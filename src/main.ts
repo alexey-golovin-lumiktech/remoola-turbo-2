@@ -10,19 +10,12 @@ async function bootstrap() {
   const config = new DocumentBuilder()
     .setTitle(customSiteTitle)
     .setDescription(`wirebill REST API`)
-    .addBearerAuth()
+    .addBasicAuth()
     .setVersion(`1.0.0`)
     .build()
 
-  const document = SwaggerModule.createDocument(app, config, { deepScanRoutes: true })
-  const options: SwaggerCustomOptions = {
-    swaggerOptions: {
-      docExpansion: DocExpansion.None,
-      tagsSorter: `alpha`,
-      operationsSorter: `alpha`
-    },
-    customSiteTitle
-  }
+  const document = SwaggerModule.createDocument(app, config, { deepScanRoutes: true, ignoreGlobalPrefix: false })
+  const options: SwaggerCustomOptions = { swaggerOptions: { docExpansion: DocExpansion.None }, customSiteTitle }
   SwaggerModule.setup(`documentation`, app, document, options)
 
   app.enableCors()

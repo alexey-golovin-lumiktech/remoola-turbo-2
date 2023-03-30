@@ -6,9 +6,12 @@ import * as knexfile from '../knexfile'
 import { KnexModule } from 'nestjs-knex'
 import { AdminModule } from './admin/admin.module'
 import { ConsumerModule } from './consumer/consumer.module'
+import { PassportModule } from '@nestjs/passport'
+import { BasicStrategy } from './strategies/auth-basic.strategy'
 
 @Module({
   imports: [
+    PassportModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: [`${process.cwd()}/.env.${process.env.NODE_ENV}`],
@@ -20,7 +23,7 @@ import { ConsumerModule } from './consumer/consumer.module'
     ConsumerModule
   ],
   controllers: [AppController],
-  providers: [],
+  providers: [BasicStrategy],
   exports: []
 })
 export class AppModule {}

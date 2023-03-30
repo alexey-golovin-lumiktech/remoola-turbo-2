@@ -26,7 +26,6 @@
     "knex:init": "./node_modules/.bin/knex init -x ts"
   },
   "dependencies": {
-    "@nestjs-query/core": "^0.30.0",
     "@nestjs/common": "^9.0.0",
     "@nestjs/config": "^2.3.1",
     "@nestjs/core": "^9.0.0",
@@ -45,6 +44,7 @@
     "knex": "^2.4.2",
     "nestjs-knex": "^2.0.0",
     "passport": "^0.6.0",
+    "passport-http": "^0.3.0",
     "pg": "^8.10.0",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
