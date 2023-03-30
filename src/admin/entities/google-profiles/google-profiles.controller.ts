@@ -4,7 +4,7 @@ import { IQuery } from 'src/common/types'
 import { IGoogleProfileModel } from 'src/models'
 import { GoogleProfilesService } from './google-profiles.service'
 
-@ApiTags(`admin / google-profiles`)
+@ApiTags(`admin / entities`)
 @Controller(`admin/google-profiles`)
 export class GoogleProfilesController {
   constructor(@Inject(GoogleProfilesService) private readonly service: GoogleProfilesService) {}

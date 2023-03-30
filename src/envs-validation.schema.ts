@@ -11,5 +11,14 @@ export const validationSchema = Joi.object({
   POSTGRES_USER: Joi.string().required(),
   POSTGRES_PASSWORD: Joi.string().required(),
   POSTGRES_DIALECT: Joi.string().required(),
-  POSTGRES_LOGGING: Joi.boolean().required()
+  POSTGRES_LOGGING: Joi.boolean().required(),
+  GOOGLE_API_KEY: Joi.string().required(),
+  GOOGLE_CLIENT_ID: Joi.string().required(),
+  GOOGLE_CLIENT_SECRET: Joi.string().required(),
+  GOOGLE_PROJECT_ID: Joi.string().required(),
+  GOOGLE_AUTH_URI: Joi.string().required(),
+  GOOGLE_TOKEN_URI: Joi.string().required(),
+  GOOGLE_AUTH_PROVIDER_X509_CERT_URL: Joi.string().required(),
+  JWT_SECRET: Joi.string().required(),
+  JWT_SECRET_EXPIRES_IN: Joi.string().required()
 })

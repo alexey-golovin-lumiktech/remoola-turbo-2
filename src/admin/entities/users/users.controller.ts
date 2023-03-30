@@ -4,7 +4,7 @@ import { IQuery } from 'src/common/types'
 import { IUserModel } from 'src/models'
 import { UsersService } from './users.service'
 
-@ApiTags(`admin / users`)
+@ApiTags(`admin / entities`)
 @Controller(`admin/users`)
 export class UsersController {
   constructor(@Inject(UsersService) private readonly service: UsersService) {}

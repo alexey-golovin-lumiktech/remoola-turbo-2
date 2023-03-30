@@ -7,6 +7,7 @@ import { UsersService } from './users.service'
 @Module({
   imports: [GoogleProfilesModule],
   controllers: [UsersController],
-  providers: [UsersService, UsersRepository]
+  providers: [UsersService, UsersRepository],
+  exports: [UsersService, UsersRepository]
 })
 export class UsersModule {}

@@ -15,7 +15,14 @@ async function bootstrap() {
     .build()
 
   const document = SwaggerModule.createDocument(app, config, { deepScanRoutes: true })
-  const options: SwaggerCustomOptions = { swaggerOptions: { docExpansion: `none` }, customSiteTitle }
+  const options: SwaggerCustomOptions = {
+    swaggerOptions: {
+      docExpansion: DocExpansion.None,
+      tagsSorter: `alpha`,
+      operationsSorter: `alpha`
+    },
+    customSiteTitle
+  }
   SwaggerModule.setup(`documentation`, app, document, options)
 
   app.enableCors()
@@ -26,6 +33,12 @@ async function bootstrap() {
 }
 
 bootstrap().catch((error: any) => console.error({ error, caller: bootstrap.name, message: `Error on startup` }))
+
+enum DocExpansion {
+  Full = `full`,
+  None = `none`,
+  List = `list`
+}
 
 interface IOptions {
   cleanup?: boolean

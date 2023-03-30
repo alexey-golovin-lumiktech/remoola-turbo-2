@@ -12,4 +12,8 @@ export class UsersService extends BaseService<IUserModel, UsersRepository> {
   ) {
     super(userRepository)
   }
+
+  findByEmail(email: string): Promise<IUserModel | null> {
+    return this.repository.query.where({ email }).first()
+  }
 }
