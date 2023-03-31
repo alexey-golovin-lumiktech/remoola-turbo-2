@@ -1,11 +1,12 @@
 import { Controller, Get, Inject, Query, UseGuards } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
-import { ApiTags } from '@nestjs/swagger'
+import { ApiSecurity, ApiTags } from '@nestjs/swagger'
 import { IQuery } from 'src/common/types'
 import { IUserModel } from 'src/models'
 import { UsersService } from './users.service'
 
 @ApiTags(`admin`)
+@ApiSecurity(`basic`)
 @Controller(`admin/users`)
 export class UsersController {
   constructor(@Inject(UsersService) private readonly service: UsersService) {}

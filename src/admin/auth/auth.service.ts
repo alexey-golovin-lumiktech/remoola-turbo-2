@@ -15,8 +15,8 @@ export class AuthService {
     return this.jwtService.sign(payload)
   }
 
-  hashPassword(password: string): Promise<string> {
-    return bcrypt.hash(password, 5)
+  hashPassword(password: string): string {
+    return bcrypt.hashSync(password, 5)
   }
 
   async login(body: ILoginBody): Promise<IAccessToken> {

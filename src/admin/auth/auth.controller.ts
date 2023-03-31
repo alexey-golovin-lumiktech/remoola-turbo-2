@@ -1,11 +1,12 @@
 import { Body, Controller, Inject, Post, UseGuards } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
+import { ApiOkResponse, ApiBasicAuth, ApiTags } from '@nestjs/swagger'
 import { AccessToken, LoginBody } from 'src/dtos'
 import { AuthService } from './auth.service'
 
 @ApiTags(`admin`)
-@Controller(`auth`)
+@ApiBasicAuth()
+@Controller(`admin/auth`)
 export class AuthController {
   constructor(@Inject(AuthService) private readonly service: AuthService) {}
 
