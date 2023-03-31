@@ -21,5 +21,5 @@ export class GoogleProfile implements IGoogleProfileModel {
 
   @ApiProperty()
   @IsDate()
-  deletedAt: Date
+  deletedAt?: Date
 }

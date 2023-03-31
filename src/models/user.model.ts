@@ -7,43 +7,34 @@ export enum UserType {
 }
 
 export interface IUserModel extends IBaseModel {
-  id: string
   email: string
-  firstName: string
-  lastName: string
-  middleName: string
+
   userType: UserType
-
   verified: boolean
-
   password: string
-  passwordHash: string
-  passwordSalt: string
+  salt: string
 
-  googleProfileId: string
-
-  createdAt: Date
-  updatedAt: Date
-  deletedAt: Date | null // soft delete
+  googleProfileId?: string
+  firstName?: string
+  lastName?: string
+  middleName?: string
 }
 
 export class UserModel implements IUserModel {
   id: string
   email: string
-  firstName: string
-  lastName: string
-  middleName: string
+
   userType: UserType
-
   verified: boolean
-
   password: string
-  passwordHash: string
-  passwordSalt: string
+  salt: string
 
-  googleProfileId: string
+  googleProfileId?: string
+  firstName?: string
+  lastName?: string
+  middleName?: string
 
   createdAt: Date
   updatedAt: Date
-  deletedAt: Date | null
+  deletedAt?: Date
 }

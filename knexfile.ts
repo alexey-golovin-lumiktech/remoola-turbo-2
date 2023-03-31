@@ -39,6 +39,7 @@ const config: { [key: string]: Knex.Config } = {
       password: process.env.POSTGRES_PASSWORD
     },
     migrations: { extension: `ts`, tableName: `knex_migrations`, directory: `./src/migrations` },
+    seeds: { extension: `ts`, directory: `./src/seeds` },
     wrapIdentifier: (value, origImpl) => origImpl(keysToSnakeCase(value)),
     postProcessResponse: (result) => keysToCamelCase(result)
   },
@@ -54,6 +55,7 @@ const config: { [key: string]: Knex.Config } = {
     },
     pool: { min: 2, max: 10 },
     migrations: { extension: `ts`, tableName: `knex_migrations`, directory: `./src/migrations` },
+    seeds: { extension: `ts`, directory: `./src/seeds` },
     wrapIdentifier: (value, origImpl) => origImpl(keysToSnakeCase(value)),
     postProcessResponse: (result) => keysToCamelCase(result)
   }

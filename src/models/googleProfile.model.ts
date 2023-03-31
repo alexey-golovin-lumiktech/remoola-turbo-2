@@ -10,5 +10,5 @@ export class GoogleProfileModel implements IGoogleProfileModel {
 
   createdAt: Date
   updatedAt: Date
-  deletedAt: Date
+  deletedAt?: Date
 }

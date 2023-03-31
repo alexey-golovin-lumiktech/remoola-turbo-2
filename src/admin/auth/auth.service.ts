@@ -4,10 +4,9 @@ import { IAccessToken, ILoginBody } from '../../dtos'
 import { JwtService } from '@nestjs/jwt'
 import { IUserModel } from '../../models'
 import { constants } from '../../constants'
-import * as bcrypt from 'bcryptjs'
 import { ConfigService } from '@nestjs/config'
-import uuid from 'uuid'
-import crypto from 'crypto'
+import * as uuid from 'uuid'
+import { verifyPassword } from 'src/utils'
 
 @Injectable()
 export class AuthService {
@@ -22,14 +21,10 @@ export class AuthService {
       const user = await this.usersService.findByEmail(body.email)
       if (!user) throw new NotFoundException({ message: constants.ADMIN_NOT_FOUND })
 
-      const passwordEquals = await bcrypt.compare(body.password, user.password)
-
-      if (!passwordEquals) {
-        throw new BadRequestException({ message: constants.INVALID_PASSWORD })
-      }
+      const verified = await verifyPassword({ password: body.password, dbPassword: user.password, dbSalt: user.salt })
+      if (!verified) throw new BadRequestException({ message: constants.INVALID_PASSWORD })
 
       const accessToken = this.generateToken(user)
-
       return { accessToken }
     } catch (error) {
       throw new HttpException(error.message || `Internal error`, HttpStatus.INTERNAL_SERVER_ERROR)
@@ -43,20 +38,6 @@ export class AuthService {
       expiresIn: this.configService.get<string>(`JWT_ACCESS_TOKEN_EXPIRES_IN`)
     }
     return this.jwtService.sign(payload, options)
-  }
-
-  private validatePassword({ password, dbPassword, dbSalt }): boolean {
-    const hash = crypto.createHmac(`sha512`, dbSalt).update(password).digest(`hex`).slice().trim()
-    return dbPassword === hash
-  }
-
-  private hashPassword(password: string, salt = ``): string {
-    if (salt.length == 0) salt = this.getRandomString(12)
-    return crypto.createHmac(`sha512`, salt).update(password).digest(`hex`)
-  }
-
-  private getRandomString(count = 3) {
-    return Array(count).fill(null).map(() => Math.random().toString(36).slice(2)).join(``) //eslint-disable-line
   }
 
   private generateRefreshToken() {
