@@ -1,7 +1,7 @@
 import type { Knex as IKnex } from 'knex'
 import { Knex } from 'knex'
-import { IListResponse } from 'src/dtos'
-import { IBaseModel } from 'src/models/base'
+import { IListResponse } from '../dtos'
+import { IBaseModel } from '../models/base'
 import { IQuery, IFilter, FilteringOperator } from './types'
 
 export interface IBaseRepository<TModel> {

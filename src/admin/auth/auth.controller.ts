@@ -1,6 +1,6 @@
 import { Body, Controller, Inject, Post } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
-import { AccessToken, LoginBody } from 'src/dtos'
+import { AccessToken, LoginBody } from '../../dtos'
 import { AuthService } from './auth.service'
 
 @ApiTags(`admin`)

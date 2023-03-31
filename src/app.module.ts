@@ -9,7 +9,7 @@ import { ConsumerModule } from './consumer/consumer.module'
 import { PassportModule } from '@nestjs/passport'
 import { BasicStrategy } from './strategies/auth-basic.strategy'
 import { GoogleStrategy } from './strategies/google.strategy'
-import { constants } from 'src/constants'
+import { constants } from './constants'
 
 @Module({
   imports: [

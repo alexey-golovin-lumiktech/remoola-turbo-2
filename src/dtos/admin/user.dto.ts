@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger'
 import { IsBoolean, IsDate, IsEnum, IsString } from 'class-validator'
-import { IUserModel, UserType } from 'src/models'
+import { IUserModel, UserType } from '../../models'
 
 export class User implements IUserModel {
   @ApiProperty()

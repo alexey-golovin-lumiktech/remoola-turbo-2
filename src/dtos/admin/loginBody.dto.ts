@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger'
 import { IsEmail, Matches } from 'class-validator'
-import { regexp, constants } from 'src/constants'
+import { regexp, constants } from '../../constants'
 
 export interface ILoginBody {
   email: string

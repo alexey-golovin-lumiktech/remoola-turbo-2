@@ -13,7 +13,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string(`first_name`).notNullable()
     table.string(`last_name`).notNullable()
     table.string(`middle_name`).notNullable()
-    table.enum(`user_type`, [`admin`, `user`]).defaultTo(`user`).notNullable()
+    table.enum(`user_type`, [`super`, `admin`, `user`]).defaultTo(`user`).notNullable()
     table.boolean(`verified`).defaultTo(false).notNullable()
 
     table.string(`password`).notNullable()

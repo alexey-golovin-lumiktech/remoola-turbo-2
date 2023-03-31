@@ -1,4 +1,4 @@
-import { getEnvPath } from 'src/common/getEnvPath'
+import { getEnvPath } from '../common/getEnvPath'
 
 export const constants = {
   UNAUTHORIZED: `Unauthorized`,

@@ -1,6 +1,7 @@
 import { IBaseModel } from './base'
 
 export enum UserType {
+  Super = `super`,
   Admin = `admin`,
   User = `user`
 }

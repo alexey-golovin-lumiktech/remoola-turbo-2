@@ -20,5 +20,6 @@ export const validationSchema = Joi.object({
   GOOGLE_TOKEN_URI: Joi.string().required(),
   GOOGLE_AUTH_PROVIDER_X509_CERT_URL: Joi.string().required(),
   JWT_SECRET: Joi.string().required(),
-  JWT_SECRET_EXPIRES_IN: Joi.string().required()
+  JWT_ACCESS_TOKEN_EXPIRES_IN: Joi.string().required(),
+  JWT_REFRESH_TOKEN_EXPIRES_IN: Joi.string().required()
 })

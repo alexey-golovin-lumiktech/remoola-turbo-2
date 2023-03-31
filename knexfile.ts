@@ -1,7 +1,7 @@
 import type { Knex } from 'knex'
 import * as dotenv from 'dotenv'
 import * as pg from 'pg'
-import { constants } from 'src/constants'
+import { constants } from './src/constants'
 dotenv.config({ path: constants.ENV_FILE_PATH })
 
 pg.types.setTypeParser(20, parseInt)
