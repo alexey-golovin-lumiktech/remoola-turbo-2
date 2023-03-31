@@ -12,7 +12,7 @@ export class LoginBody implements ILoginBody {
   @IsEmail({}, { message: constants.INCORRECT_EMAIL })
   email: string
 
-  @ApiProperty({ example: `vUN55@vV8@c@` })
+  @ApiProperty({ example: `Wirebill123!` })
   @Matches(regexp.password, { message: constants.INCORRECT_PASSWORD })
   password: string
 }

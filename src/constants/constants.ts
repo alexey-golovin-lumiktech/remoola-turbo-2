@@ -1,3 +1,5 @@
+import { getEnvPath } from 'src/common/getEnvPath'
+
 export const constants = {
   UNAUTHORIZED: `Unauthorized`,
   NOT_FOUND: `User not found`,
@@ -13,5 +15,6 @@ export const constants = {
   FORBIDDEN: `Forbidden`,
   INVITE_ERROR: `You don't have rights to invite guests`,
   INCORRECT_MIMETYPE: `Incorrect MIME types`,
-  TEMPORARY_PASSWORD_LIFETIME_HOURS: 3
+  TEMPORARY_PASSWORD_LIFETIME_HOURS: 3,
+  ENV_FILE_PATH: getEnvPath(process.cwd())
 }

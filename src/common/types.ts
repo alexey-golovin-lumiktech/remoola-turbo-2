@@ -51,3 +51,9 @@ export enum FilteringOperator {
   Between = `between`,
   NotBetween = `NOT BETWEEN`
 }
+
+export enum SwaggerDocExpansion {
+  Full = `full`,
+  None = `none`,
+  List = `list`
+}

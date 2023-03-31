@@ -1,7 +1,8 @@
 import type { Knex } from 'knex'
-import * as fs from 'fs'
 import * as dotenv from 'dotenv'
 import * as pg from 'pg'
+import { constants } from 'src/constants'
+dotenv.config({ path: constants.ENV_FILE_PATH })
 
 pg.types.setTypeParser(20, parseInt)
 const toCamel = (str) => str.replace(/([-_][a-z])/gi, (group) => group.toUpperCase().replace(`-`, ``).replace(`_`, ``))
@@ -25,10 +26,6 @@ const keysToSnakeCase = function (source) {
   }
   return toSnake(source)
 }
-
-const development = `${process.cwd()}/.env.development`
-const envFilePath = fs.existsSync(development) ? development : `${process.cwd()}/.env`
-dotenv.config({ path: envFilePath })
 
 const config: { [key: string]: Knex.Config } = {
   development: {

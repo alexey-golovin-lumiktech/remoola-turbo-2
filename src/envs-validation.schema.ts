@@ -4,7 +4,7 @@ export const validationOptions = { allowUnknown: true, abortEarly: true }
 
 export const validationSchema = Joi.object({
   NODE_ENV: Joi.string().valid(`development`, `production`).required(),
-  PORT: Joi.number().default(8080).required(),
+  PORT: Joi.number().required(),
   POSTGRES_HOST: Joi.string().required(),
   POSTGRES_PORT: Joi.number().required(),
   POSTGRES_DB: Joi.string().required(),

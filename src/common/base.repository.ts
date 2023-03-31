@@ -1,5 +1,6 @@
 import type { Knex as IKnex } from 'knex'
 import { Knex } from 'knex'
+import { IListResponse } from 'src/dtos'
 import { IBaseModel } from 'src/models/base'
 import { IQuery, IFilter, FilteringOperator } from './types'
 
@@ -80,7 +81,7 @@ export abstract class BaseRepository<TModel extends IBaseModel> implements IBase
     return arr.map((x) => `'${x}'`).join(`,`)
   }
 
-  async findAndCountAll(query?: IQuery<TModel>): Promise<{ data: TModel[]; count: number }> {
+  async findAndCountAll(query?: IQuery<TModel>): Promise<IListResponse<TModel>> {
     const qbClone = this.query
     if (query) this.queryBuilder(query).build(qbClone)
     const data = await qbClone

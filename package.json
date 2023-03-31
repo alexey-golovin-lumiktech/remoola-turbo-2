@@ -51,6 +51,7 @@
     "lint-staged": "^13.2.0",
     "nestjs-knex": "^2.0.0",
     "passport": "^0.6.0",
+    "passport-google-oauth20": "^2.0.0",
     "passport-http": "^0.3.0",
     "pg": "^8.10.0",
     "reflect-metadata": "^0.1.13",

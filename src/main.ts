@@ -1,10 +1,15 @@
 import { ConfigService } from '@nestjs/config'
 import { NestFactory } from '@nestjs/core'
 import { DocumentBuilder, SwaggerModule, SwaggerCustomOptions } from '@nestjs/swagger'
+import { AuthModule } from './admin/auth/auth.module'
+import { GoogleProfilesModule } from './admin/entities/google-profiles/google-profiles.module'
+import { UsersModule } from './admin/entities/users/users.module'
 import { AppModule } from './app.module'
+import { SwaggerDocExpansion } from './common/types'
+import * as dtos from './dtos'
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule)
+  const app = await NestFactory.create(AppModule, { cors: { origin: true, exposedHeaders: [`Content-Range`, `Content-Type`] } })
 
   const customSiteTitle = `Wirebill`
   const config = new DocumentBuilder()
@@ -14,8 +19,12 @@ async function bootstrap() {
     .setVersion(`1.0.0`)
     .build()
 
-  const document = SwaggerModule.createDocument(app, config, { deepScanRoutes: true, ignoreGlobalPrefix: false })
-  const options: SwaggerCustomOptions = { swaggerOptions: { docExpansion: DocExpansion.None }, customSiteTitle }
+  const document = SwaggerModule.createDocument(app, config, {
+    deepScanRoutes: true,
+    include: [AuthModule, UsersModule, GoogleProfilesModule],
+    extraModels: Object.values(dtos)
+  })
+  const options: SwaggerCustomOptions = { swaggerOptions: { docExpansion: SwaggerDocExpansion.None }, customSiteTitle }
   SwaggerModule.setup(`documentation`, app, document, options)
 
   app.enableCors()
@@ -26,12 +35,6 @@ async function bootstrap() {
 }
 
 bootstrap().catch((error: any) => console.error({ error, caller: bootstrap.name, message: `Error on startup` }))
-
-enum DocExpansion {
-  Full = `full`,
-  None = `none`,
-  List = `list`
-}
 
 interface IOptions {
   cleanup?: boolean

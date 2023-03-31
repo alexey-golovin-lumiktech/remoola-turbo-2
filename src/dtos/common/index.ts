@@ -1,1 +1,1 @@
-export * from './count-rows.dto'
+export * from './listResponse.dto'
