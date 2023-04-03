@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { IsDate, IsString } from 'class-validator'
+import { IsDate, IsString, ValidateIf } from 'class-validator'
 import { IGoogleProfileModel } from '../../models'
 import { Expose } from 'class-transformer'
 
@@ -27,5 +27,6 @@ export class GoogleProfile implements IGoogleProfileModel {
   @Expose()
   @ApiProperty()
   @IsDate()
-  deletedAt?: Date
+  @ValidateIf(({ value }) => value != null)
+  deletedAt?: Date = null
 }

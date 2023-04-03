@@ -65,7 +65,8 @@ export class User implements IUserModel {
   @Expose()
   @ApiPropertyOptional()
   @IsDate()
-  deletedAt?: Date
+  @ValidateIf(({ value }) => value != null)
+  deletedAt?: Date = null
 }
 
 export class CreateUser extends PickType(User, [`email`, `password`, `verified`, `firstName`, `lastName`, `middleName`]) {}
