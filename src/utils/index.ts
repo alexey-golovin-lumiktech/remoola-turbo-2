@@ -1,15 +1,23 @@
 import * as crypto from 'crypto'
 
-export const hashPassword = (password: string, salt = ``): string => {
-  if (salt.length == 0) salt = generatePasswordSalt(12)
-  return crypto.createHmac(`sha512`, salt).update(password).digest(`hex`)
+export const genPass = (params = { password: ``, salt: `` }): string => {
+  if (params.password.length == 0) throw new Error(`Password could not be empty`)
+  if (params.salt.length == 0) throw new Error(`Salt could not be empty`)
+
+  return crypto.createHmac(`sha512`, params.salt).update(params.password).digest(`hex`)
 }
 
-export const generatePasswordSalt = (count = 3) => {
-  return Array(count).fill(null).map(() => Math.random().toString(36).slice(2)).join(``) //eslint-disable-line
+export const genPassSalt = (rounds = 10) => {
+  return crypto
+    .randomBytes(Math.ceil(rounds / 2))
+    .toString(`hex`)
+    .slice(0.16)
 }
 
-export const verifyPassword = ({ password, dbPassword, dbSalt }): boolean => {
-  const hash = crypto.createHmac(`sha512`, dbSalt).update(password).digest(`hex`).slice().trim()
-  return dbPassword === hash
+export const verifyPass = (params = { toCompare: ``, password: ``, salt: `` }): boolean => {
+  if (params.password.length == 0) throw new Error(`Password could not be empty`)
+  if (params.salt.length == 0) throw new Error(`Salt could not be empty`)
+
+  const hash = crypto.createHmac(`sha512`, params.salt).update(params.toCompare).digest(`hex`)
+  return params.toCompare === hash
 }

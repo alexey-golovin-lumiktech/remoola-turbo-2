@@ -1,7 +1,6 @@
 {
   "recommendations": [
     "folke.vscode-monorepo-workspace",
-    "firsttris.vscode-jest-runner",
     "dbaeumer.vscode-eslint",
     "esbenp.prettier-vscode",
     "eamodio.gitlens",

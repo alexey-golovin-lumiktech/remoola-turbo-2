@@ -1,105 +1,76 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { IsBoolean, IsDate, IsEmail, IsEnum, IsNotEmpty, IsString } from 'class-validator'
+import { ApiProperty, ApiPropertyOptional, PickType } from '@nestjs/swagger'
+import { Expose } from 'class-transformer'
+import { IsBoolean, IsDate, IsEnum, IsString } from 'class-validator'
 import { IUserModel, UserType } from '../../models'
+import { Exclude } from 'class-transformer'
 
 export class User implements IUserModel {
+  @Expose()
   @ApiProperty()
   @IsString()
   id: string
 
-  @ApiProperty()
+  @Expose()
+  @ApiProperty({ example: `some@email.com` })
   @IsString()
   email: string
 
-  @ApiProperty()
+  @Expose()
+  @ApiProperty({ enum: UserType, default: UserType.User })
   @IsEnum(UserType)
   userType: UserType
 
-  @ApiProperty()
+  @Expose()
+  @ApiProperty({ default: false })
   @IsBoolean()
   verified: boolean
 
-  @ApiProperty()
+  @Expose()
+  @ApiProperty({ example: `SomeBestPassword123!` })
   @IsString()
   password: string
 
-  @ApiProperty()
+  @Exclude()
   @IsString()
   salt: string
 
+  @Expose()
   @ApiPropertyOptional()
   @IsString()
   firstName?: string
 
+  @Expose()
   @ApiPropertyOptional()
   @IsString()
   lastName?: string
 
+  @Expose()
   @ApiPropertyOptional()
   @IsString()
   middleName?: string
 
+  @Expose()
   @ApiPropertyOptional()
   @IsString()
   googleProfileId?: string
 
+  @Expose()
   @ApiProperty()
   @IsDate()
   createdAt: Date
 
+  @Expose()
   @ApiProperty()
   @IsDate()
   updatedAt: Date
 
+  @Expose()
   @ApiPropertyOptional()
   @IsDate()
   deletedAt?: Date
 }
 
-export type IUserCreate = Pick<
-  IUserModel,
-  | `email` //
-  | `userType`
-  | `verified`
-  | `password`
-  | `salt`
-  | `googleProfileId`
-  | `firstName`
-  | `lastName`
-  | `middleName`
->
-
-export class UserCreate implements Omit<IUserCreate, `salt`> {
-  @ApiProperty()
-  @IsEmail()
-  email: string
-
-  @ApiProperty()
-  @IsEnum(UserType)
-  userType: UserType
-
-  @ApiProperty()
-  @IsBoolean()
-  verified: boolean
-
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  password: string
-
-  @ApiPropertyOptional()
-  @IsString()
-  firstName?: string
-
-  @ApiPropertyOptional()
-  @IsString()
-  lastName?: string
-
-  @ApiPropertyOptional()
-  @IsString()
-  middleName?: string
-
-  @ApiPropertyOptional()
-  @IsString()
-  googleProfileId?: string
-}
+export class CreateUser extends PickType(User, [`email`, `password`, `userType`, `verified`]) {}
+export class UpdateUser extends CreateUser {}
+export class UpdatePassword extends PickType(User, [`password`] as const) {}
+export class UpdateUserType extends PickType(User, [`userType`] as const) {}

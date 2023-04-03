@@ -7,6 +7,9 @@ import { UsersModule } from './admin/entities/users/users.module'
 import { AppModule } from './app.module'
 import { SwaggerDocExpansion } from './common/types'
 import * as dtos from './dtos'
+import { ValidationPipe } from '@nestjs/common'
+import { plainToInstance, instanceToPlain } from 'class-transformer'
+import { HttpExceptionFilter } from './common/httpException.filter'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: { origin: true, exposedHeaders: [`Content-Range`, `Content-Type`] } })
@@ -14,7 +17,7 @@ async function bootstrap() {
   const customSiteTitle = `Wirebill`
   const config = new DocumentBuilder()
     .setTitle(customSiteTitle)
-    .setDescription(`wirebill REST API`)
+    .setDescription(`Wirebill REST API`)
     .addBasicAuth()
     .setVersion(`1.0.0`)
     .build()
@@ -28,6 +31,17 @@ async function bootstrap() {
   SwaggerModule.setup(`documentation`, app, document, options)
 
   app.enableCors()
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      transformerPackage: { plainToClass: plainToInstance, classToPlain: instanceToPlain },
+      transformOptions: {
+        excludeExtraneousValues: true,
+        enableImplicitConversion: true
+      }
+    })
+  )
+  app.useGlobalFilters(new HttpExceptionFilter())
 
   const configService = app.get(ConfigService)
   const PORT = configService.get<number>(`PORT`)

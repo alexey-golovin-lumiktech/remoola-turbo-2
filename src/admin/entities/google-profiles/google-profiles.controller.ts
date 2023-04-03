@@ -1,5 +1,5 @@
-import { Controller, Get, Inject, Query, Response } from '@nestjs/common'
-import { ApiTags } from '@nestjs/swagger'
+import { Controller, Get, Inject, Param, Query, Response } from '@nestjs/common'
+import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { IQuery } from '../../../common/types'
 import { ApiCountRowsResponse } from '../../../decorators/response-count-rows.decorator'
 import { ListResponse } from '../../../dtos'
@@ -23,5 +23,11 @@ export class GoogleProfilesController {
     res.set(`Content-Range`, result.count.toString())
     res.send(result.data)
     return result
+  }
+
+  @Get(`/:profileId`)
+  @ApiOkResponse({ type: GoogleProfile })
+  getById(@Param(`profileId`) profileId: string): Promise<GoogleProfile> {
+    return this.service.repository.findById(profileId)
   }
 }

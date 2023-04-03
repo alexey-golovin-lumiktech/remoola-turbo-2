@@ -6,7 +6,7 @@ import { IUserModel } from '../../models'
 import { constants } from '../../constants'
 import { ConfigService } from '@nestjs/config'
 import * as uuid from 'uuid'
-import { verifyPassword } from 'src/utils'
+import { verifyPass } from 'src/utils'
 
 @Injectable()
 export class AuthService {
@@ -21,7 +21,7 @@ export class AuthService {
       const user = await this.usersService.findByEmail(body.email)
       if (!user) throw new NotFoundException({ message: constants.ADMIN_NOT_FOUND })
 
-      const verified = await verifyPassword({ password: body.password, dbPassword: user.password, dbSalt: user.salt })
+      const verified = await verifyPass({ toCompare: body.password, password: user.password, salt: user.salt })
       if (!verified) throw new BadRequestException({ message: constants.INVALID_PASSWORD })
 
       const accessToken = this.generateToken(user)
