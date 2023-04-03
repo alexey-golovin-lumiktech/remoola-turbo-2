@@ -1,6 +1,6 @@
 import { Knex } from 'knex'
 
-const tableName = `users`
+const tableName = `admins`
 
 export async function up(knex: Knex): Promise<void> {
   const exist = await knex.schema.hasTable(tableName)
@@ -9,15 +9,9 @@ export async function up(knex: Knex): Promise<void> {
   return knex.schema.createTable(tableName, (table) => {
     table.uuid(`id`).primary().defaultTo(knex.raw(`uuid_generate_v4()`))
     table.string(`email`).unique().notNullable()
-    table.boolean(`verified`).defaultTo(false).notNullable()
+    table.enum(`type`, [`super`, `admin`]).defaultTo(`user`).notNullable()
     table.string(`password`).notNullable()
     table.string(`salt`).notNullable()
-
-    table.uuid(`google_profile_id`).references(`id`).inTable(`google_profiles`)
-    table.string(`first_name`)
-    table.string(`last_name`)
-    table.string(`middle_name`)
-
     table.timestamp(`created_at`).defaultTo(knex.fn.now())
     table.timestamp(`updated_at`).defaultTo(knex.fn.now())
     table.timestamp(`deleted_at`).defaultTo(null).nullable() // to soft delete

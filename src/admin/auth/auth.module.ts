@@ -1,14 +1,14 @@
 import { Module } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
-import { UsersModule } from '../entities/users/users.module'
+import { AdminsModule } from '../entities/admins/admins.module'
 import { GoogleStrategy } from '../../strategies/google.strategy'
 import { AuthController } from './auth.controller'
 import { AuthService } from './auth.service'
 
 @Module({
   imports: [
-    UsersModule,
+    AdminsModule,
     JwtModule.registerAsync({
       useFactory: (configService: ConfigService) => {
         const secret = configService.get<string>(`JWT_SECRET`)

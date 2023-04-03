@@ -1,15 +1,7 @@
-import { IBaseModel } from './base'
-
-export enum UserType {
-  Super = `super`,
-  Admin = `admin`,
-  User = `user`
-}
+import { IBaseModel, BaseModel } from './base'
 
 export interface IUserModel extends IBaseModel {
   email: string
-
-  userType: UserType
   verified: boolean
   password: string
   salt: string
@@ -20,11 +12,9 @@ export interface IUserModel extends IBaseModel {
   middleName?: string
 }
 
-export class UserModel implements IUserModel {
+export class UserModel extends BaseModel implements IUserModel {
   id: string
   email: string
-
-  userType: UserType
   verified: boolean
   password: string
   salt: string

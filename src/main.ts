@@ -3,7 +3,7 @@ import { NestFactory } from '@nestjs/core'
 import { DocumentBuilder, SwaggerModule, SwaggerCustomOptions } from '@nestjs/swagger'
 import { AuthModule } from './admin/auth/auth.module'
 import { GoogleProfilesModule } from './admin/entities/google-profiles/google-profiles.module'
-import { UsersModule } from './admin/entities/users/users.module'
+import { AdminsModule } from './admin/entities/admins/admins.module'
 import { AppModule } from './app.module'
 import { SwaggerDocExpansion } from './common/types'
 import * as dtos from './dtos'
@@ -24,7 +24,7 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config, {
     deepScanRoutes: true,
-    include: [AuthModule, UsersModule, GoogleProfilesModule],
+    include: [AuthModule, AdminsModule, GoogleProfilesModule],
     extraModels: Object.values(dtos)
   })
   const options: SwaggerCustomOptions = { swaggerOptions: { docExpansion: SwaggerDocExpansion.None }, customSiteTitle }

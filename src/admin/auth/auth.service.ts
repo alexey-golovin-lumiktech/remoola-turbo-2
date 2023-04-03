@@ -1,5 +1,5 @@
 import { BadRequestException, HttpException, HttpStatus, Inject, Injectable, NotFoundException } from '@nestjs/common'
-import { UsersService } from '../entities/users/users.service'
+import { AdminsService } from '../entities/admins/admins.service'
 import { IAccessToken, ILoginBody } from '../../dtos'
 import { JwtService } from '@nestjs/jwt'
 import { IUserModel } from '../../models'
@@ -11,7 +11,7 @@ import { verifyPass } from 'src/utils'
 @Injectable()
 export class AuthService {
   constructor(
-    @Inject(UsersService) private readonly usersService: UsersService,
+    @Inject(AdminsService) private readonly usersService: AdminsService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService
   ) {}

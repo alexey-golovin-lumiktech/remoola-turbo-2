@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional, PickType } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
-import { IsBoolean, IsDate, IsEnum, IsString } from 'class-validator'
-import { IUserModel, UserType } from '../../models'
+import { IsBoolean, IsDate, IsString } from 'class-validator'
+import { IUserModel } from '../../models'
 import { Exclude } from 'class-transformer'
 
 export class User implements IUserModel {
@@ -11,28 +11,28 @@ export class User implements IUserModel {
   id: string
 
   @Expose()
-  @ApiProperty({ example: `some@email.com` })
+  @ApiProperty()
   @IsString()
   email: string
 
   @Expose()
-  @ApiProperty({ enum: UserType, default: UserType.User })
-  @IsEnum(UserType)
-  userType: UserType
-
-  @Expose()
-  @ApiProperty({ default: false })
-  @IsBoolean()
+  @ApiProperty()
+  @IsString()
   verified: boolean
 
   @Expose()
-  @ApiProperty({ example: `SomeBestPassword123!` })
-  @IsString()
+  @ApiProperty()
+  @IsBoolean()
   password: string
 
   @Exclude()
   @IsString()
   salt: string
+
+  @Expose()
+  @ApiPropertyOptional()
+  @IsString()
+  googleProfileId?: string
 
   @Expose()
   @ApiPropertyOptional()
@@ -50,11 +50,6 @@ export class User implements IUserModel {
   middleName?: string
 
   @Expose()
-  @ApiPropertyOptional()
-  @IsString()
-  googleProfileId?: string
-
-  @Expose()
   @ApiProperty()
   @IsDate()
   createdAt: Date
@@ -70,7 +65,6 @@ export class User implements IUserModel {
   deletedAt?: Date
 }
 
-export class CreateUser extends PickType(User, [`email`, `password`, `userType`, `verified`]) {}
+export class CreateUser extends PickType(User, [`email`, `password`, `verified`, `firstName`, `lastName`, `middleName`]) {}
 export class UpdateUser extends CreateUser {}
 export class UpdatePassword extends PickType(User, [`password`] as const) {}
-export class UpdateUserType extends PickType(User, [`userType`] as const) {}

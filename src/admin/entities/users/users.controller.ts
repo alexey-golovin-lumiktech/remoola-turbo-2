@@ -2,13 +2,12 @@ import { Body, Controller, Get, Inject, Param, Post, Put, Query, Response } from
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { IQuery } from '../../../common/types'
 import { ApiCountRowsResponse } from '../../../decorators/response-count-rows.decorator'
-import { ListResponse } from '../../../dtos'
-import { CreateUser, UpdateUser, User } from '../../../dtos/admin/user.dto'
+import { User, CreateUser, ListResponse, UpdateUser } from '../../../dtos'
 import { IUserModel } from '../../../models'
 import { UsersService } from './users.service'
 
 import { Response as ResponseType } from 'express'
-@ApiTags(`admin`)
+@ApiTags(`user`)
 @Controller(`admin/users`)
 export class UsersController {
   constructor(@Inject(UsersService) private readonly service: UsersService) {}
@@ -25,7 +24,6 @@ export class UsersController {
   @Post(`/`)
   @ApiOkResponse({ type: User })
   create(@Body() body: CreateUser): Promise<User> {
-    console.log(JSON.stringify({ body }, null, 2))
     return this.service.create(body)
   }
 

@@ -1,3 +1,4 @@
+export * from './admin.dto'
 export * from './loginBody.dto'
 export * from './accessToken.dto'
 export * from './user.dto'

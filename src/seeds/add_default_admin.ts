@@ -1,9 +1,9 @@
 import { Knex } from 'knex'
-import { UserType } from '../models'
+import { AdminType } from '../models'
 import { genPassSalt, genPass } from '../utils'
 
 export async function seed(knex: Knex): Promise<void> {
-  await knex(`users`).del()
+  await knex(`admins`).del()
 
   const password = `Wirebill@123!`
   const salt = genPassSalt(4)
@@ -11,12 +11,11 @@ export async function seed(knex: Knex): Promise<void> {
   const data = [
     {
       email: `super.admin@wirebill.com`,
-      userType: UserType.Super,
-      verified: true,
+      type: AdminType.Super,
       salt: salt,
       password: hash
     }
   ]
 
-  await knex(`users`).insert(data)
+  await knex(`admins`).insert(data)
 }
