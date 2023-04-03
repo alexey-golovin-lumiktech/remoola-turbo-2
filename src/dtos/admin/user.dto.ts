@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional, PickType } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
-import { IsBoolean, IsDate, IsString } from 'class-validator'
+import { IsBoolean, IsDate, IsString, ValidateIf } from 'class-validator'
 import { IUserModel } from '../../models'
 import { Exclude } from 'class-transformer'
 
@@ -17,12 +17,12 @@ export class User implements IUserModel {
 
   @Expose()
   @ApiProperty()
-  @IsString()
+  @IsBoolean()
   verified: boolean
 
   @Expose()
   @ApiProperty()
-  @IsBoolean()
+  @IsString()
   password: string
 
   @Exclude()
@@ -37,17 +37,20 @@ export class User implements IUserModel {
   @Expose()
   @ApiPropertyOptional()
   @IsString()
-  firstName?: string
+  @ValidateIf(({ value }) => value != null)
+  firstName?: string = null
 
   @Expose()
   @ApiPropertyOptional()
   @IsString()
-  lastName?: string
+  @ValidateIf(({ value }) => value != null)
+  lastName?: string = null
 
   @Expose()
   @ApiPropertyOptional()
   @IsString()
-  middleName?: string
+  @ValidateIf(({ value }) => value != null)
+  middleName?: string = null
 
   @Expose()
   @ApiProperty()

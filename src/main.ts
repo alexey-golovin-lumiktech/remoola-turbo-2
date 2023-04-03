@@ -37,7 +37,9 @@ async function bootstrap() {
       transformerPackage: { plainToClass: plainToInstance, classToPlain: instanceToPlain },
       transformOptions: {
         excludeExtraneousValues: true,
-        enableImplicitConversion: true
+        enableImplicitConversion: true,
+        exposeDefaultValues: true,
+        exposeUnsetFields: true
       }
     })
   )
