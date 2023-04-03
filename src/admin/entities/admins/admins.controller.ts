@@ -24,14 +24,12 @@ export class AdminsController {
   @Post(`/`)
   @ApiOkResponse({ type: Admin })
   create(@Body() body: CreateAdmin): Promise<Admin> {
-    console.log(JSON.stringify({ body }, null, 2))
     return this.service.create(body)
   }
 
   @Put(`/:adminId`)
   @ApiOkResponse({ type: Admin })
   update(@Param(`adminId`) adminId: string, @Body() body: UpdateAdmin): Promise<Admin> {
-    console.log(JSON.stringify({ body }, null, 2))
     return this.service.update(adminId, body)
   }
 

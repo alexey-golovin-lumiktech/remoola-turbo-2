@@ -14,10 +14,10 @@ export const genPassSalt = (rounds = 10) => {
     .slice(0.16)
 }
 
-export const verifyPass = (params = { toCompare: ``, password: ``, salt: `` }): boolean => {
+export const verifyPass = (params = { incomingPass: ``, password: ``, salt: `` }): boolean => {
   if (params.password.length == 0) throw new Error(`Password could not be empty`)
   if (params.salt.length == 0) throw new Error(`Salt could not be empty`)
 
-  const hash = crypto.createHmac(`sha512`, params.salt).update(params.toCompare).digest(`hex`)
-  return params.toCompare === hash
+  const hash = crypto.createHmac(`sha512`, params.salt).update(params.incomingPass).digest(`hex`)
+  return params.password === hash
 }

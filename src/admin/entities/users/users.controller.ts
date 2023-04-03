@@ -30,7 +30,6 @@ export class UsersController {
   @Put(`/:userId`)
   @ApiOkResponse({ type: User })
   update(@Param(`userId`) userId: string, @Body() body: UpdateUser): Promise<User> {
-    console.log(JSON.stringify({ body }, null, 2))
     return this.service.update(userId, body)
   }
 

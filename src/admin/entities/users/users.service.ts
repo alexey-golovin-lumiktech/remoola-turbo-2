@@ -20,21 +20,15 @@ export class UsersService extends BaseService<IUserModel, UsersRepository> {
   }
 
   async create(body: any): Promise<User> {
-    body.salt = genPassSalt(10)
-    body.password = genPass({ password: body.password, salt: body.salt })
-    return this.repository.create(body)
+    const salt = genPassSalt(10)
+    const password = genPass({ password: body.password, salt })
+    return this.repository.create({ ...body, password, salt })
   }
 
   async update(userId: string, body: any): Promise<User> {
-    const user = await this.repository.findById(userId)
-
-    if (user.password != body.password /* password changed by super admin */) {
-      const salt = genPassSalt(10)
-      const password = genPass({ password: body.password, salt })
-      Object.assign(body, { password, salt }) /* add new salt + pass to body(UserModel) */
-    }
-
-    const updated = await this.repository.updateById(userId, body)
+    const salt = genPassSalt(10)
+    const password = genPass({ password: body.password, salt })
+    const updated = await this.repository.updateById(userId, { ...body, ...(body.password != null && { password, salt }) })
     return updated
   }
 }
