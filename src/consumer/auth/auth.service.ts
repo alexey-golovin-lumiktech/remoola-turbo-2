@@ -6,14 +6,23 @@ import { IUserModel } from '../../models'
 import { constants } from '../../constants'
 import { ConfigService } from '@nestjs/config'
 import { verifyPass } from 'src/utils'
+import { LoginTicket, OAuth2Client } from 'google-auth-library'
+import { GoogleProfile, IGoogleLogin } from 'src/dtos/consumer/google-profile.dto'
 
 @Injectable()
 export class AuthService {
+  private readonly oAuth2Client: OAuth2Client
+  private readonly audience: string
+
   constructor(
     @Inject(UsersService) private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService
-  ) {}
+  ) {
+    const secret = this.configService.get<string>(`GOOGLE_CLIENT_SECRET`)
+    this.audience = this.configService.get<string>(`GOOGLE_CLIENT_ID`)
+    this.oAuth2Client = new OAuth2Client(this.audience, secret)
+  }
 
   async login(body: ILoginBody): Promise<IAccessToken> {
     try {
@@ -30,6 +39,21 @@ export class AuthService {
     }
   }
 
+  async googleLogin(body: IGoogleLogin): Promise<IAccessToken> {
+    try {
+      const verified = await this.verifyIdToken(body.credential)
+      const userID: string = verified.getUserId()
+      const profile = new GoogleProfile(userID, verified.getPayload())
+      const user = await this.usersService.findByEmail(profile.email)
+      if (!user) throw new NotFoundException({ message: constants.ADMIN_NOT_FOUND })
+
+      const accessToken = this.generateToken(user)
+      return { accessToken }
+    } catch (error) {
+      throw new HttpException(error.message || `Internal error`, HttpStatus.INTERNAL_SERVER_ERROR)
+    }
+  }
+
   private generateToken(admin: IUserModel): string {
     const payload = { email: admin.email, id: admin.id }
     const options = {
@@ -37,5 +61,9 @@ export class AuthService {
       expiresIn: this.configService.get<string>(`JWT_ACCESS_TOKEN_EXPIRES_IN`)
     }
     return this.jwtService.sign(payload, options)
+  }
+
+  private verifyIdToken(idToken): Promise<LoginTicket> {
+    return this.oAuth2Client.verifyIdToken({ idToken, audience: this.audience })
   }
 }

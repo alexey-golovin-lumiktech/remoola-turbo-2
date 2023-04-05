@@ -1,4 +1,6 @@
+import { ApiProperty } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
+import { IsString } from 'class-validator'
 import { TokenPayload as ITokenPayload } from 'google-auth-library'
 
 export type ITokenPayloadPick = Pick<ITokenPayload, `email` | `email_verified` | `name` | `given_name` | `family_name` | `exp` | `picture`>
@@ -43,4 +45,15 @@ export class GoogleProfile extends TokenPayload {
     super(payload)
     this.userID = userId
   }
+}
+
+export interface IGoogleLogin {
+  credential: string
+}
+
+export class GoogleLogin implements IGoogleLogin {
+  @Expose()
+  @ApiProperty()
+  @IsString()
+  credential: string
 }
