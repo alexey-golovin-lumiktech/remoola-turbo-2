@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config'
 import { verifyPass } from 'src/utils'
 import { LoginTicket, OAuth2Client } from 'google-auth-library'
 import { GoogleProfile, IGoogleLogin } from 'src/dtos/consumer/google-profile.dto'
+import { GoogleProfilesService } from '../entities/google-profiles/google-profiles.service'
 
 @Injectable()
 export class AuthService {
@@ -16,6 +17,7 @@ export class AuthService {
 
   constructor(
     @Inject(UsersService) private readonly usersService: UsersService,
+    @Inject(GoogleProfilesService) private readonly googleProfileService: GoogleProfilesService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService
   ) {
@@ -27,7 +29,7 @@ export class AuthService {
   async login(body: ILoginBody): Promise<IAccessToken> {
     try {
       const user = await this.usersService.findByEmail(body.email)
-      if (!user) throw new NotFoundException({ message: constants.ADMIN_NOT_FOUND })
+      if (!user) throw new NotFoundException({ message: constants.NOT_FOUND })
 
       const verified = await verifyPass({ incomingPass: body.password, password: user.password, salt: user.salt })
       if (!verified) throw new BadRequestException({ message: constants.INVALID_PASSWORD })
@@ -42,10 +44,36 @@ export class AuthService {
   async googleLogin(body: IGoogleLogin): Promise<IAccessToken> {
     try {
       const verified = await this.verifyIdToken(body.credential)
-      const userID: string = verified.getUserId()
-      const profile = new GoogleProfile(userID, verified.getPayload())
-      const user = await this.usersService.findByEmail(profile.email)
-      if (!user) throw new NotFoundException({ message: constants.ADMIN_NOT_FOUND })
+      const userId: string = verified.getUserId()
+      const googleProfile = new GoogleProfile(userId, verified.getPayload())
+      let user = await this.usersService.findByEmail(googleProfile.email)
+      if (!user) {
+        const { email, emailVerified: verified } = googleProfile
+        let firstName = googleProfile.givenName
+        let lastName = googleProfile.familyName
+        if (googleProfile.name && (!firstName || !lastName)) {
+          const splitted = googleProfile.name.split(` `)
+          firstName = splitted[0]
+          lastName = splitted[1]
+        }
+
+        Object.assign(googleProfile, { data: JSON.stringify(googleProfile) })
+        const profile = await this.googleProfileService.repository.create(googleProfile)
+
+        //@IMPORTANT: we need to gen rand password + salt
+        // for user
+        // and in next time user should do remember password
+
+        user = await this.usersService.repository.create({
+          email,
+          verified,
+          firstName,
+          lastName,
+          googleProfileId: profile.id,
+          password: ``, //@TODO: needs to discuss
+          salt: `` //@TODO: needs to discuss
+        })
+      }
 
       const accessToken = this.generateToken(user)
       return { accessToken }

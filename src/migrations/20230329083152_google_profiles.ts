@@ -10,6 +10,14 @@ export async function up(knex: Knex): Promise<void> {
     table.uuid(`id`).primary().defaultTo(knex.raw(`uuid_generate_v4()`))
 
     table.jsonb(`data`).notNullable()
+    table.string(`user_id`)
+    table.string(`email`)
+    table.boolean(`email_verified`)
+    table.string(`name`)
+    table.string(`given_name`)
+    table.string(`family_name`)
+    table.string(`picture`)
+    table.string(`organization`)
 
     table.timestamp(`created_at`).defaultTo(knex.fn.now())
     table.timestamp(`updated_at`).defaultTo(knex.fn.now())

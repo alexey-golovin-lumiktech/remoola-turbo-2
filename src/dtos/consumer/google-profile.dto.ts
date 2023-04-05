@@ -27,6 +27,9 @@ export class TokenPayload implements ITokenPayloadPick {
   @Expose()
   public picture: string
 
+  @Expose()
+  public organization: string
+
   constructor(payload: ITokenPayload) {
     this.email = payload.email
     this.emailVerified = payload.email_verified
@@ -34,16 +37,17 @@ export class TokenPayload implements ITokenPayloadPick {
     this.givenName = payload.given_name
     this.familyName = payload.family_name
     this.picture = payload.picture
+    this.organization = payload.hd
   }
 }
 
 export class GoogleProfile extends TokenPayload {
   @Expose()
-  userID: string
+  userId: string
 
   constructor(userId: string, payload: ITokenPayload) {
     super(payload)
-    this.userID = userId
+    this.userId = userId
   }
 }
 

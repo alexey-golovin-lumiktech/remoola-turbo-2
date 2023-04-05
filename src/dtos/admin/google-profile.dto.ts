@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { IsDate, IsString, ValidateIf } from 'class-validator'
+import { IsBoolean, IsDate, IsString, ValidateIf } from 'class-validator'
 import { IGoogleProfileModel } from '../../models'
 import { Expose } from 'class-transformer'
 
@@ -12,7 +12,42 @@ export class GoogleProfile implements IGoogleProfileModel {
   @Expose()
   @ApiProperty()
   @IsString()
-  data: string
+  userId: string
+
+  @Expose()
+  @ApiProperty()
+  @IsString()
+  email: string
+
+  @Expose()
+  @ApiProperty()
+  @IsBoolean()
+  emailVerified: boolean
+
+  @Expose()
+  @ApiProperty()
+  @IsString()
+  name: string
+
+  @Expose()
+  @ApiProperty()
+  @IsString()
+  givenName: string
+
+  @Expose()
+  @ApiProperty()
+  @IsString()
+  familyName: string
+
+  @Expose()
+  @ApiProperty()
+  @IsString()
+  picture: string
+
+  @Expose()
+  @ApiProperty()
+  @IsString()
+  organization: string
 
   @Expose()
   @ApiProperty()
