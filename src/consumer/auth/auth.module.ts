@@ -5,7 +5,7 @@ import { UsersModule } from '../entities/users/users.module'
 import { GoogleStrategy } from '../../strategies/google.strategy'
 import { AuthController } from './auth.controller'
 import { AuthService } from './auth.service'
-import { GoogleProfilesModule } from '../entities/google-profiles/google-profiles.module'
+import { GoogleProfilesModule } from '../entities/googleProfiles/googleProfiles.module'
 
 @Module({
   imports: [

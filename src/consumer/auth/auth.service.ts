@@ -1,14 +1,15 @@
 import { BadRequestException, HttpException, HttpStatus, Inject, Injectable, NotFoundException } from '@nestjs/common'
 import { UsersService } from '../entities/users/users.service'
-import { IAccessToken, ILoginBody } from '../../dtos'
+import { ILoginBody } from '../../dtos'
 import { JwtService } from '@nestjs/jwt'
 import { IUserModel } from '../../models'
 import { constants } from '../../constants'
 import { ConfigService } from '@nestjs/config'
 import { verifyPass } from 'src/utils'
 import { LoginTicket, OAuth2Client } from 'google-auth-library'
-import { GoogleProfile, IGoogleLogin } from 'src/dtos/consumer/google-profile.dto'
-import { GoogleProfilesService } from '../entities/google-profiles/google-profiles.service'
+import { GoogleProfile, IGoogleLogin } from 'src/dtos/consumer/googleProfile.dto'
+import { GoogleProfilesService } from '../entities/googleProfiles/googleProfiles.service'
+import { IAccessConsumer } from 'src/dtos/consumer'
 
 @Injectable()
 export class AuthService {
@@ -26,7 +27,7 @@ export class AuthService {
     this.oAuth2Client = new OAuth2Client(this.audience, secret)
   }
 
-  async login(body: ILoginBody): Promise<IAccessToken> {
+  async login(body: ILoginBody): Promise<IAccessConsumer> {
     try {
       const user = await this.usersService.findByEmail(body.email)
       if (!user) throw new NotFoundException({ message: constants.NOT_FOUND })
@@ -35,13 +36,13 @@ export class AuthService {
       if (!verified) throw new BadRequestException({ message: constants.INVALID_PASSWORD })
 
       const accessToken = this.generateToken(user)
-      return { accessToken }
+      return { accessToken, refreshToken: null }
     } catch (error) {
       throw new HttpException(error.message || `Internal error`, HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
 
-  async googleLogin(body: IGoogleLogin): Promise<IAccessToken> {
+  async googleLogin(body: IGoogleLogin): Promise<IAccessConsumer> {
     try {
       const verified = await this.verifyIdToken(body.credential)
       const userId: string = verified.getUserId()
@@ -76,7 +77,7 @@ export class AuthService {
       }
 
       const accessToken = this.generateToken(user)
-      return { accessToken }
+      return { accessToken, refreshToken: null }
     } catch (error) {
       throw new HttpException(error.message || `Internal error`, HttpStatus.INTERNAL_SERVER_ERROR)
     }

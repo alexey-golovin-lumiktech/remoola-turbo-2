@@ -1,5 +1,5 @@
 export * from './admin.dto'
 export * from './loginBody.dto'
-export * from './accessToken.dto'
+export * from './accessAdmin.dto'
 export * from './user.dto'
-export * from './google-profile.dto'
+export * from './googleProfile.dto'

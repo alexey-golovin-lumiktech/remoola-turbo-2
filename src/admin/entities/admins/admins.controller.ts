@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Inject, Param, Post, Put, Query, Response } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { IQuery } from '../../../common/types'
-import { ApiCountRowsResponse } from '../../../decorators/response-count-rows.decorator'
+import { ApiCountRowsResponse } from '../../../decorators/responseCountRows.decorator'
 import { Admin, CreateAdmin, ListResponse, UpdateAdmin } from '../../../dtos'
 import { IAdminModel } from '../../../models'
 import { AdminsService } from './admins.service'

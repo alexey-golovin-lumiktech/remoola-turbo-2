@@ -1,11 +1,11 @@
 import { Controller, Get, Inject, Param, Query, Response } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { IQuery } from '../../../common/types'
-import { ApiCountRowsResponse } from '../../../decorators/response-count-rows.decorator'
+import { ApiCountRowsResponse } from '../../../decorators/responseCountRows.decorator'
 import { ListResponse } from '../../../dtos'
-import { GoogleProfile } from '../../../dtos/admin/google-profile.dto'
+import { GoogleProfile } from '../../../dtos/admin/googleProfile.dto'
 import { IGoogleProfileModel } from '../../../models'
-import { GoogleProfilesService } from './google-profiles.service'
+import { GoogleProfilesService } from './googleProfiles.service'
 import { Response as IExpressResponse } from 'express'
 
 @ApiTags(`admin`)

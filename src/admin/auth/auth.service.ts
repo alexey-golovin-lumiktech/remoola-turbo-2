@@ -1,8 +1,8 @@
 import { BadRequestException, HttpException, HttpStatus, Inject, Injectable, NotFoundException } from '@nestjs/common'
 import { AdminsService } from '../entities/admins/admins.service'
-import { IAccessToken, ILoginBody } from '../../dtos'
+import { IAccessAdmin, ILoginBody } from '../../dtos'
 import { JwtService } from '@nestjs/jwt'
-import { IUserModel } from '../../models'
+import { IAdminModel } from '../../models'
 import { constants } from '../../constants'
 import { ConfigService } from '@nestjs/config'
 import * as uuid from 'uuid'
@@ -16,22 +16,22 @@ export class AuthService {
     private readonly configService: ConfigService
   ) {}
 
-  async login(body: ILoginBody): Promise<IAccessToken> {
+  async login(body: ILoginBody): Promise<IAccessAdmin> {
     try {
-      const user = await this.usersService.findByEmail(body.email)
-      if (!user) throw new NotFoundException({ message: constants.ADMIN_NOT_FOUND })
+      const admin = await this.usersService.findByEmail(body.email)
+      if (!admin) throw new NotFoundException({ message: constants.ADMIN_NOT_FOUND })
 
-      const verified = await verifyPass({ incomingPass: body.password, password: user.password, salt: user.salt })
+      const verified = await verifyPass({ incomingPass: body.password, password: admin.password, salt: admin.salt })
       if (!verified) throw new BadRequestException({ message: constants.INVALID_PASSWORD })
 
-      const accessToken = this.generateToken(user)
-      return { accessToken }
+      const accessToken = this.generateToken(admin)
+      return { accessToken, type: admin.type }
     } catch (error) {
       throw new HttpException(error.message || `Internal error`, HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
 
-  private generateToken(admin: IUserModel): string {
+  private generateToken(admin: IAdminModel): string {
     const payload = { email: admin.email, id: admin.id }
     const options = {
       secret: this.configService.get<string>(`JWT_SECRET`),

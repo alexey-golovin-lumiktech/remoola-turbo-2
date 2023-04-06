@@ -3,7 +3,7 @@ import { User } from 'src/dtos'
 import { genPassSalt, genPass } from 'src/utils'
 import { BaseService } from '../../../common/base.service'
 import { IUserModel } from '../../../models'
-import { GoogleProfilesService } from '../google-profiles/google-profiles.service'
+import { GoogleProfilesService } from '../googleProfiles/googleProfiles.service'
 import { UsersRepository } from './users.repository'
 
 @Injectable()

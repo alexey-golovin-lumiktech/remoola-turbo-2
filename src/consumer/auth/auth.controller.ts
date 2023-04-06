@@ -1,9 +1,10 @@
 import { Body, Controller, Inject, Logger, Post } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
-import { AccessToken, LoginBody } from '../../dtos'
+import { LoginBody } from '../../dtos'
 import { AuthService } from './auth.service'
 import { ConfigService } from '@nestjs/config'
-import { GoogleLogin } from 'src/dtos/consumer/google-profile.dto'
+import { GoogleLogin } from 'src/dtos/consumer/googleProfile.dto'
+import { AccessConsumer } from 'src/dtos/consumer'
 
 @ApiTags(`consumer`)
 @Controller(`consumer/auth`)
@@ -13,14 +14,14 @@ export class AuthController {
   constructor(@Inject(AuthService) private readonly service: AuthService, private readonly configService: ConfigService) {}
 
   @Post(`/login`)
-  @ApiOkResponse({ type: AccessToken, status: 200 })
-  login(@Body() body: LoginBody): Promise<AccessToken> {
+  @ApiOkResponse({ type: AccessConsumer, status: 200 })
+  login(@Body() body: LoginBody): Promise<AccessConsumer> {
     return this.service.login(body)
   }
 
   @Post(`/google-login`)
-  @ApiOkResponse({ type: AccessToken, status: 200 })
-  googleLogin(@Body() body: GoogleLogin): Promise<AccessToken> {
+  @ApiOkResponse({ type: AccessConsumer, status: 200 })
+  googleLogin(@Body() body: GoogleLogin): Promise<AccessConsumer> {
     return this.service.googleLogin(body)
   }
 }

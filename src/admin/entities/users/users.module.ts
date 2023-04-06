@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common'
-import { GoogleProfilesModule } from '../google-profiles/google-profiles.module'
+import { GoogleProfilesModule } from '../googleProfiles/googleProfiles.module'
 import { UsersController } from './users.controller'
 import { UsersRepository } from './users.repository'
 import { UsersService } from './users.service'

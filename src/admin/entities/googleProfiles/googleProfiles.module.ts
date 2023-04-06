@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common'
-import { GoogleProfilesController } from './google-profiles.controller'
-import { GoogleProfilesRepository } from './google-profiles.repository'
-import { GoogleProfilesService } from './google-profiles.service'
+import { GoogleProfilesController } from './googleProfiles.controller'
+import { GoogleProfilesRepository } from './googleProfiles.repository'
+import { GoogleProfilesService } from './googleProfiles.service'
 
 @Module({
   controllers: [GoogleProfilesController],

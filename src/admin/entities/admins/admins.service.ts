@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common'
 import { Admin } from 'src/dtos'
 import { genPassSalt, genPass } from 'src/utils'
 import { BaseService } from '../../../common/base.service'
-import { IAdminModel, IUserModel } from '../../../models'
+import { IAdminModel } from '../../../models'
 import { AdminsRepository } from './admins.repository'
 
 @Injectable()
@@ -11,7 +11,7 @@ export class AdminsService extends BaseService<IAdminModel, AdminsRepository> {
     super(userRepository)
   }
 
-  findByEmail(email: string): Promise<IUserModel | null> {
+  findByEmail(email: string): Promise<IAdminModel | null> {
     return this.repository.query.where({ email }).first()
   }
 
