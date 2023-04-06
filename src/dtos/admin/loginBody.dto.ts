@@ -15,7 +15,7 @@ export class LoginBody implements ILoginBody {
   email: string
 
   @Expose()
-  @ApiProperty({ example: `Wirebill123!` })
+  @ApiProperty({ example: `Wirebill@Admin123!` })
   @Matches(regexp.password, { message: constants.INCORRECT_PASSWORD })
   password: string
 }
