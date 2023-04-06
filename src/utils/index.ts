@@ -1,13 +1,13 @@
 import * as crypto from 'crypto'
 
-export const genPass = (params = { password: ``, salt: `` }): string => {
+export const generatePasswordHash = (params = { password: ``, salt: `` }): string => {
   if (params.password.length == 0) throw new Error(`Password could not be empty`)
   if (params.salt.length == 0) throw new Error(`Salt could not be empty`)
 
   return crypto.createHmac(`sha512`, params.salt).update(params.password).digest(`hex`)
 }
 
-export const genPassSalt = (rounds = 10) => {
+export const genPasswordHashSalt = (rounds = 10) => {
   return crypto
     .randomBytes(Math.ceil(rounds / 2))
     .toString(`hex`)
@@ -20,4 +20,28 @@ export const verifyPass = (params = { incomingPass: ``, password: ``, salt: `` }
 
   const hash = crypto.createHmac(`sha512`, params.salt).update(params.incomingPass).digest(`hex`)
   return params.password === hash
+}
+
+export const generateStrongPassword = (): string => {
+  const lowerChars = `abcdefghijklmnopqrstuvwxyz`
+  const upperChars = `ABCDEFGHIJKLMNOPQRSTUVWXYZ`
+  const keyListInt = `0123456789`
+  const keyListSpec = `#?!@$%^&*`
+  const password = []
+
+  const getRandomValue = (from = ``) => {
+    return from[Math.ceil(Math.random() * from.length)] ?? getRandomValue(from)
+  }
+
+  for (let i = 0; i < 3; i++) {
+    const randomValue = {
+      upperKey: getRandomValue(upperChars),
+      intKey: getRandomValue(keyListInt),
+      specKey: getRandomValue(keyListSpec),
+      lowerKey: getRandomValue(lowerChars)
+    }
+    password.push(...Object.values(randomValue))
+  }
+
+  return password.join(``)
 }

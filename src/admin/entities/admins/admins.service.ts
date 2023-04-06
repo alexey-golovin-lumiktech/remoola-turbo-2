@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common'
 import { Admin } from 'src/dtos'
-import { genPassSalt, genPass } from 'src/utils'
+import { genPasswordHashSalt, generatePasswordHash } from 'src/utils'
 import { BaseService } from '../../../common/base.service'
 import { IAdminModel } from '../../../models'
 import { AdminsRepository } from './admins.repository'
@@ -16,8 +16,8 @@ export class AdminsService extends BaseService<IAdminModel, AdminsRepository> {
   }
 
   async create(body: any): Promise<Admin> {
-    body.salt = genPassSalt(10)
-    body.password = genPass({ password: body.password, salt: body.salt })
+    body.salt = genPasswordHashSalt(10)
+    body.password = generatePasswordHash({ password: body.password, salt: body.salt })
     return this.repository.create(body)
   }
 
@@ -25,8 +25,8 @@ export class AdminsService extends BaseService<IAdminModel, AdminsRepository> {
     const user = await this.repository.findById(userId)
 
     if (user.password != body.password /* password changed by super admin */) {
-      const salt = genPassSalt(10)
-      const password = genPass({ password: body.password, salt })
+      const salt = genPasswordHashSalt(10)
+      const password = generatePasswordHash({ password: body.password, salt })
       Object.assign(body, { password, salt }) /* add new salt + pass to body(UserModel) */
     }
 

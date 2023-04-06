@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common'
 import { User } from 'src/dtos'
-import { genPassSalt, genPass } from 'src/utils'
+import { genPasswordHashSalt, generatePasswordHash } from 'src/utils'
 import { BaseService } from '../../../common/base.service'
 import { IUserModel } from '../../../models'
 import { GoogleProfilesService } from '../googleProfiles/googleProfiles.service'
@@ -20,14 +20,14 @@ export class UsersService extends BaseService<IUserModel, UsersRepository> {
   }
 
   async create(body: any): Promise<User> {
-    const salt = genPassSalt(10)
-    const password = genPass({ password: body.password, salt })
+    const salt = genPasswordHashSalt(10)
+    const password = generatePasswordHash({ password: body.password, salt })
     return this.repository.create({ ...body, password, salt })
   }
 
   async update(userId: string, body: any): Promise<User> {
-    const salt = genPassSalt(10)
-    const password = genPass({ password: body.password, salt })
+    const salt = genPasswordHashSalt(10)
+    const password = generatePasswordHash({ password: body.password, salt })
     const updated = await this.repository.updateById(userId, { ...body, ...(body.password != null && { password, salt }) })
     return updated
   }

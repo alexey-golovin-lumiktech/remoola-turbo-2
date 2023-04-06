@@ -1,15 +1,16 @@
 import { BadRequestException, HttpException, HttpStatus, Inject, Injectable, NotFoundException } from '@nestjs/common'
 import { UsersService } from '../entities/users/users.service'
-import { ILoginBody } from '../../dtos'
+import { ICredentials } from '../../dtos'
 import { JwtService } from '@nestjs/jwt'
 import { IUserModel } from '../../models'
 import { constants } from '../../constants'
 import { ConfigService } from '@nestjs/config'
-import { verifyPass } from 'src/utils'
+import { generatePasswordHash, verifyPass } from 'src/utils'
 import { LoginTicket, OAuth2Client } from 'google-auth-library'
 import { GoogleProfile, IGoogleLogin } from 'src/dtos/consumer/googleProfile.dto'
 import { GoogleProfilesService } from '../entities/googleProfiles/googleProfiles.service'
 import { IAccessConsumer } from 'src/dtos/consumer'
+import { genPasswordHashSalt } from 'src/utils'
 
 @Injectable()
 export class AuthService {
@@ -27,12 +28,12 @@ export class AuthService {
     this.oAuth2Client = new OAuth2Client(this.audience, secret)
   }
 
-  async login(body: ILoginBody): Promise<IAccessConsumer> {
+  async login(credentials: ICredentials): Promise<IAccessConsumer> {
     try {
-      const user = await this.usersService.findByEmail(body.email)
+      const user = await this.usersService.findByEmail(credentials.email)
       if (!user) throw new NotFoundException({ message: constants.NOT_FOUND })
 
-      const verified = await verifyPass({ incomingPass: body.password, password: user.password, salt: user.salt })
+      const verified = await verifyPass({ incomingPass: credentials.password, password: user.password, salt: user.salt })
       if (!verified) throw new BadRequestException({ message: constants.INVALID_PASSWORD })
 
       const accessToken = this.generateToken(user)
@@ -83,6 +84,18 @@ export class AuthService {
     }
   }
 
+  async signup(credentials: ICredentials): Promise<any> {
+    const { email, password } = credentials
+    const exist = await this.usersService.findByEmail(email)
+    if (exist) throw new BadRequestException(`This email is already exist`)
+
+    const salt = genPasswordHashSalt()
+    const hash = generatePasswordHash({ password, salt })
+    const created = await this.usersService.repository.create({ email, password: hash, salt })
+    const accessToken = this.generateToken(created)
+    return { accessToken, refreshToken: null }
+  }
+
   private generateToken(admin: IUserModel): string {
     const payload = { email: admin.email, id: admin.id }
     const options = {
@@ -96,3 +109,5 @@ export class AuthService {
     return this.oAuth2Client.verifyIdToken({ idToken, audience: this.audience })
   }
 }
+
+// resetPasswordRequired to user ??

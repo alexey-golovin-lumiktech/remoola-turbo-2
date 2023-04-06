@@ -1,6 +1,6 @@
 import { Body, Controller, Inject, Post } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
-import { AccessAdmin, LoginBody } from '../../dtos'
+import { AccessAdmin, Credentials } from '../../dtos'
 import { AuthService } from './auth.service'
 
 @ApiTags(`admin`)
@@ -10,7 +10,7 @@ export class AuthController {
 
   @Post(`/login`)
   @ApiOkResponse({ type: AccessAdmin, status: 200 })
-  login(@Body() body: LoginBody): Promise<AccessAdmin> {
+  login(@Body() body: Credentials): Promise<AccessAdmin> {
     return this.service.login(body)
   }
 }

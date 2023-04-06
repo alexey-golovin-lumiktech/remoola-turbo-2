@@ -1,6 +1,6 @@
 import { BadRequestException, HttpException, HttpStatus, Inject, Injectable, NotFoundException } from '@nestjs/common'
 import { AdminsService } from '../entities/admins/admins.service'
-import { IAccessAdmin, ILoginBody } from '../../dtos'
+import { IAccessAdmin, ICredentials } from '../../dtos'
 import { JwtService } from '@nestjs/jwt'
 import { IAdminModel } from '../../models'
 import { constants } from '../../constants'
@@ -16,7 +16,7 @@ export class AuthService {
     private readonly configService: ConfigService
   ) {}
 
-  async login(body: ILoginBody): Promise<IAccessAdmin> {
+  async login(body: ICredentials): Promise<IAccessAdmin> {
     try {
       const admin = await this.usersService.findByEmail(body.email)
       if (!admin) throw new NotFoundException({ message: constants.ADMIN_NOT_FOUND })
