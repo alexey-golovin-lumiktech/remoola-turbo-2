@@ -7,7 +7,7 @@ export const generatePasswordHash = (params = { password: ``, salt: `` }): strin
   return crypto.createHmac(`sha512`, params.salt).update(params.password).digest(`hex`)
 }
 
-export const genPasswordHashSalt = (rounds = 10) => {
+export const generatePasswordHashSalt = (rounds = 10) => {
   return crypto
     .randomBytes(Math.ceil(rounds / 2))
     .toString(`hex`)

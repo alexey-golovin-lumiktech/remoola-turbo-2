@@ -5,12 +5,12 @@ import { JwtService } from '@nestjs/jwt'
 import { IUserModel } from '../../models'
 import { constants } from '../../constants'
 import { ConfigService } from '@nestjs/config'
-import { generatePasswordHash, verifyPass } from 'src/utils'
+import { generatePasswordHash, generateStrongPassword, verifyPass } from 'src/utils'
 import { LoginTicket, OAuth2Client } from 'google-auth-library'
 import { GoogleProfile, IGoogleLogin } from 'src/dtos/consumer/googleProfile.dto'
 import { GoogleProfilesService } from '../entities/googleProfiles/googleProfiles.service'
 import { IAccessConsumer } from 'src/dtos/consumer'
-import { genPasswordHashSalt } from 'src/utils'
+import { generatePasswordHashSalt } from 'src/utils'
 
 @Injectable()
 export class AuthService {
@@ -26,6 +26,17 @@ export class AuthService {
     const secret = this.configService.get<string>(`GOOGLE_CLIENT_SECRET`)
     this.audience = this.configService.get<string>(`GOOGLE_CLIENT_ID`)
     this.oAuth2Client = new OAuth2Client(this.audience, secret)
+  }
+
+  getRandomPassword(): Promise<string> {
+    const getPassword = async () => {
+      const password = generateStrongPassword()
+      const salt = generatePasswordHashSalt(10)
+      const hash = generatePasswordHash({ password, salt })
+      const exist = await this.usersService.repository.find({ filter: { password: { eq: hash } } })
+      return exist.length > 0 ? getPassword() : password
+    }
+    return getPassword()
   }
 
   async login(credentials: ICredentials): Promise<IAccessConsumer> {
@@ -89,7 +100,7 @@ export class AuthService {
     const exist = await this.usersService.findByEmail(email)
     if (exist) throw new BadRequestException(`This email is already exist`)
 
-    const salt = genPasswordHashSalt()
+    const salt = generatePasswordHashSalt()
     const hash = generatePasswordHash({ password, salt })
     const created = await this.usersService.repository.create({ email, password: hash, salt })
     const accessToken = this.generateToken(created)

@@ -1,4 +1,4 @@
-import { Body, Controller, Inject, Logger, Post } from '@nestjs/common'
+import { Body, Controller, Get, Inject, Logger, Post } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { Credentials } from '../../dtos'
 import { AuthService } from './auth.service'
@@ -27,5 +27,10 @@ export class AuthController {
   @Post(`signup`)
   signup(@Body() credentials: Credentials): Promise<any> {
     return this.service.signup(credentials)
+  }
+
+  @Get(`/random-pass`)
+  getRandomPassword(): Promise<string> {
+    return this.service.getRandomPassword()
   }
 }
