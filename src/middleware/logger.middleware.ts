@@ -1,0 +1,16 @@
+import { Injectable, Logger, NestMiddleware } from '@nestjs/common'
+import { Request, Response, NextFunction } from 'express'
+
+@Injectable()
+export class LoggerMiddleware implements NestMiddleware {
+  private logger = new Logger(`HTTP`)
+  use(req: Request, res: Response, next: NextFunction) {
+    this.logger.log({
+      method: req.method,
+      url: req.originalUrl,
+      body: req.body,
+      caller: req.headers.origin ?? req.headers.referer ?? `unknown`
+    })
+    next()
+  }
+}

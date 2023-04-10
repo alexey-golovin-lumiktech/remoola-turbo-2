@@ -4,12 +4,12 @@ import { ConfigService } from '@nestjs/config'
 
 @Injectable()
 export class MailingService {
-  logger = new Logger(MailingService.name)
+  private readonly logger = new Logger(MailingService.name)
 
   constructor(private mailerService: MailerService, private configService: ConfigService) {}
 
-  async sendUserConfirmation(params: { email: string; replacements: { confirmationCode: number | string } }) {
-    const html = this.generateEmailTemplate(params.replacements)
+  async sendUserConfirmation(params: { email: string; token: string; code: string }) {
+    const html = this.generateConfirmationEmailTemplate(params.token, params.code)
     const subject = `Welcome to Wirebill! Confirm your Email`
     try {
       const sent = await this.mailerService.sendMail({ to: params.email, subject, html })
@@ -20,22 +20,24 @@ export class MailingService {
     }
   }
 
-  private generateEmailTemplate(replacements: object) {
-    let html = `
-      <div> 
-        <div>Welcome to Wirebill app !</>
-        <div>To confirm your email follow by the next link</div>
-        <code>Confirmation code: {{confirmationCode}} </code>
-        <a href="{{feLink}}">Click to and provide confirmation code to confirm your email</a>
-      </div>
+  private generateConfirmationEmailTemplate(token: string, code: string) {
+    const feLink = `http://localhost:8080/consumer/auth/confirm?token=${token}`
+    const html = `
+    <table style="max-width:600px;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-style:italic;background:#3f3f3f;color:#ffffff;border-radius:20px;">
+      <tbody><tr><td>
+        <div style="text-align:center;font-size:18px;font-weight:bold;color:#ffffff;">Welcome to Wirebill.</div>
+        <div>&nbsp;</div>
+        <div style="color:#ffffff;">You have initialized the signup flow.<div>To&nbsp;continue&nbsp;<a href="${feLink}">Click here to confirm your email</a></div></div>
+        <div style="color:#ffffff;">Confirmation code: <code>${code}</code></div>
+        <div>&nbsp;</div>
+        <div style="margin-left:200px;text-align:right;color:#ffffff">
+          If it was not you and the email came to you by mistake, just ignore it.
+          <div style="color:#ffffff;">Best&nbsp;regards&nbsp;<a href="mailto:support@wirebill.com">support@wirebill.com</a>.
+        </div>
+        </div>
+      </td></tr></tbody>
+    </table>
     `
-
-    const feLink = this.configService.get<string>(`FE_APP_CONFIRMATION_LINK`) ?? `http://localhost:3000/contfirm`
-
-    Object.entries({ ...replacements, feLink }).forEach(([key, value]: [string, string | number]) => {
-      const replacePattern = `{{${key}}}`
-      html = html.replace(replacePattern, value.toString())
-    })
 
     return html
   }

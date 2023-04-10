@@ -1,4 +1,6 @@
 import { BadRequestException, HttpException, HttpStatus, Inject, Injectable, NotFoundException } from '@nestjs/common'
+
+import { Response } from 'express'
 import { UsersService } from '../entities/users/users.service'
 import { ICredentials } from '../../dtos'
 import { JwtService } from '@nestjs/jwt'
@@ -11,6 +13,7 @@ import { GoogleProfile, IGoogleLogin } from 'src/dtos/consumer/googleProfile.dto
 import { GoogleProfilesService } from '../entities/googleProfiles/googleProfiles.service'
 import { IAccessConsumer } from 'src/dtos/consumer'
 import { generatePasswordHashSalt } from 'src/utils'
+import { MailingService } from 'src/sharedModules/mailing/mailing.service'
 
 @Injectable()
 export class AuthService {
@@ -21,7 +24,8 @@ export class AuthService {
     @Inject(UsersService) private readonly usersService: UsersService,
     @Inject(GoogleProfilesService) private readonly googleProfileService: GoogleProfilesService,
     private readonly jwtService: JwtService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    private readonly mailingService: MailingService
   ) {
     const secret = this.configService.get<string>(`GOOGLE_CLIENT_SECRET`)
     this.audience = this.configService.get<string>(`GOOGLE_CLIENT_ID`)
@@ -99,16 +103,25 @@ export class AuthService {
     const { email, password } = credentials
     const exist = await this.usersService.findByEmail(email)
     if (exist) throw new BadRequestException(`This email is already exist`)
-
-    const salt = generatePasswordHashSalt()
-    const hash = generatePasswordHash({ password, salt })
-    const created = await this.usersService.repository.create({ email, password: hash, salt })
-    const accessToken = this.generateToken(created)
-    return { accessToken, refreshToken: null }
+    const code = generateStrongPassword()
+    const token = this.generateToken({ email })
+    this.mailingService.sendUserConfirmation({ email, token, code })
+    // const salt = generatePasswordHashSalt()
+    // const hash = generatePasswordHash({ password, salt })
+    // const created = await this.usersService.repository.create({ email, password: hash, salt })
+    // const accessToken = this.generateToken(created)
+    // return { accessToken, refreshToken: null }
+    // // sendUserConfirmation @TO_CONTINUE !!!!!!!!!!!!! what the next????????????
+    // may be one time password
   }
 
-  private generateToken(admin: IUserModel): string {
-    const payload = { email: admin.email, id: admin.id }
+  async confirm(token: string, res: Response) {
+    const decoded: any = this.jwtService.decode(token)
+    res.redirect(`http://localhost:3000/confirmed/?email=${decoded.email}`)
+  }
+
+  private generateToken(user: IUserModel | { email: string }): string {
+    const payload = { email: user.email, ...((user as IUserModel).id && { userId: (user as IUserModel).id }) }
     const options = {
       secret: this.configService.get<string>(`JWT_SECRET`),
       expiresIn: this.configService.get<string>(`JWT_ACCESS_TOKEN_EXPIRES_IN`)

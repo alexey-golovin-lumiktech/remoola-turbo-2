@@ -1,12 +1,10 @@
-import { Controller, Get, Res } from '@nestjs/common'
+import { Controller, Get, Redirect } from '@nestjs/common'
 import { ApiExcludeEndpoint } from '@nestjs/swagger'
-import { Response } from 'express'
 
 @Controller()
 export class AppController {
-  @Get()
   @ApiExcludeEndpoint(true)
-  redirect(@Res() res: Response) {
-    return res.redirect(`/documentation`)
-  }
+  @Get(`/`)
+  @Redirect(`/documentation`, 301)
+  redirect() { return { url: `/documentation` } /* eslint-disable-line */ }
 }

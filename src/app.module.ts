@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common'
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { AppController } from './app.controller'
 import * as configValidation from './envsValidation.schema'
@@ -8,6 +8,7 @@ import { AdminModule } from './admin/admin.module'
 import { ConsumerModule } from './consumer/consumer.module'
 import { constants } from './constants'
 import { SharedModulesModule } from './sharedModules/sharedModules.module'
+import { LoggerMiddleware } from './middleware/logger.middleware'
 
 @Module({
   imports: [
@@ -30,4 +31,8 @@ import { SharedModulesModule } from './sharedModules/sharedModules.module'
   controllers: [AppController],
   exports: []
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(LoggerMiddleware).forRoutes(`*`)
+  }
+}

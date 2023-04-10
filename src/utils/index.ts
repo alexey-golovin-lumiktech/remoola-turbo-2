@@ -43,5 +43,5 @@ export const generateStrongPassword = (): string => {
     password.push(...Object.values(randomValue))
   }
 
-  return password.join(``)
+  return encodeURIComponent(password.join(``))
 }
