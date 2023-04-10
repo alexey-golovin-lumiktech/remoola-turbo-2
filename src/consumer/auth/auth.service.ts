@@ -2,7 +2,7 @@ import { BadRequestException, HttpException, HttpStatus, Inject, Injectable, Not
 
 import { Response } from 'express'
 import { UsersService } from '../entities/users/users.service'
-import { ICredentials } from '../../dtos'
+import { ICredentials, ISignup } from '../../dtos'
 import { JwtService } from '@nestjs/jwt'
 import { IUserModel } from '../../models'
 import { constants } from '../../constants'
@@ -43,12 +43,12 @@ export class AuthService {
     return getPassword()
   }
 
-  async login(credentials: ICredentials): Promise<IAccessConsumer> {
+  async login(body: ICredentials): Promise<IAccessConsumer> {
     try {
-      const user = await this.usersService.findByEmail(credentials.email)
+      const user = await this.usersService.findByEmail(body.email)
       if (!user) throw new NotFoundException({ message: constants.NOT_FOUND })
 
-      const verified = await verifyPass({ incomingPass: credentials.password, password: user.password, salt: user.salt })
+      const verified = await verifyPass({ incomingPass: body.password, password: user.password, salt: user.salt })
       if (!verified) throw new BadRequestException({ message: constants.INVALID_PASSWORD })
 
       const accessToken = this.generateToken(user)
@@ -99,25 +99,30 @@ export class AuthService {
     }
   }
 
-  async signup(credentials: ICredentials): Promise<any> {
-    const { email, password } = credentials
+  async signup(body: ISignup): Promise<any> {
+    const { email, password, firstName, lastName, middleName } = body
     const exist = await this.usersService.findByEmail(email)
     if (exist) throw new BadRequestException(`This email is already exist`)
+    const salt = generatePasswordHashSalt()
+    const hash = generatePasswordHash({ password, salt })
+    await this.usersService.repository.create({ email, firstName, lastName, middleName, password: hash, salt })
     const code = generateStrongPassword()
     const token = this.generateToken({ email })
     this.mailingService.sendUserConfirmation({ email, token, code })
-    // const salt = generatePasswordHashSalt()
-    // const hash = generatePasswordHash({ password, salt })
-    // const created = await this.usersService.repository.create({ email, password: hash, salt })
-    // const accessToken = this.generateToken(created)
-    // return { accessToken, refreshToken: null }
-    // // sendUserConfirmation @TO_CONTINUE !!!!!!!!!!!!! what the next????????????
-    // may be one time password
   }
 
   async confirm(token: string, res: Response) {
     const decoded: any = this.jwtService.decode(token)
-    res.redirect(`http://localhost:3000/confirmed/?email=${decoded.email}`)
+    const redirectUrl = new URL(`confirmed`, `http://localhost:3000`)
+
+    if (decoded.email) {
+      redirectUrl.searchParams.append(`email`, decoded.email)
+
+      const [updated] = await this.usersService.repository.update({ email: { eq: decoded.email } }, { verified: true })
+      redirectUrl.searchParams.append(`verified`, !updated || updated.verified == false ? `no` : `yes`)
+    }
+
+    res.redirect(redirectUrl.toString())
   }
 
   private generateToken(user: IUserModel | { email: string }): string {
@@ -129,9 +134,7 @@ export class AuthService {
     return this.jwtService.sign(payload, options)
   }
 
-  private verifyIdToken(idToken): Promise<LoginTicket> {
-    return this.oAuth2Client.verifyIdToken({ idToken, audience: this.audience })
+  private async verifyIdToken(idToken): Promise<LoginTicket> {
+    return this.oAuth2Client.verifyIdToken({ idToken })
   }
 }
-
-// resetPasswordRequired to user ??

@@ -9,9 +9,11 @@ import { ConsumerModule } from './consumer/consumer.module'
 import { constants } from './constants'
 import { SharedModulesModule } from './sharedModules/sharedModules.module'
 import { LoggerMiddleware } from './middleware/logger.middleware'
+import { ScheduleModule } from '@nestjs/schedule'
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: [constants.ENV_FILE_PATH],
@@ -29,7 +31,8 @@ import { LoggerMiddleware } from './middleware/logger.middleware'
     SharedModulesModule
   ],
   controllers: [AppController],
-  exports: []
+  exports: [],
+  providers: []
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

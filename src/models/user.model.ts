@@ -13,7 +13,6 @@ export interface IUserModel extends IBaseModel {
 }
 
 export class UserModel extends BaseModel implements IUserModel {
-  id: string
   email: string
   verified: boolean
   password: string
@@ -23,8 +22,4 @@ export class UserModel extends BaseModel implements IUserModel {
   firstName?: string
   lastName?: string
   middleName?: string
-
-  createdAt: Date
-  updatedAt: Date
-  deletedAt?: Date
 }

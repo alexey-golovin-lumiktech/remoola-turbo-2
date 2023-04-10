@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Inject, Logger, Post, Res, Query } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
-import { Credentials } from '../../dtos'
+import { Credentials, Signup } from '../../dtos'
 import { AuthService } from './auth.service'
 import { GoogleLogin } from 'src/dtos/consumer/googleProfile.dto'
 import { AccessConsumer } from 'src/dtos/consumer'
@@ -15,8 +15,8 @@ export class AuthController {
 
   @Post(`/login`)
   @ApiOkResponse({ type: AccessConsumer, status: 200 })
-  login(@Body() credentials: Credentials): Promise<AccessConsumer> {
-    return this.service.login(credentials)
+  login(@Body() body: Credentials): Promise<AccessConsumer> {
+    return this.service.login(body)
   }
 
   @Post(`/google-login`)
@@ -26,8 +26,8 @@ export class AuthController {
   }
 
   @Post(`signup`)
-  signup(@Body() credentials: Credentials): Promise<any> {
-    return this.service.signup(credentials)
+  signup(@Body() body: Signup): Promise<any> {
+    return this.service.signup(body)
   }
 
   @Get(`confirm`)

@@ -14,7 +14,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const caller = hostIncomingMessage.headers.origin ?? hostIncomingMessage.headers.referer ?? `Unknown`
 
     this.logger.error({
-      caller: exception.name ? (exception as unknown as Function) : this.catch, // eslint-disable-line
+      caller: exception.name ? (exception as unknown as Function) : this.catch,
       error: { message, method, url, response: exception.response, status },
       payload: { body, caller }
     })
