@@ -2,7 +2,7 @@ import type { Knex as IKnex } from 'knex'
 import { Knex } from 'knex'
 import { IListResponse } from '../dtos'
 import { IBaseModel } from '../models/base'
-import { IQuery, IFilter, FilteringOperator } from './types'
+import { IQuery, IFilter } from './types'
 
 export interface IBaseRepository<TModel> {
   create(dto: Partial<TModel>): Promise<TModel>
@@ -22,48 +22,31 @@ export interface IBaseRepository<TModel> {
 export abstract class BaseRepository<TModel extends IBaseModel> implements IBaseRepository<TModel> {
   protected tableName: string
   protected knexQb: IKnex.QueryBuilder
-  protected tableColumns: string[]
-  protected sqlOperators = Object.keys(FilteringOperator).map((x) => x.toLowerCase())
+  protected columns: string[]
 
   constructor(knex: Knex, tableName: string) {
     this.tableName = tableName
     this.knexQb = knex<TModel, TModel[]>(this.tableName)
-    knex(this.tableName).columnInfo().then((x) => (this.tableColumns = Object.keys(x)))// eslint-disable-line prettier/prettier
+    setImmediate(async () => {
+      const info = await knex(this.tableName).columnInfo()
+      this.columns = Object.keys(info)
+    })
   }
 
   queryBuilder(query: IQuery<TModel>) {
-    const _convert = (obj: IFilter<TModel>, key: string): any => obj[key] || {}
-
-    const buildWhere = (q: IKnex.QueryBuilder<TModel>, field: string, filter?: IFilter<TModel>) => {
+    const buildWhere = (q: IKnex.QueryBuilder<TModel>, filter: IFilter<TModel>) => {
       if (!filter) return
-
-      const withOp = this.sqlOperators.some((op) => JSON.stringify(filter).toLowerCase().includes(op))
-      const [entry] = withOp ? Object.entries(_convert(filter, field)) : Object.entries(filter)
-      if (!entry) return
-
-      const [operatorOrColumnName, value] = entry
-      const containOneOfSqlOp = this.sqlOperators.some((x) => x.toLowerCase() == operatorOrColumnName.toLowerCase())
-      const isColumnName = this.tableColumns.includes(operatorOrColumnName)
-      if (isColumnName && !containOneOfSqlOp) return q.where({ [operatorOrColumnName]: value })
-
-      if (operatorOrColumnName == `eq` || operatorOrColumnName == `is`) q.whereRaw(`${field} = '${value}'`)
-      if (operatorOrColumnName == `in` && Array.isArray(value)) q.whereRaw(`${field} IN(${this.makeSqlIn(value)})`)
-      if (operatorOrColumnName == `ilike` || operatorOrColumnName == `like`) q.whereRaw(`${field} ${operatorOrColumnName} '%${value}%'`)
+      const entries = Object.entries(filter)
+      for (const entry of entries) {
+        if (!entry[0] || !entry[1]) continue
+        const [column, value] = entry
+        if (!this.columns.includes(column)) throw new Error(`Wrong call repository method`)
+        q.andWhere({ [column]: value })
+      }
     }
 
-    const _buildNestedWhereThrough = (filter: IFilter<TModel>) => (q: IKnex.QueryBuilder<TModel>) =>
-      Object.keys(filter).forEach((innerField) => buildWhere(q, innerField, filter))
-
     const build = (q: IKnex.QueryBuilder<TModel>): IKnex.QueryBuilder<TModel> => {
-      if (query?.filter) {
-        for (const filterField in query.filter) {
-          if (filterField == `or` || filterField == `and`) {
-            const nested = query.filter[filterField]
-            if (nested) for (const filter of nested) q[`${filterField}Where`](_buildNestedWhereThrough(filter))
-          } else buildWhere(q, filterField, query.filter)
-        }
-      }
-
+      if (query?.filter) buildWhere(q, query.filter)
       if (query?.paging?.limit) q.limit(query.paging.limit)
       if (query?.paging?.offset) q.offset(query.paging.offset)
       if (query?.sorting) query.sorting.forEach(({ field, direction }) => q.orderBy(String(field), direction))
@@ -103,9 +86,7 @@ export abstract class BaseRepository<TModel extends IBaseModel> implements IBase
   }
 
   update(filter: IFilter<TModel>, dto: Partial<TModel>): Promise<TModel[]> {
-    const qbClone = this.query
-    this.queryBuilder({ filter }).build(qbClone)
-    return qbClone.update(dto).returning(`*`)
+    return this.query.where(filter).update(dto).returning(`*`)
   }
 
   async updateById(id: string, dto: Partial<TModel>): Promise<TModel> {

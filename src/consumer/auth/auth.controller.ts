@@ -26,7 +26,7 @@ export class AuthController {
   }
 
   @Post(`signup`)
-  signup(@Body() body: Signup): Promise<any> {
+  signup(@Body() body: Signup): Promise<void | never> {
     return this.service.signup(body)
   }
 

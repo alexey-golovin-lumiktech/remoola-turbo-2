@@ -8,10 +8,7 @@ export const generatePasswordHash = (params = { password: ``, salt: `` }): strin
 }
 
 export const generatePasswordHashSalt = (rounds = 10) => {
-  return crypto
-    .randomBytes(Math.ceil(rounds / 2))
-    .toString(`hex`)
-    .slice(0.16)
+  return crypto.randomBytes(Math.ceil(rounds / 2)).toString(`hex`)
 }
 
 export const verifyPass = (params = { incomingPass: ``, password: ``, salt: `` }): boolean => {

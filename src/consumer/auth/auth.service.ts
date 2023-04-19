@@ -32,12 +32,23 @@ export class AuthService {
     this.oAuth2Client = new OAuth2Client(this.audience, secret)
   }
 
+  async validateUserCredentials(email: string, password: string): Promise<IUserModel | null> {
+    const [user] = await this.usersService.repository.find({ filter: { email, deletedAt: null } })
+
+    if (user) {
+      const hash = generatePasswordHash({ password, salt: user.salt })
+      if (hash == user.password) return user
+    }
+
+    return null
+  }
+
   getRandomPassword(): Promise<string> {
     const getPassword = async () => {
       const password = generateStrongPassword()
       const salt = generatePasswordHashSalt(10)
       const hash = generatePasswordHash({ password, salt })
-      const exist = await this.usersService.repository.find({ filter: { password: { eq: hash } } })
+      const exist = await this.usersService.repository.find({ filter: { password: hash } })
       return exist.length > 0 ? getPassword() : password
     }
     return getPassword()
@@ -99,26 +110,25 @@ export class AuthService {
     }
   }
 
-  async signup(body: ISignup): Promise<any> {
+  async signup(body: ISignup): Promise<void | never> {
     const { email, password, firstName, lastName, middleName } = body
     const exist = await this.usersService.findByEmail(email)
     if (exist) throw new BadRequestException(`This email is already exist`)
     const salt = generatePasswordHashSalt()
     const hash = generatePasswordHash({ password, salt })
     await this.usersService.repository.create({ email, firstName, lastName, middleName, password: hash, salt })
-    const code = generateStrongPassword()
     const token = this.generateToken({ email })
-    this.mailingService.sendUserConfirmation({ email, token, code })
+    this.mailingService.sendUserConfirmation({ email, token })
   }
 
   async confirm(token: string, res: Response) {
     const decoded: any = this.jwtService.decode(token)
-    const redirectUrl = new URL(`confirmed`, `http://localhost:3000`)
+    const redirectUrl = new URL(`confirmation`, `http://localhost:3000`)
 
     if (decoded.email) {
       redirectUrl.searchParams.append(`email`, decoded.email)
 
-      const [updated] = await this.usersService.repository.update({ email: { eq: decoded.email } }, { verified: true })
+      const [updated] = await this.usersService.repository.update({ email: decoded.email }, { verified: true })
       redirectUrl.searchParams.append(`verified`, !updated || updated.verified == false ? `no` : `yes`)
     }
 

@@ -14,7 +14,7 @@ export class Credentials implements ICredentials {
 
   @Expose()
   @ApiProperty({ example: `Wirebill@Admin123!` })
-  @Matches(regexp.password, { message: constants.INCORRECT_PASSWORD })
+  @Matches(regexp.password, { message: constants.INVALID_PASSWORD })
   password: string
 }
 
