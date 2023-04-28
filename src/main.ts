@@ -11,7 +11,10 @@ import { HttpExceptionFilter } from './common/httpException.filter'
 import { ConsumerModule } from './consumer/consumer.module'
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { cors: { origin: true, exposedHeaders: [`Content-Range`, `Content-Type`] } })
+  const app = await NestFactory.create(AppModule, {
+    rawBody: true,
+    cors: { origin: true, exposedHeaders: [`Content-Range`, `Content-Type`] }
+  })
 
   const customSiteTitle = `Wirebill`
   const config = new DocumentBuilder()

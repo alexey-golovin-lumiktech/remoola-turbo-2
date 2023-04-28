@@ -10,6 +10,7 @@ import { constants } from './constants'
 import { SharedModulesModule } from './sharedModules/sharedModules.module'
 import { LoggerMiddleware } from './middleware/logger.middleware'
 import { ScheduleModule } from '@nestjs/schedule'
+import { StripeModule } from 'nestjs-stripe'
 
 @Module({
   imports: [
@@ -24,6 +25,14 @@ import { ScheduleModule } from '@nestjs/schedule'
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
         return { config: knexfile[configService.get<string>(`NODE_ENV`)] }
+      }
+    }),
+    StripeModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        const apiKey = configService.get<string>(`STRIPE_SECRET_KEY`)
+        const apiVersion = `2022-11-15`
+        return { apiKey, apiVersion }
       }
     }),
     AdminModule,

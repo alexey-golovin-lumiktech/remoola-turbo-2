@@ -1,7 +1,7 @@
 {
-  "version": "0.1",
+  "version": "0.2",
   "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/master/cspell.schema.json",
-  "language": "en",
+  "language": "en,ru,en-US,en-GB,lorem",
   "words": [
     "bitauth",
     "bitjson",
@@ -36,5 +36,8 @@
     "yarn.lock",
     "tsconfig.json",
     "node_modules/**"
+  ],
+  "enableFiletypes": [
+    "!plaintext"
   ]
 }
