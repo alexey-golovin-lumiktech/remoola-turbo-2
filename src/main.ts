@@ -3,7 +3,7 @@ import { NestFactory } from '@nestjs/core'
 import { DocumentBuilder, SwaggerModule, SwaggerCustomOptions } from '@nestjs/swagger'
 import { AdminsModule } from './admin/entities/admins/admins.module'
 import { AppModule } from './app.module'
-import { SwaggerDocExpansion } from './common/types'
+import { swaggerDocExpansion } from './common/types'
 import * as dtos from './dtos'
 import { ValidationPipe } from '@nestjs/common'
 import { plainToInstance, instanceToPlain } from 'class-transformer'
@@ -29,7 +29,7 @@ async function bootstrap() {
     include: [AdminsModule, ConsumerModule],
     extraModels: Object.values(dtos)
   })
-  const options: SwaggerCustomOptions = { swaggerOptions: { docExpansion: SwaggerDocExpansion.None }, customSiteTitle }
+  const options: SwaggerCustomOptions = { swaggerOptions: { docExpansion: swaggerDocExpansion.None }, customSiteTitle }
   SwaggerModule.setup(`documentation`, app, document, options)
 
   app.enableCors()

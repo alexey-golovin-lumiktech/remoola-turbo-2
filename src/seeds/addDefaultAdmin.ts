@@ -1,5 +1,5 @@
 import { Knex } from 'knex'
-import { AdminType } from '../models'
+import { adminType } from '../models'
 import { generatePasswordHashSalt, generatePasswordHash } from '../utils'
 
 export async function seed(knex: Knex): Promise<void> {
@@ -11,7 +11,7 @@ export async function seed(knex: Knex): Promise<void> {
   const data = [
     {
       email: `super.admin@wirebill.com`,
-      type: AdminType.Super,
+      type: adminType.super,
       salt: salt,
       password: hash
     }

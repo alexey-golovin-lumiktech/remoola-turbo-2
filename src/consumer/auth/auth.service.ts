@@ -74,6 +74,8 @@ export class AuthService {
       const verified = await this.verifyIdToken(body.credential)
       const userId: string = verified.getUserId()
       const googleProfile = new GoogleProfile(userId, verified.getPayload())
+
+      console.log(JSON.stringify({ googleProfile: verified.getPayload() }, null, 2))
       let user = await this.usersService.findByEmail(googleProfile.email)
       if (!user) {
         const { email, emailVerified: verified } = googleProfile

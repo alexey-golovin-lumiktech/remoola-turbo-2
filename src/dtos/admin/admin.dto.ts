@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional, PickType } from '@nestjs/swagger'
 import { Exclude, Expose } from 'class-transformer'
-import { IsDate, IsEnum, IsString, ValidateIf } from 'class-validator'
-import { AdminType, IAdminModel } from 'src/models'
+import { IsDate, IsIn, IsString, ValidateIf } from 'class-validator'
+import { IAdminModel, adminType } from 'src/models'
 
 export class Admin implements IAdminModel {
   @Expose()
@@ -15,9 +15,9 @@ export class Admin implements IAdminModel {
   email: string
 
   @Expose()
-  @ApiProperty({ enum: AdminType })
-  @IsEnum(AdminType)
-  type: AdminType
+  @ApiProperty({ enum: Object.keys(adminType) })
+  @IsIn(Object.keys(adminType))
+  type: ValueOf<typeof adminType>
 
   @Expose()
   @ApiProperty()

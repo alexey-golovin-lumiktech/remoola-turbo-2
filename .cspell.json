@@ -20,6 +20,7 @@
     "knex",
     "libauth",
     "mkdir",
+    "Nillable",
     "ossp",
     "ovpn",
     "prettierignore",

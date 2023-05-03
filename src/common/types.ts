@@ -1,17 +1,17 @@
-export declare enum SortDirection {
-  ASC = `ASC`,
-  DESC = `DESC`
-}
+export const sortDirection = {
+  ASC: `ASC`,
+  DESC: `DESC`
+} as const
 
-export declare enum SortNulls {
-  NULLS_FIRST = `NULLS FIRST`,
-  NULLS_LAST = `NULLS LAST`
-}
+export const sortNulls = {
+  NULLS_FIRST: `NULLS FIRST`,
+  NULLS_LAST: `NULLS LAST`
+} as const
 
 export interface SortField<T> {
   field: keyof T
-  direction: SortDirection
-  nulls?: SortNulls
+  direction: ValueOf<typeof sortDirection>
+  nulls?: ValueOf<typeof sortNulls>
 }
 export interface Paging {
   limit?: number
@@ -27,8 +27,8 @@ export type IFilter<TModel> = { [K in keyof TModel]?: TModel[K] | string | symbo
 
 export type IQuery<TModel> = Pick<Query<TModel>, `sorting` | `paging`> & { filter: IFilter<TModel> }
 
-export enum SwaggerDocExpansion {
-  Full = `full`,
-  None = `none`,
-  List = `list`
-}
+export const swaggerDocExpansion = {
+  Full: `full`,
+  None: `none`,
+  List: `list`
+} as const
