@@ -1,21 +1,20 @@
-import { Controller, Inject, Post, RawBodyRequest, Req, Res } from '@nestjs/common'
+import { Body, Controller, Inject, Post, Headers, Req, RawBodyRequest } from '@nestjs/common'
 import { PaymentsService } from './payments.service'
-import { Request, Response } from 'express'
-import { InjectStripe } from 'nestjs-stripe'
-import Stripe from 'stripe'
 import { ApiTags } from '@nestjs/swagger'
 
 @ApiTags(`consumer`)
 @Controller(`consumer/payments`)
 export class PaymentsController {
-  constructor(
-    @InjectStripe() private readonly stripe: Stripe,
-    @Inject(PaymentsService) private readonly paymentsService: PaymentsService
-  ) {}
+  constructor(@Inject(PaymentsService) private readonly service: PaymentsService) {}
 
   @Post(`/webhook`)
-  webhook(@Req() req: RawBodyRequest<Request>, @Res() res: Response) {
-    this.paymentsService.webhook(req)
-    return res.status(200).send(`ok`)
+  webhook(@Headers(`stripe-signature`) signature: string, @Req() req: RawBodyRequest<Request>): Promise<{ received: true }> {
+    return this.service.webhook(signature, req)
+  }
+
+  @Post(`/setup-payment-intent`)
+  setupPaymentIntent(@Body() body: any): Promise<{ clientSecret: string } | void> {
+    // see https://github.com/stripe-samples/mobile-saving-card-without-payment/blob/main/server/node/server.js
+    return this.service.setupPaymentIntent(body)
   }
 }

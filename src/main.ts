@@ -13,7 +13,7 @@ import { ConsumerModule } from './consumer/consumer.module'
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     rawBody: true,
-    cors: { origin: true, exposedHeaders: [`Content-Range`, `Content-Type`] }
+    cors: { origin: true, exposedHeaders: [`Content-Range`, `Content-Type`], credentials: true }
   })
 
   const customSiteTitle = `Wirebill`

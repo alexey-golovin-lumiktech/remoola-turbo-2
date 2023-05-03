@@ -5,6 +5,7 @@
   "words": [
     "bitauth",
     "bitjson",
+    "capturable",
     "cimg",
     "circleci",
     "codecov",
@@ -15,6 +16,7 @@
     "execa",
     "exponentiate",
     "globby",
+    "invoiceitem",
     "knex",
     "libauth",
     "mkdir",

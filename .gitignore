@@ -40,3 +40,5 @@ lerna-debug.log*
 /generate-entity.sh
 /z-me*
 /me*
+/yalc.lock
+/.yalc
