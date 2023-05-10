@@ -8,7 +8,7 @@ export class MailingService {
 
   constructor(private mailerService: MailerService, private configService: ConfigService) {}
 
-  async sendConsumerConfirmation(params: { email: string; token: string }) {
+  async sendConsumerSignupCompletion(params: { email: string; token: string }) {
     const html = this.generateConfirmationEmailTemplate(params.token)
     const subject = `Welcome to Wirebill! Confirm your Email`
     try {
@@ -21,7 +21,7 @@ export class MailingService {
   }
 
   private generateConfirmationEmailTemplate(token: string) {
-    const feLink = `http://localhost:8080/consumer/auth/confirm?token=${token}`
+    const feLink = `http://localhost:8080/consumer/auth/signup/completion?token=${token}`
     const html = `
     <table style="max-width:600px;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-style:italic;background:#3f3f3f;color:#ffffff;border-radius:20px;">
       <tbody><tr><td>

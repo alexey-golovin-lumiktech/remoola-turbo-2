@@ -117,12 +117,12 @@ export class AuthService {
     const hash = utils.generatePasswordHash({ password, salt })
     await this.consumersService.repository.create({ email, firstName, lastName, middleName, password: hash, salt })
     const token = this.generateToken({ email })
-    this.mailingService.sendConsumerConfirmation({ email, token })
+    this.mailingService.sendConsumerSignupCompletion({ email, token })
   }
 
-  async confirm(token: string, res: Response) {
+  async signupCompletion(token: string, res: Response) {
     const decoded: any = this.jwtService.decode(token)
-    const redirectUrl = new URL(`confirmation`, `http://localhost:3000`)
+    const redirectUrl = new URL(`signup/completion`, `http://localhost:3000`)
 
     if (decoded.email) {
       redirectUrl.searchParams.append(`email`, decoded.email)
