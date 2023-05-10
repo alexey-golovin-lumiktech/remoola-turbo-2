@@ -4,7 +4,7 @@ import { NestFactory } from '@nestjs/core'
 import { DocumentBuilder, SwaggerCustomOptions, SwaggerModule } from '@nestjs/swagger'
 import { classToPlain, plainToClass } from 'class-transformer'
 
-import { AdminsModule } from './admin/entities/admins/admins.module'
+import { AdminModule } from './admin/admin.module'
 import { HttpExceptionFilter } from './common/httpException.filter'
 import { swaggerDocExpansion } from './common/types'
 import { ConsumerModule } from './consumer/consumer.module'
@@ -27,7 +27,7 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config, {
     deepScanRoutes: true,
-    include: [AdminsModule, ConsumerModule],
+    include: [AdminModule, ConsumerModule],
     extraModels: Object.values(dtos)
   })
   const options: SwaggerCustomOptions = { swaggerOptions: { docExpansion: swaggerDocExpansion.None }, customSiteTitle }
