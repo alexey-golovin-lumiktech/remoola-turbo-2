@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common'
 
 import { BaseService } from '../../../common/base.service'
 import { IConsumerModel } from '../../../models'
-import { GoogleProfilesRepository } from '../googleProfiles/googleProfiles.repository'
+import { GoogleProfilesRepository } from '../google-profiles/google-profiles.repository'
 
 import { ConsumersRepository } from './consumers.repository'
 

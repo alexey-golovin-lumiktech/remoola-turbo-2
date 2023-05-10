@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
 
 import { ConsumersModule } from '../entities/consumers/consumers.module'
-import { GoogleProfilesModule } from '../entities/googleProfiles/googleProfiles.module'
+import { GoogleProfilesModule } from '../entities/google-profiles/google-profiles.module'
 
 import { AuthController } from './auth.controller'
 import { AuthService } from './auth.service'

@@ -1,14 +1,14 @@
 import { Module } from '@nestjs/common'
 
-import { GoogleProfilesModule } from '../googleProfiles/googleProfiles.module'
+import { GoogleProfilesModule } from '../google-profiles/google-profiles.module'
 
-import { consumersController } from './consumers.controller'
+import { ConsumersController } from './consumers.controller'
 import { ConsumersRepository } from './consumers.repository'
 import { ConsumersService } from './consumers.service'
 
 @Module({
   imports: [GoogleProfilesModule],
-  controllers: [consumersController],
+  controllers: [ConsumersController],
   providers: [ConsumersService, ConsumersRepository],
   exports: [ConsumersService, ConsumersRepository]
 })

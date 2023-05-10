@@ -1,1 +1,1 @@
-export * from './transformQuery.pipe'
+export * from './transform-query.pipe'

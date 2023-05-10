@@ -5,7 +5,7 @@ import { ConsumersService } from './consumers.service'
 
 @ApiTags(`consumer`)
 @Controller(`consumer/consumers`)
-export class consumersController {
+export class ConsumersController {
   constructor(@Inject(ConsumersService) private readonly service: ConsumersService) {}
 
   @Get(`/:email`)

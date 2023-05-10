@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
 
-import { GoogleProfilesModule } from '../googleProfiles/googleProfiles.module'
+import { GoogleProfilesModule } from '../google-profiles/google-profiles.module'
 
 import { AdminConsumersController } from './consumer.controller'
 import { AdminConsumersRepository } from './consumer.repository'

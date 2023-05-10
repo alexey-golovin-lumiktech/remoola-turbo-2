@@ -4,7 +4,7 @@ import { BaseService } from '../../../common/base.service'
 import { Consumer } from '../../../dtos'
 import { IConsumerModel } from '../../../models'
 import { generatePasswordHash, generatePasswordHashSalt } from '../../../utils'
-import { GoogleProfilesService } from '../googleProfiles/googleProfiles.service'
+import { GoogleProfilesService } from '../google-profiles/google-profiles.service'
 
 import { AdminConsumersRepository } from './consumer.repository'
 

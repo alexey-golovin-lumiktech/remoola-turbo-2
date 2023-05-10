@@ -1,8 +1,8 @@
 import { Knex } from 'knex'
 
-import { adminType, adminTypes } from '../models'
+import { adminType, adminTypes, TableName } from '../models'
 
-const tableName = `admins`
+const tableName = TableName.Admins
 
 export async function up(knex: Knex): Promise<void> {
   const exist = await knex.schema.hasTable(tableName)

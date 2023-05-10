@@ -8,10 +8,10 @@ import { constants } from '../../constants'
 import { ICredentials, ISignup } from '../../dtos'
 import { ConsumerGoogleProfile, IAccessConsumer, IConsumerGoogleSignin } from '../../dtos/consumer'
 import { IConsumerModel } from '../../models'
-import { MailingService } from '../../sharedModules/mailing/mailing.service'
+import { MailingService } from '../../shared-modules/mailing/mailing.service'
 import * as utils from '../../utils'
 import { ConsumersService } from '../entities/consumers/consumers.service'
-import { GoogleProfilesService } from '../entities/googleProfiles/googleProfiles.service'
+import { GoogleProfilesService } from '../entities/google-profiles/google-profiles.service'
 
 @Injectable()
 export class AuthService {
