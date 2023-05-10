@@ -7,8 +7,8 @@ import { AdminsRepository } from './admins.repository'
 
 @Injectable()
 export class AdminsService extends BaseService<IAdminModel, AdminsRepository> {
-  constructor(@Inject(AdminsRepository) userRepository: AdminsRepository) {
-    super(userRepository)
+  constructor(@Inject(AdminsRepository) adminRepository: AdminsRepository) {
+    super(adminRepository)
   }
 
   findByEmail(email: string): Promise<IAdminModel | null> {

@@ -7,6 +7,7 @@ import { GoogleProfile } from '../../../dtos/admin/googleProfile.dto'
 import { IGoogleProfileModel } from '../../../models'
 import { GoogleProfilesService } from './googleProfiles.service'
 import { Response as IExpressResponse } from 'express'
+import { AdminPanelQueryTransformPipe } from 'src/admin/pipes/transformQuery.pipe'
 
 @ApiTags(`admin`)
 @Controller(`admin/google-profiles`)
@@ -16,7 +17,7 @@ export class GoogleProfilesController {
   @Get(`/`)
   @ApiCountRowsResponse(GoogleProfile)
   async findAndCountAll(
-    @Query() query: IQuery<IGoogleProfileModel>,
+    @Query(new AdminPanelQueryTransformPipe()) query: IQuery<IGoogleProfileModel>,
     @Response() res: IExpressResponse
   ): Promise<ListResponse<GoogleProfile>> {
     const result = await this.service.repository.findAndCountAll(query)

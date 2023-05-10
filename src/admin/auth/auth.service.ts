@@ -6,23 +6,33 @@ import { IAdminModel } from '../../models'
 import { constants } from '../../constants'
 import { ConfigService } from '@nestjs/config'
 import * as uuid from 'uuid'
-import { verifyPass } from 'src/utils'
+import { validatePassword } from 'src/utils'
 
 @Injectable()
 export class AuthService {
   constructor(
-    @Inject(AdminsService) private readonly usersService: AdminsService,
+    @Inject(AdminsService) private readonly adminsService: AdminsService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService
   ) {}
 
+  async getAuthenticatedAdmin(email: string, password: string): Promise<IAdminModel> {
+    const admin = await this.adminsService.findByEmail(email)
+    if (!admin) throw new BadRequestException(constants.INVALID_CREDENTIALS)
+
+    const isValidPassword = await validatePassword({ incomingPass: password, password: admin.password, salt: admin.salt })
+    if (!isValidPassword) throw new BadRequestException(constants.INVALID_CREDENTIALS)
+
+    return admin
+  }
+
   async login(body: ICredentials): Promise<IAccessAdmin> {
     try {
-      const admin = await this.usersService.findByEmail(body.email)
+      const admin = await this.adminsService.findByEmail(body.email)
       if (!admin) throw new NotFoundException({ message: constants.ADMIN_NOT_FOUND })
 
-      const verified = await verifyPass({ incomingPass: body.password, password: admin.password, salt: admin.salt })
-      if (!verified) throw new BadRequestException({ message: constants.INVALID_PASSWORD })
+      const verified = await validatePassword({ incomingPass: body.password, password: admin.password, salt: admin.salt })
+      if (!verified) throw new BadRequestException({ message: constants.INVALID_CREDENTIALS })
 
       const accessToken = this.generateToken(admin)
       return { accessToken, type: admin.type }

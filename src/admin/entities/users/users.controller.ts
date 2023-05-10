@@ -7,6 +7,7 @@ import { IUserModel } from '../../../models'
 import { UsersService } from './users.service'
 
 import { Response as ResponseType } from 'express'
+import { AdminPanelQueryTransformPipe } from 'src/admin/pipes/transformQuery.pipe'
 @ApiTags(`user`)
 @Controller(`admin/users`)
 export class UsersController {
@@ -14,7 +15,10 @@ export class UsersController {
 
   @Get(`/`)
   @ApiCountRowsResponse(User)
-  async findAndCountAll(@Query() query: IQuery<IUserModel>, @Response() res: ResponseType): Promise<ListResponse<User>> {
+  async findAndCountAll(
+    @Query(new AdminPanelQueryTransformPipe()) query: IQuery<IUserModel>,
+    @Response() res: ResponseType
+  ): Promise<ListResponse<User>> {
     const result = await this.service.repository.findAndCountAll(query)
     res.set(`Content-Range`, result.count.toString())
     res.send(result.data)

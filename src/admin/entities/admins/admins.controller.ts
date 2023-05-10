@@ -7,6 +7,7 @@ import { IAdminModel } from '../../../models'
 import { AdminsService } from './admins.service'
 
 import { Response as ResponseType } from 'express'
+import { AdminPanelQueryTransformPipe } from 'src/admin/pipes/transformQuery.pipe'
 @ApiTags(`admin`)
 @Controller(`admin/admins`)
 export class AdminsController {
@@ -14,7 +15,10 @@ export class AdminsController {
 
   @Get(`/`)
   @ApiCountRowsResponse(Admin)
-  async findAndCountAll(@Query() query: IQuery<IAdminModel>, @Response() res: ResponseType): Promise<ListResponse<Admin>> {
+  async findAndCountAll(
+    @Query(new AdminPanelQueryTransformPipe()) query: IQuery<IAdminModel>,
+    @Response() res: ResponseType
+  ): Promise<ListResponse<Admin>> {
     const result = await this.service.repository.findAndCountAll(query)
     res.set(`Content-Range`, result.count.toString())
     res.send(result.data)
