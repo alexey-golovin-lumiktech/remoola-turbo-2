@@ -31,7 +31,7 @@ export class AuthController {
     return this.service.signup(body)
   }
 
-  @Get(`signup/completion`)
+  @Get(`signup/verification`)
   signupCompletion(@Query(`token`) token: string, @Res() res: Response) {
     return this.service.signupCompletion(token, res)
   }

@@ -122,7 +122,7 @@ export class AuthService {
 
   async signupCompletion(token: string, res: Response) {
     const decoded: any = this.jwtService.decode(token)
-    const redirectUrl = new URL(`signup/completion`, `http://localhost:3000`)
+    const redirectUrl = new URL(`signup/verification`, `http://localhost:3000`)
 
     if (decoded.email) {
       redirectUrl.searchParams.append(`email`, decoded.email)
