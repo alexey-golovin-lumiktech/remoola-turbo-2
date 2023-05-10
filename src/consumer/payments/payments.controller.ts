@@ -1,6 +1,7 @@
-import { Body, Controller, Inject, Post, Headers, Req, RawBodyRequest } from '@nestjs/common'
-import { PaymentsService } from './payments.service'
+import { Body, Controller, Headers, Inject, Post, RawBodyRequest, Req } from '@nestjs/common'
 import { ApiTags } from '@nestjs/swagger'
+
+import { PaymentsService } from './payments.service'
 
 @ApiTags(`consumer`)
 @Controller(`consumer/payments`)

@@ -1,13 +1,15 @@
 import { Controller, Get, Inject, Param, Query, Response } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
+import { Response as IExpressResponse } from 'express'
+
+import { AdminPanelQueryTransformPipe } from '../../../admin/pipes'
 import { IQuery } from '../../../common/types'
 import { ApiCountRowsResponse } from '../../../decorators/responseCountRows.decorator'
 import { ListResponse } from '../../../dtos'
 import { GoogleProfile } from '../../../dtos/admin/googleProfile.dto'
 import { IGoogleProfileModel } from '../../../models'
+
 import { GoogleProfilesService } from './googleProfiles.service'
-import { Response as IExpressResponse } from 'express'
-import { AdminPanelQueryTransformPipe } from 'src/admin/pipes/transformQuery.pipe'
 
 @ApiTags(`admin`)
 @Controller(`admin/google-profiles`)

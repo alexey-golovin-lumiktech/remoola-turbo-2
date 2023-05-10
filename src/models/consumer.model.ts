@@ -1,6 +1,6 @@
-import { IBaseModel, BaseModel } from './base'
+import { BaseModel, IBaseModel } from './base'
 
-export interface IUserModel extends IBaseModel {
+export interface IConsumerModel extends IBaseModel {
   email: string
   verified: boolean
   password: string
@@ -12,7 +12,7 @@ export interface IUserModel extends IBaseModel {
   middleName?: string
 }
 
-export class UserModel extends BaseModel implements IUserModel {
+export class ConsumerModel extends BaseModel implements IConsumerModel {
   email: string
   verified: boolean
   password: string

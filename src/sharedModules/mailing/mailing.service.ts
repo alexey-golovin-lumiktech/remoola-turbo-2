@@ -1,6 +1,6 @@
-import { MailerService } from '@nestjs-modules/mailer'
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { MailerService } from '@nestjs-modules/mailer'
 
 @Injectable()
 export class MailingService {
@@ -8,7 +8,7 @@ export class MailingService {
 
   constructor(private mailerService: MailerService, private configService: ConfigService) {}
 
-  async sendUserConfirmation(params: { email: string; token: string }) {
+  async sendConsumerConfirmation(params: { email: string; token: string }) {
     const html = this.generateConfirmationEmailTemplate(params.token)
     const subject = `Welcome to Wirebill! Confirm your Email`
     try {

@@ -1,7 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 import { IsIn } from 'class-validator'
-import { adminType, adminTypes } from 'src/models'
+
+import { adminType, adminTypes } from '../../models'
+import { ValueOf } from '../../shared-types'
 import { Access, IAccess } from '../common'
 
 export interface IAccessAdmin extends IAccess {

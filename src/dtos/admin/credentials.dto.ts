@@ -1,10 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { IsEmail, IsString, Matches } from 'class-validator'
-import { regexp, constants } from '../../constants'
 import { Expose } from 'class-transformer'
-import { IUserModel } from 'src/models'
+import { IsEmail, IsString, Matches } from 'class-validator'
 
-export type ICredentials = Pick<IUserModel, `email` | `password`>
+import { constants, regexp } from '../../constants'
+import { IConsumerModel } from '../../models'
+
+export type ICredentials = Pick<IConsumerModel, `email` | `password`>
 
 export class Credentials implements ICredentials {
   @Expose()
@@ -18,8 +19,8 @@ export class Credentials implements ICredentials {
   password: string
 }
 
-type IUserModelSignupPick = Pick<IUserModel, `firstName` | `lastName` | `middleName`>
-export type ISignup = ICredentials & IUserModelSignupPick
+type ConsumerModelSignupPick = Pick<IConsumerModel, `firstName` | `lastName` | `middleName`>
+export type ISignup = ICredentials & ConsumerModelSignupPick
 
 export class Signup extends Credentials implements ISignup {
   @Expose()

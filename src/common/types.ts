@@ -1,3 +1,5 @@
+import { ValueOf } from '../shared-types'
+
 export const sortDirection = {
   ASC: `ASC`,
   DESC: `DESC`

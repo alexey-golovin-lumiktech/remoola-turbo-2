@@ -1,13 +1,15 @@
 import { Body, Controller, Get, Inject, Param, Post, Put, Query, Response } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
+import { Response as ResponseType } from 'express'
+
+import { AdminPanelQueryTransformPipe } from '../../../admin/pipes'
 import { IQuery } from '../../../common/types'
-import { ApiCountRowsResponse } from '../../../decorators/responseCountRows.decorator'
+import { ApiCountRowsResponse } from '../../../decorators'
 import { Admin, CreateAdmin, ListResponse, UpdateAdmin } from '../../../dtos'
 import { IAdminModel } from '../../../models'
+
 import { AdminsService } from './admins.service'
 
-import { Response as ResponseType } from 'express'
-import { AdminPanelQueryTransformPipe } from 'src/admin/pipes/transformQuery.pipe'
 @ApiTags(`admin`)
 @Controller(`admin/admins`)
 export class AdminsController {

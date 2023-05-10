@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
+
 import { Access, IAccess } from '../common'
 
 export interface IAccessConsumer extends IAccess {

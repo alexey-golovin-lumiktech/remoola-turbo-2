@@ -1,8 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common'
-import { Admin } from 'src/dtos'
-import { generatePasswordHashSalt, generatePasswordHash } from 'src/utils'
+
 import { BaseService } from '../../../common/base.service'
+import { Admin } from '../../../dtos'
 import { IAdminModel } from '../../../models'
+import { generatePasswordHash, generatePasswordHashSalt } from '../../../utils'
+
 import { AdminsRepository } from './admins.repository'
 
 @Injectable()
@@ -21,16 +23,16 @@ export class AdminsService extends BaseService<IAdminModel, AdminsRepository> {
     return this.repository.create(body)
   }
 
-  async update(userId: string, body: any): Promise<Admin> {
-    const user = await this.repository.findById(userId)
+  async update(consumerId: string, body: any): Promise<Admin> {
+    const consumer = await this.repository.findById(consumerId)
 
-    if (user.password != body.password /* password changed by super admin */) {
+    if (consumer.password != body.password /* password changed by super admin */) {
       const salt = generatePasswordHashSalt(10)
       const password = generatePasswordHash({ password: body.password, salt })
-      Object.assign(body, { password, salt }) /* add new salt + pass to body(UserModel) */
+      Object.assign(body, { password, salt }) /* add new salt + pass to body(consumerModel) */
     }
 
-    const updated = await this.repository.updateById(userId, body)
+    const updated = await this.repository.updateById(consumerId, body)
     return updated
   }
 }

@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common'
-import { AdminsModule } from './entities/admins/admins.module'
-import { GoogleProfilesModule } from './entities/googleProfiles/googleProfiles.module'
+
 import { AuthModule } from './auth/auth.module'
-import { UsersModule } from './entities/users/users.module'
+import { AdminsModule } from './entities/admins/admins.module'
+import { ConsumersModule } from './entities/consumers/consumer.module'
+import { GoogleProfilesModule } from './entities/googleProfiles/googleProfiles.module'
 
 @Module({
-  imports: [AdminsModule, GoogleProfilesModule, UsersModule, AuthModule]
+  imports: [AdminsModule, GoogleProfilesModule, ConsumersModule, AuthModule]
 })
 export class AdminModule {}

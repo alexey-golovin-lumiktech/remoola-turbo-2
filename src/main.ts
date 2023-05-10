@@ -1,14 +1,15 @@
+import { INestApplication, ValidationPipe } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { NestFactory } from '@nestjs/core'
-import { DocumentBuilder, SwaggerModule, SwaggerCustomOptions } from '@nestjs/swagger'
+import { DocumentBuilder, SwaggerCustomOptions, SwaggerModule } from '@nestjs/swagger'
+import { classToPlain, plainToClass } from 'class-transformer'
+
 import { AdminsModule } from './admin/entities/admins/admins.module'
-import { AppModule } from './app.module'
-import { swaggerDocExpansion } from './common/types'
-import * as dtos from './dtos'
-import { INestApplication, ValidationPipe } from '@nestjs/common'
-import { plainToClass, classToPlain } from 'class-transformer'
 import { HttpExceptionFilter } from './common/httpException.filter'
+import { swaggerDocExpansion } from './common/types'
 import { ConsumerModule } from './consumer/consumer.module'
+import { AppModule } from './app.module'
+import * as dtos from './dtos'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {

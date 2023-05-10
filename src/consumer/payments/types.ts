@@ -1,4 +1,4 @@
-import { stripeEvent } from 'src/constants/stripe.events'
+import { stripeEvent } from '../../constants'
 
 export type StripeEvent = typeof stripeEvent
 export type StripeEventKey = keyof StripeEvent

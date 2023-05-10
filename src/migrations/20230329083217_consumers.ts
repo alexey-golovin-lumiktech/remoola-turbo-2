@@ -1,6 +1,8 @@
 import { Knex } from 'knex'
 
-const tableName = `users`
+import { TableName } from '../models'
+
+const tableName = `consumers`
 
 export async function up(knex: Knex): Promise<void> {
   const exist = await knex.schema.hasTable(tableName)
@@ -13,7 +15,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string(`password`).notNullable()
     table.string(`salt`).notNullable()
 
-    table.uuid(`google_profile_id`).references(`id`).inTable(`google_profiles`)
+    table.uuid(`google_profile_id`).references(`id`).inTable(TableName.GoogleProfiles)
     table.string(`first_name`)
     table.string(`last_name`)
     table.string(`middle_name`)

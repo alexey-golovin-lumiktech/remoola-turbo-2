@@ -1,7 +1,8 @@
 import { Injectable, Logger, RawBodyRequest } from '@nestjs/common'
 import { InjectStripe } from 'nestjs-stripe'
 import Stripe from 'stripe'
-import { PaymentMethodTypeValue, paymentMethodType } from './types'
+
+import { paymentMethodType, PaymentMethodTypeValue } from './types'
 
 @Injectable()
 export class PaymentsService {

@@ -1,8 +1,10 @@
 import type { Knex as IKnex } from 'knex'
 import { Knex } from 'knex'
+
 import { IListResponse } from '../dtos'
 import { IBaseModel } from '../models/base'
-import { IQuery, IFilter } from './types'
+
+import { IFilter, IQuery } from './types'
 
 export interface IBaseRepository<TModel> {
   create(dto: Partial<TModel>): Promise<TModel>

@@ -1,10 +1,11 @@
-import { Body, Controller, Get, Inject, Logger, Post, Res, Query } from '@nestjs/common'
+import { Body, Controller, Get, Inject, Logger, Post, Query, Res } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
-import { Credentials, Signup } from '../../dtos'
-import { AuthService } from './auth.service'
-import { GoogleLogin } from 'src/dtos/consumer/googleProfile.dto'
-import { AccessConsumer } from 'src/dtos/consumer'
 import { Response } from 'express'
+
+import { Credentials, Signup } from '../../dtos'
+import { AccessConsumer, GoogleLogin } from '../../dtos/consumer'
+
+import { AuthService } from './auth.service'
 
 @ApiTags(`consumer`)
 @Controller(`consumer/auth`)

@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
+
 import { AdminsModule } from '../entities/admins/admins.module'
+
+import { JwtStrategy } from './strategy/jwt.strategy'
+import { AdminLocalStrategy } from './strategy/local.strategy'
 import { AuthController } from './auth.controller'
 import { AuthService } from './auth.service'
-import { AdminLocalStrategy } from './strategy/local.strategy'
-import { JwtStrategy } from './strategy/jwt.strategy'
 
 @Module({
   imports: [

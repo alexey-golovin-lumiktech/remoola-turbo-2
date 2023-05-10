@@ -43,11 +43,11 @@ export class TokenPayload implements ITokenPayloadPick {
 
 export class GoogleProfile extends TokenPayload {
   @Expose()
-  userId: string
+  consumerId: string
 
-  constructor(userId: string, payload: ITokenPayload) {
+  constructor(consumerId: string, payload: ITokenPayload) {
     super(payload)
-    this.userId = userId
+    this.consumerId = consumerId
   }
 }
 

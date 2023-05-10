@@ -1,4 +1,6 @@
-import { IBaseModel, BaseModel } from './base'
+import { ValueOf } from '../shared-types'
+
+import { BaseModel, IBaseModel } from './base'
 
 export const adminType = { super: `super`, admin: `admin` } as const
 export const adminTypes = Object.values(adminType)

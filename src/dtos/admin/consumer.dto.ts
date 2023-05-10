@@ -1,10 +1,10 @@
 import { ApiProperty, ApiPropertyOptional, PickType } from '@nestjs/swagger'
-import { Expose } from 'class-transformer'
+import { Exclude, Expose } from 'class-transformer'
 import { IsBoolean, IsDate, IsString, ValidateIf } from 'class-validator'
-import { IUserModel } from '../../models'
-import { Exclude } from 'class-transformer'
 
-export class User implements IUserModel {
+import { IConsumerModel } from '../../models'
+
+export class Consumer implements IConsumerModel {
   @Expose()
   @ApiProperty()
   @IsString()
@@ -69,6 +69,6 @@ export class User implements IUserModel {
   deletedAt?: Date = null
 }
 
-export class CreateUser extends PickType(User, [`email`, `password`, `verified`, `firstName`, `lastName`, `middleName`]) {}
-export class UpdateUser extends CreateUser {}
-export class UpdatePassword extends PickType(User, [`password`] as const) {}
+export class CreateConsumer extends PickType(Consumer, [`email`, `password`, `verified`, `firstName`, `lastName`, `middleName`]) {}
+export class UpdateConsumer extends CreateConsumer {}
+export class UpdatePassword extends PickType(Consumer, [`password`] as const) {}

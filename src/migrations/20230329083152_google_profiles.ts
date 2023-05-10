@@ -10,7 +10,7 @@ export async function up(knex: Knex): Promise<void> {
     table.uuid(`id`).primary().defaultTo(knex.raw(`uuid_generate_v4()`))
 
     table.jsonb(`data`).notNullable()
-    table.string(`user_id`)
+    table.string(`consumer_id`)
     table.string(`email`)
     table.boolean(`email_verified`)
     table.string(`name`)

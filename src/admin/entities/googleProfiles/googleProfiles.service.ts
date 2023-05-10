@@ -1,6 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common'
+
 import { BaseService } from '../../../common/base.service'
 import { IGoogleProfileModel } from '../../../models'
+
 import { GoogleProfilesRepository } from './googleProfiles.repository'
 
 @Injectable()

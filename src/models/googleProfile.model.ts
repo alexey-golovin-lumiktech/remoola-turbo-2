@@ -1,7 +1,7 @@
-import { IBaseModel, BaseModel } from './base'
+import { BaseModel, IBaseModel } from './base'
 
 export interface IGoogleProfileModel extends IBaseModel {
-  userId: string
+  consumersId: string
   email: string
   emailVerified: boolean
   name: string
@@ -12,7 +12,7 @@ export interface IGoogleProfileModel extends IBaseModel {
 }
 
 export class GoogleProfileModel extends BaseModel implements IGoogleProfileModel {
-  userId: string
+  consumersId: string
   email: string
   emailVerified: boolean
   name: string

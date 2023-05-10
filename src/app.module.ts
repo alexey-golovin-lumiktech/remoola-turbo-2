@@ -1,16 +1,18 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
-import { AppController } from './app.controller'
-import * as configValidation from './envsValidation.schema'
-import * as knexfile from '../knexfile'
+import { ScheduleModule } from '@nestjs/schedule'
 import { KnexModule } from 'nestjs-knex'
+import { StripeModule } from 'nestjs-stripe'
+
+import * as knexfile from '../knexfile'
+
 import { AdminModule } from './admin/admin.module'
 import { ConsumerModule } from './consumer/consumer.module'
-import { constants } from './constants'
-import { SharedModulesModule } from './sharedModules/sharedModules.module'
 import { LoggerMiddleware } from './middleware/logger.middleware'
-import { ScheduleModule } from '@nestjs/schedule'
-import { StripeModule } from 'nestjs-stripe'
+import { SharedModulesModule } from './sharedModules/sharedModules.module'
+import { AppController } from './app.controller'
+import { constants } from './constants'
+import * as configValidation from './envsValidation.schema'
 
 @Module({
   imports: [
