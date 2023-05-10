@@ -3,7 +3,7 @@ import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { Response } from 'express'
 
 import { Credentials, Signup } from '../../dtos'
-import { AccessConsumer, GoogleLogin } from '../../dtos/consumer'
+import { AccessConsumer, ConsumerGoogleSignin } from '../../dtos/consumer'
 
 import { AuthService } from './auth.service'
 
@@ -14,24 +14,24 @@ export class AuthController {
 
   constructor(@Inject(AuthService) private readonly service: AuthService) {}
 
-  @Post(`/login`)
+  @Post(`/signin`)
   @ApiOkResponse({ type: AccessConsumer, status: 200 })
-  login(@Body() body: Credentials): Promise<AccessConsumer> {
-    return this.service.login(body)
+  signin(@Body() body: Credentials): Promise<AccessConsumer> {
+    return this.service.signin(body)
   }
 
-  @Post(`/google-login`)
+  @Post(`/google-signin`)
   @ApiOkResponse({ type: AccessConsumer, status: 200 })
-  googleLogin(@Body() body: GoogleLogin): Promise<AccessConsumer> {
-    return this.service.googleLogin(body)
+  googleSignin(@Body() body: ConsumerGoogleSignin): Promise<AccessConsumer> {
+    return this.service.googleSignin(body)
   }
 
-  @Post(`signup`)
+  @Post(`/signup`)
   signup(@Body() body: Signup): Promise<void | never> {
     return this.service.signup(body)
   }
 
-  @Get(`signup/verification`)
+  @Get(`/signup/verification`)
   signupCompletion(@Query(`token`) token: string, @Res() res: Response) {
     return this.service.signupCompletion(token, res)
   }

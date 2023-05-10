@@ -41,7 +41,7 @@ export class TokenPayload implements ITokenPayloadPick {
   }
 }
 
-export class GoogleProfile extends TokenPayload {
+export class ConsumerGoogleProfile extends TokenPayload {
   @Expose()
   consumerId: string
 
@@ -51,11 +51,11 @@ export class GoogleProfile extends TokenPayload {
   }
 }
 
-export interface IGoogleLogin {
+export interface IConsumerGoogleSignin {
   credential: string
 }
 
-export class GoogleLogin implements IGoogleLogin {
+export class ConsumerGoogleSignin implements IConsumerGoogleSignin {
   @Expose()
   @ApiProperty()
   @IsString()

@@ -6,7 +6,7 @@ import { LoginTicket, OAuth2Client } from 'google-auth-library'
 
 import { constants } from '../../constants'
 import { ICredentials, ISignup } from '../../dtos'
-import { GoogleProfile, IAccessConsumer, IGoogleLogin } from '../../dtos/consumer'
+import { ConsumerGoogleProfile, IAccessConsumer, IConsumerGoogleSignin } from '../../dtos/consumer'
 import { IConsumerModel } from '../../models'
 import { MailingService } from '../../sharedModules/mailing/mailing.service'
 import * as utils from '../../utils'
@@ -52,7 +52,7 @@ export class AuthService {
     return getPassword()
   }
 
-  async login(body: ICredentials): Promise<IAccessConsumer> {
+  async signin(body: ICredentials): Promise<IAccessConsumer> {
     try {
       const consumer = await this.consumersService.findByEmail(body.email)
       if (!consumer) throw new NotFoundException({ message: constants.NOT_FOUND })
@@ -67,11 +67,11 @@ export class AuthService {
     }
   }
 
-  async googleLogin(body: IGoogleLogin): Promise<IAccessConsumer> {
+  async googleSignin(body: IConsumerGoogleSignin): Promise<IAccessConsumer> {
     try {
       const verified = await this.verifyIdToken(body.credential)
       const consumerId: string = verified.getUserId()
-      const googleProfile = new GoogleProfile(consumerId, verified.getPayload())
+      const googleProfile = new ConsumerGoogleProfile(consumerId, verified.getPayload())
 
       let consumer = await this.consumersService.findByEmail(googleProfile.email)
       if (!consumer) {
