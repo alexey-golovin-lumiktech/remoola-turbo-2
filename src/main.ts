@@ -5,8 +5,8 @@ import { AdminsModule } from './admin/entities/admins/admins.module'
 import { AppModule } from './app.module'
 import { swaggerDocExpansion } from './common/types'
 import * as dtos from './dtos'
-import { ValidationPipe } from '@nestjs/common'
-import { plainToInstance, instanceToPlain } from 'class-transformer'
+import { INestApplication, ValidationPipe } from '@nestjs/common'
+import { plainToClass, classToPlain } from 'class-transformer'
 import { HttpExceptionFilter } from './common/httpException.filter'
 import { ConsumerModule } from './consumer/consumer.module'
 
@@ -36,7 +36,7 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
-      transformerPackage: { plainToClass: plainToInstance, classToPlain: instanceToPlain },
+      transformerPackage: { plainToClass: plainToClass, classToPlain: classToPlain },
       transformOptions: {
         excludeExtraneousValues: true,
         enableImplicitConversion: true,
@@ -50,29 +50,36 @@ async function bootstrap() {
   const configService = app.get(ConfigService)
   const PORT = configService.get<number>(`PORT`)
   await app.listen(PORT, () => console.log(`Server started on = http://localhost:${PORT}`))
+  return app
 }
 
-bootstrap().catch((error: any) => console.error({ error, caller: bootstrap.name, message: `Error on startup` }))
+bootstrap()
+  .then(killAppWithGrace)
+  .catch((error: any) => console.error({ error, caller: bootstrap.name, message: `Error on startup` }))
 
 interface IOptions {
   cleanup?: boolean
   exit?: boolean
 }
 
-function exitHandler(options: IOptions, exitCode?: number) {
-  if (options.cleanup) console.log(`App stopped: clean`)
-  if (exitCode || exitCode === 0) console.log(`App stopped: exit code: ${exitCode}`)
-  if (options.exit) process.exit()
-}
+function killAppWithGrace(app: INestApplication) {
+  async function exitHandler(options: IOptions, exitCode?: number) {
+    if (options.cleanup) console.log(`App stopped: clean`)
+    if (exitCode || exitCode === 0) console.log(`App stopped: exit code: ${exitCode}`)
+    setTimeout(() => process.exit(1), 5000)
+    await app.close()
+    process.exit(0)
+  }
 
-process.stdin.resume()
-process.on(`unhandledRejection`, (error: Error | any) => {
-  if (error.code == `ERR_HTTP_HEADERS_SENT`) return console.log(`ERR_HTTP_HEADERS_SENT with error code: ${error.code}`)
-  console.error({ error, caller: bootstrap.name, message: `Unhandled rejection` })
-  process.exit(1)
-})
-process.on(`exit`, exitHandler.bind(null, { cleanup: true }))
-process.on(`SIGINT`, exitHandler.bind(null, { exit: true }))
-process.on(`SIGUSR1`, exitHandler.bind(null, { exit: true }))
-process.on(`SIGUSR2`, exitHandler.bind(null, { exit: true }))
-process.on(`uncaughtException`, exitHandler.bind(null, { exit: true }))
+  process.stdin.resume()
+  process.on(`unhandledRejection`, (error: Error | any) => {
+    if (error.code == `ERR_HTTP_HEADERS_SENT`) return console.log(`ERR_HTTP_HEADERS_SENT with error code: ${error.code}`)
+    console.error({ error, caller: bootstrap.name, message: `Unhandled rejection` })
+    process.exit(1)
+  })
+  process.on(`exit`, exitHandler.bind(null, { cleanup: true }))
+  process.on(`SIGINT`, exitHandler.bind(null, { exit: true }))
+  process.on(`SIGUSR1`, exitHandler.bind(null, { exit: true }))
+  process.on(`SIGUSR2`, exitHandler.bind(null, { exit: true }))
+  process.on(`uncaughtException`, exitHandler.bind(null, { exit: true }))
+}

@@ -9,7 +9,7 @@ export type ICredentials = Pick<IUserModel, `email` | `password`>
 export class Credentials implements ICredentials {
   @Expose()
   @ApiProperty({ example: `wirebill@admin.com` })
-  @IsEmail({}, { message: constants.INCORRECT_EMAIL })
+  @IsEmail({}, { message: constants.INVALID_EMAIL })
   email: string
 
   @Expose()

@@ -1,20 +1,11 @@
 import { getEnvPath } from '../common/getEnvPath'
 
 export const constants = {
-  UNAUTHORIZED: `Unauthorized`,
-  NOT_FOUND: `User not found`,
+  INVALID_CREDENTIALS: `Invalid Credentials`,
   ADMIN_NOT_FOUND: `Admin not found`,
-  ACCOUNT_CONFIRMED: `Account is confirmed`,
-  INVALID_USER: `Wrong email or password`,
+  NOT_FOUND: `Not found`,
   INVALID_PASSWORD: `Invalid password`,
-  PASSWORD_EXPIRED: `Password is expired`,
-  EMAIL: `Email`,
-  PASSWORD: `Password`,
-  INCORRECT_PASSWORD: `Incorrect password`,
-  INCORRECT_EMAIL: `Incorrect email`,
-  FORBIDDEN: `Forbidden`,
-  INVITE_ERROR: `You don't have rights to invite guests`,
-  INCORRECT_MIMETYPE: `Incorrect MIME types`,
+  INVALID_EMAIL: `Invalid email`,
   TEMPORARY_PASSWORD_LIFETIME_HOURS: 3,
   ENV_FILE_PATH: getEnvPath(process.cwd())
-}
+} as const

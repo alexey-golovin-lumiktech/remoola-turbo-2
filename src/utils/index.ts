@@ -11,7 +11,7 @@ export const generatePasswordHashSalt = (rounds = 10) => {
   return crypto.randomBytes(Math.ceil(rounds / 2)).toString(`hex`)
 }
 
-export const verifyPass = (params = { incomingPass: ``, password: ``, salt: `` }): boolean => {
+export const validatePassword = (params = { incomingPass: ``, password: ``, salt: `` }): boolean => {
   if (params.password.length == 0) throw new Error(`Password could not be empty`)
   if (params.salt.length == 0) throw new Error(`Salt could not be empty`)
 

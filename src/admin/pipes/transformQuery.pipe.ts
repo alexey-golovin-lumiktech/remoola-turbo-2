@@ -17,13 +17,16 @@ export class AdminPanelQueryTransformPipe implements PipeTransform {
         }
 
         if (key == `sort`) {
-          const order = JSON.parse(value[key])
-          if (order.length != 0) acc = { ...acc, order }
+          const sorting = JSON.parse(value[key])
+          if (sorting.length != 0) {
+            const [field, direction] = sorting
+            acc = { ...acc, sorting: [{ field, direction }] }
+          }
         }
 
         return acc
       },
-      { filter: null, paging: null, order: null }
+      { filter: null, paging: null, sorting: null }
     )
   }
 }

@@ -65,9 +65,23 @@ export abstract class BaseRepository<TModel extends IBaseModel> implements IBase
   }
 
   async findAndCountAll(query?: IQuery<TModel>): Promise<IListResponse<TModel>> {
-    const qbClone = this.query
-    if (query) this.queryBuilder(query).build(qbClone)
-    const data = await qbClone
+    const data = await this.query.modify((qb) => {
+      if (query.filter) {
+        const raw = Object.entries(query.filter).reduce((acc, [field, value]) => {
+          if (Array.isArray(value) && typeof value != `string`) acc += `${field} IN(${this.makeSqlIn(value)})`
+          else acc += `${field} = '${value}'`
+          return acc
+        }, ``)
+        qb.whereRaw(raw)
+      }
+
+      if (query.sorting) query.sorting.forEach(({ field, direction }) => qb.orderBy(String(field), direction))
+
+      if (query.paging) {
+        if (query.paging.limit) qb.limit(query.paging.limit)
+        if (query.paging.offset) qb.offset(query.paging.offset)
+      }
+    })
 
     const count = await this.query.count().then(([{ count }]) => count)
     return { count, data }
