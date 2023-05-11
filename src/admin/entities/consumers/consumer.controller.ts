@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Inject, Param, Post, Put, Query, Response } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
-import { Response as ResponseType } from 'express'
+import { Response as IExpressResponse } from 'express'
 
 import { IQuery } from '../../../common/types'
 import { ApiCountRowsResponse } from '../../../decorators/responseCountRows.decorator'
@@ -19,7 +19,7 @@ export class AdminConsumersController {
   @ApiCountRowsResponse(Consumer)
   async findAndCountAll(
     @Query(new AdminPanelQueryTransformPipe()) query: IQuery<IConsumerModel>,
-    @Response() res: ResponseType
+    @Response() res: IExpressResponse
   ): Promise<ListResponse<Consumer>> {
     const result = await this.service.repository.findAndCountAll(query)
     res.set(`Content-Range`, result.count.toString())

@@ -1,54 +1,48 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { Expose } from 'class-transformer'
-import { IsBoolean, IsDate, IsString, ValidateIf } from 'class-validator'
+import { Exclude, Expose } from 'class-transformer'
+import { IsDate, ValidateIf } from 'class-validator'
 
 import { IGoogleProfileModel } from '../../models'
 
 export class GoogleProfile implements IGoogleProfileModel {
+  @Exclude()
+  data: string
+
   @Expose()
   @ApiProperty()
-  @IsString()
   id: string
 
   @Expose()
   @ApiProperty()
-  @IsString()
-  consumersId: string
+  consumerId: string
 
   @Expose()
   @ApiProperty()
-  @IsString()
-  email: string
-
-  @Expose()
-  @ApiProperty()
-  @IsBoolean()
   emailVerified: boolean
 
   @Expose()
-  @ApiProperty()
-  @IsString()
-  name: string
+  @ApiProperty({ default: null })
+  email: string = null
 
   @Expose()
-  @ApiProperty()
-  @IsString()
-  givenName: string
+  @ApiProperty({ default: null })
+  name: string = null
 
   @Expose()
-  @ApiProperty()
-  @IsString()
-  familyName: string
+  @ApiProperty({ default: null })
+  givenName: string = null
 
   @Expose()
-  @ApiProperty()
-  @IsString()
-  picture: string
+  @ApiProperty({ default: null })
+  familyName: string = null
 
   @Expose()
-  @ApiProperty()
-  @IsString()
-  organization: string
+  @ApiProperty({ default: null })
+  picture: string = null
+
+  @Expose()
+  @ApiProperty({ default: null })
+  organization: string = null
 
   @Expose()
   @ApiProperty()
@@ -61,8 +55,8 @@ export class GoogleProfile implements IGoogleProfileModel {
   updatedAt: Date
 
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ default: null })
   @IsDate()
   @ValidateIf(({ value }) => value != null)
-  deletedAt?: Date = null
+  deletedAt: Date = null
 }

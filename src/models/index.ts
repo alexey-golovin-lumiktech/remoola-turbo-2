@@ -1,5 +1,6 @@
 export * from './address.model'
 export * from './admin.model'
+export * from './base'
 export * from './billing-details.mode'
 export * from './consumer.model'
 export * from './google-profile.model'

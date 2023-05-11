@@ -1,26 +1,45 @@
-import { Inject, Injectable } from '@nestjs/common'
+import { Inject, Injectable, Logger } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 
 import { BaseService } from '../../../common/base.service'
-import { IConsumerModel } from '../../../models'
-import { GoogleProfilesRepository } from '../google-profiles/google-profiles.repository'
+import { IBaseModel, IConsumerModel } from '../../../models'
+import { AddressesService } from '../addresses/addresses.service'
+import { BillingDetailsService } from '../billing-details/billing-details.service'
 
 import { ConsumersRepository } from './consumers.repository'
 
 @Injectable()
 export class ConsumersService extends BaseService<IConsumerModel, ConsumersRepository> {
+  private readonly logger = new Logger(ConfigService.name)
+
   constructor(
-    @Inject(ConsumersRepository) consumerRepository: ConsumersRepository,
-    @Inject(GoogleProfilesRepository) private googleProfileRepository: GoogleProfilesRepository
+    @Inject(ConsumersRepository) repository: ConsumersRepository,
+    @Inject(BillingDetailsService) private readonly billingDetailsService: BillingDetailsService,
+    @Inject(AddressesService) private readonly addressesService: AddressesService
   ) {
-    super(consumerRepository)
+    super(repository)
   }
 
-  async findByEmail(email: string): Promise<IConsumerModel | null> {
-    const [consumer] = await this.repository.find({ filter: { email, deletedAt: null } })
-    if (consumer) {
-      const [profile] = await this.googleProfileRepository.find({ filter: { id: consumer.googleProfileId, deletedAt: null } })
-      if (profile) Object.assign(consumer, { picture: profile.picture })
+  getConsumerById(consumerId: string): Promise<IConsumerModel | null> {
+    return this.repository.findById(consumerId)
+  }
+
+  async upsertConsumer(dto: Omit<IConsumerModel, keyof IBaseModel>): Promise<IConsumerModel> {
+    const [exist] = await this.repository.find({ filter: { email: dto.email } })
+    const result = exist == null ? await this.repository.create(dto) : await this.repository.updateById(exist.id, dto)
+    if (exist == null) this.addInitialBillingDetails(result.id) //init empty billing detail for the newest consumer
+    return result
+  }
+
+  private async addInitialBillingDetails(consumerId: string) {
+    let billingDetails = await this.billingDetailsService.upsertBillingDetails({ consumerId })
+    if (billingDetails) {
+      const address = await this.addressesService.upsertAddress({ consumerId, billingDetailsId: billingDetails.id })
+      if (address) {
+        billingDetails = await this.billingDetailsService.upsertBillingDetails({ consumerId, addressId: address.id })
+        return { billingDetails, address }
+      }
     }
-    return consumer
+    throw new Error(`Initial billingDetails is not created`)
   }
 }

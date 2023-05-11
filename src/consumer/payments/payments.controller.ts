@@ -3,8 +3,8 @@ import { ApiTags } from '@nestjs/swagger'
 
 import { PaymentsService } from './payments.service'
 
-@ApiTags(`consumer`)
-@Controller(`consumer/payments`)
+@ApiTags(`consumers`)
+@Controller(`consumers/payments`)
 export class PaymentsController {
   constructor(@Inject(PaymentsService) private readonly service: PaymentsService) {}
 

@@ -24,6 +24,8 @@ module.exports = {
   },
   ignorePatterns: ['.eslintrc.js'],
   rules: {
+    'no-unused-vars': 'off',
+    "@typescript-eslint/no-unused-vars": ['error', { "ignoreRestSiblings": true }],
     'quotes': ['error', 'backtick'],
     '@typescript-eslint/semi': ['error', 'never'],
     '@typescript-eslint/interface-name-prefix': 'off',

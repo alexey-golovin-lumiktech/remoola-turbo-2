@@ -1,6 +1,6 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
+import { ApiProperty } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
-import { IsEmail, IsString, Matches } from 'class-validator'
+import { IsEmail, IsString, Matches, ValidateIf } from 'class-validator'
 
 import { constants, regexp } from '../../constants'
 import { IConsumerModel } from '../../models'
@@ -9,7 +9,7 @@ export type ICredentials = Pick<IConsumerModel, `email` | `password`>
 
 export class Credentials implements ICredentials {
   @Expose()
-  @ApiProperty({ example: `wirebill@admin.com` })
+  @ApiProperty({ example: `super.admin@wirebill.com` })
   @IsEmail({}, { message: constants.INVALID_EMAIL })
   email: string
 
@@ -24,17 +24,20 @@ export type ISignup = ICredentials & ConsumerModelSignupPick
 
 export class Signup extends Credentials implements ISignup {
   @Expose()
-  @ApiPropertyOptional()
+  @ApiProperty({ default: null })
   @IsString()
-  firstName?: string
+  @ValidateIf(({ value }) => (value == `` ? null : value))
+  firstName: string = null
 
   @Expose()
-  @ApiPropertyOptional()
+  @ApiProperty({ default: null })
   @IsString()
-  lastName?: string
+  @ValidateIf(({ value }) => (value == `` ? null : value))
+  lastName: string = null
 
   @Expose()
-  @ApiPropertyOptional()
+  @ApiProperty({ default: null })
   @IsString()
-  middleName?: string
+  @ValidateIf(({ value }) => (value == `` ? null : value))
+  middleName: string = null
 }

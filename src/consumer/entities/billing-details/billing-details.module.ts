@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common'
 
-import { BillingDetailsController } from './billing-details.controller'
+import { AddressesModule } from '../addresses/addresses.module'
+
 import { BillingDetailsRepository } from './billing-details.repository'
 import { BillingDetailsService } from './billing-details.service'
 
 @Module({
-  controllers: [BillingDetailsController],
+  imports: [AddressesModule],
   providers: [BillingDetailsService, BillingDetailsRepository],
   exports: [BillingDetailsService, BillingDetailsRepository]
 })

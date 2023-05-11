@@ -5,12 +5,12 @@ export interface IInvoiceItemModel extends IBaseModel {
 
   charges: number
   tax: number
-  description?: string
+  description: string | null
 }
 
 export class InvoiceItemModel extends BaseModel implements IInvoiceItemModel {
   invoiceId: string
   charges: number
   tax: number
-  description?: string
+  description: string | null
 }

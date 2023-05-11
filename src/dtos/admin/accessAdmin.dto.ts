@@ -1,16 +1,26 @@
 import { ApiProperty } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
-import { IsIn } from 'class-validator'
+import { IsIn, IsNotEmpty, IsString } from 'class-validator'
 
 import { adminType, adminTypes } from '../../models'
 import { ValueOf } from '../../shared-types'
-import { Access, IAccess } from '../common'
+import { IAccessRefresh } from '../common'
 
-export interface IAccessAdmin extends IAccess {
-  type: ValueOf<typeof adminType>
-}
+export type IAccessAdmin = IAccessRefresh & { type: ValueOf<typeof adminType> }
 
-export class AccessAdmin extends Access implements IAccessAdmin {
+export class AccessAdmin implements IAccessAdmin {
+  @Expose()
+  @ApiProperty({ example: `access-token-string`, default: null })
+  @IsString()
+  @IsNotEmpty()
+  accessToken: string
+
+  @Expose()
+  @ApiProperty({ example: `access-token-string`, default: null })
+  @IsString()
+  @IsNotEmpty()
+  refreshToken: string
+
   @Expose()
   @ApiProperty({ enum: adminTypes })
   @IsIn(adminTypes)

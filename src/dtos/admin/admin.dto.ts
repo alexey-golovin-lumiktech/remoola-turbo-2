@@ -44,7 +44,7 @@ export class Admin implements IAdminModel {
   @ApiPropertyOptional()
   @IsDate()
   @ValidateIf(({ value }) => value != null)
-  deletedAt?: Date = null
+  deletedAt: Date = null
 }
 
 export class CreateAdmin extends PickType(Admin, [`email`, `password`, `type`]) {}

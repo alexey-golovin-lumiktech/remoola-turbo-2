@@ -36,7 +36,8 @@ export class AuthService {
       if (!verified) throw new BadRequestException({ message: constants.INVALID_CREDENTIALS })
 
       const accessToken = this.generateToken(admin)
-      return { accessToken, type: admin.type }
+      const refreshToken = this.generateRefreshToken() //@TODO : need to store refresh token
+      return { accessToken, refreshToken: refreshToken.token, type: admin.type }
     } catch (error) {
       throw new HttpException(error.message || `Internal error`, HttpStatus.INTERNAL_SERVER_ERROR)
     }

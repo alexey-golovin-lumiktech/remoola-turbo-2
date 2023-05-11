@@ -3,26 +3,26 @@ import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { Response } from 'express'
 
 import { Credentials, Signup } from '../../dtos'
-import { AccessConsumer, ConsumerGoogleSignin } from '../../dtos/consumer'
+import { GoogleSignin, SigninResponse } from '../../dtos/consumer'
 
 import { AuthService } from './auth.service'
 
-@ApiTags(`consumer`)
-@Controller(`consumer/auth`)
+@ApiTags(`consumers`)
+@Controller(`consumers/auth`)
 export class AuthController {
   logger = new Logger(AuthController.name)
 
   constructor(@Inject(AuthService) private readonly service: AuthService) {}
 
   @Post(`/signin`)
-  @ApiOkResponse({ type: AccessConsumer, status: 200 })
-  signin(@Body() body: Credentials): Promise<AccessConsumer> {
+  @ApiOkResponse({ type: SigninResponse, status: 200 })
+  signin(@Body() body: Credentials): Promise<SigninResponse> {
     return this.service.signin(body)
   }
 
   @Post(`/google-signin`)
-  @ApiOkResponse({ type: AccessConsumer, status: 200 })
-  googleSignin(@Body() body: ConsumerGoogleSignin): Promise<AccessConsumer> {
+  @ApiOkResponse({ type: SigninResponse, status: 200 })
+  googleSignin(@Body() body: GoogleSignin): Promise<SigninResponse> {
     return this.service.googleSignin(body)
   }
 
@@ -34,10 +34,5 @@ export class AuthController {
   @Get(`/signup/verification`)
   signupCompletion(@Query(`token`) token: string, @Res() res: Response) {
     return this.service.signupCompletion(token, res)
-  }
-
-  @Get(`/random-pass`)
-  getRandomPassword(): Promise<string> {
-    return this.service.getRandomPassword()
   }
 }

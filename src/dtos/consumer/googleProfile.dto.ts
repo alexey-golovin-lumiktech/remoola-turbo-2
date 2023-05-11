@@ -3,59 +3,42 @@ import { Expose } from 'class-transformer'
 import { IsString } from 'class-validator'
 import { TokenPayload as ITokenPayload } from 'google-auth-library'
 
-export type ITokenPayloadPick = Pick<ITokenPayload, `email` | `email_verified` | `name` | `given_name` | `family_name` | `exp` | `picture`>
+export type ITokenPayloadPick = Pick<
+  ITokenPayload,
+  | `email` //
+  | `email_verified`
+  | `name`
+  | `given_name`
+  | `family_name`
+  | `picture`
+>
 
-export class TokenPayload implements ITokenPayloadPick {
-  @Expose()
-  public email?: string
+export class GoogleProfile {
+  emailVerified: boolean
 
-  @Expose()
-  public emailVerified?: boolean
-
-  @Expose()
-  public name?: string
-
-  @Expose()
-  public givenName?: string
-
-  @Expose()
-  public familyName?: string
-
-  @Expose()
-  public exp: number
-
-  @Expose()
-  public picture: string
-
-  @Expose()
-  public organization: string
+  email: string | null
+  name: string | null
+  givenName: string | null
+  familyName: string | null
+  picture: string | null
+  organization: string | null
 
   constructor(payload: ITokenPayload) {
-    this.email = payload.email
-    this.emailVerified = payload.email_verified
-    this.name = payload.name
-    this.givenName = payload.given_name
-    this.familyName = payload.family_name
-    this.picture = payload.picture
-    this.organization = payload.hd
+    this.emailVerified = Boolean(payload.email_verified)
+
+    this.email = payload.email ?? null
+    this.name = payload.name ?? null
+    this.givenName = payload.given_name ?? null
+    this.familyName = payload.family_name ?? null
+    this.picture = payload.picture ?? null
+    this.organization = payload.hd ?? null
   }
 }
-
-export class ConsumerGoogleProfile extends TokenPayload {
-  @Expose()
-  consumerId: string
-
-  constructor(consumerId: string, payload: ITokenPayload) {
-    super(payload)
-    this.consumerId = consumerId
-  }
-}
-
-export interface IConsumerGoogleSignin {
+export interface IGoogleSignin {
   credential: string
 }
 
-export class ConsumerGoogleSignin implements IConsumerGoogleSignin {
+export class GoogleSignin implements IGoogleSignin {
   @Expose()
   @ApiProperty()
   @IsString()

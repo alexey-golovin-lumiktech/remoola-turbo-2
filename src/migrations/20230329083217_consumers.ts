@@ -12,9 +12,9 @@ export async function up(knex: Knex): Promise<void> {
     table.uuid(`id`).primary().defaultTo(knex.raw(`uuid_generate_v4()`))
     table.string(`email`).unique().notNullable()
     table.boolean(`verified`).defaultTo(false).notNullable()
-    table.string(`password`).notNullable()
-    table.string(`salt`).notNullable()
 
+    table.string(`password`)
+    table.string(`salt`)
     table.string(`first_name`)
     table.string(`last_name`)
     table.string(`middle_name`)

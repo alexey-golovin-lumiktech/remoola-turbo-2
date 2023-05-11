@@ -1,23 +1,28 @@
 import { BaseModel, IBaseModel } from './base'
 
 export interface IGoogleProfileModel extends IBaseModel {
-  consumersId: string
-  email: string
+  consumerId: string
   emailVerified: boolean
-  name: string
-  givenName: string
-  familyName: string
-  picture: string
-  organization: string
+
+  email: string | null
+  name: string | null
+  givenName: string | null
+  familyName: string | null
+  picture: string | null
+  organization: string | null
+
+  data: string //JSONB all g-profile data
 }
 
 export class GoogleProfileModel extends BaseModel implements IGoogleProfileModel {
-  consumersId: string
-  email: string
+  consumerId: string
   emailVerified: boolean
-  name: string
-  givenName: string
-  familyName: string
-  picture: string
-  organization: string
+
+  email: string | null
+  name: string | null
+  givenName: string | null
+  familyName: string | null
+  picture: string | null
+  organization: string | null
+  data: string
 }

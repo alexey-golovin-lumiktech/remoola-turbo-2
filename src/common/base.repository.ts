@@ -2,7 +2,7 @@ import type { Knex as IKnex } from 'knex'
 import { Knex } from 'knex'
 
 import { IListResponse } from '../dtos'
-import { IBaseModel } from '../models/base'
+import { IBaseModel } from '../models'
 
 import { IFilter, IQuery } from './types'
 
@@ -17,8 +17,8 @@ export interface IBaseRepository<TModel> {
   update(filter: IFilter<TModel>, dto: Partial<TModel>): Promise<TModel[]>
   updateById(id: string, dto: Partial<TModel>): Promise<TModel | null>
 
-  delete(filter: IFilter<TModel>): Promise<TModel[]>
-  deleteById(id: string): Promise<TModel | null>
+  softDelete(filter: IFilter<TModel>): Promise<TModel[]>
+  softDeleteById(id: string): Promise<TModel | null>
 }
 
 export abstract class BaseRepository<TModel extends IBaseModel> implements IBaseRepository<TModel> {
@@ -40,7 +40,6 @@ export abstract class BaseRepository<TModel extends IBaseModel> implements IBase
       if (!filter) return
       const entries = Object.entries(filter)
       for (const entry of entries) {
-        if (!entry[0] || !entry[1]) continue
         const [column, value] = entry
         if (!this.columns.includes(column)) throw new Error(`Wrong call repository method`)
         q.andWhere({ [column]: value })
@@ -96,9 +95,9 @@ export abstract class BaseRepository<TModel extends IBaseModel> implements IBase
     return data
   }
 
-  async findById(id: string): Promise<TModel> {
+  async findById(id: string): Promise<TModel | null> {
     const [found] = await this.find({ filter: { id } })
-    return found
+    return found ?? null
   }
 
   update(filter: IFilter<TModel>, dto: Partial<TModel>): Promise<TModel[]> {
@@ -110,12 +109,12 @@ export abstract class BaseRepository<TModel extends IBaseModel> implements IBase
     return updated
   }
 
-  delete(filter: IFilter<TModel>): Promise<TModel[]> {
+  softDelete(filter: IFilter<TModel>): Promise<TModel[]> {
     return this.update(filter, { deletedAt: new Date() } as Partial<TModel>)
   }
 
-  async deleteById(id: string): Promise<TModel> {
-    const [deleted] = await this.delete({ id })
+  async softDeleteById(id: string): Promise<TModel> {
+    const [deleted] = await this.softDelete({ id })
     return deleted
   }
 
