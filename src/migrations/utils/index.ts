@@ -10,7 +10,7 @@ export const addNullableRef = (column: string, inTable: TableName) => (t: Knex.A
 }
 
 export const addNotNullableRef = (column: string, inTable: TableName) => (t: Knex.AlterTableBuilder) => {
-  t.uuid(column).nullable().references(`id`).inTable(inTable)
+  t.uuid(column).notNullable().references(`id`).inTable(inTable)
 }
 
 export const dropColumn = (column: string) => (t: Knex.AlterTableBuilder) => {
