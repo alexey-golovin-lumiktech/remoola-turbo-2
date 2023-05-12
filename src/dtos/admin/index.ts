@@ -1,5 +1,5 @@
-export * from './accessAdmin.dto'
+export * from './access-admin.dto'
 export * from './admin.dto'
 export * from './consumer.dto'
 export * from './credentials.dto'
-export * from './googleProfile.dto'
+export * from './google-profile.dto'

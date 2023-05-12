@@ -2,8 +2,8 @@ import { Body, Controller, Get, Inject, Param, Post, Put, Query, Response } from
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { Response as IExpressResponse } from 'express'
 
-import { IQuery } from '../../../common/types'
-import { ApiCountRowsResponse } from '../../../decorators/responseCountRows.decorator'
+import { IQuery } from '../../../common'
+import { ApiCountRowsResponse } from '../../../decorators/response-count-rows.decorator'
 import { Consumer, CreateConsumer, ListResponse, UpdateConsumer } from '../../../dtos'
 import { IConsumerModel } from '../../../models'
 import { AdminPanelQueryTransformPipe } from '../../pipes'

@@ -1,4 +1,4 @@
-import { getEnvPath } from '../common/getEnvPath'
+import { getEnvPath } from '../utils'
 
 export const constants = {
   INVALID_CREDENTIALS: `Invalid Credentials`,

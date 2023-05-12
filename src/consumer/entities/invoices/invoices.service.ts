@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common'
 
-import { BaseService } from '../../../common/base.service'
+import { BaseService } from '../../../common'
 import { IInvoiceModel } from '../../../models'
 import { InvoiceItemsService } from '../invoice-items/invoice-items.service'
 

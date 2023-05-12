@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common'
 
-import { BaseService } from '../../../common/base.service'
+import { BaseService } from '../../../common'
 import { Admin } from '../../../dtos'
 import { IAdminModel } from '../../../models'
 import { generatePasswordHash, generatePasswordHashSalt } from '../../../utils'

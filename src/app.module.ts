@@ -9,10 +9,10 @@ import * as knexfile from '../knexfile'
 import { AdminModule } from './admin/admin.module'
 import { ConsumerModule } from './consumer/consumer.module'
 import { LoggerMiddleware } from './middleware/logger.middleware'
-import { SharedModulesModule } from './shared-modules/sharedModules.module'
+import { SharedModulesModule } from './shared-modules/shared-modules.module'
 import { AppController } from './app.controller'
 import { constants } from './constants'
-import * as configValidation from './envsValidation.schema'
+import * as configValidation from './envs-validation.schema'
 
 @Module({
   imports: [

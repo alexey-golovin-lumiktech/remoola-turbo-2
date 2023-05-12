@@ -3,7 +3,7 @@ import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { Response as ResponseType } from 'express'
 
 import { AdminPanelQueryTransformPipe } from '../../../admin/pipes'
-import { IQuery } from '../../../common/types'
+import { IQuery } from '../../../common'
 import { ApiCountRowsResponse } from '../../../decorators'
 import { Admin, CreateAdmin, ListResponse, UpdateAdmin } from '../../../dtos'
 import { IAdminModel } from '../../../models'

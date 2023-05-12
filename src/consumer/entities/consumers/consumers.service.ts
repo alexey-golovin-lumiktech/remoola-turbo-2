@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 
-import { BaseService } from '../../../common/base.service'
+import { BaseService } from '../../../common'
 import { IBaseModel, IConsumerModel } from '../../../models'
 import { AddressesService } from '../addresses/addresses.service'
 import { BillingDetailsService } from '../billing-details/billing-details.service'

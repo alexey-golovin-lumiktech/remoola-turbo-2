@@ -1,2 +1,2 @@
 export * from './access.dto'
-export * from './listResponse.dto'
+export * from './list-response.dto'

@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common'
 
-import { BaseService } from '../../../common/base.service'
+import { BaseService } from '../../../common'
 import { Consumer } from '../../../dtos'
 import { IConsumerModel } from '../../../models'
 import { generatePasswordHash, generatePasswordHashSalt } from '../../../utils'

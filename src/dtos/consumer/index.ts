@@ -1,2 +1,2 @@
-export * from './accessConsumer.dto'
-export * from './googleProfile.dto'
+export * from './access-consumer.dto'
+export * from './google-profile.dto'

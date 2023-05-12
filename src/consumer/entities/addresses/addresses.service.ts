@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common'
 
-import { BaseService } from '../../../common/base.service'
+import { BaseService } from '../../../common'
 import { IAddressModel, IBaseModel } from '../../../models'
 
 import { AddressesRepository } from './addresses.repository'

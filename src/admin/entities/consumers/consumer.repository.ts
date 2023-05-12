@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { InjectKnex, Knex } from 'nestjs-knex'
 
-import { BaseRepository } from '../../../common/base.repository'
+import { BaseRepository } from '../../../common'
 import { IConsumerModel, TableName } from '../../../models'
 
 @Injectable()

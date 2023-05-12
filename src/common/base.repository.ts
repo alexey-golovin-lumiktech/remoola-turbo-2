@@ -4,7 +4,7 @@ import { Knex } from 'knex'
 import { IListResponse } from '../dtos'
 import { IBaseModel } from '../models'
 
-import { IFilter, IQuery } from './types'
+import { IFilter, IQuery } from './base.types'
 
 export interface IBaseRepository<TModel> {
   create(dto: Partial<TModel>): Promise<TModel>

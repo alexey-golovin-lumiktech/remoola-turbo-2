@@ -3,10 +3,10 @@ import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { Response as IExpressResponse } from 'express'
 
 import { AdminPanelQueryTransformPipe } from '../../../admin/pipes'
-import { IQuery } from '../../../common/types'
-import { ApiCountRowsResponse } from '../../../decorators/responseCountRows.decorator'
+import { IQuery } from '../../../common'
+import { ApiCountRowsResponse } from '../../../decorators/response-count-rows.decorator'
 import { ListResponse } from '../../../dtos'
-import { GoogleProfile } from '../../../dtos/admin/googleProfile.dto'
+import { GoogleProfile } from '../../../dtos/admin/google-profile.dto'
 import { IGoogleProfileModel } from '../../../models'
 
 import { GoogleProfilesService } from './google-profiles.service'

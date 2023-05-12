@@ -5,11 +5,11 @@ import { DocumentBuilder, SwaggerCustomOptions, SwaggerModule } from '@nestjs/sw
 import { classToPlain, plainToClass } from 'class-transformer'
 
 import { AdminModule } from './admin/admin.module'
-import { HttpExceptionFilter } from './common/httpException.filter'
-import { swaggerDocExpansion } from './common/types'
 import { ConsumerModule } from './consumer/consumer.module'
 import { AppModule } from './app.module'
+import { swaggerDocExpansion } from './common'
 import * as dtos from './dtos'
+import { HttpExceptionFilter } from './filters'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
