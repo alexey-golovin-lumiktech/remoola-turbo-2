@@ -6,7 +6,7 @@ import { OAuth2Client } from 'google-auth-library'
 import * as uuid from 'uuid'
 
 import { ISignup } from '../../dtos'
-import { GoogleProfile, IGoogleSignin, ISigninResponse } from '../../dtos/consumer'
+import { GoogleProfile, IGoogleSignin, SigninResponse } from '../../dtos/consumer'
 import { IBaseModel, IConsumerModel } from '../../models'
 import { MailingService } from '../../shared-modules/mailing/mailing.service'
 import * as utils from '../../utils'
@@ -30,7 +30,7 @@ export class AuthService {
     this.oAuth2Client = new OAuth2Client(this.audience, secret)
   }
 
-  /* OK !!! */ async googleSignin(body: IGoogleSignin): Promise<ISigninResponse> {
+  /* OK !!! */ async googleSignin(body: IGoogleSignin): Promise<SigninResponse> {
     try {
       const verified = await this.oAuth2Client.verifyIdToken({ idToken: body.credential })
       const rawGoogleProfile = new GoogleProfile(verified.getPayload())
@@ -42,17 +42,16 @@ export class AuthService {
 
       this.consumersService.repository.updateById(consumer.id, { googleProfileId: gProfile.id })
       const accessToken = this.generateToken(consumer)
-      return Object.assign(consumer, { googleProfileId: gProfile.id, accessToken, refreshToken: null })
+      return utils.toResponse(SigninResponse, Object.assign(consumer, { googleProfileId: gProfile.id, accessToken, refreshToken: null }))
     } catch (error) {
       throw new HttpException(error.message || `Internal error`, HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
 
-  async signin(identity: IConsumerModel): Promise<ISigninResponse> {
+  async signin(identity: IConsumerModel): Promise<SigninResponse> {
     const accessToken = this.generateToken(identity)
     const refreshToken = this.generateRefreshToken() //@TODO : need to store refresh token
-    const responseData = Object.assign(identity, { accessToken, refreshToken: refreshToken.token })
-    return responseData
+    return utils.toResponse(SigninResponse, Object.assign(identity, { accessToken, refreshToken: refreshToken.token }))
   }
 
   private extractConsumerData(dto: GoogleProfile): Omit<IConsumerModel, keyof IBaseModel> {
@@ -67,6 +66,8 @@ export class AuthService {
       salt: null,
       middleName: null,
       googleProfileId: null,
+      billingDetailsId: null,
+      addressId: null,
     }
   }
 
@@ -76,7 +77,20 @@ export class AuthService {
 
     const salt = utils.generatePasswordHashSalt()
     const hash = utils.generatePasswordHash({ password: body.password, salt })
-    const consumer = await this.consumersService.upsertConsumer({ ...body, verified: false, password: hash, salt, googleProfileId: null })
+    const consumer = await this.consumersService.upsertConsumer({
+      email: body.email,
+      firstName: body.firstName,
+      lastName: body.lastName,
+      middleName: body.middleName,
+      verified: false,
+      password: hash,
+      salt,
+
+      googleProfileId: null,
+      billingDetailsId: null,
+      addressId: null,
+    })
+
     const token = this.generateToken(consumer)
     this.mailingService.sendConsumerSignupCompletion({ email: body.email, token })
   }

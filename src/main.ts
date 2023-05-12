@@ -3,13 +3,14 @@ import { ConfigService } from '@nestjs/config'
 import { NestFactory, Reflector } from '@nestjs/core'
 import { JwtService } from '@nestjs/jwt'
 import { DocumentBuilder, SwaggerCustomOptions, SwaggerModule } from '@nestjs/swagger'
-import { instanceToPlain, plainToInstance } from 'class-transformer'
+import { classToPlain, plainToClass } from 'class-transformer'
 
 import { AdminModule } from './admin/admin.module'
 import { AdminsService } from './admin/entities/admins/admins.service'
 import { ConsumerModule } from './consumer/consumer.module'
 import { ConsumersService } from './consumer/entities/consumers/consumers.service'
 import { AuthGuard } from './guards/auth.guard'
+import { TransformResponseInterceptor } from './interceptors/response.interceptor'
 import { AppModule } from './app.module'
 import { swaggerDocExpansion } from './common'
 import * as dtos from './dtos'
@@ -38,17 +39,19 @@ async function bootstrap() {
   SwaggerModule.setup(`documentation`, app, document, options)
 
   app.enableCors()
+  app.useGlobalFilters(new HttpExceptionFilter())
 
   const reflector = app.get(Reflector)
   const jwtService = app.get(JwtService)
   const consumersService = app.get(ConsumersService)
   const adminsService = app.get(AdminsService)
   app.useGlobalGuards(new AuthGuard(reflector, jwtService, consumersService, adminsService))
+  app.useGlobalInterceptors(new TransformResponseInterceptor(reflector))
 
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
-      transformerPackage: { plainToClass: plainToInstance, classToPlain: instanceToPlain },
+      transformerPackage: { classToPlain, plainToClass },
       transformOptions: {
         excludeExtraneousValues: true,
         enableImplicitConversion: true,
@@ -57,7 +60,6 @@ async function bootstrap() {
       },
     }),
   )
-  app.useGlobalFilters(new HttpExceptionFilter())
 
   const configService = app.get(ConfigService)
   const PORT = configService.get<number>(`PORT`)

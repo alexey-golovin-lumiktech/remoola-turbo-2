@@ -6,10 +6,13 @@ export interface IConsumerModel extends IBaseModel {
 
   password: string | null
   salt: string | null
-  googleProfileId: string | null
   firstName: string | null
   lastName: string | null
   middleName: string | null
+
+  googleProfileId: string | null //relation
+  billingDetailsId: string | null //relation
+  addressId: string | null //relation
 }
 
 export class ConsumerModel extends BaseModel implements IConsumerModel {
@@ -18,8 +21,11 @@ export class ConsumerModel extends BaseModel implements IConsumerModel {
 
   password: string | null
   salt: string | null
-  googleProfileId: string | null
   firstName: string | null
   lastName: string | null
   middleName: string | null
+
+  googleProfileId: string | null //relation
+  billingDetailsId: string | null //relation
+  addressId: string | null //relation
 }

@@ -1,23 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { Exclude, Expose } from 'class-transformer'
+import { Expose } from 'class-transformer'
 
 import { IAddressModel, IBaseModel, IBillingDetailsModel } from 'src/models'
 
 export type IUpsertBillingDetails = Partial<Omit<IBillingDetailsModel, keyof IBaseModel>> & { consumerId: string }
-export type IBillingDetailsResponse = IBillingDetailsModel & { address: IAddressModel }
 
-export class BillingDetailsAddress implements IAddressModel {
-  @Exclude()
-  createdAt: Date
-  @Exclude()
-  updatedAt: Date
-  @Exclude()
-  deletedAt: Date
-  @Exclude()
-  billingDetailsId: string
-  @Exclude()
-  consumerId: string
+export type IAddressModelPick = Pick<IAddressModel, `id` | `city` | `country` | `line1` | `line2` | `postal_code` | `state`>
+export type IBillingDetailsModelPick = Pick<IBillingDetailsModel, `id` | `email` | `name` | `phone`>
+export type IBillingDetailsResponse = IBillingDetailsModelPick & { address: IAddressModelPick }
 
+export class BillingDetailsAddress implements IAddressModelPick {
   @Expose()
   @ApiProperty()
   id: string
@@ -47,18 +39,7 @@ export class BillingDetailsAddress implements IAddressModel {
   state: string = null
 }
 
-export class BillingDetailsResponse implements IBillingDetailsModel {
-  @Exclude()
-  createdAt: Date
-  @Exclude()
-  updatedAt: Date
-  @Exclude()
-  deletedAt: Date
-  @Exclude()
-  consumerId: string
-  @Exclude()
-  addressId: string
-
+export class BillingDetailsResponse implements IBillingDetailsResponse {
   @Expose()
   @ApiProperty()
   id: string

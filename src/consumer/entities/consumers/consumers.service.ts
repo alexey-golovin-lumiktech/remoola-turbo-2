@@ -27,16 +27,20 @@ export class ConsumersService extends BaseService<IConsumerModel, ConsumersRepos
   async upsertConsumer(dto: Omit<IConsumerModel, keyof IBaseModel>): Promise<IConsumerModel> {
     const [exist] = await this.repository.find({ filter: { email: dto.email } })
     const result = exist == null ? await this.repository.create(dto) : await this.repository.updateById(exist.id, dto)
-    if (exist == null) this.addInitialBillingDetails(result.id) //init empty billing detail for the newest consumer
+    if (exist == null) this.addInitialBillingDetails(result) //init empty billing detail for the newest consumer
     return result
   }
 
-  private async addInitialBillingDetails(consumerId: string) {
-    let billingDetails = await this.billingDetailsService.upsertBillingDetails({ consumerId })
+  private async addInitialBillingDetails(consumer: IConsumerModel) {
+    const { id: consumerId, email, firstName, lastName } = consumer
+    const name = `${firstName} ${lastName}`
+
+    let billingDetails = await this.billingDetailsService.upsertBillingDetails({ consumerId, email, name })
     if (billingDetails) {
       const address = await this.addressesService.upsertAddress({ consumerId, billingDetailsId: billingDetails.id })
       if (address) {
         billingDetails = await this.billingDetailsService.upsertBillingDetails({ consumerId, addressId: address.id })
+        this.repository.updateById(consumerId, { billingDetailsId: billingDetails.id })
         return { billingDetails, address }
       }
     }

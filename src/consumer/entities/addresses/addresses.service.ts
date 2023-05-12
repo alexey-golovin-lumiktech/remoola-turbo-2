@@ -18,7 +18,7 @@ export class AddressesService extends BaseService<IAddressModel, AddressesReposi
     return result
   }
 
-  async getAddress(filter: { consumerId: string; billingDetailsId: string }) {
+  async getAddress(filter: { consumerId: string; billingDetailsId: string }): Promise<IAddressModel> {
     const [result] = await this.repository.find({ filter })
     return result ?? null
   }

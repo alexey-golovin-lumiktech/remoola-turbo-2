@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common'
 
 import { BaseService } from '../../../common'
-import { IAddressModel, IBaseModel, IBillingDetailsModel } from '../../../models'
+import { IBaseModel, IBillingDetailsModel } from '../../../models'
 import { AddressesService } from '../addresses/addresses.service'
 
 import { BillingDetailsRepository } from './billing-details.repository'
@@ -29,10 +29,6 @@ export class BillingDetailsService extends BaseService<IBillingDetailsModel, Bil
     const [billingDetails] = await this.repository.find({ filter })
     if (!billingDetails) return null
     const address = await this.addressesService.getAddress(Object.assign(filter, { billingDetailsId: billingDetails.id }))
-    return this.buildStripeLikeBillingDetails(billingDetails, address)
-  }
-
-  private buildStripeLikeBillingDetails(billingDetails: IBillingDetailsModel, address: IAddressModel) {
     return Object.assign(billingDetails, { address })
   }
 }

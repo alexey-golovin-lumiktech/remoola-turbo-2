@@ -1,3 +1,4 @@
+import { ClassConstructor, plainToInstance } from 'class-transformer'
 import * as crypto from 'crypto'
 import { existsSync } from 'fs'
 import { resolve } from 'path'
@@ -54,4 +55,9 @@ export function getEnvPath(dest: string): string {
   if (!existsSync(filePath)) filePath = fallback
 
   return filePath
+}
+
+export const toResponse = <T, V>(cls: ClassConstructor<T>, data: V | V[]) => {
+  const opts = { excludeExtraneousValues: true, enableImplicitConversion: true, exposeDefaultValues: true, exposeUnsetFields: true }
+  return plainToInstance(cls, data, opts)
 }
