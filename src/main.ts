@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config'
 import { NestFactory, Reflector } from '@nestjs/core'
 import { JwtService } from '@nestjs/jwt'
 import { DocumentBuilder, SwaggerCustomOptions, SwaggerModule } from '@nestjs/swagger'
-import { classToPlain, plainToClass } from 'class-transformer'
+import { instanceToPlain, plainToInstance } from 'class-transformer'
 
 import { AdminModule } from './admin/admin.module'
 import { AdminsService } from './admin/entities/admins/admins.service'
@@ -48,7 +48,7 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
-      transformerPackage: { plainToClass: plainToClass, classToPlain: classToPlain },
+      transformerPackage: { plainToClass: plainToInstance, classToPlain: instanceToPlain },
       transformOptions: {
         excludeExtraneousValues: true,
         enableImplicitConversion: true,

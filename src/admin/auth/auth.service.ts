@@ -44,7 +44,7 @@ export class AuthService {
   }
 
   private generateToken(admin: IAdminModel): string {
-    const payload = { email: admin.email, id: admin.id }
+    const payload = { email: admin.email, identityId: admin.id }
     const options = {
       secret: this.configService.get<string>(`JWT_SECRET`),
       expiresIn: this.configService.get<string>(`JWT_ACCESS_TOKEN_EXPIRES_IN`),

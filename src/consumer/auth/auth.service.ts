@@ -1,12 +1,11 @@
-import { BadRequestException, HttpException, HttpStatus, Inject, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { Response } from 'express'
 import { OAuth2Client } from 'google-auth-library'
 import * as uuid from 'uuid'
 
-import { constants } from '../../constants'
-import { ICredentials, ISignup } from '../../dtos'
+import { ISignup } from '../../dtos'
 import { GoogleProfile, IGoogleSignin, ISigninResponse } from '../../dtos/consumer'
 import { IBaseModel, IConsumerModel } from '../../models'
 import { MailingService } from '../../shared-modules/mailing/mailing.service'
@@ -49,24 +48,11 @@ export class AuthService {
     }
   }
 
-  async signin(body: ICredentials): Promise<ISigninResponse> {
-    try {
-      const [consumer] = await this.consumersService.repository.find({ filter: { email: body.email } })
-      if (!consumer) throw new NotFoundException({ message: constants.NOT_FOUND })
-      if (!consumer.password && !consumer.salt) throw new BadRequestException({ message: constants.PASSWORD_NOT_SET_YET })
-
-      const params = { incomingPass: body.password, password: consumer.password, salt: consumer.salt }
-      const isValidPassword = await utils.validatePassword(params)
-      if (!isValidPassword) throw new BadRequestException({ message: constants.INVALID_PASSWORD })
-
-      const accessToken = this.generateToken(consumer)
-      const refreshToken = this.generateRefreshToken() //@TODO : need to store refresh token
-      return Object.assign(consumer, { accessToken, refreshToken: refreshToken.token })
-    } catch (error) {
-      const message = error.message ?? `Internal error`
-      const status = error.status ?? HttpStatus.INTERNAL_SERVER_ERROR
-      throw new HttpException(message, status)
-    }
+  async signin(identity: IConsumerModel): Promise<ISigninResponse> {
+    const accessToken = this.generateToken(identity)
+    const refreshToken = this.generateRefreshToken() //@TODO : need to store refresh token
+    const responseData = Object.assign(identity, { accessToken, refreshToken: refreshToken.token })
+    return responseData
   }
 
   private extractConsumerData(dto: GoogleProfile): Omit<IConsumerModel, keyof IBaseModel> {
@@ -85,14 +71,14 @@ export class AuthService {
   }
 
   async signup(body: ISignup): Promise<void | never> {
-    const { email, password, firstName, lastName, middleName } = body
-    const [exist] = await this.consumersService.repository.find({ filter: { email } })
+    const [exist] = await this.consumersService.repository.find({ filter: { email: body.email } })
     if (exist) throw new BadRequestException(`This email is already exist`)
+
     const salt = utils.generatePasswordHashSalt()
-    const hash = utils.generatePasswordHash({ password, salt })
-    await this.consumersService.repository.create({ email, firstName, lastName, middleName, password: hash, salt })
-    const token = this.generateToken({ email })
-    this.mailingService.sendConsumerSignupCompletion({ email, token })
+    const hash = utils.generatePasswordHash({ password: body.password, salt })
+    const consumer = await this.consumersService.upsertConsumer({ ...body, verified: false, password: hash, salt, googleProfileId: null })
+    const token = this.generateToken(consumer)
+    this.mailingService.sendConsumerSignupCompletion({ email: body.email, token })
   }
 
   async signupCompletion(token: string, res: Response) {
@@ -110,7 +96,7 @@ export class AuthService {
   }
 
   private generateToken(consumer: IConsumerModel | { email: string }): string {
-    const payload = { email: consumer.email, ...((consumer as IConsumerModel).id && { consumerId: (consumer as IConsumerModel).id }) }
+    const payload = { email: consumer.email, ...((consumer as IConsumerModel).id && { identityId: (consumer as IConsumerModel).id }) }
     const options = {
       secret: this.configService.get<string>(`JWT_SECRET`),
       expiresIn: this.configService.get<string>(`JWT_ACCESS_TOKEN_EXPIRES_IN`),

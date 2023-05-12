@@ -6,6 +6,8 @@ import { AddressesService } from '../addresses/addresses.service'
 
 import { BillingDetailsRepository } from './billing-details.repository'
 
+import { IBillingDetailsResponse } from 'src/dtos/consumer/billing-details.dto'
+
 type IUpsertBillingDetails = Partial<Omit<IBillingDetailsModel, keyof IBaseModel>> & { consumerId: string }
 
 @Injectable()
@@ -23,7 +25,7 @@ export class BillingDetailsService extends BaseService<IBillingDetailsModel, Bil
     return result
   }
 
-  async getBillingDetails(filter: { consumerId: string }) {
+  async getBillingDetails(filter: { consumerId: string }): Promise<IBillingDetailsResponse> {
     const [billingDetails] = await this.repository.find({ filter })
     if (!billingDetails) return null
     const address = await this.addressesService.getAddress(Object.assign(filter, { billingDetailsId: billingDetails.id }))
@@ -31,7 +33,6 @@ export class BillingDetailsService extends BaseService<IBillingDetailsModel, Bil
   }
 
   private buildStripeLikeBillingDetails(billingDetails: IBillingDetailsModel, address: IAddressModel) {
-    const { addressId, ...rest } = billingDetails
-    return Object.assign(rest, { address })
+    return Object.assign(billingDetails, { address })
   }
 }

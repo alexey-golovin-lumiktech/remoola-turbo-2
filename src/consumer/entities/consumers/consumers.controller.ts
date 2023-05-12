@@ -1,9 +1,14 @@
-import { Controller, Get, Inject, NotFoundException, Param } from '@nestjs/common'
+import { Controller, Get, Inject } from '@nestjs/common'
 import { ApiTags } from '@nestjs/swagger'
 
 import { BillingDetailsService } from '../billing-details/billing-details.service'
 
 import { ConsumersService } from './consumers.service'
+
+import { SigninResponseConsumer } from 'src/dtos/consumer'
+import { BillingDetailsResponse } from 'src/dtos/consumer/billing-details.dto'
+import { ReqAuthIdentity } from 'src/guards/auth.guard'
+import { IConsumerModel } from 'src/models'
 
 @ApiTags(`consumers`)
 @Controller(`consumers`)
@@ -13,15 +18,13 @@ export class ConsumersController {
     @Inject(BillingDetailsService) private readonly billingDetailsService: BillingDetailsService,
   ) {}
 
-  @Get(`/:consumerId`)
-  async getConsumerById(@Param(`consumerId`) consumerId: string): Promise<any> {
-    const consumer = await this.service.getConsumerById(consumerId)
-    if (!consumer) throw new NotFoundException(`requested consumer does not exists`)
-    return consumer
+  @Get(`/`)
+  async getConsumerById(@ReqAuthIdentity() identity: IConsumerModel): Promise<SigninResponseConsumer> {
+    return identity
   }
 
-  @Get(`/:consumerId/billing-details`)
-  getBillingDetails(@Param(`consumerId`) consumerId: string): Promise<any> {
-    return this.billingDetailsService.getBillingDetails({ consumerId })
+  @Get(`/billing-details`)
+  getBillingDetails(@ReqAuthIdentity() identity: IConsumerModel): Promise<BillingDetailsResponse> {
+    return this.billingDetailsService.getBillingDetails({ consumerId: identity.id })
   }
 }
