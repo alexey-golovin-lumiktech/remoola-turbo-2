@@ -17,15 +17,15 @@ import { MailingService } from './mailing.service'
 
         const settings = {
           transport: { host, port, auth: { user, pass } },
-          defaults: { from }
+          defaults: { from },
         }
 
         return settings
       },
-      inject: [ConfigService]
-    })
+      inject: [ConfigService],
+    }),
   ],
   providers: [MailingService],
-  exports: [MailingService]
+  exports: [MailingService],
 })
 export class MailingModule {}

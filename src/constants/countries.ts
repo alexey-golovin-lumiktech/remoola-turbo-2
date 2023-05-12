@@ -251,5 +251,5 @@ export const countryCode = {
   WesternSahara: `EH`,
   Yemen: `YE`,
   Zambia: `ZM`,
-  Zimbabwe: `ZW`
+  Zimbabwe: `ZW`,
 } as const

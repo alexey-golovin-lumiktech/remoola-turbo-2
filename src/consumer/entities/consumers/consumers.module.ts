@@ -12,6 +12,6 @@ import { ConsumersService } from './consumers.service'
   imports: [GoogleProfilesModule, BillingDetailsModule, AddressesModule],
   controllers: [ConsumersController],
   providers: [ConsumersService, ConsumersRepository],
-  exports: [ConsumersService, ConsumersRepository]
+  exports: [ConsumersService, ConsumersRepository],
 })
 export class ConsumersModule {}

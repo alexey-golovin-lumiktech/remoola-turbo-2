@@ -10,6 +10,6 @@ import { AdminConsumersService } from './consumer.service'
   imports: [GoogleProfilesModule],
   controllers: [AdminConsumersController],
   providers: [AdminConsumersService, AdminConsumersRepository],
-  exports: [AdminConsumersService, AdminConsumersRepository]
+  exports: [AdminConsumersService, AdminConsumersRepository],
 })
 export class ConsumersModule {}

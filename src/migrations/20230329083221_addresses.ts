@@ -8,7 +8,7 @@ export async function up(knex: Knex): Promise<void> {
   const exist = await knex.schema.hasTable(tableName)
   if (exist) return
 
-  return knex.schema.createTable(tableName, (table) => {
+  return knex.schema.createTable(tableName, table => {
     table.uuid(`id`).primary().defaultTo(knex.raw(`uuid_generate_v4()`))
 
     table.string(`city`)

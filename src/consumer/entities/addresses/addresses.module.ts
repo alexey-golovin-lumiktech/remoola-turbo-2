@@ -5,6 +5,6 @@ import { AddressesService } from './addresses.service'
 
 @Module({
   providers: [AddressesService, AddressesRepository],
-  exports: [AddressesService, AddressesRepository]
+  exports: [AddressesService, AddressesRepository],
 })
 export class AddressesModule {}

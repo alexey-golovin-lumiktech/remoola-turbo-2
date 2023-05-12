@@ -37,7 +37,7 @@ export const generateStrongPassword = (): string => {
       upperKey: getRandomValue(upperChars),
       intKey: getRandomValue(keyListInt),
       specKey: getRandomValue(keyListSpec),
-      lowerKey: getRandomValue(lowerChars)
+      lowerKey: getRandomValue(lowerChars),
     }
     password.push(...Object.values(randomValue))
   }

@@ -7,6 +7,6 @@ import { GoogleProfilesService } from './google-profiles.service'
 @Module({
   controllers: [GoogleProfilesController],
   providers: [GoogleProfilesService, GoogleProfilesRepository],
-  exports: [GoogleProfilesService, GoogleProfilesRepository]
+  exports: [GoogleProfilesService, GoogleProfilesRepository],
 })
 export class GoogleProfilesModule {}

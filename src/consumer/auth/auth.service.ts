@@ -24,7 +24,7 @@ export class AuthService {
     @Inject(GoogleProfilesService) private readonly googleProfileService: GoogleProfilesService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    private readonly mailingService: MailingService
+    private readonly mailingService: MailingService,
   ) {
     const secret = this.configService.get<string>(`GOOGLE_CLIENT_SECRET`)
     this.audience = this.configService.get<string>(`GOOGLE_CLIENT_ID`)
@@ -80,7 +80,7 @@ export class AuthService {
       password: null,
       salt: null,
       middleName: null,
-      googleProfileId: null
+      googleProfileId: null,
     }
   }
 
@@ -113,7 +113,7 @@ export class AuthService {
     const payload = { email: consumer.email, ...((consumer as IConsumerModel).id && { consumerId: (consumer as IConsumerModel).id }) }
     const options = {
       secret: this.configService.get<string>(`JWT_SECRET`),
-      expiresIn: this.configService.get<string>(`JWT_ACCESS_TOKEN_EXPIRES_IN`)
+      expiresIn: this.configService.get<string>(`JWT_ACCESS_TOKEN_EXPIRES_IN`),
     }
     return this.jwtService.sign(payload, options)
   }
@@ -122,7 +122,7 @@ export class AuthService {
     const payload = { tokenUuid: uuid.v4(), type: `refresh` }
     const options = {
       secret: this.configService.get<string>(`JWT_SECRET`),
-      expiresIn: this.configService.get<string>(`JWT_REFRESH_TOKEN_EXPIRES_IN`)
+      expiresIn: this.configService.get<string>(`JWT_REFRESH_TOKEN_EXPIRES_IN`),
     }
     return { tokenUuid: payload.tokenUuid, token: this.jwtService.sign(payload, options) }
   }

@@ -18,7 +18,7 @@ import { PaymentsModule } from './payments/payments.module'
     AddressesModule,
     BillingDetailsModule,
     InvoicesModule,
-    InvoiceItemsModule
-  ]
+    InvoiceItemsModule,
+  ],
 })
 export class ConsumerModule {}

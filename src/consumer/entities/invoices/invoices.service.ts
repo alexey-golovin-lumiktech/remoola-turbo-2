@@ -10,7 +10,7 @@ import { InvoicesRepository } from './invoices.repository'
 export class InvoicesService extends BaseService<IInvoiceModel, InvoicesRepository> {
   constructor(
     @Inject(InvoicesRepository) repo: InvoicesRepository,
-    @Inject(InvoiceItemsService) private readonly invoiceItemsService: InvoiceItemsService
+    @Inject(InvoiceItemsService) private readonly invoiceItemsService: InvoiceItemsService,
   ) {
     super(repo)
   }

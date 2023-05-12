@@ -14,8 +14,8 @@ export async function seed(knex: Knex): Promise<void> {
       email: `super.admin@wirebill.com`,
       type: adminType.super,
       salt: salt,
-      password: hash
-    }
+      password: hash,
+    },
   ]
 
   await knex(`admins`).insert(data)

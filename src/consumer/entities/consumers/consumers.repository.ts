@@ -18,7 +18,7 @@ export class ConsumersRepository extends BaseRepository<IConsumerModel> {
     @Inject(AddressesRepository) private readonly addressesRepository: AddressesRepository,
     @Inject(BillingDetailsRepository) private readonly billingDetailsRepository: BillingDetailsRepository,
     @Inject(GoogleProfilesRepository) private readonly googleProfilesRepository: GoogleProfilesRepository,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
   ) {
     super(knex, TableName.Consumers)
     this.mode = this.configService.get<string>(`NODE_ENV`)

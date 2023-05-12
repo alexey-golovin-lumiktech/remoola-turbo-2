@@ -12,7 +12,7 @@ import { AdminConsumersRepository } from './consumer.repository'
 export class AdminConsumersService extends BaseService<IConsumerModel, AdminConsumersRepository> {
   constructor(
     @Inject(AdminConsumersRepository) consumersRepository: AdminConsumersRepository,
-    @Inject(GoogleProfilesService) private readonly profileService: GoogleProfilesService
+    @Inject(GoogleProfilesService) private readonly profileService: GoogleProfilesService,
   ) {
     super(consumersRepository)
   }

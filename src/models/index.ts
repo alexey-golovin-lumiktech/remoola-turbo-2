@@ -14,5 +14,5 @@ export const TableName = {
   Addresses: `addresses`,
   BillingDetails: `billing_details`,
   Invoices: `invoices`,
-  InvoiceItems: `invoice_items`
+  InvoiceItems: `invoice_items`,
 } as const

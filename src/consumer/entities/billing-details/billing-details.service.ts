@@ -12,7 +12,7 @@ type IUpsertBillingDetails = Partial<Omit<IBillingDetailsModel, keyof IBaseModel
 export class BillingDetailsService extends BaseService<IBillingDetailsModel, BillingDetailsRepository> {
   constructor(
     @Inject(BillingDetailsRepository) repo: BillingDetailsRepository,
-    @Inject(AddressesService) private readonly addressesService: AddressesService
+    @Inject(AddressesService) private readonly addressesService: AddressesService,
   ) {
     super(repo)
   }

@@ -42,3 +42,7 @@ lerna-debug.log*
 /me*
 /yalc.lock
 /.yalc
+/tsconfig.build**
+/knexfile.d.ts
+/knexfile.js
+/knexfile.js.map

@@ -10,7 +10,7 @@ import { ConsumersService } from './consumers.service'
 export class ConsumersController {
   constructor(
     @Inject(ConsumersService) private readonly service: ConsumersService,
-    @Inject(BillingDetailsService) private readonly billingDetailsService: BillingDetailsService
+    @Inject(BillingDetailsService) private readonly billingDetailsService: BillingDetailsService,
   ) {}
 
   @Get(`/:consumerId`)

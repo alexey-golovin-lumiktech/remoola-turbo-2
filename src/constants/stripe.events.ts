@@ -60,7 +60,7 @@ export const stripeEvent = {
   chargeRefunded: `charge.refunded`,
   chargeRefundUpdated: `charge.refund.updated`,
   chargeDisputeCreated: `charge.dispute.created`,
-  chargeCaptured: `charge.captured`
+  chargeCaptured: `charge.captured`,
 } as const
 
 export type StripeEvent = typeof stripeEvent

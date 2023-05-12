@@ -18,11 +18,11 @@ import { AuthService } from './auth.service'
         const expiresIn = configService.get<string>(`JWT_ACCESS_TOKEN_EXPIRES_IN`)
         return { secret, signOptions: { expiresIn } }
       },
-      inject: [ConfigService]
-    })
+      inject: [ConfigService],
+    }),
   ],
   providers: [AuthService, AdminLocalStrategy, JwtStrategy],
   exports: [AuthService],
-  controllers: [AuthController]
+  controllers: [AuthController],
 })
 export class AuthModule {}

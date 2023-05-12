@@ -14,7 +14,7 @@ export class AuthService {
   constructor(
     @Inject(AdminsService) private readonly adminsService: AdminsService,
     private readonly jwtService: JwtService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
   ) {}
 
   async getAuthenticatedAdmin(email: string, password: string): Promise<IAdminModel> {
@@ -47,7 +47,7 @@ export class AuthService {
     const payload = { email: admin.email, id: admin.id }
     const options = {
       secret: this.configService.get<string>(`JWT_SECRET`),
-      expiresIn: this.configService.get<string>(`JWT_ACCESS_TOKEN_EXPIRES_IN`)
+      expiresIn: this.configService.get<string>(`JWT_ACCESS_TOKEN_EXPIRES_IN`),
     }
     return this.jwtService.sign(payload, options)
   }
@@ -56,7 +56,7 @@ export class AuthService {
     const payload = { tokenUuid: uuid.v4(), type: `refresh` }
     const options = {
       secret: this.configService.get<string>(`JWT_SECRET`),
-      expiresIn: this.configService.get<string>(`JWT_REFRESH_TOKEN_EXPIRES_IN`)
+      expiresIn: this.configService.get<string>(`JWT_REFRESH_TOKEN_EXPIRES_IN`),
     }
     return { tokenUuid: payload.tokenUuid, token: this.jwtService.sign(payload, options) }
   }

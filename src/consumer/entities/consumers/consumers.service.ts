@@ -15,7 +15,7 @@ export class ConsumersService extends BaseService<IConsumerModel, ConsumersRepos
   constructor(
     @Inject(ConsumersRepository) repository: ConsumersRepository,
     @Inject(BillingDetailsService) private readonly billingDetailsService: BillingDetailsService,
-    @Inject(AddressesService) private readonly addressesService: AddressesService
+    @Inject(AddressesService) private readonly addressesService: AddressesService,
   ) {
     super(repository)
   }

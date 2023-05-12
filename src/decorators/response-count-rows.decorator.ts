@@ -15,12 +15,12 @@ export const ApiCountRowsResponse = <TModelClass extends Type<any>>(model: TMode
               count: { type: `number` },
               data: {
                 type: `array`,
-                items: { $ref: getSchemaPath(model) }
-              }
-            }
-          }
-        ]
-      }
-    })
+                items: { $ref: getSchemaPath(model) },
+              },
+            },
+          },
+        ],
+      },
+    }),
   )
 }

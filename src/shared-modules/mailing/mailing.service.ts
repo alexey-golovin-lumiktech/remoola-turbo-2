@@ -21,7 +21,7 @@ export class MailingService {
   }
 
   private generateConfirmationEmailTemplate(token: string) {
-    const feLink = `http://localhost:8080/consumer/auth/signup/verification?token=${token}`
+    const feLink = `http://localhost:8080/consumers/auth/signup/verification?token=${token}`
     const html = `
     <table style="max-width:600px;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-style:italic;background:#3f3f3f;color:#ffffff;border-radius:20px;">
       <tbody><tr><td>

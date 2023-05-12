@@ -19,7 +19,7 @@ export class AdminConsumersController {
   @ApiCountRowsResponse(Consumer)
   async findAndCountAll(
     @Query(new AdminPanelQueryTransformPipe()) query: IQuery<IConsumerModel>,
-    @Response() res: IExpressResponse
+    @Response() res: IExpressResponse,
   ): Promise<ListResponse<Consumer>> {
     const result = await this.service.repository.findAndCountAll(query)
     res.set(`Content-Range`, result.count.toString())

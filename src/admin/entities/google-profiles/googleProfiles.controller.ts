@@ -20,7 +20,7 @@ export class GoogleProfilesController {
   @ApiCountRowsResponse(GoogleProfile)
   async findAndCountAll(
     @Query(new AdminPanelQueryTransformPipe()) query: IQuery<IGoogleProfileModel>,
-    @Response() res: IExpressResponse
+    @Response() res: IExpressResponse,
   ): Promise<ListResponse<GoogleProfile>> {
     const result = await this.service.repository.findAndCountAll(query)
     res.set(`Content-Range`, result.count.toString())

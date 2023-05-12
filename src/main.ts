@@ -1,11 +1,15 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { NestFactory } from '@nestjs/core'
+import { NestFactory, Reflector } from '@nestjs/core'
+import { JwtService } from '@nestjs/jwt'
 import { DocumentBuilder, SwaggerCustomOptions, SwaggerModule } from '@nestjs/swagger'
 import { classToPlain, plainToClass } from 'class-transformer'
 
 import { AdminModule } from './admin/admin.module'
+import { AdminsService } from './admin/entities/admins/admins.service'
 import { ConsumerModule } from './consumer/consumer.module'
+import { ConsumersService } from './consumer/entities/consumers/consumers.service'
+import { AuthGuard } from './guards/auth.guard'
 import { AppModule } from './app.module'
 import { swaggerDocExpansion } from './common'
 import * as dtos from './dtos'
@@ -14,7 +18,7 @@ import { HttpExceptionFilter } from './filters'
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     rawBody: true,
-    cors: { origin: true, exposedHeaders: [`Content-Range`, `Content-Type`], credentials: true }
+    cors: { origin: true, exposedHeaders: [`Content-Range`, `Content-Type`], credentials: true },
   })
 
   const customSiteTitle = `Wirebill`
@@ -28,12 +32,19 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config, {
     deepScanRoutes: true,
     include: [AdminModule, ConsumerModule],
-    extraModels: Object.values(dtos)
+    extraModels: Object.values(dtos),
   })
   const options: SwaggerCustomOptions = { swaggerOptions: { docExpansion: swaggerDocExpansion.None }, customSiteTitle }
   SwaggerModule.setup(`documentation`, app, document, options)
 
   app.enableCors()
+
+  const reflector = app.get(Reflector)
+  const jwtService = app.get(JwtService)
+  const consumersService = app.get(ConsumersService)
+  const adminsService = app.get(AdminsService)
+  app.useGlobalGuards(new AuthGuard(reflector, jwtService, consumersService, adminsService))
+
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
@@ -42,9 +53,9 @@ async function bootstrap() {
         excludeExtraneousValues: true,
         enableImplicitConversion: true,
         exposeDefaultValues: true,
-        exposeUnsetFields: true
-      }
-    })
+        exposeUnsetFields: true,
+      },
+    }),
   )
   app.useGlobalFilters(new HttpExceptionFilter())
 

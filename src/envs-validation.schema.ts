@@ -37,5 +37,5 @@ export const validationSchema = Joi.object({
   NODEMAILER_SMTP_DEFAULT_FROM: Joi.string().required(),
 
   STRIPE_PUBLISHABLE_KEY: Joi.string().required(),
-  STRIPE_SECRET_KEY: Joi.string().required()
+  STRIPE_SECRET_KEY: Joi.string().required(),
 })

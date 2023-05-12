@@ -10,7 +10,7 @@ export class LoggerMiddleware implements NestMiddleware {
         method: req.method,
         url: req.originalUrl,
         body: req.body,
-        caller: req.headers.origin ?? req.headers.referer ?? `unknown`
+        caller: req.headers.origin ?? req.headers.referer ?? `unknown`,
       })
     }
     next()

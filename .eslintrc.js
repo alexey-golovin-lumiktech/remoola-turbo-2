@@ -1,38 +1,40 @@
 module.exports = {
-  parser: '@typescript-eslint/parser',
+  parser: `@typescript-eslint/parser`,
   parserOptions: {
-    project: 'tsconfig.json',
+    project: [`./tsconfig.json`],
     tsconfigRootDir: __dirname,
-    sourceType: 'module',
+    sourceType: `module`,
   },
-  plugins: [`import`, `simple-import-sort`, '@typescript-eslint/eslint-plugin', 'prettier'],
+  plugins: [`import`, `simple-import-sort`, `@typescript-eslint/eslint-plugin`, `prettier`],
   settings: {
     'import/resolver': {
-      node: { paths: [`src`], extensions: [`.js`, `.jsx`, `.ts`, `.tsx`] },
+      node: {
+        paths: [`.`],
+        extensions: [`.js`, `.ts`, `.json`],
+      },
     },
   },
   extends: [
     `plugin:import/recommended`,
     `plugin:import/typescript`,
-    'plugin:@typescript-eslint/recommended',
-    'plugin:prettier/recommended',
+    `plugin:@typescript-eslint/recommended`,
+    `plugin:prettier/recommended`,
   ],
   root: true,
   env: {
     node: true,
     jest: true,
   },
-  ignorePatterns: ['.eslintrc.js'],
   rules: {
-    'no-unused-vars': 'off',
-    "@typescript-eslint/no-unused-vars": ['error', { "ignoreRestSiblings": true }],
-    'quotes': ['error', 'backtick'],
-    '@typescript-eslint/semi': ['error', 'never'],
-    '@typescript-eslint/interface-name-prefix': 'off',
-    '@typescript-eslint/explicit-function-return-type': 'off',
-    '@typescript-eslint/explicit-module-boundary-types': 'off',
-    '@typescript-eslint/no-explicit-any': 'off',
-    '@typescript-eslint/ban-types': 'off',
+    'no-unused-vars': `off`,
+    '@typescript-eslint/no-unused-vars': [`error`, { ignoreRestSiblings: true }],
+    quotes: [`error`, `backtick`],
+    '@typescript-eslint/semi': [`error`, `never`],
+    '@typescript-eslint/interface-name-prefix': `off`,
+    '@typescript-eslint/explicit-function-return-type': `off`,
+    '@typescript-eslint/explicit-module-boundary-types': `off`,
+    '@typescript-eslint/no-explicit-any': `off`,
+    '@typescript-eslint/ban-types': `off`,
     'simple-import-sort/imports': [
       `error`,
       {
@@ -43,6 +45,7 @@ module.exports = {
           [`^\\.\\.(?!/?$)`, `^\\.\\./?$`], // Parent imports. Put ".." last.
           [`^\\./(?=.*/)(?!/?$)`, `^\\.(?!/?$)`, `^\\./?$`], // Other relative imports. Put same-folder imports and "." last.
           [`^.+\\.?(css)$`], // Style imports.
+          [`^src`],
         ],
       },
     ],
@@ -50,12 +53,17 @@ module.exports = {
     'import/newline-after-import': [`error`, { count: 1 }],
     'import/namespace': [2, { allowComputed: true }],
     'prettier/prettier': [
-      'error', {
-        semi: false,
+      `error`,
+      {
+        trailingComma: `all`,
+        singleQuote: true,
+        tabWidth: 2,
+        endOfLine: `auto`,
         printWidth: 140,
-        trailingComma: 'none',
-        singleQuote: true
-      }
-    ]
+        semi: false,
+        arrowParens: `avoid`,
+        proseWrap: `preserve`,
+      },
+    ],
   },
-};
+}

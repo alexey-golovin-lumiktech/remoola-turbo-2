@@ -21,13 +21,13 @@ import * as configValidation from './envs-validation.schema'
       isGlobal: true,
       envFilePath: [constants.ENV_FILE_PATH],
       validationSchema: configValidation.validationSchema,
-      validationOptions: configValidation.validationOptions
+      validationOptions: configValidation.validationOptions,
     }),
     KnexModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
         return { config: knexfile[configService.get<string>(`NODE_ENV`)] }
-      }
+      },
     }),
     StripeModule.forRootAsync({
       inject: [ConfigService],
@@ -35,15 +35,15 @@ import * as configValidation from './envs-validation.schema'
         const apiKey = configService.get<string>(`STRIPE_SECRET_KEY`)
         const apiVersion = `2022-11-15`
         return { apiKey, apiVersion }
-      }
+      },
     }),
     AdminModule,
     ConsumerModule,
-    SharedModulesModule
+    SharedModulesModule,
   ],
   controllers: [AppController],
   exports: [],
-  providers: []
+  providers: [],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

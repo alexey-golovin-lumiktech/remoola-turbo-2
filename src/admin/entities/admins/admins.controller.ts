@@ -19,7 +19,7 @@ export class AdminsController {
   @ApiCountRowsResponse(Admin)
   async findAndCountAll(
     @Query(new AdminPanelQueryTransformPipe()) query: IQuery<IAdminModel>,
-    @Response() res: ResponseType
+    @Response() res: ResponseType,
   ): Promise<ListResponse<Admin>> {
     const result = await this.service.repository.findAndCountAll(query)
     res.set(`Content-Range`, result.count.toString())

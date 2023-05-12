@@ -8,6 +8,6 @@ import { AdminsService } from './admins.service'
   imports: [],
   controllers: [AdminsController],
   providers: [AdminsService, AdminsRepository],
-  exports: [AdminsService, AdminsRepository]
+  exports: [AdminsService, AdminsRepository],
 })
 export class AdminsModule {}

@@ -19,5 +19,11 @@
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "noFallthroughCasesInSwitch": false
-  }
+  },
+  "include": [
+    ".eslintrc.js",
+    "src",
+    "knexfile.ts",
+    "test"
+  ],
 }

@@ -5,6 +5,6 @@ import { InvoiceItemsService } from './invoice-items.service'
 
 @Module({
   providers: [InvoiceItemsService, InvoiceItemsRepository],
-  exports: [InvoiceItemsService, InvoiceItemsRepository]
+  exports: [InvoiceItemsService, InvoiceItemsRepository],
 })
 export class InvoiceItemsModule {}

@@ -26,7 +26,7 @@ export class AdminPanelQueryTransformPipe implements PipeTransform {
 
         return acc
       },
-      { filter: null, paging: null, sorting: null }
+      { filter: null, paging: null, sorting: null },
     )
   }
 }

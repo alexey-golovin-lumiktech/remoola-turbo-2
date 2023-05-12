@@ -62,11 +62,11 @@ export abstract class BaseRepository<TModel extends IBaseModel> implements IBase
   }
 
   private makeSqlIn(arr: (string | number)[]): string {
-    return arr.map((x) => `'${x}'`).join(`,`)
+    return arr.map(x => `'${x}'`).join(`,`)
   }
 
   async findAndCountAll(query?: IQuery<TModel>): Promise<IListResponse<TModel>> {
-    const data = await this.query.modify((qb) => {
+    const data = await this.query.modify(qb => {
       if (query.filter) {
         const raw = Object.entries(query.filter).reduce((acc, [field, value]) => {
           if (Array.isArray(value) && typeof value != `string`) acc += `${field} IN(${this.makeSqlIn(value)})`

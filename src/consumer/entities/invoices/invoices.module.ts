@@ -10,6 +10,6 @@ import { InvoicesService } from './invoices.service'
   imports: [InvoiceItemsModule],
   controllers: [InvoicesController],
   providers: [InvoicesService, InvoicesRepository],
-  exports: [InvoicesService, InvoicesRepository]
+  exports: [InvoicesService, InvoicesRepository],
 })
 export class InvoicesModule {}
