@@ -1,11 +1,14 @@
-import { ApiProperty } from '@nestjs/swagger'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
+import { IsEmail } from 'class-validator'
+
+import * as constants from '../../constants'
 
 import { IAddressModel, IBaseModel, IBillingDetailsModel } from 'src/models'
 
 export type IUpsertBillingDetails = Partial<Omit<IBillingDetailsModel, keyof IBaseModel>> & { consumerId: string }
 
-export type IAddressModelPick = Pick<IAddressModel, `id` | `city` | `country` | `line1` | `line2` | `postal_code` | `state`>
+export type IAddressModelPick = Pick<IAddressModel, `id` | `city` | `country` | `line1` | `line2` | `postalCode` | `state`>
 export type IBillingDetailsModelPick = Pick<IBillingDetailsModel, `id` | `email` | `name` | `phone`>
 export type IBillingDetailsResponse = IBillingDetailsModelPick & { address: IAddressModelPick }
 
@@ -15,28 +18,28 @@ export class BillingDetailsAddress implements IAddressModelPick {
   id: string
 
   @Expose()
-  @ApiProperty({ default: null })
-  city: string = null
+  @ApiPropertyOptional({ default: null })
+  city?: string
 
   @Expose()
-  @ApiProperty({ default: null })
-  country: string = null
+  @ApiPropertyOptional({ default: null })
+  country?: string
 
   @Expose()
-  @ApiProperty({ default: null })
-  line1: string = null
+  @ApiPropertyOptional({ default: null })
+  line1?: string
 
   @Expose()
-  @ApiProperty({ default: null })
-  line2: string = null
+  @ApiPropertyOptional({ default: null })
+  line2?: string
 
   @Expose()
-  @ApiProperty({ default: null })
-  postal_code: string = null
+  @ApiPropertyOptional({ default: null })
+  postalCode?: string
 
   @Expose()
-  @ApiProperty({ default: null })
-  state: string = null
+  @ApiPropertyOptional({ default: null })
+  state?: string
 }
 
 export class BillingDetailsResponse implements IBillingDetailsResponse {
@@ -45,16 +48,17 @@ export class BillingDetailsResponse implements IBillingDetailsResponse {
   id: string
 
   @Expose()
-  @ApiProperty({ default: null })
-  email: string = null
+  @IsEmail({}, { message: constants.constants.INVALID_EMAIL })
+  @ApiPropertyOptional({ default: null })
+  email?: string
 
   @Expose()
-  @ApiProperty({ default: null })
-  name: string
+  @ApiPropertyOptional({ default: null })
+  name?: string
 
   @Expose()
-  @ApiProperty({ default: null })
-  phone: string = null
+  @ApiPropertyOptional({ default: null })
+  phone?: string
 
   @Expose()
   @ApiProperty({ default: null, type: BillingDetailsAddress })

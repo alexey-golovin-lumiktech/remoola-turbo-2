@@ -42,7 +42,8 @@ export class AuthService {
 
       this.consumersService.repository.updateById(consumer.id, { googleProfileId: gProfile.id })
       const accessToken = this.generateToken(consumer)
-      return utils.toResponse(SigninResponse, Object.assign(consumer, { googleProfileId: gProfile.id, accessToken, refreshToken: null }))
+      const refreshToken = this.generateRefreshToken() //@TODO : need to store refresh token
+      return utils.toResponse(SigninResponse, Object.assign(consumer, { googleProfileId: gProfile.id, accessToken, refreshToken }))
     } catch (error) {
       throw new HttpException(error.message || `Internal error`, HttpStatus.INTERNAL_SERVER_ERROR)
     }
@@ -61,13 +62,6 @@ export class AuthService {
       verified: dto.emailVerified,
       firstName: dto.givenName || fullName[0],
       lastName: dto.familyName || fullName[1],
-
-      password: null,
-      salt: null,
-      middleName: null,
-      googleProfileId: null,
-      billingDetailsId: null,
-      addressId: null,
     }
   }
 
@@ -85,10 +79,6 @@ export class AuthService {
       verified: false,
       password: hash,
       salt,
-
-      googleProfileId: null,
-      billingDetailsId: null,
-      addressId: null,
     })
 
     const token = this.generateToken(consumer)

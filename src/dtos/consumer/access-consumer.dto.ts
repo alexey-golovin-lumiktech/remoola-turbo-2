@@ -1,6 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
-import { IsNotEmpty, IsString } from 'class-validator'
 
 import { IConsumerModel } from '../../models'
 import { IAccessRefresh } from '../common'
@@ -26,32 +25,28 @@ export class SigninResponseConsumer implements ISigninResponseConsumer {
   email: string
 
   @Expose()
-  @ApiProperty({ default: null })
-  googleProfileId: string | null
+  @ApiPropertyOptional({ default: null })
+  googleProfileId?: string
 
   @Expose()
-  @ApiProperty({ default: null })
-  firstName: string | null
+  @ApiPropertyOptional({ default: null })
+  firstName?: string
 
   @Expose()
-  @ApiProperty({ default: null })
-  lastName: string | null
+  @ApiPropertyOptional({ default: null })
+  lastName?: string
 
   @Expose()
-  @ApiProperty({ default: null })
-  middleName: string | null
+  @ApiPropertyOptional({ default: null })
+  middleName?: string
 }
 
 export class SigninResponse extends SigninResponseConsumer implements ISigninResponse {
   @Expose()
-  @ApiProperty({ example: `access-token-string`, default: null })
-  @IsString()
-  @IsNotEmpty()
-  accessToken: string | null
+  @ApiProperty({ example: `access-token-string` })
+  accessToken: string
 
   @Expose()
-  @ApiProperty({ example: `access-token-string`, default: null })
-  @IsString()
-  @IsNotEmpty()
-  refreshToken: string | null
+  @ApiProperty({ example: `access-token-string` })
+  refreshToken: string
 }

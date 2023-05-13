@@ -4,28 +4,28 @@ export interface IConsumerModel extends IBaseModel {
   email: string
   verified: boolean
 
-  password: string | null
-  salt: string | null
-  firstName: string | null
-  lastName: string | null
-  middleName: string | null
+  password?: string
+  salt?: string
+  firstName?: string
+  lastName?: string
+  middleName?: string
 
-  googleProfileId: string | null //relation
-  billingDetailsId: string | null //relation
-  addressId: string | null //relation
+  googleProfileId?: string //relation
+  billingDetailsId?: string //relation
+  addressId?: string //relation
 }
 
 export class ConsumerModel extends BaseModel implements IConsumerModel {
   email: string
   verified: boolean
 
-  password: string | null
-  salt: string | null
-  firstName: string | null
-  lastName: string | null
-  middleName: string | null
+  password?: string
+  salt?: string
+  firstName?: string
+  lastName?: string
+  middleName?: string
 
-  googleProfileId: string | null //relation
-  billingDetailsId: string | null //relation
-  addressId: string | null //relation
+  googleProfileId?: string //relation
+  billingDetailsId?: string //relation
+  addressId?: string //relation
 }

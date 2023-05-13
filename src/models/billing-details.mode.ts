@@ -4,16 +4,16 @@ export interface IBillingDetailsModel extends IBaseModel {
   consumerId: string
   addressId: string
 
-  email: string | null
-  name: string | null
-  phone: string | null
+  email?: string
+  name?: string
+  phone?: string
 }
 
 export class BillingDetailsModel extends BaseModel implements IBillingDetailsModel {
   consumerId: string
   addressId: string
 
-  email: string | null
-  name: string | null
-  phone: string | null
+  email?: string
+  name?: string
+  phone?: string
 }

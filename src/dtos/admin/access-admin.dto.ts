@@ -10,13 +10,13 @@ export type IAccessAdmin = IAccessRefresh & { type: ValueOf<typeof adminType> }
 
 export class AccessAdmin implements IAccessAdmin {
   @Expose()
-  @ApiProperty({ example: `access-token-string`, default: null })
+  @ApiProperty({ example: `access-token-string` })
   @IsString()
   @IsNotEmpty()
   accessToken: string
 
   @Expose()
-  @ApiProperty({ example: `access-token-string`, default: null })
+  @ApiProperty({ example: `access-token-string` })
   @IsString()
   @IsNotEmpty()
   refreshToken: string

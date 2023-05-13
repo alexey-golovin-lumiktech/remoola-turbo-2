@@ -1,4 +1,4 @@
-import { ApiProperty, PickType } from '@nestjs/swagger'
+import { ApiProperty, ApiPropertyOptional, PickType } from '@nestjs/swagger'
 import { Exclude, Expose } from 'class-transformer'
 import { ValidateIf } from 'class-validator'
 
@@ -26,41 +26,41 @@ export class Consumer implements IConsumerModel {
   updatedAt: Date
 
   @Exclude()
-  @ApiProperty({ default: null })
-  password: string = null
+  @ApiPropertyOptional({ default: null })
+  password?: string
 
   @Exclude()
-  @ApiProperty({ default: null })
-  salt: string = null
+  @ApiPropertyOptional({ default: null })
+  salt?: string
 
   @Expose()
-  @ApiProperty({ default: null })
-  firstName: string = null
+  @ApiPropertyOptional({ default: null })
+  firstName?: string
 
   @Expose()
-  @ApiProperty({ default: null })
-  lastName: string = null
+  @ApiPropertyOptional({ default: null })
+  lastName?: string
 
   @Expose()
-  @ApiProperty({ default: null })
-  middleName: string = null
+  @ApiPropertyOptional({ default: null })
+  middleName?: string
 
   @Expose()
-  @ApiProperty({ default: null })
   @ValidateIf(({ value }) => value != null)
-  deletedAt: Date = null
+  @ApiPropertyOptional({ default: null })
+  deletedAt?: Date
 
   @Expose()
-  @ApiProperty({ default: null })
-  googleProfileId: string = null
+  @ApiPropertyOptional({ default: null })
+  googleProfileId?: string
 
   @Expose()
-  @ApiProperty({ default: null })
-  billingDetailsId: string = null
+  @ApiPropertyOptional({ default: null })
+  billingDetailsId?: string
 
   @Expose()
-  @ApiProperty({ default: null })
-  addressId: string = null
+  @ApiPropertyOptional({ default: null })
+  addressId?: string
 }
 
 export class CreateConsumer extends PickType(Consumer, [`email`, `password`, `verified`, `firstName`, `lastName`, `middleName`]) {}

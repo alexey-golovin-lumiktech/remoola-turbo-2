@@ -16,22 +16,22 @@ export type ITokenPayloadPick = Pick<
 export class GoogleProfile {
   emailVerified: boolean
 
-  email: string | null
-  name: string | null
-  givenName: string | null
-  familyName: string | null
-  picture: string | null
-  organization: string | null
+  email?: string
+  name?: string
+  givenName?: string
+  familyName?: string
+  picture?: string
+  organization?: string
 
   constructor(payload: ITokenPayload) {
     this.emailVerified = Boolean(payload.email_verified)
 
-    this.email = payload.email ?? null
-    this.name = payload.name ?? null
-    this.givenName = payload.given_name ?? null
-    this.familyName = payload.family_name ?? null
-    this.picture = payload.picture ?? null
-    this.organization = payload.hd ?? null
+    this.email = payload.email
+    this.name = payload.name
+    this.givenName = payload.given_name
+    this.familyName = payload.family_name
+    this.picture = payload.picture
+    this.organization = payload.hd
   }
 }
 export interface IGoogleSignin {

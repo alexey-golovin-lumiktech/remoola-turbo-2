@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import { Exclude, Expose } from 'class-transformer'
 import { IsDate, ValidateIf } from 'class-validator'
 
@@ -21,28 +21,28 @@ export class GoogleProfile implements IGoogleProfileModel {
   emailVerified: boolean
 
   @Expose()
-  @ApiProperty({ default: null })
-  email: string = null
+  @ApiPropertyOptional({ default: null })
+  email?: string
 
   @Expose()
-  @ApiProperty({ default: null })
-  name: string = null
+  @ApiPropertyOptional({ default: null })
+  name?: string
 
   @Expose()
-  @ApiProperty({ default: null })
-  givenName: string = null
+  @ApiPropertyOptional({ default: null })
+  givenName?: string
 
   @Expose()
-  @ApiProperty({ default: null })
-  familyName: string = null
+  @ApiPropertyOptional({ default: null })
+  familyName?: string
 
   @Expose()
-  @ApiProperty({ default: null })
-  picture: string = null
+  @ApiPropertyOptional({ default: null })
+  picture?: string
 
   @Expose()
-  @ApiProperty({ default: null })
-  organization: string = null
+  @ApiPropertyOptional({ default: null })
+  organization?: string
 
   @Expose()
   @ApiProperty()
@@ -55,8 +55,8 @@ export class GoogleProfile implements IGoogleProfileModel {
   updatedAt: Date
 
   @Expose()
-  @ApiProperty({ default: null })
   @IsDate()
   @ValidateIf(({ value }) => value != null)
-  deletedAt: Date = null
+  @ApiPropertyOptional({ default: null })
+  deletedAt?: Date
 }

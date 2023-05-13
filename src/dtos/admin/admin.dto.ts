@@ -7,23 +7,23 @@ import { ValueOf } from '../../shared-types'
 
 export class Admin implements IAdminModel {
   @Expose()
-  @ApiProperty()
   @IsString()
+  @ApiProperty()
   id: string
 
   @Expose()
-  @ApiProperty()
   @IsString()
+  @ApiProperty()
   email: string
 
   @Expose()
-  @ApiProperty({ enum: Object.keys(adminType) })
   @IsIn(Object.keys(adminType))
+  @ApiProperty({ enum: Object.keys(adminType) })
   type: ValueOf<typeof adminType>
 
   @Expose()
-  @ApiProperty()
   @IsString()
+  @ApiProperty()
   password: string
 
   @Exclude()
@@ -31,21 +31,21 @@ export class Admin implements IAdminModel {
   salt: string
 
   @Expose()
-  @ApiProperty()
   @IsDate()
+  @ApiProperty()
   createdAt: Date
 
   @Expose()
-  @ApiProperty()
   @IsDate()
+  @ApiProperty()
   updatedAt: Date
 
   @Expose()
-  @ApiPropertyOptional()
-  @IsDate()
   @ValidateIf(({ value }) => value != null)
-  deletedAt: Date = null
+  @IsDate()
+  @ApiPropertyOptional({ default: null })
+  deletedAt?: Date
 }
 
-export class CreateAdmin extends PickType(Admin, [`email`, `password`, `type`]) {}
+export class CreateAdmin extends PickType(Admin, [`email`, `password`, `type`] as const) {}
 export class UpdateAdmin extends CreateAdmin {}
