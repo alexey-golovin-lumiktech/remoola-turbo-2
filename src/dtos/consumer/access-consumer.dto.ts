@@ -8,7 +8,6 @@ export type ISigninResponseConsumer = Pick<
   IConsumerModel,
   | `id` //
   | `email`
-  | `googleProfileId`
   | `firstName`
   | `lastName`
   | `middleName`
@@ -23,10 +22,6 @@ export class SigninResponseConsumer implements ISigninResponseConsumer {
   @Expose()
   @ApiProperty()
   email: string
-
-  @Expose()
-  @ApiPropertyOptional({ default: null })
-  googleProfileId?: string
 
   @Expose()
   @ApiPropertyOptional({ default: null })
