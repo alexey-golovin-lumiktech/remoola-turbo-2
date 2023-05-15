@@ -11,7 +11,7 @@ export class AuthController {
   constructor(@Inject(AuthService) private readonly service: AuthService) {}
 
   @Post(`/login`)
-  @ApiOkResponse({ type: AccessAdmin, status: 200 })
+  @ApiOkResponse({ type: AccessAdmin })
   login(@Body() body: Credentials): Promise<AccessAdmin> {
     return this.service.login(body)
   }

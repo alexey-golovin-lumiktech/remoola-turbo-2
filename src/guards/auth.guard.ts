@@ -5,7 +5,7 @@ import { Request as IExpressRequest } from 'express'
 import { Observable } from 'rxjs'
 
 import { AdminsService } from 'src/admin/entities/admins/admins.service'
-import { ConsumersService } from 'src/consumer/entities/consumers/consumers.service'
+import { ConsumersService } from 'src/consumer/entities/consumer/consumer.service'
 import { IS_PUBLIC } from 'src/decorators'
 import { IAdminModel, IConsumerModel } from 'src/models'
 import { DeepPartialGeneric } from 'src/shared-types'
@@ -29,6 +29,7 @@ const messages = {
   INVALID_CREDENTIALS: `Invalid email or password`,
   INVALID_TOKEN: `Invalid token`,
   NO_IDENTITY: `No identity for given credentials`,
+  NOT_VERIFIED: `Identity is not verified. Check you email address`,
 } as const
 
 export class AuthGuard implements CanActivate {
@@ -72,6 +73,7 @@ export class AuthGuard implements CanActivate {
     const [admin] = await this.adminsService.repository.find({ filter: { email } })
     const identity = admin ?? consumer
     if (identity == null) return this.throwHandler(messages.NO_IDENTITY)
+    if ((identity as IConsumerModel).verified == false) return this.throwHandler(messages.NOT_VERIFIED)
 
     const isValidPassword = validatePassword({ incomingPass: password, password: identity.password ?? ``, salt: identity.salt ?? `` })
     if (!isValidPassword) return this.throwHandler(messages.INVALID_CREDENTIALS)

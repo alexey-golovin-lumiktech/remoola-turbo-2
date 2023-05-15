@@ -3,10 +3,11 @@ import { ConfigService } from '@nestjs/config'
 
 import { BaseService } from '../../../common'
 import { IBaseModel, IConsumerModel } from '../../../models'
-import { AddressesService } from '../addresses/addresses.service'
 import { BillingDetailsService } from '../billing-details/billing-details.service'
 
-import { ConsumersRepository } from './consumers.repository'
+import { ConsumersRepository } from './consumer.repository'
+
+type UpsertConsumer = Pick<IConsumerModel, `email`> & Partial<Omit<IConsumerModel, keyof IBaseModel>>
 
 @Injectable()
 export class ConsumersService extends BaseService<IConsumerModel, ConsumersRepository> {
@@ -15,7 +16,6 @@ export class ConsumersService extends BaseService<IConsumerModel, ConsumersRepos
   constructor(
     @Inject(ConsumersRepository) repository: ConsumersRepository,
     @Inject(BillingDetailsService) private readonly billingDetailsService: BillingDetailsService,
-    @Inject(AddressesService) private readonly addressesService: AddressesService,
   ) {
     super(repository)
   }
@@ -24,7 +24,7 @@ export class ConsumersService extends BaseService<IConsumerModel, ConsumersRepos
     return this.repository.findById(consumerId)
   }
 
-  async upsertConsumer(dto: Omit<IConsumerModel, keyof IBaseModel>): Promise<IConsumerModel> {
+  async upsertConsumer(dto: UpsertConsumer): Promise<IConsumerModel> {
     const [exist] = await this.repository.find({ filter: { email: dto.email } })
     const result = exist == null ? await this.repository.create(dto) : await this.repository.updateById(exist.id, dto)
     if (exist == null) this.addInitialBillingDetails(result) //init empty billing detail for the newest consumer
@@ -34,16 +34,7 @@ export class ConsumersService extends BaseService<IConsumerModel, ConsumersRepos
   private async addInitialBillingDetails(consumer: IConsumerModel) {
     const { id: consumerId, email, firstName, lastName } = consumer
     const name = `${firstName} ${lastName}`
-
-    let billingDetails = await this.billingDetailsService.upsertBillingDetails({ consumerId, email, name })
-    if (billingDetails) {
-      const address = await this.addressesService.upsertAddress({ consumerId, billingDetailsId: billingDetails.id })
-      if (address) {
-        billingDetails = await this.billingDetailsService.upsertBillingDetails({ consumerId, addressId: address.id })
-        this.repository.updateById(consumerId, { billingDetailsId: billingDetails.id })
-        return { billingDetails, address }
-      }
-    }
-    throw new Error(`Initial billingDetails is not created`)
+    const billingDetails = await this.billingDetailsService.upsertBillingDetails({ consumerId, email, name })
+    return billingDetails
   }
 }

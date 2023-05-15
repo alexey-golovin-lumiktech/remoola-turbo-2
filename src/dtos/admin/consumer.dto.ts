@@ -49,18 +49,6 @@ export class Consumer implements IConsumerModel {
   @ValidateIf(({ value }) => value != null)
   @ApiPropertyOptional({ default: null })
   deletedAt?: Date
-
-  @Expose()
-  @ApiPropertyOptional({ default: null })
-  googleProfileId?: string
-
-  @Expose()
-  @ApiPropertyOptional({ default: null })
-  billingDetailsId?: string
-
-  @Expose()
-  @ApiPropertyOptional({ default: null })
-  addressId?: string
 }
 
 export class CreateConsumer extends PickType(Consumer, [`email`, `password`, `verified`, `firstName`, `lastName`, `middleName`]) {}

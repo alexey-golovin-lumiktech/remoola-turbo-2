@@ -1,10 +1,10 @@
 import { Knex } from 'knex'
 
-import { adminType } from '../models'
+import { adminType, TableName } from '../models'
 import { generatePasswordHash, generatePasswordHashSalt } from '../utils'
 
 export async function seed(knex: Knex): Promise<void> {
-  await knex(`admins`).del()
+  await knex(TableName.Admins).del()
 
   const password = `Wirebill@Admin123!`
   const salt = generatePasswordHashSalt(4)
@@ -18,5 +18,5 @@ export async function seed(knex: Knex): Promise<void> {
     },
   ]
 
-  await knex(`admins`).insert(data)
+  await knex(TableName.Admins).insert(data)
 }

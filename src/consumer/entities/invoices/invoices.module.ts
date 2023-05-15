@@ -1,13 +1,13 @@
-import { Module } from '@nestjs/common'
-
-import { InvoiceItemsModule } from '../invoice-items/invoice-items.module'
+import { forwardRef, Module } from '@nestjs/common'
 
 import { InvoicesController } from './invoices.controller'
 import { InvoicesRepository } from './invoices.repository'
 import { InvoicesService } from './invoices.service'
 
+import { ConsumersModule } from 'src/consumer/entities/consumer/consumer.module'
+
 @Module({
-  imports: [InvoiceItemsModule],
+  imports: [forwardRef(() => ConsumersModule)],
   controllers: [InvoicesController],
   providers: [InvoicesService, InvoicesRepository],
   exports: [InvoicesService, InvoicesRepository],

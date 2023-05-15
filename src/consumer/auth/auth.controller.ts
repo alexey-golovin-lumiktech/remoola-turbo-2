@@ -11,15 +11,15 @@ import { ReqAuthIdentity } from 'src/guards/auth.guard'
 import { TransformResponse } from 'src/interceptors/response.interceptor'
 import { IConsumerModel } from 'src/models'
 
-@ApiTags(`consumers`)
-@Controller(`consumers/auth`)
+@ApiTags(`consumer`)
+@Controller(`consumer/auth`)
 export class AuthController {
   logger = new Logger(AuthController.name)
 
   constructor(@Inject(AuthService) private readonly service: AuthService) {}
 
   @Post(`/signin`)
-  @ApiOkResponse({ type: SigninResponse, status: 200 })
+  @ApiOkResponse({ type: SigninResponse })
   @TransformResponse(SigninResponse)
   signin(@ReqAuthIdentity() identity: IConsumerModel): Promise<SigninResponse> {
     return this.service.signin(identity)
@@ -27,7 +27,7 @@ export class AuthController {
 
   @PublicEndpoint()
   @Post(`/google-signin`)
-  @ApiOkResponse({ type: SigninResponse, status: 200 })
+  @ApiOkResponse({ type: SigninResponse })
   @TransformResponse(SigninResponse)
   googleSignin(@Body() body: GoogleSignin): Promise<SigninResponse> {
     return this.service.googleSignin(body)

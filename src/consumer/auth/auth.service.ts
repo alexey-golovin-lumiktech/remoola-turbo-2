@@ -10,7 +10,7 @@ import { GoogleProfile, IGoogleSignin, SigninResponse } from '../../dtos/consume
 import { IBaseModel, IConsumerModel } from '../../models'
 import { MailingService } from '../../shared-modules/mailing/mailing.service'
 import * as utils from '../../utils'
-import { ConsumersService } from '../entities/consumers/consumers.service'
+import { ConsumersService } from '../entities/consumer/consumer.service'
 import { GoogleProfilesService } from '../entities/google-profiles/google-profiles.service'
 
 @Injectable()
@@ -40,7 +40,6 @@ export class AuthService {
       const gProfile = await this.googleProfileService.upsertGoogleProfile(consumer.id, rawGoogleProfile)
       if (gProfile.deletedAt != null) throw new BadRequestException(`Profile is suspended, please contact the support`)
 
-      this.consumersService.repository.updateById(consumer.id, { googleProfileId: gProfile.id })
       const accessToken = this.generateToken(consumer)
       const refreshToken = this.generateRefreshToken() //@TODO : need to store refresh token
       return utils.toResponse(SigninResponse, Object.assign(consumer, { googleProfileId: gProfile.id, accessToken, refreshToken }))

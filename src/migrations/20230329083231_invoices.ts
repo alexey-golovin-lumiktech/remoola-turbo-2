@@ -1,6 +1,6 @@
 import { Knex } from 'knex'
 
-import { TableName } from '../models'
+import { invoiceStatus, invoiceStatuses, TableName } from '../models'
 
 const tableName = TableName.Invoices
 
@@ -10,9 +10,13 @@ export async function up(knex: Knex): Promise<void> {
 
   return knex.schema.createTable(tableName, table => {
     table.uuid(`id`).primary().defaultTo(knex.raw(`uuid_generate_v4()`))
+    table.string(`creator`).notNullable().references(`email`).inTable(TableName.Consumers)
+    table.string(`referer`).notNullable().references(`email`).inTable(TableName.Consumers)
 
-    table.uuid(`creator_id`).notNullable().references(`id`).inTable(TableName.Consumers)
-    table.uuid(`referer_id`).notNullable().references(`id`).inTable(TableName.Consumers)
+    table.decimal(`charges`, 10).notNullable()
+    table.decimal(`tax`, 10).notNullable()
+    table.string(`description`)
+    table.enum(`status`, invoiceStatuses).defaultTo(invoiceStatus.due).notNullable()
 
     table.timestamp(`created_at`).defaultTo(knex.fn.now())
     table.timestamp(`updated_at`).defaultTo(knex.fn.now())

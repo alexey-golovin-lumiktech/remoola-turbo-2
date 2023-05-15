@@ -10,10 +10,19 @@ export async function up(knex: Knex): Promise<void> {
 
   return knex.schema.createTable(tableName, table => {
     table.uuid(`id`).primary().defaultTo(knex.raw(`uuid_generate_v4()`))
+    table.uuid(`consumer_id`).notNullable().references(`id`).inTable(TableName.Consumers)
 
     table.string(`email`)
     table.string(`name`)
     table.string(`phone`)
+
+    // address
+    table.string(`city`)
+    table.string(`country`)
+    table.string(`line1`)
+    table.string(`line2`)
+    table.string(`postal_code`)
+    table.string(`state`)
 
     table.timestamp(`created_at`).defaultTo(knex.fn.now())
     table.timestamp(`updated_at`).defaultTo(knex.fn.now())

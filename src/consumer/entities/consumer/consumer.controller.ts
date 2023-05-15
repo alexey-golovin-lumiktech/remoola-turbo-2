@@ -1,22 +1,23 @@
-import { Controller, Get, Inject } from '@nestjs/common'
+import { Body, Controller, Get, Inject, Post } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 
 import { BillingDetailsService } from '../billing-details/billing-details.service'
+import { InvoicesService } from '../invoices/invoices.service'
 
-import { ConsumersService } from './consumers.service'
+import { ConsumersService } from './consumer.service'
 
-import { SigninResponseConsumer } from 'src/dtos/consumer'
-import { BillingDetailsResponse } from 'src/dtos/consumer/billing-details.dto'
+import { BillingDetailsResponse, CreateInvoice, Invoice, InvoicesListResponse, SigninResponseConsumer } from 'src/dtos/consumer'
 import { ReqAuthIdentity } from 'src/guards/auth.guard'
 import { TransformResponse } from 'src/interceptors/response.interceptor'
 import { IConsumerModel } from 'src/models'
 
-@ApiTags(`consumers`)
-@Controller(`consumers`)
+@ApiTags(`consumer`)
+@Controller(`consumer`)
 export class ConsumersController {
   constructor(
     @Inject(ConsumersService) private readonly service: ConsumersService,
     @Inject(BillingDetailsService) private readonly billingDetailsService: BillingDetailsService,
+    @Inject(InvoicesService) private readonly invoicesService: InvoicesService,
   ) {}
 
   @Get(`/`)
@@ -31,5 +32,18 @@ export class ConsumersController {
   @TransformResponse(BillingDetailsResponse)
   getBillingDetails(@ReqAuthIdentity() identity: IConsumerModel): Promise<BillingDetailsResponse> {
     return this.billingDetailsService.getBillingDetails({ consumerId: identity.id })
+  }
+
+  @Get(`/invoices`)
+  @TransformResponse(InvoicesListResponse)
+  @ApiOkResponse({ type: InvoicesListResponse })
+  getInvoices(@ReqAuthIdentity() identity: IConsumerModel): Promise<InvoicesListResponse> {
+    return this.invoicesService.getInvoices(identity)
+  }
+
+  @Post(`/invoices`)
+  @TransformResponse(Invoice)
+  createInvoice(@ReqAuthIdentity() identity: IConsumerModel, @Body() body: CreateInvoice): Promise<Invoice> {
+    return this.invoicesService.createInvoice(identity, body)
   }
 }
