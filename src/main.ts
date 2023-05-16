@@ -5,16 +5,17 @@ import { JwtService } from '@nestjs/jwt'
 import { DocumentBuilder, SwaggerCustomOptions, SwaggerModule } from '@nestjs/swagger'
 import { classToPlain, plainToClass } from 'class-transformer'
 
-import { AdminModule } from './admin/admin.module'
-import { AdminsService } from './admin/entities/admins/admins.service'
-import { ConsumerModule } from './consumer/consumer.module'
-import { ConsumersService } from './consumer/entities/consumer/consumer.service'
-import { AuthGuard } from './guards/auth.guard'
-import { TransformResponseInterceptor } from './interceptors/response.interceptor'
 import { AppModule } from './app.module'
-import { swaggerDocExpansion } from './common'
-import * as dtos from './dtos'
-import { HttpExceptionFilter } from './filters'
+
+import { AdminModule } from 'src/admin/admin.module'
+import { AdminsService } from 'src/admin/entities/admins/admins.service'
+import { swaggerDocExpansion } from 'src/common'
+import { ConsumerModule } from 'src/consumer/consumer.module'
+import { ConsumersService } from 'src/consumer/entities/consumer/consumer.service'
+import { AdminDTOS, CommonDTOS, ConsumerDTOS } from 'src/dtos'
+import { HttpExceptionFilter } from 'src/filters'
+import { AuthGuard } from 'src/guards/auth.guard'
+import { TransformResponseInterceptor } from 'src/interceptors/response.interceptor'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -33,7 +34,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config, {
     deepScanRoutes: true,
     include: [AdminModule, ConsumerModule],
-    extraModels: Object.values(dtos),
+    extraModels: [...Object.values(CommonDTOS), ...Object.values(AdminDTOS), ...Object.values(ConsumerDTOS)],
   })
   const options: SwaggerCustomOptions = { swaggerOptions: { docExpansion: swaggerDocExpansion.None }, customSiteTitle }
   SwaggerModule.setup(`documentation`, app, document, options)

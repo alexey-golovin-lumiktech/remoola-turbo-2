@@ -2,10 +2,11 @@ import { Inject, Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { InjectKnex, Knex } from 'nestjs-knex'
 
-import { BaseRepository, IFilter } from '../../../common'
-import { IConsumerModel, TableName } from '../../../models'
 import { BillingDetailsRepository } from '../billing-details/billing-details.repository'
 import { GoogleProfilesRepository } from '../google-profiles/google-profiles.repository'
+
+import { BaseRepository, IFilter } from 'src/common'
+import { IConsumerModel, TableName } from 'src/models'
 
 @Injectable()
 export class ConsumersRepository extends BaseRepository<IConsumerModel> {

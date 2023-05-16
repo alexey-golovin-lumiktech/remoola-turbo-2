@@ -2,10 +2,11 @@ import type { Knex as IKnex } from 'knex'
 import { Knex } from 'knex'
 import snakeCase from 'lodash/snakeCase'
 
-import { IListResponse } from '../dtos'
-import { IBaseModel } from '../models'
-
 import { IFilter, IQuery } from './base.types'
+
+import { CommonDTOS } from 'src/dtos'
+import { IBaseModel } from 'src/models'
+import { queryBuilder } from 'src/utils'
 
 export interface IBaseRepository<TModel> {
   create(dto: Partial<TModel>): Promise<TModel>
@@ -62,16 +63,12 @@ export abstract class BaseRepository<TModel extends IBaseModel> implements IBase
     return this.knexQb.clone()
   }
 
-  private makeSqlIn(arr: (string | number)[]): string {
-    return arr.map(x => `'${x}'`).join(`,`)
-  }
-
-  async findAndCountAll(query?: IQuery<TModel>): Promise<IListResponse<TModel>> {
+  async findAndCountAll(query?: IQuery<TModel>): Promise<CommonDTOS.IListResponse<TModel>> {
     const data = await this.query.modify(qb => {
       if (query?.filter) {
         const raw = Object.entries(query.filter).reduce((acc, [field, value]) => {
-          if (Array.isArray(value) && typeof value != `string`) acc += `${field} IN(${this.makeSqlIn(value)})`
-          else acc += `${snakeCase(field)} = '${value}'`
+          if (Array.isArray(value) && typeof value != `string`) acc += `${field} IN(${queryBuilder.makeSqlIn(value)})`
+          else acc += `${snakeCase(field)} = '${String(value)}'`
           return acc
         }, ``)
         qb.whereRaw(raw)

@@ -1,7 +1,7 @@
 import { Knex } from 'knex'
 
-import { adminType, TableName } from '../models'
-import { generatePasswordHash, generatePasswordHashSalt } from '../utils'
+import { adminType, TableName } from 'src/models'
+import { generatePasswordHash, generatePasswordHashSalt } from 'src/utils'
 
 export async function seed(knex: Knex): Promise<void> {
   await knex(TableName.Admins).del()

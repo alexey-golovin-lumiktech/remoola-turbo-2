@@ -34,11 +34,8 @@ export class GoogleProfile {
     this.organization = payload.hd
   }
 }
-export interface IGoogleSignin {
-  credential: string
-}
 
-export class GoogleSignin implements IGoogleSignin {
+export class GoogleSignin {
   @Expose()
   @ApiProperty()
   @IsString()

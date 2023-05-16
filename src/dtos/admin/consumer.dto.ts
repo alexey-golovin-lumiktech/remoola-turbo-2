@@ -2,7 +2,7 @@ import { ApiProperty, ApiPropertyOptional, PickType } from '@nestjs/swagger'
 import { Exclude, Expose } from 'class-transformer'
 import { ValidateIf } from 'class-validator'
 
-import { IConsumerModel } from '../../models'
+import { IConsumerModel } from 'src/models'
 
 export class Consumer implements IConsumerModel {
   @Expose()
@@ -51,6 +51,4 @@ export class Consumer implements IConsumerModel {
   deletedAt?: Date
 }
 
-export class CreateConsumer extends PickType(Consumer, [`email`, `password`, `verified`, `firstName`, `lastName`, `middleName`]) {}
-export class UpdateConsumer extends CreateConsumer {}
-export class UpdatePassword extends PickType(Consumer, [`password`] as const) {}
+export class UpsertConsumer extends PickType(Consumer, [`email`, `password`, `verified`, `firstName`, `lastName`, `middleName`]) {}

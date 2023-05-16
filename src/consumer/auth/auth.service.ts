@@ -1,17 +1,17 @@
 import { BadRequestException, HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
-import { Response } from 'express'
+import { Response as IExpressResponse } from 'express'
 import { OAuth2Client } from 'google-auth-library'
 import * as uuid from 'uuid'
 
-import { ISignup } from '../../dtos'
-import { GoogleProfile, IGoogleSignin, SigninResponse } from '../../dtos/consumer'
-import { IBaseModel, IConsumerModel } from '../../models'
-import { MailingService } from '../../shared-modules/mailing/mailing.service'
-import * as utils from '../../utils'
 import { ConsumersService } from '../entities/consumer/consumer.service'
 import { GoogleProfilesService } from '../entities/google-profiles/google-profiles.service'
+
+import { ConsumerDTOS } from 'src/dtos'
+import { IBaseModel, IConsumerModel } from 'src/models'
+import { MailingService } from 'src/shared-modules/mailing/mailing.service'
+import * as utils from 'src/utils'
 
 @Injectable()
 export class AuthService {
@@ -30,10 +30,10 @@ export class AuthService {
     this.oAuth2Client = new OAuth2Client(this.audience, secret)
   }
 
-  /* OK !!! */ async googleSignin(body: IGoogleSignin): Promise<SigninResponse> {
+  /* OK !!! */ async googleSignin(body: ConsumerDTOS.GoogleSignin): Promise<ConsumerDTOS.SigninResponse> {
     try {
       const verified = await this.oAuth2Client.verifyIdToken({ idToken: body.credential })
-      const rawGoogleProfile = new GoogleProfile(verified.getPayload())
+      const rawGoogleProfile = new ConsumerDTOS.GoogleProfile(verified.getPayload())
       const consumer = await this.consumersService.upsertConsumer(this.extractConsumerData(rawGoogleProfile))
       if (consumer.deletedAt != null) throw new BadRequestException(`Consumer is suspended, please contact the support`)
 
@@ -42,19 +42,22 @@ export class AuthService {
 
       const accessToken = this.generateToken(consumer)
       const refreshToken = this.generateRefreshToken() //@TODO : need to store refresh token
-      return utils.toResponse(SigninResponse, Object.assign(consumer, { googleProfileId: gProfile.id, accessToken, refreshToken }))
+      return utils.toResponse(
+        ConsumerDTOS.SigninResponse,
+        Object.assign(consumer, { googleProfileId: gProfile.id, accessToken, refreshToken }),
+      )
     } catch (error) {
       throw new HttpException(error.message || `Internal error`, HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
 
-  async signin(identity: IConsumerModel): Promise<SigninResponse> {
+  async signin(identity: IConsumerModel): Promise<ConsumerDTOS.SigninResponse> {
     const accessToken = this.generateToken(identity)
     const refreshToken = this.generateRefreshToken() //@TODO : need to store refresh token
-    return utils.toResponse(SigninResponse, Object.assign(identity, { accessToken, refreshToken: refreshToken.token }))
+    return utils.toResponse(ConsumerDTOS.SigninResponse, Object.assign(identity, { accessToken, refreshToken: refreshToken.token }))
   }
 
-  private extractConsumerData(dto: GoogleProfile): Omit<IConsumerModel, keyof IBaseModel> {
+  private extractConsumerData(dto: ConsumerDTOS.GoogleProfile): Omit<IConsumerModel, keyof IBaseModel> {
     const fullName = dto.name.split(` `)
     return {
       email: dto.email,
@@ -64,7 +67,7 @@ export class AuthService {
     }
   }
 
-  async signup(body: ISignup): Promise<void | never> {
+  async signup(body: ConsumerDTOS.SignupRequest): Promise<void | never> {
     const [exist] = await this.consumersService.repository.find({ filter: { email: body.email } })
     if (exist) throw new BadRequestException(`This email is already exist`)
 
@@ -84,7 +87,7 @@ export class AuthService {
     this.mailingService.sendConsumerSignupCompletion({ email: body.email, token })
   }
 
-  async signupCompletion(token: string, res: Response) {
+  async signupCompletion(token: string, res: IExpressResponse) {
     const decoded: any = this.jwtService.decode(token)
     const redirectUrl = new URL(`signup/verification`, `http://localhost:3000`)
 

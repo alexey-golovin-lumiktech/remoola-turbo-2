@@ -7,7 +7,7 @@ import { InvoicesService } from './invoices.service'
 import { AdminPanelQueryTransformPipe } from 'src/admin/pipes'
 import { IQuery } from 'src/common'
 import { ApiCountRowsResponse } from 'src/decorators'
-import { Invoice, ListResponse, UpdateInvoiceStatus } from 'src/dtos'
+import { AdminDTOS, CommonDTOS } from 'src/dtos'
 import { IInvoiceModel } from 'src/models'
 
 @ApiTags(`admin`)
@@ -16,26 +16,29 @@ export class InvoicesController {
   constructor(@Inject(InvoicesService) private readonly service: InvoicesService) {}
 
   @Get(`/`)
-  @ApiCountRowsResponse(Invoice)
+  @ApiCountRowsResponse(AdminDTOS.InvoiceResponse)
   async findAndCountAll(
     @Query(new AdminPanelQueryTransformPipe()) query: IQuery<IInvoiceModel>,
     @Response() res: IExpressResponse,
-  ): Promise<ListResponse<Invoice>> {
-    const result = await this.service.repository.findAndCountAll(query)
+  ): Promise<CommonDTOS.ListResponseDTO<AdminDTOS.InvoiceResponse>> {
+    const result = (await this.service.repository.findAndCountAll(query)) as CommonDTOS.ListResponseDTO<AdminDTOS.InvoiceResponse>
     res.set(`Content-Range`, result.count.toString())
     res.send(result.data)
     return result
   }
 
   @Get(`/:invoiceId`)
-  @ApiOkResponse({ type: Invoice })
-  getById(@Param(`invoiceId`) invoiceId: string): Promise<Invoice> {
-    return this.service.repository.findById(invoiceId)
+  @ApiOkResponse({ type: AdminDTOS.InvoiceResponse })
+  getById(@Param(`invoiceId`) invoiceId: string): Promise<AdminDTOS.InvoiceResponse> {
+    return this.service.repository.findById(invoiceId) as Promise<AdminDTOS.InvoiceResponse>
   }
 
   @Put(`/:invoiceId`)
-  @ApiOkResponse({ type: Invoice })
-  updateInvoiceStatus(@Param(`invoiceId`) invoiceId: string, @Body() body: UpdateInvoiceStatus): Promise<Invoice> {
-    return this.service.repository.updateById(invoiceId, body)
+  @ApiOkResponse({ type: AdminDTOS.InvoiceResponse })
+  updateInvoiceStatus(
+    @Param(`invoiceId`) invoiceId: string,
+    @Body() body: AdminDTOS.UpdateInvoiceStatus,
+  ): Promise<AdminDTOS.InvoiceResponse> {
+    return this.service.repository.updateById(invoiceId, body) as Promise<AdminDTOS.InvoiceResponse>
   }
 }

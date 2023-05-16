@@ -1,13 +1,12 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
+import { ApiProperty } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
-import { IsEmail, Matches, ValidateIf } from 'class-validator'
+import { IsEmail, Matches } from 'class-validator'
 
-import * as constants from '../../constants'
-import { IConsumerModel } from '../../models'
+import * as CommonDTOS from '../common'
 
-export type ICredentials = Pick<IConsumerModel, `email` | `password`>
+import * as constants from 'src/constants'
 
-export class Credentials implements ICredentials {
+export class Credentials extends CommonDTOS.Credentials {
   @Expose()
   @IsEmail({}, { message: constants.constants.INVALID_EMAIL })
   @ApiProperty({ example: `super.admin@wirebill.com` })
@@ -17,24 +16,4 @@ export class Credentials implements ICredentials {
   @Matches(constants.regexp.password, { message: constants.constants.INVALID_PASSWORD })
   @ApiProperty({ example: `Wirebill@Admin123!` })
   password: string
-}
-
-type ConsumerModelSignupPick = Pick<IConsumerModel, `firstName` | `lastName` | `middleName`>
-export type ISignup = ICredentials & ConsumerModelSignupPick
-
-export class Signup extends Credentials implements ISignup {
-  @Expose()
-  @ValidateIf(({ value }) => (value == `` ? null : value))
-  @ApiPropertyOptional({ type: String })
-  firstName?: string
-
-  @Expose()
-  @ValidateIf(({ value }) => (value == `` ? null : value))
-  @ApiPropertyOptional({ type: String })
-  lastName?: string
-
-  @Expose()
-  @ValidateIf(({ value }) => (value == `` ? null : value))
-  @ApiPropertyOptional({ type: String })
-  middleName?: string
 }

@@ -1,7 +1,7 @@
 import { Knex } from 'knex'
 
-import { invoiceStatuses, TableName } from '../models'
-import { generatePasswordHash, generatePasswordHashSalt } from '../utils'
+import { invoiceStatuses, TableName } from 'src/models'
+import { generatePasswordHash, generatePasswordHashSalt } from 'src/utils'
 
 export async function seed(knex: Knex): Promise<void> {
   await knex(TableName.Invoices).del()
@@ -61,13 +61,12 @@ export async function seed(knex: Knex): Promise<void> {
     }
     return getRnd(s, creator)
   }
-  const getInvoice = (creator: string) => () => {
+  const getInvoice = (consumer: any) => () => {
+    const filtered = consumers.filter(x => x.email != consumer.email)
+    const referer = getRnd(filtered)
     return {
-      creator: creator,
-      referer: getRnd(
-        raw.map(x => x.email),
-        creator,
-      ),
+      creatorId: consumer.id,
+      refererId: referer.id,
       charges: (Math.random() * 400).toFixed(2),
       tax: (Math.random() * 20).toFixed(2),
       description: `no description`,
@@ -78,7 +77,7 @@ export async function seed(knex: Knex): Promise<void> {
   const rawInvoices = consumers.reduce((collector, x) => {
     collector[x.email] = Array(Math.round(Math.random() * 1000))
       .fill(null)
-      .map(getInvoice(x.email))
+      .map(getInvoice(x))
     return collector
   }, {})
 

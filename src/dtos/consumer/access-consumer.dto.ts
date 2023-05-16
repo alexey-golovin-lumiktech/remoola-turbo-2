@@ -1,42 +1,9 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
+import { ApiProperty, PickType } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 
-import { IConsumerModel } from '../../models'
-import { IAccessRefresh } from '../common'
+import { ConsumerResponse } from './consumer.dto'
 
-export type ISigninResponseConsumer = Pick<
-  IConsumerModel,
-  | `id` //
-  | `email`
-  | `firstName`
-  | `lastName`
-  | `middleName`
->
-export type ISigninResponse = ISigninResponseConsumer & IAccessRefresh
-
-export class SigninResponseConsumer implements ISigninResponseConsumer {
-  @Expose()
-  @ApiProperty()
-  id: string
-
-  @Expose()
-  @ApiProperty()
-  email: string
-
-  @Expose()
-  @ApiPropertyOptional({ default: null })
-  firstName?: string
-
-  @Expose()
-  @ApiPropertyOptional({ default: null })
-  lastName?: string
-
-  @Expose()
-  @ApiPropertyOptional({ default: null })
-  middleName?: string
-}
-
-export class SigninResponse extends SigninResponseConsumer implements ISigninResponse {
+export class SigninResponse extends ConsumerResponse {
   @Expose()
   @ApiProperty({ example: `access-token-string` })
   accessToken: string
@@ -45,3 +12,5 @@ export class SigninResponse extends SigninResponseConsumer implements ISigninRes
   @ApiProperty({ example: `access-token-string` })
   refreshToken: string
 }
+
+export class SignupRequest extends PickType(ConsumerResponse, [`email`, `firstName`, `lastName`, `middleName`, `password`] as const) {}

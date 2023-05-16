@@ -1,4 +1,4 @@
-import { ValueOf } from '../shared-types'
+import { ValueOf } from 'src/shared-types'
 
 export const sortDirection = { ASC: `ASC`, DESC: `DESC` } as const
 export const sortNulls = { NULLS_FIRST: `NULLS FIRST`, NULLS_LAST: `NULLS LAST` } as const

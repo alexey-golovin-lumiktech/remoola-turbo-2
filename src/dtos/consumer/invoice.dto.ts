@@ -1,43 +1,14 @@
-import { ApiProperty, ApiPropertyOptional, PickType } from '@nestjs/swagger'
+import { ApiProperty, ApiPropertyOptional, OmitType, PickType } from '@nestjs/swagger'
 import { Expose, Type } from 'class-transformer'
-import { IsEmail, IsIn, IsNumber, IsString } from 'class-validator'
+import { IsEmail } from 'class-validator'
 
+import * as constants from 'src/constants'
 import { IInvoiceModel, InvoiceStatus, invoiceStatuses } from 'src/models'
 
-type InvoiceModelPick = Omit<IInvoiceModel, `deletedAt`>
-export class Invoice implements InvoiceModelPick {
+export class Invoice implements IInvoiceModel {
   @Expose()
   @ApiProperty()
-  @IsString()
   id: string
-
-  @Expose()
-  @ApiProperty()
-  @IsEmail()
-  creator: string
-
-  @Expose()
-  @ApiProperty()
-  @IsEmail()
-  referer: string
-
-  @Expose()
-  @ApiProperty()
-  @IsNumber()
-  charges: number
-
-  @Expose()
-  @ApiProperty()
-  tax: number
-
-  @Expose()
-  @ApiPropertyOptional({ default: null })
-  description?: string
-
-  @Expose()
-  @ApiProperty({ enum: invoiceStatuses })
-  @IsIn(invoiceStatuses)
-  status: InvoiceStatus
 
   @Expose()
   @ApiProperty()
@@ -46,6 +17,53 @@ export class Invoice implements InvoiceModelPick {
   @Expose()
   @ApiProperty()
   updatedAt: Date
+
+  @Expose()
+  @ApiPropertyOptional({ default: null })
+  deletedAt?: Date = null
+
+  @Expose()
+  @ApiProperty()
+  creatorId: string
+
+  @Expose()
+  @ApiProperty()
+  refererId: string
+
+  @Expose()
+  @ApiProperty()
+  charges: number
+
+  @Expose()
+  @ApiProperty()
+  tax: number
+
+  @Expose()
+  @ApiPropertyOptional({ default: null })
+  description?: string = null
+
+  @Expose()
+  @ApiProperty({ enum: invoiceStatuses })
+  status: InvoiceStatus
+}
+
+export class InvoiceResponse extends OmitType(Invoice, [`deletedAt`] as const) {
+  @Expose()
+  @ApiProperty()
+  @IsEmail({}, { message: constants.constants.INVALID_EMAIL })
+  referer: string
+
+  @Expose()
+  @ApiProperty()
+  @IsEmail({}, { message: constants.constants.INVALID_EMAIL })
+  creator: string
+}
+
+export class CreateInvoice extends PickType(Invoice, [`charges`, `description`] as const) {
+  @Expose()
+  @ApiProperty()
+  @IsEmail({}, { message: constants.constants.INVALID_EMAIL })
+  referer: string
 }
 
 export class InvoicesListResponse {
@@ -54,11 +72,7 @@ export class InvoicesListResponse {
   count: number
 
   @Expose()
-  @ApiProperty({ type: [Invoice] })
-  @Type(() => Invoice)
-  data: Invoice[]
+  @ApiProperty({ type: [InvoiceResponse] })
+  @Type(() => InvoiceResponse)
+  data: InvoiceResponse[]
 }
-
-export type ICreateInvoice = Pick<IInvoiceModel, `referer` | `charges` | `description`>
-
-export class CreateInvoice extends PickType(Invoice, [`referer`, `charges`, `description`] as const) implements ICreateInvoice {}

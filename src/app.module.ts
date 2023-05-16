@@ -6,13 +6,13 @@ import { StripeModule } from 'nestjs-stripe'
 
 import * as knexfile from '../knexfile'
 
-import { AdminModule } from './admin/admin.module'
-import { ConsumerModule } from './consumer/consumer.module'
-import { LoggerMiddleware } from './middleware/logger.middleware'
-import { SharedModulesModule } from './shared-modules/shared-modules.module'
-import { AppController } from './app.controller'
-import { constants } from './constants'
-import * as configValidation from './envs-validation.schema'
+import { AdminModule } from 'src/admin/admin.module'
+import { AppController } from 'src/app.controller'
+import { constants } from 'src/constants'
+import { ConsumerModule } from 'src/consumer/consumer.module'
+import * as configValidation from 'src/envs-validation.schema'
+import { LoggerMiddleware } from 'src/middleware/logger.middleware'
+import { SharedModulesModule } from 'src/shared-modules/shared-modules.module'
 
 @Module({
   imports: [

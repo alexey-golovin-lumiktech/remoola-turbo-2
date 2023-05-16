@@ -1,11 +1,10 @@
 import { Body, Controller, Inject, Post } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 
-import { AccessAdmin, Credentials } from '../../dtos'
-
 import { AuthService } from './auth.service'
 
 import { PublicEndpoint } from 'src/decorators'
+import { AdminDTOS } from 'src/dtos'
 
 @ApiTags(`admin`)
 @Controller(`admin/auth`)
@@ -14,8 +13,8 @@ export class AuthController {
 
   @Post(`/login`)
   @PublicEndpoint(/* reason: react-admin auth provider */)
-  @ApiOkResponse({ type: AccessAdmin })
-  login(@Body() body: Credentials): Promise<AccessAdmin> {
+  @ApiOkResponse({ type: AdminDTOS.Access })
+  login(@Body() body: AdminDTOS.Credentials): Promise<AdminDTOS.Access> {
     return this.service.login(body)
   }
 }

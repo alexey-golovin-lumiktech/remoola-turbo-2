@@ -1,10 +1,10 @@
 import { Injectable, Logger, NestMiddleware } from '@nestjs/common'
-import { NextFunction, Request, Response } from 'express'
+import { NextFunction as IExpressNextFunction, Request as IExpressRequest, Response as IExpressResponse } from 'express'
 
 @Injectable()
 export class LoggerMiddleware implements NestMiddleware {
   private readonly logger = new Logger(`HTTP`)
-  use(req: Request, res: Response, next: NextFunction) {
+  use(req: IExpressRequest, res: IExpressResponse, next: IExpressNextFunction) {
     if (process.env.LONG_LOGS_ENABLED == `yes`) {
       this.logger.log({
         method: req.method,

@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common'
 
-import { BaseService } from '../../../common'
-import { IBaseModel, IGoogleProfileModel } from '../../../models'
-
 import { GoogleProfilesRepository } from './google-profiles.repository'
+
+import { BaseService } from 'src/common'
+import { IBaseModel, IGoogleProfileModel } from 'src/models'
 
 export type IUpsertProfile = Omit<IGoogleProfileModel, keyof IBaseModel | `data` | `consumerId`>
 

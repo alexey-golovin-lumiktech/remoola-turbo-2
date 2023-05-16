@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common'
 import { Cron, CronExpression } from '@nestjs/schedule'
 import { InjectKnex, Knex } from 'nestjs-knex'
 
-import { TableName } from '../../models'
+import { TableName } from 'src/models'
 
 @Injectable()
 export class TasksService {

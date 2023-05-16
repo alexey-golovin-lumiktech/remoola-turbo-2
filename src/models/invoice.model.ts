@@ -7,8 +7,8 @@ export const invoiceStatuses = Object.values(invoiceStatus)
 export type InvoiceStatus = ValueOf<typeof invoiceStatus>
 
 export interface IInvoiceModel extends IBaseModel {
-  creator: string
-  referer: string
+  creatorId: string
+  refererId: string
   charges: number
   tax: number
   description?: string

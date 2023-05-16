@@ -1,66 +1,61 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
+import { ApiProperty, ApiPropertyOptional, OmitType } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 import { IsEmail } from 'class-validator'
 
-import * as constants from '../../constants'
+import { BaseModel } from '../common/base-model.dto'
 
+import * as constants from 'src/constants'
 import { IBaseModel, IBillingDetailsModel } from 'src/models'
 
 export type IUpsertBillingDetails = Partial<Omit<IBillingDetailsModel, keyof IBaseModel>> & { consumerId: string }
 
-export type IBillingDetailsResponse = Pick<
-  IBillingDetailsModel,
-  | `id` //
-  | `email`
-  | `name`
-  | `phone`
-  | `city`
-  | `country`
-  | `line1`
-  | `line2`
-  | `postalCode`
-  | `state`
->
-
-export class BillingDetailsResponse implements IBillingDetailsResponse {
+class BillingDetails extends BaseModel implements IBillingDetailsModel {
   @Expose()
   @ApiProperty()
-  id: string
+  consumerId: string
 
   @Expose()
+  @ApiPropertyOptional({ default: null })
   @IsEmail({}, { message: constants.constants.INVALID_EMAIL })
-  @ApiPropertyOptional({ default: null })
-  email?: string
+  email?: string = null
 
   @Expose()
   @ApiPropertyOptional({ default: null })
-  name?: string
+  name?: string = null
 
   @Expose()
   @ApiPropertyOptional({ default: null })
-  phone?: string
+  phone?: string = null
 
   @Expose()
   @ApiPropertyOptional({ default: null })
-  city?: string
+  city?: string = null
 
   @Expose()
   @ApiPropertyOptional({ default: null })
-  country?: string
+  country?: string = null
 
   @Expose()
   @ApiPropertyOptional({ default: null })
-  line1?: string
+  line1?: string = null
 
   @Expose()
   @ApiPropertyOptional({ default: null })
-  line2?: string
+  line2?: string = null
 
   @Expose()
   @ApiPropertyOptional({ default: null })
-  postalCode?: string
+  postalCode?: string = null
 
   @Expose()
   @ApiPropertyOptional({ default: null })
-  state?: string
+  state?: string = null
+}
+
+export class BillingDetailsResponse extends OmitType(BillingDetails, [`createdAt`, `updatedAt`, `deletedAt`] as const) {}
+
+export class UpsertBillingDetails extends OmitType(BillingDetails, [`id`, `createdAt`, `updatedAt`, `deletedAt`] as const) {
+  @Expose()
+  @ApiProperty()
+  consumerId: string
 }

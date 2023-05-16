@@ -61,3 +61,7 @@ export const toResponse = <T, V>(cls: ClassConstructor<T>, data: V | V[]) => {
   const opts = { excludeExtraneousValues: true, enableImplicitConversion: true, exposeDefaultValues: true, exposeUnsetFields: true }
   return plainToInstance(cls, data, opts)
 }
+
+export const queryBuilder = {
+  makeSqlIn: (arr: (string | number)[]): string => arr.map(x => `'${x}'`).join(`,`),
+} as const

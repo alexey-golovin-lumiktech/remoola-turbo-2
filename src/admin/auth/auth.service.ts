@@ -3,11 +3,12 @@ import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import * as uuid from 'uuid'
 
-import { constants } from '../../constants'
-import { IAccessAdmin, ICredentials } from '../../dtos'
-import { IAdminModel } from '../../models'
-import { validatePassword } from '../../utils'
 import { AdminsService } from '../entities/admins/admins.service'
+
+import { constants } from 'src/constants'
+import { AdminDTOS } from 'src/dtos'
+import { IAdminModel } from 'src/models'
+import { validatePassword } from 'src/utils'
 
 @Injectable()
 export class AuthService {
@@ -27,7 +28,7 @@ export class AuthService {
     return admin
   }
 
-  async login(body: ICredentials): Promise<IAccessAdmin> {
+  async login(body: AdminDTOS.Credentials): Promise<AdminDTOS.Access> {
     try {
       const admin = await this.adminsService.findByEmail(body.email)
       if (!admin) throw new NotFoundException({ message: constants.ADMIN_NOT_FOUND })

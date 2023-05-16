@@ -1,12 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common'
 
-import { BaseService } from '../../../common'
-import { Consumer } from '../../../dtos'
-import { IConsumerModel } from '../../../models'
-import { generatePasswordHash, generatePasswordHashSalt } from '../../../utils'
 import { GoogleProfilesService } from '../google-profiles/google-profiles.service'
 
 import { AdminConsumersRepository } from './consumer.repository'
+
+import { BaseService } from 'src/common'
+import { AdminDTOS } from 'src/dtos'
+import { IConsumerModel } from 'src/models'
+import { generatePasswordHash, generatePasswordHashSalt } from 'src/utils'
 
 @Injectable()
 export class AdminConsumersService extends BaseService<IConsumerModel, AdminConsumersRepository> {
@@ -21,13 +22,13 @@ export class AdminConsumersService extends BaseService<IConsumerModel, AdminCons
     return this.repository.query.where({ email }).first()
   }
 
-  async create(body: any): Promise<Consumer> {
+  async create(body: any): Promise<AdminDTOS.Consumer> {
     const salt = generatePasswordHashSalt(10)
     const password = generatePasswordHash({ password: body.password, salt })
     return this.repository.create({ ...body, password, salt })
   }
 
-  async update(consumerId: string, body: any): Promise<Consumer> {
+  async update(consumerId: string, body: any): Promise<AdminDTOS.Consumer> {
     const salt = generatePasswordHashSalt(10)
     const password = generatePasswordHash({ password: body.password, salt })
     const updated = await this.repository.updateById(consumerId, { ...body, ...(body.password != null && { password, salt }) })

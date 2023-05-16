@@ -1,15 +1,15 @@
-import { Type } from '@nestjs/common'
 import { applyDecorators } from '@nestjs/common/decorators/core'
 import { ApiOkResponse, getSchemaPath } from '@nestjs/swagger'
+import { ClassConstructor } from 'class-transformer'
 
-import { ListResponse } from '../dtos'
+import { CommonDTOS } from 'src/dtos'
 
-export const ApiCountRowsResponse = <TModelClass extends Type<any>>(model: TModelClass) => {
+export const ApiCountRowsResponse = <TModelClass extends ClassConstructor<unknown>>(model: TModelClass) => {
   return applyDecorators(
     ApiOkResponse({
       schema: {
         allOf: [
-          { $ref: getSchemaPath(ListResponse) },
+          { $ref: getSchemaPath(CommonDTOS.ListResponseDTO) },
           {
             properties: {
               count: { type: `number` },

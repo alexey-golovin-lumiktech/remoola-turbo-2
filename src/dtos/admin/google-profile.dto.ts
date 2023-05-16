@@ -1,16 +1,24 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { Exclude, Expose } from 'class-transformer'
-import { IsDate, ValidateIf } from 'class-validator'
+import { ApiProperty, ApiPropertyOptional, OmitType } from '@nestjs/swagger'
+import { Expose } from 'class-transformer'
 
-import { IGoogleProfileModel } from '../../models'
+import { IGoogleProfileModel } from 'src/models'
 
-export class GoogleProfile implements IGoogleProfileModel {
-  @Exclude()
-  data: string
-
+class GoogleProfile implements IGoogleProfileModel {
   @Expose()
   @ApiProperty()
   id: string
+
+  @Expose()
+  @ApiProperty()
+  createdAt: Date
+
+  @Expose()
+  @ApiProperty()
+  updatedAt: Date
+
+  @Expose()
+  @ApiPropertyOptional({ default: null })
+  deletedAt?: Date = null
 
   @Expose()
   @ApiProperty()
@@ -21,42 +29,32 @@ export class GoogleProfile implements IGoogleProfileModel {
   emailVerified: boolean
 
   @Expose()
-  @ApiPropertyOptional({ default: null })
-  email?: string
-
-  @Expose()
-  @ApiPropertyOptional({ default: null })
-  name?: string
-
-  @Expose()
-  @ApiPropertyOptional({ default: null })
-  givenName?: string
-
-  @Expose()
-  @ApiPropertyOptional({ default: null })
-  familyName?: string
-
-  @Expose()
-  @ApiPropertyOptional({ default: null })
-  picture?: string
-
-  @Expose()
-  @ApiPropertyOptional({ default: null })
-  organization?: string
-
-  @Expose()
   @ApiProperty()
-  @IsDate()
-  createdAt: Date
+  data: string
 
   @Expose()
-  @ApiProperty()
-  @IsDate()
-  updatedAt: Date
-
-  @Expose()
-  @IsDate()
-  @ValidateIf(({ value }) => value != null)
   @ApiPropertyOptional({ default: null })
-  deletedAt?: Date
+  email?: string = null
+
+  @Expose()
+  @ApiPropertyOptional({ default: null })
+  name?: string = null
+
+  @Expose()
+  @ApiPropertyOptional({ default: null })
+  givenName?: string = null
+
+  @Expose()
+  @ApiPropertyOptional({ default: null })
+  familyName?: string = null
+
+  @Expose()
+  @ApiPropertyOptional({ default: null })
+  picture?: string = null
+
+  @Expose()
+  @ApiPropertyOptional({ default: null })
+  organization?: string = null
 }
+
+export class GoogleProfileResponse extends OmitType(GoogleProfile, [`deletedAt`] as const) {}

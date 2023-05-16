@@ -2,14 +2,14 @@ import { Controller, Get, Inject, Param, Query, Response } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { Response as IExpressResponse } from 'express'
 
-import { IQuery } from '../../../common'
-import { ApiCountRowsResponse } from '../../../decorators/response-count-rows.decorator'
-import { ListResponse } from '../../../dtos'
-import { GoogleProfile } from '../../../dtos/admin/google-profile.dto'
-import { IGoogleProfileModel } from '../../../models'
 import { AdminPanelQueryTransformPipe } from '../../pipes'
 
 import { GoogleProfilesService } from './google-profiles.service'
+
+import { IQuery } from 'src/common'
+import { ApiCountRowsResponse } from 'src/decorators/response-count-rows.decorator'
+import { AdminDTOS, CommonDTOS } from 'src/dtos'
+import { IGoogleProfileModel } from 'src/models'
 
 @ApiTags(`admin`)
 @Controller(`admin/google-profiles`)
@@ -17,11 +17,11 @@ export class GoogleProfilesController {
   constructor(@Inject(GoogleProfilesService) private readonly service: GoogleProfilesService) {}
 
   @Get(`/`)
-  @ApiCountRowsResponse(GoogleProfile)
+  @ApiCountRowsResponse(AdminDTOS.GoogleProfileResponse)
   async findAndCountAll(
     @Query(new AdminPanelQueryTransformPipe()) query: IQuery<IGoogleProfileModel>,
     @Response() res: IExpressResponse,
-  ): Promise<ListResponse<GoogleProfile>> {
+  ): Promise<CommonDTOS.ListResponseDTO<AdminDTOS.GoogleProfileResponse>> {
     const result = await this.service.repository.findAndCountAll(query)
     res.set(`Content-Range`, result.count.toString())
     res.send(result.data)
@@ -29,8 +29,8 @@ export class GoogleProfilesController {
   }
 
   @Get(`/:profileId`)
-  @ApiOkResponse({ type: GoogleProfile })
-  getById(@Param(`profileId`) profileId: string): Promise<GoogleProfile> {
+  @ApiOkResponse({ type: AdminDTOS.GoogleProfileResponse })
+  getById(@Param(`profileId`) profileId: string): Promise<AdminDTOS.GoogleProfileResponse> {
     return this.service.repository.findById(profileId)
   }
 }

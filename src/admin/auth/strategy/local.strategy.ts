@@ -2,8 +2,9 @@ import { Injectable, NotAcceptableException } from '@nestjs/common'
 import { PassportStrategy } from '@nestjs/passport'
 import { Strategy } from 'passport-local'
 
-import * as constants from '../../../constants'
 import { AuthService } from '../auth.service'
+
+import * as constants from 'src/constants'
 
 @Injectable()
 export class AdminLocalStrategy extends PassportStrategy(Strategy, constants.strategy.Local) {

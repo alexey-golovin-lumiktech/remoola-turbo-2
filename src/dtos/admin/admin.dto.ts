@@ -2,10 +2,10 @@ import { ApiProperty, ApiPropertyOptional, PickType } from '@nestjs/swagger'
 import { Exclude, Expose } from 'class-transformer'
 import { IsDate, IsIn, IsString, ValidateIf } from 'class-validator'
 
-import { adminType, IAdminModel } from '../../models'
-import { ValueOf } from '../../shared-types'
+import { adminType, IAdminModel } from 'src/models'
+import { ValueOf } from 'src/shared-types'
 
-export class Admin implements IAdminModel {
+class Admin implements IAdminModel {
   @Expose()
   @IsString()
   @ApiProperty()
@@ -47,5 +47,6 @@ export class Admin implements IAdminModel {
   deletedAt?: Date
 }
 
-export class CreateAdmin extends PickType(Admin, [`email`, `password`, `type`] as const) {}
-export class UpdateAdmin extends CreateAdmin {}
+export class AdminResponse extends Admin {}
+export class CreateAdminRequest extends PickType(Admin, [`email`, `password`, `type`] as const) {}
+export class UpdateAdminRequest extends CreateAdminRequest {}

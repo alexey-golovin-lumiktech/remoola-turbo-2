@@ -1,6 +1,6 @@
 import { Knex } from 'knex'
 
-import { TableName } from '../models'
+import { TableName } from 'src/models'
 
 const tableName = TableName.Consumers
 
