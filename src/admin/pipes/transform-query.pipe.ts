@@ -6,9 +6,8 @@ export class AdminPanelQueryTransformPipe implements PipeTransform {
     return Object.keys(value).reduce(
       (acc, key) => {
         if (key == `range`) {
-          const [offset, limit] = JSON.parse(value[key])
-          if (limit) acc = { ...acc, paging: { limit } }
-          if (offset) acc = { ...acc, paging: { ...acc.paging, offset } }
+          const [offset = 0, limit = 1000] = JSON.parse(value[key])
+          acc = { ...acc, paging: { offset: offset, limit: limit - offset + 1 } }
         }
 
         if (key == `filter`) {
