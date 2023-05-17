@@ -6,10 +6,10 @@ import { AdminPanelQueryTransformPipe } from '../../pipes'
 
 import { AdminConsumersService } from './consumer.service'
 
-import { IQuery } from 'src/common'
 import { ApiCountRowsResponse } from 'src/decorators/response-count-rows.decorator'
 import { AdminDTOS, CommonDTOS } from 'src/dtos'
 import { IConsumerModel } from 'src/models'
+import { IQuery } from 'src/shared-types'
 
 @ApiTags(`admin`)
 @Controller(`admin/consumers`)

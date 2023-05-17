@@ -2,7 +2,7 @@ import { Injectable, Logger, RawBodyRequest } from '@nestjs/common'
 import { InjectStripe } from 'nestjs-stripe'
 import Stripe from 'stripe'
 
-import { paymentMethodType, PaymentMethodTypeValue } from './types'
+import { PaymentMethod, paymentMethod } from 'src/shared-types'
 
 @Injectable()
 export class PaymentsService {
@@ -32,7 +32,7 @@ export class PaymentsService {
   async setupPaymentIntent(body: any): Promise<{ clientSecret: string } | void> {
     if (!process.env) return console.log(`[body]`, body)
 
-    const payment_method_types: PaymentMethodTypeValue[] = [paymentMethodType.card]
+    const payment_method_types: PaymentMethod[] = [paymentMethod.card]
     const intent = await this.stripe.setupIntents.create({ payment_method_types })
     return { clientSecret: intent.client_secret }
   }

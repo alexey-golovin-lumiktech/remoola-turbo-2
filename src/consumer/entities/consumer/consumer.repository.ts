@@ -5,8 +5,9 @@ import { InjectKnex, Knex } from 'nestjs-knex'
 import { BillingDetailsRepository } from '../billing-details/billing-details.repository'
 import { GoogleProfilesRepository } from '../google-profiles/google-profiles.repository'
 
-import { BaseRepository, IFilter } from 'src/common'
+import { BaseRepository } from 'src/common'
 import { IConsumerModel, TableName } from 'src/models'
+import { IFilter } from 'src/shared-types'
 
 @Injectable()
 export class ConsumersRepository extends BaseRepository<IConsumerModel> {

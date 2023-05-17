@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Post } from '@nestjs/common'
+import { Body, Controller, Get, Inject, Post, Query } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 
 import { BillingDetailsService } from '../billing-details/billing-details.service'
@@ -6,7 +6,8 @@ import { InvoicesService } from '../invoices/invoices.service'
 
 import { ConsumersService } from './consumer.service'
 
-import { ConsumerDTOS } from 'src/dtos'
+import { ApiCountRowsResponse } from 'src/decorators'
+import { CommonDTOS, ConsumerDTOS } from 'src/dtos'
 import { ReqAuthIdentity } from 'src/guards/auth.guard'
 import { TransformResponse } from 'src/interceptors/response.interceptor'
 import { IConsumerModel } from 'src/models'
@@ -35,10 +36,13 @@ export class ConsumersController {
   }
 
   @Get(`/invoices`)
-  @TransformResponse(ConsumerDTOS.InvoicesListResponse)
-  @ApiOkResponse({ type: ConsumerDTOS.InvoicesListResponse })
-  getInvoices(@ReqAuthIdentity() identity: IConsumerModel): Promise<ConsumerDTOS.InvoicesListResponse> {
-    return this.invoicesService.getInvoices(identity)
+  // @TransformResponse(CommonDTOS.ListResponseDTO<ConsumerDTOS.QueryInvoices>)
+  @ApiCountRowsResponse(ConsumerDTOS.QueryInvoices)
+  getInvoices(
+    @ReqAuthIdentity() identity: IConsumerModel, //
+    @Query() query?: ConsumerDTOS.QueryInvoices,
+  ): Promise<CommonDTOS.ListResponseDTO<ConsumerDTOS.InvoiceResponse>> {
+    return this.invoicesService.getInvoices(identity, query)
   }
 
   @Post(`/invoices`)

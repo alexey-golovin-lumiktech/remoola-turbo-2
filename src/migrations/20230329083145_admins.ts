@@ -1,6 +1,7 @@
 import { Knex } from 'knex'
 
-import { adminType, adminTypes, TableName } from 'src/models'
+import { TableName } from 'src/models'
+import { adminType, adminTypes } from 'src/shared-types'
 
 const tableName = TableName.Admins
 

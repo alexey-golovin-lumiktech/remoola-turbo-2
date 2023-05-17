@@ -2,8 +2,8 @@ import { ApiProperty, ApiPropertyOptional, PickType } from '@nestjs/swagger'
 import { Exclude, Expose } from 'class-transformer'
 import { IsDate, IsIn, IsString, ValidateIf } from 'class-validator'
 
-import { adminType, IAdminModel } from 'src/models'
-import { ValueOf } from 'src/shared-types'
+import { IAdminModel } from 'src/models'
+import { adminType } from 'src/shared-types'
 
 class Admin implements IAdminModel {
   @Expose()

@@ -1,10 +1,6 @@
 import { IBaseModel } from './base'
 
-import { ValueOf } from 'src/shared-types'
-
-export const invoiceStatus = { paid: `paid`, due: `due`, canceled: `canceled` } as const
-export const invoiceStatuses = Object.values(invoiceStatus)
-export type InvoiceStatus = ValueOf<typeof invoiceStatus>
+import { InvoiceStatus } from 'src/shared-types'
 
 export interface IInvoiceModel extends IBaseModel {
   creatorId: string

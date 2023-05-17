@@ -1,9 +1,10 @@
 import { ApiProperty, ApiPropertyOptional, OmitType, PickType } from '@nestjs/swagger'
-import { Expose, Type } from 'class-transformer'
+import { Expose } from 'class-transformer'
 import { IsEmail } from 'class-validator'
 
 import * as constants from 'src/constants'
-import { IInvoiceModel, InvoiceStatus, invoiceStatuses } from 'src/models'
+import { IInvoiceModel } from 'src/models'
+import { InvoiceStatus, invoiceStatuses, InvoiceType, invoiceTypes, SortDirection, sortDirections } from 'src/shared-types'
 
 export class Invoice implements IInvoiceModel {
   @Expose()
@@ -66,13 +67,32 @@ export class CreateInvoice extends PickType(Invoice, [`charges`, `description`] 
   referer: string
 }
 
-export class InvoicesListResponse {
+export class QueryDataListSorting<TModel> {
   @Expose()
   @ApiProperty()
-  count: number
+  field: keyof TModel
 
   @Expose()
-  @ApiProperty({ type: [InvoiceResponse] })
-  @Type(() => InvoiceResponse)
-  data: InvoiceResponse[]
+  @ApiProperty({ enum: sortDirections })
+  direction: SortDirection
+}
+
+export class QueryDataList {
+  @Expose()
+  @ApiPropertyOptional()
+  limit?: number
+
+  @Expose()
+  @ApiPropertyOptional({ default: 0 })
+  offset?: number
+
+  @Expose()
+  @ApiPropertyOptional({ type: QueryDataListSorting, default: undefined })
+  sorting?: QueryDataListSorting<IInvoiceModel> = undefined
+}
+
+export class QueryInvoices extends QueryDataList {
+  @Expose()
+  @ApiPropertyOptional({ enum: invoiceTypes })
+  type?: InvoiceType = null
 }

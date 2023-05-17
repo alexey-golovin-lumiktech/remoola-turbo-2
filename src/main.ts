@@ -6,10 +6,11 @@ import { DocumentBuilder, SwaggerCustomOptions, SwaggerModule } from '@nestjs/sw
 import { classToPlain, plainToClass } from 'class-transformer'
 
 import { AppModule } from './app.module'
+import { swaggerDocExpansion } from './shared-types'
+import { checkProvidedEnvs } from './utils'
 
 import { AdminModule } from 'src/admin/admin.module'
 import { AdminsService } from 'src/admin/entities/admins/admins.service'
-import { swaggerDocExpansion } from 'src/common'
 import { ConsumerModule } from 'src/consumer/consumer.module'
 import { ConsumersService } from 'src/consumer/entities/consumer/consumer.service'
 import { AdminDTOS, CommonDTOS, ConsumerDTOS } from 'src/dtos'
@@ -64,7 +65,9 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService)
   const PORT = configService.get<number>(`PORT`)
-  await app.listen(PORT, () => console.log(`Server started on = http://localhost:${PORT}`))
+  const startMessage = `Server started on = http://localhost:${PORT}`
+  const cb = () => (checkProvidedEnvs(process.cwd())(), console.log(startMessage))
+  await app.listen(PORT, cb)
   return app
 }
 

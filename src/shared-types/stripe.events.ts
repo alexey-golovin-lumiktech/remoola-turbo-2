@@ -63,11 +63,7 @@ export const stripeEvent = {
   chargeCaptured: `charge.captured`,
 } as const
 
-export type StripeEvent = typeof stripeEvent
-export type StripeEventKey = keyof StripeEvent
-export type StripeEventValue = StripeEvent[StripeEventKey]
+export type StripeEvent = ValueOf<typeof stripeEvent>
 
-export const paymentMethodType = { card: `card` } as const
-export type PaymentMethodType = typeof paymentMethodType
-export type PaymentMethodTypeKey = keyof PaymentMethodType
-export type PaymentMethodTypeValue = PaymentMethodType[PaymentMethodTypeKey]
+export const paymentMethod = { card: `card` } as const
+export type PaymentMethod = ValueOf<typeof paymentMethod>

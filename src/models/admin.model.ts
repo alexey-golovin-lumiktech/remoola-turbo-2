@@ -1,10 +1,6 @@
 import { IBaseModel } from './base'
 
-import { ValueOf } from 'src/shared-types'
-
-export const adminType = { super: `super`, admin: `admin` } as const
-export const adminTypes = Object.values(adminType)
-export type AdminType = ValueOf<typeof adminType>
+import { AdminType } from 'src/shared-types'
 
 export interface IAdminModel extends IBaseModel {
   email: string

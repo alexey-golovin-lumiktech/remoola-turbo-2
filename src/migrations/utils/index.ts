@@ -1,7 +1,6 @@
 import { Knex } from 'knex'
 
 import { TableName as tableName } from 'src/models'
-import { ValueOf } from 'src/shared-types'
 
 type TableName = ValueOf<typeof tableName>
 

@@ -3,7 +3,8 @@ import { Expose } from 'class-transformer'
 
 import { BaseModel } from '../common'
 
-import { IInvoiceModel, InvoiceStatus, invoiceStatuses } from 'src/models'
+import { IInvoiceModel } from 'src/models'
+import { InvoiceStatus, invoiceStatuses } from 'src/shared-types'
 
 class Invoice extends BaseModel implements IInvoiceModel {
   @Expose()

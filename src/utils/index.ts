@@ -64,4 +64,6 @@ export const toResponse = <T, V>(cls: ClassConstructor<T>, data: V | V[]) => {
 
 export const queryBuilder = {
   makeSqlIn: (arr: (string | number)[]): string => arr.map(x => `'${x}'`).join(`,`),
-} as const
+}
+
+export * from './provided-envs-checking.util'

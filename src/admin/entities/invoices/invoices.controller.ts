@@ -5,10 +5,10 @@ import { Response as IExpressResponse } from 'express'
 import { InvoicesService } from './invoices.service'
 
 import { AdminPanelQueryTransformPipe } from 'src/admin/pipes'
-import { IQuery } from 'src/common'
 import { ApiCountRowsResponse } from 'src/decorators'
 import { AdminDTOS, CommonDTOS } from 'src/dtos'
 import { IInvoiceModel } from 'src/models'
+import { IQuery } from 'src/shared-types'
 
 @ApiTags(`admin`)
 @Controller(`admin/invoices`)

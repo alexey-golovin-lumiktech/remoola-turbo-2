@@ -2,10 +2,9 @@ import type { Knex as IKnex } from 'knex'
 import { Knex } from 'knex'
 import snakeCase from 'lodash/snakeCase'
 
-import { IFilter, IQuery } from './base.types'
-
 import { CommonDTOS } from 'src/dtos'
 import { IBaseModel } from 'src/models'
+import { IFilter, IQuery } from 'src/shared-types'
 import { queryBuilder } from 'src/utils'
 
 export interface IBaseRepository<TModel> {

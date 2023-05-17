@@ -4,8 +4,7 @@ import { IsIn, IsNotEmpty, IsString } from 'class-validator'
 
 import * as CommonDTOS from '../common'
 
-import { adminType, adminTypes } from 'src/models'
-import { ValueOf } from 'src/shared-types'
+import { adminType, adminTypes } from 'src/shared-types'
 
 export class Access extends CommonDTOS.Access {
   @Expose()

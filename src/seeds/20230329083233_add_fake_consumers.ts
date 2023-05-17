@@ -1,6 +1,7 @@
 import { Knex } from 'knex'
 
-import { invoiceStatuses, TableName } from 'src/models'
+import { TableName } from 'src/models'
+import { invoiceStatuses } from 'src/shared-types'
 import { generatePasswordHash, generatePasswordHashSalt } from 'src/utils'
 
 export async function seed(knex: Knex): Promise<void> {

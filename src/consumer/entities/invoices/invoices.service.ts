@@ -5,8 +5,9 @@ import { ConsumersService } from '../consumer/consumer.service'
 import { InvoicesRepository } from './invoices.repository'
 
 import { BaseService } from 'src/common'
-import { ConsumerDTOS } from 'src/dtos'
-import { IConsumerModel, IInvoiceModel, invoiceStatus } from 'src/models'
+import { CommonDTOS, ConsumerDTOS } from 'src/dtos'
+import { IConsumerModel, IInvoiceModel } from 'src/models'
+import { invoiceStatus, invoiceType } from 'src/shared-types'
 
 @Injectable()
 export class InvoicesService extends BaseService<IInvoiceModel, InvoicesRepository> {
@@ -17,8 +18,14 @@ export class InvoicesService extends BaseService<IInvoiceModel, InvoicesReposito
     super(repo)
   }
 
-  async getInvoices(identity: IConsumerModel): Promise<ConsumerDTOS.InvoicesListResponse> {
-    const invoices = await this.repository.findAndCountAll({ filter: { creatorId: identity.id } })
+  async getInvoices(
+    identity: IConsumerModel,
+    query: ConsumerDTOS.QueryInvoices,
+  ): Promise<CommonDTOS.ListResponseDTO<ConsumerDTOS.InvoiceResponse>> {
+    const { limit, offset, type } = query
+    const paging = { limit, offset }
+    const filter = type == invoiceType.incoming ? { refererId: identity.id } : { creatorId: identity.id }
+    const invoices = await this.repository.findAndCountAll({ filter, paging, sorting: [] })
     return invoices
   }
 

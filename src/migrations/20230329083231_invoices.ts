@@ -1,6 +1,7 @@
 import { Knex } from 'knex'
 
-import { invoiceStatus, invoiceStatuses, TableName } from 'src/models'
+import { TableName } from 'src/models'
+import { invoiceStatus, invoiceStatuses } from 'src/shared-types'
 
 const tableName = TableName.Invoices
 

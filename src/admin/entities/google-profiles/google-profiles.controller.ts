@@ -6,10 +6,10 @@ import { AdminPanelQueryTransformPipe } from '../../pipes'
 
 import { GoogleProfilesService } from './google-profiles.service'
 
-import { IQuery } from 'src/common'
 import { ApiCountRowsResponse } from 'src/decorators/response-count-rows.decorator'
 import { AdminDTOS, CommonDTOS } from 'src/dtos'
 import { IGoogleProfileModel } from 'src/models'
+import { IQuery } from 'src/shared-types'
 
 @ApiTags(`admin`)
 @Controller(`admin/google-profiles`)

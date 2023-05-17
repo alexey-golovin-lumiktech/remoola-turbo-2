@@ -8,7 +8,7 @@ import { AdminsService } from 'src/admin/entities/admins/admins.service'
 import { ConsumersService } from 'src/consumer/entities/consumer/consumer.service'
 import { IS_PUBLIC } from 'src/decorators'
 import { IAdminModel, IConsumerModel } from 'src/models'
-import { DeepPartialGeneric } from 'src/shared-types'
+import { AuthHeader, authHeader, authHeaders, separator } from 'src/shared-types'
 import { validatePassword } from 'src/utils'
 
 export const REQUEST_AUTH_IDENTITY = Symbol(`REQUEST_AUTH_IDENTITY`)
@@ -17,10 +17,6 @@ export const ReqAuthIdentity = createParamDecorator((_, context: ExecutionContex
   return request[REQUEST_AUTH_IDENTITY]
 })
 export type IReqAuthIdentity = IConsumerModel | IAdminModel
-
-const authHeaderType = { Bearer: `Bearer`, Basic: `Basic` } as const
-const authHeaderTypes = Object.values(authHeaderType)
-type AuthHeaderType = keyof typeof authHeaderType
 
 const messages = {
   LOST_HEADER: `Lost required authorization header!`,
@@ -34,7 +30,7 @@ const messages = {
 
 export class AuthGuard implements CanActivate {
   private readonly logger = new Logger(AuthGuard.name)
-  private readonly separator = { token: ` `, credentials: `:` } as const
+  private readonly separator = separator
 
   constructor(
     private readonly reflector: Reflector,
@@ -55,15 +51,15 @@ export class AuthGuard implements CanActivate {
     const { authorization = null } = request.headers
     if (authorization == null || authorization.length == 0) return this.throwHandler(messages.LOST_HEADER)
 
-    const [type, encoded] = authorization.split(this.separator.token) as [AuthHeaderType, string]
-    if (authHeaderTypes.includes(type) == false) return this.throwHandler(messages.UNEXPECTED(type))
+    const [type, encoded] = authorization.split(this.separator.token) as [AuthHeader, string]
+    if (authHeaders.includes(type) == false) return this.throwHandler(messages.UNEXPECTED(type))
 
     return this.processors[type](encoded, request)
   }
 
   private readonly processors = {
-    [authHeaderType.Basic]: this.basicProcessor.bind(this),
-    [authHeaderType.Bearer]: this.bearerProcessor.bind(this),
+    [authHeader.Basic]: this.basicProcessor.bind(this),
+    [authHeader.Bearer]: this.bearerProcessor.bind(this),
   }
 
   private async basicProcessor(encoded: string, request: IExpressRequest) {

@@ -1,5 +1,3 @@
 export * from './constants'
 export * from './countries'
 export * from './regexp'
-export * from './strategies'
-export * from './stripe.events'
