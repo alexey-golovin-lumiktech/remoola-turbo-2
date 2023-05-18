@@ -1,7 +1,7 @@
-import { ApiProperty, ApiPropertyOptional, PickType } from '@nestjs/swagger'
-import { Expose } from 'class-transformer'
+import { ApiProperty, PickType } from '@nestjs/swagger'
+import { Expose, Type } from 'class-transformer'
 
-import { BaseModel } from '../common'
+import { BaseModel, ListResponse } from '../common'
 
 import { IInvoiceModel } from 'src/models'
 import { InvoiceStatus, invoiceStatuses } from 'src/shared-types'
@@ -24,7 +24,7 @@ class Invoice extends BaseModel implements IInvoiceModel {
   tax: number
 
   @Expose()
-  @ApiPropertyOptional({ default: null })
+  @ApiProperty({ required: false, default: null })
   description?: string = null
 
   @Expose()
@@ -33,5 +33,12 @@ class Invoice extends BaseModel implements IInvoiceModel {
 }
 
 export class InvoiceResponse extends Invoice {}
+
+export class InvoicesList extends ListResponse<InvoiceResponse> {
+  @Expose()
+  @ApiProperty({ type: [InvoiceResponse] })
+  @Type(() => InvoiceResponse)
+  data: InvoiceResponse[]
+}
 
 export class UpdateInvoiceStatus extends PickType(Invoice, [`status`] as const) {}

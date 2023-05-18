@@ -1,14 +1,11 @@
-import { ApiProperty, ApiPropertyOptional, PickType } from '@nestjs/swagger'
-import { Exclude, Expose } from 'class-transformer'
-import { ValidateIf } from 'class-validator'
+import { ApiProperty, PickType } from '@nestjs/swagger'
+import { Exclude, Expose, Type } from 'class-transformer'
+
+import { BaseModel, ListResponse } from '../common'
 
 import { IConsumerModel } from 'src/models'
 
-export class Consumer implements IConsumerModel {
-  @Expose()
-  @ApiProperty()
-  id: string
-
+export class Consumer extends BaseModel implements IConsumerModel {
   @Expose()
   @ApiProperty()
   email: string
@@ -17,38 +14,32 @@ export class Consumer implements IConsumerModel {
   @ApiProperty()
   verified: boolean
 
-  @Expose()
-  @ApiProperty()
-  createdAt: Date
-
-  @Expose()
-  @ApiProperty()
-  updatedAt: Date
-
   @Exclude()
-  @ApiPropertyOptional({ default: null })
+  @ApiProperty({ required: false, default: null })
   password?: string
 
   @Exclude()
-  @ApiPropertyOptional({ default: null })
+  @ApiProperty({ required: false, default: null })
   salt?: string
 
   @Expose()
-  @ApiPropertyOptional({ default: null })
+  @ApiProperty({ required: false, default: null })
   firstName?: string
 
   @Expose()
-  @ApiPropertyOptional({ default: null })
+  @ApiProperty({ required: false, default: null })
   lastName?: string
 
   @Expose()
-  @ApiPropertyOptional({ default: null })
+  @ApiProperty({ required: false, default: null })
   middleName?: string
+}
 
+export class ConsumersList extends ListResponse<Consumer> {
   @Expose()
-  @ValidateIf(({ value }) => value != null)
-  @ApiPropertyOptional({ default: null })
-  deletedAt?: Date
+  @ApiProperty({ type: [Consumer] })
+  @Type(() => Consumer)
+  data: Consumer[]
 }
 
 export class UpsertConsumer extends PickType(Consumer, [`email`, `password`, `verified`, `firstName`, `lastName`, `middleName`]) {}

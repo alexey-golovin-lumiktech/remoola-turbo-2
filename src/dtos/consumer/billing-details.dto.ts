@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional, OmitType } from '@nestjs/swagger'
+import { ApiProperty, OmitType } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 import { IsEmail } from 'class-validator'
 
@@ -15,40 +15,40 @@ class BillingDetails extends BaseModel implements IBillingDetailsModel {
   consumerId: string
 
   @Expose()
-  @ApiPropertyOptional({ default: null })
+  @ApiProperty({ required: false, default: null })
   @IsEmail({}, { message: constants.constants.INVALID_EMAIL })
   email?: string = null
 
   @Expose()
-  @ApiPropertyOptional({ default: null })
+  @ApiProperty({ required: false, default: null })
   name?: string = null
 
   @Expose()
-  @ApiPropertyOptional({ default: null })
+  @ApiProperty({ required: false, default: null })
   phone?: string = null
 
   @Expose()
-  @ApiPropertyOptional({ default: null })
+  @ApiProperty({ required: false, default: null })
   city?: string = null
 
   @Expose()
-  @ApiPropertyOptional({ default: null })
+  @ApiProperty({ required: false, default: null })
   country?: string = null
 
   @Expose()
-  @ApiPropertyOptional({ default: null })
+  @ApiProperty({ required: false, default: null })
   line1?: string = null
 
   @Expose()
-  @ApiPropertyOptional({ default: null })
+  @ApiProperty({ required: false, default: null })
   line2?: string = null
 
   @Expose()
-  @ApiPropertyOptional({ default: null })
+  @ApiProperty({ required: false, default: null })
   postalCode?: string = null
 
   @Expose()
-  @ApiPropertyOptional({ default: null })
+  @ApiProperty({ required: false, default: null })
   state?: string = null
 }
 

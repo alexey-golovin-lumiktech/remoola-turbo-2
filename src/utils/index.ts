@@ -3,6 +3,8 @@ import * as crypto from 'crypto'
 import { existsSync } from 'fs'
 import { resolve } from 'path'
 
+import { KnexCount } from 'src/shared-types'
+
 export const generatePasswordHash = (params = { password: ``, salt: `` }): string => {
   if (params.password.length == 0) throw new Error(`Password could not be empty`)
   if (params.salt.length == 0) throw new Error(`Salt could not be empty`)
@@ -64,6 +66,10 @@ export const toResponse = <T, V>(cls: ClassConstructor<T>, data: V | V[]) => {
 
 export const queryBuilder = {
   makeSqlIn: (arr: (string | number)[]): string => arr.map(x => `'${x}'`).join(`,`),
+}
+
+export const getKnexCount = ([knexCount]: KnexCount[]): number => {
+  return knexCount?.count ? Number(knexCount.count) : 0
 }
 
 export * from './provided-envs-checking.util'

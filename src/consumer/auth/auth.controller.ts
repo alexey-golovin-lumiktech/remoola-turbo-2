@@ -5,7 +5,7 @@ import { Response as IExpressResponse } from 'express'
 import { AuthService } from './auth.service'
 
 import { PublicEndpoint } from 'src/decorators'
-import { ConsumerDTOS } from 'src/dtos'
+import { CONSUMER } from 'src/dtos'
 import { ReqAuthIdentity } from 'src/guards/auth.guard'
 import { TransformResponse } from 'src/interceptors/response.interceptor'
 import { IConsumerModel } from 'src/models'
@@ -18,23 +18,23 @@ export class AuthController {
   constructor(@Inject(AuthService) private readonly service: AuthService) {}
 
   @Post(`/signin`)
-  @ApiOkResponse({ type: ConsumerDTOS.SigninResponse })
-  @TransformResponse(ConsumerDTOS.SigninResponse)
-  signin(@ReqAuthIdentity() identity: IConsumerModel): Promise<ConsumerDTOS.SigninResponse> {
+  @ApiOkResponse({ type: CONSUMER.SigninResponse })
+  @TransformResponse(CONSUMER.SigninResponse)
+  signin(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.SigninResponse> {
     return this.service.signin(identity)
   }
 
   @PublicEndpoint()
   @Post(`/google-signin`)
-  @ApiOkResponse({ type: ConsumerDTOS.SigninResponse })
-  @TransformResponse(ConsumerDTOS.SigninResponse)
-  googleSignin(@Body() body: ConsumerDTOS.GoogleSignin): Promise<ConsumerDTOS.SigninResponse> {
+  @ApiOkResponse({ type: CONSUMER.SigninResponse })
+  @TransformResponse(CONSUMER.SigninResponse)
+  googleSignin(@Body() body: CONSUMER.GoogleSignin): Promise<CONSUMER.SigninResponse> {
     return this.service.googleSignin(body)
   }
 
   @PublicEndpoint()
   @Post(`/signup`)
-  signup(@Body() body: ConsumerDTOS.SignupRequest): Promise<void | never> {
+  signup(@Body() body: CONSUMER.SignupRequest): Promise<void | never> {
     return this.service.signup(body)
   }
 

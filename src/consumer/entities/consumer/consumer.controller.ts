@@ -7,7 +7,7 @@ import { InvoicesService } from '../invoices/invoices.service'
 import { ConsumersService } from './consumer.service'
 
 import { ApiCountRowsResponse } from 'src/decorators'
-import { CommonDTOS, ConsumerDTOS } from 'src/dtos'
+import { CONSUMER } from 'src/dtos'
 import { ReqAuthIdentity } from 'src/guards/auth.guard'
 import { TransformResponse } from 'src/interceptors/response.interceptor'
 import { IConsumerModel } from 'src/models'
@@ -22,35 +22,29 @@ export class ConsumersController {
   ) {}
 
   @Get(`/`)
-  @ApiOkResponse({ type: ConsumerDTOS.ConsumerResponse })
-  @TransformResponse(ConsumerDTOS.ConsumerResponse)
-  getConsumerById(@ReqAuthIdentity() identity: IConsumerModel): ConsumerDTOS.ConsumerResponse {
+  @ApiOkResponse({ type: CONSUMER.ConsumerResponse })
+  @TransformResponse(CONSUMER.ConsumerResponse)
+  getConsumerById(@ReqAuthIdentity() identity: IConsumerModel): CONSUMER.ConsumerResponse {
     return identity
   }
 
   @Get(`/billing-details`)
-  @ApiOkResponse({ type: ConsumerDTOS.BillingDetailsResponse })
-  @TransformResponse(ConsumerDTOS.BillingDetailsResponse)
-  getBillingDetails(@ReqAuthIdentity() identity: IConsumerModel): Promise<ConsumerDTOS.BillingDetailsResponse> {
+  @ApiOkResponse({ type: CONSUMER.BillingDetailsResponse })
+  @TransformResponse(CONSUMER.BillingDetailsResponse)
+  getBillingDetails(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.BillingDetailsResponse> {
     return this.billingDetailsService.getBillingDetails({ consumerId: identity.id })
   }
 
   @Get(`/invoices`)
-  // @TransformResponse(CommonDTOS.ListResponseDTO<ConsumerDTOS.QueryInvoices>)
-  @ApiCountRowsResponse(ConsumerDTOS.QueryInvoices)
-  getInvoices(
-    @ReqAuthIdentity() identity: IConsumerModel, //
-    @Query() query?: ConsumerDTOS.QueryInvoices,
-  ): Promise<CommonDTOS.ListResponseDTO<ConsumerDTOS.InvoiceResponse>> {
+  @ApiCountRowsResponse(CONSUMER.QueryInvoices)
+  @TransformResponse(CONSUMER.InvoicesList)
+  getInvoices(@ReqAuthIdentity() identity: IConsumerModel, @Query() query?: CONSUMER.QueryInvoices): Promise<CONSUMER.InvoicesList> {
     return this.invoicesService.getInvoices(identity, query)
   }
 
   @Post(`/invoices`)
-  @TransformResponse(ConsumerDTOS.Invoice)
-  createInvoice(
-    @ReqAuthIdentity() identity: IConsumerModel, //
-    @Body() body: ConsumerDTOS.CreateInvoice,
-  ): Promise<ConsumerDTOS.Invoice> {
+  @TransformResponse(CONSUMER.Invoice)
+  createInvoice(@ReqAuthIdentity() identity: IConsumerModel, @Body() body: CONSUMER.CreateInvoice): Promise<CONSUMER.Invoice> {
     return this.invoicesService.createInvoice(identity, body)
   }
 }

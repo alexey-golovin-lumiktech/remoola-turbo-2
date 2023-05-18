@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
+import { ApiProperty } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 
 import { IBaseModel } from 'src/models'
@@ -17,6 +17,6 @@ export class BaseModel implements IBaseModel {
   updatedAt: Date
 
   @Expose()
-  @ApiPropertyOptional({ default: null })
+  @ApiProperty({ required: false, default: null })
   deletedAt?: Date = null
 }

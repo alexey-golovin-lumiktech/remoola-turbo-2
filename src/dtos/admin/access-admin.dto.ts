@@ -2,11 +2,9 @@ import { ApiProperty } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 import { IsIn, IsNotEmpty, IsString } from 'class-validator'
 
-import * as CommonDTOS from '../common'
-
 import { adminType, adminTypes } from 'src/shared-types'
 
-export class Access extends CommonDTOS.Access {
+export class Access {
   @Expose()
   @ApiProperty({ example: `access-token-string` })
   @IsString()

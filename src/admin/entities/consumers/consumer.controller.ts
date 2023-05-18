@@ -6,8 +6,8 @@ import { AdminPanelQueryTransformPipe } from '../../pipes'
 
 import { AdminConsumersService } from './consumer.service'
 
-import { ApiCountRowsResponse } from 'src/decorators/response-count-rows.decorator'
-import { AdminDTOS, CommonDTOS } from 'src/dtos'
+import { ADMIN } from 'src/dtos'
+import { TransformResponse } from 'src/interceptors/response.interceptor'
 import { IConsumerModel } from 'src/models'
 import { IQuery } from 'src/shared-types'
 
@@ -17,11 +17,12 @@ export class AdminConsumersController {
   constructor(@Inject(AdminConsumersService) private readonly service: AdminConsumersService) {}
 
   @Get(`/`)
-  @ApiCountRowsResponse(AdminDTOS.Consumer)
+  @TransformResponse(ADMIN.ConsumersList)
+  @ApiOkResponse({ type: ADMIN.ConsumersList })
   async findAndCountAll(
     @Query(new AdminPanelQueryTransformPipe()) query: IQuery<IConsumerModel>,
     @Response() res: IExpressResponse,
-  ): Promise<CommonDTOS.ListResponseDTO<AdminDTOS.Consumer>> {
+  ): Promise<ADMIN.ConsumersList> {
     const result = await this.service.repository.findAndCountAll(query)
     res.set(`Content-Range`, result.count.toString())
     res.send(result.data)
@@ -29,20 +30,20 @@ export class AdminConsumersController {
   }
 
   @Post(`/`)
-  @ApiOkResponse({ type: AdminDTOS.Consumer })
-  create(@Body() body: AdminDTOS.UpsertConsumer): Promise<AdminDTOS.Consumer> {
+  @ApiOkResponse({ type: ADMIN.Consumer })
+  create(@Body() body: ADMIN.UpsertConsumer): Promise<ADMIN.Consumer> {
     return this.service.create(body)
   }
 
   @Put(`/:consumerId`)
-  @ApiOkResponse({ type: AdminDTOS.Consumer })
-  update(@Param(`consumerId`) consumerId: string, @Body() body: AdminDTOS.UpsertConsumer): Promise<AdminDTOS.Consumer> {
+  @ApiOkResponse({ type: ADMIN.Consumer })
+  update(@Param(`consumerId`) consumerId: string, @Body() body: ADMIN.UpsertConsumer): Promise<ADMIN.Consumer> {
     return this.service.update(consumerId, body)
   }
 
   @Get(`/:consumerId`)
-  @ApiOkResponse({ type: AdminDTOS.Consumer })
-  getById(@Param(`consumerId`) consumerId: string): Promise<AdminDTOS.Consumer> {
+  @ApiOkResponse({ type: ADMIN.Consumer })
+  getById(@Param(`consumerId`) consumerId: string): Promise<ADMIN.Consumer> {
     return this.service.repository.findById(consumerId)
   }
 }

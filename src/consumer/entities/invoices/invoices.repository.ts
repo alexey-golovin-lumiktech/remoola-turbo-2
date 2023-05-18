@@ -1,59 +1,34 @@
 import { Injectable } from '@nestjs/common'
-import { snakeCase } from 'lodash'
+import { ConfigService } from '@nestjs/config'
 import { InjectKnex, Knex } from 'nestjs-knex'
 
 import { BaseRepository } from 'src/common'
-import { CommonDTOS, ConsumerDTOS } from 'src/dtos'
+import { CONSUMER } from 'src/dtos'
 import { IInvoiceModel, TableName } from 'src/models'
 import { IQuery } from 'src/shared-types'
-import { queryBuilder } from 'src/utils'
+import { getKnexCount } from 'src/utils'
+import { ChainedQB } from 'src/utils/chained-query-builder'
 
 @Injectable()
 export class InvoicesRepository extends BaseRepository<IInvoiceModel> {
-  constructor(@InjectKnex() knex: Knex) {
+  private readonly mode: string
+
+  constructor(@InjectKnex() knex: Knex, private readonly configService: ConfigService) {
     super(knex, TableName.Invoices)
+    this.mode = this.configService.get<string>(`NODE_ENV`)
   }
 
-  async findAndCountAll(query?: IQuery<IInvoiceModel>): Promise<CommonDTOS.ListResponseDTO<ConsumerDTOS.InvoiceResponse>> {
-    const modify = qb => {
-      if (query?.filter) {
-        const raw = Object.entries(query.filter).reduce((acc, [field, value]) => {
-          if (Array.isArray(value) && typeof value != `string`) acc += `${field} IN(${queryBuilder.makeSqlIn(value)})`
-          else acc += `${snakeCase(field)} = '${String(value)}'`
-          return acc
-        }, ``)
-        qb.whereRaw(raw)
-      }
+  async findAndCountAll(query?: IQuery<IInvoiceModel>): Promise<CONSUMER.InvoicesList> {
+    const baseQuery = this.knex.from(`${TableName.Invoices} as i`).modify(qb => new ChainedQB(qb).filter(query?.filter ?? {}))
 
-      if (query?.sorting) query.sorting.forEach(({ field, direction }) => qb.orderBy(String(field), direction))
+    const count = await baseQuery.clone().count().then(getKnexCount)
 
-      if (query?.paging) {
-        if (query.paging?.limit) qb.limit(query.paging.limit)
-        if (query.paging?.offset) qb.offset(query.paging.offset)
-      }
-    }
-
-    const data = await this.query
+    const data = await baseQuery
       .clone()
-      .join(`${TableName.Consumers} as creator`, `creator.id`, `invoices.creator_id`)
-      .join(`${TableName.Consumers} as referer`, `referer.id`, `invoices.referer_id`)
-      .select(`${this.tableName}.*`, `creator.email as creator`, `referer.email as referer`)
-      .modify(modify)
-
-    const count = await this.query
-      .clone()
-      .modify(qb => {
-        if (query?.filter) {
-          const raw = Object.entries(query.filter).reduce((acc, [field, value]) => {
-            if (Array.isArray(value) && typeof value != `string`) acc += `${field} IN(${queryBuilder.makeSqlIn(value)})`
-            else acc += `${snakeCase(field)} = '${String(value)}'`
-            return acc
-          }, ``)
-          qb.whereRaw(raw)
-        }
-      })
-      .count()
-      .then(([{ count }]) => count)
+      .join(`${TableName.Consumers} as cr`, `cr.id`, `i.creator_id`)
+      .join(`${TableName.Consumers} as ref`, `ref.id`, `i.referer_id`)
+      .select(`i.*`, `cr.email as creator`, `ref.email as referer`)
+      .modify(qb => new ChainedQB(qb).order(query?.sorting ?? []).paging(query?.paging ?? {}))
 
     return { count, data }
   }

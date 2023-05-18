@@ -1,25 +1,11 @@
-import { ApiProperty, ApiPropertyOptional, OmitType } from '@nestjs/swagger'
-import { Expose } from 'class-transformer'
+import { ApiProperty, OmitType } from '@nestjs/swagger'
+import { Expose, Type } from 'class-transformer'
+
+import { BaseModel, ListResponse } from '../common'
 
 import { IGoogleProfileModel } from 'src/models'
 
-class GoogleProfile implements IGoogleProfileModel {
-  @Expose()
-  @ApiProperty()
-  id: string
-
-  @Expose()
-  @ApiProperty()
-  createdAt: Date
-
-  @Expose()
-  @ApiProperty()
-  updatedAt: Date
-
-  @Expose()
-  @ApiPropertyOptional({ default: null })
-  deletedAt?: Date = null
-
+class GoogleProfile extends BaseModel implements IGoogleProfileModel {
   @Expose()
   @ApiProperty()
   consumerId: string
@@ -33,28 +19,35 @@ class GoogleProfile implements IGoogleProfileModel {
   data: string
 
   @Expose()
-  @ApiPropertyOptional({ default: null })
+  @ApiProperty({ required: false, default: null })
   email?: string = null
 
   @Expose()
-  @ApiPropertyOptional({ default: null })
+  @ApiProperty({ required: false, default: null })
   name?: string = null
 
   @Expose()
-  @ApiPropertyOptional({ default: null })
+  @ApiProperty({ required: false, default: null })
   givenName?: string = null
 
   @Expose()
-  @ApiPropertyOptional({ default: null })
+  @ApiProperty({ required: false, default: null })
   familyName?: string = null
 
   @Expose()
-  @ApiPropertyOptional({ default: null })
+  @ApiProperty({ required: false, default: null })
   picture?: string = null
 
   @Expose()
-  @ApiPropertyOptional({ default: null })
+  @ApiProperty({ required: false, default: null })
   organization?: string = null
 }
 
 export class GoogleProfileResponse extends OmitType(GoogleProfile, [`deletedAt`] as const) {}
+
+export class GoogleProfilesList extends ListResponse<GoogleProfileResponse> {
+  @Expose()
+  @ApiProperty({ type: [GoogleProfileResponse] })
+  @Type(() => GoogleProfileResponse)
+  data: GoogleProfileResponse[]
+}

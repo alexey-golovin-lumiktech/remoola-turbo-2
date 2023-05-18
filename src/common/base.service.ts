@@ -1,10 +1,14 @@
 import { IBaseRepository } from './base.repository'
 
-export interface IBaseService<TModel, TRepository extends IBaseRepository<TModel>> {
+import { IBaseModel } from 'src/models'
+
+export interface IBaseService<TModel extends IBaseModel, TRepository extends IBaseRepository<TModel>> {
   repository: TRepository
 }
 
-export abstract class BaseService<TModel, TRepository extends IBaseRepository<TModel>> implements IBaseService<TModel, TRepository> {
+export abstract class BaseService<TModel extends IBaseModel, TRepository extends IBaseRepository<TModel>>
+  implements IBaseService<TModel, TRepository>
+{
   repository: TRepository
 
   constructor(repository: TRepository) {

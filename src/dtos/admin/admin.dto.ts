@@ -1,16 +1,13 @@
-import { ApiProperty, ApiPropertyOptional, PickType } from '@nestjs/swagger'
-import { Exclude, Expose } from 'class-transformer'
-import { IsDate, IsIn, IsString, ValidateIf } from 'class-validator'
+import { ApiProperty, PickType } from '@nestjs/swagger'
+import { Exclude, Expose, Type } from 'class-transformer'
+import { IsIn, IsString } from 'class-validator'
+
+import { BaseModel, ListResponse } from '../common'
 
 import { IAdminModel } from 'src/models'
 import { adminType } from 'src/shared-types'
 
-class Admin implements IAdminModel {
-  @Expose()
-  @IsString()
-  @ApiProperty()
-  id: string
-
+class Admin extends BaseModel implements IAdminModel {
   @Expose()
   @IsString()
   @ApiProperty()
@@ -29,24 +26,17 @@ class Admin implements IAdminModel {
   @Exclude()
   @IsString()
   salt: string
-
-  @Expose()
-  @IsDate()
-  @ApiProperty()
-  createdAt: Date
-
-  @Expose()
-  @IsDate()
-  @ApiProperty()
-  updatedAt: Date
-
-  @Expose()
-  @ValidateIf(({ value }) => value != null)
-  @IsDate()
-  @ApiPropertyOptional({ default: null })
-  deletedAt?: Date
 }
 
 export class AdminResponse extends Admin {}
+
 export class CreateAdminRequest extends PickType(Admin, [`email`, `password`, `type`] as const) {}
+
 export class UpdateAdminRequest extends CreateAdminRequest {}
+
+export class AdminsList extends ListResponse<Admin> {
+  @Expose()
+  @ApiProperty({ type: [Admin] })
+  @Type(() => Admin)
+  data: Admin[]
+}

@@ -2,12 +2,7 @@ import { ApiProperty } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 import { IsNumber } from 'class-validator'
 
-export interface IListResponse<TDto> {
-  count: number
-  data: TDto[]
-}
-
-export class ListResponseDTO<TDto> implements IListResponse<TDto> {
+export class ListResponse<TDtoClassOrType> {
   @Expose()
   @ApiProperty()
   @IsNumber()
@@ -15,5 +10,5 @@ export class ListResponseDTO<TDto> implements IListResponse<TDto> {
 
   @Expose()
   @ApiProperty()
-  data: TDto[]
+  data: TDtoClassOrType[]
 }

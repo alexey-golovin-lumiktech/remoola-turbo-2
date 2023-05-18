@@ -5,7 +5,7 @@ import { ConsumersService } from '../consumer/consumer.service'
 import { InvoicesRepository } from './invoices.repository'
 
 import { BaseService } from 'src/common'
-import { CommonDTOS, ConsumerDTOS } from 'src/dtos'
+import { CONSUMER } from 'src/dtos'
 import { IConsumerModel, IInvoiceModel } from 'src/models'
 import { invoiceStatus, invoiceType } from 'src/shared-types'
 
@@ -18,10 +18,7 @@ export class InvoicesService extends BaseService<IInvoiceModel, InvoicesReposito
     super(repo)
   }
 
-  async getInvoices(
-    identity: IConsumerModel,
-    query: ConsumerDTOS.QueryInvoices,
-  ): Promise<CommonDTOS.ListResponseDTO<ConsumerDTOS.InvoiceResponse>> {
+  async getInvoices(identity: IConsumerModel, query: CONSUMER.QueryInvoices): Promise<CONSUMER.InvoicesList> {
     const { limit, offset, type } = query
     const paging = { limit, offset }
     const filter = type == invoiceType.incoming ? { refererId: identity.id } : { creatorId: identity.id }
@@ -29,7 +26,7 @@ export class InvoicesService extends BaseService<IInvoiceModel, InvoicesReposito
     return invoices
   }
 
-  async createInvoice(identity: IConsumerModel, body: ConsumerDTOS.CreateInvoice): Promise<ConsumerDTOS.InvoiceResponse> {
+  async createInvoice(identity: IConsumerModel, body: CONSUMER.CreateInvoice): Promise<CONSUMER.InvoiceResponse> {
     //@NOTE_IMPORTANT stripe(create customer etc...) !!!!
     const referer = await this.consumersService.upsertConsumer({ email: body.referer })
     const created = await this.repository.create({

@@ -6,7 +6,7 @@ import * as uuid from 'uuid'
 import { AdminsService } from '../entities/admins/admins.service'
 
 import { constants } from 'src/constants'
-import { AdminDTOS } from 'src/dtos'
+import { ADMIN } from 'src/dtos'
 import { IAdminModel } from 'src/models'
 import { validatePassword } from 'src/utils'
 
@@ -28,7 +28,7 @@ export class AuthService {
     return admin
   }
 
-  async login(body: AdminDTOS.Credentials): Promise<AdminDTOS.Access> {
+  async login(body: ADMIN.Credentials): Promise<ADMIN.Access> {
     try {
       const admin = await this.adminsService.findByEmail(body.email)
       if (!admin) throw new NotFoundException({ message: constants.ADMIN_NOT_FOUND })

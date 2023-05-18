@@ -5,6 +5,7 @@ import { JwtService } from '@nestjs/jwt'
 import { DocumentBuilder, SwaggerCustomOptions, SwaggerModule } from '@nestjs/swagger'
 import { classToPlain, plainToClass } from 'class-transformer'
 
+import { ListResponse } from './dtos/common'
 import { AppModule } from './app.module'
 import { swaggerDocExpansion } from './shared-types'
 import { checkProvidedEnvs } from './utils'
@@ -13,7 +14,7 @@ import { AdminModule } from 'src/admin/admin.module'
 import { AdminsService } from 'src/admin/entities/admins/admins.service'
 import { ConsumerModule } from 'src/consumer/consumer.module'
 import { ConsumersService } from 'src/consumer/entities/consumer/consumer.service'
-import { AdminDTOS, CommonDTOS, ConsumerDTOS } from 'src/dtos'
+import { ADMIN, CONSUMER } from 'src/dtos'
 import { HttpExceptionFilter } from 'src/filters'
 import { AuthGuard } from 'src/guards/auth.guard'
 import { TransformResponseInterceptor } from 'src/interceptors/response.interceptor'
@@ -35,7 +36,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config, {
     deepScanRoutes: true,
     include: [AdminModule, ConsumerModule],
-    extraModels: [...Object.values(CommonDTOS), ...Object.values(AdminDTOS), ...Object.values(ConsumerDTOS)],
+    extraModels: [...Object.values(ADMIN), ...Object.values(CONSUMER), ListResponse],
   })
   const options: SwaggerCustomOptions = { swaggerOptions: { docExpansion: swaggerDocExpansion.None }, customSiteTitle }
   SwaggerModule.setup(`documentation`, app, document, options)

@@ -3,7 +3,7 @@ import { Inject, Injectable } from '@nestjs/common'
 import { AdminsRepository } from './admins.repository'
 
 import { BaseService } from 'src/common'
-import { AdminDTOS } from 'src/dtos'
+import { ADMIN } from 'src/dtos'
 import { IAdminModel } from 'src/models'
 import { generatePasswordHash, generatePasswordHashSalt } from 'src/utils'
 
@@ -14,16 +14,16 @@ export class AdminsService extends BaseService<IAdminModel, AdminsRepository> {
   }
 
   findByEmail(email: string): Promise<IAdminModel | null> {
-    return this.repository.query.where({ email }).first()
+    return this.repository.qb.where({ email }).first()
   }
 
-  async create(body: any): Promise<AdminDTOS.AdminResponse> {
+  async create(body: any): Promise<ADMIN.AdminResponse> {
     body.salt = generatePasswordHashSalt(10)
     body.password = generatePasswordHash({ password: body.password, salt: body.salt })
     return this.repository.create(body)
   }
 
-  async update(consumerId: string, body: any): Promise<AdminDTOS.AdminResponse> {
+  async update(consumerId: string, body: any): Promise<ADMIN.AdminResponse> {
     const consumer = await this.repository.findById(consumerId)
 
     if (consumer.password != body.password /* password changed by super admin */) {

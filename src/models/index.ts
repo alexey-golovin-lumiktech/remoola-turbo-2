@@ -11,4 +11,5 @@ export const TableName = {
   Consumers: `consumers`,
   BillingDetails: `billing_details`,
   Invoices: `invoices`,
-}
+} as const
+export type ITableName = ValueOf<typeof TableName>

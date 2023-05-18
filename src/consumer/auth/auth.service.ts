@@ -8,7 +8,7 @@ import * as uuid from 'uuid'
 import { ConsumersService } from '../entities/consumer/consumer.service'
 import { GoogleProfilesService } from '../entities/google-profiles/google-profiles.service'
 
-import { ConsumerDTOS } from 'src/dtos'
+import { CONSUMER } from 'src/dtos'
 import { IBaseModel, IConsumerModel } from 'src/models'
 import { MailingService } from 'src/shared-modules/mailing/mailing.service'
 import * as utils from 'src/utils'
@@ -30,10 +30,10 @@ export class AuthService {
     this.oAuth2Client = new OAuth2Client(this.audience, secret)
   }
 
-  /* OK !!! */ async googleSignin(body: ConsumerDTOS.GoogleSignin): Promise<ConsumerDTOS.SigninResponse> {
+  /* OK !!! */ async googleSignin(body: CONSUMER.GoogleSignin): Promise<CONSUMER.SigninResponse> {
     try {
       const verified = await this.oAuth2Client.verifyIdToken({ idToken: body.credential })
-      const rawGoogleProfile = new ConsumerDTOS.GoogleProfile(verified.getPayload())
+      const rawGoogleProfile = new CONSUMER.GoogleProfile(verified.getPayload())
       const consumer = await this.consumersService.upsertConsumer(this.extractConsumerData(rawGoogleProfile))
       if (consumer.deletedAt != null) throw new BadRequestException(`Consumer is suspended, please contact the support`)
 
@@ -42,22 +42,19 @@ export class AuthService {
 
       const accessToken = this.generateToken(consumer)
       const refreshToken = this.generateRefreshToken() //@TODO : need to store refresh token
-      return utils.toResponse(
-        ConsumerDTOS.SigninResponse,
-        Object.assign(consumer, { googleProfileId: gProfile.id, accessToken, refreshToken }),
-      )
+      return utils.toResponse(CONSUMER.SigninResponse, Object.assign(consumer, { googleProfileId: gProfile.id, accessToken, refreshToken }))
     } catch (error) {
       throw new HttpException(error.message || `Internal error`, HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
 
-  async signin(identity: IConsumerModel): Promise<ConsumerDTOS.SigninResponse> {
+  async signin(identity: IConsumerModel): Promise<CONSUMER.SigninResponse> {
     const accessToken = this.generateToken(identity)
     const refreshToken = this.generateRefreshToken() //@TODO : need to store refresh token
-    return utils.toResponse(ConsumerDTOS.SigninResponse, Object.assign(identity, { accessToken, refreshToken: refreshToken.token }))
+    return utils.toResponse(CONSUMER.SigninResponse, Object.assign(identity, { accessToken, refreshToken: refreshToken.token }))
   }
 
-  private extractConsumerData(dto: ConsumerDTOS.GoogleProfile): Omit<IConsumerModel, keyof IBaseModel> {
+  private extractConsumerData(dto: CONSUMER.GoogleProfile): Omit<IConsumerModel, keyof IBaseModel> {
     const fullName = dto.name.split(` `)
     return {
       email: dto.email,
@@ -67,7 +64,7 @@ export class AuthService {
     }
   }
 
-  async signup(body: ConsumerDTOS.SignupRequest): Promise<void | never> {
+  async signup(body: CONSUMER.SignupRequest): Promise<void | never> {
     const [exist] = await this.consumersService.repository.find({ filter: { email: body.email } })
     if (exist) throw new BadRequestException(`This email is already exist`)
 

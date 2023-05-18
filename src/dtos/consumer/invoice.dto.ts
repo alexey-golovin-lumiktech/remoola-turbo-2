@@ -1,28 +1,14 @@
-import { ApiProperty, ApiPropertyOptional, OmitType, PickType } from '@nestjs/swagger'
-import { Expose } from 'class-transformer'
+import { ApiProperty, OmitType, PickType } from '@nestjs/swagger'
+import { Expose, Type } from 'class-transformer'
 import { IsEmail } from 'class-validator'
+
+import { BaseModel, ListResponse } from '../common'
 
 import * as constants from 'src/constants'
 import { IInvoiceModel } from 'src/models'
 import { InvoiceStatus, invoiceStatuses, InvoiceType, invoiceTypes, SortDirection, sortDirections } from 'src/shared-types'
 
-export class Invoice implements IInvoiceModel {
-  @Expose()
-  @ApiProperty()
-  id: string
-
-  @Expose()
-  @ApiProperty()
-  createdAt: Date
-
-  @Expose()
-  @ApiProperty()
-  updatedAt: Date
-
-  @Expose()
-  @ApiPropertyOptional({ default: null })
-  deletedAt?: Date = null
-
+export class Invoice extends BaseModel implements IInvoiceModel {
   @Expose()
   @ApiProperty()
   creatorId: string
@@ -40,7 +26,7 @@ export class Invoice implements IInvoiceModel {
   tax: number
 
   @Expose()
-  @ApiPropertyOptional({ default: null })
+  @ApiProperty({ required: false, default: null })
   description?: string = null
 
   @Expose()
@@ -79,20 +65,27 @@ export class QueryDataListSorting<TModel> {
 
 export class QueryDataList {
   @Expose()
-  @ApiPropertyOptional()
+  @ApiProperty()
   limit?: number
 
   @Expose()
-  @ApiPropertyOptional({ default: 0 })
+  @ApiProperty({ default: 0 })
   offset?: number
 
   @Expose()
-  @ApiPropertyOptional({ type: QueryDataListSorting, default: undefined })
+  @ApiProperty({ type: QueryDataListSorting, default: undefined })
   sorting?: QueryDataListSorting<IInvoiceModel> = undefined
 }
 
 export class QueryInvoices extends QueryDataList {
   @Expose()
-  @ApiPropertyOptional({ enum: invoiceTypes })
+  @ApiProperty({ enum: invoiceTypes })
   type?: InvoiceType = null
+}
+
+export class InvoicesList extends ListResponse<InvoiceResponse> {
+  @Expose()
+  @ApiProperty({ type: [InvoiceResponse] })
+  @Type(() => InvoiceResponse)
+  data: InvoiceResponse[]
 }

@@ -1,3 +1,2 @@
-export * as AdminDTOS from './admin'
-export * as CommonDTOS from './common'
-export * as ConsumerDTOS from './consumer'
+export * as ADMIN from './admin'
+export * as CONSUMER from './consumer'
