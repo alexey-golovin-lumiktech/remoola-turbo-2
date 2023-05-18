@@ -4,12 +4,12 @@ import { JwtService } from '@nestjs/jwt'
 import { Request as IExpressRequest } from 'express'
 import { Observable } from 'rxjs'
 
-import { AdminsService } from 'src/admin/entities/admins/admins.service'
-import { ConsumersService } from 'src/consumer/entities/consumer/consumer.service'
-import { IS_PUBLIC } from 'src/decorators'
-import { IAdminModel, IConsumerModel } from 'src/models'
-import { AuthHeader, authHeader, authHeaders, separator } from 'src/shared-types'
-import { validatePassword } from 'src/utils'
+import { AdminsService } from '../admin/entities/admins/admins.service'
+import { ConsumersService } from '../consumer/entities/consumers/consumer.service'
+import { IS_PUBLIC } from '../decorators'
+import { IAdminModel, IConsumerModel } from '../models'
+import { AuthHeader, authHeader, authHeaders, separator } from '../shared-types'
+import { validatePassword } from '../utils'
 
 export const REQUEST_AUTH_IDENTITY = Symbol(`REQUEST_AUTH_IDENTITY`)
 export const ReqAuthIdentity = createParamDecorator((_, context: ExecutionContext) => {
@@ -37,7 +37,6 @@ export class AuthGuard implements CanActivate {
     private readonly jwtService: JwtService,
     private readonly consumersService: ConsumersService,
     private readonly adminsService: AdminsService,
-    private readonly options?: DeepPartialGeneric,
   ) {}
 
   canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {

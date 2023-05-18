@@ -1,13 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common'
 
-import { ConsumersService } from '../consumer/consumer.service'
+import { BaseService } from '../../../common'
+import { CONSUMER } from '../../../dtos'
+import { IConsumerModel, IInvoiceModel } from '../../../models'
+import { invoiceStatus, invoiceType } from '../../../shared-types'
+import { ConsumersService } from '../consumers/consumer.service'
 
 import { InvoicesRepository } from './invoices.repository'
-
-import { BaseService } from 'src/common'
-import { CONSUMER } from 'src/dtos'
-import { IConsumerModel, IInvoiceModel } from 'src/models'
-import { invoiceStatus, invoiceType } from 'src/shared-types'
 
 @Injectable()
 export class InvoicesService extends BaseService<IInvoiceModel, InvoicesRepository> {

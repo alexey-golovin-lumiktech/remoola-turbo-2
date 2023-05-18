@@ -2,7 +2,7 @@ import { Injectable, Logger, RawBodyRequest } from '@nestjs/common'
 import { InjectStripe } from 'nestjs-stripe'
 import Stripe from 'stripe'
 
-import { PaymentMethod, paymentMethod } from 'src/shared-types'
+import { PaymentMethod, paymentMethod } from '../../shared-types'
 
 @Injectable()
 export class PaymentsService {

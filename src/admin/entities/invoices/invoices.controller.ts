@@ -2,13 +2,13 @@ import { Body, Controller, Get, Inject, Param, Put, Query, Response } from '@nes
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { Response as IExpressResponse } from 'express'
 
-import { InvoicesService } from './invoices.service'
+import { ADMIN } from '../../../dtos'
+import { TransformResponse } from '../../../interceptors/response.interceptor'
+import { IInvoiceModel } from '../../../models'
+import { IQuery } from '../../../shared-types'
+import { AdminPanelQueryTransformPipe } from '../../pipes'
 
-import { AdminPanelQueryTransformPipe } from 'src/admin/pipes'
-import { ADMIN } from 'src/dtos'
-import { TransformResponse } from 'src/interceptors/response.interceptor'
-import { IInvoiceModel } from 'src/models'
-import { IQuery } from 'src/shared-types'
+import { InvoicesService } from './invoices.service'
 
 @ApiTags(`admin`)
 @Controller(`admin/invoices`)

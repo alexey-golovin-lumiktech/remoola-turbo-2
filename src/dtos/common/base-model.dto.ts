@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 
-import { IBaseModel } from 'src/models'
+import { IBaseModel } from '../../models'
 
 export class BaseModel implements IBaseModel {
   @Expose()

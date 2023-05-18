@@ -1,3 +1,5 @@
+import { ValueOf } from './common.types'
+
 export const stripeEvent = {
   setupIntentCreated: `setup_intent.created`,
   setupIntentSucceeded: `setup_intent.succeeded`,

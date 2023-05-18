@@ -1,11 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common'
 
-import { AdminsRepository } from './admins.repository'
+import { BaseService } from '../../../common'
+import { ADMIN } from '../../../dtos'
+import { IAdminModel } from '../../../models'
+import { generatePasswordHash, generatePasswordHashSalt } from '../../../utils'
 
-import { BaseService } from 'src/common'
-import { ADMIN } from 'src/dtos'
-import { IAdminModel } from 'src/models'
-import { generatePasswordHash, generatePasswordHashSalt } from 'src/utils'
+import { AdminsRepository } from './admins.repository'
 
 @Injectable()
 export class AdminsService extends BaseService<IAdminModel, AdminsRepository> {

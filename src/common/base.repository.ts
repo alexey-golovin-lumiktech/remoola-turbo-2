@@ -2,10 +2,10 @@ import type { Knex as IKnex } from 'knex'
 import { Knex } from 'knex'
 import { isEmpty, isNil, snakeCase } from 'lodash'
 
-import { ListResponse } from 'src/dtos/common'
-import { IBaseModel, ITableName } from 'src/models'
-import { IFilter, IQuery } from 'src/shared-types'
-import { getKnexCount, queryBuilder } from 'src/utils'
+import { ListResponse } from '../dtos/common'
+import { IBaseModel, TableName } from '../models'
+import { IFilter, IQuery } from '../shared-types'
+import { getKnexCount, queryBuilder } from '../utils'
 
 export interface IBaseRepository<TModel extends IBaseModel> {
   create(dto: Partial<TModel>): Promise<TModel>
@@ -25,7 +25,7 @@ export interface IBaseRepository<TModel extends IBaseModel> {
 export abstract class BaseRepository<TModel extends IBaseModel> implements IBaseRepository<TModel> {
   private columns: string[] = []
 
-  constructor(public readonly knex: Knex, private readonly tableName: ITableName) {
+  constructor(public readonly knex: Knex, private readonly tableName: TableName) {
     this.tableName = tableName
     knex(tableName).columnInfo().then(info => this.columns = Object.keys(info)) /* eslint-disable-line */
   }

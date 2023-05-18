@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 import { IsEmail, Matches } from 'class-validator'
 
-import * as constants from 'src/constants'
+import * as constants from '../../constants'
 
 export class Credentials {
   @Expose()

@@ -5,13 +5,12 @@ import { Response as IExpressResponse } from 'express'
 import { OAuth2Client } from 'google-auth-library'
 import * as uuid from 'uuid'
 
-import { ConsumersService } from '../entities/consumer/consumer.service'
+import { CONSUMER } from '../../dtos'
+import { IBaseModel, IConsumerModel } from '../../models'
+import { MailingService } from '../../shared-modules/mailing/mailing.service'
+import * as utils from '../../utils'
+import { ConsumersService } from '../entities/consumers/consumer.service'
 import { GoogleProfilesService } from '../entities/google-profiles/google-profiles.service'
-
-import { CONSUMER } from 'src/dtos'
-import { IBaseModel, IConsumerModel } from 'src/models'
-import { MailingService } from 'src/shared-modules/mailing/mailing.service'
-import * as utils from 'src/utils'
 
 @Injectable()
 export class AuthService {

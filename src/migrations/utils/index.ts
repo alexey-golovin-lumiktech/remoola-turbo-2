@@ -1,8 +1,6 @@
 import { Knex } from 'knex'
 
-import { TableName as tableName } from 'src/models'
-
-type TableName = ValueOf<typeof tableName>
+import type { TableName } from '../../models'
 
 export const addNullableRef = (column: string, inTable: TableName) => (t: Knex.AlterTableBuilder) => {
   t.uuid(column).nullable().references(`id`).inTable(inTable)

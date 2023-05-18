@@ -5,19 +5,18 @@ import { JwtService } from '@nestjs/jwt'
 import { DocumentBuilder, SwaggerCustomOptions, SwaggerModule } from '@nestjs/swagger'
 import { classToPlain, plainToClass } from 'class-transformer'
 
+import { AdminModule } from './admin/admin.module'
+import { AdminsService } from './admin/entities/admins/admins.service'
+import { ConsumerModule } from './consumer/consumer.module'
+import { ConsumersService } from './consumer/entities/consumers/consumer.service'
 import { ListResponse } from './dtos/common'
+import { AuthGuard } from './guards/auth.guard'
+import { TransformResponseInterceptor } from './interceptors/response.interceptor'
 import { AppModule } from './app.module'
+import { ADMIN, CONSUMER } from './dtos'
+import { HttpExceptionFilter } from './filters'
 import { swaggerDocExpansion } from './shared-types'
 import { checkProvidedEnvs } from './utils'
-
-import { AdminModule } from 'src/admin/admin.module'
-import { AdminsService } from 'src/admin/entities/admins/admins.service'
-import { ConsumerModule } from 'src/consumer/consumer.module'
-import { ConsumersService } from 'src/consumer/entities/consumer/consumer.service'
-import { ADMIN, CONSUMER } from 'src/dtos'
-import { HttpExceptionFilter } from 'src/filters'
-import { AuthGuard } from 'src/guards/auth.guard'
-import { TransformResponseInterceptor } from 'src/interceptors/response.interceptor'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {

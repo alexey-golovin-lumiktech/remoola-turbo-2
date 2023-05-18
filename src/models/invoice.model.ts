@@ -1,6 +1,6 @@
-import { IBaseModel } from './base'
+import { InvoiceStatus } from '../shared-types'
 
-import { InvoiceStatus } from 'src/shared-types'
+import { IBaseModel } from './base'
 
 export interface IInvoiceModel extends IBaseModel {
   creatorId: string

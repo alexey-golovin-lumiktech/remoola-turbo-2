@@ -1,10 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common'
 
-import { BillingDetailsRepository } from './billing-details.repository'
+import { BaseService } from '../../../common'
+import { CONSUMER } from '../../../dtos'
+import { IBillingDetailsModel } from '../../../models'
 
-import { BaseService } from 'src/common'
-import { CONSUMER } from 'src/dtos'
-import { IBillingDetailsModel } from 'src/models'
+import { BillingDetailsRepository } from './billing-details.repository'
 
 @Injectable()
 export class BillingDetailsService extends BaseService<IBillingDetailsModel, BillingDetailsRepository> {

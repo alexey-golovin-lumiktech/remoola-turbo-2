@@ -1,6 +1,6 @@
-import { IBaseModel } from './base'
+import { AdminType } from '../shared-types'
 
-import { AdminType } from 'src/shared-types'
+import { IBaseModel } from './base'
 
 export interface IAdminModel extends IBaseModel {
   email: string

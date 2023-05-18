@@ -2,14 +2,13 @@ import { Controller, Get, Inject, Param, Query, Response } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { Response as IExpressResponse } from 'express'
 
+import { ADMIN } from '../../../dtos'
+import { TransformResponse } from '../../../interceptors/response.interceptor'
+import { IGoogleProfileModel } from '../../../models'
+import { IQuery } from '../../../shared-types'
 import { AdminPanelQueryTransformPipe } from '../../pipes'
 
 import { GoogleProfilesService } from './google-profiles.service'
-
-import { ADMIN } from 'src/dtos'
-import { TransformResponse } from 'src/interceptors/response.interceptor'
-import { IGoogleProfileModel } from 'src/models'
-import { IQuery } from 'src/shared-types'
 
 @ApiTags(`admin`)
 @Controller(`admin/google-profiles`)

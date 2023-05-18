@@ -2,10 +2,9 @@ import { ApiProperty, PickType } from '@nestjs/swagger'
 import { Exclude, Expose, Type } from 'class-transformer'
 import { IsIn, IsString } from 'class-validator'
 
+import { IAdminModel } from '../../models'
+import { AdminType, adminType } from '../../shared-types'
 import { BaseModel, ListResponse } from '../common'
-
-import { IAdminModel } from 'src/models'
-import { adminType } from 'src/shared-types'
 
 class Admin extends BaseModel implements IAdminModel {
   @Expose()
@@ -16,7 +15,7 @@ class Admin extends BaseModel implements IAdminModel {
   @Expose()
   @IsIn(Object.keys(adminType))
   @ApiProperty({ enum: Object.keys(adminType) })
-  type: ValueOf<typeof adminType>
+  type: AdminType
 
   @Expose()
   @IsString()

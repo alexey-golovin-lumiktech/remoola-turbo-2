@@ -1,14 +1,14 @@
 import { Knex } from 'knex'
 
-import { TableName } from 'src/models'
-import { invoiceStatuses } from 'src/shared-types'
-import { generatePasswordHash, generatePasswordHashSalt } from 'src/utils'
+import { TABLES } from '../models'
+import { invoiceStatuses } from '../shared-types'
+import { generatePasswordHash, generatePasswordHashSalt } from '../utils'
 
 export async function seed(knex: Knex): Promise<void> {
-  await knex(TableName.Invoices).del()
-  await knex(TableName.BillingDetails).del()
-  await knex(TableName.GoogleProfiles).del()
-  await knex(TableName.Consumers).del()
+  await knex(TABLES.Invoices).del()
+  await knex(TABLES.BillingDetails).del()
+  await knex(TABLES.GoogleProfiles).del()
+  await knex(TABLES.Consumers).del()
 
   const raw = [
     {
@@ -44,14 +44,14 @@ export async function seed(knex: Knex): Promise<void> {
     }
   })
 
-  const consumers = await knex(TableName.Consumers).insert(consumersToInsert).returning(`*`)
+  const consumers = await knex(TABLES.Consumers).insert(consumersToInsert).returning(`*`)
 
   const rawBillingDetails = consumers.map(x => {
     const name = `${x.firstName} ${x.lastName}`
     return { email: x.email, consumerId: x.id, name }
   })
 
-  await knex(TableName.BillingDetails).insert(rawBillingDetails).returning(`*`)
+  await knex(TABLES.BillingDetails).insert(rawBillingDetails).returning(`*`)
 
   const getRnd = (s: unknown[], creator?: string) => {
     const i = s[Math.round(Math.random() * s.length)]
@@ -82,5 +82,5 @@ export async function seed(knex: Knex): Promise<void> {
     return collector
   }, {})
 
-  for (const invoices of Object.values(rawInvoices)) await knex(TableName.Invoices).insert(invoices).returning(`*`)
+  for (const invoices of Object.values(rawInvoices)) await knex(TABLES.Invoices).insert(invoices).returning(`*`)
 }

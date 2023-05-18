@@ -1,7 +1,7 @@
 import type { Knex as IKnex } from 'knex'
 import { isEmpty, isNil, snakeCase } from 'lodash'
 
-import { queryBuilder } from 'src/utils'
+import { queryBuilder } from '../utils'
 
 export class ChainedQB {
   constructor(private readonly qb: IKnex.QueryBuilder<{}, any>) {}

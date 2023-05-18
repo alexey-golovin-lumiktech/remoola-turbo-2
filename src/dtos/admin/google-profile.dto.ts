@@ -1,9 +1,8 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger'
 import { Expose, Type } from 'class-transformer'
 
+import { IGoogleProfileModel } from '../../models'
 import { BaseModel, ListResponse } from '../common'
-
-import { IGoogleProfileModel } from 'src/models'
 
 class GoogleProfile extends BaseModel implements IGoogleProfileModel {
   @Expose()

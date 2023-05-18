@@ -1,8 +1,8 @@
 import { Knex } from 'knex'
 
-import { TableName } from 'src/models'
+import { TABLES } from '../models'
 
-const tableName = TableName.Consumers
+const tableName = TABLES.Consumers
 
 export async function up(knex: Knex): Promise<void> {
   const exist = await knex.schema.hasTable(tableName)

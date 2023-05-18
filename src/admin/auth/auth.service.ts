@@ -3,12 +3,11 @@ import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import * as uuid from 'uuid'
 
+import { constants } from '../../constants'
+import { ADMIN } from '../../dtos'
+import { IAdminModel } from '../../models'
+import { validatePassword } from '../../utils'
 import { AdminsService } from '../entities/admins/admins.service'
-
-import { constants } from 'src/constants'
-import { ADMIN } from 'src/dtos'
-import { IAdminModel } from 'src/models'
-import { validatePassword } from 'src/utils'
 
 @Injectable()
 export class AuthService {

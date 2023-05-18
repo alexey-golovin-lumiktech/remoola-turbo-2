@@ -2,12 +2,11 @@ import { Inject, Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { InjectKnex, Knex } from 'nestjs-knex'
 
+import { BaseRepository } from '../../../common'
+import { IConsumerModel, TABLES } from '../../../models'
+import { IFilter } from '../../../shared-types'
 import { BillingDetailsRepository } from '../billing-details/billing-details.repository'
 import { GoogleProfilesRepository } from '../google-profiles/google-profiles.repository'
-
-import { BaseRepository } from 'src/common'
-import { IConsumerModel, TableName } from 'src/models'
-import { IFilter } from 'src/shared-types'
 
 @Injectable()
 export class ConsumersRepository extends BaseRepository<IConsumerModel> {
@@ -20,7 +19,7 @@ export class ConsumersRepository extends BaseRepository<IConsumerModel> {
     @Inject(GoogleProfilesRepository) private readonly googleProfilesRepository: GoogleProfilesRepository,
     private readonly configService: ConfigService,
   ) {
-    super(knex, TableName.Consumers)
+    super(knex, TABLES.Consumers)
     this.mode = this.configService.get<string>(`NODE_ENV`)
   }
 

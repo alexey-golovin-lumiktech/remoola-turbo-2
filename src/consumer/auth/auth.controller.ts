@@ -2,13 +2,13 @@ import { Body, Controller, Get, Inject, Logger, Post, Query, Res } from '@nestjs
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { Response as IExpressResponse } from 'express'
 
-import { AuthService } from './auth.service'
+import { PublicEndpoint } from '../../decorators'
+import { CONSUMER } from '../../dtos'
+import { ReqAuthIdentity } from '../../guards/auth.guard'
+import { TransformResponse } from '../../interceptors/response.interceptor'
+import { IConsumerModel } from '../../models'
 
-import { PublicEndpoint } from 'src/decorators'
-import { CONSUMER } from 'src/dtos'
-import { ReqAuthIdentity } from 'src/guards/auth.guard'
-import { TransformResponse } from 'src/interceptors/response.interceptor'
-import { IConsumerModel } from 'src/models'
+import { AuthService } from './auth.service'
 
 @ApiTags(`consumer`)
 @Controller(`consumer/auth`)

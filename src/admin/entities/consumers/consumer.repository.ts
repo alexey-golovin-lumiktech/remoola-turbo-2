@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common'
 import { InjectKnex, Knex } from 'nestjs-knex'
 
-import { BaseRepository } from 'src/common'
-import { IConsumerModel, TableName } from 'src/models'
+import { BaseRepository } from '../../../common'
+import { IConsumerModel, TABLES } from '../../../models'
 
 @Injectable()
 export class AdminConsumersRepository extends BaseRepository<IConsumerModel> {
   constructor(@InjectKnex() knex: Knex) {
-    super(knex, TableName.Consumers)
+    super(knex, TABLES.Consumers)
   }
 }

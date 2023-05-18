@@ -3,7 +3,7 @@ import * as crypto from 'crypto'
 import { existsSync } from 'fs'
 import { resolve } from 'path'
 
-import { KnexCount } from 'src/shared-types'
+import { KnexCount } from '../shared-types'
 
 export const generatePasswordHash = (params = { password: ``, salt: `` }): string => {
   if (params.password.length == 0) throw new Error(`Password could not be empty`)

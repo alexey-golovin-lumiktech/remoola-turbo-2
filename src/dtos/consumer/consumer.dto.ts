@@ -2,10 +2,9 @@ import { ApiProperty } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 import { IsEmail } from 'class-validator'
 
+import * as constants from '../../constants'
+import { IConsumerModel } from '../../models'
 import { BaseModel } from '../common/base-model.dto'
-
-import * as constants from 'src/constants'
-import { IConsumerModel } from 'src/models'
 
 class Consumer extends BaseModel implements IConsumerModel {
   @Expose()

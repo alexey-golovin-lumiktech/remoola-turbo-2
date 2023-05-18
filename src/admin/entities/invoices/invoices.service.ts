@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common'
 
-import { InvoicesRepository } from './invoices.repository'
+import { BaseService } from '../../../common'
+import { IInvoiceModel } from '../../../models'
 
-import { BaseService } from 'src/common'
-import { IInvoiceModel } from 'src/models'
+import { InvoicesRepository } from './invoices.repository'
 
 @Injectable()
 export class InvoicesService extends BaseService<IInvoiceModel, InvoicesRepository> {

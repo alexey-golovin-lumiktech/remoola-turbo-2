@@ -2,11 +2,10 @@ import { ApiProperty, OmitType, PickType } from '@nestjs/swagger'
 import { Expose, Type } from 'class-transformer'
 import { IsEmail } from 'class-validator'
 
+import * as constants from '../../constants'
+import { IInvoiceModel } from '../../models'
+import { InvoiceStatus, invoiceStatuses, InvoiceType, invoiceTypes, SortDirection, sortDirections } from '../../shared-types'
 import { BaseModel, ListResponse } from '../common'
-
-import * as constants from 'src/constants'
-import { IInvoiceModel } from 'src/models'
-import { InvoiceStatus, invoiceStatuses, InvoiceType, invoiceTypes, SortDirection, sortDirections } from 'src/shared-types'
 
 export class Invoice extends BaseModel implements IInvoiceModel {
   @Expose()

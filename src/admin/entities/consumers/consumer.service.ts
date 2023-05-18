@@ -1,13 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common'
 
+import { BaseService } from '../../../common'
+import { ADMIN } from '../../../dtos'
+import { IConsumerModel } from '../../../models'
+import { generatePasswordHash, generatePasswordHashSalt } from '../../../utils'
 import { GoogleProfilesService } from '../google-profiles/google-profiles.service'
 
 import { AdminConsumersRepository } from './consumer.repository'
-
-import { BaseService } from 'src/common'
-import { ADMIN } from 'src/dtos'
-import { IConsumerModel } from 'src/models'
-import { generatePasswordHash, generatePasswordHashSalt } from 'src/utils'
 
 @Injectable()
 export class AdminConsumersService extends BaseService<IConsumerModel, AdminConsumersRepository> {

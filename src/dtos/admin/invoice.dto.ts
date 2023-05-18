@@ -1,10 +1,9 @@
 import { ApiProperty, PickType } from '@nestjs/swagger'
 import { Expose, Type } from 'class-transformer'
 
+import { IInvoiceModel } from '../../models'
+import { InvoiceStatus, invoiceStatuses } from '../../shared-types'
 import { BaseModel, ListResponse } from '../common'
-
-import { IInvoiceModel } from 'src/models'
-import { InvoiceStatus, invoiceStatuses } from 'src/shared-types'
 
 class Invoice extends BaseModel implements IInvoiceModel {
   @Expose()

@@ -1,9 +1,8 @@
 import { ApiProperty, PickType } from '@nestjs/swagger'
 import { Exclude, Expose, Type } from 'class-transformer'
 
+import { IConsumerModel } from '../../models'
 import { BaseModel, ListResponse } from '../common'
-
-import { IConsumerModel } from 'src/models'
 
 export class Consumer extends BaseModel implements IConsumerModel {
   @Expose()

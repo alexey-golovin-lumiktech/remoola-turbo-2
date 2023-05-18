@@ -2,10 +2,9 @@ import { ApiProperty, OmitType } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 import { IsEmail } from 'class-validator'
 
+import * as constants from '../../constants'
+import { IBaseModel, IBillingDetailsModel } from '../../models'
 import { BaseModel } from '../common/base-model.dto'
-
-import * as constants from 'src/constants'
-import { IBaseModel, IBillingDetailsModel } from 'src/models'
 
 export type IUpsertBillingDetails = Partial<Omit<IBillingDetailsModel, keyof IBaseModel>> & { consumerId: string }
 

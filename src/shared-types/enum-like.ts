@@ -1,6 +1,8 @@
+import { ValueOf } from './common.types'
+
 export const sortDirection = { asc: `asc`, desc: `desc` } as const
 export const sortDirections = Object.values(sortDirection)
-export type SortDirection = (typeof sortDirection)[keyof typeof sortDirection]
+export type SortDirection = ValueOf<typeof sortDirection>
 
 export const sortNulls = { NULLS_FIRST: `NULLS FIRST`, NULLS_LAST: `NULLS LAST` } as const
 export const sortNullsValues = Object.values(sortNulls)
