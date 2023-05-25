@@ -8,7 +8,7 @@ export const sortNulls = { NULLS_FIRST: `NULLS FIRST`, NULLS_LAST: `NULLS LAST` 
 export const sortNullsValues = Object.values(sortNulls)
 export type SortNulls = ValueOf<typeof sortNulls>
 
-export const invoiceStatus = { paid: `paid`, due: `due`, canceled: `canceled` } as const
+export const invoiceStatus = { draft: `draft`, open: `open`, paid: `paid`, uncollectible: `uncollectible`, void: `void` } as const //like stripe
 export const invoiceStatuses = Object.values(invoiceStatus)
 export type InvoiceStatus = ValueOf<typeof invoiceStatus>
 

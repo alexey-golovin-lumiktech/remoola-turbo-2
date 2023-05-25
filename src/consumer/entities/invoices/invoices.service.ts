@@ -33,7 +33,7 @@ export class InvoicesService extends BaseService<IInvoiceModel, InvoicesReposito
       charges: body.charges,
       creatorId: identity.id,
       description: body.description,
-      status: invoiceStatus.due,
+      status: invoiceStatus.open,
       tax: 1.3,
     })
 

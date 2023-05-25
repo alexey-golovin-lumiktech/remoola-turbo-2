@@ -17,7 +17,7 @@ export async function up(knex: Knex): Promise<void> {
     table.decimal(`charges`, 10).notNullable()
     table.decimal(`tax`, 10).notNullable()
     table.string(`description`)
-    table.enum(`status`, invoiceStatuses).defaultTo(invoiceStatus.due).notNullable()
+    table.enum(`status`, invoiceStatuses).defaultTo(invoiceStatus.open).notNullable()
 
     table.timestamp(`created_at`).defaultTo(knex.fn.now())
     table.timestamp(`updated_at`).defaultTo(knex.fn.now())
