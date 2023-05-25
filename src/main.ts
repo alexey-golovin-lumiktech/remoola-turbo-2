@@ -71,14 +71,8 @@ async function bootstrap() {
   return app
 }
 
-bootstrap()
-  .then(killAppWithGrace)
-  .catch((error: any) => console.error({ error, caller: bootstrap.name, message: `Error on startup` }))
-
-interface IOptions {
-  cleanup?: boolean
-  exit?: boolean
-}
+// eslint-disable-next-line
+bootstrap().then(killAppWithGrace).catch((e: any) => console.error(e.message ?? `Bootstrap err`))
 
 function killAppWithGrace(app: INestApplication) {
   async function exitHandler(options: IOptions, exitCode?: number) {
@@ -101,3 +95,4 @@ function killAppWithGrace(app: INestApplication) {
   process.on(`SIGUSR2`, exitHandler.bind(null, { exit: true }))
   process.on(`uncaughtException`, exitHandler.bind(null, { exit: true }))
 }
+type IOptions = { cleanup?: boolean; exit?: boolean }

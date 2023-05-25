@@ -1,4 +1,4 @@
-import { BadRequestException, HttpException, HttpStatus, Inject, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import * as uuid from 'uuid'
@@ -11,6 +11,8 @@ import { AdminsService } from '../entities/admins/admins.service'
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name)
+
   constructor(
     @Inject(AdminsService) private readonly adminsService: AdminsService,
     private readonly jwtService: JwtService,
@@ -30,16 +32,17 @@ export class AuthService {
   async login(body: ADMIN.Credentials): Promise<ADMIN.Access> {
     try {
       const admin = await this.adminsService.findByEmail(body.email)
-      if (!admin) throw new NotFoundException({ message: constants.ADMIN_NOT_FOUND })
+      if (!admin) throw new NotFoundException(constants.ADMIN_NOT_FOUND)
 
       const verified = await validatePassword({ incomingPass: body.password, password: admin.password, salt: admin.salt })
-      if (!verified) throw new BadRequestException({ message: constants.INVALID_CREDENTIALS })
+      if (!verified) throw new BadRequestException(constants.INVALID_CREDENTIALS)
 
       const accessToken = this.generateToken(admin)
       const refreshToken = this.generateRefreshToken() //@TODO : need to store refresh token
       return { accessToken, refreshToken: refreshToken.token, type: admin.type }
     } catch (error) {
-      throw new HttpException(error.message || `Internal error`, HttpStatus.INTERNAL_SERVER_ERROR)
+      this.logger.error(error)
+      throw new InternalServerErrorException()
     }
   }
 

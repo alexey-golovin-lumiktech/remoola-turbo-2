@@ -1,4 +1,4 @@
-import { BadRequestException, HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common'
+import { BadRequestException, Inject, Injectable, InternalServerErrorException, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { Response as IExpressResponse } from 'express'
@@ -14,6 +14,7 @@ import { GoogleProfilesService } from '../entities/google-profiles/google-profil
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name)
   private readonly oAuth2Client: OAuth2Client
   private readonly audience: string
 
@@ -43,7 +44,8 @@ export class AuthService {
       const refreshToken = this.generateRefreshToken() //@TODO : need to store refresh token
       return utils.toResponse(CONSUMER.SigninResponse, Object.assign(consumer, { googleProfileId: gProfile.id, accessToken, refreshToken }))
     } catch (error) {
-      throw new HttpException(error.message || `Internal error`, HttpStatus.INTERNAL_SERVER_ERROR)
+      this.logger.error(error)
+      throw new InternalServerErrorException()
     }
   }
 
@@ -80,7 +82,7 @@ export class AuthService {
     })
 
     const token = this.generateToken(consumer)
-    this.mailingService.sendConsumerSignupCompletion({ email: body.email, token })
+    this.mailingService.sendEmailToConsumerSignupCompletion({ email: body.email, token })
   }
 
   async signupCompletion(token: string, res: IExpressResponse) {

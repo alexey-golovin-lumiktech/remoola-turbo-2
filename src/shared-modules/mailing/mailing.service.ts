@@ -8,7 +8,7 @@ export class MailingService {
 
   constructor(private mailerService: MailerService, private configService: ConfigService) {}
 
-  async sendConsumerSignupCompletion(params: { email: string; token: string }) {
+  async sendEmailToConsumerSignupCompletion(params: { email: string; token: string }) {
     const html = this.generateConfirmationEmailTemplate(params.token)
     const subject = `Welcome to Wirebill! Confirm your Email`
     try {

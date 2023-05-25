@@ -1,4 +1,12 @@
-import { CallHandler, CustomDecorator, ExecutionContext, HttpException, Injectable, NestInterceptor, SetMetadata } from '@nestjs/common'
+import {
+  CallHandler,
+  CustomDecorator,
+  ExecutionContext,
+  Injectable,
+  InternalServerErrorException,
+  NestInterceptor,
+  SetMetadata,
+} from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
 import { ClassConstructor, plainToInstance } from 'class-transformer'
 import { Observable, throwError } from 'rxjs'
@@ -24,7 +32,7 @@ export class TransformResponseInterceptor implements NestInterceptor {
       }),
       catchError(err => {
         console.log(`err`, err)
-        return throwError(() => new HttpException(err, 500))
+        return throwError(() => new InternalServerErrorException(err.message ?? `[TransformResponseInterceptor] Internal server error`))
       }),
     )
   }
