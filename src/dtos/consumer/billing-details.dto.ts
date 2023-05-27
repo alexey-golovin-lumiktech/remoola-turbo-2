@@ -14,41 +14,41 @@ class BillingDetails extends BaseModel implements IBillingDetailsModel {
   consumerId: string
 
   @Expose()
-  @ApiProperty({ required: false, default: null })
+  @ApiProperty()
   @IsEmail({}, { message: constants.constants.INVALID_EMAIL })
-  email?: string = null
+  email?: string
 
   @Expose()
-  @ApiProperty({ required: false, default: null })
-  name?: string = null
+  @ApiProperty()
+  name?: string
 
   @Expose()
-  @ApiProperty({ required: false, default: null })
-  phone?: string = null
+  @ApiProperty()
+  phone?: string
 
   @Expose()
-  @ApiProperty({ required: false, default: null })
-  city?: string = null
+  @ApiProperty()
+  city?: string
 
   @Expose()
-  @ApiProperty({ required: false, default: null })
-  country?: string = null
+  @ApiProperty()
+  country?: string
 
   @Expose()
-  @ApiProperty({ required: false, default: null })
-  line1?: string = null
+  @ApiProperty()
+  line1?: string
 
   @Expose()
-  @ApiProperty({ required: false, default: null })
-  line2?: string = null
+  @ApiProperty()
+  line2?: string
 
   @Expose()
-  @ApiProperty({ required: false, default: null })
-  postalCode?: string = null
+  @ApiProperty()
+  postalCode?: string
 
   @Expose()
-  @ApiProperty({ required: false, default: null })
-  state?: string = null
+  @ApiProperty()
+  state?: string
 }
 
 export class BillingDetailsResponse extends OmitType(BillingDetails, [`createdAt`, `updatedAt`, `deletedAt`] as const) {}

@@ -1,8 +1,8 @@
 import { Knex } from 'knex'
 
-import { TABLES } from '../models'
+import { TABLE_NAME } from '../models'
 
-const tableName = TABLES.Consumers
+const tableName = TABLE_NAME.Consumers
 
 export async function up(knex: Knex): Promise<void> {
   const exist = await knex.schema.hasTable(tableName)
@@ -18,6 +18,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string(`first_name`)
     table.string(`last_name`)
     table.string(`middle_name`)
+    table.string(`stripe_customer_id`)
 
     table.timestamp(`created_at`).defaultTo(knex.fn.now())
     table.timestamp(`updated_at`).defaultTo(knex.fn.now())

@@ -4,10 +4,11 @@ import { AuthModule } from './auth/auth.module'
 import { BillingDetailsModule } from './entities/billing-details/billing-details.module'
 import { ConsumersModule } from './entities/consumers/consumer.module'
 import { GoogleProfilesModule } from './entities/google-profiles/google-profiles.module'
+import { InvoiceItemsModule } from './entities/invoice-items/invoice-items.module'
 import { InvoicesModule } from './entities/invoices/invoices.module'
 import { PaymentsModule } from './payments/payments.module'
 
 @Module({
-  imports: [GoogleProfilesModule, ConsumersModule, AuthModule, PaymentsModule, BillingDetailsModule, InvoicesModule],
+  imports: [GoogleProfilesModule, ConsumersModule, AuthModule, PaymentsModule, BillingDetailsModule, InvoicesModule, InvoiceItemsModule],
 })
 export class ConsumerModule {}

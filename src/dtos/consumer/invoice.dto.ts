@@ -1,11 +1,13 @@
-import { ApiProperty, OmitType, PickType } from '@nestjs/swagger'
-import { Expose, Type } from 'class-transformer'
+import { ApiProperty, OmitType } from '@nestjs/swagger'
+import { Exclude, Expose, Type } from 'class-transformer'
 import { IsEmail } from 'class-validator'
 
 import * as constants from '../../constants'
 import { IInvoiceModel } from '../../models'
 import { InvoiceStatus, invoiceStatuses, InvoiceType, invoiceTypes, SortDirection, sortDirections } from '../../shared-types'
 import { BaseModel, ListResponse } from '../common'
+
+import { CreateInvoiceItem, InvoiceItem } from './invoice-item.dto'
 
 export class Invoice extends BaseModel implements IInvoiceModel {
   @Expose()
@@ -17,39 +19,40 @@ export class Invoice extends BaseModel implements IInvoiceModel {
   refererId: string
 
   @Expose()
-  @ApiProperty()
-  charges: number
-
-  @Expose()
-  @ApiProperty()
-  tax: number
-
-  @Expose()
-  @ApiProperty({ required: false, default: null })
-  description?: string = null
-
-  @Expose()
   @ApiProperty({ enum: invoiceStatuses })
   status: InvoiceStatus
-}
-
-export class InvoiceResponse extends OmitType(Invoice, [`deletedAt`] as const) {
-  @Expose()
-  @ApiProperty()
-  @IsEmail({}, { message: constants.constants.INVALID_EMAIL })
-  referer: string
 
   @Expose()
   @ApiProperty()
-  @IsEmail({}, { message: constants.constants.INVALID_EMAIL })
-  creator: string
-}
+  currency?: string
 
-export class CreateInvoice extends PickType(Invoice, [`charges`, `description`] as const) {
   @Expose()
   @ApiProperty()
-  @IsEmail({}, { message: constants.constants.INVALID_EMAIL })
-  referer: string
+  tax?: number
+
+  @Expose()
+  @ApiProperty()
+  subtotal: number
+
+  @Expose()
+  @ApiProperty()
+  total: number
+
+  @Expose()
+  @ApiProperty()
+  stripeInvoiceId?: string
+
+  @Expose()
+  @ApiProperty()
+  hostedInvoiceUrl?: string
+
+  @Expose()
+  @ApiProperty()
+  invoicePdf?: string
+
+  @Exclude()
+  @ApiProperty()
+  metadata?: string
 }
 
 export class QueryDataListSorting<TModel> {
@@ -79,7 +82,24 @@ export class QueryDataList {
 export class QueryInvoices extends QueryDataList {
   @Expose()
   @ApiProperty({ enum: invoiceTypes })
-  type?: InvoiceType = null
+  type?: InvoiceType
+}
+
+export class InvoiceResponse extends OmitType(Invoice, [`deletedAt`] as const) {
+  @Expose()
+  @ApiProperty()
+  @IsEmail({}, { message: constants.constants.INVALID_EMAIL })
+  referer: string
+
+  @Expose()
+  @ApiProperty()
+  @IsEmail({}, { message: constants.constants.INVALID_EMAIL })
+  creator: string
+
+  @Expose()
+  @ApiProperty({ type: InvoiceItem })
+  @Type(() => InvoiceItem)
+  items: InvoiceItem[]
 }
 
 export class InvoicesList extends ListResponse<InvoiceResponse> {
@@ -87,4 +107,24 @@ export class InvoicesList extends ListResponse<InvoiceResponse> {
   @ApiProperty({ type: [InvoiceResponse] })
   @Type(() => InvoiceResponse)
   data: InvoiceResponse[]
+}
+
+export class CreateInvoice {
+  @Expose()
+  @ApiProperty()
+  @IsEmail({}, { message: constants.constants.INVALID_EMAIL })
+  referer: string
+
+  @Expose()
+  @ApiProperty({ required: false, default: constants.currencyCode.USD })
+  currency?: string
+
+  @Expose()
+  @ApiProperty({ required: false, default: 0 })
+  tax?: number
+
+  @Expose()
+  @ApiProperty({ type: [CreateInvoiceItem] })
+  @Type(() => CreateInvoiceItem)
+  items: CreateInvoiceItem[]
 }

@@ -72,4 +72,5 @@ export const getKnexCount = ([knexCount]: KnexCount[]): number => {
   return knexCount?.count ? Number(knexCount.count) : 0
 }
 
+export * from './calculate-invoice'
 export * from './provided-envs-checking.util'

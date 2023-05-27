@@ -28,7 +28,8 @@ export class TransformResponseInterceptor implements NestInterceptor {
 
         const cls = handlerDto ?? classDto
         const opts = { excludeExtraneousValues: true, enableImplicitConversion: true, exposeDefaultValues: true, exposeUnsetFields: true }
-        return plainToInstance(cls, res, opts)
+        const converted = plainToInstance(cls, res, opts)
+        return converted
       }),
       catchError(err => {
         console.log(`err`, err)

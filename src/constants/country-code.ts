@@ -1,6 +1,6 @@
-export type CountryCode = typeof countryCode
-export type CountryCodeKey = keyof CountryCode
-export type CountryCodeValue = CountryCode[CountryCodeKey]
+import { ValueOf } from '../shared-types'
+
+export type CountryCode = ValueOf<typeof countryCode>
 /* cspell:disable */
 export const countryCode = {
   Afghanistan: `AF`,

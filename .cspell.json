@@ -15,7 +15,9 @@
     "esnext",
     "execa",
     "exponentiate",
+    "fbba",
     "globby",
+    "Ilall",
     "invoiceitem",
     "knex",
     "libauth",
@@ -32,6 +34,7 @@
     "untracked",
     "Whoer",
     "whoerconfigs",
+    "whsec",
     "wirebill"
   ],
   "flagWords": [],

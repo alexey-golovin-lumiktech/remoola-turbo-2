@@ -1,6 +1,8 @@
 import { Body, Controller, Headers, Inject, Post, RawBodyRequest, Req } from '@nestjs/common'
 import { ApiTags } from '@nestjs/swagger'
 
+import { PublicEndpoint } from '../../decorators'
+
 import { PaymentsService } from './payments.service'
 
 @ApiTags(`consumer`)
@@ -8,6 +10,7 @@ import { PaymentsService } from './payments.service'
 export class PaymentsController {
   constructor(@Inject(PaymentsService) private readonly service: PaymentsService) {}
 
+  @PublicEndpoint()
   @Post(`/webhook`)
   webhook(@Headers(`stripe-signature`) signature: string, @Req() req: RawBodyRequest<Request>): Promise<{ received: true }> {
     return this.service.webhook(signature, req)

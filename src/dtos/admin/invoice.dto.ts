@@ -1,11 +1,11 @@
 import { ApiProperty, PickType } from '@nestjs/swagger'
-import { Expose, Type } from 'class-transformer'
+import { Exclude, Expose, Type } from 'class-transformer'
 
 import { IInvoiceModel } from '../../models'
 import { InvoiceStatus, invoiceStatuses } from '../../shared-types'
 import { BaseModel, ListResponse } from '../common'
 
-class Invoice extends BaseModel implements IInvoiceModel {
+export class Invoice extends BaseModel implements IInvoiceModel {
   @Expose()
   @ApiProperty()
   creatorId: string
@@ -15,20 +15,40 @@ class Invoice extends BaseModel implements IInvoiceModel {
   refererId: string
 
   @Expose()
-  @ApiProperty()
-  charges: number
-
-  @Expose()
-  @ApiProperty()
-  tax: number
-
-  @Expose()
-  @ApiProperty({ required: false, default: null })
-  description?: string = null
-
-  @Expose()
   @ApiProperty({ enum: invoiceStatuses })
   status: InvoiceStatus
+
+  @Expose()
+  @ApiProperty()
+  currency?: string
+
+  @Expose()
+  @ApiProperty()
+  tax?: number
+
+  @Expose()
+  @ApiProperty()
+  subtotal: number
+
+  @Expose()
+  @ApiProperty()
+  total: number
+
+  @Expose()
+  @ApiProperty()
+  stripeInvoiceId?: string
+
+  @Expose()
+  @ApiProperty()
+  hostedInvoiceUrl?: string
+
+  @Expose()
+  @ApiProperty()
+  invoicePdf?: string
+
+  @Exclude()
+  @ApiProperty()
+  metadata?: string
 }
 
 export class InvoiceResponse extends Invoice {}
@@ -40,4 +60,4 @@ export class InvoicesList extends ListResponse<InvoiceResponse> {
   data: InvoiceResponse[]
 }
 
-export class UpdateInvoiceStatus extends PickType(Invoice, [`status`] as const) {}
+export class UpdateInvoiceStatus extends PickType(InvoiceResponse, [`status`] as const) {}

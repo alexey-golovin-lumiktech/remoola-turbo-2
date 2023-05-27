@@ -8,8 +8,8 @@ import { BillingDetailsRepository } from './billing-details.repository'
 
 @Injectable()
 export class BillingDetailsService extends BaseService<IBillingDetailsModel, BillingDetailsRepository> {
-  constructor(@Inject(BillingDetailsRepository) repo: BillingDetailsRepository) {
-    super(repo)
+  constructor(@Inject(BillingDetailsRepository) repository: BillingDetailsRepository) {
+    super(repository)
   }
 
   async upsertBillingDetails(dto: CONSUMER.UpsertBillingDetails): Promise<IBillingDetailsModel> {

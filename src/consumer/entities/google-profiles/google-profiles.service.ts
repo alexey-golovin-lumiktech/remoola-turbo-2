@@ -9,8 +9,8 @@ export type IUpsertProfile = Omit<IGoogleProfileModel, keyof IBaseModel | `data`
 
 @Injectable()
 export class GoogleProfilesService extends BaseService<IGoogleProfileModel, GoogleProfilesRepository> {
-  constructor(@Inject(GoogleProfilesRepository) googleProfileRepository: GoogleProfilesRepository) {
-    super(googleProfileRepository)
+  constructor(@Inject(GoogleProfilesRepository) repository: GoogleProfilesRepository) {
+    super(repository)
   }
 
   async upsertGoogleProfile(consumerId: string, dto: IUpsertProfile): Promise<IGoogleProfileModel> {

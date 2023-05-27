@@ -47,13 +47,13 @@ export class ConsumersController {
   @Get(`/invoices`)
   @ApiCountRowsResponse(CONSUMER.QueryInvoices)
   @TransformResponse(CONSUMER.InvoicesList)
-  getInvoices(@ReqAuthIdentity() identity: IConsumerModel, @Query() query?: CONSUMER.QueryInvoices): Promise<CONSUMER.InvoicesList> {
-    return this.invoicesService.getInvoices(identity, query)
+  getInvoicesList(@ReqAuthIdentity() identity: IConsumerModel, @Query() query?: CONSUMER.QueryInvoices): Promise<CONSUMER.InvoicesList> {
+    return this.invoicesService.getInvoicesList(identity, query)
   }
 
   @Post(`/invoices`)
   @TransformResponse(CONSUMER.Invoice)
   createInvoice(@ReqAuthIdentity() identity: IConsumerModel, @Body() body: CONSUMER.CreateInvoice): Promise<CONSUMER.Invoice> {
-    return this.invoicesService.createInvoice(identity, body)
+    return this.invoicesService.createInvoiceLocalFirst(identity, body)
   }
 }

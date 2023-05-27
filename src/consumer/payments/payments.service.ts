@@ -24,8 +24,9 @@ export class PaymentsService {
       }
     }
 
-    const data: Stripe.Event.Data = event.data
-    this.logger.debug(`event type ${event.type}, data: ${JSON.stringify(data, null, -1)}`)
+    // const data: Stripe.Event.Data = event.data
+    // this.logger.debug(`STRIPE HOOK event type ${event.type}, data: ${JSON.stringify(data, null, -1)}`)
+    this.logger.debug(`STRIPE HOOK event: "${event.type}"`)
     return { received: true }
   }
 

@@ -18,28 +18,28 @@ class GoogleProfile extends BaseModel implements IGoogleProfileModel {
   data: string
 
   @Expose()
-  @ApiProperty({ required: false, default: null })
-  email?: string = null
+  @ApiProperty()
+  email?: string
 
   @Expose()
-  @ApiProperty({ required: false, default: null })
-  name?: string = null
+  @ApiProperty()
+  name?: string
 
   @Expose()
-  @ApiProperty({ required: false, default: null })
-  givenName?: string = null
+  @ApiProperty()
+  givenName?: string
 
   @Expose()
-  @ApiProperty({ required: false, default: null })
-  familyName?: string = null
+  @ApiProperty()
+  familyName?: string
 
   @Expose()
-  @ApiProperty({ required: false, default: null })
-  picture?: string = null
+  @ApiProperty()
+  picture?: string
 
   @Expose()
-  @ApiProperty({ required: false, default: null })
-  organization?: string = null
+  @ApiProperty()
+  organization?: string
 }
 
 export class GoogleProfileResponse extends OmitType(GoogleProfile, [`deletedAt`] as const) {}

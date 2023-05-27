@@ -17,6 +17,6 @@ export class BaseModel implements IBaseModel {
   updatedAt: Date
 
   @Expose()
-  @ApiProperty({ required: false, default: null })
+  @ApiProperty()
   deletedAt?: Date = null
 }

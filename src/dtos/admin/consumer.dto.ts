@@ -14,24 +14,28 @@ export class Consumer extends BaseModel implements IConsumerModel {
   verified: boolean
 
   @Exclude()
-  @ApiProperty({ required: false, default: null })
+  @ApiProperty()
   password?: string
 
   @Exclude()
-  @ApiProperty({ required: false, default: null })
+  @ApiProperty()
   salt?: string
 
   @Expose()
-  @ApiProperty({ required: false, default: null })
+  @ApiProperty()
   firstName?: string
 
   @Expose()
-  @ApiProperty({ required: false, default: null })
+  @ApiProperty()
   lastName?: string
 
   @Expose()
-  @ApiProperty({ required: false, default: null })
+  @ApiProperty()
   middleName?: string
+
+  @Expose()
+  @ApiProperty()
+  stripeCustomerId?: string
 }
 
 export class ConsumersList extends ListResponse<Consumer> {

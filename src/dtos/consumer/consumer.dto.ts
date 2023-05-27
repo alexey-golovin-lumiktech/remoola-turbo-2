@@ -35,6 +35,10 @@ class Consumer extends BaseModel implements IConsumerModel {
   @Expose()
   @ApiProperty()
   middleName?: string
+
+  @Expose()
+  @ApiProperty()
+  stripeCustomerId?: string
 }
 
 export class ConsumerResponse extends Consumer {}
