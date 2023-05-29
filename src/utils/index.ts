@@ -1,8 +1,10 @@
 import { ClassConstructor, plainToInstance } from 'class-transformer'
 import * as crypto from 'crypto'
 import { existsSync } from 'fs'
+import { sumBy } from 'lodash'
 import { resolve } from 'path'
 
+import { currencyCode } from '../constants/currency-code'
 import { KnexCount } from '../shared-types'
 
 export const generatePasswordHash = (params = { password: ``, salt: `` }): string => {
@@ -72,5 +74,14 @@ export const getKnexCount = ([knexCount]: KnexCount[]): number => {
   return knexCount?.count ? Number(knexCount.count) : 0
 }
 
-export * from './calculate-invoice'
+export const currencyFormatters = {
+  [currencyCode.USD]: new Intl.NumberFormat(`en-US`, { style: `currency`, currency: `usd` }),
+}
+
+export const calculateInvoice = (invoiceItems: any[], tax: number) => {
+  const subtotal = sumBy(invoiceItems, `amount`)
+  const total = subtotal + (subtotal / 100) * tax
+  return { subtotal, total }
+}
+
 export * from './provided-envs-checking.util'

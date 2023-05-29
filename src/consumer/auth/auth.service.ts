@@ -82,7 +82,7 @@ export class AuthService {
     })
 
     const token = this.generateToken(consumer)
-    this.mailingService.sendEmailToConsumerSignupCompletion({ email: body.email, token })
+    this.mailingService.sendConsumerSignupCompletionEmail({ email: body.email, token })
   }
 
   async signupCompletion(token: string, res: IExpressResponse) {

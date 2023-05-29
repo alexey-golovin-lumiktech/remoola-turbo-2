@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common'
+import { Inject, Injectable, Logger } from '@nestjs/common'
 import { InjectStripe } from 'nestjs-stripe'
 import Stripe from 'stripe'
 
@@ -7,6 +7,7 @@ import * as constants from '../../../constants'
 import { CONSUMER } from '../../../dtos'
 import { BaseModel } from '../../../dtos/common'
 import { IConsumerModel, IInvoiceModel, TABLE_NAME } from '../../../models'
+import { MailingService } from '../../../shared-modules/mailing/mailing.service'
 import { invoiceType } from '../../../shared-types'
 import { calculateInvoice, getKnexCount } from '../../../utils'
 import { ConsumersService } from '../consumers/consumer.service'
@@ -16,6 +17,7 @@ import { InvoicesRepository } from './invoices.repository'
 
 @Injectable()
 export class InvoicesService extends BaseService<IInvoiceModel, InvoicesRepository> {
+  private readonly logger = new Logger(InvoicesService.name)
   private readonly defaultTax = 2.9 // need to check
 
   constructor(
@@ -23,6 +25,7 @@ export class InvoicesService extends BaseService<IInvoiceModel, InvoicesReposito
     @Inject(ConsumersService) private readonly consumersService: ConsumersService,
     @Inject(InvoiceItemsService) private readonly itemsService: InvoiceItemsService,
     @InjectStripe() private readonly stripe: Stripe,
+    @Inject(MailingService) private readonly mailingService: MailingService,
   ) {
     super(repository)
   }
@@ -31,16 +34,16 @@ export class InvoicesService extends BaseService<IInvoiceModel, InvoicesReposito
     const filter = query.type == invoiceType.incoming ? { refererId: identity.id } : { creatorId: identity.id }
 
     const baseQuery = this.repository
-      .knex(`${TABLE_NAME.Invoices} as invoice`)
-      .join(`${TABLE_NAME.Consumers} as creator`, `creator.id`, `invoice.creatorId`)
-      .join(`${TABLE_NAME.Consumers} as referer`, `referer.id`, `invoice.refererId`)
+      .knex(`${TABLE_NAME.Invoices} as invoices`)
+      .join(`${TABLE_NAME.Consumers} as creators`, `creators.id`, `invoices.creatorId`)
+      .join(`${TABLE_NAME.Consumers} as referers`, `referers.id`, `invoices.refererId`)
       .where(filter)
 
     const count = await baseQuery.clone().count().then(getKnexCount)
 
     let data: CONSUMER.InvoiceResponse[] = await baseQuery
       .clone()
-      .select(`invoice.*`, `creator.email as creator`, `referer.email as referer`)
+      .select(`invoices.*`, `creators.email as creator`, `referers.email as referer`)
       .modify(qb => {
         if (query?.sorting?.direction && query?.sorting?.field) {
           qb.orderBy(query.sorting.field, query.sorting.direction)
@@ -126,6 +129,26 @@ export class InvoicesService extends BaseService<IInvoiceModel, InvoicesReposito
       items: invoiceItems,
     }
     return result
+  }
+
+  async getInvoiceByIdToDownload(invoiceId: string) {
+    try {
+      const invoice: CONSUMER.InvoiceResponse = await this.repository.knex
+        .from(`${TABLE_NAME.Invoices} as invoices`)
+        .join(`${TABLE_NAME.Consumers} as creator`, `creator.id`, `invoices.creatorId`)
+        .join(`${TABLE_NAME.Consumers} as referer`, `referer.id`, `invoices.refererId`)
+        .select(`invoices.*`, `creator.email as creator`, `referer.email as referer`)
+        .where(`invoices.id`, invoiceId)
+        .first()
+      const items = await this.repository.knex.from(`${TABLE_NAME.InvoiceItems} as items`).where({ invoiceId })
+      const invoiceHtml = this.mailingService.getInvoiceHtml({ ...invoice, items, dueDate: new Date() /* ??? */ })
+      // const processed = await generatePdf({ rawHtml: invoiceHtml }) // coming soon
+      const result = { buffer: /* processed.buffer */ invoiceHtml, variant: `invoice` }
+      return result
+    } catch (error) {
+      this.logger.error(error.message)
+      return { buffer: Buffer.from(`Sorry!! An invoice with ID-${invoiceId} does not exist`), variant: `error` }
+    }
   }
 
   private stripeInvoiceItemToModel(invoiceId: string) {

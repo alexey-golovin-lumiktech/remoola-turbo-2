@@ -1,6 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { MailerService } from '@nestjs-modules/mailer'
+import moment from 'moment'
+
+import { currencyCode } from '../../constants/currency-code'
+import * as CONSUMER from '../../dtos/consumer'
+import { currencyFormatters } from '../../utils'
+
+import * as templates from './templates'
 
 @Injectable()
 export class MailingService {
@@ -8,36 +15,54 @@ export class MailingService {
 
   constructor(private mailerService: MailerService, private configService: ConfigService) {}
 
-  async sendEmailToConsumerSignupCompletion(params: { email: string; token: string }) {
-    const html = this.generateConfirmationEmailTemplate(params.token)
+  async sendConsumerSignupCompletionEmail(params: { email: string; token: string }) {
+    const beLink = `http://localhost:8080/consumer/auth/signup/verification?token=${params.token}`
+    const html = templates.auth.signupCompletionTemplate.html.replace(new RegExp(`{{beLink}}`, `g`), beLink)
     const subject = `Welcome to Wirebill! Confirm your Email`
     try {
       const sent = await this.mailerService.sendMail({ to: params.email, subject, html })
-
       this.logger.log(`Sent success`, sent)
     } catch (error) {
       this.logger.error(error)
     }
   }
 
-  private generateConfirmationEmailTemplate(token: string) {
-    const feLink = `http://localhost:8080/consumer/auth/signup/verification?token=${token}`
-    const html = `
-    <table style="max-width:600px;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-style:italic;background:#3f3f3f;color:#ffffff;border-radius:20px;">
-      <tbody><tr><td>
-        <div style="text-align:center;font-size:18px;font-weight:bold;color:#ffffff;">Welcome to Wirebill.</div>
-        <div>&nbsp;</div>
-        <div style="color:#ffffff;">You have initialized the signup flow.<div>To&nbsp;continue&nbsp;<a href="${feLink}">Click here to confirm your email</a></div></div>
-        <div>&nbsp;</div>
-        <div style="margin-left:200px;text-align:right;color:#ffffff">
-          If it was not you and the email came to you by mistake, just ignore it.
-          <div style="color:#ffffff;">Best&nbsp;regards&nbsp;<a href="mailto:support@wirebill.com">support@wirebill.com</a>.
-        </div>
-        </div>
-      </td></tr></tbody>
-    </table>
-    `
+  async sendOutgoingInvoiceEmail(invoice: CONSUMER.InvoiceResponse & { dueDate: Date }) {
+    const html = this.getInvoiceHtml(invoice)
+    const subject = `${invoice.creator} require payment from ${invoice.referer}`
+    try {
+      const sent = await this.mailerService.sendMail({ to: invoice.referer, subject, html })
+      this.logger.log(`Sent success`, sent)
+    } catch (error) {
+      this.logger.error(error)
+    }
+  }
 
-    return html
+  getInvoiceHtml(invoice: CONSUMER.InvoiceResponse & { dueDate: Date }): string {
+    const itemsHtml = invoice.items.map(item => this.getInvoiceItemHtml(item, invoice.tax)).join(`\n`)
+    const payOnlineBeLink = `http://some-link`
+    const formatter = currencyFormatters[currencyCode.USD]
+    return templates.invoicing.invoice.html
+      .replace(new RegExp(`{{id}}`, `g`), invoice.id)
+      .replace(new RegExp(`{{createdAt}}`, `g`), moment(invoice.createdAt).format(`ll`))
+      .replace(new RegExp(`{{dueDate}}`, `g`), moment(invoice.dueDate).format(`ll`))
+      .replace(new RegExp(`{{creator}}`, `g`), invoice.creator)
+      .replace(new RegExp(`{{referer}}`, `g`), invoice.referer)
+      .replace(new RegExp(`{{total}}`, `g`), formatter.format(invoice.total))
+      .replace(new RegExp(`{{subtotal}}`, `g`), formatter.format(invoice.subtotal))
+      .replace(new RegExp(`{{payOnlineBeLink}}`, `g`), payOnlineBeLink)
+      .replace(new RegExp(`{{itemsHtml}}`, `g`), itemsHtml)
+  }
+
+  getInvoiceItemHtml(item: CONSUMER.InvoiceItem, tax: CONSUMER.InvoiceResponse[`tax`]): string {
+    let subtotal = item.amount
+    if (tax) subtotal = item.amount + (item.amount / 100) * tax
+
+    const formatter = currencyFormatters[currencyCode.USD]
+    return templates.invoicing.invoiceItem.html
+      .replace(new RegExp(`{{description}}`, `g`), item.description)
+      .replace(new RegExp(`{{amount}}`, `g`), formatter.format(item.amount))
+      .replace(new RegExp(`{{subtotal}}`, `g`), formatter.format(subtotal))
+      .replace(new RegExp(`{{tax}}`, `g`), tax ? tax + `%` : `--`)
   }
 }
