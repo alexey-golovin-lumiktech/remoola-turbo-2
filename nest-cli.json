@@ -3,9 +3,30 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
   "compilerOptions": {
-    "deleteOutDir": true
+    "deleteOutDir": true,
+    "webpack": true
   },
   "generateOptions": {
     "spec": false
+  },
+  "projects": {
+    "back-and-front": {
+      "type": "library",
+      "root": "libs/back-and-front",
+      "entryFile": "index",
+      "sourceRoot": "libs/back-and-front/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/back-and-front/tsconfig.lib.json"
+      }
+    },
+    "pdf-generator-package": {
+      "type": "library",
+      "root": "libs/pdf-generator-package",
+      "entryFile": "index",
+      "sourceRoot": "libs/pdf-generator-package/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/pdf-generator-package/tsconfig.lib.json"
+      }
+    }
   }
 }

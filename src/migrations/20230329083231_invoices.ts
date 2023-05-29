@@ -1,8 +1,8 @@
+import { invoiceStatus, invoiceStatuses } from '@wirebill/back-and-front'
 import { Knex } from 'knex'
 
 import * as constants from '../constants'
 import { TABLE_NAME } from '../models'
-import { invoiceStatus, invoiceStatuses } from '../shared-types'
 
 const tableName = TABLE_NAME.Invoices
 

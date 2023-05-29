@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config'
 import { NestFactory, Reflector } from '@nestjs/core'
 import { JwtService } from '@nestjs/jwt'
 import { DocumentBuilder, SwaggerCustomOptions, SwaggerModule } from '@nestjs/swagger'
+import { swaggerDocExpansion } from '@wirebill/back-and-front'
 import { classToPlain, plainToClass } from 'class-transformer'
 
 import { AdminModule } from './admin/admin.module'
@@ -15,7 +16,6 @@ import { TransformResponseInterceptor } from './interceptors/response.intercepto
 import { AppModule } from './app.module'
 import { ADMIN, CONSUMER } from './dtos'
 import { HttpExceptionFilter } from './filters'
-import { swaggerDocExpansion } from './shared-types'
 import { checkProvidedEnvs } from './utils'
 
 async function bootstrap() {

@@ -1,4 +1,4 @@
-import { SortDirection, SortNulls } from '@wirebill/back-and-front/types'
+import { SortDirection, SortNulls } from './enum-like'
 
 export type Nullable<T> = T | null
 export type Unassignable<T> = T | undefined

@@ -4,7 +4,6 @@
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
     "target": "es2017",
     "sourceMap": true,
@@ -18,12 +17,28 @@
     "forceConsistentCasingInFileNames": false,
     "resolveJsonModule": true,
     "esModuleInterop": true,
-    "noFallthroughCasesInSwitch": false
+    "experimentalDecorators": true,
+    "noFallthroughCasesInSwitch": false,
+    "paths": {
+      "@wirebill/back-and-front": [
+        "libs/back-and-front/src"
+      ],
+      "@wirebill/back-and-front/*": [
+        "libs/back-and-front/src/*"
+      ],
+      "@wirebill/pdf-generator-package": [
+        "libs/pdf-generator-package/src"
+      ],
+      "@wirebill/pdf-generator-package/*": [
+        "libs/pdf-generator-package/src/*"
+      ]
+    }
   },
   "include": [
     ".eslintrc.js",
     "src",
+    "libs",
     "knexfile.ts",
     "test"
-  ],
+  ]
 }

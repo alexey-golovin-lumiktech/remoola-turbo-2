@@ -1,4 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common'
+import { invoiceType } from '@wirebill/back-and-front'
+import { generatePdf } from '@wirebill/pdf-generator-package'
 import { InjectStripe } from 'nestjs-stripe'
 import Stripe from 'stripe'
 
@@ -8,7 +10,6 @@ import { CONSUMER } from '../../../dtos'
 import { BaseModel } from '../../../dtos/common'
 import { IConsumerModel, IInvoiceModel, TABLE_NAME } from '../../../models'
 import { MailingService } from '../../../shared-modules/mailing/mailing.service'
-import { invoiceType } from '../../../shared-types'
 import { calculateInvoice, getKnexCount } from '../../../utils'
 import { ConsumersService } from '../consumers/consumer.service'
 import { InvoiceItemsService } from '../invoice-items/invoice-items.service'
@@ -28,6 +29,10 @@ export class InvoicesService extends BaseService<IInvoiceModel, InvoicesReposito
     @Inject(MailingService) private readonly mailingService: MailingService,
   ) {
     super(repository)
+    setTimeout(async () => {
+      const [invoice] = await this.repository.find()
+      this.getInvoiceByIdToDownload(invoice.id)
+    }, 1200)
   }
 
   async getInvoicesList(identity: IConsumerModel, query: CONSUMER.QueryInvoices): Promise<CONSUMER.InvoicesList> {
@@ -142,8 +147,8 @@ export class InvoicesService extends BaseService<IInvoiceModel, InvoicesReposito
         .first()
       const items = await this.repository.knex.from(`${TABLE_NAME.InvoiceItems} as items`).where({ invoiceId })
       const invoiceHtml = this.mailingService.getInvoiceHtml({ ...invoice, items, dueDate: new Date() /* ??? */ })
-      // const processed = await generatePdf({ rawHtml: invoiceHtml }) // coming soon
-      const result = { buffer: /* processed.buffer */ invoiceHtml, variant: `invoice` }
+      const processed = await generatePdf({ rawHtml: invoiceHtml })
+      const result = { buffer: processed.buffer, variant: `invoice` }
       return result
     } catch (error) {
       this.logger.error(error.message)

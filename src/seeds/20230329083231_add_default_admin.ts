@@ -1,7 +1,7 @@
+import { adminType } from '@wirebill/back-and-front/types'
 import { Knex } from 'knex'
 
 import { TABLE_NAME } from '../models'
-import { adminType } from '../shared-types'
 import * as utils from '../utils'
 
 export async function seed(knex: Knex): Promise<void> {

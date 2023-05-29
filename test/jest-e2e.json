@@ -1,9 +1,19 @@
 {
-  "moduleFileExtensions": ["js", "json", "ts"],
+  "moduleFileExtensions": [
+    "js",
+    "json",
+    "ts"
+  ],
   "rootDir": ".",
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "moduleNameMapper": {
+    "@wirebill/back-and-front/(.*)": "<rootDir>/../libs/back-and-front/src/$1",
+    "@wirebill/back-and-front": "<rootDir>/../libs/back-and-front/src",
+    "@wirebill/pdf-generator-package/(.*)": "<rootDir>/../libs/pdf-generator-package/src/$1",
+    "@wirebill/pdf-generator-package": "<rootDir>/../libs/pdf-generator-package/src"
   }
 }

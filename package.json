@@ -42,7 +42,9 @@
       "ts"
     ],
     "moduleNameMapper": {
-      "^@wirebill/shared(|/.*)$": "<rootDir>/libs/shared/src/$1"
+      "^@wirebill/shared(|/.*)$": "<rootDir>/libs/shared/src/$1",
+      "^@wirebill/back-and-front(|/.*)$": "<rootDir>/libs/back-and-front/src/$1",
+      "^@wirebill/pdf-generator-package(|/.*)$": "<rootDir>/libs/pdf-generator-package/src/$1"
     },
     "rootDir": ".",
     "roots": [
@@ -65,7 +67,6 @@
     "@nestjs/platform-express": "^9.0.0",
     "@nestjs/schedule": "^2.2.1",
     "@nestjs/swagger": "^6.2.1",
-    "@types/moment": "^2.13.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
     "cross-env": "^7.0.3",
@@ -85,6 +86,7 @@
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
     "pg": "^8.10.0",
+    "puppeteer": "^20.4.0",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
     "rxjs": "^7.2.0",
@@ -101,12 +103,14 @@
     "@types/json5": "^2.2.0",
     "@types/knex": "^0.16.1",
     "@types/lodash": "^4.14.192",
+    "@types/moment": "^2.13.0",
     "@types/node": "^16.0.0",
     "@types/nodemailer": "^6.4.7",
     "@types/passport": "^1.0.12",
     "@types/passport-http": "^0.3.9",
     "@types/passport-jwt": "^3.0.8",
     "@types/passport-local": "^1.0.35",
+    "@types/puppeteer": "^7.0.4",
     "@types/request": "^2.48.8",
     "@types/stripe": "^8.0.417",
     "@types/supertest": "^2.0.11",

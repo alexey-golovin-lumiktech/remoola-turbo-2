@@ -1,4 +1,4 @@
-import { AdminType } from '../shared-types'
+import { AdminType } from '@wirebill/back-and-front'
 
 import { IBaseModel } from './base'
 

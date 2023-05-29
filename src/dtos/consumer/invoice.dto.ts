@@ -1,10 +1,10 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger'
+import { InvoiceStatus, invoiceStatuses, InvoiceType, invoiceTypes, SortDirection, sortDirections } from '@wirebill/back-and-front'
 import { Exclude, Expose, Type } from 'class-transformer'
 import { IsEmail } from 'class-validator'
 
 import * as constants from '../../constants'
 import { IInvoiceModel } from '../../models'
-import { InvoiceStatus, invoiceStatuses, InvoiceType, invoiceTypes, SortDirection, sortDirections } from '../../shared-types'
 import { BaseModel, ListResponse } from '../common'
 
 import { CreateInvoiceItem, InvoiceItem } from './invoice-item.dto'

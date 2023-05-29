@@ -1,9 +1,9 @@
 import { ApiProperty, PickType } from '@nestjs/swagger'
+import { AdminType, adminType } from '@wirebill/back-and-front'
 import { Exclude, Expose, Type } from 'class-transformer'
 import { IsIn, IsString } from 'class-validator'
 
 import { IAdminModel } from '../../models'
-import { AdminType, adminType } from '../../shared-types'
 import { BaseModel, ListResponse } from '../common'
 
 class Admin extends BaseModel implements IAdminModel {

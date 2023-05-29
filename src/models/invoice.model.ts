@@ -1,5 +1,6 @@
+import { InvoiceStatus } from '@wirebill/back-and-front'
+
 import { InvoiceItem } from '../dtos/admin'
-import { InvoiceStatus } from '../shared-types'
 
 import { IBaseModel } from './base'
 
