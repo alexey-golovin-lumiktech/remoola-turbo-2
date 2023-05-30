@@ -85,3 +85,4 @@ export const calculateInvoice = (invoiceItems: any[], tax: number) => {
 }
 
 export * from './provided-envs-checking.util'
+export * from './email-templating'

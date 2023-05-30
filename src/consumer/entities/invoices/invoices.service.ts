@@ -4,13 +4,14 @@ import { generatePdf } from '@wirebill/pdf-generator-package'
 import { InjectStripe } from 'nestjs-stripe'
 import Stripe from 'stripe'
 
-import { BaseService } from '../../../common'
-import * as constants from '../../../constants'
-import { CONSUMER } from '../../../dtos'
-import { BaseModel } from '../../../dtos/common'
-import { IConsumerModel, IInvoiceModel, TABLE_NAME } from '../../../models'
-import { MailingService } from '../../../shared-modules/mailing/mailing.service'
-import { calculateInvoice, getKnexCount } from '../../../utils'
+import { BaseService } from 'src/common'
+import * as constants from 'src/constants'
+import { CONSUMER } from 'src/dtos'
+import { BaseModel } from 'src/dtos/common'
+import { IConsumerModel, IInvoiceModel, TABLE_NAME } from 'src/models'
+import { MailingService } from 'src/shared-modules/mailing/mailing.service'
+import { calculateInvoice, getKnexCount, invoiceToHtml } from 'src/utils'
+
 import { ConsumersService } from '../consumers/consumer.service'
 import { InvoiceItemsService } from '../invoice-items/invoice-items.service'
 
@@ -29,10 +30,6 @@ export class InvoicesService extends BaseService<IInvoiceModel, InvoicesReposito
     @Inject(MailingService) private readonly mailingService: MailingService,
   ) {
     super(repository)
-    setTimeout(async () => {
-      const [invoice] = await this.repository.find()
-      this.getInvoiceByIdToDownload(invoice.id)
-    }, 1200)
   }
 
   async getInvoicesList(identity: IConsumerModel, query: CONSUMER.QueryInvoices): Promise<CONSUMER.InvoicesList> {
@@ -41,14 +38,14 @@ export class InvoicesService extends BaseService<IInvoiceModel, InvoicesReposito
     const baseQuery = this.repository
       .knex(`${TABLE_NAME.Invoices} as invoices`)
       .join(`${TABLE_NAME.Consumers} as creators`, `creators.id`, `invoices.creatorId`)
-      .join(`${TABLE_NAME.Consumers} as referers`, `referers.id`, `invoices.refererId`)
+      .join(`${TABLE_NAME.Consumers} as referrers`, `referrers.id`, `invoices.refererId`)
       .where(filter)
 
     const count = await baseQuery.clone().count().then(getKnexCount)
 
     let data: CONSUMER.InvoiceResponse[] = await baseQuery
       .clone()
-      .select(`invoices.*`, `creators.email as creator`, `referers.email as referer`)
+      .select(`invoices.*`, `creators.email as creator`, `referrers.email as referer`)
       .modify(qb => {
         if (query?.sorting?.direction && query?.sorting?.field) {
           qb.orderBy(query.sorting.field, query.sorting.direction)
@@ -85,6 +82,8 @@ export class InvoicesService extends BaseService<IInvoiceModel, InvoicesReposito
       creator: identity.email,
       items,
     }
+
+    this.mailingService.sendOutgoingInvoiceEmail({ ...result, dueDate: new Date() })
     return result
   }
 
@@ -146,9 +145,9 @@ export class InvoicesService extends BaseService<IInvoiceModel, InvoicesReposito
         .where(`invoices.id`, invoiceId)
         .first()
       const items = await this.repository.knex.from(`${TABLE_NAME.InvoiceItems} as items`).where({ invoiceId })
-      const invoiceHtml = this.mailingService.getInvoiceHtml({ ...invoice, items, dueDate: new Date() /* ??? */ })
-      const processed = await generatePdf({ rawHtml: invoiceHtml })
-      const result = { buffer: processed.buffer, variant: `invoice` }
+      const invoiceHtml = invoiceToHtml.processor({ ...invoice, items, dueDate: new Date() /* ??? */ })
+      const buffer = await generatePdf({ rawHtml: invoiceHtml })
+      const result = { buffer, variant: `invoice` }
       return result
     } catch (error) {
       this.logger.error(error.message)
