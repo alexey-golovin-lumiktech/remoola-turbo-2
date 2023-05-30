@@ -9,4 +9,5 @@ export const constants = {
   INVALID_EMAIL: `Invalid email`,
   TEMPORARY_PASSWORD_LIFETIME_HOURS: 3,
   ENV_FILE_PATH: getEnvPath(process.cwd()),
+  defaultDueDateInDays30: 30,
 } as const

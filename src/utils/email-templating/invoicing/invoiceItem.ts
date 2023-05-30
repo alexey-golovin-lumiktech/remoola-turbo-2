@@ -1,4 +1,4 @@
-import { currencyCode } from '../../../constants'
+import { currencyCode } from '../../../shared-types'
 import { currencyFormatters } from '../..'
 
 const html = `

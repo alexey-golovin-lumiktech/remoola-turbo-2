@@ -31,7 +31,7 @@
       ],
       "@wirebill/pdf-generator-package/*": [
         "libs/pdf-generator-package/src/*"
-      ]
+      ],
     }
   },
   "include": [

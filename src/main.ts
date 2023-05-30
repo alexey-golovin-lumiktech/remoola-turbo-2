@@ -3,7 +3,6 @@ import { ConfigService } from '@nestjs/config'
 import { NestFactory, Reflector } from '@nestjs/core'
 import { JwtService } from '@nestjs/jwt'
 import { DocumentBuilder, SwaggerCustomOptions, SwaggerModule } from '@nestjs/swagger'
-import { swaggerDocExpansion } from '@wirebill/back-and-front'
 import { classToPlain, plainToClass } from 'class-transformer'
 
 import { AdminModule } from './admin/admin.module'
@@ -37,7 +36,7 @@ async function bootstrap() {
     include: [AdminModule, ConsumerModule],
     extraModels: [...Object.values(ADMIN), ...Object.values(CONSUMER), ListResponse],
   })
-  const options: SwaggerCustomOptions = { swaggerOptions: { docExpansion: swaggerDocExpansion.None }, customSiteTitle }
+  const options: SwaggerCustomOptions = { swaggerOptions: { docExpansion: `none` }, customSiteTitle }
   SwaggerModule.setup(`documentation`, app, document, options)
 
   app.enableCors()
@@ -76,10 +75,11 @@ bootstrap().then(killAppWithGrace).catch((e: any) => console.error(e.message ?? 
 
 function killAppWithGrace(app: INestApplication) {
   async function exitHandler(options: IOptions, exitCode?: number) {
+    await app.close()
+
     if (options.cleanup) console.log(`App stopped: clean`)
     if (exitCode || exitCode === 0) console.log(`App stopped: exit code: ${exitCode}`)
     setTimeout(() => process.exit(1), 5000)
-    await app.close()
     process.exit(0)
   }
 

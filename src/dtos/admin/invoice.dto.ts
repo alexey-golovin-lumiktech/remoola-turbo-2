@@ -1,8 +1,8 @@
 import { ApiProperty, PickType } from '@nestjs/swagger'
-import { InvoiceStatus, invoiceStatuses } from '@wirebill/back-and-front'
 import { Exclude, Expose, Type } from 'class-transformer'
 
 import { IInvoiceModel } from '../../models'
+import { InvoiceStatus, invoiceStatuses } from '../../shared-types'
 import { BaseModel, ListResponse } from '../common'
 
 export class Invoice extends BaseModel implements IInvoiceModel {
@@ -33,6 +33,10 @@ export class Invoice extends BaseModel implements IInvoiceModel {
   @Expose()
   @ApiProperty()
   total: number
+
+  @Expose()
+  @ApiProperty()
+  dueDateInDays: number
 
   @Expose()
   @ApiProperty()

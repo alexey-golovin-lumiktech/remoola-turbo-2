@@ -4,8 +4,7 @@ import { existsSync } from 'fs'
 import { sumBy } from 'lodash'
 import { resolve } from 'path'
 
-import { currencyCode } from '../constants/currency-code'
-import { KnexCount } from '../shared-types'
+import { currencyCode, KnexCount } from '../shared-types'
 
 export const generatePasswordHash = (params = { password: ``, salt: `` }): string => {
   if (params.password.length == 0) throw new Error(`Password could not be empty`)
@@ -78,7 +77,7 @@ export const currencyFormatters = {
   [currencyCode.USD]: new Intl.NumberFormat(`en-US`, { style: `currency`, currency: `usd` }),
 }
 
-export const calculateInvoice = (invoiceItems: any[], tax: number) => {
+export const calculateInvoiceTotalAndSubtotal = (invoiceItems: any[], tax: number) => {
   const subtotal = sumBy(invoiceItems, `amount`)
   const total = subtotal + (subtotal / 100) * tax
   return { subtotal, total }
@@ -86,3 +85,4 @@ export const calculateInvoice = (invoiceItems: any[], tax: number) => {
 
 export * from './provided-envs-checking.util'
 export * from './email-templating'
+export * from './plainToInstance'

@@ -1,7 +1,8 @@
 import moment from 'moment'
+import { CONSUMER } from 'src/dtos'
 
-import { currencyCode } from '../../../constants'
-import { currencyFormatters } from '../..'
+import { currencyCode } from '../../../shared-types'
+import { currencyFormatters, plainToInstance } from '../../../utils'
 
 import * as invoiceItemToHtml from './invoiceItem'
 
@@ -91,7 +92,8 @@ const mapping = {
   invoiceItemsHtml: new RegExp(`{{invoiceItemsHtml}}`, `gi`) /* new */,
 } as const
 
-export const processor = (invoice: any) => {
+export const processor = (rawInvoice: any) => {
+  const invoice = plainToInstance(CONSUMER.InvoiceResponse, rawInvoice)
   const formatter = currencyFormatters[currencyCode.USD]
   const itemsHtml = invoice.items.map(item => invoiceItemToHtml.processor(item, invoice.tax)).join(`\n`)
   const payOnlineBeLink = `http://some-link`
@@ -99,7 +101,7 @@ export const processor = (invoice: any) => {
   return html
     .replace(mapping.invoiceId, invoice.id)
     .replace(mapping.invoiceCreatedAt, moment(invoice.createdAt).format(`ll`))
-    .replace(mapping.invoiceDueDate, moment(invoice.dueDate).format(`ll`))
+    .replace(mapping.invoiceDueDate, moment(invoice.dueDateInDays).format(`ll`))
     .replace(mapping.invoiceCreatorEmail, invoice.creator)
     .replace(mapping.invoiceRefererEmail, invoice.referer)
     .replace(mapping.invoiceTotal, formatter.format(invoice.total))

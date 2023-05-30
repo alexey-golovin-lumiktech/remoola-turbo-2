@@ -1,7 +1,7 @@
-import { adminType, adminTypes } from '@wirebill/back-and-front'
 import { Knex } from 'knex'
 
 import { TABLE_NAME } from '../models'
+import { adminType, adminTypes } from '../shared-types'
 
 const tableName = TABLE_NAME.Admins
 
@@ -12,7 +12,7 @@ export async function up(knex: Knex): Promise<void> {
   return knex.schema.createTable(tableName, table => {
     table.uuid(`id`).primary().defaultTo(knex.raw(`uuid_generate_v4()`))
     table.string(`email`).unique().notNullable()
-    table.enum(`type`, adminTypes).defaultTo(adminType.admin).notNullable()
+    table.string(`type`).checkIn(adminTypes).defaultTo(adminType.admin).notNullable()
     table.string(`password`).notNullable()
     table.string(`salt`).notNullable()
     table.timestamp(`created_at`).defaultTo(knex.fn.now())

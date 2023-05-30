@@ -1,8 +1,7 @@
-import { invoiceStatus, invoiceStatuses } from '@wirebill/back-and-front'
 import { Knex } from 'knex'
 
-import * as constants from '../constants'
 import { TABLE_NAME } from '../models'
+import { currencyCode, currencyCodes, invoiceStatus, invoiceStatuses } from '../shared-types'
 
 const tableName = TABLE_NAME.Invoices
 
@@ -14,11 +13,12 @@ export async function up(knex: Knex): Promise<void> {
     table.uuid(`id`).primary().defaultTo(knex.raw(`uuid_generate_v4()`))
     table.uuid(`creator_id`).notNullable().references(`id`).inTable(TABLE_NAME.Consumers)
     table.uuid(`referer_id`).notNullable().references(`id`).inTable(TABLE_NAME.Consumers)
-    table.enum(`status`, invoiceStatuses).defaultTo(invoiceStatus.open).notNullable()
-    table.string(`currency`, 3).defaultTo(constants.currencyCode.USD)
-    table.integer(`subtotal`).notNullable() // in cents
-    table.decimal(`tax`, 2, 1).defaultTo(0) // percents for total
-    table.decimal(`total`, 10, 2).notNullable() // in cents (subtotal + ((subtotal / 100) * tax))
+    table.string(`status`).checkIn(invoiceStatuses).defaultTo(invoiceStatus.open).notNullable()
+    table.string(`currency`, 3).checkIn(currencyCodes).defaultTo(currencyCode.USD)
+    table.decimal(`subtotal`).notNullable()
+    table.decimal(`tax`).defaultTo(0)
+    table.decimal(`total`).notNullable()
+    table.integer(`due_date_in_days`).notNullable()
 
     // stripe
     table.string(`stripe_invoice_id`)

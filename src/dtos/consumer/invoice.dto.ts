@@ -1,10 +1,10 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger'
-import { InvoiceStatus, invoiceStatuses, InvoiceType, invoiceTypes, SortDirection, sortDirections } from '@wirebill/back-and-front'
-import { Exclude, Expose, Type } from 'class-transformer'
+import { Exclude, Expose, Transform, Type } from 'class-transformer'
 import { IsEmail } from 'class-validator'
 
-import * as constants from '../../constants'
+import { constants } from '../../constants'
 import { IInvoiceModel } from '../../models'
+import { currencyCode, InvoiceStatus, invoiceStatuses, InvoiceType, invoiceTypes, SortDirection, sortDirections } from '../../shared-types'
 import { BaseModel, ListResponse } from '../common'
 
 import { CreateInvoiceItem, InvoiceItem } from './invoice-item.dto'
@@ -37,6 +37,10 @@ export class Invoice extends BaseModel implements IInvoiceModel {
   @Expose()
   @ApiProperty()
   total: number
+
+  @Expose()
+  @ApiProperty()
+  dueDateInDays: number
 
   @Expose()
   @ApiProperty()
@@ -85,20 +89,31 @@ export class QueryInvoices extends QueryDataList {
   type?: InvoiceType
 }
 
-export class InvoiceResponse extends OmitType(Invoice, [`deletedAt`] as const) {
+export class InvoiceResponse extends OmitType(Invoice, [`deletedAt`, `subtotal`, `total`] as const) {
   @Expose()
   @ApiProperty()
-  @IsEmail({}, { message: constants.constants.INVALID_EMAIL })
+  @IsEmail({}, { message: constants.INVALID_EMAIL })
   referer: string
 
   @Expose()
   @ApiProperty()
-  @IsEmail({}, { message: constants.constants.INVALID_EMAIL })
+  @IsEmail({}, { message: constants.INVALID_EMAIL })
   creator: string
+
+  @Expose()
+  @ApiProperty()
+  @Transform(({ value: total }) => total / 100)
+  total: number
+
+  @Expose()
+  @ApiProperty()
+  @Transform(({ value: subtotal }) => subtotal / 100)
+  subtotal: number
 
   @Expose()
   @ApiProperty({ type: InvoiceItem })
   @Type(() => InvoiceItem)
+  @Transform(({ value: items }) => items.map(x => Object.assign(x, { amount: x.amount / 100 })))
   items: InvoiceItem[]
 }
 
@@ -112,11 +127,11 @@ export class InvoicesList extends ListResponse<InvoiceResponse> {
 export class CreateInvoice {
   @Expose()
   @ApiProperty()
-  @IsEmail({}, { message: constants.constants.INVALID_EMAIL })
+  @IsEmail({}, { message: constants.INVALID_EMAIL })
   referer: string
 
   @Expose()
-  @ApiProperty({ required: false, default: constants.currencyCode.USD })
+  @ApiProperty({ required: false, default: currencyCode.USD })
   currency?: string
 
   @Expose()
@@ -124,7 +139,15 @@ export class CreateInvoice {
   tax?: number
 
   @Expose()
+  @ApiProperty()
+  dueDateInDays: number
+
+  @Expose()
   @ApiProperty({ type: [CreateInvoiceItem] })
   @Type(() => CreateInvoiceItem)
+  @Transform(({ value: items }) => {
+    const transformed = items.map(x => Object.assign(x, { amount: x.amount * 100 }))
+    return transformed
+  })
   items: CreateInvoiceItem[]
 }

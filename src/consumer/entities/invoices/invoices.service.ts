@@ -1,17 +1,15 @@
 import { Inject, Injectable, Logger } from '@nestjs/common'
-import { invoiceType } from '@wirebill/back-and-front'
 import { generatePdf } from '@wirebill/pdf-generator-package'
 import { InjectStripe } from 'nestjs-stripe'
 import Stripe from 'stripe'
 
-import { BaseService } from 'src/common'
-import * as constants from 'src/constants'
-import { CONSUMER } from 'src/dtos'
-import { BaseModel } from 'src/dtos/common'
-import { IConsumerModel, IInvoiceModel, TABLE_NAME } from 'src/models'
-import { MailingService } from 'src/shared-modules/mailing/mailing.service'
-import { calculateInvoice, getKnexCount, invoiceToHtml } from 'src/utils'
-
+import { BaseService } from '../../../common'
+import { CONSUMER } from '../../../dtos'
+import { BaseModel } from '../../../dtos/common'
+import { IConsumerModel, IInvoiceModel, TABLE_NAME } from '../../../models'
+import { MailingService } from '../../../shared-modules/mailing/mailing.service'
+import { currencyCode, currencyCodes, invoiceType } from '../../../shared-types'
+import { calculateInvoiceTotalAndSubtotal, getKnexCount, invoiceToHtml } from '../../../utils'
 import { ConsumersService } from '../consumers/consumer.service'
 import { InvoiceItemsService } from '../invoice-items/invoice-items.service'
 
@@ -21,6 +19,7 @@ import { InvoicesRepository } from './invoices.repository'
 export class InvoicesService extends BaseService<IInvoiceModel, InvoicesRepository> {
   private readonly logger = new Logger(InvoicesService.name)
   private readonly defaultTax = 2.9 // need to check
+  private allowSendEmail = true
 
   constructor(
     @Inject(InvoicesRepository) repository: InvoicesRepository,
@@ -30,6 +29,7 @@ export class InvoicesService extends BaseService<IInvoiceModel, InvoicesReposito
     @Inject(MailingService) private readonly mailingService: MailingService,
   ) {
     super(repository)
+    this.allowSendEmail = true
   }
 
   async getInvoicesList(identity: IConsumerModel, query: CONSUMER.QueryInvoices): Promise<CONSUMER.InvoicesList> {
@@ -69,37 +69,46 @@ export class InvoicesService extends BaseService<IInvoiceModel, InvoicesReposito
   }
 
   async createInvoiceLocalFirst(identity: IConsumerModel, body: CONSUMER.CreateInvoice): Promise<CONSUMER.InvoiceResponse> {
-    const referer = await this.consumersService.upsertConsumer({ email: body.referer })
+    const consumerAsReferer = await this.consumersService.upsertConsumer({ email: body.referer })
     const tax = body.tax ?? this.defaultTax
-    const { subtotal, total } = calculateInvoice(body.items, tax)
-    const invoice = await this.repository.create({ creatorId: identity.id, subtotal, total, tax, refererId: referer.id })
-    const items = await this.itemsService.createManyItems(invoice.id, body.items)
+    const { subtotal, total } = calculateInvoiceTotalAndSubtotal(body.items, tax)
+    const dbInvoice = await this.repository.create({
+      creatorId: identity.id,
+      subtotal,
+      total,
+      tax,
+      refererId: consumerAsReferer.id,
+      dueDateInDays: body.dueDateInDays,
+      currency: currencyCode.USD,
+    })
+
+    const dbInvoiceItems = await this.itemsService.createManyItems(dbInvoice.id, body.items)
     const result = {
-      ...invoice,
-      tax: parseFloat(`${invoice.tax}`),
-      total: parseFloat(`${invoice.total}`),
-      referer: referer.email,
+      ...dbInvoice,
+      tax: parseFloat(`${dbInvoice.tax}`),
+      total: parseFloat(`${dbInvoice.total}`),
+      referer: consumerAsReferer.email,
       creator: identity.email,
-      items,
+      items: dbInvoiceItems,
     }
 
-    this.mailingService.sendOutgoingInvoiceEmail({ ...result, dueDate: new Date() })
+    if (this.allowSendEmail) this.mailingService.sendOutgoingInvoiceEmail(result)
     return result
   }
 
   async createInvoiceStripeFirst(identity: IConsumerModel, body: CONSUMER.CreateInvoice): Promise<CONSUMER.InvoiceResponse> {
-    let referer = await this.consumersService.upsertConsumer({ email: body.referer })
+    let consumerAsReferer = await this.consumersService.upsertConsumer({ email: body.referer })
 
-    if (!referer.stripeCustomerId) {
-      const customer = await this.stripe.customers.create({ email: referer.email })
-      referer = await this.consumersService.upsertConsumer({ email: body.referer, stripeCustomerId: customer.id })
+    if (!consumerAsReferer.stripeCustomerId) {
+      const customer = await this.stripe.customers.create({ email: consumerAsReferer.email })
+      consumerAsReferer = await this.consumersService.upsertConsumer({ email: body.referer, stripeCustomerId: customer.id })
     }
 
     let stripeInvoice = await this.stripe.invoices.create({
-      customer: referer.stripeCustomerId,
+      customer: consumerAsReferer.stripeCustomerId,
       auto_advance: true,
       collection_method: `send_invoice`,
-      days_until_due: 30,
+      days_until_due: body.dueDateInDays,
       payment_settings: { payment_method_types: [`card`] },
     })
 
@@ -110,28 +119,30 @@ export class InvoicesService extends BaseService<IInvoiceModel, InvoicesReposito
           amount: item.amount,
           description: item.description,
 
-          currency: constants.currencyCode.USD,
-          customer: referer.stripeCustomerId,
+          currency: currencyCode.USD,
+          customer: consumerAsReferer.stripeCustomerId,
         }),
       ),
     )
 
     stripeInvoice = await this.stripe.invoices.sendInvoice(stripeInvoice.id)
 
-    const rawInvoice = this.stripeInvoiceToModel(stripeInvoice, referer.id, identity.id)
-    const invoice = await this.repository.create(rawInvoice)
+    const rawInvoice = this.stripeInvoiceToModel(stripeInvoice, consumerAsReferer.id, identity.id)
+    const dbInvoice = await this.repository.create(rawInvoice)
 
-    const rawInvoiceItems = stripeInvoiceItems.map(this.stripeInvoiceItemToModel(invoice.id))
-    const invoiceItems = await this.itemsService.repository.createMany(rawInvoiceItems)
+    const rawInvoiceItems = stripeInvoiceItems.map(this.stripeInvoiceItemToModel(dbInvoice.id))
+    const dbInvoiceItems = await this.itemsService.repository.createMany(rawInvoiceItems)
 
     const result = {
-      ...invoice,
-      tax: parseFloat(`${invoice.tax}`),
-      total: parseFloat(`${invoice.total}`),
-      referer: referer.email,
+      ...dbInvoice,
+      tax: parseFloat(`${dbInvoice.tax}`),
+      total: parseFloat(`${dbInvoice.total}`),
+      referer: consumerAsReferer.email,
       creator: identity.email,
-      items: invoiceItems,
+      items: dbInvoiceItems,
     }
+
+    if (this.allowSendEmail) this.mailingService.sendOutgoingInvoiceEmail(result)
     return result
   }
 
@@ -145,7 +156,7 @@ export class InvoicesService extends BaseService<IInvoiceModel, InvoicesReposito
         .where(`invoices.id`, invoiceId)
         .first()
       const items = await this.repository.knex.from(`${TABLE_NAME.InvoiceItems} as items`).where({ invoiceId })
-      const invoiceHtml = invoiceToHtml.processor({ ...invoice, items, dueDate: new Date() /* ??? */ })
+      const invoiceHtml = invoiceToHtml.processor({ ...invoice, items })
       const buffer = await generatePdf({ rawHtml: invoiceHtml })
       const result = { buffer, variant: `invoice` }
       return result
@@ -159,7 +170,7 @@ export class InvoicesService extends BaseService<IInvoiceModel, InvoicesReposito
     return (item: Stripe.InvoiceItem): Omit<CONSUMER.InvoiceItem, keyof BaseModel> => ({
       invoiceId: invoiceId,
       description: item.description,
-      currency: item.currency,
+      currency: currencyCodes.find(x => new RegExp(x, `gi`).test(item.currency)) ?? currencyCode.USD,
       amount: item.amount,
       metadata: JSON.stringify(item, null, -1),
     })
@@ -172,7 +183,8 @@ export class InvoicesService extends BaseService<IInvoiceModel, InvoicesReposito
       stripeInvoiceId: invoice.id,
       status: invoice.status,
       tax: invoice.tax,
-      currency: invoice.currency,
+      currency: currencyCodes.find(x => new RegExp(x, `gi`).test(invoice.currency)) ?? currencyCode.USD,
+      dueDateInDays: invoice.due_date,
 
       subtotal: invoice.subtotal,
       total: invoice.total,

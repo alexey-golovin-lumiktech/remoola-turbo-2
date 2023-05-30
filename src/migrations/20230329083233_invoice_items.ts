@@ -1,7 +1,7 @@
 import { Knex } from 'knex'
 
-import * as constants from '../constants'
 import { TABLE_NAME } from '../models'
+import { currencyCode } from '../shared-types'
 
 const tableName = TABLE_NAME.InvoiceItems
 
@@ -13,8 +13,8 @@ export async function up(knex: Knex): Promise<void> {
     table.uuid(`id`).primary().defaultTo(knex.raw(`uuid_generate_v4()`))
     table.uuid(`invoice_id`).notNullable().references(`id`).inTable(TABLE_NAME.Invoices)
     table.string(`description`).notNullable()
-    table.string(`currency`, 3).notNullable().defaultTo(constants.currencyCode.USD) //Three-letter ISO currency code, in lowercase. Must be a supported currency.
-    table.integer(`amount`).notNullable() // price in cents
+    table.string(`currency`, 3).notNullable().defaultTo(currencyCode.USD) //Three-letter ISO currency code, in lowercase. Must be a supported currency.
+    table.decimal(`amount`).notNullable() // price in cents
 
     table.jsonb(`metadata`) // full stripe item details
     table.timestamp(`created_at`).defaultTo(knex.fn.now())

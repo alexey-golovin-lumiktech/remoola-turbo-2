@@ -1,7 +1,6 @@
 import { CanActivate, createParamDecorator, ExecutionContext, ForbiddenException, Logger } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
 import { JwtService } from '@nestjs/jwt'
-import { AuthHeader, authHeader, authHeaders, separator } from '@wirebill/back-and-front'
 import { Request as IExpressRequest } from 'express'
 import { Observable } from 'rxjs'
 
@@ -9,6 +8,7 @@ import { AdminsService } from '../admin/entities/admins/admins.service'
 import { ConsumersService } from '../consumer/entities/consumers/consumer.service'
 import { IS_PUBLIC } from '../decorators'
 import { IAdminModel, IConsumerModel } from '../models'
+import { AuthHeader, authHeader, authHeaders, separator } from '../shared-types'
 import { validatePassword } from '../utils'
 
 export const REQUEST_AUTH_IDENTITY = Symbol(`REQUEST_AUTH_IDENTITY`)

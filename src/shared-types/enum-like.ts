@@ -27,3 +27,7 @@ export type AuthHeader = ValueOf<typeof authHeader>
 export const separator = { token: ` `, credentials: `:` } as const
 export const separators = Object.values(separator)
 export type Separator = ValueOf<typeof separator>
+
+export const currencyCode = { USD: `USD` } as const
+export const currencyCodes = Object.values(currencyCode)
+export type CurrencyCode = ValueOf<typeof currencyCode>

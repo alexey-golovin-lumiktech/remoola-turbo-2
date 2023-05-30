@@ -24,10 +24,10 @@ export class MailingService {
     }
   }
 
-  async sendOutgoingInvoiceEmail(invoice: CONSUMER.InvoiceResponse & { dueDate: Date }) {
+  async sendOutgoingInvoiceEmail(invoice: CONSUMER.InvoiceResponse) {
     const html = outgoingInvoiceToHtml.processor(invoice)
     const content = await generatePdf({ rawHtml: invoiceToHtml.processor(invoice) })
-    const subject = `${invoice.creator} require payment from ${invoice.referer}`
+    const subject = `NEW INVOICE #${invoice.id}`
     const attachments: ISendMailOptions[`attachments`] = [{ content, filename: `invoice-${invoice.id}.pdf` }]
     try {
       const sent = await this.mailerService.sendMail({ to: invoice.referer, subject, html, attachments })

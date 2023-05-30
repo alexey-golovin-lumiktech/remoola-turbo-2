@@ -1,8 +1,8 @@
-import { currencyCode } from '../../../constants'
+import { currencyCode } from '../../../shared-types'
 import { currencyFormatters } from '../..'
 
 const html = `
-  <table style="padding: 20px;font-style: italic;background: #3f3f3f;color: cyan;border-radius: 20px;font-size:28px;">
+  <table style="padding: 20px;font-style: italic;background: #3f3f3f;color: cyan;border-radius: 20px;">
     <tbody><tr><td>
           <div style="text-align:center; font-weight:bold;color:cyan;">New Invoice #{{invoiceId}}</div>
           <div style="text-align:center; font-weight:bold;color:cyan;">From {{invoiceCreatorEmail}}</div>

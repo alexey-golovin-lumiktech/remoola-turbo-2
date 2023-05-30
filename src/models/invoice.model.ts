@@ -1,6 +1,5 @@
-import { InvoiceStatus } from '@wirebill/back-and-front'
-
 import { InvoiceItem } from '../dtos/admin'
+import { InvoiceStatus } from '../shared-types'
 
 import { IBaseModel } from './base'
 
@@ -12,8 +11,9 @@ export interface IInvoiceModel extends IBaseModel {
   status: InvoiceStatus
   currency?: string //default usd
   tax?: number //default 1
-  subtotal: number // in cents
-  total: number // in cents
+  subtotal: number
+  total: number
+  dueDateInDays: number // default 30
   items?: InvoiceItem[]
 
   // stripe
