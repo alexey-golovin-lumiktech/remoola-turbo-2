@@ -7,17 +7,19 @@ import { StripeModule } from 'nestjs-stripe'
 import * as knexfile from '../knexfile'
 
 import { AdminModule } from './admin/admin.module'
+import { constants } from './constants/constants'
 import { ConsumerModule } from './consumer/consumer.module'
 import { LoggerMiddleware } from './middleware/logger.middleware'
 import { SharedModulesModule } from './shared-modules/shared-modules.module'
 import { AppController } from './app.controller'
-import { constants } from './constants'
 import * as configValidation from './envs-validation.schema'
 
 @Module({
   imports: [
     ScheduleModule.forRoot(),
     ConfigModule.forRoot({
+      cache: true,
+      expandVariables: true,
       isGlobal: true,
       envFilePath: [constants.ENV_FILE_PATH],
       validationSchema: configValidation.validationSchema,

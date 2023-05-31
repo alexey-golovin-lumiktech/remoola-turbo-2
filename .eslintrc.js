@@ -12,6 +12,12 @@ module.exports = {
     node: true,
     jest: true,
   },
+  settings: {
+    'import/resolver': {
+      typescript: {},
+      node: { extensions: [`.js`, `.ts`, `.json`] },
+    },
+  },
   rules: {
     quotes: [`error`, `backtick`],
     '@typescript-eslint/interface-name-prefix': `off`,

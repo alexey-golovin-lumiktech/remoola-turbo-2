@@ -1,5 +1,6 @@
 import { ApiProperty, PickType } from '@nestjs/swagger'
 import { Exclude, Expose, Type } from 'class-transformer'
+import { IsNumber, IsString } from 'class-validator'
 
 import { IInvoiceItemModel } from '../../models'
 import { BaseModel, ListResponse } from '../common'
@@ -7,18 +8,22 @@ import { BaseModel, ListResponse } from '../common'
 export class InvoiceItem extends BaseModel implements IInvoiceItemModel {
   @Expose()
   @ApiProperty()
+  @IsString()
   invoiceId: string
 
   @Expose()
   @ApiProperty()
+  @IsString()
   description: string
 
   @Expose()
   @ApiProperty()
+  @IsString()
   currency: string
 
   @Expose()
   @ApiProperty()
+  @IsNumber()
   amount: number
 
   @Exclude()

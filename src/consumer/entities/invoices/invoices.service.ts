@@ -9,7 +9,7 @@ import { BaseModel } from '../../../dtos/common'
 import { IConsumerModel, IInvoiceModel, TABLE_NAME } from '../../../models'
 import { MailingService } from '../../../shared-modules/mailing/mailing.service'
 import { currencyCode, currencyCodes, invoiceType } from '../../../shared-types'
-import { calculateInvoiceTotalAndSubtotal, getKnexCount, invoiceToHtml } from '../../../utils'
+import { calculateInvoiceTotalAndSubtotal, getKnexCount, invoiceToHtml, plainToInstance } from '../../../utils'
 import { ConsumersService } from '../consumers/consumer.service'
 import { InvoiceItemsService } from '../invoice-items/invoice-items.service'
 
@@ -57,13 +57,8 @@ export class InvoicesService extends BaseService<IInvoiceModel, InvoicesReposito
         if (query?.offset) qb.offset(query.offset)
       })
 
-    data = await Promise.all(
-      data.map(invoice =>
-        this.itemsService //
-          .getInvoiceItems({ invoiceId: invoice.id })
-          .then(items => Object.assign(invoice, { items })),
-      ),
-    )
+    // eslint-disable-next-line
+    data = await Promise.all(data.map(x => this.itemsService.getInvoiceItems({ invoiceId: x.id }).then(items => Object.assign(x, { items }))))
 
     return { data, count }
   }
@@ -82,15 +77,8 @@ export class InvoicesService extends BaseService<IInvoiceModel, InvoicesReposito
       currency: currencyCode.USD,
     })
 
-    const dbInvoiceItems = await this.itemsService.createManyItems(dbInvoice.id, body.items)
-    const result = {
-      ...dbInvoice,
-      tax: parseFloat(`${dbInvoice.tax}`),
-      total: parseFloat(`${dbInvoice.total}`),
-      referer: consumerAsReferer.email,
-      creator: identity.email,
-      items: dbInvoiceItems,
-    }
+    dbInvoice.items = await this.itemsService.createManyItems(dbInvoice.id, body.items)
+    const result = plainToInstance(CONSUMER.InvoiceResponse, { ...dbInvoice, referer: consumerAsReferer.email, creator: identity.email })
 
     if (this.allowSendEmail) this.mailingService.sendOutgoingInvoiceEmail(result)
     return result
@@ -131,16 +119,8 @@ export class InvoicesService extends BaseService<IInvoiceModel, InvoicesReposito
     const dbInvoice = await this.repository.create(rawInvoice)
 
     const rawInvoiceItems = stripeInvoiceItems.map(this.stripeInvoiceItemToModel(dbInvoice.id))
-    const dbInvoiceItems = await this.itemsService.repository.createMany(rawInvoiceItems)
-
-    const result = {
-      ...dbInvoice,
-      tax: parseFloat(`${dbInvoice.tax}`),
-      total: parseFloat(`${dbInvoice.total}`),
-      referer: consumerAsReferer.email,
-      creator: identity.email,
-      items: dbInvoiceItems,
-    }
+    dbInvoice.items = await this.itemsService.repository.createMany(rawInvoiceItems)
+    const result = plainToInstance(CONSUMER.InvoiceResponse, { ...dbInvoice, referer: consumerAsReferer.email, creator: identity.email })
 
     if (this.allowSendEmail) this.mailingService.sendOutgoingInvoiceEmail(result)
     return result

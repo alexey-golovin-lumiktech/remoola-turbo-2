@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Inject, Patch, Post, Query } from '@nestjs/common'
+import { Body, Controller, Get, Inject, InternalServerErrorException, Patch, Post, Query, Redirect } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
+import { isEmpty, isNil } from 'lodash'
 
-import { ApiCountRowsResponse } from '../../../decorators'
+import { ApiCountRowsResponse, PublicEndpoint } from '../../../decorators'
 import { CONSUMER } from '../../../dtos'
 import { ReqAuthIdentity } from '../../../guards/auth.guard'
 import { TransformResponse } from '../../../interceptors/response.interceptor'
@@ -55,5 +56,30 @@ export class ConsumersController {
   @TransformResponse(CONSUMER.Invoice)
   createInvoice(@ReqAuthIdentity() identity: IConsumerModel, @Body() body: CONSUMER.CreateInvoice): Promise<CONSUMER.Invoice> {
     return this.invoicesService.createInvoiceLocalFirst(identity, body)
+  }
+
+  @PublicEndpoint()
+  @Get(`/payment-choices`)
+  @Redirect(process.env.FRONTEND_BASE_URL, 302)
+  async redirectToPaymentChoices(@Query(`invoiceId`) invoiceId: string, @Query(`refererEmail`) refererEmail: string) {
+    const frontendBaseUrl = process.env.FRONTEND_BASE_URL
+    const isFrontendBaseUrlExist = !isEmpty(frontendBaseUrl) && !isNil(frontendBaseUrl)
+    if (!isFrontendBaseUrlExist) throw new InternalServerErrorException(`lost frontendBaseURL`)
+
+    const [invoice] = await this.invoicesService.repository.find({ filter: { id: invoiceId } })
+    const [referer] = await this.service.repository.find({ filter: { email: refererEmail } })
+    const isInvoiceExist = !isNil(invoice) && !isEmpty(invoice)
+    const isRefererExist = !isNil(referer) && !isEmpty(referer)
+
+    if (isInvoiceExist && isRefererExist) {
+      const url = new URL(`payment-choices`, frontendBaseUrl)
+      url.searchParams.append(`invoiceId`, invoiceId)
+      url.searchParams.append(`refererEmail`, refererEmail)
+      return { url: url.href }
+    }
+
+    const url = new URL(`error-page`, frontendBaseUrl)
+    url.searchParams.append(`message`, `Invalid link. Canceled!`)
+    return { url: url.href }
   }
 }

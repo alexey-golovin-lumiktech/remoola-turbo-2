@@ -1,3 +1,4 @@
+import { CONSUMER } from '../../../dtos'
 import { currencyCode } from '../../../shared-types'
 import { currencyFormatters } from '../..'
 
@@ -27,12 +28,17 @@ const mapping = {
   invoiceSubtotal: new RegExp(`{{invoiceSubtotal}}`, `gi`),
 } as const
 
-export const processor = (invoice: any) => {
+export const processor = (invoice: CONSUMER.InvoiceResponse) => {
   const formatter = currencyFormatters[currencyCode.USD]
+
+  const backendBaseURL = `http://localhost:8080`
+  const invoiceLink = new URL(`consumer/payment-choices`, backendBaseURL)
+  invoiceLink.searchParams.append(`invoiceId`, invoice.id)
+  invoiceLink.searchParams.append(`refererEmail`, invoice.referer)
 
   return html
     .replace(mapping.invoiceCreatorEmail, invoice.creator)
     .replace(mapping.invoiceId, invoice.id)
-    .replace(mapping.invoiceLink, invoice.link)
+    .replace(mapping.invoiceLink, invoiceLink.toString())
     .replace(mapping.invoiceSubtotal, formatter.format(invoice.subtotal))
 }

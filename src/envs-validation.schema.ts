@@ -38,4 +38,5 @@ export const validationSchema = Joi.object({
 
   STRIPE_PUBLISHABLE_KEY: Joi.string().required(),
   STRIPE_SECRET_KEY: Joi.string().required(),
+  FRONTEND_BASE_URL: Joi.string().required(),
 })

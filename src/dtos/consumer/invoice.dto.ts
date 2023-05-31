@@ -1,6 +1,6 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger'
 import { Exclude, Expose, Transform, Type } from 'class-transformer'
-import { IsEmail } from 'class-validator'
+import { IsEmail, IsIn, IsNumber, IsString, ValidateIf } from 'class-validator'
 
 import { constants } from '../../constants'
 import { IInvoiceModel } from '../../models'
@@ -12,26 +12,34 @@ import { CreateInvoiceItem, InvoiceItem } from './invoice-item.dto'
 export class Invoice extends BaseModel implements IInvoiceModel {
   @Expose()
   @ApiProperty()
+  @IsString()
   creatorId: string
 
   @Expose()
   @ApiProperty()
+  @IsString()
   refererId: string
 
   @Expose()
   @ApiProperty({ enum: invoiceStatuses })
+  @IsIn(invoiceStatuses)
   status: InvoiceStatus
 
   @Expose()
   @ApiProperty()
+  @IsString()
+  @ValidateIf(({ value }) => value != null)
   currency?: string
 
   @Expose()
   @ApiProperty()
+  @IsNumber()
+  @ValidateIf(({ value }) => value != null)
   tax?: number
 
   @Expose()
   @ApiProperty()
+  @IsNumber()
   subtotal: number
 
   @Expose()
@@ -40,18 +48,25 @@ export class Invoice extends BaseModel implements IInvoiceModel {
 
   @Expose()
   @ApiProperty()
+  @IsNumber()
   dueDateInDays: number
 
   @Expose()
   @ApiProperty()
+  @IsString()
+  @ValidateIf(({ value }) => value != null)
   stripeInvoiceId?: string
 
   @Expose()
   @ApiProperty()
+  @IsString()
+  @ValidateIf(({ value }) => value != null)
   hostedInvoiceUrl?: string
 
   @Expose()
   @ApiProperty()
+  @IsString()
+  @ValidateIf(({ value }) => value != null)
   invoicePdf?: string
 
   @Exclude()

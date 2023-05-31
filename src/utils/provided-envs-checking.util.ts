@@ -31,6 +31,7 @@ const customEnvironmentVariables = [
   `NODEMAILER_SMTP_DEFAULT_FROM`,
   `STRIPE_PUBLISHABLE_KEY`,
   `STRIPE_SECRET_KEY`,
+  `FRONTEND_BASE_URL`,
 ]
 
 export const checkProvidedEnvs = (inDirectory: typeof __dirname) => () => {
