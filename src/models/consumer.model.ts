@@ -1,4 +1,4 @@
-import { IBaseModel } from './base'
+import { IBaseModel } from '../common'
 
 export interface IConsumerModel extends IBaseModel {
   email: string

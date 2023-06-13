@@ -1,7 +1,6 @@
+import { IBaseModel } from '../common'
 import { InvoiceItem } from '../dtos/admin'
 import { InvoiceStatus } from '../shared-types'
-
-import { IBaseModel } from './base'
 
 export interface IInvoiceModel extends IBaseModel {
   metadata?: string

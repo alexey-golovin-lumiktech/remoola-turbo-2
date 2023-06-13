@@ -3,9 +3,11 @@ import { Knex } from 'knex'
 import { isEmpty, isNil, snakeCase } from 'lodash'
 
 import { ListResponse } from '../dtos/common'
-import { IBaseModel, TableName } from '../models'
+import { TableName } from '../models'
 import { IFilter, IQuery } from '../shared-types'
 import { getKnexCount, queryBuilder } from '../utils'
+
+import { IBaseModel } from './base.model'
 
 export interface IBaseRepository<TModel extends IBaseModel> {
   create(dto: Partial<TModel>): Promise<TModel>

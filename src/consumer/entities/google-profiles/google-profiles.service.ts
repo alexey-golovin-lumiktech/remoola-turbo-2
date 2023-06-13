@@ -1,14 +1,17 @@
 import { Inject, Injectable } from '@nestjs/common'
 
-import { BaseService } from '../../../common'
-import { IBaseModel, IGoogleProfileModel } from '../../../models'
+import { BaseService, IBaseModel, IBaseService } from '../../../common'
+import { IGoogleProfileModel } from '../../../models'
 
 import { GoogleProfilesRepository } from './google-profiles.repository'
 
 export type IUpsertProfile = Omit<IGoogleProfileModel, keyof IBaseModel | `data` | `consumerId`>
 
 @Injectable()
-export class GoogleProfilesService extends BaseService<IGoogleProfileModel, GoogleProfilesRepository> {
+export class GoogleProfilesService
+  extends BaseService<IGoogleProfileModel, GoogleProfilesRepository>
+  implements IBaseService<IGoogleProfileModel, GoogleProfilesRepository>
+{
   constructor(@Inject(GoogleProfilesRepository) repository: GoogleProfilesRepository) {
     super(repository)
   }
