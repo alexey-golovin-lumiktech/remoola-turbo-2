@@ -33,10 +33,12 @@ export class AuthService {
 
   /* OK !!! */ async googleSignin(body: CONSUMER.GoogleSignin): Promise<CONSUMER.SigninResponse> {
     try {
-      const verified = await this.oAuth2Client.verifyIdToken({ idToken: body.credential })
+      const { credential, contractorKind = null, accountType } = body
+      console.log(JSON.stringify({ body }, null, 2))
+      const verified = await this.oAuth2Client.verifyIdToken({ idToken: credential })
       const rawGoogleProfile = new CONSUMER.GoogleProfile(verified.getPayload())
       const consumerData = this.extractConsumerData(rawGoogleProfile)
-      const consumer = await this.consumersService.upsertConsumer({ ...consumerData, accountType: body.accountType })
+      const consumer = await this.consumersService.upsertConsumer({ ...consumerData, accountType, contractorKind })
       if (consumer.deletedAt != null) throw new BadRequestException(`Consumer is suspended, please contact the support`)
 
       const gProfile = await this.googleProfileService.upsertGoogleProfile(consumer.id, rawGoogleProfile)
@@ -57,7 +59,7 @@ export class AuthService {
     return utils.toResponse(CONSUMER.SigninResponse, Object.assign(identity, { accessToken, refreshToken: refreshToken.token }))
   }
 
-  private extractConsumerData(dto: CONSUMER.GoogleProfile): Omit<IConsumerModel, keyof IBaseModel | `accountType`> {
+  private extractConsumerData(dto: CONSUMER.GoogleProfile): Omit<IConsumerModel, keyof IBaseModel | `accountType` | `contractorKind`> {
     const fullName = dto.name.split(` `)
     return {
       email: dto.email,
@@ -68,6 +70,7 @@ export class AuthService {
   }
 
   async signup(body: CONSUMER.SignupRequest): Promise<void | never> {
+    console.log(JSON.stringify({ body }, null, 2))
     const [exist] = await this.consumersService.repository.find({ filter: { email: body.email } })
     if (exist) throw new BadRequestException(`This email is already exist`)
 

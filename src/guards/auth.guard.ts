@@ -8,7 +8,7 @@ import { AdminsService } from '../admin/entities/admins/admins.service'
 import { ConsumersService } from '../consumer/entities/consumers/consumer.service'
 import { IS_PUBLIC } from '../decorators'
 import { IAdminModel, IConsumerModel } from '../models'
-import { AuthHeader, authHeader, authHeaders, separator } from '../shared-types'
+import { AuthHeader, authHeader, authHeaderVariants, separator } from '../shared-types'
 import { validatePassword } from '../utils'
 
 export const REQUEST_AUTH_IDENTITY = Symbol(`REQUEST_AUTH_IDENTITY`)
@@ -51,7 +51,7 @@ export class AuthGuard implements CanActivate {
     if (authorization == null || authorization.length == 0) return this.throwHandler(messages.LOST_HEADER)
 
     const [type, encoded] = authorization.split(this.separator.token) as [AuthHeader, string]
-    if (authHeaders.includes(type) == false) return this.throwHandler(messages.UNEXPECTED(type))
+    if (authHeaderVariants.includes(type) == false) return this.throwHandler(messages.UNEXPECTED(type))
 
     return this.processors[type](encoded, request)
   }

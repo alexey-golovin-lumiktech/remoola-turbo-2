@@ -8,7 +8,7 @@ import { CONSUMER } from '../../../dtos'
 import { BaseModel } from '../../../dtos/common'
 import { IConsumerModel, IInvoiceModel, TABLE_NAME } from '../../../models'
 import { MailingService } from '../../../shared-modules/mailing/mailing.service'
-import { currencyCode, currencyCodes, invoiceType } from '../../../shared-types'
+import { currencyCode, currencyCodeVariants, invoiceType } from '../../../shared-types'
 import { calculateInvoiceTotalAndSubtotal, getKnexCount, invoiceToHtml, plainToInstance } from '../../../utils'
 import { ConsumersService } from '../consumers/consumer.service'
 import { InvoiceItemsService } from '../invoice-items/invoice-items.service'
@@ -150,7 +150,7 @@ export class InvoicesService extends BaseService<IInvoiceModel, InvoicesReposito
     return (item: Stripe.InvoiceItem): Omit<CONSUMER.InvoiceItem, keyof BaseModel> => ({
       invoiceId: invoiceId,
       description: item.description,
-      currency: currencyCodes.find(x => new RegExp(x, `gi`).test(item.currency)) ?? currencyCode.USD,
+      currency: currencyCodeVariants.find(x => new RegExp(x, `gi`).test(item.currency)) ?? currencyCode.USD,
       amount: item.amount,
       metadata: JSON.stringify(item, null, -1),
     })
@@ -163,7 +163,7 @@ export class InvoicesService extends BaseService<IInvoiceModel, InvoicesReposito
       stripeInvoiceId: invoice.id,
       status: invoice.status,
       tax: invoice.tax,
-      currency: currencyCodes.find(x => new RegExp(x, `gi`).test(invoice.currency)) ?? currencyCode.USD,
+      currency: currencyCodeVariants.find(x => new RegExp(x, `gi`).test(invoice.currency)) ?? currencyCode.USD,
       dueDateInDays: invoice.due_date,
 
       subtotal: invoice.subtotal,

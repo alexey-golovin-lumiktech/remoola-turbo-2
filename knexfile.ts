@@ -2,7 +2,7 @@ import * as dotenv from 'dotenv'
 import type { Knex } from 'knex'
 import * as pg from 'pg'
 
-import { constants } from './src/constants'
+import * as constants from './src/constants'
 
 dotenv.config({ path: constants.ENV_FILE_PATH })
 

@@ -1,16 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 import { IsEmail } from 'class-validator'
-import { AccountType, accountTypeVariants } from 'src/shared-types'
 
 import * as constants from '../../constants'
 import { IConsumerModel } from '../../models'
+import { AccountType, accountTypeVariants, ContractorKind, contractorKindVariants } from '../../shared-types'
 import { BaseModel } from '../common/base-model.dto'
 
 class Consumer extends BaseModel implements IConsumerModel {
   @Expose()
   @ApiProperty()
-  @IsEmail({}, { message: constants.constants.INVALID_EMAIL })
+  @IsEmail({}, { message: constants.INVALID_EMAIL })
   email: string
 
   @Expose()
@@ -36,6 +36,10 @@ class Consumer extends BaseModel implements IConsumerModel {
   @Expose()
   @ApiProperty({ enum: accountTypeVariants })
   accountType: AccountType
+
+  @Expose()
+  @ApiProperty({ enum: contractorKindVariants })
+  contractorKind?: ContractorKind
 
   @Expose()
   @ApiProperty()

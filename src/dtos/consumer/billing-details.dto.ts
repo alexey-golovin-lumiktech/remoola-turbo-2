@@ -16,7 +16,7 @@ class BillingDetails extends BaseModel implements IBillingDetailsModel {
 
   @Expose()
   @ApiProperty()
-  @IsEmail({}, { message: constants.constants.INVALID_EMAIL })
+  @IsEmail({}, { message: constants.INVALID_EMAIL })
   email?: string
 
   @Expose()

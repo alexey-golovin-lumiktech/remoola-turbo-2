@@ -1,6 +1,6 @@
 import moment from 'moment'
-import { CONSUMER } from 'src/dtos'
 
+import { CONSUMER } from '../../../dtos'
 import { currencyCode } from '../../../shared-types'
 import { currencyFormatters, plainToInstance } from '../../../utils'
 

@@ -19,4 +19,5 @@ export class SignupRequest extends PickType(ConsumerResponse, [
   `lastName`,
   `password`,
   `accountType`,
+  `contractorKind`,
 ] as const) {}

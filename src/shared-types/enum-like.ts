@@ -1,35 +1,43 @@
 export const sortDirection = { asc: `asc`, desc: `desc` } as const
-export const sortDirections = Object.values(sortDirection)
-export type SortDirection = ValueOf<typeof sortDirection>
+export const sortDirectionVariants = Object.values(sortDirection)
+export type SortDirection = (typeof sortDirection)[keyof typeof sortDirection]
 
 export const sortNulls = { NULLS_FIRST: `NULLS FIRST`, NULLS_LAST: `NULLS LAST` } as const
-export const sortNullsValues = Object.values(sortNulls)
-export type SortNulls = ValueOf<typeof sortNulls>
+export const sortNullsVariants = Object.values(sortNulls)
+export type SortNulls = (typeof sortNulls)[keyof typeof sortNulls]
 
 export const invoiceStatus = { draft: `draft`, open: `open`, paid: `paid`, uncollectible: `uncollectible`, void: `void` } as const //like stripe
-export const invoiceStatuses = Object.values(invoiceStatus)
-export type InvoiceStatus = ValueOf<typeof invoiceStatus>
+export const invoiceStatusVariants = Object.values(invoiceStatus)
+export type InvoiceStatus = (typeof invoiceStatus)[keyof typeof invoiceStatus]
 
 export const invoiceType = { incoming: `incoming-only`, outgoing: `outgoing-only` } as const
-export const invoiceTypes = Object.values(invoiceType /* eslint-disable-line */)
+export const invoiceTypeVariants = Object.values(invoiceType /* eslint-disable-line */)
 export type InvoiceType = (typeof invoiceType)[keyof typeof invoiceType]
 
 export const adminType = { super: `super`, admin: `admin` } as const
-export const adminTypes = Object.values(adminType)
-export type AdminType = ValueOf<typeof adminType>
+export const adminTypeVariants = Object.values(adminType)
+export type AdminType = (typeof adminType)[keyof typeof adminType]
 
 export const authHeader = { Bearer: `Bearer`, Basic: `Basic` } as const
-export const authHeaders = Object.values(authHeader)
-export type AuthHeader = ValueOf<typeof authHeader>
+export const authHeaderVariants = Object.values(authHeader)
+export type AuthHeader = (typeof authHeader)[keyof typeof authHeader]
 
 export const separator = { token: ` `, credentials: `:` } as const
-export const separators = Object.values(separator)
-export type Separator = ValueOf<typeof separator>
+export const separatorVariants = Object.values(separator)
+export type Separator = (typeof separator)[keyof typeof separator]
 
 export const currencyCode = { USD: `USD` } as const
-export const currencyCodes = Object.values(currencyCode)
-export type CurrencyCode = ValueOf<typeof currencyCode>
+export const currencyCodeVariants = Object.values(currencyCode)
+export type CurrencyCode = (typeof currencyCode)[keyof typeof currencyCode]
 
 export const accountType = { business: `business`, contractor: `contractor` } as const
 export const accountTypeVariants = Object.values(accountType)
-export type AccountType = ValueOf<typeof accountType>
+export type AccountType = (typeof accountType)[keyof typeof accountType]
+
+export const contractorKind = { entity: `entity`, individual: `individual` } as const
+export const contractorKindVariants = Object.values(contractorKind)
+export type ContractorKind = (typeof contractorKind)[keyof typeof contractorKind]
+
+export const howDidHearAboutUs = { google: `google`, facebook: `facebook`, internet: `internet` }
+export const howDidHearAboutUsVariants = Object.values(howDidHearAboutUs)
+export type HowDidHearAboutUs = (typeof howDidHearAboutUs)[keyof typeof howDidHearAboutUs]

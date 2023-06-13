@@ -2,7 +2,8 @@ import { ApiProperty } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 import { IsString } from 'class-validator'
 import { TokenPayload as ITokenPayload } from 'google-auth-library'
-import { AccountType, accountTypeVariants } from 'src/shared-types'
+
+import { AccountType, accountTypeVariants, ContractorKind, contractorKindVariants } from '../../shared-types'
 
 export type ITokenPayloadPick = Pick<
   ITokenPayload,
@@ -45,4 +46,8 @@ export class GoogleSignin {
   @Expose()
   @ApiProperty({ enum: accountTypeVariants })
   accountType: AccountType
+
+  @Expose()
+  @ApiProperty({ enum: contractorKindVariants, default: null, required: false })
+  contractorKind?: ContractorKind = null
 }

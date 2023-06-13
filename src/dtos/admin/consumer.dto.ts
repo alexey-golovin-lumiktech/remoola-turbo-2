@@ -1,8 +1,8 @@
 import { ApiProperty, PickType } from '@nestjs/swagger'
 import { Exclude, Expose, Type } from 'class-transformer'
-import { AccountType, accountTypeVariants } from 'src/shared-types'
 
 import { IConsumerModel } from '../../models'
+import { AccountType, accountTypeVariants, ContractorKind, contractorKindVariants } from '../../shared-types'
 import { BaseModel, ListResponse } from '../common'
 
 export class Consumer extends BaseModel implements IConsumerModel {
@@ -35,6 +35,10 @@ export class Consumer extends BaseModel implements IConsumerModel {
   accountType: AccountType
 
   @Expose()
+  @ApiProperty({ enum: contractorKindVariants, default: null, required: false })
+  contractorKind?: ContractorKind = null
+
+  @Expose()
   @ApiProperty()
   stripeCustomerId?: string
 }
@@ -53,4 +57,5 @@ export class UpsertConsumer extends PickType(Consumer, [
   `firstName`,
   `lastName`,
   `accountType`,
+  `contractorKind`,
 ]) {}

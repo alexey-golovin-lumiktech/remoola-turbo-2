@@ -2,9 +2,17 @@ import { ApiProperty, OmitType } from '@nestjs/swagger'
 import { Exclude, Expose, Transform, Type } from 'class-transformer'
 import { IsEmail, IsIn, IsNumber, IsString, ValidateIf } from 'class-validator'
 
-import { constants } from '../../constants'
+import * as constants from '../../constants'
 import { IInvoiceModel } from '../../models'
-import { currencyCode, InvoiceStatus, invoiceStatuses, InvoiceType, invoiceTypes, SortDirection, sortDirections } from '../../shared-types'
+import {
+  currencyCode,
+  InvoiceStatus,
+  invoiceStatusVariants,
+  InvoiceType,
+  invoiceTypeVariants,
+  SortDirection,
+  sortDirectionVariants,
+} from '../../shared-types'
 import { BaseModel, ListResponse } from '../common'
 
 import { CreateInvoiceItem, InvoiceItem } from './invoice-item.dto'
@@ -21,8 +29,8 @@ export class Invoice extends BaseModel implements IInvoiceModel {
   refererId: string
 
   @Expose()
-  @ApiProperty({ enum: invoiceStatuses })
-  @IsIn(invoiceStatuses)
+  @ApiProperty({ enum: invoiceStatusVariants })
+  @IsIn(invoiceStatusVariants)
   status: InvoiceStatus
 
   @Expose()
@@ -80,7 +88,7 @@ export class QueryDataListSorting<TModel> {
   field: keyof TModel
 
   @Expose()
-  @ApiProperty({ enum: sortDirections })
+  @ApiProperty({ enum: sortDirectionVariants })
   direction: SortDirection
 }
 
@@ -100,7 +108,7 @@ export class QueryDataList {
 
 export class QueryInvoices extends QueryDataList {
   @Expose()
-  @ApiProperty({ enum: invoiceTypes })
+  @ApiProperty({ enum: invoiceTypeVariants })
   type?: InvoiceType
 }
 

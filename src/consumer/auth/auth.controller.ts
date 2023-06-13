@@ -35,6 +35,7 @@ export class AuthController {
   @PublicEndpoint()
   @Post(`/signup`)
   signup(@Body() body: CONSUMER.SignupRequest): Promise<void | never> {
+    console.log(JSON.stringify({ body }, null, 2))
     return this.service.signup(body)
   }
 

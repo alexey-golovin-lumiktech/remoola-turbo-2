@@ -13,4 +13,4 @@ export const TABLE_NAME = {
   Invoices: `invoices`,
   InvoiceItems: `invoice_items`,
 } as const
-export type TableName = ValueOf<typeof TABLE_NAME>
+export type TableName = (typeof TABLE_NAME)[keyof typeof TABLE_NAME]

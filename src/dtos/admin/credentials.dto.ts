@@ -6,12 +6,12 @@ import * as constants from '../../constants'
 
 export class Credentials {
   @Expose()
-  @IsEmail({}, { message: constants.constants.INVALID_EMAIL })
+  @IsEmail({}, { message: constants.INVALID_EMAIL })
   @ApiProperty({ example: `super.admin@wirebill.com` })
   email: string
 
   @Expose()
-  @Matches(constants.regexp.password, { message: constants.constants.INVALID_PASSWORD })
+  @Matches(constants.PASSWORD_RE, { message: constants.INVALID_PASSWORD })
   @ApiProperty({ example: `Wirebill@Admin123!` })
   password: string
 }

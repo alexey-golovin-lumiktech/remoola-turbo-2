@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import * as uuid from 'uuid'
 
-import { constants } from '../../constants'
+import * as constants from '../../constants'
 import { ADMIN } from '../../dtos'
 import { IAdminModel } from '../../models'
 import { validatePassword } from '../../utils'

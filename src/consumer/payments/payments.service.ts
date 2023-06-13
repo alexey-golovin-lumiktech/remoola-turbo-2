@@ -1,9 +1,9 @@
 import { Inject, Injectable, Logger, RawBodyRequest } from '@nestjs/common'
 import { plainToInstance } from 'class-transformer'
 import { InjectStripe } from 'nestjs-stripe'
-import { CONSUMER } from 'src/dtos'
 import Stripe from 'stripe'
 
+import { CONSUMER } from '../../dtos'
 import { PaymentMethod, paymentMethod } from '../../shared-types'
 import { InvoiceItemsService } from '../entities/invoice-items/invoice-items.service'
 import { InvoicesService } from '../entities/invoices/invoices.service'

@@ -1,7 +1,7 @@
 import { Knex } from 'knex'
-import { accountType, accountTypeVariants } from 'src/shared-types'
 
 import { TABLE_NAME } from '../models'
+import * as shared from '../shared-types'
 
 const tableName = TABLE_NAME.Consumers
 
@@ -11,9 +11,11 @@ export async function up(knex: Knex): Promise<void> {
 
   return knex.schema.createTable(tableName, table => {
     table.uuid(`id`).primary().defaultTo(knex.raw(`uuid_generate_v4()`))
-    table.string(`email`).unique().notNullable()
-    table.boolean(`verified`).defaultTo(false).notNullable()
-    table.string(`account_type`).checkIn(accountTypeVariants).defaultTo(accountType.contractor).notNullable
+    table.string(`email`).unique()
+    table.boolean(`verified`).defaultTo(false)
+    table.string(`account_type`).checkIn(shared.accountTypeVariants).defaultTo(shared.accountType.contractor)
+    table.string(`contractor_kind`).checkIn(shared.contractorKindVariants).defaultTo(null)
+    table.string(`how_did_hear_about_us`).defaultTo(shared.howDidHearAboutUsVariants)
 
     table.string(`password`)
     table.string(`salt`)
