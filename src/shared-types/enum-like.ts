@@ -41,3 +41,11 @@ export type ContractorKind = (typeof contractorKind)[keyof typeof contractorKind
 export const howDidHearAboutUs = { google: `google`, facebook: `facebook`, internet: `internet` }
 export const howDidHearAboutUsVariants = Object.values(howDidHearAboutUs)
 export type HowDidHearAboutUs = (typeof howDidHearAboutUs)[keyof typeof howDidHearAboutUs]
+
+export const organizationSize = { small: `1-10`, medium: `11-100`, large: `101-500` } as const
+export const organizationSizeVariants = Object.values(organizationSize)
+export type OrganizationSize = (typeof organizationSize)[keyof typeof organizationSize]
+
+export const consumerRoleInOrganization = { manager: `manager`, worker: `worker`, owner: `owner`, other: `other` } as const
+export const consumerRoleInOrganizationVariants = Object.values(consumerRoleInOrganization)
+export type ConsumerRoleInOrganization = (typeof consumerRoleInOrganization)[keyof typeof consumerRoleInOrganization]
