@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 import { IsEmail } from 'class-validator'
+import { AccountType, accountTypeVariants } from 'src/shared-types'
 
 import * as constants from '../../constants'
 import { IConsumerModel } from '../../models'
@@ -33,8 +34,8 @@ class Consumer extends BaseModel implements IConsumerModel {
   lastName?: string
 
   @Expose()
-  @ApiProperty()
-  middleName?: string
+  @ApiProperty({ enum: accountTypeVariants })
+  accountType: AccountType
 
   @Expose()
   @ApiProperty()

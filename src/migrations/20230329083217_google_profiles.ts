@@ -2,7 +2,7 @@ import { Knex } from 'knex'
 
 import { TABLE_NAME } from '../models'
 
-const tableName = TABLE_NAME.Consumers
+const tableName = TABLE_NAME.GoogleProfiles
 
 export async function up(knex: Knex): Promise<void> {
   const exist = await knex.schema.hasTable(tableName)
@@ -10,15 +10,15 @@ export async function up(knex: Knex): Promise<void> {
 
   return knex.schema.createTable(tableName, table => {
     table.uuid(`id`).primary().defaultTo(knex.raw(`uuid_generate_v4()`))
-    table.string(`email`).unique().notNullable()
-    table.boolean(`verified`).defaultTo(false).notNullable()
 
-    table.string(`password`)
-    table.string(`salt`)
-    table.string(`first_name`)
-    table.string(`last_name`)
-    table.string(`middle_name`)
-    table.string(`stripe_customer_id`)
+    table.jsonb(`data`).notNullable()
+    table.string(`email`)
+    table.boolean(`email_verified`)
+    table.string(`name`)
+    table.string(`given_name`)
+    table.string(`family_name`)
+    table.string(`picture`)
+    table.string(`organization`)
 
     table.timestamp(`created_at`).defaultTo(knex.fn.now())
     table.timestamp(`updated_at`).defaultTo(knex.fn.now())

@@ -35,7 +35,8 @@ export class AuthService {
     try {
       const verified = await this.oAuth2Client.verifyIdToken({ idToken: body.credential })
       const rawGoogleProfile = new CONSUMER.GoogleProfile(verified.getPayload())
-      const consumer = await this.consumersService.upsertConsumer(this.extractConsumerData(rawGoogleProfile))
+      const consumerData = this.extractConsumerData(rawGoogleProfile)
+      const consumer = await this.consumersService.upsertConsumer({ ...consumerData, accountType: body.accountType })
       if (consumer.deletedAt != null) throw new BadRequestException(`Consumer is suspended, please contact the support`)
 
       const gProfile = await this.googleProfileService.upsertGoogleProfile(consumer.id, rawGoogleProfile)
@@ -56,7 +57,7 @@ export class AuthService {
     return utils.toResponse(CONSUMER.SigninResponse, Object.assign(identity, { accessToken, refreshToken: refreshToken.token }))
   }
 
-  private extractConsumerData(dto: CONSUMER.GoogleProfile): Omit<IConsumerModel, keyof IBaseModel> {
+  private extractConsumerData(dto: CONSUMER.GoogleProfile): Omit<IConsumerModel, keyof IBaseModel | `accountType`> {
     const fullName = dto.name.split(` `)
     return {
       email: dto.email,
@@ -76,7 +77,6 @@ export class AuthService {
       email: body.email,
       firstName: body.firstName,
       lastName: body.lastName,
-      middleName: body.middleName,
       verified: false,
       password: hash,
       salt,

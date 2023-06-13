@@ -31,13 +31,12 @@
       ],
       "@wirebill/pdf-generator-package/*": [
         "libs/pdf-generator-package/src/*"
-      ],
-      // "@/*": [
-      //   "*"
-      // ]
+      ]
     },
   },
+  "exclude": ["node_modules", "**/*.spec.ts"],
   "include": [
+    "./src/global-typings.d.ts",
     ".eslintrc.js",
     "src",
     "libs",

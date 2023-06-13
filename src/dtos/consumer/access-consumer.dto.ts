@@ -13,4 +13,10 @@ export class SigninResponse extends ConsumerResponse {
   refreshToken: string
 }
 
-export class SignupRequest extends PickType(ConsumerResponse, [`email`, `firstName`, `lastName`, `middleName`, `password`] as const) {}
+export class SignupRequest extends PickType(ConsumerResponse, [
+  `email`, //
+  `firstName`,
+  `lastName`,
+  `password`,
+  `accountType`,
+] as const) {}

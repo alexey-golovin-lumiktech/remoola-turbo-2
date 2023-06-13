@@ -1,5 +1,3 @@
-import { ValueOf } from './common.types'
-
 export const sortDirection = { asc: `asc`, desc: `desc` } as const
 export const sortDirections = Object.values(sortDirection)
 export type SortDirection = ValueOf<typeof sortDirection>

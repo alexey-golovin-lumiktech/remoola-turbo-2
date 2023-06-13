@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 import { IsString } from 'class-validator'
 import { TokenPayload as ITokenPayload } from 'google-auth-library'
+import { AccountType, accountTypeVariants } from 'src/shared-types'
 
 export type ITokenPayloadPick = Pick<
   ITokenPayload,
@@ -40,4 +41,8 @@ export class GoogleSignin {
   @ApiProperty()
   @IsString()
   credential: string
+
+  @Expose()
+  @ApiProperty({ enum: accountTypeVariants })
+  accountType: AccountType
 }

@@ -1,8 +1,9 @@
 import { Knex } from 'knex'
+import { accountType, accountTypeVariants } from 'src/shared-types'
 
 import { TABLE_NAME } from '../models'
 
-const tableName = TABLE_NAME.GoogleProfiles
+const tableName = TABLE_NAME.Consumers
 
 export async function up(knex: Knex): Promise<void> {
   const exist = await knex.schema.hasTable(tableName)
@@ -10,16 +11,15 @@ export async function up(knex: Knex): Promise<void> {
 
   return knex.schema.createTable(tableName, table => {
     table.uuid(`id`).primary().defaultTo(knex.raw(`uuid_generate_v4()`))
-    table.uuid(`consumer_id`).notNullable().references(`id`).inTable(TABLE_NAME.Consumers)
+    table.string(`email`).unique().notNullable()
+    table.boolean(`verified`).defaultTo(false).notNullable()
+    table.string(`account_type`).checkIn(accountTypeVariants).defaultTo(accountType.contractor).notNullable
 
-    table.jsonb(`data`).notNullable()
-    table.string(`email`)
-    table.boolean(`email_verified`)
-    table.string(`name`)
-    table.string(`given_name`)
-    table.string(`family_name`)
-    table.string(`picture`)
-    table.string(`organization`)
+    table.string(`password`)
+    table.string(`salt`)
+    table.string(`first_name`)
+    table.string(`last_name`)
+    table.string(`stripe_customer_id`)
 
     table.timestamp(`created_at`).defaultTo(knex.fn.now())
     table.timestamp(`updated_at`).defaultTo(knex.fn.now())

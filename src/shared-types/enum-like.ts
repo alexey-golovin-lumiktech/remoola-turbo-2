@@ -1,5 +1,3 @@
-import { ValueOf } from './common.types'
-
 export const sortDirection = { asc: `asc`, desc: `desc` } as const
 export const sortDirections = Object.values(sortDirection)
 export type SortDirection = ValueOf<typeof sortDirection>
@@ -31,3 +29,7 @@ export type Separator = ValueOf<typeof separator>
 export const currencyCode = { USD: `USD` } as const
 export const currencyCodes = Object.values(currencyCode)
 export type CurrencyCode = ValueOf<typeof currencyCode>
+
+export const accountType = { business: `business`, contractor: `contractor` } as const
+export const accountTypeVariants = Object.values(accountType)
+export type AccountType = ValueOf<typeof accountType>

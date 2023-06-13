@@ -1,5 +1,3 @@
-import { ValueOf } from '../shared-types'
-
 export * from './admin.model'
 export * from './billing-details.mode'
 export * from './consumer.model'
