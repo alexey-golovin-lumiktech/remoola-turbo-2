@@ -7,6 +7,9 @@ import { CONSUMER } from '../../dtos'
 import { ReqAuthIdentity } from '../../guards/auth.guard'
 import { TransformResponse } from '../../interceptors/response.interceptor'
 import { IConsumerModel } from '../../models'
+import { AddressDetailsService } from '../entities/address-details/address-details.service'
+import { OrganizationDetailsService } from '../entities/organization-details/organization-details.service'
+import { PersonalDetailsService } from '../entities/personal-details/personal-details.service'
 
 import { AuthService } from './auth.service'
 
@@ -15,7 +18,12 @@ import { AuthService } from './auth.service'
 export class AuthController {
   logger = new Logger(AuthController.name)
 
-  constructor(@Inject(AuthService) private readonly service: AuthService) {}
+  constructor(
+    @Inject(AuthService) private readonly service: AuthService,
+    @Inject(PersonalDetailsService) private personalDetailsService: PersonalDetailsService,
+    @Inject(OrganizationDetailsService) private organizationDetailsService: OrganizationDetailsService,
+    @Inject(AddressDetailsService) private addressDetailsService: AddressDetailsService,
+  ) {}
 
   @Post(`/signin`)
   @ApiOkResponse({ type: CONSUMER.SigninResponse })
@@ -35,8 +43,25 @@ export class AuthController {
   @PublicEndpoint()
   @Post(`/signup`)
   signup(@Body() body: CONSUMER.SignupRequest): Promise<void | never> {
-    console.log(JSON.stringify({ body }, null, 2))
     return this.service.signup(body)
+  }
+
+  @PublicEndpoint()
+  @Post(`/signup/personal-details`)
+  signupPersonalDetails(@Body() body: CONSUMER.PersonalDetails): Promise<void | never> {
+    return this.personalDetailsService.upsertPersonalDetails(body)
+  }
+
+  @PublicEndpoint()
+  @Post(`/signup/organization-details`)
+  signupOrganizationDetails(@Body() body: CONSUMER.OrganizationDetails): Promise<void | never> {
+    return this.organizationDetailsService.upsertOrganizationDetails(body)
+  }
+
+  @PublicEndpoint()
+  @Post(`/signup/address-details`)
+  signupAddressDetails(@Body() body: CONSUMER.AddressDetails): Promise<void | never> {
+    return this.addressDetailsService.upsertAddressDetails(body)
   }
 
   @PublicEndpoint()

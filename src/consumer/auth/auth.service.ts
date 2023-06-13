@@ -34,7 +34,6 @@ export class AuthService {
   /* OK !!! */ async googleSignin(body: CONSUMER.GoogleSignin): Promise<CONSUMER.SigninResponse> {
     try {
       const { credential, contractorKind = null, accountType } = body
-      console.log(JSON.stringify({ body }, null, 2))
       const verified = await this.oAuth2Client.verifyIdToken({ idToken: credential })
       const rawGoogleProfile = new CONSUMER.GoogleProfile(verified.getPayload())
       const consumerData = this.extractConsumerData(rawGoogleProfile)
@@ -70,7 +69,6 @@ export class AuthService {
   }
 
   async signup(body: CONSUMER.SignupRequest): Promise<void | never> {
-    console.log(JSON.stringify({ body }, null, 2))
     const [exist] = await this.consumersService.repository.find({ filter: { email: body.email } })
     if (exist) throw new BadRequestException(`This email is already exist`)
 
