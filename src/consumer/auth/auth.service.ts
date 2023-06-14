@@ -6,11 +6,11 @@ import { OAuth2Client } from 'google-auth-library'
 import * as uuid from 'uuid'
 
 import { IBaseModel } from '../../common'
+import { MailingService } from '../../common-shared-modules/mailing/mailing.service'
 import { CONSUMER } from '../../dtos'
 import { IConsumerModel } from '../../models'
-import { MailingService } from '../../shared-modules/mailing/mailing.service'
 import * as utils from '../../utils'
-import { ConsumersService } from '../entities/consumers/consumer.service'
+import { ConsumerService } from '../entities/consumer/consumer.service'
 import { GoogleProfilesService } from '../entities/google-profiles/google-profiles.service'
 
 @Injectable()
@@ -20,7 +20,7 @@ export class AuthService {
   private readonly audience: string
 
   constructor(
-    @Inject(ConsumersService) private readonly consumersService: ConsumersService,
+    @Inject(ConsumerService) private readonly consumersService: ConsumerService,
     @Inject(GoogleProfilesService) private readonly googleProfileService: GoogleProfilesService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
@@ -68,7 +68,7 @@ export class AuthService {
     }
   }
 
-  async signup(body: CONSUMER.SignupRequest): Promise<void | never> {
+  async signup(body: CONSUMER.SignupRequest): Promise<CONSUMER.ConsumerResponse | never> {
     const [exist] = await this.consumersService.repository.find({ filter: { email: body.email } })
     if (exist) throw new BadRequestException(`This email is already exist`)
 
@@ -83,8 +83,7 @@ export class AuthService {
       salt,
     })
 
-    const token = this.generateToken(consumer)
-    this.mailingService.sendConsumerSignupCompletionEmail({ email: body.email, token })
+    return consumer
   }
 
   async signupCompletion(token: string, res: IExpressResponse) {

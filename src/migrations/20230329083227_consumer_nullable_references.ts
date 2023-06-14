@@ -2,7 +2,7 @@ import { Knex } from 'knex'
 
 import { TABLE_NAME } from '../models'
 
-const tableName = TABLE_NAME.Consumers
+const tableName = TABLE_NAME.Consumer
 
 const refs = [
   { columnName: `google_profile_details_id`, inRefTable: TABLE_NAME.GoogleProfileDetails }, //

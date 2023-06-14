@@ -5,7 +5,7 @@ import { adminType } from '../shared-types'
 import * as utils from '../utils'
 
 export async function seed(knex: Knex): Promise<void> {
-  await knex(TABLE_NAME.Admins).del()
+  await knex(TABLE_NAME.Admin).del()
 
   const password = `Wirebill@Admin123!`
   const salt = utils.generatePasswordHashSalt(4)
@@ -19,5 +19,5 @@ export async function seed(knex: Knex): Promise<void> {
     },
   ]
 
-  await knex(TABLE_NAME.Admins).insert(data)
+  await knex(TABLE_NAME.Admin).insert(data)
 }

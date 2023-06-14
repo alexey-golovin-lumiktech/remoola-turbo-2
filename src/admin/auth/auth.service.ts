@@ -7,14 +7,14 @@ import * as constants from '../../constants'
 import { ADMIN } from '../../dtos'
 import { IAdminModel } from '../../models'
 import { validatePassword } from '../../utils'
-import { AdminsService } from '../entities/admins/admins.service'
+import { AdminService } from '../entities/admin/admin.service'
 
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name)
 
   constructor(
-    @Inject(AdminsService) private readonly adminsService: AdminsService,
+    @Inject(AdminService) private readonly adminsService: AdminService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
   ) {}

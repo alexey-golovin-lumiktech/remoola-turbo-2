@@ -42,26 +42,35 @@ export class AuthController {
 
   @PublicEndpoint()
   @Post(`/signup`)
-  signup(@Body() body: CONSUMER.SignupRequest): Promise<void | never> {
+  signup(@Body() body: CONSUMER.SignupRequest): Promise<CONSUMER.ConsumerResponse | never> {
     return this.service.signup(body)
   }
 
   @PublicEndpoint()
   @Post(`/signup/:consumerId/personal-details`)
-  signupPersonalDetails(@Param() consumerId: string, @Body() body: CONSUMER.PersonalDetails): Promise<void | never> {
-    return this.personalDetailsService.upsertPersonalDetails(consumerId, body)
+  signupPersonalDetails(
+    @Param(`consumerId`) consumerId: string,
+    @Body() body: CONSUMER.CreatePersonalDetails,
+  ): Promise<CONSUMER.PersonalDetailsResponse | never> {
+    return this.personalDetailsService.upsertPersonalDetails({ ...body, consumerId })
   }
 
   @PublicEndpoint()
   @Post(`/signup/:consumerId/organization-details`)
-  signupOrganizationDetails(@Param() consumerId: string, @Body() body: CONSUMER.OrganizationDetails): Promise<void | never> {
-    return this.organizationDetailsService.upsertOrganizationDetails(consumerId, body)
+  signupOrganizationDetails(
+    @Param(`consumerId`) consumerId: string,
+    @Body() body: CONSUMER.CreateOrganizationDetails,
+  ): Promise<CONSUMER.OrganizationDetailsResponse | never> {
+    return this.organizationDetailsService.upsertOrganizationDetails({ ...body, consumerId })
   }
 
   @PublicEndpoint()
   @Post(`/signup/:consumerId/address-details`)
-  signupAddressDetails(@Param() consumerId: string, @Body() body: CONSUMER.AddressDetails): Promise<void | never> {
-    return this.addressDetailsService.upsertAddressDetails(consumerId, body)
+  signupAddressDetails(
+    @Param(`consumerId`) consumerId: string,
+    @Body() body: CONSUMER.CreateAddressDetails,
+  ): Promise<CONSUMER.AddressDetailsResponse | never> {
+    return this.addressDetailsService.upsertAddressDetails({ ...body, consumerId })
   }
 
   @PublicEndpoint()

@@ -5,10 +5,10 @@ import { JwtService } from '@nestjs/jwt'
 import { DocumentBuilder, SwaggerCustomOptions, SwaggerModule } from '@nestjs/swagger'
 import { classToPlain, plainToClass } from 'class-transformer'
 
-import { AdminModule } from './admin/admin.module'
-import { AdminsService } from './admin/entities/admins/admins.service'
-import { ConsumerModule } from './consumer/consumer.module'
-import { ConsumersService } from './consumer/entities/consumers/consumer.service'
+import { AdminCommonModule } from './admin/admin-common.module'
+import { AdminService } from './admin/entities/admin/admin.service'
+import { ConsumerCommonModule } from './consumer/consumer-common.module'
+import { ConsumerService } from './consumer/entities/consumer/consumer.service'
 import { ListResponse } from './dtos/common'
 import { AuthGuard } from './guards/auth.guard'
 import { TransformResponseInterceptor } from './interceptors/response.interceptor'
@@ -33,7 +33,7 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config, {
     deepScanRoutes: true,
-    include: [AdminModule, ConsumerModule],
+    include: [AdminCommonModule, ConsumerCommonModule],
     extraModels: [...Object.values(ADMIN), ...Object.values(CONSUMER), ListResponse],
   })
   const options: SwaggerCustomOptions = { swaggerOptions: { docExpansion: `none` }, customSiteTitle }
@@ -44,8 +44,8 @@ async function bootstrap() {
 
   const reflector = app.get(Reflector)
   const jwtService = app.get(JwtService)
-  const consumersService = app.get(ConsumersService)
-  const adminsService = app.get(AdminsService)
+  const consumersService = app.get(ConsumerService)
+  const adminsService = app.get(AdminService)
   app.useGlobalGuards(new AuthGuard(reflector, jwtService, consumersService, adminsService))
   app.useGlobalInterceptors(new TransformResponseInterceptor(reflector))
 

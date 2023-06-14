@@ -6,10 +6,10 @@ import { StripeModule } from 'nestjs-stripe'
 
 import * as knexfile from '../knexfile'
 
-import { AdminModule } from './admin/admin.module'
-import { ConsumerModule } from './consumer/consumer.module'
+import { AdminCommonModule } from './admin/admin-common.module'
+import { CommonSharedModulesModule } from './common-shared-modules/common-shared-modules.module'
+import { ConsumerCommonModule } from './consumer/consumer-common.module'
 import { LoggerMiddleware } from './middleware/logger.middleware'
-import { SharedModulesModule } from './shared-modules/shared-modules.module'
 import { AppController } from './app.controller'
 import * as constants from './constants'
 import * as configValidation from './envs-validation.schema'
@@ -39,9 +39,9 @@ import * as configValidation from './envs-validation.schema'
         return { apiKey, apiVersion }
       },
     }),
-    AdminModule,
-    ConsumerModule,
-    SharedModulesModule,
+    AdminCommonModule,
+    ConsumerCommonModule,
+    CommonSharedModulesModule,
   ],
   controllers: [AppController],
   exports: [],

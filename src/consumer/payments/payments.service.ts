@@ -5,8 +5,8 @@ import Stripe from 'stripe'
 
 import { CONSUMER } from '../../dtos'
 import { PaymentMethod, paymentMethod } from '../../shared-types'
-import { InvoiceItemsService } from '../entities/invoice-items/invoice-items.service'
-import { InvoicesService } from '../entities/invoices/invoices.service'
+import { InvoiceService } from '../entities/invoice/invoice.service'
+import { InvoiceItemService } from '../entities/invoice-item/invoice-item.service'
 
 @Injectable()
 export class PaymentsService {
@@ -15,8 +15,8 @@ export class PaymentsService {
 
   constructor(
     @InjectStripe() private readonly stripe: Stripe,
-    @Inject(InvoicesService) private invoicesService: InvoicesService,
-    @Inject(InvoiceItemsService) private itemsService: InvoiceItemsService,
+    @Inject(InvoiceService) private invoicesService: InvoiceService,
+    @Inject(InvoiceItemService) private itemsService: InvoiceItemService,
   ) {
     this.endpointSecret = process.env.WH_ENDPOINT_SECRET ?? ``
   }

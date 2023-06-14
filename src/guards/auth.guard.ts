@@ -4,8 +4,8 @@ import { JwtService } from '@nestjs/jwt'
 import { Request as IExpressRequest } from 'express'
 import { Observable } from 'rxjs'
 
-import { AdminsService } from '../admin/entities/admins/admins.service'
-import { ConsumersService } from '../consumer/entities/consumers/consumer.service'
+import { AdminService } from '../admin/entities/admin/admin.service'
+import { ConsumerService } from '../consumer/entities/consumer/consumer.service'
 import { IS_PUBLIC } from '../decorators'
 import { IAdminModel, IConsumerModel } from '../models'
 import { AuthHeader, authHeader, authHeaderVariants, separator } from '../shared-types'
@@ -35,8 +35,8 @@ export class AuthGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly jwtService: JwtService,
-    private readonly consumersService: ConsumersService,
-    private readonly adminsService: AdminsService,
+    private readonly consumersService: ConsumerService,
+    private readonly adminsService: AdminService,
   ) {}
 
   canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
