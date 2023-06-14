@@ -5,7 +5,7 @@ import { generatePasswordHash, generatePasswordHashSalt } from '../utils'
 
 export async function seed(knex: Knex): Promise<void> {
   await knex(TABLE_NAME.BillingDetails).del()
-  await knex(TABLE_NAME.GoogleProfiles).del()
+  await knex(TABLE_NAME.GoogleProfileDetails).del()
   await knex(TABLE_NAME.Consumers).del()
 
   const raw = [

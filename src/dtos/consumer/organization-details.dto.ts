@@ -7,6 +7,10 @@ import { BaseModel } from '../common/base-model.dto'
 export class OrganizationDetails extends BaseModel implements IOrganizationDetailsModel {
   @Expose()
   @ApiProperty()
+  consumerId: string
+
+  @Expose()
+  @ApiProperty()
   name: string
 
   @Expose()

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Logger, Post, Query, Res } from '@nestjs/common'
+import { Body, Controller, Get, Inject, Logger, Param, Post, Query, Res } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { Response as IExpressResponse } from 'express'
 
@@ -47,21 +47,21 @@ export class AuthController {
   }
 
   @PublicEndpoint()
-  @Post(`/signup/personal-details`)
-  signupPersonalDetails(@Body() body: CONSUMER.PersonalDetails): Promise<void | never> {
-    return this.personalDetailsService.upsertPersonalDetails(body)
+  @Post(`/signup/:consumerId/personal-details`)
+  signupPersonalDetails(@Param() consumerId: string, @Body() body: CONSUMER.PersonalDetails): Promise<void | never> {
+    return this.personalDetailsService.upsertPersonalDetails(consumerId, body)
   }
 
   @PublicEndpoint()
-  @Post(`/signup/organization-details`)
-  signupOrganizationDetails(@Body() body: CONSUMER.OrganizationDetails): Promise<void | never> {
-    return this.organizationDetailsService.upsertOrganizationDetails(body)
+  @Post(`/signup/:consumerId/organization-details`)
+  signupOrganizationDetails(@Param() consumerId: string, @Body() body: CONSUMER.OrganizationDetails): Promise<void | never> {
+    return this.organizationDetailsService.upsertOrganizationDetails(consumerId, body)
   }
 
   @PublicEndpoint()
-  @Post(`/signup/address-details`)
-  signupAddressDetails(@Body() body: CONSUMER.AddressDetails): Promise<void | never> {
-    return this.addressDetailsService.upsertAddressDetails(body)
+  @Post(`/signup/:consumerId/address-details`)
+  signupAddressDetails(@Param() consumerId: string, @Body() body: CONSUMER.AddressDetails): Promise<void | never> {
+    return this.addressDetailsService.upsertAddressDetails(consumerId, body)
   }
 
   @PublicEndpoint()

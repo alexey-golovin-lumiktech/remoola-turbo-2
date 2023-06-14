@@ -12,8 +12,8 @@ export class OrganizationDetailsService extends BaseService<IOrganizationDetails
     super(repository)
   }
 
-  async upsertOrganizationDetails(organizationDetailsBody: CONSUMER.OrganizationDetails) {
-    console.log(JSON.stringify({ organizationDetailsBody }, null, 2))
+  async upsertOrganizationDetails(consumerId: string, organizationDetailsBody: CONSUMER.OrganizationDetails) {
+    console.log(JSON.stringify({ consumerId, organizationDetailsBody }, null, 2))
     return null
   }
 }

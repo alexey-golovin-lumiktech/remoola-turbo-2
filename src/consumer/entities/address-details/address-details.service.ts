@@ -12,8 +12,8 @@ export class AddressDetailsService extends BaseService<IAddressDetailsModel, Add
     super(repository)
   }
 
-  async upsertAddressDetails(addressDetailsBody: CONSUMER.AddressDetails) {
-    console.log(JSON.stringify({ body: addressDetailsBody }, null, 2))
+  async upsertAddressDetails(consumerId: string, addressDetailsBody: CONSUMER.AddressDetails) {
+    console.log(JSON.stringify({ consumerId, addressDetailsBody }, null, 2))
     return null
   }
 }

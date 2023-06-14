@@ -14,7 +14,7 @@ export const TABLE_NAME = {
   PersonalDetails: `personal_details`,
   AddressDetails: `address_details`,
   OrganizationDetails: `organization_details`,
-  GoogleProfiles: `google_profiles`,
+  GoogleProfileDetails: `google_profile_details`,
   BillingDetails: `billing_details`,
   Invoices: `invoices`,
   InvoiceItems: `invoice_items`,

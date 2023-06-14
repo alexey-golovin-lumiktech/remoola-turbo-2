@@ -12,4 +12,10 @@ export interface IConsumerModel extends IBaseModel {
   firstName?: string
   lastName?: string
   stripeCustomerId?: string
+
+  // refs
+  googleProfileDetailsId?: string
+  personalDetailsId?: string
+  addressDetailsId?: string
+  organizationDetailsId?: string
 }

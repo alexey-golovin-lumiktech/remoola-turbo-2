@@ -7,6 +7,6 @@ import { IGoogleProfileModel, TABLE_NAME } from '../../../models'
 @Injectable()
 export class GoogleProfilesRepository extends BaseRepository<IGoogleProfileModel> {
   constructor(@InjectKnex() knex: Knex) {
-    super(knex, TABLE_NAME.GoogleProfiles)
+    super(knex, TABLE_NAME.GoogleProfileDetails)
   }
 }

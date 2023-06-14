@@ -10,7 +10,7 @@ export async function up(knex: Knex): Promise<void> {
 
   return knex.schema.createTable(tableName, table => {
     table.uuid(`id`).primary().defaultTo(knex.raw(`uuid_generate_v4()`))
-    table.uuid(`consumer_id`).notNullable().references(`id`).inTable(TABLE_NAME.Consumers)
+    table.uuid(`consumer_id`).notNullable().references(`id`).inTable(TABLE_NAME.Consumers).onDelete(`CASCADE`).onUpdate(`CASCADE`)
 
     table.string(`email`)
     table.string(`name`)
@@ -31,5 +31,8 @@ export async function up(knex: Knex): Promise<void> {
 }
 
 export async function down(knex: Knex): Promise<void> {
-  return knex.schema.dropTableIfExists(tableName)
+  const exist = await knex.schema.hasTable(tableName)
+  if (!exist) return
+
+  return knex.schema.dropTable(tableName)
 }

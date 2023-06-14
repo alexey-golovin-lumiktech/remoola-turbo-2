@@ -7,6 +7,10 @@ import { BaseModel } from '../common/base-model.dto'
 export class AddressDetails extends BaseModel implements IAddressDetailsModel {
   @Expose()
   @ApiProperty()
+  consumerId: string
+
+  @Expose()
+  @ApiProperty()
   street: string
 
   @Expose()

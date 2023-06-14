@@ -12,8 +12,8 @@ export class PersonalDetailsService extends BaseService<IPersonalDetailsModel, P
     super(repository)
   }
 
-  async upsertPersonalDetails(personalDetailsBody: CONSUMER.PersonalDetails) {
-    console.log(JSON.stringify({ personalDetailsBody }, null, 2))
+  async upsertPersonalDetails(consumerId: string, personalDetailsBody: CONSUMER.PersonalDetails) {
+    console.log(JSON.stringify({ consumerId, personalDetailsBody }, null, 2))
     return null
   }
 }
