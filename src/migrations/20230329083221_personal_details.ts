@@ -16,10 +16,10 @@ export async function up(knex: Knex): Promise<void> {
     table.string(`date_of_birth`).notNullable()
     table.string(`passport_or_id_number`).notNullable()
 
-    table.string(`country_of_tax_residence`).nullable()
-    table.string(`legal_status`).nullable()
-    table.string(`tax_id`).nullable()
-    table.string(`phone_number`).nullable()
+    table.string(`country_of_tax_residence`).defaultTo(null).nullable()
+    table.string(`legal_status`).defaultTo(null).nullable()
+    table.string(`tax_id`).defaultTo(null).nullable()
+    table.string(`phone_number`).defaultTo(null).nullable()
 
     table.timestamp(`created_at`).defaultTo(knex.fn.now())
     table.timestamp(`updated_at`).defaultTo(knex.fn.now())

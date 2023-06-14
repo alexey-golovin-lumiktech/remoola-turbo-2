@@ -24,8 +24,8 @@ export async function up(knex: Knex): Promise<void | void[]> {
             .uuid(columnName)
             .references(`id`)
             .inTable(inRefTable)
-            .nullable()
             .defaultTo(null)
+            .nullable()
             .onDelete(`SET NULL`),
         )
       })
