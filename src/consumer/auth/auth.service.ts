@@ -86,7 +86,14 @@ export class AuthService {
     return consumer
   }
 
-  async signupCompletion(token: string, res: IExpressResponse) {
+  async completeProfileCreation(consumerId: string): Promise<void | never> {
+    const consumer = await this.consumersService.getConsumerById(consumerId)
+    if (!consumer) throw new BadRequestException(`No consumer for provided consumerId: ${consumerId}`)
+    const token = this.generateToken(consumer)
+    this.mailingService.sendConsumerSignupCompletionEmail({ email: consumer.email, token })
+  }
+
+  async signupVerification(token: string, res: IExpressResponse) {
     const decoded: any = this.jwtService.decode(token)
     const redirectUrl = new URL(`signup/verification`, `http://localhost:3000`)
 

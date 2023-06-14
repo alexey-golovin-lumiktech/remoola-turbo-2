@@ -47,7 +47,7 @@ export class AuthController {
   }
 
   @PublicEndpoint()
-  @Post(`/signup/:consumerId/personal-details`)
+  @Post(`/:consumerId/personal-details`)
   signupPersonalDetails(
     @Param(`consumerId`) consumerId: string,
     @Body() body: CONSUMER.CreatePersonalDetails,
@@ -56,7 +56,7 @@ export class AuthController {
   }
 
   @PublicEndpoint()
-  @Post(`/signup/:consumerId/organization-details`)
+  @Post(`/:consumerId/organization-details`)
   signupOrganizationDetails(
     @Param(`consumerId`) consumerId: string,
     @Body() body: CONSUMER.CreateOrganizationDetails,
@@ -65,7 +65,7 @@ export class AuthController {
   }
 
   @PublicEndpoint()
-  @Post(`/signup/:consumerId/address-details`)
+  @Post(`/:consumerId/address-details`)
   signupAddressDetails(
     @Param(`consumerId`) consumerId: string,
     @Body() body: CONSUMER.CreateAddressDetails,
@@ -74,8 +74,14 @@ export class AuthController {
   }
 
   @PublicEndpoint()
+  @Get(`/:consumerId/complete-profile-creation`)
+  completeProfileCreation(@Param(`consumerId`) consumerId: string): Promise<void | never> {
+    return this.service.completeProfileCreation(consumerId)
+  }
+
+  @PublicEndpoint()
   @Get(`/signup/verification`)
-  signupCompletion(@Query(`token`) token: string, @Res() res: IExpressResponse) {
-    return this.service.signupCompletion(token, res)
+  signupVerification(@Query(`token`) token: string, @Res() res: IExpressResponse) {
+    return this.service.signupVerification(token, res)
   }
 }
