@@ -31,7 +31,7 @@ export class AuthService {
     this.oAuth2Client = new OAuth2Client(this.audience, secret)
   }
 
-  /* OK !!! */ async googleSignin(body: CONSUMER.GoogleSignin): Promise<CONSUMER.SigninResponse> {
+  /* OK !!! */ async googleSignin(body: CONSUMER.GoogleSignin): Promise<CONSUMER.LoginResponse> {
     try {
       const { credential, contractorKind = null, accountType } = body
       const verified = await this.oAuth2Client.verifyIdToken({ idToken: credential })
@@ -45,17 +45,17 @@ export class AuthService {
 
       const accessToken = this.generateToken(consumer)
       const refreshToken = this.generateRefreshToken() //@TODO : need to store refresh token
-      return utils.toResponse(CONSUMER.SigninResponse, Object.assign(consumer, { googleProfileId: gProfile.id, accessToken, refreshToken }))
+      return utils.toResponse(CONSUMER.LoginResponse, Object.assign(consumer, { googleProfileId: gProfile.id, accessToken, refreshToken }))
     } catch (error) {
       this.logger.error(error)
       throw new InternalServerErrorException()
     }
   }
 
-  async signin(identity: IConsumerModel): Promise<CONSUMER.SigninResponse> {
+  async login(identity: IConsumerModel): Promise<CONSUMER.LoginResponse> {
     const accessToken = this.generateToken(identity)
     const refreshToken = this.generateRefreshToken() //@TODO : need to store refresh token
-    return utils.toResponse(CONSUMER.SigninResponse, Object.assign(identity, { accessToken, refreshToken: refreshToken.token }))
+    return utils.toResponse(CONSUMER.LoginResponse, Object.assign(identity, { accessToken, refreshToken: refreshToken.token }))
   }
 
   private extractConsumerData(dto: CONSUMER.GoogleProfile): Omit<IConsumerModel, keyof IBaseModel | `accountType` | `contractorKind`> {

@@ -25,18 +25,18 @@ export class AuthController {
     @Inject(AddressDetailsService) private addressDetailsService: AddressDetailsService,
   ) {}
 
-  @Post(`/signin`)
-  @ApiOkResponse({ type: CONSUMER.SigninResponse })
-  @TransformResponse(CONSUMER.SigninResponse)
-  signin(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.SigninResponse> {
-    return this.service.signin(identity)
+  @Post(`/login`)
+  @ApiOkResponse({ type: CONSUMER.LoginResponse })
+  @TransformResponse(CONSUMER.LoginResponse)
+  login(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.LoginResponse> {
+    return this.service.login(identity)
   }
 
   @PublicEndpoint()
   @Post(`/google-signin`)
-  @ApiOkResponse({ type: CONSUMER.SigninResponse })
-  @TransformResponse(CONSUMER.SigninResponse)
-  googleSignin(@Body() body: CONSUMER.GoogleSignin): Promise<CONSUMER.SigninResponse> {
+  @ApiOkResponse({ type: CONSUMER.LoginResponse })
+  @TransformResponse(CONSUMER.LoginResponse)
+  googleSignin(@Body() body: CONSUMER.GoogleSignin): Promise<CONSUMER.LoginResponse> {
     return this.service.googleSignin(body)
   }
 

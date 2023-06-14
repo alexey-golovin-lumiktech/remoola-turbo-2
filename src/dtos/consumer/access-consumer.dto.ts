@@ -3,7 +3,7 @@ import { Expose } from 'class-transformer'
 
 import { ConsumerResponse } from './consumer.dto'
 
-export class SigninResponse extends ConsumerResponse {
+export class LoginResponse extends ConsumerResponse {
   @Expose()
   @ApiProperty({ example: `access-token-string` })
   accessToken: string
