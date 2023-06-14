@@ -42,8 +42,8 @@ class Consumer extends BaseModel implements IConsumerModel {
   contractorKind?: ContractorKind
 
   @Expose()
-  @ApiProperty()
-  stripeCustomerId?: string
+  @ApiProperty({ required: false, default: null })
+  stripeCustomerId?: string = null
 
   // refs
   @Expose()

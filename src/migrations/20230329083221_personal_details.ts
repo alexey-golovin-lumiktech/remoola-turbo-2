@@ -13,12 +13,13 @@ export async function up(knex: Knex): Promise<void> {
     table.uuid(`consumer_id`).notNullable().references(`id`).inTable(TABLE_NAME.Consumers)
 
     table.string(`citizen_of`).notNullable()
-    table.string(`country_of_tax_residence`).notNullable()
-    table.string(`legal_status`).notNullable()
-    table.string(`tax_id`).notNullable()
     table.string(`date_of_birth`).notNullable()
     table.string(`passport_or_id_number`).notNullable()
-    table.string(`phone_number`).notNullable()
+
+    table.string(`country_of_tax_residence`).nullable()
+    table.string(`legal_status`).nullable()
+    table.string(`tax_id`).nullable()
+    table.string(`phone_number`).nullable()
 
     table.timestamp(`created_at`).defaultTo(knex.fn.now())
     table.timestamp(`updated_at`).defaultTo(knex.fn.now())

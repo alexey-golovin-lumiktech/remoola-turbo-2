@@ -15,18 +15,6 @@ export class PersonalDetails extends BaseModel implements IPersonalDetailsModel 
 
   @Expose()
   @ApiProperty()
-  countryOfTaxResidence: string
-
-  @Expose()
-  @ApiProperty()
-  legalStatus: string
-
-  @Expose()
-  @ApiProperty()
-  taxId: string
-
-  @Expose()
-  @ApiProperty()
   dateOfBirth: string
 
   @Expose()
@@ -34,6 +22,18 @@ export class PersonalDetails extends BaseModel implements IPersonalDetailsModel 
   passportOrIdNumber: string
 
   @Expose()
-  @ApiProperty()
-  phoneNumber: string
+  @ApiProperty({ required: false, default: null })
+  countryOfTaxResidence?: string = null
+
+  @Expose()
+  @ApiProperty({ required: false, default: null })
+  legalStatus?: string = null
+
+  @Expose()
+  @ApiProperty({ required: false, default: null })
+  taxId?: string = null
+
+  @Expose()
+  @ApiProperty({ required: false, default: null })
+  phoneNumber?: string = null
 }
