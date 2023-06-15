@@ -44,10 +44,10 @@ export class GoogleSignin {
   credential: string
 
   @Expose()
-  @ApiProperty({ enum: accountTypeVariants })
-  accountType: AccountType
+  @ApiProperty({ enum: accountTypeVariants, required: false })
+  accountType?: AccountType
 
   @Expose()
-  @ApiProperty({ enum: contractorKindVariants, default: null, required: false })
-  contractorKind?: ContractorKind = null
+  @ApiProperty({ enum: contractorKindVariants, required: false })
+  contractorKind?: ContractorKind
 }

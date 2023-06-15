@@ -33,11 +33,11 @@ export class AuthController {
   }
 
   @PublicEndpoint()
-  @Post(`/google-signin`)
+  @Post(`/google-oauth`)
   @ApiOkResponse({ type: CONSUMER.LoginResponse })
   @TransformResponse(CONSUMER.LoginResponse)
-  googleSignin(@Body() body: CONSUMER.GoogleSignin): Promise<CONSUMER.LoginResponse> {
-    return this.service.googleSignin(body)
+  googleOAuth(@Body() body: CONSUMER.GoogleSignin): Promise<CONSUMER.LoginResponse> {
+    return this.service.googleOAuth(body)
   }
 
   @PublicEndpoint()

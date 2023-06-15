@@ -31,9 +31,9 @@ export class AuthService {
     this.oAuth2Client = new OAuth2Client(this.audience, secret)
   }
 
-  /* OK !!! */ async googleSignin(body: CONSUMER.GoogleSignin): Promise<CONSUMER.LoginResponse> {
+  /* OK !!! */ async googleOAuth(body: CONSUMER.GoogleSignin): Promise<CONSUMER.LoginResponse> {
     try {
-      const { credential, contractorKind = null, accountType } = body
+      const { credential, contractorKind = null, accountType = null } = body
       const verified = await this.oAuth2Client.verifyIdToken({ idToken: credential })
       const rawGoogleProfile = new CONSUMER.GoogleProfile(verified.getPayload())
       const consumerData = this.extractConsumerData(rawGoogleProfile)
@@ -44,8 +44,8 @@ export class AuthService {
       if (gProfile.deletedAt != null) throw new BadRequestException(`Profile is suspended, please contact the support`)
 
       const accessToken = this.generateToken(consumer)
-      const refreshToken = this.generateRefreshToken() //@TODO : need to store refresh token
-      return utils.toResponse(CONSUMER.LoginResponse, Object.assign(consumer, { googleProfileId: gProfile.id, accessToken, refreshToken }))
+      const { token: refreshToken } = this.generateRefreshToken() //@TODO : need to store refresh token
+      return Object.assign(consumer, { googleProfileId: gProfile.id, accessToken, refreshToken })
     } catch (error) {
       this.logger.error(error)
       throw new InternalServerErrorException()
