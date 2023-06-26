@@ -7,12 +7,12 @@ import { IInvoiceModel } from '../../models'
 import {
   CurrencyCode,
   CurrencyCodeValue,
-  StripeInvoiceStatus,
-  StripeInvoiceStatusValue,
   InvoiceType,
   InvoiceTypeValue,
   SortDirection,
   SortDirectionValue,
+  StripeInvoiceStatus,
+  StripeInvoiceStatusValue,
 } from '../../shared-types'
 import { BaseModel, ListResponse } from '../common'
 
