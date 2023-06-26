@@ -1,5 +1,5 @@
 import { CONSUMER } from '../../../dtos'
-import { currencyCode } from '../../../shared-types'
+import { CurrencyCode } from '../../../shared-types'
 import { currencyFormatters } from '../..'
 
 const html = `
@@ -19,17 +19,17 @@ const html = `
         </td></tr>
     </tbody>
   </table>
-` as const
+`
 
-const mapping = {
-  invoiceCreatorEmail: new RegExp(`{{invoiceCreatorEmail}}`, `gi`),
-  invoiceId: new RegExp(`{{invoiceId}}`, `gi`),
-  invoiceLink: new RegExp(`{{invoiceLink}}`, `gi`),
-  invoiceSubtotal: new RegExp(`{{invoiceSubtotal}}`, `gi`),
-} as const
+const RegExpToKeyMapping = {
+  InvoiceCreatorEmail: new RegExp(`{{invoiceCreatorEmail}}`, `gi`),
+  InvoiceId: new RegExp(`{{invoiceId}}`, `gi`),
+  InvoiceLink: new RegExp(`{{invoiceLink}}`, `gi`),
+  InvoiceSubtotal: new RegExp(`{{invoiceSubtotal}}`, `gi`),
+}
 
 export const processor = (invoice: CONSUMER.InvoiceResponse) => {
-  const formatter = currencyFormatters[currencyCode.USD]
+  const formatter = currencyFormatters[CurrencyCode.USD]
 
   const backendBaseURL = `http://localhost:8080`
   const invoiceLink = new URL(`consumer/payment-choices`, backendBaseURL)
@@ -37,8 +37,8 @@ export const processor = (invoice: CONSUMER.InvoiceResponse) => {
   invoiceLink.searchParams.append(`refererEmail`, invoice.referer)
 
   return html
-    .replace(mapping.invoiceCreatorEmail, invoice.creator)
-    .replace(mapping.invoiceId, invoice.id)
-    .replace(mapping.invoiceLink, invoiceLink.toString())
-    .replace(mapping.invoiceSubtotal, formatter.format(invoice.subtotal))
+    .replace(RegExpToKeyMapping.InvoiceCreatorEmail, invoice.creator)
+    .replace(RegExpToKeyMapping.InvoiceId, invoice.id)
+    .replace(RegExpToKeyMapping.InvoiceLink, invoiceLink.toString())
+    .replace(RegExpToKeyMapping.InvoiceSubtotal, formatter.format(invoice.subtotal))
 }

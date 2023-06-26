@@ -1,7 +1,7 @@
 import moment from 'moment'
 
 import { CONSUMER } from '../../../dtos'
-import { currencyCode } from '../../../shared-types'
+import { CurrencyCode } from '../../../shared-types'
 import { currencyFormatters, plainToInstance } from '../../../utils'
 
 import * as invoiceItemToHtml from './invoiceItem'
@@ -78,34 +78,34 @@ const html = `
       </tr>
     </tbody>
   </table>   
-` as const
+`
 
-const mapping = {
-  invoiceId: new RegExp(`{{invoiceId}}`, `gi`),
-  invoiceCreatedAt: new RegExp(`{{invoiceCreatedAt}}`, `gi`),
-  invoiceCreatorEmail: new RegExp(`{{invoiceCreatorEmail}}`, `gi`),
-  invoiceRefererEmail: new RegExp(`{{invoiceRefererEmail}}`, `gi`),
-  invoiceTotal: new RegExp(`{{invoiceTotal}}`, `gi`),
-  invoiceSubtotal: new RegExp(`{{invoiceSubtotal}}`, `gi`),
-  invoiceDueDate: new RegExp(`{{invoiceDueDate}}`, `gi`) /* ??? */,
-  toPayOnlineInvoiceLink: new RegExp(`{{toPayOnlineInvoiceLink}}`, `gi`) /* new */,
-  invoiceItemsHtml: new RegExp(`{{invoiceItemsHtml}}`, `gi`) /* new */,
-} as const
+const RegExpToKeyMapping = {
+  InvoiceId: new RegExp(`{{invoiceId}}`, `gi`),
+  InvoiceCreatedAt: new RegExp(`{{invoiceCreatedAt}}`, `gi`),
+  InvoiceCreatorEmail: new RegExp(`{{invoiceCreatorEmail}}`, `gi`),
+  InvoiceRefererEmail: new RegExp(`{{invoiceRefererEmail}}`, `gi`),
+  InvoiceTotal: new RegExp(`{{invoiceTotal}}`, `gi`),
+  InvoiceSubtotal: new RegExp(`{{invoiceSubtotal}}`, `gi`),
+  InvoiceDueDate: new RegExp(`{{invoiceDueDate}}`, `gi`) /* ??? */,
+  ToPayOnlineInvoiceLink: new RegExp(`{{toPayOnlineInvoiceLink}}`, `gi`) /* new */,
+  InvoiceItemsHtml: new RegExp(`{{invoiceItemsHtml}}`, `gi`) /* new */,
+}
 
 export const processor = (rawInvoice: any) => {
   const invoice = plainToInstance(CONSUMER.InvoiceResponse, rawInvoice)
-  const formatter = currencyFormatters[currencyCode.USD]
+  const formatter = currencyFormatters[CurrencyCode.USD]
   const itemsHtml = invoice.items.map(item => invoiceItemToHtml.processor(item, invoice.tax)).join(`\n`)
   const payOnlineBeLink = `http://some-link`
 
   return html
-    .replace(mapping.invoiceId, invoice.id)
-    .replace(mapping.invoiceCreatedAt, moment(invoice.createdAt).format(`ll`))
-    .replace(mapping.invoiceDueDate, moment(invoice.dueDateInDays).format(`ll`))
-    .replace(mapping.invoiceCreatorEmail, invoice.creator)
-    .replace(mapping.invoiceRefererEmail, invoice.referer)
-    .replace(mapping.invoiceTotal, formatter.format(invoice.total))
-    .replace(mapping.invoiceSubtotal, formatter.format(invoice.subtotal))
-    .replace(mapping.toPayOnlineInvoiceLink, payOnlineBeLink)
-    .replace(mapping.invoiceItemsHtml, itemsHtml)
+    .replace(RegExpToKeyMapping.InvoiceId, invoice.id)
+    .replace(RegExpToKeyMapping.InvoiceCreatedAt, moment(invoice.createdAt).format(`ll`))
+    .replace(RegExpToKeyMapping.InvoiceDueDate, moment(invoice.dueDateInDays).format(`ll`))
+    .replace(RegExpToKeyMapping.InvoiceCreatorEmail, invoice.creator)
+    .replace(RegExpToKeyMapping.InvoiceRefererEmail, invoice.referer)
+    .replace(RegExpToKeyMapping.InvoiceTotal, formatter.format(invoice.total))
+    .replace(RegExpToKeyMapping.InvoiceSubtotal, formatter.format(invoice.subtotal))
+    .replace(RegExpToKeyMapping.ToPayOnlineInvoiceLink, payOnlineBeLink)
+    .replace(RegExpToKeyMapping.InvoiceItemsHtml, itemsHtml)
 }

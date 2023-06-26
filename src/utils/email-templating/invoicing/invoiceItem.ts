@@ -1,4 +1,4 @@
-import { currencyCode } from '../../../shared-types'
+import { CurrencyCode } from '../../../shared-types'
 import { currencyFormatters } from '../..'
 
 const html = `
@@ -8,23 +8,23 @@ const html = `
     <td width="15%" style="padding: 5px;text-align: right;">{{invoiceTax}}</td>
     <td width="15%" style="padding: 5px;text-align: right;">{{calculatedItemSubtotal}}</td>
   </tr>
-` as const
+`
 
-const mapping = {
-  itemDescription: new RegExp(`{{itemDescription}}`, `gi`),
-  itemAmount: new RegExp(`{{itemAmount}}`, `gi`),
-  calculatedItemSubtotal: new RegExp(`{{calculatedItemSubtotal}}`, `gi`),
-  invoiceTax: new RegExp(`{{invoiceTax}}`, `gi`),
-} as const
+const RegExpToKeyMapping = {
+  ItemDescription: new RegExp(`{{itemDescription}}`, `gi`),
+  ItemAmount: new RegExp(`{{itemAmount}}`, `gi`),
+  CalculatedItemSubtotal: new RegExp(`{{calculatedItemSubtotal}}`, `gi`),
+  InvoiceTax: new RegExp(`{{invoiceTax}}`, `gi`),
+}
 
 export const processor = (item: any, tax?: number) => {
-  const formatter = currencyFormatters[currencyCode.USD]
+  const formatter = currencyFormatters[CurrencyCode.USD]
   let calculatedItemSubtotal = item.amount
   if (tax) calculatedItemSubtotal = item.amount + (item.amount / 100) * tax
 
   return html
-    .replace(mapping.itemDescription, item.description)
-    .replace(mapping.itemAmount, formatter.format(item.amount))
-    .replace(mapping.calculatedItemSubtotal, formatter.format(calculatedItemSubtotal))
-    .replace(mapping.invoiceTax, tax ? tax + `%` : `--`)
+    .replace(RegExpToKeyMapping.ItemDescription, item.description)
+    .replace(RegExpToKeyMapping.ItemAmount, formatter.format(item.amount))
+    .replace(RegExpToKeyMapping.CalculatedItemSubtotal, formatter.format(calculatedItemSubtotal))
+    .replace(RegExpToKeyMapping.InvoiceTax, tax ? tax + `%` : `--`)
 }

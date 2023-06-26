@@ -3,7 +3,7 @@ import { Expose } from 'class-transformer'
 import { IsString } from 'class-validator'
 import { TokenPayload as ITokenPayload } from 'google-auth-library'
 
-import { AccountType, accountTypeVariants, ContractorKind, contractorKindVariants } from '../../shared-types'
+import { AccountTypeValue, accountTypeValues, ContractorKindValue, contractorKindValues } from '../../shared-types'
 
 export type ITokenPayloadPick = Pick<
   ITokenPayload,
@@ -44,10 +44,10 @@ export class GoogleSignin {
   credential: string
 
   @Expose()
-  @ApiProperty({ enum: accountTypeVariants, required: false })
-  accountType?: AccountType
+  @ApiProperty({ enum: accountTypeValues, required: false })
+  accountType?: AccountTypeValue
 
   @Expose()
-  @ApiProperty({ enum: contractorKindVariants, required: false })
-  contractorKind?: ContractorKind
+  @ApiProperty({ enum: contractorKindValues, required: false })
+  contractorKind?: ContractorKindValue
 }

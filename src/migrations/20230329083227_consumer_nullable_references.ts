@@ -1,14 +1,14 @@
 import { Knex } from 'knex'
 
-import { TABLE_NAME } from '../models'
+import { TableName } from '../models'
 
-const tableName = TABLE_NAME.Consumer
+const tableName = TableName.Consumer
 
 const refs = [
-  { columnName: `google_profile_details_id`, inRefTable: TABLE_NAME.GoogleProfileDetails }, //
-  { columnName: `personal_details_id`, inRefTable: TABLE_NAME.PersonalDetails },
-  { columnName: `address_details_id`, inRefTable: TABLE_NAME.AddressDetails },
-  { columnName: `organization_details_id`, inRefTable: TABLE_NAME.OrganizationDetails },
+  { columnName: `google_profile_details_id`, inRefTable: TableName.GoogleProfileDetails }, //
+  { columnName: `personal_details_id`, inRefTable: TableName.PersonalDetails },
+  { columnName: `address_details_id`, inRefTable: TableName.AddressDetails },
+  { columnName: `organization_details_id`, inRefTable: TableName.OrganizationDetails },
 ]
 
 export async function up(knex: Knex): Promise<void | void[]> {

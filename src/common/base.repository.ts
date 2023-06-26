@@ -3,7 +3,7 @@ import { Knex } from 'knex'
 import { isEmpty, isNil, snakeCase } from 'lodash'
 
 import { ListResponse } from '../dtos/common'
-import { TableName } from '../models'
+import { TableNameValue } from '../models'
 import { IFilter, IQuery } from '../shared-types'
 import { getKnexCount, queryBuilder } from '../utils'
 
@@ -27,7 +27,7 @@ export interface IBaseRepository<TModel extends IBaseModel> {
 export abstract class BaseRepository<TModel extends IBaseModel> implements IBaseRepository<TModel> {
   private columns: string[] = []
 
-  constructor(public readonly knex: Knex, private readonly tableName: TableName) {
+  constructor(public readonly knex: Knex, private readonly tableName: TableNameValue) {
     this.tableName = tableName
     knex(tableName).columnInfo().then(info => this.columns = Object.keys(info)) /* eslint-disable-line */
   }

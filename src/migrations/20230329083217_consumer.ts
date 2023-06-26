@@ -1,9 +1,9 @@
 import { Knex } from 'knex'
 
-import { TABLE_NAME } from '../models'
+import { TableName } from '../models'
 import * as shared from '../shared-types'
 
-const tableName = TABLE_NAME.Consumer
+const tableName = TableName.Consumer
 
 export async function up(knex: Knex): Promise<void> {
   const exist = await knex.schema.hasTable(tableName)
@@ -13,9 +13,9 @@ export async function up(knex: Knex): Promise<void> {
     table.uuid(`id`).primary().defaultTo(knex.raw(`uuid_generate_v4()`))
     table.string(`email`).unique()
     table.boolean(`verified`).defaultTo(false)
-    table.string(`account_type`).checkIn(shared.accountTypeVariants).defaultTo(shared.accountType.contractor)
-    table.string(`contractor_kind`).checkIn(shared.contractorKindVariants).defaultTo(null).nullable()
-    table.string(`how_did_hear_about_us`).defaultTo(shared.howDidHearAboutUsVariants)
+    table.string(`account_type`).checkIn(shared.accountTypeValues).defaultTo(shared.AccountType.Contractor)
+    table.string(`contractor_kind`).checkIn(shared.contractorKindValues).defaultTo(null).nullable()
+    table.string(`how_did_hear_about_us`).defaultTo(shared.howDidHearAboutUsValues)
 
     table.string(`password`)
     table.string(`salt`)

@@ -13,8 +13,8 @@ const html = `
         </td></tr>
     </tbody>
   </table>
-` as const
+`
 
-const mapping = { emailConfirmationLink: new RegExp(`{{emailConfirmationLink}}`, `gi`) } as const
+const RegExpToKeyMapping = { emailConfirmationLink: new RegExp(`{{emailConfirmationLink}}`, `gi`) }
 
-export const processor = (emailConfirmationLink: string) => html.replace(mapping.emailConfirmationLink, emailConfirmationLink)
+export const processor = (emailConfirmationLink: string) => html.replace(RegExpToKeyMapping.emailConfirmationLink, emailConfirmationLink)

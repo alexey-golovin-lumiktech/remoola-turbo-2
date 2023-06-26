@@ -1,9 +1,9 @@
 import { IBaseModel } from '../common'
-import { AdminType } from '../shared-types'
+import { AdminTypeValue } from '../shared-types'
 
 export interface IAdminModel extends IBaseModel {
   email: string
-  type: AdminType
+  type: AdminTypeValue
   password: string
   salt: string
 }

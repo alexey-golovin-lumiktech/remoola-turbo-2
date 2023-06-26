@@ -1,6 +1,6 @@
-import { SortDirection, SortNulls } from './enum-like'
+import { SortDirectionValue, SortNullsValue } from './enum-like'
 
-export type SortField<T> = { field: keyof T; direction: SortDirection; nulls?: SortNulls }
+export type SortField<T> = { field: keyof T; direction: SortDirectionValue; nulls?: SortNullsValue }
 export type Paging = { limit?: number; offset?: number }
 export type Query<T> = { paging?: Paging; sorting?: SortField<T>[] }
 export type IFilter<TModel> = { [K in keyof TModel]?: TModel[K] | string | symbol | number }

@@ -1,13 +1,13 @@
 import { IBaseModel } from '../common'
 import { InvoiceItem } from '../dtos/admin'
-import { InvoiceStatus } from '../shared-types'
+import { InvoiceStatusValue } from '../shared-types'
 
 export interface IInvoiceModel extends IBaseModel {
   metadata?: string
 
   creatorId: string
   refererId: string
-  status: InvoiceStatus
+  status: InvoiceStatusValue
   currency?: string //default usd
   tax?: number //default 1
   subtotal: number

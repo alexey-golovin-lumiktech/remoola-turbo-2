@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config'
 import { InjectKnex, Knex } from 'nestjs-knex'
 
 import { BaseRepository } from '../../../common'
-import { IConsumerModel, TABLE_NAME } from '../../../models'
+import { IConsumerModel, TableName } from '../../../models'
 import { IFilter } from '../../../shared-types'
 import { BillingDetailsRepository } from '../billing-details/billing-details.repository'
 import { GoogleProfilesRepository } from '../google-profiles/google-profiles.repository'
@@ -19,7 +19,7 @@ export class ConsumerRepository extends BaseRepository<IConsumerModel> {
     @Inject(GoogleProfilesRepository) private readonly googleProfilesRepository: GoogleProfilesRepository,
     private readonly configService: ConfigService,
   ) {
-    super(knex, TABLE_NAME.Consumer)
+    super(knex, TableName.Consumer)
     this.mode = this.configService.get<string>(`NODE_ENV`)
   }
 

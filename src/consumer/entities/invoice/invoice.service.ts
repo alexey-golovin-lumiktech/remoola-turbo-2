@@ -7,8 +7,8 @@ import { BaseService } from '../../../common'
 import { MailingService } from '../../../common-shared-modules/mailing/mailing.service'
 import { CONSUMER } from '../../../dtos'
 import { BaseModel } from '../../../dtos/common'
-import { IConsumerModel, IInvoiceModel, TABLE_NAME } from '../../../models'
-import { currencyCode, currencyCodeVariants, invoiceType } from '../../../shared-types'
+import { IConsumerModel, IInvoiceModel, TableName } from '../../../models'
+import { CurrencyCode, currencyCodeValues, InvoiceType } from '../../../shared-types'
 import { calculateInvoiceTotalAndSubtotal, getKnexCount, invoiceToHtml, plainToInstance } from '../../../utils'
 import { ConsumerService } from '../consumer/consumer.service'
 import { InvoiceItemService } from '../invoice-item/invoice-item.service'
@@ -33,12 +33,12 @@ export class InvoiceService extends BaseService<IInvoiceModel, InvoiceRepository
   }
 
   async getInvoicesList(identity: IConsumerModel, query: CONSUMER.QueryInvoices): Promise<CONSUMER.InvoicesList> {
-    const filter = query.type == invoiceType.incoming ? { refererId: identity.id } : { creatorId: identity.id }
+    const filter = query.type == InvoiceType.Incoming ? { refererId: identity.id } : { creatorId: identity.id }
 
     const baseQuery = this.repository
-      .knex(`${TABLE_NAME.Invoice} as invoices`)
-      .join(`${TABLE_NAME.Consumer} as creators`, `creators.id`, `invoices.creatorId`)
-      .join(`${TABLE_NAME.Consumer} as referrers`, `referrers.id`, `invoices.refererId`)
+      .knex(`${TableName.Invoice} as invoices`)
+      .join(`${TableName.Consumer} as creators`, `creators.id`, `invoices.creatorId`)
+      .join(`${TableName.Consumer} as referrers`, `referrers.id`, `invoices.refererId`)
       .where(filter)
 
     const count = await baseQuery.clone().count().then(getKnexCount)
@@ -74,7 +74,7 @@ export class InvoiceService extends BaseService<IInvoiceModel, InvoiceRepository
       tax,
       refererId: consumerAsReferer.id,
       dueDateInDays: body.dueDateInDays,
-      currency: currencyCode.USD,
+      currency: CurrencyCode.USD,
     })
 
     dbInvoice.items = await this.itemsService.createManyItems(dbInvoice.id, body.items)
@@ -107,7 +107,7 @@ export class InvoiceService extends BaseService<IInvoiceModel, InvoiceRepository
           amount: item.amount,
           description: item.description,
 
-          currency: currencyCode.USD,
+          currency: CurrencyCode.USD,
           customer: consumerAsReferer.stripeCustomerId,
         }),
       ),
@@ -129,13 +129,13 @@ export class InvoiceService extends BaseService<IInvoiceModel, InvoiceRepository
   async getInvoiceByIdToDownload(invoiceId: string) {
     try {
       const invoice: CONSUMER.InvoiceResponse = await this.repository.knex
-        .from(`${TABLE_NAME.Invoice} as invoices`)
-        .join(`${TABLE_NAME.Consumer} as creator`, `creator.id`, `invoices.creatorId`)
-        .join(`${TABLE_NAME.Consumer} as referer`, `referer.id`, `invoices.refererId`)
+        .from(`${TableName.Invoice} as invoices`)
+        .join(`${TableName.Consumer} as creator`, `creator.id`, `invoices.creatorId`)
+        .join(`${TableName.Consumer} as referer`, `referer.id`, `invoices.refererId`)
         .select(`invoices.*`, `creator.email as creator`, `referer.email as referer`)
         .where(`invoices.id`, invoiceId)
         .first()
-      const items = await this.repository.knex.from(`${TABLE_NAME.InvoiceItem} as items`).where({ invoiceId })
+      const items = await this.repository.knex.from(`${TableName.InvoiceItem} as items`).where({ invoiceId })
       const invoiceHtml = invoiceToHtml.processor({ ...invoice, items })
       const buffer = await generatePdf({ rawHtml: invoiceHtml })
       const result = { buffer, variant: `invoice` }
@@ -150,7 +150,7 @@ export class InvoiceService extends BaseService<IInvoiceModel, InvoiceRepository
     return (item: Stripe.InvoiceItem): Omit<CONSUMER.InvoiceItem, keyof BaseModel> => ({
       invoiceId: invoiceId,
       description: item.description,
-      currency: currencyCodeVariants.find(x => new RegExp(x, `gi`).test(item.currency)) ?? currencyCode.USD,
+      currency: currencyCodeValues.find(x => new RegExp(x, `gi`).test(item.currency)) ?? CurrencyCode.USD,
       amount: item.amount,
       metadata: JSON.stringify(item, null, -1),
     })
@@ -163,7 +163,7 @@ export class InvoiceService extends BaseService<IInvoiceModel, InvoiceRepository
       stripeInvoiceId: invoice.id,
       status: invoice.status,
       tax: invoice.tax,
-      currency: currencyCodeVariants.find(x => new RegExp(x, `gi`).test(invoice.currency)) ?? currencyCode.USD,
+      currency: currencyCodeValues.find(x => new RegExp(x, `gi`).test(invoice.currency)) ?? CurrencyCode.USD,
       dueDateInDays: invoice.due_date,
 
       subtotal: invoice.subtotal,

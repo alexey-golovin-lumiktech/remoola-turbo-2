@@ -2,11 +2,11 @@ import { Injectable } from '@nestjs/common'
 import { InjectKnex, Knex } from 'nestjs-knex'
 
 import { BaseRepository } from '../../../common'
-import { IInvoiceModel, TABLE_NAME } from '../../../models'
+import { IInvoiceModel, TableName } from '../../../models'
 
 @Injectable()
 export class AdminInvoiceRepository extends BaseRepository<IInvoiceModel> {
   constructor(@InjectKnex() knex: Knex) {
-    super(knex, TABLE_NAME.Invoice)
+    super(knex, TableName.Invoice)
   }
 }

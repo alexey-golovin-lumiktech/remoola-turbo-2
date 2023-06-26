@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common'
 import { Cron, CronExpression } from '@nestjs/schedule'
 import { InjectKnex, Knex } from 'nestjs-knex'
 
-import { TABLE_NAME } from '../../models'
+import { TableName } from '../../models'
 
 @Injectable()
 export class TaskService {
@@ -12,7 +12,7 @@ export class TaskService {
 
   @Cron(CronExpression.EVERY_HOUR)
   async handleUnverifiedConsumers() {
-    const deleted = await this.knex.from(TABLE_NAME.Consumer).where(`verified`, false).del().returning(`*`)
+    const deleted = await this.knex.from(TableName.Consumer).where(`verified`, false).del().returning(`*`)
     deleted.length == 0 || this.logger.log(deleted)
   }
 }

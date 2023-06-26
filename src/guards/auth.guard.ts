@@ -8,7 +8,7 @@ import { AdminService } from '../admin/entities/admin/admin.service'
 import { ConsumerService } from '../consumer/entities/consumer/consumer.service'
 import { IS_PUBLIC } from '../decorators'
 import { IAdminModel, IConsumerModel } from '../models'
-import { AuthHeader, authHeader, authHeaderVariants, separator } from '../shared-types'
+import { AuthHeader, AuthHeaderValue, authHeaderValues, Separator } from '../shared-types'
 import { validatePassword } from '../utils'
 
 export const REQUEST_AUTH_IDENTITY = Symbol(`REQUEST_AUTH_IDENTITY`)
@@ -18,7 +18,7 @@ export const ReqAuthIdentity = createParamDecorator((_, context: ExecutionContex
 })
 export type IReqAuthIdentity = IConsumerModel | IAdminModel
 
-const messages = {
+const GuardMessage = {
   LOST_HEADER: `Lost required authorization header!`,
   PUBLIC_ENDPOINT: `Public endpoint. Skip checking!`,
   UNEXPECTED: (type: string) => `Unexpected auth header type: ${type}`,
@@ -30,7 +30,7 @@ const messages = {
 
 export class AuthGuard implements CanActivate {
   private readonly logger = new Logger(AuthGuard.name)
-  private readonly separator = separator
+  private readonly separator = Separator
 
   constructor(
     private readonly reflector: Reflector,
@@ -43,35 +43,35 @@ export class AuthGuard implements CanActivate {
     const request: IExpressRequest = context.switchToHttp().getRequest()
     const isPublic = this.reflector.get<boolean>(IS_PUBLIC, context.getHandler())
     if (isPublic) {
-      this.logger.log(messages.PUBLIC_ENDPOINT)
+      this.logger.log(GuardMessage.PUBLIC_ENDPOINT)
       return true
     }
 
     const { authorization = null } = request.headers
-    if (authorization == null || authorization.length == 0) return this.throwHandler(messages.LOST_HEADER)
+    if (authorization == null || authorization.length == 0) return this.throwHandler(GuardMessage.LOST_HEADER)
 
-    const [type, encoded] = authorization.split(this.separator.token) as [AuthHeader, string]
-    if (authHeaderVariants.includes(type) == false) return this.throwHandler(messages.UNEXPECTED(type))
+    const [type, encoded] = authorization.split(this.separator.Token) as [AuthHeaderValue, string]
+    if (authHeaderValues.includes(type) == false) return this.throwHandler(GuardMessage.UNEXPECTED(type))
 
     return this.processors[type](encoded, request)
   }
 
   private readonly processors = {
-    [authHeader.Basic]: this.basicProcessor.bind(this),
-    [authHeader.Bearer]: this.bearerProcessor.bind(this),
+    [AuthHeader.Basic]: this.basicProcessor.bind(this),
+    [AuthHeader.Bearer]: this.bearerProcessor.bind(this),
   }
 
   private async basicProcessor(encoded: string, request: IExpressRequest) {
     const decoded = Buffer.from(encoded, `base64`).toString(`utf-8`)
-    const [email, password] = decoded.split(this.separator.credentials).map(x => x.trim())
+    const [email, password] = decoded.split(this.separator.Credentials).map(x => x.trim())
     const [consumer] = await this.consumersService.repository.find({ filter: { email } })
     const [admin] = await this.adminsService.repository.find({ filter: { email } })
     const identity = admin ?? consumer
-    if (identity == null) return this.throwHandler(messages.NO_IDENTITY)
-    if ((identity as IConsumerModel).verified == false) return this.throwHandler(messages.NOT_VERIFIED)
+    if (identity == null) return this.throwHandler(GuardMessage.NO_IDENTITY)
+    if ((identity as IConsumerModel).verified == false) return this.throwHandler(GuardMessage.NOT_VERIFIED)
 
     const isValidPassword = validatePassword({ incomingPass: password, password: identity.password ?? ``, salt: identity.salt ?? `` })
-    if (!isValidPassword) return this.throwHandler(messages.INVALID_CREDENTIALS)
+    if (!isValidPassword) return this.throwHandler(GuardMessage.INVALID_CREDENTIALS)
 
     request[REQUEST_AUTH_IDENTITY] = identity
     return true
@@ -79,14 +79,14 @@ export class AuthGuard implements CanActivate {
 
   private async bearerProcessor(encoded: string, request: IExpressRequest) {
     const decoded = this.jwtService.decode(encoded)
-    if (decoded == null || !decoded[`identityId`]) return this.throwHandler(messages.INVALID_TOKEN)
+    if (decoded == null || !decoded[`identityId`]) return this.throwHandler(GuardMessage.INVALID_TOKEN)
 
     const identityId = decoded[`identityId`]
     const admin = await this.adminsService.repository.findById(identityId)
     const consumer = await this.consumersService.repository.findById(identityId)
 
     const identity = admin ?? consumer
-    if (identity == null) return this.throwHandler(messages.NO_IDENTITY)
+    if (identity == null) return this.throwHandler(GuardMessage.NO_IDENTITY)
 
     request[REQUEST_AUTH_IDENTITY] = identity
     return true

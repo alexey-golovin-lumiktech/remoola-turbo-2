@@ -1,12 +1,12 @@
 import { Knex } from 'knex'
 
-import { TABLE_NAME } from '../models'
+import { TableName } from '../models'
 import { generatePasswordHash, generatePasswordHashSalt } from '../utils'
 
 export async function seed(knex: Knex): Promise<void> {
-  await knex(TABLE_NAME.BillingDetails).del()
-  await knex(TABLE_NAME.GoogleProfileDetails).del()
-  await knex(TABLE_NAME.Consumer).del()
+  await knex(TableName.BillingDetails).del()
+  await knex(TableName.GoogleProfileDetails).del()
+  await knex(TableName.Consumer).del()
 
   const raw = [
     {
@@ -42,12 +42,12 @@ export async function seed(knex: Knex): Promise<void> {
     }
   })
 
-  const consumers = await knex(TABLE_NAME.Consumer).insert(consumersToInsert).returning(`*`)
+  const consumers = await knex(TableName.Consumer).insert(consumersToInsert).returning(`*`)
 
   const rawBillingDetails = consumers.map(x => {
     const name = `${x.firstName} ${x.lastName}`
     return { email: x.email, consumerId: x.id, name }
   })
 
-  await knex(TABLE_NAME.BillingDetails).insert(rawBillingDetails).returning(`*`)
+  await knex(TableName.BillingDetails).insert(rawBillingDetails).returning(`*`)
 }

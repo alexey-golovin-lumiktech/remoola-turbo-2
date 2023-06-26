@@ -2,7 +2,7 @@ import { ApiProperty, PickType } from '@nestjs/swagger'
 import { Exclude, Expose, Type } from 'class-transformer'
 
 import { IInvoiceModel } from '../../models'
-import { InvoiceStatus, invoiceStatusVariants } from '../../shared-types'
+import { InvoiceStatusValue, invoiceStatusValues } from '../../shared-types'
 import { BaseModel, ListResponse } from '../common'
 
 export class Invoice extends BaseModel implements IInvoiceModel {
@@ -15,8 +15,8 @@ export class Invoice extends BaseModel implements IInvoiceModel {
   refererId: string
 
   @Expose()
-  @ApiProperty({ enum: invoiceStatusVariants })
-  status: InvoiceStatus
+  @ApiProperty({ enum: invoiceStatusValues })
+  status: InvoiceStatusValue
 
   @Expose()
   @ApiProperty()

@@ -4,7 +4,7 @@ import { existsSync } from 'fs'
 import { sumBy } from 'lodash'
 import { resolve } from 'path'
 
-import { currencyCode, KnexCount } from '../shared-types'
+import { CurrencyCode, KnexCount } from '../shared-types'
 
 export const generatePasswordHash = (params = { password: ``, salt: `` }): string => {
   if (params.password.length == 0) throw new Error(`Password could not be empty`)
@@ -74,7 +74,7 @@ export const getKnexCount = ([knexCount]: KnexCount[]): number => {
 }
 
 export const currencyFormatters = {
-  [currencyCode.USD]: new Intl.NumberFormat(`en-US`, { style: `currency`, currency: `usd` }),
+  [CurrencyCode.USD]: new Intl.NumberFormat(`en-US`, { style: `currency`, currency: `usd` }),
 }
 
 export const calculateInvoiceTotalAndSubtotal = (invoiceItems: any[], tax: number) => {

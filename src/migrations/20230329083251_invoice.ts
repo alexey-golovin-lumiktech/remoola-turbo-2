@@ -1,9 +1,9 @@
 import { Knex } from 'knex'
 
-import { TABLE_NAME } from '../models'
-import { currencyCode, currencyCodeVariants, invoiceStatus, invoiceStatusVariants } from '../shared-types'
+import { TableName } from '../models'
+import { CurrencyCode, currencyCodeValues, InvoiceStatus, invoiceStatusValues } from '../shared-types'
 
-const tableName = TABLE_NAME.Invoice
+const tableName = TableName.Invoice
 
 export async function up(knex: Knex): Promise<void> {
   const exist = await knex.schema.hasTable(tableName)
@@ -11,10 +11,10 @@ export async function up(knex: Knex): Promise<void> {
 
   return knex.schema.createTable(tableName, table => {
     table.uuid(`id`).primary().defaultTo(knex.raw(`uuid_generate_v4()`))
-    table.uuid(`creator_id`).notNullable().references(`id`).inTable(TABLE_NAME.Consumer)
-    table.uuid(`referer_id`).notNullable().references(`id`).inTable(TABLE_NAME.Consumer)
-    table.string(`status`).checkIn(invoiceStatusVariants).defaultTo(invoiceStatus.open).notNullable()
-    table.string(`currency`, 3).checkIn(currencyCodeVariants).defaultTo(currencyCode.USD)
+    table.uuid(`creator_id`).notNullable().references(`id`).inTable(TableName.Consumer)
+    table.uuid(`referer_id`).notNullable().references(`id`).inTable(TableName.Consumer)
+    table.string(`status`).checkIn(invoiceStatusValues).defaultTo(InvoiceStatus.Open).notNullable()
+    table.string(`currency`, 3).checkIn(currencyCodeValues).defaultTo(CurrencyCode.USD)
     table.decimal(`subtotal`).notNullable()
     table.decimal(`tax`).defaultTo(0)
     table.decimal(`total`).notNullable()

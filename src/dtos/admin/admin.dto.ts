@@ -3,7 +3,7 @@ import { Exclude, Expose, Type } from 'class-transformer'
 import { IsIn, IsString } from 'class-validator'
 
 import { IAdminModel } from '../../models'
-import { AdminType, adminType } from '../../shared-types'
+import { AdminType, AdminTypeValue } from '../../shared-types'
 import { BaseModel, ListResponse } from '../common'
 
 class Admin extends BaseModel implements IAdminModel {
@@ -13,9 +13,9 @@ class Admin extends BaseModel implements IAdminModel {
   email: string
 
   @Expose()
-  @IsIn(Object.keys(adminType))
-  @ApiProperty({ enum: Object.keys(adminType) })
-  type: AdminType
+  @IsIn(Object.keys(AdminType))
+  @ApiProperty({ enum: Object.keys(AdminType) })
+  type: AdminTypeValue
 
   @Expose()
   @IsString()

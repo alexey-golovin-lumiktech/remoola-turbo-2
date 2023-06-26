@@ -1,9 +1,9 @@
 import { Knex } from 'knex'
 
-import { TABLE_NAME } from '../models'
-import { currencyCode } from '../shared-types'
+import { TableName } from '../models'
+import { CurrencyCode } from '../shared-types'
 
-const tableName = TABLE_NAME.InvoiceItem
+const tableName = TableName.InvoiceItem
 
 export async function up(knex: Knex): Promise<void> {
   const exist = await knex.schema.hasTable(tableName)
@@ -11,9 +11,9 @@ export async function up(knex: Knex): Promise<void> {
 
   return knex.schema.createTable(tableName, table => {
     table.uuid(`id`).primary().defaultTo(knex.raw(`uuid_generate_v4()`))
-    table.uuid(`invoice_id`).notNullable().references(`id`).inTable(TABLE_NAME.Invoice)
+    table.uuid(`invoice_id`).notNullable().references(`id`).inTable(TableName.Invoice)
     table.string(`description`).notNullable()
-    table.string(`currency`, 3).notNullable().defaultTo(currencyCode.USD) //Three-letter ISO currency code, in lowercase. Must be a supported currency.
+    table.string(`currency`, 3).notNullable().defaultTo(CurrencyCode.USD) //Three-letter ISO currency code, in lowercase. Must be a supported currency.
     table.decimal(`amount`).notNullable() // price in cents
 
     table.jsonb(`metadata`) // full stripe item details

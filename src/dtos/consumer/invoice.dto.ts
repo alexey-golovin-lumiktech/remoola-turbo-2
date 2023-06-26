@@ -5,13 +5,13 @@ import { IsEmail, IsIn, IsNumber, IsString, ValidateIf } from 'class-validator'
 import * as constants from '../../constants'
 import { IInvoiceModel } from '../../models'
 import {
-  currencyCode,
-  InvoiceStatus,
-  invoiceStatusVariants,
-  InvoiceType,
-  invoiceTypeVariants,
-  SortDirection,
-  sortDirectionVariants,
+  CurrencyCode,
+  InvoiceStatusValue,
+  invoiceStatusValues,
+  InvoiceTypeValue,
+  invoiceTypeValues,
+  SortDirectionValue,
+  sortDirectionValues,
 } from '../../shared-types'
 import { BaseModel, ListResponse } from '../common'
 
@@ -29,9 +29,9 @@ export class Invoice extends BaseModel implements IInvoiceModel {
   refererId: string
 
   @Expose()
-  @ApiProperty({ enum: invoiceStatusVariants })
-  @IsIn(invoiceStatusVariants)
-  status: InvoiceStatus
+  @ApiProperty({ enum: invoiceStatusValues })
+  @IsIn(invoiceStatusValues)
+  status: InvoiceStatusValue
 
   @Expose()
   @ApiProperty()
@@ -88,8 +88,8 @@ export class QueryDataListSorting<TModel> {
   field: keyof TModel
 
   @Expose()
-  @ApiProperty({ enum: sortDirectionVariants })
-  direction: SortDirection
+  @ApiProperty({ enum: sortDirectionValues })
+  direction: SortDirectionValue
 }
 
 export class QueryDataList {
@@ -108,8 +108,8 @@ export class QueryDataList {
 
 export class QueryInvoices extends QueryDataList {
   @Expose()
-  @ApiProperty({ enum: invoiceTypeVariants })
-  type?: InvoiceType
+  @ApiProperty({ enum: invoiceTypeValues })
+  type?: InvoiceTypeValue
 }
 
 export class InvoiceResponse extends OmitType(Invoice, [`deletedAt`, `subtotal`, `total`] as const) {
@@ -154,7 +154,7 @@ export class CreateInvoice {
   referer: string
 
   @Expose()
-  @ApiProperty({ required: false, default: currencyCode.USD })
+  @ApiProperty({ required: false, default: CurrencyCode.USD })
   currency?: string
 
   @Expose()

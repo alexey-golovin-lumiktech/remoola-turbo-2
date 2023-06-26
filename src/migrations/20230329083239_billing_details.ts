@@ -1,8 +1,8 @@
 import { Knex } from 'knex'
 
-import { TABLE_NAME } from '../models'
+import { TableName } from '../models'
 
-const tableName = TABLE_NAME.BillingDetails
+const tableName = TableName.BillingDetails
 
 export async function up(knex: Knex): Promise<void> {
   const exist = await knex.schema.hasTable(tableName)
@@ -10,7 +10,7 @@ export async function up(knex: Knex): Promise<void> {
 
   return knex.schema.createTable(tableName, table => {
     table.uuid(`id`).primary().defaultTo(knex.raw(`uuid_generate_v4()`))
-    table.uuid(`consumer_id`).notNullable().references(`id`).inTable(TABLE_NAME.Consumer).onDelete(`CASCADE`).onUpdate(`CASCADE`)
+    table.uuid(`consumer_id`).notNullable().references(`id`).inTable(TableName.Consumer).onDelete(`CASCADE`).onUpdate(`CASCADE`)
 
     table.string(`email`)
     table.string(`name`)

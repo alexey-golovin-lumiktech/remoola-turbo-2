@@ -2,7 +2,7 @@ import { ApiProperty, PickType } from '@nestjs/swagger'
 import { Exclude, Expose, Type } from 'class-transformer'
 
 import { IConsumerModel } from '../../models'
-import { AccountType, accountTypeVariants, ContractorKind, contractorKindVariants } from '../../shared-types'
+import { AccountTypeValue, accountTypeValues, ContractorKindValue, contractorKindValues } from '../../shared-types'
 import { BaseModel, ListResponse } from '../common'
 
 export class Consumer extends BaseModel implements IConsumerModel {
@@ -31,12 +31,12 @@ export class Consumer extends BaseModel implements IConsumerModel {
   lastName?: string
 
   @Expose()
-  @ApiProperty({ enum: accountTypeVariants })
-  accountType: AccountType
+  @ApiProperty({ enum: accountTypeValues })
+  accountType: AccountTypeValue
 
   @Expose()
-  @ApiProperty({ enum: contractorKindVariants, default: null, required: false })
-  contractorKind?: ContractorKind = null
+  @ApiProperty({ enum: contractorKindValues, default: null, required: false })
+  contractorKind?: ContractorKindValue = null
 
   @Expose()
   @ApiProperty({ required: false, default: null })

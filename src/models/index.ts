@@ -8,7 +8,7 @@ export * from './billing-details.mode'
 export * from './invoice.model'
 export * from './invoice-item.model'
 
-export const TABLE_NAME = {
+export const TableName = {
   Admin: `admin`,
   Consumer: `consumer`,
   PersonalDetails: `personal_details`,
@@ -19,4 +19,4 @@ export const TABLE_NAME = {
   Invoice: `invoice`,
   InvoiceItem: `invoice_item`,
 } as const
-export type TableName = (typeof TABLE_NAME)[keyof typeof TABLE_NAME]
+export type TableNameValue = (typeof TableName)[keyof typeof TableName]

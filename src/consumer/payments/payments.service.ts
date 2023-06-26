@@ -4,7 +4,7 @@ import { InjectStripe } from 'nestjs-stripe'
 import Stripe from 'stripe'
 
 import { CONSUMER } from '../../dtos'
-import { PaymentMethod, paymentMethod } from '../../shared-types'
+import { PaymentMethod, PaymentMethodValue } from '../../shared-types'
 import { InvoiceService } from '../entities/invoice/invoice.service'
 import { InvoiceItemService } from '../entities/invoice-item/invoice-item.service'
 
@@ -41,7 +41,7 @@ export class PaymentsService {
   async setupPaymentIntent(body: any): Promise<{ clientSecret: string } | void> {
     if (!process.env) return console.log(`[body]`, body)
 
-    const payment_method_types: PaymentMethod[] = [paymentMethod.card]
+    const payment_method_types: PaymentMethodValue[] = [PaymentMethod.Card]
     const intent = await this.stripe.setupIntents.create({ payment_method_types })
     return { clientSecret: intent.client_secret }
   }
