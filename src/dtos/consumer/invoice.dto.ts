@@ -7,8 +7,8 @@ import { IInvoiceModel } from '../../models'
 import {
   CurrencyCode,
   CurrencyCodeValue,
-  InvoiceStatus,
-  InvoiceStatusValue,
+  StripeInvoiceStatus,
+  StripeInvoiceStatusValue,
   InvoiceType,
   InvoiceTypeValue,
   SortDirection,
@@ -30,9 +30,9 @@ export class Invoice extends BaseModel implements IInvoiceModel {
   refererId: string
 
   @Expose()
-  @ApiProperty({ enum: Object.values(InvoiceStatus) })
-  @IsIn(Object.values(InvoiceStatus))
-  status: InvoiceStatusValue
+  @ApiProperty({ enum: Object.values(StripeInvoiceStatus) })
+  @IsIn(Object.values(StripeInvoiceStatus))
+  status: StripeInvoiceStatusValue
 
   @Expose()
   @ApiProperty()

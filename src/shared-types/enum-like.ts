@@ -14,8 +14,8 @@ export type SortNullsValue = (typeof SortNulls)[keyof typeof SortNulls]
 | uncollectible | The customer is unlikely to pay this invoice (treat it as bad debt in your accounting process).       | You can void or pay the invoice.                                                 |
 |_______________|_______________________________________________________________________________________________________|_________________________________________________________________________________*/
 
-export const InvoiceStatus = { Draft: `draft`, Open: `open`, Paid: `paid`, Uncollectible: `uncollectible`, Void: `void` } as const
-export type InvoiceStatusValue = (typeof InvoiceStatus)[keyof typeof InvoiceStatus]
+export const StripeInvoiceStatus = { Draft: `draft`, Open: `open`, Paid: `paid`, Uncollectible: `uncollectible`, Void: `void` } as const
+export type StripeInvoiceStatusValue = (typeof StripeInvoiceStatus)[keyof typeof StripeInvoiceStatus]
 
 export const InvoiceType = { Incoming: `incoming-only`, Outgoing: `outgoing-only` } as const
 export type InvoiceTypeValue = (typeof InvoiceType)[keyof typeof InvoiceType]
