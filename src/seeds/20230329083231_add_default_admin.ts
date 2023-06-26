@@ -10,14 +10,7 @@ export async function seed(knex: Knex): Promise<void> {
   const password = `Wirebill@Admin123!`
   const salt = utils.generatePasswordHashSalt(4)
   const hash = utils.generatePasswordHash({ password, salt })
-  const data = [
-    {
-      email: `super.admin@wirebill.com`,
-      type: AdminType.Super,
-      salt: salt,
-      password: hash,
-    },
-  ]
+  const data = [{ email: `super.admin@wirebill.com`, type: AdminType.Super, salt: salt, password: hash }]
 
   await knex(TableName.Admin).insert(data)
 }

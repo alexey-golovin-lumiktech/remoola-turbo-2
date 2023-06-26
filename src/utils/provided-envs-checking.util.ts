@@ -3,7 +3,7 @@ import * as fs from 'fs'
 
 import { getEnvPath } from '.'
 
-const customEnvironmentVariables = [
+const customEnvironmentNames = [
   `PORT`,
   `POSTGRES_HOST`,
   `POSTGRES_PORT`,
@@ -47,7 +47,7 @@ export const checkProvidedEnvs = (inDirectory: typeof __dirname) => () => {
   const detectedEnvFilePath = `[!!! FILE] ::`.padEnd(45, NBSP) + `- ${path}`
 
   let collector: string[] = []
-  for (const name of customEnvironmentVariables) {
+  for (const name of customEnvironmentNames) {
     if (!process.env[name]) {
       collector.push(`process.env.${name}`.padEnd(45, NBSP) + `- is not specified`)
     }
