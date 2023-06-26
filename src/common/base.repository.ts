@@ -4,7 +4,7 @@ import { isEmpty, isNil, snakeCase } from 'lodash'
 
 import { ListResponse } from '../dtos/common'
 import { TableNameValue } from '../models'
-import { IFilter, IQuery } from '../shared-types'
+import { ListQuery, ListQueryFilter } from '../shared-types'
 import { getKnexCount, queryBuilder } from '../utils'
 
 import { IBaseModel } from './base.model'
@@ -13,14 +13,14 @@ export interface IBaseRepository<TModel extends IBaseModel> {
   create(dto: Partial<TModel>): Promise<TModel>
   createMany(dto: Partial<TModel>[]): Promise<TModel[]>
 
-  find(query?: IQuery<TModel>): Promise<TModel[]>
+  find(query?: ListQuery<TModel>): Promise<TModel[]>
   findById(id: string): Promise<TModel | null>
-  findAndCountAll(query?: IQuery<TModel>): Promise<{ data: TModel[]; count: number }>
+  findAndCountAll(query?: ListQuery<TModel>): Promise<{ data: TModel[]; count: number }>
 
-  update(filter: IFilter<TModel>, dto: Partial<TModel>): Promise<TModel[]>
+  update(filter: ListQueryFilter<TModel>, dto: Partial<TModel>): Promise<TModel[]>
   updateById(id: string, dto: Partial<TModel>): Promise<TModel | null>
 
-  softDelete(filter: IFilter<TModel>): Promise<TModel[]>
+  softDelete(filter: ListQueryFilter<TModel>): Promise<TModel[]>
   softDeleteById(id: string): Promise<TModel | null>
 }
 
@@ -34,8 +34,8 @@ export abstract class BaseRepository<TModel extends IBaseModel> implements IBase
 
   get qb() { return this.knex.from(this.tableName) } /* eslint-disable-line */
 
-  queryBuilder(query: IQuery<TModel>) {
-    const buildWhere = (q: IKnex.QueryBuilder, filter: IFilter<TModel>) => {
+  queryBuilder(query: ListQuery<TModel>) {
+    const buildWhere = (q: IKnex.QueryBuilder, filter: ListQueryFilter<TModel>) => {
       if (!filter) return
       const entries = Object.entries(filter)
       for (const [attr, value] of entries) {
@@ -66,7 +66,7 @@ export abstract class BaseRepository<TModel extends IBaseModel> implements IBase
     return { buildWhere, build }
   }
 
-  async findAndCountAll(query?: IQuery<TModel>): Promise<ListResponse<TModel>> {
+  async findAndCountAll(query?: ListQuery<TModel>): Promise<ListResponse<TModel>> {
     const data = await this.find(query)
     const qb = this.qb.clone() /* @IMPORTANT_NOTE baseQuery.clone() is required */
     if (query) this.queryBuilder({ filter: query.filter }).build(qb)
@@ -74,7 +74,7 @@ export abstract class BaseRepository<TModel extends IBaseModel> implements IBase
     return { count, data }
   }
 
-  async find(query?: IQuery<TModel>): Promise<TModel[]> {
+  async find(query?: ListQuery<TModel>): Promise<TModel[]> {
     const qb = this.qb.clone()
     if (query) this.queryBuilder(query).build(qb)
     const data = await qb
@@ -86,7 +86,7 @@ export abstract class BaseRepository<TModel extends IBaseModel> implements IBase
     return found ?? null
   }
 
-  update(filter: IFilter<TModel>, dto: Partial<TModel>): Promise<TModel[]> {
+  update(filter: ListQueryFilter<TModel>, dto: Partial<TModel>): Promise<TModel[]> {
     return this.qb.clone().where(filter).update(dto).returning(`*`)
   }
 
@@ -95,7 +95,7 @@ export abstract class BaseRepository<TModel extends IBaseModel> implements IBase
     return updated
   }
 
-  softDelete(filter: IFilter<TModel>): Promise<TModel[]> {
+  softDelete(filter: ListQueryFilter<TModel>): Promise<TModel[]> {
     // @TYPESCRIPT_ERR https://stackoverflow.com/questions/59279796/typescript-partial-of-a-generic-type
     const softDeleteDto = Object.assign({} as Partial<TModel>, { deletedAt: new Date() })
     return this.update(filter, softDeleteDto)

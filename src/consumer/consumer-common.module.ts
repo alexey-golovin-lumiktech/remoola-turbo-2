@@ -6,6 +6,7 @@ import { BillingDetailsModule } from './entities/billing-details/billing-details
 import { ConsumerModule } from './entities/consumer/consumer.module'
 import { GoogleProfilesModule } from './entities/google-profiles/google-profiles.module'
 import { OrganizationDetailsModule } from './entities/organization-details/organization-details.module'
+import { PaymentRequestModule } from './entities/payment-request/payment-request.module'
 import { PersonalDetailsModule } from './entities/personal-details/personal-details.module'
 
 @Module({
@@ -17,6 +18,7 @@ import { PersonalDetailsModule } from './entities/personal-details/personal-deta
     GoogleProfilesModule,
     OrganizationDetailsModule,
     PersonalDetailsModule,
+    PaymentRequestModule,
   ],
 })
 export class ConsumerCommonModule {}

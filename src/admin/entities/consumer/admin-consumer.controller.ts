@@ -3,9 +3,10 @@ import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { Response as IExpressResponse } from 'express'
 
 import { ADMIN } from '../../../dtos'
-import { TransformResponse } from '../../../interceptors/response.interceptor'
+import { ListResponse } from '../../../dtos/common'
+import { TransformResponse } from '../../../interceptors'
 import { IConsumerModel } from '../../../models'
-import { IQuery } from '../../../shared-types'
+import { ListQuery } from '../../../shared-types'
 import { AdminPanelQueryTransformPipe } from '../../pipes'
 
 import { AdminConsumerService } from './admin-consumer.service'
@@ -16,12 +17,12 @@ export class AdminConsumerController {
   constructor(@Inject(AdminConsumerService) private readonly service: AdminConsumerService) {}
 
   @Get(`/`)
-  @TransformResponse(ADMIN.ConsumersList)
-  @ApiOkResponse({ type: ADMIN.ConsumersList })
+  @TransformResponse(ListResponse<ADMIN.Consumer>)
+  @ApiOkResponse({ type: ListResponse<ADMIN.Consumer> })
   async findAndCountAll(
-    @Query(new AdminPanelQueryTransformPipe()) query: IQuery<IConsumerModel>,
+    @Query(new AdminPanelQueryTransformPipe()) query: ListQuery<IConsumerModel>,
     @Response() res: IExpressResponse,
-  ): Promise<ADMIN.ConsumersList> {
+  ): Promise<ListResponse<ADMIN.Consumer>> {
     const result = await this.service.repository.findAndCountAll(query)
     res.set(`Content-Range`, result.count.toString())
     res.send(result.data)

@@ -1,11 +1,12 @@
 import { Body, Controller, Get, Inject, Param, Post, Put, Query, Response } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { Response as IExpressResponse } from 'express'
+import { ListResponse } from 'src/dtos/common'
 
 import { ADMIN } from '../../../dtos'
-import { TransformResponse } from '../../../interceptors/response.interceptor'
+import { TransformResponse } from '../../../interceptors'
 import { IAdminModel } from '../../../models'
-import { IQuery } from '../../../shared-types'
+import { ListQuery } from '../../../shared-types'
 import { AdminPanelQueryTransformPipe } from '../../pipes'
 
 import { AdminService } from './admin.service'
@@ -16,12 +17,12 @@ export class AdminController {
   constructor(@Inject(AdminService) private readonly service: AdminService) {}
 
   @Get(`/`)
-  @TransformResponse(ADMIN.AdminsList)
-  @ApiOkResponse({ type: ADMIN.AdminsList })
+  @TransformResponse(ListResponse<ADMIN.AdminResponse>)
+  @ApiOkResponse({ type: ListResponse<ADMIN.AdminResponse> })
   async findAndCountAll(
-    @Query(new AdminPanelQueryTransformPipe()) query: IQuery<IAdminModel>,
+    @Query(new AdminPanelQueryTransformPipe()) query: ListQuery<IAdminModel>,
     @Response() res: IExpressResponse,
-  ): Promise<ADMIN.AdminsList> {
+  ): Promise<ListResponse<ADMIN.AdminResponse>> {
     const result = await this.service.repository.findAndCountAll(query)
     res.set(`Content-Range`, result.count.toString())
     res.send(result.data)

@@ -1,8 +1,8 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger'
-import { Expose, Type } from 'class-transformer'
+import { Expose } from 'class-transformer'
 
 import { IGoogleProfileModel } from '../../models'
-import { BaseModel, ListResponse } from '../common'
+import { BaseModel } from '../common'
 
 class GoogleProfile extends BaseModel implements IGoogleProfileModel {
   @Expose()
@@ -43,10 +43,3 @@ class GoogleProfile extends BaseModel implements IGoogleProfileModel {
 }
 
 export class GoogleProfileResponse extends OmitType(GoogleProfile, [`deletedAt`] as const) {}
-
-export class GoogleProfilesList extends ListResponse<GoogleProfileResponse> {
-  @Expose()
-  @ApiProperty({ type: [GoogleProfileResponse] })
-  @Type(() => GoogleProfileResponse)
-  data: GoogleProfileResponse[]
-}

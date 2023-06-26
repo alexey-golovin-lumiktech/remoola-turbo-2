@@ -1,4 +1,4 @@
-import { ApiProperty, PickType } from '@nestjs/swagger'
+import { ApiProperty, OmitType, PickType } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 
 import { IAddressDetailsModel } from '../../models'
@@ -26,7 +26,8 @@ class AddressDetails extends BaseModel implements IAddressDetailsModel {
   zipOrPostalCode: string
 }
 
-export class CreateAddressDetails extends PickType(AddressDetails, [
+export class AddressDetailsResponse extends OmitType(AddressDetails, [`deletedAt`] as const) {}
+export class CreateAddressDetails extends PickType(AddressDetailsResponse, [
   `consumerId`,
   `street`,
   `city`,
@@ -34,12 +35,10 @@ export class CreateAddressDetails extends PickType(AddressDetails, [
   `zipOrPostalCode`,
 ] as const) {}
 
-export class UpdateAddressDetails extends PickType(AddressDetails, [
+export class UpdateAddressDetails extends PickType(AddressDetailsResponse, [
   `consumerId`,
   `street`,
   `city`,
   `region`,
   `zipOrPostalCode`,
 ] as const) {}
-
-export class AddressDetailsResponse extends AddressDetails {}

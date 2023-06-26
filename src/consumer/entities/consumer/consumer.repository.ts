@@ -4,7 +4,7 @@ import { InjectKnex, Knex } from 'nestjs-knex'
 
 import { BaseRepository } from '../../../common'
 import { IConsumerModel, TableName } from '../../../models'
-import { IFilter } from '../../../shared-types'
+import { ListQueryFilter } from '../../../shared-types'
 import { BillingDetailsRepository } from '../billing-details/billing-details.repository'
 import { GoogleProfilesRepository } from '../google-profiles/google-profiles.repository'
 
@@ -23,7 +23,7 @@ export class ConsumerRepository extends BaseRepository<IConsumerModel> {
     this.mode = this.configService.get<string>(`NODE_ENV`)
   }
 
-  async completelyDelete(filter: IFilter<IConsumerModel>/* eslint-disable-line */): Promise<boolean> {
+  async completelyDelete(filter: ListQueryFilter<IConsumerModel>/* eslint-disable-line */): Promise<boolean> {
     if (this.mode == `development`) {
       // const [consumer] = await this.update(filter, { googleProfileId: null })
       // if (!consumer) return true

@@ -1,4 +1,4 @@
-import { ApiProperty, PickType } from '@nestjs/swagger'
+import { ApiProperty, OmitType, PickType } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 
 import { IOrganizationDetailsModel } from '../../models'
@@ -22,18 +22,18 @@ class OrganizationDetails extends BaseModel implements IOrganizationDetailsModel
   consumerRoleInOrganization: string
 }
 
-export class CreateOrganizationDetails extends PickType(OrganizationDetails, [
+export class OrganizationDetailsResponse extends OmitType(OrganizationDetails, [`deletedAt`] as const) {}
+
+export class CreateOrganizationDetails extends PickType(OrganizationDetailsResponse, [
   `consumerId`,
   `name`,
   `size`,
   `consumerRoleInOrganization`,
 ] as const) {}
 
-export class UpdateOrganizationDetails extends PickType(OrganizationDetails, [
+export class UpdateOrganizationDetails extends PickType(OrganizationDetailsResponse, [
   `consumerId`,
   `name`,
   `size`,
   `consumerRoleInOrganization`,
 ] as const) {}
-
-export class OrganizationDetailsResponse extends OrganizationDetails {}

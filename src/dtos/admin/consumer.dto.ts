@@ -1,9 +1,9 @@
 import { ApiProperty, PickType } from '@nestjs/swagger'
-import { Exclude, Expose, Type } from 'class-transformer'
+import { Exclude, Expose } from 'class-transformer'
 
 import { IConsumerModel } from '../../models'
 import { AccountType, AccountTypeValue, ContractorKind, ContractorKindValue } from '../../shared-types'
-import { BaseModel, ListResponse } from '../common'
+import { BaseModel } from '../common'
 
 export class Consumer extends BaseModel implements IConsumerModel {
   @Expose()
@@ -58,13 +58,6 @@ export class Consumer extends BaseModel implements IConsumerModel {
   @Expose()
   @ApiProperty({ required: false, default: null })
   organizationDetailsId?: string = null
-}
-
-export class ConsumersList extends ListResponse<Consumer> {
-  @Expose()
-  @ApiProperty({ type: [Consumer] })
-  @Type(() => Consumer)
-  data: Consumer[]
 }
 
 export class UpsertConsumer extends PickType(Consumer, [

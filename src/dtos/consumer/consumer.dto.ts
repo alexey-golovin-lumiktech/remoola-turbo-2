@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger'
+import { ApiProperty, OmitType } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 import { IsEmail } from 'class-validator'
 
@@ -63,4 +63,4 @@ class Consumer extends BaseModel implements IConsumerModel {
   organizationDetailsId?: string = null
 }
 
-export class ConsumerResponse extends Consumer {}
+export class ConsumerResponse extends OmitType(Consumer, [`deletedAt`] as const) {}

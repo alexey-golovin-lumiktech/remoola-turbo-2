@@ -11,10 +11,10 @@ import { ConsumerCommonModule } from './consumer/consumer-common.module'
 import { ConsumerService } from './consumer/entities/consumer/consumer.service'
 import { ListResponse } from './dtos/common'
 import { AuthGuard } from './guards/auth.guard'
-import { TransformResponseInterceptor } from './interceptors/response.interceptor'
 import { AppModule } from './app.module'
 import { ADMIN, CONSUMER } from './dtos'
 import { HttpExceptionFilter } from './filters'
+import { TransformResponseInterceptor } from './interceptors'
 import { checkProvidedEnvs } from './utils'
 
 async function bootstrap() {

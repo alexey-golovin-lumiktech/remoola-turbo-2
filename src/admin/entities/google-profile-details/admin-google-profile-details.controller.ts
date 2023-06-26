@@ -3,9 +3,10 @@ import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { Response as IExpressResponse } from 'express'
 
 import { ADMIN } from '../../../dtos'
-import { TransformResponse } from '../../../interceptors/response.interceptor'
+import { ListResponse } from '../../../dtos/common'
+import { TransformResponse } from '../../../interceptors'
 import { IGoogleProfileModel } from '../../../models'
-import { IQuery } from '../../../shared-types'
+import { ListQuery } from '../../../shared-types'
 import { AdminPanelQueryTransformPipe } from '../../pipes'
 
 import { AdminGoogleProfileDetailsService } from './admin-google-profile-details.service'
@@ -16,12 +17,12 @@ export class AdminGoogleProfileDetailsController {
   constructor(@Inject(AdminGoogleProfileDetailsService) private readonly service: AdminGoogleProfileDetailsService) {}
 
   @Get(`/`)
-  @TransformResponse(ADMIN.GoogleProfilesList)
-  @ApiOkResponse({ type: ADMIN.GoogleProfilesList })
+  @TransformResponse(ListResponse<ADMIN.GoogleProfileResponse>)
+  @ApiOkResponse({ type: ListResponse<ADMIN.GoogleProfileResponse> })
   async findAndCountAll(
-    @Query(new AdminPanelQueryTransformPipe()) query: IQuery<IGoogleProfileModel>,
+    @Query(new AdminPanelQueryTransformPipe()) query: ListQuery<IGoogleProfileModel>,
     @Response() res: IExpressResponse,
-  ): Promise<ADMIN.GoogleProfilesList> {
+  ): Promise<ListResponse<ADMIN.GoogleProfileResponse>> {
     const result = await this.service.repository.findAndCountAll(query)
     res.set(`Content-Range`, result.count.toString())
     res.send(result.data)

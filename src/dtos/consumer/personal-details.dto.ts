@@ -1,4 +1,4 @@
-import { ApiProperty, PickType } from '@nestjs/swagger'
+import { ApiProperty, OmitType, PickType } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 
 import { IPersonalDetailsModel } from '../../models'
@@ -38,7 +38,8 @@ class PersonalDetails extends BaseModel implements IPersonalDetailsModel {
   phoneNumber?: string = null
 }
 
-export class CreatePersonalDetails extends PickType(PersonalDetails, [
+export class PersonalDetailsResponse extends OmitType(PersonalDetails, [`deletedAt`] as const) {}
+export class CreatePersonalDetails extends PickType(PersonalDetailsResponse, [
   `consumerId`,
   `citizenOf`,
   `dateOfBirth`,
@@ -49,7 +50,7 @@ export class CreatePersonalDetails extends PickType(PersonalDetails, [
   `phoneNumber`,
 ] as const) {}
 
-export class UpdatePersonalDetails extends PickType(PersonalDetails, [
+export class UpdatePersonalDetails extends PickType(PersonalDetailsResponse, [
   `consumerId`,
   `citizenOf`,
   `dateOfBirth`,
@@ -59,5 +60,3 @@ export class UpdatePersonalDetails extends PickType(PersonalDetails, [
   `taxId`,
   `phoneNumber`,
 ] as const) {}
-
-export class PersonalDetailsResponse extends PersonalDetails {}
