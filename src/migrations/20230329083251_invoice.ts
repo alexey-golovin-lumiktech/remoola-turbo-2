@@ -1,7 +1,7 @@
 import { Knex } from 'knex'
 
 import { TableName } from '../models'
-import { CurrencyCode, currencyCodeValues, InvoiceStatus, invoiceStatusValues } from '../shared-types'
+import { CurrencyCode, InvoiceStatus } from '../shared-types'
 
 const tableName = TableName.Invoice
 
@@ -13,8 +13,8 @@ export async function up(knex: Knex): Promise<void> {
     table.uuid(`id`).primary().defaultTo(knex.raw(`uuid_generate_v4()`))
     table.uuid(`creator_id`).notNullable().references(`id`).inTable(TableName.Consumer)
     table.uuid(`referer_id`).notNullable().references(`id`).inTable(TableName.Consumer)
-    table.string(`status`).checkIn(invoiceStatusValues).defaultTo(InvoiceStatus.Open).notNullable()
-    table.string(`currency`, 3).checkIn(currencyCodeValues).defaultTo(CurrencyCode.USD)
+    table.string(`status`).checkIn(Object.values(InvoiceStatus)).defaultTo(InvoiceStatus.Open).notNullable()
+    table.string(`currency`, 3).checkIn(Object.values(CurrencyCode)).defaultTo(CurrencyCode.USD)
     table.decimal(`subtotal`).notNullable()
     table.decimal(`tax`).defaultTo(0)
     table.decimal(`total`).notNullable()

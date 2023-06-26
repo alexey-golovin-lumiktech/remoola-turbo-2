@@ -4,7 +4,7 @@ import { IsEmail } from 'class-validator'
 
 import * as constants from '../../constants'
 import { IConsumerModel } from '../../models'
-import { AccountTypeValue, accountTypeValues, ContractorKindValue, contractorKindValues } from '../../shared-types'
+import { AccountType, AccountTypeValue, ContractorKind, ContractorKindValue } from '../../shared-types'
 import { BaseModel } from '../common/base-model.dto'
 
 class Consumer extends BaseModel implements IConsumerModel {
@@ -34,11 +34,11 @@ class Consumer extends BaseModel implements IConsumerModel {
   lastName?: string
 
   @Expose()
-  @ApiProperty({ enum: accountTypeValues })
+  @ApiProperty({ enum: Object.values(AccountType) })
   accountType: AccountTypeValue
 
   @Expose()
-  @ApiProperty({ enum: contractorKindValues })
+  @ApiProperty({ enum: Object.values(ContractorKind) })
   contractorKind?: ContractorKindValue
 
   @Expose()

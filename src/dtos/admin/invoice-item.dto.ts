@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger'
 import { Exclude, Expose, Type } from 'class-transformer'
 
 import { IInvoiceItemModel } from '../../models'
+import { CurrencyCode, CurrencyCodeValue } from '../../shared-types'
 import { BaseModel, ListResponse } from '../common'
 
 export class InvoiceItem extends BaseModel implements IInvoiceItemModel {
@@ -14,8 +15,8 @@ export class InvoiceItem extends BaseModel implements IInvoiceItemModel {
   description: string
 
   @Expose()
-  @ApiProperty()
-  currency: string
+  @ApiProperty({ enum: Object.values(CurrencyCode) })
+  currency: CurrencyCodeValue
 
   @Expose()
   @ApiProperty()

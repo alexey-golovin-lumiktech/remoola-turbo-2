@@ -1,7 +1,7 @@
 import { Knex } from 'knex'
 
 import { TableName } from '../models'
-import { AdminType, adminTypeValues } from '../shared-types'
+import { AdminType } from '../shared-types'
 
 const tableName = TableName.Admin
 
@@ -12,7 +12,7 @@ export async function up(knex: Knex): Promise<void> {
   return knex.schema.createTable(tableName, table => {
     table.uuid(`id`).primary().defaultTo(knex.raw(`uuid_generate_v4()`))
     table.string(`email`).unique().notNullable()
-    table.string(`type`).checkIn(adminTypeValues).defaultTo(AdminType.Admin).notNullable()
+    table.string(`type`).checkIn(Object.values(AdminType)).defaultTo(AdminType.Admin).notNullable()
     table.string(`password`).notNullable()
     table.string(`salt`).notNullable()
     table.timestamp(`created_at`).defaultTo(knex.fn.now())

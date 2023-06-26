@@ -1,6 +1,6 @@
 import { CONSUMER } from '../../../dtos'
 import { CurrencyCode } from '../../../shared-types'
-import { currencyFormatters } from '../..'
+import { formatToCurrency } from '../..'
 
 const html = `
   <table style="padding: 20px;font-style: italic;background: #3f3f3f;color: cyan;border-radius: 20px;">
@@ -29,8 +29,6 @@ const RegExpToKeyMapping = {
 }
 
 export const processor = (invoice: CONSUMER.InvoiceResponse) => {
-  const formatter = currencyFormatters[CurrencyCode.USD]
-
   const backendBaseURL = `http://localhost:8080`
   const invoiceLink = new URL(`consumer/payment-choices`, backendBaseURL)
   invoiceLink.searchParams.append(`invoiceId`, invoice.id)
@@ -40,5 +38,5 @@ export const processor = (invoice: CONSUMER.InvoiceResponse) => {
     .replace(RegExpToKeyMapping.InvoiceCreatorEmail, invoice.creator)
     .replace(RegExpToKeyMapping.InvoiceId, invoice.id)
     .replace(RegExpToKeyMapping.InvoiceLink, invoiceLink.toString())
-    .replace(RegExpToKeyMapping.InvoiceSubtotal, formatter.format(invoice.subtotal))
+    .replace(RegExpToKeyMapping.InvoiceSubtotal, formatToCurrency(invoice.subtotal, CurrencyCode.USD))
 }

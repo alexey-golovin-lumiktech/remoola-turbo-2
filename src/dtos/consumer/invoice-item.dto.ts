@@ -3,6 +3,7 @@ import { Exclude, Expose, Type } from 'class-transformer'
 import { IsNumber, IsString } from 'class-validator'
 
 import { IInvoiceItemModel } from '../../models'
+import { CurrencyCode, CurrencyCodeValue } from '../../shared-types'
 import { BaseModel, ListResponse } from '../common'
 
 export class InvoiceItem extends BaseModel implements IInvoiceItemModel {
@@ -17,9 +18,8 @@ export class InvoiceItem extends BaseModel implements IInvoiceItemModel {
   description: string
 
   @Expose()
-  @ApiProperty()
-  @IsString()
-  currency: string
+  @ApiProperty({ enum: Object.values(CurrencyCode) })
+  currency: CurrencyCodeValue
 
   @Expose()
   @ApiProperty()

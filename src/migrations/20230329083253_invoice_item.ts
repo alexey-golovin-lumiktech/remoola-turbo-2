@@ -13,7 +13,7 @@ export async function up(knex: Knex): Promise<void> {
     table.uuid(`id`).primary().defaultTo(knex.raw(`uuid_generate_v4()`))
     table.uuid(`invoice_id`).notNullable().references(`id`).inTable(TableName.Invoice)
     table.string(`description`).notNullable()
-    table.string(`currency`, 3).notNullable().defaultTo(CurrencyCode.USD) //Three-letter ISO currency code, in lowercase. Must be a supported currency.
+    table.string(`currency`, 3).notNullable().defaultTo(CurrencyCode.USD)
     table.decimal(`amount`).notNullable() // price in cents
 
     table.jsonb(`metadata`) // full stripe item details

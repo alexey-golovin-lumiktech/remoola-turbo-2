@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 import { IsIn, IsNotEmpty, IsString } from 'class-validator'
 
-import { AdminTypeValue, adminTypeValues } from '../../shared-types'
+import { AdminType, AdminTypeValue } from '../../shared-types'
 
 export class Access {
   @Expose()
@@ -18,7 +18,7 @@ export class Access {
   refreshToken: string
 
   @Expose()
-  @ApiProperty({ enum: adminTypeValues })
-  @IsIn(adminTypeValues)
+  @ApiProperty({ enum: Object.values(AdminType) })
+  @IsIn(Object.values(AdminType))
   type: AdminTypeValue
 }

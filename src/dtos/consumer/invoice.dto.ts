@@ -6,12 +6,13 @@ import * as constants from '../../constants'
 import { IInvoiceModel } from '../../models'
 import {
   CurrencyCode,
+  CurrencyCodeValue,
+  InvoiceStatus,
   InvoiceStatusValue,
-  invoiceStatusValues,
+  InvoiceType,
   InvoiceTypeValue,
-  invoiceTypeValues,
+  SortDirection,
   SortDirectionValue,
-  sortDirectionValues,
 } from '../../shared-types'
 import { BaseModel, ListResponse } from '../common'
 
@@ -29,15 +30,16 @@ export class Invoice extends BaseModel implements IInvoiceModel {
   refererId: string
 
   @Expose()
-  @ApiProperty({ enum: invoiceStatusValues })
-  @IsIn(invoiceStatusValues)
+  @ApiProperty({ enum: Object.values(InvoiceStatus) })
+  @IsIn(Object.values(InvoiceStatus))
   status: InvoiceStatusValue
 
   @Expose()
   @ApiProperty()
   @IsString()
   @ValidateIf(({ value }) => value != null)
-  currency?: string
+  @IsIn(Object.values(CurrencyCode))
+  currency?: CurrencyCodeValue
 
   @Expose()
   @ApiProperty()
@@ -88,7 +90,7 @@ export class QueryDataListSorting<TModel> {
   field: keyof TModel
 
   @Expose()
-  @ApiProperty({ enum: sortDirectionValues })
+  @ApiProperty({ enum: Object.values(SortDirection) })
   direction: SortDirectionValue
 }
 
@@ -108,7 +110,7 @@ export class QueryDataList {
 
 export class QueryInvoices extends QueryDataList {
   @Expose()
-  @ApiProperty({ enum: invoiceTypeValues })
+  @ApiProperty({ enum: Object.values(InvoiceType) })
   type?: InvoiceTypeValue
 }
 

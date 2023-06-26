@@ -1,5 +1,5 @@
 import { CurrencyCode } from '../../../shared-types'
-import { currencyFormatters } from '../..'
+import { formatToCurrency } from '../..'
 
 const html = `
   <tr>
@@ -18,13 +18,12 @@ const RegExpToKeyMapping = {
 }
 
 export const processor = (item: any, tax?: number) => {
-  const formatter = currencyFormatters[CurrencyCode.USD]
   let calculatedItemSubtotal = item.amount
   if (tax) calculatedItemSubtotal = item.amount + (item.amount / 100) * tax
 
   return html
     .replace(RegExpToKeyMapping.ItemDescription, item.description)
-    .replace(RegExpToKeyMapping.ItemAmount, formatter.format(item.amount))
-    .replace(RegExpToKeyMapping.CalculatedItemSubtotal, formatter.format(calculatedItemSubtotal))
+    .replace(RegExpToKeyMapping.ItemAmount, formatToCurrency(item.amount, CurrencyCode.USD))
+    .replace(RegExpToKeyMapping.CalculatedItemSubtotal, formatToCurrency(calculatedItemSubtotal, CurrencyCode.USD))
     .replace(RegExpToKeyMapping.InvoiceTax, tax ? tax + `%` : `--`)
 }

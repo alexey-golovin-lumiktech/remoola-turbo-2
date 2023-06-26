@@ -2,7 +2,7 @@ import moment from 'moment'
 
 import { CONSUMER } from '../../../dtos'
 import { CurrencyCode } from '../../../shared-types'
-import { currencyFormatters, plainToInstance } from '../../../utils'
+import { formatToCurrency, plainToInstance } from '../../../utils'
 
 import * as invoiceItemToHtml from './invoiceItem'
 
@@ -94,7 +94,6 @@ const RegExpToKeyMapping = {
 
 export const processor = (rawInvoice: any) => {
   const invoice = plainToInstance(CONSUMER.InvoiceResponse, rawInvoice)
-  const formatter = currencyFormatters[CurrencyCode.USD]
   const itemsHtml = invoice.items.map(item => invoiceItemToHtml.processor(item, invoice.tax)).join(`\n`)
   const payOnlineBeLink = `http://some-link`
 
@@ -104,8 +103,8 @@ export const processor = (rawInvoice: any) => {
     .replace(RegExpToKeyMapping.InvoiceDueDate, moment(invoice.dueDateInDays).format(`ll`))
     .replace(RegExpToKeyMapping.InvoiceCreatorEmail, invoice.creator)
     .replace(RegExpToKeyMapping.InvoiceRefererEmail, invoice.referer)
-    .replace(RegExpToKeyMapping.InvoiceTotal, formatter.format(invoice.total))
-    .replace(RegExpToKeyMapping.InvoiceSubtotal, formatter.format(invoice.subtotal))
+    .replace(RegExpToKeyMapping.InvoiceTotal, formatToCurrency(invoice.total, CurrencyCode.USD))
+    .replace(RegExpToKeyMapping.InvoiceSubtotal, formatToCurrency(invoice.subtotal, CurrencyCode.USD))
     .replace(RegExpToKeyMapping.ToPayOnlineInvoiceLink, payOnlineBeLink)
     .replace(RegExpToKeyMapping.InvoiceItemsHtml, itemsHtml)
 }

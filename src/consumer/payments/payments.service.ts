@@ -4,7 +4,7 @@ import { InjectStripe } from 'nestjs-stripe'
 import Stripe from 'stripe'
 
 import { CONSUMER } from '../../dtos'
-import { PaymentMethod, PaymentMethodValue } from '../../shared-types'
+import { CurrencyCode, PaymentMethod, PaymentMethodValue } from '../../shared-types'
 import { InvoiceService } from '../entities/invoice/invoice.service'
 import { InvoiceItemService } from '../entities/invoice-item/invoice-item.service'
 
@@ -56,7 +56,7 @@ export class PaymentsService {
 
     const session = await this.stripe.checkout.sessions.create({
       line_items: invoiceResponse.items.map(x => ({
-        price_data: { currency: `usd`, unit_amount: 1000, product_data: { name: x.description } },
+        price_data: { currency: CurrencyCode.USD, unit_amount: 1000, product_data: { name: x.description } },
         quantity: 1,
       })),
       phone_number_collection: { enabled: true },

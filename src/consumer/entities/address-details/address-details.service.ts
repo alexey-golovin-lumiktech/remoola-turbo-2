@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common'
-import { CONSUMER } from 'src/dtos'
 
 import { BaseService } from '../../../common'
+import { CONSUMER } from '../../../dtos'
 import { IAddressDetailsModel } from '../../../models'
 import { ConsumerService } from '../consumer/consumer.service'
 
