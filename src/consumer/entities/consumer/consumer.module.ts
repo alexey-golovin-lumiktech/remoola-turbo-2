@@ -1,11 +1,10 @@
-import { forwardRef, Module } from '@nestjs/common'
+import { Module } from '@nestjs/common'
 
 import { AddressDetailsModule } from '../address-details/address-details.module'
 import { AddressDetailsRepository } from '../address-details/address-details.repository'
 import { AddressDetailsService } from '../address-details/address-details.service'
 import { BillingDetailsModule } from '../billing-details/billing-details.module'
 import { GoogleProfilesModule } from '../google-profiles/google-profiles.module'
-import { InvoiceModule } from '../invoice/invoice.module'
 import { OrganizationDetailsModule } from '../organization-details/organization-details.module'
 import { OrganizationDetailsRepository } from '../organization-details/organization-details.repository'
 import { OrganizationDetailsService } from '../organization-details/organization-details.service'
@@ -18,14 +17,7 @@ import { ConsumerRepository } from './consumer.repository'
 import { ConsumerService } from './consumer.service'
 
 @Module({
-  imports: [
-    GoogleProfilesModule,
-    BillingDetailsModule,
-    AddressDetailsModule,
-    OrganizationDetailsModule,
-    PersonalDetailsModule,
-    forwardRef(() => InvoiceModule),
-  ],
+  imports: [GoogleProfilesModule, BillingDetailsModule, AddressDetailsModule, OrganizationDetailsModule, PersonalDetailsModule],
   controllers: [ConsumerController],
   providers: [
     ConsumerService,

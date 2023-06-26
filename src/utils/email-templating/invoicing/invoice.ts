@@ -1,8 +1,7 @@
 import moment from 'moment'
 
-import { CONSUMER } from '../../../dtos'
 import { CurrencyCode } from '../../../shared-types'
-import { formatToCurrency, plainToInstance } from '../../../utils'
+import { formatToCurrency } from '../../../utils'
 
 import * as invoiceItemToHtml from './invoiceItem'
 
@@ -93,7 +92,7 @@ const RegExpToKeyMapping = {
 }
 
 export const processor = (rawInvoice: any) => {
-  const invoice = plainToInstance(CONSUMER.InvoiceResponse, rawInvoice)
+  const invoice = rawInvoice // plainToInstance(CONSUMER.InvoiceResponse, rawInvoice)
   const itemsHtml = invoice.items.map(item => invoiceItemToHtml.processor(item, invoice.tax)).join(`\n`)
   const payOnlineBeLink = `http://some-link`
 

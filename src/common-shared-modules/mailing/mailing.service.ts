@@ -3,7 +3,6 @@ import { ConfigService } from '@nestjs/config'
 import { ISendMailOptions, MailerService } from '@nestjs-modules/mailer'
 import { generatePdf } from '@wirebill/pdf-generator-package'
 
-import * as CONSUMER from '../../dtos/consumer'
 import { invoiceToHtml, outgoingInvoiceToHtml, signupCompletionToHtml } from '../../utils'
 
 @Injectable()
@@ -24,7 +23,7 @@ export class MailingService {
     }
   }
 
-  async sendOutgoingInvoiceEmail(invoice: CONSUMER.InvoiceResponse) {
+  async sendOutgoingInvoiceEmail(invoice: any /* CONSUMER.InvoiceResponse */) {
     const html = outgoingInvoiceToHtml.processor(invoice)
     const content = await generatePdf({ rawHtml: invoiceToHtml.processor(invoice) })
     const subject = `NEW INVOICE #${invoice.id}`

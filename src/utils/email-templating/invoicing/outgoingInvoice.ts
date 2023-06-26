@@ -1,4 +1,3 @@
-import { CONSUMER } from '../../../dtos'
 import { CurrencyCode } from '../../../shared-types'
 import { formatToCurrency } from '../..'
 
@@ -28,7 +27,7 @@ const RegExpToKeyMapping = {
   InvoiceSubtotal: new RegExp(`{{invoiceSubtotal}}`, `gi`),
 }
 
-export const processor = (invoice: CONSUMER.InvoiceResponse) => {
+export const processor = (invoice: any /* CONSUMER.InvoiceResponse */) => {
   const backendBaseURL = `http://localhost:8080`
   const invoiceLink = new URL(`consumer/payment-choices`, backendBaseURL)
   invoiceLink.searchParams.append(`invoiceId`, invoice.id)
