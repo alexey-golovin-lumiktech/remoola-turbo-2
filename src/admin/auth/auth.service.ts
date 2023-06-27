@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Inject, Injectable, InternalServerErrorException, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import * as uuid from 'uuid'
@@ -29,17 +29,11 @@ export class AuthService {
     return admin
   }
 
-  async login(body: ADMIN.Credentials): Promise<ADMIN.Access> {
+  async login(identity: IAdminModel): Promise<ADMIN.Access> {
     try {
-      const admin = await this.adminsService.findByEmail(body.email)
-      if (!admin) throw new NotFoundException(constants.ADMIN_NOT_FOUND)
-
-      const verified = await validatePassword({ incomingPass: body.password, password: admin.password, salt: admin.salt })
-      if (!verified) throw new BadRequestException(constants.INVALID_CREDENTIALS)
-
-      const accessToken = this.generateToken(admin)
+      const accessToken = this.generateToken(identity)
       const refreshToken = this.generateRefreshToken() //@TODO : need to store refresh token
-      return { accessToken, refreshToken: refreshToken.token, type: admin.type }
+      return { accessToken, refreshToken: refreshToken.token, type: identity.type }
     } catch (error) {
       this.logger.error(error)
       throw new InternalServerErrorException()
