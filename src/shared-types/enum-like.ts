@@ -28,8 +28,8 @@ export type AdminTypeValue = (typeof AdminType)[keyof typeof AdminType]
 export const AuthHeader = { Bearer: `Bearer`, Basic: `Basic` } as const
 export type AuthHeaderValue = (typeof AuthHeader)[keyof typeof AuthHeader]
 
-export const Separator = { Token: ` `, Credentials: `:` } as const
-export type SeparatorValue = (typeof Separator)[keyof typeof Separator]
+export const CredentialsSeparator = { Token: ` `, Credentials: `:` } as const
+export type CredentialsSeparatorValue = (typeof CredentialsSeparator)[keyof typeof CredentialsSeparator]
 
 export const AccountType = { Business: `business`, Contractor: `contractor` } as const
 export type AccountTypeValue = (typeof AccountType)[keyof typeof AccountType]
@@ -46,7 +46,14 @@ export type OrganizationSizeValue = (typeof OrganizationSize)[keyof typeof Organ
 export const ConsumerRole = { Manager: `manager`, Worker: `worker`, Owner: `owner`, Other: `other` } as const
 export type ConsumerRoleValue = (typeof ConsumerRole)[keyof typeof ConsumerRole]
 
-export const PaymentStatus = { Waiting: `waiting`, Completed: `completed`, Pending: `pending`, Denied: `denied` } as const
+export const PaymentStatus = {
+  Draft: `draft`,
+  Waiting: `waiting`,
+  Pending: `pending`,
+  Completed: `completed`,
+  Denied: `denied`,
+  Uncollectible: `uncollectible`,
+} as const
 export type PaymentStatusValue = (typeof PaymentStatus)[keyof typeof PaymentStatus]
 
 export const TransactionType = { CreditCard: `credit card`, BankTransfer: `bank transfer` } as const

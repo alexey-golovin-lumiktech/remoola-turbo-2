@@ -1,5 +1,5 @@
 import { ApiProperty, OmitType, PickType } from '@nestjs/swagger'
-import { PaymentStatus, TransactionType } from '@wirebill/back-and-front'
+import { CurrencyCode, CurrencyCodeValue, PaymentStatus, TransactionType } from '@wirebill/back-and-front'
 import { Expose } from 'class-transformer'
 import { IsIn, IsNotEmpty, IsNumber, IsString } from 'class-validator'
 
@@ -25,6 +25,12 @@ class Payment extends BaseModel implements IPaymentRequestModel {
   @IsNumber()
   @IsNotEmpty()
   amount: number
+
+  @Expose()
+  @ApiProperty({ enum: Object.values(CurrencyCode) })
+  @IsString()
+  @IsIn(Object.values(CurrencyCode))
+  currencyCode: CurrencyCodeValue
 
   @Expose()
   @ApiProperty()

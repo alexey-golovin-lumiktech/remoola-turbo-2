@@ -5,7 +5,7 @@ export * from './personal-details.model'
 export * from './address-details.model'
 export * from './organization-details.model'
 export * from './billing-details.mode'
-export * from './payment.model'
+export * from './payment-request.model'
 
 export type TableNameValue = (typeof TableName)[keyof typeof TableName]
 export const TableName = {

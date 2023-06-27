@@ -4,7 +4,7 @@ import { Expose } from 'class-transformer'
 import { IsIn, IsNotEmpty, IsNumber, IsString } from 'class-validator'
 
 import { IConsumerModel, IPaymentRequestModel } from '../../models'
-import { PaymentStatusValue, TransactionTypeValue } from '../../shared-types'
+import { CurrencyCode, CurrencyCodeValue, PaymentStatusValue, TransactionTypeValue } from '../../shared-types'
 import { BaseModel } from '../common'
 
 class Payment extends BaseModel implements IPaymentRequestModel {
@@ -27,6 +27,12 @@ class Payment extends BaseModel implements IPaymentRequestModel {
   @IsNumber()
   @IsNotEmpty()
   amount: number
+
+  @Expose()
+  @ApiProperty({ enum: Object.values(CurrencyCode) })
+  @IsString()
+  @IsIn(Object.values(CurrencyCode))
+  currencyCode: CurrencyCodeValue
 
   @Expose()
   @ApiProperty()

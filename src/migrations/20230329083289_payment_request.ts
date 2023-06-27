@@ -1,7 +1,9 @@
 import { Knex } from 'knex'
 
 import { TableName } from '../models'
-import { PaymentStatus, TransactionType } from '../shared-types'
+import { CurrencyCode, PaymentStatus, TransactionType } from '../shared-types'
+
+import { addAuditColumns, addUUIDPrimaryKey } from './migration-utils'
 
 const tableName = TableName.PaymentRequest
 
@@ -10,23 +12,25 @@ export async function up(knex: Knex): Promise<void> {
   if (exist) return
 
   return knex.schema.createTable(tableName, table => {
-    table.uuid(`id`).primary().defaultTo(knex.raw(`uuid_generate_v4()`))
+    addUUIDPrimaryKey(table, knex)
     table.uuid(`requester_id`).notNullable().references(`id`).inTable(TableName.Consumer).onDelete(`CASCADE`).onUpdate(`CASCADE`)
     table.uuid(`payer_id`).notNullable().references(`id`).inTable(TableName.Consumer).onDelete(`CASCADE`).onUpdate(`CASCADE`)
 
     table.integer(`amount`).notNullable()
-    table.timestamp(`due_by`).notNullable()
-    table.timestamp(`sent_date`)
+    table.string(`currency_code`).checkIn(Object.values(CurrencyCode), `currency_code_code`).defaultTo(CurrencyCode.USD).notNullable()
+    table.string(`status`).checkIn(Object.values(PaymentStatus), `payment_status_values`).defaultTo(PaymentStatus.Draft).notNullable()
+
     table
       .string(`transaction_type`)
       .checkIn(Object.values(TransactionType), `transaction_type_values`)
       .defaultTo(TransactionType.CreditCard)
-    table.string(`tax_id`)
-    table.string(`status`).checkIn(Object.values(PaymentStatus), `payment_status_values`).defaultTo(PaymentStatus.Waiting)
+      .notNullable()
 
-    table.timestamp(`created_at`).defaultTo(knex.fn.now())
-    table.timestamp(`updated_at`).defaultTo(knex.fn.now())
-    table.timestamp(`deleted_at`).defaultTo(null).nullable() // to soft delete
+    table.timestamp(`due_by`).notNullable()
+    table.timestamp(`sent_date`)
+    table.string(`tax_id`)
+
+    addAuditColumns(table, knex)
   })
 }
 

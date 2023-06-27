@@ -8,7 +8,7 @@ import { AdminService } from '../admin/entities/admin/admin.service'
 import { ConsumerService } from '../consumer/entities/consumer/consumer.service'
 import { IS_PUBLIC } from '../decorators'
 import { IAdminModel, IConsumerModel } from '../models'
-import { AuthHeader, AuthHeaderValue, Separator } from '../shared-types'
+import { AuthHeader, AuthHeaderValue, CredentialsSeparator } from '../shared-types'
 import { validatePassword } from '../utils'
 
 export const REQUEST_AUTH_IDENTITY = Symbol(`REQUEST_AUTH_IDENTITY`)
@@ -24,13 +24,13 @@ const GuardMessage = {
   UNEXPECTED: (type: string) => `Unexpected auth header type: ${type}`,
   INVALID_CREDENTIALS: `Invalid email or password`,
   INVALID_TOKEN: `Invalid token`,
-  NO_IDENTITY: `No identity for given credentials`,
-  NOT_VERIFIED: `Identity is not verified. Check you email address`,
+  NO_IDENTITY: `No identity for given credentials.`,
+  NOT_VERIFIED: `Probably your email address is not verified yet. Check you email address`,
 } as const
 
 export class AuthGuard implements CanActivate {
   private readonly logger = new Logger(AuthGuard.name)
-  private readonly separator = Separator
+  private readonly separator = CredentialsSeparator
 
   constructor(
     private readonly reflector: Reflector,
@@ -67,6 +67,9 @@ export class AuthGuard implements CanActivate {
     const [consumer] = await this.consumersService.repository.find({ filter: { email } })
     const [admin] = await this.adminsService.repository.find({ filter: { email } })
     const identity = admin ?? consumer
+    console.log(`[identity]`, identity)
+    console.log(`[email]`, email)
+    console.log(`[password]`, password)
     if (identity == null) return this.throwHandler(GuardMessage.NO_IDENTITY)
     if ((identity as IConsumerModel).verified == false) return this.throwHandler(GuardMessage.NOT_VERIFIED)
 

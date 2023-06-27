@@ -4,6 +4,7 @@ import { AccountTypeValue, ContractorKindValue } from '../shared-types'
 export interface IConsumerModel extends IBaseModel {
   email: string
   verified: boolean
+  legalVerified: boolean
   accountType: AccountTypeValue
 
   contractorKind?: ContractorKindValue

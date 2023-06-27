@@ -11,8 +11,12 @@ export class Consumer extends BaseModel implements IConsumerModel {
   email: string
 
   @Expose()
-  @ApiProperty()
-  verified: boolean
+  @ApiProperty({ default: false })
+  verified = false
+
+  @Expose()
+  @ApiProperty({ default: false })
+  legalVerified = false
 
   @Exclude()
   @ApiProperty()

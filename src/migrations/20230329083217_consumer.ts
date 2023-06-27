@@ -3,6 +3,8 @@ import { Knex } from 'knex'
 import { TableName } from '../models'
 import * as shared from '../shared-types'
 
+import { addAuditColumns, addUUIDPrimaryKey } from './migration-utils'
+
 const tableName = TableName.Consumer
 
 export async function up(knex: Knex): Promise<void> {
@@ -10,9 +12,11 @@ export async function up(knex: Knex): Promise<void> {
   if (exist) return
 
   return knex.schema.createTable(tableName, table => {
-    table.uuid(`id`).primary().defaultTo(knex.raw(`uuid_generate_v4()`))
+    addUUIDPrimaryKey(table, knex)
+
     table.string(`email`).unique()
-    table.boolean(`verified`).defaultTo(false)
+    table.boolean(`verified`).defaultTo(false).notNullable()
+    table.boolean(`legal_verified`).defaultTo(false).notNullable().comment(`only when user provide docs`)
     table.string(`account_type`).checkIn(Object.values(shared.AccountType), `account_type_values`).defaultTo(shared.AccountType.Contractor)
     table.string(`contractor_kind`).checkIn(Object.values(shared.ContractorKind), `contractor_kind_values`).defaultTo(null).nullable()
     table.string(`how_did_hear_about_us`).defaultTo(shared.HowDidHearAboutUs.Google)
@@ -23,9 +27,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string(`last_name`)
     table.string(`stripe_customer_id`).defaultTo(null).nullable()
 
-    table.timestamp(`created_at`).defaultTo(knex.fn.now())
-    table.timestamp(`updated_at`).defaultTo(knex.fn.now())
-    table.timestamp(`deleted_at`).defaultTo(null).nullable() // to soft delete
+    addAuditColumns(table, knex)
   })
 }
 
