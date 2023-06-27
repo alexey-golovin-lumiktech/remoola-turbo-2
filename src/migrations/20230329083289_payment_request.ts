@@ -17,9 +17,12 @@ export async function up(knex: Knex): Promise<void> {
     table.integer(`amount`).notNullable()
     table.timestamp(`due_by`).notNullable()
     table.timestamp(`sent_date`)
-    table.string(`transaction_type`).checkIn(Object.values(TransactionType)).defaultTo(TransactionType.CreditCard)
+    table
+      .string(`transaction_type`)
+      .checkIn(Object.values(TransactionType), `transaction_type_values`)
+      .defaultTo(TransactionType.CreditCard)
     table.string(`tax_id`)
-    table.string(`status`).checkIn(Object.values(PaymentStatus)).defaultTo(PaymentStatus.Pending)
+    table.string(`status`).checkIn(Object.values(PaymentStatus), `payment_status_values`).defaultTo(PaymentStatus.Waiting)
 
     table.timestamp(`created_at`).defaultTo(knex.fn.now())
     table.timestamp(`updated_at`).defaultTo(knex.fn.now())

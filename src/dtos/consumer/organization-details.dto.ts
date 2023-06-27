@@ -19,7 +19,7 @@ class OrganizationDetails extends BaseModel implements IOrganizationDetailsModel
 
   @Expose()
   @ApiProperty()
-  consumerRoleInOrganization: string
+  consumerRole: string
 }
 
 export class OrganizationDetailsResponse extends OmitType(OrganizationDetails, [`deletedAt`] as const) {}
@@ -28,12 +28,12 @@ export class CreateOrganizationDetails extends PickType(OrganizationDetailsRespo
   `consumerId`,
   `name`,
   `size`,
-  `consumerRoleInOrganization`,
+  `consumerRole`,
 ] as const) {}
 
 export class UpdateOrganizationDetails extends PickType(OrganizationDetailsResponse, [
   `consumerId`,
   `name`,
   `size`,
-  `consumerRoleInOrganization`,
+  `consumerRole`,
 ] as const) {}

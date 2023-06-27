@@ -13,9 +13,9 @@ export async function up(knex: Knex): Promise<void> {
     table.uuid(`id`).primary().defaultTo(knex.raw(`uuid_generate_v4()`))
     table.string(`email`).unique()
     table.boolean(`verified`).defaultTo(false)
-    table.string(`account_type`).checkIn(Object.values(shared.AccountType)).defaultTo(shared.AccountType.Contractor)
-    table.string(`contractor_kind`).checkIn(Object.values(shared.ContractorKind)).defaultTo(null).nullable()
-    table.string(`how_did_hear_about_us`).defaultTo(Object.values(shared.HowDidHearAboutUs))
+    table.string(`account_type`).checkIn(Object.values(shared.AccountType), `account_type_values`).defaultTo(shared.AccountType.Contractor)
+    table.string(`contractor_kind`).checkIn(Object.values(shared.ContractorKind), `contractor_kind_values`).defaultTo(null).nullable()
+    table.string(`how_did_hear_about_us`).defaultTo(shared.HowDidHearAboutUs.Google)
 
     table.string(`password`)
     table.string(`salt`)

@@ -40,7 +40,7 @@ export type ContractorKindValue = (typeof ContractorKind)[keyof typeof Contracto
 export const HowDidHearAboutUs = { Google: `google`, Facebook: `facebook`, Internet: `internet` } as const
 export type HowDidHearAboutUsValue = (typeof HowDidHearAboutUs)[keyof typeof HowDidHearAboutUs]
 
-export const OrganizationSize = { Small: `1-10`, Medium: `11-100`, Large: `101-500` } as const
+export const OrganizationSize = { Small: `small (1-10)`, Medium: `medium (11-100)`, Large: `large (101-500)` } as const
 export type OrganizationSizeValue = (typeof OrganizationSize)[keyof typeof OrganizationSize]
 
 export const ConsumerRole = { Manager: `manager`, Worker: `worker`, Owner: `owner`, Other: `other` } as const
@@ -49,7 +49,7 @@ export type ConsumerRoleValue = (typeof ConsumerRole)[keyof typeof ConsumerRole]
 export const PaymentStatus = { Waiting: `waiting`, Completed: `completed`, Pending: `pending`, Denied: `denied` } as const
 export type PaymentStatusValue = (typeof PaymentStatus)[keyof typeof PaymentStatus]
 
-export const TransactionType = { CreditCard: `credit_card`, BankTransfer: `bank_transfer` } as const
+export const TransactionType = { CreditCard: `credit card`, BankTransfer: `bank transfer` } as const
 export type TransactionTypeValue = (typeof TransactionType)[keyof typeof TransactionType]
 
 export const Timeline = {

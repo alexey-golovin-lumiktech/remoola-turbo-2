@@ -1,3 +1,5 @@
+import moment from 'moment'
+
 export const SortDirection = { Asc: `asc`, Desc: `desc` } as const
 export type SortDirectionValue = (typeof SortDirection)[keyof typeof SortDirection]
 
@@ -38,7 +40,7 @@ export type ContractorKindValue = (typeof ContractorKind)[keyof typeof Contracto
 export const HowDidHearAboutUs = { Google: `google`, Facebook: `facebook`, Internet: `internet` } as const
 export type HowDidHearAboutUsValue = (typeof HowDidHearAboutUs)[keyof typeof HowDidHearAboutUs]
 
-export const OrganizationSize = { Small: `1-10`, Medium: `11-100`, Large: `101-500` } as const
+export const OrganizationSize = { Small: `small (1-10)`, Medium: `medium (11-100)`, Large: `large (101-500)` } as const
 export type OrganizationSizeValue = (typeof OrganizationSize)[keyof typeof OrganizationSize]
 
 export const ConsumerRole = { Manager: `manager`, Worker: `worker`, Owner: `owner`, Other: `other` } as const
@@ -50,7 +52,11 @@ export type PaymentStatusValue = (typeof PaymentStatus)[keyof typeof PaymentStat
 export const TransactionType = { CreditCard: `credit card`, BankTransfer: `bank transfer` } as const
 export type TransactionTypeValue = (typeof TransactionType)[keyof typeof TransactionType]
 
-export const Timeline = { Past90Days: `past 90 days`, Past30Days: `past 30 days`, Past7Days: `past 7 days` } as const
+export const Timeline = {
+  Past90Days: moment().add(-90, `days`).valueOf(),
+  Past30Days: moment().add(-30, `days`).valueOf(),
+  Past7Days: moment().add(-7, `days`).valueOf(),
+} as const
 export type TimelineValue = (typeof Timeline)[keyof typeof Timeline]
 
 export const CurrencyCode = {

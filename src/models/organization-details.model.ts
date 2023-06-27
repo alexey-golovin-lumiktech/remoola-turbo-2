@@ -4,5 +4,5 @@ export interface IOrganizationDetailsModel extends IBaseModel {
   consumerId: string
   name: string
   size: string
-  consumerRoleInOrganization: string
+  consumerRole: string
 }
