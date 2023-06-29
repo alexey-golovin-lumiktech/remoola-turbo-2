@@ -8,7 +8,8 @@ import { AdminService } from '../admin/entities/admin/admin.service'
 import { ConsumerService } from '../consumer/entities/consumer/consumer.service'
 import { IS_PUBLIC } from '../decorators'
 import { IAdminModel, IConsumerModel } from '../models'
-import { AuthHeader, AuthHeaderValue, CredentialsSeparator } from '../shared-types'
+import type { AuthHeaderValue } from '../shared-types/common.types'
+import { AuthHeader, CredentialsSeparator } from '../shared-types/enum-like'
 import { validatePassword } from '../utils'
 
 export const REQUEST_AUTH_IDENTITY = Symbol(`REQUEST_AUTH_IDENTITY`)
@@ -67,9 +68,6 @@ export class AuthGuard implements CanActivate {
     const [consumer] = await this.consumersService.repository.find({ filter: { email } })
     const [admin] = await this.adminsService.repository.find({ filter: { email } })
     const identity = admin ?? consumer
-    console.log(`[identity]`, identity)
-    console.log(`[email]`, email)
-    console.log(`[password]`, password)
     if (identity == null) return this.throwHandler(GuardMessage.NO_IDENTITY)
     if ((identity as IConsumerModel).verified == false) return this.throwHandler(GuardMessage.NOT_VERIFIED)
 

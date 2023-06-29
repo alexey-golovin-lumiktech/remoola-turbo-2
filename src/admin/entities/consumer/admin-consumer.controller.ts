@@ -6,7 +6,7 @@ import { ADMIN } from '../../../dtos'
 import { ListResponse } from '../../../dtos/common'
 import { TransformResponse } from '../../../interceptors'
 import { IConsumerModel } from '../../../models'
-import { ListQuery } from '../../../shared-types'
+import type { ListQuery } from '../../../shared-types/common.types'
 import { AdminPanelQueryTransformPipe } from '../../pipes'
 
 import { AdminConsumerService } from './admin-consumer.service'

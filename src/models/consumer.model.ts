@@ -1,5 +1,5 @@
 import { IBaseModel } from '../common'
-import { AccountTypeValue, ContractorKindValue } from '../shared-types'
+import type { AccountTypeValue, ContractorKindValue } from '../shared-types/common.types'
 
 export interface IConsumerModel extends IBaseModel {
   accountType: AccountTypeValue

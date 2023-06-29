@@ -4,7 +4,7 @@ import { isEmpty, isNil, snakeCase } from 'lodash'
 
 import { ListResponse } from '../dtos/common'
 import { TableNameValue } from '../models'
-import { ListQuery, ListQueryFilter } from '../shared-types'
+import type { ListQuery, ListQueryFilter } from '../shared-types/common.types'
 import { getKnexCount, queryBuilder } from '../utils'
 
 import { IBaseModel } from './base.model'

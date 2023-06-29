@@ -6,7 +6,7 @@ import { PaymentRequestListResponse } from '../../../dtos/consumer'
 import { ReqAuthIdentity } from '../../../guards/auth.guard'
 import { TransformResponse } from '../../../interceptors'
 import { IConsumerModel, IPaymentRequestModel } from '../../../models'
-import { ListQuery } from '../../../shared-types'
+import type { ListQuery } from '../../../shared-types/common.types'
 import { BillingDetailsService } from '../billing-details/billing-details.service'
 import { PaymentRequestService } from '../payment-request/payment-request.service'
 

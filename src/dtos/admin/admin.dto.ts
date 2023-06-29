@@ -3,7 +3,8 @@ import { Exclude, Expose } from 'class-transformer'
 import { IsIn, IsString } from 'class-validator'
 
 import { IAdminModel } from '../../models'
-import { AdminType, AdminTypeValue } from '../../shared-types'
+import type { AdminTypeValue } from '../../shared-types/common.types'
+import { AdminType } from '../../shared-types/enum-like'
 import { BaseModel } from '../common'
 
 class Admin extends BaseModel implements IAdminModel {

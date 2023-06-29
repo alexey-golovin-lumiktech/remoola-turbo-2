@@ -1,4 +1,4 @@
-import { CurrencyCode } from '../../../shared-types'
+import { CurrencyCode } from '../../../shared-types/enum-like'
 import { formatToCurrency } from '../..'
 
 const html = `

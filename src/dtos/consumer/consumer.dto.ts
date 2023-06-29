@@ -4,7 +4,8 @@ import { IsEmail, IsIn, ValidateIf } from 'class-validator'
 
 import * as constants from '../../constants'
 import { IConsumerModel } from '../../models'
-import { AccountType, AccountTypeValue, ContractorKind, ContractorKindValue } from '../../shared-types'
+import type { AccountTypeValue, ContractorKindValue } from '../../shared-types/common.types'
+import { AccountType, ContractorKind } from '../../shared-types/enum-like'
 import { BaseModel } from '../common/base-model.dto'
 
 class Consumer extends BaseModel implements IConsumerModel {

@@ -6,7 +6,7 @@ import { ADMIN } from '../../../dtos'
 import { ListResponse } from '../../../dtos/common'
 import { TransformResponse } from '../../../interceptors'
 import { IGoogleProfileModel } from '../../../models'
-import { ListQuery } from '../../../shared-types'
+import type { ListQuery } from '../../../shared-types/common.types'
 import { AdminPanelQueryTransformPipe } from '../../pipes'
 
 import { AdminGoogleProfileDetailsService } from './admin-google-profile-details.service'

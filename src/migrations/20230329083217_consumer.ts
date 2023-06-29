@@ -1,7 +1,7 @@
 import { Knex } from 'knex'
 
 import { TableName } from '../models'
-import * as shared from '../shared-types'
+import { AccountType, ContractorKind, HowDidHearAboutUs } from '../shared-types/enum-like'
 
 import { addAuditColumns, addUUIDPrimaryKey } from './migration-utils'
 
@@ -14,17 +14,13 @@ export async function up(knex: Knex): Promise<void> {
   return knex.schema.createTable(tableName, table => {
     addUUIDPrimaryKey(table, knex)
 
-    table
-      .string(`account_type`)
-      .checkIn(Object.values(shared.AccountType), `account_type_values`)
-      .defaultTo(shared.AccountType.Contractor)
-      .notNullable()
-    table.string(`contractor_kind`).checkIn(Object.values(shared.ContractorKind), `contractor_kind_values`).defaultTo(null).nullable()
+    table.string(`account_type`).checkIn(Object.values(AccountType), `account_type_values`).defaultTo(AccountType.Contractor).notNullable()
+    table.string(`contractor_kind`).checkIn(Object.values(ContractorKind), `contractor_kind_values`).defaultTo(null).nullable()
     table.string(`email`).unique().notNullable()
     table.boolean(`verified`).defaultTo(false).notNullable()
     table.boolean(`legal_verified`).defaultTo(false).notNullable().comment(`only when user provide docs`)
 
-    table.string(`how_did_hear_about_us`).defaultTo(shared.HowDidHearAboutUs.Google).notNullable()
+    table.string(`how_did_hear_about_us`).defaultTo(HowDidHearAboutUs.Google).notNullable()
     table.string(`password`).notNullable()
     table.string(`salt`).notNullable()
     table.string(`first_name`).notNullable()

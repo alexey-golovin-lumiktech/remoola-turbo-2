@@ -1,11 +1,5 @@
 import moment from 'moment'
 
-export const SortDirection = { Asc: `asc`, Desc: `desc` } as const
-export type SortDirectionValue = (typeof SortDirection)[keyof typeof SortDirection]
-
-export const SortNulls = { NullsFirst: `NULLS FIRST`, NullsLast: `NULLS LAST` } as const
-export type SortNullsValue = (typeof SortNulls)[keyof typeof SortNulls]
-
 /* _________________________________________________________________________________________________________________________________________________________________________________________________________
 | STATUS        | DESCRIPTION                                                                                           | ACTIONS                                                                          |
 |---------------|-------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
@@ -15,36 +9,20 @@ export type SortNullsValue = (typeof SortNulls)[keyof typeof SortNulls]
 | void          | This invoice was a mistake, and must be canceled.                                                     | No actions possible.                                                             |
 | uncollectible | The customer is unlikely to pay this invoice (treat it as bad debt in your accounting process).       | You can void or pay the invoice.                                                 |
 |_______________|_______________________________________________________________________________________________________|_________________________________________________________________________________*/
-
 export const StripeInvoiceStatus = { Draft: `draft`, Open: `open`, Paid: `paid`, Uncollectible: `uncollectible`, Void: `void` } as const
-export type StripeInvoiceStatusValue = (typeof StripeInvoiceStatus)[keyof typeof StripeInvoiceStatus]
 
+export const SortDirection = { Asc: `asc`, Desc: `desc` } as const
+export const SortNulls = { NullsFirst: `NULLS FIRST`, NullsLast: `NULLS LAST` } as const
 export const InvoiceType = { Incoming: `incoming-only`, Outgoing: `outgoing-only` } as const
-export type InvoiceTypeValue = (typeof InvoiceType)[keyof typeof InvoiceType]
-
 export const AdminType = { Super: `super`, Admin: `admin` } as const
-export type AdminTypeValue = (typeof AdminType)[keyof typeof AdminType]
-
 export const AuthHeader = { Bearer: `Bearer`, Basic: `Basic` } as const
-export type AuthHeaderValue = (typeof AuthHeader)[keyof typeof AuthHeader]
-
 export const CredentialsSeparator = { Token: ` `, Credentials: `:` } as const
-export type CredentialsSeparatorValue = (typeof CredentialsSeparator)[keyof typeof CredentialsSeparator]
-
 export const AccountType = { Business: `business`, Contractor: `contractor` } as const
-export type AccountTypeValue = (typeof AccountType)[keyof typeof AccountType]
-
 export const ContractorKind = { Entity: `entity`, Individual: `individual` } as const
-export type ContractorKindValue = (typeof ContractorKind)[keyof typeof ContractorKind]
-
 export const HowDidHearAboutUs = { Google: `google`, Facebook: `facebook`, Internet: `internet` } as const
-export type HowDidHearAboutUsValue = (typeof HowDidHearAboutUs)[keyof typeof HowDidHearAboutUs]
-
 export const OrganizationSize = { Small: `small (1-10)`, Medium: `medium (11-100)`, Large: `large (101-500)` } as const
-export type OrganizationSizeValue = (typeof OrganizationSize)[keyof typeof OrganizationSize]
-
 export const ConsumerRole = { Manager: `manager`, Worker: `worker`, Owner: `owner`, Other: `other` } as const
-export type ConsumerRoleValue = (typeof ConsumerRole)[keyof typeof ConsumerRole]
+export const TransactionType = { CreditCard: `credit card`, BankTransfer: `bank transfer` } as const
 
 export const PaymentStatus = {
   Draft: `draft`,
@@ -54,17 +32,12 @@ export const PaymentStatus = {
   Denied: `denied`,
   Uncollectible: `uncollectible`,
 } as const
-export type PaymentStatusValue = (typeof PaymentStatus)[keyof typeof PaymentStatus]
-
-export const TransactionType = { CreditCard: `credit card`, BankTransfer: `bank transfer` } as const
-export type TransactionTypeValue = (typeof TransactionType)[keyof typeof TransactionType]
 
 export const Timeline = {
   Past90Days: moment().add(-90, `days`).valueOf(),
   Past30Days: moment().add(-30, `days`).valueOf(),
   Past7Days: moment().add(-7, `days`).valueOf(),
 } as const
-export type TimelineValue = (typeof Timeline)[keyof typeof Timeline]
 
 export const CurrencyCode = {
   AUD: `AUD`,
@@ -112,7 +85,6 @@ export const CurrencyCode = {
   JPY: `JPY`,
   RUB: `RUB`,
 } as const
-export type CurrencyCodeValue = (typeof CurrencyCode)[keyof typeof CurrencyCode]
 
 export const CardBrand = {
   Visa: `visa`,
@@ -129,4 +101,70 @@ export const CardBrand = {
   Dankort: `dankort`,
   VisaelEctron: `visaelectron`,
 } as const
-export type CardBrandValue = (typeof CardBrand)[keyof typeof CardBrand]
+
+export const StripeEvent = {
+  SetupIntentCreated: `setup_intent.created`,
+  SetupIntentSucceeded: `setup_intent.succeeded`,
+  PaymentIntentCreated: `payment_intent.created`,
+  InvoiceCreated: `invoice.created`,
+  InvoiceItemUpdated: `invoiceitem.updated`,
+  InvoiceItemCreated: `invoiceitem.created`,
+  CustomerUpdated: `customer.updated`,
+  CustomerCreated: `customer.created`,
+  CustomerSubscriptionUpdated: `customer.subscription.updated`,
+  PaymentIntentCanceled: `payment_intent.canceled`,
+  InvoiceVoided: `invoice.voided`,
+  InvoiceUpdated: `invoice.updated`,
+  InvoiceFinalized: `invoice.finalized`,
+  InvoicePaymentSucceeded: `invoice.payment_succeeded`,
+  InvoicePaid: `invoice.paid`,
+  PaymentIntentSucceeded: `payment_intent.succeeded`,
+  ChargeSucceeded: `charge.succeeded`,
+  PaymentMethodAttached: `payment_method.attached`,
+  SubscriptionScheduleUpdated: `subscription_schedule.updated`,
+  SubscriptionScheduleCreated: `subscription_schedule.created`,
+  CustomerSubscriptionCreated: `customer.subscription.created`,
+  PriceCreated: `price.created`,
+  PlanCreated: `plan.created`,
+  ProductCreated: `product.created`,
+  CustomerSourceCreated: `customer.source.created`,
+  SubscriptionScheduleReleased: `subscription_schedule.released`,
+  SubscriptionScheduleCanceled: `subscription_schedule.canceled`,
+  CustomerSubscriptionDeleted: `customer.subscription.deleted`,
+  InvoicePaymentFailed: `invoice.payment_failed`,
+  PaymentIntentPaymentFailed: `payment_intent.payment_failed`,
+  ChargeFailed: `charge.failed`,
+  SetupIntentSetupFailed: `setup_intent.setup_failed`,
+  SetupIntentCanceled: `setup_intent.canceled`,
+  QuoteFinalized: `quote.finalized`,
+  QuoteCreated: `quote.created`,
+  QuoteCanceled: `quote.canceled`,
+  QuoteAccepted: `quote.accepted`,
+  ProductUpdated: `product.updated`,
+  ProductDeleted: `product.deleted`,
+  PriceUpdated: `price.updated`,
+  PlanUpdated: `plan.updated`,
+  PriceDeleted: `price.deleted`,
+  PlanDeleted: `plan.deleted`,
+  BalanceAvailable: `balance.available`,
+  PaymentLinkUpdated: `payment_link.updated`,
+  PaymentLinkCreated: `payment_link.created`,
+  PaymentIntentAmountCapturableUpdated: `payment_intent.amount_capturable_updated`,
+  InvoicePaymentActionRequired: `invoice.payment_action_required`,
+  PaymentIntentRequiresAction: `payment_intent.requires_action`,
+  IdentityVerificationSessionRedacted: `identity.verification_session.redacted`,
+  IdentityVerificationSessionCreated: `identity.verification_session.created`,
+  IdentityVerificationSessionCanceled: `identity.verification_session.canceled`,
+  CustomerSourceUpdated: `customer.source.updated`,
+  CustomerDeleted: `customer.deleted`,
+  CheckoutSessionCompleted: `checkout.session.completed`,
+  CheckoutSessionAsyncPaymentFailed: `checkout.session.async_payment_failed`,
+  PaymentIntentProcessing: `payment_intent.processing`,
+  ChargePending: `charge.pending`,
+  ChargeRefunded: `charge.refunded`,
+  ChargeRefundUpdated: `charge.refund.updated`,
+  ChargeDisputeCreated: `charge.dispute.created`,
+  ChargeCaptured: `charge.captured`,
+} as const
+
+export type StripeEventValue = (typeof StripeEvent)[keyof typeof StripeEvent]

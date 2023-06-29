@@ -4,7 +4,7 @@ import { InjectKnex, Knex } from 'nestjs-knex'
 
 import { BaseRepository } from '../../../common'
 import { IConsumerModel, TableName } from '../../../models'
-import { ListQueryFilter } from '../../../shared-types'
+import type { ListQueryFilter } from '../../../shared-types/common.types'
 import { BillingDetailsRepository } from '../billing-details/billing-details.repository'
 import { GoogleProfilesRepository } from '../google-profiles/google-profiles.repository'
 

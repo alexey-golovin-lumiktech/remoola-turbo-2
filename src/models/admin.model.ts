@@ -1,5 +1,5 @@
 import { IBaseModel } from '../common'
-import { AdminTypeValue } from '../shared-types'
+import type { AdminTypeValue } from '../shared-types/common.types'
 
 export interface IAdminModel extends IBaseModel {
   email: string

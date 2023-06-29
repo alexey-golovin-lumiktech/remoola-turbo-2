@@ -1,5 +1,5 @@
 import { IBaseModel } from '../common'
-import { CurrencyCodeValue, PaymentStatusValue, TransactionTypeValue } from '../shared-types'
+import type { CurrencyCodeValue, PaymentStatusValue, TransactionTypeValue } from '../shared-types/common.types'
 
 export interface IPaymentRequestModel extends IBaseModel {
   requesterId: string

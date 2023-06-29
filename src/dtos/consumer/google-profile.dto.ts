@@ -3,7 +3,8 @@ import { Expose } from 'class-transformer'
 import { IsIn, IsString, ValidateIf } from 'class-validator'
 import { TokenPayload as ITokenPayload } from 'google-auth-library'
 
-import { AccountType, AccountTypeValue, ContractorKind, ContractorKindValue } from '../../shared-types'
+import type { AccountTypeValue, ContractorKindValue } from '../../shared-types/common.types'
+import { AccountType, ContractorKind } from '../../shared-types/enum-like'
 
 export type ITokenPayloadPick = Pick<
   ITokenPayload,

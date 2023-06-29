@@ -1,7 +1,7 @@
 import { Knex } from 'knex'
 
 import { TableName } from '../models'
-import { OrganizationSize } from '../shared-types'
+import { OrganizationSize } from '../shared-types/enum-like'
 
 import { addAuditColumns, addUUIDPrimaryKey } from './migration-utils'
 

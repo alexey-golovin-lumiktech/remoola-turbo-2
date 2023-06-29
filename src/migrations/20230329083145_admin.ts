@@ -1,7 +1,7 @@
 import { Knex } from 'knex'
 
 import { TableName } from '../models'
-import { AdminType } from '../shared-types'
+import { AdminType } from '../shared-types/enum-like'
 
 import { addAuditColumns, addUUIDPrimaryKey } from './migration-utils'
 

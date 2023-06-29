@@ -7,7 +7,7 @@ import { UpdatePaymentRequest } from '../../../dtos/admin'
 import { ListResponse } from '../../../dtos/common'
 import { TransformResponse } from '../../../interceptors'
 import { IPaymentRequestModel } from '../../../models'
-import { ListQuery } from '../../../shared-types'
+import type { ListQuery } from '../../../shared-types/common.types'
 import { AdminPanelQueryTransformPipe } from '../../pipes'
 
 import { AdminPaymentRequestService } from './admin-payment-request.service'

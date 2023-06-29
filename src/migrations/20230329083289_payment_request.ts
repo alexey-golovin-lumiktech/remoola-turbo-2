@@ -1,7 +1,7 @@
 import { Knex } from 'knex'
 
 import { TableName } from '../models'
-import { CurrencyCode, PaymentStatus, TransactionType } from '../shared-types'
+import { CurrencyCode, PaymentStatus, TransactionType } from '../shared-types/enum-like'
 
 import { addAuditColumns, addUUIDPrimaryKey } from './migration-utils'
 
