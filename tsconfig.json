@@ -8,7 +8,6 @@
     "target": "es2017",
     "sourceMap": true,
     "outDir": "./dist",
-    "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": false,
@@ -21,16 +20,16 @@
     "noFallthroughCasesInSwitch": false,
     "paths": {
       "@wirebill/back-and-front": [
-        "libs/back-and-front/src"
+        "./libs/back-and-front/src"
       ],
       "@wirebill/back-and-front/*": [
-        "libs/back-and-front/src/*"
+        "./libs/back-and-front/src/*"
       ],
       "@wirebill/pdf-generator-package": [
-        "libs/pdf-generator-package/src"
+        "./libs/pdf-generator-package/src"
       ],
       "@wirebill/pdf-generator-package/*": [
-        "libs/pdf-generator-package/src/*"
+        "./libs/pdf-generator-package/src/*"
       ]
     },
   },
