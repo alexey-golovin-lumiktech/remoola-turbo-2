@@ -3,7 +3,7 @@ import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { Response as IExpressResponse } from 'express'
 
 import { ADMIN } from '../../../dtos'
-import { UpdatePayment } from '../../../dtos/admin'
+import { UpdatePaymentRequest } from '../../../dtos/admin'
 import { ListResponse } from '../../../dtos/common'
 import { TransformResponse } from '../../../interceptors'
 import { IPaymentRequestModel } from '../../../models'
@@ -18,12 +18,12 @@ export class AdminPaymentRequestController {
   constructor(@Inject(AdminPaymentRequestService) private readonly service: AdminPaymentRequestService) {}
 
   @Get(`/`)
-  @TransformResponse(ListResponse<ADMIN.PaymentResponse>)
-  @ApiOkResponse({ type: ListResponse<ADMIN.PaymentResponse> })
+  @TransformResponse(ListResponse<ADMIN.PaymentRequestResponse>)
+  @ApiOkResponse({ type: ListResponse<ADMIN.PaymentRequestResponse> })
   async findAndCountAll(
     @Query(new AdminPanelQueryTransformPipe()) query: ListQuery<IPaymentRequestModel>,
     @Response() res: IExpressResponse,
-  ): Promise<ListResponse<ADMIN.PaymentResponse>> {
+  ): Promise<ListResponse<ADMIN.PaymentRequestResponse>> {
     const result = await this.service.repository.findAndCountAll(query)
     res.set(`Content-Range`, result.count.toString())
     res.send(result.data)
@@ -31,13 +31,13 @@ export class AdminPaymentRequestController {
   }
 
   @Get(`/:paymentId`)
-  @ApiOkResponse({ type: ADMIN.PaymentResponse })
-  getById(@Param(`paymentId`) paymentId: string): Promise<ADMIN.PaymentResponse> {
+  @ApiOkResponse({ type: ADMIN.PaymentRequestResponse })
+  getById(@Param(`paymentId`) paymentId: string): Promise<ADMIN.PaymentRequestResponse> {
     return this.service.repository.findById(paymentId)
   }
 
   @Patch(`/:paymentId`)
-  updatePaymentStatus(@Param(`paymentId`) paymentId: string, @Body() body: UpdatePayment) {
+  updatePaymentStatus(@Param(`paymentId`) paymentId: string, @Body() body: UpdatePaymentRequest) {
     return this.service.repository.updateById(paymentId, body)
   }
 }

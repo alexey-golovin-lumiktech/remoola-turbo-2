@@ -1,8 +1,8 @@
 import { Body, Controller, Get, Inject, Patch, Query } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
+import { PaymentRequestListResponse } from 'src/dtos/consumer'
 
 import { CONSUMER } from '../../../dtos'
-import { ListResponse } from '../../../dtos/common'
 import { ReqAuthIdentity } from '../../../guards/auth.guard'
 import { TransformResponse } from '../../../interceptors'
 import { IConsumerModel, IPaymentRequestModel } from '../../../models'
@@ -46,10 +46,12 @@ export class ConsumerController {
   }
 
   @Get(`/payment-request`)
+  @ApiOkResponse({ type: PaymentRequestListResponse })
+  @TransformResponse(PaymentRequestListResponse)
   listPaymentRequests(
     @ReqAuthIdentity() identity: IConsumerModel,
     @Query() query: ListQuery<IPaymentRequestModel>,
-  ): Promise<ListResponse<CONSUMER.PaymentResponse>> {
+  ): Promise<PaymentRequestListResponse> {
     return this.paymentService.listPaymentRequests(identity.id, query)
   }
 }

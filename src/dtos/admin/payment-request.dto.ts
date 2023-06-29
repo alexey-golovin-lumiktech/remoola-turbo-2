@@ -7,7 +7,7 @@ import { IPaymentRequestModel } from '../../models'
 import { PaymentStatusValue, TransactionTypeValue } from '../../shared-types'
 import { BaseModel } from '../common'
 
-class Payment extends BaseModel implements IPaymentRequestModel {
+class PaymentRequest extends BaseModel implements IPaymentRequestModel {
   @Expose()
   @ApiProperty()
   @IsString()
@@ -57,6 +57,6 @@ class Payment extends BaseModel implements IPaymentRequestModel {
   taxId: string
 }
 
-export class PaymentResponse extends OmitType(Payment, [`deletedAt`] as const) {}
+export class PaymentRequestResponse extends OmitType(PaymentRequest, [`deletedAt`] as const) {}
 
-export class UpdatePayment extends PickType(Payment, [`status`] as const) {}
+export class UpdatePaymentRequest extends PickType(PaymentRequest, [`status`] as const) {}

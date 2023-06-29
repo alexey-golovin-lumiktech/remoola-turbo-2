@@ -19,7 +19,10 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
     super(repository)
   }
 
-  async listPaymentRequests(consumerId: string, query: ListQuery<IPaymentRequestModel>): Promise<ListResponse<CONSUMER.PaymentResponse>> {
+  async listPaymentRequests(
+    consumerId: string,
+    query: ListQuery<IPaymentRequestModel>,
+  ): Promise<ListResponse<CONSUMER.PaymentRequestResponse>> {
     const baseQuery = this.repository.knex
       .from(`${TableName.PaymentRequest} as p`)
       .join(`${TableName.Consumer} as requester`, `requester.id`, `p.requester_id`)

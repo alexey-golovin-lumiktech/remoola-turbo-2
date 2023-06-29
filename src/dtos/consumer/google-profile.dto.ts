@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
-import { IsString } from 'class-validator'
+import { IsIn, IsString, ValidateIf } from 'class-validator'
 import { TokenPayload as ITokenPayload } from 'google-auth-library'
 
 import { AccountType, AccountTypeValue, ContractorKind, ContractorKindValue } from '../../shared-types'
@@ -48,6 +48,8 @@ export class GoogleSignin {
   accountType?: AccountTypeValue
 
   @Expose()
-  @ApiProperty({ enum: Object.values(ContractorKind), required: false })
-  contractorKind?: ContractorKindValue
+  @ApiProperty({ required: false, default: null })
+  @ValidateIf((_, value) => value != null)
+  @IsIn(Object.values(ContractorKind))
+  contractorKind?: ContractorKindValue = null
 }

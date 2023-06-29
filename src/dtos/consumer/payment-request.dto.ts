@@ -1,26 +1,24 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger'
 import { ListQueryFilter, PaymentStatus, SortDirectionValue, TransactionType } from '@wirebill/back-and-front'
-import { Expose } from 'class-transformer'
-import { IsIn, IsNotEmpty, IsNumber, IsString } from 'class-validator'
+import { Expose, Type } from 'class-transformer'
+import { IsDate, IsIn, IsNotEmpty, IsNumber, IsString } from 'class-validator'
 
 import { IConsumerModel, IPaymentRequestModel } from '../../models'
 import { CurrencyCode, CurrencyCodeValue, PaymentStatusValue, TransactionTypeValue } from '../../shared-types'
-import { BaseModel } from '../common'
+import { BaseModel, ListResponse } from '../common'
 
-class Payment extends BaseModel implements IPaymentRequestModel {
+class PaymentRequest extends BaseModel implements IPaymentRequestModel {
+  @Expose()
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
   requesterId: string
-  payerId: string
-  @Expose()
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  requester: string
 
   @Expose()
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
-  payer: string
+  payerId: string
 
   @Expose()
   @ApiProperty()
@@ -40,6 +38,7 @@ class Payment extends BaseModel implements IPaymentRequestModel {
 
   @Expose()
   @ApiProperty()
+  @IsDate()
   sentDate: Date
 
   @Expose()
@@ -59,9 +58,16 @@ class Payment extends BaseModel implements IPaymentRequestModel {
   taxId: string
 }
 
-export class PaymentResponse extends OmitType(Payment, [`deletedAt`] as const) {}
+export class PaymentRequestResponse extends OmitType(PaymentRequest, [`deletedAt`] as const) {}
 
-export class PaymentsListQuery {
+export class PaymentRequestListResponse extends ListResponse<PaymentRequestResponse> {
+  @Expose()
+  @ApiProperty({ type: PaymentRequestResponse })
+  @Type(() => PaymentRequestResponse)
+  data: PaymentRequestResponse[]
+}
+
+export class PaymentRequestsListQuery {
   paging: { limit: number; offset: number }
   sorting: [{ field: string; direction: SortDirectionValue }]
   filter: ListQueryFilter<IConsumerModel>

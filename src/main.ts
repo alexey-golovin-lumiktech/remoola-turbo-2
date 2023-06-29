@@ -24,12 +24,7 @@ async function bootstrap() {
   })
 
   const customSiteTitle = `Wirebill`
-  const config = new DocumentBuilder()
-    .setTitle(customSiteTitle)
-    .setDescription(`Wirebill REST API`)
-    .addBasicAuth()
-    .setVersion(`1.0.0`)
-    .build()
+  const config = new DocumentBuilder().setTitle(customSiteTitle).setDescription(`Wirebill REST API`).setVersion(`1.0.0`).build()
 
   const document = SwaggerModule.createDocument(app, config, {
     deepScanRoutes: true,

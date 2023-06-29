@@ -1,13 +1,26 @@
 import { ApiProperty, PickType } from '@nestjs/swagger'
-import { Exclude, Expose } from 'class-transformer'
+import { Expose } from 'class-transformer'
+import { IsEmail, IsIn, ValidateIf } from 'class-validator'
 
+import * as constants from '../../constants'
 import { IConsumerModel } from '../../models'
 import { AccountType, AccountTypeValue, ContractorKind, ContractorKindValue } from '../../shared-types'
 import { BaseModel } from '../common'
 
 export class Consumer extends BaseModel implements IConsumerModel {
   @Expose()
+  @ApiProperty({ enum: Object.values(AccountType) })
+  accountType: AccountTypeValue
+
+  @Expose()
+  @ApiProperty({ required: false, default: null })
+  @ValidateIf((_, value) => value != null)
+  @IsIn(Object.values(ContractorKind))
+  contractorKind?: ContractorKindValue = null
+
+  @Expose()
   @ApiProperty()
+  @IsEmail({}, { message: constants.INVALID_EMAIL })
   email: string
 
   @Expose()
@@ -18,13 +31,17 @@ export class Consumer extends BaseModel implements IConsumerModel {
   @ApiProperty({ default: false })
   legalVerified = false
 
-  @Exclude()
-  @ApiProperty()
-  password?: string
+  @Expose()
+  @ApiProperty({ default: null, required: false })
+  password?: string = null
 
-  @Exclude()
-  @ApiProperty()
-  salt?: string
+  @Expose()
+  @ApiProperty({ default: null, required: false })
+  salt?: string = null
+
+  @Expose()
+  @ApiProperty({ required: true })
+  howDidHearAboutUs: string
 
   @Expose()
   @ApiProperty()
@@ -33,14 +50,6 @@ export class Consumer extends BaseModel implements IConsumerModel {
   @Expose()
   @ApiProperty()
   lastName?: string
-
-  @Expose()
-  @ApiProperty({ enum: Object.values(AccountType) })
-  accountType: AccountTypeValue
-
-  @Expose()
-  @ApiProperty({ enum: Object.values(ContractorKind), default: null, required: false })
-  contractorKind?: ContractorKindValue = null
 
   @Expose()
   @ApiProperty({ required: false, default: null })

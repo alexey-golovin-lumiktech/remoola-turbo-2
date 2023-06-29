@@ -2,12 +2,13 @@ import { IBaseModel } from '../common'
 import { AccountTypeValue, ContractorKindValue } from '../shared-types'
 
 export interface IConsumerModel extends IBaseModel {
+  accountType: AccountTypeValue
+  contractorKind?: ContractorKindValue
   email: string
   verified: boolean
   legalVerified: boolean
-  accountType: AccountTypeValue
+  howDidHearAboutUs: string
 
-  contractorKind?: ContractorKindValue
   password?: string
   salt?: string
   firstName?: string
