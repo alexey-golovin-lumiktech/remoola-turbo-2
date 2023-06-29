@@ -1,9 +1,9 @@
 import { Body, Controller, Get, Inject, Param, Post, Put, Query, Response } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { Response as IExpressResponse } from 'express'
-import { ListResponse } from 'src/dtos/common'
 
 import { ADMIN } from '../../../dtos'
+import { ListResponse } from '../../../dtos/common'
 import { TransformResponse } from '../../../interceptors'
 import { IAdminModel } from '../../../models'
 import { ListQuery } from '../../../shared-types'

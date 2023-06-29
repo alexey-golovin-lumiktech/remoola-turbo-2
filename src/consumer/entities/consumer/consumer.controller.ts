@@ -1,8 +1,8 @@
 import { Body, Controller, Get, Inject, Patch, Query } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
-import { PaymentRequestListResponse } from 'src/dtos/consumer'
 
 import { CONSUMER } from '../../../dtos'
+import { PaymentRequestListResponse } from '../../../dtos/consumer'
 import { ReqAuthIdentity } from '../../../guards/auth.guard'
 import { TransformResponse } from '../../../interceptors'
 import { IConsumerModel, IPaymentRequestModel } from '../../../models'
