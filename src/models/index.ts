@@ -1,4 +1,4 @@
-import { OneOfObjectValues } from '../shared-types/common.types'
+import { OneOfObjectValues } from '@wirebill/shared-common/common.types'
 
 export * from './admin.model'
 export * from './consumer.model'

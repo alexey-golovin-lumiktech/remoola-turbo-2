@@ -2,12 +2,13 @@ import { Body, Controller, Get, Inject, Param, Patch, Query, Response } from '@n
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { Response as IExpressResponse } from 'express'
 
+import { ListQuery } from '@wirebill/shared-common/common.types'
+
 import { ADMIN } from '../../../dtos'
 import { UpdatePaymentRequest } from '../../../dtos/admin'
 import { ListResponse } from '../../../dtos/common'
 import { TransformResponse } from '../../../interceptors'
 import { IPaymentRequestModel } from '../../../models'
-import type { ListQuery } from '../../../shared-types/common.types'
 import { AdminPanelQueryTransformPipe } from '../../pipes'
 
 import { AdminPaymentRequestService } from './admin-payment-request.service'

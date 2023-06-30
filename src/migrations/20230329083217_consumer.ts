@@ -1,7 +1,8 @@
 import { Knex } from 'knex'
 
+import { AccountType, ContractorKind, HowDidHearAboutUs } from '@wirebill/shared-common/enum-like'
+
 import { TableName } from '../models'
-import { AccountType, ContractorKind, HowDidHearAboutUs } from '../shared-types/enum-like'
 
 import { addAuditColumns, addUUIDPrimaryKey } from './migration-utils'
 

@@ -2,9 +2,10 @@ import { Inject, Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { InjectKnex, Knex } from 'nestjs-knex'
 
+import type { ListQueryFilter } from '@wirebill/shared-common/common.types'
+
 import { BaseRepository } from '../../../common'
 import { IConsumerModel, TableName } from '../../../models'
-import type { ListQueryFilter } from '../../../shared-types/common.types'
 import { BillingDetailsRepository } from '../billing-details/billing-details.repository'
 import { GoogleProfilesRepository } from '../google-profiles/google-profiles.repository'
 

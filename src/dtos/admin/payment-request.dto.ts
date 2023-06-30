@@ -2,9 +2,10 @@ import { ApiProperty, OmitType, PickType } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 import { IsIn, IsNotEmpty, IsNumber, IsString } from 'class-validator'
 
+import type { CurrencyCodeValue, PaymentStatusValue, TransactionTypeValue } from '@wirebill/shared-common/common.types'
+import { CurrencyCode, PaymentStatus, TransactionType } from '@wirebill/shared-common/enum-like'
+
 import { IPaymentRequestModel } from '../../models'
-import type { CurrencyCodeValue, PaymentStatusValue, TransactionTypeValue } from '../../shared-types/common.types'
-import { CurrencyCode, PaymentStatus, TransactionType } from '../../shared-types/enum-like'
 import { BaseModel } from '../common'
 
 class PaymentRequest extends BaseModel implements IPaymentRequestModel {

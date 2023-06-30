@@ -2,11 +2,12 @@ import { Body, Controller, Get, Inject, Param, Post, Put, Query, Response } from
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { Response as IExpressResponse } from 'express'
 
+import { ListQuery } from '@wirebill/shared-common/common.types'
+
 import { ADMIN } from '../../../dtos'
 import { ListResponse } from '../../../dtos/common'
 import { TransformResponse } from '../../../interceptors'
 import { IAdminModel } from '../../../models'
-import type { ListQuery } from '../../../shared-types/common.types'
 import { AdminPanelQueryTransformPipe } from '../../pipes'
 
 import { AdminService } from './admin.service'

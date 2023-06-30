@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ISendMailOptions, MailerService } from '@nestjs-modules/mailer'
+
 import { generatePdf } from '@wirebill/pdf-generator-package'
 
 import { invoiceToHtml, outgoingInvoiceToHtml, signupCompletionToHtml } from '../../utils'

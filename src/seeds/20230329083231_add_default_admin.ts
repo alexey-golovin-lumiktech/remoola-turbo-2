@@ -1,7 +1,8 @@
 import { Knex } from 'knex'
 
+import { AdminType } from '@wirebill/shared-common/enum-like'
+
 import { TableName } from '../models'
-import { AdminType } from '../shared-types/enum-like'
 import * as utils from '../utils'
 
 export async function seed(knex: Knex): Promise<void> {

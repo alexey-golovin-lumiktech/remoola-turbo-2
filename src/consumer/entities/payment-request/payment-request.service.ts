@@ -1,10 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common'
 
+import type { ListQuery } from '@wirebill/shared-common/common.types'
+
 import { BaseService } from '../../../common'
 import { CONSUMER } from '../../../dtos'
 import { ListResponse } from '../../../dtos/common'
 import { IPaymentRequestModel, TableName } from '../../../models'
-import { ListQuery } from '../../../shared-types/common.types'
 import { getKnexCount } from '../../../utils'
 import { ConsumerService } from '../consumer/consumer.service'
 

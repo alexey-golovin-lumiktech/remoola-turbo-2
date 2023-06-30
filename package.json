@@ -42,9 +42,10 @@
       "ts"
     ],
     "moduleNameMapper": {
-      "^@wirebill/shared(|/.*)$": "<rootDir>/libs/shared/src/$1",
-      "^@wirebill/back-and-front(|/.*)$": "<rootDir>/libs/back-and-front/src/$1",
-      "^@wirebill/pdf-generator-package(|/.*)$": "<rootDir>/libs/pdf-generator-package/src/$1"
+      "^@wirebill/pdf-generator-package(|/.*)$": "<rootDir>/libs/pdf-generator-package/src/$1",
+      "^@wirebill/shared-admin(|/.*)$": "<rootDir>/libs/shared-admin/src/$1",
+      "^@wirebill/shared-consumer(|/.*)$": "<rootDir>/libs/shared-consumer/src/$1",
+      "^@wirebill/shared-common(|/.*)$": "<rootDir>/libs/shared-common/src/$1"
     },
     "rootDir": ".",
     "roots": [

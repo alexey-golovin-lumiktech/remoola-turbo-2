@@ -1,7 +1,8 @@
 import { Knex } from 'knex'
 
+import { CurrencyCode, PaymentStatus, TransactionType } from '@wirebill/shared-common/enum-like'
+
 import { TableName } from '../models'
-import { CurrencyCode, PaymentStatus, TransactionType } from '../shared-types/enum-like'
 
 import { addAuditColumns, addUUIDPrimaryKey } from './migration-utils'
 

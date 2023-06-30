@@ -1,5 +1,6 @@
+import type { AdminTypeValue } from '@wirebill/shared-common/common.types'
+
 import { IBaseModel } from '../common'
-import type { AdminTypeValue } from '../shared-types/common.types'
 
 export interface IAdminModel extends IBaseModel {
   email: string

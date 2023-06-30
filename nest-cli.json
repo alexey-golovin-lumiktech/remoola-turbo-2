@@ -3,21 +3,15 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
   "compilerOptions": {
-    "deleteOutDir": true
+    "deleteOutDir": true,
+    "webpack": false,
+    "builder": "tsc"
   },
   "generateOptions": {
-    "spec": false
+    "spec": false,
+    "flat": true
   },
   "projects": {
-    "back-and-front": {
-      "type": "library",
-      "root": "./libs/back-and-front",
-      "entryFile": "index",
-      "sourceRoot": "./libs/back-and-front/src",
-      "compilerOptions": {
-        "tsConfigPath": "./libs/back-and-front/tsconfig.lib.json"
-      }
-    },
     "pdf-generator-package": {
       "type": "library",
       "root": "./libs/pdf-generator-package",
@@ -25,6 +19,33 @@
       "sourceRoot": "./libs/pdf-generator-package/src",
       "compilerOptions": {
         "tsConfigPath": "./libs/pdf-generator-package/tsconfig.lib.json"
+      }
+    },
+    "shared-admin": {
+      "type": "library",
+      "root": "./libs/shared-admin",
+      "entryFile": "index",
+      "sourceRoot": "./libs/shared-admin/src",
+      "compilerOptions": {
+        "tsConfigPath": "./libs/shared-admin/tsconfig.lib.json"
+      }
+    },
+    "shared-consumer": {
+      "type": "library",
+      "root": "./libs/shared-consumer",
+      "entryFile": "index",
+      "sourceRoot": "./libs/shared-consumer/src",
+      "compilerOptions": {
+        "tsConfigPath": "./libs/shared-consumer/tsconfig.lib.json"
+      }
+    },
+    "shared-common": {
+      "type": "library",
+      "root": "./libs/shared-common",
+      "entryFile": "index",
+      "sourceRoot": "./libs/shared-common/src",
+      "compilerOptions": {
+        "tsConfigPath": "./libs/shared-common/tsconfig.lib.json"
       }
     }
   }

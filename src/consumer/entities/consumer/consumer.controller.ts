@@ -1,12 +1,13 @@
 import { Body, Controller, Get, Inject, Patch, Query } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 
+import type { ListQuery } from '@wirebill/shared-common/common.types'
+
 import { CONSUMER } from '../../../dtos'
 import { PaymentRequestListResponse } from '../../../dtos/consumer'
 import { ReqAuthIdentity } from '../../../guards/auth.guard'
 import { TransformResponse } from '../../../interceptors'
 import { IConsumerModel, IPaymentRequestModel } from '../../../models'
-import type { ListQuery } from '../../../shared-types/common.types'
 import { BillingDetailsService } from '../billing-details/billing-details.service'
 import { PaymentRequestService } from '../payment-request/payment-request.service'
 

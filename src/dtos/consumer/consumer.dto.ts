@@ -2,10 +2,11 @@ import { ApiProperty, OmitType } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 import { IsEmail, IsIn, ValidateIf } from 'class-validator'
 
+import type { AccountTypeValue, ContractorKindValue } from '@wirebill/shared-common/common.types'
+import { AccountType, ContractorKind } from '@wirebill/shared-common/enum-like'
+
 import * as constants from '../../constants'
 import { IConsumerModel } from '../../models'
-import type { AccountTypeValue, ContractorKindValue } from '../../shared-types/common.types'
-import { AccountType, ContractorKind } from '../../shared-types/enum-like'
 import { BaseModel } from '../common/base-model.dto'
 
 class Consumer extends BaseModel implements IConsumerModel {

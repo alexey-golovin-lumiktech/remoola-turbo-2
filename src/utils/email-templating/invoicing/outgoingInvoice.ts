@@ -1,4 +1,5 @@
-import { CurrencyCode } from '../../../shared-types/enum-like'
+import { CurrencyCode } from '@wirebill/shared-common/enum-like'
+
 import { formatToCurrency } from '../..'
 
 const html = `

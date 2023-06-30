@@ -4,12 +4,13 @@ import { JwtService } from '@nestjs/jwt'
 import { Request as IExpressRequest } from 'express'
 import { Observable } from 'rxjs'
 
+import type { AuthHeaderValue } from '@wirebill/shared-common/common.types'
+import { AuthHeader, CredentialsSeparator } from '@wirebill/shared-common/enum-like'
+
 import { AdminService } from '../admin/entities/admin/admin.service'
 import { ConsumerService } from '../consumer/entities/consumer/consumer.service'
 import { IS_PUBLIC } from '../decorators'
 import { IAdminModel, IConsumerModel } from '../models'
-import type { AuthHeaderValue } from '../shared-types/common.types'
-import { AuthHeader, CredentialsSeparator } from '../shared-types/enum-like'
 import { validatePassword } from '../utils'
 
 export const REQUEST_AUTH_IDENTITY = Symbol(`REQUEST_AUTH_IDENTITY`)

@@ -1,6 +1,7 @@
 import moment from 'moment'
 
-import { CurrencyCode } from '../../../shared-types/enum-like'
+import { CurrencyCode } from '@wirebill/shared-common/enum-like'
+
 import { formatToCurrency } from '../../../utils'
 
 import * as invoiceItemToHtml from './invoiceItem'

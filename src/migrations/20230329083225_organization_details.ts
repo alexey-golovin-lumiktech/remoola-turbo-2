@@ -1,7 +1,8 @@
 import { Knex } from 'knex'
 
+import { OrganizationSize } from '@wirebill/shared-common/enum-like'
+
 import { TableName } from '../models'
-import { OrganizationSize } from '../shared-types/enum-like'
 
 import { addAuditColumns, addUUIDPrimaryKey } from './migration-utils'
 

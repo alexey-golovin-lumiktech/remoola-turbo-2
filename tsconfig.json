@@ -19,21 +19,37 @@
     "experimentalDecorators": true,
     "noFallthroughCasesInSwitch": false,
     "paths": {
-      "@wirebill/back-and-front": [
-        "./libs/back-and-front/src"
-      ],
-      "@wirebill/back-and-front/*": [
-        "./libs/back-and-front/src/*"
-      ],
       "@wirebill/pdf-generator-package": [
         "./libs/pdf-generator-package/src"
       ],
       "@wirebill/pdf-generator-package/*": [
         "./libs/pdf-generator-package/src/*"
+      ],
+      "@wirebill/shared-admin": [
+        "./libs/shared-admin/src"
+      ],
+      "@wirebill/shared-admin/*": [
+        "./libs/shared-admin/src/*"
+      ],
+      "@wirebill/shared-consumer": [
+        "./libs/shared-consumer/src"
+      ],
+      "@wirebill/shared-consumer/*": [
+        "./libs/shared-consumer/src/*"
+      ],
+      "@wirebill/shared-common": [
+        "./libs/shared-common/src"
+      ],
+      "@wirebill/shared-common/*": [
+        "./libs/shared-common/src/*"
       ]
     },
+    "baseUrl": "./"
   },
-  "exclude": ["node_modules", "**/*.spec.ts"],
+  "exclude": [
+    "node_modules",
+    "**/*.spec.ts"
+  ],
   "include": [
     "global-typings.d.ts",
     ".eslintrc.js",

@@ -5,11 +5,12 @@ import { Response as IExpressResponse } from 'express'
 import { OAuth2Client } from 'google-auth-library'
 import * as uuid from 'uuid'
 
+import { HowDidHearAboutUs } from '@wirebill/shared-common/enum-like'
+
 import { IBaseModel } from '../../common'
 import { MailingService } from '../../common-shared-modules/mailing/mailing.service'
 import { CONSUMER } from '../../dtos'
 import { IConsumerModel } from '../../models'
-import { HowDidHearAboutUs } from '../../shared-types/enum-like'
 import * as utils from '../../utils'
 import { ConsumerService } from '../entities/consumer/consumer.service'
 import { GoogleProfilesService } from '../entities/google-profiles/google-profiles.service'

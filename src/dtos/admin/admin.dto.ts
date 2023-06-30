@@ -2,9 +2,10 @@ import { ApiProperty, OmitType, PickType } from '@nestjs/swagger'
 import { Exclude, Expose } from 'class-transformer'
 import { IsIn, IsString } from 'class-validator'
 
+import type { AdminTypeValue } from '@wirebill/shared-common/common.types'
+import { AdminType } from '@wirebill/shared-common/enum-like'
+
 import { IAdminModel } from '../../models'
-import type { AdminTypeValue } from '../../shared-types/common.types'
-import { AdminType } from '../../shared-types/enum-like'
 import { BaseModel } from '../common'
 
 class Admin extends BaseModel implements IAdminModel {
