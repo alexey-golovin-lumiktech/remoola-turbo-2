@@ -166,5 +166,3 @@ export const StripeEvent = {
   ChargeDisputeCreated: `charge.dispute.created`,
   ChargeCaptured: `charge.captured`,
 } as const
-
-export type StripeEventValue = (typeof StripeEvent)[keyof typeof StripeEvent]
