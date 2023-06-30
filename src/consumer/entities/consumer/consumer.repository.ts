@@ -1,44 +1,17 @@
-import { Inject, Injectable, Logger } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { InjectKnex, Knex } from 'nestjs-knex'
 
-import type { ListQueryFilter } from '@wirebill/shared-common/common.types'
-
 import { BaseRepository } from '../../../common'
 import { IConsumerModel, TableName } from '../../../models'
-import { BillingDetailsRepository } from '../billing-details/billing-details.repository'
-import { GoogleProfilesRepository } from '../google-profiles/google-profiles.repository'
 
 @Injectable()
 export class ConsumerRepository extends BaseRepository<IConsumerModel> {
   private readonly logger = new Logger(ConsumerRepository.name)
   private readonly mode: string
 
-  constructor(
-    @InjectKnex() knex: Knex,
-    @Inject(BillingDetailsRepository) private readonly billingDetailsRepository: BillingDetailsRepository,
-    @Inject(GoogleProfilesRepository) private readonly googleProfilesRepository: GoogleProfilesRepository,
-    private readonly configService: ConfigService,
-  ) {
+  constructor(@InjectKnex() knex: Knex, private readonly configService: ConfigService) {
     super(knex, TableName.Consumer)
     this.mode = this.configService.get<string>(`NODE_ENV`)
-  }
-
-  async completelyDelete(filter: ListQueryFilter<IConsumerModel>/* eslint-disable-line */): Promise<boolean> {
-    if (this.mode == `development`) {
-      // const [consumer] = await this.update(filter, { googleProfileId: null })
-      // if (!consumer) return true
-
-      // @IMPORTANT NOTE: Coming soon
-      // const [deletedAddress] = await this.addressesRepository.completelyDelete({ consumerId: consumer.id })
-      // if (deletedAddress) await this.billingDetailsRepository.completelyDelete({ consumerId: consumer.id })
-
-      // const [deletedProfile] = await this.googleProfilesRepository.completelyDelete({ consumerId: consumer.id })
-      // if (deletedProfile) await this.completelyDeleteById(consumer.id)
-
-      return true
-    }
-    this.logger.warn(`Completely deleting entity allowed only in development mode`)
-    return true
   }
 }
