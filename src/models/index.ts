@@ -1,5 +1,3 @@
-import { OneOfObjectValues } from '@wirebill/shared-common/common.types'
-
 export * from './admin.model'
 export * from './consumer.model'
 export * from './google-profile.model'
@@ -9,7 +7,7 @@ export * from './organization-details.model'
 export * from './billing-details.mode'
 export * from './payment-request.model'
 
-export type TableNameValue = OneOfObjectValues<typeof TableName>
+export type TableNameValue = (typeof TableName)[keyof typeof TableName]
 export const TableName = {
   Admin: `admin`,
   Consumer: `consumer`,

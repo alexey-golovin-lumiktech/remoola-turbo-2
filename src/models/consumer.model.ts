@@ -1,9 +1,9 @@
-import type { AccountTypeValue, ContractorKindValue } from '@wirebill/shared-common/common.types'
+import type { AccountTypeValue, ContractorKindValue } from '@wirebill/shared-common'
 
 import { IBaseModel } from '../common'
 
 export interface IConsumerModel extends IBaseModel {
-  accountType: AccountTypeValue
+  accountType?: AccountTypeValue
   contractorKind?: ContractorKindValue
   email: string
   verified: boolean

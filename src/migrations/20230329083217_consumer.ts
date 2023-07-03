@@ -1,6 +1,6 @@
 import { Knex } from 'knex'
 
-import { AccountType, ContractorKind, HowDidHearAboutUs } from '@wirebill/shared-common/enum-like'
+import { AccountType, ContractorKind, HowDidHearAboutUs } from '@wirebill/shared-common'
 
 import { TableName } from '../models'
 
@@ -15,7 +15,7 @@ export async function up(knex: Knex): Promise<void> {
   return knex.schema.createTable(tableName, table => {
     addUUIDPrimaryKey(table, knex)
 
-    table.string(`account_type`).checkIn(Object.values(AccountType), `account_type_values`).defaultTo(AccountType.Contractor).notNullable()
+    table.string(`account_type`).checkIn(Object.values(AccountType), `account_type_values`).defaultTo(null).nullable()
     table.string(`contractor_kind`).checkIn(Object.values(ContractorKind), `contractor_kind_values`).defaultTo(null).nullable()
     table.string(`email`).unique().notNullable()
     table.boolean(`verified`).defaultTo(false).notNullable()
