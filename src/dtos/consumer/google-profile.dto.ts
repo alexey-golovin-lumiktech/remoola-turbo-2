@@ -3,8 +3,7 @@ import { Expose } from 'class-transformer'
 import { IsIn, IsString, ValidateIf } from 'class-validator'
 import { TokenPayload as ITokenPayload } from 'google-auth-library'
 
-import type { AccountTypeValue, ContractorKindValue } from '@wirebill/shared-common/common.types'
-import { AccountType, ContractorKind } from '@wirebill/shared-common/enum-like'
+import { AccountType, AccountTypeValue, ContractorKind, ContractorKindValue } from '@wirebill/shared-common'
 
 export type ITokenPayloadPick = Pick<
   ITokenPayload,
@@ -45,8 +44,10 @@ export class GoogleSignin {
   credential: string
 
   @Expose()
-  @ApiProperty({ enum: Object.values(AccountType), required: false })
-  accountType?: AccountTypeValue
+  @ApiProperty({ required: false, default: null })
+  @ValidateIf((_, value) => value != null)
+  @IsIn(Object.values(AccountType))
+  accountType?: AccountTypeValue = null
 
   @Expose()
   @ApiProperty({ required: false, default: null })

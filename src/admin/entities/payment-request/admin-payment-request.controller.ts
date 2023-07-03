@@ -2,7 +2,7 @@ import { Body, Controller, Get, Inject, Param, Patch, Query, Response } from '@n
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { Response as IExpressResponse } from 'express'
 
-import { ListQuery } from '@wirebill/shared-common/common.types'
+import { ListQuery } from '@wirebill/shared-common'
 
 import { ADMIN } from '../../../dtos'
 import { UpdatePaymentRequest } from '../../../dtos/admin'

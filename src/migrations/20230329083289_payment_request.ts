@@ -1,6 +1,6 @@
 import { Knex } from 'knex'
 
-import { CurrencyCode, PaymentStatus, TransactionType } from '@wirebill/shared-common/enum-like'
+import { CurrencyCode, PaymentStatus, TransactionType } from '@wirebill/shared-common'
 
 import { TableName } from '../models'
 

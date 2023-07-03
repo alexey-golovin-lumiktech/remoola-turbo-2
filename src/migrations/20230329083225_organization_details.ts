@@ -1,6 +1,6 @@
 import { Knex } from 'knex'
 
-import { OrganizationSize } from '@wirebill/shared-common/enum-like'
+import { OrganizationSize } from '@wirebill/shared-common'
 
 import { TableName } from '../models'
 

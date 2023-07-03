@@ -1,6 +1,6 @@
 import moment from 'moment'
 
-import { CurrencyCode } from '@wirebill/shared-common/enum-like'
+import { CurrencyCode } from '@wirebill/shared-common'
 
 import { formatToCurrency } from '../../../utils'
 

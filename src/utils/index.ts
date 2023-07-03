@@ -4,8 +4,7 @@ import { existsSync } from 'fs'
 import { sumBy } from 'lodash'
 import { resolve } from 'path'
 
-import type { CurrencyCodeValue, KnexCount } from '@wirebill/shared-common/common.types'
-import { CurrencyCode } from '@wirebill/shared-common/enum-like'
+import { CurrencyCode, CurrencyCodeValue, KnexCount } from '@wirebill/shared-common'
 
 export const generatePasswordHash = (params = { password: ``, salt: `` }): string => {
   if (params.password.length == 0) throw new Error(`Password could not be empty`)

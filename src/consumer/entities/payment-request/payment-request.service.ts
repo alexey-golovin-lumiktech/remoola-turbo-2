@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common'
 
-import type { ListQuery } from '@wirebill/shared-common/common.types'
+import type { ListQuery } from '@wirebill/shared-common'
 
 import { BaseService } from '../../../common'
 import { CONSUMER } from '../../../dtos'

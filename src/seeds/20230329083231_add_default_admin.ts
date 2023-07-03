@@ -1,6 +1,6 @@
 import { Knex } from 'knex'
 
-import { AdminType } from '@wirebill/shared-common/enum-like'
+import { AdminType } from '@wirebill/shared-common'
 
 import { TableName } from '../models'
 import * as utils from '../utils'

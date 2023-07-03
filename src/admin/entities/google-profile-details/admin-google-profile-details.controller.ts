@@ -2,7 +2,7 @@ import { Controller, Get, Inject, Param, Query, Response } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { Response as IExpressResponse } from 'express'
 
-import { ListQuery } from '@wirebill/shared-common/common.types'
+import { ListQuery } from '@wirebill/shared-common'
 
 import { ADMIN } from '../../../dtos'
 import { ListResponse } from '../../../dtos/common'

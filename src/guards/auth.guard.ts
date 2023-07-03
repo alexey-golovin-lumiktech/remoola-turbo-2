@@ -4,8 +4,7 @@ import { JwtService } from '@nestjs/jwt'
 import { Request as IExpressRequest } from 'express'
 import { Observable } from 'rxjs'
 
-import type { AuthHeaderValue } from '@wirebill/shared-common/common.types'
-import { AuthHeader, CredentialsSeparator } from '@wirebill/shared-common/enum-like'
+import { AuthHeader, AuthHeaderValue, CredentialsSeparator } from '@wirebill/shared-common'
 
 import { AdminService } from '../admin/entities/admin/admin.service'
 import { ConsumerService } from '../consumer/entities/consumer/consumer.service'

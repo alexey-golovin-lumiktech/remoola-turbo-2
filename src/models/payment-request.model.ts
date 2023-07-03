@@ -1,4 +1,4 @@
-import type { CurrencyCodeValue, PaymentStatusValue, TransactionTypeValue } from '@wirebill/shared-common/common.types'
+import type { CurrencyCodeValue, PaymentStatusValue, TransactionTypeValue } from '@wirebill/shared-common'
 
 import { IBaseModel } from '../common'
 

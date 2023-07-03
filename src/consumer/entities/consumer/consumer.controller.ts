@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Inject, Patch, Query } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 
-import type { ListQuery } from '@wirebill/shared-common/common.types'
+import type { ListQuery } from '@wirebill/shared-common'
 
 import { CONSUMER } from '../../../dtos'
 import { PaymentRequestListResponse } from '../../../dtos/consumer'

@@ -1,4 +1,4 @@
-import type { AdminTypeValue } from '@wirebill/shared-common/common.types'
+import type { AdminTypeValue } from '@wirebill/shared-common'
 
 import { IBaseModel } from '../common'
 
