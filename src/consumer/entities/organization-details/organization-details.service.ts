@@ -1,8 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common'
 
+import { IOrganizationDetailsModel } from '@wirebill/shared-common/models'
+
 import { BaseService } from '../../../common'
 import { CONSUMER } from '../../../dtos'
-import { IOrganizationDetailsModel } from '../../../models'
 import { ConsumerService } from '../consumer/consumer.service'
 
 import { OrganizationDetailsRepository } from './organization-details.repository'

@@ -1,6 +1,6 @@
 import { Knex } from 'knex'
 
-import { TableName } from '../models'
+import { TableName } from '@wirebill/shared-common/models'
 
 import { addAuditColumns, addUUIDPrimaryKey } from './migration-utils'
 

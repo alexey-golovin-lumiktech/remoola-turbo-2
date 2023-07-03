@@ -1,8 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common'
 
+import { IPersonalDetailsModel } from '@wirebill/shared-common/models'
+
 import { BaseService } from '../../../common'
 import { CONSUMER } from '../../../dtos'
-import { IPersonalDetailsModel } from '../../../models'
 import { ConsumerService } from '../consumer/consumer.service'
 
 import { PersonalDetailsRepository } from './personal-details.repository'

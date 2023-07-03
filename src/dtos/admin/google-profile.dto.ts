@@ -1,7 +1,8 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 
-import { IGoogleProfileModel } from '../../models'
+import { IGoogleProfileModel } from '@wirebill/shared-common/models'
+
 import { BaseModel } from '../common'
 
 class GoogleProfile extends BaseModel implements IGoogleProfileModel {

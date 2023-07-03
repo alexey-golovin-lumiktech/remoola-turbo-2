@@ -1,8 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common'
 
+import { IAddressDetailsModel } from '@wirebill/shared-common/models'
+
 import { BaseService } from '../../../common'
 import { CONSUMER } from '../../../dtos'
-import { IAddressDetailsModel } from '../../../models'
 import { ConsumerService } from '../consumer/consumer.service'
 
 import { AddressDetailsRepository } from './address-details.repository'

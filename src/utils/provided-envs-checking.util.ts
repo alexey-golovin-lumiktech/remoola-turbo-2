@@ -1,7 +1,6 @@
 import * as dotenv from 'dotenv'
 import * as fs from 'fs'
-
-import { getEnvPath } from '.'
+import { getEnvPath } from 'src/constants'
 
 const customEnvironmentNames = [
   `PORT`,

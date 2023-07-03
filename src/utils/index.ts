@@ -1,10 +1,9 @@
 import { ClassConstructor, plainToInstance } from 'class-transformer'
 import * as crypto from 'crypto'
-import { existsSync } from 'fs'
 import { sumBy } from 'lodash'
-import { resolve } from 'path'
 
-import { CurrencyCode, CurrencyCodeValue, KnexCount } from '@wirebill/shared-common'
+import { CurrencyCode } from '@wirebill/shared-common/enums'
+import { CurrencyCodeValue, KnexCount } from '@wirebill/shared-common/types'
 
 export const generatePasswordHash = (params = { password: ``, salt: `` }): string => {
   if (params.password.length == 0) throw new Error(`Password could not be empty`)
@@ -47,17 +46,6 @@ export const generateStrongPassword = (): string => {
   }
 
   return encodeURIComponent(password.join(``))
-}
-
-export function getEnvPath(dest: string): string {
-  const env: string | undefined = process.env.NODE_ENV
-  const fallback: string = resolve(`${dest}/.env`)
-  const filename: string = env ? `.env.${env}` : `.env.development`
-  let filePath: string = resolve(`${dest}/${filename}`)
-
-  if (!existsSync(filePath)) filePath = fallback
-
-  return filePath
 }
 
 export const toResponse = <T, V>(cls: ClassConstructor<T>, data: V | V[]) => {

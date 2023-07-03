@@ -3,9 +3,10 @@ import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import * as uuid from 'uuid'
 
+import { IAdminModel } from '@wirebill/shared-common/models'
+
 import * as constants from '../../constants'
 import { ADMIN } from '../../dtos'
-import { IAdminModel } from '../../models'
 import { validatePassword } from '../../utils'
 import { AdminService } from '../entities/admin/admin.service'
 

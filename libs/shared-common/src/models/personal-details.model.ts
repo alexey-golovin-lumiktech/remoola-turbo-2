@@ -1,4 +1,4 @@
-import { IBaseModel } from '../common'
+import { IBaseModel } from './base.model'
 
 export interface IPersonalDetailsModel extends IBaseModel {
   consumerId: string

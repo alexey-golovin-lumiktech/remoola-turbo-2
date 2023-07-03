@@ -1,7 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common'
 
+import { IPaymentRequestModel } from '@wirebill/shared-common/models'
+
 import { BaseService } from '../../../common'
-import { IPaymentRequestModel } from '../../../models'
 import { AdminConsumerService } from '../consumer/admin-consumer.service'
 
 import { AdminPaymentRequestRepository } from './admin-payment-request.repository'

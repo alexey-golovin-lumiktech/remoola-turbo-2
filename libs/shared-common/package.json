@@ -1,45 +1,18 @@
 {
   "name": "@wirebill/shared-common",
-  "version": "0.0.1",
+  "version": "0.0.777",
+  "main": "index.js",
+  "types": "index.d.js",
   "license": "MIT",
-  "type": "commonjs",
-  "files": [
-    "dist"
-  ],
-  "exports": {
-    ".": {
-      "require": "./dist/index.js",
-      "import": "./dist/index.js",
-      "node": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    },
-    "./package.json": "./package.json"
-  },
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "tsup",
-    "start:dev": "tsup --watch"
+    "clean": "rm -rf dtos enums models types tsconfig.tsbuildinfo",
+    "build": "yarn clean && ttsc --build",
+    "build:watch": "ttsc --build --watch"
   },
   "devDependencies": {
     "@types/node": "^20.3.3",
-    "tsup": "^7.1.0",
-    "typescript": "^5.1.6"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "tsup": {
-    "dts": true,
-    "clean": true,
-    "splitting": false,
-    "format": [
-      "cjs"
-    ],
-    "target": "esnext",
-    "entry": [
-      "src/**/index.ts"
-    ]
+    "npm-run-all": "^4.1.5",
+    "ttypescript": "^1.5.15",
+    "typescript": "^4.9.5"
   }
 }

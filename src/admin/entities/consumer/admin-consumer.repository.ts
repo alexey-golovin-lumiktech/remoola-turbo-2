@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common'
 import { InjectKnex, Knex } from 'nestjs-knex'
 
+import { IConsumerModel, TableName } from '@wirebill/shared-common/models'
+
 import { BaseRepository } from '../../../common'
-import { IConsumerModel, TableName } from '../../../models'
 
 @Injectable()
 export class AdminConsumerRepository extends BaseRepository<IConsumerModel> {

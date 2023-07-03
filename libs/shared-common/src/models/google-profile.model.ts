@@ -1,4 +1,4 @@
-import { IBaseModel } from '../common'
+import { IBaseModel } from './base.model'
 
 export interface IGoogleProfileModel extends IBaseModel {
   consumerId: string

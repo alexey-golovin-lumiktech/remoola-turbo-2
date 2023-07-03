@@ -1,8 +1,7 @@
 import { Knex } from 'knex'
 
-import { OrganizationSize } from '@wirebill/shared-common'
-
-import { TableName } from '../models'
+import { OrganizationSize } from '@wirebill/shared-common/enums'
+import { TableName } from '@wirebill/shared-common/models'
 
 import { addAuditColumns, addUUIDPrimaryKey } from './migration-utils'
 

@@ -2,12 +2,12 @@ import { Controller, Get, Inject, Param, Query, Response } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { Response as IExpressResponse } from 'express'
 
-import { ListQuery } from '@wirebill/shared-common'
+import { IGoogleProfileModel } from '@wirebill/shared-common/models'
+import { ListQuery } from '@wirebill/shared-common/types'
 
 import { ADMIN } from '../../../dtos'
 import { ListResponse } from '../../../dtos/common'
 import { TransformResponse } from '../../../interceptors'
-import { IGoogleProfileModel } from '../../../models'
 import { AdminPanelQueryTransformPipe } from '../../pipes'
 
 import { AdminGoogleProfileDetailsService } from './admin-google-profile-details.service'

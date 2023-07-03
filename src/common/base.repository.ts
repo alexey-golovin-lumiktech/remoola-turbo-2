@@ -2,10 +2,10 @@ import type { Knex as IKnex } from 'knex'
 import { Knex } from 'knex'
 import { isEmpty, isNil, snakeCase } from 'lodash'
 
-import { ListQuery, ListQueryFilter } from '@wirebill/shared-common'
+import { TableNameValue } from '@wirebill/shared-common/models'
+import { ListQuery, ListQueryFilter } from '@wirebill/shared-common/types'
 
 import { ListResponse } from '../dtos/common'
-import { TableNameValue } from '../models'
 import { getKnexCount, queryBuilder } from '../utils'
 
 import { IBaseModel } from './base.model'

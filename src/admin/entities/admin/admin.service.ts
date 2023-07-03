@@ -1,8 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common'
 
+import { IAdminModel } from '@wirebill/shared-common/models'
+
 import { BaseService } from '../../../common'
 import { ADMIN } from '../../../dtos'
-import { IAdminModel } from '../../../models'
 import { generatePasswordHash, generatePasswordHashSalt } from '../../../utils'
 
 import { AdminRepository } from './admin.repository'

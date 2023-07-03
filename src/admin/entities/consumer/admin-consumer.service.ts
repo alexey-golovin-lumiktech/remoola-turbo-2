@@ -1,8 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common'
 
+import { IConsumerModel } from '@wirebill/shared-common/models'
+
 import { BaseService } from '../../../common'
 import { ADMIN } from '../../../dtos'
-import { IConsumerModel } from '../../../models'
 import { generatePasswordHash, generatePasswordHashSalt } from '../../../utils'
 import { AdminGoogleProfileDetailsService } from '../google-profile-details/admin-google-profile-details.service'
 

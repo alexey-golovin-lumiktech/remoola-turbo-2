@@ -1,6 +1,6 @@
-import type { CurrencyCodeValue, PaymentStatusValue, TransactionTypeValue } from '@wirebill/shared-common'
+import { CurrencyCodeValue, PaymentStatusValue, TransactionTypeValue } from '../types'
 
-import { IBaseModel } from '../common'
+import { IBaseModel } from './base.model'
 
 export interface IPaymentRequestModel extends IBaseModel {
   requesterId: string

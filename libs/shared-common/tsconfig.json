@@ -1,15 +1,22 @@
 {
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
     "declaration": true,
-    "outDir": "../../dist/libs/shared-common"
+    "composite": true,
+    "outDir": ".",
+    "rootDir": "./src",
+    "tsBuildInfoFile": "./tsconfig.tsbuildinfo"
   },
   "include": [
-    "src/**/*"
+    "./src"
   ],
   "exclude": [
-    "node_modules",
+    "node_modules/**",
     "dist",
-    "test",
-    "**/*spec.ts"
-  ]
+    "dtos",
+    "enums",
+    "models",
+    "types"
+  ],
+  "compileOnSave": false
 }

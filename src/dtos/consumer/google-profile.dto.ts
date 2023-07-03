@@ -3,7 +3,8 @@ import { Expose } from 'class-transformer'
 import { IsIn, IsString, ValidateIf } from 'class-validator'
 import { TokenPayload as ITokenPayload } from 'google-auth-library'
 
-import { AccountType, AccountTypeValue, ContractorKind, ContractorKindValue } from '@wirebill/shared-common'
+import { AccountType, ContractorKind } from '@wirebill/shared-common/enums'
+import { AccountTypeValue, ContractorKindValue } from '@wirebill/shared-common/types'
 
 export type ITokenPayloadPick = Pick<
   ITokenPayload,

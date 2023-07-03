@@ -1,4 +1,4 @@
-import { CurrencyCode } from '@wirebill/shared-common'
+import { CurrencyCode } from '@wirebill/shared-common/enums'
 
 import { formatToCurrency } from '../..'
 

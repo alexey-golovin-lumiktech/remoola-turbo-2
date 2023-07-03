@@ -164,3 +164,5 @@ export const StripeEvent = {
   ChargeDisputeCreated: `charge.dispute.created`,
   ChargeCaptured: `charge.captured`,
 } as const
+
+export const DDD = { bbb: `bbb` } as const

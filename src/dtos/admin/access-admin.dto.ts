@@ -2,7 +2,8 @@ import { ApiProperty } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 import { IsIn, IsNotEmpty, IsString } from 'class-validator'
 
-import { AdminType, AdminTypeValue } from '@wirebill/shared-common'
+import { AdminType } from '@wirebill/shared-common/enums'
+import { AdminTypeValue } from '@wirebill/shared-common/types'
 
 export class Access {
   @Expose()

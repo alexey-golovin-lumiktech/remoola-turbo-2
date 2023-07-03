@@ -18,30 +18,35 @@
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "noFallthroughCasesInSwitch": false,
+    "typeRoots": [
+      "node_modules/@types",
+      "src/**/*",
+      "typings/**/*"
+    ],
     "paths": {
       "@wirebill/pdf-generator-package": [
-        "./libs/pdf-generator-package/src"
+        "libs/pdf-generator-package/src",
       ],
       "@wirebill/pdf-generator-package/*": [
-        "./libs/pdf-generator-package/src/*"
+        "libs/pdf-generator-package/src/*",
       ],
       "@wirebill/shared-admin": [
-        "./libs/shared-admin/src"
+        "libs/shared-admin/src",
       ],
       "@wirebill/shared-admin/*": [
-        "./libs/shared-admin/src/*"
+        "libs/shared-admin/src/*",
       ],
       "@wirebill/shared-consumer": [
-        "./libs/shared-consumer/src"
+        "libs/shared-consumer/src",
       ],
       "@wirebill/shared-consumer/*": [
-        "./libs/shared-consumer/src/*"
+        "libs/shared-consumer/src/*",
       ],
       "@wirebill/shared-common": [
-        "./libs/shared-common/src"
+        "libs/shared-common/src",
       ],
       "@wirebill/shared-common/*": [
-        "./libs/shared-common/src/*"
+        "libs/shared-common/src/*",
       ]
     },
     "baseUrl": "./"
@@ -51,7 +56,7 @@
     "**/*.spec.ts"
   ],
   "include": [
-    "global-typings.d.ts",
+    "typings",
     ".eslintrc.js",
     "src",
     "libs",

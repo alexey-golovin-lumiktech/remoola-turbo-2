@@ -1,8 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common'
 
+import { IBillingDetailsModel } from '@wirebill/shared-common/models'
+
 import { BaseService } from '../../../common'
 import { CONSUMER } from '../../../dtos'
-import { IBillingDetailsModel } from '../../../models'
 
 import { BillingDetailsRepository } from './billing-details.repository'
 

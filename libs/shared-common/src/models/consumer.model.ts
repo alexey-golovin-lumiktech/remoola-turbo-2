@@ -1,6 +1,6 @@
-import type { AccountTypeValue, ContractorKindValue } from '@wirebill/shared-common'
+import { AccountTypeValue, ContractorKindValue } from '../types'
 
-import { IBaseModel } from '../common'
+import { IBaseModel } from './base.model'
 
 export interface IConsumerModel extends IBaseModel {
   accountType?: AccountTypeValue

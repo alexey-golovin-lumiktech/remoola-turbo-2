@@ -2,8 +2,9 @@ import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { InjectKnex, Knex } from 'nestjs-knex'
 
+import { IConsumerModel, TableName } from '@wirebill/shared-common/models'
+
 import { BaseRepository } from '../../../common'
-import { IConsumerModel, TableName } from '../../../models'
 
 @Injectable()
 export class ConsumerRepository extends BaseRepository<IConsumerModel> {

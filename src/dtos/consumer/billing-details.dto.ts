@@ -2,12 +2,10 @@ import { ApiProperty, OmitType } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 import { IsEmail } from 'class-validator'
 
-import { IBaseModel } from '../../common'
-import * as constants from '../../constants'
-import { IBillingDetailsModel } from '../../models'
-import { BaseModel } from '../common/base-model.dto'
+import { IBillingDetailsModel } from '@wirebill/shared-common/models'
 
-export type IUpsertBillingDetails = Partial<Omit<IBillingDetailsModel, keyof IBaseModel>> & { consumerId: string }
+import * as constants from '../../constants'
+import { BaseModel } from '../common/base-model.dto'
 
 class BillingDetails extends BaseModel implements IBillingDetailsModel {
   @Expose()

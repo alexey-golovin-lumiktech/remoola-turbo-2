@@ -1,7 +1,8 @@
 import { ApiProperty, OmitType, PickType } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 
-import { IOrganizationDetailsModel } from '../../models'
+import { IOrganizationDetailsModel } from '@wirebill/shared-common/models'
+
 import { BaseModel } from '../common/base-model.dto'
 
 class OrganizationDetails extends BaseModel implements IOrganizationDetailsModel {

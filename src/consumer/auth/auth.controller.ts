@@ -2,11 +2,12 @@ import { Body, Controller, Get, Inject, Logger, Param, Post, Query, Res } from '
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { Response as IExpressResponse } from 'express'
 
+import { IConsumerModel } from '@wirebill/shared-common/models'
+
 import { PublicEndpoint } from '../../decorators'
 import { CONSUMER } from '../../dtos'
 import { ReqAuthIdentity } from '../../guards/auth.guard'
 import { TransformResponse } from '../../interceptors'
-import { IConsumerModel } from '../../models'
 import { AddressDetailsService } from '../entities/address-details/address-details.service'
 import { OrganizationDetailsService } from '../entities/organization-details/organization-details.service'
 import { PersonalDetailsService } from '../entities/personal-details/personal-details.service'

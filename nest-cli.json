@@ -18,7 +18,7 @@
       "entryFile": "index",
       "sourceRoot": "./libs/pdf-generator-package/src",
       "compilerOptions": {
-        "tsConfigPath": "./libs/pdf-generator-package/tsconfig.lib.json"
+        "tsConfigPath": "./libs/pdf-generator-package/tsconfig.json"
       }
     },
     "shared-admin": {
@@ -27,7 +27,7 @@
       "entryFile": "index",
       "sourceRoot": "./libs/shared-admin/src",
       "compilerOptions": {
-        "tsConfigPath": "./libs/shared-admin/tsconfig.lib.json"
+        "tsConfigPath": "./libs/shared-admin/tsconfig.json"
       }
     },
     "shared-consumer": {
@@ -36,7 +36,7 @@
       "entryFile": "index",
       "sourceRoot": "./libs/shared-consumer/src",
       "compilerOptions": {
-        "tsConfigPath": "./libs/shared-consumer/tsconfig.lib.json"
+        "tsConfigPath": "./libs/shared-consumer/tsconfig.json"
       }
     },
     "shared-common": {
@@ -45,7 +45,7 @@
       "entryFile": "index",
       "sourceRoot": "./libs/shared-common/src",
       "compilerOptions": {
-        "tsConfigPath": "./libs/shared-common/tsconfig.lib.json"
+        "tsConfigPath": "./libs/shared-common/tsconfig.json"
       }
     }
   }

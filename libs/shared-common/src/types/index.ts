@@ -17,7 +17,8 @@ import {
   StripeInvoiceStatus,
   Timeline,
   TransactionType,
-} from './enum-like'
+} from '../enums'
+import { IBaseModel } from '../models/base.model'
 
 export type OneOfObjectKeys<T> = keyof T
 export type OneOfObjectValues<T> = T[OneOfObjectKeys<T>]
@@ -63,3 +64,11 @@ export type ListQuery<TModel> = {
 }
 
 export type KnexCount = { count: number }
+
+export type WithoutDeletedAt<TModel> = TModel extends IBaseModel ? Omit<TModel, `deletedAt`> : TModel
+
+export type OnlyUpsertFields<TModel> = TModel extends IBaseModel & { consumerId?: string } //
+  ? Omit<TModel, `id` | `createdAt` | `updatedAt` | `deletedAt` | `consumerId`>
+  : TModel extends IBaseModel
+  ? Omit<TModel, `id` | `createdAt` | `updatedAt` | `deletedAt`>
+  : TModel

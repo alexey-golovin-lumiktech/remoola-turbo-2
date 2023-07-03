@@ -1,6 +1,6 @@
 import { Knex } from 'knex'
 
-import type { TableNameValue } from '../../models'
+import { TableNameValue } from '@wirebill/shared-common/models'
 
 export const addNullableRef = (column: string, inTable: TableNameValue) => (t: Knex.AlterTableBuilder) => {
   t.uuid(column).nullable().references(`id`).inTable(inTable)

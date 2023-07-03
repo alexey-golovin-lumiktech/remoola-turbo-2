@@ -1,5 +1,6 @@
-import { OneOfObjectValues } from '@wirebill/shared-common'
+import { OneOfObjectValues } from '../types'
 
+export * from './base.model'
 export * from './admin.model'
 export * from './consumer.model'
 export * from './google-profile.model'

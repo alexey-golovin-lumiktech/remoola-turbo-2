@@ -1,9 +1,10 @@
 import { Controller, Inject, Post } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 
+import { IAdminModel } from '@wirebill/shared-common/models'
+
 import { ADMIN } from '../../dtos'
 import { ReqAuthIdentity } from '../../guards/auth.guard'
-import { IAdminModel } from '../../models'
 
 import { AuthService } from './auth.service'
 
