@@ -1,6 +1,6 @@
 # compiled output
-/dist
-/node_modules
+/**/dist
+/**/node_modules
 
 # Logs
 logs
@@ -40,8 +40,8 @@ lerna-debug.log*
 /generate-entity.sh
 /z-me*
 /me*
-/yalc.lock
-/.yalc
+/**/yalc.lock
+/**/.yalc
 /tsconfig.build**
 /knexfile.d.ts
 /knexfile.js

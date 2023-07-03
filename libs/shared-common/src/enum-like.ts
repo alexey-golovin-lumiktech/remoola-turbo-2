@@ -1,5 +1,3 @@
-import moment from 'moment'
-
 /* _________________________________________________________________________________________________________________________________________________________________________________________________________
 | STATUS        | DESCRIPTION                                                                                           | ACTIONS                                                                          |
 |---------------|-------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
@@ -34,9 +32,9 @@ export const PaymentStatus = {
 } as const
 
 export const Timeline = {
-  Past90Days: moment().add(-90, `days`).valueOf(),
-  Past30Days: moment().add(-30, `days`).valueOf(),
-  Past7Days: moment().add(-7, `days`).valueOf(),
+  Past90Days: `Past 90 Days`,
+  Past30Days: `Past 30 Days`,
+  Past7Days: `Past 7 Days`,
 } as const
 
 export const CurrencyCode = {
