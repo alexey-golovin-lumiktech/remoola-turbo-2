@@ -11,8 +11,6 @@
     "^.+\\.(t|j)s$": "ts-jest"
   },
   "moduleNameMapper": {
-    "@wirebill/pdf-generator-package/(.*)": "<rootDir>/../libs/pdf-generator-package/src/$1",
-    "@wirebill/pdf-generator-package": "<rootDir>/../libs/pdf-generator-package/src",
     "@wirebill/shared-admin/(.*)": "<rootDir>/../libs/shared-admin/src/$1",
     "@wirebill/shared-admin": "<rootDir>/../libs/shared-admin/src",
     "@wirebill/shared-consumer/(.*)": "<rootDir>/../libs/shared-consumer/src/$1",
