@@ -24,12 +24,6 @@
       "typings/**/*"
     ],
     "paths": {
-      "@wirebill/pdf-generator-package": [
-        "libs/pdf-generator-package/src",
-      ],
-      "@wirebill/pdf-generator-package/*": [
-        "libs/pdf-generator-package/src/*",
-      ],
       "@wirebill/shared-admin": [
         "libs/shared-admin/src",
       ],

@@ -10,37 +10,36 @@
 	"tasks": [
 		{
 			"label": "create terminals",
-			"dependsOn": [ 
+			"dependsOn": [
 				"shared-common",
 				"pdf-generator-package",
 				"shared-admin",
 				"shared-consumer",
-			 ],
-			"group": { "kind": "build", "isDefault": true },
-			"runOptions": { "runOn": "folderOpen" }
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"runOptions": {
+				"runOn": "folderOpen"
+			}
 		},
 		{
 			"label": "shared-common",
 			"type": "shell",
-			"command":"yarn workspace @wirebill/shared-common run build:watch",
-			"isBackground": true,
-		},
-		{
-			"label": "pdf-generator-package",
-			"type": "shell",
-			"command":"yarn workspace @wirebill/pdf-generator-package run build:watch",
+			"command": "yarn workspace @wirebill/shared-common run build:watch",
 			"isBackground": true,
 		},
 		{
 			"label": "shared-admin",
 			"type": "shell",
-			"command":"yarn workspace @wirebill/shared-admin run build:watch",
+			"command": "yarn workspace @wirebill/shared-admin run build:watch",
 			"isBackground": true,
 		},
 		{
 			"label": "shared-consumer",
 			"type": "shell",
-			"command":"yarn workspace @wirebill/shared-consumer run build:watch",
+			"command": "yarn workspace @wirebill/shared-consumer run build:watch",
 			"isBackground": true,
 		}
 	]
