@@ -14,8 +14,6 @@
     "@wirebill/shared-admin/(.*)": "<rootDir>/../libs/shared-admin/src/$1",
     "@wirebill/shared-admin": "<rootDir>/../libs/shared-admin/src",
     "@wirebill/shared-consumer/(.*)": "<rootDir>/../libs/shared-consumer/src/$1",
-    "@wirebill/shared-consumer": "<rootDir>/../libs/shared-consumer/src",
-    "@wirebill/shared-common/(.*)": "<rootDir>/../libs/shared-common/src/$1",
-    "@wirebill/shared-common": "<rootDir>/../libs/shared-common/src"
+    "@wirebill/shared-consumer": "<rootDir>/../libs/shared-consumer/src"
   }
 }

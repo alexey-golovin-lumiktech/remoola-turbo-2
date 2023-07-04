@@ -1561,8 +1561,10 @@
   resolved "https://gitlab.com/api/v4/projects/45659941/packages/npm/@wirebill/pdf-generator-package/-/@wirebill/pdf-generator-package-0.0.1.tgz#36adccae3541add4892cb5adf2814a22f4bca2eb"
   integrity sha1-Nq3MrjVBrdSJLLWt8oFKIvS8ous=
 
-"@wirebill/shared-common@file:.yalc/@wirebill/shared-common":
-  version "0.0.777"
+"@wirebill/shared-common@^0.0.920387666-SNAPSHOT":
+  version "0.0.920387666-SNAPSHOT"
+  resolved "https://gitlab.com/api/v4/projects/45659941/packages/npm/@wirebill/shared-common/-/@wirebill/shared-common-0.0.920387666-SNAPSHOT.tgz#f02bed2d82ff358fe4a5f022ca536e3727beccfd"
+  integrity sha1-8CvtLYL/NY/kpfAiylNuNye+zP0=
 
 "@xtuc/ieee754@^1.2.0":
   version "1.2.0"

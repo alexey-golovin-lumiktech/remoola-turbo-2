@@ -25,12 +25,6 @@
 			}
 		},
 		{
-			"label": "shared-common",
-			"type": "shell",
-			"command": "yarn workspace @wirebill/shared-common run build:watch",
-			"isBackground": true,
-		},
-		{
 			"label": "shared-admin",
 			"type": "shell",
 			"command": "yarn workspace @wirebill/shared-admin run build:watch",

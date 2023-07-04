@@ -35,12 +35,6 @@
       ],
       "@wirebill/shared-consumer/*": [
         "libs/shared-consumer/src/*",
-      ],
-      "@wirebill/shared-common": [
-        "libs/shared-common/src",
-      ],
-      "@wirebill/shared-common/*": [
-        "libs/shared-common/src/*",
       ]
     },
     "baseUrl": "./"
