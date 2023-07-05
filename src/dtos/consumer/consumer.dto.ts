@@ -1,6 +1,6 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
-import { IsEmail, IsIn, ValidateIf } from 'class-validator'
+import { IsBoolean, IsEmail, IsIn, ValidateIf } from 'class-validator'
 
 import { AccountType, ContractorKind } from '@wirebill/shared-common/enums'
 import { IConsumerModel } from '@wirebill/shared-common/models'
@@ -29,19 +29,21 @@ class Consumer extends BaseModel implements IConsumerModel {
 
   @Expose()
   @ApiProperty({ default: false })
+  @IsBoolean()
   verified = false
 
   @Expose()
   @ApiProperty({ default: false })
+  @IsBoolean()
   legalVerified = false
 
   @Expose()
-  @ApiProperty({ default: null, required: false })
-  password?: string = null
+  @ApiProperty()
+  password: string
 
   @Expose()
-  @ApiProperty({ default: null, required: false })
-  salt?: string = null
+  @ApiProperty()
+  salt: string
 
   @Expose()
   @ApiProperty({ required: true })
@@ -49,11 +51,11 @@ class Consumer extends BaseModel implements IConsumerModel {
 
   @Expose()
   @ApiProperty()
-  firstName?: string
+  firstName: string
 
   @Expose()
   @ApiProperty()
-  lastName?: string
+  lastName: string
 
   @Expose()
   @ApiProperty({ required: false, default: null })

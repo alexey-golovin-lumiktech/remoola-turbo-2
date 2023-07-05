@@ -20,7 +20,7 @@ class GoogleProfile extends BaseModel implements IGoogleProfileModel {
 
   @Expose()
   @ApiProperty()
-  email?: string
+  email: string
 
   @Expose()
   @ApiProperty()

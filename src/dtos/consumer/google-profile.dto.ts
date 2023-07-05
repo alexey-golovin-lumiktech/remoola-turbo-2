@@ -18,8 +18,8 @@ export type ITokenPayloadPick = Pick<
 
 export class GoogleProfile {
   emailVerified: boolean
-
-  email?: string
+  data: string
+  email: string
   name?: string
   givenName?: string
   familyName?: string

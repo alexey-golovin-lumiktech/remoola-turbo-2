@@ -38,10 +38,6 @@ class PaymentRequest extends BaseModel implements IPaymentRequestModel {
   dueBy: Date
 
   @Expose()
-  @ApiProperty()
-  sentDate: Date
-
-  @Expose()
   @ApiProperty({ enum: Object.values(TransactionType) })
   @IsString()
   @IsIn(Object.values(TransactionType))
@@ -55,7 +51,11 @@ class PaymentRequest extends BaseModel implements IPaymentRequestModel {
 
   @Expose()
   @ApiProperty()
-  taxId: string
+  sentDate?: Date
+
+  @Expose()
+  @ApiProperty()
+  taxId?: string
 }
 
 export class PaymentRequestResponse extends OmitType(PaymentRequest, [`deletedAt`] as const) {}

@@ -16,7 +16,7 @@ class PersonalDetails extends BaseModel implements IPersonalDetailsModel {
 
   @Expose()
   @ApiProperty()
-  dateOfBirth: string
+  dateOfBirth: Date
 
   @Expose()
   @ApiProperty()

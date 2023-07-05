@@ -66,7 +66,9 @@ export class AuthService {
     return utils.toResponse(CONSUMER.LoginResponse, Object.assign(identity, { accessToken, refreshToken: refreshToken.token }))
   }
 
-  private extractConsumerData(dto: CONSUMER.GoogleProfile): Omit<IConsumerModel, keyof IBaseModel | `accountType` | `contractorKind`> {
+  private extractConsumerData(
+    dto: CONSUMER.GoogleProfile,
+  ): Omit<IConsumerModel, keyof IBaseModel | `accountType` | `contractorKind` | `password` | `salt`> {
     const fullName = dto.name.split(` `)
 
     return {
