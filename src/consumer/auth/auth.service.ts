@@ -38,13 +38,19 @@ export class AuthService {
       const { credential, contractorKind = null, accountType = null } = body
       const verified = await this.oAuth2Client.verifyIdToken({ idToken: credential })
       const rawGoogleProfile = new CONSUMER.GoogleProfile(verified.getPayload())
+
       const consumerData = this.extractConsumerData(rawGoogleProfile)
-      const consumer = await this.consumersService.upsertConsumer({ ...consumerData, accountType, contractorKind })
+
+      const temporaryGeneratedStrongPassword = utils.generateStrongPassword()
+      const salt = utils.generatePasswordHashSalt()
+      const hash = utils.generatePasswordHash({ password: temporaryGeneratedStrongPassword, salt })
+      const consumer = await this.consumersService.upsertConsumer({ ...consumerData, password: hash, salt, accountType, contractorKind })
       if (consumer.deletedAt != null) throw new BadRequestException(`Consumer is suspended, please contact the support`)
 
       const gProfile = await this.googleProfileService.upsertGoogleProfile(consumer.id, rawGoogleProfile)
       if (gProfile.deletedAt != null) throw new BadRequestException(`Profile is suspended, please contact the support`)
 
+      await this.mailingService.sendConsumerTemporaryPasswordForGoogleOAuth({ email: consumer.email, temporaryGeneratedStrongPassword })
       const accessToken = this.generateToken(consumer)
       const { token: refreshToken } = this.generateRefreshToken() //@TODO: need to store refresh token
       return Object.assign(consumer, { googleProfileId: gProfile.id, accessToken, refreshToken })
@@ -62,6 +68,7 @@ export class AuthService {
 
   private extractConsumerData(dto: CONSUMER.GoogleProfile): Omit<IConsumerModel, keyof IBaseModel | `accountType` | `contractorKind`> {
     const fullName = dto.name.split(` `)
+
     return {
       email: dto.email,
       verified: dto.emailVerified,
