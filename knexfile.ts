@@ -2,9 +2,9 @@ import * as dotenv from 'dotenv'
 import type { Knex } from 'knex'
 import * as pg from 'pg'
 
-import * as constants from './src/constants'
+import { getEnvPath } from '@wirebill/shared-common/utils'
 
-dotenv.config({ path: constants.ENV_FILE_PATH })
+dotenv.config({ path: getEnvPath(process.cwd()) })
 
 pg.types.setTypeParser(20, parseInt)
 const toCamel = str => str.replace(/([-_][a-z])/gi, group => group.toUpperCase().replace(`-`, ``).replace(`_`, ``))

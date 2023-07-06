@@ -1,4 +1,4 @@
-import { getEnvPath } from '../utils'
+import { getEnvPath } from '@wirebill/shared-common/utils'
 
 export const INVALID_CREDENTIALS = `Invalid Credentials`
 export const ADMIN_NOT_FOUND = `Admin not found`

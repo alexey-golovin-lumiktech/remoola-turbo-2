@@ -4,6 +4,8 @@ import { ScheduleModule } from '@nestjs/schedule'
 import { KnexModule } from 'nestjs-knex'
 import { StripeModule } from 'nestjs-stripe'
 
+import { getEnvPath } from '@wirebill/shared-common/utils'
+
 import * as knexfile from '../knexfile'
 
 import { AdminCommonModule } from './admin/admin-common.module'
@@ -11,7 +13,6 @@ import { CommonSharedModulesModule } from './common-shared-modules/common-shared
 import { ConsumerCommonModule } from './consumer/consumer-common.module'
 import { LoggerMiddleware } from './middleware/logger.middleware'
 import { AppController } from './app.controller'
-import * as constants from './constants'
 import * as configValidation from './envs-validation.schema'
 
 @Module({
@@ -21,7 +22,7 @@ import * as configValidation from './envs-validation.schema'
       cache: true,
       expandVariables: true,
       isGlobal: true,
-      envFilePath: [constants.ENV_FILE_PATH],
+      envFilePath: [getEnvPath(process.cwd())],
       validationSchema: configValidation.validationSchema,
       validationOptions: configValidation.validationOptions,
     }),

@@ -1,19 +1,7 @@
 import * as dotenv from 'dotenv'
 import * as fs from 'fs'
-import { existsSync } from 'fs'
-import { resolve } from 'path'
 
-// @NOTE: this fn should be defined here only
-export function getEnvPath(dest: string): string {
-  const env: string | undefined = process.env.NODE_ENV
-  const fallback: string = resolve(`${dest}/.env`)
-  const filename: string = env ? `.env.${env}` : `.env.development`
-  let filePath: string = resolve(`${dest}/${filename}`)
-
-  if (!existsSync(filePath)) filePath = fallback
-
-  return filePath
-}
+import { getEnvPath } from '@wirebill/shared-common/utils'
 
 const customEnvironmentNames = [
   `PORT`,

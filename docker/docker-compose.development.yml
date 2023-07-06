@@ -12,6 +12,7 @@ services:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - wirebill_network
+    restart: unless-stopped
 
   wirebill_adminer:
     container_name: wirebill_adminer
@@ -20,7 +21,7 @@ services:
     ports:
       - 9999:8080
     networks:
-      - wirebill_network 
+      - wirebill_network  
 
 volumes:
   wirebill_postgress_data:
