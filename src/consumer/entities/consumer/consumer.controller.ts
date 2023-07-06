@@ -33,7 +33,7 @@ export class ConsumerController {
   @ApiOkResponse({ type: CONSUMER.BillingDetailsResponse })
   @TransformResponse(CONSUMER.BillingDetailsResponse)
   getBillingDetails(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.BillingDetailsResponse> {
-    return this.billingDetailsService.getBillingDetails({ consumerId: identity.id })
+    return this.billingDetailsService.getConsumerBillingDetails({ consumerId: identity.id })
   }
 
   @Patch(`/billing-details`)
@@ -43,7 +43,7 @@ export class ConsumerController {
     @ReqAuthIdentity() identity: IConsumerModel,
     @Body() body: CONSUMER.UpsertBillingDetails,
   ): Promise<CONSUMER.BillingDetailsResponse> {
-    return this.billingDetailsService.upsertBillingDetails({ ...body, consumerId: identity.id })
+    return this.billingDetailsService.upsert({ ...body, consumerId: identity.id })
   }
 
   @Get(`/payment-request`)

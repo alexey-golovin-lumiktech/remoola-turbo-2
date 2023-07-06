@@ -22,7 +22,7 @@ export class AuthService {
   private readonly audience: string
 
   constructor(
-    @Inject(ConsumerService) private readonly consumersService: ConsumerService,
+    @Inject(ConsumerService) private readonly service: ConsumerService,
     @Inject(GoogleProfilesService) private readonly googleProfileService: GoogleProfilesService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
@@ -40,20 +40,21 @@ export class AuthService {
       const rawGoogleProfile = new CONSUMER.GoogleProfile(verified.getPayload())
 
       const consumerData = this.extractConsumerData(rawGoogleProfile)
+      const [exist] = await this.service.repository.find({ filter: { email: consumerData.email } })
 
       const temporaryGeneratedStrongPassword = utils.generateStrongPassword()
       const salt = utils.generatePasswordHashSalt()
       const hash = utils.generatePasswordHash({ password: temporaryGeneratedStrongPassword, salt })
-      const consumer = await this.consumersService.upsertConsumer({ ...consumerData, password: hash, salt, accountType, contractorKind })
+      const consumer = exist ?? (await this.service.upsert({ ...consumerData, password: hash, salt, accountType, contractorKind }))
       if (consumer.deletedAt != null) throw new BadRequestException(`Consumer is suspended, please contact the support`)
 
-      const gProfile = await this.googleProfileService.upsertGoogleProfile(consumer.id, rawGoogleProfile)
-      if (gProfile.deletedAt != null) throw new BadRequestException(`Profile is suspended, please contact the support`)
+      const googleProfile = await this.googleProfileService.upsert(consumer.id, rawGoogleProfile)
+      if (googleProfile.deletedAt != null) throw new BadRequestException(`Profile is suspended, please contact the support`)
 
       await this.mailingService.sendConsumerTemporaryPasswordForGoogleOAuth({ email: consumer.email, temporaryGeneratedStrongPassword })
       const accessToken = this.generateToken(consumer)
       const { token: refreshToken } = this.generateRefreshToken() //@TODO: need to store refresh token
-      return Object.assign(consumer, { googleProfileId: gProfile.id, accessToken, refreshToken })
+      return Object.assign(consumer, { googleProfileId: googleProfile.id, accessToken, refreshToken })
     } catch (error) {
       this.logger.error(error)
       throw new InternalServerErrorException()
@@ -82,12 +83,12 @@ export class AuthService {
   }
 
   async signup(body: CONSUMER.SignupRequest): Promise<CONSUMER.ConsumerResponse | never> {
-    const [exist] = await this.consumersService.repository.find({ filter: { email: body.email } })
+    const [exist] = await this.service.repository.find({ filter: { email: body.email } })
     if (exist) throw new BadRequestException(`This email is already exist`)
 
     const salt = utils.generatePasswordHashSalt()
     const hash = utils.generatePasswordHash({ password: body.password, salt })
-    const consumer = await this.consumersService.upsertConsumer({
+    const consumer = await this.service.upsert({
       email: body.email,
       firstName: body.firstName,
       lastName: body.lastName,
@@ -100,7 +101,7 @@ export class AuthService {
   }
 
   async completeProfileCreation(consumerId: string): Promise<void | never> {
-    const consumer = await this.consumersService.getConsumerById(consumerId)
+    const consumer = await this.service.getById(consumerId)
     if (!consumer) throw new BadRequestException(`No consumer for provided consumerId: ${consumerId}`)
     const token = this.generateToken(consumer)
     this.mailingService.sendConsumerSignupCompletionEmail({ email: consumer.email, token })
@@ -113,7 +114,7 @@ export class AuthService {
     if (decoded.email) {
       redirectUrl.searchParams.append(`email`, decoded.email)
 
-      const [updated] = await this.consumersService.repository.update({ email: decoded.email }, { verified: true })
+      const [updated] = await this.service.repository.update({ email: decoded.email }, { verified: true })
       redirectUrl.searchParams.append(`verified`, !updated || updated.verified == false ? `no` : `yes`)
     }
 
