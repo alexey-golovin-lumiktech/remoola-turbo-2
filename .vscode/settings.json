@@ -4,12 +4,12 @@
     {
       "previewLimit": 50,
       "server": "localhost",
-      "port": 5532,
+      "port": 5432,
       "driver": "PostgreSQL",
       "name": "wirebill",
       "database": "wirebill",
-      "username": "root",
-      "password": "password"
+      "username": "wirebill",
+      "password": "wirebill"
     }
   ],
   "editor.tabSize": 2,
