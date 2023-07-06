@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common'
 
-import { IGoogleProfileModel } from '@wirebill/shared-common/models'
+import { IBaseModel, IGoogleProfileModel } from '@wirebill/shared-common/models'
 
-import { BaseService, IBaseModel, IBaseService } from '../../../common'
+import { BaseService, IBaseService } from '../../../common'
 
 import { GoogleProfilesRepository } from './google-profiles.repository'
 

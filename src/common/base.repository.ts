@@ -2,13 +2,11 @@ import type { Knex as IKnex } from 'knex'
 import { Knex } from 'knex'
 import { isEmpty, isNil, snakeCase } from 'lodash'
 
-import { TableNameValue } from '@wirebill/shared-common/models'
+import { IBaseModel, TableNameValue } from '@wirebill/shared-common/models'
 import { ListQuery, ListQueryFilter } from '@wirebill/shared-common/types'
 
 import { ListResponse } from '../dtos/common'
 import { getKnexCount, queryBuilder } from '../utils'
-
-import { IBaseModel } from './base.model'
 
 export interface IBaseRepository<TModel extends IBaseModel> {
   create(dto: Partial<TModel>): Promise<TModel>

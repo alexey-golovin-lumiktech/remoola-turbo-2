@@ -6,9 +6,8 @@ import { OAuth2Client } from 'google-auth-library'
 import * as uuid from 'uuid'
 
 import { HowDidHearAboutUs } from '@wirebill/shared-common/enums'
-import { IConsumerModel } from '@wirebill/shared-common/models'
+import { IBaseModel, IConsumerModel } from '@wirebill/shared-common/models'
 
-import { IBaseModel } from '../../common'
 import { MailingService } from '../../common-shared-modules/mailing/mailing.service'
 import { CONSUMER } from '../../dtos'
 import * as utils from '../../utils'
