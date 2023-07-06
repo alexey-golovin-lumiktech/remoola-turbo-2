@@ -2,7 +2,7 @@ import { ApiProperty, OmitType, PickType } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 import { IsIn } from 'class-validator'
 
-import { ConsumerRole, ConsumerRoleValue, OrganizationSize, OrganizationSizeValue } from '@wirebill/shared-common'
+import { OrganizationSize, OrganizationSizeValue } from '@wirebill/shared-common'
 import { IOrganizationDetailsModel } from '@wirebill/shared-common/models'
 
 import { BaseModel } from '../common/base-model.dto'
@@ -22,9 +22,8 @@ class OrganizationDetails extends BaseModel implements IOrganizationDetailsModel
   size: OrganizationSizeValue
 
   @Expose()
-  @ApiProperty()
-  @IsIn(Object.values(ConsumerRole))
-  consumerRole: ConsumerRoleValue
+  @ApiProperty({ required: true })
+  consumerRole: string
 }
 
 export class OrganizationDetailsResponse extends OmitType(OrganizationDetails, [`deletedAt`] as const) {}
