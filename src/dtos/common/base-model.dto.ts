@@ -28,5 +28,5 @@ export class BaseModel implements IBaseModel {
   @IsDate()
   @ValidateIf(({ value }) => value != null)
   @Transform(({ value: deletedAt }) => (deletedAt == null ? null : moment(deletedAt).valueOf()))
-  deletedAt?: Date = null
+  deletedAt?: Date
 }

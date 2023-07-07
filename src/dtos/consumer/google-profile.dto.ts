@@ -45,14 +45,14 @@ export class GoogleSignin {
   credential: string
 
   @Expose()
-  @ApiProperty({ required: false, default: null })
+  @ApiProperty({ required: false })
   @ValidateIf((_, value) => value != null)
   @IsIn(Object.values(AccountType))
-  accountType?: AccountTypeValue = null
+  accountType?: AccountTypeValue
 
   @Expose()
-  @ApiProperty({ required: false, default: null })
+  @ApiProperty({ required: false })
   @ValidateIf((_, value) => value != null)
   @IsIn(Object.values(ContractorKind))
-  contractorKind?: ContractorKindValue = null
+  contractorKind?: ContractorKindValue
 }

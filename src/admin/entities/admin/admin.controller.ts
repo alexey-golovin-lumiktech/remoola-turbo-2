@@ -33,14 +33,14 @@ export class AdminController {
   @Post(`/`)
   @TransformResponse(ADMIN.AdminResponse)
   @ApiOkResponse({ type: ADMIN.AdminResponse })
-  create(@Body() body: ADMIN.CreateAdminRequest): Promise<ADMIN.AdminResponse> {
+  create(@Body() body: ADMIN.CreateAdmin): Promise<ADMIN.AdminResponse> {
     return this.service.create(body)
   }
 
   @Put(`/:adminId`)
   @TransformResponse(ADMIN.AdminResponse)
   @ApiOkResponse({ type: ADMIN.AdminResponse })
-  update(@Param(`adminId`) adminId: string, @Body() body: ADMIN.UpdateAdminRequest): Promise<ADMIN.AdminResponse> {
+  update(@Param(`adminId`) adminId: string, @Body() body: ADMIN.UpdateAdmin): Promise<ADMIN.AdminResponse> {
     return this.service.update(adminId, body)
   }
 

@@ -1,10 +1,10 @@
-import { Inject, Injectable } from '@nestjs/common'
+import { BadRequestException, Inject, Injectable } from '@nestjs/common'
 
 import { IAdminModel } from '@wirebill/shared-common/models'
 
 import { BaseService } from '../../../common'
 import { ADMIN } from '../../../dtos'
-import { generatePasswordHash, generatePasswordHashSalt } from '../../../utils'
+import { generatePasswordHash, generatePasswordHashSalt, providedPasswordsIsEqual } from '../../../utils'
 
 import { AdminRepository } from './admin.repository'
 
@@ -18,22 +18,27 @@ export class AdminService extends BaseService<IAdminModel, AdminRepository> {
     return this.repository.qb.where({ email }).first()
   }
 
-  async create(body: any): Promise<ADMIN.AdminResponse> {
-    body.salt = generatePasswordHashSalt(10)
-    body.password = generatePasswordHash({ password: body.password, salt: body.salt })
-    return this.repository.create(body)
+  async create(body: ADMIN.CreateAdmin): Promise<ADMIN.AdminResponse> {
+    const salt = generatePasswordHashSalt(10)
+    const password = generatePasswordHash({ password: body.password, salt })
+    return this.repository.create({ ...body, salt, password })
   }
 
-  async update(consumerId: string, body: any): Promise<ADMIN.AdminResponse> {
-    const consumer = await this.repository.findById(consumerId)
+  async update(adminId: string, body: ADMIN.UpdateAdmin): Promise<ADMIN.AdminResponse> {
+    const admin = await this.repository.findById(adminId)
+    if (!admin) throw new BadRequestException(`No admin for provided adminId: ${adminId}`)
 
-    if (consumer.password != body.password /* password changed by super admin */) {
-      const salt = generatePasswordHashSalt(10)
-      const password = generatePasswordHash({ password: body.password, salt })
-      Object.assign(body, { password, salt }) /* add new salt + pass to body(consumerModel) */
+    const incomingBodyPasswordIsEqualToAdminExistPassword = providedPasswordsIsEqual({
+      incomingPass: body.password,
+      password: admin.password,
+      salt: admin.salt,
+    })
+
+    if (!incomingBodyPasswordIsEqualToAdminExistPassword) {
+      body.salt = generatePasswordHashSalt(10)
+      body.password = generatePasswordHash({ password: body.password, salt: body.salt })
     }
 
-    const updated = await this.repository.updateById(consumerId, body)
-    return updated
+    return this.repository.updateById(adminId, body)
   }
 }

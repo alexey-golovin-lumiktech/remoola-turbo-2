@@ -11,16 +11,16 @@ import { BaseModel } from '../common'
 
 export class Consumer extends BaseModel implements IConsumerModel {
   @Expose()
-  @ApiProperty({ required: false, default: null })
+  @ApiProperty({ required: false })
   @ValidateIf((_, value) => value != null)
   @IsIn(Object.values(AccountType))
-  accountType?: AccountTypeValue = null
+  accountType?: AccountTypeValue
 
   @Expose()
-  @ApiProperty({ required: false, default: null })
+  @ApiProperty({ required: false })
   @ValidateIf((_, value) => value != null)
   @IsIn(Object.values(ContractorKind))
-  contractorKind?: ContractorKindValue = null
+  contractorKind?: ContractorKindValue
 
   @Expose()
   @ApiProperty()
@@ -28,12 +28,12 @@ export class Consumer extends BaseModel implements IConsumerModel {
   email: string
 
   @Expose()
-  @ApiProperty({ default: false })
+  @ApiProperty()
   @IsBoolean()
   verified = false
 
   @Expose()
-  @ApiProperty({ default: false })
+  @ApiProperty()
   @IsBoolean()
   legalVerified = false
 
@@ -58,25 +58,25 @@ export class Consumer extends BaseModel implements IConsumerModel {
   lastName: string
 
   @Expose()
-  @ApiProperty({ required: false, default: null })
-  stripeCustomerId?: string = null
+  @ApiProperty({ required: false })
+  stripeCustomerId?: string
 
   // refs
   @Expose()
-  @ApiProperty({ required: false, default: null })
-  googleProfileDetailsId?: string = null
+  @ApiProperty({ required: false })
+  googleProfileDetailsId?: string
 
   @Expose()
-  @ApiProperty({ required: false, default: null })
-  personalDetailsId?: string = null
+  @ApiProperty({ required: false })
+  personalDetailsId?: string
 
   @Expose()
-  @ApiProperty({ required: false, default: null })
-  addressDetailsId?: string = null
+  @ApiProperty({ required: false })
+  addressDetailsId?: string
 
   @Expose()
-  @ApiProperty({ required: false, default: null })
-  organizationDetailsId?: string = null
+  @ApiProperty({ required: false })
+  organizationDetailsId?: string
 }
 
 export class UpsertConsumer extends PickType(Consumer, [

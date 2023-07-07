@@ -23,20 +23,20 @@ class PersonalDetails extends BaseModel implements IPersonalDetailsModel {
   passportOrIdNumber: string
 
   @Expose()
-  @ApiProperty({ required: false, default: null })
-  countryOfTaxResidence?: string = null
+  @ApiProperty({ required: false })
+  countryOfTaxResidence?: string
 
   @Expose()
-  @ApiProperty({ required: false, default: null })
-  legalStatus?: string = null
+  @ApiProperty({ required: false })
+  legalStatus?: string
 
   @Expose()
-  @ApiProperty({ required: false, default: null })
-  taxId?: string = null
+  @ApiProperty({ required: false })
+  taxId?: string
 
   @Expose()
-  @ApiProperty({ required: false, default: null })
-  phoneNumber?: string = null
+  @ApiProperty({ required: false })
+  phoneNumber?: string
 }
 
 export class PersonalDetailsResponse extends OmitType(PersonalDetails, [`deletedAt`] as const) {}
