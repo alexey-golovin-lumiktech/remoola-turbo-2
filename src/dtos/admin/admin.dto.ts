@@ -16,8 +16,8 @@ class Admin extends BaseModel implements IAdminModel {
   email: string
 
   @Expose()
-  @IsIn(Object.keys(AdminType))
-  @ApiProperty({ enum: Object.keys(AdminType) })
+  @IsIn(Object.values(AdminType))
+  @ApiProperty({ enum: Object.values(AdminType) })
   type: AdminTypeValue
 
   @Expose()
