@@ -88,6 +88,8 @@ export class AuthService {
     const salt = utils.generatePasswordHashSalt()
     const hash = utils.generatePasswordHash({ password: body.password, salt })
     const consumer = await this.service.upsert({
+      accountType: body.accountType,
+      contractorKind: body.contractorKind,
       email: body.email,
       firstName: body.firstName,
       lastName: body.lastName,
