@@ -3,14 +3,14 @@ import { ConfigService } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
 
 import { ConsumerModule } from '../entities/consumer/consumer.module'
-import { GoogleProfilesModule } from '../entities/google-profiles/google-profiles.module'
+import { GoogleProfileDetailsModule } from '../entities/google-profile-details/google-profile-details.module'
 
 import { AuthController } from './auth.controller'
 import { AuthService } from './auth.service'
 
 @Module({
   imports: [
-    GoogleProfilesModule,
+    GoogleProfileDetailsModule,
     ConsumerModule,
     JwtModule.registerAsync({
       useFactory: (configService: ConfigService) => {

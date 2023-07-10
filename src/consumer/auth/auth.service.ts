@@ -12,7 +12,7 @@ import { MailingService } from '../../common-shared-modules/mailing/mailing.serv
 import { CONSUMER } from '../../dtos'
 import * as utils from '../../utils'
 import { ConsumerService } from '../entities/consumer/consumer.service'
-import { GoogleProfilesService } from '../entities/google-profiles/google-profiles.service'
+import { GoogleProfileDetailsService } from '../entities/google-profile-details/google-profile-details.service'
 
 @Injectable()
 export class AuthService {
@@ -22,7 +22,7 @@ export class AuthService {
 
   constructor(
     @Inject(ConsumerService) private readonly service: ConsumerService,
-    @Inject(GoogleProfilesService) private readonly googleProfileService: GoogleProfilesService,
+    @Inject(GoogleProfileDetailsService) private readonly googleProfileService: GoogleProfileDetailsService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly mailingService: MailingService,

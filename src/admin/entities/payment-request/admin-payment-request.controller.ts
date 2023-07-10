@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Param, Patch, Query, Response } from '@nestjs/common'
+import { Body, Controller, Get, Inject, Param, Put, Query, Response } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { Response as IExpressResponse } from 'express'
 
@@ -31,14 +31,14 @@ export class AdminPaymentRequestController {
     return result
   }
 
-  @Get(`/:paymentId`)
+  @Get(`/:paymentRequestId`)
   @ApiOkResponse({ type: ADMIN.PaymentRequestResponse })
-  getById(@Param(`paymentId`) paymentId: string): Promise<ADMIN.PaymentRequestResponse> {
-    return this.service.repository.findById(paymentId)
+  getById(@Param(`paymentRequestId`) paymentRequestId: string): Promise<ADMIN.PaymentRequestResponse> {
+    return this.service.repository.findById(paymentRequestId)
   }
 
-  @Patch(`/:paymentId`)
-  updatePaymentStatus(@Param(`paymentId`) paymentId: string, @Body() body: UpdatePaymentRequest) {
-    return this.service.repository.updateById(paymentId, body)
+  @Put(`/:paymentRequestId`)
+  updateById(@Param(`paymentRequestId`) paymentRequestId: string, @Body() body: UpdatePaymentRequest) {
+    return this.service.repository.updateById(paymentRequestId, body)
   }
 }

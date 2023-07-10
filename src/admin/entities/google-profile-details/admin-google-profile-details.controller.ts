@@ -1,8 +1,8 @@
-import { Controller, Get, Inject, Param, Query, Response } from '@nestjs/common'
+import { Body, Controller, Get, Inject, Param, Put, Query, Response } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { Response as IExpressResponse } from 'express'
 
-import { IGoogleProfileModel } from '@wirebill/shared-common/models'
+import { IGoogleProfileDetailsModel } from '@wirebill/shared-common/models'
 import { ListQuery } from '@wirebill/shared-common/types'
 
 import { ADMIN } from '../../../dtos'
@@ -18,21 +18,30 @@ export class AdminGoogleProfileDetailsController {
   constructor(@Inject(AdminGoogleProfileDetailsService) private readonly service: AdminGoogleProfileDetailsService) {}
 
   @Get(`/`)
-  @TransformResponse(ListResponse<ADMIN.GoogleProfileResponse>)
-  @ApiOkResponse({ type: ListResponse<ADMIN.GoogleProfileResponse> })
+  @TransformResponse(ListResponse<ADMIN.GoogleProfileDetailsResponse>)
+  @ApiOkResponse({ type: ListResponse<ADMIN.GoogleProfileDetailsResponse> })
   async findAndCountAll(
-    @Query(new AdminPanelQueryTransformPipe()) query: ListQuery<IGoogleProfileModel>,
+    @Query(new AdminPanelQueryTransformPipe()) query: ListQuery<IGoogleProfileDetailsModel>,
     @Response() res: IExpressResponse,
-  ): Promise<ListResponse<ADMIN.GoogleProfileResponse>> {
+  ): Promise<ListResponse<ADMIN.GoogleProfileDetailsResponse>> {
     const result = await this.service.repository.findAndCountAll(query)
     res.set(`Content-Range`, result.count.toString())
     res.send(result.data)
     return result
   }
 
-  @Get(`/:profileId`)
-  @ApiOkResponse({ type: ADMIN.GoogleProfileResponse })
-  getById(@Param(`profileId`) profileId: string): Promise<ADMIN.GoogleProfileResponse> {
-    return this.service.repository.findById(profileId)
+  @Get(`/:googleProfileDetailsId`)
+  @ApiOkResponse({ type: ADMIN.GoogleProfileDetailsResponse })
+  getById(@Param(`googleProfileDetailsId`) googleProfileDetailsId: string): Promise<ADMIN.GoogleProfileDetailsResponse> {
+    return this.service.repository.findById(googleProfileDetailsId)
+  }
+
+  @Put(`/:googleProfileDetailsId`)
+  @ApiOkResponse({ type: ADMIN.GoogleProfileDetailsResponse })
+  updateById(
+    @Param(`googleProfileDetailsId`) googleProfileDetailsId: string,
+    @Body() body: ADMIN.UpdateGoogleProfileDetails,
+  ): Promise<ADMIN.GoogleProfileDetailsResponse> {
+    return this.service.repository.updateById(googleProfileDetailsId, body)
   }
 }

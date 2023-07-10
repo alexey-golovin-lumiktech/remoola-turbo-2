@@ -4,7 +4,7 @@ import { AddressDetailsModule } from '../address-details/address-details.module'
 import { AddressDetailsRepository } from '../address-details/address-details.repository'
 import { AddressDetailsService } from '../address-details/address-details.service'
 import { BillingDetailsModule } from '../billing-details/billing-details.module'
-import { GoogleProfilesModule } from '../google-profiles/google-profiles.module'
+import { GoogleProfileDetailsModule } from '../google-profile-details/google-profile-details.module'
 import { OrganizationDetailsModule } from '../organization-details/organization-details.module'
 import { OrganizationDetailsRepository } from '../organization-details/organization-details.repository'
 import { OrganizationDetailsService } from '../organization-details/organization-details.service'
@@ -20,7 +20,7 @@ import { ConsumerService } from './consumer.service'
 
 @Module({
   imports: [
-    GoogleProfilesModule,
+    GoogleProfileDetailsModule,
     BillingDetailsModule,
     AddressDetailsModule,
     OrganizationDetailsModule,
