@@ -46,7 +46,7 @@ export class ConsumerController {
     return this.billingDetailsService.upsert({ ...body, consumerId: identity.id })
   }
 
-  @Get(`/payment-request`)
+  @Get(`/payment-requests`)
   @ApiOkResponse({ type: PaymentRequestListResponse })
   @TransformResponse(PaymentRequestListResponse)
   listPaymentRequests(

@@ -14,7 +14,7 @@ import { AdminPanelQueryTransformPipe } from '../../pipes'
 import { AdminPaymentRequestService } from './admin-payment-request.service'
 
 @ApiTags(`admin`)
-@Controller(`admin/payment-request`)
+@Controller(`admin/payment-requests`)
 export class AdminPaymentRequestController {
   constructor(@Inject(AdminPaymentRequestService) private readonly service: AdminPaymentRequestService) {}
 
