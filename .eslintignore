@@ -1,0 +1,9 @@
+# compiled output 
+node_modules
+dist 
+/libs/shared-common/dtos
+/libs/shared-common/enums
+/libs/shared-common/types
+/libs/shared-common/models
+/libs/shared-common/tsconfig.tsbuildinfo
+/libs/shared-common/yarn.lock

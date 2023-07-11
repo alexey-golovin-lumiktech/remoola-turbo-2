@@ -1,0 +1,43 @@
+import { ApiProperty, OmitType, PickType } from '@nestjs/swagger'
+import { Expose } from 'class-transformer'
+import { IsIn } from 'class-validator'
+
+import { OrganizationSize, OrganizationSizeValue } from '@wirebill/shared-common'
+import { IOrganizationDetailsModel } from '@wirebill/shared-common/models'
+
+import { BaseModel } from '../common/base-model.dto'
+
+class OrganizationDetails extends BaseModel implements IOrganizationDetailsModel {
+  @Expose()
+  @ApiProperty()
+  consumerId: string
+
+  @Expose()
+  @ApiProperty()
+  name: string
+
+  @Expose()
+  @ApiProperty()
+  @IsIn(Object.values(OrganizationSize))
+  size: OrganizationSizeValue
+
+  @Expose()
+  @ApiProperty({ required: true })
+  consumerRole: string
+}
+
+export class OrganizationDetailsResponse extends OmitType(OrganizationDetails, [`deletedAt`] as const) {}
+
+export class CreateOrganizationDetails extends PickType(OrganizationDetailsResponse, [
+  `consumerId`,
+  `name`,
+  `size`,
+  `consumerRole`,
+] as const) {}
+
+export class UpdateOrganizationDetails extends PickType(OrganizationDetailsResponse, [
+  `consumerId`,
+  `name`,
+  `size`,
+  `consumerRole`,
+] as const) {}

@@ -1,0 +1,54 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "es2017",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "incremental": true,
+    "skipLibCheck": true,
+    "strictNullChecks": false,
+    "noImplicitAny": false,
+    "strictBindCallApply": false,
+    "forceConsistentCasingInFileNames": false,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "noFallthroughCasesInSwitch": false,
+    "typeRoots": [
+      "node_modules/@types",
+      "src/**/*",
+      "typings/**/*"
+    ],
+    "paths": {
+      "@wirebill/shared-admin": [
+        "libs/shared-admin/src",
+      ],
+      "@wirebill/shared-admin/*": [
+        "libs/shared-admin/src/*",
+      ],
+      "@wirebill/shared-consumer": [
+        "libs/shared-consumer/src",
+      ],
+      "@wirebill/shared-consumer/*": [
+        "libs/shared-consumer/src/*",
+      ]
+    },
+    "baseUrl": "./"
+  },
+  "exclude": [
+    "node_modules",
+    "**/*.spec.ts"
+  ],
+  "include": [
+    "typings",
+    ".eslintrc.js",
+    "src",
+    "libs",
+    "knexfile.ts",
+    "test"
+  ]
+}

@@ -1,0 +1,58 @@
+import { ApiProperty } from '@nestjs/swagger'
+import { Expose } from 'class-transformer'
+import { IsIn, IsString, ValidateIf } from 'class-validator'
+import { TokenPayload as ITokenPayload } from 'google-auth-library'
+
+import { AccountType, ContractorKind } from '@wirebill/shared-common/enums'
+import { AccountTypeValue, ContractorKindValue } from '@wirebill/shared-common/types'
+
+export type ITokenPayloadPick = Pick<
+  ITokenPayload,
+  | `email` //
+  | `email_verified`
+  | `name`
+  | `given_name`
+  | `family_name`
+  | `picture`
+>
+
+export class GoogleProfile {
+  emailVerified: boolean
+  data: string
+  email: string
+  name?: string
+  givenName?: string
+  familyName?: string
+  picture?: string
+  organization?: string
+
+  constructor(payload: ITokenPayload) {
+    this.emailVerified = Boolean(payload.email_verified)
+
+    this.email = payload.email
+    this.name = payload.name
+    this.givenName = payload.given_name
+    this.familyName = payload.family_name
+    this.picture = payload.picture
+    this.organization = payload.hd
+  }
+}
+
+export class GoogleSignin {
+  @Expose()
+  @ApiProperty()
+  @IsString()
+  credential: string
+
+  @Expose()
+  @ApiProperty({ required: false })
+  @ValidateIf((_, value) => value != null)
+  @IsIn(Object.values(AccountType))
+  accountType?: AccountTypeValue
+
+  @Expose()
+  @ApiProperty({ required: false })
+  @ValidateIf((_, value) => value != null)
+  @IsIn(Object.values(ContractorKind))
+  contractorKind?: ContractorKindValue
+}

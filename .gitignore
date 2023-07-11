@@ -1,0 +1,77 @@
+# compiled output
+
+# Logs
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# OS
+.DS_Store
+
+# Tests
+/coverage
+/.nyc_output
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+node_modules
+dist
+
+/client_secret_287142264528-9j8ivu8qfeemn8fri1sv3pfej1g05h36.apps.googleusercontent.com.json
+/.env
+/.env.development
+/generate-entity.sh
+/z-me*
+/me*
+/**/yalc.lock
+/**/.yalc
+/tsconfig.build**
+/knexfile.d.ts
+/knexfile.js
+/knexfile.js.map
+
+
+/libs/shared-admin/dtos
+/libs/shared-admin/enums
+/libs/shared-admin/types
+/libs/shared-admin/models
+/libs/shared-admin/tsconfig.tsbuildinfo
+/libs/shared-admin/yarn.lock
+
+/libs/shared-consumer/dtos
+/libs/shared-consumer/enums
+/libs/shared-consumer/types
+/libs/shared-consumer/models
+/libs/shared-consumer/tsconfig.tsbuildinfo
+/libs/shared-consumer/yarn.lock
+
+/libs/shared-common/dtos
+/libs/shared-common/enums
+/libs/shared-common/types
+/libs/shared-common/models
+/libs/shared-common/tsconfig.tsbuildinfo
+/libs/shared-common/yarn.lock
+
+/libs/pdf-generator-package/dtos
+/libs/pdf-generator-package/enums
+/libs/pdf-generator-package/types
+/libs/pdf-generator-package/models
+/libs/pdf-generator-package/tsconfig.tsbuildinfo
+/libs/pdf-generator-package/yarn.lock

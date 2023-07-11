@@ -1,0 +1,19 @@
+{
+  "moduleFileExtensions": [
+    "js",
+    "json",
+    "ts"
+  ],
+  "rootDir": ".",
+  "testEnvironment": "node",
+  "testRegex": ".e2e-spec.ts$",
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "moduleNameMapper": {
+    "@wirebill/shared-admin/(.*)": "<rootDir>/../libs/shared-admin/src/$1",
+    "@wirebill/shared-admin": "<rootDir>/../libs/shared-admin/src",
+    "@wirebill/shared-consumer/(.*)": "<rootDir>/../libs/shared-consumer/src/$1",
+    "@wirebill/shared-consumer": "<rootDir>/../libs/shared-consumer/src"
+  }
+}
