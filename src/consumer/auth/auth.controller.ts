@@ -29,8 +29,8 @@ export class AuthController {
   @Post(`/login`)
   @ApiOkResponse({ type: CONSUMER.LoginResponse })
   @TransformResponse(CONSUMER.LoginResponse)
-  login(@ReqAuthIdentity() consumerIdentity: IConsumerModel): Promise<CONSUMER.LoginResponse> {
-    return this.service.login(consumerIdentity)
+  login(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.LoginResponse> {
+    return this.service.login(identity)
   }
 
   @PublicEndpoint()

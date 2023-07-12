@@ -60,10 +60,10 @@ export class AuthService {
     }
   }
 
-  async login(consumerIdentity: IConsumerModel): Promise<CONSUMER.LoginResponse> {
-    const accessToken = this.generateToken(consumerIdentity)
+  async login(identity: IConsumerModel): Promise<CONSUMER.LoginResponse> {
+    const accessToken = this.generateToken(identity)
     const refreshToken = this.generateRefreshToken() //@TODO: need to store refresh token
-    return utils.toResponse(CONSUMER.LoginResponse, Object.assign(consumerIdentity, { accessToken, refreshToken: refreshToken.token }))
+    return utils.toResponse(CONSUMER.LoginResponse, Object.assign(identity, { accessToken, refreshToken: refreshToken.token }))
   }
 
   private extractConsumerData(

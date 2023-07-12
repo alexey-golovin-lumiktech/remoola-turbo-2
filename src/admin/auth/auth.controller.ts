@@ -15,7 +15,7 @@ export class AuthController {
 
   @Post(`/login`)
   @ApiOkResponse({ type: ADMIN.Access })
-  login(@ReqAuthIdentity() adminIdentity: IAdminModel): Promise<ADMIN.Access> {
-    return this.service.login(adminIdentity)
+  login(@ReqAuthIdentity() identity: IAdminModel): Promise<ADMIN.Access> {
+    return this.service.login(identity)
   }
 }

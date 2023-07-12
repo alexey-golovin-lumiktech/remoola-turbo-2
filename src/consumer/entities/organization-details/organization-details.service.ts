@@ -22,10 +22,4 @@ export class OrganizationDetailsService extends BaseService<IOrganizationDetails
     const organizationDetails = exist == null ? await this.repository.create(dto) : await this.repository.updateById(exist.id, dto)
     return organizationDetails
   }
-
-  async getConsumerOrganizationDetails(filter: { consumerId: string }): Promise<CONSUMER.OrganizationDetailsResponse | null> {
-    const [organizationDetails] = await this.repository.find({ filter })
-    if (!organizationDetails) return null
-    return organizationDetails
-  }
 }

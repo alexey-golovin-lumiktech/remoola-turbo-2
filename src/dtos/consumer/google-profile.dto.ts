@@ -3,10 +3,12 @@ import { Expose } from 'class-transformer'
 import { IsIn, IsString, ValidateIf } from 'class-validator'
 import { TokenPayload as ITokenPayload } from 'google-auth-library'
 
-import { IGoogleProfileDetailsModel } from '@wirebill/shared-common'
-import { IGoogleProfileDetailsCreate } from '@wirebill/shared-common/dtos'
+import { IGoogleProfileDetailsCreate, IGoogleProfileDetailsUpdate } from '@wirebill/shared-common/dtos'
 import { AccountType, ContractorKind } from '@wirebill/shared-common/enums'
+import { IGoogleProfileDetailsModel } from '@wirebill/shared-common/models'
 import { AccountTypeValue, ContractorKindValue } from '@wirebill/shared-common/types'
+
+import { BaseModel } from '../common'
 
 export type ITokenPayloadPick = Pick<
   ITokenPayload,
@@ -59,20 +61,45 @@ export class GoogleSignin {
   contractorKind?: ContractorKindValue
 }
 
-class GoogleProfileDetails implements IGoogleProfileDetailsModel {
+class GoogleProfileDetails extends BaseModel implements IGoogleProfileDetailsModel {
+  @Expose()
+  @ApiProperty({ required: true })
   consumerId: string
+
+  @Expose()
+  @ApiProperty({ required: true })
   emailVerified: boolean
+
+  @Expose()
+  @ApiProperty({ required: true })
   data: string
+
+  @Expose()
+  @ApiProperty({ required: true })
   email: string
+
+  @Expose()
+  @ApiProperty({ required: false })
   name?: string
+
+  @Expose()
+  @ApiProperty({ required: false })
   givenName?: string
+
+  @Expose()
+  @ApiProperty({ required: false })
   familyName?: string
+
+  @Expose()
+  @ApiProperty({ required: false })
   picture?: string
+
+  @Expose()
+  @ApiProperty({ required: false })
   organization?: string
-  id: string
-  createdAt: Date
-  updatedAt: Date
-  deletedAt?: Date
 }
 
-export class GoogleProfileDetailsResponse extends OmitType(GoogleProfileDetails, [`deletedAt`] as const) {}
+export class GoogleProfileDetailsResponse extends OmitType(GoogleProfileDetails, [`data`] as const) {}
+export class GoogleProfileDetailsUpdate
+  extends OmitType(GoogleProfileDetails, [`id`, `createdAt`, `updatedAt`, `consumerId`, `data`] as const)
+  implements Omit<IGoogleProfileDetailsUpdate, `data`> {}
