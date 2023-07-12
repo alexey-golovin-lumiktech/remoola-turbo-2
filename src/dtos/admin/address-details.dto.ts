@@ -1,7 +1,8 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 
-import { IAddressDetailsModel, IAddressDetailsUpdate } from '@wirebill/shared-common'
+import { IAddressDetailsUpdate } from '@wirebill/shared-common/dtos'
+import { IAddressDetailsModel } from '@wirebill/shared-common/models'
 
 import { BaseModel } from '../common'
 

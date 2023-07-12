@@ -2,8 +2,9 @@ import { ApiProperty, OmitType, PickType } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 import { IsIn } from 'class-validator'
 
-import { OrganizationSize, OrganizationSizeValue } from '@wirebill/shared-common'
+import { OrganizationSize } from '@wirebill/shared-common/enums'
 import { IOrganizationDetailsModel } from '@wirebill/shared-common/models'
+import { OrganizationSizeValue } from '@wirebill/shared-common/types'
 
 import { BaseModel } from '../common/base-model.dto'
 

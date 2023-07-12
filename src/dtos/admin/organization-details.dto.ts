@@ -1,7 +1,9 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 
-import { IOrganizationDetailsModel, IOrganizationDetailsUpdate, OrganizationSizeValue } from '@wirebill/shared-common'
+import { IOrganizationDetailsUpdate } from '@wirebill/shared-common/dtos'
+import { IOrganizationDetailsModel } from '@wirebill/shared-common/models'
+import { OrganizationSizeValue } from '@wirebill/shared-common/types'
 
 import { BaseModel } from '../common'
 

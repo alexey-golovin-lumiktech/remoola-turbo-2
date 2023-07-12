@@ -24,20 +24,20 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
     consumerId: string,
     query: ListQuery<IPaymentRequestModel>,
   ): Promise<ListResponse<CONSUMER.PaymentRequestResponse>> {
-    const baseQuery = this.repository.knex
-      .from(`${TableName.PaymentRequest} as p`)
-      .join(`${TableName.Consumer} as requester`, `requester.id`, `p.requester_id`)
-      .join(`${TableName.Consumer} as payer`, `requester.id`, `p.payer_id`)
-      .modify(qb => {
-        if (query.filter) qb.where({ ...query.filter, requesterId: consumerId })
-        if (query.sorting) query.sorting.forEach(({ field, direction }) => qb.orderBy(field, direction))
-      })
+    const baseQuery = this.repository.knex.from(`${TableName.PaymentRequest} as p`).where({ requesterId: consumerId })
 
     const count = await baseQuery.clone().count().then(getKnexCount)
-    const data = await baseQuery.clone().modify(qb => {
-      if (query.paging.limit) qb.limit(query.paging.limit)
-      if (query.paging.offset) qb.offset(query.paging.offset)
-    })
+    const data = await baseQuery
+      .clone()
+      .join(`${TableName.Consumer} as requester`, `requester.id`, `p.requester_id`)
+      .join(`${TableName.Consumer} as payer`, `payer.id`, `p.payer_id`)
+      .modify(qb => {
+        if (query?.filter) qb.where({ ...query.filter, requesterId: consumerId })
+        if (query?.sorting) query.sorting.forEach(({ field, direction }) => qb.orderBy(field, direction))
+        if (query?.paging?.limit) qb.limit(query.paging.limit)
+        if (query?.paging?.offset) qb.offset(query.paging.offset)
+      })
+      .select(`p.*`, `requester.first_name as requester_name`, `payer.first_name as payer_name`)
 
     return { count, data }
   }

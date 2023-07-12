@@ -2,6 +2,7 @@ import { ApiProperty, OmitType } from '@nestjs/swagger'
 import { Expose, Type } from 'class-transformer'
 import { IsDate, IsIn, IsNotEmpty, IsNumber, IsString } from 'class-validator'
 
+import { IPaymentRequestResponse } from '@wirebill/shared-common/dtos'
 import { CurrencyCode, PaymentStatus, TransactionType } from '@wirebill/shared-common/enums'
 import { IConsumerModel, IPaymentRequestModel } from '@wirebill/shared-common/models'
 import {
@@ -65,7 +66,15 @@ class PaymentRequest extends BaseModel implements IPaymentRequestModel {
   taxId: string
 }
 
-export class PaymentRequestResponse extends OmitType(PaymentRequest, [`deletedAt`] as const) {}
+export class PaymentRequestResponse extends OmitType(PaymentRequest, [`deletedAt`] as const) implements IPaymentRequestResponse {
+  @Expose()
+  @ApiProperty()
+  payerName: string
+
+  @Expose()
+  @ApiProperty()
+  requesterName: string
+}
 
 export class PaymentRequestListResponse extends ListResponse<PaymentRequestResponse> {
   @Expose()
