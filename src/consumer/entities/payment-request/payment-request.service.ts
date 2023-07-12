@@ -20,7 +20,7 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
     super(repository)
   }
 
-  async listPaymentRequests(
+  async getConsumerPaymentRequests(
     consumerId: string,
     query: ListQuery<IPaymentRequestModel>,
   ): Promise<ListResponse<CONSUMER.PaymentRequestResponse>> {

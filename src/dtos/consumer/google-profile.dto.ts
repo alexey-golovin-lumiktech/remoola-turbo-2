@@ -1,8 +1,10 @@
-import { ApiProperty } from '@nestjs/swagger'
+import { ApiProperty, OmitType } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 import { IsIn, IsString, ValidateIf } from 'class-validator'
 import { TokenPayload as ITokenPayload } from 'google-auth-library'
 
+import { IGoogleProfileDetailsModel } from '@wirebill/shared-common'
+import { IGoogleProfileDetailsCreate } from '@wirebill/shared-common/dtos'
 import { AccountType, ContractorKind } from '@wirebill/shared-common/enums'
 import { AccountTypeValue, ContractorKindValue } from '@wirebill/shared-common/types'
 
@@ -16,14 +18,14 @@ export type ITokenPayloadPick = Pick<
   | `picture`
 >
 
-export class GoogleProfile {
+export class CreateGoogleProfileDetails implements IGoogleProfileDetailsCreate {
+  name?: string
+  email: string
+  picture?: string
   emailVerified: boolean
   data: string
-  email: string
-  name?: string
   givenName?: string
   familyName?: string
-  picture?: string
   organization?: string
 
   constructor(payload: ITokenPayload) {
@@ -56,3 +58,21 @@ export class GoogleSignin {
   @IsIn(Object.values(ContractorKind))
   contractorKind?: ContractorKindValue
 }
+
+class GoogleProfileDetails implements IGoogleProfileDetailsModel {
+  consumerId: string
+  emailVerified: boolean
+  data: string
+  email: string
+  name?: string
+  givenName?: string
+  familyName?: string
+  picture?: string
+  organization?: string
+  id: string
+  createdAt: Date
+  updatedAt: Date
+  deletedAt?: Date
+}
+
+export class GoogleProfileDetailsResponse extends OmitType(GoogleProfileDetails, [`deletedAt`] as const) {}

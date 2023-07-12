@@ -22,4 +22,10 @@ export class AddressDetailsService extends BaseService<IAddressDetailsModel, Add
     const addressDetails = exist == null ? await this.repository.create(dto) : await this.repository.updateById(exist.id, dto)
     return addressDetails
   }
+
+  async getConsumerAddressDetails(filter: { consumerId: string }): Promise<CONSUMER.AddressDetailsResponse | null> {
+    const [addressDetails] = await this.repository.find({ filter })
+    if (!addressDetails) return null
+    return addressDetails
+  }
 }

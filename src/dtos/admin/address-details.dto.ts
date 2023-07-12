@@ -1,7 +1,7 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 
-import { IAddressDetailsModel, IUpdateAddressDetails } from '@wirebill/shared-common'
+import { IAddressDetailsModel, IAddressDetailsUpdate } from '@wirebill/shared-common'
 
 import { BaseModel } from '../common'
 
@@ -29,7 +29,7 @@ class AddressDetails extends BaseModel implements IAddressDetailsModel {
 
 export class AddressDetailsResponse extends OmitType(AddressDetails, [`deletedAt`] as const) {}
 
-export class UpdateAddressDetails implements IUpdateAddressDetails {
+export class UpdateAddressDetails implements IAddressDetailsUpdate {
   @Expose()
   @ApiProperty()
   street: string

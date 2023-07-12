@@ -19,7 +19,7 @@ export class BillingDetailsService extends BaseService<IBillingDetailsModel, Bil
     return result
   }
 
-  async getConsumerBillingDetails(filter: { consumerId: string }): Promise<CONSUMER.BillingDetailsResponse> {
+  async getConsumerBillingDetails(filter: { consumerId: string }): Promise<CONSUMER.BillingDetailsResponse | null> {
     const [billingDetails] = await this.repository.find({ filter })
     if (!billingDetails) return null
     return billingDetails

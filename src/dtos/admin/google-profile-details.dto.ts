@@ -1,7 +1,7 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 
-import { IUpdateGoogleProfileDetails } from '@wirebill/shared-common'
+import { IGoogleProfileDetailsUpdate } from '@wirebill/shared-common'
 import { IGoogleProfileDetailsModel } from '@wirebill/shared-common/models'
 
 import { BaseModel } from '../common'
@@ -46,7 +46,7 @@ class GoogleProfileDetails extends BaseModel implements IGoogleProfileDetailsMod
 
 export class GoogleProfileDetailsResponse extends OmitType(GoogleProfileDetails, [`deletedAt`] as const) {}
 
-export class UpdateGoogleProfileDetails implements IUpdateGoogleProfileDetails {
+export class UpdateGoogleProfileDetails implements IGoogleProfileDetailsUpdate {
   @Expose()
   @ApiProperty({ required: false })
   emailVerified?: boolean

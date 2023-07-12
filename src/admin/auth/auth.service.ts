@@ -30,11 +30,11 @@ export class AuthService {
     return admin
   }
 
-  async login(identity: IAdminModel): Promise<ADMIN.Access> {
+  async login(admin: IAdminModel): Promise<ADMIN.Access> {
     try {
-      const accessToken = this.generateToken(identity)
+      const accessToken = this.generateToken(admin)
       const refreshToken = this.generateRefreshToken() //@TODO: need to store refresh token
-      return { accessToken, refreshToken: refreshToken.token, type: identity.type }
+      return { accessToken, refreshToken: refreshToken.token, type: admin.type }
     } catch (error) {
       this.logger.error(error)
       throw new InternalServerErrorException()

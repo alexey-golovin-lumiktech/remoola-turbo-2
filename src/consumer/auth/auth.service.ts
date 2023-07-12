@@ -36,7 +36,7 @@ export class AuthService {
     try {
       const { credential, contractorKind = null, accountType = null } = body
       const verified = await this.oAuth2Client.verifyIdToken({ idToken: credential })
-      const rawGoogleProfile = new CONSUMER.GoogleProfile(verified.getPayload())
+      const rawGoogleProfile = new CONSUMER.CreateGoogleProfileDetails(verified.getPayload())
 
       const consumerData = this.extractConsumerData(rawGoogleProfile)
       const [exist] = await this.service.repository.find({ filter: { email: consumerData.email } })
@@ -60,14 +60,14 @@ export class AuthService {
     }
   }
 
-  async login(identity: IConsumerModel): Promise<CONSUMER.LoginResponse> {
-    const accessToken = this.generateToken(identity)
+  async login(consumerIdentity: IConsumerModel): Promise<CONSUMER.LoginResponse> {
+    const accessToken = this.generateToken(consumerIdentity)
     const refreshToken = this.generateRefreshToken() //@TODO: need to store refresh token
-    return utils.toResponse(CONSUMER.LoginResponse, Object.assign(identity, { accessToken, refreshToken: refreshToken.token }))
+    return utils.toResponse(CONSUMER.LoginResponse, Object.assign(consumerIdentity, { accessToken, refreshToken: refreshToken.token }))
   }
 
   private extractConsumerData(
-    dto: CONSUMER.GoogleProfile,
+    dto: CONSUMER.CreateGoogleProfileDetails,
   ): Omit<IConsumerModel, keyof IBaseModel | `accountType` | `contractorKind` | `password` | `salt`> {
     const fullName = dto.name.split(` `)
 

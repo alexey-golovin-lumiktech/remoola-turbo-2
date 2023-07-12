@@ -1,7 +1,7 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 
-import { IBillingDetailsModel, IUpdateBillingDetails } from '@wirebill/shared-common'
+import { IBillingDetailsModel, IBillingDetailsUpdate } from '@wirebill/shared-common'
 
 import { BaseModel } from '../common'
 
@@ -49,7 +49,7 @@ class BillingDetails extends BaseModel implements IBillingDetailsModel {
 
 export class BillingDetailsResponse extends OmitType(BillingDetails, [`deletedAt`] as const) {}
 
-export class UpdateBillingDetails implements IUpdateBillingDetails {
+export class UpdateBillingDetails implements IBillingDetailsUpdate {
   @Expose()
   @ApiProperty({ required: false })
   email?: string
