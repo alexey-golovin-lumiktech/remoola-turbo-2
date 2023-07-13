@@ -17,10 +17,7 @@ export class ConsumerQueryTransformPipe implements PipeTransform {
 
         if (key == `sorting`) {
           const sorting = JSON.parse(value[key])
-          if (sorting.length != 0) {
-            const [field, direction] = sorting
-            acc = { ...acc, sorting: [{ field, direction }] }
-          }
+          if (sorting.length != 0) acc = { ...acc, sorting }
         }
 
         return acc

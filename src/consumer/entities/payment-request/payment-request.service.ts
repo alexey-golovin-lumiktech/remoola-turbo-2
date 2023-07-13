@@ -33,7 +33,9 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
       .where({ requesterId: consumerId })
       .modify(qb => {
         if (query.filter) qb.andWhere(query.filter)
-        if (timelineFilter) qb.andWhere(timelineFilter.field, timelineFilter.comparison, moment(timelineFilter.value).format(`YYYY-MM-DD`))
+        if (timelineFilter) {
+          qb.andWhere(`p.${timelineFilter.field}`, timelineFilter.comparison, moment(timelineFilter.value).format(`YYYY-MM-DD`))
+        }
       })
 
     const count = await baseQuery.clone().count().then(getKnexCount)
@@ -41,10 +43,9 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
     const data = await baseQuery
       .clone()
       .modify(qb => {
-        if (query?.sorting) query.sorting.forEach(({ field, direction }) => qb.orderBy(field, direction))
-
         if (query?.paging?.limit) qb.limit(query.paging.limit)
         if (query?.paging?.offset) qb.offset(query.paging.offset)
+        if (query?.sorting) query.sorting.forEach(({ field, direction }) => qb.orderBy(field, direction))
       })
       .select(`p.*`, `requester.first_name as requester_name`, `payer.first_name as payer_name`)
 
