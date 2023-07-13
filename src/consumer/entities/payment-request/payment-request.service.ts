@@ -26,17 +26,21 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
     query?: Query<IPaymentRequestModel>,
     timelineFilter?: TimelineFilter<IPaymentRequestModel>,
   ): Promise<ListResponse<CONSUMER.PaymentRequestResponse>> {
-    const baseQuery = this.repository.knex.from(`${TableName.PaymentRequest} as p`).where({ requesterId: consumerId })
+    const baseQuery = this.repository.knex
+      .from(`${TableName.PaymentRequest} as p`)
+      .join(`${TableName.Consumer} as requester`, `requester.id`, `p.requester_id`)
+      .join(`${TableName.Consumer} as payer`, `payer.id`, `p.payer_id`)
+      .where({ requesterId: consumerId })
+      .modify(qb => {
+        if (query.filter) qb.andWhere(query.filter)
+        if (timelineFilter) qb.andWhere(timelineFilter.field, timelineFilter.comparison, moment(timelineFilter.value).format(`YYYY-MM-DD`))
+      })
+
     const count = await baseQuery.clone().count().then(getKnexCount)
 
     const data = await baseQuery
       .clone()
-      .join(`${TableName.Consumer} as requester`, `requester.id`, `p.requester_id`)
-      .join(`${TableName.Consumer} as payer`, `payer.id`, `p.payer_id`)
       .modify(qb => {
-        if (query?.filter) qb.andWhere(query.filter)
-        if (timelineFilter) qb.andWhere(timelineFilter.field, timelineFilter.comparison, moment(timelineFilter.value).format(`YYYY-MM-DD`))
-
         if (query?.sorting) query.sorting.forEach(({ field, direction }) => qb.orderBy(field, direction))
 
         if (query?.paging?.limit) qb.limit(query.paging.limit)
