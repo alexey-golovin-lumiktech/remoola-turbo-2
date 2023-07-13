@@ -1,9 +1,9 @@
-import { Body, Controller, Get, Inject, Param, Put, Query, Response } from '@nestjs/common'
+import { Body, Controller, Get, Inject, Param, Put, Query as ReqQuery, Response } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { Response as IExpressResponse } from 'express'
 
 import { IPaymentRequestModel } from '@wirebill/shared-common/models'
-import { ListQuery } from '@wirebill/shared-common/types'
+import { Query } from '@wirebill/shared-common/types'
 
 import { ADMIN } from '../../../dtos'
 import { UpdatePaymentRequest } from '../../../dtos/admin'
@@ -22,7 +22,7 @@ export class AdminPaymentRequestController {
   @TransformResponse(ListResponse<ADMIN.PaymentRequestResponse>)
   @ApiOkResponse({ type: ListResponse<ADMIN.PaymentRequestResponse> })
   async findAndCountAll(
-    @Query(new AdminPanelQueryTransformPipe()) query: ListQuery<IPaymentRequestModel>,
+    @ReqQuery(new AdminPanelQueryTransformPipe()) query: Query<IPaymentRequestModel>,
     @Response() res: IExpressResponse,
   ): Promise<ListResponse<ADMIN.PaymentRequestResponse>> {
     const result = await this.service.repository.findAndCountAll(query)

@@ -1,9 +1,9 @@
-import { Body, Controller, Get, Inject, Param, Put, Query, Response } from '@nestjs/common'
+import { Body, Controller, Get, Inject, Param, Put, Query as ReqQuery, Response } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { Response as IExpressResponse } from 'express'
 
 import { IGoogleProfileDetailsModel } from '@wirebill/shared-common/models'
-import { ListQuery } from '@wirebill/shared-common/types'
+import { Query } from '@wirebill/shared-common/types'
 
 import { ADMIN } from '../../../dtos'
 import { ListResponse } from '../../../dtos/common'
@@ -21,7 +21,7 @@ export class AdminGoogleProfileDetailsController {
   @TransformResponse(ListResponse<ADMIN.GoogleProfileDetailsResponse>)
   @ApiOkResponse({ type: ListResponse<ADMIN.GoogleProfileDetailsResponse> })
   async findAndCountAll(
-    @Query(new AdminPanelQueryTransformPipe()) query: ListQuery<IGoogleProfileDetailsModel>,
+    @ReqQuery(new AdminPanelQueryTransformPipe()) query: Query<IGoogleProfileDetailsModel>,
     @Response() res: IExpressResponse,
   ): Promise<ListResponse<ADMIN.GoogleProfileDetailsResponse>> {
     const result = await this.service.repository.findAndCountAll(query)

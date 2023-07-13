@@ -1,13 +1,13 @@
-import { Body, Controller, Get, Inject, Patch, Query } from '@nestjs/common'
+import { Body, Controller, Get, Inject, Patch, Query as ReqQuery } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 
 import { IConsumerModel, IPaymentRequestModel } from '@wirebill/shared-common/models'
-import { ListQuery } from '@wirebill/shared-common/types'
+import { Query, TimelineFilter } from '@wirebill/shared-common/types'
 
 import { CONSUMER } from '../../../dtos'
 import { ReqAuthIdentity } from '../../../guards/auth.guard'
 import { TransformResponse } from '../../../interceptors'
-import { ConsumerQueryTransformPipe } from '../../pipes'
+import { ConsumerQueryTransformPipe, ParseJsonPipe } from '../../pipes'
 import { AddressDetailsService } from '../address-details/address-details.service'
 import { BillingDetailsService } from '../billing-details/billing-details.service'
 import { GoogleProfileDetailsService } from '../google-profile-details/google-profile-details.service'
@@ -92,8 +92,9 @@ export class ConsumerController {
   @TransformResponse(CONSUMER.PaymentRequestListResponse)
   getConsumerPaymentRequestsList(
     @ReqAuthIdentity() identity: IConsumerModel,
-    @Query(new ConsumerQueryTransformPipe()) query: ListQuery<IPaymentRequestModel>,
+    @ReqQuery(new ConsumerQueryTransformPipe()) query?: Query<IPaymentRequestModel>,
+    @ReqQuery(`timelineFilter`, ParseJsonPipe) timelineFilter?: TimelineFilter<IPaymentRequestModel>,
   ): Promise<CONSUMER.PaymentRequestListResponse> {
-    return this.paymentService.getConsumerPaymentRequestsList(identity.id, query)
+    return this.paymentService.getConsumerPaymentRequestsList(identity.id, query, timelineFilter)
   }
 }

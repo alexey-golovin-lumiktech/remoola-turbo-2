@@ -1,7 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common'
+import moment from 'moment'
 
 import { IPaymentRequestModel, TableName } from '@wirebill/shared-common/models'
-import { ListQuery } from '@wirebill/shared-common/types'
+import { Query, TimelineFilter } from '@wirebill/shared-common/types'
 
 import { BaseService } from '../../../common'
 import { CONSUMER } from '../../../dtos'
@@ -22,23 +23,28 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
 
   async getConsumerPaymentRequestsList(
     consumerId: string,
-    query: ListQuery<IPaymentRequestModel>,
+    query?: Query<IPaymentRequestModel>,
+    timelineFilter?: TimelineFilter<IPaymentRequestModel>,
   ): Promise<ListResponse<CONSUMER.PaymentRequestResponse>> {
     const baseQuery = this.repository.knex.from(`${TableName.PaymentRequest} as p`).where({ requesterId: consumerId })
-
     const count = await baseQuery.clone().count().then(getKnexCount)
+
     const data = await baseQuery
       .clone()
       .join(`${TableName.Consumer} as requester`, `requester.id`, `p.requester_id`)
       .join(`${TableName.Consumer} as payer`, `payer.id`, `p.payer_id`)
       .modify(qb => {
-        if (query?.filter) qb.where({ ...query.filter, requesterId: consumerId })
+        if (query?.filter) qb.andWhere(query.filter)
+        if (timelineFilter) qb.andWhere(timelineFilter.field, timelineFilter.comparison, moment(timelineFilter.value).format(`YYYY-MM-DD`))
+
         if (query?.sorting) query.sorting.forEach(({ field, direction }) => qb.orderBy(field, direction))
+
         if (query?.paging?.limit) qb.limit(query.paging.limit)
         if (query?.paging?.offset) qb.offset(query.paging.offset)
       })
       .select(`p.*`, `requester.first_name as requester_name`, `payer.first_name as payer_name`)
 
-    return { count, data }
+    const result = { count, data }
+    return result
   }
 }

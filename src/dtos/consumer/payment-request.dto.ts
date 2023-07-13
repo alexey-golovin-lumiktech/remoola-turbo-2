@@ -5,13 +5,7 @@ import { IsDate, IsIn, IsNotEmpty, IsNumber, IsString } from 'class-validator'
 import { IPaymentRequestResponse } from '@wirebill/shared-common/dtos'
 import { CurrencyCode, PaymentStatus, TransactionType } from '@wirebill/shared-common/enums'
 import { IConsumerModel, IPaymentRequestModel } from '@wirebill/shared-common/models'
-import {
-  CurrencyCodeValue,
-  ListQueryFilter,
-  PaymentStatusValue,
-  SortDirectionValue,
-  TransactionTypeValue,
-} from '@wirebill/shared-common/types'
+import { CurrencyCodeValue, PaymentStatusValue, QueryFilter, SortDirectionValue, TransactionTypeValue } from '@wirebill/shared-common/types'
 
 import { BaseModel, ListResponse } from '../common'
 
@@ -86,5 +80,5 @@ export class PaymentRequestListResponse extends ListResponse<PaymentRequestRespo
 export class PaymentRequestsListQuery {
   paging: { limit: number; offset: number }
   sorting: [{ field: string; direction: SortDirectionValue }]
-  filter: ListQueryFilter<IConsumerModel>
+  filter: QueryFilter<IConsumerModel>
 }

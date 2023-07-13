@@ -1,9 +1,9 @@
-import { Body, Controller, Get, Inject, Param, Put, Query, Response } from '@nestjs/common'
+import { Body, Controller, Get, Inject, Param, Put, Query as ReqQuery, Response } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { Response as IExpressResponse } from 'express'
 
 import { IPersonalDetailsModel } from '@wirebill/shared-common/models'
-import { ListQuery } from '@wirebill/shared-common/types'
+import { Query } from '@wirebill/shared-common/types'
 
 import { ADMIN } from '../../../dtos'
 import { ListResponse } from '../../../dtos/common'
@@ -21,7 +21,7 @@ export class AdminPersonalDetailsController {
   @TransformResponse(ListResponse<ADMIN.PersonalDetailsResponse>)
   @ApiOkResponse({ type: ListResponse<ADMIN.PersonalDetailsResponse> })
   async findAndCountAll(
-    @Query(new AdminPanelQueryTransformPipe()) query: ListQuery<IPersonalDetailsModel>,
+    @ReqQuery(new AdminPanelQueryTransformPipe()) query: Query<IPersonalDetailsModel>,
     @Response() res: IExpressResponse,
   ): Promise<ListResponse<ADMIN.PersonalDetailsResponse>> {
     const result = await this.service.repository.findAndCountAll(query)
