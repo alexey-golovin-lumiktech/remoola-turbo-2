@@ -2,7 +2,7 @@ import { ApiProperty, OmitType, PickType } from '@nestjs/swagger'
 import { Exclude, Expose } from 'class-transformer'
 import { IsIn, IsString } from 'class-validator'
 
-import { IAdminResponse, IUpdateAdmin } from '@wirebill/shared-common/dtos'
+import { IAdminResponse, IAdminUpdate } from '@wirebill/shared-common/dtos'
 import { AdminType } from '@wirebill/shared-common/enums'
 import { IAdminModel } from '@wirebill/shared-common/models'
 import { AdminTypeValue } from '@wirebill/shared-common/types'
@@ -30,7 +30,7 @@ class Admin extends BaseModel implements IAdminModel {
   salt: string
 }
 
-export class UpdateAdmin implements IUpdateAdmin {
+export class UpdateAdmin implements IAdminUpdate {
   @Expose()
   @IsString()
   @ApiProperty({ required: false })

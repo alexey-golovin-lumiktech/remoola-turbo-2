@@ -3,13 +3,13 @@ import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { Response as IExpressResponse } from 'express'
 
 import { IPaymentRequestModel } from '@wirebill/shared-common/models'
-import { ListQuery } from '@wirebill/shared-common/types'
+import { ReqQuery } from '@wirebill/shared-common/types'
 
 import { ADMIN } from '../../../dtos'
 import { UpdatePaymentRequest } from '../../../dtos/admin'
 import { ListResponse } from '../../../dtos/common'
 import { TransformResponse } from '../../../interceptors'
-import { AdminPanelQueryTransformPipe } from '../../pipes'
+import { ReqQueryTransformPipe } from '../../pipes'
 
 import { AdminPaymentRequestService } from './admin-payment-request.service'
 
@@ -22,7 +22,7 @@ export class AdminPaymentRequestController {
   @TransformResponse(ListResponse<ADMIN.PaymentRequestResponse>)
   @ApiOkResponse({ type: ListResponse<ADMIN.PaymentRequestResponse> })
   async findAndCountAll(
-    @Query(new AdminPanelQueryTransformPipe()) query: ListQuery<IPaymentRequestModel>,
+    @Query(new ReqQueryTransformPipe()) query: ReqQuery<IPaymentRequestModel>,
     @Response() res: IExpressResponse,
   ): Promise<ListResponse<ADMIN.PaymentRequestResponse>> {
     const result = await this.service.repository.findAndCountAll(query)

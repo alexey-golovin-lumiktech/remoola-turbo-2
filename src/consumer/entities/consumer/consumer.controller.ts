@@ -2,14 +2,18 @@ import { Body, Controller, Get, Inject, Patch, Query } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 
 import { IConsumerModel, IPaymentRequestModel } from '@wirebill/shared-common/models'
-import { ListQuery } from '@wirebill/shared-common/types'
+import { ReqQuery, TimelineFilter } from '@wirebill/shared-common/types'
 
 import { CONSUMER } from '../../../dtos'
-import { PaymentRequestListResponse } from '../../../dtos/consumer'
 import { ReqAuthIdentity } from '../../../guards/auth.guard'
 import { TransformResponse } from '../../../interceptors'
+import { ParseJsonPipe, ReqQueryTransformPipe } from '../../pipes'
+import { AddressDetailsService } from '../address-details/address-details.service'
 import { BillingDetailsService } from '../billing-details/billing-details.service'
+import { GoogleProfileDetailsService } from '../google-profile-details/google-profile-details.service'
+import { OrganizationDetailsService } from '../organization-details/organization-details.service'
 import { PaymentRequestService } from '../payment-request/payment-request.service'
+import { PersonalDetailsService } from '../personal-details/personal-details.service'
 
 import { ConsumerService } from './consumer.service'
 
@@ -20,6 +24,10 @@ export class ConsumerController {
     @Inject(ConsumerService) private readonly service: ConsumerService,
     @Inject(BillingDetailsService) private readonly billingDetailsService: BillingDetailsService,
     @Inject(PaymentRequestService) private readonly paymentService: PaymentRequestService,
+    @Inject(GoogleProfileDetailsService) private readonly googleProfileDetailsService: GoogleProfileDetailsService,
+    @Inject(PersonalDetailsService) private readonly personalDetailsService: PersonalDetailsService,
+    @Inject(AddressDetailsService) private readonly addressDetailsService: AddressDetailsService,
+    @Inject(OrganizationDetailsService) private readonly organizationDetailsService: OrganizationDetailsService,
   ) {}
 
   @Get(`/`)
@@ -29,17 +37,50 @@ export class ConsumerController {
     return identity
   }
 
+  @Get(`/google-profile-details`)
+  @ApiOkResponse({ type: CONSUMER.GoogleProfileDetailsResponse })
+  @TransformResponse(CONSUMER.GoogleProfileDetailsResponse)
+  getConsumerGoogleProfileDetails(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.GoogleProfileDetailsResponse | null> {
+    if (identity.googleProfileDetailsId == null) return null
+    return this.googleProfileDetailsService.repository.findById(identity.googleProfileDetailsId)
+  }
+
+  @Get(`/personal-details`)
+  @ApiOkResponse({ type: CONSUMER.PersonalDetailsResponse })
+  @TransformResponse(CONSUMER.PersonalDetailsResponse)
+  getConsumerPersonalDetails(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.PersonalDetailsResponse | null> {
+    if (identity.personalDetailsId == null) return null
+    return this.personalDetailsService.repository.findById(identity.personalDetailsId)
+  }
+
+  @Get(`/address-details`)
+  @ApiOkResponse({ type: CONSUMER.AddressDetailsResponse })
+  @TransformResponse(CONSUMER.AddressDetailsResponse)
+  getConsumerAddressDetails(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.AddressDetailsResponse | null> {
+    if (identity.addressDetailsId == null) return null
+    return this.addressDetailsService.repository.findById(identity.addressDetailsId)
+  }
+
+  @Get(`/organization-details`)
+  @ApiOkResponse({ type: CONSUMER.OrganizationDetailsResponse })
+  @TransformResponse(CONSUMER.OrganizationDetailsResponse)
+  getConsumerOrganizationDetails(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.OrganizationDetailsResponse | null> {
+    if (identity.organizationDetailsId == null) return null
+    return this.organizationDetailsService.repository.findById(identity.organizationDetailsId)
+  }
+
   @Get(`/billing-details`)
   @ApiOkResponse({ type: CONSUMER.BillingDetailsResponse })
   @TransformResponse(CONSUMER.BillingDetailsResponse)
-  getBillingDetails(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.BillingDetailsResponse> {
-    return this.billingDetailsService.getConsumerBillingDetails({ consumerId: identity.id })
+  getConsumerBillingDetails(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.BillingDetailsResponse> {
+    if (identity.billingDetailsId == null) return null
+    return this.billingDetailsService.repository.findById(identity.billingDetailsId)
   }
 
   @Patch(`/billing-details`)
   @ApiOkResponse({ type: CONSUMER.BillingDetailsResponse })
   @TransformResponse(CONSUMER.BillingDetailsResponse)
-  patchBillingDetails(
+  updateConsumerBillingDetails(
     @ReqAuthIdentity() identity: IConsumerModel,
     @Body() body: CONSUMER.UpsertBillingDetails,
   ): Promise<CONSUMER.BillingDetailsResponse> {
@@ -47,12 +88,13 @@ export class ConsumerController {
   }
 
   @Get(`/payment-requests`)
-  @ApiOkResponse({ type: PaymentRequestListResponse })
-  @TransformResponse(PaymentRequestListResponse)
-  listPaymentRequests(
+  @ApiOkResponse({ type: CONSUMER.PaymentRequestListResponse })
+  @TransformResponse(CONSUMER.PaymentRequestListResponse)
+  getConsumerPaymentRequestsList(
     @ReqAuthIdentity() identity: IConsumerModel,
-    @Query() query: ListQuery<IPaymentRequestModel>,
-  ): Promise<PaymentRequestListResponse> {
-    return this.paymentService.listPaymentRequests(identity.id, query)
+    @Query(new ReqQueryTransformPipe()) query: ReqQuery<IPaymentRequestModel>,
+    @Query(`timelineFilter`, ParseJsonPipe) timelineFilter: Unassignable<TimelineFilter<IPaymentRequestModel>>,
+  ): Promise<CONSUMER.PaymentRequestListResponse> {
+    return this.paymentService.getConsumerPaymentRequestsList(identity.id, query, timelineFilter)
   }
 }

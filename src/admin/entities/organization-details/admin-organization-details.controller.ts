@@ -3,12 +3,12 @@ import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { Response as IExpressResponse } from 'express'
 
 import { IOrganizationDetailsModel } from '@wirebill/shared-common/models'
-import { ListQuery } from '@wirebill/shared-common/types'
+import { ReqQuery } from '@wirebill/shared-common/types'
 
 import { ADMIN } from '../../../dtos'
 import { ListResponse } from '../../../dtos/common'
 import { TransformResponse } from '../../../interceptors'
-import { AdminPanelQueryTransformPipe } from '../../pipes'
+import { ReqQueryTransformPipe } from '../../pipes'
 
 import { AdminOrganizationDetailsService } from './admin-organization-details.service'
 
@@ -21,7 +21,7 @@ export class AdminOrganizationDetailsController {
   @TransformResponse(ListResponse<ADMIN.OrganizationDetailsResponse>)
   @ApiOkResponse({ type: ListResponse<ADMIN.OrganizationDetailsResponse> })
   async findAndCountAll(
-    @Query(new AdminPanelQueryTransformPipe()) query: ListQuery<IOrganizationDetailsModel>,
+    @Query(new ReqQueryTransformPipe()) query: ReqQuery<IOrganizationDetailsModel>,
     @Response() res: IExpressResponse,
   ): Promise<ListResponse<ADMIN.OrganizationDetailsResponse>> {
     const result = await this.service.repository.findAndCountAll(query)

@@ -1,4 +1,4 @@
-import { IBaseModel } from '@wirebill/shared-common'
+import { IBaseModel } from '@wirebill/shared-common/models'
 
 import { IBaseRepository } from './base.repository'
 

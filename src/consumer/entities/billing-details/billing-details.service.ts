@@ -18,10 +18,4 @@ export class BillingDetailsService extends BaseService<IBillingDetailsModel, Bil
     const result = exist == null ? await this.repository.create(dto) : await this.repository.updateById(exist.id, dto)
     return result
   }
-
-  async getConsumerBillingDetails(filter: { consumerId: string }): Promise<CONSUMER.BillingDetailsResponse> {
-    const [billingDetails] = await this.repository.find({ filter })
-    if (!billingDetails) return null
-    return billingDetails
-  }
 }

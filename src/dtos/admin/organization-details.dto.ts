@@ -1,7 +1,9 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 
-import { IOrganizationDetailsModel, IUpdateOrganizationDetails, OrganizationSizeValue } from '@wirebill/shared-common'
+import { IOrganizationDetailsUpdate } from '@wirebill/shared-common/dtos'
+import { IOrganizationDetailsModel } from '@wirebill/shared-common/models'
+import { OrganizationSizeValue } from '@wirebill/shared-common/types'
 
 import { BaseModel } from '../common'
 
@@ -25,7 +27,7 @@ class OrganizationDetails extends BaseModel implements IOrganizationDetailsModel
 
 export class OrganizationDetailsResponse extends OmitType(OrganizationDetails, [`deletedAt`] as const) {}
 
-export class UpdateOrganizationDetails implements IUpdateOrganizationDetails {
+export class UpdateOrganizationDetails implements IOrganizationDetailsUpdate {
   @Expose()
   @ApiProperty({ required: false })
   name?: string

@@ -36,7 +36,7 @@ export class AuthService {
     try {
       const { credential, contractorKind = null, accountType = null } = body
       const verified = await this.oAuth2Client.verifyIdToken({ idToken: credential })
-      const rawGoogleProfile = new CONSUMER.GoogleProfile(verified.getPayload())
+      const rawGoogleProfile = new CONSUMER.CreateGoogleProfileDetails(verified.getPayload())
 
       const consumerData = this.extractConsumerData(rawGoogleProfile)
       const [exist] = await this.service.repository.find({ filter: { email: consumerData.email } })
@@ -67,7 +67,7 @@ export class AuthService {
   }
 
   private extractConsumerData(
-    dto: CONSUMER.GoogleProfile,
+    dto: CONSUMER.CreateGoogleProfileDetails,
   ): Omit<IConsumerModel, keyof IBaseModel | `accountType` | `contractorKind` | `password` | `salt`> {
     const fullName = dto.name.split(` `)
 
