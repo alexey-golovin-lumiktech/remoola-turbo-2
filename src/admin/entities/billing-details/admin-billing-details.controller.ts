@@ -1,14 +1,14 @@
-import { Body, Controller, Get, Inject, Param, Put, Query as ReqQuery, Response } from '@nestjs/common'
+import { Body, Controller, Get, Inject, Param, Put, Query, Response } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { Response as IExpressResponse } from 'express'
 
 import { IBillingDetailsModel } from '@wirebill/shared-common/models'
-import { Query } from '@wirebill/shared-common/types'
+import { ReqQuery } from '@wirebill/shared-common/types'
 
 import { ADMIN } from '../../../dtos'
 import { ListResponse } from '../../../dtos/common'
 import { TransformResponse } from '../../../interceptors'
-import { AdminPanelQueryTransformPipe } from '../../pipes'
+import { ReqQueryTransformPipe } from '../../pipes'
 
 import { AdminBillingDetailsService } from './admin-billing-details.service'
 
@@ -21,7 +21,7 @@ export class AdminBillingDetailsController {
   @TransformResponse(ListResponse<ADMIN.BillingDetailsResponse>)
   @ApiOkResponse({ type: ListResponse<ADMIN.BillingDetailsResponse> })
   async findAndCountAll(
-    @ReqQuery(new AdminPanelQueryTransformPipe()) query: Query<IBillingDetailsModel>,
+    @Query(new ReqQueryTransformPipe()) query: ReqQuery<IBillingDetailsModel>,
     @Response() res: IExpressResponse,
   ): Promise<ListResponse<ADMIN.BillingDetailsResponse>> {
     const result = await this.service.repository.findAndCountAll(query)

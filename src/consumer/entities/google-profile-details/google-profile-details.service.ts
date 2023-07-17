@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common'
-import { CONSUMER } from 'src/dtos'
 
 import { IGoogleProfileDetailsModel } from '@wirebill/shared-common/models'
 
 import { BaseService, IBaseService } from '../../../common'
+import { CONSUMER } from '../../../dtos'
 import { ConsumerService } from '../consumer/consumer.service'
 
 import { GoogleProfileDetailsRepository } from './google-profile-details.repository'

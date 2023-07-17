@@ -1,14 +1,14 @@
-import { Body, Controller, Get, Inject, Param, Put, Query as ReqQuery, Response } from '@nestjs/common'
+import { Body, Controller, Get, Inject, Param, Put, Query, Response } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { Response as IExpressResponse } from 'express'
 
 import { IAddressDetailsModel } from '@wirebill/shared-common/models'
-import { Query } from '@wirebill/shared-common/types'
+import { ReqQuery } from '@wirebill/shared-common/types'
 
 import { ADMIN } from '../../../dtos'
 import { ListResponse } from '../../../dtos/common'
 import { TransformResponse } from '../../../interceptors'
-import { AdminPanelQueryTransformPipe } from '../../pipes'
+import { ReqQueryTransformPipe } from '../../pipes'
 
 import { AdminAddressDetailsService } from './admin-address-details.service'
 
@@ -21,7 +21,7 @@ export class AdminAddressDetailsController {
   @TransformResponse(ListResponse<ADMIN.AddressDetailsResponse>)
   @ApiOkResponse({ type: ListResponse<ADMIN.AddressDetailsResponse> })
   async findAndCountAll(
-    @ReqQuery(new AdminPanelQueryTransformPipe()) query: Query<IAddressDetailsModel>,
+    @Query(new ReqQueryTransformPipe()) query: ReqQuery<IAddressDetailsModel>,
     @Response() res: IExpressResponse,
   ): Promise<ListResponse<ADMIN.AddressDetailsResponse>> {
     const result = await this.service.repository.findAndCountAll(query)

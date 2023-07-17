@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common'
 import moment from 'moment'
 
 import { IPaymentRequestModel, TableName } from '@wirebill/shared-common/models'
-import { Query, TimelineFilter } from '@wirebill/shared-common/types'
+import { ReqQuery, TimelineFilter } from '@wirebill/shared-common/types'
 
 import { BaseService } from '../../../common'
 import { CONSUMER } from '../../../dtos'
@@ -23,8 +23,8 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
 
   async getConsumerPaymentRequestsList(
     consumerId: string,
-    query?: Query<IPaymentRequestModel>,
-    timelineFilter?: TimelineFilter<IPaymentRequestModel>,
+    query: ReqQuery<IPaymentRequestModel>,
+    timelineFilter: Unassignable<TimelineFilter<IPaymentRequestModel>>,
   ): Promise<ListResponse<CONSUMER.PaymentRequestResponse>> {
     const baseQuery = this.repository.knex
       .from(`${TableName.PaymentRequest} as p`)
