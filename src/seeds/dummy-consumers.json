@@ -1,0 +1,140 @@
+[
+  {
+    "accountType": "contractor",
+    "contractorKind": "entity",
+    "email": "alexey.golovin@lumiktech.com",
+    "verified": true,
+    "legalVerified": false,
+    "howDidHearAboutUs": "google",
+    "password": "c38a7c661e877ace5bd46aa6f709aa93c94118850a8d2eb40b66444abeed576ce215b0ab7317e0bc1220e65f7c5a33c6c34dc1727cf7467fdf4bd0ad5b1f1444",
+    "salt": "1b7e517924",
+    "firstName": "Alexey",
+    "lastName": "Golovin",
+    "stripeCustomerId": null,
+    "googleProfileDetails": {
+      "email": "alexey.golovin@lumiktech.com",
+      "emailVerified": true,
+      "name": "Alexey Golovin",
+      "givenName": "Alexey",
+      "familyName": "Golovin",
+      "picture": "https://lh3.googleusercontent.com/a/AAcHTtddivvmGYlsRz0Ro_lQv92GS-b4hxr0K8HgspBrzuVM=s96-c",
+      "organization": "lumiktech.com"
+    },
+    "personalDetails": {
+      "citizenOf": "Anguilla",
+      "dateOfBirth": "2023-07-03",
+      "passportOrIdNumber": "5435345345",
+      "countryOfTaxResidence": "Anguilla",
+      "legalStatus": "fake-legal-status-1",
+      "taxId": "5234345345",
+      "phoneNumber": "555-55-55"
+    },
+    "addressDetails": {
+      "street": "street",
+      "city": "city",
+      "region": "region",
+      "zipOrPostalCode": "898989898"
+    },
+    "organizationDetails": {
+      "name": "alex-org",
+      "consumerRole": "Creator",
+      "size": "small (1-10)"
+    },
+    "billingDetails": {
+      "email": "alexey.golovin@lumiktech.com",
+      "name": "Alexey Golovin",
+      "phone": null,
+      "city": null,
+      "country": null,
+      "line1": null,
+      "line2": null,
+      "postalCode": null,
+      "state": null
+    }
+  },
+  {
+    "accountType": "contractor",
+    "contractorKind": "entity",
+    "email": "simplelogin-newsletter.djakm@simplelogin.com",
+    "verified": true,
+    "legalVerified": false,
+    "howDidHearAboutUs": "google",
+    "password": "9d247ca50d93f64c9904f1a3ecadfd65d3299b226301bd1ec0cf5efe5875349c5596f63ca5cb2a0961d452dc2a65f3458b27f36975bbf4e04e71b3ef7985a0dc",
+    "salt": "3ab848ab1d",
+    "firstName": "simplelogin",
+    "lastName": "newsletter",
+    "stripeCustomerId": null,
+    "googleProfileDetails": null,
+    "personalDetails": {
+      "citizenOf": "Antigua and barbuda",
+      "dateOfBirth": "2023-07-01",
+      "passportOrIdNumber": "5435345345",
+      "countryOfTaxResidence": "Antigua and barbuda",
+      "legalStatus": "fake-legal-status-7",
+      "taxId": "22222222",
+      "phoneNumber": "5555-55-222"
+    },
+    "addressDetails": {
+      "street": "street2",
+      "city": "city2",
+      "region": "region2",
+      "zipOrPostalCode": "2434234234"
+    },
+    "organizationDetails": {
+      "name": "newsletter-org",
+      "consumerRole": "worker",
+      "size": "small (1-10)"
+    },
+    "billingDetails": {
+      "email": "simplelogin-newsletter.djakm@simplelogin.com",
+      "name": "simplelogin newsletter",
+      "phone": null,
+      "city": null,
+      "country": null,
+      "line1": null,
+      "line2": null,
+      "postalCode": null,
+      "state": null
+    }
+  },
+  {
+    "accountType": "business",
+    "contractorKind": "individual",
+    "email": "purelybroom866@simplelogin.com",
+    "verified": true,
+    "legalVerified": false,
+    "howDidHearAboutUs": "google",
+    "password": "3df23ebbc1c8b0d5870ed90b4a44717bdf52276c5569ab09361b4767ffb02033bc09e7bc4784607a39bf87eda4fd5d58fc286c3bba9dcd1ac3d8bef74200df2e",
+    "salt": "56a2ac262d",
+    "firstName": "purelybroom",
+    "lastName": "866",
+    "stripeCustomerId": null,
+    "googleProfileDetails": null,
+    "personalDetails": {
+      "citizenOf": "Angola",
+      "dateOfBirth": "2023-07-03",
+      "passportOrIdNumber": "89709098-0",
+      "countryOfTaxResidence": null,
+      "legalStatus": null,
+      "taxId": null,
+      "phoneNumber": null
+    },
+    "addressDetails": null,
+    "organizationDetails": {
+      "name": "purelybroom-org",
+      "consumerRole": "worker",
+      "size": "small (1-10)"
+    },
+    "billingDetails": {
+      "email": "purelybroom866@simplelogin.com",
+      "name": "purelybroom 866",
+      "phone": null,
+      "city": null,
+      "country": null,
+      "line1": null,
+      "line2": null,
+      "postalCode": null,
+      "state": null
+    }
+  }
+]
