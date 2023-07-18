@@ -12,15 +12,6 @@
     "flat": true
   },
   "projects": {
-    "pdf-generator-package": {
-      "type": "library",
-      "root": "./libs/pdf-generator-package",
-      "entryFile": "index",
-      "sourceRoot": "./libs/pdf-generator-package/src",
-      "compilerOptions": {
-        "tsConfigPath": "./libs/pdf-generator-package/tsconfig.json"
-      }
-    },
     "shared-admin": {
       "type": "library",
       "root": "./libs/shared-admin",
@@ -37,15 +28,6 @@
       "sourceRoot": "./libs/shared-consumer/src",
       "compilerOptions": {
         "tsConfigPath": "./libs/shared-consumer/tsconfig.json"
-      }
-    },
-    "shared-common": {
-      "type": "library",
-      "root": "./libs/shared-common",
-      "entryFile": "index",
-      "sourceRoot": "./libs/shared-common/src",
-      "compilerOptions": {
-        "tsConfigPath": "./libs/shared-common/tsconfig.json"
       }
     }
   }

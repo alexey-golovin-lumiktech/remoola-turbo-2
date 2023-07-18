@@ -1,5 +1,5 @@
 {
-  "name": "wirebill-admin-backend",
+  "name": "@wirebill/backend",
   "version": "0.0.1",
   "private": true,
   "description": "",
