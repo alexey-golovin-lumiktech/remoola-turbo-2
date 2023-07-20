@@ -4,7 +4,7 @@ import { IsEmail, IsNumber, IsString } from 'class-validator'
 import { IConsumerModel } from '@wirebill/shared-common/models'
 
 export type IJwtTokenPayload = {
-  consumerId: IConsumerModel[`id`]
+  identityId: IConsumerModel[`id`]
   email: IConsumerModel[`email`]
   iat?: number
   exp?: number
@@ -13,7 +13,7 @@ export type IJwtTokenPayload = {
 export class JwtTokenPayload implements IJwtTokenPayload {
   @Expose()
   @IsString()
-  consumerId: string
+  identityId: string
 
   @Expose()
   @IsEmail()

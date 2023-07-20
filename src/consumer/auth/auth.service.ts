@@ -151,13 +151,13 @@ export class AuthService {
     const verified = await this.verifyChangePasswordFlowToken(param.token)
     const salt = utils.generatePasswordHashSalt()
     const hash = utils.generatePasswordHash({ password: body.password, salt })
-    await this.consumerService.repository.updateById(verified.consumerId, { salt, password: hash })
-    await this.resetPasswordService.removeAllConsumerRecords(verified.consumerId)
+    await this.consumerService.repository.updateById(verified.identityId, { salt, password: hash })
+    await this.resetPasswordService.removeAllConsumerRecords(verified.identityId)
     return true
   }
 
   private generateToken(consumer: Pick<IConsumerModel, `email` | `id`>): string {
-    const payload: IJwtTokenPayload = { consumerId: consumer.id, email: consumer.email }
+    const payload: IJwtTokenPayload = { identityId: consumer.id, email: consumer.email }
     const options = {
       secret: this.configService.get<string>(`JWT_SECRET`),
       expiresIn: this.configService.get<string>(`JWT_ACCESS_TOKEN_EXPIRES_IN`),
@@ -166,10 +166,11 @@ export class AuthService {
   }
 
   private async verifyChangePasswordFlowToken(token): Promise<IJwtTokenPayload> {
+    console.log(`[token]`, token)
     const verified = await this.jwtService.verifyAsync<IJwtTokenPayload>(token)
     if (!verified) throw new UnauthorizedException(`Invalid token`)
 
-    const [consumer] = await this.consumerService.repository.find({ filter: { email: verified.email, id: verified.consumerId } })
+    const [consumer] = await this.consumerService.repository.find({ filter: { email: verified.email, id: verified.identityId } })
     if (consumer == null) throw new UnauthorizedException(`Consumer not found`)
 
     const record = await this.resetPasswordService.getRecordIfNotExpired({ token, consumerId: consumer.id })
