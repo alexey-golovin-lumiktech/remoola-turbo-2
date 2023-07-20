@@ -18,9 +18,12 @@ export class ResetPasswordService extends BaseService<IResetPasswordModel, Reset
 
   async upsert(dto: Pick<IResetPasswordModel, `consumerId` | `token`>) {
     const exist = await this.repository.findOne({ consumerId: dto.consumerId })
-    const expiredAt = new Date(Date.now() + 1000 * 60 * 10)
-    const data = { ...dto, expiredAt }
-    const record = exist == null ? await this.repository.create(data) : await this.repository.updateById(exist.id, data)
+    const expiredAt = new Date(Date.now() + 1000 * 60 * 60 * 24) // 1 day
+    const record =
+      exist == null
+        ? await this.repository.create({ ...dto, expiredAt })
+        : await this.repository.updateById(exist.id, { ...dto, expiredAt })
+
     return record
   }
 
@@ -28,8 +31,8 @@ export class ResetPasswordService extends BaseService<IResetPasswordModel, Reset
     return this.repository.findOne(filter, { field: `expiredAt`, comparison: `>`, value: `current_timestamp` })
   }
 
-  async removeUsedRecord(filter: Pick<IResetPasswordModel, `consumerId` | `token`>) {
-    const found = await this.repository.find({ filter })
+  async removeAllConsumerRecords(consumerId: IResetPasswordModel[`consumerId`]) {
+    const found = await this.repository.find({ filter: { consumerId } })
     return this.repository.deleteManyById(found.map(x => x.id))
   }
 }
