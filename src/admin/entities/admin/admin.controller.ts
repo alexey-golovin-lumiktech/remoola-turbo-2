@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Inject, Param, Post, Put, Query, Response } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
-import { Response as IExpressResponse } from 'express'
+import express from 'express'
 
 import { IAdminModel } from '@wirebill/shared-common/models'
 import { ReqQuery } from '@wirebill/shared-common/types'
@@ -22,7 +22,7 @@ export class AdminController {
   @ApiOkResponse({ type: ListResponse<ADMIN.AdminResponse> })
   async findAndCountAll(
     @Query(new ReqQueryTransformPipe()) query: ReqQuery<IAdminModel>,
-    @Response() res: IExpressResponse,
+    @Response() res: express.Response,
   ): Promise<ListResponse<ADMIN.AdminResponse>> {
     const result = await this.service.repository.findAndCountAll(query)
     res.set(`Content-Range`, result.count.toString())

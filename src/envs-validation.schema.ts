@@ -5,7 +5,9 @@ export const validationOptions = { allowUnknown: true, abortEarly: true }
 export const validationSchema = Joi.object({
   NODE_ENV: Joi.string().valid(`development`, `production`).required(),
 
-  PORT: Joi.number().required(),
+  NEST_APP_PORT: Joi.number().required(),
+  NEST_APP_HOST: Joi.string().default(`localhost`),
+  NEST_APP_EXTERNAL_ORIGIN: Joi.string().required(),
 
   POSTGRES_HOST: Joi.string().required(),
   POSTGRES_PORT: Joi.number().required(),
@@ -38,5 +40,4 @@ export const validationSchema = Joi.object({
 
   STRIPE_PUBLISHABLE_KEY: Joi.string().required(),
   STRIPE_SECRET_KEY: Joi.string().required(),
-  FRONTEND_BASE_URL: Joi.string().required(),
 })

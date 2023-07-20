@@ -1,6 +1,20 @@
-import { Body, Controller, Get, Inject, Logger, Param, Post, Query, Res } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  Inject,
+  InternalServerErrorException,
+  Logger,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Response,
+} from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
-import { Response as IExpressResponse } from 'express'
+import express from 'express'
+import { IncomingHttpHeaders } from 'http'
 
 import { IConsumerModel } from '@wirebill/shared-common/models'
 
@@ -82,7 +96,23 @@ export class AuthController {
 
   @PublicEndpoint()
   @Get(`/signup/verification`)
-  signupVerification(@Query(`token`) token: string, @Res() res: IExpressResponse) {
-    return this.service.signupVerification(token, res)
+  signupVerification(@Headers() headers: IncomingHttpHeaders, @Query(`token`) token: string, @Response() res: express.Response) {
+    const headersRefererOrOrigin = headers.origin || headers.referer
+    if (!headersRefererOrOrigin) throw new InternalServerErrorException(`Unexpected referer(origin): ${headersRefererOrOrigin}`)
+    return this.service.signupVerification(token, res, headersRefererOrOrigin)
+  }
+
+  @PublicEndpoint()
+  @Post(`/change-password`)
+  checkEmailAndSendRecoveryLink(@Headers() headers: IncomingHttpHeaders, @Body() body: { email: string }): Promise<void> {
+    const headersRefererOrOrigin = headers.origin || headers.referer
+    if (!headersRefererOrOrigin) throw new InternalServerErrorException(`Unexpected referer(origin): ${headersRefererOrOrigin}`)
+    return this.service.checkEmailAndSendRecoveryLink(body, headersRefererOrOrigin)
+  }
+
+  @PublicEndpoint()
+  @Patch(`/change-password/:token`)
+  changePassword(@Param() param: CONSUMER.ChangePasswordParam, @Body() body: CONSUMER.ChangePasswordBody) {
+    return this.service.changePassword(body, param)
   }
 }

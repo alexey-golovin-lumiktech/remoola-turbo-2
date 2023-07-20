@@ -18,7 +18,7 @@ export class OrganizationDetailsService extends BaseService<IOrganizationDetails
   }
 
   async upsert(dto: CONSUMER.CreateOrganizationDetails): Promise<CONSUMER.OrganizationDetailsResponse | never> {
-    const [exist] = await this.repository.find({ filter: { consumerId: dto.consumerId } })
+    const exist = await this.repository.findById(dto.consumerId)
     const organizationDetails = exist == null ? await this.repository.create(dto) : await this.repository.updateById(exist.id, dto)
     return organizationDetails
   }

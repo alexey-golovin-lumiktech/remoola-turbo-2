@@ -4,7 +4,7 @@ import { IAdminModel } from '@wirebill/shared-common/models'
 
 import { BaseService } from '../../../common'
 import { ADMIN } from '../../../dtos'
-import { generatePasswordHash, generatePasswordHashSalt, providedPasswordsIsEqual } from '../../../utils'
+import { generatePasswordHash, generatePasswordHashSalt, passwordsIsEqual } from '../../../utils'
 
 import { AdminRepository } from './admin.repository'
 
@@ -28,7 +28,7 @@ export class AdminService extends BaseService<IAdminModel, AdminRepository> {
     const admin = await this.repository.findById(adminId)
     if (!admin) throw new BadRequestException(`No admin for provided adminId: ${adminId}`)
 
-    const incomingBodyPasswordIsEqualToAdminExistPassword = providedPasswordsIsEqual({
+    const incomingBodyPasswordIsEqualToAdminExistPassword = passwordsIsEqual({
       incomingPass: body.password,
       password: admin.password,
       salt: admin.salt,

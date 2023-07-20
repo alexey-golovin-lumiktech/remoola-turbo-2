@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Inject, Param, Put, Query, Response } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
-import { Response as IExpressResponse } from 'express'
+import express from 'express'
 
 import { IPersonalDetailsModel } from '@wirebill/shared-common/models'
 import { ReqQuery } from '@wirebill/shared-common/types'
@@ -22,7 +22,7 @@ export class AdminPersonalDetailsController {
   @ApiOkResponse({ type: ListResponse<ADMIN.PersonalDetailsResponse> })
   async findAndCountAll(
     @Query(new ReqQueryTransformPipe()) query: ReqQuery<IPersonalDetailsModel>,
-    @Response() res: IExpressResponse,
+    @Response() res: express.Response,
   ): Promise<ListResponse<ADMIN.PersonalDetailsResponse>> {
     const result = await this.service.repository.findAndCountAll(query)
     res.set(`Content-Range`, result.count.toString())

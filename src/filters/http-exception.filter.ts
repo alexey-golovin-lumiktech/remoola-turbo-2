@@ -1,5 +1,5 @@
 import { ArgumentsHost, Catch, ExceptionFilter, ForbiddenException, HttpException, HttpStatus, Logger } from '@nestjs/common'
-import { Response as IExpressResponse } from 'express'
+import express from 'express'
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -22,7 +22,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
 
     const ctx = host.switchToHttp()
-    const res = ctx.getResponse<IExpressResponse>()
+    const res = ctx.getResponse<express.Response>()
     res.status(status).json(exception.response ?? { statusCode: status, message })
   }
 }

@@ -16,7 +16,7 @@ export const generatePasswordHashSalt = (rounds = 10) => {
   return crypto.randomBytes(Math.ceil(rounds / 2)).toString(`hex`)
 }
 
-export const providedPasswordsIsEqual = (params = { incomingPass: ``, password: ``, salt: `` }): boolean => {
+export const passwordsIsEqual = (params = { incomingPass: ``, password: ``, salt: `` }): boolean => {
   if (params.password.length == 0) throw new Error(`Password could not be empty`)
   if (params.salt.length == 0) throw new Error(`Salt could not be empty`)
 
@@ -27,19 +27,17 @@ export const providedPasswordsIsEqual = (params = { incomingPass: ``, password: 
 export const generateStrongPassword = (): string => {
   const lowerChars = `abcdefghijklmnopqrstuvwxyz`
   const upperChars = `ABCDEFGHIJKLMNOPQRSTUVWXYZ`
-  const keyListInt = `0123456789`
-  const keyListSpec = `#?!@$%^&*`
+  const intChars = `0123456789`
+  const specChars = `#?!@$%^&*`
   const password = []
 
-  const getRandomValue = (from = ``) => {
-    return from[Math.ceil(Math.random() * from.length)] ?? getRandomValue(from)
-  }
+  const getRandomValue = (source = ``) => source[Math.ceil(Math.random() * source.length)] ?? getRandomValue(source)
 
   for (let i = 0; i < 3; i++) {
     const randomValue = {
       upperKey: getRandomValue(upperChars),
-      intKey: getRandomValue(keyListInt),
-      specKey: getRandomValue(keyListSpec),
+      intKey: getRandomValue(intChars),
+      specKey: getRandomValue(specChars),
       lowerKey: getRandomValue(lowerChars),
     }
     password.push(...Object.values(randomValue))
@@ -75,5 +73,5 @@ export const calculateInvoiceTotalAndSubtotal = (invoiceItems: any[], tax: numbe
 }
 
 export * from './provided-envs-checking.util'
-export * from './email-templating'
+export * as emailTemplating from './email-templating'
 export * from './plainToInstance'

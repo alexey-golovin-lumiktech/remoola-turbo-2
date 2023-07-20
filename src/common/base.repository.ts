@@ -1,9 +1,10 @@
 import type { Knex as IKnex } from 'knex'
 import { Knex } from 'knex'
-import { isEmpty, isNil, snakeCase } from 'lodash'
+import { isEmpty, isEqual, isNil, snakeCase } from 'lodash'
+import moment from 'moment'
 
 import { IBaseModel, TableNameValue } from '@wirebill/shared-common/models'
-import { ReqQuery, ReqQueryFilter } from '@wirebill/shared-common/types'
+import { ReqQuery, ReqQueryComparisonFilter, ReqQueryFilter } from '@wirebill/shared-common/types'
 
 import { ListResponse } from '../dtos/common'
 import { getKnexCount, queryBuilder } from '../utils'
@@ -13,6 +14,7 @@ export interface IBaseRepository<TModel extends IBaseModel> {
   createMany(dto: Partial<TModel>[]): Promise<TModel[]>
 
   find(query: ReqQuery<TModel>): Promise<TModel[]>
+  findOne(filter: ReqQueryFilter<TModel>): Promise<Nullable<TModel>>
   findById(id: string): Promise<TModel | null>
   findAndCountAll(query: ReqQuery<TModel>): Promise<{ data: TModel[]; count: number }>
 
@@ -21,6 +23,9 @@ export interface IBaseRepository<TModel extends IBaseModel> {
 
   softDelete(filter: ReqQueryFilter<TModel>): Promise<TModel[]>
   softDeleteById(id: string): Promise<TModel | null>
+
+  deleteById(id: string): Promise<boolean>
+  deleteManyById(ids: string[]): Promise<boolean>
 }
 
 export abstract class BaseRepository<TModel extends IBaseModel> implements IBaseRepository<TModel> {
@@ -51,9 +56,11 @@ export abstract class BaseRepository<TModel extends IBaseModel> implements IBase
     const build = (q: IKnex.QueryBuilder): IKnex.QueryBuilder => {
       buildWhere(q, { ...query?.filter })
 
-      if (query.comparisonFilters != null) {
+      if ((query.comparisonFilters || []).every(x => isEqual(Object.keys(x).sort(), [`field`, `comparison`, `value`].sort()))) {
         for (const { field, comparison, value } of query.comparisonFilters) {
-          q.andWhereRaw(`${snakeCase(String(field))} ${comparison} ${value}`)
+          if (value instanceof Date) {
+            q.andWhereRaw(`${snakeCase(String(field))} ${comparison} '${moment(value).format(`YYYY-MM-DD HH:mm:ss`)}'`)
+          } else q.andWhereRaw(`${snakeCase(String(field))} ${comparison} ${value}`)
         }
       }
 
@@ -86,7 +93,7 @@ export abstract class BaseRepository<TModel extends IBaseModel> implements IBase
       }).build(qb)
     }
 
-    const data = await this.find(query)
+    const data: TModel[] = await this.find(query)
     return { count, data }
   }
 
@@ -102,17 +109,24 @@ export abstract class BaseRepository<TModel extends IBaseModel> implements IBase
       }).build(qb)
     }
 
-    const data = await qb
+    const data: TModel[] = await qb
     return data
   }
 
-  async findById(id: string): Promise<TModel | null> {
-    const [found] = await this.find({ filter: { id } })
-    return found ?? null
+  async findOne(filter: ReqQueryFilter<TModel>, comparisonFilter?: ReqQueryComparisonFilter<TModel>): Promise<Nullable<TModel>> {
+    const qb = this.qb.clone()
+    if (filter) this.queryBuilder({ filter: filter ?? {}, comparisonFilters: [comparisonFilter].filter(Boolean) }).build(qb)
+    const data: TModel = await qb.first()
+    return data ?? null
   }
 
-  update(filter: ReqQueryFilter<TModel>, dto: Partial<TModel>): Promise<TModel[]> {
-    return this.qb.clone().where(filter).update(dto).returning(`*`)
+  findById(id: string): Promise<TModel | null> {
+    return this.findOne({ id })
+  }
+
+  async update(filter: ReqQueryFilter<TModel>, dto: Partial<TModel>): Promise<TModel[]> {
+    const updated: TModel[] = await this.qb.clone().where(filter).update(dto).returning(`*`)
+    return updated
   }
 
   async updateById(id: string, dto: Partial<TModel>): Promise<TModel> {
@@ -132,12 +146,19 @@ export abstract class BaseRepository<TModel extends IBaseModel> implements IBase
   }
 
   async create(dto: Partial<TModel>): Promise<TModel> {
-    const [created] = await this.createMany([dto])
+    const [created]: TModel[] = await this.createMany([dto])
     return created
   }
 
-  async createMany(dto: Partial<TModel>[]): Promise<TModel[]> {
-    const created = await this.knex.insert(dto).into(this.tableName).returning(`*`)
-    return created
+  createMany(dto: Partial<TModel>[]): Promise<TModel[]> {
+    return this.knex.insert(dto).into(this.tableName).returning(`*`)
+  }
+
+  deleteById(id: string): Promise<boolean> {
+    return this.deleteManyById([id])
+  }
+
+  deleteManyById(ids: string[]): Promise<boolean> {
+    return this.qb.clone().whereIn(`id`, ids).del()
   }
 }

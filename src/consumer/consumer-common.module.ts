@@ -8,6 +8,7 @@ import { GoogleProfileDetailsModule } from './entities/google-profile-details/go
 import { OrganizationDetailsModule } from './entities/organization-details/organization-details.module'
 import { PaymentRequestModule } from './entities/payment-request/payment-request.module'
 import { PersonalDetailsModule } from './entities/personal-details/personal-details.module'
+import { ResetPasswordModule } from './entities/reset-password/reset-password.module'
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { PersonalDetailsModule } from './entities/personal-details/personal-deta
     OrganizationDetailsModule,
     PersonalDetailsModule,
     PaymentRequestModule,
+    ResetPasswordModule,
   ],
 })
 export class ConsumerCommonModule {}

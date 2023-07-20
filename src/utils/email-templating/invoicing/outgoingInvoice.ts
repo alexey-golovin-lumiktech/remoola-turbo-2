@@ -29,7 +29,7 @@ const RegExpToKeyMapping = {
 }
 
 export const processor = (invoice: any /* CONSUMER.InvoiceResponse */) => {
-  const backendBaseURL = `http://localhost:8080`
+  const backendBaseURL = process.env.NEST_APP_EXTERNAL_ORIGIN //@TODO: should be changed in future
   const invoiceLink = new URL(`consumer/payment-choices`, backendBaseURL)
   invoiceLink.searchParams.append(`invoiceId`, invoice.id)
   invoiceLink.searchParams.append(`refererEmail`, invoice.referer)

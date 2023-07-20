@@ -28,8 +28,12 @@ export class ConsumerService
     return this.repository.findById(consumerId)
   }
 
+  getByEmail(email: string): Promise<IConsumerModel | null> {
+    return this.repository.findOne({ email })
+  }
+
   async upsert(dto: UpsertConsumer): Promise<IConsumerModel> {
-    const [exist] = await this.repository.find({ filter: { email: dto.email } })
+    const exist = await this.repository.findOne({ email: dto.email })
     const result = exist == null ? await this.repository.create(dto) : await this.repository.updateById(exist.id, dto)
     if (exist == null) this.addInitialBillingDetails(result) //init empty billing detail for the newest consumer
     return result

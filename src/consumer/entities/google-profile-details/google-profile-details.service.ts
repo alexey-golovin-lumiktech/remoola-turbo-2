@@ -21,7 +21,7 @@ export class GoogleProfileDetailsService
   }
 
   async upsert(consumerId: string, dto: CONSUMER.GoogleProfileDetailsUpdate): Promise<CONSUMER.GoogleProfileDetailsResponse> {
-    const [exist] = await this.repository.find({ filter: { consumerId } })
+    const exist = await this.repository.findById(consumerId)
     const data = { ...dto, consumerId, data: JSON.stringify(dto) }
     const result = exist == null ? await this.repository.create(data) : await this.repository.updateById(exist.id, data)
     return result

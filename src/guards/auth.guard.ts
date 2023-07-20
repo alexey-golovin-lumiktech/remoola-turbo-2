@@ -1,7 +1,7 @@
 import { CanActivate, createParamDecorator, ExecutionContext, ForbiddenException, Logger } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
 import { JwtService } from '@nestjs/jwt'
-import { Request as IExpressRequest } from 'express'
+import express from 'express'
 import { Observable } from 'rxjs'
 
 import { AuthHeader, CredentialsSeparator } from '@wirebill/shared-common/enums'
@@ -11,7 +11,7 @@ import { AuthHeaderValue } from '@wirebill/shared-common/types'
 import { AdminService } from '../admin/entities/admin/admin.service'
 import { ConsumerService } from '../consumer/entities/consumer/consumer.service'
 import { IS_PUBLIC } from '../decorators'
-import { providedPasswordsIsEqual } from '../utils'
+import { passwordsIsEqual } from '../utils'
 
 export const REQUEST_AUTH_IDENTITY = Symbol(`REQUEST_AUTH_IDENTITY`)
 export const ReqAuthIdentity = createParamDecorator((_, context: ExecutionContext) => {
@@ -42,7 +42,7 @@ export class AuthGuard implements CanActivate {
   ) {}
 
   canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
-    const request: IExpressRequest = context.switchToHttp().getRequest()
+    const request: express.Request = context.switchToHttp().getRequest()
     const isPublic = this.reflector.get<boolean>(IS_PUBLIC, context.getHandler())
     if (isPublic) {
       this.logger.log(GuardMessage.PUBLIC_ENDPOINT)
@@ -63,16 +63,16 @@ export class AuthGuard implements CanActivate {
     [AuthHeader.Bearer]: this.bearerProcessor.bind(this),
   }
 
-  private async basicProcessor(encoded: string, request: IExpressRequest) {
+  private async basicProcessor(encoded: string, request: express.Request) {
     const decoded = Buffer.from(encoded, `base64`).toString(`utf-8`)
     const [email, password] = decoded.split(this.separator.Credentials).map(x => x.trim())
-    const [consumer] = await this.consumersService.repository.find({ filter: { email } })
-    const [admin] = await this.adminsService.repository.find({ filter: { email } })
+    const consumer = await this.consumersService.repository.findOne({ email })
+    const admin = await this.adminsService.repository.findOne({ email })
     const identity = admin ?? consumer
     if (identity == null) return this.throwHandler(GuardMessage.NO_IDENTITY)
     if ((identity as IConsumerModel).verified == false) return this.throwHandler(GuardMessage.NOT_VERIFIED)
 
-    const isValidPassword = providedPasswordsIsEqual({
+    const isValidPassword = passwordsIsEqual({
       incomingPass: password,
       password: identity.password ?? ``,
       salt: identity.salt ?? ``,
@@ -83,7 +83,7 @@ export class AuthGuard implements CanActivate {
     return true
   }
 
-  private async bearerProcessor(encoded: string, request: IExpressRequest) {
+  private async bearerProcessor(encoded: string, request: express.Request) {
     const decoded = this.jwtService.decode(encoded)
     if (decoded == null || !decoded[`identityId`]) return this.throwHandler(GuardMessage.INVALID_TOKEN)
 

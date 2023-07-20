@@ -15,4 +15,10 @@ export class TaskService {
     const deleted = await this.knex.from(TableName.Consumer).where(`verified`, false).del().returning(`*`)
     deleted.length == 0 || this.logger.log(deleted)
   }
+
+  @Cron(CronExpression.EVERY_2_HOURS)
+  async handleExpiredResetPasswordRecords() {
+    const deleted = await this.knex.from(TableName.ResetPassword).where(`expired_at`, `<=`, new Date()).del().returning(`*`)
+    deleted.length == 0 || this.logger.log(deleted)
+  }
 }

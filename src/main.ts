@@ -58,10 +58,12 @@ async function bootstrap() {
   )
 
   const configService = app.get(ConfigService)
-  const PORT = configService.get<number>(`PORT`)
-  const startMessage = `Server started on = http://localhost:${PORT}`
+  const NEST_APP_PORT = configService.get<number>(`NEST_APP_PORT`)
+  const NEST_APP_HOST = configService.get<string>(`NEST_APP_HOST`) ?? `localhost`
+
+  const startMessage = `Server started on = http://${NEST_APP_HOST}:${NEST_APP_PORT}`
   const cb = () => (checkProvidedEnvs(process.cwd())(), console.log(startMessage))
-  await app.listen(PORT, cb)
+  await app.listen(NEST_APP_PORT, NEST_APP_HOST, cb)
   return app
 }
 
