@@ -166,7 +166,6 @@ export class AuthService {
   }
 
   private async verifyChangePasswordFlowToken(token): Promise<IJwtTokenPayload> {
-    console.log(`[token]`, token)
     const verified = await this.jwtService.verifyAsync<IJwtTokenPayload>(token)
     if (!verified) throw new UnauthorizedException(`Invalid token`)
 
