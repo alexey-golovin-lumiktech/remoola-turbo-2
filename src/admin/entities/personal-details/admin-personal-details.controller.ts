@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Param, Put, Query, Response } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Inject, Param, Put, Query, Response } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import express from 'express'
 
@@ -40,5 +40,11 @@ export class AdminPersonalDetailsController {
   @ApiOkResponse({ type: ADMIN.PersonalDetailsResponse })
   updateById(@Param(`personalDetailsId`) personalDetailsId: string, @Body() body: unknown): Promise<ADMIN.PersonalDetailsResponse> {
     return this.service.repository.updateById(personalDetailsId, body)
+  }
+
+  @Delete(`/:personalDetailsId`)
+  @ApiOkResponse({ type: Boolean })
+  deleteById(@Param(`personalDetailsId`) personalDetailsId: string): Promise<boolean> {
+    return this.service.repository.deleteById(personalDetailsId)
   }
 }

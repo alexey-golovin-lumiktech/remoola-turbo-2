@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Param, Put, Query, Response } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Inject, Param, Put, Query, Response } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import express from 'express'
 
@@ -40,5 +40,11 @@ export class AdminPaymentRequestController {
   @Put(`/:paymentRequestId`)
   updateById(@Param(`paymentRequestId`) paymentRequestId: string, @Body() body: UpdatePaymentRequest) {
     return this.service.repository.updateById(paymentRequestId, body)
+  }
+
+  @Delete(`/:paymentRequestId`)
+  @ApiOkResponse({ type: Boolean })
+  deleteById(@Param(`paymentRequestId`) paymentRequestId: string): Promise<boolean> {
+    return this.service.repository.deleteById(paymentRequestId)
   }
 }

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Param, Put, Query, Response } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Inject, Param, Put, Query, Response } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import express from 'express'
 
@@ -43,5 +43,11 @@ export class AdminGoogleProfileDetailsController {
     @Body() body: ADMIN.UpdateGoogleProfileDetails,
   ): Promise<ADMIN.GoogleProfileDetailsResponse> {
     return this.service.repository.updateById(googleProfileDetailsId, body)
+  }
+
+  @Delete(`/:googleProfileDetailsId`)
+  @ApiOkResponse({ type: Boolean })
+  deleteById(@Param(`googleProfileDetailsId`) googleProfileDetailsId: string): Promise<boolean> {
+    return this.service.repository.deleteById(googleProfileDetailsId)
   }
 }
