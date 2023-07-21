@@ -29,29 +29,20 @@ export interface IBaseRepository<TModel extends IBaseModel> {
 }
 
 export abstract class BaseRepository<TModel extends IBaseModel> implements IBaseRepository<TModel> {
-  private columns: string[] = []
-
-  constructor(public readonly knex: Knex, private readonly tableName: TableNameValue) {
-    knex(this.tableName).columnInfo().then(info => this.columns = Object.keys(info)) /* eslint-disable-line */
-  }
+  constructor(public readonly knex: Knex, private readonly tableName: TableNameValue) {}
 
   get qb() { return this.knex.from(this.tableName) } /* eslint-disable-line */
 
-  queryBuilder(query: ReqQuery<TModel> = {}) {
-    if (this.columns.length == 0) {
-      console.log(`Table ${this.tableName} doesn't have any columns, needs to run migrations`)
-      return
-    }
-
+  queryBuilder(query: ReqQuery<TModel> = {}, columns: string[]) {
     const buildWhere = (q: IKnex.QueryBuilder, filter: ReqQueryFilter<TModel>) => {
       if (!filter) return
       const entries = Object.entries(filter)
       for (const [attr, value] of entries) {
         if (isNil(value)) continue
-        if (!this.columns.includes(attr)) {
+        if (!columns.includes(attr)) {
           throw new Error(
             `Wrong call repository method, table: ${this.tableName}, columns: ${JSON.stringify(
-              this.columns,
+              columns,
               null,
               -1,
             )}, attr: ${attr}, value:${value}`,
@@ -63,6 +54,8 @@ export abstract class BaseRepository<TModel extends IBaseModel> implements IBase
         else raw += `${snakeCase(attr)} = '${String(value)}'`
         if (!isEmpty(raw.trim()) && raw.includes(String(value))) q.andWhereRaw(raw)
       }
+
+      return q
     }
 
     const build = (q: IKnex.QueryBuilder): IKnex.QueryBuilder => {
@@ -92,17 +85,25 @@ export abstract class BaseRepository<TModel extends IBaseModel> implements IBase
     return { buildWhere, build }
   }
 
+  private getColumns(table: TableNameValue) {
+    return this.knex.from(table).columnInfo().then(info => Object.keys(info))/* eslint-disable-line */
+  }
+
   async findAndCountAll(query: ReqQuery<TModel> = {}): Promise<ListResponse<TModel>> {
+    const columns = await this.getColumns(this.tableName)
     const qb = this.qb.clone() /* @IMPORTANT_NOTE baseQuery.clone() is required */
     const count = await qb.count().then(getKnexCount) /* @IMPORTANT_NOTE qb.count() should be called before queryBuilder */
 
     if (query) {
-      this.queryBuilder({
-        filter: query.filter ?? {},
-        comparisonFilters: query.comparisonFilters ?? [],
-        sorting: query.sorting ?? [],
-        paging: query.paging ?? {},
-      }).build(qb)
+      this.queryBuilder(
+        {
+          filter: query.filter ?? {},
+          comparisonFilters: query.comparisonFilters ?? [],
+          sorting: query.sorting ?? [],
+          paging: query.paging ?? {},
+        },
+        columns,
+      ).build(qb)
     }
 
     const data: TModel[] = await this.find(query)
@@ -110,15 +111,19 @@ export abstract class BaseRepository<TModel extends IBaseModel> implements IBase
   }
 
   async find(query: ReqQuery<TModel> = {}): Promise<TModel[]> {
+    const columns = await this.getColumns(this.tableName)
     const qb = this.qb.clone()
 
     if (query) {
-      this.queryBuilder({
-        filter: query.filter ?? {},
-        comparisonFilters: query.comparisonFilters ?? [],
-        sorting: query.sorting ?? [],
-        paging: query.paging ?? {},
-      }).build(qb)
+      this.queryBuilder(
+        {
+          filter: query.filter ?? {},
+          comparisonFilters: query.comparisonFilters ?? [],
+          sorting: query.sorting ?? [],
+          paging: query.paging ?? {},
+        },
+        columns,
+      ).build(qb)
     }
 
     const data: TModel[] = await qb
@@ -126,8 +131,9 @@ export abstract class BaseRepository<TModel extends IBaseModel> implements IBase
   }
 
   async findOne(filter: ReqQueryFilter<TModel>, comparisonFilter?: ReqQueryComparisonFilter<TModel>): Promise<Nullable<TModel>> {
+    const columns = await this.getColumns(this.tableName)
     const qb = this.qb.clone()
-    if (filter) this.queryBuilder({ filter: filter ?? {}, comparisonFilters: [comparisonFilter].filter(Boolean) }).build(qb)
+    if (filter) this.queryBuilder({ filter: filter ?? {}, comparisonFilters: [comparisonFilter].filter(Boolean) }, columns).build(qb)
     const data: TModel = await qb.first()
     return data ?? null
   }

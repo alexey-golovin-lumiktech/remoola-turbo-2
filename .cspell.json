@@ -25,6 +25,7 @@
     "invoiceitem",
     "knex",
     "libauth",
+    "Millis",
     "mkdir",
     "Nillable",
     "ossp",

@@ -27,8 +27,6 @@ async function bootstrap() {
       credentials: true,
     },
     rawBody: true,
-    bufferLogs: true,
-    abortOnError: false,
   })
 
   const customSiteTitle = `Wirebill`
@@ -39,7 +37,21 @@ async function bootstrap() {
     include: [AdminCommonModule, ConsumerCommonModule],
     extraModels: [...Object.values(ADMIN), ...Object.values(CONSUMER), ListResponse],
   })
-  const options: SwaggerCustomOptions = { swaggerOptions: { docExpansion: `none` }, customSiteTitle }
+  const options: SwaggerCustomOptions = {
+    swaggerOptions: { docExpansion: `none` },
+    customSiteTitle,
+    customfavIcon: `https://avatars.githubusercontent.com/u/6936373?s=200&v=4`,
+    customJs: [
+      `https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.1.3/swagger-ui-bundle.js`,
+      `https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.1.3/swagger-ui-bundle.min.js`,
+      `https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.1.3/swagger-ui-standalone-preset.js`,
+      `https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.1.3/swagger-ui-standalone-preset.min.js`,
+    ],
+    customCssUrl: [
+      `https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.1.3/swagger-ui.css`,
+      `https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.1.3/swagger-ui.min.css`,
+    ],
+  }
   SwaggerModule.setup(`documentation`, app, document, options)
 
   app.enableCors()

@@ -39,6 +39,18 @@ const connectionConfig: Knex.Config[`connection`] = {
   password: process.env.POSTGRES_PASSWORD,
 }
 
+const pool: Knex.Config[`pool`] = {
+  min: 0,
+  max: 20,
+  acquireTimeoutMillis: 300000,
+  createTimeoutMillis: 300000,
+  destroyTimeoutMillis: 300000,
+  idleTimeoutMillis: 30000,
+  reapIntervalMillis: 1000,
+  createRetryIntervalMillis: 2000,
+  propagateCreateError: false,
+}
+
 const connection = VERCEL_POSTGRES_URL != null ? `${VERCEL_POSTGRES_URL}?sslmode=require` : connectionConfig
 
 const config: { [key: string]: Knex.Config } = {
@@ -46,6 +58,8 @@ const config: { [key: string]: Knex.Config } = {
     debug: /^true$/.test(process.env.POSTGRES_LOGGING) ?? false,
     client: `pg`,
     connection: connection,
+    acquireConnectionTimeout: 1000000,
+    pool: pool,
     migrations: { extension: `ts`, tableName: `knex_migrations`, directory: `./src/migrations` },
     seeds: { extension: `ts`, directory: `./src/seeds` },
     wrapIdentifier: (value, origImpl) => origImpl(keysToSnakeCase(value)),
@@ -55,7 +69,8 @@ const config: { [key: string]: Knex.Config } = {
     debug: false,
     client: `pg`,
     connection: connection,
-    pool: { min: 2, max: 10 },
+    acquireConnectionTimeout: 1000000,
+    pool: pool,
     migrations: { extension: `ts`, tableName: `knex_migrations`, directory: `./src/migrations` },
     seeds: { extension: `ts`, directory: `./src/seeds` },
     wrapIdentifier: (value, origImpl) => origImpl(keysToSnakeCase(value)),
