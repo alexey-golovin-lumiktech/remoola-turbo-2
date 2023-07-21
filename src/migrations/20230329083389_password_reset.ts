@@ -14,7 +14,7 @@ export async function up(knex: Knex): Promise<void> {
     addUUIDPrimaryKey(table, knex)
 
     table.uuid(`consumer_id`).notNullable().references(`id`).inTable(TableName.Consumer).onDelete(`CASCADE`).onUpdate(`CASCADE`)
-    table.string(`token`).notNullable()
+    table.text(`token`).notNullable() //could be too long
     table.timestamp(`expired_at`).notNullable()
 
     addAuditColumns(table, knex)
