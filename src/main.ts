@@ -5,6 +5,8 @@ import { JwtService } from '@nestjs/jwt'
 import { DocumentBuilder, SwaggerCustomOptions, SwaggerModule } from '@nestjs/swagger'
 import { classToPlain, plainToClass } from 'class-transformer'
 
+import * as knexfile from '../knexfile'
+
 import { AdminCommonModule } from './admin/admin-common.module'
 import { AdminService } from './admin/entities/admin/admin.service'
 import { ConsumerCommonModule } from './consumer/consumer-common.module'
@@ -19,8 +21,14 @@ import { checkProvidedEnvs } from './utils'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
+    cors: {
+      origin: [/localhost/, /\.vercel.app/, /\.ngrok-free.app/],
+      exposedHeaders: [`Content-Range`, `Content-Type`],
+      credentials: true,
+    },
     rawBody: true,
-    cors: { origin: true, exposedHeaders: [`Content-Range`, `Content-Type`], credentials: true },
+    bufferLogs: true,
+    abortOnError: false,
   })
 
   const customSiteTitle = `Wirebill`
@@ -61,8 +69,10 @@ async function bootstrap() {
   const NEST_APP_PORT = configService.get<number>(`NEST_APP_PORT`)
   const NEST_APP_HOST = configService.get<string>(`NEST_APP_HOST`) ?? `localhost`
 
+  const dbConfig = knexfile[configService.get<string>(`NODE_ENV`)]
+  const dbConnectionMessage = [`Database:`, JSON.stringify(dbConfig.connection, null, 2)]
   const startMessage = `Server started on = http://${NEST_APP_HOST}:${NEST_APP_PORT}`
-  const cb = () => (checkProvidedEnvs(process.cwd())(), console.log(startMessage))
+  const cb = () => (checkProvidedEnvs(process.cwd())(), console.log(startMessage), console.log(...dbConnectionMessage))
   await app.listen(NEST_APP_PORT, NEST_APP_HOST, cb)
   return app
 }

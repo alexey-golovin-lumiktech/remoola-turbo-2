@@ -10,7 +10,7 @@ const customEnvironmentNames = [
 
   `POSTGRES_HOST`,
   `POSTGRES_PORT`,
-  `POSTGRES_DB`,
+  `POSTGRES_DATABASE`,
   `POSTGRES_USER`,
   `POSTGRES_PASSWORD`,
   `POSTGRES_DIALECT`,

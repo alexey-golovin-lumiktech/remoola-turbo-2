@@ -62,3 +62,4 @@ dist
 /libs/shared-consumer/tsconfig.tsbuildinfo
 /libs/shared-consumer/yarn.lock
  
+.vercel

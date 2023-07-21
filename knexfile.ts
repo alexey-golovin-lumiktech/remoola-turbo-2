@@ -29,17 +29,23 @@ const keysToSnakeCase = function (source) {
   return toSnake(source)
 }
 
+const { VERCEL_POSTGRES_URL = undefined } = process.env
+
+const connectionConfig: Knex.Config[`connection`] = {
+  host: process.env.POSTGRES_HOST,
+  port: parseInt(process.env.POSTGRES_PORT),
+  database: process.env.POSTGRES_DATABASE,
+  user: process.env.POSTGRES_USER,
+  password: process.env.POSTGRES_PASSWORD,
+}
+
+const connection = VERCEL_POSTGRES_URL != null ? `${VERCEL_POSTGRES_URL}?sslmode=require` : connectionConfig
+
 const config: { [key: string]: Knex.Config } = {
   development: {
     debug: /^true$/.test(process.env.POSTGRES_LOGGING) ?? false,
     client: `pg`,
-    connection: {
-      host: process.env.POSTGRES_HOST,
-      port: parseInt(process.env.POSTGRES_PORT),
-      database: process.env.POSTGRES_DB,
-      user: process.env.POSTGRES_USER,
-      password: process.env.POSTGRES_PASSWORD,
-    },
+    connection: connection,
     migrations: { extension: `ts`, tableName: `knex_migrations`, directory: `./src/migrations` },
     seeds: { extension: `ts`, directory: `./src/seeds` },
     wrapIdentifier: (value, origImpl) => origImpl(keysToSnakeCase(value)),
@@ -48,13 +54,7 @@ const config: { [key: string]: Knex.Config } = {
   production: {
     debug: false,
     client: `pg`,
-    connection: {
-      host: process.env.POSTGRES_HOST,
-      port: parseInt(process.env.POSTGRES_PORT),
-      database: process.env.POSTGRES_DB,
-      user: process.env.POSTGRES_USER,
-      password: process.env.POSTGRES_PASSWORD,
-    },
+    connection: connection,
     pool: { min: 2, max: 10 },
     migrations: { extension: `ts`, tableName: `knex_migrations`, directory: `./src/migrations` },
     seeds: { extension: `ts`, directory: `./src/seeds` },

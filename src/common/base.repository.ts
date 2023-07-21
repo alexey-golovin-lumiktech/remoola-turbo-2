@@ -32,13 +32,17 @@ export abstract class BaseRepository<TModel extends IBaseModel> implements IBase
   private columns: string[] = []
 
   constructor(public readonly knex: Knex, private readonly tableName: TableNameValue) {
-    this.tableName = tableName
-    knex(tableName).columnInfo().then(info => this.columns = Object.keys(info)) /* eslint-disable-line */
+    knex(this.tableName).columnInfo().then(info => this.columns = Object.keys(info)) /* eslint-disable-line */
   }
 
   get qb() { return this.knex.from(this.tableName) } /* eslint-disable-line */
 
   queryBuilder(query: ReqQuery<TModel> = {}) {
+    if (this.columns.length == 0) {
+      console.log(`Table ${this.tableName} doesn't have any columns, needs to run migrations`)
+      return
+    }
+
     const buildWhere = (q: IKnex.QueryBuilder, filter: ReqQueryFilter<TModel>) => {
       if (!filter) return
       const entries = Object.entries(filter)
