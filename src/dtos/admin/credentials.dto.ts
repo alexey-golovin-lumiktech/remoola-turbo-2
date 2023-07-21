@@ -9,11 +9,11 @@ import * as constants from '../../constants'
 export class Credentials implements BasicAuthCredentials {
   @Expose()
   @IsEmail({}, { message: constants.INVALID_EMAIL })
-  @ApiProperty({ example: `super.admin@wirebill.com` })
+  @ApiProperty({ example: `regular.admin@wirebill.com` })
   email: string
 
   @Expose()
   @Matches(constants.PASSWORD_RE, { message: constants.INVALID_PASSWORD })
-  @ApiProperty({ example: `Wirebill@Admin123!` })
+  @ApiProperty({ example: `RegularWirebill@Admin123!` })
   password: string
 }
