@@ -48,7 +48,15 @@ export abstract class BaseRepository<TModel extends IBaseModel> implements IBase
       const entries = Object.entries(filter)
       for (const [attr, value] of entries) {
         if (isNil(value)) continue
-        if (!this.columns.includes(attr)) throw new Error(`Wrong call repository method`)
+        if (!this.columns.includes(attr)) {
+          throw new Error(
+            `Wrong call repository method, table: ${this.tableName}, columns: ${JSON.stringify(
+              this.columns,
+              null,
+              -1,
+            )}, attr: ${attr}, value:${value}`,
+          )
+        }
 
         let raw = ``
         if (Array.isArray(value)) raw += `${snakeCase(attr)} IN(${queryBuilder.makeSqlIn(value)})`
