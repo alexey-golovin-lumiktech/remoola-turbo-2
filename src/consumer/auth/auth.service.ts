@@ -31,7 +31,7 @@ export class AuthService {
 
   constructor(
     @Inject(ConsumerService) private readonly consumerService: ConsumerService,
-    @Inject(GoogleProfileDetailsService) private readonly googleProfileService: GoogleProfileDetailsService,
+    @Inject(GoogleProfileDetailsService) private readonly googleProfileDetailsService: GoogleProfileDetailsService,
     @Inject(ResetPasswordService) private readonly resetPasswordService: ResetPasswordService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
@@ -49,21 +49,25 @@ export class AuthService {
       const rawGoogleProfile = new CONSUMER.CreateGoogleProfileDetails(verified.getPayload())
 
       const consumerData = this.extractConsumerData(rawGoogleProfile)
-      const exist = await this.consumerService.repository.findOne({ email: consumerData.email })
+      let consumer = await this.consumerService.repository.findOne({ email: consumerData.email })
 
-      const temporaryGeneratedStrongPassword = utils.generateStrongPassword()
-      const salt = utils.generatePasswordHashSalt()
-      const hash = utils.generatePasswordHash({ password: temporaryGeneratedStrongPassword, salt })
-      const consumer = exist ?? (await this.consumerService.upsert({ ...consumerData, password: hash, salt, accountType, contractorKind }))
-      if (consumer.deletedAt != null) throw new BadRequestException(`Consumer is suspended, please contact the support`)
+      if (!consumer) {
+        const temporaryGeneratedStrongPassword = utils.generateStrongPassword()
+        const salt = utils.generatePasswordHashSalt()
+        const hash = utils.generatePasswordHash({ password: temporaryGeneratedStrongPassword, salt })
+        consumer = await this.consumerService.upsert({ ...consumerData, password: hash, salt, accountType, contractorKind })
+        if (consumer.deletedAt != null) throw new BadRequestException(`Consumer is suspended, please contact the support`)
 
-      const googleProfile = await this.googleProfileService.upsert(consumer.id, rawGoogleProfile)
-      if (googleProfile.deletedAt != null) throw new BadRequestException(`Profile is suspended, please contact the support`)
+        const googleProfileDetails = await this.googleProfileDetailsService.upsert(consumer.id, rawGoogleProfile)
+        if (googleProfileDetails.deletedAt != null) throw new BadRequestException(`Profile is suspended, please contact the support`)
 
-      await this.mailingService.sendConsumerTemporaryPasswordForGoogleOAuth({ email: consumer.email, temporaryGeneratedStrongPassword })
+        await this.mailingService.sendConsumerTemporaryPasswordForGoogleOAuth({ email: consumer.email, temporaryGeneratedStrongPassword })
+        consumer.googleProfileDetailsId = googleProfileDetails.id
+      }
+
       const accessToken = this.generateToken(consumer)
-      const { token: refreshToken } = this.generateRefreshToken() //@TODO: need to store refresh token
-      return Object.assign(consumer, { googleProfileId: googleProfile.id, accessToken, refreshToken })
+      const refreshToken = this.generateRefreshToken() //@TODO: need to store refresh token
+      return { ...consumer, accessToken, refreshToken: refreshToken.token }
     } catch (error) {
       this.logger.error(error)
       throw new InternalServerErrorException()
