@@ -1,5 +1,5 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger'
-import { Expose } from 'class-transformer'
+import { Exclude, Expose } from 'class-transformer'
 import { IsIn, IsString, ValidateIf } from 'class-validator'
 import { TokenPayload as ITokenPayload } from 'google-auth-library'
 
@@ -21,13 +21,35 @@ export type ITokenPayloadPick = Pick<
 >
 
 export class CreateGoogleProfileDetails implements IGoogleProfileDetailsCreate {
+  @Expose()
+  @ApiProperty({ required: false })
   name?: string
+
+  @Expose()
+  @ApiProperty()
   email: string
+
+  @Expose()
+  @ApiProperty({ required: false })
   picture?: string
+
+  @Expose()
+  @ApiProperty()
   emailVerified: boolean
+
+  @Exclude()
   data: string
+
+  @Expose()
+  @ApiProperty({ required: false })
   givenName?: string
+
+  @Expose()
+  @ApiProperty({ required: false })
   familyName?: string
+
+  @Expose()
+  @ApiProperty({ required: false })
   organization?: string
 
   constructor(payload: ITokenPayload) {
@@ -101,5 +123,5 @@ class GoogleProfileDetails extends BaseModel implements IGoogleProfileDetailsMod
 
 export class GoogleProfileDetailsResponse extends OmitType(GoogleProfileDetails, [`data`] as const) {}
 export class GoogleProfileDetailsUpdate
-  extends OmitType(GoogleProfileDetails, [`id`, `createdAt`, `updatedAt`, `consumerId`, `data`] as const)
+  extends OmitType(GoogleProfileDetails, [`id`, `createdAt`, `updatedAt`, `consumerId`, `data`, `deletedAt`] as const)
   implements Omit<IGoogleProfileDetailsUpdate, `data`> {}

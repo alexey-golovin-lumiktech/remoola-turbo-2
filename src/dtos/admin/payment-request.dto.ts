@@ -1,10 +1,10 @@
 import { ApiProperty, OmitType, PickType } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
-import { IsIn, IsNotEmpty, IsNumber, IsString } from 'class-validator'
+import { IsDate, IsIn, IsNotEmpty, IsNumber, IsString } from 'class-validator'
 
-import { CurrencyCode, PaymentStatus, TransactionType } from '@wirebill/shared-common/enums'
+import { CurrencyCode, TransactionStatus, TransactionType } from '@wirebill/shared-common/enums'
 import { IPaymentRequestModel } from '@wirebill/shared-common/models'
-import { CurrencyCodeValue, PaymentStatusValue, TransactionTypeValue } from '@wirebill/shared-common/types'
+import { CurrencyCodeValue, TransactionStatusValue, TransactionTypeValue } from '@wirebill/shared-common/types'
 
 import { BaseModel } from '../common'
 
@@ -25,17 +25,19 @@ class PaymentRequest extends BaseModel implements IPaymentRequestModel {
   @ApiProperty()
   @IsNumber()
   @IsNotEmpty()
-  amount: number
+  transactionAmount: number
 
   @Expose()
   @ApiProperty({ enum: Object.values(CurrencyCode) })
   @IsString()
   @IsIn(Object.values(CurrencyCode))
-  currencyCode: CurrencyCodeValue
+  transactionCurrencyCode: CurrencyCodeValue
 
   @Expose()
-  @ApiProperty()
-  dueBy: Date
+  @ApiProperty({ enum: Object.values(TransactionStatus) })
+  @IsString()
+  @IsIn(Object.values(TransactionStatus))
+  transactionStatus: TransactionStatusValue
 
   @Expose()
   @ApiProperty({ enum: Object.values(TransactionType) })
@@ -44,20 +46,20 @@ class PaymentRequest extends BaseModel implements IPaymentRequestModel {
   transactionType: TransactionTypeValue
 
   @Expose()
-  @ApiProperty({ enum: Object.values(PaymentStatus) })
-  @IsString()
-  @IsIn(Object.values(PaymentStatus))
-  status: PaymentStatusValue
+  @ApiProperty()
+  transactionId: string
 
   @Expose()
   @ApiProperty()
+  @IsDate()
+  dueBy: Date
+
+  @Expose()
+  @ApiProperty()
+  @IsDate()
   sentDate?: Date
-
-  @Expose()
-  @ApiProperty()
-  taxId?: string
 }
 
 export class PaymentRequestResponse extends OmitType(PaymentRequest, [`deletedAt`] as const) {}
 
-export class UpdatePaymentRequest extends PickType(PaymentRequest, [`status`] as const) {}
+export class UpdatePaymentRequest extends PickType(PaymentRequest, [`transactionStatus`] as const) {}

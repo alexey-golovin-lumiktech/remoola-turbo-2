@@ -3,13 +3,13 @@ import { Expose, Type } from 'class-transformer'
 import { IsDate, IsIn, IsNotEmpty, IsNumber, IsString } from 'class-validator'
 
 import { IPaymentRequestResponse } from '@wirebill/shared-common/dtos'
-import { CurrencyCode, PaymentStatus, TransactionType } from '@wirebill/shared-common/enums'
+import { CurrencyCode, TransactionStatus, TransactionType } from '@wirebill/shared-common/enums'
 import { IConsumerModel, IPaymentRequestModel } from '@wirebill/shared-common/models'
 import {
   CurrencyCodeValue,
-  PaymentStatusValue,
   ReqQueryFilter,
   SortDirectionValue,
+  TransactionStatusValue,
   TransactionTypeValue,
 } from '@wirebill/shared-common/types'
 
@@ -32,22 +32,19 @@ class PaymentRequest extends BaseModel implements IPaymentRequestModel {
   @ApiProperty()
   @IsNumber()
   @IsNotEmpty()
-  amount: number
+  transactionAmount: number
 
   @Expose()
   @ApiProperty({ enum: Object.values(CurrencyCode) })
   @IsString()
   @IsIn(Object.values(CurrencyCode))
-  currencyCode: CurrencyCodeValue
+  transactionCurrencyCode: CurrencyCodeValue
 
   @Expose()
-  @ApiProperty()
-  dueBy: Date
-
-  @Expose()
-  @ApiProperty()
-  @IsDate()
-  sentDate: Date
+  @ApiProperty({ enum: Object.values(TransactionStatus) })
+  @IsString()
+  @IsIn(Object.values(TransactionStatus))
+  transactionStatus: TransactionStatusValue
 
   @Expose()
   @ApiProperty({ enum: Object.values(TransactionType) })
@@ -56,14 +53,18 @@ class PaymentRequest extends BaseModel implements IPaymentRequestModel {
   transactionType: TransactionTypeValue
 
   @Expose()
-  @ApiProperty({ enum: Object.values(PaymentStatus) })
-  @IsString()
-  @IsIn(Object.values(PaymentStatus))
-  status: PaymentStatusValue
+  @ApiProperty()
+  transactionId: string
 
   @Expose()
   @ApiProperty()
-  taxId: string
+  @IsDate()
+  dueBy: Date
+
+  @Expose()
+  @ApiProperty()
+  @IsDate()
+  sentDate?: Date
 }
 
 export class PaymentRequestResponse extends OmitType(PaymentRequest, [`deletedAt`] as const) implements IPaymentRequestResponse {

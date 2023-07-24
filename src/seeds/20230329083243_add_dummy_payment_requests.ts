@@ -1,7 +1,7 @@
 import { Knex } from 'knex'
 
 import { IPaymentRequestCreate } from '@wirebill/shared-common/dtos'
-import { CurrencyCode, PaymentStatus, TransactionType } from '@wirebill/shared-common/enums'
+import { CurrencyCode, TransactionStatus, TransactionType } from '@wirebill/shared-common/enums'
 import { TableName } from '@wirebill/shared-common/models'
 
 import { default as dummyConsumers } from './dummy-consumers.json'
@@ -16,18 +16,18 @@ export async function seed(knex: Knex): Promise<void> {
     for (const payerId of consumerIds) {
       if (requesterId === payerId) continue
       for (const transactionType of Object.values(TransactionType)) {
-        for (const paymentStatus of Object.values(PaymentStatus)) {
+        for (const paymentStatus of Object.values(TransactionStatus)) {
           for (const currencyCode of Object.values(CurrencyCode)) {
             const paymentRequest: IPaymentRequestCreate = {
               requesterId: requesterId,
               payerId: payerId,
-              amount: Math.round(Math.random() * 999),
-              currencyCode: currencyCode,
+              transactionAmount: Math.round(Math.random() * 999),
+              transactionCurrencyCode: currencyCode,
+              transactionStatus: paymentStatus,
               transactionType: transactionType,
-              status: paymentStatus,
+              transactionId: Math.random().toString(36).slice(2).toUpperCase(),
               dueBy: new Date(Date.now() + dayInMs * Math.round(Math.random() * 29)),
               sentDate: new Date(Date.now() - dayInMs * Math.round(Math.random() * 21)),
-              taxId: Math.random().toString(36).slice(2).toUpperCase(),
             }
 
             await knex.insert([paymentRequest]).into(TableName.PaymentRequest).returning(`*`)

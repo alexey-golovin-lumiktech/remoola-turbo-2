@@ -1556,15 +1556,15 @@
     "@webassemblyjs/ast" "1.11.6"
     "@xtuc/long" "4.2.2"
 
-"@wirebill/pdf-generator-package@^0.0.939176180":
-  version "0.0.939176180"
-  resolved "https://gitlab.com/api/v4/projects/45659941/packages/npm/@wirebill/pdf-generator-package/-/@wirebill/pdf-generator-package-0.0.939176180.tgz#b9462d0d14870da6950dccb74c262260fab2d404"
-  integrity sha1-uUYtDRSHDaaVDcy3TCYiYPqy1AQ=
+"@wirebill/pdf-generator-package@^0.0.942961636":
+  version "0.0.942961636"
+  resolved "https://gitlab.com/api/v4/projects/45659941/packages/npm/@wirebill/pdf-generator-package/-/@wirebill/pdf-generator-package-0.0.942961636.tgz#a56d600f1a49ca3884158b74f6b43a5c21b4b2cd"
+  integrity sha1-pW1gDxpJyjiEFYt09rQ6XCG0ss0=
 
-"@wirebill/shared-common@^0.0.939176180":
-  version "0.0.939176180"
-  resolved "https://gitlab.com/api/v4/projects/45659941/packages/npm/@wirebill/shared-common/-/@wirebill/shared-common-0.0.939176180.tgz#13492d38a7ec1b08f858d62e207a16dd9eadccf3"
-  integrity sha1-E0ktOKfsGwj4WNYuIHoW3Z6tzPM=
+"@wirebill/shared-common@^0.0.942961636":
+  version "0.0.942961636"
+  resolved "https://gitlab.com/api/v4/projects/45659941/packages/npm/@wirebill/shared-common/-/@wirebill/shared-common-0.0.942961636.tgz#1d4fe81705a71134dfca14a5174a0ba97a9bc2eb"
+  integrity sha1-HU/oFwWnETTfyhSlF0oLqXqbwus=
 
 "@xtuc/ieee754@^1.2.0":
   version "1.2.0"
