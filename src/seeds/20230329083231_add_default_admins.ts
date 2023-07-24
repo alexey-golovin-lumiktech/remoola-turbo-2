@@ -7,17 +7,18 @@ import { TableName } from '@wirebill/shared-common/models'
 import * as utils from '../utils'
 
 export async function seed(knex: Knex): Promise<void> {
-  await knex(TableName.Admin).del()
-
   const admins: Omit<IAdminCreate, `salt`>[] = [
     { type: AdminType.Admin, email: `regular.admin@wirebill.com`, password: `RegularWirebill@Admin123!` },
     { type: AdminType.Super, email: `super.admin@wirebill.com`, password: `SuperWirebill@Admin123!` },
   ]
 
+  await knex.from(TableName.Admin).whereIn('email', admins.map(x => x.email)).del(/* eslint-disable-line */)
+
+
   for (const admin of admins) {
     const salt = utils.generatePasswordHashSalt(4)
     const hash = utils.generatePasswordHash({ password: admin.password, salt })
     const data: IAdminCreate[] = [{ email: admin.email, type: admin.type, salt: salt, password: hash }]
-    await knex(TableName.Admin).insert(data)
+    await knex.insert(data).into(TableName.Admin).returning(`*`)
   }
 }

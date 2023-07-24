@@ -12,8 +12,8 @@ const getRandomArrayItem = (arr: unknown[]) => arr[Math.round(Math.random() * ar
 
 export async function seed(knex: Knex): Promise<void> {
   const dummyConsumerEmails = dummyConsumers.map(x => x.email)
-  const consumerIds = await knex.from(TableName.Consumer).where(`email`, `in`, dummyConsumerEmails).pluck(`id`)
-  await knex.from(TableName.PaymentRequest).whereIn(`requesterId`, consumerIds).orWhereIn(`payerId`, consumerIds).del().returning(`*`)
+  const consumerIds = await knex.from(TableName.Consumer).whereIn(`email`, dummyConsumerEmails).pluck(`id`)
+  await knex.from(TableName.PaymentRequest).whereIn(`requesterId`, consumerIds).orWhereIn(`payerId`, consumerIds).del(/* eslint-disable-line */).returning(`*`)
 
   const dayInMs = 1000 * 60 * 60 * 24
   for (const requesterId of consumerIds) {

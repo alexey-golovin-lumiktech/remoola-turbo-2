@@ -6,7 +6,7 @@ import { default as dummyConsumers } from './dummy-consumers.json'
 
 export async function seed(knex: Knex): Promise<void> {
   const dummyConsumerEmails = dummyConsumers.map(x => x.email)
-  await knex(TableName.Consumer).where(`email`, `in`, dummyConsumerEmails).del()
+  await knex.from(TableName.Consumer).whereIn(`email`, dummyConsumerEmails).del(/* eslint-disable-line */)
 
   for (const dummyConsumerData of dummyConsumers) {
     const { googleProfileDetails, personalDetails, addressDetails, organizationDetails, billingDetails, ...rawConsumer } = dummyConsumerData
