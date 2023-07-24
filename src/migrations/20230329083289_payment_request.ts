@@ -33,9 +33,12 @@ export async function up(knex: Knex): Promise<void> {
       .defaultTo(TransactionType.CreditCard)
       .notNullable()
     table.string(`transaction_id`)
+    table.decimal(`stripe_fee_in_percents`, 2, 1)
+    table.text(`description`)
 
     table.timestamp(`due_by`).notNullable()
     table.timestamp(`sent_date`)
+    table.timestamp(`paid_on`)
 
     addAuditColumns(table, knex)
   })

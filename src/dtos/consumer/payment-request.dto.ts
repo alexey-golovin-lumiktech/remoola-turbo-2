@@ -1,6 +1,6 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger'
 import { Expose, Type } from 'class-transformer'
-import { IsDate, IsIn, IsNotEmpty, IsNumber, IsString } from 'class-validator'
+import { IsDate, IsIn, IsNotEmpty, IsNumber, IsString, ValidateIf } from 'class-validator'
 
 import { IPaymentRequestResponse } from '@wirebill/shared-common/dtos'
 import { CurrencyCode, TransactionStatus, TransactionType } from '@wirebill/shared-common/enums'
@@ -58,6 +58,10 @@ class PaymentRequest extends BaseModel implements IPaymentRequestModel {
 
   @Expose()
   @ApiProperty()
+  description: string
+
+  @Expose()
+  @ApiProperty()
   @IsDate()
   dueBy: Date
 
@@ -65,6 +69,18 @@ class PaymentRequest extends BaseModel implements IPaymentRequestModel {
   @ApiProperty()
   @IsDate()
   sentDate?: Date
+
+  @Expose()
+  @ApiProperty()
+  @IsDate()
+  @ValidateIf(({ value }) => value != null)
+  paidOn?: Date
+
+  @Expose()
+  @ApiProperty()
+  @IsNumber()
+  @ValidateIf(({ value }) => value != null)
+  stripeFeeInPercents?: number
 }
 
 export class PaymentRequestResponse extends OmitType(PaymentRequest, [`deletedAt`] as const) implements IPaymentRequestResponse {
@@ -74,7 +90,15 @@ export class PaymentRequestResponse extends OmitType(PaymentRequest, [`deletedAt
 
   @Expose()
   @ApiProperty()
+  payerEmail: string
+
+  @Expose()
+  @ApiProperty()
   requesterName: string
+
+  @Expose()
+  @ApiProperty()
+  requesterEmail: string
 }
 
 export class PaymentRequestListResponse extends ListResponse<PaymentRequestResponse> {

@@ -47,7 +47,13 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
         if (query?.paging?.offset) qb.offset(query.paging.offset)
         if (query?.sorting) query.sorting.forEach(({ field, direction }) => qb.orderBy(field, direction))
       })
-      .select(`p.*`, `requester.first_name as requester_name`, `payer.first_name as payer_name`)
+      .select(
+        `p.*`,
+        `requester.first_name as requester_name`,
+        `payer.first_name as payer_name`,
+        `requester.email as requester_email`,
+        `payer.email as payer_email`,
+      )
 
     const result = { count, data }
     return result

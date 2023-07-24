@@ -6,6 +6,10 @@ import { TableName } from '@wirebill/shared-common/models'
 
 import { default as dummyConsumers } from './dummy-consumers.json'
 
+const descriptions = [`SEO`, `Develop a database structure`, `Develop frontend app`, `Develop backend app`]
+
+const getRandomArrayItem = (arr: unknown[]) => arr[Math.round(Math.random() * arr.length)] ?? getRandomArrayItem(arr)
+
 export async function seed(knex: Knex): Promise<void> {
   const dummyConsumerEmails = dummyConsumers.map(x => x.email)
   const consumerIds = await knex.from(TableName.Consumer).where(`email`, `in`, dummyConsumerEmails).pluck(`id`)
@@ -26,8 +30,11 @@ export async function seed(knex: Knex): Promise<void> {
               transactionStatus: paymentStatus,
               transactionType: transactionType,
               transactionId: Math.random().toString(36).slice(2).toUpperCase(),
+              description: getRandomArrayItem(descriptions),
               dueBy: new Date(Date.now() + dayInMs * Math.round(Math.random() * 29)),
               sentDate: new Date(Date.now() - dayInMs * Math.round(Math.random() * 21)),
+              paidOn: null,
+              stripeFeeInPercents: null,
             }
 
             await knex.insert([paymentRequest]).into(TableName.PaymentRequest).returning(`*`)
