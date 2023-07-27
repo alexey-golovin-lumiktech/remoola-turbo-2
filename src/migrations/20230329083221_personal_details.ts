@@ -7,6 +7,10 @@ import { addAuditColumns, addUUIDPrimaryKey } from './migration-utils'
 
 const tableName = TableName.PersonalDetails
 
+const Checks = {
+  LegalStatus: { name: `legal_status_value_constraint`, values: Object.values(LegalStatus) },
+} as const
+
 export async function up(knex: Knex): Promise<void> {
   const exist = await knex.schema.hasTable(tableName)
   if (exist) return
@@ -18,7 +22,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string(`citizen_of`).notNullable()
     table.string(`date_of_birth`).notNullable()
     table.string(`passport_or_id_number`).notNullable()
-    table.string(`legal_status`).checkIn(Object.values(LegalStatus), `legal_status_values`).notNullable()
+    table.string(`legal_status`).checkIn(Checks.LegalStatus.values, Checks.LegalStatus.name).notNullable()
 
     table.string(`country_of_tax_residence`).defaultTo(null).nullable()
     table.string(`tax_id`).defaultTo(null).nullable()
@@ -32,5 +36,8 @@ export async function down(knex: Knex): Promise<void> {
   const exist = await knex.schema.hasTable(tableName)
   if (!exist) return
 
-  return knex.schema.dropTable(tableName)
+  const checkNamesListToDrop = Object.values(Checks).map(x => x.name)
+  return knex.schema
+    .alterTable(tableName, table => table.dropChecks(checkNamesListToDrop)) //
+    .finally(() => knex.schema.dropTable(tableName))
 }

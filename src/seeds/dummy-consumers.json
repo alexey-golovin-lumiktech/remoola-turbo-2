@@ -38,7 +38,7 @@
     "organizationDetails": {
       "name": "alex-org",
       "consumerRole": "Creator",
-      "size": "small (1-10)"
+      "size": "100+ team members"
     },
     "billingDetails": {
       "email": "alexey.golovin@lumiktech.com",
@@ -83,7 +83,7 @@
     "organizationDetails": {
       "name": "newsletter-org",
       "consumerRole": "worker",
-      "size": "small (1-10)"
+      "size": "1-10 team members"
     },
     "billingDetails": {
       "email": "simplelogin-newsletter.djakm@simplelogin.com",
@@ -123,7 +123,7 @@
     "organizationDetails": {
       "name": "purelybroom-org",
       "consumerRole": "worker",
-      "size": "small (1-10)"
+      "size": "11 - 100 team members"
     },
     "billingDetails": {
       "email": "purelybroom866@simplelogin.com",

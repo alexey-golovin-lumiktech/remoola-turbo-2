@@ -7,6 +7,10 @@ import { addAuditColumns, addUUIDPrimaryKey } from './migration-utils'
 
 const tableName = TableName.OrganizationDetails
 
+const Checks = {
+  OrganizationSize: { name: `organization_size_value_constraint`, values: Object.values(OrganizationSize) },
+} as const
+
 export async function up(knex: Knex): Promise<void> {
   const exist = await knex.schema.hasTable(tableName)
   if (exist) return
@@ -19,7 +23,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string(`consumer_role`).notNullable()
     table
       .string(`size`)
-      .checkIn(Object.values(OrganizationSize), `organization_size_values`)
+      .checkIn(Checks.OrganizationSize.values, Checks.OrganizationSize.name)
       .defaultTo(OrganizationSize.Small)
       .notNullable()
 
@@ -31,5 +35,8 @@ export async function down(knex: Knex): Promise<void> {
   const exist = await knex.schema.hasTable(tableName)
   if (!exist) return
 
-  return knex.schema.dropTable(tableName)
+  const checkNamesListToDrop = Object.values(Checks).map(x => x.name)
+  return knex.schema
+    .alterTable(tableName, table => table.dropChecks(checkNamesListToDrop)) //
+    .finally(() => knex.schema.dropTable(tableName))
 }

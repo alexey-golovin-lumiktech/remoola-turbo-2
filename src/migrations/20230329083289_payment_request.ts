@@ -7,6 +7,12 @@ import { addAuditColumns, addUUIDPrimaryKey } from './migration-utils'
 
 const tableName = TableName.PaymentRequest
 
+const Checks = {
+  CurrencyCode: { name: `currency_code_value_constraint`, values: Object.values(CurrencyCode) },
+  TransactionStatus: { name: `payment_status_value_constraint`, values: Object.values(TransactionStatus) },
+  TransactionType: { name: `transaction_type_value_constraint`, values: Object.values(TransactionType) },
+} as const
+
 export async function up(knex: Knex): Promise<void> {
   const exist = await knex.schema.hasTable(tableName)
   if (exist) return
@@ -19,17 +25,17 @@ export async function up(knex: Knex): Promise<void> {
     table.integer(`transaction_amount`).notNullable()
     table
       .string(`transaction_currency_code`)
-      .checkIn(Object.values(CurrencyCode), `currency_code_code`)
+      .checkIn(Checks.CurrencyCode.values, Checks.CurrencyCode.name)
       .defaultTo(CurrencyCode.USD)
       .notNullable()
     table
       .string(`transaction_status`)
-      .checkIn(Object.values(TransactionStatus), `payment_status_values`)
+      .checkIn(Checks.TransactionStatus.values, Checks.TransactionStatus.name)
       .defaultTo(TransactionStatus.Draft)
       .notNullable()
     table
       .string(`transaction_type`)
-      .checkIn(Object.values(TransactionType), `transaction_type_values`)
+      .checkIn(Checks.TransactionType.values, Checks.TransactionType.name)
       .defaultTo(TransactionType.CreditCard)
       .notNullable()
     table.string(`transaction_id`)
@@ -48,5 +54,8 @@ export async function down(knex: Knex): Promise<void> {
   const exist = await knex.schema.hasTable(tableName)
   if (!exist) return
 
-  return knex.schema.dropTable(tableName)
+  const checkNamesListToDrop = Object.values(Checks).map(x => x.name)
+  return knex.schema
+    .alterTable(tableName, table => table.dropChecks(checkNamesListToDrop)) //
+    .finally(() => knex.schema.dropTable(tableName))
 }
