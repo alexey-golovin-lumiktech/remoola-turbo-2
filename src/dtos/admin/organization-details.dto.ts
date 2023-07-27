@@ -3,7 +3,7 @@ import { Expose } from 'class-transformer'
 
 import { IOrganizationDetailsUpdate } from '@wirebill/shared-common/dtos'
 import { IOrganizationDetailsModel } from '@wirebill/shared-common/models'
-import { OrganizationSizeValue } from '@wirebill/shared-common/types'
+import { ConsumerRoleValue, OrganizationSizeValue } from '@wirebill/shared-common/types'
 
 import { BaseModel } from '../common'
 
@@ -22,7 +22,7 @@ class OrganizationDetails extends BaseModel implements IOrganizationDetailsModel
 
   @Expose()
   @ApiProperty()
-  consumerRole: string
+  consumerRole: string | ConsumerRoleValue
 }
 
 export class OrganizationDetailsResponse extends OmitType(OrganizationDetails, [`deletedAt`] as const) {}
@@ -38,5 +38,5 @@ export class UpdateOrganizationDetails implements IOrganizationDetailsUpdate {
 
   @Expose()
   @ApiProperty({ required: false })
-  consumerRole?: string
+  consumerRole?: string | ConsumerRoleValue
 }

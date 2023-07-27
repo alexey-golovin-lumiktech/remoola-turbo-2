@@ -4,7 +4,7 @@ import { IsIn } from 'class-validator'
 
 import { OrganizationSize } from '@wirebill/shared-common/enums'
 import { IOrganizationDetailsModel } from '@wirebill/shared-common/models'
-import { OrganizationSizeValue } from '@wirebill/shared-common/types'
+import { ConsumerRoleValue, OrganizationSizeValue } from '@wirebill/shared-common/types'
 
 import { BaseModel } from '../common/base-model.dto'
 
@@ -24,7 +24,7 @@ class OrganizationDetails extends BaseModel implements IOrganizationDetailsModel
 
   @Expose()
   @ApiProperty({ required: true })
-  consumerRole: string
+  consumerRole: string | ConsumerRoleValue
 }
 
 export class OrganizationDetailsResponse extends OmitType(OrganizationDetails, [`deletedAt`] as const) {}

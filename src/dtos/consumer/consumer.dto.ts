@@ -4,7 +4,7 @@ import { IsBoolean, IsEmail, IsIn, ValidateIf } from 'class-validator'
 
 import { AccountType, ContractorKind } from '@wirebill/shared-common/enums'
 import { IConsumerModel } from '@wirebill/shared-common/models'
-import { AccountTypeValue, ContractorKindValue } from '@wirebill/shared-common/types'
+import { AccountTypeValue, ContractorKindValue, HowDidHearAboutUsValue } from '@wirebill/shared-common/types'
 
 import * as constants from '../../constants'
 import { BaseModel } from '../common/base-model.dto'
@@ -47,7 +47,7 @@ class Consumer extends BaseModel implements IConsumerModel {
 
   @Expose()
   @ApiProperty({ required: true })
-  howDidHearAboutUs: string
+  howDidHearAboutUs: string | HowDidHearAboutUsValue
 
   @Expose()
   @ApiProperty()

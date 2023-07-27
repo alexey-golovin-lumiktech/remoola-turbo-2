@@ -3,6 +3,7 @@ import { Expose } from 'class-transformer'
 
 import { IPersonalDetailsUpdate } from '@wirebill/shared-common/dtos'
 import { IPersonalDetailsModel } from '@wirebill/shared-common/models'
+import { LegalStatusValue } from '@wirebill/shared-common/types'
 
 import { BaseModel } from '../common'
 
@@ -29,7 +30,7 @@ class PersonalDetails extends BaseModel implements IPersonalDetailsModel {
 
   @Expose()
   @ApiProperty({ required: false })
-  legalStatus?: string
+  legalStatus?: string | LegalStatusValue
 
   @Expose()
   @ApiProperty({ required: false })
@@ -61,7 +62,7 @@ export class UpdatePersonalDetails implements IPersonalDetailsUpdate {
 
   @Expose()
   @ApiProperty({ required: false })
-  legalStatus?: string
+  legalStatus?: string | LegalStatusValue
 
   @Expose()
   @ApiProperty({ required: false })
