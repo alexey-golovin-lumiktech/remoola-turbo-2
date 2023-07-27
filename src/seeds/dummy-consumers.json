@@ -25,7 +25,7 @@
       "dateOfBirth": "2023-07-03",
       "passportOrIdNumber": "5435345345",
       "countryOfTaxResidence": "Anguilla",
-      "legalStatus": "fake-legal-status-1",
+      "legalStatus": "Individual",
       "taxId": "5234345345",
       "phoneNumber": "555-55-55"
     },
@@ -70,7 +70,7 @@
       "dateOfBirth": "2023-07-01",
       "passportOrIdNumber": "5435345345",
       "countryOfTaxResidence": "Antigua and barbuda",
-      "legalStatus": "fake-legal-status-7",
+      "legalStatus": "Sole trader",
       "taxId": "22222222",
       "phoneNumber": "5555-55-222"
     },
@@ -115,7 +115,7 @@
       "dateOfBirth": "2023-07-03",
       "passportOrIdNumber": "89709098-0",
       "countryOfTaxResidence": null,
-      "legalStatus": null,
+      "legalStatus": "Individual entrepreneur",
       "taxId": null,
       "phoneNumber": null
     },
