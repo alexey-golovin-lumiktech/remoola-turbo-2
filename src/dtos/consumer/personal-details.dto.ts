@@ -1,6 +1,6 @@
 import { ApiProperty, OmitType, PickType } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
-import { IsEnum, IsNotEmpty } from 'class-validator'
+import { ValidateIf } from 'class-validator'
 
 import { LegalStatus } from '@wirebill/shared-common/enums'
 import { IPersonalDetailsModel } from '@wirebill/shared-common/models'
@@ -27,9 +27,8 @@ class PersonalDetails extends BaseModel implements IPersonalDetailsModel {
 
   @Expose()
   @ApiProperty({ enum: Object.values(LegalStatus) })
-  @IsNotEmpty()
-  @IsEnum(Object.values(LegalStatus))
-  legalStatus: LegalStatusValue
+  @ValidateIf(({ value }) => value != null)
+  legalStatus?: LegalStatusValue
 
   @Expose()
   @ApiProperty({ required: false })

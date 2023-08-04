@@ -22,7 +22,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string(`citizen_of`).notNullable()
     table.string(`date_of_birth`).notNullable()
     table.string(`passport_or_id_number`).notNullable()
-    table.string(`legal_status`).checkIn(Checks.LegalStatus.values, Checks.LegalStatus.name).notNullable()
+    table.string(`legal_status`).checkIn(Checks.LegalStatus.values, Checks.LegalStatus.name).nullable()
 
     table.string(`country_of_tax_residence`).defaultTo(null).nullable()
     table.string(`tax_id`).defaultTo(null).nullable()
