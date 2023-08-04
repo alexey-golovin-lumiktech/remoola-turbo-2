@@ -27,7 +27,7 @@ class PersonalDetails extends BaseModel implements IPersonalDetailsModel {
   passportOrIdNumber: string
 
   @Expose()
-  @ApiProperty({ enum: Object.values(LegalStatus) })
+  @ApiProperty({ enum: Object.values(LegalStatus), required: false })
   @ValidateIf(({ value }) => value != null)
   legalStatus?: LegalStatusValue
 
@@ -60,7 +60,7 @@ export class UpdatePersonalDetails implements IPersonalDetailsUpdate {
   passportOrIdNumber: string
 
   @Expose()
-  @ApiProperty({ enum: Object.values(LegalStatus) })
+  @ApiProperty({ enum: Object.values(LegalStatus), required: false })
   @ValidateIf(({ value }) => value != null)
   legalStatus?: LegalStatusValue
 
