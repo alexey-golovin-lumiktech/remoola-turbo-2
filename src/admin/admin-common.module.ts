@@ -5,6 +5,7 @@ import { AdminAddressDetailsModule } from './entities/address-details/admin-addr
 import { AdminModule } from './entities/admin/admin.module'
 import { AdminBillingDetailsModule } from './entities/billing-details/admin-billing-details.module'
 import { AdminConsumerModule } from './entities/consumer/admin-consumer.module'
+import { AdminCreditCardModule } from './entities/credit-card/admin-credit-card.module'
 import { AdminGoogleProfileDetailsModule } from './entities/google-profile-details/admin-google-profile-details.module'
 import { AdminOrganizationDetailsModule } from './entities/organization-details/admin-organization-details.module'
 import { AdminPaymentRequestModule } from './entities/payment-request/admin-payment-request.module'
@@ -21,6 +22,7 @@ import { AdminPersonalDetailsModule } from './entities/personal-details/admin-pe
     AdminOrganizationDetailsModule,
     AdminPersonalDetailsModule,
     AdminBillingDetailsModule,
+    AdminCreditCardModule,
   ],
 })
 export class AdminCommonModule {}

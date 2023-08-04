@@ -30,10 +30,11 @@
       "phoneNumber": "555-55-55"
     },
     "addressDetails": {
-      "street": "street",
-      "city": "city",
-      "region": "region",
-      "zipOrPostalCode": "898989898"
+      "postalCode": "lumiktech-postalCode",
+      "country": "lumiktech-country",
+      "state": "lumiktech-state",
+      "city": "lumiktech-city",
+      "street": "lumiktech-street"
     },
     "organizationDetails": {
       "name": "alex-org",
@@ -43,13 +44,7 @@
     "billingDetails": {
       "email": "alexey.golovin@lumiktech.com",
       "name": "Alexey Golovin",
-      "phone": null,
-      "city": null,
-      "country": null,
-      "line1": null,
-      "line2": null,
-      "postalCode": null,
-      "state": null
+      "phone": null
     }
   },
   {
@@ -75,10 +70,11 @@
       "phoneNumber": "5555-55-222"
     },
     "addressDetails": {
-      "street": "street2",
-      "city": "city2",
-      "region": "region2",
-      "zipOrPostalCode": "2434234234"
+      "postalCode": "simplelogin-postalCode",
+      "country": "simplelogin-country",
+      "state": "simplelogin-state",
+      "city": "simplelogin-city",
+      "street": "simplelogin-street"
     },
     "organizationDetails": {
       "name": "newsletter-org",
@@ -88,13 +84,7 @@
     "billingDetails": {
       "email": "simplelogin-newsletter.djakm@simplelogin.com",
       "name": "simplelogin newsletter",
-      "phone": null,
-      "city": null,
-      "country": null,
-      "line1": null,
-      "line2": null,
-      "postalCode": null,
-      "state": null
+      "phone": null
     }
   },
   {
@@ -128,13 +118,7 @@
     "billingDetails": {
       "email": "purelybroom866@simplelogin.com",
       "name": "purelybroom 866",
-      "phone": null,
-      "city": null,
-      "country": null,
-      "line1": null,
-      "line2": null,
-      "postalCode": null,
-      "state": null
+      "phone": null
     }
   }
 ]

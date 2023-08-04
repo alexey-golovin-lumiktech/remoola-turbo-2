@@ -13,7 +13,7 @@ export class BillingDetailsService extends BaseService<IBillingDetailsModel, Bil
     super(repository)
   }
 
-  async upsert(dto: CONSUMER.UpsertBillingDetails): Promise<IBillingDetailsModel> {
+  async upsert(dto: CONSUMER.BillingDetailsUpdate): Promise<IBillingDetailsModel> {
     const exist = await this.repository.findById(dto.consumerId)
     const result = exist == null ? await this.repository.create(dto) : await this.repository.updateById(exist.id, dto)
     return result

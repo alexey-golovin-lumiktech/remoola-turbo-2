@@ -14,10 +14,11 @@ export async function up(knex: Knex): Promise<void> {
     addUUIDPrimaryKey(table, knex)
     table.uuid(`consumer_id`).notNullable().references(`id`).inTable(TableName.Consumer).onDelete(`CASCADE`)
 
-    table.string(`street`).notNullable()
-    table.string(`city`).notNullable()
-    table.string(`region`).notNullable()
-    table.string(`zip_or_postal_code`).notNullable()
+    table.string(`postal_code`).notNullable()
+    table.string(`country`).notNullable()
+    table.string(`state`).nullable()
+    table.string(`city`).nullable()
+    table.string(`street`).nullable()
 
     addAuditColumns(table, knex)
   })

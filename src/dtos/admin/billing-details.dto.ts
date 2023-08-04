@@ -1,89 +1,44 @@
-import { ApiProperty, OmitType } from '@nestjs/swagger'
+import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
+import { IsEmail, IsPhoneNumber, ValidateIf } from 'class-validator'
 
-import { IBillingDetailsUpdate } from '@wirebill/shared-common/dtos'
+import { IBillingDetailsCreate, IBillingDetailsResponse, IBillingDetailsUpdate } from '@wirebill/shared-common/dtos'
 import { IBillingDetailsModel } from '@wirebill/shared-common/models'
 
 import { BaseModel } from '../common'
 
 class BillingDetails extends BaseModel implements IBillingDetailsModel {
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ required: true })
   consumerId: string
 
   @Expose()
   @ApiProperty({ required: false })
+  @IsEmail()
+  @ValidateIf(({ value }) => value != null)
   email?: string
 
   @Expose()
   @ApiProperty({ required: false })
+  @ValidateIf(({ value }) => value != null)
   name?: string
 
   @Expose()
   @ApiProperty({ required: false })
+  @IsPhoneNumber()
+  @ValidateIf(({ value }) => value != null)
   phone?: string
-
-  @Expose()
-  @ApiProperty({ required: false })
-  city?: string
-
-  @Expose()
-  @ApiProperty({ required: false })
-  country?: string
-
-  @Expose()
-  @ApiProperty({ required: false })
-  line1?: string
-
-  @Expose()
-  @ApiProperty({ required: false })
-  line2?: string
-
-  @Expose()
-  @ApiProperty({ required: false })
-  postalCode?: string
-
-  @Expose()
-  @ApiProperty({ required: false })
-  state?: string
 }
 
-export class BillingDetailsResponse extends OmitType(BillingDetails, [`deletedAt`] as const) {}
+export class BillingDetailsResponse extends OmitType(BillingDetails, [`deletedAt`] as const) implements IBillingDetailsResponse {}
 
-export class UpdateBillingDetails implements IBillingDetailsUpdate {
-  @Expose()
-  @ApiProperty({ required: false })
-  email?: string
+export class BillingDetailsCreate
+  extends PickType(BillingDetails, [
+    `consumerId`, //
+    `name`,
+    `email`,
+    `phone`,
+  ] as const)
+  implements IBillingDetailsCreate {}
 
-  @Expose()
-  @ApiProperty({ required: false })
-  name?: string
-
-  @Expose()
-  @ApiProperty({ required: false })
-  phone?: string
-
-  @Expose()
-  @ApiProperty({ required: false })
-  city?: string
-
-  @Expose()
-  @ApiProperty({ required: false })
-  country?: string
-
-  @Expose()
-  @ApiProperty({ required: false })
-  line1?: string
-
-  @Expose()
-  @ApiProperty({ required: false })
-  line2?: string
-
-  @Expose()
-  @ApiProperty({ required: false })
-  postalCode?: string
-
-  @Expose()
-  @ApiProperty({ required: false })
-  state?: string
-}
+export class BillingDetailsUpdate extends PartialType(BillingDetailsCreate) implements IBillingDetailsUpdate {}

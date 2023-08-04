@@ -1,49 +1,48 @@
-import { ApiProperty, OmitType } from '@nestjs/swagger'
+import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 
-import { IAddressDetailsUpdate } from '@wirebill/shared-common/dtos'
+import { IAddressDetailsCreate, IAddressDetailsUpdate } from '@wirebill/shared-common/dtos'
 import { IAddressDetailsModel } from '@wirebill/shared-common/models'
 
 import { BaseModel } from '../common'
 
 class AddressDetails extends BaseModel implements IAddressDetailsModel {
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ required: true })
   consumerId: string
 
   @Expose()
-  @ApiProperty()
-  street: string
+  @ApiProperty({ required: true })
+  postalCode: string
 
   @Expose()
-  @ApiProperty()
-  city: string
+  @ApiProperty({ required: true })
+  country: string
 
   @Expose()
-  @ApiProperty()
-  region: string
+  @ApiProperty({ required: false })
+  state?: string = null
 
   @Expose()
-  @ApiProperty()
-  zipOrPostalCode: string
+  @ApiProperty({ required: false })
+  city?: string = null
+
+  @Expose()
+  @ApiProperty({ required: false })
+  street?: string = null
 }
 
 export class AddressDetailsResponse extends OmitType(AddressDetails, [`deletedAt`] as const) {}
 
-export class UpdateAddressDetails implements IAddressDetailsUpdate {
-  @Expose()
-  @ApiProperty()
-  street: string
+export class AddressDetailsCreate
+  extends PickType(AddressDetails, [
+    `consumerId`, //
+    `postalCode`,
+    `country`,
+    `state`,
+    `city`,
+    `street`,
+  ] as const)
+  implements IAddressDetailsCreate {}
 
-  @Expose()
-  @ApiProperty()
-  city: string
-
-  @Expose()
-  @ApiProperty()
-  region: string
-
-  @Expose()
-  @ApiProperty()
-  zipOrPostalCode: string
-}
+export class AddressDetailsUpdate extends PartialType(AddressDetailsCreate) implements IAddressDetailsUpdate {}

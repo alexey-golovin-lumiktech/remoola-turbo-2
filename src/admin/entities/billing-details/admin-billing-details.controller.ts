@@ -40,7 +40,7 @@ export class AdminBillingDetailsController {
   @ApiOkResponse({ type: ADMIN.BillingDetailsResponse })
   updateById(
     @Param(`billingDetailsId`) billingDetailsId: string,
-    @Body() body: ADMIN.UpdateBillingDetails,
+    @Body() body: ADMIN.BillingDetailsUpdate,
   ): Promise<ADMIN.BillingDetailsResponse> {
     return this.service.repository.updateById(billingDetailsId, body)
   }

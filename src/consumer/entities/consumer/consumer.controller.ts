@@ -1,5 +1,7 @@
-import { Body, Controller, Get, Inject, Patch, Query } from '@nestjs/common'
+import { Body, Controller, Get, Inject, Param, Patch, Post, Query } from '@nestjs/common'
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
+import { ListResponse } from 'src/dtos/common'
+import { CreditCardCreate, CreditCardResponse, CreditCardUpdate } from 'src/dtos/consumer'
 
 import { IConsumerModel, IPaymentRequestModel } from '@wirebill/shared-common/models'
 import { ReqQuery, TimelineFilter } from '@wirebill/shared-common/types'
@@ -10,6 +12,7 @@ import { TransformResponse } from '../../../interceptors'
 import { ParseJsonPipe, ReqQueryTransformPipe } from '../../pipes'
 import { AddressDetailsService } from '../address-details/address-details.service'
 import { BillingDetailsService } from '../billing-details/billing-details.service'
+import { CreditCardService } from '../credit-card/credit-card.service'
 import { GoogleProfileDetailsService } from '../google-profile-details/google-profile-details.service'
 import { OrganizationDetailsService } from '../organization-details/organization-details.service'
 import { PaymentRequestService } from '../payment-request/payment-request.service'
@@ -28,6 +31,7 @@ export class ConsumerController {
     @Inject(PersonalDetailsService) private readonly personalDetailsService: PersonalDetailsService,
     @Inject(AddressDetailsService) private readonly addressDetailsService: AddressDetailsService,
     @Inject(OrganizationDetailsService) private readonly organizationDetailsService: OrganizationDetailsService,
+    @Inject(CreditCardService) private readonly creditCardService: CreditCardService,
   ) {}
 
   @Get(`/`)
@@ -82,7 +86,7 @@ export class ConsumerController {
   @TransformResponse(CONSUMER.BillingDetailsResponse)
   updateConsumerBillingDetails(
     @ReqAuthIdentity() identity: IConsumerModel,
-    @Body() body: CONSUMER.UpsertBillingDetails,
+    @Body() body: CONSUMER.BillingDetailsUpdate,
   ): Promise<CONSUMER.BillingDetailsResponse> {
     return this.billingDetailsService.upsert({ ...body, consumerId: identity.id })
   }
@@ -96,5 +100,32 @@ export class ConsumerController {
     @Query(`timelineFilter`, ParseJsonPipe) timelineFilter: Unassignable<TimelineFilter<IPaymentRequestModel>>,
   ): Promise<CONSUMER.PaymentRequestListResponse> {
     return this.paymentService.getConsumerPaymentRequestsList(identity.id, query, timelineFilter)
+  }
+
+  @Get(`/credit-cards`)
+  getConsumerCreditCardsList(@ReqAuthIdentity() identity: IConsumerModel): Promise<ListResponse<CreditCardResponse>> {
+    return this.creditCardService.repository.findAndCountAll({ filter: { consumerId: identity.id } })
+  }
+
+  @Get(`/credit-cards/:cardId`)
+  getConsumerCreditCardById(
+    @ReqAuthIdentity() identity: IConsumerModel,
+    @Param(`cardId`) cardId: string,
+  ): Promise<CreditCardResponse | null> {
+    return this.creditCardService.repository.findById(cardId)
+  }
+
+  @Patch(`/credit-cards/:cardId`)
+  updateConsumerCreditCardById(
+    @Param(`cardId`) cardId: string,
+    @Body() body: CreditCardUpdate,
+    @ReqAuthIdentity() identity: IConsumerModel, //
+  ) {
+    return this.creditCardService.repository.updateById(cardId, { ...body, consumerId: identity.id })
+  }
+
+  @Post(`/credit-cards`)
+  createConsumerCreditCard(@ReqAuthIdentity() identity: IConsumerModel, @Body() body: CreditCardCreate): Promise<CreditCardResponse> {
+    return this.creditCardService.repository.create({ ...body, consumerId: identity.id })
   }
 }

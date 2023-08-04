@@ -40,7 +40,7 @@ export class AdminGoogleProfileDetailsController {
   @ApiOkResponse({ type: ADMIN.GoogleProfileDetailsResponse })
   updateById(
     @Param(`googleProfileDetailsId`) googleProfileDetailsId: string,
-    @Body() body: ADMIN.UpdateGoogleProfileDetails,
+    @Body() body: ADMIN.GoogleProfileDetailsUpdate,
   ): Promise<ADMIN.GoogleProfileDetailsResponse> {
     return this.service.repository.updateById(googleProfileDetailsId, body)
   }

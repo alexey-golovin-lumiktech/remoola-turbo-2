@@ -83,7 +83,7 @@ export class AuthController {
   @Post(`/:consumerId/address-details`)
   signupAddressDetails(
     @Param(`consumerId`) consumerId: string,
-    @Body() body: CONSUMER.CreateAddressDetails,
+    @Body() body: CONSUMER.AddressDetailsCreate,
   ): Promise<CONSUMER.AddressDetailsResponse | never> {
     return this.addressDetailsService.upsert({ ...body, consumerId })
   }

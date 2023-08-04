@@ -13,7 +13,7 @@ export async function seed(knex: Knex): Promise<void> {
     const [consumer] = await knex.insert([rawConsumer]).into(TableName.Consumer).returning(`*`)
     if (googleProfileDetails != null) {
       await knex
-        .insert([{ ...googleProfileDetails, data: JSON.stringify(googleProfileDetails), consumerId: consumer.id }])
+        .insert([{ ...googleProfileDetails, metadata: JSON.stringify(googleProfileDetails), consumerId: consumer.id }])
         .into(TableName.GoogleProfileDetails)
         .returning(`*`)
     }

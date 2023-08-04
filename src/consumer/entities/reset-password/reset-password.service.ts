@@ -27,7 +27,7 @@ export class ResetPasswordService extends BaseService<IResetPasswordModel, Reset
     return record
   }
 
-  async getRecordIfNotExpired(filter: Pick<IResetPasswordModel, `consumerId` | `token`>): Promise<IResetPasswordModel | null> {
+  async getRecordIfNotExpired(filter: Pick<IResetPasswordModel, `consumerId` | `token`>) {
     return this.repository.findOne(filter, { field: `expiredAt`, comparison: `>`, value: `current_timestamp` })
   }
 

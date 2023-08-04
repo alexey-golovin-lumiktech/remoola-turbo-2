@@ -1,9 +1,9 @@
-import { ApiProperty, OmitType } from '@nestjs/swagger'
+import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger'
 import { Exclude, Expose } from 'class-transformer'
 import { IsIn, IsString, ValidateIf } from 'class-validator'
 import { TokenPayload as ITokenPayload } from 'google-auth-library'
 
-import { IGoogleProfileDetailsCreate, IGoogleProfileDetailsUpdate } from '@wirebill/shared-common/dtos'
+import { IGoogleProfileDetailsCreate, IGoogleProfileDetailsResponse, IGoogleProfileDetailsUpdate } from '@wirebill/shared-common/dtos'
 import { AccountType, ContractorKind } from '@wirebill/shared-common/enums'
 import { IGoogleProfileDetailsModel } from '@wirebill/shared-common/models'
 import { AccountTypeValue, ContractorKindValue } from '@wirebill/shared-common/types'
@@ -94,10 +94,6 @@ class GoogleProfileDetails extends BaseModel implements IGoogleProfileDetailsMod
 
   @Expose()
   @ApiProperty({ required: true })
-  data: string
-
-  @Expose()
-  @ApiProperty({ required: true })
   email: string
 
   @Expose()
@@ -119,9 +115,26 @@ class GoogleProfileDetails extends BaseModel implements IGoogleProfileDetailsMod
   @Expose()
   @ApiProperty({ required: false })
   organization?: string
+
+  @Expose()
+  @ApiProperty({ required: false })
+  metadata?: string
 }
 
-export class GoogleProfileDetailsResponse extends OmitType(GoogleProfileDetails, [`data`] as const) {}
-export class GoogleProfileDetailsUpdate
-  extends OmitType(GoogleProfileDetails, [`id`, `createdAt`, `updatedAt`, `consumerId`, `data`, `deletedAt`] as const)
-  implements Omit<IGoogleProfileDetailsUpdate, `data`> {}
+export class GoogleProfileDetailsResponse
+  extends OmitType(GoogleProfileDetails, [`deletedAt`] as const)
+  implements IGoogleProfileDetailsResponse {}
+
+export class GoogleProfileDetailsCreate
+  extends PickType(GoogleProfileDetails, [
+    `name`, //
+    `emailVerified`,
+    `email`,
+    `givenName`,
+    `familyName`,
+    `picture`,
+    `organization`,
+  ] as const)
+  implements IGoogleProfileDetailsCreate {}
+
+export class GoogleProfileDetailsUpdate extends PartialType(GoogleProfileDetailsCreate) implements IGoogleProfileDetailsUpdate {}
