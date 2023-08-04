@@ -1556,15 +1556,15 @@
     "@webassemblyjs/ast" "1.11.6"
     "@xtuc/long" "4.2.2"
 
-"@wirebill/pdf-generator-package@^0.0.955674705":
-  version "0.0.955674705"
-  resolved "https://gitlab.com/api/v4/projects/45659941/packages/npm/@wirebill/pdf-generator-package/-/@wirebill/pdf-generator-package-0.0.955674705.tgz#72b766e2d823e9028f3945259b43306e6a95ee2a"
-  integrity sha1-crdm4tgj6QKPOUUlm0MwbmqV7io=
+"@wirebill/pdf-generator-package@^0.0.956209568":
+  version "0.0.956209568"
+  resolved "https://gitlab.com/api/v4/projects/45659941/packages/npm/@wirebill/pdf-generator-package/-/@wirebill/pdf-generator-package-0.0.956209568.tgz#5c29dc5c0b8d2be1256645232b4e46fa8944a70c"
+  integrity sha1-XCncXAuNK+ElZkUjK05G+olEpww=
 
-"@wirebill/shared-common@^0.0.955674705":
-  version "0.0.955674705"
-  resolved "https://gitlab.com/api/v4/projects/45659941/packages/npm/@wirebill/shared-common/-/@wirebill/shared-common-0.0.955674705.tgz#4097080d5d0f1673da558c44eff2399efdab5693"
-  integrity sha1-QJcIDV0PFnPaVYxE7/I5nv2rVpM=
+"@wirebill/shared-common@^0.0.956209568":
+  version "0.0.956209568"
+  resolved "https://gitlab.com/api/v4/projects/45659941/packages/npm/@wirebill/shared-common/-/@wirebill/shared-common-0.0.956209568.tgz#c598e22aec462e2904a794ae68f080bb817c0a31"
+  integrity sha1-xZjiKuxGLikEp5SuaPCAu4F8CjE=
 
 "@xtuc/ieee754@^1.2.0":
   version "1.2.0"
@@ -1613,6 +1613,18 @@ acorn@^8.4.1, acorn@^8.7.0, acorn@^8.7.1, acorn@^8.8.2, acorn@^8.9.0:
   version "8.9.0"
   resolved "https://registry.yarnpkg.com/acorn/-/acorn-8.9.0.tgz#78a16e3b2bcc198c10822786fa6679e245db5b59"
   integrity sha512-jaVNAFBHNLXspO543WnNNPZFRtavh3skAkITqD0/2aeMkKZTN+254PyhwxFYrk3vQ1xfY+2wbesJMs/JC8/PwQ==
+
+addresser@^1.1.20:
+  version "1.1.20"
+  resolved "https://registry.yarnpkg.com/addresser/-/addresser-1.1.20.tgz#4c5af53e7753417412d3097e8078b6e63e77fc53"
+  integrity sha512-+RF7y2RkgulLWdiKNwWW2d21RXneDcYasFdeR+kbUmSXp5HqrAAIh3f8YLaHV4WsjzN4L0XG2GhlfHwa1jkeLg==
+
+addressit@^1.8.2:
+  version "1.8.2"
+  resolved "https://registry.yarnpkg.com/addressit/-/addressit-1.8.2.tgz#c61e2a010399e0126f616e3f8ede5d2c5a595fe1"
+  integrity sha512-DOVgmGyklDLD28FDx21V0eigvmwfOcfQ9myWWSe/lafZ3sB3hifvRh3lxTKw4PUrgWtKy6c4R/V9kLP9Ewx1AA==
+  dependencies:
+    cog "^1.0.0"
 
 agent-base@6, agent-base@^6.0.0, agent-base@^6.0.2:
   version "6.0.2"
@@ -2324,6 +2336,11 @@ co@^4.6.0:
   version "4.6.0"
   resolved "https://registry.yarnpkg.com/co/-/co-4.6.0.tgz#6ea6bdf3d853ae54ccb8e47bfa0bf3f9031fb184"
   integrity sha512-QVb0dM5HvG+uaxitm8wONl7jltx8dqhfU33DcqtOZcLSVIKSDDLDi7+0LbAKiyI8hD9u42m2YxXSkMGWThaecQ==
+
+cog@^1.0.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/cog/-/cog-1.1.0.tgz#bff31f813b7deaed5ad868bfe364f2ff9afe10b3"
+  integrity sha512-g6hFYt6/3kDkMM2QSE3x9PYz6g3hCL5OjLFgU+kAyDToHXw/hZ8nLqUf0g+vfnwDro7EHrm3whRrO1tA0r7u6A==
 
 collect-v8-coverage@^1.0.0:
   version "1.0.1"

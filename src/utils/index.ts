@@ -75,3 +75,4 @@ export const calculateInvoiceTotalAndSubtotal = (invoiceItems: any[], tax: numbe
 export * from './provided-envs-checking.util'
 export * as emailTemplating from './email-templating'
 export * from './plainToInstance'
+export * from './deepDiff'

@@ -17,7 +17,7 @@ export class AddressDetailsService extends BaseService<IAddressDetailsModel, Add
     super(repository)
   }
 
-  async upsert(dto: CONSUMER.CreateAddressDetails): Promise<CONSUMER.AddressDetailsResponse | never> {
+  async upsert(dto: CONSUMER.AddressDetailsCreate): Promise<IAddressDetailsModel> {
     const exist = await this.repository.findById(dto.consumerId)
     const addressDetails = exist == null ? await this.repository.create(dto) : await this.repository.updateById(exist.id, dto)
     return addressDetails

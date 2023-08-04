@@ -17,7 +17,7 @@ export class PersonalDetailsService extends BaseService<IPersonalDetailsModel, P
     super(repository)
   }
 
-  async upsert(dto: CONSUMER.CreatePersonalDetails): Promise<CONSUMER.PersonalDetailsResponse | never> {
+  async upsert(dto: CONSUMER.CreatePersonalDetails): Promise<IPersonalDetailsModel> {
     const exist = await this.repository.findById(dto.consumerId)
     const personalDetails = exist == null ? await this.repository.create(dto) : await this.repository.updateById(exist.id, dto)
     return personalDetails

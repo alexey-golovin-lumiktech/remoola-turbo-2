@@ -1,59 +1,44 @@
-import { ApiProperty, OmitType } from '@nestjs/swagger'
+import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
-import { IsEmail } from 'class-validator'
+import { IsEmail, IsPhoneNumber, ValidateIf } from 'class-validator'
 
+import { IBillingDetailsCreate, IBillingDetailsResponse, IBillingDetailsUpdate } from '@wirebill/shared-common/dtos'
 import { IBillingDetailsModel } from '@wirebill/shared-common/models'
 
-import * as constants from '../../constants'
-import { BaseModel } from '../common/base-model.dto'
+import { BaseModel } from '../common'
 
 class BillingDetails extends BaseModel implements IBillingDetailsModel {
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ required: true })
   consumerId: string
 
   @Expose()
-  @ApiProperty()
-  @IsEmail({}, { message: constants.INVALID_EMAIL })
+  @ApiProperty({ required: false })
+  @IsEmail()
+  @ValidateIf(({ value }) => value != null)
   email?: string
 
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ required: false })
+  @ValidateIf(({ value }) => value != null)
   name?: string
 
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ required: false })
+  @IsPhoneNumber()
+  @ValidateIf(({ value }) => value != null)
   phone?: string
-
-  @Expose()
-  @ApiProperty()
-  city?: string
-
-  @Expose()
-  @ApiProperty()
-  country?: string
-
-  @Expose()
-  @ApiProperty()
-  line1?: string
-
-  @Expose()
-  @ApiProperty()
-  line2?: string
-
-  @Expose()
-  @ApiProperty()
-  postalCode?: string
-
-  @Expose()
-  @ApiProperty()
-  state?: string
 }
 
-export class BillingDetailsResponse extends OmitType(BillingDetails, [`createdAt`, `updatedAt`, `deletedAt`] as const) {}
+export class BillingDetailsResponse extends OmitType(BillingDetails, [`deletedAt`] as const) implements IBillingDetailsResponse {}
 
-export class UpsertBillingDetails extends OmitType(BillingDetails, [`id`, `createdAt`, `updatedAt`, `deletedAt`] as const) {
-  @Expose()
-  @ApiProperty()
-  consumerId: string
-}
+export class BillingDetailsCreate
+  extends PickType(BillingDetails, [
+    `consumerId`, //
+    `name`,
+    `email`,
+    `phone`,
+  ] as const)
+  implements IBillingDetailsCreate {}
+
+export class BillingDetailsUpdate extends PartialType(BillingDetailsCreate) implements IBillingDetailsUpdate {}
