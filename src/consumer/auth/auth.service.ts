@@ -115,16 +115,16 @@ export class AuthService {
     return consumer
   }
 
-  async completeProfileCreation(consumerId: string): Promise<void | never> {
+  async completeProfileCreation(consumerId: string, referer: string): Promise<void | never> {
     const consumer = await this.consumerService.getById(consumerId)
     if (!consumer) throw new BadRequestException(`No consumer for provided consumerId: ${consumerId}`)
     const token = this.generateToken(consumer)
-    this.mailingService.sendConsumerSignupCompletionEmail({ email: consumer.email, token })
+    this.mailingService.sendConsumerSignupCompletionEmail({ email: consumer.email, token, referer })
   }
 
-  async signupVerification(token: string, res: express.Response, headersRefererOrOrigin) {
+  async signupVerification(token: string, res: express.Response, referer) {
     const decoded: any = this.jwtService.decode(token)
-    const redirectUrl = new URL(`signup/verification`, headersRefererOrOrigin)
+    const redirectUrl = new URL(`signup/verification`, referer)
 
     if (decoded.email) {
       redirectUrl.searchParams.append(`email`, decoded.email)
@@ -136,14 +136,14 @@ export class AuthService {
     res.redirect(redirectUrl.toString())
   }
 
-  async checkEmailAndSendRecoveryLink(body: Pick<IChangePasswordBody, `email`>, headersRefererOrOrigin: string): Promise<void> {
+  async checkEmailAndSendRecoveryLink(body: Pick<IChangePasswordBody, `email`>, referer: string): Promise<void> {
     if (body.email == null) throw new BadRequestException(`Email is required`)
 
     const consumer = await this.consumerService.repository.findOne({ email: body.email })
     if (!consumer) throw new BadRequestException(`Not found any consumer for email: ${body.email}`)
 
     const record = await this.resetPasswordService.upsert({ token: this.generateToken(consumer), consumerId: consumer.id })
-    const forgotPasswordLink = new URL(`change-password`, headersRefererOrOrigin)
+    const forgotPasswordLink = new URL(`change-password`, referer)
     forgotPasswordLink.searchParams.append(`token`, record.token)
     this.mailingService.sendForgotPasswordEmail({ forgotPasswordLink: forgotPasswordLink.toString(), email: consumer.email })
   }

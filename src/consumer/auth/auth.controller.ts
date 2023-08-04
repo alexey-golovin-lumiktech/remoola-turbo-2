@@ -90,24 +90,25 @@ export class AuthController {
 
   @PublicEndpoint()
   @Get(`/:consumerId/complete-profile-creation`)
-  completeProfileCreation(@Param(`consumerId`) consumerId: string): Promise<void | never> {
-    return this.service.completeProfileCreation(consumerId)
+  completeProfileCreation(@Headers() headers: IncomingHttpHeaders, @Param(`consumerId`) consumerId: string): Promise<void | never> {
+    const referer = headers.origin || headers.referer
+    if (!referer) throw new InternalServerErrorException(`Unexpected referer(origin): ${referer}`)
+    return this.service.completeProfileCreation(consumerId, referer)
   }
 
   @PublicEndpoint()
   @Get(`/signup/verification`)
-  signupVerification(@Headers() headers: IncomingHttpHeaders, @Query(`token`) token: string, @Response() res: express.Response) {
-    const headersRefererOrOrigin = headers.origin || headers.referer
-    if (!headersRefererOrOrigin) throw new InternalServerErrorException(`Unexpected referer(origin): ${headersRefererOrOrigin}`)
-    return this.service.signupVerification(token, res, headersRefererOrOrigin)
+  signupVerification(@Query(`referer`) referer: string, @Query(`token`) token: string, @Response() res: express.Response) {
+    if (!referer) throw new InternalServerErrorException(`Unexpected referer(origin): ${referer}`)
+    return this.service.signupVerification(token, res, referer)
   }
 
   @PublicEndpoint()
   @Post(`/change-password`)
   checkEmailAndSendRecoveryLink(@Headers() headers: IncomingHttpHeaders, @Body() body: { email: string }): Promise<void> {
-    const headersRefererOrOrigin = headers.origin || headers.referer
-    if (!headersRefererOrOrigin) throw new InternalServerErrorException(`Unexpected referer(origin): ${headersRefererOrOrigin}`)
-    return this.service.checkEmailAndSendRecoveryLink(body, headersRefererOrOrigin)
+    const referer = headers.origin || headers.referer
+    if (!referer) throw new InternalServerErrorException(`Unexpected referer(origin): ${referer}`)
+    return this.service.checkEmailAndSendRecoveryLink(body, referer)
   }
 
   @PublicEndpoint()

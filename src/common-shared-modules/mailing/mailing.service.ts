@@ -12,9 +12,9 @@ export class MailingService {
 
   constructor(private mailerService: MailerService, private configService: ConfigService) {}
 
-  async sendConsumerSignupCompletionEmail(params: { email: string; token: string }): Promise<void> {
+  async sendConsumerSignupCompletionEmail(params: { email: string; token: string; referer: string }): Promise<void> {
     const backendBaseURL = this.configService.get<string>(`NEST_APP_EXTERNAL_ORIGIN`)
-    const emailConfirmationLink = `${backendBaseURL}/consumer/auth/signup/verification?token=${params.token}`
+    const emailConfirmationLink = `${backendBaseURL}/consumer/auth/signup/verification?token=${params.token}&referer=${params.referer}`
     const html = emailTemplating.signupCompletionToHtml.processor(emailConfirmationLink)
     const subject = `Welcome to Wirebill! Confirm your Email`
     try {
