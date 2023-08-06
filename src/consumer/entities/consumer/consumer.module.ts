@@ -4,6 +4,8 @@ import { AddressDetailsModule } from '../address-details/address-details.module'
 import { AddressDetailsRepository } from '../address-details/address-details.repository'
 import { AddressDetailsService } from '../address-details/address-details.service'
 import { BillingDetailsModule } from '../billing-details/billing-details.module'
+import { ContactModule } from '../contact/contact.module'
+import { ContactService } from '../contact/contact.service'
 import { CreditCardModule } from '../credit-card/credit-card.module'
 import { CreditCardService } from '../credit-card/credit-card.service'
 import { GoogleProfileDetailsModule } from '../google-profile-details/google-profile-details.module'
@@ -29,6 +31,7 @@ import { ConsumerService } from './consumer.service'
     PersonalDetailsModule,
     PaymentRequestModule,
     CreditCardModule,
+    ContactModule,
   ],
   controllers: [ConsumerController],
   providers: [
@@ -42,6 +45,7 @@ import { ConsumerService } from './consumer.service'
     OrganizationDetailsService,
     PaymentRequestService,
     CreditCardService,
+    ContactService,
   ],
   exports: [
     ConsumerService,
@@ -54,6 +58,7 @@ import { ConsumerService } from './consumer.service'
     OrganizationDetailsService,
     PaymentRequestService,
     CreditCardService,
+    ContactService,
   ],
 })
 export class ConsumerModule {}

@@ -1,16 +1,8 @@
-import {
-  CallHandler,
-  CustomDecorator,
-  ExecutionContext,
-  Injectable,
-  InternalServerErrorException,
-  NestInterceptor,
-  SetMetadata,
-} from '@nestjs/common'
+import { CallHandler, CustomDecorator, ExecutionContext, Injectable, NestInterceptor, SetMetadata } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
 import { ClassConstructor, plainToInstance } from 'class-transformer'
-import { Observable, throwError } from 'rxjs'
-import { catchError, map } from 'rxjs/operators'
+import { Observable } from 'rxjs'
+import { map } from 'rxjs/operators'
 
 const DTO_CLASS_TO_TRANSFORM_RESPONSE = Symbol(`DTO_CLASS_TO_TRANSFORM_RESPONSE`)
 export const TransformResponse = <T>(cls: ClassConstructor<T>): CustomDecorator<symbol> => SetMetadata(DTO_CLASS_TO_TRANSFORM_RESPONSE, cls)
@@ -32,10 +24,6 @@ export class TransformResponseInterceptor implements NestInterceptor {
         const opts = { excludeExtraneousValues: true, enableImplicitConversion: true, exposeDefaultValues: true, exposeUnsetFields: true }
         const converted = plainToInstance(cls, res, opts)
         return converted
-      }),
-      catchError(err => {
-        console.log(`err`, err)
-        return throwError(() => new InternalServerErrorException(err.message ?? `[TransformResponseInterceptor] Internal server error`))
       }),
     )
   }

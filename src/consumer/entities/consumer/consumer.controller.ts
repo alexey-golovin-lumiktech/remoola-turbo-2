@@ -1,7 +1,5 @@
-import { Body, Controller, Get, Inject, Param, Patch, Post, Query } from '@nestjs/common'
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
-import { ListResponse } from 'src/dtos/common'
-import { CreditCardCreate, CreditCardResponse, CreditCardUpdate } from 'src/dtos/consumer'
+import { BadRequestException, Body, Controller, Get, Inject, Param, Patch, Post, Query } from '@nestjs/common'
+import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger'
 
 import { IConsumerModel, IPaymentRequestModel } from '@wirebill/shared-common/models'
 import { ReqQuery, TimelineFilter } from '@wirebill/shared-common/types'
@@ -12,6 +10,7 @@ import { TransformResponse } from '../../../interceptors'
 import { ParseJsonPipe, ReqQueryTransformPipe } from '../../pipes'
 import { AddressDetailsService } from '../address-details/address-details.service'
 import { BillingDetailsService } from '../billing-details/billing-details.service'
+import { ContactService } from '../contact/contact.service'
 import { CreditCardService } from '../credit-card/credit-card.service'
 import { GoogleProfileDetailsService } from '../google-profile-details/google-profile-details.service'
 import { OrganizationDetailsService } from '../organization-details/organization-details.service'
@@ -21,6 +20,7 @@ import { PersonalDetailsService } from '../personal-details/personal-details.ser
 import { ConsumerService } from './consumer.service'
 
 @ApiTags(`consumer`)
+@ApiBearerAuth()
 @Controller(`consumer`)
 export class ConsumerController {
   constructor(
@@ -32,6 +32,7 @@ export class ConsumerController {
     @Inject(AddressDetailsService) private readonly addressDetailsService: AddressDetailsService,
     @Inject(OrganizationDetailsService) private readonly organizationDetailsService: OrganizationDetailsService,
     @Inject(CreditCardService) private readonly creditCardService: CreditCardService,
+    @Inject(ContactService) private readonly contactService: ContactService,
   ) {}
 
   @Get(`/`)
@@ -103,29 +104,87 @@ export class ConsumerController {
   }
 
   @Get(`/credit-cards`)
-  getConsumerCreditCardsList(@ReqAuthIdentity() identity: IConsumerModel): Promise<ListResponse<CreditCardResponse>> {
-    return this.creditCardService.repository.findAndCountAll({ filter: { consumerId: identity.id } })
+  @TransformResponse(CONSUMER.CreditCardsListResponse)
+  @ApiOkResponse({ type: CONSUMER.CreditCardsListResponse })
+  getConsumerCreditCardsList(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.CreditCardsListResponse> {
+    return this.creditCardService.repository.findAndCountAll({ filter: { deletedAt: null, consumerId: identity.id } })
   }
 
   @Get(`/credit-cards/:cardId`)
+  @TransformResponse(CONSUMER.CreditCardResponse)
+  @ApiOkResponse({ type: CONSUMER.CreditCardResponse })
   getConsumerCreditCardById(
     @ReqAuthIdentity() identity: IConsumerModel,
     @Param(`cardId`) cardId: string,
-  ): Promise<CreditCardResponse | null> {
-    return this.creditCardService.repository.findById(cardId)
+  ): Promise<CONSUMER.CreditCardResponse | null> {
+    return this.creditCardService.repository.findOne({ deletedAt: null, id: cardId, consumerId: identity.id })
   }
 
   @Patch(`/credit-cards/:cardId`)
+  @TransformResponse(CONSUMER.CreditCardResponse)
+  @ApiOkResponse({ type: CONSUMER.CreditCardResponse })
   updateConsumerCreditCardById(
     @Param(`cardId`) cardId: string,
-    @Body() body: CreditCardUpdate,
+    @Body() body: CONSUMER.CreditCardUpdate,
     @ReqAuthIdentity() identity: IConsumerModel, //
-  ) {
-    return this.creditCardService.repository.updateById(cardId, { ...body, consumerId: identity.id })
+  ): Promise<CONSUMER.CreditCardResponse | null> {
+    return this.creditCardService.repository.updateOne(
+      { deletedAt: null, id: cardId, consumerId: identity.id },
+      { ...body, consumerId: identity.id },
+    )
   }
 
   @Post(`/credit-cards`)
-  createConsumerCreditCard(@ReqAuthIdentity() identity: IConsumerModel, @Body() body: CreditCardCreate): Promise<CreditCardResponse> {
+  @TransformResponse(CONSUMER.CreditCardResponse)
+  @ApiOkResponse({ type: CONSUMER.CreditCardResponse })
+  createConsumerCreditCard(
+    @ReqAuthIdentity() identity: IConsumerModel,
+    @Body() body: CONSUMER.CreditCardCreate,
+  ): Promise<CONSUMER.CreditCardResponse> {
     return this.creditCardService.repository.create({ ...body, consumerId: identity.id })
+  }
+
+  @Get(`/contacts`)
+  @TransformResponse(CONSUMER.ContactsListResponse)
+  @ApiOkResponse({ type: CONSUMER.ContactsListResponse })
+  getConsumerContactsList(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.ContactsListResponse> {
+    return this.contactService.repository.findAndCountAll({ filter: { deletedAt: null, consumerId: identity.id } })
+  }
+
+  @Get(`/contacts/:contactId`)
+  @TransformResponse(CONSUMER.ContactResponse)
+  @ApiOkResponse({ type: CONSUMER.ContactResponse })
+  getConsumerContactById(
+    @Param(`contactId`) contactId: string,
+    @ReqAuthIdentity() identity: IConsumerModel,
+  ): Promise<CONSUMER.ContactResponse> {
+    return this.contactService.repository.findOne({ deletedAt: null, id: contactId, consumerId: identity.id })
+  }
+
+  @Patch(`/contacts/:contactId`)
+  @TransformResponse(CONSUMER.ContactResponse)
+  @ApiOkResponse({ type: CONSUMER.ContactResponse })
+  async updateConsumerContactById(
+    @Param(`contactId`) contactId: string,
+    @Body() body: CONSUMER.ContactUpdate,
+    @ReqAuthIdentity() identity: IConsumerModel,
+  ): Promise<CONSUMER.ContactResponse> {
+    const found = await this.contactService.repository.findOne({ deletedAt: null, id: contactId, consumerId: identity.id })
+    if (!found) throw new BadRequestException(`No contact for provided id: ${contactId}`)
+    const address = { ...found.address, ...body.address }
+    return this.contactService.repository.updateOne({ id: contactId, consumerId: identity.id }, { ...body, address })
+  }
+
+  @Post(`/contacts`)
+  @TransformResponse(CONSUMER.ContactResponse)
+  @ApiOkResponse({ type: CONSUMER.ContactResponse })
+  async createConsumerContact(
+    @ReqAuthIdentity() identity: IConsumerModel,
+    @Body() body: CONSUMER.ContactCreate,
+  ): Promise<CONSUMER.ContactResponse> {
+    console.log(`[body]`, body)
+    const exist = await this.contactService.repository.findOne({ deletedAt: null, email: body.email, consumerId: identity.id })
+    if (exist) throw new BadRequestException(`Contact for provided email: ${body.email} is already exist`)
+    return this.contactService.repository.create({ ...body, consumerId: identity.id })
   }
 }

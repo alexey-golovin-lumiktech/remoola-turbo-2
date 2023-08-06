@@ -1,9 +1,11 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common'
+import { BadRequestException, HttpStatus, INestApplication, ValidationPipe } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { NestFactory, Reflector } from '@nestjs/core'
 import { JwtService } from '@nestjs/jwt'
 import { DocumentBuilder, SwaggerCustomOptions, SwaggerModule } from '@nestjs/swagger'
 import { classToPlain, plainToClass } from 'class-transformer'
+import { ValidationError } from 'class-validator'
+import { camelCase, startCase } from 'lodash'
 
 import * as knexfile from '../knexfile'
 
@@ -30,7 +32,13 @@ async function bootstrap() {
   })
 
   const customSiteTitle = `Wirebill`
-  const config = new DocumentBuilder().setTitle(customSiteTitle).setDescription(`Wirebill REST API`).setVersion(`1.0.0`).build()
+  const config = new DocumentBuilder()
+    .addBearerAuth({ type: `http`, name: `authorization`, scheme: `basic` }, `basic`)
+    .addBearerAuth({ type: `http`, name: `authorization`, scheme: `bearer` }, `bearer`)
+    .setTitle(customSiteTitle)
+    .setDescription(`Wirebill REST API`)
+    .setVersion(`1.0.0`)
+    .build()
 
   const document = SwaggerModule.createDocument(app, config, {
     deepScanRoutes: true,
@@ -55,7 +63,6 @@ async function bootstrap() {
   SwaggerModule.setup(`documentation`, app, document, options)
 
   app.enableCors()
-  app.useGlobalFilters(new HttpExceptionFilter())
 
   const reflector = app.get(Reflector)
   const jwtService = app.get(JwtService)
@@ -63,9 +70,24 @@ async function bootstrap() {
   const adminsService = app.get(AdminService)
   app.useGlobalGuards(new AuthGuard(reflector, jwtService, consumersService, adminsService))
   app.useGlobalInterceptors(new TransformResponseInterceptor(reflector))
+  app.useGlobalFilters(new HttpExceptionFilter())
 
   app.useGlobalPipes(
     new ValidationPipe({
+      stopAtFirstError: true,
+      exceptionFactory: (validationErrors: ValidationError[] = []) => {
+        const statusCode = HttpStatus.BAD_REQUEST
+        const statusText = startCase(camelCase(HttpStatus[HttpStatus.BAD_REQUEST]))
+        const error = validationErrors.reduce(
+          (acc, ctx) => {
+            acc.errors = { ...acc.errors, [ctx.property]: Object.values(ctx.constraints).join(`, `) }
+            acc.message += Object.values(ctx.constraints).join(`, `)
+            return acc
+          },
+          { message: ``, errors: {}, statusCode, statusText },
+        )
+        return new BadRequestException(error)
+      },
       transform: true,
       transformerPackage: { classToPlain, plainToClass },
       transformOptions: {

@@ -20,6 +20,7 @@ export interface IBaseRepository<TModel extends IBaseModel> {
 
   update(filter: ReqQueryFilter<TModel>, dto: Partial<TModel>): Promise<TModel[]>
   updateById(id: string, dto: Partial<TModel>): Promise<TModel | null>
+  updateOne(filter: ReqQueryFilter<TModel>, dto: Partial<TModel>): Promise<TModel | null>
 
   softDelete(filter: ReqQueryFilter<TModel>): Promise<TModel[]>
   softDeleteById(id: string): Promise<TModel | null>
@@ -149,6 +150,11 @@ export abstract class BaseRepository<TModel extends IBaseModel> implements IBase
 
   async updateById(id: string, dto: Partial<TModel>): Promise<TModel> {
     const [updated] = await this.update({ id }, dto)
+    return updated
+  }
+
+  async updateOne(filter: ReqQueryFilter<TModel>, dto: Partial<TModel>): Promise<TModel> {
+    const [updated] = await this.update(filter, dto)
     return updated
   }
 

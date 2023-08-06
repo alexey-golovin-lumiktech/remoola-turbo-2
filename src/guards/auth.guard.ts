@@ -50,10 +50,10 @@ export class AuthGuard implements CanActivate {
     }
 
     const { authorization = null } = request.headers
-    if (authorization == null || authorization.length == 0) return this.throwHandler(GuardMessage.LOST_HEADER)
+    if (authorization == null || authorization.length == 0) return this.throwError(GuardMessage.LOST_HEADER)
 
     const [type, encoded] = authorization.split(this.separator.Token) as [AuthHeaderValue, string]
-    if (Object.values(AuthHeader).includes(type) == false) return this.throwHandler(GuardMessage.UNEXPECTED(type))
+    if (Object.values(AuthHeader).includes(type) == false) return this.throwError(GuardMessage.UNEXPECTED(type))
 
     return this.processors[type](encoded, request)
   }
@@ -66,39 +66,44 @@ export class AuthGuard implements CanActivate {
   private async basicProcessor(encoded: string, request: express.Request) {
     const decoded = Buffer.from(encoded, `base64`).toString(`utf-8`)
     const [email, password] = decoded.split(this.separator.Credentials).map(x => x.trim())
-    const consumer = await this.consumersService.repository.findOne({ email })
     const admin = await this.adminsService.repository.findOne({ email })
+    const consumer = await this.consumersService.repository.findOne({ email })
     const identity = admin ?? consumer
-    if (identity == null) return this.throwHandler(GuardMessage.NO_IDENTITY)
-    if ((identity as IConsumerModel).verified == false) return this.throwHandler(GuardMessage.NOT_VERIFIED)
+
+    if (identity == null) return this.throwError(GuardMessage.NO_IDENTITY)
+    if (request.url.startsWith(`/admin/`) && !admin) return this.throwError(`Only for admins`)
+    if (request.url.startsWith(`/consumer/`) && !consumer) return this.throwError(`Only for consumers`)
+    if ((identity as IConsumerModel).verified == false) return this.throwError(GuardMessage.NOT_VERIFIED)
 
     const isValidPassword = passwordsIsEqual({
       incomingPass: password,
       password: identity.password ?? ``,
       salt: identity.salt ?? ``,
     })
-    if (!isValidPassword) return this.throwHandler(GuardMessage.INVALID_CREDENTIALS)
+    if (!isValidPassword) return this.throwError(GuardMessage.INVALID_CREDENTIALS)
 
-    request[REQUEST_AUTH_IDENTITY] = identity
+    request[REQUEST_AUTH_IDENTITY] = Object.assign(identity, { type: admin ? `admin` : `consumer` })
     return true
   }
 
   private async bearerProcessor(encoded: string, request: express.Request) {
     const decoded = this.jwtService.decode(encoded)
-    if (decoded == null || !decoded[`identityId`]) return this.throwHandler(GuardMessage.INVALID_TOKEN)
+    if (decoded == null || !decoded[`identityId`]) return this.throwError(GuardMessage.INVALID_TOKEN)
 
     const identityId = decoded[`identityId`]
     const admin = await this.adminsService.repository.findById(identityId)
     const consumer = await this.consumersService.repository.findById(identityId)
-
     const identity = admin ?? consumer
-    if (identity == null) return this.throwHandler(GuardMessage.NO_IDENTITY)
 
-    request[REQUEST_AUTH_IDENTITY] = identity
+    if (identity == null) return this.throwError(GuardMessage.NO_IDENTITY)
+    if (request.url.startsWith(`/admin/`) && !admin) return this.throwError(`Only for admins`)
+    if (request.url.startsWith(`/consumer/`) && !consumer) return this.throwError(`Only for consumers`)
+
+    request[REQUEST_AUTH_IDENTITY] = Object.assign(identity, { type: admin ? `admin` : `consumer` })
     return true
   }
 
-  private throwHandler(message: string): never {
+  private throwError(message: string): never {
     this.logger.error(message)
     throw new ForbiddenException(message)
   }

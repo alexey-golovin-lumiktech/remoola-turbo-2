@@ -4,7 +4,7 @@ import { TableName } from '@wirebill/shared-common/models'
 
 import { addAuditColumns, addUUIDPrimaryKey } from './migration-utils'
 
-const tableName = TableName.CreditCard
+const tableName = TableName.Contact
 
 export async function up(knex: Knex): Promise<void> {
   const exist = await knex.schema.hasTable(tableName)
@@ -14,13 +14,10 @@ export async function up(knex: Knex): Promise<void> {
     addUUIDPrimaryKey(table, knex)
     table.uuid(`consumer_id`).notNullable().references(`id`).inTable(TableName.Consumer).onDelete(`CASCADE`)
 
-    table.string(`brand`).notNullable()
-    table.string(`country`).notNullable()
-    table.integer(`exp_month`).notNullable()
-    table.integer(`exp_year`).notNullable()
-    table.string(`last4`).notNullable()
+    table.string(`email`).notNullable()
+    table.string(`name`).nullable().comment(`contact address object`)
+    table.jsonb(`address`).notNullable()
 
-    table.jsonb(`metadata`).comment(`stripe card data json`)
     addAuditColumns(table, knex)
   })
 }
