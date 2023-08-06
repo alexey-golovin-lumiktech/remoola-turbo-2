@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, Inject, MethodNotAllowedException, Param, Post, Put, Query, Response } from '@nestjs/common'
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
+import { ApiBasicAuth, ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import express from 'express'
 import { ReqAuthIdentity } from 'src/guards/auth.guard'
 
@@ -14,6 +14,8 @@ import { ReqQueryTransformPipe } from '../../pipes'
 
 import { AdminService } from './admin.service'
 
+@ApiBearerAuth()
+@ApiBasicAuth()
 @ApiTags(`admin`)
 @Controller(`admin/admins`)
 export class AdminController {

@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, Inject, Param, Put, Query, Response } from '@nestjs/common'
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
+import { ApiBasicAuth, ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import express from 'express'
 
 import { IPaymentRequestModel } from '@wirebill/shared-common/models'
@@ -13,6 +13,8 @@ import { ReqQueryTransformPipe } from '../../pipes'
 
 import { AdminPaymentRequestService } from './admin-payment-request.service'
 
+@ApiBearerAuth()
+@ApiBasicAuth()
 @ApiTags(`admin`)
 @Controller(`admin/payment-requests`)
 export class AdminPaymentRequestController {

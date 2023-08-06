@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, Inject, Param, Put, Query, Response } from '@nestjs/common'
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
+import { ApiBasicAuth, ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import express from 'express'
 
 import { IOrganizationDetailsModel } from '@wirebill/shared-common/models'
@@ -12,6 +12,8 @@ import { ReqQueryTransformPipe } from '../../pipes'
 
 import { AdminOrganizationDetailsService } from './admin-organization-details.service'
 
+@ApiBearerAuth()
+@ApiBasicAuth()
 @ApiTags(`admin`)
 @Controller(`admin/organization-details`)
 export class AdminOrganizationDetailsController {
