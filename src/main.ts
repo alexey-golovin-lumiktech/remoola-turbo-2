@@ -33,10 +33,10 @@ async function bootstrap() {
 
   const customSiteTitle = `Wirebill`
   const config = new DocumentBuilder()
-    .addBearerAuth({ type: `http`, name: `authorization`, scheme: `basic` }, `basic`)
-    .addBearerAuth({ type: `http`, name: `authorization`, scheme: `bearer` }, `bearer`)
+    .addBasicAuth({ type: `http`, scheme: `basic` }, `basic`)
+    .addBearerAuth({ type: `http`, scheme: `bearer` }, `bearer`)
     .setTitle(customSiteTitle)
-    .setDescription(`Wirebill REST API`)
+    .setDescription([`<a rel="noopener noreferrer" target="_self" href="/documentation-json">swagger.json</a>`].join(` `))
     .setVersion(`1.0.0`)
     .build()
 
@@ -46,8 +46,16 @@ async function bootstrap() {
     extraModels: [...Object.values(ADMIN), ...Object.values(CONSUMER), ListResponse],
   })
   const options: SwaggerCustomOptions = {
-    swaggerOptions: { docExpansion: `none` },
-    customSiteTitle,
+    swaggerOptions: {
+      swagger: `2.0`,
+      docExpansion: `none`,
+      pathPrefixSize: 2,
+      swaggerUI: false,
+      grouping: `tags`,
+      basePath: `/`,
+      documentationPath: `/documentation`,
+    },
+
     customfavIcon: `https://avatars.githubusercontent.com/u/6936373?s=200&v=4`,
     customJs: [
       `https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.1.3/swagger-ui-bundle.js`,

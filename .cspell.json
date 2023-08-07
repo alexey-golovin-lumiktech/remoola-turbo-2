@@ -30,6 +30,8 @@
     "Millis",
     "mkdir",
     "Nillable",
+    "noopener",
+    "noreferrer",
     "ossp",
     "ovpn",
     "plpgsql",

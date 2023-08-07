@@ -12,7 +12,7 @@ import {
   Query,
   Response,
 } from '@nestjs/common'
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
+import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger'
 import express from 'express'
 import { IncomingHttpHeaders } from 'http'
 
@@ -41,6 +41,7 @@ export class AuthController {
   ) {}
 
   @Post(`/login`)
+  @ApiOperation({ operationId: `consumer_auth_login` })
   @ApiOkResponse({ type: CONSUMER.LoginResponse })
   @TransformResponse(CONSUMER.LoginResponse)
   login(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.LoginResponse> {
