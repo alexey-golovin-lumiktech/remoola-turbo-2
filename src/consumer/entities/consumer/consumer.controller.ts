@@ -103,6 +103,16 @@ export class ConsumerController {
     return this.paymentService.getConsumerPaymentRequestsList(identity.id, query, timelineFilter)
   }
 
+  @Get(`/payment-requests/:paymentRequestId`)
+  @ApiOkResponse({ type: CONSUMER.PaymentRequestResponse })
+  @TransformResponse(CONSUMER.PaymentRequestResponse)
+  getConsumerPaymentRequestById(
+    @ReqAuthIdentity() _identity: IConsumerModel,
+    @Param(`paymentRequestId`) paymentRequestId: string,
+  ): Promise<CONSUMER.PaymentRequestResponse> {
+    return this.paymentService.getConsumerPaymentRequestById(paymentRequestId)
+  }
+
   @Get(`/credit-cards`)
   @TransformResponse(CONSUMER.CreditCardsListResponse)
   @ApiOkResponse({ type: CONSUMER.CreditCardsListResponse })

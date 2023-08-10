@@ -58,4 +58,20 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
     const result = { count, data }
     return result
   }
+
+  async getConsumerPaymentRequestById(paymentRequestId: string): Promise<CONSUMER.PaymentRequestResponse> {
+    return this.repository.knex
+      .from(`${TableName.PaymentRequest} as p`)
+      .join(`${TableName.Consumer} as requester`, `requester.id`, `p.requester_id`)
+      .join(`${TableName.Consumer} as payer`, `payer.id`, `p.payer_id`)
+      .where(`p.id`, paymentRequestId)
+      .select(
+        `p.*`,
+        `requester.first_name as requester_name`,
+        `payer.first_name as payer_name`,
+        `requester.email as requester_email`,
+        `payer.email as payer_email`,
+      )
+      .first()
+  }
 }
