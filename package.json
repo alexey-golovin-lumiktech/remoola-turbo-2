@@ -123,6 +123,7 @@
     "@types/passport-http": "^0.3.9",
     "@types/passport-jwt": "^3.0.8",
     "@types/passport-local": "^1.0.35",
+    "@types/pg": "^8.10.2",
     "@types/puppeteer": "^7.0.4",
     "@types/request": "^2.48.8",
     "@types/stripe": "^8.0.417",
