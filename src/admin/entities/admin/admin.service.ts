@@ -18,13 +18,13 @@ export class AdminService extends BaseService<IAdminModel, AdminRepository> {
     return this.repository.qb.where({ email }).first()
   }
 
-  async create(body: ADMIN.CreateAdmin): Promise<IAdminModel> {
+  async create(body: ADMIN.AdminCreate): Promise<IAdminModel> {
     const salt = generatePasswordHashSalt(10)
     const password = generatePasswordHash({ password: body.password, salt })
     return this.repository.create({ ...body, salt, password })
   }
 
-  async update(adminId: string, body: ADMIN.UpdateAdmin): Promise<IAdminModel> {
+  async update(adminId: string, body: ADMIN.AdminUpdate): Promise<IAdminModel> {
     const admin = await this.repository.findById(adminId)
     if (!admin) throw new BadRequestException(`No admin for provided adminId: ${adminId}`)
 
@@ -35,8 +35,9 @@ export class AdminService extends BaseService<IAdminModel, AdminRepository> {
     })
 
     if (!incomingBodyPasswordIsEqualToAdminExistPassword) {
-      body.salt = generatePasswordHashSalt(10)
-      body.password = generatePasswordHash({ password: body.password, salt: body.salt })
+      const salt = generatePasswordHashSalt(10)
+      const password = generatePasswordHash({ password: body.password, salt: admin.salt })
+      return this.repository.updateById(adminId, { ...body, salt, password })
     }
 
     return this.repository.updateById(adminId, body)

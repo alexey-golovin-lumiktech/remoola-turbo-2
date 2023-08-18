@@ -1,7 +1,8 @@
-import { ApiProperty, OmitType, PickType } from '@nestjs/swagger'
+import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 import { IsIn } from 'class-validator'
 
+import { IOrganizationDetailsCreate, IOrganizationDetailsUpdate } from '@wirebill/shared-common/dtos'
 import { OrganizationSize } from '@wirebill/shared-common/enums'
 import { IOrganizationDetailsModel } from '@wirebill/shared-common/models'
 import { ConsumerRoleValue, OrganizationSizeValue } from '@wirebill/shared-common/types'
@@ -29,16 +30,8 @@ class OrganizationDetails extends BaseModel implements IOrganizationDetailsModel
 
 export class OrganizationDetailsResponse extends OmitType(OrganizationDetails, [`deletedAt`] as const) {}
 
-export class CreateOrganizationDetails extends PickType(OrganizationDetailsResponse, [
-  `consumerId`,
-  `name`,
-  `size`,
-  `consumerRole`,
-] as const) {}
+export class OrganizationDetailsCreate
+  extends PickType(OrganizationDetails, [`consumerId`, `name`, `size`, `consumerRole`] as const)
+  implements IOrganizationDetailsCreate {}
 
-export class UpdateOrganizationDetails extends PickType(OrganizationDetailsResponse, [
-  `consumerId`,
-  `name`,
-  `size`,
-  `consumerRole`,
-] as const) {}
+export class OrganizationDetailsUpdate extends PartialType(OrganizationDetailsCreate) implements IOrganizationDetailsUpdate {}

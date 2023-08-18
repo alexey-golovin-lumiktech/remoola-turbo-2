@@ -40,7 +40,7 @@ export class AdminController {
   @Post(`/`)
   @TransformResponse(ADMIN.AdminResponse)
   @ApiOkResponse({ type: ADMIN.AdminResponse })
-  create(@ReqAuthIdentity() identity: IAdminModel, @Body() body: ADMIN.CreateAdmin): Promise<ADMIN.AdminResponse> {
+  create(@ReqAuthIdentity() identity: IAdminModel, @Body() body: ADMIN.AdminCreate): Promise<ADMIN.AdminResponse> {
     if (identity.type != AdminType.Super) throw new MethodNotAllowedException(`Allowed only for admin type "super"`)
     return this.service.create(body)
   }
@@ -51,7 +51,7 @@ export class AdminController {
   update(
     @ReqAuthIdentity() identity: IAdminModel,
     @Param(`adminId`) adminId: string,
-    @Body() body: ADMIN.UpdateAdmin,
+    @Body() body: ADMIN.AdminUpdate,
   ): Promise<ADMIN.AdminResponse> {
     if (identity.type != AdminType.Super) throw new MethodNotAllowedException(`Allowed only for admin type "super"`)
     return this.service.update(adminId, body)

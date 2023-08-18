@@ -1,7 +1,8 @@
-import { ApiProperty, OmitType, PickType } from '@nestjs/swagger'
+import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 import { ValidateIf } from 'class-validator'
 
+import { IPersonalDetailsCreate, IPersonalDetailsUpdate } from '@wirebill/shared-common/dtos'
 import { LegalStatus } from '@wirebill/shared-common/enums'
 import { IPersonalDetailsModel } from '@wirebill/shared-common/models'
 import { LegalStatusValue } from '@wirebill/shared-common/types'
@@ -44,24 +45,17 @@ class PersonalDetails extends BaseModel implements IPersonalDetailsModel {
 }
 
 export class PersonalDetailsResponse extends OmitType(PersonalDetails, [`deletedAt`] as const) {}
-export class CreatePersonalDetails extends PickType(PersonalDetailsResponse, [
-  `consumerId`,
-  `citizenOf`,
-  `dateOfBirth`,
-  `passportOrIdNumber`,
-  `countryOfTaxResidence`,
-  `legalStatus`,
-  `taxId`,
-  `phoneNumber`,
-] as const) {}
+export class PersonalDetailsCreate
+  extends PickType(PersonalDetails, [
+    `consumerId`,
+    `citizenOf`,
+    `dateOfBirth`,
+    `passportOrIdNumber`,
+    `countryOfTaxResidence`,
+    `legalStatus`,
+    `taxId`,
+    `phoneNumber`,
+  ] as const)
+  implements IPersonalDetailsCreate {}
 
-export class UpdatePersonalDetails extends PickType(PersonalDetailsResponse, [
-  `consumerId`,
-  `citizenOf`,
-  `dateOfBirth`,
-  `passportOrIdNumber`,
-  `countryOfTaxResidence`,
-  `legalStatus`,
-  `taxId`,
-  `phoneNumber`,
-] as const) {}
+export class PersonalDetailsUpdate extends PartialType(PersonalDetailsCreate) implements IPersonalDetailsUpdate {}

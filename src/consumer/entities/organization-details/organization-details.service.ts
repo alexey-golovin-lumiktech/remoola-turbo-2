@@ -17,7 +17,7 @@ export class OrganizationDetailsService extends BaseService<IOrganizationDetails
     super(repository)
   }
 
-  async upsert(dto: CONSUMER.CreateOrganizationDetails): Promise<IOrganizationDetailsModel> {
+  async upsert(dto: CONSUMER.OrganizationDetailsCreate): Promise<IOrganizationDetailsModel> {
     const exist = await this.repository.findById(dto.consumerId)
     const organizationDetails = exist == null ? await this.repository.create(dto) : await this.repository.updateById(exist.id, dto)
     return organizationDetails

@@ -1,4 +1,4 @@
-import { ApiProperty, OmitType } from '@nestjs/swagger'
+import { ApiProperty, OmitType, PickType } from '@nestjs/swagger'
 import { Expose } from 'class-transformer'
 import { ValidateIf } from 'class-validator'
 
@@ -46,33 +46,14 @@ class PersonalDetails extends BaseModel implements IPersonalDetailsModel {
 
 export class PersonalDetailsResponse extends OmitType(PersonalDetails, [`deletedAt`] as const) {}
 
-export class UpdatePersonalDetails implements IPersonalDetailsUpdate {
-  @Expose()
-  @ApiProperty({ required: false })
-  citizenOf: string
-
-  @Expose()
-  @ApiProperty({ required: false })
-  dateOfBirth: Date
-
-  @Expose()
-  @ApiProperty({ required: false })
-  passportOrIdNumber: string
-
-  @Expose()
-  @ApiProperty({ enum: Object.values(LegalStatus), required: false })
-  @ValidateIf(({ value }) => value != null)
-  legalStatus?: LegalStatusValue
-
-  @Expose()
-  @ApiProperty({ required: false })
-  countryOfTaxResidence?: string
-
-  @Expose()
-  @ApiProperty({ required: false })
-  taxId?: string
-
-  @Expose()
-  @ApiProperty({ required: false })
-  phoneNumber?: string
-}
+export class UpdatePersonalDetails
+  extends PickType(PersonalDetails, [
+    `citizenOf`,
+    `dateOfBirth`,
+    `passportOrIdNumber`,
+    `legalStatus`,
+    `countryOfTaxResidence`,
+    `taxId`,
+    `phoneNumber`,
+  ] as const)
+  implements IPersonalDetailsUpdate {}

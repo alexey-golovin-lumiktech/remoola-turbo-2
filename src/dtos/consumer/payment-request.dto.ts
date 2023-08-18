@@ -13,7 +13,7 @@ import {
   TransactionTypeValue,
 } from '@wirebill/shared-common/types'
 
-import { BaseModel, ListResponse } from '../common'
+import { BaseModel } from '../common'
 
 class PaymentRequest extends BaseModel implements IPaymentRequestModel {
   @Expose()
@@ -101,9 +101,13 @@ export class PaymentRequestResponse extends OmitType(PaymentRequest, [`deletedAt
   requesterEmail: string
 }
 
-export class PaymentRequestListResponse extends ListResponse<PaymentRequestResponse> {
+export class PaymentRequestListResponse {
   @Expose()
-  @ApiProperty({ type: PaymentRequestResponse })
+  @ApiProperty({ required: true })
+  count: number
+
+  @Expose()
+  @ApiProperty({ required: true, type: [PaymentRequestResponse] })
   @Type(() => PaymentRequestResponse)
   data: PaymentRequestResponse[]
 }

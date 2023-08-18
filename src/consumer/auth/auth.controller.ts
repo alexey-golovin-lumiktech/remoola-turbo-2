@@ -66,7 +66,7 @@ export class AuthController {
   @Post(`/:consumerId/personal-details`)
   signupPersonalDetails(
     @Param(`consumerId`) consumerId: string,
-    @Body() body: CONSUMER.CreatePersonalDetails,
+    @Body() body: CONSUMER.PersonalDetailsCreate,
   ): Promise<CONSUMER.PersonalDetailsResponse | never> {
     return this.personalDetailsService.upsert({ ...body, consumerId })
   }
@@ -75,7 +75,7 @@ export class AuthController {
   @Post(`/:consumerId/organization-details`)
   signupOrganizationDetails(
     @Param(`consumerId`) consumerId: string,
-    @Body() body: CONSUMER.CreateOrganizationDetails,
+    @Body() body: CONSUMER.OrganizationDetailsCreate,
   ): Promise<CONSUMER.OrganizationDetailsResponse | never> {
     return this.organizationDetailsService.upsert({ ...body, consumerId })
   }
