@@ -39,6 +39,8 @@ const customEnvironmentNames = [
 
   `STRIPE_PUBLISHABLE_KEY`,
   `STRIPE_SECRET_KEY`,
+
+  `AWS_FILE_UPLOAD_MAX_SIZE_BYTES`,
 ]
 
 export const checkProvidedEnvs = (inDirectory: typeof __dirname) => () => {

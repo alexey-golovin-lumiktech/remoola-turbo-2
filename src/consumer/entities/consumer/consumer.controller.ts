@@ -1,4 +1,17 @@
-import { BadRequestException, Body, Controller, Get, Inject, Param, Patch, Post, Query } from '@nestjs/common'
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Inject,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UploadedFiles,
+  UseInterceptors,
+} from '@nestjs/common'
+import { AnyFilesInterceptor } from '@nestjs/platform-express'
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger'
 
 import { IConsumerModel, IPaymentRequestModel } from '@wirebill/shared-common/models'
@@ -26,7 +39,7 @@ export class ConsumerController {
   constructor(
     @Inject(ConsumerService) private readonly service: ConsumerService,
     @Inject(BillingDetailsService) private readonly billingDetailsService: BillingDetailsService,
-    @Inject(PaymentRequestService) private readonly paymentService: PaymentRequestService,
+    @Inject(PaymentRequestService) private readonly paymentRequestService: PaymentRequestService,
     @Inject(GoogleProfileDetailsService) private readonly googleProfileDetailsService: GoogleProfileDetailsService,
     @Inject(PersonalDetailsService) private readonly personalDetailsService: PersonalDetailsService,
     @Inject(AddressDetailsService) private readonly addressDetailsService: AddressDetailsService,
@@ -100,7 +113,31 @@ export class ConsumerController {
     @Query(new ReqQueryTransformPipe()) query: ReqQuery<IPaymentRequestModel>,
     @Query(`timelineFilter`, ParseJsonPipe) timelineFilter: Unassignable<TimelineFilter<IPaymentRequestModel>>,
   ): Promise<CONSUMER.PaymentRequestListResponse> {
-    return this.paymentService.getConsumerPaymentRequestsList(identity.id, query, timelineFilter)
+    return this.paymentRequestService.getConsumerPaymentRequestsList(identity.id, query, timelineFilter)
+  }
+
+  @Post(`/payment-requests/pay-to-contact`)
+  @ApiOkResponse({ type: CONSUMER.PaymentRequestResponse })
+  @TransformResponse(CONSUMER.PaymentRequestResponse)
+  @UseInterceptors(AnyFilesInterceptor())
+  payToContact(
+    @UploadedFiles() files: Array<Express.Multer.File> = [],
+    @Body() body: CONSUMER.PaymentRequestPayToContact,
+    @ReqAuthIdentity() identity: IConsumerModel,
+  ): Promise<void> | never {
+    this.checkUploadedFilesToMaxSize(files)
+    return this.paymentRequestService.payToContact({ identity, files, body })
+  }
+
+  private checkUploadedFilesToMaxSize(files: Array<Express.Multer.File>) {
+    const maxFileSize = Number(process.env.AWS_FILE_UPLOAD_MAX_SIZE_BYTES)
+    const oversize = files.reduce<Array<string>>((acc, { size, filename, originalname }) => {
+      if (size > maxFileSize) acc.push(`${Math.ceil(size / 1000000)}_MB ${filename || originalname}`)
+      return acc
+    }, [])
+    if (oversize.length == 0) return
+    const message = `File size limit exceeded (max: ${maxFileSize / 1000000}_MB).`
+    throw new BadRequestException({ message, details: oversize, statusCode: 400, error: `Bad Request` })
   }
 
   @Get(`/payment-requests/:paymentRequestId`)
@@ -110,7 +147,7 @@ export class ConsumerController {
     @ReqAuthIdentity() _identity: IConsumerModel,
     @Param(`paymentRequestId`) paymentRequestId: string,
   ): Promise<CONSUMER.PaymentRequestResponse> {
-    return this.paymentService.getConsumerPaymentRequestById(paymentRequestId)
+    return this.paymentRequestService.getConsumerPaymentRequestById(paymentRequestId)
   }
 
   @Get(`/credit-cards`)

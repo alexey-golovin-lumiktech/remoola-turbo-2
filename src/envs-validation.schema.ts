@@ -40,4 +40,6 @@ export const validationSchema = Joi.object({
 
   STRIPE_PUBLISHABLE_KEY: Joi.string().required(),
   STRIPE_SECRET_KEY: Joi.string().required(),
+
+  AWS_FILE_UPLOAD_MAX_SIZE_BYTES: Joi.number().default(50000000),
 })

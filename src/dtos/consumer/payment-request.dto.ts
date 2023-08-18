@@ -1,4 +1,4 @@
-import { ApiProperty, OmitType } from '@nestjs/swagger'
+import { ApiProperty, OmitType, PickType } from '@nestjs/swagger'
 import { Expose, Type } from 'class-transformer'
 import { IsDate, IsIn, IsNotEmpty, IsNumber, IsString, ValidateIf } from 'class-validator'
 
@@ -117,3 +117,11 @@ export class PaymentRequestsListQuery {
   sorting: [{ field: string; direction: SortDirectionValue }]
   filter: ReqQueryFilter<IConsumerModel>
 }
+
+export class PaymentRequestPayToContact extends PickType(PaymentRequest, [
+  `description`,
+  `transactionAmount`,
+  `transactionCurrencyCode`,
+  `transactionType`,
+  `stripeFeeInPercents`,
+] as const) {}
