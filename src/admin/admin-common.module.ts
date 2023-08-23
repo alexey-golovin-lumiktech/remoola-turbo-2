@@ -8,6 +8,7 @@ import { AdminConsumerModule } from './entities/consumer/admin-consumer.module'
 import { AdminContactModule } from './entities/contact/admin-contact.module'
 import { AdminCreditCardModule } from './entities/credit-card/admin-credit-card.module'
 import { AdminGoogleProfileDetailsModule } from './entities/google-profile-details/admin-google-profile-details.module'
+import { AdminIdentityResourceModule } from './entities/identity-resource/admin-identity-resource.module'
 import { AdminOrganizationDetailsModule } from './entities/organization-details/admin-organization-details.module'
 import { AdminPaymentRequestModule } from './entities/payment-request/admin-payment-request.module'
 import { AdminPersonalDetailsModule } from './entities/personal-details/admin-personal-details.module'
@@ -25,6 +26,7 @@ import { AdminPersonalDetailsModule } from './entities/personal-details/admin-pe
     AdminBillingDetailsModule,
     AdminCreditCardModule,
     AdminContactModule,
+    AdminIdentityResourceModule,
   ],
 })
 export class AdminCommonModule {}

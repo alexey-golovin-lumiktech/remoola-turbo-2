@@ -32,7 +32,7 @@ class ContactDTO extends BaseModel implements IContactModel {
 
 export class ContactResponse extends OmitType(ContactDTO, [`deletedAt`] as const) implements IContactResponse {}
 
-export class ContactsListResponse {
+export class ContactListResponse {
   @Expose()
   @ApiProperty({ required: true })
   count: number

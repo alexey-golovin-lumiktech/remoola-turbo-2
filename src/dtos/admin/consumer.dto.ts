@@ -1,7 +1,8 @@
 import { ApiProperty, PickType } from '@nestjs/swagger'
-import { Expose } from 'class-transformer'
+import { Expose, Type } from 'class-transformer'
 import { IsBoolean, IsEmail, IsIn, ValidateIf } from 'class-validator'
 
+import { IConsumerResponse } from '@wirebill/shared-common/dtos'
 import { AccountType, ContractorKind } from '@wirebill/shared-common/enums'
 import { IConsumerModel } from '@wirebill/shared-common/models'
 import { AccountTypeValue, ContractorKindValue, HowDidHearAboutUsValue } from '@wirebill/shared-common/types'
@@ -9,7 +10,7 @@ import { AccountTypeValue, ContractorKindValue, HowDidHearAboutUsValue } from '@
 import * as constants from '../../constants'
 import { BaseModel } from '../common'
 
-export class Consumer extends BaseModel implements IConsumerModel {
+class Consumer extends BaseModel implements IConsumerModel {
   @Expose()
   @ApiProperty({ required: false })
   @ValidateIf((_, value) => value != null)
@@ -77,6 +78,19 @@ export class Consumer extends BaseModel implements IConsumerModel {
   @Expose()
   @ApiProperty({ required: false })
   organizationDetailsId?: string
+}
+
+export class ConsumerResponse extends Consumer implements IConsumerResponse {}
+
+export class ConsumerListResponse {
+  @Expose()
+  @ApiProperty({ required: true })
+  count: number
+
+  @Expose()
+  @ApiProperty({ required: true, type: [ConsumerResponse] })
+  @Type(() => ConsumerResponse)
+  data: ConsumerResponse[]
 }
 
 export class UpsertConsumer extends PickType(Consumer, [

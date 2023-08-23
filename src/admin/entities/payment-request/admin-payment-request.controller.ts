@@ -6,8 +6,7 @@ import { IPaymentRequestModel } from '@wirebill/shared-common/models'
 import { ReqQuery } from '@wirebill/shared-common/types'
 
 import { ADMIN } from '../../../dtos'
-import { UpdatePaymentRequest } from '../../../dtos/admin'
-import { ListResponse } from '../../../dtos/common'
+import { PaymentRequestUpdate } from '../../../dtos/admin'
 import { TransformResponse } from '../../../interceptors'
 import { ReqQueryTransformPipe } from '../../pipes'
 
@@ -21,12 +20,12 @@ export class AdminPaymentRequestController {
   constructor(@Inject(AdminPaymentRequestService) private readonly service: AdminPaymentRequestService) {}
 
   @Get(`/`)
-  @TransformResponse(ListResponse<ADMIN.PaymentRequestResponse>)
-  @ApiOkResponse({ type: ListResponse<ADMIN.PaymentRequestResponse> })
+  @TransformResponse(ADMIN.PaymentRequestListResponse)
+  @ApiOkResponse({ type: ADMIN.PaymentRequestListResponse })
   async findAndCountAll(
     @Query(new ReqQueryTransformPipe()) query: ReqQuery<IPaymentRequestModel>,
     @Response() res: express.Response,
-  ): Promise<ListResponse<ADMIN.PaymentRequestResponse>> {
+  ): Promise<ADMIN.PaymentRequestListResponse> {
     const result = await this.service.repository.findAndCountAll(query)
     res.set(`Content-Range`, result.count.toString())
     res.send(result.data)
@@ -40,7 +39,7 @@ export class AdminPaymentRequestController {
   }
 
   @Put(`/:paymentRequestId`)
-  updateById(@Param(`paymentRequestId`) paymentRequestId: string, @Body() body: UpdatePaymentRequest) {
+  updateById(@Param(`paymentRequestId`) paymentRequestId: string, @Body() body: PaymentRequestUpdate) {
     return this.service.repository.updateById(paymentRequestId, body)
   }
 

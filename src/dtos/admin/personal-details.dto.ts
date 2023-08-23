@@ -1,5 +1,5 @@
 import { ApiProperty, OmitType, PickType } from '@nestjs/swagger'
-import { Expose } from 'class-transformer'
+import { Expose, Type } from 'class-transformer'
 import { ValidateIf } from 'class-validator'
 
 import { IPersonalDetailsUpdate } from '@wirebill/shared-common/dtos'
@@ -45,6 +45,17 @@ class PersonalDetails extends BaseModel implements IPersonalDetailsModel {
 }
 
 export class PersonalDetailsResponse extends OmitType(PersonalDetails, [`deletedAt`] as const) {}
+
+export class PersonalDetailsListResponse {
+  @Expose()
+  @ApiProperty({ required: true })
+  count: number
+
+  @Expose()
+  @ApiProperty({ required: true, type: [PersonalDetailsResponse] })
+  @Type(() => PersonalDetailsResponse)
+  data: PersonalDetailsResponse[]
+}
 
 export class UpdatePersonalDetails
   extends PickType(PersonalDetails, [

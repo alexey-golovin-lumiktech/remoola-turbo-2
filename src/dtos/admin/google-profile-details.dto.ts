@@ -1,7 +1,7 @@
 import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger'
-import { Expose } from 'class-transformer'
+import { Expose, Type } from 'class-transformer'
 
-import { IGoogleProfileDetailsCreate, IGoogleProfileDetailsUpdate } from '@wirebill/shared-common/dtos'
+import { IGoogleProfileDetailsCreate, IGoogleProfileDetailsResponse, IGoogleProfileDetailsUpdate } from '@wirebill/shared-common/dtos'
 import { IGoogleProfileDetailsModel } from '@wirebill/shared-common/models'
 
 import { BaseModel } from '../common'
@@ -44,7 +44,20 @@ class GoogleProfileDetails extends BaseModel implements IGoogleProfileDetailsMod
   metadata?: string
 }
 
-export class GoogleProfileDetailsResponse extends OmitType(GoogleProfileDetails, [`deletedAt`, `metadata`] as const) {}
+export class GoogleProfileDetailsResponse
+  extends OmitType(GoogleProfileDetails, [`deletedAt`, `metadata`] as const)
+  implements IGoogleProfileDetailsResponse {}
+
+export class GoogleProfileDetailsListResponse {
+  @Expose()
+  @ApiProperty({ required: true })
+  count: number
+
+  @Expose()
+  @ApiProperty({ required: true, type: [GoogleProfileDetailsResponse] })
+  @Type(() => GoogleProfileDetailsResponse)
+  data: GoogleProfileDetailsResponse[]
+}
 
 export class GoogleProfileDetailsCreate
   extends PickType(GoogleProfileDetails, [

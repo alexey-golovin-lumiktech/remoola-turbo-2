@@ -6,7 +6,6 @@ import { IOrganizationDetailsModel } from '@wirebill/shared-common/models'
 import { ReqQuery } from '@wirebill/shared-common/types'
 
 import { ADMIN } from '../../../dtos'
-import { ListResponse } from '../../../dtos/common'
 import { TransformResponse } from '../../../interceptors'
 import { ReqQueryTransformPipe } from '../../pipes'
 
@@ -20,12 +19,12 @@ export class AdminOrganizationDetailsController {
   constructor(@Inject(AdminOrganizationDetailsService) private readonly service: AdminOrganizationDetailsService) {}
 
   @Get(`/`)
-  @TransformResponse(ListResponse<ADMIN.OrganizationDetailsResponse>)
-  @ApiOkResponse({ type: ListResponse<ADMIN.OrganizationDetailsResponse> })
+  @TransformResponse(ADMIN.OrganizationDetailsListResponse)
+  @ApiOkResponse({ type: ADMIN.OrganizationDetailsListResponse })
   async findAndCountAll(
     @Query(new ReqQueryTransformPipe()) query: ReqQuery<IOrganizationDetailsModel>,
     @Response() res: express.Response,
-  ): Promise<ListResponse<ADMIN.OrganizationDetailsResponse>> {
+  ): Promise<ADMIN.OrganizationDetailsListResponse> {
     const result = await this.service.repository.findAndCountAll(query)
     res.set(`Content-Range`, result.count.toString())
     res.send(result.data)
@@ -42,7 +41,7 @@ export class AdminOrganizationDetailsController {
   @ApiOkResponse({ type: ADMIN.OrganizationDetailsResponse })
   updateById(
     @Param(`organizationDetailsId`) organizationDetailsId: string,
-    @Body() body: ADMIN.UpdateOrganizationDetails,
+    @Body() body: ADMIN.OrganizationDetailsUpdate,
   ): Promise<ADMIN.OrganizationDetailsResponse> {
     return this.service.repository.updateById(organizationDetailsId, body)
   }

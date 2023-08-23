@@ -7,7 +7,6 @@ import { ReqQuery } from '@wirebill/shared-common/types'
 
 import { ADMIN } from '../../../dtos'
 import { CreditCardUpdate } from '../../../dtos/admin'
-import { ListResponse } from '../../../dtos/common'
 import { TransformResponse } from '../../../interceptors'
 import { ReqQueryTransformPipe } from '../../pipes'
 
@@ -21,12 +20,12 @@ export class AdminCreditCardController {
   constructor(@Inject(AdminCreditCardService) private readonly service: AdminCreditCardService) {}
 
   @Get(`/`)
-  @TransformResponse(ListResponse<ADMIN.CreditCardResponse>)
-  @ApiOkResponse({ type: ListResponse<ADMIN.CreditCardResponse> })
+  @TransformResponse(ADMIN.CreditCardListResponse)
+  @ApiOkResponse({ type: ADMIN.CreditCardListResponse })
   async findAndCountAll(
     @Query(new ReqQueryTransformPipe()) query: ReqQuery<ICreditCardModel>,
     @Response() res: express.Response,
-  ): Promise<ListResponse<ADMIN.CreditCardResponse>> {
+  ): Promise<ADMIN.CreditCardListResponse> {
     const result = await this.service.repository.findAndCountAll(query)
     res.set(`Content-Range`, result.count.toString())
     res.send(result.data)

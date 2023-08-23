@@ -1,5 +1,5 @@
 import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger'
-import { Expose } from 'class-transformer'
+import { Expose, Type } from 'class-transformer'
 
 import { ICreditCardCreate, ICreditCardResponse, ICreditCardUpdate } from '@wirebill/shared-common/dtos'
 import { ICreditCardModel } from '@wirebill/shared-common/models'
@@ -33,6 +33,17 @@ class CreditCard extends BaseModel implements ICreditCardModel {
 }
 
 export class CreditCardResponse extends OmitType(CreditCard, [`deletedAt`] as const) implements ICreditCardResponse {}
+
+export class CreditCardListResponse {
+  @Expose()
+  @ApiProperty({ required: true })
+  count: number
+
+  @Expose()
+  @ApiProperty({ required: true, type: [CreditCardResponse] })
+  @Type(() => CreditCardResponse)
+  data: CreditCardResponse[]
+}
 
 export class CreditCardCreate
   extends PickType(CreditCard, [`brand`, `country`, `expMonth`, `expYear`, `last4`] as const)

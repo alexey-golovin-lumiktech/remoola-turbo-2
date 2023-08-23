@@ -8,7 +8,6 @@ import { IAdminModel } from '@wirebill/shared-common/models'
 import { ReqQuery } from '@wirebill/shared-common/types'
 
 import { ADMIN } from '../../../dtos'
-import { ListResponse } from '../../../dtos/common'
 import { TransformResponse } from '../../../interceptors'
 import { ReqQueryTransformPipe } from '../../pipes'
 
@@ -22,13 +21,13 @@ export class AdminController {
   constructor(@Inject(AdminService) private readonly service: AdminService) {}
 
   @Get(`/`)
-  @TransformResponse(ListResponse<ADMIN.AdminResponse>)
-  @ApiOkResponse({ type: ListResponse<ADMIN.AdminResponse> })
+  @TransformResponse(ADMIN.AdminListResponse)
+  @ApiOkResponse({ type: ADMIN.AdminListResponse })
   async findAndCountAll(
     @ReqAuthIdentity() identity: IAdminModel,
     @Query(new ReqQueryTransformPipe()) query: ReqQuery<IAdminModel>,
     @Response() res: express.Response,
-  ): Promise<ListResponse<ADMIN.AdminResponse>> {
+  ): Promise<ADMIN.AdminListResponse> {
     if (identity.type != AdminType.Super) query = { ...query, filter: { ...query.filter, type: AdminType.Admin } }
 
     const result = await this.service.repository.findAndCountAll(query)

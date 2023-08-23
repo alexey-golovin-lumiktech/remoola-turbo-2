@@ -1,5 +1,5 @@
 import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger'
-import { Exclude, Expose } from 'class-transformer'
+import { Exclude, Expose, Type } from 'class-transformer'
 import { IsIn, IsString } from 'class-validator'
 
 import { IAdminCreate, IAdminResponse, IAdminUpdate } from '@wirebill/shared-common/dtos'
@@ -30,14 +30,17 @@ class Admin extends BaseModel implements IAdminModel {
   salt: string
 }
 
-export class AdminResponse extends OmitType(Admin, [`deletedAt`] as const) implements IAdminResponse {
-  email: string
-  type: AdminTypeValue
-  password: string
-  salt: string
-  id: string
-  createdAt: Date
-  updatedAt: Date
+export class AdminResponse extends OmitType(Admin, [`deletedAt`] as const) implements IAdminResponse {}
+
+export class AdminListResponse {
+  @Expose()
+  @ApiProperty({ required: true })
+  count: number
+
+  @Expose()
+  @ApiProperty({ required: true, type: [AdminResponse] })
+  @Type(() => AdminResponse)
+  data: AdminResponse[]
 }
 
 export class AdminCreate extends PickType(Admin, [`email`, `password`, `type`] as const) implements Omit<IAdminCreate, `salt`> {}

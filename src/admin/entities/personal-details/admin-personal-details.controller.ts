@@ -6,7 +6,6 @@ import { IPersonalDetailsModel } from '@wirebill/shared-common/models'
 import { ReqQuery } from '@wirebill/shared-common/types'
 
 import { ADMIN } from '../../../dtos'
-import { ListResponse } from '../../../dtos/common'
 import { TransformResponse } from '../../../interceptors'
 import { ReqQueryTransformPipe } from '../../pipes'
 
@@ -20,12 +19,12 @@ export class AdminPersonalDetailsController {
   constructor(@Inject(AdminPersonalDetailsService) private readonly service: AdminPersonalDetailsService) {}
 
   @Get(`/`)
-  @TransformResponse(ListResponse<ADMIN.PersonalDetailsResponse>)
-  @ApiOkResponse({ type: ListResponse<ADMIN.PersonalDetailsResponse> })
+  @TransformResponse(ADMIN.PersonalDetailsListResponse)
+  @ApiOkResponse({ type: ADMIN.PersonalDetailsListResponse })
   async findAndCountAll(
     @Query(new ReqQueryTransformPipe()) query: ReqQuery<IPersonalDetailsModel>,
     @Response() res: express.Response,
-  ): Promise<ListResponse<ADMIN.PersonalDetailsResponse>> {
+  ): Promise<ADMIN.PersonalDetailsListResponse> {
     const result = await this.service.repository.findAndCountAll(query)
     res.set(`Content-Range`, result.count.toString())
     res.send(result.data)

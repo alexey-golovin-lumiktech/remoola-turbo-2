@@ -1,5 +1,5 @@
 import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger'
-import { Expose } from 'class-transformer'
+import { Expose, Type } from 'class-transformer'
 import { IsEmail, IsPhoneNumber, ValidateIf } from 'class-validator'
 
 import { IBillingDetailsCreate, IBillingDetailsResponse, IBillingDetailsUpdate } from '@wirebill/shared-common/dtos'
@@ -31,6 +31,17 @@ class BillingDetails extends BaseModel implements IBillingDetailsModel {
 }
 
 export class BillingDetailsResponse extends OmitType(BillingDetails, [`deletedAt`] as const) implements IBillingDetailsResponse {}
+
+export class BillingDetailsListResponse {
+  @Expose()
+  @ApiProperty({ required: true })
+  count: number
+
+  @Expose()
+  @ApiProperty({ required: true, type: [BillingDetailsResponse] })
+  @Type(() => BillingDetailsResponse)
+  data: BillingDetailsResponse[]
+}
 
 export class BillingDetailsCreate
   extends PickType(BillingDetails, [

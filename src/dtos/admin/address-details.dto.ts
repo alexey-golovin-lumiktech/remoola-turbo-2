@@ -1,7 +1,7 @@
 import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger'
-import { Expose } from 'class-transformer'
+import { Expose, Type } from 'class-transformer'
 
-import { IAddressDetailsCreate, IAddressDetailsUpdate } from '@wirebill/shared-common/dtos'
+import { IAddressDetailsCreate, IAddressDetailsResponse, IAddressDetailsUpdate } from '@wirebill/shared-common/dtos'
 import { IAddressDetailsModel } from '@wirebill/shared-common/models'
 
 import { BaseModel } from '../common'
@@ -32,7 +32,18 @@ class AddressDetails extends BaseModel implements IAddressDetailsModel {
   street?: string = null
 }
 
-export class AddressDetailsResponse extends OmitType(AddressDetails, [`deletedAt`] as const) {}
+export class AddressDetailsResponse extends OmitType(AddressDetails, [`deletedAt`] as const) implements IAddressDetailsResponse {}
+
+export class AddressDetailsListResponse {
+  @Expose()
+  @ApiProperty({ required: true })
+  count: number
+
+  @Expose()
+  @ApiProperty({ required: true, type: [AddressDetailsResponse] })
+  @Type(() => AddressDetailsResponse)
+  data: AddressDetailsResponse[]
+}
 
 export class AddressDetailsCreate
   extends PickType(AddressDetails, [

@@ -1,7 +1,8 @@
 import { ApiProperty, OmitType, PickType } from '@nestjs/swagger'
-import { Expose } from 'class-transformer'
+import { Expose, Type } from 'class-transformer'
 import { IsDate, IsIn, IsNotEmpty, IsNumber, IsString, ValidateIf } from 'class-validator'
 
+import { IPaymentRequestResponse, IPaymentRequestUpdate } from '@wirebill/shared-common/dtos'
 import { CurrencyCode, TransactionStatus, TransactionType } from '@wirebill/shared-common/enums'
 import { IPaymentRequestModel } from '@wirebill/shared-common/models'
 import { CurrencyCodeValue, TransactionStatusValue, TransactionTypeValue } from '@wirebill/shared-common/types'
@@ -76,6 +77,19 @@ class PaymentRequest extends BaseModel implements IPaymentRequestModel {
   stripeFeeInPercents?: number
 }
 
-export class PaymentRequestResponse extends OmitType(PaymentRequest, [`deletedAt`] as const) {}
+export class PaymentRequestResponse
+  extends OmitType(PaymentRequest, [`deletedAt`] as const)
+  implements Omit<IPaymentRequestResponse, `payerName` | `payerEmail` | `requesterName` | `requesterEmail`> {}
 
-export class UpdatePaymentRequest extends PickType(PaymentRequest, [`transactionStatus`] as const) {}
+export class PaymentRequestListResponse {
+  @Expose()
+  @ApiProperty({ required: true })
+  count: number
+
+  @Expose()
+  @ApiProperty({ required: true, type: [PaymentRequestResponse] })
+  @Type(() => PaymentRequestResponse)
+  data: PaymentRequestResponse[]
+}
+
+export class PaymentRequestUpdate extends PickType(PaymentRequest, [`transactionStatus`] as const) implements IPaymentRequestUpdate {}

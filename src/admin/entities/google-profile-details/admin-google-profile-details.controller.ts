@@ -6,7 +6,6 @@ import { IGoogleProfileDetailsModel } from '@wirebill/shared-common/models'
 import { ReqQuery } from '@wirebill/shared-common/types'
 
 import { ADMIN } from '../../../dtos'
-import { ListResponse } from '../../../dtos/common'
 import { TransformResponse } from '../../../interceptors'
 import { ReqQueryTransformPipe } from '../../pipes'
 
@@ -20,12 +19,12 @@ export class AdminGoogleProfileDetailsController {
   constructor(@Inject(AdminGoogleProfileDetailsService) private readonly service: AdminGoogleProfileDetailsService) {}
 
   @Get(`/`)
-  @TransformResponse(ListResponse<ADMIN.GoogleProfileDetailsResponse>)
-  @ApiOkResponse({ type: ListResponse<ADMIN.GoogleProfileDetailsResponse> })
+  @TransformResponse(ADMIN.GoogleProfileDetailsListResponse)
+  @ApiOkResponse({ type: ADMIN.GoogleProfileDetailsListResponse })
   async findAndCountAll(
     @Query(new ReqQueryTransformPipe()) query: ReqQuery<IGoogleProfileDetailsModel>,
     @Response() res: express.Response,
-  ): Promise<ListResponse<ADMIN.GoogleProfileDetailsResponse>> {
+  ): Promise<ADMIN.GoogleProfileDetailsListResponse> {
     const result = await this.service.repository.findAndCountAll(query)
     res.set(`Content-Range`, result.count.toString())
     res.send(result.data)
