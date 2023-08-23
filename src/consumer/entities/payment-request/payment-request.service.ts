@@ -1,39 +1,38 @@
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { Inject, Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import moment from 'moment'
+import { AwsS3Service } from 'src/common-shared-modules/aws-s3/aws-s3.service'
 
+import { IIdentityResourceCreate, IPaymentRequestCreate } from '@wirebill/shared-common/dtos'
+import { ResourceAccess, ResourceOwnerType, ResourceRelatedTo, TransactionStatus, TransactionType } from '@wirebill/shared-common/enums'
 import { IConsumerModel, IPaymentRequestModel, TableName } from '@wirebill/shared-common/models'
 import { ReqQuery, TimelineFilter } from '@wirebill/shared-common/types'
 
 import { BaseService } from '../../../common'
 import { CONSUMER } from '../../../dtos'
-import { ListResponse } from '../../../dtos/common'
-import { getKnexCount } from '../../../utils'
+import { getKnexCount, plainToInstance } from '../../../utils'
 import { ConsumerService } from '../consumer/consumer.service'
+import { IdentityResourceService } from '../identity-resource/identity-resource.service'
 
 import { PaymentRequestRepository } from './payment-request.repository'
 
 @Injectable()
 export class PaymentRequestService extends BaseService<IPaymentRequestModel, PaymentRequestRepository> {
-  s3Client: S3Client
-  bucket: string
-
   constructor(
     @Inject(PaymentRequestRepository) repository: PaymentRequestRepository,
     @Inject(ConsumerService) private readonly consumersService: ConsumerService,
+    @Inject(IdentityResourceService) private readonly identityResourceService: IdentityResourceService,
     private readonly configService: ConfigService,
+    private readonly s3Service: AwsS3Service,
   ) {
     super(repository)
-    this.s3Client = new S3Client()
-    this.bucket = configService.get(`AWS_BUCKET_NAME`)
   }
 
   async getConsumerPaymentRequestsList(
     consumerId: string,
     query: ReqQuery<IPaymentRequestModel>,
     timelineFilter: Unassignable<TimelineFilter<IPaymentRequestModel>>,
-  ): Promise<ListResponse<CONSUMER.PaymentRequestResponse>> {
+  ): Promise<CONSUMER.PaymentRequestListResponse> {
     const baseQuery = this.repository.knex
       .from(`${TableName.PaymentRequest} as p`)
       .join(`${TableName.Consumer} as requester`, `requester.id`, `p.requester_id`)
@@ -87,35 +86,43 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
     identity: IConsumerModel
     files: Array<Express.Multer.File>
     body: CONSUMER.PaymentRequestPayToContact
-  }): Promise<void> {
-    await this.uploadToS3(dto.files)
-  }
+  }): Promise<CONSUMER.PaymentRequestResponse> {
+    const { identity, files, body } = dto
+    const uploaded = await this.s3Service.uploadMany(files)
+    const data: IIdentityResourceCreate[] = uploaded.map(x => ({
+      ...x,
+      ownerId: identity.id,
+      ownerType: ResourceOwnerType.Consumer,
+      relatedTo: ResourceRelatedTo.PaymentRequest,
+      access: ResourceAccess.Public,
+    }))
 
-  private async uploadToS3(files: Array<Express.Multer.File>) {
-    const responses = []
-    const errors = []
+    await this.identityResourceService.repository.createMany(data)
 
-    for (const file of files) {
-      try {
-        const command = new PutObjectCommand({
-          Bucket: this.bucket,
-          Key: this.sanitiseString(file.filename || file.originalname),
-          Body: file.buffer,
-          ContentType: file.mimetype,
-        })
-        const response = await this.s3Client.send(command)
-        responses.push(response)
-      } catch (error) {
-        console.log(`[error]`, error)
-        errors.push(error)
-        continue
-      }
+    // @TODO-IMPORTANT: do not forget add stripe logic
+    /* 
+    1 нужно при добавлении контакта выслать письмо с приглашением в wirebill
+    2 нужно в payToContact добавить логику 
+      - создание stripe.customer - если TransactionType.CreditCard
+      - отправку письма для контакта которому производиться платёж 
+        с приглашением в wirebill если контакт еше не является wirebill.consumer
+    */
+    const stripeLogicStub = { transactionId: `stripe-transaction-id` }
+    const now = new Date()
+
+    const paymentRequestData: IPaymentRequestCreate = {
+      payerId: identity.id,
+      transactionStatus: TransactionStatus.Completed,
+      transactionId: body.transactionType == TransactionType.BankTransfer ? null : stripeLogicStub.transactionId,
+      dueBy: now,
+      sentDate: now,
+      paidOn: now,
+      ...body,
     }
 
-    return { errors, responses }
-  }
-
-  private sanitiseString(str: string): string {
-    return Buffer.from(str, `latin1`).toString(`utf8`).replace(/_|-|,/gi, ` `).replace(/\s+/gi, `_`)
+    const created = await this.repository.create(paymentRequestData)
+    const transformed = plainToInstance(CONSUMER.PaymentRequestResponse, created)
+    console.log(`[transformed]`, transformed)
+    return transformed
   }
 }

@@ -124,7 +124,7 @@ export class ConsumerController {
     @UploadedFiles() files: Array<Express.Multer.File> = [],
     @Body() body: CONSUMER.PaymentRequestPayToContact,
     @ReqAuthIdentity() identity: IConsumerModel,
-  ): Promise<void> | never {
+  ): Promise<CONSUMER.PaymentRequestResponse> | never {
     this.checkUploadedFilesToMaxSize(files)
     return this.paymentRequestService.payToContact({ identity, files, body })
   }
@@ -192,9 +192,9 @@ export class ConsumerController {
   }
 
   @Get(`/contacts`)
-  @TransformResponse(CONSUMER.ContactsListResponse)
-  @ApiOkResponse({ type: CONSUMER.ContactsListResponse })
-  getConsumerContactsList(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.ContactsListResponse> {
+  @TransformResponse(CONSUMER.ContactListResponse)
+  @ApiOkResponse({ type: CONSUMER.ContactListResponse })
+  getConsumerContactsList(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.ContactListResponse> {
     return this.contactService.repository.findAndCountAll({ filter: { deletedAt: null, consumerId: identity.id } })
   }
 

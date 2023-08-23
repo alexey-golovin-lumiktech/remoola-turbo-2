@@ -119,6 +119,7 @@ export class PaymentRequestsListQuery {
 }
 
 export class PaymentRequestPayToContact extends PickType(PaymentRequest, [
+  `requesterId`,
   `description`,
   `transactionAmount`,
   `transactionCurrencyCode`,

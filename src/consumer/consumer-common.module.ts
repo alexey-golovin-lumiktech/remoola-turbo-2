@@ -7,6 +7,7 @@ import { ConsumerModule } from './entities/consumer/consumer.module'
 import { ContactModule } from './entities/contact/contact.module'
 import { CreditCardModule } from './entities/credit-card/credit-card.module'
 import { GoogleProfileDetailsModule } from './entities/google-profile-details/google-profile-details.module'
+import { IdentityResourceModule } from './entities/identity-resource/identity-resource.module'
 import { OrganizationDetailsModule } from './entities/organization-details/organization-details.module'
 import { PaymentRequestModule } from './entities/payment-request/payment-request.module'
 import { PersonalDetailsModule } from './entities/personal-details/personal-details.module'
@@ -18,13 +19,28 @@ import { ResetPasswordModule } from './entities/reset-password/reset-password.mo
     AddressDetailsModule,
     BillingDetailsModule,
     ConsumerModule,
-    GoogleProfileDetailsModule,
-    OrganizationDetailsModule,
-    PersonalDetailsModule,
-    PaymentRequestModule,
-    ResetPasswordModule,
-    CreditCardModule,
     ContactModule,
+    CreditCardModule,
+    GoogleProfileDetailsModule,
+    IdentityResourceModule,
+    OrganizationDetailsModule,
+    PaymentRequestModule,
+    PersonalDetailsModule,
+    ResetPasswordModule,
+  ],
+  exports: [
+    AuthModule,
+    AddressDetailsModule,
+    BillingDetailsModule,
+    ConsumerModule,
+    ContactModule,
+    CreditCardModule,
+    GoogleProfileDetailsModule,
+    IdentityResourceModule,
+    OrganizationDetailsModule,
+    PaymentRequestModule,
+    PersonalDetailsModule,
+    ResetPasswordModule,
   ],
 })
 export class ConsumerCommonModule {}

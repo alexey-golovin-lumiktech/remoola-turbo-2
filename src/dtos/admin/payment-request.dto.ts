@@ -48,16 +48,16 @@ class PaymentRequest extends BaseModel implements IPaymentRequestModel {
 
   @Expose()
   @ApiProperty()
-  transactionId: string
-
-  @Expose()
-  @ApiProperty()
   description: string
 
   @Expose()
   @ApiProperty()
   @IsDate()
   dueBy: Date
+
+  @Expose()
+  @ApiProperty()
+  transactionId: string | null = null
 
   @Expose()
   @ApiProperty()
