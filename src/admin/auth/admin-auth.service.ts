@@ -11,8 +11,8 @@ import { passwordsIsEqual } from '../../utils'
 import { AdminService } from '../entities/admin/admin.service'
 
 @Injectable()
-export class AuthService {
-  private readonly logger = new Logger(AuthService.name)
+export class AdminAuthService {
+  private readonly logger = new Logger(AdminAuthService.name)
 
   constructor(
     @Inject(AdminService) private readonly adminsService: AdminService,

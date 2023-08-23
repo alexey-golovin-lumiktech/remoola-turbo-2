@@ -4,8 +4,8 @@ import { JwtModule } from '@nestjs/jwt'
 
 import { AdminModule } from '../entities/admin/admin.module'
 
-import { AuthController } from './auth.controller'
-import { AuthService } from './auth.service'
+import { AdminAuthController } from './admin-auth.controller'
+import { AdminAuthService } from './admin-auth.service'
 
 @Module({
   imports: [
@@ -19,8 +19,8 @@ import { AuthService } from './auth.service'
       inject: [ConfigService],
     }),
   ],
-  providers: [AuthService],
-  exports: [AuthService],
-  controllers: [AuthController],
+  providers: [AdminAuthService],
+  exports: [AdminAuthService],
+  controllers: [AdminAuthController],
 })
-export class AuthModule {}
+export class AdminAuthModule {}

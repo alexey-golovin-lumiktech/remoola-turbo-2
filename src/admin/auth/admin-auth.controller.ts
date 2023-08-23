@@ -6,12 +6,12 @@ import { IAdminModel } from '@wirebill/shared-common/models'
 import { ADMIN } from '../../dtos'
 import { ReqAuthIdentity } from '../../guards/auth.guard'
 
-import { AuthService } from './auth.service'
+import { AdminAuthService } from './admin-auth.service'
 
 @ApiTags(`admin`)
 @Controller(`admin/auth`)
-export class AuthController {
-  constructor(@Inject(AuthService) private readonly service: AuthService) {}
+export class AdminAuthController {
+  constructor(@Inject(AdminAuthService) private readonly service: AdminAuthService) {}
 
   @Post(`/login`)
   @ApiOperation({ operationId: `admin_auth_login` })
