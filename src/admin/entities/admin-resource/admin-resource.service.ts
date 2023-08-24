@@ -19,7 +19,7 @@ export class AdminResourceService extends BaseService<IAdminResourceModel, Admin
 
   async createAdminResource(adminId: string, file: Express.Multer.File): Promise<IAdminResourceModel | null> {
     try {
-      const resource = await this.resourceService.createOneResource(file)
+      const resource = await this.resourceService.createOne(file)
       if (resource == null) return null
       const consumerResource = await this.repository.create({ adminId, resourceId: resource.id })
       return consumerResource ?? null

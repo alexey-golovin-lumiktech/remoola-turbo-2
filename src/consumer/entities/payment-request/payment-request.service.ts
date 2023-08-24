@@ -9,7 +9,6 @@ import { ReqQuery, TimelineFilter } from '@wirebill/shared-common/types'
 import { BaseService } from '../../../common'
 import { CONSUMER } from '../../../dtos'
 import { getKnexCount, plainToInstance } from '../../../utils'
-import { ConsumerResourceService } from '../consumer-resource/consumer-resource.service'
 import { PaymentRequestAttachmentService } from '../payment-request-attachment/payment-request-attachment.service'
 
 import { PaymentRequestRepository } from './payment-request.repository'
@@ -18,7 +17,6 @@ import { PaymentRequestRepository } from './payment-request.repository'
 export class PaymentRequestService extends BaseService<IPaymentRequestModel, PaymentRequestRepository> {
   constructor(
     @Inject(PaymentRequestRepository) repository: PaymentRequestRepository,
-    @Inject(ConsumerResourceService) private readonly consumerResourceService: ConsumerResourceService,
     @Inject(PaymentRequestAttachmentService) private readonly paymentRequestAttachmentService: PaymentRequestAttachmentService,
   ) {
     super(repository)
@@ -107,7 +105,7 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
     }
 
     const created = await this.repository.create(paymentRequestData)
-    await this.paymentRequestAttachmentService.createPaymentRequestAttachmentList(created.requesterId, created.id, files)
+    await this.paymentRequestAttachmentService.createMany(created.requesterId, created.id, files)
     const transformed = plainToInstance(CONSUMER.PaymentRequestResponse, created)
     console.log(`[transformed]`, transformed)
     return transformed

@@ -18,17 +18,17 @@ export class ResourceService extends BaseService<IResourceModel, ResourceReposit
     super(repository)
   }
 
-  async createOneResource(file: Express.Multer.File): Promise<IResourceModel | null> {
+  async createOne(file: Express.Multer.File): Promise<IResourceModel | null> {
     const uploaded: IResourceCreate = await this.s3Service.uploadOne(file)
     const resource = await this.repository.create(uploaded)
     return resource ?? null
   }
 
-  async createManyResources(files: Express.Multer.File[]) {
+  async createMany(files: Express.Multer.File[]) {
     const resources: IResourceModel[] = []
     for (const file of files) {
       try {
-        const resource = await this.createOneResource(file)
+        const resource = await this.createOne(file)
         if (resource != null) resources.push(resource)
       } catch (error) {
         const message = `[createManyResources] Something went wrong to process file: ${file.originalname}`
