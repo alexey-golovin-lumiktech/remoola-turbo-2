@@ -32,7 +32,9 @@ export interface IBaseRepository<TModel extends IBaseModel> {
 export abstract class BaseRepository<TModel extends IBaseModel> implements IBaseRepository<TModel> {
   constructor(public readonly knex: Knex, private readonly tableName: TableNameValue) {}
 
-  get qb() { return this.knex.from(this.tableName) } /* eslint-disable-line */
+  get qb() {
+    return this.knex.from(this.tableName)
+  }
 
   queryBuilder(query: ReqQuery<TModel> = {}, columns: string[]) {
     const buildWhere = (q: IKnex.QueryBuilder, filter: ReqQueryFilter<TModel>) => {
@@ -87,13 +89,16 @@ export abstract class BaseRepository<TModel extends IBaseModel> implements IBase
   }
 
   private getColumns(table: TableNameValue) {
-    return this.knex.from(table).columnInfo().then(info => Object.keys(info))/* eslint-disable-line */
+    return this.knex
+      .from(table)
+      .columnInfo()
+      .then(info => Object.keys(info))
   }
 
   async findAndCountAll(query: ReqQuery<TModel> = {}): Promise<ListResponse<TModel>> {
     const columns = await this.getColumns(this.tableName)
-    const qb = this.qb.clone() /* @IMPORTANT_NOTE baseQuery.clone() is required */
-    const count = await qb.count().then(getKnexCount) /* @IMPORTANT_NOTE qb.count() should be called before queryBuilder */
+    const qb = this.qb.clone() /* @IMPORTANT_NOTE: baseQuery.clone() is required */
+    const count = await qb.count().then(getKnexCount) /* @IMPORTANT_NOTE: qb.count() should be called before queryBuilder */
 
     if (query) {
       this.queryBuilder(

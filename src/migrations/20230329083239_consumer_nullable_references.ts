@@ -5,6 +5,7 @@ import { TableName } from '@wirebill/shared-common/models'
 const tableName = TableName.Consumer
 
 /* 
+  @IMPORTANT_NOTE
   triggers for tables
  - "personal_details"
  - "address_details"

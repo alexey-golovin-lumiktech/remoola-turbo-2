@@ -17,7 +17,7 @@ export const addUUIDPrimaryKey = (table, knex) => {
 export const addAuditColumns = (table, knex) => {
   table.timestamp(`created_at`).defaultTo(knex.fn.now())
   table.timestamp(`updated_at`).defaultTo(knex.fn.now())
-  table.timestamp(`deleted_at`).defaultTo(null).nullable() // to soft delete
+  table.timestamp(`deleted_at`).defaultTo(null).nullable() // @IMPORTANT_NOTE: to soft delete
 }
 
 export const buildIndexName = ({ tableName, columns }) => {

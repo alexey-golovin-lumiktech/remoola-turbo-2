@@ -9,5 +9,7 @@ export class AppController {
   @ApiExcludeEndpoint(true)
   @Get(`/`)
   @Redirect(`/documentation`, 301)
-  redirect() { return { url: `/documentation` } /* eslint-disable-line */ }
+  redirect() {
+    return { url: `/documentation` }
+  }
 }

@@ -59,7 +59,7 @@ export class AwsS3Service {
   }
 
   private originalnameToS3ResourceKey = (file: Express.Multer.File): string => {
-    // @REASON: Issue with UTF-8 characters in filename https://github.com/expressjs/multer/issues/1104
+    // @IMPORTANT_NOTE: Issue with UTF-8 characters in filename https://github.com/expressjs/multer/issues/1104
     return Buffer.from(file.originalname, `latin1`) //
       .toString(`utf8`)
       .replace(/_|-|,/gi, ` `)

@@ -33,7 +33,7 @@ export class AdminAuthService {
   async login(admin: IAdminModel): Promise<ADMIN.Access> {
     try {
       const accessToken = this.generateToken(admin)
-      const refreshToken = this.generateRefreshToken() //@TODO: need to store refresh token
+      const refreshToken = this.generateRefreshToken() //@IMPORTANT_NOTE: need to store refresh token
       return { accessToken, refreshToken: refreshToken.token, type: admin.type }
     } catch (error) {
       this.logger.error(error)

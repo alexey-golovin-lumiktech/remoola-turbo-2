@@ -12,8 +12,8 @@ export async function seed(knex: Knex): Promise<void> {
     { type: AdminType.Super, email: `super.admin@wirebill.com`, password: `SuperWirebill@Admin123!` },
   ]
 
-  await knex.from(TableName.Admin).whereIn('email', admins.map(x => x.email)).del(/* eslint-disable-line */)
-
+  const emails = admins.map(x => x.email)
+  await knex.from(TableName.Admin).whereIn(`email`, emails).del()
 
   for (const admin of admins) {
     const salt = utils.generatePasswordHashSalt(4)

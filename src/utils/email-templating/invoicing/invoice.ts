@@ -93,7 +93,7 @@ const RegExpToKeyMapping = {
 }
 
 export const processor = (rawInvoice: any) => {
-  const invoice = rawInvoice // plainToInstance(CONSUMER.InvoiceResponse, rawInvoice)
+  const invoice = rawInvoice // @IMPORTANT_NOTE: plainToInstance(CONSUMER.InvoiceResponse, rawInvoice)
   const itemsHtml = invoice.items.map(item => invoiceItemToHtml.processor(item, invoice.tax)).join(`\n`)
   const payOnlineBeLink = `http://some-link`
 

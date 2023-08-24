@@ -11,7 +11,7 @@ export async function seed(knex: Knex): Promise<void> {
   const dummyConsumerEmails = dummyConsumers.map(x => x.email)
   const consumers = await knex.from(TableName.Consumer).whereIn(`email`, dummyConsumerEmails)
   const consumerIds = consumers.map(x => x.id)
-  await knex.from(TableName.Contact).whereIn(`email`, dummyConsumerEmails).orWhereIn(`consumerId`, consumerIds).del(/* eslint-disable-line */).returning(`*`)
+  await knex.from(TableName.Contact).whereIn(`email`, dummyConsumerEmails).orWhereIn(`consumerId`, consumerIds).del()
 
   for (const consumer of consumers) {
     for (const email of dummyConsumerEmails.filter(x => x != consumer.email)) {

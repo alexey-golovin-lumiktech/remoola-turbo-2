@@ -66,7 +66,7 @@ export class AuthService {
       }
 
       const accessToken = this.generateToken(consumer)
-      const refreshToken = this.generateRefreshToken() //@TODO: need to store refresh token
+      const refreshToken = this.generateRefreshToken() //@IMPORTANT_NOTE: need to store refresh token
       return { ...consumer, accessToken, refreshToken: refreshToken.token }
     } catch (error) {
       this.logger.error(error)
@@ -76,7 +76,7 @@ export class AuthService {
 
   async login(identity: IConsumerModel): Promise<CONSUMER.LoginResponse> {
     const accessToken = this.generateToken(identity)
-    const refreshToken = this.generateRefreshToken() //@TODO: need to store refresh token
+    const refreshToken = this.generateRefreshToken() //@IMPORTANT_NOTE: need to store refresh token
     return utils.toResponse(CONSUMER.LoginResponse, Object.assign(identity, { accessToken, refreshToken: refreshToken.token }))
   }
 
@@ -88,8 +88,8 @@ export class AuthService {
     return {
       email: dto.email,
       verified: dto.emailVerified,
-      legalVerified: false, //@TODO: should be "true" only when users who have provided documents for bank transfer
-      howDidHearAboutUs: HowDidHearAboutUs.Google, //@TODO: random
+      legalVerified: false, //@IMPORTANT_NOTE: should be "true" only when users who have provided documents for bank transfer
+      howDidHearAboutUs: HowDidHearAboutUs.Google, //@IMPORTANT_NOTE: random
       firstName: dto.givenName || fullName[0],
       lastName: dto.familyName || fullName[1],
     }

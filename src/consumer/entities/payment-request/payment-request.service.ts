@@ -85,13 +85,13 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
   }): Promise<CONSUMER.PaymentRequestResponse> {
     const { identity, files, body } = dto
 
-    // @TODO-IMPORTANT: do not forget add stripe logic
     /* 
-    1 создать consumer
-    2 добавить логику 
-      - создание stripe.customer - если TransactionType.CreditCard
-      - отправку письма для контакта которому производиться платёж 
-        с приглашением в wirebill если контакт еше не является wirebill.consumer
+      @IMPORTANT_NOTE: do not forget add stripe logic
+      1 создать consumer
+      2 добавить логику 
+        - создание stripe.customer - если TransactionType.CreditCard
+        - отправку письма для контакта которому производиться платёж 
+          с приглашением в wirebill если контакт еше не является wirebill.consumer
     */
     const stripeLogicStub = { transactionId: `stripe-transaction-id` }
     const now = new Date()
