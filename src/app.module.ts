@@ -40,9 +40,9 @@ import * as configValidation from './envs-validation.schema'
         return { apiKey, apiVersion }
       },
     }),
+    CommonSharedModulesModule,
     AdminCommonModule,
     ConsumerCommonModule,
-    CommonSharedModulesModule,
   ],
   controllers: [AppController],
   exports: [],

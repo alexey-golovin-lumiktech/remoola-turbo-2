@@ -57,7 +57,7 @@ class PaymentRequest extends BaseModel implements IPaymentRequestModel {
 
   @Expose()
   @ApiProperty()
-  transactionId: string | null = null
+  transactionId?: string = null
 
   @Expose()
   @ApiProperty()

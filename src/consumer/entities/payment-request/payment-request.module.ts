@@ -1,14 +1,13 @@
-import { forwardRef, Module } from '@nestjs/common'
-import { AwsS3Module } from 'src/common-shared-modules/aws-s3/aws-s3.module'
+import { Module } from '@nestjs/common'
 
-import { ConsumerModule } from '../consumer/consumer.module'
-import { IdentityResourceModule } from '../identity-resource/identity-resource.module'
+import { ConsumerResourceModule } from '../consumer-resource/consumer-resource.module'
+import { PaymentRequestAttachmentModule } from '../payment-request-attachment/payment-request-attachment.module'
 
 import { PaymentRequestRepository } from './payment-request.repository'
 import { PaymentRequestService } from './payment-request.service'
 
 @Module({
-  imports: [AwsS3Module, forwardRef(() => ConsumerModule), forwardRef(() => IdentityResourceModule)],
+  imports: [ConsumerResourceModule, PaymentRequestAttachmentModule],
   providers: [PaymentRequestRepository, PaymentRequestService],
   exports: [PaymentRequestRepository, PaymentRequestService],
 })

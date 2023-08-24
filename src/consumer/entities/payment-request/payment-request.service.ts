@@ -1,18 +1,16 @@
 import { Inject, Injectable } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
 import moment from 'moment'
-import { AwsS3Service } from 'src/common-shared-modules/aws-s3/aws-s3.service'
 
-import { IIdentityResourceCreate, IPaymentRequestCreate } from '@wirebill/shared-common/dtos'
-import { ResourceAccess, ResourceOwnerType, ResourceRelatedTo, TransactionStatus, TransactionType } from '@wirebill/shared-common/enums'
+import { IPaymentRequestCreate } from '@wirebill/shared-common/dtos'
+import { TransactionStatus, TransactionType } from '@wirebill/shared-common/enums'
 import { IConsumerModel, IPaymentRequestModel, TableName } from '@wirebill/shared-common/models'
 import { ReqQuery, TimelineFilter } from '@wirebill/shared-common/types'
 
 import { BaseService } from '../../../common'
 import { CONSUMER } from '../../../dtos'
 import { getKnexCount, plainToInstance } from '../../../utils'
-import { ConsumerService } from '../consumer/consumer.service'
-import { IdentityResourceService } from '../identity-resource/identity-resource.service'
+import { ConsumerResourceService } from '../consumer-resource/consumer-resource.service'
+import { PaymentRequestAttachmentService } from '../payment-request-attachment/payment-request-attachment.service'
 
 import { PaymentRequestRepository } from './payment-request.repository'
 
@@ -20,10 +18,8 @@ import { PaymentRequestRepository } from './payment-request.repository'
 export class PaymentRequestService extends BaseService<IPaymentRequestModel, PaymentRequestRepository> {
   constructor(
     @Inject(PaymentRequestRepository) repository: PaymentRequestRepository,
-    @Inject(ConsumerService) private readonly consumersService: ConsumerService,
-    @Inject(IdentityResourceService) private readonly identityResourceService: IdentityResourceService,
-    private readonly configService: ConfigService,
-    private readonly s3Service: AwsS3Service,
+    @Inject(ConsumerResourceService) private readonly consumerResourceService: ConsumerResourceService,
+    @Inject(PaymentRequestAttachmentService) private readonly paymentRequestAttachmentService: PaymentRequestAttachmentService,
   ) {
     super(repository)
   }
@@ -88,21 +84,11 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
     body: CONSUMER.PaymentRequestPayToContact
   }): Promise<CONSUMER.PaymentRequestResponse> {
     const { identity, files, body } = dto
-    const uploaded = await this.s3Service.uploadMany(files)
-    const data: IIdentityResourceCreate[] = uploaded.map(x => ({
-      ...x,
-      ownerId: identity.id,
-      ownerType: ResourceOwnerType.Consumer,
-      relatedTo: ResourceRelatedTo.PaymentRequest,
-      access: ResourceAccess.Public,
-    }))
-
-    await this.identityResourceService.repository.createMany(data)
 
     // @TODO-IMPORTANT: do not forget add stripe logic
     /* 
-    1 нужно при добавлении контакта выслать письмо с приглашением в wirebill
-    2 нужно в payToContact добавить логику 
+    1 создать consumer
+    2 добавить логику 
       - создание stripe.customer - если TransactionType.CreditCard
       - отправку письма для контакта которому производиться платёж 
         с приглашением в wirebill если контакт еше не является wirebill.consumer
@@ -121,6 +107,7 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
     }
 
     const created = await this.repository.create(paymentRequestData)
+    await this.paymentRequestAttachmentService.createPaymentRequestAttachmentList(created.requesterId, created.id, files)
     const transformed = plainToInstance(CONSUMER.PaymentRequestResponse, created)
     console.log(`[transformed]`, transformed)
     return transformed

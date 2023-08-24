@@ -1,53 +1,45 @@
+import { PutObjectCommand, PutObjectCommandInput, S3Client } from '@aws-sdk/client-s3'
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import AWS, { S3 } from 'aws-sdk'
+import { removeTestObjectsFromS3 } from 'src/utils'
 
-import { IIdentityResourceModel } from '@wirebill/shared-common/models'
-
-type UploadOneFileResult = Pick<IIdentityResourceModel, `originalname` | `mimetype` | `size` | `bucket` | `key` | `downloadUrl`>
+import { IResourceCreate } from '@wirebill/shared-common/dtos'
 
 @Injectable()
 export class AwsS3Service {
   private readonly logger = new Logger(AwsS3Service.name)
   private readonly bucket: string
-  private readonly s3: AWS.S3
+  private readonly region: string
+  private readonly s3Client = new S3Client()
 
   constructor(private readonly configService: ConfigService) {
     this.bucket = this.configService.get<string>(`AWS_BUCKET`)
-    this.s3 = new AWS.S3()
+    this.region = this.configService.get<string>(`AWS_REGION`)
+
+    if (this.configService.get<string>(`AWS_CLEAR_S3`) == `yes`) removeTestObjectsFromS3(this.bucket, this.s3Client)
   }
 
-  async uploadOne(file: Express.Multer.File, tags: S3.Tag[] = []): Promise<UploadOneFileResult | null> {
+  async uploadOne(file: Express.Multer.File): Promise<IResourceCreate | null> {
     try {
       const key = this.originalnameToS3ResourceKey(file)
-
-      const params: AWS.S3.PutObjectRequest = {
+      const params: PutObjectCommandInput = {
         Body: file.stream ?? file.buffer,
         Key: key,
         Bucket: this.bucket,
         ContentType: file.mimetype,
         ContentDisposition: `attachment;filename="${key}"`,
       }
-
-      const uploaded = await this.s3
-        .upload(params, {
-          params,
-          tags,
-          queueSize: 4, // optional concurrency configuration
-          partSize: 1024 * 1024 * 5, // optional size of each part, in bytes, at least 5MB
-        })
-        .promise()
-
-      return this.getUploadFileResult(file, uploaded)
+      this.s3Client.send(new PutObjectCommand(params))
+      return this.getUploadFileResult(file, key)
     } catch (error) {
-      const message = error?.message ?? `Fail to upload file: ${file.originalname}(originalname) ${file.size}bytes`
-      this.logger.warn(message)
+      const message = `Fail to upload file: ${file.originalname}(originalname) ${file.size}bytes`
+      this.logger.warn(error?.message || message)
       return null
     }
   }
 
-  async uploadMany(files: Express.Multer.File[]): Promise<UploadOneFileResult[]> {
-    const collected: UploadOneFileResult[] = []
+  async uploadMany(files: Express.Multer.File[]): Promise<IResourceCreate[]> {
+    const collected: IResourceCreate[] = []
     for (const file of files) {
       const result = await this.uploadOne(file)
       if (result != null) collected.push(result)
@@ -55,14 +47,14 @@ export class AwsS3Service {
     return collected
   }
 
-  private getUploadFileResult(file: Express.Multer.File, uploaded: AWS.S3.ManagedUpload.SendData) {
+  private getUploadFileResult(file: Express.Multer.File, key: IResourceCreate[`key`]): Omit<IResourceCreate, `access`> {
     return {
       originalname: file.originalname,
       mimetype: file.mimetype,
       size: file.size,
-      bucket: uploaded.Bucket,
-      key: uploaded.Key,
-      downloadUrl: uploaded.Location,
+      bucket: this.bucket,
+      key: key,
+      downloadUrl: this.getResourceDownloadUrl(key),
     }
   }
 
@@ -72,5 +64,9 @@ export class AwsS3Service {
       .toString(`utf8`)
       .replace(/_|-|,/gi, ` `)
       .replace(/\s+/gi, `_`)
+  }
+
+  private getResourceDownloadUrl(key: IResourceCreate[`key`]): string {
+    return `https://${this.bucket}.s3.${this.region}.amazonaws.com/${key}`
   }
 }
