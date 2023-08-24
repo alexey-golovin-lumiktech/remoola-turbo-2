@@ -32,20 +32,5 @@ import { ResetPasswordModule } from './entities/reset-password/reset-password.mo
     ResetPasswordModule,
     PaymentRequestAttachmentModule,
   ],
-  exports: [
-    ResourceModule,
-    AuthModule,
-    AddressDetailsModule,
-    BillingDetailsModule,
-    ConsumerModule,
-    ConsumerResourceModule,
-    ContactModule,
-    CreditCardModule,
-    GoogleProfileDetailsModule,
-    OrganizationDetailsModule,
-    PaymentRequestModule,
-    PersonalDetailsModule,
-    ResetPasswordModule,
-  ],
 })
 export class ConsumerCommonModule {}

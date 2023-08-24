@@ -1,12 +1,9 @@
-import { forwardRef, Module } from '@nestjs/common'
-
-import { ConsumerModule } from '../consumer/consumer.module'
+import { Module } from '@nestjs/common'
 
 import { ContactRepository } from './contact.repository'
 import { ContactService } from './contact.service'
 
 @Module({
-  imports: [forwardRef(() => ConsumerModule)],
   providers: [ContactRepository, ContactService],
   exports: [ContactRepository, ContactService],
 })

@@ -1,4 +1,4 @@
-import { forwardRef, Module } from '@nestjs/common'
+import { Module } from '@nestjs/common'
 
 import { AdminConsumerModule } from '../consumer/admin-consumer.module'
 
@@ -7,7 +7,7 @@ import { AdminContactRepository } from './admin-contact.repository'
 import { AdminContactService } from './admin-contact.service'
 
 @Module({
-  imports: [forwardRef(() => AdminConsumerModule)],
+  imports: [AdminConsumerModule],
   controllers: [AdminContactController],
   providers: [AdminContactRepository, AdminContactService],
   exports: [AdminContactRepository, AdminContactService],

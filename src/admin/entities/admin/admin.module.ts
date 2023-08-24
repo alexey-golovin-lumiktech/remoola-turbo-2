@@ -5,7 +5,6 @@ import { AdminRepository } from './admin.repository'
 import { AdminService } from './admin.service'
 
 @Module({
-  imports: [],
   controllers: [AdminController],
   providers: [AdminService, AdminRepository],
   exports: [AdminService, AdminRepository],

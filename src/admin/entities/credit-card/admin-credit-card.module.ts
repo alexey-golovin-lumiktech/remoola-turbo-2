@@ -1,4 +1,4 @@
-import { forwardRef, Module } from '@nestjs/common'
+import { Module } from '@nestjs/common'
 
 import { AdminConsumerModule } from '../consumer/admin-consumer.module'
 
@@ -7,7 +7,7 @@ import { AdminCreditCardRepository } from './admin-credit-card.repository'
 import { AdminCreditCardService } from './admin-credit-card.service'
 
 @Module({
-  imports: [forwardRef(() => AdminConsumerModule)],
+  imports: [AdminConsumerModule],
   controllers: [AdminCreditCardController],
   providers: [AdminCreditCardRepository, AdminCreditCardService],
   exports: [AdminCreditCardRepository, AdminCreditCardService],

@@ -2,20 +2,18 @@ import { Module } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
 
+import { AddressDetailsModule } from '../entities/address-details/address-details.module'
 import { ConsumerModule } from '../entities/consumer/consumer.module'
 import { GoogleProfileDetailsModule } from '../entities/google-profile-details/google-profile-details.module'
+import { OrganizationDetailsModule } from '../entities/organization-details/organization-details.module'
+import { PersonalDetailsModule } from '../entities/personal-details/personal-details.module'
 import { ResetPasswordModule } from '../entities/reset-password/reset-password.module'
-import { ResetPasswordRepository } from '../entities/reset-password/reset-password.repository'
-import { ResetPasswordService } from '../entities/reset-password/reset-password.service'
 
 import { AuthController } from './auth.controller'
 import { AuthService } from './auth.service'
 
 @Module({
   imports: [
-    GoogleProfileDetailsModule,
-    ConsumerModule,
-    ResetPasswordModule,
     JwtModule.registerAsync({
       useFactory: (configService: ConfigService) => {
         const secret = configService.get<string>(`JWT_SECRET`)
@@ -24,8 +22,16 @@ import { AuthService } from './auth.service'
       },
       inject: [ConfigService],
     }),
+
+    GoogleProfileDetailsModule,
+    PersonalDetailsModule,
+    OrganizationDetailsModule,
+    AddressDetailsModule,
+    ConsumerModule,
+    ResetPasswordModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, ResetPasswordRepository, ResetPasswordService],
+  providers: [AuthService],
+  exports: [AuthService],
 })
 export class AuthModule {}

@@ -1,13 +1,10 @@
-import { forwardRef, Module } from '@nestjs/common'
-
-import { ConsumerModule } from '../consumer/consumer.module'
+import { Module } from '@nestjs/common'
 
 import { GoogleProfileDetailsRepository } from './google-profile-details.repository'
 import { GoogleProfileDetailsService } from './google-profile-details.service'
 
 @Module({
-  imports: [forwardRef(() => ConsumerModule)],
-  providers: [GoogleProfileDetailsService, GoogleProfileDetailsRepository],
-  exports: [GoogleProfileDetailsService, GoogleProfileDetailsRepository],
+  providers: [GoogleProfileDetailsRepository, GoogleProfileDetailsService],
+  exports: [GoogleProfileDetailsRepository, GoogleProfileDetailsService],
 })
 export class GoogleProfileDetailsModule {}

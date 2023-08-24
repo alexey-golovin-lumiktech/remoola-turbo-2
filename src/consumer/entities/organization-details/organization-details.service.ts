@@ -4,16 +4,12 @@ import { IOrganizationDetailsModel } from '@wirebill/shared-common/models'
 
 import { BaseService } from '../../../common'
 import { CONSUMER } from '../../../dtos'
-import { ConsumerService } from '../consumer/consumer.service'
 
 import { OrganizationDetailsRepository } from './organization-details.repository'
 
 @Injectable()
 export class OrganizationDetailsService extends BaseService<IOrganizationDetailsModel, OrganizationDetailsRepository> {
-  constructor(
-    @Inject(OrganizationDetailsRepository) repository: OrganizationDetailsRepository,
-    @Inject(ConsumerService) private readonly consumersService: ConsumerService,
-  ) {
+  constructor(@Inject(OrganizationDetailsRepository) repository: OrganizationDetailsRepository) {
     super(repository)
   }
 

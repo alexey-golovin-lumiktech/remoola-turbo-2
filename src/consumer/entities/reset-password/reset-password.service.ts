@@ -3,16 +3,12 @@ import { Inject, Injectable } from '@nestjs/common'
 import { IResetPasswordModel } from '@wirebill/shared-common/models'
 
 import { BaseService } from '../../../common'
-import { ConsumerService } from '../consumer/consumer.service'
 
 import { ResetPasswordRepository } from './reset-password.repository'
 
 @Injectable()
 export class ResetPasswordService extends BaseService<IResetPasswordModel, ResetPasswordRepository> {
-  constructor(
-    @Inject(ResetPasswordRepository) repository: ResetPasswordRepository,
-    @Inject(ConsumerService) private readonly consumersService: ConsumerService,
-  ) {
+  constructor(@Inject(ResetPasswordRepository) repository: ResetPasswordRepository) {
     super(repository)
   }
 

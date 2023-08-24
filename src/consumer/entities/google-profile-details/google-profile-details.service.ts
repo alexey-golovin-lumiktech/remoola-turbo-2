@@ -4,7 +4,6 @@ import { IGoogleProfileDetailsModel } from '@wirebill/shared-common/models'
 
 import { BaseService, IBaseService } from '../../../common'
 import { CONSUMER } from '../../../dtos'
-import { ConsumerService } from '../consumer/consumer.service'
 
 import { GoogleProfileDetailsRepository } from './google-profile-details.repository'
 
@@ -13,10 +12,7 @@ export class GoogleProfileDetailsService
   extends BaseService<IGoogleProfileDetailsModel, GoogleProfileDetailsRepository>
   implements IBaseService<IGoogleProfileDetailsModel, GoogleProfileDetailsRepository>
 {
-  constructor(
-    @Inject(GoogleProfileDetailsRepository) repository: GoogleProfileDetailsRepository,
-    @Inject(ConsumerService) private readonly consumersService: ConsumerService,
-  ) {
+  constructor(@Inject(GoogleProfileDetailsRepository) repository: GoogleProfileDetailsRepository) {
     super(repository)
   }
 

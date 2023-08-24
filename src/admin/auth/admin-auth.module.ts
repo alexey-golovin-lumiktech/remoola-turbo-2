@@ -19,8 +19,8 @@ import { AdminAuthService } from './admin-auth.service'
       inject: [ConfigService],
     }),
   ],
+  controllers: [AdminAuthController],
   providers: [AdminAuthService],
   exports: [AdminAuthService],
-  controllers: [AdminAuthController],
 })
 export class AdminAuthModule {}
