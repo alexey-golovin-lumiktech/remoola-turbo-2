@@ -20,7 +20,7 @@ export class PaymentRequestAttachmentService extends BaseService<IPaymentRequest
   }
 
   async getAttachmentList(paymentRequestId: string): Promise<IPaymentRequestAttachmentModel[]> {
-    return this.repository.find({ filter: { id: paymentRequestId } })
+    return this.repository.find({ filter: { paymentRequestId } })
   }
 
   async createOne(consumerId: string, paymentRequestId: string, file: Express.Multer.File): Promise<IPaymentRequestAttachmentModel> {
