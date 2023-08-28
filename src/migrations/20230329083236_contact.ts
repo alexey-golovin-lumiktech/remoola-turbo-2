@@ -15,8 +15,8 @@ export async function up(knex: Knex): Promise<void> {
     table.uuid(`consumer_id`).notNullable().references(`id`).inTable(TableName.Consumer).onDelete(`CASCADE`)
 
     table.string(`email`).notNullable()
-    table.string(`name`).nullable().comment(`contact address object`)
-    table.jsonb(`address`).notNullable()
+    table.string(`name`).nullable()
+    table.jsonb(`address`).notNullable().comment(`contact address object`)
 
     addAuditColumns(table, knex)
   })

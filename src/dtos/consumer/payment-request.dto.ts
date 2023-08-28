@@ -1,6 +1,7 @@
 import { ApiProperty, OmitType, PickType } from '@nestjs/swagger'
 import { Expose, Type } from 'class-transformer'
-import { IsDate, IsIn, IsNotEmpty, IsNumber, IsString, ValidateIf } from 'class-validator'
+import { IsDate, IsEmail, IsIn, IsNotEmpty, IsNumber, IsString, ValidateIf } from 'class-validator'
+import { INVALID_EMAIL } from 'src/constants'
 
 import { IPaymentRequestResponse } from '@wirebill/shared-common/dtos'
 import { CurrencyCode, TransactionStatus, TransactionType } from '@wirebill/shared-common/enums'
@@ -14,6 +15,8 @@ import {
 } from '@wirebill/shared-common/types'
 
 import { BaseModel } from '../common'
+
+import { PaymentRequestAttachmentResponse } from './payment-request-attachment.dto'
 
 class PaymentRequest extends BaseModel implements IPaymentRequestModel {
   @Expose()
@@ -99,6 +102,11 @@ export class PaymentRequestResponse extends OmitType(PaymentRequest, [`deletedAt
   @Expose()
   @ApiProperty()
   requesterEmail: string
+
+  @Expose()
+  @ApiProperty({ required: false, type: [PaymentRequestAttachmentResponse] })
+  @Type(() => PaymentRequestAttachmentResponse)
+  attachments: PaymentRequestAttachmentResponse[]
 }
 
 export class PaymentRequestListResponse {
@@ -119,10 +127,14 @@ export class PaymentRequestsListQuery {
 }
 
 export class PaymentRequestPayToContact extends PickType(PaymentRequest, [
-  `requesterId`,
   `description`,
   `transactionAmount`,
   `transactionCurrencyCode`,
   `transactionType`,
   `stripeFeeInPercents`,
-] as const) {}
+] as const) {
+  @Expose()
+  @ApiProperty()
+  @IsEmail({}, { message: INVALID_EMAIL })
+  contactEmail: string
+}

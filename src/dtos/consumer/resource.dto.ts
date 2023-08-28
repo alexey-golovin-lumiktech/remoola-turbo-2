@@ -8,12 +8,32 @@ import { ResourceAccessValue } from '@wirebill/shared-common/types'
 import { BaseModel } from '../common'
 
 class Resource extends BaseModel implements IResourceModel {
+  @Expose()
+  @ApiProperty()
   access?: ResourceAccessValue
+
+  @Expose()
+  @ApiProperty()
   originalname: string
+
+  @Expose()
+  @ApiProperty()
   mimetype: string
+
+  @Expose()
+  @ApiProperty()
   size: number
+
+  @Expose()
+  @ApiProperty()
   bucket: string
+
+  @Expose()
+  @ApiProperty()
   key: string
+
+  @Expose()
+  @ApiProperty()
   downloadUrl: string
 }
 

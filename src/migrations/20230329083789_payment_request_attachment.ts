@@ -19,7 +19,7 @@ export async function up(knex: Knex): Promise<void> {
       .references(`id`)
       .inTable(TableName.Consumer)
       .onDelete(`CASCADE`)
-      .comment(`consumer_id (or identity.id)`)
+      .comment(`consumer.id (or identity.id)`)
 
     table.uuid(`payment_request_id`).notNullable().references(`id`).inTable(TableName.PaymentRequest).onDelete(`CASCADE`)
     table.uuid(`resource_id`).notNullable().references(`id`).inTable(TableName.Resource).onDelete(`CASCADE`)

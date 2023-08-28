@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common'
 import { Knex } from 'knex'
+import { snakeCase } from 'lodash'
 import moment from 'moment'
 
 import { IPaymentRequestCreate } from '@wirebill/shared-common/dtos'
@@ -10,6 +11,7 @@ import { ReqQuery, TimelineFilter } from '@wirebill/shared-common/types'
 import { BaseService } from '../../../common'
 import { CONSUMER } from '../../../dtos'
 import { getKnexCount, plainToInstance } from '../../../utils'
+import { ConsumerService } from '../consumer/consumer.service'
 import { PaymentRequestAttachmentService } from '../payment-request-attachment/payment-request-attachment.service'
 
 import { PaymentRequestRepository } from './payment-request.repository'
@@ -19,6 +21,7 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
   constructor(
     @Inject(PaymentRequestRepository) repository: PaymentRequestRepository,
     @Inject(PaymentRequestAttachmentService) private readonly paymentRequestAttachmentService: PaymentRequestAttachmentService,
+    @Inject(ConsumerService) private readonly consumerService: ConsumerService,
   ) {
     super(repository)
   }
@@ -29,12 +32,12 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
     timelineFilter: Unassignable<TimelineFilter<IPaymentRequestModel>>,
   ): Promise<CONSUMER.PaymentRequestListResponse> {
     const filters = <T>(qb: Knex.QueryBuilder<T>) => {
-      if (query.filter) qb.andWhere(query.filter)
+      if (query.filter) qb.where(query.filter)
       if (timelineFilter) {
-        qb.andWhere(
-          `p.${timelineFilter.field}`, //
+        qb.where(
+          `p.${snakeCase(timelineFilter.field)}`,
           timelineFilter.comparison,
-          moment(timelineFilter.value).format(`YYYY-MM-DD`),
+          moment.utc(timelineFilter.value).startOf(`day`).format(`YYYY-MM-DD`),
         )
       }
     }
@@ -48,9 +51,9 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
       .orWhere({ payerId: consumerId })
       .modify(filters)
 
-    const count = await baseQuery.clone().count().then(getKnexCount)
+    const count: Awaited<number> = await baseQuery.clone().count().then(getKnexCount)
 
-    const data = await baseQuery
+    const data: Awaited<CONSUMER.PaymentRequestResponse[]> = await baseQuery
       .clone()
       .modify(qb => {
         if (query?.paging?.limit) qb.limit(query.paging.limit)
@@ -65,12 +68,16 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
         `payer.email as payer_email`,
       )
 
+    for (const item of data) {
+      item.attachments = await this.paymentRequestAttachmentService.getAttachmentList(consumerId, item.id)
+    }
+
     const result = { count, data }
     return result
   }
 
-  async getConsumerPaymentRequestById(paymentRequestId: string): Promise<CONSUMER.PaymentRequestResponse> {
-    return this.repository.knex
+  async getConsumerPaymentRequestById(consumerId: string, paymentRequestId: string): Promise<CONSUMER.PaymentRequestResponse> {
+    const data: Awaited<CONSUMER.PaymentRequestResponse> = await this.repository.knex
       .from(`${TableName.PaymentRequest} as p`)
       .join(`${TableName.Consumer} as requester`, `requester.id`, `p.requester_id`)
       .join(`${TableName.Consumer} as payer`, `payer.id`, `p.payer_id`)
@@ -83,6 +90,10 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
         `payer.email as payer_email`,
       )
       .first()
+
+    if (data != null) data.attachments = await this.paymentRequestAttachmentService.getAttachmentList(consumerId, data.id)
+
+    return data
   }
 
   async payToContact(dto: {
@@ -90,33 +101,42 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
     files: Array<Express.Multer.File>
     body: CONSUMER.PaymentRequestPayToContact
   }): Promise<CONSUMER.PaymentRequestResponse> {
-    const { identity, files, body } = dto
+    try {
+      const { identity, files } = dto
+      const { contactEmail, ...restBody } = dto.body
 
-    /* 
-      @IMPORTANT_NOTE: do not forget add stripe logic
-      1 создать consumer
-      2 добавить логику 
-        - создание stripe.customer - если TransactionType.CreditCard
-        - отправку письма для контакта которому производиться платёж 
-          с приглашением в wirebill если контакт еше не является wirebill.consumer
-    */
-    const stripeLogicStub = { transactionId: `stripe-transaction-id` }
-    const now = new Date()
+      const consumer = await this.consumerService.repository.findOne({ email: contactEmail })
+      console.log(`[consumer]`, consumer)
 
-    const paymentRequestData: IPaymentRequestCreate = {
-      payerId: identity.id,
-      transactionStatus: TransactionStatus.Completed,
-      transactionId: body.transactionType == TransactionType.BankTransfer ? null : stripeLogicStub.transactionId,
-      dueBy: now,
-      sentDate: now,
-      paidOn: now,
-      ...body,
+      /* check payments on ui pay!!!!!
+        @IMPORTANT_NOTE: do not forget add stripe logic
+        1 создать consumer
+        2 добавить логику 
+          - создание stripe.customer - если TransactionType.CreditCard
+          - отправку письма для контакта которому производиться платёж 
+            с приглашением в wirebill если контакт еше не является wirebill.consumer
+      */
+      const stripeLogicStub = { transactionId: `stripe-transaction-id` }
+      const now = new Date()
+
+      const paymentRequestData: IPaymentRequestCreate = {
+        requesterId: consumer.id,
+        payerId: identity.id,
+        transactionStatus: TransactionStatus.Completed,
+        transactionId: restBody.transactionType == TransactionType.BankTransfer ? null : stripeLogicStub.transactionId,
+        dueBy: now,
+        sentDate: now,
+        paidOn: now,
+        ...restBody,
+      }
+
+      const created = await this.repository.create(paymentRequestData)
+      if (files.length != 0) await this.paymentRequestAttachmentService.createMany(created.requesterId, created.id, files)
+      const transformed = plainToInstance(CONSUMER.PaymentRequestResponse, created)
+      console.log(`[transformed]`, transformed)
+      return transformed
+    } catch (error) {
+      console.log(`[error]`, error)
     }
-
-    const created = await this.repository.create(paymentRequestData)
-    await this.paymentRequestAttachmentService.createMany(created.requesterId, created.id, files)
-    const transformed = plainToInstance(CONSUMER.PaymentRequestResponse, created)
-    console.log(`[transformed]`, transformed)
-    return transformed
   }
 }

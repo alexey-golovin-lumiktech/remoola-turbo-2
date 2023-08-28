@@ -20,8 +20,11 @@ export class ResourceService extends BaseService<IResourceModel, ResourceReposit
 
   async createOne(file: Express.Multer.File): Promise<IResourceModel | null> {
     const uploaded: IResourceCreate = await this.s3Service.uploadOne(file)
-    const resource = await this.repository.create(uploaded)
-    return resource ?? null
+    if (uploaded != null) {
+      const resource = await this.repository.create(uploaded)
+      return resource ?? null
+    }
+    return null
   }
 
   async createMany(files: Express.Multer.File[]) {

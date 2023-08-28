@@ -26,12 +26,12 @@ export async function up(knex: Knex): Promise<void> {
       .comment(`one of ${Object.values(ResourceAccess)}`)
 
     table.string(`originalname`).notNullable().comment(`file originalname(multer)`)
-    table.string(`mimetype`).notNullable().comment(`Value of the 'Content-Type' header for this file. Used for the uploading to S3`)
+    table.string(`mimetype`).notNullable().comment(`Value of the 'Content-Type' header for this file.`)
     table.integer(`size`).notNullable().comment(`file size in bytes(multer)`)
 
     table.string(`bucket`).notNullable().comment(`s3 bucket`)
     table.string(`key`).notNullable().comment(`s3 uploaded resource key`)
-    table.string(`download_url`).notNullable().comment(`s3 uploaded object location(url)`)
+    table.string(`download_url`).notNullable().comment(`s3 uploaded object location url`)
 
     addAuditColumns(table, knex)
   })

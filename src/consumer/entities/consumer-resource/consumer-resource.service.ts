@@ -24,7 +24,7 @@ export class ConsumerResourceService extends BaseService<IConsumerResourceModel,
     return consumerResource ?? null
   }
 
-  async createMany(consumerId: string, files: Express.Multer.File[]): Promise<IConsumerResourceModel[]> {
+  async createMany(consumerId: string, files: Express.Multer.File[] = []): Promise<IConsumerResourceModel[]> {
     const collected: IConsumerResourceModel[] = []
 
     for (const file of files) {

@@ -144,10 +144,10 @@ export class ConsumerController {
   @ApiOkResponse({ type: CONSUMER.PaymentRequestResponse })
   @TransformResponse(CONSUMER.PaymentRequestResponse)
   getConsumerPaymentRequestById(
-    @ReqAuthIdentity() _identity: IConsumerModel,
+    @ReqAuthIdentity() identity: IConsumerModel,
     @Param(`paymentRequestId`) paymentRequestId: string,
   ): Promise<CONSUMER.PaymentRequestResponse> {
-    return this.paymentRequestService.getConsumerPaymentRequestById(paymentRequestId)
+    return this.paymentRequestService.getConsumerPaymentRequestById(identity.id, paymentRequestId)
   }
 
   @Get(`/credit-cards`)
