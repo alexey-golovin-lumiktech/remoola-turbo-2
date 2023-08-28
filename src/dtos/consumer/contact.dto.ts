@@ -10,7 +10,7 @@ import { BaseModel } from '../common'
 
 class ContactAddress extends OmitType(AddressDetailsCreate, [`consumerId`] as const) {}
 
-class ContactDTO extends BaseModel implements IContactModel {
+class Contact extends BaseModel implements IContactModel {
   @Expose()
   @ApiProperty({ required: true })
   consumerId: string
@@ -30,7 +30,7 @@ class ContactDTO extends BaseModel implements IContactModel {
   address: ContactAddress
 }
 
-export class ContactResponse extends OmitType(ContactDTO, [`deletedAt`] as const) implements IContactResponse {}
+export class ContactResponse extends OmitType(Contact, [`deletedAt`] as const) implements IContactResponse {}
 
 export class ContactListResponse {
   @Expose()
@@ -43,6 +43,6 @@ export class ContactListResponse {
   data: ContactResponse[]
 }
 
-export class ContactCreate extends PickType(ContactDTO, [`consumerId`, `address`, `email`, `name`] as const) implements IContactCreate {}
+export class ContactCreate extends PickType(Contact, [`consumerId`, `address`, `email`, `name`] as const) implements IContactCreate {}
 
 export class ContactUpdate extends PartialType(ContactCreate) implements IContactUpdate {}
