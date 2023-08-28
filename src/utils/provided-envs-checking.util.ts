@@ -4,13 +4,14 @@ import * as fs from 'fs'
 import { getEnvPath } from '@wirebill/shared-common/utils'
 
 const customEnvironmentNames = [
+  `NODE_ENV`,
   `NEST_APP_PORT`,
   `NEST_APP_HOST`,
   `NEST_APP_EXTERNAL_ORIGIN`,
 
   `POSTGRES_HOST`,
   `POSTGRES_PORT`,
-  `POSTGRES_DB`,
+  `POSTGRES_DATABASE`,
   `POSTGRES_USER`,
   `POSTGRES_PASSWORD`,
   `POSTGRES_DIALECT`,
@@ -28,9 +29,6 @@ const customEnvironmentNames = [
   `JWT_ACCESS_TOKEN_EXPIRES_IN`,
   `JWT_REFRESH_TOKEN_EXPIRES_IN`,
 
-  `HTTP_BASIC_USER`,
-  `HTTP_BASIC_PASS`,
-
   `NODEMAILER_SMTP_HOST`,
   `NODEMAILER_SMTP_PORT`,
   `NODEMAILER_SMTP_USER`,
@@ -41,6 +39,10 @@ const customEnvironmentNames = [
   `STRIPE_SECRET_KEY`,
 
   `AWS_FILE_UPLOAD_MAX_SIZE_BYTES`,
+  `AWS_ACCESS_KEY_ID`,
+  `AWS_SECRET_ACCESS_KEY`,
+  `AWS_REGION`,
+  `AWS_BUCKET`,
 ]
 
 export const checkProvidedEnvs = (inDirectory: typeof __dirname) => () => {

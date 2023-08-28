@@ -1,7 +1,6 @@
 import { PutObjectCommand, PutObjectCommandInput, S3Client } from '@aws-sdk/client-s3'
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { removeTestObjectsFromS3 } from 'src/utils'
 
 import { IResourceCreate } from '@wirebill/shared-common/dtos'
 
@@ -15,8 +14,6 @@ export class AwsS3Service {
   constructor(private readonly configService: ConfigService) {
     this.bucket = this.configService.get<string>(`AWS_BUCKET`)
     this.region = this.configService.get<string>(`AWS_REGION`)
-
-    if (this.configService.get<string>(`AWS_CLEAR_S3`) == `yes`) removeTestObjectsFromS3(this.bucket, this.s3Client)
   }
 
   async uploadOne(file: Express.Multer.File): Promise<IResourceCreate | null> {
