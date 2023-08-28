@@ -1,7 +1,8 @@
-import { PutObjectCommand, PutObjectCommandInput, S3Client } from '@aws-sdk/client-s3'
+import { HeadObjectCommand, HeadObjectCommandOutput, PutObjectCommand, PutObjectCommandInput, S3Client } from '@aws-sdk/client-s3'
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 
+// import { removeTestObjectsFromS3 } from 'src/utils'
 import { IResourceCreate } from '@wirebill/shared-common/dtos'
 
 @Injectable()
@@ -16,17 +17,27 @@ export class AwsS3Service {
     this.region = this.configService.get<string>(`AWS_REGION`)
   }
 
+  private checkExists(key: IResourceCreate[`key`]): Promise<HeadObjectCommandOutput | null> {
+    return this.s3Client.send(new HeadObjectCommand({ Bucket: this.bucket, Key: key })).catch(() => null)
+  }
+
   async uploadOne(file: Express.Multer.File): Promise<IResourceCreate | null> {
     try {
       const key = this.originalnameToS3ResourceKey(file)
-      const params: PutObjectCommandInput = {
-        Body: file.stream ?? file.buffer,
-        Key: key,
-        Bucket: this.bucket,
-        ContentType: file.mimetype,
-        ContentDisposition: `attachment;filename="${key}"`,
-      }
-      this.s3Client.send(new PutObjectCommand(params))
+      const exist = await this.checkExists(key)
+
+      if (exist == null || exist.ContentLength != file.size || exist.ContentType != file.mimetype) {
+        const params: PutObjectCommandInput = {
+          Body: file.stream ?? file.buffer,
+          Key: key,
+          Bucket: this.bucket,
+          ContentLength: file.size,
+          ContentType: file.mimetype,
+          ContentDisposition: `attachment;filename="${key}"`,
+        }
+        this.s3Client.send(new PutObjectCommand(params))
+      } else this.logger.log(`Skip uploading for file: ${file.originalname} (reason: ALREADY_EXIST)`)
+
       return this.getUploadFileResult(file, key)
     } catch (error) {
       const message = `Fail to upload file: ${file.originalname}(originalname) ${file.size}bytes`
