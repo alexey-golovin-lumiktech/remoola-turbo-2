@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common'
+import { Knex } from 'knex'
 import moment from 'moment'
 
 import { IPaymentRequestCreate } from '@wirebill/shared-common/dtos'
@@ -27,17 +28,25 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
     query: ReqQuery<IPaymentRequestModel>,
     timelineFilter: Unassignable<TimelineFilter<IPaymentRequestModel>>,
   ): Promise<CONSUMER.PaymentRequestListResponse> {
+    const filters = <T>(qb: Knex.QueryBuilder<T>) => {
+      if (query.filter) qb.andWhere(query.filter)
+      if (timelineFilter) {
+        qb.andWhere(
+          `p.${timelineFilter.field}`, //
+          timelineFilter.comparison,
+          moment(timelineFilter.value).format(`YYYY-MM-DD`),
+        )
+      }
+    }
+
     const baseQuery = this.repository.knex
       .from(`${TableName.PaymentRequest} as p`)
       .join(`${TableName.Consumer} as requester`, `requester.id`, `p.requester_id`)
       .join(`${TableName.Consumer} as payer`, `payer.id`, `p.payer_id`)
       .where({ requesterId: consumerId })
-      .modify(qb => {
-        if (query.filter) qb.andWhere(query.filter)
-        if (timelineFilter) {
-          qb.andWhere(`p.${timelineFilter.field}`, timelineFilter.comparison, moment(timelineFilter.value).format(`YYYY-MM-DD`))
-        }
-      })
+      .modify(filters)
+      .orWhere({ payerId: consumerId })
+      .modify(filters)
 
     const count = await baseQuery.clone().count().then(getKnexCount)
 
