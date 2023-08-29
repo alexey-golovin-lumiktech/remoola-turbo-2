@@ -3,7 +3,6 @@ import { Module } from '@nestjs/common'
 import { AdminAuthModule } from './auth/admin-auth.module'
 import { AdminAddressDetailsModule } from './entities/address-details/admin-address-details.module'
 import { AdminModule } from './entities/admin/admin.module'
-import { AdminResourceModule } from './entities/admin-resource/admin-resource.module'
 import { AdminBillingDetailsModule } from './entities/billing-details/admin-billing-details.module'
 import { AdminConsumerModule } from './entities/consumer/admin-consumer.module'
 import { AdminContactModule } from './entities/contact/admin-contact.module'
@@ -26,7 +25,6 @@ import { AdminPersonalDetailsModule } from './entities/personal-details/admin-pe
     AdminBillingDetailsModule,
     AdminCreditCardModule,
     AdminContactModule,
-    AdminResourceModule,
   ],
 })
 export class AdminCommonModule {}

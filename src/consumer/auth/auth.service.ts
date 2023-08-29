@@ -61,7 +61,6 @@ export class AuthService {
         if (googleProfileDetails.deletedAt != null) throw new BadRequestException(`Profile is suspended, please contact the support`)
 
         await this.mailingService.sendConsumerTemporaryPasswordForGoogleOAuth({ email: consumer.email, tmpPassword })
-        consumer.googleProfileDetailsId = googleProfileDetails.id
       }
 
       const accessToken = this.generateToken(consumer)

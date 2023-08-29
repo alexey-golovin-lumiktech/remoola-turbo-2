@@ -31,24 +31,21 @@ export class AdminGoogleProfileDetailsController {
     return result
   }
 
-  @Get(`/:googleProfileDetailsId`)
+  @Get(`/:id`)
   @ApiOkResponse({ type: ADMIN.GoogleProfileDetailsResponse })
-  getById(@Param(`googleProfileDetailsId`) googleProfileDetailsId: string): Promise<ADMIN.GoogleProfileDetailsResponse> {
-    return this.service.repository.findById(googleProfileDetailsId)
+  getById(@Param(`id`) id: string): Promise<ADMIN.GoogleProfileDetailsResponse> {
+    return this.service.repository.findById(id)
   }
 
-  @Put(`/:googleProfileDetailsId`)
+  @Put(`/:id`)
   @ApiOkResponse({ type: ADMIN.GoogleProfileDetailsResponse })
-  updateById(
-    @Param(`googleProfileDetailsId`) googleProfileDetailsId: string,
-    @Body() body: ADMIN.GoogleProfileDetailsUpdate,
-  ): Promise<ADMIN.GoogleProfileDetailsResponse> {
-    return this.service.repository.updateById(googleProfileDetailsId, body)
+  updateById(@Param(`id`) id: string, @Body() body: ADMIN.GoogleProfileDetailsUpdate): Promise<ADMIN.GoogleProfileDetailsResponse> {
+    return this.service.repository.updateById(id, body)
   }
 
-  @Delete(`/:googleProfileDetailsId`)
+  @Delete(`/:id`)
   @ApiOkResponse({ type: Boolean })
-  deleteById(@Param(`googleProfileDetailsId`) googleProfileDetailsId: string): Promise<boolean> {
-    return this.service.repository.deleteById(googleProfileDetailsId)
+  deleteById(@Param(`id`) id: string): Promise<boolean> {
+    return this.service.repository.deleteById(id)
   }
 }

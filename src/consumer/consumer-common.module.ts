@@ -4,7 +4,6 @@ import { ResourceModule } from '../common-shared-modules/resource/resource.modul
 
 import { AuthModule } from './auth/auth.module'
 import { AddressDetailsModule } from './entities/address-details/address-details.module'
-import { BillingDetailsModule } from './entities/billing-details/billing-details.module'
 import { ConsumerModule } from './entities/consumer/consumer.module'
 import { ConsumerResourceModule } from './entities/consumer-resource/consumer-resource.module'
 import { ContactModule } from './entities/contact/contact.module'
@@ -21,7 +20,6 @@ import { ResetPasswordModule } from './entities/reset-password/reset-password.mo
     ResourceModule,
     AuthModule,
     AddressDetailsModule,
-    BillingDetailsModule,
     ConsumerModule,
     ConsumerResourceModule,
     ContactModule,
