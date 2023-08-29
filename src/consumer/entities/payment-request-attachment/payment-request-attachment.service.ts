@@ -1,11 +1,11 @@
 import { Inject, Injectable, Logger } from '@nestjs/common'
-import { BaseService } from 'src/common'
-import { ResourceService } from 'src/common-shared-modules/resource/resource.service'
-import { CONSUMER } from 'src/dtos'
 
 import { IPaymentRequestAttachmentCreate } from '@wirebill/shared-common/dtos'
 import { IPaymentRequestAttachmentModel } from '@wirebill/shared-common/models'
 
+import { BaseService } from '../../../common'
+import { ResourceService } from '../../../common-shared-modules/resource/resource.service'
+import { CONSUMER } from '../../../dtos'
 import { ConsumerResourceService } from '../consumer-resource/consumer-resource.service'
 
 import { PaymentRequestAttachmentRepository } from './payment-request-attachment.repository'

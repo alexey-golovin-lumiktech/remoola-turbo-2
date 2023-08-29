@@ -1,8 +1,9 @@
 import { Inject, Injectable, Logger } from '@nestjs/common'
-import { BaseService } from 'src/common'
-import { ResourceService } from 'src/common-shared-modules/resource/resource.service'
 
 import { IAdminResourceModel } from '@wirebill/shared-common/models'
+
+import { BaseService } from '../../../common'
+import { ResourceService } from '../../../common-shared-modules/resource/resource.service'
 
 import { AdminResourceRepository } from './admin-resource.repository'
 

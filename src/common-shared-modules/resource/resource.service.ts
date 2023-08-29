@@ -1,9 +1,9 @@
 import { Inject, Injectable, Logger } from '@nestjs/common'
-import { BaseService } from 'src/common'
 
 import { IResourceCreate } from '@wirebill/shared-common/dtos'
 import { IResourceModel } from '@wirebill/shared-common/models'
 
+import { BaseService } from '../../common'
 import { AwsS3Service } from '../aws-s3/aws-s3.service'
 
 import { ResourceRepository } from './resource.repository'

@@ -1,7 +1,7 @@
 import { forwardRef, Module } from '@nestjs/common'
-import { AwsS3Module } from 'src/common-shared-modules/aws-s3/aws-s3.module'
-import { ResourceModule } from 'src/common-shared-modules/resource/resource.module'
 
+import { AwsS3Module } from '../../../common-shared-modules/aws-s3/aws-s3.module'
+import { ResourceModule } from '../../../common-shared-modules/resource/resource.module'
 import { AddressDetailsModule } from '../address-details/address-details.module'
 import { BillingDetailsModule } from '../billing-details/billing-details.module'
 import { ConsumerResourceModule } from '../consumer-resource/consumer-resource.module'

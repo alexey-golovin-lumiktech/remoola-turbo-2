@@ -2,7 +2,6 @@ import { HeadObjectCommand, HeadObjectCommandOutput, PutObjectCommand, PutObject
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 
-// import { removeTestObjectsFromS3 } from 'src/utils'
 import { IResourceCreate } from '@wirebill/shared-common/dtos'
 
 @Injectable()

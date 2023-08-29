@@ -1,12 +1,13 @@
 import { Body, Controller, Delete, Get, Inject, Param, Put, Query, Response } from '@nestjs/common'
 import { ApiBasicAuth, ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import express from 'express'
-import { ReqQueryTransformPipe } from 'src/admin/pipes'
-import { ADMIN } from 'src/dtos'
-import { TransformResponse } from 'src/interceptors'
 
 import { IAdminResourceModel } from '@wirebill/shared-common/models'
 import { ReqQuery } from '@wirebill/shared-common/types'
+
+import { ADMIN } from '../../../dtos'
+import { TransformResponse } from '../../../interceptors'
+import { ReqQueryTransformPipe } from '../../pipes'
 
 import { AdminResourceService } from './admin-resource.service'
 

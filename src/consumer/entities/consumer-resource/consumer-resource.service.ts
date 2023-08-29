@@ -1,8 +1,9 @@
 import { Inject, Injectable, Logger } from '@nestjs/common'
-import { BaseService } from 'src/common'
-import { ResourceService } from 'src/common-shared-modules/resource/resource.service'
 
 import { IConsumerResourceModel } from '@wirebill/shared-common/models'
+
+import { BaseService } from '../../../common'
+import { ResourceService } from '../../../common-shared-modules/resource/resource.service'
 
 import { ConsumerResourceRepository } from './consumer-resource.repository'
 

@@ -1,7 +1,6 @@
 import { ApiProperty, OmitType, PickType } from '@nestjs/swagger'
 import { Expose, Type } from 'class-transformer'
 import { IsDate, IsEmail, IsIn, IsNotEmpty, IsNumber, IsString, ValidateIf } from 'class-validator'
-import { INVALID_EMAIL } from 'src/constants'
 
 import { IPaymentRequestResponse } from '@wirebill/shared-common/dtos'
 import { CurrencyCode, TransactionStatus, TransactionType } from '@wirebill/shared-common/enums'
@@ -14,6 +13,7 @@ import {
   TransactionTypeValue,
 } from '@wirebill/shared-common/types'
 
+import { INVALID_EMAIL } from '../../constants'
 import { BaseModel } from '../common'
 
 import { PaymentRequestAttachmentResponse } from './payment-request-attachment.dto'
