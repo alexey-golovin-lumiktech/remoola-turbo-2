@@ -63,26 +63,6 @@ class Consumer extends BaseModel implements IConsumerModel {
   @Expose()
   @ApiProperty({ required: false, default: null })
   stripeCustomerId?: string = null
-
-  @Expose()
-  @ApiProperty({ required: false, default: null })
-  googleProfileDetailsId?: string = null
-
-  @Expose()
-  @ApiProperty({ required: false, default: null })
-  personalDetailsId?: string = null
-
-  @Expose()
-  @ApiProperty({ required: false, default: null })
-  addressDetailsId?: string = null
-
-  @Expose()
-  @ApiProperty({ required: false, default: null })
-  organizationDetailsId?: string = null
-
-  @Expose()
-  @ApiProperty({ required: false, default: null })
-  billingDetailsId?: string = null
 }
 
 export class ConsumerResponse extends OmitType(Consumer, [`deletedAt`] as const) implements IConsumerResponse {}

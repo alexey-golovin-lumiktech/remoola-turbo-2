@@ -13,6 +13,7 @@ export async function up(knex: Knex): Promise<void> {
   return knex.schema.createTable(tableName, table => {
     addUUIDPrimaryKey(table, knex)
     table.uuid(`consumer_id`).notNullable().references(`id`).inTable(TableName.Consumer).onDelete(`CASCADE`)
+    table.uuid(`billing_details_id`).nullable().references(`id`).inTable(TableName.BillingDetails)
 
     table.string(`brand`).notNullable()
     table.string(`country`).notNullable()

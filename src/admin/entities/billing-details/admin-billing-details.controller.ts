@@ -31,18 +31,15 @@ export class AdminBillingDetailsController {
     return result
   }
 
-  @Get(`/:billingDetailsId`)
+  @Get(`/:id`)
   @ApiOkResponse({ type: ADMIN.BillingDetailsResponse })
-  getById(@Param(`billingDetailsId`) billingDetailsId: string): Promise<ADMIN.BillingDetailsResponse> {
-    return this.service.repository.findById(billingDetailsId)
+  getById(@Param(`id`) id: string): Promise<ADMIN.BillingDetailsResponse> {
+    return this.service.repository.findById(id)
   }
 
-  @Put(`/:billingDetailsId`)
+  @Put(`/:id`)
   @ApiOkResponse({ type: ADMIN.BillingDetailsResponse })
-  updateById(
-    @Param(`billingDetailsId`) billingDetailsId: string,
-    @Body() body: ADMIN.BillingDetailsUpdate,
-  ): Promise<ADMIN.BillingDetailsResponse> {
-    return this.service.repository.updateById(billingDetailsId, body)
+  updateById(@Param(`id`) id: string, @Body() body: ADMIN.BillingDetailsUpdate): Promise<ADMIN.BillingDetailsResponse> {
+    return this.service.repository.updateById(id, body)
   }
 }

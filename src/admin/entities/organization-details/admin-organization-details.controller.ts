@@ -31,24 +31,21 @@ export class AdminOrganizationDetailsController {
     return result
   }
 
-  @Get(`/:organizationDetailsId`)
+  @Get(`/:id`)
   @ApiOkResponse({ type: ADMIN.OrganizationDetailsResponse })
-  getById(@Param(`organizationDetailsId`) organizationDetailsId: string): Promise<ADMIN.OrganizationDetailsResponse> {
-    return this.service.repository.findById(organizationDetailsId)
+  getById(@Param(`id`) id: string): Promise<ADMIN.OrganizationDetailsResponse> {
+    return this.service.repository.findById(id)
   }
 
-  @Put(`/:organizationDetailsId`)
+  @Put(`/:id`)
   @ApiOkResponse({ type: ADMIN.OrganizationDetailsResponse })
-  updateById(
-    @Param(`organizationDetailsId`) organizationDetailsId: string,
-    @Body() body: ADMIN.OrganizationDetailsUpdate,
-  ): Promise<ADMIN.OrganizationDetailsResponse> {
-    return this.service.repository.updateById(organizationDetailsId, body)
+  updateById(@Param(`id`) id: string, @Body() body: ADMIN.OrganizationDetailsUpdate): Promise<ADMIN.OrganizationDetailsResponse> {
+    return this.service.repository.updateById(id, body)
   }
 
-  @Delete(`/:organizationDetailsId`)
+  @Delete(`/:id`)
   @ApiOkResponse({ type: Boolean })
-  deleteById(@Param(`organizationDetailsId`) organizationDetailsId: string): Promise<boolean> {
-    return this.service.repository.deleteById(organizationDetailsId)
+  deleteById(@Param(`id`) id: string): Promise<boolean> {
+    return this.service.repository.deleteById(id)
   }
 }

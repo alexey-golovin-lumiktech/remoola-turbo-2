@@ -59,50 +59,28 @@ export class ConsumerController {
   @ApiOkResponse({ type: CONSUMER.GoogleProfileDetailsResponse })
   @TransformResponse(CONSUMER.GoogleProfileDetailsResponse)
   getConsumerGoogleProfileDetails(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.GoogleProfileDetailsResponse | null> {
-    if (identity.googleProfileDetailsId == null) return null
-    return this.googleProfileDetailsService.repository.findById(identity.googleProfileDetailsId)
+    return this.googleProfileDetailsService.repository.findOne({ deletedAt: null, consumerId: identity.id })
   }
 
   @Get(`/personal-details`)
   @ApiOkResponse({ type: CONSUMER.PersonalDetailsResponse })
   @TransformResponse(CONSUMER.PersonalDetailsResponse)
   getConsumerPersonalDetails(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.PersonalDetailsResponse | null> {
-    if (identity.personalDetailsId == null) return null
-    return this.personalDetailsService.repository.findById(identity.personalDetailsId)
+    return this.personalDetailsService.repository.findOne({ deletedAt: null, consumerId: identity.id })
   }
 
   @Get(`/address-details`)
   @ApiOkResponse({ type: CONSUMER.AddressDetailsResponse })
   @TransformResponse(CONSUMER.AddressDetailsResponse)
   getConsumerAddressDetails(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.AddressDetailsResponse | null> {
-    if (identity.addressDetailsId == null) return null
-    return this.addressDetailsService.repository.findById(identity.addressDetailsId)
+    return this.addressDetailsService.repository.findOne({ deletedAt: null, consumerId: identity.id })
   }
 
   @Get(`/organization-details`)
   @ApiOkResponse({ type: CONSUMER.OrganizationDetailsResponse })
   @TransformResponse(CONSUMER.OrganizationDetailsResponse)
   getConsumerOrganizationDetails(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.OrganizationDetailsResponse | null> {
-    if (identity.organizationDetailsId == null) return null
-    return this.organizationDetailsService.repository.findById(identity.organizationDetailsId)
-  }
-
-  @Get(`/billing-details`)
-  @ApiOkResponse({ type: CONSUMER.BillingDetailsResponse })
-  @TransformResponse(CONSUMER.BillingDetailsResponse)
-  getConsumerBillingDetails(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.BillingDetailsResponse> {
-    if (identity.billingDetailsId == null) return null
-    return this.billingDetailsService.repository.findById(identity.billingDetailsId)
-  }
-
-  @Patch(`/billing-details`)
-  @ApiOkResponse({ type: CONSUMER.BillingDetailsResponse })
-  @TransformResponse(CONSUMER.BillingDetailsResponse)
-  updateConsumerBillingDetails(
-    @ReqAuthIdentity() identity: IConsumerModel,
-    @Body() body: CONSUMER.BillingDetailsUpdate,
-  ): Promise<CONSUMER.BillingDetailsResponse> {
-    return this.billingDetailsService.upsert({ ...body, consumerId: identity.id })
+    return this.organizationDetailsService.repository.findOne({ deletedAt: null, consumerId: identity.id })
   }
 
   @Get(`/payment-requests`)
