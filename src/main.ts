@@ -16,10 +16,10 @@ import { ConsumerService } from './consumer/entities/consumer/consumer.service'
 import { ListResponse } from './dtos/common'
 import { AuthGuard } from './guards/auth.guard'
 import { AppModule } from './app.module'
+import { commonUtils } from './common-utils'
 import { ADMIN, CONSUMER } from './dtos'
 import { HttpExceptionFilter } from './filters'
 import { TransformResponseInterceptor } from './interceptors'
-import { checkProvidedEnvs } from './utils'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -114,7 +114,7 @@ async function bootstrap() {
   const dbConfig = knexfile[configService.get<string>(`NODE_ENV`)]
   const dbConnectionMessage = [`Database:`, JSON.stringify(dbConfig.connection, null, 2)]
   const startMessage = `Server started on = http://${NEST_APP_HOST}:${NEST_APP_PORT}`
-  const cb = () => (checkProvidedEnvs(process.cwd())(), console.log(startMessage), console.log(...dbConnectionMessage))
+  const cb = () => (commonUtils.checkProvidedEnvs(process.cwd())(), console.log(startMessage), console.log(...dbConnectionMessage))
   await app.listen(NEST_APP_PORT, NEST_APP_HOST, cb)
   return app
 }

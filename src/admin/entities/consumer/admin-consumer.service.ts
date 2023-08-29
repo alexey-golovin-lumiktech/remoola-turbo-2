@@ -3,7 +3,8 @@ import { Inject, Injectable } from '@nestjs/common'
 import { IConsumerModel } from '@wirebill/shared-common/models'
 
 import { BaseService } from '../../../common'
-import { generatePasswordHash, generatePasswordHashSalt } from '../../../utils'
+import { commonUtils } from '../../../common-utils'
+import { ADMIN } from '../../../dtos'
 import { AdminGoogleProfileDetailsService } from '../google-profile-details/admin-google-profile-details.service'
 
 import { AdminConsumerRepository } from './admin-consumer.repository'
@@ -18,19 +19,20 @@ export class AdminConsumerService extends BaseService<IConsumerModel, AdminConsu
   }
 
   findByEmail(email: string): Promise<IConsumerModel | null> {
-    return this.repository.qb.where({ email }).first()
+    return this.repository.findOne({ email })
   }
 
-  async create(body: any): Promise<IConsumerModel> {
-    const salt = generatePasswordHashSalt(10)
-    const password = generatePasswordHash({ password: body.password, salt })
-    return this.repository.create({ ...body, password, salt })
+  create(body: ADMIN.ConsumerCreate): Promise<IConsumerModel> {
+    const salt = commonUtils.getHashingSalt(10)
+    const hash = commonUtils.hashPassword({ password: body.password, salt })
+    return this.repository.create({ ...body, password: hash, salt })
   }
 
-  async update(consumerId: string, body: any): Promise<IConsumerModel> {
-    const salt = generatePasswordHashSalt(10)
-    const password = generatePasswordHash({ password: body.password, salt })
-    const updated = await this.repository.updateById(consumerId, { ...body, ...(body.password != null && { password, salt }) })
-    return updated
+  update(consumerId: string, body: ADMIN.ConsumerUpdate): Promise<IConsumerModel> {
+    if (body.password != null) {
+      body.salt = commonUtils.getHashingSalt(10)
+      body.password = commonUtils.hashPassword({ password: body.password, salt: body.salt })
+    }
+    return this.repository.updateById(consumerId, body)
   }
 }

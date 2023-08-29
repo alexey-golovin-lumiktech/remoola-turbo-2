@@ -1,7 +1,7 @@
 import type { Knex as IKnex } from 'knex'
 import { isEmpty, isNil, snakeCase } from 'lodash'
 
-import { queryBuilder } from '../utils'
+import { dbQuerying } from './db-querying'
 
 export class ChainedQB {
   constructor(private readonly qb: IKnex.QueryBuilder<{}, any>) {}
@@ -10,7 +10,7 @@ export class ChainedQB {
     let raw = ``
     for (const [field, value] of Object.entries(filter)) {
       if (isNil(value)) continue
-      if (Array.isArray(value)) raw += `${snakeCase(field)} IN(${queryBuilder.makeSqlIn(value)})`
+      if (Array.isArray(value)) raw += `${snakeCase(field)} IN(${dbQuerying.makeSqlIn(value)})`
       else raw += `${snakeCase(field)} = '${String(value)}'`
       if (!isEmpty(raw.trim())) this.qb.andWhereRaw(raw)
     }

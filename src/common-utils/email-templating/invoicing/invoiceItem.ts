@@ -1,6 +1,6 @@
 import { CurrencyCode } from '@wirebill/shared-common/enums'
 
-import { formatToCurrency } from '../..'
+import { formatToCurrency } from '../../format-to-currency'
 
 const html = `
   <tr>

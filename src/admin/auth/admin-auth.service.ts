@@ -5,9 +5,9 @@ import * as uuid from 'uuid'
 
 import { IAdminModel } from '@wirebill/shared-common/models'
 
+import { commonUtils } from '../../common-utils'
 import * as constants from '../../constants'
 import { ADMIN } from '../../dtos'
-import { passwordsIsEqual } from '../../utils'
 import { AdminService } from '../entities/admin/admin.service'
 
 @Injectable()
@@ -24,7 +24,7 @@ export class AdminAuthService {
     const admin = await this.adminsService.findByEmail(email)
     if (!admin) throw new BadRequestException(constants.INVALID_CREDENTIALS)
 
-    const isValidPassword = await passwordsIsEqual({ incomingPass: password, password: admin.password, salt: admin.salt })
+    const isValidPassword = await commonUtils.validatePassword({ incomingPass: password, password: admin.password, salt: admin.salt })
     if (!isValidPassword) throw new BadRequestException(constants.INVALID_CREDENTIALS)
 
     return admin

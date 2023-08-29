@@ -11,16 +11,15 @@ import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import express from 'express'
 import { OAuth2Client } from 'google-auth-library'
-import { IJwtTokenPayload } from 'src/dtos/consumer/jwt-payload.dto'
 import * as uuid from 'uuid'
 
-import { IChangePasswordBody, IChangePasswordParam } from '@wirebill/shared-common/dtos'
-import { HowDidHearAboutUs } from '@wirebill/shared-common/enums'
-import { IBaseModel, IConsumerModel } from '@wirebill/shared-common/models'
+import { IChangePasswordBody, IChangePasswordParam, IConsumerCreate } from '@wirebill/shared-common/dtos'
+import { IConsumerModel } from '@wirebill/shared-common/models'
 
 import { MailingService } from '../../common-shared-modules/mailing/mailing.service'
+import { commonUtils } from '../../common-utils'
 import { CONSUMER } from '../../dtos'
-import * as utils from '../../utils'
+import { IJwtTokenPayload } from '../../dtos/consumer/jwt-payload.dto'
 import { ConsumerService } from '../entities/consumer/consumer.service'
 import { GoogleProfileDetailsService } from '../entities/google-profile-details/google-profile-details.service'
 import { ResetPasswordService } from '../entities/reset-password/reset-password.service'
@@ -48,20 +47,20 @@ export class AuthService {
       const verified = await this.oAuth2Client.verifyIdToken({ idToken: credential })
       const rawGoogleProfile = new CONSUMER.CreateGoogleProfileDetails(verified.getPayload())
 
-      const consumerData = this.extractConsumerData(rawGoogleProfile)
+      const consumerData = this.extractConsumerFromGoogleProfile(rawGoogleProfile)
       let consumer = await this.consumerService.repository.findOne({ email: consumerData.email })
 
       if (!consumer) {
-        const temporaryGeneratedStrongPassword = utils.generateStrongPassword()
-        const salt = utils.generatePasswordHashSalt()
-        const hash = utils.generatePasswordHash({ password: temporaryGeneratedStrongPassword, salt })
+        const tmpPassword = commonUtils.generateStrongPassword()
+        const salt = commonUtils.getHashingSalt()
+        const hash = commonUtils.hashPassword({ password: tmpPassword, salt })
         consumer = await this.consumerService.upsert({ ...consumerData, password: hash, salt, accountType, contractorKind })
         if (consumer.deletedAt != null) throw new BadRequestException(`Consumer is suspended, please contact the support`)
 
         const googleProfileDetails = await this.googleProfileDetailsService.upsert(consumer.id, rawGoogleProfile)
         if (googleProfileDetails.deletedAt != null) throw new BadRequestException(`Profile is suspended, please contact the support`)
 
-        await this.mailingService.sendConsumerTemporaryPasswordForGoogleOAuth({ email: consumer.email, temporaryGeneratedStrongPassword })
+        await this.mailingService.sendConsumerTemporaryPasswordForGoogleOAuth({ email: consumer.email, tmpPassword })
         consumer.googleProfileDetailsId = googleProfileDetails.id
       }
 
@@ -77,37 +76,34 @@ export class AuthService {
   async login(identity: IConsumerModel): Promise<CONSUMER.LoginResponse> {
     const accessToken = this.generateToken(identity)
     const refreshToken = this.generateRefreshToken() //@IMPORTANT_NOTE: need to store refresh token
-    return utils.toResponse(CONSUMER.LoginResponse, Object.assign(identity, { accessToken, refreshToken: refreshToken.token }))
+    return commonUtils.convertPlainToClassInstance(
+      CONSUMER.LoginResponse,
+      Object.assign(identity, { accessToken, refreshToken: refreshToken.token }),
+    )
   }
 
-  private extractConsumerData(
-    dto: CONSUMER.CreateGoogleProfileDetails,
-  ): Omit<IConsumerModel, keyof IBaseModel | `accountType` | `contractorKind` | `password` | `salt`> {
-    const fullName = dto.name.split(` `)
+  private extractConsumerFromGoogleProfile(dto: CONSUMER.CreateGoogleProfileDetails): Omit<IConsumerCreate, `verified` | `legalVerified`> {
+    const { name, email, givenName, familyName } = dto
 
-    return {
-      email: dto.email,
-      verified: dto.emailVerified,
-      legalVerified: false, //@IMPORTANT_NOTE: should be "true" only when users who have provided documents for bank transfer
-      howDidHearAboutUs: HowDidHearAboutUs.Google, //@IMPORTANT_NOTE: random
-      firstName: dto.givenName || fullName[0],
-      lastName: dto.familyName || fullName[1],
-    }
+    const [fullNameFirstName, fullNameLastName] = name.split(` `)
+    const firstName = givenName || fullNameFirstName
+    const lastName = familyName || fullNameLastName
+
+    return { email, firstName, lastName }
   }
 
   async signup(body: CONSUMER.SignupRequest): Promise<CONSUMER.ConsumerResponse | never> {
     const exist = await this.consumerService.repository.findOne({ email: body.email })
     if (exist) throw new BadRequestException(`This email is already exist`)
 
-    const salt = utils.generatePasswordHashSalt()
-    const hash = utils.generatePasswordHash({ password: body.password, salt })
+    const salt = commonUtils.getHashingSalt()
+    const hash = commonUtils.hashPassword({ password: body.password, salt })
     const consumer = await this.consumerService.upsert({
       accountType: body.accountType,
       contractorKind: body.contractorKind,
       email: body.email,
       firstName: body.firstName,
       lastName: body.lastName,
-      verified: false,
       password: hash,
       salt,
     })
@@ -153,8 +149,8 @@ export class AuthService {
     if (body.password == null) throw new BadRequestException(`Password is required`)
 
     const verified = await this.verifyChangePasswordFlowToken(param.token)
-    const salt = utils.generatePasswordHashSalt()
-    const hash = utils.generatePasswordHash({ password: body.password, salt })
+    const salt = commonUtils.getHashingSalt()
+    const hash = commonUtils.hashPassword({ password: body.password, salt })
     await this.consumerService.repository.updateById(verified.identityId, { salt, password: hash })
     await this.resetPasswordService.removeAllConsumerRecords(verified.identityId)
     return true

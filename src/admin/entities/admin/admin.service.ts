@@ -3,8 +3,8 @@ import { BadRequestException, Inject, Injectable } from '@nestjs/common'
 import { IAdminModel } from '@wirebill/shared-common/models'
 
 import { BaseService } from '../../../common'
+import { commonUtils } from '../../../common-utils'
 import { ADMIN } from '../../../dtos'
-import { generatePasswordHash, generatePasswordHashSalt, passwordsIsEqual } from '../../../utils'
 
 import { AdminRepository } from './admin.repository'
 
@@ -15,29 +15,29 @@ export class AdminService extends BaseService<IAdminModel, AdminRepository> {
   }
 
   findByEmail(email: string): Promise<IAdminModel | null> {
-    return this.repository.qb.where({ email }).first()
+    return this.repository.findOne({ email })
   }
 
   async create(body: ADMIN.AdminCreate): Promise<IAdminModel> {
-    const salt = generatePasswordHashSalt(10)
-    const password = generatePasswordHash({ password: body.password, salt })
-    return this.repository.create({ ...body, salt, password })
+    const salt = commonUtils.getHashingSalt(10)
+    const hash = commonUtils.hashPassword({ password: body.password, salt })
+    return this.repository.create({ ...body, password: hash, salt })
   }
 
   async update(adminId: string, body: ADMIN.AdminUpdate): Promise<IAdminModel> {
     const admin = await this.repository.findById(adminId)
     if (!admin) throw new BadRequestException(`No admin for provided adminId: ${adminId}`)
 
-    const incomingBodyPasswordIsEqualToAdminExistPassword = passwordsIsEqual({
+    const validPassword = commonUtils.validatePassword({
       incomingPass: body.password,
       password: admin.password,
       salt: admin.salt,
     })
 
-    if (!incomingBodyPasswordIsEqualToAdminExistPassword) {
-      const salt = generatePasswordHashSalt(10)
-      const password = generatePasswordHash({ password: body.password, salt: admin.salt })
-      return this.repository.updateById(adminId, { ...body, salt, password })
+    if (validPassword == false) {
+      const salt = commonUtils.getHashingSalt(10)
+      const hash = commonUtils.hashPassword({ password: body.password, salt })
+      return this.repository.updateById(adminId, { ...body, password: hash, salt })
     }
 
     return this.repository.updateById(adminId, body)
