@@ -1,6 +1,6 @@
 import { Knex } from 'knex'
 
-import { AccountType, ContractorKind, HowDidHearAboutUs } from '@wirebill/shared-common/enums'
+import { AccountType, ContractorKind } from '@wirebill/shared-common/enums'
 import { TableName } from '@wirebill/shared-common/models'
 
 import { addAuditColumns, addUUIDPrimaryKey } from './migration-utils'
@@ -19,22 +19,19 @@ export async function up(knex: Knex): Promise<void> {
   return knex.schema.createTable(tableName, table => {
     addUUIDPrimaryKey(table, knex)
 
-    table
-      .string(`account_type`) //
-      .checkIn(Checks.AccountType.values, Checks.AccountType.name)
-      .defaultTo(null)
-      .nullable()
-    table.string(`contractor_kind`).checkIn(Checks.ContractorKind.values, Checks.ContractorKind.name).defaultTo(null).nullable()
-    table.string(`email`).unique().notNullable()
-    table.boolean(`verified`).defaultTo(false).notNullable()
-    table.boolean(`legal_verified`).defaultTo(false).notNullable().comment(`only when user provide docs`)
+    table.string(`email`).notNullable().unique()
+    table.boolean(`verified`).notNullable().defaultTo(false)
+    table.boolean(`legal_verified`).notNullable().defaultTo(false).comment(`only when user provide docs`)
 
-    table.string(`how_did_hear_about_us`).defaultTo(HowDidHearAboutUs.Google).notNullable()
-    table.string(`password`).notNullable()
-    table.string(`salt`).notNullable()
-    table.string(`first_name`).notNullable()
-    table.string(`last_name`).notNullable()
-    table.string(`stripe_customer_id`).defaultTo(null).nullable()
+    table.string(`password`).nullable().defaultTo(null)
+    table.string(`salt`).nullable().defaultTo(null)
+    table.string(`first_name`).nullable().defaultTo(null)
+    table.string(`last_name`).nullable().defaultTo(null)
+
+    table.string(`account_type`).checkIn(Checks.AccountType.values, Checks.AccountType.name).nullable().defaultTo(null)
+    table.string(`contractor_kind`).checkIn(Checks.ContractorKind.values, Checks.ContractorKind.name).nullable().defaultTo(null)
+    table.string(`how_did_hear_about_us`).nullable().defaultTo(null)
+    table.string(`stripe_customer_id`).nullable().defaultTo(null)
 
     addAuditColumns(table, knex)
   })

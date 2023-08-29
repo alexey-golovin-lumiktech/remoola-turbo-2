@@ -1,13 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common'
+import { ADMIN } from 'src/dtos'
 
-import { IBaseModel, IConsumerModel } from '@wirebill/shared-common/models'
+import { IConsumerModel } from '@wirebill/shared-common/models'
 
 import { BaseService, IBaseService } from '../../../common'
 import { BillingDetailsService } from '../billing-details/billing-details.service'
 
 import { ConsumerRepository } from './consumer.repository'
-
-type UpsertConsumer = Pick<IConsumerModel, `email`> & Partial<Omit<IConsumerModel, keyof IBaseModel>>
 
 @Injectable()
 export class ConsumerService
@@ -25,7 +24,7 @@ export class ConsumerService
     return this.repository.findById(consumerId)
   }
 
-  async upsert(dto: UpsertConsumer): Promise<IConsumerModel> {
+  async upsert(dto: ADMIN.ConsumerCreate | ADMIN.ConsumerUpdate): Promise<IConsumerModel> {
     const exist = await this.repository.findOne({ email: dto.email })
     const result = exist == null ? await this.repository.create(dto) : await this.repository.updateById(exist.id, dto)
     if (exist == null) await this.addInitialBillingDetails(result) //init empty billing detail for the newest consumer

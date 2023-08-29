@@ -33,13 +33,13 @@ export class AdminConsumerController {
 
   @Post(`/`)
   @ApiOkResponse({ type: ADMIN.ConsumerResponse })
-  create(@Body() body: ADMIN.UpsertConsumer): Promise<ADMIN.ConsumerResponse> {
+  create(@Body() body: ADMIN.ConsumerCreate): Promise<ADMIN.ConsumerResponse> {
     return this.service.create(body)
   }
 
   @Put(`/:consumerId`)
   @ApiOkResponse({ type: ADMIN.ConsumerResponse })
-  update(@Param(`consumerId`) consumerId: string, @Body() body: ADMIN.UpsertConsumer): Promise<ADMIN.ConsumerResponse> {
+  update(@Param(`consumerId`) consumerId: string, @Body() body: ADMIN.ConsumerUpdate): Promise<ADMIN.ConsumerResponse> {
     return this.service.update(consumerId, body)
   }
 
