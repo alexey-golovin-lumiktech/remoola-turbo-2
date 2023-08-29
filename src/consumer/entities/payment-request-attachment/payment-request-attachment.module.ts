@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
-import { ResourceModule } from 'src/common-shared-modules/resource/resource.module'
 
+import { ResourceModule } from '../../../common-shared-modules/resource/resource.module'
 import { ConsumerResourceModule } from '../consumer-resource/consumer-resource.module'
 
 import { PaymentRequestAttachmentRepository } from './payment-request-attachment.repository'

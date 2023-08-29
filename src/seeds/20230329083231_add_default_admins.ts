@@ -4,7 +4,7 @@ import { IAdminCreate } from '@wirebill/shared-common/dtos'
 import { AdminType } from '@wirebill/shared-common/enums'
 import { TableName } from '@wirebill/shared-common/models'
 
-import * as utils from '../utils'
+import { commonUtils } from '../common-utils'
 
 export async function seed(knex: Knex): Promise<void> {
   const admins: Omit<IAdminCreate, `salt`>[] = [
@@ -16,8 +16,8 @@ export async function seed(knex: Knex): Promise<void> {
   await knex.from(TableName.Admin).whereIn(`email`, emails).del()
 
   for (const admin of admins) {
-    const salt = utils.generatePasswordHashSalt(4)
-    const hash = utils.generatePasswordHash({ password: admin.password, salt })
+    const salt = commonUtils.getHashingSalt(4)
+    const hash = commonUtils.hashPassword({ password: admin.password, salt })
     const data: IAdminCreate[] = [{ email: admin.email, type: admin.type, salt: salt, password: hash }]
     await knex.insert(data).into(TableName.Admin).returning(`*`)
   }

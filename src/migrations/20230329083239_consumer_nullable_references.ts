@@ -12,7 +12,7 @@ const tableName = TableName.Consumer
  - "organization_details"
  - "google_profile_details"
  - "billing_details"
-reason: to avoid manually set(update) ref tables PK for "consumer" table after inserting new row
+  reason: to avoid manually set(update) ref tables PK for "consumer" table after inserting new row
 */
 
 const refs = [
@@ -77,9 +77,11 @@ export async function down(knex: Knex): Promise<void | void[]> {
   return Promise.all(
     refs.map(({ columnName, trigger, inRefTable }) => {
       return knex.raw(`DROP TRIGGER IF EXISTS ${trigger} ON ${inRefTable};`).then(() => {
-        return knex.schema.hasColumn(tableName, columnName).then(existColumn => {
-          if (!existColumn) return null
-          return knex.schema.table(tableName, table => table.dropColumn(columnName))
+        return knex.raw(`DROP FUNCTION IF EXISTS ${trigger}`).then(() => {
+          return knex.schema.hasColumn(tableName, columnName).then(existColumn => {
+            if (!existColumn) return null
+            return knex.schema.table(tableName, table => table.dropColumn(columnName))
+          })
         })
       })
     }),

@@ -1,7 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common'
-import { BaseService } from 'src/common'
 
 import { ICreditCardModel } from '@wirebill/shared-common/models'
+
+import { BaseService } from '../../../common'
 
 import { CreditCardRepository } from './credit-card.repository'
 

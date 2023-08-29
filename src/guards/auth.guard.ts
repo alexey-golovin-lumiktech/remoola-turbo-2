@@ -9,9 +9,9 @@ import { IAdminModel, IConsumerModel } from '@wirebill/shared-common/models'
 import { AuthHeaderValue } from '@wirebill/shared-common/types'
 
 import { AdminService } from '../admin/entities/admin/admin.service'
+import { commonUtils } from '../common-utils'
 import { ConsumerService } from '../consumer/entities/consumer/consumer.service'
 import { IS_PUBLIC } from '../decorators'
-import { passwordsIsEqual } from '../utils'
 
 export const REQUEST_AUTH_IDENTITY = Symbol(`REQUEST_AUTH_IDENTITY`)
 export const ReqAuthIdentity = createParamDecorator((_, context: ExecutionContext) => {
@@ -75,7 +75,7 @@ export class AuthGuard implements CanActivate {
     if (request.url.startsWith(`/consumer/`) && !consumer) return this.throwError(`Only for consumers`)
     if ((identity as IConsumerModel).verified == false) return this.throwError(GuardMessage.NOT_VERIFIED)
 
-    const isValidPassword = passwordsIsEqual({
+    const isValidPassword = commonUtils.validatePassword({
       incomingPass: password,
       password: identity.password ?? ``,
       salt: identity.salt ?? ``,

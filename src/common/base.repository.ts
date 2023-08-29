@@ -6,8 +6,8 @@ import moment from 'moment'
 import { IBaseModel, TableNameValue } from '@wirebill/shared-common/models'
 import { ReqQuery, ReqQueryComparisonFilter, ReqQueryFilter } from '@wirebill/shared-common/types'
 
+import { commonUtils } from '../common-utils'
 import { ListResponse } from '../dtos/common'
-import { getKnexCount, queryBuilder } from '../utils'
 
 export interface IBaseRepository<TModel extends IBaseModel> {
   create(dto: Partial<TModel>): Promise<TModel>
@@ -53,7 +53,7 @@ export abstract class BaseRepository<TModel extends IBaseModel> implements IBase
         }
 
         let raw = ``
-        if (Array.isArray(value)) raw += `${snakeCase(attr)} IN(${queryBuilder.makeSqlIn(value)})`
+        if (Array.isArray(value)) raw += `${snakeCase(attr)} IN(${commonUtils.dbQuerying.makeSqlIn(value)})`
         else raw += `${snakeCase(attr)} = '${String(value)}'`
         if (!isEmpty(raw.trim()) && raw.includes(String(value))) q.andWhereRaw(raw)
       }
@@ -98,7 +98,9 @@ export abstract class BaseRepository<TModel extends IBaseModel> implements IBase
   async findAndCountAll(query: ReqQuery<TModel> = {}): Promise<ListResponse<TModel>> {
     const columns = await this.getColumns(this.tableName)
     const qb = this.qb.clone() /* @IMPORTANT_NOTE: baseQuery.clone() is required */
-    const count = await qb.count().then(getKnexCount) /* @IMPORTANT_NOTE: qb.count() should be called before queryBuilder */
+    const count = await qb
+      .count()
+      .then(commonUtils.dbQuerying.getKnexCount) /* @IMPORTANT_NOTE: qb.count() should be called before queryBuilder */
 
     if (query) {
       this.queryBuilder(

@@ -229,7 +229,6 @@ export class ConsumerController {
     @ReqAuthIdentity() identity: IConsumerModel,
     @Body() body: CONSUMER.ContactCreate,
   ): Promise<CONSUMER.ContactResponse> {
-    console.log(`[body]`, body)
     const exist = await this.contactService.repository.findOne({ deletedAt: null, email: body.email, consumerId: identity.id })
     if (exist) throw new BadRequestException(`Contact for provided email: ${body.email} is already exist`)
     return this.contactService.repository.create({ ...body, consumerId: identity.id })

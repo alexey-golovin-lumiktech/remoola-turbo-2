@@ -9,8 +9,8 @@ import { IConsumerModel, IPaymentRequestModel, TableName } from '@wirebill/share
 import { ReqQuery, TimelineFilter } from '@wirebill/shared-common/types'
 
 import { BaseService } from '../../../common'
+import { commonUtils } from '../../../common-utils'
 import { CONSUMER } from '../../../dtos'
-import { getKnexCount, plainToInstance } from '../../../utils'
 import { ConsumerService } from '../consumer/consumer.service'
 import { PaymentRequestAttachmentService } from '../payment-request-attachment/payment-request-attachment.service'
 
@@ -31,7 +31,7 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
     query: ReqQuery<IPaymentRequestModel>,
     timelineFilter: Unassignable<TimelineFilter<IPaymentRequestModel>>,
   ): Promise<CONSUMER.PaymentRequestListResponse> {
-    const filters = <T>(qb: Knex.QueryBuilder<T>) => {
+    const withFilters = <T>(qb: Knex.QueryBuilder<T>) => {
       if (query.filter) qb.where(query.filter)
       if (timelineFilter) {
         qb.where(
@@ -47,11 +47,11 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
       .join(`${TableName.Consumer} as requester`, `requester.id`, `p.requester_id`)
       .join(`${TableName.Consumer} as payer`, `payer.id`, `p.payer_id`)
       .where({ requesterId: consumerId })
-      .modify(filters)
+      .modify(withFilters)
       .orWhere({ payerId: consumerId })
-      .modify(filters)
+      .modify(withFilters)
 
-    const count: Awaited<number> = await baseQuery.clone().count().then(getKnexCount)
+    const count: Awaited<number> = await baseQuery.clone().count().then(commonUtils.dbQuerying.getKnexCount)
 
     const data: Awaited<CONSUMER.PaymentRequestResponse[]> = await baseQuery
       .clone()
@@ -103,9 +103,9 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
   }): Promise<CONSUMER.PaymentRequestResponse> {
     try {
       const { identity, files } = dto
-      const { contactEmail, ...restBody } = dto.body
+      const { contactEmail: email, ...restBody } = dto.body
 
-      const consumer = await this.consumerService.repository.findOne({ email: contactEmail })
+      const consumer = await this.consumerService.upsert({ email })
       console.log(`[consumer]`, consumer)
 
       /* check payments on ui pay!!!!!
@@ -122,7 +122,7 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
       const paymentRequestData: IPaymentRequestCreate = {
         requesterId: consumer.id,
         payerId: identity.id,
-        transactionStatus: TransactionStatus.Completed,
+        transactionStatus: TransactionStatus.WaitingRecipientApproval,
         transactionId: restBody.transactionType == TransactionType.BankTransfer ? null : stripeLogicStub.transactionId,
         dueBy: now,
         sentDate: now,
@@ -132,11 +132,19 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
 
       const created = await this.repository.create(paymentRequestData)
       if (files.length != 0) await this.paymentRequestAttachmentService.createMany(created.requesterId, created.id, files)
-      const transformed = plainToInstance(CONSUMER.PaymentRequestResponse, created)
+      const transformed = commonUtils.convertPlainToClassInstance(CONSUMER.PaymentRequestResponse, created)
       console.log(`[transformed]`, transformed)
       return transformed
     } catch (error) {
       console.log(`[error]`, error)
     }
+  }
+
+  private async getExistOcreateConsumer(email: string) {
+    const exist = await this.consumerService.repository.findOne({ email })
+    if (exist != null) return exist
+
+    const consumer = await this.consumerService.repository.create({ email })
+    return consumer
   }
 }
