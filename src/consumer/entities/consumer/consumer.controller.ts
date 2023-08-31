@@ -59,39 +59,61 @@ export class ConsumerController {
   @ApiOkResponse({ type: CONSUMER.GoogleProfileDetailsResponse })
   @TransformResponse(CONSUMER.GoogleProfileDetailsResponse)
   getConsumerGoogleProfileDetails(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.GoogleProfileDetailsResponse | null> {
-    return this.googleProfileDetailsService.repository.findOne({ deletedAt: null, consumerId: identity.id })
+    return this.googleProfileDetailsService.repository.findOne({ deletedAt: null, id: identity.googleProfileDetailsId })
   }
 
   @Get(`/personal-details`)
   @ApiOkResponse({ type: CONSUMER.PersonalDetailsResponse })
   @TransformResponse(CONSUMER.PersonalDetailsResponse)
   getConsumerPersonalDetails(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.PersonalDetailsResponse | null> {
-    return this.personalDetailsService.repository.findOne({ deletedAt: null, consumerId: identity.id })
+    return this.personalDetailsService.repository.findOne({ deletedAt: null, id: identity.personalDetailsId })
   }
 
   @Get(`/address-details`)
   @ApiOkResponse({ type: CONSUMER.AddressDetailsResponse })
   @TransformResponse(CONSUMER.AddressDetailsResponse)
   getConsumerAddressDetails(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.AddressDetailsResponse | null> {
-    return this.addressDetailsService.repository.findOne({ deletedAt: null, consumerId: identity.id })
+    return this.addressDetailsService.repository.findOne({ deletedAt: null, id: identity.addressDetailsId })
   }
 
   @Get(`/organization-details`)
   @ApiOkResponse({ type: CONSUMER.OrganizationDetailsResponse })
   @TransformResponse(CONSUMER.OrganizationDetailsResponse)
   getConsumerOrganizationDetails(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.OrganizationDetailsResponse | null> {
-    return this.organizationDetailsService.repository.findOne({ deletedAt: null, consumerId: identity.id })
+    return this.organizationDetailsService.repository.findOne({ deletedAt: null, id: identity.organizationDetailsId })
   }
 
-  @Get(`/payment-requests`)
+  @Get(`/payment-requests/sent`)
   @ApiOkResponse({ type: CONSUMER.PaymentRequestListResponse })
   @TransformResponse(CONSUMER.PaymentRequestListResponse)
-  getConsumerPaymentRequestsList(
+  getSentPaymentRequestsList(
     @ReqAuthIdentity() identity: IConsumerModel,
     @Query(new ReqQueryTransformPipe()) query: ReqQuery<IPaymentRequestModel>,
     @Query(`timelineFilter`, ParseJsonPipe) timelineFilter: Unassignable<TimelineFilter<IPaymentRequestModel>>,
   ): Promise<CONSUMER.PaymentRequestListResponse> {
-    return this.paymentRequestService.getConsumerPaymentRequestsList(identity.id, query, timelineFilter)
+    return this.paymentRequestService.getSentPaymentRequestsList(identity.id, query, timelineFilter)
+  }
+
+  @Get(`/payment-requests/received`)
+  @ApiOkResponse({ type: CONSUMER.PaymentRequestListResponse })
+  @TransformResponse(CONSUMER.PaymentRequestListResponse)
+  getReceivedPaymentRequestsList(
+    @ReqAuthIdentity() identity: IConsumerModel,
+    @Query(new ReqQueryTransformPipe()) query: ReqQuery<IPaymentRequestModel>,
+    @Query(`timelineFilter`, ParseJsonPipe) timelineFilter: Unassignable<TimelineFilter<IPaymentRequestModel>>,
+  ): Promise<CONSUMER.PaymentRequestListResponse> {
+    return this.paymentRequestService.getReceivedPaymentRequestsList(identity.id, query, timelineFilter)
+  }
+
+  @Get(`/payment-requests/history`)
+  @ApiOkResponse({ type: CONSUMER.PaymentRequestListResponse })
+  @TransformResponse(CONSUMER.PaymentRequestListResponse)
+  getPaymentRequestsHistory(
+    @ReqAuthIdentity() identity: IConsumerModel,
+    @Query(new ReqQueryTransformPipe()) query: ReqQuery<IPaymentRequestModel>,
+    @Query(`timelineFilter`, ParseJsonPipe) timelineFilter: Unassignable<TimelineFilter<IPaymentRequestModel>>,
+  ): Promise<CONSUMER.PaymentRequestListResponse> {
+    return this.paymentRequestService.getPaymentRequestsHistory(identity.id, query, timelineFilter)
   }
 
   @Post(`/payment-requests/pay-to-contact`)

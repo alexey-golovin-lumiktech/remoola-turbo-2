@@ -12,10 +12,6 @@ import { BaseModel } from '../common/base-model.dto'
 class PersonalDetails extends BaseModel implements IPersonalDetailsModel {
   @Expose()
   @ApiProperty()
-  consumerId: string
-
-  @Expose()
-  @ApiProperty()
   citizenOf: string
 
   @Expose()
@@ -47,7 +43,6 @@ class PersonalDetails extends BaseModel implements IPersonalDetailsModel {
 export class PersonalDetailsResponse extends OmitType(PersonalDetails, [`deletedAt`] as const) {}
 export class PersonalDetailsCreate
   extends PickType(PersonalDetails, [
-    `consumerId`,
     `citizenOf`,
     `dateOfBirth`,
     `passportOrIdNumber`,

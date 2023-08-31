@@ -68,7 +68,7 @@ export class AuthController {
     @Param(`consumerId`) consumerId: string,
     @Body() body: CONSUMER.PersonalDetailsCreate,
   ): Promise<CONSUMER.PersonalDetailsResponse | never> {
-    return this.personalDetailsService.upsert({ ...body, consumerId })
+    return this.personalDetailsService.upsert(consumerId, body)
   }
 
   @PublicEndpoint()
@@ -77,7 +77,7 @@ export class AuthController {
     @Param(`consumerId`) consumerId: string,
     @Body() body: CONSUMER.OrganizationDetailsCreate,
   ): Promise<CONSUMER.OrganizationDetailsResponse | never> {
-    return this.organizationDetailsService.upsert({ ...body, consumerId })
+    return this.organizationDetailsService.upsert(consumerId, body)
   }
 
   @PublicEndpoint()
@@ -86,7 +86,7 @@ export class AuthController {
     @Param(`consumerId`) consumerId: string,
     @Body() body: CONSUMER.AddressDetailsCreate,
   ): Promise<CONSUMER.AddressDetailsResponse | never> {
-    return this.addressDetailsService.upsert({ ...body, consumerId })
+    return this.addressDetailsService.upsert(consumerId, body)
   }
 
   @PublicEndpoint()

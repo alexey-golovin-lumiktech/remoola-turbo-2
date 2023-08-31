@@ -1,6 +1,13 @@
 import { Knex } from 'knex'
 
-import { TableName } from '@wirebill/shared-common/models'
+import { IConsumerCreate } from '@wirebill/shared-common/dtos'
+import {
+  IAddressDetailsModel,
+  IGoogleProfileDetailsModel,
+  IOrganizationDetailsModel,
+  IPersonalDetailsModel,
+  TableName,
+} from '@wirebill/shared-common/models'
 
 import { default as dummyConsumers } from './dummy-consumers.json'
 
@@ -10,37 +17,47 @@ export async function seed(knex: Knex): Promise<void> {
 
   for (const dummyConsumerData of dummyConsumers) {
     const { googleProfileDetails, personalDetails, addressDetails, organizationDetails, billingDetails, ...rawConsumer } = dummyConsumerData
-    const [consumer] = await knex.insert([rawConsumer]).into(TableName.Consumer).returning(`*`)
+    const consumerData = { ...rawConsumer } as IConsumerCreate
     if (googleProfileDetails != null) {
-      await knex
-        .insert([{ ...googleProfileDetails, metadata: JSON.stringify(googleProfileDetails), consumerId: consumer.id }])
-        .into(TableName.GoogleProfileDetails)
+      const [inserted] = await knex
+        .insert([{ ...googleProfileDetails, metadata: JSON.stringify(googleProfileDetails) }])
+        .into<IGoogleProfileDetailsModel>(TableName.GoogleProfileDetails)
         .returning(`*`)
+      if (inserted == null) console.log(`[LOST GoogleProfileDetails]`), process.exit(1)
+
+      consumerData.googleProfileDetailsId = inserted.id
     }
     if (personalDetails != null) {
-      await knex
-        .insert([{ ...personalDetails, consumerId: consumer.id }])
-        .into(TableName.PersonalDetails)
+      const [inserted] = await knex
+        .insert([{ ...personalDetails }])
+        .into<IPersonalDetailsModel>(TableName.PersonalDetails)
         .returning(`*`)
+      if (inserted == null) console.log(`[LOST PersonalDetails]`), process.exit(1)
+
+      consumerData.personalDetailsId = inserted.id
     }
     if (addressDetails != null) {
-      await knex
-        .insert([{ ...addressDetails, consumerId: consumer.id }])
-        .into(TableName.AddressDetails)
+      const [inserted] = await knex
+        .insert([{ ...addressDetails }])
+        .into<IAddressDetailsModel>(TableName.AddressDetails)
         .returning(`*`)
+      if (inserted == null) console.log(`[LOST AddressDetails]`), process.exit(1)
+
+      consumerData.addressDetailsId = inserted.id
     }
     if (organizationDetails != null) {
-      await knex
-        .insert([{ ...organizationDetails, consumerId: consumer.id }])
-        .into(TableName.OrganizationDetails)
+      const [inserted] = await knex
+        .insert([{ ...organizationDetails }])
+        .into<IOrganizationDetailsModel>(TableName.OrganizationDetails)
         .returning(`*`)
+      if (inserted == null) console.log(`[LOST OrganizationDetails]`), process.exit(1)
+
+      consumerData.organizationDetailsId = inserted.id
     }
-    if (billingDetails != null) {
-      await knex
-        .insert([{ ...billingDetails, consumerId: consumer.id }])
-        .into(TableName.BillingDetails)
-        .returning(`*`)
-    }
+
+    const [consumer] = await knex.insert([consumerData]).into(TableName.Consumer).returning(`*`)
+    if (consumer == null) console.log(`[LOST Consumer]`), process.exit(1)
+
     console.count(`[SUCCESS CREATED DUMMY CONSUMER]`)
   }
 }

@@ -8,8 +8,8 @@ import { addAuditColumns, addUUIDPrimaryKey } from './migration-utils'
 const tableName = TableName.Consumer
 
 const Checks = {
-  AccountType: { name: `account_type_value_constraint`, values: Object.values(AccountType) },
-  ContractorKind: { name: `contractor_kind_value_constraint`, values: Object.values(ContractorKind) },
+  AccountType: { name: `consumer_account_type_value_constraint`, values: Object.values(AccountType) },
+  ContractorKind: { name: `consumer_contractor_kind_value_constraint`, values: Object.values(ContractorKind) },
 } as const
 
 export async function up(knex: Knex): Promise<void> {

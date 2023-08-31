@@ -4,7 +4,7 @@ import { snakeCase } from 'lodash'
 import moment from 'moment'
 
 import { IPaymentRequestCreate } from '@wirebill/shared-common/dtos'
-import { TransactionStatus, TransactionType } from '@wirebill/shared-common/enums'
+import { TransactionStatus } from '@wirebill/shared-common/enums'
 import { IConsumerModel, IPaymentRequestModel, TableName } from '@wirebill/shared-common/models'
 import { ReqQuery, TimelineFilter } from '@wirebill/shared-common/types'
 
@@ -26,7 +26,97 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
     super(repository)
   }
 
-  async getConsumerPaymentRequestsList(
+  async getSentPaymentRequestsList(
+    consumerId: string,
+    query: ReqQuery<IPaymentRequestModel>,
+    timelineFilter: Unassignable<TimelineFilter<IPaymentRequestModel>>,
+  ): Promise<CONSUMER.PaymentRequestListResponse> {
+    const withFilters = <T>(qb: Knex.QueryBuilder<T>) => {
+      if (query.filter) qb.where(query.filter)
+      if (timelineFilter) {
+        qb.where(
+          `p.${snakeCase(timelineFilter.field)}`,
+          timelineFilter.comparison,
+          moment.utc(timelineFilter.value).startOf(`day`).format(`YYYY-MM-DD`),
+        )
+      }
+    }
+
+    const baseQuery = this.repository.knex
+      .from(`${TableName.PaymentRequest} as p`)
+      .join(`${TableName.Consumer} as requester`, `requester.id`, `p.requester_id`)
+      .join(`${TableName.Consumer} as payer`, `payer.id`, `p.payer_id`)
+      .where({ requesterId: consumerId })
+      .modify(withFilters)
+
+    const count: Awaited<number> = await baseQuery.clone().count().then(commonUtils.dbQuerying.getKnexCount)
+
+    const data: Awaited<CONSUMER.PaymentRequestResponse[]> = await baseQuery
+      .clone()
+      .modify(qb => {
+        if (query?.paging?.limit) qb.limit(query.paging.limit)
+        if (query?.paging?.offset) qb.offset(query.paging.offset)
+        if (query?.sorting) query.sorting.forEach(({ field, direction }) => qb.orderBy(field, direction))
+      })
+      .select(
+        `p.*`,
+        `requester.first_name as requester_name`,
+        `payer.first_name as payer_name`,
+        `requester.email as requester_email`,
+        `payer.email as payer_email`,
+      )
+
+    for (const item of data) item.attachments = await this.paymentRequestAttachmentService.getAttachmentList(consumerId, item.id)
+    const result = { count, data }
+    return result
+  }
+
+  async getReceivedPaymentRequestsList(
+    consumerId: string,
+    query: ReqQuery<IPaymentRequestModel>,
+    timelineFilter: Unassignable<TimelineFilter<IPaymentRequestModel>>,
+  ): Promise<CONSUMER.PaymentRequestListResponse> {
+    const withFilters = <T>(qb: Knex.QueryBuilder<T>) => {
+      if (query.filter) qb.where(query.filter)
+      if (timelineFilter) {
+        qb.where(
+          `p.${snakeCase(timelineFilter.field)}`,
+          timelineFilter.comparison,
+          moment.utc(timelineFilter.value).startOf(`day`).format(`YYYY-MM-DD`),
+        )
+      }
+    }
+
+    const baseQuery = this.repository.knex
+      .from(`${TableName.PaymentRequest} as p`)
+      .join(`${TableName.Consumer} as requester`, `requester.id`, `p.requester_id`)
+      .join(`${TableName.Consumer} as payer`, `payer.id`, `p.payer_id`)
+      .orWhere({ payerId: consumerId })
+      .modify(withFilters)
+
+    const count: Awaited<number> = await baseQuery.clone().count().then(commonUtils.dbQuerying.getKnexCount)
+
+    const data: Awaited<CONSUMER.PaymentRequestResponse[]> = await baseQuery
+      .clone()
+      .modify(qb => {
+        if (query?.paging?.limit) qb.limit(query.paging.limit)
+        if (query?.paging?.offset) qb.offset(query.paging.offset)
+        if (query?.sorting) query.sorting.forEach(({ field, direction }) => qb.orderBy(field, direction))
+      })
+      .select(
+        `p.*`,
+        `requester.first_name as requester_name`,
+        `payer.first_name as payer_name`,
+        `requester.email as requester_email`,
+        `payer.email as payer_email`,
+      )
+
+    for (const item of data) item.attachments = await this.paymentRequestAttachmentService.getAttachmentList(consumerId, item.id)
+    const result = { count, data }
+    return result
+  }
+
+  async getPaymentRequestsHistory(
     consumerId: string,
     query: ReqQuery<IPaymentRequestModel>,
     timelineFilter: Unassignable<TimelineFilter<IPaymentRequestModel>>,
@@ -68,10 +158,7 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
         `payer.email as payer_email`,
       )
 
-    for (const item of data) {
-      item.attachments = await this.paymentRequestAttachmentService.getAttachmentList(consumerId, item.id)
-    }
-
+    for (const item of data) item.attachments = await this.paymentRequestAttachmentService.getAttachmentList(consumerId, item.id)
     const result = { count, data }
     return result
   }
@@ -101,14 +188,15 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
     files: Array<Express.Multer.File>
     body: CONSUMER.PaymentRequestPayToContact
   }): Promise<CONSUMER.PaymentRequestResponse> {
-    try {
-      const { identity, files } = dto
-      const { contactEmail: email, ...restBody } = dto.body
+    const { identity, files } = dto
+    const { contactEmail, ...restBody } = dto.body
+    const { amount, currencyCode, description, type } = restBody
+    const payerName = identity.firstName
+    const payerEmail = identity.email
 
-      const consumer = await this.consumerService.upsert({ email })
-      console.log(`[consumer]`, consumer)
+    const consumer = await this.getExistingConsumerOrCreatedAndInvitedToSystem(contactEmail)
 
-      /* check payments on ui pay!!!!!
+    /* check payments on ui pay!!!!!
         @IMPORTANT_NOTE: do not forget add stripe logic
         1 создать consumer
         2 добавить логику 
@@ -116,31 +204,38 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
           - отправку письма для контакта которому производиться платёж 
             с приглашением в wirebill если контакт еше не является wirebill.consumer
       */
-      const stripeLogicStub = { transactionId: `stripe-transaction-id` }
-      const now = new Date()
 
-      const paymentRequestData: IPaymentRequestCreate = {
-        requesterId: consumer.id,
-        payerId: identity.id,
-        transactionStatus: TransactionStatus.WaitingRecipientApproval,
-        transactionId: restBody.transactionType == TransactionType.BankTransfer ? null : stripeLogicStub.transactionId,
-        dueBy: now,
-        sentDate: now,
-        paidOn: now,
-        ...restBody,
-      }
-
-      const created = await this.repository.create(paymentRequestData)
-      if (files.length != 0) await this.paymentRequestAttachmentService.createMany(created.requesterId, created.id, files)
-      const transformed = commonUtils.convertPlainToClassInstance(CONSUMER.PaymentRequestResponse, created)
-      console.log(`[transformed]`, transformed)
-      return transformed
-    } catch (error) {
-      console.log(`[error]`, error)
+    const now = new Date()
+    const rawPaymentRequest: IPaymentRequestCreate = {
+      requesterId: consumer.id,
+      payerId: identity.id,
+      status: TransactionStatus.WaitingRecipientApproval,
+      dueDate: now,
+      sentDate: now,
+      expectationDate: now,
+      createdBy: identity.email,
+      updatedBy: identity.email,
+      deletedBy: null,
+      amount: amount,
+      currencyCode: currencyCode,
+      description: description,
+      type: type,
     }
+
+    const paymentRequest = await this.repository.create(rawPaymentRequest)
+    let attachments: CONSUMER.PaymentRequestResponse[`attachments`] = []
+
+    if (files.length != 0) {
+      await this.paymentRequestAttachmentService.createMany(paymentRequest.requesterId, paymentRequest.id, files)
+      attachments = await this.paymentRequestAttachmentService.getAttachmentList(identity.id, paymentRequest.id)
+    }
+
+    const additions = { payerName, payerEmail, requesterName: consumer.firstName, requesterEmail: consumer.email, attachments }
+    const data: CONSUMER.PaymentRequestResponse = { ...paymentRequest, ...additions }
+    return data
   }
 
-  private async getExistOcreateConsumer(email: string) {
+  private async getExistingConsumerOrCreatedAndInvitedToSystem(email: string) {
     const exist = await this.consumerService.repository.findOne({ email })
     if (exist != null) return exist
 

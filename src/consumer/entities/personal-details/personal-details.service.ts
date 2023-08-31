@@ -1,21 +1,31 @@
-import { Inject, Injectable } from '@nestjs/common'
+import { BadRequestException, Inject, Injectable } from '@nestjs/common'
 
 import { IPersonalDetailsModel } from '@wirebill/shared-common/models'
 
 import { BaseService } from '../../../common'
 import { CONSUMER } from '../../../dtos'
+import { ConsumerService } from '../consumer/consumer.service'
 
 import { PersonalDetailsRepository } from './personal-details.repository'
 
 @Injectable()
 export class PersonalDetailsService extends BaseService<IPersonalDetailsModel, PersonalDetailsRepository> {
-  constructor(@Inject(PersonalDetailsRepository) repository: PersonalDetailsRepository) {
+  constructor(
+    @Inject(PersonalDetailsRepository) repository: PersonalDetailsRepository,
+    @Inject(ConsumerService) private readonly consumerService: ConsumerService,
+  ) {
     super(repository)
   }
 
-  async upsert(dto: CONSUMER.PersonalDetailsCreate): Promise<IPersonalDetailsModel> {
-    const exist = await this.repository.findById(dto.consumerId)
-    const personalDetails = exist == null ? await this.repository.create(dto) : await this.repository.updateById(exist.id, dto)
+  async upsert(consumerId: string, body: CONSUMER.PersonalDetailsCreate): Promise<IPersonalDetailsModel> {
+    const consumer = await this.consumerService.repository.findById(consumerId)
+    if (consumer == null) throw new BadRequestException(`Consumer does not exist`)
+
+    const exist = await this.repository.findOne(body)
+    const personalDetails = exist == null ? await this.repository.create(body) : await this.repository.updateById(exist.id, body)
+    if (personalDetails == null) throw new BadRequestException(`Something went wrong for creating address details`)
+
+    await this.consumerService.repository.updateById(consumer.id, { personalDetailsId: personalDetails.id })
     return personalDetails
   }
 }

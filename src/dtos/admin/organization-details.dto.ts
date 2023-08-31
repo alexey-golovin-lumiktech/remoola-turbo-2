@@ -10,10 +10,6 @@ import { BaseModel } from '../common'
 class OrganizationDetails extends BaseModel implements IOrganizationDetailsModel {
   @Expose()
   @ApiProperty()
-  consumerId: string
-
-  @Expose()
-  @ApiProperty()
   name: string
 
   @Expose()

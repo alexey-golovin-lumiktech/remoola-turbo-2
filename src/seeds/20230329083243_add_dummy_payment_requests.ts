@@ -2,7 +2,7 @@ import { Knex } from 'knex'
 
 import { IPaymentRequestCreate } from '@wirebill/shared-common/dtos'
 import { CurrencyCode, TransactionStatus, TransactionType } from '@wirebill/shared-common/enums'
-import { TableName } from '@wirebill/shared-common/models'
+import { IConsumerModel, TableName } from '@wirebill/shared-common/models'
 
 import { default as dummyConsumers } from './dummy-consumers.json'
 
@@ -12,33 +12,36 @@ const getRandomArrayItem = (arr: unknown[]) => arr[Math.round(Math.random() * ar
 
 export async function seed(knex: Knex): Promise<void> {
   const dummyConsumerEmails = dummyConsumers.map(x => x.email)
-  const consumerIds = await knex.from(TableName.Consumer).whereIn(`email`, dummyConsumerEmails).pluck(`id`)
+  const consumers: Awaited<IConsumerModel[]> = await knex.from(TableName.Consumer).whereIn(`email`, dummyConsumerEmails)
+  const consumerIds = consumers.map(x => x.id)
   await knex.from(TableName.PaymentRequest).whereIn(`requesterId`, consumerIds).orWhereIn(`payerId`, consumerIds).del()
 
   const dayInMs = 1000 * 60 * 60 * 24
-  for (const requesterId of consumerIds) {
-    for (const payerId of consumerIds) {
+  for (const { id: requesterId, email: requesterEmail } of consumers) {
+    for (const { id: payerId, email: payerEmail } of consumers) {
       if (requesterId === payerId) continue
-      for (const transactionType of Object.values(TransactionType)) {
+      for (const type of Object.values(TransactionType)) {
         for (const paymentStatus of Object.values(TransactionStatus)) {
           for (const currencyCode of Object.values(CurrencyCode)) {
             const paymentRequest: IPaymentRequestCreate = {
               requesterId: requesterId,
               payerId: payerId,
-              transactionAmount: Math.round(Math.random() * 999),
-              transactionCurrencyCode: currencyCode,
-              transactionStatus: paymentStatus,
-              transactionType: transactionType,
-              transactionId: Math.random().toString(36).slice(2).toUpperCase(),
+              amount: Math.round(Math.random() * 999),
+              currencyCode: currencyCode,
+              status: paymentStatus,
+              type: type,
+              // transactionId: Math.random().toString(36).slice(2).toUpperCase(), ???
               description: getRandomArrayItem(descriptions),
-              dueBy: new Date(Date.now() + dayInMs * Math.round(Math.random() * 29)),
+              dueDate: new Date(Date.now() + dayInMs * Math.round(Math.random() * 29)),
               sentDate: new Date(Date.now() - dayInMs * Math.round(Math.random() * 21)),
-              paidOn: null,
-              stripeFeeInPercents: null,
+              expectationDate: new Date(Date.now() - dayInMs * Math.round(Math.random() * 37)),
+              createdBy: paymentStatus == `completed` ? payerEmail : requesterEmail,
+              updatedBy: paymentStatus == `completed` ? payerEmail : requesterEmail,
+              deletedBy: null,
             }
 
             await knex.insert([paymentRequest]).into(TableName.PaymentRequest).returning(`*`)
-            console.count(`[SUCCESS CREATED DUMMY PAYMENT REQUEST FOR DUMMY CONSUMERS]`)
+            console.count(`[SUCCESS CREATED DUMMY PAYMENT REQUEST]`)
           }
         }
       }

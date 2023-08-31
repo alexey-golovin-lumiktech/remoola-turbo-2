@@ -1,8 +1,8 @@
 import { ApiProperty, OmitType, PickType } from '@nestjs/swagger'
 import { Expose, Type } from 'class-transformer'
-import { IsDate, IsEmail, IsIn, IsNotEmpty, IsNumber, IsString, ValidateIf } from 'class-validator'
+import { IsDate, IsEmail, IsIn, IsNumber, IsString, IsUUID, ValidateIf } from 'class-validator'
 
-import { IPaymentRequestResponse } from '@wirebill/shared-common/dtos'
+import { IPaymentRequestResponseExtended } from '@wirebill/shared-common/dtos'
 import { CurrencyCode, TransactionStatus, TransactionType } from '@wirebill/shared-common/enums'
 import { IConsumerModel, IPaymentRequestModel } from '@wirebill/shared-common/models'
 import {
@@ -21,72 +21,76 @@ import { PaymentRequestAttachmentResponse } from './payment-request-attachment.d
 class PaymentRequest extends BaseModel implements IPaymentRequestModel {
   @Expose()
   @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
+  @IsUUID(`all`)
   requesterId: string
 
   @Expose()
   @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
+  @IsUUID(`all`)
   payerId: string
 
   @Expose()
   @ApiProperty()
   @IsNumber()
-  @IsNotEmpty()
-  transactionAmount: number
+  amount: number
 
   @Expose()
   @ApiProperty({ enum: Object.values(CurrencyCode) })
   @IsString()
   @IsIn(Object.values(CurrencyCode))
-  transactionCurrencyCode: CurrencyCodeValue
+  currencyCode: CurrencyCodeValue
 
   @Expose()
-  @ApiProperty({ enum: Object.values(TransactionStatus) })
+  @ApiProperty()
   @IsString()
-  @IsIn(Object.values(TransactionStatus))
-  transactionStatus: TransactionStatusValue
+  description: string
 
   @Expose()
   @ApiProperty({ enum: Object.values(TransactionType) })
   @IsString()
   @IsIn(Object.values(TransactionType))
-  transactionType: TransactionTypeValue
+  type: TransactionTypeValue
 
   @Expose()
   @ApiProperty()
-  transactionId: string
-
-  @Expose()
-  @ApiProperty()
-  description: string
-
-  @Expose()
-  @ApiProperty()
-  @IsDate()
-  dueBy: Date
+  @ApiProperty({ enum: Object.values(TransactionStatus) })
+  @IsString()
+  @IsIn(Object.values(TransactionStatus))
+  status: TransactionStatusValue
 
   @Expose()
   @ApiProperty()
   @IsDate()
-  sentDate?: Date
+  dueDate: Date
 
   @Expose()
   @ApiProperty()
   @IsDate()
-  @ValidateIf(({ value }) => value != null)
-  paidOn?: Date
+  sentDate: Date
 
   @Expose()
   @ApiProperty()
-  @IsNumber()
-  @ValidateIf(({ value }) => value != null)
-  stripeFeeInPercents?: number
+  @IsDate()
+  expectationDate: Date
+
+  @Expose()
+  @ApiProperty()
+  @IsString()
+  createdBy: string
+
+  @Expose()
+  @ApiProperty()
+  @IsString()
+  updatedBy: string
+
+  @Expose()
+  @ApiProperty({ required: false })
+  @ValidateIf(x => x.value != null)
+  @IsString()
+  deletedBy?: string = null
 }
 
-export class PaymentRequestResponse extends OmitType(PaymentRequest, [`deletedAt`] as const) implements IPaymentRequestResponse {
+export class PaymentRequestResponse extends OmitType(PaymentRequest, [`deletedAt`] as const) implements IPaymentRequestResponseExtended {
   @Expose()
   @ApiProperty()
   payerName: string
@@ -106,7 +110,7 @@ export class PaymentRequestResponse extends OmitType(PaymentRequest, [`deletedAt
   @Expose()
   @ApiProperty({ required: false, type: [PaymentRequestAttachmentResponse] })
   @Type(() => PaymentRequestAttachmentResponse)
-  attachments: PaymentRequestAttachmentResponse[]
+  attachments: PaymentRequestAttachmentResponse[] = []
 }
 
 export class PaymentRequestListResponse {
@@ -126,13 +130,7 @@ export class PaymentRequestsListQuery {
   filter: ReqQueryFilter<IConsumerModel>
 }
 
-export class PaymentRequestPayToContact extends PickType(PaymentRequest, [
-  `description`,
-  `transactionAmount`,
-  `transactionCurrencyCode`,
-  `transactionType`,
-  `stripeFeeInPercents`,
-] as const) {
+export class PaymentRequestPayToContact extends PickType(PaymentRequest, [`description`, `amount`, `currencyCode`, `type`] as const) {
   @Expose()
   @ApiProperty()
   @IsEmail({}, { message: INVALID_EMAIL })

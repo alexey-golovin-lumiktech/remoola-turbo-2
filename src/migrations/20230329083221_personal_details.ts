@@ -8,7 +8,7 @@ import { addAuditColumns, addUUIDPrimaryKey } from './migration-utils'
 const tableName = TableName.PersonalDetails
 
 const Checks = {
-  LegalStatus: { name: `legal_status_value_constraint`, values: Object.values(LegalStatus) },
+  LegalStatus: { name: `personal_details_legal_status_value_constraint`, values: Object.values(LegalStatus) },
 } as const
 
 export async function up(knex: Knex): Promise<void> {
@@ -17,7 +17,6 @@ export async function up(knex: Knex): Promise<void> {
 
   return knex.schema.createTable(tableName, table => {
     addUUIDPrimaryKey(table, knex)
-    table.uuid(`consumer_id`).notNullable().references(`id`).inTable(TableName.Consumer).onDelete(`CASCADE`)
 
     table.string(`citizen_of`).notNullable()
     table.string(`date_of_birth`).notNullable()

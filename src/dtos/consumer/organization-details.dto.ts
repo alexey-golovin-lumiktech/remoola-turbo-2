@@ -12,10 +12,6 @@ import { BaseModel } from '../common/base-model.dto'
 class OrganizationDetails extends BaseModel implements IOrganizationDetailsModel {
   @Expose()
   @ApiProperty()
-  consumerId: string
-
-  @Expose()
-  @ApiProperty()
   name: string
 
   @Expose()
@@ -31,7 +27,7 @@ class OrganizationDetails extends BaseModel implements IOrganizationDetailsModel
 export class OrganizationDetailsResponse extends OmitType(OrganizationDetails, [`deletedAt`] as const) {}
 
 export class OrganizationDetailsCreate
-  extends PickType(OrganizationDetails, [`consumerId`, `name`, `size`, `consumerRole`] as const)
+  extends PickType(OrganizationDetails, [`name`, `size`, `consumerRole`] as const)
   implements IOrganizationDetailsCreate {}
 
 export class OrganizationDetailsUpdate extends PartialType(OrganizationDetailsCreate) implements IOrganizationDetailsUpdate {}

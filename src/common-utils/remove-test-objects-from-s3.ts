@@ -3,6 +3,7 @@ import { DeleteObjectCommand, ListObjectsCommand, S3Client } from '@aws-sdk/clie
 export const removeTestObjectsFromS3 = (Bucket: string, s3Client: S3Client) => {
   setTimeout(async () => {
     const list = await s3Client.send(new ListObjectsCommand({ Bucket }))
-    for (const { Key } of list.Contents ?? []) await s3Client.send(new DeleteObjectCommand({ Bucket, Key }))
+    if ((list.Contents ?? []).length == 0) return console.log(`Bucket ${Bucket} is empty`)
+    for (const { Key } of list.Contents ?? []) console.log(`[remove]`, Key), await s3Client.send(new DeleteObjectCommand({ Bucket, Key }))
   }, 2000)
 }

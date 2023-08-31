@@ -12,10 +12,6 @@ import { BaseModel } from '../common'
 class PersonalDetails extends BaseModel implements IPersonalDetailsModel {
   @Expose()
   @ApiProperty()
-  consumerId: string
-
-  @Expose()
-  @ApiProperty()
   citizenOf: string
 
   @Expose()
