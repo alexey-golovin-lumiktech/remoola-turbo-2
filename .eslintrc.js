@@ -1,8 +1,9 @@
 module.exports = {
   parser: `@typescript-eslint/parser`,
   parserOptions: {
-    project: `tsconfig.json`,
+    projects: [`./tsconfig.json`, `./tsconfig.eslint.json`],
     tsconfigRootDir: __dirname,
+    ecmaVersion: `latest`,
     sourceType: `module`,
   },
   plugins: [`@typescript-eslint/eslint-plugin`, `simple-import-sort`],

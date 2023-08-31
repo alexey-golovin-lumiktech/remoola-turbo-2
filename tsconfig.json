@@ -39,16 +39,4 @@
     },
     "baseUrl": "./"
   },
-  "exclude": [
-    "node_modules",
-    "**/*.spec.ts"
-  ],
-  "include": [
-    "typings",
-    ".eslintrc.js",
-    "src",
-    "libs",
-    "knexfile.ts",
-    "test"
-  ]
 }
