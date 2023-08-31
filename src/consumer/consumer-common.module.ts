@@ -14,6 +14,7 @@ import { PaymentRequestModule } from './entities/payment-request/payment-request
 import { PaymentRequestAttachmentModule } from './entities/payment-request-attachment/payment-request-attachment.module'
 import { PersonalDetailsModule } from './entities/personal-details/personal-details.module'
 import { ResetPasswordModule } from './entities/reset-password/reset-password.module'
+import { TransactionModule } from './entities/transaction/transaction.module'
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { ResetPasswordModule } from './entities/reset-password/reset-password.mo
     PersonalDetailsModule,
     ResetPasswordModule,
     PaymentRequestAttachmentModule,
+    TransactionModule,
   ],
 })
 export class ConsumerCommonModule {}

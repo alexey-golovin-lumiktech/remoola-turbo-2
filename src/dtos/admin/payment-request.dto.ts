@@ -43,7 +43,6 @@ class PaymentRequest extends BaseModel implements IPaymentRequestModel {
   type: TransactionTypeValue
 
   @Expose()
-  @ApiProperty()
   @ApiProperty({ enum: Object.values(TransactionStatus) })
   @IsString()
   @IsIn(Object.values(TransactionStatus))

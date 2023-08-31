@@ -12,6 +12,7 @@ import { OrganizationDetailsModule } from '../organization-details/organization-
 import { PaymentRequestModule } from '../payment-request/payment-request.module'
 import { PaymentRequestAttachmentModule } from '../payment-request-attachment/payment-request-attachment.module'
 import { PersonalDetailsModule } from '../personal-details/personal-details.module'
+import { TransactionModule } from '../transaction/transaction.module'
 
 import { ConsumerController } from './consumer.controller'
 import { ConsumerRepository } from './consumer.repository'
@@ -31,6 +32,7 @@ import { ConsumerService } from './consumer.service'
     forwardRef(() => PaymentRequestModule),
     forwardRef(() => PaymentRequestAttachmentModule),
     forwardRef(() => PersonalDetailsModule),
+    forwardRef(() => TransactionModule),
   ],
   controllers: [ConsumerController],
   providers: [ConsumerRepository, ConsumerService],
