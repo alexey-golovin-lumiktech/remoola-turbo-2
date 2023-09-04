@@ -5,6 +5,7 @@ import {
   AdminType,
   ContractorKind,
   CurrencyCode,
+  FeesType,
   LegalStatus,
   OrganizationSize,
   ResourceAccess,
@@ -69,5 +70,6 @@ export const constraintsToTableLookup = {
     CurrencyCode: { name: `transaction_currency_code_value_constraint`, values: Object.values(CurrencyCode) },
     TransactionStatus: { name: `transaction_status_value_constraint`, values: Object.values(TransactionStatus) },
     TransactionType: { name: `transaction_type_value_constraint`, values: Object.values(TransactionType) },
+    FeesType: { name: `transaction_fees_type_value`, values: Object.values(FeesType) },
   },
 } as const

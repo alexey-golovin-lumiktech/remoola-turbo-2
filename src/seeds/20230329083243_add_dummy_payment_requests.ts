@@ -59,10 +59,6 @@ export async function seed(knex: Knex): Promise<void> {
               createdBy: paymentRequestCreated.createdBy,
               updatedBy: paymentRequestCreated.updatedBy,
               deletedBy: paymentRequestCreated.deletedBy,
-              feesAmount: Math.ceil((paymentRequestCreated.amount / 100) * 10),
-              feesType: `fees_type`, // whats mean ???
-              stripeId: null,
-              stripeFeeInPercents: null,
             }
 
             const [transactionCreated]: Awaited<ITransactionModel[]> = await knex

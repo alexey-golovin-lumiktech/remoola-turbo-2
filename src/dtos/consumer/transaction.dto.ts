@@ -1,11 +1,11 @@
 import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger'
 import { Expose, Type } from 'class-transformer'
-import { IsIn, IsNotEmpty, IsString, IsUUID } from 'class-validator'
+import { IsIn, IsNotEmpty, IsString, IsUUID, ValidateIf } from 'class-validator'
 
 import { ITransactionCreate, ITransactionResponse, ITransactionUpdate } from '@wirebill/shared-common/dtos'
-import { CurrencyCode, TransactionStatus, TransactionType } from '@wirebill/shared-common/enums'
+import { CurrencyCode, FeesType, TransactionStatus, TransactionType } from '@wirebill/shared-common/enums'
 import { ITransactionModel } from '@wirebill/shared-common/models'
-import { CurrencyCodeValue, TransactionStatusValue, TransactionTypeValue } from '@wirebill/shared-common/types'
+import { CurrencyCodeValue, FeesTypeValue, TransactionStatusValue, TransactionTypeValue } from '@wirebill/shared-common/types'
 
 import { BaseModel } from '../common'
 
@@ -56,24 +56,27 @@ class Transaction extends BaseModel implements ITransactionModel {
   updatedBy: string
 
   @Expose()
-  @ApiProperty({ required: false })
-  deletedBy?: string
+  @ApiProperty({ required: false, default: null })
+  deletedBy?: string = null
 
   @Expose()
   @ApiProperty({ required: false })
-  feesAmount?: number
+  feesAmount?: number = null
 
   @Expose()
-  @ApiProperty({ required: false })
-  feesType?: string
+  @ApiProperty({ enum: Object.values(FeesType), default: FeesType.NoFeesIncluded, required: false })
+  @IsString()
+  @IsIn(Object.values(FeesType))
+  @ValidateIf(({ value }) => value != null)
+  feesType?: FeesTypeValue = FeesType.NoFeesIncluded
 
   @Expose()
-  @ApiProperty({ required: false })
-  stripeId?: string
+  @ApiProperty({ required: false, default: null })
+  stripeId?: string = null
 
   @Expose()
-  @ApiProperty({ required: false })
-  stripeFeeInPercents?: number
+  @ApiProperty({ required: false, default: null })
+  stripeFeeInPercents?: number = null
 }
 
 export class TransactionResponse extends OmitType(Transaction, [`deletedAt`] as const) implements ITransactionResponse {}
