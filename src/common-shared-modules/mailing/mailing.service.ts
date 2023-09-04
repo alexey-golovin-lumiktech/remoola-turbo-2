@@ -71,7 +71,7 @@ export class MailingService {
     }
   }
 
-  async send(params: { email: string; signupLink: string }) {
+  async sendInvitationEmail(params: { email: string; signupLink: string }) {
     const html = commonUtils.emailTemplating.invitation.processor(params)
     const subject = `Wirebill. Invitation`
     try {

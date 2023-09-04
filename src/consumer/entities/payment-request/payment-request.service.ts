@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common'
 import { Knex } from 'knex'
 import { snakeCase } from 'lodash'
 import moment from 'moment'
+import { MailingService } from 'src/common-shared-modules/mailing/mailing.service'
 
 import { IPaymentRequestCreate } from '@wirebill/shared-common/dtos'
 import { TransactionStatus } from '@wirebill/shared-common/enums'
@@ -14,13 +15,16 @@ import { CONSUMER } from '../../../dtos'
 import { PaymentRequestRepository } from '../../../repositories'
 import { ConsumerService } from '../consumer/consumer.service'
 import { PaymentRequestAttachmentService } from '../payment-request-attachment/payment-request-attachment.service'
+import { TransactionService } from '../transaction/transaction.service'
 
 @Injectable()
 export class PaymentRequestService extends BaseService<IPaymentRequestModel, PaymentRequestRepository> {
   constructor(
     @Inject(PaymentRequestRepository) repository: PaymentRequestRepository,
     @Inject(PaymentRequestAttachmentService) private readonly paymentRequestAttachmentService: PaymentRequestAttachmentService,
+    @Inject(TransactionService) private readonly transactionService: TransactionService,
     @Inject(ConsumerService) private readonly consumerService: ConsumerService,
+    private readonly mailingService: MailingService,
   ) {
     super(repository)
   }
@@ -66,8 +70,7 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
       )
 
     for (const item of data) item.attachments = await this.paymentRequestAttachmentService.getAttachmentList(consumerId, item.id)
-    const result = { count, data }
-    return result
+    return { count, data }
   }
 
   async getReceivedPaymentRequestsList(
@@ -111,8 +114,7 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
       )
 
     for (const item of data) item.attachments = await this.paymentRequestAttachmentService.getAttachmentList(consumerId, item.id)
-    const result = { count, data }
-    return result
+    return { count, data }
   }
 
   async getPaymentRequestsHistory(
@@ -158,8 +160,7 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
       )
 
     for (const item of data) item.attachments = await this.paymentRequestAttachmentService.getAttachmentList(consumerId, item.id)
-    const result = { count, data }
-    return result
+    return { count, data }
   }
 
   async getConsumerPaymentRequestById(consumerId: string, paymentRequestId: string): Promise<CONSUMER.PaymentRequestResponse> {
@@ -194,7 +195,7 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
     const payerEmail = identity.email
 
     const consumer = await this.getExistingConsumerOrCreatedAndInvitedToSystem(contactEmail)
-
+    this.mailingService.sendPayToContactPaymentInfoEmail({ contactEmail, payerEmail, paymentDetailsLink: `http://localhost:5173` })
     /* check payments on ui pay!!!!!
         @IMPORTANT_NOTE: do not forget add stripe logic
         1 создать consumer
@@ -205,7 +206,8 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
       */
 
     const now = new Date()
-    const rawPaymentRequest: IPaymentRequestCreate = {
+
+    const paymentRequest: Awaited<IPaymentRequestModel> = await this.repository.create({
       requesterId: consumer.id,
       payerId: identity.id,
       status: TransactionStatus.WaitingRecipientApproval,
@@ -219,9 +221,9 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
       currencyCode: currencyCode,
       description: description,
       type: type,
-    }
+    } satisfies IPaymentRequestCreate)
+    await this.transactionService.createFromPaymentRequest(paymentRequest)
 
-    const paymentRequest = await this.repository.create(rawPaymentRequest)
     let attachments: CONSUMER.PaymentRequestResponse[`attachments`] = []
 
     if (files.length != 0) {
@@ -230,15 +232,15 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
     }
 
     const additions = { payerName, payerEmail, requesterName: consumer.firstName, requesterEmail: consumer.email, attachments }
-    const data: CONSUMER.PaymentRequestResponse = { ...paymentRequest, ...additions }
-    return data
+    return { ...paymentRequest, ...additions }
   }
 
-  private async getExistingConsumerOrCreatedAndInvitedToSystem(email: string) {
-    const exist = await this.consumerService.repository.findOne({ email })
+  private async getExistingConsumerOrCreatedAndInvitedToSystem(contactEmail: string): Promise<IConsumerModel> {
+    const exist = await this.consumerService.repository.findOne({ email: contactEmail })
     if (exist != null) return exist
 
-    const consumer = await this.consumerService.repository.create({ email })
+    const consumer = await this.consumerService.repository.create({ email: contactEmail })
+
     return consumer
   }
 }
