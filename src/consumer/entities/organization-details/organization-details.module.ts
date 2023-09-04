@@ -1,8 +1,8 @@
 import { forwardRef, Module } from '@nestjs/common'
 
+import { OrganizationDetailsRepository } from '../../../repositories'
 import { ConsumerModule } from '../consumer/consumer.module'
 
-import { OrganizationDetailsRepository } from './organization-details.repository'
 import { OrganizationDetailsService } from './organization-details.service'
 
 @Module({

@@ -5,13 +5,12 @@ import { IAdminModel } from '@wirebill/shared-common/models'
 import { BaseService } from '../../../common'
 import { commonUtils } from '../../../common-utils'
 import { ADMIN } from '../../../dtos'
-
-import { AdminRepository } from './admin.repository'
+import { AdminRepository } from '../../../repositories'
 
 @Injectable()
 export class AdminService extends BaseService<IAdminModel, AdminRepository> {
-  constructor(@Inject(AdminRepository) adminRepository: AdminRepository) {
-    super(adminRepository)
+  constructor(@Inject(AdminRepository) repository: AdminRepository) {
+    super(repository)
   }
 
   findByEmail(email: string): Promise<IAdminModel | null> {

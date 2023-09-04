@@ -1,15 +1,15 @@
 import { Module } from '@nestjs/common'
 
+import { ContactRepository } from '../../../repositories'
 import { AdminConsumerModule } from '../consumer/admin-consumer.module'
 
 import { AdminContactController } from './admin-contact.controller'
-import { AdminContactRepository } from './admin-contact.repository'
 import { AdminContactService } from './admin-contact.service'
 
 @Module({
   imports: [AdminConsumerModule],
   controllers: [AdminContactController],
-  providers: [AdminContactRepository, AdminContactService],
-  exports: [AdminContactRepository, AdminContactService],
+  providers: [ContactRepository, AdminContactService],
+  exports: [ContactRepository, AdminContactService],
 })
 export class AdminContactModule {}

@@ -11,10 +11,9 @@ import { ReqQuery, TimelineFilter } from '@wirebill/shared-common/types'
 import { BaseService } from '../../../common'
 import { commonUtils } from '../../../common-utils'
 import { CONSUMER } from '../../../dtos'
+import { PaymentRequestRepository } from '../../../repositories'
 import { ConsumerService } from '../consumer/consumer.service'
 import { PaymentRequestAttachmentService } from '../payment-request-attachment/payment-request-attachment.service'
-
-import { PaymentRequestRepository } from './payment-request.repository'
 
 @Injectable()
 export class PaymentRequestService extends BaseService<IPaymentRequestModel, PaymentRequestRepository> {

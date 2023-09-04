@@ -19,7 +19,7 @@ export async function up(knex: Knex): Promise<void> {
         -- rand indexing is zero-based, chars is 1-based.
         result =  result || chars[1 + (get_byte(rand, i) % array_length(chars, 1))];
       end loop;
-      return '#' || result;
+      return result;
     end;
     $$ language plpgsql;
   `)

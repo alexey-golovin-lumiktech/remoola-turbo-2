@@ -3,12 +3,11 @@ import { Inject, Injectable } from '@nestjs/common'
 import { ITransactionModel } from '@wirebill/shared-common/models'
 
 import { BaseService } from '../../../common'
-
-import { AdminTransactionRepository } from './admin-transaction.repository'
+import { TransactionRepository } from '../../../repositories'
 
 @Injectable()
-export class AdminTransactionService extends BaseService<ITransactionModel, AdminTransactionRepository> {
-  constructor(@Inject(AdminTransactionRepository) repository: AdminTransactionRepository) {
+export class AdminTransactionService extends BaseService<ITransactionModel, TransactionRepository> {
+  constructor(@Inject(TransactionRepository) repository: TransactionRepository) {
     super(repository)
   }
 }

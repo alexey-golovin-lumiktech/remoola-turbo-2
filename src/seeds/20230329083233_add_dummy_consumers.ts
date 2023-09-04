@@ -60,4 +60,6 @@ export async function seed(knex: Knex): Promise<void> {
 
     console.count(`[SUCCESS CREATED DUMMY CONSUMER]`)
   }
+
+  console.log(`[DONE]`)
 }

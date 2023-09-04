@@ -3,16 +3,11 @@ import { Inject, Injectable } from '@nestjs/common'
 import { ICreditCardModel } from '@wirebill/shared-common/models'
 
 import { BaseService } from '../../../common'
-import { AdminConsumerService } from '../consumer/admin-consumer.service'
-
-import { AdminCreditCardRepository } from './admin-credit-card.repository'
+import { CreditCardRepository } from '../../../repositories'
 
 @Injectable()
-export class AdminCreditCardService extends BaseService<ICreditCardModel, AdminCreditCardRepository> {
-  constructor(
-    @Inject(AdminCreditCardRepository) repository: AdminCreditCardRepository,
-    @Inject(AdminConsumerService) private readonly adminConsumerService: AdminConsumerService,
-  ) {
+export class AdminCreditCardService extends BaseService<ICreditCardModel, CreditCardRepository> {
+  constructor(@Inject(CreditCardRepository) repository: CreditCardRepository) {
     super(repository)
   }
 }

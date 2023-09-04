@@ -1,8 +1,8 @@
 import { Knex } from 'knex'
 
-import { IPaymentRequestCreate } from '@wirebill/shared-common/dtos'
+import { IPaymentRequestCreate, ITransactionCreate } from '@wirebill/shared-common/dtos'
 import { CurrencyCode, TransactionStatus, TransactionType } from '@wirebill/shared-common/enums'
-import { IConsumerModel, TableName } from '@wirebill/shared-common/models'
+import { IConsumerModel, IPaymentRequestModel, ITransactionModel, TableName } from '@wirebill/shared-common/models'
 
 import { default as dummyConsumers } from './dummy-consumers.json'
 
@@ -40,7 +40,40 @@ export async function seed(knex: Knex): Promise<void> {
               deletedBy: null,
             }
 
-            await knex.insert([paymentRequest]).into(TableName.PaymentRequest).returning(`*`)
+            const [paymentRequestCreated]: Awaited<IPaymentRequestModel[]> = await knex
+              .insert([paymentRequest])
+              .into(TableName.PaymentRequest)
+              .returning(`*`)
+
+            if (paymentRequestCreated == null) {
+              console.log(`[Something went wrong to create payment request]`)
+              process.exit(1)
+            }
+
+            const transaction: ITransactionCreate = {
+              paymentRequestId: paymentRequestCreated.id,
+              currencyCode: currencyCode,
+              originAmount: paymentRequestCreated.amount,
+              type: paymentRequestCreated.type,
+              status: paymentRequestCreated.status,
+              createdBy: paymentRequestCreated.createdBy,
+              updatedBy: paymentRequestCreated.updatedBy,
+              deletedBy: paymentRequestCreated.deletedBy,
+              feesAmount: Math.ceil((paymentRequestCreated.amount / 100) * 10),
+              feesType: `fees_type`, // whats mean ???
+              stripeId: null,
+              stripeFeeInPercents: null,
+            }
+
+            const [transactionCreated]: Awaited<ITransactionModel[]> = await knex
+              .insert([transaction])
+              .into(TableName.Transaction)
+              .returning(`*`)
+
+            if (transactionCreated == null) {
+              console.log(`[Something went wrong to create payment request transaction]`)
+              process.exit(1)
+            }
             console.count(`[SUCCESS CREATED DUMMY PAYMENT REQUEST]`)
           }
         }

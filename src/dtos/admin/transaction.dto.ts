@@ -16,10 +16,10 @@ class Transaction extends BaseModel implements ITransactionModel {
   paymentRequestId: string
 
   @Expose()
-  @ApiProperty({ required: true })
+  @ApiProperty({ required: false })
   @IsString()
   @IsNotEmpty()
-  code: string
+  code?: string
 
   @Expose()
   @ApiProperty({ enum: Object.values(CurrencyCode) })

@@ -14,7 +14,7 @@ import { AdminTransactionService } from './admin-transaction.service'
 @ApiBearerAuth()
 @ApiBasicAuth()
 @ApiTags(`admin`)
-@Controller(`admin/transaction`)
+@Controller(`admin/transactions`)
 export class AdminTransactionController {
   constructor(@Inject(AdminTransactionService) private readonly service: AdminTransactionService) {}
 

@@ -6,9 +6,8 @@ import { IPaymentRequestAttachmentModel } from '@wirebill/shared-common/models'
 import { BaseService } from '../../../common'
 import { ResourceService } from '../../../common-shared-modules/resource/resource.service'
 import { CONSUMER } from '../../../dtos'
+import { PaymentRequestAttachmentRepository } from '../../../repositories'
 import { ConsumerResourceService } from '../consumer-resource/consumer-resource.service'
-
-import { PaymentRequestAttachmentRepository } from './payment-request-attachment.repository'
 
 @Injectable()
 export class PaymentRequestAttachmentService extends BaseService<IPaymentRequestAttachmentModel, PaymentRequestAttachmentRepository> {

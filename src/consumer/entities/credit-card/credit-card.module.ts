@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common'
 
-import { CreditCardRepository } from './credit-card.repository'
+import { CreditCardRepository } from '../../../repositories'
+
 import { CreditCardService } from './credit-card.service'
 
 @Module({

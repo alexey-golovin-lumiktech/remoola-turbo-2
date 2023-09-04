@@ -2,6 +2,7 @@ import { forwardRef, Module } from '@nestjs/common'
 
 import { AwsS3Module } from '../../../common-shared-modules/aws-s3/aws-s3.module'
 import { ResourceModule } from '../../../common-shared-modules/resource/resource.module'
+import { ConsumerRepository } from '../../../repositories'
 import { AddressDetailsModule } from '../address-details/address-details.module'
 import { BillingDetailsModule } from '../billing-details/billing-details.module'
 import { ConsumerResourceModule } from '../consumer-resource/consumer-resource.module'
@@ -15,7 +16,6 @@ import { PersonalDetailsModule } from '../personal-details/personal-details.modu
 import { TransactionModule } from '../transaction/transaction.module'
 
 import { ConsumerController } from './consumer.controller'
-import { ConsumerRepository } from './consumer.repository'
 import { ConsumerService } from './consumer.service'
 
 @Module({

@@ -4,8 +4,7 @@ import { IConsumerResourceModel } from '@wirebill/shared-common/models'
 
 import { BaseService } from '../../../common'
 import { ResourceService } from '../../../common-shared-modules/resource/resource.service'
-
-import { ConsumerResourceRepository } from './consumer-resource.repository'
+import { ConsumerResourceRepository } from '../../../repositories'
 
 @Injectable()
 export class ConsumerResourceService extends BaseService<IConsumerResourceModel, ConsumerResourceRepository> {

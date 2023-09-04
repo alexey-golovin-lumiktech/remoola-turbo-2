@@ -3,16 +3,11 @@ import { Inject, Injectable } from '@nestjs/common'
 import { IPaymentRequestModel } from '@wirebill/shared-common/models'
 
 import { BaseService } from '../../../common'
-import { AdminConsumerService } from '../consumer/admin-consumer.service'
-
-import { AdminPaymentRequestRepository } from './admin-payment-request.repository'
+import { PaymentRequestRepository } from '../../../repositories'
 
 @Injectable()
-export class AdminPaymentRequestService extends BaseService<IPaymentRequestModel, AdminPaymentRequestRepository> {
-  constructor(
-    @Inject(AdminPaymentRequestRepository) repository: AdminPaymentRequestRepository,
-    @Inject(AdminConsumerService) private readonly adminConsumerService: AdminConsumerService,
-  ) {
+export class AdminPaymentRequestService extends BaseService<IPaymentRequestModel, PaymentRequestRepository> {
+  constructor(@Inject(PaymentRequestRepository) repository: PaymentRequestRepository) {
     super(repository)
   }
 }
