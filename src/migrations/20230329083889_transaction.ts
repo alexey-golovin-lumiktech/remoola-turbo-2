@@ -16,7 +16,10 @@ export async function up(knex: Knex): Promise<void> {
     addUUIDPrimaryKey(table, knex)
 
     table.uuid(`payment_request_id`).notNullable().references(`id`).inTable(TableName.PaymentRequest).onDelete(`CASCADE`)
-    table.string(`code`, 6).comment(`current transaction ID - 6 symbols text auto generated`)
+    table
+      .string(`code`, 6)
+      .defaultTo(knex.raw(`substr(md5(now()::text), 0, 7)`))
+      .comment(`current transaction ID - 6 symbols text auto generated`)
 
     table.integer(`origin_amount`).notNullable()
     table
@@ -47,29 +50,12 @@ export async function up(knex: Knex): Promise<void> {
     table.unique([`payment_request_id`, `code`])
     addAuditColumns(table, knex)
   })
-
-  await knex.raw(`
-    CREATE OR REPLACE FUNCTION set_default_random_text_fn()
-    RETURNS TRIGGER AS $$
-    BEGIN
-      NEW.code := unique_random(6, '${tableName}', 'code');
-      RETURN NEW;
-    END;
-    $$ LANGUAGE plpgsql;
-
-    CREATE TRIGGER set_default_random_text_tg
-    BEFORE INSERT ON ${tableName}
-    FOR EACH ROW
-    EXECUTE FUNCTION set_default_random_text_fn();
-  `)
 }
 
 export async function down(knex: Knex): Promise<void> {
   const exist = await knex.schema.hasTable(tableName)
   if (!exist) return
 
-  await knex.raw(`DROP TRIGGER IF EXISTS set_default_random_text_tg ON ${tableName};`)
-  await knex.raw(`DROP FUNCTION IF EXISTS set_default_random_text_fn`)
   const constraintNamesToDrop = Object.values(tableConstraints).map(x => x.name)
   return knex.schema //
     .alterTable(tableName, table => {
