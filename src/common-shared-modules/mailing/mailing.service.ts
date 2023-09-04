@@ -39,7 +39,7 @@ export class MailingService {
   }
 
   async sendConsumerTemporaryPasswordForGoogleOAuth(params: { email: string; tmpPassword: string }): Promise<void> {
-    const html = commonUtils.emailTemplating.googleOAuthtmpPassword.processor(params.tmpPassword)
+    const html = commonUtils.emailTemplating.googleOAuthTmpPassword.processor(params.tmpPassword)
     const subject = `Welcome to Wirebill! You successfully registered through Google OAuth`
     try {
       const sent = await this.mailerService.sendMail({ to: params.email, subject, html })
@@ -60,7 +60,25 @@ export class MailingService {
     }
   }
 
-  // async sendInvitationEmailForPotentialConsumer(params: { email: string }) {}
+  async sendPayToContactPaymentInfoEmail(params: { contactEmail: string; payerEmail: string; paymentDetailsLink: string }) {
+    const html = commonUtils.emailTemplating.payToContactPaymentInfo.processor(params)
+    const subject = `Wirebill. Payment`
+    try {
+      const sent = await this.mailerService.sendMail({ to: params.contactEmail, subject, html })
+      this.logger.log(`Email "${subject}" successfully sent to: ${sent.envelope.to.join(` & `)}`)
+    } catch (error) {
+      this.logger.error(error)
+    }
+  }
 
-  // async sendEmailAboutPayment(params: { email: string }) {}
+  async send(params: { email: string; signupLink: string }) {
+    const html = commonUtils.emailTemplating.invitation.processor(params)
+    const subject = `Wirebill. Invitation`
+    try {
+      const sent = await this.mailerService.sendMail({ to: params.email, subject, html })
+      this.logger.log(`Email "${subject}" successfully sent to: ${sent.envelope.to.join(` & `)}`)
+    } catch (error) {
+      this.logger.error(error)
+    }
+  }
 }
