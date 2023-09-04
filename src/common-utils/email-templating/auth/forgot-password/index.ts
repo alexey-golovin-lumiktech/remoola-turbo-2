@@ -15,6 +15,6 @@ const html = `
   </table>
 `
 
-const RegExpToKeyMapping = { forgotPasswordLink: new RegExp(`{{forgotPasswordLink}}`, `gi`) }
+const ReplacementsRegExpMapping = { forgotPasswordLink: new RegExp(`{{forgotPasswordLink}}`, `gi`) }
 
-export const processor = (forgotPasswordLink: string) => html.replace(RegExpToKeyMapping.forgotPasswordLink, forgotPasswordLink)
+export const processor = (forgotPasswordLink: string) => html.replace(ReplacementsRegExpMapping.forgotPasswordLink, forgotPasswordLink)
