@@ -16,8 +16,8 @@ const html = `
   </table>
 `
 
-const RegExpToKeyMapping = { tmpPassword: new RegExp(`{{tmpPassword}}`, `gi`) }
+const ReplacementsRegExpMapping = { tmpPassword: new RegExp(`{{tmpPassword}}`, `gi`) }
 
 export const processor = (tmpPassword: string) => {
-  return html.replace(RegExpToKeyMapping.tmpPassword, tmpPassword)
+  return html.replace(ReplacementsRegExpMapping.tmpPassword, tmpPassword)
 }

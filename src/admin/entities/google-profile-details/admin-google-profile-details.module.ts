@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common'
 
+import { GoogleProfileDetailsRepository } from '../../../repositories'
+
 import { AdminGoogleProfileDetailsController } from './admin-google-profile-details.controller'
-import { AdminGoogleProfileDetailsRepository } from './admin-google-profile-details.repository'
 import { AdminGoogleProfileDetailsService } from './admin-google-profile-details.service'
 
 @Module({
   controllers: [AdminGoogleProfileDetailsController],
-  providers: [AdminGoogleProfileDetailsService, AdminGoogleProfileDetailsRepository],
-  exports: [AdminGoogleProfileDetailsService, AdminGoogleProfileDetailsRepository],
+  providers: [GoogleProfileDetailsRepository, AdminGoogleProfileDetailsService],
+  exports: [GoogleProfileDetailsRepository, AdminGoogleProfileDetailsService],
 })
 export class AdminGoogleProfileDetailsModule {}

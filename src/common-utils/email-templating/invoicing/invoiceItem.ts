@@ -11,7 +11,7 @@ const html = `
   </tr>
 `
 
-const RegExpToKeyMapping = {
+const ReplacementsRegExpMapping = {
   ItemDescription: new RegExp(`{{itemDescription}}`, `gi`),
   ItemAmount: new RegExp(`{{itemAmount}}`, `gi`),
   CalculatedItemSubtotal: new RegExp(`{{calculatedItemSubtotal}}`, `gi`),
@@ -23,8 +23,8 @@ export const processor = (item: any, tax?: number) => {
   if (tax) calculatedItemSubtotal = item.amount + (item.amount / 100) * tax
 
   return html
-    .replace(RegExpToKeyMapping.ItemDescription, item.description)
-    .replace(RegExpToKeyMapping.ItemAmount, formatToCurrency(item.amount, CurrencyCode.USD))
-    .replace(RegExpToKeyMapping.CalculatedItemSubtotal, formatToCurrency(calculatedItemSubtotal, CurrencyCode.USD))
-    .replace(RegExpToKeyMapping.InvoiceTax, tax ? tax + `%` : `--`)
+    .replace(ReplacementsRegExpMapping.ItemDescription, item.description)
+    .replace(ReplacementsRegExpMapping.ItemAmount, formatToCurrency(item.amount, CurrencyCode.USD))
+    .replace(ReplacementsRegExpMapping.CalculatedItemSubtotal, formatToCurrency(calculatedItemSubtotal, CurrencyCode.USD))
+    .replace(ReplacementsRegExpMapping.InvoiceTax, tax ? tax + `%` : `--`)
 }

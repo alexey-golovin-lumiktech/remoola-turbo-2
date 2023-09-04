@@ -86,10 +86,6 @@ export class GoogleSignin {
 class GoogleProfileDetails extends BaseModel implements IGoogleProfileDetailsModel {
   @Expose()
   @ApiProperty({ required: true })
-  consumerId: string
-
-  @Expose()
-  @ApiProperty({ required: true })
   emailVerified: boolean
 
   @Expose()

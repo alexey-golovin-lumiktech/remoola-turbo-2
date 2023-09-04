@@ -9,10 +9,6 @@ import { BaseModel } from '../common'
 class AddressDetails extends BaseModel implements IAddressDetailsModel {
   @Expose()
   @ApiProperty({ required: true })
-  consumerId: string
-
-  @Expose()
-  @ApiProperty({ required: true })
   postalCode: string
 
   @Expose()
@@ -35,14 +31,7 @@ class AddressDetails extends BaseModel implements IAddressDetailsModel {
 export class AddressDetailsResponse extends OmitType(AddressDetails, [`deletedAt`] as const) {}
 
 export class AddressDetailsCreate
-  extends PickType(AddressDetails, [
-    `consumerId`, //
-    `postalCode`,
-    `country`,
-    `state`,
-    `city`,
-    `street`,
-  ] as const)
+  extends PickType(AddressDetails, [`postalCode`, `country`, `state`, `city`, `street`] as const)
   implements IAddressDetailsCreate {}
 
 export class AddressDetailsUpdate extends PartialType(AddressDetailsCreate) implements IAddressDetailsUpdate {}

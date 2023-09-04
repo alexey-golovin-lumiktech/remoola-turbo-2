@@ -4,8 +4,7 @@ import { IGoogleProfileDetailsModel } from '@wirebill/shared-common/models'
 
 import { BaseService, IBaseService } from '../../../common'
 import { CONSUMER } from '../../../dtos'
-
-import { GoogleProfileDetailsRepository } from './google-profile-details.repository'
+import { GoogleProfileDetailsRepository } from '../../../repositories'
 
 @Injectable()
 export class GoogleProfileDetailsService

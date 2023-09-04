@@ -9,10 +9,6 @@ import { BaseModel } from '../common'
 class AddressDetails extends BaseModel implements IAddressDetailsModel {
   @Expose()
   @ApiProperty({ required: true })
-  consumerId: string
-
-  @Expose()
-  @ApiProperty({ required: true })
   postalCode: string
 
   @Expose()
@@ -47,8 +43,7 @@ export class AddressDetailsListResponse {
 
 export class AddressDetailsCreate
   extends PickType(AddressDetails, [
-    `consumerId`, //
-    `postalCode`,
+    `postalCode`, //
     `country`,
     `state`,
     `city`,

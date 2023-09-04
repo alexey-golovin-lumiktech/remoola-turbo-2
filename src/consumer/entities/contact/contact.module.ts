@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common'
 
-import { ContactRepository } from './contact.repository'
+import { ContactRepository } from '../../../repositories'
+
 import { ContactService } from './contact.service'
 
 @Module({

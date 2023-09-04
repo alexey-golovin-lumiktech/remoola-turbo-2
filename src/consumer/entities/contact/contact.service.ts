@@ -3,8 +3,7 @@ import { Inject, Injectable } from '@nestjs/common'
 import { IContactModel } from '@wirebill/shared-common/models'
 
 import { BaseService } from '../../../common'
-
-import { ContactRepository } from './contact.repository'
+import { ContactRepository } from '../../../repositories'
 
 @Injectable()
 export class ContactService extends BaseService<IContactModel, ContactRepository> {

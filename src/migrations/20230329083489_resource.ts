@@ -3,13 +3,10 @@ import { Knex } from 'knex'
 import { ResourceAccess } from '@wirebill/shared-common/enums'
 import { TableName } from '@wirebill/shared-common/models'
 
-import { addAuditColumns, addUUIDPrimaryKey } from './migration-utils'
+import { addAuditColumns, addUUIDPrimaryKey, constraintsToTableLookup } from './migration-utils'
 
 const tableName = TableName.Resource
-
-const Checks = {
-  ResourceAccess: { name: `resource_access_value_constraint`, values: Object.values(ResourceAccess) },
-} as const
+const tableConstraints = constraintsToTableLookup[tableName]
 
 export async function up(knex: Knex): Promise<void> {
   const exist = await knex.schema.hasTable(tableName)
@@ -20,10 +17,10 @@ export async function up(knex: Knex): Promise<void> {
 
     table
       .string(`access`)
-      .checkIn(Checks.ResourceAccess.values, Checks.ResourceAccess.name)
+      .checkIn(tableConstraints.ResourceAccess.values, tableConstraints.ResourceAccess.name)
       .notNullable()
       .defaultTo(ResourceAccess.Public)
-      .comment(`one of ${Object.values(ResourceAccess)}`)
+      .comment(`one of ${tableConstraints.ResourceAccess.values}`)
 
     table.string(`originalname`).notNullable().comment(`file originalname(multer)`)
     table.string(`mimetype`).notNullable().comment(`Value of the 'Content-Type' header for this file.`)
@@ -41,8 +38,8 @@ export async function down(knex: Knex): Promise<void> {
   const exist = await knex.schema.hasTable(tableName)
   if (!exist) return
 
-  const checkNamesListToDrop = Object.values(Checks).map(x => x.name)
-  return knex.schema
-    .alterTable(tableName, table => table.dropChecks(checkNamesListToDrop)) //
+  const constraintNamesToDrop = Object.values(tableConstraints).map(x => x.name)
+  return knex.schema //
+    .alterTable(tableName, table => table.dropChecks(constraintNamesToDrop))
     .finally(() => knex.schema.dropTable(tableName))
 }

@@ -21,7 +21,7 @@ const html = `
   </table>
 `
 
-const RegExpToKeyMapping = {
+const ReplacementsRegExpMapping = {
   InvoiceCreatorEmail: new RegExp(`{{invoiceCreatorEmail}}`, `gi`),
   InvoiceId: new RegExp(`{{invoiceId}}`, `gi`),
   InvoiceLink: new RegExp(`{{invoiceLink}}`, `gi`),
@@ -35,8 +35,8 @@ export const processor = (invoice: any /* CONSUMER.InvoiceResponse */) => {
   invoiceLink.searchParams.append(`refererEmail`, invoice.referer)
 
   return html
-    .replace(RegExpToKeyMapping.InvoiceCreatorEmail, invoice.creator)
-    .replace(RegExpToKeyMapping.InvoiceId, invoice.id)
-    .replace(RegExpToKeyMapping.InvoiceLink, invoiceLink.toString())
-    .replace(RegExpToKeyMapping.InvoiceSubtotal, formatToCurrency(invoice.subtotal, CurrencyCode.USD))
+    .replace(ReplacementsRegExpMapping.InvoiceCreatorEmail, invoice.creator)
+    .replace(ReplacementsRegExpMapping.InvoiceId, invoice.id)
+    .replace(ReplacementsRegExpMapping.InvoiceLink, invoiceLink.toString())
+    .replace(ReplacementsRegExpMapping.InvoiceSubtotal, formatToCurrency(invoice.subtotal, CurrencyCode.USD))
 }

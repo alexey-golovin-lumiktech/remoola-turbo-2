@@ -8,8 +8,6 @@ import { IContactModel } from '@wirebill/shared-common/models'
 import { AddressDetailsCreate } from '../admin'
 import { BaseModel } from '../common'
 
-class ContactAddress extends OmitType(AddressDetailsCreate, [`consumerId`] as const) {}
-
 class Contact extends BaseModel implements IContactModel {
   @Expose()
   @ApiProperty({ required: true })
@@ -26,8 +24,8 @@ class Contact extends BaseModel implements IContactModel {
   name?: string
 
   @Expose()
-  @ApiProperty({ required: true, type: ContactAddress })
-  address: ContactAddress
+  @ApiProperty({ required: true, type: AddressDetailsCreate })
+  address: AddressDetailsCreate
 }
 
 export class ContactResponse extends OmitType(Contact, [`deletedAt`] as const) implements IContactResponse {}

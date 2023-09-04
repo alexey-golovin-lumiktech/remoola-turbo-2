@@ -9,10 +9,6 @@ import { BaseModel } from '../common'
 
 class BillingDetails extends BaseModel implements IBillingDetailsModel {
   @Expose()
-  @ApiProperty({ required: true })
-  consumerId: string
-
-  @Expose()
   @ApiProperty({ required: false })
   @IsEmail()
   @ValidateIf(({ value }) => value != null)
@@ -45,8 +41,7 @@ export class BillingDetailsListResponse {
 
 export class BillingDetailsCreate
   extends PickType(BillingDetails, [
-    `consumerId`, //
-    `name`,
+    `name`, //
     `email`,
     `phone`,
   ] as const)

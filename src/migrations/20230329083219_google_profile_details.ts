@@ -12,7 +12,6 @@ export async function up(knex: Knex): Promise<void> {
 
   return knex.schema.createTable(tableName, table => {
     addUUIDPrimaryKey(table, knex)
-    table.uuid(`consumer_id`).notNullable().references(`id`).inTable(TableName.Consumer).onDelete(`CASCADE`)
 
     table.string(`email`).notNullable()
     table.boolean(`email_verified`).notNullable()
@@ -21,8 +20,8 @@ export async function up(knex: Knex): Promise<void> {
     table.string(`family_name`).nullable()
     table.string(`picture`).nullable()
     table.string(`organization`).nullable()
-
     table.jsonb(`metadata`).comment(`full google profile data json`)
+
     addAuditColumns(table, knex)
   })
 }

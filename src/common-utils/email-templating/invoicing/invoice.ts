@@ -80,7 +80,7 @@ const html = `
   </table>   
 `
 
-const RegExpToKeyMapping = {
+const ReplacementsRegExpMapping = {
   InvoiceId: new RegExp(`{{invoiceId}}`, `gi`),
   InvoiceCreatedAt: new RegExp(`{{invoiceCreatedAt}}`, `gi`),
   InvoiceCreatorEmail: new RegExp(`{{invoiceCreatorEmail}}`, `gi`),
@@ -98,13 +98,13 @@ export const processor = (rawInvoice: any) => {
   const payOnlineBeLink = `http://some-link`
 
   return html
-    .replace(RegExpToKeyMapping.InvoiceId, invoice.id)
-    .replace(RegExpToKeyMapping.InvoiceCreatedAt, moment(invoice.createdAt).format(`ll`))
-    .replace(RegExpToKeyMapping.InvoiceDueDate, moment(invoice.dueDateInDays).format(`ll`))
-    .replace(RegExpToKeyMapping.InvoiceCreatorEmail, invoice.creator)
-    .replace(RegExpToKeyMapping.InvoiceRefererEmail, invoice.referer)
-    .replace(RegExpToKeyMapping.InvoiceTotal, formatToCurrency(invoice.total, CurrencyCode.USD))
-    .replace(RegExpToKeyMapping.InvoiceSubtotal, formatToCurrency(invoice.subtotal, CurrencyCode.USD))
-    .replace(RegExpToKeyMapping.ToPayOnlineInvoiceLink, payOnlineBeLink)
-    .replace(RegExpToKeyMapping.InvoiceItemsHtml, itemsHtml)
+    .replace(ReplacementsRegExpMapping.InvoiceId, invoice.id)
+    .replace(ReplacementsRegExpMapping.InvoiceCreatedAt, moment(invoice.createdAt).format(`ll`))
+    .replace(ReplacementsRegExpMapping.InvoiceDueDate, moment(invoice.dueDateInDays).format(`ll`))
+    .replace(ReplacementsRegExpMapping.InvoiceCreatorEmail, invoice.creator)
+    .replace(ReplacementsRegExpMapping.InvoiceRefererEmail, invoice.referer)
+    .replace(ReplacementsRegExpMapping.InvoiceTotal, formatToCurrency(invoice.total, CurrencyCode.USD))
+    .replace(ReplacementsRegExpMapping.InvoiceSubtotal, formatToCurrency(invoice.subtotal, CurrencyCode.USD))
+    .replace(ReplacementsRegExpMapping.ToPayOnlineInvoiceLink, payOnlineBeLink)
+    .replace(ReplacementsRegExpMapping.InvoiceItemsHtml, itemsHtml)
 }

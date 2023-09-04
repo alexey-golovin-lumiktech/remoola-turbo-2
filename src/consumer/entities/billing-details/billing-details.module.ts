@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common'
 
-import { BillingDetailsRepository } from './billing-details.repository'
+import { BillingDetailsRepository } from '../../../repositories'
+
 import { BillingDetailsService } from './billing-details.service'
 
 @Module({

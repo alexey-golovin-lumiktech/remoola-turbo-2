@@ -4,9 +4,8 @@ import { IConsumerModel } from '@wirebill/shared-common/models'
 
 import { BaseService, IBaseService } from '../../../common'
 import { CONSUMER } from '../../../dtos'
+import { ConsumerRepository } from '../../../repositories'
 import { BillingDetailsService } from '../billing-details/billing-details.service'
-
-import { ConsumerRepository } from './consumer.repository'
 
 @Injectable()
 export class ConsumerService

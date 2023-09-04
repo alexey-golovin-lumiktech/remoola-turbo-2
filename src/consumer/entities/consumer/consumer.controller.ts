@@ -22,13 +22,13 @@ import { ReqAuthIdentity } from '../../../guards/auth.guard'
 import { TransformResponse } from '../../../interceptors'
 import { ParseJsonPipe, ReqQueryTransformPipe } from '../../pipes'
 import { AddressDetailsService } from '../address-details/address-details.service'
-import { BillingDetailsService } from '../billing-details/billing-details.service'
 import { ContactService } from '../contact/contact.service'
 import { CreditCardService } from '../credit-card/credit-card.service'
 import { GoogleProfileDetailsService } from '../google-profile-details/google-profile-details.service'
 import { OrganizationDetailsService } from '../organization-details/organization-details.service'
 import { PaymentRequestService } from '../payment-request/payment-request.service'
 import { PersonalDetailsService } from '../personal-details/personal-details.service'
+import { TransactionService } from '../transaction/transaction.service'
 
 import { ConsumerService } from './consumer.service'
 
@@ -38,7 +38,6 @@ import { ConsumerService } from './consumer.service'
 export class ConsumerController {
   constructor(
     @Inject(ConsumerService) private readonly service: ConsumerService,
-    @Inject(BillingDetailsService) private readonly billingDetailsService: BillingDetailsService,
     @Inject(PaymentRequestService) private readonly paymentRequestService: PaymentRequestService,
     @Inject(GoogleProfileDetailsService) private readonly googleProfileDetailsService: GoogleProfileDetailsService,
     @Inject(PersonalDetailsService) private readonly personalDetailsService: PersonalDetailsService,
@@ -46,6 +45,7 @@ export class ConsumerController {
     @Inject(OrganizationDetailsService) private readonly organizationDetailsService: OrganizationDetailsService,
     @Inject(CreditCardService) private readonly creditCardService: CreditCardService,
     @Inject(ContactService) private readonly contactService: ContactService,
+    @Inject(TransactionService) private readonly transactionService: TransactionService,
   ) {}
 
   @Get(`/`)
@@ -59,39 +59,61 @@ export class ConsumerController {
   @ApiOkResponse({ type: CONSUMER.GoogleProfileDetailsResponse })
   @TransformResponse(CONSUMER.GoogleProfileDetailsResponse)
   getConsumerGoogleProfileDetails(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.GoogleProfileDetailsResponse | null> {
-    return this.googleProfileDetailsService.repository.findOne({ deletedAt: null, consumerId: identity.id })
+    return this.googleProfileDetailsService.repository.findOne({ deletedAt: null, id: identity.googleProfileDetailsId })
   }
 
   @Get(`/personal-details`)
   @ApiOkResponse({ type: CONSUMER.PersonalDetailsResponse })
   @TransformResponse(CONSUMER.PersonalDetailsResponse)
   getConsumerPersonalDetails(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.PersonalDetailsResponse | null> {
-    return this.personalDetailsService.repository.findOne({ deletedAt: null, consumerId: identity.id })
+    return this.personalDetailsService.repository.findOne({ deletedAt: null, id: identity.personalDetailsId })
   }
 
   @Get(`/address-details`)
   @ApiOkResponse({ type: CONSUMER.AddressDetailsResponse })
   @TransformResponse(CONSUMER.AddressDetailsResponse)
   getConsumerAddressDetails(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.AddressDetailsResponse | null> {
-    return this.addressDetailsService.repository.findOne({ deletedAt: null, consumerId: identity.id })
+    return this.addressDetailsService.repository.findOne({ deletedAt: null, id: identity.addressDetailsId })
   }
 
   @Get(`/organization-details`)
   @ApiOkResponse({ type: CONSUMER.OrganizationDetailsResponse })
   @TransformResponse(CONSUMER.OrganizationDetailsResponse)
   getConsumerOrganizationDetails(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.OrganizationDetailsResponse | null> {
-    return this.organizationDetailsService.repository.findOne({ deletedAt: null, consumerId: identity.id })
+    return this.organizationDetailsService.repository.findOne({ deletedAt: null, id: identity.organizationDetailsId })
   }
 
-  @Get(`/payment-requests`)
+  @Get(`/payment-requests/sent`)
   @ApiOkResponse({ type: CONSUMER.PaymentRequestListResponse })
   @TransformResponse(CONSUMER.PaymentRequestListResponse)
-  getConsumerPaymentRequestsList(
+  getSentPaymentRequestsList(
     @ReqAuthIdentity() identity: IConsumerModel,
     @Query(new ReqQueryTransformPipe()) query: ReqQuery<IPaymentRequestModel>,
     @Query(`timelineFilter`, ParseJsonPipe) timelineFilter: Unassignable<TimelineFilter<IPaymentRequestModel>>,
   ): Promise<CONSUMER.PaymentRequestListResponse> {
-    return this.paymentRequestService.getConsumerPaymentRequestsList(identity.id, query, timelineFilter)
+    return this.paymentRequestService.getSentPaymentRequestsList(identity.id, query, timelineFilter)
+  }
+
+  @Get(`/payment-requests/received`)
+  @ApiOkResponse({ type: CONSUMER.PaymentRequestListResponse })
+  @TransformResponse(CONSUMER.PaymentRequestListResponse)
+  getReceivedPaymentRequestsList(
+    @ReqAuthIdentity() identity: IConsumerModel,
+    @Query(new ReqQueryTransformPipe()) query: ReqQuery<IPaymentRequestModel>,
+    @Query(`timelineFilter`, ParseJsonPipe) timelineFilter: Unassignable<TimelineFilter<IPaymentRequestModel>>,
+  ): Promise<CONSUMER.PaymentRequestListResponse> {
+    return this.paymentRequestService.getReceivedPaymentRequestsList(identity.id, query, timelineFilter)
+  }
+
+  @Get(`/payment-requests/history`)
+  @ApiOkResponse({ type: CONSUMER.PaymentRequestListResponse })
+  @TransformResponse(CONSUMER.PaymentRequestListResponse)
+  getPaymentRequestsHistory(
+    @ReqAuthIdentity() identity: IConsumerModel,
+    @Query(new ReqQueryTransformPipe()) query: ReqQuery<IPaymentRequestModel>,
+    @Query(`timelineFilter`, ParseJsonPipe) timelineFilter: Unassignable<TimelineFilter<IPaymentRequestModel>>,
+  ): Promise<CONSUMER.PaymentRequestListResponse> {
+    return this.paymentRequestService.getPaymentRequestsHistory(identity.id, query, timelineFilter)
   }
 
   @Post(`/payment-requests/pay-to-contact`)
@@ -210,5 +232,60 @@ export class ConsumerController {
     const exist = await this.contactService.repository.findOne({ deletedAt: null, email: body.email, consumerId: identity.id })
     if (exist) throw new BadRequestException(`Contact for provided email: ${body.email} is already exist`)
     return this.contactService.repository.create({ ...body, consumerId: identity.id })
+  }
+
+  @Get(`/transactions`)
+  @TransformResponse(CONSUMER.TransactionListResponse)
+  @ApiOkResponse({ type: CONSUMER.TransactionListResponse })
+  getConsumerTransactionList(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.TransactionListResponse> {
+    return this.transactionService.repository.findAndCountAll({ filter: { deletedAt: null, createdBy: identity.email } })
+  }
+
+  @Get(`/transactions/:transactionId/:code`)
+  @TransformResponse(CONSUMER.TransactionResponse)
+  @ApiOkResponse({ type: CONSUMER.TransactionResponse })
+  getConsumerTransactionById(
+    @Param(`transactionId`) transactionId: string,
+    @Param(`code`) code: string,
+    @ReqAuthIdentity() identity: IConsumerModel,
+  ): Promise<CONSUMER.TransactionResponse> {
+    return this.transactionService.repository.findOne({ deletedAt: null, id: transactionId, code, createdBy: identity.email })
+  }
+
+  @Patch(`/transactions/:transactionId/:code`)
+  @TransformResponse(CONSUMER.TransactionResponse)
+  @ApiOkResponse({ type: CONSUMER.TransactionResponse })
+  async updateConsumerTransactionById(
+    @Param(`transactionId`) transactionId: string,
+    @Param(`code`) code: string,
+    @Body() body: CONSUMER.TransactionUpdate,
+    @ReqAuthIdentity() identity: IConsumerModel,
+  ): Promise<CONSUMER.TransactionResponse> {
+    const now = new Date()
+    return this.transactionService.repository.updateOne(
+      { id: transactionId, code, createdBy: identity.email },
+      {
+        ...body,
+        updatedAt: now,
+        updatedBy: identity.email,
+      },
+    )
+  }
+
+  @Post(`/transactions`)
+  @TransformResponse(CONSUMER.TransactionResponse)
+  @ApiOkResponse({ type: CONSUMER.TransactionResponse })
+  async createConsumerTransaction(
+    @ReqAuthIdentity() identity: IConsumerModel,
+    @Body() body: CONSUMER.TransactionCreate,
+  ): Promise<CONSUMER.TransactionResponse> {
+    const now = new Date()
+    return this.transactionService.repository.create({
+      ...body,
+      createdAt: now,
+      createdBy: identity.email,
+      updatedAt: now,
+      updatedBy: identity.email,
+    })
   }
 }

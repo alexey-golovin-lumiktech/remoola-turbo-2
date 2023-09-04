@@ -11,6 +11,7 @@ import { AdminGoogleProfileDetailsModule } from './entities/google-profile-detai
 import { AdminOrganizationDetailsModule } from './entities/organization-details/admin-organization-details.module'
 import { AdminPaymentRequestModule } from './entities/payment-request/admin-payment-request.module'
 import { AdminPersonalDetailsModule } from './entities/personal-details/admin-personal-details.module'
+import { AdminTransactionModule } from './entities/transaction/admin-transaction.module'
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { AdminPersonalDetailsModule } from './entities/personal-details/admin-pe
     AdminBillingDetailsModule,
     AdminCreditCardModule,
     AdminContactModule,
+    AdminTransactionModule,
   ],
 })
 export class AdminCommonModule {}

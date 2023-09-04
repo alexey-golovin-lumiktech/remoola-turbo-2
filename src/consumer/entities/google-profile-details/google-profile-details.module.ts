@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common'
 
-import { GoogleProfileDetailsRepository } from './google-profile-details.repository'
+import { GoogleProfileDetailsRepository } from '../../../repositories'
+
 import { GoogleProfileDetailsService } from './google-profile-details.service'
 
 @Module({

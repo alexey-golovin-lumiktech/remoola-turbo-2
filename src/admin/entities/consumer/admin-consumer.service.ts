@@ -5,17 +5,12 @@ import { IConsumerModel } from '@wirebill/shared-common/models'
 import { BaseService } from '../../../common'
 import { commonUtils } from '../../../common-utils'
 import { ADMIN } from '../../../dtos'
-import { AdminGoogleProfileDetailsService } from '../google-profile-details/admin-google-profile-details.service'
-
-import { AdminConsumerRepository } from './admin-consumer.repository'
+import { ConsumerRepository } from '../../../repositories'
 
 @Injectable()
-export class AdminConsumerService extends BaseService<IConsumerModel, AdminConsumerRepository> {
-  constructor(
-    @Inject(AdminConsumerRepository) consumersRepository: AdminConsumerRepository,
-    @Inject(AdminGoogleProfileDetailsService) private readonly profileService: AdminGoogleProfileDetailsService,
-  ) {
-    super(consumersRepository)
+export class AdminConsumerService extends BaseService<IConsumerModel, ConsumerRepository> {
+  constructor(@Inject(ConsumerRepository) repository: ConsumerRepository) {
+    super(repository)
   }
 
   findByEmail(email: string): Promise<IConsumerModel | null> {

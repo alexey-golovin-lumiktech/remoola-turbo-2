@@ -1,15 +1,11 @@
 import { Knex } from 'knex'
 
-import { LegalStatus } from '@wirebill/shared-common/enums'
 import { TableName } from '@wirebill/shared-common/models'
 
-import { addAuditColumns, addUUIDPrimaryKey } from './migration-utils'
+import { addAuditColumns, addUUIDPrimaryKey, constraintsToTableLookup } from './migration-utils'
 
 const tableName = TableName.PersonalDetails
-
-const Checks = {
-  LegalStatus: { name: `legal_status_value_constraint`, values: Object.values(LegalStatus) },
-} as const
+const tableConstraints = constraintsToTableLookup[tableName]
 
 export async function up(knex: Knex): Promise<void> {
   const exist = await knex.schema.hasTable(tableName)
@@ -17,12 +13,11 @@ export async function up(knex: Knex): Promise<void> {
 
   return knex.schema.createTable(tableName, table => {
     addUUIDPrimaryKey(table, knex)
-    table.uuid(`consumer_id`).notNullable().references(`id`).inTable(TableName.Consumer).onDelete(`CASCADE`)
 
     table.string(`citizen_of`).notNullable()
     table.string(`date_of_birth`).notNullable()
     table.string(`passport_or_id_number`).notNullable()
-    table.string(`legal_status`).checkIn(Checks.LegalStatus.values, Checks.LegalStatus.name).nullable()
+    table.string(`legal_status`).checkIn(tableConstraints.LegalStatus.values, tableConstraints.LegalStatus.name).nullable()
 
     table.string(`country_of_tax_residence`).defaultTo(null).nullable()
     table.string(`tax_id`).defaultTo(null).nullable()
@@ -36,8 +31,8 @@ export async function down(knex: Knex): Promise<void> {
   const exist = await knex.schema.hasTable(tableName)
   if (!exist) return
 
-  const checkNamesListToDrop = Object.values(Checks).map(x => x.name)
-  return knex.schema
-    .alterTable(tableName, table => table.dropChecks(checkNamesListToDrop)) //
+  const constraintNamesToDrop = Object.values(tableConstraints).map(x => x.name)
+  return knex.schema //
+    .alterTable(tableName, table => table.dropChecks(constraintNamesToDrop))
     .finally(() => knex.schema.dropTable(tableName))
 }
