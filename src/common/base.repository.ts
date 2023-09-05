@@ -30,7 +30,10 @@ export interface IBaseRepository<TModel extends IBaseModel> {
 }
 
 export abstract class BaseRepository<TModel extends IBaseModel> implements IBaseRepository<TModel> {
-  constructor(public readonly knex: Knex, private readonly tableName: TableNameValue) {}
+  constructor(
+    public readonly knex: Knex,
+    private readonly tableName: TableNameValue,
+  ) {}
 
   get qb() {
     return this.knex.from(this.tableName)

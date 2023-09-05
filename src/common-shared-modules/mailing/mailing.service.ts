@@ -10,7 +10,10 @@ import { commonUtils } from '../../common-utils'
 export class MailingService {
   private readonly logger = new Logger(MailingService.name)
 
-  constructor(private mailerService: MailerService, private configService: ConfigService) {}
+  constructor(
+    private mailerService: MailerService,
+    private configService: ConfigService,
+  ) {}
 
   async sendConsumerSignupCompletionEmail(params: { email: string; token: string; referer: string }): Promise<void> {
     const backendBaseURL = this.configService.get<string>(`NEST_APP_EXTERNAL_ORIGIN`)

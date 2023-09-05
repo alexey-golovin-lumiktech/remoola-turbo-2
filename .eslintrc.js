@@ -1,7 +1,7 @@
 module.exports = {
   parser: `@typescript-eslint/parser`,
   parserOptions: {
-    projects: [`./tsconfig.json`, `./tsconfig.eslint.json`],
+    project: [`./tsconfig.json`, `./tsconfig.eslint.json`, `./tsconfig.build.json`],
     tsconfigRootDir: __dirname,
     ecmaVersion: `latest`,
     sourceType: `module`,
@@ -27,6 +27,7 @@ module.exports = {
     '@typescript-eslint/no-explicit-any': `off`,
     '@typescript-eslint/no-unused-vars': [`error`, { ignoreRestSiblings: true }],
     '@typescript-eslint/semi': [`error`, `never`],
+    'max-len': [`error`, { code: 140, ignoreTemplateLiterals: true, ignoreRegExpLiterals: true, ignoreUrls: true }],
     '@typescript-eslint/ban-types': `off`,
     'no-restricted-imports': `off`,
     'simple-import-sort/imports': [
