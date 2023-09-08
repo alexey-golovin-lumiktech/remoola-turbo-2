@@ -10,25 +10,5 @@
   "generateOptions": {
     "spec": false,
     "flat": true
-  },
-  "projects": {
-    "shared-admin": {
-      "type": "library",
-      "root": "./libs/shared-admin",
-      "entryFile": "index",
-      "sourceRoot": "./libs/shared-admin/src",
-      "compilerOptions": {
-        "tsConfigPath": "./libs/shared-admin/tsconfig.json"
-      }
-    },
-    "shared-consumer": {
-      "type": "library",
-      "root": "./libs/shared-consumer",
-      "entryFile": "index",
-      "sourceRoot": "./libs/shared-consumer/src",
-      "compilerOptions": {
-        "tsConfigPath": "./libs/shared-consumer/tsconfig.json"
-      }
-    }
   }
 }
