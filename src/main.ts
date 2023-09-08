@@ -72,8 +72,6 @@ async function bootstrap() {
   }
   SwaggerModule.setup(`documentation`, app, document, options)
 
-  app.enableCors()
-
   const reflector = app.get(Reflector)
   const jwtService = app.get(JwtService)
   const consumersService = app.get(ConsumerService)
