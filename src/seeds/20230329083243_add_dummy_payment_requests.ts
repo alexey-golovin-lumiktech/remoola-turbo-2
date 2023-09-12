@@ -30,7 +30,6 @@ export async function seed(knex: Knex): Promise<void> {
               currencyCode: currencyCode,
               status: paymentStatus,
               type: type,
-              // transactionId: Math.random().toString(36).slice(2).toUpperCase(), ???
               description: getRandomArrayItem(descriptions),
               dueDate: new Date(Date.now() + dayInMs * Math.round(Math.random() * 29)),
               sentDate: new Date(Date.now() - dayInMs * Math.round(Math.random() * 21)),

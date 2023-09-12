@@ -47,19 +47,4 @@ dist
 /knexfile.js
 /knexfile.js.map
 
-
-/libs/shared-admin/dtos
-/libs/shared-admin/enums
-/libs/shared-admin/types
-/libs/shared-admin/models
-/libs/shared-admin/tsconfig.tsbuildinfo
-/libs/shared-admin/yarn.lock
-
-/libs/shared-consumer/dtos
-/libs/shared-consumer/enums
-/libs/shared-consumer/types
-/libs/shared-consumer/models
-/libs/shared-consumer/tsconfig.tsbuildinfo
-/libs/shared-consumer/yarn.lock
- 
 .vercel

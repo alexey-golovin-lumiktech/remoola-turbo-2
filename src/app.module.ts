@@ -36,8 +36,7 @@ import * as configValidation from './envs-validation.schema'
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
         const apiKey = configService.get<string>(`STRIPE_SECRET_KEY`)
-        const apiVersion = `2022-11-15`
-        return { apiKey, apiVersion }
+        return { apiKey, apiVersion: `2023-08-16` }
       },
     }),
     CommonSharedModulesModule,

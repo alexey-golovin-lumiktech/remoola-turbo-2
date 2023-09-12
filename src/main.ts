@@ -22,6 +22,8 @@ import { HttpExceptionFilter } from './filters'
 import { TransformResponseInterceptor } from './interceptors'
 
 async function bootstrap() {
+  commonUtils.checkProvidedEnvs(process.cwd())()
+
   const app = await NestFactory.create(AppModule, {
     cors: {
       origin: [/localhost/, /\.vercel.app/, /\.ngrok-free.app/],
@@ -70,8 +72,6 @@ async function bootstrap() {
   }
   SwaggerModule.setup(`documentation`, app, document, options)
 
-  app.enableCors()
-
   const reflector = app.get(Reflector)
   const jwtService = app.get(JwtService)
   const consumersService = app.get(ConsumerService)
@@ -111,11 +111,12 @@ async function bootstrap() {
   const NEST_APP_PORT = configService.get<number>(`NEST_APP_PORT`)
   const NEST_APP_HOST = configService.get<string>(`NEST_APP_HOST`) ?? `localhost`
 
-  const dbConfig = knexfile[configService.get<string>(`NODE_ENV`)]
-  const dbConnectionMessage = [`Database:`, JSON.stringify(dbConfig.connection, null, 2)]
-  const startMessage = `Server started on = http://${NEST_APP_HOST}:${NEST_APP_PORT}`
-  const cb = () => (commonUtils.checkProvidedEnvs(process.cwd())(), console.log(startMessage), console.log(...dbConnectionMessage))
-  await app.listen(NEST_APP_PORT, NEST_APP_HOST, cb)
+  await app
+    .listen(NEST_APP_PORT, NEST_APP_HOST)
+    .then(() => console.log(``))
+    .then(() => app.getUrl())
+    .then(appUrl => console.debug(`Server started on = ${appUrl}`))
+    .then(() => console.debug(`Database: ${JSON.stringify(knexfile[configService.get<string>(`NODE_ENV`)]?.connection)}`))
   return app
 }
 
@@ -123,7 +124,7 @@ async function bootstrap() {
 bootstrap().then(killAppWithGrace).catch((e: any) => console.error(e.message ?? `Bootstrap err`))
 
 function killAppWithGrace(app: INestApplication) {
-  async function exitHandler(options: IOptions, exitCode?: number) {
+  async function exitHandler(options: { cleanup?: boolean; exit?: boolean }, exitCode?: number) {
     await app.close()
 
     if (options.cleanup) console.log(`App stopped: clean`)
@@ -144,4 +145,3 @@ function killAppWithGrace(app: INestApplication) {
   process.on(`SIGUSR2`, exitHandler.bind(null, { exit: true }))
   process.on(`uncaughtException`, exitHandler.bind(null, { exit: true }))
 }
-type IOptions = { cleanup?: boolean; exit?: boolean }
