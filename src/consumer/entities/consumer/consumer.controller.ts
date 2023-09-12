@@ -15,7 +15,7 @@ import { AnyFilesInterceptor } from '@nestjs/platform-express'
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger'
 
 import { IConsumerModel, IPaymentRequestModel } from '@wirebill/shared-common/models'
-import { ReqQuery, TimelineFilter } from '@wirebill/shared-common/types'
+import { ReqQuery, ReqQueryTimelineFilter } from '@wirebill/shared-common/types'
 
 import { CONSUMER } from '../../../dtos'
 import { ReqAuthIdentity } from '../../../guards/auth.guard'
@@ -89,7 +89,7 @@ export class ConsumerController {
   getSentPaymentRequestsList(
     @ReqAuthIdentity() identity: IConsumerModel,
     @Query(new ReqQueryTransformPipe()) query: ReqQuery<IPaymentRequestModel>,
-    @Query(`timelineFilter`, ParseJsonPipe) timelineFilter: Unassignable<TimelineFilter<IPaymentRequestModel>>,
+    @Query(`timelineFilter`, ParseJsonPipe) timelineFilter: Unassignable<ReqQueryTimelineFilter<IPaymentRequestModel>>,
   ): Promise<CONSUMER.PaymentRequestListResponse> {
     return this.paymentRequestService.getSentPaymentRequestsList(identity.id, query, timelineFilter)
   }
@@ -100,7 +100,7 @@ export class ConsumerController {
   getReceivedPaymentRequestsList(
     @ReqAuthIdentity() identity: IConsumerModel,
     @Query(new ReqQueryTransformPipe()) query: ReqQuery<IPaymentRequestModel>,
-    @Query(`timelineFilter`, ParseJsonPipe) timelineFilter: Unassignable<TimelineFilter<IPaymentRequestModel>>,
+    @Query(`timelineFilter`, ParseJsonPipe) timelineFilter: Unassignable<ReqQueryTimelineFilter<IPaymentRequestModel>>,
   ): Promise<CONSUMER.PaymentRequestListResponse> {
     return this.paymentRequestService.getReceivedPaymentRequestsList(identity.id, query, timelineFilter)
   }
@@ -111,7 +111,7 @@ export class ConsumerController {
   getPaymentRequestsHistory(
     @ReqAuthIdentity() identity: IConsumerModel,
     @Query(new ReqQueryTransformPipe()) query: ReqQuery<IPaymentRequestModel>,
-    @Query(`timelineFilter`, ParseJsonPipe) timelineFilter: Unassignable<TimelineFilter<IPaymentRequestModel>>,
+    @Query(`timelineFilter`, ParseJsonPipe) timelineFilter: Unassignable<ReqQueryTimelineFilter<IPaymentRequestModel>>,
   ): Promise<CONSUMER.PaymentRequestListResponse> {
     return this.paymentRequestService.getPaymentRequestsHistory(identity.id, query, timelineFilter)
   }

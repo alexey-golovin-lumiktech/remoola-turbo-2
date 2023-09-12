@@ -7,7 +7,7 @@ import { MailingService } from 'src/common-shared-modules/mailing/mailing.servic
 import { IPaymentRequestCreate } from '@wirebill/shared-common/dtos'
 import { TransactionStatus } from '@wirebill/shared-common/enums'
 import { IConsumerModel, IPaymentRequestModel, TableName } from '@wirebill/shared-common/models'
-import { ReqQuery, TimelineFilter } from '@wirebill/shared-common/types'
+import { ReqQuery, ReqQueryTimelineFilter } from '@wirebill/shared-common/types'
 
 import { BaseService } from '../../../common'
 import { commonUtils } from '../../../common-utils'
@@ -32,7 +32,7 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
   async getSentPaymentRequestsList(
     consumerId: string,
     query: ReqQuery<IPaymentRequestModel>,
-    timelineFilter: Unassignable<TimelineFilter<IPaymentRequestModel>>,
+    timelineFilter: Unassignable<ReqQueryTimelineFilter<IPaymentRequestModel>>,
   ): Promise<CONSUMER.PaymentRequestListResponse> {
     const withFilters = <T>(qb: Knex.QueryBuilder<T>) => {
       if (query.filter) qb.where(query.filter)
@@ -76,7 +76,7 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
   async getReceivedPaymentRequestsList(
     consumerId: string,
     query: ReqQuery<IPaymentRequestModel>,
-    timelineFilter: Unassignable<TimelineFilter<IPaymentRequestModel>>,
+    timelineFilter: Unassignable<ReqQueryTimelineFilter<IPaymentRequestModel>>,
   ): Promise<CONSUMER.PaymentRequestListResponse> {
     const withFilters = <T>(qb: Knex.QueryBuilder<T>) => {
       if (query.filter) qb.where(query.filter)
@@ -120,7 +120,7 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
   async getPaymentRequestsHistory(
     consumerId: string,
     query: ReqQuery<IPaymentRequestModel>,
-    timelineFilter: Unassignable<TimelineFilter<IPaymentRequestModel>>,
+    timelineFilter: Unassignable<ReqQueryTimelineFilter<IPaymentRequestModel>>,
   ): Promise<CONSUMER.PaymentRequestListResponse> {
     const withFilters = <T>(qb: Knex.QueryBuilder<T>) => {
       if (query.filter) qb.where(query.filter)
