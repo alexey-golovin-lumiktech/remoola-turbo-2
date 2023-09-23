@@ -9,10 +9,6 @@ import { BaseModel } from '../common'
 
 class BillingDetails extends BaseModel implements IBillingDetailsModel {
   @Expose()
-  @ApiProperty({ required: true })
-  consumerId: string
-
-  @Expose()
   @ApiProperty({ required: false })
   @IsEmail()
   @ValidateIf(({ value }) => value != null)
@@ -32,13 +28,6 @@ class BillingDetails extends BaseModel implements IBillingDetailsModel {
 
 export class BillingDetailsResponse extends OmitType(BillingDetails, [`deletedAt`] as const) implements IBillingDetailsResponse {}
 
-export class BillingDetailsCreate
-  extends PickType(BillingDetails, [
-    `consumerId`, //
-    `name`,
-    `email`,
-    `phone`,
-  ] as const)
-  implements IBillingDetailsCreate {}
+export class BillingDetailsCreate extends PickType(BillingDetails, [`name`, `email`, `phone`] as const) implements IBillingDetailsCreate {}
 
 export class BillingDetailsUpdate extends PartialType(BillingDetailsCreate) implements IBillingDetailsUpdate {}

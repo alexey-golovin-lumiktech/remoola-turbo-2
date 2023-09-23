@@ -21,7 +21,7 @@ export class AddressDetailsService extends BaseService<IAddressDetailsModel, Add
     if (consumer == null) throw new BadRequestException(`Consumer does not exist`)
 
     const exist = await this.repository.findOne(body)
-    const addressDetails = exist == null ? await this.repository.create(body) : await this.repository.updateById(exist.id, body)
+    const addressDetails = exist != null ? await this.repository.updateById(exist.id, body) : await this.repository.create(body)
     if (addressDetails == null) throw new BadRequestException(`Something went wrong for creating address details`)
 
     await this.consumerService.repository.updateById(consumer.id, { addressDetailsId: addressDetails.id })

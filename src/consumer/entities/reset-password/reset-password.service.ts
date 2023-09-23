@@ -14,12 +14,7 @@ export class ResetPasswordService extends BaseService<IResetPasswordModel, Reset
   async upsert(dto: Pick<IResetPasswordModel, `consumerId` | `token`>) {
     const exist = await this.repository.findOne({ consumerId: dto.consumerId })
     const expiredAt = new Date(Date.now() + 1000 * 60 * 60 * 24)
-    const record =
-      exist == null
-        ? await this.repository.create({ ...dto, expiredAt })
-        : await this.repository.updateById(exist.id, { ...dto, expiredAt })
-
-    return record
+    return exist != null ? this.repository.updateById(exist.id, { ...dto, expiredAt }) : this.repository.create({ ...dto, expiredAt })
   }
 
   async getRecordIfNotExpired(filter: Pick<IResetPasswordModel, `consumerId` | `token`>) {

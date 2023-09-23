@@ -21,10 +21,10 @@ export class OrganizationDetailsService extends BaseService<IOrganizationDetails
     if (consumer == null) throw new BadRequestException(`Consumer does not exist`)
 
     const exist = await this.repository.findOne(body)
-    const organizationDetails = exist == null ? await this.repository.create(body) : await this.repository.updateById(exist.id, body)
+    const organizationDetails = exist != null ? await this.repository.updateById(exist.id, body) : await this.repository.create(body)
     if (organizationDetails == null) throw new BadRequestException(`Something went wrong for upsert organization details`)
-    await this.consumerService.repository.updateById(consumer.id, { organizationDetailsId: organizationDetails.id })
 
+    await this.consumerService.repository.updateById(consumer.id, { organizationDetailsId: organizationDetails.id })
     return organizationDetails
   }
 }

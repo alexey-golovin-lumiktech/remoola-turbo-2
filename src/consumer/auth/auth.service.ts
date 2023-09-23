@@ -51,16 +51,13 @@ export class AuthService {
       let consumer = await this.consumerService.repository.findOne({ email: consumerData.email })
 
       if (!consumer) {
-        const tmpPassword = commonUtils.generateStrongPassword()
-        const salt = commonUtils.getHashingSalt()
-        const hash = commonUtils.hashPassword({ password: tmpPassword, salt })
-        consumer = await this.consumerService.upsert({ ...consumerData, password: hash, salt, accountType, contractorKind })
+        consumer = await this.consumerService.upsert({ ...consumerData, accountType, contractorKind })
         if (consumer.deletedAt != null) throw new BadRequestException(`Consumer is suspended, please contact the support`)
 
         const googleProfileDetails = await this.googleProfileDetailsService.upsert(consumer.id, rawGoogleProfile)
         if (googleProfileDetails.deletedAt != null) throw new BadRequestException(`Profile is suspended, please contact the support`)
 
-        await this.mailingService.sendConsumerTemporaryPasswordForGoogleOAuth({ email: consumer.email, tmpPassword })
+        await this.mailingService.sendConsumerTemporaryPasswordForGoogleOAuth({ email: consumer.email })
       }
 
       const accessToken = this.generateToken(consumer)

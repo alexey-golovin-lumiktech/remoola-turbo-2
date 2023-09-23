@@ -4,7 +4,6 @@ const html = `
           <div style="text-align:center; font-weight:bold;color:cyan;">Welcome to Wirebill.</div>
           <div>&nbsp;</div>
           <div style="color:cyan;">You have initialized the signup flow with Google OAuth.</div>
-          <div style="color:cyan;">Your temporary generated strong password: <strong>{{tmpPassword}}</strong></div>
           <div>&nbsp;</div>
           <div style="margin-left:200px;text-align:right;color:cyan">
             If it was not you and the email came to you by mistake, just ignore it.
@@ -16,8 +15,4 @@ const html = `
   </table>
 `
 
-const ReplacementsRegExpMapping = { tmpPassword: new RegExp(`{{tmpPassword}}`, `gi`) }
-
-export const processor = (tmpPassword: string) => {
-  return html.replace(ReplacementsRegExpMapping.tmpPassword, tmpPassword)
-}
+export const processor = () => html

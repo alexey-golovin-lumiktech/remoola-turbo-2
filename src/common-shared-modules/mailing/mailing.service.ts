@@ -41,8 +41,8 @@ export class MailingService {
     }
   }
 
-  async sendConsumerTemporaryPasswordForGoogleOAuth(params: { email: string; tmpPassword: string }): Promise<void> {
-    const html = commonUtils.emailTemplating.googleOAuthTmpPassword.processor(params.tmpPassword)
+  async sendConsumerTemporaryPasswordForGoogleOAuth(params: { email: string }): Promise<void> {
+    const html = commonUtils.emailTemplating.googleOAuthTmpPassword.processor()
     const subject = `Welcome to Wirebill! You successfully registered through Google OAuth`
     try {
       const sent = await this.mailerService.sendMail({ to: params.email, subject, html })

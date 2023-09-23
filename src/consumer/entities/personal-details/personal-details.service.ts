@@ -21,8 +21,8 @@ export class PersonalDetailsService extends BaseService<IPersonalDetailsModel, P
     if (consumer == null) throw new BadRequestException(`Consumer does not exist`)
 
     const exist = await this.repository.findOne(body)
-    const personalDetails = exist == null ? await this.repository.create(body) : await this.repository.updateById(exist.id, body)
-    if (personalDetails == null) throw new BadRequestException(`Something went wrong for creating address details`)
+    const personalDetails = exist != null ? await this.repository.updateById(exist.id, body) : await this.repository.create(body)
+    if (personalDetails == null) throw new BadRequestException(`Something went wrong for adding personal details`)
 
     await this.consumerService.repository.updateById(consumer.id, { personalDetailsId: personalDetails.id })
     return personalDetails
