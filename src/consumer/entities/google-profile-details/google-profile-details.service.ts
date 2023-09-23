@@ -23,7 +23,7 @@ export class GoogleProfileDetailsService
     const consumer = await this.consumerService.repository.findById(consumerId)
     if (consumer == null) throw new BadRequestException(`Consumer does not exist`)
 
-    const data = { ...dto, consumerId, metadata: JSON.stringify(dto) }
+    const data = { ...dto, metadata: JSON.stringify(dto) }
     const exist = await this.repository.findOne({ email: dto.email })
     const googleProfileDetails = exist != null ? await this.repository.updateById(exist.id, data) : await this.repository.create(data)
     if (googleProfileDetails == null) throw new BadRequestException(`Something went wrong for creating google profile details`)
