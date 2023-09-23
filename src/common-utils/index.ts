@@ -19,6 +19,13 @@ const validatePassword = (params = { incomingPass: ``, password: ``, salt: `` })
   return params.password === hash
 }
 
+const getConsumerFullName = (consumer: IConsumerModel): Nullable<string> => {
+  if (!consumer.firstName && !consumer.lastName) return null
+  return `${consumer.firstName} ${consumer.lastName}`.trim()
+}
+
+import { IConsumerModel } from '@wirebill/shared-common/models'
+
 import { ChainedQB } from './chained-query-builder'
 import { dbQuerying } from './db-querying'
 import { deepDiff } from './deepDiff'
@@ -46,4 +53,5 @@ export const commonUtils = {
   deepDiff,
   formatToCurrency,
   downloadFile,
+  getConsumerFullName,
 }
