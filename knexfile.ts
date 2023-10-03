@@ -29,14 +29,12 @@ const keysToSnakeCase = function (source: any) {
   return toSnake(source)
 }
 
-const { VERCEL_POSTGRES_URL = undefined } = process.env
-
 const connectionConfig: Knex.Config[`connection`] = {
-  host: process.env.POSTGRES_HOST,
-  port: parseInt(process.env.POSTGRES_PORT),
-  database: process.env.POSTGRES_DATABASE,
-  user: process.env.POSTGRES_USER,
-  password: process.env.POSTGRES_PASSWORD,
+  host: process.env.POSTGRES_HOST || `localhost`,
+  port: parseInt(process.env.POSTGRES_PORT || `5432`),
+  database: process.env.POSTGRES_DATABASE || `wirebill`,
+  user: process.env.POSTGRES_USER || `wirebill`,
+  password: process.env.POSTGRES_PASSWORD || `wirebill`,
 }
 
 const pool: Knex.Config[`pool`] = {
@@ -51,7 +49,10 @@ const pool: Knex.Config[`pool`] = {
   propagateCreateError: false,
 }
 
-const connection = VERCEL_POSTGRES_URL != null ? `${VERCEL_POSTGRES_URL}?sslmode=require` : connectionConfig
+const connection =
+  /^null|undefined$/i.test(process.env.VERCEL_POSTGRES_URL) == false
+    ? `${process.env.VERCEL_POSTGRES_URL}?sslmode=require`
+    : connectionConfig
 
 const config: { [key: string]: Knex.Config } = {
   development: {

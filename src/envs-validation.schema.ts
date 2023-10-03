@@ -9,13 +9,13 @@ export const validationSchema = Joi.object({
   NEST_APP_HOST: Joi.string().default(`localhost`),
   NEST_APP_EXTERNAL_ORIGIN: Joi.string().required(),
 
-  POSTGRES_HOST: Joi.string().default(`localhost`).required(),
-  POSTGRES_PORT: Joi.number().default(5432).required(),
-  POSTGRES_DATABASE: Joi.string().default(`wirebill`).required(),
-  POSTGRES_USER: Joi.string().default(`wirebill`).required(),
-  POSTGRES_PASSWORD: Joi.string().default(`wirebill`).required(),
-  POSTGRES_DIALECT: Joi.string().default(`postgres`).required(),
-  POSTGRES_LOGGING: Joi.boolean().default(false).required(),
+  POSTGRES_HOST: Joi.string().default(`localhost`).optional(),
+  POSTGRES_PORT: Joi.number().default(5432).optional(),
+  POSTGRES_DATABASE: Joi.string().default(`wirebill`).optional(),
+  POSTGRES_USER: Joi.string().default(`wirebill`).optional(),
+  POSTGRES_PASSWORD: Joi.string().default(`wirebill`).optional(),
+  POSTGRES_DIALECT: Joi.string().default(`postgres`).optional(),
+  POSTGRES_LOGGING: Joi.boolean().default(false).optional(),
 
   GOOGLE_API_KEY: Joi.string().required(),
   GOOGLE_CLIENT_ID: Joi.string().required(),
@@ -23,6 +23,7 @@ export const validationSchema = Joi.object({
   GOOGLE_PROJECT_ID: Joi.string().required(),
   GOOGLE_AUTH_URI: Joi.string().required(),
   GOOGLE_TOKEN_URI: Joi.string().required(),
+
   GOOGLE_AUTH_PROVIDER_X509_CERT_URL: Joi.string().required(),
 
   JWT_SECRET: Joi.string().required(),
