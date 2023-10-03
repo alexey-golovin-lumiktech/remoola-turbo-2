@@ -1,6 +1,18 @@
 import * as Joi from 'joi'
 
+const noVercelPostgresUrlProvided = /^null|undefined$/i.test(process.env.VERCEL_POSTGRES_URL)
+
 export const validationOptions = { allowUnknown: true, abortEarly: true }
+
+const postgres = {
+  POSTGRES_HOST: Joi.string().default(`localhost`).required(),
+  POSTGRES_PORT: Joi.number().default(5432).required(),
+  POSTGRES_DATABASE: Joi.string().default(`wirebill`).required(),
+  POSTGRES_USER: Joi.string().default(`wirebill`).required(),
+  POSTGRES_PASSWORD: Joi.string().default(`wirebill`).required(),
+  POSTGRES_DIALECT: Joi.string().default(`postgres`).required(),
+  POSTGRES_LOGGING: Joi.boolean().default(false).required(),
+}
 
 export const validationSchema = Joi.object({
   NODE_ENV: Joi.string().valid(`development`, `production`).required(),
@@ -9,13 +21,7 @@ export const validationSchema = Joi.object({
   NEST_APP_HOST: Joi.string().default(`localhost`),
   NEST_APP_EXTERNAL_ORIGIN: Joi.string().required(),
 
-  POSTGRES_HOST: Joi.string().default(`localhost`).optional(),
-  POSTGRES_PORT: Joi.number().default(5432).optional(),
-  POSTGRES_DATABASE: Joi.string().default(`wirebill`).optional(),
-  POSTGRES_USER: Joi.string().default(`wirebill`).optional(),
-  POSTGRES_PASSWORD: Joi.string().default(`wirebill`).optional(),
-  POSTGRES_DIALECT: Joi.string().default(`postgres`).optional(),
-  POSTGRES_LOGGING: Joi.boolean().default(false).optional(),
+  ...(noVercelPostgresUrlProvided && postgres),
 
   GOOGLE_API_KEY: Joi.string().required(),
   GOOGLE_CLIENT_ID: Joi.string().required(),

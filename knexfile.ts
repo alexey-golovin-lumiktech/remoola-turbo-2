@@ -48,11 +48,8 @@ const pool: Knex.Config[`pool`] = {
   createRetryIntervalMillis: 2000,
   propagateCreateError: false,
 }
-
-const connection =
-  /^null|undefined$/i.test(process.env.VERCEL_POSTGRES_URL) == false
-    ? `${process.env.VERCEL_POSTGRES_URL}?sslmode=require`
-    : connectionConfig
+const isVercelPostgresUrlProvided = /^null|undefined$/i.test(process.env.VERCEL_POSTGRES_URL) == false
+const connection = isVercelPostgresUrlProvided ? `${process.env.VERCEL_POSTGRES_URL}?sslmode=require` : connectionConfig
 
 const config: { [key: string]: Knex.Config } = {
   development: {
