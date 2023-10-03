@@ -4,7 +4,7 @@ import { IAdminCreate } from '@wirebill/shared-common/dtos'
 import { AdminType } from '@wirebill/shared-common/enums'
 import { TableName } from '@wirebill/shared-common/models'
 
-import { commonUtils } from '../common-utils'
+import { commonUtils } from '../../common-utils'
 
 export async function seed(knex: Knex): Promise<void> {
   const admins: Omit<IAdminCreate, `salt`>[] = [

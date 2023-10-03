@@ -19,7 +19,7 @@ const validatePassword = (params = { incomingPass: ``, password: ``, salt: `` })
   return params.password === hash
 }
 
-const getConsumerFullName = (consumer: IConsumerModel): Nullable<string> => {
+const getConsumerFullName = (consumer: IConsumerModel): null | string => {
   if (!consumer.firstName && !consumer.lastName) return null
   return `${consumer.firstName} ${consumer.lastName}`.trim()
 }
