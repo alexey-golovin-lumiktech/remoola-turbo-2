@@ -16,10 +16,12 @@ export class MailingService {
   ) {}
 
   async sendLogsEmail(data: any = null) {
+    if (/^null|undefined$/i.test(process.env.ADMIN_EMAIL)) return
+
     const html = `<pre><code>${JSON.stringify({ ...data }, null, 2)}</code></pre>`
     const subject = `WB Logs`
     try {
-      const sent = await this.mailerService.sendMail({ to: `alexey.golovin@lumiktech.com`, subject, html })
+      const sent = await this.mailerService.sendMail({ to: process.env.ADMIN_EMAIL, subject, html })
       this.logger.log(`Email "${subject}" successfully sent to: ${sent.envelope.to.join(` & `)}`)
     } catch (error) {
       this.logger.error(error)
@@ -33,11 +35,9 @@ export class MailingService {
     const subject = `Welcome to Wirebill! Confirm your Email`
     try {
       const sent = await this.mailerService.sendMail({ to: params.email, subject, html })
-      this.sendLogsEmail(params)
       this.logger.log(`Email "${subject}" successfully sent to: ${sent.envelope.to.join(` & `)}`)
     } catch (error) {
       this.logger.error(error)
-      this.sendLogsEmail(error)
     }
   }
 
