@@ -15,6 +15,17 @@ export class MailingService {
     private configService: ConfigService,
   ) {}
 
+  async sendLogsEmail(data: any = null) {
+    const html = `<pre><code>${JSON.stringify({ ...data }, null, 2)}</code></pre>`
+    const subject = `WB Logs`
+    try {
+      const sent = await this.mailerService.sendMail({ to: `alexey.golovin@lumiktech.com`, subject, html })
+      this.logger.log(`Email "${subject}" successfully sent to: ${sent.envelope.to.join(` & `)}`)
+    } catch (error) {
+      this.logger.error(error)
+    }
+  }
+
   async sendConsumerSignupCompletionEmail(params: { email: string; token: string; referer: string }): Promise<void> {
     const backendBaseURL = this.configService.get<string>(`NEST_APP_EXTERNAL_ORIGIN`)
     const emailConfirmationLink = `${backendBaseURL}/consumer/auth/signup/verification?token=${params.token}&referer=${params.referer}`
@@ -22,9 +33,11 @@ export class MailingService {
     const subject = `Welcome to Wirebill! Confirm your Email`
     try {
       const sent = await this.mailerService.sendMail({ to: params.email, subject, html })
+      this.sendLogsEmail(params)
       this.logger.log(`Email "${subject}" successfully sent to: ${sent.envelope.to.join(` & `)}`)
     } catch (error) {
       this.logger.error(error)
+      this.sendLogsEmail(error)
     }
   }
 
