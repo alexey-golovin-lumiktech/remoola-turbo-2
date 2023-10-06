@@ -29,7 +29,7 @@ const keysToSnakeCase = function (source: any) {
   return toSnake(source)
 }
 
-const connectionConfig: Knex.Config[`connection`] = {
+const connectionConfig: Knex.PgConnectionConfig = {
   host: process.env.POSTGRES_HOST || `localhost`,
   port: parseInt(process.env.POSTGRES_PORT || `5432`),
   database: process.env.POSTGRES_DATABASE || `wirebill`,
@@ -37,7 +37,12 @@ const connectionConfig: Knex.Config[`connection`] = {
   password: process.env.POSTGRES_PASSWORD || `wirebill`,
 }
 
-const pool: Knex.Config[`pool`] = {
+if (/^true$/i.test(process.env.POSTGRES_SSL)) {
+  const extras: Pick<Knex.PgConnectionConfig, `ssl`> & { sslmode: `required` } = { ssl: true, sslmode: `required` }
+  Object.assign(connectionConfig, extras)
+}
+
+const pool: Knex.PoolConfig = {
   min: 0,
   max: 20,
   acquireTimeoutMillis: 300000,

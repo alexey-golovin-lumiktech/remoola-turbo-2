@@ -5,7 +5,7 @@
     "email": "alexey.golovin@lumiktech.com",
     "verified": true,
     "legalVerified": false,
-    "howDidHearAboutUs": "google",
+    "howDidHearAboutUs": "Google",
     "password": "c38a7c661e877ace5bd46aa6f709aa93c94118850a8d2eb40b66444abeed576ce215b0ab7317e0bc1220e65f7c5a33c6c34dc1727cf7467fdf4bd0ad5b1f1444",
     "salt": "1b7e517924",
     "firstName": "Alexey",
@@ -53,7 +53,7 @@
     "email": "simplelogin-newsletter.djakm@simplelogin.com",
     "verified": true,
     "legalVerified": false,
-    "howDidHearAboutUs": "google",
+    "howDidHearAboutUs": "Google",
     "password": "9d247ca50d93f64c9904f1a3ecadfd65d3299b226301bd1ec0cf5efe5875349c5596f63ca5cb2a0961d452dc2a65f3458b27f36975bbf4e04e71b3ef7985a0dc",
     "salt": "3ab848ab1d",
     "firstName": "simplelogin",
@@ -78,7 +78,7 @@
     },
     "organizationDetails": {
       "name": "newsletter-org",
-      "consumerRole": "worker",
+      "consumerRole": "Worker",
       "size": "1-10 team members"
     },
     "billingDetails": {
@@ -93,7 +93,7 @@
     "email": "purelybroom866@simplelogin.com",
     "verified": true,
     "legalVerified": false,
-    "howDidHearAboutUs": "google",
+    "howDidHearAboutUs": "Google",
     "password": "3df23ebbc1c8b0d5870ed90b4a44717bdf52276c5569ab09361b4767ffb02033bc09e7bc4784607a39bf87eda4fd5d58fc286c3bba9dcd1ac3d8bef74200df2e",
     "salt": "56a2ac262d",
     "firstName": "purelybroom",
@@ -112,7 +112,7 @@
     "addressDetails": null,
     "organizationDetails": {
       "name": "purelybroom-org",
-      "consumerRole": "worker",
+      "consumerRole": "Worker",
       "size": "11 - 100 team members"
     },
     "billingDetails": {
