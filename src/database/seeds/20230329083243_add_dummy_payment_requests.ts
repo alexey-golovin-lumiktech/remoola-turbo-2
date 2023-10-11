@@ -22,7 +22,7 @@ export async function seed(knex: Knex): Promise<void> {
       if (requesterId === payerId) continue
       for (const type of Object.values(TransactionType)) {
         for (const paymentStatus of Object.values(TransactionStatus)) {
-          for (const currencyCode of Object.values(CurrencyCode)) {
+          for (const currencyCode of Object.values(CurrencyCode).filter(x => [`CHF`, `USD`, `RUB`, `EUR`, `JPY`, `GBP`].includes(x))) {
             const paymentRequest: IPaymentRequestCreate = {
               requesterId: requesterId,
               payerId: payerId,
