@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
+import { AccessRefreshTokenRepository } from 'src/repositories'
 
 import { AddressDetailsModule } from '../entities/address-details/address-details.module'
 import { ConsumerModule } from '../entities/consumer/consumer.module'
@@ -15,14 +16,9 @@ import { AuthService } from './auth.service'
 @Module({
   imports: [
     JwtModule.registerAsync({
-      useFactory: (configService: ConfigService) => {
-        const secret = configService.get<string>(`JWT_SECRET`)
-        const expiresIn = configService.get<string>(`JWT_ACCESS_TOKEN_EXPIRES_IN`)
-        return { global: true, secret, signOptions: { expiresIn } }
-      },
+      useFactory: (configService: ConfigService) => ({ secret: configService.get<string>(`JWT_SECRET`) }),
       inject: [ConfigService],
     }),
-
     GoogleProfileDetailsModule,
     PersonalDetailsModule,
     OrganizationDetailsModule,
@@ -31,7 +27,7 @@ import { AuthService } from './auth.service'
     ResetPasswordModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService],
+  providers: [AccessRefreshTokenRepository, AuthService],
   exports: [AuthService],
 })
 export class AuthModule {}

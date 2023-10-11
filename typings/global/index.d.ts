@@ -5,6 +5,7 @@ type OneOfObjectKeys<T> = keyof T
 type OneOfObjectValues<T> = T[keyof T]
 type Generic = { [key: string]: unknown }
 type DeepPartial<T> = T extends object ? { [P in keyof T]?: DeepPartial<T[P]> } : T
+type Prettified<T> = { [K in keyof T]: T[K] } & NonNullable<unknown>
 
 declare namespace NodeJS {
   interface ProcessEnv {

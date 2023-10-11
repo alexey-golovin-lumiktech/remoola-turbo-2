@@ -1,7 +1,8 @@
-import { BadRequestException, Inject, Injectable, InternalServerErrorException, Logger } from '@nestjs/common'
+import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
-import * as uuid from 'uuid'
+import { IJwtTokenPayload } from 'src/dtos/consumer'
+import { AccessRefreshTokenRepository } from 'src/repositories'
 
 import { IAdminModel } from '@wirebill/shared-common/models'
 
@@ -16,6 +17,7 @@ export class AdminAuthService {
 
   constructor(
     @Inject(AdminService) private readonly adminsService: AdminService,
+    @Inject(AccessRefreshTokenRepository) private readonly accessRefreshTokenRepository: AccessRefreshTokenRepository,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
   ) {}
@@ -31,31 +33,32 @@ export class AdminAuthService {
   }
 
   async login(admin: IAdminModel): Promise<ADMIN.Access> {
-    try {
-      const accessToken = this.generateToken(admin)
-      const refreshToken = this.generateRefreshToken() //@IMPORTANT_NOTE: need to store refresh token
-      return { accessToken, refreshToken: refreshToken.token, type: admin.type }
-    } catch (error) {
-      this.logger.error(error)
-      throw new InternalServerErrorException()
-    }
+    const access = await this.getAccessAndRefreshToken(admin.id)
+    return Object.assign({ ...access, type: admin.type, email: admin.email, id: admin.id })
   }
 
-  private generateToken(admin: IAdminModel): string {
-    const payload = { email: admin.email, identityId: admin.id }
-    const options = {
-      secret: this.configService.get<string>(`JWT_SECRET`),
-      expiresIn: this.configService.get<string>(`JWT_ACCESS_TOKEN_EXPIRES_IN`),
-    }
-    return this.jwtService.sign(payload, options)
+  async refreshAccess(refreshToken: string): Promise<ADMIN.Access> {
+    const verified = this.jwtService.verify<IJwtTokenPayload>(refreshToken)
+    const exist = await this.accessRefreshTokenRepository.findOne({ identityId: verified.identityId })
+    if (exist == null) throw new BadRequestException(`invalid refresh token`)
+
+    const admin = await this.adminsService.repository.findById(verified.identityId)
+    const access = await this.getAccessAndRefreshToken(admin.id)
+    return Object.assign({ ...access, type: admin.type, email: admin.email, id: admin.id })
   }
 
-  private generateRefreshToken() {
-    const payload = { tokenUuid: uuid.v4(), type: `refresh` }
-    const options = {
-      secret: this.configService.get<string>(`JWT_SECRET`),
-      expiresIn: this.configService.get<string>(`JWT_REFRESH_TOKEN_EXPIRES_IN`),
-    }
-    return { tokenUuid: payload.tokenUuid, token: this.jwtService.sign(payload, options) }
+  private async getAccessAndRefreshToken(identityId: IAdminModel[`id`]): Promise<Pick<ADMIN.Access, `accessToken` | `refreshToken`>> {
+    const accessToken = await this.getAccessToken(identityId)
+    const refreshToken = await this.getRefreshToken(identityId)
+    const saved = await this.accessRefreshTokenRepository.upsert({ accessToken, refreshToken, identityId })
+    return { accessToken: saved.accessToken, refreshToken: saved.refreshToken }
+  }
+
+  private getAccessToken(identityId: string) {
+    return this.jwtService.signAsync({ identityId, type: `access` }, { expiresIn: process.env.JWT_ACCESS_TOKEN_EXPIRES_IN })
+  }
+
+  private getRefreshToken(identityId: string) {
+    return this.jwtService.signAsync({ identityId, type: `refresh` }, { expiresIn: process.env.JWT_REFRESH_TOKEN_EXPIRES_IN })
   }
 }

@@ -9,6 +9,8 @@ import {
   TableName,
 } from '@wirebill/shared-common/models'
 
+import { commonUtils } from '../../common-utils'
+
 import { default as dummyConsumers } from './dummy-consumers.json'
 
 export async function seed(knex: Knex): Promise<void> {
@@ -53,6 +55,9 @@ export async function seed(knex: Knex): Promise<void> {
       if (inserted == null) console.log(`[LOST OrganizationDetails]`), process.exit(1)
 
       consumerData.organizationDetailsId = inserted.id
+      const salt = commonUtils.getHashingSalt(10)
+      const password = commonUtils.hashPassword({ password: consumerData.email, salt })
+      Object.assign(consumerData, { salt, password })
     }
 
     const [consumer] = await knex.insert([consumerData]).into(TableName.Consumer).returning(`*`)

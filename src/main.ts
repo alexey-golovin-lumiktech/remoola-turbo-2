@@ -20,6 +20,7 @@ import { commonUtils } from './common-utils'
 import { ADMIN, CONSUMER } from './dtos'
 import { HttpExceptionFilter } from './filters'
 import { TransformResponseInterceptor } from './interceptors'
+import { AccessRefreshTokenRepository } from './repositories'
 
 async function bootstrap() {
   commonUtils.checkProvidedEnvs(process.cwd())()
@@ -28,7 +29,6 @@ async function bootstrap() {
     cors: {
       origin: [/localhost/, /\.vercel.app/, /\.ngrok-free.app/],
       exposedHeaders: [`Content-Range`, `Content-Type`],
-      credentials: true,
     },
     rawBody: true,
   })
@@ -76,7 +76,8 @@ async function bootstrap() {
   const jwtService = app.get(JwtService)
   const consumersService = app.get(ConsumerService)
   const adminsService = app.get(AdminService)
-  app.useGlobalGuards(new AuthGuard(reflector, jwtService, consumersService, adminsService))
+  const accessRefreshTokenRepository = app.get(AccessRefreshTokenRepository)
+  app.useGlobalGuards(new AuthGuard(reflector, jwtService, consumersService, adminsService, accessRefreshTokenRepository))
   app.useGlobalInterceptors(new TransformResponseInterceptor(reflector))
   app.useGlobalFilters(new HttpExceptionFilter())
 

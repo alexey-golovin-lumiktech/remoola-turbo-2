@@ -12,7 +12,7 @@ import {
   Query,
   Response,
 } from '@nestjs/common'
-import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger'
+import { ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger'
 import express from 'express'
 import { IncomingHttpHeaders } from 'http'
 
@@ -60,6 +60,15 @@ export class AuthController {
   @Post(`/signup`)
   signup(@Body() body: CONSUMER.SignupRequest): Promise<CONSUMER.ConsumerResponse | never> {
     return this.service.signup(body)
+  }
+
+  @PublicEndpoint()
+  @Post(`/refresh-access`)
+  @ApiOperation({ operationId: `refresh_access` })
+  @ApiBody({ schema: { type: `object`, properties: { refreshToken: { type: `string` } } } })
+  @ApiOkResponse({ type: CONSUMER.LoginResponse })
+  refreshAccess(@Body(`refreshToken`) refreshToken: string): Promise<CONSUMER.LoginResponse | unknown> {
+    return this.service.refreshAccess(refreshToken)
   }
 
   @PublicEndpoint()

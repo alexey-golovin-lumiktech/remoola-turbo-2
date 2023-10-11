@@ -11,7 +11,7 @@ import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import express from 'express'
 import { OAuth2Client } from 'google-auth-library'
-import * as uuid from 'uuid'
+import { AccessRefreshTokenRepository } from 'src/repositories'
 
 import { IChangePasswordBody, IChangePasswordParam, IConsumerCreate } from '@wirebill/shared-common/dtos'
 import { IConsumerModel } from '@wirebill/shared-common/models'
@@ -32,6 +32,7 @@ export class AuthService {
     @Inject(ConsumerService) private readonly consumerService: ConsumerService,
     @Inject(GoogleProfileDetailsService) private readonly googleProfileDetailsService: GoogleProfileDetailsService,
     @Inject(ResetPasswordService) private readonly resetPasswordService: ResetPasswordService,
+    @Inject(AccessRefreshTokenRepository) private readonly accessRefreshTokenRepository: AccessRefreshTokenRepository,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly mailingService: MailingService,
@@ -60,9 +61,9 @@ export class AuthService {
         await this.mailingService.sendConsumerTemporaryPasswordForGoogleOAuth({ email: consumer.email })
       }
 
-      const accessToken = this.generateToken(consumer)
-      const refreshToken = this.generateRefreshToken() //@IMPORTANT_NOTE: need to store refresh token
-      return { ...consumer, accessToken, refreshToken: refreshToken.token }
+      const access = await this.getAccessAndRefreshToken(consumer.id)
+
+      return commonUtils.convertPlainToClassInstance(CONSUMER.LoginResponse, Object.assign(consumer, access))
     } catch (error) {
       this.logger.error(error)
       throw new InternalServerErrorException()
@@ -70,12 +71,18 @@ export class AuthService {
   }
 
   async login(identity: IConsumerModel): Promise<CONSUMER.LoginResponse> {
-    const accessToken = this.generateToken(identity)
-    const refreshToken = this.generateRefreshToken() //@IMPORTANT_NOTE: need to store refresh token
-    return commonUtils.convertPlainToClassInstance(
-      CONSUMER.LoginResponse,
-      Object.assign(identity, { accessToken, refreshToken: refreshToken.token }),
-    )
+    const access = await this.getAccessAndRefreshToken(identity.id)
+    return commonUtils.convertPlainToClassInstance(CONSUMER.LoginResponse, Object.assign(identity, access))
+  }
+
+  async refreshAccess(refreshToken: string): Promise<CONSUMER.LoginResponse> {
+    const verified = this.jwtService.verify<IJwtTokenPayload>(refreshToken)
+    const exist = await this.accessRefreshTokenRepository.findOne({ identityId: verified.identityId })
+    if (exist == null) throw new BadRequestException(`invalid refresh token`)
+
+    const consumer = await this.consumerService.repository.findById(verified.identityId)
+    const access = await this.getAccessAndRefreshToken(consumer.id)
+    return commonUtils.convertPlainToClassInstance(CONSUMER.LoginResponse, Object.assign(consumer, access))
   }
 
   private extractConsumerFromGoogleProfile(dto: CONSUMER.CreateGoogleProfileDetails): Omit<IConsumerCreate, `verified` | `legalVerified`> {
@@ -110,7 +117,7 @@ export class AuthService {
   async completeProfileCreation(consumerId: string, referer: string): Promise<void | never> {
     const consumer = await this.consumerService.getById(consumerId)
     if (!consumer) throw new BadRequestException(`No consumer for provided consumerId: ${consumerId}`)
-    const token = this.generateToken(consumer)
+    const token = await this.getAccessToken(consumer.id)
     this.mailingService.sendConsumerSignupCompletionEmail({ email: consumer.email, token, referer })
   }
 
@@ -134,7 +141,8 @@ export class AuthService {
     const consumer = await this.consumerService.repository.findOne({ email: body.email })
     if (!consumer) throw new BadRequestException(`Not found any consumer for email: ${body.email}`)
 
-    const record = await this.resetPasswordService.upsert({ token: this.generateToken(consumer), consumerId: consumer.id })
+    const token = await this.getAccessToken(consumer.id)
+    const record = await this.resetPasswordService.upsert({ token, consumerId: consumer.id })
     const forgotPasswordLink = new URL(`change-password`, referer)
     forgotPasswordLink.searchParams.append(`token`, record.token)
     this.mailingService.sendForgotPasswordEmail({ forgotPasswordLink: forgotPasswordLink.toString(), email: consumer.email })
@@ -152,18 +160,26 @@ export class AuthService {
     return true
   }
 
-  private generateToken(consumer: Pick<IConsumerModel, `email` | `id`>): string {
-    const payload: IJwtTokenPayload = { identityId: consumer.id, email: consumer.email }
-    const options = {
-      secret: this.configService.get<string>(`JWT_SECRET`),
-      expiresIn: this.configService.get<string>(`JWT_ACCESS_TOKEN_EXPIRES_IN`),
-    }
-    return this.jwtService.sign(payload, options)
+  private async getAccessAndRefreshToken(
+    identityId: IConsumerModel[`id`],
+  ): Promise<Pick<CONSUMER.LoginResponse, `accessToken` | `refreshToken`>> {
+    const accessToken = await this.getAccessToken(identityId)
+    const refreshToken = await this.getRefreshToken(identityId)
+    const saved = await this.accessRefreshTokenRepository.upsert({ accessToken, refreshToken, identityId })
+    return { accessToken: saved.accessToken, refreshToken: saved.refreshToken }
+  }
+
+  private getAccessToken(identityId: string) {
+    return this.jwtService.signAsync({ identityId, type: `access` }, { expiresIn: process.env.JWT_ACCESS_TOKEN_EXPIRES_IN })
+  }
+
+  private getRefreshToken(identityId: string) {
+    return this.jwtService.signAsync({ identityId, type: `refresh` }, { expiresIn: process.env.JWT_REFRESH_TOKEN_EXPIRES_IN })
   }
 
   private async verifyChangePasswordFlowToken(token): Promise<IJwtTokenPayload> {
-    const verified = await this.jwtService.verifyAsync<IJwtTokenPayload>(token)
-    if (!verified) throw new UnauthorizedException(`Invalid token`)
+    const verified = this.jwtService.verify<IJwtTokenPayload>(token)
+    if (!verified) throw new UnauthorizedException(`[verifyChangePasswordFlowToken] Invalid token`)
 
     const [consumer] = await this.consumerService.repository.find({ filter: { email: verified.email, id: verified.identityId } })
     if (consumer == null) throw new UnauthorizedException(`Consumer not found`)
@@ -172,14 +188,5 @@ export class AuthService {
     if (record == null) throw new NotFoundException(`Change password flow is expired or not initialized`)
 
     return verified
-  }
-
-  private generateRefreshToken() {
-    const payload = { tokenUuid: uuid.v4(), type: `refresh` }
-    const options = {
-      secret: this.configService.get<string>(`JWT_SECRET`),
-      expiresIn: this.configService.get<string>(`JWT_REFRESH_TOKEN_EXPIRES_IN`),
-    }
-    return { tokenUuid: payload.tokenUuid, token: this.jwtService.sign(payload, options) }
   }
 }

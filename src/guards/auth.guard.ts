@@ -3,6 +3,8 @@ import { Reflector } from '@nestjs/core'
 import { JwtService } from '@nestjs/jwt'
 import express from 'express'
 import { Observable } from 'rxjs'
+import { IJwtTokenPayload } from 'src/dtos/consumer'
+import { AccessRefreshTokenRepository } from 'src/repositories'
 
 import { AuthHeader, CredentialsSeparator } from '@wirebill/shared-common/enums'
 import { IAdminModel, IConsumerModel } from '@wirebill/shared-common/models'
@@ -21,13 +23,16 @@ export const ReqAuthIdentity = createParamDecorator((_, context: ExecutionContex
 export type IReqAuthIdentity = IConsumerModel | IAdminModel
 
 const GuardMessage = {
-  LOST_HEADER: `Lost required authorization header!`,
-  PUBLIC_ENDPOINT: `Public endpoint. Skip checking!`,
-  UNEXPECTED: (type: string) => `Unexpected auth header type: ${type}`,
-  INVALID_CREDENTIALS: `Invalid email or password`,
-  INVALID_TOKEN: `Invalid token`,
-  NO_IDENTITY: `No identity for given credentials.`,
-  NOT_VERIFIED: `Probably your email address is not verified yet. Check you email address`,
+  LOST_HEADER: `[AuthGuard] lost required authorization header!`,
+  PUBLIC_ENDPOINT: `[AuthGuard] public endpoint. skip checking!`,
+  UNEXPECTED: (type: string) => `[AuthGuard] unexpected auth header type: ${type}`,
+  INVALID_CREDENTIALS: `[AuthGuard] invalid email or password`,
+  INVALID_TOKEN: `[AuthGuard] invalid token`,
+  PROVIDED_TOKEN_IS_EXPIRED_OR_NOT_IN_REPOSITORY: `[AuthGuard] provided token is expired or not in repository`,
+  NO_IDENTITY: `[AuthGuard] no identity for given credentials.`,
+  NOT_VERIFIED: `[AuthGuard] probably your email address is not verified yet. Check you email address`,
+  ONLY_FOR_ADMINS: `[AuthGuard] only for admins`,
+  ONLY_FOR_CONSUMERS: `[AuthGuard] only for consumers`,
 } as const
 
 export class AuthGuard implements CanActivate {
@@ -39,6 +44,7 @@ export class AuthGuard implements CanActivate {
     private readonly jwtService: JwtService,
     private readonly consumersService: ConsumerService,
     private readonly adminsService: AdminService,
+    private readonly accessRefreshTokenRepository: AccessRefreshTokenRepository,
   ) {}
 
   canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
@@ -71,8 +77,8 @@ export class AuthGuard implements CanActivate {
     const identity = admin ?? consumer
 
     if (identity == null) return this.throwError(GuardMessage.NO_IDENTITY)
-    if (request.url.startsWith(`/admin/`) && !admin) return this.throwError(`Only for admins`)
-    if (request.url.startsWith(`/consumer/`) && !consumer) return this.throwError(`Only for consumers`)
+    if (request.url.startsWith(`/admin/`) && !admin) return this.throwError(GuardMessage.ONLY_FOR_ADMINS)
+    if (request.url.startsWith(`/consumer/`) && !consumer) return this.throwError(GuardMessage.ONLY_FOR_CONSUMERS)
     if ((identity as IConsumerModel).verified == false) return this.throwError(GuardMessage.NOT_VERIFIED)
 
     const isValidPassword = commonUtils.validatePassword({
@@ -86,18 +92,21 @@ export class AuthGuard implements CanActivate {
     return true
   }
 
-  private async bearerProcessor(encoded: string, request: express.Request) {
-    const decoded = this.jwtService.decode(encoded)
-    if (decoded == null || !decoded[`identityId`]) return this.throwError(GuardMessage.INVALID_TOKEN)
+  private async bearerProcessor(accessToken: string, request: express.Request) {
+    const verified = this.jwtService.verify<IJwtTokenPayload>(accessToken)
+    if (verified == null) return this.throwError(`[AuthGuard][bearerProcessor] invalid token. no verified`)
+    if (!verified.identityId) return this.throwError(`[AuthGuard][bearerProcessor] invalid token. no identity id`)
 
-    const identityId = decoded[`identityId`]
-    const admin = await this.adminsService.repository.findById(identityId)
-    const consumer = await this.consumersService.repository.findById(identityId)
+    const access = await this.accessRefreshTokenRepository.findOne({ identityId: verified.identityId, accessToken })
+    if (access == null) this.throwError(GuardMessage.PROVIDED_TOKEN_IS_EXPIRED_OR_NOT_IN_REPOSITORY)
+
+    const admin = await this.adminsService.repository.findById(verified.identityId)
+    const consumer = await this.consumersService.repository.findById(verified.identityId)
     const identity = admin ?? consumer
 
     if (identity == null) return this.throwError(GuardMessage.NO_IDENTITY)
-    if (request.url.startsWith(`/admin/`) && !admin) return this.throwError(`Only for admins`)
-    if (request.url.startsWith(`/consumer/`) && !consumer) return this.throwError(`Only for consumers`)
+    if (request.url.startsWith(`/admin/`) && !admin) return this.throwError(GuardMessage.ONLY_FOR_ADMINS)
+    if (request.url.startsWith(`/consumer/`) && !consumer) return this.throwError(GuardMessage.ONLY_FOR_CONSUMERS)
 
     request[REQUEST_AUTH_IDENTITY] = Object.assign(identity, { type: admin ? `admin` : `consumer` })
     return true
@@ -105,6 +114,7 @@ export class AuthGuard implements CanActivate {
 
   private throwError(message: string): never {
     this.logger.error(message)
+
     throw new ForbiddenException(message)
   }
 }
