@@ -15,17 +15,27 @@ import { LoggerMiddleware } from './middleware/logger.middleware'
 import { AppController } from './app.controller'
 import * as configValidation from './envs-validation.schema'
 
+const IS_ON_VERCEL = /^true$/i.test(process.env[`IS_ON_VERCEL`])
+
+const localDevelopmentConfigModuleSetup = {
+  cache: true,
+  expandVariables: true,
+  envFilePath: [getEnvPath(process.cwd())],
+  validationSchema: configValidation.validationSchema,
+  validationOptions: configValidation.validationOptions,
+}
+
+const configModuleOptions = { isGlobal: true }
+if (IS_ON_VERCEL == false) Object.assign(configModuleOptions, localDevelopmentConfigModuleSetup)
+
+setTimeout(() => {
+  console.log(`[configModuleOptions]`, configModuleOptions[`envFilePath`])
+}, 3000)
+
 @Module({
   imports: [
     ScheduleModule.forRoot(),
-    ConfigModule.forRoot({
-      cache: true,
-      expandVariables: true,
-      isGlobal: true,
-      envFilePath: [getEnvPath(process.cwd())],
-      validationSchema: configValidation.validationSchema,
-      validationOptions: configValidation.validationOptions,
-    }),
+    ConfigModule.forRoot(configModuleOptions),
     KnexModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {

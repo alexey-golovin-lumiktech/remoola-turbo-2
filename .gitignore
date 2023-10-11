@@ -48,3 +48,15 @@ dist
 /knexfile.js.map
 
 .vercel
+
+/z-me*
+/me*
+./*.yml
+./*.sh
+./*.pdf
+./.env.development
+./.env.example
+./.env
+./zdocs.tmp
+./z-me-folder
+./env-copy.development.yml

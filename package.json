@@ -26,6 +26,7 @@
     "start": "nest start",
     "start:debug": "nest start --debug --watch",
     "start:dev": "cross-env NODE_ENV=development nest start --watch",
+    "start:vercel:dev": "cross-env NODE_ENV=development IS_ON_VERCEL=true nest start --watch",
     "start:prod": "node dist/main",
     "test": "jest",
     "test:cov": "jest --coverage",
