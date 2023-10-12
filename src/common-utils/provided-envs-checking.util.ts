@@ -14,8 +14,8 @@ const customEnvironmentNames = [
   `POSTGRES_DATABASE`,
   `POSTGRES_USER`,
   `POSTGRES_PASSWORD`,
-  `POSTGRES_DIALECT`,
-  `POSTGRES_LOGGING`,
+  `POSTGRES_DEBUG`,
+  // 'VERCEL_POSTGRES_URL',  //!!!optional, when provided other options will be ignored
 
   `GOOGLE_API_KEY`,
   `GOOGLE_CLIENT_ID`,

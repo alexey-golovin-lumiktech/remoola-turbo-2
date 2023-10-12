@@ -30,17 +30,15 @@ const keysToSnakeCase = function (source: any) {
 }
 
 const connectionConfig: Knex.PgConnectionConfig = {
-  host: process.env.POSTGRES_HOST || `localhost`,
-  port: parseInt(process.env.POSTGRES_PORT || `5432`),
-  database: process.env.POSTGRES_DATABASE || `wirebill`,
-  user: process.env.POSTGRES_USER || `wirebill`,
-  password: process.env.POSTGRES_PASSWORD || `wirebill`,
+  host: process.env.POSTGRES_HOST,
+  port: parseInt(process.env.POSTGRES_PORT),
+  database: process.env.POSTGRES_DATABASE,
+  user: process.env.POSTGRES_USER,
+  password: process.env.POSTGRES_PASSWORD,
+  ssl: /^true$/i.test(process.env.POSTGRES_SSL),
 }
 
-if (/^true$/i.test(process.env.POSTGRES_SSL)) {
-  const extras: Pick<Knex.PgConnectionConfig, `ssl`> & { sslmode: `required` } = { ssl: true, sslmode: `required` }
-  Object.assign(connectionConfig, extras)
-}
+if (connectionConfig.ssl) Object.assign(connectionConfig, { sslmode: `require` })
 
 const pool: Knex.PoolConfig = {
   min: 0,
@@ -53,14 +51,12 @@ const pool: Knex.PoolConfig = {
   createRetryIntervalMillis: 2000,
   propagateCreateError: false,
 }
-const isVercelPostgresUrlProvided = /^null|undefined$/i.test(process.env.VERCEL_POSTGRES_URL) == false
-const connection = isVercelPostgresUrlProvided ? `${process.env.VERCEL_POSTGRES_URL}?sslmode=require` : connectionConfig
 
 const config: { [key: string]: Knex.Config } = {
   development: {
-    debug: /^true$/.test(process.env.POSTGRES_LOGGING) ?? false,
+    debug: /^true$/.test(process.env.POSTGRES_DEBUG),
     client: `pg`,
-    connection: connection,
+    connection: process.env.VERCEL_POSTGRES_URL || connectionConfig,
     acquireConnectionTimeout: 1000000,
     pool: pool,
     migrations: { extension: `ts`, tableName: `knex_migrations`, directory: `./src/database/migrations` },
@@ -71,7 +67,7 @@ const config: { [key: string]: Knex.Config } = {
   production: {
     debug: false,
     client: `pg`,
-    connection: connection,
+    connection: process.env.VERCEL_POSTGRES_URL || connectionConfig,
     acquireConnectionTimeout: 1000000,
     pool: pool,
     migrations: { extension: `ts`, tableName: `knex_migrations`, directory: `./src/database/migrations` },

@@ -15,9 +15,7 @@ import { LoggerMiddleware } from './middleware/logger.middleware'
 import { AppController } from './app.controller'
 import * as configValidation from './envs-validation.schema'
 
-const IS_ON_VERCEL = /^true$/i.test(process.env[`IS_ON_VERCEL`])
-
-const localDevelopmentConfigModuleSetup = {
+const developmentConfigModuleSetup = {
   cache: true,
   expandVariables: true,
   envFilePath: [getEnvPath(process.cwd())],
@@ -26,11 +24,7 @@ const localDevelopmentConfigModuleSetup = {
 }
 
 const configModuleOptions = { isGlobal: true }
-if (IS_ON_VERCEL == false) Object.assign(configModuleOptions, localDevelopmentConfigModuleSetup)
-
-setTimeout(() => {
-  console.log(`[configModuleOptions]`, configModuleOptions[`envFilePath`])
-}, 3000)
+if (Object.keys(process.env).some(x => x.startsWith(`VERCEL_`))) Object.assign(configModuleOptions, developmentConfigModuleSetup)
 
 @Module({
   imports: [

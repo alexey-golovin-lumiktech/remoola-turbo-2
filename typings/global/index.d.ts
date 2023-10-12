@@ -19,8 +19,8 @@ declare namespace NodeJS {
     POSTGRES_DATABASE?: string
     POSTGRES_USER?: string
     POSTGRES_PASSWORD?: string
-    POSTGRES_DIALECT?: string
-    POSTGRES_LOGGING?: string
+    POSTGRES_DEBUG?: string
+    VERCEL_POSTGRES_URL?: string
 
     GOOGLE_API_KEY?: string
     GOOGLE_CLIENT_ID?: string

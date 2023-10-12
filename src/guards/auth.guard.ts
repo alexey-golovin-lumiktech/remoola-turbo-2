@@ -97,8 +97,9 @@ export class AuthGuard implements CanActivate {
     if (verified == null) return this.throwError(`[AuthGuard][bearerProcessor] invalid token. no verified`)
     if (!verified.identityId) return this.throwError(`[AuthGuard][bearerProcessor] invalid token. no identity id`)
 
-    const access = await this.accessRefreshTokenRepository.findOne({ identityId: verified.identityId, accessToken })
-    if (access == null) this.throwError(GuardMessage.PROVIDED_TOKEN_IS_EXPIRED_OR_NOT_IN_REPOSITORY)
+    const exist = await this.accessRefreshTokenRepository.findOne({ identityId: verified.identityId, accessToken })
+    if (exist == null) return this.throwError(`no identity record`)
+    if (exist.accessToken != accessToken) return this.throwError(`provided token is not valid`)
 
     const admin = await this.adminsService.repository.findById(verified.identityId)
     const consumer = await this.consumersService.repository.findById(verified.identityId)

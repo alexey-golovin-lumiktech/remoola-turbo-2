@@ -10,12 +10,12 @@ const postgres = {
   POSTGRES_DATABASE: Joi.string().default(`wirebill`).required(),
   POSTGRES_USER: Joi.string().default(`wirebill`).required(),
   POSTGRES_PASSWORD: Joi.string().default(`wirebill`).required(),
-  POSTGRES_DIALECT: Joi.string().default(`postgres`).required(),
-  POSTGRES_LOGGING: Joi.boolean().default(false).required(),
+  POSTGRES_DEBUG: Joi.boolean().default(false).required(),
+  VERCEL_POSTGRES_URL: Joi.string().optional(), //!!!optional, when provided other options will be ignored
 }
 
 export const validationSchema = Joi.object({
-  NODE_ENV: Joi.string().valid(`development`, `production`).required(),
+  NODE_ENV: Joi.string().valid(`staging`, `development`, `production`).required(),
 
   NEST_APP_PORT: Joi.number().required(),
   NEST_APP_HOST: Joi.string().default(`localhost`),

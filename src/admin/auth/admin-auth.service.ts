@@ -40,7 +40,8 @@ export class AdminAuthService {
   async refreshAccess(refreshToken: string): Promise<ADMIN.Access> {
     const verified = this.jwtService.verify<IJwtTokenPayload>(refreshToken)
     const exist = await this.accessRefreshTokenRepository.findOne({ identityId: verified.identityId })
-    if (exist == null) throw new BadRequestException(`invalid refresh token`)
+    if (exist == null) throw new BadRequestException(`no identity record`)
+    if (exist.refreshToken != refreshToken) throw new BadRequestException(`provided token is not valid`)
 
     const admin = await this.adminsService.repository.findById(verified.identityId)
     const access = await this.getAccessAndRefreshToken(admin.id)

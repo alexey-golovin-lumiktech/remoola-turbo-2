@@ -60,3 +60,4 @@ dist
 ./zdocs.tmp
 ./z-me-folder
 ./env-copy.development.yml
+.env*.local
