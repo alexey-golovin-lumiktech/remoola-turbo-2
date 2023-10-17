@@ -6,7 +6,6 @@ import { ConsumerRepository } from '../../../repositories'
 import { BillingDetailsModule } from '../billing-details/billing-details.module'
 import { ConsumerResourceModule } from '../consumer-resource/consumer-resource.module'
 import { PaymentRequestAttachmentModule } from '../payment-request-attachment/payment-request-attachment.module'
-import { TransactionModule } from '../transaction/transaction.module'
 
 import { ConsumerController } from './consumer.controller'
 import { ConsumerService } from './consumer.service'
@@ -18,7 +17,6 @@ import { ConsumerService } from './consumer.service'
     forwardRef(() => BillingDetailsModule),
     forwardRef(() => ConsumerResourceModule),
     forwardRef(() => PaymentRequestAttachmentModule),
-    forwardRef(() => TransactionModule),
   ],
   controllers: [ConsumerController],
   providers: [ConsumerRepository, ConsumerService],
