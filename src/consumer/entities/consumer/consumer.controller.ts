@@ -7,7 +7,6 @@ import { CONSUMER } from '../../../dtos'
 import { ReqAuthIdentity } from '../../../guards/auth.guard'
 import { TransformResponse } from '../../../interceptors'
 import { ContactService } from '../contact/contact.service'
-import { CreditCardService } from '../credit-card/credit-card.service'
 import { TransactionService } from '../transaction/transaction.service'
 
 import { ConsumerService } from './consumer.service'
@@ -18,7 +17,6 @@ import { ConsumerService } from './consumer.service'
 export class ConsumerController {
   constructor(
     @Inject(ConsumerService) private readonly service: ConsumerService,
-    @Inject(CreditCardService) private readonly creditCardService: CreditCardService,
     @Inject(ContactService) private readonly contactService: ContactService,
     @Inject(TransactionService) private readonly transactionService: TransactionService,
   ) {}
@@ -28,47 +26,6 @@ export class ConsumerController {
   @TransformResponse(CONSUMER.ConsumerResponse)
   getConsumerById(@ReqAuthIdentity() identity: IConsumerModel): CONSUMER.ConsumerResponse {
     return identity
-  }
-
-  @Get(`/credit-cards`)
-  @TransformResponse(CONSUMER.CreditCardsListResponse)
-  @ApiOkResponse({ type: CONSUMER.CreditCardsListResponse })
-  getConsumerCreditCardsList(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.CreditCardsListResponse> {
-    return this.creditCardService.repository.findAndCountAll({ filter: { deletedAt: null, consumerId: identity.id } })
-  }
-
-  @Get(`/credit-cards/:cardId`)
-  @TransformResponse(CONSUMER.CreditCardResponse)
-  @ApiOkResponse({ type: CONSUMER.CreditCardResponse })
-  getConsumerCreditCardById(
-    @ReqAuthIdentity() identity: IConsumerModel,
-    @Param(`cardId`) cardId: string,
-  ): Promise<CONSUMER.CreditCardResponse | null> {
-    return this.creditCardService.repository.findOne({ deletedAt: null, id: cardId, consumerId: identity.id })
-  }
-
-  @Patch(`/credit-cards/:cardId`)
-  @TransformResponse(CONSUMER.CreditCardResponse)
-  @ApiOkResponse({ type: CONSUMER.CreditCardResponse })
-  updateConsumerCreditCardById(
-    @Param(`cardId`) cardId: string,
-    @Body() body: CONSUMER.CreditCardUpdate,
-    @ReqAuthIdentity() identity: IConsumerModel, //
-  ): Promise<CONSUMER.CreditCardResponse | null> {
-    return this.creditCardService.repository.updateOne(
-      { deletedAt: null, id: cardId, consumerId: identity.id },
-      { ...body, consumerId: identity.id },
-    )
-  }
-
-  @Post(`/credit-cards`)
-  @TransformResponse(CONSUMER.CreditCardResponse)
-  @ApiOkResponse({ type: CONSUMER.CreditCardResponse })
-  createConsumerCreditCard(
-    @ReqAuthIdentity() identity: IConsumerModel,
-    @Body() body: CONSUMER.CreditCardCreate,
-  ): Promise<CONSUMER.CreditCardResponse> {
-    return this.creditCardService.repository.create({ ...body, consumerId: identity.id })
   }
 
   @Get(`/contacts`)

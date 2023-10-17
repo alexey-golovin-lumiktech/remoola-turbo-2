@@ -6,7 +6,6 @@ import { ConsumerRepository } from '../../../repositories'
 import { BillingDetailsModule } from '../billing-details/billing-details.module'
 import { ConsumerResourceModule } from '../consumer-resource/consumer-resource.module'
 import { ContactModule } from '../contact/contact.module'
-import { CreditCardModule } from '../credit-card/credit-card.module'
 import { PaymentRequestAttachmentModule } from '../payment-request-attachment/payment-request-attachment.module'
 import { TransactionModule } from '../transaction/transaction.module'
 
@@ -20,7 +19,6 @@ import { ConsumerService } from './consumer.service'
     forwardRef(() => BillingDetailsModule),
     forwardRef(() => ConsumerResourceModule),
     forwardRef(() => ContactModule),
-    forwardRef(() => CreditCardModule),
     forwardRef(() => PaymentRequestAttachmentModule),
     forwardRef(() => TransactionModule),
   ],
