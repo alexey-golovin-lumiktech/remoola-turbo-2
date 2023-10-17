@@ -10,7 +10,6 @@ import { AddressDetailsService } from '../address-details/address-details.servic
 import { ContactService } from '../contact/contact.service'
 import { CreditCardService } from '../credit-card/credit-card.service'
 import { OrganizationDetailsService } from '../organization-details/organization-details.service'
-import { PersonalDetailsService } from '../personal-details/personal-details.service'
 import { TransactionService } from '../transaction/transaction.service'
 
 import { ConsumerService } from './consumer.service'
@@ -21,7 +20,6 @@ import { ConsumerService } from './consumer.service'
 export class ConsumerController {
   constructor(
     @Inject(ConsumerService) private readonly service: ConsumerService,
-    @Inject(PersonalDetailsService) private readonly personalDetailsService: PersonalDetailsService,
     @Inject(AddressDetailsService) private readonly addressDetailsService: AddressDetailsService,
     @Inject(OrganizationDetailsService) private readonly organizationDetailsService: OrganizationDetailsService,
     @Inject(CreditCardService) private readonly creditCardService: CreditCardService,
@@ -34,13 +32,6 @@ export class ConsumerController {
   @TransformResponse(CONSUMER.ConsumerResponse)
   getConsumerById(@ReqAuthIdentity() identity: IConsumerModel): CONSUMER.ConsumerResponse {
     return identity
-  }
-
-  @Get(`/personal-details`)
-  @ApiOkResponse({ type: CONSUMER.PersonalDetailsResponse })
-  @TransformResponse(CONSUMER.PersonalDetailsResponse)
-  getConsumerPersonalDetails(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.PersonalDetailsResponse | null> {
-    return this.personalDetailsService.repository.findOne({ deletedAt: null, id: identity.personalDetailsId })
   }
 
   @Get(`/address-details`)

@@ -10,7 +10,6 @@ import { ContactModule } from '../contact/contact.module'
 import { CreditCardModule } from '../credit-card/credit-card.module'
 import { OrganizationDetailsModule } from '../organization-details/organization-details.module'
 import { PaymentRequestAttachmentModule } from '../payment-request-attachment/payment-request-attachment.module'
-import { PersonalDetailsModule } from '../personal-details/personal-details.module'
 import { TransactionModule } from '../transaction/transaction.module'
 
 import { ConsumerController } from './consumer.controller'
@@ -27,7 +26,6 @@ import { ConsumerService } from './consumer.service'
     forwardRef(() => CreditCardModule),
     forwardRef(() => OrganizationDetailsModule),
     forwardRef(() => PaymentRequestAttachmentModule),
-    forwardRef(() => PersonalDetailsModule),
     forwardRef(() => TransactionModule),
   ],
   controllers: [ConsumerController],
