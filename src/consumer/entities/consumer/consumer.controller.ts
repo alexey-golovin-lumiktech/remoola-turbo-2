@@ -9,7 +9,6 @@ import { TransformResponse } from '../../../interceptors'
 import { AddressDetailsService } from '../address-details/address-details.service'
 import { ContactService } from '../contact/contact.service'
 import { CreditCardService } from '../credit-card/credit-card.service'
-import { GoogleProfileDetailsService } from '../google-profile-details/google-profile-details.service'
 import { OrganizationDetailsService } from '../organization-details/organization-details.service'
 import { PersonalDetailsService } from '../personal-details/personal-details.service'
 import { TransactionService } from '../transaction/transaction.service'
@@ -22,7 +21,6 @@ import { ConsumerService } from './consumer.service'
 export class ConsumerController {
   constructor(
     @Inject(ConsumerService) private readonly service: ConsumerService,
-    @Inject(GoogleProfileDetailsService) private readonly googleProfileDetailsService: GoogleProfileDetailsService,
     @Inject(PersonalDetailsService) private readonly personalDetailsService: PersonalDetailsService,
     @Inject(AddressDetailsService) private readonly addressDetailsService: AddressDetailsService,
     @Inject(OrganizationDetailsService) private readonly organizationDetailsService: OrganizationDetailsService,
@@ -36,13 +34,6 @@ export class ConsumerController {
   @TransformResponse(CONSUMER.ConsumerResponse)
   getConsumerById(@ReqAuthIdentity() identity: IConsumerModel): CONSUMER.ConsumerResponse {
     return identity
-  }
-
-  @Get(`/google-profile-details`)
-  @ApiOkResponse({ type: CONSUMER.GoogleProfileDetailsResponse })
-  @TransformResponse(CONSUMER.GoogleProfileDetailsResponse)
-  getConsumerGoogleProfileDetails(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.GoogleProfileDetailsResponse | null> {
-    return this.googleProfileDetailsService.repository.findOne({ deletedAt: null, id: identity.googleProfileDetailsId })
   }
 
   @Get(`/personal-details`)
