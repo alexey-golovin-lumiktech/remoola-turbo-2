@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Inject, Param, Patch, Post } from '@nestjs/common'
+import { Body, Controller, Get, Inject, Param, Patch, Post } from '@nestjs/common'
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger'
 
 import { IConsumerModel } from '@wirebill/shared-common/models'
@@ -6,7 +6,6 @@ import { IConsumerModel } from '@wirebill/shared-common/models'
 import { CONSUMER } from '../../../dtos'
 import { ReqAuthIdentity } from '../../../guards/auth.guard'
 import { TransformResponse } from '../../../interceptors'
-import { ContactService } from '../contact/contact.service'
 import { TransactionService } from '../transaction/transaction.service'
 
 import { ConsumerService } from './consumer.service'
@@ -17,7 +16,6 @@ import { ConsumerService } from './consumer.service'
 export class ConsumerController {
   constructor(
     @Inject(ConsumerService) private readonly service: ConsumerService,
-    @Inject(ContactService) private readonly contactService: ContactService,
     @Inject(TransactionService) private readonly transactionService: TransactionService,
   ) {}
 
@@ -26,49 +24,6 @@ export class ConsumerController {
   @TransformResponse(CONSUMER.ConsumerResponse)
   getConsumerById(@ReqAuthIdentity() identity: IConsumerModel): CONSUMER.ConsumerResponse {
     return identity
-  }
-
-  @Get(`/contacts`)
-  @TransformResponse(CONSUMER.ContactListResponse)
-  @ApiOkResponse({ type: CONSUMER.ContactListResponse })
-  getConsumerContactsList(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.ContactListResponse> {
-    return this.contactService.repository.findAndCountAll({ filter: { deletedAt: null, consumerId: identity.id } })
-  }
-
-  @Get(`/contacts/:contactId`)
-  @TransformResponse(CONSUMER.ContactResponse)
-  @ApiOkResponse({ type: CONSUMER.ContactResponse })
-  getConsumerContactById(
-    @Param(`contactId`) contactId: string,
-    @ReqAuthIdentity() identity: IConsumerModel,
-  ): Promise<CONSUMER.ContactResponse> {
-    return this.contactService.repository.findOne({ deletedAt: null, id: contactId, consumerId: identity.id })
-  }
-
-  @Patch(`/contacts/:contactId`)
-  @TransformResponse(CONSUMER.ContactResponse)
-  @ApiOkResponse({ type: CONSUMER.ContactResponse })
-  async updateConsumerContactById(
-    @Param(`contactId`) contactId: string,
-    @Body() body: CONSUMER.ContactUpdate,
-    @ReqAuthIdentity() identity: IConsumerModel,
-  ): Promise<CONSUMER.ContactResponse> {
-    const found = await this.contactService.repository.findOne({ deletedAt: null, id: contactId, consumerId: identity.id })
-    if (!found) throw new BadRequestException(`No contact for provided id: ${contactId}`)
-    const address = { ...found.address, ...body.address }
-    return this.contactService.repository.updateOne({ id: contactId, consumerId: identity.id }, { ...body, address })
-  }
-
-  @Post(`/contacts`)
-  @TransformResponse(CONSUMER.ContactResponse)
-  @ApiOkResponse({ type: CONSUMER.ContactResponse })
-  async createConsumerContact(
-    @ReqAuthIdentity() identity: IConsumerModel,
-    @Body() body: CONSUMER.ContactCreate,
-  ): Promise<CONSUMER.ContactResponse> {
-    const exist = await this.contactService.repository.findOne({ deletedAt: null, email: body.email, consumerId: identity.id })
-    if (exist) throw new BadRequestException(`Contact for provided email: ${body.email} is already exist`)
-    return this.contactService.repository.create({ ...body, consumerId: identity.id })
   }
 
   @Get(`/transactions`)

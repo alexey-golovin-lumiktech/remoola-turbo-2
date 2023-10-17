@@ -5,7 +5,6 @@ import { ResourceModule } from '../../../common-shared-modules/resource/resource
 import { ConsumerRepository } from '../../../repositories'
 import { BillingDetailsModule } from '../billing-details/billing-details.module'
 import { ConsumerResourceModule } from '../consumer-resource/consumer-resource.module'
-import { ContactModule } from '../contact/contact.module'
 import { PaymentRequestAttachmentModule } from '../payment-request-attachment/payment-request-attachment.module'
 import { TransactionModule } from '../transaction/transaction.module'
 
@@ -18,7 +17,6 @@ import { ConsumerService } from './consumer.service'
     forwardRef(() => ResourceModule),
     forwardRef(() => BillingDetailsModule),
     forwardRef(() => ConsumerResourceModule),
-    forwardRef(() => ContactModule),
     forwardRef(() => PaymentRequestAttachmentModule),
     forwardRef(() => TransactionModule),
   ],
