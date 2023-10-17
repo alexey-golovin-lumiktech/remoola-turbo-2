@@ -1,9 +1,9 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common'
-import { CONSUMER } from 'src/dtos'
 
 import { ICreditCardModel } from '@wirebill/shared-common/models'
 
 import { BaseService } from '../../../common'
+import { CONSUMER } from '../../../dtos'
 import { CreditCardRepository } from '../../../repositories'
 import { ConsumerService } from '../consumer/consumer.service'
 
