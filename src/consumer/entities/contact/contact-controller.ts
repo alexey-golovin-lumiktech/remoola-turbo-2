@@ -1,10 +1,11 @@
 import { BadRequestException, Body, Controller, Get, Inject, Param, Patch, Post } from '@nestjs/common'
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger'
-import { CONSUMER } from 'src/dtos'
-import { ReqAuthIdentity } from 'src/guards/auth.guard'
-import { TransformResponse } from 'src/interceptors'
 
 import { IConsumerModel } from '@wirebill/shared-common/models'
+
+import { CONSUMER } from '../../../dtos'
+import { ReqAuthIdentity } from '../../../guards/auth.guard'
+import { TransformResponse } from '../../../interceptors'
 
 import { ContactService } from './contact.service'
 
