@@ -5,6 +5,7 @@ import { ConsumerModule } from '../consumer/consumer.module'
 import { PaymentRequestAttachmentModule } from '../payment-request-attachment/payment-request-attachment.module'
 import { TransactionModule } from '../transaction/transaction.module'
 
+import { PaymentRequestController } from './payment-request.controller'
 import { PaymentRequestService } from './payment-request.service'
 
 @Module({
@@ -13,6 +14,7 @@ import { PaymentRequestService } from './payment-request.service'
     forwardRef(() => ConsumerModule),
     forwardRef(() => TransactionModule),
   ],
+  controllers: [PaymentRequestController],
   providers: [PaymentRequestRepository, PaymentRequestService],
   exports: [PaymentRequestRepository, PaymentRequestService],
 })

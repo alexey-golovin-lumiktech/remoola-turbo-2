@@ -10,7 +10,6 @@ import { ContactModule } from '../contact/contact.module'
 import { CreditCardModule } from '../credit-card/credit-card.module'
 import { GoogleProfileDetailsModule } from '../google-profile-details/google-profile-details.module'
 import { OrganizationDetailsModule } from '../organization-details/organization-details.module'
-import { PaymentRequestModule } from '../payment-request/payment-request.module'
 import { PaymentRequestAttachmentModule } from '../payment-request-attachment/payment-request-attachment.module'
 import { PersonalDetailsModule } from '../personal-details/personal-details.module'
 import { TransactionModule } from '../transaction/transaction.module'
@@ -29,7 +28,6 @@ import { ConsumerService } from './consumer.service'
     forwardRef(() => CreditCardModule),
     forwardRef(() => GoogleProfileDetailsModule),
     forwardRef(() => OrganizationDetailsModule),
-    forwardRef(() => PaymentRequestModule),
     forwardRef(() => PaymentRequestAttachmentModule),
     forwardRef(() => PersonalDetailsModule),
     forwardRef(() => TransactionModule),

@@ -1,32 +1,16 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Get,
-  Inject,
-  Param,
-  Patch,
-  Post,
-  Query,
-  UploadedFiles,
-  UseInterceptors,
-} from '@nestjs/common'
-import { AnyFilesInterceptor } from '@nestjs/platform-express'
+import { BadRequestException, Body, Controller, Get, Inject, Param, Patch, Post } from '@nestjs/common'
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger'
 
-import { IConsumerModel, IPaymentRequestModel } from '@wirebill/shared-common/models'
-import { ReqQuery, ReqQueryTimelineFilter } from '@wirebill/shared-common/types'
+import { IConsumerModel } from '@wirebill/shared-common/models'
 
 import { CONSUMER } from '../../../dtos'
 import { ReqAuthIdentity } from '../../../guards/auth.guard'
 import { TransformResponse } from '../../../interceptors'
-import { ParseJsonPipe, ReqQueryTransformPipe } from '../../pipes'
 import { AddressDetailsService } from '../address-details/address-details.service'
 import { ContactService } from '../contact/contact.service'
 import { CreditCardService } from '../credit-card/credit-card.service'
 import { GoogleProfileDetailsService } from '../google-profile-details/google-profile-details.service'
 import { OrganizationDetailsService } from '../organization-details/organization-details.service'
-import { PaymentRequestService } from '../payment-request/payment-request.service'
 import { PersonalDetailsService } from '../personal-details/personal-details.service'
 import { TransactionService } from '../transaction/transaction.service'
 
@@ -38,7 +22,6 @@ import { ConsumerService } from './consumer.service'
 export class ConsumerController {
   constructor(
     @Inject(ConsumerService) private readonly service: ConsumerService,
-    @Inject(PaymentRequestService) private readonly paymentRequestService: PaymentRequestService,
     @Inject(GoogleProfileDetailsService) private readonly googleProfileDetailsService: GoogleProfileDetailsService,
     @Inject(PersonalDetailsService) private readonly personalDetailsService: PersonalDetailsService,
     @Inject(AddressDetailsService) private readonly addressDetailsService: AddressDetailsService,
@@ -81,73 +64,6 @@ export class ConsumerController {
   @TransformResponse(CONSUMER.OrganizationDetailsResponse)
   getConsumerOrganizationDetails(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.OrganizationDetailsResponse | null> {
     return this.organizationDetailsService.repository.findOne({ deletedAt: null, id: identity.organizationDetailsId })
-  }
-
-  @Get(`/payment-requests/sent`)
-  @ApiOkResponse({ type: CONSUMER.PaymentRequestListResponse })
-  @TransformResponse(CONSUMER.PaymentRequestListResponse)
-  getSentPaymentRequestsList(
-    @ReqAuthIdentity() identity: IConsumerModel,
-    @Query(new ReqQueryTransformPipe()) query: ReqQuery<IPaymentRequestModel>,
-    @Query(`timelineFilter`, ParseJsonPipe) timelineFilter: Unassignable<ReqQueryTimelineFilter<IPaymentRequestModel>>,
-  ): Promise<CONSUMER.PaymentRequestListResponse> {
-    return this.paymentRequestService.getSentPaymentRequestsList(identity.id, query, timelineFilter)
-  }
-
-  @Get(`/payment-requests/received`)
-  @ApiOkResponse({ type: CONSUMER.PaymentRequestListResponse })
-  @TransformResponse(CONSUMER.PaymentRequestListResponse)
-  getReceivedPaymentRequestsList(
-    @ReqAuthIdentity() identity: IConsumerModel,
-    @Query(new ReqQueryTransformPipe()) query: ReqQuery<IPaymentRequestModel>,
-    @Query(`timelineFilter`, ParseJsonPipe) timelineFilter: Unassignable<ReqQueryTimelineFilter<IPaymentRequestModel>>,
-  ): Promise<CONSUMER.PaymentRequestListResponse> {
-    return this.paymentRequestService.getReceivedPaymentRequestsList(identity.id, query, timelineFilter)
-  }
-
-  @Get(`/payment-requests/history`)
-  @ApiOkResponse({ type: CONSUMER.PaymentRequestListResponse })
-  @TransformResponse(CONSUMER.PaymentRequestListResponse)
-  getPaymentRequestsHistory(
-    @ReqAuthIdentity() identity: IConsumerModel,
-    @Query(new ReqQueryTransformPipe()) query: ReqQuery<IPaymentRequestModel>,
-    @Query(`timelineFilter`, ParseJsonPipe) timelineFilter: Unassignable<ReqQueryTimelineFilter<IPaymentRequestModel>>,
-  ): Promise<CONSUMER.PaymentRequestListResponse> {
-    return this.paymentRequestService.getPaymentRequestsHistory(identity.id, query, timelineFilter)
-  }
-
-  @Post(`/payment-requests/pay-to-contact`)
-  @ApiOkResponse({ type: CONSUMER.PaymentRequestResponse })
-  @TransformResponse(CONSUMER.PaymentRequestResponse)
-  @UseInterceptors(AnyFilesInterceptor())
-  payToContact(
-    @UploadedFiles() files: Array<Express.Multer.File> = [],
-    @Body() body: CONSUMER.PaymentRequestPayToContact,
-    @ReqAuthIdentity() identity: IConsumerModel,
-  ): Promise<CONSUMER.PaymentRequestResponse> | never {
-    this.checkUploadedFilesToMaxSize(files)
-    return this.paymentRequestService.payToContact({ identity, files, body })
-  }
-
-  private checkUploadedFilesToMaxSize(files: Array<Express.Multer.File>) {
-    const maxFileSize = Number(process.env.AWS_FILE_UPLOAD_MAX_SIZE_BYTES)
-    const oversize = files.reduce<Array<string>>((acc, { size, filename, originalname }) => {
-      if (size > maxFileSize) acc.push(`${Math.ceil(size / 1000000)}_MB ${filename || originalname}`)
-      return acc
-    }, [])
-    if (oversize.length == 0) return
-    const message = `File size limit exceeded (max: ${maxFileSize / 1000000}_MB).`
-    throw new BadRequestException({ message, details: oversize, statusCode: 400, error: `Bad Request` })
-  }
-
-  @Get(`/payment-requests/:paymentRequestId`)
-  @ApiOkResponse({ type: CONSUMER.PaymentRequestResponse })
-  @TransformResponse(CONSUMER.PaymentRequestResponse)
-  getConsumerPaymentRequestById(
-    @ReqAuthIdentity() identity: IConsumerModel,
-    @Param(`paymentRequestId`) paymentRequestId: string,
-  ): Promise<CONSUMER.PaymentRequestResponse> {
-    return this.paymentRequestService.getConsumerPaymentRequestById(identity.id, paymentRequestId)
   }
 
   @Get(`/credit-cards`)
