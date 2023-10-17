@@ -6,7 +6,6 @@ import { IConsumerModel } from '@wirebill/shared-common/models'
 import { CONSUMER } from '../../../dtos'
 import { ReqAuthIdentity } from '../../../guards/auth.guard'
 import { TransformResponse } from '../../../interceptors'
-import { AddressDetailsService } from '../address-details/address-details.service'
 import { ContactService } from '../contact/contact.service'
 import { CreditCardService } from '../credit-card/credit-card.service'
 import { OrganizationDetailsService } from '../organization-details/organization-details.service'
@@ -20,7 +19,6 @@ import { ConsumerService } from './consumer.service'
 export class ConsumerController {
   constructor(
     @Inject(ConsumerService) private readonly service: ConsumerService,
-    @Inject(AddressDetailsService) private readonly addressDetailsService: AddressDetailsService,
     @Inject(OrganizationDetailsService) private readonly organizationDetailsService: OrganizationDetailsService,
     @Inject(CreditCardService) private readonly creditCardService: CreditCardService,
     @Inject(ContactService) private readonly contactService: ContactService,
@@ -32,13 +30,6 @@ export class ConsumerController {
   @TransformResponse(CONSUMER.ConsumerResponse)
   getConsumerById(@ReqAuthIdentity() identity: IConsumerModel): CONSUMER.ConsumerResponse {
     return identity
-  }
-
-  @Get(`/address-details`)
-  @ApiOkResponse({ type: CONSUMER.AddressDetailsResponse })
-  @TransformResponse(CONSUMER.AddressDetailsResponse)
-  getConsumerAddressDetails(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.AddressDetailsResponse | null> {
-    return this.addressDetailsService.repository.findOne({ deletedAt: null, id: identity.addressDetailsId })
   }
 
   @Get(`/organization-details`)
