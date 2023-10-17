@@ -2,7 +2,6 @@ import { Inject, Injectable } from '@nestjs/common'
 import { Knex } from 'knex'
 import { snakeCase } from 'lodash'
 import moment from 'moment'
-import { MailingService } from 'src/common-shared-modules/mailing/mailing.service'
 
 import { IPaymentRequestCreate } from '@wirebill/shared-common/dtos'
 import { TransactionStatus } from '@wirebill/shared-common/enums'
@@ -10,6 +9,7 @@ import { IConsumerModel, IPaymentRequestModel, TableName } from '@wirebill/share
 import { ReqQuery, ReqQueryTimelineFilter } from '@wirebill/shared-common/types'
 
 import { BaseService } from '../../../common'
+import { MailingService } from '../../../common-shared-modules/mailing/mailing.service'
 import { commonUtils } from '../../../common-utils'
 import { CONSUMER } from '../../../dtos'
 import { PaymentRequestRepository } from '../../../repositories'

@@ -1,14 +1,14 @@
 import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
-import { IJwtTokenPayload } from 'src/dtos/consumer'
-import { AccessRefreshTokenRepository } from 'src/repositories'
 
 import { IAdminModel } from '@wirebill/shared-common/models'
 
 import { commonUtils } from '../../common-utils'
 import * as constants from '../../constants'
 import { ADMIN } from '../../dtos'
+import { IJwtTokenPayload } from '../../dtos/consumer'
+import { AccessRefreshTokenRepository } from '../../repositories'
 import { AdminService } from '../entities/admin/admin.service'
 
 @Injectable()
