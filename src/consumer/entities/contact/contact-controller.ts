@@ -23,6 +23,18 @@ export class ContactController {
     return this.service.repository.findAndCountAll({ filter: { deletedAt: null, consumerId: identity.id } })
   }
 
+  @Post(`/`)
+  @TransformResponse(CONSUMER.ContactResponse)
+  @ApiOkResponse({ type: CONSUMER.ContactResponse })
+  async createConsumerContact(
+    @ReqAuthIdentity() identity: IConsumerModel,
+    @Body() body: CONSUMER.ContactCreate,
+  ): Promise<CONSUMER.ContactResponse> {
+    const exist = await this.service.repository.findOne({ deletedAt: null, email: body.email, consumerId: identity.id })
+    if (exist) throw new BadRequestException(`Contact for provided email: ${body.email} is already exist`)
+    return this.service.repository.create({ ...body, consumerId: identity.id })
+  }
+
   @Get(`/:contactId`)
   @TransformResponse(CONSUMER.ContactResponse)
   @ApiOkResponse({ type: CONSUMER.ContactResponse })
@@ -45,17 +57,5 @@ export class ContactController {
     if (!found) throw new BadRequestException(`No contact for provided id: ${contactId}`)
     const address = { ...found.address, ...body.address }
     return this.service.repository.updateOne({ id: contactId, consumerId: identity.id }, { ...body, address })
-  }
-
-  @Post(`/`)
-  @TransformResponse(CONSUMER.ContactResponse)
-  @ApiOkResponse({ type: CONSUMER.ContactResponse })
-  async createConsumerContact(
-    @ReqAuthIdentity() identity: IConsumerModel,
-    @Body() body: CONSUMER.ContactCreate,
-  ): Promise<CONSUMER.ContactResponse> {
-    const exist = await this.service.repository.findOne({ deletedAt: null, email: body.email, consumerId: identity.id })
-    if (exist) throw new BadRequestException(`Contact for provided email: ${body.email} is already exist`)
-    return this.service.repository.create({ ...body, consumerId: identity.id })
   }
 }

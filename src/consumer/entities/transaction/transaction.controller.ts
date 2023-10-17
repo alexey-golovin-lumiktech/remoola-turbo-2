@@ -23,6 +23,23 @@ export class TransactionController {
     return this.service.repository.findAndCountAll({ filter: { deletedAt: null, createdBy: identity.email } })
   }
 
+  @Post(`/`)
+  @TransformResponse(CONSUMER.TransactionResponse)
+  @ApiOkResponse({ type: CONSUMER.TransactionResponse })
+  async createConsumerTransaction(
+    @ReqAuthIdentity() identity: IConsumerModel,
+    @Body() body: CONSUMER.TransactionCreate,
+  ): Promise<CONSUMER.TransactionResponse> {
+    const now = new Date()
+    return this.service.repository.create({
+      ...body,
+      createdAt: now,
+      createdBy: identity.email,
+      updatedAt: now,
+      updatedBy: identity.email,
+    })
+  }
+
   @Get(`/:transactionId/:code`)
   @TransformResponse(CONSUMER.TransactionResponse)
   @ApiOkResponse({ type: CONSUMER.TransactionResponse })
@@ -52,22 +69,5 @@ export class TransactionController {
         updatedBy: identity.email,
       },
     )
-  }
-
-  @Post(`/`)
-  @TransformResponse(CONSUMER.TransactionResponse)
-  @ApiOkResponse({ type: CONSUMER.TransactionResponse })
-  async createConsumerTransaction(
-    @ReqAuthIdentity() identity: IConsumerModel,
-    @Body() body: CONSUMER.TransactionCreate,
-  ): Promise<CONSUMER.TransactionResponse> {
-    const now = new Date()
-    return this.service.repository.create({
-      ...body,
-      createdAt: now,
-      createdBy: identity.email,
-      updatedAt: now,
-      updatedBy: identity.email,
-    })
   }
 }
