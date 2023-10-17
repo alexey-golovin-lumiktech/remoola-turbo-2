@@ -8,7 +8,6 @@ import { ReqAuthIdentity } from '../../../guards/auth.guard'
 import { TransformResponse } from '../../../interceptors'
 import { ContactService } from '../contact/contact.service'
 import { CreditCardService } from '../credit-card/credit-card.service'
-import { OrganizationDetailsService } from '../organization-details/organization-details.service'
 import { TransactionService } from '../transaction/transaction.service'
 
 import { ConsumerService } from './consumer.service'
@@ -19,7 +18,6 @@ import { ConsumerService } from './consumer.service'
 export class ConsumerController {
   constructor(
     @Inject(ConsumerService) private readonly service: ConsumerService,
-    @Inject(OrganizationDetailsService) private readonly organizationDetailsService: OrganizationDetailsService,
     @Inject(CreditCardService) private readonly creditCardService: CreditCardService,
     @Inject(ContactService) private readonly contactService: ContactService,
     @Inject(TransactionService) private readonly transactionService: TransactionService,
@@ -30,13 +28,6 @@ export class ConsumerController {
   @TransformResponse(CONSUMER.ConsumerResponse)
   getConsumerById(@ReqAuthIdentity() identity: IConsumerModel): CONSUMER.ConsumerResponse {
     return identity
-  }
-
-  @Get(`/organization-details`)
-  @ApiOkResponse({ type: CONSUMER.OrganizationDetailsResponse })
-  @TransformResponse(CONSUMER.OrganizationDetailsResponse)
-  getConsumerOrganizationDetails(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.OrganizationDetailsResponse | null> {
-    return this.organizationDetailsService.repository.findOne({ deletedAt: null, id: identity.organizationDetailsId })
   }
 
   @Get(`/credit-cards`)
