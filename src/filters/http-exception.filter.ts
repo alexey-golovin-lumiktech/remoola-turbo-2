@@ -1,28 +1,24 @@
 import { ArgumentsHost, Catch, ExceptionFilter, ForbiddenException, HttpException, HttpStatus, Logger } from '@nestjs/common'
 import express from 'express'
+import { isEmpty } from 'lodash'
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name)
 
-  catch(exception: any, host: ArgumentsHost) {
+  catch(exception: any | HttpException, host: ArgumentsHost) {
+    const ctx = host.switchToHttp()
     const status = exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR
     const hostIncomingMessage = host.getArgByIndex(0)
-    const { body, method, url } = hostIncomingMessage
+    const { body, method, url, headers } = hostIncomingMessage
 
-    const message = (exception.detail || exception.message || exception.exception || `Internal server error`).replaceAll(`\"`, `\``)
-    const caller = hostIncomingMessage.headers.origin ?? hostIncomingMessage.headers.referer ?? `Unknown`
+    const caller = headers?.origin ?? headers?.referer ?? headers?.[`user-agent`] ?? `Unknown`
+    const name = (exception.name ? exception : this.catch).name
+    const message = exception.message ?? `Internal Server Error`
+    const error = { url, method, status, name, message, caller, timestamp: new Date().valueOf() }
+    if (!isEmpty(body)) Object.assign(error, { body })
+    if (name != ForbiddenException.name) this.logger.error(JSON.stringify(error, null, -1))
 
-    if (exception.name != ForbiddenException.name) {
-      this.logger.error({
-        caller: caller ?? (exception.name ? exception : this.catch).name,
-        error: { message, method, url, response: exception.response, status },
-        payload: { body, caller },
-      })
-    }
-
-    const ctx = host.switchToHttp()
-    const res = ctx.getResponse<express.Response>()
-    res.status(status).json(exception.response ?? { statusCode: status, message })
+    ctx.getResponse<express.Response>().status(status).json(error)
   }
 }
