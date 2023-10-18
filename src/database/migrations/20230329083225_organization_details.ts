@@ -3,10 +3,9 @@ import { Knex } from 'knex'
 import { OrganizationSize } from '@wirebill/shared-common/enums'
 import { TableName } from '@wirebill/shared-common/models'
 
-import { addAuditColumns, addUUIDPrimaryKey, constraintsToTableLookup } from './migration-utils'
+import { addAuditColumns, addUUIDPrimaryKey, CommonConstraints } from './migration-utils'
 
 const tableName = TableName.OrganizationDetails
-const tableConstraints = constraintsToTableLookup[tableName]
 
 export async function up(knex: Knex): Promise<void> {
   const exist = await knex.schema.hasTable(tableName)
@@ -18,8 +17,11 @@ export async function up(knex: Knex): Promise<void> {
     table.string(`name`).notNullable()
     table.string(`consumer_role`).notNullable()
     table
-      .string(`size`)
-      .checkIn(tableConstraints.OrganizationSize.values, tableConstraints.OrganizationSize.name)
+      .enum(`size`, CommonConstraints.OrganizationSize.values, {
+        useNative: true,
+        enumName: CommonConstraints.OrganizationSize.name,
+        existingType: true,
+      })
       .defaultTo(OrganizationSize.Small)
       .notNullable()
 
@@ -31,8 +33,5 @@ export async function down(knex: Knex): Promise<void> {
   const exist = await knex.schema.hasTable(tableName)
   if (!exist) return
 
-  const constraintNamesToDrop = Object.values(tableConstraints).map(x => x.name)
-  return knex.schema //
-    .alterTable(tableName, table => table.dropChecks(constraintNamesToDrop))
-    .finally(() => knex.schema.dropTable(tableName))
+  return knex.schema.dropTable(tableName)
 }

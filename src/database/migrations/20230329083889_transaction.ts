@@ -3,10 +3,9 @@ import { Knex } from 'knex'
 import { CurrencyCode, FeesType, TransactionStatus, TransactionType } from '@wirebill/shared-common/enums'
 import { TableName } from '@wirebill/shared-common/models'
 
-import { addAuditColumns, addUUIDPrimaryKey, constraintsToTableLookup } from './migration-utils'
+import { addAuditColumns, addUUIDPrimaryKey, CommonConstraints } from './migration-utils'
 
 const tableName = TableName.Transaction
-const tableConstraints = constraintsToTableLookup[tableName]
 
 export async function up(knex: Knex): Promise<void> {
   const exist = await knex.schema.hasTable(tableName)
@@ -22,19 +21,31 @@ export async function up(knex: Knex): Promise<void> {
       .comment(`current transaction ID - 6 symbols text auto generated on db layer by default`)
 
     table.integer(`origin_amount`).notNullable()
+
     table
-      .string(`currency_code`)
-      .checkIn(tableConstraints.CurrencyCode.values, tableConstraints.CurrencyCode.name)
+      .enum(`currency_code`, CommonConstraints.CurrencyCode.values, {
+        useNative: true,
+        enumName: CommonConstraints.CurrencyCode.name,
+        existingType: true,
+      })
       .defaultTo(CurrencyCode.USD)
       .notNullable()
+
     table
-      .string(`type`)
-      .checkIn(tableConstraints.TransactionType.values, tableConstraints.TransactionType.name)
+      .enum(`type`, CommonConstraints.TransactionType.values, {
+        useNative: true,
+        enumName: CommonConstraints.TransactionType.name,
+        existingType: true,
+      })
       .defaultTo(TransactionType.CreditCard)
       .notNullable()
+
     table
-      .string(`status`)
-      .checkIn(tableConstraints.TransactionStatus.values, tableConstraints.TransactionStatus.name)
+      .enum(`status`, CommonConstraints.TransactionStatus.values, {
+        useNative: true,
+        enumName: CommonConstraints.TransactionStatus.name,
+        existingType: true,
+      })
       .defaultTo(TransactionStatus.Draft)
       .notNullable()
 
@@ -43,9 +54,13 @@ export async function up(knex: Knex): Promise<void> {
     table.string(`deleted_by`)
 
     table.integer(`fees_amount`)
+
     table
-      .string(`fees_type`)
-      .checkIn(tableConstraints.FeesType.values, tableConstraints.FeesType.name)
+      .enum(`fees_type`, CommonConstraints.FeesType.values, {
+        useNative: true,
+        enumName: CommonConstraints.FeesType.name,
+        existingType: true,
+      })
       .defaultTo(FeesType.NoFeesIncluded)
       .notNullable()
 
@@ -61,11 +76,9 @@ export async function down(knex: Knex): Promise<void> {
   const exist = await knex.schema.hasTable(tableName)
   if (!exist) return
 
-  const constraintNamesToDrop = Object.values(tableConstraints).map(x => x.name)
   return knex.schema //
     .alterTable(tableName, table => {
       table.dropUnique([`payment_request_id`, `code`])
-      table.dropChecks([...constraintNamesToDrop, `transaction_stripe_fee_in_percents_range`])
     })
     .finally(() => knex.schema.dropTable(tableName))
 }

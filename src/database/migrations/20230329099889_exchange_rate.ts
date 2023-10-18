@@ -4,7 +4,7 @@ import { TableName } from '@wirebill/shared-common/models'
 
 import { addAuditColumns, addUUIDPrimaryKey, CommonConstraints } from './migration-utils'
 
-const tableName = TableName.PersonalDetails
+const tableName = TableName.ExchangeRate
 
 export async function up(knex: Knex): Promise<void> {
   const exist = await knex.schema.hasTable(tableName)
@@ -13,21 +13,25 @@ export async function up(knex: Knex): Promise<void> {
   return knex.schema.createTable(tableName, table => {
     addUUIDPrimaryKey(table, knex)
 
-    table.string(`citizen_of`).notNullable()
-    table.string(`date_of_birth`).notNullable()
-    table.string(`passport_or_id_number`).notNullable()
     table
-      .enum(`legal_status`, CommonConstraints.LegalStatus.values, {
+      .enum(`from_currency`, CommonConstraints.CurrencyCode.values, {
         useNative: true,
-        enumName: CommonConstraints.LegalStatus.name,
+        enumName: CommonConstraints.CurrencyCode.name,
         existingType: true,
       })
-      .nullable()
+      .notNullable()
 
-    table.string(`country_of_tax_residence`).defaultTo(null).nullable()
-    table.string(`tax_id`).defaultTo(null).nullable()
-    table.string(`phone_number`).defaultTo(null).nullable()
+    table
+      .enum(`to_currency`, CommonConstraints.CurrencyCode.values, {
+        useNative: true,
+        enumName: CommonConstraints.CurrencyCode.name,
+        existingType: true,
+      })
+      .notNullable()
 
+    table.decimal(`rate`, 11, 4).notNullable()
+
+    table.unique([`from_currency`, `to_currency`])
     addAuditColumns(table, knex)
   })
 }
