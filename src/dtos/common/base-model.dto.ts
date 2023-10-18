@@ -13,20 +13,20 @@ export class BaseModel implements IBaseModel {
 
   @Expose()
   @ApiProperty()
+  @Transform(x => (x?.value == null ? null : moment(x.value).valueOf()))
   @IsDate()
-  @Transform(({ value: createdAt }) => (createdAt == null ? null : moment(createdAt).valueOf()))
   createdAt: Date
 
   @Expose()
   @ApiProperty()
+  @Transform(x => (x?.value == null ? null : moment(x.value).valueOf()))
   @IsDate()
-  @Transform(({ value: updatedAt }) => (updatedAt == null ? null : moment(updatedAt).valueOf()))
   updatedAt: Date
 
   @Expose()
   @ApiProperty()
+  @Transform(x => (x?.value == null ? null : moment(x.value).valueOf()))
+  @ValidateIf(x => x.value != null)
   @IsDate()
-  @ValidateIf(({ value }) => value != null)
-  @Transform(({ value: deletedAt }) => (deletedAt == null ? null : moment(deletedAt).valueOf()))
   deletedAt?: Date
 }
