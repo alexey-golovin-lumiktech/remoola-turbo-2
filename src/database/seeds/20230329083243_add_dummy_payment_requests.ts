@@ -1,7 +1,7 @@
 import { Knex } from 'knex'
 
 import { IPaymentRequestCreate, ITransactionCreate } from '@wirebill/shared-common/dtos'
-import { CurrencyCode, TransactionStatus, TransactionType } from '@wirebill/shared-common/enums'
+import { MustUsefulCurrencyCode, TransactionStatus, TransactionType } from '@wirebill/shared-common/enums'
 import { IConsumerModel, IPaymentRequestModel, ITransactionModel, TableName } from '@wirebill/shared-common/models'
 
 import { default as dummyConsumers } from './dummy-consumers.json'
@@ -22,7 +22,7 @@ export async function seed(knex: Knex): Promise<void> {
       if (requesterId === payerId) continue
       for (const type of Object.values(TransactionType)) {
         for (const paymentStatus of Object.values(TransactionStatus)) {
-          for (const currencyCode of Object.values(CurrencyCode).filter(x => [`CHF`, `USD`, `RUB`, `EUR`, `JPY`, `GBP`].includes(x))) {
+          for (const currencyCode of Object.values(MustUsefulCurrencyCode)) {
             const paymentRequest: IPaymentRequestCreate = {
               requesterId: requesterId,
               payerId: payerId,
