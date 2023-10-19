@@ -16,7 +16,7 @@ export async function up(knex: Knex): Promise<void> {
     table.uuid(`requester_id`).notNullable().references(`id`).inTable(TableName.Consumer).onDelete(`CASCADE`).comment(`consumer.id`)
     table.uuid(`payer_id`).notNullable().references(`id`).inTable(TableName.Consumer).onDelete(`CASCADE`).comment(`consumer.id`)
 
-    table.integer(`amount`).notNullable()
+    table.decimal(`amount`, 9, 2).notNullable()
     table
       .enum(`currency_code`, CommonConstraints.CurrencyCode.values, {
         useNative: true,

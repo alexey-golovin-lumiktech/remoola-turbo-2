@@ -1,7 +1,7 @@
 import { Knex } from 'knex'
 
 import { IPaymentRequestCreate, ITransactionCreate } from '@wirebill/shared-common/dtos'
-import { MustUsefulCurrencyCode, TransactionStatus, TransactionType } from '@wirebill/shared-common/enums'
+import { MustUsefulCurrencyCode, TransactionActionType, TransactionStatus, TransactionType } from '@wirebill/shared-common/enums'
 import { IConsumerModel, IPaymentRequestModel, ITransactionModel, TableName } from '@wirebill/shared-common/models'
 
 import { default as dummyConsumers } from './dummy-consumers.json'
@@ -9,6 +9,7 @@ import { default as dummyConsumers } from './dummy-consumers.json'
 const descriptions = [`SEO`, `Develop a database structure`, `Develop frontend app`, `Develop backend app`]
 
 const getRandomArrayItem = (arr: unknown[]) => arr[Math.round(Math.random() * arr.length)] ?? getRandomArrayItem(arr)
+const dummyAdminEmails = [`regular.admin@wirebill.com`, `super.admin@wirebill.com`]
 
 export async function seed(knex: Knex): Promise<void> {
   const dummyConsumerEmails = dummyConsumers.map(x => x.email)
@@ -18,7 +19,7 @@ export async function seed(knex: Knex): Promise<void> {
 
   const dayInMs = 1000 * 60 * 60 * 24
   for (const { id: requesterId, email: requesterEmail } of consumers) {
-    for (const { id: payerId, email: payerEmail } of consumers) {
+    for (const { id: payerId } of consumers) {
       if (requesterId === payerId) continue
       for (const type of Object.values(TransactionType)) {
         for (const paymentStatus of Object.values(TransactionStatus)) {
@@ -26,7 +27,7 @@ export async function seed(knex: Knex): Promise<void> {
             const paymentRequest: IPaymentRequestCreate = {
               requesterId: requesterId,
               payerId: payerId,
-              amount: Math.round(Math.random() * 999),
+              amount: parseFloat((Math.random() * 999).toFixed(2)),
               currencyCode: currencyCode,
               status: paymentStatus,
               type: type,
@@ -34,9 +35,8 @@ export async function seed(knex: Knex): Promise<void> {
               dueDate: new Date(Date.now() + dayInMs * Math.round(Math.random() * 29)),
               sentDate: new Date(Date.now() - dayInMs * Math.round(Math.random() * 21)),
               expectationDate: new Date(Date.now() - dayInMs * Math.round(Math.random() * 37)),
-              createdBy: paymentStatus == `completed` ? payerEmail : requesterEmail,
-              updatedBy: paymentStatus == `completed` ? payerEmail : requesterEmail,
-              deletedBy: null,
+              createdBy: requesterEmail,
+              updatedBy: requesterEmail,
             }
 
             const [paymentRequestCreated]: Awaited<IPaymentRequestModel[]> = await knex
@@ -49,24 +49,52 @@ export async function seed(knex: Knex): Promise<void> {
               process.exit(1)
             }
 
-            const transaction: ITransactionCreate = {
+            const outcomeTransaction: ITransactionCreate & { consumerId: string } = {
               paymentRequestId: paymentRequestCreated.id,
               currencyCode: currencyCode,
-              originAmount: paymentRequestCreated.amount,
               type: paymentRequestCreated.type,
               status: paymentRequestCreated.status,
+
               createdBy: paymentRequestCreated.createdBy,
               updatedBy: paymentRequestCreated.updatedBy,
-              deletedBy: paymentRequestCreated.deletedBy,
+              consumerId: payerId,
+              originAmount: -paymentRequestCreated.amount,
+              actionType: TransactionActionType.outcome,
             }
 
-            const [transactionCreated]: Awaited<ITransactionModel[]> = await knex
-              .insert([transaction])
+            const [outcomeTransactionCreated]: Awaited<ITransactionModel[]> = await knex
+              .insert([outcomeTransaction])
               .into(TableName.Transaction)
               .returning(`*`)
 
-            if (transactionCreated == null) {
-              console.log(`[Something went wrong to create payment request transaction]`)
+            if (paymentRequestCreated.status == `completed`) {
+              const adminEmail = getRandomArrayItem(dummyAdminEmails)
+              const incomeTransaction: ITransactionCreate & { consumerId: string } = {
+                paymentRequestId: paymentRequestCreated.id,
+                currencyCode: currencyCode,
+                type: paymentRequestCreated.type,
+                status: paymentRequestCreated.status,
+
+                createdBy: adminEmail,
+                updatedBy: adminEmail,
+                consumerId: requesterId,
+                originAmount: +paymentRequestCreated.amount,
+                actionType: TransactionActionType.income,
+              }
+
+              const [incomeTransactionCreated]: Awaited<ITransactionModel[]> = await knex
+                .insert([incomeTransaction])
+                .into(TableName.Transaction)
+                .returning(`*`)
+
+              if (incomeTransactionCreated == null) {
+                console.log(`[Something went wrong to create payment request income transaction]`)
+                process.exit(1)
+              }
+            }
+
+            if (outcomeTransactionCreated == null) {
+              console.log(`[Something went wrong to create payment request outcome transaction]`)
               process.exit(1)
             }
             console.count(`[SUCCESS CREATED DUMMY PAYMENT REQUEST]`)

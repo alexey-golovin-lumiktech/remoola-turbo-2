@@ -7,6 +7,7 @@ import { getEnvPath } from '@wirebill/shared-common/utils'
 dotenv.config({ path: getEnvPath(process.cwd()) })
 
 pg.types.setTypeParser(20, parseInt)
+pg.types.setTypeParser(1700, parseFloat)
 const toCamel = (str: string) => str.replace(/([-_][a-z])/gi, group => group.toUpperCase().replace(`-`, ``).replace(`_`, ``))
 const toSnake = (str?: string) => (str == undefined ? undefined : str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`))
 const isObject = (source: any) => source === Object(source) && typeof source !== `function` && !(source instanceof Date)

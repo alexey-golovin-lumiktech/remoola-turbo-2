@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common'
 
 import { ITransactionCreate } from '@wirebill/shared-common/dtos'
+import { TransactionActionType } from '@wirebill/shared-common/enums'
 import { IPaymentRequestModel, ITransactionModel } from '@wirebill/shared-common/models'
 
 import { BaseService } from '../../../common'
@@ -16,12 +17,14 @@ export class TransactionService extends BaseService<ITransactionModel, Transacti
     return this.repository.create({
       paymentRequestId: paymentRequest.id,
       currencyCode: paymentRequest.currencyCode,
-      originAmount: paymentRequest.amount,
       type: paymentRequest.type,
       status: paymentRequest.status,
+
       createdBy: paymentRequest.createdBy,
       updatedBy: paymentRequest.updatedBy,
-      deletedBy: paymentRequest.deletedBy,
-    } satisfies ITransactionCreate)
+      consumerId: paymentRequest.requesterId,
+      actionType: TransactionActionType.outcome,
+      originAmount: -paymentRequest.amount,
+    } satisfies ITransactionCreate & { consumerId: string })
   }
 }
