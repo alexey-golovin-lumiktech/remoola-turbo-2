@@ -130,3 +130,28 @@ export class TransactionCreate
   implements ITransactionCreate {}
 
 export class TransactionUpdate extends PartialType(TransactionCreate) implements ITransactionUpdate {}
+
+export type IGetConsumerBallanceResult = { currency: CurrencyCodeValue; ballance: number }
+export class GetConsumerBallanceResult implements IGetConsumerBallanceResult {
+  @Expose()
+  @ApiProperty()
+  currency: CurrencyCodeValue
+
+  @Expose()
+  @ApiProperty()
+  ballance: number
+}
+
+export type IGetConsumerBallanceParams = { consumerId: string; currencyCode?: CurrencyCodeValue }
+export class GetConsumerBallanceParams implements IGetConsumerBallanceParams {
+  @Expose()
+  @ApiProperty({ required: true })
+  @IsUUID(`all`)
+  consumerId: string
+
+  @Expose()
+  @ApiProperty({ required: false, enum: Object.values(CurrencyCode), default: null })
+  @ValidateIf(x => x.value != null)
+  @IsIn(Object.values(CurrencyCode))
+  currencyCode?: CurrencyCodeValue = null
+}

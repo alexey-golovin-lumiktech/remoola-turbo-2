@@ -40,6 +40,13 @@ export class TransactionController {
     })
   }
 
+  @Get(`/ballance`)
+  @TransformResponse(CONSUMER.GetConsumerBallanceResult)
+  @ApiOkResponse({ type: CONSUMER.GetConsumerBallanceResult })
+  getConsumerBallance(@ReqAuthIdentity() consumer: IConsumerModel): Promise<CONSUMER.GetConsumerBallanceResult[]> {
+    return this.service.getConsumerBallance({ consumerId: consumer.id })
+  }
+
   @Get(`/:transactionId/:code`)
   @TransformResponse(CONSUMER.TransactionResponse)
   @ApiOkResponse({ type: CONSUMER.TransactionResponse })
