@@ -16,14 +16,14 @@ import { ContactService } from './contact.service'
 export class ContactController {
   constructor(@Inject(ContactService) private readonly service: ContactService) {}
 
-  @Get(`/`)
+  @Get()
   @TransformResponse(CONSUMER.ContactListResponse)
   @ApiOkResponse({ type: CONSUMER.ContactListResponse })
   getConsumerContactsList(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.ContactListResponse> {
     return this.service.repository.findAndCountAll({ filter: { deletedAt: null, consumerId: identity.id } })
   }
 
-  @Post(`/`)
+  @Post()
   @TransformResponse(CONSUMER.ContactResponse)
   @ApiOkResponse({ type: CONSUMER.ContactResponse })
   async createConsumerContact(

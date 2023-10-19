@@ -16,7 +16,7 @@ import { CreditCardService } from './credit-card.service'
 export class CreditCardController {
   constructor(@Inject(CreditCardService) private readonly service: CreditCardService) {}
 
-  @Get(`/`)
+  @Get()
   @TransformResponse(CONSUMER.CreditCardsListResponse)
   @ApiOkResponse({ type: CONSUMER.CreditCardsListResponse })
   getConsumerCreditCardsList(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.CreditCardsListResponse> {
@@ -44,7 +44,7 @@ export class CreditCardController {
     return this.service.repository.updateOne({ deletedAt: null, id: cardId, consumerId: identity.id }, { ...body, consumerId: identity.id })
   }
 
-  @Post(`/`)
+  @Post()
   @TransformResponse(CONSUMER.CreditCardResponse)
   @ApiOkResponse({ type: CONSUMER.CreditCardResponse })
   createConsumerCreditCard(

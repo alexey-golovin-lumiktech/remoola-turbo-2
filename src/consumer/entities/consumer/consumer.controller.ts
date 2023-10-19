@@ -15,7 +15,7 @@ import { ConsumerService } from './consumer.service'
 export class ConsumerController {
   constructor(@Inject(ConsumerService) private readonly service: ConsumerService) {}
 
-  @Get(`/`)
+  @Get()
   @ApiOkResponse({ type: CONSUMER.ConsumerResponse })
   @TransformResponse(CONSUMER.ConsumerResponse)
   getConsumerById(@ReqAuthIdentity() identity: IConsumerModel): CONSUMER.ConsumerResponse {

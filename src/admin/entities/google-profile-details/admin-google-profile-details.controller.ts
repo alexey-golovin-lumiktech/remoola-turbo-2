@@ -18,7 +18,7 @@ import { AdminGoogleProfileDetailsService } from './admin-google-profile-details
 export class AdminGoogleProfileDetailsController {
   constructor(@Inject(AdminGoogleProfileDetailsService) private readonly service: AdminGoogleProfileDetailsService) {}
 
-  @Get(`/`)
+  @Get()
   @TransformResponse(ADMIN.GoogleProfileDetailsListResponse)
   @ApiOkResponse({ type: ADMIN.GoogleProfileDetailsListResponse })
   async findAndCountAll(

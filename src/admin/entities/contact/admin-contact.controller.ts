@@ -19,7 +19,7 @@ import { AdminContactService } from './admin-contact.service'
 export class AdminContactController {
   constructor(@Inject(AdminContactService) private readonly service: AdminContactService) {}
 
-  @Get(`/`)
+  @Get()
   @TransformResponse(ADMIN.ContactListResponse)
   @ApiOkResponse({ type: ADMIN.ContactListResponse })
   async findAndCountAll(

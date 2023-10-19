@@ -16,7 +16,7 @@ import { GoogleProfileDetailsService } from './google-profile-details.service'
 export class GoogleProfileDetailsController {
   constructor(@Inject(GoogleProfileDetailsService) private readonly service: GoogleProfileDetailsService) {}
 
-  @Get(`/`)
+  @Get()
   @ApiOkResponse({ type: CONSUMER.GoogleProfileDetailsResponse })
   @TransformResponse(CONSUMER.GoogleProfileDetailsResponse)
   getConsumerGoogleProfileDetails(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.GoogleProfileDetailsResponse | null> {

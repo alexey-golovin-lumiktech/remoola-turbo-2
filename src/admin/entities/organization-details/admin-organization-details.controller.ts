@@ -18,7 +18,7 @@ import { AdminOrganizationDetailsService } from './admin-organization-details.se
 export class AdminOrganizationDetailsController {
   constructor(@Inject(AdminOrganizationDetailsService) private readonly service: AdminOrganizationDetailsService) {}
 
-  @Get(`/`)
+  @Get()
   @TransformResponse(ADMIN.OrganizationDetailsListResponse)
   @ApiOkResponse({ type: ADMIN.OrganizationDetailsListResponse })
   async findAndCountAll(

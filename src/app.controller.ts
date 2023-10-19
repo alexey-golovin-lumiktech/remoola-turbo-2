@@ -7,7 +7,7 @@ import { PublicEndpoint } from './decorators'
 export class AppController {
   @PublicEndpoint()
   @ApiExcludeEndpoint(true)
-  @Get(`/`)
+  @Get()
   @Redirect(`/documentation`, 301)
   redirect() {
     return { url: `/documentation` }

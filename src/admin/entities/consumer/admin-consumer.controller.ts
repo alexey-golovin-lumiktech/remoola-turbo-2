@@ -18,7 +18,7 @@ import { AdminConsumerService } from './admin-consumer.service'
 export class AdminConsumerController {
   constructor(@Inject(AdminConsumerService) private readonly service: AdminConsumerService) {}
 
-  @Get(`/`)
+  @Get()
   @TransformResponse(ADMIN.ConsumerListResponse)
   @ApiOkResponse({ type: ADMIN.ConsumerListResponse })
   async findAndCountAll(
@@ -31,7 +31,7 @@ export class AdminConsumerController {
     return result
   }
 
-  @Post(`/`)
+  @Post()
   @ApiOkResponse({ type: ADMIN.ConsumerResponse })
   create(@Body() body: ADMIN.ConsumerCreate): Promise<ADMIN.ConsumerResponse> {
     return this.service.create(body)

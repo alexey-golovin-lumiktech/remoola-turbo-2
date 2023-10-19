@@ -16,7 +16,7 @@ import { OrganizationDetailsService } from './organization-details.service'
 export class OrganizationDetailsController {
   constructor(@Inject(OrganizationDetailsService) private readonly service: OrganizationDetailsService) {}
 
-  @Get(`/`)
+  @Get()
   @ApiOkResponse({ type: CONSUMER.OrganizationDetailsResponse })
   @TransformResponse(CONSUMER.OrganizationDetailsResponse)
   getConsumerOrganizationDetails(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.OrganizationDetailsResponse | null> {

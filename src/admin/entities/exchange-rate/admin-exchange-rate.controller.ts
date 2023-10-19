@@ -18,7 +18,7 @@ import { AdminExchangeRateService } from './admin-exchange-rate.service'
 export class AdminExchangeRateController {
   constructor(@Inject(AdminExchangeRateService) private readonly service: AdminExchangeRateService) {}
 
-  @Get(`/`)
+  @Get()
   @TransformResponse(ADMIN.ExchangeRatesListResponse)
   @ApiOkResponse({ type: ADMIN.ExchangeRatesListResponse })
   async findAndCountAll(
@@ -31,7 +31,7 @@ export class AdminExchangeRateController {
     return result
   }
 
-  @Post(`/`)
+  @Post()
   @ApiOkResponse({ type: ADMIN.ExchangeRateCreate })
   create(@Body() body: ADMIN.ExchangeRateCreate): Promise<ADMIN.ExchangeRateResponse> {
     return this.service.repository.create(body)

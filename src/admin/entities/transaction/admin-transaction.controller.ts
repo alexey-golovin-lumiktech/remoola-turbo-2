@@ -18,7 +18,7 @@ import { AdminTransactionService } from './admin-transaction.service'
 export class AdminTransactionController {
   constructor(@Inject(AdminTransactionService) private readonly service: AdminTransactionService) {}
 
-  @Get(`/`)
+  @Get()
   @TransformResponse(ADMIN.TransactionListResponse)
   @ApiOkResponse({ type: ADMIN.TransactionListResponse })
   async findAndCountAll(

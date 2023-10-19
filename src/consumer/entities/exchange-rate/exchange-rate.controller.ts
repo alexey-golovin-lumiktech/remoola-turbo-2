@@ -17,7 +17,7 @@ import { ExchangeRateService } from './exchange-rate.service'
 export class ExchangeRateController {
   constructor(@Inject(ExchangeRateService) private readonly service: ExchangeRateService) {}
 
-  @Get(`/`)
+  @Get()
   @TransformResponse(CONSUMER.ExchangeRatesListResponse)
   @ApiOkResponse({ type: CONSUMER.ExchangeRatesListResponse })
   async findAndCountAll(

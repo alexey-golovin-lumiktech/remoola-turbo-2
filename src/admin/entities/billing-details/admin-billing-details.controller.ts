@@ -18,7 +18,7 @@ import { AdminBillingDetailsService } from './admin-billing-details.service'
 export class AdminBillingDetailsController {
   constructor(@Inject(AdminBillingDetailsService) private readonly service: AdminBillingDetailsService) {}
 
-  @Get(`/`)
+  @Get()
   @TransformResponse(ADMIN.BillingDetailsListResponse)
   @ApiOkResponse({ type: ADMIN.BillingDetailsListResponse })
   async findAndCountAll(

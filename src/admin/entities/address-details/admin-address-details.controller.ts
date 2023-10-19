@@ -18,7 +18,7 @@ import { AdminAddressDetailsService } from './admin-address-details.service'
 export class AdminAddressDetailsController {
   constructor(@Inject(AdminAddressDetailsService) private readonly service: AdminAddressDetailsService) {}
 
-  @Get(`/`)
+  @Get()
   @TransformResponse(ADMIN.AddressDetailsListResponse)
   @ApiOkResponse({ type: ADMIN.AddressDetailsListResponse })
   async findAndCountAll(

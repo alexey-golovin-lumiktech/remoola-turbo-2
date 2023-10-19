@@ -16,14 +16,14 @@ import { TransactionService } from './transaction.service'
 export class TransactionController {
   constructor(@Inject(TransactionService) private readonly service: TransactionService) {}
 
-  @Get(`/`)
+  @Get()
   @TransformResponse(CONSUMER.TransactionListResponse)
   @ApiOkResponse({ type: CONSUMER.TransactionListResponse })
   getConsumerTransactionList(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.TransactionListResponse> {
     return this.service.repository.findAndCountAll({ filter: { deletedAt: null, createdBy: identity.email } })
   }
 
-  @Post(`/`)
+  @Post()
   @TransformResponse(CONSUMER.TransactionResponse)
   @ApiOkResponse({ type: CONSUMER.TransactionResponse })
   async createConsumerTransaction(

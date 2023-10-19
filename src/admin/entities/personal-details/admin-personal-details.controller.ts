@@ -18,7 +18,7 @@ import { AdminPersonalDetailsService } from './admin-personal-details.service'
 export class AdminPersonalDetailsController {
   constructor(@Inject(AdminPersonalDetailsService) private readonly service: AdminPersonalDetailsService) {}
 
-  @Get(`/`)
+  @Get()
   @TransformResponse(ADMIN.PersonalDetailsListResponse)
   @ApiOkResponse({ type: ADMIN.PersonalDetailsListResponse })
   async findAndCountAll(

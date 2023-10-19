@@ -16,7 +16,7 @@ import { AddressDetailsService } from './address-details.service'
 export class AddressDetailsController {
   constructor(@Inject(AddressDetailsService) private readonly service: AddressDetailsService) {}
 
-  @Get(`/`)
+  @Get()
   @ApiOkResponse({ type: CONSUMER.AddressDetailsResponse })
   @TransformResponse(CONSUMER.AddressDetailsResponse)
   getConsumerAddressDetails(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.AddressDetailsResponse | null> {

@@ -19,7 +19,7 @@ import { AdminCreditCardService } from './admin-credit-card.service'
 export class AdminCreditCardController {
   constructor(@Inject(AdminCreditCardService) private readonly service: AdminCreditCardService) {}
 
-  @Get(`/`)
+  @Get()
   @TransformResponse(ADMIN.CreditCardListResponse)
   @ApiOkResponse({ type: ADMIN.CreditCardListResponse })
   async findAndCountAll(

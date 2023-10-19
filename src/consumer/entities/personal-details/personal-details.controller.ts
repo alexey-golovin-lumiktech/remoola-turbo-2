@@ -16,7 +16,7 @@ import { PersonalDetailsService } from './personal-details.service'
 export class PersonalDetailsController {
   constructor(@Inject(PersonalDetailsService) private readonly service: PersonalDetailsService) {}
 
-  @Get(`/`)
+  @Get()
   @ApiOkResponse({ type: CONSUMER.PersonalDetailsResponse })
   @TransformResponse(CONSUMER.PersonalDetailsResponse)
   getConsumerPersonalDetails(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.PersonalDetailsResponse | null> {

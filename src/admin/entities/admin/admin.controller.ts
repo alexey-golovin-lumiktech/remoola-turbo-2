@@ -20,7 +20,7 @@ import { AdminService } from './admin.service'
 export class AdminController {
   constructor(@Inject(AdminService) private readonly service: AdminService) {}
 
-  @Get(`/`)
+  @Get()
   @TransformResponse(ADMIN.AdminListResponse)
   @ApiOkResponse({ type: ADMIN.AdminListResponse })
   async findAndCountAll(
@@ -36,7 +36,7 @@ export class AdminController {
     return result
   }
 
-  @Post(`/`)
+  @Post()
   @TransformResponse(ADMIN.AdminResponse)
   @ApiOkResponse({ type: ADMIN.AdminResponse })
   create(@ReqAuthIdentity() identity: IAdminModel, @Body() body: ADMIN.AdminCreate): Promise<ADMIN.AdminResponse> {

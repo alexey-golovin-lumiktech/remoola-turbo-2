@@ -19,7 +19,7 @@ import { AdminPaymentRequestService } from './admin-payment-request.service'
 export class AdminPaymentRequestController {
   constructor(@Inject(AdminPaymentRequestService) private readonly service: AdminPaymentRequestService) {}
 
-  @Get(`/`)
+  @Get()
   @TransformResponse(ADMIN.PaymentRequestListResponse)
   @ApiOkResponse({ type: ADMIN.PaymentRequestListResponse })
   async findAndCountAll(
