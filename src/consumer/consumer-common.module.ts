@@ -8,6 +8,7 @@ import { ConsumerModule } from './entities/consumer/consumer.module'
 import { ConsumerResourceModule } from './entities/consumer-resource/consumer-resource.module'
 import { ContactModule } from './entities/contact/contact.module'
 import { CreditCardModule } from './entities/credit-card/credit-card.module'
+import { ExchangeRateModule } from './entities/exchange-rate/exchange-rate.module'
 import { GoogleProfileDetailsModule } from './entities/google-profile-details/google-profile-details.module'
 import { OrganizationDetailsModule } from './entities/organization-details/organization-details.module'
 import { PaymentRequestModule } from './entities/payment-request/payment-request.module'
@@ -32,6 +33,7 @@ import { TransactionModule } from './entities/transaction/transaction.module'
     ResetPasswordModule,
     PaymentRequestAttachmentModule,
     TransactionModule,
+    ExchangeRateModule,
   ],
 })
 export class ConsumerCommonModule {}
