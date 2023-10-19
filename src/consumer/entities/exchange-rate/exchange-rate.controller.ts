@@ -1,5 +1,5 @@
 import { Controller, Get, Inject, Query } from '@nestjs/common'
-import { ApiBasicAuth, ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger'
+import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger'
 
 import { IExchangeRateModel } from '@wirebill/shared-common/models'
 import { ReqQuery } from '@wirebill/shared-common/types'
@@ -10,9 +10,9 @@ import { ReqQueryTransformPipe } from '../../pipes'
 
 import { ExchangeRateService } from './exchange-rate.service'
 
-@ApiBearerAuth()
-@ApiBasicAuth()
 @ApiTags(`consumer`)
+@ApiTags(`exchange-rates`)
+@ApiBearerAuth()
 @Controller(`consumer/exchange-rates`)
 export class ExchangeRateController {
   constructor(@Inject(ExchangeRateService) private readonly service: ExchangeRateService) {}
