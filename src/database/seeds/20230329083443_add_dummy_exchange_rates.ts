@@ -3,24 +3,6 @@ import { Knex } from 'knex'
 import { IExchangeRateCreate } from '@wirebill/shared-common/dtos'
 import { MustUsefulCurrencyCode } from '@wirebill/shared-common/enums'
 import { TableName } from '@wirebill/shared-common/models'
-import { CurrencyCodeValue } from '@wirebill/shared-common/types'
-
-const buildUniqCurrencyCodePairs = (): [CurrencyCodeValue, CurrencyCodeValue][] => {
-  const source = Object.values<CurrencyCodeValue>(MustUsefulCurrencyCode)
-  const target = Object.values<CurrencyCodeValue>(MustUsefulCurrencyCode)
-
-  const result: [CurrencyCodeValue, CurrencyCodeValue][] = []
-  for (const fromCurrency of source) {
-    for (const toCurrency of target) {
-      if (fromCurrency == toCurrency) continue
-
-      const toCollect: [CurrencyCodeValue, CurrencyCodeValue] = [fromCurrency, toCurrency]
-      if (result.some(([x1, x2]) => toCollect.includes(x1) && toCollect.includes(x2))) continue
-      else result.push(toCollect)
-    }
-  }
-  return result
-}
 
 export async function seed(knex: Knex): Promise<void> {
   const mustUsefulCurrencyCodes = Object.values(MustUsefulCurrencyCode)
@@ -30,14 +12,29 @@ export async function seed(knex: Knex): Promise<void> {
     .orWhereIn(`from_currency`, mustUsefulCurrencyCodes)
     .del()
 
-  const uniq = buildUniqCurrencyCodePairs()
-  for (const [fromCurrency, toCurrency] of uniq) {
-    const exchangeRate: IExchangeRateCreate = {
-      fromCurrency,
-      toCurrency,
-      rate: 0.5555,
-    }
-
+  const lookup: IExchangeRateCreate[] = [
+    { fromCurrency: `USD`, toCurrency: `EUR`, rate: 0.95 },
+    { fromCurrency: `USD`, toCurrency: `JPY`, rate: 1.0576 },
+    { fromCurrency: `USD`, toCurrency: `GBP`, rate: 0.82 },
+    { fromCurrency: `USD`, toCurrency: `AUD`, rate: 1.58 },
+    { fromCurrency: `EUR`, toCurrency: `USD`, rate: 1.0576 },
+    { fromCurrency: `EUR`, toCurrency: `JPY`, rate: 0.8582 },
+    { fromCurrency: `EUR`, toCurrency: `GBP`, rate: 0.8427 },
+    { fromCurrency: `EUR`, toCurrency: `AUD`, rate: 0.9398 },
+    { fromCurrency: `JPY`, toCurrency: `USD`, rate: 149.88 },
+    { fromCurrency: `JPY`, toCurrency: `EUR`, rate: 0.0063 },
+    { fromCurrency: `JPY`, toCurrency: `GBP`, rate: 0.4798 },
+    { fromCurrency: `JPY`, toCurrency: `AUD`, rate: 0.3871 },
+    { fromCurrency: `GBP`, toCurrency: `USD`, rate: 1.22 },
+    { fromCurrency: `GBP`, toCurrency: `EUR`, rate: 1.15 },
+    { fromCurrency: `GBP`, toCurrency: `JPY`, rate: 182.34 },
+    { fromCurrency: `GBP`, toCurrency: `AUD`, rate: 0.4087 },
+    { fromCurrency: `AUD`, toCurrency: `USD`, rate: 0.63 },
+    { fromCurrency: `AUD`, toCurrency: `JPY`, rate: 94.56 },
+    { fromCurrency: `AUD`, toCurrency: `EUR`, rate: 0.59 },
+    { fromCurrency: `AUD`, toCurrency: `GBP`, rate: 0.52 },
+  ]
+  for (const exchangeRate of lookup) {
     await knex.insert([exchangeRate]).into(TableName.ExchangeRate).returning(`*`)
     console.count(`[SUCCESS CREATED DUMMY EXCHANGE RATE RECORD]`)
   }

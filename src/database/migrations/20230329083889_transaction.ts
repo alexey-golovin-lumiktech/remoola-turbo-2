@@ -16,39 +16,15 @@ const addNotNullableFields = (table: Knex.CreateTableBuilder, knex: Knex) => {
     .comment(`current transaction ID - 6 symbols text auto generated on db layer by default`)
     .notNullable()
 
-  table
-    .enum(`type`, CommonConstraints.TransactionType.values, {
-      useNative: true,
-      enumName: CommonConstraints.TransactionType.name,
-      existingType: true,
-    })
-    .notNullable()
+  table.string(`type`).checkIn(CommonConstraints.TransactionType.values).notNullable()
 
   table.decimal(`origin_amount`, 9, 2).notNullable()
 
-  table
-    .enum(`currency_code`, CommonConstraints.CurrencyCode.values, {
-      useNative: true,
-      enumName: CommonConstraints.CurrencyCode.name,
-      existingType: true,
-    })
-    .notNullable()
+  table.string(`currency_code`).checkIn(CommonConstraints.CurrencyCode.values).notNullable()
 
-  table
-    .enum(`action_type`, CommonConstraints.TransactionActionType.values, {
-      useNative: true,
-      enumName: CommonConstraints.TransactionActionType.name,
-      existingType: true,
-    })
-    .notNullable()
+  table.string(`action_type`).checkIn(CommonConstraints.TransactionActionType.values).notNullable()
 
-  table
-    .enum(`status`, CommonConstraints.TransactionStatus.values, {
-      useNative: true,
-      enumName: CommonConstraints.TransactionStatus.name,
-      existingType: true,
-    })
-    .notNullable()
+  table.string(`status`).checkIn(CommonConstraints.TransactionStatus.values).notNullable()
 }
 
 const addNullableFields = (table: Knex.CreateTableBuilder) => {
@@ -61,11 +37,8 @@ const addNullableFields = (table: Knex.CreateTableBuilder) => {
     .nullable()
 
   table
-    .enum(`fees_type`, CommonConstraints.FeesType.values, {
-      useNative: true,
-      enumName: CommonConstraints.FeesType.name,
-      existingType: true,
-    })
+    .string(`fees_type`)
+    .checkIn(CommonConstraints.FeesType.values)
     .defaultTo(FeesType.NoFeesIncluded)
     .comment(`nullable - according to exchange-rate-management tasks`)
     .nullable()

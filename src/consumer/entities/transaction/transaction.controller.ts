@@ -40,11 +40,11 @@ export class TransactionController {
     })
   }
 
-  @Get(`/ballance`)
+  @Get(`/currencies-ballance-state`)
   @TransformResponse(CONSUMER.GetConsumerBallanceResult)
   @ApiOkResponse({ type: CONSUMER.GetConsumerBallanceResult })
-  getConsumerBallance(@ReqAuthIdentity() consumer: IConsumerModel): Promise<CONSUMER.GetConsumerBallanceResult[]> {
-    return this.service.getConsumerBallance({ consumerId: consumer.id })
+  getConsumerCurrenciesBallanceState(@ReqAuthIdentity() consumer: IConsumerModel): Promise<CONSUMER.GetConsumerBallanceResult[]> {
+    return this.service.getConsumerCurrenciesBallanceState({ consumerId: consumer.id })
   }
 
   @Get(`/:transactionId/:code`)

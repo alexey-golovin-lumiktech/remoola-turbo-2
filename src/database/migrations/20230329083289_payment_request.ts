@@ -17,30 +17,9 @@ export async function up(knex: Knex): Promise<void> {
     table.uuid(`payer_id`).notNullable().references(`id`).inTable(TableName.Consumer).onDelete(`CASCADE`).comment(`consumer.id`)
 
     table.decimal(`amount`, 9, 2).notNullable()
-    table
-      .enum(`currency_code`, CommonConstraints.CurrencyCode.values, {
-        useNative: true,
-        enumName: CommonConstraints.CurrencyCode.name,
-        existingType: true,
-      })
-      .defaultTo(CurrencyCode.USD)
-      .notNullable()
-    table
-      .enum(`status`, CommonConstraints.TransactionStatus.values, {
-        useNative: true,
-        enumName: CommonConstraints.TransactionStatus.name,
-        existingType: true,
-      })
-      .defaultTo(TransactionStatus.Draft)
-      .notNullable()
-    table
-      .enum(`type`, CommonConstraints.TransactionType.values, {
-        useNative: true,
-        enumName: CommonConstraints.TransactionType.name,
-        existingType: true,
-      })
-      .defaultTo(TransactionType.CreditCard)
-      .notNullable()
+    table.string(`currency_code`).checkIn(CommonConstraints.CurrencyCode.values).defaultTo(CurrencyCode.USD).notNullable()
+    table.string(`status`).checkIn(CommonConstraints.TransactionStatus.values).defaultTo(TransactionStatus.Draft).notNullable()
+    table.string(`type`).checkIn(CommonConstraints.TransactionType.values).defaultTo(TransactionType.CreditCard).notNullable()
     table.text(`description`)
 
     table.timestamp(`due_date`)

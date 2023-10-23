@@ -8,6 +8,8 @@ import { ITransactionModel } from '@wirebill/shared-common/models'
 import {
   CurrencyCodeValue,
   FeesTypeValue,
+  IGetConsumerBallanceParams,
+  IGetConsumerBallanceResult,
   TransactionActionTypeValue,
   TransactionStatusValue,
   TransactionTypeValue,
@@ -131,18 +133,16 @@ export class TransactionCreate
 
 export class TransactionUpdate extends PartialType(TransactionCreate) implements ITransactionUpdate {}
 
-export type IGetConsumerBallanceResult = { currency: CurrencyCodeValue; ballance: number }
 export class GetConsumerBallanceResult implements IGetConsumerBallanceResult {
   @Expose()
   @ApiProperty()
-  currency: CurrencyCodeValue
+  currencyCode: CurrencyCodeValue
 
   @Expose()
   @ApiProperty()
-  ballance: number
+  amount: number
 }
 
-export type IGetConsumerBallanceParams = { consumerId: string; currencyCode?: CurrencyCodeValue }
 export class GetConsumerBallanceParams implements IGetConsumerBallanceParams {
   @Expose()
   @ApiProperty({ required: true })

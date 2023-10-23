@@ -15,7 +15,7 @@ export class TransactionService extends BaseService<ITransactionModel, Transacti
   }
 
   createFromPaymentRequest(paymentRequest: IPaymentRequestModel): Promise<ITransactionModel> {
-    return this.repository.create({
+    const outcomeTransaction = {
       paymentRequestId: paymentRequest.id,
       currencyCode: paymentRequest.currencyCode,
       type: paymentRequest.type,
@@ -23,20 +23,21 @@ export class TransactionService extends BaseService<ITransactionModel, Transacti
 
       createdBy: paymentRequest.createdBy,
       updatedBy: paymentRequest.updatedBy,
-      consumerId: paymentRequest.requesterId,
       actionType: TransactionActionType.outcome,
       originAmount: -paymentRequest.amount,
-    } satisfies ITransactionCreate & { consumerId: string })
+    } satisfies ITransactionCreate
+
+    return this.repository.create({ ...outcomeTransaction, consumerId: paymentRequest.requesterId })
   }
 
-  async getConsumerBallance(params: CONSUMER.GetConsumerBallanceParams): Promise<CONSUMER.GetConsumerBallanceResult[]> {
+  async getConsumerCurrenciesBallanceState(params: CONSUMER.GetConsumerBallanceParams): Promise<CONSUMER.GetConsumerBallanceResult[]> {
     return this.repository.knex
       .from(TableName.Transaction)
       .where(`consumer_id`, params.consumerId)
       .modify(qb => !Object.values(CurrencyCode).includes(params.currencyCode) || qb.andWhere(`currency_code`, params.currencyCode))
-      .sum(`origin_amount as ballance`)
+      .sum(`origin_amount as amount`)
       .groupBy(`currency_code`)
       .orderBy(`currency_code`, `asc`)
-      .select(`currency_code as currency`)
+      .select(`currency_code`)
   }
 }
