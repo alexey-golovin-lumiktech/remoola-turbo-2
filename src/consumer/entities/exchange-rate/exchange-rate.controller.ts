@@ -1,12 +1,14 @@
-import { Controller, Get, Inject, Query } from '@nestjs/common'
+import { Body, Controller, Get, Inject, Post, Query } from '@nestjs/common'
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger'
+import { ReqAuthIdentity } from 'src/guards/auth.guard'
 
-import { IExchangeRateModel } from '@wirebill/shared-common/models'
+import { IConsumerModel, IExchangeRateModel } from '@wirebill/shared-common/models'
 import { ReqQuery } from '@wirebill/shared-common/types'
 
 import { CONSUMER } from '../../../dtos'
 import { TransformResponse } from '../../../interceptors'
 import { ReqQueryTransformPipe } from '../../pipes'
+import { TransactionService } from '../transaction/transaction.service'
 
 import { ExchangeRateService } from './exchange-rate.service'
 
@@ -15,7 +17,10 @@ import { ExchangeRateService } from './exchange-rate.service'
 @ApiBearerAuth()
 @Controller(`consumer/exchange-rates`)
 export class ExchangeRateController {
-  constructor(@Inject(ExchangeRateService) private readonly service: ExchangeRateService) {}
+  constructor(
+    @Inject(ExchangeRateService) private readonly service: ExchangeRateService,
+    @Inject(TransactionService) private readonly transactionService: TransactionService,
+  ) {}
 
   @Get()
   @TransformResponse(CONSUMER.ExchangeRatesListResponse)
@@ -25,5 +30,10 @@ export class ExchangeRateController {
   ): Promise<CONSUMER.ExchangeRatesListResponse> {
     Object.assign(query, { filter: { ...query?.filter, deletedAt: null } })
     return this.service.repository.findAndCountAll(query)
+  }
+
+  @Post()
+  exchangeRate(@ReqAuthIdentity() consumer: IConsumerModel, @Body() body: CONSUMER.ExchangeConsumerCurrencyBody) {
+    return this.transactionService.exchangeRate(consumer, body)
   }
 }

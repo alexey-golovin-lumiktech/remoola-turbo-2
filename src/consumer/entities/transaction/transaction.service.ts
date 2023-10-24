@@ -2,8 +2,8 @@ import { Inject, Injectable } from '@nestjs/common'
 import { CONSUMER } from 'src/dtos'
 
 import { ITransactionCreate } from '@wirebill/shared-common/dtos'
-import { CurrencyCode, TransactionActionType } from '@wirebill/shared-common/enums'
-import { IPaymentRequestModel, ITransactionModel, TableName } from '@wirebill/shared-common/models'
+import { CurrencyCode, TransactionActionType, TransactionStatus, TransactionType } from '@wirebill/shared-common/enums'
+import { IConsumerModel, IPaymentRequestModel, ITransactionModel, TableName } from '@wirebill/shared-common/models'
 
 import { BaseService } from '../../../common'
 import { TransactionRepository } from '../../../repositories'
@@ -39,5 +39,31 @@ export class TransactionService extends BaseService<ITransactionModel, Transacti
       .groupBy(`currency_code`)
       .orderBy(`currency_code`, `asc`)
       .select(`currency_code`)
+  }
+
+  async exchangeRate(consumer: IConsumerModel, body: CONSUMER.ExchangeConsumerCurrencyBody) {
+    const common = {
+      consumerId: consumer.id,
+      type: TransactionType.CurrencyExchange,
+      status: TransactionStatus.Completed,
+      createdBy: consumer.email,
+      updatedBy: consumer.email,
+    }
+
+    const outcomeTransaction = {
+      ...common,
+      currencyCode: body.fromCurrency,
+      originAmount: -body.amount,
+      actionType: TransactionActionType.outcome,
+    } satisfies ITransactionCreate
+
+    const incomeTransaction = {
+      ...common,
+      currencyCode: body.toCurrency,
+      originAmount: +body.amount,
+      actionType: TransactionActionType.income,
+    } satisfies ITransactionCreate
+
+    return this.repository.createMany([outcomeTransaction, incomeTransaction])
   }
 }

@@ -21,7 +21,7 @@ export async function seed(knex: Knex): Promise<void> {
     { fromCurrency: `EUR`, toCurrency: `JPY`, rate: 0.8582 },
     { fromCurrency: `EUR`, toCurrency: `GBP`, rate: 0.8427 },
     { fromCurrency: `EUR`, toCurrency: `AUD`, rate: 0.9398 },
-    { fromCurrency: `JPY`, toCurrency: `USD`, rate: 149.88 },
+    { fromCurrency: `JPY`, toCurrency: `USD`, rate: 0.0067 },
     { fromCurrency: `JPY`, toCurrency: `EUR`, rate: 0.0063 },
     { fromCurrency: `JPY`, toCurrency: `GBP`, rate: 0.4798 },
     { fromCurrency: `JPY`, toCurrency: `AUD`, rate: 0.3871 },
@@ -34,6 +34,7 @@ export async function seed(knex: Knex): Promise<void> {
     { fromCurrency: `AUD`, toCurrency: `EUR`, rate: 0.59 },
     { fromCurrency: `AUD`, toCurrency: `GBP`, rate: 0.52 },
   ]
+
   for (const exchangeRate of lookup) {
     await knex.insert([exchangeRate]).into(TableName.ExchangeRate).returning(`*`)
     console.count(`[SUCCESS CREATED DUMMY EXCHANGE RATE RECORD]`)

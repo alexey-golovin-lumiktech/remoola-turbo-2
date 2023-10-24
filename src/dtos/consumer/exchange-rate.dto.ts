@@ -1,4 +1,4 @@
-import { ApiProperty, OmitType } from '@nestjs/swagger'
+import { ApiProperty, OmitType, PickType } from '@nestjs/swagger'
 import { Expose, Type } from 'class-transformer'
 import { IsIn, IsNumber, IsString } from 'class-validator'
 
@@ -38,4 +38,10 @@ export class ExchangeRatesListResponse {
   @ApiProperty({ required: true, type: [ExchangeRateResponse] })
   @Type(() => ExchangeRateResponse)
   data: ExchangeRateResponse[]
+}
+
+export class ExchangeConsumerCurrencyBody extends PickType(ExchangeRate, [`fromCurrency`, `toCurrency`] as const) {
+  @Expose()
+  @IsNumber()
+  amount: number
 }
