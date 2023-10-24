@@ -33,7 +33,8 @@ export class ExchangeRateController {
   }
 
   @Post()
-  exchangeRate(@ReqAuthIdentity() consumer: IConsumerModel, @Body() body: CONSUMER.ExchangeConsumerCurrencyBody) {
-    return this.transactionService.exchangeRate(consumer, body)
+  async exchangeRate(@ReqAuthIdentity() consumer: IConsumerModel, @Body() body: CONSUMER.ExchangeConsumerCurrencyBody) {
+    const rate = await this.service.repository.findOne({ toCurrency: body.toCurrency, fromCurrency: body.fromCurrency })
+    return this.transactionService.exchangeRate(consumer, body, rate)
   }
 }

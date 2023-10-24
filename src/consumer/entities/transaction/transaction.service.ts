@@ -3,7 +3,7 @@ import { CONSUMER } from 'src/dtos'
 
 import { ITransactionCreate } from '@wirebill/shared-common/dtos'
 import { CurrencyCode, TransactionActionType, TransactionStatus, TransactionType } from '@wirebill/shared-common/enums'
-import { IConsumerModel, IPaymentRequestModel, ITransactionModel, TableName } from '@wirebill/shared-common/models'
+import { IConsumerModel, IExchangeRateModel, IPaymentRequestModel, ITransactionModel, TableName } from '@wirebill/shared-common/models'
 
 import { BaseService } from '../../../common'
 import { TransactionRepository } from '../../../repositories'
@@ -41,7 +41,9 @@ export class TransactionService extends BaseService<ITransactionModel, Transacti
       .select(`currency_code`)
   }
 
-  async exchangeRate(consumer: IConsumerModel, body: CONSUMER.ExchangeConsumerCurrencyBody) {
+  async exchangeRate(consumer: IConsumerModel, body: CONSUMER.ExchangeConsumerCurrencyBody, exchangeRate?: IExchangeRateModel) {
+    const rate = exchangeRate?.rate ?? 1
+
     const common = {
       consumerId: consumer.id,
       type: TransactionType.CurrencyExchange,
@@ -53,7 +55,7 @@ export class TransactionService extends BaseService<ITransactionModel, Transacti
     const outcomeTransaction = {
       ...common,
       currencyCode: body.fromCurrency,
-      originAmount: -body.amount,
+      originAmount: -body.amount / rate,
       actionType: TransactionActionType.outcome,
     } satisfies ITransactionCreate
 
@@ -64,6 +66,8 @@ export class TransactionService extends BaseService<ITransactionModel, Transacti
       actionType: TransactionActionType.income,
     } satisfies ITransactionCreate
 
-    return this.repository.createMany([outcomeTransaction, incomeTransaction])
+    const result = await this.repository.createMany([outcomeTransaction, incomeTransaction])
+    console.log(`[result]`, result)
+    return result
   }
 }
