@@ -16,14 +16,7 @@ export async function up(knex: Knex): Promise<void> {
 
     table.string(`name`).notNullable()
     table.string(`consumer_role`).notNullable()
-    table
-      .enum(`size`, CommonConstraints.OrganizationSize.values, {
-        useNative: true,
-        enumName: CommonConstraints.OrganizationSize.name,
-        existingType: true,
-      })
-      .defaultTo(OrganizationSize.Small)
-      .notNullable()
+    table.string(`size`).checkIn(CommonConstraints.OrganizationSize.values).defaultTo(OrganizationSize.Small).notNullable()
 
     addAuditColumns(table, knex)
   })

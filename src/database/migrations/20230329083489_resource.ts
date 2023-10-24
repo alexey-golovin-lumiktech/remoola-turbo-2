@@ -15,11 +15,7 @@ export async function up(knex: Knex): Promise<void> {
     addUUIDPrimaryKey(table, knex)
 
     table
-      .enum(`access`, CommonConstraints.ResourceAccess.values, {
-        useNative: true,
-        enumName: CommonConstraints.ResourceAccess.name,
-        existingType: true,
-      })
+      .enum(`access`, CommonConstraints.ResourceAccess.values)
       .notNullable()
       .defaultTo(ResourceAccess.Public)
       .comment(`one of ${CommonConstraints.ResourceAccess.values}`)

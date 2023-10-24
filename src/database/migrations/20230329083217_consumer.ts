@@ -22,23 +22,9 @@ export async function up(knex: Knex): Promise<void> {
     table.string(`first_name`).nullable().defaultTo(null)
     table.string(`last_name`).nullable().defaultTo(null)
 
-    table
-      .enum(`account_type`, CommonConstraints.AccountType.values, {
-        useNative: true,
-        enumName: CommonConstraints.AccountType.name,
-        existingType: true,
-      })
-      .nullable()
-      .defaultTo(null)
+    table.string(`account_type`).checkIn(CommonConstraints.AccountType.values).nullable().defaultTo(null)
 
-    table
-      .enum(`contractor_kind`, CommonConstraints.ContractorKind.values, {
-        useNative: true,
-        enumName: CommonConstraints.ContractorKind.name,
-        existingType: true,
-      })
-      .nullable()
-      .defaultTo(null)
+    table.string(`contractor_kind`).checkIn(CommonConstraints.ContractorKind.values).nullable().defaultTo(null)
 
     table.string(`how_did_hear_about_us`).nullable().defaultTo(null)
     table.string(`stripe_customer_id`).nullable().defaultTo(null)

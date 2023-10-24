@@ -3,56 +3,68 @@ import { Expose, Type } from 'class-transformer'
 import { IsIn, IsNotEmpty, IsString, IsUUID, ValidateIf } from 'class-validator'
 
 import { ITransactionCreate, ITransactionResponse, ITransactionUpdate } from '@wirebill/shared-common/dtos'
-import { CurrencyCode, FeesType, TransactionStatus, TransactionType } from '@wirebill/shared-common/enums'
+import { CurrencyCode, FeesType, TransactionActionType, TransactionStatus, TransactionType } from '@wirebill/shared-common/enums'
 import { ITransactionModel } from '@wirebill/shared-common/models'
-import { CurrencyCodeValue, FeesTypeValue, TransactionStatusValue, TransactionTypeValue } from '@wirebill/shared-common/types'
+import {
+  CurrencyCodeValue,
+  FeesTypeValue,
+  TransactionActionTypeValue,
+  TransactionStatusValue,
+  TransactionTypeValue,
+} from '@wirebill/shared-common/types'
 
 import { BaseModel } from '../common'
 
 class Transaction extends BaseModel implements ITransactionModel {
   @Expose()
-  @ApiProperty({ required: true })
   @IsUUID(`all`)
-  paymentRequestId: string
+  @ApiProperty()
+  consumerId: string
 
   @Expose()
-  @ApiProperty({ required: false })
   @IsString()
   @IsNotEmpty()
-  code?: string
+  @ApiProperty({ required: false, default: null })
+  code?: string = null
 
   @Expose()
-  @ApiProperty({ enum: Object.values(CurrencyCode) })
   @IsString()
-  @IsIn(Object.values(CurrencyCode))
-  currencyCode: CurrencyCodeValue
+  @IsIn(Object.values(TransactionType))
+  @ApiProperty({ enum: Object.values(TransactionType) })
+  type: TransactionTypeValue
 
   @Expose()
   @ApiProperty({ required: true })
   originAmount: number
 
   @Expose()
-  @ApiProperty({ enum: Object.values(TransactionType) })
   @IsString()
-  @IsIn(Object.values(TransactionType))
-  type: TransactionTypeValue
+  @IsIn(Object.values(CurrencyCode))
+  @ApiProperty({ enum: Object.values(CurrencyCode) })
+  currencyCode: CurrencyCodeValue
 
   @Expose()
-  @ApiProperty({ enum: Object.values(TransactionStatus) })
+  @IsString()
+  @IsIn(Object.values(TransactionActionType))
+  @ApiProperty({ enum: Object.values(TransactionActionType) })
+  actionType: TransactionActionTypeValue
+
+  @Expose()
   @IsString()
   @IsIn(Object.values(TransactionStatus))
+  @ApiProperty({ enum: Object.values(TransactionStatus) })
   status: TransactionStatusValue
 
   @Expose()
-  @ApiProperty({ required: true })
   @IsString()
   @IsNotEmpty()
+  @ApiProperty({ required: true })
   createdBy: string
 
   @Expose()
-  @ApiProperty({ required: true })
   @IsString()
   @IsNotEmpty()
+  @ApiProperty({ required: true })
   updatedBy: string
 
   @Expose()
@@ -60,15 +72,20 @@ class Transaction extends BaseModel implements ITransactionModel {
   deletedBy?: string = null
 
   @Expose()
-  @ApiProperty({ required: false })
-  feesAmount?: number = null
+  @IsUUID(`all`)
+  @ApiProperty()
+  paymentRequestId?: string
 
   @Expose()
-  @ApiProperty({ enum: Object.values(FeesType), default: FeesType.NoFeesIncluded, required: false })
-  @IsString()
-  @IsIn(Object.values(FeesType))
   @ValidateIf(({ value }) => value != null)
+  @IsIn(Object.values(FeesType))
+  @IsString()
+  @ApiProperty({ enum: Object.values(FeesType), default: FeesType.NoFeesIncluded, required: false })
   feesType?: FeesTypeValue = FeesType.NoFeesIncluded
+
+  @Expose()
+  @ApiProperty({ required: false })
+  feesAmount?: number = null
 
   @Expose()
   @ApiProperty({ required: false, default: null })
@@ -107,6 +124,8 @@ export class TransactionCreate
     `feesType`,
     `stripeId`,
     `stripeFeeInPercents`,
+    `actionType`,
+    `consumerId`,
   ] as const)
   implements ITransactionCreate {}
 

@@ -16,13 +16,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string(`citizen_of`).notNullable()
     table.string(`date_of_birth`).notNullable()
     table.string(`passport_or_id_number`).notNullable()
-    table
-      .enum(`legal_status`, CommonConstraints.LegalStatus.values, {
-        useNative: true,
-        enumName: CommonConstraints.LegalStatus.name,
-        existingType: true,
-      })
-      .nullable()
+    table.string(`legal_status`).checkIn(CommonConstraints.LegalStatus.values).nullable()
 
     table.string(`country_of_tax_residence`).defaultTo(null).nullable()
     table.string(`tax_id`).defaultTo(null).nullable()

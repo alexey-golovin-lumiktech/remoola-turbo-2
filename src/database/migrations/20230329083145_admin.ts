@@ -15,14 +15,7 @@ export async function up(knex: Knex): Promise<void> {
     addUUIDPrimaryKey(table, knex)
 
     table.string(`email`).unique().notNullable()
-    table
-      .enum(`type`, CommonConstraints.AdminType.values, {
-        useNative: true,
-        enumName: CommonConstraints.AdminType.name,
-        existingType: true,
-      })
-      .defaultTo(AdminType.Admin)
-      .notNullable()
+    table.string(`type`).checkIn(CommonConstraints.AdminType.values).defaultTo(AdminType.Admin).notNullable()
     table.string(`password`).notNullable()
     table.string(`salt`).notNullable()
 

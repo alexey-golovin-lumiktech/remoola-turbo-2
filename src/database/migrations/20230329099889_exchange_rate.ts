@@ -13,21 +13,9 @@ export async function up(knex: Knex): Promise<void> {
   return knex.schema.createTable(tableName, table => {
     addUUIDPrimaryKey(table, knex)
 
-    table
-      .enum(`from_currency`, CommonConstraints.CurrencyCode.values, {
-        useNative: true,
-        enumName: CommonConstraints.CurrencyCode.name,
-        existingType: true,
-      })
-      .notNullable()
+    table.string(`from_currency`).checkIn(CommonConstraints.CurrencyCode.values).notNullable()
 
-    table
-      .enum(`to_currency`, CommonConstraints.CurrencyCode.values, {
-        useNative: true,
-        enumName: CommonConstraints.CurrencyCode.name,
-        existingType: true,
-      })
-      .notNullable()
+    table.string(`to_currency`).checkIn(CommonConstraints.CurrencyCode.values).notNullable()
 
     table.decimal(`rate`, 11, 4).notNullable()
 

@@ -9,6 +9,7 @@ import {
   LegalStatus,
   OrganizationSize,
   ResourceAccess,
+  TransactionActionType,
   TransactionStatus,
   TransactionType,
 } from '@wirebill/shared-common/enums'
@@ -49,4 +50,5 @@ export const CommonConstraints = {
   AccountType: { name: `account_type_value_constraint`, values: Object.values(AccountType) },
   ContractorKind: { name: `contractor_kind_value_constraint`, values: Object.values(ContractorKind) },
   AdminType: { name: `admin_type_value_constraint`, values: Object.values(AdminType) },
+  TransactionActionType: { name: `transaction_action_type`, values: Object.values(TransactionActionType) },
 } as const

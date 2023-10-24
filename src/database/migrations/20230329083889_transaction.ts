@@ -1,11 +1,54 @@
 import { Knex } from 'knex'
 
-import { CurrencyCode, FeesType, TransactionStatus, TransactionType } from '@wirebill/shared-common/enums'
+import { FeesType } from '@wirebill/shared-common/enums'
 import { TableName } from '@wirebill/shared-common/models'
 
 import { addAuditColumns, addUUIDPrimaryKey, CommonConstraints } from './migration-utils'
 
 const tableName = TableName.Transaction
+
+const addNotNullableFields = (table: Knex.CreateTableBuilder, knex: Knex) => {
+  table.uuid(`consumer_id`).references(`id`).inTable(TableName.Consumer).onDelete(`CASCADE`).notNullable()
+
+  table
+    .string(`code`, 6)
+    .defaultTo(knex.raw(`substr(md5(now()::text), 0, 7)`))
+    .comment(`current transaction ID - 6 symbols text auto generated on db layer by default`)
+    .notNullable()
+
+  table.string(`type`).checkIn(CommonConstraints.TransactionType.values).notNullable()
+
+  table.decimal(`origin_amount`, 9, 2).notNullable()
+
+  table.string(`currency_code`).checkIn(CommonConstraints.CurrencyCode.values).notNullable()
+
+  table.string(`action_type`).checkIn(CommonConstraints.TransactionActionType.values).notNullable()
+
+  table.string(`status`).checkIn(CommonConstraints.TransactionStatus.values).notNullable()
+}
+
+const addNullableFields = (table: Knex.CreateTableBuilder) => {
+  table
+    .uuid(`payment_request_id`)
+    .references(`id`)
+    .inTable(TableName.PaymentRequest)
+    .onDelete(`SET NULL`)
+    .comment(`nullable - according to exchange-rate-management tasks`)
+    .nullable()
+
+  table
+    .string(`fees_type`)
+    .checkIn(CommonConstraints.FeesType.values)
+    .defaultTo(FeesType.NoFeesIncluded)
+    .comment(`nullable - according to exchange-rate-management tasks`)
+    .nullable()
+
+  table.decimal(`fees_amount`, 9, 2).comment(`nullable - according to exchange-rate-management tasks`).nullable()
+
+  table.string(`stripe_id`).nullable()
+
+  table.integer(`stripe_fee_in_percents`).checkBetween([0, 100], `transaction_stripe_fee_in_percents_range`).nullable()
+}
 
 export async function up(knex: Knex): Promise<void> {
   const exist = await knex.schema.hasTable(tableName)
@@ -14,58 +57,13 @@ export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTable(tableName, table => {
     addUUIDPrimaryKey(table, knex)
 
-    table.uuid(`payment_request_id`).notNullable().references(`id`).inTable(TableName.PaymentRequest).onDelete(`CASCADE`)
-    table
-      .string(`code`, 6)
-      .defaultTo(knex.raw(`substr(md5(now()::text), 0, 7)`))
-      .comment(`current transaction ID - 6 symbols text auto generated on db layer by default`)
+    addNotNullableFields(table, knex)
 
-    table.integer(`origin_amount`).notNullable()
-
-    table
-      .enum(`currency_code`, CommonConstraints.CurrencyCode.values, {
-        useNative: true,
-        enumName: CommonConstraints.CurrencyCode.name,
-        existingType: true,
-      })
-      .defaultTo(CurrencyCode.USD)
-      .notNullable()
-
-    table
-      .enum(`type`, CommonConstraints.TransactionType.values, {
-        useNative: true,
-        enumName: CommonConstraints.TransactionType.name,
-        existingType: true,
-      })
-      .defaultTo(TransactionType.CreditCard)
-      .notNullable()
-
-    table
-      .enum(`status`, CommonConstraints.TransactionStatus.values, {
-        useNative: true,
-        enumName: CommonConstraints.TransactionStatus.name,
-        existingType: true,
-      })
-      .defaultTo(TransactionStatus.Draft)
-      .notNullable()
+    addNullableFields(table)
 
     table.string(`created_by`).notNullable()
     table.string(`updated_by`).notNullable()
     table.string(`deleted_by`)
-
-    table.integer(`fees_amount`)
-
-    table
-      .enum(`fees_type`, CommonConstraints.FeesType.values, {
-        useNative: true,
-        enumName: CommonConstraints.FeesType.name,
-        existingType: true,
-      })
-      .defaultTo(FeesType.NoFeesIncluded)
-      .notNullable()
-
-    table.string(`stripe_id`)
-    table.integer(`stripe_fee_in_percents`).checkBetween([0, 100], `transaction_stripe_fee_in_percents_range`)
 
     table.unique([`payment_request_id`, `code`])
     addAuditColumns(table, knex)
