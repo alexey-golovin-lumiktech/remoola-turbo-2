@@ -67,7 +67,6 @@ export class TransactionService extends BaseService<ITransactionModel, Transacti
     } satisfies ITransactionCreate
 
     const result = await this.repository.createMany([outcomeTransaction, incomeTransaction])
-    console.log(`[result]`, result)
     return result
   }
 }
