@@ -20,7 +20,7 @@ export class TransactionController {
   @TransformResponse(CONSUMER.TransactionListResponse)
   @ApiOkResponse({ type: CONSUMER.TransactionListResponse })
   getConsumerTransactionList(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.TransactionListResponse> {
-    return this.service.repository.findAndCountAll({ filter: { deletedAt: null, createdBy: identity.email } })
+    return this.service.repository.findAndCountAll({ filter: { deletedAt: null, consumerId: identity.id } })
   }
 
   @Post()
@@ -33,6 +33,7 @@ export class TransactionController {
     const now = new Date()
     return this.service.repository.create({
       ...body,
+      consumerId: identity.id,
       createdAt: now,
       createdBy: identity.email,
       updatedAt: now,
@@ -55,7 +56,7 @@ export class TransactionController {
     @Param(`code`) code: string,
     @ReqAuthIdentity() identity: IConsumerModel,
   ): Promise<CONSUMER.TransactionResponse> {
-    return this.service.repository.findOne({ deletedAt: null, id: transactionId, code, createdBy: identity.email })
+    return this.service.repository.findOne({ deletedAt: null, id: transactionId, code, consumerId: identity.id })
   }
 
   @Patch(`/:transactionId/:code`)
@@ -69,7 +70,7 @@ export class TransactionController {
   ): Promise<CONSUMER.TransactionResponse> {
     const now = new Date()
     return this.service.repository.updateOne(
-      { id: transactionId, code, createdBy: identity.email },
+      { id: transactionId, code, consumerId: identity.id },
       {
         ...body,
         updatedAt: now,

@@ -5,11 +5,9 @@ import { MustUsefulCurrencyCode, TransactionActionType, TransactionStatus, Trans
 import { IConsumerModel, IPaymentRequestModel, ITransactionModel, TableName } from '@wirebill/shared-common/models'
 
 import { default as dummyConsumers } from './dummy-consumers.json'
+export const getRandomArrayItem = (arr: unknown[]) => arr[Math.round(Math.random() * arr.length)] ?? getRandomArrayItem(arr)
 
 const dummyConsumerEmails = dummyConsumers.map(x => x.email)
-const descriptions = [`SEO`, `Develop a database structure`, `Develop frontend app`, `Develop backend app`]
-
-const getRandomArrayItem = (arr: unknown[]) => arr[Math.round(Math.random() * arr.length)] ?? getRandomArrayItem(arr)
 const dummyAdminEmails = [`regular.admin@wirebill.com`, `super.admin@wirebill.com`]
 
 const replenishCustomerBallanceThroughTransactions = async (knex: Knex) => {
@@ -43,6 +41,7 @@ const replenishCustomerBallanceThroughTransactions = async (knex: Knex) => {
 }
 
 export async function seed(knex: Knex): Promise<void> {
+  const descriptions = [`SEO`, `Develop a database structure`, `Develop frontend app`, `Develop backend app`]
   const consumers: Awaited<IConsumerModel[]> = await knex.from(TableName.Consumer).whereIn(`email`, dummyConsumerEmails)
   const consumerIds = consumers.map(x => x.id)
   await knex.from(TableName.PaymentRequest).whereIn(`requesterId`, consumerIds).orWhereIn(`payerId`, consumerIds).del()
