@@ -15,6 +15,8 @@ export async function up(knex: Knex): Promise<void> {
     addUUIDPrimaryKey(table, knex)
 
     table.uuid(`consumer_id`).notNullable().references(`id`).inTable(TableName.Consumer).onDelete(`CASCADE`)
+    table.uuid(`billing_details_id`).nullable().references(`id`).inTable(TableName.BillingDetails).onDelete(`SET NULL`).defaultTo(null)
+
     table.string(`type`).checkIn(CommonConstraints.PaymentMethodType.values).notNullable()
     table.string(`brand`).notNullable()
     table.string(`last4`, 4).notNullable()
