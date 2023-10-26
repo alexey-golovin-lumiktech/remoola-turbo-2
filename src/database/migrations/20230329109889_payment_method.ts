@@ -23,6 +23,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string(`exp_month`, 2).nullable().comment(`required for type: ${PaymentMethodType.CreditCard}`)
     table.string(`exp_year`, 4).nullable().comment(`required for type: ${PaymentMethodType.CreditCard}`)
 
+    table.unique([`type`, `last4`, `consumer_id`])
     addAuditColumns(table, knex)
   })
 }

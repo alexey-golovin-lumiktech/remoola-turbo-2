@@ -1,10 +1,12 @@
-import { Body, Controller, Delete, Get, Inject, Param, Patch, Post } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Query } from '@nestjs/common'
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger'
+import { ReqQueryTransformPipe } from 'src/consumer/pipes'
 import { CONSUMER } from 'src/dtos'
 import { ReqAuthIdentity } from 'src/guards/auth.guard'
 import { TransformResponse } from 'src/interceptors'
 
-import { IConsumerModel } from '@wirebill/shared-common/models'
+import { IConsumerModel, IPaymentMethodModel } from '@wirebill/shared-common/models'
+import { ReqQuery } from '@wirebill/shared-common/types'
 
 import { PaymentMethodService } from './payment-method.service'
 
@@ -18,8 +20,12 @@ export class PaymentMethodController {
   @Get()
   @TransformResponse(CONSUMER.PaymentMethodListResponse)
   @ApiOkResponse({ type: CONSUMER.PaymentMethodListResponse })
-  getConsumerPaymentMethodsList(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.PaymentMethodListResponse> {
-    return this.service.findAndCountAll(identity.id)
+  getConsumerPaymentMethodsList(
+    @ReqAuthIdentity() identity: IConsumerModel,
+    @Query(new ReqQueryTransformPipe()) query: ReqQuery<IPaymentMethodModel>,
+  ): Promise<CONSUMER.PaymentMethodListResponse> {
+    Object.assign(query, { filter: { ...query?.filter, consumerId: identity.id, deletedAt: null } })
+    return this.service.findAndCountAll(query)
   }
 
   @Post()
