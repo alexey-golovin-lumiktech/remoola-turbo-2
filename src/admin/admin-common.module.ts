@@ -9,6 +9,7 @@ import { AdminContactModule } from './entities/contact/admin-contact.module'
 import { AdminExchangeRateModule } from './entities/exchange-rate/admin-exchange-rate.module'
 import { AdminGoogleProfileDetailsModule } from './entities/google-profile-details/admin-google-profile-details.module'
 import { AdminOrganizationDetailsModule } from './entities/organization-details/admin-organization-details.module'
+import { AdminPaymentMethodModule } from './entities/payment-method/admin-payment-method.module'
 import { AdminPaymentRequestModule } from './entities/payment-request/admin-payment-request.module'
 import { AdminPersonalDetailsModule } from './entities/personal-details/admin-personal-details.module'
 import { AdminTransactionModule } from './entities/transaction/admin-transaction.module'
@@ -27,6 +28,7 @@ import { AdminTransactionModule } from './entities/transaction/admin-transaction
     AdminContactModule,
     AdminTransactionModule,
     AdminExchangeRateModule,
+    AdminPaymentMethodModule,
   ],
 })
 export class AdminCommonModule {}

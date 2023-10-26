@@ -1,6 +1,6 @@
 import { Knex } from 'knex'
 
-import { IPaymentMethodBankAccountModelCreate, IPaymentMethodCreditCardModelCreate } from '@wirebill/shared-common/dtos'
+import { IPaymentMethodBankAccountCreate, IPaymentMethodCreditCardCreate } from '@wirebill/shared-common/dtos'
 import { CardBrand } from '@wirebill/shared-common/enums'
 import { TableName } from '@wirebill/shared-common/models'
 
@@ -19,7 +19,7 @@ export async function seed(knex: Knex): Promise<void> {
     return getLastFour(collector)
   }
 
-  const getCreditCard = (): IPaymentMethodCreditCardModelCreate => {
+  const getCreditCard = (_: null, index: number): IPaymentMethodCreditCardCreate => {
     const months = [`1`, `2`, `3`, `4`, `5`, `6`, `7`, `8`, `9`, `10`, `11`, `12`]
     const years = [`2023`, `2024`, `2025`, `2026`]
     return {
@@ -28,10 +28,11 @@ export async function seed(knex: Knex): Promise<void> {
       last4: getLastFour(),
       expMonth: getRandomArrayItem(months),
       expYear: getRandomArrayItem(years),
+      defaultSelected: index == 0,
     }
   }
 
-  const getBankAccount = (): IPaymentMethodBankAccountModelCreate => {
+  const getBankAccount = (_: null, index: number): IPaymentMethodBankAccountCreate => {
     const banks = [
       `JPMorgan`,
       `Bank of America`,
@@ -48,6 +49,7 @@ export async function seed(knex: Knex): Promise<void> {
       type: `bank account`,
       brand: getRandomArrayItem(banks),
       last4: getLastFour(),
+      defaultSelected: index == 4,
     }
   }
 
