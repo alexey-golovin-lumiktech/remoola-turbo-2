@@ -7,10 +7,10 @@ import { AddressDetailsModule } from './entities/address-details/address-details
 import { ConsumerModule } from './entities/consumer/consumer.module'
 import { ConsumerResourceModule } from './entities/consumer-resource/consumer-resource.module'
 import { ContactModule } from './entities/contact/contact.module'
-import { CreditCardModule } from './entities/credit-card/credit-card.module'
 import { ExchangeRateModule } from './entities/exchange-rate/exchange-rate.module'
 import { GoogleProfileDetailsModule } from './entities/google-profile-details/google-profile-details.module'
 import { OrganizationDetailsModule } from './entities/organization-details/organization-details.module'
+import { PaymentMethodModule } from './entities/payment-method/payment-method.module'
 import { PaymentRequestModule } from './entities/payment-request/payment-request.module'
 import { PaymentRequestAttachmentModule } from './entities/payment-request-attachment/payment-request-attachment.module'
 import { PersonalDetailsModule } from './entities/personal-details/personal-details.module'
@@ -25,7 +25,6 @@ import { TransactionModule } from './entities/transaction/transaction.module'
     ConsumerModule,
     ConsumerResourceModule,
     ContactModule,
-    CreditCardModule,
     GoogleProfileDetailsModule,
     OrganizationDetailsModule,
     PaymentRequestModule,
@@ -34,6 +33,7 @@ import { TransactionModule } from './entities/transaction/transaction.module'
     PaymentRequestAttachmentModule,
     TransactionModule,
     ExchangeRateModule,
+    PaymentMethodModule,
   ],
 })
 export class ConsumerCommonModule {}

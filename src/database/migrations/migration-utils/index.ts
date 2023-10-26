@@ -8,6 +8,7 @@ import {
   FeesType,
   LegalStatus,
   OrganizationSize,
+  PaymentMethodType,
   ResourceAccess,
   TransactionActionType,
   TransactionStatus,
@@ -50,5 +51,6 @@ export const CommonConstraints = {
   AccountType: { name: `account_type_value_constraint`, values: Object.values(AccountType) },
   ContractorKind: { name: `contractor_kind_value_constraint`, values: Object.values(ContractorKind) },
   AdminType: { name: `admin_type_value_constraint`, values: Object.values(AdminType) },
-  TransactionActionType: { name: `transaction_action_type`, values: Object.values(TransactionActionType) },
+  TransactionActionType: { name: `transaction_action_type_value_constraint`, values: Object.values(TransactionActionType) },
+  PaymentMethodType: { name: `payment_method_type_value_constraint`, values: Object.values(PaymentMethodType) },
 } as const
