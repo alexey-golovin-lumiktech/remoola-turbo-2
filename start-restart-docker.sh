@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 echo "Restart docker"
 
 if [[ -z "${NODE_ENV}" ]]; then
