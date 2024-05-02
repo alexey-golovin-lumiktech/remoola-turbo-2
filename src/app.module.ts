@@ -40,7 +40,7 @@ if (Object.keys(process.env).some(x => x.startsWith(`VERCEL_`))) Object.assign(c
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
         const apiKey = configService.get<string>(`STRIPE_SECRET_KEY`)
-        return { apiKey, apiVersion: `2023-08-16` }
+        return { apiKey, apiVersion: `2024-04-10` }
       },
     }),
     CommonSharedModulesModule,
