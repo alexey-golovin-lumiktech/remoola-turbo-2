@@ -17,11 +17,11 @@ echo "------------------------------------------------"
 
 echo ""
 echo "down wirebill containers for $DOCKER_COMPOSE_FILE"
-docker-compose -p wirebill -f $DOCKER_COMPOSE_FILE down
+docker compose -p wirebill -f $DOCKER_COMPOSE_FILE down
 echo ""
 echo "pause 1 sec"
 sleep 1
 echo ""
 echo "up wirebill containers for $DOCKER_COMPOSE_FILE"
-docker-compose -p wirebill -f $DOCKER_COMPOSE_FILE up -d --build
+docker compose -p wirebill -f $DOCKER_COMPOSE_FILE up -d --build
 exit 0
