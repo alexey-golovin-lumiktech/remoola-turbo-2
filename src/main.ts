@@ -122,7 +122,9 @@ async function bootstrap() {
 }
 
 // eslint-disable-next-line
-bootstrap().then(killAppWithGrace).catch((e: any) => console.error(e.message ?? `Bootstrap err`))
+bootstrap()
+  .then(killAppWithGrace)
+  .catch((e: any) => console.error(e.message ?? `Bootstrap err`))
 
 function killAppWithGrace(app: INestApplication) {
   async function exitHandler(options: { cleanup?: boolean; exit?: boolean }, exitCode?: number) {
