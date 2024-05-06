@@ -56,10 +56,10 @@ export class AdminAuthService {
   }
 
   private getAccessToken(identityId: string) {
-    return this.jwtService.signAsync({ identityId, type: `access` }, { expiresIn: 8.64e7 }) //8.64e7 ~ 24hrs in milliseconds
+    return this.jwtService.signAsync({ identityId, type: `access` }, { expiresIn: 86400 }) //86400 ~ 24hrs in milliseconds
   }
 
   private getRefreshToken(identityId: string) {
-    return this.jwtService.signAsync({ identityId, type: `refresh` }, { expiresIn: 6.048e8 }) //6.048e8 ~ 7days in milliseconds
+    return this.jwtService.signAsync({ identityId, type: `refresh` }, { expiresIn: 604800 }) //604800 ~ 7days in seconds
   }
 }
