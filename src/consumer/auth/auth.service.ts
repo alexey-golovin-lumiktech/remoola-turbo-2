@@ -171,11 +171,11 @@ export class AuthService {
   }
 
   private getAccessToken(identityId: string) {
-    return this.jwtService.signAsync({ identityId, type: `access` }, { expiresIn: process.env.JWT_ACCESS_TOKEN_EXPIRES_IN })
+    return this.jwtService.signAsync({ identityId, type: `access` }, { expiresIn: 8.64e7 }) //8.64e7 ~ 24hrs in milliseconds
   }
 
   private getRefreshToken(identityId: string) {
-    return this.jwtService.signAsync({ identityId, type: `refresh` }, { expiresIn: process.env.JWT_REFRESH_TOKEN_EXPIRES_IN })
+    return this.jwtService.signAsync({ identityId, type: `refresh` }, { expiresIn: 6.048e8 }) //6.048e8 ~ 7days in milliseconds
   }
 
   private async verifyChangePasswordFlowToken(token): Promise<IJwtTokenPayload> {
