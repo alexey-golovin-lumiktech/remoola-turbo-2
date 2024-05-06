@@ -33,7 +33,7 @@ export class ResourceService extends BaseService<IResourceModel, ResourceReposit
       try {
         const resource = await this.createOne(file)
         if (resource != null) resources.push(resource)
-      } catch (error) {
+      } catch (error: any) {
         const message = `[createManyResources] Something went wrong to process file: ${file.originalname}`
         this.logger.error(error?.message || message)
         continue

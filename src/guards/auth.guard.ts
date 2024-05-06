@@ -99,7 +99,7 @@ export class AuthGuard implements CanActivate {
 
     const exist = await this.accessRefreshTokenRepository.findOne({ identityId: verified.identityId, accessToken })
     if (exist == null) return this.throwError(`no identity record`)
-    if (exist.accessToken != accessToken) return this.throwError(`provided token is not valid`)
+    if (exist.accessToken != accessToken) return this.throwError(`provided access token is not valid`)
 
     const admin = await this.adminsService.repository.findById(verified.identityId)
     const consumer = await this.consumersService.repository.findById(verified.identityId)

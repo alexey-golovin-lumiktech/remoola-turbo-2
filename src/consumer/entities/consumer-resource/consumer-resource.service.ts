@@ -35,7 +35,7 @@ export class ConsumerResourceService extends BaseService<IConsumerResourceModel,
           this.logger.error(message)
           continue
         } else collected.push(toCollect)
-      } catch (error) {
+      } catch (error: any) {
         const message = `[createConsumerResourceList] Something went wrong to process file: ${file.originalname}`
         this.logger.error(error?.message || message)
         continue

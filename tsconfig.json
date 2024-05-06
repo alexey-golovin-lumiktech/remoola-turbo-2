@@ -18,6 +18,8 @@
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "noFallthroughCasesInSwitch": false,
+    "strict": true,
     "baseUrl": "./"
   },
+  "include": ["src", "typings", "knexfile.ts"]
 }

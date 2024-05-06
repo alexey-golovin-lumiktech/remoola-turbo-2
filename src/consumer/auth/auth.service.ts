@@ -79,7 +79,7 @@ export class AuthService {
     const verified = this.jwtService.verify<IJwtTokenPayload>(refreshToken)
     const exist = await this.accessRefreshTokenRepository.findOne({ identityId: verified.identityId })
     if (exist == null) throw new BadRequestException(`no identity record`)
-    if (exist.refreshToken != refreshToken) throw new BadRequestException(`provided token is not valid`)
+    if (exist.refreshToken != refreshToken) throw new BadRequestException(`provided refresh token is not valid`)
 
     const consumer = await this.consumerService.repository.findById(verified.identityId)
     const access = await this.getAccessAndRefreshToken(consumer.id)

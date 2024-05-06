@@ -38,7 +38,7 @@ export class AwsS3Service {
       } else this.logger.log(`Skip uploading for file: ${file.originalname} (reason: ALREADY_EXIST)`)
 
       return this.getUploadFileResult(file, key)
-    } catch (error) {
+    } catch (error: any) {
       const message = `Fail to upload file: ${file.originalname}(originalname) ${file.size}bytes`
       this.logger.warn(error?.message || message)
       return null

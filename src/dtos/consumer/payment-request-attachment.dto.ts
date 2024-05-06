@@ -32,7 +32,9 @@ type AttachmentFields = OptionalResourceFields & RequiredResourceFields
 
 export class PaymentRequestAttachmentResponse
   extends OmitType(PaymentRequestAttachment, [`deletedAt`] as const)
-  implements IPaymentRequestAttachmentResponse, AttachmentFields {/* eslint-disable-line */
+  implements IPaymentRequestAttachmentResponse, AttachmentFields
+{
+  /* eslint-disable-line */
 
   @Expose()
   @ApiProperty()
