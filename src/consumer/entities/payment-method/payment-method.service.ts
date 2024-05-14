@@ -1,12 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common'
 import { snakeCase } from 'lodash'
-import { BaseService } from 'src/common'
-import { commonUtils } from 'src/common-utils'
-import { CONSUMER } from 'src/dtos'
-import { PaymentMethodRepository } from 'src/repositories'
 
 import { IPaymentMethodModel, TableName } from '@wirebill/shared-common/models'
 import { ReqQuery } from '@wirebill/shared-common/types'
+
+import { BaseService } from '@-/common'
+import { commonUtils } from '@-/common-utils'
+import { CONSUMER } from '@-/dtos'
+import { PaymentMethodRepository } from '@-/repositories'
 
 @Injectable()
 export class PaymentMethodService extends BaseService<IPaymentMethodModel, PaymentMethodRepository> {

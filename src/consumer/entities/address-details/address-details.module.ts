@@ -1,6 +1,7 @@
 import { forwardRef, Module } from '@nestjs/common'
 
-import { AddressDetailsRepository } from '../../../repositories'
+import { AddressDetailsRepository } from '@-/repositories'
+
 import { ConsumerModule } from '../consumer/consumer.module'
 
 import { AddressDetailsController } from './address-details.controller'

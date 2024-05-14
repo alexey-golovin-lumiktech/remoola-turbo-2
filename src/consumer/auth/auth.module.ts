@@ -2,7 +2,8 @@ import { Module } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
 
-import { AccessRefreshTokenRepository } from '../../repositories'
+import { AccessRefreshTokenRepository } from '@-/repositories'
+
 import { AddressDetailsModule } from '../entities/address-details/address-details.module'
 import { ConsumerModule } from '../entities/consumer/consumer.module'
 import { GoogleProfileDetailsModule } from '../entities/google-profile-details/google-profile-details.module'
@@ -12,6 +13,7 @@ import { ResetPasswordModule } from '../entities/reset-password/reset-password.m
 
 import { AuthController } from './auth.controller'
 import { AuthService } from './auth.service'
+import { GoogleAuthService } from './google-auth.service'
 
 @Module({
   imports: [
@@ -27,7 +29,7 @@ import { AuthService } from './auth.service'
     ResetPasswordModule,
   ],
   controllers: [AuthController],
-  providers: [AccessRefreshTokenRepository, AuthService],
-  exports: [AuthService],
+  providers: [AccessRefreshTokenRepository, AuthService, GoogleAuthService],
+  exports: [AuthService, GoogleAuthService],
 })
 export class AuthModule {}

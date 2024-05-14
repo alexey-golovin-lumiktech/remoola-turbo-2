@@ -5,9 +5,9 @@ import express from 'express'
 import { IExchangeRateModel } from '@wirebill/shared-common/models'
 import { ReqQuery } from '@wirebill/shared-common/types'
 
-import { ADMIN } from '../../../dtos'
-import { TransformResponse } from '../../../interceptors'
-import { ReqQueryTransformPipe } from '../../pipes'
+import { ReqQueryTransformPipe } from '@-/admin/pipes'
+import { ADMIN } from '@-/dtos'
+import { TransformResponse } from '@-/interceptors'
 
 import { AdminExchangeRateService } from './admin-exchange-rate.service'
 

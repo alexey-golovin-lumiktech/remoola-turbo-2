@@ -4,11 +4,12 @@ import { JwtService } from '@nestjs/jwt'
 
 import { IAdminModel } from '@wirebill/shared-common/models'
 
-import { commonUtils } from '../../common-utils'
-import * as constants from '../../constants'
-import { ADMIN } from '../../dtos'
-import { IJwtTokenPayload } from '../../dtos/consumer'
-import { AccessRefreshTokenRepository } from '../../repositories'
+import { commonUtils } from '@-/common-utils'
+import * as constants from '@-/constants'
+import { ADMIN } from '@-/dtos'
+import { IJwtTokenPayload } from '@-/dtos/consumer'
+import { AccessRefreshTokenRepository } from '@-/repositories'
+
 import { AdminService } from '../entities/admin/admin.service'
 
 @Injectable()

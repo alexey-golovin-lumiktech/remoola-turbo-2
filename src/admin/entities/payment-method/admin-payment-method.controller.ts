@@ -1,12 +1,13 @@
 import { Body, Controller, Delete, Get, Inject, Param, Put, Query, Response } from '@nestjs/common'
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import express from 'express'
-import { ReqQueryTransformPipe } from 'src/admin/pipes'
-import { ADMIN } from 'src/dtos'
-import { TransformResponse } from 'src/interceptors'
 
 import { IPaymentMethodModel } from '@wirebill/shared-common/models'
 import { ReqQuery } from '@wirebill/shared-common/types'
+
+import { ReqQueryTransformPipe } from '@-/admin/pipes'
+import { ADMIN } from '@-/dtos'
+import { TransformResponse } from '@-/interceptors'
 
 import { AdminPaymentMethodService } from './admin-payment-method.service'
 

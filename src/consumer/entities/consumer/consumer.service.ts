@@ -2,9 +2,9 @@ import { Inject, Injectable } from '@nestjs/common'
 
 import { IConsumerModel } from '@wirebill/shared-common/models'
 
-import { BaseService, IBaseService } from '../../../common'
-import { CONSUMER } from '../../../dtos'
-import { ConsumerRepository } from '../../../repositories'
+import { BaseService, IBaseService } from '@-/common'
+import { CONSUMER } from '@-/dtos'
+import { ConsumerRepository } from '@-/repositories'
 
 @Injectable()
 export class ConsumerService

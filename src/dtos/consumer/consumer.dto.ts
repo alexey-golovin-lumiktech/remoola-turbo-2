@@ -7,8 +7,9 @@ import { AccountType, ContractorKind } from '@wirebill/shared-common/enums'
 import { IConsumerModel } from '@wirebill/shared-common/models'
 import { AccountTypeValue, ContractorKindValue, HowDidHearAboutUsValue } from '@wirebill/shared-common/types'
 
-import * as constants from '../../constants'
-import { BaseModel } from '../common/base-model.dto'
+import * as constants from '@-/constants'
+
+import { BaseModel } from '../common'
 
 class Consumer extends BaseModel implements IConsumerModel {
   @Expose()

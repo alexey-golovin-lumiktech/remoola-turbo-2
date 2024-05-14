@@ -1,9 +1,10 @@
 import { Body, Controller, Get, Inject, Post, Query } from '@nestjs/common'
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger'
-import { ReqAuthIdentity } from 'src/guards/auth.guard'
 
 import { IConsumerModel, IExchangeRateModel } from '@wirebill/shared-common/models'
 import { ReqQuery } from '@wirebill/shared-common/types'
+
+import { ReqAuthIdentity } from '@-/guards/auth.guard'
 
 import { CONSUMER } from '../../../dtos'
 import { TransformResponse } from '../../../interceptors'

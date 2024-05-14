@@ -15,26 +15,30 @@ import {
 import { ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger'
 import express from 'express'
 import { IncomingHttpHeaders } from 'http'
+import _ from 'lodash'
 
 import { IConsumerModel } from '@wirebill/shared-common/models'
 
-import { PublicEndpoint } from '../../decorators'
-import { CONSUMER } from '../../dtos'
-import { ReqAuthIdentity } from '../../guards/auth.guard'
-import { TransformResponse } from '../../interceptors'
+import { PublicEndpoint } from '@-/decorators'
+import { CONSUMER } from '@-/dtos'
+import { ReqAuthIdentity } from '@-/guards/auth.guard'
+import { TransformResponse } from '@-/interceptors'
+
 import { AddressDetailsService } from '../entities/address-details/address-details.service'
 import { OrganizationDetailsService } from '../entities/organization-details/organization-details.service'
 import { PersonalDetailsService } from '../entities/personal-details/personal-details.service'
 
 import { AuthService } from './auth.service'
+import { GoogleAuthService } from './google-auth.service'
 
 @ApiTags(`consumer`)
 @Controller(`consumer/auth`)
 export class AuthController {
-  logger = new Logger(AuthController.name)
+  private logger = new Logger(AuthController.name)
 
   constructor(
     @Inject(AuthService) private readonly service: AuthService,
+    @Inject(GoogleAuthService) private readonly googleAuthService: GoogleAuthService,
     @Inject(PersonalDetailsService) private personalDetailsService: PersonalDetailsService,
     @Inject(OrganizationDetailsService) private organizationDetailsService: OrganizationDetailsService,
     @Inject(AddressDetailsService) private addressDetailsService: AddressDetailsService,
@@ -46,6 +50,29 @@ export class AuthController {
   @TransformResponse(CONSUMER.LoginResponse)
   login(@ReqAuthIdentity() identity: IConsumerModel): Promise<CONSUMER.LoginResponse> {
     return this.service.login(identity)
+  }
+
+  @PublicEndpoint()
+  @Get(`/google-new-way`)
+  @ApiOkResponse({ type: CONSUMER.GoogleOAuthNewWayResponse })
+  @TransformResponse(CONSUMER.GoogleOAuthNewWayResponse)
+  googleOAuthNewWay(@Query() query: CONSUMER.GoogleOAuth2Query) {
+    return this.googleAuthService.googleOAuthNewWay(query)
+  }
+
+  @PublicEndpoint()
+  @Get(`/google-redirect-new-way`)
+  @ApiOkResponse({ type: CONSUMER.LoginResponse })
+  @TransformResponse(CONSUMER.LoginResponse)
+  async googleOAuthNewWayRedirect(@Response() response: express.Response, @Query() query: CONSUMER.RedirectCallbackQuery) {
+    const queryStateHref = _.get(query, `state.href`, null)
+    if (queryStateHref == null) {
+      this.logger.debug({ caller: this.googleOAuthNewWayRedirect.name, payload: { queryStateHref, query } })
+      return
+    }
+    if (query?.error == null) await this.googleAuthService.googleOAuthNewWayRedirect(query)
+    const url = new URL(queryStateHref)
+    return response.status(301).redirect(url.origin + `/create-profile`)
   }
 
   @PublicEndpoint()

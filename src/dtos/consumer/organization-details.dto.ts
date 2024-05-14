@@ -7,7 +7,7 @@ import { OrganizationSize } from '@wirebill/shared-common/enums'
 import { IOrganizationDetailsModel } from '@wirebill/shared-common/models'
 import { ConsumerRoleValue, OrganizationSizeValue } from '@wirebill/shared-common/types'
 
-import { BaseModel } from '../common/base-model.dto'
+import { BaseModel } from '../common'
 
 class OrganizationDetails extends BaseModel implements IOrganizationDetailsModel {
   @Expose()

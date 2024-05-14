@@ -2,10 +2,10 @@ import { BadRequestException, Inject, Injectable } from '@nestjs/common'
 
 import { IAdminModel } from '@wirebill/shared-common/models'
 
-import { BaseService } from '../../../common'
-import { commonUtils } from '../../../common-utils'
-import { ADMIN } from '../../../dtos'
-import { AdminRepository } from '../../../repositories'
+import { BaseService } from '@-/common'
+import { commonUtils } from '@-/common-utils'
+import { ADMIN } from '@-/dtos'
+import { AdminRepository } from '@-/repositories'
 
 @Injectable()
 export class AdminService extends BaseService<IAdminModel, AdminRepository> {

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
 
-import { BillingDetailsRepository } from '../../../repositories'
+import { BillingDetailsRepository } from '@-/repositories'
 
 import { AdminBillingDetailsController } from './admin-billing-details.controller'
 import { AdminBillingDetailsService } from './admin-billing-details.service'
