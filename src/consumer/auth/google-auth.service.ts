@@ -9,15 +9,16 @@ import { CONSUMER } from '@-/dtos'
 export class GoogleAuthService {
   private logger = new Logger(GoogleAuthService.name)
   private googleapisOauth2Client: Auth.OAuth2Client
-  private origin = process.env.GOOGLE_CLIENT_LOCAL_ORIGIN || `http://localhost:8088`
+  private origin = /* process.env.GOOGLE_CLIENT_LOCAL_ORIGIN || */ `http://localhost:8088`
   private scope: string[]
 
   constructor() {
-    this.googleapisOauth2Client = new google.auth.OAuth2({
+    const opts = {
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       redirectUri: `${this.origin}/consumer/auth/google-redirect-new-way`,
-    })
+    } satisfies Auth.OAuth2ClientOptions
+    this.googleapisOauth2Client = new google.auth.OAuth2(opts)
 
     let parsed: string
     try {
@@ -32,6 +33,7 @@ export class GoogleAuthService {
       access_type: `offline`,
       scope: this.scope,
       include_granted_scopes: true,
+      redirect_uri: `${this.origin}/consumer/auth/google-redirect-new-way`,
     } satisfies Auth.GenerateAuthUrlOpts
     return { Location: this.googleapisOauth2Client.generateAuthUrl(opts) }
   }

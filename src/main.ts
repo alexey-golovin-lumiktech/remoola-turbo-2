@@ -23,7 +23,7 @@ import { TransformResponseInterceptor } from './interceptors'
 import { AccessRefreshTokenRepository } from './repositories'
 
 async function bootstrap() {
-  commonUtils.checkProvidedEnvs(process.cwd())()
+  commonUtils.checkProvidedEnvs()
 
   const app = await NestFactory.create(AppModule, {
     cors: {

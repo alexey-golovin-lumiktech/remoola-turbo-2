@@ -9,11 +9,12 @@ import supertest from 'supertest'
 import { AdminService } from '@-/admin/entities/admin/admin.service'
 import { ConsumerService } from '@-/consumer/entities/consumer/consumer.service'
 import { HttpExceptionFilter } from '@-/filters'
-import { AuthGuard } from '@-/guards/auth.guard'
 import { TransformResponseInterceptor } from '@-/interceptors'
 import { AccessRefreshTokenRepository } from '@-/repositories'
 
-import { AppModule } from '../src/app.module'
+import { AppModule } from '../app.module'
+
+import { AuthGuard } from './auth.guard'
 
 describe(`AppController (e2e)`, () => {
   let app: INestApplication
@@ -67,4 +68,25 @@ describe(`AppController (e2e)`, () => {
   afterEach(() => app?.close())
 
   it(`/ (GET)`, () => supertest.agent(app.getHttpServer()).get(`/`).expect(301))
+
+  it(`me`, async () => {
+    const email = `simplelogin-newsletter.djakm@simplelogin.com`
+    const credentials = { email, password: email }
+    const headers = { authorization: `Basic ` + Buffer.from(credentials.email + `:` + credentials.password).toString(`base64`) }
+    const result = await supertest
+      .agent(app.getHttpServer())
+      .post(`/consumer/auth/login`)
+      .set({
+        accept: `application/json`,
+        'content-type': `application/json`,
+        'x-testing-rate-limit': `testing_pass`,
+        ...headers,
+      })
+    expect(result.body.id).toBeDefined()
+    expect(result.body.accessToken).toBeDefined()
+    expect(result.body.refreshToken).toBeDefined()
+    expect(result.body.email).toBeDefined()
+    expect(result.body.email).toBe(email)
+    expect(result.body).toMatchObject({ email: `simplelogin-newsletter.djakm@simplelogin.com` })
+  })
 })

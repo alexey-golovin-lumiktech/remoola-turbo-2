@@ -51,5 +51,5 @@
       "@-/repositories/*": ["src/repositories/*"],
     }
   },
-  "include": ["src", "typings", "knexfile.ts"]
+  "include": ["src", "typings", "knexfile.ts", "test"]
 }
