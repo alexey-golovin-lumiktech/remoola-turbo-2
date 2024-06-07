@@ -1,11 +1,11 @@
-import { ApiProperty, PickType } from '@nestjs/swagger'
+import { ApiProperty, OmitType, PickType } from '@nestjs/swagger'
 import { Expose, Transform } from 'class-transformer'
 
 import { fromBase64 } from '@-/common-utils'
 
 import { ConsumerResponse } from './consumer.dto'
 
-export class LoginResponse extends ConsumerResponse {
+export class LoginResponse extends OmitType(ConsumerResponse, [`password`, `salt`] as const) {
   @Expose()
   @ApiProperty({ example: `access-token-string` })
   accessToken: string

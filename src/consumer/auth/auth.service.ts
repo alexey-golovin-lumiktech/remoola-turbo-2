@@ -46,6 +46,7 @@ export class AuthService {
 
   async googleOAuth(body: CONSUMER.GoogleSignin): Promise<CONSUMER.LoginResponse> {
     try {
+      console.log(`[body]`, body)
       const { credential, contractorKind = null, accountType = null } = body
       const verified = await this.oAuth2Client.verifyIdToken({ idToken: credential })
       const rawGoogleProfile = new CONSUMER.CreateGoogleProfileDetails(verified.getPayload())
@@ -63,9 +64,9 @@ export class AuthService {
         await this.mailingService.sendConsumerTemporaryPasswordForGoogleOAuth({ email: consumer.email })
       }
 
-      const access = await this.getAccessAndRefreshToken(consumer.id)
+      // const access = await this.getAccessAndRefreshToken(consumer.id)
 
-      return commonUtils.convertPlainToClassInstance(CONSUMER.LoginResponse, Object.assign(consumer, access))
+      return commonUtils.convertPlainToClassInstance(CONSUMER.LoginResponse, consumer)
     } catch (error) {
       this.logger.error(error)
       throw new InternalServerErrorException()

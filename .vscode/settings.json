@@ -44,5 +44,5 @@
   "javascript.format.insertSpaceAfterOpeningAndBeforeClosingEmptyBraces": false,
   "typescript.format.insertSpaceAfterOpeningAndBeforeClosingEmptyBraces": false,
   "typescript.tsdk": "node_modules/typescript/lib",
-  "task.allowAutomaticTasks": "off",
+  "task.allowAutomaticTasks": "off", 
 }
