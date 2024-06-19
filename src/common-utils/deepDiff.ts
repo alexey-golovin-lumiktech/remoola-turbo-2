@@ -1,23 +1,32 @@
 import _ from 'lodash'
 
-export const deepDiff = (fromObject, toObject) => {
-  const buildCurrentChangePath = (path, key) => (_.isUndefined(path) ? key : `${path}.${key}`)
+type DiffResult = Record<string, { from?: any; to?: any }>
 
-  const changes = {}
-  const walk = (fromObject, toObject, path = undefined) => {
-    for (const key of _.keys(fromObject)) {
+export const deepDiff = (fromObject: Record<string, any>, toObject: Record<string, any>): DiffResult => {
+  const buildCurrentChangePath = (path: string | undefined, key: string) => (_.isUndefined(path) ? key : `${path}.${key}`)
+
+  const changes: DiffResult = {}
+
+  const walk = (fromObj: Record<string, any>, toObj: Record<string, any>, path: string | undefined = undefined): void => {
+    for (const key of _.keys(fromObj)) {
       const currentPath = buildCurrentChangePath(path, key)
-      if (!_.has(toObject, key)) changes[currentPath] = { from: _.get(fromObject, key) }
+      if (!_.has(toObj, key)) {
+        changes[currentPath] = { from: _.get(fromObj, key) }
+      }
     }
 
-    for (const [key, to] of _.entries(toObject)) {
+    for (const [key, toValue] of _.entries(toObj)) {
       const currentPath = buildCurrentChangePath(path, key)
-      if (!_.has(fromObject, key)) changes[currentPath] = { to }
-      else {
-        const from = _.get(fromObject, key)
-        if (_.isEqual(from, to)) continue
-        if (_.isObjectLike(to) && _.isObjectLike(from)) walk(from, to, currentPath)
-        else changes[currentPath] = { from, to }
+      if (!_.has(fromObj, key)) {
+        changes[currentPath] = { to: toValue }
+      } else {
+        const fromValue = _.get(fromObj, key)
+        if (_.isEqual(fromValue, toValue)) continue
+        if (_.isObjectLike(toValue) && _.isObjectLike(fromValue)) {
+          walk(fromValue, toValue, currentPath)
+        } else {
+          changes[currentPath] = { from: fromValue, to: toValue }
+        }
       }
     }
   }
