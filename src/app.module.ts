@@ -11,6 +11,7 @@ import * as knexfile from '../knexfile'
 import { AdminCommonModule } from './admin/admin-common.module'
 import { CommonSharedModulesModule } from './common-shared-modules/common-shared-modules.module'
 import { ConsumerCommonModule } from './consumer/consumer-common.module'
+import { HealthModule } from './health/health.module'
 import { LoggerMiddleware } from './middleware/logger.middleware'
 import { AppController } from './app.controller'
 import * as configValidation from './envs-validation.schema'
@@ -46,6 +47,7 @@ if (Object.keys(process.env).some(x => x.startsWith(`VERCEL_`))) Object.assign(c
     CommonSharedModulesModule,
     AdminCommonModule,
     ConsumerCommonModule,
+    HealthModule,
   ],
   controllers: [AppController],
   exports: [],
