@@ -38,7 +38,7 @@
     "pre-commit": "npx lint-staged"
   },
   "lint-staged": {
-    "**/*.{ts}": [
+    "**/*.ts": [
       "yarn format",
       "yarn lint"
     ]
@@ -73,8 +73,8 @@
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/schedule": "^4.0.2",
     "@nestjs/swagger": "^7.3.1",
-    "@wirebill/pdf-generator-package": "^0.0.1276147011",
-    "@wirebill/shared-common": "^0.0.1276147011",
+    "@wirebill/pdf-generator-package": "^0.0.1322481904",
+    "@wirebill/shared-common": "^0.0.1322481904",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "cross-env": "^7.0.3",
