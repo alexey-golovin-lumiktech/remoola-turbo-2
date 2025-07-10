@@ -1,5 +1,4 @@
-import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
+import { BadRequestException, Inject, Injectable } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 
 import { IAdminModel } from '@wirebill/shared-common/models'
@@ -14,13 +13,10 @@ import { AdminService } from '../entities/admin/admin.service'
 
 @Injectable()
 export class AdminAuthService {
-  private readonly logger = new Logger(AdminAuthService.name)
-
   constructor(
     @Inject(AdminService) private readonly adminsService: AdminService,
     @Inject(AccessRefreshTokenRepository) private readonly accessRefreshTokenRepository: AccessRefreshTokenRepository,
     private readonly jwtService: JwtService,
-    private readonly configService: ConfigService,
   ) {}
 
   async getAuthenticatedAdmin(email: string, password: string): Promise<IAdminModel> {
