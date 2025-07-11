@@ -2,15 +2,15 @@ import { Logger } from '@nestjs/common'
 import { GetTokenResponse } from 'google-auth-library/build/src/auth/oauth2client'
 import { Auth, google } from 'googleapis'
 import _ from 'lodash'
-import { envs } from 'src/envs'
 
 import { toBase64 } from '@-/common-utils'
 import { CONSUMER } from '@-/dtos'
+import { envs } from '@-/envs'
 
 export class GoogleAuthService {
   private logger = new Logger(GoogleAuthService.name)
   private googleapisOauth2Client: Auth.OAuth2Client
-  private origin = /* envs.GOOGLE_CLIENT_LOCAL_ORIGIN || */ `http://127.0.0.1:8088`
+  private origin = /* envs.GOOGLE_CLIENT_LOCAL_ORIGIN || */ `http://127.0.0.1:8888`
   private scope: string[]
 
   constructor() {

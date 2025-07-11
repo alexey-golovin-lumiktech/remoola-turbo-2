@@ -1,8 +1,7 @@
-import { envs } from 'src/envs'
-
 import { CurrencyCode } from '@wirebill/shared-common/enums'
 
 import { formatToCurrency } from '@-/common-utils/format-to-currency'
+import { envs } from '@-/envs'
 
 const html = `
   <table style="padding: 20px;font-style: italic;background: #3f3f3f;color: cyan;border-radius: 20px;">

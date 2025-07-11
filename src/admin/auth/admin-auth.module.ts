@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common'
 import { JwtModule } from '@nestjs/jwt'
-import { envs } from 'src/envs'
 
+import { envs } from '@-/envs'
 import { AccessRefreshTokenRepository } from '@-/repositories'
 
 import { AdminModule } from '../entities/admin/admin.module'

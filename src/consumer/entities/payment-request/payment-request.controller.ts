@@ -1,10 +1,11 @@
 import { BadRequestException, Body, Controller, Get, Inject, Param, Post, Query, UploadedFiles, UseInterceptors } from '@nestjs/common'
 import { AnyFilesInterceptor } from '@nestjs/platform-express'
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger'
-import { envs } from 'src/envs'
 
 import { IConsumerModel, IPaymentRequestModel } from '@wirebill/shared-common/models'
 import { ReqQuery, ReqQueryTimelineFilter } from '@wirebill/shared-common/types'
+
+import { envs } from '@-/envs'
 
 import { ParseJsonPipe, ReqQueryTransformPipe } from '../../../consumer/pipes'
 import { CONSUMER } from '../../../dtos'

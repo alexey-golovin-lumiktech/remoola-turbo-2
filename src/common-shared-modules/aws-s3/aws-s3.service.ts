@@ -1,8 +1,9 @@
 import { HeadObjectCommand, HeadObjectCommandOutput, PutObjectCommand, PutObjectCommandInput, S3Client } from '@aws-sdk/client-s3'
 import { Injectable, Logger } from '@nestjs/common'
-import { envs } from 'src/envs'
 
 import { IResourceCreate } from '@wirebill/shared-common/dtos'
+
+import { envs } from '@-/envs'
 
 @Injectable()
 export class AwsS3Service {

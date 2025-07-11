@@ -1,4 +1,4 @@
-import z from 'zod'
+import z, { ZodArray, ZodDefault, ZodType, ZodTypeAny } from 'zod'
 
 const ENVIRONMENT = { PRODUCTION: `production`, STAGING: `staging`, DEVELOPMENT: `development`, TEST: `test` } as const
 const environments = Object.values(ENVIRONMENT)
@@ -15,14 +15,42 @@ const node = {
     .default(`production`),
 }
 
+export function zBoolean(fallback = false): ZodType<boolean> {
+  return z.preprocess(raw => {
+    if (typeof raw === `string`) {
+      const lowered = raw.trim().toLowerCase()
+      if ([`true`, `1`, `yes`, `y`].includes(lowered)) return true
+      if ([`false`, `0`, `no`, `n`].includes(lowered)) return false
+    }
+    return typeof raw === `boolean` ? raw : fallback
+  }, z.boolean())
+}
+
+export function zArray<T extends ZodTypeAny>(itemSchema: T, fallback: z.infer<T>[] = []): ZodDefault<ZodArray<T>> {
+  const arrWithDefault = z.array(itemSchema).default(fallback)
+  return z.preprocess(raw => {
+    if (typeof raw === `string`) {
+      try {
+        return JSON.parse(raw)
+      } catch {
+        return raw
+          .split(`,`)
+          .map(s => s.trim())
+          .filter(Boolean)
+      }
+    }
+    return raw
+  }, arrWithDefault) as unknown as ZodDefault<ZodArray<T>>
+}
+
 const postgres = {
   POSTGRES_HOST: z.string().default(`127.0.0.1`),
   POSTGRES_PORT: z.coerce.number().default(5432),
   POSTGRES_DATABASE: z.string().default(`wirebill`),
   POSTGRES_USER: z.string().default(`wirebill`),
   POSTGRES_PASSWORD: z.string().default(`wirebill`),
-  POSTGRES_DEBUG: z.coerce.boolean().default(false),
-  POSTGRES_SSL: z.coerce.boolean().default(false),
+  POSTGRES_DEBUG: zBoolean(false),
+  POSTGRES_SSL: zBoolean(true),
 
   VERCEL_POSTGRES_URL: z.string().optional(),
 }
@@ -37,22 +65,7 @@ const google = {
   GOOGLE_API_KEY: z.string(),
   GOOGLE_CLIENT_ID: z.string(),
   GOOGLE_CLIENT_SECRET: z.string(),
-  GOOGLE_CALENDAR_SCOPES: z.preprocess(
-    val => {
-      if (typeof val === `string`) {
-        try {
-          return JSON.parse(val)
-        } catch {
-          return val
-            .split(`,`)
-            .map(s => s.trim())
-            .filter(Boolean)
-        }
-      }
-      return val
-    },
-    z.array(z.string().min(1)),
-  ),
+  GOOGLE_CALENDAR_SCOPES: zArray(z.string().min(1), []),
 }
 
 const jwt = {

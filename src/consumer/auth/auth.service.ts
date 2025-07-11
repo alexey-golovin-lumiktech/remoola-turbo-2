@@ -10,7 +10,6 @@ import {
 import { JwtService } from '@nestjs/jwt'
 import express from 'express'
 import { OAuth2Client } from 'google-auth-library'
-import { envs } from 'src/envs'
 
 import { IChangePasswordBody, IChangePasswordParam, IConsumerCreate } from '@wirebill/shared-common/dtos'
 import { IConsumerModel } from '@wirebill/shared-common/models'
@@ -19,6 +18,7 @@ import { MailingService } from '@-/common-shared-modules/mailing/mailing.service
 import { commonUtils } from '@-/common-utils'
 import { CONSUMER } from '@-/dtos'
 import { IJwtTokenPayload } from '@-/dtos/consumer'
+import { envs } from '@-/envs'
 import { AccessRefreshTokenRepository } from '@-/repositories'
 
 import { ConsumerService } from '../entities/consumer/consumer.service'

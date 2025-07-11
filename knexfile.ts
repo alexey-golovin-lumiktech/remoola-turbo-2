@@ -1,6 +1,7 @@
 import type { Knex } from 'knex'
 import * as pg from 'pg'
-import { envs } from 'src/envs'
+
+import { envs } from '@-/envs'
 
 pg.types.setTypeParser(20, parseInt)
 pg.types.setTypeParser(1700, parseFloat)

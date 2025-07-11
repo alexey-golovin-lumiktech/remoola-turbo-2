@@ -1,8 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { ISendMailOptions, MailerService } from '@nestjs-modules/mailer'
-import { envs } from 'src/envs'
 
 import { generatePdf } from '@wirebill/pdf-generator-package'
+
+import { envs } from '@-/envs'
 
 import { commonUtils } from '../../common-utils'
 
