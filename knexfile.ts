@@ -1,8 +1,6 @@
 import type { Knex } from 'knex'
 import * as pg from 'pg'
 
-import { envs } from '@-/envs'
-
 pg.types.setTypeParser(20, parseInt)
 pg.types.setTypeParser(1700, parseFloat)
 const toCamel = (str: string) => str.replace(/([-_][a-z])/gi, group => group.toUpperCase().replace(`-`, ``).replace(`_`, ``))
@@ -27,17 +25,6 @@ const keysToSnakeCase = function (source: any) {
   return toSnake(source)
 }
 
-const connectionConfig: Knex.PgConnectionConfig = {
-  host: envs.POSTGRES_HOST,
-  port: envs.POSTGRES_PORT,
-  database: envs.POSTGRES_DATABASE,
-  user: envs.POSTGRES_USER,
-  password: envs.POSTGRES_PASSWORD,
-  ssl: envs.POSTGRES_SSL,
-}
-
-if (connectionConfig.ssl) Object.assign(connectionConfig, { sslmode: `require` })
-
 const pool: Knex.PoolConfig = {
   min: 0,
   max: 20,
@@ -52,9 +39,9 @@ const pool: Knex.PoolConfig = {
 
 const config: { [key: string]: Knex.Config } = {
   development: {
-    debug: envs.POSTGRES_DEBUG,
+    debug: false,
     client: `pg`,
-    connection: envs.VERCEL_POSTGRES_URL || connectionConfig,
+    connection: process.env.DATABASE_URL,
     acquireConnectionTimeout: 1000000,
     pool: pool,
     migrations: { extension: `ts`, tableName: `knex_migrations`, directory: `./src/database/migrations` },
@@ -65,7 +52,7 @@ const config: { [key: string]: Knex.Config } = {
   production: {
     debug: false,
     client: `pg`,
-    connection: envs.VERCEL_POSTGRES_URL || connectionConfig,
+    connection: process.env.DATABASE_URL,
     acquireConnectionTimeout: 1000000,
     pool: pool,
     migrations: { extension: `ts`, tableName: `knex_migrations`, directory: `./src/database/migrations` },

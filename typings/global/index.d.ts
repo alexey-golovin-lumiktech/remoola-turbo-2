@@ -9,18 +9,12 @@ type Prettified<T> = { [K in keyof T]: T[K] } & NonNullable<unknown>
 
 declare namespace NodeJS {
   interface ProcessEnv {
-    NODE_ENV?: string
+    NODE_ENV?: `production` | `development` | `staging` | `test`
     NEST_APP_PORT?: string
     NEST_APP_HOST?: string
     NEST_APP_EXTERNAL_ORIGIN?: string
 
-    POSTGRES_HOST?: string
-    POSTGRES_PORT?: string
-    POSTGRES_DATABASE?: string
-    POSTGRES_USER?: string
-    POSTGRES_PASSWORD?: string
-    POSTGRES_DEBUG?: string
-    VERCEL_POSTGRES_URL?: string
+    DATABASE_URL?: string
 
     GOOGLE_API_KEY?: string
     GOOGLE_CLIENT_ID?: string

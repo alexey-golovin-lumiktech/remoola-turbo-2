@@ -68,12 +68,14 @@ export class PaymentRequestController {
   }
 
   private checkUploadedFilesToMaxSize(files: Array<Express.Multer.File>) {
+    const MAX_SIZE = envs.AWS_FILE_UPLOAD_MAX_SIZE_BYTES
+
     const oversize = files.reduce<Array<string>>((acc, { size, filename, originalname }) => {
-      if (size > envs.AWS_FILE_UPLOAD_MAX_SIZE_BYTES) acc.push(`${Math.ceil(size / 1000000)}_MB ${filename || originalname}`)
+      if (size > MAX_SIZE) acc.push(`${Math.ceil(size / 1000000)}_MB ${filename || originalname}`)
       return acc
     }, [])
     if (oversize.length == 0) return
-    const message = `File size limit exceeded (max: ${envs.AWS_FILE_UPLOAD_MAX_SIZE_BYTES / 1000000}_MB).`
+    const message = `File size limit exceeded (max: ${MAX_SIZE / 1000000}_MB).`
     throw new BadRequestException({ message, details: oversize, statusCode: 400, error: `Bad Request` })
   }
 

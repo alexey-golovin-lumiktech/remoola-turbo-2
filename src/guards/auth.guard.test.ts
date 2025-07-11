@@ -87,6 +87,6 @@ describe(`AppController (e2e)`, () => {
     expect(result.body.refreshToken).toBeDefined()
     expect(result.body.email).toBeDefined()
     expect(result.body.email).toBe(email)
-    expect(result.body).toMatchObject({ email: `simplelogin-newsletter.djakm@simplelogin.com` })
+    expect(result.body).toMatchObject({ email })
   })
 })
