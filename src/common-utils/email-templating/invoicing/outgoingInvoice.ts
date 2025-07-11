@@ -1,6 +1,7 @@
 import { CurrencyCode } from '@wirebill/shared-common/enums'
 
 import { formatToCurrency } from '@-/common-utils/format-to-currency'
+import { envs } from '@-/envs'
 
 const html = `
   <table style="padding: 20px;font-style: italic;background: #3f3f3f;color: cyan;border-radius: 20px;">
@@ -29,7 +30,7 @@ const ReplacementsRegExpMapping = {
 }
 
 export const processor = (invoice: any /* CONSUMER.InvoiceResponse */) => {
-  const backendBaseURL = process.env.NEST_APP_EXTERNAL_ORIGIN //@IMPORTANT_NOTE: should be changed in future
+  const backendBaseURL = envs.NEST_APP_EXTERNAL_ORIGIN //@IMPORTANT_NOTE: should be changed in future
   const invoiceLink = new URL(`consumer/payment-choices`, backendBaseURL)
   invoiceLink.searchParams.append(`invoiceId`, invoice.id)
   invoiceLink.searchParams.append(`refererEmail`, invoice.referer)

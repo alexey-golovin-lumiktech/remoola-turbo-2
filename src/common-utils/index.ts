@@ -34,7 +34,6 @@ import * as emailTemplating from './email-templating'
 import { formatToCurrency } from './format-to-currency'
 import { generateStrongPassword } from './generate-strong-password'
 import { convertPlainToClassInstance } from './plainToInstance'
-import { checkProvidedEnvs } from './provided-envs-checking.util'
 import { removeTestObjectsFromS3 } from './remove-test-objects-from-s3'
 export * from './googleapis.utils'
 
@@ -44,7 +43,6 @@ export const commonUtils = {
 
   ChainedQB,
 
-  checkProvidedEnvs,
   convertPlainToClassInstance,
   hashPassword,
   getHashingSalt,

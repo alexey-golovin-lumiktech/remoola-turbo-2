@@ -1,8 +1,9 @@
 import { HeadObjectCommand, HeadObjectCommandOutput, PutObjectCommand, PutObjectCommandInput, S3Client } from '@aws-sdk/client-s3'
 import { Injectable, Logger } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
 
 import { IResourceCreate } from '@wirebill/shared-common/dtos'
+
+import { envs } from '@-/envs'
 
 @Injectable()
 export class AwsS3Service {
@@ -11,12 +12,10 @@ export class AwsS3Service {
   private readonly region: string
   private readonly s3Client: S3Client
 
-  constructor(private readonly configService: ConfigService) {
-    this.bucket = this.configService.get<string>(`AWS_BUCKET`)!
-    this.region = this.configService.get<string>(`AWS_REGION`)!
-    this.s3Client = new S3Client({
-      region: this.region,
-    })
+  constructor() {
+    this.bucket = envs.AWS_BUCKET
+    this.region = envs.AWS_REGION
+    this.s3Client = new S3Client({ region: this.region })
   }
 
   private async checkExists(key: IResourceCreate[`key`]): Promise<HeadObjectCommandOutput | null> {

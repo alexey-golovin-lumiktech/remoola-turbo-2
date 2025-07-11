@@ -82,7 +82,8 @@
       "^@-/guards(|/.*)$": "<rootDir>/src/guards/$1",
       "^@-/interceptors(|/.*)$": "<rootDir>/src/interceptors/$1",
       "^@-/middleware(|/.*)$": "<rootDir>/src/middleware/$1",
-      "^@-/repositories(|/.*)$": "<rootDir>/src/repositories/$1"
+      "^@-/repositories(|/.*)$": "<rootDir>/src/repositories/$1",
+      "^@-/envs": "<rootDir>/src/envs"
     }
   },
   "dependencies": {
@@ -90,16 +91,15 @@
     "@nestjs-modules/mailer": "^2.0.2",
     "@nestjs/axios": "^4.0.0",
     "@nestjs/common": "^10.0.0",
-    "@nestjs/config": "^3.2.2",
     "@nestjs/core": "^10.0.0",
     "@nestjs/jwt": "^10.2.0",
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/schedule": "^4.0.2",
     "@nestjs/swagger": "^7.3.1",
     "@nestjs/terminus": "^11.0.0",
-    "axios": "^1.10.0",
     "@wirebill/pdf-generator-package": "^0.0.1322481904",
     "@wirebill/shared-common": "^0.0.1322481904",
+    "axios": "^1.10.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "cross-env": "^7.0.3",
@@ -124,7 +124,7 @@
     "rxjs": "^7.8.1",
     "stripe": "^15.4.0",
     "uuid": "^9.0.1",
-    "zod": "^3.23.6"
+    "zod": "^4.0.5"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",

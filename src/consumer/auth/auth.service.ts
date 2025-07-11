@@ -7,7 +7,6 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import express from 'express'
 import { OAuth2Client } from 'google-auth-library'
@@ -19,6 +18,7 @@ import { MailingService } from '@-/common-shared-modules/mailing/mailing.service
 import { commonUtils } from '@-/common-utils'
 import { CONSUMER } from '@-/dtos'
 import { IJwtTokenPayload } from '@-/dtos/consumer'
+import { envs } from '@-/envs'
 import { AccessRefreshTokenRepository } from '@-/repositories'
 
 import { ConsumerService } from '../entities/consumer/consumer.service'
@@ -36,11 +36,10 @@ export class AuthService {
     @Inject(ResetPasswordService) private readonly resetPasswordService: ResetPasswordService,
     @Inject(AccessRefreshTokenRepository) private readonly accessRefreshTokenRepository: AccessRefreshTokenRepository,
     private readonly jwtService: JwtService,
-    private readonly configService: ConfigService,
     private readonly mailingService: MailingService,
   ) {
-    const googleClientSecret = this.configService.get<string>(`GOOGLE_CLIENT_SECRET`)
-    const googleClientId = this.configService.get<string>(`GOOGLE_CLIENT_ID`)
+    const googleClientSecret = envs.GOOGLE_CLIENT_SECRET
+    const googleClientId = envs.GOOGLE_CLIENT_ID
     this.oAuth2Client = new OAuth2Client(googleClientId, googleClientSecret)
   }
 

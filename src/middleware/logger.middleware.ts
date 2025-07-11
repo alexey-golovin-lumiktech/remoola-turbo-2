@@ -1,13 +1,14 @@
 import { Injectable, Logger, NestMiddleware } from '@nestjs/common'
 import { NextFunction, Request, Response } from 'express'
 
+import { envs } from '@-/envs'
+
 @Injectable()
 export class LoggerMiddleware implements NestMiddleware {
   private readonly logger = new Logger(`HTTP`)
-  private readonly longLogsEnabled = process.env.LONG_LOGS_ENABLED === `yes`
 
   use(req: Request, res: Response, next: NextFunction) {
-    if (this.longLogsEnabled) {
+    if (envs.LONG_LOGS_ENABLED) {
       const {
         method,
         originalUrl,

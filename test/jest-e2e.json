@@ -29,6 +29,7 @@
     "^@-/guards(|/.*)$": "<rootDir>/src/guards/$1",
     "^@-/interceptors(|/.*)$": "<rootDir>/src/interceptors/$1",
     "^@-/middleware(|/.*)$": "<rootDir>/src/middleware/$1",
-    "^@-/repositories(|/.*)$": "<rootDir>/src/repositories/$1"
+    "^@-/repositories(|/.*)$": "<rootDir>/src/repositories/$1",
+    "^@-/envs": "<rootDir>/src/envs"
   }
 }

@@ -1,5 +1,4 @@
 import { BadRequestException, HttpStatus, INestApplication, ValidationPipe } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
 import { NestFactory, Reflector } from '@nestjs/core'
 import { JwtService } from '@nestjs/jwt'
 import { DocumentBuilder, SwaggerCustomOptions, SwaggerModule } from '@nestjs/swagger'
@@ -17,18 +16,16 @@ import { ListResponse } from './dtos/common'
 import { AuthGuard } from './guards/auth.guard'
 import { HealthModule } from './health/health.module'
 import { AppModule } from './app.module'
-import { commonUtils } from './common-utils'
 import { ADMIN, CONSUMER } from './dtos'
+import { envs } from './envs'
 import { HttpExceptionFilter } from './filters'
 import { TransformResponseInterceptor } from './interceptors'
 import { AccessRefreshTokenRepository } from './repositories'
 
 async function bootstrap() {
-  commonUtils.checkProvidedEnvs()
-
   const app = await NestFactory.create(AppModule, {
     cors: {
-      origin: [/localhost/, /\.vercel.app/, /\.ngrok-free.app/],
+      origin: [/127.0.0.1/, /\.vercel.app/, /\.ngrok-free.app/],
       exposedHeaders: [`Content-Range`, `Content-Type`],
     },
     rawBody: true,
@@ -109,23 +106,24 @@ async function bootstrap() {
     }),
   )
 
-  const configService = app.get(ConfigService)
-  const NEST_APP_PORT = configService.get<number>(`NEST_APP_PORT`)
-  const NEST_APP_HOST = configService.get<string>(`NEST_APP_HOST`) ?? `localhost`
+  const NEST_APP_PORT = envs.NEST_APP_PORT
+  const NEST_APP_HOST = envs.NEST_APP_HOST
+
+  process.stdout.write(`[NEST_APP_PORT] ` + NEST_APP_PORT)
+  process.stdout.write(`[NEST_APP_HOST] ` + NEST_APP_HOST)
 
   await app
     .listen(NEST_APP_PORT, NEST_APP_HOST)
     .then(() => console.log(``))
     .then(() => app.getUrl())
     .then(appUrl => console.debug(`Server started on = ${appUrl}`))
-    .then(() => console.debug(`Database: ${JSON.stringify(knexfile[configService.get<string>(`NODE_ENV`)]?.connection)}`))
+    .then(() => console.debug(`Database: ${JSON.stringify(knexfile[envs.NODE_ENV]?.connection)}`))
   return app
 }
 
-// eslint-disable-next-line
 bootstrap()
   .then(killAppWithGrace)
-  .catch((e: any) => console.error(e.message ?? `Bootstrap err`))
+  .catch(e => console.error(String(e) ?? `Bootstrap err`))
 
 function killAppWithGrace(app: INestApplication) {
   async function exitHandler(options: { cleanup?: boolean; exit?: boolean }, exitCode?: number) {
