@@ -2,6 +2,7 @@ import { Logger } from '@nestjs/common'
 import { GetTokenResponse } from 'google-auth-library/build/src/auth/oauth2client'
 import { Auth, google } from 'googleapis'
 import _ from 'lodash'
+import { envs } from 'src/envs'
 
 import { toBase64 } from '@-/common-utils'
 import { CONSUMER } from '@-/dtos'
@@ -9,29 +10,25 @@ import { CONSUMER } from '@-/dtos'
 export class GoogleAuthService {
   private logger = new Logger(GoogleAuthService.name)
   private googleapisOauth2Client: Auth.OAuth2Client
-  private origin = /* process.env.GOOGLE_CLIENT_LOCAL_ORIGIN || */ `http://localhost:8088`
+  private origin = /* envs.GOOGLE_CLIENT_LOCAL_ORIGIN || */ `http://127.0.0.1:8088`
   private scope: string[]
 
   constructor() {
-    const opts = {
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      redirectUri: `${this.origin}/consumer/auth/google-redirect-new-way`,
-    } satisfies Auth.OAuth2ClientOptions
-    this.googleapisOauth2Client = new google.auth.OAuth2(opts)
-
-    let parsed: string
-    try {
-      parsed = JSON.parse(process.env.GOOGLE_CALENDAR_SCOPES)
-    } catch {}
-    this.scope = Array.from(parsed)
+    if (envs.GOOGLE_CALENDAR_SCOPES?.length) {
+      const opts = {
+        clientId: envs.GOOGLE_CLIENT_ID,
+        clientSecret: envs.GOOGLE_CLIENT_SECRET,
+        redirectUri: `${this.origin}/consumer/auth/google-redirect-new-way`,
+      } satisfies Auth.OAuth2ClientOptions
+      this.googleapisOauth2Client = new google.auth.OAuth2(opts)
+    } else console.log(`[envs.GOOGLE_CALENDAR_SCOPES] is not defined`, envs.GOOGLE_CALENDAR_SCOPES)
   }
 
   async googleOAuthNewWay(state: { href: string }) {
     const opts = {
       state: toBase64(state),
       access_type: `offline`,
-      scope: this.scope,
+      scope: envs.GOOGLE_CALENDAR_SCOPES,
       include_granted_scopes: true,
       redirect_uri: `${this.origin}/consumer/auth/google-redirect-new-way`,
     } satisfies Auth.GenerateAuthUrlOpts

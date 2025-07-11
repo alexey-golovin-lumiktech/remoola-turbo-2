@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
 import { ISendMailOptions, MailerService } from '@nestjs-modules/mailer'
+import { envs } from 'src/envs'
 
 import { generatePdf } from '@wirebill/pdf-generator-package'
 
@@ -10,10 +10,7 @@ import { commonUtils } from '../../common-utils'
 export class MailingService {
   private readonly logger = new Logger(MailingService.name)
 
-  constructor(
-    private mailerService: MailerService,
-    private configService: ConfigService,
-  ) {}
+  constructor(private mailerService: MailerService) {}
 
   async sendLogsEmail(data: any = null) {
     if (/^null|undefined$/i.test(process.env.ADMIN_EMAIL)) return
@@ -29,7 +26,7 @@ export class MailingService {
   }
 
   async sendConsumerSignupCompletionEmail(params: { email: string; token: string; referer: string }): Promise<void> {
-    const backendBaseURL = this.configService.get<string>(`NEST_APP_EXTERNAL_ORIGIN`)
+    const backendBaseURL = envs.NEST_APP_EXTERNAL_ORIGIN
     const emailConfirmationLink = `${backendBaseURL}/consumer/auth/signup/verification?token=${params.token}&referer=${params.referer}`
     const html = commonUtils.emailTemplating.signupCompletionToHtml.processor(emailConfirmationLink)
     const subject = `Welcome to Wirebill! Confirm your Email`

@@ -1,6 +1,6 @@
 import { Global, Module } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
-import { MailerModule } from '@nestjs-modules/mailer'
+import { MailerModule, type MailerOptions } from '@nestjs-modules/mailer'
+import { envs } from 'src/envs'
 
 import { MailingService } from './mailing.service'
 
@@ -8,21 +8,20 @@ import { MailingService } from './mailing.service'
 @Module({
   imports: [
     MailerModule.forRootAsync({
-      useFactory: async (configService: ConfigService) => {
-        const host = configService.get<string>(`NODEMAILER_SMTP_HOST`)
-        const port = configService.get<number>(`NODEMAILER_SMTP_PORT`)
-        const user = configService.get<string>(`NODEMAILER_SMTP_USER`)
-        const pass = configService.get<string>(`NODEMAILER_SMTP_USER_PASS`)
-        const from = configService.get<string>(`NODEMAILER_SMTP_DEFAULT_FROM`)
-
-        const settings = {
-          transport: { host, port, auth: { user, pass } },
-          defaults: { from },
-        }
-
-        return settings
+      useFactory: () => {
+        return {
+          transport: {
+            host: envs.NODEMAILER_SMTP_HOST,
+            port: envs.NODEMAILER_SMTP_PORT,
+            auth: {
+              user: envs.NODEMAILER_SMTP_USER,
+              pass: envs.NODEMAILER_SMTP_USER_PASS,
+            },
+            pool: true,
+          },
+          defaults: { from: envs.NODEMAILER_SMTP_DEFAULT_FROM },
+        } satisfies MailerOptions
       },
-      inject: [ConfigService],
     }),
   ],
   providers: [MailingService],

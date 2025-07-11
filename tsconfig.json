@@ -19,6 +19,7 @@
     "experimentalDecorators": true,
     "noFallthroughCasesInSwitch": false,
     "strict": true,
+    "noStrictGenericChecks": false,
     "baseUrl": "./",
     "paths": {
       "@-/admin": ["src/admin"],

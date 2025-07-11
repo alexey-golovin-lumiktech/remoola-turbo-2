@@ -195,7 +195,7 @@ export class PaymentRequestService extends BaseService<IPaymentRequestModel, Pay
     const payerEmail = identity.email
 
     const consumer = await this.getExistingConsumerOrCreatedAndInvitedToSystem(contactEmail)
-    this.mailingService.sendPayToContactPaymentInfoEmail({ contactEmail, payerEmail, paymentDetailsLink: `http://localhost:5173` })
+    this.mailingService.sendPayToContactPaymentInfoEmail({ contactEmail, payerEmail, paymentDetailsLink: `http://127.0.0.1:5173` })
     /* check payments on ui pay!!!!!
         @IMPORTANT_NOTE: do not forget add stripe logic
         1 создать consumer

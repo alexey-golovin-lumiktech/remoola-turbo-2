@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
+import { envs } from 'src/envs'
 
 import { AccessRefreshTokenRepository } from '@-/repositories'
 
@@ -17,10 +17,7 @@ import { GoogleAuthService } from './google-auth.service'
 
 @Module({
   imports: [
-    JwtModule.registerAsync({
-      useFactory: (configService: ConfigService) => ({ secret: configService.get<string>(`JWT_SECRET`) }),
-      inject: [ConfigService],
-    }),
+    JwtModule.registerAsync({ useFactory: () => ({ secret: envs.JWT_SECRET }) }),
     GoogleProfileDetailsModule,
     PersonalDetailsModule,
     OrganizationDetailsModule,

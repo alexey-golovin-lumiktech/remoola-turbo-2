@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
+import { envs } from 'src/envs'
 
 import { AccessRefreshTokenRepository } from '@-/repositories'
 
@@ -10,13 +10,7 @@ import { AdminAuthController } from './admin-auth.controller'
 import { AdminAuthService } from './admin-auth.service'
 
 @Module({
-  imports: [
-    AdminModule,
-    JwtModule.registerAsync({
-      useFactory: (configService: ConfigService) => ({ secret: configService.get<string>(`JWT_SECRET`) }),
-      inject: [ConfigService],
-    }),
-  ],
+  imports: [AdminModule, JwtModule.registerAsync({ useFactory: () => ({ secret: envs.JWT_SECRET }) })],
   controllers: [AdminAuthController],
   providers: [AccessRefreshTokenRepository, AdminAuthService],
   exports: [AdminAuthService],
