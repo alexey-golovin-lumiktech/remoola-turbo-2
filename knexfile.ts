@@ -25,17 +25,6 @@ const keysToSnakeCase = function (source: any) {
   return toSnake(source)
 }
 
-const connectionConfig: Knex.PgConnectionConfig = {
-  host: process.env.POSTGRES_HOST,
-  port: parseInt(process.env.POSTGRES_PORT),
-  database: process.env.POSTGRES_DATABASE,
-  user: process.env.POSTGRES_USER,
-  password: process.env.POSTGRES_PASSWORD,
-  ssl: /^true$/i.test(process.env.POSTGRES_SSL),
-}
-
-if (connectionConfig.ssl) Object.assign(connectionConfig, { sslmode: `require` })
-
 const pool: Knex.PoolConfig = {
   min: 0,
   max: 20,
@@ -50,9 +39,9 @@ const pool: Knex.PoolConfig = {
 
 const config: { [key: string]: Knex.Config } = {
   development: {
-    debug: /^true$/.test(process.env.POSTGRES_DEBUG),
+    debug: false,
     client: `pg`,
-    connection: process.env.VERCEL_POSTGRES_URL || connectionConfig,
+    connection: process.env.DATABASE_URL,
     acquireConnectionTimeout: 1000000,
     pool: pool,
     migrations: { extension: `ts`, tableName: `knex_migrations`, directory: `./src/database/migrations` },
@@ -63,7 +52,7 @@ const config: { [key: string]: Knex.Config } = {
   production: {
     debug: false,
     client: `pg`,
-    connection: process.env.VERCEL_POSTGRES_URL || connectionConfig,
+    connection: process.env.DATABASE_URL,
     acquireConnectionTimeout: 1000000,
     pool: pool,
     migrations: { extension: `ts`, tableName: `knex_migrations`, directory: `./src/database/migrations` },

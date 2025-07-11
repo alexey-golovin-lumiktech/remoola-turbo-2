@@ -106,14 +106,8 @@ async function bootstrap() {
     }),
   )
 
-  const NEST_APP_PORT = envs.NEST_APP_PORT
-  const NEST_APP_HOST = envs.NEST_APP_HOST
-
-  process.stdout.write(`[NEST_APP_PORT] ` + NEST_APP_PORT)
-  process.stdout.write(`[NEST_APP_HOST] ` + NEST_APP_HOST)
-
   await app
-    .listen(NEST_APP_PORT, NEST_APP_HOST)
+    .listen(envs.NEST_APP_PORT, envs.NEST_APP_HOST)
     .then(() => console.log(``))
     .then(() => app.getUrl())
     .then(appUrl => console.debug(`Server started on = ${appUrl}`))

@@ -3,7 +3,7 @@ import { Injectable, Logger } from '@nestjs/common'
 
 import { IResourceCreate } from '@wirebill/shared-common/dtos'
 
-import { envs } from '@-/envs'
+import { check, envs } from '@-/envs'
 
 @Injectable()
 export class AwsS3Service {
@@ -13,6 +13,8 @@ export class AwsS3Service {
   private readonly s3Client: S3Client
 
   constructor() {
+    check(`AWS_BUCKET`, `AWS_REGION`)
+
     this.bucket = envs.AWS_BUCKET
     this.region = envs.AWS_REGION
     this.s3Client = new S3Client({ region: this.region })

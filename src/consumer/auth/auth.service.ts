@@ -18,7 +18,7 @@ import { MailingService } from '@-/common-shared-modules/mailing/mailing.service
 import { commonUtils } from '@-/common-utils'
 import { CONSUMER } from '@-/dtos'
 import { IJwtTokenPayload } from '@-/dtos/consumer'
-import { envs } from '@-/envs'
+import { check, envs } from '@-/envs'
 import { AccessRefreshTokenRepository } from '@-/repositories'
 
 import { ConsumerService } from '../entities/consumer/consumer.service'
@@ -38,14 +38,14 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly mailingService: MailingService,
   ) {
-    const googleClientSecret = envs.GOOGLE_CLIENT_SECRET
-    const googleClientId = envs.GOOGLE_CLIENT_ID
-    this.oAuth2Client = new OAuth2Client(googleClientId, googleClientSecret)
+    check(`GOOGLE_CLIENT_SECRET`, `GOOGLE_CLIENT_ID`)
+    this.oAuth2Client = new OAuth2Client(envs.GOOGLE_CLIENT_ID, envs.GOOGLE_CLIENT_SECRET)
   }
 
   async googleOAuth(body: CONSUMER.GoogleSignin): Promise<CONSUMER.LoginResponse> {
+    if (!this.oAuth2Client) throw new InternalServerErrorException(`oAuth2Client is not defined`)
+
     try {
-      console.log(`[body]`, body)
       const { credential, contractorKind = null, accountType = null } = body
       const verified = await this.oAuth2Client.verifyIdToken({ idToken: credential })
       const rawGoogleProfile = new CONSUMER.CreateGoogleProfileDetails(verified.getPayload())

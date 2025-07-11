@@ -14,12 +14,10 @@ export class MailingService {
   constructor(private mailerService: MailerService) {}
 
   async sendLogsEmail(data: any = null) {
-    if (/^null|undefined$/i.test(process.env.ADMIN_EMAIL)) return
-
     const html = `<pre><code>${JSON.stringify({ ...data }, null, 2)}</code></pre>`
     const subject = `WB Logs`
     try {
-      const sent = await this.mailerService.sendMail({ to: process.env.ADMIN_EMAIL, subject, html })
+      const sent = await this.mailerService.sendMail({ to: envs.ADMIN_EMAIL, subject, html })
       this.logger.log(`Email "${subject}" successfully sent to: ${sent.envelope.to.join(` & `)}`)
     } catch (error) {
       this.logger.error(error)

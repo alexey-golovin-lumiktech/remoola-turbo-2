@@ -1,19 +1,19 @@
-import { Logger } from '@nestjs/common'
+import { InternalServerErrorException } from '@nestjs/common'
 import { GetTokenResponse } from 'google-auth-library/build/src/auth/oauth2client'
 import { Auth, google } from 'googleapis'
 import _ from 'lodash'
 
 import { toBase64 } from '@-/common-utils'
 import { CONSUMER } from '@-/dtos'
-import { envs } from '@-/envs'
+import { check, envs } from '@-/envs'
 
 export class GoogleAuthService {
-  private logger = new Logger(GoogleAuthService.name)
   private googleapisOauth2Client: Auth.OAuth2Client
-  private origin = /* envs.GOOGLE_CLIENT_LOCAL_ORIGIN || */ `http://127.0.0.1:8888`
-  private scope: string[]
+  private origin = `http://${envs.NEST_APP_HOST}:${envs.NEST_APP_PORT}`
 
   constructor() {
+    check(`NEST_APP_HOST`, `NEST_APP_PORT`, `GOOGLE_CALENDAR_SCOPES`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`)
+
     if (envs.GOOGLE_CALENDAR_SCOPES?.length) {
       const opts = {
         clientId: envs.GOOGLE_CLIENT_ID,
@@ -21,10 +21,12 @@ export class GoogleAuthService {
         redirectUri: `${this.origin}/consumer/auth/google-redirect-new-way`,
       } satisfies Auth.OAuth2ClientOptions
       this.googleapisOauth2Client = new google.auth.OAuth2(opts)
-    } else console.log(`[envs.GOOGLE_CALENDAR_SCOPES] is not defined`, envs.GOOGLE_CALENDAR_SCOPES)
+    }
   }
 
   async googleOAuthNewWay(state: { href: string }) {
+    if (!this.googleapisOauth2Client) throw new InternalServerErrorException(`Google API is not initialized`)
+
     const opts = {
       state: toBase64(state),
       access_type: `offline`,
@@ -36,6 +38,8 @@ export class GoogleAuthService {
   }
 
   async googleOAuthNewWayRedirect(query: CONSUMER.RedirectCallbackQuery) {
+    if (!this.googleapisOauth2Client) throw new InternalServerErrorException(`Google API is not initialized`)
+
     const queryCode = _.get(query, `code`, null)
     const response: GetTokenResponse = await this.googleapisOauth2Client.getToken(queryCode)
     const verified = await this.googleapisOauth2Client.verifyIdToken({ idToken: response.tokens.id_token })
