@@ -1,8 +1,3 @@
-import * as dotenv from 'dotenv'
-import * as fs from 'fs'
-
-import { getEnvPath } from '@wirebill/shared-common/utils'
-
 const customEnvironmentNames = [
   `NODE_ENV`,
   `NEST_APP_PORT`,
@@ -20,10 +15,6 @@ const customEnvironmentNames = [
   `GOOGLE_API_KEY`,
   `GOOGLE_CLIENT_ID`,
   `GOOGLE_CLIENT_SECRET`,
-  `GOOGLE_PROJECT_ID`,
-  `GOOGLE_AUTH_URI`,
-  `GOOGLE_TOKEN_URI`,
-  `GOOGLE_AUTH_PROVIDER_X509_CERT_URL`,
 
   `JWT_SECRET`,
   `JWT_ACCESS_TOKEN_EXPIRES_IN`,
@@ -45,17 +36,14 @@ const customEnvironmentNames = [
   `AWS_BUCKET`,
 ]
 
-export const checkProvidedEnvs = (inDirectory: typeof __dirname) => () => {
+export const checkProvidedEnvs = () => {
   const NBSP = `\u00A0`
-  const path: string = getEnvPath(inDirectory)
-  if (path && fs.existsSync(path)) dotenv.config({ path })
 
   const head = `\n********* CHECKING REQUIRED ENVIRONMENTS ***********`
   const tail = `********* CHECKING REQUIRED ENVIRONMENTS ***********\n`
   const status = `[!!! CHECK STATUS]`.padEnd(45, NBSP)
   const failMsg = status + `- FAILED`
   const successMsg = status + `- SUCCESS`
-  const detectedEnvFilePath = `[!!! FILE] ::`.padEnd(45, NBSP) + `- ${path}`
 
   let collector: string[] = []
   for (const name of customEnvironmentNames) {
@@ -64,7 +52,7 @@ export const checkProvidedEnvs = (inDirectory: typeof __dirname) => () => {
     }
   }
 
-  if (collector.length) collector = [head, failMsg, detectedEnvFilePath, ...collector, tail]
-  else collector = [head, successMsg, detectedEnvFilePath, ...collector, tail]
+  if (collector.length) collector = [head, failMsg, ...collector, tail]
+  else collector = [head, successMsg, ...collector, tail]
   collector.forEach((msg: string) => console.log(`${msg}`))
 }

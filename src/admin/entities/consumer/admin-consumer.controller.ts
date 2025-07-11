@@ -5,9 +5,9 @@ import express from 'express'
 import { IConsumerModel } from '@wirebill/shared-common/models'
 import { ReqQuery } from '@wirebill/shared-common/types'
 
-import { ADMIN } from '../../../dtos'
-import { TransformResponse } from '../../../interceptors'
-import { ReqQueryTransformPipe } from '../../pipes'
+import { ReqQueryTransformPipe } from '@-/admin/pipes'
+import { ADMIN } from '@-/dtos'
+import { TransformResponse } from '@-/interceptors'
 
 import { AdminConsumerService } from './admin-consumer.service'
 

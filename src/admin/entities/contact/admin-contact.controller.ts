@@ -5,10 +5,10 @@ import express from 'express'
 import { IContactModel } from '@wirebill/shared-common/models'
 import { ReqQuery } from '@wirebill/shared-common/types'
 
-import { ADMIN } from '../../../dtos'
-import { ContactUpdate } from '../../../dtos/admin'
-import { TransformResponse } from '../../../interceptors'
-import { ReqQueryTransformPipe } from '../../pipes'
+import { ReqQueryTransformPipe } from '@-/admin/pipes'
+import { ADMIN } from '@-/dtos'
+import { ContactUpdate } from '@-/dtos/admin'
+import { TransformResponse } from '@-/interceptors'
 
 import { AdminContactService } from './admin-contact.service'
 

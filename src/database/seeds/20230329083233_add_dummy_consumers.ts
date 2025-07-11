@@ -9,7 +9,7 @@ import {
   TableName,
 } from '@wirebill/shared-common/models'
 
-import { commonUtils } from '../../common-utils'
+import { commonUtils } from '@-/common-utils'
 
 import { default as dummyConsumers } from './dummy-consumers.json'
 

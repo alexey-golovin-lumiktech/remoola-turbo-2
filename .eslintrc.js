@@ -44,6 +44,7 @@ module.exports = {
         groups: [
           [`^@?\\w`], // Packages "react" related packages come first.
           [`^(@wirebill)(/.*|$)`], // Internal packages.
+          [`^(@-)(/.*|$)`], // Internal packages.
           [`^\\.\\.(?!/?$)`, `^\\.\\./?$`], // Parent imports. Put ".." last.
           [`^\\./(?=.*/)(?!/?$)`, `^\\.(?!/?$)`, `^\\./?$`],
           [`^\\u0000`], // Side effect imports.

@@ -9,15 +9,22 @@ export class AwsS3Service {
   private readonly logger = new Logger(AwsS3Service.name)
   private readonly bucket: string
   private readonly region: string
-  private readonly s3Client = new S3Client()
+  private readonly s3Client: S3Client
 
   constructor(private readonly configService: ConfigService) {
-    this.bucket = this.configService.get<string>(`AWS_BUCKET`)
-    this.region = this.configService.get<string>(`AWS_REGION`)
+    this.bucket = this.configService.get<string>(`AWS_BUCKET`)!
+    this.region = this.configService.get<string>(`AWS_REGION`)!
+    this.s3Client = new S3Client({
+      region: this.region,
+    })
   }
 
-  private checkExists(key: IResourceCreate[`key`]): Promise<HeadObjectCommandOutput | null> {
-    return this.s3Client.send(new HeadObjectCommand({ Bucket: this.bucket, Key: key })).catch(() => null)
+  private async checkExists(key: IResourceCreate[`key`]): Promise<HeadObjectCommandOutput | null> {
+    try {
+      return await this.s3Client.send(new HeadObjectCommand({ Bucket: this.bucket, Key: key }))
+    } catch {
+      return null
+    }
   }
 
   async uploadOne(file: Express.Multer.File): Promise<IResourceCreate | null> {
@@ -25,7 +32,7 @@ export class AwsS3Service {
       const key = this.originalnameToS3ResourceKey(file)
       const exist = await this.checkExists(key)
 
-      if (exist == null || exist.ContentLength != file.size || exist.ContentType != file.mimetype) {
+      if (!exist || exist.ContentLength !== file.size || exist.ContentType !== file.mimetype) {
         const params: PutObjectCommandInput = {
           Body: file.stream ?? file.buffer,
           Key: key,
@@ -34,27 +41,28 @@ export class AwsS3Service {
           ContentType: file.mimetype,
           ContentDisposition: `attachment;filename="${key}"`,
         }
-        this.s3Client.send(new PutObjectCommand(params))
-      } else this.logger.log(`Skip uploading for file: ${file.originalname} (reason: ALREADY_EXIST)`)
+        await this.s3Client.send(new PutObjectCommand(params))
+      } else {
+        this.logger.log(`Skip uploading for file: ${file.originalname} (reason: ALREADY_EXIST)`)
+      }
 
       return this.getUploadFileResult(file, key)
     } catch (error: any) {
-      const message = `Fail to upload file: ${file.originalname}(originalname) ${file.size}bytes`
-      this.logger.warn(error?.message || message)
+      this.logger.warn(`Fail to upload file: ${file.originalname} (${file.size} bytes) - ${error.message}`)
       return null
     }
   }
 
   async uploadMany(files: Express.Multer.File[]): Promise<IResourceCreate[]> {
-    const collected: IResourceCreate[] = []
+    const results: IResourceCreate[] = []
     for (const file of files) {
       const result = await this.uploadOne(file)
-      if (result != null) collected.push(result)
+      if (result) results.push(result)
     }
-    return collected
+    return results
   }
 
-  private getUploadFileResult(file: Express.Multer.File, key: IResourceCreate[`key`]): Omit<IResourceCreate, `access`> {
+  private getUploadFileResult(file: Express.Multer.File, key: IResourceCreate[`key`]): IResourceCreate {
     return {
       originalname: file.originalname,
       mimetype: file.mimetype,
@@ -65,7 +73,7 @@ export class AwsS3Service {
     }
   }
 
-  private originalnameToS3ResourceKey = (file: Express.Multer.File): string => {
+  private originalnameToS3ResourceKey(file: Express.Multer.File): string {
     // @IMPORTANT_NOTE: Issue with UTF-8 characters in filename https://github.com/expressjs/multer/issues/1104
     return Buffer.from(file.originalname, `latin1`) //
       .toString(`utf8`)

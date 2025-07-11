@@ -3,7 +3,7 @@ import { InjectKnex, Knex } from 'nestjs-knex'
 
 import { IConsumerResourceModel, TableName } from '@wirebill/shared-common/models'
 
-import { BaseRepository } from '../common'
+import { BaseRepository } from '@-/common'
 
 @Injectable()
 export class ConsumerResourceRepository extends BaseRepository<IConsumerResourceModel> {

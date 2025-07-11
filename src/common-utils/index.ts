@@ -36,6 +36,7 @@ import { generateStrongPassword } from './generate-strong-password'
 import { convertPlainToClassInstance } from './plainToInstance'
 import { checkProvidedEnvs } from './provided-envs-checking.util'
 import { removeTestObjectsFromS3 } from './remove-test-objects-from-s3'
+export * from './googleapis.utils'
 
 export const commonUtils = {
   dbQuerying,

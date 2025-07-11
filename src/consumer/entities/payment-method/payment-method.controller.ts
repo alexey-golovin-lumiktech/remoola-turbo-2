@@ -1,12 +1,13 @@
 import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Query } from '@nestjs/common'
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger'
-import { ReqQueryTransformPipe } from 'src/consumer/pipes'
-import { CONSUMER } from 'src/dtos'
-import { ReqAuthIdentity } from 'src/guards/auth.guard'
-import { TransformResponse } from 'src/interceptors'
 
 import { IConsumerModel, IPaymentMethodModel } from '@wirebill/shared-common/models'
 import { ReqQuery } from '@wirebill/shared-common/types'
+
+import { ReqQueryTransformPipe } from '@-/admin/pipes'
+import { CONSUMER } from '@-/dtos'
+import { ReqAuthIdentity } from '@-/guards/auth.guard'
+import { TransformResponse } from '@-/interceptors'
 
 import { PaymentMethodService } from './payment-method.service'
 

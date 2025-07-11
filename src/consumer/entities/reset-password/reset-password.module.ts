@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
 
-import { ResetPasswordRepository } from '../../../repositories'
+import { ResetPasswordRepository } from '@-/repositories'
 
 import { ResetPasswordService } from './reset-password.service'
 

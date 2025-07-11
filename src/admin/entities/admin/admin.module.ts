@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
 
-import { AdminRepository } from '../../../repositories'
+import { AdminRepository } from '@-/repositories'
 
 import { AdminController } from './admin.controller'
 import { AdminService } from './admin.service'

@@ -15,14 +15,16 @@ import { OAuth2Client } from 'google-auth-library'
 import { IChangePasswordBody, IChangePasswordParam, IConsumerCreate } from '@wirebill/shared-common/dtos'
 import { IConsumerModel } from '@wirebill/shared-common/models'
 
-import { MailingService } from '../../common-shared-modules/mailing/mailing.service'
-import { commonUtils } from '../../common-utils'
-import { CONSUMER } from '../../dtos'
-import { IJwtTokenPayload } from '../../dtos/consumer/jwt-payload.dto'
-import { AccessRefreshTokenRepository } from '../../repositories'
+import { MailingService } from '@-/common-shared-modules/mailing/mailing.service'
+import { commonUtils } from '@-/common-utils'
+import { CONSUMER } from '@-/dtos'
+import { IJwtTokenPayload } from '@-/dtos/consumer'
+import { AccessRefreshTokenRepository } from '@-/repositories'
+
 import { ConsumerService } from '../entities/consumer/consumer.service'
 import { GoogleProfileDetailsService } from '../entities/google-profile-details/google-profile-details.service'
 import { ResetPasswordService } from '../entities/reset-password/reset-password.service'
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name)
@@ -44,6 +46,7 @@ export class AuthService {
 
   async googleOAuth(body: CONSUMER.GoogleSignin): Promise<CONSUMER.LoginResponse> {
     try {
+      console.log(`[body]`, body)
       const { credential, contractorKind = null, accountType = null } = body
       const verified = await this.oAuth2Client.verifyIdToken({ idToken: credential })
       const rawGoogleProfile = new CONSUMER.CreateGoogleProfileDetails(verified.getPayload())
@@ -61,9 +64,9 @@ export class AuthService {
         await this.mailingService.sendConsumerTemporaryPasswordForGoogleOAuth({ email: consumer.email })
       }
 
-      const access = await this.getAccessAndRefreshToken(consumer.id)
+      // const access = await this.getAccessAndRefreshToken(consumer.id)
 
-      return commonUtils.convertPlainToClassInstance(CONSUMER.LoginResponse, Object.assign(consumer, access))
+      return commonUtils.convertPlainToClassInstance(CONSUMER.LoginResponse, consumer)
     } catch (error) {
       this.logger.error(error)
       throw new InternalServerErrorException()

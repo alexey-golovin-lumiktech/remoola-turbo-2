@@ -13,7 +13,8 @@ import {
   TransactionTypeValue,
 } from '@wirebill/shared-common/types'
 
-import { INVALID_EMAIL } from '../../constants'
+import { INVALID_EMAIL } from '@-/constants'
+
 import { BaseModel } from '../common'
 
 import { PaymentRequestAttachmentResponse } from './payment-request-attachment.dto'

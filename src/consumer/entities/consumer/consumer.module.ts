@@ -1,8 +1,9 @@
 import { forwardRef, Module } from '@nestjs/common'
 
-import { AwsS3Module } from '../../../common-shared-modules/aws-s3/aws-s3.module'
-import { ResourceModule } from '../../../common-shared-modules/resource/resource.module'
-import { ConsumerRepository } from '../../../repositories'
+import { AwsS3Module } from '@-/common-shared-modules/aws-s3/aws-s3.module'
+import { ResourceModule } from '@-/common-shared-modules/resource/resource.module'
+import { ConsumerRepository } from '@-/repositories'
+
 import { BillingDetailsModule } from '../billing-details/billing-details.module'
 import { ConsumerResourceModule } from '../consumer-resource/consumer-resource.module'
 import { PaymentRequestAttachmentModule } from '../payment-request-attachment/payment-request-attachment.module'

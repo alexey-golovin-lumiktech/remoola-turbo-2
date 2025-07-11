@@ -1,10 +1,5 @@
-import * as dotenv from 'dotenv'
 import type { Knex } from 'knex'
 import * as pg from 'pg'
-
-import { getEnvPath } from '@wirebill/shared-common/utils'
-
-dotenv.config({ path: getEnvPath(process.cwd()) })
 
 pg.types.setTypeParser(20, parseInt)
 pg.types.setTypeParser(1700, parseFloat)

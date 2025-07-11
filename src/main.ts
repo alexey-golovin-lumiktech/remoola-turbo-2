@@ -15,6 +15,7 @@ import { ConsumerCommonModule } from './consumer/consumer-common.module'
 import { ConsumerService } from './consumer/entities/consumer/consumer.service'
 import { ListResponse } from './dtos/common'
 import { AuthGuard } from './guards/auth.guard'
+import { HealthModule } from './health/health.module'
 import { AppModule } from './app.module'
 import { commonUtils } from './common-utils'
 import { ADMIN, CONSUMER } from './dtos'
@@ -23,7 +24,7 @@ import { TransformResponseInterceptor } from './interceptors'
 import { AccessRefreshTokenRepository } from './repositories'
 
 async function bootstrap() {
-  commonUtils.checkProvidedEnvs(process.cwd())()
+  commonUtils.checkProvidedEnvs()
 
   const app = await NestFactory.create(AppModule, {
     cors: {
@@ -44,7 +45,7 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config, {
     deepScanRoutes: true,
-    include: [AdminCommonModule, ConsumerCommonModule],
+    include: [AdminCommonModule, ConsumerCommonModule, HealthModule],
     extraModels: [...Object.values(ADMIN), ...Object.values(CONSUMER), ListResponse],
   })
   const options: SwaggerCustomOptions = {
