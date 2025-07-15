@@ -3,7 +3,7 @@ import { Injectable, Logger } from '@nestjs/common'
 
 import { IResourceCreate } from '@wirebill/shared-common/dtos'
 
-import { check, envs } from '@-/envs'
+import { check, envs } from '../../envs'
 
 @Injectable()
 export class AwsS3Service {

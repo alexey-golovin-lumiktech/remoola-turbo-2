@@ -5,10 +5,9 @@ import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { IConsumerModel, IPaymentRequestModel } from '@wirebill/shared-common/models'
 import { ReqQuery, ReqQueryTimelineFilter } from '@wirebill/shared-common/types'
 
-import { envs } from '@-/envs'
-
 import { ParseJsonPipe, ReqQueryTransformPipe } from '../../../consumer/pipes'
 import { CONSUMER } from '../../../dtos'
+import { envs } from '../../../envs'
 import { ReqAuthIdentity } from '../../../guards/auth.guard'
 import { TransformResponse } from '../../../interceptors'
 

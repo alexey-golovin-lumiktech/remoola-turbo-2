@@ -3,9 +3,8 @@ import { ISendMailOptions, MailerService } from '@nestjs-modules/mailer'
 
 import { generatePdf } from '@wirebill/pdf-generator-package'
 
-import { envs } from '@-/envs'
-
 import { commonUtils } from '../../common-utils'
+import { envs } from '../../envs'
 
 @Injectable()
 export class MailingService {
