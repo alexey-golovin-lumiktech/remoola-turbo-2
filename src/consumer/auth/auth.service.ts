@@ -18,9 +18,9 @@ import { MailingService } from '@-/common-shared-modules/mailing/mailing.service
 import { commonUtils } from '@-/common-utils'
 import { CONSUMER } from '@-/dtos'
 import { IJwtTokenPayload } from '@-/dtos/consumer'
-import { check, envs } from '@-/envs'
 import { AccessRefreshTokenRepository } from '@-/repositories'
 
+import { check, envs } from '../../envs'
 import { ConsumerService } from '../entities/consumer/consumer.service'
 import { GoogleProfileDetailsService } from '../entities/google-profile-details/google-profile-details.service'
 import { ResetPasswordService } from '../entities/reset-password/reset-password.service'

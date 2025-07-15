@@ -5,7 +5,8 @@ import _ from 'lodash'
 
 import { toBase64 } from '@-/common-utils'
 import { CONSUMER } from '@-/dtos'
-import { check, envs } from '@-/envs'
+
+import { check, envs } from '../../envs'
 
 export class GoogleAuthService {
   private googleapisOauth2Client: Auth.OAuth2Client

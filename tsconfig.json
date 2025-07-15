@@ -49,8 +49,7 @@
       "@-/middleware": ["src/middleware"],
       "@-/middleware/*": ["src/middleware/*"],
       "@-/repositories": ["src/repositories"],
-      "@-/repositories/*": ["src/repositories/*"],
-      "@-/envs": ["src/envs"],
+      "@-/repositories/*": ["src/repositories/*"]
     }
   },
   "include": ["src", "typings", "knexfile.ts", "test"]
