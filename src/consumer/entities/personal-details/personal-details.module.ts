@@ -1,7 +1,6 @@
 import { forwardRef, Module } from '@nestjs/common'
 
-import { PersonalDetailsRepository } from '@-/repositories'
-
+import { PersonalDetailsRepository } from '../../../repositories'
 import { ConsumerModule } from '../consumer/consumer.module'
 
 import { PersonalDetailsController } from './personal-details.controller'

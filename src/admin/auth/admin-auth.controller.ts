@@ -3,9 +3,9 @@ import { ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger'
 
 import { IAdminModel } from '@wirebill/shared-common/models'
 
-import { PublicEndpoint } from '@-/decorators'
-import { ADMIN } from '@-/dtos'
-import { ReqAuthIdentity } from '@-/guards/auth.guard'
+import { PublicEndpoint } from '../../decorators'
+import { ADMIN } from '../../dtos'
+import { ReqAuthIdentity } from '../../guards/auth.guard'
 
 import { AdminAuthService } from './admin-auth.service'
 

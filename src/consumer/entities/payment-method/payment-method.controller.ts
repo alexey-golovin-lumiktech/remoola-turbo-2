@@ -4,10 +4,10 @@ import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { IConsumerModel, IPaymentMethodModel } from '@wirebill/shared-common/models'
 import { ReqQuery } from '@wirebill/shared-common/types'
 
-import { ReqQueryTransformPipe } from '@-/admin/pipes'
-import { CONSUMER } from '@-/dtos'
-import { ReqAuthIdentity } from '@-/guards/auth.guard'
-import { TransformResponse } from '@-/interceptors'
+import { CONSUMER } from '../../../dtos'
+import { ReqAuthIdentity } from '../../../guards/auth.guard'
+import { TransformResponse } from '../../../interceptors'
+import { ReqQueryTransformPipe } from '../../pipes'
 
 import { PaymentMethodService } from './payment-method.service'
 

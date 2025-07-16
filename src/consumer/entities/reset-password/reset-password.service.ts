@@ -2,8 +2,8 @@ import { Inject, Injectable } from '@nestjs/common'
 
 import { IResetPasswordModel } from '@wirebill/shared-common/models'
 
-import { BaseService } from '@-/common'
-import { ResetPasswordRepository } from '@-/repositories'
+import { BaseService } from '../../../common'
+import { ResetPasswordRepository } from '../../../repositories'
 
 @Injectable()
 export class ResetPasswordService extends BaseService<IResetPasswordModel, ResetPasswordRepository> {

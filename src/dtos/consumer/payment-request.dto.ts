@@ -13,8 +13,7 @@ import {
   TransactionTypeValue,
 } from '@wirebill/shared-common/types'
 
-import { INVALID_EMAIL } from '@-/constants'
-
+import { constants } from '../../constants'
 import { BaseModel } from '../common'
 
 import { PaymentRequestAttachmentResponse } from './payment-request-attachment.dto'
@@ -88,7 +87,7 @@ class PaymentRequest extends BaseModel implements IPaymentRequestModel {
   @ApiProperty({ required: false })
   @ValidateIf(x => x.value != null)
   @IsString()
-  deletedBy?: string = null
+  deletedBy?: string
 }
 
 export class PaymentRequestResponse extends OmitType(PaymentRequest, [`deletedAt`] as const) implements IPaymentRequestResponseExtended {
@@ -134,6 +133,6 @@ export class PaymentRequestsListQuery {
 export class PaymentRequestPayToContact extends PickType(PaymentRequest, [`description`, `amount`, `currencyCode`, `type`] as const) {
   @Expose()
   @ApiProperty()
-  @IsEmail({}, { message: INVALID_EMAIL })
+  @IsEmail({}, { message: constants.INVALID_EMAIL })
   contactEmail: string
 }

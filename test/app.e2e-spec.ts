@@ -6,14 +6,13 @@ import { classToPlain, plainToClass } from 'class-transformer'
 import { camelCase, startCase } from 'lodash'
 import supertest from 'supertest'
 
-import { AdminService } from '@-/admin/entities/admin/admin.service'
-import { ConsumerService } from '@-/consumer/entities/consumer/consumer.service'
-import { HttpExceptionFilter } from '@-/filters'
-import { AuthGuard } from '@-/guards/auth.guard'
-import { TransformResponseInterceptor } from '@-/interceptors'
-import { AccessRefreshTokenRepository } from '@-/repositories'
-
+import { AdminService } from '../src/admin/entities/admin/admin.service'
 import { AppModule } from '../src/app.module'
+import { ConsumerService } from '../src/consumer/entities/consumer/consumer.service'
+import { HttpExceptionFilter } from '../src/filters'
+import { AuthGuard } from '../src/guards/auth.guard'
+import { TransformResponseInterceptor } from '../src/interceptors'
+import { AccessRefreshTokenRepository } from '../src/repositories'
 
 describe(`AppController (e2e)`, () => {
   let app: INestApplication

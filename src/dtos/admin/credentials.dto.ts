@@ -4,7 +4,7 @@ import { IsEmail, Matches } from 'class-validator'
 
 import { BasicAuthCredentials } from '@wirebill/shared-common/dtos'
 
-import * as constants from '@-/constants'
+import { constants } from '../../constants'
 
 export class Credentials implements BasicAuthCredentials {
   @Expose()

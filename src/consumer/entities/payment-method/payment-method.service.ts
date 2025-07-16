@@ -4,10 +4,10 @@ import { snakeCase } from 'lodash'
 import { IPaymentMethodModel, TableName } from '@wirebill/shared-common/models'
 import { ReqQuery } from '@wirebill/shared-common/types'
 
-import { BaseService } from '@-/common'
-import { commonUtils } from '@-/common-utils'
-import { CONSUMER } from '@-/dtos'
-import { PaymentMethodRepository } from '@-/repositories'
+import { BaseService } from '../../../common'
+import { commonUtils } from '../../../common-utils'
+import { CONSUMER } from '../../../dtos'
+import { PaymentMethodRepository } from '../../../repositories'
 
 @Injectable()
 export class PaymentMethodService extends BaseService<IPaymentMethodModel, PaymentMethodRepository> {

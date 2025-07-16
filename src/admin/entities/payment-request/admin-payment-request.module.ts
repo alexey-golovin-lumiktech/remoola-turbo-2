@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common'
 
-import { PaymentRequestRepository } from '@-/repositories'
-
+import { PaymentRequestRepository } from '../../../repositories'
 import { AdminConsumerModule } from '../consumer/admin-consumer.module'
 
 import { AdminPaymentRequestController } from './admin-payment-request.controller'

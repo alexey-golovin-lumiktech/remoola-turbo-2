@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
 
-import { ResourceModule } from '@-/common-shared-modules/resource/resource.module'
+import { ResourceModule } from '../common-shared-modules/resource/resource.module'
 
 import { AuthModule } from './auth/auth.module'
 import { AddressDetailsModule } from './entities/address-details/address-details.module'

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
 
-import { PaymentMethodRepository } from '@-/repositories'
+import { PaymentMethodRepository } from '../../../repositories'
 
 import { AdminPaymentMethodController } from './admin-payment-method.controller'
 import { AdminPaymentMethodService } from './admin-payment-method.service'

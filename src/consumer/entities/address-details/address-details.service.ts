@@ -2,10 +2,9 @@ import { BadRequestException, Inject, Injectable } from '@nestjs/common'
 
 import { IAddressDetailsModel } from '@wirebill/shared-common/models'
 
-import { BaseService } from '@-/common'
-import { CONSUMER } from '@-/dtos'
-import { AddressDetailsRepository } from '@-/repositories'
-
+import { BaseService } from '../../../common'
+import { CONSUMER } from '../../../dtos'
+import { AddressDetailsRepository } from '../../../repositories'
 import { ConsumerService } from '../consumer/consumer.service'
 
 @Injectable()

@@ -3,9 +3,8 @@ import { GetTokenResponse } from 'google-auth-library/build/src/auth/oauth2clien
 import { Auth, google } from 'googleapis'
 import _ from 'lodash'
 
-import { toBase64 } from '@-/common-utils'
-import { CONSUMER } from '@-/dtos'
-
+import { toBase64 } from '../../common-utils'
+import { CONSUMER } from '../../dtos'
 import { check, envs } from '../../envs'
 
 export class GoogleAuthService {
