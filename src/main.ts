@@ -25,7 +25,7 @@ import { AccessRefreshTokenRepository } from './repositories'
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     cors: {
-      origin: [/127.0.0.1/, /\.vercel.app/, /\.ngrok-free.app/],
+      origin: [/localhost/, /127.0.0.1/, /\.vercel.app/, /\.ngrok-free.app/],
       exposedHeaders: [`Content-Range`, `Content-Type`],
     },
     rawBody: true,

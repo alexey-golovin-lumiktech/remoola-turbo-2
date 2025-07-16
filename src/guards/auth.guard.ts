@@ -88,7 +88,7 @@ export class AuthGuard implements CanActivate {
     })
     if (!isValidPassword) return this.throwError(GuardMessage.INVALID_CREDENTIALS)
 
-    request[REQUEST_AUTH_IDENTITY] = Object.assign(identity, { type: admin ? `admin` : `consumer` })
+    request[REQUEST_AUTH_IDENTITY] = Object.assign(identity, { type: admin ? admin.type : `consumer` })
     return true
   }
 
@@ -109,7 +109,7 @@ export class AuthGuard implements CanActivate {
     if (request.url.startsWith(`/admin/`) && !admin) return this.throwError(GuardMessage.ONLY_FOR_ADMINS)
     if (request.url.startsWith(`/consumer/`) && !consumer) return this.throwError(GuardMessage.ONLY_FOR_CONSUMERS)
 
-    request[REQUEST_AUTH_IDENTITY] = Object.assign(identity, { type: admin ? `admin` : `consumer` })
+    request[REQUEST_AUTH_IDENTITY] = Object.assign(identity, { type: admin ? admin.type : `consumer` })
     return true
   }
 
