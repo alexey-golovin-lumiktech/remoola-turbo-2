@@ -4,9 +4,9 @@ import { ITransactionCreate } from '@wirebill/shared-common/dtos'
 import { CurrencyCode, TransactionActionType, TransactionStatus, TransactionType } from '@wirebill/shared-common/enums'
 import { IConsumerModel, IExchangeRateModel, IPaymentRequestModel, ITransactionModel, TableName } from '@wirebill/shared-common/models'
 
-import { BaseService } from '@-/common'
-import { CONSUMER } from '@-/dtos'
-import { TransactionRepository } from '@-/repositories'
+import { BaseService } from '../../../common'
+import { CONSUMER } from '../../../dtos'
+import { TransactionRepository } from '../../../repositories'
 
 @Injectable()
 export class TransactionService extends BaseService<ITransactionModel, TransactionRepository> {

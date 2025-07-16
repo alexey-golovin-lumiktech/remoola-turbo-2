@@ -2,9 +2,8 @@ import { Inject, Injectable } from '@nestjs/common'
 
 import { IPersonalDetailsModel } from '@wirebill/shared-common/models'
 
-import { PersonalDetailsRepository } from '@-/repositories'
-
 import { BaseService } from '../../../common'
+import { PersonalDetailsRepository } from '../../../repositories'
 
 @Injectable()
 export class AdminPersonalDetailsService extends BaseService<IPersonalDetailsModel, PersonalDetailsRepository> {

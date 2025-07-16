@@ -5,10 +5,10 @@ import express from 'express'
 import { IPaymentRequestModel } from '@wirebill/shared-common/models'
 import { ReqQuery } from '@wirebill/shared-common/types'
 
-import { ReqQueryTransformPipe } from '@-/admin/pipes'
-import { ADMIN } from '@-/dtos'
-import { PaymentRequestUpdate } from '@-/dtos/admin'
-import { TransformResponse } from '@-/interceptors'
+import { ADMIN } from '../../../dtos'
+import { PaymentRequestUpdate } from '../../../dtos/admin'
+import { TransformResponse } from '../../../interceptors'
+import { ReqQueryTransformPipe } from '../../pipes'
 
 import { AdminPaymentRequestService } from './admin-payment-request.service'
 

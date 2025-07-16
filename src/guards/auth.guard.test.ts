@@ -6,13 +6,12 @@ import { classToPlain, plainToClass } from 'class-transformer'
 import { camelCase, startCase } from 'lodash'
 import supertest from 'supertest'
 
-import { AdminService } from '@-/admin/entities/admin/admin.service'
-import { ConsumerService } from '@-/consumer/entities/consumer/consumer.service'
-import { HttpExceptionFilter } from '@-/filters'
-import { TransformResponseInterceptor } from '@-/interceptors'
-import { AccessRefreshTokenRepository } from '@-/repositories'
-
+import { AdminService } from '../admin/entities/admin/admin.service'
 import { AppModule } from '../app.module'
+import { ConsumerService } from '../consumer/entities/consumer/consumer.service'
+import { HttpExceptionFilter } from '../filters'
+import { TransformResponseInterceptor } from '../interceptors'
+import { AccessRefreshTokenRepository } from '../repositories'
 
 import { AuthGuard } from './auth.guard'
 

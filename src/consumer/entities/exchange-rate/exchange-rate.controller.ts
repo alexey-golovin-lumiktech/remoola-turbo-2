@@ -4,9 +4,8 @@ import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger'
 import { IConsumerModel, IExchangeRateModel } from '@wirebill/shared-common/models'
 import { ReqQuery } from '@wirebill/shared-common/types'
 
-import { ReqAuthIdentity } from '@-/guards/auth.guard'
-
 import { CONSUMER } from '../../../dtos'
+import { ReqAuthIdentity } from '../../../guards/auth.guard'
 import { TransformResponse } from '../../../interceptors'
 import { ReqQueryTransformPipe } from '../../pipes'
 import { TransactionService } from '../transaction/transaction.service'

@@ -2,9 +2,8 @@ import { Inject, Injectable } from '@nestjs/common'
 
 import { IPaymentRequestModel } from '@wirebill/shared-common/models'
 
-import { PaymentRequestRepository } from '@-/repositories'
-
 import { BaseService } from '../../../common'
+import { PaymentRequestRepository } from '../../../repositories'
 
 @Injectable()
 export class AdminPaymentRequestService extends BaseService<IPaymentRequestModel, PaymentRequestRepository> {

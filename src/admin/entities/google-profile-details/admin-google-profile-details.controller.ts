@@ -5,9 +5,9 @@ import express from 'express'
 import { IGoogleProfileDetailsModel } from '@wirebill/shared-common/models'
 import { ReqQuery } from '@wirebill/shared-common/types'
 
-import { ReqQueryTransformPipe } from '@-/admin/pipes'
-import { ADMIN } from '@-/dtos'
-import { TransformResponse } from '@-/interceptors'
+import { ADMIN } from '../../../dtos'
+import { TransformResponse } from '../../../interceptors'
+import { ReqQueryTransformPipe } from '../../pipes'
 
 import { AdminGoogleProfileDetailsService } from './admin-google-profile-details.service'
 

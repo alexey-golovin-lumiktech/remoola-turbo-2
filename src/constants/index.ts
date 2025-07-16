@@ -7,3 +7,15 @@ export const INVALID_EMAIL = `Invalid email`
 export const TEMPORARY_PASSWORD_LIFETIME_HOURS = 3
 export const DEFAULT_DUE_DATE_IN_DAYS30 = 30
 export const PASSWORD_RE = /(?!.* )(?=(.*[A-Z]){2,})(?=.*?[a-z])(?=.*[1-9]{1,})(?=.*?[#?!@$%^&*-]).{8,}$/
+
+export const constants = {
+  INVALID_CREDENTIALS,
+  ADMIN_NOT_FOUND,
+  NOT_FOUND,
+  INVALID_PASSWORD,
+  PASSWORD_NOT_SET_YET,
+  INVALID_EMAIL,
+  TEMPORARY_PASSWORD_LIFETIME_HOURS,
+  DEFAULT_DUE_DATE_IN_DAYS30,
+  PASSWORD_RE,
+} as const

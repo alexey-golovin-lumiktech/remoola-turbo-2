@@ -1,9 +1,8 @@
 import { Module } from '@nestjs/common'
 import { JwtModule } from '@nestjs/jwt'
 
-import { AccessRefreshTokenRepository } from '@-/repositories'
-
 import { envs } from '../../envs'
+import { AccessRefreshTokenRepository } from '../../repositories'
 import { AddressDetailsModule } from '../entities/address-details/address-details.module'
 import { ConsumerModule } from '../entities/consumer/consumer.module'
 import { GoogleProfileDetailsModule } from '../entities/google-profile-details/google-profile-details.module'

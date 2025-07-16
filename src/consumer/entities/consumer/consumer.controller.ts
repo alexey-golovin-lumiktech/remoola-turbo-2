@@ -3,9 +3,9 @@ import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger'
 
 import { IConsumerModel } from '@wirebill/shared-common/models'
 
-import { CONSUMER } from '@-/dtos'
-import { ReqAuthIdentity } from '@-/guards/auth.guard'
-import { TransformResponse } from '@-/interceptors'
+import { CONSUMER } from '../../../dtos'
+import { ReqAuthIdentity } from '../../../guards/auth.guard'
+import { TransformResponse } from '../../../interceptors'
 
 import { ConsumerService } from './consumer.service'
 

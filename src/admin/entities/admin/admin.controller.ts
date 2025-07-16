@@ -6,10 +6,10 @@ import { AdminType } from '@wirebill/shared-common/enums'
 import { IAdminModel } from '@wirebill/shared-common/models'
 import { ReqQuery } from '@wirebill/shared-common/types'
 
-import { ReqQueryTransformPipe } from '@-/admin/pipes'
-import { ADMIN } from '@-/dtos'
-import { ReqAuthIdentity } from '@-/guards/auth.guard'
-import { TransformResponse } from '@-/interceptors'
+import { ADMIN } from '../../../dtos'
+import { ReqAuthIdentity } from '../../../guards/auth.guard'
+import { TransformResponse } from '../../../interceptors'
+import { ReqQueryTransformPipe } from '../../pipes'
 
 import { AdminService } from './admin.service'
 

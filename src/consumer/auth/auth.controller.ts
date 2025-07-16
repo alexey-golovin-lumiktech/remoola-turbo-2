@@ -19,11 +19,10 @@ import _ from 'lodash'
 
 import { IConsumerModel } from '@wirebill/shared-common/models'
 
-import { PublicEndpoint } from '@-/decorators'
-import { CONSUMER } from '@-/dtos'
-import { ReqAuthIdentity } from '@-/guards/auth.guard'
-import { TransformResponse } from '@-/interceptors'
-
+import { PublicEndpoint } from '../../decorators'
+import { CONSUMER } from '../../dtos'
+import { ReqAuthIdentity } from '../../guards/auth.guard'
+import { TransformResponse } from '../../interceptors'
 import { AddressDetailsService } from '../entities/address-details/address-details.service'
 import { OrganizationDetailsService } from '../entities/organization-details/organization-details.service'
 import { PersonalDetailsService } from '../entities/personal-details/personal-details.service'

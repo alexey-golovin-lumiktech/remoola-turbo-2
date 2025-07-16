@@ -2,7 +2,7 @@ import { applyDecorators } from '@nestjs/common'
 import { ApiOkResponse, getSchemaPath } from '@nestjs/swagger'
 import { ClassConstructor } from 'class-transformer'
 
-import { ListResponse } from '@-/dtos/common'
+import { ListResponse } from '../dtos/common'
 
 export const ApiCountRowsResponse = <TModel extends ClassConstructor<unknown>>(model: TModel) => {
   return applyDecorators(

@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common'
 
-import { ContactRepository } from '@-/repositories'
-
+import { ContactRepository } from '../../../repositories'
 import { AdminConsumerModule } from '../consumer/admin-consumer.module'
 
 import { AdminContactController } from './admin-contact.controller'

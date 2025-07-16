@@ -1,7 +1,7 @@
 import { ApiProperty, OmitType, PickType } from '@nestjs/swagger'
 import { Expose, Transform } from 'class-transformer'
 
-import { fromBase64 } from '@-/common-utils'
+import { fromBase64 } from '../../common-utils'
 
 import { ConsumerResponse } from './consumer.dto'
 

@@ -20,37 +20,7 @@
     "noFallthroughCasesInSwitch": false,
     "strict": true,
     "noStrictGenericChecks": false,
-    "baseUrl": "./",
-    "paths": {
-      "@-/admin": ["src/admin"],
-      "@-/admin/*": ["src/admin/*"],
-      "@-/common": ["src/common"],
-      "@-/common/*": ["src/common/*"],
-      "@-/common-shared-modules": ["src/common-shared-modules"],
-      "@-/common-shared-modules/*": ["src/common-shared-modules/*"],
-      "@-/common-utils": ["src/common-utils"],
-      "@-/common-utils/*": ["src/common-utils/*"],
-      "@-/constants": ["src/constants"],
-      "@-/constants/*": ["src/constants/*"],
-      "@-/consumer": ["src/consumer"],
-      "@-/consumer/*": ["src/consumer/*"],
-      "@-/database": ["src/database"],
-      "@-/database/*": ["src/database/*"],
-      "@-/decorators": ["src/decorators"],
-      "@-/decorators/*": ["src/decorators/*"],
-      "@-/dtos": ["src/dtos"],
-      "@-/dtos/*": ["src/dtos/*"],
-      "@-/filters": ["src/filters"],
-      "@-/filters/*": ["src/filters/*"],
-      "@-/guards": ["src/guards"],
-      "@-/guards/*": ["src/guards/*"],
-      "@-/interceptors": ["src/interceptors"],
-      "@-/interceptors/*": ["src/interceptors/*"],
-      "@-/middleware": ["src/middleware"],
-      "@-/middleware/*": ["src/middleware/*"],
-      "@-/repositories": ["src/repositories"],
-      "@-/repositories/*": ["src/repositories/*"]
-    }
+    "baseUrl": "./"
   },
   "include": ["src", "typings", "knexfile.ts", "test"]
 }

@@ -14,21 +14,5 @@
   "bail": 1,
   "logHeapUsage": true,
   "passWithNoTests": true,
-  "detectOpenHandles": true,
-  "moduleNameMapper": {
-    "^@-/admin(|/.*)$": "<rootDir>/src/admin/$1",
-    "^@-/common(|/.*)$": "<rootDir>/src/common/$1",
-    "^@-/common-shared-modules(|/.*)$": "<rootDir>/src/common-shared-modules/$1",
-    "^@-/common-utils(|/.*)$": "<rootDir>/src/common-utils/$1",
-    "^@-/constants(|/.*)$": "<rootDir>/src/constants/$1",
-    "^@-/consumer(|/.*)$": "<rootDir>/src/consumer/$1",
-    "^@-/database(|/.*)$": "<rootDir>/src/database/$1",
-    "^@-/decorators(|/.*)$": "<rootDir>/src/decorators/$1",
-    "^@-/dtos(|/.*)$": "<rootDir>/src/dtos/$1",
-    "^@-/filters(|/.*)$": "<rootDir>/src/filters/$1",
-    "^@-/guards(|/.*)$": "<rootDir>/src/guards/$1",
-    "^@-/interceptors(|/.*)$": "<rootDir>/src/interceptors/$1",
-    "^@-/middleware(|/.*)$": "<rootDir>/src/middleware/$1",
-    "^@-/repositories(|/.*)$": "<rootDir>/src/repositories/$1"
-  }
+  "detectOpenHandles": true
 }

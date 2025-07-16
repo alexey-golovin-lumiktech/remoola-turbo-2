@@ -8,12 +8,12 @@ import { AuthHeader, CredentialsSeparator } from '@wirebill/shared-common/enums'
 import { IAdminModel, IConsumerModel } from '@wirebill/shared-common/models'
 import { AuthHeaderValue } from '@wirebill/shared-common/types'
 
-import { AdminService } from '@-/admin/entities/admin/admin.service'
-import { commonUtils } from '@-/common-utils'
-import { ConsumerService } from '@-/consumer/entities/consumer/consumer.service'
-import { IS_PUBLIC } from '@-/decorators'
-import { IJwtTokenPayload } from '@-/dtos/consumer'
-import { AccessRefreshTokenRepository } from '@-/repositories'
+import { AdminService } from '../admin/entities/admin/admin.service'
+import { commonUtils } from '../common-utils'
+import { ConsumerService } from '../consumer/entities/consumer/consumer.service'
+import { IS_PUBLIC } from '../decorators'
+import { IJwtTokenPayload } from '../dtos/consumer'
+import { AccessRefreshTokenRepository } from '../repositories'
 
 export const REQUEST_AUTH_IDENTITY = Symbol(`REQUEST_AUTH_IDENTITY`)
 export const ReqAuthIdentity = createParamDecorator((_, context: ExecutionContext) => {
