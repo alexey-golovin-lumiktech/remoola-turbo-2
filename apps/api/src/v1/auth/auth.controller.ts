@@ -28,6 +28,20 @@ export class AuthController {
       path: `/`,
     };
 
+    const recommended = {
+      httpOnly: true,
+      secure: true,
+      sameSite: `none`, // ✅ required for cross-site
+      domain: `.vercel.app`, // or your real prod domain
+      path: `/`,
+    };
+
+    console.log(`\n************************************`);
+    console.log(`common`, common);
+    console.log(`recommended`, recommended);
+    console.log(`parsedEnvs.NODE_ENV`, parsedEnvs.NODE_ENV);
+    console.log(`************************************\n`);
+
     res.cookie(`access_token`, access, { ...common, maxAge: 1000 * 60 * 15 });
     res.cookie(`refresh_token`, refresh, { ...common, maxAge: 1000 * 60 * 60 * 24 * 7 });
   }
