@@ -17,8 +17,7 @@
     "start:dev": "yarn dev:envs nest start --watch",
     "dev": "yarn start:dev",
     "migrate:up": "yarn dev:envs typeorm-ts-node-commonjs migration:run -d ./src/config/orm.config.ts",
-    "migrate:up2": "yarn build && yarn dev:envs typeorm migration:run -- -d ./dist/src/config/orm.config.js",
-    "postbuild": "node dist/src/generate-openapi.js"
+    "migrate:up2": "yarn build && yarn dev:envs typeorm migration:run -- -d ./dist/src/config/orm.config.js"
   },
   "dependencies": {
     "@remoola/api-types": "^0.0.0",
