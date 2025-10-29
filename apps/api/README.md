@@ -9,7 +9,7 @@ pnpm run dev
 # Also works with NPM, YARN, BUN, ...
 ```
 
-By default, your server will run at [localhost:5555](http://localhost:5555). You can use your favorite API platform like [Insomnia](https://insomnia.rest/) or [Postman](https://www.postman.com/) to test your APIs
+By default, your server will run at [127.0.0.1:3000](http://127.0.0.1:3000). You can use your favorite API platform like [Insomnia](https://insomnia.rest/) or [Postman](https://www.postman.com/) to test your APIs
 
 You can start editing the demo **APIs** by modifying [linksService](./src/links/links.service.ts) provider.
 

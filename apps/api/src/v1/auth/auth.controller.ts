@@ -16,7 +16,7 @@ export class AuthController {
 
   private setAuthCookies(res: express.Response, access: string, refresh: string) {
     const isProd = parsedEnvs.NODE_ENV == `production`;
-    const domain = isProd ? parsedEnvs.COOKIE_DOMAIN : undefined; // ❌ don't set on localhost(127.0.0.1)
+    const domain = isProd ? parsedEnvs.COOKIE_DOMAIN : undefined; // ❌ don't set on 127.0.0.1(127.0.0.1)
     const sameSite = isProd ? (`none` as const) : (`lax` as const);
     const secure = isProd || parsedEnvs.COOKIE_SECURE == `true`;
 

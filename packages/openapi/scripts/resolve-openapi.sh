@@ -3,7 +3,7 @@ set -e
 
 TARGET="src/openapi.json"
 LOCAL_API_JSON="../../apps/api/dist/api-json/v1.json"
-DEFAULT_URL=${OPENAPI_URL:-http://127.0.0.1:3333/api-json/v1}
+DEFAULT_URL=${OPENAPI_URL:-http://127.0.0.1:3000/api-json/v1}
 
 mkdir -p src
 

@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "exports": {
-    "./*": "./src/*.tsx"
+    "./*": "./src/*.tsx",
+    "./styles.css": "./src/styles.css"
   },
   "scripts": {
     "lint": "eslint . --max-warnings 0",
@@ -11,6 +12,9 @@
     "check-types": "tsc --noEmit",
     "clean": "rimraf node_modules"
   },
+  "sideEffects": [
+    "src/styles.css"
+  ],
   "devDependencies": {
     "@remoola/eslint-config": "^0.0.0",
     "@remoola/typescript-config": "^0.0.0",

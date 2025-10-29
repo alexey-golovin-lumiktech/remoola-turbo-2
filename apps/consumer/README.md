@@ -7,7 +7,7 @@ pnpm dev
 # Also works with NPM, YARN, BUN, ...
 ```
 
-Browse [localhost:3001](http://localhost:3001) to see the result.
+Browse [127.0.0.1:3001](http://127.0.0.1:3001) to see the result.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 

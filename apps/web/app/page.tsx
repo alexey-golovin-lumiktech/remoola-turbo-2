@@ -1,7 +1,7 @@
 import Image, { type ImageProps } from 'next/image';
 
 import type { Link } from '@remoola/api-types';
-import { Button } from '@remoola/ui/components/Button';
+import { Button } from '@remoola/ui/Button';
 
 import styles from './page.module.css';
 
@@ -23,7 +23,7 @@ const ThemeImage = (props: Props) => {
 
 async function getLinks(): Promise<Link[]> {
   try {
-    const res = await fetch(`http://localhost:5555/links`, {
+    const res = await fetch(`http://127.0.0.1:3000/links`, {
       cache: `no-store`,
     });
 
@@ -98,7 +98,7 @@ export default async function Home() {
             ))}
           </div>
         ) : (
-          <div style={{ color: `#666` }}>No links available. Make sure the NestJS API is running on port 5555.</div>
+          <div style={{ color: `#666` }}>No links available. Make sure the NestJS API is running on port 3000.</div>
         )}
       </main>
 
