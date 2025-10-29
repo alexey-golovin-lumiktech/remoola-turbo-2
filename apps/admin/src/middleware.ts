@@ -1,29 +1,16 @@
-import { type NextRequest, NextResponse } from 'next/server';
-
-const PROTECTED_ROUTES = [
-  `/`, //
-  `/admins`,
-  `/clients`,
-  `/contractors`,
-  `/contracts`,
-  `/payments`,
-  `/documents`,
-];
+// apps/admin/src/middleware.ts
+import { NextResponse, type NextRequest } from 'next/server';
 
 export function middleware(req: NextRequest) {
-  const path = req.nextUrl.pathname;
-  const hasAccess = req.cookies.get(`access_token`);
-  const isProtected = PROTECTED_ROUTES.some((p) => path == p || path.startsWith(p + `/`));
+  const token = req.cookies.get(`access_token`)?.value;
+  const { pathname } = req.nextUrl;
 
-  if (isProtected && !hasAccess) {
+  if (!token && !pathname.startsWith(`/login`)) {
     const url = req.nextUrl.clone();
     url.pathname = `/login`;
-    url.searchParams.set(`next`, path);
+    url.searchParams.set(`next`, pathname);
     return NextResponse.redirect(url);
   }
+
   return NextResponse.next();
 }
-
-export const config = {
-  matcher: [`/((?!_next|favicon.ico|assets|api/.*).*)`],
-};
