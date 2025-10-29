@@ -23,7 +23,7 @@ export default async function AdminPage({ params }: { params: { adminId: string 
     contracts: [];
     payments: [];
   };
-  const client = await getClientSSR<Client>((await params).adminId);
+  const client = await getClientSSR<Client>(params.adminId);
   if (!client) redirect(`/clients`);
 
   return (
