@@ -13,8 +13,7 @@ export default function LoginForm({ nextPath }: { nextPath: string }) {
     e.preventDefault();
     setErr(undefined);
 
-    const base = process.env.NEXT_PUBLIC_API_BASE_URL!;
-    const response = await fetch(`${base}/auth/login`, {
+    const response = await fetch(`/api/login`, {
       method: `POST`,
       credentials: `include`,
       headers: { 'Content-Type': `application/json` },
@@ -25,7 +24,7 @@ export default function LoginForm({ nextPath }: { nextPath: string }) {
       return;
     }
 
-    const me = await fetch(`${base}/auth/me`, { credentials: `include`, cache: `no-store` });
+    const me = await fetch(`/api/me`, { credentials: `include`, cache: `no-store` });
     if (!me.ok) {
       setErr(`Logged in, but cookies not available. Check CORS/cookie attrs.`);
       return;

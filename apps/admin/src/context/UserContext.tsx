@@ -8,10 +8,9 @@ export const UserContext = createContext<User | null>(null);
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const base = process.env.NEXT_PUBLIC_API_BASE_URL!;
 
   useEffect(() => {
-    fetch(`${base}/auth/me`, { credentials: `include`, cache: `no-store` })
+    fetch(`/api/me`, { credentials: `include`, cache: `no-store` })
       .then((r) => {
         if (r.ok) return r.json();
         return null;
