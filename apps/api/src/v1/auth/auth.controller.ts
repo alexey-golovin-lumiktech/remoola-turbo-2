@@ -24,7 +24,7 @@ export class AuthController {
       httpOnly: true,
       sameSite,
       secure,
-      domain,
+      domain: process.env.VERCEL_URL || domain,
       path: `/`,
     };
 
@@ -33,7 +33,6 @@ export class AuthController {
 
     /* vercel FALLBACK */
     res.cookie(`access_token_public`, access, {
-      httpOnly: true,
       secure: true,
       sameSite: `none`,
       path: `/`,

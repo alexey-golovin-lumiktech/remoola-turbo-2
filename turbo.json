@@ -26,7 +26,8 @@
     "COOKIE_SECURE",
     "SECURE_SESSION_SECRET",
     "PORT",
-    "VERCEL"
+    "VERCEL",
+    "VERCEL_URL"
   ],
   "globalDependencies": [
     "package.json",
