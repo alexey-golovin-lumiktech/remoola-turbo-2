@@ -53,6 +53,12 @@
     "clean": {
       "cache": false
     },
-    "test:e2e": {}
+    "test:e2e": {},
+    "deploy": {
+      "dependsOn": [
+        "build"
+      ],
+      "cache": false
+    }
   }
 }
