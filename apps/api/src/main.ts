@@ -1,5 +1,3 @@
-import { mkdirSync, writeFileSync } from 'fs';
-
 import { VersioningType } from '@nestjs/common';
 import { type RequestHandler } from '@nestjs/common/interfaces';
 import { NestFactory, Reflector } from '@nestjs/core';
@@ -68,8 +66,6 @@ async function bootstrap() {
 
     const json: RequestHandler = (_req, res) => res.send(document);
     app.getHttpAdapter().get(`/api-json/v${version}`, json);
-    mkdirSync(`./dist/api-json`, { recursive: true });
-    writeFileSync(`./dist/api-json/v${version}.json`, JSON.stringify(document, null, 2));
 
     const options: SwaggerCustomOptions = {
       customSiteTitle: title,
@@ -96,4 +92,5 @@ async function bootstrap() {
     .then(() => (console.log(``), app.getUrl()))
     .then(info);
 }
-bootstrap();
+
+void bootstrap();
