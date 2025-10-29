@@ -25,7 +25,8 @@
     "POSTGRES_SSL",
     "COOKIE_SECURE",
     "SECURE_SESSION_SECRET",
-    "PORT"
+    "PORT",
+    "VERCEL"
   ],
   "globalDependencies": [
     "package.json",

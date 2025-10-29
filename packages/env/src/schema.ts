@@ -5,6 +5,7 @@ import { z } from 'zod';
  * Automatically validated at runtime.
  */
 export const envSchema = z.object({
+  VERCEL: z.string().optional(),
   NODE_ENV: z.union([z.literal(`development`), z.literal(`production`)]).default(`development`),
 
   // Common URLs

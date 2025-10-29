@@ -24,26 +24,13 @@ export class AuthController {
       httpOnly: true,
       sameSite,
       secure,
-      domain,
-      path: `/`,
-    };
-
-    const recommended = {
-      httpOnly: true,
-      secure: true,
-      sameSite: `none`, // ✅ required for cross-site
-      domain: `.vercel.app`, // or your real prod domain
+      domain: process.env.VERCEL ? `.vercel.app` : domain,
       path: `/`,
     };
 
     console.log(`\n************************************`);
     console.log(`common`, common);
-    console.log(`recommended`, recommended);
-    console.log(`parsedEnvs.NODE_ENV`, parsedEnvs.NODE_ENV);
-    console.log(
-      `vercel envs`,
-      Object.keys(process.env).filter((x) => /vercel/gi.test(x)),
-    );
+    console.log(`process.env.VERCEL`, process.env.VERCEL);
     console.log(`************************************\n`);
 
     res.cookie(`access_token`, access, { ...common, maxAge: 1000 * 60 * 15 });
