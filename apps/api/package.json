@@ -1,5 +1,5 @@
 {
-  "name": "api",
+  "name": "@remoola/api",
   "version": "0.0.0",
   "private": true,
   "scripts": {
@@ -19,7 +19,7 @@
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
-    "@repo/api": "^0.0.0",
+    "@remoola/api-types": "^0.0.0",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1"
   },
@@ -28,9 +28,9 @@
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.0",
-    "@repo/eslint-config": "^0.0.0",
-    "@repo/jest-config": "^0.0.0",
-    "@repo/typescript-config": "^0.0.0",
+    "@remoola/eslint-config": "^0.0.0",
+    "@remoola/jest-config": "^0.0.0",
+    "@remoola/typescript-config": "^0.0.0",
     "@types/express": "^4.17.17",
     "@types/node": "^22.10.7",
     "@types/supertest": "^6.0.0",

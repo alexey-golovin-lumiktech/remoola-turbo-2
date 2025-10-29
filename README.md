@@ -22,11 +22,11 @@ This Turborepo includes the following packages & apps:
 │   ├── api                       # NestJS app (https://nestjs.com).
 │   └── web                       # Next.js app (https://nextjs.org).
 └── packages
-    ├── @repo/api                 # Shared `NestJS` resources.
-    ├── @repo/eslint-config       # `eslint` configurations (includes `prettier`)
-    ├── @repo/jest-config         # `jest` configurations
-    ├── @repo/typescript-config   # `tsconfig.json`s used throughout the monorepo
-    └── @repo/ui                  # Shareable stub React component library.
+    ├── @remoola/api-types           # Shared `NestJS` resources.
+    ├── @remoola/eslint-config       # `eslint` configurations (includes `prettier`)
+    ├── @remoola/jest-config         # `jest` configurations
+    ├── @remoola/typescript-config   # `tsconfig.json`s used throughout the monorepo
+    └── @remoola/ui                  # Shareable stub React component library.
 ```
 
 Each package and application are mostly written in [TypeScript](https://www.typescriptlang.org/).
@@ -70,14 +70,14 @@ pnpm run test
 # You can launch e2e testes with `test:e2e`
 pnpm run test:e2e
 
-# See `@repo/jest-config` to customize the behavior.
+# See `@remoola/jest-config` to customize the behavior.
 ```
 
 #### Lint
 
 ```bash
 # Will lint all the app & packages with the supported `lint` script.
-# See `@repo/eslint-config` to customize the behavior.
+# See `@remoola/eslint-config` to customize the behavior.
 pnpm run lint
 ```
 
@@ -85,7 +85,7 @@ pnpm run lint
 
 ```bash
 # Will format all the supported `.ts,.js,json,.tsx,.jsx` files.
-# See `@repo/eslint-config/prettier-base.js` to customize the behavior.
+# See `@remoola/eslint-config/prettier-base.js` to customize the behavior.
 pnpm format
 ```
 

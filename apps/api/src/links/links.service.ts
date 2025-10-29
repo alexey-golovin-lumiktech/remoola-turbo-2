@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { Link, CreateLinkDto, UpdateLinkDto } from '@repo/api';
+
+import { Link, CreateLinkDto, UpdateLinkDto } from '@remoola/api-types';
 
 @Injectable()
 export class LinksService {

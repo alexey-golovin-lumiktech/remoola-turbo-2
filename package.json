@@ -1,5 +1,5 @@
 {
-  "name": "my-turborepo",
+  "name": "remoola-turbo-2",
   "version": "0.0.0",
   "private": true,
   "description": "",
@@ -12,11 +12,12 @@
     "test:e2e": "turbo run test:e2e",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "clean": "turbo run clean && rimraf node_modules"
+    "clean": "turbo run clean && rimraf node_modules",
+    "postinstall": "turbo run build --filter=\"./packages/*\""
   },
   "devDependencies": {
-    "@repo/eslint-config": "^0.0.0",
-    "@repo/typescript-config": "^0.0.0",
+    "@remoola/eslint-config": "^0.0.0",
+    "@remoola/typescript-config": "^0.0.0",
     "prettier": "^3.2.5",
     "turbo": "^2.5.0"
   },

@@ -1,5 +1,5 @@
 {
-  "name": "web",
+  "name": "@remoola/web",
   "version": "0.0.0",
   "type": "module",
   "private": true,
@@ -12,15 +12,15 @@
     "clean": "rimraf node_modules .next"
   },
   "dependencies": {
-    "@repo/ui": "^0.0.0",
+    "@remoola/ui": "^0.0.0",
     "next": "^15.4.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
-    "@repo/api": "^0.0.0",
-    "@repo/eslint-config": "^0.0.0",
-    "@repo/typescript-config": "^0.0.0",
+    "@remoola/api-types": "^0.0.0",
+    "@remoola/eslint-config": "^0.0.0",
+    "@remoola/typescript-config": "^0.0.0",
     "@types/node": "^22.15.3",
     "@types/react": "19.1.0",
     "@types/react-dom": "19.1.1",

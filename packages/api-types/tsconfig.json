@@ -1,15 +1,14 @@
 {
-  "extends": "@remoola/typescript-config/base.json",
+  "extends": "@remoola/typescript-config/nestjs.json",
   "compilerOptions": {
-    "declaration": true,
-    "declarationMap": true,
     "allowJs": true,
+    "baseUrl": "src",
     "esModuleInterop": true,
     "incremental": false,
-    "module": "commonjs",
-    "moduleResolution": "Node10",
     "outDir": "dist",
-    "baseUrl": "src"
+    "types": [
+      "node"
+    ]
   },
   "include": [
     "src"

@@ -1,9 +1,9 @@
-import { Button } from '@repo/ui/components/Button';
 import Image, { type ImageProps } from 'next/image';
 
-import styles from './page.module.css';
+import type { Link } from '@remoola/api-types';
+import { Button } from '@remoola/ui/components/Button';
 
-import type { Link } from '@repo/api';
+import styles from './page.module.css';
 
 type Props = Omit<ImageProps, `src`> & {
   srcLight: string;
