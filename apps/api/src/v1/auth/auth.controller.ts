@@ -40,6 +40,10 @@ export class AuthController {
     console.log(`common`, common);
     console.log(`recommended`, recommended);
     console.log(`parsedEnvs.NODE_ENV`, parsedEnvs.NODE_ENV);
+    console.log(
+      `vercel envs`,
+      Object.keys(process.env).filter((x) => /vercel/gi.test(x)),
+    );
     console.log(`************************************\n`);
 
     res.cookie(`access_token`, access, { ...common, maxAge: 1000 * 60 * 15 });
