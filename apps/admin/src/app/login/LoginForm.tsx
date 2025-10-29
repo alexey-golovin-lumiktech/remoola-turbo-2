@@ -24,7 +24,7 @@ export default function LoginForm({ nextPath }: { nextPath: string }) {
       return;
     }
 
-    const me = await fetch(`/api/me`, { credentials: `include`, cache: `no-store` });
+    const me = await fetch(`/api/me`, { credentials: `include` });
     if (!me.ok) {
       setErr(`Logged in, but cookies not available. Check CORS/cookie attrs.`);
       return;

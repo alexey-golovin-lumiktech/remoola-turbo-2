@@ -10,7 +10,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    fetch(`/api/me`, { credentials: `include`, cache: `no-store` })
+    fetch(`/api/me`, { credentials: `include` })
       .then((r) => {
         if (r.ok) return r.json();
         return null;

@@ -26,4 +26,4 @@ export const config = {
   matcher: [`/((?!_next|favicon.ico|assets|api/.*).*)`],
 };
 
-export const runtime = `nodejs`;
+// export const runtime = `nodejs`;

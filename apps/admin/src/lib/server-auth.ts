@@ -9,9 +9,11 @@ type BackendResponse<T> = {
 };
 
 export async function getMeSSR<T = R>() {
+  const api = process.env.NEXT_PUBLIC_API_BASE_URL!;
+
   const cookieStore = await nextCookies(); // ✅ await the async cookies() call
   const cookieHeader = cookieStore.toString(); // ← include session cookies
-  const res = await fetch(`/api/me`, {
+  const res = await fetch(`${api}/auth/me`, {
     headers: { Cookie: cookieHeader },
     credentials: `include`,
     cache: `no-store`,
