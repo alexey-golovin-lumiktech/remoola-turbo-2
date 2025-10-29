@@ -1,8 +1,10 @@
 'use client';
 
+import { useRouter } from 'next/router';
 import { useState } from 'react';
 
 export default function LoginForm({ nextPath }: { nextPath: string }) {
+  const router = useRouter();
   const [email, setEmail] = useState(`admin@example.com`);
   const [password, setPassword] = useState(`password`);
   const [err, setErr] = useState<string>();
@@ -29,7 +31,7 @@ export default function LoginForm({ nextPath }: { nextPath: string }) {
       return;
     }
 
-    window.location.assign(nextPath || `/`);
+    router.replace(nextPath || `/`);
   };
 
   return (
