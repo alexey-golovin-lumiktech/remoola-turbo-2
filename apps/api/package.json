@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "build": "nest build",
+    "build": "yarn migrate:up && nest build",
     "start": "nest start",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
@@ -15,7 +15,10 @@
     "clean": "rimraf node_modules",
     "dev:envs": "dotenv -e ./.env.development -e ./.env --",
     "start:dev": "yarn dev:envs nest start --watch",
-    "dev": "yarn start:dev"
+    "dev": "yarn start:dev",
+    "migrate:up": "yarn dev:envs typeorm-ts-node-commonjs migration:run -d ./src/config/orm.config.ts",
+    "migrate:up2": "yarn build && yarn dev:envs typeorm migration:run -- -d ./dist/src/config/orm.config.js",
+    "postbuild": "node dist/src/generate-openapi.js"
   },
   "dependencies": {
     "@remoola/api-types": "^0.0.0",
