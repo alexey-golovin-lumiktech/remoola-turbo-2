@@ -77,7 +77,8 @@ async function bootstrap() {
     };
     SwaggerModule.setup(`docs/v${version}`, app, document, options);
   };
-
+  const docs: RequestHandler = (_req, res) => res.redirect(301, `/docs/v1`);
+  app.getHttpAdapter().get(`/`, docs);
   versionsConfig.forEach((params) => setupSwagger(params));
 
   const info = (appUrl: string) => {
