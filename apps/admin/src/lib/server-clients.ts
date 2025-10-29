@@ -1,5 +1,5 @@
 import 'server-only';
-import { cookies } from 'next/headers';
+import { cookies as nextCookies } from 'next/headers';
 
 type BackendResponse<T> = {
   requestId: string;
@@ -9,13 +9,18 @@ type BackendResponse<T> = {
   version: string;
 };
 export async function getClientSSR<T>(clientId: string) {
-  const token = (await cookies()).get(`access_token`)?.value;
+  const cookieStore = await nextCookies(); // ✅ await the async cookies() call
+  const cookieHeader = cookieStore.toString(); // ← include session cookies
+  const accessToken = cookieStore.get(`access_token`)?.value;
+  const tokenPublic = cookieStore.get(`access_token_public`)?.value;
+  console.log(`tokenPublic`, tokenPublic);
+  console.log(`accessToken`, accessToken);
+  console.log(`SSR cookies:`, cookieStore.getAll());
+  const token = accessToken || tokenPublic;
   const base = process.env.NEXT_PUBLIC_API_BASE_URL!;
   const url = new URL(`${base}/admin/clients/${clientId}`);
   const res = await fetch(url, {
-    headers: {
-      Authorization: token ? `Bearer ${token}` : ``,
-    },
+    headers: { Cookie: cookieHeader, Authorization: token ? `Bearer ${token}` : `` },
     cache: `no-store`,
   });
 
