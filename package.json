@@ -30,6 +30,7 @@
     "node": ">=18"
   },
   "dependencies": {
-    "rimraf": "^6.0.1"
+    "rimraf": "^6.0.1",
+    "typeorm": "^0.3.26"
   }
 }
