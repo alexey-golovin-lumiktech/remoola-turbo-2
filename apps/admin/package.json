@@ -1,10 +1,10 @@
 {
-  "name": "@remoola/web",
+  "name": "@remoola/admin",
   "version": "0.0.0",
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack --port 3002",
+    "dev": "next dev --turbopack --port 3010",
     "build": "next build",
     "start": "next start",
     "lint": "next lint --max-warnings 0",
@@ -12,10 +12,13 @@
     "clean": "rimraf node_modules .next"
   },
   "dependencies": {
+    "@remoola/openapi": "^0.0.0",
     "@remoola/ui": "^0.0.0",
-    "next": "^15.4.2",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "next": "15.5.0",
+    "swr": "^2.3.6",
+    "zod": "^4.0.17"
   },
   "devDependencies": {
     "@remoola/api-types": "^0.0.0",
@@ -25,6 +28,10 @@
     "@types/react": "19.1.0",
     "@types/react-dom": "19.1.1",
     "eslint": "^9.31.0",
-    "typescript": "5.8.2"
+    "typescript": "5.8.2",
+    "@tailwindcss/postcss": "^4",
+    "eslint-config-next": "15.5.2",
+    "openapi-typescript-codegen": "^0.29.0",
+    "tailwindcss": "^4"
   }
 }

@@ -16,6 +16,7 @@ async function generateOpenAPI() {
       origin: true,
       credentials: true,
     },
+    logger: false,
   });
   app.setGlobalPrefix(`api`);
 
