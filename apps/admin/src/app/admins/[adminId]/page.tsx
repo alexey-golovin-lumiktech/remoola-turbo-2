@@ -7,7 +7,7 @@ import { Card } from '@remoola/ui/Card';
 import { getMeSSR } from '../../../lib/server-auth';
 import { getClientSSR } from '../../../lib/server-clients';
 
-export default async function AdminPage({ params }: { params: Promise<{ adminId: string }> }) {
+export default async function AdminPage({ params }: PageProps<`/admins/[adminId]`>) {
   const me = await getMeSSR();
   if (!me?.role || (me.role !== `admin` && me.role !== `superadmin`)) redirect(`/login?next=/`);
 
