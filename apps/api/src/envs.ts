@@ -1,6 +1,5 @@
 import { type JwtSignOptions } from '@nestjs/jwt';
 
-// with defaults
 export const NODE_ENV = process.env.NODE_ENV || `production`;
 export const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN ?? `1d`) as JwtSignOptions[`expiresIn`];
 export const JWT_REFRESH_TTL = (process.env.JWT_REFRESH_TTL || `7d`) as JwtSignOptions[`expiresIn`];
@@ -24,6 +23,5 @@ export const DATABASE_URL =
   process.env.DATABASE_URL ||
   `postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}`;
 
-// boolean string true|false|undefined
 export const POSTGRES_SSL = process.env.POSTGRES_SSL;
 export const COOKIE_SECURE = process.env.COOKIE_SECURE;

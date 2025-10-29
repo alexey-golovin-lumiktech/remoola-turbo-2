@@ -9,15 +9,12 @@ export const envSchema = z.object({
   VERCEL: z.string().optional(),
   NODE_ENV: z.union([z.literal(`development`), z.literal(`production`)]).default(`development`),
 
-  // Common URLs
   NEXT_PUBLIC_API_BASE_URL: z.url().optional(),
   DATABASE_URL: z.url().optional(),
   REDIS_URL: z.url().optional(),
 
-  // Optional keys for external APIs
   OPENAI_API_KEY: z.string().optional(),
 
-  // Feature toggles
   ENABLE_DEBUG: z
     .string()
     .optional()

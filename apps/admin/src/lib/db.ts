@@ -38,7 +38,6 @@ export async function openDatabase(config: DBConfig): Promise<IDBDatabase> {
 
       console.info(`[IndexedDB] Upgrading ${config.name} from v${oldVersion} → v${newVersion}`);
 
-      // Create missing stores
       for (const def of config.stores) {
         if (!db.objectStoreNames.contains(def.name)) {
           db.createObjectStore(def.name, {
@@ -49,7 +48,6 @@ export async function openDatabase(config: DBConfig): Promise<IDBDatabase> {
         }
       }
 
-      // Remove obsolete stores
       for (const name of Array.from(db.objectStoreNames)) {
         if (!config.stores.some((s) => s.name === name)) {
           db.deleteObjectStore(name);
@@ -57,7 +55,6 @@ export async function openDatabase(config: DBConfig): Promise<IDBDatabase> {
         }
       }
 
-      // Run custom migration logic
       if (config.onUpgrade) {
         try {
           await config.onUpgrade(db, oldVersion, newVersion);
@@ -122,7 +119,7 @@ export const DB = {
     return new Promise<void>((resolve, reject) => {
       const tx = db.transaction(store, `readwrite`);
       const s = tx.objectStore(store);
-      const req = s.openCursor(); // ✅ correct
+      const req = s.openCursor();
 
       req.onsuccess = () => {
         const cursor = req.result;

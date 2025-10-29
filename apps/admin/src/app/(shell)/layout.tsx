@@ -6,7 +6,6 @@ import { getMeSSR } from '../../lib/server-auth';
 
 export default async function ShellLayout({ children }: { children: React.ReactNode }) {
   const me = await getMeSSR();
-  console.log(`ShellLayout me`, me);
   const role = me?.role;
   if (!role || (role != `admin` && role != `superadmin`)) redirect(`/login?next=/`);
 

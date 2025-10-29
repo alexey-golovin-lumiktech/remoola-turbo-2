@@ -10,7 +10,6 @@ export class AddPasswordHashToUser1700000000001 implements MigrationInterface {
         name: `password_hash`,
         type: `varchar`,
         isNullable: false,
-        // placeholder; immediately update in seed or app
         default: `'${`$2b$10$zZzZzZzZzZzZzZzZzZzZzO8l9n2XYV6uN2W5JQ7g7Yh4q4oVZbQe`}'`,
       }),
     );

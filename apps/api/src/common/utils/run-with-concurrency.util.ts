@@ -21,7 +21,6 @@ export const runWithConcurrency = async <T>(
             active--;
             if (i < items.length) kick();
             else if (active == 0) {
-              // log but don't throw to keep the purge resilient
               if (errors.length) for (const e of errors) logger.error(e.error);
               resolve();
             }

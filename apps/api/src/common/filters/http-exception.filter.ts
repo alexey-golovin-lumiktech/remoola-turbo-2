@@ -20,14 +20,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
       status = exception.getStatus();
       const res = exception.getResponse();
 
-      // Normalize NestJS error response structure
       if (typeof res === `string`) {
         errorResponse = { message: res };
       } else {
         errorResponse = res as Record<string, any>;
       }
     } else {
-      // Handle non-HttpExceptions (e.g., runtime errors)
       errorResponse = {
         message: (exception as any)?.message || `Internal Server Error`,
         stack: parsedEnvs.NODE_ENV !== `production` ? (exception as any)?.stack : undefined,
