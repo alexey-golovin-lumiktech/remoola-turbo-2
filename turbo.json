@@ -1,14 +1,52 @@
 {
   "$schema": "https://turborepo.com/schema.json",
-  "globalDependencies": ["**/.env.*local"],
+  "globalEnv": [
+    "NODE_ENV",
+    "NEXT_PUBLIC_API_BASE_URL",
+    "DATABASE_URL",
+    "REDIS_URL",
+    "OPENAI_API_KEY",
+    "JWT_EXPIRES_IN",
+    "JWT_REFRESH_TTL",
+    "JWT_ACCESS_TTL",
+    "JWT_SECRET",
+    "JWT_REFRESH_SECRET",
+    "FORCE_PAYMENT_RESULT",
+    "S3_BUCKET",
+    "AWS_REGION",
+    "S3_PUBLIC_BASE",
+    "COOKIE_DOMAIN",
+    "POSTGRES_TIMEZONE",
+    "POSTGRES_HOST",
+    "POSTGRES_PORT",
+    "POSTGRES_USER",
+    "POSTGRES_PASSWORD",
+    "POSTGRES_DB",
+    "POSTGRES_SSL",
+    "COOKIE_SECURE",
+    "SECURE_SESSION_SECRET",
+    "PORT"
+  ],
+  "globalDependencies": [
+    "package.json",
+    "yarn.lock",
+    ".env",
+    ".env.*"
+  ],
   "tasks": {
     "dev": {
       "cache": false,
       "persistent": true
     },
     "build": {
-      "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**",
+        "dist/**"
+      ]
     },
     "lint": {},
     "test": {},
