@@ -1,0 +1,14 @@
+{
+  "recommendations": [
+    "folke.vscode-monorepo-workspace",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "eamodio.gitlens",
+    "streetsidesoftware.code-spell-checker",
+    "zhengxiaoyao0716.intelligence-change-case",
+    "mikestead.dotenv",
+    "mtxr.sqltools",
+    "mtxr.sqltools-driver-pg",
+    "eliostruyf.vscode-typescript-exportallmodules",
+  ]
+}

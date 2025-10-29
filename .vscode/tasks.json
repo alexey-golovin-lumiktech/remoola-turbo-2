@@ -1,0 +1,38 @@
+{
+	"version": "2.0.0",
+	"presentation": {
+		"echo": false,
+		"reveal": "always",
+		"focus": false,
+		"panel": "dedicated",
+		"showReuseMessage": true,
+	},
+	"tasks": [
+		{
+			"label": "create terminals",
+			"dependsOn": [
+				"shared-admin",
+				"shared-consumer",
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"runOptions": {
+				"runOn": "folderOpen"
+			}
+		},
+		{
+			"label": "shared-admin",
+			"type": "shell",
+			"command": "yarn workspace @wirebill/shared-admin run build:watch",
+			"isBackground": true,
+		},
+		{
+			"label": "shared-consumer",
+			"type": "shell",
+			"command": "yarn workspace @wirebill/shared-consumer run build:watch",
+			"isBackground": true,
+		}
+	]
+}
