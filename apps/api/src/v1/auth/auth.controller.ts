@@ -33,10 +33,10 @@ export class AuthController {
 
     /* vercel FALLBACK */
     res.cookie(`access_token_public`, access, {
+      httpOnly: true,
       secure: true,
       sameSite: `none`,
       path: `/`,
-      domain: `.vercel.app`,
     });
   }
 
