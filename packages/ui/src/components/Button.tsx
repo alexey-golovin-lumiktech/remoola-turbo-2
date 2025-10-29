@@ -1,10 +1,11 @@
 import React from 'react';
+
 import { cn } from '../utils/cn';
 
 export type ButtonVariant = `primary` | `ghost`;
 export const Button = React.forwardRef<
   HTMLButtonElement,
-  React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant }
+  React.ButtonHTMLAttributes<HTMLButtonElement> & { className?: string; variant?: ButtonVariant }
 >(function Button({ className, variant = `primary`, ...props }, ref) {
   return (
     <button

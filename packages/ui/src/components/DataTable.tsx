@@ -10,7 +10,7 @@ export type Column<T> = {
 export function DataTable<T>({
   rows,
   columns,
-  rowKey
+  rowKey,
 }: {
   rows: T[];
   columns: Column<T>[];
@@ -22,7 +22,9 @@ export function DataTable<T>({
         <thead>
           <tr className="text-gray-500">
             {columns.map((c) => (
-              <th key={String(c.key)} className={c.className || ``}>{c.header}</th>
+              <th key={String(c.key)} className={c.className || ``}>
+                {c.header}
+              </th>
             ))}
           </tr>
         </thead>

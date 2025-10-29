@@ -1,10 +1,11 @@
-import type { Link } from '@repo/api';
 import { Button } from '@repo/ui/components/Button';
 import Image, { type ImageProps } from 'next/image';
 
 import styles from './page.module.css';
 
-type Props = Omit<ImageProps, 'src'> & {
+import type { Link } from '@repo/api';
+
+type Props = Omit<ImageProps, `src`> & {
   srcLight: string;
   srcDark: string;
 };
@@ -22,17 +23,17 @@ const ThemeImage = (props: Props) => {
 
 async function getLinks(): Promise<Link[]> {
   try {
-    const res = await fetch('http://localhost:5555/links', {
-      cache: 'no-store',
+    const res = await fetch(`http://localhost:5555/links`, {
+      cache: `no-store`,
     });
 
     if (!res.ok) {
-      throw new Error('Failed to fetch links');
+      throw new Error(`Failed to fetch links`);
     }
 
     return res.json();
   } catch (error) {
-    console.error('Error fetching links:', error);
+    console.error(`Error fetching links:`, error);
     return [];
   }
 }
@@ -66,13 +67,7 @@ export default async function Home() {
             target="_blank"
             rel="noopener noreferrer"
           >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
+            <Image className={styles.logo} src="/vercel.svg" alt="Vercel logomark" width={20} height={20} />
             Deploy now
           </a>
           <a
@@ -85,9 +80,7 @@ export default async function Home() {
           </a>
         </div>
 
-        <Button   className={styles.secondary}>
-          Open alert
-        </Button>
+        <Button className={styles.secondary}>Open alert</Button>
 
         {links.length > 0 ? (
           <div className={styles.ctas}>
@@ -105,10 +98,7 @@ export default async function Home() {
             ))}
           </div>
         ) : (
-          <div style={{ color: '#666' }}>
-            No links available. Make sure the NestJS API is running on port
-            5555.
-          </div>
+          <div style={{ color: `#666` }}>No links available. Make sure the NestJS API is running on port 5555.</div>
         )}
       </main>
 
@@ -118,27 +108,11 @@ export default async function Home() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
+          <Image aria-hidden src="/window.svg" alt="Window icon" width={16} height={16} />
           Examples
         </a>
-        <a
-          href="https://turborepo.com?utm_source=create-turbo"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
+        <a href="https://turborepo.com?utm_source=create-turbo" target="_blank" rel="noopener noreferrer">
+          <Image aria-hidden src="/globe.svg" alt="Globe icon" width={16} height={16} />
           Go to turborepo.com →
         </a>
       </footer>
