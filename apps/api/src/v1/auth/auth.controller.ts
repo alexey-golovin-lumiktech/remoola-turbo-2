@@ -29,13 +29,6 @@ export class AuthController {
 
     res.cookie(`access_token`, access, { ...common, maxAge: 1000 * 60 * 15 });
     res.cookie(`refresh_token`, refresh, { ...common, maxAge: 1000 * 60 * 60 * 24 * 7 });
-
-    /* vercel FALLBACK */
-    res.cookie(`access_token_public`, access, {
-      secure: true,
-      sameSite: `none`,
-      path: `/`,
-    });
   }
 
   @Post(`login`)
