@@ -4,7 +4,7 @@
     {
       "previewLimit": 50,
       "server": "127.0.0.1",
-      "port": 5432,
+      "port": 5433,
       "driver": "PostgreSQL",
       "name": "wirebill",
       "database": "wirebill",
