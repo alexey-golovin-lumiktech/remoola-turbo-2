@@ -14,6 +14,12 @@ export const config = [
   eslintConfigPrettier,
   ...tseslint.configs.recommended,
   {
+    ignores: [
+      "**/*.mjs",
+      "eslint.config.mjs"
+    ],
+  },
+  {
     plugins: {
       turbo: turboPlugin,
     },

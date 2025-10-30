@@ -3,35 +3,47 @@
   "version": "0.0.0",
   "private": true,
   "description": "",
-  "author": "",
   "license": "UNLICENSED",
+  "author": "",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "turbo run dev --parallel",
-    "start": "turbo run start --parallel",
     "build": "turbo run build",
-    "test": "turbo run test",
-    "test:e2e": "turbo run test:e2e",
-    "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "clean": "turbo run clean && rimraf node_modules",
-    "postinstall": "turbo run build --filter=\"./packages/*\""
+    "db:migrate:deploy": "turbo run db:migrate:deploy",
+    "db:migrate:dev": "turbo run db:migrate:dev",
+    "db:push": "turbo run db:push",
+    "db:pull": "DATABASE_URL=\"postgresql://wirebill:wirebill@127.0.0.1:5433/wirebill\" turbo run db:pull",
+    "db:seed": "turbo run db:seed",
+    "dev": "turbo run dev --parallel",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "generate": "turbo run generate",
+    "postinstall": "turbo run build --filter=\"./packages/*\"",
+    "lint": "turbo run lint",
+    "start": "turbo run start --parallel",
+    "test": "turbo run test",
+    "test:e2e": "turbo run test:e2e"
+  },
+  "dependencies": {
+    "@prisma/client": "latest",
+    "rimraf": "^6.0.1",
+    "typeorm": "^0.3.26"
   },
   "devDependencies": {
     "@remoola/eslint-config": "^0.0.0",
     "@remoola/typescript-config": "^0.0.0",
     "prettier": "^3.2.5",
+    "prisma": "latest",
     "turbo": "^2.5.0"
   },
   "packageManager": "yarn@1.22.22",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
   "engines": {
     "node": ">=18"
   },
-  "dependencies": {
-    "rimraf": "^6.0.1",
-    "typeorm": "^0.3.26"
+  "prisma": {
+    "schema": "packages/database/prisma/schema.prisma",
+    "seed": "tsx packages/database/src/seed.ts"
   }
 }

@@ -85,30 +85,30 @@
   },
   "change-case.default": [
     "snake_case",
-    "param-case",
     "camelCase",
     "PascalCase",
+    "param-case",
     "CONST_CASE"
   ],
   "change-case.js": [
     "snake_case",
-    "param-case",
     "camelCase",
     "PascalCase",
+    "param-case",
     "CONST_CASE"
   ],
   "change-case.ts": [
     "snake_case",
-    "param-case",
     "camelCase",
     "PascalCase",
+    "param-case",
     "CONST_CASE"
   ],
   "change-case.cs": [
     "snake_case",
-    "param-case",
     "camelCase",
     "PascalCase",
+    "param-case",
     "CONST_CASE"
   ],
   "diffEditor.ignoreTrimWhitespace": false,
@@ -120,5 +120,8 @@
   "typescript.enablePromptUseWorkspaceTsdk": true,
   "[snippets]": {
     "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "[prisma]": {
+    "editor.defaultFormatter": "Prisma.prisma"
   },
 }

@@ -61,6 +61,28 @@
         "build"
       ],
       "cache": false
+    },
+    "db:migrate:dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "db:migrate:deploy": {
+      "cache": false
+    },
+    "db:push": {
+      "cache": false
+    },
+    "db:pull": {
+      "cache": false
+    },
+    "db:seed": {
+      "cache": false
+    },
+    "generate": {
+      "dependsOn": [
+        "^generate"
+      ],
+      "cache": false
     }
   }
 }
