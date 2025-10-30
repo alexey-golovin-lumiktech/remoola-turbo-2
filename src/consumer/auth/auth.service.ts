@@ -126,11 +126,12 @@ export class AuthService {
   async signupVerification(token: string, res: express.Response, referer) {
     const decoded: any = this.jwtService.decode(token)
     const redirectUrl = new URL(`signup/verification`, referer)
+    const identity = await this.consumerService.getById(decoded.identityId)
 
-    if (decoded.email) {
-      redirectUrl.searchParams.append(`email`, decoded.email)
+    if (identity?.email) {
+      redirectUrl.searchParams.append(`email`, identity.email)
 
-      const [updated] = await this.consumerService.repository.update({ email: decoded.email }, { verified: true })
+      const [updated] = await this.consumerService.repository.update({ email: identity.email }, { verified: true })
       redirectUrl.searchParams.append(`verified`, !updated || updated.verified == false ? `no` : `yes`)
     }
 
