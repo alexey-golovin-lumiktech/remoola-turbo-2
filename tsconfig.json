@@ -20,7 +20,26 @@
     "noFallthroughCasesInSwitch": false,
     "strict": true,
     "noStrictGenericChecks": false,
-    "baseUrl": "./"
+    "baseUrl": "./",
+    "paths": {
+      "@wirebill/shared-common": [
+        "src/shared-common"
+      ],
+      "@wirebill/shared-common/*": [
+        "src/shared-common/*"
+      ],
+      "@wirebill/pdf-generator-package": [
+        "src/shared-common/pdf-generator-package"
+      ],
+      "@wirebill/pdf-generator-package/*": [
+        "src/shared-common/pdf-generator-package/*"
+      ]
+    }
   },
-  "include": ["src", "typings", "knexfile.ts", "test"]
+  "include": [
+    "src",
+    "typings",
+    "knexfile.ts",
+    "test"
+  ]
 }
