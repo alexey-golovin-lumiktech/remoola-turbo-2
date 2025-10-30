@@ -7,9 +7,7 @@ const nextConfig: NextConfig = {
   transpilePackages: [`@remoola/ui`, `@remoola/openapi`],
   outputFileTracingRoot: path.join(__dirname, `../../`),
   allowedDevOrigins: [`localhost`, `127.0.0.1`],
-  experimental: {
-    externalDir: true,
-  },
+  experimental: { externalDir: true },
 };
 
 export default nextConfig;

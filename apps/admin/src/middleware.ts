@@ -2,9 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 export function middleware(req: NextRequest) {
   const cookieStore = req.cookies;
-  const accessToken = cookieStore.get(`access_token`)?.value;
-  const tokenPublic = cookieStore.get(`access_token_public`)?.value;
-  const token = accessToken || tokenPublic;
+  const token = cookieStore.get(`access_token`)?.value;
   const { pathname } = req.nextUrl;
 
   if (!token && !pathname.startsWith(`/login`)) {
@@ -17,6 +15,4 @@ export function middleware(req: NextRequest) {
   return NextResponse.next();
 }
 
-export const config = {
-  matcher: [`/((?!_next|favicon.ico|assets|api/.*).*)`],
-};
+export const config = { matcher: [`/((?!_next|favicon.ico|assets|api/.*).*)`] };
