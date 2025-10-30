@@ -1,0 +1,5 @@
+@import "tailwindcss";
+
+html,body { height: 100%; }
+body { background: linear-gradient(135deg,#f8fafc,#eef2ff); font-family: ui-sans-serif,system-ui; }
+
