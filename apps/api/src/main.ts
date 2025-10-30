@@ -1,5 +1,5 @@
 import { VersioningType } from '@nestjs/common';
-import { type RequestHandler } from '@nestjs/common/interfaces';
+import { type INestApplication, type RequestHandler } from '@nestjs/common/interfaces';
 import { NestFactory, Reflector } from '@nestjs/core';
 import { type NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, type SwaggerCustomOptions, SwaggerModule } from '@nestjs/swagger';
@@ -68,14 +68,7 @@ async function bootstrap() {
     const json: RequestHandler = (_req, res) => res.send(document);
     app.getHttpAdapter().get(`/api-json/v${version}`, json);
 
-    const options: SwaggerCustomOptions = {
-      customSiteTitle: title,
-      customJs: [
-        `https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.1.3/swagger-ui-bundle.min.js`,
-        `https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.1.3/swagger-ui-standalone-preset.min.js`,
-      ],
-      customCssUrl: [`https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.1.3/swagger-ui.min.css`],
-    };
+    const options: SwaggerCustomOptions = { customSiteTitle: title };
     SwaggerModule.setup(`docs/v${version}`, app, document, options);
   };
   const docs: RequestHandler = (_req, res) => res.redirect(301, `/docs/v1`);
@@ -93,6 +86,34 @@ async function bootstrap() {
     .listen(parsedEnvs.PORT)
     .then(() => (console.log(``), app.getUrl()))
     .then(info);
+
+  return app;
 }
 
-void bootstrap();
+void bootstrap()
+  .then(killAppWithGrace)
+  .catch((e) => console.error(String(e) || `Bootstrap err`));
+
+function killAppWithGrace(app: INestApplication) {
+  async function exitHandler(options: { cleanup?: boolean; exit?: boolean }, exitCode?: number) {
+    await app.close();
+
+    if (options.cleanup) console.log(`App stopped: clean`);
+    if (exitCode || exitCode === 0) console.log(`App stopped: exit code: ${exitCode}`);
+    setTimeout(() => process.exit(1), 5000);
+    process.exit(0);
+  }
+
+  process.stdin.resume();
+  process.on(`unhandledRejection`, (error: Error | any) => {
+    if (error.code == `ERR_HTTP_HEADERS_SENT`)
+      return console.log(`ERR_HTTP_HEADERS_SENT with error code: ${error.code}`);
+    console.error({ error, caller: bootstrap.name, message: `Unhandled rejection` });
+    process.exit(1);
+  });
+  process.on(`exit`, exitHandler.bind(null, { cleanup: true }));
+  process.on(`SIGINT`, exitHandler.bind(null, { exit: true }));
+  process.on(`SIGUSR1`, exitHandler.bind(null, { exit: true }));
+  process.on(`SIGUSR2`, exitHandler.bind(null, { exit: true }));
+  process.on(`uncaughtException`, exitHandler.bind(null, { exit: true }));
+}
