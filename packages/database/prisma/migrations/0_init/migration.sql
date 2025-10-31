@@ -399,4 +399,3 @@ ALTER TABLE "transaction" ADD CONSTRAINT "transaction_consumer_id_foreign" FOREI
 
 -- AddForeignKey
 ALTER TABLE "transaction" ADD CONSTRAINT "transaction_payment_request_id_foreign" FOREIGN KEY ("payment_request_id") REFERENCES "payment_request"("id") ON DELETE SET NULL ON UPDATE NO ACTION;
-

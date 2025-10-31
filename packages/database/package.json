@@ -1,34 +1,27 @@
 {
   "name": "@remoola/database",
-  "version": "1.0.0",
-  "exports": {
-    ".": "./src/client.ts"
-  },
-  "scripts": {
-    "db:migrate:deploy": "prisma migrate deploy",
-    "db:migrate:dev": "prisma migrate dev",
-    "db:push": "prisma db push",
-    "db:pull": "prisma db pull",
-    "db:seed": "tsx src/seed.ts",
-    "dev": "tsup src/* --watch",
-    "format": "prisma format",
-    "generate": "prisma generate",
-    "lint": "eslint . --max-warnings 0",
-    "prebuild": "npm run generate",
-    "predev": "npm run generate",
-    "studio": "prisma studio"
+  "version": "0.0.0",
+  "devDependencies": {
+    "@types/node": "^24.9.2",
+    "prisma": "^6.18.0",
+    "prisma-generator-typescript-interfaces": "^3.1.0",
+    "tsx": "^4.20.6",
+    "typescript": "5.8.2"
   },
   "dependencies": {
-    "@prisma/client": "latest"
+    "@prisma/client": "^6.18.0",
+    "dotenv": "^17.2.3",
+    "dotenv-cli": "^11.0.0"
   },
-  "devDependencies": {
-    "@remoola/eslint-config": "^0.0.0",
-    "@remoola/typescript-config": "^0.0.0",
-    "eslint": "^9.31.0",
-    "prisma": "latest",
-    "rimraf": "^5.0.5",
-    "tsup": "^8.0.2",
-    "tsx": "4.19.1",
-    "typescript": "5.8.2"
+  "scripts": {
+    "db:pull": "prisma db pull",
+    "db:push": "prisma db push",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:studio": "prisma studio"
+  },
+  "exports": {
+    ".": "./src/index.ts"
   }
 }

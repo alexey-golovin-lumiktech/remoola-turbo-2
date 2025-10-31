@@ -1,9 +1,16 @@
 {
-  "extends": "@remoola/typescript-config/base.json",
+  "extends": "@remoola/typescript-config/nestjs.json",
+  "compilerOptions": {
+    "target": "es2016",
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "strictNullChecks": true
+  },
   "include": [
     "**/*.ts",
-    "**/*.tsx",
-    "tsup.config.ts"
+    "prisma.config.ts"
   ],
   "exclude": [
     "node_modules"

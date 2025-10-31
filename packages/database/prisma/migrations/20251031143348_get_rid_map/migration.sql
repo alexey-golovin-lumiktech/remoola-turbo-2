@@ -1,4 +1,16 @@
 -- RenameForeignKey
+ALTER TABLE "consumer" RENAME CONSTRAINT "consumer_address_details_id_foreign" TO "consumer_address_details_id_fkey";
+
+-- RenameForeignKey
+ALTER TABLE "consumer" RENAME CONSTRAINT "consumer_google_profile_details_id_foreign" TO "consumer_google_profile_details_id_fkey";
+
+-- RenameForeignKey
+ALTER TABLE "consumer" RENAME CONSTRAINT "consumer_organization_details_id_foreign" TO "consumer_organization_details_id_fkey";
+
+-- RenameForeignKey
+ALTER TABLE "consumer" RENAME CONSTRAINT "consumer_personal_details_id_foreign" TO "consumer_personal_details_id_fkey";
+
+-- RenameForeignKey
 ALTER TABLE "consumer_resource" RENAME CONSTRAINT "consumer_resource_consumer_id_foreign" TO "consumer_resource_consumer_id_fkey";
 
 -- RenameForeignKey
@@ -6,6 +18,9 @@ ALTER TABLE "consumer_resource" RENAME CONSTRAINT "consumer_resource_resource_id
 
 -- RenameForeignKey
 ALTER TABLE "contact" RENAME CONSTRAINT "contact_consumer_id_foreign" TO "contact_consumer_id_fkey";
+
+-- RenameForeignKey
+ALTER TABLE "payment_method" RENAME CONSTRAINT "payment_method_billing_details_id_foreign" TO "payment_method_billing_details_id_fkey";
 
 -- RenameForeignKey
 ALTER TABLE "payment_method" RENAME CONSTRAINT "payment_method_consumer_id_foreign" TO "payment_method_consumer_id_fkey";
@@ -33,6 +48,12 @@ ALTER TABLE "transaction" RENAME CONSTRAINT "transaction_consumer_id_foreign" TO
 
 -- RenameForeignKey
 ALTER TABLE "transaction" RENAME CONSTRAINT "transaction_payment_request_id_foreign" TO "transaction_payment_request_id_fkey";
+
+-- RenameIndex
+ALTER INDEX "admin_email_unique" RENAME TO "admin_email_key";
+
+-- RenameIndex
+ALTER INDEX "consumer_email_unique" RENAME TO "consumer_email_key";
 
 -- RenameIndex
 ALTER INDEX "consumer_resource_consumer_id_resource_id_unique" RENAME TO "consumer_resource_consumer_id_resource_id_key";

@@ -3,13 +3,24 @@ generator client {
   output   = "../generated/prisma"
 }
 
+generator typescriptInterfaces {
+  provider          = "prisma-generator-typescript-interfaces"
+  output            = "../types/types.ts"
+  modelPrefix       = "I"
+  modelSuffix       = "Model"
+  modelType         = "type"
+  enumType          = "object"
+  optionalNullables = true
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-model accessRefreshToken {
-  id           String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+model AccessRefreshToken {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
   identityId   String @map("identity_id") @db.Uuid
   accessToken  String @map("access_token") @db.VarChar(255)
   refreshToken String @map("refresh_token") @db.VarChar(255)
@@ -21,16 +32,17 @@ model accessRefreshToken {
   @@map("access_refresh_token")
 }
 
-model addressDetails {
-  id         String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+model AddressDetails {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
   postalCode String  @map("postal_code") @db.VarChar(255)
   country    String  @db.VarChar(255)
-  state      String? @db.VarChar(255)
   city       String? @db.VarChar(255)
+  state      String? @db.VarChar(255)
   street     String? @db.VarChar(255)
 
-  consumerId String   @unique @map("consumer_id") @db.Uuid
-  consumer   consumer @relation(fields: [consumerId], references: [id])
+  consumerId String   @unique @db.Uuid
+  consumer   Consumer @relation(fields: [consumerId], references: [id])
 
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
@@ -39,26 +51,29 @@ model addressDetails {
   @@map("address_details")
 }
 
-model admin {
-  id       String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  email    String @unique(map: "admin_email_unique") @db.VarChar(255)
+model Admin {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  type AdminType @default(ADMIN)
+
+  email    String @unique() @db.VarChar(255)
   password String @db.VarChar(255)
   salt     String @db.VarChar(255)
-
-  type AdminTypeEnum @default(Admin)
 
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@map("admin")
 }
 
-model billingDetails {
+model BillingDetails {
   id    String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   email String? @db.VarChar(255)
   name  String? @db.VarChar(255)
   phone String? @db.VarChar(255)
 
-  paymentMethod paymentMethod?
+  paymentMethod PaymentMethod?
 
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
@@ -67,55 +82,52 @@ model billingDetails {
   @@map("billing_details")
 }
 
-model consumer {
-  id                String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  email             String  @unique(map: "consumer_email_unique") @db.VarChar(255)
-  verified          Boolean @default(false)
-  legalVerified     Boolean @default(false) @map("legal_verified")
-  password          String? @db.VarChar(255)
-  salt              String? @db.VarChar(255)
-  firstName         String? @map("first_name") @db.VarChar(255)
-  lastName          String? @map("last_name") @db.VarChar(255)
+model Consumer {
+  id            String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  email         String  @unique() @db.VarChar(255)
+  verified      Boolean @default(false)
+  legalVerified Boolean @default(false) @map("legal_verified")
+  password      String? @db.VarChar(255)
+  salt          String? @db.VarChar(255)
+  firstName     String? @map("first_name") @db.VarChar(255)
+  lastName      String? @map("last_name") @db.VarChar(255)
+
+  accountType    AccountType?    @map("account_type")
+  contractorKind ContractorKind? @map("contractor_kind")
+
   howDidHearAboutUs String? @map("how_did_hear_about_us") @db.VarChar(255)
   stripeCustomerId  String? @map("stripe_customer_id") @db.VarChar(255)
 
-  accountType    AccountTypeEnum?    @map("account_type")
-  contractorKind ContractorKindEnum? @map("contractor_kind")
+  addressDetails       AddressDetails?
+  personalDetails      PersonalDetails?
+  organizationDetails  OrganizationDetails?
+  googleProfileDetails GoogleProfileDetails?
 
-  addressDetailsId String?         @map("address_details_id") @db.Uuid
-  addressDetails   addressDetails?
+  asPayerPaymentRequests     PaymentRequest[] @relation("PaymentRequestPayerIdToConsumer")
+  asRequesterPaymentRequests PaymentRequest[] @relation("PaymentRequestRequesterIdToConsumer")
 
-  organizationDetailsId String?              @map("organization_details_id") @db.Uuid
-  organizationDetails   organizationDetails?
-
-  personalDetailsId String?          @map("personal_details_id") @db.Uuid
-  personalDetails   personalDetails?
-
-  googleProfileDetailsId String?               @map("google_profile_details_id") @db.Uuid
-  googleProfileDetails   googleProfileDetails?
-
-  consumerResources          consumerResource[]
-  contacts                   contact[]
-  paymentMethods             paymentMethod[]
-  asPayerPaymentRequests     paymentRequest[]           @relation("payment_request_payer_idToconsumer")
-  asRequesterPaymentRequests paymentRequest[]           @relation("payment_request_requester_idToconsumer")
-  paymentRequestAttachments  paymentRequestAttachment[]
-  passwordResets             resetPassword[]
-  transactions               transaction[]
+  resources      ConsumerResource[]
+  contacts       Contact[]
+  paymentMethods PaymentMethod[]
+  attachments    PaymentRequestAttachment[]
+  passwordResets ResetPassword[]
+  transactions   Transaction[]
 
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@map("consumer")
 }
 
-model consumerResource {
+model ConsumerResource {
   id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
 
   consumerId String   @map("consumer_id") @db.Uuid
-  consumer   consumer @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  consumer   Consumer @relation(fields: [consumerId], references: [id], onDelete: Cascade)
 
   resourceId String   @map("resource_id") @db.Uuid
-  resource   resource @relation(fields: [resourceId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
 
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
@@ -125,25 +137,30 @@ model consumerResource {
   @@map("consumer_resource")
 }
 
-model contact {
-  id      String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+model Contact {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
   email   String  @db.VarChar(255)
   name    String? @db.VarChar(255)
   address Json
 
   consumerId String   @map("consumer_id") @db.Uuid
-  consumer   consumer @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  consumer   Consumer @relation(fields: [consumerId], references: [id], onDelete: Cascade)
 
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@map("contact")
 }
 
-model exchangeRate {
-  id           String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  rate         Decimal          @db.Decimal(11, 4)
-  fromCurrency CurrencyCodeEnum @map("from_currency")
-  toCurrency   CurrencyCodeEnum @map("to_currency")
+model ExchangeRate {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  fromCurrency CurrencyCode @map("from_currency")
+  toCurrency   CurrencyCode @map("to_currency")
+
+  rate Decimal @db.Decimal(11, 4)
 
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
@@ -153,8 +170,9 @@ model exchangeRate {
   @@map("exchange_rate")
 }
 
-model googleProfileDetails {
-  id            String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+model GoogleProfileDetails {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
   email         String  @db.VarChar(255)
   emailVerified Boolean @map("email_verified")
   name          String? @db.VarChar(255)
@@ -165,7 +183,7 @@ model googleProfileDetails {
   metadata      Json?
 
   consumerId String   @unique @db.Uuid
-  consumer   consumer @relation(fields: [consumerId], references: [id])
+  consumer   Consumer @relation(fields: [consumerId], references: [id], onDelete: Cascade)
 
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
@@ -174,15 +192,15 @@ model googleProfileDetails {
   @@map("google_profile_details")
 }
 
-model organizationDetails {
-  id           String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name         String @db.VarChar(255)
-  consumerRole String @map("consumer_role") @db.VarChar(255)
+model OrganizationDetails {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
 
-  size OrganizationSizeEnum @default(Small)
+  name         String           @db.VarChar(255)
+  consumerRole String           @map("consumer_role") @db.VarChar(255)
+  size         OrganizationSize @default(SMALL)
 
-  consumerId String   @unique @map("consumer_id") @db.Uuid
-  consumer   consumer @relation(fields: [consumerId], references: [id])
+  consumerId String   @unique @db.Uuid
+  consumer   Consumer @relation(fields: [consumerId], references: [id], onDelete: Cascade)
 
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
@@ -191,8 +209,11 @@ model organizationDetails {
   @@map("organization_details")
 }
 
-model paymentMethod {
-  id              String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+model PaymentMethod {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  type PaymentMethodType
+
   defaultSelected Boolean @default(false) @map("default_selected")
   brand           String  @db.VarChar(255)
   last4           String  @db.VarChar(4)
@@ -200,13 +221,11 @@ model paymentMethod {
   expMonth        String? @map("exp_month") @db.VarChar(2)
   expYear         String? @map("exp_year") @db.VarChar(4)
 
-  type PaymentMethodTypeEnum
-
-  billingDetailsId String?         @unique @map("billing_details_id") @db.Uuid
-  billingDetails   billingDetails? @relation(fields: [billingDetailsId], references: [id])
+  billingDetailsId String         @unique @map("billing_details_id") @db.Uuid
+  billingDetails   BillingDetails @relation(fields: [billingDetailsId], references: [id])
 
   consumerId String   @map("consumer_id") @db.Uuid
-  consumer   consumer @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  consumer   Consumer @relation(fields: [consumerId], references: [id], onDelete: Cascade)
 
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
@@ -216,50 +235,49 @@ model paymentMethod {
   @@map("payment_method")
 }
 
-model paymentRequest {
-  id              String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+model PaymentRequest {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  currencyCode CurrencyCode      @default(USD) @map("currency_code")
+  status       TransactionStatus @default(DRAFT) @map("status")
+  type         TransactionType   @default(CREDIT_CARD) @map("type")
+
   amount          Decimal   @db.Decimal(9, 2)
   description     String?
   dueDate         DateTime? @map("due_date") @db.Timestamptz(6)
   expectationDate DateTime? @map("expectation_date") @db.Timestamptz(6)
   sentDate        DateTime? @map("sent_date") @db.Timestamptz(6)
 
-  currencyCode CurrencyCodeEnum      @default(USD) @map("currency_code")
-  status       TransactionStatusEnum @default(Draft) @map("status")
-  type         PaymentMethodTypeEnum @default(CreditCard) @map("type")
-
   payerId String   @map("payer_id") @db.Uuid
-  payer   consumer @relation("payment_request_payer_idToconsumer", fields: [payerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  payer   Consumer @relation("PaymentRequestPayerIdToConsumer", fields: [payerId], references: [id], onDelete: Cascade)
 
   requesterId String   @map("requester_id") @db.Uuid
-  requester   consumer @relation("payment_request_requester_idToconsumer", fields: [requesterId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  requester   Consumer @relation("PaymentRequestRequesterIdToConsumer", fields: [requesterId], references: [id], onDelete: Cascade)
 
-  attachments  paymentRequestAttachment[]
-  transactions transaction[]
+  attachments  PaymentRequestAttachment[]
+  transactions Transaction[]
 
   createdBy String    @map("created_by") @db.VarChar(255)
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-
   updatedBy String    @map("updated_by") @db.VarChar(255)
   updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
-
   deletedBy String?   @map("deleted_by") @db.VarChar(255)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
   @@map("payment_request")
 }
 
-model paymentRequestAttachment {
+model PaymentRequestAttachment {
   id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
 
   paymentRequestId String         @map("payment_request_id") @db.Uuid
-  paymentRequest   paymentRequest @relation(fields: [paymentRequestId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  paymentRequest   PaymentRequest @relation(fields: [paymentRequestId], references: [id], onDelete: Cascade)
 
   requesterId String   @map("requester_id") @db.Uuid
-  consumer    consumer @relation(fields: [requesterId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  requester   Consumer @relation(fields: [requesterId], references: [id], onDelete: Cascade)
 
   resourceId String   @map("resource_id") @db.Uuid
-  resource   resource @relation(fields: [resourceId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
 
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
@@ -268,18 +286,20 @@ model paymentRequestAttachment {
   @@map("payment_request_attachment")
 }
 
-model personalDetails {
-  id                    String           @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  citizenOf             String           @map("citizen_of") @db.VarChar(255)
-  dateOfBirth           String           @map("date_of_birth") @db.VarChar(255)
-  passportOrIdNumber    String           @map("passport_or_id_number") @db.VarChar(255)
-  countryOfTaxResidence String?          @map("country_of_tax_residence") @db.VarChar(255)
-  taxId                 String?          @map("tax_id") @db.VarChar(255)
-  phoneNumber           String?          @map("phone_number") @db.VarChar(255)
-  legalStatus           LegalStatusEnum? @map("legal_status")
+model PersonalDetails {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
 
-  consumerId String   @unique @map("consumer_id") @db.Uuid
-  consumer   consumer @relation(fields: [consumerId], references: [id])
+  legalStatus LegalStatus? @map("legal_status")
+
+  citizenOf             String  @map("citizen_of") @db.VarChar(255)
+  dateOfBirth           String  @map("date_of_birth") @db.VarChar(255)
+  passportOrIdNumber    String  @map("passport_or_id_number") @db.VarChar(255)
+  countryOfTaxResidence String? @map("country_of_tax_residence") @db.VarChar(255)
+  taxId                 String? @map("tax_id") @db.VarChar(255)
+  phoneNumber           String? @map("phone_number") @db.VarChar(255)
+
+  consumerId String   @unique @db.Uuid
+  consumer   Consumer @relation(fields: [consumerId], references: [id])
 
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
@@ -288,13 +308,14 @@ model personalDetails {
   @@map("personal_details")
 }
 
-model resetPassword {
-  id        String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+model ResetPassword {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
   token     String
   expiredAt DateTime @map("expired_at") @db.Timestamptz(6)
 
   consumerId String   @map("consumer_id") @db.Uuid
-  consumer   consumer @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  consumer   Consumer @relation(fields: [consumerId], references: [id], onDelete: Cascade)
 
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
@@ -303,8 +324,10 @@ model resetPassword {
   @@map("reset_password")
 }
 
-model resource {
-  id           String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+model Resource {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  access       String @default("public")
   originalName String @map("originalname") @db.VarChar(255)
   mimetype     String @db.VarChar(255)
   size         Int
@@ -312,69 +335,71 @@ model resource {
   key          String @db.VarChar(255)
   downloadUrl  String @map("download_url") @db.VarChar(255)
 
-  access ResourceAccessEnum @default(Public)
-
-  consumerResources         consumerResource[]
-  paymentRequestAttachments paymentRequestAttachment[]
-
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  consumerResources ConsumerResource[]
+  attachments       PaymentRequestAttachment[]
+
+  @@map("resource")
 }
 
-model transaction {
-  id                  String                @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  code                String                @default(dbgenerated("substr(md5((now())::text), 0, 7)")) @db.VarChar(6)
-  originAmount        Decimal               @map("origin_amount") @db.Decimal(9, 2)
-  feesAmount          Decimal?              @map("fees_amount") @db.Decimal(9, 2)
-  stripeId            String?               @map("stripe_id") @db.VarChar(255)
-  stripeFeeInPercents Int?                  @map("stripe_fee_in_percents")
-  type                TransactionTypeEnum   @map("type")
-  currencyCode        CurrencyCodeEnum      @map("currency_code")
-  actionType          TransactionActionEnum @map("action_type")
-  status              TransactionStatusEnum @map("status")
-  feesType            FeesTypeEnum?         @default(NoFeesIncluded) @map("fees_type")
+model Transaction {
+  id   String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  code String @default(dbgenerated("substr(md5((now())::text), 0, 7)")) @db.VarChar(6)
+
+  type         TransactionType       @map("type")
+  currencyCode CurrencyCode          @map("currency_code")
+  actionType   TransactionActionType @map("action_type")
+  status       TransactionStatus     @map("status")
+
+  feesType     TransactionFeesType? @default(NO_FEES_INCLUDED) @map("fees_type")
+  feesAmount   Decimal?             @map("fees_amount") @db.Decimal(9, 2)
+  originAmount Decimal              @map("origin_amount") @db.Decimal(9, 2)
+
+  stripeId            String? @map("stripe_id") @db.VarChar(255)
+  stripeFeeInPercents Int?    @map("stripe_fee_in_percents")
 
   consumerId String   @map("consumer_id") @db.Uuid
-  consumer   consumer @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  consumer   Consumer @relation(fields: [consumerId], references: [id], onDelete: Cascade)
 
   paymentRequestId String?         @map("payment_request_id") @db.Uuid
-  paymentRequest   paymentRequest? @relation(fields: [paymentRequestId], references: [id], onUpdate: NoAction)
+  paymentRequest   PaymentRequest? @relation(fields: [paymentRequestId], references: [id])
 
   createdBy String    @map("created_by") @db.VarChar(255)
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-
   updatedBy String    @map("updated_by") @db.VarChar(255)
   updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
-
   deletedBy String?   @map("deleted_by") @db.VarChar(255)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
   @@unique([paymentRequestId, code])
+  @@map("transaction")
 }
 
-enum AccountTypeEnum {
-  Business   @map("Business")
-  Contractor @map("Contractor")
+enum AccountType {
+  BUSINESS
+  CONTRACTOR
 
   @@map("account_type_enum")
 }
 
-enum AdminTypeEnum {
-  Super @map("Super")
-  Admin @map("Admin")
+enum AdminType {
+  SUPER
+  ADMIN
 
   @@map("admin_type_enum")
 }
 
-enum ContractorKindEnum {
-  Entity     @map("Entity")
-  Individual @map("Individual")
+enum ContractorKind {
+  ENTITY
+  INDIVIDUAL
 
   @@map("contractor_kind_enum")
 }
 
-enum CurrencyCodeEnum {
+enum CurrencyCode {
   USD
   EUR
   JPY
@@ -423,66 +448,66 @@ enum CurrencyCodeEnum {
   @@map("currency_code_enum")
 }
 
-enum FeesTypeEnum {
-  FeesIncluded   @map("Fees Included")
-  NoFeesIncluded @map("No Fees Included")
+enum TransactionFeesType {
+  FEES_INCLUDED
+  NO_FEES_INCLUDED
 
-  @@map("fees_type_enum")
+  @@map("transaction_fees_type_enum")
 }
 
-enum LegalStatusEnum {
-  Individual             @map("Individual")
-  IndividualEntrepreneur @map("Individual Entrepreneur")
-  SoleTrader             @map("Sole Trader")
+enum LegalStatus {
+  INDIVIDUAL
+  INDIVIDUAL_ENTREPRENEUR
+  SOLE_TRADER
 
   @@map("legal_status_enum")
 }
 
-enum OrganizationSizeEnum {
-  Small  @map("1-10 team members")
-  Medium @map("11-100 team members")
-  Large  @map("100+ team members")
+enum OrganizationSize {
+  SMALL
+  MEDIUM
+  LARGE
 
   @@map("organization_size_enum")
 }
 
-enum PaymentMethodTypeEnum {
-  BankAccount @map("Bank Account")
-  CreditCard  @map("Credit Card")
+enum PaymentMethodType {
+  BANK_ACCOUNT
+  CREDIT_CARD
 
   @@map("payment_method_type_enum")
 }
 
-enum ResourceAccessEnum {
-  Public  @map("Public")
-  Private @map("Private")
+enum ResourceAccess {
+  PUBLIC
+  PRIVATE
 
   @@map("resource_access_enum")
 }
 
-enum TransactionActionEnum {
-  Income  @map("Income")
-  Outcome @map("Outcome")
+enum TransactionActionType {
+  INCOME
+  OUTCOME
 
-  @@map("transaction_action_enum")
+  @@map("transaction_action_type_enum")
 }
 
-enum TransactionStatusEnum {
-  Draft                      @map("Draft")
-  Waiting                    @map("Waiting")
-  Waiting_Recipient_Approval @map("Waiting Recipient Approval")
-  Pending                    @map("Pending")
-  Completed                  @map("Completed")
-  Denied                     @map("Denied")
-  Uncollectible              @map("Uncollectible")
+enum TransactionStatus {
+  DRAFT
+  WAITING
+  WAITING_RECIPIENT_APPROVAL
+  PENDING
+  COMPLETED
+  DENIED
+  UNCOLLECTIBLE
 
   @@map("transaction_status_enum")
 }
 
-enum TransactionTypeEnum {
-  CreditCard       @map("Credit Card")
-  BankTransfer     @map("Bank Transfer")
-  CurrencyExchange @map("Currency Exchange")
+enum TransactionType {
+  CREDIT_CARD
+  BANK_TRANSFER
+  CURRENCY_EXCHANGE
 
   @@map("transaction_type_enum")
 }

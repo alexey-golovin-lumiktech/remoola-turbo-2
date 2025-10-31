@@ -27,7 +27,7 @@
     "test:e2e": "turbo run test:e2e"
   },
   "dependencies": {
-    "@prisma/client": "latest",
+    "@prisma/client": "^6.18.0",
     "rimraf": "^6.0.1",
     "typeorm": "^0.3.26"
   },
@@ -35,15 +35,11 @@
     "@remoola/eslint-config": "^0.0.0",
     "@remoola/typescript-config": "^0.0.0",
     "prettier": "^3.2.5",
-    "prisma": "latest",
+    "prisma": "^6.18.0",
     "turbo": "^2.5.0"
   },
   "packageManager": "yarn@1.22.22",
   "engines": {
     "node": ">=18"
-  },
-  "prisma": {
-    "schema": "packages/database/prisma/schema.prisma",
-    "seed": "tsx packages/database/src/seed.ts"
   }
 }
