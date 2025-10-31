@@ -1,16 +1,7 @@
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../generated/prisma"
-}
-
-generator typescriptInterfaces {
-  provider          = "prisma-generator-typescript-interfaces"
-  output            = "../types/types.ts"
-  modelPrefix       = "I"
-  modelSuffix       = "Model"
-  modelType         = "type"
-  enumType          = "object"
-  optionalNullables = true
+  emitDts  = false
 }
 
 datasource db {

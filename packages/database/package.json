@@ -1,6 +1,14 @@
 {
   "name": "@remoola/database",
   "version": "0.0.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "require": "./src/index.ts"
+    }
+  },
   "devDependencies": {
     "@types/node": "^24.9.2",
     "prisma": "^6.18.0",
@@ -11,17 +19,11 @@
   "dependencies": {
     "@prisma/client": "^6.18.0",
     "dotenv": "^17.2.3",
-    "dotenv-cli": "^11.0.0"
+    "dotenv-cli": "^11.0.0",
+    "tsup": "^8.5.0"
   },
   "scripts": {
-    "db:pull": "prisma db pull",
-    "db:push": "prisma db push",
     "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev",
-    "db:deploy": "prisma migrate deploy",
-    "db:studio": "prisma studio"
-  },
-  "exports": {
-    ".": "./src/index.ts"
+    "db:migrate": "prisma migrate dev"
   }
 }
