@@ -1,44 +1,75 @@
 import { ValidationPipe } from '@nestjs/common';
-import { type INestApplication, type RequestHandler } from '@nestjs/common/interfaces';
+import { type INestApplication } from '@nestjs/common/interfaces';
 import { NestFactory, Reflector } from '@nestjs/core';
+import { JwtService } from '@nestjs/jwt';
 import { type NestExpressApplication } from '@nestjs/platform-express';
-import { DocumentBuilder, type SwaggerCustomOptions, SwaggerModule } from '@nestjs/swagger';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { default as cookieParser } from 'cookie-parser';
 import * as express from 'express';
 
+import { AdminType, type PrismaClient } from '@remoola/database';
 import { parsedEnvs } from '@remoola/env';
 
 import { AdminModule } from './admin/admin.module';
 import { AppModule } from './app.module';
-import { AuthModule } from './auth/auth.module';
 import { ConsumerModule } from './consumer/consumer.module';
+import { AuthGuard } from './guards';
+import { TransformResponseInterceptor } from './interceptors';
+import { PrismaService } from './shared/prisma.service';
+import { type IAdminCreate, passwordUtils } from './shared-common';
+
+async function seed(prisma: PrismaClient): Promise<void> {
+  const admins = [
+    { type: AdminType.ADMIN, email: `regular.admin@wirebill.com`, password: `RegularWirebill@Admin123!` },
+    { type: AdminType.SUPER, email: `super.admin@wirebill.com`, password: `SuperWirebill@Admin123!` },
+    { type: AdminType.SUPER, email: `email@email.com`, password: `password` },
+  ];
+
+  const emails = admins.map((x) => x.email);
+  await prisma.admin.deleteMany({ where: { email: { in: emails } } });
+
+  const data: IAdminCreate[] = [];
+  for (const admin of admins) {
+    const salt = passwordUtils.getHashingSalt(4);
+    const hash = passwordUtils.hashPassword({ password: admin.password, salt });
+    data.push({ email: admin.email, type: admin.type, salt: salt, password: hash });
+  }
+  await prisma.admin.createMany({ data, skipDuplicates: true });
+}
+
+function linkTo(kind: `Consumer` | `Admin`) {
+  const lookup = { Consumer: `/docs/consumer`, Admin: `/docs/admin` };
+  return `<a rel="noopener noreferrer" target="_self" href="${lookup[kind]}" style="color:#93c5fd">
+    (${kind} api)
+    </a>`;
+}
 
 function setupSwagger(app: any) {
   const adminConfig = new DocumentBuilder()
+    .addBasicAuth({ type: `http`, scheme: `basic` }, `basic`)
+    .addBearerAuth({ type: `http`, scheme: `bearer` }, `bearer`)
     .setTitle(`Remoola Admin API`)
-    .setDescription(
-      `API documentation for Admin area <a href="/docs/consumer" style="color:#93c5fd">Switch to Consumer area</a>`,
-    )
+    .setDescription(`Admin API ${linkTo(`Consumer`)}`)
     .setVersion(`1.0`)
     .addBearerAuth()
     .build();
 
   const adminDocument = SwaggerModule.createDocument(app, adminConfig, {
-    include: [AuthModule, AdminModule],
+    include: [AdminModule],
   });
   SwaggerModule.setup(`docs/admin`, app, adminDocument);
 
   const consumerConfig = new DocumentBuilder()
+    .addBasicAuth({ type: `http`, scheme: `basic` }, `basic`)
+    .addBearerAuth({ type: `http`, scheme: `bearer` }, `bearer`)
     .setTitle(`Remoola Consumer API`)
-    .setDescription(
-      `API documentation for Consumer area <a href="/docs/admin" style="color:#93c5fd">Switch to Admin area</a>`,
-    )
+    .setDescription(`Consumer API ${linkTo(`Admin`)}`)
     .setVersion(`1.0`)
     .addBearerAuth()
     .build();
 
   const consumerDocument = SwaggerModule.createDocument(app, consumerConfig, {
-    include: [AuthModule, ConsumerModule],
+    include: [ConsumerModule],
   });
   SwaggerModule.setup(`docs/consumer`, app, consumerDocument);
 }
@@ -59,7 +90,14 @@ async function bootstrap() {
 
   app.setGlobalPrefix(`api`);
   setupSwagger(app);
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  app.useGlobalPipes(new ValidationPipe({ /*  whitelist: true,  */ transform: true }));
+
+  const reflector = app.get(Reflector);
+  const jwtService = app.get(JwtService);
+  const prisma = app.get(PrismaService);
+  await seed(prisma);
+  app.useGlobalGuards(new AuthGuard(reflector, jwtService, prisma));
+  app.useGlobalInterceptors(new TransformResponseInterceptor(reflector));
 
   const port = 3333;
   await app

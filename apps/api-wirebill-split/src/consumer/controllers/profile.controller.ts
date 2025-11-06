@@ -1,19 +1,21 @@
 import { Controller, Get, Req, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBasicAuth, ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 
 import { JwtAuthGuard } from '../../auth/jwt.guard';
+import { Identity, IIdentity } from '../../common';
 
 @ApiTags(`Consumer: Profile`)
-@ApiBearerAuth()
+@ApiBearerAuth(`bearer`) // 👈 tells Swagger to attach Bearer token
+@ApiBasicAuth(`basic`) // 👈 optional, if this route also accepts Basic Auth
 @Controller(`profile`)
 @UseGuards(JwtAuthGuard)
 export class ProfileController {
   constructor() {}
 
-  @Get()
-  async getProfile(@Req() req: Request) {
+  @Get(`me`)
+  async getMe(@Req() req: Request, @Identity() identity: IIdentity) {
     console.log(`getProfile`, { user: req.user, secret: req.secret });
-    return req.user;
+    return identity;
   }
 }

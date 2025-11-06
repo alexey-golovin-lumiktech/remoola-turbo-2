@@ -28,7 +28,11 @@
     "PORT",
     "VERCEL",
     "VERCEL_URL",
-    "JWT_ACCESS_SECRET"
+    "JWT_ACCESS_SECRET",
+    "GOOGLE_CLIENT_ID",
+    "GOOGLE_CLIENT_SECRET",
+    "NEST_APP_EXTERNAL_ORIGIN",
+    "ADMIN_EMAIL"
   ],
   "ui": "stream",
   "globalDependencies": [

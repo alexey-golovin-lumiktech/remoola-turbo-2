@@ -1,16 +1,25 @@
 import { Controller, Get } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBasicAuth, ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
+import { IConsumerModel } from '@remoola/database';
+
+import { Identity } from '../../common';
 import { AdminsService } from '../services/admins.service';
 
 @ApiTags(`Admin: Admins`)
-@ApiBearerAuth()
+@ApiBearerAuth(`bearer`) // 👈 tells Swagger to attach Bearer token
+@ApiBasicAuth(`basic`) // 👈 optional, if this route also accepts Basic Auth
 @Controller(`admins`)
 export class AdminsController {
-  constructor(private readonly usersService: AdminsService) {}
+  constructor(private readonly service: AdminsService) {}
 
   @Get()
   findAllAdmins() {
-    return this.usersService.findAllAdmins();
+    return this.service.findAllAdmins();
+  }
+
+  @Get(`me`)
+  me(@Identity() identity: IConsumerModel) {
+    return identity;
   }
 }
