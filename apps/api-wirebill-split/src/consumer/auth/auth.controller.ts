@@ -34,7 +34,7 @@ import { PrismaService } from '../../shared/prisma.service';
 @ApiTags(`Consumer: Auth`)
 @ApiBearerAuth(`bearer`) // 👈 tells Swagger to attach Bearer token
 @ApiBasicAuth(`basic`) // 👈 optional, if this route also accepts Basic Auth
-@Controller()
+@Controller(`auth`)
 export class ConsumerAuthController {
   private readonly logger = new Logger(ConsumerAuthController.name);
 
