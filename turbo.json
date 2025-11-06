@@ -27,8 +27,10 @@
     "SECURE_SESSION_SECRET",
     "PORT",
     "VERCEL",
-    "VERCEL_URL"
+    "VERCEL_URL",
+    "JWT_ACCESS_SECRET"
   ],
+  "ui": "stream",
   "globalDependencies": [
     "package.json",
     "yarn.lock",
