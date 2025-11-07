@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
   const base = process.env.NEXT_PUBLIC_API_BASE_URL!;
+  console.log(`\n************************************`);
+  console.log(`base`, base);
+  console.log(`************************************\n`);
 
   const res = await fetch(`${base}/auth/login`, {
     method: `POST`,
