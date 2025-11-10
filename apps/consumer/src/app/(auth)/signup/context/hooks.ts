@@ -16,36 +16,38 @@ import {
   ORGANIZATION_SIZE,
   type IAccountType,
   type IContractorKind,
+  LEGAL_STATUS,
 } from './types';
 
 const initial = {
+  consumerId: null,
   accountType: ACCOUNT_TYPE.CONTRACTOR,
   contractorKind: CONTRACTOR_KIND.INDIVIDUAL,
   signupDetails: {
-    firstName: ``,
-    lastName: ``,
-    email: ``,
-    password: ``,
+    firstName: `John`,
+    lastName: `Do`,
+    email: `anconsumer.fntyz@aleeas.com`,
+    password: `password`,
     howDidHearAboutUs: HOW_DID_HEAR_ABOUT_US.GOOGLE,
   } satisfies ISignupDetails,
   personalDetails: {
-    citizenOf: ``,
-    dateOfBirth: ``,
-    passportOrIdNumber: ``,
-    countryOfTaxResidence: ``,
+    citizenOf: `United States`,
+    dateOfBirth: `2025-12-12`,
+    passportOrIdNumber: `A12345678`,
+    countryOfTaxResidence: `United States`,
     taxId: ``,
-    phoneNumber: ``,
-    legalStatus: ``,
+    phoneNumber: `+1(212) 456-78-90`,
+    legalStatus: LEGAL_STATUS.INDIVIDUAL,
   } satisfies IPersonalDetails,
   addressDetails: {
-    postalCode: ``,
-    country: ``,
-    city: ``,
-    state: ``,
-    street: ``,
+    postalCode: `123123123`,
+    country: `United States`,
+    city: `New York`,
+    state: `Alabama`,
+    street: `Winchester`,
   } satisfies IAddressDetails,
   organizationDetails: {
-    name: ``,
+    name: `Lumiktech`,
     consumerRole: CONSUMER_ROLE.FINANCE,
     size: ORGANIZATION_SIZE.SMALL,
   } satisfies IOrganizationDetails,
@@ -54,17 +56,20 @@ const initial = {
 export const useSignupContextProviderValue = (): ISignupContext => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [accountType, setAccountType] = useState<IAccountType>(initial.accountType);
   const [contractorKind, setContractorKind] = useState<IContractorKind>(initial.contractorKind);
+  const [accountType, setAccountType] = useState<IAccountType>(initial.accountType);
 
   const [addressDetails, setAddressDetails] = useState<IAddressDetails>(initial.addressDetails);
   const [organizationDetails, setOrganizationDetails] = useState<IOrganizationDetails>(initial.organizationDetails);
   const [personalDetails, setPersonalDetails] = useState<IPersonalDetails>(initial.personalDetails);
   const [signupDetails, setSignupDetails] = useState<ISignupDetails>(initial.signupDetails);
+  const [consumerId, setConsumerId] = useState<string | null>(initial.consumerId);
 
   const [step, setStep] = useState<IStep>(0);
 
-  const nextStep = () => setStep((s) => (s < 4 ? ((s + 1) as IStep) : s));
+  const maxStep = accountType === ACCOUNT_TYPE.CONTRACTOR ? 4 : 3;
+
+  const nextStep = () => setStep((s) => (s < maxStep ? ((s + 1) as IStep) : s));
   const prevStep = () => setStep((s) => (s > 0 ? ((s - 1) as IStep) : s));
 
   const updateAccountType = (value: IAccountType) => {
@@ -94,6 +99,7 @@ export const useSignupContextProviderValue = (): ISignupContext => {
     setOrganizationDetails(initial.organizationDetails);
     setPersonalDetails(initial.personalDetails);
     setSignupDetails(initial.signupDetails);
+    setConsumerId(initial.consumerId);
   };
 
   const handleGoogleSignup = () => {
@@ -113,6 +119,7 @@ export const useSignupContextProviderValue = (): ISignupContext => {
       personalDetails,
       addressDetails,
       organizationDetails,
+      consumerId,
     }),
     [
       loading,
@@ -124,12 +131,9 @@ export const useSignupContextProviderValue = (): ISignupContext => {
       personalDetails,
       addressDetails,
       organizationDetails,
+      consumerId,
     ],
   );
-
-  console.log(`\n************************************`);
-  console.log(`state`, state);
-  console.log(`************************************\n`);
 
   return {
     state,
@@ -146,6 +150,7 @@ export const useSignupContextProviderValue = (): ISignupContext => {
       updateAddressDetails,
       updateOrganizationDetails,
       resetSignup,
+      setConsumerId,
     },
   };
 };

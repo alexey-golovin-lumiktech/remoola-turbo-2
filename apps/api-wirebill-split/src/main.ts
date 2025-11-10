@@ -12,6 +12,7 @@ import { parsedEnvs } from '@remoola/env';
 
 import { AdminModule } from './admin/admin.module';
 import { AppModule } from './app.module';
+import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter';
 import { ConsumerModule } from './consumer/consumer.module';
 import { AuthGuard } from './guards';
 import { TransformResponseInterceptor } from './interceptors';
@@ -90,7 +91,21 @@ async function bootstrap() {
 
   app.setGlobalPrefix(`api`);
   setupSwagger(app);
-  app.useGlobalPipes(new ValidationPipe({ /*  whitelist: true,  */ transform: true }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      skipMissingProperties: true,
+      skipNullProperties: true,
+      skipUndefinedProperties: true,
+      stopAtFirstError: true,
+      transform: true,
+      transformOptions: {
+        excludeExtraneousValues: true,
+        exposeUnsetFields: false,
+        enableImplicitConversion: true,
+        exposeDefaultValues: false,
+      },
+    }),
+  );
 
   const reflector = app.get(Reflector);
   const jwtService = app.get(JwtService);
@@ -98,6 +113,7 @@ async function bootstrap() {
   await seed(prisma);
   app.useGlobalGuards(new AuthGuard(reflector, jwtService, prisma));
   app.useGlobalInterceptors(new TransformResponseInterceptor(reflector));
+  app.useGlobalFilters(new PrismaExceptionFilter());
 
   const port = 3333;
   await app

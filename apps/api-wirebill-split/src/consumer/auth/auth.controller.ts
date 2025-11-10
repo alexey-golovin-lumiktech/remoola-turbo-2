@@ -11,6 +11,7 @@ import {
   Patch,
   Post,
   Query,
+  Res,
   Response,
 } from '@nestjs/common';
 import { ApiOperation, ApiOkResponse, ApiBody, ApiTags, ApiBasicAuth, ApiBearerAuth } from '@nestjs/swagger';
@@ -28,8 +29,10 @@ import { ConsumerAuthService } from './auth.service';
 import { GoogleAuthService } from './google-auth.service';
 import { Identity, PublicEndpoint } from '../../common';
 import { CONSUMER } from '../../dtos';
+import { envs, JWT_ACCESS_TTL, JWT_REFRESH_TTL } from '../../envs';
 import { TransformResponse } from '../../interceptors';
 import { PrismaService } from '../../shared/prisma.service';
+import { ACCESS_TOKEN_COOKIE_KEY, REFRESH_TOKEN_COOKIE_KEY } from '../../shared-common';
 
 @ApiTags(`Consumer: Auth`)
 @ApiBearerAuth(`bearer`) // 👈 tells Swagger to attach Bearer token
@@ -44,12 +47,31 @@ export class ConsumerAuthController {
     private readonly prisma: PrismaService,
   ) {}
 
+  private setAuthCookies(res: express.Response, accessToken: string, refreshToken: string) {
+    const isProd = envs.NODE_ENV == `production`;
+
+    const sameSite = isProd ? (`none` as const) : (`lax` as const);
+    const secure = isProd || process.env.COOKIE_SECURE == `true`;
+
+    const common = {
+      httpOnly: true,
+      sameSite,
+      secure,
+      path: `/`,
+    };
+
+    res.cookie(ACCESS_TOKEN_COOKIE_KEY, accessToken, { ...common, maxAge: JWT_ACCESS_TTL });
+    res.cookie(REFRESH_TOKEN_COOKIE_KEY, refreshToken, { ...common, maxAge: JWT_REFRESH_TTL });
+  }
+
   @Post(`login`)
   @ApiOperation({ operationId: `consumer_auth_login` })
   @ApiOkResponse({ type: CONSUMER.LoginResponse })
   @TransformResponse(CONSUMER.LoginResponse)
-  login(@Identity() identity: IConsumerModel) {
-    return this.service.login(identity);
+  async login(@Res({ passthrough: true }) res, @Identity() identity: IConsumerModel) {
+    const data = await this.service.login(identity);
+    this.setAuthCookies(res, data.accessToken, data.refreshToken);
+    return data;
   }
 
   @PublicEndpoint()
@@ -196,5 +218,10 @@ export class ConsumerAuthController {
   @Patch(`change-password/:token`)
   changePassword(@Param() param: CONSUMER.ChangePasswordParam, @Body() body: CONSUMER.ChangePasswordBody) {
     return this.service.changePassword(body, param);
+  }
+
+  @Get(`me`)
+  me(@Identity() identity: IConsumerModel) {
+    return identity;
   }
 }

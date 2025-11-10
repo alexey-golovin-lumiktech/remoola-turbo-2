@@ -105,6 +105,10 @@ export class AuthGuard implements CanActivate {
 
     if (consumer && consumer.verified == false) return this.throwError(GuardMessage.NOT_VERIFIED);
 
+    console.log(`\n************************************`);
+    console.log(`identity`, identity);
+    console.log(`************************************\n`);
+
     const isValidPassword = passwordUtils.validatePassword({
       incomingPass: password,
       password: identity.password ?? ``,

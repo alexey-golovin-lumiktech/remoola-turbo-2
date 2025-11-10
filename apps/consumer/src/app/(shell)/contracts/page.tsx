@@ -35,7 +35,6 @@ export default function ContractsPage() {
           actions={
             <button
               onClick={async () => {
-                // demo create: choose real contractorId in your UI
                 await postJson(`/contracts`, {
                   contractorId: rows[0]?.contractorId,
                   rateCents: 8000,

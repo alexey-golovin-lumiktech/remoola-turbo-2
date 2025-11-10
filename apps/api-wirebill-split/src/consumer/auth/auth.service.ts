@@ -67,7 +67,7 @@ export class ConsumerAuthService {
 
   async login(identity: IConsumerModel) {
     const access = await this.getAccessAndRefreshToken(identity.id);
-    return Object.assign(identity, access);
+    return { identity, ...access };
   }
 
   async refreshAccess(refreshToken: string) {

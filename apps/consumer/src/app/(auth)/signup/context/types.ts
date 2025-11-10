@@ -30,9 +30,9 @@ export const ACCOUNT_TYPE = {
 export type IAccountType = (typeof ACCOUNT_TYPE)[keyof typeof ACCOUNT_TYPE];
 
 export const HOW_DID_HEAR_ABOUT_US = {
-  EMPLOYER_COMPANY: `Employer/Company`,
-  EMPLOYEE_CONTRACTOR: `Employee/Contractor`,
-  REFERRED_RECOMMENDED: `Referred/Recommended`,
+  EMPLOYER_COMPANY: `Employer / Company`,
+  EMPLOYEE_CONTRACTOR: `Employee / Contractor`,
+  REFERRED_RECOMMENDED: `Referred / Recommended`,
   EMAIL_INVITE: `Email invite`,
   GOOGLE: `Google`,
   FACEBOOK: `Facebook`,
@@ -102,6 +102,7 @@ export type ISignupContext = {
     personalDetails: IPersonalDetails;
     addressDetails: IAddressDetails;
     organizationDetails: IOrganizationDetails;
+    consumerId: string | null;
   };
   action: {
     setLoading: Dispatch<SetStateAction<boolean>>;
@@ -116,6 +117,7 @@ export type ISignupContext = {
     updateAddressDetails: <K extends keyof IAddressDetails>(key: K, value: IAddressDetails[K]) => void;
     updateOrganizationDetails: <K extends keyof IOrganizationDetails>(key: K, value: IOrganizationDetails[K]) => void;
     resetSignup: () => void;
+    setConsumerId: Dispatch<SetStateAction<string | null>>;
   };
 };
 

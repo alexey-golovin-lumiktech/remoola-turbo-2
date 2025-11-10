@@ -9,6 +9,8 @@ import { ConsumerAuthService } from './auth/auth.service';
 import { GoogleAuthService } from './auth/google-auth.service';
 import { ProfileController } from './controllers/profile.controller';
 import { MailingService } from '../shared/mailing.service';
+import { ConsumerSignupController } from './auth/signup.controller';
+import { SignupService } from './auth/signup.service';
 
 @Module({
   imports: [
@@ -34,7 +36,7 @@ import { MailingService } from '../shared/mailing.service';
       },
     }),
   ],
-  controllers: [ConsumerAuthController, ProfileController],
-  providers: [MailingService, ConsumerAuthService, GoogleAuthService],
+  controllers: [ConsumerSignupController, ConsumerAuthController, ProfileController],
+  providers: [MailingService, SignupService, ConsumerAuthService, GoogleAuthService],
 })
 export class ConsumerModule {}

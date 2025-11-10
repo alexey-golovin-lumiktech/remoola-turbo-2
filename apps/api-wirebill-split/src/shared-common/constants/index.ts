@@ -1,13 +1,15 @@
-/* eslint-disable max-len */
-export const INVALID_CREDENTIALS = `Invalid Credentials`;
-export const ADMIN_NOT_FOUND = `Admin not found`;
-export const NOT_FOUND = `Not found`;
-export const INVALID_PASSWORD = `Invalid password`;
-export const PASSWORD_NOT_SET_YET = `Consumer password is not set yet. Try using a different way to log in to the app, or restore your password `;
-export const INVALID_EMAIL = `Invalid email`;
-export const TEMPORARY_PASSWORD_LIFETIME_HOURS = 3;
-export const DEFAULT_DUE_DATE_IN_DAYS30 = 30;
+export const PASSWORD_NOT_SET_YET = `Consumer password is not set yet. Try using a different way to log in to the app, or restore your password ` as const; //eslint-disable-line
+
+export const INVALID_CREDENTIALS = `Invalid Credentials` as const;
+export const ADMIN_NOT_FOUND = `Admin not found` as const;
+export const NOT_FOUND = `Not found` as const;
+export const INVALID_PASSWORD = `Invalid password` as const;
+export const INVALID_EMAIL = `Invalid email` as const;
+export const TEMPORARY_PASSWORD_LIFETIME_HOURS = 3 as const;
+export const DEFAULT_DUE_DATE_IN_DAYS30 = 30 as const;
 export const PASSWORD_RE = /(?!.* )(?=(.*[A-Z]){2,})(?=.*?[a-z])(?=.*[1-9]{1,})(?=.*?[#?!@$%^&*-]).{8,}$/;
+export const ACCESS_TOKEN_COOKIE_KEY = `access_token` as const;
+export const REFRESH_TOKEN_COOKIE_KEY = `refresh_token` as const;
 
 export const constants = {
   INVALID_CREDENTIALS,
@@ -19,4 +21,6 @@ export const constants = {
   TEMPORARY_PASSWORD_LIFETIME_HOURS,
   DEFAULT_DUE_DATE_IN_DAYS30,
   PASSWORD_RE,
+  ACCESS_TOKEN_COOKIE_KEY,
+  REFRESH_TOKEN_COOKIE_KEY,
 } as const;
