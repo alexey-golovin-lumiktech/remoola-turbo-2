@@ -1,7 +1,18 @@
-import { Body, Controller, Get, InternalServerErrorException, Param, Post, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  InternalServerErrorException,
+  Param,
+  Post,
+  Req,
+} from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiBasicAuth, ApiOkResponse } from '@nestjs/swagger';
 import express from 'express';
 
+import { ConsumerSignupServiceGPT } from './consumer-signup.service';
 import {
   AddressDetailsUpsert,
   AddressDetailsUpsertOkResponse,
@@ -14,13 +25,25 @@ import {
 import { SignupService } from './signup.service';
 import { PublicEndpoint } from '../../common';
 import { removeNil } from '../../shared-common';
+import { ConsumerSignupGPT } from './dto/consumer-signup.dto';
 
 @ApiTags(`Consumer: Signup`)
 @ApiBearerAuth(`bearer`) // 👈 tells Swagger to attach Bearer token
 @ApiBasicAuth(`basic`) // 👈 optional, if this route also accepts Basic Auth
 @Controller(`signup`)
 export class ConsumerSignupController {
-  constructor(private readonly service: SignupService) {}
+  constructor(
+    private readonly service: SignupService,
+    private readonly signupServiceGPT: ConsumerSignupServiceGPT,
+  ) {}
+
+  @PublicEndpoint()
+  @Post(`signup-gpt`)
+  @HttpCode(HttpStatus.CREATED)
+  async signupGPT(@Body() body: ConsumerSignupGPT) {
+    const consumer = await this.signupServiceGPT.signupGPT(removeNil(body));
+    return { consumer };
+  }
 
   @PublicEndpoint()
   @Post()
@@ -51,9 +74,10 @@ export class ConsumerSignupController {
 
   @PublicEndpoint()
   @Get(`/:consumerId/complete-profile-creation`)
-  completeProfileCreation(@Req() req: express.Request, @Param(`consumerId`) consumerId: string): Promise<void | never> {
+  completeProfileCreation(@Req() req: express.Request, @Param(`consumerId`) consumerId: string) {
     const referer = req.headers.origin || req.headers.referer;
     if (!referer) throw new InternalServerErrorException(`Unexpected referer(origin): ${referer}`);
-    return this.service.completeProfileCreation(consumerId, referer);
+    this.service.completeProfileCreation(consumerId, referer);
+    return `success`;
   }
 }

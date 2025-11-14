@@ -17,10 +17,10 @@ export class AdminAuthService {
     const admin = await this.prisma.admin.findFirst({ where: { email } });
     if (!admin) throw new BadRequestException(constants.INVALID_CREDENTIALS);
 
-    const isValidPassword = passwordUtils.validatePassword({
-      incomingPass: password,
-      password: admin.password,
-      salt: admin.salt,
+    const isValidPassword = await passwordUtils.verifyPassword({
+      password,
+      storedHash: admin.password,
+      storedSalt: admin.salt,
     });
     if (!isValidPassword) throw new BadRequestException(constants.INVALID_CREDENTIALS);
 

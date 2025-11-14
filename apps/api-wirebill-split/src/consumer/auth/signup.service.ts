@@ -32,8 +32,7 @@ export class SignupService {
       return { consumerId: exist.id };
     }
 
-    const salt = passwordUtils.getHashingSalt();
-    const hash = passwordUtils.hashPassword({ password: body.password, salt });
+    const { salt, hash } = await passwordUtils.hashPassword(body.password);
     const consumer = await this.prisma.consumer.create({
       data: {
         salt: salt,

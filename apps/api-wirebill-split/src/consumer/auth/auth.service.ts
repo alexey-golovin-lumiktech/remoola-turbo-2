@@ -94,8 +94,7 @@ export class ConsumerAuthService {
     const exist = await this.prisma.consumer.findFirst({ where: { email: body.email } });
     if (exist) throw new BadRequestException(`This email is already exist`);
 
-    const salt = passwordUtils.getHashingSalt();
-    const hash = passwordUtils.hashPassword({ password: body.password, salt });
+    const { salt, hash } = await passwordUtils.hashPassword(body.password);
 
     return await this.prisma.consumer.create({
       data: { ...body, password: hash, salt },
@@ -154,9 +153,7 @@ export class ConsumerAuthService {
     if (body.password == null) throw new BadRequestException(`Password is required`);
 
     const verified = await this.verifyChangePasswordFlowToken(param.token);
-    const salt = passwordUtils.getHashingSalt();
-    const hash = passwordUtils.hashPassword({ password: body.password, salt });
-
+    const { salt, hash } = await passwordUtils.hashPassword(body.password);
     await this.prisma.consumer.update({
       where: { id: verified.identityId },
       data: { salt, password: hash },

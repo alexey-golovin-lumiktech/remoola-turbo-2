@@ -1,10 +1,4 @@
-import {
-  type CanActivate,
-  createParamDecorator,
-  type ExecutionContext,
-  ForbiddenException,
-  Logger,
-} from '@nestjs/common';
+import { type CanActivate, type ExecutionContext, ForbiddenException, Logger } from '@nestjs/common';
 import { type Reflector } from '@nestjs/core';
 import { type JwtService } from '@nestjs/jwt';
 import { type Observable } from 'rxjs';
@@ -105,16 +99,12 @@ export class AuthGuard implements CanActivate {
 
     if (consumer && consumer.verified == false) return this.throwError(GuardMessage.NOT_VERIFIED);
 
-    console.log(`\n************************************`);
-    console.log(`identity`, identity);
-    console.log(`************************************\n`);
-
-    const isValidPassword = passwordUtils.validatePassword({
-      incomingPass: password,
-      password: identity.password ?? ``,
-      salt: identity.salt ?? ``,
+    const isVerifiedPassword = await passwordUtils.verifyPassword({
+      password,
+      storedHash: identity.password,
+      storedSalt: identity.salt,
     });
-    if (!isValidPassword) return this.throwError(GuardMessage.INVALID_CREDENTIALS);
+    if (!isVerifiedPassword) return this.throwError(GuardMessage.INVALID_CREDENTIALS);
 
     this.assign(request, identity, admin?.type ?? `consumer`);
     return true;

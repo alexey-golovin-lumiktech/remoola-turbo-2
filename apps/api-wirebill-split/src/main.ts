@@ -31,8 +31,7 @@ async function seed(prisma: PrismaClient): Promise<void> {
 
   const data: IAdminCreate[] = [];
   for (const admin of admins) {
-    const salt = passwordUtils.getHashingSalt(4);
-    const hash = passwordUtils.hashPassword({ password: admin.password, salt });
+    const { salt, hash } = await passwordUtils.hashPassword(admin.password);
     data.push({ email: admin.email, type: admin.type, salt: salt, password: hash });
   }
   await prisma.admin.createMany({ data, skipDuplicates: true });
@@ -57,6 +56,7 @@ function setupSwagger(app: any) {
 
   const adminDocument = SwaggerModule.createDocument(app, adminConfig, {
     include: [AdminModule],
+    deepScanRoutes: true,
   });
   SwaggerModule.setup(`docs/admin`, app, adminDocument);
 
@@ -71,6 +71,7 @@ function setupSwagger(app: any) {
 
   const consumerDocument = SwaggerModule.createDocument(app, consumerConfig, {
     include: [ConsumerModule],
+    deepScanRoutes: true,
   });
   SwaggerModule.setup(`docs/consumer`, app, consumerDocument);
 }

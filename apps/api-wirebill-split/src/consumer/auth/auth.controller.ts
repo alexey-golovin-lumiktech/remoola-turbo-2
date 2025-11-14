@@ -5,6 +5,8 @@ import {
   Controller,
   Get,
   Headers,
+  HttpCode,
+  HttpStatus,
   InternalServerErrorException,
   Logger,
   Param,
@@ -26,13 +28,15 @@ import {
 } from '@remoola/database';
 
 import { ConsumerAuthService } from './auth.service';
+import { GoogleOAuthGPT } from './dto';
 import { GoogleAuthService } from './google-auth.service';
+import { GoogleOAuthServiceGPT } from './google-oauth.service';
 import { Identity, PublicEndpoint } from '../../common';
 import { CONSUMER } from '../../dtos';
 import { envs, JWT_ACCESS_TTL, JWT_REFRESH_TTL } from '../../envs';
 import { TransformResponse } from '../../interceptors';
 import { PrismaService } from '../../shared/prisma.service';
-import { ACCESS_TOKEN_COOKIE_KEY, REFRESH_TOKEN_COOKIE_KEY } from '../../shared-common';
+import { ACCESS_TOKEN_COOKIE_KEY, REFRESH_TOKEN_COOKIE_KEY, removeNil } from '../../shared-common';
 
 @ApiTags(`Consumer: Auth`)
 @ApiBearerAuth(`bearer`) // 👈 tells Swagger to attach Bearer token
@@ -45,6 +49,7 @@ export class ConsumerAuthController {
     private readonly service: ConsumerAuthService,
     private readonly googleAuthService: GoogleAuthService,
     private readonly prisma: PrismaService,
+    private readonly googleOAuthServiceGPT: GoogleOAuthServiceGPT,
   ) {}
 
   private setAuthCookies(res: express.Response, accessToken: string, refreshToken: string) {
@@ -105,14 +110,23 @@ export class ConsumerAuthController {
   @ApiOkResponse({ type: CONSUMER.LoginResponse })
   @TransformResponse(CONSUMER.LoginResponse)
   googleOAuth(@Body() body: CONSUMER.GoogleSignin) {
-    return this.service.googleOAuth(body);
+    return this.service.googleOAuth(removeNil(body));
+  }
+
+  @PublicEndpoint()
+  @Post(`google-login-gpt`)
+  @HttpCode(HttpStatus.OK)
+  async googleLoginGPT(@Body() body: GoogleOAuthGPT) {
+    // You can set cookies here if you integrate with AuthService
+    const result = await this.googleOAuthServiceGPT.googleLoginGPT(removeNil(body));
+    return result;
   }
 
   @PublicEndpoint()
   @Post(`signup`)
   @TransformResponse(CONSUMER.ConsumerResponse)
   signup(@Body() body: CONSUMER.SignupRequest) {
-    return this.service.signup(body);
+    return this.service.signup(removeNil(body));
   }
 
   @PublicEndpoint()
@@ -132,12 +146,12 @@ export class ConsumerAuthController {
 
     if (!found) {
       personalDetails = await this.prisma.personalDetails.create({
-        data: { consumer: { connect: { id: consumerId } }, ...body },
+        data: { consumer: { connect: { id: consumerId } }, ...removeNil(body) },
       });
     } else {
       personalDetails = await this.prisma.personalDetails.update({
         where: { id: found.id },
-        data: body,
+        data: removeNil(body),
       });
     }
 
@@ -155,12 +169,12 @@ export class ConsumerAuthController {
     let organizationDetails: IOrganizationDetailsModel;
     if (!found) {
       organizationDetails = await this.prisma.organizationDetails.create({
-        data: { consumer: { connect: { id: consumerId } }, ...body },
+        data: { consumer: { connect: { id: consumerId } }, ...removeNil(body) },
       });
     } else {
       organizationDetails = await this.prisma.organizationDetails.update({
         where: { id: found.id },
-        data: body,
+        data: removeNil(body),
       });
     }
 
@@ -175,12 +189,12 @@ export class ConsumerAuthController {
     let addressDetails: IAddressDetailsModel;
     if (!found) {
       addressDetails = await this.prisma.addressDetails.create({
-        data: { consumer: { connect: { id: consumerId } }, ...body },
+        data: { consumer: { connect: { id: consumerId } }, ...removeNil(body) },
       });
     } else {
       addressDetails = await this.prisma.addressDetails.update({
         where: { id: found.id },
-        data: body,
+        data: removeNil(body),
       });
     }
 
@@ -211,13 +225,13 @@ export class ConsumerAuthController {
   checkEmailAndSendRecoveryLink(@Headers() headers: IncomingHttpHeaders, @Body() body: { email: string }) {
     const referer = headers.origin || headers.referer;
     if (!referer) throw new InternalServerErrorException(`Unexpected referer(origin): ${referer}`);
-    return this.service.checkEmailAndSendRecoveryLink(body, referer);
+    return this.service.checkEmailAndSendRecoveryLink(removeNil(body), referer);
   }
 
   @PublicEndpoint()
   @Patch(`change-password/:token`)
   changePassword(@Param() param: CONSUMER.ChangePasswordParam, @Body() body: CONSUMER.ChangePasswordBody) {
-    return this.service.changePassword(body, param);
+    return this.service.changePassword(removeNil(body), removeNil(param));
   }
 
   @Get(`me`)

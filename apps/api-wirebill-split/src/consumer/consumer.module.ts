@@ -6,7 +6,9 @@ import { MailerModule, MailerOptions } from '@nestjs-modules/mailer';
 import { envs, JWT_ACCESS_SECRET, JWT_ACCESS_TTL } from '../envs';
 import { ConsumerAuthController } from './auth/auth.controller';
 import { ConsumerAuthService } from './auth/auth.service';
+import { ConsumerSignupServiceGPT } from './auth/consumer-signup.service';
 import { GoogleAuthService } from './auth/google-auth.service';
+import { GoogleOAuthServiceGPT } from './auth/google-oauth.service';
 import { ProfileController } from './controllers/profile.controller';
 import { MailingService } from '../shared/mailing.service';
 import { ConsumerSignupController } from './auth/signup.controller';
@@ -37,6 +39,13 @@ import { SignupService } from './auth/signup.service';
     }),
   ],
   controllers: [ConsumerSignupController, ConsumerAuthController, ProfileController],
-  providers: [MailingService, SignupService, ConsumerAuthService, GoogleAuthService],
+  providers: [
+    MailingService,
+    GoogleOAuthServiceGPT,
+    ConsumerSignupServiceGPT,
+    SignupService,
+    ConsumerAuthService,
+    GoogleAuthService,
+  ],
 })
 export class ConsumerModule {}
