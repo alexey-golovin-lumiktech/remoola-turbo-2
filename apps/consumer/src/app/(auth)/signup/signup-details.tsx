@@ -92,13 +92,6 @@ export default function SignupDetails() {
           onChange={handleChangeSignupDetails}
         />
         <div className="mt-3" />
-        {/* <Input
-          type="password"
-          placeholder="Password"
-          value={signupDetails.password}
-          name="password"
-          onChange={handleChangeSignupDetails}
-        /> */}
         <div className="flex flex-row w-full">
           <PasswordInput
             placeholder="Your password"
