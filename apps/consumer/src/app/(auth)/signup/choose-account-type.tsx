@@ -2,8 +2,7 @@ import { type ChangeEvent } from 'react';
 
 import { Button } from '@remoola/ui/Button';
 
-import { useSignupContext } from './context/hooks';
-import { ACCOUNT_TYPE, type IAccountType } from './context/types';
+import { useSignupContext, ACCOUNT_TYPE, type IAccountType } from './context/signup';
 
 export default function ChooseAccountType() {
   const {

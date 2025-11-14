@@ -5,12 +5,12 @@ import { type ChangeEvent } from 'react';
 import { Button } from '@remoola/ui/Button';
 import { Input } from '@remoola/ui/Input';
 
-import { useSignupContext } from './context/hooks';
+import { useSignupContext } from './context/signup';
 
 export default function AddressDetails() {
   const {
-    state: { addressDetails, consumerId },
-    action: { updateAddressDetails, setError, setLoading },
+    state: { addressDetails },
+    action: { updateAddressDetails, submitSignup },
   } = useSignupContext();
 
   const handleChangeAddressDetails = (e: ChangeEvent<HTMLInputElement>) => {
@@ -20,36 +20,7 @@ export default function AddressDetails() {
 
   const submitAddressDetails = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-
-    try {
-      setLoading(true);
-      const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE_URL}/signup/${consumerId}/address-details`);
-      const response = await fetch(url, {
-        method: `POST`,
-        headers: { 'Content-Type': `application/json` },
-        body: JSON.stringify({
-          postalCode: addressDetails.postalCode,
-          country: addressDetails.country,
-          city: addressDetails.city,
-          state: addressDetails.state,
-          street: addressDetails.street,
-        }),
-      });
-      if (!response.ok) throw new Error(`Signup failed`);
-      const json = await response.json();
-
-      const complete = new URL(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/signup/${consumerId}/complete-profile-creation`,
-      );
-      await fetch(complete);
-      console.log(`submitAddressDetails json`, json);
-      window.location.href = `/login`;
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+    submitSignup();
   };
 
   return (

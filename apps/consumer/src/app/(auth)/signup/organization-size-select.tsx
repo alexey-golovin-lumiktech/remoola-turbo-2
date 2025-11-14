@@ -1,6 +1,5 @@
 /* eslint-disable max-len */
-import { useSignupContext } from './context/hooks';
-import { ORGANIZATION_SIZE } from './context/types';
+import { useSignupContext, ORGANIZATION_SIZE } from './context/signup';
 
 export function OrganizationSizeSelect() {
   const {

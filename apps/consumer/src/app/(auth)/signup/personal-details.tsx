@@ -5,15 +5,13 @@ import { type ChangeEvent } from 'react';
 import { Button } from '@remoola/ui/Button';
 import { Input } from '@remoola/ui/Input';
 
-import { countries } from './context/countries';
-import { useSignupContext } from './context/hooks';
-import { ACCOUNT_TYPE, LEGAL_STATUS } from './context/types';
+import { countries, useSignupContext, ACCOUNT_TYPE, LEGAL_STATUS } from './context/signup';
 import { CustomSelect as CitizenOfCountriesSelect, CustomSelect as CountryOfTaxResidenceSelect } from './custom-select';
 
 export default function PersonalDetails() {
   const {
-    state: { personalDetails, accountType, consumerId },
-    action: { updatePersonalDetails, nextStep, setError, setLoading },
+    state: { personalDetails, accountType },
+    action: { updatePersonalDetails, nextStep },
   } = useSignupContext();
 
   const handleChangePersonalDetails = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -23,48 +21,7 @@ export default function PersonalDetails() {
 
   const submitPersonalDetails = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-
-    try {
-      setLoading(true);
-      const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE_URL}/signup/${consumerId}/personal-details`);
-      let body;
-      if (accountType === ACCOUNT_TYPE.CONTRACTOR) {
-        body = {
-          citizenOf: personalDetails.citizenOf,
-          dateOfBirth: personalDetails.dateOfBirth,
-          passportOrIdNumber: personalDetails.passportOrIdNumber,
-          countryOfTaxResidence: personalDetails.countryOfTaxResidence,
-          taxId: personalDetails.taxId,
-          phoneNumber: personalDetails.phoneNumber,
-          legalStatus: personalDetails.legalStatus || null,
-        };
-      } else {
-        body = {
-          citizenOf: personalDetails.citizenOf,
-          dateOfBirth: personalDetails.dateOfBirth,
-          passportOrIdNumber: personalDetails.passportOrIdNumber,
-        };
-      }
-      const response = await fetch(url, {
-        method: `POST`,
-        headers: { 'Content-Type': `application/json` },
-        body: JSON.stringify(body),
-      });
-      if (!response.ok) {
-        const text = JSON.parse(await response.text());
-        console.log(`\n************ Error status: ${response.status} ************`);
-        console.log(text.message.join(`\n`));
-        throw new Error(text.message);
-      }
-      const json = await response.json();
-      console.log(`submitPersonalDetails json`, json);
-      nextStep();
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+    nextStep();
   };
 
   return (
@@ -99,7 +56,7 @@ export default function PersonalDetails() {
             <CountryOfTaxResidenceSelect
               name="legalStatus" //
               label="Legal Status"
-              value={personalDetails.legalStatus}
+              value={personalDetails.legalStatus || ``}
               options={Object.values(LEGAL_STATUS)}
               onChange={handleChangePersonalDetails}
               defaultEmpty

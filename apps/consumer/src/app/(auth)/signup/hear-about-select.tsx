@@ -1,8 +1,7 @@
 /* eslint-disable max-len */
 import { useState } from 'react';
 
-import { useSignupContext } from './context/hooks';
-import { HOW_DID_HEAR_ABOUT_US, type IHowDidHearAboutUs } from './context/types';
+import { useSignupContext, HOW_DID_HEAR_ABOUT_US, type IHowDidHearAboutUs } from './context/signup';
 
 const OPTIONS = Object.values(HOW_DID_HEAR_ABOUT_US).map(String);
 

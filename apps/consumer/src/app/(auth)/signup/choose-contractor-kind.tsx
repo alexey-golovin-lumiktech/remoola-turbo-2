@@ -2,8 +2,7 @@ import { type ChangeEvent } from 'react';
 
 import { Button } from '@remoola/ui/Button';
 
-import { useSignupContext } from './context/hooks';
-import { CONTRACTOR_KIND, type IContractorKind } from './context/types';
+import { useSignupContext, CONTRACTOR_KIND, type IContractorKind } from './context/signup';
 
 export default function ChooseContractorKind() {
   const {

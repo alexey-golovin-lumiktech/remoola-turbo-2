@@ -5,15 +5,14 @@ import { type ChangeEvent } from 'react';
 import { Button } from '@remoola/ui/Button';
 import { Input } from '@remoola/ui/Input';
 
-import { useSignupContext } from './context/hooks';
-import { CONSUMER_ROLE } from './context/types';
+import { useSignupContext, CONSUMER_ROLE } from './context/signup';
 import { CustomSelect as ConsumerRoleSelect } from './custom-select';
 import { OrganizationSizeSelect } from './organization-size-select';
 
 export default function OrganizationDetails() {
   const {
-    state: { organizationDetails, consumerId },
-    action: { updateOrganizationDetails, setError, setLoading },
+    state: { organizationDetails },
+    action: { updateOrganizationDetails, submitSignup },
   } = useSignupContext();
 
   const handleChangeOrganizationDetails = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -23,33 +22,7 @@ export default function OrganizationDetails() {
 
   const submitOrganizationDetails = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-
-    try {
-      setLoading(true);
-      const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE_URL}/signup/${consumerId}/organization-details`);
-      const response = await fetch(url, {
-        method: `POST`,
-        headers: { 'Content-Type': `application/json` },
-        body: JSON.stringify({
-          name: organizationDetails.name,
-          consumerRole: organizationDetails.consumerRole,
-          size: organizationDetails.size,
-        }),
-      });
-      if (!response.ok) throw new Error(`Signup failed`);
-      const json = await response.json();
-      const complete = new URL(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/signup/${consumerId}/complete-profile-creation`,
-      );
-      await fetch(complete);
-      console.log(`submitOrganizationDetails json`, json);
-      window.location.href = `/login`;
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+    submitSignup();
   };
 
   return (

@@ -2,10 +2,9 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 
-import { Admin as AdminModel, AdminType } from '@remoola/database';
+import { Admin as AdminModel } from '@remoola/database';
 
 import { RefreshTokenPayload } from './types';
-import { passwordUtils } from '../../common';
 import { JWT_ACCESS_TTL, JWT_REFRESH_SECRET, JWT_REFRESH_TTL, JWT_SECRET } from '../../envs';
 import { PrismaService } from '../../prisma/prisma.service';
 
@@ -51,13 +50,5 @@ export class AdminAuthService {
     } catch {
       throw new UnauthorizedException(`Invalid refresh`);
     }
-  }
-
-  private async createAdmin(email: string, password: string, type = AdminType.ADMIN) {
-    const salt = passwordUtils.getHashingSalt(10);
-    const hash = await bcrypt.hash(password, 10);
-    return await this.prisma.admin.create({
-      data: { email, type, salt, password: hash },
-    });
   }
 }

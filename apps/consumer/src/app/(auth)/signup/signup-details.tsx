@@ -6,15 +6,25 @@ import { FcGoogle } from 'react-icons/fc';
 import { Button } from '@remoola/ui/Button';
 import { Input } from '@remoola/ui/Input';
 
-import { useSignupContext } from './context/hooks';
-import { ACCOUNT_TYPE } from './context/types';
+import { useSignupContext, ACCOUNT_TYPE } from './context/signup';
 import { HeardAboutUsSection } from './hear-about-select';
+import { PasswordInput } from './password-input';
+import { generatePassword } from '../../../lib/password';
 
 export default function SignupDetails() {
   const {
-    state: { signupDetails, accountType, contractorKind },
-    action: { updateSignupDetails, nextStep, handleGoogleSignup, setError, setLoading, setConsumerId },
+    state: { signupDetails, accountType },
+    action: { updateSignupDetails, nextStep, handleGoogleSignup },
   } = useSignupContext();
+
+  const handleGenerate = () => {
+    const generatedPassword = generatePassword({
+      length: 14,
+      symbols: true,
+      noAmbiguous: true,
+    });
+    updateSignupDetails(`password`, generatedPassword);
+  };
 
   const handleChangeSignupDetails = (e: ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
@@ -29,33 +39,7 @@ export default function SignupDetails() {
 
   const submitSignupDetails = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-
-    try {
-      setLoading(true);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/signup`, {
-        method: `POST`,
-        headers: { 'Content-Type': `application/json` },
-        body: JSON.stringify({
-          firstName: signupDetails.firstName,
-          lastName: signupDetails.lastName,
-          email: signupDetails.email,
-          password: signupDetails.password,
-          howDidHearAboutUs: signupDetails.howDidHearAboutUs,
-          accountType,
-          contractorKind: accountType === ACCOUNT_TYPE.CONTRACTOR ? contractorKind : null,
-        }),
-      });
-      if (!response.ok) throw new Error(`Signup failed`);
-      const json = await response.json();
-      console.log(`submitSignupDetails json`, json);
-      setConsumerId(json?.consumerId || null);
-      nextStep();
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+    nextStep();
   };
 
   return (
@@ -108,13 +92,23 @@ export default function SignupDetails() {
           onChange={handleChangeSignupDetails}
         />
         <div className="mt-3" />
-        <Input
+        {/* <Input
           type="password"
           placeholder="Password"
           value={signupDetails.password}
           name="password"
           onChange={handleChangeSignupDetails}
-        />
+        /> */}
+        <div className="flex flex-row w-full">
+          <PasswordInput
+            placeholder="Your password"
+            value={signupDetails.password}
+            onChange={handleChangeSignupDetails}
+          />
+          <Button type="button" className="bg-blue-600 px-2 ml-2 text-white rounded" onClick={handleGenerate}>
+            Generate
+          </Button>
+        </div>
         <div className="mt-3" />
         <HeardAboutUsSection />
         <div className="flex gap-2 mt-6 w-full">
