@@ -5,11 +5,11 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 import { useSignupForm } from '../../hooks/useSignupForm';
-import { ACCOUNT_TYPE, CONTRACTOR_KIND, type IContractorKind } from '../../types/account.types';
+import { type IContractorKind, ACCOUNT_TYPE, CONTRACTOR_KIND } from '../../types';
 
 export default function ChooseContractorKindStep() {
   const router = useRouter();
-  const { signup, updateSignup } = useSignupForm();
+  const { signupDetails: signup, updateSignup } = useSignupForm();
 
   const selectKind = (kind: IContractorKind) => {
     updateSignup({ contractorKind: kind });
@@ -39,7 +39,7 @@ export default function ChooseContractorKindStep() {
       <div className="w-full max-w-xl space-y-8 text-center">
         <div className="space-y-1">
           <h2 className="text-sm text-gray-500">Great! Now choose what type of contractor you are</h2>
-          <h1 className="text-3xl font-semibold">I&lsquo;m an</h1>
+          <h1 className="text-3xl font-semibold">I`m an</h1>
         </div>
 
         <div className="flex gap-5 justify-center">

@@ -1,21 +1,21 @@
 export const STEP_NAME = {
-  SIGNUP: `signup details`,
-  PERSONAL: `personal details`,
-  ORGANIZATION: `organization details`,
-  ADDRESS: `address details`,
+  SIGNUP_DETAILS: `signup details`,
+  PERSONAL_DETAILS: `personal details`,
+  ORGANIZATION_DETAILS: `organization details`,
+  ADDRESS_DETAILS: `address details`,
 } as const;
 
 export type IStepName = (typeof STEP_NAME)[keyof typeof STEP_NAME];
 
-export interface StepMeta {
+export type IStepMeta = {
   label: IStepName;
   submitted: boolean;
   stepNumber: number;
-}
+};
 
-export interface NormalizedStep {
+export type INormalizedStep = {
   name: IStepName;
   label: IStepName;
   submitted: boolean;
   index: number;
-}
+};

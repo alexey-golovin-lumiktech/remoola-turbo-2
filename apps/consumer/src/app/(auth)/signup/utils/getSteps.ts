@@ -1,28 +1,28 @@
-import { ACCOUNT_TYPE, CONTRACTOR_KIND, type IAccountType, type IContractorKind } from '../types/account.types';
-import { type IStepName, STEP_NAME, type StepMeta } from '../types/step.types';
+import { type IAccountType, type IContractorKind, ACCOUNT_TYPE, CONTRACTOR_KIND } from '../types';
+import { type IStepName, STEP_NAME, type IStepMeta } from '../types/step.types';
 
-export type StepsMap = Partial<Record<IStepName, StepMeta>>;
+export type StepsMap = Partial<Record<IStepName, IStepMeta>>;
 
-const baseSteps: Record<IStepName, StepMeta> = {
-  [STEP_NAME.SIGNUP]: {
+const baseSteps: Record<IStepName, IStepMeta> = {
+  [STEP_NAME.SIGNUP_DETAILS]: {
     submitted: false,
     stepNumber: 1,
-    label: STEP_NAME.SIGNUP,
+    label: STEP_NAME.SIGNUP_DETAILS,
   },
-  [STEP_NAME.PERSONAL]: {
+  [STEP_NAME.PERSONAL_DETAILS]: {
     submitted: false,
     stepNumber: 2,
-    label: STEP_NAME.PERSONAL,
+    label: STEP_NAME.PERSONAL_DETAILS,
   },
-  [STEP_NAME.ORGANIZATION]: {
+  [STEP_NAME.ORGANIZATION_DETAILS]: {
     submitted: false,
     stepNumber: 3,
-    label: STEP_NAME.ORGANIZATION,
+    label: STEP_NAME.ORGANIZATION_DETAILS,
   },
-  [STEP_NAME.ADDRESS]: {
+  [STEP_NAME.ADDRESS_DETAILS]: {
     submitted: false,
     stepNumber: 4,
-    label: STEP_NAME.ADDRESS,
+    label: STEP_NAME.ADDRESS_DETAILS,
   },
 } as const;
 
@@ -32,26 +32,26 @@ export const getSteps = (accountType: IAccountType, contractorKind: IContractorK
   switch (accountType) {
     case ACCOUNT_TYPE.BUSINESS: {
       return {
-        [STEP_NAME.SIGNUP]: steps[STEP_NAME.SIGNUP],
-        [STEP_NAME.PERSONAL]: steps[STEP_NAME.PERSONAL],
-        [STEP_NAME.ORGANIZATION]: steps[STEP_NAME.ORGANIZATION],
+        [STEP_NAME.SIGNUP_DETAILS]: steps[STEP_NAME.SIGNUP_DETAILS],
+        [STEP_NAME.PERSONAL_DETAILS]: steps[STEP_NAME.PERSONAL_DETAILS],
+        [STEP_NAME.ORGANIZATION_DETAILS]: steps[STEP_NAME.ORGANIZATION_DETAILS],
       };
     }
     case ACCOUNT_TYPE.CONTRACTOR: {
       switch (contractorKind) {
         case CONTRACTOR_KIND.INDIVIDUAL: {
           return {
-            [STEP_NAME.SIGNUP]: steps[STEP_NAME.SIGNUP],
-            [STEP_NAME.PERSONAL]: steps[STEP_NAME.PERSONAL],
-            [STEP_NAME.ADDRESS]: steps[STEP_NAME.ADDRESS],
+            [STEP_NAME.SIGNUP_DETAILS]: steps[STEP_NAME.SIGNUP_DETAILS],
+            [STEP_NAME.PERSONAL_DETAILS]: steps[STEP_NAME.PERSONAL_DETAILS],
+            [STEP_NAME.ADDRESS_DETAILS]: steps[STEP_NAME.ADDRESS_DETAILS],
           };
         }
         case CONTRACTOR_KIND.ENTITY: {
           return {
-            [STEP_NAME.SIGNUP]: steps[STEP_NAME.SIGNUP],
-            [STEP_NAME.PERSONAL]: steps[STEP_NAME.PERSONAL],
-            [STEP_NAME.ADDRESS]: steps[STEP_NAME.ADDRESS],
-            [STEP_NAME.ORGANIZATION]: steps[STEP_NAME.ORGANIZATION],
+            [STEP_NAME.SIGNUP_DETAILS]: steps[STEP_NAME.SIGNUP_DETAILS],
+            [STEP_NAME.PERSONAL_DETAILS]: steps[STEP_NAME.PERSONAL_DETAILS],
+            [STEP_NAME.ADDRESS_DETAILS]: steps[STEP_NAME.ADDRESS_DETAILS],
+            [STEP_NAME.ORGANIZATION_DETAILS]: steps[STEP_NAME.ORGANIZATION_DETAILS],
           };
         }
         case null:

@@ -11,6 +11,9 @@ export class ConsumerSignupServiceGPT {
   constructor(private readonly prisma: PrismaService) {}
 
   async signupGPT(dto: ConsumerSignupGPT) {
+    console.log(`\n************************************`);
+    console.log(`dto`, dto);
+    console.log(`************************************\n`);
     this.ensureBusinessRules(dto);
 
     const existing = await this.prisma.consumer.findUnique({

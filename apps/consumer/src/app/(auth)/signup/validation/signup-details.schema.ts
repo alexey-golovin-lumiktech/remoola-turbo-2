@@ -1,14 +1,14 @@
 import { z } from 'zod';
 
-import { ACCOUNT_TYPE, CONTRACTOR_KIND } from '../types/account.types';
+import { ACCOUNT_TYPE, CONTRACTOR_KIND } from '../types';
 
-export const signupSchema = z
+export const signupDetailsSchema = z
   .object({
-    email: z.string().email(),
+    email: z.email(),
     password: z.string().min(8),
     confirmPassword: z.string().min(8),
-    accountType: z.nativeEnum(ACCOUNT_TYPE),
-    contractorKind: z.nativeEnum(CONTRACTOR_KIND),
+    accountType: z.enum(ACCOUNT_TYPE),
+    contractorKind: z.enum(CONTRACTOR_KIND),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: `Passwords must match`,

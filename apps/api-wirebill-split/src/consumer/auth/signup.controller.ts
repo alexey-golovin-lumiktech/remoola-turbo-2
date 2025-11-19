@@ -41,6 +41,9 @@ export class ConsumerSignupController {
   @Post(`signup-gpt`)
   @HttpCode(HttpStatus.CREATED)
   async signupGPT(@Body() body: ConsumerSignupGPT) {
+    console.log(`\n************************************`);
+    console.log(`body`, body);
+    console.log(`************************************\n`);
     const consumer = await this.signupServiceGPT.signupGPT(removeNil(body));
     return { consumer };
   }

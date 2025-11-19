@@ -3,18 +3,18 @@
 
 import { SelectWithClear } from '@remoola/ui/SelectWithClear';
 
-import { type IOrganizationSizeLabel, LABEL_SIZE, SIZE_LABEL } from '../../context/signup';
 import { useSignupSteps } from '../../context/SignupStepsContext';
 import { useSignupForm } from '../../hooks/useSignupForm';
+import { type IOrganizationSizeLabel, SIZE_LABEL, LABEL_SIZE, type IConsumerRole, CONSUMER_ROLE } from '../../types';
 import { STEP_NAME } from '../../types/step.types';
 import { PrevNextButtons } from '../PrevNextButtons';
 
-export function OrganizationStep() {
-  const { organization, updateOrganization } = useSignupForm();
+export function OrganizationDetailsStep() {
+  const { organizationDetails: organization, updateOrganization } = useSignupForm();
   const { markSubmitted, goNext } = useSignupSteps();
 
   const handleSubmit = () => {
-    markSubmitted(STEP_NAME.ORGANIZATION);
+    markSubmitted(STEP_NAME.ORGANIZATION_DETAILS);
     goNext();
   };
 
@@ -33,7 +33,7 @@ export function OrganizationStep() {
         />
       </div>
 
-      <SelectWithClear<string>
+      <SelectWithClear<IConsumerRole>
         label="Your Role In Organization"
         value={organization.consumerRole}
         onChange={(consumerRole) => {
@@ -41,18 +41,18 @@ export function OrganizationStep() {
           updateOrganization({ consumerRole, consumerRoleOther });
         }}
         options={[
-          { label: `Founder`, value: `Founder` },
-          { label: `Finance`, value: `Finance` },
-          { label: `Marketing`, value: `Marketing` },
-          { label: `Customer Support`, value: `Customer Support` },
-          { label: `Sales`, value: `Sales` },
-          { label: `Legal`, value: `Legal` },
-          { label: `Human Resource`, value: `Human Resource` },
-          { label: `Operations`, value: `Operations` },
-          { label: `Compliance`, value: `Compliance` },
-          { label: `Product`, value: `Product` },
-          { label: `Engineering`, value: `Engineering` },
-          { label: `Analysis Data`, value: `Analysis Data` },
+          { label: CONSUMER_ROLE.FOUNDER, value: CONSUMER_ROLE.FOUNDER },
+          { label: CONSUMER_ROLE.FINANCE, value: CONSUMER_ROLE.FINANCE },
+          { label: CONSUMER_ROLE.MARKETING, value: CONSUMER_ROLE.MARKETING },
+          { label: CONSUMER_ROLE.CUSTOMER_SUPPORT, value: CONSUMER_ROLE.CUSTOMER_SUPPORT },
+          { label: CONSUMER_ROLE.SALES, value: CONSUMER_ROLE.SALES },
+          { label: CONSUMER_ROLE.LEGAL, value: CONSUMER_ROLE.LEGAL },
+          { label: CONSUMER_ROLE.HUMAN_RESOURCE, value: CONSUMER_ROLE.HUMAN_RESOURCE },
+          { label: CONSUMER_ROLE.OPERATIONS, value: CONSUMER_ROLE.OPERATIONS },
+          { label: CONSUMER_ROLE.COMPLIANCE, value: CONSUMER_ROLE.COMPLIANCE },
+          { label: CONSUMER_ROLE.PRODUCT, value: CONSUMER_ROLE.PRODUCT },
+          { label: CONSUMER_ROLE.ENGINEERING, value: CONSUMER_ROLE.ENGINEERING },
+          { label: CONSUMER_ROLE.ANALYSIS_DATA, value: CONSUMER_ROLE.ANALYSIS_DATA },
         ]}
         showOtherField
         showNotSelected={false}

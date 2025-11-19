@@ -3,32 +3,30 @@
 import { type ReactNode, useState, useMemo, useContext, createContext } from 'react';
 
 import {
+  type ISignupFormState,
+  type ISignupDetails,
+  type IPersonalDetails,
+  type IOrganizationDetails,
+  type IAddressDetails,
   type IAccountType,
   type IContractorKind,
-  CONSUMER_ROLE,
   HOW_DID_HEAR_ABOUT_US,
   ORGANIZATION_SIZE,
-} from '../context/signup';
-import {
-  type SignupFormState,
-  type SignupSection,
-  type PersonalSection,
-  type OrganizationSection,
-  type AddressSection,
-} from '../types/signup.types';
+  CONSUMER_ROLE,
+} from '../types';
 
 interface SignupFormContextValue {
-  state: SignupFormState;
+  state: ISignupFormState;
 
-  signup: SignupSection;
-  personal: PersonalSection;
-  organization: OrganizationSection;
-  address: AddressSection;
+  signupDetails: ISignupDetails;
+  personalDetails: IPersonalDetails;
+  organizationDetails: IOrganizationDetails;
+  addressDetails: IAddressDetails;
 
-  updateSignup: (patch: Partial<SignupSection>) => void;
-  updatePersonal: (patch: Partial<PersonalSection>) => void;
-  updateOrganization: (patch: Partial<OrganizationSection>) => void;
-  updateAddress: (patch: Partial<AddressSection>) => void;
+  updateSignup: (patch: Partial<ISignupDetails>) => void;
+  updatePersonal: (patch: Partial<IPersonalDetails>) => void;
+  updateOrganization: (patch: Partial<IOrganizationDetails>) => void;
+  updateAddress: (patch: Partial<IAddressDetails>) => void;
 
   accountType: IAccountType;
   contractorKind: IContractorKind;
@@ -36,8 +34,8 @@ interface SignupFormContextValue {
 
 const SignupFormContext = createContext<SignupFormContextValue | null>(null);
 
-const initialState: SignupFormState = {
-  signup: {
+const initialState: ISignupFormState = {
+  signupDetails: {
     email: ``,
     password: ``,
     confirmPassword: ``,
@@ -47,7 +45,7 @@ const initialState: SignupFormState = {
     howDidHearAboutUs: HOW_DID_HEAR_ABOUT_US.GOOGLE,
     howDidHearAboutUsOther: null,
   },
-  personal: {
+  personalDetails: {
     firstName: ``,
     lastName: ``,
     citizenOf: ``,
@@ -58,14 +56,14 @@ const initialState: SignupFormState = {
     passportOrIdNumber: ``,
     phoneNumber: ``,
   },
-  organization: {
+  organizationDetails: {
     name: ``,
     size: ORGANIZATION_SIZE.SMALL,
 
     consumerRole: CONSUMER_ROLE.FOUNDER, // NEW
     consumerRoleOther: null, // NEW
   },
-  address: {
+  addressDetails: {
     postalCode: ``,
     country: ``,
     state: ``,
@@ -75,42 +73,40 @@ const initialState: SignupFormState = {
 };
 
 export function SignupFormProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<SignupFormState>(initialState);
+  const [state, setState] = useState<ISignupFormState>(initialState);
 
-  const updateSignup = (patch: Partial<SignupSection>) => {
-    setState((prev) => ({ ...prev, signup: { ...prev.signup, ...patch } }));
+  const updateSignup = (patch: Partial<ISignupDetails>) => {
+    setState((prev) => ({ ...prev, signupDetails: { ...prev.signupDetails, ...patch } }));
   };
 
-  console.log(`state`, state);
-
-  const updatePersonal = (patch: Partial<PersonalSection>) => {
-    setState((prev) => ({ ...prev, personal: { ...prev.personal, ...patch } }));
+  const updatePersonal = (patch: Partial<IPersonalDetails>) => {
+    setState((prev) => ({ ...prev, personalDetails: { ...prev.personalDetails, ...patch } }));
   };
 
-  const updateOrganization = (patch: Partial<OrganizationSection>) => {
+  const updateOrganization = (patch: Partial<IOrganizationDetails>) => {
     setState((prev) => ({
       ...prev,
-      organization: { ...prev.organization, ...patch },
+      organizationDetails: { ...prev.organizationDetails, ...patch },
     }));
   };
 
-  const updateAddress = (patch: Partial<AddressSection>) => {
-    setState((prev) => ({ ...prev, address: { ...prev.address, ...patch } }));
+  const updateAddress = (patch: Partial<IAddressDetails>) => {
+    setState((prev) => ({ ...prev, addressDetails: { ...prev.addressDetails, ...patch } }));
   };
 
   const value = useMemo<SignupFormContextValue>(
     () => ({
       state,
-      signup: state.signup,
-      personal: state.personal,
-      organization: state.organization,
-      address: state.address,
+      signupDetails: state.signupDetails,
+      personalDetails: state.personalDetails,
+      organizationDetails: state.organizationDetails,
+      addressDetails: state.addressDetails,
       updateSignup,
       updatePersonal,
       updateOrganization,
       updateAddress,
-      accountType: state.signup.accountType!,
-      contractorKind: state.signup.contractorKind!,
+      accountType: state.signupDetails.accountType!,
+      contractorKind: state.signupDetails.contractorKind!,
     }),
     [state],
   );

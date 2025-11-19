@@ -7,13 +7,13 @@ import { useSignupSubmit } from '../../hooks/useSignupSubmit';
 import { STEP_NAME } from '../../types/step.types';
 import { PrevNextButtons } from '../PrevNextButtons';
 
-export function AddressStep() {
-  const { address, updateAddress } = useSignupForm();
+export function AddressDetailsStep() {
+  const { addressDetails: address, updateAddress } = useSignupForm();
   const { markSubmitted } = useSignupSteps();
   const { submit, loading, error } = useSignupSubmit();
 
   const handleSubmit = async () => {
-    markSubmitted(STEP_NAME.ADDRESS);
+    markSubmitted(STEP_NAME.ADDRESS_DETAILS);
     const result = await submit();
     if (result.success) {
       // maybe redirect or show success

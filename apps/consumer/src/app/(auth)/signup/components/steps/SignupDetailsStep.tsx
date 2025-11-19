@@ -4,20 +4,19 @@
 import { PasswordInput } from '@remoola/ui/PasswordInput';
 import { SelectWithClear } from '@remoola/ui/SelectWithClear';
 
-import { type IHowDidHearAboutUs, HOW_DID_HEAR_ABOUT_US } from '../../context/signup';
 import { useSignupSteps } from '../../context/SignupStepsContext';
 import { useSignupForm } from '../../hooks/useSignupForm';
-import { ACCOUNT_TYPE, CONTRACTOR_KIND } from '../../types/account.types';
+import { type IHowDidHearAboutUs, HOW_DID_HEAR_ABOUT_US, ACCOUNT_TYPE, CONTRACTOR_KIND } from '../../types';
 import { STEP_NAME } from '../../types/step.types';
 import { generatePassword } from '../../utils/passwordGenerator';
 import { PrevNextButtons } from '../PrevNextButtons';
 
-export function SignupStep() {
-  const { signup, updateSignup } = useSignupForm();
+export function SignupDetailsStep() {
+  const { signupDetails: signup, updateSignup } = useSignupForm();
   const { markSubmitted, goNext } = useSignupSteps();
 
   const handleSubmit = () => {
-    markSubmitted(STEP_NAME.SIGNUP);
+    markSubmitted(STEP_NAME.SIGNUP_DETAILS);
     goNext();
   };
 

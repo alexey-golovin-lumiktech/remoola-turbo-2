@@ -1,132 +1,14 @@
 import { type Dispatch, type SetStateAction } from 'react';
 
-export const LEGAL_STATUS = {
-  INDIVIDUAL: `INDIVIDUAL`,
-  INDIVIDUAL_ENTREPRENEUR: `INDIVIDUAL_ENTREPRENEUR`,
-  SOLE_TRADER: `SOLE_TRADER`,
-} as const;
-export type ILegalStatus = (typeof LEGAL_STATUS)[keyof typeof LEGAL_STATUS];
-
-export const LEGAL_STATUS_LABEL = {
-  [LEGAL_STATUS.INDIVIDUAL]: `Individual`,
-  [LEGAL_STATUS.INDIVIDUAL_ENTREPRENEUR]: `Individual Entrepreneur`,
-  [LEGAL_STATUS.SOLE_TRADER]: `Sole Trader`,
-} as const;
-export type ILegalStatusLabel = (typeof LEGAL_STATUS_LABEL)[keyof typeof LEGAL_STATUS_LABEL];
-
-export const STATUS_LABEL = {
-  [LEGAL_STATUS.INDIVIDUAL]: LEGAL_STATUS_LABEL[LEGAL_STATUS.INDIVIDUAL],
-  [LEGAL_STATUS.INDIVIDUAL_ENTREPRENEUR]: LEGAL_STATUS_LABEL[LEGAL_STATUS.INDIVIDUAL_ENTREPRENEUR],
-  [LEGAL_STATUS.SOLE_TRADER]: LEGAL_STATUS_LABEL[LEGAL_STATUS.SOLE_TRADER],
-};
-export const LABEL_STATUS = {
-  [LEGAL_STATUS_LABEL[LEGAL_STATUS.INDIVIDUAL]]: LEGAL_STATUS.INDIVIDUAL,
-  [LEGAL_STATUS_LABEL[LEGAL_STATUS.INDIVIDUAL_ENTREPRENEUR]]: LEGAL_STATUS.INDIVIDUAL_ENTREPRENEUR,
-  [LEGAL_STATUS_LABEL[LEGAL_STATUS.SOLE_TRADER]]: LEGAL_STATUS.SOLE_TRADER,
-};
-
-export const CONTRACTOR_KIND = {
-  ENTITY: `ENTITY`,
-  INDIVIDUAL: `INDIVIDUAL`,
-} as const;
-
-export type IContractorKind = (typeof CONTRACTOR_KIND)[keyof typeof CONTRACTOR_KIND];
-
-export const ORGANIZATION_SIZE = {
-  SMALL: `SMALL`,
-  MEDIUM: `MEDIUM`,
-  LARGE: `LARGE`,
-} as const;
-
-export type IOrganizationSize = (typeof ORGANIZATION_SIZE)[keyof typeof ORGANIZATION_SIZE];
-
-export const ORGANIZATION_SIZE_LABEL = {
-  [ORGANIZATION_SIZE.SMALL]: `1-10 team members`,
-  [ORGANIZATION_SIZE.MEDIUM]: `11-100 team members`,
-  [ORGANIZATION_SIZE.LARGE]: `100+ team members`,
-} as const;
-
-export type IOrganizationSizeLabel = (typeof ORGANIZATION_SIZE_LABEL)[keyof typeof ORGANIZATION_SIZE_LABEL];
-
-export const SIZE_LABEL = {
-  [ORGANIZATION_SIZE.SMALL]: ORGANIZATION_SIZE_LABEL[ORGANIZATION_SIZE.SMALL],
-  [ORGANIZATION_SIZE.MEDIUM]: ORGANIZATION_SIZE_LABEL[ORGANIZATION_SIZE.MEDIUM],
-  [ORGANIZATION_SIZE.LARGE]: ORGANIZATION_SIZE_LABEL[ORGANIZATION_SIZE.LARGE],
-};
-
-export const LABEL_SIZE = {
-  [ORGANIZATION_SIZE_LABEL[ORGANIZATION_SIZE.SMALL]]: ORGANIZATION_SIZE.SMALL,
-  [ORGANIZATION_SIZE_LABEL[ORGANIZATION_SIZE.MEDIUM]]: ORGANIZATION_SIZE.MEDIUM,
-  [ORGANIZATION_SIZE_LABEL[ORGANIZATION_SIZE.LARGE]]: ORGANIZATION_SIZE.LARGE,
-};
-
-export const ACCOUNT_TYPE = {
-  BUSINESS: `BUSINESS`,
-  CONTRACTOR: `CONTRACTOR`,
-} as const;
-export type IAccountType = (typeof ACCOUNT_TYPE)[keyof typeof ACCOUNT_TYPE];
-
-export const HOW_DID_HEAR_ABOUT_US = {
-  EMPLOYER_COMPANY: `Employer / Company`,
-  EMPLOYEE_CONTRACTOR: `Employee / Contractor`,
-  REFERRED_RECOMMENDED: `Referred / Recommended`,
-  EMAIL_INVITE: `Email invite`,
-  GOOGLE: `Google`,
-  FACEBOOK: `Facebook`,
-  TWITTER: `Twitter`,
-  LINKED_IN: `LinkedIn`,
-  OTHER: `Other`,
-} as const;
-export type IHowDidHearAboutUs = (typeof HOW_DID_HEAR_ABOUT_US)[keyof typeof HOW_DID_HEAR_ABOUT_US];
-
-export type ISignupDetails = {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  howDidHearAboutUs: IHowDidHearAboutUs | string;
-};
-
-export type IPersonalDetails = {
-  citizenOf: string;
-  dateOfBirth: string;
-  passportOrIdNumber: string;
-  countryOfTaxResidence: string;
-  taxId: string;
-  phoneNumber: string;
-  legalStatus?: ILegalStatus | string;
-};
-
-export type IAddressDetails = {
-  postalCode: string;
-  country: string;
-  city: string;
-  state: string;
-  street: string;
-};
-
-export const CONSUMER_ROLE = {
-  FOUNDER: `Founder`,
-  FINANCE: `Finance`,
-  MARKETING: `Marketing`,
-  CUSTOMER_SUPPORT: `Customer support`,
-  SALES: `Sales`,
-  LEGAL: `Legal`,
-  HUMAN_RESOURCE: `Human resource`,
-  OPERATIONS: `Operations`,
-  COMPLIANCE: `Compliance`,
-  PRODUCT: `Product`,
-  ENGINEERING: `Engineering`,
-  ANALYSIS_DATA: `Analysis/Data`,
-  OTHER: `Other`,
-} as const;
-export type ConsumerRole = (typeof CONSUMER_ROLE)[keyof typeof CONSUMER_ROLE];
-
-export type IOrganizationDetails = {
-  name: string;
-  consumerRole: ConsumerRole | string;
-  size: IOrganizationSize | string;
-};
+import {
+  type IAccountType,
+  type IContractorKind,
+  type ISignupDetails,
+  type IPersonalDetails,
+  type IAddressDetails,
+  type IOrganizationDetails,
+  type ACCOUNT_TYPE,
+} from '../../types';
 
 export type ISignupContext = {
   state: {

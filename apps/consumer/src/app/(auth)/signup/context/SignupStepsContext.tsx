@@ -2,13 +2,13 @@
 
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
 
-import { type IAccountType, type IContractorKind } from '../types/account.types';
-import { type IStepName, type NormalizedStep, STEP_NAME } from '../types/step.types';
+import { type IAccountType, type IContractorKind } from '../types';
+import { type IStepName, type INormalizedStep, STEP_NAME } from '../types/step.types';
 import { getSteps } from '../utils/getSteps';
 import { normalizeSteps } from '../utils/normalizeSteps';
 
 interface SignupStepsState {
-  steps: NormalizedStep[];
+  steps: INormalizedStep[];
   currentStep: IStepName;
 
   goNext: () => void;
@@ -42,7 +42,7 @@ export function SignupStepsProvider({
 
   const stepsArray = useMemo(() => normalizeSteps(stepsObj), [stepsObj]);
 
-  const [currentStep, setCurrentStep] = useState<IStepName>(STEP_NAME.SIGNUP);
+  const [currentStep, setCurrentStep] = useState<IStepName>(STEP_NAME.SIGNUP_DETAILS);
   const [submitted, setSubmitted] = useState<Partial<Record<IStepName, boolean>>>({});
 
   const stepNames = stepsArray.map((s) => s.name);
@@ -68,7 +68,7 @@ export function SignupStepsProvider({
     setSubmitted((prev) => ({ ...prev, [name]: true }));
   };
 
-  const mergedSteps: NormalizedStep[] = stepsArray.map((s) => ({
+  const mergedSteps: INormalizedStep[] = stepsArray.map((s) => ({
     ...s,
     submitted: submitted[s.name] || s.submitted,
   }));

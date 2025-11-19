@@ -1,25 +1,24 @@
 /* eslint-disable max-len */
 import { useContext, useMemo, useState } from 'react';
 
+import { type ISignupContext, type IStep } from '.';
 import { context } from './context';
 import {
-  CONSUMER_ROLE,
-  HOW_DID_HEAR_ABOUT_US,
-  type IOrganizationDetails,
-  type IAddressDetails,
-  type IPersonalDetails,
-  type ISignupDetails,
-  type ISignupContext,
-  type IStep,
   ACCOUNT_TYPE,
   CONTRACTOR_KIND,
-  ORGANIZATION_SIZE,
-  type IAccountType,
-  type IContractorKind,
+  HOW_DID_HEAR_ABOUT_US,
+  type ISignupDetails,
   LEGAL_STATUS,
+  type IPersonalDetails,
+  type IAddressDetails,
+  CONSUMER_ROLE,
+  ORGANIZATION_SIZE,
+  type IOrganizationDetails,
   type ILegalStatus,
   type IOrganizationSize,
-} from './types';
+  type IAccountType,
+  type IContractorKind,
+} from '../../types';
 
 const initial = {
   consumerId: null,
@@ -251,7 +250,6 @@ export const useSignupContextProviderValue = (): ISignupContext => {
       });
       if (!response.ok) throw new Error(JSON.parse(await response.text()).message || `Signup failed`);
       const json = await response.json();
-      console.log(`submitSignup json`, json);
 
       const complete = new URL(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/signup/${json.consumer.id}/complete-profile-creation`,

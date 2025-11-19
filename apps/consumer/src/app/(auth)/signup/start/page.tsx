@@ -9,7 +9,7 @@ import { ACCOUNT_TYPE, type IAccountType } from '../types/account.types';
 
 export default function ChooseAccountTypeStep() {
   const router = useRouter();
-  const { signup, updateSignup } = useSignupForm();
+  const { signupDetails: signup, updateSignup } = useSignupForm();
 
   const selectType = (type: IAccountType) => {
     updateSignup({ accountType: type });
@@ -38,8 +38,8 @@ export default function ChooseAccountTypeStep() {
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-xl space-y-8 text-center">
         <div className="space-y-1">
-          <h2 className="text-sm text-gray-500">Let’s find the right account for your needs</h2>
-          <h1 className="text-3xl font-semibold">I'm a</h1>
+          <h2 className="text-sm text-gray-500">Let`s find the right account for your needs</h2>
+          <h1 className="text-3xl font-semibold">I`m a</h1>
         </div>
 
         <div className="flex gap-5 justify-center">

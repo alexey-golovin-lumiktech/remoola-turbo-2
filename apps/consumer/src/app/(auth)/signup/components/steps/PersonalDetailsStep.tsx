@@ -3,18 +3,18 @@
 
 import { SelectWithClear } from '@remoola/ui/SelectWithClear';
 
-import { type ILegalStatusLabel, LABEL_STATUS, STATUS_LABEL, LEGAL_STATUS_LABEL } from '../../context/signup';
 import { useSignupSteps } from '../../context/SignupStepsContext';
 import { useSignupForm } from '../../hooks/useSignupForm';
+import { type ILegalStatusLabel, STATUS_LABEL, LABEL_STATUS, LEGAL_STATUS_LABEL } from '../../types';
 import { STEP_NAME } from '../../types/step.types';
 import { PrevNextButtons } from '../PrevNextButtons';
 
-export function PersonalStep() {
-  const { personal, updatePersonal } = useSignupForm();
+export function PersonalDetailsStep() {
+  const { personalDetails: personal, updatePersonal } = useSignupForm();
   const { markSubmitted, goNext } = useSignupSteps();
 
   const handleSubmit = () => {
-    markSubmitted(STEP_NAME.PERSONAL);
+    markSubmitted(STEP_NAME.PERSONAL_DETAILS);
     goNext();
   };
 
