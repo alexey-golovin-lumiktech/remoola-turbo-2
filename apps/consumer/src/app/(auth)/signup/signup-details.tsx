@@ -5,13 +5,14 @@ import { FcGoogle } from 'react-icons/fc';
 
 import { Button } from '@remoola/ui/Button';
 import { Input } from '@remoola/ui/Input';
+import { PasswordInput } from '@remoola/ui/PasswordInput';
+import { SelectWithClear } from '@remoola/ui/SelectWithClear';
 
-import { useSignupContext, ACCOUNT_TYPE } from './context/signup';
-import { HeardAboutUsSection } from './hear-about-select';
-import { PasswordInput } from './password-input';
+import { useSignupContext, ACCOUNT_TYPE, type IHowDidHearAboutUs, HOW_DID_HEAR_ABOUT_US } from './context/signup';
 import { generatePassword } from '../../../lib/password';
 
 export default function SignupDetails() {
+  // should removed
   const {
     state: { signupDetails, accountType },
     action: { updateSignupDetails, nextStep, handleGoogleSignup },
@@ -103,7 +104,24 @@ export default function SignupDetails() {
           </Button>
         </div>
         <div className="mt-3" />
-        <HeardAboutUsSection />
+        <SelectWithClear<IHowDidHearAboutUs>
+          label="How Did You Hear About Us?"
+          value={HOW_DID_HEAR_ABOUT_US.GOOGLE}
+          onChange={(howDidHearAboutUs) => updateSignupDetails(`howDidHearAboutUs`, howDidHearAboutUs!)}
+          options={[
+            { label: HOW_DID_HEAR_ABOUT_US.EMPLOYER_COMPANY, value: HOW_DID_HEAR_ABOUT_US.EMPLOYER_COMPANY },
+            { label: HOW_DID_HEAR_ABOUT_US.EMPLOYEE_CONTRACTOR, value: HOW_DID_HEAR_ABOUT_US.EMPLOYEE_CONTRACTOR },
+            { label: HOW_DID_HEAR_ABOUT_US.REFERRED_RECOMMENDED, value: HOW_DID_HEAR_ABOUT_US.REFERRED_RECOMMENDED },
+            { label: HOW_DID_HEAR_ABOUT_US.EMAIL_INVITE, value: HOW_DID_HEAR_ABOUT_US.EMAIL_INVITE },
+            { label: HOW_DID_HEAR_ABOUT_US.GOOGLE, value: HOW_DID_HEAR_ABOUT_US.GOOGLE },
+            { label: HOW_DID_HEAR_ABOUT_US.FACEBOOK, value: HOW_DID_HEAR_ABOUT_US.FACEBOOK },
+            { label: HOW_DID_HEAR_ABOUT_US.TWITTER, value: HOW_DID_HEAR_ABOUT_US.TWITTER },
+            { label: HOW_DID_HEAR_ABOUT_US.LINKED_IN, value: HOW_DID_HEAR_ABOUT_US.LINKED_IN },
+            { label: HOW_DID_HEAR_ABOUT_US.OTHER, value: HOW_DID_HEAR_ABOUT_US.OTHER },
+          ]}
+          showOtherField
+          showNotSelected={false}
+        />
         <div className="flex gap-2 mt-6 w-full">
           <Button type="submit" className="w-full">
             Sign up

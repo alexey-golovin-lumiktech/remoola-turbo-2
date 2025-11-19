@@ -39,7 +39,7 @@ export default function ChooseContractorKindStep() {
       <div className="w-full max-w-xl space-y-8 text-center">
         <div className="space-y-1">
           <h2 className="text-sm text-gray-500">Great! Now choose what type of contractor you are</h2>
-          <h1 className="text-3xl font-semibold">I'm an</h1>
+          <h1 className="text-3xl font-semibold">I&lsquo;m an</h1>
         </div>
 
         <div className="flex gap-5 justify-center">

@@ -1,12 +1,15 @@
 /* eslint-disable max-len */
 'use client';
 
+import { PasswordInput } from '@remoola/ui/PasswordInput';
+import { SelectWithClear } from '@remoola/ui/SelectWithClear';
+
+import { type IHowDidHearAboutUs, HOW_DID_HEAR_ABOUT_US } from '../../context/signup';
 import { useSignupSteps } from '../../context/SignupStepsContext';
 import { useSignupForm } from '../../hooks/useSignupForm';
 import { ACCOUNT_TYPE, CONTRACTOR_KIND } from '../../types/account.types';
 import { STEP_NAME } from '../../types/step.types';
 import { generatePassword } from '../../utils/passwordGenerator';
-import { PasswordInput } from '../PasswordInput';
 import { PrevNextButtons } from '../PrevNextButtons';
 
 export function SignupStep() {
@@ -70,62 +73,25 @@ export function SignupStep() {
         />
       </div>
 
-      <div className="space-y-2">
-        <label className="text-xs font-medium text-gray-700">How Did You Hear About Us?</label>
-
-        <div className="relative">
-          <select
-            value={signup.howDidHearAboutUs ?? ``}
-            onChange={(e) => {
-              const value = e.target.value || null;
-              updateSignup({
-                howDidHearAboutUs: value,
-                howDidHearAboutUsOther: null, // reset
-              });
-            }}
-            className="w-full rounded-md border px-3 py-2 text-sm bg-white"
-          >
-            <option value="">Not Selected</option>
-            <option value="Employer Company">Employer Company</option>
-            <option value="Employee Contractor">Employee Contractor</option>
-            <option value="Referred Recommended">Referred Recommended</option>
-            <option value="Email Invite">Email Invite</option>
-            <option value="Google">Google</option>
-            <option value="Facebook">Facebook</option>
-            <option value="Twitter">Twitter</option>
-            <option value="LinkedIn">LinkedIn</option>
-            <option value="Other">Other</option>
-          </select>
-
-          {signup.howDidHearAboutUs && (
-            <button
-              type="button"
-              onClick={() =>
-                updateSignup({
-                  howDidHearAboutUs: null,
-                  howDidHearAboutUsOther: null,
-                })
-              }
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 text-lg"
-            >
-              ×
-            </button>
-          )}
-        </div>
-
-        {/* If “Other” selected → show input */}
-        {signup.howDidHearAboutUs === `Other` && (
-          <div>
-            <input
-              type="text"
-              value={signup.howDidHearAboutUsOther ?? ``}
-              onChange={(e) => updateSignup({ howDidHearAboutUsOther: e.target.value })}
-              placeholder="Explain how did you hear about us..."
-              className="mt-2 w-full rounded-md border px-3 py-2 text-sm"
-            />
-          </div>
-        )}
-      </div>
+      <SelectWithClear<IHowDidHearAboutUs | string>
+        label="How Did You Hear About Us?"
+        value={signup.howDidHearAboutUs || ``}
+        onChange={(howDidHearAboutUs) => updateSignup({ howDidHearAboutUs })}
+        options={[
+          { label: HOW_DID_HEAR_ABOUT_US.EMPLOYER_COMPANY, value: HOW_DID_HEAR_ABOUT_US.EMPLOYER_COMPANY },
+          { label: HOW_DID_HEAR_ABOUT_US.EMPLOYEE_CONTRACTOR, value: HOW_DID_HEAR_ABOUT_US.EMPLOYEE_CONTRACTOR },
+          { label: HOW_DID_HEAR_ABOUT_US.REFERRED_RECOMMENDED, value: HOW_DID_HEAR_ABOUT_US.REFERRED_RECOMMENDED },
+          { label: HOW_DID_HEAR_ABOUT_US.EMAIL_INVITE, value: HOW_DID_HEAR_ABOUT_US.EMAIL_INVITE },
+          { label: HOW_DID_HEAR_ABOUT_US.GOOGLE, value: HOW_DID_HEAR_ABOUT_US.GOOGLE },
+          { label: HOW_DID_HEAR_ABOUT_US.FACEBOOK, value: HOW_DID_HEAR_ABOUT_US.FACEBOOK },
+          { label: HOW_DID_HEAR_ABOUT_US.TWITTER, value: HOW_DID_HEAR_ABOUT_US.TWITTER },
+          { label: HOW_DID_HEAR_ABOUT_US.LINKED_IN, value: HOW_DID_HEAR_ABOUT_US.LINKED_IN },
+        ]}
+        showOtherField
+        showNotSelected={false}
+        otherValue={signup.howDidHearAboutUsOther}
+        onChangeOther={(howDidHearAboutUsOther) => updateSignup({ howDidHearAboutUsOther })}
+      />
 
       <div className="space-y-1">
         <label className="text-xs font-medium text-gray-700">Account type</label>
