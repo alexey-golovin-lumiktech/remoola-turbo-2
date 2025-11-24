@@ -130,6 +130,14 @@ const app = {
   ADMIN_EMAIL: z.string().default(`simplelogin-newsletter.djakm@simplelogin.com`),
 };
 
+const debugging = {
+  DEBUG_ALLOWED: z
+    .string()
+    .default(`FALSE`)
+    .transform((v) => v === `TRUE`)
+    .pipe(z.boolean()),
+};
+
 const schema = z.object({
   ...node,
   ...database,
@@ -141,6 +149,7 @@ const schema = z.object({
   ...aws,
   ...logs,
   ...app,
+  ...debugging,
 });
 
 const parsed = schema.safeParse(process.env);
