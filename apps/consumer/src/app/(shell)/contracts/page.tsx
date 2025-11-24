@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Badge } from '@remoola/ui/Badge';
 import { Card } from '@remoola/ui/Card';
 
-import { getJson, postJson, putJson } from '../../../lib/api';
+import { getJson, postJson, putJson } from '../../../lib';
 
 type Row = {
   id: string;

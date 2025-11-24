@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 
-import { useSignupSteps } from '../context/SignupStepsContext';
+import { useSignupSteps } from '../hooks';
 
 interface PrevNextButtonsProps {
   onNext?: () => void;

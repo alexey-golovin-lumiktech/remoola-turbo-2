@@ -11,7 +11,5 @@ export type ISignupRequest = Pick<
   | `accountType` //
   | `contractorKind`
   | `email`
-  | `firstName`
-  | `lastName`
   | `password`
 >;

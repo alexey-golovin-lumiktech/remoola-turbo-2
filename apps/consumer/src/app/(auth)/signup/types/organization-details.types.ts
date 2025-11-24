@@ -3,7 +3,7 @@ import { type IOrganizationSize } from './organization-size.types';
 
 export type IOrganizationDetails = {
   name: string;
-  size: IOrganizationSize | null;
-  consumerRole: IConsumerRole | null;
-  consumerRoleOther: string | null;
+  size: null | IOrganizationSize;
+  consumerRole: null | IConsumerRole;
+  consumerRoleOther: null | string;
 };

@@ -2,7 +2,7 @@ import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger';
 import { Exclude, Expose, Type } from 'class-transformer';
 import { IsIn, IsString } from 'class-validator';
 
-import { AdminType } from '@remoola/database';
+import { $Enums } from '@remoola/database';
 
 import { IAdminCreate, IAdminModel, IAdminResponse, IAdminUpdate } from '../../shared-common';
 import { BaseModel } from '../common';
@@ -14,9 +14,9 @@ class Admin extends BaseModel implements IAdminModel {
   email: string;
 
   @Expose()
-  @IsIn(Object.values(AdminType))
-  @ApiProperty({ enum: Object.values(AdminType) })
-  type: AdminType;
+  @IsIn(Object.values($Enums.AdminType))
+  @ApiProperty({ enum: Object.values($Enums.AdminType) })
+  type: $Enums.AdminType;
 
   @Expose()
   @IsString()

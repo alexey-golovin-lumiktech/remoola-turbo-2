@@ -3,7 +3,7 @@ import { Exclude, Expose } from 'class-transformer';
 import { IsIn, IsString, ValidateIf } from 'class-validator';
 import { TokenPayload as ITokenPayload } from 'google-auth-library';
 
-import { AccountType, ContractorKind } from '@remoola/database';
+import { $Enums } from '@remoola/database';
 
 import {
   IGoogleProfileDetailsCreate,
@@ -76,14 +76,14 @@ export class GoogleSignin {
   @Expose()
   @ApiProperty({ required: false })
   @ValidateIf((_, value) => value != null)
-  @IsIn(Object.values(AccountType))
-  accountType?: AccountType;
+  @IsIn(Object.values($Enums.AccountType))
+  accountType?: $Enums.AccountType;
 
   @Expose()
   @ApiProperty({ required: false })
   @ValidateIf((_, value) => value != null)
-  @IsIn(Object.values(ContractorKind))
-  contractorKind?: ContractorKind;
+  @IsIn(Object.values($Enums.ContractorKind))
+  contractorKind?: $Enums.ContractorKind;
 }
 
 class GoogleProfileDetails extends BaseModel implements IGoogleProfileDetailsModel {

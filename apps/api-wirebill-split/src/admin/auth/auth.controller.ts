@@ -1,8 +1,8 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Post } from '@nestjs/common';
 import { ApiBasicAuth, ApiBearerAuth, ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import express from 'express';
 
-import { IAdminModel } from '@remoola/database';
+import { type AdminModel } from '@remoola/database';
 
 import { AdminAuthService } from './auth.service';
 import { Identity, PublicEndpoint } from '../../common/decorators';
@@ -36,7 +36,7 @@ export class AdminAuthController {
   @Post(`login`)
   @ApiOperation({ operationId: `admin_auth_login` })
   @ApiOkResponse({ type: ADMIN.Access })
-  login(@Identity() identity: IAdminModel) {
+  login(@Identity() identity: AdminModel) {
     return this.service.login(identity);
   }
 

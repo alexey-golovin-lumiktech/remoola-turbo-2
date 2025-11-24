@@ -1,6 +1,6 @@
 /* eslint-disable max-len */
 
-import { CurrencyCode } from '@remoola/database';
+import { $Enums } from '@remoola/database';
 
 import { envs } from '../../../../envs';
 import { formatCurrency } from '../../../../shared-common';
@@ -41,5 +41,5 @@ export const processor = (invoice: any /* CONSUMER.InvoiceResponse */) => {
     .replace(ReplacementsRegExpMapping.InvoiceCreatorEmail, invoice.creator)
     .replace(ReplacementsRegExpMapping.InvoiceId, invoice.id)
     .replace(ReplacementsRegExpMapping.InvoiceLink, invoiceLink.toString())
-    .replace(ReplacementsRegExpMapping.InvoiceSubtotal, formatCurrency(invoice.subtotal, CurrencyCode.USD));
+    .replace(ReplacementsRegExpMapping.InvoiceSubtotal, formatCurrency(invoice.subtotal, $Enums.CurrencyCode.USD));
 };

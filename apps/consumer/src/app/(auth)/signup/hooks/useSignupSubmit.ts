@@ -1,13 +1,15 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { useSignupForm } from './useSignupForm';
-import { ACCOUNT_TYPE } from '../types';
 import { signupDetailsSchema, personalDetailsSchema, organizationSchema, addressDetailsSchema } from '../validation';
 
 export function useSignupSubmit() {
-  const { signupDetails, personalDetails, organizationDetails, addressDetails } = useSignupForm();
+  const router = useRouter();
+  const { isBusiness, isContractorEntity, signupDetails, personalDetails, organizationDetails, addressDetails } =
+    useSignupForm();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,18 +22,20 @@ export function useSignupSubmit() {
       signupDetailsSchema.parse(signupDetails);
       personalDetailsSchema.parse(personalDetails);
 
-      if (signupDetails.accountType === ACCOUNT_TYPE.BUSINESS) {
-        organizationSchema.parse(organizationDetails);
-      }
-
-      addressDetailsSchema.parse(addressDetails);
+      if (isBusiness || isContractorEntity) organizationSchema.parse(organizationDetails);
+      if (!isBusiness) addressDetailsSchema.parse(addressDetails);
 
       const payload = {
         ...signupDetails,
         personalDetails: personalDetails,
-        organizationDetails: signupDetails.accountType === ACCOUNT_TYPE.BUSINESS ? organizationDetails : null,
-        addressDetails: addressDetails,
+        organizationDetails: isBusiness || isContractorEntity ? organizationDetails : null,
+        addressDetails: isBusiness ? null : addressDetails,
       };
+
+      console.log(`\n************************************`);
+      console.log(`payload`, payload);
+      console.log(`organizationDetails`, organizationDetails);
+      console.log(`************************************\n`);
 
       const response = await fetch(`/api/signup`, {
         method: `POST`,
@@ -49,8 +53,7 @@ export function useSignupSubmit() {
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/signup/${json.consumer.id}/complete-profile-creation`,
       );
       await fetch(complete);
-      window.location.href = `/login`;
-      return { success: true };
+      router.push(`/signup/completed`);
     } catch (e: any) {
       setError(e.message ?? `Unknown error`);
       return { success: false, error: e.message };

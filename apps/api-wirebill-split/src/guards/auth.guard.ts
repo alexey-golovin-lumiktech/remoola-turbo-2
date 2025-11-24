@@ -15,7 +15,6 @@ const CONSUMER_API_URL_STARTS = `/api/consumer/`;
 
 const GuardMessage = {
   LOST_HEADER: `[AuthGuard] lost required authorization header!`,
-  PUBLIC_ENDPOINT: `[AuthGuard] public endpoint. skip checking!`,
   UNEXPECTED: (type: string) => `[AuthGuard] unexpected auth header type: ${type}`,
   INVALID_CREDENTIALS: `[AuthGuard] invalid email or password`,
   INVALID_TOKEN: `[AuthGuard] invalid token`,
@@ -39,10 +38,7 @@ export class AuthGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
     const request: express.Request = context.switchToHttp().getRequest();
     const isPublic = this.reflector.get<boolean>(IS_PUBLIC, context.getHandler());
-    if (isPublic) {
-      this.logger.log(GuardMessage.PUBLIC_ENDPOINT);
-      return true;
-    }
+    if (isPublic) return true;
 
     const { authorization = null } = request.headers;
     if (authorization == null || authorization.length == 0) return this.throwError(GuardMessage.LOST_HEADER);
@@ -59,23 +55,23 @@ export class AuthGuard implements CanActivate {
   };
 
   private findAdminByEmail(where: { email: string }) {
-    return this.prisma.admin.findFirst({ where });
+    return this.prisma.adminModel.findFirst({ where });
   }
 
   private findConsumerByEmail(where: { email: string }) {
-    return this.prisma.consumer.findFirst({ where });
+    return this.prisma.consumerModel.findFirst({ where });
   }
 
   private findAdminById(identityId: string) {
-    return this.prisma.admin.findFirst({ where: { id: identityId } });
+    return this.prisma.adminModel.findFirst({ where: { id: identityId } });
   }
 
   private findConsumerById(identityId: string) {
-    return this.prisma.consumer.findFirst({ where: { id: identityId } });
+    return this.prisma.consumerModel.findFirst({ where: { id: identityId } });
   }
 
   private findIdentityAccess(where: { identityId: string; accessToken: string }) {
-    return this.prisma.accessRefreshToken.findFirst({ where });
+    return this.prisma.accessRefreshTokenModel.findFirst({ where });
   }
 
   private async basicProcessor(encoded: string, request: express.Request) {

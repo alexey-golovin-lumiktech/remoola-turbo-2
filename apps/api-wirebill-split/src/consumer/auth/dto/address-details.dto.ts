@@ -1,9 +1,9 @@
 import { ApiProperty, PickType } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 
-import { type AddressDetails as IAddressDetails } from '@remoola/database';
+import { type AddressDetailsModel } from '@remoola/database';
 
-class AddressDetails implements IAddressDetails {
+class AddressDetailsDTO implements AddressDetailsModel {
   @Expose()
   @ApiProperty()
   id: string;
@@ -45,7 +45,7 @@ class AddressDetails implements IAddressDetails {
   deletedAt: Date;
 }
 
-export class AddressDetailsUpsert extends PickType(AddressDetails, [
+export class AddressDetailsUpsert extends PickType(AddressDetailsDTO, [
   `postalCode`,
   `country`,
   `city`,

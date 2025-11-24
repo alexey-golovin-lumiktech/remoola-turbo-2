@@ -2,7 +2,7 @@ import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { ValidateIf } from 'class-validator';
 
-import { LegalStatus } from '@remoola/database';
+import { $Enums } from '@remoola/database';
 
 import { IPersonalDetailsCreate, IPersonalDetailsModel, IPersonalDetailsUpdate } from '../../shared-common';
 import { BaseModel } from '../common';
@@ -21,9 +21,9 @@ class PersonalDetails extends BaseModel implements IPersonalDetailsModel {
   passportOrIdNumber: string;
 
   @Expose()
-  @ApiProperty({ enum: Object.values(LegalStatus), required: false })
+  @ApiProperty({ enum: Object.values($Enums.LegalStatus), required: false })
   @ValidateIf(({ value }) => value != null)
-  legalStatus?: LegalStatus;
+  legalStatus?: $Enums.LegalStatus;
 
   @Expose()
   @ApiProperty({ required: false })

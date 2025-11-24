@@ -1,9 +1,9 @@
-import { type ResourceAccess } from '@remoola/database';
+import { type $Enums } from '@remoola/database';
 
 import type { IBaseModel } from './base.model';
 
 export type IResourceModel = {
-  access?: ResourceAccess;
+  access?: $Enums.ResourceAccess;
   originalname: string;
   mimetype: string;
   size: number;

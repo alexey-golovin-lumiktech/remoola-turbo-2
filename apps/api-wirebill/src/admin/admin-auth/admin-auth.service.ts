@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 
-import { Admin as AdminModel } from '@remoola/database';
+import { AdminModel } from '@remoola/database';
 
 import { RefreshTokenPayload } from './types';
 import { JWT_ACCESS_TTL, JWT_REFRESH_SECRET, JWT_REFRESH_TTL, JWT_SECRET } from '../../envs';
@@ -17,7 +17,7 @@ export class AdminAuthService {
 
   async validate(incomingEmail: string, incomingPass: string) {
     console.log(`validate`);
-    const admin = await this.prisma.admin.findFirst({
+    const admin = await this.prisma.adminModel.findFirst({
       where: { email: incomingEmail },
     });
     if (!admin) throw new UnauthorizedException(`INVALID_CREDENTIALS`);

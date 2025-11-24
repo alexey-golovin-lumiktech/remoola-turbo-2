@@ -1,12 +1,13 @@
 import { type IAccountType } from './account.types';
 import { type IContractorKind } from './contractor-kind.types';
+import { type IHowDidHearAboutUs } from './how-did-hear-about-us.types';
 
 export type ISignupDetails = {
   email: string;
   password: string;
   confirmPassword: string;
-  accountType: IAccountType | null;
-  contractorKind: IContractorKind | null;
-  howDidHearAboutUs: string | null;
-  howDidHearAboutUsOther: string | null;
+  accountType: null | IAccountType;
+  contractorKind: null | IContractorKind;
+  howDidHearAboutUs: null | IHowDidHearAboutUs;
+  howDidHearAboutUsOther: null | string;
 };

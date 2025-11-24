@@ -7,7 +7,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { default as cookieParser } from 'cookie-parser';
 import * as express from 'express';
 
-import { AdminType, type PrismaClient } from '@remoola/database';
+import { $Enums, type PrismaClient } from '@remoola/database';
 import { parsedEnvs } from '@remoola/env';
 
 import { AdminModule } from './admin/admin.module';
@@ -21,20 +21,20 @@ import { type IAdminCreate, passwordUtils } from './shared-common';
 
 async function seed(prisma: PrismaClient): Promise<void> {
   const admins = [
-    { type: AdminType.ADMIN, email: `regular.admin@wirebill.com`, password: `RegularWirebill@Admin123!` },
-    { type: AdminType.SUPER, email: `super.admin@wirebill.com`, password: `SuperWirebill@Admin123!` },
-    { type: AdminType.SUPER, email: `email@email.com`, password: `password` },
+    { type: $Enums.AdminType.ADMIN, email: `regular.admin@wirebill.com`, password: `RegularWirebill@Admin123!` },
+    { type: $Enums.AdminType.SUPER, email: `super.admin@wirebill.com`, password: `SuperWirebill@Admin123!` },
+    { type: $Enums.AdminType.SUPER, email: `email@email.com`, password: `password` },
   ];
 
   const emails = admins.map((x) => x.email);
-  await prisma.admin.deleteMany({ where: { email: { in: emails } } });
+  await prisma.adminModel.deleteMany({ where: { email: { in: emails } } });
 
   const data: IAdminCreate[] = [];
   for (const admin of admins) {
     const { salt, hash } = await passwordUtils.hashPassword(admin.password);
     data.push({ email: admin.email, type: admin.type, salt: salt, password: hash });
   }
-  await prisma.admin.createMany({ data, skipDuplicates: true });
+  await prisma.adminModel.createMany({ data, skipDuplicates: true });
 }
 
 function linkTo(kind: `Consumer` | `Admin`) {

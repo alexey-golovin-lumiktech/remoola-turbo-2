@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 import moment from 'moment';
 
-import { CurrencyCode } from '@remoola/database';
+import { $Enums } from '@remoola/database';
 
 import * as invoiceItemToHtml from './invoiceItem';
 import { formatCurrency } from '../../../../shared-common';
@@ -103,8 +103,8 @@ export const processor = (rawInvoice: any) => {
     .replace(ReplacementsRegExpMapping.InvoiceDueDate, moment(invoice.dueDateInDays).format(`ll`))
     .replace(ReplacementsRegExpMapping.InvoiceCreatorEmail, invoice.creator)
     .replace(ReplacementsRegExpMapping.InvoiceRefererEmail, invoice.referer)
-    .replace(ReplacementsRegExpMapping.InvoiceTotal, formatCurrency(invoice.total, CurrencyCode.USD))
-    .replace(ReplacementsRegExpMapping.InvoiceSubtotal, formatCurrency(invoice.subtotal, CurrencyCode.USD))
+    .replace(ReplacementsRegExpMapping.InvoiceTotal, formatCurrency(invoice.total, $Enums.CurrencyCode.USD))
+    .replace(ReplacementsRegExpMapping.InvoiceSubtotal, formatCurrency(invoice.subtotal, $Enums.CurrencyCode.USD))
     .replace(ReplacementsRegExpMapping.ToPayOnlineInvoiceLink, payOnlineBeLink)
     .replace(ReplacementsRegExpMapping.InvoiceItemsHtml, itemsHtml);
 };

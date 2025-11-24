@@ -1,12 +1,9 @@
-/* eslint-disable max-len */
 'use client';
 
 import { SelectWithClear } from '@remoola/ui/SelectWithClear';
 
-import { useSignupSteps } from '../../context/SignupStepsContext';
-import { useSignupForm } from '../../hooks/useSignupForm';
-import { type ILegalStatusLabel, STATUS_LABEL, LABEL_STATUS, LEGAL_STATUS_LABEL } from '../../types';
-import { STEP_NAME } from '../../types/step.types';
+import { useSignupForm, useSignupSteps } from '../../hooks';
+import { type ILegalStatusLabel, STATUS_LABEL, LABEL_STATUS, LEGAL_STATUS_LABEL, STEP_NAME } from '../../types';
 import { PrevNextButtons } from '../PrevNextButtons';
 
 export function PersonalDetailsStep() {
@@ -20,7 +17,6 @@ export function PersonalDetailsStep() {
 
   return (
     <div className="w-full max-w-md space-y-4 rounded bg-white p-6 shadow-sm">
-      {/* <form onSubmit={handleSubmit} className="w-full max-w-md space-y-4 rounded-lg border bg-white p-6 shadow-sm"> */}
       <h1 className="mb-2 text-lg font-semibold">Personal details</h1>
 
       <div className="grid grid-cols-2 gap-3">
@@ -119,7 +115,6 @@ export function PersonalDetailsStep() {
       </div>
 
       <PrevNextButtons onClick={() => handleSubmit()} />
-      {/* </form> */}
     </div>
   );
 }

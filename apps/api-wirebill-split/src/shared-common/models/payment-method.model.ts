@@ -1,4 +1,4 @@
-import { type PaymentMethodType } from '@remoola/database';
+import { type $Enums } from '@remoola/database';
 
 import type { CreditCardExpMonth, CreditCardExpYear } from '../types';
 import type { IBaseModel } from './base.model';
@@ -14,18 +14,18 @@ export type IPaymentMethodCommon = {
 } & IBaseModel //eslint-disable-line
 
 export type IPaymentMethodBankAccountModel = {
-  type: typeof PaymentMethodType.BANK_ACCOUNT;
+  type: typeof $Enums.PaymentMethodType.BANK_ACCOUNT;
 } & IPaymentMethodCommon;
 
 export type IPaymentMethodCreditCardModel = {
-  type: typeof PaymentMethodType.CREDIT_CARD;
+  type: typeof $Enums.PaymentMethodType.CREDIT_CARD;
   expMonth: CreditCardExpMonth;
   expYear: CreditCardExpYear;
 } & IPaymentMethodCommon;
 
 export type IPaymentMethodModel = {
   consumerId: string;
-  type: PaymentMethodType;
+  type: $Enums.PaymentMethodType;
   brand: string;
   last4: string;
   defaultSelected: boolean;

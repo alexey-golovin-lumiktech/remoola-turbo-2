@@ -1,6 +1,5 @@
-import { type ContractorKind, type AccountType } from '@remoola/database';
+import { type $Enums } from '@remoola/database';
 
-import type { HowDidHearAboutUsValue } from '../types';
 import type { IBaseModel } from './base.model';
 
 export type IConsumerModel = {
@@ -10,12 +9,11 @@ export type IConsumerModel = {
 
   password?: string;
   salt?: string;
-  firstName?: string;
-  lastName?: string;
 
-  howDidHearAboutUs?: string | HowDidHearAboutUsValue;
-  accountType?: AccountType;
-  contractorKind?: ContractorKind;
+  howDidHearAboutUs?: null | $Enums.HowDidHearAboutUs;
+  howDidHearAboutUsOther?: null | string;
+  accountType?: $Enums.AccountType;
+  contractorKind?: $Enums.ContractorKind;
   stripeCustomerId?: string;
 
   googleProfileDetailsId?: string;

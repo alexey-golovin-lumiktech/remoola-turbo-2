@@ -2,12 +2,12 @@ import { ApiProperty, PartialType, PickType } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsBoolean, IsEmail, IsIn, ValidateIf } from 'class-validator';
 
-import { AccountType, ContractorKind, IConsumerModel } from '@remoola/database';
+import { $Enums, type ConsumerModel } from '@remoola/database';
 
-import { constants, HowDidHearAboutUsValue, IConsumerCreate, IConsumerUpdate } from '../../shared-common';
+import { constants, IConsumerCreate, IConsumerUpdate } from '../../shared-common';
 import { BaseModel } from '../common';
 
-export class ConsumerModel extends BaseModel implements IConsumerModel {
+export class ConsumerDTO extends BaseModel implements ConsumerModel {
   @Expose()
   @ApiProperty({ required: true })
   @IsEmail({}, { message: constants.INVALID_EMAIL })
@@ -35,27 +35,23 @@ export class ConsumerModel extends BaseModel implements IConsumerModel {
 
   @Expose()
   @ApiProperty({ required: false, default: null })
-  firstName: string;
+  howDidHearAboutUs: null | $Enums.HowDidHearAboutUs;
 
   @Expose()
   @ApiProperty({ required: false, default: null })
-  lastName: string;
-
-  @Expose()
-  @ApiProperty({ required: false, default: null })
-  howDidHearAboutUs: string | HowDidHearAboutUsValue;
+  howDidHearAboutUsOther: null | string;
 
   @Expose()
   @ApiProperty({ required: false, default: null })
   @ValidateIf((_, value) => value != null)
-  @IsIn(Object.values(AccountType))
-  accountType: AccountType;
+  @IsIn(Object.values($Enums.AccountType))
+  accountType: $Enums.AccountType;
 
   @Expose()
   @ApiProperty({ required: false, default: null })
   @ValidateIf((_, value) => value != null)
-  @IsIn(Object.values(ContractorKind))
-  contractorKind: ContractorKind;
+  @IsIn(Object.values($Enums.ContractorKind))
+  contractorKind: $Enums.ContractorKind;
 
   @Expose()
   @ApiProperty({ required: false, default: null })
@@ -63,14 +59,12 @@ export class ConsumerModel extends BaseModel implements IConsumerModel {
 }
 
 export class ConsumerCreate
-  extends PickType(ConsumerModel, [
+  extends PickType(ConsumerDTO, [
     `email`,
     `verified`,
     `legalVerified`,
     `password`,
     `salt`,
-    `firstName`,
-    `lastName`,
     `howDidHearAboutUs`,
     `accountType`,
     `contractorKind`,

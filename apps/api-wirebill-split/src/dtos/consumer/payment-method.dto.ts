@@ -2,7 +2,7 @@ import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 import { IsIn, IsUUID } from 'class-validator';
 
-import { PaymentMethodType } from '@remoola/database';
+import { $Enums } from '@remoola/database';
 
 import {
   CreditCardExpMonth,
@@ -12,7 +12,7 @@ import {
 } from '../../shared-common';
 import { BaseModel } from '../common';
 
-export class PaymentMethod extends BaseModel implements IPaymentMethodModel {
+export class PaymentMethodDTO extends BaseModel implements IPaymentMethodModel {
   @Expose()
   @IsUUID(`all`)
   @ApiProperty()
@@ -20,8 +20,8 @@ export class PaymentMethod extends BaseModel implements IPaymentMethodModel {
 
   @Expose()
   @ApiProperty({ required: true })
-  @IsIn(Object.values(PaymentMethodType))
-  type: PaymentMethodType;
+  @IsIn(Object.values($Enums.PaymentMethodType))
+  type: $Enums.PaymentMethodType;
 
   @Expose()
   @ApiProperty({ required: true })
@@ -49,7 +49,7 @@ export class PaymentMethod extends BaseModel implements IPaymentMethodModel {
 }
 
 export class PaymentMethodResponse
-  extends OmitType(PaymentMethod, [`deletedAt`] as const)
+  extends OmitType(PaymentMethodDTO, [`deletedAt`] as const)
   implements IPaymentMethodResponse {}
 
 export class PaymentMethodListResponse {
@@ -63,7 +63,7 @@ export class PaymentMethodListResponse {
   data: PaymentMethodResponse[];
 }
 
-export class PaymentMethodCreate extends PickType(PaymentMethod, [
+export class PaymentMethodCreate extends PickType(PaymentMethodDTO, [
   `type`,
   `brand`,
   `last4`,
@@ -71,5 +71,5 @@ export class PaymentMethodCreate extends PickType(PaymentMethod, [
   `expYear`,
 ] as const) {}
 export class PaymentMethodUpdate extends PartialType(
-  PickType(PaymentMethod, [`brand`, `last4`, `expMonth`, `expYear`] as const),
+  PickType(PaymentMethodDTO, [`brand`, `last4`, `expMonth`, `expYear`] as const),
 ) {}

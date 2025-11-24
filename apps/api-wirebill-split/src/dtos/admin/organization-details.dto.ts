@@ -1,9 +1,9 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 
-import { OrganizationSize } from '@remoola/database';
+import { $Enums } from '@remoola/database';
 
-import { ConsumerRoleValue, IOrganizationDetailsModel, IOrganizationDetailsUpdate } from '../../shared-common';
+import { IOrganizationDetailsModel, IOrganizationDetailsUpdate } from '../../shared-common';
 import { BaseModel } from '../common';
 
 class OrganizationDetails extends BaseModel implements IOrganizationDetailsModel {
@@ -13,11 +13,15 @@ class OrganizationDetails extends BaseModel implements IOrganizationDetailsModel
 
   @Expose()
   @ApiProperty()
-  size: OrganizationSize;
+  size: $Enums.OrganizationSize;
 
   @Expose()
   @ApiProperty()
-  consumerRole: string | ConsumerRoleValue;
+  consumerRole: null | $Enums.ConsumerRole;
+
+  @Expose()
+  @ApiProperty()
+  consumerRoleOther: null | string;
 }
 
 export class OrganizationDetailsResponse
@@ -42,9 +46,13 @@ export class OrganizationDetailsUpdate implements IOrganizationDetailsUpdate {
 
   @Expose()
   @ApiProperty({ required: false })
-  size?: OrganizationSize;
+  size?: $Enums.OrganizationSize;
 
   @Expose()
   @ApiProperty({ required: false })
-  consumerRole?: string | ConsumerRoleValue;
+  consumerRole?: null | $Enums.ConsumerRole;
+
+  @Expose()
+  @ApiProperty({ required: false })
+  consumerRoleOther?: null | string;
 }

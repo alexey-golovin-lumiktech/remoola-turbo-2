@@ -11,7 +11,7 @@ import {
   IsISO8601,
 } from 'class-validator';
 
-import { LegalStatus, OrganizationSize, AccountType, ContractorKind } from '@remoola/database';
+import { $Enums } from '@remoola/database';
 
 export class AddressDetailsGPT {
   @Expose()
@@ -60,10 +60,10 @@ export class PersonalDetailsGPT {
   passportOrIdNumber: string;
 
   @Expose()
-  @ApiPropertyOptional({ example: LegalStatus.INDIVIDUAL })
+  @ApiPropertyOptional({ example: $Enums.LegalStatus.INDIVIDUAL })
   @IsOptional()
-  @IsEnum(LegalStatus)
-  legalStatus?: LegalStatus;
+  @IsEnum($Enums.LegalStatus)
+  legalStatus?: $Enums.LegalStatus;
 
   @Expose()
   @ApiPropertyOptional()
@@ -82,6 +82,19 @@ export class PersonalDetailsGPT {
   @IsOptional()
   @IsString()
   phoneNumber?: string;
+
+  @Expose()
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  firstName?: string;
+
+  @Expose()
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsOptional()
+  @IsString()
+  lastName?: string;
 }
 
 export class OrganizationDetailsGPT {
@@ -96,9 +109,9 @@ export class OrganizationDetailsGPT {
   consumerRole: string;
 
   @Expose()
-  @ApiProperty({ example: OrganizationSize.SMALL })
-  @IsEnum(OrganizationSize)
-  size: OrganizationSize;
+  @ApiProperty({ example: $Enums.OrganizationSize.SMALL })
+  @IsEnum($Enums.OrganizationSize)
+  size: $Enums.OrganizationSize;
 }
 
 export class ConsumerSignupGPT {
@@ -114,35 +127,27 @@ export class ConsumerSignupGPT {
   password: string;
 
   @Expose()
-  @ApiProperty({ example: AccountType.CONTRACTOR, enum: AccountType })
-  @IsEnum(AccountType)
-  accountType: AccountType;
+  @ApiProperty({ example: $Enums.AccountType.CONTRACTOR, enum: $Enums.AccountType })
+  @IsEnum($Enums.AccountType)
+  accountType: $Enums.AccountType;
 
   @Expose()
-  @ApiPropertyOptional({ example: ContractorKind.INDIVIDUAL, enum: ContractorKind })
-  @ValidateIf((o) => o.accountType === AccountType.CONTRACTOR)
-  @IsEnum(ContractorKind)
-  contractorKind?: ContractorKind;
+  @ApiPropertyOptional({ example: $Enums.ContractorKind.INDIVIDUAL, enum: $Enums.ContractorKind })
+  @ValidateIf((o) => o.accountType === $Enums.AccountType.CONTRACTOR)
+  @IsEnum($Enums.ContractorKind)
+  contractorKind?: $Enums.ContractorKind;
 
   @Expose()
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  firstName?: string;
+  howDidHearAboutUs: null | $Enums.HowDidHearAboutUs;
 
   @Expose()
   @ApiPropertyOptional()
   @IsOptional()
-  @IsOptional()
   @IsString()
-  lastName?: string;
-
-  @Expose()
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsOptional()
-  @IsString()
-  howDidHearAboutUs?: string;
+  howDidHearAboutUsOther: null | string;
 
   @Expose()
   @ApiProperty()
@@ -155,8 +160,8 @@ export class ConsumerSignupGPT {
   @ApiPropertyOptional({ type: OrganizationDetailsGPT })
   @ValidateIf(
     (o) =>
-      o.accountType === AccountType.BUSINESS ||
-      (o.accountType === AccountType.CONTRACTOR && o.contractorKind === ContractorKind.ENTITY),
+      o.accountType === $Enums.AccountType.BUSINESS ||
+      (o.accountType === $Enums.AccountType.CONTRACTOR && o.contractorKind === $Enums.ContractorKind.ENTITY),
   )
   @ValidateNested()
   @Type(() => OrganizationDetailsGPT)
@@ -165,7 +170,9 @@ export class ConsumerSignupGPT {
   // Required for CONTRACTOR + INDIVIDUAL
   @Expose()
   @ApiPropertyOptional({ type: PersonalDetailsGPT })
-  @ValidateIf((o) => o.accountType === AccountType.CONTRACTOR && o.contractorKind === ContractorKind.INDIVIDUAL)
+  @ValidateIf(
+    (o) => o.accountType === $Enums.AccountType.CONTRACTOR && o.contractorKind === $Enums.ContractorKind.INDIVIDUAL,
+  )
   @ValidateNested()
   @Type(() => PersonalDetailsGPT)
   personalDetails?: PersonalDetailsGPT;

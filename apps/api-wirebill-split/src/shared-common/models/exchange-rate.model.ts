@@ -1,9 +1,9 @@
-import { type CurrencyCode } from '@remoola/database';
+import { type $Enums } from '@remoola/database';
 
 import type { IBaseModel } from './base.model';
 
 export type IExchangeRateModel = {
-  fromCurrency: CurrencyCode;
-  toCurrency: CurrencyCode;
+  fromCurrency: $Enums.CurrencyCode;
+  toCurrency: $Enums.CurrencyCode;
   rate: number;
 } & IBaseModel;

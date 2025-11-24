@@ -64,7 +64,7 @@ export function SelectWithClear<T extends string | null>({
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          setOpen((o) => !o);
+          setOpen((open) => !open);
         }}
         className={`
           relative w-full border rounded px-3 py-2 bg-white text-sm

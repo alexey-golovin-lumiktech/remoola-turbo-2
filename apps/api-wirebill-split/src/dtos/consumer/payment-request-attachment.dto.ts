@@ -1,7 +1,7 @@
 import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 
-import { IPaymentRequestAttachmentModel, ResourceAccess } from '@remoola/database';
+import { type PaymentRequestAttachmentModel, $Enums } from '@remoola/database';
 
 import {
   IPaymentRequestAttachmentCreate,
@@ -11,7 +11,7 @@ import {
 } from '../../shared-common';
 import { BaseModel } from '../common';
 
-class PaymentRequestAttachment extends BaseModel implements IPaymentRequestAttachmentModel {
+class PaymentRequestAttachmentDTO extends BaseModel implements PaymentRequestAttachmentModel {
   @Expose()
   @ApiProperty()
   requesterId: string;
@@ -30,11 +30,11 @@ type OptionalResourceFields = Partial<Omit<IResourceResponse, `downloadUrl` | `o
 type AttachmentFields = OptionalResourceFields & RequiredResourceFields;
 
 export class PaymentRequestAttachmentResponse
-  extends OmitType(PaymentRequestAttachment, [`deletedAt`] as const)
+  extends OmitType(PaymentRequestAttachmentDTO, [`deletedAt`] as const)
   implements IPaymentRequestAttachmentResponse, AttachmentFields {
   @Expose()
   @ApiProperty()
-  access?: ResourceAccess;
+  access?: $Enums.ResourceAccess;
 
   @Expose()
   @ApiProperty()
@@ -73,7 +73,7 @@ export class PaymentRequestAttachmentListResponse {
 }
 
 export class PaymentRequestAttachmentCreate
-  extends PickType(PaymentRequestAttachment, [
+  extends PickType(PaymentRequestAttachmentDTO, [
     `requesterId`, //
     `paymentRequestId`,
     `resourceId`,

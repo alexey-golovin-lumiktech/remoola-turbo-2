@@ -2,11 +2,11 @@ import { ApiProperty, ApiPropertyOptional, PickType } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsEmail, IsString } from 'class-validator';
 
-import { $Enums, type Consumer as IConsumer } from '@remoola/database';
+import { $Enums, type ConsumerModel } from '@remoola/database';
 
 import { OptionalNullableString } from '../../../common';
 
-class Consumer implements IConsumer {
+class ConsumerDTO implements ConsumerModel {
   @Expose()
   @ApiProperty()
   id: string;
@@ -46,14 +46,6 @@ class Consumer implements IConsumer {
   salt: string;
 
   @Expose()
-  @ApiProperty()
-  firstName: string;
-
-  @Expose()
-  @ApiProperty()
-  lastName: string;
-
-  @Expose()
   @ApiProperty({ enum: $Enums.AccountType })
   accountType: $Enums.AccountType;
 
@@ -63,29 +55,24 @@ class Consumer implements IConsumer {
 
   @Expose()
   @ApiProperty()
-  howDidHearAboutUs: string;
+  howDidHearAboutUs: null | $Enums.HowDidHearAboutUs;
+
+  @Expose()
+  @ApiProperty()
+  howDidHearAboutUsOther: null | string;
 
   @Expose()
   @ApiProperty()
   stripeCustomerId: string;
 }
 
-export class SignupBody extends PickType(Consumer, [
+export class SignupBody extends PickType(ConsumerDTO, [
   `email`, //
   `password`,
   `accountType`,
   `howDidHearAboutUs`,
+  `howDidHearAboutUsOther`,
 ] as const) {
-  @Expose()
-  @ApiPropertyOptional()
-  @OptionalNullableString()
-  firstName?: string;
-
-  @Expose()
-  @ApiPropertyOptional()
-  @OptionalNullableString()
-  lastName?: string;
-
   @Expose()
   @ApiPropertyOptional({ enum: $Enums.ContractorKind })
   @OptionalNullableString()

@@ -9,7 +9,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model AccessRefreshToken {
+model AccessRefreshTokenModel {
   id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
 
   identityId   String @map("identity_id") @db.Uuid
@@ -23,7 +23,7 @@ model AccessRefreshToken {
   @@map("access_refresh_token")
 }
 
-model AddressDetails {
+model AddressDetailsModel {
   id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
 
   postalCode String  @map("postal_code") @db.VarChar(255)
@@ -32,8 +32,8 @@ model AddressDetails {
   state      String? @db.VarChar(255)
   street     String? @db.VarChar(255)
 
-  consumerId String   @unique @db.Uuid
-  consumer   Consumer @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  consumerId String        @unique @db.Uuid
+  consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
@@ -42,7 +42,7 @@ model AddressDetails {
   @@map("address_details")
 }
 
-model Admin {
+model AdminModel {
   id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
 
   type AdminType @default(ADMIN)
@@ -58,13 +58,13 @@ model Admin {
   @@map("admin")
 }
 
-model BillingDetails {
+model BillingDetailsModel {
   id    String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   email String? @db.VarChar(255)
   name  String? @db.VarChar(255)
   phone String? @db.VarChar(255)
 
-  paymentMethod PaymentMethod?
+  paymentMethod PaymentMethodModel?
 
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
@@ -73,7 +73,7 @@ model BillingDetails {
   @@map("billing_details")
 }
 
-model Consumer {
+model ConsumerModel {
   id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
 
   email          String          @unique() @db.VarChar(255)
@@ -84,26 +84,25 @@ model Consumer {
   salt          String?  @db.VarChar(255)
   verified      Boolean? @default(false)
   legalVerified Boolean? @default(false) @map("legal_verified")
-  firstName     String?  @map("first_name") @db.VarChar(255)
-  lastName      String?  @map("last_name") @db.VarChar(255)
 
-  howDidHearAboutUs String? @map("how_did_hear_about_us") @db.VarChar(255)
-  stripeCustomerId  String? @map("stripe_customer_id") @db.VarChar(255)
+  howDidHearAboutUs      HowDidHearAboutUs? @map("how_did_hear_about_us")
+  howDidHearAboutUsOther String?            @map("how_did_hear_about_us_other") @db.VarChar(255)
+  stripeCustomerId       String?            @map("stripe_customer_id") @db.VarChar(255)
 
-  addressDetails       AddressDetails?
-  personalDetails      PersonalDetails?
-  organizationDetails  OrganizationDetails?
-  googleProfileDetails GoogleProfileDetails?
+  addressDetails       AddressDetailsModel?
+  personalDetails      PersonalDetailsModel?
+  organizationDetails  OrganizationDetailsModel?
+  googleProfileDetails GoogleProfileDetailsModel?
 
-  asPayerPaymentRequests     PaymentRequest[] @relation("PaymentRequestPayerIdToConsumer")
-  asRequesterPaymentRequests PaymentRequest[] @relation("PaymentRequestRequesterIdToConsumer")
+  asPayerPaymentRequests     PaymentRequestModel[] @relation("PaymentRequestPayerIdToConsumer")
+  asRequesterPaymentRequests PaymentRequestModel[] @relation("PaymentRequestRequesterIdToConsumer")
 
-  resources      ConsumerResource[]
-  contacts       Contact[]
-  paymentMethods PaymentMethod[]
-  attachments    PaymentRequestAttachment[]
-  passwordResets ResetPassword[]
-  transactions   Transaction[]
+  resources      ConsumerResourceModel[]
+  contacts       ContactModel[]
+  paymentMethods PaymentMethodModel[]
+  attachments    PaymentRequestAttachmentModel[]
+  passwordResets ResetPasswordModel[]
+  transactions   TransactionModel[]
 
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
@@ -112,14 +111,14 @@ model Consumer {
   @@map("consumer")
 }
 
-model ConsumerResource {
+model ConsumerResourceModel {
   id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
 
-  consumerId String   @map("consumer_id") @db.Uuid
-  consumer   Consumer @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  consumerId String        @map("consumer_id") @db.Uuid
+  consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  resourceId String   @map("resource_id") @db.Uuid
-  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  resourceId String        @map("resource_id") @db.Uuid
+  resource   ResourceModel @relation(fields: [resourceId], references: [id], onDelete: Cascade)
 
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
@@ -129,15 +128,15 @@ model ConsumerResource {
   @@map("consumer_resource")
 }
 
-model Contact {
+model ContactModel {
   id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
 
   email   String  @db.VarChar(255)
   name    String? @db.VarChar(255)
   address Json
 
-  consumerId String   @map("consumer_id") @db.Uuid
-  consumer   Consumer @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  consumerId String        @map("consumer_id") @db.Uuid
+  consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
@@ -146,7 +145,7 @@ model Contact {
   @@map("contact")
 }
 
-model ExchangeRate {
+model ExchangeRateModel {
   id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
 
   fromCurrency CurrencyCode @map("from_currency")
@@ -162,7 +161,7 @@ model ExchangeRate {
   @@map("exchange_rate")
 }
 
-model GoogleProfileDetails {
+model GoogleProfileDetailsModel {
   id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
 
   email         String  @db.VarChar(255)
@@ -174,8 +173,8 @@ model GoogleProfileDetails {
   organization  String? @db.VarChar(255)
   metadata      Json?
 
-  consumerId String   @unique @db.Uuid
-  consumer   Consumer @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  consumerId String        @unique @db.Uuid
+  consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
@@ -184,15 +183,16 @@ model GoogleProfileDetails {
   @@map("google_profile_details")
 }
 
-model OrganizationDetails {
+model OrganizationDetailsModel {
   id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
 
-  name         String           @db.VarChar(255)
-  consumerRole String           @map("consumer_role") @db.VarChar(255)
-  size         OrganizationSize @default(SMALL)
+  name              String           @db.VarChar(255)
+  consumerRole      ConsumerRole?    @map("consumer_role")
+  consumerRoleOther String?          @map("consumer_role_other") @db.VarChar(255)
+  size              OrganizationSize @default(SMALL)
 
-  consumerId String   @unique @db.Uuid
-  consumer   Consumer @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  consumerId String        @unique @db.Uuid
+  consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
@@ -201,7 +201,7 @@ model OrganizationDetails {
   @@map("organization_details")
 }
 
-model PaymentMethod {
+model PaymentMethodModel {
   id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
 
   type PaymentMethodType
@@ -213,11 +213,11 @@ model PaymentMethod {
   expMonth        String? @map("exp_month") @db.VarChar(2)
   expYear         String? @map("exp_year") @db.VarChar(4)
 
-  billingDetailsId String         @unique @map("billing_details_id") @db.Uuid
-  billingDetails   BillingDetails @relation(fields: [billingDetailsId], references: [id])
+  billingDetailsId String              @unique @map("billing_details_id") @db.Uuid
+  billingDetails   BillingDetailsModel @relation(fields: [billingDetailsId], references: [id])
 
-  consumerId String   @map("consumer_id") @db.Uuid
-  consumer   Consumer @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  consumerId String        @map("consumer_id") @db.Uuid
+  consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
@@ -227,7 +227,7 @@ model PaymentMethod {
   @@map("payment_method")
 }
 
-model PaymentRequest {
+model PaymentRequestModel {
   id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
 
   currencyCode CurrencyCode      @default(USD) @map("currency_code")
@@ -240,14 +240,14 @@ model PaymentRequest {
   expectationDate DateTime? @map("expectation_date") @db.Timestamptz(6)
   sentDate        DateTime? @map("sent_date") @db.Timestamptz(6)
 
-  payerId String   @map("payer_id") @db.Uuid
-  payer   Consumer @relation("PaymentRequestPayerIdToConsumer", fields: [payerId], references: [id], onDelete: Cascade)
+  payerId String        @map("payer_id") @db.Uuid
+  payer   ConsumerModel @relation("PaymentRequestPayerIdToConsumer", fields: [payerId], references: [id], onDelete: Cascade)
 
-  requesterId String   @map("requester_id") @db.Uuid
-  requester   Consumer @relation("PaymentRequestRequesterIdToConsumer", fields: [requesterId], references: [id], onDelete: Cascade)
+  requesterId String        @map("requester_id") @db.Uuid
+  requester   ConsumerModel @relation("PaymentRequestRequesterIdToConsumer", fields: [requesterId], references: [id], onDelete: Cascade)
 
-  attachments  PaymentRequestAttachment[]
-  transactions Transaction[]
+  attachments  PaymentRequestAttachmentModel[]
+  transactions TransactionModel[]
 
   createdBy String    @map("created_by") @db.VarChar(255)
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -259,17 +259,17 @@ model PaymentRequest {
   @@map("payment_request")
 }
 
-model PaymentRequestAttachment {
+model PaymentRequestAttachmentModel {
   id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
 
-  paymentRequestId String         @map("payment_request_id") @db.Uuid
-  paymentRequest   PaymentRequest @relation(fields: [paymentRequestId], references: [id], onDelete: Cascade)
+  paymentRequestId String              @map("payment_request_id") @db.Uuid
+  paymentRequest   PaymentRequestModel @relation(fields: [paymentRequestId], references: [id], onDelete: Cascade)
 
-  requesterId String   @map("requester_id") @db.Uuid
-  requester   Consumer @relation(fields: [requesterId], references: [id], onDelete: Cascade)
+  requesterId String        @map("requester_id") @db.Uuid
+  requester   ConsumerModel @relation(fields: [requesterId], references: [id], onDelete: Cascade)
 
-  resourceId String   @map("resource_id") @db.Uuid
-  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  resourceId String        @map("resource_id") @db.Uuid
+  resource   ResourceModel @relation(fields: [resourceId], references: [id], onDelete: Cascade)
 
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
@@ -278,7 +278,7 @@ model PaymentRequestAttachment {
   @@map("payment_request_attachment")
 }
 
-model PersonalDetails {
+model PersonalDetailsModel {
   id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
 
   legalStatus LegalStatus? @map("legal_status")
@@ -289,9 +289,11 @@ model PersonalDetails {
   countryOfTaxResidence String?  @map("country_of_tax_residence") @db.VarChar(255)
   taxId                 String?  @map("tax_id") @db.VarChar(255)
   phoneNumber           String?  @map("phone_number") @db.VarChar(255)
+  firstName             String?  @map("first_name") @db.VarChar(255)
+  lastName              String?  @map("last_name") @db.VarChar(255)
 
-  consumerId String   @unique @db.Uuid
-  consumer   Consumer @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  consumerId String        @unique @db.Uuid
+  consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
@@ -300,14 +302,14 @@ model PersonalDetails {
   @@map("personal_details")
 }
 
-model ResetPassword {
+model ResetPasswordModel {
   id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
 
   token     String
   expiredAt DateTime @map("expired_at") @db.Timestamptz(6)
 
-  consumerId String   @map("consumer_id") @db.Uuid
-  consumer   Consumer @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  consumerId String        @map("consumer_id") @db.Uuid
+  consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
@@ -316,7 +318,7 @@ model ResetPassword {
   @@map("reset_password")
 }
 
-model Resource {
+model ResourceModel {
   id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
 
   access       String @default("public")
@@ -331,13 +333,13 @@ model Resource {
   updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
-  consumerResources ConsumerResource[]
-  attachments       PaymentRequestAttachment[]
+  consumerResources ConsumerResourceModel[]
+  attachments       PaymentRequestAttachmentModel[]
 
   @@map("resource")
 }
 
-model Transaction {
+model TransactionModel {
   id   String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   code String @default(dbgenerated("substr(md5((now())::text), 0, 7)")) @db.VarChar(6)
 
@@ -353,11 +355,11 @@ model Transaction {
   stripeId            String? @map("stripe_id") @db.VarChar(255)
   stripeFeeInPercents Int?    @map("stripe_fee_in_percents")
 
-  consumerId String   @map("consumer_id") @db.Uuid
-  consumer   Consumer @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  consumerId String        @map("consumer_id") @db.Uuid
+  consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  paymentRequestId String?         @map("payment_request_id") @db.Uuid
-  paymentRequest   PaymentRequest? @relation(fields: [paymentRequestId], references: [id])
+  paymentRequestId String?              @map("payment_request_id") @db.Uuid
+  paymentRequest   PaymentRequestModel? @relation(fields: [paymentRequestId], references: [id])
 
   createdBy String    @map("created_by") @db.VarChar(255)
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -502,4 +504,36 @@ enum TransactionType {
   CURRENCY_EXCHANGE
 
   @@map("transaction_type_enum")
+}
+
+enum ConsumerRole {
+  FOUNDER
+  FINANCE
+  MARKETING
+  CUSTOMER_SUPPORT
+  SALES
+  LEGAL
+  HUMAN_RESOURCE
+  OPERATIONS
+  COMPLIANCE
+  PRODUCT
+  ENGINEERING
+  ANALYSIS_DATA
+  OTHER
+
+  @@map("consumer_role")
+}
+
+enum HowDidHearAboutUs {
+  EMPLOYER_COMPANY
+  EMPLOYEE_CONTRACTOR
+  REFERRED_RECOMMENDED
+  EMAIL_INVITE
+  GOOGLE
+  FACEBOOK
+  TWITTER
+  LINKED_IN
+  OTHER
+
+  @@map("how_did_hear_about_us")
 }

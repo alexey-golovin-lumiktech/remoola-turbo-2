@@ -27,34 +27,6 @@ export const AuthHeader = { Bearer: `Bearer`, Basic: `Basic` } as const;
 
 export const CredentialsSeparator = { Token: ` `, Credentials: `:` } as const;
 
-export const HowDidHearAboutUs = {
-  EmployerCompany: `Employer/Company`,
-  EmployeeContractor: `Employee/Contractor`,
-  ReferredRecommended: `Referred/Recommended`,
-  EmailInvite: `Email invite`,
-  Google: `Google`,
-  Facebook: `Facebook`,
-  Twitter: `Twitter`,
-  LinkedIn: `LinkedIn`,
-  Other: `Other`,
-} as const;
-
-export const ConsumerRole = {
-  Founder: `Founder`,
-  Finance: `Finance`,
-  Marketing: `Marketing`,
-  CustomerSupport: `Customer support`,
-  Sales: `Sales`,
-  Legal: `Legal`,
-  HumanResource: `Human resource`,
-  Operations: `Operations`,
-  Compliance: `Compliance`,
-  Product: `Product`,
-  Engineering: `Engineering`,
-  AnalysisData: `Analysis/Data`,
-  Other: `Other`,
-} as const;
-
 export const Timeline = {
   Past90Days: `Past 90 Days`,
   Past30Days: `Past 30 Days`,

@@ -10,7 +10,7 @@ import { JwtService } from '@nestjs/jwt';
 import express from 'express';
 import { OAuth2Client } from 'google-auth-library';
 
-import { IConsumerModel, IResetPasswordModel } from '@remoola/database';
+import { type ConsumerModel, type ResetPasswordModel } from '@remoola/database';
 
 import { CONSUMER } from '../../dtos';
 import { IJwtTokenPayload } from '../../dtos/consumer';
@@ -40,14 +40,14 @@ export class ConsumerAuthService {
       const googleProfileDetailsInstance = new CONSUMER.CreateGoogleProfileDetails(verified.getPayload());
 
       const consumerData = this.extractConsumerFromGoogleProfile(googleProfileDetailsInstance);
-      let consumer = await this.prisma.consumer.findFirst({ where: { email: consumerData.email } });
+      let consumer = await this.prisma.consumerModel.findFirst({ where: { email: consumerData.email } });
 
       if (!consumer) {
-        consumer = await this.prisma.consumer.create({ data: { ...consumerData, accountType, contractorKind } });
+        consumer = await this.prisma.consumerModel.create({ data: { ...consumerData, accountType, contractorKind } });
         if (consumer.deletedAt != null)
-          throw new BadRequestException(`Consumer is suspended, please contact the support`);
+          throw new BadRequestException(`ConsumerModel is suspended, please contact the support`);
 
-        const googleProfileDetails = await this.prisma.googleProfileDetails.create({
+        const googleProfileDetails = await this.prisma.googleProfileDetailsModel.create({
           data: { consumerId: consumer.id, ...googleProfileDetailsInstance },
         });
         if (googleProfileDetails.deletedAt != null)
@@ -65,17 +65,17 @@ export class ConsumerAuthService {
     }
   }
 
-  async login(identity: IConsumerModel) {
+  async login(identity: ConsumerModel) {
     const access = await this.getAccessAndRefreshToken(identity.id);
     return { identity, ...access };
   }
 
   async refreshAccess(refreshToken: string) {
     const verified = this.jwtService.verify<IJwtTokenPayload>(refreshToken);
-    const exist = await this.prisma.accessRefreshToken.findFirst({ where: { identityId: verified.identityId } });
+    const exist = await this.prisma.accessRefreshTokenModel.findFirst({ where: { identityId: verified.identityId } });
     if (exist == null) throw new BadRequestException(`no identity record`);
 
-    const consumer = await this.prisma.consumer.findFirst({ where: { id: verified.identityId } });
+    const consumer = await this.prisma.consumerModel.findFirst({ where: { id: verified.identityId } });
     const access = await this.getAccessAndRefreshToken(consumer.id);
     return Object.assign(consumer, access);
   }
@@ -91,32 +91,32 @@ export class ConsumerAuthService {
   }
 
   async signup(body: CONSUMER.SignupRequest) {
-    const exist = await this.prisma.consumer.findFirst({ where: { email: body.email } });
+    const exist = await this.prisma.consumerModel.findFirst({ where: { email: body.email } });
     if (exist) throw new BadRequestException(`This email is already exist`);
 
     const { salt, hash } = await passwordUtils.hashPassword(body.password);
 
-    return await this.prisma.consumer.create({
+    return await this.prisma.consumerModel.create({
       data: { ...body, password: hash, salt },
     });
   }
 
-  async completeProfileCreation(consumerId: string, referer: string) {
-    const consumer = await this.prisma.consumer.findFirst({ where: { id: consumerId } });
+  async completeProfileCreationAndSendVerificationEmail(consumerId: string, referer: string) {
+    const consumer = await this.prisma.consumerModel.findFirst({ where: { id: consumerId } });
     if (!consumer) throw new BadRequestException(`No consumer for provided consumerId: ${consumerId}`);
     const token = await this.getAccessToken(consumer.id);
-    this.mailingService.sendConsumerSignupCompletionEmail({ email: consumer.email, token, referer });
+    this.mailingService.sendConsumerSignupVerificationEmail({ email: consumer.email, token, referer });
   }
 
   async signupVerification(token: string, res: express.Response, referer) {
     const decoded: any = this.jwtService.decode(token);
     const redirectUrl = new URL(`signup/verification`, referer);
-    const identity = await this.prisma.consumer.findFirst({ where: { id: decoded.identityId } });
+    const identity = await this.prisma.consumerModel.findFirst({ where: { id: decoded.identityId } });
 
     if (identity?.email) {
       redirectUrl.searchParams.append(`email`, identity.email);
 
-      const updated = await this.prisma.consumer.update({
+      const updated = await this.prisma.consumerModel.update({
         where: { email: identity.email },
         data: { verified: true },
       });
@@ -129,16 +129,16 @@ export class ConsumerAuthService {
   async checkEmailAndSendRecoveryLink(body: Pick<IChangePasswordBody, `email`>, referer: string) {
     if (body.email == null) throw new BadRequestException(`Email is required`);
 
-    const consumer = await this.prisma.consumer.findFirst({ where: { email: body.email } });
+    const consumer = await this.prisma.consumerModel.findFirst({ where: { email: body.email } });
     if (!consumer) throw new BadRequestException(`Not found any consumer for email: ${body.email}`);
 
-    const found = await this.prisma.resetPassword.findFirst({ where: { consumerId: consumer.id } });
+    const found = await this.prisma.resetPasswordModel.findFirst({ where: { consumerId: consumer.id } });
     const oneTimeAccessToken = await this.getAccessToken(consumer.id);
     const expiredAt = new Date(Date.now() + 1000 * 60 * 60 * 24);
     const resetPasswordData = { consumerId: consumer.id, token: oneTimeAccessToken, expiredAt };
-    let record: IResetPasswordModel;
-    if (!found) record = await this.prisma.resetPassword.create({ data: resetPasswordData });
-    else record = await this.prisma.resetPassword.update({ where: { id: found.id }, data: resetPasswordData });
+    let record: ResetPasswordModel;
+    if (!found) record = await this.prisma.resetPasswordModel.create({ data: resetPasswordData });
+    else record = await this.prisma.resetPasswordModel.update({ where: { id: found.id }, data: resetPasswordData });
 
     const forgotPasswordLink = new URL(`change-password`, referer);
     forgotPasswordLink.searchParams.append(`token`, record.token);
@@ -154,22 +154,22 @@ export class ConsumerAuthService {
 
     const verified = await this.verifyChangePasswordFlowToken(param.token);
     const { salt, hash } = await passwordUtils.hashPassword(body.password);
-    await this.prisma.consumer.update({
+    await this.prisma.consumerModel.update({
       where: { id: verified.identityId },
       data: { salt, password: hash },
     });
-    await this.prisma.resetPassword.deleteMany({ where: { consumerId: verified.identityId } });
+    await this.prisma.resetPasswordModel.deleteMany({ where: { consumerId: verified.identityId } });
     return true;
   }
 
-  private async getAccessAndRefreshToken(identityId: IConsumerModel[`id`]) {
+  private async getAccessAndRefreshToken(identityId: ConsumerModel[`id`]) {
     const accessToken = await this.getAccessToken(identityId);
     const refreshToken = await this.getRefreshToken(identityId);
-    const found = await this.prisma.accessRefreshToken.findFirst({ where: { identityId } });
+    const found = await this.prisma.accessRefreshTokenModel.findFirst({ where: { identityId } });
 
     const data = { accessToken, refreshToken };
-    if (!found) await this.prisma.accessRefreshToken.create({ data: { ...data, identityId } });
-    else await this.prisma.accessRefreshToken.update({ where: { id: found.id }, data });
+    if (!found) await this.prisma.accessRefreshTokenModel.create({ data: { ...data, identityId } });
+    else await this.prisma.accessRefreshTokenModel.update({ where: { id: found.id }, data });
 
     return data;
   }
@@ -188,12 +188,12 @@ export class ConsumerAuthService {
     const verified = this.jwtService.verify<IJwtTokenPayload>(token);
     if (!verified) throw new UnauthorizedException(`[verifyChangePasswordFlowToken] Invalid token`);
 
-    const consumer = await this.prisma.consumer.findFirst({
+    const consumer = await this.prisma.consumerModel.findFirst({
       where: { email: verified.email, id: verified.identityId },
     });
-    if (consumer == null) throw new UnauthorizedException(`Consumer not found`);
+    if (consumer == null) throw new UnauthorizedException(`ConsumerModel not found`);
 
-    const record = this.prisma.resetPassword.findFirst({
+    const record = this.prisma.resetPasswordModel.findFirst({
       where: { consumerId: consumer.id, token, expiredAt: { gte: new Date() } },
     });
     if (record == null) throw new NotFoundException(`Change password flow is expired or not initialized`);

@@ -1,8 +1,8 @@
-import { CurrencyCode } from '@remoola/database';
+import { $Enums } from '@remoola/database';
 
 export const formatCurrency = (
   value: number,
-  currency: CurrencyCode = CurrencyCode.USD,
+  currency: $Enums.CurrencyCode = $Enums.CurrencyCode.USD,
   replaceDoubleZero?: boolean,
 ) => {
   const locale = Intl.DateTimeFormat().resolvedOptions().locale;

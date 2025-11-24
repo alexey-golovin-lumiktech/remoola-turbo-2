@@ -1,4 +1,3 @@
-/* eslint-disable max-len */
 import { Injectable, Logger } from '@nestjs/common';
 import { ISendMailOptions, MailerService } from '@nestjs-modules/mailer';
 
@@ -30,10 +29,12 @@ export class MailingService {
     }
   }
 
-  async sendConsumerSignupCompletionEmail(params: { email: string; token: string; referer: string }) {
+  async sendConsumerSignupVerificationEmail(params: { email: string; token: string; referer: string }) {
     const backendBaseURL = process.env.NEST_APP_EXTERNAL_ORIGIN! || `http://[::1]:3333/api`;
-    const emailConfirmationLink = `${backendBaseURL}/consumer/auth/signup/verification?token=${params.token}&referer=${params.referer}`;
-    const html = signupCompletionToHtml.processor(emailConfirmationLink);
+    const emailConfirmationUrl = new URL(`${backendBaseURL}/consumer/auth/signup/verification`);
+    emailConfirmationUrl.search = new URLSearchParams(params).toString();
+
+    const html = signupCompletionToHtml.processor(emailConfirmationUrl.toString());
     const subject = `Welcome to Wirebill! Confirm your Email`;
     try {
       const sent = await this.mailerService.sendMail({ to: params.email, subject, html });

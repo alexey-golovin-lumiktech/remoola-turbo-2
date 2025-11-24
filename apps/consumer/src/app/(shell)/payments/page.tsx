@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Badge } from '@remoola/ui/Badge';
 import { Card } from '@remoola/ui/Card';
 
-import { getJson, postJson } from '../../../lib/api';
+import { getJson, postJson } from '../../../lib';
 
 type Payment = {
   id: string;

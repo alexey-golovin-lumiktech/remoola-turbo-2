@@ -1,9 +1,6 @@
-'use client';
-
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
 
-import { type IAccountType, type IContractorKind } from '../types';
-import { type IStepName, type INormalizedStep, STEP_NAME } from '../types/step.types';
+import { type IAccountType, type IContractorKind, type IStepName, STEP_NAME, type INormalizedStep } from '../types';
 import { getSteps } from '../utils/getSteps';
 import { normalizeSteps } from '../utils/normalizeSteps';
 
@@ -22,12 +19,6 @@ interface SignupStepsState {
 }
 
 const SignupStepsContext = createContext<SignupStepsState | null>(null);
-
-export const useSignupSteps = (): SignupStepsState => {
-  const ctx = useContext(SignupStepsContext);
-  if (!ctx) throw new Error(`SignupStepsContext missing`);
-  return ctx;
-};
 
 export function SignupStepsProvider({
   children,
@@ -86,3 +77,9 @@ export function SignupStepsProvider({
 
   return <SignupStepsContext.Provider value={value}>{children}</SignupStepsContext.Provider>;
 }
+
+export const useSignupSteps = (): SignupStepsState => {
+  const ctx = useContext(SignupStepsContext);
+  if (!ctx) throw new Error(`SignupStepsContext missing`);
+  return ctx;
+};

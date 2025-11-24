@@ -3,14 +3,15 @@
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
-import { Stepper } from './components/Stepper';
-import { AddressDetailsStep } from './components/steps/AddressDetailsStep';
-import { OrganizationDetailsStep } from './components/steps/OrganizationDetailsStep';
-import { PersonalDetailsStep } from './components/steps/PersonalDetailsStep';
-import { SignupDetailsStep } from './components/steps/SignupDetailsStep';
-import { SignupStepsProvider, useSignupSteps } from './context/SignupStepsContext';
-import { useSignupForm } from './hooks/useSignupForm';
-import { STEP_NAME } from './types/step.types';
+import {
+  Stepper,
+  SignupDetailsStep,
+  PersonalDetailsStep,
+  OrganizationDetailsStep,
+  AddressDetailsStep,
+} from './components';
+import { useSignupForm, SignupStepsProvider, useSignupSteps } from './hooks';
+import { STEP_NAME } from './types';
 
 function SignupPageInner() {
   const router = useRouter();

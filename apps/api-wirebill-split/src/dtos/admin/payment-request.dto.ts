@@ -2,7 +2,7 @@ import { ApiProperty, OmitType, PickType } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 import { IsDate, IsIn, IsNumber, IsString, IsUUID, ValidateIf } from 'class-validator';
 
-import { CurrencyCode, TransactionStatus, TransactionType } from '@remoola/database';
+import { $Enums } from '@remoola/database';
 
 import { IPaymentRequestModel, IPaymentRequestResponse, IPaymentRequestUpdate } from '../../shared-common';
 import { BaseModel } from '../common';
@@ -24,10 +24,10 @@ class PaymentRequest extends BaseModel implements IPaymentRequestModel {
   amount: number;
 
   @Expose()
-  @ApiProperty({ enum: Object.values(CurrencyCode) })
+  @ApiProperty({ enum: Object.values($Enums.CurrencyCode) })
   @IsString()
-  @IsIn(Object.values(CurrencyCode))
-  currencyCode: CurrencyCode;
+  @IsIn(Object.values($Enums.CurrencyCode))
+  currencyCode: $Enums.CurrencyCode;
 
   @Expose()
   @ApiProperty()
@@ -35,16 +35,16 @@ class PaymentRequest extends BaseModel implements IPaymentRequestModel {
   description: string;
 
   @Expose()
-  @ApiProperty({ enum: Object.values(TransactionType) })
+  @ApiProperty({ enum: Object.values($Enums.TransactionType) })
   @IsString()
-  @IsIn(Object.values(TransactionType))
-  type: TransactionType;
+  @IsIn(Object.values($Enums.TransactionType))
+  type: $Enums.TransactionType;
 
   @Expose()
-  @ApiProperty({ enum: Object.values(TransactionStatus) })
+  @ApiProperty({ enum: Object.values($Enums.TransactionStatus) })
   @IsString()
-  @IsIn(Object.values(TransactionStatus))
-  status: TransactionStatus;
+  @IsIn(Object.values($Enums.TransactionStatus))
+  status: $Enums.TransactionStatus;
 
   @Expose()
   @ApiProperty()

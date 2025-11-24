@@ -1,4 +1,4 @@
-import { CurrencyCode } from '@remoola/database';
+import { $Enums } from '@remoola/database';
 
 import { formatCurrency } from '../../../../shared-common';
 
@@ -24,7 +24,10 @@ export const processor = (item: any, tax?: number) => {
 
   return html
     .replace(ReplacementsRegExpMapping.ItemDescription, item.description)
-    .replace(ReplacementsRegExpMapping.ItemAmount, formatCurrency(item.amount, CurrencyCode.USD))
-    .replace(ReplacementsRegExpMapping.CalculatedItemSubtotal, formatCurrency(calculatedItemSubtotal, CurrencyCode.USD))
+    .replace(ReplacementsRegExpMapping.ItemAmount, formatCurrency(item.amount, $Enums.CurrencyCode.USD))
+    .replace(
+      ReplacementsRegExpMapping.CalculatedItemSubtotal,
+      formatCurrency(calculatedItemSubtotal, $Enums.CurrencyCode.USD),
+    )
     .replace(ReplacementsRegExpMapping.InvoiceTax, tax ? tax + `%` : `--`);
 };

@@ -1,16 +1,16 @@
 import { Expose } from 'class-transformer';
 import { IsEmail, IsNumber, IsString } from 'class-validator';
 
-import { IConsumerModel } from '@remoola/database';
+import { type ConsumerModel } from '@remoola/database';
 
 export type IJwtTokenPayload = {
-  identityId: IConsumerModel[`id`];
-  email: IConsumerModel[`email`];
+  identityId: ConsumerModel[`id`];
+  email: ConsumerModel[`email`];
   iat?: number;
   exp?: number;
 };
 
-export class JwtTokenPayload implements IJwtTokenPayload {
+export class JwtTokenPayloadDTO implements IJwtTokenPayload {
   @Expose()
   @IsString()
   identityId: string;

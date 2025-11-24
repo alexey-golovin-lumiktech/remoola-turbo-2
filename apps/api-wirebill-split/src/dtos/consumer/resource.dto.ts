@@ -1,7 +1,7 @@
 import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 
-import { ResourceAccess } from '@remoola/database';
+import { $Enums } from '@remoola/database';
 
 import { IResourceCreate, IResourceModel, IResourceResponse, IResourceUpdate } from '../../shared-common';
 import { BaseModel } from '../common';
@@ -9,7 +9,7 @@ import { BaseModel } from '../common';
 class Resource extends BaseModel implements IResourceModel {
   @Expose()
   @ApiProperty()
-  access?: ResourceAccess;
+  access?: $Enums.ResourceAccess;
 
   @Expose()
   @ApiProperty()

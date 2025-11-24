@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { OAuth2Client } from 'google-auth-library';
 
-import { AccountType, ContractorKind, Prisma } from '@remoola/database';
+import { $Enums, Prisma } from '@remoola/database';
 
 import { GoogleOAuthGPT } from './dto/google-oauth.dto';
 import { PrismaService } from '../../shared/prisma.service';
@@ -54,8 +54,8 @@ export class GoogleOAuthServiceGPT {
         email: consumer.email,
         accountType: consumer.accountType,
         contractorKind: consumer.contractorKind,
-        firstName: consumer.firstName,
-        lastName: consumer.lastName,
+        firstName: consumer.personalDetails?.firstName,
+        lastName: consumer.personalDetails?.lastName,
         verified: consumer.verified,
         legalVerified: consumer.legalVerified,
         stripeCustomerId: consumer.stripeCustomerId,
@@ -97,47 +97,94 @@ export class GoogleOAuthServiceGPT {
    * You can later allow user to upgrade to BUSINESS or ENTITY etc.
    */
   private async upsertConsumerFromGooglePayload(email: string, payload: Record<string, any>) {
-    const existing = await this.prisma.consumer.findUnique({
+    const existing = await this.prisma.consumerModel.findUnique({
       where: { email },
+      include: { personalDetails: true },
     });
 
+    const hasNameUpdate = payload.firstName || payload.lastName;
+
     if (existing) {
-      // Optionally mark verified if Google says so
+      const updateData: any = {};
+
+      // Mark verified if Google says so
       if (!existing.verified && payload.email_verified) {
-        return this.prisma.consumer.update({
-          where: { id: existing.id },
-          data: {
-            verified: true,
-          },
-        });
+        updateData.verified = true;
       }
-      return existing;
+
+      // PERSONAL DETAILS UPDATE LOGIC
+      if (hasNameUpdate) {
+        if (existing.personalDetails) {
+          // Update existing personalDetails row
+          updateData.personalDetails = {
+            update: {
+              ...(payload.firstName ? { firstName: payload.firstName } : {}),
+              ...(payload.lastName ? { lastName: payload.lastName } : {}),
+            },
+          };
+        } else {
+          // Create new personalDetails row
+          updateData.personalDetails = {
+            create: {
+              firstName: payload.firstName ?? null,
+              lastName: payload.lastName ?? null,
+              citizenOf: null,
+              dateOfBirth: null,
+              passportOrIdNumber: null,
+            },
+          };
+        }
+      }
+
+      // Nothing to update
+      if (Object.keys(updateData).length === 0) {
+        return existing;
+      }
+
+      const updated = await this.prisma.consumerModel.update({
+        where: { id: existing.id },
+        data: updateData,
+        include: { personalDetails: true },
+      });
+
+      return updated;
     }
 
-    // No consumer → create new one (minimal profile; extended later via forms)
+    // CONSUMER DOES NOT EXIST → CREATE NEW
     try {
-      const consumer = await this.prisma.consumer.create({
+      const consumer = await this.prisma.consumerModel.create({
         data: {
           email,
-          accountType: AccountType.CONTRACTOR,
-          contractorKind: ContractorKind.INDIVIDUAL,
+          accountType: $Enums.AccountType.CONTRACTOR,
+          contractorKind: $Enums.ContractorKind.INDIVIDUAL,
           password: null,
           salt: null,
           verified: !!payload.email_verified,
           legalVerified: false,
-          firstName: (payload.given_name as string) ?? null,
-          lastName: (payload.family_name as string) ?? null,
           howDidHearAboutUs: null,
+          howDidHearAboutUsOther: null,
           stripeCustomerId: null,
+          ...(hasNameUpdate && {
+            personalDetails: {
+              create: {
+                firstName: payload.firstName ?? null,
+                lastName: payload.lastName ?? null,
+                citizenOf: null,
+                dateOfBirth: null,
+                passportOrIdNumber: null,
+              },
+            },
+          }),
         },
+        include: { personalDetails: true },
       });
 
       return consumer;
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === `P2002`) {
-        // Unique constraint conflict (race) → refetch by email
-        return this.prisma.consumer.findUniqueOrThrow({
+        return this.prisma.consumerModel.findUniqueOrThrow({
           where: { email },
+          include: { personalDetails: true },
         });
       }
       throw err;
@@ -149,7 +196,7 @@ export class GoogleOAuthServiceGPT {
 
     const organization = typeof hd === `string` && hd.length > 0 ? (hd as string) : null;
 
-    await this.prisma.googleProfileDetails.upsert({
+    await this.prisma.googleProfileDetailsModel.upsert({
       where: { consumerId }, // unique
       update: {
         email: email ?? ``,

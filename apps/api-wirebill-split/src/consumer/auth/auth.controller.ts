@@ -21,10 +21,10 @@ import express from 'express';
 import _ from 'lodash';
 
 import {
-  IAddressDetailsModel,
-  IConsumerModel,
-  IOrganizationDetailsModel,
-  IPersonalDetailsModel,
+  type AddressDetailsModel,
+  type ConsumerModel,
+  type OrganizationDetailsModel,
+  type PersonalDetailsModel,
 } from '@remoola/database';
 
 import { ConsumerAuthService } from './auth.service';
@@ -73,7 +73,7 @@ export class ConsumerAuthController {
   @ApiOperation({ operationId: `consumer_auth_login` })
   @ApiOkResponse({ type: CONSUMER.LoginResponse })
   @TransformResponse(CONSUMER.LoginResponse)
-  async login(@Res({ passthrough: true }) res, @Identity() identity: IConsumerModel) {
+  async login(@Res({ passthrough: true }) res, @Identity() identity: ConsumerModel) {
     const data = await this.service.login(identity);
     this.setAuthCookies(res, data.accessToken, data.refreshToken);
     return data;
@@ -141,15 +141,15 @@ export class ConsumerAuthController {
   @PublicEndpoint()
   @Post(`:consumerId/personal-details`)
   async signupPersonalDetails(@Param(`consumerId`) consumerId: string, @Body() body: CONSUMER.PersonalDetailsCreate) {
-    const found = await this.prisma.personalDetails.findFirst({ where: { consumerId } });
-    let personalDetails: IPersonalDetailsModel;
+    const found = await this.prisma.personalDetailsModel.findFirst({ where: { consumerId } });
+    let personalDetails: PersonalDetailsModel;
 
     if (!found) {
-      personalDetails = await this.prisma.personalDetails.create({
+      personalDetails = await this.prisma.personalDetailsModel.create({
         data: { consumer: { connect: { id: consumerId } }, ...removeNil(body) },
       });
     } else {
-      personalDetails = await this.prisma.personalDetails.update({
+      personalDetails = await this.prisma.personalDetailsModel.update({
         where: { id: found.id },
         data: removeNil(body),
       });
@@ -164,15 +164,15 @@ export class ConsumerAuthController {
     @Param(`consumerId`) consumerId: string,
     @Body() body: CONSUMER.OrganizationDetailsCreate,
   ) {
-    const found = await this.prisma.personalDetails.findFirst({ where: { consumerId } });
+    const found = await this.prisma.personalDetailsModel.findFirst({ where: { consumerId } });
 
-    let organizationDetails: IOrganizationDetailsModel;
+    let organizationDetails: OrganizationDetailsModel;
     if (!found) {
-      organizationDetails = await this.prisma.organizationDetails.create({
+      organizationDetails = await this.prisma.organizationDetailsModel.create({
         data: { consumer: { connect: { id: consumerId } }, ...removeNil(body) },
       });
     } else {
-      organizationDetails = await this.prisma.organizationDetails.update({
+      organizationDetails = await this.prisma.organizationDetailsModel.update({
         where: { id: found.id },
         data: removeNil(body),
       });
@@ -184,15 +184,15 @@ export class ConsumerAuthController {
   @PublicEndpoint()
   @Post(`:consumerId/address-details`)
   async signupAddressDetails(@Param(`consumerId`) consumerId: string, @Body() body: CONSUMER.AddressDetailsCreate) {
-    const found = await this.prisma.personalDetails.findFirst({ where: { consumerId } });
+    const found = await this.prisma.personalDetailsModel.findFirst({ where: { consumerId } });
 
-    let addressDetails: IAddressDetailsModel;
+    let addressDetails: AddressDetailsModel;
     if (!found) {
-      addressDetails = await this.prisma.addressDetails.create({
+      addressDetails = await this.prisma.addressDetailsModel.create({
         data: { consumer: { connect: { id: consumerId } }, ...removeNil(body) },
       });
     } else {
-      addressDetails = await this.prisma.addressDetails.update({
+      addressDetails = await this.prisma.addressDetailsModel.update({
         where: { id: found.id },
         data: removeNil(body),
       });
@@ -206,7 +206,7 @@ export class ConsumerAuthController {
   completeProfileCreation(@Headers() headers: IncomingHttpHeaders, @Param(`consumerId`) consumerId: string) {
     const referer = headers.origin || headers.referer;
     if (!referer) throw new InternalServerErrorException(`Unexpected referer(origin): ${referer}`);
-    return this.service.completeProfileCreation(consumerId, referer);
+    return this.service.completeProfileCreationAndSendVerificationEmail(consumerId, referer);
   }
 
   @PublicEndpoint()
@@ -235,7 +235,7 @@ export class ConsumerAuthController {
   }
 
   @Get(`me`)
-  me(@Identity() identity: IConsumerModel) {
+  me(@Identity() identity: ConsumerModel) {
     return identity;
   }
 }

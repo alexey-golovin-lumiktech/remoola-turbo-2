@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
 
-import { AdminType } from '@remoola/database';
+import { $Enums } from '@remoola/database';
 
 export class RegisterBody {
   @ApiProperty({ example: `email@email.com` })
@@ -13,8 +13,8 @@ export class RegisterBody {
   @MinLength(6)
   password: string;
 
-  @ApiProperty({ enum: AdminType, required: false })
+  @ApiProperty({ enum: $Enums.AdminType, required: false })
   @IsOptional()
-  @IsEnum(AdminType)
-  type?: AdminType = AdminType.ADMIN;
+  @IsEnum($Enums.AdminType)
+  type?: $Enums.AdminType = $Enums.AdminType.ADMIN;
 }

@@ -41,9 +41,6 @@ export class ConsumerSignupController {
   @Post(`signup-gpt`)
   @HttpCode(HttpStatus.CREATED)
   async signupGPT(@Body() body: ConsumerSignupGPT) {
-    console.log(`\n************************************`);
-    console.log(`body`, body);
-    console.log(`************************************\n`);
     const consumer = await this.signupServiceGPT.signupGPT(removeNil(body));
     return { consumer };
   }
@@ -80,7 +77,7 @@ export class ConsumerSignupController {
   completeProfileCreation(@Req() req: express.Request, @Param(`consumerId`) consumerId: string) {
     const referer = req.headers.origin || req.headers.referer;
     if (!referer) throw new InternalServerErrorException(`Unexpected referer(origin): ${referer}`);
-    this.service.completeProfileCreation(consumerId, referer);
+    this.service.completeProfileCreationAndSendVerificationEmail(consumerId, referer);
     return `success`;
   }
 }

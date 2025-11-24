@@ -2,13 +2,7 @@ import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 import { IsIn, IsNotEmpty, IsString, IsUUID, ValidateIf } from 'class-validator';
 
-import {
-  CurrencyCode,
-  TransactionActionType,
-  TransactionFeesType,
-  TransactionStatus,
-  TransactionType,
-} from '@remoola/database';
+import { $Enums } from '@remoola/database';
 
 import {
   type ITransactionCreate,
@@ -32,9 +26,9 @@ class Transaction extends BaseModel implements ITransactionModel {
 
   @Expose()
   @IsString()
-  @IsIn(Object.values(TransactionType))
-  @ApiProperty({ enum: Object.values(TransactionType) })
-  type: TransactionType;
+  @IsIn(Object.values($Enums.TransactionType))
+  @ApiProperty({ enum: Object.values($Enums.TransactionType) })
+  type: $Enums.TransactionType;
 
   @Expose()
   @ApiProperty({ required: true })
@@ -42,21 +36,21 @@ class Transaction extends BaseModel implements ITransactionModel {
 
   @Expose()
   @IsString()
-  @IsIn(Object.values(CurrencyCode))
-  @ApiProperty({ enum: Object.values(CurrencyCode) })
-  currencyCode: CurrencyCode;
+  @IsIn(Object.values($Enums.CurrencyCode))
+  @ApiProperty({ enum: Object.values($Enums.CurrencyCode) })
+  currencyCode: $Enums.CurrencyCode;
 
   @Expose()
   @IsString()
-  @IsIn(Object.values(TransactionActionType))
-  @ApiProperty({ enum: Object.values(TransactionActionType) })
-  actionType: TransactionActionType;
+  @IsIn(Object.values($Enums.TransactionActionType))
+  @ApiProperty({ enum: Object.values($Enums.TransactionActionType) })
+  actionType: $Enums.TransactionActionType;
 
   @Expose()
   @IsString()
-  @IsIn(Object.values(TransactionStatus))
-  @ApiProperty({ enum: Object.values(TransactionStatus) })
-  status: TransactionStatus;
+  @IsIn(Object.values($Enums.TransactionStatus))
+  @ApiProperty({ enum: Object.values($Enums.TransactionStatus) })
+  status: $Enums.TransactionStatus;
 
   @Expose()
   @IsString()
@@ -81,14 +75,14 @@ class Transaction extends BaseModel implements ITransactionModel {
 
   @Expose()
   @ValidateIf(({ value }) => value != null)
-  @IsIn(Object.values(TransactionFeesType))
+  @IsIn(Object.values($Enums.TransactionFeesType))
   @IsString()
   @ApiProperty({
-    enum: Object.values(TransactionFeesType),
-    default: TransactionFeesType.NO_FEES_INCLUDED,
+    enum: Object.values($Enums.TransactionFeesType),
+    default: $Enums.TransactionFeesType.NO_FEES_INCLUDED,
     required: false,
   })
-  feesType?: TransactionFeesType = TransactionFeesType.NO_FEES_INCLUDED;
+  feesType?: $Enums.TransactionFeesType = $Enums.TransactionFeesType.NO_FEES_INCLUDED;
 
   @Expose()
   @ApiProperty({ required: false })

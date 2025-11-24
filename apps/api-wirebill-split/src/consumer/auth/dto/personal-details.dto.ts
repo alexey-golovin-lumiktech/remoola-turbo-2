@@ -2,12 +2,12 @@ import { BadRequestException } from '@nestjs/common';
 import { ApiProperty, ApiPropertyOptional, PickType } from '@nestjs/swagger';
 import { Expose, Transform } from 'class-transformer';
 
-import { $Enums, type PersonalDetails as IPersonalDetails } from '@remoola/database';
+import { $Enums, type PersonalDetailsModel } from '@remoola/database';
 
 import { OptionalNullableString } from '../../../common';
 import { toNativeDate } from '../../../shared-common';
 
-class PersonalDetails implements IPersonalDetails {
+class PersonalDetailsDTO implements PersonalDetailsModel {
   @Expose()
   @ApiProperty()
   id: string;
@@ -60,15 +60,25 @@ class PersonalDetails implements IPersonalDetails {
   @Expose()
   @ApiProperty()
   deletedAt: Date;
+
+  @Expose()
+  @ApiProperty()
+  firstName: string;
+
+  @Expose()
+  @ApiProperty()
+  lastName: string;
 }
 
-export class PersonalDetailsUpsert extends PickType(PersonalDetails, [
+export class PersonalDetailsUpsert extends PickType(PersonalDetailsDTO, [
   `citizenOf`,
   `dateOfBirth`,
   `passportOrIdNumber`,
   `countryOfTaxResidence`,
   `taxId`,
   `phoneNumber`,
+  `firstName`,
+  `lastName`,
 ] as const) {
   @Expose()
   @ApiPropertyOptional({ enum: $Enums.LegalStatus })

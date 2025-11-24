@@ -1,7 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiBasicAuth, ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import { IConsumerModel } from '@remoola/database';
+import { type AdminModel } from '@remoola/database';
 
 import { Identity } from '../../common';
 import { AdminsService } from '../services/admins.service';
@@ -19,7 +19,7 @@ export class AdminsController {
   }
 
   @Get(`me`)
-  me(@Identity() identity: IConsumerModel) {
+  me(@Identity() identity: AdminModel) {
     return identity;
   }
 }

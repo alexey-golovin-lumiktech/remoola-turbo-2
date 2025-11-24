@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 
 import { Card } from '@remoola/ui/Card';
 
-import { getJson, postJson } from '../../../lib/api';
+import { getJson, postJson } from '../../../lib';
 
 type Doc = { id: string; name: string; type: string; size: string; updated: string; fileUrl?: string };
 

@@ -4,11 +4,16 @@
 import { PasswordInput } from '@remoola/ui/PasswordInput';
 import { SelectWithClear } from '@remoola/ui/SelectWithClear';
 
-import { useSignupSteps } from '../../context/SignupStepsContext';
-import { useSignupForm } from '../../hooks/useSignupForm';
-import { type IHowDidHearAboutUs, HOW_DID_HEAR_ABOUT_US, ACCOUNT_TYPE, CONTRACTOR_KIND } from '../../types';
-import { STEP_NAME } from '../../types/step.types';
-import { generatePassword } from '../../utils/passwordGenerator';
+import { useSignupForm, useSignupSteps } from '../../hooks';
+import {
+  type IHowDidHearAboutUs,
+  HOW_DID_HEAR_ABOUT_US,
+  ACCOUNT_TYPE,
+  CONTRACTOR_KIND,
+  STEP_NAME,
+  HOW_DID_HEAR_ABOUT_US_LABEL,
+} from '../../types';
+import { generatePassword } from '../../utils';
 import { PrevNextButtons } from '../PrevNextButtons';
 
 export function SignupDetailsStep() {
@@ -22,7 +27,6 @@ export function SignupDetailsStep() {
 
   return (
     <div className="w-full max-w-md space-y-4 rounded bg-white p-6 shadow-sm">
-      {/* <form onSubmit={handleSubmit} className="w-full max-w-md space-y-4 rounded-xl border bg-white p-6 shadow-sm"> */}
       <h1 className="mb-1 text-xl font-semibold">Create your account</h1>
       <p className="mb-4 text-sm text-gray-600">Start by entering your basic account details.</p>
 
@@ -53,8 +57,8 @@ export function SignupDetailsStep() {
           <button
             type="button"
             onClick={() => {
-              const pwd = generatePassword(12);
-              updateSignup({ password: pwd, confirmPassword: pwd });
+              const generated = generatePassword(12);
+              updateSignup({ password: generated, confirmPassword: generated });
             }}
             className="whitespace-nowrap rounded-md border border-blue-600 bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700 hover:bg-blue-100"
           >
@@ -72,21 +76,40 @@ export function SignupDetailsStep() {
         />
       </div>
 
-      <SelectWithClear<IHowDidHearAboutUs | string>
+      <SelectWithClear<IHowDidHearAboutUs | null>
         label="How Did You Hear About Us?"
-        value={signup.howDidHearAboutUs || ``}
-        onChange={(howDidHearAboutUs) => updateSignup({ howDidHearAboutUs })}
+        value={signup.howDidHearAboutUs}
+        onChange={(howDidHearAboutUs) => {
+          const howDidHearAboutUsOther =
+            howDidHearAboutUs !== HOW_DID_HEAR_ABOUT_US.OTHER ? null : signup.howDidHearAboutUsOther;
+          updateSignup({ howDidHearAboutUs, howDidHearAboutUsOther });
+        }}
         options={[
-          { label: HOW_DID_HEAR_ABOUT_US.EMPLOYER_COMPANY, value: HOW_DID_HEAR_ABOUT_US.EMPLOYER_COMPANY },
-          { label: HOW_DID_HEAR_ABOUT_US.EMPLOYEE_CONTRACTOR, value: HOW_DID_HEAR_ABOUT_US.EMPLOYEE_CONTRACTOR },
-          { label: HOW_DID_HEAR_ABOUT_US.REFERRED_RECOMMENDED, value: HOW_DID_HEAR_ABOUT_US.REFERRED_RECOMMENDED },
-          { label: HOW_DID_HEAR_ABOUT_US.EMAIL_INVITE, value: HOW_DID_HEAR_ABOUT_US.EMAIL_INVITE },
-          { label: HOW_DID_HEAR_ABOUT_US.GOOGLE, value: HOW_DID_HEAR_ABOUT_US.GOOGLE },
-          { label: HOW_DID_HEAR_ABOUT_US.FACEBOOK, value: HOW_DID_HEAR_ABOUT_US.FACEBOOK },
-          { label: HOW_DID_HEAR_ABOUT_US.TWITTER, value: HOW_DID_HEAR_ABOUT_US.TWITTER },
-          { label: HOW_DID_HEAR_ABOUT_US.LINKED_IN, value: HOW_DID_HEAR_ABOUT_US.LINKED_IN },
+          {
+            value: HOW_DID_HEAR_ABOUT_US.EMPLOYER_COMPANY,
+            label: HOW_DID_HEAR_ABOUT_US_LABEL[HOW_DID_HEAR_ABOUT_US.EMPLOYER_COMPANY],
+          },
+          {
+            value: HOW_DID_HEAR_ABOUT_US.EMPLOYEE_CONTRACTOR,
+            label: HOW_DID_HEAR_ABOUT_US_LABEL[HOW_DID_HEAR_ABOUT_US.EMPLOYEE_CONTRACTOR],
+          },
+          {
+            value: HOW_DID_HEAR_ABOUT_US.REFERRED_RECOMMENDED,
+            label: HOW_DID_HEAR_ABOUT_US_LABEL[HOW_DID_HEAR_ABOUT_US.REFERRED_RECOMMENDED],
+          },
+          {
+            value: HOW_DID_HEAR_ABOUT_US.EMAIL_INVITE,
+            label: HOW_DID_HEAR_ABOUT_US_LABEL[HOW_DID_HEAR_ABOUT_US.EMAIL_INVITE],
+          },
+          { value: HOW_DID_HEAR_ABOUT_US.GOOGLE, label: HOW_DID_HEAR_ABOUT_US_LABEL[HOW_DID_HEAR_ABOUT_US.GOOGLE] },
+          { value: HOW_DID_HEAR_ABOUT_US.FACEBOOK, label: HOW_DID_HEAR_ABOUT_US_LABEL[HOW_DID_HEAR_ABOUT_US.FACEBOOK] },
+          { value: HOW_DID_HEAR_ABOUT_US.TWITTER, label: HOW_DID_HEAR_ABOUT_US_LABEL[HOW_DID_HEAR_ABOUT_US.TWITTER] },
+          {
+            value: HOW_DID_HEAR_ABOUT_US.LINKED_IN,
+            label: HOW_DID_HEAR_ABOUT_US_LABEL[HOW_DID_HEAR_ABOUT_US.LINKED_IN],
+          },
+          { value: HOW_DID_HEAR_ABOUT_US.OTHER, label: HOW_DID_HEAR_ABOUT_US_LABEL[HOW_DID_HEAR_ABOUT_US.OTHER] },
         ]}
-        showOtherField
         showNotSelected={false}
         otherValue={signup.howDidHearAboutUsOther}
         onChangeOther={(howDidHearAboutUsOther) => updateSignup({ howDidHearAboutUsOther })}
@@ -170,7 +193,6 @@ export function SignupDetailsStep() {
       )}
 
       <PrevNextButtons nextLabel="Continue" onClick={() => handleSubmit()} />
-      {/* </form> */}
     </div>
   );
 }

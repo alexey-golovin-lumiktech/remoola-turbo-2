@@ -1,4 +1,4 @@
-import { type CurrencyCode } from '@remoola/database';
+import { type $Enums } from '@remoola/database';
 
 import type {
   SortDirection,
@@ -7,8 +7,6 @@ import type {
   InvoiceType,
   AuthHeader,
   CredentialsSeparator,
-  HowDidHearAboutUs,
-  ConsumerRole,
   Timeline,
   CardBrand,
   StripeEvent,
@@ -29,8 +27,6 @@ export type StripeInvoiceStatusValue = OneOfObjectValues<typeof StripeInvoiceSta
 export type InvoiceTypeValue = OneOfObjectValues<typeof InvoiceType>;
 export type AuthHeaderValue = OneOfObjectValues<typeof AuthHeader>;
 export type CredentialsSeparatorValue = OneOfObjectValues<typeof CredentialsSeparator>;
-export type HowDidHearAboutUsValue = OneOfObjectValues<typeof HowDidHearAboutUs>;
-export type ConsumerRoleValue = OneOfObjectValues<typeof ConsumerRole>;
 export type TimelineValue = OneOfObjectValues<typeof Timeline>;
 export type CardBrandValue = OneOfObjectValues<typeof CardBrand>;
 export type StripeEventValue = OneOfObjectValues<typeof StripeEvent>;
@@ -89,8 +85,8 @@ export type ReqQueryTimelineFilter<T> = {
 /* ============================================ TIMELINE FILTER TYPES ============================================ */
 
 export type Prettified<T> = { [K in keyof T]: T[K] } & NonNullable<unknown>;
-export type IGetConsumerBallanceResult = { currencyCode: CurrencyCode; amount: number };
-export type IGetConsumerBallanceParams = { consumerId: string; currencyCode?: CurrencyCode };
+export type IGetConsumerBallanceResult = { currencyCode: $Enums.CurrencyCode; amount: number };
+export type IGetConsumerBallanceParams = { consumerId: string; currencyCode?: $Enums.CurrencyCode };
 
 export type CreditCardExpMonth = `1` | `2` | `3` | `4` | `5` | `6` | `7` | `8` | `9` | `10` | `11` | `12`;
 export type CreditCardExpYear =

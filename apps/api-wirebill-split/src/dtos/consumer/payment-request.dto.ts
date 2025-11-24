@@ -2,7 +2,7 @@ import { ApiProperty, OmitType, PickType } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 import { IsDate, IsEmail, IsIn, IsNumber, IsString, IsUUID, ValidateIf } from 'class-validator';
 
-import { CurrencyCode, TransactionStatus, TransactionType } from '@remoola/database';
+import { $Enums } from '@remoola/database';
 
 import { BaseModel } from '../common';
 import { PaymentRequestAttachmentResponse } from './payment-request-attachment.dto';
@@ -15,7 +15,7 @@ import {
 } from '../../shared-common';
 import { constants } from '../../shared-common/constants';
 
-class PaymentRequest extends BaseModel implements IPaymentRequestModel {
+class PaymentRequestDTO extends BaseModel implements IPaymentRequestModel {
   @Expose()
   @ApiProperty()
   @IsUUID(`all`)
@@ -32,10 +32,10 @@ class PaymentRequest extends BaseModel implements IPaymentRequestModel {
   amount: number;
 
   @Expose()
-  @ApiProperty({ enum: Object.values(CurrencyCode) })
+  @ApiProperty({ enum: Object.values($Enums.CurrencyCode) })
   @IsString()
-  @IsIn(Object.values(CurrencyCode))
-  currencyCode: CurrencyCode;
+  @IsIn(Object.values($Enums.CurrencyCode))
+  currencyCode: $Enums.CurrencyCode;
 
   @Expose()
   @ApiProperty()
@@ -43,17 +43,17 @@ class PaymentRequest extends BaseModel implements IPaymentRequestModel {
   description: string;
 
   @Expose()
-  @ApiProperty({ enum: Object.values(TransactionType) })
+  @ApiProperty({ enum: Object.values($Enums.TransactionType) })
   @IsString()
-  @IsIn(Object.values(TransactionType))
-  type: TransactionType;
+  @IsIn(Object.values($Enums.TransactionType))
+  type: $Enums.TransactionType;
 
   @Expose()
   @ApiProperty()
-  @ApiProperty({ enum: Object.values(TransactionStatus) })
+  @ApiProperty({ enum: Object.values($Enums.TransactionStatus) })
   @IsString()
-  @IsIn(Object.values(TransactionStatus))
-  status: TransactionStatus;
+  @IsIn(Object.values($Enums.TransactionStatus))
+  status: $Enums.TransactionStatus;
 
   @Expose()
   @ApiProperty()
@@ -88,7 +88,7 @@ class PaymentRequest extends BaseModel implements IPaymentRequestModel {
 }
 
 export class PaymentRequestResponse
-  extends OmitType(PaymentRequest, [`deletedAt`] as const)
+  extends OmitType(PaymentRequestDTO, [`deletedAt`] as const)
   implements IPaymentRequestResponseExtended {
   @Expose()
   @ApiProperty()
@@ -129,7 +129,7 @@ export class PaymentRequestsListQuery {
   filter: ReqQueryFilter<IConsumerModel>;
 }
 
-export class PaymentRequestPayToContact extends PickType(PaymentRequest, [
+export class PaymentRequestPayToContact extends PickType(PaymentRequestDTO, [
   `description`,
   `amount`,
   `currencyCode`,

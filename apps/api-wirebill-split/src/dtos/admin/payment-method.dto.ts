@@ -2,7 +2,7 @@ import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 import { IsIn, IsUUID } from 'class-validator';
 
-import { PaymentMethodType } from '@remoola/database';
+import { $Enums } from '@remoola/database';
 
 import {
   CreditCardExpMonth,
@@ -20,8 +20,8 @@ export class PaymentMethod extends BaseModel implements IPaymentMethodModel {
 
   @Expose()
   @ApiProperty({ required: true })
-  @IsIn(Object.values(PaymentMethodType))
-  type: PaymentMethodType;
+  @IsIn(Object.values($Enums.PaymentMethodType))
+  type: $Enums.PaymentMethodType;
 
   @Expose()
   @ApiProperty({ required: true })

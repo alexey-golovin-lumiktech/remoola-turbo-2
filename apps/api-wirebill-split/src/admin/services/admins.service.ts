@@ -7,7 +7,7 @@ export class AdminsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAllAdmins() {
-    return this.prisma.admin.findMany({
+    return this.prisma.adminModel.findMany({
       where: { type: { in: [`ADMIN`, `SUPER`] } },
       orderBy: { createdAt: `desc` },
     });

@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 
-import { AccountType, Prisma, ContractorKind } from '@remoola/database';
+import { Prisma, $Enums } from '@remoola/database';
 
 import { ConsumerSignupGPT } from './dto';
 import { PrismaService } from '../../shared/prisma.service';
@@ -11,12 +11,9 @@ export class ConsumerSignupServiceGPT {
   constructor(private readonly prisma: PrismaService) {}
 
   async signupGPT(dto: ConsumerSignupGPT) {
-    console.log(`\n************************************`);
-    console.log(`dto`, dto);
-    console.log(`************************************\n`);
     this.ensureBusinessRules(dto);
 
-    const existing = await this.prisma.consumer.findUnique({
+    const existing = await this.prisma.consumerModel.findUnique({
       where: { email: dto.email.toLowerCase() },
       select: { id: true },
     });
@@ -39,6 +36,8 @@ export class ConsumerSignupServiceGPT {
             countryOfTaxResidence: dto.personalDetails.countryOfTaxResidence ?? null,
             taxId: dto.personalDetails.taxId ?? null,
             phoneNumber: dto.personalDetails.phoneNumber ?? null,
+            firstName: dto.personalDetails.firstName ?? null,
+            lastName: dto.personalDetails.lastName ?? null,
           },
         };
       }
@@ -54,29 +53,31 @@ export class ConsumerSignupServiceGPT {
         };
       }
 
-      const addressDetails = {
-        create: {
-          postalCode: dto.addressDetails.postalCode,
-          country: dto.addressDetails.country,
-          city: dto.addressDetails.city ?? null,
-          state: dto.addressDetails.state ?? null,
-          street: dto.addressDetails.street ?? null,
-        },
-      };
+      let addressDetails;
+      if (dto.addressDetails) {
+        addressDetails = {
+          create: {
+            postalCode: dto.addressDetails.postalCode,
+            country: dto.addressDetails.country,
+            city: dto.addressDetails.city ?? null,
+            state: dto.addressDetails.state ?? null,
+            street: dto.addressDetails.street ?? null,
+          },
+        };
+      }
 
-      const consumer = await this.prisma.consumer.create({
+      const consumer = await this.prisma.consumerModel.create({
         data: {
           email: dto.email.toLowerCase(),
           accountType: dto.accountType,
-          contractorKind: dto.accountType === AccountType.CONTRACTOR ? (dto.contractorKind ?? null) : null,
+          contractorKind: dto.accountType === $Enums.AccountType.CONTRACTOR ? (dto.contractorKind ?? null) : null,
           password: hash,
           salt,
           verified: false,
           legalVerified: false,
-          firstName: dto.firstName ?? null,
-          lastName: dto.lastName ?? null,
           howDidHearAboutUs: dto.howDidHearAboutUs ?? null,
-          addressDetails: addressDetails,
+          howDidHearAboutUsOther: dto.howDidHearAboutUsOther ?? null,
+          ...(addressDetails && { addressDetails }),
           ...(personalDetails && { personalDetails }),
           ...(organizationDetails && { organizationDetails }),
         },
@@ -98,18 +99,18 @@ export class ConsumerSignupServiceGPT {
    * and required nested blocks.
    */
   private ensureBusinessRules(dto: ConsumerSignupGPT) {
-    if (dto.accountType === AccountType.CONTRACTOR && !dto.contractorKind) {
+    if (dto.accountType === $Enums.AccountType.CONTRACTOR && !dto.contractorKind) {
       throw new BadRequestException(`contractorKind is required for CONTRACTOR accountType`);
     }
 
-    if (dto.accountType === AccountType.BUSINESS && dto.contractorKind !== undefined) {
+    if (dto.accountType === $Enums.AccountType.BUSINESS && dto.contractorKind !== undefined) {
       throw new BadRequestException(`contractorKind must not be provided for BUSINESS accountType`);
     }
 
     // CONTRACTOR + INDIVIDUAL → personal required
     if (
-      dto.accountType === AccountType.CONTRACTOR &&
-      dto.contractorKind === ContractorKind.INDIVIDUAL &&
+      dto.accountType === $Enums.AccountType.CONTRACTOR &&
+      dto.contractorKind === $Enums.ContractorKind.INDIVIDUAL &&
       !dto.personalDetails
     ) {
       throw new BadRequestException(`personal details are required for INDIVIDUAL contractor`);
@@ -117,8 +118,8 @@ export class ConsumerSignupServiceGPT {
 
     // BUSINESS or CONTRACTOR + ENTITY → organization required
     if (
-      (dto.accountType === AccountType.BUSINESS ||
-        (dto.accountType === AccountType.CONTRACTOR && dto.contractorKind === ContractorKind.ENTITY)) &&
+      (dto.accountType === $Enums.AccountType.BUSINESS ||
+        (dto.accountType === $Enums.AccountType.CONTRACTOR && dto.contractorKind === $Enums.ContractorKind.ENTITY)) &&
       !dto.organizationDetails
     ) {
       throw new BadRequestException(`organization details are required for BUSINESS and ENTITY contractor`);

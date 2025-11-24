@@ -13,6 +13,8 @@ import {
   HOW_DID_HEAR_ABOUT_US,
   ORGANIZATION_SIZE,
   CONSUMER_ROLE,
+  ACCOUNT_TYPE,
+  CONTRACTOR_KIND,
 } from '../types';
 
 interface SignupFormContextValue {
@@ -30,6 +32,11 @@ interface SignupFormContextValue {
 
   accountType: IAccountType;
   contractorKind: IContractorKind;
+
+  isContractor: boolean;
+  isBusiness: boolean;
+  isContractorEntity: boolean;
+  isContractorIndividual: boolean;
 }
 
 const SignupFormContext = createContext<SignupFormContextValue | null>(null);
@@ -60,8 +67,8 @@ const initialState: ISignupFormState = {
     name: ``,
     size: ORGANIZATION_SIZE.SMALL,
 
-    consumerRole: CONSUMER_ROLE.FOUNDER, // NEW
-    consumerRoleOther: null, // NEW
+    consumerRole: CONSUMER_ROLE.FOUNDER,
+    consumerRoleOther: null,
   },
   addressDetails: {
     postalCode: ``,
@@ -107,6 +114,10 @@ export function SignupFormProvider({ children }: { children: ReactNode }) {
       updateAddress,
       accountType: state.signupDetails.accountType!,
       contractorKind: state.signupDetails.contractorKind!,
+      isContractor: state.signupDetails.accountType === ACCOUNT_TYPE.CONTRACTOR,
+      isBusiness: state.signupDetails.accountType === ACCOUNT_TYPE.BUSINESS,
+      isContractorEntity: state.signupDetails.contractorKind === CONTRACTOR_KIND.ENTITY,
+      isContractorIndividual: state.signupDetails.contractorKind === CONTRACTOR_KIND.INDIVIDUAL,
     }),
     [state],
   );

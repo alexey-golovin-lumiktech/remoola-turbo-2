@@ -2,9 +2,9 @@ import { ApiProperty, PickType } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsString, IsNotEmpty } from 'class-validator';
 
-import { $Enums, type OrganizationDetails as IOrganizationDetails } from '@remoola/database';
+import { $Enums, type OrganizationDetailsModel } from '@remoola/database';
 
-class OrganizationDetails implements IOrganizationDetails {
+class OrganizationDetailsDTO implements OrganizationDetailsModel {
   @Expose()
   @ApiProperty()
   @IsString()
@@ -21,7 +21,13 @@ class OrganizationDetails implements IOrganizationDetails {
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
-  consumerRole: string;
+  consumerRole: null | $Enums.ConsumerRole;
+
+  @Expose()
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  consumerRoleOther: null | string;
 
   @Expose()
   @ApiProperty({ enum: $Enums.OrganizationSize })
@@ -45,7 +51,7 @@ class OrganizationDetails implements IOrganizationDetails {
   deletedAt: Date;
 }
 
-export class OrganizationDetailsUpsert extends PickType(OrganizationDetails, [
+export class OrganizationDetailsUpsert extends PickType(OrganizationDetailsDTO, [
   `name`,
   `consumerRole`,
   `size`,

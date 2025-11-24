@@ -2,15 +2,9 @@ import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 import { IsBoolean, IsEmail, IsIn, ValidateIf } from 'class-validator';
 
-import { AccountType, ContractorKind } from '@remoola/database';
+import { $Enums } from '@remoola/database';
 
-import {
-  IConsumerModel,
-  HowDidHearAboutUsValue,
-  IConsumerResponse,
-  IConsumerCreate,
-  IConsumerUpdate,
-} from '../../shared-common';
+import { IConsumerModel, IConsumerResponse, IConsumerCreate, IConsumerUpdate } from '../../shared-common';
 import { constants } from '../../shared-common/constants';
 import { BaseModel } from '../common';
 
@@ -42,27 +36,23 @@ class Consumer extends BaseModel implements IConsumerModel {
 
   @Expose()
   @ApiProperty({ required: false, default: null })
-  firstName?: string = null;
+  howDidHearAboutUs?: null | $Enums.HowDidHearAboutUs = null;
 
   @Expose()
   @ApiProperty({ required: false, default: null })
-  lastName?: string = null;
-
-  @Expose()
-  @ApiProperty({ required: false, default: null })
-  howDidHearAboutUs?: string | HowDidHearAboutUsValue = null;
+  howDidHearAboutUsOther?: null | string = null;
 
   @Expose()
   @ApiProperty({ required: false, default: null })
   @ValidateIf((_, value) => value != null)
-  @IsIn(Object.values(AccountType))
-  accountType?: AccountType = null;
+  @IsIn(Object.values($Enums.AccountType))
+  accountType?: $Enums.AccountType = null;
 
   @Expose()
   @ApiProperty({ required: false, default: null })
   @ValidateIf((_, value) => value != null)
-  @IsIn(Object.values(ContractorKind))
-  contractorKind?: ContractorKind = null;
+  @IsIn(Object.values($Enums.ContractorKind))
+  contractorKind?: $Enums.ContractorKind = null;
 
   @Expose()
   @ApiProperty({ required: false, default: null })
@@ -89,8 +79,6 @@ export class ConsumerCreate
     `legalVerified`,
     `password`,
     `salt`,
-    `firstName`,
-    `lastName`,
     `howDidHearAboutUs`,
     `accountType`,
     `contractorKind`,

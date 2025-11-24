@@ -1,10 +1,10 @@
 import { ApiProperty, OmitType, PickType } from '@nestjs/swagger';
 import { Expose, Transform } from 'class-transformer';
 
-import { ConsumerModel } from './consumer.dto';
+import { ConsumerDTO } from './consumer.dto';
 import { fromBase64 } from '../../shared-common';
 
-export class LoginResponse extends OmitType(ConsumerModel, [`password`, `salt`] as const) {
+export class LoginResponse extends OmitType(ConsumerDTO, [`password`, `salt`] as const) {
   @Expose()
   @ApiProperty({ example: `access-token-string` })
   accessToken: string;
@@ -14,20 +14,16 @@ export class LoginResponse extends OmitType(ConsumerModel, [`password`, `salt`] 
   refreshToken: string;
 }
 
-export class SignupRequest extends PickType(ConsumerModel, [
+export class SignupRequest extends PickType(ConsumerDTO, [
   `email`, //
-  `firstName`,
-  `lastName`,
   `password`,
   `accountType`,
   `contractorKind`,
 ] as const) {}
 
-export class ConsumerResponse extends PickType(ConsumerModel, [
+export class ConsumerResponse extends PickType(ConsumerDTO, [
   `id`,
   `email`,
-  `firstName`,
-  `lastName`,
   `verified`,
   `accountType`,
   `contractorKind`,

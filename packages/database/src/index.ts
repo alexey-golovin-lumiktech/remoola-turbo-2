@@ -8,22 +8,22 @@ export const prisma = globalForPrisma.prisma || new generated.PrismaClient({ dat
 
 if (process.env.NODE_ENV !== `production`) globalForPrisma.prisma = prisma;
 
-export type IAccessRefreshTokenModel = generated.AccessRefreshToken;
-export type IAddressDetailsModel = generated.AddressDetails;
-export type IAdminModel = generated.Admin;
-export type IBillingDetailsModel = generated.BillingDetails;
-export type IConsumerModel = generated.Consumer;
-export type IConsumerResourceModel = generated.ConsumerResource;
-export type IContactModel = generated.Contact;
-export type IExchangeRateModel = generated.ExchangeRate;
-export type IGoogleProfileDetailsModel = generated.GoogleProfileDetails;
-export type IOrganizationDetailsModel = generated.OrganizationDetails;
-export type IPaymentMethodModel = generated.PaymentMethod;
-export type IPaymentRequestModel = generated.PaymentRequest;
-export type IPaymentRequestAttachmentModel = generated.PaymentRequestAttachment;
-export type IPersonalDetailsModel = generated.PersonalDetails;
-export type IResetPasswordModel = generated.ResetPassword;
-export type IResourceModel = generated.Resource;
-export type ITransactionModel = generated.Transaction;
+// export type IPrismaAccessRefreshTokenModel = generated.AccessRefreshToken;
+// export type IPrismaAddressDetailsModel = generated.AddressDetails;
+// export type IPrismaAdminModel = generated.Admin;
+// export type IPrismaBillingDetailsModel = generated.BillingDetails;
+// export type IPrismaConsumerModel = generated.Consumer;
+// export type IPrismaConsumerResourceModel = generated.ConsumerResource;
+// export type IPrismaContactModel = generated.Contact;
+// export type IPrismaExchangeRateModel = generated.ExchangeRate;
+// export type IPrismaGoogleProfileDetailsModel = generated.GoogleProfileDetails;
+// export type IPrismaOrganizationDetailsModel = generated.OrganizationDetails;
+// export type IPrismaPaymentMethodModel = generated.PaymentMethod;
+// export type IPrismaPaymentRequestModel = generated.PaymentRequest;
+// export type IPrismaPaymentRequestAttachmentModel = generated.PaymentRequestAttachment;
+// export type IPrismaPersonalDetailsModel = generated.PersonalDetails;
+// export type IPrismaResetPasswordModel = generated.ResetPassword;
+// export type IPrismaResourceModel = generated.Resource;
+// export type IPrismaTransactionModel = generated.Transaction;
 
 export * from '../generated/prisma/index.js'; // exports generated types from prisma

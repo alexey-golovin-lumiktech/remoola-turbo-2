@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsEmail, IsIn, IsNotEmpty, IsString } from 'class-validator';
 
-import { AdminType } from '@remoola/database';
+import { $Enums } from '@remoola/database';
 
 export class Access {
   @Expose()
@@ -24,9 +24,9 @@ export class Access {
   refreshToken: string;
 
   @Expose()
-  @ApiProperty({ enum: Object.values(AdminType) })
-  @IsIn(Object.values(AdminType))
-  type: AdminType;
+  @ApiProperty({ enum: Object.values($Enums.AdminType) })
+  @IsIn(Object.values($Enums.AdminType))
+  type: $Enums.AdminType;
 
   @Expose()
   @ApiProperty({ example: `email-string` })

@@ -1,6 +1,6 @@
 'use client';
 
-import { useSignupSteps } from '../context/SignupStepsContext';
+import { useSignupSteps } from '../hooks';
 
 export function Stepper() {
   const { steps, currentStep } = useSignupSteps();

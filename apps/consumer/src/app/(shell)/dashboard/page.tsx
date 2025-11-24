@@ -6,7 +6,7 @@ import { Badge } from '@remoola/ui/Badge';
 import { Card } from '@remoola/ui/Card';
 import { Progress as ProgressBar } from '@remoola/ui/Progress';
 
-import { getJson } from '../../../lib/api';
+import { getJson } from '../../../lib';
 
 type DashboardDto = {
   balance: string;

@@ -1,4 +1,4 @@
-import { type LegalStatus } from '@remoola/database';
+import { type $Enums } from '@remoola/database';
 
 import type { IBaseModel } from './base.model';
 
@@ -7,7 +7,7 @@ export type IPersonalDetailsModel = {
   dateOfBirth: string;
   passportOrIdNumber: string;
 
-  legalStatus?: LegalStatus; // only for contractors
+  legalStatus?: $Enums.LegalStatus; // only for contractors
   countryOfTaxResidence?: string;
   taxId?: string;
   phoneNumber?: string;

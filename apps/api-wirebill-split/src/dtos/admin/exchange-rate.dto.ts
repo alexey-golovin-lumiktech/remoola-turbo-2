@@ -2,7 +2,7 @@ import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 import { IsIn, IsNumber, IsString } from 'class-validator';
 
-import { CurrencyCode } from '@remoola/database';
+import { $Enums } from '@remoola/database';
 
 import {
   IExchangeRateModel,
@@ -14,16 +14,16 @@ import { BaseModel } from '../common';
 
 class ExchangeRate extends BaseModel implements IExchangeRateModel {
   @Expose()
-  @ApiProperty({ enum: Object.values(CurrencyCode) })
+  @ApiProperty({ enum: Object.values($Enums.CurrencyCode) })
   @IsString()
-  @IsIn(Object.values(CurrencyCode))
-  fromCurrency: CurrencyCode;
+  @IsIn(Object.values($Enums.CurrencyCode))
+  fromCurrency: $Enums.CurrencyCode;
 
   @Expose()
-  @ApiProperty({ enum: Object.values(CurrencyCode) })
+  @ApiProperty({ enum: Object.values($Enums.CurrencyCode) })
   @IsString()
-  @IsIn(Object.values(CurrencyCode))
-  toCurrency: CurrencyCode;
+  @IsIn(Object.values($Enums.CurrencyCode))
+  toCurrency: $Enums.CurrencyCode;
 
   @Expose()
   @IsNumber()
