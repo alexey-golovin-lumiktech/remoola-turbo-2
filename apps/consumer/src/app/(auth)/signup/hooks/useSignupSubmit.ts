@@ -50,7 +50,7 @@ export function useSignupSubmit() {
       const json = await response.json();
 
       const complete = new URL(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/signup/${json.consumer.id}/complete-profile-creation`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/signup/${json.consumer.id}/complete-profile-creation`,
       );
       await fetch(complete);
       router.push(`/signup/completed`);

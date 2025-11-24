@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, Res } from '@nestjs/common';
 import { ApiBasicAuth, ApiBearerAuth, ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import express from 'express';
 
@@ -36,8 +36,10 @@ export class AdminAuthController {
   @Post(`login`)
   @ApiOperation({ operationId: `admin_auth_login` })
   @ApiOkResponse({ type: ADMIN.Access })
-  login(@Identity() identity: AdminModel) {
-    return this.service.login(identity);
+  async login(@Res({ passthrough: true }) res, @Identity() identity: AdminModel) {
+    const data = await this.service.login(identity);
+    this.setAuthCookies(res, data.accessToken, data.refreshToken);
+    return data;
   }
 
   @PublicEndpoint()

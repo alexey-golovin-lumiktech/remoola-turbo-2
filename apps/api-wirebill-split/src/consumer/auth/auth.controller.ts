@@ -14,28 +14,22 @@ import {
   Post,
   Query,
   Res,
-  Response,
+  Req,
 } from '@nestjs/common';
 import { ApiOperation, ApiOkResponse, ApiBody, ApiTags, ApiBasicAuth, ApiBearerAuth } from '@nestjs/swagger';
 import express from 'express';
 import _ from 'lodash';
 
-import {
-  type AddressDetailsModel,
-  type ConsumerModel,
-  type OrganizationDetailsModel,
-  type PersonalDetailsModel,
-} from '@remoola/database';
+import { type ConsumerModel } from '@remoola/database';
 
 import { ConsumerAuthService } from './auth.service';
-import { GoogleOAuthGPT } from './dto';
+import { ConsumerSignupGPT, GoogleOAuthGPT } from './dto';
 import { GoogleAuthService } from './google-auth.service';
 import { GoogleOAuthServiceGPT } from './google-oauth.service';
 import { Identity, PublicEndpoint } from '../../common';
 import { CONSUMER } from '../../dtos';
 import { envs, JWT_ACCESS_TTL, JWT_REFRESH_TTL } from '../../envs';
 import { TransformResponse } from '../../interceptors';
-import { PrismaService } from '../../shared/prisma.service';
 import { ACCESS_TOKEN_COOKIE_KEY, REFRESH_TOKEN_COOKIE_KEY, removeNil } from '../../shared-common';
 
 @ApiTags(`Consumer: Auth`)
@@ -48,7 +42,6 @@ export class ConsumerAuthController {
   constructor(
     private readonly service: ConsumerAuthService,
     private readonly googleAuthService: GoogleAuthService,
-    private readonly prisma: PrismaService,
     private readonly googleOAuthServiceGPT: GoogleOAuthServiceGPT,
   ) {}
 
@@ -91,10 +84,7 @@ export class ConsumerAuthController {
   @Get(`google-redirect-new-way`)
   @ApiOkResponse({ type: CONSUMER.LoginResponse })
   @TransformResponse(CONSUMER.LoginResponse)
-  async googleOAuthNewWayRedirect(
-    @Response() response: express.Response,
-    @Query() query: CONSUMER.RedirectCallbackQuery,
-  ) {
+  async googleOAuthNewWayRedirect(@Res() response: express.Response, @Query() query: CONSUMER.RedirectCallbackQuery) {
     const queryStateHref = _.get(query, `state.href`, null);
     if (queryStateHref == null) {
       this.logger.debug({ caller: this.googleOAuthNewWayRedirect.name, payload: { queryStateHref, query } });
@@ -123,101 +113,12 @@ export class ConsumerAuthController {
   }
 
   @PublicEndpoint()
-  @Post(`signup`)
-  @TransformResponse(CONSUMER.ConsumerResponse)
-  signup(@Body() body: CONSUMER.SignupRequest) {
-    return this.service.signup(removeNil(body));
-  }
-
-  @PublicEndpoint()
   @Post(`refresh-access`)
   @ApiOperation({ operationId: `refresh_access` })
   @ApiBody({ schema: { type: `object`, properties: { refreshToken: { type: `string` } } } })
   @ApiOkResponse({ type: CONSUMER.LoginResponse })
   refreshAccess(@Body(`refreshToken`) refreshToken: string) {
     return this.service.refreshAccess(refreshToken);
-  }
-
-  @PublicEndpoint()
-  @Post(`:consumerId/personal-details`)
-  async signupPersonalDetails(@Param(`consumerId`) consumerId: string, @Body() body: CONSUMER.PersonalDetailsCreate) {
-    const found = await this.prisma.personalDetailsModel.findFirst({ where: { consumerId } });
-    let personalDetails: PersonalDetailsModel;
-
-    if (!found) {
-      personalDetails = await this.prisma.personalDetailsModel.create({
-        data: { consumer: { connect: { id: consumerId } }, ...removeNil(body) },
-      });
-    } else {
-      personalDetails = await this.prisma.personalDetailsModel.update({
-        where: { id: found.id },
-        data: removeNil(body),
-      });
-    }
-
-    return personalDetails;
-  }
-
-  @PublicEndpoint()
-  @Post(`:consumerId/organization-details`)
-  async signupOrganizationDetails(
-    @Param(`consumerId`) consumerId: string,
-    @Body() body: CONSUMER.OrganizationDetailsCreate,
-  ) {
-    const found = await this.prisma.personalDetailsModel.findFirst({ where: { consumerId } });
-
-    let organizationDetails: OrganizationDetailsModel;
-    if (!found) {
-      organizationDetails = await this.prisma.organizationDetailsModel.create({
-        data: { consumer: { connect: { id: consumerId } }, ...removeNil(body) },
-      });
-    } else {
-      organizationDetails = await this.prisma.organizationDetailsModel.update({
-        where: { id: found.id },
-        data: removeNil(body),
-      });
-    }
-
-    return organizationDetails;
-  }
-
-  @PublicEndpoint()
-  @Post(`:consumerId/address-details`)
-  async signupAddressDetails(@Param(`consumerId`) consumerId: string, @Body() body: CONSUMER.AddressDetailsCreate) {
-    const found = await this.prisma.personalDetailsModel.findFirst({ where: { consumerId } });
-
-    let addressDetails: AddressDetailsModel;
-    if (!found) {
-      addressDetails = await this.prisma.addressDetailsModel.create({
-        data: { consumer: { connect: { id: consumerId } }, ...removeNil(body) },
-      });
-    } else {
-      addressDetails = await this.prisma.addressDetailsModel.update({
-        where: { id: found.id },
-        data: removeNil(body),
-      });
-    }
-
-    return addressDetails;
-  }
-
-  @PublicEndpoint()
-  @Get(`:consumerId/complete-profile-creation`)
-  completeProfileCreation(@Headers() headers: IncomingHttpHeaders, @Param(`consumerId`) consumerId: string) {
-    const referer = headers.origin || headers.referer;
-    if (!referer) throw new InternalServerErrorException(`Unexpected referer(origin): ${referer}`);
-    return this.service.completeProfileCreationAndSendVerificationEmail(consumerId, referer);
-  }
-
-  @PublicEndpoint()
-  @Get(`signup/verification`)
-  signupVerification(
-    @Query(`referer`) referer: string,
-    @Query(`token`) token: string,
-    @Response() res: express.Response,
-  ) {
-    if (!referer) throw new InternalServerErrorException(`Unexpected referer(origin): ${referer}`);
-    return this.service.signupVerification(token, res, referer);
   }
 
   @PublicEndpoint()
@@ -237,5 +138,29 @@ export class ConsumerAuthController {
   @Get(`me`)
   me(@Identity() identity: ConsumerModel) {
     return identity;
+  }
+
+  @PublicEndpoint()
+  @Post(`signup`)
+  @HttpCode(HttpStatus.CREATED)
+  async signup(@Body() body: ConsumerSignupGPT) {
+    const consumer = await this.service.signup(removeNil(body));
+    return { consumer };
+  }
+
+  @PublicEndpoint()
+  @Get(`signup/:consumerId/complete-profile-creation`)
+  completeProfileCreation(@Req() req: express.Request, @Param(`consumerId`) consumerId: string) {
+    const referer = req.headers.origin || req.headers.referer;
+    if (!referer) throw new InternalServerErrorException(`Unexpected referer(origin): ${referer}`);
+    this.service.completeProfileCreationAndSendVerificationEmail(consumerId, referer);
+    return `success`;
+  }
+
+  @PublicEndpoint()
+  @Get(`signup/verification`)
+  signupVerification(@Query(`referer`) referer: string, @Query(`token`) token: string, @Res() res: express.Response) {
+    if (!referer) throw new InternalServerErrorException(`Unexpected referer(origin): ${referer}`);
+    return this.service.signupVerification(token, res, referer);
   }
 }

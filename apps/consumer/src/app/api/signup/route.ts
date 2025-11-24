@@ -9,7 +9,7 @@ export async function POST(req: Request) {
     ...(entries.authorization?.trim() && { authorization: entries.authorization }),
   };
 
-  const res = await fetch(`${base}/signup/signup-gpt`, {
+  const res = await fetch(`${base}/auth/signup`, {
     method: `POST`,
     headers,
     body: await req.text(),
