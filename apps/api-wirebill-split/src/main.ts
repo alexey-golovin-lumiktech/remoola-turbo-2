@@ -1,3 +1,5 @@
+import { join } from 'path';
+
 import { ValidationPipe } from '@nestjs/common';
 import { type INestApplication } from '@nestjs/common/interfaces';
 import { NestFactory, Reflector } from '@nestjs/core';
@@ -89,6 +91,11 @@ async function bootstrap() {
   app.use(express.json({ limit: `25mb` }));
   app.use(express.urlencoded({ extended: true, limit: `25mb` }));
   app.use(cookieParser(parsedEnvs.SECURE_SESSION_SECRET));
+  app.use(`/webhooks/stripe`, express.raw({ type: `application/json` }));
+  app.use(`/uploads`, express.static(join(process.cwd(), `uploads`)));
+  setTimeout(() => {
+    console.log(``, join(process.cwd(), `uploads`));
+  }, 3000);
 
   app.setGlobalPrefix(`api`);
   setupSwagger(app);

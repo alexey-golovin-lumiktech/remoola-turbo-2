@@ -10,6 +10,9 @@ import { GoogleAuthService } from './auth/google-auth.service';
 import { GoogleOAuthServiceGPT } from './auth/google-oauth.service';
 import { ProfileController } from './controllers/profile.controller';
 import { MailingService } from '../shared/mailing.service';
+import { ConsumerDashboardModule } from './modules/consumer-dashboard/consumer-dashboard.module';
+import { ConsumerDocumentsModule } from './modules/documents/consumer-documents.module';
+import { ConsumerPaymentsModule } from './modules/payments/consumer-payments.module';
 
 @Module({
   imports: [
@@ -34,6 +37,9 @@ import { MailingService } from '../shared/mailing.service';
         } satisfies MailerOptions;
       },
     }),
+    ConsumerDashboardModule,
+    ConsumerDocumentsModule,
+    ConsumerPaymentsModule,
   ],
   controllers: [ConsumerAuthController, ProfileController],
   providers: [MailingService, GoogleOAuthServiceGPT, ConsumerAuthService, GoogleAuthService],
