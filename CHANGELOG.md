@@ -116,4 +116,9 @@
 -   **2025-11-24:** Consolidated all signup endpoints into `AuthController`, removed duplicate
                     controllers and services, updated route to `/auth/signup`, unified profile
                     creation flow, updated frontend calls.
+-   **2025-11-25:** Updated consumer API and site modules, added tagging support, and prepared
+                    consumer-facing components for upcoming functionality.
+-   **2025-11-26:** Added consumer payment methods module with full Stripe integration,
+                    implemented consumer contacts UI, performed consumer site updates.
+
 ```
