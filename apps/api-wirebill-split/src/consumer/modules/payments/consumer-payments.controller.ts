@@ -46,9 +46,6 @@ export class ConsumerPaymentsController {
 
   @Post(`:id/stripe-session`)
   async createStripeSession(@Identity() identity: ConsumerModel, @Param(`id`) id: string, @Req() req: express.Request) {
-    console.log(`\n************************************`);
-    console.log(`req.get(\`referrer\`)`, req.get(`referrer`));
-    console.log(`************************************\n`);
     return this.payments.createStripeSession(identity.id, id, req.get(`referrer`));
   }
 }

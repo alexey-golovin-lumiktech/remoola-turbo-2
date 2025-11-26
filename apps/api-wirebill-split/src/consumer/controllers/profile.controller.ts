@@ -14,8 +14,7 @@ export class ProfileController {
   constructor() {}
 
   @Get(`me`)
-  async getMe(@Req() req: Request, @Identity() identity: IIdentity) {
-    console.log(`getProfile`, { user: req.user, secret: req.secret });
+  async getMe(@Identity() identity: IIdentity) {
     return identity;
   }
 }

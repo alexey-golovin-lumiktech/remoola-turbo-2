@@ -31,9 +31,6 @@ export class ConsumerDashboardService {
       quickDocs,
     };
 
-    console.log(`\n************************************`);
-    console.log(`response`, response);
-    console.log(`************************************\n`);
     return response;
   }
 

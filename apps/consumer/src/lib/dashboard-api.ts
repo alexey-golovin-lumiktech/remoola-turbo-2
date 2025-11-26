@@ -62,7 +62,6 @@ async function apiGet<T>(path: string): Promise<T> {
   });
 
   if (!res.ok) {
-    console.log(`res`, res);
     // you may want better error handling / redirects here
     throw new Error(`Failed to load ${path}: ${res.status}`);
   }

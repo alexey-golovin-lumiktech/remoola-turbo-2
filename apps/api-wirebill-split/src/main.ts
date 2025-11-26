@@ -93,9 +93,6 @@ async function bootstrap() {
   app.use(cookieParser(parsedEnvs.SECURE_SESSION_SECRET));
   app.use(`/webhooks/stripe`, express.raw({ type: `application/json` }));
   app.use(`/uploads`, express.static(join(process.cwd(), `uploads`)));
-  setTimeout(() => {
-    console.log(``, join(process.cwd(), `uploads`));
-  }, 3000);
 
   app.setGlobalPrefix(`api`);
   setupSwagger(app);

@@ -230,14 +230,10 @@ export class ConsumerPaymentsService {
       })),
     };
 
-    console.log(`\n************************************`);
-    console.log(`response`, response);
-    console.log(`************************************\n`);
     return response;
   }
 
   async startPayment(consumerId: string, dto: StartPaymentDto) {
-    console.log(`dto`, dto);
     const recipient = await this.prisma.consumerModel.findUnique({
       where: { email: dto.email },
     });
