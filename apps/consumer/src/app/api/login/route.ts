@@ -17,10 +17,6 @@ export async function POST(req: Request) {
   });
 
   const setCookie = res.headers.get(`set-cookie`);
-  const text = await res.text();
-
-  return new NextResponse(text, {
-    status: res.status,
-    headers: setCookie ? { 'set-cookie': setCookie } : {},
-  });
+  const data = await res.text();
+  return new NextResponse(data, { status: res.status, headers: setCookie ? { 'set-cookie': setCookie } : {} });
 }

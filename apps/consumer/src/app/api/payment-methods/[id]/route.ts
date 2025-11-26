@@ -1,8 +1,8 @@
 import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
-export async function GET(req: NextRequest) {
+
+export async function PATCH(req: NextRequest, context: { params: { id: string } }) {
   const cookieHeader = (await cookies()).toString();
-  const base = process.env.NEXT_PUBLIC_API_BASE_URL!;
 
   const entries = Object.fromEntries(req.headers);
   const headers: Record<string, string> = {
@@ -11,9 +11,14 @@ export async function GET(req: NextRequest) {
     ...(entries.authorization?.trim() && { authorization: entries.authorization }),
   };
 
-  const res = await fetch(`${base}/contacts`, {
+  const base = process.env.NEXT_PUBLIC_API_BASE_URL || ``;
+  const body = await req.text();
+
+  const res = await fetch(`${base}/payment-methods/${context.params.id}`, {
+    method: `PATCH`,
     headers: headers,
     credentials: `include`,
+    body,
   });
 
   const setCookie = res.headers.get(`set-cookie`);
@@ -21,9 +26,8 @@ export async function GET(req: NextRequest) {
   return new NextResponse(data, { status: res.status, headers: setCookie ? { 'set-cookie': setCookie } : {} });
 }
 
-export async function POST(req: NextRequest) {
+export async function DELETE(req: NextRequest, context: { params: { id: string } }) {
   const cookieHeader = (await cookies()).toString();
-  const base = process.env.NEXT_PUBLIC_API_BASE_URL!;
 
   const entries = Object.fromEntries(req.headers);
   const headers: Record<string, string> = {
@@ -31,14 +35,12 @@ export async function POST(req: NextRequest) {
     Cookie: cookieHeader,
     ...(entries.authorization?.trim() && { authorization: entries.authorization }),
   };
+  const base = process.env.NEXT_PUBLIC_API_BASE_URL || ``;
 
-  const body = await req.text();
-
-  const res = await fetch(`${base}/contacts`, {
-    method: `POST`,
+  const res = await fetch(`${base}/payment-methods/${context.params.id}`, {
+    method: `DELETE`,
     headers: headers,
     credentials: `include`,
-    body,
   });
 
   const setCookie = res.headers.get(`set-cookie`);

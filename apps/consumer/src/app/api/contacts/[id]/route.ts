@@ -20,7 +20,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     body,
   });
 
-  return new NextResponse(await res.text(), { status: res.status });
+  const setCookie = res.headers.get(`set-cookie`);
+  const data = await res.text();
+  return new NextResponse(data, { status: res.status, headers: setCookie ? { 'set-cookie': setCookie } : {} });
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
@@ -40,5 +42,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     credentials: `include`,
   });
 
-  return new NextResponse(await res.text(), { status: res.status });
+  const setCookie = res.headers.get(`set-cookie`);
+  const data = await res.text();
+  return new NextResponse(data, { status: res.status, headers: setCookie ? { 'set-cookie': setCookie } : {} });
 }

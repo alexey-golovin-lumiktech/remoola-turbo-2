@@ -17,6 +17,7 @@ export async function GET(req: Request) {
     credentials: `include`,
   });
 
+  const setCookie = res.headers.get(`set-cookie`);
   const data = await res.text();
-  return new NextResponse(data, { status: res.status });
+  return new NextResponse(data, { status: res.status, headers: setCookie ? { 'set-cookie': setCookie } : {} });
 }

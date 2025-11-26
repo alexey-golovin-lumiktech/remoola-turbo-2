@@ -1,4 +1,5 @@
 export interface ConsumerContractItem {
+  id: string;
   name: string;
   email: string;
 

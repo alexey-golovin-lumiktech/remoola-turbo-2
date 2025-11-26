@@ -9,7 +9,6 @@ export async function getContacts(): Promise<{ items: ConsumerContact[] }> {
     credentials: `include`,
     cache: `no-cache`,
   });
-  console.log(`res`, res);
   if (!res.ok) throw new Error(`Failed to load contacts`);
   return res.json();
 }

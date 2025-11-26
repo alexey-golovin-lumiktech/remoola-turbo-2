@@ -31,7 +31,7 @@ export default function ContractsTable({ items }: Props) {
         )}
 
         {items.map((row) => (
-          <tr key={row.email} className="border-b last:border-none">
+          <tr key={row.id} className="border-b last:border-none">
             <td className="py-3">{row.name}</td>
             <td className="capitalize">{row.lastStatus ?? `—`}</td>
             <td>{row.lastActivity ? new Date(row.lastActivity).toLocaleDateString() : `—`}</td>
