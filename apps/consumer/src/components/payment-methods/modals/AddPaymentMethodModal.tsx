@@ -71,8 +71,6 @@ function AddPaymentMethodModalInner({ onCloseAction: onClose, onCreatedAction: o
     // 2) Confirm using Stripe Elements
     const cardElement = elements?.getElement(CardElement);
 
-    console.log(`cardElement`, cardElement);
-
     const confirmRes = await stripe?.confirmCardSetup(clientSecret, {
       payment_method: {
         card: cardElement!,
@@ -91,7 +89,7 @@ function AddPaymentMethodModalInner({ onCloseAction: onClose, onCreatedAction: o
     }
 
     // ❗ FIX: extract payment method id
-    const paymentMethodId = confirmRes.setupIntent.payment_method as string;
+    const paymentMethodId = confirmRes!.setupIntent.payment_method as string;
 
     // 3) Retrieve metadata from backend
     const metaRes = await fetch(`/api/stripe/payment-method/metadata`, {
@@ -101,9 +99,6 @@ function AddPaymentMethodModalInner({ onCloseAction: onClose, onCreatedAction: o
     });
 
     const cardMeta = await metaRes.json();
-    console.log(`\n************************************`);
-    console.log(`cardMeta`, cardMeta);
-    console.log(`************************************\n`);
 
     // 3) Save method in Nest backend
     const payload: CreatePaymentMethodDto = {

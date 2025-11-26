@@ -17,9 +17,6 @@ export class ConsumerContactsController {
   @Get()
   async list(@Identity() identity: ConsumerModel): Promise<ConsumerContactsResponse> {
     const items = await this.service.list(identity.id);
-    console.log(`\n************************************`);
-    console.log(`items`, items);
-    console.log(`************************************\n`);
     return { items };
   }
 
