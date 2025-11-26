@@ -4,7 +4,11 @@ const doFetch = (path: string, init?: RequestInit) => {
   return fetch(API + path, {
     credentials: `include`,
     ...init,
-    headers: { 'Content-Type': `application/json`, ...(init?.headers || {}) },
+    headers: {
+      authorization: localStorage.getItem(`authorization`) || ``,
+      'Content-Type': `application/json`,
+      ...(init?.headers || {}),
+    },
   });
 };
 
@@ -20,7 +24,11 @@ export const raw = async <T>(path: string, init?: RequestInit) => {
   let request = await doFetch(path, init);
 
   if (request.status == 401) {
-    const refreshRequest = await fetch(API + `/auth/refresh`, { method: `POST`, credentials: `include` });
+    const refreshRequest = await fetch(API + `/auth/refresh`, {
+      method: `POST`,
+      credentials: `include`,
+      headers: { authorization: localStorage.getItem(`authorization`) || `` },
+    });
     if (refreshRequest.ok) request = await doFetch(path, init);
   }
 

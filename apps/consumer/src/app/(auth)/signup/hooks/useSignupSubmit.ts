@@ -32,14 +32,9 @@ export function useSignupSubmit() {
         addressDetails: isBusiness ? null : addressDetails,
       };
 
-      console.log(`\n************************************`);
-      console.log(`payload`, payload);
-      console.log(`organizationDetails`, organizationDetails);
-      console.log(`************************************\n`);
-
       const response = await fetch(`/api/signup`, {
         method: `POST`,
-        headers: { 'Content-Type': `application/json` },
+        headers: { 'Content-Type': `application/json`, authorization: localStorage.getItem(`authorization`) || `` },
         body: JSON.stringify(payload),
       });
 
