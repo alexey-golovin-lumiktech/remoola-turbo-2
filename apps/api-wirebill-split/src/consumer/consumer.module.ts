@@ -11,6 +11,8 @@ import { GoogleOAuthServiceGPT } from './auth/google-oauth.service';
 import { ProfileController } from './controllers/profile.controller';
 import { MailingService } from '../shared/mailing.service';
 import { ConsumerDashboardModule } from './modules/consumer-dashboard/consumer-dashboard.module';
+import { ConsumerContactsModule } from './modules/contacts/consumer-contacts.module';
+import { ConsumerContractsModule } from './modules/contracts/consumer-contracts.module';
 import { ConsumerDocumentsModule } from './modules/documents/consumer-documents.module';
 import { ConsumerPaymentsModule } from './modules/payments/consumer-payments.module';
 
@@ -38,6 +40,8 @@ import { ConsumerPaymentsModule } from './modules/payments/consumer-payments.mod
       },
     }),
     ConsumerDashboardModule,
+    ConsumerContactsModule,
+    ConsumerContractsModule,
     ConsumerDocumentsModule,
     ConsumerPaymentsModule,
   ],

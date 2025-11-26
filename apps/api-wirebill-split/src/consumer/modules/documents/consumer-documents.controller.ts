@@ -11,6 +11,7 @@ import {
   Req,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
+import { ApiTags } from '@nestjs/swagger';
 import express from 'express';
 
 import { ConsumerModel } from '@remoola/database';
@@ -20,6 +21,7 @@ import { AttachDocumentsDto, BulkDeleteDocumentsDto, SetTagsDto } from './dto/do
 import { JwtAuthGuard } from '../../../auth/jwt.guard';
 import { Identity } from '../../../common';
 
+@ApiTags(`Consumer: documents`)
 @Controller(`consumer/documents`)
 @UseGuards(JwtAuthGuard)
 export class ConsumerDocumentsController {
