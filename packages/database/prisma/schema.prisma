@@ -1,7 +1,7 @@
 generator client {
   provider = "prisma-client-js"
   output   = "../generated/prisma"
-  emitDts  = false
+  emitDts  = "false"
 }
 
 datasource db {
@@ -47,7 +47,7 @@ model AdminModel {
 
   type AdminType @default(ADMIN)
 
-  email    String @unique() @db.VarChar(255)
+  email    String @unique @db.VarChar(255)
   password String @db.VarChar(255)
   salt     String @db.VarChar(255)
 
@@ -76,7 +76,7 @@ model BillingDetailsModel {
 model ConsumerModel {
   id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
 
-  email          String          @unique() @db.VarChar(255)
+  email          String          @unique @db.VarChar(255)
   accountType    AccountType     @map("account_type")
   contractorKind ContractorKind? @map("contractor_kind")
 
