@@ -14,6 +14,7 @@ import { ConsumerDashboardModule } from './modules/consumer-dashboard/consumer-d
 import { ConsumerContactsModule } from './modules/contacts/consumer-contacts.module';
 import { ConsumerContractsModule } from './modules/contracts/consumer-contracts.module';
 import { ConsumerDocumentsModule } from './modules/documents/consumer-documents.module';
+import { ConsumerPaymentMethodsModule } from './modules/payment-methods/consumer-payment-methods.module';
 import { ConsumerPaymentsModule } from './modules/payments/consumer-payments.module';
 
 @Module({
@@ -43,6 +44,7 @@ import { ConsumerPaymentsModule } from './modules/payments/consumer-payments.mod
     ConsumerContactsModule,
     ConsumerContractsModule,
     ConsumerDocumentsModule,
+    ConsumerPaymentMethodsModule,
     ConsumerPaymentsModule,
   ],
   controllers: [ConsumerAuthController, ProfileController],

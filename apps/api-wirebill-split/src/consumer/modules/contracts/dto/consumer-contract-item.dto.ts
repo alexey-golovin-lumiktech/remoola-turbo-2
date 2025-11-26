@@ -3,6 +3,10 @@ import { Expose } from 'class-transformer';
 
 export class ConsumerContractItem {
   @Expose()
+  @ApiProperty({ example: `35f4d4b2-0bb8-4c74-95b4-e5b8f186e284` })
+  id: string;
+
+  @Expose()
   @ApiProperty({ example: `John Doe` })
   name: string;
 

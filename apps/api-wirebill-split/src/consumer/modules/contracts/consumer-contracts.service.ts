@@ -40,6 +40,7 @@ export class ConsumerContractsService {
       const lastReq = related.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0];
 
       return {
+        id: contact.id,
         name: contact.name ?? contact.email,
         email: contact.email,
         lastRequestId: lastReq?.id ?? null,
