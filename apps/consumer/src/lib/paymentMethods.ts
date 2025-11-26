@@ -1,5 +1,3 @@
-// services/paymentMethods.service.ts
-
 import { headers } from 'next/headers';
 
 import { getAuthHeaders } from './getHeaders';

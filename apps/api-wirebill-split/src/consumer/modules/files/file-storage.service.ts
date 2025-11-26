@@ -9,7 +9,7 @@ import { envs } from '../../../envs';
 
 @Injectable()
 export class FileStorageService {
-  private readonly useS3 = false; // !!envs.AWS_BUCKET; // auto-switch mode
+  private readonly useS3 = false; // !!envs.AWS_BUCKET; auto-switch mode
   private s3: S3Client | null = null;
 
   constructor() {
@@ -43,9 +43,6 @@ export class FileStorageService {
     }
   }
 
-  // ---------------------------------------------------------
-  // LOCAL STORAGE MODE (development)
-  // ---------------------------------------------------------
   private async uploadLocal(buffer: Buffer, key: string, backendHost) {
     const localFolder = join(process.cwd(), `uploads`);
 
@@ -57,13 +54,10 @@ export class FileStorageService {
     return {
       bucket: `local`,
       key,
-      downloadUrl: `http://${backendHost}/uploads/${key}`, // expose via a static route
+      downloadUrl: `http://${backendHost}/uploads/${key}`,
     };
   }
 
-  // ---------------------------------------------------------
-  // AWS S3 STORAGE MODE (production)
-  // ---------------------------------------------------------
   private async uploadS3(buffer: Buffer, key: string, mimetype: string) {
     const bucket = envs.AWS_BUCKET!;
 
@@ -72,7 +66,7 @@ export class FileStorageService {
       Key: key,
       Body: buffer,
       ContentType: mimetype,
-      ACL: `public-read`, // you want direct preview + download
+      ACL: `public-read`,
     });
 
     await this.s3!.send(cmd);

@@ -10,9 +10,7 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     const token = params.get(`token`);
     if (token) {
-      // Store the JWT token
       document.cookie = `access_token=${token}; path=/; max-age=900`;
-      // Redirect to profile or dashboard
       router.replace(`/profile`);
     } else {
       router.replace(`/login`);

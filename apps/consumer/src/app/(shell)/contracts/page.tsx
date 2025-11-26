@@ -3,8 +3,6 @@ import { getContracts } from '../../../lib/contracts';
 import { type ConsumerContractItem } from '../../../types';
 
 export default async function ContractsPage() {
-  // read cookie manually because server components cannot access localStorage
-
   let contracts: ConsumerContractItem[] = [];
   try {
     contracts = await getContracts();

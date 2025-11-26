@@ -9,7 +9,7 @@ export type DashboardSummary = {
 export type PendingRequest = {
   id: string;
   counterpartyName: string;
-  amount: number; // decimal as number (use string if you prefer)
+  amount: number; // decimal as number (use string if prefer)
   currencyCode: string;
   status: string;
   lastActivityAt: string | null;
@@ -44,7 +44,6 @@ export type DashboardData = {
   quickDocs: QuickDoc[];
 };
 
-// Helper to hit your Nest API from server components
 async function apiGet<T>(path: string): Promise<T> {
   const headers = await getAuthHeaders();
 
@@ -55,7 +54,7 @@ async function apiGet<T>(path: string): Promise<T> {
   });
 
   if (!res.ok) {
-    // you may want better error handling / redirects here
+    // may want better error handling / redirects here
     throw new Error(`Failed to load ${path}: ${res.status}`);
   }
 
@@ -63,7 +62,7 @@ async function apiGet<T>(path: string): Promise<T> {
 }
 
 export async function getDashboardData(): Promise<DashboardData> {
-  // You can replace with a single /consumer/dashboard endpoint if you like.
-  // For now assume you already have this aggregated endpoint in Nest.
+  // can replace with a single /consumer/dashboard endpoint if like.
+  // For now assume already have this aggregated endpoint in Nest.
   return apiGet<DashboardData>(`/dashboard`);
 }

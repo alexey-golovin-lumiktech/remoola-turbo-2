@@ -25,7 +25,6 @@ export class ConsumerPaymentMethodsController {
     return this.service.list(identity.id);
   }
 
-  // Stripe SetupIntent (for card)
   @Post(`stripe/intents`)
   async createStripeSetupIntent(@Identity() identity: ConsumerModel): Promise<CreateStripeSetupIntentResponse> {
     return this.service.createStripeSetupIntent(identity.id);
@@ -36,7 +35,6 @@ export class ConsumerPaymentMethodsController {
     return this.service.confirmStripeSetupIntent(identity.id, dto);
   }
 
-  // Manual (bank or card)
   @Post()
   async createManual(@Identity() identity: ConsumerModel, @Body() dto: CreateManualPaymentMethod) {
     return this.service.createManual(identity.id, dto);

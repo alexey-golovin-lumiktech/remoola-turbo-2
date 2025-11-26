@@ -9,5 +9,5 @@ export type IGoogleProfileDetailsModel = {
   familyName?: string;
   picture?: string;
   organization?: string;
-  metadata?: string; // JSONB all g-profile data
+  metadata?: string;
 } & IBaseModel;

@@ -104,7 +104,6 @@ export class ConsumerPaymentsService {
 
     if (!paymentRequestId) return;
 
-    // Update transaction
     await this.prisma.transactionModel.updateMany({
       where: { paymentRequestId },
       data: {
@@ -113,7 +112,6 @@ export class ConsumerPaymentsService {
       },
     });
 
-    // Update payment request
     await this.prisma.paymentRequestModel.update({
       where: { id: paymentRequestId },
       data: {

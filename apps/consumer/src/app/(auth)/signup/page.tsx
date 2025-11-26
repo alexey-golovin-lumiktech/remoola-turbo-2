@@ -17,7 +17,6 @@ function SignupPageInner() {
   const router = useRouter();
   const { accountType, contractorKind } = useSignupForm();
 
-  // Guard: must complete pre-signup selection
   useEffect(() => {
     if (!accountType) router.replace(`/signup/start`);
     if (accountType === `CONTRACTOR` && !contractorKind) router.replace(`/signup/start/contractor-kind`);

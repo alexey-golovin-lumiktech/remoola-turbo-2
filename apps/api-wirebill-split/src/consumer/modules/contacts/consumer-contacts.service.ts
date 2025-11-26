@@ -15,7 +15,6 @@ export class ConsumerContactsService {
 
     if (!contact) throw new Error(`Contact not found`);
 
-    // payment requests linked by email
     const prs = await this.prisma.paymentRequestModel.findMany({
       where: {
         OR: [{ payer: { email: contact.email } }, { requester: { email: contact.email } }],

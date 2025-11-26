@@ -42,7 +42,6 @@ function AddPaymentMethodModalInner({ onCloseAction: onClose, onCreatedAction: o
   const [billingPhone, setBillingPhone] = useState(``);
   const [defaultSelected, setDefaultSelected] = useState(true);
 
-  // Bank fields
   const [bankName, setBankName] = useState(``);
   const [bankAccount, setBankAccount] = useState(``);
   const [bankRouting, setBankRouting] = useState(``);
@@ -88,7 +87,6 @@ function AddPaymentMethodModalInner({ onCloseAction: onClose, onCreatedAction: o
       return;
     }
 
-    // ❗ FIX: extract payment method id
     const paymentMethodId = confirmRes!.setupIntent.payment_method as string;
 
     // 3) Retrieve metadata from backend
@@ -106,12 +104,10 @@ function AddPaymentMethodModalInner({ onCloseAction: onClose, onCreatedAction: o
       setupIntentId,
       defaultSelected,
 
-      // billing
       billingName,
       billingEmail,
       billingPhone,
 
-      // ✔ metadata fixed
       brand: cardMeta.brand,
       last4: cardMeta.last4,
       expMonth: cardMeta.expMonth,
@@ -145,7 +141,6 @@ function AddPaymentMethodModalInner({ onCloseAction: onClose, onCreatedAction: o
       billingEmail,
       billingPhone,
 
-      // Bank metadata
       brand: bankName,
       last4: bankAccount.slice(-4),
     };

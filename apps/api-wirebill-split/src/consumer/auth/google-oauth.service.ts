@@ -197,7 +197,7 @@ export class GoogleOAuthServiceGPT {
     const organization = typeof hd === `string` && hd.length > 0 ? (hd as string) : null;
 
     await this.prisma.googleProfileDetailsModel.upsert({
-      where: { consumerId }, // unique
+      where: { consumerId },
       update: {
         email: email ?? ``,
         emailVerified: !!email_verified,

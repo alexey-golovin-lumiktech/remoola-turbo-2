@@ -34,10 +34,6 @@ export class ConsumerDashboardService {
     return response;
   }
 
-  // ============================================================
-  // SUMMARY
-  // ============================================================
-
   private async buildSummary(consumerId: string) {
     const [balance, activeRequests, lastPayment] = await Promise.all([
       // Completed transactions → balance
@@ -70,10 +66,6 @@ export class ConsumerDashboardService {
     };
   }
 
-  // ============================================================
-  // PENDING PAYMENT REQUESTS
-  // ============================================================
-
   private async buildPendingRequests(consumerId: string): Promise<PendingRequestDto[]> {
     const requests = await this.prisma.paymentRequestModel.findMany({
       where: {
@@ -96,10 +88,6 @@ export class ConsumerDashboardService {
       lastActivityAt: req.updatedAt,
     }));
   }
-
-  // ============================================================
-  // ACTIVITY TIMELINE
-  // ============================================================
 
   private async buildActivity(consumerId: string): Promise<ActivityItemDto[]> {
     const consumer = await this.prisma.consumerModel.findUnique({
@@ -169,10 +157,6 @@ export class ConsumerDashboardService {
     return items.sort((a, b) => new Date(b.createdAt).valueOf() - new Date(a.createdAt).valueOf());
   }
 
-  // ============================================================
-  // COMPLIANCE TASKS
-  // ============================================================
-
   private async buildTasks(consumerId: string): Promise<ComplianceTaskDto[]> {
     const consumer = await this.prisma.consumerModel.findUnique({
       where: { id: consumerId },
@@ -207,10 +191,6 @@ export class ConsumerDashboardService {
       },
     ];
   }
-
-  // ============================================================
-  // QUICK DOCS
-  // ============================================================
 
   private async buildQuickDocs(consumerId: string): Promise<QuickDocDto[]> {
     const items = await this.prisma.consumerResourceModel.findMany({

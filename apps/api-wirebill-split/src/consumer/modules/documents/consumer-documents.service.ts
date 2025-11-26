@@ -1,6 +1,5 @@
 import { Injectable, ForbiddenException } from '@nestjs/common';
 
-// Assume you have something like this already:
 import { PrismaService } from '../../../shared/prisma.service';
 import { FileStorageService } from '../files/file-storage.service';
 
@@ -122,16 +121,12 @@ export class ConsumerDocumentsService {
   }
 
   async bulkDeleteDocuments(consumerId: string, ids: string[]) {
-    // only delete links for this consumer; optionally soft-delete resources
     await this.prisma.consumerResourceModel.deleteMany({
       where: {
         consumerId,
         resourceId: { in: ids },
       },
     });
-
-    // Optionally mark resource.deletedAt if nobody else references them
-    // (left as a TODO depending on your business logic)
 
     return { success: true };
   }

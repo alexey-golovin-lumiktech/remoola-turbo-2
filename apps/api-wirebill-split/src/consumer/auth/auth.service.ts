@@ -31,11 +31,6 @@ export class ConsumerAuthService {
     private readonly mailingService: MailingService,
   ) {
     this.oAuth2Client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID!, process.env.GOOGLE_CLIENT_SECRET!);
-
-    // setTimeout(async () => {
-    //   const t = await import(`./z-me-testing`);
-    //   await t.testing(this.prisma);
-    // }, 3000);
   }
 
   async googleOAuth(body: CONSUMER.GoogleSignin) {
