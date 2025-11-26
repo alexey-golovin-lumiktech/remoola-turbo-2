@@ -1,4 +1,4 @@
-import { cookies } from 'next/headers';
+import { getAuthHeaders } from './getHeaders';
 
 export type DashboardSummary = {
   balanceCents: number;
@@ -46,18 +46,11 @@ export type DashboardData = {
 
 // Helper to hit your Nest API from server components
 async function apiGet<T>(path: string): Promise<T> {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore
-    .getAll()
-    .map((c) => `${c.name}=${encodeURIComponent(c.value)}`)
-    .join(`; `);
+  const headers = await getAuthHeaders();
 
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL!;
   const res = await fetch(`${baseUrl}${path}`, {
-    headers: {
-      cookie: cookieHeader,
-      authorization: `Basic YWxleGV5LmdvbG92aW5AbHVtaWt0ZWNoLmNvbTphbGV4ZXkuZ29sb3ZpbkBsdW1pa3RlY2guY29t`,
-    },
+    headers: headers,
     cache: `no-store`,
   });
 
