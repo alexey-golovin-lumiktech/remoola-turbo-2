@@ -97,12 +97,12 @@ model ConsumerModel {
   asPayerPaymentRequests     PaymentRequestModel[] @relation("PaymentRequestPayerIdToConsumer")
   asRequesterPaymentRequests PaymentRequestModel[] @relation("PaymentRequestRequesterIdToConsumer")
 
-  resources      ConsumerResourceModel[]
-  contacts       ContactModel[]
-  paymentMethods PaymentMethodModel[]
-  attachments    PaymentRequestAttachmentModel[]
-  passwordResets ResetPasswordModel[]
-  transactions   TransactionModel[]
+  consumerResources ConsumerResourceModel[]
+  contacts          ContactModel[]
+  paymentMethods    PaymentMethodModel[]
+  attachments       PaymentRequestAttachmentModel[]
+  passwordResets    ResetPasswordModel[]
+  transactions      TransactionModel[]
 
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
@@ -335,6 +335,7 @@ model ResourceModel {
 
   consumerResources ConsumerResourceModel[]
   attachments       PaymentRequestAttachmentModel[]
+  resourceTags      ResourceTagModel[]
 
   @@map("resource")
 }
@@ -370,6 +371,27 @@ model TransactionModel {
 
   @@unique([paymentRequestId, code])
   @@map("transaction")
+}
+
+model DocumentTagModel {
+  id   String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name String @unique @db.VarChar(64)
+
+  resourceTags ResourceTagModel[]
+
+  @@map("document_tag")
+}
+
+model ResourceTagModel {
+  id         String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  resourceId String @map("resource_id") @db.Uuid
+  tagId      String @map("tag_id") @db.Uuid
+
+  resource ResourceModel    @relation(fields: [resourceId], references: [id])
+  tag      DocumentTagModel @relation(fields: [tagId], references: [id])
+
+  @@unique([resourceId, tagId])
+  @@map("resource_tag")
 }
 
 enum AccountType {
