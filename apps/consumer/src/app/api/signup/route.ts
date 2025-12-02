@@ -1,17 +1,16 @@
 import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
-  const base = process.env.NEXT_PUBLIC_API_BASE_URL!;
+  const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/signup`;
+  console.log(`POST`, url);
 
-  const entries = Object.fromEntries(req.headers);
-  const headers: Record<string, string> = {
-    'Content-Type': `application/json`,
-    ...(entries.authorization?.trim() && { authorization: entries.authorization }),
-  };
-
-  const res = await fetch(`${base}/auth/signup`, {
+  const res = await fetch(url, {
     method: `POST`,
-    headers,
+    headers: {
+      ...Object.fromEntries(req.headers),
+      'Content-Type': `application/json`,
+      referrer: `http://127.0.0.1:3001`,
+    },
     body: await req.text(),
     credentials: `include`,
   });

@@ -2,18 +2,17 @@ import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function GET(req: NextRequest) {
-  const cookieHeader = (await cookies()).toString();
-  const consumerApi = process.env.NEXT_PUBLIC_API_BASE_URL!;
+  const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/contracts`;
+  console.log(`GET`, url);
 
-  const entries = Object.fromEntries(req.headers);
-  const headers: Record<string, string> = {
-    'Content-Type': `application/json`,
-    Cookie: cookieHeader,
-    ...(entries.authorization?.trim() && { authorization: entries.authorization }),
-  };
-
-  const res = await fetch(`${consumerApi}/contracts`, {
-    headers: headers,
+  const res = await fetch(url, {
+    method: `GET`,
+    headers: {
+      ...Object.fromEntries(req.headers),
+      'Content-Type': `application/json`,
+      Cookie: (await cookies()).toString(),
+      referrer: `http://127.0.0.1:3001`,
+    },
     credentials: `include`,
     cache: `no-cache`,
   });

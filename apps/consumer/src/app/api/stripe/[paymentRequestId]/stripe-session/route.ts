@@ -1,16 +1,19 @@
 import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 
-export async function GET(req: NextRequest) {
-  const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/dashboard`;
-  console.log(`GET`, url);
+export async function POST(req: NextRequest, context: { params: Promise<{ paymentRequestId: string }> }) {
+  const params = await context.params;
 
+  const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/stripe/${params.paymentRequestId}/stripe-session`;
+  console.log(`POST`, url);
+
+  const cookieHeader = (await cookies()).toString();
   const res = await fetch(url, {
-    method: `GET`,
+    method: `POST`,
     headers: {
       ...Object.fromEntries(req.headers),
       'Content-Type': `application/json`,
-      Cookie: (await cookies()).toString(),
+      Cookie: cookieHeader,
       referrer: `http://127.0.0.1:3001`,
     },
     credentials: `include`,

@@ -2,23 +2,19 @@ import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
-  const cookieHeader = (await cookies()).toString();
+  const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/payments/start`;
+  console.log(`POST`, url);
 
-  const entries = Object.fromEntries(req.headers);
-  const headers: Record<string, string> = {
-    'Content-Type': `application/json`,
-    Cookie: cookieHeader,
-    ...(entries.authorization?.trim() && { authorization: entries.authorization }),
-  };
-
-  const body = await req.text();
-  const base = process.env.NEXT_PUBLIC_API_BASE_URL || ``;
-
-  const res = await fetch(`${base}/payments/start`, {
+  const res = await fetch(url, {
     method: `POST`,
-    headers: headers,
+    headers: {
+      ...Object.fromEntries(req.headers),
+      'Content-Type': `application/json`,
+      Cookie: (await cookies()).toString(),
+      referrer: `http://127.0.0.1:3001`,
+    },
     credentials: `include`,
-    body,
+    body: await req.text(),
   });
 
   const setCookie = res.headers.get(`set-cookie`);

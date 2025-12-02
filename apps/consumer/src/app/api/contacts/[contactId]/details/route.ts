@@ -1,8 +1,9 @@
 import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 
-export async function GET(req: NextRequest) {
-  const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/dashboard`;
+export async function GET(req: NextRequest, context: { params: Promise<{ contactId: string }> }) {
+  const params = await context.params;
+  const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/contacts/${params.contactId}/details`;
   console.log(`GET`, url);
 
   const res = await fetch(url, {

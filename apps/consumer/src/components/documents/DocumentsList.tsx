@@ -73,7 +73,6 @@ export function DocumentsList() {
       method: `POST`,
       credentials: `include`,
       body: form,
-      headers: { 'Content-Type': `application/json` },
     });
 
     setUploading(false);

@@ -1,19 +1,19 @@
 import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
-  const base = process.env.NEXT_PUBLIC_API_BASE_URL!;
+  const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/login`;
+  console.log(`POST`, url);
 
-  const entries = Object.fromEntries(req.headers);
-  const headers: Record<string, string> = {
-    'Content-Type': `application/json`,
-    ...(entries.authorization?.trim() && { authorization: entries.authorization }),
-  };
-
-  const res = await fetch(`${base}/auth/login`, {
+  const res = await fetch(url, {
     method: `POST`,
-    headers,
-    body: await req.text(),
+    headers: {
+      ...Object.fromEntries(req.headers),
+      'Content-Type': `application/json`,
+      referrer: `http://127.0.0.1:3001`,
+    },
     credentials: `include`,
+    cache: `no-cache`,
+    body: await req.text(),
   });
 
   const setCookie = res.headers.get(`set-cookie`);
