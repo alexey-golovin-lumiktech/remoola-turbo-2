@@ -9,7 +9,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ contact
   const res = await fetch(url, {
     method: `GET`,
     headers: {
-      ...Object.fromEntries(req.headers),
+
       'Content-Type': `application/json`,
       Cookie: (await cookies()).toString(),
     },

@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
 
   const res = await fetch(url, {
     headers: {
-      ...Object.fromEntries(req.headers),
+
       'Content-Type': `application/json`,
       Cookie: (await cookies()).toString(),
     },
@@ -27,12 +27,12 @@ export async function POST(req: NextRequest) {
   const res = await fetch(url, {
     method: `POST`,
     headers: {
-      ...Object.fromEntries(req.headers),
+
       'Content-Type': `application/json`,
       Cookie: (await cookies()).toString(),
     },
     credentials: `include`,
-    body: await req.text(),
+    body: await req.clone().text(),
   });
 
   const setCookie = res.headers.get(`set-cookie`);

@@ -9,12 +9,11 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ payme
   const res = await fetch(url, {
     method: `PATCH`,
     headers: {
-      ...Object.fromEntries(req.headers),
       'Content-Type': `application/json`,
       Cookie: (await cookies()).toString(),
     },
     credentials: `include`,
-    body: await req.text(),
+    body: await req.clone().text(),
   });
 
   const setCookie = res.headers.get(`set-cookie`);
@@ -30,7 +29,6 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ paym
   const res = await fetch(url, {
     method: `DELETE`,
     headers: {
-      ...Object.fromEntries(req.headers),
       'Content-Type': `application/json`,
       Cookie: (await cookies()).toString(),
     },

@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
   const res = await fetch(url, {
     method: `GET`,
     headers: {
-      ...Object.fromEntries(req.headers),
+
       'Content-Type': `application/json`,
       Cookie: (await cookies()).toString(),
     },
