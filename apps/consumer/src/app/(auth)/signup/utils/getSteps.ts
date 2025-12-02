@@ -1,12 +1,12 @@
 import {
+  type IStepName,
+  type IStepMeta,
+  STEP_NAME,
   type IAccountType,
   type IContractorKind,
   ACCOUNT_TYPE,
   CONTRACTOR_KIND,
-  type IStepName,
-  STEP_NAME,
-  type IStepMeta,
-} from '../types';
+} from '../../../../types';
 
 export type StepsMap = Partial<Record<IStepName, IStepMeta>>;
 

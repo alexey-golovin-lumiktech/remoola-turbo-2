@@ -2,8 +2,14 @@
 
 import { SelectWithClear } from '@remoola/ui/SelectWithClear';
 
+import {
+  STEP_NAME,
+  type ILegalStatusLabel,
+  STATUS_LABEL,
+  LABEL_STATUS,
+  LEGAL_STATUS_LABEL,
+} from '../../../../../types';
 import { useSignupForm, useSignupSteps } from '../../hooks';
-import { type ILegalStatusLabel, STATUS_LABEL, LABEL_STATUS, LEGAL_STATUS_LABEL, STEP_NAME } from '../../types';
 import { PrevNextButtons } from '../PrevNextButtons';
 
 export function PersonalDetailsStep() {

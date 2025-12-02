@@ -2,16 +2,16 @@
 
 import { SelectWithClear } from '@remoola/ui/SelectWithClear';
 
-import { useSignupForm, useSignupSteps, useSignupSubmit } from '../../hooks';
 import {
+  STEP_NAME,
+  type IConsumerRole,
+  CONSUMER_ROLE,
+  CONSUMER_ROLE_LABEL,
   type IOrganizationSizeLabel,
   SIZE_LABEL,
   LABEL_SIZE,
-  type IConsumerRole,
-  CONSUMER_ROLE,
-  STEP_NAME,
-  CONSUMER_ROLE_LABEL,
-} from '../../types';
+} from '../../../../../types';
+import { useSignupForm, useSignupSteps, useSignupSubmit } from '../../hooks';
 import { PrevNextButtons } from '../PrevNextButtons';
 
 export function OrganizationDetailsStep() {

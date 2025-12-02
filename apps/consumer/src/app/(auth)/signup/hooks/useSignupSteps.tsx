@@ -1,6 +1,12 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
 
-import { type IAccountType, type IContractorKind, type IStepName, STEP_NAME, type INormalizedStep } from '../types';
+import {
+  type INormalizedStep,
+  type IStepName,
+  type IAccountType,
+  type IContractorKind,
+  STEP_NAME,
+} from '../../../../types';
 import { getSteps } from '../utils/getSteps';
 import { normalizeSteps } from '../utils/normalizeSteps';
 

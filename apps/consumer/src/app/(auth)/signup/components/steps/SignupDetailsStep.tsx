@@ -4,15 +4,15 @@
 import { PasswordInput } from '@remoola/ui/PasswordInput';
 import { SelectWithClear } from '@remoola/ui/SelectWithClear';
 
-import { useSignupForm, useSignupSteps } from '../../hooks';
 import {
+  STEP_NAME,
   type IHowDidHearAboutUs,
   HOW_DID_HEAR_ABOUT_US,
+  HOW_DID_HEAR_ABOUT_US_LABEL,
   ACCOUNT_TYPE,
   CONTRACTOR_KIND,
-  STEP_NAME,
-  HOW_DID_HEAR_ABOUT_US_LABEL,
-} from '../../types';
+} from '../../../../../types';
+import { useSignupForm, useSignupSteps } from '../../hooks';
 import { generatePassword } from '../../utils';
 import { PrevNextButtons } from '../PrevNextButtons';
 

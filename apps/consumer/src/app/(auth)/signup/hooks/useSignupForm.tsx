@@ -15,7 +15,7 @@ import {
   CONSUMER_ROLE,
   ACCOUNT_TYPE,
   CONTRACTOR_KIND,
-} from '../types';
+} from '../../../../types';
 
 interface SignupFormContextValue {
   state: ISignupFormState;

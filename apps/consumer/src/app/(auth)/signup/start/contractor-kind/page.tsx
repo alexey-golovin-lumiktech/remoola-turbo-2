@@ -4,8 +4,8 @@
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
+import { type IContractorKind, ACCOUNT_TYPE, CONTRACTOR_KIND } from '../../../../../types';
 import { useSignupForm } from '../../hooks/useSignupForm';
-import { type IContractorKind, ACCOUNT_TYPE, CONTRACTOR_KIND } from '../../types';
 
 export default function ChooseContractorKindStep() {
   const router = useRouter();

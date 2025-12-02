@@ -8,18 +8,16 @@ import { type ConsumerContactDetails } from '../../types';
 export function ContactDetailsView({ id }: { id: ConsumerContactDetails[`id`] }) {
   const [details, setDetails] = useState<ConsumerContactDetails>();
 
-  useEffect(() => {
-    const loadDetails = async () => {
-      const res = await fetch(`/api/contacts/${id}/details`, {
-        credentials: `include`,
-      });
-      if (!res.ok) throw new Error(`Failed to load contact`);
-      const json = await res.json();
-      setDetails(json);
-    };
-    if (!details) loadDetails();
-  }, [id, details]);
+  async function loadDetails(contactId: string) {
+    const res = await fetch(`/api/contacts/${contactId}/details`, {
+      credentials: `include`,
+    });
+    if (!res.ok) throw new Error(`Failed to load contact`);
+    const json = await res.json();
+    setDetails(json);
+  }
 
+  useEffect(() => void loadDetails(id), [id]);
   if (!details) return null;
 
   return (

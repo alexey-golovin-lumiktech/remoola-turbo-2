@@ -1,7 +1,7 @@
 'use client';
 
+import { STEP_NAME } from '../../../../../types';
 import { useSignupForm, useSignupSteps, useSignupSubmit } from '../../hooks';
-import { STEP_NAME } from '../../types';
 import { PrevNextButtons } from '../PrevNextButtons';
 
 export function AddressDetailsStep() {

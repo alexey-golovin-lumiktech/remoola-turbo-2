@@ -4,8 +4,8 @@
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
+import { type IAccountType, ACCOUNT_TYPE } from '../../../../types';
 import { useSignupForm } from '../hooks/useSignupForm';
-import { ACCOUNT_TYPE, type IAccountType } from '../types';
 
 export default function ChooseAccountTypeStep() {
   const router = useRouter();
