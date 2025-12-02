@@ -1,11 +1,11 @@
 import { headers } from 'next/headers';
 
 import { getAuthHeaders } from './getHeaders';
-export async function getPaymentMethods() {
+export async function getPaymentMethods(authorization: string | null) {
   const host = (await headers()).get(`host`);
   const protocol = process.env.NODE_ENV === `development` ? `http` : `https`;
   const url = `${protocol}://${host}/api/payment-methods`;
-  const authHeaders = await getAuthHeaders();
+  const authHeaders = await getAuthHeaders(authorization);
 
   const res = await fetch(url, {
     headers: authHeaders,

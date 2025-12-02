@@ -1,8 +1,8 @@
 import { type ConsumerContractItem } from '../types';
 import { getAuthHeaders } from './getHeaders';
 
-export async function getContracts(): Promise<ConsumerContractItem[]> {
-  const headers = await getAuthHeaders();
+export async function getContracts(authorization: string | null): Promise<ConsumerContractItem[]> {
+  const headers = await getAuthHeaders(authorization);
 
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL!;
   const res = await fetch(`${baseUrl}/contracts`, {

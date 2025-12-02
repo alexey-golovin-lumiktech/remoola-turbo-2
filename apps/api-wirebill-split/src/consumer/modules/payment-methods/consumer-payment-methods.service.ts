@@ -1,11 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { InjectStripe } from 'nestjs-stripe';
-import Stripe from 'stripe';
-
-import { $Enums } from '@remoola/database';
 
 import {
-  ConfirmStripeSetupIntent,
   CreateManualPaymentMethod,
   PaymentMethodItem,
   PaymentMethodsResponse,
@@ -15,21 +10,7 @@ import { PrismaService } from '../../../shared/prisma.service';
 
 @Injectable()
 export class ConsumerPaymentMethodsService {
-  constructor(
-    @InjectStripe() private stripe: Stripe,
-    private prisma: PrismaService,
-  ) {}
-
-  async getPaymentMethodMetadata(paymentMethodId: string) {
-    const pm = await this.stripe.paymentMethods.retrieve(paymentMethodId);
-
-    return {
-      brand: pm.card?.brand,
-      last4: pm.card?.last4,
-      expMonth: pm.card?.exp_month?.toString(),
-      expYear: pm.card?.exp_year?.toString(),
-    };
-  }
+  constructor(private readonly prisma: PrismaService) {}
 
   async list(consumerId: string): Promise<PaymentMethodsResponse> {
     const methods = await this.prisma.paymentMethodModel.findMany({
@@ -61,97 +42,6 @@ export class ConsumerPaymentMethodsService {
     });
 
     return { items };
-  }
-
-  private async ensureStripeCustomer(consumerId: string) {
-    const consumer = await this.prisma.consumerModel.findUnique({
-      where: { id: consumerId },
-    });
-
-    if (!consumer) throw new BadRequestException(`Consumer not found`);
-
-    if (consumer.stripeCustomerId) {
-      return { consumer, customerId: consumer.stripeCustomerId };
-    }
-
-    const customer = await this.stripe.customers.create({
-      email: consumer.email,
-    });
-
-    await this.prisma.consumerModel.update({
-      where: { id: consumer.id },
-      data: { stripeCustomerId: customer.id },
-    });
-
-    return { consumer, customerId: customer.id };
-  }
-
-  // 1) Create SetupIntent for new card
-  async createStripeSetupIntent(consumerId: string) {
-    const { customerId } = await this.ensureStripeCustomer(consumerId);
-
-    const intent = await this.stripe.setupIntents.create({
-      customer: customerId,
-      usage: `off_session`,
-      payment_method_types: [`card`],
-    });
-
-    if (!intent.client_secret) {
-      throw new BadRequestException(`No client_secret from Stripe`);
-    }
-
-    return { clientSecret: intent.client_secret };
-  }
-
-  // 2) Confirm SetupIntent -> persist card in DB
-  async confirmStripeSetupIntent(consumerId: string, dto: ConfirmStripeSetupIntent) {
-    const { consumer } = await this.ensureStripeCustomer(consumerId);
-
-    const setupIntent = await this.stripe.setupIntents.retrieve(dto.setupIntentId, { expand: [`payment_method`] });
-
-    if (setupIntent.status !== `succeeded`) {
-      throw new BadRequestException(`SetupIntent not succeeded. Current status: ${setupIntent.status}`);
-    }
-
-    const pm = setupIntent.payment_method;
-    if (!pm || typeof pm === `string`) {
-      throw new BadRequestException(`No payment_method on SetupIntent`);
-    }
-
-    if (pm.type !== `card` || !pm.card) {
-      throw new BadRequestException(`Only card payment methods supported`);
-    }
-
-    const card = pm.card;
-    const billing = pm.billing_details ?? {};
-
-    const billingDetails = await this.prisma.billingDetailsModel.create({
-      data: {
-        email: billing[`email`] ?? consumer.email,
-        name: (billing[`name`] as string | null) ?? null,
-        phone: (billing[`phone`] as string | null) ?? null,
-      },
-    });
-
-    const hasDefault = await this.prisma.paymentMethodModel.count({
-      where: { consumerId, deletedAt: null, defaultSelected: true },
-    });
-
-    const created = await this.prisma.paymentMethodModel.create({
-      data: {
-        type: $Enums.PaymentMethodType.CREDIT_CARD,
-        defaultSelected: hasDefault === 0,
-        brand: card.brand ?? `card`,
-        last4: card.last4 ?? ``,
-        serviceFee: 0,
-        expMonth: card.exp_month ? String(card.exp_month).padStart(2, `0`) : null,
-        expYear: card.exp_year ? String(card.exp_year) : null,
-        billingDetailsId: billingDetails.id,
-        consumerId,
-      },
-    });
-
-    return created;
   }
 
   // 3) Manual bank/card create

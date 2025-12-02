@@ -13,7 +13,7 @@ import { Identity } from '../../../common';
 @Controller(`consumer/payments`)
 @UseGuards(JwtAuthGuard)
 export class ConsumerPaymentsController {
-  constructor(private readonly payments: ConsumerPaymentsService) {}
+  constructor(private readonly service: ConsumerPaymentsService) {}
 
   @Get()
   async list(
@@ -24,7 +24,7 @@ export class ConsumerPaymentsController {
     @Query(`type`) type?: string,
     @Query(`search`) search?: string,
   ) {
-    return this.payments.listPayments({
+    return this.service.listPayments({
       consumerId: identity.id,
       page: Number(page),
       pageSize: Number(pageSize),
@@ -36,16 +36,11 @@ export class ConsumerPaymentsController {
 
   @Post(`start`)
   async startPayment(@Identity() identity: ConsumerModel, @Body() dto: StartPaymentDto) {
-    return this.payments.startPayment(identity.id, dto);
+    return this.service.startPayment(identity.id, dto);
   }
 
   @Get(`:id`)
   async getPayment(@Identity() identity: ConsumerModel, @Param(`id`) id: string) {
-    return this.payments.getPaymentView(identity.id, id);
-  }
-
-  @Post(`:id/stripe-session`)
-  async createStripeSession(@Identity() identity: ConsumerModel, @Param(`id`) id: string, @Req() req: express.Request) {
-    return this.payments.createStripeSession(identity.id, id, req.get(`referrer`));
+    return this.service.getPaymentView(identity.id, id);
   }
 }

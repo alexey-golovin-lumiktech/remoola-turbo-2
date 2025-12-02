@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import ContactsTable from './ContactsTable';
 import CreateContactModal from './modals/CreateContactModal';
@@ -9,16 +9,18 @@ import EditContactModal from './modals/EditContactModal';
 import { getContacts } from '../../lib/contacts';
 import { type ConsumerContact } from '../../types';
 
-export default function ContactsPageClient({ initialItems }: { initialItems: ConsumerContact[] }) {
-  const [items, setItems] = useState(initialItems);
+export default function ContactsPageClient() {
+  const [items, setItems] = useState<ConsumerContact[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
   const [editContact, setEditContact] = useState<ConsumerContact | null>(null);
   const [deleteContact, setDeleteContact] = useState<ConsumerContact | null>(null);
 
   async function refresh() {
-    const { items } = await getContacts();
+    const { items } = await getContacts(localStorage.getItem(`authorization`));
     setItems(items);
   }
+
+  useEffect(() => void refresh(), []);
 
   return (
     <div className="flex flex-col gap-6 px-8 py-6">

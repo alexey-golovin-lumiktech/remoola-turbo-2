@@ -1,8 +1,8 @@
 import { type ConsumerContactDetails, type ConsumerContact } from '../types';
 import { getAuthHeaders } from './getHeaders';
 
-export async function getContacts(): Promise<{ items: ConsumerContact[] }> {
-  const headers = await getAuthHeaders();
+export async function getContacts(authorization: string | null): Promise<{ items: ConsumerContact[] }> {
+  const headers = await getAuthHeaders(authorization);
 
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/contacts`, {
     headers: headers,
@@ -13,8 +13,8 @@ export async function getContacts(): Promise<{ items: ConsumerContact[] }> {
   return res.json();
 }
 
-export async function getContactDetails(id: string): Promise<ConsumerContactDetails> {
-  const headers = await getAuthHeaders();
+export async function getContactDetails(id: string, authorization: string | null): Promise<ConsumerContactDetails> {
+  const headers = await getAuthHeaders(authorization);
 
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/contacts/${id}/details`, {
     headers: headers,

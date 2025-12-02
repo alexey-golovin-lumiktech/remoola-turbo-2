@@ -1,6 +1,4 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { InjectStripe } from 'nestjs-stripe';
-import Stripe from 'stripe';
 
 import { $Enums } from '@remoola/database';
 
@@ -8,10 +6,7 @@ import { StartPaymentDto } from './dto/start-payment.dto';
 import { PrismaService } from '../../../shared/prisma.service';
 @Injectable()
 export class ConsumerPaymentsService {
-  constructor(
-    @InjectStripe() private stripe: Stripe,
-    private prisma: PrismaService,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
   async listPayments(params: {
     consumerId: string;
@@ -97,75 +92,6 @@ export class ConsumerPaymentsService {
       page,
       pageSize,
     };
-  }
-
-  async handleStripeSuccess(session: Stripe.Checkout.Session) {
-    const paymentRequestId = session.metadata?.paymentRequestId;
-
-    if (!paymentRequestId) return;
-
-    await this.prisma.transactionModel.updateMany({
-      where: { paymentRequestId },
-      data: {
-        status: $Enums.TransactionStatus.COMPLETED,
-        updatedBy: `stripe`,
-      },
-    });
-
-    await this.prisma.paymentRequestModel.update({
-      where: { id: paymentRequestId },
-      data: {
-        status: $Enums.TransactionStatus.COMPLETED,
-        updatedBy: `stripe`,
-      },
-    });
-  }
-
-  async createStripeSession(consumerId: string, paymentRequestId: string, referrer: string) {
-    const pr = await this.prisma.paymentRequestModel.findFirst({
-      where: {
-        id: paymentRequestId,
-        payerId: consumerId,
-      },
-      include: {
-        transactions: true,
-        requester: true,
-      },
-    });
-
-    if (!pr) throw new NotFoundException(`Payment not found`);
-    if (pr.status !== `PENDING`) throw new ForbiddenException(`Payment already processed`);
-
-    const amountCents = Math.round(Number(pr.amount) * 100);
-
-    // 1) Create Stripe Checkout session
-    const session = await this.stripe.checkout.sessions.create({
-      payment_method_types: [`card`],
-      mode: `payment`,
-      line_items: [
-        {
-          price_data: {
-            currency: pr.currencyCode.toLowerCase(),
-            product_data: {
-              name: `Payment to ${pr.requester.email}`,
-            },
-            unit_amount: amountCents,
-          },
-          quantity: 1,
-        },
-      ],
-      success_url: `${referrer}/payments/${pr.id}?success=1`,
-      cancel_url: `${referrer}/payments/${pr.id}?canceled=1`,
-      metadata: { paymentRequestId: pr.id, consumerId },
-    });
-
-    // 2) Update transaction to Waiting status
-    await this.prisma.transactionModel.updateMany({
-      where: { paymentRequestId: pr.id },
-      data: { status: `WAITING`, stripeId: session.id },
-    });
-
-    return { url: session.url };
   }
 
   async getPaymentView(consumerId: string, id: string) {

@@ -1,9 +1,6 @@
 import ContactsPageClient from '../../../components/contacts/ContactsPageClient';
-import { getContacts } from '../../../lib/contacts';
 
 export default async function ContactsPage() {
-  const { items } = await getContacts();
-
   return (
     <div className="flex flex-col gap-6 px-8 py-6">
       <div>
@@ -12,7 +9,7 @@ export default async function ContactsPage() {
       </div>
 
       <div className="rounded-2xl bg-white/90 p-4 shadow-sm">
-        <ContactsPageClient initialItems={items} />
+        <ContactsPageClient />
       </div>
     </div>
   );

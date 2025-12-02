@@ -11,6 +11,7 @@ import {
   UpdatePaymentMethod,
   CreateStripeSetupIntentResponse,
 } from './dto/payment-method.dto';
+import { ConsumerStripeService } from './stripe.service';
 import { JwtAuthGuard } from '../../../auth/jwt.guard';
 import { Identity } from '../../../common/decorators/identity.decorator';
 
@@ -18,40 +19,43 @@ import { Identity } from '../../../common/decorators/identity.decorator';
 @Controller(`consumer/payment-methods`)
 @UseGuards(JwtAuthGuard)
 export class ConsumerPaymentMethodsController {
-  constructor(private service: ConsumerPaymentMethodsService) {}
+  constructor(
+    private paymentService: ConsumerPaymentMethodsService,
+    private readonly stripeService: ConsumerStripeService,
+  ) {}
 
   @Get()
   async list(@Identity() identity: ConsumerModel): Promise<PaymentMethodsResponse> {
-    return this.service.list(identity.id);
+    return this.paymentService.list(identity.id);
   }
 
   @Post(`stripe/intents`)
   async createStripeSetupIntent(@Identity() identity: ConsumerModel): Promise<CreateStripeSetupIntentResponse> {
-    return this.service.createStripeSetupIntent(identity.id);
+    return this.stripeService.createStripeSetupIntent(identity.id);
   }
 
   @Post(`stripe/confirm`)
   async confirmStripeSetupIntent(@Identity() identity: ConsumerModel, @Body() dto: ConfirmStripeSetupIntent) {
-    return this.service.confirmStripeSetupIntent(identity.id, dto);
+    return this.stripeService.confirmStripeSetupIntent(identity.id, dto);
   }
 
   @Post()
   async createManual(@Identity() identity: ConsumerModel, @Body() dto: CreateManualPaymentMethod) {
-    return this.service.createManual(identity.id, dto);
+    return this.paymentService.createManual(identity.id, dto);
   }
 
   @Patch(`:id`)
   async update(@Identity() identity: ConsumerModel, @Param(`id`) id: string, @Body() dto: UpdatePaymentMethod) {
-    return this.service.update(identity.id, id, dto);
+    return this.paymentService.update(identity.id, id, dto);
   }
 
   @Delete(`:id`)
   async delete(@Identity() identity: ConsumerModel, @Param(`id`) id: string) {
-    return this.service.delete(identity.id, id);
+    return this.paymentService.delete(identity.id, id);
   }
 
   @Post(`stripe/payment-method/metadata`)
   async getPaymentMethodMetadata(@Body(`paymentMethodId`) paymentMethodId: string) {
-    return this.service.getPaymentMethodMetadata(paymentMethodId);
+    return this.stripeService.getPaymentMethodMetadata(paymentMethodId);
   }
 }

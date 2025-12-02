@@ -44,8 +44,8 @@ export type DashboardData = {
   quickDocs: QuickDoc[];
 };
 
-async function apiGet<T>(path: string): Promise<T> {
-  const headers = await getAuthHeaders();
+async function apiGet<T>(path: string, authorization: string | null): Promise<T> {
+  const headers = await getAuthHeaders(authorization);
 
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL!;
   const res = await fetch(`${baseUrl}${path}`, {

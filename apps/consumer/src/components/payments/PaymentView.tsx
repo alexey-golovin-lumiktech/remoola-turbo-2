@@ -28,7 +28,7 @@ export default function PaymentView({ paymentRequestId }: { paymentRequestId: st
   }, [paymentRequestId]);
 
   async function payNow() {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/payments/${paymentRequestId}/stripe-session`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/stripe/${paymentRequestId}/stripe-session`, {
       method: `POST`,
       credentials: `include`,
       headers: { authorization: localStorage.getItem(`authorization`) || `` },
