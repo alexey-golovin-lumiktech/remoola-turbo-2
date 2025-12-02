@@ -1,14 +1,27 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
 import { type ConsumerContractItem } from '../../types';
 
-interface Props {
-  items: ConsumerContractItem[];
-}
+export function ContractsTable() {
+  const [contracts, setContracts] = useState<ConsumerContractItem[]>([]);
 
-export default function ContractsTable({ items }: Props) {
+  useEffect(() => {
+    const loadContracts = async () => {
+      const response = await fetch(`/api/contracts`, {
+        credentials: `include`,
+        cache: `no-cache`,
+      });
+      if (!response.ok) throw new Error(`Fail to load contracts`);
+
+      const json = await response.json();
+      setContracts(json);
+    };
+    loadContracts();
+  }, []);
+
   return (
     <table className="w-full text-sm">
       <thead>
@@ -22,7 +35,7 @@ export default function ContractsTable({ items }: Props) {
       </thead>
 
       <tbody>
-        {(!items || items.length === 0) && (
+        {(!contracts || contracts.length === 0) && (
           <tr>
             <td colSpan={5} className="text-center py-8 text-gray-400">
               You have no contractors yet.
@@ -30,7 +43,7 @@ export default function ContractsTable({ items }: Props) {
           </tr>
         )}
 
-        {items.map((row) => (
+        {contracts.map((row) => (
           <tr key={row.id} className="border-b last:border-none">
             <td className="py-3">{row.name}</td>
             <td className="capitalize">{row.lastStatus ?? `—`}</td>

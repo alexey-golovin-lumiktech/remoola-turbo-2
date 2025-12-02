@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-export default function CreateContactModal({
+export function CreateContactModal({
   open,
   onCloseAction,
   onCreatedAction: onCreated,

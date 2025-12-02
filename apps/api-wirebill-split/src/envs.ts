@@ -112,6 +112,8 @@ const nodemailer = {
 const stripe = {
   STRIPE_PUBLISHABLE_KEY: z.string().default(`STRIPE_PUBLISHABLE_KEY`),
   STRIPE_SECRET_KEY: z.string().default(`STRIPE_SECRET_KEY`),
+  STRIPE_WEBHOOK_SECRET: z.string().default(`STRIPE_WEBHOOK_SECRET`),
+  STRIPE_WEBHOOK_SECRET_BILLING: z.string().default(`STRIPE_WEBHOOK_SECRET_BILLING`),
 };
 
 const aws = {
@@ -138,6 +140,11 @@ const debugging = {
     .pipe(z.boolean()),
 };
 
+const ngrok = {
+  NGROK_AUTH_TOKEN: z.string().default(`NGROK_AUTH_TOKEN`),
+  NGROK_DOMAIN: z.string().default(`NGROK_DOMAIN`),
+};
+
 const schema = z.object({
   ...node,
   ...database,
@@ -150,6 +157,7 @@ const schema = z.object({
   ...logs,
   ...app,
   ...debugging,
+  ...ngrok,
 });
 
 const parsed = schema.safeParse(process.env);

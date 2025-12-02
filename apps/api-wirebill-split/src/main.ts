@@ -6,6 +6,7 @@ import { NestFactory, Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { type NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as ngrok from '@ngrok/ngrok';
 import { default as cookieParser } from 'cookie-parser';
 import * as express from 'express';
 
@@ -16,11 +17,11 @@ import { AdminModule } from './admin/admin.module';
 import { AppModule } from './app.module';
 import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter';
 import { ConsumerModule } from './consumer/consumer.module';
+import { envs } from './envs';
 import { AuthGuard } from './guards';
 import { TransformResponseInterceptor } from './interceptors';
 import { PrismaService } from './shared/prisma.service';
 import { type IAdminCreate, passwordUtils } from './shared-common';
-
 async function seed(prisma: PrismaClient): Promise<void> {
   const admins = [
     { type: $Enums.AdminType.ADMIN, email: `regular.admin@wirebill.com`, password: `RegularWirebill@Admin123!` },
@@ -91,7 +92,7 @@ async function bootstrap() {
   app.use(express.json({ limit: `25mb` }));
   app.use(express.urlencoded({ extended: true, limit: `25mb` }));
   app.use(cookieParser(parsedEnvs.SECURE_SESSION_SECRET));
-  app.use(`/webhooks/stripe`, express.raw({ type: `application/json` }));
+  app.use(`/consumer/webhooks`, express.raw({ type: `application/json` }));
   app.use(`/uploads`, express.static(join(process.cwd(), `uploads`)));
 
   app.setGlobalPrefix(`api`);
@@ -129,6 +130,16 @@ async function bootstrap() {
       console.log(`📘 Admin Docs → ${appUrl}/docs/admin`);
       console.log(`📗 Consumer Docs → ${appUrl}/docs/consumer`);
     });
+
+  if (envs.NGROK_AUTH_TOKEN !== `NGROK_AUTH_TOKEN` && envs.NGROK_DOMAIN !== `NGROK_DOMAIN`) {
+    const listener = await ngrok.forward({
+      addr: port,
+      authtoken: envs.NGROK_AUTH_TOKEN,
+      domain: envs.NGROK_DOMAIN,
+    });
+
+    console.log(`Ingress ngrok established at: ${listener.url()}`);
+  }
 
   return app;
 }

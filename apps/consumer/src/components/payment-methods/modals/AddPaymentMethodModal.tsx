@@ -20,7 +20,7 @@ type Props = {
   onCreatedAction: () => void;
 };
 
-export default function AddPaymentMethodModal({ open, onCloseAction, onCreatedAction }: Props) {
+export function AddPaymentMethodModal({ open, onCloseAction, onCreatedAction }: Props) {
   if (!open) return null;
 
   return (

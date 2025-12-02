@@ -9,7 +9,7 @@ type Props = {
   item: PaymentMethodItem | null;
 };
 
-export default function DeletePaymentMethodModal({ open, onCloseAction, onDeletedAction, item }: Props) {
+export function DeletePaymentMethodModal({ open, onCloseAction, onDeletedAction, item }: Props) {
   if (!open || !item) return null;
 
   async function handleDelete() {

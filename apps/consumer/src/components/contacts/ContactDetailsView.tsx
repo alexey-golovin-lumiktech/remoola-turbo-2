@@ -1,10 +1,27 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
 import { type ConsumerContactDetails } from '../../types';
 
-export default function ContactDetailsView({ details }: { details: ConsumerContactDetails }) {
+export function ContactDetailsView({ id }: { id: ConsumerContactDetails[`id`] }) {
+  const [details, setDetails] = useState<ConsumerContactDetails>();
+
+  useEffect(() => {
+    const loadDetails = async () => {
+      const res = await fetch(`/api/contacts/${id}/details`, {
+        credentials: `include`,
+      });
+      if (!res.ok) throw new Error(`Failed to load contact`);
+      const json = await res.json();
+      setDetails(json);
+    };
+    if (!details) loadDetails();
+  }, [id, details]);
+
+  if (!details) return null;
+
   return (
     <div className="p-8 space-y-8">
       <div>

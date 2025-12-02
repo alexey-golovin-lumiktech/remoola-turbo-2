@@ -2,7 +2,7 @@
 
 import { type ConsumerContact } from '../../../types';
 
-export default function DeleteContactModal({
+export function DeleteContactModal({
   open,
   onCloseAction,
   contact,

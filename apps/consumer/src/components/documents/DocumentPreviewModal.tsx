@@ -20,7 +20,7 @@ interface Props {
   };
 }
 
-export default function DocumentPreviewModal({ open, onClose, doc }: Props) {
+export function DocumentPreviewModal({ open, onClose, doc }: Props) {
   const { isFullscreen, toggleFullscreen, fullscreenRef } = useFullscreen();
 
   const { size, startDragging } = useResizable({ minWidth: 400, minHeight: 300, maxWidth: 1600, maxHeight: 1200 });

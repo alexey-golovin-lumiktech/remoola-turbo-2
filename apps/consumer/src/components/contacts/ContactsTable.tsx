@@ -2,12 +2,14 @@
 
 import { type ConsumerContactAddress, type ConsumerContact } from '../../types';
 
-export default function ContactsTable({
+export function ContactsTable({
   items,
+  onDetailsAction,
   onEditAction,
   onDeleteAction,
 }: {
   items: ConsumerContact[];
+  onDetailsAction: (contact: ConsumerContact) => void;
   onEditAction: (contact: ConsumerContact) => void;
   onDeleteAction: (contact: ConsumerContact) => void;
 }) {
@@ -38,6 +40,10 @@ export default function ContactsTable({
             <td className="text-gray-600">{shortAddress(c.address)}</td>
 
             <td className="text-right space-x-3">
+              <button onClick={() => onDetailsAction(c)} className="text-blue-600 hover:underline">
+                Details
+              </button>
+
               <button onClick={() => onEditAction(c)} className="text-blue-600 hover:underline">
                 Edit
               </button>

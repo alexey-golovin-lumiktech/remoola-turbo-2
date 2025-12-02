@@ -1,15 +1,6 @@
-import ContractsTable from '../../../components/contracts/ContractsTable';
-import { getContracts } from '../../../lib/contracts';
-import { type ConsumerContractItem } from '../../../types';
+import { ContractsTable } from '../../../components';
 
 export default async function ContractsPage() {
-  let contracts: ConsumerContractItem[] = [];
-  try {
-    contracts = await getContracts();
-  } catch (err) {
-    console.error(`Failed to fetch contracts:`, err);
-  }
-
   return (
     <div className="flex flex-col gap-6 px-8 py-6">
       {/* Title */}
@@ -20,7 +11,7 @@ export default async function ContractsPage() {
 
       {/* Table */}
       <div className="rounded-2xl bg-white/90 p-4 shadow-sm">
-        <ContractsTable items={contracts} />
+        <ContractsTable />
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 import { type ConsumerContact } from '../../types';
 
-export default function ContactView({ contact }: { contact: ConsumerContact }) {
+export function ContactView({ contact }: { contact: ConsumerContact }) {
   const [editing, setEditing] = useState(false);
 
   return (

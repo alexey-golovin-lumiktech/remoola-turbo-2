@@ -6,7 +6,8 @@ import {
   ActivityTimeline,
   ComplianceTasksCard,
   QuickDocsCard,
-} from '../../../components/dashboard';
+  VerifyMeButton,
+} from '../../../components';
 import { apiGet, type DashboardData } from '../../../lib/dashboard-api';
 
 import type { Metadata } from 'next';
@@ -23,6 +24,16 @@ export default async function DashboardPage() {
       <DashboardHeader />
 
       <SummaryCards summary={dashboardData.summary} />
+      {/*
+      {user.legalVerified ? (
+        <span className="inline-flex items-center gap-1 text-green-700 bg-green-100 px-2 py-1 rounded text-xs">
+          ✔ Verified
+        </span>
+      ) : (
+        <VerifyMeButton />
+      )} */}
+
+      <VerifyMeButton />
 
       <ActionRow />
 

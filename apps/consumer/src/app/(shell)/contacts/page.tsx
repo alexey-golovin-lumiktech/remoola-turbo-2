@@ -1,4 +1,4 @@
-import ContactsPageClient from '../../../components/contacts/ContactsPageClient';
+import { ContactsPageClient } from '../../../components';
 
 export default async function ContactsPage() {
   return (

@@ -1,10 +1,9 @@
 import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 
-export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export async function GET(req: NextRequest) {
   const cookieHeader = (await cookies()).toString();
-  const base = process.env.NEXT_PUBLIC_API_BASE_URL!;
+  const consumerApi = process.env.NEXT_PUBLIC_API_BASE_URL!;
 
   const entries = Object.fromEntries(req.headers);
   const headers: Record<string, string> = {
@@ -13,9 +12,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     ...(entries.authorization?.trim() && { authorization: entries.authorization }),
   };
 
-  const res = await fetch(`${base}/contacts/${id}/details`, {
+  console.log(`\n************************************`);
+  console.log(`${consumerApi}/contracts`);
+  console.log(`************************************\n`);
+  const res = await fetch(`${consumerApi}/contracts`, {
     headers: headers,
     credentials: `include`,
+    cache: `no-cache`,
   });
 
   const setCookie = res.headers.get(`set-cookie`);

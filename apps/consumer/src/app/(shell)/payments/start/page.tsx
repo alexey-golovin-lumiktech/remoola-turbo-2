@@ -1,6 +1,6 @@
 import { type Metadata } from 'next';
 
-import StartPaymentForm from '../../../../components/payments/StartPaymentForm';
+import { StartPaymentForm } from '../../../../components';
 
 export const metadata: Metadata = {
   title: `Start Payment – Remoola`,

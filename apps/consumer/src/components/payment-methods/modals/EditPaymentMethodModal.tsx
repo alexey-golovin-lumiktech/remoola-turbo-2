@@ -11,12 +11,7 @@ type Props = {
   item: PaymentMethodItem | null;
 };
 
-export default function EditPaymentMethodModal({
-  open,
-  onCloseAction: onClose,
-  onUpdatedAction: onUpdated,
-  item,
-}: Props) {
+export function EditPaymentMethodModal({ open, onCloseAction: onClose, onUpdatedAction: onUpdated, item }: Props) {
   const [billingName, setBillingName] = useState(``);
   const [billingEmail, setBillingEmail] = useState(``);
   const [billingPhone, setBillingPhone] = useState(``);

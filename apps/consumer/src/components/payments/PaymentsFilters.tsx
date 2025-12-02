@@ -1,6 +1,6 @@
 'use client';
 
-export default function PaymentsFilters({
+export function PaymentsFilters({
   status,
   type,
   search,

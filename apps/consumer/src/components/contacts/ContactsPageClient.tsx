@@ -1,23 +1,24 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-import ContactsTable from './ContactsTable';
-import CreateContactModal from './modals/CreateContactModal';
-import DeleteContactModal from './modals/DeleteContactModal';
-import EditContactModal from './modals/EditContactModal';
-import { getContacts } from '../../lib/contacts';
+import { ContactsTable } from './ContactsTable';
+import { CreateContactModal, DeleteContactModal, EditContactModal } from './modals';
 import { type ConsumerContact } from '../../types';
 
-export default function ContactsPageClient() {
+export function ContactsPageClient() {
+  const router = useRouter();
   const [items, setItems] = useState<ConsumerContact[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
   const [editContact, setEditContact] = useState<ConsumerContact | null>(null);
   const [deleteContact, setDeleteContact] = useState<ConsumerContact | null>(null);
 
   async function refresh() {
-    const { items } = await getContacts();
-    setItems(items);
+    const response = await fetch(`/api/contacts`);
+    if (!response.ok) throw new Error(`Something went wrong retrieve contacts`);
+    const json = await response.json();
+    setItems(json.items);
   }
 
   useEffect(() => void refresh(), []);
@@ -43,6 +44,7 @@ export default function ContactsPageClient() {
           items={items}
           onEditAction={(contact) => setEditContact(contact)}
           onDeleteAction={(contact) => setDeleteContact(contact)}
+          onDetailsAction={(contact) => router.push(`contacts/${contact.id}/details`)}
         />
       </div>
 

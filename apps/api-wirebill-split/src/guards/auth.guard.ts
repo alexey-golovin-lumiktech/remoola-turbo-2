@@ -49,7 +49,8 @@ export class AuthGuard implements CanActivate {
     if (cookieAccessToken) return this.bearerProcessor(cookieAccessToken, request);
 
     const { authorization = null } = request.headers;
-    if (authorization == null || authorization.length == 0) return this.throwError(GuardMessage.LOST_HEADER);
+    if (authorization == null || authorization.length == 0)
+      return this.throwError(GuardMessage.LOST_HEADER + ` url: ` + request.url);
 
     const [type, encoded] = authorization.split(this.separator.Token) as [AuthHeaderValue, string];
     if (Object.values(AuthHeader).includes(type) == false) return this.throwError(GuardMessage.UNEXPECTED(type));

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-import DocumentPreviewModal from './DocumentPreviewModal';
+import { DocumentPreviewModal } from './DocumentPreviewModal';
 
 type Doc = {
   id: string;
@@ -17,7 +17,7 @@ type Doc = {
 
 type PreviewDoc = Doc | null;
 
-export default function DocumentsList() {
+export function DocumentsList() {
   const [docs, setDocs] = useState<Doc[]>([]);
   const [kind, setKind] = useState(``);
   const [selected, setSelected] = useState<Set<string>>(new Set());

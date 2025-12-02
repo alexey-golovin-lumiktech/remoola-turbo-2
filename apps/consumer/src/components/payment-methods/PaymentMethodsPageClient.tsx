@@ -1,15 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
-import AddPaymentMethodModal from './modals/AddPaymentMethodModal';
-import DeletePaymentMethodModal from './modals/DeletePaymentMethodModal';
-import EditPaymentMethodModal from './modals/EditPaymentMethodModal';
-import PaymentMethodsList from './PaymentMethodsList';
+import { AddPaymentMethodModal, DeletePaymentMethodModal, EditPaymentMethodModal } from './modals';
+import { PaymentMethodsList } from './PaymentMethodsList';
 import { type PaymentMethodItem } from '../../types/payment-methods';
 
-export default function PaymentMethodsPageClient({ initialItems }: { initialItems: PaymentMethodItem[] }) {
-  const [items, setItems] = useState(initialItems);
+export function PaymentMethodsPageClient() {
+  const [items, setItems] = useState<PaymentMethodItem[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
   const [editItem, setEditItem] = useState<PaymentMethodItem | null>(null);
   const [deleteItem, setDeleteItem] = useState<PaymentMethodItem | null>(null);
@@ -17,10 +15,14 @@ export default function PaymentMethodsPageClient({ initialItems }: { initialItem
   async function refresh() {
     const res = await fetch(`/api/payment-methods`, {
       headers: { 'Content-Type': `application/json` },
+      credentials: `include`,
+      cache: `no-cache`,
     });
     const data = await res.json();
     setItems(data.items);
   }
+
+  useEffect(() => void refresh(), []);
 
   return (
     <div className="flex flex-col gap-6 px-8 py-6">

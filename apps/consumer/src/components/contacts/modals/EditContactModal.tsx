@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 
 import { type ConsumerContactAddress, type ConsumerContact } from '../../../types';
 
-export default function EditContactModal({
+export function EditContactModal({
   open,
   onCloseAction,
   onUpdatedAction,

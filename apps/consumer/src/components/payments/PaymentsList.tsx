@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-import PaymentsFilters from './PaymentsFilters';
+import { PaymentsFilters } from './PaymentsFilters';
 
 type PaymentItem = {
   id: string;
@@ -21,7 +21,7 @@ type PaymentItem = {
   };
 };
 
-export default function PaymentsList() {
+export function PaymentsList() {
   const [items, setItems] = useState<PaymentItem[]>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);

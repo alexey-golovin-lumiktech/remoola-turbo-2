@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-export default function StartPaymentForm() {
+export function StartPaymentForm() {
   const router = useRouter();
 
   const [email, setEmail] = useState(``);
@@ -15,7 +15,7 @@ export default function StartPaymentForm() {
   async function submit() {
     setLoading(true);
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/payments/start`, {
+    const res = await fetch(`/api/payments/start`, {
       method: `POST`,
       credentials: `include`,
       headers: { 'Content-Type': `application/json` },

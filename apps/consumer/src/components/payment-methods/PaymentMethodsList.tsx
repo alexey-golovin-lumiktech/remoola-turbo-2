@@ -10,7 +10,7 @@ type Props = {
   onDeleteAction: (item: PaymentMethodItem) => void;
 };
 
-export default function PaymentMethodsList({ items, onEditAction, onDeleteAction }: Props) {
+export function PaymentMethodsList({ items, onEditAction, onDeleteAction }: Props) {
   if (!items.length) {
     return <div className="text-center text-gray-400 py-10">No payment methods added yet.</div>;
   }

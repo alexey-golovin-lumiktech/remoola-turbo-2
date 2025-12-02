@@ -1,6 +1,6 @@
 import { type Metadata } from 'next';
 
-import DocumentsList from '../../../components/documents/DocumentsList';
+import { DocumentsList } from '../../../components';
 
 export const metadata: Metadata = {
   title: `Documents - Remoola`,

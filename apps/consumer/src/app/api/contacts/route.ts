@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 export async function GET(req: NextRequest) {
   const cookieHeader = (await cookies()).toString();
-  const base = process.env.NEXT_PUBLIC_API_BASE_URL!;
+  const consumerApi = process.env.NEXT_PUBLIC_API_BASE_URL!;
 
   const entries = Object.fromEntries(req.headers);
   const headers: Record<string, string> = {
@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
     ...(entries.authorization?.trim() && { authorization: entries.authorization }),
   };
 
-  const res = await fetch(`${base}/contacts`, {
+  const res = await fetch(`${consumerApi}/contacts`, {
     headers: headers,
     credentials: `include`,
   });
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const cookieHeader = (await cookies()).toString();
-  const base = process.env.NEXT_PUBLIC_API_BASE_URL!;
+  const consumerApi = process.env.NEXT_PUBLIC_API_BASE_URL!;
 
   const entries = Object.fromEntries(req.headers);
   const headers: Record<string, string> = {
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
 
   const body = await req.text();
 
-  const res = await fetch(`${base}/contacts`, {
+  const res = await fetch(`${consumerApi}/contacts`, {
     method: `POST`,
     headers: headers,
     credentials: `include`,
