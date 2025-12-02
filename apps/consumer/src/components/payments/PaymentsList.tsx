@@ -22,7 +22,7 @@ type PaymentItem = {
 };
 
 export function PaymentsList() {
-  const [items, setItems] = useState<PaymentItem[]>([]);
+  const [payments, setPayments] = useState<PaymentItem[]>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const pageSize = 20;
@@ -50,7 +50,7 @@ export function PaymentsList() {
       if (!res.ok) return;
 
       const data = await res.json();
-      setItems(data.items || []);
+      setPayments(data.items || []);
       setTotal(data.total || 0);
     }
 
@@ -84,7 +84,7 @@ export function PaymentsList() {
             </tr>
           </thead>
           <tbody>
-            {items.length === 0 && (
+            {payments.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-6 py-6 text-center text-slate-500">
                   No payments found
@@ -92,7 +92,7 @@ export function PaymentsList() {
               </tr>
             )}
 
-            {items.map((p) => (
+            {payments.map((p) => (
               <tr key={p.id} className="border-b hover:bg-slate-50 transition cursor-pointer">
                 <td className="px-6 py-4">
                   <div className="font-medium">{p.counterparty.email}</div>

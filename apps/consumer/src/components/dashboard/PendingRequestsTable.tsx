@@ -1,6 +1,6 @@
 'use client';
 
-import { type PendingRequest } from '../../lib/dashboard-api';
+import { type IPendingRequest } from '../../types';
 
 function formatAmount(amount: number, currency: string) {
   return new Intl.NumberFormat(undefined, {
@@ -9,7 +9,7 @@ function formatAmount(amount: number, currency: string) {
   }).format(amount);
 }
 
-export function PendingRequestsTable({ items }: { items: PendingRequest[] }) {
+export function PendingRequestsTable({ pendingRequests }: { pendingRequests: IPendingRequest[] }) {
   return (
     <section className="w-full">
       <header className="mb-3 flex items-center justify-between">
@@ -29,7 +29,7 @@ export function PendingRequestsTable({ items }: { items: PendingRequest[] }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
-            {items.length === 0 && (
+            {pendingRequests.length === 0 && (
               <tr>
                 <td colSpan={4} className="px-4 py-6 text-center text-sm text-slate-400">
                   No open payment requests yet.
@@ -37,18 +37,20 @@ export function PendingRequestsTable({ items }: { items: PendingRequest[] }) {
               </tr>
             )}
 
-            {items.map((item) => (
-              <tr key={item.id}>
-                <td className="px-4 py-3 text-sm text-slate-900">{item.counterpartyName}</td>
-                <td className="px-4 py-3 text-sm text-slate-900">{formatAmount(item.amount, item.currencyCode)}</td>
+            {pendingRequests.map((pendingRequest) => (
+              <tr key={pendingRequest.id}>
+                <td className="px-4 py-3 text-sm text-slate-900">{pendingRequest.counterpartyName}</td>
+                <td className="px-4 py-3 text-sm text-slate-900">
+                  {formatAmount(pendingRequest.amount, pendingRequest.currencyCode)}
+                </td>
                 <td className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-blue-600">
-                  {item.status.replace(/_/g, ` `)}
+                  {pendingRequest.status.replace(/_/g, ` `)}
                 </td>
                 <td className="px-4 py-3 text-right text-xs text-slate-500">
-                  {item.lastActivityAt
+                  {pendingRequest.lastActivityAt
                     ? new Intl.DateTimeFormat(undefined, {
                         dateStyle: `medium`,
-                      }).format(new Date(item.lastActivityAt))
+                      }).format(new Date(pendingRequest.lastActivityAt))
                     : `—`}
                 </td>
               </tr>

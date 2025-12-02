@@ -1,19 +1,19 @@
 'use client';
 
-import { type PaymentMethodItem } from '../../../types/payment-methods';
+import { type PaymentMethodItem } from '../../../types';
 
 type Props = {
   open: boolean;
   onCloseAction: () => void;
   onDeletedAction: () => void;
-  item: PaymentMethodItem | null;
+  paymentMethod: PaymentMethodItem | null;
 };
 
-export function DeletePaymentMethodModal({ open, onCloseAction, onDeletedAction, item }: Props) {
-  if (!open || !item) return null;
+export function DeletePaymentMethodModal({ open, onCloseAction, onDeletedAction, paymentMethod }: Props) {
+  if (!open || !paymentMethod) return null;
 
   async function handleDelete() {
-    const res = await fetch(`/api/payment-methods/${item!.id}`, {
+    const res = await fetch(`/api/payment-methods/${paymentMethod!.id}`, {
       method: `DELETE`,
       headers: { 'Content-Type': `application/json` },
     });
@@ -40,16 +40,20 @@ export function DeletePaymentMethodModal({ open, onCloseAction, onDeletedAction,
 
         <div className="border rounded-lg p-3 bg-gray-50 mb-4">
           <div className="font-medium">
-            {item.type === `CREDIT_CARD` ? `${item.brand} •••• ${item.last4}` : `Bank Account •••• ${item.last4}`}
+            {paymentMethod.type === `CREDIT_CARD`
+              ? `${paymentMethod.brand} •••• ${paymentMethod.last4}`
+              : `Bank Account •••• ${paymentMethod.last4}`}
           </div>
 
-          {item.expMonth && item.expYear && (
+          {paymentMethod.expMonth && paymentMethod.expYear && (
             <div className="text-sm text-gray-500">
-              Expires {item.expMonth}/{item.expYear}
+              Expires {paymentMethod.expMonth}/{paymentMethod.expYear}
             </div>
           )}
 
-          {item.defaultSelected && <div className="text-xs text-green-600 font-medium mt-1">(Default method)</div>}
+          {paymentMethod.defaultSelected && (
+            <div className="text-xs text-green-600 font-medium mt-1">(Default method)</div>
+          )}
         </div>
 
         <p className="text-sm text-red-600 mb-4">This action cannot be undone.</p>

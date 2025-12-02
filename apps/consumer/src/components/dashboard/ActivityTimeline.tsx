@@ -1,8 +1,8 @@
 'use client';
 
-import { type ActivityItem } from '../../lib/dashboard-api';
+import { type IActivityItem } from '../../types';
 
-export function ActivityTimeline({ items }: { items: ActivityItem[] }) {
+export function ActivityTimeline({ activityTimelineItems }: { activityTimelineItems: IActivityItem[] }) {
   return (
     <section>
       <header className="mb-3 flex items-center justify-between">
@@ -10,26 +10,28 @@ export function ActivityTimeline({ items }: { items: ActivityItem[] }) {
       </header>
 
       <div className="space-y-3">
-        {items.length === 0 && (
+        {activityTimelineItems.length === 0 && (
           <p className="text-sm text-slate-400">
             No recent activity. Once you create payment requests and complete compliance, events will show up here.
           </p>
         )}
 
-        {items.map((item) => (
-          <div key={item.id} className="flex items-start gap-3">
+        {activityTimelineItems.map((activityTimelineItem) => (
+          <div key={activityTimelineItem.id} className="flex items-start gap-3">
             <div className="mt-1 h-2 w-2 flex-shrink-0 rounded-full bg-blue-500" />
             <div className="flex-1">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-slate-900">{item.label}</p>
+                <p className="text-sm font-medium text-slate-900">{activityTimelineItem.label}</p>
                 <span className="text-xs text-slate-400">
                   {new Intl.DateTimeFormat(undefined, {
                     dateStyle: `short`,
                     timeStyle: `short`,
-                  }).format(new Date(item.createdAt))}
+                  }).format(new Date(activityTimelineItem.createdAt))}
                 </span>
               </div>
-              {item.description && <p className="text-xs text-slate-500">{item.description}</p>}
+              {activityTimelineItem.description && (
+                <p className="text-xs text-slate-500">{activityTimelineItem.description}</p>
+              )}
             </div>
           </div>
         ))}

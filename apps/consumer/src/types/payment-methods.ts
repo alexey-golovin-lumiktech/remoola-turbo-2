@@ -31,10 +31,6 @@ export type PaymentMethodItem = {
   deletedAt?: string | null;
 };
 
-export type PaymentMethodsResponse = {
-  items: PaymentMethodItem[];
-};
-
 export type CreatePaymentMethodDto = {
   type: PaymentMethodType;
 

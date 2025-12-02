@@ -2,38 +2,43 @@
 
 import { useEffect, useState } from 'react';
 
-import { type PaymentMethodItem } from '../../../types/payment-methods';
+import { type PaymentMethodItem } from '../../../types';
 
 type Props = {
   open: boolean;
   onCloseAction: () => void;
   onUpdatedAction: () => void;
-  item: PaymentMethodItem | null;
+  paymentMethod: PaymentMethodItem | null;
 };
 
-export function EditPaymentMethodModal({ open, onCloseAction: onClose, onUpdatedAction: onUpdated, item }: Props) {
+export function EditPaymentMethodModal({
+  open,
+  onCloseAction: onClose,
+  onUpdatedAction: onUpdated,
+  paymentMethod: paymentMethod,
+}: Props) {
   const [billingName, setBillingName] = useState(``);
   const [billingEmail, setBillingEmail] = useState(``);
   const [billingPhone, setBillingPhone] = useState(``);
   const [defaultSelected, setDefaultSelected] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  /** Load item data on open */
+  /** Load paymentMethod data on open */
   useEffect(() => {
-    if (item) {
-      setBillingName(item.billingDetails?.name ?? ``);
-      setBillingEmail(item.billingDetails?.email ?? ``);
-      setBillingPhone(item.billingDetails?.phone ?? ``);
-      setDefaultSelected(item.defaultSelected ?? false);
+    if (paymentMethod) {
+      setBillingName(paymentMethod.billingDetails?.name ?? ``);
+      setBillingEmail(paymentMethod.billingDetails?.email ?? ``);
+      setBillingPhone(paymentMethod.billingDetails?.phone ?? ``);
+      setDefaultSelected(paymentMethod.defaultSelected ?? false);
     }
-  }, [item]);
+  }, [paymentMethod]);
 
-  if (!open || !item) return null;
+  if (!open || !paymentMethod) return null;
 
   async function handleSave() {
     setSaving(true);
 
-    const res = await fetch(`/api/payment-methods/${item!.id}`, {
+    const res = await fetch(`/api/payment-methods/${paymentMethod!.id}`, {
       method: `PATCH`,
       headers: { 'Content-Type': `application/json` },
       body: JSON.stringify({
@@ -76,16 +81,18 @@ export function EditPaymentMethodModal({ open, onCloseAction: onClose, onUpdated
         {/* Metadata block (non-editable) */}
         <div className="bg-gray-50 border rounded-lg p-4">
           <div className="text-sm text-gray-600">Type:</div>
-          <div className="font-medium mb-2">{item.type === `CREDIT_CARD` ? `Credit Card` : `Bank Account`}</div>
+          <div className="font-medium mb-2">
+            {paymentMethod.type === `CREDIT_CARD` ? `Credit Card` : `Bank Account`}
+          </div>
 
           <div className="text-sm text-gray-600">Details:</div>
           <div className="font-medium">
-            {item.brand} •••• {item.last4}
+            {paymentMethod.brand} •••• {paymentMethod.last4}
           </div>
 
-          {item.expMonth && item.expYear && (
+          {paymentMethod.expMonth && paymentMethod.expYear && (
             <div className="text-sm text-gray-500 mt-1">
-              Expires {item.expMonth}/{item.expYear}
+              Expires {paymentMethod.expMonth}/{paymentMethod.expYear}
             </div>
           )}
         </div>

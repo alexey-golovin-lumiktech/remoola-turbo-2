@@ -5,12 +5,12 @@ export function middleware(req: NextRequest) {
   const token = cookieStore.get(`access_token`)?.value;
   const { pathname } = req.nextUrl;
 
-  // if (!token && !pathname.startsWith(`/login`)) {
-  //   const url = req.nextUrl.clone();
-  //   url.pathname = `/login`;
-  //   url.searchParams.set(`next`, pathname);
-  //   return NextResponse.redirect(url);
-  // }
+  if (!token && !pathname.startsWith(`/login`)) {
+    const url = req.nextUrl.clone();
+    url.pathname = `/login`;
+    url.searchParams.set(`next`, pathname);
+    return NextResponse.redirect(url);
+  }
   return NextResponse.next();
 }
 

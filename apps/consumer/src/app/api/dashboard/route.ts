@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
     ...(entries.authorization?.trim() && { authorization: entries.authorization }),
   };
 
-  const res = await fetch(`${consumerApi}/contracts`, {
+  const res = await fetch(`${consumerApi}/dashboard`, {
     headers: headers,
     credentials: `include`,
     cache: `no-cache`,

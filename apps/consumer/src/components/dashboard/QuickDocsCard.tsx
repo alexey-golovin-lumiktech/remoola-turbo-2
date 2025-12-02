@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 
-import { type QuickDoc } from '../../lib/dashboard-api';
+import { type IQuickDoc } from '../../types';
 
-export function QuickDocsCard({ docs }: { docs: QuickDoc[] }) {
+export function QuickDocsCard({ docs }: { docs: IQuickDoc[] }) {
   return (
     <section>
       <header className="mb-3 flex items-center justify-between">

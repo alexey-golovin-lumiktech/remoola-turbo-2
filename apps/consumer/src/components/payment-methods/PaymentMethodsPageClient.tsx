@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react';
 
 import { AddPaymentMethodModal, DeletePaymentMethodModal, EditPaymentMethodModal } from './modals';
 import { PaymentMethodsList } from './PaymentMethodsList';
-import { type PaymentMethodItem } from '../../types/payment-methods';
+import { type PaymentMethodItem } from '../../types';
 
 export function PaymentMethodsPageClient() {
-  const [items, setItems] = useState<PaymentMethodItem[]>([]);
+  const [payments, setPayments] = useState<PaymentMethodItem[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
   const [editItem, setEditItem] = useState<PaymentMethodItem | null>(null);
   const [deleteItem, setDeleteItem] = useState<PaymentMethodItem | null>(null);
@@ -19,7 +19,7 @@ export function PaymentMethodsPageClient() {
       cache: `no-cache`,
     });
     const data = await res.json();
-    setItems(data.items);
+    setPayments(data.items || []);
   }
 
   useEffect(() => void refresh(), []);
@@ -41,23 +41,23 @@ export function PaymentMethodsPageClient() {
       </div>
 
       <PaymentMethodsList
-        items={items || []}
-        onEditAction={(item) => setEditItem(item)}
-        onDeleteAction={(item) => setDeleteItem(item)}
+        payments={payments || []}
+        onEditAction={(paymentMethod) => setEditItem(paymentMethod)}
+        onDeleteAction={(paymentMethod) => setDeleteItem(paymentMethod)}
       />
 
       <AddPaymentMethodModal open={createOpen} onCloseAction={() => setCreateOpen(false)} onCreatedAction={refresh} />
 
       <EditPaymentMethodModal
         open={!!editItem}
-        item={editItem}
+        paymentMethod={editItem}
         onCloseAction={() => setEditItem(null)}
         onUpdatedAction={refresh}
       />
 
       <DeletePaymentMethodModal
         open={!!deleteItem}
-        item={deleteItem}
+        paymentMethod={deleteItem}
         onCloseAction={() => setDeleteItem(null)}
         onDeletedAction={refresh}
       />

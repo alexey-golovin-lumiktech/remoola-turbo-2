@@ -4,11 +4,7 @@ import { Elements, CardElement, useStripe, useElements } from '@stripe/react-str
 import { loadStripe } from '@stripe/stripe-js';
 import { useState } from 'react';
 
-import {
-  type StripeSetupIntentPayload,
-  type PaymentMethodType,
-  type CreatePaymentMethodDto,
-} from '../../../types/payment-methods';
+import { type StripeSetupIntentPayload, type PaymentMethodType, type CreatePaymentMethodDto } from '../../../types';
 
 const stripePromise = loadStripe(
   `pk_test_51N1NYhCnUuv0cnz82HRdWjJG6BQLt39UMrZtu5TMQwHxHZ78T9OgVOrlCSKInTIsClMaizf2V685PCzsTBphw7zV006mPbh9qN`,

@@ -2,9 +2,9 @@
 
 import { useMemo } from 'react';
 
-import { type ComplianceTask } from '../../lib/dashboard-api';
+import { type IComplianceTask } from '../../types';
 
-export function ComplianceTasksCard({ tasks }: { tasks: ComplianceTask[] }) {
+export function ComplianceTasksCard({ tasks }: { tasks: IComplianceTask[] }) {
   const completedCount = useMemo(() => tasks.filter((t) => t.completed).length, [tasks]);
   const progress = tasks.length ? Math.round((completedCount / tasks.length) * 100) : 0;
 

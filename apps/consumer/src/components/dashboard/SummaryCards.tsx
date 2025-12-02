@@ -1,6 +1,6 @@
 'use client';
 
-import { type DashboardSummary } from '../../lib/dashboard-api';
+import { type IDashboardSummary } from '../../types';
 
 function formatMoney(cents: number, currency = `USD`) {
   return new Intl.NumberFormat(undefined, {
@@ -10,7 +10,7 @@ function formatMoney(cents: number, currency = `USD`) {
   }).format(cents / 100);
 }
 
-export function SummaryCards({ summary }: { summary: DashboardSummary }) {
+export function SummaryCards({ summary }: { summary: IDashboardSummary }) {
   const lastPaymentLabel = summary.lastPaymentAt
     ? new Intl.DateTimeFormat(undefined, {
         dateStyle: `medium`,

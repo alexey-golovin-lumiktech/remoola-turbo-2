@@ -2,23 +2,23 @@
 
 import { CreditCard, Landmark, Star, Pencil, Trash2 } from 'lucide-react';
 
-import { type PaymentMethodItem } from '../../types/payment-methods';
+import { type PaymentMethodItem } from '../../types';
 
 type Props = {
-  items: PaymentMethodItem[];
-  onEditAction: (item: PaymentMethodItem) => void;
-  onDeleteAction: (item: PaymentMethodItem) => void;
+  payments: PaymentMethodItem[];
+  onEditAction: (paymentMethod: PaymentMethodItem) => void;
+  onDeleteAction: (paymentMethod: PaymentMethodItem) => void;
 };
 
-export function PaymentMethodsList({ items, onEditAction, onDeleteAction }: Props) {
-  if (!items.length) {
+export function PaymentMethodsList({ payments, onEditAction, onDeleteAction }: Props) {
+  if (!payments.length) {
     return <div className="text-center text-gray-400 py-10">No payment methods added yet.</div>;
   }
 
   return (
     <div className="space-y-4">
-      {items.map((pm) => (
-        <PaymentMethodRow key={pm.id} item={pm} onEdit={onEditAction} onDelete={onDeleteAction} />
+      {payments.map((pm) => (
+        <PaymentMethodRow key={pm.id} payment={pm} onEdit={onEditAction} onDelete={onDeleteAction} />
       ))}
     </div>
   );
@@ -29,15 +29,15 @@ export function PaymentMethodsList({ items, onEditAction, onDeleteAction }: Prop
 ------------------------------ */
 
 function PaymentMethodRow({
-  item,
+  payment,
   onEdit,
   onDelete,
 }: {
-  item: PaymentMethodItem;
+  payment: PaymentMethodItem;
   onEdit: (pm: PaymentMethodItem) => void;
   onDelete: (pm: PaymentMethodItem) => void;
 }) {
-  const icon = getPaymentMethodIcon(item);
+  const icon = getPaymentMethodIcon(payment);
 
   return (
     <div className="flex items-center justify-between p-4 bg-white rounded-xl border shadow-sm hover:shadow transition">
@@ -47,12 +47,14 @@ function PaymentMethodRow({
 
         <div className="flex flex-col">
           <div className="font-semibold">
-            {item.type === `CREDIT_CARD` ? `${item.brand} •••• ${item.last4}` : `Bank Account •••• ${item.last4}`}
+            {payment.type === `CREDIT_CARD`
+              ? `${payment.brand} •••• ${payment.last4}`
+              : `Bank Account •••• ${payment.last4}`}
           </div>
 
-          <div className="text-sm text-gray-500">{item.billingDetails?.name ?? `No billing name`}</div>
+          <div className="text-sm text-gray-500">{payment.billingDetails?.name ?? `No billing name`}</div>
 
-          {item.defaultSelected && (
+          {payment.defaultSelected && (
             <span
               className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-green-100 text-green-700
             rounded-full font-medium"
@@ -65,12 +67,12 @@ function PaymentMethodRow({
 
       {/* ACTIONS */}
       <div className="flex gap-3 text-sm">
-        <button className="flex items-center gap-1 text-blue-600 hover:text-blue-800" onClick={() => onEdit(item)}>
+        <button className="flex items-center gap-1 text-blue-600 hover:text-blue-800" onClick={() => onEdit(payment)}>
           <Pencil size={14} />
           Edit
         </button>
 
-        <button className="flex items-center gap-1 text-red-500 hover:text-red-700" onClick={() => onDelete(item)}>
+        <button className="flex items-center gap-1 text-red-500 hover:text-red-700" onClick={() => onDelete(payment)}>
           <Trash2 size={14} />
           Delete
         </button>
@@ -83,12 +85,12 @@ function PaymentMethodRow({
    HELPER: CARD/BANK ICON PICKER
 ------------------------------ */
 
-function getPaymentMethodIcon(item: PaymentMethodItem) {
-  if (item.type === `BANK_ACCOUNT`) {
+function getPaymentMethodIcon(payment: PaymentMethodItem) {
+  if (payment.type === `BANK_ACCOUNT`) {
     return <Landmark size={22} />;
   }
 
-  const brand = item.brand?.toLowerCase() ?? ``;
+  const brand = payment.brand?.toLowerCase() ?? ``;
 
   if (brand.includes(`visa`)) return <CreditCard size={22} />;
   if (brand.includes(`mastercard`)) return <CreditCard size={22} />;

@@ -1,5 +1,5 @@
 import { type StepsMap } from './getSteps';
-import { type IStepName, type INormalizedStep, type IStepMeta } from '../types/step.types';
+import { type IStepName, type INormalizedStep, type IStepMeta } from '../types';
 
 export const normalizeSteps = (stepsObj: StepsMap): INormalizedStep[] =>
   Object.entries(stepsObj).map(([name, meta], index) => {
