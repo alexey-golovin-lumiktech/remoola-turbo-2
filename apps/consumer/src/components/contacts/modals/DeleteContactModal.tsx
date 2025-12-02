@@ -19,7 +19,6 @@ export function DeleteContactModal({
     const res = await fetch(`/api/contacts/${contact!.id}`, {
       method: `DELETE`,
       credentials: `include`,
-      headers: { 'Content-Type': `application/json` },
     });
     if (res.ok) {
       onDeletedAction();

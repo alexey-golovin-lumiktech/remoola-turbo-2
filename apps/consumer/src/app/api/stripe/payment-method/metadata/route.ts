@@ -12,10 +12,8 @@ export async function POST(req: NextRequest) {
       ...Object.fromEntries(req.headers),
       'Content-Type': `application/json`,
       Cookie: cookieHeader,
-      referrer: `http://127.0.0.1:3001`,
     },
     credentials: `include`,
-    cache: `no-cache`,
     body: await req.text(),
   });
 

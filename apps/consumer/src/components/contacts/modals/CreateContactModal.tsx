@@ -28,7 +28,6 @@ export function CreateContactModal({
       method: `POST`,
       body: JSON.stringify({ email, name, address }),
       credentials: `include`,
-      headers: { 'Content-Type': `application/json` },
     });
     if (res.ok) {
       onCreated();

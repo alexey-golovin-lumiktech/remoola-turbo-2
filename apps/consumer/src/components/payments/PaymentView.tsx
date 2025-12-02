@@ -10,6 +10,7 @@ export function PaymentView({ paymentRequestId }: { paymentRequestId: string }) 
     async function load() {
       setLoading(true);
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/payments/${paymentRequestId}`, {
+        method: `GET`,
         credentials: `include`,
         cache: `no-cache`,
       });
@@ -31,7 +32,6 @@ export function PaymentView({ paymentRequestId }: { paymentRequestId: string }) 
     const res = await fetch(`/api/stripe/${paymentRequestId}/stripe-session`, {
       method: `POST`,
       credentials: `include`,
-      cache: `no-cache`,
     });
 
     const json = await res.json();

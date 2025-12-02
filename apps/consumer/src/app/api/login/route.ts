@@ -9,10 +9,8 @@ export async function POST(req: Request) {
     headers: {
       ...Object.fromEntries(req.headers),
       'Content-Type': `application/json`,
-      referrer: `http://127.0.0.1:3001`,
     },
     credentials: `include`,
-    cache: `no-cache`,
     body: await req.text(),
   });
 

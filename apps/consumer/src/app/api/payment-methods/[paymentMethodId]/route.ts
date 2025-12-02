@@ -12,10 +12,8 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ payme
       ...Object.fromEntries(req.headers),
       'Content-Type': `application/json`,
       Cookie: (await cookies()).toString(),
-      referrer: `http://127.0.0.1:3001`,
     },
     credentials: `include`,
-    cache: `no-cache`,
     body: await req.text(),
   });
 
@@ -35,10 +33,8 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ paym
       ...Object.fromEntries(req.headers),
       'Content-Type': `application/json`,
       Cookie: (await cookies()).toString(),
-      referrer: `http://127.0.0.1:3001`,
     },
     credentials: `include`,
-    cache: `no-cache`,
   });
 
   const setCookie = res.headers.get(`set-cookie`);

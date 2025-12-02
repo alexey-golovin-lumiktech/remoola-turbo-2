@@ -15,7 +15,11 @@ export function ContactsPageClient() {
   const [deleteContact, setDeleteContact] = useState<ConsumerContact | null>(null);
 
   async function refresh() {
-    const response = await fetch(`/api/contacts`);
+    const response = await fetch(`/api/contacts`, {
+      method: `GET`,
+      credentials: `include`,
+      cache: `no-cache`,
+    });
     if (!response.ok) throw new Error(`Something went wrong retrieve contacts`);
     const json = await response.json();
     setItems(json.items);

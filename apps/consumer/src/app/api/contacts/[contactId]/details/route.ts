@@ -12,7 +12,6 @@ export async function GET(req: NextRequest, context: { params: Promise<{ contact
       ...Object.fromEntries(req.headers),
       'Content-Type': `application/json`,
       Cookie: (await cookies()).toString(),
-      referrer: `http://127.0.0.1:3001`,
     },
     credentials: `include`,
     cache: `no-cache`,

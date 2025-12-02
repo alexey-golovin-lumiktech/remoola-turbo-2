@@ -13,6 +13,7 @@ export function VerifyMeButton() {
     const res = await fetch(`/api/stripe/verify/start`, {
       method: `POST`,
       headers: { authorization },
+      credentials: `include`,
     });
 
     const { clientSecret } = await res.json();

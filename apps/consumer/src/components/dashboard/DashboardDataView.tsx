@@ -17,6 +17,7 @@ export function DashboardDataView() {
 
   async function fetchDashboardData() {
     const response = await fetch(`/api/dashboard`, {
+      method: `GET`,
       credentials: `include`,
       cache: `no-cache`,
     });

@@ -11,6 +11,7 @@ export function ContractsTable() {
   useEffect(() => {
     const loadContracts = async () => {
       const response = await fetch(`/api/contracts`, {
+        method: `GET`,
         credentials: `include`,
         cache: `no-cache`,
       });

@@ -18,16 +18,19 @@ export default function LoginForm({ nextPath }: { nextPath: string }) {
 
     const loginRequest = await fetch(`/api/login`, {
       method: `POST`,
-      credentials: `include`,
       headers: { 'Content-Type': `application/json`, ...authHeader },
       body: JSON.stringify({ email, password }),
+      credentials: `include`,
     });
     if (!loginRequest.ok) {
       setErr(`Login failed (${loginRequest.status})`);
       return;
     }
 
-    const meRequest = await fetch(`/api/me`, { credentials: `include`, headers: { ...authHeader } });
+    const meRequest = await fetch(`/api/me`, {
+      method: `GET`,
+      credentials: `include`,
+    });
     if (!meRequest.ok) {
       setErr(`Logged in, but cookies not available. Check CORS/cookie attrs.`);
       return;
