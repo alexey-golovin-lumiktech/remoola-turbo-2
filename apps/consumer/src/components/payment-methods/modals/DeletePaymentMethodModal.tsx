@@ -13,11 +13,9 @@ export default function DeletePaymentMethodModal({ open, onCloseAction, onDelete
   if (!open || !item) return null;
 
   async function handleDelete() {
-    const authorization = localStorage.getItem(`authorization`) || ``;
-
     const res = await fetch(`/api/payment-methods/${item!.id}`, {
       method: `DELETE`,
-      headers: { authorization },
+      headers: { 'Content-Type': `application/json` },
     });
 
     if (res.ok) {

@@ -19,7 +19,7 @@ export default function DeleteContactModal({
     const res = await fetch(`/api/contacts/${contact!.id}`, {
       method: `DELETE`,
       credentials: `include`,
-      headers: { 'Content-Type': `application/json`, authorization: localStorage.getItem(`authorization`)! },
+      headers: { 'Content-Type': `application/json` },
     });
     if (res.ok) {
       onDeletedAction();
@@ -32,7 +32,7 @@ export default function DeleteContactModal({
       <div className="bg-white rounded-xl p-6 w-full max-w-sm">
         <h2 className="text-lg font-semibold">Delete Contact</h2>
         <p className="text-sm text-gray-600 py-2">
-          Are you sure you want to delete &quot;{contact.name ?? contact.email}"?
+          Are you sure you want to delete &quot;{contact.name ?? contact.email}&quot;?
         </p>
 
         <div className="flex justify-end gap-2 mt-4">

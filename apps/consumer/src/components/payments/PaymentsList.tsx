@@ -44,9 +44,7 @@ export default function PaymentsList() {
 
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/payments?${params}`, {
         credentials: `include`,
-        headers: {
-          authorization: localStorage.getItem(`authorization`) || ``,
-        },
+        headers: { 'Content-Type': `application/json` },
       });
 
       if (!res.ok) return;

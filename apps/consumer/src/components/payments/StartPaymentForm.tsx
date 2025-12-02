@@ -18,10 +18,7 @@ export default function StartPaymentForm() {
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/payments/start`, {
       method: `POST`,
       credentials: `include`,
-      headers: {
-        'Content-Type': `application/json`,
-        authorization: localStorage.getItem(`authorization`) || ``,
-      },
+      headers: { 'Content-Type': `application/json` },
       body: JSON.stringify({
         email,
         amount,

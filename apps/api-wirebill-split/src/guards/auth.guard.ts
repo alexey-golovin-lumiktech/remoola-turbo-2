@@ -1,12 +1,17 @@
 import { type CanActivate, type ExecutionContext, ForbiddenException, Logger } from '@nestjs/common';
 import { type Reflector } from '@nestjs/core';
 import { type JwtService } from '@nestjs/jwt';
-import { type Observable } from 'rxjs';
 
 import { IDENTITY, type IIdentity, IS_PUBLIC } from '../common';
 import { type IJwtTokenPayload } from '../dtos/consumer';
 import { type PrismaService } from '../shared/prisma.service';
-import { AuthHeader, type AuthHeaderValue, CredentialsSeparator, passwordUtils } from '../shared-common';
+import {
+  ACCESS_TOKEN_COOKIE_KEY,
+  AuthHeader,
+  type AuthHeaderValue,
+  CredentialsSeparator,
+  passwordUtils,
+} from '../shared-common';
 
 import type express from 'express';
 
@@ -35,10 +40,13 @@ export class AuthGuard implements CanActivate {
     private readonly prisma: PrismaService,
   ) {}
 
-  canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
+  async canActivate(context: ExecutionContext) {
     const request: express.Request = context.switchToHttp().getRequest();
     const isPublic = this.reflector.get<boolean>(IS_PUBLIC, context.getHandler());
     if (isPublic) return true;
+
+    const cookieAccessToken = request.cookies[ACCESS_TOKEN_COOKIE_KEY];
+    if (cookieAccessToken) return this.bearerProcessor(cookieAccessToken, request);
 
     const { authorization = null } = request.headers;
     if (authorization == null || authorization.length == 0) return this.throwError(GuardMessage.LOST_HEADER);
@@ -70,8 +78,14 @@ export class AuthGuard implements CanActivate {
     return this.prisma.consumerModel.findFirst({ where: { id: identityId } });
   }
 
-  private findIdentityAccess(where: { identityId: string; accessToken: string }) {
-    return this.prisma.accessRefreshTokenModel.findFirst({ where });
+  private findIdentityAccess(dto: { identityId: string; accessToken: string; refreshToken?: string }) {
+    return this.prisma.accessRefreshTokenModel.findFirst({
+      where: {
+        identityId: dto.identityId,
+        accessToken: dto.accessToken,
+        ...(dto.refreshToken && { refreshToken: dto.refreshToken }),
+      },
+    });
   }
 
   private async basicProcessor(encoded: string, request: express.Request) {
@@ -129,7 +143,6 @@ export class AuthGuard implements CanActivate {
     if (request.url.startsWith(CONSUMER_API_URL_STARTS) && !consumer) {
       return this.throwError(GuardMessage.ONLY_FOR_CONSUMERS);
     }
-
     this.assign(request, identity, admin?.type ?? `consumer`);
     return true;
   }

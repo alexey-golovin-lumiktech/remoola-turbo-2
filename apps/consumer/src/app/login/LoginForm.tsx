@@ -14,13 +14,12 @@ export default function LoginForm({ nextPath }: { nextPath: string }) {
     e.preventDefault();
     setErr(undefined);
 
-    const authorization = `Basic ` + window.btoa(email + `:` + password);
-    localStorage.setItem(`authorization`, authorization);
+    const authHeader = { authorization: `Basic ` + window.btoa(email + `:` + password) };
 
-    const loginRequest = await fetch(`/api/login?authorization=${authorization}`, {
+    const loginRequest = await fetch(`/api/login`, {
       method: `POST`,
       credentials: `include`,
-      headers: { 'Content-Type': `application/json`, authorization },
+      headers: { 'Content-Type': `application/json`, ...authHeader },
       body: JSON.stringify({ email, password }),
     });
     if (!loginRequest.ok) {
@@ -28,7 +27,7 @@ export default function LoginForm({ nextPath }: { nextPath: string }) {
       return;
     }
 
-    const meRequest = await fetch(`/api/me`, { credentials: `include`, headers: { authorization } });
+    const meRequest = await fetch(`/api/me`, { credentials: `include`, headers: { ...authHeader } });
     if (!meRequest.ok) {
       setErr(`Logged in, but cookies not available. Check CORS/cookie attrs.`);
       return;

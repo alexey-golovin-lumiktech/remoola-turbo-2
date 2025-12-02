@@ -5,7 +5,6 @@ const doFetch = (path: string, init?: RequestInit) => {
     credentials: `include`,
     ...init,
     headers: {
-      authorization: localStorage.getItem(`authorization`) || ``,
       'Content-Type': `application/json`,
       ...(init?.headers || {}),
     },
@@ -27,7 +26,6 @@ export const raw = async <T>(path: string, init?: RequestInit) => {
     const refreshRequest = await fetch(API + `/auth/refresh`, {
       method: `POST`,
       credentials: `include`,
-      headers: { authorization: localStorage.getItem(`authorization`) || `` },
     });
     if (refreshRequest.ok) request = await doFetch(path, init);
   }
@@ -52,7 +50,6 @@ export const patchJson = <T>(p: string, body: unknown) =>
   raw<T>(p, { method: `PATCH`, body: JSON.stringify(body) }) as Promise<T>;
 
 const join = (...args: string[]) => `/` + args.filter(Boolean).join(`/`);
-const search = (path: string, input?: string) => (input ? `${path}?search=${encodeURIComponent(input)}` : path);
 
 export const api = {
   payments: {

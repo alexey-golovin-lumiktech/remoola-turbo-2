@@ -34,7 +34,7 @@ export function useSignupSubmit() {
 
       const response = await fetch(`/api/signup`, {
         method: `POST`,
-        headers: { 'Content-Type': `application/json`, authorization: localStorage.getItem(`authorization`) || `` },
+        headers: { 'Content-Type': `application/json` },
         body: JSON.stringify(payload),
       });
 

@@ -44,8 +44,8 @@ export type DashboardData = {
   quickDocs: QuickDoc[];
 };
 
-async function apiGet<T>(path: string, authorization: string | null): Promise<T> {
-  const headers = await getAuthHeaders(authorization);
+export async function apiGet<T>(path: string): Promise<T> {
+  const headers = await getAuthHeaders();
 
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL!;
   const res = await fetch(`${baseUrl}${path}`, {
@@ -54,15 +54,10 @@ async function apiGet<T>(path: string, authorization: string | null): Promise<T>
   });
 
   if (!res.ok) {
+    console.log(`await res.text()`, await res.text());
     // may want better error handling / redirects here
     throw new Error(`Failed to load ${path}: ${res.status}`);
   }
 
   return res.json();
-}
-
-export async function getDashboardData(): Promise<DashboardData> {
-  // can replace with a single /consumer/dashboard endpoint if like.
-  // For now assume already have this aggregated endpoint in Nest.
-  return apiGet<DashboardData>(`/dashboard`);
 }

@@ -11,7 +11,6 @@ export default function PaymentView({ paymentRequestId }: { paymentRequestId: st
       setLoading(true);
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/payments/${paymentRequestId}`, {
         credentials: `include`,
-        headers: { authorization: localStorage.getItem(`authorization`) || `` },
       });
 
       if (!res.ok) {
@@ -31,7 +30,6 @@ export default function PaymentView({ paymentRequestId }: { paymentRequestId: st
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/stripe/${paymentRequestId}/stripe-session`, {
       method: `POST`,
       credentials: `include`,
-      headers: { authorization: localStorage.getItem(`authorization`) || `` },
     });
 
     const json = await res.json();

@@ -16,7 +16,7 @@ export default function ContactsPageClient() {
   const [deleteContact, setDeleteContact] = useState<ConsumerContact | null>(null);
 
   async function refresh() {
-    const { items } = await getContacts(localStorage.getItem(`authorization`));
+    const { items } = await getContacts();
     setItems(items);
   }
 

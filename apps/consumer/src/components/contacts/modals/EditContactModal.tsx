@@ -47,7 +47,7 @@ export default function EditContactModal({
       method: `PATCH`,
       body: JSON.stringify({ name, email, address }),
       credentials: `include`,
-      headers: { 'Content-Type': `application/json`, authorization: localStorage.getItem(`authorization`)! },
+      headers: { 'Content-Type': `application/json` },
     });
 
     if (res.ok) {

@@ -31,9 +31,7 @@ export default function DocumentsList() {
 
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/documents?${params}`, {
       credentials: `include`,
-      headers: {
-        authorization: localStorage.getItem(`authorization`) || ``,
-      },
+      headers: { 'Content-Type': `application/json` },
     });
 
     if (!res.ok) return;
@@ -75,9 +73,7 @@ export default function DocumentsList() {
       method: `POST`,
       credentials: `include`,
       body: form,
-      headers: {
-        authorization: localStorage.getItem(`authorization`) || ``,
-      },
+      headers: { 'Content-Type': `application/json` },
     });
 
     setUploading(false);
@@ -98,7 +94,7 @@ export default function DocumentsList() {
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/documents/bulk-delete`, {
       method: `POST`,
       credentials: `include`,
-      headers: { 'Content-Type': `application/json`, authorization: localStorage.getItem(`authorization`) || `` },
+      headers: { 'Content-Type': `application/json` },
       body: JSON.stringify({ ids: Array.from(selected) }),
     });
 
@@ -119,7 +115,7 @@ export default function DocumentsList() {
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/documents/attach-to-payment`, {
       method: `POST`,
       credentials: `include`,
-      headers: { 'Content-Type': `application/json`, authorization: localStorage.getItem(`authorization`) || `` },
+      headers: { 'Content-Type': `application/json` },
       body: JSON.stringify({
         paymentRequestId: attachPaymentId.trim(),
         resourceIds: Array.from(selected),
@@ -144,7 +140,7 @@ export default function DocumentsList() {
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/documents/${docId}/tags`, {
       method: `POST`,
       credentials: `include`,
-      headers: { 'Content-Type': `application/json`, authorization: localStorage.getItem(`authorization`) || `` },
+      headers: { 'Content-Type': `application/json` },
       body: JSON.stringify({ tags }),
     });
 

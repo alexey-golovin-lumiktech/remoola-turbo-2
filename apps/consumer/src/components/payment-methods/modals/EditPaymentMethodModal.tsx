@@ -38,14 +38,9 @@ export default function EditPaymentMethodModal({
   async function handleSave() {
     setSaving(true);
 
-    const authorization = localStorage.getItem(`authorization`) || ``;
-
     const res = await fetch(`/api/payment-methods/${item!.id}`, {
       method: `PATCH`,
-      headers: {
-        authorization,
-        'Content-Type': `application/json`,
-      },
+      headers: { 'Content-Type': `application/json` },
       body: JSON.stringify({
         billingName,
         billingEmail,

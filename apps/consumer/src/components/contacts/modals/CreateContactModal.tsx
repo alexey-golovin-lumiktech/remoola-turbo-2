@@ -14,11 +14,11 @@ export default function CreateContactModal({
   const [email, setEmail] = useState(`email@email.com`);
   const [name, setName] = useState(`name full`);
   const [address, setAddress] = useState({
-    postalCode: `3123123123`,
-    country: `USA`,
-    state: `Alaska`,
-    city: `City`,
-    street: `Street`,
+    postalCode: ``,
+    country: ``,
+    state: ``,
+    city: ``,
+    street: ``,
   });
 
   if (!open) return null;
@@ -28,7 +28,7 @@ export default function CreateContactModal({
       method: `POST`,
       body: JSON.stringify({ email, name, address }),
       credentials: `include`,
-      headers: { 'Content-Type': `application/json`, authorization: localStorage.getItem(`authorization`)! },
+      headers: { 'Content-Type': `application/json` },
     });
     if (res.ok) {
       onCreated();

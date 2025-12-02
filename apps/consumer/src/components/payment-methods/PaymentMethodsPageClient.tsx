@@ -16,7 +16,7 @@ export default function PaymentMethodsPageClient({ initialItems }: { initialItem
 
   async function refresh() {
     const res = await fetch(`/api/payment-methods`, {
-      headers: { authorization: localStorage.getItem(`authorization`) || ``, 'Content-Type': `application/json` },
+      headers: { 'Content-Type': `application/json` },
     });
     const data = await res.json();
     setItems(data.items);
