@@ -1,6 +1,5 @@
-import { Controller, Post, Body, UseGuards, Param, Get, Req, Query } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Param, Get, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import express from 'express';
 
 import { ConsumerModel } from '@remoola/database';
 

@@ -85,7 +85,7 @@ async function bootstrap() {
     cors: {
       origin: true,
       credentials: true,
-      exposedHeaders: [`Set-Cookie`, `Content-Range`, `Content-Type`],
+      exposedHeaders: [`set-cookie`, `content-range`, `content-type`],
     },
   });
 
