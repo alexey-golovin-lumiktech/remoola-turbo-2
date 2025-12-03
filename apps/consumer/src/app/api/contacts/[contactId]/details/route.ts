@@ -7,7 +7,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ contact
 
   const res = await fetch(url, {
     method: `GET`,
-    headers: Object.fromEntries(req.headers),
+    headers: { ...Object.fromEntries(req.headers), 'content-type': `application/json` },
     credentials: `include`,
     cache: `no-cache`,
   });

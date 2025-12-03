@@ -6,7 +6,7 @@ export async function POST(req: Request) {
 
   const res = await fetch(url, {
     method: `POST`,
-    headers: Object.fromEntries(req.headers),
+    headers: { ...Object.fromEntries(req.headers), 'content-type': `application/json` },
     credentials: `include`,
     body: await req.clone().text(),
   });

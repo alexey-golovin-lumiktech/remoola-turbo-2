@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 
+import { type IAddressDetails } from '../../../types';
+
 export function CreateContactModal({
   open,
   onCloseAction,
@@ -11,14 +13,14 @@ export function CreateContactModal({
   onCloseAction: () => void;
   onCreatedAction: () => void;
 }) {
-  const [email, setEmail] = useState(`email@email.com`);
-  const [name, setName] = useState(`name full`);
-  const [address, setAddress] = useState({
-    postalCode: ``,
-    country: ``,
-    state: ``,
-    city: ``,
-    street: ``,
+  const [email, setEmail] = useState<string | null>(null);
+  const [name, setName] = useState<string | null>(null);
+  const [address, setAddress] = useState<IAddressDetails>({
+    postalCode: null,
+    country: null,
+    state: null,
+    city: null,
+    street: null,
   });
 
   if (!open) return null;
@@ -27,6 +29,7 @@ export function CreateContactModal({
     const res = await fetch(`/api/contacts`, {
       method: `POST`,
       body: JSON.stringify({ email, name, address }),
+      headers: { 'content-type': `application/json` },
       credentials: `include`,
     });
     if (res.ok) {
@@ -42,50 +45,50 @@ export function CreateContactModal({
 
         <input
           placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          value={email || ``}
+          onChange={(e) => setEmail(e.target.value.trim() || null)}
           className="w-full border rounded-lg p-2"
         />
 
         <input
           placeholder="Name (optional)"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
+          value={name || ``}
+          onChange={(e) => setName(e.target.value.trim() || null)}
           className="w-full border rounded-lg p-2"
         />
 
         <input
           placeholder="Street"
-          value={address.street}
-          onChange={(e) => setAddress((a) => ({ ...a, street: e.target.value }))}
+          value={address.street || ``}
+          onChange={(e) => setAddress((a) => ({ ...a, street: e.target.value.trim() || null }))}
           className="w-full border rounded-lg p-2"
         />
 
         <input
           placeholder="City"
-          value={address.city}
-          onChange={(e) => setAddress((a) => ({ ...a, city: e.target.value }))}
+          value={address.city || ``}
+          onChange={(e) => setAddress((a) => ({ ...a, city: e.target.value.trim() || null }))}
           className="w-full border rounded-lg p-2"
         />
 
         <input
           placeholder="State"
-          value={address.state}
-          onChange={(e) => setAddress((a) => ({ ...a, state: e.target.value }))}
+          value={address.state || ``}
+          onChange={(e) => setAddress((a) => ({ ...a, state: e.target.value.trim() || null }))}
           className="w-full border rounded-lg p-2"
         />
 
         <input
           placeholder="PostalCode"
-          value={address.postalCode}
-          onChange={(e) => setAddress((a) => ({ ...a, postalCode: e.target.value }))}
+          value={address.postalCode || ``}
+          onChange={(e) => setAddress((a) => ({ ...a, postalCode: e.target.value.trim() || null }))}
           className="w-full border rounded-lg p-2"
         />
 
         <input
           placeholder="Country"
-          value={address.country}
-          onChange={(e) => setAddress((a) => ({ ...a, country: e.target.value }))}
+          value={address.country || ``}
+          onChange={(e) => setAddress((a) => ({ ...a, country: e.target.value.trim() || null }))}
           className="w-full border rounded-lg p-2"
         />
 
