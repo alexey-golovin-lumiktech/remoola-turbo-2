@@ -1,4 +1,4 @@
-import { Controller, Post, Req, Res, HttpCode, Headers } from '@nestjs/common';
+import { Controller, Post, Request, Res, HttpCode, Headers, RawBodyRequest } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import express from 'express';
 
@@ -15,12 +15,8 @@ export class StripeWebhookController {
   @Post()
   @PublicEndpoint()
   @HttpCode(200)
-  async handleCheckoutSessionCompleted(
-    @Req() req: express.Request & { rawBody: string | Buffer<ArrayBufferLike> },
-    @Res() res: express.Response,
-  ) {
-    await this.service.processStripeEvent(req, res);
-    res.json({ received: true });
+  processStripeEvent(@Request() req: RawBodyRequest<express.Request>, @Res() res: express.Response) {
+    return this.service.processStripeEvent(req, res);
   }
 
   @Post(`stripe/verify/start`)

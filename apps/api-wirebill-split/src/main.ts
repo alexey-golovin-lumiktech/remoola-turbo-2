@@ -81,6 +81,7 @@ function setupSwagger(app: any) {
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    rawBody: true,
     cors: {
       origin: true,
       credentials: true,
@@ -88,14 +89,16 @@ async function bootstrap() {
     },
   });
 
+  app.setGlobalPrefix(`api`);
   app.set(`query parser`, `extended`);
-  app.use(express.json({ limit: `25mb` }));
+  app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (req.path.startsWith(`/api/consumer/webhooks`)) return next();
+    express.json({ limit: `25mb` })(req, res, next);
+  });
   app.use(express.urlencoded({ extended: true, limit: `25mb` }));
   app.use(cookieParser(parsedEnvs.SECURE_SESSION_SECRET));
-  app.use(`/consumer/webhooks`, express.raw({ type: `application/json` }));
   app.use(`/uploads`, express.static(join(process.cwd(), `uploads`)));
 
-  app.setGlobalPrefix(`api`);
   setupSwagger(app);
   app.useGlobalPipes(
     new ValidationPipe({
@@ -136,6 +139,8 @@ async function bootstrap() {
       addr: port,
       authtoken: envs.NGROK_AUTH_TOKEN,
       domain: envs.NGROK_DOMAIN,
+      compression: false,
+      force_new_session: true,
     });
 
     console.log(`Ingress ngrok established at: ${listener.url()}`);

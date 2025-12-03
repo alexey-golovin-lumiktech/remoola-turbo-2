@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, RawBodyRequest } from '@nestjs/common';
 import express from 'express';
 import { InjectStripe } from 'nestjs-stripe';
 import Stripe from 'stripe';
@@ -31,40 +31,37 @@ export class StripeWebhookService {
     return { clientSecret: session.client_secret };
   }
 
-  async processStripeEvent(
-    req: express.Request & { rawBody: string | Buffer<ArrayBufferLike> },
-    res: express.Response,
-  ) {
-    console.log(`\n************************************`);
-    console.log(`processStripeEvent`);
-    console.log(`envs.STRIPE_WEBHOOK_SECRET`, envs.STRIPE_WEBHOOK_SECRET);
+  async processStripeEvent(req: RawBodyRequest<express.Request>, res: express.Response) {
     if (envs.STRIPE_WEBHOOK_SECRET === `STRIPE_WEBHOOK_SECRET`) return;
     if (!req.rawBody) return;
 
     try {
       const signature = req.headers[`stripe-signature`];
+
       const event = this.stripe.webhooks.constructEvent(req.rawBody, signature, envs.STRIPE_WEBHOOK_SECRET);
-      console.log(`event.type`, event.type);
-      console.log(`************************************\n`);
       switch (event.type) {
         case `identity.verification_session.verified`: {
-          await this.handleVerified(event.data.object as any);
+          console.log(`[INIT] ${event.type}`);
+          await this.handleVerified(event.data.object);
+          console.log(`[DONE] ${event.type}`);
           break;
         }
 
         case `checkout.session.completed`: {
-          const session = event.data.object as Stripe.Checkout.Session;
-          await this.handleStripeSuccess(session);
+          console.log(`[INIT] ${event.type}`);
+          await this.handleStripeSuccess(event.data.object);
+          console.log(`[DONE] ${event.type}`);
           break;
         }
 
         default: {
-          console.log(`received unhandled stripe event type: ${event.type}`);
+          console.log(`[SKIP] ${event.type}`);
           break;
         }
       }
 
-      return res.json({ received: true });
+      res.json({ received: true });
+      return;
     } catch (err) {
       res.status(400).send(`Webhook Error: ${err.message}`);
       return;
@@ -72,32 +69,40 @@ export class StripeWebhookService {
   }
 
   private async handleVerified(session: Stripe.Identity.VerificationSession) {
-    const consumerId = session.metadata.consumerId;
+    const consumerId = session.metadata?.consumerId;
+    if (!consumerId) {
+      console.error(`NO consumerId: ${consumerId}`);
+      return;
+    }
 
-    const doc = session.verified_outputs;
-
-    await this.prisma.consumerModel.update({
+    const consumer = await this.prisma.consumerModel.findFirst({
       where: { id: consumerId },
-      data: {
-        legalVerified: true,
-        personalDetails: {
-          upsert: {
-            create: {
-              firstName: doc.first_name,
-              lastName: doc.last_name,
-              dateOfBirth: doc.dob ? new Date(doc.dob.year, doc.dob.month - 1, doc.dob.day) : null,
-              citizenOf: doc.address?.country || null,
-              passportOrIdNumber: null,
-            },
-            update: {
-              firstName: doc.first_name,
-              lastName: doc.last_name,
-              dateOfBirth: doc.dob ? new Date(doc.dob.year, doc.dob.month - 1, doc.dob.day) : null,
-              citizenOf: doc.address?.country || null,
-            },
-          },
-        },
-      },
+      include: { personalDetails: true },
+    });
+    if (!consumer) {
+      console.error(`NO consumer for id: ${consumerId}`);
+      return;
+    }
+
+    let personalDetails;
+    if (session.verified_outputs) {
+      const doc = session.verified_outputs;
+
+      const data = {
+        firstName: doc.first_name,
+        lastName: doc.last_name,
+        dateOfBirth: doc.dob ? new Date(doc.dob.year, doc.dob.month - 1, doc.dob.day) : null,
+        citizenOf: doc.address?.country || null,
+        passportOrIdNumber: null,
+      };
+
+      personalDetails = { upsert: { create: data, update: data } };
+    }
+
+    return await this.prisma.consumerModel.update({
+      where: { id: consumer.id },
+      data: { legalVerified: true, ...(personalDetails && { personalDetails }) },
+      include: { personalDetails: !!personalDetails },
     });
   }
 
