@@ -14,6 +14,7 @@ import { OAuth2Client } from 'google-auth-library';
 import { $Enums, Prisma, type ConsumerModel, type ResetPasswordModel } from '@remoola/database';
 
 import { ConsumerSignupGPT } from './dto';
+import { LoginBody } from '../../auth/dto/login.dto';
 import { CONSUMER } from '../../dtos';
 import { IJwtTokenPayload } from '../../dtos/consumer';
 import { HOURS_24MS } from '../../envs';
@@ -68,7 +69,17 @@ export class ConsumerAuthService {
     }
   }
 
-  async login(identity: ConsumerModel) {
+  async login(body: LoginBody) {
+    const identity = await this.prisma.consumerModel.findUnique({ where: { email: body.email } });
+    if (!identity) throw new UnauthorizedException(`Invalid credentials`);
+
+    const valid = await passwordUtils.verifyPassword({
+      password: body.password,
+      storedHash: identity.password,
+      storedSalt: identity.salt,
+    });
+    if (!valid) throw new UnauthorizedException(`Invalid credentials`);
+
     const access = await this.getAccessAndRefreshToken(identity.id);
     return { identity, ...access };
   }

@@ -63,11 +63,12 @@ export class ConsumerAuthController {
   }
 
   @Post(`login`)
+  @PublicEndpoint()
   @ApiOperation({ operationId: `consumer_auth_login` })
   @ApiOkResponse({ type: CONSUMER.LoginResponse })
   @TransformResponse(CONSUMER.LoginResponse)
-  async login(@Res({ passthrough: true }) res, @Identity() identity: ConsumerModel) {
-    const data = await this.service.login(identity);
+  async login(@Res({ passthrough: true }) res, @Body() body: any) {
+    const data = await this.service.login(body);
     this.setAuthCookies(res, data.accessToken, data.refreshToken);
     return data;
   }
