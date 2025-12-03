@@ -24,7 +24,13 @@
     "lint": "turbo run lint",
     "start": "turbo run start --parallel",
     "test": "turbo run test",
-    "test:e2e": "turbo run test:e2e"
+    "test:e2e": "turbo run test:e2e",
+    "dev:api": "yarn workspace @remoola/api run dev",
+    "dev:consumer": "yarn workspace @remoola/consumer run dev",
+    "dev:admin": "yarn workspace @remoola/admin run dev",
+    "turbo:dev:api": "turbo run dev --filter=@remoola/api",
+    "turbo:dev:consumer": "turbo run dev --filter=@remoola/consumer",
+    "turbo:dev:admin": "turbo run dev --filter=@remoola/admin"
   },
   "dependencies": {
     "@prisma/client": "^6.18.0",
