@@ -44,7 +44,7 @@ export function PaymentsList() {
 
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/payments?${params}`, {
         credentials: `include`,
-        headers: { 'Content-Type': `application/json` },
+        headers: { 'content-type': `application/json` },
       });
 
       if (!res.ok) return;

@@ -14,11 +14,12 @@ export default function LoginForm({ nextPath }: { nextPath: string }) {
     e.preventDefault();
     setErr(undefined);
 
-    const authHeader = { authorization: `Basic ` + window.btoa(email + `:` + password) };
-
     const loginRequest = await fetch(`/api/login`, {
       method: `POST`,
-      headers: { 'Content-Type': `application/json`, ...authHeader },
+      headers: {
+        'content-type': `application/json`,
+        authorization: `Basic ` + window.btoa(email + `:` + password),
+      },
       body: JSON.stringify({ email, password }),
       credentials: `include`,
     });

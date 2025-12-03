@@ -7,14 +7,16 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ payme
 
   const res = await fetch(url, {
     method: `PATCH`,
-    headers: { ...Object.fromEntries(req.headers), 'Content-Type': `application/json` },
+    headers: Object.fromEntries(req.headers),
     credentials: `include`,
     body: await req.clone().text(),
   });
 
-  const setCookie = res.headers.get(`set-cookie`);
+  const cookie = res.headers.get(`set-cookie`);
   const data = await res.text();
-  return new NextResponse(data, { status: res.status, headers: setCookie ? { 'set-cookie': setCookie } : {} });
+  const headers: HeadersInit = {};
+  if (cookie) headers[`set-cookie`] = cookie;
+  return new NextResponse(data, { status: res.status, headers });
 }
 
 export async function DELETE(req: NextRequest, context: { params: Promise<{ paymentMethodId: string }> }) {
@@ -24,11 +26,13 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ paym
 
   const res = await fetch(url, {
     method: `DELETE`,
-    headers: { ...Object.fromEntries(req.headers), 'Content-Type': `application/json` },
+    headers: Object.fromEntries(req.headers),
     credentials: `include`,
   });
 
-  const setCookie = res.headers.get(`set-cookie`);
+  const cookie = res.headers.get(`set-cookie`);
   const data = await res.text();
-  return new NextResponse(data, { status: res.status, headers: setCookie ? { 'set-cookie': setCookie } : {} });
+  const headers: HeadersInit = {};
+  if (cookie) headers[`set-cookie`] = cookie;
+  return new NextResponse(data, { status: res.status, headers });
 }

@@ -7,12 +7,14 @@ export async function GET(req: NextRequest, context: { params: Promise<{ contact
 
   const res = await fetch(url, {
     method: `GET`,
-    headers: { ...Object.fromEntries(req.headers), 'Content-Type': `application/json` },
+    headers: Object.fromEntries(req.headers),
     credentials: `include`,
     cache: `no-cache`,
   });
 
-  const setCookie = res.headers.get(`set-cookie`);
+  const cookie = res.headers.get(`set-cookie`);
   const data = await res.text();
-  return new NextResponse(data, { status: res.status, headers: setCookie ? { 'set-cookie': setCookie } : {} });
+  const headers: HeadersInit = {};
+  if (cookie) headers[`set-cookie`] = cookie;
+  return new NextResponse(data, { status: res.status, headers });
 }

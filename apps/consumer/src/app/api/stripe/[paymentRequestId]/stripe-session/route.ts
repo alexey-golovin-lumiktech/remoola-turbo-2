@@ -8,11 +8,11 @@ export async function POST(req: NextRequest, context: { params: Promise<{ paymen
 
   const res = await fetch(url, {
     method: `POST`,
-    headers: { ...Object.fromEntries(req.headers), 'Content-Type': `application/json` },
+    headers: Object.fromEntries(req.headers),
     credentials: `include`,
   });
 
-  const setCookie = res.headers.get(`set-cookie`);
+  const cookie = res.headers.get(`set-cookie`);
   const data = await res.text();
-  return new NextResponse(data, { status: res.status, headers: setCookie ? { 'set-cookie': setCookie } : {} });
+  return new NextResponse(data, { status: res.status, headers: cookie ? { 'set-cookie': cookie } : {} });
 }

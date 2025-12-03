@@ -31,7 +31,7 @@ export function DocumentsList() {
 
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/documents?${params}`, {
       credentials: `include`,
-      headers: { 'Content-Type': `application/json` },
+      headers: { 'content-type': `application/json` },
     });
 
     if (!res.ok) return;
@@ -93,7 +93,7 @@ export function DocumentsList() {
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/documents/bulk-delete`, {
       method: `POST`,
       credentials: `include`,
-      headers: { 'Content-Type': `application/json` },
+      headers: { 'content-type': `application/json` },
       body: JSON.stringify({ ids: Array.from(selected) }),
     });
 
@@ -114,7 +114,7 @@ export function DocumentsList() {
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/documents/attach-to-payment`, {
       method: `POST`,
       credentials: `include`,
-      headers: { 'Content-Type': `application/json` },
+      headers: { 'content-type': `application/json` },
       body: JSON.stringify({
         paymentRequestId: attachPaymentId.trim(),
         resourceIds: Array.from(selected),
@@ -139,7 +139,7 @@ export function DocumentsList() {
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/documents/${docId}/tags`, {
       method: `POST`,
       credentials: `include`,
-      headers: { 'Content-Type': `application/json` },
+      headers: { 'content-type': `application/json` },
       body: JSON.stringify({ tags }),
     });
 

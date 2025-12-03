@@ -6,15 +6,14 @@ export async function POST(req: Request) {
 
   const res = await fetch(url, {
     method: `POST`,
-    headers: {
-
-      'Content-Type': `application/json`,
-    },
+    headers: Object.fromEntries(req.headers),
     body: await req.clone().text(),
     credentials: `include`,
   });
 
-  const setCookie = res.headers.get(`set-cookie`);
+  const cookie = res.headers.get(`set-cookie`);
   const data = await res.text();
-  return new NextResponse(data, { status: res.status, headers: setCookie ? { 'set-cookie': setCookie } : {} });
+  const headers: HeadersInit = {};
+  if (cookie) headers[`set-cookie`] = cookie;
+  return new NextResponse(data, { status: res.status, headers });
 }
