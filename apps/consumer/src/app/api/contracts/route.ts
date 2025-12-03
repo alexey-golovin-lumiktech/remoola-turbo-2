@@ -1,4 +1,3 @@
-import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function GET(req: NextRequest) {
@@ -7,11 +6,7 @@ export async function GET(req: NextRequest) {
 
   const res = await fetch(url, {
     method: `GET`,
-    headers: {
-
-      'Content-Type': `application/json`,
-      Cookie: (await cookies()).toString(),
-    },
+    headers: { ...Object.fromEntries(req.headers), 'Content-Type': `application/json` },
     credentials: `include`,
     cache: `no-cache`,
   });

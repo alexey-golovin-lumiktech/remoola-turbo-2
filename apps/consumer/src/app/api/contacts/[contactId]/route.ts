@@ -1,4 +1,3 @@
-import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 export async function PATCH(req: NextRequest, context: { params: Promise<{ contactId: string }> }) {
   const params = await context.params;
@@ -7,11 +6,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ conta
 
   const res = await fetch(url, {
     method: `PATCH`,
-    headers: {
-
-      'Content-Type': `application/json`,
-      Cookie: (await cookies()).toString(),
-    },
+    headers: { ...Object.fromEntries(req.headers), 'Content-Type': `application/json` },
     credentials: `include`,
     body: await req.clone().text(),
   });
@@ -28,12 +23,7 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ cont
 
   const res = await fetch(url, {
     method: `DELETE`,
-    headers: {
-
-      'Content-Type': `application/json`,
-      Cookie: (await cookies()).toString(),
-      referrer: `http://127.0.0.1:3001`,
-    },
+    headers: { ...Object.fromEntries(req.headers), 'Content-Type': `application/json` },
     credentials: `include`,
   });
 

@@ -1,4 +1,3 @@
-import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function GET(req: NextRequest) {
@@ -6,11 +5,8 @@ export async function GET(req: NextRequest) {
   console.log(`GET`, url);
 
   const res = await fetch(url, {
-    headers: {
-
-      'Content-Type': `application/json`,
-      Cookie: (await cookies()).toString(),
-    },
+    method: `GET`,
+    headers: { ...Object.fromEntries(req.headers), 'Content-Type': `application/json` },
     credentials: `include`,
     cache: `no-cache`,
   });
@@ -26,11 +22,7 @@ export async function POST(req: NextRequest) {
 
   const res = await fetch(url, {
     method: `POST`,
-    headers: {
-
-      'Content-Type': `application/json`,
-      Cookie: (await cookies()).toString(),
-    },
+    headers: { ...Object.fromEntries(req.headers), 'Content-Type': `application/json` },
     credentials: `include`,
     body: await req.clone().text(),
   });

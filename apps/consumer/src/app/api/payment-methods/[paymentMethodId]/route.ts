@@ -1,4 +1,3 @@
-import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function PATCH(req: NextRequest, context: { params: Promise<{ paymentMethodId: string }> }) {
@@ -8,10 +7,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ payme
 
   const res = await fetch(url, {
     method: `PATCH`,
-    headers: {
-      'Content-Type': `application/json`,
-      Cookie: (await cookies()).toString(),
-    },
+    headers: { ...Object.fromEntries(req.headers), 'Content-Type': `application/json` },
     credentials: `include`,
     body: await req.clone().text(),
   });
@@ -28,10 +24,7 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ paym
 
   const res = await fetch(url, {
     method: `DELETE`,
-    headers: {
-      'Content-Type': `application/json`,
-      Cookie: (await cookies()).toString(),
-    },
+    headers: { ...Object.fromEntries(req.headers), 'Content-Type': `application/json` },
     credentials: `include`,
   });
 

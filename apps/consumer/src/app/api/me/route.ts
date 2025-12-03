@@ -1,16 +1,12 @@
-import { cookies } from 'next/headers';
-import { NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/me`;
   console.log(`GET`, url);
 
   const res = await fetch(url, {
     method: `GET`,
-    headers: {
-      'Content-Type': `application/json`,
-      Cookie: (await cookies()).toString(),
-    },
+    headers: { ...Object.fromEntries(req.headers), 'Content-Type': `application/json` },
     credentials: `include`,
     cache: `no-cache`,
   });

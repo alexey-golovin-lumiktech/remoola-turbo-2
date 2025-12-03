@@ -1,4 +1,3 @@
-import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 export async function GET(req: NextRequest) {
   const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/contacts`;
@@ -6,11 +5,7 @@ export async function GET(req: NextRequest) {
 
   const res = await fetch(url, {
     method: `GET`,
-    headers: {
-
-      'Content-Type': `application/json`,
-      Cookie: (await cookies()).toString(),
-    },
+    headers: { ...Object.fromEntries(req.headers), 'Content-Type': `application/json` },
     credentials: `include`,
     cache: `no-cache`,
   });
@@ -26,11 +21,7 @@ export async function POST(req: NextRequest) {
 
   const res = await fetch(url, {
     method: `POST`,
-    headers: {
-
-      'Content-Type': `application/json`,
-      Cookie: (await cookies()).toString(),
-    },
+    headers: { ...Object.fromEntries(req.headers), 'Content-Type': `application/json` },
     credentials: `include`,
     body: await req.clone().text(),
   });
