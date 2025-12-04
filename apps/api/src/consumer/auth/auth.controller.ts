@@ -57,7 +57,7 @@ export class ConsumerAuthController {
         domain: `.vercel.app`,
         maxAge: 900000, // 15 min
       } as const;
-
+      console.log(`VERCEL COOKIE`, vercelCookieOptions);
       res.cookie(ACCESS_TOKEN_COOKIE_KEY, accessToken, { ...vercelCookieOptions, maxAge: JWT_ACCESS_TTL });
       res.cookie(REFRESH_TOKEN_COOKIE_KEY, refreshToken, { ...vercelCookieOptions, maxAge: JWT_REFRESH_TTL });
     } else {
@@ -71,6 +71,7 @@ export class ConsumerAuthController {
         path: `/`,
       };
 
+      console.log(`NO VERCEL COOKIE`, common);
       res.cookie(ACCESS_TOKEN_COOKIE_KEY, accessToken, { ...common, maxAge: JWT_ACCESS_TTL });
       res.cookie(REFRESH_TOKEN_COOKIE_KEY, refreshToken, { ...common, maxAge: JWT_REFRESH_TTL });
     }
