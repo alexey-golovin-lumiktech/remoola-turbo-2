@@ -4,8 +4,13 @@ import { IsBoolean, IsEmail, IsIn, ValidateIf } from 'class-validator';
 
 import { $Enums } from '@remoola/database';
 
-import { IConsumerModel, IConsumerResponse, IConsumerCreate, IConsumerUpdate } from '../../shared-common';
-import { constants } from '../../shared-common/constants';
+import {
+  type IConsumerModel,
+  type IConsumerResponse,
+  type IConsumerCreate,
+  type IConsumerUpdate,
+  constants,
+} from '../../shared-common';
 import { BaseModel } from '../common';
 
 class Consumer extends BaseModel implements IConsumerModel {

@@ -1,7 +1,7 @@
 import { BadRequestException, Controller, Param, Post, Req } from '@nestjs/common';
 import express from 'express';
 
-import { ConsumerModel } from '@remoola/database';
+import { type ConsumerModel } from '@remoola/database';
 
 import { ConsumerStripeService } from './stripe.service';
 import { Identity } from '../../../common';

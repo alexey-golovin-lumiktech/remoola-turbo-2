@@ -14,7 +14,7 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { ApiTags } from '@nestjs/swagger';
 import express from 'express';
 
-import { ConsumerModel } from '@remoola/database';
+import { type ConsumerModel } from '@remoola/database';
 
 import { ConsumerDocumentsService } from './consumer-documents.service';
 import { AttachDocumentsDto, BulkDeleteDocumentsDto, SetTagsDto } from './dto/document.dto';

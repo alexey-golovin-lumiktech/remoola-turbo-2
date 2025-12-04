@@ -4,7 +4,7 @@ import { IsIn, IsNumber, IsString } from 'class-validator';
 
 import { $Enums } from '@remoola/database';
 
-import { IExchangeRateModel, IExchangeRateResponse } from '../../shared-common';
+import { type IExchangeRateModel, type IExchangeRateResponse } from '../../shared-common';
 import { BaseModel } from '../common';
 
 class ExchangeRate extends BaseModel implements IExchangeRateModel {

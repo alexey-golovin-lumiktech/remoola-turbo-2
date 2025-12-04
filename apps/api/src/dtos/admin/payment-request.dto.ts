@@ -4,7 +4,11 @@ import { IsDate, IsIn, IsNumber, IsString, IsUUID, ValidateIf } from 'class-vali
 
 import { $Enums } from '@remoola/database';
 
-import { IPaymentRequestModel, IPaymentRequestResponse, IPaymentRequestUpdate } from '../../shared-common';
+import {
+  type IPaymentRequestModel,
+  type IPaymentRequestResponse,
+  type IPaymentRequestUpdate,
+} from '../../shared-common';
 import { BaseModel } from '../common';
 
 class PaymentRequest extends BaseModel implements IPaymentRequestModel {

@@ -7,13 +7,13 @@ import { $Enums } from '@remoola/database';
 import { BaseModel } from '../common';
 import { PaymentRequestAttachmentResponse } from './payment-request-attachment.dto';
 import {
-  IConsumerModel,
-  IPaymentRequestModel,
-  IPaymentRequestResponseExtended,
-  ReqQueryFilter,
-  SortDirectionValue,
+  type IConsumerModel,
+  type IPaymentRequestModel,
+  type IPaymentRequestResponseExtended,
+  type ReqQueryFilter,
+  type SortDirectionValue,
+  constants,
 } from '../../shared-common';
-import { constants } from '../../shared-common/constants';
 
 class PaymentRequestDTO extends BaseModel implements IPaymentRequestModel {
   @Expose()

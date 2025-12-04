@@ -2,7 +2,7 @@ import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 import { IsEmail, IsNotEmpty } from 'class-validator';
 
-import { IContactModel, IContactResponse, IContactCreate, IContactUpdate } from '../../shared-common';
+import { type IContactModel, type IContactResponse, type IContactCreate, IContactUpdate } from '../../shared-common';
 import { AddressDetailsCreate } from '../admin';
 import { BaseModel } from '../common';
 

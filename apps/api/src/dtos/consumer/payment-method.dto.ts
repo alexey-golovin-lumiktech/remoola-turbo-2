@@ -5,10 +5,10 @@ import { IsIn, IsUUID } from 'class-validator';
 import { $Enums } from '@remoola/database';
 
 import {
-  CreditCardExpMonth,
-  CreditCardExpYear,
-  IPaymentMethodModel,
-  IPaymentMethodResponse,
+  type CreditCardExpMonth,
+  type CreditCardExpYear,
+  type IPaymentMethodModel,
+  type IPaymentMethodResponse,
 } from '../../shared-common';
 import { BaseModel } from '../common';
 

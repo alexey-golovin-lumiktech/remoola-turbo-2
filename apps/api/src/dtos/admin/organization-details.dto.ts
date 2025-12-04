@@ -3,7 +3,7 @@ import { Expose, Type } from 'class-transformer';
 
 import { $Enums } from '@remoola/database';
 
-import { IOrganizationDetailsModel, IOrganizationDetailsUpdate } from '../../shared-common';
+import { type IOrganizationDetailsModel, type IOrganizationDetailsUpdate } from '../../shared-common';
 import { BaseModel } from '../common';
 
 class OrganizationDetails extends BaseModel implements IOrganizationDetailsModel {

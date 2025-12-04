@@ -5,10 +5,10 @@ import { IsIn, IsNumber, IsString } from 'class-validator';
 import { $Enums } from '@remoola/database';
 
 import {
-  IExchangeRateModel,
-  IExchangeRateResponse,
-  IExchangeRateCreate,
-  IExchangeRateUpdate,
+  type IExchangeRateModel,
+  type IExchangeRateResponse,
+  type IExchangeRateCreate,
+  type IExchangeRateUpdate,
 } from '../../shared-common';
 import { BaseModel } from '../common';
 

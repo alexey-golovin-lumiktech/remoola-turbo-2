@@ -1,7 +1,7 @@
 import { Controller, Post, Body, UseGuards, Param, Get, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
-import { ConsumerModel } from '@remoola/database';
+import { type ConsumerModel } from '@remoola/database';
 
 import { ConsumerPaymentsService } from './consumer-payments.service';
 import { StartPaymentDto } from './dto/start-payment.dto';

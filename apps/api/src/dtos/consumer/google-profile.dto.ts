@@ -6,10 +6,10 @@ import { TokenPayload as ITokenPayload } from 'google-auth-library';
 import { $Enums } from '@remoola/database';
 
 import {
-  IGoogleProfileDetailsCreate,
-  IGoogleProfileDetailsModel,
-  IGoogleProfileDetailsResponse,
-  IGoogleProfileDetailsUpdate,
+  type IGoogleProfileDetailsCreate,
+  type IGoogleProfileDetailsModel,
+  type IGoogleProfileDetailsResponse,
+  type IGoogleProfileDetailsUpdate,
 } from '../../shared-common';
 import { BaseModel } from '../common';
 

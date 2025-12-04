@@ -1,7 +1,7 @@
 import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 
-import { IAddressDetailsCreate, IAddressDetailsModel, IAddressDetailsUpdate } from '../../shared-common';
+import { type IAddressDetailsCreate, type IAddressDetailsModel, type IAddressDetailsUpdate } from '../../shared-common';
 import { BaseModel } from '../common';
 
 class AddressDetails extends BaseModel implements IAddressDetailsModel {

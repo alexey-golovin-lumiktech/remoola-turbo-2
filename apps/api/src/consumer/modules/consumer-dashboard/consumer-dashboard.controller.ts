@@ -1,7 +1,7 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
-import { ConsumerModel } from '@remoola/database';
+import { type ConsumerModel } from '@remoola/database';
 
 import { ConsumerDashboardService } from './consumer-dashboard.service';
 import { DashboardDataDto } from './dtos/dashboard-data.dto';

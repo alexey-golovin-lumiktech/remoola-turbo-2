@@ -3,7 +3,7 @@ import { Expose, Transform } from 'class-transformer';
 import { IsDate, IsString, ValidateIf } from 'class-validator';
 import moment from 'moment';
 
-import { IBaseModel } from '../../shared-common';
+import { type IBaseModel } from '../../shared-common';
 
 export class BaseModel implements IBaseModel {
   @Expose()

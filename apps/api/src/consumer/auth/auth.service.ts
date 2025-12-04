@@ -20,7 +20,7 @@ import { IJwtTokenPayload } from '../../dtos/consumer';
 import { HOURS_24MS } from '../../envs';
 import { MailingService } from '../../shared/mailing.service';
 import { PrismaService } from '../../shared/prisma.service';
-import { IChangePasswordBody, IChangePasswordParam, passwordUtils } from '../../shared-common';
+import { type IChangePasswordBody, type IChangePasswordParam, passwordUtils } from '../../shared-common';
 
 @Injectable()
 export class ConsumerAuthService {

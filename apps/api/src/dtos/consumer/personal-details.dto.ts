@@ -4,7 +4,11 @@ import { ValidateIf } from 'class-validator';
 
 import { $Enums } from '@remoola/database';
 
-import { IPersonalDetailsCreate, IPersonalDetailsModel, IPersonalDetailsUpdate } from '../../shared-common';
+import {
+  type IPersonalDetailsCreate,
+  type IPersonalDetailsModel,
+  type IPersonalDetailsUpdate,
+} from '../../shared-common';
 import { BaseModel } from '../common';
 
 class PersonalDetails extends BaseModel implements IPersonalDetailsModel {

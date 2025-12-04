@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 
-import { PaymentMethodType } from '@remoola/database';
+import { $Enums } from '@remoola/database';
 
 export class BillingDetails {
   @Expose()
@@ -27,8 +27,8 @@ export class PaymentMethodItem {
   id: string;
 
   @Expose()
-  @ApiProperty({ enum: PaymentMethodType })
-  type: PaymentMethodType;
+  @ApiProperty({ enum: $Enums.PaymentMethodType })
+  type: $Enums.PaymentMethodType;
 
   @Expose()
   @ApiProperty()
@@ -78,8 +78,8 @@ export class ConfirmStripeSetupIntent {
 // Manual bank / card create DTO
 export class CreateManualPaymentMethod {
   @Expose()
-  @ApiProperty({ enum: PaymentMethodType })
-  type: PaymentMethodType; // BANK_ACCOUNT or CREDIT_CARD
+  @ApiProperty({ enum: $Enums.PaymentMethodType })
+  type: $Enums.PaymentMethodType; // BANK_ACCOUNT or CREDIT_CARD
 
   @Expose()
   @ApiProperty()

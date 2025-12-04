@@ -4,7 +4,7 @@ import { IsBoolean, IsEmail, IsIn, ValidateIf } from 'class-validator';
 
 import { $Enums, type ConsumerModel } from '@remoola/database';
 
-import { constants, IConsumerCreate, IConsumerUpdate } from '../../shared-common';
+import { constants, type IConsumerCreate, type IConsumerUpdate } from '../../shared-common';
 import { BaseModel } from '../common';
 
 export class ConsumerDTO extends BaseModel implements ConsumerModel {

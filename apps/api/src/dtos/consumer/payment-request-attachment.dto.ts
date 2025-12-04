@@ -4,10 +4,10 @@ import { Expose, Type } from 'class-transformer';
 import { type PaymentRequestAttachmentModel, $Enums } from '@remoola/database';
 
 import {
-  IPaymentRequestAttachmentCreate,
-  IPaymentRequestAttachmentResponse,
-  IPaymentRequestAttachmentUpdate,
-  IResourceResponse,
+  type IPaymentRequestAttachmentCreate,
+  type IPaymentRequestAttachmentResponse,
+  type IPaymentRequestAttachmentUpdate,
+  type IResourceResponse,
 } from '../../shared-common';
 import { BaseModel } from '../common';
 

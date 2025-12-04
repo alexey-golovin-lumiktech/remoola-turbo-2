@@ -3,7 +3,12 @@ import { Expose, Type } from 'class-transformer';
 
 import { $Enums } from '@remoola/database';
 
-import { IResourceCreate, IResourceModel, IResourceResponse, IResourceUpdate } from '../../shared-common';
+import {
+  type IResourceCreate,
+  type IResourceModel,
+  type IResourceResponse,
+  type IResourceUpdate,
+} from '../../shared-common';
 import { BaseModel } from '../common';
 
 class Resource extends BaseModel implements IResourceModel {

@@ -1,6 +1,6 @@
 import { type $Enums } from '@remoola/database';
 
-import type { IBaseModel } from './base.model';
+import { type IBaseModel } from './base.model';
 
 export type IAdminModel = {
   email: string;

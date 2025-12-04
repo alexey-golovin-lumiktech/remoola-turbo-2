@@ -2,8 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsEmail, Matches } from 'class-validator';
 
-import { BasicAuthCredentials } from '../../shared-common';
-import { constants } from '../../shared-common/constants';
+import { type BasicAuthCredentials, constants } from '../../shared-common';
 
 export class Credentials implements BasicAuthCredentials {
   @Expose()

@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsEmail, IsNotEmpty, IsString, ValidateIf } from 'class-validator';
 
-import { IChangePasswordBody, IChangePasswordParam } from '../../shared-common';
+import { type IChangePasswordBody, type IChangePasswordParam } from '../../shared-common';
 
 export class ChangePasswordBody implements IChangePasswordBody {
   @Expose()

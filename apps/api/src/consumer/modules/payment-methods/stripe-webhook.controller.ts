@@ -2,7 +2,7 @@ import { Controller, Post, Request, Res, HttpCode, RawBodyRequest } from '@nestj
 import { ApiTags } from '@nestjs/swagger';
 import express from 'express';
 
-import { ConsumerModel } from '@remoola/database';
+import { type ConsumerModel } from '@remoola/database';
 
 import { StripeWebhookService } from './stripe-webhook.service';
 import { Identity, PublicEndpoint } from '../../../common';
