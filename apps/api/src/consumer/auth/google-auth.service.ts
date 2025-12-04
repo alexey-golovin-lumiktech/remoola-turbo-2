@@ -10,7 +10,7 @@ import { toBase64 } from '../../shared-common';
 @Injectable()
 export class GoogleAuthService {
   private googleapisOauth2Client: Auth.OAuth2Client;
-  private origin = `http://${envs.NEST_APP_HOST}:${envs.NEST_APP_PORT}`;
+  private origin = `http://${envs.NEST_APP_HOST}:${envs.PORT}`;
 
   constructor() {
     if (envs.GOOGLE_CALENDAR_SCOPES?.length) {

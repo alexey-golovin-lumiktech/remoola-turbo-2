@@ -83,7 +83,7 @@ const database = {
 };
 
 const nest = {
-  NEST_APP_PORT: z.coerce.number().default(3000),
+  PORT: z.coerce.number().optional().default(3000),
   NEST_APP_HOST: z.string().default(`127.0.0.1`),
   NEST_APP_EXTERNAL_ORIGIN: z.string().default(`NEST_APP_EXTERNAL_ORIGIN`),
 };

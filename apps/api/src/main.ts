@@ -124,7 +124,7 @@ async function bootstrap() {
   app.useGlobalInterceptors(new TransformResponseInterceptor(reflector));
   app.useGlobalFilters(new PrismaExceptionFilter());
 
-  const port = 3333;
+  const port = envs.PORT || 3000;
   await app
     .listen(port)
     .then(app.getUrl)
