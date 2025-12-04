@@ -11,6 +11,7 @@ import {
   payToContactPaymentInfo,
   signupCompletionToHtml,
 } from './mailing-utils';
+import { envs } from '../envs';
 
 @Injectable()
 export class MailingService {
@@ -30,7 +31,9 @@ export class MailingService {
   }
 
   async sendConsumerSignupVerificationEmail(params: { email: string; token: string; referer: string }) {
-    const backendBaseURL = process.env.NEST_APP_EXTERNAL_ORIGIN! || `http://[::1]:3333/api`;
+    let backendBaseURL = process.env.NEST_APP_EXTERNAL_ORIGIN! || `http://[::1]:3333/api`;
+    if (envs.VERCEL !== 0) backendBaseURL = `https://remoola-turbo-2-api.vercel.app/api`;
+
     const emailConfirmationUrl = new URL(`${backendBaseURL}/consumer/auth/signup/verification`);
     emailConfirmationUrl.search = new URLSearchParams(params).toString();
 
