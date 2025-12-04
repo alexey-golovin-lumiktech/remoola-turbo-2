@@ -1,11 +1,17 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 
-export default function LoginForm({ nextPath }: { nextPath: string }) {
+export default function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // read ?next=... from URL, fallback to /dashboard
+  const rawNext = searchParams.get(`next`);
+  const nextPath = rawNext && rawNext.length > 0 ? decodeURIComponent(rawNext) : `/dashboard`;
+
   const [email, setEmail] = useState(`user@example.com`);
   const [password, setPassword] = useState(`password`);
   const [err, setErr] = useState<string>();
@@ -14,7 +20,8 @@ export default function LoginForm({ nextPath }: { nextPath: string }) {
     e.preventDefault();
     setErr(undefined);
 
-    const encoded = Buffer.from(`${email}:${password}`).toString(`base64`);
+    const encoded = btoa(`${email}:${password}`);
+
     const loginRequest = await fetch(`/api/login`, {
       method: `POST`,
       headers: {
@@ -24,6 +31,7 @@ export default function LoginForm({ nextPath }: { nextPath: string }) {
       body: JSON.stringify({ email, password }),
       credentials: `include`,
     });
+
     if (!loginRequest.ok) {
       setErr(`Login failed (${loginRequest.status})`);
       return;
@@ -33,21 +41,20 @@ export default function LoginForm({ nextPath }: { nextPath: string }) {
       method: `GET`,
       credentials: `include`,
     });
+
     if (!meRequest.ok) {
       setErr(`Logged in, but cookies not available. Check CORS/cookie attrs.`);
       return;
     }
 
+    // ✅ redirect to ?next=... or /dashboard
     router.replace(nextPath || `/dashboard`);
   };
 
   return (
     <div className="mx-auto max-w-md p-8">
       <h1 className="mb-4 text-2xl font-semibold">Sign in</h1>
-      <form
-        className="space-y-3" //
-        onSubmit={submitLogin}
-      >
+      <form className="space-y-3" onSubmit={submitLogin}>
         <input
           className="w-full rounded-md border px-3 py-2"
           value={email}
@@ -61,10 +68,11 @@ export default function LoginForm({ nextPath }: { nextPath: string }) {
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
         />
-        {err && <p className="text-sm text-rose-600 whitespace-pre-wrap">{err}</p>}
+        {err && <p className="mt-1 whitespace-pre-wrap text-sm text-rose-600">{err}</p>}
         <button className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white">Login</button>
       </form>
-      <p className="text-center text-sm text-gray-600 mt-6">
+
+      <p className="mt-6 text-center text-sm text-gray-600">
         Need to create an account?{` `}
         <Link href="/signup" className="text-blue-600 hover:underline">
           Sign Up

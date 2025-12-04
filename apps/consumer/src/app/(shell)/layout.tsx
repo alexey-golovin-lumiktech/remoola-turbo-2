@@ -55,7 +55,7 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
             <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">⌘K</span>
           </div>
           <a
-            href="/login"
+            href="/logout"
             className="grid h-10 w-10 place-items-center rounded-full bg-white shadow-sm ring-1 ring-black/5"
           >
             ⎋
