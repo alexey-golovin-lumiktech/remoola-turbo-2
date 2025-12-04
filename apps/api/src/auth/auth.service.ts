@@ -3,6 +3,7 @@ import * as crypto from 'crypto';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
+import { v4 } from 'uuid';
 
 import { $Enums } from '@remoola/database';
 
@@ -16,7 +17,10 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
-  ) {}
+  ) {
+    // reason: unused(need check why)
+    setTimeout(() => this.generateRefreshToken(v4()), 3000);
+  }
 
   async register(body: RegisterBody) {
     const existing = await this.prisma.adminModel.findUnique({ where: { email: body.email } });

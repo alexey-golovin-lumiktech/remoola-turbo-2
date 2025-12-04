@@ -1,4 +1,4 @@
-import { Controller, Post, Request, Res, HttpCode, Headers, RawBodyRequest } from '@nestjs/common';
+import { Controller, Post, Request, Res, HttpCode, RawBodyRequest } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import express from 'express';
 

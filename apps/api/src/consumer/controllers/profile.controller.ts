@@ -2,7 +2,7 @@ import { Controller, Get, UseGuards } from '@nestjs/common';
 import { ApiBasicAuth, ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { JwtAuthGuard } from '../../auth/jwt.guard';
-import { Identity, IIdentity } from '../../common';
+import { Identity, type IIdentity } from '../../common';
 
 @ApiTags(`Consumer: Profile`)
 @ApiBearerAuth(`bearer`) // 👈 tells Swagger to attach Bearer token
