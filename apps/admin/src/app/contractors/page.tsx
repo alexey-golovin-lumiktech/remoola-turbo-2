@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { Card } from '@remoola/ui/Card';
 import { DataTable } from '@remoola/ui/DataTable';
@@ -13,7 +13,7 @@ export default function ContractorsPage() {
   const [search, setSearch] = useState(``);
   const [name, setName] = useState(``);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       const contractors = await api.contractors.search<Contractor[]>(encodeURIComponent(search));
       setRows(contractors || []);
@@ -21,8 +21,8 @@ export default function ContractorsPage() {
       if (error instanceof HttpError) console.error(`Request failed`, error.status, error.body);
       else if (!(error instanceof DOMException)) console.error(error);
     }
-  };
-  useEffect(() => void load(), [search]);
+  }, [search]);
+  useEffect(() => void load(), [load]);
 
   return (
     <>

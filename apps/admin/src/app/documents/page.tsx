@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { Card } from '@remoola/ui/Card';
 import { DataTable } from '@remoola/ui/DataTable';
@@ -12,7 +12,7 @@ export default function DocumentsPage() {
   const [search] = useState(``);
   const [rows, setRows] = useState<Doc[]>([]);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       const documents = await api.documents.search<Doc[]>(encodeURIComponent(search));
       setRows(documents || []);
@@ -20,8 +20,8 @@ export default function DocumentsPage() {
       if (error instanceof HttpError) console.error(`Request failed`, error.status, error.body);
       else if (!(error instanceof DOMException)) console.error(error);
     }
-  };
-  useEffect(() => void load(), []);
+  }, [search]);
+  useEffect(() => void load(), [load]);
 
   return (
     <>

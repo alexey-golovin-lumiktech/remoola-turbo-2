@@ -27,8 +27,8 @@ export function AddressDetailsStep() {
         <label className="block text-xs font-medium text-gray-700">Postal code</label>
         <input
           type="text"
-          value={addressDetails.postalCode}
-          onChange={(e) => updateAddress({ postalCode: e.target.value })}
+          value={addressDetails.postalCode || ``}
+          onChange={(e) => updateAddress({ postalCode: e.target.value.trim() || null })}
           className="w-full rounded-md border px-3 py-2 text-sm"
         />
       </div>
@@ -37,8 +37,8 @@ export function AddressDetailsStep() {
         <label className="block text-xs font-medium text-gray-700">Country</label>
         <input
           type="text"
-          value={addressDetails.country}
-          onChange={(e) => updateAddress({ country: e.target.value })}
+          value={addressDetails.country || ``}
+          onChange={(e) => updateAddress({ country: e.target.value.trim() || null })}
           className="w-full rounded-md border px-3 py-2 text-sm"
         />
       </div>
@@ -47,8 +47,8 @@ export function AddressDetailsStep() {
         <label className="block text-xs font-medium text-gray-700">State / Region</label>
         <input
           type="text"
-          value={addressDetails.state}
-          onChange={(e) => updateAddress({ state: e.target.value })}
+          value={addressDetails.state || ``}
+          onChange={(e) => updateAddress({ state: e.target.value.trim() || null })}
           className="w-full rounded-md border px-3 py-2 text-sm"
         />
       </div>
@@ -57,8 +57,8 @@ export function AddressDetailsStep() {
         <label className="block text-xs font-medium text-gray-700">City</label>
         <input
           type="text"
-          value={addressDetails.city}
-          onChange={(e) => updateAddress({ city: e.target.value })}
+          value={addressDetails.city || ``}
+          onChange={(e) => updateAddress({ city: e.target.value.trim() || null })}
           className="w-full rounded-md border px-3 py-2 text-sm"
         />
       </div>
@@ -67,8 +67,8 @@ export function AddressDetailsStep() {
         <label className="block text-xs font-medium text-gray-700">Street</label>
         <input
           type="text"
-          value={addressDetails.street}
-          onChange={(e) => updateAddress({ street: e.target.value })}
+          value={addressDetails.street || ``}
+          onChange={(e) => updateAddress({ street: e.target.value.trim() || null })}
           className="w-full rounded-md border px-3 py-2 text-sm"
         />
       </div>
