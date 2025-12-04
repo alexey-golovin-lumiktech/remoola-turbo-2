@@ -1,4 +1,4 @@
-import { type Prisma } from '@remoola/database';
+import { type Prisma } from '@remoola/database-2';
 
 /**
  * Robustly extracts details from PrismaClientValidationError across versions.

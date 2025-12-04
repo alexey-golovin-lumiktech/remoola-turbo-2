@@ -1,7 +1,7 @@
 import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 
-import { $Enums } from '@remoola/database';
+import { $Enums } from '@remoola/database-2';
 
 import {
   type IResourceCreate,

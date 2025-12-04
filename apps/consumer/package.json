@@ -12,6 +12,7 @@
     "clean": "rm -rf ./node_modules ./.next"
   },
   "dependencies": {
+    "@remoola/database-2": "^0.0.0",
     "@remoola/database": "^0.0.0",
     "@remoola/ui": "^0.0.0",
     "@stripe/react-stripe-js": "^5.4.1",

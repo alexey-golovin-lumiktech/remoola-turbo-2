@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
-import { type ConsumerModel } from '@remoola/database';
+import { type ConsumerModel } from '@remoola/database-2';
 
 import { ConsumerContactsService } from './consumer-contacts.service';
 import { ConsumerContactsResponse, ConsumerCreateContact, ConsumerUpdateContact } from './dto/consumer-contact.dto';

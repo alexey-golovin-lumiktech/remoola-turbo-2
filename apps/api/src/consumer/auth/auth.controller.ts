@@ -20,7 +20,7 @@ import { ApiOperation, ApiOkResponse, ApiBody, ApiTags, ApiBasicAuth, ApiBearerA
 import express from 'express';
 import _ from 'lodash';
 
-import { type ConsumerModel } from '@remoola/database';
+import { type ConsumerModel } from '@remoola/database-2';
 
 import { ConsumerAuthService } from './auth.service';
 import { ConsumerSignupGPT, GoogleOAuthGPT } from './dto';

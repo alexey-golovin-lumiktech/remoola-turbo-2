@@ -2,7 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import { ApiProperty, ApiPropertyOptional, PickType } from '@nestjs/swagger';
 import { Expose, Transform } from 'class-transformer';
 
-import { $Enums, type PersonalDetailsModel } from '@remoola/database';
+import { $Enums, type PersonalDetailsModel } from '@remoola/database-2';
 
 import { OptionalNullableString } from '../../../common';
 import { toNativeDate } from '../../../shared-common';

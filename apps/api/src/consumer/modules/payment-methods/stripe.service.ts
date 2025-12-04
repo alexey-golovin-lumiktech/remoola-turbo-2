@@ -2,7 +2,7 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 import { InjectStripe } from 'nestjs-stripe';
 import Stripe from 'stripe';
 
-import { $Enums } from '@remoola/database';
+import { $Enums } from '@remoola/database-2';
 
 import { ConfirmStripeSetupIntent } from './dto/payment-method.dto';
 import { PrismaService } from '../../../shared/prisma.service';

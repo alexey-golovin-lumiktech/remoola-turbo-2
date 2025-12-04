@@ -43,11 +43,15 @@
   ],
   "tasks": {
     "dev": {
+      "dependsOn": [
+        "^db:generate"
+      ],
       "cache": false,
       "persistent": true
     },
     "build": {
       "dependsOn": [
+        "^db:generate",
         "^build"
       ],
       "inputs": [
@@ -75,6 +79,9 @@
     "db:migrate": {
       "cache": false,
       "persistent": true
+    },
+    "db:deploy": {
+      "cache": false
     }
   }
 }

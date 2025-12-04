@@ -2,7 +2,7 @@ import { ApiProperty, PartialType, PickType } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsBoolean, IsEmail, IsIn, ValidateIf } from 'class-validator';
 
-import { $Enums, type ConsumerModel } from '@remoola/database';
+import { $Enums, type ConsumerModel } from '@remoola/database-2';
 
 import { constants, type IConsumerCreate, type IConsumerUpdate } from '../../shared-common';
 import { BaseModel } from '../common';

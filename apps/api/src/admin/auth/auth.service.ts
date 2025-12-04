@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
-import { type AccessRefreshTokenModel, type AdminModel } from '@remoola/database';
+import { type AccessRefreshTokenModel, type AdminModel } from '@remoola/database-2';
 
 import { IJwtTokenPayload } from '../../dtos/consumer';
 import { PrismaService } from '../../shared/prisma.service';

@@ -2,7 +2,7 @@ import { ApiProperty, PickType } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsString, IsNotEmpty } from 'class-validator';
 
-import { $Enums, type OrganizationDetailsModel } from '@remoola/database';
+import { $Enums, type OrganizationDetailsModel } from '@remoola/database-2';
 
 class OrganizationDetailsDTO implements OrganizationDetailsModel {
   @Expose()

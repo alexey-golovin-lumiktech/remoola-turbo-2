@@ -3,7 +3,7 @@ import { Exclude, Expose } from 'class-transformer';
 import { IsIn, IsString, ValidateIf } from 'class-validator';
 import { TokenPayload as ITokenPayload } from 'google-auth-library';
 
-import { $Enums } from '@remoola/database';
+import { $Enums } from '@remoola/database-2';
 
 import {
   type IGoogleProfileDetailsCreate,

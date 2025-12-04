@@ -1,6 +1,6 @@
 import { HttpStatus } from '@nestjs/common';
 
-import { type Prisma } from '@remoola/database';
+import { type Prisma } from '@remoola/database-2';
 
 export function mapPrismaKnownError(error: Prisma.PrismaClientKnownRequestError): {
   status: number;

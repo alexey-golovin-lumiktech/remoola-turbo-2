@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { OAuth2Client } from 'google-auth-library';
 
-import { $Enums, Prisma } from '@remoola/database';
+import { $Enums, Prisma } from '@remoola/database-2';
 
 import { GoogleOAuthGPT } from './dto/google-oauth.dto';
 import { PrismaService } from '../../shared/prisma.service';

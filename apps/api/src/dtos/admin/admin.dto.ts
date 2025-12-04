@@ -2,7 +2,7 @@ import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger';
 import { Exclude, Expose, Type } from 'class-transformer';
 import { IsIn, IsString } from 'class-validator';
 
-import { $Enums } from '@remoola/database';
+import { $Enums } from '@remoola/database-2';
 
 import { type IAdminCreate, type IAdminModel, type IAdminResponse, type IAdminUpdate } from '../../shared-common';
 import { BaseModel } from '../common';

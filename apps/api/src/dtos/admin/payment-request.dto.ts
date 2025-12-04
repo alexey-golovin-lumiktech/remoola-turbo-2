@@ -2,7 +2,7 @@ import { ApiProperty, OmitType, PickType } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 import { IsDate, IsIn, IsNumber, IsString, IsUUID, ValidateIf } from 'class-validator';
 
-import { $Enums } from '@remoola/database';
+import { $Enums } from '@remoola/database-2';
 
 import {
   type IPaymentRequestModel,

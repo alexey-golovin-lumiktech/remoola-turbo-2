@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 import moment from 'moment';
 
-import { $Enums } from '@remoola/database';
+import { $Enums } from '@remoola/database-2';
 
 import * as invoiceItemToHtml from './invoiceItem';
 import { formatCurrency } from '../../../../shared-common';

@@ -2,7 +2,7 @@ import { Body, Controller, Post, Res } from '@nestjs/common';
 import { ApiBasicAuth, ApiBearerAuth, ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import express from 'express';
 
-import { type AdminModel } from '@remoola/database';
+import { type AdminModel } from '@remoola/database-2';
 
 import { AdminAuthService } from './auth.service';
 import { Identity, PublicEndpoint } from '../../common/decorators';

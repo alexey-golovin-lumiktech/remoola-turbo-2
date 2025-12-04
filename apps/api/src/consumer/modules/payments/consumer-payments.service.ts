@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 
-import { $Enums } from '@remoola/database';
+import { $Enums } from '@remoola/database-2';
 
 import { StartPaymentDto } from './dto/start-payment.dto';
 import { PrismaService } from '../../../shared/prisma.service';

@@ -3,7 +3,7 @@ import express from 'express';
 import { InjectStripe } from 'nestjs-stripe';
 import Stripe from 'stripe';
 
-import { $Enums, type ConsumerModel } from '@remoola/database';
+import { $Enums, type ConsumerModel } from '@remoola/database-2';
 
 import { STRIPE_EVENT } from './events';
 import { envs } from '../../../envs';

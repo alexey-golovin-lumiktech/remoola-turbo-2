@@ -11,7 +11,7 @@ import { JwtService } from '@nestjs/jwt';
 import express from 'express';
 import { OAuth2Client } from 'google-auth-library';
 
-import { $Enums, Prisma, type ConsumerModel, type ResetPasswordModel } from '@remoola/database';
+import { $Enums, Prisma, type ConsumerModel, type ResetPasswordModel } from '@remoola/database-2';
 
 import { ConsumerSignupGPT } from './dto';
 import { LoginBody } from '../../auth/dto/login.dto';

@@ -1,7 +1,7 @@
 import { ApiProperty, PickType } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 
-import { type AddressDetailsModel } from '@remoola/database';
+import { type AddressDetailsModel } from '@remoola/database-2';
 
 class AddressDetailsDTO implements AddressDetailsModel {
   @Expose()

@@ -1,7 +1,7 @@
 import { ExceptionFilter, Catch, ArgumentsHost, HttpStatus } from '@nestjs/common';
 import express from 'express';
 
-import { Prisma } from '@remoola/database';
+import { Prisma } from '@remoola/database-2';
 
 import { extractPrismaValidationDetails, mapPrismaKnownError } from './utils';
 

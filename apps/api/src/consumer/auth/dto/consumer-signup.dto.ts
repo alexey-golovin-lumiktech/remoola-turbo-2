@@ -11,7 +11,7 @@ import {
   IsISO8601,
 } from 'class-validator';
 
-import { $Enums } from '@remoola/database';
+import { $Enums } from '@remoola/database-2';
 
 export class AddressDetailsGPT {
   @Expose()

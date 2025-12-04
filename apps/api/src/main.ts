@@ -10,7 +10,7 @@ import * as ngrok from '@ngrok/ngrok';
 import { default as cookieParser } from 'cookie-parser';
 import * as express from 'express';
 
-import { $Enums, type PrismaClient } from '@remoola/database';
+import { $Enums, type PrismaClient } from '@remoola/database-2';
 import { parsedEnvs } from '@remoola/env';
 
 import { AdminModule } from './admin/admin.module';

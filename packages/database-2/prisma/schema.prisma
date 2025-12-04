@@ -1,0 +1,560 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./../generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model AccessRefreshTokenModel {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  identityId   String @map("identity_id") @db.Uuid
+  accessToken  String @map("access_token") @db.VarChar(255)
+  refreshToken String @map("refresh_token") @db.VarChar(255)
+
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@map("access_refresh_token")
+}
+
+model AddressDetailsModel {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  postalCode String  @map("postal_code") @db.VarChar(255)
+  country    String  @db.VarChar(255)
+  city       String? @db.VarChar(255)
+  state      String? @db.VarChar(255)
+  street     String? @db.VarChar(255)
+
+  consumerId String        @unique @db.Uuid
+  consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@map("address_details")
+}
+
+model AdminModel {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  type AdminType @default(ADMIN)
+
+  email    String @unique @db.VarChar(255)
+  password String @db.VarChar(255)
+  salt     String @db.VarChar(255)
+
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@map("admin")
+}
+
+model BillingDetailsModel {
+  id    String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  email String? @db.VarChar(255)
+  name  String? @db.VarChar(255)
+  phone String? @db.VarChar(255)
+
+  paymentMethod PaymentMethodModel?
+
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@map("billing_details")
+}
+
+model ConsumerModel {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  email          String          @unique @db.VarChar(255)
+  accountType    AccountType     @map("account_type")
+  contractorKind ContractorKind? @map("contractor_kind")
+
+  password      String?  @db.VarChar(255)
+  salt          String?  @db.VarChar(255)
+  verified      Boolean? @default(false)
+  legalVerified Boolean? @default(false) @map("legal_verified")
+
+  howDidHearAboutUs      HowDidHearAboutUs? @map("how_did_hear_about_us")
+  howDidHearAboutUsOther String?            @map("how_did_hear_about_us_other") @db.VarChar(255)
+  stripeCustomerId       String?            @map("stripe_customer_id") @db.VarChar(255)
+
+  addressDetails       AddressDetailsModel?
+  personalDetails      PersonalDetailsModel?
+  organizationDetails  OrganizationDetailsModel?
+  googleProfileDetails GoogleProfileDetailsModel?
+
+  asPayerPaymentRequests     PaymentRequestModel[] @relation("PaymentRequestPayerIdToConsumer")
+  asRequesterPaymentRequests PaymentRequestModel[] @relation("PaymentRequestRequesterIdToConsumer")
+
+  consumerResources ConsumerResourceModel[]
+  contacts          ContactModel[]
+  paymentMethods    PaymentMethodModel[]
+  attachments       PaymentRequestAttachmentModel[]
+  passwordResets    ResetPasswordModel[]
+  transactions      TransactionModel[]
+
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@map("consumer")
+}
+
+model ConsumerResourceModel {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  consumerId String        @map("consumer_id") @db.Uuid
+  consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  resourceId String        @map("resource_id") @db.Uuid
+  resource   ResourceModel @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@unique([consumerId, resourceId])
+  @@map("consumer_resource")
+}
+
+model ContactModel {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  email   String  @db.VarChar(255)
+  name    String? @db.VarChar(255)
+  address Json
+
+  consumerId String        @map("consumer_id") @db.Uuid
+  consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@map("contact")
+}
+
+model ExchangeRateModel {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  fromCurrency CurrencyCode @map("from_currency")
+  toCurrency   CurrencyCode @map("to_currency")
+
+  rate Decimal @db.Decimal(11, 4)
+
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@unique([fromCurrency, toCurrency])
+  @@map("exchange_rate")
+}
+
+model GoogleProfileDetailsModel {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  email         String  @db.VarChar(255)
+  emailVerified Boolean @map("email_verified")
+  name          String? @db.VarChar(255)
+  givenName     String? @map("given_name") @db.VarChar(255)
+  familyName    String? @map("family_name") @db.VarChar(255)
+  picture       String? @db.VarChar(255)
+  organization  String? @db.VarChar(255)
+  metadata      Json?
+
+  consumerId String        @unique @db.Uuid
+  consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@map("google_profile_details")
+}
+
+model OrganizationDetailsModel {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  name              String           @db.VarChar(255)
+  consumerRole      ConsumerRole?    @map("consumer_role")
+  consumerRoleOther String?          @map("consumer_role_other") @db.VarChar(255)
+  size              OrganizationSize @default(SMALL)
+
+  consumerId String        @unique @db.Uuid
+  consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@map("organization_details")
+}
+
+model PaymentMethodModel {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  type PaymentMethodType
+
+  defaultSelected Boolean @default(false) @map("default_selected")
+  brand           String  @db.VarChar(255)
+  last4           String  @db.VarChar(4)
+  serviceFee      Int     @default(0) @map("service_fee")
+  expMonth        String? @map("exp_month") @db.VarChar(2)
+  expYear         String? @map("exp_year") @db.VarChar(4)
+
+  billingDetailsId String              @unique @map("billing_details_id") @db.Uuid
+  billingDetails   BillingDetailsModel @relation(fields: [billingDetailsId], references: [id])
+
+  consumerId String        @map("consumer_id") @db.Uuid
+  consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@unique([type, last4, consumerId])
+  @@map("payment_method")
+}
+
+model PaymentRequestModel {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  currencyCode CurrencyCode      @default(USD) @map("currency_code")
+  status       TransactionStatus @default(DRAFT) @map("status")
+  type         TransactionType   @default(CREDIT_CARD) @map("type")
+
+  amount          Decimal   @db.Decimal(9, 2)
+  description     String?
+  dueDate         DateTime? @map("due_date") @db.Timestamptz(6)
+  expectationDate DateTime? @map("expectation_date") @db.Timestamptz(6)
+  sentDate        DateTime? @map("sent_date") @db.Timestamptz(6)
+
+  payerId String        @map("payer_id") @db.Uuid
+  payer   ConsumerModel @relation("PaymentRequestPayerIdToConsumer", fields: [payerId], references: [id], onDelete: Cascade)
+
+  requesterId String        @map("requester_id") @db.Uuid
+  requester   ConsumerModel @relation("PaymentRequestRequesterIdToConsumer", fields: [requesterId], references: [id], onDelete: Cascade)
+
+  attachments  PaymentRequestAttachmentModel[]
+  transactions TransactionModel[]
+
+  createdBy String    @map("created_by") @db.VarChar(255)
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedBy String    @map("updated_by") @db.VarChar(255)
+  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedBy String?   @map("deleted_by") @db.VarChar(255)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@map("payment_request")
+}
+
+model PaymentRequestAttachmentModel {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  paymentRequestId String              @map("payment_request_id") @db.Uuid
+  paymentRequest   PaymentRequestModel @relation(fields: [paymentRequestId], references: [id], onDelete: Cascade)
+
+  requesterId String        @map("requester_id") @db.Uuid
+  requester   ConsumerModel @relation(fields: [requesterId], references: [id], onDelete: Cascade)
+
+  resourceId String        @map("resource_id") @db.Uuid
+  resource   ResourceModel @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@map("payment_request_attachment")
+}
+
+model PersonalDetailsModel {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  legalStatus LegalStatus? @map("legal_status")
+
+  citizenOf             String   @map("citizen_of") @db.VarChar(255)
+  dateOfBirth           DateTime @map("date_of_birth")
+  passportOrIdNumber    String   @map("passport_or_id_number") @db.VarChar(255)
+  countryOfTaxResidence String?  @map("country_of_tax_residence") @db.VarChar(255)
+  taxId                 String?  @map("tax_id") @db.VarChar(255)
+  phoneNumber           String?  @map("phone_number") @db.VarChar(255)
+  firstName             String?  @map("first_name") @db.VarChar(255)
+  lastName              String?  @map("last_name") @db.VarChar(255)
+
+  consumerId String        @unique @db.Uuid
+  consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@map("personal_details")
+}
+
+model ResetPasswordModel {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  token     String
+  expiredAt DateTime @map("expired_at") @db.Timestamptz(6)
+
+  consumerId String        @map("consumer_id") @db.Uuid
+  consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@map("reset_password")
+}
+
+model ResourceModel {
+  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+
+  access       String @default("public")
+  originalName String @map("originalname") @db.VarChar(255)
+  mimetype     String @db.VarChar(255)
+  size         Int
+  bucket       String @db.VarChar(255)
+  key          String @db.VarChar(255)
+  downloadUrl  String @map("download_url") @db.VarChar(255)
+
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  consumerResources ConsumerResourceModel[]
+  attachments       PaymentRequestAttachmentModel[]
+  resourceTags      ResourceTagModel[]
+
+  @@map("resource")
+}
+
+model TransactionModel {
+  id   String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  code String @default(dbgenerated("substr(md5((now())::text), 0, 7)")) @db.VarChar(6)
+
+  type         TransactionType       @map("type")
+  currencyCode CurrencyCode          @map("currency_code")
+  actionType   TransactionActionType @map("action_type")
+  status       TransactionStatus     @map("status")
+
+  feesType     TransactionFeesType? @default(NO_FEES_INCLUDED) @map("fees_type")
+  feesAmount   Decimal?             @map("fees_amount") @db.Decimal(9, 2)
+  originAmount Decimal              @map("origin_amount") @db.Decimal(9, 2)
+
+  stripeId            String? @map("stripe_id") @db.VarChar(255)
+  stripeFeeInPercents Int?    @map("stripe_fee_in_percents")
+
+  consumerId String        @map("consumer_id") @db.Uuid
+  consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  paymentRequestId String?              @map("payment_request_id") @db.Uuid
+  paymentRequest   PaymentRequestModel? @relation(fields: [paymentRequestId], references: [id])
+
+  createdBy String    @map("created_by") @db.VarChar(255)
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedBy String    @map("updated_by") @db.VarChar(255)
+  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedBy String?   @map("deleted_by") @db.VarChar(255)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@unique([paymentRequestId, code])
+  @@map("transaction")
+}
+
+model DocumentTagModel {
+  id   String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name String @unique @db.VarChar(64)
+
+  resourceTags ResourceTagModel[]
+
+  @@map("document_tag")
+}
+
+model ResourceTagModel {
+  id         String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  resourceId String @map("resource_id") @db.Uuid
+  tagId      String @map("tag_id") @db.Uuid
+
+  resource ResourceModel    @relation(fields: [resourceId], references: [id])
+  tag      DocumentTagModel @relation(fields: [tagId], references: [id])
+
+  @@unique([resourceId, tagId])
+  @@map("resource_tag")
+}
+
+enum AccountType {
+  BUSINESS
+  CONTRACTOR
+
+  @@map("account_type_enum")
+}
+
+enum AdminType {
+  SUPER
+  ADMIN
+
+  @@map("admin_type_enum")
+}
+
+enum ContractorKind {
+  ENTITY
+  INDIVIDUAL
+
+  @@map("contractor_kind_enum")
+}
+
+enum CurrencyCode {
+  USD
+  EUR
+  JPY
+  GBP
+  AUD
+  AZN
+  AMD
+  BYN
+  BGN
+  BRL
+  HUF
+  VND
+  HKD
+  GEL
+  DKK
+  AED
+  EGP
+  INR
+  IDR
+  KZT
+  CAD
+  QAR
+  KGS
+  CNY
+  MDL
+  NZD
+  NOK
+  PLN
+  RON
+  XDR
+  SGD
+  TJS
+  THB
+  TRY
+  TMT
+  UZS
+  UAH
+  CZK
+  SEK
+  CHF
+  RSD
+  ZAR
+  KRW
+  RUB
+
+  @@map("currency_code_enum")
+}
+
+enum TransactionFeesType {
+  FEES_INCLUDED
+  NO_FEES_INCLUDED
+
+  @@map("transaction_fees_type_enum")
+}
+
+enum LegalStatus {
+  INDIVIDUAL
+  INDIVIDUAL_ENTREPRENEUR
+  SOLE_TRADER
+
+  @@map("legal_status_enum")
+}
+
+enum OrganizationSize {
+  SMALL
+  MEDIUM
+  LARGE
+
+  @@map("organization_size_enum")
+}
+
+enum PaymentMethodType {
+  BANK_ACCOUNT
+  CREDIT_CARD
+
+  @@map("payment_method_type_enum")
+}
+
+enum ResourceAccess {
+  PUBLIC
+  PRIVATE
+
+  @@map("resource_access_enum")
+}
+
+enum TransactionActionType {
+  INCOME
+  OUTCOME
+
+  @@map("transaction_action_type_enum")
+}
+
+enum TransactionStatus {
+  DRAFT
+  WAITING
+  WAITING_RECIPIENT_APPROVAL
+  PENDING
+  COMPLETED
+  DENIED
+  UNCOLLECTIBLE
+
+  @@map("transaction_status_enum")
+}
+
+enum TransactionType {
+  CREDIT_CARD
+  BANK_TRANSFER
+  CURRENCY_EXCHANGE
+
+  @@map("transaction_type_enum")
+}
+
+enum ConsumerRole {
+  FOUNDER
+  FINANCE
+  MARKETING
+  CUSTOMER_SUPPORT
+  SALES
+  LEGAL
+  HUMAN_RESOURCE
+  OPERATIONS
+  COMPLIANCE
+  PRODUCT
+  ENGINEERING
+  ANALYSIS_DATA
+  OTHER
+
+  @@map("consumer_role")
+}
+
+enum HowDidHearAboutUs {
+  EMPLOYER_COMPANY
+  EMPLOYEE_CONTRACTOR
+  REFERRED_RECOMMENDED
+  EMAIL_INVITE
+  GOOGLE
+  FACEBOOK
+  TWITTER
+  LINKED_IN
+  OTHER
+
+  @@map("how_did_hear_about_us")
+}

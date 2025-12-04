@@ -5,7 +5,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { v4 } from 'uuid';
 
-import { $Enums } from '@remoola/database';
+import { $Enums } from '@remoola/database-2';
 
 import { JWT_REFRESH_SECRET, JWT_ACCESS_SECRET, JWT_ACCESS_TTL, JWT_REFRESH_TTL } from '../envs';
 import { PrismaService } from '../shared/prisma.service';

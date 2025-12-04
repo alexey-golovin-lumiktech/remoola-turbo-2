@@ -1,4 +1,4 @@
-import { $Enums } from '@remoola/database';
+import { $Enums } from '@remoola/database-2';
 
 import { formatCurrency } from '../../../../shared-common';
 

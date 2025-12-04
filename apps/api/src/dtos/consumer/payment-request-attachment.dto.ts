@@ -1,7 +1,7 @@
 import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 
-import { type PaymentRequestAttachmentModel, $Enums } from '@remoola/database';
+import { type PaymentRequestAttachmentModel, $Enums } from '@remoola/database-2';
 
 import {
   type IPaymentRequestAttachmentCreate,

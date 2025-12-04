@@ -2,7 +2,7 @@ import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsIn } from 'class-validator';
 
-import { $Enums } from '@remoola/database';
+import { $Enums } from '@remoola/database-2';
 
 import {
   type IOrganizationDetailsCreate,

@@ -1,6 +1,6 @@
 /* eslint-disable max-len */
 
-import { $Enums } from '@remoola/database';
+import { $Enums } from '@remoola/database-2';
 
 import { envs } from '../../../../envs';
 import { formatCurrency } from '../../../../shared-common';
