@@ -14,11 +14,12 @@ export default function LoginForm({ nextPath }: { nextPath: string }) {
     e.preventDefault();
     setErr(undefined);
 
+    const encoded = Buffer.from(`${email}:${password}`).toString(`base64`);
     const loginRequest = await fetch(`/api/login`, {
       method: `POST`,
       headers: {
         'content-type': `application/json`,
-        authorization: `Basic ` + window.btoa(email + `:` + password),
+        authorization: `Basic ${encoded}`,
       },
       body: JSON.stringify({ email, password }),
       credentials: `include`,
