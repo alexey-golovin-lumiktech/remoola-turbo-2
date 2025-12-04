@@ -1,16 +1,25 @@
-import { NextResponse, type NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+
+import type { NextRequest } from 'next/server';
 
 export function middleware(req: NextRequest) {
-  const cookieStore = req.cookies;
-  const token = cookieStore.get(`access_token`)?.value;
-  const { pathname } = req.nextUrl;
+  const token = req.cookies.get(`access_token`)?.value;
 
-  if (!token && !pathname.startsWith(`/login`)) {
-    const url = req.nextUrl.clone();
-    url.pathname = `/login`;
-    url.searchParams.set(`next`, pathname);
-    return NextResponse.redirect(url);
+  const isAuthPage = req.nextUrl.pathname.startsWith(`/login`);
+  const isCallback = req.nextUrl.pathname.startsWith(`/auth/callback`);
+  const isProtected = req.nextUrl.pathname.startsWith(`/profile`) || req.nextUrl.pathname.startsWith(`/contacts`);
+
+  // Allow callback even without cookie (it will wait and then redirect)
+  if (isCallback) return NextResponse.next();
+
+  if (isProtected && !token) {
+    return NextResponse.redirect(new URL(`/login?next=${encodeURIComponent(req.nextUrl.pathname)}`, req.url));
   }
+
+  if (isAuthPage && token) {
+    return NextResponse.redirect(new URL(`/profile`, req.url));
+  }
+
   return NextResponse.next();
 }
 

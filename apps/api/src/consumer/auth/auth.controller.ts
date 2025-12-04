@@ -48,18 +48,32 @@ export class ConsumerAuthController {
   private setAuthCookies(res: express.Response, accessToken: string, refreshToken: string) {
     const isProd = envs.NODE_ENV == `production`;
 
-    const sameSite = isProd ? (`none` as const) : (`lax` as const);
-    const secure = isProd || process.env.COOKIE_SECURE == `true`;
+    if (envs.VERCEL !== 0) {
+      const vercelCookieOptions = {
+        httpOnly: true,
+        secure: true,
+        sameSite: `none`,
+        path: `/`,
+        domain: `.vercel.app`,
+        maxAge: 900000, // 15 min
+      } as const;
 
-    const common = {
-      httpOnly: true,
-      sameSite,
-      secure,
-      path: `/`,
-    };
+      res.cookie(ACCESS_TOKEN_COOKIE_KEY, accessToken, { ...vercelCookieOptions, maxAge: JWT_ACCESS_TTL });
+      res.cookie(REFRESH_TOKEN_COOKIE_KEY, refreshToken, { ...vercelCookieOptions, maxAge: JWT_REFRESH_TTL });
+    } else {
+      const sameSite = isProd ? (`none` as const) : (`lax` as const);
+      const secure = isProd || process.env.COOKIE_SECURE == `true`;
 
-    res.cookie(ACCESS_TOKEN_COOKIE_KEY, accessToken, { ...common, maxAge: JWT_ACCESS_TTL });
-    res.cookie(REFRESH_TOKEN_COOKIE_KEY, refreshToken, { ...common, maxAge: JWT_REFRESH_TTL });
+      const common = {
+        httpOnly: true,
+        sameSite,
+        secure,
+        path: `/`,
+      };
+
+      res.cookie(ACCESS_TOKEN_COOKIE_KEY, accessToken, { ...common, maxAge: JWT_ACCESS_TTL });
+      res.cookie(REFRESH_TOKEN_COOKIE_KEY, refreshToken, { ...common, maxAge: JWT_REFRESH_TTL });
+    }
   }
 
   @Post(`login`)

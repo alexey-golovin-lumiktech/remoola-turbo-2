@@ -145,6 +145,10 @@ const ngrok = {
   NGROK_DOMAIN: z.string().default(`NGROK_DOMAIN`),
 };
 
+const vercel = {
+  VERCEL: z.coerce.number().optional().default(0),
+};
+
 const schema = z.object({
   ...node,
   ...database,
@@ -158,6 +162,7 @@ const schema = z.object({
   ...app,
   ...debugging,
   ...ngrok,
+  ...vercel,
 });
 
 const parsed = schema.safeParse(process.env);
