@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import { type $Enums } from '@remoola/database';
+import { type $Enums } from '@remoola/database-2';
 
 import type { IBaseModel } from './base.model';
 

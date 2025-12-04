@@ -33,7 +33,6 @@
     "@ngrok/ngrok": "^1.6.0",
     "@remoola/api-types": "^0.0.0",
     "@remoola/database-2": "^0.0.0",
-    "@remoola/database": "^0.0.0",
     "@remoola/env": "^0.0.0",
     "bcryptjs": "^3.0.2",
     "bullmq": "^5.58.0",

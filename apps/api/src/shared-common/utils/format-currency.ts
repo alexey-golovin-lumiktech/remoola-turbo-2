@@ -1,4 +1,4 @@
-import { $Enums } from '@remoola/database';
+import { $Enums } from '@remoola/database-2';
 
 export const formatCurrency = (
   value: number,

@@ -1,7 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiBasicAuth, ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import { type AdminModel } from '@remoola/database';
+import { type AdminModel } from '@remoola/database-2';
 
 import { Identity } from '../../common';
 import { AdminsService } from '../services/admins.service';

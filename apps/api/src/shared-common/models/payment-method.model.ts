@@ -1,4 +1,4 @@
-import { type $Enums } from '@remoola/database';
+import { type $Enums } from '@remoola/database-2';
 
 import type { CreditCardExpMonth, CreditCardExpYear } from '../types';
 import type { IBaseModel } from './base.model';

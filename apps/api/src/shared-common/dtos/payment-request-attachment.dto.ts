@@ -1,4 +1,4 @@
-import { type PaymentRequestAttachmentModel } from '@remoola/database';
+import { type PaymentRequestAttachmentModel } from '@remoola/database-2';
 
 import { type OnlyUpsertFields, type WithoutDeletedAt } from '../types';
 
