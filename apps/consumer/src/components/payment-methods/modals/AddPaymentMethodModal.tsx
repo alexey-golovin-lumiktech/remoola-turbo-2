@@ -6,9 +6,7 @@ import { useState } from 'react';
 
 import { type StripeSetupIntentPayload, type PaymentMethodType, type CreatePaymentMethodDto } from '../../../types';
 
-const stripePromise = loadStripe(
-  `pk_test_51N1NYhCnUuv0cnz82HRdWjJG6BQLt39UMrZtu5TMQwHxHZ78T9OgVOrlCSKInTIsClMaizf2V685PCzsTBphw7zV006mPbh9qN`,
-);
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
 type Props = {
   open: boolean;

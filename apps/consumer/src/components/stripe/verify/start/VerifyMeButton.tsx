@@ -16,9 +16,7 @@ export function VerifyMeButton() {
 
     const { clientSecret } = await res.json();
 
-    const stripe = await loadStripe(
-      `pk_test_51N1NYhCnUuv0cnz82HRdWjJG6BQLt39UMrZtu5TMQwHxHZ78T9OgVOrlCSKInTIsClMaizf2V685PCzsTBphw7zV006mPbh9qN`,
-    );
+    const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
     await stripe!.verifyIdentity(clientSecret);
 
