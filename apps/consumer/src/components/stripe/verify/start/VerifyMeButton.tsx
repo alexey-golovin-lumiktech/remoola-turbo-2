@@ -8,11 +8,9 @@ export function VerifyMeButton() {
 
   async function startVerification() {
     setLoading(true);
-    const authorization = localStorage.getItem(`authorization`) ?? ``;
 
     const res = await fetch(`/api/stripe/verify/start`, {
       method: `POST`,
-      headers: { authorization },
       credentials: `include`,
     });
 

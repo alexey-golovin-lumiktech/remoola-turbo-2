@@ -1,13 +1,11 @@
-import { NextResponse } from 'next/server';
-
-import type { NextRequest } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
 export function middleware(req: NextRequest) {
   const token = req.cookies.get(`access_token`)?.value;
 
-  const isAuthPage = req.nextUrl.pathname.startsWith(`/login`);
+  const isAuthPage = req.nextUrl.pathname.startsWith(`/login`) || req.nextUrl.pathname.startsWith(`/signup`);
   const isCallback = req.nextUrl.pathname.startsWith(`/auth/callback`);
-  const isProtected = req.nextUrl.pathname.startsWith(`/profile`) || req.nextUrl.pathname.startsWith(`/contacts`);
+  const isProtected = !isAuthPage;
 
   // Allow callback even without cookie (it will wait and then redirect)
   if (isCallback) return NextResponse.next();
@@ -17,7 +15,7 @@ export function middleware(req: NextRequest) {
   }
 
   if (isAuthPage && token) {
-    return NextResponse.redirect(new URL(`/profile`, req.url));
+    return NextResponse.redirect(new URL(`/dashboard`, req.url));
   }
 
   return NextResponse.next();

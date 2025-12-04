@@ -20,14 +20,9 @@ export default function LoginForm() {
     e.preventDefault();
     setErr(undefined);
 
-    const encoded = btoa(`${email}:${password}`);
-
     const loginRequest = await fetch(`/api/login`, {
       method: `POST`,
-      headers: {
-        'content-type': `application/json`,
-        authorization: `Basic ${encoded}`,
-      },
+      headers: { 'content-type': `application/json` },
       body: JSON.stringify({ email, password }),
       credentials: `include`,
     });

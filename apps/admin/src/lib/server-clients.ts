@@ -15,7 +15,7 @@ export async function getClientSSR<T>(clientId: string) {
   const base = process.env.NEXT_PUBLIC_API_BASE_URL!;
   const url = new URL(`${base}/admin/clients/${clientId}`);
   const res = await fetch(url, {
-    headers: { Cookie: cookieHeader, Authorization: token ? `Bearer ${token}` : `` },
+    headers: { cookie: cookieHeader, authorization: token ? `Bearer ${token}` : `` },
     cache: `no-store`,
   });
 

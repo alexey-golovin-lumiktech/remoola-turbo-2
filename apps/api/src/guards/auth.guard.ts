@@ -5,13 +5,7 @@ import { type JwtService } from '@nestjs/jwt';
 import { IDENTITY, type IIdentity, IS_PUBLIC } from '../common';
 import { type IJwtTokenPayload } from '../dtos/consumer';
 import { type PrismaService } from '../shared/prisma.service';
-import {
-  ACCESS_TOKEN_COOKIE_KEY,
-  AuthHeader,
-  type AuthHeaderValue,
-  CredentialsSeparator,
-  passwordUtils,
-} from '../shared-common';
+import { ACCESS_TOKEN_COOKIE_KEY, AuthHeader, CredentialsSeparator, passwordUtils } from '../shared-common';
 
 import type express from 'express';
 
@@ -19,7 +13,6 @@ const ADMIN_API_URL_STARTS = `/api/admin/`;
 const CONSUMER_API_URL_STARTS = `/api/consumer/`;
 
 const GuardMessage = {
-  LOST_HEADER: `[AuthGuard] lost required authorization header!`,
   UNEXPECTED: (type: string) => `[AuthGuard] unexpected auth header type: ${type}`,
   INVALID_CREDENTIALS: `[AuthGuard] invalid email or password`,
   INVALID_TOKEN: `[AuthGuard] invalid token`,
@@ -46,16 +39,9 @@ export class AuthGuard implements CanActivate {
     if (isPublic) return true;
 
     const cookieAccessToken = request.cookies[ACCESS_TOKEN_COOKIE_KEY];
-    if (cookieAccessToken) return this.bearerProcessor(cookieAccessToken, request);
+    if (cookieAccessToken) return await this.bearerProcessor(cookieAccessToken, request);
 
-    const { authorization = null } = request.headers;
-    if (authorization == null || authorization.length == 0)
-      return this.throwError(GuardMessage.LOST_HEADER + ` url: ` + request.url);
-
-    const [type, encoded] = authorization.split(this.separator.Token) as [AuthHeaderValue, string];
-    if (Object.values(AuthHeader).includes(type) == false) return this.throwError(GuardMessage.UNEXPECTED(type));
-
-    return this.processors[type](encoded, request);
+    return false;
   }
 
   private readonly processors = {
