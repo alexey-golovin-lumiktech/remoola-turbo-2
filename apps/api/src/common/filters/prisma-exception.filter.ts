@@ -1,5 +1,5 @@
 import { ExceptionFilter, Catch, ArgumentsHost, HttpStatus } from '@nestjs/common';
-import { Response } from 'express';
+import express from 'express';
 
 import { Prisma } from '@remoola/database';
 
@@ -14,7 +14,7 @@ import { extractPrismaValidationDetails, mapPrismaKnownError } from './utils';
 export class PrismaExceptionFilter implements ExceptionFilter {
   catch(exception: Prisma.PrismaClientKnownRequestError | Prisma.PrismaClientValidationError, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
-    const response = ctx.getResponse<Response>();
+    const response = ctx.getResponse<express.Response>();
 
     let status = HttpStatus.BAD_REQUEST;
     let message = `Database error`;

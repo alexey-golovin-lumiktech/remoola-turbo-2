@@ -1,5 +1,5 @@
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor, UnauthorizedException } from '@nestjs/common';
-import { Response, Request } from 'express';
+import express from 'express';
 import { catchError, from, lastValueFrom } from 'rxjs';
 
 import { JWT_ACCESS_COOKIE, JWT_ACCESS_TTL } from '../../envs';
@@ -10,8 +10,8 @@ export class JwtRefreshInterceptor implements NestInterceptor {
   constructor(private readonly auth: AuthService) {}
 
   intercept(ctx: ExecutionContext, next: CallHandler) {
-    const req = ctx.switchToHttp().getRequest<Request>();
-    const res = ctx.switchToHttp().getResponse<Response>();
+    const req = ctx.switchToHttp().getRequest<express.Request>();
+    const res = ctx.switchToHttp().getResponse<express.Response>();
     const refreshToken = req.cookies?.refresh_token;
 
     return next.handle().pipe(
