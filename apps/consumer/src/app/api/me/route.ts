@@ -11,6 +11,8 @@ export async function GET(req: NextRequest) {
     cache: `no-cache`,
   });
 
+  console.log(`apps/consumer/src/app/api/me/route.ts res.ok`, res.ok);
+
   const cookie = res.headers.get(`set-cookie`);
   const data = await res.text();
   const headers: HeadersInit = {};

@@ -24,7 +24,11 @@ export default function LoginForm({ nextPath }: { nextPath: string }) {
       return;
     }
 
-    const meRequest = await fetch(`/api/me`, { credentials: `include` });
+    const meRequest = await fetch(`/api/me`, {
+      headers: { 'Content-Type': `application/json` },
+      credentials: `include`,
+    });
+    console.log(`apps/admin/src/app/login/LoginForm.tsx /me res.ok`, meRequest.ok);
     if (!meRequest.ok) {
       setErr(`Logged in, but cookies not available. Check CORS/cookie attrs.`);
       return;

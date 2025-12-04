@@ -14,11 +14,12 @@ export async function getMeSSR<T = R>() {
   const cookieStore = await nextCookies(); // ✅ await the async cookies() call
   const cookieHeader = cookieStore.toString(); // ← include session cookies
   const res = await fetch(`${api}/auth/me`, {
-    headers: { Cookie: cookieHeader },
+    headers: { cookie: cookieHeader, 'content-type': `application/json` },
     credentials: `include`,
     cache: `no-store`,
   });
 
+  console.log(`apps/admin/src/lib/server-auth.ts /me res.ok`, res.ok);
   if (!res.ok) return null;
   const json: BackendResponse<T> = await res.json();
   return json.data;
