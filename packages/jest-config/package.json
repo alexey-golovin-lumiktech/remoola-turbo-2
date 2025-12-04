@@ -38,6 +38,6 @@
   },
   "scripts": {
     "build": "tsc",
-    "clean": "rimraf node_modules dist"
+    "clean": "rm -rf ./node_modules ./dist"
   }
 }

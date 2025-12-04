@@ -7,7 +7,7 @@
     "dev": "yarn build --watch",
     "build": "tsc -b -v",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
-    "clean": "rimraf node_modules dist"
+    "clean": "rm -rf ./node_modules ./dist"
   },
   "main": "./dist/entry.js",
   "types": "./dist/entry.d.ts",

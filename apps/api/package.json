@@ -12,7 +12,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
-    "clean": "rimraf node_modules",
+    "clean": "rm -rf ./node_modules ./dist",
     "dev:envs": "dotenv -e ./.env.development -e ./.env --",
     "start:dev": "yarn dev:envs nest start --watch",
     "dev": "yarn start:dev"
