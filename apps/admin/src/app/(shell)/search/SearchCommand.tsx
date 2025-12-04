@@ -53,7 +53,7 @@ export default function SearchCommand() {
       }
     };
 
-    const t = setTimeout(fetchData, 300); // debounce
+    const t = setTimeout(fetchData, 300);
     return () => {
       clearTimeout(t);
       controller.abort();

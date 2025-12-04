@@ -1,6 +1,13 @@
-// apps/consumer/src/app/login/page.tsx
+'use client';
+
+import { Suspense } from 'react';
+
 import LoginForm from './LoginForm';
 
 export default function LoginPage() {
-  return <LoginForm />;
+  return (
+    <Suspense fallback={<p>Loading login form...</p>}>
+      <LoginForm />
+    </Suspense>
+  );
 }

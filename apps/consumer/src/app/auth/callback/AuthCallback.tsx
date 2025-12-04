@@ -6,7 +6,7 @@ import { useEffect } from 'react';
 export default function AuthCallback() {
   const router = useRouter();
   const params = useSearchParams();
-  const next = params.get(`next`) || `/profile`;
+  const next = params.get(`next`) || `/dashboard`;
 
   useEffect(() => {
     let tries = 0;

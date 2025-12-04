@@ -124,7 +124,7 @@ export function SignupDetailsStep() {
             onClick={() =>
               updateSignup({
                 accountType: ACCOUNT_TYPE.BUSINESS,
-                contractorKind: CONTRACTOR_KIND.INDIVIDUAL, // reset
+                contractorKind: CONTRACTOR_KIND.INDIVIDUAL, // must reset
               })
             }
             className={`flex-1 rounded-md border px-3 py-2 text-center text-sm
