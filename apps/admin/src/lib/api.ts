@@ -12,7 +12,7 @@ import { openDatabase, DB } from './db'; // ← uses the robust DB layer
 /*                               Global Constants                             */
 /* -------------------------------------------------------------------------- */
 const API = process.env.NEXT_PUBLIC_API_BASE_URL!;
-const DEFAULT_HEADERS = { 'Content-Type': `application/json` };
+const DEFAULT_HEADERS = { 'content-type': `application/json` };
 
 /* -------------------------------------------------------------------------- */
 /*                              Error Definition                              */
@@ -241,7 +241,7 @@ export async function request<T>(path: string, init?: RequestOptions): Promise<T
     }
   }
 
-  const contentType = res.headers.get(`Content-Type`);
+  const contentType = res.headers.get(`content-type`);
   if (!contentType?.includes(`application/json`)) return null;
 
   const json: BackendResponse<T> = await res.json();
@@ -265,7 +265,7 @@ async function revalidateInBackground<T>(path: string, init: RequestOptions | un
   try {
     const res = await doFetch(path, init);
     if (!res.ok) return;
-    const contentType = res.headers.get(`Content-Type`);
+    const contentType = res.headers.get(`content-type`);
     if (!contentType?.includes(`application/json`)) return;
     const json: BackendResponse<T> = await res.json();
     const result = json.data ?? null;

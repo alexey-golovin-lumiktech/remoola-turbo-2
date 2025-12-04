@@ -46,7 +46,7 @@ export class ConsumerAuthController {
   ) {}
 
   private setAuthCookies(res: express.Response, accessToken: string, refreshToken: string) {
-    const isProd = envs.NODE_ENV == `production`;
+    const isProd = envs.NODE_ENV === `production`;
 
     if (envs.VERCEL !== 0) {
       const vercelCookieOptions = {
@@ -54,8 +54,6 @@ export class ConsumerAuthController {
         secure: true,
         sameSite: `none`,
         path: `/`,
-        domain: `.vercel.app`,
-        maxAge: 900000, // 15 min
       } as const;
       console.log(`VERCEL COOKIE`, vercelCookieOptions);
       res.cookie(ACCESS_TOKEN_COOKIE_KEY, accessToken, { ...vercelCookieOptions, maxAge: JWT_ACCESS_TTL });

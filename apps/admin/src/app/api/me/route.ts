@@ -6,7 +6,7 @@ export async function GET() {
   const cookieHeader = (await cookies()).toString();
 
   const res = await fetch(`${api}/auth/me`, {
-    headers: { Cookie: cookieHeader },
+    headers: { cookie: cookieHeader },
     credentials: `include`,
   });
 

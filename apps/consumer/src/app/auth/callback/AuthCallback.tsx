@@ -14,7 +14,7 @@ export default function AuthCallback() {
     const interval = setInterval(() => {
       tries++;
 
-      // Cookie MUST be httpOnly: check via document.cookie
+      // cookie MUST be httpOnly: check via document.cookie
       const hasToken = document.cookie.includes(`access_token=`);
 
       if (hasToken) {

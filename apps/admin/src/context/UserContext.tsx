@@ -10,7 +10,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    fetch(`/api/me`, { headers: { 'Content-Type': `application/json` }, credentials: `include` })
+    fetch(`/api/me`, { headers: { 'content-type': `application/json` }, credentials: `include` })
       .then((r) => {
         console.log(`apps/admin/src/context/UserContext.tsx /me res.ok`, r.ok);
         if (r.ok) return r.json();

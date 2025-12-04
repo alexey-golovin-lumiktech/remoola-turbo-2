@@ -16,7 +16,7 @@ export default function LoginForm({ nextPath }: { nextPath: string }) {
     const loginRequest = await fetch(`/api/login`, {
       method: `POST`,
       credentials: `include`,
-      headers: { 'Content-Type': `application/json` },
+      headers: { 'content-type': `application/json` },
       body: JSON.stringify({ email, password }),
     });
     if (!loginRequest.ok) {
@@ -25,7 +25,7 @@ export default function LoginForm({ nextPath }: { nextPath: string }) {
     }
 
     const meRequest = await fetch(`/api/me`, {
-      headers: { 'Content-Type': `application/json` },
+      headers: { 'content-type': `application/json` },
       credentials: `include`,
     });
     console.log(`apps/admin/src/app/login/LoginForm.tsx /me res.ok`, meRequest.ok);
