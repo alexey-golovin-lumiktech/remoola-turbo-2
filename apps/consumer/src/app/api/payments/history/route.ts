@@ -15,10 +15,6 @@ export async function GET(req: Request) {
     cache: `no-store`,
   });
 
-  console.log(`\n************************************`);
-  console.log(`res.ok`, await res.clone().text());
-  console.log(`************************************\n`);
-
   const cookie = res.headers.get(`set-cookie`);
   const data = await res.text();
   const headers: HeadersInit = {};

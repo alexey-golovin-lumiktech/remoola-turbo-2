@@ -62,7 +62,7 @@ export class ConsumerStripeService {
       return { url: session.url };
     } catch (error) {
       console.log(`error`, error);
-      console.log(`referrer`, frontendBaseUrl);
+      console.log(`frontendBaseUrl`, frontendBaseUrl);
       throw error;
     }
   }

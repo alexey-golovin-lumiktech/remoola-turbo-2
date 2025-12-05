@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
   const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE_URL}/documents/upload`);
-  console.log(`POST`, url.toString());
+  console.log(`POST`, url);
 
   // Re-send FormData to backend API
   const res = await fetch(url, {

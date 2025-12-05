@@ -15,15 +15,12 @@ export class ConsumerExchangeController {
   constructor(private readonly service: ConsumerExchangeService) {}
 
   @Get(`rates`)
-  async getRate(@Query() query: ExchangeRateQueryDto) {
-    console.log(`\n************************************`);
-    console.log(`query`, query);
-    console.log(`************************************\n`);
+  getRate(@Query() query: ExchangeRateQueryDto) {
     return this.service.getRate(query.from, query.to);
   }
 
   @Post(`convert`)
-  async convert(@Identity() consumer: ConsumerModel, @Body() dto: ConvertCurrencyDto) {
+  convert(@Identity() consumer: ConsumerModel, @Body() dto: ConvertCurrencyDto) {
     return this.service.convert(consumer.id, dto);
   }
 }

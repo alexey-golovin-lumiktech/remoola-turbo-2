@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  console.log(`GET`, url.toString());
+  console.log(`GET`, url);
 
   const res = await fetch(url, {
     method: `GET`,
