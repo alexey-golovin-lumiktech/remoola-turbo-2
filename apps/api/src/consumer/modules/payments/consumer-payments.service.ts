@@ -33,7 +33,7 @@ export class ConsumerPaymentsService {
       ];
     }
 
-    const [total, results] = await Promise.all([
+    const [total, paymentRequests] = await Promise.all([
       this.prisma.paymentRequestModel.count({ where }),
 
       this.prisma.paymentRequestModel.findMany({
@@ -54,10 +54,10 @@ export class ConsumerPaymentsService {
       }),
     ]);
 
-    const items = results.map((p) => {
-      const latestTx = p.transactions[0];
+    const items = paymentRequests.map((paymentRequest) => {
+      const latestTx = paymentRequest.transactions[0];
 
-      const counterparty = p.payerId === consumerId ? p.requester : p.payer;
+      const counterparty = paymentRequest.payerId === consumerId ? paymentRequest.requester : paymentRequest.payer;
 
       let latestTransaction;
       if (latestTx) {
@@ -69,13 +69,13 @@ export class ConsumerPaymentsService {
       }
 
       return {
-        id: p.id,
-        amount: Number(p.amount),
-        currencyCode: p.currencyCode,
-        status: p.status,
-        type: p.type,
-        description: p.description,
-        createdAt: p.createdAt.toISOString(),
+        id: paymentRequest.id,
+        amount: Number(paymentRequest.amount),
+        currencyCode: paymentRequest.currencyCode,
+        status: paymentRequest.status,
+        type: paymentRequest.type,
+        description: paymentRequest.description,
+        createdAt: paymentRequest.createdAt.toISOString(),
 
         counterparty: {
           id: counterparty.id,
@@ -95,7 +95,7 @@ export class ConsumerPaymentsService {
   }
 
   async getPaymentView(consumerId: string, id: string) {
-    const pr = await this.prisma.paymentRequestModel.findUnique({
+    const paymentRequest = await this.prisma.paymentRequestModel.findUnique({
       where: { id },
       include: {
         payer: true,
@@ -109,48 +109,48 @@ export class ConsumerPaymentsService {
       },
     });
 
-    if (!pr) throw new NotFoundException(`Payment request not found`);
+    if (!paymentRequest) throw new NotFoundException(`Payment request not found`);
 
-    if (pr.payerId !== consumerId && pr.requesterId !== consumerId) {
+    if (paymentRequest.payerId !== consumerId && paymentRequest.requesterId !== consumerId) {
       throw new ForbiddenException(`You do not have access to this payment`);
     }
 
     const response = {
-      id: pr.id,
-      amount: Number(pr.amount),
-      currencyCode: pr.currencyCode,
-      status: pr.status,
-      type: pr.type,
-      description: pr.description,
-      dueDate: pr.dueDate,
-      expectationDate: pr.expectationDate,
-      sentDate: pr.sentDate,
-      createdAt: pr.createdAt,
-      updatedAt: pr.updatedAt,
+      id: paymentRequest.id,
+      amount: Number(paymentRequest.amount),
+      currencyCode: paymentRequest.currencyCode,
+      status: paymentRequest.status,
+      type: paymentRequest.type,
+      description: paymentRequest.description,
+      dueDate: paymentRequest.dueDate,
+      expectationDate: paymentRequest.expectationDate,
+      sentDate: paymentRequest.sentDate,
+      createdAt: paymentRequest.createdAt,
+      updatedAt: paymentRequest.updatedAt,
 
       payer: {
-        id: pr.payer.id,
-        email: pr.payer.email,
+        id: paymentRequest.payer.id,
+        email: paymentRequest.payer.email,
       },
 
       requester: {
-        id: pr.requester.id,
-        email: pr.requester.email,
+        id: paymentRequest.requester.id,
+        email: paymentRequest.requester.email,
       },
 
-      transactions: pr.transactions.map((t) => ({
-        id: t.id,
-        status: t.status,
-        actionType: t.actionType,
-        createdAt: t.createdAt,
+      transactions: paymentRequest.transactions.map((paymentRequestTransaction) => ({
+        id: paymentRequestTransaction.id,
+        status: paymentRequestTransaction.status,
+        actionType: paymentRequestTransaction.actionType,
+        createdAt: paymentRequestTransaction.createdAt,
       })),
 
-      attachments: pr.attachments.map((a) => ({
-        id: a.resource.id,
-        name: a.resource.originalName,
-        downloadUrl: a.resource.downloadUrl,
-        size: a.resource.size,
-        createdAt: a.resource.createdAt,
+      attachments: paymentRequest.attachments.map((paymentRequestAttachment) => ({
+        id: paymentRequestAttachment.resource.id,
+        name: paymentRequestAttachment.resource.originalName,
+        downloadUrl: paymentRequestAttachment.resource.downloadUrl,
+        size: paymentRequestAttachment.resource.size,
+        createdAt: paymentRequestAttachment.resource.createdAt,
       })),
     };
 

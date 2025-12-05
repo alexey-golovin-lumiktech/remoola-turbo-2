@@ -13,7 +13,7 @@ export class ConsumerContractsService {
       where: { consumerId },
     });
 
-    const emails = contacts.map((c) => c.email);
+    const emails = contacts.map((contact) => contact.email);
 
     // 2. Load payment requests involving these emails
     const paymentRequests = await this.prisma.paymentRequestModel.findMany({
@@ -33,11 +33,14 @@ export class ConsumerContractsService {
 
     // 3. Build contract rows
     return contacts.map((contact) => {
-      const related = paymentRequests.filter(
-        (pr) => pr.payer?.email === contact.email || pr.requester?.email === contact.email,
+      const filteredPaymentRequests = paymentRequests.filter(
+        (paymentRequest) =>
+          paymentRequest.payer?.email === contact.email || paymentRequest.requester?.email === contact.email,
       );
 
-      const lastReq = related.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0];
+      const lastReq = filteredPaymentRequests.sort(
+        (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+      )[0];
 
       return {
         id: contact.id,
@@ -46,7 +49,7 @@ export class ConsumerContractsService {
         lastRequestId: lastReq?.id ?? null,
         lastStatus: lastReq?.status ?? null,
         lastActivity: lastReq?.updatedAt ?? null,
-        docs: related.reduce((sum, pr) => sum + pr.attachments.length, 0),
+        docs: filteredPaymentRequests.reduce((sum, paymentRequest) => sum + paymentRequest.attachments.length, 0),
       };
     });
   }

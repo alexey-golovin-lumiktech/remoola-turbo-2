@@ -11,7 +11,7 @@ export class ConsumerDocumentsService {
   ) {}
 
   async getDocuments(consumerId: string, kind?: string) {
-    const docs = await this.prisma.consumerResourceModel.findMany({
+    const consumerResources = await this.prisma.consumerResourceModel.findMany({
       where: { consumerId },
       include: {
         resource: {
@@ -25,7 +25,7 @@ export class ConsumerDocumentsService {
       orderBy: { createdAt: `desc` },
     });
 
-    const paymentAtt = await this.prisma.paymentRequestAttachmentModel.findMany({
+    const paymentRequestAttachments = await this.prisma.paymentRequestAttachmentModel.findMany({
       where: { requesterId: consumerId },
       include: {
         resource: {
@@ -43,30 +43,30 @@ export class ConsumerDocumentsService {
     });
 
     const merged = [
-      ...docs.map((cr) => ({
-        id: cr.resource.id,
-        name: cr.resource.originalName,
-        size: cr.resource.size,
-        createdAt: cr.resource.createdAt?.toISOString() ?? ``,
-        downloadUrl: cr.resource.downloadUrl,
-        mimetype: cr.resource.mimetype,
-        kind: this.detectKind(cr.resource.originalName),
-        tags: cr.resource.resourceTags.map((rt) => rt.tag.name),
+      ...consumerResources.map((consumerResource) => ({
+        id: consumerResource.resource.id,
+        name: consumerResource.resource.originalName,
+        size: consumerResource.resource.size,
+        createdAt: consumerResource.resource.createdAt?.toISOString() ?? ``,
+        downloadUrl: consumerResource.resource.downloadUrl,
+        mimetype: consumerResource.resource.mimetype,
+        kind: this.detectKind(consumerResource.resource.originalName),
+        tags: consumerResource.resource.resourceTags.map((resourceTag) => resourceTag.tag.name),
       })),
-      ...paymentAtt.map((att) => ({
-        id: att.resource.id,
-        name: att.resource.originalName,
-        size: att.resource.size,
-        createdAt: att.resource.createdAt?.toISOString() ?? ``,
-        downloadUrl: att.resource.downloadUrl,
-        mimetype: att.resource.mimetype,
+      ...paymentRequestAttachments.map((paymentRequestAttachment) => ({
+        id: paymentRequestAttachment.resource.id,
+        name: paymentRequestAttachment.resource.originalName,
+        size: paymentRequestAttachment.resource.size,
+        createdAt: paymentRequestAttachment.resource.createdAt?.toISOString() ?? ``,
+        downloadUrl: paymentRequestAttachment.resource.downloadUrl,
+        mimetype: paymentRequestAttachment.resource.mimetype,
         kind: `PAYMENT`,
-        tags: att.resource.resourceTags.map((rt) => rt.tag.name),
+        tags: paymentRequestAttachment.resource.resourceTags.map((resourceTag) => resourceTag.tag.name),
       })),
     ];
 
     if (kind) {
-      return merged.filter((d) => d.kind === kind.toUpperCase());
+      return merged.filter((document) => document.kind === kind.toUpperCase());
     }
 
     return merged;
@@ -163,7 +163,7 @@ export class ConsumerDocumentsService {
       throw new ForbiddenException(`Payment not found or not owned by you`);
     }
 
-    const existing = await this.prisma.paymentRequestAttachmentModel.findMany({
+    const paymentRequestAttachments = await this.prisma.paymentRequestAttachmentModel.findMany({
       where: {
         paymentRequestId,
         resourceId: { in: resourceIds },
@@ -171,9 +171,9 @@ export class ConsumerDocumentsService {
       select: { resourceId: true },
     });
 
-    const existingIds = new Set(existing.map((e) => e.resourceId));
+    const existingAttachmentResourceIds = new Set(paymentRequestAttachments.map((attachment) => attachment.resourceId));
 
-    const toCreate = resourceIds.filter((id) => !existingIds.has(id));
+    const toCreate = resourceIds.filter((resourceId) => !existingAttachmentResourceIds.has(resourceId));
 
     await this.prisma.paymentRequestAttachmentModel.createMany({
       data: toCreate.map((resourceId) => ({
@@ -189,29 +189,29 @@ export class ConsumerDocumentsService {
 
   async setTags(consumerId: string, resourceId: string, tags: string[]) {
     // ensure consumer has access
-    const cr = await this.prisma.consumerResourceModel.findFirst({
+    const consumerResource = await this.prisma.consumerResourceModel.findFirst({
       where: { consumerId, resourceId },
     });
 
-    if (!cr) {
+    if (!consumerResource) {
       throw new ForbiddenException(`No access to this document`);
     }
 
     // normalize tags
     const cleaned = tags
-      .map((t) => t.trim())
+      .map((tag) => tag.trim())
       .filter(Boolean)
-      .map((t) => t.toLowerCase());
+      .map((tag) => tag.toLowerCase());
 
     // upsert tag records
-    const tagRecords = [];
+    const documentTags = [];
     for (const name of cleaned) {
-      const tag = await this.prisma.documentTagModel.upsert({
+      const documentTag = await this.prisma.documentTagModel.upsert({
         where: { name },
         update: {},
         create: { name },
       });
-      tagRecords.push(tag);
+      documentTags.push(documentTag);
     }
 
     // remove old links
@@ -221,9 +221,9 @@ export class ConsumerDocumentsService {
 
     // add current links
     await this.prisma.resourceTagModel.createMany({
-      data: tagRecords.map((tag) => ({
+      data: documentTags.map((documentTag) => ({
         resourceId,
-        tagId: tag.id,
+        tagId: documentTag.id,
       })),
     });
 

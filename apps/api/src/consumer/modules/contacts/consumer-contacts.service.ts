@@ -15,7 +15,7 @@ export class ConsumerContactsService {
 
     if (!contact) throw new Error(`Contact not found`);
 
-    const prs = await this.prisma.paymentRequestModel.findMany({
+    const paymentRequests = await this.prisma.paymentRequestModel.findMany({
       where: {
         OR: [{ payer: { email: contact.email } }, { requester: { email: contact.email } }],
       },
@@ -27,12 +27,12 @@ export class ConsumerContactsService {
       orderBy: { createdAt: `desc` },
     });
 
-    const documents = prs.flatMap((pr) =>
-      pr.attachments.map((att) => ({
-        id: att.resource.id,
-        name: att.resource.originalName,
-        url: att.resource.downloadUrl,
-        createdAt: att.resource.createdAt,
+    const documents = paymentRequests.flatMap((paymentRequest) =>
+      paymentRequest.attachments.map((paymentRequestAttachment) => ({
+        id: paymentRequestAttachment.resource.id,
+        name: paymentRequestAttachment.resource.originalName,
+        url: paymentRequestAttachment.resource.downloadUrl,
+        createdAt: paymentRequestAttachment.resource.createdAt,
       })),
     );
 
@@ -41,27 +41,27 @@ export class ConsumerContactsService {
       email: contact.email,
       name: contact.name,
       address: JSON.parse(JSON.stringify(contact.address)),
-      paymentRequests: prs.map((pr) => ({
-        id: pr.id,
-        amount: pr.amount.toString(),
-        status: pr.status,
-        createdAt: pr.createdAt,
+      paymentRequests: paymentRequests.map((paymentRequest) => ({
+        id: paymentRequest.id,
+        amount: paymentRequest.amount.toString(),
+        status: paymentRequest.status,
+        createdAt: paymentRequest.createdAt,
       })),
       documents,
     };
   }
 
   async list(consumerId: string): Promise<ConsumerContact[]> {
-    const rows = await this.prisma.contactModel.findMany({
+    const contacts = await this.prisma.contactModel.findMany({
       where: { consumerId },
       orderBy: { createdAt: `desc` },
     });
 
-    return rows.map((r) => ({
-      id: r.id,
-      email: r.email,
-      name: r.name,
-      address: JSON.parse(JSON.stringify(r.address)),
+    return contacts.map((contact) => ({
+      id: contact.id,
+      email: contact.email,
+      name: contact.name,
+      address: JSON.parse(JSON.stringify(contact.address)),
     }));
   }
 

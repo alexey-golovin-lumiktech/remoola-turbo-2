@@ -1,12 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import {
-  DashboardData,
-  ActivityItem,
-  ComplianceTask,
-  PendingRequest,
-  QuickDoc,
-} from './dtos/dashboard-data.dto';
+import { DashboardData, ActivityItem, ComplianceTask, PendingRequest, QuickDoc } from './dtos/dashboard-data.dto';
 import { PrismaService } from '../../../shared/prisma.service';
 
 @Injectable()
@@ -67,7 +61,7 @@ export class ConsumerDashboardService {
   }
 
   private async buildPendingRequests(consumerId: string): Promise<PendingRequest[]> {
-    const requests = await this.prisma.paymentRequestModel.findMany({
+    const paymentRequests = await this.prisma.paymentRequestModel.findMany({
       where: {
         payerId: consumerId,
         status: { not: `COMPLETED` },
@@ -79,13 +73,13 @@ export class ConsumerDashboardService {
       },
     });
 
-    return requests.map((req) => ({
-      id: req.id,
-      counterpartyName: req.requester.email,
-      amount: Number(req.amount),
-      currencyCode: req.currencyCode,
-      status: req.status,
-      lastActivityAt: req.updatedAt,
+    return paymentRequests.map((paymentRequest) => ({
+      id: paymentRequest.id,
+      counterpartyName: paymentRequest.requester.email,
+      amount: Number(paymentRequest.amount),
+      currencyCode: paymentRequest.currencyCode,
+      status: paymentRequest.status,
+      lastActivityAt: paymentRequest.updatedAt,
     }));
   }
 
@@ -171,7 +165,9 @@ export class ConsumerDashboardService {
       },
     });
 
-    const hasW9 = consumer.consumerResources.some((cr) => cr.resource.originalName.toLowerCase().includes(`w9`));
+    const hasW9 = consumer.consumerResources.some((consumerResource) =>
+      consumerResource.resource.originalName.toLowerCase().includes(`w9`),
+    );
 
     return [
       {
@@ -193,7 +189,7 @@ export class ConsumerDashboardService {
   }
 
   private async buildQuickDocs(consumerId: string): Promise<QuickDoc[]> {
-    const items = await this.prisma.consumerResourceModel.findMany({
+    const consumerResources = await this.prisma.consumerResourceModel.findMany({
       where: { consumerId },
       include: {
         resource: true,
@@ -204,10 +200,10 @@ export class ConsumerDashboardService {
       take: 5,
     });
 
-    return items.map((cr) => ({
-      id: cr.resource.id,
-      name: cr.resource.originalName,
-      createdAt: cr.resource.createdAt?.toISOString() ?? ``,
+    return consumerResources.map((consumerResource) => ({
+      id: consumerResource.resource.id,
+      name: consumerResource.resource.originalName,
+      createdAt: consumerResource.resource.createdAt?.toISOString() ?? ``,
     }));
   }
 }

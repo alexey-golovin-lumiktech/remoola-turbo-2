@@ -13,31 +13,31 @@ export class ConsumerPaymentMethodsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async list(consumerId: string): Promise<PaymentMethodsResponse> {
-    const methods = await this.prisma.paymentMethodModel.findMany({
+    const paymentMethods = await this.prisma.paymentMethodModel.findMany({
       where: { consumerId, deletedAt: null },
       include: { billingDetails: true },
       orderBy: { createdAt: `desc` },
     });
 
-    const items: PaymentMethodItem[] = methods.map((m) => {
+    const items: PaymentMethodItem[] = paymentMethods.map((paymentMethod) => {
       let billingDetails;
-      if (m.billingDetails) {
+      if (paymentMethod.billingDetails) {
         billingDetails = {
-          id: m.billingDetails.id,
-          email: m.billingDetails.email,
-          name: m.billingDetails.name,
-          phone: m.billingDetails.phone,
+          id: paymentMethod.billingDetails.id,
+          email: paymentMethod.billingDetails.email,
+          name: paymentMethod.billingDetails.name,
+          phone: paymentMethod.billingDetails.phone,
         };
       }
 
       return {
-        id: m.id,
-        type: m.type,
-        brand: m.brand,
-        last4: m.last4,
-        expMonth: m.expMonth,
-        expYear: m.expYear,
-        defaultSelected: m.defaultSelected,
+        id: paymentMethod.id,
+        type: paymentMethod.type,
+        brand: paymentMethod.brand,
+        last4: paymentMethod.last4,
+        expMonth: paymentMethod.expMonth,
+        expYear: paymentMethod.expYear,
+        defaultSelected: paymentMethod.defaultSelected,
         billingDetails: billingDetails || null,
       };
     });
