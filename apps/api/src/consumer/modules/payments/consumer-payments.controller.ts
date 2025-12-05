@@ -35,37 +35,36 @@ export class ConsumerPaymentsController {
   }
 
   @Post(`start`)
-  async startPayment(@Identity() identity: ConsumerModel, @Body() body: StartPayment) {
+  startPayment(@Identity() identity: ConsumerModel, @Body() body: StartPayment) {
     return this.service.startPayment(identity.id, body);
-  }
-
-  @Get(`:id`)
-  async getPayment(@Identity() identity: ConsumerModel, @Param(`id`) id: string) {
-    return this.service.getPaymentView(identity.id, id);
   }
 
   @Get(`balance`)
   @ApiOperation({ summary: `Get current available balance` })
-  async getBalance(@Identity() consumer: ConsumerModel) {
-    const available = await this.service.getAvailableBalance(consumer.id);
-    return { available, currencyCode: `USD` as const };
+  getBalance(@Identity() consumer: ConsumerModel) {
+    return this.service.getBalances(consumer.id);
   }
 
   @Get(`history`)
   @ApiOperation({ summary: `List payment transactions` })
-  async history(@Identity() consumer: ConsumerModel, @Query() query: PaymentsHistoryQueryDto) {
+  history(@Identity() consumer: ConsumerModel, @Query() query: PaymentsHistoryQueryDto) {
     return this.service.getHistory(consumer.id, query);
   }
 
   @Post(`withdraw`)
   @ApiOperation({ summary: `Withdraw funds from consumer balance` })
-  async withdraw(@Identity() consumer: ConsumerModel, @Body() body: WithdrawDto) {
+  withdraw(@Identity() consumer: ConsumerModel, @Body() body: WithdrawDto) {
     return this.service.withdraw(consumer.id, body);
   }
 
   @Post(`transfer`)
   @ApiOperation({ summary: `Transfer funds to another user` })
-  async transfer(@Identity() consumer: ConsumerModel, @Body() body: TransferDto) {
+  transfer(@Identity() consumer: ConsumerModel, @Body() body: TransferDto) {
     return this.service.transfer(consumer.id, body);
+  }
+
+  @Get(`:id`)
+  getPayment(@Identity() identity: ConsumerModel, @Param(`id`) id: string) {
+    return this.service.getPaymentView(identity.id, id);
   }
 }

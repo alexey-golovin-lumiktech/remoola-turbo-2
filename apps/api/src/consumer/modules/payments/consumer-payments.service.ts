@@ -214,6 +214,30 @@ export class ConsumerPaymentsService {
     };
   }
 
+  async getBalances(consumerId: string) {
+    const txs = await this.prisma.transactionModel.findMany({
+      where: { consumerId },
+    });
+
+    const map: Record<string, number> = {};
+
+    for (const tx of txs) {
+      const amount = Number(tx.originAmount);
+      const cur = tx.currencyCode;
+
+      if (!map[cur]) map[cur] = 0;
+
+      const isIncome = tx.actionType === `INCOME` && [`COMPLETED`, `WAITING`].includes(tx.status);
+
+      const isOutcome = tx.actionType === `OUTCOME` && [`COMPLETED`, `PENDING`].includes(tx.status);
+
+      if (isIncome) map[cur] += amount;
+      if (isOutcome) map[cur] -= amount;
+    }
+
+    return map;
+  }
+
   async getAvailableBalance(consumerId: string): Promise<number> {
     const incoming = await this.prisma.transactionModel.aggregate({
       where: {

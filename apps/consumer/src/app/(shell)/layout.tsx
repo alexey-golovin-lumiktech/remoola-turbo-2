@@ -45,6 +45,10 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
           <SidebarLink href="/withdraw-transfer" active={pathname.startsWith(`/withdraw-transfer`)}>
             Withdraw And Transfer
           </SidebarLink>
+
+          <SidebarLink href="/exchange" active={pathname.startsWith(`/exchange`)}>
+            Exchange Rate
+          </SidebarLink>
         </nav>
         <div className="absolute bottom-4 left-0 right-0 px-4 text-xs text-white/70">© Remoola 2025</div>
       </aside>
