@@ -1,14 +1,14 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
-export async function GET(req: NextRequest) {
-  const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/me`;
-  console.log(`GET`, url);
+export async function POST(req: NextRequest) {
+  const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/documents/attach-to-payment`;
+  console.log(`POST`, url);
 
   const res = await fetch(url, {
-    method: `GET`,
+    method: `POST`,
     headers: { ...Object.fromEntries(req.headers), 'content-type': `application/json` },
     credentials: `include`,
-    cache: `no-cache`,
+    body: await req.clone().text(),
   });
 
   const cookie = res.headers.get(`set-cookie`);

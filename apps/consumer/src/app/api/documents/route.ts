@@ -1,8 +1,17 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function GET(req: NextRequest) {
-  const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/me`;
-  console.log(`GET`, url);
+  const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE_URL}/documents`);
+
+  const params = Object.fromEntries(new URL(req.url).searchParams);
+  for (const [key, value] of Object.entries(params)) {
+    if (value) {
+      if (url.searchParams.has(key)) url.searchParams.set(key, value);
+      else url.searchParams.append(key, value);
+    }
+  }
+
+  console.log(`GET`, url.toString());
 
   const res = await fetch(url, {
     method: `GET`,

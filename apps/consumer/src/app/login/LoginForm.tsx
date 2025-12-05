@@ -37,7 +37,6 @@ export default function LoginForm() {
       credentials: `include`,
     });
 
-    console.log(`apps/consumer/src/app/login/LoginForm.tsx /me res.ok`, meRequest.ok);
     if (!meRequest.ok) {
       setErr(`Logged in, but cookies not available. Check CORS/cookie attrs.`);
       return;

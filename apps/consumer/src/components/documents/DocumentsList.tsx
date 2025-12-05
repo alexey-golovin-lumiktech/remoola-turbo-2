@@ -29,7 +29,7 @@ export function DocumentsList() {
     const params = new URLSearchParams();
     if (kind) params.append(`kind`, kind);
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/documents?${params}`, {
+    const res = await fetch(`/api/documents?${params}`, {
       credentials: `include`,
       headers: { 'content-type': `application/json` },
     });
@@ -69,7 +69,7 @@ export function DocumentsList() {
     Array.from(files).forEach((file) => form.append(`files`, file));
     setUploading(true);
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/documents/upload`, {
+    const res = await fetch(`/api/documents/upload`, {
       method: `POST`,
       credentials: `include`,
       body: form,
@@ -90,7 +90,7 @@ export function DocumentsList() {
     if (selected.size === 0) return;
     if (!confirm(`Delete selected documents?`)) return;
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/documents/bulk-delete`, {
+    const res = await fetch(`/api/documents/bulk-delete`, {
       method: `POST`,
       credentials: `include`,
       headers: { 'content-type': `application/json` },
@@ -111,7 +111,7 @@ export function DocumentsList() {
       return;
     }
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/documents/attach-to-payment`, {
+    const res = await fetch(`/api/documents/attach-to-payment`, {
       method: `POST`,
       credentials: `include`,
       headers: { 'content-type': `application/json` },
@@ -136,7 +136,7 @@ export function DocumentsList() {
       .map((t) => t.trim())
       .filter(Boolean);
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/documents/${docId}/tags`, {
+    const res = await fetch(`/api/documents/${docId}/tags`, {
       method: `POST`,
       credentials: `include`,
       headers: { 'content-type': `application/json` },

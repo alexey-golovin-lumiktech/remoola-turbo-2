@@ -42,7 +42,7 @@ export function PaymentsList() {
       if (type) params.append(`type`, type);
       if (search) params.append(`search`, search);
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/payments?${params}`, {
+      const res = await fetch(`/api/payments?${params}`, {
         credentials: `include`,
         headers: { 'content-type': `application/json` },
       });

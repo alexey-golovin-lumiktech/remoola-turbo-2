@@ -9,7 +9,7 @@ export function PaymentView({ paymentRequestId }: { paymentRequestId: string }) 
   useEffect(() => {
     async function load() {
       setLoading(true);
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/payments/${paymentRequestId}`, {
+      const res = await fetch(`/api/payments/${paymentRequestId}`, {
         method: `GET`,
         credentials: `include`,
         cache: `no-cache`,
