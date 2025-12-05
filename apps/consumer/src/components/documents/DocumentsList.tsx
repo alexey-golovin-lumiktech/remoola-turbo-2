@@ -38,8 +38,6 @@ export function DocumentsList() {
 
     if (!res.ok) return;
 
-    console.log(`await res.json()`, await res.clone().json());
-
     setDocs(await res.json());
     setSelected(new Set());
   }, [kind]);
