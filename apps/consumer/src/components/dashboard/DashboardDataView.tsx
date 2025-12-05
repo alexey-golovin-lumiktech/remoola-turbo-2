@@ -8,6 +8,7 @@ import { ActivityTimeline } from './ActivityTimeline';
 import { ComplianceTasksCard } from './ComplianceTasksCard';
 import { DashboardHeader } from './DashboardHeader';
 import { PendingRequestsTable } from './PendingRequestsTable';
+import { PendingWithdrawalsCard } from './PendingWithdrawalsCard';
 import { QuickDocsCard } from './QuickDocsCard';
 import { SummaryCards } from './SummaryCards';
 import { type IDashboardData } from '../../types';
@@ -58,6 +59,9 @@ export function DashboardDataView() {
         </div>
 
         <div className="flex flex-col gap-4">
+          <div className="rounded-2xl bg-white/90 p-4 shadow-sm">
+            <PendingWithdrawalsCard />
+          </div>
           <div className="rounded-2xl bg-white/90 p-4 shadow-sm">
             <ComplianceTasksCard tasks={dashboardData.tasks} />
           </div>

@@ -55,6 +55,14 @@ export class StripeWebhookService {
           break;
         }
 
+        case `payout.paid`:
+          await this.handlePayoutPaid(event);
+          break;
+        case `payout.failed`:
+        case `payout.canceled`:
+          await this.handlePayoutFailed(event);
+          break;
+
         default: {
           console.log(`[SKIP] ${event.type}`);
           break;
@@ -67,6 +75,28 @@ export class StripeWebhookService {
       res.status(400).send(`Webhook Error: ${err.message}`);
       return;
     }
+  }
+
+  private async handlePayoutPaid(event: Stripe.Event) {
+    const payout = event.data.object as Stripe.Payout;
+
+    if (!payout.metadata?.transactionId) return;
+
+    await this.prisma.transactionModel.updateMany({
+      where: { id: payout.metadata.transactionId },
+      data: { status: $Enums.TransactionStatus.COMPLETED },
+    });
+  }
+
+  private async handlePayoutFailed(event: Stripe.Event) {
+    const payout = event.data.object as Stripe.Payout;
+
+    if (!payout.metadata?.transactionId) return;
+
+    await this.prisma.transactionModel.updateMany({
+      where: { id: payout.metadata.transactionId },
+      data: { status: $Enums.TransactionStatus.DENIED },
+    });
   }
 
   private async handleVerified(session: Stripe.Identity.VerificationSession) {

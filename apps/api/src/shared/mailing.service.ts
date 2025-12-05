@@ -15,7 +15,7 @@ import { envs } from '../envs';
 
 @Injectable()
 export class MailingService {
-  private readonly logger = new Logger(MailingService.name);
+  private readonly logger = console;
 
   constructor(private mailerService: MailerService) {}
 

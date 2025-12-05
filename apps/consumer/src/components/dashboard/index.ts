@@ -4,5 +4,6 @@ export * from './ComplianceTasksCard';
 export * from './DashboardDataView';
 export * from './DashboardHeader';
 export * from './PendingRequestsTable';
+export * from './PendingWithdrawalsCard';
 export * from './QuickDocsCard';
 export * from './SummaryCards';

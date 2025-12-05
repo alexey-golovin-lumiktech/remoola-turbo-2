@@ -1,9 +1,10 @@
 import { Controller, Post, Body, UseGuards, Param, Get, Query } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { type ConsumerModel } from '@remoola/database-2';
 
 import { ConsumerPaymentsService } from './consumer-payments.service';
+import { PaymentsHistoryQueryDto, TransferDto, WithdrawDto } from './dto';
 import { StartPayment } from './dto/start-payment.dto';
 import { JwtAuthGuard } from '../../../auth/jwt.guard';
 import { Identity } from '../../../common';
@@ -41,5 +42,30 @@ export class ConsumerPaymentsController {
   @Get(`:id`)
   async getPayment(@Identity() identity: ConsumerModel, @Param(`id`) id: string) {
     return this.service.getPaymentView(identity.id, id);
+  }
+
+  @Get(`balance`)
+  @ApiOperation({ summary: `Get current available balance` })
+  async getBalance(@Identity() consumer: ConsumerModel) {
+    const available = await this.service.getAvailableBalance(consumer.id);
+    return { available, currencyCode: `USD` as const };
+  }
+
+  @Get(`history`)
+  @ApiOperation({ summary: `List payment transactions` })
+  async history(@Identity() consumer: ConsumerModel, @Query() query: PaymentsHistoryQueryDto) {
+    return this.service.getHistory(consumer.id, query);
+  }
+
+  @Post(`withdraw`)
+  @ApiOperation({ summary: `Withdraw funds from consumer balance` })
+  async withdraw(@Identity() consumer: ConsumerModel, @Body() body: WithdrawDto) {
+    return this.service.withdraw(consumer.id, body);
+  }
+
+  @Post(`transfer`)
+  @ApiOperation({ summary: `Transfer funds to another user` })
+  async transfer(@Identity() consumer: ConsumerModel, @Body() body: TransferDto) {
+    return this.service.transfer(consumer.id, body);
   }
 }

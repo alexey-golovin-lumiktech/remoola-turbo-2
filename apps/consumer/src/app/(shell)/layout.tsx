@@ -39,7 +39,11 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
           </SidebarLink>
 
           <SidebarLink href="/payment-methods" active={pathname.startsWith(`/payment-methods`)}>
-            Payment Methods
+            Bank And Cards
+          </SidebarLink>
+
+          <SidebarLink href="/withdraw-transfer" active={pathname.startsWith(`/withdraw-transfer`)}>
+            Withdraw And Transfer
           </SidebarLink>
         </nav>
         <div className="absolute bottom-4 left-0 right-0 px-4 text-xs text-white/70">© Remoola 2025</div>
