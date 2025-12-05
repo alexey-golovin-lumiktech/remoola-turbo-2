@@ -135,7 +135,7 @@ export class ConsumerDocumentsService {
     const payment = await this.prisma.paymentRequestModel.findFirst({
       where: {
         id: paymentRequestId,
-        requesterId: consumerId,
+        payerId: consumerId,
       },
     });
 
