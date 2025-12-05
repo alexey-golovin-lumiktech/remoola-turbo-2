@@ -13,7 +13,7 @@ import {
 
 import { $Enums } from '@remoola/database-2';
 
-export class AddressDetailsGPT {
+export class AddressDetails {
   @Expose()
   @ApiProperty()
   @IsString()
@@ -43,7 +43,7 @@ export class AddressDetailsGPT {
   street?: string;
 }
 
-export class PersonalDetailsGPT {
+export class PersonalDetails {
   @Expose()
   @ApiProperty()
   @IsString()
@@ -97,7 +97,7 @@ export class PersonalDetailsGPT {
   lastName?: string;
 }
 
-export class OrganizationDetailsGPT {
+export class OrganizationDetails {
   @Expose()
   @ApiProperty()
   @IsString()
@@ -114,7 +114,7 @@ export class OrganizationDetailsGPT {
   size: $Enums.OrganizationSize;
 }
 
-export class ConsumerSignupGPT {
+export class ConsumerSignup {
   @Expose()
   @ApiProperty({ example: `email@email.com` })
   @IsEmail()
@@ -152,28 +152,28 @@ export class ConsumerSignupGPT {
   @Expose()
   @ApiProperty()
   @ValidateNested()
-  @Type(() => AddressDetailsGPT)
-  addressDetails: AddressDetailsGPT;
+  @Type(() => AddressDetails)
+  addressDetails: AddressDetails;
 
   // Required for BUSINESS, or CONTRACTOR + ENTITY
   @Expose()
-  @ApiPropertyOptional({ type: OrganizationDetailsGPT })
+  @ApiPropertyOptional({ type: OrganizationDetails })
   @ValidateIf(
     (o) =>
       o.accountType === $Enums.AccountType.BUSINESS ||
       (o.accountType === $Enums.AccountType.CONTRACTOR && o.contractorKind === $Enums.ContractorKind.ENTITY),
   )
   @ValidateNested()
-  @Type(() => OrganizationDetailsGPT)
-  organizationDetails?: OrganizationDetailsGPT;
+  @Type(() => OrganizationDetails)
+  organizationDetails?: OrganizationDetails;
 
   // Required for CONTRACTOR + INDIVIDUAL
   @Expose()
-  @ApiPropertyOptional({ type: PersonalDetailsGPT })
+  @ApiPropertyOptional({ type: PersonalDetails })
   @ValidateIf(
     (o) => o.accountType === $Enums.AccountType.CONTRACTOR && o.contractorKind === $Enums.ContractorKind.INDIVIDUAL,
   )
   @ValidateNested()
-  @Type(() => PersonalDetailsGPT)
-  personalDetails?: PersonalDetailsGPT;
+  @Type(() => PersonalDetails)
+  personalDetails?: PersonalDetails;
 }

@@ -13,7 +13,7 @@ import { OAuth2Client } from 'google-auth-library';
 
 import { $Enums, Prisma, type ConsumerModel, type ResetPasswordModel } from '@remoola/database-2';
 
-import { ConsumerSignupGPT } from './dto';
+import { ConsumerSignup } from './dto';
 import { LoginBody } from '../../auth/dto/login.dto';
 import { CONSUMER } from '../../dtos';
 import { IJwtTokenPayload } from '../../dtos/consumer';
@@ -204,7 +204,7 @@ export class ConsumerAuthService {
     this.mailingService.sendConsumerSignupVerificationEmail({ email: consumer.email, token, referer });
   }
 
-  async signup(dto: ConsumerSignupGPT) {
+  async signup(dto: ConsumerSignup) {
     this.ensureBusinessRules(dto);
 
     const existing = await this.prisma.consumerModel.findUnique({
@@ -292,7 +292,7 @@ export class ConsumerAuthService {
    * Enforce combinations of accountType / contractorKind
    * and required nested blocks.
    */
-  private ensureBusinessRules(dto: ConsumerSignupGPT) {
+  private ensureBusinessRules(dto: ConsumerSignup) {
     if (dto.accountType === $Enums.AccountType.CONTRACTOR && !dto.contractorKind) {
       throw new BadRequestException(`contractorKind is required for CONTRACTOR accountType`);
     }

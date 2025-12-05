@@ -7,7 +7,7 @@ import { envs, JWT_ACCESS_SECRET, JWT_ACCESS_TTL } from '../envs';
 import { ConsumerAuthController } from './auth/auth.controller';
 import { ConsumerAuthService } from './auth/auth.service';
 import { GoogleAuthService } from './auth/google-auth.service';
-import { GoogleOAuthServiceGPT } from './auth/google-oauth.service';
+import { GoogleOAuthService } from './auth/google-oauth.service';
 import { ProfileController } from './controllers/profile.controller';
 import { MailingService } from '../shared/mailing.service';
 import { ConsumerDashboardModule } from './modules/consumer-dashboard/consumer-dashboard.module';
@@ -48,6 +48,6 @@ import { ConsumerPaymentsModule } from './modules/payments/consumer-payments.mod
     ConsumerPaymentsModule,
   ],
   controllers: [ConsumerAuthController, ProfileController],
-  providers: [MailingService, GoogleOAuthServiceGPT, ConsumerAuthService, GoogleAuthService],
+  providers: [MailingService, GoogleOAuthService, ConsumerAuthService, GoogleAuthService],
 })
 export class ConsumerModule {}

@@ -23,9 +23,9 @@ import _ from 'lodash';
 import { type ConsumerModel } from '@remoola/database-2';
 
 import { ConsumerAuthService } from './auth.service';
-import { ConsumerSignupGPT, GoogleOAuthGPT } from './dto';
+import { ConsumerSignup, GoogleOAuth } from './dto';
 import { GoogleAuthService } from './google-auth.service';
-import { GoogleOAuthServiceGPT } from './google-oauth.service';
+import { GoogleOAuthService } from './google-oauth.service';
 import { Identity, PublicEndpoint } from '../../common';
 import { CONSUMER } from '../../dtos';
 import { envs, JWT_ACCESS_TTL, JWT_REFRESH_TTL } from '../../envs';
@@ -42,7 +42,7 @@ export class ConsumerAuthController {
   constructor(
     private readonly service: ConsumerAuthService,
     private readonly googleAuthService: GoogleAuthService,
-    private readonly googleOAuthServiceGPT: GoogleOAuthServiceGPT,
+    private readonly googleOAuthServiceGPT: GoogleOAuthService,
   ) {}
 
   private setAuthCookies(res: express.Response, accessToken: string, refreshToken: string) {
@@ -120,7 +120,7 @@ export class ConsumerAuthController {
   @PublicEndpoint()
   @Post(`google-login-gpt`)
   @HttpCode(HttpStatus.OK)
-  async googleLoginGPT(@Body() body: GoogleOAuthGPT) {
+  async googleLoginGPT(@Body() body: GoogleOAuth) {
     // You can set cookies here if you integrate with AuthService
     const result = await this.googleOAuthServiceGPT.googleLoginGPT(removeNil(body));
     return result;
@@ -157,7 +157,7 @@ export class ConsumerAuthController {
   @PublicEndpoint()
   @Post(`signup`)
   @HttpCode(HttpStatus.CREATED)
-  async signup(@Body() body: ConsumerSignupGPT) {
+  async signup(@Body() body: ConsumerSignup) {
     const consumer = await this.service.signup(removeNil(body));
     return { consumer };
   }
