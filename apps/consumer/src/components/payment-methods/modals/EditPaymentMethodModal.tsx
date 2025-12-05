@@ -40,6 +40,7 @@ export function EditPaymentMethodModal({
 
     const res = await fetch(`/api/payment-methods/${paymentMethod!.id}`, {
       method: `PATCH`,
+      headers: { 'content-type': `application/json` },
       body: JSON.stringify({
         billingName,
         billingEmail,

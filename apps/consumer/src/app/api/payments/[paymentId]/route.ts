@@ -7,7 +7,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ payme
 
   const res = await fetch(url, {
     method: `PATCH`,
-    headers: { ...Object.fromEntries(req.headers), 'content-type': `application/json` },
+    headers: new Headers(req.headers),
     credentials: `include`,
     body: await req.clone().text(),
   });
@@ -26,7 +26,7 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ paym
 
   const res = await fetch(url, {
     method: `DELETE`,
-    headers: { ...Object.fromEntries(req.headers), 'content-type': `application/json` },
+    headers: new Headers(req.headers),
     credentials: `include`,
   });
 
@@ -44,7 +44,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ payment
 
   const res = await fetch(url, {
     method: `GET`,
-    headers: { ...Object.fromEntries(req.headers), 'content-type': `application/json` },
+    headers: new Headers(req.headers),
     credentials: `include`,
     cache: `no-store`,
   });

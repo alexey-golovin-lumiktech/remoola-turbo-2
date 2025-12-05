@@ -45,6 +45,7 @@ export function EditContactModal({
   async function update() {
     const res = await fetch(`/api/contacts/${contact!.id}`, {
       method: `PATCH`,
+      headers: { 'content-type': `application/json` },
       body: JSON.stringify({ name, email, address }),
       credentials: `include`,
     });

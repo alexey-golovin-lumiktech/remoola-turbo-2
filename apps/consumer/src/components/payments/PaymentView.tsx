@@ -11,6 +11,7 @@ export function PaymentView({ paymentRequestId }: { paymentRequestId: string }) 
       setLoading(true);
       const res = await fetch(`/api/payments/${paymentRequestId}`, {
         method: `GET`,
+        headers: { 'content-type': `application/json` },
         credentials: `include`,
         cache: `no-store`,
       });
@@ -31,6 +32,7 @@ export function PaymentView({ paymentRequestId }: { paymentRequestId: string }) 
   async function payNow() {
     const res = await fetch(`/api/stripe/${paymentRequestId}/stripe-session`, {
       method: `POST`,
+      headers: { 'content-type': `application/json` },
       credentials: `include`,
     });
 

@@ -12,6 +12,7 @@ export function ContractsTable() {
     const loadContracts = async () => {
       const response = await fetch(`/api/contracts`, {
         method: `GET`,
+        headers: { 'content-type': `application/json` },
         credentials: `include`,
         cache: `no-store`,
       });

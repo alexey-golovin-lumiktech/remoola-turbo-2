@@ -8,7 +8,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ paymen
 
   const res = await fetch(url, {
     method: `POST`,
-    headers: { ...Object.fromEntries(req.headers), 'content-type': `application/json` },
+    headers: new Headers(req.headers),
     credentials: `include`,
   });
 

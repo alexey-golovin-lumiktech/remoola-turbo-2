@@ -11,6 +11,7 @@ export function ContactDetailsView({ id }: { id: ConsumerContactDetails[`id`] })
   async function loadDetails(contactId: string) {
     const res = await fetch(`/api/contacts/${contactId}/details`, {
       method: `GET`,
+      headers: { 'content-type': `application/json` },
       credentials: `include`,
       cache: `no-store`,
     });

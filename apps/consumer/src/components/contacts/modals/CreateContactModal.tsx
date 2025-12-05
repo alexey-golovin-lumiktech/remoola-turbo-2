@@ -28,8 +28,8 @@ export function CreateContactModal({
   async function create() {
     const res = await fetch(`/api/contacts`, {
       method: `POST`,
-      body: JSON.stringify({ email, name, address }),
       headers: { 'content-type': `application/json` },
+      body: JSON.stringify({ email, name, address }),
       credentials: `include`,
     });
     if (res.ok) {

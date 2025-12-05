@@ -18,6 +18,7 @@ export function StartPaymentForm() {
     const res = await fetch(`/api/payments/start`, {
       method: `POST`,
       credentials: `include`,
+      headers: { 'content-type': `application/json` },
       body: JSON.stringify({
         email,
         amount,

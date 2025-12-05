@@ -17,6 +17,7 @@ export function ContactsPageClient() {
   async function refresh() {
     const response = await fetch(`/api/contacts`, {
       method: `GET`,
+      headers: { 'content-type': `application/json` },
       credentials: `include`,
       cache: `no-store`,
     });

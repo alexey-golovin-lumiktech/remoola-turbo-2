@@ -43,8 +43,10 @@ export function PaymentsList() {
       if (search) params.append(`search`, search);
 
       const res = await fetch(`/api/payments?${params}`, {
-        credentials: `include`,
+        method: `GET`,
         headers: { 'content-type': `application/json` },
+        credentials: `include`,
+        cache: `no-store`,
       });
 
       if (!res.ok) return;

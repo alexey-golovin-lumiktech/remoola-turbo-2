@@ -6,7 +6,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ conta
 
   const res = await fetch(url, {
     method: `PATCH`,
-    headers: { ...Object.fromEntries(req.headers), 'content-type': `application/json` },
+    headers: new Headers(req.headers),
     credentials: `include`,
     body: await req.clone().text(),
   });
@@ -25,7 +25,7 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ cont
 
   const res = await fetch(url, {
     method: `DELETE`,
-    headers: { ...Object.fromEntries(req.headers), 'content-type': `application/json` },
+    headers: new Headers(req.headers),
     credentials: `include`,
   });
 

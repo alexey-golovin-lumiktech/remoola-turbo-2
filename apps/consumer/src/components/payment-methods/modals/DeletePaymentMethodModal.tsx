@@ -15,6 +15,7 @@ export function DeletePaymentMethodModal({ open, onCloseAction, onDeletedAction,
   async function handleDelete() {
     const res = await fetch(`/api/payment-methods/${paymentMethod!.id}`, {
       method: `DELETE`,
+      headers: { 'content-type': `application/json` },
       credentials: `include`,
     });
 

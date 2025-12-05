@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
 
   const res = await fetch(url, {
     method: `GET`,
-    headers: { ...Object.fromEntries(req.headers), 'content-type': `application/json` },
+    headers: new Headers(req.headers),
     credentials: `include`,
     cache: `no-store`,
   });

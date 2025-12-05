@@ -46,6 +46,7 @@ function AddPaymentMethodModalInner({ onCloseAction: onClose, onCreatedAction: o
     // 1) Create setup intent on backend
     const siRes = await fetch(`/api/stripe/setup-intent`, {
       method: `POST`,
+      headers: { 'content-type': `application/json` },
       credentials: `include`,
     });
 
@@ -82,6 +83,7 @@ function AddPaymentMethodModalInner({ onCloseAction: onClose, onCreatedAction: o
     // 3) Retrieve metadata from backend
     const metaRes = await fetch(`/api/stripe/payment-method/metadata`, {
       method: `POST`,
+      headers: { 'content-type': `application/json` },
       body: JSON.stringify({ paymentMethodId }),
       credentials: `include`,
     });
@@ -106,6 +108,7 @@ function AddPaymentMethodModalInner({ onCloseAction: onClose, onCreatedAction: o
 
     const saveRes = await fetch(`/api/payment-methods`, {
       method: `POST`,
+      headers: { 'content-type': `application/json` },
       body: JSON.stringify(payload),
       credentials: `include`,
     });
@@ -137,6 +140,7 @@ function AddPaymentMethodModalInner({ onCloseAction: onClose, onCreatedAction: o
 
     const res = await fetch(`/api/payment-methods`, {
       method: `POST`,
+      headers: { 'content-type': `application/json` },
       body: JSON.stringify(payload),
       credentials: `include`,
     });

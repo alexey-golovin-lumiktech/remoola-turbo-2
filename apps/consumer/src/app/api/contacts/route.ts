@@ -5,7 +5,7 @@ export async function GET(req: NextRequest) {
 
   const res = await fetch(url, {
     method: `GET`,
-    headers: { ...Object.fromEntries(req.headers), 'content-type': `application/json` },
+    headers: new Headers(req.headers),
     credentials: `include`,
     cache: `no-store`,
   });
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
 
   const res = await fetch(url, {
     method: `POST`,
-    headers: { ...Object.fromEntries(req.headers), 'content-type': `application/json` },
+    headers: new Headers(req.headers),
     credentials: `include`,
     body: await req.clone().text(),
   });

@@ -15,6 +15,7 @@ export function PaymentMethodsPageClient() {
   async function refresh() {
     const res = await fetch(`/api/payment-methods`, {
       method: `GET`,
+      headers: { 'content-type': `application/json` },
       credentials: `include`,
       cache: `no-store`,
     });

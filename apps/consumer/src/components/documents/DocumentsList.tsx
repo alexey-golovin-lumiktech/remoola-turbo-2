@@ -31,6 +31,7 @@ export function DocumentsList() {
 
     const res = await fetch(`/api/documents?${params}`, {
       method: `GET`,
+      headers: { 'content-type': `application/json` },
       credentials: `include`,
       cache: `no-store`,
     });
@@ -95,8 +96,8 @@ export function DocumentsList() {
 
     const res = await fetch(`/api/documents/bulk-delete`, {
       method: `POST`,
-      credentials: `include`,
       headers: { 'content-type': `application/json` },
+      credentials: `include`,
       body: JSON.stringify({ ids: Array.from(selected) }),
     });
 
@@ -116,8 +117,8 @@ export function DocumentsList() {
 
     const res = await fetch(`/api/documents/attach-to-payment`, {
       method: `POST`,
-      credentials: `include`,
       headers: { 'content-type': `application/json` },
+      credentials: `include`,
       body: JSON.stringify({
         paymentRequestId: attachPaymentId.trim(),
         resourceIds: Array.from(selected),
@@ -141,8 +142,8 @@ export function DocumentsList() {
 
     const res = await fetch(`/api/documents/${docId}/tags`, {
       method: `POST`,
-      credentials: `include`,
       headers: { 'content-type': `application/json` },
+      credentials: `include`,
       body: JSON.stringify({ tags }),
     });
 

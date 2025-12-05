@@ -34,7 +34,9 @@ export default function LoginForm() {
 
     const meRequest = await fetch(`/api/me`, {
       method: `GET`,
+      headers: { 'content-type': `application/json` },
       credentials: `include`,
+      cache: `no-store`,
     });
 
     if (!meRequest.ok) {
