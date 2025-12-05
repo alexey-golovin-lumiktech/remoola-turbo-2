@@ -128,14 +128,34 @@ export class ConsumerDocumentsService {
       },
     });
 
+    await this.prisma.resourceTagModel.deleteMany({
+      where: {
+        resourceId: { in: ids },
+      },
+    });
+
+    await this.prisma.paymentRequestAttachmentModel.deleteMany({
+      where: {
+        resourceId: { in: ids },
+      },
+    });
+
     return { success: true };
   }
 
   async attachToPayment(consumerId: string, paymentRequestId: string, resourceIds: string[]) {
     const payment = await this.prisma.paymentRequestModel.findFirst({
       where: {
-        id: paymentRequestId,
-        payerId: consumerId,
+        OR: [
+          {
+            id: paymentRequestId,
+            payerId: consumerId,
+          },
+          {
+            id: paymentRequestId,
+            requesterId: consumerId,
+          },
+        ],
       },
     });
 
