@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
     method: `GET`,
     headers: { ...Object.fromEntries(req.headers), 'content-type': `application/json` },
     credentials: `include`,
-    cache: `no-cache`,
+    cache: `no-store`,
   });
 
   const cookie = res.headers.get(`set-cookie`);

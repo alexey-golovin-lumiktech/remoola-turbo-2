@@ -19,7 +19,7 @@ export function DashboardDataView() {
     const response = await fetch(`/api/dashboard`, {
       method: `GET`,
       credentials: `include`,
-      cache: `no-cache`,
+      cache: `no-store`,
     });
     if (!response.ok) throw new Error(`Fail load dashboard data`);
     const json = await response.json();

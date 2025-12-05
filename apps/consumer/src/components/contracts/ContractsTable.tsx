@@ -13,7 +13,7 @@ export function ContractsTable() {
       const response = await fetch(`/api/contracts`, {
         method: `GET`,
         credentials: `include`,
-        cache: `no-cache`,
+        cache: `no-store`,
       });
       if (!response.ok) throw new Error(`Fail to load contracts`);
 

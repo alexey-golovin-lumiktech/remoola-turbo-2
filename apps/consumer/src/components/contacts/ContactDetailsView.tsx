@@ -12,7 +12,7 @@ export function ContactDetailsView({ id }: { id: ConsumerContactDetails[`id`] })
     const res = await fetch(`/api/contacts/${contactId}/details`, {
       method: `GET`,
       credentials: `include`,
-      cache: `no-cache`,
+      cache: `no-store`,
     });
     if (!res.ok) throw new Error(`Failed to load contact`);
     const json = await res.json();

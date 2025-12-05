@@ -30,11 +30,14 @@ export function DocumentsList() {
     if (kind) params.append(`kind`, kind);
 
     const res = await fetch(`/api/documents?${params}`, {
+      method: `GET`,
       credentials: `include`,
-      headers: { 'content-type': `application/json` },
+      cache: `no-store`,
     });
 
     if (!res.ok) return;
+
+    console.log(`await res.json()`, await res.clone().json());
 
     setDocs(await res.json());
     setSelected(new Set());

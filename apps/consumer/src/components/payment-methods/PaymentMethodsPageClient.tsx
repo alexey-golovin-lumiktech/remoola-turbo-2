@@ -16,7 +16,7 @@ export function PaymentMethodsPageClient() {
     const res = await fetch(`/api/payment-methods`, {
       method: `GET`,
       credentials: `include`,
-      cache: `no-cache`,
+      cache: `no-store`,
     });
     const data = await res.json();
     setPayments(data.items || []);

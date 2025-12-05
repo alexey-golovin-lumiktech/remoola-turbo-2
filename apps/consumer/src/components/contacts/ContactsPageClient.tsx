@@ -18,7 +18,7 @@ export function ContactsPageClient() {
     const response = await fetch(`/api/contacts`, {
       method: `GET`,
       credentials: `include`,
-      cache: `no-cache`,
+      cache: `no-store`,
     });
     if (!response.ok) throw new Error(`Something went wrong retrieve contacts`);
     const json = await response.json();

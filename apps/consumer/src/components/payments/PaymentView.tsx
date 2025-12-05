@@ -12,7 +12,7 @@ export function PaymentView({ paymentRequestId }: { paymentRequestId: string }) 
       const res = await fetch(`/api/payments/${paymentRequestId}`, {
         method: `GET`,
         credentials: `include`,
-        cache: `no-cache`,
+        cache: `no-store`,
       });
 
       if (!res.ok) {
