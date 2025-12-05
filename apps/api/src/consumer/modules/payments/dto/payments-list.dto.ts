@@ -25,7 +25,7 @@ export class Counterparty {
   email: string;
 }
 
-export class PaymentListItemDto {
+export class PaymentListItem {
   @Expose()
   @ApiProperty()
   id: string;
@@ -63,10 +63,10 @@ export class PaymentListItemDto {
   latestTransaction?: LatestTransaction;
 }
 
-export class PaymentsListDto {
+export class PaymentsList {
   @Expose()
-  @ApiProperty({ type: PaymentListItemDto, isArray: true })
-  items: PaymentListItemDto[];
+  @ApiProperty({ type: PaymentListItem, isArray: true })
+  items: PaymentListItem[];
 
   @Expose()
   @ApiProperty()

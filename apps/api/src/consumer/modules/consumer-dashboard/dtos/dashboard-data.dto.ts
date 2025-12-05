@@ -1,10 +1,10 @@
-export class DashboardSummaryDto {
+export class DashboardSummary {
   balanceCents: number;
   activeRequests: number;
   lastPaymentAt: Date | string | null;
 }
 
-export class PendingRequestDto {
+export class PendingRequest {
   id: string;
   counterpartyName: string;
   amount: number;
@@ -13,7 +13,7 @@ export class PendingRequestDto {
   lastActivityAt: Date | string | null;
 }
 
-export class ActivityItemDto {
+export class ActivityItem {
   id: string;
   label: string;
   description?: string;
@@ -21,22 +21,22 @@ export class ActivityItemDto {
   kind: string;
 }
 
-export class ComplianceTaskDto {
+export class ComplianceTask {
   id: string;
   label: string;
   completed: boolean;
 }
 
-export class QuickDocDto {
+export class QuickDoc {
   id: string;
   name: string;
   createdAt: string;
 }
 
-export class DashboardDataDto {
-  summary: DashboardSummaryDto;
-  pendingRequests: PendingRequestDto[];
-  activity: ActivityItemDto[];
-  tasks: ComplianceTaskDto[];
-  quickDocs: QuickDocDto[];
+export class DashboardData {
+  summary: DashboardSummary;
+  pendingRequests: PendingRequest[];
+  activity: ActivityItem[];
+  tasks: ComplianceTask[];
+  quickDocs: QuickDoc[];
 }

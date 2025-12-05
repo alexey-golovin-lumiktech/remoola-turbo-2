@@ -4,7 +4,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { type ConsumerModel } from '@remoola/database-2';
 
 import { ConsumerPaymentsService } from './consumer-payments.service';
-import { StartPaymentDto } from './dto/start-payment.dto';
+import { StartPayment } from './dto/start-payment.dto';
 import { JwtAuthGuard } from '../../../auth/jwt.guard';
 import { Identity } from '../../../common';
 
@@ -34,8 +34,8 @@ export class ConsumerPaymentsController {
   }
 
   @Post(`start`)
-  async startPayment(@Identity() identity: ConsumerModel, @Body() dto: StartPaymentDto) {
-    return this.service.startPayment(identity.id, dto);
+  async startPayment(@Identity() identity: ConsumerModel, @Body() body: StartPayment) {
+    return this.service.startPayment(identity.id, body);
   }
 
   @Get(`:id`)

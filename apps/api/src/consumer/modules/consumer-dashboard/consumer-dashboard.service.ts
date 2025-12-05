@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 
 import {
-  DashboardDataDto,
-  ActivityItemDto,
-  ComplianceTaskDto,
-  PendingRequestDto,
-  QuickDocDto,
+  DashboardData,
+  ActivityItem,
+  ComplianceTask,
+  PendingRequest,
+  QuickDoc,
 } from './dtos/dashboard-data.dto';
 import { PrismaService } from '../../../shared/prisma.service';
 
@@ -14,7 +14,7 @@ export class ConsumerDashboardService {
   constructor(private prisma: PrismaService) {}
 
   /** Main entry point */
-  async getDashboardData(consumerId: string): Promise<DashboardDataDto> {
+  async getDashboardData(consumerId: string): Promise<DashboardData> {
     const [summary, pendingRequests, activity, tasks, quickDocs] = await Promise.all([
       this.buildSummary(consumerId),
       this.buildPendingRequests(consumerId),
@@ -66,7 +66,7 @@ export class ConsumerDashboardService {
     };
   }
 
-  private async buildPendingRequests(consumerId: string): Promise<PendingRequestDto[]> {
+  private async buildPendingRequests(consumerId: string): Promise<PendingRequest[]> {
     const requests = await this.prisma.paymentRequestModel.findMany({
       where: {
         payerId: consumerId,
@@ -89,7 +89,7 @@ export class ConsumerDashboardService {
     }));
   }
 
-  private async buildActivity(consumerId: string): Promise<ActivityItemDto[]> {
+  private async buildActivity(consumerId: string): Promise<ActivityItem[]> {
     const consumer = await this.prisma.consumerModel.findUnique({
       where: { id: consumerId },
       include: {
@@ -103,7 +103,7 @@ export class ConsumerDashboardService {
       },
     });
 
-    const items: ActivityItemDto[] = [];
+    const items: ActivityItem[] = [];
 
     // KYC
     if (consumer.personalDetails) {
@@ -157,7 +157,7 @@ export class ConsumerDashboardService {
     return items.sort((a, b) => new Date(b.createdAt).valueOf() - new Date(a.createdAt).valueOf());
   }
 
-  private async buildTasks(consumerId: string): Promise<ComplianceTaskDto[]> {
+  private async buildTasks(consumerId: string): Promise<ComplianceTask[]> {
     const consumer = await this.prisma.consumerModel.findUnique({
       where: { id: consumerId },
       include: {
@@ -192,7 +192,7 @@ export class ConsumerDashboardService {
     ];
   }
 
-  private async buildQuickDocs(consumerId: string): Promise<QuickDocDto[]> {
+  private async buildQuickDocs(consumerId: string): Promise<QuickDoc[]> {
     const items = await this.prisma.consumerResourceModel.findMany({
       where: { consumerId },
       include: {

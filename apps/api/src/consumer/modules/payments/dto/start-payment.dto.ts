@@ -4,7 +4,7 @@ import { IsEmail, IsEnum, IsNumberString, IsOptional, IsString } from 'class-val
 
 import { $Enums } from '@remoola/database-2';
 
-export class StartPaymentDto {
+export class StartPayment {
   @Expose()
   @ApiProperty()
   @IsEmail()

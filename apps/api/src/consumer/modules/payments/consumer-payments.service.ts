@@ -2,7 +2,7 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 
 import { $Enums } from '@remoola/database-2';
 
-import { StartPaymentDto } from './dto/start-payment.dto';
+import { StartPayment } from './dto/start-payment.dto';
 import { PrismaService } from '../../../shared/prisma.service';
 @Injectable()
 export class ConsumerPaymentsService {
@@ -157,9 +157,9 @@ export class ConsumerPaymentsService {
     return response;
   }
 
-  async startPayment(consumerId: string, dto: StartPaymentDto) {
+  async startPayment(consumerId: string, body: StartPayment) {
     const recipient = await this.prisma.consumerModel.findUnique({
-      where: { email: dto.email },
+      where: { email: body.email },
     });
 
     if (!recipient) {
@@ -170,13 +170,13 @@ export class ConsumerPaymentsService {
       throw new BadRequestException(`You cannot send payment to yourself.`);
     }
 
-    const amount = Number(dto.amount);
+    const amount = Number(body.amount);
     if (isNaN(amount) || amount <= 0) {
       throw new BadRequestException(`Invalid amount`);
     }
 
     const transactionType: $Enums.TransactionType =
-      dto.method === `CREDIT_CARD` ? $Enums.TransactionType.CREDIT_CARD : $Enums.TransactionType.BANK_TRANSFER;
+      body.method === `CREDIT_CARD` ? $Enums.TransactionType.CREDIT_CARD : $Enums.TransactionType.BANK_TRANSFER;
 
     // 1. Create Payment Request
     const paymentRequest = await this.prisma.paymentRequestModel.create({
@@ -185,7 +185,7 @@ export class ConsumerPaymentsService {
         requesterId: recipient.id,
         currencyCode: $Enums.CurrencyCode.USD,
         amount,
-        description: dto.description ?? null,
+        description: body.description ?? null,
         type: transactionType,
         status: $Enums.TransactionStatus.PENDING,
         createdBy: consumerId,

@@ -119,10 +119,10 @@ export class ConsumerStripeService {
   }
 
   // 2) Confirm SetupIntent -> persist card in DB
-  async confirmStripeSetupIntent(consumerId: string, dto: ConfirmStripeSetupIntent) {
+  async confirmStripeSetupIntent(consumerId: string, body: ConfirmStripeSetupIntent) {
     const { consumer } = await this.ensureStripeCustomer(consumerId);
 
-    const setupIntent = await this.stripe.setupIntents.retrieve(dto.setupIntentId, { expand: [`payment_method`] });
+    const setupIntent = await this.stripe.setupIntents.retrieve(body.setupIntentId, { expand: [`payment_method`] });
 
     if (setupIntent.status !== `succeeded`) {
       throw new BadRequestException(`SetupIntent not succeeded. Current status: ${setupIntent.status}`);

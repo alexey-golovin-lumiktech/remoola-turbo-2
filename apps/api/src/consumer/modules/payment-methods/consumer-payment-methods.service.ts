@@ -45,12 +45,12 @@ export class ConsumerPaymentMethodsService {
   }
 
   // 3) Manual bank/card create
-  async createManual(consumerId: string, dto: CreateManualPaymentMethod) {
+  async createManual(consumerId: string, body: CreateManualPaymentMethod) {
     const billingDetails = await this.prisma.billingDetailsModel.create({
       data: {
-        email: dto.billingEmail ?? null,
-        name: dto.billingName ?? null,
-        phone: dto.billingPhone ?? null,
+        email: body.billingEmail ?? null,
+        name: body.billingName ?? null,
+        phone: body.billingPhone ?? null,
       },
     });
 
@@ -60,13 +60,13 @@ export class ConsumerPaymentMethodsService {
 
     return this.prisma.paymentMethodModel.create({
       data: {
-        type: dto.type,
+        type: body.type,
         defaultSelected: hasDefault === 0,
-        brand: dto.brand,
-        last4: dto.last4.slice(-4),
+        brand: body.brand,
+        last4: body.last4.slice(-4),
         serviceFee: 0,
-        expMonth: dto.expMonth ?? null,
-        expYear: dto.expYear ?? null,
+        expMonth: body.expMonth ?? null,
+        expYear: body.expYear ?? null,
         billingDetailsId: billingDetails.id,
         consumerId,
       },
@@ -74,7 +74,7 @@ export class ConsumerPaymentMethodsService {
   }
 
   // 4) Update (e.g. defaultSelected, billing details)
-  async update(consumerId: string, id: string, dto: UpdatePaymentMethod) {
+  async update(consumerId: string, id: string, body: UpdatePaymentMethod) {
     const pm = await this.prisma.paymentMethodModel.findFirst({
       where: { id, consumerId, deletedAt: null },
       include: { billingDetails: true },
@@ -82,7 +82,7 @@ export class ConsumerPaymentMethodsService {
 
     if (!pm) throw new BadRequestException(`Payment method not found`);
 
-    if (dto.defaultSelected) {
+    if (body.defaultSelected) {
       // unset all others, set this one
       await this.prisma.paymentMethodModel.updateMany({
         where: { consumerId, deletedAt: null },
@@ -90,13 +90,13 @@ export class ConsumerPaymentMethodsService {
       });
     }
 
-    if (dto.billingName || dto.billingEmail || dto.billingPhone) {
+    if (body.billingName || body.billingEmail || body.billingPhone) {
       if (!pm.billingDetailsId) {
         const bd = await this.prisma.billingDetailsModel.create({
           data: {
-            name: dto.billingName ?? null,
-            email: dto.billingEmail ?? null,
-            phone: dto.billingPhone ?? null,
+            name: body.billingName ?? null,
+            email: body.billingEmail ?? null,
+            phone: body.billingPhone ?? null,
           },
         });
 
@@ -108,9 +108,9 @@ export class ConsumerPaymentMethodsService {
         await this.prisma.billingDetailsModel.update({
           where: { id: pm.billingDetailsId },
           data: {
-            name: dto.billingName ?? undefined,
-            email: dto.billingEmail ?? undefined,
-            phone: dto.billingPhone ?? undefined,
+            name: body.billingName ?? undefined,
+            email: body.billingEmail ?? undefined,
+            phone: body.billingPhone ?? undefined,
           },
         });
       }
@@ -119,7 +119,7 @@ export class ConsumerPaymentMethodsService {
     return this.prisma.paymentMethodModel.update({
       where: { id: pm.id },
       data: {
-        defaultSelected: dto.defaultSelected !== undefined ? dto.defaultSelected : pm.defaultSelected,
+        defaultSelected: body.defaultSelected !== undefined ? body.defaultSelected : pm.defaultSelected,
       },
     });
   }

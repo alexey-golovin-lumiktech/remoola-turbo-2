@@ -17,7 +17,7 @@ import express from 'express';
 import { type ConsumerModel } from '@remoola/database-2';
 
 import { ConsumerDocumentsService } from './consumer-documents.service';
-import { AttachDocumentsDto, BulkDeleteDocumentsDto, SetTagsDto } from './dto/document.dto';
+import { AttachDocuments, BulkDeleteDocuments, SetTags } from './dto/document.dto';
 import { JwtAuthGuard } from '../../../auth/jwt.guard';
 import { Identity } from '../../../common';
 
@@ -43,17 +43,17 @@ export class ConsumerDocumentsController {
   }
 
   @Post(`bulk-delete`)
-  async bulkDelete(@Identity() identity: ConsumerModel, @Body() dto: BulkDeleteDocumentsDto) {
-    return this.documents.bulkDeleteDocuments(identity.id, dto.ids);
+  async bulkDelete(@Identity() identity: ConsumerModel, @Body() body: BulkDeleteDocuments) {
+    return this.documents.bulkDeleteDocuments(identity.id, body.ids);
   }
 
   @Post(`attach-to-payment`)
-  async attachToPayment(@Identity() identity: ConsumerModel, @Body() dto: AttachDocumentsDto) {
-    return this.documents.attachToPayment(identity.id, dto.paymentRequestId, dto.resourceIds);
+  async attachToPayment(@Identity() identity: ConsumerModel, @Body() body: AttachDocuments) {
+    return this.documents.attachToPayment(identity.id, body.paymentRequestId, body.resourceIds);
   }
 
   @Post(`:id/tags`)
-  async setTags(@Identity() identity: ConsumerModel, @Body() dto: SetTagsDto, @Param(`id`) resourceId: string) {
-    return this.documents.setTags(identity.id, resourceId, dto.tags);
+  async setTags(@Identity() identity: ConsumerModel, @Body() body: SetTags, @Param(`id`) resourceId: string) {
+    return this.documents.setTags(identity.id, resourceId, body.tags);
   }
 }

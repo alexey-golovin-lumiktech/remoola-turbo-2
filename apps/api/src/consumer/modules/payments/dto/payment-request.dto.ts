@@ -1,4 +1,4 @@
-export class PaymentRequestDetailsDto {
+export class PaymentRequestDetails {
   id: string;
   amount: number;
   currencyCode: string;

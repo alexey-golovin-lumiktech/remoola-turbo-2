@@ -65,24 +65,24 @@ export class ConsumerContactsService {
     }));
   }
 
-  async create(consumerId: string, dto: ConsumerCreateContact) {
+  async create(consumerId: string, body: ConsumerCreateContact) {
     return this.prisma.contactModel.create({
       data: {
-        email: dto.email,
-        name: dto.name,
-        address: JSON.parse(JSON.stringify(dto.address)),
+        email: body.email,
+        name: body.name,
+        address: JSON.parse(JSON.stringify(body.address)),
         consumer: { connect: { id: consumerId } },
       },
     });
   }
 
-  async update(id: string, consumerId: string, dto: ConsumerUpdateContact) {
+  async update(id: string, consumerId: string, body: ConsumerUpdateContact) {
     return this.prisma.contactModel.update({
       where: { id, consumerId },
       data: {
-        email: dto.email,
-        name: dto.name,
-        address: JSON.parse(JSON.stringify(dto.address)),
+        email: body.email,
+        name: body.name,
+        address: JSON.parse(JSON.stringify(body.address)),
       },
     });
   }

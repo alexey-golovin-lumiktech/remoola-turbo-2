@@ -1,4 +1,4 @@
-export class ConsumerDocumentDto {
+export class ConsumerDocument {
   id: string;
   name: string;
   size: number;
@@ -9,15 +9,15 @@ export class ConsumerDocumentDto {
   tags: string[];
 }
 
-export class BulkDeleteDocumentsDto {
+export class BulkDeleteDocuments {
   ids: string[];
 }
 
-export class AttachDocumentsDto {
+export class AttachDocuments {
   paymentRequestId: string;
   resourceIds: string[];
 }
 
-export class SetTagsDto {
+export class SetTags {
   tags: string[];
 }

@@ -35,18 +35,18 @@ export class ConsumerPaymentMethodsController {
   }
 
   @Post(`stripe/confirm`)
-  async confirmStripeSetupIntent(@Identity() identity: ConsumerModel, @Body() dto: ConfirmStripeSetupIntent) {
-    return this.stripeService.confirmStripeSetupIntent(identity.id, dto);
+  async confirmStripeSetupIntent(@Identity() identity: ConsumerModel, @Body() body: ConfirmStripeSetupIntent) {
+    return this.stripeService.confirmStripeSetupIntent(identity.id, body);
   }
 
   @Post()
-  async createManual(@Identity() identity: ConsumerModel, @Body() dto: CreateManualPaymentMethod) {
-    return this.paymentService.createManual(identity.id, dto);
+  async createManual(@Identity() identity: ConsumerModel, @Body() body: CreateManualPaymentMethod) {
+    return this.paymentService.createManual(identity.id, body);
   }
 
   @Patch(`:id`)
-  async update(@Identity() identity: ConsumerModel, @Param(`id`) id: string, @Body() dto: UpdatePaymentMethod) {
-    return this.paymentService.update(identity.id, id, dto);
+  async update(@Identity() identity: ConsumerModel, @Param(`id`) id: string, @Body() body: UpdatePaymentMethod) {
+    return this.paymentService.update(identity.id, id, body);
   }
 
   @Delete(`:id`)

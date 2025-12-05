@@ -21,13 +21,13 @@ export class ConsumerContactsController {
   }
 
   @Post()
-  async create(@Identity() identity: ConsumerModel, @Body() dto: ConsumerCreateContact) {
-    return this.service.create(identity.id, dto);
+  async create(@Identity() identity: ConsumerModel, @Body() body: ConsumerCreateContact) {
+    return this.service.create(identity.id, body);
   }
 
   @Patch(`:id`)
-  async update(@Identity() identity: ConsumerModel, @Param(`id`) id: string, @Body() dto: ConsumerUpdateContact) {
-    return this.service.update(id, identity.id, dto);
+  async update(@Identity() identity: ConsumerModel, @Param(`id`) id: string, @Body() body: ConsumerUpdateContact) {
+    return this.service.update(id, identity.id, body);
   }
 
   @Delete(`:id`)
