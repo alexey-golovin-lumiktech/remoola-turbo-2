@@ -26,6 +26,7 @@ export class ConsumerPaymentMethodsService {
           id: m.billingDetails.id,
           email: m.billingDetails.email,
           name: m.billingDetails.name,
+          phone: m.billingDetails.phone,
         };
       }
 
