@@ -98,7 +98,17 @@ export function SignupFormProvider({ children }: { children: ReactNode }) {
   };
 
   const updateAddress = (patch: Partial<IAddressDetails>) => {
-    setState((prev) => ({ ...prev, addressDetails: { ...prev.addressDetails, ...patch } }));
+    setState((prev) => ({
+      ...prev,
+      addressDetails: {
+        ...prev.addressDetails,
+        postalCode: patch.postalCode?.trim() || null,
+        country: patch.country?.trim() || null,
+        state: patch.state?.trim() || null,
+        city: patch.city?.trim() || null,
+        street: patch.street?.trim() || null,
+      },
+    }));
   };
 
   const value = useMemo<SignupFormContextValue>(

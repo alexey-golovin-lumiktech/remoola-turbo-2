@@ -54,7 +54,7 @@ export function PendingWithdrawalsCard() {
           {data.items.map((tx) => (
             <li key={tx.id} className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2">
               <div>
-                <div className="font-medium">−${Number(tx.originAmount).toFixed(2)}</div>
+                <div className="font-medium">-${Number(tx.originAmount).toFixed(2)}</div>
                 <div className="text-[11px] text-gray-500">Code {tx.code}</div>
               </div>
               <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-[11px] font-medium text-yellow-800">

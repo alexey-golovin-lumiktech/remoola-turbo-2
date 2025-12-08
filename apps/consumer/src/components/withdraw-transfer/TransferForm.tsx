@@ -23,7 +23,7 @@ export function TransferForm() {
       return;
     }
     if (!recipient.trim()) {
-      setErr(`Please enter recipient email or phone.`);
+      setErr(`Please enter recipient email.`);
       return;
     }
 
@@ -55,7 +55,7 @@ export function TransferForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-4 rounded-xl border bg-white p-6 shadow-sm">
       <h2 className="text-lg font-semibold">Transfer to another person</h2>
-      <p className="text-sm text-gray-600">Send money to another Remoola user using their email or phone number.</p>
+      <p className="text-sm text-gray-600">Send money to another Remoola user using their email number.</p>
 
       <div>
         <label className="mb-1 block text-sm font-medium">Amount</label>
@@ -74,7 +74,7 @@ export function TransferForm() {
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium">Recipient (email or phone)</label>
+        <label className="mb-1 block text-sm font-medium">Recipient (email)</label>
         <input
           value={recipient}
           onChange={(e) => setRecipient(e.target.value)}

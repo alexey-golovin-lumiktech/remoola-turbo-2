@@ -28,7 +28,7 @@ export function AddressDetailsStep() {
         <input
           type="text"
           value={addressDetails.postalCode || ``}
-          onChange={(e) => updateAddress({ postalCode: e.target.value.trim() || null })}
+          onChange={(e) => updateAddress({ postalCode: e.target.value || null })}
           className="w-full rounded-md border px-3 py-2 text-sm"
         />
       </div>
@@ -38,7 +38,7 @@ export function AddressDetailsStep() {
         <input
           type="text"
           value={addressDetails.country || ``}
-          onChange={(e) => updateAddress({ country: e.target.value.trim() || null })}
+          onChange={(e) => updateAddress({ country: e.target.value || null })}
           className="w-full rounded-md border px-3 py-2 text-sm"
         />
       </div>
@@ -48,7 +48,7 @@ export function AddressDetailsStep() {
         <input
           type="text"
           value={addressDetails.state || ``}
-          onChange={(e) => updateAddress({ state: e.target.value.trim() || null })}
+          onChange={(e) => updateAddress({ state: e.target.value || null })}
           className="w-full rounded-md border px-3 py-2 text-sm"
         />
       </div>
@@ -58,7 +58,7 @@ export function AddressDetailsStep() {
         <input
           type="text"
           value={addressDetails.city || ``}
-          onChange={(e) => updateAddress({ city: e.target.value.trim() || null })}
+          onChange={(e) => updateAddress({ city: e.target.value || null })}
           className="w-full rounded-md border px-3 py-2 text-sm"
         />
       </div>
@@ -68,7 +68,7 @@ export function AddressDetailsStep() {
         <input
           type="text"
           value={addressDetails.street || ``}
-          onChange={(e) => updateAddress({ street: e.target.value.trim() || null })}
+          onChange={(e) => updateAddress({ street: e.target.value || null })}
           className="w-full rounded-md border px-3 py-2 text-sm"
         />
       </div>

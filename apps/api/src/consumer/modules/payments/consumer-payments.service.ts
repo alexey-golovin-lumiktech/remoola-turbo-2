@@ -215,21 +215,21 @@ export class ConsumerPaymentsService {
   }
 
   async getBalances(consumerId: string) {
-    const txs = await this.prisma.transactionModel.findMany({
+    const transactions = await this.prisma.transactionModel.findMany({
       where: { consumerId },
     });
 
     const map: Record<string, number> = {};
 
-    for (const tx of txs) {
-      const amount = Number(tx.originAmount);
-      const cur = tx.currencyCode;
+    for (const transaction of transactions) {
+      const amount = Number(transaction.originAmount);
+      const cur = transaction.currencyCode;
 
       if (!map[cur]) map[cur] = 0;
 
-      const isIncome = tx.actionType === `INCOME` && [`COMPLETED`, `WAITING`].includes(tx.status);
+      const isIncome = transaction.actionType === `INCOME` && [`COMPLETED`, `WAITING`].includes(transaction.status);
 
-      const isOutcome = tx.actionType === `OUTCOME` && [`COMPLETED`, `PENDING`].includes(tx.status);
+      const isOutcome = transaction.actionType === `OUTCOME` && [`COMPLETED`, `PENDING`].includes(transaction.status);
 
       if (isIncome) map[cur] += amount;
       if (isOutcome) map[cur] -= amount;

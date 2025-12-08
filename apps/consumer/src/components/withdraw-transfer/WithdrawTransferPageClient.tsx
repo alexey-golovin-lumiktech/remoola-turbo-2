@@ -5,13 +5,10 @@ import { useEffect, useState } from 'react';
 import { TransferForm } from './TransferForm';
 import { WithdrawForm } from './WithdrawForm';
 
-type BalanceResponse = {
-  available: number;
-  currencyCode: string;
-};
+type BalanceMap = Record<string, number>;
 
 export function WithdrawTransferPageClient() {
-  const [balance, setBalance] = useState<BalanceResponse | null>(null);
+  const [balances, setBalances] = useState<BalanceMap>({});
 
   useEffect(() => {
     const loadBalance = async () => {
@@ -19,25 +16,28 @@ export function WithdrawTransferPageClient() {
         credentials: `include`,
       });
       if (!res.ok) return;
-      const json = (await res.json()) as BalanceResponse;
-      setBalance(json);
+
+      const json = (await res.json()) as BalanceMap;
+      setBalances(json);
     };
 
     loadBalance();
   }, []);
 
+  const entries = Object.entries(balances);
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
-      <h1 className="mb-2 text-2xl font-semibold">Withdraw &amp; Transfer</h1>
+      <h1 className="mb-2 text-2xl font-semibold">Withdraw And Transfer</h1>
 
-      {balance && (
-        <p className="mb-4 text-sm text-gray-700">
-          Available balance:{` `}
-          <span className="font-semibold">
-            {balance.currencyCode} {balance.available.toFixed(2)}
-          </span>
-        </p>
-      )}
+      {entries.length > 0 &&
+        entries.map(([currency, amount]) => (
+          <p key={currency} className="mb-2 text-sm text-gray-700">
+            Available balance:{` `}
+            <span className="font-semibold">
+              {currency} {amount.toFixed(2)}
+            </span>
+          </p>
+        ))}
 
       <div className="space-y-8">
         <WithdrawForm />

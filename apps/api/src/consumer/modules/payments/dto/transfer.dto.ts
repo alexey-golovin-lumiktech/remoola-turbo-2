@@ -12,7 +12,7 @@ export class TransferDto {
   @Expose()
   @ApiProperty()
   @IsString()
-  recipient!: string; // email or phone
+  recipient!: string; // email
 
   @Expose()
   @ApiPropertyOptional()
