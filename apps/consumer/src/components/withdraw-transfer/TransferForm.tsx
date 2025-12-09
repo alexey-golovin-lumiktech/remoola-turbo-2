@@ -55,7 +55,7 @@ export function TransferForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-4 rounded-xl border bg-white p-6 shadow-sm">
       <h2 className="text-lg font-semibold">Transfer to another person</h2>
-      <p className="text-sm text-gray-600">Send money to another Remoola user using their email number.</p>
+      <p className="text-sm text-gray-600">Send money to another user using their email number.</p>
 
       <div>
         <label className="mb-1 block text-sm font-medium">Amount</label>
@@ -79,7 +79,7 @@ export function TransferForm() {
           value={recipient}
           onChange={(e) => setRecipient(e.target.value)}
           className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="example@email.com or +1 234 567 890"
+          placeholder="example@email.com"
         />
       </div>
 

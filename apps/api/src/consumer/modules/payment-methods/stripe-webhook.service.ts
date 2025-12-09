@@ -1,6 +1,5 @@
 import { Injectable, type RawBodyRequest } from '@nestjs/common';
 import express from 'express';
-import { InjectStripe } from 'nestjs-stripe';
 import Stripe from 'stripe';
 
 import { $Enums, type ConsumerModel } from '@remoola/database-2';
@@ -11,10 +10,11 @@ import { PrismaService } from '../../../shared/prisma.service';
 
 @Injectable()
 export class StripeWebhookService {
-  constructor(
-    private prisma: PrismaService,
-    @InjectStripe() private stripe: Stripe,
-  ) {}
+  private stripe: Stripe;
+
+  constructor(private prisma: PrismaService) {
+    this.stripe = new Stripe(envs.STRIPE_SECRET_KEY, { apiVersion: `2025-11-17.clover` });
+  }
 
   async startVerifyMeStripeSession(identity: ConsumerModel) {
     const session = await this.stripe.identity.verificationSessions.create({

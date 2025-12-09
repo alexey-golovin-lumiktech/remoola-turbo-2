@@ -1,18 +1,19 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { InjectStripe } from 'nestjs-stripe';
 import Stripe from 'stripe';
 
 import { $Enums } from '@remoola/database-2';
 
 import { ConfirmStripeSetupIntent } from './dto/payment-method.dto';
+import { envs } from '../../../envs';
 import { PrismaService } from '../../../shared/prisma.service';
 
 @Injectable()
 export class ConsumerStripeService {
-  constructor(
-    private prisma: PrismaService,
-    @InjectStripe() private stripe: Stripe,
-  ) {}
+  private stripe: Stripe;
+
+  constructor(private prisma: PrismaService) {
+    this.stripe = new Stripe(envs.STRIPE_SECRET_KEY, { apiVersion: `2025-11-17.clover` });
+  }
 
   async createStripeSession(consumerId: string, paymentRequestId: string, frontendBaseUrl: string) {
     try {

@@ -46,9 +46,7 @@ export default function Sidebar() {
           Documents
         </SidebarLink>
       </nav>
-      <div className="absolute bottom-4 left-4 right-4 text-xs text-white/70">
-        © Remoola {new Date().getFullYear()}
-      </div>
+      <div className="absolute bottom-4 left-4 right-4 text-xs text-white/70">© Remoola {new Date().getFullYear()}</div>
     </div>
   );
 }

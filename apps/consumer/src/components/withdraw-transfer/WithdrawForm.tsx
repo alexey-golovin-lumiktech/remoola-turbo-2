@@ -53,7 +53,7 @@ export function WithdrawForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-4 rounded-xl border bg-white p-6 shadow-sm">
       <h2 className="text-lg font-semibold">Withdraw funds</h2>
-      <p className="text-sm text-gray-600">Send money from your Remoola balance to your card or bank account.</p>
+      <p className="text-sm text-gray-600">Send money from your balance to your card or bank account.</p>
 
       <div>
         <label className="mb-1 block text-sm font-medium">Amount</label>
