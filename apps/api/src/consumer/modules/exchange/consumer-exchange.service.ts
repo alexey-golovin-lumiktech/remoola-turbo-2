@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 
 import { $Enums } from '@remoola/database-2';
 
-import { ConvertCurrencyDto } from './dto/convert.dto';
+import { ConvertCurrencyBody } from './dto/convert.dto';
 import { PrismaService } from '../../../shared/prisma.service';
 
 @Injectable()
@@ -48,12 +48,12 @@ export class ConsumerExchangeService {
     return map;
   }
 
-  async convert(consumerId: string, dto: ConvertCurrencyDto) {
-    if (dto.from === dto.to) {
+  async convert(consumerId: string, body: ConvertCurrencyBody) {
+    if (body.from === body.to) {
       throw new BadRequestException(`Cannot convert into same currency`);
     }
 
-    const { amount, from, to } = dto;
+    const { amount, from, to } = body;
 
     const balances = await this.getBalanceByCurrency(consumerId);
     const available = balances[from] ?? 0;

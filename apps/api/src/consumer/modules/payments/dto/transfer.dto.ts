@@ -2,7 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsNumber, IsString, Min } from 'class-validator';
 
-export class TransferDto {
+export class TransferBody {
   @Expose()
   @ApiProperty()
   @IsNumber()

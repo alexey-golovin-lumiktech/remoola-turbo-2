@@ -3,7 +3,7 @@ import { OAuth2Client } from 'google-auth-library';
 
 import { $Enums, Prisma } from '@remoola/database-2';
 
-import { GoogleOAuth } from './dto/google-oauth.dto';
+import { GoogleOAuthBody } from './dto/google-oauth.dto';
 import { PrismaService } from '../../shared/prisma.service';
 
 @Injectable()
@@ -26,8 +26,8 @@ export class GoogleOAuthService {
    * If consumer doesn't exist → create with password=null.
    * Always upsert GoogleProfileDetails.
    */
-  async googleLoginGPT(dto: GoogleOAuth) {
-    const payload = await this.verifyIdToken(dto.idToken);
+  async googleLoginGPT(body: GoogleOAuthBody) {
+    const payload = await this.verifyIdToken(body.idToken);
 
     const email = payload.email?.toLowerCase();
     const emailVerified = !!payload.email_verified;

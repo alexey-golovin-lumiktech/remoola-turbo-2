@@ -23,7 +23,7 @@ import _ from 'lodash';
 import { type ConsumerModel } from '@remoola/database-2';
 
 import { ConsumerAuthService } from './auth.service';
-import { ConsumerSignup, GoogleOAuth } from './dto';
+import { ConsumerSignup, GoogleOAuthBody } from './dto';
 import { GoogleAuthService } from './google-auth.service';
 import { GoogleOAuthService } from './google-oauth.service';
 import { Identity, PublicEndpoint } from '../../common';
@@ -118,7 +118,7 @@ export class ConsumerAuthController {
   @PublicEndpoint()
   @Post(`google-login-gpt`)
   @HttpCode(HttpStatus.OK)
-  async googleLoginGPT(@Body() body: GoogleOAuth) {
+  async googleLoginGPT(@Body() body: GoogleOAuthBody) {
     // You can set cookies here if you integrate with AuthService
     const result = await this.googleOAuthServiceGPT.googleLoginGPT(removeNil(body));
     return result;

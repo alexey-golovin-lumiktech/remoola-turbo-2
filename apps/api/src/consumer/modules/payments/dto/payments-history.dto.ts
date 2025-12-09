@@ -4,7 +4,7 @@ import { IsEnum, IsInt, IsOptional, Min } from 'class-validator';
 
 import { $Enums } from '@remoola/database-2';
 
-export class PaymentsHistoryQueryDto {
+export class PaymentsHistoryQuery {
   @Expose()
   @ApiPropertyOptional({ enum: $Enums.TransactionActionType })
   @IsEnum($Enums.TransactionActionType)

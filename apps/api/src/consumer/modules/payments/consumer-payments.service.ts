@@ -2,7 +2,7 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 
 import { $Enums } from '@remoola/database-2';
 
-import { PaymentsHistoryQueryDto, TransferDto, WithdrawDto } from './dto';
+import { PaymentsHistoryQuery, TransferBody, WithdrawBody } from './dto';
 import { StartPayment } from './dto/start-payment.dto';
 import { PrismaService } from '../../../shared/prisma.service';
 @Injectable()
@@ -263,7 +263,7 @@ export class ConsumerPaymentsService {
     return inVal - outVal;
   }
 
-  async getHistory(consumerId: string, query: PaymentsHistoryQueryDto) {
+  async getHistory(consumerId: string, query: PaymentsHistoryQuery) {
     const { actionType, status, limit = 20, offset = 0 } = query;
 
     const where: any = { consumerId };
@@ -333,8 +333,8 @@ export class ConsumerPaymentsService {
     }
   }
 
-  async withdraw(consumerId: string, dto: WithdrawDto) {
-    const numericAmount = Number(dto.amount);
+  async withdraw(consumerId: string, body: WithdrawBody) {
+    const numericAmount = Number(body.amount);
     if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
       throw new BadRequestException(`Invalid amount`);
     }
@@ -387,8 +387,8 @@ export class ConsumerPaymentsService {
     });
   }
 
-  async transfer(consumerId: string, dto: TransferDto) {
-    const numericAmount = Number(dto.amount);
+  async transfer(consumerId: string, body: TransferBody) {
+    const numericAmount = Number(body.amount);
     if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
       throw new BadRequestException(`Invalid amount`);
     }
@@ -403,11 +403,11 @@ export class ConsumerPaymentsService {
     const recipient = await this.prisma.consumerModel.findFirst({
       where: {
         OR: [
-          { email: dto.recipient },
+          { email: body.recipient },
           // via personal details phone
           {
             personalDetails: {
-              phoneNumber: dto.recipient,
+              phoneNumber: body.recipient,
             },
           },
         ],

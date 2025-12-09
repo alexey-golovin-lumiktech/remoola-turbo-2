@@ -16,7 +16,7 @@ const html = `
           <br/>
           <div style="margin-left:200px;text-align:right;color:cyan">
             If the email came to you by mistake, just ignore it.
-            <div style="color:cyan;">Best regards 
+            <div style="color:cyan;">Best regards
               <a style="color:goldenrod" href="mailto:support@wirebill.com">support@wirebill.com</a>.
             </div>
           </div>
@@ -24,18 +24,18 @@ const html = `
       </tr>
     </tbody>
   </table>
-` as const
+` as const;
 
 const ReplacementsRegExpMapping = {
   contactEmail: new RegExp(`{{contactEmail}}`, `gi`),
   payerEmail: new RegExp(`{{payerEmail}}`, `gi`),
   paymentDetailsLink: new RegExp(`{{paymentDetailsLink}}`, `gi`),
-} as const
+} as const;
 
 export const processor = (params: { contactEmail: string; payerEmail: string; paymentDetailsLink: string }): string => {
-  const { contactEmail = ``, payerEmail = ``, paymentDetailsLink = `` } = params
+  const { contactEmail = ``, payerEmail = ``, paymentDetailsLink = `` } = params;
   return html
     .replace(ReplacementsRegExpMapping.contactEmail, contactEmail)
     .replace(ReplacementsRegExpMapping.payerEmail, payerEmail)
-    .replace(ReplacementsRegExpMapping.paymentDetailsLink, paymentDetailsLink)
-}
+    .replace(ReplacementsRegExpMapping.paymentDetailsLink, paymentDetailsLink);
+};

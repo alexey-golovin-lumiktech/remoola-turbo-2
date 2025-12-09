@@ -1,3 +1,3 @@
-export * from './invoicing'
-export * from './auth'
-export * from './payment'
+export * from './invoicing';
+export * from './auth';
+export * from './payment';

@@ -1,1 +1,1 @@
-export * as payToContactPaymentInfo from './info'
+export * as payToContactPaymentInfo from './info';

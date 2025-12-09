@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-escape */
 import { extname } from 'path';
 
 export function sanitizeFilename(raw: string): string {

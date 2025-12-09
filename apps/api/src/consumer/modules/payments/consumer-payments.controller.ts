@@ -4,7 +4,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { type ConsumerModel } from '@remoola/database-2';
 
 import { ConsumerPaymentsService } from './consumer-payments.service';
-import { PaymentsHistoryQueryDto, TransferDto, WithdrawDto } from './dto';
+import { PaymentsHistoryQuery, TransferBody, WithdrawBody } from './dto';
 import { StartPayment } from './dto/start-payment.dto';
 import { JwtAuthGuard } from '../../../auth/jwt.guard';
 import { Identity } from '../../../common';
@@ -47,19 +47,19 @@ export class ConsumerPaymentsController {
 
   @Get(`history`)
   @ApiOperation({ summary: `List payment transactions` })
-  history(@Identity() consumer: ConsumerModel, @Query() query: PaymentsHistoryQueryDto) {
+  history(@Identity() consumer: ConsumerModel, @Query() query: PaymentsHistoryQuery) {
     return this.service.getHistory(consumer.id, query);
   }
 
   @Post(`withdraw`)
   @ApiOperation({ summary: `Withdraw funds from consumer balance` })
-  withdraw(@Identity() consumer: ConsumerModel, @Body() body: WithdrawDto) {
+  withdraw(@Identity() consumer: ConsumerModel, @Body() body: WithdrawBody) {
     return this.service.withdraw(consumer.id, body);
   }
 
   @Post(`transfer`)
   @ApiOperation({ summary: `Transfer funds to another user` })
-  transfer(@Identity() consumer: ConsumerModel, @Body() body: TransferDto) {
+  transfer(@Identity() consumer: ConsumerModel, @Body() body: TransferBody) {
     return this.service.transfer(consumer.id, body);
   }
 

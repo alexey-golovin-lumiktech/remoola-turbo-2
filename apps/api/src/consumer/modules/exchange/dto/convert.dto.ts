@@ -4,7 +4,7 @@ import { IsEnum, IsNumber, Min } from 'class-validator';
 
 import { $Enums } from '@remoola/database-2';
 
-export class ConvertCurrencyDto {
+export class ConvertCurrencyBody {
   @Expose()
   @ApiProperty({ enum: $Enums.CurrencyCode })
   @IsEnum($Enums.CurrencyCode)

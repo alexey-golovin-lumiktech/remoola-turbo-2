@@ -4,7 +4,7 @@ import { IsEnum, IsNumber, Min } from 'class-validator';
 
 import { $Enums } from '@remoola/database-2';
 
-export class WithdrawDto {
+export class WithdrawBody {
   @Expose()
   @ApiProperty()
   @IsNumber()

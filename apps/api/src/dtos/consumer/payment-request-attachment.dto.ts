@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 

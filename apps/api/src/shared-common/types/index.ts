@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { type $Enums } from '@remoola/database-2';
 
 import type {

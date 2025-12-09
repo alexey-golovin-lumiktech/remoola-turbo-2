@@ -65,12 +65,12 @@ export class AuthGuard implements CanActivate {
     return this.prisma.consumerModel.findFirst({ where: { id: identityId } });
   }
 
-  private findIdentityAccess(dto: { identityId: string; accessToken: string; refreshToken?: string }) {
+  private findIdentityAccess(params: { identityId: string; accessToken: string; refreshToken?: string }) {
     return this.prisma.accessRefreshTokenModel.findFirst({
       where: {
-        identityId: dto.identityId,
-        accessToken: dto.accessToken,
-        ...(dto.refreshToken && { refreshToken: dto.refreshToken }),
+        identityId: params.identityId,
+        accessToken: params.accessToken,
+        ...(params.refreshToken && { refreshToken: params.refreshToken }),
       },
     });
   }

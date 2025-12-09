@@ -4,7 +4,7 @@ import { IsEnum } from 'class-validator';
 
 import { $Enums } from '@remoola/database-2';
 
-export class ExchangeRateQueryDto {
+export class ExchangeRateQuery {
   @Expose()
   @ApiProperty({ enum: $Enums.CurrencyCode })
   @IsEnum($Enums.CurrencyCode)
