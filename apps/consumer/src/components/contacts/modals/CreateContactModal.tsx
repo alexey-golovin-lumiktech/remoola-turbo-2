@@ -56,49 +56,49 @@ export function CreateContactModal({
         <input
           placeholder="Email"
           value={email || ``}
-          onChange={(e) => setEmail(e.target.value || null)}
+          onChange={(e) => setEmail(e.target.value)}
           className="w-full border rounded-lg p-2"
         />
 
         <input
           placeholder="Name (optional)"
           value={name || ``}
-          onChange={(e) => setName(e.target.value || null)}
+          onChange={(e) => setName(e.target.value)}
           className="w-full border rounded-lg p-2"
         />
 
         <input
           placeholder="Street"
           value={address.street || ``}
-          onChange={(e) => setAddress((a) => ({ ...a, street: e.target.value || null }))}
+          onChange={(e) => setAddress((a) => ({ ...a, street: e.target.value }))}
           className="w-full border rounded-lg p-2"
         />
 
         <input
           placeholder="City"
           value={address.city || ``}
-          onChange={(e) => setAddress((a) => ({ ...a, city: e.target.value || null }))}
+          onChange={(e) => setAddress((a) => ({ ...a, city: e.target.value }))}
           className="w-full border rounded-lg p-2"
         />
 
         <input
           placeholder="State"
           value={address.state || ``}
-          onChange={(e) => setAddress((a) => ({ ...a, state: e.target.value || null }))}
+          onChange={(e) => setAddress((a) => ({ ...a, state: e.target.value }))}
           className="w-full border rounded-lg p-2"
         />
 
         <input
           placeholder="PostalCode"
           value={address.postalCode || ``}
-          onChange={(e) => setAddress((a) => ({ ...a, postalCode: e.target.value || null }))}
+          onChange={(e) => setAddress((a) => ({ ...a, postalCode: e.target.value }))}
           className="w-full border rounded-lg p-2"
         />
 
         <input
           placeholder="Country"
           value={address.country || ``}
-          onChange={(e) => setAddress((a) => ({ ...a, country: e.target.value || null }))}
+          onChange={(e) => setAddress((a) => ({ ...a, country: e.target.value }))}
           className="w-full border rounded-lg p-2"
         />
 

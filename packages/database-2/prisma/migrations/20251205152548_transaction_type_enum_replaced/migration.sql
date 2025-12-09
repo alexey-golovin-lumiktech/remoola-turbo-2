@@ -6,15 +6,13 @@
 */
 -- AlterEnum
 BEGIN;
-CREATE TYPE "transaction_type_enum_new" AS ENUM ('INTERNAL_TRANSFER', 'WITHDRAWAL', 'PAYOUT');
+CREATE TYPE "transaction_type_enum_new" AS ENUM ('CREDIT_CARD', 'BANK_TRANSFER', 'CURRENCY_EXCHANGE');
 ALTER TABLE "public"."payment_request" ALTER COLUMN "type" DROP DEFAULT;
 ALTER TABLE "payment_request" ALTER COLUMN "type" TYPE "transaction_type_enum_new" USING ("type"::text::"transaction_type_enum_new");
 ALTER TABLE "transaction" ALTER COLUMN "type" TYPE "transaction_type_enum_new" USING ("type"::text::"transaction_type_enum_new");
 ALTER TYPE "transaction_type_enum" RENAME TO "transaction_type_enum_old";
 ALTER TYPE "transaction_type_enum_new" RENAME TO "transaction_type_enum";
 DROP TYPE "public"."transaction_type_enum_old";
-ALTER TABLE "payment_request" ALTER COLUMN "type" SET DEFAULT 'PAYOUT';
-COMMIT;
 
 -- AlterTable
-ALTER TABLE "payment_request" ALTER COLUMN "type" SET DEFAULT 'PAYOUT';
+ALTER TABLE "payment_request" ALTER COLUMN "type" SET DEFAULT 'CREDIT_CARD';

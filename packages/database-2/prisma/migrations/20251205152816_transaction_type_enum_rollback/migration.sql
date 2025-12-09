@@ -13,8 +13,6 @@ ALTER TABLE "transaction" ALTER COLUMN "type" TYPE "transaction_type_enum_new" U
 ALTER TYPE "transaction_type_enum" RENAME TO "transaction_type_enum_old";
 ALTER TYPE "transaction_type_enum_new" RENAME TO "transaction_type_enum";
 DROP TYPE "public"."transaction_type_enum_old";
-ALTER TABLE "payment_request" ALTER COLUMN "type" SET DEFAULT 'CREDIT_CARD';
-COMMIT;
 
 -- AlterTable
 ALTER TABLE "payment_request" ALTER COLUMN "type" SET DEFAULT 'CREDIT_CARD';

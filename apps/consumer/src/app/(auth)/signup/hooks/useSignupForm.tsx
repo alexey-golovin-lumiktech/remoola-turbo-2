@@ -102,11 +102,11 @@ export function SignupFormProvider({ children }: { children: ReactNode }) {
       ...prev,
       addressDetails: {
         ...prev.addressDetails,
-        postalCode: patch.postalCode?.trim() || null,
-        country: patch.country?.trim() || null,
-        state: patch.state?.trim() || null,
-        city: patch.city?.trim() || null,
-        street: patch.street?.trim() || null,
+        ...(patch.postalCode && { postalCode: patch.postalCode?.trim() }),
+        ...(patch.country && { country: patch.country?.trim() }),
+        ...(patch.state && { state: patch.state?.trim() }),
+        ...(patch.city && { city: patch.city?.trim() }),
+        ...(patch.street && { street: patch.street?.trim() }),
       },
     }));
   };
@@ -134,9 +134,3 @@ export function SignupFormProvider({ children }: { children: ReactNode }) {
 
   return <SignupFormContext.Provider value={value}>{children}</SignupFormContext.Provider>;
 }
-
-export const useSignupForm = (): SignupFormContextValue => {
-  const ctx = useContext(SignupFormContext);
-  if (!ctx) throw new Error(`useSignupForm must be used within SignupFormProvider`);
-  return ctx;
-};
