@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, useState, useMemo, useContext, createContext } from 'react';
+import { type ReactNode, useState, useMemo, createContext, useContext } from 'react';
 
 import {
   type ISignupFormState,
@@ -134,3 +134,9 @@ export function SignupFormProvider({ children }: { children: ReactNode }) {
 
   return <SignupFormContext.Provider value={value}>{children}</SignupFormContext.Provider>;
 }
+
+export const useSignupForm = (): SignupFormContextValue => {
+  const ctx = useContext(SignupFormContext);
+  if (!ctx) throw new Error(`useSignupForm must be used within SignupFormProvider`);
+  return ctx;
+};

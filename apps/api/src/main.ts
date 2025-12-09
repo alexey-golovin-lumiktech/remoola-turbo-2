@@ -11,7 +11,6 @@ import { default as cookieParser } from 'cookie-parser';
 import * as express from 'express';
 
 import { $Enums, type PrismaClient } from '@remoola/database-2';
-import { parsedEnvs } from '@remoola/env';
 
 import { AdminModule } from './admin/admin.module';
 import { AppModule } from './app.module';
@@ -22,6 +21,7 @@ import { AuthGuard } from './guards';
 import { TransformResponseInterceptor } from './interceptors';
 import { PrismaService } from './shared/prisma.service';
 import { type IAdminCreate, passwordUtils } from './shared-common';
+
 async function seed(prisma: PrismaClient): Promise<void> {
   const admins = [
     { type: $Enums.AdminType.ADMIN, email: `regular.admin@wirebill.com`, password: `RegularWirebill@Admin123!` },
@@ -135,7 +135,7 @@ async function bootstrap() {
     express.json({ limit: `25mb` })(req, res, next);
   });
   app.use(express.urlencoded({ extended: true, limit: `25mb` }));
-  app.use(cookieParser(parsedEnvs.SECURE_SESSION_SECRET));
+  app.use(cookieParser(envs.SECURE_SESSION_SECRET));
   app.use(`/uploads`, express.static(join(process.cwd(), `uploads`)));
   app.use((req, res, next) => {
     if (req.path === `/` || req.path === `/api`) {

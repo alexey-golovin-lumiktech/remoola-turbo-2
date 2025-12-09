@@ -130,6 +130,7 @@ const logs = {
 
 const app = {
   ADMIN_EMAIL: z.string().default(`simplelogin-newsletter.djakm@simplelogin.com`),
+  SECURE_SESSION_SECRET: z.string().optional().default(`SECURE_SESSION_SECRET`),
 };
 
 const debugging = {
