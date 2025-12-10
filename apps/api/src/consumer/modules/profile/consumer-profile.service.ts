@@ -1,7 +1,5 @@
 import { Injectable } from '@nestjs/common';
 
-import { $Enums, AddressDetailsModel, OrganizationDetailsModel, PersonalDetailsModel } from '@remoola/database-2';
-
 import { UpdateConsumerProfileBody, UpdateConsumerPasswordBody } from './dtos';
 import { PrismaService } from '../../../shared/prisma.service';
 import { passwordUtils } from '../../../shared-common';

@@ -1,7 +1,7 @@
 import { Controller, Get, Patch, Body, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
-import { ConsumerModel } from '@remoola/database-2';
+import { type ConsumerModel } from '@remoola/database-2';
 
 import { ConsumerProfileService } from './consumer-profile.service';
 import { UpdateConsumerPasswordBody, UpdateConsumerProfileBody } from './dtos';
