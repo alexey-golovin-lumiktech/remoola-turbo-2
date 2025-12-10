@@ -31,10 +31,16 @@ export class FileStorageService {
    * @returns { bucket, key, downloadUrl }
    */
   async upload(
-    { buffer, originalname, mimetype }: { buffer: Buffer; originalname: string; mimetype: string },
+    {
+      buffer,
+      originalname,
+      mimetype,
+      folder,
+    }: { buffer: Buffer; originalname: string; mimetype: string; folder?: string },
     backendHost,
   ) {
-    const key = `${randomUUID()}-${originalname.replace(/\s+/g, `_`)}`;
+    let key = `${randomUUID()}-${originalname.replace(/\s+/g, `_`)}`;
+    if (folder) key = `${folder}/${key}`;
 
     if (this.useS3) {
       return this.uploadS3(buffer, key, mimetype);
@@ -44,11 +50,17 @@ export class FileStorageService {
   }
 
   private async uploadLocal(buffer: Buffer, key: string, backendHost) {
-    const localFolder = join(process.cwd(), `uploads`);
+    let localFolder = join(process.cwd(), `uploads`);
+    if (key.includes(`/`)) {
+      const parts = key.split(`/`);
+      parts.pop();
+      const subfolder = parts.join(`/`);
+      localFolder = join(localFolder, subfolder);
+    }
 
     await mkdir(localFolder, { recursive: true });
 
-    const filePath = join(localFolder, key);
+    const filePath = join(localFolder, key.split(`/`).pop());
     await writeFile(filePath, buffer);
 
     return {

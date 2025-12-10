@@ -50,6 +50,7 @@
     "nestjs-stripe": "^1.0.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
+    "pdfkit": "^0.17.2",
     "pg": "^8.16.3",
     "puppeteer": "^24.29.0",
     "reflect-metadata": "^0.2.2",

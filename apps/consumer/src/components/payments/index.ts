@@ -1,3 +1,4 @@
+export * from './BankTransferInstructions';
 export * from './PaymentView';
 export * from './PaymentsFilters';
 export * from './PaymentsList';

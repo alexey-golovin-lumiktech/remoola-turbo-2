@@ -95,9 +95,9 @@ export class ConsumerPaymentsService {
     };
   }
 
-  async getPaymentView(consumerId: string, id: string) {
+  async getPaymentView(consumerId: string, paymentRequestId: string) {
     const paymentRequest = await this.prisma.paymentRequestModel.findUnique({
-      where: { id },
+      where: { id: paymentRequestId },
       include: {
         payer: true,
         requester: true,

@@ -45,6 +45,17 @@ export function PaymentView({ paymentRequestId }: { paymentRequestId: string }) 
     }
   }
 
+  async function generateInvoice() {
+    const res = await fetch(`/api/payments/${paymentRequestId}/generate-invoice`, {
+      method: `POST`,
+      headers: { 'content-type': `application/json` },
+      credentials: `include`,
+    });
+
+    const json = await res.json();
+    console.log(`json`, json);
+  }
+
   if (loading) {
     return <div className="p-8 text-slate-600">Loading payment…</div>;
   }
@@ -58,6 +69,17 @@ export function PaymentView({ paymentRequestId }: { paymentRequestId: string }) 
   }
 
   const p = data;
+
+  // const bankDetails = {
+  //   amount: p.amount,
+  //   currency: p.currencyCode,
+  //   reference: p.bankReferenceId,
+  //   beneficiary: `WireBill Inc.`,
+  //   accountNumber: `00221113334566`,
+  //   swiftCode: `CHASESU11`,
+  //   routingNumber: `0001124445`,
+  //   address: `1033, 2nd St, San Francisco, CA 92345, USA`,
+  // };
 
   return (
     <div className="px-8 py-6 flex flex-col gap-6">
@@ -142,6 +164,13 @@ export function PaymentView({ paymentRequestId }: { paymentRequestId: string }) 
               Pay Now
             </button>
           )}
+
+          <button
+            className="rounded-full bg-blue-600 px-6 py-3 text-sm text-white shadow hover:bg-blue-700"
+            onClick={generateInvoice}
+          >
+            Generate INVOICE
+          </button>
         </div>
       </div>
     </div>

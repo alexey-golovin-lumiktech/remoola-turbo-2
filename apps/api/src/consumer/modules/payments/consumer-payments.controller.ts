@@ -1,8 +1,10 @@
-import { Controller, Post, Body, UseGuards, Param, Get, Query } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Param, Get, Query, Req } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import express from 'express';
 
 import { type ConsumerModel } from '@remoola/database-2';
 
+import { ConsumerInvoiceService } from './consumer-invoice.service';
 import { ConsumerPaymentsService } from './consumer-payments.service';
 import { PaymentsHistoryQuery, TransferBody, WithdrawBody } from './dto';
 import { StartPayment } from './dto/start-payment.dto';
@@ -13,7 +15,10 @@ import { Identity } from '../../../common';
 @Controller(`consumer/payments`)
 @UseGuards(JwtAuthGuard)
 export class ConsumerPaymentsController {
-  constructor(private readonly service: ConsumerPaymentsService) {}
+  constructor(
+    private readonly service: ConsumerPaymentsService,
+    private readonly invoiceService: ConsumerInvoiceService,
+  ) {}
 
   @Get()
   async list(
@@ -63,8 +68,17 @@ export class ConsumerPaymentsController {
     return this.service.transfer(consumer.id, body);
   }
 
-  @Get(`:id`)
-  getPayment(@Identity() identity: ConsumerModel, @Param(`id`) id: string) {
-    return this.service.getPaymentView(identity.id, id);
+  @Get(`:paymentRequestId`)
+  getPayment(@Identity() identity: ConsumerModel, @Param(`paymentRequestId`) paymentRequestId: string) {
+    return this.service.getPaymentView(identity.id, paymentRequestId);
+  }
+
+  @Post(`:paymentRequestId/generate-invoice`)
+  async generate(
+    @Identity() identity: ConsumerModel,
+    @Param(`paymentRequestId`) paymentRequestId: string,
+    @Req() req: express.Request,
+  ) {
+    return this.invoiceService.generateInvoice(paymentRequestId, identity.id, req.get(`host`));
   }
 }
