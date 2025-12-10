@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     method: `POST`,
     body: req.body,
     credentials: `include`,
-    headers: { ...Object.fromEntries(req.headers) },
+    headers: new Headers(req.headers),
     duplex: `half`,
   } as RequestInit);
 

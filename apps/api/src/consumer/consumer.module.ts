@@ -8,7 +8,6 @@ import { ConsumerAuthController } from './auth/auth.controller';
 import { ConsumerAuthService } from './auth/auth.service';
 import { GoogleAuthService } from './auth/google-auth.service';
 import { GoogleOAuthService } from './auth/google-oauth.service';
-import { ProfileController } from './controllers/profile.controller';
 import { MailingService } from '../shared/mailing.service';
 import { ConsumerDashboardModule } from './modules/consumer-dashboard/consumer-dashboard.module';
 import { ConsumerContactsModule } from './modules/contacts/consumer-contacts.module';
@@ -17,6 +16,7 @@ import { ConsumerDocumentsModule } from './modules/documents/consumer-documents.
 import { ConsumerExchangeModule } from './modules/exchange/consumer-exchange.module';
 import { ConsumerPaymentMethodsModule } from './modules/payment-methods/consumer-payment-methods.module';
 import { ConsumerPaymentsModule } from './modules/payments/consumer-payments.module';
+import { ConsumerProfileModule } from './modules/profile/consumer-profile.module';
 
 @Module({
   imports: [
@@ -48,8 +48,9 @@ import { ConsumerPaymentsModule } from './modules/payments/consumer-payments.mod
     ConsumerExchangeModule,
     ConsumerPaymentMethodsModule,
     ConsumerPaymentsModule,
+    ConsumerProfileModule,
   ],
-  controllers: [ConsumerAuthController, ProfileController],
+  controllers: [ConsumerAuthController],
   providers: [MailingService, GoogleOAuthService, ConsumerAuthService, GoogleAuthService],
 })
 export class ConsumerModule {}

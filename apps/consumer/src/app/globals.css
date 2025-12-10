@@ -3,3 +3,22 @@
 html,body { height: 100%; }
 body { background: linear-gradient(135deg,#f8fafc,#eef2ff); font-family: ui-sans-serif,system-ui; }
 
+.input {
+  @apply w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500;
+}
+
+.input-label {
+  @apply block text-sm font-medium text-gray-700 mb-1;
+}
+
+.input {
+  @apply w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500;
+}
+
+.form-section {
+  @apply border p-6 rounded-xl bg-white shadow-sm space-y-6;
+}
+
+.form-grid {
+  @apply grid grid-cols-2 gap-4;
+}

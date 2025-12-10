@@ -7,10 +7,7 @@ export async function GET(req: Request) {
 
   const res = await fetch(url, {
     method: `GET`,
-    headers: {
-      cookie: req.headers.get(`cookie`)!,
-      'content-type': `application/json`,
-    },
+    headers: new Headers(req.headers),
     credentials: `include`,
     cache: `no-store`,
   });

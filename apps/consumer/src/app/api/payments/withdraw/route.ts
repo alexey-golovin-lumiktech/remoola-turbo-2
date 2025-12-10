@@ -5,10 +5,8 @@ export async function POST(req: Request) {
 
   const res = await fetch(url, {
     method: `POST`,
-    headers: {
-      'content-type': `application/json`,
-      cookie: req.headers.get(`cookie`) ?? ``,
-    },
+    headers: new Headers(req.headers),
+    credentials: `include`,
     body: await req.text(),
   });
 

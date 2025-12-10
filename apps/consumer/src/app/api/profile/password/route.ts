@@ -1,10 +1,11 @@
-import { NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
-export async function POST(req: Request) {
-  const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/payments/transfer`;
+export async function PATCH(req: NextRequest) {
+  const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/profile/password`;
+  console.log(`PATCH`, url);
 
   const res = await fetch(url, {
-    method: `POST`,
+    method: `PATCH`,
     headers: new Headers(req.headers),
     credentials: `include`,
     body: await req.text(),

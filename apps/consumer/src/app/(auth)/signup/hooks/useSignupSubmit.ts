@@ -35,8 +35,8 @@ export function useSignupSubmit() {
       const response = await fetch(`/api/signup`, {
         method: `POST`,
         headers: { 'content-type': `application/json` },
-        body: JSON.stringify(payload),
         credentials: `include`,
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {

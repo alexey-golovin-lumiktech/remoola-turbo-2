@@ -1,0 +1,19 @@
+import { type NextRequest, NextResponse } from 'next/server';
+
+export async function GET(req: NextRequest) {
+  const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/profile/me`;
+  console.log(`GET`, url);
+
+  const response = await fetch(url, {
+    method: `GET`,
+    headers: new Headers(req.headers),
+    credentials: `include`,
+    cache: `no-store`,
+  });
+
+  const cookie = response.headers.get(`set-cookie`);
+  const data = await response.text();
+  const headers: HeadersInit = {};
+  if (cookie) headers[`set-cookie`] = cookie;
+  return new NextResponse(data, { status: response.status, headers });
+}
