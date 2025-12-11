@@ -8,8 +8,8 @@ export const INVALID_EMAIL = `Invalid email` as const;
 export const TEMPORARY_PASSWORD_LIFETIME_HOURS = 3 as const;
 export const DEFAULT_DUE_DATE_IN_DAYS30 = 30 as const;
 export const PASSWORD_RE = /(?!.* )(?=(.*[A-Z]){2,})(?=.*?[a-z])(?=.*[1-9]{1,})(?=.*?[#?!@$%^&*-]).{8,}$/;
-export const ACCESS_TOKEN_COOKIE_KEY = `access_token` as const;
-export const REFRESH_TOKEN_COOKIE_KEY = `refresh_token` as const;
+export const ACCESS_TOKEN_COOKIE_KEY = `access_token` as const; // according to http protocol
+export const REFRESH_TOKEN_COOKIE_KEY = `refresh_token` as const; // according to http protocol
 
 export const constants = {
   INVALID_CREDENTIALS,

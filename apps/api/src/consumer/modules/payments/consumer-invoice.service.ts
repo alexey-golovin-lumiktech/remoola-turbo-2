@@ -35,7 +35,7 @@ export class ConsumerInvoiceService {
       throw new ForbiddenException(`You are not allowed to access this invoice`);
     }
 
-    const invoiceNumber = `INV-${payment.id.slice(0, 8)}-${Date.now()}`;
+    const invoiceNumber = `INV-${payment.status}-${payment.id.slice(0, 8)}-${Date.now()}`;
 
     // 1) Build HTML
     const html = buildInvoiceHtmlV5({ invoiceNumber, payment });
@@ -64,8 +64,8 @@ export class ConsumerInvoiceService {
           create: {
             tag: {
               connectOrCreate: {
-                where: { name: `INVOICE` },
-                create: { name: `INVOICE` },
+                where: { name: `INVOICE-${payment.status}` },
+                create: { name: `INVOICE-${payment.status}` },
               },
             },
           },

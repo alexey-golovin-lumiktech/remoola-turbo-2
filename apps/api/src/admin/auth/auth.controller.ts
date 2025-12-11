@@ -8,6 +8,7 @@ import { AdminAuthService } from './auth.service';
 import { Identity, PublicEndpoint } from '../../common/decorators';
 import { ADMIN } from '../../dtos';
 import { envs, JWT_ACCESS_TTL, JWT_REFRESH_TTL } from '../../envs';
+import { ACCESS_TOKEN_COOKIE_KEY, REFRESH_TOKEN_COOKIE_KEY } from '../../shared-common';
 
 @ApiTags(`Admin: Auth`)
 @ApiBearerAuth(`bearer`) // 👈 tells Swagger to attach Bearer token
@@ -16,7 +17,7 @@ import { envs, JWT_ACCESS_TTL, JWT_REFRESH_TTL } from '../../envs';
 export class AdminAuthController {
   constructor(private readonly service: AdminAuthService) {}
 
-  private setAuthCookies(res: express.Response, access: string, refresh: string) {
+  private setAuthCookies(res: express.Response, accessToken: string, refreshToken: string) {
     const isProd = envs.NODE_ENV == `production`;
     const sameSite = isProd ? (`none` as const) : (`lax` as const);
     const secure = isProd || process.env.COOKIE_SECURE == `true`;
@@ -28,8 +29,8 @@ export class AdminAuthController {
       path: `/`,
     };
 
-    res.cookie(`access_token`, access, { ...common, maxAge: JWT_ACCESS_TTL });
-    res.cookie(`refresh_token`, refresh, { ...common, maxAge: JWT_REFRESH_TTL });
+    res.cookie(ACCESS_TOKEN_COOKIE_KEY, accessToken, { ...common, maxAge: JWT_ACCESS_TTL });
+    res.cookie(REFRESH_TOKEN_COOKIE_KEY, refreshToken, { ...common, maxAge: JWT_REFRESH_TTL });
   }
 
   @Post(`login`)

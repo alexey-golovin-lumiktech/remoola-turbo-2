@@ -30,9 +30,6 @@ export const DAYS_7MS = 604800000 as const;
 export const JWT_ACCESS_TTL = HOURS_24MS;
 export const JWT_REFRESH_TTL = DAYS_7MS;
 
-export const JWT_ACCESS_COOKIE = `access_token` as const; // according to http protocol
-export const JWT_REFRESH_COOKIE = `refresh_token` as const; // according to http protocol
-
 import z, { type ZodArray, type ZodDefault, type ZodType, type ZodTypeAny } from 'zod';
 
 const ENVIRONMENT = { PRODUCTION: `production`, STAGING: `staging`, DEVELOPMENT: `development`, TEST: `test` } as const;
@@ -121,7 +118,7 @@ const aws = {
   AWS_ACCESS_KEY_ID: z.string().default(`AWS_ACCESS_KEY_ID`),
   AWS_SECRET_ACCESS_KEY: z.string().default(`AWS_SECRET_ACCESS_KEY`),
   AWS_REGION: z.string().default(`AWS_REGION`),
-  AWS_BUCKET: z.string().default(`wirebill`),
+  AWS_BUCKET: z.string().default(`wirebill-v2`),
 };
 
 const logs = {

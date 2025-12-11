@@ -2,7 +2,8 @@ import { CallHandler, ExecutionContext, Injectable, NestInterceptor, Unauthorize
 import express from 'express';
 import { catchError, from, lastValueFrom } from 'rxjs';
 
-import { JWT_ACCESS_COOKIE, JWT_ACCESS_TTL } from '../../envs';
+import { JWT_ACCESS_TTL } from '../../envs';
+import { ACCESS_TOKEN_COOKIE_KEY } from '../../shared-common';
 import { AuthService } from '../auth.service';
 
 @Injectable()
@@ -25,7 +26,7 @@ export class JwtRefreshInterceptor implements NestInterceptor {
         try {
           const { accessToken, ...identity } = await this.auth.refresh(refreshToken);
 
-          res.cookie(JWT_ACCESS_COOKIE, accessToken, {
+          res.cookie(ACCESS_TOKEN_COOKIE_KEY, accessToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === `production`,
             sameSite: `strict`,

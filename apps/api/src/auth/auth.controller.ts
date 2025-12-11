@@ -3,10 +3,11 @@ import { ApiTags, ApiResponse, ApiBody } from '@nestjs/swagger';
 import express from 'express';
 
 import { AuthService } from './auth.service';
+import { JWT_ACCESS_TTL } from '../envs';
+import { ACCESS_TOKEN_COOKIE_KEY } from '../shared-common';
 import { LoginBody } from './dto/login.dto';
 import { RegisterBody } from './dto/register.dto';
 import { JwtAuthGuard } from './jwt.guard';
-import { JWT_ACCESS_COOKIE, JWT_ACCESS_TTL } from '../envs';
 
 @ApiTags(`Auth`)
 @Controller(`auth`)
@@ -33,7 +34,7 @@ export class AuthController {
 
   @Post(`logout`)
   async logout(@Res({ passthrough: true }) res: express.Response) {
-    res.clearCookie(JWT_ACCESS_COOKIE, { path: `/` });
+    res.clearCookie(ACCESS_TOKEN_COOKIE_KEY, { path: `/` });
     return { message: `Logged out` };
   }
 
@@ -45,7 +46,7 @@ export class AuthController {
 
   private setCookie(res: express.Response, accessToken: string) {
     console.log(`setCookie`);
-    res.cookie(JWT_ACCESS_COOKIE, accessToken, {
+    res.cookie(ACCESS_TOKEN_COOKIE_KEY, accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === `production`,
       sameSite: `strict`,

@@ -1,5 +1,7 @@
 import { Injectable, ForbiddenException } from '@nestjs/common';
 
+import { $Enums } from '@remoola/database-2';
+
 import { PrismaService } from '../../../shared/prisma.service';
 import { FileStorageService } from '../files/file-storage.service';
 
@@ -97,7 +99,7 @@ export class ConsumerDocumentsService {
 
       const resource = await this.prisma.resourceModel.create({
         data: {
-          access: `public`,
+          access: $Enums.ResourceAccess.PUBLIC,
           originalName: originalName,
           mimetype: file.mimetype,
           size: file.size,

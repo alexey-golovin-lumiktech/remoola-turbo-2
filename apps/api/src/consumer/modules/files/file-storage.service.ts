@@ -1,4 +1,3 @@
-import { randomUUID } from 'crypto';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 
@@ -9,27 +8,22 @@ import { envs } from '../../../envs';
 
 @Injectable()
 export class FileStorageService {
-  private readonly useS3 = false; // !!envs.AWS_BUCKET; auto-switch mode
+  private readonly useS3 = !!envs.AWS_BUCKET; // auto-switch mode
   private s3: S3Client | null = null;
 
   constructor() {
     if (this.useS3) {
-      this.s3 = new S3Client({
+      const configuration = {
         region: envs.AWS_REGION,
         credentials: {
           accessKeyId: envs.AWS_ACCESS_KEY_ID!,
           secretAccessKey: envs.AWS_SECRET_ACCESS_KEY!,
         },
-      });
+      };
+      this.s3 = new S3Client(configuration);
     }
   }
 
-  /**
-   * Upload buffer content.
-   * Automatically chooses local mode OR AWS S3 mode.
-   *
-   * @returns { bucket, key, downloadUrl }
-   */
   async upload(
     {
       buffer,
@@ -39,7 +33,7 @@ export class FileStorageService {
     }: { buffer: Buffer; originalName: string; mimetype: string; folder?: string },
     backendHost,
   ) {
-    let key = `${randomUUID()}-${originalName.replace(/\s+/g, `_`)}`;
+    let key = originalName.replace(/\s+/g, `_`);
     if (folder) key = `${folder}/${key}`;
 
     if (this.useS3) {
@@ -78,7 +72,6 @@ export class FileStorageService {
       Key: key,
       Body: buffer,
       ContentType: mimetype,
-      ACL: `public-read`,
     });
 
     await this.s3!.send(cmd);
