@@ -44,22 +44,17 @@ export class ConsumerInvoiceService {
     const buffer = await this.renderPdfFromHtml(html);
 
     // 3) Upload to S3 and create ResourceModel
-    const originalname = `${invoiceNumber}.pdf`;
+    const originalName = `${invoiceNumber}.pdf`;
     const mimetype = `application/pdf`;
     const { bucket, key, downloadUrl } = await this.storage.upload(
-      {
-        buffer: buffer,
-        originalname: originalname,
-        mimetype: mimetype,
-        folder: `invoices`,
-      },
+      { buffer, originalName, mimetype, folder: `invoices` },
       backendHost,
     );
 
     const resource = await this.prisma.resourceModel.create({
       data: {
         access: $Enums.ResourceAccess.PRIVATE,
-        originalName: originalname,
+        originalName: originalName,
         mimetype: mimetype,
         size: buffer.length,
         bucket,

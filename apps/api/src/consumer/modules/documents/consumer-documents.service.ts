@@ -89,7 +89,7 @@ export class ConsumerDocumentsService {
       const stored = await this.storage.upload(
         {
           buffer: file.buffer,
-          originalname: originalName,
+          originalName: originalName,
           mimetype: file.mimetype,
         },
         backendHost,

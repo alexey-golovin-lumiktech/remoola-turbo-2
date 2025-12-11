@@ -26,8 +26,8 @@ class PaymentRequestAttachmentDTO extends BaseModel implements PaymentRequestAtt
   resourceId: string;
 }
 
-type RequiredResourceFields = Required<Pick<IResourceResponse, `downloadUrl` | `originalname`>>;
-type OptionalResourceFields = Partial<Omit<IResourceResponse, `downloadUrl` | `originalname`>>;
+type RequiredResourceFields = Required<Pick<IResourceResponse, `downloadUrl` | `originalName`>>;
+type OptionalResourceFields = Partial<Omit<IResourceResponse, `downloadUrl` | `originalName`>>;
 type AttachmentFields = OptionalResourceFields & RequiredResourceFields;
 
 export class PaymentRequestAttachmentResponse
@@ -55,7 +55,7 @@ export class PaymentRequestAttachmentResponse
 
   @Expose()
   @ApiProperty()
-  originalname: string;
+  originalName: string;
 
   @Expose()
   @ApiProperty()

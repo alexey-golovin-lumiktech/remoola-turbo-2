@@ -18,7 +18,7 @@ class Resource extends BaseModel implements IResourceModel {
 
   @Expose()
   @ApiProperty()
-  originalname: string;
+  originalName: string;
 
   @Expose()
   @ApiProperty()
@@ -55,7 +55,7 @@ export class ResourceListResponse {
 }
 
 export class ResourceCreate
-  extends PickType(Resource, [`access`, `originalname`, `mimetype`, `size`, `bucket`, `key`, `downloadUrl`] as const)
+  extends PickType(Resource, [`access`, `originalName`, `mimetype`, `size`, `bucket`, `key`, `downloadUrl`] as const)
   implements IResourceCreate {}
 
 export class ResourceUpdate extends PartialType(ResourceCreate) implements IResourceUpdate {}

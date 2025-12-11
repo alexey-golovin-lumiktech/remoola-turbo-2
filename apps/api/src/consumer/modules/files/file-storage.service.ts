@@ -33,13 +33,13 @@ export class FileStorageService {
   async upload(
     {
       buffer,
-      originalname,
+      originalName,
       mimetype,
       folder,
-    }: { buffer: Buffer; originalname: string; mimetype: string; folder?: string },
+    }: { buffer: Buffer; originalName: string; mimetype: string; folder?: string },
     backendHost,
   ) {
-    let key = `${randomUUID()}-${originalname.replace(/\s+/g, `_`)}`;
+    let key = `${randomUUID()}-${originalName.replace(/\s+/g, `_`)}`;
     if (folder) key = `${folder}/${key}`;
 
     if (this.useS3) {
