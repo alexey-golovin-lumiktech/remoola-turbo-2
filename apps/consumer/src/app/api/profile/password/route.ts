@@ -1,8 +1,8 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function PATCH(req: NextRequest) {
-  const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/profile/password`;
-  console.log(`PATCH`, url);
+  const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE_URL}/profile/password`);
+  console.log(`PATCH`, url.href);
 
   const res = await fetch(url, {
     method: `PATCH`,

@@ -2,8 +2,8 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 export async function PATCH(req: NextRequest, context: { params: Promise<{ paymentMethodId: string }> }) {
   const params = await context.params;
-  const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/payment-methods/${params.paymentMethodId}`;
-  console.log(`PATCH`, url);
+  const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE_URL}/payment-methods/${params.paymentMethodId}`);
+  console.log(`PATCH`, url.href);
 
   const res = await fetch(url, {
     method: `PATCH`,
@@ -21,8 +21,8 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ payme
 
 export async function DELETE(req: NextRequest, context: { params: Promise<{ paymentMethodId: string }> }) {
   const params = await context.params;
-  const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/payment-methods/${params.paymentMethodId}`;
-  console.log(`DELETE`, url);
+  const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE_URL}/payment-methods/${params.paymentMethodId}`);
+  console.log(`DELETE`, url.href);
 
   const res = await fetch(url, {
     method: `DELETE`,
@@ -39,8 +39,8 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ paym
 
 export async function GET(req: NextRequest, context: { params: Promise<{ paymentMethodId: string }> }) {
   const params = await context.params;
-  const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/payment-methods/${params.paymentMethodId}`;
-  console.log(`GET`, url);
+  const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE_URL}/payment-methods/${params.paymentMethodId}`);
+  console.log(`GET`, url.href);
 
   const res = await fetch(url, {
     method: `GET`,

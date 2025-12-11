@@ -3,8 +3,8 @@ import { type NextRequest, NextResponse } from 'next/server';
 export async function POST(req: NextRequest, context: { params: Promise<{ paymentRequestId: string }> }) {
   const params = await context.params;
 
-  const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/stripe/${params.paymentRequestId}/stripe-session`;
-  console.log(`POST`, url);
+  const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE_URL}/stripe/${params.paymentRequestId}/stripe-session`);
+  console.log(`POST`, url.href);
 
   const res = await fetch(url, {
     method: `POST`,
