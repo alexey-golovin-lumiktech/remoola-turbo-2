@@ -117,7 +117,7 @@ export function PaymentView({ paymentRequestId }: { paymentRequestId: string }) 
           <div className="p-6 rounded-2xl bg-white shadow-sm border">
             <h2 className="font-semibold mb-3">Timeline</h2>
 
-            {p.transactions.map((t: any) => (
+            {p.ledgerEntries.map((t: any) => (
               <div key={t.id} className="border-l pl-4 ml-2 mb-4 relative">
                 <div className="absolute w-3 h-3 bg-blue-600 rounded-full -left-1 top-1"></div>
 

@@ -24,7 +24,7 @@ export class ConsumerInvoiceService {
         requester: {
           include: { personalDetails: true },
         },
-        transactions: true,
+        ledgerEntries: true,
       },
     });
 

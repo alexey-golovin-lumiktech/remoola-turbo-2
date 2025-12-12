@@ -93,15 +93,15 @@ model ConsumerModel {
   organizationDetails  OrganizationDetailsModel?
   googleProfileDetails GoogleProfileDetailsModel?
 
-  asPayerPaymentRequests     PaymentRequestModel[] @relation("PaymentRequestPayerIdToConsumer")
-  asRequesterPaymentRequests PaymentRequestModel[] @relation("PaymentRequestRequesterIdToConsumer")
+  asPayerPaymentRequests     PaymentRequestModel[] @relation("PaymentRequestPayer")
+  asRequesterPaymentRequests PaymentRequestModel[] @relation("PaymentRequestRequester")
 
   consumerResources ConsumerResourceModel[]
   contacts          ContactModel[]
   paymentMethods    PaymentMethodModel[]
   attachments       PaymentRequestAttachmentModel[]
   passwordResets    ResetPasswordModel[]
-  transactions      TransactionModel[]
+  ledgerEntries     LedgerEntryModel[]
 
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
@@ -231,7 +231,8 @@ model PaymentRequestModel {
 
   currencyCode CurrencyCode      @default(USD) @map("currency_code")
   status       TransactionStatus @default(DRAFT) @map("status")
-  type         TransactionType   @default(CREDIT_CARD) @map("type")
+  type         TransactionType   @default(CREDIT_CARD) @map("type") //deprecated
+  paymentRail  PaymentRail?      @map("payment_rail")
 
   amount          Decimal   @db.Decimal(9, 2)
   description     String?
@@ -240,13 +241,13 @@ model PaymentRequestModel {
   sentDate        DateTime? @map("sent_date") @db.Timestamptz(6)
 
   payerId String        @map("payer_id") @db.Uuid
-  payer   ConsumerModel @relation("PaymentRequestPayerIdToConsumer", fields: [payerId], references: [id], onDelete: Cascade)
+  payer   ConsumerModel @relation("PaymentRequestPayer", fields: [payerId], references: [id], onDelete: Cascade)
 
   requesterId String        @map("requester_id") @db.Uuid
-  requester   ConsumerModel @relation("PaymentRequestRequesterIdToConsumer", fields: [requesterId], references: [id], onDelete: Cascade)
+  requester   ConsumerModel @relation("PaymentRequestRequester", fields: [requesterId], references: [id], onDelete: Cascade)
 
-  attachments  PaymentRequestAttachmentModel[]
-  transactions TransactionModel[]
+  attachments   PaymentRequestAttachmentModel[]
+  ledgerEntries LedgerEntryModel[]
 
   createdBy String    @map("created_by") @db.VarChar(255)
   createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -256,6 +257,45 @@ model PaymentRequestModel {
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
   @@map("payment_request")
+}
+
+model LedgerEntryModel {
+  id       String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  ledgerId String @map("ledger_id") @db.Uuid
+
+  type         LedgerEntryType
+  currencyCode CurrencyCode
+  status       TransactionStatus
+
+  /**
+   * SIGNED:
+   * + → money enters consumer
+   * - → money leaves consumer
+   */
+  amount Decimal @db.Decimal(9, 2)
+
+  feesType   TransactionFeesType? @default(NO_FEES_INCLUDED)
+  feesAmount Decimal?             @db.Decimal(9, 2)
+
+  stripeId String? @map("stripe_id")
+  metadata Json?
+
+  consumerId String        @map("consumer_id") @db.Uuid
+  consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade)
+
+  paymentRequestId String?              @map("payment_request_id") @db.Uuid
+  paymentRequest   PaymentRequestModel? @relation(fields: [paymentRequestId], references: [id])
+
+  createdBy String    @map("created_by")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedBy String    @map("updated_by")
+  updatedAt DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedBy String?   @map("deleted_by")
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@index([consumerId])
+  @@index([ledgerId])
+  @@map("ledger_entry")
 }
 
 model PaymentRequestAttachmentModel {
@@ -340,40 +380,6 @@ model ResourceModel {
   @@map("resource")
 }
 
-model TransactionModel {
-  id   String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  code String @default(dbgenerated("substr(md5((now())::text), 0, 7)")) @db.VarChar(6)
-
-  type         TransactionType       @map("type")
-  currencyCode CurrencyCode          @map("currency_code")
-  actionType   TransactionActionType @map("action_type")
-  status       TransactionStatus     @map("status")
-
-  feesType     TransactionFeesType? @default(NO_FEES_INCLUDED) @map("fees_type")
-  feesAmount   Decimal?             @map("fees_amount") @db.Decimal(9, 2)
-  originAmount Decimal              @map("origin_amount") @db.Decimal(9, 2)
-
-  stripeId            String? @map("stripe_id") @db.VarChar(255)
-  stripeFeeInPercents Int?    @map("stripe_fee_in_percents")
-  metadata            Json?
-
-  consumerId String        @map("consumer_id") @db.Uuid
-  consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  paymentRequestId String?              @map("payment_request_id") @db.Uuid
-  paymentRequest   PaymentRequestModel? @relation(fields: [paymentRequestId], references: [id])
-
-  createdBy String    @map("created_by") @db.VarChar(255)
-  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedBy String    @map("updated_by") @db.VarChar(255)
-  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
-  deletedBy String?   @map("deleted_by") @db.VarChar(255)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
-
-  @@unique([paymentRequestId, code])
-  @@map("transaction")
-}
-
 model DocumentTagModel {
   id   String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   name String @unique @db.VarChar(64)
@@ -393,6 +399,40 @@ model ResourceTagModel {
 
   @@unique([resourceId, tagId])
   @@map("resource_tag")
+}
+
+enum LedgerEntryType {
+  USER_PAYMENT
+  // transfer of funds between two user balances (payer → receiver)
+
+  USER_PAYMENT_REVERSAL
+  // reversal of a previous USER_PAYMENT (refund, chargeback, cancel-before-settlement)
+
+  PLATFORM_FEE
+  // platform commission charged to user balance
+
+  PLATFORM_FEE_REVERSAL
+  // reversal of a previously charged platform fee
+
+  USER_DEPOSIT
+  // credit to user balance from an external funding source (card, bank)
+
+  USER_DEPOSIT_REVERSAL
+  // reversal of a deposit (failed, refunded, or chargeback)
+
+  USER_PAYOUT
+  // debit from user balance to an external destination (bank, card)
+
+  USER_PAYOUT_REVERSAL
+  // reversal of a payout (failed or returned)
+
+  INTERNAL_TRANSFER
+  // movement between internal wallets or balances (escrow, holds)
+
+  CURRENCY_EXCHANGE
+  // currency conversion involving multiple ledger entries
+
+  @@map("ledger_entry_type_enum")
 }
 
 enum AccountType {
@@ -562,4 +602,39 @@ enum HowDidHearAboutUs {
   OTHER
 
   @@map("how_did_hear_about_us")
+}
+
+enum PaymentRail {
+  // -------- INTERNAL --------
+  INTERNAL // platform-internal balance move (no external provider)
+
+  // -------- BANKING --------
+  BANK_TRANSFER // generic bank transfer (manual, local wire)
+  SEPA_TRANSFER // SEPA credit transfer
+  SEPA_INSTANT // SEPA Instant
+  SWIFT_TRANSFER // international wire (SWIFT)
+  ACH // US ACH
+  WIRE // domestic wire (non-SWIFT)
+
+  // -------- CARDS --------
+  CARD // generic card payment
+  CARD_3DS // card payment with 3DS
+  CARD_TOKENIZED // tokenized card (Apple Pay / Google Pay)
+
+  // -------- STRIPE (OPTIONAL BUT PRACTICAL) --------
+  STRIPE_BALANCE // Stripe-hosted balance movement
+  STRIPE_PAYOUT // Stripe payout to bank
+  STRIPE_REFUND // Stripe refund
+  STRIPE_CHARGEBACK // Stripe dispute/chargeback
+
+  // -------- WALLETS / ALT PAYMENTS --------
+  PAYPAL
+  APPLE_PAY
+  GOOGLE_PAY
+
+  // -------- CASH / MANUAL --------
+  CASH
+  MANUAL // admin/manual adjustment
+
+  @@map("payment_rail_enum")
 }

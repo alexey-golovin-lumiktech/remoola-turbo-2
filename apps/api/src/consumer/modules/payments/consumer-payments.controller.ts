@@ -47,7 +47,7 @@ export class ConsumerPaymentsController {
   @Get(`balance`)
   @ApiOperation({ summary: `Get current available balance` })
   getBalance(@Identity() consumer: ConsumerModel) {
-    return this.service.getBalances(consumer.id);
+    return this.service.getBalancesCompleted(consumer.id);
   }
 
   @Get(`history`)

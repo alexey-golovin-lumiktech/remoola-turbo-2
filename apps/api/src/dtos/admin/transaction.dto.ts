@@ -32,19 +32,13 @@ class Transaction extends BaseModel implements ITransactionModel {
 
   @Expose()
   @ApiProperty({ required: true })
-  originAmount: number;
+  amount: number;
 
   @Expose()
   @IsString()
   @IsIn(Object.values($Enums.CurrencyCode))
   @ApiProperty({ enum: Object.values($Enums.CurrencyCode) })
   currencyCode: $Enums.CurrencyCode;
-
-  @Expose()
-  @IsString()
-  @IsIn(Object.values($Enums.TransactionActionType))
-  @ApiProperty({ enum: Object.values($Enums.TransactionActionType) })
-  actionType: $Enums.TransactionActionType;
 
   @Expose()
   @IsString()
@@ -117,7 +111,7 @@ export class TransactionCreate
     `paymentRequestId`,
     `code`,
     `currencyCode`,
-    `originAmount`,
+    `amount`,
     `type`,
     `status`,
     `createdBy`,
@@ -127,7 +121,6 @@ export class TransactionCreate
     `feesType`,
     `stripeId`,
     `stripeFeeInPercents`,
-    `actionType`,
     `consumerId`,
   ] as const)
   implements ITransactionCreate {}

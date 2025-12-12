@@ -36,13 +36,13 @@ export function buildInvoiceHtmlV5(params: BuildInvoiceV5Params): string {
 
   const payer = payment.payer;
   const requester = payment.requester;
-  const tx = payment.transactions?.[0] ?? null;
+  const tx = payment.ledgerEntries?.[0] ?? null;
 
   const amount = Number(payment.amount ?? 0);
   const currency = payment.currencyCode;
   const fees = Number(tx?.feesAmount ?? 0);
-  const originAmount = Number(tx?.originAmount ?? amount);
-  const total = originAmount + fees;
+  const txAmount = Number(tx?.amount ?? amount);
+  const total = txAmount + fees;
 
   const isPaid = payment.status === `COMPLETED`;
   const isDraft = payment.status === `DRAFT`;
@@ -349,15 +349,14 @@ td {
         Currency: <strong>${currency}</strong>
       </div>
 
-      ${
-        isPaid
-          ? `<span class="badge badge-paid">PAID</span>`
-          : isDraft
-            ? `<span class="badge badge-draft">DRAFT</span>`
-            : isFailed
-              ? `<span class="badge badge-failed">${payment.status}</span>`
-              : `<span class="badge badge-other">${payment.status}</span>`
-      }
+      ${isPaid
+      ? `<span class="badge badge-paid">PAID</span>`
+      : isDraft
+        ? `<span class="badge badge-draft">DRAFT</span>`
+        : isFailed
+          ? `<span class="badge badge-failed">${payment.status}</span>`
+          : `<span class="badge badge-other">${payment.status}</span>`
+    }
     </div>
   </div>
 
@@ -439,7 +438,7 @@ td {
         <div class="card">
           <div class="section-title" style="margin-bottom:4px;">Totals</div>
           <div class="meta-item">
-          <span class="meta-item-label">Original Amount</span><span>${originAmount.toFixed(2)} ${currency}</span></div>
+          <span class="meta-item-label">Original Amount</span><span>${txAmount.toFixed(2)} ${currency}</span></div>
           <div class="meta-item">
           <span class="meta-item-label">Fees</span><span>${fees.toFixed(2)} ${currency}</span></div>
           <div class="meta-item">
@@ -458,16 +457,15 @@ td {
             <span class="meta-item-label">Status</span>
             <span>${payment.status}</span>
           </div>
-          ${
-            tx?.stripeId
-              ? `
+          ${tx?.stripeId
+      ? `
           <div class="meta-item">
             <span class="meta-item-label">Stripe ID</span>
             <span>${tx.stripeId.slice(0, 10)}</span>
           </div>
           `
-              : ``
-          }
+      : ``
+    }
         </div>
 
       </div>
@@ -482,15 +480,14 @@ td {
       <div class="muted">Signature / Company Representative</div>
     </div>
 
-    ${
-      qrCodeUrl
-        ? `
+    ${qrCodeUrl
+      ? `
       <div class="qr-block">
         <img src="${qrCodeUrl}" />
         <div class="qr-caption">View this invoice online</div>
       </div>
     `
-        : ``
+      : ``
     }
   </div>
 

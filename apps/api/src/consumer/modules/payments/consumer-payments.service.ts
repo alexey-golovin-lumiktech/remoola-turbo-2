@@ -1,3 +1,5 @@
+import { randomUUID } from 'crypto';
+
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
@@ -42,7 +44,7 @@ export class ConsumerPaymentsService {
         include: {
           requester: true,
           payer: true,
-          transactions: {
+          ledgerEntries: {
             orderBy: { createdAt: `desc` },
             take: 1,
           },
@@ -56,7 +58,7 @@ export class ConsumerPaymentsService {
     ]);
 
     const items = paymentRequests.map((paymentRequest) => {
-      const latestTx = paymentRequest.transactions[0];
+      const latestTx = paymentRequest.ledgerEntries[0];
 
       const counterparty = paymentRequest.payerId === consumerId ? paymentRequest.requester : paymentRequest.payer;
 
@@ -99,29 +101,34 @@ export class ConsumerPaymentsService {
     const paymentRequest = await this.prisma.paymentRequestModel.findUnique({
       where: { id: paymentRequestId },
       include: {
-        payer: true,
-        requester: true,
+        payer: { select: { id: true, email: true } },
+        requester: { select: { id: true, email: true } },
         attachments: {
           include: {
             resource: true,
           },
         },
-        transactions: true,
+        ledgerEntries: {
+          orderBy: { createdAt: `asc` },
+        },
       },
     });
 
-    if (!paymentRequest) throw new NotFoundException(`Payment request not found`);
+    if (!paymentRequest) {
+      throw new NotFoundException(`Payment request not found`);
+    }
 
     if (paymentRequest.payerId !== consumerId && paymentRequest.requesterId !== consumerId) {
       throw new ForbiddenException(`You do not have access to this payment`);
     }
 
-    const response = {
+    const isPayer = paymentRequest.payerId === consumerId;
+
+    return {
       id: paymentRequest.id,
       amount: Number(paymentRequest.amount),
       currencyCode: paymentRequest.currencyCode,
       status: paymentRequest.status,
-      type: paymentRequest.type,
       description: paymentRequest.description,
       dueDate: paymentRequest.dueDate,
       expectationDate: paymentRequest.expectationDate,
@@ -129,33 +136,35 @@ export class ConsumerPaymentsService {
       createdAt: paymentRequest.createdAt,
       updatedAt: paymentRequest.updatedAt,
 
-      payer: {
-        id: paymentRequest.payer.id,
-        email: paymentRequest.payer.email,
-      },
+      role: isPayer ? `PAYER` : `REQUESTER`,
 
-      requester: {
-        id: paymentRequest.requester.id,
-        email: paymentRequest.requester.email,
-      },
+      payer: paymentRequest.payer,
+      requester: paymentRequest.requester,
 
-      transactions: paymentRequest.transactions.map((paymentRequestTransaction) => ({
-        id: paymentRequestTransaction.id,
-        status: paymentRequestTransaction.status,
-        actionType: paymentRequestTransaction.actionType,
-        createdAt: paymentRequestTransaction.createdAt,
-      })),
+      ledgerEntries: paymentRequest.ledgerEntries.map((entry) => {
+        const metadata = JSON.parse(JSON.stringify(entry.metadata || {}));
+        return {
+          id: entry.id,
+          ledgerId: entry.ledgerId,
+          currencyCode: entry.currencyCode,
+          amount: Number(entry.amount), // SIGNED
+          direction: Number(entry.amount) > 0 ? `IN` : `OUT`,
+          status: entry.status,
+          type: entry.type,
+          createdAt: entry.createdAt,
+          rail: metadata.rail ?? null,
+          counterpartyId: metadata.counterpartyId ?? null,
+        };
+      }),
 
-      attachments: paymentRequest.attachments.map((paymentRequestAttachment) => ({
-        id: paymentRequestAttachment.resource.id,
-        name: paymentRequestAttachment.resource.originalName,
-        downloadUrl: paymentRequestAttachment.resource.downloadUrl,
-        size: paymentRequestAttachment.resource.size,
-        createdAt: paymentRequestAttachment.resource.createdAt,
+      attachments: paymentRequest.attachments.map((att) => ({
+        id: att.resource.id,
+        name: att.resource.originalName,
+        downloadUrl: att.resource.downloadUrl,
+        size: att.resource.size,
+        createdAt: att.resource.createdAt,
       })),
     };
-
-    return response;
   }
 
   async startPayment(consumerId: string, body: StartPayment) {
@@ -168,120 +177,175 @@ export class ConsumerPaymentsService {
     }
 
     if (recipient.id === consumerId) {
-      throw new BadRequestException(`You cannot send payment to yourself.`);
+      throw new BadRequestException(`You cannot send payment to yourself`);
     }
 
     const amount = Number(body.amount);
-    if (isNaN(amount) || amount <= 0) {
+    if (!Number.isFinite(amount) || amount <= 0) {
       throw new BadRequestException(`Invalid amount`);
     }
 
-    const transactionType: $Enums.TransactionType =
-      body.method === `CREDIT_CARD` ? $Enums.TransactionType.CREDIT_CARD : $Enums.TransactionType.BANK_TRANSFER;
+    const paymentRail = body.method === `CREDIT_CARD` ? $Enums.PaymentRail.CARD : $Enums.PaymentRail.BANK_TRANSFER;
 
-    // 1. Create Payment Request
-    const paymentRequest = await this.prisma.paymentRequestModel.create({
-      data: {
-        payerId: consumerId,
-        requesterId: recipient.id,
-        currencyCode: $Enums.CurrencyCode.USD,
-        amount,
-        description: body.description ?? null,
-        type: transactionType,
-        status: $Enums.TransactionStatus.PENDING,
-        createdBy: consumerId,
-        updatedBy: consumerId,
-      },
+    const ledgerId = randomUUID();
+
+    return this.prisma.$transaction(async (tx) => {
+      // 1️⃣ Create payment request (business intent)
+      const paymentRequest = await tx.paymentRequestModel.create({
+        data: {
+          payerId: consumerId,
+          requesterId: recipient.id,
+          currencyCode: $Enums.CurrencyCode.USD,
+          amount,
+          description: body.description ?? null,
+          status: $Enums.TransactionStatus.PENDING,
+          createdBy: consumerId,
+          updatedBy: consumerId,
+        },
+      });
+
+      // 2️⃣ PAYER ledger entry (money leaves)
+      await tx.ledgerEntryModel.create({
+        data: {
+          ledgerId,
+          consumerId,
+          paymentRequestId: paymentRequest.id,
+          type: $Enums.LedgerEntryType.USER_PAYMENT,
+          currencyCode: $Enums.CurrencyCode.USD,
+          status: $Enums.TransactionStatus.PENDING,
+          amount: -amount, // SIGNED
+          createdBy: consumerId,
+          updatedBy: consumerId,
+          metadata: {
+            rail: paymentRail,
+            counterpartyId: recipient.id,
+          },
+        },
+      });
+
+      // 3️⃣ RECIPIENT ledger entry (money enters)
+      await tx.ledgerEntryModel.create({
+        data: {
+          ledgerId,
+          consumerId: recipient.id,
+          paymentRequestId: paymentRequest.id,
+          type: $Enums.LedgerEntryType.USER_PAYMENT,
+          currencyCode: $Enums.CurrencyCode.USD,
+          status: $Enums.TransactionStatus.PENDING,
+          amount: +amount, // SIGNED
+          createdBy: consumerId,
+          updatedBy: consumerId,
+          metadata: {
+            rail: paymentRail,
+            counterpartyId: consumerId,
+          },
+        },
+      });
+
+      return { paymentRequestId: paymentRequest.id, ledgerId };
     });
-
-    // 2. Create Transaction linked to the request
-    await this.prisma.transactionModel.create({
-      data: {
-        consumerId,
-        paymentRequestId: paymentRequest.id,
-        originAmount: amount,
-        currencyCode: $Enums.CurrencyCode.USD,
-        type: transactionType,
-        actionType: $Enums.TransactionActionType.OUTCOME,
-        status: $Enums.TransactionStatus.PENDING,
-        createdBy: consumerId,
-        updatedBy: consumerId,
-      },
-    });
-
-    return {
-      paymentRequestId: paymentRequest.id,
-    };
   }
 
-  async getBalances(consumerId: string) {
-    const transactions = await this.prisma.transactionModel.findMany({
-      where: { consumerId },
+  async getBalancesCompleted(consumerId: string): Promise<Record<$Enums.CurrencyCode, number>> {
+    const rows = await this.prisma.ledgerEntryModel.groupBy({
+      by: [`currencyCode`],
+      where: {
+        consumerId,
+        status: $Enums.TransactionStatus.COMPLETED,
+      },
+      _sum: {
+        amount: true,
+      },
     });
 
-    const map: Record<string, number> = {};
+    const result: Record<$Enums.CurrencyCode, number> = {} as any;
 
-    for (const transaction of transactions) {
-      const amount = Number(transaction.originAmount);
-      const cur = transaction.currencyCode;
-
-      if (!map[cur]) map[cur] = 0;
-
-      const isIncome = transaction.actionType === `INCOME` && [`COMPLETED`, `WAITING`].includes(transaction.status);
-
-      const isOutcome = transaction.actionType === `OUTCOME` && [`COMPLETED`, `PENDING`].includes(transaction.status);
-
-      if (isIncome) map[cur] += amount;
-      if (isOutcome) map[cur] -= amount;
+    for (const row of rows) {
+      result[row.currencyCode] = Number(row._sum.amount ?? 0);
     }
 
-    return map;
+    return result;
+  }
+
+  async getBalancesIncludePending(consumerId: string): Promise<Record<$Enums.CurrencyCode, number>> {
+    const rows = await this.prisma.ledgerEntryModel.groupBy({
+      by: [`currencyCode`],
+      where: {
+        consumerId,
+        status: {
+          in: [$Enums.TransactionStatus.COMPLETED, $Enums.TransactionStatus.PENDING],
+        },
+      },
+      _sum: {
+        amount: true,
+      },
+    });
+
+    const result: Record<$Enums.CurrencyCode, number> = {} as any;
+
+    for (const row of rows) {
+      result[row.currencyCode] = Number(row._sum.amount ?? 0);
+    }
+
+    return result;
   }
 
   async getAvailableBalance(consumerId: string): Promise<number> {
-    const incoming = await this.prisma.transactionModel.aggregate({
+    const result = await this.prisma.ledgerEntryModel.aggregate({
       where: {
         consumerId,
-        actionType: $Enums.TransactionActionType.INCOME,
-        status: { in: [$Enums.TransactionStatus.COMPLETED, $Enums.TransactionStatus.WAITING] },
+        status: $Enums.TransactionStatus.COMPLETED,
       },
-      _sum: { originAmount: true },
+      _sum: {
+        amount: true,
+      },
     });
 
-    const outgoing = await this.prisma.transactionModel.aggregate({
-      where: {
-        consumerId,
-        actionType: $Enums.TransactionActionType.OUTCOME,
-        status: { in: [$Enums.TransactionStatus.COMPLETED, $Enums.TransactionStatus.PENDING] },
-      },
-      _sum: { originAmount: true },
-    });
-
-    const inVal = Number(incoming._sum.originAmount ?? 0);
-    const outVal = Number(outgoing._sum.originAmount ?? 0);
-
-    return inVal - outVal;
+    return Number(result._sum.amount ?? 0);
   }
 
   async getHistory(consumerId: string, query: PaymentsHistoryQuery) {
     const { actionType, status, limit = 20, offset = 0 } = query;
 
     const where: any = { consumerId };
-    if (actionType) where.actionType = actionType;
-    if (status) where.status = status;
+
+    if (status) {
+      where.status = status;
+    }
+
+    // Signed-ledger direction filter
+    if (actionType === `INCOME`) {
+      where.amount = { gt: 0 };
+    } else if (actionType === `OUTCOME`) {
+      where.amount = { lt: 0 };
+    }
 
     const [items, total] = await this.prisma.$transaction([
-      this.prisma.transactionModel.findMany({
+      this.prisma.ledgerEntryModel.findMany({
         where,
         orderBy: { createdAt: `desc` },
         skip: offset,
         take: limit,
       }),
-      this.prisma.transactionModel.count({ where }),
+      this.prisma.ledgerEntryModel.count({ where }),
     ]);
 
     return {
-      items,
+      items: items.map((e) => {
+        const metadata = JSON.parse(JSON.stringify(e.metadata || {}));
+        return {
+          id: e.id,
+          ledgerId: e.ledgerId,
+          type: e.type,
+          status: e.status,
+          currencyCode: e.currencyCode,
+          amount: Number(e.amount),
+          direction: Number(e.amount) > 0 ? `IN` : `OUT`,
+          createdAt: e.createdAt,
+          rail: metadata.rail ?? null,
+          paymentRequestId: e.paymentRequestId ?? null,
+        };
+      }),
       total,
       limit,
       offset,
@@ -307,17 +371,20 @@ export class ConsumerPaymentsService {
     const start = new Date();
     start.setHours(0, 0, 0, 0);
 
-    const result = await this.prisma.transactionModel.aggregate({
+    const result = await this.prisma.ledgerEntryModel.aggregate({
       where: {
         consumerId,
-        actionType: $Enums.TransactionActionType.OUTCOME,
+        amount: { lt: 0 }, // 👈 outgoing money
         createdAt: { gte: start },
-        status: { in: [$Enums.TransactionStatus.PENDING, $Enums.TransactionStatus.COMPLETED] },
+        status: {
+          in: [$Enums.TransactionStatus.PENDING, $Enums.TransactionStatus.COMPLETED],
+        },
       },
-      _sum: { originAmount: true },
+      _sum: { amount: true },
     });
 
-    return Number(result._sum.originAmount ?? 0);
+    // amount is negative → return absolute value
+    return Math.abs(Number(result._sum.amount ?? 0));
   }
 
   private async ensureLimits(consumerId: string, amount: number) {
@@ -334,85 +401,86 @@ export class ConsumerPaymentsService {
   }
 
   async withdraw(consumerId: string, body: WithdrawBody) {
-    const numericAmount = Number(body.amount);
-    if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+    const amount = Number(body.amount);
+    if (!Number.isFinite(amount) || amount <= 0) {
       throw new BadRequestException(`Invalid amount`);
     }
 
-    await this.ensureLimits(consumerId, numericAmount);
+    await this.ensureLimits(consumerId, amount);
 
     const balance = await this.getAvailableBalance(consumerId);
-    if (numericAmount > balance) {
+    if (amount > balance) {
       throw new BadRequestException(`Insufficient balance`);
     }
 
+    const ledgerId = randomUUID();
+
     return this.prisma.$transaction(async (tx) => {
-      // Create our internal transaction first
-      const transaction = await tx.transactionModel.create({
+      // 1️⃣ Ledger entry: money leaves user balance
+      const payoutEntry = await tx.ledgerEntryModel.create({
         data: {
+          ledgerId,
           consumerId,
-          type: $Enums.TransactionType.BANK_TRANSFER,
-          currencyCode: $Enums.CurrencyCode.USD, // adjust if you support multiple
-          actionType: $Enums.TransactionActionType.OUTCOME,
+          type: $Enums.LedgerEntryType.USER_PAYOUT,
+          currencyCode: $Enums.CurrencyCode.USD,
           status: $Enums.TransactionStatus.PENDING,
-          originAmount: numericAmount,
+          amount: -amount, // SIGNED
           createdBy: consumerId,
           updatedBy: consumerId,
-          paymentRequestId: null,
+          metadata: {
+            rail: $Enums.PaymentRail.BANK_TRANSFER,
+            requesterId: consumerId,
+          },
         },
       });
 
-      // // OPTIONAL: Stripe payout integration
-      // const consumer = await this.prisma.consumerModel.findUnique({
-      //   where: { id: consumerId },
-      //   select: { stripeCustomerId: true },
-      // });
-      // if (consumer?.stripeCustomerId) {
-      //   const payout = await this.stripeService.createWithdrawalPayout({
-      //     consumerId,
-      //     stripeCustomerId: consumer.stripeCustomerId,
-      //     amount: numericAmount,
-      //     currency: `usd`,
-      //     transactionId: transaction.id,
-      //     method: dto.method,
-      //   });
+      // 2️⃣ OPTIONAL: external payout (Stripe / bank)
+      // This does NOT change the ledger semantics
+      /*
+    const consumer = await tx.consumerModel.findUnique({
+      where: { id: consumerId },
+      select: { stripeCustomerId: true },
+    });
 
-      //   await tx.transactionModel.update({
-      //     where: { id: transaction.id },
-      //     data: { stripeId: payout.id },
-      //   });
-      // }
+    if (consumer?.stripeCustomerId) {
+      const payout = await this.stripeService.createWithdrawalPayout({
+        consumerId,
+        stripeCustomerId: consumer.stripeCustomerId,
+        amount,
+        currency: 'usd',
+        ledgerId,
+      });
 
-      return transaction;
+      await tx.ledgerEntryModel.update({
+        where: { id: payoutEntry.id },
+        data: {
+          stripeId: payout.id,
+        },
+      });
+    }
+    */
+
+      return payoutEntry;
     });
   }
 
   async transfer(consumerId: string, body: TransferBody) {
-    const numericAmount = Number(body.amount);
-    if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+    const amount = Number(body.amount);
+    if (!Number.isFinite(amount) || amount <= 0) {
       throw new BadRequestException(`Invalid amount`);
     }
 
-    await this.ensureLimits(consumerId, numericAmount);
+    await this.ensureLimits(consumerId, amount);
 
     const balance = await this.getAvailableBalance(consumerId);
-    if (numericAmount > balance) {
+    if (amount > balance) {
       throw new BadRequestException(`Insufficient balance`);
     }
 
     const recipient = await this.prisma.consumerModel.findFirst({
       where: {
-        OR: [
-          { email: body.recipient },
-          // via personal details phone
-          {
-            personalDetails: {
-              phoneNumber: body.recipient,
-            },
-          },
-        ],
+        OR: [{ email: body.recipient }, { personalDetails: { phoneNumber: body.recipient } }],
       },
-      include: { personalDetails: true },
     });
 
     if (!recipient) {
@@ -423,36 +491,48 @@ export class ConsumerPaymentsService {
       throw new BadRequestException(`Cannot transfer to yourself`);
     }
 
+    const ledgerId = randomUUID();
+
     return this.prisma.$transaction(async (tx) => {
-      // OUTCOME record for sender
-      const outgoing = await tx.transactionModel.create({
+      // Sender (money leaves)
+      await tx.ledgerEntryModel.create({
         data: {
+          ledgerId,
           consumerId,
-          type: $Enums.TransactionType.BANK_TRANSFER,
+          type: $Enums.LedgerEntryType.USER_PAYMENT,
           currencyCode: $Enums.CurrencyCode.USD,
-          actionType: $Enums.TransactionActionType.OUTCOME,
           status: $Enums.TransactionStatus.COMPLETED,
-          originAmount: numericAmount,
+          amount: -amount, // SIGNED
           createdBy: consumerId,
           updatedBy: consumerId,
+          metadata: {
+            rail: $Enums.PaymentRail.BANK_TRANSFER,
+            senderId: consumerId,
+            recipientId: recipient.id,
+          },
         },
       });
 
-      // INCOME record for recipient
-      await tx.transactionModel.create({
+      // Recipient (money enters)
+      await tx.ledgerEntryModel.create({
         data: {
+          ledgerId,
           consumerId: recipient.id,
-          type: $Enums.TransactionType.BANK_TRANSFER,
+          type: $Enums.LedgerEntryType.USER_PAYMENT,
           currencyCode: $Enums.CurrencyCode.USD,
-          actionType: $Enums.TransactionActionType.INCOME,
           status: $Enums.TransactionStatus.COMPLETED,
-          originAmount: numericAmount,
+          amount: +amount, // SIGNED
           createdBy: consumerId,
           updatedBy: consumerId,
+          metadata: {
+            rail: $Enums.PaymentRail.BANK_TRANSFER,
+            senderId: consumerId,
+            recipientId: recipient.id,
+          },
         },
       });
 
-      return outgoing;
+      return { ledgerId };
     });
   }
 }

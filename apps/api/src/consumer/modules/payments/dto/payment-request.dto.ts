@@ -23,7 +23,7 @@ export class PaymentRequestDetails {
   createdAt: string;
   updatedAt: string;
 
-  transactions: {
+  ledgerEntries: {
     id: string;
     status: string;
     actionType: string;

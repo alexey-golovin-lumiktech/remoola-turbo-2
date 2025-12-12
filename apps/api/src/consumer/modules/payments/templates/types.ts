@@ -3,7 +3,7 @@ import {
   type ConsumerModel,
   type PersonalDetailsModel,
   type AddressDetailsModel,
-  type TransactionModel,
+  type LedgerEntryModel,
 } from '@remoola/database-2';
 
 export type InvoicePayment = PaymentRequestModel & {
@@ -16,7 +16,7 @@ export type InvoicePayment = PaymentRequestModel & {
     personalDetails: PersonalDetailsModel;
   };
 } & {
-  transactions: TransactionModel[];
+  ledgerEntries: LedgerEntryModel[];
 };
 
 export type InvoiceTemplateParams = { invoiceNumber: string; payment: InvoicePayment };

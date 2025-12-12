@@ -23,7 +23,7 @@ export class ConsumerStripeService {
           payerId: consumerId,
         },
         include: {
-          transactions: true,
+          ledgerEntries: true,
           requester: true,
         },
       });
@@ -55,7 +55,7 @@ export class ConsumerStripeService {
       });
 
       // 2) Update transaction to Waiting status
-      await this.prisma.transactionModel.updateMany({
+      await this.prisma.ledgerEntryModel.updateMany({
         where: { paymentRequestId: pr.id },
         data: { status: `WAITING`, stripeId: session.id },
       });

@@ -82,7 +82,7 @@ export class StripeWebhookService {
 
     if (!payout.metadata?.transactionId) return;
 
-    await this.prisma.transactionModel.updateMany({
+    await this.prisma.ledgerEntryModel.updateMany({
       where: { id: payout.metadata.transactionId },
       data: { status: $Enums.TransactionStatus.COMPLETED },
     });
@@ -93,7 +93,7 @@ export class StripeWebhookService {
 
     if (!payout.metadata?.transactionId) return;
 
-    await this.prisma.transactionModel.updateMany({
+    await this.prisma.ledgerEntryModel.updateMany({
       where: { id: payout.metadata.transactionId },
       data: { status: $Enums.TransactionStatus.DENIED },
     });
@@ -142,7 +142,7 @@ export class StripeWebhookService {
 
     if (!paymentRequestId) return;
 
-    await this.prisma.transactionModel.updateMany({
+    await this.prisma.ledgerEntryModel.updateMany({
       where: { paymentRequestId },
       data: {
         status: $Enums.TransactionStatus.COMPLETED,

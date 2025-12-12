@@ -1,3 +1,5 @@
+import { randomUUID } from 'crypto';
+
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
@@ -22,38 +24,36 @@ export class ConsumerExchangeService {
   }
 
   async getBalanceByCurrency(consumerId: string): Promise<Record<$Enums.CurrencyCode, number>> {
-    const transactions = await this.prisma.transactionModel.findMany({
-      where: { consumerId },
+    const rows = await this.prisma.ledgerEntryModel.groupBy({
+      by: [`currencyCode`],
+      where: {
+        consumerId,
+        status: $Enums.TransactionStatus.COMPLETED, // 👈 only settled funds
+      },
+      _sum: {
+        amount: true,
+      },
     });
 
-    const map: Record<$Enums.CurrencyCode, number> = {} as any;
+    const result: Record<$Enums.CurrencyCode, number> = {} as any;
 
-    for (const tx of transactions) {
-      const amount = Number(tx.originAmount);
-      const cur = tx.currencyCode;
-
-      if (!map[cur]) map[cur] = 0;
-
-      if (tx.actionType === $Enums.TransactionActionType.INCOME) {
-        if (tx.status === $Enums.TransactionStatus.COMPLETED || tx.status === $Enums.TransactionStatus.WAITING) {
-          map[cur] += amount;
-        }
-      } else {
-        if (tx.status === $Enums.TransactionStatus.COMPLETED || tx.status === $Enums.TransactionStatus.PENDING) {
-          map[cur] -= amount;
-        }
-      }
+    for (const row of rows) {
+      result[row.currencyCode] = Number(row._sum.amount ?? 0);
     }
 
-    return map;
+    return result;
   }
 
   async convert(consumerId: string, body: ConvertCurrencyBody) {
-    if (body.from === body.to) {
+    const { amount, from, to } = body;
+
+    if (from === to) {
       throw new BadRequestException(`Cannot convert into same currency`);
     }
 
-    const { amount, from, to } = body;
+    if (!Number.isFinite(amount) || amount <= 0) {
+      throw new BadRequestException(`Invalid amount`);
+    }
 
     const balances = await this.getBalanceByCurrency(consumerId);
     const available = balances[from] ?? 0;
@@ -65,32 +65,44 @@ export class ConsumerExchangeService {
     const rate = await this.getRate(from, to);
     const converted = Number((amount * rate.rate).toFixed(2));
 
+    const ledgerId = randomUUID();
+
     return this.prisma.$transaction(async (tx) => {
-      // OUTCOME in source currency
-      await tx.transactionModel.create({
+      // 1️⃣ Source currency — money leaves
+      await tx.ledgerEntryModel.create({
         data: {
+          ledgerId,
           consumerId,
-          type: $Enums.TransactionType.CURRENCY_EXCHANGE,
+          type: $Enums.LedgerEntryType.CURRENCY_EXCHANGE,
           currencyCode: from,
-          actionType: $Enums.TransactionActionType.OUTCOME,
           status: $Enums.TransactionStatus.COMPLETED,
-          originAmount: amount,
+          amount: -amount, // SIGNED
           createdBy: consumerId,
           updatedBy: consumerId,
+          metadata: {
+            from,
+            to,
+            rate: rate.rate,
+          },
         },
       });
 
-      // INCOME in target currency
-      const income = await tx.transactionModel.create({
+      // 2️⃣ Target currency — money enters
+      const income = await tx.ledgerEntryModel.create({
         data: {
+          ledgerId,
           consumerId,
-          type: $Enums.TransactionType.CURRENCY_EXCHANGE,
+          type: $Enums.LedgerEntryType.CURRENCY_EXCHANGE,
           currencyCode: to,
-          actionType: $Enums.TransactionActionType.INCOME,
           status: $Enums.TransactionStatus.COMPLETED,
-          originAmount: converted,
+          amount: +converted, // SIGNED
           createdBy: consumerId,
           updatedBy: consumerId,
+          metadata: {
+            from,
+            to,
+            rate: rate.rate,
+          },
         },
       });
 
@@ -100,7 +112,8 @@ export class ConsumerExchangeService {
         rate: rate.rate,
         sourceAmount: amount,
         targetAmount: converted,
-        transactionId: income.id,
+        ledgerId,
+        entryId: income.id,
       };
     });
   }

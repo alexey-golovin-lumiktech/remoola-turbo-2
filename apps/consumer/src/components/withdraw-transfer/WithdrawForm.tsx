@@ -6,7 +6,7 @@ import { SuccessModal } from './SuccessModal';
 
 export function WithdrawForm() {
   const [amount, setAmount] = useState(``);
-  const [method, setMethod] = useState<`CARD` | `BANK` | ``>(``);
+  const [method, setMethod] = useState<`BANK_ACCOUNT` | `CREDIT_CARD` | ``>(``);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | undefined>();
   const [successOpen, setSuccessOpen] = useState(false);
@@ -76,9 +76,9 @@ export function WithdrawForm() {
         <div className="flex gap-3">
           <button
             type="button"
-            onClick={() => setMethod(`CARD`)}
+            onClick={() => setMethod(`CREDIT_CARD`)}
             className={`flex-1 rounded-lg border px-3 py-2 text-sm transition ${
-              method === `CARD`
+              method === `CREDIT_CARD`
                 ? `border-blue-600 bg-blue-50 text-blue-700`
                 : `border-gray-300 bg-white text-gray-800 hover:bg-gray-50`
             }`}
@@ -87,9 +87,9 @@ export function WithdrawForm() {
           </button>
           <button
             type="button"
-            onClick={() => setMethod(`BANK`)}
+            onClick={() => setMethod(`BANK_ACCOUNT`)}
             className={`flex-1 rounded-lg border px-3 py-2 text-sm transition ${
-              method === `BANK`
+              method === `BANK_ACCOUNT`
                 ? `border-blue-600 bg-blue-50 text-blue-700`
                 : `border-gray-300 bg-white text-gray-800 hover:bg-gray-50`
             }`}

@@ -23,7 +23,7 @@ export class ConsumerContractsService {
       include: {
         payer: true,
         requester: true,
-        transactions: {
+        ledgerEntries: {
           orderBy: { createdAt: `desc` },
           take: 1,
         },

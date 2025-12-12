@@ -31,9 +31,9 @@ export class ConsumerDashboardService {
   private async buildSummary(consumerId: string) {
     const [balance, activeRequests, lastPayment] = await Promise.all([
       // Completed transactions → balance
-      this.prisma.transactionModel.aggregate({
+      this.prisma.ledgerEntryModel.aggregate({
         where: { consumerId, status: `COMPLETED` },
-        _sum: { originAmount: true },
+        _sum: { amount: true },
       }),
 
       // Active payment requests count
@@ -45,7 +45,7 @@ export class ConsumerDashboardService {
       }),
 
       // Last payment made
-      this.prisma.transactionModel.findFirst({
+      this.prisma.ledgerEntryModel.findFirst({
         where: { consumerId },
         orderBy: { createdAt: `desc` },
         select: { createdAt: true },
@@ -53,7 +53,7 @@ export class ConsumerDashboardService {
     ]);
 
     return {
-      balanceCents: balance._sum.originAmount ? Number(balance._sum.originAmount) * 100 : 0,
+      balanceCents: balance._sum.amount ? Number(balance._sum.amount) * 100 : 0,
 
       activeRequests,
       lastPaymentAt: lastPayment?.createdAt ?? null,
@@ -183,7 +183,7 @@ export class ConsumerDashboardService {
       {
         id: `bank`,
         label: `Add bank account`,
-        completed: consumer.paymentMethods.length > 0,
+        completed: consumer.paymentMethods.filter((x) => x.type === `BANK_ACCOUNT`).length > 0,
       },
     ];
   }
