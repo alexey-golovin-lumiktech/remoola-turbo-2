@@ -1,3 +1,5 @@
+import { type TPaymentDirection } from '@remoola/api-types';
+
 export class PaymentRequestDetails {
   id: string;
   amount: number;
@@ -26,7 +28,7 @@ export class PaymentRequestDetails {
   ledgerEntries: {
     id: string;
     status: string;
-    actionType: string;
+    direction: TPaymentDirection;
     createdAt: string;
   }[];
 

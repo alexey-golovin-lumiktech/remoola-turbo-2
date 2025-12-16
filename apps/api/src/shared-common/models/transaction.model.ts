@@ -10,7 +10,6 @@ export type ITransactionModel = {
   type: $Enums.TransactionType;
   amount: number; // in cents
   currencyCode: $Enums.CurrencyCode;
-  // actionType: $Enums.TransactionActionType;
   status: $Enums.TransactionStatus; // (status changes depending on the status of stripe or by the admin depending on the physical receipt of money)
 
   createdBy: string;

@@ -44,34 +44,62 @@ export class ConsumerDocumentsService {
       orderBy: { createdAt: `desc` },
     });
 
-    const merged = [
-      ...consumerResources.map((consumerResource) => ({
-        id: consumerResource.resource.id,
-        name: consumerResource.resource.originalName,
-        size: consumerResource.resource.size,
-        createdAt: consumerResource.resource.createdAt?.toISOString() ?? ``,
-        downloadUrl: consumerResource.resource.downloadUrl,
-        mimetype: consumerResource.resource.mimetype,
-        kind: this.detectKind(consumerResource.resource.originalName),
-        tags: consumerResource.resource.resourceTags.map((resourceTag) => resourceTag.tag.name),
+    // 1️⃣ Normalize both sources into the same shape
+    const all = [
+      ...consumerResources.map((cr) => ({
+        resourceId: cr.resource.id,
+        name: cr.resource.originalName,
+        size: cr.resource.size,
+        createdAt: cr.resource.createdAt ?? cr.createdAt,
+        downloadUrl: cr.resource.downloadUrl,
+        mimetype: cr.resource.mimetype,
+        kind: this.detectKind(cr.resource.originalName),
+        tags: cr.resource.resourceTags.map((rt) => rt.tag.name),
       })),
-      ...paymentRequestAttachments.map((paymentRequestAttachment) => ({
-        id: paymentRequestAttachment.resource.id,
-        name: paymentRequestAttachment.resource.originalName,
-        size: paymentRequestAttachment.resource.size,
-        createdAt: paymentRequestAttachment.resource.createdAt?.toISOString() ?? ``,
-        downloadUrl: paymentRequestAttachment.resource.downloadUrl,
-        mimetype: paymentRequestAttachment.resource.mimetype,
+      ...paymentRequestAttachments.map((pa) => ({
+        resourceId: pa.resource.id,
+        name: pa.resource.originalName,
+        size: pa.resource.size,
+        createdAt: pa.resource.createdAt ?? pa.createdAt,
+        downloadUrl: pa.resource.downloadUrl,
+        mimetype: pa.resource.mimetype,
         kind: `PAYMENT`,
-        tags: paymentRequestAttachment.resource.resourceTags.map((resourceTag) => resourceTag.tag.name),
+        tags: pa.resource.resourceTags.map((rt) => rt.tag.name),
       })),
     ];
 
-    if (kind) {
-      return merged.filter((document) => document.kind === kind.toUpperCase());
+    // 2️⃣ Deduplicate by resourceId
+    const byResource = new Map<string, (typeof all)[number]>();
+
+    for (const doc of all) {
+      const existing = byResource.get(doc.resourceId);
+
+      // Keep the newest entry if duplicates exist
+      if (!existing || doc.createdAt > existing.createdAt) {
+        byResource.set(doc.resourceId, doc);
+      }
     }
 
-    return merged;
+    // 3️⃣ Convert map → array and sort
+    let result = Array.from(byResource.values())
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .map((doc) => ({
+        id: doc.resourceId,
+        name: doc.name,
+        size: doc.size,
+        createdAt: doc.createdAt.toISOString(),
+        downloadUrl: doc.downloadUrl,
+        mimetype: doc.mimetype,
+        kind: doc.kind,
+        tags: doc.tags,
+      }));
+
+    // 4️⃣ Optional filter
+    if (kind) {
+      result = result.filter((document) => document.kind === kind.toUpperCase());
+    }
+
+    return result;
   }
 
   private detectKind(filename: string): string {

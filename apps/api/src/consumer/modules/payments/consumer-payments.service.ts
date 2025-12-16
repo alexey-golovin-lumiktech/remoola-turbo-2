@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 
+import { PaymentDirection } from '@remoola/api-types';
 import { $Enums } from '@remoola/database-2';
 
 import { PaymentsHistoryQuery, TransferBody, WithdrawBody } from './dto';
@@ -143,12 +144,14 @@ export class ConsumerPaymentsService {
 
       ledgerEntries: paymentRequest.ledgerEntries.map((entry) => {
         const metadata = JSON.parse(JSON.stringify(entry.metadata || {}));
+        const amount = Number(entry.amount);
+
         return {
           id: entry.id,
           ledgerId: entry.ledgerId,
           currencyCode: entry.currencyCode,
-          amount: Number(entry.amount), // SIGNED
-          direction: Number(entry.amount) > 0 ? `IN` : `OUT`,
+          amount: amount, // SIGNED
+          direction: amount ? PaymentDirection.INCOME : PaymentDirection.OUTCOME,
           status: entry.status,
           type: entry.type,
           createdAt: entry.createdAt,
@@ -305,7 +308,7 @@ export class ConsumerPaymentsService {
   }
 
   async getHistory(consumerId: string, query: PaymentsHistoryQuery) {
-    const { actionType, status, limit = 20, offset = 0 } = query;
+    const { direction, status, limit = 20, offset = 0 } = query;
 
     const where: any = { consumerId };
 
@@ -313,40 +316,55 @@ export class ConsumerPaymentsService {
       where.status = status;
     }
 
-    // Signed-ledger direction filter
-    if (actionType === `INCOME`) {
+    // direction filter via signed amount
+    if (direction === PaymentDirection.INCOME) {
       where.amount = { gt: 0 };
-    } else if (actionType === `OUTCOME`) {
+    } else if (direction === PaymentDirection.OUTCOME) {
       where.amount = { lt: 0 };
     }
 
-    const [items, total] = await this.prisma.$transaction([
-      this.prisma.ledgerEntryModel.findMany({
-        where,
-        orderBy: { createdAt: `desc` },
-        skip: offset,
-        take: limit,
-      }),
-      this.prisma.ledgerEntryModel.count({ where }),
-    ]);
+    const rows = await this.prisma.ledgerEntryModel.findMany({
+      where,
+      orderBy: { createdAt: `desc` },
+    });
+
+    // 1️⃣ Group by ledgerId
+    const byLedger = new Map<string, typeof rows>();
+
+    for (const row of rows) {
+      if (!byLedger.has(row.ledgerId)) {
+        byLedger.set(row.ledgerId, []);
+      }
+      byLedger.get(row.ledgerId)!.push(row);
+    }
+
+    // 2️⃣ Collapse into one history item per ledgerId
+    const items = Array.from(byLedger.values())
+      .map((entries) => {
+        // Prefer entry belonging to this consumer (always exists)
+        const entry = entries.find((e) => e.consumerId === consumerId) ?? entries[0];
+        const amount = Number(entry.amount);
+        const metadata = JSON.parse(JSON.stringify(entry.metadata || {}));
+
+        return {
+          id: entry.id,
+          ledgerId: entry.ledgerId,
+          type: entry.type,
+          status: entry.status,
+          currencyCode: entry.currencyCode,
+          amount: amount,
+          direction: amount ? PaymentDirection.INCOME : PaymentDirection.OUTCOME,
+          createdAt: entry.createdAt,
+          rail: metadata.rail ?? null,
+          paymentRequestId: entry.paymentRequestId ?? null,
+        };
+      })
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(offset, offset + limit);
 
     return {
-      items: items.map((e) => {
-        const metadata = JSON.parse(JSON.stringify(e.metadata || {}));
-        return {
-          id: e.id,
-          ledgerId: e.ledgerId,
-          type: e.type,
-          status: e.status,
-          currencyCode: e.currencyCode,
-          amount: Number(e.amount),
-          direction: Number(e.amount) > 0 ? `IN` : `OUT`,
-          createdAt: e.createdAt,
-          rail: metadata.rail ?? null,
-          paymentRequestId: e.paymentRequestId ?? null,
-        };
-      }),
-      total,
+      items,
+      total: byLedger.size,
       limit,
       offset,
     };

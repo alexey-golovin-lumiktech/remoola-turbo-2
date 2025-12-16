@@ -29,7 +29,7 @@ export class ConsumerStripeService {
       });
 
       if (!pr) throw new NotFoundException(`Payment not found`);
-      if (pr.status !== `PENDING`) throw new ForbiddenException(`Payment already processed`);
+      if (pr.status !== $Enums.TransactionStatus.PENDING) throw new ForbiddenException(`Payment already processed`);
 
       const amountCents = Math.round(Number(pr.amount) * 100);
 

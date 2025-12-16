@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 
+import { PaymentDirection, TransactionStatus } from '@remoola/api-types';
+
 type Transaction = {
   id: string;
   code: string;
@@ -22,9 +24,12 @@ export function PendingWithdrawalsCard() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch(`/api/payments/history?actionType=OUTCOME&status=PENDING&limit=5`, {
-          credentials: `include`,
+        const search = new URLSearchParams({
+          direction: PaymentDirection.OUTCOME,
+          status: TransactionStatus.PENDING,
+          limit: `5`,
         });
+        const res = await fetch(`/api/payments/history?${search.toString()}`, { credentials: `include` });
         if (!res.ok) return;
         const json = (await res.json()) as HistoryResponse;
         setData(json);
