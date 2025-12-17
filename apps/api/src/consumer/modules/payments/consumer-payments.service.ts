@@ -141,24 +141,28 @@ export class ConsumerPaymentsService {
 
       payer: paymentRequest.payer,
       requester: paymentRequest.requester,
+      ledgerEntries: paymentRequest.ledgerEntries
+        .map((entry) => {
+          const metadata = JSON.parse(JSON.stringify(entry.metadata || {}));
+          const amount = Number(entry.amount);
 
-      ledgerEntries: paymentRequest.ledgerEntries.map((entry) => {
-        const metadata = JSON.parse(JSON.stringify(entry.metadata || {}));
-        const amount = Number(entry.amount);
-
-        return {
-          id: entry.id,
-          ledgerId: entry.ledgerId,
-          currencyCode: entry.currencyCode,
-          amount: amount, // SIGNED
-          direction: amount ? PaymentDirection.INCOME : PaymentDirection.OUTCOME,
-          status: entry.status,
-          type: entry.type,
-          createdAt: entry.createdAt,
-          rail: metadata.rail ?? null,
-          counterpartyId: metadata.counterpartyId ?? null,
-        };
-      }),
+          return {
+            id: entry.id,
+            ledgerId: entry.ledgerId,
+            currencyCode: entry.currencyCode,
+            amount,
+            direction: amount > 0 ? PaymentDirection.INCOME : PaymentDirection.OUTCOME,
+            status: entry.status,
+            type: entry.type,
+            createdAt: entry.createdAt,
+            rail: metadata.rail ?? null,
+            counterpartyId: metadata.counterpartyId ?? null,
+          };
+        })
+        .filter(
+          (entry, index, self) =>
+            index === self.findIndex((e) => e.ledgerId === entry.ledgerId && e.type === entry.type),
+        ),
 
       attachments: paymentRequest.attachments.map((att) => ({
         id: att.resource.id,
