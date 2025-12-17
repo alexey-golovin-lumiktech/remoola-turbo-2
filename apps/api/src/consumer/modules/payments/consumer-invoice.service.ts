@@ -1,11 +1,11 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import chromium from '@sparticuz/chromium';
 import puppeteer from 'puppeteer-core';
 
 import { $Enums } from '@remoola/database-2';
 
 import { buildInvoiceHtmlV5 } from './templates';
 import { PrismaService } from '../../../shared/prisma.service';
+import { getBrowser, pfdPageViewport } from '../../../shared-common/pdf-generator-package/constants';
 import { FileStorageService } from '../files/file-storage.service';
 
 @Injectable()
@@ -99,15 +99,11 @@ export class ConsumerInvoiceService {
   }
 
   private async renderPdfFromHtml(html: string): Promise<Buffer> {
-    const browser = await puppeteer.launch({
-      args: chromium.args,
-      executablePath: await chromium.executablePath(),
-      headless: true,
-    });
+    const browser = await getBrowser();
 
     try {
       const page = await browser.newPage();
-      await page.setViewport({ width: 1240, height: 1754 });
+      await page.setViewport(pfdPageViewport);
       await page.setContent(html, { waitUntil: `networkidle0` });
 
       await page.emulateMediaType(`screen`);
