@@ -349,14 +349,15 @@ td {
         Currency: <strong>${currency}</strong>
       </div>
 
-      ${isPaid
-      ? `<span class="badge badge-paid">PAID</span>`
-      : isDraft
-        ? `<span class="badge badge-draft">DRAFT</span>`
-        : isFailed
-          ? `<span class="badge badge-failed">${payment.status}</span>`
-          : `<span class="badge badge-other">${payment.status}</span>`
-    }
+      ${
+        isPaid
+          ? `<span class="badge badge-paid">PAID</span>`
+          : isDraft
+            ? `<span class="badge badge-draft">DRAFT</span>`
+            : isFailed
+              ? `<span class="badge badge-failed">${payment.status}</span>`
+              : `<span class="badge badge-other">${payment.status}</span>`
+      }
     </div>
   </div>
 
@@ -457,15 +458,16 @@ td {
             <span class="meta-item-label">Status</span>
             <span>${payment.status}</span>
           </div>
-          ${tx?.stripeId
-      ? `
+          ${
+            tx?.stripeId
+              ? `
           <div class="meta-item">
             <span class="meta-item-label">Stripe ID</span>
             <span>${tx.stripeId.slice(0, 10)}</span>
           </div>
           `
-      : ``
-    }
+              : ``
+          }
         </div>
 
       </div>
@@ -480,14 +482,15 @@ td {
       <div class="muted">Signature / Company Representative</div>
     </div>
 
-    ${qrCodeUrl
-      ? `
+    ${
+      qrCodeUrl
+        ? `
       <div class="qr-block">
         <img src="${qrCodeUrl}" />
         <div class="qr-caption">View this invoice online</div>
       </div>
     `
-      : ``
+        : ``
     }
   </div>
 

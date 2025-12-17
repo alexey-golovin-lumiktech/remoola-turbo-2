@@ -4,15 +4,9 @@ import { useState } from 'react';
 
 import { type IAddressDetails } from '../../../types';
 
-export function CreateContactModal({
-  open,
-  onCloseAction,
-  onCreatedAction: onCreated,
-}: {
-  open: boolean;
-  onCloseAction: () => void;
-  onCreatedAction: () => void;
-}) {
+type CreateContactModalProps = { open: boolean; onCloseAction: () => void; onCreatedAction: () => void };
+
+export function CreateContactModal({ open, onCloseAction, onCreatedAction }: CreateContactModalProps) {
   const [email, setEmail] = useState<string | null>(null);
   const [name, setName] = useState<string | null>(null);
   const [address, setAddress] = useState<IAddressDetails>({
@@ -43,9 +37,20 @@ export function CreateContactModal({
       credentials: `include`,
     });
     if (res.ok) {
-      onCreated();
+      setEmail(null);
+      setName(null);
+      setAddress({
+        postalCode: null,
+        country: null,
+        state: null,
+        city: null,
+        street: null,
+      });
+      onCreatedAction();
       onCloseAction();
     }
+    const parsed = JSON.parse((await res.text()) || `{}`);
+    alert(`An unexpected error occurred: ${parsed?.message || res.statusText}`);
   }
 
   return (

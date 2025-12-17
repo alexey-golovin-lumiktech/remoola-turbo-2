@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 
 import { ConsumerContactDetails } from './dto/consumer-contact-details.dto';
 import { ConsumerContact, ConsumerCreateContact, ConsumerUpdateContact } from './dto/consumer-contact.dto';
@@ -66,6 +66,14 @@ export class ConsumerContactsService {
   }
 
   async create(consumerId: string, body: ConsumerCreateContact) {
+    const existByEmail = await this.prisma.contactModel.findFirst({
+      where: { consumerId, email: body.email },
+    });
+
+    if (existByEmail) {
+      throw new ConflictException(`A contact with this email already exists.`);
+    }
+
     return this.prisma.contactModel.create({
       data: {
         email: body.email,
