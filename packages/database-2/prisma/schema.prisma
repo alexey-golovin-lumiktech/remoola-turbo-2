@@ -293,7 +293,8 @@ model LedgerEntryModel {
   deletedBy String?   @map("deleted_by")
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
-  @@unique([paymentRequestId, ledgerId, type])
+  @@unique([paymentRequestId, ledgerId, consumerId, type])
+  @@index([paymentRequestId])
   @@index([consumerId])
   @@index([ledgerId])
   @@map("ledger_entry")

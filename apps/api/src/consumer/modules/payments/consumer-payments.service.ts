@@ -194,9 +194,10 @@ export class ConsumerPaymentsService {
 
     const paymentRail = body.method === `CREDIT_CARD` ? $Enums.PaymentRail.CARD : $Enums.PaymentRail.BANK_TRANSFER;
 
-    const ledgerId = randomUUID();
-
     return this.prisma.$transaction(async (tx) => {
+      // 🔐 Generate ledgerId INSIDE tx (idempotency-safe)
+      const ledgerId = randomUUID();
+
       // 1️⃣ Create payment request (business intent)
       const paymentRequest = await tx.paymentRequestModel.create({
         data: {
@@ -239,7 +240,7 @@ export class ConsumerPaymentsService {
           type: $Enums.LedgerEntryType.USER_PAYMENT,
           currencyCode: $Enums.CurrencyCode.USD,
           status: $Enums.TransactionStatus.PENDING,
-          amount: +amount, // SIGNED
+          amount: amount, // SIGNED
           createdBy: consumerId,
           updatedBy: consumerId,
           metadata: {
@@ -249,7 +250,10 @@ export class ConsumerPaymentsService {
         },
       });
 
-      return { paymentRequestId: paymentRequest.id, ledgerId };
+      return {
+        paymentRequestId: paymentRequest.id,
+        ledgerId,
+      };
     });
   }
 

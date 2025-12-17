@@ -36,21 +36,21 @@ export function CreateContactModal({ open, onCloseAction, onCreatedAction }: Cre
       }),
       credentials: `include`,
     });
-    if (res.ok) {
-      setEmail(null);
-      setName(null);
-      setAddress({
-        postalCode: null,
-        country: null,
-        state: null,
-        city: null,
-        street: null,
-      });
-      onCreatedAction();
-      onCloseAction();
+    if (!res.ok) {
+      const parsed = JSON.parse((await res.text()) || `{}`);
+      return alert(`An unexpected error occurred: ${parsed?.message || res.statusText}`);
     }
-    const parsed = JSON.parse((await res.text()) || `{}`);
-    alert(`An unexpected error occurred: ${parsed?.message || res.statusText}`);
+    setEmail(null);
+    setName(null);
+    setAddress({
+      postalCode: null,
+      country: null,
+      state: null,
+      city: null,
+      street: null,
+    });
+    onCreatedAction();
+    onCloseAction();
   }
 
   return (
