@@ -66,8 +66,8 @@
     },
     "build": {
       "dependsOn": [
-        "^db:generate",
-        "^build"
+        "^build",
+        "db:generate"
       ],
       "inputs": [
         "$TURBO_DEFAULT$",
@@ -89,6 +89,9 @@
     },
     "test:e2e": {},
     "db:generate": {
+      "outputs": [
+        "generated/**"
+      ],
       "cache": false
     },
     "db:migrate": {
