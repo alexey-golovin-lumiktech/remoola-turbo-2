@@ -9,7 +9,9 @@ function formatAmount(amount: number, currency: string) {
   }).format(amount);
 }
 
-export function PendingRequestsTable({ pendingRequests }: { pendingRequests: IPendingRequest[] }) {
+type PendingRequestsTableProps = { pendingRequests: IPendingRequest[] };
+
+export function PendingRequestsTable({ pendingRequests }: PendingRequestsTableProps) {
   return (
     <section className="w-full">
       <header className="mb-3 flex items-center justify-between">

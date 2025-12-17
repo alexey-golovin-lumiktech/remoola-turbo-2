@@ -1,8 +1,4 @@
-export const ORGANIZATION_SIZE = {
-  SMALL: `SMALL`,
-  MEDIUM: `MEDIUM`,
-  LARGE: `LARGE`,
-} as const;
+export const ORGANIZATION_SIZE = { SMALL: `SMALL`, MEDIUM: `MEDIUM`, LARGE: `LARGE` } as const;
 
 export type IOrganizationSize = (typeof ORGANIZATION_SIZE)[keyof typeof ORGANIZATION_SIZE];
 

@@ -5,7 +5,9 @@ import { useEffect, useState } from 'react';
 
 import { type ConsumerContactDetails } from '../../types';
 
-export function ContactDetailsView({ id }: { id: ConsumerContactDetails[`id`] }) {
+type ContactDetailsViewProps = { id: ConsumerContactDetails[`id`] };
+
+export function ContactDetailsView({ id }: ContactDetailsViewProps) {
   const [details, setDetails] = useState<ConsumerContactDetails>();
 
   async function loadDetails(contactId: string) {

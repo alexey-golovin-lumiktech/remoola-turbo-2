@@ -1,5 +1,14 @@
 'use client';
 
+type PaymentsFiltersProps = {
+  status: string;
+  type: string;
+  search: string;
+  onStatusChangeAction: (v: string) => void;
+  onTypeChangeAction: (v: string) => void;
+  onSearchChangeAction: (v: string) => void;
+};
+
 export function PaymentsFilters({
   status,
   type,
@@ -7,14 +16,7 @@ export function PaymentsFilters({
   onStatusChangeAction,
   onTypeChangeAction,
   onSearchChangeAction,
-}: {
-  status: string;
-  type: string;
-  search: string;
-  onStatusChangeAction: (v: string) => void;
-  onTypeChangeAction: (v: string) => void;
-  onSearchChangeAction: (v: string) => void;
-}) {
+}: PaymentsFiltersProps) {
   return (
     <div className="flex items-center gap-3">
       {/* Search */}

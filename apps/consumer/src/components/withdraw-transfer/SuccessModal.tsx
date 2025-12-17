@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 
-type Props = {
+type SuccessModalProps = {
   open: boolean;
   title: string;
   description?: string;
@@ -10,7 +10,7 @@ type Props = {
   actions?: ReactNode;
 };
 
-export function SuccessModal({ open, title, description, onCloseAction, actions }: Props) {
+export function SuccessModal({ open, title, description, onCloseAction, actions }: SuccessModalProps) {
   if (!open) return null;
 
   return (

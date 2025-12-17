@@ -4,13 +4,13 @@ import { CreditCard, Landmark, Star, Pencil, Trash2 } from 'lucide-react';
 
 import { type PaymentMethodItem } from '../../types';
 
-type Props = {
+type PaymentMethodsListProps = {
   payments: PaymentMethodItem[];
   onEditAction: (paymentMethod: PaymentMethodItem) => void;
   onDeleteAction: (paymentMethod: PaymentMethodItem) => void;
 };
 
-export function PaymentMethodsList({ payments, onEditAction, onDeleteAction }: Props) {
+export function PaymentMethodsList({ payments, onEditAction, onDeleteAction }: PaymentMethodsListProps) {
   if (!payments.length) {
     return <div className="text-center text-gray-400 py-10">No payment methods added yet.</div>;
   }

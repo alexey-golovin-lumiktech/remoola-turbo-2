@@ -14,7 +14,9 @@ type BankDetails = {
   address: string;
 };
 
-export function BankTransferInstructions({ details }: { details: BankDetails }) {
+type BankTransferInstructionsProps = { details: BankDetails };
+
+export function BankTransferInstructions({ details }: BankTransferInstructionsProps) {
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
   const copy = async (label: string, value: string) => {

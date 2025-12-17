@@ -2,14 +2,19 @@
 
 import { type PaymentMethodItem } from '../../../types';
 
-type Props = {
+type DeletePaymentMethodModalProps = {
   open: boolean;
   onCloseAction: () => void;
   onDeletedAction: () => void;
   paymentMethod: PaymentMethodItem | null;
 };
 
-export function DeletePaymentMethodModal({ open, onCloseAction, onDeletedAction, paymentMethod }: Props) {
+export function DeletePaymentMethodModal({
+  open,
+  onCloseAction,
+  onDeletedAction,
+  paymentMethod,
+}: DeletePaymentMethodModalProps) {
   if (!open || !paymentMethod) return null;
 
   async function handleDelete() {

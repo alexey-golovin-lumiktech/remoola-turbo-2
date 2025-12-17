@@ -12,10 +12,7 @@ type Transaction = {
   createdAt: string | null;
 };
 
-type HistoryResponse = {
-  items: Transaction[];
-  total: number;
-};
+type HistoryResponse = { items: Transaction[]; total: number };
 
 export function PendingWithdrawalsCard() {
   const [data, setData] = useState<HistoryResponse | null>(null);

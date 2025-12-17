@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 
-import puppeteer from 'puppeteer';
+import chromium from '@sparticuz/chromium';
+import puppeteer from 'puppeteer-core';
 
 import { outputHtmlPath, puppeteerOptions } from './constants';
 import { getInvoiceHtml } from './templates';
@@ -12,8 +13,13 @@ export const generatePdf = async (params: GeneratePdfParams) => {
   if (webUrl.length === 0 && rawHtml.length === 0)
     throw new Error(`Params should contain one of from webUrl or rawHtml`);
 
-  const browser = await puppeteer.launch(puppeteerOptions.launchOptions);
+  const browser = await puppeteer.launch({
+    args: chromium.args,
+    executablePath: await chromium.executablePath(),
+    headless: true,
+  });
   const page = await browser.newPage();
+  await page.setViewport({ width: 1240, height: 1754 });
 
   if (webUrl.length > 0) await page.goto(webUrl, { waitUntil: `networkidle0` });
   if (rawHtml.length > 0) await page.setContent(rawHtml, { waitUntil: `domcontentloaded` });

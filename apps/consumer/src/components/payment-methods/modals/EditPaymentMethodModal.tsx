@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 
 import { type PaymentMethodItem } from '../../../types';
 
-type Props = {
+type EditPaymentMethodModalProps = {
   open: boolean;
   onCloseAction: () => void;
   onUpdatedAction: () => void;
@@ -16,7 +16,7 @@ export function EditPaymentMethodModal({
   onCloseAction: onClose,
   onUpdatedAction: onUpdated,
   paymentMethod: paymentMethod,
-}: Props) {
+}: EditPaymentMethodModalProps) {
   const [billingName, setBillingName] = useState(``);
   const [billingEmail, setBillingEmail] = useState(``);
   const [billingPhone, setBillingPhone] = useState(``);

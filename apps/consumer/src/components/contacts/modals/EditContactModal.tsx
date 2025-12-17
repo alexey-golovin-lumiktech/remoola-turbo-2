@@ -4,17 +4,14 @@ import { useEffect, useState } from 'react';
 
 import { type ConsumerContactAddress, type ConsumerContact } from '../../../types';
 
-export function EditContactModal({
-  open,
-  onCloseAction,
-  onUpdatedAction,
-  contact,
-}: {
+type EditContactModalProps = {
   open: boolean;
   onCloseAction: () => void;
   contact: ConsumerContact | null;
   onUpdatedAction: () => void;
-}) {
+};
+
+export function EditContactModal({ open, onCloseAction, onUpdatedAction, contact }: EditContactModalProps) {
   const [name, setName] = useState(contact?.name ?? ``);
   const [email, setEmail] = useState(contact?.email ?? ``);
   const [address, setAddress] = useState<ConsumerContactAddress>({

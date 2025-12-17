@@ -1,5 +1,6 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import puppeteer from 'puppeteer';
+import chromium from '@sparticuz/chromium';
+import puppeteer from 'puppeteer-core';
 
 import { $Enums } from '@remoola/database-2';
 
@@ -99,19 +100,15 @@ export class ConsumerInvoiceService {
 
   private async renderPdfFromHtml(html: string): Promise<Buffer> {
     const browser = await puppeteer.launch({
+      args: chromium.args,
+      executablePath: await chromium.executablePath(),
       headless: true,
-      args: [
-        `--no-sandbox`, //
-        `--disable-setuid-sandbox`,
-        `--disable-dev-shm-usage`,
-      ],
     });
 
     try {
       const page = await browser.newPage();
-      await page.setContent(html, {
-        waitUntil: `networkidle0`,
-      });
+      await page.setViewport({ width: 1240, height: 1754 });
+      await page.setContent(html, { waitUntil: `networkidle0` });
 
       await page.emulateMediaType(`screen`);
 

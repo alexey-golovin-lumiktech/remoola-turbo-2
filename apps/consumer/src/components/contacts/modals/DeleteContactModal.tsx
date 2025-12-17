@@ -2,17 +2,14 @@
 
 import { type ConsumerContact } from '../../../types';
 
-export function DeleteContactModal({
-  open,
-  onCloseAction,
-  contact,
-  onDeletedAction,
-}: {
+type DeleteContactModalProps = {
   open: boolean;
   onCloseAction: () => void;
   contact: ConsumerContact | null;
   onDeletedAction: () => void;
-}) {
+};
+
+export function DeleteContactModal({ open, onCloseAction, contact, onDeletedAction }: DeleteContactModalProps) {
   if (!open || !contact) return null;
 
   async function remove() {
@@ -25,6 +22,8 @@ export function DeleteContactModal({
       onDeletedAction();
       onCloseAction();
     }
+    const parsed = JSON.parse((await res.text()) || `{}`);
+    alert(`An unexpected error occurred: ${parsed?.message || res.statusText}`);
   }
 
   return (

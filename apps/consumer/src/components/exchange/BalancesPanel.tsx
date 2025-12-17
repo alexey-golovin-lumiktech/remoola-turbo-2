@@ -1,8 +1,9 @@
 'use client';
 
 type BalanceMap = Record<string, number>;
+type BalancesPanelProps = { balances: BalanceMap };
 
-export function BalancesPanel({ balances }: { balances: BalanceMap }) {
+export function BalancesPanel({ balances }: BalancesPanelProps) {
   const entries = Object.entries(balances);
 
   if (entries.length === 0) {

@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 
-export function PaymentView({ paymentRequestId }: { paymentRequestId: string }) {
+type PaymentViewProps = { paymentRequestId: string };
+
+export function PaymentView({ paymentRequestId }: PaymentViewProps) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 

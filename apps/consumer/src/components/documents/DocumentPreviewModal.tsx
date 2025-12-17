@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useFullscreen } from './useFullscreen';
 import { useResizable } from './useResizable';
 
-interface Props {
+interface DocumentPreviewModalProps {
   open: boolean;
   onClose: () => void;
   doc: {
@@ -20,7 +20,7 @@ interface Props {
   };
 }
 
-export function DocumentPreviewModal({ open, onClose, doc }: Props) {
+export function DocumentPreviewModal({ open, onClose, doc }: DocumentPreviewModalProps) {
   const { isFullscreen, toggleFullscreen, fullscreenRef } = useFullscreen();
 
   const { size, startDragging } = useResizable({ minWidth: 400, minHeight: 300, maxWidth: 1600, maxHeight: 1200 });

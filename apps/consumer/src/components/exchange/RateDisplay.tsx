@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from 'react';
 
-type Props = {
+type RateDisplayProps = {
   from: string; // CurrencyCode
   to: string; // CurrencyCode
 };
 
-export function RateDisplay({ from, to }: Props) {
+export function RateDisplay({ from, to }: RateDisplayProps) {
   const [rate, setRate] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [prevRate, setPrevRate] = useState<number | null>(null);

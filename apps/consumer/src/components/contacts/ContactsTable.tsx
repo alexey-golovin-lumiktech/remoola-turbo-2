@@ -2,17 +2,14 @@
 
 import { type ConsumerContactAddress, type ConsumerContact } from '../../types';
 
-export function ContactsTable({
-  items,
-  onDetailsAction,
-  onEditAction,
-  onDeleteAction,
-}: {
+type ContactsTableProps = {
   items: ConsumerContact[];
   onDetailsAction: (contact: ConsumerContact) => void;
   onEditAction: (contact: ConsumerContact) => void;
   onDeleteAction: (contact: ConsumerContact) => void;
-}) {
+};
+
+export function ContactsTable({ items, onDetailsAction, onEditAction, onDeleteAction }: ContactsTableProps) {
   return (
     <table className="w-full text-sm">
       <thead>

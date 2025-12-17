@@ -4,7 +4,9 @@ import Link from 'next/link';
 
 import { type IQuickDoc } from '../../types';
 
-export function QuickDocsCard({ docs }: { docs: IQuickDoc[] }) {
+type QuickDocsCardProps = { docs: IQuickDoc[] };
+
+export function QuickDocsCard({ docs }: QuickDocsCardProps) {
   return (
     <section>
       <header className="mb-3 flex items-center justify-between">

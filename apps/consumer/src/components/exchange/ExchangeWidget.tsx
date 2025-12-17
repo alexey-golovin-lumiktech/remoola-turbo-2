@@ -6,7 +6,9 @@ import { RateDisplay } from './RateDisplay';
 
 const CURRENCIES = [`USD`, `EUR`, `JPY`, `GBP`, `AUD`] as const;
 
-export function ExchangeWidget({ balances }: { balances: Record<string, number> }) {
+type ExchangeWidgetProps = { balances: Record<string, number> };
+
+export function ExchangeWidget({ balances }: ExchangeWidgetProps) {
   const [from, setFrom] = useState(`USD`);
   const [to, setTo] = useState(`EUR`);
   const [amount, setAmount] = useState(``);

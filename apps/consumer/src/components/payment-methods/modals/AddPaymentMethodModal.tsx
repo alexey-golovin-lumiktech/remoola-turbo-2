@@ -8,13 +8,13 @@ import { type StripeSetupIntentPayload, type PaymentMethodType, type CreatePayme
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
-type Props = {
+type AddPaymentMethodModalProps = {
   open: boolean;
   onCloseAction: () => void;
   onCreatedAction: () => void;
 };
 
-export function AddPaymentMethodModal({ open, onCloseAction, onCreatedAction }: Props) {
+export function AddPaymentMethodModal({ open, onCloseAction, onCreatedAction }: AddPaymentMethodModalProps) {
   if (!open) return null;
 
   return (
@@ -24,7 +24,10 @@ export function AddPaymentMethodModal({ open, onCloseAction, onCreatedAction }: 
   );
 }
 
-function AddPaymentMethodModalInner({ onCloseAction: onClose, onCreatedAction: onCreated }: Props) {
+function AddPaymentMethodModalInner({
+  onCloseAction: onClose,
+  onCreatedAction: onCreated,
+}: AddPaymentMethodModalProps) {
   const stripe = useStripe();
   const elements = useElements();
 

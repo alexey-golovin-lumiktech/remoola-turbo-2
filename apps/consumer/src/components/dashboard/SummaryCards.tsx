@@ -10,7 +10,9 @@ function formatMoney(cents: number, currency = `USD`) {
   }).format(cents / 100);
 }
 
-export function SummaryCards({ summary }: { summary: IDashboardSummary }) {
+type SummaryCardsProps = { summary: IDashboardSummary };
+
+export function SummaryCards({ summary }: SummaryCardsProps) {
   const lastPaymentLabel = summary.lastPaymentAt
     ? new Intl.DateTimeFormat(undefined, {
         dateStyle: `medium`,

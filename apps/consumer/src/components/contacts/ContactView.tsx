@@ -5,7 +5,9 @@ import { useState } from 'react';
 
 import { type ConsumerContact } from '../../types';
 
-export function ContactView({ contact }: { contact: ConsumerContact }) {
+type ContactViewProps = { contact: ConsumerContact };
+
+export function ContactView({ contact }: ContactViewProps) {
   const [editing, setEditing] = useState(false);
 
   return (

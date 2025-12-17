@@ -2,7 +2,9 @@
 
 import { type IActivityItem } from '../../types';
 
-export function ActivityTimeline({ activityTimelineItems }: { activityTimelineItems: IActivityItem[] }) {
+type ActivityTimelineProps = { activityTimelineItems: IActivityItem[] };
+
+export function ActivityTimeline({ activityTimelineItems }: ActivityTimelineProps) {
   return (
     <section>
       <header className="mb-3 flex items-center justify-between">
