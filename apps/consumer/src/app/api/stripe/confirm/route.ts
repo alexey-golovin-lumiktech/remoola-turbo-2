@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
-  const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE_URL}/payment-methods/stripe/confirm`);
+  const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE_URL}/stripe/confirm`);
   console.log(`POST`, url.href);
 
   const res = await fetch(url, {
