@@ -205,6 +205,8 @@ model PaymentMethodModel {
 
   type PaymentMethodType
 
+  stripePaymentMethodId String? @map("stripe_payment_method_id")
+
   defaultSelected Boolean @default(false) @map("default_selected")
   brand           String  @db.VarChar(255)
   last4           String  @db.VarChar(4)
@@ -223,6 +225,8 @@ model PaymentMethodModel {
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
   @@unique([type, last4, consumerId])
+  @@unique([consumerId, stripePaymentMethodId])
+  @@index([consumerId])
   @@map("payment_method")
 }
 
