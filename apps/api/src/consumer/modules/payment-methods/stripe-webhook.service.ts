@@ -2,7 +2,7 @@ import { Injectable, type RawBodyRequest } from '@nestjs/common';
 import express from 'express';
 import Stripe from 'stripe';
 
-import { $Enums, type ConsumerModel } from '@remoola/database-2';
+import { $Enums } from '@remoola/database-2';
 
 import { STRIPE_EVENT } from './events';
 import { envs } from '../../../envs';
@@ -16,10 +16,10 @@ export class StripeWebhookService {
     this.stripe = new Stripe(envs.STRIPE_SECRET_KEY, { apiVersion: `2025-11-17.clover` });
   }
 
-  async startVerifyMeStripeSession(identity: ConsumerModel) {
+  async startVerifyMeStripeSession(consumerId: string) {
     const session = await this.stripe.identity.verificationSessions.create({
       type: `document`,
-      metadata: { consumerId: identity.id }, // important
+      metadata: { consumerId }, // important
       options: {
         document: {
           allowed_types: [`passport`, `driving_license`, `id_card`],

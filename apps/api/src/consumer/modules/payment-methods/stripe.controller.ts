@@ -10,10 +10,14 @@ import { Identity } from '../../../common';
 export class ConsumerStripeController {
   constructor(private readonly service: ConsumerStripeService) {}
 
-  @Post(`:id/stripe-session`)
-  async createStripeSession(@Identity() identity: ConsumerModel, @Param(`id`) id: string, @Req() req: express.Request) {
+  @Post(`:paymentRequestId/stripe-session`)
+  async createStripeSession(
+    @Identity() consumer: ConsumerModel,
+    @Param(`paymentRequestId`) paymentRequestId: string,
+    @Req() req: express.Request,
+  ) {
     const frontendBaseUrl = req.get(`origin`);
     if (!frontendBaseUrl) throw new BadRequestException(`origin is required`);
-    return this.service.createStripeSession(identity.id, id, frontendBaseUrl);
+    return this.service.createStripeSession(consumer.id, paymentRequestId, frontendBaseUrl);
   }
 }

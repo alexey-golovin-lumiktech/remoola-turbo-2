@@ -14,7 +14,7 @@ import { $Enums, type PrismaClient } from '@remoola/database-2';
 
 import { AdminModule } from './admin/admin.module';
 import { AppModule } from './app.module';
-import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter';
+import { PrismaExceptionFilter } from './common';
 import { ConsumerModule } from './consumer/consumer.module';
 import { envs } from './envs';
 import { AuthGuard } from './guards';

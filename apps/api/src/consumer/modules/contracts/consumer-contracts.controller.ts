@@ -15,7 +15,7 @@ export class ConsumerContractsController {
   constructor(private readonly service: ConsumerContractsService) {}
 
   @Get()
-  async list(@Identity() identity: ConsumerModel): Promise<ConsumerContractItem[]> {
-    return this.service.getContracts(identity.id);
+  async list(@Identity() consumer: ConsumerModel): Promise<ConsumerContractItem[]> {
+    return this.service.getContracts(consumer.id);
   }
 }

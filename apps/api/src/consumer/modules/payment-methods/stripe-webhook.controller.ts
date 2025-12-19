@@ -20,7 +20,7 @@ export class StripeWebhookController {
   }
 
   @Post(`stripe/verify/start`)
-  async startVerifyMeStripeSession(@Identity() identity: ConsumerModel) {
-    return this.service.startVerifyMeStripeSession(identity);
+  async startVerifyMeStripeSession(@Identity() consumer: ConsumerModel) {
+    return this.service.startVerifyMeStripeSession(consumer.id);
   }
 }

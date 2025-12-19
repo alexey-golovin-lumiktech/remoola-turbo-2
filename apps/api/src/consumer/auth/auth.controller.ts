@@ -148,8 +148,8 @@ export class ConsumerAuthController {
   }
 
   @Get(`me`)
-  me(@Identity() identity: ConsumerModel) {
-    return identity;
+  me(@Identity() consumer: ConsumerModel) {
+    return consumer;
   }
 
   @PublicEndpoint()

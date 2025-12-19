@@ -5,7 +5,7 @@ import express from 'express';
 import { type AdminModel } from '@remoola/database-2';
 
 import { AdminAuthService } from './auth.service';
-import { Identity, PublicEndpoint } from '../../common/decorators';
+import { Identity, PublicEndpoint } from '../../common';
 import { ADMIN } from '../../dtos';
 import { envs, JWT_ACCESS_TTL, JWT_REFRESH_TTL } from '../../envs';
 import { ACCESS_TOKEN_COOKIE_KEY, REFRESH_TOKEN_COOKIE_KEY } from '../../shared-common';

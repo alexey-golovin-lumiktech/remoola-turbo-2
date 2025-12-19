@@ -22,7 +22,7 @@ export class ConsumerPaymentsController {
 
   @Get()
   async list(
-    @Identity() identity: ConsumerModel,
+    @Identity() consumer: ConsumerModel,
     @Query(`page`) page = 1,
     @Query(`pageSize`) pageSize = 20,
     @Query(`status`) status?: string,
@@ -30,7 +30,7 @@ export class ConsumerPaymentsController {
     @Query(`search`) search?: string,
   ) {
     return this.service.listPayments({
-      consumerId: identity.id,
+      consumerId: consumer.id,
       page: Number(page),
       pageSize: Number(pageSize),
       status,
@@ -40,8 +40,8 @@ export class ConsumerPaymentsController {
   }
 
   @Post(`start`)
-  startPayment(@Identity() identity: ConsumerModel, @Body() body: StartPayment) {
-    return this.service.startPayment(identity.id, body);
+  startPayment(@Identity() consumer: ConsumerModel, @Body() body: StartPayment) {
+    return this.service.startPayment(consumer.id, body);
   }
 
   @Get(`balance`)
@@ -69,16 +69,16 @@ export class ConsumerPaymentsController {
   }
 
   @Get(`:paymentRequestId`)
-  getPayment(@Identity() identity: ConsumerModel, @Param(`paymentRequestId`) paymentRequestId: string) {
-    return this.service.getPaymentView(identity.id, paymentRequestId);
+  getPayment(@Identity() consumer: ConsumerModel, @Param(`paymentRequestId`) paymentRequestId: string) {
+    return this.service.getPaymentView(consumer.id, paymentRequestId);
   }
 
   @Post(`:paymentRequestId/generate-invoice`)
   async generate(
-    @Identity() identity: ConsumerModel,
+    @Identity() consumer: ConsumerModel,
     @Param(`paymentRequestId`) paymentRequestId: string,
     @Req() req: express.Request,
   ) {
-    return this.invoiceService.generateInvoice(paymentRequestId, identity.id, req.get(`host`));
+    return this.invoiceService.generateInvoice(paymentRequestId, consumer.id, req.get(`host`));
   }
 }

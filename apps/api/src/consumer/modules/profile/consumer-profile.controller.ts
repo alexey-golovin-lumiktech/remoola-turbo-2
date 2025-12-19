@@ -15,17 +15,17 @@ export class ConsumerProfileController {
   constructor(private readonly service: ConsumerProfileService) {}
 
   @Get(`me`)
-  getMe(@Identity() identity: ConsumerModel) {
-    return this.service.getProfile(identity.id);
+  getMe(@Identity() consumer: ConsumerModel) {
+    return this.service.getProfile(consumer.id);
   }
 
   @Patch(`update`)
-  async updateProfile(@Identity() identity: ConsumerModel, @Body() body: UpdateConsumerProfileBody) {
-    return this.service.updateProfile(identity.id, body);
+  async updateProfile(@Identity() consumer: ConsumerModel, @Body() body: UpdateConsumerProfileBody) {
+    return this.service.updateProfile(consumer.id, body);
   }
 
   @Patch(`password`)
-  async changePassword(@Identity() identity: ConsumerModel, @Body() body: UpdateConsumerPasswordBody) {
-    return this.service.changePassword(identity.id, body);
+  async changePassword(@Identity() consumer: ConsumerModel, @Body() body: UpdateConsumerPasswordBody) {
+    return this.service.changePassword(consumer.id, body);
   }
 }

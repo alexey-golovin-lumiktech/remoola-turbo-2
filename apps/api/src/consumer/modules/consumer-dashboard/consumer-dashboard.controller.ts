@@ -15,7 +15,7 @@ export class ConsumerDashboardController {
   constructor(private readonly dashboard: ConsumerDashboardService) {}
 
   @Get()
-  async getDashboard(@Identity() identity: ConsumerModel): Promise<DashboardData> {
-    return this.dashboard.getDashboardData(identity.id);
+  async getDashboard(@Identity() consumer: ConsumerModel): Promise<DashboardData> {
+    return this.dashboard.getDashboardData(consumer.id);
   }
 }

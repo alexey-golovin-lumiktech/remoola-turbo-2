@@ -1,5 +1,4 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import puppeteer from 'puppeteer-core';
 
 import { $Enums } from '@remoola/database-2';
 

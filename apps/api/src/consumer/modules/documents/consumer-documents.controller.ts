@@ -28,32 +28,32 @@ export class ConsumerDocumentsController {
   constructor(private readonly documents: ConsumerDocumentsService) {}
 
   @Get()
-  list(@Identity() identity: ConsumerModel, @Query(`kind`) kind?: string) {
-    return this.documents.getDocuments(identity.id, kind);
+  list(@Identity() consumer: ConsumerModel, @Query(`kind`) kind?: string) {
+    return this.documents.getDocuments(consumer.id, kind);
   }
 
   @Post(`upload`)
   @UseInterceptors(FilesInterceptor(`files`))
   upload(
-    @Identity() identity: ConsumerModel,
+    @Identity() consumer: ConsumerModel,
     @UploadedFiles() files: Express.Multer.File[],
     @Req() req: express.Request,
   ) {
-    return this.documents.uploadDocuments(identity.id, files, req.get(`host`));
+    return this.documents.uploadDocuments(consumer.id, files, req.get(`host`));
   }
 
   @Post(`bulk-delete`)
-  bulkDelete(@Identity() identity: ConsumerModel, @Body() body: BulkDeleteDocuments) {
-    return this.documents.bulkDeleteDocuments(identity.id, body.ids);
+  bulkDelete(@Identity() consumer: ConsumerModel, @Body() body: BulkDeleteDocuments) {
+    return this.documents.bulkDeleteDocuments(consumer.id, body.ids);
   }
 
   @Post(`attach-to-payment`)
-  attachToPayment(@Identity() identity: ConsumerModel, @Body() body: AttachDocuments) {
-    return this.documents.attachToPayment(identity.id, body.paymentRequestId, body.resourceIds);
+  attachToPayment(@Identity() consumer: ConsumerModel, @Body() body: AttachDocuments) {
+    return this.documents.attachToPayment(consumer.id, body.paymentRequestId, body.resourceIds);
   }
 
   @Post(`:id/tags`)
-  setTags(@Identity() identity: ConsumerModel, @Body() body: SetTags, @Param(`id`) resourceId: string) {
-    return this.documents.setTags(identity.id, resourceId, body.tags);
+  setTags(@Identity() consumer: ConsumerModel, @Body() body: SetTags, @Param(`id`) resourceId: string) {
+    return this.documents.setTags(consumer.id, resourceId, body.tags);
   }
 }
