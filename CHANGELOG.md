@@ -128,19 +128,59 @@
 
 - **2025-12-01:** Internal updates and preparations for December feature work.
 
-- **2025-12-02:** Migrated authentication from localStorage tokens to secure cookie-based authentication, standardized fetch configurations, refactored API routes with PATCH/DELETE support, added Stripe session endpoints, moved auth types to shared directory, consolidated dashboard types and logic, added Stripe identity verification with webhook handling, improved component exports, added contact details page, and removed legacy signup controllers in favor of unified `/auth/signup` endpoint.
+- **2025-12-02:** Migrated authentication from localStorage tokens to secure cookie-based authentication,
+                  standardized fetch configurations, refactored API routes with PATCH/DELETE support,
+                  added Stripe session endpoints, moved auth types to shared directory, consolidated dashboard
+                  types and logic, added Stripe identity verification with webhook handling, improved component
+                  exports, added contact details page, and removed legacy signup controllers in favor of unified
+                  `/auth/signup` endpoint.
 
-- **2025-12-03:** Updated login endpoint to accept credentials via request body, standardized header handling, normalized CORS header names, cleaned unused imports, replaced manual cookie forwarding with request-based forwarding, added workspace-specific dev scripts, improved Stripe webhook raw-body handling, and performed extensive cleanup of deprecated API code from previous architecture.
+- **2025-12-03:** Updated login endpoint to accept credentials via request body, standardized header handling,
+                  normalized CORS header names, cleaned unused imports, replaced manual cookie forwarding
+                  with request-based forwarding, added workspace-specific dev scripts, improved Stripe webhook
+                  raw-body handling, and performed extensive cleanup of deprecated API code from previous architecture.
 
-- **2025-12-04:** Performed large-scale Vercel-related fixes: Prisma generate issues, React hook dependency corrections, extracted verification and auth callback logic, improved `/me` headers and debug logging, resolved redirect issues for consumer login/signup, added Vercel backend URL for email verification, added Vercel domain to allowed origins, fixed cookie issues, and improved Swagger configuration.
+- **2025-12-04:** Performed large-scale Vercel-related fixes: Prisma generate issues, React hook dependency corrections,
+                  extracted verification and auth callback logic, improved `/me` headers and debug logging,
+                  resolved redirect issues for consumer login/signup, added Vercel backend URL for email verification,
+                  added Vercel domain to allowed origins, fixed cookie issues, and improved Swagger configuration.
 
-- **2025-12-05:** Added wallet functionality with balance, withdraw, and transfer features; added currency exchange with multi-currency balance support; standardized fetch request headers; fixed documents API routes; improved DTO naming, parameter naming, and removed `Dto` suffix; cleaned up debug logs and comments; fixed billing phone formatting; added Swagger decorators; added proxy routes for documents and payments; and improved code readability.
+- **2025-12-05:** Added wallet functionality with balance, withdraw, and transfer features; added currency exchange with
+                  multi-currency balance support; standardized fetch request headers; fixed documents API routes;
+                  improved DTO naming, parameter naming, and removed `Dto` suffix; cleaned up debug logs and comments;
+                  fixed billing phone formatting; added Swagger decorators; added proxy routes for documents and payments;
+                  and improved code readability.
 
-- **2025-12-08:** Updated Next.js version according to Vercel CVE-2025-55182 security recommendations and performed additional fixes in consumer/admin apps.
+- **2025-12-08:** Updated Next.js version according to Vercel CVE-2025-55182 security recommendations and
+                  performed additional fixes in consumer/admin apps.
 
-- **2025-12-09:** Fixed build scripts, performed linting updates, improved internal configurations, and completed a framework upgrade across packages.
+- **2025-12-09:** Fixed build scripts, performed linting updates, improved internal configurations,
+                  and completed a framework upgrade across packages.
 
-- **2025-12-10:** Implemented full consumer profile management (personal, address, organization), added profile update + password change flows, created profile settings UI, added updated API routes with header forwarding, removed deprecated profile controller, and applied minor fixes and polish.
+- **2025-12-10:** Implemented full consumer profile management (personal, address, organization),
+                  added profile update + password change flows, created profile settings UI,
+                  added updated API routes with header forwarding, removed deprecated profile controller,
+                  and applied minor fixes and polish.
+
+- **2025-12-11:** Added unique constraint for `payment_request_attachment`, standardized naming (`originalname` → `originalName`),
+                  centralized JWT cookie constants, improved file upload handling and S3 bucket switching,
+                  refined invoice tagging/numbering, and standardized API endpoint construction using `URL`.
+
+- **2025-12-12:** Refactored transaction system to signed double-entry ledger entries by replacing `TransactionModel`
+                  with `LedgerEntryModel`, adding ledger enums/types and rails, migrating schema, and updating balance calculations
+                  and payment flows accordingly.
+
+- **2025-12-16:** Replaced `actionType` with a direction enum and introduced payment deduplication logic to reduce duplicate processing.
+
+- **2025-12-17:** Improved contact creation with duplicate email validation and error handling, centralized Puppeteer/PDF
+                  generation configuration, updated DB build pipeline to include Prisma generation,
+                  added ledger entry deduplication + uniqueness constraints and indexes, improved ledger idempotency/transaction safety,
+                  and added POST endpoint for currency exchange conversion.
+
+- **2025-12-19:** Added Stripe `paymentMethodId` field with DB constraints and migration, renamed `@Identity()` param to `consumer`
+                  across controllers with import cleanup, updated Stripe webhook service signature, and move Stripe endpoints
+                  from payment-methods into a dedicated Stripe controller.
+
 
 
 ```
