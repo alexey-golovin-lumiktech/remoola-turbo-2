@@ -15,10 +15,11 @@ model AccessRefreshTokenModel {
   accessToken  String @map("access_token") @db.VarChar(255)
   refreshToken String @map("refresh_token") @db.VarChar(255)
 
-  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
+  @@index([identityId])
   @@map("access_refresh_token")
 }
 
@@ -34,10 +35,11 @@ model AddressDetailsModel {
   consumerId String        @unique @db.Uuid
   consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
+  @@index([consumerId, deletedAt])
   @@map("address_details")
 }
 
@@ -50,10 +52,11 @@ model AdminModel {
   password String @db.VarChar(255)
   salt     String @db.VarChar(255)
 
-  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
+  @@index([email, deletedAt])
   @@map("admin")
 }
 
@@ -65,8 +68,8 @@ model BillingDetailsModel {
 
   paymentMethod PaymentMethodModel?
 
-  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
   @@map("billing_details")
@@ -103,10 +106,11 @@ model ConsumerModel {
   passwordResets    ResetPasswordModel[]
   ledgerEntries     LedgerEntryModel[]
 
-  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
+  @@index([email, deletedAt])
   @@map("consumer")
 }
 
@@ -119,11 +123,13 @@ model ConsumerResourceModel {
   resourceId String        @map("resource_id") @db.Uuid
   resource   ResourceModel @relation(fields: [resourceId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
   @@unique([consumerId, resourceId])
+  @@index([consumerId, deletedAt])
+  @@index([resourceId, deletedAt])
   @@map("consumer_resource")
 }
 
@@ -137,10 +143,12 @@ model ContactModel {
   consumerId String        @map("consumer_id") @db.Uuid
   consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
+  @@unique([consumerId, email])
+  @@index([consumerId])
   @@map("contact")
 }
 
@@ -150,10 +158,11 @@ model ExchangeRateModel {
   fromCurrency CurrencyCode @map("from_currency")
   toCurrency   CurrencyCode @map("to_currency")
 
-  rate Decimal @db.Decimal(11, 4)
+  // Increased precision for FX
+  rate Decimal @db.Decimal(18, 8)
 
-  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
   @@unique([fromCurrency, toCurrency])
@@ -175,10 +184,11 @@ model GoogleProfileDetailsModel {
   consumerId String        @unique @db.Uuid
   consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
+  @@index([consumerId, deletedAt])
   @@map("google_profile_details")
 }
 
@@ -193,10 +203,11 @@ model OrganizationDetailsModel {
   consumerId String        @unique @db.Uuid
   consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
+  @@index([consumerId, deletedAt])
   @@map("organization_details")
 }
 
@@ -205,27 +216,40 @@ model PaymentMethodModel {
 
   type PaymentMethodType
 
-  stripePaymentMethodId String? @map("stripe_payment_method_id")
+  // Stripe identity
+  stripePaymentMethodId String? @map("stripe_payment_method_id") @db.VarChar(255)
+
+  // Stable dedupe key from Stripe when possible (card fingerprint / bank fingerprint)
+  stripeFingerprint String? @map("stripe_fingerprint") @db.VarChar(255)
 
   defaultSelected Boolean @default(false) @map("default_selected")
-  brand           String  @db.VarChar(255)
-  last4           String  @db.VarChar(4)
-  serviceFee      Int     @default(0) @map("service_fee")
-  expMonth        String? @map("exp_month") @db.VarChar(2)
-  expYear         String? @map("exp_year") @db.VarChar(4)
+
+  // Card-ish (optional because BANK_ACCOUNT exists)
+  brand    String? @db.VarChar(255)
+  last4    String? @db.VarChar(4)
+  expMonth String? @map("exp_month") @db.VarChar(2)
+  expYear  String? @map("exp_year") @db.VarChar(4)
+
+  // Bank-ish (optional)
+  bankName     String?       @map("bank_name") @db.VarChar(255)
+  bankLast4    String?       @map("bank_last4") @db.VarChar(4)
+  bankCountry  String?       @map("bank_country") @db.VarChar(2)
+  bankCurrency CurrencyCode? @map("bank_currency")
+
+  serviceFee Int @default(0) @map("service_fee")
 
   billingDetailsId String              @unique @map("billing_details_id") @db.Uuid
-  billingDetails   BillingDetailsModel @relation(fields: [billingDetailsId], references: [id])
+  billingDetails   BillingDetailsModel @relation(fields: [billingDetailsId], references: [id], onDelete: Cascade)
 
   consumerId String        @map("consumer_id") @db.Uuid
   consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
-  @@unique([type, last4, consumerId])
   @@unique([consumerId, stripePaymentMethodId])
+  @@unique([consumerId, stripeFingerprint])
   @@index([consumerId])
   @@map("payment_method")
 }
@@ -235,8 +259,10 @@ model PaymentRequestModel {
 
   currencyCode CurrencyCode      @default(USD) @map("currency_code")
   status       TransactionStatus @default(DRAFT) @map("status")
-  type         TransactionType   @default(CREDIT_CARD) @map("type") //deprecated
-  paymentRail  PaymentRail?      @map("payment_rail")
+
+  // Deprecated — keep nullable to reduce misleading data
+  type        TransactionType? @map("type")
+  paymentRail PaymentRail?     @map("payment_rail")
 
   amount          Decimal   @db.Decimal(9, 2)
   description     String?
@@ -253,13 +279,16 @@ model PaymentRequestModel {
   attachments   PaymentRequestAttachmentModel[]
   ledgerEntries LedgerEntryModel[]
 
-  createdBy String    @map("created_by") @db.VarChar(255)
-  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedBy String    @map("updated_by") @db.VarChar(255)
-  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  createdBy String?   @map("created_by") @db.VarChar(255)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedBy String?   @map("updated_by") @db.VarChar(255)
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedBy String?   @map("deleted_by") @db.VarChar(255)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
+  @@index([payerId])
+  @@index([requesterId])
+  @@index([status])
   @@map("payment_request")
 }
 
@@ -281,23 +310,27 @@ model LedgerEntryModel {
   feesType   TransactionFeesType? @default(NO_FEES_INCLUDED)
   feesAmount Decimal?             @db.Decimal(9, 2)
 
-  stripeId String? @map("stripe_id")
+  stripeId String? @map("stripe_id") @db.VarChar(255)
+
+  // Ensures exactly-once ledger writes across retries/webhooks
+  idempotencyKey String? @map("idempotency_key") @db.VarChar(128)
+
   metadata Json?
 
   consumerId String        @map("consumer_id") @db.Uuid
   consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade)
 
   paymentRequestId String?              @map("payment_request_id") @db.Uuid
-  paymentRequest   PaymentRequestModel? @relation(fields: [paymentRequestId], references: [id])
+  paymentRequest   PaymentRequestModel? @relation(fields: [paymentRequestId], references: [id], onDelete: SetNull)
 
-  createdBy String    @map("created_by")
+  createdBy String?   @map("created_by") @db.VarChar(255)
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedBy String    @map("updated_by")
-  updatedAt DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
-  deletedBy String?   @map("deleted_by")
+  updatedBy String?   @map("updated_by") @db.VarChar(255)
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedBy String?   @map("deleted_by") @db.VarChar(255)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
-  @@unique([paymentRequestId, ledgerId, consumerId, type])
+  @@unique([idempotencyKey])
   @@index([paymentRequestId])
   @@index([consumerId])
   @@index([ledgerId])
@@ -316,11 +349,14 @@ model PaymentRequestAttachmentModel {
   resourceId String        @map("resource_id") @db.Uuid
   resource   ResourceModel @relation(fields: [resourceId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
   @@unique([paymentRequestId, requesterId, resourceId])
+  @@index([paymentRequestId])
+  @@index([requesterId])
+  @@index([resourceId])
   @@map("payment_request_attachment")
 }
 
@@ -330,7 +366,7 @@ model PersonalDetailsModel {
   legalStatus LegalStatus? @map("legal_status")
 
   citizenOf             String   @map("citizen_of") @db.VarChar(255)
-  dateOfBirth           DateTime @map("date_of_birth")
+  dateOfBirth           DateTime @map("date_of_birth") @db.Timestamptz(6)
   passportOrIdNumber    String   @map("passport_or_id_number") @db.VarChar(255)
   countryOfTaxResidence String?  @map("country_of_tax_residence") @db.VarChar(255)
   taxId                 String?  @map("tax_id") @db.VarChar(255)
@@ -341,33 +377,38 @@ model PersonalDetailsModel {
   consumerId String        @unique @db.Uuid
   consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
+  @@index([consumerId, deletedAt])
   @@map("personal_details")
 }
 
 model ResetPasswordModel {
   id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
 
-  token     String
+  token     String   @db.VarChar(255)
   expiredAt DateTime @map("expired_at") @db.Timestamptz(6)
 
   consumerId String        @map("consumer_id") @db.Uuid
   consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
+  @@index([consumerId])
+  @@index([token])
   @@map("reset_password")
 }
 
 model ResourceModel {
   id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
 
-  access       String @default("public")
+  // Use enum (you already defined it)
+  access ResourceAccess @default(PUBLIC) @map("access")
+
   originalName String @map("originalname") @db.VarChar(255)
   mimetype     String @db.VarChar(255)
   size         Int
@@ -375,14 +416,15 @@ model ResourceModel {
   key          String @db.VarChar(255)
   downloadUrl  String @map("download_url") @db.VarChar(255)
 
-  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime? @default(now()) @map("updated_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
   consumerResources ConsumerResourceModel[]
   attachments       PaymentRequestAttachmentModel[]
   resourceTags      ResourceTagModel[]
 
+  @@index([access])
   @@map("resource")
 }
 
@@ -400,10 +442,12 @@ model ResourceTagModel {
   resourceId String @map("resource_id") @db.Uuid
   tagId      String @map("tag_id") @db.Uuid
 
-  resource ResourceModel    @relation(fields: [resourceId], references: [id])
-  tag      DocumentTagModel @relation(fields: [tagId], references: [id])
+  resource ResourceModel    @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  tag      DocumentTagModel @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@unique([resourceId, tagId])
+  @@index([resourceId])
+  @@index([tagId])
   @@map("resource_tag")
 }
 
