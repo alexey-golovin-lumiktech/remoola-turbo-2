@@ -30,14 +30,30 @@ async function seed(prisma: PrismaClient): Promise<void> {
   ];
 
   const emails = admins.map((x) => x.email);
-  await prisma.adminModel.deleteMany({ where: { email: { in: emails } } });
-
-  const data: IAdminCreate[] = [];
+  const dbAdmins = await prisma.adminModel.findMany({ where: { email: { in: emails } } });
   for (const admin of admins) {
-    const { salt, hash } = await passwordUtils.hashPassword(admin.password);
-    data.push({ email: admin.email, type: admin.type, salt: salt, password: hash });
+    for (const dbAdmin of dbAdmins) {
+      if (dbAdmin.email === admin.email) {
+        const valid = await passwordUtils.verifyPassword({
+          password: admin.password,
+          storedHash: dbAdmin.password,
+          storedSalt: dbAdmin.salt,
+        });
+        if (!valid) {
+          const { salt, hash } = await passwordUtils.hashPassword(admin.password);
+          await prisma.adminModel.update({ where: { id: dbAdmin.id }, data: { password: hash, salt } });
+        } else console.log(`Admin ${admin.email} OK !`);
+      }
+    }
   }
-  await prisma.adminModel.createMany({ data, skipDuplicates: true });
+
+  // await prisma.adminModel.deleteMany({ where: { email: { in: emails } } });
+  // const data: IAdminCreate[] = [];
+  // for (const admin of admins) {
+  //   const { salt, hash } = await passwordUtils.hashPassword(admin.password);
+  //   data.push({ email: admin.email, type: admin.type, salt: salt, password: hash });
+  // }
+  // await prisma.adminModel.createMany({ data, skipDuplicates: true });
 
   const lookup = [
     { fromCurrency: $Enums.CurrencyCode.USD, toCurrency: $Enums.CurrencyCode.EUR, rate: 0.95 },

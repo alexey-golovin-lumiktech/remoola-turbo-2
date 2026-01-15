@@ -1,11 +1,20 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
+const PUBLIC_PATHS = [`/login`, `/api/auth/login`];
+
 export function middleware(req: NextRequest) {
-  const cookieStore = req.cookies;
-  const token = cookieStore.get(`access_token`)?.value;
   const { pathname } = req.nextUrl;
 
-  if (!token && !pathname.startsWith(`/login`)) {
+  if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p))) {
+    return NextResponse.next();
+  }
+
+  // Adjust this cookie name to whatever your backend sets for admin auth.
+  // Example: "access_token", "authorization", etc.
+  const hasSessionCookie = req.cookies.get(`access_token`)?.value || req.cookies.get(`authorization`)?.value;
+
+  // Protect both pages and /api routes under (protected)
+  if (!hasSessionCookie && !pathname.startsWith(`/api/`)) {
     const url = req.nextUrl.clone();
     url.pathname = `/login`;
     url.searchParams.set(`next`, pathname);
@@ -15,4 +24,6 @@ export function middleware(req: NextRequest) {
   return NextResponse.next();
 }
 
-export const config = { matcher: [`/((?!_next|favicon.ico|assets|api/.*).*)`] };
+export const config = {
+  matcher: [`/((?!_next/static|_next/image|favicon.ico).*)`],
+};
