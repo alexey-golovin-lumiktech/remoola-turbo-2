@@ -34,38 +34,38 @@ export default function AdminsPage() {
   const [resetPassword, setResetPassword] = useState(``);
 
   async function loadMe() {
-    const res = await apiFetch<AdminMe>(`/api/auth/me`);
-    if (!res.ok) return null;
-    return res.data;
+    const response = await apiFetch<AdminMe>(`/api/auth/me`);
+    if (!response.ok) return null;
+    return response.data;
   }
 
   async function loadAdmins(nextIncludeDeleted = includeDeleted) {
     setLoading(true);
     setErr(undefined);
 
-    const qs = nextIncludeDeleted ? `?includeDeleted=1` : ``;
-    const res = await apiFetch<AdminUser[]>(`/api/admins${qs}`);
+    const search = nextIncludeDeleted ? `?includeDeleted=1` : ``;
+    const response = await apiFetch<AdminUser[]>(`/api/admins${search}`);
     setLoading(false);
 
-    if (!res.ok) {
-      setErr(res.message);
+    if (!response.ok) {
+      setErr(response.message);
       setAdmins([]);
       return;
     }
-    setAdmins(res.data);
+    setAdmins(response.data);
   }
 
   useEffect(() => {
     (async () => {
-      const m = await loadMe();
-      setMe(m);
+      const me = await loadMe();
+      setMe(me);
 
       // SUPER only
-      if (!m) {
+      if (!me) {
         router.push(`/login`);
         return;
       }
-      if (m.type !== `SUPER`) {
+      if (me.type !== `SUPER`) {
         router.push(`/dashboard`);
         return;
       }
@@ -96,12 +96,12 @@ export default function AdminsPage() {
     if (!newEmail.trim()) return setErr(`Email is required`);
     if (!newPassword || newPassword.length < 8) return setErr(`Password must be at least 8 characters`);
 
-    const res = await apiFetch<AdminUser>(`/api/admins`, {
+    const response = await apiFetch<AdminUser>(`/api/admins`, {
       method: `POST`,
       body: JSON.stringify({ email: newEmail.trim(), password: newPassword, type: newType }),
     });
 
-    if (!res.ok) return setErr(res.message);
+    if (!response.ok) return setErr(response.message);
 
     setCreateOpen(false);
     setNewEmail(``);
@@ -114,22 +114,22 @@ export default function AdminsPage() {
     setErr(undefined);
     if (adminId === me?.id) return setErr(`You cannot delete yourself.`);
 
-    const res = await apiFetch<AdminUser>(`/api/admins/${adminId}`, {
+    const response = await apiFetch<AdminUser>(`/api/admins/${adminId}`, {
       method: `PATCH`,
       body: JSON.stringify({ action: `delete` }),
     });
 
-    if (!res.ok) return setErr(res.message);
+    if (!response.ok) return setErr(response.message);
     await loadAdmins(includeDeleted);
   }
 
   async function restoreAdmin(adminId: string) {
     setErr(undefined);
-    const res = await apiFetch<AdminUser>(`/api/admins/${adminId}`, {
+    const response = await apiFetch<AdminUser>(`/api/admins/${adminId}`, {
       method: `PATCH`,
       body: JSON.stringify({ action: `restore` }),
     });
-    if (!res.ok) return setErr(res.message);
+    if (!response.ok) return setErr(response.message);
     await loadAdmins(includeDeleted);
   }
 
@@ -139,12 +139,12 @@ export default function AdminsPage() {
 
     if (!resetPassword || resetPassword.length < 8) return setErr(`Password must be at least 8 characters`);
 
-    const res = await apiFetch<{ ok: true }>(`/api/admins/${resetPasswordAdminId}/password`, {
+    const response = await apiFetch<{ ok: true }>(`/api/admins/${resetPasswordAdminId}/password`, {
       method: `PATCH`,
       body: JSON.stringify({ password: resetPassword }),
     });
 
-    if (!res.ok) return setErr(res.message);
+    if (!response.ok) return setErr(response.message);
 
     setResetPasswordAdminId(null);
     setResetPassword(``);
@@ -155,7 +155,7 @@ export default function AdminsPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">Admins</h1>
-          <p className="text-sm text-gray-600">Manage AdminModel users (SUPER-only).</p>
+          <p className="text-sm text-gray-600">Manage Admins (SUPER-only).</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -273,7 +273,7 @@ export default function AdminsPage() {
             <div className="flex items-start justify-between">
               <div>
                 <div className="text-lg font-semibold">Create admin</div>
-                <div className="text-sm text-gray-600">Creates a new AdminModel record.</div>
+                <div className="text-sm text-gray-600">Creates a new Admin record.</div>
               </div>
               <button className="rounded-lg border px-2 py-1 text-sm" onClick={() => setCreateOpen(false)}>
                 ✕

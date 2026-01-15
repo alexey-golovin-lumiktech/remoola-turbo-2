@@ -10,9 +10,9 @@ export default function ConsumerDetailsPage(props: { params: Promise<{ adminId: 
 
   useEffect(() => {
     async function getConsumer(consumerId: string): Promise<Consumer | null> {
-      const res = await fetch(`/api/consumers/${consumerId}`, { cache: `no-store`, credentials: `include` });
-      if (!res.ok) return null;
-      return (await res.json()) as Consumer;
+      const response = await fetch(`/api/consumers/${consumerId}`, { cache: `no-store`, credentials: `include` });
+      if (!response.ok) return null;
+      return (await response.json()) as Consumer;
     }
 
     props.params.then((params) => getConsumer(params.adminId)).then(setConsumer);

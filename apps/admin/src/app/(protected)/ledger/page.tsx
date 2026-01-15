@@ -7,27 +7,27 @@ import { StatusPill } from '../../../components/StatusPill';
 import { type LedgerEntry } from '../../../lib/types';
 
 export default function LedgerPage() {
-  const [rows, setRows] = useState<LedgerEntry[]>([]);
+  const [ledgerEntries, setLedgerEntries] = useState<LedgerEntry[]>([]);
 
   useEffect(() => {
     async function getLedger(): Promise<LedgerEntry[]> {
-      const res = await fetch(`/api/ledger`, { cache: `no-store`, credentials: `include` });
-      if (!res.ok) return [];
-      return await res.json();
+      const response = await fetch(`/api/ledger`, { cache: `no-store`, credentials: `include` });
+      if (!response.ok) return [];
+      return await response.json();
     }
 
-    getLedger().then(setRows);
+    getLedger().then(setLedgerEntries);
   }, []);
 
   return (
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-semibold">Ledger</h1>
-        <p className="text-sm text-gray-600">LedgerEntryModel (signed amounts, idempotencyKey, stripeId).</p>
+        <p className="text-sm text-gray-600">Ledger Entry (signed amounts, idempotencyKey, stripeId).</p>
       </div>
 
       <DataTable<LedgerEntry>
-        rows={rows}
+        rows={ledgerEntries}
         getRowKeyAction={(r) => r.id}
         columns={[
           {

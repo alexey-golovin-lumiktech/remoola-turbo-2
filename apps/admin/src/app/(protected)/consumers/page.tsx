@@ -22,7 +22,7 @@ export default function ConsumersPage() {
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-semibold">Consumers</h1>
-        <p className="text-sm text-gray-600">ConsumerModel + joined details (personal/org/address/google).</p>
+        <p className="text-sm text-gray-600">Consumer + joined details (personal/org/address/google).</p>
       </div>
 
       <DataTable<Consumer>

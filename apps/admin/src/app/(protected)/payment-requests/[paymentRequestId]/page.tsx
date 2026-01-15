@@ -11,9 +11,9 @@ export default function PaymentRequestDetails(props: { params: Promise<{ payment
 
   useEffect(() => {
     async function getPaymentRequest(paymentRequestId: string): Promise<PaymentRequest | null> {
-      const res = await fetch(`/api/payment-requests/${paymentRequestId}`, { cache: `no-store` });
-      if (!res.ok) return null;
-      return (await res.json()) as PaymentRequest;
+      const response = await fetch(`/api/payment-requests/${paymentRequestId}`, { cache: `no-store` });
+      if (!response.ok) return null;
+      return (await response.json()) as PaymentRequest;
     }
 
     props.params.then((params) => getPaymentRequest(params.paymentRequestId)).then(setPaymentRequest);

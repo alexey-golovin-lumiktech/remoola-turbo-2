@@ -2,20 +2,20 @@ export async function apiFetch<T>(
   path: string,
   init?: RequestInit,
 ): Promise<{ ok: true; data: T } | { ok: false; status: number; message: string; raw?: any }> {
-  const res = await fetch(path, {
+  const response = await fetch(path, {
     credentials: `include`,
     headers: { 'content-type': `application/json`, ...(init?.headers || {}) },
     ...init,
   });
 
-  const text = await res.text();
+  const text = await response.text();
   const parsed = text ? safeJson(text) : null;
 
-  if (!res.ok) {
+  if (!response.ok) {
     return {
       ok: false,
-      status: res.status,
-      message: parsed?.message || res.statusText,
+      status: response.status,
+      message: parsed?.message || response.statusText,
       raw: parsed,
     };
   }

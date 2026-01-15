@@ -7,7 +7,7 @@ import { StatusPill } from '../../../components/StatusPill';
 import { type PaymentRequest } from '../../../lib/types';
 
 export default function PaymentRequestsPage() {
-  const [rows, setRows] = useState<PaymentRequest[]>([]);
+  const [paymentRequests, setPaymentRequests] = useState<PaymentRequest[]>([]);
 
   useEffect(() => {
     async function loadPaymentRequests(): Promise<PaymentRequest[]> {
@@ -16,18 +16,18 @@ export default function PaymentRequestsPage() {
       return await response.json();
     }
 
-    loadPaymentRequests().then(setRows);
+    loadPaymentRequests().then(setPaymentRequests);
   }, []);
 
   return (
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-semibold">Payment Requests</h1>
-        <p className="text-sm text-gray-600">PaymentRequestModel (payer/requester, status, rail, dates).</p>
+        <p className="text-sm text-gray-600">Payment Request (payer/requester, status, rail, dates).</p>
       </div>
 
       <DataTable<PaymentRequest>
-        rows={rows}
+        rows={paymentRequests}
         getRowKeyAction={(r) => r.id}
         rowHrefAction={(r) => `/payment-requests/${r.id}`}
         columns={[

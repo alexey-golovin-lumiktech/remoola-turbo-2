@@ -10,11 +10,7 @@ export async function proxyToBackend(req: NextRequest, backendPath: string) {
   // (Next automatically provides cookies in req.headers)
   const body = req.method === `GET` || req.method === `HEAD` ? undefined : await req.text();
 
-  console.log(`\n************************************`);
-  console.log(`url`, url);
-  console.log(`body`, body);
-
-  const res = await fetch(url, {
+  const response = await fetch(url, {
     method: req.method,
     headers,
     body,
@@ -22,16 +18,16 @@ export async function proxyToBackend(req: NextRequest, backendPath: string) {
     redirect: `manual`,
   });
 
-  const text = await res.text();
+  const text = await response.text();
 
   // Forward set-cookie back to browser
-  const setCookie = res.headers.get(`set-cookie`);
+  const setCookie = response.headers.get(`set-cookie`);
   const outHeaders: HeadersInit = {};
   if (setCookie) outHeaders[`set-cookie`] = setCookie;
 
   // Preserve content-type if present
-  const ct = res.headers.get(`content-type`);
-  if (ct) outHeaders[`content-type`] = ct;
+  const contentTypeHeaders = response.headers.get(`content-type`);
+  if (contentTypeHeaders) outHeaders[`content-type`] = contentTypeHeaders;
 
-  return new NextResponse(text, { status: res.status, headers: outHeaders });
+  return new NextResponse(text, { status: response.status, headers: outHeaders });
 }

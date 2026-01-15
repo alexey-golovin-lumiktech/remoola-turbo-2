@@ -17,7 +17,8 @@ export function middleware(req: NextRequest) {
   if (!hasSessionCookie && !pathname.startsWith(`/api/`)) {
     const url = req.nextUrl.clone();
     url.pathname = `/login`;
-    url.searchParams.set(`next`, pathname);
+    const intended = pathname === `/` ? `/dashboard` : pathname;
+    url.searchParams.set(`next`, intended);
     return NextResponse.redirect(url);
   }
 

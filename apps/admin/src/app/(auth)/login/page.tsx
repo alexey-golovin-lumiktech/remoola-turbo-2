@@ -7,8 +7,10 @@ import { apiFetch } from '../../../lib/api';
 
 export default function LoginPage() {
   const router = useRouter();
-  const sp = useSearchParams();
-  const next = sp.get(`next`) || `/dashboard`;
+  const searchParams = useSearchParams();
+  const rawNext = searchParams.get(`next`) || `/dashboard`;
+
+  const next = rawNext === `/` || rawNext === `/login` ? `/dashboard` : rawNext;
 
   const [email, setEmail] = useState(`super.admin@wirebill.com`);
   const [password, setPassword] = useState(`SuperWirebill@Admin123!`);
@@ -20,14 +22,14 @@ export default function LoginPage() {
     setErr(undefined);
     setLoading(true);
 
-    const res = await apiFetch<{ ok: true }>(`/api/auth/login`, {
+    const response = await apiFetch<{ ok: true }>(`/api/auth/login`, {
       method: `POST`,
       body: JSON.stringify({ email, password }),
     });
 
     setLoading(false);
 
-    if (!res.ok) return setErr(res.message);
+    if (!response.ok) return setErr(response.message);
 
     router.push(next);
     router.refresh();

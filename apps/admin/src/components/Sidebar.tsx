@@ -23,8 +23,8 @@ export function Sidebar() {
 
   useEffect(() => {
     (async () => {
-      const res = await apiFetch<AdminMe>(`/api/auth/me`);
-      if (res.ok) setMe(res.data);
+      const response = await apiFetch<AdminMe>(`/api/auth/me`);
+      if (response.ok) setMe(response.data);
     })();
   }, []);
 
