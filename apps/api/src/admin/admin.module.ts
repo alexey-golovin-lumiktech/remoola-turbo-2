@@ -3,10 +3,12 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 
 import { JWT_ACCESS_SECRET, JWT_ACCESS_TTL } from '../envs';
-import { AdminAuthController } from './auth/auth.controller';
-import { AdminAuthService } from './auth/auth.service';
-import { AdminsController } from './controllers/admin.controller';
-import { AdminsService } from './services/admins.service';
+import { AdminAuthController } from './auth/admin-auth.controller';
+import { AdminAuthService } from './auth/admin-auth.service';
+import { AdminAdminsModule } from './modules/admins/admin-admins.module';
+import { AdminConsumersModule } from './modules/consumers/admin-consumers.module';
+import { AdminLedgersModule } from './modules/ledger/admin-ledger.module';
+import { AdminPaymentRequestsModule } from './modules/payment-requests/admin-payment-requests.module';
 
 @Module({
   imports: [
@@ -15,8 +17,12 @@ import { AdminsService } from './services/admins.service';
       secret: JWT_ACCESS_SECRET!,
       signOptions: { expiresIn: JWT_ACCESS_TTL },
     }),
+    AdminAdminsModule,
+    AdminConsumersModule,
+    AdminLedgersModule,
+    AdminPaymentRequestsModule,
   ],
-  controllers: [AdminAuthController, AdminsController],
-  providers: [AdminAuthService, AdminsService],
+  controllers: [AdminAuthController],
+  providers: [AdminAuthService],
 })
 export class AdminModule {}

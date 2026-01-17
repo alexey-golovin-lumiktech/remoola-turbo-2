@@ -13,22 +13,23 @@
   },
   "dependencies": {
     "@remoola/ui": "^0.0.0",
+    "@tanstack/react-query": "^5.90.18",
+    "next": "15.5.7",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "next": "15.5.7",
     "swr": "^2.3.6",
     "zod": "^4.0.17"
   },
   "devDependencies": {
     "@remoola/eslint-config": "^0.0.0",
     "@remoola/typescript-config": "^0.0.0",
+    "@tailwindcss/postcss": "^4",
     "@types/node": "^22.15.3",
     "@types/react": "19.1.0",
     "@types/react-dom": "19.1.1",
     "eslint": "^9.31.0",
-    "typescript": "5.8.2",
-    "@tailwindcss/postcss": "^4",
     "eslint-config-next": "15.5.2",
-    "tailwindcss": "^4"
+    "tailwindcss": "^4",
+    "typescript": "5.8.2"
   }
 }
