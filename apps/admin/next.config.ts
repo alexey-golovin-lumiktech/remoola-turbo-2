@@ -5,9 +5,9 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   transpilePackages: [`@remoola/ui`, `@remoola/database-2`],
-  outputFileTracingRoot: path.join(__dirname, `../../`),
-  allowedDevOrigins: [`localhost`, `127.0.0.1`, `remoola-turbo-2-api.vercel.app`],
-  experimental: { externalDir: true },
+  // outputFileTracingRoot removed for Vercel compatibility
+  // allowedDevOrigins removed for Vercel (not needed in production)
+  // experimental.externalDir removed for Vercel compatibility
 
   // Performance optimizations (compress is enabled by default in Next.js 15)
   compress: true,

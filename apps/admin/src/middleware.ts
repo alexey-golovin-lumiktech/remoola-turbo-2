@@ -26,7 +26,7 @@ async function validateToken(token: string): Promise<boolean> {
       },
       credentials: `include`,
       // Short timeout for middleware
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout ? AbortSignal.timeout(5000) : undefined,
     });
 
     const isValid = response.ok;
