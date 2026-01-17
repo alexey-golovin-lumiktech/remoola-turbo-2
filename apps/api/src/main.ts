@@ -20,7 +20,7 @@ import { envs } from './envs';
 import { AuthGuard } from './guards';
 import { TransformResponseInterceptor } from './interceptors';
 import { PrismaService } from './shared/prisma.service';
-import { type IAdminCreate, passwordUtils } from './shared-common';
+import { passwordUtils } from './shared-common';
 
 async function seed(prisma: PrismaClient): Promise<void> {
   const admins = [

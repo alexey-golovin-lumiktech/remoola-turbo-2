@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import { AdminModel } from '@remoola/database-2';
+import { type AdminModel } from '@remoola/database-2';
 
 import { PrismaService } from '../../../shared/prisma.service';
 import { hashPassword } from '../../../shared-common';

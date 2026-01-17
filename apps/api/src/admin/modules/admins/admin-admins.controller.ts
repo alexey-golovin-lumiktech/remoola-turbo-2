@@ -1,7 +1,7 @@
 import { BadRequestException, Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiBasicAuth } from '@nestjs/swagger';
 
-import { AdminModel } from '@remoola/database-2';
+import { type AdminModel } from '@remoola/database-2';
 
 import { AdminAdminsService } from './admin-admins.service';
 import { JwtAuthGuard } from '../../../auth/jwt.guard';
