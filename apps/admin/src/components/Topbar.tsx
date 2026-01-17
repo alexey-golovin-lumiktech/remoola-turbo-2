@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-import { apiFetch } from '../lib/api';
+import { apiFetch } from '../lib';
 
 export function Topbar() {
   const router = useRouter();

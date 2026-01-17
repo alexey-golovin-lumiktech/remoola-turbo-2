@@ -4,8 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-import { apiFetch } from '../lib/api';
-import { type AdminMe } from '../lib/types';
+import { apiFetch, type AdminMe } from '../lib';
 
 const BASE_NAV = [
   { href: `/dashboard`, label: `Dashboard` },

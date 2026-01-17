@@ -32,4 +32,11 @@ export class AdminAdminsService {
       data: { password: hash, salt },
     });
   }
+
+  async getById(adminId: string) {
+    return this.prisma.adminModel.findUnique({
+      where: { id: adminId },
+      select: { id: true, email: true, type: true },
+    });
+  }
 }

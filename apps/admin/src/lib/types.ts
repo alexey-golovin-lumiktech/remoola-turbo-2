@@ -1,3 +1,5 @@
+import { type JSX } from 'react';
+
 export type AdminType = `SUPER` | `ADMIN`;
 
 export type AdminUser = {
@@ -128,4 +130,10 @@ export type LedgerEntry = {
 
   createdAt: string;
   updatedAt: string;
+};
+
+export type PageProps = { params: JSX.IntrinsicAttributes | PromiseLike<JSX.IntrinsicAttributes> };
+
+export type RouteHandlerContext<T extends Record<string, string>> = {
+  params: Promise<T>;
 };

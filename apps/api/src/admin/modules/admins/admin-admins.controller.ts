@@ -20,6 +20,11 @@ export class AdminAdminsController {
     return this.service.findAllAdmins(admin);
   }
 
+  @Get(`:adminId`)
+  getById(@Param(`adminId`) adminId: string) {
+    return this.service.getById(adminId);
+  }
+
   @Patch(`:adminId/password`)
   patchAdminPassword(
     @Identity() admin: AdminModel,
