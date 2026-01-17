@@ -137,3 +137,42 @@ export type PageProps = { params: JSX.IntrinsicAttributes | PromiseLike<JSX.Intr
 export type RouteHandlerContext<T extends Record<string, string>> = {
   params: Promise<T>;
 };
+
+// Enhanced API types are defined in api.ts
+
+// Query keys for consistent caching
+export const queryKeys = {
+  auth: {
+    me: () => [`api/auth/me`] as const,
+  },
+  admins: {
+    list: (filters?: { includeDeleted?: boolean }) => [`api/admins`, filters] as const,
+    detail: (id: string) => [`api/admins/${id}`] as const,
+  },
+  consumers: {
+    list: () => [`api/consumers`] as const,
+    detail: (id: string) => [`api/consumers/${id}`] as const,
+  },
+  paymentRequests: {
+    list: () => [`api/payment-requests`] as const,
+    detail: (id: string) => [`api/payment-requests/${id}`] as const,
+  },
+  ledger: {
+    entries: () => [`api/ledger`] as const,
+  },
+} as const;
+
+// Mutation types
+export type CreateAdminData = {
+  email: string;
+  password: string;
+  type: AdminType;
+};
+
+export type UpdateAdminData = {
+  action: `delete` | `restore`;
+};
+
+export type ResetPasswordData = {
+  password: string;
+};

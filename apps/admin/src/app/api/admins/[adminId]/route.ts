@@ -11,4 +11,3 @@ export async function GET(req: NextRequest, ctx: RouteHandlerContext<{ adminId: 
   const { adminId } = await ctx.params;
   return proxyToBackend(req, `/admin/admins/${adminId}`);
 }
-

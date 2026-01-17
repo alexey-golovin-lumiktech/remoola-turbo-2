@@ -3,8 +3,9 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
-import { DataTable } from '../../../components';
-import { apiFetch, type AdminMe, type AdminType, type AdminUser } from '../../../lib';
+import { DataTable, ErrorBoundary, PageSkeleton } from '../../../components';
+import { apiClient, useFormValidation, createAdminSchema, resetPasswordSchema, type AdminType } from '../../../lib';
+import { useAuth, useAdmins, useCreateAdmin, useResetAdminPassword } from '../../../lib/client';
 
 function rowPill(text: string) {
   const cls =
@@ -15,372 +16,405 @@ function rowPill(text: string) {
 export function AdminsPageClient() {
   const router = useRouter();
 
-  const [me, setMe] = useState<AdminMe | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Auth check
+  const { data: me, error: authError, isLoading: authLoading } = useAuth();
 
-  const [includeDeleted, setIncludeDeleted] = useState(false);
-  const [admins, setAdmins] = useState<AdminUser[]>([]);
-  const [err, setErr] = useState<string>();
+  // Redirect if not authenticated or not SUPER
+  useEffect(() => {
+    if (authLoading) return;
 
-  // create
-  const [createOpen, setCreateOpen] = useState(false);
-  const [newEmail, setNewEmail] = useState(``);
-  const [newType, setNewType] = useState<AdminType>(`ADMIN`);
-  const [newPassword, setNewPassword] = useState(``);
-
-  // reset password
-  const [resetPasswordAdminId, setResetPasswordAdminId] = useState<string | null>(null);
-  const [resetPassword, setResetPassword] = useState(``);
-
-  async function loadMe() {
-    const response = await apiFetch<AdminMe>(`/api/auth/me`);
-    if (!response.ok) return null;
-    return response.data;
-  }
-
-  async function loadAdmins(nextIncludeDeleted = includeDeleted) {
-    setLoading(true);
-    setErr(undefined);
-
-    const search = nextIncludeDeleted ? `?includeDeleted=1` : ``;
-    const response = await apiFetch<AdminUser[]>(`/api/admins${search}`);
-    setLoading(false);
-
-    if (!response.ok) {
-      setErr(response.message);
-      setAdmins([]);
+    if (authError || !me) {
+      router.push(`/login`);
       return;
     }
-    setAdmins(response.data);
-  }
 
-  useEffect(() => {
-    (async () => {
-      const me = await loadMe();
-      setMe(me);
+    if (me.type !== `SUPER`) {
+      router.push(`/dashboard`);
+      return;
+    }
+  }, [me, authError, authLoading, router]);
 
-      // SUPER only
-      if (!me) {
-        router.push(`/login`);
-        return;
-      }
-      if (me.type !== `SUPER`) {
-        router.push(`/dashboard`);
-        return;
-      }
+  const [includeDeleted, setIncludeDeleted] = useState(false);
+  const [err, setErr] = useState<string>();
 
-      await loadAdmins(false);
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Data fetching with SWR
+  const {
+    data: admins,
+    error: adminsError,
+    isLoading: adminsLoading,
+    mutate: mutateAdmins,
+  } = useAdmins(includeDeleted);
 
-  useEffect(() => {
-    if (!me) return;
-    if (me.type !== `SUPER`) return;
-    loadAdmins(includeDeleted);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [includeDeleted]);
+  // Mutations
+  const createAdminMutation = useCreateAdmin();
+  const resetPasswordMutation = useResetAdminPassword(``);
 
-  const sorted = useMemo(() => {
-    // keep SUPER first, then email
+  // Local state for forms
+  const [createOpen, setCreateOpen] = useState(false);
+  const [resetPasswordAdminId, setResetPasswordAdminId] = useState<string | null>(null);
+
+  // Form validation hooks
+  const createForm = useFormValidation(createAdminSchema, {
+    email: ``,
+    password: ``,
+    type: `ADMIN` as AdminType,
+  });
+
+  const resetPasswordForm = useFormValidation(resetPasswordSchema, {
+    password: ``,
+  });
+
+  // Combine errors
+  const displayError = err || adminsError?.message;
+
+  // Sorted admins
+  const sortedAdmins = useMemo(() => {
+    if (!admins) return [];
     return [...admins].sort((a, b) => {
       if (a.type !== b.type) return a.type === `SUPER` ? -1 : 1;
       return a.email.localeCompare(b.email);
     });
   }, [admins]);
 
+  // Form handlers with validation
   async function createAdmin() {
     setErr(undefined);
 
-    if (!newEmail.trim()) return setErr(`Email is required`);
-    if (!newPassword || newPassword.length < 8) return setErr(`Password must be at least 8 characters`);
+    const validation = createForm.validate();
+    if (!validation.success) {
+      setErr(`Please fix the form errors`);
+      return;
+    }
 
-    const response = await apiFetch<AdminUser>(`/api/admins`, {
-      method: `POST`,
-      body: JSON.stringify({ email: newEmail.trim(), password: newPassword, type: newType }),
-    });
+    try {
+      await createAdminMutation.trigger(validation.data);
 
-    if (!response.ok) return setErr(response.message);
+      // Reset form and close modal
+      createForm.reset();
+      setCreateOpen(false);
 
-    setCreateOpen(false);
-    setNewEmail(``);
-    setNewPassword(``);
-    setNewType(`ADMIN`);
-    await loadAdmins(includeDeleted);
+      // Refetch data
+      mutateAdmins();
+    } catch (error: any) {
+      setErr(error.message || `Failed to create admin`);
+    }
   }
 
-  async function softDeleteAdmin(adminId: string) {
+  const softDeleteAdmin = async (adminId: string) => {
     setErr(undefined);
     if (adminId === me?.id) return setErr(`You cannot delete yourself.`);
 
-    const response = await apiFetch<AdminUser>(`/api/admins/${adminId}`, {
-      method: `PATCH`,
-      body: JSON.stringify({ action: `delete` }),
-    });
+    try {
+      const response = await apiClient.patch(`admins/${adminId}`, { action: `delete` });
+      if (!response.ok) {
+        throw new Error(response.error.message);
+      }
+      mutateAdmins();
+    } catch (error: any) {
+      setErr(error.message || `Failed to delete admin`);
+    }
+  };
 
-    if (!response.ok) return setErr(response.message);
-    await loadAdmins(includeDeleted);
-  }
-
-  async function restoreAdmin(adminId: string) {
+  const restoreAdmin = async (adminId: string) => {
     setErr(undefined);
-    const response = await apiFetch<AdminUser>(`/api/admins/${adminId}`, {
-      method: `PATCH`,
-      body: JSON.stringify({ action: `restore` }),
-    });
-    if (!response.ok) return setErr(response.message);
-    await loadAdmins(includeDeleted);
-  }
+    try {
+      const response = await apiClient.patch(`admins/${adminId}`, { action: `restore` });
+      if (!response.ok) {
+        throw new Error(response.error.message);
+      }
+      mutateAdmins();
+    } catch (error: any) {
+      setErr(error.message || `Failed to restore admin`);
+    }
+  };
 
   async function submitResetPassword() {
     if (!resetPasswordAdminId) return;
     setErr(undefined);
 
-    if (!resetPassword || resetPassword.length < 8) return setErr(`Password must be at least 8 characters`);
+    const validation = resetPasswordForm.validate();
+    if (!validation.success) {
+      setErr(`Please fix the form errors`);
+      return;
+    }
 
-    const response = await apiFetch<{ ok: true }>(`/api/admins/${resetPasswordAdminId}/password`, {
-      method: `PATCH`,
-      body: JSON.stringify({ password: resetPassword }),
-    });
+    try {
+      await resetPasswordMutation.trigger(validation.data, {
+        revalidate: false,
+        populateCache: false,
+      });
 
-    if (!response.ok) return setErr(response.message);
+      setResetPasswordAdminId(null);
+      resetPasswordForm.reset();
+    } catch (error: any) {
+      setErr(error.message || `Failed to reset password`);
+    }
+  }
 
-    setResetPasswordAdminId(null);
-    setResetPassword(``);
+  // Loading state
+  if (authLoading || adminsLoading) {
+    return <PageSkeleton />;
+  }
+
+  // Don't render if not authorized
+  if (!me || me.type !== `SUPER`) {
+    return null;
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">Admins</h1>
-          <p className="text-sm text-gray-600">Manage Admins (SUPER-only).</p>
+    <ErrorBoundary>
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-semibold">Admins</h1>
+            <p className="text-sm text-gray-600">Manage Admins (SUPER-only).</p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                checked={includeDeleted}
+                onChange={(e) => setIncludeDeleted(e.target.checked)}
+                className="h-4 w-4"
+              />
+              Include deleted
+            </label>
+
+            <button
+              onClick={() => setCreateOpen(true)}
+              disabled={createAdminMutation.isMutating}
+              className="rounded-lg bg-black px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+            >
+              {createAdminMutation.isMutating ? `Creating...` : `Create admin`}
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <label className="flex items-center gap-2 text-sm text-gray-700">
-            <input
-              type="checkbox"
-              checked={includeDeleted}
-              onChange={(e) => setIncludeDeleted(e.target.checked)}
-              className="h-4 w-4"
-            />
-            Include deleted
-          </label>
+        {displayError && (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+            {displayError}
+          </div>
+        )}
 
-          <button
-            onClick={() => setCreateOpen(true)}
-            className="rounded-lg bg-black px-3 py-2 text-sm font-medium text-white"
-          >
-            Create admin
-          </button>
-        </div>
-      </div>
-
-      {err && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{err}</div>}
-
-      <DataTable
-        rows={sorted}
-        getRowKeyAction={(a) => a.id}
-        rowHrefAction={(r) => `/admins/${r.id}`}
-        columns={[
-          {
-            key: `type`,
-            header: `Type`,
-            render: (a) => rowPill(a.type),
-          },
-          {
-            key: `email`,
-            header: `Email`,
-            render: (a) => <span className="font-medium">{a.email}</span>,
-          },
-          {
-            key: `status`,
-            header: `Status`,
-            render: (a) =>
-              a.deletedAt ? (
-                <span
-                  className="inline-flex rounded-full border border-red-200 bg-red-50
-                px-2 py-0.5 text-xs text-red-700"
-                >
-                  Deleted
-                </span>
-              ) : (
-                <span
-                  className="inline-flex rounded-full border border-green-200 bg-green-50
-                px-2 py-0.5 text-xs text-green-700"
-                >
-                  Active
-                </span>
-              ),
-          },
-          {
-            key: `created`,
-            header: `Created`,
-            render: (a) => <span className="text-gray-600">{new Date(a.createdAt).toLocaleString()}</span>,
-          },
-          {
-            key: `updated`,
-            header: `Updated`,
-            render: (a) => <span className="text-gray-600">{new Date(a.updatedAt).toLocaleString()}</span>,
-          },
-          {
-            key: `actions`,
-            header: `Actions`,
-            render: (a) => (
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  className="rounded-lg border px-2 py-1 text-xs hover:bg-gray-50"
-                  onClick={() => {
-                    setResetPasswordAdminId(a.id);
-                    setResetPassword(``);
-                  }}
-                >
-                  Reset password
-                </button>
-
-                {!a.deletedAt ? (
-                  <button
-                    className="rounded-lg border border-red-200 bg-red-50 px-2 py-1 text-xs
-                    text-red-700 hover:bg-red-100 disabled:opacity-60"
-                    disabled={a.id === me?.id}
-                    onClick={() => softDeleteAdmin(a.id)}
-                  >
-                    Delete
-                  </button>
+        <DataTable
+          rows={sortedAdmins}
+          getRowKeyAction={(a) => a.id}
+          rowHrefAction={(r) => `/admins/${r.id}`}
+          columns={[
+            {
+              key: `type`,
+              header: `Type`,
+              render: (a) => rowPill(a.type),
+            },
+            {
+              key: `email`,
+              header: `Email`,
+              render: (a) => <span className="font-medium">{a.email}</span>,
+            },
+            {
+              key: `status`,
+              header: `Status`,
+              render: (a) =>
+                a.deletedAt ? (
+                  <span className="inline-flex rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-xs text-red-700">
+                    Deleted
+                  </span>
                 ) : (
+                  <span className="inline-flex rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-xs text-green-700">
+                    Active
+                  </span>
+                ),
+            },
+            {
+              key: `created`,
+              header: `Created`,
+              render: (a) => <span className="text-gray-600">{new Date(a.createdAt).toLocaleString()}</span>,
+            },
+            {
+              key: `updated`,
+              header: `Updated`,
+              render: (a) => <span className="text-gray-600">{new Date(a.updatedAt).toLocaleString()}</span>,
+            },
+            {
+              key: `actions`,
+              header: `Actions`,
+              render: (a) => (
+                <div className="flex flex-wrap items-center gap-2">
                   <button
-                    className="rounded-lg border border-green-200 bg-green-50 px-2 py-1
-                    text-xs text-green-700 hover:bg-green-100"
-                    onClick={() => restoreAdmin(a.id)}
+                    className="rounded-lg border px-2 py-1 text-xs hover:bg-gray-50"
+                    onClick={() => {
+                      setResetPasswordAdminId(a.id);
+                      resetPasswordForm.reset();
+                    }}
                   >
-                    Restore
+                    Reset password
                   </button>
+
+                  {!a.deletedAt ? (
+                    <button
+                      className="rounded-lg border border-red-200 bg-red-50 px-2 py-1 text-xs text-red-700 hover:bg-red-100 disabled:opacity-60"
+                      disabled={a.id === me?.id}
+                      onClick={() => softDeleteAdmin(a.id)}
+                    >
+                      Delete
+                    </button>
+                  ) : (
+                    <button
+                      className="rounded-lg border border-green-200 bg-green-50 px-2 py-1 text-xs text-green-700 hover:bg-green-100"
+                      onClick={() => restoreAdmin(a.id)}
+                    >
+                      Restore
+                    </button>
+                  )}
+                </div>
+              ),
+              className: `w-[260px]`,
+            },
+          ]}
+        />
+
+        {/* Create modal */}
+        {createOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+            <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-lg">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="text-lg font-semibold">Create admin</div>
+                  <div className="text-sm text-gray-600">Creates a new Admin record.</div>
+                </div>
+                <button className="rounded-lg border px-2 py-1 text-sm" onClick={() => setCreateOpen(false)}>
+                  ✕
+                </button>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                <label className="block">
+                  <div className="mb-1 text-xs font-medium text-gray-700">Email</div>
+                  <input
+                    className="w-full rounded-lg border px-3 py-2 text-sm"
+                    value={createForm.values.email}
+                    onChange={(e) => createForm.setValue(`email`, e.target.value)}
+                    onBlur={() => createForm.setTouched(`email`)}
+                    placeholder="admin@remoola.com"
+                    disabled={createAdminMutation.isMutating}
+                  />
+                  {createForm.errors.email && (
+                    <div className="mt-1 text-xs text-red-600">{createForm.errors.email}</div>
+                  )}
+                </label>
+
+                <label className="block">
+                  <div className="mb-1 text-xs font-medium text-gray-700">Type</div>
+                  <select
+                    className="w-full rounded-lg border px-3 py-2 text-sm"
+                    value={createForm.values.type}
+                    onChange={(e) => createForm.setValue(`type`, e.target.value as AdminType)}
+                    onBlur={() => createForm.setTouched(`type`)}
+                    disabled={createAdminMutation.isMutating}
+                  >
+                    <option value="ADMIN">ADMIN</option>
+                    <option value="SUPER">SUPER</option>
+                  </select>
+                  {createForm.errors.type && <div className="mt-1 text-xs text-red-600">{createForm.errors.type}</div>}
+                </label>
+
+                <label className="block">
+                  <div className="mb-1 text-xs font-medium text-gray-700">Temporary password</div>
+                  <input
+                    className="w-full rounded-lg border px-3 py-2 text-sm"
+                    type="password"
+                    value={createForm.values.password}
+                    onChange={(e) => createForm.setValue(`password`, e.target.value)}
+                    onBlur={() => createForm.setTouched(`password`)}
+                    placeholder="min 8 chars"
+                    disabled={createAdminMutation.isMutating}
+                  />
+                  {createForm.errors.password && (
+                    <div className="mt-1 text-xs text-red-600">{createForm.errors.password}</div>
+                  )}
+                  <div className="mt-1 text-xs text-gray-500">Backend should hash + salt; FE never stores it.</div>
+                </label>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    className="rounded-lg border px-3 py-2 text-sm hover:bg-gray-50"
+                    onClick={() => setCreateOpen(false)}
+                    disabled={createAdminMutation.isMutating}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="rounded-lg bg-black px-3 py-2 text-sm font-medium text-white"
+                    onClick={createAdmin}
+                    disabled={createAdminMutation.isMutating}
+                  >
+                    {createAdminMutation.isMutating ? `Creating...` : `Create`}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Reset password modal */}
+        {resetPasswordAdminId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+            <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-lg">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="text-lg font-semibold">Reset password</div>
+                  <div className="text-sm text-gray-600">Sets a new password for this admin.</div>
+                </div>
+                <button className="rounded-lg border px-2 py-1 text-sm" onClick={() => setResetPasswordAdminId(null)}>
+                  ✕
+                </button>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                <label className="block">
+                  <div className="mb-1 text-xs font-medium text-gray-700">New password</div>
+                  <input
+                    className="w-full rounded-lg border px-3 py-2 text-sm"
+                    type="password"
+                    value={resetPasswordForm.values.password}
+                    onChange={(e) => resetPasswordForm.setValue(`password`, e.target.value)}
+                    onBlur={() => resetPasswordForm.setTouched(`password`)}
+                    placeholder="min 8 chars"
+                    disabled={resetPasswordMutation.isMutating}
+                  />
+                  {resetPasswordForm.errors.password && (
+                    <div className="mt-1 text-xs text-red-600">{resetPasswordForm.errors.password}</div>
+                  )}
+                </label>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    className="rounded-lg border px-3 py-2 text-sm hover:bg-gray-50"
+                    onClick={() => setResetPasswordAdminId(null)}
+                    disabled={resetPasswordMutation.isMutating}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="rounded-lg bg-black px-3 py-2 text-sm font-medium text-white"
+                    onClick={submitResetPassword}
+                    disabled={resetPasswordMutation.isMutating}
+                  >
+                    {resetPasswordMutation.isMutating ? `Saving...` : `Save`}
+                  </button>
+                </div>
+
+                {resetPasswordAdminId === me?.id && (
+                  <div className="rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-2 text-xs text-yellow-800">
+                    You're resetting your own password — make sure you remember it.
+                  </div>
                 )}
               </div>
-            ),
-            className: `w-[260px]`,
-          },
-        ]}
-      />
-
-      {loading && <div className="text-sm text-gray-600">Loading…</div>}
-
-      {/* Create modal */}
-      {createOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-lg">
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="text-lg font-semibold">Create admin</div>
-                <div className="text-sm text-gray-600">Creates a new Admin record.</div>
-              </div>
-              <button className="rounded-lg border px-2 py-1 text-sm" onClick={() => setCreateOpen(false)}>
-                ✕
-              </button>
-            </div>
-
-            <div className="mt-4 space-y-3">
-              <label className="block">
-                <div className="mb-1 text-xs font-medium text-gray-700">Email</div>
-                <input
-                  className="w-full rounded-lg border px-3 py-2 text-sm"
-                  value={newEmail}
-                  onChange={(e) => setNewEmail(e.target.value)}
-                  placeholder="admin@remoola.com"
-                />
-              </label>
-
-              <label className="block">
-                <div className="mb-1 text-xs font-medium text-gray-700">Type</div>
-                <select
-                  className="w-full rounded-lg border px-3 py-2 text-sm"
-                  value={newType}
-                  onChange={(e) => setNewType(e.target.value as AdminType)}
-                >
-                  <option value="ADMIN">ADMIN</option>
-                  <option value="SUPER">SUPER</option>
-                </select>
-              </label>
-
-              <label className="block">
-                <div className="mb-1 text-xs font-medium text-gray-700">Temporary password</div>
-                <input
-                  className="w-full rounded-lg border px-3 py-2 text-sm"
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="min 8 chars"
-                />
-                <div className="mt-1 text-xs text-gray-500">Backend should hash + salt; FE never stores it.</div>
-              </label>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  className="rounded-lg border px-3 py-2 text-sm hover:bg-gray-50"
-                  onClick={() => setCreateOpen(false)}
-                >
-                  Cancel
-                </button>
-                <button className="rounded-lg bg-black px-3 py-2 text-sm font-medium text-white" onClick={createAdmin}>
-                  Create
-                </button>
-              </div>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Reset password modal */}
-      {resetPasswordAdminId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-lg">
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="text-lg font-semibold">Reset password</div>
-                <div className="text-sm text-gray-600">Sets a new password for this admin.</div>
-              </div>
-              <button className="rounded-lg border px-2 py-1 text-sm" onClick={() => setResetPasswordAdminId(null)}>
-                ✕
-              </button>
-            </div>
-
-            <div className="mt-4 space-y-3">
-              <label className="block">
-                <div className="mb-1 text-xs font-medium text-gray-700">New password</div>
-                <input
-                  className="w-full rounded-lg border px-3 py-2 text-sm"
-                  type="password"
-                  value={resetPassword}
-                  onChange={(e) => setResetPassword(e.target.value)}
-                  placeholder="min 8 chars"
-                />
-              </label>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  className="rounded-lg border px-3 py-2 text-sm hover:bg-gray-50"
-                  onClick={() => setResetPasswordAdminId(null)}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="rounded-lg bg-black px-3 py-2 text-sm font-medium text-white"
-                  onClick={submitResetPassword}
-                >
-                  Save
-                </button>
-              </div>
-
-              {resetPasswordAdminId === me?.id && (
-                <div className="rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-2 text-xs text-yellow-800">
-                  You’re resetting your own password — make sure you remember it.
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </ErrorBoundary>
   );
 }

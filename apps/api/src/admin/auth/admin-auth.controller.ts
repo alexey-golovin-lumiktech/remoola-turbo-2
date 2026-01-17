@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Res, UseGuards } from '@nestjs/common';
 import { ApiBasicAuth, ApiBearerAuth, ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import express from 'express';
 
@@ -9,7 +9,6 @@ import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Identity, PublicEndpoint } from '../../common';
 import { ADMIN } from '../../dtos';
 import { envs, JWT_ACCESS_TTL, JWT_REFRESH_TTL } from '../../envs';
-import { AuthGuard } from '../../guards';
 import { ACCESS_TOKEN_COOKIE_KEY, REFRESH_TOKEN_COOKIE_KEY } from '../../shared-common';
 
 @ApiTags(`Admin: Auth`)

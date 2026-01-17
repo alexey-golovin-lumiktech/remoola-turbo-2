@@ -31,6 +31,7 @@ export function LoginPageClient() {
 
     if (!response.ok) return setErr(response.message);
 
+    // Redirect to dashboard after successful login
     router.push(next);
     router.refresh();
   }
