@@ -89,9 +89,25 @@ function linkTo(kind: `Consumer` | `Admin`) {
     </a>`;
 }
 
-// Using default Swagger UI configuration to avoid CSP violations
+// Minimal Swagger UI configuration - no external resources to avoid CSP violations
 
 function setupSwagger(app: any) {
+  // Configure Swagger UI to work with Vercel CSP
+  const swaggerOptions = {
+    // Disable external CDN resources to comply with CSP
+    customCssUrl: [],
+    customJs: [],
+    customfavIcon: '',
+    swaggerOptions: {
+      // Minimal configuration to work within CSP constraints
+      tryItOutEnabled: false,
+      docExpansion: 'list',
+      filter: false,
+      showExtensions: false,
+      showCommonExtensions: false,
+    },
+  };
+
   const adminConfig = new DocumentBuilder()
     .addBasicAuth({ type: `http`, scheme: `basic` }, `basic`)
     .addBearerAuth({ type: `http`, scheme: `bearer` }, `bearer`)
@@ -105,7 +121,7 @@ function setupSwagger(app: any) {
     include: [AdminModule],
     deepScanRoutes: true,
   });
-  SwaggerModule.setup(`docs/admin`, app, adminDocument);
+  SwaggerModule.setup(`docs/admin`, app, adminDocument, swaggerOptions);
 
   const consumerConfig = new DocumentBuilder()
     .addBasicAuth({ type: `http`, scheme: `basic` }, `basic`)
@@ -120,7 +136,7 @@ function setupSwagger(app: any) {
     include: [ConsumerModule],
     deepScanRoutes: true,
   });
-  SwaggerModule.setup(`docs/consumer`, app, consumerDocument);
+  SwaggerModule.setup(`docs/consumer`, app, consumerDocument, swaggerOptions);
 }
 
 async function bootstrap() {
@@ -152,6 +168,19 @@ async function bootstrap() {
   });
 
   setupSwagger(app);
+
+  // Add CSP headers for Swagger routes to work with Vercel
+  app.use('/docs', (req, res, next) => {
+    res.setHeader('Content-Security-Policy', [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data:",
+      "font-src 'self'",
+      "connect-src 'self'",
+    ].join('; '));
+    next();
+  });
   app.useGlobalPipes(
     new ValidationPipe({
       skipMissingProperties: true,
