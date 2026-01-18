@@ -156,6 +156,24 @@ async function bootstrap() {
   });
 
   setupSwagger(app);
+
+  // Add CSP headers for Swagger routes to work with Vercel
+  const CSPcallback = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    res.setHeader(
+      `Content-Security-Policy`,
+      [
+        `default-src 'self'`,
+        `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com`,
+        `style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com`,
+        `img-src 'self' data: https://avatars.githubusercontent.com https://cdnjs.cloudflare.com`,
+        `font-src 'self' https://fonts.gstatic.com`,
+        `connect-src 'self'`,
+      ].join(`; `),
+    );
+    next();
+  };
+  app.use(`/admin/docs`, CSPcallback);
+  app.use(`/consumer/docs`, CSPcallback);
   app.useGlobalPipes(
     new ValidationPipe({
       skipMissingProperties: true,
