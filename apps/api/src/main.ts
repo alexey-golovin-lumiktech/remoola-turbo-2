@@ -48,14 +48,6 @@ async function seed(prisma: PrismaClient): Promise<void> {
     }
   }
 
-  // await prisma.adminModel.deleteMany({ where: { email: { in: emails } } });
-  // const data: IAdminCreate[] = [];
-  // for (const admin of admins) {
-  //   const { salt, hash } = await passwordUtils.hashPassword(admin.password);
-  //   data.push({ email: admin.email, type: admin.type, salt: salt, password: hash });
-  // }
-  // await prisma.adminModel.createMany({ data, skipDuplicates: true });
-
   const lookup = [
     { fromCurrency: $Enums.CurrencyCode.USD, toCurrency: $Enums.CurrencyCode.EUR, rate: 0.95 },
     { fromCurrency: $Enums.CurrencyCode.USD, toCurrency: $Enums.CurrencyCode.JPY, rate: 1.0576 },
@@ -89,25 +81,21 @@ function linkTo(kind: `Consumer` | `Admin`) {
     </a>`;
 }
 
-// Minimal Swagger UI configuration - no external resources to avoid CSP violations
+const opts = {
+  customfavIcon: `https://avatars.githubusercontent.com/u/6936373?s=200&v=4`,
+  customJs: [
+    `https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.1.3/swagger-ui-bundle.js`,
+    `https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.1.3/swagger-ui-bundle.min.js`,
+    `https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.1.3/swagger-ui-standalone-preset.js`,
+    `https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.1.3/swagger-ui-standalone-preset.min.js`,
+  ],
+  customCssUrl: [
+    `https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.1.3/swagger-ui.css`,
+    `https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.1.3/swagger-ui.min.css`,
+  ],
+};
 
 function setupSwagger(app: any) {
-  // Configure Swagger UI to work with Vercel CSP
-  const swaggerOptions = {
-    // Disable external CDN resources to comply with CSP
-    customCssUrl: [],
-    customJs: [],
-    customfavIcon: '',
-    swaggerOptions: {
-      // Minimal configuration to work within CSP constraints
-      tryItOutEnabled: false,
-      docExpansion: 'list',
-      filter: false,
-      showExtensions: false,
-      showCommonExtensions: false,
-    },
-  };
-
   const adminConfig = new DocumentBuilder()
     .addBasicAuth({ type: `http`, scheme: `basic` }, `basic`)
     .addBearerAuth({ type: `http`, scheme: `bearer` }, `bearer`)
@@ -121,7 +109,7 @@ function setupSwagger(app: any) {
     include: [AdminModule],
     deepScanRoutes: true,
   });
-  SwaggerModule.setup(`docs/admin`, app, adminDocument, swaggerOptions);
+  SwaggerModule.setup(`docs/admin`, app, adminDocument, opts);
 
   const consumerConfig = new DocumentBuilder()
     .addBasicAuth({ type: `http`, scheme: `basic` }, `basic`)
@@ -136,13 +124,13 @@ function setupSwagger(app: any) {
     include: [ConsumerModule],
     deepScanRoutes: true,
   });
-  SwaggerModule.setup(`docs/consumer`, app, consumerDocument, swaggerOptions);
+  SwaggerModule.setup(`docs/consumer`, app, consumerDocument, opts);
 }
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     cors: {
-      origin: envs.CORS_ALLOWED_ORIGINS,
+      origin: true,
       credentials: true,
       exposedHeaders: [`set-cookie`, `content-range`, `content-type`],
     },
@@ -168,19 +156,6 @@ async function bootstrap() {
   });
 
   setupSwagger(app);
-
-  // Add CSP headers for Swagger routes to work with Vercel
-  app.use('/docs', (req, res, next) => {
-    res.setHeader('Content-Security-Policy', [
-      "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-      "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data:",
-      "font-src 'self'",
-      "connect-src 'self'",
-    ].join('; '));
-    next();
-  });
   app.useGlobalPipes(
     new ValidationPipe({
       skipMissingProperties: true,
