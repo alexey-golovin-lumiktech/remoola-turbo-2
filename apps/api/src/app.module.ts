@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { RouterModule } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
 
 import { AdminModule } from './admin/admin.module';
@@ -13,6 +12,8 @@ import { DatabaseModule } from './shared/database.module';
     DatabaseModule,
     AuthModule,
     HealthModule,
+    AdminModule,
+    ConsumerModule,
     ThrottlerModule.forRoot([
       {
         ttl: 60000, // 1 minute
@@ -24,10 +25,6 @@ import { DatabaseModule } from './shared/database.module';
         limit: 1000, // requests per ttl
         ignoreUserAgents: [/googlebot/i, /bingbot/i, /slurp/i],
       },
-    ]),
-    RouterModule.register([
-      { path: `admin`, module: AdminModule },
-      { path: `consumer`, module: ConsumerModule },
     ]),
   ],
 })
