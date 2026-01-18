@@ -1,12 +1,9 @@
 export const NODE_ENV = process.env.NODE_ENV || `production`;
 
-export const FORCE_PAYMENT_RESULT = process.env.FORCE_PAYMENT_RESULT;
-
 export const S3_BUCKET = process.env.S3_BUCKET;
 export const AWS_REGION = process.env.AWS_REGION;
 export const S3_PUBLIC_BASE = process.env.S3_PUBLIC_BASE;
 
-export const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN;
 export const COOKIE_SECURE = process.env.COOKIE_SECURE;
 
 export const POSTGRES_TIMEZONE = process.env.POSTGRES_TIMEZONE || `UTC`;

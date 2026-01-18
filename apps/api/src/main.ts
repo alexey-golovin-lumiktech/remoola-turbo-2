@@ -43,7 +43,7 @@ async function seed(prisma: PrismaClient): Promise<void> {
         if (!valid) {
           const { salt, hash } = await passwordUtils.hashPassword(admin.password);
           await prisma.adminModel.update({ where: { id: dbAdmin.id }, data: { password: hash, salt } });
-        } else console.log(`Admin ${admin.email} OK !`);
+        }
       }
     }
   }

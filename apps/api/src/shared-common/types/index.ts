@@ -10,7 +10,6 @@ import type {
   CredentialsSeparator,
   Timeline,
   CardBrand,
-  StripeEvent,
   PGComparisonOperator,
   PaymentRequestTimelineField,
   PersonalDetailsTimelineField,
@@ -30,7 +29,6 @@ export type AuthHeaderValue = OneOfObjectValues<typeof AuthHeader>;
 export type CredentialsSeparatorValue = OneOfObjectValues<typeof CredentialsSeparator>;
 export type TimelineValue = OneOfObjectValues<typeof Timeline>;
 export type CardBrandValue = OneOfObjectValues<typeof CardBrand>;
-export type StripeEventValue = OneOfObjectValues<typeof StripeEvent>;
 export type PGComparisonOperatorValue = OneOfObjectValues<typeof PGComparisonOperator>;
 
 export type ReqQueryPaging = { limit?: number; offset?: number };
