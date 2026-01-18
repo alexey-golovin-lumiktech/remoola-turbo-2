@@ -83,6 +83,7 @@ const nest = {
   PORT: z.coerce.number().optional().default(3000),
   NEST_APP_HOST: z.string().default(`127.0.0.1`),
   NEST_APP_EXTERNAL_ORIGIN: z.string().default(`NEST_APP_EXTERNAL_ORIGIN`),
+  CORS_ALLOWED_ORIGINS: zArray(z.string().min(1), [`http://localhost:3000`, `http://localhost:3001`]),
 };
 
 const google = {
@@ -128,6 +129,10 @@ const logs = {
 const app = {
   ADMIN_EMAIL: z.string().default(`simplelogin-newsletter.djakm@simplelogin.com`),
   SECURE_SESSION_SECRET: z.string().optional().default(`SECURE_SESSION_SECRET`),
+  DEFAULT_ADMIN_EMAIL: z.string().default(`admin@wirebill.com`),
+  DEFAULT_ADMIN_PASSWORD: z.string().default(`Admin@123!`),
+  SUPER_ADMIN_EMAIL: z.string().default(`super@wirebill.com`),
+  SUPER_ADMIN_PASSWORD: z.string().default(`Super@123!`),
 };
 
 const debugging = {
@@ -141,6 +146,13 @@ const debugging = {
 const ngrok = {
   NGROK_AUTH_TOKEN: z.string().default(`NGROK_AUTH_TOKEN`),
   NGROK_DOMAIN: z.string().default(`NGROK_DOMAIN`),
+};
+
+const redis = {
+  REDIS_HOST: z.string().default(`127.0.0.1`),
+  REDIS_PORT: z.coerce.number().default(6379),
+  REDIS_PASSWORD: z.string().optional(),
+  REDIS_URL: z.string().optional(),
 };
 
 const vercel = {
@@ -160,6 +172,7 @@ const schema = z.object({
   ...app,
   ...debugging,
   ...ngrok,
+  ...redis,
   ...vercel,
 });
 
