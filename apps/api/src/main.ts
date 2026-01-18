@@ -89,19 +89,7 @@ function linkTo(kind: `Consumer` | `Admin`) {
     </a>`;
 }
 
-const opts = {
-  customfavIcon: `https://avatars.githubusercontent.com/u/6936373?s=200&v=4`,
-  customJs: [
-    `https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.1.3/swagger-ui-bundle.js`,
-    `https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.1.3/swagger-ui-bundle.min.js`,
-    `https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.1.3/swagger-ui-standalone-preset.js`,
-    `https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.1.3/swagger-ui-standalone-preset.min.js`,
-  ],
-  customCssUrl: [
-    `https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.1.3/swagger-ui.css`,
-    `https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.1.3/swagger-ui.min.css`,
-  ],
-};
+// Using default Swagger UI configuration to avoid CSP violations
 
 function setupSwagger(app: any) {
   const adminConfig = new DocumentBuilder()
@@ -117,7 +105,7 @@ function setupSwagger(app: any) {
     include: [AdminModule],
     deepScanRoutes: true,
   });
-  SwaggerModule.setup(`docs/admin`, app, adminDocument, opts);
+  SwaggerModule.setup(`docs/admin`, app, adminDocument);
 
   const consumerConfig = new DocumentBuilder()
     .addBasicAuth({ type: `http`, scheme: `basic` }, `basic`)
@@ -132,7 +120,7 @@ function setupSwagger(app: any) {
     include: [ConsumerModule],
     deepScanRoutes: true,
   });
-  SwaggerModule.setup(`docs/consumer`, app, consumerDocument, opts);
+  SwaggerModule.setup(`docs/consumer`, app, consumerDocument);
 }
 
 async function bootstrap() {
