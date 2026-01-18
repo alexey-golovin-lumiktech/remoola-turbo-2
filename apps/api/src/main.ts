@@ -109,7 +109,7 @@ function setupSwagger(app: any) {
     include: [AdminModule],
     deepScanRoutes: true,
   });
-  SwaggerModule.setup(`docs/admin`, app, adminDocument, opts);
+  SwaggerModule.setup(`docs/admin`, app, adminDocument, { ...opts, jsonDocumentUrl: `docs/admin-api-json` });
 
   const consumerConfig = new DocumentBuilder()
     .addBasicAuth({ type: `http`, scheme: `basic` }, `basic`)
@@ -124,7 +124,7 @@ function setupSwagger(app: any) {
     include: [ConsumerModule],
     deepScanRoutes: true,
   });
-  SwaggerModule.setup(`docs/consumer`, app, consumerDocument, opts);
+  SwaggerModule.setup(`docs/consumer`, app, consumerDocument, { ...opts, jsonDocumentUrl: `docs/consumer-api-json` });
 }
 
 async function bootstrap() {
@@ -138,7 +138,11 @@ async function bootstrap() {
 
   app.setGlobalPrefix(`api`);
   app.set(`query parser`, `extended`);
-  if (envs.HELMET_ENABLED! === `ENABLED`) app.use(helmet());
+  app.use((req, res, next) => {
+    const isSwagger = req.path.startsWith(`/docs`)
+    if (isSwagger) return helmet({ contentSecurityPolicy: false })(req, res, next);
+    return helmet()(req, res, next);
+  });
   app.use(compression());
   app.use(new CorrelationIdMiddleware().use);
   app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
