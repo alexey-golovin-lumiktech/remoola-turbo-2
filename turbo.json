@@ -55,7 +55,8 @@
     "AWS_SECRET_ACCESS_KEY",
     "AWS_BUCKET",
     "TURBO_TELEMETRY_DISABLED",
-    "DO_NOT_TRACK"
+    "DO_NOT_TRACK",
+    "HELMET_ENABLED"
   ],
   "ui": "stream",
   "globalDependencies": [

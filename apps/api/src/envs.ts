@@ -156,6 +156,10 @@ const vercel = {
   VERCEL: z.coerce.number().optional().default(0),
 };
 
+const security = {
+  HELMET_ENABLED: z.string().default(`DISABLED`),
+};
+
 const schema = z.object({
   ...node,
   ...database,
@@ -171,6 +175,7 @@ const schema = z.object({
   ...ngrok,
   ...redis,
   ...vercel,
+  ...security,
 });
 
 const parsed = schema.safeParse(process.env);
