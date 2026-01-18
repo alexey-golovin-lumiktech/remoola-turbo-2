@@ -7,14 +7,16 @@ import { JwtService } from '@nestjs/jwt';
 import { type NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as ngrok from '@ngrok/ngrok';
+import compression from 'compression';
 import { default as cookieParser } from 'cookie-parser';
 import * as express from 'express';
+import helmet from 'helmet';
 
 import { $Enums, type PrismaClient } from '@remoola/database-2';
 
 import { AdminModule } from './admin/admin.module';
 import { AppModule } from './app.module';
-import { PrismaExceptionFilter } from './common';
+import { PrismaExceptionFilter, CorrelationIdMiddleware, LoggingInterceptor } from './common';
 import { ConsumerModule } from './consumer/consumer.module';
 import { envs } from './envs';
 import { AuthGuard } from './guards';
@@ -24,9 +26,8 @@ import { passwordUtils } from './shared-common';
 
 async function seed(prisma: PrismaClient): Promise<void> {
   const admins = [
-    { type: $Enums.AdminType.ADMIN, email: `regular.admin@wirebill.com`, password: `RegularWirebill@Admin123!` },
-    { type: $Enums.AdminType.SUPER, email: `super.admin@wirebill.com`, password: `SuperWirebill@Admin123!` },
-    { type: $Enums.AdminType.SUPER, email: `email@email.com`, password: `password` },
+    { type: $Enums.AdminType.ADMIN, email: envs.DEFAULT_ADMIN_EMAIL, password: envs.DEFAULT_ADMIN_PASSWORD },
+    { type: $Enums.AdminType.SUPER, email: envs.SUPER_ADMIN_EMAIL, password: envs.SUPER_ADMIN_PASSWORD },
   ];
 
   const emails = admins.map((x) => x.email);
@@ -42,18 +43,10 @@ async function seed(prisma: PrismaClient): Promise<void> {
         if (!valid) {
           const { salt, hash } = await passwordUtils.hashPassword(admin.password);
           await prisma.adminModel.update({ where: { id: dbAdmin.id }, data: { password: hash, salt } });
-        } else console.log(`Admin ${admin.email} OK !`);
+        }
       }
     }
   }
-
-  // await prisma.adminModel.deleteMany({ where: { email: { in: emails } } });
-  // const data: IAdminCreate[] = [];
-  // for (const admin of admins) {
-  //   const { salt, hash } = await passwordUtils.hashPassword(admin.password);
-  //   data.push({ email: admin.email, type: admin.type, salt: salt, password: hash });
-  // }
-  // await prisma.adminModel.createMany({ data, skipDuplicates: true });
 
   const lookup = [
     { fromCurrency: $Enums.CurrencyCode.USD, toCurrency: $Enums.CurrencyCode.EUR, rate: 0.95 },
@@ -116,7 +109,7 @@ function setupSwagger(app: any) {
     include: [AdminModule],
     deepScanRoutes: true,
   });
-  SwaggerModule.setup(`docs/admin`, app, adminDocument, opts);
+  SwaggerModule.setup(`docs/admin`, app, adminDocument, { ...opts, jsonDocumentUrl: `docs/admin-api-json` });
 
   const consumerConfig = new DocumentBuilder()
     .addBasicAuth({ type: `http`, scheme: `basic` }, `basic`)
@@ -131,12 +124,11 @@ function setupSwagger(app: any) {
     include: [ConsumerModule],
     deepScanRoutes: true,
   });
-  SwaggerModule.setup(`docs/consumer`, app, consumerDocument, opts);
+  SwaggerModule.setup(`docs/consumer`, app, consumerDocument, { ...opts, jsonDocumentUrl: `docs/consumer-api-json` });
 }
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-    rawBody: true,
     cors: {
       origin: true,
       credentials: true,
@@ -146,11 +138,18 @@ async function bootstrap() {
 
   app.setGlobalPrefix(`api`);
   app.set(`query parser`, `extended`);
+  app.use((req, res, next) => {
+    const isSwagger = req.path.startsWith(`/docs`)
+    if (isSwagger) return helmet({ contentSecurityPolicy: false })(req, res, next);
+    return helmet()(req, res, next);
+  });
+  app.use(compression());
+  app.use(new CorrelationIdMiddleware().use);
   app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (req.path.startsWith(`/api/consumer/webhooks`)) return next();
-    express.json({ limit: `25mb` })(req, res, next);
+    express.json({ limit: `10mb` })(req, res, next);
   });
-  app.use(express.urlencoded({ extended: true, limit: `25mb` }));
+  app.use(express.urlencoded({ extended: true, limit: `10mb` }));
   app.use(cookieParser(envs.SECURE_SESSION_SECRET));
   app.use(`/uploads`, express.static(join(process.cwd(), `uploads`)));
   app.use((req, res, next) => {
@@ -161,6 +160,8 @@ async function bootstrap() {
   });
 
   setupSwagger(app);
+
+  // Add CSP headers for Swagger routes to work with Vercel
   app.useGlobalPipes(
     new ValidationPipe({
       skipMissingProperties: true,
@@ -182,7 +183,7 @@ async function bootstrap() {
   const prisma = app.get(PrismaService);
   await seed(prisma);
   app.useGlobalGuards(new AuthGuard(reflector, jwtService, prisma));
-  app.useGlobalInterceptors(new TransformResponseInterceptor(reflector));
+  app.useGlobalInterceptors(new TransformResponseInterceptor(reflector), new LoggingInterceptor());
   app.useGlobalFilters(new PrismaExceptionFilter());
 
   const port = envs.PORT || 3000;

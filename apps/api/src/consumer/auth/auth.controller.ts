@@ -35,7 +35,7 @@ import { ACCESS_TOKEN_COOKIE_KEY, REFRESH_TOKEN_COOKIE_KEY, removeNil } from '..
 @ApiTags(`Consumer: Auth`)
 @ApiBearerAuth(`bearer`) // 👈 tells Swagger to attach Bearer token
 @ApiBasicAuth(`basic`) // 👈 optional, if this route also accepts Basic Auth
-@Controller(`auth`)
+@Controller(`consumer/auth`)
 export class ConsumerAuthController {
   private readonly logger = new Logger(ConsumerAuthController.name);
 

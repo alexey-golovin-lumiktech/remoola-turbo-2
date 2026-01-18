@@ -20,10 +20,6 @@ export class FileStorageService {
           secretAccessKey: envs.AWS_SECRET_ACCESS_KEY!,
         },
       };
-      console.log(`\n************************************`);
-      console.log(`useS3 configuration`, configuration);
-      console.log(`envs.AWS_REGION`, envs.AWS_REGION);
-      console.log(`************************************\n`);
       this.s3 = new S3Client(configuration);
     }
   }
@@ -77,10 +73,6 @@ export class FileStorageService {
       Body: buffer,
       ContentType: mimetype,
     });
-    console.log(`\n************************************`);
-    console.log(`envs.AWS_BUCKET`, envs.AWS_BUCKET);
-    console.log(`envs.AWS_REGION`, envs.AWS_REGION);
-    console.log(`************************************\n`);
 
     await this.s3!.send(cmd);
 

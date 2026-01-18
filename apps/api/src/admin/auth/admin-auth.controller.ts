@@ -14,7 +14,7 @@ import { ACCESS_TOKEN_COOKIE_KEY, REFRESH_TOKEN_COOKIE_KEY } from '../../shared-
 @ApiTags(`Admin: Auth`)
 @ApiBearerAuth(`bearer`) // 👈 tells Swagger to attach Bearer token
 @ApiBasicAuth(`basic`) // 👈 optional, if this route also accepts Basic Auth
-@Controller(`auth`)
+@Controller(`admin/auth`)
 export class AdminAuthController {
   constructor(private readonly service: AdminAuthService) {}
 

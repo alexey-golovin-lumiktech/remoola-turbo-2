@@ -28,9 +28,6 @@ export class AdminAuthService {
   }
 
   async login(body: any) {
-    // const access = await this.getAccessAndRefreshToken(admin.id);
-    // return Object.assign({ ...access, type: admin.type, email: admin.email, id: admin.id });
-
     const identity = await this.prisma.adminModel.findUnique({ where: { email: body.email } });
     if (!identity) throw new UnauthorizedException(`Invalid credentials`);
 

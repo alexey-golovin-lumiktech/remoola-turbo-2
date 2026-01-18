@@ -1,12 +1,9 @@
 export const NODE_ENV = process.env.NODE_ENV || `production`;
 
-export const FORCE_PAYMENT_RESULT = process.env.FORCE_PAYMENT_RESULT;
-
 export const S3_BUCKET = process.env.S3_BUCKET;
 export const AWS_REGION = process.env.AWS_REGION;
 export const S3_PUBLIC_BASE = process.env.S3_PUBLIC_BASE;
 
-export const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN;
 export const COOKIE_SECURE = process.env.COOKIE_SECURE;
 
 export const POSTGRES_TIMEZONE = process.env.POSTGRES_TIMEZONE || `UTC`;
@@ -83,6 +80,7 @@ const nest = {
   PORT: z.coerce.number().optional().default(3000),
   NEST_APP_HOST: z.string().default(`127.0.0.1`),
   NEST_APP_EXTERNAL_ORIGIN: z.string().default(`NEST_APP_EXTERNAL_ORIGIN`),
+  CORS_ALLOWED_ORIGINS: zArray(z.string().min(1), [`http://localhost:3000`, `http://localhost:3001`]),
 };
 
 const google = {
@@ -128,6 +126,10 @@ const logs = {
 const app = {
   ADMIN_EMAIL: z.string().default(`simplelogin-newsletter.djakm@simplelogin.com`),
   SECURE_SESSION_SECRET: z.string().optional().default(`SECURE_SESSION_SECRET`),
+  DEFAULT_ADMIN_EMAIL: z.string().default(`admin@wirebill.com`),
+  DEFAULT_ADMIN_PASSWORD: z.string().default(`Admin@123!`),
+  SUPER_ADMIN_EMAIL: z.string().default(`super@wirebill.com`),
+  SUPER_ADMIN_PASSWORD: z.string().default(`Super@123!`),
 };
 
 const debugging = {
@@ -143,8 +145,19 @@ const ngrok = {
   NGROK_DOMAIN: z.string().default(`NGROK_DOMAIN`),
 };
 
+const redis = {
+  REDIS_HOST: z.string().default(`127.0.0.1`),
+  REDIS_PORT: z.coerce.number().default(6379),
+  REDIS_PASSWORD: z.string().optional(),
+  REDIS_URL: z.string().optional(),
+};
+
 const vercel = {
   VERCEL: z.coerce.number().optional().default(0),
+};
+
+const security = {
+  HELMET_ENABLED: z.string().default(`DISABLED`),
 };
 
 const schema = z.object({
@@ -160,7 +173,9 @@ const schema = z.object({
   ...app,
   ...debugging,
   ...ngrok,
+  ...redis,
   ...vercel,
+  ...security,
 });
 
 const parsed = schema.safeParse(process.env);

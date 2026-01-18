@@ -45,7 +45,6 @@ export class AuthController {
   }
 
   private setCookie(res: express.Response, accessToken: string) {
-    console.log(`setCookie`);
     res.cookie(ACCESS_TOKEN_COOKIE_KEY, accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === `production`,

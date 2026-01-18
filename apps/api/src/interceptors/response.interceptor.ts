@@ -32,17 +32,7 @@ export class TransformResponseInterceptor implements NestInterceptor {
           if (Array.isArray(res)) result = res.map((item) => plainToInstance(cls, item, opts));
           else result = plainToInstance(cls, res, opts);
 
-          const order = [
-            `id`,
-            `email`,
-            `firstName`,
-            `lastName`,
-            `verified`,
-            `accountType`,
-            `contractorKind`,
-            `howDidHearAboutUs`,
-          ];
-          return JSON.parse(JSON.stringify(result, order));
+          return result;
         } catch (error: any) {
           throw new Error(`Response transformation failed: ${error.message}`);
         }

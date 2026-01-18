@@ -5,7 +5,7 @@ import { type JwtService } from '@nestjs/jwt';
 import { IDENTITY, type IIdentity, IS_PUBLIC } from '../common';
 import { type IJwtTokenPayload } from '../dtos/consumer';
 import { type PrismaService } from '../shared/prisma.service';
-import { ACCESS_TOKEN_COOKIE_KEY, CredentialsSeparator } from '../shared-common';
+import { ACCESS_TOKEN_COOKIE_KEY } from '../shared-common';
 
 import type express from 'express';
 
@@ -25,7 +25,6 @@ const GuardMessage = {
 
 export class AuthGuard implements CanActivate {
   private readonly logger = new Logger(AuthGuard.name);
-  private readonly separator = CredentialsSeparator;
 
   constructor(
     private readonly reflector: Reflector,
