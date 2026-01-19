@@ -6,30 +6,8 @@ export interface ApiError {
   statusCode?: number;
 }
 
-export class ApiResponseError extends Error {
-  statusCode: number;
-  code?: string;
-
-  constructor(message: string, statusCode: number = 500, code?: string) {
-    super(message);
-    this.name = `ApiResponseError`;
-    this.statusCode = statusCode;
-    this.code = code;
-  }
-}
-
 export function handleApiError(error: unknown): NextResponse<ApiError> {
   console.error(`API Error:`, error);
-
-  if (error instanceof ApiResponseError) {
-    return NextResponse.json(
-      {
-        message: error.message,
-        code: error.code,
-      },
-      { status: error.statusCode },
-    );
-  }
 
   if (error instanceof Error) {
     // Check for specific error types
@@ -50,6 +28,18 @@ export function handleApiError(error: unknown): NextResponse<ApiError> {
           code: `TIMEOUT`,
         },
         { status: 408 },
+      );
+    }
+
+    // Check if it's our custom error format
+    const customError = error as any;
+    if (customError.statusCode) {
+      return NextResponse.json(
+        {
+          message: error.message,
+          code: customError.code,
+        },
+        { status: customError.statusCode },
       );
     }
 
@@ -137,10 +127,3 @@ export async function proxyApiRequest(
   throw lastError;
 }
 
-export async function safeJsonParse<T>(text: string, fallback: T): Promise<T> {
-  try {
-    return JSON.parse(text) as T;
-  } catch {
-    return fallback;
-  }
-}

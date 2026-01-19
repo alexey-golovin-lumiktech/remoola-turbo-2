@@ -97,11 +97,11 @@ export function useUpdateContact(id: string) {
 export function useDeleteContact(id: string) {
   return useSWRMutation(
     queryKeys.contacts.detail(id),
-    async (key: any, { arg }: { arg: any }) => {
+    async (key: any, _arg: { arg: any }) => {
       return mutationFetcher(key, { method: `DELETE` });
     },
     {
-      optimisticData: (currentData: any) => {
+      optimisticData: (_currentData: any) => {
         // Optimistically remove the contact from the list
         return null;
       },
@@ -131,11 +131,11 @@ export function useOptimisticMutation<TData>(
 ) {
   return useSWRMutation(
     key,
-    async (key: any, { arg }: { arg: any }) => {
+    async (_key: any, { arg }: { arg: any }) => {
       return mutationFetcher(key, { method: `POST`, data: arg });
     },
     {
-      optimisticData: updater,
+      optimisticData: (_currentData: TData | undefined) => updater(_currentData),
       rollbackOnError: true,
       ...options,
     },
