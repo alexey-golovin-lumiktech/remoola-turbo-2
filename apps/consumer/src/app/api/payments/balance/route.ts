@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 export async function GET(req: Request) {
-  const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE_URL}/payments/balance`);
+  const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE_URL}/consumer/payments/balance`);
   console.log(`GET`, url.href);
 
   const res = await fetch(url, {

@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-
+import { useDashboard } from '../../lib/hooks';
 import { VerifyMeButton } from '../stripe';
+import { DashboardSkeleton } from '../ui';
 import { ActionRow } from './ActionRow';
 import { ActivityTimeline } from './ActivityTimeline';
 import { ComplianceTasksCard } from './ComplianceTasksCard';
@@ -11,39 +11,46 @@ import { PendingRequestsTable } from './PendingRequestsTable';
 import { PendingWithdrawalsCard } from './PendingWithdrawalsCard';
 import { QuickDocsCard } from './QuickDocsCard';
 import { SummaryCards } from './SummaryCards';
-import { type IDashboardData } from '../../types';
+// Type is inferred from the hook
 
 export function DashboardDataView() {
-  const [dashboardData, setDashboardData] = useState<IDashboardData>();
+  const { data: dashboardData, error, isLoading } = useDashboard();
 
-  async function fetchDashboardData() {
-    const response = await fetch(`/api/dashboard`, {
-      method: `GET`,
-      headers: { 'content-type': `application/json` },
-      credentials: `include`,
-      cache: `no-store`,
-    });
-    if (!response.ok) throw new Error(`Fail load dashboard data`);
-    const json = await response.json();
-    setDashboardData(json);
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px] p-8">
+        <div className="text-center">
+          <div className="rounded-full bg-red-100 p-3 mb-4 mx-auto w-fit">
+            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732
+                0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+              />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Failed to load dashboard</h2>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
   }
-  useEffect(() => void fetchDashboardData(), []);
 
-  if (!dashboardData) return null;
+  if (isLoading || !dashboardData) return <DashboardSkeleton />;
 
   return (
     <div className="flex h-full flex-col gap-6 px-8 py-6">
       <DashboardHeader />
 
       <SummaryCards summary={dashboardData.summary} />
-      {/*
-      {user.legalVerified ? (
-        <span className="inline-flex items-center gap-1 text-green-700 bg-green-100 px-2 py-1 rounded text-xs">
-          ✔ Verified
-        </span>
-      ) : (
-        <VerifyMeButton />
-      )} */}
 
       <VerifyMeButton />
 
