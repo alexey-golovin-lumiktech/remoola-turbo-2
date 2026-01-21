@@ -12,8 +12,8 @@ model AccessRefreshTokenModel {
   id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
 
   identityId   String @map("identity_id") @db.Uuid
-  accessToken  String @map("access_token") @db.VarChar(255)
-  refreshToken String @map("refresh_token") @db.VarChar(255)
+  accessToken  String @map("access_token") @db.Text
+  refreshToken String @map("refresh_token") @db.Text
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -39,7 +39,7 @@ model AddressDetailsModel {
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
-  @@index([consumerId, deletedAt])
+  @@unique([consumerId, deletedAt])
   @@map("address_details")
 }
 
@@ -48,7 +48,7 @@ model AdminModel {
 
   type AdminType @default(ADMIN)
 
-  email    String @unique @db.VarChar(255)
+  email    String @db.VarChar(255)
   password String @db.VarChar(255)
   salt     String @db.VarChar(255)
 
@@ -56,7 +56,7 @@ model AdminModel {
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
-  @@index([email, deletedAt])
+  @@unique([email, deletedAt])
   @@map("admin")
 }
 
@@ -66,7 +66,7 @@ model BillingDetailsModel {
   name  String? @db.VarChar(255)
   phone String? @db.VarChar(255)
 
-  paymentMethod PaymentMethodModel?
+  paymentMethods PaymentMethodModel[]
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -78,7 +78,7 @@ model BillingDetailsModel {
 model ConsumerModel {
   id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
 
-  email          String          @unique @db.VarChar(255)
+  email          String          @db.VarChar(255)
   accountType    AccountType     @map("account_type")
   contractorKind ContractorKind? @map("contractor_kind")
 
@@ -110,7 +110,7 @@ model ConsumerModel {
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
-  @@index([email, deletedAt])
+  @@unique([email, deletedAt])
   @@map("consumer")
 }
 
@@ -127,7 +127,7 @@ model ConsumerResourceModel {
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
-  @@unique([consumerId, resourceId])
+  @@unique([consumerId, resourceId, deletedAt])
   @@index([consumerId, deletedAt])
   @@index([resourceId, deletedAt])
   @@map("consumer_resource")
@@ -147,7 +147,7 @@ model ContactModel {
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
-  @@unique([consumerId, email])
+  @@unique([consumerId, email, deletedAt])
   @@index([consumerId])
   @@map("contact")
 }
@@ -165,7 +165,7 @@ model ExchangeRateModel {
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
-  @@unique([fromCurrency, toCurrency])
+  @@unique([fromCurrency, toCurrency, deletedAt])
   @@map("exchange_rate")
 }
 
@@ -188,7 +188,7 @@ model GoogleProfileDetailsModel {
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
-  @@index([consumerId, deletedAt])
+  @@unique([consumerId, deletedAt])
   @@map("google_profile_details")
 }
 
@@ -207,7 +207,7 @@ model OrganizationDetailsModel {
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
-  @@index([consumerId, deletedAt])
+  @@unique([consumerId, deletedAt])
   @@map("organization_details")
 }
 
@@ -238,8 +238,8 @@ model PaymentMethodModel {
 
   serviceFee Int @default(0) @map("service_fee")
 
-  billingDetailsId String              @unique @map("billing_details_id") @db.Uuid
-  billingDetails   BillingDetailsModel @relation(fields: [billingDetailsId], references: [id], onDelete: Cascade)
+  billingDetailsId String?              @map("billing_details_id") @db.Uuid
+  billingDetails   BillingDetailsModel? @relation(fields: [billingDetailsId], references: [id], onDelete: Cascade)
 
   consumerId String        @map("consumer_id") @db.Uuid
   consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -248,8 +248,8 @@ model PaymentMethodModel {
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
-  @@unique([consumerId, stripePaymentMethodId])
-  @@unique([consumerId, stripeFingerprint])
+  @@unique([consumerId, stripePaymentMethodId, deletedAt])
+  @@unique([consumerId, stripeFingerprint, deletedAt])
   @@index([consumerId])
   @@map("payment_method")
 }
@@ -353,7 +353,7 @@ model PaymentRequestAttachmentModel {
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
-  @@unique([paymentRequestId, requesterId, resourceId])
+  @@unique([paymentRequestId, requesterId, resourceId, deletedAt])
   @@index([paymentRequestId])
   @@index([requesterId])
   @@index([resourceId])
@@ -381,7 +381,7 @@ model PersonalDetailsModel {
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
-  @@index([consumerId, deletedAt])
+  @@unique([consumerId, deletedAt])
   @@map("personal_details")
 }
 

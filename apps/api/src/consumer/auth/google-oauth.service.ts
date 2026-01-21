@@ -97,8 +97,8 @@ export class GoogleOAuthService {
    * You can later allow user to upgrade to BUSINESS or ENTITY etc.
    */
   private async upsertConsumerFromGooglePayload(email: string, payload: Record<string, any>) {
-    const existing = await this.prisma.consumerModel.findUnique({
-      where: { email },
+    const existing = await this.prisma.consumerModel.findFirst({
+      where: { email, deletedAt: null },
       include: { personalDetails: true },
     });
 
@@ -182,8 +182,8 @@ export class GoogleOAuthService {
       return consumer;
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === `P2002`) {
-        return this.prisma.consumerModel.findUniqueOrThrow({
-          where: { email },
+        return this.prisma.consumerModel.findFirstOrThrow({
+          where: { email, deletedAt: null },
           include: { personalDetails: true },
         });
       }

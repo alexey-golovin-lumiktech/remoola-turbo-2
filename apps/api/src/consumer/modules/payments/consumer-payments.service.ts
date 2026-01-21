@@ -175,8 +175,8 @@ export class ConsumerPaymentsService {
   }
 
   async startPayment(consumerId: string, body: StartPayment) {
-    const recipient = await this.prisma.consumerModel.findUnique({
-      where: { email: body.email },
+    const recipient = await this.prisma.consumerModel.findFirst({
+      where: { email: body.email, deletedAt: null },
     });
 
     if (!recipient) {
@@ -268,10 +268,14 @@ export class ConsumerPaymentsService {
         amount: true,
       },
     });
+    console.log(`rows`, rows);
 
     const result: Record<$Enums.CurrencyCode, number> = {} as any;
 
     for (const row of rows) {
+      console.log(`\n************************************`);
+      console.log(`row`, row);
+      console.log(`************************************\n`);
       result[row.currencyCode] = Number(row._sum.amount ?? 0);
     }
 

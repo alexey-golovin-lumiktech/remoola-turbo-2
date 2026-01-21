@@ -14,8 +14,12 @@ export class ConsumerExchangeService {
   async getRate(from: $Enums.CurrencyCode, to: $Enums.CurrencyCode) {
     if (from === to) return { rate: 1 };
 
-    const rate = await this.prisma.exchangeRateModel.findUnique({
-      where: { fromCurrency_toCurrency: { fromCurrency: from, toCurrency: to } },
+    const rate = await this.prisma.exchangeRateModel.findFirst({
+      where: {
+        fromCurrency: from,
+        toCurrency: to,
+        deletedAt: null,
+      },
     });
 
     if (!rate) throw new NotFoundException(`Rate not available`);

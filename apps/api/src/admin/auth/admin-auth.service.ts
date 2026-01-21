@@ -14,7 +14,9 @@ export class AdminAuthService {
     private readonly prisma: PrismaService,
   ) {}
   async getAuthenticatedAdmin(email: string, password: string) {
-    const admin = await this.prisma.adminModel.findFirst({ where: { email } });
+    const admin = await this.prisma.adminModel.findFirst({
+      where: { email, deletedAt: null },
+    });
     if (!admin) throw new BadRequestException(constants.INVALID_CREDENTIALS);
 
     const isValidPassword = await passwordUtils.verifyPassword({
@@ -28,7 +30,9 @@ export class AdminAuthService {
   }
 
   async login(body: any) {
-    const identity = await this.prisma.adminModel.findUnique({ where: { email: body.email } });
+    const identity = await this.prisma.adminModel.findFirst({
+      where: { email: body.email, deletedAt: null },
+    });
     if (!identity) throw new UnauthorizedException(`Invalid credentials`);
 
     const valid = await passwordUtils.verifyPassword({
