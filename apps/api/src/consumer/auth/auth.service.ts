@@ -70,7 +70,9 @@ export class ConsumerAuthService {
   }
 
   async login(body: LoginBody) {
-    const identity = await this.prisma.consumerModel.findUnique({ where: { email: body.email } });
+    const identity = await this.prisma.consumerModel.findFirst({
+      where: { email: body.email, deletedAt: null },
+    });
     if (!identity) throw new UnauthorizedException(`Invalid credentials`);
 
     const valid = await passwordUtils.verifyPassword({
@@ -107,13 +109,15 @@ export class ConsumerAuthService {
   async signupVerification(token: string, res: express.Response, referer) {
     const decoded: any = this.jwtService.decode(token);
     const redirectUrl = new URL(`signup/verification`, referer);
-    const identity = await this.prisma.consumerModel.findFirst({ where: { id: decoded.identityId } });
+    const identity = await this.prisma.consumerModel.findFirst({
+      where: { id: decoded.identityId, deletedAt: null },
+    });
 
     if (identity?.email) {
       redirectUrl.searchParams.append(`email`, identity.email);
 
       const updated = await this.prisma.consumerModel.update({
-        where: { email: identity.email },
+        where: { id: identity.id },
         data: { verified: true },
       });
       redirectUrl.searchParams.append(`verified`, !updated || updated.verified == false ? `no` : `yes`);
@@ -207,14 +211,17 @@ export class ConsumerAuthService {
   async signup(dto: ConsumerSignup) {
     this.ensureBusinessRules(dto);
 
-    const existing = await this.prisma.consumerModel.findUnique({
+    const existing = await this.prisma.consumerModel.findFirst({
       where: { email: dto.email.toLowerCase() },
-      select: { id: true },
+      select: { id: true, deletedAt: true },
     });
 
-    if (existing) {
+    if (existing && !existing.deletedAt) {
       throw new ConflictException(`Email is already registered`);
     }
+
+    // Note: With soft-delete uniqueness including deletedAt,
+    // soft-deleted consumers can have their email re-used for new registrations
 
     const { hash, salt } = await passwordUtils.hashPassword(dto.password);
 

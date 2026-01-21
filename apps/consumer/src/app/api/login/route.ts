@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
-  const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/login`);
-  console.log(`POST`, url.href);
+  const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE_URL}/consumer/auth/login`);
 
   const res = await fetch(url, {
     method: `POST`,

@@ -129,6 +129,7 @@ function setupSwagger(app: any) {
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    rawBody: true,
     cors: {
       origin: true,
       credentials: true,
@@ -139,7 +140,7 @@ async function bootstrap() {
   app.setGlobalPrefix(`api`);
   app.set(`query parser`, `extended`);
   app.use((req, res, next) => {
-    const isSwagger = req.path.startsWith(`/docs`)
+    const isSwagger = req.path.startsWith(`/docs`);
     if (isSwagger) return helmet({ contentSecurityPolicy: false })(req, res, next);
     return helmet()(req, res, next);
   });

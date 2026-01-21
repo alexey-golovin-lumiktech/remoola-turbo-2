@@ -2,7 +2,9 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 export async function POST(req: NextRequest, context: { params: Promise<{ paymentRequestId: string }> }) {
   const params = await context.params;
-  const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE_URL}/payments/${params.paymentRequestId}/generate-invoice`);
+  const url = new URL(
+    `${process.env.NEXT_PUBLIC_API_BASE_URL}/consumer/payments/${params.paymentRequestId}/generate-invoice`,
+  );
   console.log(`POST`, url.href);
 
   const res = await fetch(url, {

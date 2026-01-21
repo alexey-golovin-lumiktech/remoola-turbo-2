@@ -23,8 +23,11 @@ export class AuthService {
   }
 
   async register(body: RegisterBody) {
-    const existing = await this.prisma.adminModel.findUnique({ where: { email: body.email } });
-    if (existing) throw new UnauthorizedException(`Email already in use`);
+    const existing = await this.prisma.adminModel.findFirst({
+      where: { email: body.email },
+      select: { id: true, deletedAt: true },
+    });
+    if (existing && !existing.deletedAt) throw new UnauthorizedException(`Email already in use`);
 
     const hash = await bcrypt.hash(body.password, 10);
     const identity = await this.prisma.adminModel.create({
@@ -41,7 +44,9 @@ export class AuthService {
   }
 
   async login(body: LoginBody) {
-    const identity = await this.prisma.adminModel.findUnique({ where: { email: body.email } });
+    const identity = await this.prisma.adminModel.findFirst({
+      where: { email: body.email, deletedAt: null },
+    });
     if (!identity) throw new UnauthorizedException(`Invalid credentials`);
 
     const valid = await bcrypt.compare(body.password, identity.password);

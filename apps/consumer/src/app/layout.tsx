@@ -3,6 +3,8 @@ import './globals.css';
 import { type Metadata } from 'next';
 import { Toaster } from 'sonner';
 
+import { PageErrorBoundary, SWRProvider } from '../components';
+
 export const metadata: Metadata = {
   title: `Remoola`,
   description: `Client dashboard`,
@@ -13,7 +15,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <Toaster richColors position="top-right" />
-        {children}
+        <SWRProvider>
+          <PageErrorBoundary>{children}</PageErrorBoundary>
+        </SWRProvider>
       </body>
     </html>
   );

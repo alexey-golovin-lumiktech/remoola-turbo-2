@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 export async function PATCH(req: NextRequest, context: { params: Promise<{ contactId: string }> }) {
   const params = await context.params;
-  const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE_URL}/contacts/${params.contactId}`);
+  const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE_URL}/consumer/contacts/${params.contactId}`);
   console.log(`PATCH`, url.href);
 
   const res = await fetch(url, {
@@ -20,7 +20,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ conta
 
 export async function DELETE(req: NextRequest, context: { params: Promise<{ contactId: string }> }) {
   const params = await context.params;
-  const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE_URL}/contacts/${params.contactId}`);
+  const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE_URL}/consumer/contacts/${params.contactId}`);
   console.log(`DELETE`, url.href);
 
   const res = await fetch(url, {

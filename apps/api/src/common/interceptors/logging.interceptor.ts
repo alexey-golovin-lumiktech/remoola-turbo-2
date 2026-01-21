@@ -1,4 +1,5 @@
 import { Injectable, NestInterceptor, ExecutionContext, CallHandler, Logger } from '@nestjs/common';
+import { Response } from 'express';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 
@@ -10,7 +11,7 @@ export class LoggingInterceptor implements NestInterceptor {
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest<RequestWithCorrelationId>();
-    const response = context.switchToHttp().getResponse();
+    const response = context.switchToHttp().getResponse<Response>();
     const { method, url, correlationId } = request;
     const userAgent = request.get(`User-Agent`) || ``;
     const startTime = Date.now();
@@ -27,7 +28,6 @@ export class LoggingInterceptor implements NestInterceptor {
     return next.handle().pipe(
       tap(() => {
         const { statusCode } = response;
-        const contentLength = response.get(`Content-Length`);
         const duration = Date.now() - startTime;
 
         this.logger.log({
@@ -36,7 +36,6 @@ export class LoggingInterceptor implements NestInterceptor {
           method,
           url,
           statusCode,
-          contentLength,
           duration: `${duration}ms`,
           timestamp: new Date().toISOString(),
         });

@@ -182,5 +182,55 @@
                   from payment-methods into a dedicated Stripe controller.
 
 
+# Changelog (January 2026)
+
+- **2026-01-12:** Prepared database and infrastructure refactoring by reviewing schema consistency,
+                  auditing timestamp usage, evaluating foreign key performance,
+                  and planning enhancements for payment methods, ledger idempotency,
+                  and resource access standardization. (Database Audit and Refactoring Plan for Payments & Ledger)
+
+- **2026-01-13:** Implemented foundational database improvements by adding strategic indexes,
+                  defining cascade delete rules, increasing FX rate precision,
+                  introducing enums for resource access, and preparing ledger idempotency
+                  mechanisms for exactly-once processing. (Database Foundations & Ledger Idempotency)
+
+- **2026-01-14:** Finalized database and infrastructure standardization by making
+                  `createdAt` / `updatedAt` non-nullable with `@updatedAt`,
+                  enhancing `PaymentMethodModel` with bank account support and Stripe fingerprinting,
+                  adding ledger idempotency keys, and introducing telemetry opt-out
+                  environment variables to turbo.json for Vercel. (DB & Infra Standardization)
+
+- **2026-01-15:** Simplified admin frontend architecture by switching to a direct
+                  Next.js API proxy with lightweight `apiFetch`, removed complex SWR setup,
+                  added admin pages (consumers, payment requests, ledger, admin management),
+                  improved naming and redirect logic, cleaned up legacy components,
+                  and removed debug logging. (Admin FE Cleanup & Refactor)
+
+- **2026-01-17:** Refactored admin frontend with improved routing, client-boundary loading
+                  patterns, variable naming cleanup, enhanced dashboard and listing pages,
+                  merged admin FE refactoring pull request, and attempted Vercel deployment
+                  configuration which was later reverted. (Admin FE Routing Refinements)
+
+- **2026-01-18:** Hardened API security, performance, and environment management by implementing
+                  secure CORS configuration, rate limiting, response compression, Helmet security headers,
+                  structured logging with correlation IDs, health check endpoints, reduced upload limits,
+                  fixed Swagger routing and documentation, removed dead code and unused imports,
+                  replaced RouterModule routing with explicit controller paths, and configured
+                  Swagger UI for CSP compliance on Vercel with iterative fixes. (Harden API Security and Infrastructure)
+
+- **2026-01-19:** Implemented robust consumer SWR architecture, corrected all consumer-specific
+                  API route prefixes, introduced a centralized ApiClient with caching,
+                  deduplication and retry logic, and migrated data fetching to type-safe
+                  SWR hooks and mutations. (Implement Robust Consumer SWR Architecture)
+
+- **2026-01-20:** Added global error boundaries with user-friendly fallbacks,
+                  replaced blank screens with skeleton loading components,
+                  improved resilience of the consumer app under failure states,
+                  and enhanced overall UX consistency during loading and errors.(Consumer UX Resilience)
+
+- **2026-01-21:** Simplified consumer error handling by removing the `ApiResponseError` abstraction,
+                  eliminated unused utilities and redundant exports, cleaned up debug logging,
+                  fixed unused parameter warnings in SWR hooks,
+                  and finalized performance optimizations and bundle cleanup. (Simplify Consumer Error Handling and Cleanup)
 
 ```
