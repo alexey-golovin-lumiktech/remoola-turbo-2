@@ -62,13 +62,15 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
             <input
               placeholder="Search anything..."
               className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm shadow-sm
-              outline-none focus:ring-2 focus:ring-blue-500"
+              outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-600
+              dark:text-white dark:placeholder:text-gray-400"
             />
-            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">⌘K</span>
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500">⌘K</span>
           </div>
           <a
             href="/logout"
-            className="grid h-10 w-10 place-items-center rounded-full bg-white shadow-sm ring-1 ring-black/5"
+            className="grid h-10 w-10 place-items-center rounded-full bg-white shadow-sm ring-1 ring-black/5
+            dark:bg-slate-800 dark:ring-white/10 dark:text-white"
           >
             ⎋
           </a>

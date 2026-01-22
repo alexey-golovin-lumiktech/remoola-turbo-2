@@ -50,26 +50,26 @@ export default function LoginForm() {
 
   return (
     <div className="mx-auto max-w-md p-8">
-      <h1 className="mb-4 text-2xl font-semibold">Sign in</h1>
+      <h1 className="mb-4 text-2xl font-semibold text-gray-900 dark:text-white">Sign in</h1>
       <form className="space-y-3" onSubmit={submitLogin}>
         <input
-          className="w-full rounded-md border px-3 py-2"
+          className="w-full rounded-md border px-3 py-2 bg-white dark:bg-slate-800 text-gray-900 dark:text-white border-gray-300 dark:border-slate-600"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Email"
         />
         <input
-          className="w-full rounded-md border px-3 py-2"
+          className="w-full rounded-md border px-3 py-2 bg-white dark:bg-slate-800 text-gray-900 dark:text-white border-gray-300 dark:border-slate-600"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
         />
-        {err && <p className="mt-1 whitespace-pre-wrap text-sm text-rose-600">{err}</p>}
-        <button className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white">Login</button>
+        {err && <p className="mt-1 whitespace-pre-wrap text-sm text-rose-600 dark:text-rose-400">{err}</p>}
+        <button className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 dark:hover:bg-blue-500">Login</button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-gray-600">
+      <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-300">
         Need to create an account?{` `}
         <Link href="/signup" className="text-blue-600 hover:underline">
           Sign Up

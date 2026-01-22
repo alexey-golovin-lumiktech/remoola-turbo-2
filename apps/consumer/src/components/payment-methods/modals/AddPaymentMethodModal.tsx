@@ -167,21 +167,21 @@ function AddPaymentMethodModalInner({
 
   return (
     <div
-      className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+      className="fixed inset-0 bg-black/40 dark:bg-black/60 flex items-center justify-center z-50"
       onClick={() => !loading && onClose()}
     >
       <div
-        className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-xl space-y-5"
+        className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-lg shadow-xl space-y-5"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-xl font-semibold mb-2">Add payment method</h2>
+        <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Add payment method</h2>
 
         {/* Method selector */}
         <div className="flex gap-3">
           <button
             onClick={() => setMethodType(`CREDIT_CARD`)}
             className={`px-3 py-2 rounded-lg border ${
-              methodType === `CREDIT_CARD` ? `bg-blue-600 text-white border-blue-600` : `bg-gray-100`
+              methodType === `CREDIT_CARD` ? `bg-blue-600 text-white border-blue-600` : `bg-gray-100 dark:bg-slate-700 dark:text-white`
             }`}
           >
             Credit Card
@@ -190,7 +190,7 @@ function AddPaymentMethodModalInner({
           <button
             onClick={() => setMethodType(`BANK_ACCOUNT`)}
             className={`px-3 py-2 rounded-lg border ${
-              methodType === `BANK_ACCOUNT` ? `bg-blue-600 text-white border-blue-600` : `bg-gray-100`
+              methodType === `BANK_ACCOUNT` ? `bg-blue-600 text-white border-blue-600` : `bg-gray-100 dark:bg-slate-700 dark:text-white`
             }`}
           >
             Bank Account

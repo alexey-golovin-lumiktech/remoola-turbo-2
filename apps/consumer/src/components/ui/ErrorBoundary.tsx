@@ -38,8 +38,8 @@ export class ErrorBoundary extends Component<Props, State> {
 
       return (
         <div className="flex flex-col items-center justify-center min-h-[400px] p-8 text-center">
-          <div className="rounded-full bg-red-100 p-3 mb-4">
-            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="rounded-full bg-red-100 dark:bg-red-900/20 p-3 mb-4">
+            <svg className="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -49,8 +49,8 @@ export class ErrorBoundary extends Component<Props, State> {
               />
             </svg>
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Something went wrong</h2>
-          <p className="text-gray-600 mb-6 max-w-md">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Something went wrong</h2>
+          <p className="text-gray-600 dark:text-gray-300 mb-6 max-w-md">
             We encountered an unexpected error. Please try refreshing the page or contact support if the problem
             persists.
           </p>
@@ -70,10 +70,10 @@ export class ErrorBoundary extends Component<Props, State> {
           </div>
           {process.env.NODE_ENV === `development` && this.state.error && (
             <details className="mt-6 text-left">
-              <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-700">
+              <summary className="cursor-pointer text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
                 Error Details (Development)
               </summary>
-              <pre className="mt-2 p-4 bg-gray-100 rounded text-xs overflow-auto max-w-full">
+              <pre className="mt-2 p-4 bg-gray-100 dark:bg-slate-800 rounded text-xs overflow-auto max-w-full text-gray-900 dark:text-gray-100">
                 {this.state.error.stack}
               </pre>
             </details>
@@ -96,9 +96,9 @@ export function SectionErrorBoundary({ children }: { children: ReactNode }) {
   return (
     <ErrorBoundary
       fallback={
-        <div className="flex items-center justify-center p-8 bg-red-50 border border-red-200 rounded-lg">
+        <div className="flex items-center justify-center p-8 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg">
           <div className="text-center">
-            <svg className="w-6 h-6 text-red-600 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 text-red-600 dark:text-red-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -107,7 +107,7 @@ export function SectionErrorBoundary({ children }: { children: ReactNode }) {
                 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
               />
             </svg>
-            <p className="text-sm text-red-700">This section encountered an error</p>
+            <p className="text-sm text-red-700 dark:text-red-300">This section encountered an error</p>
           </div>
         </div>
       }

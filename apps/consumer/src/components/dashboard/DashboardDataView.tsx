@@ -20,8 +20,8 @@ export function DashboardDataView() {
     return (
       <div className="flex items-center justify-center min-h-[400px] p-8">
         <div className="text-center">
-          <div className="rounded-full bg-red-100 p-3 mb-4 mx-auto w-fit">
-            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="rounded-full bg-red-100 dark:bg-red-900/20 p-3 mb-4 mx-auto w-fit">
+            <svg className="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -31,8 +31,8 @@ export function DashboardDataView() {
               />
             </svg>
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Failed to load dashboard</h2>
-          <p className="text-gray-600 mb-6">{error}</p>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Failed to load dashboard</h2>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">{error}</p>
           <button
             onClick={() => window.location.reload()}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"

@@ -8,7 +8,7 @@ interface SkeletonProps {
 }
 
 export function Skeleton({ className }: SkeletonProps) {
-  return <div className={cn(`animate-pulse rounded-md bg-gray-200`, className)} />;
+  return <div className={cn(`animate-pulse rounded-md bg-gray-200 dark:bg-slate-700`, className)} />;
 }
 
 export function SkeletonText({ className, lines = 1 }: SkeletonProps & { lines?: number }) {
@@ -34,7 +34,7 @@ export function SkeletonText({ className, lines = 1 }: SkeletonProps & { lines?:
 
 export function SkeletonCard({ className }: SkeletonProps) {
   return (
-    <div className={cn(`rounded-2xl bg-white/90 p-6 shadow-sm`, className)}>
+    <div className={cn(`rounded-2xl bg-white/90 dark:bg-slate-800/90 p-6 shadow-sm`, className)}>
       <div className="space-y-4">
         <Skeleton className="h-6 w-1/3" />
         <div className="space-y-3">
@@ -49,7 +49,7 @@ export function SkeletonCard({ className }: SkeletonProps) {
 
 export function SkeletonTable({ rows = 5, cols = 4, className }: SkeletonProps & { rows?: number; cols?: number }) {
   return (
-    <div className={cn(`bg-white rounded-2xl shadow-sm border`, className)}>
+    <div className={cn(`bg-white dark:bg-slate-800 rounded-2xl shadow-sm border dark:border-slate-600`, className)}>
       <div className="p-6">
         {/* Table Header */}
         <div className="grid gap-4 mb-4" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>

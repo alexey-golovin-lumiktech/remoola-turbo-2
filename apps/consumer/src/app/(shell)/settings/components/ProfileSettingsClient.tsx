@@ -34,11 +34,11 @@ export default function ProfileSettingsClient() {
   }
 
   if (error) {
-    return <p className="text-red-600">{error}</p>;
+    return <p className="text-red-600 dark:text-red-400">{error}</p>;
   }
 
   if (!profile) {
-    return <p className="text-gray-600">Loading profile...</p>;
+    return <p className="text-gray-600 dark:text-gray-300">Loading profile...</p>;
   }
 
   return (
