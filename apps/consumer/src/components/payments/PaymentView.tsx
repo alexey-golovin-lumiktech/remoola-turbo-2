@@ -162,7 +162,7 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
         {/* Left Side: Details */}
         <div className="col-span-2 flex flex-col gap-6">
           {/* Summary Card */}
-          <div className="p-6 rounded-2xl bg-white shadow-sm border">
+          <div className="p-6 rounded-2xl bg-white dark:bg-slate-800 shadow-sm border dark:border-slate-600">
             <div className="flex justify-between mb-4">
               <div className="text-xl font-semibold">
                 ${p.amount.toFixed(2)} {p.currencyCode}
@@ -173,8 +173,8 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
                   p.status === `PENDING`
                     ? `bg-yellow-100 text-yellow-800`
                     : p.status === `COMPLETED`
-                      ? `bg-green-100 text-green-800`
-                      : `bg-gray-100 text-gray-600`
+                      ? `bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300`
+                      : `bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300`
                 }`}
               >
                 {p.status}
@@ -187,8 +187,8 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
           </div>
 
           {/* Timeline */}
-          <div className="p-6 rounded-2xl bg-white shadow-sm border">
-            <h2 className="font-semibold mb-3">Timeline</h2>
+          <div className="p-6 rounded-2xl bg-white dark:bg-slate-800 shadow-sm border dark:border-slate-600">
+            <h2 className="font-semibold mb-3 text-gray-900 dark:text-white">Timeline</h2>
 
             {p.ledgerEntries.map((t: any) => (
               <div key={t.id} className="border-l pl-4 ml-2 mb-4 relative">
@@ -205,8 +205,8 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
 
         {/* Right Side: Attachments */}
         <div className="col-span-1 flex flex-col gap-6">
-          <div className="p-6 rounded-2xl bg-white shadow-sm border">
-            <h2 className="font-semibold mb-3">Attachments</h2>
+          <div className="p-6 rounded-2xl bg-white dark:bg-slate-800 shadow-sm border dark:border-slate-600">
+            <h2 className="font-semibold mb-3 text-gray-900 dark:text-white">Attachments</h2>
 
             {p.attachments.length === 0 && <div className="text-sm text-slate-500">No attachments</div>}
 
@@ -230,16 +230,16 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
 
           {/* Payment Method Selection */}
           {p.status === `PENDING` && paymentMethods.length > 0 && (
-            <div className="p-6 rounded-2xl bg-white shadow-sm border">
-              <h3 className="font-semibold mb-3">Select Payment Method</h3>
+            <div className="p-6 rounded-2xl bg-white dark:bg-slate-800 shadow-sm border dark:border-slate-600">
+              <h3 className="font-semibold mb-3 text-gray-900 dark:text-white">Select Payment Method</h3>
               <div className="space-y-3">
                 {paymentMethods.map((method) => (
                   <div
                     key={method.id}
                     className={`p-3 border rounded-lg cursor-pointer transition-colors ${
                       selectedPaymentMethodId === method.id
-                        ? `border-blue-500 bg-blue-50`
-                        : `border-gray-200 hover:border-gray-300`
+                        ? `border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400`
+                        : `border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500`
                     }`}
                     onClick={() => setSelectedPaymentMethodId(method.id)}
                   >
@@ -278,8 +278,8 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
                 <div
                   className={`p-3 border rounded-lg cursor-pointer transition-colors ${
                     selectedPaymentMethodId === ``
-                      ? `border-blue-500 bg-blue-50`
-                      : `border-gray-200 hover:border-gray-300`
+                      ? `border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400`
+                      : `border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500`
                   }`}
                   onClick={() => setSelectedPaymentMethodId(``)}
                 >
@@ -304,7 +304,7 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
           {p.status === `PENDING` && (
             <button
               className="rounded-full bg-blue-600 px-6 py-3 text-sm text-white shadow
-                hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                hover:bg-blue-700 dark:hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={payNow}
               disabled={paying}
             >
@@ -313,7 +313,7 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
           )}
 
           <button
-            className="rounded-full bg-blue-600 px-6 py-3 text-sm text-white shadow hover:bg-blue-700"
+            className="rounded-full bg-blue-600 px-6 py-3 text-sm text-white shadow hover:bg-blue-700 dark:hover:bg-blue-500"
             onClick={generateInvoice}
           >
             Generate INVOICE

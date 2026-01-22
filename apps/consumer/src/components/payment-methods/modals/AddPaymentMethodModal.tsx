@@ -268,7 +268,7 @@ function AddPaymentMethodModalInner({
         <div className="flex justify-end gap-2 pt-4">
           <button
             onClick={() => !loading && onClose()}
-            className="px-4 py-2 rounded-lg hover:bg-gray-100 text-sm disabled:opacity-50"
+            className="px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-600 text-sm disabled:opacity-50"
           >
             Cancel
           </button>
@@ -276,7 +276,7 @@ function AddPaymentMethodModalInner({
           <button
             onClick={submit}
             disabled={loading}
-            className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-50"
+            className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700 dark:hover:bg-blue-500 disabled:opacity-50"
           >
             {loading ? `Saving...` : `Add method`}
           </button>

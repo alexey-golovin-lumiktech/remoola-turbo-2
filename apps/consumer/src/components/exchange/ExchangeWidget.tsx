@@ -49,7 +49,7 @@ export function ExchangeWidget({ balances }: ExchangeWidgetProps) {
   }
 
   return (
-    <div className="rounded-xl border p-6 bg-white shadow">
+    <div className="rounded-xl border p-6 bg-white dark:bg-slate-800 shadow dark:border-slate-600">
       <div className="mb-2 text-sm text-gray-600">
         Available: {available.toFixed(2)} {from}
       </div>
@@ -100,7 +100,7 @@ export function ExchangeWidget({ balances }: ExchangeWidgetProps) {
         <button
           onClick={convert}
           disabled={!amount || !rate}
-          className="w-full bg-blue-600 p-2 rounded text-white disabled:opacity-50"
+          className="w-full bg-blue-600 p-2 rounded text-white hover:bg-blue-700 dark:hover:bg-blue-500 disabled:opacity-50"
         >
           Convert
         </button>

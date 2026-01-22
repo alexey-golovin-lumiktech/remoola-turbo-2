@@ -94,7 +94,7 @@ export function StartPaymentForm() {
 
       <button
         disabled={loading}
-        className="rounded-full bg-blue-600 px-6 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700
+        className="rounded-full bg-blue-600 px-6 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700 dark:hover:bg-blue-500
         disabled:opacity-50"
       >
         {loading ? `Processing...` : `Send Payment`}

@@ -48,10 +48,10 @@ function PaymentMethodRow({
   const icon = getPaymentMethodIcon(payment);
 
   return (
-    <div className="flex items-center justify-between p-4 bg-white rounded-xl border shadow-sm hover:shadow transition">
+    <div className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-xl border dark:border-slate-600 shadow-sm hover:shadow transition">
       {/* LEFT */}
       <div className="flex gap-4 items-center">
-        <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-gray-700">{icon}</div>
+        <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-700 dark:text-gray-300">{icon}</div>
 
         <div className="flex flex-col">
           <div className="font-semibold">

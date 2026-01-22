@@ -68,11 +68,11 @@ export function PaymentsList() {
               />
             </svg>
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Failed to load payments</h2>
-          <p className="text-gray-600 mb-6">{error.message}</p>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Failed to load payments</h2>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">{error.message}</p>
           <button
             onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-500 transition-colors"
           >
             Refresh Page
           </button>
@@ -96,7 +96,7 @@ export function PaymentsList() {
       {isLoading ? (
         <SkeletonTable rows={8} cols={6} />
       ) : (
-        <div className="bg-white rounded-2xl shadow-sm border">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border dark:border-slate-600">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-slate-500 border-b">
@@ -164,14 +164,14 @@ export function PaymentsList() {
           <button
             disabled={page <= 1}
             onClick={() => setPage((p: number) => p - 1)}
-            className="px-3 py-1 rounded-md bg-white border shadow-sm disabled:opacity-50"
+            className="px-3 py-1 rounded-md bg-white dark:bg-slate-700 border dark:border-slate-600 shadow-sm disabled:opacity-50"
           >
             Previous
           </button>
           <button
             disabled={page >= totalPages}
             onClick={() => setPage((p: number) => p + 1)}
-            className="px-3 py-1 rounded-md bg-white border shadow-sm disabled:opacity-50"
+            className="px-3 py-1 rounded-md bg-white dark:bg-slate-700 border dark:border-slate-600 shadow-sm disabled:opacity-50"
           >
             Next
           </button>

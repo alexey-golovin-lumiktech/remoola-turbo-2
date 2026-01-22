@@ -35,7 +35,7 @@ export function DashboardDataView() {
           <p className="text-gray-600 dark:text-gray-300 mb-6">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-500 transition-colors"
           >
             Try Again
           </button>
@@ -56,23 +56,23 @@ export function DashboardDataView() {
 
       <ActionRow />
 
-      <div className="rounded-2xl bg-white/90 p-4 shadow-sm">
+      <div className="rounded-2xl bg-white/90 dark:bg-slate-800/90 p-4 shadow-sm">
         <PendingRequestsTable pendingRequests={dashboardData.pendingRequests} />
       </div>
 
       <div className="grid gap-4 md:grid-cols-[2fr,1fr]">
-        <div className="rounded-2xl bg-white/90 p-4 shadow-sm">
+        <div className="rounded-2xl bg-white/90 dark:bg-slate-800/90 p-4 shadow-sm">
           <ActivityTimeline activityTimelineItems={dashboardData.activity} />
         </div>
 
         <div className="flex flex-col gap-4">
-          <div className="rounded-2xl bg-white/90 p-4 shadow-sm">
+          <div className="rounded-2xl bg-white/90 dark:bg-slate-800/90 p-4 shadow-sm">
             <PendingWithdrawalsCard />
           </div>
-          <div className="rounded-2xl bg-white/90 p-4 shadow-sm">
+          <div className="rounded-2xl bg-white/90 dark:bg-slate-800/90 p-4 shadow-sm">
             <ComplianceTasksCard tasks={dashboardData.tasks} />
           </div>
-          <div className="rounded-2xl bg-white/90 p-4 shadow-sm">
+          <div className="rounded-2xl bg-white/90 dark:bg-slate-800/90 p-4 shadow-sm">
             <QuickDocsCard docs={dashboardData.quickDocs} />
           </div>
         </div>
