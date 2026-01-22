@@ -17,6 +17,7 @@ import { ConsumerExchangeModule } from './modules/exchange/consumer-exchange.mod
 import { ConsumerPaymentMethodsModule } from './modules/payment-methods/consumer-payment-methods.module';
 import { ConsumerPaymentsModule } from './modules/payments/consumer-payments.module';
 import { ConsumerProfileModule } from './modules/profile/consumer-profile.module';
+import { ConsumerSettingsModule } from './modules/settings/consumer-settings.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { ConsumerProfileModule } from './modules/profile/consumer-profile.module
     ConsumerPaymentMethodsModule,
     ConsumerPaymentsModule,
     ConsumerProfileModule,
+    ConsumerSettingsModule,
   ],
   controllers: [ConsumerAuthController],
   providers: [MailingService, GoogleOAuthService, ConsumerAuthService, GoogleAuthService],

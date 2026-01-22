@@ -7,6 +7,7 @@ import { AddressDetailsForm } from './AddressDetailsForm';
 import { OrganizationDetailsForm } from './OrganizationDetailsForm';
 import { PasswordChangeForm } from './PasswordChangeForm';
 import { PersonalDetailsForm } from './PersonalDetailsForm';
+import { ThemeSettingsForm } from './ThemeSettingsForm';
 
 export default function ProfileSettingsClient() {
   const [profile, setProfile] = useState<any>(null);
@@ -42,6 +43,7 @@ export default function ProfileSettingsClient() {
 
   return (
     <div className="space-y-10">
+      <ThemeSettingsForm />
       <PersonalDetailsForm profile={profile} reload={load} />
       <AddressDetailsForm profile={profile} reload={load} />
       {profile.accountType === `BUSINESS` && <OrganizationDetailsForm profile={profile} reload={load} />}

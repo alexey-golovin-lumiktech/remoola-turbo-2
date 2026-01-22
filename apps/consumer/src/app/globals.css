@@ -1,7 +1,15 @@
 @import "tailwindcss";
 
 html,body { height: 100%; }
-body { background: linear-gradient(135deg,#f8fafc,#eef2ff); font-family: ui-sans-serif,system-ui; }
+body {
+  background: linear-gradient(135deg,#f8fafc,#eef2ff);
+  font-family: ui-sans-serif,system-ui;
+  transition: background-color 0.2s ease;
+}
+
+.dark body {
+  background: linear-gradient(135deg,#0f172a,#1e293b);
+}
 
 .input {
   @apply w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500;

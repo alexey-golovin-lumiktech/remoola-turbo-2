@@ -241,6 +241,13 @@
                   added admin endpoint for manual payment method migration,
                   updated payment UI to support saved method selection,
                   enhanced error handling for Stripe attachment failures,
-                  and removed debug console logs from payment service.(Stripe Customer Attachment & Off-Session Payments)
+                  removed debug console logs from payment service (Stripe Customer Attachment & Off-Session Payments),
+                  implemented dark/light theme switching for the consumer app,
+                  added `UserSettingsModel` with theme preference,
+                  created backend API endpoints for theme settings,
+                  implemented `ThemeProvider` with React context,
+                  added CSS custom properties for dark theme support,
+                  integrated theme selection into user profile settings,
+                  and added system preference detection with localStorage persistence (Consumer light/dark mode).
 
 ```

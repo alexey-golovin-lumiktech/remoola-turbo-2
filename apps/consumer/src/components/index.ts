@@ -6,3 +6,5 @@ export * from './payment-methods';
 export * from './payments';
 export * from './stripe';
 export * from './ui';
+export { ThemeProvider, useTheme } from './ThemeProvider';
+export { ThemeInitializer } from './ThemeInitializer';

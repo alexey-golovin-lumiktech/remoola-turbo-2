@@ -1,4 +1,5 @@
 :root {
+  /* Light theme (default) */
   --bg-0: #f6f8ff;
   --bg-1: #eef2ff;
   --ink: #0f172a;
@@ -11,6 +12,20 @@
   --shadow: 0 8px 30px rgba(17, 24, 39, .05);
   --radius-lg: 16px;
   --radius-xl: 22px;
+}
+
+.dark {
+  /* Dark theme */
+  --bg-0: #0f172a;
+  --bg-1: #1e293b;
+  --ink: #f1f5f9;
+  --muted: #94a3b8;
+  --line: #334155;
+  --card: #1e293b;
+  --blue-900: #1e40af;
+  --blue-600: #3b82f6;
+  --ring: rgba(59, 130, 246, .15);
+  --shadow: 0 8px 30px rgba(15, 23, 42, .3);
 }
 
 /* Cards */
