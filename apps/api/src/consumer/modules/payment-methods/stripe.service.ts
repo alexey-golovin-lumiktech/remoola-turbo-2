@@ -3,7 +3,7 @@ import Stripe from 'stripe';
 
 import { $Enums } from '@remoola/database-2';
 
-import { ConfirmStripeSetupIntent } from './dto/payment-method.dto';
+import { ConfirmStripeSetupIntent, PayWithSavedPaymentMethod } from './dto/payment-method.dto';
 import { envs } from '../../../envs';
 import { PrismaService } from '../../../shared/prisma.service';
 
@@ -16,54 +16,50 @@ export class ConsumerStripeService {
   }
 
   async createStripeSession(consumerId: string, paymentRequestId: string, frontendBaseUrl: string) {
-    try {
-      const pr = await this.prisma.paymentRequestModel.findFirst({
-        where: {
-          id: paymentRequestId,
-          payerId: consumerId,
-        },
-        include: {
-          ledgerEntries: true,
-          requester: true,
-        },
-      });
+    const pr = await this.prisma.paymentRequestModel.findFirst({
+      where: {
+        id: paymentRequestId,
+        payerId: consumerId,
+      },
+      include: {
+        ledgerEntries: true,
+        requester: true,
+      },
+    });
 
-      if (!pr) throw new NotFoundException(`Payment not found`);
-      if (pr.status !== $Enums.TransactionStatus.PENDING) throw new ForbiddenException(`Payment already processed`);
+    if (!pr) throw new NotFoundException(`Payment not found`);
+    if (pr.status !== $Enums.TransactionStatus.PENDING) throw new ForbiddenException(`Payment already processed`);
 
-      const amountCents = Math.round(Number(pr.amount) * 100);
+    const amountCents = Math.round(Number(pr.amount) * 100);
 
-      // 1) Create Stripe Checkout session
-      const session = await this.stripe.checkout.sessions.create({
-        payment_method_types: [`card`],
-        mode: `payment`,
-        line_items: [
-          {
-            price_data: {
-              currency: pr.currencyCode.toLowerCase(),
-              product_data: {
-                name: `Payment to ${pr.requester.email}`,
-              },
-              unit_amount: amountCents,
+    // 1) Create Stripe Checkout session
+    const session = await this.stripe.checkout.sessions.create({
+      payment_method_types: [`card`],
+      mode: `payment`,
+      line_items: [
+        {
+          price_data: {
+            currency: pr.currencyCode.toLowerCase(),
+            product_data: {
+              name: `Payment to ${pr.requester.email}`,
             },
-            quantity: 1,
+            unit_amount: amountCents,
           },
-        ],
-        success_url: `${frontendBaseUrl}/payments/${pr.id}?success=1`,
-        cancel_url: `${frontendBaseUrl}/payments/${pr.id}?canceled=1`,
-        metadata: { paymentRequestId: pr.id, consumerId },
-      });
+          quantity: 1,
+        },
+      ],
+      success_url: `${frontendBaseUrl}/payments/${pr.id}?success=1`,
+      cancel_url: `${frontendBaseUrl}/payments/${pr.id}?canceled=1`,
+      metadata: { paymentRequestId: pr.id, consumerId },
+    });
 
-      // 2) Update transaction to Waiting status
-      await this.prisma.ledgerEntryModel.updateMany({
-        where: { paymentRequestId: pr.id },
-        data: { status: `WAITING`, stripeId: session.id },
-      });
+    // 2) Update transaction to Waiting status
+    await this.prisma.ledgerEntryModel.updateMany({
+      where: { paymentRequestId: pr.id },
+      data: { status: `WAITING`, stripeId: session.id },
+    });
 
-      return { url: session.url };
-    } catch (error) {
-      throw error;
-    }
+    return { url: session.url };
   }
 
   async getPaymentMethodMetadata(paymentMethodId: string) {
@@ -154,6 +150,8 @@ export class ConsumerStripeService {
     const created = await this.prisma.paymentMethodModel.create({
       data: {
         type: $Enums.PaymentMethodType.CREDIT_CARD,
+        stripePaymentMethodId: pm.id, // Store the Stripe payment method ID for reuse
+        stripeFingerprint: pm.card?.fingerprint || null,
         defaultSelected: hasDefault === 0,
         brand: card.brand ?? `card`,
         last4: card.last4 ?? ``,
@@ -166,5 +164,164 @@ export class ConsumerStripeService {
     });
 
     return created;
+  }
+
+  // Pay with saved payment method
+  async payWithSavedPaymentMethod(consumerId: string, paymentRequestId: string, body: PayWithSavedPaymentMethod) {
+    // 1) Validate payment method belongs to consumer
+    const paymentMethod = await this.prisma.paymentMethodModel.findFirst({
+      where: {
+        id: body.paymentMethodId,
+        consumerId,
+        deletedAt: null,
+      },
+      include: { billingDetails: true },
+    });
+
+    if (!paymentMethod) {
+      throw new BadRequestException(`Payment method not found or does not belong to consumer`);
+    }
+
+    if (!paymentMethod.stripePaymentMethodId) {
+      throw new BadRequestException(
+        `Payment method does not have a valid Stripe payment method ID. Please add a new payment method.`,
+      );
+    }
+
+    // 2) Double-check that the payment method is attached to customer
+    try {
+      const { customerId } = await this.ensureStripeCustomer(consumerId);
+      const stripePaymentMethod = await this.stripe.paymentMethods.retrieve(paymentMethod.stripePaymentMethodId);
+
+      // Check if payment method is attached to our customer
+      if (stripePaymentMethod.customer !== customerId) {
+        // Try to attach it
+        try {
+          await this.stripe.paymentMethods.attach(paymentMethod.stripePaymentMethodId, {
+            customer: customerId,
+          });
+          console.log(`Attached orphaned payment method to customer:`, paymentMethod.id);
+        } catch (attachError: any) {
+          if (
+            attachError.type === `invalid_request_error` &&
+            attachError.message.includes(`previously used without being attached`)
+          ) {
+            // This payment method cannot be used - mark as deleted
+            await this.prisma.paymentMethodModel.update({
+              where: { id: paymentMethod.id },
+              data: {
+                deletedAt: new Date(),
+                stripePaymentMethodId: null,
+              },
+            });
+            throw new BadRequestException(`This payment method cannot be reused. Please add a new payment method.`);
+          }
+          throw attachError;
+        }
+      }
+    } catch (error: any) {
+      if (error.type === `invalid_request_error` && error.message.includes(`previously used without being attached`)) {
+        // Mark as deleted and inform user
+        await this.prisma.paymentMethodModel.update({
+          where: { id: paymentMethod.id },
+          data: {
+            deletedAt: new Date(),
+            stripePaymentMethodId: null,
+          },
+        });
+        throw new BadRequestException(
+          `This payment method cannot be reused due to Stripe security requirements. Please add a new payment method.`,
+        );
+      }
+      throw error;
+    }
+
+    // 3) Get payment request details
+    const pr = await this.prisma.paymentRequestModel.findFirst({
+      where: {
+        id: paymentRequestId,
+        payerId: consumerId,
+      },
+      include: {
+        ledgerEntries: true,
+        requester: true,
+      },
+    });
+
+    if (!pr) throw new NotFoundException(`Payment request not found`);
+    if (pr.status !== $Enums.TransactionStatus.PENDING) {
+      throw new ForbiddenException(`Payment request already processed`);
+    }
+
+    // 4) Ensure Stripe customer exists
+    const { customerId } = await this.ensureStripeCustomer(consumerId);
+
+    const amountCents = Math.round(Number(pr.amount) * 100);
+
+    try {
+      // 5) Create and confirm payment intent with saved payment method
+      const paymentIntent = await this.stripe.paymentIntents.create({
+        amount: amountCents,
+        currency: pr.currencyCode.toLowerCase(),
+        customer: customerId,
+        payment_method: paymentMethod.stripePaymentMethodId,
+        confirm: true, // Confirm immediately since payment method is saved
+        off_session: true, // This is an off-session payment
+        metadata: {
+          paymentRequestId: pr.id,
+          consumerId,
+          paymentMethodId: paymentMethod.id,
+        },
+        description: `Payment to ${pr.requester.email}`,
+      });
+
+      // 6) Update database records
+      if (paymentIntent.status === `succeeded`) {
+        await this.prisma.ledgerEntryModel.updateMany({
+          where: { paymentRequestId: pr.id },
+          data: {
+            status: $Enums.TransactionStatus.COMPLETED,
+            stripeId: paymentIntent.id,
+            updatedBy: `stripe`,
+          },
+        });
+
+        await this.prisma.paymentRequestModel.update({
+          where: { id: paymentRequestId },
+          data: {
+            status: $Enums.TransactionStatus.COMPLETED,
+            updatedBy: `stripe`,
+          },
+        });
+
+        return {
+          success: true,
+          paymentIntentId: paymentIntent.id,
+          status: paymentIntent.status,
+        };
+      } else {
+        // Handle cases where payment intent requires additional action
+        return {
+          success: false,
+          paymentIntentId: paymentIntent.id,
+          status: paymentIntent.status,
+          nextAction: paymentIntent.next_action,
+        };
+      }
+    } catch (error) {
+      // Handle Stripe errors
+      console.error(`Payment with saved payment method failed:`, error);
+
+      // Update ledger entries to failed status
+      await this.prisma.ledgerEntryModel.updateMany({
+        where: { paymentRequestId: pr.id },
+        data: {
+          status: $Enums.TransactionStatus.DENIED,
+          updatedBy: `stripe`,
+        },
+      });
+
+      throw error;
+    }
   }
 }

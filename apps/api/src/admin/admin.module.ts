@@ -9,6 +9,7 @@ import { AdminAdminsModule } from './modules/admins/admin-admins.module';
 import { AdminConsumersModule } from './modules/consumers/admin-consumers.module';
 import { AdminLedgersModule } from './modules/ledger/admin-ledger.module';
 import { AdminPaymentRequestsModule } from './modules/payment-requests/admin-payment-requests.module';
+import { ConsumerPaymentMethodsModule } from '../consumer/modules/payment-methods/consumer-payment-methods.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { AdminPaymentRequestsModule } from './modules/payment-requests/admin-pay
     AdminConsumersModule,
     AdminLedgersModule,
     AdminPaymentRequestsModule,
+    ConsumerPaymentMethodsModule,
   ],
   controllers: [AdminAuthController],
   providers: [AdminAuthService],

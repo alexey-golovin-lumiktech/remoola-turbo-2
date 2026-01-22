@@ -46,6 +46,7 @@ export type CreatePaymentMethodDto = {
   billingPhone?: string;
 
   setupIntentId?: string;
+  stripePaymentMethodId?: string;
 };
 
 export type UpdatePaymentMethodDto = {

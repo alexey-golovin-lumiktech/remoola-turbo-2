@@ -12,7 +12,15 @@ type PaymentMethodsListProps = {
 
 export function PaymentMethodsList({ payments, onEditAction, onDeleteAction }: PaymentMethodsListProps) {
   if (!payments.length) {
-    return <div className="text-center text-gray-400 py-10">No payment methods added yet.</div>;
+    return (
+      <div className="text-center py-10">
+        <div className="text-gray-400 mb-4">No payment methods added yet.</div>
+        <div className="text-sm text-gray-500 max-w-md mx-auto">
+          If you had payment methods that are no longer showing, they may have been updated for security reasons.
+          Please add new payment methods using the button above.
+        </div>
+      </div>
+    );
   }
 
   return (

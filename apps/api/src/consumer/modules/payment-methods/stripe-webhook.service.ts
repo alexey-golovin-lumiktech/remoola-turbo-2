@@ -1,4 +1,4 @@
-import { Injectable, type RawBodyRequest } from '@nestjs/common';
+import { BadRequestException, Injectable, type RawBodyRequest } from '@nestjs/common';
 import express from 'express';
 import Stripe from 'stripe';
 
@@ -14,6 +14,11 @@ export class StripeWebhookService {
 
   constructor(private prisma: PrismaService) {
     this.stripe = new Stripe(envs.STRIPE_SECRET_KEY, { apiVersion: `2025-11-17.clover` });
+
+    // ONE-TIME MIGRATION: Attach existing payment methods to customer
+    // This fixes payment methods collected before customer attachment was implemented
+    // TODO: Remove this code after migration completes (check logs for completion)
+    // this.runPaymentMethodMigration();
   }
 
   async startVerifyMeStripeSession(consumerId: string) {
@@ -169,12 +174,160 @@ export class StripeWebhookService {
     }
   }
 
+  private async ensureStripeCustomer(consumerId: string) {
+    const consumer = await this.prisma.consumerModel.findUnique({
+      where: { id: consumerId },
+    });
+
+    if (!consumer) throw new BadRequestException(`Consumer not found`);
+
+    if (consumer.stripeCustomerId) {
+      return { consumer, customerId: consumer.stripeCustomerId };
+    }
+
+    const customer = await this.stripe.customers.create({
+      email: consumer.email,
+    });
+
+    await this.prisma.consumerModel.update({
+      where: { id: consumer.id },
+      data: { stripeCustomerId: customer.id },
+    });
+
+    return { consumer, customerId: customer.id };
+  }
+
+  private async runPaymentMethodMigration() {
+    try {
+      // Migrate payment methods for a specific user
+      const email = `alexey.golovin@lumiktech.com`;
+      const consumer = await this.prisma.consumerModel.findFirst({
+        where: { email },
+        include: { paymentMethods: true },
+      });
+
+      if (!consumer) {
+        console.log(`Consumer not found for migration`);
+        return;
+      }
+
+      console.log(`Starting payment method migration for consumer:`, consumer.id);
+      const { customerId } = await this.ensureStripeCustomer(consumer.id);
+      console.log(`Customer ID:`, customerId);
+
+      let attachedCount = 0;
+      let failedCount = 0;
+
+      for (const paymentMethod of consumer.paymentMethods) {
+        if (!paymentMethod.stripePaymentMethodId) {
+          console.log(`Skipping payment method without Stripe ID:`, paymentMethod.id);
+          continue;
+        }
+
+        try {
+          await this.stripe.paymentMethods.attach(paymentMethod.stripePaymentMethodId, {
+            customer: customerId,
+          });
+          console.log(
+            `✅ Payment method attached successfully:`,
+            paymentMethod.id,
+            paymentMethod.stripePaymentMethodId,
+          );
+          attachedCount++;
+        } catch (error: any) {
+          if (
+            error.type === `invalid_request_error` &&
+            (error.message.includes(`previously used without being attached`) ||
+              error.message.includes(`was previously used without being attached`))
+          ) {
+            console.log(`❌ Payment method cannot be reused (used without customer):`, paymentMethod.id);
+            // Mark this payment method as unusable - users will need to add new ones via setup intent
+            await this.prisma.paymentMethodModel.update({
+              where: { id: paymentMethod.id },
+              data: {
+                deletedAt: new Date(),
+                stripePaymentMethodId: null, // Clear the unusable Stripe ID
+              },
+            });
+            console.log(`🗑️ Marked payment method as deleted:`, paymentMethod.id);
+          } else {
+            console.log(`❌ Unexpected error attaching payment method:`, paymentMethod.id, error.message);
+          }
+          failedCount++;
+        }
+      }
+
+      console.log(`Migration completed: ${attachedCount} attached, ${failedCount} failed`);
+    } catch (error: any) {
+      console.error(`Migration failed:`, error.message);
+    }
+  }
+
+  // Manual migration method - can be called from an admin endpoint
+  async migrateAllPaymentMethods() {
+    console.log(`Starting comprehensive payment method migration for all consumers...`);
+
+    try {
+      const consumers = await this.prisma.consumerModel.findMany({
+        include: { paymentMethods: true },
+      });
+
+      let totalAttached = 0;
+      let totalFailed = 0;
+
+      for (const consumer of consumers) {
+        if (consumer.paymentMethods.length === 0) continue;
+
+        console.log(`Migrating consumer: ${consumer.id} (${consumer.email})`);
+        const { customerId } = await this.ensureStripeCustomer(consumer.id);
+
+        for (const paymentMethod of consumer.paymentMethods) {
+          if (!paymentMethod.stripePaymentMethodId || paymentMethod.deletedAt) {
+            continue;
+          }
+
+          try {
+            await this.stripe.paymentMethods.attach(paymentMethod.stripePaymentMethodId, {
+              customer: customerId,
+            });
+            console.log(`✅ Attached: ${paymentMethod.id} for consumer ${consumer.id}`);
+            totalAttached++;
+          } catch (error: any) {
+            if (
+              error.type === `invalid_request_error` &&
+              (error.message.includes(`previously used without being attached`) ||
+                error.message.includes(`was previously used without being attached`))
+            ) {
+              await this.prisma.paymentMethodModel.update({
+                where: { id: paymentMethod.id },
+                data: {
+                  deletedAt: new Date(),
+                  stripePaymentMethodId: null,
+                },
+              });
+              console.log(`🗑️ Marked unusable: ${paymentMethod.id} for consumer ${consumer.id}`);
+            } else {
+              console.log(`❌ Error: ${paymentMethod.id} for consumer ${consumer.id}: ${error.message}`);
+            }
+            totalFailed++;
+          }
+        }
+      }
+
+      console.log(`Migration completed: ${totalAttached} attached, ${totalFailed} failed/removed`);
+      return { success: true, attached: totalAttached, failed: totalFailed };
+    } catch (error: any) {
+      console.error(`Migration failed:`, error.message);
+      throw error;
+    }
+  }
+
   private async collectPaymentMethodFromCheckout(session: Stripe.Checkout.Session, consumerId: string) {
     // Get the payment intent to access the payment method
     if (!session.payment_intent) return;
 
     let paymentIntent: Stripe.PaymentIntent;
-    if (typeof session.payment_intent === 'string') {
+    if (typeof session.payment_intent === `string`) {
       paymentIntent = await this.stripe.paymentIntents.retrieve(session.payment_intent);
     } else {
       paymentIntent = session.payment_intent as Stripe.PaymentIntent;
@@ -183,10 +336,31 @@ export class StripeWebhookService {
     if (!paymentIntent.payment_method) return;
 
     let paymentMethod: Stripe.PaymentMethod;
-    if (typeof paymentIntent.payment_method === 'string') {
+    if (typeof paymentIntent.payment_method === `string`) {
       paymentMethod = await this.stripe.paymentMethods.retrieve(paymentIntent.payment_method);
     } else {
       paymentMethod = paymentIntent.payment_method as Stripe.PaymentMethod;
+    }
+
+    // Ensure the payment method is attached to the Stripe customer
+    const { customerId } = await this.ensureStripeCustomer(consumerId);
+
+    try {
+      // Attach the payment method to the customer (this allows reuse)
+      await this.stripe.paymentMethods.attach(paymentMethod.id, {
+        customer: customerId,
+      });
+      console.log(`Payment method attached to customer successfully`);
+    } catch (error: any) {
+      // Handle different types of attachment errors
+      if (error.type === `invalid_request_error` && error.message.includes(`previously used without being attached`)) {
+        console.log(`Payment method cannot be reused (used without customer), skipping storage`);
+        return; // Don't store this payment method since it can't be reused
+      } else if (error.type === `invalid_request_error` && error.message.includes(`already attached`)) {
+        console.log(`Payment method already attached to customer, continuing...`);
+      } else {
+        console.log(`Payment method attachment warning:`, error.message);
+      }
     }
 
     // Check if this payment method is already stored for the consumer
@@ -222,11 +396,11 @@ export class StripeWebhookService {
     let expMonth: string | undefined;
     let expYear: string | undefined;
 
-    if (paymentMethod.type === 'card' && paymentMethod.card) {
+    if (paymentMethod.type === `card` && paymentMethod.card) {
       type = $Enums.PaymentMethodType.CREDIT_CARD;
-      brand = paymentMethod.card.brand || 'card';
-      last4 = paymentMethod.card.last4 || '';
-      expMonth = paymentMethod.card.exp_month ? String(paymentMethod.card.exp_month).padStart(2, '0') : undefined;
+      brand = paymentMethod.card.brand || `card`;
+      last4 = paymentMethod.card.last4 || ``;
+      expMonth = paymentMethod.card.exp_month ? String(paymentMethod.card.exp_month).padStart(2, `0`) : undefined;
       expYear = paymentMethod.card.exp_year ? String(paymentMethod.card.exp_year) : undefined;
     } else {
       // For other payment method types, we might not have detailed info
@@ -247,8 +421,8 @@ export class StripeWebhookService {
         stripePaymentMethodId: paymentMethod.id,
         stripeFingerprint: paymentMethod.card?.fingerprint || null,
         defaultSelected: hasDefault === 0, // Make this default if no other default exists
-        brand: brand || 'card',
-        last4: last4 || '',
+        brand: brand || `card`,
+        last4: last4 || ``,
         expMonth,
         expYear,
         serviceFee: 0,

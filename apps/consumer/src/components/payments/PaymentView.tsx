@@ -4,27 +4,68 @@ import { useEffect, useState } from 'react';
 
 type PaymentViewProps = { paymentRequestId: string };
 
+type PaymentMethod = {
+  id: string;
+  type: string;
+  brand: string;
+  last4: string;
+  expMonth: number | null;
+  expYear: number | null;
+  defaultSelected: boolean;
+  billingDetails: {
+    id: string;
+    email: string | null;
+    name: string | null;
+    phone: string | null;
+  } | null;
+};
+
 export function PaymentView({ paymentRequestId }: PaymentViewProps) {
   const [data, setData] = useState<any>(null);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<string>(``);
   const [loading, setLoading] = useState(true);
+  const [paying, setPaying] = useState(false);
 
   useEffect(() => {
     async function load() {
       setLoading(true);
-      const res = await fetch(`/api/payments/${paymentRequestId}`, {
+
+      // Load payment request data
+      const paymentRes = await fetch(`/api/payments/${paymentRequestId}`, {
         method: `GET`,
         headers: { 'content-type': `application/json` },
         credentials: `include`,
         cache: `no-store`,
       });
 
-      if (!res.ok) {
+      if (!paymentRes.ok) {
         setLoading(false);
         return;
       }
 
-      const json = await res.json();
-      setData(json);
+      const paymentJson = await paymentRes.json();
+      setData(paymentJson);
+
+      // Load payment methods
+      const methodsRes = await fetch(`/api/payment-methods`, {
+        method: `GET`,
+        headers: { 'content-type': `application/json` },
+        credentials: `include`,
+        cache: `no-store`,
+      });
+
+      if (methodsRes.ok) {
+        const methodsJson = await methodsRes.json();
+        setPaymentMethods(methodsJson.items || []);
+
+        // Auto-select default payment method
+        const defaultMethod = methodsJson.items?.find((m: PaymentMethod) => m.defaultSelected);
+        if (defaultMethod) {
+          setSelectedPaymentMethodId(defaultMethod.id);
+        }
+      }
+
       setLoading(false);
     }
 
@@ -32,18 +73,48 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
   }, [paymentRequestId]);
 
   async function payNow() {
-    const res = await fetch(`/api/stripe/${paymentRequestId}/stripe-session`, {
-      method: `POST`,
-      headers: { 'content-type': `application/json` },
-      credentials: `include`,
-    });
+    setPaying(true);
 
-    const json = await res.json();
+    try {
+      if (selectedPaymentMethodId) {
+        // Pay with saved payment method
+        const res = await fetch(`/api/stripe/${paymentRequestId}/pay-with-saved-method`, {
+          method: `POST`,
+          headers: { 'content-type': `application/json` },
+          credentials: `include`,
+          body: JSON.stringify({ paymentMethodId: selectedPaymentMethodId }),
+        });
 
-    if (json.url) {
-      window.location.href = json.url;
-    } else {
-      alert(`Cannot start payment`);
+        const json = await res.json();
+
+        if (json.success) {
+          // Payment successful, reload the page to show updated status
+          window.location.reload();
+        } else if (json.nextAction) {
+          alert(`Payment requires additional action. Please check your email or payment method for next steps.`);
+        } else {
+          alert(`Payment failed: ${json.message || `Unknown error`}`);
+        }
+      } else {
+        // Pay with new payment method (checkout session)
+        const res = await fetch(`/api/stripe/${paymentRequestId}/stripe-session`, {
+          method: `POST`,
+          headers: { 'content-type': `application/json` },
+          credentials: `include`,
+        });
+
+        const json = await res.json();
+
+        if (json.url) {
+          window.location.href = json.url;
+        } else {
+          alert(`Cannot start payment`);
+        }
+      }
+    } catch (error) {
+      alert(`Payment error: ${error instanceof Error ? error.message : `Unknown error`}`);
+    } finally {
+      setPaying(false);
     }
   }
 
@@ -157,13 +228,87 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
             ))}
           </div>
 
+          {/* Payment Method Selection */}
+          {p.status === `PENDING` && paymentMethods.length > 0 && (
+            <div className="p-6 rounded-2xl bg-white shadow-sm border">
+              <h3 className="font-semibold mb-3">Select Payment Method</h3>
+              <div className="space-y-3">
+                {paymentMethods.map((method) => (
+                  <div
+                    key={method.id}
+                    className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                      selectedPaymentMethodId === method.id
+                        ? `border-blue-500 bg-blue-50`
+                        : `border-gray-200 hover:border-gray-300`
+                    }`}
+                    onClick={() => setSelectedPaymentMethodId(method.id)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="radio"
+                          checked={selectedPaymentMethodId === method.id}
+                          onChange={() => setSelectedPaymentMethodId(method.id)}
+                          className="text-blue-600"
+                        />
+                        <div>
+                          <div className="font-medium">
+                            {method.brand} ****{method.last4}
+                            {method.defaultSelected && (
+                              <span className="ml-2 px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
+                                Default
+                              </span>
+                            )}
+                          </div>
+                          {method.expMonth && method.expYear && (
+                            <div className="text-sm text-gray-500">
+                              Expires {String(method.expMonth).padStart(2, `0`)}/{method.expYear}
+                            </div>
+                          )}
+                          {method.billingDetails?.name && (
+                            <div className="text-sm text-gray-500">{method.billingDetails.name}</div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-sm text-gray-500 capitalize">{method.type.toLowerCase()}</div>
+                    </div>
+                  </div>
+                ))}
+
+                <div
+                  className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                    selectedPaymentMethodId === ``
+                      ? `border-blue-500 bg-blue-50`
+                      : `border-gray-200 hover:border-gray-300`
+                  }`}
+                  onClick={() => setSelectedPaymentMethodId(``)}
+                >
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      checked={selectedPaymentMethodId === ``}
+                      onChange={() => setSelectedPaymentMethodId(``)}
+                      className="text-blue-600"
+                    />
+                    <div>
+                      <div className="font-medium">Add New Payment Method</div>
+                      <div className="text-sm text-gray-500">Enter new card or bank details</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Action Button */}
           {p.status === `PENDING` && (
             <button
-              className="rounded-full bg-blue-600 px-6 py-3 text-sm text-white shadow hover:bg-blue-700"
+              className="rounded-full bg-blue-600 px-6 py-3 text-sm text-white shadow
+                hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={payNow}
+              disabled={paying}
             >
-              Pay Now
+              {paying ? `Processing...` : `Pay Now`}
             </button>
           )}
 

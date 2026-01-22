@@ -70,6 +70,7 @@ export class ConsumerPaymentMethodsService {
         expYear: body.expYear ?? null,
         billingDetailsId: billingDetails.id,
         consumerId,
+        stripePaymentMethodId: body.stripePaymentMethodId ?? null,
       },
     });
   }

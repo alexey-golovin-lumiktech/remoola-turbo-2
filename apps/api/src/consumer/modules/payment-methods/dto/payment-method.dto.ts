@@ -132,6 +132,12 @@ export class CreateManualPaymentMethod {
   @IsString()
   @ApiProperty({ required: false })
   billingPhone?: string;
+
+  @Expose()
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ required: false })
+  stripePaymentMethodId?: string;
 }
 
 export class UpdatePaymentMethod {
@@ -157,4 +163,13 @@ export class UpdatePaymentMethod {
   @IsString()
   @ApiProperty({ required: false })
   billingPhone?: string;
+}
+
+// DTO for paying with saved payment method
+export class PayWithSavedPaymentMethod {
+  @Expose()
+  @IsNotEmpty()
+  @IsString()
+  @ApiProperty({ description: `ID of the saved payment method to use` })
+  paymentMethodId: string;
 }

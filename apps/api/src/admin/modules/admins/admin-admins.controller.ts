@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiBasicAuth } from '@nestjs/swagger';
 
 import { type AdminModel } from '@remoola/database-2';
@@ -6,6 +6,7 @@ import { type AdminModel } from '@remoola/database-2';
 import { AdminAdminsService } from './admin-admins.service';
 import { JwtAuthGuard } from '../../../auth/jwt.guard';
 import { Identity } from '../../../common';
+import { StripeWebhookService } from '../../../consumer/modules/payment-methods/stripe-webhook.service';
 
 @UseGuards(JwtAuthGuard)
 @ApiTags(`Admin: Admins`)
@@ -13,7 +14,10 @@ import { Identity } from '../../../common';
 @ApiBasicAuth(`basic`) // 👈 optional, if this route also accepts Basic Auth
 @Controller(`admin/admins`)
 export class AdminAdminsController {
-  constructor(private readonly service: AdminAdminsService) {}
+  constructor(
+    private readonly service: AdminAdminsService,
+    private readonly stripeWebhookService: StripeWebhookService,
+  ) {}
 
   @Get()
   findAllAdmins(@Identity() admin: AdminModel) {
@@ -35,5 +39,13 @@ export class AdminAdminsController {
       throw new BadRequestException(`Only SUPER admins can change admin passwords`);
     }
     return this.service.patchAdminPassword(adminId, password);
+  }
+
+  @Post(`system/migrate-payment-methods`)
+  migratePaymentMethods(@Identity() admin: AdminModel) {
+    if (admin.type !== `SUPER`) {
+      throw new BadRequestException(`Only SUPER admins can run system migrations`);
+    }
+    return this.stripeWebhookService.migrateAllPaymentMethods();
   }
 }

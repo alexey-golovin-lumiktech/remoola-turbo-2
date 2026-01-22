@@ -233,4 +233,14 @@
                   fixed unused parameter warnings in SWR hooks,
                   and finalized performance optimizations and bundle cleanup. (Simplify Consumer Error Handling and Cleanup)
 
+- **2026-01-22:** Implemented saved payment methods with Stripe customer attachment,
+                  added `stripePaymentMethodId` to enable payment method reuse,
+                  implemented off-session payments with saved methods,
+                  added Stripe customer creation and attachment logic,
+                  created payment method migration system for existing records,
+                  added admin endpoint for manual payment method migration,
+                  updated payment UI to support saved method selection,
+                  enhanced error handling for Stripe attachment failures,
+                  and removed debug console logs from payment service.(Stripe Customer Attachment & Off-Session Payments)
+
 ```

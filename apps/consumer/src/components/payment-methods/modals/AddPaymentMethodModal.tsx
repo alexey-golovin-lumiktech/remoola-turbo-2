@@ -81,20 +81,19 @@ function AddPaymentMethodModalInner({
       return;
     }
 
-    const paymentMethodId = confirmRes!.setupIntent.payment_method as string;
+    const stripePaymentMethodId = confirmRes!.setupIntent.payment_method as string;
 
-    // 3) Retrieve metadata from backend
     const metaRes = await fetch(`/api/stripe/payment-method/metadata`, {
       method: `POST`,
       headers: { 'content-type': `application/json` },
-      body: JSON.stringify({ paymentMethodId }),
+      body: JSON.stringify({ stripePaymentMethodId }),
       credentials: `include`,
     });
 
     const cardMeta = await metaRes.json();
 
     // 3) Save method in Nest backend
-    const payload: CreatePaymentMethodDto = {
+    const payload: CreatePaymentMethodDto & any = {
       type: `CREDIT_CARD`,
       setupIntentId,
       defaultSelected,
@@ -105,10 +104,10 @@ function AddPaymentMethodModalInner({
 
       brand: cardMeta.brand,
       last4: cardMeta.last4,
-      expMonth: cardMeta.expMonth,
+      expMonth: cardMeta.expMonth.toString().padStart(2, `0`),
       expYear: cardMeta.expYear,
+      stripePaymentMethodId: stripePaymentMethodId,
     };
-
     const saveRes = await fetch(`/api/payment-methods`, {
       method: `POST`,
       headers: { 'content-type': `application/json` },
