@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
+import { IsEnum, IsNotEmpty, IsOptional, IsString, Length, Matches } from 'class-validator';
 
 import { $Enums } from '@remoola/database-2';
 
@@ -71,6 +72,8 @@ export class CreateStripeSetupIntentResponse {
 // Stripe confirm payload
 export class ConfirmStripeSetupIntent {
   @Expose()
+  @IsNotEmpty()
+  @IsString()
   @ApiProperty()
   setupIntentId: string;
 }
@@ -78,52 +81,80 @@ export class ConfirmStripeSetupIntent {
 // Manual bank / card create DTO
 export class CreateManualPaymentMethod {
   @Expose()
+  @IsEnum($Enums.PaymentMethodType)
   @ApiProperty({ enum: $Enums.PaymentMethodType })
   type: $Enums.PaymentMethodType; // BANK_ACCOUNT or CREDIT_CARD
 
   @Expose()
+  @IsNotEmpty()
+  @IsString()
   @ApiProperty()
   brand: string; // "Chase", "Bank of America", etc
 
   @Expose()
+  @IsNotEmpty()
+  @IsString()
+  @Length(4, 4)
+  @Matches(/^\d{4}$/)
   @ApiProperty()
   last4: string;
 
   @Expose()
+  @IsOptional()
+  @IsString()
+  @Length(2, 2)
+  @Matches(/^(0[1-9]|1[0-2])$/)
   @ApiProperty({ required: false })
   expMonth?: string;
 
   @Expose()
+  @IsOptional()
+  @IsString()
+  @Length(4, 4)
+  @Matches(/^\d{4}$/)
   @ApiProperty({ required: false })
   expYear?: string;
 
   @Expose()
+  @IsOptional()
+  @IsString()
   @ApiProperty({ required: false })
   billingName?: string;
 
   @Expose()
+  @IsOptional()
+  @IsString()
   @ApiProperty({ required: false })
   billingEmail?: string;
 
   @Expose()
+  @IsOptional()
+  @IsString()
   @ApiProperty({ required: false })
   billingPhone?: string;
 }
 
 export class UpdatePaymentMethod {
   @Expose()
+  @IsOptional()
   @ApiProperty({ required: false })
   defaultSelected?: boolean;
 
   @Expose()
+  @IsOptional()
+  @IsString()
   @ApiProperty({ required: false })
   billingName?: string;
 
   @Expose()
+  @IsOptional()
+  @IsString()
   @ApiProperty({ required: false })
   billingEmail?: string;
 
   @Expose()
+  @IsOptional()
+  @IsString()
   @ApiProperty({ required: false })
   billingPhone?: string;
 }

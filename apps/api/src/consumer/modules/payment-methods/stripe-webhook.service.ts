@@ -139,9 +139,11 @@ export class StripeWebhookService {
 
   private async handleStripeSuccess(session: Stripe.Checkout.Session) {
     const paymentRequestId = session.metadata?.paymentRequestId;
+    const consumerId = session.metadata?.consumerId;
 
-    if (!paymentRequestId) return;
+    if (!paymentRequestId || !consumerId) return;
 
+    // Update payment request and ledger entries to completed
     await this.prisma.ledgerEntryModel.updateMany({
       where: { paymentRequestId },
       data: {
@@ -155,6 +157,103 @@ export class StripeWebhookService {
       data: {
         status: $Enums.TransactionStatus.COMPLETED,
         updatedBy: `stripe`,
+      },
+    });
+
+    // Collect and store the payment method used in this checkout session
+    try {
+      await this.collectPaymentMethodFromCheckout(session, consumerId);
+    } catch (error) {
+      console.error(`Failed to collect payment method from checkout session:`, error);
+      // Don't fail the entire webhook if payment method collection fails
+    }
+  }
+
+  private async collectPaymentMethodFromCheckout(session: Stripe.Checkout.Session, consumerId: string) {
+    // Get the payment intent to access the payment method
+    if (!session.payment_intent) return;
+
+    let paymentIntent: Stripe.PaymentIntent;
+    if (typeof session.payment_intent === 'string') {
+      paymentIntent = await this.stripe.paymentIntents.retrieve(session.payment_intent);
+    } else {
+      paymentIntent = session.payment_intent as Stripe.PaymentIntent;
+    }
+
+    if (!paymentIntent.payment_method) return;
+
+    let paymentMethod: Stripe.PaymentMethod;
+    if (typeof paymentIntent.payment_method === 'string') {
+      paymentMethod = await this.stripe.paymentMethods.retrieve(paymentIntent.payment_method);
+    } else {
+      paymentMethod = paymentIntent.payment_method as Stripe.PaymentMethod;
+    }
+
+    // Check if this payment method is already stored for the consumer
+    const existingPaymentMethod = await this.prisma.paymentMethodModel.findFirst({
+      where: {
+        consumerId,
+        stripePaymentMethodId: paymentMethod.id,
+        deletedAt: null,
+      },
+    });
+
+    if (existingPaymentMethod) {
+      // Payment method already exists, no need to create duplicate
+      return;
+    }
+
+    // Extract payment method details
+    let billingDetails;
+    if (paymentMethod.billing_details) {
+      billingDetails = await this.prisma.billingDetailsModel.create({
+        data: {
+          email: paymentMethod.billing_details.email || null,
+          name: paymentMethod.billing_details.name || null,
+          phone: paymentMethod.billing_details.phone || null,
+        },
+      });
+    }
+
+    // Determine payment method type and extract card details
+    let type: $Enums.PaymentMethodType;
+    let brand: string | undefined;
+    let last4: string | undefined;
+    let expMonth: string | undefined;
+    let expYear: string | undefined;
+
+    if (paymentMethod.type === 'card' && paymentMethod.card) {
+      type = $Enums.PaymentMethodType.CREDIT_CARD;
+      brand = paymentMethod.card.brand || 'card';
+      last4 = paymentMethod.card.last4 || '';
+      expMonth = paymentMethod.card.exp_month ? String(paymentMethod.card.exp_month).padStart(2, '0') : undefined;
+      expYear = paymentMethod.card.exp_year ? String(paymentMethod.card.exp_year) : undefined;
+    } else {
+      // For other payment method types, we might not have detailed info
+      // This could be expanded to handle other payment method types
+      console.log(`Unsupported payment method type: ${paymentMethod.type}`);
+      return;
+    }
+
+    // Check if consumer already has a default payment method
+    const hasDefault = await this.prisma.paymentMethodModel.count({
+      where: { consumerId, deletedAt: null, defaultSelected: true },
+    });
+
+    // Create the payment method record
+    await this.prisma.paymentMethodModel.create({
+      data: {
+        type,
+        stripePaymentMethodId: paymentMethod.id,
+        stripeFingerprint: paymentMethod.card?.fingerprint || null,
+        defaultSelected: hasDefault === 0, // Make this default if no other default exists
+        brand: brand || 'card',
+        last4: last4 || '',
+        expMonth,
+        expYear,
+        serviceFee: 0,
+        billingDetailsId: billingDetails?.id || null,
+        consumerId,
       },
     });
   }
