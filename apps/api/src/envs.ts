@@ -126,10 +126,10 @@ const logs = {
 const app = {
   ADMIN_EMAIL: z.string().default(`simplelogin-newsletter.djakm@simplelogin.com`),
   SECURE_SESSION_SECRET: z.string().optional().default(`SECURE_SESSION_SECRET`),
-  DEFAULT_ADMIN_EMAIL: z.string().default(`admin@wirebill.com`),
-  DEFAULT_ADMIN_PASSWORD: z.string().default(`Admin@123!`),
-  SUPER_ADMIN_EMAIL: z.string().default(`super@wirebill.com`),
-  SUPER_ADMIN_PASSWORD: z.string().default(`Super@123!`),
+  DEFAULT_ADMIN_EMAIL: z.string().default(`regular.admin@wirebill.com`),
+  DEFAULT_ADMIN_PASSWORD: z.string().default(`RegularWirebill@Admin123!`),
+  SUPER_ADMIN_EMAIL: z.string().default(`super.admin@wirebill.com`),
+  SUPER_ADMIN_PASSWORD: z.string().default(`SuperWirebill@Admin123!`),
 };
 
 const debugging = {

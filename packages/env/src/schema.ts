@@ -24,10 +24,10 @@ export const envSchema = z.object({
   JWT_REFRESH_SECRET: z.string().optional().default(`JWT_REFRESH_SECRET`),
 
   // Admin seeding credentials
-  DEFAULT_ADMIN_EMAIL: z.string().optional().default(`admin@wirebill.com`),
-  DEFAULT_ADMIN_PASSWORD: z.string().optional().default(`Admin@123!`),
-  SUPER_ADMIN_EMAIL: z.string().optional().default(`super@wirebill.com`),
-  SUPER_ADMIN_PASSWORD: z.string().optional().default(`Super@123!`),
+  DEFAULT_ADMIN_EMAIL: z.string().default(`regular.admin@wirebill.com`),
+  DEFAULT_ADMIN_PASSWORD: z.string().default(`RegularWirebill@Admin123!`),
+  SUPER_ADMIN_EMAIL: z.string().default(`super.admin@wirebill.com`),
+  SUPER_ADMIN_PASSWORD: z.string().default(`SuperWirebill@Admin123!`),
 
   S3_BUCKET: z.string().optional(),
   AWS_REGION: z.string().optional(),
