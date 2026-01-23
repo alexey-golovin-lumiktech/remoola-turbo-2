@@ -57,20 +57,25 @@ export function ContactDetailsView({ id }: ContactDetailsViewProps) {
       </div>
 
       {/* Documents */}
-      <div className="rounded-xl bg-white p-4 shadow">
-        <h2 className="font-semibold mb-4">Documents</h2>
+      <div className="rounded-xl bg-white dark:bg-slate-800 p-4 shadow dark:border dark:border-slate-600">
+        <h2 className="font-semibold mb-4 text-gray-900 dark:text-white">Documents</h2>
 
         <div className="grid grid-cols-2 gap-4">
           {details.documents.map((doc) => (
-            <div key={doc.id} className="border rounded p-3 bg-gray-50">
-              <div className="font-medium">{doc.name}</div>
-              <a href={doc.url} target="_blank" className="text-blue-600 text-sm underline" rel="noreferrer">
+            <div key={doc.id} className="border border-gray-200 dark:border-slate-600 rounded p-3 bg-gray-50 dark:bg-slate-700">
+              <div className="font-medium text-gray-900 dark:text-white">{doc.name}</div>
+              <a
+                href={doc.url}
+                target="_blank"
+                className="text-blue-600 dark:text-blue-400 text-sm underline"
+                rel="noreferrer"
+              >
                 Download
               </a>
             </div>
           ))}
 
-          {details.documents.length === 0 && <div className="text-gray-400">No documents</div>}
+          {details.documents.length === 0 && <div className="text-gray-400 dark:text-slate-500">No documents</div>}
         </div>
       </div>
     </div>

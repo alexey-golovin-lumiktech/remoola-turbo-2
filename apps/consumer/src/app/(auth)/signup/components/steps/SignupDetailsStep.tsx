@@ -26,24 +26,24 @@ export function SignupDetailsStep() {
   };
 
   return (
-    <div className="w-full max-w-md space-y-4 rounded bg-white p-6 shadow-sm">
-      <h1 className="mb-1 text-xl font-semibold">Create your account</h1>
-      <p className="mb-4 text-sm text-gray-600">Start by entering your basic account details.</p>
+    <div className="w-full max-w-md space-y-4 rounded bg-white dark:bg-slate-800 p-6 shadow-sm">
+      <h1 className="mb-1 text-xl font-semibold text-gray-900 dark:text-white">Create your account</h1>
+      <p className="mb-4 text-sm text-gray-600 dark:text-gray-300">Start by entering your basic account details.</p>
 
       <div className="space-y-2">
-        <label className="text-xs font-medium text-gray-700">Email</label>
+        <label className="text-xs font-medium text-gray-700 dark:text-gray-300">Email</label>
         <input
           type="email"
           value={signup.email}
           onChange={(e) => updateSignup({ email: e.target.value })}
-          className="w-full rounded-md border px-3 py-2 text-sm"
+          className="w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white border-gray-300 dark:border-slate-600"
           placeholder="you@example.com"
           required
         />
       </div>
 
       <div className="space-y-2">
-        <label className="text-xs font-medium text-gray-700">Password</label>
+        <label className="text-xs font-medium text-gray-700 dark:text-gray-300">Password</label>
 
         <div className="flex gap-2">
           <div className="flex-1">
@@ -60,7 +60,7 @@ export function SignupDetailsStep() {
               const generated = generatePassword(12);
               updateSignup({ password: generated, confirmPassword: generated });
             }}
-            className="whitespace-nowrap rounded-md border border-blue-600 bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700 hover:bg-blue-100"
+            className="whitespace-nowrap rounded-md border border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 text-xs font-medium text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30"
           >
             Generate
           </button>
@@ -68,7 +68,7 @@ export function SignupDetailsStep() {
       </div>
 
       <div className="space-y-2">
-        <label className="text-xs font-medium text-gray-700">Confirm password</label>
+        <label className="text-xs font-medium text-gray-700 dark:text-gray-300">Confirm password</label>
         <PasswordInput
           value={signup.confirmPassword}
           onChange={(value) => updateSignup({ confirmPassword: value })}
@@ -116,7 +116,7 @@ export function SignupDetailsStep() {
       />
 
       <div className="space-y-1">
-        <label className="text-xs font-medium text-gray-700">Account type</label>
+        <label className="text-xs font-medium text-gray-700 dark:text-gray-300">Account type</label>
 
         <div className="flex gap-3">
           <button
@@ -130,8 +130,8 @@ export function SignupDetailsStep() {
             className={`flex-1 rounded-md border px-3 py-2 text-center text-sm
               ${
                 signup.accountType === ACCOUNT_TYPE.BUSINESS
-                  ? `border-blue-600 bg-blue-50 text-blue-700`
-                  : `border-gray-300 text-gray-700`
+                  ? `border-blue-600 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/20 dark:text-blue-300`
+                  : `border-gray-300 text-gray-700 dark:border-slate-600 dark:text-slate-300 dark:bg-slate-800`
               }`}
           >
             Business
@@ -148,8 +148,8 @@ export function SignupDetailsStep() {
             className={`flex-1 rounded-md border px-3 py-2 text-center text-sm
               ${
                 signup.accountType === ACCOUNT_TYPE.CONTRACTOR
-                  ? `border-blue-600 bg-blue-50 text-blue-700`
-                  : `border-gray-300 text-gray-700`
+                  ? `border-blue-600 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/20 dark:text-blue-300`
+                  : `border-gray-300 text-gray-700 dark:border-slate-600 dark:text-slate-300 dark:bg-slate-800`
               }`}
           >
             Contractor
@@ -160,7 +160,7 @@ export function SignupDetailsStep() {
       {/* Contractor kind (ONLY if contractor) */}
       {signup.accountType === ACCOUNT_TYPE.CONTRACTOR && (
         <div className="space-y-1">
-          <label className="text-xs font-medium text-gray-700">Contractor kind</label>
+          <label className="text-xs font-medium text-gray-700 dark:text-gray-300">Contractor kind</label>
 
           <div className="flex gap-3">
             <button
@@ -169,8 +169,8 @@ export function SignupDetailsStep() {
               className={`flex-1 rounded-md border px-3 py-2 text-center text-sm
                 ${
                   signup.contractorKind === CONTRACTOR_KIND.INDIVIDUAL
-                    ? `border-blue-600 bg-blue-50 text-blue-700`
-                    : `border-gray-300 text-gray-700`
+                    ? `border-blue-600 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/20 dark:text-blue-300`
+                    : `border-gray-300 text-gray-700 dark:border-slate-600 dark:text-slate-300 dark:bg-slate-800`
                 }`}
             >
               Individual
@@ -182,8 +182,8 @@ export function SignupDetailsStep() {
               className={`flex-1 rounded-md border px-3 py-2 text-center text-sm
                 ${
                   signup.contractorKind === CONTRACTOR_KIND.ENTITY
-                    ? `border-blue-600 bg-blue-50 text-blue-700`
-                    : `border-gray-300 text-gray-700`
+                    ? `border-blue-600 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/20 dark:text-blue-300`
+                    : `border-gray-300 text-gray-700 dark:border-slate-600 dark:text-slate-300 dark:bg-slate-800`
                 }`}
             >
               Entity

@@ -32,5 +32,5 @@ export default function AuthCallback() {
     return () => clearInterval(interval);
   }, [router, next]);
 
-  return <div className="flex h-screen items-center justify-center text-gray-600">Redirecting…</div>;
+  return <div className="flex h-screen items-center justify-center text-gray-600 dark:text-gray-300">Redirecting…</div>;
 }

@@ -164,7 +164,7 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
           {/* Summary Card */}
           <div className="p-6 rounded-2xl bg-white dark:bg-slate-800 shadow-sm border dark:border-slate-600">
             <div className="flex justify-between mb-4">
-              <div className="text-xl font-semibold">
+              <div className="text-xl font-semibold text-gray-900 dark:text-white">
                 ${p.amount.toFixed(2)} {p.currencyCode}
               </div>
 
@@ -252,7 +252,7 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
                           className="text-blue-600 dark:text-blue-400"
                         />
                         <div>
-                          <div className="font-medium">
+                          <div className="font-medium text-gray-900 dark:text-white">
                             {method.brand} ****{method.last4}
                             {method.defaultSelected && (
                               <span className="ml-2 px-2 py-1 text-xs bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300 rounded">
@@ -261,16 +261,18 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
                             )}
                           </div>
                           {method.expMonth && method.expYear && (
-                            <div className="text-sm text-gray-500">
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
                               Expires {String(method.expMonth).padStart(2, `0`)}/{method.expYear}
                             </div>
                           )}
                           {method.billingDetails?.name && (
-                            <div className="text-sm text-gray-500">{method.billingDetails.name}</div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">{method.billingDetails.name}</div>
                           )}
                         </div>
                       </div>
-                      <div className="text-sm text-gray-500 capitalize">{method.type.toLowerCase()}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400 capitalize">
+                        {method.type.toLowerCase()}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -288,11 +290,11 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
                       type="radio"
                       checked={selectedPaymentMethodId === ``}
                       onChange={() => setSelectedPaymentMethodId(``)}
-                      className="text-blue-600"
+                      className="text-blue-600 dark:text-blue-400"
                     />
                     <div>
-                      <div className="font-medium">Add New Payment Method</div>
-                      <div className="text-sm text-gray-500">Enter new card or bank details</div>
+                      <div className="font-medium text-gray-900 dark:text-white">Add New Payment Method</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">Enter new card or bank details</div>
                     </div>
                   </div>
                 </div>

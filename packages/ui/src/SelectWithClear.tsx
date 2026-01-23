@@ -56,8 +56,8 @@ export function SelectWithClear<T extends string | null>({
   };
 
   return (
-    <div ref={wrapperRef} className="relative w-full space-y-2">
-      {label && <label className="text-xs font-medium text-gray-700 block">{label}</label>}
+    <div ref={wrapperRef} className="rm-select">
+      {label && <label className="rm-select__label">{label}</label>}
 
       {/* TRIGGER */}
       <div
@@ -66,12 +66,11 @@ export function SelectWithClear<T extends string | null>({
           e.stopPropagation();
           setOpen((open) => !open);
         }}
-        className={`
-          relative w-full border rounded px-3 py-2 bg-white text-sm
-          cursor-pointer select-none flex items-center justify-between
-        `}
+        className="rm-select__trigger"
       >
-        <span className={value ? `text-gray-900` : `text-gray-400`}>{value ?? placeholder}</span>
+        <span className={value ? `rm-select__value` : `rm-select__placeholder`}>
+          {options.find((x) => x.value === value)?.label ?? value ?? placeholder}
+        </span>
 
         {value ? (
           <button
@@ -81,12 +80,12 @@ export function SelectWithClear<T extends string | null>({
               e.stopPropagation();
               handleSelect(null);
             }}
-            className="text-gray-500 hover:text-gray-700 text-lg leading-none"
+            className="rm-select__clear"
           >
             ×
           </button>
         ) : (
-          <button type="button" className="text-gray-500 hover:text-gray-700 text-lg  pointer-events-none">
+          <button type="button" className="rm-select__chevron pointer-events-none">
             {open ? `▲` : `▼`}
           </button>
         )}
@@ -94,13 +93,7 @@ export function SelectWithClear<T extends string | null>({
 
       {/* DROPDOWN MENU */}
       {open && (
-        <div
-          style={{ zIndex: 100 }}
-          className="absolute left-0 right-0 mt-1
-            bg-white border shadow-lg
-            rounded-b-lg
-            max-h-72 overflow-auto"
-        >
+        <div className="rm-select__menu">
           {/* Placeholder */}
           {showNotSelected && (
             <div
@@ -109,10 +102,7 @@ export function SelectWithClear<T extends string | null>({
                 e.stopPropagation();
                 handleSelect(null);
               }}
-              className="
-              px-3 py-2 text-sm text-gray-500
-              cursor-pointer hover:bg-gray-100
-            "
+              className="rm-select__option rm-select__option--placeholder"
             >
               {placeholder}
             </div>
@@ -126,10 +116,7 @@ export function SelectWithClear<T extends string | null>({
                 e.stopPropagation();
                 handleSelect(opt.value);
               }}
-              className={`
-                px-3 py-2 text-sm cursor-pointer
-                ${value === opt.value ? `bg-blue-50 text-blue-600` : `hover:bg-gray-100`}
-              `}
+              className={`rm-select__option ${value === opt.value ? `rm-select__option--active` : ``}`}
             >
               {opt.label}
             </div>
@@ -142,10 +129,7 @@ export function SelectWithClear<T extends string | null>({
                 e.stopPropagation();
                 handleSelect(`Other` as T);
               }}
-              className={`
-                px-3 py-2 text-sm cursor-pointer
-                ${value === `Other` ? `bg-blue-50 text-blue-600` : `hover:bg-gray-100`}
-              `}
+              className={`rm-select__option ${value === `Other` ? `rm-select__option--active` : ``}`}
             >
               Other
             </div>
@@ -164,7 +148,7 @@ export function SelectWithClear<T extends string | null>({
             onChangeOther?.(e.target.value);
           }}
           placeholder="Please specify..."
-          className="border rounded px-3 py-2 text-sm w-full"
+          className="rm-select__other-input"
         />
       )}
     </div>

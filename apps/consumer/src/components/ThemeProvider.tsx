@@ -2,12 +2,13 @@
 
 import React, { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
-export type Theme = `light` | `dark` | `system`;
+export const Theme = { LIGHT: `light`, DARK: `dark`, SYSTEM: `system` } as const;
+export type ITheme = (typeof Theme)[keyof typeof Theme];
 
 interface ThemeContextType {
-  theme: Theme;
-  resolvedTheme: `light` | `dark`;
-  setTheme: (theme: Theme) => void;
+  theme: ITheme;
+  resolvedTheme: ITheme;
+  setTheme: (theme: ITheme) => void;
   toggleTheme: () => void;
 }
 
@@ -18,8 +19,8 @@ export function useTheme() {
   if (context === undefined) {
     // During SSR/static generation, return a default theme
     return {
-      theme: `system` as Theme,
-      resolvedTheme: `light` as `light` | `dark`,
+      theme: Theme.SYSTEM,
+      resolvedTheme: Theme.LIGHT,
       setTheme: () => {},
       toggleTheme: () => {},
     };
@@ -29,20 +30,24 @@ export function useTheme() {
 
 interface ThemeProviderProps {
   children: ReactNode;
-  defaultTheme?: Theme;
+  defaultTheme?: ITheme;
   storageKey?: string;
 }
 
-export function ThemeProvider({ children, defaultTheme = `system`, storageKey = `remoola-theme` }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(defaultTheme);
-  const [resolvedTheme, setResolvedTheme] = useState<`light` | `dark`>(`light`);
+export function ThemeProvider({
+  children,
+  defaultTheme = Theme.SYSTEM,
+  storageKey = `remoola-theme`,
+}: ThemeProviderProps) {
+  const [theme, setTheme] = useState<ITheme>(defaultTheme);
+  const [resolvedTheme, setResolvedTheme] = useState<ITheme>(Theme.LIGHT);
   const [mounted, setMounted] = useState(false);
 
   // Load theme from localStorage on mount
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(storageKey) as Theme;
-      if (stored && [`light`, `dark`, `system`].includes(stored)) {
+      const stored = localStorage.getItem(storageKey) as ITheme;
+      if (stored && [Theme.LIGHT, Theme.DARK, Theme.SYSTEM].includes(stored)) {
         setTheme(stored);
       }
     } catch (error) {
@@ -55,8 +60,8 @@ export function ThemeProvider({ children, defaultTheme = `system`, storageKey = 
   useEffect(() => {
     const root = window.document.documentElement;
 
-    if (theme === `system`) {
-      const systemTheme = window.matchMedia(`(prefers-color-scheme: dark)`).matches ? `dark` : `light`;
+    if (theme === Theme.SYSTEM) {
+      const systemTheme = window.matchMedia(`(prefers-color-scheme: dark)`).matches ? Theme.DARK : Theme.LIGHT;
 
       setResolvedTheme(systemTheme);
       root.classList.remove(`light`, `dark`);
@@ -75,15 +80,15 @@ export function ThemeProvider({ children, defaultTheme = `system`, storageKey = 
     }
   }, [theme, storageKey]);
 
-  // Listen for system theme changes when theme is 'system'
+  // Listen for system theme changes when theme is 'SYSTEM'
   useEffect(() => {
-    if (theme !== `system`) return;
+    if (theme !== Theme.SYSTEM) return;
 
     const mediaQuery = window.matchMedia(`(prefers-color-scheme: dark)`);
 
     const handleChange = () => {
       const root = window.document.documentElement;
-      const systemTheme = mediaQuery.matches ? `dark` : `light`;
+      const systemTheme = mediaQuery.matches ? Theme.DARK : Theme.LIGHT;
 
       setResolvedTheme(systemTheme);
       root.classList.remove(`light`, `dark`);
@@ -98,7 +103,7 @@ export function ThemeProvider({ children, defaultTheme = `system`, storageKey = 
     theme,
     resolvedTheme,
     setTheme,
-    toggleTheme: () => setTheme((prev) => (prev === `light` ? `dark` : `light`)),
+    toggleTheme: () => setTheme((prev) => (prev === Theme.LIGHT ? Theme.DARK : Theme.LIGHT)),
   };
 
   // Prevent hydration mismatch by not rendering until mounted

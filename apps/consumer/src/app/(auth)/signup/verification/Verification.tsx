@@ -21,9 +21,9 @@ export default function Verification() {
   if (!email) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen text-center p-6">
-        <h1 className="text-2xl font-semibold mb-3">Invalid verification link</h1>
-        <p className="text-gray-600 mb-6">Missing email parameter.</p>
-        <Link href="/signup" className="text-blue-600 hover:underline">
+        <h1 className="text-2xl font-semibold mb-3 text-gray-900 dark:text-white">Invalid verification link</h1>
+        <p className="text-gray-600 dark:text-gray-300 mb-6">Missing email parameter.</p>
+        <Link href="/signup" className="text-blue-600 dark:text-blue-400 hover:underline">
           Go back to signup
         </Link>
       </div>
@@ -34,11 +34,11 @@ export default function Verification() {
     <div className="flex flex-col items-center justify-center min-h-screen text-center p-6">
       {status === `success` && (
         <>
-          <h1 className="text-3xl font-bold text-green-600 mb-3">Email Verified 🎉</h1>
-          <p className="text-gray-700 mb-6">
+          <h1 className="text-3xl font-bold text-green-600 dark:text-green-400 mb-3">Email Verified 🎉</h1>
+          <p className="text-gray-700 dark:text-gray-300 mb-6">
             Your email <span className="font-mono">{decodeURIComponent(email)}</span> has been successfully verified.
           </p>
-          <Link href="/login" className="text-blue-600 hover:underline">
+          <Link href="/login" className="text-blue-600 dark:text-blue-400 hover:underline">
             Continue to Login
           </Link>
         </>
@@ -46,12 +46,12 @@ export default function Verification() {
 
       {status === `failed` && (
         <>
-          <h1 className="text-3xl font-bold text-red-600 mb-3">Verification Failed</h1>
-          <p className="text-gray-700 mb-6">
+          <h1 className="text-3xl font-bold text-red-600 dark:text-red-400 mb-3">Verification Failed</h1>
+          <p className="text-gray-700 dark:text-gray-300 mb-6">
             The verification link for <span className="font-mono">{decodeURIComponent(email)}</span> is invalid or
             expired.
           </p>
-          <Link href="/signup" className="text-blue-600 hover:underline">
+          <Link href="/signup" className="text-blue-600 dark:text-blue-400 hover:underline">
             Try signing up again
           </Link>
         </>
@@ -59,8 +59,8 @@ export default function Verification() {
 
       {status === `unknown` && (
         <>
-          <h1 className="text-3xl font-bold text-gray-700 mb-3">Checking Verification...</h1>
-          <p className="text-gray-500 mb-6">Please wait a moment.</p>
+          <h1 className="text-3xl font-bold text-gray-700 dark:text-gray-300 mb-3">Checking Verification...</h1>
+          <p className="text-gray-500 dark:text-gray-400 mb-6">Please wait a moment.</p>
         </>
       )}
     </div>

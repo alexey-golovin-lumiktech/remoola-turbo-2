@@ -37,7 +37,7 @@ export function PasswordChangeForm({ reload }: any) {
 
   return (
     <section className="form-section">
-      <h2 className="text-lg font-semibold">Change Password</h2>
+      <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Change Password</h2>
 
       {error && <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>}
 
@@ -53,7 +53,11 @@ export function PasswordChangeForm({ reload }: any) {
         </div>
       </div>
 
-      <button disabled={saving} onClick={save} className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500">
+      <button
+        disabled={saving}
+        onClick={save}
+        className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500"
+      >
         {saving ? `Saving...` : `Change Password`}
       </button>
     </section>

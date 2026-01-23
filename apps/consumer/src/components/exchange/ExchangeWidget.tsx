@@ -50,14 +50,18 @@ export function ExchangeWidget({ balances }: ExchangeWidgetProps) {
 
   return (
     <div className="rounded-xl border p-6 bg-white dark:bg-slate-800 shadow dark:border-slate-600">
-      <div className="mb-2 text-sm text-gray-600">
+      <div className="mb-2 text-sm text-gray-600 dark:text-gray-300">
         Available: {available.toFixed(2)} {from}
       </div>
       <RateDisplay from={from} to={to} />
       <div className="space-y-4">
         <div>
-          <label>From currency</label>
-          <select className="border rounded p-2 w-full" value={from} onChange={(e) => setFrom(e.target.value)}>
+          <label className="text-sm text-gray-700 dark:text-gray-300">From currency</label>
+          <select
+            className="border border-gray-300 dark:border-slate-600 rounded p-2 w-full bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+          >
             {CURRENCIES.map((c) => (
               <option key={c}>{c}</option>
             ))}
@@ -65,8 +69,12 @@ export function ExchangeWidget({ balances }: ExchangeWidgetProps) {
         </div>
 
         <div>
-          <label>To currency</label>
-          <select className="border rounded p-2 w-full" value={to} onChange={(e) => setTo(e.target.value)}>
+          <label className="text-sm text-gray-700 dark:text-gray-300">To currency</label>
+          <select
+            className="border border-gray-300 dark:border-slate-600 rounded p-2 w-full bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
+            value={to}
+            onChange={(e) => setTo(e.target.value)}
+          >
             {CURRENCIES.map((c) => (
               <option key={c}>{c}</option>
             ))}
@@ -74,9 +82,9 @@ export function ExchangeWidget({ balances }: ExchangeWidgetProps) {
         </div>
 
         <div>
-          <label>Amount</label>
+          <label className="text-sm text-gray-700 dark:text-gray-300">Amount</label>
           <input
-            className="border rounded p-2 w-full"
+            className="border border-gray-300 dark:border-slate-600 rounded p-2 w-full bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             type="number"
@@ -86,13 +94,13 @@ export function ExchangeWidget({ balances }: ExchangeWidgetProps) {
         </div>
 
         {rate !== null && (
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             Rate: 1 {from} → {rate} {to}
           </p>
         )}
 
         {result !== null && (
-          <p className="text-sm font-semibold">
+          <p className="text-sm font-semibold text-gray-900 dark:text-white">
             You will receive: {result} {to}
           </p>
         )}

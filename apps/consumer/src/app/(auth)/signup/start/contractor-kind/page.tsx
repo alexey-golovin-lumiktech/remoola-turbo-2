@@ -35,10 +35,10 @@ export default function ChooseContractorKindStep() {
   if (!signup.accountType) return null;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-slate-900 px-4">
       <div className="w-full max-w-xl space-y-8 text-center">
         <div className="space-y-1">
-          <h2 className="text-sm text-gray-500">Great! Now choose what type of contractor you are</h2>
+        <h2 className="text-sm text-gray-500 dark:text-gray-400">Great! Now choose what type of contractor you are</h2>
           <h1 className="text-3xl font-semibold">I`m an</h1>
         </div>
 
@@ -51,15 +51,17 @@ export default function ChooseContractorKindStep() {
               transition-all
               ${
                 isSelected(CONTRACTOR_KIND.INDIVIDUAL)
-                  ? `border-blue-600 bg-blue-50 shadow-sm`
-                  : `border-gray-300 bg-white hover:bg-gray-100`
+                  ? `border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20 shadow-sm`
+                  : `border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700`
               }
             `}
           >
             <div className="text-4xl mb-2">👤</div>
             <div
               className={`text-sm font-semibold ${
-                isSelected(CONTRACTOR_KIND.INDIVIDUAL) ? `text-blue-700` : `text-gray-700`
+                isSelected(CONTRACTOR_KIND.INDIVIDUAL)
+                  ? `text-blue-700 dark:text-blue-300`
+                  : `text-gray-700 dark:text-gray-300`
               }`}
             >
               INDIVIDUAL
@@ -74,15 +76,17 @@ export default function ChooseContractorKindStep() {
               transition-all
               ${
                 isSelected(CONTRACTOR_KIND.ENTITY)
-                  ? `border-blue-600 bg-blue-50 shadow-sm`
-                  : `border-gray-300 bg-white hover:bg-gray-100`
+                  ? `border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20 shadow-sm`
+                  : `border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700`
               }
             `}
           >
             <div className="text-4xl mb-2">🏢</div>
             <div
               className={`text-sm font-semibold ${
-                isSelected(CONTRACTOR_KIND.ENTITY) ? `text-blue-700` : `text-gray-700`
+                isSelected(CONTRACTOR_KIND.ENTITY)
+                  ? `text-blue-700 dark:text-blue-300`
+                  : `text-gray-700 dark:text-gray-300`
               }`}
             >
               ENTITY
@@ -92,7 +96,7 @@ export default function ChooseContractorKindStep() {
 
         {/* Description (optional, but matching previous screen style) */}
         {signup.contractorKind === CONTRACTOR_KIND.INDIVIDUAL && (
-          <div className="text-left text-sm text-gray-600 mx-auto max-w-sm space-y-1">
+          <div className="text-left text-sm text-gray-600 dark:text-gray-300 mx-auto max-w-sm space-y-1">
             <div className="font-medium">As an individual contractor you can:</div>
             <ul className="list-disc list-inside space-y-1">
               <li>Work with global clients</li>
@@ -104,7 +108,7 @@ export default function ChooseContractorKindStep() {
         )}
 
         {signup.contractorKind === CONTRACTOR_KIND.ENTITY && (
-          <div className="text-left text-sm text-gray-600 mx-auto max-w-sm space-y-1">
+          <div className="text-left text-sm text-gray-600 dark:text-gray-300 mx-auto max-w-sm space-y-1">
             <div className="font-medium">As an entity contractor you can:</div>
             <ul className="list-disc list-inside space-y-1">
               <li>Manage your company’s invoices</li>
@@ -125,7 +129,7 @@ export default function ChooseContractorKindStep() {
 
         <button
           onClick={() => router.push(`/signup/start`)}
-          className="block w-full text-sm text-gray-500 mt-2 hover:underline"
+          className="block w-full text-sm text-gray-500 dark:text-gray-400 mt-2 hover:underline"
           type="button"
         >
           ← Back

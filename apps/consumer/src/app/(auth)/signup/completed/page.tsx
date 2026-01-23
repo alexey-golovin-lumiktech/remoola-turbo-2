@@ -4,11 +4,11 @@ import Link from 'next/link';
 
 export default function SignupCompletedPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md rounded-xl border bg-white p-8 shadow-sm text-center">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900 px-4">
+      <div className="w-full max-w-md rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-8 shadow-sm text-center">
         <div className="flex justify-center mb-6">
           <svg
-            className="h-14 w-14 text-green-500"
+            className="h-14 w-14 text-green-500 dark:text-green-400"
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
@@ -18,13 +18,15 @@ export default function SignupCompletedPage() {
           </svg>
         </div>
 
-        <h1 className="text-2xl font-semibold text-gray-900 mb-2">Congratulations. Sign up success.</h1>
+        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">
+          Congratulations. Sign up success.
+        </h1>
 
-        <h2 className="text-lg text-gray-600 mb-6">
-          Welcome to <span className="font-semibold text-indigo-600">Remoola</span>
+        <h2 className="text-lg text-gray-600 dark:text-gray-300 mb-6">
+          Welcome to <span className="font-semibold text-indigo-600 dark:text-indigo-400">Remoola</span>
         </h2>
 
-        <p className="text-gray-600 mb-8 leading-relaxed">
+        <p className="text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
           We have sent you an email so that you can confirm your email and activate your account.
           <br />
           Check your email and come back soon.
@@ -32,7 +34,7 @@ export default function SignupCompletedPage() {
 
         <Link
           href="/login"
-          className="block w-full rounded-lg bg-indigo-600 py-3 text-white font-medium hover:bg-indigo-700 transition"
+          className="block w-full rounded-lg bg-indigo-600 py-3 text-white font-medium hover:bg-indigo-700 dark:hover:bg-indigo-500 transition"
         >
           Click to Sign In
         </Link>

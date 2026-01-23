@@ -16,7 +16,7 @@ export class ConsumerSettingsService {
     });
 
     return {
-      theme: settings?.theme || `LIGHT`,
+      theme: settings?.theme ?? null,
     };
   }
 

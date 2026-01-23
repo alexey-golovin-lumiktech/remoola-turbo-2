@@ -216,6 +216,7 @@ export function DocumentsList() {
                   type="checkbox"
                   checked={selected.size === docs.length && docs.length > 0}
                   onChange={toggleSelectAll}
+                  className="rounded border-slate-300 dark:border-slate-600 text-blue-600 dark:text-blue-400"
                 />
               </th>
               <th className="px-4 py-3">Name</th>
@@ -244,7 +245,7 @@ export function DocumentsList() {
                     <input type="checkbox" checked={checked} onChange={() => toggleSelect(d.id)} />
                   </td>
 
-                  <td className="px-4 py-4 font-medium">{d.name}</td>
+                  <td className="px-4 py-4 font-medium text-gray-900 dark:text-white">{d.name}</td>
 
                   <td className="px-4 py-4 text-slate-600 dark:text-slate-400">{d.kind}</td>
 

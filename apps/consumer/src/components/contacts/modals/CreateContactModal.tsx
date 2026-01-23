@@ -54,64 +54,70 @@ export function CreateContactModal({ open, onCloseAction, onCreatedAction }: Cre
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex justify-center items-center">
-      <div className="bg-white rounded-xl p-6 w-full max-w-md space-y-4">
-        <h2 className="text-xl font-semibold">Create Contact</h2>
+    <div className="fixed inset-0 bg-black/40 dark:bg-black/60 flex justify-center items-center">
+      <div className="bg-white dark:bg-slate-800 rounded-xl p-6 w-full max-w-md space-y-4">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Create Contact</h2>
 
         <input
           placeholder="Email"
           value={email || ``}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full border rounded-lg p-2"
+          className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
         />
 
         <input
           placeholder="Name (optional)"
           value={name || ``}
           onChange={(e) => setName(e.target.value)}
-          className="w-full border rounded-lg p-2"
+          className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
         />
 
         <input
           placeholder="Street"
           value={address.street || ``}
           onChange={(e) => setAddress((a) => ({ ...a, street: e.target.value }))}
-          className="w-full border rounded-lg p-2"
+          className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
         />
 
         <input
           placeholder="City"
           value={address.city || ``}
           onChange={(e) => setAddress((a) => ({ ...a, city: e.target.value }))}
-          className="w-full border rounded-lg p-2"
+          className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
         />
 
         <input
           placeholder="State"
           value={address.state || ``}
           onChange={(e) => setAddress((a) => ({ ...a, state: e.target.value }))}
-          className="w-full border rounded-lg p-2"
+          className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
         />
 
         <input
           placeholder="PostalCode"
           value={address.postalCode || ``}
           onChange={(e) => setAddress((a) => ({ ...a, postalCode: e.target.value }))}
-          className="w-full border rounded-lg p-2"
+          className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
         />
 
         <input
           placeholder="Country"
           value={address.country || ``}
           onChange={(e) => setAddress((a) => ({ ...a, country: e.target.value }))}
-          className="w-full border rounded-lg p-2"
+          className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
         />
 
         <div className="flex justify-end gap-2">
-          <button onClick={onCloseAction} className="px-4 py-2">
+          <button
+            onClick={onCloseAction}
+            className="px-4 py-2 rounded text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700"
+          >
             Cancel
           </button>
-          <button onClick={create} className="px-4 py-2 bg-blue-600 text-white rounded">
+          <button
+            onClick={create}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-500"
+          >
             Create
           </button>
         </div>

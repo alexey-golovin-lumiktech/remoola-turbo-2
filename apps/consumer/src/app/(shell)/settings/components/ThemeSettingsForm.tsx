@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-import { useTheme, type Theme } from '../../../../components/ThemeProvider';
+import { Theme, useTheme, type ITheme } from '../../../../components/ThemeProvider';
 
 interface ThemeOption {
-  value: Theme;
+  value: ITheme;
   label: string;
   description: string;
   icon: string;
@@ -14,19 +14,19 @@ interface ThemeOption {
 
 const themeOptions: ThemeOption[] = [
   {
-    value: `light`,
+    value: Theme.LIGHT,
     label: `Light`,
     description: `Always use light theme`,
     icon: `☀️`,
   },
   {
-    value: `dark`,
+    value: Theme.DARK,
     label: `Dark`,
     description: `Always use dark theme`,
     icon: `🌙`,
   },
   {
-    value: `system`,
+    value: Theme.SYSTEM,
     label: `System`,
     description: `Follow your system preference`,
     icon: `💻`,
@@ -61,7 +61,7 @@ export function ThemeSettingsForm() {
     loadSettings();
   }, [setTheme]);
 
-  async function updateTheme(newTheme: Theme) {
+  async function updateTheme(newTheme: ITheme) {
     setLoading(true);
     try {
       const response = await fetch(`/api/settings/theme`, {
@@ -91,6 +91,7 @@ export function ThemeSettingsForm() {
       <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">
         Choose how Remoola looks to you. Select a theme or follow your system preference.
       </p>
+      {theme === Theme.SYSTEM && <p className="text-xs text-gray-500 dark:text-gray-400 mb-6">Using device theme</p>}
 
       <div className="space-y-3">
         {themeOptions.map((option) => (
@@ -108,7 +109,7 @@ export function ThemeSettingsForm() {
               name="theme"
               value={option.value}
               checked={theme === option.value}
-              onChange={(e) => updateTheme(e.target.value as Theme)}
+              onChange={(e) => updateTheme(e.target.value as ITheme)}
               className="sr-only"
               disabled={loading}
             />
@@ -121,7 +122,7 @@ export function ThemeSettingsForm() {
             </div>
             {theme === option.value && (
               <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
-                <div className="w-2 h-2 rounded-full bg-white" />
+                <div className="w-2 h-2 rounded-full bg-white dark:bg-slate-200" />
               </div>
             )}
           </label>

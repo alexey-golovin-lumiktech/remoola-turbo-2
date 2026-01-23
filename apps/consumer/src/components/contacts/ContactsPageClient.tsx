@@ -32,19 +32,19 @@ export function ContactsPageClient() {
     <div className="flex flex-col gap-6 px-8 py-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Contacts</h1>
-          <p className="text-sm text-gray-500">Saved contractors and business contacts.</p>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Contacts</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Saved contractors and business contacts.</p>
         </div>
 
         <button
           onClick={() => setCreateOpen(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow-sm hover:bg-blue-700 transition"
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow-sm hover:bg-blue-700 dark:hover:bg-blue-500 transition"
         >
           + Add Contact
         </button>
       </div>
 
-      <div className="rounded-2xl bg-white/90 p-4 shadow-sm">
+      <div className="rounded-2xl bg-white/90 dark:bg-slate-800/90 p-4 shadow-sm">
         <ContactsTable
           items={items}
           onEditAction={(contact) => setEditContact(contact)}

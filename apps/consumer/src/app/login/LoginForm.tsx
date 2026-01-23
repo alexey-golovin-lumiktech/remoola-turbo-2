@@ -71,7 +71,7 @@ export default function LoginForm() {
 
       <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-300">
         Need to create an account?{` `}
-        <Link href="/signup" className="text-blue-600 hover:underline">
+        <Link href="/signup" className="text-blue-600 dark:text-blue-400 hover:underline">
           Sign Up
         </Link>
       </p>

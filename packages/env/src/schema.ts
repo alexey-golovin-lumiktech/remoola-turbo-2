@@ -83,6 +83,8 @@ export const envSchema = z.object({
   // Telemetry
   TURBO_TELEMETRY_DISABLED: z.string().optional(),
   DO_NOT_TRACK: z.string().optional(),
+
+  ENABLE_DEBUG: z.string().optional().default(`ENABLED`),
 });
 
 export type Environment = z.infer<typeof envSchema>;

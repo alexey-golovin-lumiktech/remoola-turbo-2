@@ -64,35 +64,38 @@ export function EditPaymentMethodModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 transition-opacity"
+      className="fixed inset-0 bg-black/40 dark:bg-black/60 flex items-center justify-center z-50 transition-opacity"
       onClick={closeIfAllowed}
     >
       <div
-        className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-xl space-y-5 animate-fadeIn"
+        className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-lg shadow-xl space-y-5 animate-fadeIn"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex justify-between items-center">
-          <h2 className="text-xl font-semibold">Edit payment method</h2>
-          <button onClick={closeIfAllowed} className="text-2xl leading-none px-2 text-gray-500 hover:text-gray-700">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Edit payment method</h2>
+          <button
+            onClick={closeIfAllowed}
+            className="text-2xl leading-none px-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+          >
             ×
           </button>
         </div>
 
         {/* Metadata block (non-editable) */}
-        <div className="bg-gray-50 border rounded-lg p-4">
-          <div className="text-sm text-gray-600">Type:</div>
-          <div className="font-medium mb-2">
+        <div className="bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg p-4">
+          <div className="text-sm text-gray-600 dark:text-gray-300">Type:</div>
+          <div className="font-medium mb-2 text-gray-900 dark:text-white">
             {paymentMethod.type === `CREDIT_CARD` ? `Credit Card` : `Bank Account`}
           </div>
 
-          <div className="text-sm text-gray-600">Details:</div>
-          <div className="font-medium">
+          <div className="text-sm text-gray-600 dark:text-gray-300">Details:</div>
+          <div className="font-medium text-gray-900 dark:text-white">
             {paymentMethod.brand} •••• {paymentMethod.last4}
           </div>
 
           {paymentMethod.expMonth && paymentMethod.expYear && (
-            <div className="text-sm text-gray-500 mt-1">
+            <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               Expires {paymentMethod.expMonth}/{paymentMethod.expYear}
             </div>
           )}
@@ -104,24 +107,24 @@ export function EditPaymentMethodModal({
             placeholder="Billing name"
             value={billingName}
             onChange={(e) => setBillingName(e.target.value)}
-            className="w-full border rounded-lg p-2 text-sm"
+            className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
           />
 
           <input
             placeholder="Billing email"
             value={billingEmail}
             onChange={(e) => setBillingEmail(e.target.value)}
-            className="w-full border rounded-lg p-2 text-sm"
+            className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
           />
 
           <input
             placeholder="Billing phone"
             value={billingPhone}
             onChange={(e) => setBillingPhone(e.target.value)}
-            className="w-full border rounded-lg p-2 text-sm"
+            className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
           />
 
-          <label className="flex items-center gap-2 text-sm mt-3">
+          <label className="flex items-center gap-2 text-sm mt-3 text-gray-700 dark:text-gray-300">
             <input
               type="checkbox"
               checked={defaultSelected}
@@ -137,7 +140,7 @@ export function EditPaymentMethodModal({
           <button
             onClick={closeIfAllowed}
             disabled={saving}
-            className="px-4 py-2 rounded-lg hover:bg-gray-100 text-sm disabled:opacity-50"
+            className="px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 text-sm text-gray-700 dark:text-gray-200 disabled:opacity-50"
           >
             Cancel
           </button>
@@ -145,7 +148,7 @@ export function EditPaymentMethodModal({
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-50"
+            className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700 dark:hover:bg-blue-500 disabled:opacity-50"
           >
             {saving ? `Saving...` : `Save changes`}
           </button>

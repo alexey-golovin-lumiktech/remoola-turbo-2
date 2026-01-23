@@ -57,8 +57,8 @@ export function PaymentsList() {
     return (
       <div className="flex items-center justify-center min-h-[400px] p-8">
         <div className="text-center">
-          <div className="rounded-full bg-red-100 p-3 mb-4 mx-auto w-fit">
-            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="rounded-full bg-red-100 dark:bg-red-900/20 p-3 mb-4 mx-auto w-fit">
+            <svg className="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -124,7 +124,7 @@ export function PaymentsList() {
                     <div className="text-xs text-slate-500 dark:text-slate-400">{p.description || `—`}</div>
                   </td>
 
-                  <td className="px-6 py-4 font-semibold">${p.amount.toFixed(2)}</td>
+                  <td className="px-6 py-4 font-semibold text-gray-900 dark:text-white">${p.amount.toFixed(2)}</td>
 
                   <td className="px-6 py-4">
                     <span
@@ -164,14 +164,14 @@ export function PaymentsList() {
           <button
             disabled={page <= 1}
             onClick={() => setPage((p: number) => p - 1)}
-            className="px-3 py-1 rounded-md bg-white dark:bg-slate-700 border dark:border-slate-600 shadow-sm disabled:opacity-50"
+            className="px-3 py-1 rounded-md bg-white dark:bg-slate-700 border dark:border-slate-600 shadow-sm text-gray-700 dark:text-gray-200 disabled:opacity-50"
           >
             Previous
           </button>
           <button
             disabled={page >= totalPages}
             onClick={() => setPage((p: number) => p + 1)}
-            className="px-3 py-1 rounded-md bg-white dark:bg-slate-700 border dark:border-slate-600 shadow-sm disabled:opacity-50"
+            className="px-3 py-1 rounded-md bg-white dark:bg-slate-700 border dark:border-slate-600 shadow-sm text-gray-700 dark:text-gray-200 disabled:opacity-50"
           >
             Next
           </button>

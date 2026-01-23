@@ -2,9 +2,10 @@
 
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { type StripeSetupIntentPayload, type PaymentMethodType, type CreatePaymentMethodDto } from '../../../types';
+import { useTheme } from '../../ThemeProvider';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
@@ -30,6 +31,7 @@ function AddPaymentMethodModalInner({
 }: AddPaymentMethodModalProps) {
   const stripe = useStripe();
   const elements = useElements();
+  const { resolvedTheme } = useTheme();
 
   const [methodType, setMethodType] = useState<PaymentMethodType>(`CREDIT_CARD`);
   const [loading, setLoading] = useState(false);
@@ -42,6 +44,27 @@ function AddPaymentMethodModalInner({
   const [bankName, setBankName] = useState(``);
   const [bankAccount, setBankAccount] = useState(``);
   const [bankRouting, setBankRouting] = useState(``);
+
+  const cardElementOptions = useMemo(
+    () => ({
+      style: {
+        base: {
+          color: resolvedTheme === `dark` ? `#e2e8f0` : `#0f172a`,
+          backgroundColor: resolvedTheme === `dark` ? `#1e293b` : `#ffffff`,
+          fontFamily: `ui-sans-serif, system-ui`,
+          fontSize: `14px`,
+          '::placeholder': {
+            color: resolvedTheme === `dark` ? `#94a3b8` : `#64748b`,
+          },
+        },
+        invalid: {
+          color: `#ef4444`,
+          iconColor: `#ef4444`,
+        },
+      },
+    }),
+    [resolvedTheme],
+  );
 
   async function createCardMethod() {
     setLoading(true);
@@ -203,63 +226,63 @@ function AddPaymentMethodModalInner({
             placeholder="Billing name"
             value={billingName}
             onChange={(e) => setBillingName(e.target.value)}
-            className="w-full border rounded-lg p-2 text-sm"
+            className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
           />
 
           <input
             placeholder="Billing email"
             value={billingEmail}
             onChange={(e) => setBillingEmail(e.target.value)}
-            className="w-full border rounded-lg p-2 text-sm"
+            className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
           />
 
           <input
             placeholder="Billing phone"
             value={billingPhone}
             onChange={(e) => setBillingPhone(e.target.value)}
-            className="w-full border rounded-lg p-2 text-sm"
+            className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
           />
         </div>
 
         {/* Card form */}
         {methodType === `CREDIT_CARD` && (
-          <div className="border rounded-lg p-4 bg-gray-50">
-            <CardElement className="p-2" />
+          <div className="border border-gray-200 dark:border-slate-600 rounded-lg p-4 bg-gray-50 dark:bg-slate-700">
+            <CardElement className="p-2" options={cardElementOptions} />
           </div>
         )}
 
         {/* Bank form */}
         {methodType === `BANK_ACCOUNT` && (
-          <div className="space-y-3 border rounded-lg p-4 bg-gray-50">
+          <div className="space-y-3 border border-gray-200 dark:border-slate-600 rounded-lg p-4 bg-gray-50 dark:bg-slate-700">
             <input
               placeholder="Bank name"
               value={bankName}
               onChange={(e) => setBankName(e.target.value)}
-              className="w-full border rounded-lg p-2 text-sm"
+              className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
             />
 
             <input
               placeholder="Account number"
               value={bankAccount}
               onChange={(e) => setBankAccount(e.target.value)}
-              className="w-full border rounded-lg p-2 text-sm"
+              className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
             />
 
             <input
               placeholder="Routing number"
               value={bankRouting}
               onChange={(e) => setBankRouting(e.target.value)}
-              className="w-full border rounded-lg p-2 text-sm"
+              className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
             />
           </div>
         )}
 
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
           <input
             type="checkbox"
             checked={defaultSelected}
             onChange={(e) => setDefaultSelected(e.target.checked)}
-            className="h-4 w-4"
+            className="h-4 w-4 rounded border-gray-300 dark:border-slate-600 text-blue-600 dark:text-blue-400"
           />
           Set as default payment method
         </label>

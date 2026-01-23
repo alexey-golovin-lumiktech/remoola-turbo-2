@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Expose } from 'class-transformer';
 import { IsEnum } from 'class-validator';
 
 export enum Theme {
@@ -8,6 +9,7 @@ export enum Theme {
 }
 
 export class UpdateThemeDto {
+  @Expose()
   @ApiProperty({
     enum: Theme,
     description: `Theme preference`,

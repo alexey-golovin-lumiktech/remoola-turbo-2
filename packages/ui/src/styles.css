@@ -46,7 +46,7 @@
 /* Inputs */
 .rm-input {
   width: 100%;
-  background: #fff;
+  background: var(--card);
   border: 1px solid var(--line);
   border-radius: 14px;
   padding: 10px 14px;
@@ -55,7 +55,7 @@
   outline: none;
   box-shadow: 0 1px 0 rgba(17,24,39,.02);
 }
-.rm-input::placeholder { color: #9aa4b2; }
+.rm-input::placeholder { color: var(--muted); }
 .rm-input:focus { border-color: #bfdbfe; box-shadow: 0 0 0 4px var(--ring); }
 
 /* Buttons */
@@ -66,14 +66,14 @@
 }
 .rm-btn--primary { background: var(--blue-600); color: #fff; box-shadow: 0 4px 10px rgba(37,99,235,.25); }
 .rm-btn--primary:hover { filter: brightness(1.05); }
-.rm-btn--ghost { background: #fff; color: var(--ink); border-color: var(--line); }
-.rm-btn--ghost:hover { background: #f8fafc; }
+.rm-btn--ghost { background: var(--card); color: var(--ink); border-color: var(--line); }
+.rm-btn--ghost:hover { background: var(--bg-0); }
 
 /* Pills / Chips / Badges */
 .rm-pill {
   display:inline-flex; align-items:center; gap:6px;
   padding: 6px 10px; border-radius: 999px; font-size: 12px;
-  border: 1px solid rgba(16,24,40,.08); background: #f8fafc; color:#0f172a;
+  border: 1px solid rgba(16,24,40,.08); background: var(--bg-0); color: var(--ink);
 }
 .rm-badge { display:inline-flex; align-items:center; gap:6px;
   padding: 6px 10px; border-radius: 999px; font-size: 12px; border: 1px solid;
@@ -85,18 +85,18 @@
 .rm-badge--amber  { color:#92400e; background:#fef3c7; border-color:#f59e0b33; }
 
 /* Progress */
-.rm-progress { height: 8px; width: 100%; border-radius: 999px; background: #eef2f7; overflow: hidden; }
+.rm-progress { height: 8px; width: 100%; border-radius: 999px; background: var(--bg-1); overflow: hidden; }
 .rm-progress__bar { height: 100%; background: var(--blue-600); width: 0; transition: width .2s ease; }
 
 /* Table */
-.rm-tablewrap { overflow:auto; border-radius: 14px; border:1px solid var(--line); background:#fff; }
+.rm-tablewrap { overflow:auto; border-radius: 14px; border:1px solid var(--line); background: var(--card); }
 .rm-table { width: 100%; border-collapse: separate; border-spacing: 0; }
 .rm-table thead th {
-  color:#6b7280; font-weight:600; font-size:12px; letter-spacing:.02em;
-  padding: 10px 12px; background:#fafafa; border-bottom:1px solid var(--line);
+  color: var(--muted); font-weight:600; font-size:12px; letter-spacing:.02em;
+  padding: 10px 12px; background: var(--bg-0); border-bottom:1px solid var(--line);
 }
-.rm-table tbody td { padding: 14px 12px; border-bottom:1px solid #f1f5f9; }
-.rm-table tbody tr:hover td { background:#fafbff; }
+.rm-table tbody td { padding: 14px 12px; border-bottom:1px solid var(--line); }
+.rm-table tbody tr:hover td { background: var(--bg-1); }
 
 /* Sidebar link */
 .rm-sb-link {
@@ -110,3 +110,61 @@
 /* Small helpers */
 .rm-stat { font-weight: 700; font-size: 22px; color: var(--ink); }
 .rm-muted { color: var(--muted); }
+
+/* SelectWithClear */
+.rm-select { position: relative; width: 100%; display: flex; flex-direction: column; gap: 8px; }
+.rm-select__label { font-size: 12px; font-weight: 500; color: var(--muted); display: block; }
+.rm-select__trigger {
+  position: relative;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px 12px;
+  background: var(--card);
+  color: var(--ink);
+  font-size: 14px;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.rm-select__value { color: var(--ink); }
+.rm-select__placeholder { color: var(--muted); }
+.rm-select__clear,
+.rm-select__chevron { color: var(--muted); font-size: 16px; line-height: 1; }
+.rm-select__clear:hover,
+.rm-select__chevron:hover { color: var(--ink); }
+
+.rm-select__menu {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: var(--card);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 0 0 8px 8px;
+  box-shadow: var(--shadow);
+  max-height: 18rem;
+  overflow: auto;
+  z-index: 100;
+}
+.rm-select__option {
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--ink);
+}
+.rm-select__option:hover { background: var(--bg-0); }
+.rm-select__option--active { background: rgba(59, 130, 246, .15); color: var(--blue-600); }
+.rm-select__option--placeholder { color: var(--muted); }
+.rm-select__other-input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 14px;
+  background: var(--card);
+  color: var(--ink);
+}

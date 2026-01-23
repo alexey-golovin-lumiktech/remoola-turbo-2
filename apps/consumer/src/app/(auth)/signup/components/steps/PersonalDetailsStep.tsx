@@ -22,47 +22,47 @@ export function PersonalDetailsStep() {
   };
 
   return (
-    <div className="w-full max-w-md space-y-4 rounded bg-white p-6 shadow-sm">
-      <h1 className="mb-2 text-lg font-semibold">Personal details</h1>
+    <div className="w-full max-w-md space-y-4 rounded bg-white dark:bg-slate-800 p-6 shadow-sm">
+      <h1 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Personal details</h1>
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
-          <label className="block text-xs font-medium text-gray-700">First name</label>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">First name</label>
           <input
             type="text"
             value={personal.firstName}
             onChange={(e) => updatePersonal({ firstName: e.target.value })}
-            className="w-full rounded-md border px-3 py-2 text-sm"
+            className="w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white border-gray-300 dark:border-slate-600"
           />
         </div>
         <div className="space-y-1">
-          <label className="block text-xs font-medium text-gray-700">Last name</label>
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">Last name</label>
           <input
             type="text"
             value={personal.lastName}
             onChange={(e) => updatePersonal({ lastName: e.target.value })}
-            className="w-full rounded-md border px-3 py-2 text-sm"
+            className="w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white border-gray-300 dark:border-slate-600"
           />
         </div>
       </div>
 
       <div className="space-y-1">
-        <label className="block text-xs font-medium text-gray-700">Citizen of</label>
+        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">Citizen of</label>
         <input
           type="text"
           value={personal.citizenOf}
           onChange={(e) => updatePersonal({ citizenOf: e.target.value })}
-          className="w-full rounded-md border px-3 py-2 text-sm"
+          className="w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white border-gray-300 dark:border-slate-600"
         />
       </div>
 
       <div className="space-y-1">
-        <label className="block text-xs font-medium text-gray-700">Country of tax residence</label>
+        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">Country of tax residence</label>
         <input
           type="text"
           value={personal.countryOfTaxResidence}
           onChange={(e) => updatePersonal({ countryOfTaxResidence: e.target.value })}
-          className="w-full rounded-md border px-3 py-2 text-sm"
+          className="w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white border-gray-300 dark:border-slate-600"
         />
       </div>
 
@@ -81,42 +81,42 @@ export function PersonalDetailsStep() {
       />
 
       <div className="space-y-1">
-        <label className="block text-xs font-medium text-gray-700">Tax ID</label>
+        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">Tax ID</label>
         <input
           type="text"
           value={personal.taxId}
           onChange={(e) => updatePersonal({ taxId: e.target.value })}
-          className="w-full rounded-md border px-3 py-2 text-sm"
+          className="w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white border-gray-300 dark:border-slate-600"
         />
       </div>
 
       <div className="space-y-1">
-        <label className="block text-xs font-medium text-gray-700">Date of birth</label>
+        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">Date of birth</label>
         <input
           type="date"
           value={personal.dateOfBirth}
           onChange={(e) => updatePersonal({ dateOfBirth: e.target.value })}
-          className="w-full rounded-md border px-3 py-2 text-sm"
+          className="w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white border-gray-300 dark:border-slate-600"
         />
       </div>
 
       <div className="space-y-1">
-        <label className="block text-xs font-medium text-gray-700">Passport/ID number</label>
+        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">Passport/ID number</label>
         <input
           type="text"
           value={personal.passportOrIdNumber}
           onChange={(e) => updatePersonal({ passportOrIdNumber: e.target.value })}
-          className="w-full rounded-md border px-3 py-2 text-sm"
+          className="w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white border-gray-300 dark:border-slate-600"
         />
       </div>
 
       <div className="space-y-1">
-        <label className="block text-xs font-medium text-gray-700">Phone number</label>
+        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">Phone number</label>
         <input
           type="tel"
           value={personal.phoneNumber}
           onChange={(e) => updatePersonal({ phoneNumber: e.target.value })}
-          className="w-full rounded-md border px-3 py-2 text-sm"
+          className="w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white border-gray-300 dark:border-slate-600"
         />
       </div>
 

@@ -29,16 +29,16 @@ export function OrganizationDetailsStep() {
   if (isBusiness || isContractorEntity) prevNextButtonsText = `Finish signup`;
 
   return (
-    <div className="w-full max-w-md space-y-4 rounded bg-white p-6 shadow-sm">
-      <h1 className="mb-2 text-lg font-semibold">Organization details</h1>
+    <div className="w-full max-w-md space-y-4 rounded bg-white dark:bg-slate-800 p-6 shadow-sm">
+      <h1 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Organization details</h1>
 
       <div className="space-y-1">
-        <label className="block text-xs font-medium text-gray-700">Organization name</label>
+        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">Organization name</label>
         <input
           type="text"
           value={organizationDetails.name}
           onChange={(e) => updateOrganization({ name: e.target.value })}
-          className="w-full rounded-md border px-3 py-2 text-sm"
+          className="w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white border-gray-300 dark:border-slate-600"
         />
       </div>
 
@@ -82,7 +82,7 @@ export function OrganizationDetailsStep() {
         showNotSelected={false}
       />
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
       <PrevNextButtons nextLabel={loading ? `Submitting...` : prevNextButtonsText} onClick={() => handleSubmit()} />
     </div>
