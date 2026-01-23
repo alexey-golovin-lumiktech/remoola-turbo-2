@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Tailwind v4: make `dark:` respond to `.dark` class (not OS theme). */
+@custom-variant dark (&:where(.dark, .dark *));
+
 html,body { height: 100%; }
 body {
   background: linear-gradient(135deg,#f8fafc,#eef2ff);
