@@ -53,7 +53,7 @@ export function PasswordChangeForm({ reload }: any) {
         </div>
       </div>
 
-      <button disabled={saving} onClick={save} className="px-4 py-2 rounded-lg bg-blue-600 text-white">
+      <button disabled={saving} onClick={save} className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500">
         {saving ? `Saving...` : `Change Password`}
       </button>
     </section>

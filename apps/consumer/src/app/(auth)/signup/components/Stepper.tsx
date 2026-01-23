@@ -18,14 +18,14 @@ export function Stepper() {
               className={`flex h-9 w-9 items-center justify-center rounded-full border text-sm transition
                 ${isActive ? `border-blue-600 bg-blue-600 text-white` : ``}
                 ${isCompleted ? `border-green-600 bg-green-600 text-white` : ``}
-                ${!isActive && !isCompleted ? `border-gray-300 text-gray-500` : ``}`}
+                ${!isActive && !isCompleted ? `border-gray-300 dark:border-slate-600 text-gray-500 dark:text-slate-400` : ``}`}
             >
               {isCompleted ? `✓` : index + 1}
             </div>
 
             <span
               className={`mt-2 text-[11px] leading-tight
-                ${isActive ? `font-semibold text-blue-600` : `text-gray-600`}`}
+                ${isActive ? `font-semibold text-blue-600 dark:text-blue-400` : `text-gray-600 dark:text-gray-400`}`}
             >
               {step.label}
             </span>
