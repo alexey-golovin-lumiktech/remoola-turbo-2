@@ -18,9 +18,9 @@ export function PendingRequestsTable({ pendingRequests }: PendingRequestsTablePr
         <h2 className="text-sm font-semibold text-slate-900 dark:text-white">Open Payment Requests</h2>
       </header>
 
-      <div className="overflow-hidden rounded-xl border border-slate-100">
-        <table className="min-w-full divide-y divide-slate-100 bg-white text-sm">
-          <thead className="bg-slate-50">
+      <div className="overflow-hidden rounded-xl border border-slate-100 dark:border-slate-600">
+        <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-600 bg-white dark:bg-slate-800 text-sm">
+          <thead className="bg-slate-50 dark:bg-slate-700">
             <tr>
               <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Name</th>
               <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Amount</th>
@@ -30,7 +30,7 @@ export function PendingRequestsTable({ pendingRequests }: PendingRequestsTablePr
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-50">
+          <tbody className="divide-y divide-slate-50 dark:divide-slate-600">
             {pendingRequests.length === 0 && (
               <tr>
                 <td colSpan={4} className="px-4 py-6 text-center text-sm text-slate-400 dark:text-slate-500">

@@ -23,7 +23,7 @@ export function QuickDocsCard({ docs }: QuickDocsCardProps) {
       ) : (
         <ul className="space-y-2 text-sm">
           {docs.map((doc) => (
-            <li key={doc.id} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2">
+            <li key={doc.id} className="flex items-center justify-between rounded-lg bg-slate-50 dark:bg-slate-700 px-3 py-2">
               <span className="truncate text-slate-800 dark:text-slate-200">{doc.name}</span>
               <span className="whitespace-nowrap text-xs text-slate-400 dark:text-slate-500">
                 {new Intl.DateTimeFormat(undefined, {

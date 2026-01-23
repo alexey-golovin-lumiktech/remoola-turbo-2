@@ -34,7 +34,7 @@ export function BankTransferInstructions({ details }: BankTransferInstructionsPr
       </div>
 
       {/* Action needed */}
-      <div className="bg-amber-50 border border-amber-300 text-amber-800 p-4 rounded-xl mb-8">
+      <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300 p-4 rounded-xl mb-8">
         <h3 className="font-semibold mb-1">Action needed</h3>
         <p className="text-sm">
           Send money from your bank using the instructions below.
@@ -47,14 +47,14 @@ export function BankTransferInstructions({ details }: BankTransferInstructionsPr
       <div className="flex justify-between items-end mb-6">
         <div>
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">Amount due</h2>
-          <div className="text-2xl font-bold">
+          <div className="text-2xl font-bold text-gray-900 dark:text-white">
             {isNaN(details.amount) ? `—` : `$${details.amount.toFixed(2)} ${details.currency}`}
           </div>
         </div>
 
         <button
           className="flex items-center gap-2 px-4 py-2 bg-blue-600
-        hover:bg-blue-700 text-white rounded-lg shadow-sm"
+        hover:bg-blue-700 dark:hover:bg-blue-500 text-white rounded-lg shadow-sm"
         >
           <FileDown size={18} />
           Download Invoice PDF
@@ -62,7 +62,7 @@ export function BankTransferInstructions({ details }: BankTransferInstructionsPr
       </div>
 
       {/* Wire transfer card */}
-      <div className="border border-slate-200 bg-white rounded-2xl shadow-sm p-6">
+      <div className="border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-6">
         <h3 className="text-xl font-semibold mb-5 text-slate-800 dark:text-slate-200">Wire Transfer Details</h3>
 
         <Field
@@ -123,7 +123,7 @@ export function BankTransferInstructions({ details }: BankTransferInstructionsPr
 
       {/* Continue button */}
       <button
-        className="w-full mt-10 py-4 bg-green-600 hover:bg-green-700
+        className="w-full mt-10 py-4 bg-green-600 hover:bg-green-700 dark:hover:bg-green-500
       text-white font-semibold text-lg rounded-xl shadow"
       >
         Continue to Pay
@@ -142,7 +142,7 @@ function Step({ active, label }: { active?: boolean; label: string }) {
       <div
         className={
           `w-5 h-5 rounded-full flex items-center justify-center ` +
-          (active ? `bg-green-600 text-white` : `bg-slate-200`)
+          (active ? `bg-green-600 text-white` : `bg-slate-200 dark:bg-slate-600`)
         }
       >
         <Check size={14} />
@@ -169,15 +169,15 @@ function Field({
     <div className="mb-5">
       <div className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">{label}</div>
 
-      <div className="flex items-center border border-slate-300 rounded-lg bg-slate-50 px-3 py-2">
-        <div className="text-slate-900 font-medium truncate">{value}</div>
+      <div className="flex items-center border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700 px-3 py-2">
+        <div className="text-slate-900 dark:text-white font-medium truncate">{value}</div>
 
-        <button className="ml-auto text-slate-500 hover:text-slate-700" onClick={onCopy}>
-          {copied ? <Check size={18} className="text-green-600" /> : <Clipboard size={18} />}
+        <button className="ml-auto text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200" onClick={onCopy}>
+          {copied ? <Check size={18} className="text-green-600 dark:text-green-400" /> : <Clipboard size={18} />}
         </button>
       </div>
 
-      {helper && <div className="text-xs text-slate-500 mt-1">{helper}</div>}
+      {helper && <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">{helper}</div>}
     </div>
   );
 }
