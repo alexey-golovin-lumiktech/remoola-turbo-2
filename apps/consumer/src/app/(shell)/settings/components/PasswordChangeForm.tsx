@@ -39,7 +39,7 @@ export function PasswordChangeForm({ reload }: any) {
     <section className="form-section">
       <h2 className="text-lg font-semibold">Change Password</h2>
 
-      {error && <p className="text-red-600 text-sm">{error}</p>}
+      {error && <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>}
 
       <div className="grid gap-4">
         <div>

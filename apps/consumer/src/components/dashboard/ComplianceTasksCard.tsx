@@ -13,12 +13,12 @@ export function ComplianceTasksCard({ tasks }: ComplianceTasksCardProps) {
     <section>
       <header className="mb-3 flex items-center justify-between">
         <div>
-          <h2 className="text-sm font-semibold text-slate-900">Tasks – Onboarding / Compliance</h2>
-          <p className="text-xs text-slate-500">
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-white">Tasks – Onboarding / Compliance</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             {completedCount} of {tasks.length} completed
           </p>
         </div>
-        <span className="text-xs font-medium text-blue-600">{progress}% ready</span>
+        <span className="text-xs font-medium text-blue-600 dark:text-blue-400">{progress}% ready</span>
       </header>
 
       <div className="mb-3 h-2 w-full overflow-hidden rounded-full bg-slate-100">
@@ -32,13 +32,13 @@ export function ComplianceTasksCard({ tasks }: ComplianceTasksCardProps) {
               type="checkbox"
               checked={task.completed}
               readOnly
-              className="h-4 w-4 rounded border-slate-300 text-blue-600"
+              className="h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-blue-600 dark:text-blue-400"
             />
-            <span className={task.completed ? `text-slate-400 line-through` : `text-slate-700`}>{task.label}</span>
+            <span className={task.completed ? `text-slate-400 dark:text-slate-500 line-through` : `text-slate-700 dark:text-slate-300`}>{task.label}</span>
           </li>
         ))}
 
-        {tasks.length === 0 && <p className="text-sm text-slate-400">No tasks at the moment. You’re all set! 🎉</p>}
+        {tasks.length === 0 && <p className="text-sm text-slate-400 dark:text-slate-500">No tasks at the moment. You’re all set! 🎉</p>}
       </ul>
     </section>
   );

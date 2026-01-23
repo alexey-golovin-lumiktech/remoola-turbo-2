@@ -46,7 +46,7 @@ export function BankTransferInstructions({ details }: BankTransferInstructionsPr
       {/* Amount Due + PDF Button */}
       <div className="flex justify-between items-end mb-6">
         <div>
-          <h2 className="text-lg font-semibold text-slate-900 mb-1">Amount due</h2>
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">Amount due</h2>
           <div className="text-2xl font-bold">
             {isNaN(details.amount) ? `—` : `$${details.amount.toFixed(2)} ${details.currency}`}
           </div>
@@ -63,7 +63,7 @@ export function BankTransferInstructions({ details }: BankTransferInstructionsPr
 
       {/* Wire transfer card */}
       <div className="border border-slate-200 bg-white rounded-2xl shadow-sm p-6">
-        <h3 className="text-xl font-semibold mb-5 text-slate-800">Wire Transfer Details</h3>
+        <h3 className="text-xl font-semibold mb-5 text-slate-800 dark:text-slate-200">Wire Transfer Details</h3>
 
         <Field
           label="Reference"
@@ -116,7 +116,7 @@ export function BankTransferInstructions({ details }: BankTransferInstructionsPr
         />
 
         {/* SWIFT note */}
-        <div className="mt-6 bg-slate-100 border border-slate-300 rounded-xl p-4 text-sm text-slate-700">
+        <div className="mt-6 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl p-4 text-sm text-slate-700 dark:text-slate-300">
           <strong>Select “OUR”</strong> for SWIFT transfer fees. This ensures Remoola receives your full payment.
         </div>
       </div>
@@ -147,7 +147,7 @@ function Step({ active, label }: { active?: boolean; label: string }) {
       >
         <Check size={14} />
       </div>
-      <span className={active ? `text-slate-900 font-medium` : `text-slate-400`}>{label}</span>
+      <span className={active ? `text-slate-900 dark:text-white font-medium` : `text-slate-400 dark:text-slate-500`}>{label}</span>
     </div>
   );
 }
@@ -167,7 +167,7 @@ function Field({
 }) {
   return (
     <div className="mb-5">
-      <div className="text-sm font-medium text-slate-500 mb-1">{label}</div>
+      <div className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">{label}</div>
 
       <div className="flex items-center border border-slate-300 rounded-lg bg-slate-50 px-3 py-2">
         <div className="text-slate-900 font-medium truncate">{value}</div>

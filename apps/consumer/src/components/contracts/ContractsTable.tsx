@@ -27,7 +27,7 @@ export function ContractsTable() {
   return (
     <table className="w-full text-sm">
       <thead>
-        <tr className="text-left text-gray-400 border-b">
+        <tr className="text-left text-gray-400 dark:text-slate-400 border-b border-gray-200 dark:border-slate-600">
           <th className="py-3">Contractor</th>
           <th>Status</th>
           <th>Last activity</th>
@@ -39,25 +39,25 @@ export function ContractsTable() {
       <tbody>
         {(!contracts || contracts.length === 0) && (
           <tr>
-            <td colSpan={5} className="text-center py-8 text-gray-400">
+            <td colSpan={5} className="text-center py-8 text-gray-400 dark:text-slate-400">
               You have no contractors yet.
             </td>
           </tr>
         )}
 
         {contracts.map((row) => (
-          <tr key={row.id} className="border-b last:border-none">
-            <td className="py-3">{row.name}</td>
-            <td className="capitalize">{row.lastStatus ?? `—`}</td>
-            <td>{row.lastActivity ? new Date(row.lastActivity).toLocaleDateString() : `—`}</td>
-            <td>{row.docs}</td>
+          <tr key={row.id} className="border-b border-gray-200 dark:border-slate-600 last:border-none hover:bg-gray-50 dark:hover:bg-slate-700/50">
+            <td className="py-3 text-gray-900 dark:text-white">{row.name}</td>
+            <td className="capitalize text-gray-700 dark:text-slate-300">{row.lastStatus ?? `—`}</td>
+            <td className="text-gray-700 dark:text-slate-300">{row.lastActivity ? new Date(row.lastActivity).toLocaleDateString() : `—`}</td>
+            <td className="text-gray-700 dark:text-slate-300">{row.docs}</td>
             <td className="text-right">
               {row.lastRequestId ? (
-                <Link href={`/payments/${row.lastRequestId}`} className="text-blue-600 hover:underline">
+                <Link href={`/payments/${row.lastRequestId}`} className="text-blue-600 dark:text-blue-400 hover:underline">
                   View
                 </Link>
               ) : (
-                <span className="text-gray-400">No payments</span>
+                <span className="text-gray-400 dark:text-slate-400">No payments</span>
               )}
             </td>
           </tr>

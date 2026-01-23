@@ -53,56 +53,56 @@ export function TransferForm() {
   };
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4 rounded-xl border bg-white p-6 shadow-sm">
-      <h2 className="text-lg font-semibold">Transfer to another person</h2>
-      <p className="text-sm text-gray-600">Send money to another user using their email number.</p>
+    <form onSubmit={onSubmit} className="space-y-4 rounded-xl border dark:border-slate-600 bg-white dark:bg-slate-800 p-6 shadow-sm">
+      <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Transfer to another person</h2>
+      <p className="text-sm text-gray-600 dark:text-slate-300">Send money to another user using their email number.</p>
 
       <div>
-        <label className="mb-1 block text-sm font-medium">Amount</label>
+        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">Amount</label>
         <div className="relative">
-          <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-500">$</span>
+          <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-500 dark:text-slate-400">$</span>
           <input
             type="number"
             min="0"
             step="0.01"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            className="w-full rounded-lg border px-7 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-lg border border-gray-300 dark:border-slate-600 px-7 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="0.00"
           />
         </div>
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium">Recipient (email)</label>
+        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">Recipient (email)</label>
         <input
           value={recipient}
           onChange={(e) => setRecipient(e.target.value)}
-          className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="example@email.com"
         />
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium">
-          Note <span className="text-gray-400">(optional)</span>
+        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">
+          Note <span className="text-gray-400 dark:text-slate-400">(optional)</span>
         </label>
         <textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}
           rows={2}
-          className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="What is this transfer for?"
         />
       </div>
 
-      {err && <p className="text-sm text-red-600">{err}</p>}
+      {err && <p className="text-sm text-red-600 dark:text-red-400">{err}</p>}
 
       <button
         type="submit"
         disabled={loading}
         className="w-full rounded-lg bg-blue-600 py-2 text-sm font-medium
-        text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+        text-white transition hover:bg-blue-700 dark:hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading ? `Processing…` : `Send transfer`}
       </button>

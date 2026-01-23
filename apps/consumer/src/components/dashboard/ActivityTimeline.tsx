@@ -8,12 +8,12 @@ export function ActivityTimeline({ activityTimelineItems }: ActivityTimelineProp
   return (
     <section>
       <header className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-slate-900">Activity Timeline</h2>
+        <h2 className="text-sm font-semibold text-slate-900 dark:text-white">Activity Timeline</h2>
       </header>
 
       <div className="space-y-3">
         {activityTimelineItems.length === 0 && (
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-slate-400 dark:text-slate-500">
             No recent activity. Once you create payment requests and complete compliance, events will show up here.
           </p>
         )}
@@ -23,8 +23,8 @@ export function ActivityTimeline({ activityTimelineItems }: ActivityTimelineProp
             <div className="mt-1 h-2 w-2 flex-shrink-0 rounded-full bg-blue-500" />
             <div className="flex-1">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-slate-900">{activityTimelineItem.label}</p>
-                <span className="text-xs text-slate-400">
+                <p className="text-sm font-medium text-slate-900 dark:text-white">{activityTimelineItem.label}</p>
+                <span className="text-xs text-slate-400 dark:text-slate-500">
                   {new Intl.DateTimeFormat(undefined, {
                     dateStyle: `short`,
                     timeStyle: `short`,
@@ -32,7 +32,7 @@ export function ActivityTimeline({ activityTimelineItems }: ActivityTimelineProp
                 </span>
               </div>
               {activityTimelineItem.description && (
-                <p className="text-xs text-slate-500">{activityTimelineItem.description}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{activityTimelineItem.description}</p>
               )}
             </div>
           </div>

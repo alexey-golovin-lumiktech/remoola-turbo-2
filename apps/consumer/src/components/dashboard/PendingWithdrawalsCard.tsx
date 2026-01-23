@@ -59,7 +59,7 @@ export function PendingWithdrawalsCard() {
                 <div className="font-medium">-${Number(tx.amount).toFixed(2)}</div>
                 <div className="text-[11px] text-gray-500">Code {tx.code}</div>
               </div>
-              <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-[11px] font-medium text-yellow-800">
+              <span className="rounded-full bg-yellow-100 dark:bg-yellow-900/20 px-2 py-0.5 text-[11px] font-medium text-yellow-800 dark:text-yellow-300">
                 Pending
               </span>
             </li>

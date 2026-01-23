@@ -47,33 +47,33 @@ export function StartPaymentForm() {
       className="space-y-4"
     >
       <div>
-        <label className="block text-sm font-medium text-slate-700">Recipient Email</label>
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Recipient Email</label>
         <input
           type="email"
           required
-          className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+          className="mt-1 w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white border-gray-300 dark:border-slate-600"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700">Amount (USD)</label>
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Amount (USD)</label>
         <input
           type="number"
           step="0.01"
           min="0.01"
           required
-          className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+          className="mt-1 w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white border-gray-300 dark:border-slate-600"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700">Description</label>
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Description</label>
         <textarea
-          className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+          className="mt-1 w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white border-gray-300 dark:border-slate-600"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Optional"
@@ -81,9 +81,9 @@ export function StartPaymentForm() {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-700">Payment Method</label>
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Payment Method</label>
         <select
-          className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+          className="mt-1 w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white border-gray-300 dark:border-slate-600"
           value={method}
           onChange={(e) => setMethod(e.target.value as `CREDIT_CARD` | `BANK_ACCOUNT`)}
         >

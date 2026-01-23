@@ -99,7 +99,7 @@ export function PaymentsList() {
         <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border dark:border-slate-600">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-slate-500 border-b">
+              <tr className="text-left text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-600">
                 <th className="px-6 py-3">Counterparty</th>
                 <th className="px-6 py-3">Amount</th>
                 <th className="px-6 py-3">Status</th>
@@ -111,17 +111,17 @@ export function PaymentsList() {
             <tbody>
               {payments.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-6 text-center text-slate-500">
+                  <td colSpan={6} className="px-6 py-6 text-center text-slate-500 dark:text-slate-400">
                     No payments found
                   </td>
                 </tr>
               )}
 
               {payments.map((p: PaymentItem) => (
-                <tr key={p.id} className="border-b hover:bg-slate-50 transition cursor-pointer">
+                <tr key={p.id} className="border-b border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition cursor-pointer">
                   <td className="px-6 py-4">
-                    <div className="font-medium">{p.counterparty.email}</div>
-                    <div className="text-xs text-slate-500">{p.description || `—`}</div>
+                    <div className="font-medium text-gray-900 dark:text-white">{p.counterparty.email}</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">{p.description || `—`}</div>
                   </td>
 
                   <td className="px-6 py-4 font-semibold">${p.amount.toFixed(2)}</td>
@@ -130,24 +130,24 @@ export function PaymentsList() {
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-medium ${
                         p.status === `PENDING`
-                          ? `bg-yellow-100 text-yellow-800`
+                          ? `bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300`
                           : p.status === `COMPLETED`
-                            ? `bg-green-100 text-green-800`
+                            ? `bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300`
                             : p.status === `WAITING`
-                              ? `bg-blue-100 text-blue-800`
-                              : `bg-slate-100 text-slate-600`
+                              ? `bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300`
+                              : `bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300`
                       }`}
                     >
                       {p.status}
                     </span>
                   </td>
 
-                  <td className="px-6 py-4 text-slate-700">{p.type}</td>
+                  <td className="px-6 py-4 text-slate-700 dark:text-slate-300">{p.type}</td>
 
-                  <td className="px-6 py-4 text-slate-600">{new Date(p.createdAt).toLocaleDateString()}</td>
+                  <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{new Date(p.createdAt).toLocaleDateString()}</td>
 
                   <td className="px-6 py-4 text-right">
-                    <Link href={`/payments/${p.id}`} className="text-blue-600 font-medium hover:underline">
+                    <Link href={`/payments/${p.id}`} className="text-blue-600 dark:text-blue-400 font-medium hover:underline">
                       View →
                     </Link>
                   </td>
