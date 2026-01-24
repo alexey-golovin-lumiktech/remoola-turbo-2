@@ -250,4 +250,15 @@
                   integrated theme selection into user profile settings,
                   and added system preference detection with localStorage persistence (Consumer light/dark mode).
 
+- **2026-01-24:** Refactored consumer UI styling by centralizing and extracting reusable
+                  CSS class constants, introducing a `joinClasses` utility,
+                  migrating consumer components to CSS modules,
+                  and removing legacy class-name helpers,
+                  fixed dark mode by aligning theme classes and selectors,
+                  set default theme to SYSTEM in `user_settings`,
+                  renamed theme-related interfaces and settings for clarity,
+                  extracted reusable `FormCard` and `FormField` components,
+                  and fixed password change form by wrapping fields in a proper form,
+                  adding autocomplete support and preserving existing layout.
+
 ```
