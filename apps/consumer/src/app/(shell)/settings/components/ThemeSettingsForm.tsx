@@ -24,14 +24,14 @@ import {
   themeUpdating,
 } from '../../../../components/ui/classNames';
 
-interface ThemeOption {
+interface ThemeConfigOptions {
   value: ITheme;
   label: string;
   description: string;
   icon: string;
 }
 
-const themeSettings: ThemeOption[] = [
+const themeConfigOptions: ThemeConfigOptions[] = [
   {
     value: Theme.LIGHT,
     label: `Light`,
@@ -113,7 +113,7 @@ export function ThemeSettingsForm() {
       {theme === Theme.SYSTEM && <p className={themeDeviceHint}>Using device theme</p>}
 
       <div className={themeOptions}>
-        {themeSettings.map((option) => (
+        {themeConfigOptions.map((option) => (
           <label
             key={option.value}
             className={`${themeOptionBase} ${
