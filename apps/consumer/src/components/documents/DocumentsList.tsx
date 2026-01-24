@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { DocumentPreviewModal } from './DocumentPreviewModal';
-import {
+import styles from '../ui/classNames.module.css';
+
+const {
   attachButton,
   bulkActionsRow,
   checkboxBase,
@@ -28,7 +30,7 @@ import {
   textSm,
   uploadButtonPrimary,
   width40,
-} from '../ui/classNames';
+} = styles;
 
 type Doc = {
   id: string;

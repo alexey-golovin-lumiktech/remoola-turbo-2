@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react';
 
 import { type PaymentMethodItem } from '../../../types';
-import {
+import styles from '../../ui/classNames.module.css';
+
+const {
   checkboxSmall,
   flexRowItemsCenter,
   gap2,
@@ -27,7 +29,7 @@ import {
   spaceY3,
   textSm,
   textMutedGrayStrong,
-} from '../../ui/classNames';
+} = styles;
 
 type EditPaymentMethodModalProps = {
   open: boolean;

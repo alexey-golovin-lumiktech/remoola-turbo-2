@@ -3,7 +3,9 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 
-import { authCallbackContainer } from '../../../components/ui/classNames';
+import styles from '../../../components/ui/classNames.module.css';
+
+const { authCallbackContainer } = styles;
 
 export default function AuthCallback() {
   const router = useRouter();

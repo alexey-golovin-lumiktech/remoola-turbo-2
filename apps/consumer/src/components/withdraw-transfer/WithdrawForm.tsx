@@ -4,15 +4,33 @@ import { useState } from 'react';
 
 import { FormCard, FormField } from '../ui';
 import { SuccessModal } from './SuccessModal';
-import {
+import styles from '../ui/classNames.module.css';
+
+const {
   errorTextClass,
   formInputRoundedLgWithPrefix,
   inputPrefixIcon,
   flexRowGap3,
-  getToggleButtonClasses,
   primaryButtonClass,
   relativePosition,
-} from '../ui/classNames';
+} = styles;
+
+const joinClasses = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(` `);
+
+const pillToggleBase: Record<`md` | `lg`, string> = {
+  md: styles.pillToggleBaseMd!,
+  lg: styles.pillToggleBaseLg!,
+};
+
+const pillToggleActive = styles.pillToggleActive;
+const pillToggleInactiveMd = styles.pillToggleInactiveMd;
+const pillToggleInactiveLg = styles.pillToggleInactiveLg;
+
+const getToggleButtonClasses = (isActive: boolean, variant: `md` | `lg` = `md`) => {
+  const base = pillToggleBase[variant];
+  const state = isActive ? pillToggleActive : variant === `lg` ? pillToggleInactiveLg : pillToggleInactiveMd;
+  return joinClasses(base, state);
+};
 
 export function WithdrawForm() {
   const [amount, setAmount] = useState(``);

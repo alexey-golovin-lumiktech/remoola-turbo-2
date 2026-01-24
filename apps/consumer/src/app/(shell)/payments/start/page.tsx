@@ -1,12 +1,9 @@
 import { type Metadata } from 'next';
 
 import { StartPaymentForm } from '../../../../components';
-import {
-  pageStackContainer,
-  pageSubtitlePlain,
-  pageTitlePlain,
-  startPaymentCard,
-} from '../../../../components/ui/classNames';
+import styles from '../../../../components/ui/classNames.module.css';
+
+const { pageStackContainer, pageSubtitlePlain, pageTitlePlain, startPaymentCard } = styles;
 
 export const metadata: Metadata = {
   title: `Start Payment – Remoola`,

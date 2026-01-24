@@ -1,6 +1,8 @@
 'use client';
 
-import {
+import styles from '../ui/classNames.module.css';
+
+const {
   flexRowGap3,
   mlAuto,
   modalButtonPrimary,
@@ -8,7 +10,7 @@ import {
   successModalDescription,
   successModalOverlay,
   successModalTitle,
-} from '../ui/classNames';
+} = styles;
 
 import type { ReactNode } from 'react';
 

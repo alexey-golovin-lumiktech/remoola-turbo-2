@@ -3,20 +3,7 @@
 import { PasswordInput } from '@remoola/ui/PasswordInput';
 import { SelectWithClear } from '@remoola/ui/SelectWithClear';
 
-import {
-  formInputFullWidth,
-  getToggleButtonClasses,
-  signupGenerateButton,
-  signupPasswordInput,
-  signupPasswordRow,
-  signupStepCard,
-  signupStepGroup,
-  signupStepGroupLg,
-  signupStepLabelInline,
-  signupStepSubtitle,
-  signupStepTitleLg,
-  flexRowGap3,
-} from '../../../../../components/ui/classNames';
+import styles from '../../../../../components/ui/classNames.module.css';
 import {
   STEP_NAME,
   type IHowDidHearAboutUs,
@@ -28,6 +15,37 @@ import {
 import { useSignupForm, useSignupSteps } from '../../hooks';
 import { generatePassword } from '../../utils';
 import { PrevNextButtons } from '../PrevNextButtons';
+
+const {
+  formInputFullWidth,
+  signupGenerateButton,
+  signupPasswordInput,
+  signupPasswordRow,
+  signupStepCard,
+  signupStepGroup,
+  signupStepGroupLg,
+  signupStepLabelInline,
+  signupStepSubtitle,
+  signupStepTitleLg,
+  flexRowGap3,
+} = styles;
+
+const joinClasses = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(` `);
+
+const pillToggleBase: Record<`md` | `lg`, string> = {
+  md: styles.pillToggleBaseMd!,
+  lg: styles.pillToggleBaseLg!,
+};
+
+const pillToggleActive = styles.pillToggleActive;
+const pillToggleInactiveMd = styles.pillToggleInactiveMd;
+const pillToggleInactiveLg = styles.pillToggleInactiveLg;
+
+const getToggleButtonClasses = (isActive: boolean, variant: `md` | `lg` = `md`) => {
+  const base = pillToggleBase[variant];
+  const state = isActive ? pillToggleActive : variant === `lg` ? pillToggleInactiveLg : pillToggleInactiveMd;
+  return joinClasses(base, state);
+};
 
 export function SignupDetailsStep() {
   const { signupDetails: signup, updateSignup } = useSignupForm();

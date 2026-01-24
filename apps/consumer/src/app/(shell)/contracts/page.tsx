@@ -1,10 +1,7 @@
 import { ContractsTable } from '../../../components';
-import {
-  cardBaseSoftCompact,
-  pageStackContainer,
-  pageSubtitleGray,
-  pageTitleGray,
-} from '../../../components/ui/classNames';
+import styles from '../../../components/ui/classNames.module.css';
+
+const { cardBaseSoftCompact, pageStackContainer, pageSubtitleGray, pageTitleGray } = styles;
 
 export default async function ContractsPage() {
   return (

@@ -1,4 +1,6 @@
-import {
+import styles from './classNames.module.css';
+
+const {
   dashboardContainer,
   flexRowBetween,
   gridMainContent,
@@ -22,7 +24,7 @@ import {
   skeletonTablePadding,
   skeletonTextFiveSixths,
   skeletonTextFourSixths,
-} from './classNames';
+} = styles;
 
 // Simple className utility since @remoola/ui/utils doesn't exist
 function cn(...classes: (string | undefined | null | boolean)[]): string {

@@ -1,6 +1,6 @@
 'use client';
 
-import { formFieldDescription, formFieldLabel } from './classNames';
+import styles from './classNames.module.css';
 
 import type { ReactNode } from 'react';
 
@@ -12,6 +12,7 @@ export interface FormFieldProps {
 }
 
 export function FormField({ label, description, children, className = `` }: FormFieldProps) {
+  const { formFieldDescription, formFieldLabel } = styles;
   return (
     <div className={className}>
       <label className={formFieldLabel}>{label}</label>

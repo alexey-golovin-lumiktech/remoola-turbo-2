@@ -2,7 +2,10 @@
 
 import Link from 'next/link';
 
-import {
+import styles from '../../../../components/ui/classNames.module.css';
+import { useSignupSteps } from '../hooks';
+
+const {
   signupBackLink,
   signupLoginLink,
   signupLoginPrefix,
@@ -10,8 +13,7 @@ import {
   signupNavContainer,
   signupNavRow,
   signupNextButton,
-} from '../../../../components/ui/classNames';
-import { useSignupSteps } from '../hooks';
+} = styles;
 
 interface PrevNextButtonsProps {
   onNext?: () => void;

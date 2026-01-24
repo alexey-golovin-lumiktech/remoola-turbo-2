@@ -2,14 +2,7 @@
 
 import { SelectWithClear } from '@remoola/ui/SelectWithClear';
 
-import {
-  errorTextClass,
-  formInputFullWidth,
-  signupStepCard,
-  signupStepGroup,
-  signupStepLabel,
-  signupStepTitle,
-} from '../../../../../components/ui/classNames';
+import styles from '../../../../../components/ui/classNames.module.css';
 import {
   STEP_NAME,
   type IConsumerRole,
@@ -21,6 +14,8 @@ import {
 } from '../../../../../types';
 import { useSignupForm, useSignupSteps, useSignupSubmit } from '../../hooks';
 import { PrevNextButtons } from '../PrevNextButtons';
+
+const { errorTextClass, formInputFullWidth, signupStepCard, signupStepGroup, signupStepLabel, signupStepTitle } = styles;
 
 export function OrganizationDetailsStep() {
   const { isBusiness, isContractorEntity, organizationDetails, updateOrganization } = useSignupForm();

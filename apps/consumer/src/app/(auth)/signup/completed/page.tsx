@@ -2,7 +2,9 @@
 
 import Link from 'next/link';
 
-import {
+import styles from '../../../../components/ui/classNames.module.css';
+
+const {
   signupCompletedButton,
   signupCompletedCard,
   signupCompletedContainer,
@@ -12,7 +14,7 @@ import {
   signupCompletedText,
   signupCompletedTitle,
   signupCompletedBrand,
-} from '../../../../components/ui/classNames';
+} = styles;
 
 export default function SignupCompletedPage() {
   return (

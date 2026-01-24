@@ -2,14 +2,7 @@
 
 import { SelectWithClear } from '@remoola/ui/SelectWithClear';
 
-import {
-  formInputFullWidth,
-  signupStepCard,
-  signupStepGrid,
-  signupStepGroup,
-  signupStepLabel,
-  signupStepTitle,
-} from '../../../../../components/ui/classNames';
+import styles from '../../../../../components/ui/classNames.module.css';
 import {
   STEP_NAME,
   type ILegalStatusLabel,
@@ -19,6 +12,9 @@ import {
 } from '../../../../../types';
 import { useSignupForm, useSignupSteps } from '../../hooks';
 import { PrevNextButtons } from '../PrevNextButtons';
+
+const { formInputFullWidth, signupStepCard, signupStepGrid, signupStepGroup, signupStepLabel, signupStepTitle } =
+  styles;
 
 export function PersonalDetailsStep() {
   const { personalDetails: personal, updatePersonal } = useSignupForm();

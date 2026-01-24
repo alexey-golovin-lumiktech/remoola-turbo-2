@@ -1,5 +1,7 @@
 import ProfileSettingsClient from './components/ProfileSettingsClient';
-import { settingsPageContainer, settingsPageTitle } from '../../../components/ui/classNames';
+import styles from '../../../components/ui/classNames.module.css';
+
+const { settingsPageContainer, settingsPageTitle } = styles;
 
 export default async function SettingsPage() {
   return (

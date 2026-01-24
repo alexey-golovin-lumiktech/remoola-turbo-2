@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Theme, useTheme, type ITheme } from '../../../../components/ThemeProvider';
-import {
+import styles from '../../../../components/ui/classNames.module.css';
+
+const {
   themeCard,
   themeDescription,
   themeDeviceHint,
@@ -22,7 +24,7 @@ import {
   themeOptions,
   themeTitle,
   themeUpdating,
-} from '../../../../components/ui/classNames';
+} = styles;
 
 interface ThemeConfigOptions {
   value: ITheme;
@@ -70,6 +72,8 @@ export function ThemeSettingsForm() {
           const data = await response.json();
           if (data.theme) {
             setTheme(data.theme.toLowerCase());
+          } else {
+            setTheme(Theme.SYSTEM);
           }
         }
       } catch (error) {

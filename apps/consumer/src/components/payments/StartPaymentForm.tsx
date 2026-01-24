@@ -4,13 +4,9 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { FormField } from '../ui';
-import {
-  buttonDisabledOpacity,
-  buttonPrimaryRoundedCompact,
-  formFieldSpacing,
-  formInputFullWidth,
-  spaceY4,
-} from '../ui/classNames';
+import styles from '../ui/classNames.module.css';
+
+const { buttonDisabledOpacity, buttonPrimaryRoundedCompact, formFieldSpacing, formInputFullWidth, spaceY4 } = styles;
 
 export function StartPaymentForm() {
   const router = useRouter();

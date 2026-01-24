@@ -3,7 +3,9 @@
 import { CreditCard, Landmark, Star, Pencil, Trash2 } from 'lucide-react';
 
 import { type PaymentMethodItem } from '../../types';
-import {
+import styles from '../ui/classNames.module.css';
+
+const {
   actionButtonDanger,
   actionButtonPrimary,
   badgeDefaultInline,
@@ -19,7 +21,7 @@ import {
   paymentMethodRowTitle,
   spaceY4,
   textSm,
-} from '../ui/classNames';
+} = styles;
 
 type PaymentMethodsListProps = {
   payments: PaymentMethodItem[];

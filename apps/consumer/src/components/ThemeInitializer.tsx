@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 
-import { useTheme } from './ThemeProvider';
+import { Theme, useTheme } from './ThemeProvider';
 
 export function ThemeInitializer() {
   const { setTheme } = useTheme();
@@ -24,6 +24,8 @@ export function ThemeInitializer() {
           const data = await response.json();
           if (data.theme) {
             setTheme(data.theme.toLowerCase());
+          } else {
+            setTheme(Theme.SYSTEM);
           }
         }
       } catch (error) {

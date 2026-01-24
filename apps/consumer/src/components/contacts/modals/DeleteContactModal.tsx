@@ -1,7 +1,9 @@
 'use client';
 
 import { type ConsumerContact } from '../../../types';
-import {
+import styles from '../../ui/classNames.module.css';
+
+const {
   modalButtonDanger,
   modalButtonSecondary,
   modalContentMd,
@@ -11,7 +13,7 @@ import {
   modalTitleClass,
   mt4,
   py2,
-} from '../../ui/classNames';
+} = styles;
 
 type DeleteContactModalProps = {
   open: boolean;

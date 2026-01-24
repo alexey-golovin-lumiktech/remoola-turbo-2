@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 
-import {
+import styles from '../ui/classNames.module.css';
+
+const {
   rateCard,
   rateChangedText,
   rateEmpty,
@@ -13,7 +15,7 @@ import {
   rateRow,
   rateValue,
   rateValueChanged,
-} from '../ui/classNames';
+} = styles;
 
 type RateDisplayProps = {
   from: string; // CurrencyCode

@@ -1,6 +1,9 @@
 'use client';
 
-import {
+import styles from '../../../../components/ui/classNames.module.css';
+import { useSignupSteps } from '../hooks';
+
+const {
   stepperCircleActive,
   stepperCircleBase,
   stepperCircleComplete,
@@ -10,8 +13,7 @@ import {
   stepperLabelActive,
   stepperLabelBase,
   stepperLabelInactive,
-} from '../../../../components/ui/classNames';
-import { useSignupSteps } from '../hooks';
+} = styles;
 
 export function Stepper() {
   const { steps, currentStep } = useSignupSteps();

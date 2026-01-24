@@ -3,7 +3,9 @@
 import { loadStripe } from '@stripe/stripe-js';
 import { useState } from 'react';
 
-import { primaryActionButton } from '../../../ui/classNames';
+import styles from '../../../ui/classNames.module.css';
+
+const { primaryActionButton } = styles;
 export function VerifyMeButton() {
   const [loading, setLoading] = useState(false);
 

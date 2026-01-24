@@ -1,7 +1,9 @@
 'use client';
 
 import { type IActivityItem } from '../../types';
-import {
+import styles from '../ui/classNames.module.css';
+
+const {
   activityDate,
   activityDescription,
   activityDot,
@@ -13,7 +15,7 @@ import {
   activityRowBody,
   activityRowHeader,
   activityTitle,
-} from '../ui/classNames';
+} = styles;
 
 type ActivityTimelineProps = { activityTimelineItems: IActivityItem[] };
 

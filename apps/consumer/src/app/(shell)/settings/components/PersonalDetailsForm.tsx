@@ -3,15 +3,10 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-import {
-  formGridClass,
-  formGridSpan2,
-  formSection,
-  formSectionTitle,
-  inputClass,
-  inputLabel,
-  primaryActionButton,
-} from '../../../../components/ui/classNames';
+import styles from '../../../../components/ui/classNames.module.css';
+
+const { formGridClass, formGridSpan2, formSection, formSectionTitle, inputClass, inputLabel, primaryActionButton } =
+  styles;
 
 export function PersonalDetailsForm({ profile, reload }: any) {
   const pd = profile.personalDetails ?? {};

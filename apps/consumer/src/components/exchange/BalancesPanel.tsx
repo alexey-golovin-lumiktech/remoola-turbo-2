@@ -1,6 +1,8 @@
 'use client';
 
-import { balanceCard, balanceLabel, balanceValue, balancesLoading, balancesRow } from '../ui/classNames';
+import styles from '../ui/classNames.module.css';
+
+const { balanceCard, balanceLabel, balanceValue, balancesLoading, balancesRow } = styles;
 
 type BalanceMap = Record<string, number>;
 type BalancesPanelProps = { balances: BalanceMap };

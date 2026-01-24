@@ -4,7 +4,9 @@ import { useState } from 'react';
 
 import { FormCard, FormField } from '../ui';
 import { SuccessModal } from './SuccessModal';
-import {
+import styles from '../ui/classNames.module.css';
+
+const {
   errorTextClass,
   formInputRoundedLg,
   formInputRoundedLgWithPrefix,
@@ -12,7 +14,7 @@ import {
   primaryButtonClass,
   relativePosition,
   textMutedSlate,
-} from '../ui/classNames';
+} = styles;
 
 export function TransferForm() {
   const [amount, setAmount] = useState(``);

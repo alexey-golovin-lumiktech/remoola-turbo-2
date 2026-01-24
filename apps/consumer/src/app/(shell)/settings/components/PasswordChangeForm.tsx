@@ -1,15 +1,10 @@
 'use client';
 import { useState } from 'react';
 
-import {
-  errorTextClass,
-  formGrid,
-  formSection,
-  formSectionTitle,
-  inputClass,
-  inputLabel,
-  primaryActionButton,
-} from '../../../../components/ui/classNames';
+import styles from '../../../../components/ui/classNames.module.css';
+
+const { errorTextClass, formGrid, formSection, formSectionTitle, inputClass, inputLabel, primaryActionButton } =
+  styles;
 
 export function PasswordChangeForm({ reload }: any) {
   const [password, setPassword] = useState(``);

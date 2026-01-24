@@ -3,7 +3,9 @@
 import { useState } from 'react';
 
 import { type IAddressDetails } from '../../../types';
-import {
+import styles from '../../ui/classNames.module.css';
+
+const {
   contactModalInput,
   modalButtonPrimary,
   modalButtonSecondary,
@@ -12,7 +14,7 @@ import {
   modalOverlayClass,
   modalTitleClass,
   spaceY4,
-} from '../../ui/classNames';
+} = styles;
 
 type CreateContactModalProps = { open: boolean; onCloseAction: () => void; onCreatedAction: () => void };
 

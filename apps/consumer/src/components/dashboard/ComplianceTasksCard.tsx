@@ -3,7 +3,9 @@
 import { useMemo } from 'react';
 
 import { type IComplianceTask } from '../../types';
-import {
+import styles from '../ui/classNames.module.css';
+
+const {
   checkboxPrimary,
   complianceBar,
   complianceBarFill,
@@ -16,7 +18,7 @@ import {
   complianceProgressText,
   complianceSubtitle,
   complianceTitle,
-} from '../ui/classNames';
+} = styles;
 
 type ComplianceTasksCardProps = { tasks: IComplianceTask[] };
 export function ComplianceTasksCard({ tasks }: ComplianceTasksCardProps) {

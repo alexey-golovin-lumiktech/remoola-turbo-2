@@ -4,13 +4,15 @@ import { useEffect, useState } from 'react';
 
 import { TransferForm } from './TransferForm';
 import { WithdrawForm } from './WithdrawForm';
-import {
+import styles from '../ui/classNames.module.css';
+
+const {
   spaceY8,
   withdrawTransferBalance,
   withdrawTransferBalanceAmount,
   withdrawTransferContainer,
   withdrawTransferTitle,
-} from '../ui/classNames';
+} = styles;
 
 type BalanceMap = Record<string, number>;
 

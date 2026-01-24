@@ -6,7 +6,9 @@ import { useMemo, useState } from 'react';
 import { usePayments } from '../../lib/hooks';
 import { SkeletonTable } from '../ui';
 import { PaymentsFilters } from './PaymentsFilters';
-import {
+import styles from '../ui/classNames.module.css';
+
+const {
   badgeBase,
   badgeCompleted,
   badgeDefault,
@@ -36,7 +38,7 @@ import {
   textRight,
   textSecondary,
   textXsMuted,
-} from '../ui/classNames';
+} = styles;
 
 type PaymentItem = {
   id: string;

@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 
 import { PaymentDirection, TransactionStatus } from '@remoola/api-types';
 
-import {
+import styles from '../ui/classNames.module.css';
+
+const {
   pendingWithdrawalsAmount,
   pendingWithdrawalsBadge,
   pendingWithdrawalsCard,
@@ -15,7 +17,7 @@ import {
   pendingWithdrawalsItem,
   pendingWithdrawalsList,
   pendingWithdrawalsTitle,
-} from '../ui/classNames';
+} = styles;
 
 type Transaction = {
   id: string;

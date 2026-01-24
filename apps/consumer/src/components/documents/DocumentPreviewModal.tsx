@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 
 import { useFullscreen } from './useFullscreen';
 import { useResizable } from './useResizable';
-import {
+import styles from '../ui/classNames.module.css';
+
+const {
   docPreviewActionButton,
   docPreviewActionButtonSquare,
   docPreviewActions,
@@ -25,7 +27,7 @@ import {
   docPreviewTopbar,
   docPreviewZoomLabel,
   flexRowItemsCenter,
-} from '../ui/classNames';
+} = styles;
 
 interface DocumentPreviewModalProps {
   open: boolean;

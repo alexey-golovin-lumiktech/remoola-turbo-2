@@ -4,7 +4,9 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-import {
+import styles from '../../../../components/ui/classNames.module.css';
+
+const {
   verificationContainer,
   verificationEmail,
   verificationFailedTitle,
@@ -14,7 +16,7 @@ import {
   verificationText,
   verificationTitle,
   verificationUnknownTitle,
-} from '../../../../components/ui/classNames';
+} = styles;
 
 export default function Verification() {
   const searchParams = useSearchParams();

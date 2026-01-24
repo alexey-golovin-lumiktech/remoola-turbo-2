@@ -2,7 +2,9 @@
 
 import React, { Component, type ReactNode } from 'react';
 
-import {
+import styles from './classNames.module.css';
+
+const {
   emptyStateIcon,
   emptyStateIconSvg,
   errorBoundaryButtons,
@@ -18,7 +20,7 @@ import {
   sectionErrorIcon,
   sectionErrorText,
   textCenter,
-} from './classNames';
+} = styles;
 
 interface Props {
   children: ReactNode;

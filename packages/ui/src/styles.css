@@ -14,7 +14,7 @@
   --radius-xl: 22px;
 }
 
-.dark {
+:where(.dark, [data-theme="dark"]) {
   /* Dark theme */
   --bg-0: #0f172a;
   --bg-1: #1e293b;

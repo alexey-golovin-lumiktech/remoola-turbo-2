@@ -3,7 +3,11 @@
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
-import {
+import styles from '../../../../components/ui/classNames.module.css';
+import { type IAccountType, ACCOUNT_TYPE } from '../../../../types';
+import { useSignupForm } from '../hooks/useSignupForm';
+
+const {
   signupStartCard,
   signupStartHeader,
   signupStartInfo,
@@ -21,9 +25,7 @@ import {
   signupStartPageContainer,
   signupStartSubtitle,
   signupStartTitle,
-} from '../../../../components/ui/classNames';
-import { type IAccountType, ACCOUNT_TYPE } from '../../../../types';
-import { useSignupForm } from '../hooks/useSignupForm';
+} = styles;
 
 export default function ChooseAccountTypeStep() {
   const router = useRouter();

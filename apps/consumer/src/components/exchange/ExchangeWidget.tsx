@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 
 import { RateDisplay } from './RateDisplay';
-import {
+import styles from '../ui/classNames.module.css';
+
+const {
   exchangeAvailable,
   exchangeButton,
   exchangeCard,
@@ -12,7 +14,7 @@ import {
   exchangeLabel,
   exchangeRateText,
   exchangeResultText,
-} from '../ui/classNames';
+} = styles;
 
 const CURRENCIES = [`USD`, `EUR`, `JPY`, `GBP`, `AUD`] as const;
 

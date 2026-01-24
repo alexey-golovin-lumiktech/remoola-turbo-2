@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 
 import { BalancesPanel } from './BalancesPanel';
 import { ExchangeWidget } from './ExchangeWidget';
-import { exchangePageContainer, exchangePageTitle } from '../ui/classNames';
+import styles from '../ui/classNames.module.css';
+
+const { exchangePageContainer, exchangePageTitle } = styles;
 
 type BalanceMap = Record<string, number>;
 

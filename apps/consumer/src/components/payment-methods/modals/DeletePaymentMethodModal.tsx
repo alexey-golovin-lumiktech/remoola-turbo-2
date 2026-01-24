@@ -1,7 +1,9 @@
 'use client';
 
 import { type PaymentMethodItem } from '../../../types';
-import {
+import styles from '../../ui/classNames.module.css';
+
+const {
   modalButtonDanger,
   modalButtonSecondary,
   modalContentMd,
@@ -14,7 +16,7 @@ import {
   modalOverlayClass,
   modalParagraphClass,
   modalTitleClass,
-} from '../../ui/classNames';
+} = styles;
 
 type DeletePaymentMethodModalProps = {
   open: boolean;

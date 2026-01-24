@@ -11,7 +11,9 @@ import { PendingRequestsTable } from './PendingRequestsTable';
 import { PendingWithdrawalsCard } from './PendingWithdrawalsCard';
 import { QuickDocsCard } from './QuickDocsCard';
 import { SummaryCards } from './SummaryCards';
-import {
+import styles from '../ui/classNames.module.css';
+
+const {
   cardBaseSoftCompact,
   dashboardContainer,
   dashboardGrid,
@@ -23,7 +25,7 @@ import {
   errorBoundaryTitle,
   refreshButtonClass,
   textCenter,
-} from '../ui/classNames';
+} = styles;
 // Type is inferred from the hook
 
 export function DashboardDataView() {

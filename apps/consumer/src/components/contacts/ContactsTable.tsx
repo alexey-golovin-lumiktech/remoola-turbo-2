@@ -1,7 +1,9 @@
 'use client';
 
 import { type ConsumerContactAddress, type ConsumerContact } from '../../types';
-import {
+import styles from '../ui/classNames.module.css';
+
+const {
   emptyStateText,
   linkDanger,
   linkPrimary,
@@ -15,7 +17,7 @@ import {
   textRight,
   textSm,
   spaceX3,
-} from '../ui/classNames';
+} = styles;
 
 type ContactsTableProps = {
   items: ConsumerContact[];

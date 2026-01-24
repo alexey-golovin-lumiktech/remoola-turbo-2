@@ -4,7 +4,9 @@
 import { useState } from 'react';
 
 import { type ConsumerContact } from '../../types';
-import { contactViewButton, contactViewContainer, contactViewDetails, contactViewTitle } from '../ui/classNames';
+import styles from '../ui/classNames.module.css';
+
+const { contactViewButton, contactViewContainer, contactViewDetails, contactViewTitle } = styles;
 
 type ContactViewProps = { contact: ConsumerContact };
 

@@ -59,17 +59,29 @@ export function ThemeProvider({
   // Resolve theme based on user preference and system preference
   useEffect(() => {
     const root = window.document.documentElement;
+    const body = window.document.body;
 
     if (theme === Theme.SYSTEM) {
       const systemTheme = window.matchMedia(`(prefers-color-scheme: dark)`).matches ? Theme.DARK : Theme.LIGHT;
+      const nextTheme = systemTheme;
 
-      setResolvedTheme(systemTheme);
+      setResolvedTheme(nextTheme);
       root.classList.remove(`light`, `dark`);
-      root.classList.add(systemTheme);
+      body.classList.remove(`light`, `dark`);
+      root.classList.add(nextTheme);
+      body.classList.add(nextTheme);
+      root.dataset.theme = nextTheme;
+      body.dataset.theme = nextTheme;
     } else {
-      setResolvedTheme(theme);
+      const nextTheme = theme;
+
+      setResolvedTheme(nextTheme);
       root.classList.remove(`light`, `dark`);
-      root.classList.add(theme);
+      body.classList.remove(`light`, `dark`);
+      root.classList.add(nextTheme);
+      body.classList.add(nextTheme);
+      root.dataset.theme = nextTheme;
+      body.dataset.theme = nextTheme;
     }
 
     // Save to localStorage
@@ -88,11 +100,17 @@ export function ThemeProvider({
 
     const handleChange = () => {
       const root = window.document.documentElement;
+      const body = window.document.body;
       const systemTheme = mediaQuery.matches ? Theme.DARK : Theme.LIGHT;
+      const nextTheme = systemTheme;
 
-      setResolvedTheme(systemTheme);
+      setResolvedTheme(nextTheme);
       root.classList.remove(`light`, `dark`);
-      root.classList.add(systemTheme);
+      body.classList.remove(`light`, `dark`);
+      root.classList.add(nextTheme);
+      body.classList.add(nextTheme);
+      root.dataset.theme = nextTheme;
+      body.dataset.theme = nextTheme;
     };
 
     mediaQuery.addEventListener(`change`, handleChange);

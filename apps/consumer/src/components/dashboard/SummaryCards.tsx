@@ -1,15 +1,10 @@
 'use client';
 
 import { type IDashboardSummary } from '../../types';
-import {
-  cardBaseSoft,
-  summaryCardLabel,
-  summaryGrid,
-  summaryValueLg,
-  summaryValueMd,
-  summaryValueMeta,
-  summaryValueSm,
-} from '../ui/classNames';
+import styles from '../ui/classNames.module.css';
+
+const { cardBaseSoft, summaryCardLabel, summaryGrid, summaryValueLg, summaryValueMd, summaryValueMeta, summaryValueSm } =
+  styles;
 
 function formatMoney(cents: number, currency = `USD`) {
   return new Intl.NumberFormat(undefined, {

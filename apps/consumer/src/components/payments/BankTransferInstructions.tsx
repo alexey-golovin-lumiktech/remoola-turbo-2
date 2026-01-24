@@ -3,7 +3,9 @@
 import { Check, Clipboard, FileDown } from 'lucide-react';
 import { useState } from 'react';
 
-import {
+import styles from '../ui/classNames.module.css';
+
+const {
   bankTransferAlert,
   bankTransferAlertText,
   bankTransferAlertTitle,
@@ -30,7 +32,7 @@ import {
   stepIconInactive,
   stepLabelActive,
   stepLabelInactive,
-} from '../ui/classNames';
+} = styles;
 
 type BankDetails = {
   amount: number;

@@ -11,8 +11,10 @@ import {
   AddressDetailsStep,
 } from './components';
 import { useSignupForm, SignupStepsProvider, useSignupSteps } from './hooks';
-import { signupFlowContainer } from '../../../components/ui/classNames';
+import styles from '../../../components/ui/classNames.module.css';
 import { STEP_NAME } from '../../../types';
+
+const { signupFlowContainer } = styles;
 
 function SignupPageInner() {
   const router = useRouter();

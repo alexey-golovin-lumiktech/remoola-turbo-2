@@ -12,8 +12,8 @@
     "clean": "rm -rf ./node_modules ./.next"
   },
   "dependencies": {
-    "@remoola/ui": "^0.0.0",
     "@remoola/api-types": "^0.0.0",
+    "@remoola/ui": "^0.0.0",
     "@stripe/react-stripe-js": "^5.4.1",
     "@stripe/stripe-js": "^8.5.3",
     "framer-motion": "^12.23.24",
@@ -35,6 +35,7 @@
     "@types/react-dom": "19.1.1",
     "eslint": "^9.31.0",
     "eslint-config-next": "15.5.2",
+    "sass": "^1.97.3",
     "tailwindcss": "^4",
     "typescript": "5.8.2"
   }

@@ -1,7 +1,9 @@
 import { type Metadata } from 'next';
 
 import { DocumentsList } from '../../../components';
-import { pageContainer, pageSubtitle, pageTitle } from '../../../components/ui/classNames';
+import styles from '../../../components/ui/classNames.module.css';
+
+const { pageContainer, pageSubtitle, pageTitle } = styles;
 
 export const metadata: Metadata = {
   title: `Documents - Remoola`,

@@ -6,14 +6,16 @@ import { useEffect, useState } from 'react';
 import { ContactsTable } from './ContactsTable';
 import { CreateContactModal, DeleteContactModal, EditContactModal } from './modals';
 import { type ConsumerContact } from '../../types';
-import {
+import styles from '../ui/classNames.module.css';
+
+const {
   cardBaseSoftCompact,
   contactsAddButton,
   contactsPageContainer,
   contactsPageHeader,
   contactsPageSubtitle,
   contactsPageTitle,
-} from '../ui/classNames';
+} = styles;
 
 export function ContactsPageClient() {
   const router = useRouter();

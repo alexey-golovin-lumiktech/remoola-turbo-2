@@ -3,7 +3,11 @@
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
-import {
+import styles from '../../../../../components/ui/classNames.module.css';
+import { type IContractorKind, ACCOUNT_TYPE, CONTRACTOR_KIND } from '../../../../../types';
+import { useSignupForm } from '../../hooks';
+
+const {
   signupStartBackButton,
   signupStartCard,
   signupStartHeader,
@@ -22,9 +26,7 @@ import {
   signupStartPageContainer,
   signupStartSubtitle,
   signupStartTitle,
-} from '../../../../../components/ui/classNames';
-import { type IContractorKind, ACCOUNT_TYPE, CONTRACTOR_KIND } from '../../../../../types';
-import { useSignupForm } from '../../hooks';
+} = styles;
 
 export default function ChooseContractorKindStep() {
   const router = useRouter();

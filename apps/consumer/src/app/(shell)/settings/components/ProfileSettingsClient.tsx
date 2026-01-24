@@ -8,7 +8,9 @@ import { OrganizationDetailsForm } from './OrganizationDetailsForm';
 import { PasswordChangeForm } from './PasswordChangeForm';
 import { PersonalDetailsForm } from './PersonalDetailsForm';
 import { ThemeSettingsForm } from './ThemeSettingsForm';
-import { errorTextClass, spaceY10, textSecondary } from '../../../../components/ui/classNames';
+import styles from '../../../../components/ui/classNames.module.css';
+
+const { errorTextClass, spaceY10, textSecondary } = styles;
 
 export default function ProfileSettingsClient() {
   const [profile, setProfile] = useState<any>(null);

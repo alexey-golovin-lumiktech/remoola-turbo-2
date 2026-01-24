@@ -1,0 +1,2021 @@
+/* classNames.module.css */
+@reference "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.formInputBase {
+  @apply rounded-md border px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white border-gray-300 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500;
+}
+
+.formInputFullWidth {
+  @apply w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white border-gray-300 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500;
+}
+
+.formFieldSpacing {
+  @apply mt-1 w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white border-gray-300 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500;
+}
+
+.formInputRoundedLg {
+  @apply w-full rounded-lg border px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white border-gray-300 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500;
+}
+
+.formInputRoundedLgWithPrefix {
+  @apply w-full rounded-lg border px-7 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white border-gray-300 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500;
+}
+
+.formInputSmall {
+  @apply px-2 py-1 border rounded-md text-xs bg-white dark:bg-slate-800 text-gray-900 dark:text-white border-gray-300 dark:border-slate-600;
+}
+
+.searchInputClass {
+  @apply px-3 py-2 rounded-md border text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white border-gray-300 dark:border-slate-600 placeholder:text-gray-400 dark:placeholder:text-gray-500;
+}
+
+.modalFieldVariant {
+  @apply w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500;
+}
+
+.primaryButtonClass {
+  @apply w-full rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+.errorTextClass {
+  @apply text-sm text-red-600 dark:text-red-400;
+}
+
+.pillToggleBaseMd {
+  @apply flex-1 rounded-md border px-3 py-2 text-center text-sm transition;
+}
+
+.pillToggleBaseLg {
+  @apply flex-1 rounded-lg border px-3 py-2 text-sm transition;
+}
+
+.pillToggleActive {
+  @apply border-blue-600 bg-blue-50 dark:border-blue-400 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300;
+}
+
+.pillToggleInactiveMd {
+  @apply border-gray-300 text-gray-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300;
+}
+
+.pillToggleInactiveLg {
+  @apply border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600;
+}
+
+.methodToggleButtonBase {
+  @apply px-3 py-2 rounded-lg border text-sm font-medium text-center;
+}
+
+.methodToggleButtonActive {
+  @apply border-blue-600 bg-blue-600 text-white;
+}
+
+.methodToggleButtonInactive {
+  @apply border border-gray-300 dark:border-slate-600 bg-gray-100 dark:bg-slate-700 text-gray-900 dark:text-white;
+}
+
+.modalOverlayClass {
+  @apply fixed inset-0 bg-black/40 dark:bg-black/60 flex items-center justify-center z-50;
+}
+
+.modalContentLg {
+  @apply bg-white dark:bg-slate-800 rounded-2xl p-6 w-full shadow-xl max-w-lg;
+  animation: fadeIn 200ms ease-out;
+}
+
+.modalContentMd {
+  @apply bg-white dark:bg-slate-800 rounded-2xl p-6 w-full shadow-xl max-w-md;
+  animation: fadeIn 200ms ease-out;
+}
+
+.modalTitleClass {
+  @apply text-xl font-semibold text-gray-900 dark:text-white;
+}
+
+.modalHeaderRow {
+  @apply flex justify-between items-center;
+}
+
+.modalCloseButton {
+  @apply text-2xl leading-none px-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200;
+}
+
+.modalMetaLabel {
+  @apply text-sm text-gray-600 dark:text-gray-300;
+}
+
+.modalMetaValue {
+  @apply font-medium text-gray-900 dark:text-white;
+}
+
+.modalParagraphClass {
+  @apply text-gray-700 dark:text-gray-300 text-sm;
+}
+
+.modalInfoCard {
+  @apply border border-gray-200 dark:border-slate-600 rounded-lg bg-gray-50 dark:bg-slate-700;
+}
+
+.modalInfoTitle {
+  @apply font-medium text-gray-900 dark:text-white;
+}
+
+.modalInfoSubtext {
+  @apply text-sm text-gray-500 dark:text-gray-400;
+}
+
+.modalDefaultBadge {
+  @apply text-xs text-green-600 dark:text-green-400 font-medium mt-1;
+}
+
+.modalDangerNoticeClass {
+  @apply text-sm text-red-600 dark:text-red-400 mb-4;
+}
+
+.modalButtonSecondary {
+  @apply px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 text-sm text-gray-700 dark:text-gray-200 disabled:opacity-50;
+}
+
+.modalButtonDanger {
+  @apply px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 dark:hover:bg-red-500 text-sm;
+}
+
+.modalButtonPrimary {
+  @apply px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500 text-sm disabled:opacity-50;
+}
+
+.modalFooterActions {
+  @apply flex justify-end gap-2 pt-4;
+}
+
+.modalFooterActionsLg {
+  @apply flex justify-end gap-3 mt-6;
+}
+
+.successModalOverlay {
+  @apply fixed inset-0 z-40 flex items-center justify-center bg-black/30 dark:bg-black/60 backdrop-blur-sm;
+}
+
+.successModalContent {
+  @apply w-[90%] max-w-sm bg-white dark:bg-slate-800 rounded-xl p-6 shadow-xl;
+}
+
+.successModalTitle {
+  @apply mb-2 text-lg font-semibold text-gray-900 dark:text-white;
+}
+
+.successModalDescription {
+  @apply mb-4 text-sm text-gray-600 dark:text-gray-300;
+}
+
+.textPrimary {
+  @apply text-gray-900 dark:text-white;
+}
+
+.textSecondary {
+  @apply text-gray-600 dark:text-gray-300;
+}
+
+.textMuted {
+  @apply text-slate-500 dark:text-slate-400;
+}
+
+.textMutedGray {
+  @apply text-gray-500 dark:text-gray-400;
+}
+
+.textMutedSlate {
+  @apply text-gray-400 dark:text-slate-400;
+}
+
+.textMutedGrayStrong {
+  @apply text-gray-700 dark:text-gray-300;
+}
+
+.textMutedMixed {
+  @apply text-gray-600 dark:text-slate-400;
+}
+
+.textMutedGrayAlt {
+  @apply text-gray-700 dark:text-slate-300;
+}
+
+.textMutedSlateAlt {
+  @apply text-gray-400 dark:text-slate-500;
+}
+
+.linkPrimary {
+  @apply text-blue-600 dark:text-blue-400 hover:underline;
+}
+
+.linkPrimaryMedium {
+  @apply text-blue-600 dark:text-blue-400 hover:underline font-medium;
+}
+
+.linkDanger {
+  @apply text-red-500 dark:text-red-400 hover:underline;
+}
+
+.linkPrimaryUnderlineSm {
+  @apply text-blue-600 dark:text-blue-400 text-sm underline;
+}
+
+.cardBase {
+  @apply rounded-2xl bg-white dark:bg-slate-800 shadow-sm border dark:border-slate-600;
+}
+
+.cardBasePadded {
+  @apply rounded-2xl bg-white dark:bg-slate-800 shadow-sm border dark:border-slate-600 p-6;
+}
+
+.cardBaseSoft {
+  @apply rounded-2xl bg-white/90 dark:bg-slate-800/90 px-6 py-4 shadow-sm;
+}
+
+.cardBaseSoftCompact {
+  @apply rounded-2xl bg-white/90 dark:bg-slate-800/90 p-4 shadow-sm;
+}
+
+.tableContainer {
+  @apply bg-white dark:bg-slate-800 rounded-2xl shadow-sm border dark:border-slate-600;
+}
+
+.tableHeaderRow {
+  @apply text-left text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-600;
+}
+
+.tableHeaderRowMuted {
+  @apply text-left text-gray-400 dark:text-slate-500 border-b border-gray-200 dark:border-slate-600;
+}
+
+.tableHeaderRowMutedAlt {
+  @apply text-left text-gray-400 dark:text-slate-400 border-b border-gray-200 dark:border-slate-600;
+}
+
+.tableBodyRow {
+  @apply border-b border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition;
+}
+
+.tableBodyRowMuted {
+  @apply border-b border-gray-200 dark:border-slate-600 last:border-none hover:bg-gray-50 dark:hover:bg-slate-700/30;
+}
+
+.tableBodyRowMutedStrong {
+  @apply border-b border-gray-200 dark:border-slate-600 last:border-none hover:bg-gray-50 dark:hover:bg-slate-700/50;
+}
+
+.tableCellHeaderMd {
+  @apply px-4 py-3;
+}
+
+.tableCellHeaderLg {
+  @apply px-6 py-3;
+}
+
+.tableCellHeaderSimple {
+  @apply py-3;
+}
+
+.tableCellBodyMd {
+  @apply px-4 py-4;
+}
+
+.tableCellBodyLg {
+  @apply px-6 py-4;
+}
+
+.tableCellBodySimple {
+  @apply py-3;
+}
+
+.tableEmptyCell {
+  @apply px-6 py-6 text-center text-slate-500 dark:text-slate-400;
+}
+
+.badgeBase {
+  @apply px-3 py-1 rounded-full text-xs font-medium;
+}
+
+.badgePending {
+  @apply bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300;
+}
+
+.badgeCompleted {
+  @apply bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300;
+}
+
+.badgeWaiting {
+  @apply bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300;
+}
+
+.badgeDefault {
+  @apply bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300;
+}
+
+.badgeDefaultInline {
+  @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-full font-medium;
+}
+
+.buttonPrimaryRounded {
+  @apply rounded-full bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500 px-6 py-3 text-sm shadow;
+}
+
+.buttonPrimaryRoundedCompact {
+  @apply rounded-full bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500 px-6 py-2 text-sm font-semibold shadow;
+}
+
+.buttonPrimarySm {
+  @apply rounded-md bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500 px-4 py-2 text-sm;
+}
+
+.buttonSecondary {
+  @apply px-3 py-1 rounded-md bg-white dark:bg-slate-800 border dark:border-slate-600 shadow-sm text-gray-700 dark:text-gray-200 disabled:opacity-50;
+}
+
+.buttonDisabledCursor {
+  @apply disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.buttonDisabledOpacity {
+  @apply disabled:opacity-50;
+}
+
+.actionButtonPrimary {
+  @apply flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300;
+}
+
+.actionButtonDanger {
+  @apply flex items-center gap-1 text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300;
+}
+
+.inputPrefixIcon {
+  @apply pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-500 dark:text-slate-400;
+}
+
+.checkboxBase {
+  @apply rounded border-slate-300 dark:border-slate-600 text-blue-600 dark:text-blue-400;
+}
+
+.checkboxPrimary {
+  @apply h-4 w-4 rounded border-gray-300 dark:border-slate-600 text-blue-600 dark:text-blue-400;
+}
+
+.checkboxSmall {
+  @apply h-4 w-4;
+}
+
+.radioPrimary {
+  @apply text-blue-600 dark:text-blue-400;
+}
+
+.emptyStateContainer {
+  @apply flex items-center justify-center min-h-[400px] p-8;
+}
+
+.emptyStateIcon {
+  @apply rounded-full bg-red-100 dark:bg-red-900/20 p-3 mb-4 mx-auto w-fit;
+}
+
+.emptyStateIconSvg {
+  @apply w-8 h-8 text-red-600 dark:text-red-400;
+}
+
+.emptyStateText {
+  @apply text-center py-8 text-gray-400 dark:text-slate-400;
+}
+
+.emptyStateCentered {
+  @apply text-center py-10;
+}
+
+.emptyStateTitle {
+  @apply text-gray-400 dark:text-slate-500 mb-4;
+}
+
+.emptyStateBody {
+  @apply text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto;
+}
+
+.paymentMethodRow {
+  @apply flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-xl border dark:border-slate-600 shadow-sm hover:shadow transition;
+}
+
+.paymentMethodRowIcon {
+  @apply w-12 h-12 rounded-xl bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-700 dark:text-gray-300;
+}
+
+.paymentMethodRowTitle {
+  @apply font-semibold text-gray-900 dark:text-white;
+}
+
+.paymentMethodRowMeta {
+  @apply text-sm text-gray-500 dark:text-gray-400;
+}
+
+.textSm {
+  @apply text-sm;
+}
+
+.fontMedium {
+  @apply font-medium;
+}
+
+.textXs {
+  @apply text-xs;
+}
+
+.textXsMuted {
+  @apply text-xs text-slate-500 dark:text-slate-400;
+}
+
+.textMutedStrong {
+  @apply text-slate-700 dark:text-slate-300;
+}
+
+.spaceY2 {
+  @apply space-y-2;
+}
+
+.spaceY3 {
+  @apply space-y-3;
+}
+
+.spaceY4 {
+  @apply space-y-4;
+}
+
+.spaceY6 {
+  @apply space-y-6;
+}
+
+.spaceY8 {
+  @apply space-y-8;
+}
+
+.spaceY10 {
+  @apply space-y-10;
+}
+
+.flexRowItemsCenter {
+  @apply flex items-center;
+}
+
+.flexRowGap4 {
+  @apply flex gap-4 items-center;
+}
+
+.flexRowGap3 {
+  @apply flex gap-3;
+}
+
+.flexCol {
+  @apply flex flex-col;
+}
+
+.flexJustifyEnd {
+  @apply flex justify-end;
+}
+
+.gap2 {
+  @apply gap-2;
+}
+
+.flexRowGap3ItemsCenter {
+  @apply flex items-center gap-3;
+}
+
+.width64 {
+  @apply w-64;
+}
+
+.textCenter {
+  @apply text-center;
+}
+
+.textRight {
+  @apply text-right;
+}
+
+.cursorPointer {
+  @apply cursor-pointer;
+}
+
+.transitionColors {
+  @apply transition-colors;
+}
+
+.transitionDefault {
+  @apply transition;
+}
+
+.textCapitalize {
+  @apply capitalize;
+}
+
+.spaceX2 {
+  @apply space-x-2;
+}
+
+.spaceX3 {
+  @apply space-x-3;
+}
+
+.width40 {
+  @apply w-40;
+}
+
+.flexWrapItemsCenterGap4 {
+  @apply flex flex-wrap items-center gap-4;
+}
+
+.inlineFlexItemsCenterGap2 {
+  @apply inline-flex items-center gap-2;
+}
+
+.relativePosition {
+  @apply relative;
+}
+
+.mlAuto {
+  @apply ml-auto;
+}
+
+.mt4 {
+  @apply mt-4;
+}
+
+.py2 {
+  @apply py-2;
+}
+
+.p2 {
+  @apply p-2;
+}
+
+.p4 {
+  @apply p-4;
+}
+
+.mt3 {
+  @apply mt-3;
+}
+
+.mb2 {
+  @apply mb-2;
+}
+
+.mt1 {
+  @apply mt-1;
+}
+
+.uploadButtonPrimary {
+  @apply rounded-full bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500 px-4 py-2 text-sm font-semibold shadow cursor-pointer;
+}
+
+.hiddenInput {
+  @apply hidden;
+}
+
+.bulkActionsRow {
+  @apply flex items-center gap-2;
+}
+
+.dangerButtonSm {
+  @apply px-3 py-2 rounded-md border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 text-xs font-medium text-red-700 dark:text-red-300;
+}
+
+.attachButton {
+  @apply px-3 py-2 rounded-md border bg-slate-50 dark:bg-slate-700 text-xs font-medium text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-600;
+}
+
+.linkPrimaryXs {
+  @apply text-blue-600 dark:text-blue-400 text-xs font-medium hover:underline;
+}
+
+.refreshButtonClass {
+  @apply px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500 transition-colors;
+}
+
+.paymentViewLoading {
+  @apply p-8 text-slate-600 dark:text-slate-300;
+}
+
+.paymentViewNotFound {
+  @apply p-8;
+}
+
+.paymentViewContainer {
+  @apply px-8 py-6 flex flex-col gap-6;
+}
+
+.paymentViewTitle {
+  @apply text-2xl font-semibold text-slate-900 dark:text-white;
+}
+
+.paymentViewGrid {
+  @apply grid grid-cols-3 gap-6;
+}
+
+.paymentViewLeftCol {
+  @apply col-span-2 flex flex-col gap-6;
+}
+
+.paymentViewRightCol {
+  @apply col-span-1 flex flex-col gap-6;
+}
+
+.cardHeaderRow {
+  @apply flex justify-between mb-4;
+}
+
+.amountTitle {
+  @apply text-xl font-semibold text-gray-900 dark:text-white;
+}
+
+.descriptionText {
+  @apply text-sm text-slate-600 dark:text-slate-300;
+}
+
+.timestampText {
+  @apply mt-4 text-xs text-slate-500 dark:text-slate-400;
+}
+
+.sectionTitle {
+  @apply font-semibold mb-3 text-gray-900 dark:text-white;
+}
+
+.timelineItem {
+  @apply border-l border-slate-300 dark:border-slate-600 pl-4 ml-2 mb-4 relative;
+}
+
+.timelineDot {
+  @apply absolute w-3 h-3 bg-blue-600 dark:bg-blue-500 rounded-full -left-1 top-1;
+}
+
+.timelineTitle {
+  @apply text-sm font-semibold text-gray-900 dark:text-white;
+}
+
+.timelineMeta {
+  @apply text-xs text-slate-600 dark:text-slate-300;
+}
+
+.attachmentRow {
+  @apply flex justify-between items-center border-b border-slate-200 dark:border-slate-600 py-2;
+}
+
+.attachmentName {
+  @apply text-sm text-gray-900 dark:text-white;
+}
+
+.attachmentSize {
+  @apply text-xs text-slate-500 dark:text-slate-400;
+}
+
+.attachmentLink {
+  @apply text-blue-600 dark:text-blue-400 text-sm font-medium;
+}
+
+.selectableCardBase {
+  @apply p-3 border rounded-lg cursor-pointer transition-colors;
+}
+
+.selectableCardActive {
+  @apply border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400;
+}
+
+.selectableCardInactive {
+  @apply border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500;
+}
+
+.methodRowHeader {
+  @apply flex items-center justify-between;
+}
+
+.methodRowLeft {
+  @apply flex items-center gap-3;
+}
+
+.badgeBaseStrong {
+  @apply px-3 py-1 rounded-full text-xs font-semibold;
+}
+
+.badgeNeutral {
+  @apply bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300;
+}
+
+.badgeDefaultSm {
+  @apply ml-2 px-2 py-1 text-xs bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300 rounded;
+}
+
+.bankTransferContainer {
+  @apply max-w-3xl mx-auto pb-16;
+}
+
+.bankTransferStepper {
+  @apply flex items-center gap-4 mb-10;
+}
+
+.bankTransferAlert {
+  @apply bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300 p-4 rounded-xl mb-8;
+}
+
+.bankTransferAlertTitle {
+  @apply font-semibold mb-1;
+}
+
+.bankTransferAlertText {
+  @apply text-sm;
+}
+
+.bankTransferAmountRow {
+  @apply flex justify-between items-end mb-6;
+}
+
+.bankTransferAmountLabel {
+  @apply text-lg font-semibold mb-1 text-slate-900 dark:text-white;
+}
+
+.bankTransferAmountValue {
+  @apply text-2xl font-bold text-gray-900 dark:text-white;
+}
+
+.bankTransferDownloadButton {
+  @apply flex items-center gap-2 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500 rounded-lg shadow-sm;
+}
+
+.bankTransferCard {
+  @apply border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-6;
+}
+
+.bankTransferCardTitle {
+  @apply text-xl font-semibold mb-5 text-slate-800 dark:text-slate-200;
+}
+
+.bankTransferSwiftNote {
+  @apply mt-6 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl p-4 text-sm text-slate-700 dark:text-slate-300;
+}
+
+.bankTransferContinueButton {
+  @apply w-full mt-10 py-4 bg-green-600 hover:bg-green-700 dark:hover:bg-green-500 text-white font-semibold text-lg rounded-xl shadow;
+}
+
+.stepContainer {
+  @apply flex items-center gap-2;
+}
+
+.stepIconBase {
+  @apply w-5 h-5 rounded-full flex items-center justify-center;
+}
+
+.stepIconActive {
+  @apply bg-green-600 text-white;
+}
+
+.stepIconInactive {
+  @apply bg-slate-200 dark:bg-slate-600;
+}
+
+.stepLabelActive {
+  @apply text-slate-900 dark:text-white font-medium;
+}
+
+.stepLabelInactive {
+  @apply text-slate-400 dark:text-slate-500;
+}
+
+.fieldWrapper {
+  @apply mb-5;
+}
+
+.fieldLabel {
+  @apply text-sm font-medium mb-1 text-slate-500 dark:text-slate-400;
+}
+
+.fieldRow {
+  @apply flex items-center border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700 px-3 py-2;
+}
+
+.fieldValue {
+  @apply text-slate-900 dark:text-white font-medium truncate;
+}
+
+.fieldCopyButton {
+  @apply ml-auto text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200;
+}
+
+.fieldCopyIconActive {
+  @apply text-green-600 dark:text-green-400;
+}
+
+.fieldHelper {
+  @apply text-xs text-slate-500 dark:text-slate-400 mt-1;
+}
+
+.docPreviewOverlay {
+  @apply fixed inset-0 z-50 bg-black/40 dark:bg-black/60 flex items-center justify-center p-2 md:p-6;
+}
+
+.docPreviewModal {
+  @apply relative bg-white dark:bg-slate-900 rounded-xl shadow-xl overflow-hidden transition-all;
+}
+
+.docPreviewFullscreen {
+  @apply w-screen h-screen rounded-none;
+}
+
+.docPreviewTopbar {
+  @apply flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700;
+}
+
+.docPreviewTitle {
+  @apply font-semibold text-gray-900 dark:text-white;
+}
+
+.docPreviewMeta {
+  @apply text-xs text-gray-500 dark:text-gray-400;
+}
+
+.docPreviewActions {
+  @apply flex items-center gap-3;
+}
+
+.docPreviewActionButton {
+  @apply px-2 py-1 rounded-md border border-gray-200 dark:border-slate-600 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700;
+}
+
+.docPreviewActionButtonSquare {
+  @apply px-2 py-1 border border-gray-200 dark:border-slate-600 rounded text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700;
+}
+
+.docPreviewZoomLabel {
+  @apply text-sm w-10 text-center;
+}
+
+.docPreviewCloseButton {
+  @apply text-xl px-2 text-gray-700 dark:text-gray-200;
+}
+
+.docPreviewContent {
+  @apply flex h-[calc(100%-50px)] overflow-hidden bg-gray-100 dark:bg-slate-900;
+}
+
+.docPreviewSidebar {
+  @apply hidden md:block w-32 border-r border-gray-200 dark:border-slate-700 overflow-auto bg-gray-200 dark:bg-slate-800 p-2;
+}
+
+.docPreviewSidebarLabel {
+  @apply text-xs text-center text-gray-500 dark:text-gray-400;
+}
+
+.docPreviewDocument {
+  @apply flex-1 overflow-auto flex justify-center items-start p-4;
+}
+
+.docPreviewIframe {
+  @apply w-full h-full;
+}
+
+.docPreviewImage {
+  @apply object-contain;
+}
+
+.docPreviewDragHandle {
+  @apply absolute bottom-0 right-0 w-6 h-6 cursor-se-resize opacity-50 hover:opacity-100;
+}
+
+.docPreviewDragHandleIcon {
+  @apply w-full h-full bg-gray-400/40 dark:bg-slate-700/50 rounded-tr-md;
+}
+
+.loginContainer {
+  @apply mx-auto max-w-md p-8;
+}
+
+.loginTitle {
+  @apply mb-4 text-2xl font-semibold text-gray-900 dark:text-white;
+}
+
+.loginForm {
+  @apply space-y-3;
+}
+
+.loginErrorText {
+  @apply mt-1 whitespace-pre-wrap text-sm text-rose-600 dark:text-rose-400;
+}
+
+.loginButton {
+  @apply rounded-md bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500 px-4 py-2 text-sm;
+}
+
+.loginFooter {
+  @apply mt-6 text-center text-sm text-gray-600 dark:text-gray-300;
+}
+
+.withdrawTransferContainer {
+  @apply mx-auto max-w-2xl px-4 py-8;
+}
+
+.withdrawTransferTitle {
+  @apply mb-2 text-2xl font-semibold text-gray-900 dark:text-white;
+}
+
+.withdrawTransferBalance {
+  @apply mb-2 text-sm text-gray-700 dark:text-gray-300;
+}
+
+.withdrawTransferBalanceAmount {
+  @apply font-semibold;
+}
+
+.contactsPageContainer {
+  @apply flex flex-col gap-6 px-8 py-6;
+}
+
+.contactsPageHeader {
+  @apply flex items-center justify-between;
+}
+
+.contactsPageTitle {
+  @apply text-2xl font-semibold text-gray-900 dark:text-white;
+}
+
+.contactsPageSubtitle {
+  @apply text-sm text-gray-500 dark:text-gray-400;
+}
+
+.contactsAddButton {
+  @apply px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500 shadow-sm transition;
+}
+
+.contactDetailsContainer {
+  @apply p-8 space-y-8;
+}
+
+.contactDetailsTitle {
+  @apply text-2xl font-semibold text-gray-900 dark:text-white;
+}
+
+.contactDetailsSubtitle {
+  @apply text-gray-600 dark:text-gray-300;
+}
+
+.contactDetailsCard {
+  @apply rounded-xl bg-white dark:bg-slate-800 p-4 shadow dark:border dark:border-slate-600;
+}
+
+.contactDetailsCardTitle {
+  @apply font-semibold mb-2 text-gray-900 dark:text-white;
+}
+
+.contactDetailsCardTitleLg {
+  @apply font-semibold mb-4 text-gray-900 dark:text-white;
+}
+
+.contactDetailsPre {
+  @apply text-sm text-gray-700 dark:text-gray-300;
+}
+
+.contactDetailsPaymentList {
+  @apply space-y-2;
+}
+
+.contactDetailsPaymentLink {
+  @apply block border border-gray-200 dark:border-slate-600 px-4 py-2 rounded hover:bg-gray-50 dark:hover:bg-slate-700/50 text-gray-900 dark:text-white;
+}
+
+.contactDetailsPaymentMeta {
+  @apply text-xs text-gray-500 dark:text-slate-400;
+}
+
+.contactDetailsEmptyText {
+  @apply text-gray-400 dark:text-slate-500;
+}
+
+.contactDetailsDocsGrid {
+  @apply grid grid-cols-2 gap-4;
+}
+
+.contactDetailsDocCard {
+  @apply border border-gray-200 dark:border-slate-600 rounded p-3 bg-gray-50 dark:bg-slate-700;
+}
+
+.contactModalInput {
+  @apply w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 bg-white dark:bg-slate-800 text-gray-900 dark:text-white;
+}
+
+.contactViewContainer {
+  @apply p-8 space-y-4;
+}
+
+.contactViewTitle {
+  @apply text-xl font-semibold;
+}
+
+.contactViewDetails {
+  @apply space-y-2;
+}
+
+.contactViewButton {
+  @apply px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500;
+}
+
+.formCardBase {
+  @apply space-y-4 rounded-xl border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 p-6 shadow-sm;
+}
+
+.formCardTitle {
+  @apply text-lg font-semibold text-gray-900 dark:text-white;
+}
+
+.formCardDescription {
+  @apply text-sm text-slate-600 dark:text-slate-300;
+}
+
+.formFieldLabel {
+  @apply mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300;
+}
+
+.formFieldDescription {
+  @apply text-xs text-gray-500 dark:text-slate-400 mb-2;
+}
+
+.errorBoundaryContainer {
+  @apply flex flex-col items-center justify-center min-h-[400px] p-8 text-center;
+}
+
+.errorBoundaryTitle {
+  @apply text-xl font-semibold mb-2 text-gray-900 dark:text-white;
+}
+
+.errorBoundaryText {
+  @apply text-gray-600 dark:text-gray-300 mb-6 max-w-md;
+}
+
+.errorBoundaryButtons {
+  @apply space-x-4;
+}
+
+.errorBoundaryRetryButton {
+  @apply px-4 py-2 bg-gray-600 dark:bg-slate-600 text-white rounded-lg hover:bg-gray-700 dark:hover:bg-slate-500 transition-colors;
+}
+
+.errorDetails {
+  @apply mt-6 text-left;
+}
+
+.errorDetailsSummary {
+  @apply cursor-pointer text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200;
+}
+
+.errorDetailsPre {
+  @apply mt-2 p-4 bg-gray-100 dark:bg-slate-800 rounded text-xs overflow-auto max-w-full text-gray-900 dark:text-gray-100;
+}
+
+.sectionErrorFallback {
+  @apply flex items-center justify-center p-8 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg;
+}
+
+.sectionErrorIcon {
+  @apply w-6 h-6 text-red-600 dark:text-red-400 mx-auto mb-2;
+}
+
+.sectionErrorText {
+  @apply text-sm text-red-700 dark:text-red-300;
+}
+
+.quickDocsHeader {
+  @apply mb-3 flex items-center justify-between;
+}
+
+.quickDocsTitle {
+  @apply text-sm font-semibold text-slate-900 dark:text-white;
+}
+
+.quickDocsLink {
+  @apply text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline;
+}
+
+.quickDocsEmpty {
+  @apply text-sm text-slate-400 dark:text-slate-500;
+}
+
+.quickDocsList {
+  @apply space-y-2 text-sm;
+}
+
+.quickDocsItem {
+  @apply flex items-center justify-between rounded-lg bg-slate-50 dark:bg-slate-700 px-3 py-2;
+}
+
+.quickDocsName {
+  @apply truncate text-slate-800 dark:text-slate-200;
+}
+
+.quickDocsDate {
+  @apply whitespace-nowrap text-xs text-slate-400 dark:text-slate-500;
+}
+
+.complianceHeader {
+  @apply mb-3 flex items-center justify-between;
+}
+
+.complianceTitle {
+  @apply text-sm font-semibold text-slate-900 dark:text-white;
+}
+
+.complianceSubtitle {
+  @apply text-xs text-slate-500 dark:text-slate-400;
+}
+
+.complianceProgressText {
+  @apply text-xs font-medium text-blue-600 dark:text-blue-400;
+}
+
+.complianceBar {
+  @apply mb-3 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700;
+}
+
+.complianceBarFill {
+  @apply h-full rounded-full bg-blue-500 transition-[width];
+}
+
+.complianceList {
+  @apply space-y-2;
+}
+
+.complianceItem {
+  @apply flex items-center gap-2 text-sm;
+}
+
+.complianceLabelDone {
+  @apply text-slate-400 dark:text-slate-500 line-through;
+}
+
+.complianceLabelOpen {
+  @apply text-slate-700 dark:text-slate-300;
+}
+
+.complianceEmpty {
+  @apply text-sm text-slate-400 dark:text-slate-500;
+}
+
+.summaryGrid {
+  @apply grid gap-4 md:grid-cols-3;
+}
+
+.summaryCardLabel {
+  @apply text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400;
+}
+
+.summaryValueLg {
+  @apply mt-2 text-3xl font-semibold text-slate-900 dark:text-white;
+}
+
+.summaryValueMd {
+  @apply mt-2 text-2xl font-semibold text-slate-900 dark:text-white;
+}
+
+.summaryValueSm {
+  @apply mt-2 text-lg font-semibold text-slate-900 dark:text-white;
+}
+
+.summaryValueMeta {
+  @apply text-sm font-normal text-slate-500 dark:text-slate-400;
+}
+
+.pendingRequestsSection {
+  @apply w-full;
+}
+
+.pendingRequestsHeader {
+  @apply mb-3 flex items-center justify-between;
+}
+
+.pendingRequestsTitle {
+  @apply text-sm font-semibold text-slate-900 dark:text-white;
+}
+
+.pendingRequestsTableWrapper {
+  @apply overflow-hidden rounded-xl border border-slate-100 dark:border-slate-600;
+}
+
+.pendingRequestsTable {
+  @apply min-w-full divide-y divide-slate-100 dark:divide-slate-600 bg-white dark:bg-slate-800 text-sm;
+}
+
+.pendingRequestsHead {
+  @apply bg-slate-50 dark:bg-slate-700;
+}
+
+.pendingRequestsHeadCell {
+  @apply px-4 py-2 text-left text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400;
+}
+
+.pendingRequestsHeadCellRight {
+  @apply px-4 py-2 text-right text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400;
+}
+
+.pendingRequestsBody {
+  @apply divide-y divide-slate-50 dark:divide-slate-600;
+}
+
+.pendingRequestsEmptyCell {
+  @apply px-4 py-6 text-center text-sm text-slate-400 dark:text-slate-500;
+}
+
+.pendingRequestsCell {
+  @apply px-4 py-3 text-sm text-slate-900 dark:text-white;
+}
+
+.pendingRequestsStatus {
+  @apply px-4 py-3 text-xs font-medium uppercase tracking-wide text-blue-600 dark:text-blue-400;
+}
+
+.pendingRequestsDate {
+  @apply px-4 py-3 text-right text-xs text-slate-500 dark:text-slate-400;
+}
+
+.dashboardContainer {
+  @apply flex h-full flex-col gap-6 px-8 py-6;
+}
+
+.dashboardGrid {
+  @apply grid gap-4 md:grid-cols-[2fr,1fr];
+}
+
+.dashboardSidebar {
+  @apply flex flex-col gap-4;
+}
+
+.pendingWithdrawalsCard {
+  @apply border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm;
+}
+
+.pendingWithdrawalsHeader {
+  @apply mb-2 flex items-center justify-between;
+}
+
+.pendingWithdrawalsTitle {
+  @apply text-sm font-semibold text-gray-900 dark:text-white;
+}
+
+.pendingWithdrawalsCount {
+  @apply text-xs text-gray-500 dark:text-gray-400;
+}
+
+.pendingWithdrawalsHint {
+  @apply text-xs text-gray-500 dark:text-gray-400;
+}
+
+.pendingWithdrawalsList {
+  @apply space-y-2 text-xs;
+}
+
+.pendingWithdrawalsItem {
+  @apply flex items-center justify-between rounded-lg bg-gray-50 dark:bg-slate-700 px-3 py-2;
+}
+
+.pendingWithdrawalsAmount {
+  @apply font-medium text-gray-900 dark:text-white;
+}
+
+.pendingWithdrawalsCode {
+  @apply text-[11px] text-gray-500 dark:text-gray-400;
+}
+
+.pendingWithdrawalsBadge {
+  @apply rounded-full bg-yellow-100 dark:bg-yellow-900/20 px-2 py-0.5 text-[11px] font-medium text-yellow-800 dark:text-yellow-300;
+}
+
+.activityHeader {
+  @apply mb-3 flex items-center justify-between;
+}
+
+.activityTitle {
+  @apply text-sm font-semibold text-slate-900 dark:text-white;
+}
+
+.activityList {
+  @apply space-y-3;
+}
+
+.activityEmpty {
+  @apply text-sm text-slate-400 dark:text-slate-500;
+}
+
+.activityRow {
+  @apply flex items-start gap-3;
+}
+
+.activityDot {
+  @apply mt-1 h-2 w-2 flex-shrink-0 rounded-full bg-blue-500;
+}
+
+.activityRowBody {
+  @apply flex-1;
+}
+
+.activityRowHeader {
+  @apply flex items-center justify-between;
+}
+
+.activityLabel {
+  @apply text-sm font-medium text-slate-900 dark:text-white;
+}
+
+.activityDate {
+  @apply text-xs text-slate-400 dark:text-slate-500;
+}
+
+.activityDescription {
+  @apply text-xs text-slate-500 dark:text-slate-400;
+}
+
+.dashboardHeader {
+  @apply flex flex-col gap-1;
+}
+
+.dashboardHeaderTitle {
+  @apply text-2xl font-semibold text-slate-900 dark:text-white;
+}
+
+.dashboardHeaderSubtitle {
+  @apply text-sm text-slate-500 dark:text-slate-400;
+}
+
+.actionRowGrid {
+  @apply grid gap-4 md:grid-cols-[2fr,1fr];
+}
+
+.actionRowCard {
+  @apply flex items-center justify-between rounded-2xl bg-white/90 dark:bg-slate-800/90 px-6 py-4 shadow-sm;
+}
+
+.actionRowTitle {
+  @apply text-sm font-medium text-slate-900 dark:text-white;
+}
+
+.actionRowSubtitle {
+  @apply text-xs text-slate-500 dark:text-slate-400;
+}
+
+.actionRowButton {
+  @apply rounded-full bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500 px-5 py-2 text-sm font-semibold shadow;
+}
+
+.signupNavContainer {
+  @apply mt-6 space-y-4;
+}
+
+.signupNavRow {
+  @apply flex items-center justify-between text-sm;
+}
+
+.signupBackLink {
+  @apply text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200;
+}
+
+.signupLoginText {
+  @apply text-right text-gray-600 dark:text-gray-300;
+}
+
+.signupLoginPrefix {
+  @apply mr-1;
+}
+
+.signupLoginLink {
+  @apply font-medium text-blue-600 dark:text-blue-400 hover:underline;
+}
+
+.signupNextButton {
+  @apply w-full rounded-md bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500 px-4 py-2 text-sm font-semibold;
+}
+
+.signupStartPageContainer {
+  @apply flex min-h-screen items-center justify-center bg-gray-50 dark:bg-slate-900 px-4;
+}
+
+.signupStartCard {
+  @apply w-full max-w-xl space-y-8 text-center;
+}
+
+.signupStartHeader {
+  @apply space-y-1;
+}
+
+.signupStartSubtitle {
+  @apply text-sm text-gray-500 dark:text-gray-400;
+}
+
+.signupStartTitle {
+  @apply text-3xl font-semibold;
+}
+
+.signupStartOptions {
+  @apply flex gap-5 justify-center;
+}
+
+.signupStartOptionBase {
+  @apply flex h-40 w-40 flex-col items-center justify-center rounded-xl border transition-all;
+}
+
+.signupStartOptionActive {
+  @apply border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20 shadow-sm;
+}
+
+.signupStartOptionInactive {
+  @apply border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700;
+}
+
+.signupStartOptionEmoji {
+  @apply text-4xl mb-2;
+}
+
+.signupStartOptionLabelBase {
+  @apply text-sm font-semibold;
+}
+
+.signupStartOptionLabelActive {
+  @apply text-blue-700 dark:text-blue-300;
+}
+
+.signupStartOptionLabelInactive {
+  @apply text-gray-700 dark:text-gray-300;
+}
+
+.signupStartInfo {
+  @apply text-left text-sm text-gray-600 dark:text-gray-300 mx-auto max-w-sm space-y-1;
+}
+
+.signupStartInfoTitle {
+  @apply font-medium;
+}
+
+.signupStartList {
+  @apply list-disc list-inside space-y-1;
+}
+
+.signupStartNextButton {
+  @apply w-full rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500 px-5 py-3 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.signupStartBackButton {
+  @apply block w-full text-sm text-gray-500 dark:text-gray-400 mt-2 hover:underline;
+}
+
+.signupCompletedContainer {
+  @apply min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900 px-4;
+}
+
+.signupCompletedCard {
+  @apply w-full max-w-md rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-8 shadow-sm text-center;
+}
+
+.signupCompletedIconWrap {
+  @apply flex justify-center mb-6;
+}
+
+.signupCompletedIcon {
+  @apply h-14 w-14 text-green-500 dark:text-green-400;
+}
+
+.signupCompletedTitle {
+  @apply text-2xl font-semibold mb-2 text-gray-900 dark:text-white;
+}
+
+.signupCompletedSubtitle {
+  @apply text-lg mb-6 text-gray-600 dark:text-gray-300;
+}
+
+.signupCompletedBrand {
+  @apply font-semibold text-indigo-600 dark:text-indigo-400;
+}
+
+.signupCompletedText {
+  @apply text-gray-600 dark:text-gray-300 mb-8 leading-relaxed;
+}
+
+.signupCompletedButton {
+  @apply block w-full rounded-lg bg-indigo-600 py-3 text-white font-medium hover:bg-indigo-700 dark:hover:bg-indigo-500 transition;
+}
+
+.verificationContainer {
+  @apply flex flex-col items-center justify-center min-h-screen text-center p-6;
+}
+
+.verificationTitle {
+  @apply text-2xl font-semibold mb-3 text-gray-900 dark:text-white;
+}
+
+.verificationText {
+  @apply text-gray-600 dark:text-gray-300 mb-6;
+}
+
+.verificationLink {
+  @apply text-blue-600 dark:text-blue-400 hover:underline;
+}
+
+.verificationSuccessTitle {
+  @apply text-3xl font-bold text-green-600 dark:text-green-400 mb-3;
+}
+
+.verificationFailedTitle {
+  @apply text-3xl font-bold text-red-600 dark:text-red-400 mb-3;
+}
+
+.verificationUnknownTitle {
+  @apply text-3xl font-bold mb-3 text-gray-700 dark:text-gray-300;
+}
+
+.verificationMutedText {
+  @apply text-gray-500 dark:text-gray-400 mb-6;
+}
+
+.verificationEmail {
+  @apply font-mono;
+}
+
+.signupFlowContainer {
+  @apply flex flex-col items-center px-4 py-8;
+}
+
+.stepperContainer {
+  @apply flex items-center justify-between w-full max-w-md mx-auto mt-5 mb-8 gap-3;
+}
+
+.stepperItem {
+  @apply flex flex-col items-center flex-1 text-center;
+}
+
+.stepperCircleBase {
+  @apply flex h-9 w-9 items-center justify-center rounded-full border text-sm transition;
+}
+
+.stepperCircleActive {
+  @apply border-blue-600 bg-blue-600 text-white;
+}
+
+.stepperCircleComplete {
+  @apply border-green-600 bg-green-600 text-white;
+}
+
+.stepperCircleInactive {
+  @apply border border-gray-300 dark:border-slate-600 text-gray-500 dark:text-slate-400;
+}
+
+.stepperLabelBase {
+  @apply mt-2 text-[11px] leading-tight;
+}
+
+.stepperLabelActive {
+  @apply font-semibold text-blue-600 dark:text-blue-400;
+}
+
+.stepperLabelInactive {
+  @apply text-gray-500 dark:text-gray-400;
+}
+
+.signupStepCard {
+  @apply w-full max-w-md space-y-4 rounded bg-white dark:bg-slate-800 p-6 shadow-sm;
+}
+
+.signupStepTitle {
+  @apply mb-2 text-lg font-semibold text-gray-900 dark:text-white;
+}
+
+.signupStepTitleLg {
+  @apply mb-1 text-xl font-semibold text-gray-900 dark:text-white;
+}
+
+.signupStepSubtitle {
+  @apply mb-4 text-sm text-gray-600 dark:text-gray-300;
+}
+
+.signupStepGrid {
+  @apply grid grid-cols-2 gap-3;
+}
+
+.signupStepGroup {
+  @apply space-y-1;
+}
+
+.signupStepLabel {
+  @apply block text-xs font-medium text-gray-700 dark:text-gray-300;
+}
+
+.signupStepGroupLg {
+  @apply space-y-2;
+}
+
+.signupStepLabelInline {
+  @apply text-xs font-medium text-gray-700 dark:text-gray-300;
+}
+
+.signupPasswordRow {
+  @apply flex gap-2;
+}
+
+.signupPasswordInput {
+  @apply flex-1;
+}
+
+.signupGenerateButton {
+  @apply whitespace-nowrap rounded-md border border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 text-xs font-medium text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30;
+}
+
+.shellContainer {
+  @apply mx-auto flex gap-6 px-3 py-4 sm:px-6 lg:px-8;
+}
+
+.shellAside {
+  @apply sticky top-4 hidden h-[calc(100vh-2rem)] w-64 shrink-0 rounded-3xl bg-blue-900 p-4 text-white shadow-xl lg:block;
+}
+
+.shellBrandRow {
+  @apply flex items-center gap-2 px-2 py-3;
+}
+
+.shellBrandIcon {
+  @apply h-8 w-8 rounded-xl bg-white/20;
+}
+
+.shellBrandText {
+  @apply text-lg font-bold tracking-tight;
+}
+
+.shellNav {
+  @apply mt-6 space-y-1;
+}
+
+.shellFooter {
+  @apply absolute bottom-4 left-0 right-0 px-4 text-xs text-white/70;
+}
+
+.shellMain {
+  @apply flex-1;
+}
+
+.shellHeader {
+  @apply mb-5 flex items-center gap-3;
+}
+
+.shellSearchWrap {
+  @apply relative w-full;
+}
+
+.shellSearchInput {
+  @apply w-full rounded-xl border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm shadow-sm outline-none focus:ring-2 focus:ring-blue-500 dark:text-white dark:placeholder:text-gray-400;
+}
+
+.shellSearchHint {
+  @apply pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500;
+}
+
+.shellLogout {
+  @apply grid h-10 w-10 place-items-center rounded-full bg-white dark:bg-slate-800 shadow-sm ring-1 ring-black/5 dark:ring-white/10 dark:text-white;
+}
+
+.pageContainer {
+  @apply px-8 py-6;
+}
+
+.pageTitle {
+  @apply text-2xl font-semibold mb-2 text-slate-900 dark:text-white;
+}
+
+.pageSubtitle {
+  @apply text-sm text-slate-500 dark:text-slate-400 mb-6;
+}
+
+.pageStackContainer {
+  @apply flex flex-col gap-6 px-8 py-6;
+}
+
+.pageTitleGray {
+  @apply text-2xl font-semibold text-gray-900 dark:text-white;
+}
+
+.pageSubtitleGray {
+  @apply text-sm text-gray-500 dark:text-gray-400;
+}
+
+.pageTitlePlain {
+  @apply text-2xl font-semibold text-slate-900 dark:text-white;
+}
+
+.pageSubtitlePlain {
+  @apply text-sm text-slate-500 dark:text-slate-400;
+}
+
+.startPaymentCard {
+  @apply rounded-2xl bg-white dark:bg-slate-800 p-6 shadow-sm max-w-xl border border-slate-200 dark:border-slate-600;
+}
+
+.pageHeaderRow {
+  @apply flex justify-between items-center;
+}
+
+.primaryActionButton {
+  @apply px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500 transition;
+}
+
+.settingsPageContainer {
+  @apply mx-auto max-w-3xl px-4 py-8;
+}
+
+.settingsPageTitle {
+  @apply text-2xl font-semibold mb-4 text-gray-900 dark:text-white;
+}
+
+.formSection {
+  @apply border p-6 rounded-xl bg-white shadow-sm space-y-6 border-gray-200 dark:bg-slate-800 dark:border-slate-600;
+}
+
+.formSectionTitle {
+  @apply text-lg font-semibold text-gray-900 dark:text-white;
+}
+
+.formGrid {
+  @apply grid gap-4;
+}
+
+.inputLabel {
+  @apply block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1;
+}
+
+.inputClass {
+  @apply w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 border-gray-300 dark:bg-slate-800 dark:text-white dark:border-slate-600;
+}
+
+.formGridClass {
+  @apply grid grid-cols-2 gap-4;
+}
+
+.formGridSpan2 {
+  @apply col-span-2;
+}
+
+.themeCard {
+  @apply border p-6 rounded-xl bg-white dark:bg-slate-800 shadow-sm dark:border-slate-600;
+}
+
+.themeTitle {
+  @apply text-lg font-semibold mb-4 text-gray-900 dark:text-white;
+}
+
+.themeDescription {
+  @apply text-sm text-gray-600 dark:text-gray-300 mb-6;
+}
+
+.themeDeviceHint {
+  @apply text-xs text-gray-500 dark:text-gray-400 mb-6;
+}
+
+.themeOptions {
+  @apply space-y-3;
+}
+
+.themeOptionBase {
+  @apply flex items-center p-4 rounded-lg border cursor-pointer transition-colors;
+}
+
+.themeOptionActive {
+  @apply border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400;
+}
+
+.themeOptionInactive {
+  @apply border-gray-200 bg-gray-50 hover:bg-gray-100 dark:border-slate-600 dark:bg-slate-700 dark:hover:bg-slate-600;
+}
+
+.themeOptionDisabled {
+  @apply opacity-50 pointer-events-none;
+}
+
+.themeOptionInput {
+  @apply sr-only;
+}
+
+.themeOptionBody {
+  @apply flex items-center flex-1;
+}
+
+.themeOptionIcon {
+  @apply text-2xl mr-4;
+}
+
+.themeOptionLabel {
+  @apply font-medium text-gray-900 dark:text-white;
+}
+
+.themeOptionText {
+  @apply text-sm text-gray-600 dark:text-gray-300;
+}
+
+.themeOptionCheck {
+  @apply w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center;
+}
+
+.themeOptionCheckInner {
+  @apply w-2 h-2 rounded-full bg-white dark:bg-slate-200;
+}
+
+.themeUpdating {
+  @apply mt-4 text-sm text-gray-600 dark:text-gray-300;
+}
+
+.authCallbackContainer {
+  @apply flex h-screen items-center justify-center text-gray-600 dark:text-gray-300;
+}
+
+.balancesLoading {
+  @apply text-sm text-gray-500 dark:text-gray-400 mb-6;
+}
+
+.balancesRow {
+  @apply flex gap-4 mb-6;
+}
+
+.balanceCard {
+  @apply flex-1 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 p-4 text-center shadow-sm;
+}
+
+.balanceLabel {
+  @apply text-xs text-gray-500 dark:text-gray-400;
+}
+
+.balanceValue {
+  @apply text-lg font-semibold text-gray-900 dark:text-white;
+}
+
+.rateCard {
+  @apply mt-2 rounded-lg bg-gray-50 dark:bg-slate-800 px-4 py-3 text-sm flex flex-col gap-1 border border-gray-200 dark:border-slate-700;
+}
+
+.rateLoading {
+  @apply text-gray-500 dark:text-gray-400 text-xs;
+}
+
+.rateRow {
+  @apply flex items-center gap-2;
+}
+
+.rateFrom {
+  @apply font-semibold;
+}
+
+.rateEquals {
+  @apply text-gray-700 dark:text-gray-300;
+}
+
+.rateValue {
+  @apply font-semibold transition-all;
+}
+
+.rateValueChanged {
+  @apply text-green-600 dark:text-green-400 scale-[1.05];
+}
+
+.rateInverse {
+  @apply text-xs text-gray-600 dark:text-gray-300;
+}
+
+.rateChangedText {
+  @apply text-xs text-green-600 dark:text-green-400;
+}
+
+.rateEmpty {
+  @apply text-gray-500 dark:text-gray-400 text-xs;
+}
+
+.exchangeCard {
+  @apply rounded-xl border bg-white dark:bg-slate-800 p-6 shadow dark:border-slate-600;
+}
+
+.exchangeAvailable {
+  @apply mb-2 text-sm text-gray-600 dark:text-gray-300;
+}
+
+.exchangeForm {
+  @apply space-y-4;
+}
+
+.exchangeLabel {
+  @apply text-sm text-gray-700 dark:text-gray-300;
+}
+
+.exchangeField {
+  @apply border border-gray-300 dark:border-slate-600 rounded p-2 w-full bg-white dark:bg-slate-800 text-gray-900 dark:text-white;
+}
+
+.exchangeRateText {
+  @apply text-sm text-gray-500 dark:text-gray-400;
+}
+
+.exchangeResultText {
+  @apply text-sm font-semibold text-gray-900 dark:text-white;
+}
+
+.exchangeButton {
+  @apply w-full p-2 bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500 rounded disabled:opacity-50;
+}
+
+.exchangePageContainer {
+  @apply mx-auto max-w-2xl p-6;
+}
+
+.exchangePageTitle {
+  @apply text-2xl font-bold mb-6;
+}
+
+.flexRowBetween {
+  @apply flex items-center justify-between;
+}
+
+.gridGap4 {
+  @apply grid gap-4;
+}
+
+.gridSummaryCards {
+  @apply grid gap-4 md:grid-cols-2 lg:grid-cols-4;
+}
+
+.gridMainContent {
+  @apply grid gap-4 md:grid-cols-[2fr,1fr];
+}
+
+.skeletonBase {
+  @apply animate-pulse rounded-md bg-gray-200 dark:bg-slate-700;
+}
+
+.skeletonLine {
+  @apply h-4 w-full;
+}
+
+.skeletonSpaceY2 {
+  @apply space-y-2;
+}
+
+.skeletonSpaceY3 {
+  @apply space-y-3;
+}
+
+.skeletonSpaceY4 {
+  @apply space-y-4;
+}
+
+.skeletonCard {
+  @apply rounded-2xl bg-white/90 dark:bg-slate-800/90 p-6 shadow-sm;
+}
+
+.skeletonCardTitle {
+  @apply h-6 w-1/3;
+}
+
+.skeletonTextFiveSixths {
+  @apply h-4 w-5/6;
+}
+
+.skeletonTextFourSixths {
+  @apply h-4 w-4/6;
+}
+
+.skeletonTableContainer {
+  @apply bg-white dark:bg-slate-800 rounded-2xl shadow-sm border dark:border-slate-600;
+}
+
+.skeletonTablePadding {
+  @apply p-6;
+}
+
+.skeletonHeaderCell {
+  @apply h-4 w-20;
+}
+
+.skeletonRow {
+  @apply grid gap-4 py-3 border-b last:border-b-0;
+}
+
+.skeletonCellShort {
+  @apply w-24;
+}
+
+.skeletonCellTiny {
+  @apply w-16;
+}
+
+.skeletonHeaderBlock {
+  @apply grid gap-4 mb-4;
+}
+
+.skeletonHeaderTitle {
+  @apply h-8 w-48;
+}
+
+.skeletonHeaderAction {
+  @apply h-10 w-32;
+}
+
+.skeletonCardPadding {
+  @apply p-4;
+}

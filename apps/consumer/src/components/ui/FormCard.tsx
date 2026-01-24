@@ -1,6 +1,6 @@
 'use client';
 
-import { formCardBase, formCardDescription, formCardTitle } from './classNames';
+import styles from './classNames.module.css';
 
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 
@@ -10,6 +10,7 @@ export interface FormCardProps extends ComponentPropsWithoutRef<`form`> {
 }
 
 export function FormCard({ title, description, children, className = ``, ...props }: FormCardProps) {
+  const { formCardBase, formCardDescription, formCardTitle } = styles;
   return (
     <form {...props} className={`${formCardBase} ${className}`.trim()}>
       {title && <h2 className={formCardTitle}>{title}</h2>}

@@ -1,7 +1,9 @@
 'use client';
 
 import { type IPendingRequest } from '../../types';
-import {
+import styles from '../ui/classNames.module.css';
+
+const {
   pendingRequestsBody,
   pendingRequestsCell,
   pendingRequestsDate,
@@ -15,7 +17,7 @@ import {
   pendingRequestsTable,
   pendingRequestsTableWrapper,
   pendingRequestsTitle,
-} from '../ui/classNames';
+} = styles;
 
 function formatAmount(amount: number, currency: string) {
   return new Intl.NumberFormat(undefined, {

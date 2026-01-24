@@ -4,7 +4,9 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 import { type ConsumerContractItem } from '../../types';
-import {
+import styles from '../ui/classNames.module.css';
+
+const {
   emptyStateText,
   linkPrimary,
   tableBodyRowMutedStrong,
@@ -17,7 +19,7 @@ import {
   textPrimary,
   textRight,
   textSm,
-} from '../ui/classNames';
+} = styles;
 
 export function ContractsTable() {
   const [contracts, setContracts] = useState<ConsumerContractItem[]>([]);

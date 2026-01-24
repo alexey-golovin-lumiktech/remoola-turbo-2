@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react';
 
 import { type ConsumerContactAddress, type ConsumerContact } from '../../../types';
-import {
+import styles from '../../ui/classNames.module.css';
+
+const {
   contactModalInput,
   modalButtonPrimary,
   modalButtonSecondary,
@@ -12,7 +14,7 @@ import {
   modalOverlayClass,
   modalTitleClass,
   spaceY4,
-} from '../../ui/classNames';
+} = styles;
 
 type EditContactModalProps = {
   open: boolean;

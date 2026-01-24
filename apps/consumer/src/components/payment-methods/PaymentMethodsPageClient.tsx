@@ -5,13 +5,9 @@ import { useEffect, useState } from 'react';
 import { AddPaymentMethodModal, DeletePaymentMethodModal, EditPaymentMethodModal } from './modals';
 import { PaymentMethodsList } from './PaymentMethodsList';
 import { type PaymentMethodItem } from '../../types';
-import {
-  pageHeaderRow,
-  pageStackContainer,
-  pageSubtitleGray,
-  pageTitleGray,
-  primaryActionButton,
-} from '../ui/classNames';
+import styles from '../ui/classNames.module.css';
+
+const { pageHeaderRow, pageStackContainer, pageSubtitleGray, pageTitleGray, primaryActionButton } = styles;
 
 export function PaymentMethodsPageClient() {
   const [payments, setPayments] = useState<PaymentMethodItem[]>([]);

@@ -4,7 +4,9 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 import { type ConsumerContactDetails } from '../../types';
-import {
+import styles from '../ui/classNames.module.css';
+
+const {
   contactDetailsCard,
   contactDetailsCardTitle,
   contactDetailsCardTitleLg,
@@ -21,7 +23,7 @@ import {
   linkPrimaryUnderlineSm,
   textPrimary,
   fontMedium,
-} from '../ui/classNames';
+} = styles;
 
 type ContactDetailsViewProps = { id: ConsumerContactDetails[`id`] };
 

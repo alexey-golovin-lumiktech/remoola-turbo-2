@@ -3,7 +3,9 @@
 import Link from 'next/link';
 
 import { type IQuickDoc } from '../../types';
-import {
+import styles from '../ui/classNames.module.css';
+
+const {
   quickDocsDate,
   quickDocsEmpty,
   quickDocsHeader,
@@ -12,7 +14,7 @@ import {
   quickDocsList,
   quickDocsName,
   quickDocsTitle,
-} from '../ui/classNames';
+} = styles;
 
 type QuickDocsCardProps = { docs: IQuickDoc[] };
 

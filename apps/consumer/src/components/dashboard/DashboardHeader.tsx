@@ -1,6 +1,8 @@
 'use client';
 
-import { dashboardHeader, dashboardHeaderSubtitle, dashboardHeaderTitle } from '../ui/classNames';
+import styles from '../ui/classNames.module.css';
+
+const { dashboardHeader, dashboardHeaderSubtitle, dashboardHeaderTitle } = styles;
 
 export function DashboardHeader() {
   return (

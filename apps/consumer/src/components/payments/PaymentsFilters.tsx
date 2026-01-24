@@ -1,6 +1,8 @@
 'use client';
 
-import { flexRowGap3ItemsCenter, formInputBase, searchInputClass, width64 } from '../ui/classNames';
+import styles from '../ui/classNames.module.css';
+
+const { flexRowGap3ItemsCenter, formInputBase, searchInputClass, width64 } = styles;
 
 type PaymentsFiltersProps = {
   status: string;

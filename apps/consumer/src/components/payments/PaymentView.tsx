@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 
-import {
+import styles from '../ui/classNames.module.css';
+
+const {
   amountTitle,
   attachmentLink,
   attachmentName,
@@ -45,7 +47,7 @@ import {
   timelineMeta,
   timelineTitle,
   timestampText,
-} from '../ui/classNames';
+} = styles;
 
 type PaymentViewProps = { paymentRequestId: string };
 

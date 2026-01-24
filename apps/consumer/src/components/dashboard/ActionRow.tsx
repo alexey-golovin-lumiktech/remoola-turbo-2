@@ -2,7 +2,9 @@
 
 import { useRouter } from 'next/navigation';
 
-import { actionRowButton, actionRowCard, actionRowGrid, actionRowSubtitle, actionRowTitle } from '../ui/classNames';
+import styles from '../ui/classNames.module.css';
+
+const { actionRowButton, actionRowCard, actionRowGrid, actionRowSubtitle, actionRowTitle } = styles;
 
 export function ActionRow() {
   const router = useRouter();

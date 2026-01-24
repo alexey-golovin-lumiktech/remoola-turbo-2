@@ -4,7 +4,9 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 
-import {
+import styles from '../../components/ui/classNames.module.css';
+
+const {
   formInputFullWidth,
   linkPrimary,
   loginButton,
@@ -13,7 +15,7 @@ import {
   loginFooter,
   loginForm,
   loginTitle,
-} from '../../components/ui/classNames';
+} = styles;
 
 export default function LoginForm() {
   const router = useRouter();

@@ -6,7 +6,9 @@ import { useMemo, useState } from 'react';
 
 import { type StripeSetupIntentPayload, type PaymentMethodType, type CreatePaymentMethodDto } from '../../../types';
 import { useTheme } from '../../ThemeProvider';
-import {
+import styles from '../../ui/classNames.module.css';
+
+const {
   checkboxPrimary,
   flexRowGap3,
   flexRowItemsCenter,
@@ -27,7 +29,7 @@ import {
   spaceY3,
   textMutedGrayStrong,
   textSm,
-} from '../../ui/classNames';
+} = styles;
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
