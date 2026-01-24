@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { FormCard, FormField } from '../ui';
 import { SuccessModal } from './SuccessModal';
 
 export function WithdrawForm() {
@@ -51,12 +52,12 @@ export function WithdrawForm() {
   };
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4 rounded-xl border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Withdraw funds</h2>
-      <p className="text-sm text-gray-600 dark:text-slate-300">Send money from your balance to your card or bank account.</p>
-
-      <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">Amount</label>
+    <FormCard
+      onSubmit={onSubmit}
+      title="Withdraw funds"
+      description="Send money from your balance to your card or bank account."
+    >
+      <FormField label="Amount">
         <div className="relative">
           <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-500 dark:text-slate-400">$</span>
           <input
@@ -69,10 +70,9 @@ export function WithdrawForm() {
             placeholder="0.00"
           />
         </div>
-      </div>
+      </FormField>
 
-      <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-300">Withdraw to</label>
+      <FormField label="Withdraw to">
         <div className="flex gap-3">
           <button
             type="button"
@@ -97,15 +97,14 @@ export function WithdrawForm() {
             Bank account
           </button>
         </div>
-      </div>
+      </FormField>
 
       {err && <p className="text-sm text-red-600 dark:text-red-400">{err}</p>}
 
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-lg bg-blue-600 py-2 text-sm font-medium
-        text-white transition hover:bg-blue-700 dark:hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+        className="w-full rounded-lg bg-blue-600 py-2 text-sm font-medium text-white transition hover:bg-blue-700 dark:hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading ? `Processing…` : `Withdraw`}
       </button>
@@ -116,6 +115,6 @@ export function WithdrawForm() {
         description="Your withdrawal request has been submitted. You`ll see it in your transactions shortly."
         onCloseAction={() => setSuccessOpen(false)}
       />
-    </form>
+    </FormCard>
   );
 }

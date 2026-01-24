@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import { FormField } from '../ui';
+
 export function StartPaymentForm() {
   const router = useRouter();
 
@@ -46,8 +48,7 @@ export function StartPaymentForm() {
       }}
       className="space-y-4"
     >
-      <div>
-        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Recipient Email</label>
+      <FormField label="Recipient Email">
         <input
           type="email"
           required
@@ -55,10 +56,9 @@ export function StartPaymentForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
-      </div>
+      </FormField>
 
-      <div>
-        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Amount (USD)</label>
+      <FormField label="Amount (USD)">
         <input
           type="number"
           step="0.01"
@@ -68,20 +68,18 @@ export function StartPaymentForm() {
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
         />
-      </div>
+      </FormField>
 
-      <div>
-        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Description</label>
+      <FormField label="Description">
         <textarea
           className="mt-1 w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white border-gray-300 dark:border-slate-600"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Optional"
         />
-      </div>
+      </FormField>
 
-      <div>
-        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Payment Method</label>
+      <FormField label="Payment Method">
         <select
           className="mt-1 w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white border-gray-300 dark:border-slate-600"
           value={method}
@@ -90,7 +88,7 @@ export function StartPaymentForm() {
           <option value="CREDIT_CARD">Credit Card</option>
           <option value="BANK_ACCOUNT">Bank Account</option>
         </select>
-      </div>
+      </FormField>
 
       <button
         disabled={loading}
