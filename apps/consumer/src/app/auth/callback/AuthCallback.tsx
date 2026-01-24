@@ -3,6 +3,8 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 
+import { authCallbackContainer } from '../../../components/ui/classNames';
+
 export default function AuthCallback() {
   const router = useRouter();
   const params = useSearchParams();
@@ -32,5 +34,5 @@ export default function AuthCallback() {
     return () => clearInterval(interval);
   }, [router, next]);
 
-  return <div className="flex h-screen items-center justify-center text-gray-600 dark:text-gray-300">Redirecting…</div>;
+  return <div className={authCallbackContainer}>Redirecting…</div>;
 }

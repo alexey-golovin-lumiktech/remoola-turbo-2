@@ -6,6 +6,37 @@ import { useMemo, useState } from 'react';
 import { usePayments } from '../../lib/hooks';
 import { SkeletonTable } from '../ui';
 import { PaymentsFilters } from './PaymentsFilters';
+import {
+  badgeBase,
+  badgeCompleted,
+  badgeDefault,
+  badgePending,
+  badgeWaiting,
+  buttonSecondary,
+  cursorPointer,
+  emptyStateContainer,
+  emptyStateIcon,
+  emptyStateIconSvg,
+  flexJustifyEnd,
+  gap2,
+  linkPrimaryMedium,
+  refreshButtonClass,
+  spaceY6,
+  tableBodyRow,
+  tableCellBodyLg,
+  tableCellHeaderLg,
+  tableContainer,
+  tableEmptyCell,
+  tableHeaderRow,
+  textCenter,
+  textSm,
+  textMuted,
+  textMutedStrong,
+  textPrimary,
+  textRight,
+  textSecondary,
+  textXsMuted,
+} from '../ui/classNames';
 
 type PaymentItem = {
   id: string;
@@ -55,10 +86,10 @@ export function PaymentsList() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-[400px] p-8">
-        <div className="text-center">
-          <div className="rounded-full bg-red-100 dark:bg-red-900/20 p-3 mb-4 mx-auto w-fit">
-            <svg className="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className={emptyStateContainer}>
+        <div className={textCenter}>
+          <div className={emptyStateIcon}>
+            <svg className={emptyStateIconSvg} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -68,12 +99,9 @@ export function PaymentsList() {
               />
             </svg>
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Failed to load payments</h2>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">{error.message}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-500 transition-colors"
-          >
+          <h2 className={`text-xl font-semibold ${textPrimary} mb-2`}>Failed to load payments</h2>
+          <p className={`${textSecondary} mb-6`}>{error.message}</p>
+          <button onClick={() => window.location.reload()} className={refreshButtonClass}>
             Refresh Page
           </button>
         </div>
@@ -82,7 +110,7 @@ export function PaymentsList() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className={spaceY6}>
       <PaymentsFilters
         status={status}
         type={type}
@@ -96,58 +124,58 @@ export function PaymentsList() {
       {isLoading ? (
         <SkeletonTable rows={8} cols={6} />
       ) : (
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border dark:border-slate-600">
-          <table className="w-full text-sm">
+        <div className={tableContainer}>
+          <table className={`w-full ${textSm}`}>
             <thead>
-              <tr className="text-left text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-600">
-                <th className="px-6 py-3">Counterparty</th>
-                <th className="px-6 py-3">Amount</th>
-                <th className="px-6 py-3">Status</th>
-                <th className="px-6 py-3">Type</th>
-                <th className="px-6 py-3">Date</th>
-                <th className="px-6 py-3"></th>
+              <tr className={tableHeaderRow}>
+                <th className={tableCellHeaderLg}>Counterparty</th>
+                <th className={tableCellHeaderLg}>Amount</th>
+                <th className={tableCellHeaderLg}>Status</th>
+                <th className={tableCellHeaderLg}>Type</th>
+                <th className={tableCellHeaderLg}>Date</th>
+                <th className={tableCellHeaderLg}></th>
               </tr>
             </thead>
             <tbody>
               {payments.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-6 text-center text-slate-500 dark:text-slate-400">
+                  <td colSpan={6} className={tableEmptyCell}>
                     No payments found
                   </td>
                 </tr>
               )}
 
               {payments.map((p: PaymentItem) => (
-                <tr key={p.id} className="border-b border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition cursor-pointer">
-                  <td className="px-6 py-4">
-                    <div className="font-medium text-gray-900 dark:text-white">{p.counterparty.email}</div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400">{p.description || `—`}</div>
+                <tr key={p.id} className={`${tableBodyRow} ${cursorPointer}`}>
+                  <td className={tableCellBodyLg}>
+                    <div className={`font-medium ${textPrimary}`}>{p.counterparty.email}</div>
+                    <div className={textXsMuted}>{p.description || `—`}</div>
                   </td>
 
-                  <td className="px-6 py-4 font-semibold text-gray-900 dark:text-white">${p.amount.toFixed(2)}</td>
+                  <td className={`${tableCellBodyLg} font-semibold ${textPrimary}`}>${p.amount.toFixed(2)}</td>
 
-                  <td className="px-6 py-4">
+                  <td className={tableCellBodyLg}>
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      className={`${badgeBase} ${
                         p.status === `PENDING`
-                          ? `bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300`
+                          ? badgePending
                           : p.status === `COMPLETED`
-                            ? `bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300`
+                            ? badgeCompleted
                             : p.status === `WAITING`
-                              ? `bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300`
-                              : `bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300`
+                              ? badgeWaiting
+                              : badgeDefault
                       }`}
                     >
                       {p.status}
                     </span>
                   </td>
 
-                  <td className="px-6 py-4 text-slate-700 dark:text-slate-300">{p.type}</td>
+                  <td className={`${tableCellBodyLg} ${textMutedStrong}`}>{p.type}</td>
 
-                  <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{new Date(p.createdAt).toLocaleDateString()}</td>
+                  <td className={`${tableCellBodyLg} ${textMuted}`}>{new Date(p.createdAt).toLocaleDateString()}</td>
 
-                  <td className="px-6 py-4 text-right">
-                    <Link href={`/payments/${p.id}`} className="text-blue-600 dark:text-blue-400 font-medium hover:underline">
+                  <td className={`${tableCellBodyLg} ${textRight}`}>
+                    <Link href={`/payments/${p.id}`} className={linkPrimaryMedium}>
                       View →
                     </Link>
                   </td>
@@ -160,18 +188,14 @@ export function PaymentsList() {
 
       {/* Pagination */}
       {totalPages > 1 && !isLoading && (
-        <div className="flex justify-end gap-2">
-          <button
-            disabled={page <= 1}
-            onClick={() => setPage((p: number) => p - 1)}
-            className="px-3 py-1 rounded-md bg-white dark:bg-slate-700 border dark:border-slate-600 shadow-sm text-gray-700 dark:text-gray-200 disabled:opacity-50"
-          >
+        <div className={`${flexJustifyEnd} ${gap2}`}>
+          <button disabled={page <= 1} onClick={() => setPage((p: number) => p - 1)} className={buttonSecondary}>
             Previous
           </button>
           <button
             disabled={page >= totalPages}
             onClick={() => setPage((p: number) => p + 1)}
-            className="px-3 py-1 rounded-md bg-white dark:bg-slate-700 border dark:border-slate-600 shadow-sm text-gray-700 dark:text-gray-200 disabled:opacity-50"
+            className={buttonSecondary}
           >
             Next
           </button>

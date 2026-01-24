@@ -97,11 +97,11 @@ export function useUpdateContact(id: string) {
 export function useDeleteContact(id: string) {
   return useSWRMutation(
     queryKeys.contacts.detail(id),
-    async (key: any, _arg: { arg: any }) => {
+    async (/* eslint-disable-line @typescript-eslint/no-unused-vars */ key: any, _arg: { arg: any }) => {
       return mutationFetcher(key, { method: `DELETE` });
     },
     {
-      optimisticData: (_currentData: any) => {
+      optimisticData: (/* eslint-disable-line @typescript-eslint/no-unused-vars */ _currentData: any) => {
         // Optimistically remove the contact from the list
         return null;
       },

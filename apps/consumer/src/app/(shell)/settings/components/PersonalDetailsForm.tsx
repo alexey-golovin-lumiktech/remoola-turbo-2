@@ -3,6 +3,16 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 
+import {
+  formGridClass,
+  formGridSpan2,
+  formSection,
+  formSectionTitle,
+  inputClass,
+  inputLabel,
+  primaryActionButton,
+} from '../../../../components/ui/classNames';
+
 export function PersonalDetailsForm({ profile, reload }: any) {
   const pd = profile.personalDetails ?? {};
 
@@ -52,65 +62,65 @@ export function PersonalDetailsForm({ profile, reload }: any) {
   }
 
   return (
-    <section className="form-section">
-      <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Personal Details</h2>
+    <section className={formSection}>
+      <h2 className={formSectionTitle}>Personal Details</h2>
 
-      <div className="form-grid">
+      <div className={formGridClass}>
         <div>
-          <label className="input-label">First Name</label>
-          <input className="input" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+          <label className={inputLabel}>First Name</label>
+          <input className={inputClass} value={firstName} onChange={(e) => setFirstName(e.target.value)} />
         </div>
 
         <div>
-          <label className="input-label">Last Name</label>
-          <input className="input" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+          <label className={inputLabel}>Last Name</label>
+          <input className={inputClass} value={lastName} onChange={(e) => setLastName(e.target.value)} />
         </div>
 
-        <div className="col-span-2">
-          <label className="input-label">Citizen of</label>
-          <input className="input" value={citizenOf} onChange={(e) => setCitizenOf(e.target.value)} />
+        <div className={formGridSpan2}>
+          <label className={inputLabel}>Citizen of</label>
+          <input className={inputClass} value={citizenOf} onChange={(e) => setCitizenOf(e.target.value)} />
         </div>
 
-        <div className="col-span-2">
-          <label className="input-label">Passport / ID Number</label>
-          <input className="input" value={passportOrIdNumber} onChange={(e) => setPassportOrIdNumber(e.target.value)} />
-        </div>
-
-        <div className="col-span-2">
-          <label className="input-label">Legal Status</label>
-          <input className="input" value={legalStatus} onChange={(e) => setLegalStatus(e.target.value)} />
-        </div>
-
-        <div className="col-span-2">
-          <label className="input-label">Date Of Birth</label>
-          <input className="input" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} />
-        </div>
-
-        <div className="col-span-2">
-          <label className="input-label">Country Of Tax Residence</label>
+        <div className={formGridSpan2}>
+          <label className={inputLabel}>Passport / ID Number</label>
           <input
-            className="input"
+            className={inputClass}
+            value={passportOrIdNumber}
+            onChange={(e) => setPassportOrIdNumber(e.target.value)}
+          />
+        </div>
+
+        <div className={formGridSpan2}>
+          <label className={inputLabel}>Legal Status</label>
+          <input className={inputClass} value={legalStatus} onChange={(e) => setLegalStatus(e.target.value)} />
+        </div>
+
+        <div className={formGridSpan2}>
+          <label className={inputLabel}>Date Of Birth</label>
+          <input className={inputClass} value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} />
+        </div>
+
+        <div className={formGridSpan2}>
+          <label className={inputLabel}>Country Of Tax Residence</label>
+          <input
+            className={inputClass}
             value={countryOfTaxResidence}
             onChange={(e) => setCountryOfTaxResidence(e.target.value)}
           />
         </div>
 
-        <div className="col-span-2">
-          <label className="input-label">Tax ID</label>
-          <input className="input" value={taxId} onChange={(e) => setTaxId(e.target.value)} />
+        <div className={formGridSpan2}>
+          <label className={inputLabel}>Tax ID</label>
+          <input className={inputClass} value={taxId} onChange={(e) => setTaxId(e.target.value)} />
         </div>
 
-        <div className="col-span-2">
-          <label className="input-label">Phone number</label>
-          <input className="input" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
+        <div className={formGridSpan2}>
+          <label className={inputLabel}>Phone number</label>
+          <input className={inputClass} value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
         </div>
       </div>
 
-      <button
-        disabled={saving}
-        onClick={save}
-        className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500"
-      >
+      <button disabled={saving} onClick={save} className={primaryActionButton}>
         {saving ? `Saving...` : `Save Changes`}
       </button>
     </section>

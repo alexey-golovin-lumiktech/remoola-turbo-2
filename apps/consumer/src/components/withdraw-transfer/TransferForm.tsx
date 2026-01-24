@@ -4,6 +4,15 @@ import { useState } from 'react';
 
 import { FormCard, FormField } from '../ui';
 import { SuccessModal } from './SuccessModal';
+import {
+  errorTextClass,
+  formInputRoundedLg,
+  formInputRoundedLgWithPrefix,
+  inputPrefixIcon,
+  primaryButtonClass,
+  relativePosition,
+  textMutedSlate,
+} from '../ui/classNames';
 
 export function TransferForm() {
   const [amount, setAmount] = useState(``);
@@ -60,15 +69,15 @@ export function TransferForm() {
       description="Send money to another user using their email number."
     >
       <FormField label="Amount">
-        <div className="relative">
-          <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-500 dark:text-slate-400">$</span>
+        <div className={relativePosition}>
+          <span className={inputPrefixIcon}>$</span>
           <input
             type="number"
             min="0"
             step="0.01"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 dark:border-slate-600 px-7 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={formInputRoundedLgWithPrefix}
             placeholder="0.00"
           />
         </div>
@@ -78,7 +87,7 @@ export function TransferForm() {
         <input
           value={recipient}
           onChange={(e) => setRecipient(e.target.value)}
-          className="w-full rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className={formInputRoundedLg}
           placeholder="example@email.com"
         />
       </FormField>
@@ -86,7 +95,7 @@ export function TransferForm() {
       <FormField
         label={
           <>
-            Note <span className="text-gray-400 dark:text-slate-400">(optional)</span>
+            Note <span className={textMutedSlate}>(optional)</span>
           </>
         }
       >
@@ -94,18 +103,14 @@ export function TransferForm() {
           value={note}
           onChange={(e) => setNote(e.target.value)}
           rows={2}
-          className="w-full rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className={formInputRoundedLg}
           placeholder="What is this transfer for?"
         />
       </FormField>
 
-      {err && <p className="text-sm text-red-600 dark:text-red-400">{err}</p>}
+      {err && <p className={errorTextClass}>{err}</p>}
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full rounded-lg bg-blue-600 py-2 text-sm font-medium text-white transition hover:bg-blue-700 dark:hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
-      >
+      <button type="submit" disabled={loading} className={primaryButtonClass}>
         {loading ? `Processing…` : `Send transfer`}
       </button>
 

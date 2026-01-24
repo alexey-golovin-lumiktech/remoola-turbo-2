@@ -4,6 +4,7 @@
 import { useState } from 'react';
 
 import { type ConsumerContact } from '../../types';
+import { contactViewButton, contactViewContainer, contactViewDetails, contactViewTitle } from '../ui/classNames';
 
 type ContactViewProps = { contact: ConsumerContact };
 
@@ -11,10 +12,10 @@ export function ContactView({ contact }: ContactViewProps) {
   const [editing, setEditing] = useState(false);
 
   return (
-    <div className="p-8 space-y-4">
-      <h1 className="text-xl font-semibold">{contact.name ?? contact.email}</h1>
+    <div className={contactViewContainer}>
+      <h1 className={contactViewTitle}>{contact.name ?? contact.email}</h1>
 
-      <div className="space-y-2">
+      <div className={contactViewDetails}>
         <div>
           <strong>Email:</strong> {contact.email}
         </div>
@@ -23,7 +24,7 @@ export function ContactView({ contact }: ContactViewProps) {
         </div>
       </div>
 
-      <button onClick={() => setEditing(true)} className="px-4 py-2 rounded-md bg-blue-600 text-white">
+      <button onClick={() => setEditing(true)} className={contactViewButton}>
         Edit
       </button>
     </div>

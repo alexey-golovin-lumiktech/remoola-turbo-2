@@ -8,6 +8,7 @@ import { OrganizationDetailsForm } from './OrganizationDetailsForm';
 import { PasswordChangeForm } from './PasswordChangeForm';
 import { PersonalDetailsForm } from './PersonalDetailsForm';
 import { ThemeSettingsForm } from './ThemeSettingsForm';
+import { errorTextClass, spaceY10, textSecondary } from '../../../../components/ui/classNames';
 
 export default function ProfileSettingsClient() {
   const [profile, setProfile] = useState<any>(null);
@@ -34,15 +35,15 @@ export default function ProfileSettingsClient() {
   }
 
   if (error) {
-    return <p className="text-red-600 dark:text-red-400">{error}</p>;
+    return <p className={errorTextClass}>{error}</p>;
   }
 
   if (!profile) {
-    return <p className="text-gray-600 dark:text-gray-300">Loading profile...</p>;
+    return <p className={textSecondary}>Loading profile...</p>;
   }
 
   return (
-    <div className="space-y-10">
+    <div className={spaceY10}>
       <ThemeSettingsForm />
       <PersonalDetailsForm profile={profile} reload={load} />
       <AddressDetailsForm profile={profile} reload={load} />

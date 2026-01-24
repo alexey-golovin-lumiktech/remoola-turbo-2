@@ -1,3 +1,29 @@
+import {
+  dashboardContainer,
+  flexRowBetween,
+  gridMainContent,
+  gridSummaryCards,
+  skeletonBase,
+  skeletonCard,
+  skeletonCardPadding,
+  skeletonCardTitle,
+  skeletonCellShort,
+  skeletonCellTiny,
+  skeletonHeaderAction,
+  skeletonHeaderBlock,
+  skeletonHeaderCell,
+  skeletonHeaderTitle,
+  skeletonLine,
+  skeletonRow,
+  skeletonSpaceY2,
+  skeletonSpaceY3,
+  skeletonSpaceY4,
+  skeletonTableContainer,
+  skeletonTablePadding,
+  skeletonTextFiveSixths,
+  skeletonTextFourSixths,
+} from './classNames';
+
 // Simple className utility since @remoola/ui/utils doesn't exist
 function cn(...classes: (string | undefined | null | boolean)[]): string {
   return classes.filter(Boolean).join(` `);
@@ -8,16 +34,16 @@ interface SkeletonProps {
 }
 
 export function Skeleton({ className }: SkeletonProps) {
-  return <div className={cn(`animate-pulse rounded-md bg-gray-200 dark:bg-slate-700`, className)} />;
+  return <div className={cn(skeletonBase, className)} />;
 }
 
 export function SkeletonText({ className, lines = 1 }: SkeletonProps & { lines?: number }) {
   if (lines === 1) {
-    return <Skeleton className={cn(`h-4 w-full`, className)} />;
+    return <Skeleton className={cn(skeletonLine, className)} />;
   }
 
   return (
-    <div className="space-y-2">
+    <div className={skeletonSpaceY2}>
       {Array.from({ length: lines }).map((_, i) => (
         <Skeleton
           key={i}
@@ -34,13 +60,13 @@ export function SkeletonText({ className, lines = 1 }: SkeletonProps & { lines?:
 
 export function SkeletonCard({ className }: SkeletonProps) {
   return (
-    <div className={cn(`rounded-2xl bg-white/90 dark:bg-slate-800/90 p-6 shadow-sm`, className)}>
-      <div className="space-y-4">
-        <Skeleton className="h-6 w-1/3" />
-        <div className="space-y-3">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-5/6" />
-          <Skeleton className="h-4 w-4/6" />
+    <div className={cn(skeletonCard, className)}>
+      <div className={skeletonSpaceY4}>
+        <Skeleton className={skeletonCardTitle} />
+        <div className={skeletonSpaceY3}>
+          <Skeleton className={skeletonLine} />
+          <Skeleton className={skeletonTextFiveSixths} />
+          <Skeleton className={skeletonTextFourSixths} />
         </div>
       </div>
     </div>
@@ -49,21 +75,21 @@ export function SkeletonCard({ className }: SkeletonProps) {
 
 export function SkeletonTable({ rows = 5, cols = 4, className }: SkeletonProps & { rows?: number; cols?: number }) {
   return (
-    <div className={cn(`bg-white dark:bg-slate-800 rounded-2xl shadow-sm border dark:border-slate-600`, className)}>
-      <div className="p-6">
+    <div className={cn(skeletonTableContainer, className)}>
+      <div className={skeletonTablePadding}>
         {/* Table Header */}
-        <div className="grid gap-4 mb-4" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
+        <div className={skeletonHeaderBlock} style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
           {Array.from({ length: cols }).map((_, i) => (
-            <Skeleton key={`header-${i}`} className="h-4 w-20" />
+            <Skeleton key={`header-${i}`} className={skeletonHeaderCell} />
           ))}
         </div>
 
         {/* Table Rows */}
-        <div className="space-y-4">
+        <div className={skeletonSpaceY4}>
           {Array.from({ length: rows }).map((_, rowIndex) => (
             <div
               key={`row-${rowIndex}`}
-              className="grid gap-4 py-3 border-b last:border-b-0"
+              className={skeletonRow}
               style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}
             >
               {Array.from({ length: cols }).map((_, colIndex) => (
@@ -72,9 +98,9 @@ export function SkeletonTable({ rows = 5, cols = 4, className }: SkeletonProps &
                   className={cn(
                     `h-4`,
                     colIndex === 0
-                      ? `w-24` // First column (name/id) shorter
+                      ? skeletonCellShort // First column (name/id) shorter
                       : colIndex === cols - 1
-                        ? `w-16` // Last column (actions) shorter
+                        ? skeletonCellTiny // Last column (actions) shorter
                         : `w-full`,
                   )}
                 />
@@ -89,17 +115,17 @@ export function SkeletonTable({ rows = 5, cols = 4, className }: SkeletonProps &
 
 export function DashboardSkeleton() {
   return (
-    <div className="flex h-full flex-col gap-6 px-8 py-6">
+    <div className={dashboardContainer}>
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-10 w-32" />
+      <div className={flexRowBetween}>
+        <Skeleton className={skeletonHeaderTitle} />
+        <Skeleton className={skeletonHeaderAction} />
       </div>
 
       {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className={gridSummaryCards}>
         {Array.from({ length: 4 }).map((_, i) => (
-          <SkeletonCard key={i} className="p-4" />
+          <SkeletonCard key={i} className={skeletonCardPadding} />
         ))}
       </div>
 
@@ -107,9 +133,9 @@ export function DashboardSkeleton() {
       <SkeletonCard />
 
       {/* Main Content Grid */}
-      <div className="grid gap-4 md:grid-cols-[2fr,1fr]">
+      <div className={gridMainContent}>
         <SkeletonTable rows={8} cols={5} />
-        <div className="space-y-4">
+        <div className={skeletonSpaceY4}>
           <SkeletonCard />
           <SkeletonCard />
           <SkeletonCard />

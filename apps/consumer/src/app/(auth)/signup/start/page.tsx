@@ -1,9 +1,27 @@
-/* eslint-disable max-len */
 'use client';
 
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
+import {
+  signupStartCard,
+  signupStartHeader,
+  signupStartInfo,
+  signupStartInfoTitle,
+  signupStartList,
+  signupStartNextButton,
+  signupStartOptionActive,
+  signupStartOptionBase,
+  signupStartOptionEmoji,
+  signupStartOptionInactive,
+  signupStartOptionLabelActive,
+  signupStartOptionLabelBase,
+  signupStartOptionLabelInactive,
+  signupStartOptions,
+  signupStartPageContainer,
+  signupStartSubtitle,
+  signupStartTitle,
+} from '../../../../components/ui/classNames';
 import { type IAccountType, ACCOUNT_TYPE } from '../../../../types';
 import { useSignupForm } from '../hooks/useSignupForm';
 
@@ -35,33 +53,25 @@ export default function ChooseAccountTypeStep() {
   if (!signup.accountType) return null;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-slate-900 px-4">
-      <div className="w-full max-w-xl space-y-8 text-center">
-        <div className="space-y-1">
-        <h2 className="text-sm text-gray-500 dark:text-gray-400">Let`s find the right account for your needs</h2>
-          <h1 className="text-3xl font-semibold">I`m a</h1>
+    <div className={signupStartPageContainer}>
+      <div className={signupStartCard}>
+        <div className={signupStartHeader}>
+          <h2 className={signupStartSubtitle}>Let`s find the right account for your needs</h2>
+          <h1 className={signupStartTitle}>I`m a</h1>
         </div>
 
-        <div className="flex gap-5 justify-center">
+        <div className={signupStartOptions}>
           <button
             type="button"
             onClick={() => selectType(ACCOUNT_TYPE.BUSINESS)}
-            className={`
-              flex h-40 w-40 flex-col items-center justify-center rounded-xl border
-              transition-all
-              ${
-                isSelected(ACCOUNT_TYPE.BUSINESS)
-                  ? `border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20 shadow-sm`
-                  : `border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700`
-              }
-            `}
+            className={`${signupStartOptionBase} ${
+              isSelected(ACCOUNT_TYPE.BUSINESS) ? signupStartOptionActive : signupStartOptionInactive
+            }`}
           >
-            <div className="text-4xl mb-2">📄</div>
+            <div className={signupStartOptionEmoji}>📄</div>
             <div
-              className={`text-sm font-semibold ${
-                isSelected(ACCOUNT_TYPE.BUSINESS)
-                  ? `text-blue-700 dark:text-blue-300`
-                  : `text-gray-700 dark:text-gray-300`
+              className={`${signupStartOptionLabelBase} ${
+                isSelected(ACCOUNT_TYPE.BUSINESS) ? signupStartOptionLabelActive : signupStartOptionLabelInactive
               }`}
             >
               BUSINESS
@@ -71,22 +81,14 @@ export default function ChooseAccountTypeStep() {
           <button
             type="button"
             onClick={() => selectType(ACCOUNT_TYPE.CONTRACTOR)}
-            className={`
-              flex h-40 w-40 flex-col items-center justify-center rounded-xl border
-              transition-all
-              ${
-                isSelected(ACCOUNT_TYPE.CONTRACTOR)
-                  ? `border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20 shadow-sm`
-                  : `border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700`
-              }
-            `}
+            className={`${signupStartOptionBase} ${
+              isSelected(ACCOUNT_TYPE.CONTRACTOR) ? signupStartOptionActive : signupStartOptionInactive
+            }`}
           >
-            <div className="text-4xl mb-2">🏠</div>
+            <div className={signupStartOptionEmoji}>🏠</div>
             <div
-              className={`text-sm font-semibold ${
-                isSelected(ACCOUNT_TYPE.CONTRACTOR)
-                  ? `text-blue-700 dark:text-blue-300`
-                  : `text-gray-700 dark:text-gray-300`
+              className={`${signupStartOptionLabelBase} ${
+                isSelected(ACCOUNT_TYPE.CONTRACTOR) ? signupStartOptionLabelActive : signupStartOptionLabelInactive
               }`}
             >
               CONTRACTOR
@@ -96,9 +98,9 @@ export default function ChooseAccountTypeStep() {
 
         {/* === Helpful Description (only when contractor selected) === */}
         {signup.accountType === ACCOUNT_TYPE.CONTRACTOR && (
-          <div className="text-left text-sm text-gray-600 dark:text-gray-300 mx-auto max-w-sm space-y-1">
-            <div className="font-medium">Sign up as a contractor to:</div>
-            <ul className="list-disc list-inside space-y-1">
+          <div className={signupStartInfo}>
+            <div className={signupStartInfoTitle}>Sign up as a contractor to:</div>
+            <ul className={signupStartList}>
               <li>Get paid faster with automated invoicing</li>
               <li>Work with verified businesses worldwide</li>
               <li>Manage all your clients in one place</li>
@@ -108,9 +110,9 @@ export default function ChooseAccountTypeStep() {
         )}
 
         {signup.accountType === ACCOUNT_TYPE.BUSINESS && (
-          <div className="text-left text-sm text-gray-600 dark:text-gray-300 mx-auto max-w-sm space-y-1">
-            <div className="font-medium">Sign up as a contractor to:</div>
-            <ul className="list-disc list-inside space-y-1">
+          <div className={signupStartInfo}>
+            <div className={signupStartInfoTitle}>Sign up as a contractor to:</div>
+            <ul className={signupStartList}>
               <li>Work compliantly from 150+ countries</li>
               <li>Automate your invoicing for every client</li>
               <li>Avoid transfer fees with 7+ payment options</li>
@@ -119,11 +121,7 @@ export default function ChooseAccountTypeStep() {
           </div>
         )}
 
-        <button
-          disabled={!signup.accountType}
-          onClick={onNext}
-          className="w-full rounded-lg bg-blue-600 px-5 py-3 text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-        >
+        <button disabled={!signup.accountType} onClick={onNext} className={signupStartNextButton}>
           Next
         </button>
       </div>

@@ -3,6 +3,7 @@
 import { loadStripe } from '@stripe/stripe-js';
 import { useState } from 'react';
 
+import { primaryActionButton } from '../../../ui/classNames';
 export function VerifyMeButton() {
   const [loading, setLoading] = useState(false);
 
@@ -25,7 +26,7 @@ export function VerifyMeButton() {
   }
 
   return (
-    <button onClick={startVerification} disabled={loading} className="px-4 py-2 bg-blue-600 text-white rounded-lg">
+    <button onClick={startVerification} disabled={loading} className={primaryActionButton}>
       {loading ? `Starting...` : `Verify Me`}
     </button>
   );

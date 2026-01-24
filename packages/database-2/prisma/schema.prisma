@@ -701,7 +701,7 @@ enum Theme {
 model UserSettingsModel {
   id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
 
-  theme Theme @default(LIGHT)
+  theme Theme @default(SYSTEM)
 
   consumerId String        @unique @db.Uuid
   consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)

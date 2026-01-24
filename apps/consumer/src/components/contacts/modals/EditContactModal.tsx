@@ -3,6 +3,16 @@
 import { useEffect, useState } from 'react';
 
 import { type ConsumerContactAddress, type ConsumerContact } from '../../../types';
+import {
+  contactModalInput,
+  modalButtonPrimary,
+  modalButtonSecondary,
+  modalContentMd,
+  modalFooterActions,
+  modalOverlayClass,
+  modalTitleClass,
+  spaceY4,
+} from '../../ui/classNames';
 
 type EditContactModalProps = {
   open: boolean;
@@ -58,16 +68,16 @@ export function EditContactModal({ open, onCloseAction, onUpdatedAction, contact
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 dark:bg-black/60 flex justify-center items-center z-50">
-      <div className="bg-white dark:bg-slate-800 rounded-xl p-6 w-full max-w-md space-y-4">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Edit Contact</h2>
+    <div className={modalOverlayClass}>
+      <div className={`${modalContentMd} ${spaceY4}`}>
+        <h2 className={modalTitleClass}>Edit Contact</h2>
 
         {/* Contact name */}
         <input
           placeholder="Name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
+          className={contactModalInput}
         />
 
         {/* Email */}
@@ -75,60 +85,52 @@ export function EditContactModal({ open, onCloseAction, onUpdatedAction, contact
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
+          className={contactModalInput}
         />
 
         {/* Address Section */}
-        {/* <div className="grid grid-cols-2 gap-3"> */}
         <input
           placeholder="Street"
           value={address.street}
           onChange={(e) => updateAddress(`street`, e.target.value)}
-          className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
+          className={contactModalInput}
         />
 
         <input
           placeholder="City"
           value={address.city}
           onChange={(e) => updateAddress(`city`, e.target.value)}
-          className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
+          className={contactModalInput}
         />
 
         <input
           placeholder="State"
           value={address.state}
           onChange={(e) => updateAddress(`state`, e.target.value)}
-          className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
+          className={contactModalInput}
         />
 
         <input
           placeholder="Postal Code"
           value={address.postalCode}
           onChange={(e) => updateAddress(`postalCode`, e.target.value)}
-          className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
+          className={contactModalInput}
         />
 
         <input
           placeholder="Country"
           value={address.country}
           onChange={(e) => updateAddress(`country`, e.target.value)}
-          className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
+          className={contactModalInput}
         />
-        {/* </div> */}
 
         {/* Buttons */}
-        <div className="flex justify-end gap-2 pt-4">
-          <button
-            onClick={onCloseAction}
-            className="px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition text-gray-700 dark:text-gray-200"
-          >
+        <div className={modalFooterActions}>
+          <button onClick={onCloseAction} className={modalButtonSecondary}>
             Cancel
           </button>
 
-          <button
-            onClick={update}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-500 transition"
-          >
+          <button onClick={update} className={modalButtonPrimary}>
             Save Changes
           </button>
         </div>

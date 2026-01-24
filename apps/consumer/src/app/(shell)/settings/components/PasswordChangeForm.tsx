@@ -1,6 +1,16 @@
 'use client';
 import { useState } from 'react';
 
+import {
+  errorTextClass,
+  formGrid,
+  formSection,
+  formSectionTitle,
+  inputClass,
+  inputLabel,
+  primaryActionButton,
+} from '../../../../components/ui/classNames';
+
 export function PasswordChangeForm({ reload }: any) {
   const [password, setPassword] = useState(``);
   const [confirm, setConfirm] = useState(``);
@@ -36,28 +46,29 @@ export function PasswordChangeForm({ reload }: any) {
   }
 
   return (
-    <section className="form-section">
-      <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Change Password</h2>
+    <section className={formSection}>
+      <h2 className={formSectionTitle}>Change Password</h2>
 
-      {error && <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>}
+      {error && <p className={errorTextClass}>{error}</p>}
 
-      <div className="grid gap-4">
+      <div className={formGrid}>
         <div>
-          <label className="input-label">New Password</label>
-          <input type="password" className="input" value={password} onChange={(e) => setPassword(e.target.value)} />
+          <label className={inputLabel}>New Password</label>
+          <input
+            type="password"
+            className={inputClass}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
         </div>
 
         <div>
-          <label className="input-label">Confirm Password</label>
-          <input type="password" className="input" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+          <label className={inputLabel}>Confirm Password</label>
+          <input type="password" className={inputClass} value={confirm} onChange={(e) => setConfirm(e.target.value)} />
         </div>
       </div>
 
-      <button
-        disabled={saving}
-        onClick={save}
-        className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500"
-      >
+      <button disabled={saving} onClick={save} className={primaryActionButton}>
         {saving ? `Saving...` : `Change Password`}
       </button>
     </section>

@@ -3,6 +3,16 @@
 import { useState, useEffect } from 'react';
 
 import { RateDisplay } from './RateDisplay';
+import {
+  exchangeAvailable,
+  exchangeButton,
+  exchangeCard,
+  exchangeField,
+  exchangeForm,
+  exchangeLabel,
+  exchangeRateText,
+  exchangeResultText,
+} from '../ui/classNames';
 
 const CURRENCIES = [`USD`, `EUR`, `JPY`, `GBP`, `AUD`] as const;
 
@@ -49,19 +59,15 @@ export function ExchangeWidget({ balances }: ExchangeWidgetProps) {
   }
 
   return (
-    <div className="rounded-xl border p-6 bg-white dark:bg-slate-800 shadow dark:border-slate-600">
-      <div className="mb-2 text-sm text-gray-600 dark:text-gray-300">
+    <div className={exchangeCard}>
+      <div className={exchangeAvailable}>
         Available: {available.toFixed(2)} {from}
       </div>
       <RateDisplay from={from} to={to} />
-      <div className="space-y-4">
+      <div className={exchangeForm}>
         <div>
-          <label className="text-sm text-gray-700 dark:text-gray-300">From currency</label>
-          <select
-            className="border border-gray-300 dark:border-slate-600 rounded p-2 w-full bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
-            value={from}
-            onChange={(e) => setFrom(e.target.value)}
-          >
+          <label className={exchangeLabel}>From currency</label>
+          <select className={exchangeField} value={from} onChange={(e) => setFrom(e.target.value)}>
             {CURRENCIES.map((c) => (
               <option key={c}>{c}</option>
             ))}
@@ -69,12 +75,8 @@ export function ExchangeWidget({ balances }: ExchangeWidgetProps) {
         </div>
 
         <div>
-          <label className="text-sm text-gray-700 dark:text-gray-300">To currency</label>
-          <select
-            className="border border-gray-300 dark:border-slate-600 rounded p-2 w-full bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
-            value={to}
-            onChange={(e) => setTo(e.target.value)}
-          >
+          <label className={exchangeLabel}>To currency</label>
+          <select className={exchangeField} value={to} onChange={(e) => setTo(e.target.value)}>
             {CURRENCIES.map((c) => (
               <option key={c}>{c}</option>
             ))}
@@ -82,9 +84,9 @@ export function ExchangeWidget({ balances }: ExchangeWidgetProps) {
         </div>
 
         <div>
-          <label className="text-sm text-gray-700 dark:text-gray-300">Amount</label>
+          <label className={exchangeLabel}>Amount</label>
           <input
-            className="border border-gray-300 dark:border-slate-600 rounded p-2 w-full bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
+            className={exchangeField}
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             type="number"
@@ -94,22 +96,18 @@ export function ExchangeWidget({ balances }: ExchangeWidgetProps) {
         </div>
 
         {rate !== null && (
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className={exchangeRateText}>
             Rate: 1 {from} → {rate} {to}
           </p>
         )}
 
         {result !== null && (
-          <p className="text-sm font-semibold text-gray-900 dark:text-white">
+          <p className={exchangeResultText}>
             You will receive: {result} {to}
           </p>
         )}
 
-        <button
-          onClick={convert}
-          disabled={!amount || !rate}
-          className="w-full bg-blue-600 p-2 rounded text-white hover:bg-blue-700 dark:hover:bg-blue-500 disabled:opacity-50"
-        >
+        <button onClick={convert} disabled={!amount || !rate} className={exchangeButton}>
           Convert
         </button>
       </div>

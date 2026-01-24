@@ -2,40 +2,41 @@
 
 import Link from 'next/link';
 
+import {
+  signupCompletedButton,
+  signupCompletedCard,
+  signupCompletedContainer,
+  signupCompletedIcon,
+  signupCompletedIconWrap,
+  signupCompletedSubtitle,
+  signupCompletedText,
+  signupCompletedTitle,
+  signupCompletedBrand,
+} from '../../../../components/ui/classNames';
+
 export default function SignupCompletedPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900 px-4">
-      <div className="w-full max-w-md rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-8 shadow-sm text-center">
-        <div className="flex justify-center mb-6">
-          <svg
-            className="h-14 w-14 text-green-500 dark:text-green-400"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            viewBox="0 0 24 24"
-          >
+    <div className={signupCompletedContainer}>
+      <div className={signupCompletedCard}>
+        <div className={signupCompletedIconWrap}>
+          <svg className={signupCompletedIcon} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
 
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">
-          Congratulations. Sign up success.
-        </h1>
+        <h1 className={signupCompletedTitle}>Congratulations. Sign up success.</h1>
 
-        <h2 className="text-lg text-gray-600 dark:text-gray-300 mb-6">
-          Welcome to <span className="font-semibold text-indigo-600 dark:text-indigo-400">Remoola</span>
+        <h2 className={signupCompletedSubtitle}>
+          Welcome to <span className={signupCompletedBrand}>Remoola</span>
         </h2>
 
-        <p className="text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
+        <p className={signupCompletedText}>
           We have sent you an email so that you can confirm your email and activate your account.
           <br />
           Check your email and come back soon.
         </p>
 
-        <Link
-          href="/login"
-          className="block w-full rounded-lg bg-indigo-600 py-3 text-white font-medium hover:bg-indigo-700 dark:hover:bg-indigo-500 transition"
-        >
+        <Link href="/login" className={signupCompletedButton}>
           Click to Sign In
         </Link>
       </div>

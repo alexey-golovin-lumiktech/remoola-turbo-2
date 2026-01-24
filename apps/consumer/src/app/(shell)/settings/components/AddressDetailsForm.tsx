@@ -2,6 +2,16 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 
+import {
+  formGridClass,
+  formGridSpan2,
+  formSection,
+  formSectionTitle,
+  inputClass,
+  inputLabel,
+  primaryActionButton,
+} from '../../../../components/ui/classNames';
+
 export function AddressDetailsForm({ profile, reload }: any) {
   const ad = profile.addressDetails ?? {};
 
@@ -35,41 +45,37 @@ export function AddressDetailsForm({ profile, reload }: any) {
   }
 
   return (
-    <section className="form-section">
-      <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Address Details</h2>
+    <section className={formSection}>
+      <h2 className={formSectionTitle}>Address Details</h2>
 
-      <div className="form-grid">
+      <div className={formGridClass}>
         <div>
-          <label className="input-label">Postal Code</label>
-          <input className="input" value={postalCode} onChange={(e) => setPostalCode(e.target.value)} />
+          <label className={inputLabel}>Postal Code</label>
+          <input className={inputClass} value={postalCode} onChange={(e) => setPostalCode(e.target.value)} />
         </div>
 
         <div>
-          <label className="input-label">Country</label>
-          <input className="input" value={country} onChange={(e) => setCountry(e.target.value)} />
+          <label className={inputLabel}>Country</label>
+          <input className={inputClass} value={country} onChange={(e) => setCountry(e.target.value)} />
         </div>
 
-        <div className="col-span-2">
-          <label className="input-label">City</label>
-          <input className="input" value={city} onChange={(e) => setCity(e.target.value)} />
+        <div className={formGridSpan2}>
+          <label className={inputLabel}>City</label>
+          <input className={inputClass} value={city} onChange={(e) => setCity(e.target.value)} />
         </div>
 
-        <div className="col-span-2">
-          <label className="input-label">Street</label>
-          <input className="input" value={street} onChange={(e) => setStreet(e.target.value)} />
+        <div className={formGridSpan2}>
+          <label className={inputLabel}>Street</label>
+          <input className={inputClass} value={street} onChange={(e) => setStreet(e.target.value)} />
         </div>
 
-        <div className="col-span-2">
-          <label className="input-label">State</label>
-          <input className="input" value={state} onChange={(e) => setState(e.target.value)} />
+        <div className={formGridSpan2}>
+          <label className={inputLabel}>State</label>
+          <input className={inputClass} value={state} onChange={(e) => setState(e.target.value)} />
         </div>
       </div>
 
-      <button
-        disabled={saving}
-        onClick={save}
-        className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500"
-      >
+      <button disabled={saving} onClick={save} className={primaryActionButton}>
         {saving ? `Saving...` : `Save Changes`}
       </button>
     </section>

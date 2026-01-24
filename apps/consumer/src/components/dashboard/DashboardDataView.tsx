@@ -11,6 +11,19 @@ import { PendingRequestsTable } from './PendingRequestsTable';
 import { PendingWithdrawalsCard } from './PendingWithdrawalsCard';
 import { QuickDocsCard } from './QuickDocsCard';
 import { SummaryCards } from './SummaryCards';
+import {
+  cardBaseSoftCompact,
+  dashboardContainer,
+  dashboardGrid,
+  dashboardSidebar,
+  emptyStateContainer,
+  emptyStateIcon,
+  emptyStateIconSvg,
+  errorBoundaryText,
+  errorBoundaryTitle,
+  refreshButtonClass,
+  textCenter,
+} from '../ui/classNames';
 // Type is inferred from the hook
 
 export function DashboardDataView() {
@@ -18,10 +31,10 @@ export function DashboardDataView() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-[400px] p-8">
-        <div className="text-center">
-          <div className="rounded-full bg-red-100 dark:bg-red-900/20 p-3 mb-4 mx-auto w-fit">
-            <svg className="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className={emptyStateContainer}>
+        <div className={textCenter}>
+          <div className={emptyStateIcon}>
+            <svg className={emptyStateIconSvg} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -31,12 +44,9 @@ export function DashboardDataView() {
               />
             </svg>
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Failed to load dashboard</h2>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-500 transition-colors"
-          >
+          <h2 className={errorBoundaryTitle}>Failed to load dashboard</h2>
+          <p className={errorBoundaryText}>{error}</p>
+          <button onClick={() => window.location.reload()} className={refreshButtonClass}>
             Try Again
           </button>
         </div>
@@ -47,7 +57,7 @@ export function DashboardDataView() {
   if (isLoading || !dashboardData) return <DashboardSkeleton />;
 
   return (
-    <div className="flex h-full flex-col gap-6 px-8 py-6">
+    <div className={dashboardContainer}>
       <DashboardHeader />
 
       <SummaryCards summary={dashboardData.summary} />
@@ -56,23 +66,23 @@ export function DashboardDataView() {
 
       <ActionRow />
 
-      <div className="rounded-2xl bg-white/90 dark:bg-slate-800/90 p-4 shadow-sm">
+      <div className={cardBaseSoftCompact}>
         <PendingRequestsTable pendingRequests={dashboardData.pendingRequests} />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-[2fr,1fr]">
-        <div className="rounded-2xl bg-white/90 dark:bg-slate-800/90 p-4 shadow-sm">
+      <div className={dashboardGrid}>
+        <div className={cardBaseSoftCompact}>
           <ActivityTimeline activityTimelineItems={dashboardData.activity} />
         </div>
 
-        <div className="flex flex-col gap-4">
-          <div className="rounded-2xl bg-white/90 dark:bg-slate-800/90 p-4 shadow-sm">
+        <div className={dashboardSidebar}>
+          <div className={cardBaseSoftCompact}>
             <PendingWithdrawalsCard />
           </div>
-          <div className="rounded-2xl bg-white/90 dark:bg-slate-800/90 p-4 shadow-sm">
+          <div className={cardBaseSoftCompact}>
             <ComplianceTasksCard tasks={dashboardData.tasks} />
           </div>
-          <div className="rounded-2xl bg-white/90 dark:bg-slate-800/90 p-4 shadow-sm">
+          <div className={cardBaseSoftCompact}>
             <QuickDocsCard docs={dashboardData.quickDocs} />
           </div>
         </div>

@@ -2,35 +2,29 @@
 
 import { useRouter } from 'next/navigation';
 
+import { actionRowButton, actionRowCard, actionRowGrid, actionRowSubtitle, actionRowTitle } from '../ui/classNames';
+
 export function ActionRow() {
   const router = useRouter();
 
   return (
-    <section className="grid gap-4 md:grid-cols-[2fr,1fr]">
-      <div className="flex items-center justify-between rounded-2xl bg-white/90 dark:bg-slate-800/90 px-6 py-4 shadow-sm">
+    <section className={actionRowGrid}>
+      <div className={actionRowCard}>
         <div>
-          <p className="text-sm font-medium text-slate-900 dark:text-white">Create Payment Request</p>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Send an invoice-like request in minutes.</p>
+          <p className={actionRowTitle}>Create Payment Request</p>
+          <p className={actionRowSubtitle}>Send an invoice-like request in minutes.</p>
         </div>
-        <button
-          type="button"
-          onClick={() => router.push(`/payment-requests/new`)}
-          className="rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700 dark:hover:bg-blue-500"
-        >
+        <button type="button" onClick={() => router.push(`/payment-requests/new`)} className={actionRowButton}>
           Create
         </button>
       </div>
 
-      <div className="flex items-center justify-between rounded-2xl bg-white/90 dark:bg-slate-800/90 px-6 py-4 shadow-sm">
+      <div className={actionRowCard}>
         <div>
-          <p className="text-sm font-medium text-slate-900 dark:text-white">Start Payment</p>
-          <p className="text-xs text-slate-500 dark:text-slate-400">One-off payment flow (card or bank).</p>
+          <p className={actionRowTitle}>Start Payment</p>
+          <p className={actionRowSubtitle}>One-off payment flow (card or bank).</p>
         </div>
-        <button
-          type="button"
-          onClick={() => router.push(`/payments/start`)}
-          className="rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700 dark:hover:bg-blue-500"
-        >
+        <button type="button" onClick={() => router.push(`/payments/start`)} className={actionRowButton}>
           Pay
         </button>
       </div>

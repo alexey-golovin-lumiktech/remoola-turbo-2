@@ -5,6 +5,13 @@ import { useEffect, useState } from 'react';
 import { AddPaymentMethodModal, DeletePaymentMethodModal, EditPaymentMethodModal } from './modals';
 import { PaymentMethodsList } from './PaymentMethodsList';
 import { type PaymentMethodItem } from '../../types';
+import {
+  pageHeaderRow,
+  pageStackContainer,
+  pageSubtitleGray,
+  pageTitleGray,
+  primaryActionButton,
+} from '../ui/classNames';
 
 export function PaymentMethodsPageClient() {
   const [payments, setPayments] = useState<PaymentMethodItem[]>([]);
@@ -26,17 +33,14 @@ export function PaymentMethodsPageClient() {
   useEffect(() => void refresh(), []);
 
   return (
-    <div className="flex flex-col gap-6 px-8 py-6">
-      <div className="flex justify-between items-center">
+    <div className={pageStackContainer}>
+      <div className={pageHeaderRow}>
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Bank Accounts & Cards</h1>
-          <p className="text-gray-500 dark:text-gray-400 text-sm">Manage your saved cards and bank accounts.</p>
+          <h1 className={pageTitleGray}>Bank Accounts & Cards</h1>
+          <p className={pageSubtitleGray}>Manage your saved cards and bank accounts.</p>
         </div>
 
-        <button
-          onClick={() => setCreateOpen(true)}
-          className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500 transition"
-        >
+        <button onClick={() => setCreateOpen(true)} className={primaryActionButton}>
           + Add Payment Method
         </button>
       </div>

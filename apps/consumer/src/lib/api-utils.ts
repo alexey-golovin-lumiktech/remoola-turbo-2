@@ -85,8 +85,8 @@ export async function proxyApiRequest(
         signal: controller.signal,
         ...(req.method !== `GET` &&
           req.method !== `HEAD` && {
-          body: req.body,
-        }),
+            body: req.body,
+          }),
       });
 
       clearTimeout(timeoutId);
@@ -126,4 +126,3 @@ export async function proxyApiRequest(
 
   throw lastError;
 }
-

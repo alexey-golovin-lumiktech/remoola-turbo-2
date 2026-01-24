@@ -1,9 +1,28 @@
-/* eslint-disable max-len */
 'use client';
 
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
+import {
+  signupStartBackButton,
+  signupStartCard,
+  signupStartHeader,
+  signupStartInfo,
+  signupStartInfoTitle,
+  signupStartList,
+  signupStartNextButton,
+  signupStartOptionActive,
+  signupStartOptionBase,
+  signupStartOptionEmoji,
+  signupStartOptionInactive,
+  signupStartOptionLabelActive,
+  signupStartOptionLabelBase,
+  signupStartOptionLabelInactive,
+  signupStartOptions,
+  signupStartPageContainer,
+  signupStartSubtitle,
+  signupStartTitle,
+} from '../../../../../components/ui/classNames';
 import { type IContractorKind, ACCOUNT_TYPE, CONTRACTOR_KIND } from '../../../../../types';
 import { useSignupForm } from '../../hooks';
 
@@ -35,33 +54,25 @@ export default function ChooseContractorKindStep() {
   if (!signup.accountType) return null;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-slate-900 px-4">
-      <div className="w-full max-w-xl space-y-8 text-center">
-        <div className="space-y-1">
-        <h2 className="text-sm text-gray-500 dark:text-gray-400">Great! Now choose what type of contractor you are</h2>
-          <h1 className="text-3xl font-semibold">I`m an</h1>
+    <div className={signupStartPageContainer}>
+      <div className={signupStartCard}>
+        <div className={signupStartHeader}>
+          <h2 className={signupStartSubtitle}>Great! Now choose what type of contractor you are</h2>
+          <h1 className={signupStartTitle}>I`m an</h1>
         </div>
 
-        <div className="flex gap-5 justify-center">
+        <div className={signupStartOptions}>
           <button
             type="button"
             onClick={() => selectKind(CONTRACTOR_KIND.INDIVIDUAL)}
-            className={`
-              flex h-40 w-40 flex-col items-center justify-center rounded-xl border
-              transition-all
-              ${
-                isSelected(CONTRACTOR_KIND.INDIVIDUAL)
-                  ? `border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20 shadow-sm`
-                  : `border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700`
-              }
-            `}
+            className={`${signupStartOptionBase} ${
+              isSelected(CONTRACTOR_KIND.INDIVIDUAL) ? signupStartOptionActive : signupStartOptionInactive
+            }`}
           >
-            <div className="text-4xl mb-2">👤</div>
+            <div className={signupStartOptionEmoji}>👤</div>
             <div
-              className={`text-sm font-semibold ${
-                isSelected(CONTRACTOR_KIND.INDIVIDUAL)
-                  ? `text-blue-700 dark:text-blue-300`
-                  : `text-gray-700 dark:text-gray-300`
+              className={`${signupStartOptionLabelBase} ${
+                isSelected(CONTRACTOR_KIND.INDIVIDUAL) ? signupStartOptionLabelActive : signupStartOptionLabelInactive
               }`}
             >
               INDIVIDUAL
@@ -71,22 +82,14 @@ export default function ChooseContractorKindStep() {
           <button
             type="button"
             onClick={() => selectKind(CONTRACTOR_KIND.ENTITY)}
-            className={`
-              flex h-40 w-40 flex-col items-center justify-center rounded-xl border
-              transition-all
-              ${
-                isSelected(CONTRACTOR_KIND.ENTITY)
-                  ? `border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20 shadow-sm`
-                  : `border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700`
-              }
-            `}
+            className={`${signupStartOptionBase} ${
+              isSelected(CONTRACTOR_KIND.ENTITY) ? signupStartOptionActive : signupStartOptionInactive
+            }`}
           >
-            <div className="text-4xl mb-2">🏢</div>
+            <div className={signupStartOptionEmoji}>🏢</div>
             <div
-              className={`text-sm font-semibold ${
-                isSelected(CONTRACTOR_KIND.ENTITY)
-                  ? `text-blue-700 dark:text-blue-300`
-                  : `text-gray-700 dark:text-gray-300`
+              className={`${signupStartOptionLabelBase} ${
+                isSelected(CONTRACTOR_KIND.ENTITY) ? signupStartOptionLabelActive : signupStartOptionLabelInactive
               }`}
             >
               ENTITY
@@ -96,9 +99,9 @@ export default function ChooseContractorKindStep() {
 
         {/* Description (optional, but matching previous screen style) */}
         {signup.contractorKind === CONTRACTOR_KIND.INDIVIDUAL && (
-          <div className="text-left text-sm text-gray-600 dark:text-gray-300 mx-auto max-w-sm space-y-1">
-            <div className="font-medium">As an individual contractor you can:</div>
-            <ul className="list-disc list-inside space-y-1">
+          <div className={signupStartInfo}>
+            <div className={signupStartInfoTitle}>As an individual contractor you can:</div>
+            <ul className={signupStartList}>
               <li>Work with global clients</li>
               <li>Get paid faster</li>
               <li>Track all invoices in one place</li>
@@ -108,9 +111,9 @@ export default function ChooseContractorKindStep() {
         )}
 
         {signup.contractorKind === CONTRACTOR_KIND.ENTITY && (
-          <div className="text-left text-sm text-gray-600 dark:text-gray-300 mx-auto max-w-sm space-y-1">
-            <div className="font-medium">As an entity contractor you can:</div>
-            <ul className="list-disc list-inside space-y-1">
+          <div className={signupStartInfo}>
+            <div className={signupStartInfoTitle}>As an entity contractor you can:</div>
+            <ul className={signupStartList}>
               <li>Manage your company’s invoices</li>
               <li>Assign roles and collaborate</li>
               <li>Work with verified businesses</li>
@@ -119,19 +122,11 @@ export default function ChooseContractorKindStep() {
           </div>
         )}
 
-        <button
-          disabled={!signup.contractorKind}
-          onClick={onNext}
-          className="w-full rounded-lg bg-blue-600 px-5 py-3 text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-        >
+        <button disabled={!signup.contractorKind} onClick={onNext} className={signupStartNextButton}>
           Next
         </button>
 
-        <button
-          onClick={() => router.push(`/signup/start`)}
-          className="block w-full text-sm text-gray-500 dark:text-gray-400 mt-2 hover:underline"
-          type="button"
-        >
+        <button onClick={() => router.push(`/signup/start`)} className={signupStartBackButton} type="button">
           ← Back
         </button>
       </div>

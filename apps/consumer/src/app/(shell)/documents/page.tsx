@@ -1,6 +1,7 @@
 import { type Metadata } from 'next';
 
 import { DocumentsList } from '../../../components';
+import { pageContainer, pageSubtitle, pageTitle } from '../../../components/ui/classNames';
 
 export const metadata: Metadata = {
   title: `Documents - Remoola`,
@@ -8,11 +9,9 @@ export const metadata: Metadata = {
 
 export default function DocumentsPage() {
   return (
-    <div className="px-8 py-6">
-      <h1 className="text-2xl font-semibold text-slate-900 dark:text-white mb-2">Documents</h1>
-      <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-        Access all your uploaded and payment-related files.
-      </p>
+    <div className={pageContainer}>
+      <h1 className={pageTitle}>Documents</h1>
+      <p className={pageSubtitle}>Access all your uploaded and payment-related files.</p>
 
       <DocumentsList />
     </div>

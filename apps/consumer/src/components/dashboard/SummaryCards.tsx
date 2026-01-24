@@ -1,6 +1,15 @@
 'use client';
 
 import { type IDashboardSummary } from '../../types';
+import {
+  cardBaseSoft,
+  summaryCardLabel,
+  summaryGrid,
+  summaryValueLg,
+  summaryValueMd,
+  summaryValueMeta,
+  summaryValueSm,
+} from '../ui/classNames';
 
 function formatMoney(cents: number, currency = `USD`) {
   return new Intl.NumberFormat(undefined, {
@@ -21,22 +30,24 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
     : `—`;
 
   return (
-    <section className="grid gap-4 md:grid-cols-3">
-      <div className="rounded-2xl bg-white/90 dark:bg-slate-800/90 px-6 py-4 shadow-sm">
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Balance</p>
-        <p className="mt-2 text-3xl font-semibold text-slate-900 dark:text-white">{formatMoney(summary.balanceCents)}</p>
+    <section className={summaryGrid}>
+      <div className={cardBaseSoft}>
+        <p className={summaryCardLabel}>Balance</p>
+        <p className={summaryValueLg}>{formatMoney(summary.balanceCents)}</p>
       </div>
 
-      <div className="rounded-2xl bg-white/90 dark:bg-slate-800/90 px-6 py-4 shadow-sm">
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Contracts</p>
-        <p className="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">
-          {summary.activeRequests} <span className="text-sm font-normal text-slate-500 dark:text-slate-400">active</span>
+      <div className={cardBaseSoft}>
+        <p className={summaryCardLabel}>Contracts</p>
+        <p className={summaryValueMd}>
+          {summary.activeRequests}
+          {` `}
+          <span className={summaryValueMeta}>active</span>
         </p>
       </div>
 
-      <div className="rounded-2xl bg-white/90 dark:bg-slate-800/90 px-6 py-4 shadow-sm">
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Last payment</p>
-        <p className="mt-2 text-lg font-semibold text-slate-900 dark:text-white">{lastPaymentLabel}</p>
+      <div className={cardBaseSoft}>
+        <p className={summaryCardLabel}>Last payment</p>
+        <p className={summaryValueSm}>{lastPaymentLabel}</p>
       </div>
     </section>
   );

@@ -3,6 +3,23 @@
 import { CreditCard, Landmark, Star, Pencil, Trash2 } from 'lucide-react';
 
 import { type PaymentMethodItem } from '../../types';
+import {
+  actionButtonDanger,
+  actionButtonPrimary,
+  badgeDefaultInline,
+  emptyStateBody,
+  emptyStateCentered,
+  emptyStateTitle,
+  flexCol,
+  flexRowGap3,
+  flexRowGap4,
+  paymentMethodRow,
+  paymentMethodRowIcon,
+  paymentMethodRowMeta,
+  paymentMethodRowTitle,
+  spaceY4,
+  textSm,
+} from '../ui/classNames';
 
 type PaymentMethodsListProps = {
   payments: PaymentMethodItem[];
@@ -13,18 +30,18 @@ type PaymentMethodsListProps = {
 export function PaymentMethodsList({ payments, onEditAction, onDeleteAction }: PaymentMethodsListProps) {
   if (!payments.length) {
     return (
-      <div className="text-center py-10">
-        <div className="text-gray-400 dark:text-slate-500 mb-4">No payment methods added yet.</div>
-        <div className="text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-          If you had payment methods that are no longer showing, they may have been updated for security reasons.
-          Please add new payment methods using the button above.
+      <div className={emptyStateCentered}>
+        <div className={emptyStateTitle}>No payment methods added yet.</div>
+        <div className={emptyStateBody}>
+          If you had payment methods that are no longer showing, they may have been updated for security reasons. Please
+          add new payment methods using the button above.
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className={spaceY4}>
       {payments.map((pm) => (
         <PaymentMethodRow key={pm.id} payment={pm} onEdit={onEditAction} onDelete={onDeleteAction} />
       ))}
@@ -48,24 +65,22 @@ function PaymentMethodRow({
   const icon = getPaymentMethodIcon(payment);
 
   return (
-    <div className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-xl border dark:border-slate-600 shadow-sm hover:shadow transition">
+    <div className={paymentMethodRow}>
       {/* LEFT */}
-      <div className="flex gap-4 items-center">
-        <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-700 dark:text-gray-300">{icon}</div>
+      <div className={flexRowGap4}>
+        <div className={paymentMethodRowIcon}>{icon}</div>
 
-        <div className="flex flex-col">
-          <div className="font-semibold text-gray-900 dark:text-white">
+        <div className={flexCol}>
+          <div className={paymentMethodRowTitle}>
             {payment.type === `CREDIT_CARD`
               ? `${payment.brand} •••• ${payment.last4}`
               : `Bank Account •••• ${payment.last4}`}
           </div>
 
-          <div className="text-sm text-gray-500 dark:text-gray-400">
-            {payment.billingDetails?.name ?? `No billing name`}
-          </div>
+          <div className={paymentMethodRowMeta}>{payment.billingDetails?.name ?? `No billing name`}</div>
 
           {payment.defaultSelected && (
-            <span className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-full font-medium">
+            <span className={`mt-1 ${badgeDefaultInline}`}>
               <Star size={12} /> Default
             </span>
           )}
@@ -73,19 +88,13 @@ function PaymentMethodRow({
       </div>
 
       {/* ACTIONS */}
-      <div className="flex gap-3 text-sm">
-        <button
-          className="flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
-          onClick={() => onEdit(payment)}
-        >
+      <div className={`${flexRowGap3} ${textSm}`}>
+        <button className={actionButtonPrimary} onClick={() => onEdit(payment)}>
           <Pencil size={14} />
           Edit
         </button>
 
-        <button
-          className="flex items-center gap-1 text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
-          onClick={() => onDelete(payment)}
-        >
+        <button className={actionButtonDanger} onClick={() => onDelete(payment)}>
           <Trash2 size={14} />
           Delete
         </button>

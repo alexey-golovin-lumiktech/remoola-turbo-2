@@ -1,5 +1,15 @@
 'use client';
 
+import {
+  flexRowGap3,
+  mlAuto,
+  modalButtonPrimary,
+  successModalContent,
+  successModalDescription,
+  successModalOverlay,
+  successModalTitle,
+} from '../ui/classNames';
+
 import type { ReactNode } from 'react';
 
 type SuccessModalProps = {
@@ -14,18 +24,14 @@ export function SuccessModal({ open, title, description, onCloseAction, actions 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30 dark:bg-black/60 backdrop-blur-sm">
-      <div className="w-[90%] max-w-sm rounded-xl bg-white dark:bg-slate-800 p-6 shadow-xl">
-        <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
-        {description && <p className="mb-4 text-sm text-gray-600 dark:text-gray-300">{description}</p>}
+    <div className={successModalOverlay}>
+      <div className={successModalContent}>
+        <h3 className={successModalTitle}>{title}</h3>
+        {description && <p className={successModalDescription}>{description}</p>}
 
-        <div className="flex gap-3">
+        <div className={flexRowGap3}>
           {actions}
-          <button
-            type="button"
-            onClick={onCloseAction}
-            className="ml-auto rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 dark:hover:bg-blue-500"
-          >
+          <button type="button" onClick={onCloseAction} className={`${modalButtonPrimary} ${mlAuto}`}>
             OK
           </button>
         </div>

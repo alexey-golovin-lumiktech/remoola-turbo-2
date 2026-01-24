@@ -4,6 +4,25 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Theme, useTheme, type ITheme } from '../../../../components/ThemeProvider';
+import {
+  themeCard,
+  themeDescription,
+  themeDeviceHint,
+  themeOptionActive,
+  themeOptionBase,
+  themeOptionBody,
+  themeOptionCheck,
+  themeOptionCheckInner,
+  themeOptionDisabled,
+  themeOptionIcon,
+  themeOptionInactive,
+  themeOptionInput,
+  themeOptionLabel,
+  themeOptionText,
+  themeOptions,
+  themeTitle,
+  themeUpdating,
+} from '../../../../components/ui/classNames';
 
 interface ThemeOption {
   value: ITheme;
@@ -12,7 +31,7 @@ interface ThemeOption {
   icon: string;
 }
 
-const themeOptions: ThemeOption[] = [
+const themeSettings: ThemeOption[] = [
   {
     value: Theme.LIGHT,
     label: `Light`,
@@ -86,23 +105,20 @@ export function ThemeSettingsForm() {
   }
 
   return (
-    <div className="border p-6 rounded-xl bg-white shadow-sm dark:bg-slate-800 dark:border-slate-600">
-      <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Theme Settings</h3>
-      <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">
+    <div className={themeCard}>
+      <h3 className={themeTitle}>Theme Settings</h3>
+      <p className={themeDescription}>
         Choose how Remoola looks to you. Select a theme or follow your system preference.
       </p>
-      {theme === Theme.SYSTEM && <p className="text-xs text-gray-500 dark:text-gray-400 mb-6">Using device theme</p>}
+      {theme === Theme.SYSTEM && <p className={themeDeviceHint}>Using device theme</p>}
 
-      <div className="space-y-3">
-        {themeOptions.map((option) => (
+      <div className={themeOptions}>
+        {themeSettings.map((option) => (
           <label
             key={option.value}
-            className={`flex items-center p-4 rounded-lg border cursor-pointer transition-colors ${
-              theme === option.value
-                ? `border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400`
-                : `border-gray-200 bg-gray-50 hover:bg-gray-100 dark:border-slate-600
-                dark:bg-slate-700 dark:hover:bg-slate-600`
-            } ${loading ? `opacity-50 pointer-events-none` : ``}`}
+            className={`${themeOptionBase} ${
+              theme === option.value ? themeOptionActive : themeOptionInactive
+            } ${loading ? themeOptionDisabled : ``}`}
           >
             <input
               type="radio"
@@ -110,26 +126,26 @@ export function ThemeSettingsForm() {
               value={option.value}
               checked={theme === option.value}
               onChange={(e) => updateTheme(e.target.value as ITheme)}
-              className="sr-only"
+              className={themeOptionInput}
               disabled={loading}
             />
-            <div className="flex items-center flex-1">
-              <span className="text-2xl mr-4">{option.icon}</span>
+            <div className={themeOptionBody}>
+              <span className={themeOptionIcon}>{option.icon}</span>
               <div>
-                <div className="font-medium text-gray-900 dark:text-white">{option.label}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-300">{option.description}</div>
+                <div className={themeOptionLabel}>{option.label}</div>
+                <div className={themeOptionText}>{option.description}</div>
               </div>
             </div>
             {theme === option.value && (
-              <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
-                <div className="w-2 h-2 rounded-full bg-white dark:bg-slate-200" />
+              <div className={themeOptionCheck}>
+                <div className={themeOptionCheckInner} />
               </div>
             )}
           </label>
         ))}
       </div>
 
-      {loading && <div className="mt-4 text-sm text-gray-600 dark:text-gray-300">Updating theme...</div>}
+      {loading && <div className={themeUpdating}>Updating theme...</div>}
     </div>
   );
 }

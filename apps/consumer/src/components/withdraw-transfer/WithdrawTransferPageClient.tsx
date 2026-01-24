@@ -4,6 +4,13 @@ import { useEffect, useState } from 'react';
 
 import { TransferForm } from './TransferForm';
 import { WithdrawForm } from './WithdrawForm';
+import {
+  spaceY8,
+  withdrawTransferBalance,
+  withdrawTransferBalanceAmount,
+  withdrawTransferContainer,
+  withdrawTransferTitle,
+} from '../ui/classNames';
 
 type BalanceMap = Record<string, number>;
 
@@ -26,20 +33,20 @@ export function WithdrawTransferPageClient() {
 
   const entries = Object.entries(balances);
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8">
-      <h1 className="mb-2 text-2xl font-semibold text-gray-900 dark:text-white">Withdraw And Transfer</h1>
+    <div className={withdrawTransferContainer}>
+      <h1 className={withdrawTransferTitle}>Withdraw And Transfer</h1>
 
       {entries.length > 0 &&
         entries.map(([currency, amount]) => (
-          <p key={currency} className="mb-2 text-sm text-gray-700 dark:text-gray-300">
+          <p key={currency} className={withdrawTransferBalance}>
             Available balance:{` `}
-            <span className="font-semibold">
+            <span className={withdrawTransferBalanceAmount}>
               {currency} {amount.toFixed(2)}
             </span>
           </p>
         ))}
 
-      <div className="space-y-8">
+      <div className={spaceY8}>
         <WithdrawForm />
         <TransferForm />
       </div>

@@ -1,5 +1,16 @@
 'use client';
 
+import {
+  stepperCircleActive,
+  stepperCircleBase,
+  stepperCircleComplete,
+  stepperCircleInactive,
+  stepperContainer,
+  stepperItem,
+  stepperLabelActive,
+  stepperLabelBase,
+  stepperLabelInactive,
+} from '../../../../components/ui/classNames';
 import { useSignupSteps } from '../hooks';
 
 export function Stepper() {
@@ -7,26 +18,22 @@ export function Stepper() {
   const currentIndex = steps.findIndex((s) => s.name === currentStep);
 
   return (
-    <div className="flex items-center justify-between w-full max-w-md mx-auto mt-5 mb-8 gap-3">
+    <div className={stepperContainer}>
       {steps.map((step, index) => {
         const isActive = index === currentIndex;
         const isCompleted = step.submitted || index < currentIndex;
 
         return (
-          <div key={step.name} className="flex flex-col items-center flex-1 text-center">
+          <div key={step.name} className={stepperItem}>
             <div
-              className={`flex h-9 w-9 items-center justify-center rounded-full border text-sm transition
-                ${isActive ? `border-blue-600 bg-blue-600 text-white` : ``}
-                ${isCompleted ? `border-green-600 bg-green-600 text-white` : ``}
-                ${!isActive && !isCompleted ? `border-gray-300 dark:border-slate-600 text-gray-500 dark:text-slate-400` : ``}`}
+              className={`${stepperCircleBase} ${isActive ? stepperCircleActive : ``} ${
+                isCompleted ? stepperCircleComplete : ``
+              } ${!isActive && !isCompleted ? stepperCircleInactive : ``}`}
             >
               {isCompleted ? `✓` : index + 1}
             </div>
 
-            <span
-              className={`mt-2 text-[11px] leading-tight
-                ${isActive ? `font-semibold text-blue-600 dark:text-blue-400` : `text-gray-600 dark:text-gray-400`}`}
-            >
+            <span className={`${stepperLabelBase} ${isActive ? stepperLabelActive : stepperLabelInactive}`}>
               {step.label}
             </span>
           </div>

@@ -6,6 +6,28 @@ import { useMemo, useState } from 'react';
 
 import { type StripeSetupIntentPayload, type PaymentMethodType, type CreatePaymentMethodDto } from '../../../types';
 import { useTheme } from '../../ThemeProvider';
+import {
+  checkboxPrimary,
+  flexRowGap3,
+  flexRowItemsCenter,
+  gap2,
+  methodToggleButtonActive,
+  methodToggleButtonBase,
+  methodToggleButtonInactive,
+  modalButtonPrimary,
+  modalButtonSecondary,
+  modalContentLg,
+  modalFieldVariant,
+  modalFooterActions,
+  modalInfoCard,
+  modalOverlayClass,
+  modalTitleClass,
+  p2,
+  p4,
+  spaceY3,
+  textMutedGrayStrong,
+  textSm,
+} from '../../ui/classNames';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
@@ -189,118 +211,107 @@ function AddPaymentMethodModalInner({
   }
 
   return (
-    <div
-      className="fixed inset-0 bg-black/40 dark:bg-black/60 flex items-center justify-center z-50"
-      onClick={() => !loading && onClose()}
-    >
-      <div
-        className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-lg shadow-xl space-y-5"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Add payment method</h2>
+    <div className={modalOverlayClass} onClick={() => !loading && onClose()}>
+      <div className={`${modalContentLg} space-y-5`} onClick={(e) => e.stopPropagation()}>
+        <h2 className={`${modalTitleClass} mb-2`}>Add payment method</h2>
 
         {/* Method selector */}
-        <div className="flex gap-3">
+        <div className={flexRowGap3}>
           <button
             onClick={() => setMethodType(`CREDIT_CARD`)}
-            className={`px-3 py-2 rounded-lg border ${
-              methodType === `CREDIT_CARD` ? `bg-blue-600 text-white border-blue-600` : `bg-gray-100 dark:bg-slate-700 dark:text-white`
-            }`}
+            className={`
+              ${methodToggleButtonBase}
+              ${methodType === `CREDIT_CARD` ? methodToggleButtonActive : methodToggleButtonInactive}
+            `}
           >
             Credit Card
           </button>
 
           <button
             onClick={() => setMethodType(`BANK_ACCOUNT`)}
-            className={`px-3 py-2 rounded-lg border ${
-              methodType === `BANK_ACCOUNT` ? `bg-blue-600 text-white border-blue-600` : `bg-gray-100 dark:bg-slate-700 dark:text-white`
-            }`}
+            className={`
+              ${methodToggleButtonBase}
+              ${methodType === `BANK_ACCOUNT` ? methodToggleButtonActive : methodToggleButtonInactive}
+            `}
           >
             Bank Account
           </button>
         </div>
 
         {/* Billing details */}
-        <div className="space-y-3">
+        <div className={spaceY3}>
           <input
             placeholder="Billing name"
             value={billingName}
             onChange={(e) => setBillingName(e.target.value)}
-            className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
+            className={modalFieldVariant}
           />
 
           <input
             placeholder="Billing email"
             value={billingEmail}
             onChange={(e) => setBillingEmail(e.target.value)}
-            className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
+            className={modalFieldVariant}
           />
 
           <input
             placeholder="Billing phone"
             value={billingPhone}
             onChange={(e) => setBillingPhone(e.target.value)}
-            className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
+            className={modalFieldVariant}
           />
         </div>
 
         {/* Card form */}
         {methodType === `CREDIT_CARD` && (
-          <div className="border border-gray-200 dark:border-slate-600 rounded-lg p-4 bg-gray-50 dark:bg-slate-700">
-            <CardElement className="p-2" options={cardElementOptions} />
+          <div className={`${modalInfoCard} ${p4}`}>
+            <CardElement className={p2} options={cardElementOptions} />
           </div>
         )}
 
         {/* Bank form */}
         {methodType === `BANK_ACCOUNT` && (
-          <div className="space-y-3 border border-gray-200 dark:border-slate-600 rounded-lg p-4 bg-gray-50 dark:bg-slate-700">
+          <div className={`${modalInfoCard} ${spaceY3} ${p4}`}>
             <input
               placeholder="Bank name"
               value={bankName}
               onChange={(e) => setBankName(e.target.value)}
-              className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
+              className={modalFieldVariant}
             />
 
             <input
               placeholder="Account number"
               value={bankAccount}
               onChange={(e) => setBankAccount(e.target.value)}
-              className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
+              className={modalFieldVariant}
             />
 
             <input
               placeholder="Routing number"
               value={bankRouting}
               onChange={(e) => setBankRouting(e.target.value)}
-              className="w-full border border-gray-300 dark:border-slate-600 rounded-lg p-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
+              className={modalFieldVariant}
             />
           </div>
         )}
 
-        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+        <label className={`${flexRowItemsCenter} ${gap2} ${textSm} ${textMutedGrayStrong}`}>
           <input
             type="checkbox"
             checked={defaultSelected}
             onChange={(e) => setDefaultSelected(e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300 dark:border-slate-600 text-blue-600 dark:text-blue-400"
+            className={checkboxPrimary}
           />
           Set as default payment method
         </label>
 
         {/* Footer buttons */}
-        <div className="flex justify-end gap-2 pt-4">
-          <button
-            onClick={() => !loading && onClose()}
-            className="px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-600 text-sm disabled:opacity-50"
-          >
+        <div className={modalFooterActions}>
+          <button onClick={() => !loading && onClose()} className={modalButtonSecondary}>
             Cancel
           </button>
 
-          <button
-            onClick={submit}
-            disabled={loading}
-            className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700 dark:hover:bg-blue-500 disabled:opacity-50"
-          >
+          <button onClick={submit} disabled={loading} className={modalButtonPrimary}>
             {loading ? `Saving...` : `Add method`}
           </button>
         </div>

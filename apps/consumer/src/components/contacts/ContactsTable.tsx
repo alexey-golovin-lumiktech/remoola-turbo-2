@@ -1,6 +1,21 @@
 'use client';
 
 import { type ConsumerContactAddress, type ConsumerContact } from '../../types';
+import {
+  emptyStateText,
+  linkDanger,
+  linkPrimary,
+  tableBodyRowMuted,
+  tableCellBodySimple,
+  tableCellHeaderSimple,
+  tableHeaderRowMuted,
+  textMutedGrayStrong,
+  textMutedMixed,
+  textPrimary,
+  textRight,
+  textSm,
+  spaceX3,
+} from '../ui/classNames';
 
 type ContactsTableProps = {
   items: ConsumerContact[];
@@ -11,41 +26,41 @@ type ContactsTableProps = {
 
 export function ContactsTable({ items, onDetailsAction, onEditAction, onDeleteAction }: ContactsTableProps) {
   return (
-    <table className="w-full text-sm">
+    <table className={`w-full ${textSm}`}>
       <thead>
-        <tr className="text-left text-gray-400 dark:text-slate-500 border-b border-gray-200 dark:border-slate-600">
-          <th className="py-3">Name</th>
+        <tr className={tableHeaderRowMuted}>
+          <th className={tableCellHeaderSimple}>Name</th>
           <th>Email</th>
           <th>Address</th>
-          <th className="text-right">Actions</th>
+          <th className={textRight}>Actions</th>
         </tr>
       </thead>
 
       <tbody>
         {items.length === 0 && (
           <tr>
-            <td colSpan={4} className="text-center py-8 text-gray-400 dark:text-slate-500">
+            <td colSpan={4} className={emptyStateText}>
               No contacts found.
             </td>
           </tr>
         )}
 
         {items.map((c) => (
-          <tr key={c.id} className="border-b border-gray-200 dark:border-slate-600 last:border-none hover:bg-gray-50 dark:hover:bg-slate-700/30">
-            <td className="py-3 font-medium text-gray-900 dark:text-white">{c.name ?? `—`}</td>
-            <td className="text-gray-700 dark:text-gray-300">{c.email}</td>
-            <td className="text-gray-600 dark:text-slate-400">{shortAddress(c.address)}</td>
+          <tr key={c.id} className={tableBodyRowMuted}>
+            <td className={`${tableCellBodySimple} font-medium ${textPrimary}`}>{c.name ?? `—`}</td>
+            <td className={textMutedGrayStrong}>{c.email}</td>
+            <td className={textMutedMixed}>{shortAddress(c.address)}</td>
 
-            <td className="text-right space-x-3">
-              <button onClick={() => onDetailsAction(c)} className="text-blue-600 dark:text-blue-400 hover:underline">
+            <td className={`${textRight} ${spaceX3}`}>
+              <button onClick={() => onDetailsAction(c)} className={linkPrimary}>
                 Details
               </button>
 
-              <button onClick={() => onEditAction(c)} className="text-blue-600 dark:text-blue-400 hover:underline">
+              <button onClick={() => onEditAction(c)} className={linkPrimary}>
                 Edit
               </button>
 
-              <button onClick={() => onDeleteAction(c)} className="text-red-500 dark:text-red-400 hover:underline">
+              <button onClick={() => onDeleteAction(c)} className={linkDanger}>
                 Delete
               </button>
             </td>

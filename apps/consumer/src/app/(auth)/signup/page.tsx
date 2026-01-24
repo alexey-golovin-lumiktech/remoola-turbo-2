@@ -11,6 +11,7 @@ import {
   AddressDetailsStep,
 } from './components';
 import { useSignupForm, SignupStepsProvider, useSignupSteps } from './hooks';
+import { signupFlowContainer } from '../../../components/ui/classNames';
 import { STEP_NAME } from '../../../types';
 
 function SignupPageInner() {
@@ -35,7 +36,7 @@ function SignupFlow() {
   const { currentStep } = useSignupSteps();
 
   return (
-    <div className="flex flex-col items-center px-4 py-8">
+    <div className={signupFlowContainer}>
       <Stepper />
 
       {currentStep === STEP_NAME.SIGNUP_DETAILS && <SignupDetailsStep />}

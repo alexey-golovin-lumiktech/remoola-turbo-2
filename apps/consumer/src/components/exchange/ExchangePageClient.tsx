@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 
 import { BalancesPanel } from './BalancesPanel';
 import { ExchangeWidget } from './ExchangeWidget';
+import { exchangePageContainer, exchangePageTitle } from '../ui/classNames';
 
 type BalanceMap = Record<string, number>;
 
@@ -17,8 +18,8 @@ export function ExchangePageClient() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-2xl p-6">
-      <h1 className="text-2xl font-bold mb-6">Currency Exchange</h1>
+    <div className={exchangePageContainer}>
+      <h1 className={exchangePageTitle}>Currency Exchange</h1>
       <BalancesPanel balances={balances} />
       <ExchangeWidget balances={balances} />
     </div>

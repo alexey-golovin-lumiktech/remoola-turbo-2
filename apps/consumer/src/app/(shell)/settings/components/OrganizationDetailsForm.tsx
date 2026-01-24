@@ -2,6 +2,16 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 
+import {
+  formGridClass,
+  formGridSpan2,
+  formSection,
+  formSectionTitle,
+  inputClass,
+  inputLabel,
+  primaryActionButton,
+} from '../../../../components/ui/classNames';
+
 export function OrganizationDetailsForm({ profile, reload }: any) {
   const org = profile.organizationDetails ?? {};
 
@@ -39,36 +49,44 @@ export function OrganizationDetailsForm({ profile, reload }: any) {
   }
 
   return (
-    <section className="form-section">
-      <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Organization Details</h2>
+    <section className={formSection}>
+      <h2 className={formSectionTitle}>Organization Details</h2>
 
-      <div className="form-grid">
-        <div className="col-span-2">
-          <label className="input-label">Organization Name</label>
-          <input className="input" value={organizationName} onChange={(e) => setOrganizationName(e.target.value)} />
+      <div className={formGridClass}>
+        <div className={formGridSpan2}>
+          <label className={inputLabel}>Organization Name</label>
+          <input
+            className={inputClass}
+            value={organizationName}
+            onChange={(e) => setOrganizationName(e.target.value)}
+          />
         </div>
 
         <div>
-          <label className="input-label">Organization Size</label>
-          <input className="input" value={organizationSize} onChange={(e) => setOrganizationSize(e.target.value)} />
+          <label className={inputLabel}>Organization Size</label>
+          <input
+            className={inputClass}
+            value={organizationSize}
+            onChange={(e) => setOrganizationSize(e.target.value)}
+          />
         </div>
 
         <div>
-          <label className="input-label">Legal Status</label>
-          <input className="input" value={legalStatus} onChange={(e) => setLegalStatus(e.target.value)} />
+          <label className={inputLabel}>Legal Status</label>
+          <input className={inputClass} value={legalStatus} onChange={(e) => setLegalStatus(e.target.value)} />
         </div>
 
-        <div className="col-span-2">
-          <label className="input-label">Registration Number</label>
-          <input className="input" value={registrationNumber} onChange={(e) => setRegistrationNumber(e.target.value)} />
+        <div className={formGridSpan2}>
+          <label className={inputLabel}>Registration Number</label>
+          <input
+            className={inputClass}
+            value={registrationNumber}
+            onChange={(e) => setRegistrationNumber(e.target.value)}
+          />
         </div>
       </div>
 
-      <button
-        disabled={saving}
-        onClick={save}
-        className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500"
-      >
+      <button disabled={saving} onClick={save} className={primaryActionButton}>
         {saving ? `Saving...` : `Save Changes`}
       </button>
     </section>
