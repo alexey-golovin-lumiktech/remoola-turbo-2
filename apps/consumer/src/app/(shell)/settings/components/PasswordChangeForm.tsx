@@ -3,8 +3,16 @@ import { useState } from 'react';
 
 import styles from '../../../../components/ui/classNames.module.css';
 
-const { errorTextClass, formGrid, formSection, formSectionTitle, inputClass, inputLabel, primaryActionButton } =
-  styles;
+const {
+  errorTextClass,
+  formGrid,
+  formSection,
+  formSectionTitle,
+  inputClass,
+  inputLabel,
+  primaryActionButton,
+  spaceY6,
+} = styles;
 
 export function PasswordChangeForm({ reload }: any) {
   const [password, setPassword] = useState(``);
@@ -12,7 +20,8 @@ export function PasswordChangeForm({ reload }: any) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function save() {
+  async function save(e?: React.FormEvent) {
+    e?.preventDefault();
     setError(null);
 
     if (password !== confirm) {
@@ -46,26 +55,44 @@ export function PasswordChangeForm({ reload }: any) {
 
       {error && <p className={errorTextClass}>{error}</p>}
 
-      <div className={formGrid}>
-        <div>
-          <label className={inputLabel}>New Password</label>
-          <input
-            type="password"
-            className={inputClass}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+      <form onSubmit={save} className={spaceY6}>
+        <input
+          type="text"
+          autoComplete="username"
+          value=""
+          readOnly
+          aria-hidden="true"
+          tabIndex={-1}
+          style={{ position: `absolute`, left: `-9999px`, width: `1px`, height: `1px`, opacity: 0 }}
+        />
+        <div className={formGrid}>
+          <div>
+            <label className={inputLabel}>New Password</label>
+            <input
+              type="password"
+              autoComplete="new-password"
+              className={inputClass}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className={inputLabel}>Confirm Password</label>
+            <input
+              type="password"
+              autoComplete="new-password"
+              className={inputClass}
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+            />
+          </div>
         </div>
 
-        <div>
-          <label className={inputLabel}>Confirm Password</label>
-          <input type="password" className={inputClass} value={confirm} onChange={(e) => setConfirm(e.target.value)} />
-        </div>
-      </div>
-
-      <button disabled={saving} onClick={save} className={primaryActionButton}>
-        {saving ? `Saving...` : `Change Password`}
-      </button>
+        <button type="submit" disabled={saving} className={primaryActionButton}>
+          {saving ? `Saving...` : `Change Password`}
+        </button>
+      </form>
     </section>
   );
 }
