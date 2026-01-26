@@ -2,7 +2,19 @@ import useSWR from 'swr';
 import useSWRMutation from 'swr/mutation';
 
 import { mutationFetcher } from './swr-config';
-import { queryKeys, type AdminDetails, type AdminMe, type Consumer, type PaymentRequest, type LedgerEntry } from './types';
+import {
+  queryKeys,
+  type AdminDetails,
+  type AdminMe,
+  type Consumer,
+  type PaymentRequest,
+  type LedgerEntry,
+  type DashboardStats,
+  type PaymentRequestsByStatus,
+  type RecentPaymentRequest,
+  type LedgerAnomaly,
+  type VerificationQueueItem,
+} from './types';
 
 // Auth hooks
 export function useAuth() {
@@ -76,6 +88,27 @@ export function usePaymentRequest(id: string) {
 // Ledger hooks
 export function useLedgerEntries() {
   return useSWR<LedgerEntry[]>(queryKeys.ledger.entries());
+}
+
+// Dashboard hooks
+export function useDashboardStats() {
+  return useSWR<DashboardStats>(queryKeys.dashboard.stats());
+}
+
+export function usePaymentRequestsByStatus() {
+  return useSWR<PaymentRequestsByStatus>(queryKeys.dashboard.paymentRequestsByStatus());
+}
+
+export function useRecentPaymentRequests() {
+  return useSWR<RecentPaymentRequest[]>(queryKeys.dashboard.recentPaymentRequests());
+}
+
+export function useLedgerAnomalies() {
+  return useSWR<LedgerAnomaly[]>(queryKeys.dashboard.ledgerAnomalies());
+}
+
+export function useVerificationQueue() {
+  return useSWR<VerificationQueueItem[]>(queryKeys.dashboard.verificationQueue());
 }
 
 // Generic mutation hook for optimistic updates

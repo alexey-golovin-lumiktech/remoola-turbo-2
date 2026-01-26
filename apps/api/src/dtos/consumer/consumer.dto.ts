@@ -56,6 +56,22 @@ export class ConsumerDTO extends BaseModel implements ConsumerModel {
   @Expose()
   @ApiProperty({ required: false, default: null })
   stripeCustomerId: string;
+
+  @Expose()
+  @ApiProperty({ required: false })
+  verificationStatus: $Enums.VerificationStatus;
+
+  @Expose()
+  @ApiProperty({ required: false })
+  verificationReason: string;
+
+  @Expose()
+  @ApiProperty({ required: false })
+  verificationUpdatedAt: Date;
+
+  @Expose()
+  @ApiProperty({ required: false })
+  verificationUpdatedBy: string;
 }
 
 export class ConsumerCreate

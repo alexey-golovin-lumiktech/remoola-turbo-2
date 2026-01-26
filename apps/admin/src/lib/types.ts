@@ -28,7 +28,19 @@ export type TransactionStatus =
   | `DENIED`
   | `UNCOLLECTIBLE`;
 
+export type VerificationStatus = `PENDING` | `APPROVED` | `MORE_INFO` | `REJECTED` | `FLAGGED`;
+
 export type CurrencyCode = string; // keep flexible; you have a big enum
+
+export type ConsumerResource = {
+  id: string;
+  resource: {
+    id: string;
+    originalName: string;
+    downloadUrl: string;
+    createdAt: string;
+  };
+};
 
 export type Consumer = {
   id: string;
@@ -37,6 +49,10 @@ export type Consumer = {
   contractorKind?: ContractorKind | null;
   verified?: boolean | null;
   legalVerified?: boolean | null;
+  verificationStatus?: VerificationStatus | null;
+  verificationReason?: string | null;
+  verificationUpdatedAt?: string | null;
+  verificationUpdatedBy?: string | null;
   howDidHearAboutUs?: string | null;
   howDidHearAboutUsOther?: string | null;
   stripeCustomerId?: string | null;
@@ -47,6 +63,7 @@ export type Consumer = {
   organizationDetails?: OrganizationDetails | null;
   addressDetails?: AddressDetails | null;
   googleProfileDetails?: GoogleProfileDetails | null;
+  consumerResources?: ConsumerResource[];
 };
 
 export type AddressDetails = {
@@ -160,6 +177,13 @@ export const queryKeys = {
   ledger: {
     entries: () => [`api/ledger`] as const,
   },
+  dashboard: {
+    stats: () => [`api/dashboard/stats`] as const,
+    paymentRequestsByStatus: () => [`api/dashboard/payment-requests-by-status`] as const,
+    recentPaymentRequests: () => [`api/dashboard/recent-payment-requests`] as const,
+    ledgerAnomalies: () => [`api/dashboard/ledger-anomalies`] as const,
+    verificationQueue: () => [`api/dashboard/verification-queue`] as const,
+  },
 } as const;
 
 // Mutation types
@@ -175,4 +199,54 @@ export type UpdateAdminData = {
 
 export type ResetPasswordData = {
   password: string;
+};
+
+// Dashboard types
+export type DashboardStats = {
+  consumers: {
+    total: number;
+    verified: number;
+    unverified: number;
+  };
+  paymentRequests: {
+    total: number;
+    byStatus: Record<TransactionStatus, number>;
+  };
+  ledger: {
+    total: number;
+    anomalies: number;
+  };
+};
+
+export type PaymentRequestsByStatus = {
+  status: TransactionStatus;
+  count: number;
+  totalAmount: string;
+}[];
+
+export type RecentPaymentRequest = PaymentRequest & {
+  payer?: Pick<Consumer, `id` | `email`>;
+  requester?: Pick<Consumer, `id` | `email`>;
+};
+
+export type LedgerAnomaly = {
+  id: string;
+  type:
+    | `duplicate`
+    | `missing_ledger_entry`
+    | `dangling_ledger_entry`
+    | `unlinked_payment_ledger_entry`
+    | `amount_mismatch`
+    | `status_inconsistency`
+    | `premature_ledger_entry`;
+  description: string;
+  paymentRequestId?: string;
+  consumerId: string;
+  createdAt: string;
+};
+
+export type VerificationQueueItem = Consumer & {
+  personalDetails?: PersonalDetails;
+  organizationDetails?: OrganizationDetails;
+  documentsCount: number;
 };

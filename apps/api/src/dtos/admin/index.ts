@@ -1,6 +1,7 @@
 export * from './access-admin.dto';
 export * from './admin.dto';
 export * from './consumer.dto';
+export * from './consumer-verification.dto';
 export * from './credentials.dto';
 export * from './google-profile-details.dto';
 export * from './payment-request.dto';

@@ -6,6 +6,10 @@ export type IConsumerModel = {
   email: string;
   verified: boolean;
   legalVerified: boolean;
+  verificationStatus?: $Enums.VerificationStatus;
+  verificationReason?: string | null;
+  verificationUpdatedAt?: Date | null;
+  verificationUpdatedBy?: string | null;
 
   password?: string;
   salt?: string;

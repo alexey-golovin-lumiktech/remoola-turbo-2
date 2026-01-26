@@ -15,7 +15,8 @@ import {
 import { useSignupForm, useSignupSteps, useSignupSubmit } from '../../hooks';
 import { PrevNextButtons } from '../PrevNextButtons';
 
-const { errorTextClass, formInputFullWidth, signupStepCard, signupStepGroup, signupStepLabel, signupStepTitle } = styles;
+const { errorTextClass, formInputFullWidth, signupStepCard, signupStepGroup, signupStepLabel, signupStepTitle } =
+  styles;
 
 export function OrganizationDetailsStep() {
   const { isBusiness, isContractorEntity, organizationDetails, updateOrganization } = useSignupForm();

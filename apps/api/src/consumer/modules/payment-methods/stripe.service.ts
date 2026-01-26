@@ -200,7 +200,7 @@ export class ConsumerStripeService {
           await this.stripe.paymentMethods.attach(paymentMethod.stripePaymentMethodId, {
             customer: customerId,
           });
-          console.log(`Attached orphaned payment method to customer:`, paymentMethod.id);
+          console.warn(`Attached orphaned payment method to customer:`, paymentMethod.id);
         } catch (attachError: any) {
           if (
             attachError.type === `invalid_request_error` &&

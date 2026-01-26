@@ -87,6 +87,11 @@ model ConsumerModel {
   verified      Boolean? @default(false)
   legalVerified Boolean? @default(false) @map("legal_verified")
 
+  verificationStatus    VerificationStatus @default(PENDING) @map("verification_status")
+  verificationReason    String?            @map("verification_reason") @db.Text
+  verificationUpdatedAt DateTime?          @map("verification_updated_at") @db.Timestamptz(6)
+  verificationUpdatedBy String?            @map("verification_updated_by") @db.Uuid
+
   howDidHearAboutUs      HowDidHearAboutUs? @map("how_did_hear_about_us")
   howDidHearAboutUsOther String?            @map("how_did_hear_about_us_other") @db.VarChar(255)
   stripeCustomerId       String?            @map("stripe_customer_id") @db.VarChar(255)
@@ -569,6 +574,16 @@ enum LegalStatus {
   SOLE_TRADER
 
   @@map("legal_status_enum")
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  MORE_INFO
+  REJECTED
+  FLAGGED
+
+  @@map("verification_status_enum")
 }
 
 enum OrganizationSize {

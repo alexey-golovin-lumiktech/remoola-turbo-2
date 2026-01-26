@@ -1,6 +1,6 @@
 import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
-import { IsBoolean, IsEmail, IsIn, ValidateIf } from 'class-validator';
+import { IsBoolean, IsEmail, IsIn, IsOptional, IsString, ValidateIf } from 'class-validator';
 
 import { $Enums } from '@remoola/database-2';
 
@@ -30,6 +30,26 @@ class Consumer extends BaseModel implements IConsumerModel {
   @ValidateIf(({ value }) => value != null)
   @IsBoolean()
   legalVerified = false;
+
+  @Expose()
+  @ApiProperty({ required: false, default: `PENDING` })
+  @ValidateIf((_, value) => value != null)
+  @IsIn(Object.values($Enums.VerificationStatus))
+  verificationStatus?: $Enums.VerificationStatus = $Enums.VerificationStatus.PENDING;
+
+  @Expose()
+  @ApiProperty({ required: false, default: null })
+  @IsOptional()
+  @IsString()
+  verificationReason?: string | null = null;
+
+  @Expose()
+  @ApiProperty({ required: false, default: null })
+  verificationUpdatedAt?: Date | null = null;
+
+  @Expose()
+  @ApiProperty({ required: false, default: null })
+  verificationUpdatedBy?: string | null = null;
 
   @Expose()
   @ApiProperty({ required: false, default: null })

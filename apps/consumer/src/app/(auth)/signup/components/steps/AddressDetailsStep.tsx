@@ -5,7 +5,8 @@ import { STEP_NAME } from '../../../../../types';
 import { useSignupForm, useSignupSteps, useSignupSubmit } from '../../hooks';
 import { PrevNextButtons } from '../PrevNextButtons';
 
-const { errorTextClass, formInputFullWidth, signupStepCard, signupStepGroup, signupStepLabel, signupStepTitle } = styles;
+const { errorTextClass, formInputFullWidth, signupStepCard, signupStepGroup, signupStepLabel, signupStepTitle } =
+  styles;
 
 export function AddressDetailsStep() {
   const { isContractorIndividual, addressDetails, updateAddress } = useSignupForm();
