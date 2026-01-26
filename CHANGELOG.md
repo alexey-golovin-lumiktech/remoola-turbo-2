@@ -261,4 +261,17 @@
                   and fixed password change form by wrapping fields in a proper form,
                   adding autocomplete support and preserving existing layout.
 
+- **2026-01-26:** Normalized consumer flows and admin actions by refining signup steps,
+                  dashboard data views, modal interactions, and shared UI components,
+                  added admin theme switching with CSS custom properties and a topbar toggle,
+                  centralized admin styling into CSS modules and cleaned up views,
+                  implemented comprehensive admin dashboard metrics including status totals,
+                  recent payments, ledger anomalies and verification queue,
+                  introduced `AdminDashboardService` for statistics and anomaly detection,
+                  added consumer verification workflow with approve/reject/flag actions,
+                  extended `Consumer` model with verification state and audit fields,
+                  implemented ledger anomaly detection logic,
+                  added dashboard API endpoints with client-side hooks,
+                  and added admin API guard to prevent self-delete.
+
 ```
