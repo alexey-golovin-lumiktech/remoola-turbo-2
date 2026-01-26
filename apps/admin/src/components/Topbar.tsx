@@ -4,11 +4,13 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { apiFetch } from '../lib';
+import { Theme, useTheme } from './ThemeProvider';
 import styles from './ui/classNames.module.css';
 
 export function Topbar() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const { resolvedTheme, toggleTheme } = useTheme();
 
   async function logout() {
     setLoading(true);
@@ -20,9 +22,14 @@ export function Topbar() {
   return (
     <header className={styles.adminTopbar}>
       <div className={styles.adminTopbarTitle}>Admin Panel</div>
-      <button disabled={loading} onClick={logout} className={styles.adminTopbarLogout}>
-        {loading ? `Signing out...` : `Sign out`}
-      </button>
+      <div className={styles.adminTopbarActions}>
+        <button type="button" onClick={toggleTheme} className={styles.adminTopbarTheme}>
+          {resolvedTheme === Theme.DARK ? `Switch to Light` : `Switch to Dark`}
+        </button>
+        <button disabled={loading} onClick={logout} className={styles.adminTopbarLogout}>
+          {loading ? `Signing out...` : `Sign out`}
+        </button>
+      </div>
     </header>
   );
 }

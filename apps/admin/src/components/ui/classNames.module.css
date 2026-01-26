@@ -3,19 +3,27 @@
 @custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
 
 .adminTopbar {
-  @apply flex items-center justify-between border-b bg-white px-6 py-3;
+  @apply flex items-center justify-between border-b bg-[var(--card)] px-6 py-3;
 }
 
 .adminTopbarTitle {
-  @apply text-sm text-gray-600;
+  @apply text-sm text-[var(--muted)];
+}
+
+.adminTopbarActions {
+  @apply flex items-center gap-2;
+}
+
+.adminTopbarTheme {
+  @apply rounded-lg border border-[var(--line)] px-3 py-1.5 text-sm text-[var(--ink)] hover:bg-[var(--bg-0)];
 }
 
 .adminTopbarLogout {
-  @apply rounded-lg border px-3 py-1.5 text-sm hover:bg-gray-50 disabled:opacity-60;
+  @apply rounded-lg border border-[var(--line)] px-3 py-1.5 text-sm text-[var(--ink)] hover:bg-[var(--bg-0)] disabled:opacity-60;
 }
 
 .adminSidebar {
-  @apply w-64 border-r bg-white;
+  @apply w-64 border-r border-[var(--line)] bg-[var(--card)];
 }
 
 .adminSidebarHeader {
@@ -27,7 +35,7 @@
 }
 
 .adminSidebarMeta {
-  @apply text-xs text-gray-500;
+  @apply text-xs text-[var(--muted)];
 }
 
 .adminSidebarNav {
@@ -39,15 +47,15 @@
 }
 
 .adminSidebarLinkActive {
-  @apply bg-gray-100 font-medium;
+  @apply bg-[var(--bg-0)] font-medium;
 }
 
 .adminSidebarLinkInactive {
-  @apply text-gray-700 hover:bg-gray-50;
+  @apply text-[var(--ink)] hover:bg-[var(--bg-0)];
 }
 
 .adminSkeletonBase {
-  @apply animate-pulse rounded-md bg-gray-200;
+  @apply animate-pulse rounded-md bg-[var(--bg-1)];
 }
 
 .adminSkeletonTable {
@@ -71,7 +79,7 @@
 }
 
 .adminSkeletonCard {
-  @apply p-6 border rounded-lg bg-white;
+  @apply p-6 border border-[var(--line)] rounded-lg bg-[var(--card)];
 }
 
 .adminSkeletonCardBody {
@@ -163,7 +171,7 @@
 }
 
 .adminStatusPillNeutral {
-  @apply bg-gray-50 text-gray-700 border-gray-200;
+  @apply bg-[var(--bg-0)] text-[var(--ink)] border-[var(--line)];
 }
 
 .adminLoadingFallback {
@@ -183,11 +191,11 @@
 }
 
 .adminErrorBoundaryTitle {
-  @apply text-xl font-semibold text-gray-900 mb-2;
+  @apply text-xl font-semibold text-[var(--ink)] mb-2;
 }
 
 .adminErrorBoundaryMessage {
-  @apply text-gray-600 mb-4;
+  @apply text-[var(--muted)] mb-4;
 }
 
 .adminErrorBoundaryButton {
@@ -207,7 +215,7 @@
 }
 
 .adminErrorFallbackMessage {
-  @apply text-gray-700 mb-3;
+  @apply text-[var(--ink)] mb-3;
 }
 
 .adminErrorFallbackButton {
@@ -215,11 +223,11 @@
 }
 
 .adminJsonView {
-  @apply overflow-auto rounded-xl border bg-gray-50 p-4 text-xs leading-relaxed;
+  @apply overflow-auto rounded-xl border border-[var(--line)] bg-[var(--bg-0)] p-4 text-xs leading-relaxed text-[var(--ink)];
 }
 
 .adminDataTableWrapper {
-  @apply overflow-x-auto rounded-xl border bg-white;
+  @apply overflow-x-auto rounded-xl border border-[var(--line)] bg-[var(--card)];
 }
 
 .adminDataTable {
@@ -227,15 +235,15 @@
 }
 
 .adminDataTableHead {
-  @apply border-b bg-gray-50;
+  @apply border-b border-[var(--line)] bg-[var(--bg-0)];
 }
 
 .adminDataTableHeaderCell {
-  @apply px-4 py-3 text-left text-xs font-semibold text-gray-700;
+  @apply px-4 py-3 text-left text-xs font-semibold text-[var(--muted)];
 }
 
 .adminDataTableRow {
-  @apply border-b last:border-b-0 hover:bg-gray-50;
+  @apply border-b border-[var(--line)] last:border-b-0 hover:bg-[var(--bg-0)];
 }
 
 .adminDataTableCell {
@@ -247,11 +255,11 @@
 }
 
 .adminLoginContainer {
-  @apply flex min-h-screen items-center justify-center bg-gray-50 p-6;
+  @apply flex min-h-screen items-center justify-center bg-[var(--bg-0)] p-6;
 }
 
 .adminLoginForm {
-  @apply w-full max-w-sm rounded-xl border bg-white p-6 shadow-sm;
+  @apply w-full max-w-sm rounded-xl border border-[var(--line)] bg-[var(--card)] p-6 shadow-[var(--shadow)];
 }
 
 .adminLoginTitle {
@@ -259,7 +267,7 @@
 }
 
 .adminLoginSubtitle {
-  @apply mt-1 text-sm text-gray-600;
+  @apply mt-1 text-sm text-[var(--muted)];
 }
 
 .adminLoginFields {
@@ -271,11 +279,11 @@
 }
 
 .adminLoginLabelText {
-  @apply mb-1 text-xs font-medium text-gray-700;
+  @apply mb-1 text-xs font-medium text-[var(--muted)];
 }
 
 .adminLoginInput {
-  @apply w-full rounded-lg border px-3 py-2 text-sm;
+  @apply w-full rounded-lg border border-[var(--line)] bg-[var(--card)] px-3 py-2 text-sm text-[var(--ink)];
 }
 
 .adminLoginError {
@@ -283,19 +291,19 @@
 }
 
 .adminLoginButton {
-  @apply w-full rounded-lg bg-black px-3 py-2 text-sm font-medium text-white disabled:opacity-70;
+  @apply w-full rounded-lg bg-[var(--blue-600)] px-3 py-2 text-sm font-medium text-white disabled:opacity-70;
 }
 
 .adminLoginSkeletonContainer {
-  @apply flex min-h-screen items-center justify-center bg-gray-50 p-6;
+  @apply flex min-h-screen items-center justify-center bg-[var(--bg-0)] p-6;
 }
 
 .adminLoginSkeletonCard {
-  @apply w-full max-w-sm rounded-xl border bg-white p-6 shadow-sm;
+  @apply w-full max-w-sm rounded-xl border border-[var(--line)] bg-[var(--card)] p-6 shadow-[var(--shadow)];
 }
 
 .adminLoginSkeletonTitle {
-  @apply h-6 w-32 rounded bg-gray-200;
+  @apply h-6 w-32 rounded bg-[var(--bg-1)];
 }
 
 .adminLoginSkeletonFields {
@@ -303,11 +311,11 @@
 }
 
 .adminLoginSkeletonField {
-  @apply h-10 rounded bg-gray-200;
+  @apply h-10 rounded bg-[var(--bg-1)];
 }
 
 .adminProtectedLayout {
-  @apply flex min-h-screen bg-gray-50;
+  @apply flex min-h-screen bg-[var(--bg-0)];
 }
 
 .adminProtectedContent {
@@ -327,7 +335,7 @@
 }
 
 .adminPageSubtitle {
-  @apply text-sm text-gray-600;
+  @apply text-sm text-[var(--muted)];
 }
 
 .adminDashboardGrid {
@@ -335,11 +343,11 @@
 }
 
 .adminDashboardCard {
-  @apply rounded-xl border bg-white p-4;
+  @apply rounded-xl border border-[var(--line)] bg-[var(--card)] p-4;
 }
 
 .adminDashboardCardLabel {
-  @apply text-sm text-gray-500;
+  @apply text-sm text-[var(--muted)];
 }
 
 .adminDashboardCardValue {
@@ -351,7 +359,7 @@
 }
 
 .adminTextGray700 {
-  @apply text-gray-700;
+  @apply text-[var(--ink)];
 }
 
 .adminTextMedium {
@@ -359,11 +367,11 @@
 }
 
 .adminTextGray600 {
-  @apply text-sm text-gray-600;
+  @apply text-sm text-[var(--muted)];
 }
 
 .adminTextGray500 {
-  @apply text-sm text-gray-500;
+  @apply text-sm text-[var(--muted)];
 }
 
 .adminInlineStatusPill {
@@ -371,11 +379,11 @@
 }
 
 .adminDetailMeta {
-  @apply mt-1 text-sm text-gray-700;
+  @apply mt-1 text-sm text-[var(--ink)];
 }
 
 .adminCard {
-  @apply rounded-xl border bg-white p-4;
+  @apply rounded-xl border border-[var(--line)] bg-[var(--card)] p-4;
 }
 
 .adminCardTitle {
@@ -399,7 +407,7 @@
 }
 
 .adminRowPillDefault {
-  @apply bg-gray-50 text-gray-700 border-gray-200;
+  @apply bg-[var(--bg-0)] text-[var(--ink)] border-[var(--line)];
 }
 
 .adminHeaderRow {
@@ -411,7 +419,7 @@
 }
 
 .adminCheckboxLabel {
-  @apply flex items-center gap-2 text-sm text-gray-700;
+  @apply flex items-center gap-2 text-sm text-[var(--ink)];
 }
 
 .adminCheckbox {
@@ -419,7 +427,7 @@
 }
 
 .adminPrimaryButton {
-  @apply rounded-lg bg-black px-3 py-2 text-sm font-medium text-white disabled:opacity-50;
+  @apply rounded-lg bg-[var(--blue-600)] px-3 py-2 text-sm font-medium text-white disabled:opacity-50;
 }
 
 .adminAlertError {
@@ -443,7 +451,7 @@
 }
 
 .adminActionButton {
-  @apply rounded-lg border px-2 py-1 text-xs hover:bg-gray-50;
+  @apply rounded-lg border border-[var(--line)] px-2 py-1 text-xs text-[var(--ink)] hover:bg-[var(--bg-0)];
 }
 
 .adminDeleteButton {
@@ -455,11 +463,11 @@
 }
 
 .adminModalOverlay {
-  @apply fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4;
+  @apply fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4;
 }
 
 .adminModalCard {
-  @apply w-full max-w-md rounded-2xl bg-white p-5 shadow-lg;
+  @apply w-full max-w-md rounded-2xl bg-[var(--card)] p-5 shadow-[var(--shadow)];
 }
 
 .adminModalHeader {
@@ -471,11 +479,11 @@
 }
 
 .adminModalSubtitle {
-  @apply text-sm text-gray-600;
+  @apply text-sm text-[var(--muted)];
 }
 
 .adminModalClose {
-  @apply rounded-lg border px-2 py-1 text-sm;
+  @apply rounded-lg border border-[var(--line)] px-2 py-1 text-sm text-[var(--ink)];
 }
 
 .adminModalBody {
@@ -487,11 +495,11 @@
 }
 
 .adminFormLabelText {
-  @apply mb-1 text-xs font-medium text-gray-700;
+  @apply mb-1 text-xs font-medium text-[var(--muted)];
 }
 
 .adminFormInput {
-  @apply w-full rounded-lg border px-3 py-2 text-sm;
+  @apply w-full rounded-lg border border-[var(--line)] bg-[var(--card)] px-3 py-2 text-sm text-[var(--ink)];
 }
 
 .adminFormError {
@@ -499,7 +507,7 @@
 }
 
 .adminFormHelp {
-  @apply mt-1 text-xs text-gray-500;
+  @apply mt-1 text-xs text-[var(--muted)];
 }
 
 .adminModalFooter {
@@ -507,11 +515,11 @@
 }
 
 .adminModalCancel {
-  @apply rounded-lg border px-3 py-2 text-sm hover:bg-gray-50;
+  @apply rounded-lg border border-[var(--line)] px-3 py-2 text-sm text-[var(--ink)] hover:bg-[var(--bg-0)];
 }
 
 .adminModalPrimary {
-  @apply rounded-lg bg-black px-3 py-2 text-sm font-medium text-white;
+  @apply rounded-lg bg-[var(--blue-600)] px-3 py-2 text-sm font-medium text-white;
 }
 
 .adminWarningNote {

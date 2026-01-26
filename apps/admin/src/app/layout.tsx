@@ -1,6 +1,8 @@
+import '@remoola/ui/styles.css';
 import './globals.css';
 import { PerformanceProvider } from '../components/PerformanceProvider';
 import { SWRProvider } from '../components/SWRProvider';
+import { ThemeProvider } from '../components/ThemeProvider';
 import { reportWebVitals } from '../lib/performance';
 
 import type { Metadata } from 'next';
@@ -17,9 +19,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en">
       <body>
-        <PerformanceProvider>
-          <SWRProvider>{children}</SWRProvider>
-        </PerformanceProvider>
+        <ThemeProvider>
+          <PerformanceProvider>
+            <SWRProvider>{children}</SWRProvider>
+          </PerformanceProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -1,20 +1,6 @@
 @import "tailwindcss";
 
 /* admin-web/src/app/globals.css */
-:root {
-  --bg-0: #f6f8ff;         /* surface gradient start */
-  --bg-1: #eef2ff;         /* surface gradient end   */
-  --ink: #0f172a;          /* slate-900-ish          */
-  --muted: #64748b;        /* slate-500-ish          */
-  --line: #e5e7eb;         /* gray-200               */
-  --card: #ffffff;
-  --blue-900: #18357a;     /* deeper brand blue      */
-  --blue-600: #2563eb;
-  --ring: rgba(37, 99, 235, .15);
-  --shadow: 0 8px 30px rgba(17, 24, 39, .05);
-  --radius-lg: 16px;
-  --radius-xl: 22px;
-}
 
 * { box-sizing: border-box; }
 html, body { height: 100%; }
