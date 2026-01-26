@@ -87,7 +87,9 @@ export function SignupDetailsStep() {
 
           <button
             type="button"
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
               const generated = generatePassword(12);
               updateSignup({ password: generated, confirmPassword: generated });
             }}
@@ -152,12 +154,14 @@ export function SignupDetailsStep() {
         <div className={flexRowGap3}>
           <button
             type="button"
-            onClick={() =>
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
               updateSignup({
                 accountType: ACCOUNT_TYPE.BUSINESS,
                 contractorKind: CONTRACTOR_KIND.INDIVIDUAL, // must reset
-              })
-            }
+              });
+            }}
             className={getToggleButtonClasses(signup.accountType === ACCOUNT_TYPE.BUSINESS)}
           >
             Business
@@ -165,12 +169,14 @@ export function SignupDetailsStep() {
 
           <button
             type="button"
-            onClick={() =>
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
               updateSignup({
                 accountType: ACCOUNT_TYPE.CONTRACTOR,
                 contractorKind: signup.contractorKind ?? CONTRACTOR_KIND.INDIVIDUAL,
-              })
-            }
+              });
+            }}
             className={getToggleButtonClasses(signup.accountType === ACCOUNT_TYPE.CONTRACTOR)}
           >
             Contractor
@@ -186,7 +192,11 @@ export function SignupDetailsStep() {
           <div className={flexRowGap3}>
             <button
               type="button"
-              onClick={() => updateSignup({ contractorKind: CONTRACTOR_KIND.INDIVIDUAL })}
+              onClick={(e) => (
+                e.preventDefault(),
+                e.stopPropagation(),
+                updateSignup({ contractorKind: CONTRACTOR_KIND.INDIVIDUAL })
+              )}
               className={getToggleButtonClasses(signup.contractorKind === CONTRACTOR_KIND.INDIVIDUAL)}
             >
               Individual
@@ -194,7 +204,11 @@ export function SignupDetailsStep() {
 
             <button
               type="button"
-              onClick={() => updateSignup({ contractorKind: CONTRACTOR_KIND.ENTITY })}
+              onClick={(e) => (
+                e.preventDefault(),
+                e.stopPropagation(),
+                updateSignup({ contractorKind: CONTRACTOR_KIND.ENTITY })
+              )}
               className={getToggleButtonClasses(signup.contractorKind === CONTRACTOR_KIND.ENTITY)}
             >
               Entity
@@ -203,7 +217,7 @@ export function SignupDetailsStep() {
         </div>
       )}
 
-      <PrevNextButtons nextLabel="Continue" onClick={() => handleSubmit()} />
+      <PrevNextButtons nextLabel="Continue" handleClick={() => handleSubmit()} />
     </div>
   );
 }

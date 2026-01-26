@@ -261,7 +261,11 @@ export function DocumentsList() {
               return (
                 <tr key={d.id} className={tableBodyRow}>
                   <td className={tableCellBodyMd}>
-                    <input type="checkbox" checked={checked} onChange={() => toggleSelect(d.id)} />
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(e) => (e.preventDefault(), e.stopPropagation(), toggleSelect(d.id))}
+                    />
                   </td>
 
                   <td className={`${tableCellBodyMd} font-medium ${textPrimary}`}>{d.name}</td>
@@ -282,7 +286,11 @@ export function DocumentsList() {
                   <td className={`${tableCellBodyMd} ${textMuted}`}>{new Date(d.createdAt).toLocaleDateString()}</td>
 
                   <td className={`${tableCellBodyMd} ${textRight} ${spaceX2}`}>
-                    <button type="button" className={linkPrimaryXs} onClick={() => setPreview(d)}>
+                    <button
+                      type="button"
+                      className={linkPrimaryXs}
+                      onClick={(e) => (e.preventDefault(), e.stopPropagation(), setPreview(d))}
+                    >
                       Preview
                     </button>
                     <a href={d.downloadUrl} className={linkPrimaryXs} target="_blank" rel="noreferrer">

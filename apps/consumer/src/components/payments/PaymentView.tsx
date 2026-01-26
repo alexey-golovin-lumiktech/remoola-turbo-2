@@ -277,14 +277,22 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
                     className={`${selectableCardBase} ${
                       selectedPaymentMethodId === method.id ? selectableCardActive : selectableCardInactive
                     }`}
-                    onClick={() => setSelectedPaymentMethodId(method.id)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setSelectedPaymentMethodId(method.id);
+                    }}
                   >
                     <div className={methodRowHeader}>
                       <div className={methodRowLeft}>
                         <input
                           type="radio"
                           checked={selectedPaymentMethodId === method.id}
-                          onChange={() => setSelectedPaymentMethodId(method.id)}
+                          onChange={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setSelectedPaymentMethodId(method.id);
+                          }}
                           className={radioPrimary}
                         />
                         <div>
@@ -311,13 +319,21 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
                   className={`${selectableCardBase} ${
                     selectedPaymentMethodId === `` ? selectableCardActive : selectableCardInactive
                   }`}
-                  onClick={() => setSelectedPaymentMethodId(``)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setSelectedPaymentMethodId(``);
+                  }}
                 >
                   <div className={methodRowLeft}>
                     <input
                       type="radio"
                       checked={selectedPaymentMethodId === ``}
-                      onChange={() => setSelectedPaymentMethodId(``)}
+                      onChange={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setSelectedPaymentMethodId(``);
+                      }}
                       className={radioPrimary}
                     />
                     <div>

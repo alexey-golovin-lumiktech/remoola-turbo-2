@@ -48,7 +48,10 @@ export function DashboardDataView() {
           </div>
           <h2 className={errorBoundaryTitle}>Failed to load dashboard</h2>
           <p className={errorBoundaryText}>{error}</p>
-          <button onClick={() => window.location.reload()} className={refreshButtonClass}>
+          <button
+            onClick={(e) => (e.preventDefault(), e.stopPropagation(), window.location.reload())}
+            className={refreshButtonClass}
+          >
             Try Again
           </button>
         </div>

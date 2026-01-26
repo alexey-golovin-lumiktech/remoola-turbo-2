@@ -16,7 +16,11 @@ export function ActionRow() {
           <p className={actionRowTitle}>Create Payment Request</p>
           <p className={actionRowSubtitle}>Send an invoice-like request in minutes.</p>
         </div>
-        <button type="button" onClick={() => router.push(`/payment-requests/new`)} className={actionRowButton}>
+        <button
+          type="button"
+          onClick={(e) => (e.preventDefault(), e.stopPropagation(), router.push(`/payment-requests/new`))}
+          className={actionRowButton}
+        >
           Create
         </button>
       </div>
@@ -26,7 +30,11 @@ export function ActionRow() {
           <p className={actionRowTitle}>Start Payment</p>
           <p className={actionRowSubtitle}>One-off payment flow (card or bank).</p>
         </div>
-        <button type="button" onClick={() => router.push(`/payments/start`)} className={actionRowButton}>
+        <button
+          type="button"
+          onClick={(e) => (e.preventDefault(), e.stopPropagation(), router.push(`/payments/start`))}
+          className={actionRowButton}
+        >
           Pay
         </button>
       </div>

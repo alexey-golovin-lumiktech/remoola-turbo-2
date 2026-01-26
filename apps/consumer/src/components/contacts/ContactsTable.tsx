@@ -54,15 +54,24 @@ export function ContactsTable({ items, onDetailsAction, onEditAction, onDeleteAc
             <td className={textMutedMixed}>{shortAddress(c.address)}</td>
 
             <td className={`${textRight} ${spaceX3}`}>
-              <button onClick={() => onDetailsAction(c)} className={linkPrimary}>
+              <button
+                onClick={(e) => (e.preventDefault(), e.stopPropagation(), onDetailsAction(c))}
+                className={linkPrimary}
+              >
                 Details
               </button>
 
-              <button onClick={() => onEditAction(c)} className={linkPrimary}>
+              <button
+                onClick={(e) => (e.preventDefault(), e.stopPropagation(), onEditAction(c))}
+                className={linkPrimary}
+              >
                 Edit
               </button>
 
-              <button onClick={() => onDeleteAction(c)} className={linkDanger}>
+              <button
+                onClick={(e) => (e.preventDefault(), e.stopPropagation(), onDeleteAction(c))}
+                className={linkDanger}
+              >
                 Delete
               </button>
             </td>

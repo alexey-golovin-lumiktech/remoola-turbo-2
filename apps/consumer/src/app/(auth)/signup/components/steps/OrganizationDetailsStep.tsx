@@ -88,7 +88,7 @@ export function OrganizationDetailsStep() {
 
       {error && <p className={errorTextClass}>{error}</p>}
 
-      <PrevNextButtons nextLabel={loading ? `Submitting...` : prevNextButtonsText} onClick={() => handleSubmit()} />
+      <PrevNextButtons nextLabel={loading ? `Submitting...` : prevNextButtonsText} handleClick={() => handleSubmit()} />
     </div>
   );
 }

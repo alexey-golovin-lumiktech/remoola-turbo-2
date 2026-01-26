@@ -26,7 +26,10 @@ export function ContactView({ contact }: ContactViewProps) {
         </div>
       </div>
 
-      <button onClick={() => setEditing(true)} className={contactViewButton}>
+      <button
+        onClick={(e) => (e.preventDefault(), e.stopPropagation(), setEditing(true))}
+        className={contactViewButton}
+      >
         Edit
       </button>
     </div>

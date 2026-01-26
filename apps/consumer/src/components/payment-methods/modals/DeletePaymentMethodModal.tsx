@@ -49,8 +49,8 @@ export function DeletePaymentMethodModal({
   }
 
   return (
-    <div className={modalOverlayClass} onClick={() => onCloseAction()}>
-      <div className={modalContentMd} onClick={(e) => e.stopPropagation()}>
+    <div className={modalOverlayClass} onClick={(e) => (e.stopPropagation(), e.preventDefault(), onCloseAction())}>
+      <div className={modalContentMd} onClick={(e) => (e.stopPropagation(), e.preventDefault())}>
         {/* HEADER */}
         <h2 className={`${modalTitleClass} mb-4`}>Delete payment method</h2>
 

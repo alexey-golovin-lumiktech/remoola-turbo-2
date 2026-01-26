@@ -85,7 +85,10 @@ export function DocumentPreviewModal({ open, onClose, doc }: DocumentPreviewModa
 
           <div className={docPreviewActions}>
             {/* Thumbnail toggle */}
-            <button onClick={() => setShowThumbnails((x) => !x)} className={docPreviewActionButton}>
+            <button
+              onClick={(e) => (e.preventDefault(), e.stopPropagation(), setShowThumbnails((x) => !x))}
+              className={docPreviewActionButton}
+            >
               {showThumbnails ? `Hide Thumbs` : `Show Thumbs`}
             </button>
 
@@ -93,14 +96,18 @@ export function DocumentPreviewModal({ open, onClose, doc }: DocumentPreviewModa
             {isPDF || isImage ? (
               <div className={flexRowItemsCenter}>
                 <button
-                  onClick={() => setZoom((z) => Math.max(0.4, z - ZOOM_STEP))}
+                  onClick={(e) => (
+                    e.preventDefault(),
+                    e.stopPropagation(),
+                    setZoom((z) => Math.max(0.4, z - ZOOM_STEP))
+                  )}
                   className={docPreviewActionButtonSquare}
                 >
                   –
                 </button>
                 <span className={docPreviewZoomLabel}>{Math.round(zoom * 100)}%</span>
                 <button
-                  onClick={() => setZoom((z) => Math.min(3, z + ZOOM_STEP))}
+                  onClick={(e) => (e.preventDefault(), e.stopPropagation(), setZoom((z) => Math.min(3, z + ZOOM_STEP)))}
                   className={docPreviewActionButtonSquare}
                 >
                   +
@@ -109,18 +116,26 @@ export function DocumentPreviewModal({ open, onClose, doc }: DocumentPreviewModa
             ) : null}
 
             {/* Fit to width */}
-            <button onClick={() => setZoom(1)} className={docPreviewActionButton}>
+            <button
+              onClick={(e) => (e.preventDefault(), e.stopPropagation(), setZoom(1))}
+              className={docPreviewActionButton}
+            >
               Fit
             </button>
 
             {/* Download */}
+
             <a href={doc.downloadUrl} download={doc.name} className={docPreviewActionButton}>
               Download
             </a>
 
             {/* Print */}
             <button
-              onClick={() => window.open(doc.downloadUrl, `_blank`)?.print?.()}
+              onClick={(e) => (
+                e.preventDefault(),
+                e.stopPropagation(),
+                window.open(doc.downloadUrl, `_blank`)?.print?.()
+              )}
               className={docPreviewActionButton}
             >
               Print

@@ -33,6 +33,15 @@ export class AdminAdminsService {
     });
   }
 
+  async updateAdminStatus(adminId: string, action: `delete` | `restore`) {
+    const data = action === `delete` ? { deletedAt: new Date() } : { deletedAt: null };
+
+    return this.prisma.adminModel.update({
+      where: { id: adminId },
+      data,
+    });
+  }
+
   async getById(adminId: string) {
     return this.prisma.adminModel.findUnique({
       where: { id: adminId },

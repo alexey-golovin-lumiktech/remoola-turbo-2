@@ -103,7 +103,14 @@ export function PaymentsList() {
           </div>
           <h2 className={`text-xl font-semibold ${textPrimary} mb-2`}>Failed to load payments</h2>
           <p className={`${textSecondary} mb-6`}>{error.message}</p>
-          <button onClick={() => window.location.reload()} className={refreshButtonClass}>
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              window.location.reload();
+            }}
+            className={refreshButtonClass}
+          >
             Refresh Page
           </button>
         </div>
@@ -191,12 +198,24 @@ export function PaymentsList() {
       {/* Pagination */}
       {totalPages > 1 && !isLoading && (
         <div className={`${flexJustifyEnd} ${gap2}`}>
-          <button disabled={page <= 1} onClick={() => setPage((p: number) => p - 1)} className={buttonSecondary}>
+          <button
+            disabled={page <= 1}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setPage((p: number) => p - 1);
+            }}
+            className={buttonSecondary}
+          >
             Previous
           </button>
           <button
             disabled={page >= totalPages}
-            onClick={() => setPage((p: number) => p + 1)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setPage((p: number) => p + 1);
+            }}
             className={buttonSecondary}
           >
             Next

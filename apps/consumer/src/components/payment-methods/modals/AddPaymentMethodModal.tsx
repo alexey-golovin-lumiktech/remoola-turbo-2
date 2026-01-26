@@ -213,14 +213,17 @@ function AddPaymentMethodModalInner({
   }
 
   return (
-    <div className={modalOverlayClass} onClick={() => !loading && onClose()}>
+    <div
+      className={modalOverlayClass}
+      onClick={(e) => (e.stopPropagation(), e.preventDefault(), !loading && onClose())}
+    >
       <div className={`${modalContentLg} space-y-5`} onClick={(e) => e.stopPropagation()}>
         <h2 className={`${modalTitleClass} mb-2`}>Add payment method</h2>
 
         {/* Method selector */}
         <div className={flexRowGap3}>
           <button
-            onClick={() => setMethodType(`CREDIT_CARD`)}
+            onClick={(e) => (e.stopPropagation(), e.preventDefault(), setMethodType(`CREDIT_CARD`))}
             className={`
               ${methodToggleButtonBase}
               ${methodType === `CREDIT_CARD` ? methodToggleButtonActive : methodToggleButtonInactive}
@@ -230,7 +233,7 @@ function AddPaymentMethodModalInner({
           </button>
 
           <button
-            onClick={() => setMethodType(`BANK_ACCOUNT`)}
+            onClick={(e) => (e.stopPropagation(), e.preventDefault(), setMethodType(`BANK_ACCOUNT`))}
             className={`
               ${methodToggleButtonBase}
               ${methodType === `BANK_ACCOUNT` ? methodToggleButtonActive : methodToggleButtonInactive}
@@ -309,7 +312,10 @@ function AddPaymentMethodModalInner({
 
         {/* Footer buttons */}
         <div className={modalFooterActions}>
-          <button onClick={() => !loading && onClose()} className={modalButtonSecondary}>
+          <button
+            onClick={(e) => (e.stopPropagation(), e.preventDefault(), !loading && onClose())}
+            className={modalButtonSecondary}
+          >
             Cancel
           </button>
 

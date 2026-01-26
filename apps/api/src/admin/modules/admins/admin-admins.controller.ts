@@ -41,6 +41,24 @@ export class AdminAdminsController {
     return this.service.patchAdminPassword(adminId, password);
   }
 
+  @Patch(`:adminId`)
+  updateAdmin(
+    @Identity() admin: AdminModel,
+    @Param(`adminId`) adminId: string,
+    @Body(`action`) action: `delete` | `restore`,
+  ) {
+    if (admin.type !== `SUPER`) {
+      throw new BadRequestException(`Only SUPER admins can update admins`);
+    }
+    if (action !== `delete` && action !== `restore`) {
+      throw new BadRequestException(`Unsupported admin action`);
+    }
+    if (action === `delete` && adminId === admin.id) {
+      throw new BadRequestException(`You cannot delete yourself`);
+    }
+    return this.service.updateAdminStatus(adminId, action);
+  }
+
   @Post(`system/migrate-payment-methods`)
   migratePaymentMethods(@Identity() admin: AdminModel) {
     if (admin.type !== `SUPER`) {

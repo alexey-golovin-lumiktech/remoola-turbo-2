@@ -75,11 +75,22 @@ export class ErrorBoundary extends Component<Props, State> {
             persists.
           </p>
           <div className={errorBoundaryButtons}>
-            <button onClick={() => window.location.reload()} className={refreshButtonClass}>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                window.location.reload();
+              }}
+              className={refreshButtonClass}
+            >
               Refresh Page
             </button>
             <button
-              onClick={() => this.setState({ hasError: false, error: undefined })}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.setState({ hasError: false, error: undefined });
+              }}
               className={errorBoundaryRetryButton}
             >
               Try Again

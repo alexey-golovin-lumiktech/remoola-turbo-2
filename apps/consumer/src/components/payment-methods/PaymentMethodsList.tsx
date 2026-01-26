@@ -91,12 +91,18 @@ function PaymentMethodRow({
 
       {/* ACTIONS */}
       <div className={`${flexRowGap3} ${textSm}`}>
-        <button className={actionButtonPrimary} onClick={() => onEdit(payment)}>
+        <button
+          className={actionButtonPrimary}
+          onClick={(e) => (e.stopPropagation(), e.preventDefault(), onEdit(payment))}
+        >
           <Pencil size={14} />
           Edit
         </button>
 
-        <button className={actionButtonDanger} onClick={() => onDelete(payment)}>
+        <button
+          className={actionButtonDanger}
+          onClick={(e) => (e.stopPropagation(), e.preventDefault(), onDelete(payment))}
+        >
           <Trash2 size={14} />
           Delete
         </button>

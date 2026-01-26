@@ -66,7 +66,7 @@ export default function ChooseContractorKindStep() {
         <div className={signupStartOptions}>
           <button
             type="button"
-            onClick={() => selectKind(CONTRACTOR_KIND.INDIVIDUAL)}
+            onClick={(e) => (e.preventDefault(), e.stopPropagation(), selectKind(CONTRACTOR_KIND.INDIVIDUAL))}
             className={`${signupStartOptionBase} ${
               isSelected(CONTRACTOR_KIND.INDIVIDUAL) ? signupStartOptionActive : signupStartOptionInactive
             }`}
@@ -83,7 +83,7 @@ export default function ChooseContractorKindStep() {
 
           <button
             type="button"
-            onClick={() => selectKind(CONTRACTOR_KIND.ENTITY)}
+            onClick={(e) => (e.preventDefault(), e.stopPropagation(), selectKind(CONTRACTOR_KIND.ENTITY))}
             className={`${signupStartOptionBase} ${
               isSelected(CONTRACTOR_KIND.ENTITY) ? signupStartOptionActive : signupStartOptionInactive
             }`}
@@ -128,7 +128,11 @@ export default function ChooseContractorKindStep() {
           Next
         </button>
 
-        <button onClick={() => router.push(`/signup/start`)} className={signupStartBackButton} type="button">
+        <button
+          onClick={(e) => (e.preventDefault(), e.stopPropagation(), router.push(`/signup/start`))}
+          className={signupStartBackButton}
+          type="button"
+        >
           ← Back
         </button>
       </div>

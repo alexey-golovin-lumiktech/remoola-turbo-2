@@ -16,12 +16,16 @@ const {
 } = styles;
 
 interface PrevNextButtonsProps {
-  onNext?: () => void;
+  handleNext?: () => void;
   nextLabel?: string;
-  onClick?: () => void;
+  handleClick?: () => void;
 }
 
-export function PrevNextButtons({ onClick, onNext, nextLabel = `Next step` }: PrevNextButtonsProps) {
+export function PrevNextButtons({
+  handleClick: handleClick,
+  handleNext: handleNext,
+  nextLabel = `Next step`,
+}: PrevNextButtonsProps) {
   const { goBack, goNext, isFirst, isLast } = useSignupSteps();
 
   return (
@@ -45,9 +49,11 @@ export function PrevNextButtons({ onClick, onNext, nextLabel = `Next step` }: Pr
 
       <button
         type="button"
-        onClick={() => {
-          if (onClick) return onClick();
-          if (onNext) return onNext();
+        onClick={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          if (handleClick) return handleClick();
+          if (handleNext) return handleNext();
           return goNext();
         }}
         className={signupNextButton}

@@ -130,28 +130,28 @@ export function ConsumerDetailsPageClient({ consumerId }: { consumerId: string }
             <div className={styles.adminModalFooter}>
               <button
                 className={styles.adminModalPrimary}
-                onClick={() => updateVerification(`approve`)}
+                onClick={(e) => (e.stopPropagation(), e.preventDefault(), updateVerification(`approve`))}
                 disabled={verificationLoading}
               >
                 Approve
               </button>
               <button
                 className={styles.adminActionButton}
-                onClick={() => updateVerification(`more_info`)}
+                onClick={(e) => (e.stopPropagation(), e.preventDefault(), updateVerification(`more_info`))}
                 disabled={verificationLoading}
               >
                 Request more info
               </button>
               <button
                 className={styles.adminDeleteButton}
-                onClick={() => updateVerification(`reject`)}
+                onClick={(e) => (e.stopPropagation(), e.preventDefault(), updateVerification(`reject`))}
                 disabled={verificationLoading}
               >
                 Reject
               </button>
               <button
                 className={styles.adminActionButton}
-                onClick={() => updateVerification(`flag`)}
+                onClick={(e) => (e.stopPropagation(), e.preventDefault(), updateVerification(`flag`))}
                 disabled={verificationLoading}
               >
                 Flag

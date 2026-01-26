@@ -103,14 +103,22 @@ export function WithdrawForm() {
         <div className={flexRowGap3}>
           <button
             type="button"
-            onClick={() => setMethod(`CREDIT_CARD`)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setMethod(`CREDIT_CARD`);
+            }}
             className={getToggleButtonClasses(method === `CREDIT_CARD`, `lg`)}
           >
             Card
           </button>
           <button
             type="button"
-            onClick={() => setMethod(`BANK_ACCOUNT`)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setMethod(`BANK_ACCOUNT`);
+            }}
             className={getToggleButtonClasses(method === `BANK_ACCOUNT`, `lg`)}
           >
             Bank account

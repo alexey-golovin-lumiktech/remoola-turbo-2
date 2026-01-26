@@ -46,7 +46,11 @@ export class ErrorBoundary extends Component<Props, State> {
               {this.state.error.message || `An unexpected error occurred`}
             </p>
             <button
-              onClick={() => this.setState({ hasError: false, error: null })}
+              onClick={(e) => (
+                e.stopPropagation(),
+                e.preventDefault(),
+                this.setState({ hasError: false, error: null })
+              )}
               className={styles.adminErrorBoundaryButton}
             >
               Try again

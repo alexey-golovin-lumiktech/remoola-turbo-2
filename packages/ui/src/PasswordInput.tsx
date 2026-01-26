@@ -56,7 +56,15 @@ export function PasswordInput({ value, onChange, placeholder, name }: PasswordIn
         className={styles.input}
       />
 
-      <button type="button" onClick={() => setShow((show) => !show)} className={styles.toggleButton}>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setShow((show) => !show);
+        }}
+        className={styles.toggleButton}
+      >
         {show ? `Hide` : `Show`}
       </button>
     </div>

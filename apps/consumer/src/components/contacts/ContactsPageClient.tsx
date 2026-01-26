@@ -46,7 +46,10 @@ export function ContactsPageClient() {
           <p className={contactsPageSubtitle}>Saved contractors and business contacts.</p>
         </div>
 
-        <button onClick={() => setCreateOpen(true)} className={contactsAddButton}>
+        <button
+          onClick={(e) => (e.preventDefault(), e.stopPropagation(), setCreateOpen(true))}
+          className={contactsAddButton}
+        >
           + Add Contact
         </button>
       </div>

@@ -65,7 +65,7 @@ export default function ChooseAccountTypeStep() {
         <div className={signupStartOptions}>
           <button
             type="button"
-            onClick={() => selectType(ACCOUNT_TYPE.BUSINESS)}
+            onClick={(e) => (e.preventDefault(), e.stopPropagation(), selectType(ACCOUNT_TYPE.BUSINESS))}
             className={`${signupStartOptionBase} ${
               isSelected(ACCOUNT_TYPE.BUSINESS) ? signupStartOptionActive : signupStartOptionInactive
             }`}
@@ -82,7 +82,7 @@ export default function ChooseAccountTypeStep() {
 
           <button
             type="button"
-            onClick={() => selectType(ACCOUNT_TYPE.CONTRACTOR)}
+            onClick={(e) => (e.preventDefault(), e.stopPropagation(), selectType(ACCOUNT_TYPE.CONTRACTOR))}
             className={`${signupStartOptionBase} ${
               isSelected(ACCOUNT_TYPE.CONTRACTOR) ? signupStartOptionActive : signupStartOptionInactive
             }`}

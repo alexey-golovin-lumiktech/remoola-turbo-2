@@ -45,13 +45,13 @@ export function AdminsPageClient() {
     mutate: mutateAdmins,
   } = useAdmins(includeDeleted);
 
-  // Mutations
-  const createAdminMutation = useCreateAdmin();
-  const resetPasswordMutation = useResetAdminPassword(``);
-
   // Local state for forms
   const [createOpen, setCreateOpen] = useState(false);
   const [resetPasswordAdminId, setResetPasswordAdminId] = useState<string | null>(null);
+
+  // Mutations
+  const createAdminMutation = useCreateAdmin();
+  const resetPasswordMutation = useResetAdminPassword(resetPasswordAdminId ?? ``);
 
   // Form validation hooks
   const createForm = useFormValidation(createAdminSchema, {
@@ -102,7 +102,6 @@ export function AdminsPageClient() {
 
   const softDeleteAdmin = async (adminId: string) => {
     setErr(undefined);
-    if (adminId === me?.id) return setErr(`You cannot delete yourself.`);
 
     try {
       const response = await apiClient.patch(`admins/${adminId}`, { action: `delete` });
@@ -182,7 +181,7 @@ export function AdminsPageClient() {
             </label>
 
             <button
-              onClick={() => setCreateOpen(true)}
+              onClick={(e) => (e.stopPropagation(), e.preventDefault(), setCreateOpen(true))}
               disabled={createAdminMutation.isMutating}
               className={styles.adminPrimaryButton}
             >
@@ -235,7 +234,9 @@ export function AdminsPageClient() {
                 <div className={styles.adminActionRow}>
                   <button
                     className={styles.adminActionButton}
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
                       setResetPasswordAdminId(a.id);
                       resetPasswordForm.reset();
                     }}
@@ -246,13 +247,15 @@ export function AdminsPageClient() {
                   {!a.deletedAt ? (
                     <button
                       className={styles.adminDeleteButton}
-                      disabled={a.id === me?.id}
-                      onClick={() => softDeleteAdmin(a.id)}
+                      onClick={(e) => (e.stopPropagation(), e.preventDefault(), softDeleteAdmin(a.id))}
                     >
                       Delete
                     </button>
                   ) : (
-                    <button className={styles.adminRestoreButton} onClick={() => restoreAdmin(a.id)}>
+                    <button
+                      className={styles.adminRestoreButton}
+                      onClick={(e) => (e.stopPropagation(), e.preventDefault(), restoreAdmin(a.id))}
+                    >
                       Restore
                     </button>
                   )}
@@ -270,9 +273,13 @@ export function AdminsPageClient() {
               <div className={styles.adminModalHeader}>
                 <div>
                   <div className={styles.adminModalTitle}>Create admin</div>
+
                   <div className={styles.adminModalSubtitle}>Creates a new Admin record.</div>
                 </div>
-                <button className={styles.adminModalClose} onClick={() => setCreateOpen(false)}>
+                <button
+                  className={styles.adminModalClose}
+                  onClick={(e) => (e.stopPropagation(), e.preventDefault(), setCreateOpen(false))}
+                >
                   ✕
                 </button>
               </div>
@@ -326,7 +333,7 @@ export function AdminsPageClient() {
                 <div className={styles.adminModalFooter}>
                   <button
                     className={styles.adminModalCancel}
-                    onClick={() => setCreateOpen(false)}
+                    onClick={(e) => (e.stopPropagation(), e.preventDefault(), setCreateOpen(false))}
                     disabled={createAdminMutation.isMutating}
                   >
                     Cancel
@@ -348,16 +355,19 @@ export function AdminsPageClient() {
         {resetPasswordAdminId && (
           <div className={styles.adminModalOverlay}>
             <div className={styles.adminModalCard}>
+              {` `}
               <div className={styles.adminModalHeader}>
                 <div>
                   <div className={styles.adminModalTitle}>Reset password</div>
                   <div className={styles.adminModalSubtitle}>Sets a new password for this admin.</div>
                 </div>
-                <button className={styles.adminModalClose} onClick={() => setResetPasswordAdminId(null)}>
+                <button
+                  className={styles.adminModalClose}
+                  onClick={(e) => (e.stopPropagation(), e.preventDefault(), setResetPasswordAdminId(null))}
+                >
                   ✕
                 </button>
               </div>
-
               <div className={styles.adminModalBody}>
                 <label className={styles.adminFormLabelBlock}>
                   <div className={styles.adminFormLabelText}>New password</div>
@@ -378,14 +388,14 @@ export function AdminsPageClient() {
                 <div className={styles.adminModalFooter}>
                   <button
                     className={styles.adminModalCancel}
-                    onClick={() => setResetPasswordAdminId(null)}
+                    onClick={(e) => (e.stopPropagation(), e.preventDefault(), setResetPasswordAdminId(null))}
                     disabled={resetPasswordMutation.isMutating}
                   >
                     Cancel
                   </button>
                   <button
                     className={styles.adminModalPrimary}
-                    onClick={submitResetPassword}
+                    onClick={(e) => (e.stopPropagation(), e.preventDefault(), submitResetPassword())}
                     disabled={resetPasswordMutation.isMutating}
                   >
                     {resetPasswordMutation.isMutating ? `Saving...` : `Save`}

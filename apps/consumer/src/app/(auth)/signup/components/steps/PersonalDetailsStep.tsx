@@ -124,7 +124,7 @@ export function PersonalDetailsStep() {
         />
       </div>
 
-      <PrevNextButtons onClick={() => handleSubmit()} />
+      <PrevNextButtons handleClick={() => handleSubmit()} />
     </div>
   );
 }

@@ -36,7 +36,10 @@ export function PaymentMethodsPageClient() {
           <p className={pageSubtitleGray}>Manage your saved cards and bank accounts.</p>
         </div>
 
-        <button onClick={() => setCreateOpen(true)} className={primaryActionButton}>
+        <button
+          onClick={(e) => (e.stopPropagation(), e.preventDefault(), setCreateOpen(true))}
+          className={primaryActionButton}
+        >
           + Add Payment Method
         </button>
       </div>
