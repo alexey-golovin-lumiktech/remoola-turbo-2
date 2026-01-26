@@ -2,7 +2,7 @@ import useSWR from 'swr';
 import useSWRMutation from 'swr/mutation';
 
 import { mutationFetcher } from './swr-config';
-import { queryKeys, type AdminUser, type AdminMe, type Consumer, type PaymentRequest, type LedgerEntry } from './types';
+import { queryKeys, type AdminDetails, type AdminMe, type Consumer, type PaymentRequest, type LedgerEntry } from './types';
 
 // Auth hooks
 export function useAuth() {
@@ -14,11 +14,11 @@ export function useAuth() {
 
 // Admin hooks
 export function useAdmins(includeDeleted = false) {
-  return useSWR<AdminUser[]>(queryKeys.admins.list({ includeDeleted }));
+  return useSWR<AdminDetails[]>(queryKeys.admins.list({ includeDeleted }));
 }
 
 export function useAdmin(id: string) {
-  return useSWR<AdminUser>(queryKeys.admins.detail(id));
+  return useSWR<AdminDetails>(queryKeys.admins.detail(id));
 }
 
 export function useCreateAdmin() {

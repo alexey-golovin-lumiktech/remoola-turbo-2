@@ -2,6 +2,8 @@
 
 import React, { Component, type ErrorInfo, type ReactNode } from 'react';
 
+import styles from './ui/classNames.module.css';
+
 interface Props {
   children: ReactNode;
   fallback?: (error: Error, retry: () => void) => ReactNode;
@@ -36,14 +38,16 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="min-h-[400px] flex items-center justify-center">
-          <div className="text-center p-6 max-w-md">
-            <div className="text-red-500 text-6xl mb-4">⚠️</div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Something went wrong</h2>
-            <p className="text-gray-600 mb-4">{this.state.error.message || `An unexpected error occurred`}</p>
+        <div className={styles.adminErrorBoundaryContainer}>
+          <div className={styles.adminErrorBoundaryCard}>
+            <div className={styles.adminErrorBoundaryIcon}>⚠️</div>
+            <h2 className={styles.adminErrorBoundaryTitle}>Something went wrong</h2>
+            <p className={styles.adminErrorBoundaryMessage}>
+              {this.state.error.message || `An unexpected error occurred`}
+            </p>
             <button
               onClick={() => this.setState({ hasError: false, error: null })}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              className={styles.adminErrorBoundaryButton}
             >
               Try again
             </button>
@@ -59,14 +63,11 @@ export class ErrorBoundary extends Component<Props, State> {
 // Hook-based error boundary for functional components
 export function ErrorFallback({ error, retryAction }: { error: Error; retryAction: () => void }) {
   return (
-    <div className="min-h-[200px] flex items-center justify-center">
-      <div className="text-center p-4">
-        <div className="text-red-500 text-4xl mb-2">⚠️</div>
-        <p className="text-gray-700 mb-3">{error.message || `Something went wrong`}</p>
-        <button
-          onClick={retryAction}
-          className="px-3 py-1.5 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
-        >
+    <div className={styles.adminErrorFallbackContainer}>
+      <div className={styles.adminErrorFallbackCard}>
+        <div className={styles.adminErrorFallbackIcon}>⚠️</div>
+        <p className={styles.adminErrorFallbackMessage}>{error.message || `Something went wrong`}</p>
+        <button onClick={retryAction} className={styles.adminErrorFallbackButton}>
           Retry
         </button>
       </div>

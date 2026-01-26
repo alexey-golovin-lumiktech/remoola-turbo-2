@@ -3,76 +3,77 @@
 import { useEffect, useState } from 'react';
 
 import { JsonView } from '../../../../components';
+import styles from '../../../../components/ui/classNames.module.css';
 import { type Consumer } from '../../../../lib';
 
 export function ConsumerDetailsPageClient({ consumerId }: { consumerId: string }) {
-  const [consumer, setConsumer] = useState<Consumer | null>(null);
+  const [consumerDetails, setConsumerDetails] = useState<Consumer | null>(null);
 
   useEffect(() => {
-    async function getConsumer(consumerId: string): Promise<Consumer | null> {
+    async function loadConsumerDetails(consumerId: string): Promise<Consumer | null> {
       const response = await fetch(`/api/consumers/${consumerId}`, { cache: `no-store`, credentials: `include` });
       if (!response.ok) return null;
       return (await response.json()) as Consumer;
     }
 
-    getConsumer(consumerId).then(setConsumer);
+    loadConsumerDetails(consumerId).then(setConsumerDetails);
   }, [consumerId]);
 
-  if (!consumer) return <div className="text-sm text-gray-600">Consumer not found</div>;
+  if (!consumerDetails) return <div className={styles.adminTextGray600}>Consumer not found</div>;
 
   return (
-    <div className="space-y-4">
+    <div className={styles.adminPageStack}>
       <div>
-        <div className="text-sm text-gray-500">Consumer</div>
-        <h1 className="text-2xl font-semibold">{consumer.email}</h1>
-        <div className="mt-1 text-sm text-gray-700">
-          {consumer.accountType}
-          {consumer.contractorKind ? ` / ${consumer.contractorKind}` : ``}
-          {consumer.stripeCustomerId ? ` • Stripe: ${consumer.stripeCustomerId}` : ``}
+        <div className={styles.adminTextGray500}>Consumer</div>
+        <h1 className={styles.adminPageTitle}>{consumerDetails.email}</h1>
+        <div className={styles.adminDetailMeta}>
+          {consumerDetails.accountType}
+          {consumerDetails.contractorKind ? ` / ${consumerDetails.contractorKind}` : ``}
+          {consumerDetails.stripeCustomerId ? ` • Stripe: ${consumerDetails.stripeCustomerId}` : ``}
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-xl border bg-white p-4">
-          <div className="text-sm font-semibold">Personal Details</div>
-          <div className="mt-3">
-            {consumer.personalDetails ? (
-              <JsonView value={consumer.personalDetails} />
+      <div className={styles.adminDetailsGrid}>
+        <div className={styles.adminCard}>
+          <div className={styles.adminCardTitle}>Personal Details</div>
+          <div className={styles.adminCardContent}>
+            {consumerDetails.personalDetails ? (
+              <JsonView value={consumerDetails.personalDetails} />
             ) : (
-              <div className="text-sm text-gray-500">—</div>
+              <div className={styles.adminTextGray500}>—</div>
             )}
           </div>
         </div>
 
-        <div className="rounded-xl border bg-white p-4">
-          <div className="text-sm font-semibold">Organization Details</div>
-          <div className="mt-3">
-            {consumer.organizationDetails ? (
-              <JsonView value={consumer.organizationDetails} />
+        <div className={styles.adminCard}>
+          <div className={styles.adminCardTitle}>Organization Details</div>
+          <div className={styles.adminCardContent}>
+            {consumerDetails.organizationDetails ? (
+              <JsonView value={consumerDetails.organizationDetails} />
             ) : (
-              <div className="text-sm text-gray-500">—</div>
+              <div className={styles.adminTextGray500}>—</div>
             )}
           </div>
         </div>
 
-        <div className="rounded-xl border bg-white p-4">
-          <div className="text-sm font-semibold">Address Details</div>
-          <div className="mt-3">
-            {consumer.addressDetails ? (
-              <JsonView value={consumer.addressDetails} />
+        <div className={styles.adminCard}>
+          <div className={styles.adminCardTitle}>Address Details</div>
+          <div className={styles.adminCardContent}>
+            {consumerDetails.addressDetails ? (
+              <JsonView value={consumerDetails.addressDetails} />
             ) : (
-              <div className="text-sm text-gray-500">—</div>
+              <div className={styles.adminTextGray500}>—</div>
             )}
           </div>
         </div>
 
-        <div className="rounded-xl border bg-white p-4">
-          <div className="text-sm font-semibold">GoogleProfile Details</div>
-          <div className="mt-3">
-            {consumer.googleProfileDetails ? (
-              <JsonView value={consumer.googleProfileDetails} />
+        <div className={styles.adminCard}>
+          <div className={styles.adminCardTitle}>GoogleProfile Details</div>
+          <div className={styles.adminCardContent}>
+            {consumerDetails.googleProfileDetails ? (
+              <JsonView value={consumerDetails.googleProfileDetails} />
             ) : (
-              <div className="text-sm text-gray-500">—</div>
+              <div className={styles.adminTextGray500}>—</div>
             )}
           </div>
         </div>

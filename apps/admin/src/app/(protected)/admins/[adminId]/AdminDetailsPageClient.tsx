@@ -3,13 +3,14 @@
 import { useEffect, useState } from 'react';
 
 import { JsonView } from '../../../../components';
-import { type AdminUser } from '../../../../lib';
+import styles from '../../../../components/ui/classNames.module.css';
+import { type AdminDetails } from '../../../../lib';
 
 export function AdminDetailsPageClient({ adminId }: { adminId: string }) {
-  const [admin, setAdmin] = useState<AdminUser | null>(null);
+  const [adminDetails, setAdminDetails] = useState<AdminDetails | null>(null);
 
   useEffect(() => {
-    async function getAdmin(adminId: string): Promise<AdminUser | null> {
+    async function loadAdminDetails(adminId: string): Promise<AdminDetails | null> {
       const response = await fetch(`/api/admins/${adminId}`, {
         cache: `no-store`,
         credentials: `include`,
@@ -18,18 +19,18 @@ export function AdminDetailsPageClient({ adminId }: { adminId: string }) {
       return await response.json();
     }
 
-    getAdmin(adminId).then(setAdmin);
+    loadAdminDetails(adminId).then(setAdminDetails);
   }, [adminId]);
 
-  if (!admin) return <div className="text-sm text-gray-600">Admin not found</div>;
+  if (!adminDetails) return <div className={styles.adminTextGray600}>Admin not found</div>;
 
   return (
-    <div className="space-y-4">
+    <div className={styles.adminPageStack}>
       <div>
-        <div className="text-sm text-gray-500">Admin</div>
-        <h1 className="text-2xl font-semibold">{admin.email}</h1>
-        <div className="mt-1 text-sm text-gray-700">
-          <JsonView value={admin} />
+        <div className={styles.adminTextGray500}>Admin</div>
+        <h1 className={styles.adminPageTitle}>{adminDetails.email}</h1>
+        <div className={styles.adminDetailMeta}>
+          <JsonView value={adminDetails} />
         </div>
       </div>
     </div>

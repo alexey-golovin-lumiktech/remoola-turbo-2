@@ -1,26 +1,28 @@
 import { cn } from '@remoola/ui';
 
+import styles from './ui/classNames.module.css';
+
 // Base skeleton component
 function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn(`animate-pulse rounded-md bg-gray-200`, className)} {...props} />;
+  return <div className={cn(styles.adminSkeletonBase, className)} {...props} />;
 }
 
 // Table skeleton
 export function TableSkeleton({ rows = 5, columns = 4 }: { rows?: number; columns?: number }) {
   return (
-    <div className="space-y-3">
+    <div className={styles.adminSkeletonTable}>
       {/* Header skeleton */}
-      <div className="flex space-x-4">
+      <div className={styles.adminSkeletonHeaderRow}>
         {Array.from({ length: columns }).map((_, i) => (
-          <Skeleton key={i} className="h-4 flex-1" />
+          <Skeleton key={i} className={styles.adminSkeletonHeaderCell} />
         ))}
       </div>
 
       {/* Row skeletons */}
       {Array.from({ length: rows }).map((_, rowIndex) => (
-        <div key={rowIndex} className="flex space-x-4">
+        <div key={rowIndex} className={styles.adminSkeletonRow}>
           {Array.from({ length: columns }).map((_, colIndex) => (
-            <Skeleton key={colIndex} className="h-8 flex-1" />
+            <Skeleton key={colIndex} className={styles.adminSkeletonRowCell} />
           ))}
         </div>
       ))}
@@ -31,14 +33,14 @@ export function TableSkeleton({ rows = 5, columns = 4 }: { rows?: number; column
 // Card skeleton
 export function CardSkeleton() {
   return (
-    <div className="p-6 border rounded-lg bg-white">
-      <div className="space-y-4">
-        <Skeleton className="h-4 w-3/4" />
-        <Skeleton className="h-4 w-1/2" />
-        <div className="space-y-2">
-          <Skeleton className="h-3 w-full" />
-          <Skeleton className="h-3 w-4/5" />
-          <Skeleton className="h-3 w-2/3" />
+    <div className={styles.adminSkeletonCard}>
+      <div className={styles.adminSkeletonCardBody}>
+        <Skeleton className={styles.adminSkeletonLineThreeQuarters} />
+        <Skeleton className={styles.adminSkeletonLineHalf} />
+        <div className={styles.adminSkeletonTextGroup}>
+          <Skeleton className={styles.adminSkeletonTextLine} />
+          <Skeleton className={styles.adminSkeletonTextLineFourFifths} />
+          <Skeleton className={styles.adminSkeletonTextLineTwoThirds} />
         </div>
       </div>
     </div>
@@ -48,16 +50,16 @@ export function CardSkeleton() {
 // Form skeleton
 export function FormSkeleton({ fields = 3 }: { fields?: number }) {
   return (
-    <div className="space-y-4">
+    <div className={styles.adminSkeletonForm}>
       {Array.from({ length: fields }).map((_, i) => (
-        <div key={i} className="space-y-2">
-          <Skeleton className="h-4 w-20" />
-          <Skeleton className="h-10 w-full" />
+        <div key={i} className={styles.adminSkeletonFormField}>
+          <Skeleton className={styles.adminSkeletonFormLabel} />
+          <Skeleton className={styles.adminSkeletonFormInput} />
         </div>
       ))}
-      <div className="flex space-x-2 pt-4">
-        <Skeleton className="h-10 w-20" />
-        <Skeleton className="h-10 w-20" />
+      <div className={styles.adminSkeletonFormActions}>
+        <Skeleton className={styles.adminSkeletonFormButton} />
+        <Skeleton className={styles.adminSkeletonFormButton} />
       </div>
     </div>
   );
@@ -66,12 +68,12 @@ export function FormSkeleton({ fields = 3 }: { fields?: number }) {
 // Page header skeleton
 export function PageHeaderSkeleton() {
   return (
-    <div className="flex flex-wrap items-end justify-between gap-3 mb-6">
-      <div className="space-y-2">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-4 w-64" />
+    <div className={styles.adminSkeletonPageHeader}>
+      <div className={styles.adminSkeletonPageHeaderText}>
+        <Skeleton className={styles.adminSkeletonPageTitle} />
+        <Skeleton className={styles.adminSkeletonPageSubtitle} />
       </div>
-      <Skeleton className="h-10 w-32" />
+      <Skeleton className={styles.adminSkeletonPageAction} />
     </div>
   );
 }
@@ -79,7 +81,7 @@ export function PageHeaderSkeleton() {
 // Full page skeleton
 export function PageSkeleton() {
   return (
-    <div className="space-y-6">
+    <div className={styles.adminSkeletonPage}>
       <PageHeaderSkeleton />
       <CardSkeleton />
       <TableSkeleton />

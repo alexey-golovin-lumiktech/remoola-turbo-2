@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 
 import { StatusPill, JsonView } from '../../../../components';
+import styles from '../../../../components/ui/classNames.module.css';
 import { type PaymentRequest } from '../../../../lib';
 
 export function PaymentRequestDetailsClient({ paymentRequestId }: { paymentRequestId: string }) {
@@ -18,29 +19,29 @@ export function PaymentRequestDetailsClient({ paymentRequestId }: { paymentReque
     getPaymentRequest(paymentRequestId).then(setPaymentRequest);
   }, [paymentRequestId]);
 
-  if (!paymentRequest) return <div className="text-sm text-gray-600">Payment request not found</div>;
+  if (!paymentRequest) return <div className={styles.adminTextGray600}>Payment request not found</div>;
 
   return (
-    <div className="space-y-4">
+    <div className={styles.adminPageStack}>
       <div>
-        <div className="text-sm text-gray-500">Payment Request</div>
-        <h1 className="text-2xl font-semibold">
+        <div className={styles.adminTextGray500}>Payment Request</div>
+        <h1 className={styles.adminPageTitle}>
           {paymentRequest.currencyCode} {paymentRequest.amount}
           {` `}
-          <span className="ml-2 align-middle">
+          <span className={styles.adminInlineStatusPill}>
             <StatusPill value={paymentRequest.status} />
           </span>
         </h1>
-        <div className="mt-1 text-sm text-gray-700">
+        <div className={styles.adminDetailMeta}>
           Rail: {paymentRequest.paymentRail ?? `—`} • Payer: {paymentRequest.payer?.email ?? paymentRequest.payerId} •
           Requester:{` `}
           {paymentRequest.requester?.email ?? paymentRequest.requesterId}
         </div>
       </div>
 
-      <div className="rounded-xl border bg-white p-4">
-        <div className="text-sm font-semibold">Raw</div>
-        <div className="mt-3">
+      <div className={styles.adminCard}>
+        <div className={styles.adminCardTitle}>Raw</div>
+        <div className={styles.adminCardContent}>
           <JsonView value={paymentRequest} />
         </div>
       </div>

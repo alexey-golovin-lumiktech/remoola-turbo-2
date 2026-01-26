@@ -1,0 +1,519 @@
+/* classNames.module.css */
+@reference "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.adminTopbar {
+  @apply flex items-center justify-between border-b bg-white px-6 py-3;
+}
+
+.adminTopbarTitle {
+  @apply text-sm text-gray-600;
+}
+
+.adminTopbarLogout {
+  @apply rounded-lg border px-3 py-1.5 text-sm hover:bg-gray-50 disabled:opacity-60;
+}
+
+.adminSidebar {
+  @apply w-64 border-r bg-white;
+}
+
+.adminSidebarHeader {
+  @apply p-4;
+}
+
+.adminSidebarTitle {
+  @apply text-lg font-semibold;
+}
+
+.adminSidebarMeta {
+  @apply text-xs text-gray-500;
+}
+
+.adminSidebarNav {
+  @apply px-2 pb-4;
+}
+
+.adminSidebarLinkBase {
+  @apply block rounded-lg px-3 py-2 text-sm;
+}
+
+.adminSidebarLinkActive {
+  @apply bg-gray-100 font-medium;
+}
+
+.adminSidebarLinkInactive {
+  @apply text-gray-700 hover:bg-gray-50;
+}
+
+.adminSkeletonBase {
+  @apply animate-pulse rounded-md bg-gray-200;
+}
+
+.adminSkeletonTable {
+  @apply space-y-3;
+}
+
+.adminSkeletonHeaderRow {
+  @apply flex space-x-4;
+}
+
+.adminSkeletonHeaderCell {
+  @apply h-4 flex-1;
+}
+
+.adminSkeletonRow {
+  @apply flex space-x-4;
+}
+
+.adminSkeletonRowCell {
+  @apply h-8 flex-1;
+}
+
+.adminSkeletonCard {
+  @apply p-6 border rounded-lg bg-white;
+}
+
+.adminSkeletonCardBody {
+  @apply space-y-4;
+}
+
+.adminSkeletonLineThreeQuarters {
+  @apply h-4 w-3/4;
+}
+
+.adminSkeletonLineHalf {
+  @apply h-4 w-1/2;
+}
+
+.adminSkeletonTextGroup {
+  @apply space-y-2;
+}
+
+.adminSkeletonTextLine {
+  @apply h-3 w-full;
+}
+
+.adminSkeletonTextLineFourFifths {
+  @apply h-3 w-4/5;
+}
+
+.adminSkeletonTextLineTwoThirds {
+  @apply h-3 w-2/3;
+}
+
+.adminSkeletonForm {
+  @apply space-y-4;
+}
+
+.adminSkeletonFormField {
+  @apply space-y-2;
+}
+
+.adminSkeletonFormLabel {
+  @apply h-4 w-20;
+}
+
+.adminSkeletonFormInput {
+  @apply h-10 w-full;
+}
+
+.adminSkeletonFormActions {
+  @apply flex space-x-2 pt-4;
+}
+
+.adminSkeletonFormButton {
+  @apply h-10 w-20;
+}
+
+.adminSkeletonPageHeader {
+  @apply flex flex-wrap items-end justify-between gap-3 mb-6;
+}
+
+.adminSkeletonPageHeaderText {
+  @apply space-y-2;
+}
+
+.adminSkeletonPageTitle {
+  @apply h-8 w-48;
+}
+
+.adminSkeletonPageSubtitle {
+  @apply h-4 w-64;
+}
+
+.adminSkeletonPageAction {
+  @apply h-10 w-32;
+}
+
+.adminSkeletonPage {
+  @apply space-y-6;
+}
+
+.adminStatusPillBase {
+  @apply inline-flex rounded-full border px-2 py-0.5 text-xs;
+}
+
+.adminStatusPillGood {
+  @apply bg-green-50 text-green-700 border-green-200;
+}
+
+.adminStatusPillBad {
+  @apply bg-red-50 text-red-700 border-red-200;
+}
+
+.adminStatusPillNeutral {
+  @apply bg-gray-50 text-gray-700 border-gray-200;
+}
+
+.adminLoadingFallback {
+  @apply space-y-4;
+}
+
+.adminErrorBoundaryContainer {
+  @apply min-h-[400px] flex items-center justify-center;
+}
+
+.adminErrorBoundaryCard {
+  @apply text-center p-6 max-w-md;
+}
+
+.adminErrorBoundaryIcon {
+  @apply text-red-500 text-6xl mb-4;
+}
+
+.adminErrorBoundaryTitle {
+  @apply text-xl font-semibold text-gray-900 mb-2;
+}
+
+.adminErrorBoundaryMessage {
+  @apply text-gray-600 mb-4;
+}
+
+.adminErrorBoundaryButton {
+  @apply px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors;
+}
+
+.adminErrorFallbackContainer {
+  @apply min-h-[200px] flex items-center justify-center;
+}
+
+.adminErrorFallbackCard {
+  @apply text-center p-4;
+}
+
+.adminErrorFallbackIcon {
+  @apply text-red-500 text-4xl mb-2;
+}
+
+.adminErrorFallbackMessage {
+  @apply text-gray-700 mb-3;
+}
+
+.adminErrorFallbackButton {
+  @apply px-3 py-1.5 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors;
+}
+
+.adminJsonView {
+  @apply overflow-auto rounded-xl border bg-gray-50 p-4 text-xs leading-relaxed;
+}
+
+.adminDataTableWrapper {
+  @apply overflow-x-auto rounded-xl border bg-white;
+}
+
+.adminDataTable {
+  @apply min-w-full text-sm;
+}
+
+.adminDataTableHead {
+  @apply border-b bg-gray-50;
+}
+
+.adminDataTableHeaderCell {
+  @apply px-4 py-3 text-left text-xs font-semibold text-gray-700;
+}
+
+.adminDataTableRow {
+  @apply border-b last:border-b-0 hover:bg-gray-50;
+}
+
+.adminDataTableCell {
+  @apply px-4 py-3 align-top;
+}
+
+.adminDataTableLink {
+  @apply contents;
+}
+
+.adminLoginContainer {
+  @apply flex min-h-screen items-center justify-center bg-gray-50 p-6;
+}
+
+.adminLoginForm {
+  @apply w-full max-w-sm rounded-xl border bg-white p-6 shadow-sm;
+}
+
+.adminLoginTitle {
+  @apply text-xl font-semibold;
+}
+
+.adminLoginSubtitle {
+  @apply mt-1 text-sm text-gray-600;
+}
+
+.adminLoginFields {
+  @apply mt-4 space-y-3;
+}
+
+.adminLoginLabel {
+  @apply block;
+}
+
+.adminLoginLabelText {
+  @apply mb-1 text-xs font-medium text-gray-700;
+}
+
+.adminLoginInput {
+  @apply w-full rounded-lg border px-3 py-2 text-sm;
+}
+
+.adminLoginError {
+  @apply rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700;
+}
+
+.adminLoginButton {
+  @apply w-full rounded-lg bg-black px-3 py-2 text-sm font-medium text-white disabled:opacity-70;
+}
+
+.adminLoginSkeletonContainer {
+  @apply flex min-h-screen items-center justify-center bg-gray-50 p-6;
+}
+
+.adminLoginSkeletonCard {
+  @apply w-full max-w-sm rounded-xl border bg-white p-6 shadow-sm;
+}
+
+.adminLoginSkeletonTitle {
+  @apply h-6 w-32 rounded bg-gray-200;
+}
+
+.adminLoginSkeletonFields {
+  @apply mt-4 space-y-3;
+}
+
+.adminLoginSkeletonField {
+  @apply h-10 rounded bg-gray-200;
+}
+
+.adminProtectedLayout {
+  @apply flex min-h-screen bg-gray-50;
+}
+
+.adminProtectedContent {
+  @apply flex min-w-0 flex-1 flex-col;
+}
+
+.adminProtectedMain {
+  @apply min-w-0 flex-1 p-6;
+}
+
+.adminPageStack {
+  @apply space-y-4;
+}
+
+.adminPageTitle {
+  @apply text-2xl font-semibold;
+}
+
+.adminPageSubtitle {
+  @apply text-sm text-gray-600;
+}
+
+.adminDashboardGrid {
+  @apply grid gap-4 md:grid-cols-3;
+}
+
+.adminDashboardCard {
+  @apply rounded-xl border bg-white p-4;
+}
+
+.adminDashboardCardLabel {
+  @apply text-sm text-gray-500;
+}
+
+.adminDashboardCardValue {
+  @apply mt-1 text-2xl font-semibold;
+}
+
+.adminMonoCode {
+  @apply font-mono text-xs;
+}
+
+.adminTextGray700 {
+  @apply text-gray-700;
+}
+
+.adminTextMedium {
+  @apply font-medium;
+}
+
+.adminTextGray600 {
+  @apply text-sm text-gray-600;
+}
+
+.adminTextGray500 {
+  @apply text-sm text-gray-500;
+}
+
+.adminInlineStatusPill {
+  @apply ml-2 align-middle;
+}
+
+.adminDetailMeta {
+  @apply mt-1 text-sm text-gray-700;
+}
+
+.adminCard {
+  @apply rounded-xl border bg-white p-4;
+}
+
+.adminCardTitle {
+  @apply text-sm font-semibold;
+}
+
+.adminCardContent {
+  @apply mt-3;
+}
+
+.adminDetailsGrid {
+  @apply grid gap-4 lg:grid-cols-2;
+}
+
+.adminRowPillBase {
+  @apply inline-flex rounded-full border px-2 py-0.5 text-xs;
+}
+
+.adminRowPillSuper {
+  @apply bg-purple-50 text-purple-700 border-purple-200;
+}
+
+.adminRowPillDefault {
+  @apply bg-gray-50 text-gray-700 border-gray-200;
+}
+
+.adminHeaderRow {
+  @apply flex flex-wrap items-end justify-between gap-3;
+}
+
+.adminHeaderActions {
+  @apply flex items-center gap-3;
+}
+
+.adminCheckboxLabel {
+  @apply flex items-center gap-2 text-sm text-gray-700;
+}
+
+.adminCheckbox {
+  @apply h-4 w-4;
+}
+
+.adminPrimaryButton {
+  @apply rounded-lg bg-black px-3 py-2 text-sm font-medium text-white disabled:opacity-50;
+}
+
+.adminAlertError {
+  @apply rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800;
+}
+
+.adminStatusBadgeBase {
+  @apply inline-flex rounded-full border px-2 py-0.5 text-xs;
+}
+
+.adminStatusBadgeDeleted {
+  @apply border-red-200 bg-red-50 text-red-700;
+}
+
+.adminStatusBadgeActive {
+  @apply border-green-200 bg-green-50 text-green-700;
+}
+
+.adminActionRow {
+  @apply flex flex-wrap items-center gap-2;
+}
+
+.adminActionButton {
+  @apply rounded-lg border px-2 py-1 text-xs hover:bg-gray-50;
+}
+
+.adminDeleteButton {
+  @apply rounded-lg border border-red-200 bg-red-50 px-2 py-1 text-xs text-red-700 hover:bg-red-100 disabled:opacity-60;
+}
+
+.adminRestoreButton {
+  @apply rounded-lg border border-green-200 bg-green-50 px-2 py-1 text-xs text-green-700 hover:bg-green-100;
+}
+
+.adminModalOverlay {
+  @apply fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4;
+}
+
+.adminModalCard {
+  @apply w-full max-w-md rounded-2xl bg-white p-5 shadow-lg;
+}
+
+.adminModalHeader {
+  @apply flex items-start justify-between;
+}
+
+.adminModalTitle {
+  @apply text-lg font-semibold;
+}
+
+.adminModalSubtitle {
+  @apply text-sm text-gray-600;
+}
+
+.adminModalClose {
+  @apply rounded-lg border px-2 py-1 text-sm;
+}
+
+.adminModalBody {
+  @apply mt-4 space-y-3;
+}
+
+.adminFormLabelBlock {
+  @apply block;
+}
+
+.adminFormLabelText {
+  @apply mb-1 text-xs font-medium text-gray-700;
+}
+
+.adminFormInput {
+  @apply w-full rounded-lg border px-3 py-2 text-sm;
+}
+
+.adminFormError {
+  @apply mt-1 text-xs text-red-600;
+}
+
+.adminFormHelp {
+  @apply mt-1 text-xs text-gray-500;
+}
+
+.adminModalFooter {
+  @apply flex justify-end gap-2 pt-2;
+}
+
+.adminModalCancel {
+  @apply rounded-lg border px-3 py-2 text-sm hover:bg-gray-50;
+}
+
+.adminModalPrimary {
+  @apply rounded-lg bg-black px-3 py-2 text-sm font-medium text-white;
+}
+
+.adminWarningNote {
+  @apply rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-2 text-xs text-yellow-800;
+}

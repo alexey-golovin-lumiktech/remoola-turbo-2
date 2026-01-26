@@ -2,7 +2,7 @@ import { type JSX } from 'react';
 
 export type AdminType = `SUPER` | `ADMIN`;
 
-export type AdminUser = {
+export type AdminDetails = {
   id: string;
   type: AdminType;
   email: string;

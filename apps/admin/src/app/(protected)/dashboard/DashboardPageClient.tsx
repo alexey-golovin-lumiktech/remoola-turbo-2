@@ -1,25 +1,27 @@
+import styles from '../../../components/ui/classNames.module.css';
+
 export function DashboardPageClient() {
   return (
-    <div className="space-y-4">
+    <div className={styles.adminPageStack}>
       <div>
-        <h1 className="text-2xl font-semibold">Dashboard</h1>
-        <p className="text-sm text-gray-600">
+        <h1 className={styles.adminPageTitle}>Dashboard</h1>
+        <p className={styles.adminPageSubtitle}>
           Next: totals by status, last 24h payment requests, ledger anomalies, verification queues.
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-xl border bg-white p-4">
-          <div className="text-sm text-gray-500">Consumers</div>
-          <div className="mt-1 text-2xl font-semibold">—</div>
+      <div className={styles.adminDashboardGrid}>
+        <div className={styles.adminDashboardCard}>
+          <div className={styles.adminDashboardCardLabel}>Consumers</div>
+          <div className={styles.adminDashboardCardValue}>—</div>
         </div>
-        <div className="rounded-xl border bg-white p-4">
-          <div className="text-sm text-gray-500">Payment Requests</div>
-          <div className="mt-1 text-2xl font-semibold">—</div>
+        <div className={styles.adminDashboardCard}>
+          <div className={styles.adminDashboardCardLabel}>Payment Requests</div>
+          <div className={styles.adminDashboardCardValue}>—</div>
         </div>
-        <div className="rounded-xl border bg-white p-4">
-          <div className="text-sm text-gray-500">Ledger Entries</div>
-          <div className="mt-1 text-2xl font-semibold">—</div>
+        <div className={styles.adminDashboardCard}>
+          <div className={styles.adminDashboardCardLabel}>Ledger Entries</div>
+          <div className={styles.adminDashboardCardValue}>—</div>
         </div>
       </div>
     </div>

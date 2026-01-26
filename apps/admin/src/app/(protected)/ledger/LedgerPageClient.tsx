@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 
 import { StatusPill, DataTable } from '../../../components';
+import styles from '../../../components/ui/classNames.module.css';
 import { type LedgerEntry } from '../../../lib';
 
 export function LedgerPageClient() {
@@ -19,10 +20,10 @@ export function LedgerPageClient() {
   }, []);
 
   return (
-    <div className="space-y-4">
+    <div className={styles.adminPageStack}>
       <div>
-        <h1 className="text-2xl font-semibold">Ledger</h1>
-        <p className="text-sm text-gray-600">Ledger Entry (signed amounts, idempotencyKey, stripeId).</p>
+        <h1 className={styles.adminPageTitle}>Ledger</h1>
+        <p className={styles.adminPageSubtitle}>Ledger Entry (signed amounts, idempotencyKey, stripeId).</p>
       </div>
 
       <DataTable<LedgerEntry>
@@ -32,15 +33,15 @@ export function LedgerPageClient() {
           {
             key: `ledgerId`,
             header: `Ledger`,
-            render: (r) => <span className="font-mono text-xs">{r.ledgerId.slice(0, 8)}…</span>,
+            render: (r) => <span className={styles.adminMonoCode}>{r.ledgerId.slice(0, 8)}…</span>,
           },
-          { key: `type`, header: `Type`, render: (r) => <span className="text-gray-700">{r.type}</span> },
+          { key: `type`, header: `Type`, render: (r) => <span className={styles.adminTextGray700}>{r.type}</span> },
           { key: `status`, header: `Status`, render: (r) => <StatusPill value={r.status} /> },
           {
             key: `amt`,
             header: `Amount`,
             render: (r) => (
-              <span className="font-medium">
+              <span className={styles.adminTextMedium}>
                 {r.currencyCode} {r.amount}
               </span>
             ),
@@ -49,23 +50,23 @@ export function LedgerPageClient() {
             key: `fees`,
             header: `Fees`,
             render: (r) => (
-              <span className="text-gray-700">{r.feesAmount ? `${r.feesAmount} (${r.feesType})` : `—`}</span>
+              <span className={styles.adminTextGray700}>{r.feesAmount ? `${r.feesAmount} (${r.feesType})` : `—`}</span>
             ),
           },
           {
             key: `stripe`,
             header: `Stripe`,
-            render: (r) => <span className="text-gray-600">{r.stripeId ?? `—`}</span>,
+            render: (r) => <span className={styles.adminTextGray600}>{r.stripeId ?? `—`}</span>,
           },
           {
             key: `idem`,
             header: `Idempotency`,
-            render: (r) => <span className="text-gray-600">{r.idempotencyKey ?? `—`}</span>,
+            render: (r) => <span className={styles.adminTextGray600}>{r.idempotencyKey ?? `—`}</span>,
           },
           {
             key: `created`,
             header: `Created`,
-            render: (r) => <span className="text-gray-600">{new Date(r.createdAt).toLocaleString()}</span>,
+            render: (r) => <span className={styles.adminTextGray600}>{new Date(r.createdAt).toLocaleString()}</span>,
           },
         ]}
       />

@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 
+import styles from '../../../components/ui/classNames.module.css';
 import { apiFetch } from '../../../lib';
 
 export function LoginPageClient() {
@@ -37,26 +38,26 @@ export function LoginPageClient() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6">
-      <form onSubmit={submit} className="w-full max-w-sm rounded-xl border bg-white p-6 shadow-sm">
-        <h1 className="text-xl font-semibold">Admin Login</h1>
-        <p className="mt-1 text-sm text-gray-600">Sign in to manage Remoola.</p>
+    <div className={styles.adminLoginContainer}>
+      <form onSubmit={submit} className={styles.adminLoginForm}>
+        <h1 className={styles.adminLoginTitle}>Admin Login</h1>
+        <p className={styles.adminLoginSubtitle}>Sign in to manage Remoola.</p>
 
-        <div className="mt-4 space-y-3">
-          <label className="block">
-            <div className="mb-1 text-xs font-medium text-gray-700">Email</div>
+        <div className={styles.adminLoginFields}>
+          <label className={styles.adminLoginLabel}>
+            <div className={styles.adminLoginLabelText}>Email</div>
             <input
-              className="w-full rounded-lg border px-3 py-2 text-sm"
+              className={styles.adminLoginInput}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
             />
           </label>
 
-          <label className="block">
-            <div className="mb-1 text-xs font-medium text-gray-700">Password</div>
+          <label className={styles.adminLoginLabel}>
+            <div className={styles.adminLoginLabelText}>Password</div>
             <input
-              className="w-full rounded-lg border px-3 py-2 text-sm"
+              className={styles.adminLoginInput}
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -64,12 +65,9 @@ export function LoginPageClient() {
             />
           </label>
 
-          {err && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{err}</div>}
+          {err && <div className={styles.adminLoginError}>{err}</div>}
 
-          <button
-            disabled={loading}
-            className="w-full rounded-lg bg-black px-3 py-2 text-sm font-medium text-white disabled:opacity-70"
-          >
+          <button disabled={loading} className={styles.adminLoginButton}>
             {loading ? `Signing in...` : `Sign in`}
           </button>
         </div>

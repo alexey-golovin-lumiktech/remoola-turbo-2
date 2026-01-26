@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 
+import styles from './ui/classNames.module.css';
+
 export type Column<T> = {
   key: string;
   header: string;
@@ -21,15 +23,12 @@ export function DataTable<T>({
   rowHrefAction?: (row: T) => string;
 }) {
   return (
-    <div className="overflow-x-auto rounded-xl border bg-white">
-      <table className="min-w-full text-sm">
-        <thead className="border-b bg-gray-50">
+    <div className={styles.adminDataTableWrapper}>
+      <table className={styles.adminDataTable}>
+        <thead className={styles.adminDataTableHead}>
           <tr>
             {columns.map((c) => (
-              <th
-                key={c.key}
-                className={`px-4 py-3 text-left text-xs font-semibold text-gray-700 ` + (c.className || ``)}
-              >
+              <th key={c.key} className={`${styles.adminDataTableHeaderCell} ${c.className || ``}`}>
                 {c.header}
               </th>
             ))}
@@ -41,19 +40,19 @@ export function DataTable<T>({
             const href = rowHrefAction?.(row);
 
             return href ? (
-              <tr key={key} className="border-b last:border-b-0 hover:bg-gray-50">
+              <tr key={key} className={styles.adminDataTableRow}>
                 {columns.map((c) => (
-                  <td key={c.key} className={`px-4 py-3 align-top ` + (c.className || ``)}>
-                    <Link key={key} href={href} className="contents">
+                  <td key={c.key} className={`${styles.adminDataTableCell} ${c.className || ``}`}>
+                    <Link key={key} href={href} className={styles.adminDataTableLink}>
                       {c.render(row)}
                     </Link>
                   </td>
                 ))}
               </tr>
             ) : (
-              <tr key={key} className="border-b last:border-b-0 hover:bg-gray-50">
+              <tr key={key} className={styles.adminDataTableRow}>
                 {columns.map((c) => (
-                  <td key={c.key} className={`px-4 py-3 align-top ` + (c.className || ``)}>
+                  <td key={c.key} className={`${styles.adminDataTableCell} ${c.className || ``}`}>
                     {c.render(row)}
                   </td>
                 ))}

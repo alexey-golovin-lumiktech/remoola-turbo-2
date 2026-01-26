@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { apiFetch } from '../lib';
+import styles from './ui/classNames.module.css';
 
 export function Topbar() {
   const router = useRouter();
@@ -17,13 +18,9 @@ export function Topbar() {
   }
 
   return (
-    <header className="flex items-center justify-between border-b bg-white px-6 py-3">
-      <div className="text-sm text-gray-600">Admin Panel</div>
-      <button
-        disabled={loading}
-        onClick={logout}
-        className="rounded-lg border px-3 py-1.5 text-sm hover:bg-gray-50 disabled:opacity-60"
-      >
+    <header className={styles.adminTopbar}>
+      <div className={styles.adminTopbarTitle}>Admin Panel</div>
+      <button disabled={loading} onClick={logout} className={styles.adminTopbarLogout}>
         {loading ? `Signing out...` : `Sign out`}
       </button>
     </header>

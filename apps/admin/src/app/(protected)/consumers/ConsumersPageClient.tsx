@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 
 import { DataTable } from '../../../components';
+import styles from '../../../components/ui/classNames.module.css';
 import { type Consumer } from '../../../lib';
 
 export function ConsumersPageClient() {
@@ -19,10 +20,10 @@ export function ConsumersPageClient() {
   }, []);
 
   return (
-    <div className="space-y-4">
+    <div className={styles.adminPageStack}>
       <div>
-        <h1 className="text-2xl font-semibold">Consumers</h1>
-        <p className="text-sm text-gray-600">Consumer + joined details (personal/org/address/google).</p>
+        <h1 className={styles.adminPageTitle}>Consumers</h1>
+        <p className={styles.adminPageSubtitle}>Consumer + joined details (personal/org/address/google).</p>
       </div>
 
       <DataTable<Consumer>
@@ -33,7 +34,7 @@ export function ConsumersPageClient() {
           {
             key: `email`,
             header: `Email`,
-            render: (c) => <span className="font-medium">{c.email}</span>,
+            render: (c) => <span className={styles.adminTextMedium}>{c.email}</span>,
           },
           {
             key: `type`,
@@ -58,7 +59,7 @@ export function ConsumersPageClient() {
           {
             key: `created`,
             header: `Created`,
-            render: (c) => <span className="text-gray-600">{new Date(c.createdAt).toLocaleString()}</span>,
+            render: (c) => <span className={styles.adminTextGray600}>{new Date(c.createdAt).toLocaleString()}</span>,
           },
         ]}
       />

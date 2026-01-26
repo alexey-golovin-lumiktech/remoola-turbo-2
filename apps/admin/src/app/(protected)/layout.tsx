@@ -1,12 +1,13 @@
 import { Sidebar, Topbar } from '../../components';
+import styles from '../../components/ui/classNames.module.css';
 
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className={styles.adminProtectedLayout}>
       <Sidebar />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className={styles.adminProtectedContent}>
         <Topbar />
-        <main className="min-w-0 flex-1 p-6">{children}</main>
+        <main className={styles.adminProtectedMain}>{children}</main>
       </div>
     </div>
   );

@@ -1,9 +1,7 @@
 'use client';
 
+import styles from './ui/classNames.module.css';
+
 export function JsonView({ value }: { value: unknown }) {
-  return (
-    <pre className="overflow-auto rounded-xl border bg-gray-50 p-4 text-xs leading-relaxed">
-      {JSON.stringify(value, null, 2)}
-    </pre>
-  );
+  return <pre className={styles.adminJsonView}>{JSON.stringify(value, null, 2)}</pre>;
 }

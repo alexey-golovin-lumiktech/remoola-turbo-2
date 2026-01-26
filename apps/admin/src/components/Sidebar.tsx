@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { apiFetch, type AdminMe } from '../lib';
+import styles from './ui/classNames.module.css';
 
 const BASE_NAV = [
   { href: `/dashboard`, label: `Dashboard` },
@@ -32,13 +33,13 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="w-64 border-r bg-white">
-      <div className="p-4">
-        <div className="text-lg font-semibold">Remoola Admin</div>
-        <div className="text-xs text-gray-500">{me ? `${me.email} • ${me.type}` : `Loading…`}</div>
+    <aside className={styles.adminSidebar}>
+      <div className={styles.adminSidebarHeader}>
+        <div className={styles.adminSidebarTitle}>Remoola Admin</div>
+        <div className={styles.adminSidebarMeta}>{me ? `${me.email} • ${me.type}` : `Loading…`}</div>
       </div>
 
-      <nav className="px-2 pb-4">
+      <nav className={styles.adminSidebarNav}>
         {BASE_NAV.map((item) => {
           const active = pathname === item.href;
           return (
@@ -46,8 +47,8 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={[
-                `block rounded-lg px-3 py-2 text-sm`,
-                active ? `bg-gray-100 font-medium` : `text-gray-700 hover:bg-gray-50`,
+                styles.adminSidebarLinkBase,
+                active ? styles.adminSidebarLinkActive : styles.adminSidebarLinkInactive,
               ].join(` `)}
             >
               {item.label}

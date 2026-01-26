@@ -1,12 +1,14 @@
+import styles from '../../../components/ui/classNames.module.css';
+
 export function LoginSkeleton() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6">
-      <div className="w-full max-w-sm rounded-xl border bg-white p-6 shadow-sm">
-        <div className="h-6 w-32 rounded bg-gray-200" />
-        <div className="mt-4 space-y-3">
-          <div className="h-10 rounded bg-gray-200" />
-          <div className="h-10 rounded bg-gray-200" />
-          <div className="h-10 rounded bg-gray-200" />
+    <div className={styles.adminLoginSkeletonContainer}>
+      <div className={styles.adminLoginSkeletonCard}>
+        <div className={styles.adminLoginSkeletonTitle} />
+        <div className={styles.adminLoginSkeletonFields}>
+          <div className={styles.adminLoginSkeletonField} />
+          <div className={styles.adminLoginSkeletonField} />
+          <div className={styles.adminLoginSkeletonField} />
         </div>
       </div>
     </div>
