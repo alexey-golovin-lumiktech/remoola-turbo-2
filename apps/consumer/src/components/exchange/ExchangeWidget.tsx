@@ -26,8 +26,28 @@ export function ExchangeWidget({ balances }: ExchangeWidgetProps) {
   const [amount, setAmount] = useState(``);
   const [rate, setRate] = useState<number | null>(null);
   const [result, setResult] = useState<number | null>(null);
+  const [currencies, setCurrencies] = useState<string[]>([...CURRENCIES]);
 
   const available = balances[from] ?? 0;
+  useEffect(() => {
+    fetch(`/api/exchange/currencies`, { credentials: `include` })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (Array.isArray(data) && data.length) {
+          setCurrencies(data);
+        }
+      })
+      .catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
+    if (!currencies.length) return;
+    if (!currencies.includes(from) || !currencies.includes(to)) {
+      setFrom(currencies[0] ?? `USD`);
+      setTo(currencies[1] ?? currencies[0] ?? `EUR`);
+    }
+  }, [currencies, from, to]);
+
   useEffect(() => {
     if (from && to) {
       fetch(`/api/exchange/rates?from=${from}&to=${to}`)
@@ -70,7 +90,7 @@ export function ExchangeWidget({ balances }: ExchangeWidgetProps) {
         <div>
           <label className={exchangeLabel}>From currency</label>
           <select className={exchangeField} value={from} onChange={(e) => setFrom(e.target.value)}>
-            {CURRENCIES.map((c) => (
+            {currencies.map((c) => (
               <option key={c}>{c}</option>
             ))}
           </select>
@@ -79,7 +99,7 @@ export function ExchangeWidget({ balances }: ExchangeWidgetProps) {
         <div>
           <label className={exchangeLabel}>To currency</label>
           <select className={exchangeField} value={to} onChange={(e) => setTo(e.target.value)}>
-            {CURRENCIES.map((c) => (
+            {currencies.map((c) => (
               <option key={c}>{c}</option>
             ))}
           </select>

@@ -149,6 +149,40 @@ export type LedgerEntry = {
   updatedAt: string;
 };
 
+export type ScheduledFxConversionStatus = `PENDING` | `PROCESSING` | `EXECUTED` | `FAILED` | `CANCELLED`;
+
+export type AutoConversionRule = {
+  id: string;
+  consumerId: string;
+  consumer?: Pick<Consumer, `id` | `email`>;
+  fromCurrency: CurrencyCode;
+  toCurrency: CurrencyCode;
+  targetBalance: number;
+  maxConvertAmount?: number | null;
+  minIntervalMinutes: number;
+  enabled: boolean;
+  nextRunAt?: string | null;
+  lastRunAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ScheduledFxConversion = {
+  id: string;
+  consumerId: string;
+  consumer?: Pick<Consumer, `id` | `email`>;
+  fromCurrency: CurrencyCode;
+  toCurrency: CurrencyCode;
+  amount: number;
+  status: ScheduledFxConversionStatus;
+  executeAt: string;
+  attempts: number;
+  lastError?: string | null;
+  ledgerId?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type PageProps = { params: JSX.IntrinsicAttributes | PromiseLike<JSX.IntrinsicAttributes> };
 
 export type RouteHandlerContext<T extends Record<string, string>> = {
@@ -232,13 +266,13 @@ export type RecentPaymentRequest = PaymentRequest & {
 export type LedgerAnomaly = {
   id: string;
   type:
-    | `duplicate`
-    | `missing_ledger_entry`
-    | `dangling_ledger_entry`
-    | `unlinked_payment_ledger_entry`
-    | `amount_mismatch`
-    | `status_inconsistency`
-    | `premature_ledger_entry`;
+  | `duplicate`
+  | `missing_ledger_entry`
+  | `dangling_ledger_entry`
+  | `unlinked_payment_ledger_entry`
+  | `amount_mismatch`
+  | `status_inconsistency`
+  | `premature_ledger_entry`;
   description: string;
   paymentRequestId?: string;
   consumerId: string;

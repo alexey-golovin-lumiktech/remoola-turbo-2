@@ -1,14 +1,19 @@
 import { randomUUID } from 'crypto';
 
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
 
 import { ConvertCurrencyBody } from './dto/convert.dto';
+import { CreateAutoConversionRuleBody } from './dto/create-auto-conversion-rule.dto';
+import { ScheduleConversionBody } from './dto/schedule-conversion.dto';
+import { UpdateAutoConversionRuleBody } from './dto/update-auto-conversion-rule.dto';
 import { PrismaService } from '../../../shared/prisma.service';
 
 @Injectable()
 export class ConsumerExchangeService {
+  private readonly logger = new Logger(ConsumerExchangeService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async getRate(from: $Enums.CurrencyCode, to: $Enums.CurrencyCode) {
@@ -49,6 +54,481 @@ export class ConsumerExchangeService {
   }
 
   async convert(consumerId: string, body: ConvertCurrencyBody) {
+    return this.convertInternal(consumerId, body, {
+      metadata: { source: `manual` },
+    });
+  }
+
+  async listAutoConversionRules(consumerId: string) {
+    const rules = await this.prisma.walletAutoConversionRuleModel.findMany({
+      where: { consumerId, deletedAt: null },
+      orderBy: { createdAt: `desc` },
+    });
+    return rules.map((rule) => this.normalizeRule(rule));
+  }
+
+  async createAutoConversionRule(consumerId: string, body: CreateAutoConversionRuleBody) {
+    const { from, to } = body;
+
+    if (from === to) {
+      throw new BadRequestException(`Source and target currencies must differ`);
+    }
+
+    if (!Number.isFinite(body.targetBalance) || body.targetBalance < 0) {
+      throw new BadRequestException(`Invalid target balance`);
+    }
+
+    if (body.maxConvertAmount != null && body.maxConvertAmount <= 0) {
+      throw new BadRequestException(`Invalid max convert amount`);
+    }
+
+    const minIntervalMinutes = body.minIntervalMinutes ?? 60;
+
+    const rule = await this.prisma.walletAutoConversionRuleModel.create({
+      data: {
+        consumerId,
+        fromCurrency: from,
+        toCurrency: to,
+        targetBalance: body.targetBalance,
+        maxConvertAmount: body.maxConvertAmount ?? null,
+        minIntervalMinutes,
+        nextRunAt: new Date(),
+        enabled: body.enabled ?? true,
+      },
+    });
+    return this.normalizeRule(rule);
+  }
+
+  async updateAutoConversionRule(consumerId: string, ruleId: string, body: UpdateAutoConversionRuleBody) {
+    const rule = await this.prisma.walletAutoConversionRuleModel.findFirst({
+      where: { id: ruleId, consumerId, deletedAt: null },
+    });
+
+    if (!rule) {
+      throw new NotFoundException(`Rule not found`);
+    }
+
+    const from = body.from ?? rule.fromCurrency;
+    const to = body.to ?? rule.toCurrency;
+
+    if (from === to) {
+      throw new BadRequestException(`Source and target currencies must differ`);
+    }
+
+    if (body.targetBalance != null && (!Number.isFinite(body.targetBalance) || body.targetBalance < 0)) {
+      throw new BadRequestException(`Invalid target balance`);
+    }
+
+    if (body.maxConvertAmount != null && body.maxConvertAmount <= 0) {
+      throw new BadRequestException(`Invalid max convert amount`);
+    }
+
+    const minIntervalMinutes = body.minIntervalMinutes ?? rule.minIntervalMinutes;
+    const nextRunAt =
+      body.minIntervalMinutes != null || body.enabled === true ? new Date() : rule.nextRunAt ?? new Date();
+
+    const maxConvertAmount =
+      body.maxConvertAmount === null ? null : body.maxConvertAmount ?? undefined;
+
+    const updated = await this.prisma.walletAutoConversionRuleModel.update({
+      where: { id: rule.id },
+      data: {
+        fromCurrency: from,
+        toCurrency: to,
+        targetBalance: body.targetBalance ?? undefined,
+        maxConvertAmount,
+        minIntervalMinutes,
+        enabled: body.enabled ?? undefined,
+        nextRunAt,
+      },
+    });
+    return this.normalizeRule(updated);
+  }
+
+  async deleteAutoConversionRule(consumerId: string, ruleId: string) {
+    const rule = await this.prisma.walletAutoConversionRuleModel.findFirst({
+      where: { id: ruleId, consumerId, deletedAt: null },
+    });
+
+    if (!rule) {
+      throw new NotFoundException(`Rule not found`);
+    }
+
+    await this.prisma.walletAutoConversionRuleModel.update({
+      where: { id: rule.id },
+      data: { deletedAt: new Date(), enabled: false },
+    });
+
+    return { ruleId: rule.id };
+  }
+
+  async listScheduledConversions(consumerId: string) {
+    const conversions = await this.prisma.scheduledFxConversionModel.findMany({
+      where: { consumerId, deletedAt: null },
+      orderBy: { executeAt: `desc` },
+    });
+    return conversions.map((conversion) => this.normalizeScheduledConversion(conversion));
+  }
+
+  async scheduleConversion(consumerId: string, body: ScheduleConversionBody) {
+    const { from, to, amount } = body;
+
+    if (from === to) {
+      throw new BadRequestException(`Source and target currencies must differ`);
+    }
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      throw new BadRequestException(`Invalid amount`);
+    }
+
+    const executeAt = new Date(body.executeAt);
+    if (Number.isNaN(executeAt.getTime())) {
+      throw new BadRequestException(`Invalid executeAt`);
+    }
+
+    if (executeAt.getTime() <= Date.now()) {
+      throw new BadRequestException(`executeAt must be in the future`);
+    }
+
+    const conversion = await this.prisma.scheduledFxConversionModel.create({
+      data: {
+        consumerId,
+        fromCurrency: from,
+        toCurrency: to,
+        amount,
+        executeAt,
+      },
+    });
+    return this.normalizeScheduledConversion(conversion);
+  }
+
+  async cancelScheduledConversion(consumerId: string, conversionId: string) {
+    const conversion = await this.prisma.scheduledFxConversionModel.findFirst({
+      where: { id: conversionId, consumerId, deletedAt: null },
+    });
+
+    if (!conversion) {
+      throw new NotFoundException(`Scheduled conversion not found`);
+    }
+
+    if (conversion.status !== $Enums.ScheduledFxConversionStatus.PENDING) {
+      throw new BadRequestException(`Only pending conversions can be cancelled`);
+    }
+
+    await this.prisma.scheduledFxConversionModel.update({
+      where: { id: conversion.id },
+      data: {
+        status: $Enums.ScheduledFxConversionStatus.CANCELLED,
+        updatedAt: new Date(),
+      },
+    });
+
+    return { conversionId: conversion.id };
+  }
+
+  async processDueScheduledConversions() {
+    const now = new Date();
+    const due = await this.prisma.scheduledFxConversionModel.findMany({
+      where: {
+        status: $Enums.ScheduledFxConversionStatus.PENDING,
+        executeAt: { lte: now },
+        deletedAt: null,
+      },
+      orderBy: { executeAt: `asc` },
+      take: 25,
+    });
+
+    for (const conversion of due) {
+      const claimed = await this.prisma.scheduledFxConversionModel.updateMany({
+        where: {
+          id: conversion.id,
+          status: $Enums.ScheduledFxConversionStatus.PENDING,
+        },
+        data: {
+          status: $Enums.ScheduledFxConversionStatus.PROCESSING,
+          processingAt: new Date(),
+          attempts: { increment: 1 },
+        },
+      });
+
+      if (!claimed.count) continue;
+
+      try {
+        const result = await this.convertInternal(
+          conversion.consumerId,
+          {
+            from: conversion.fromCurrency,
+            to: conversion.toCurrency,
+            amount: Number(conversion.amount),
+          },
+          {
+            metadata: { source: `scheduled`, scheduledConversionId: conversion.id },
+            idempotencyKeyPrefix: `scheduled:${conversion.id}`,
+          },
+        );
+
+        await this.prisma.scheduledFxConversionModel.update({
+          where: { id: conversion.id },
+          data: {
+            status: $Enums.ScheduledFxConversionStatus.EXECUTED,
+            executedAt: new Date(),
+            ledgerId: result.ledgerId,
+            lastError: null,
+          },
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : `Unknown error`;
+        this.logger.warn(`Scheduled conversion failed (${conversion.id}): ${message}`);
+
+        await this.prisma.scheduledFxConversionModel.update({
+          where: { id: conversion.id },
+          data: {
+            status: $Enums.ScheduledFxConversionStatus.FAILED,
+            failedAt: new Date(),
+            lastError: message,
+          },
+        });
+      }
+    }
+  }
+
+  async executeScheduledConversionNow(conversionId: string, initiatedBy?: { source: string; actorId?: string }) {
+    const conversion = await this.prisma.scheduledFxConversionModel.findFirst({
+      where: { id: conversionId, deletedAt: null },
+    });
+
+    if (!conversion) {
+      throw new NotFoundException(`Scheduled conversion not found`);
+    }
+
+    if (conversion.status === $Enums.ScheduledFxConversionStatus.EXECUTED) {
+      throw new BadRequestException(`Conversion already executed`);
+    }
+
+    if (conversion.status === $Enums.ScheduledFxConversionStatus.CANCELLED) {
+      throw new BadRequestException(`Conversion is cancelled`);
+    }
+
+    const claimed = await this.prisma.scheduledFxConversionModel.updateMany({
+      where: {
+        id: conversion.id,
+        status: { in: [$Enums.ScheduledFxConversionStatus.PENDING, $Enums.ScheduledFxConversionStatus.FAILED] },
+      },
+      data: {
+        status: $Enums.ScheduledFxConversionStatus.PROCESSING,
+        processingAt: new Date(),
+        attempts: { increment: 1 },
+      },
+    });
+
+    if (!claimed.count) {
+      throw new BadRequestException(`Conversion is already processing`);
+    }
+
+    try {
+      const result = await this.convertInternal(
+        conversion.consumerId,
+        {
+          from: conversion.fromCurrency,
+          to: conversion.toCurrency,
+          amount: Number(conversion.amount),
+        },
+        {
+          metadata: {
+            source: initiatedBy?.source ?? `admin`,
+            initiatedBy: initiatedBy?.actorId ?? null,
+            scheduledConversionId: conversion.id,
+          },
+          idempotencyKeyPrefix: `scheduled:${conversion.id}`,
+        },
+      );
+
+      await this.prisma.scheduledFxConversionModel.update({
+        where: { id: conversion.id },
+        data: {
+          status: $Enums.ScheduledFxConversionStatus.EXECUTED,
+          executedAt: new Date(),
+          ledgerId: result.ledgerId,
+          lastError: null,
+        },
+      });
+
+      return {
+        conversionId: conversion.id,
+        ledgerId: result.ledgerId,
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : `Unknown error`;
+      this.logger.warn(`Admin forced conversion failed (${conversion.id}): ${message}`);
+
+      await this.prisma.scheduledFxConversionModel.update({
+        where: { id: conversion.id },
+        data: {
+          status: $Enums.ScheduledFxConversionStatus.FAILED,
+          failedAt: new Date(),
+          lastError: message,
+        },
+      });
+
+      throw error;
+    }
+  }
+
+  async processDueAutoConversionRules() {
+    const now = new Date();
+    const rules = await this.prisma.walletAutoConversionRuleModel.findMany({
+      where: {
+        enabled: true,
+        deletedAt: null,
+        OR: [{ nextRunAt: null }, { nextRunAt: { lte: now } }],
+      },
+      orderBy: { nextRunAt: `asc` },
+      take: 50,
+    });
+
+    for (const rule of rules) {
+      const claimed = await this.prisma.walletAutoConversionRuleModel.updateMany({
+        where: {
+          id: rule.id,
+          enabled: true,
+          deletedAt: null,
+          OR: [{ nextRunAt: null }, { nextRunAt: { lte: now } }],
+        },
+        data: {
+          lastRunAt: now,
+          nextRunAt: new Date(now.getTime() + rule.minIntervalMinutes * 60 * 1000),
+        },
+      });
+
+      if (!claimed.count) continue;
+
+      try {
+        await this.executeAutoConversionRule(rule, {
+          source: `auto_rule`,
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : `Unknown error`;
+        this.logger.warn(`Auto conversion rule failed (${rule.id}): ${message}`);
+      }
+    }
+  }
+
+  async runAutoConversionRuleNow(ruleId: string, initiatedBy?: { source: string; actorId?: string }) {
+    const rule = await this.prisma.walletAutoConversionRuleModel.findFirst({
+      where: { id: ruleId, deletedAt: null },
+    });
+
+    if (!rule) {
+      throw new NotFoundException(`Rule not found`);
+    }
+
+    const now = new Date();
+    await this.prisma.walletAutoConversionRuleModel.update({
+      where: { id: rule.id },
+      data: {
+        lastRunAt: now,
+        nextRunAt: new Date(now.getTime() + rule.minIntervalMinutes * 60 * 1000),
+      },
+    });
+
+    return this.executeAutoConversionRule(rule, {
+      source: initiatedBy?.source ?? `manual_rule_run`,
+      actorId: initiatedBy?.actorId,
+    });
+  }
+
+  private async executeAutoConversionRule(
+    rule: {
+      id: string;
+      consumerId: string;
+      fromCurrency: $Enums.CurrencyCode;
+      toCurrency: $Enums.CurrencyCode;
+      targetBalance: unknown;
+      maxConvertAmount: unknown;
+    },
+    initiatedBy: { source: string; actorId?: string },
+  ) {
+    const balances = await this.getBalanceByCurrency(rule.consumerId);
+    const available = balances[rule.fromCurrency] ?? 0;
+    const targetBalance = Number(rule.targetBalance);
+
+    if (available <= targetBalance) {
+      return {
+        ruleId: rule.id,
+        converted: false,
+        reason: `balance_below_target`,
+      };
+    }
+
+    let amountToConvert = available - targetBalance;
+    if (rule.maxConvertAmount != null) {
+      amountToConvert = Math.min(amountToConvert, Number(rule.maxConvertAmount));
+    }
+
+    if (amountToConvert <= 0) {
+      return {
+        ruleId: rule.id,
+        converted: false,
+        reason: `no_amount_to_convert`,
+      };
+    }
+
+    const runAt = new Date();
+    const result = await this.convertInternal(
+      rule.consumerId,
+      {
+        from: rule.fromCurrency,
+        to: rule.toCurrency,
+        amount: amountToConvert,
+      },
+      {
+        metadata: {
+          source: initiatedBy.source,
+          initiatedBy: initiatedBy.actorId ?? null,
+          ruleId: rule.id,
+          runAt: runAt.toISOString(),
+        },
+        idempotencyKeyPrefix: `rule:${rule.id}:${runAt.toISOString()}`,
+      },
+    );
+
+    return {
+      ruleId: rule.id,
+      converted: true,
+      ledgerId: result.ledgerId,
+    };
+  }
+
+  getCurrencies() {
+    return Object.values($Enums.CurrencyCode);
+  }
+
+  private normalizeRule(rule: {
+    targetBalance: any;
+    maxConvertAmount: any;
+  }) {
+    return {
+      ...rule,
+      targetBalance: Number(rule.targetBalance),
+      maxConvertAmount: rule.maxConvertAmount != null ? Number(rule.maxConvertAmount) : null,
+    };
+  }
+
+  private normalizeScheduledConversion(conversion: { amount: any }) {
+    return {
+      ...conversion,
+      amount: Number(conversion.amount),
+    };
+  }
+
+  private async convertInternal(
+    consumerId: string,
+    body: ConvertCurrencyBody,
+    options?: {
+      metadata?: Record<string, unknown>;
+      idempotencyKeyPrefix?: string;
+    },
+  ) {
     const { amount, from, to } = body;
 
     if (from === to) {
@@ -69,7 +549,77 @@ export class ConsumerExchangeService {
     const rate = await this.getRate(from, to);
     const converted = Number((amount * rate.rate).toFixed(2));
 
+    const idempotencyKeyPrefix = options?.idempotencyKeyPrefix;
+    const targetKey = idempotencyKeyPrefix ? `${idempotencyKeyPrefix}:target` : null;
+    const sourceKey = idempotencyKeyPrefix ? `${idempotencyKeyPrefix}:source` : null;
+
+    if (idempotencyKeyPrefix) {
+      const [existingTarget, existingSource] = await Promise.all([
+        this.prisma.ledgerEntryModel.findFirst({
+          where: { idempotencyKey: targetKey ?? undefined, consumerId },
+        }),
+        this.prisma.ledgerEntryModel.findFirst({
+          where: { idempotencyKey: sourceKey ?? undefined, consumerId },
+        }),
+      ]);
+
+      if (existingTarget) {
+        const metadata = (existingTarget.metadata ?? {}) as Record<string, unknown>;
+        const rateFromMetadata = typeof metadata.rate === `number` ? metadata.rate : undefined;
+        return {
+          from,
+          to,
+          rate: rateFromMetadata ?? rate.rate,
+          sourceAmount: amount,
+          targetAmount: Number(existingTarget.amount),
+          ledgerId: existingTarget.ledgerId,
+          entryId: existingTarget.id,
+        };
+      }
+
+      if (existingSource && !existingTarget) {
+        const sourceMetadata = (existingSource.metadata ?? {}) as Record<string, unknown>;
+        const rateFromMetadata =
+          typeof sourceMetadata.rate === `number` ? sourceMetadata.rate : rate.rate;
+        const mergedMetadata = {
+          ...sourceMetadata,
+          ...(options?.metadata ?? {}),
+          from,
+          to,
+          rate: rateFromMetadata,
+        };
+        const sourceAmount = Math.abs(Number(existingSource.amount));
+        const convertedAmount = Number((sourceAmount * rateFromMetadata).toFixed(2));
+
+        const income = await this.prisma.ledgerEntryModel.create({
+          data: {
+            ledgerId: existingSource.ledgerId,
+            consumerId,
+            type: $Enums.LedgerEntryType.CURRENCY_EXCHANGE,
+            currencyCode: to,
+            status: $Enums.TransactionStatus.COMPLETED,
+            amount: +convertedAmount,
+            createdBy: consumerId,
+            updatedBy: consumerId,
+            idempotencyKey: targetKey ?? undefined,
+            metadata: mergedMetadata,
+          },
+        });
+
+        return {
+          from,
+          to,
+          rate: rateFromMetadata,
+          sourceAmount,
+          targetAmount: convertedAmount,
+          ledgerId: income.ledgerId,
+          entryId: income.id,
+        };
+      }
+    }
+
     const ledgerId = randomUUID();
+    const metadata = { from, to, rate: rate.rate, ...(options?.metadata ?? {}) };
 
     return this.prisma.$transaction(async (tx) => {
       // 1️⃣ Source currency — money leaves
@@ -83,11 +633,8 @@ export class ConsumerExchangeService {
           amount: -amount, // SIGNED
           createdBy: consumerId,
           updatedBy: consumerId,
-          metadata: {
-            from,
-            to,
-            rate: rate.rate,
-          },
+          idempotencyKey: sourceKey ?? undefined,
+          metadata,
         },
       });
 
@@ -102,11 +649,8 @@ export class ConsumerExchangeService {
           amount: +converted, // SIGNED
           createdBy: consumerId,
           updatedBy: consumerId,
-          metadata: {
-            from,
-            to,
-            rate: rate.rate,
-          },
+          idempotencyKey: targetKey ?? undefined,
+          metadata,
         },
       });
 

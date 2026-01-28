@@ -1,13 +1,12 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
-export async function POST(req: NextRequest) {
-  const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE_URL}/consumer/exchange/convert`);
+export async function GET(req: NextRequest) {
+  const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE_URL}/consumer/exchange/currencies`);
 
   const res = await fetch(url, {
-    method: `POST`,
+    method: `GET`,
     headers: new Headers(req.headers),
     credentials: `include`,
-    body: await req.clone().text(),
   });
 
   const cookie = res.headers.get(`set-cookie`);

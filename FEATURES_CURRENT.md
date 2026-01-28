@@ -24,7 +24,7 @@ Consumer domain features:
 - Contacts CRUD and contact details.
 - Contracts listing.
 - Document upload, tagging, and attachment to payments.
-- Exchange rates and currency conversion.
+- Exchange rates, currency conversion, auto-conversion rules, scheduled FX conversions, and admin review/override.
 - Payment methods CRUD (manual) and Stripe payment method metadata lookup.
 - Stripe checkout sessions, setup intents, confirmations, saved-method payments.
 - Stripe webhooks, including identity verification start.

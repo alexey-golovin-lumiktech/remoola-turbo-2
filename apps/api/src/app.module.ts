@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
 
 import { AdminModule } from './admin/admin.module';
@@ -14,6 +15,7 @@ import { DatabaseModule } from './shared/database.module';
     HealthModule,
     AdminModule,
     ConsumerModule,
+    ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([
       {
         ttl: 60000, // 1 minute

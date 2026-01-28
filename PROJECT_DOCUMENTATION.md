@@ -49,6 +49,14 @@ Payment Requests (`/admin/payment-requests`):
 - `GET /`: list all payment requests.
 - `GET /:id`: payment request details.
 
+Exchange (`/admin/exchange`):
+- `GET /rules`: list auto-conversion rules across consumers.
+- `PATCH /rules/:ruleId`: update/override a rule.
+- `POST /rules/:ruleId/run`: force-run a rule immediately.
+- `GET /scheduled`: list scheduled FX conversions.
+- `POST /scheduled/:conversionId/cancel`: cancel a scheduled conversion.
+- `POST /scheduled/:conversionId/execute`: force-execute a scheduled conversion.
+
 ### Consumer APIs
 
 Auth (`/consumer/auth`):
@@ -89,6 +97,14 @@ Documents (`/consumer/documents`):
 Exchange (`/consumer/exchange`):
 - `GET /rates`: get FX rate for currency pair.
 - `POST /convert`: currency conversion (consumer context).
+- `GET /rules`: list auto-conversion rules.
+- `POST /rules`: create auto-conversion rule.
+- `PATCH /rules/:ruleId`: update auto-conversion rule.
+- `DELETE /rules/:ruleId`: delete auto-conversion rule.
+- `GET /scheduled`: list scheduled FX conversions.
+- `POST /scheduled`: create scheduled FX conversion.
+- `POST /scheduled/:conversionId/cancel`: cancel scheduled conversion.
+- `GET /currencies`: list supported currency codes.
 
 Payment Methods (`/consumer/payment-methods`):
 - `GET /`: list saved payment methods.
@@ -150,6 +166,8 @@ Implemented screens:
 - `/(protected)/consumers`: consumer list and consumer details pages.
 - `/(protected)/payment-requests`: list and details.
 - `/(protected)/ledger`: ledger listing and ledger anomalies view.
+- `/(protected)/exchange/rules`: review auto-conversion rules.
+- `/(protected)/exchange/scheduled`: review scheduled FX conversions.
 
 Dashboard widgets in `apps/admin/src/components/dashboard`:
 - Status totals and recent payment requests.
@@ -161,6 +179,7 @@ Internal Admin API routes (server-side):
 - Consumer management routes (`/api/consumers/*`, including verification updates).
 - Dashboard data routes (`/api/dashboard/*`).
 - Ledger and payment request data routes (`/api/ledger`, `/api/payment-requests/*`).
+- Exchange routes (`/api/exchange/*`).
 
 ## Consumer App (Next.js)
 
@@ -180,6 +199,8 @@ Main shell routes:
 - `/contracts`: contract list.
 - `/documents`: documents list, upload, tags, attach to payments.
 - `/exchange`: currency exchange, balances, rates.
+- `/exchange/rules`: manage auto-conversion rules.
+- `/exchange/scheduled`: manage scheduled FX conversions.
 - `/payment-methods`: manage saved payment methods.
 - `/payment-requests/new`: create new payment request.
 - `/payments`: list payments and filters.

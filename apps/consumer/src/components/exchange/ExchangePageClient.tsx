@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from 'react';
 
+import Link from 'next/link';
+
 import { BalancesPanel } from './BalancesPanel';
 import { ExchangeWidget } from './ExchangeWidget';
 import styles from '../ui/classNames.module.css';
 
-const { exchangePageContainer, exchangePageTitle } = styles;
+const { exchangePageContainer, exchangePageTitle, flexRowBetween, buttonSecondary } = styles;
 
 type BalanceMap = Record<string, number>;
 
@@ -21,7 +23,18 @@ export function ExchangePageClient() {
 
   return (
     <div className={exchangePageContainer}>
-      <h1 className={exchangePageTitle}>Currency Exchange</h1>
+      <div className={flexRowBetween}>
+        <h1 className={exchangePageTitle}>Currency Exchange</h1>
+        <div>
+          <Link className={buttonSecondary} href="/exchange/rules">
+            Auto rules
+          </Link>
+          {` `}
+          <Link className={buttonSecondary} href="/exchange/scheduled">
+            Scheduled
+          </Link>
+        </div>
+      </div>
       <BalancesPanel balances={balances} />
       <ExchangeWidget balances={balances} />
     </div>
