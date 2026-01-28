@@ -49,6 +49,10 @@ const {
   timestampText,
 } = styles;
 
+function formatAmount(amount: number, currencyCode: string) {
+  return new Intl.NumberFormat(undefined, { style: `currency`, currency: currencyCode }).format(amount);
+}
+
 type PaymentViewProps = { paymentRequestId: string };
 
 type PaymentMethod = {
@@ -73,6 +77,7 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
   const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<string>(``);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -176,6 +181,29 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
     console.log(`json`, json);
   }
 
+  async function sendRequest() {
+    setSending(true);
+    try {
+      const res = await fetch(`/api/payment-requests/${paymentRequestId}/send`, {
+        method: `POST`,
+        headers: { 'content-type': `application/json` },
+        credentials: `include`,
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(err.message || `Failed to send request`);
+        return;
+      }
+
+      window.location.reload();
+    } catch (error) {
+      alert(`Send error: ${error instanceof Error ? error.message : `Unknown error`}`);
+    } finally {
+      setSending(false);
+    }
+  }
+
   if (loading) {
     return <div className={paymentViewLoading}>Loading payment…</div>;
   }
@@ -211,9 +239,7 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
           {/* Summary Card */}
           <div className={cardBasePadded}>
             <div className={cardHeaderRow}>
-              <div className={amountTitle}>
-                ${p.amount.toFixed(2)} {p.currencyCode}
-              </div>
+              <div className={amountTitle}>{formatAmount(p.amount, p.currencyCode)}</div>
 
               <span
                 className={`${badgeBaseStrong} ${
@@ -267,7 +293,7 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
           </div>
 
           {/* Payment Method Selection */}
-          {p.status === `PENDING` && paymentMethods.length > 0 && (
+          {p.status === `PENDING` && p.role === `PAYER` && paymentMethods.length > 0 && (
             <div className={cardBasePadded}>
               <h3 className={sectionTitle}>Select Payment Method</h3>
               <div className={spaceY3}>
@@ -347,9 +373,23 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
           )}
 
           {/* Action Button */}
-          {p.status === `PENDING` && (
-            <button className={`${buttonPrimaryRounded} ${buttonDisabledCursor}`} onClick={payNow} disabled={paying}>
+          {p.status === `PENDING` && p.role === `PAYER` && (
+            <button
+              className={`${buttonPrimaryRounded} ${buttonDisabledCursor}`}
+              onClick={payNow}
+              disabled={paying} //
+            >
               {paying ? `Processing...` : `Pay Now`}
+            </button>
+          )}
+
+          {p.status === `DRAFT` && p.role === `REQUESTER` && (
+            <button
+              className={`${buttonPrimaryRounded} ${buttonDisabledCursor}`}
+              onClick={sendRequest}
+              disabled={sending}
+            >
+              {sending ? `Sending...` : `Send Request`}
             </button>
           )}
 

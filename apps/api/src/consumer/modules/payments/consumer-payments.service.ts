@@ -5,7 +5,7 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 import { PaymentDirection } from '@remoola/api-types';
 import { $Enums } from '@remoola/database-2';
 
-import { PaymentsHistoryQuery, TransferBody, WithdrawBody } from './dto';
+import { CreatePaymentRequest, PaymentsHistoryQuery, TransferBody, WithdrawBody } from './dto';
 import { StartPayment } from './dto/start-payment.dto';
 import { PrismaService } from '../../../shared/prisma.service';
 @Injectable()
@@ -255,6 +255,84 @@ export class ConsumerPaymentsService {
         ledgerId,
       };
     });
+  }
+
+  async createPaymentRequest(consumerId: string, body: CreatePaymentRequest) {
+    const recipient = await this.prisma.consumerModel.findFirst({
+      where: { email: body.email, deletedAt: null },
+    });
+
+    if (!recipient) {
+      throw new BadRequestException(`Recipient not found`);
+    }
+
+    if (recipient.id === consumerId) {
+      throw new BadRequestException(`You cannot request payment from yourself`);
+    }
+
+    const amount = Number(body.amount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      throw new BadRequestException(`Invalid amount`);
+    }
+
+    const parseDate = (value?: string) => {
+      if (!value) return null;
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) {
+        throw new BadRequestException(`Invalid date`);
+      }
+      return date;
+    };
+
+    const dueDate = parseDate(body.dueDate);
+    const expectationDate = parseDate(body.expectationDate);
+
+    const paymentRequest = await this.prisma.paymentRequestModel.create({
+      data: {
+        payerId: recipient.id,
+        requesterId: consumerId,
+        currencyCode: body.currencyCode ?? $Enums.CurrencyCode.USD,
+        amount,
+        description: body.description ?? null,
+        dueDate,
+        expectationDate,
+        status: $Enums.TransactionStatus.DRAFT,
+        createdBy: consumerId,
+        updatedBy: consumerId,
+      },
+    });
+
+    return { paymentRequestId: paymentRequest.id };
+  }
+
+  async sendPaymentRequest(consumerId: string, paymentRequestId: string) {
+    const paymentRequest = await this.prisma.paymentRequestModel.findUnique({
+      where: { id: paymentRequestId },
+      select: { id: true, requesterId: true, status: true },
+    });
+
+    if (!paymentRequest) {
+      throw new NotFoundException(`Payment request not found`);
+    }
+
+    if (paymentRequest.requesterId !== consumerId) {
+      throw new ForbiddenException(`You do not have access to this payment request`);
+    }
+
+    if (paymentRequest.status !== $Enums.TransactionStatus.DRAFT) {
+      throw new BadRequestException(`Only draft requests can be sent`);
+    }
+
+    const updated = await this.prisma.paymentRequestModel.update({
+      where: { id: paymentRequestId },
+      data: {
+        status: $Enums.TransactionStatus.PENDING,
+        sentDate: new Date(),
+        updatedBy: consumerId,
+      },
+    });
+
+    return { paymentRequestId: updated.id };
   }
 
   async getBalancesCompleted(consumerId: string): Promise<Record<$Enums.CurrencyCode, number>> {

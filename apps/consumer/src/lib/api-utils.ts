@@ -82,12 +82,10 @@ export async function proxyApiRequest(
         method: req.method,
         headers: new Headers(req.headers),
         credentials: `include`,
+        ...(req.body && { duplex: `half` }),
         signal: controller.signal,
-        ...(req.method !== `GET` &&
-          req.method !== `HEAD` && {
-            body: req.body,
-          }),
-      });
+        ...(req.method !== `GET` && req.method !== `HEAD` && { body: req.body }),
+      } as RequestInit);
 
       clearTimeout(timeoutId);
 

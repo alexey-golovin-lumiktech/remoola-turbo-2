@@ -40,6 +40,10 @@ const {
   textXsMuted,
 } = styles;
 
+function formatAmount(amount: number, currencyCode: string) {
+  return new Intl.NumberFormat(undefined, { style: `currency`, currency: currencyCode }).format(amount);
+}
+
 type PaymentItem = {
   id: string;
   amount: number;
@@ -161,7 +165,9 @@ export function PaymentsList() {
                     <div className={textXsMuted}>{p.description || `—`}</div>
                   </td>
 
-                  <td className={`${tableCellBodyLg} font-semibold ${textPrimary}`}>${p.amount.toFixed(2)}</td>
+                  <td className={`${tableCellBodyLg} font-semibold ${textPrimary}`}>
+                    {formatAmount(p.amount, p.currencyCode)}
+                  </td>
 
                   <td className={tableCellBodyLg}>
                     <span
