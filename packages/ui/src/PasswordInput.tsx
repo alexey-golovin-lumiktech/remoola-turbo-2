@@ -7,14 +7,21 @@ interface PasswordInputProps {
   onChange: (value: string) => void;
   placeholder?: string;
   name?: string;
+  className?: string;
+  inputClassName?: string;
 }
 
-export function PasswordInput({ value, onChange, placeholder, name }: PasswordInputProps) {
+const joinClasses = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(` `);
+
+export function PasswordInput({ value, onChange, placeholder, name, className, inputClassName }: PasswordInputProps) {
   const [show, setShow] = useState(false);
 
   const styles = {
     input: `
       w-full
+      min-w-0
+      box-border
+      pr-12
       rounded-md
       border
       px-3
@@ -37,6 +44,7 @@ export function PasswordInput({ value, onChange, placeholder, name }: PasswordIn
       right-3
       top-1/2
       -translate-y-1/2
+      z-10
       text-xs
       text-gray-500
       dark:text-gray-400
@@ -46,14 +54,14 @@ export function PasswordInput({ value, onChange, placeholder, name }: PasswordIn
   };
 
   return (
-    <div className="relative w-full">
+    <div className={joinClasses(`relative w-full min-w-0 max-w-full overflow-hidden`, className)}>
       <input
         type={show ? `text` : `password`}
         name={name}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className={styles.input}
+        className={joinClasses(styles.input, inputClassName)}
       />
 
       <button

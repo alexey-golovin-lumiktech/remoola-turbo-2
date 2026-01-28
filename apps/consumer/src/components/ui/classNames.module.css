@@ -10,6 +10,10 @@
   @apply w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white border-gray-300 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500;
 }
 
+.formInputError {
+  @apply border-red-500 dark:border-red-400 focus:ring-red-500;
+}
+
 .formFieldSpacing {
   @apply mt-1 w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white border-gray-300 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500;
 }
@@ -1613,15 +1617,27 @@
 }
 
 .signupPasswordRow {
-  @apply flex gap-2;
+  @apply flex flex-wrap items-center gap-2;
 }
 
 .signupPasswordInput {
-  @apply flex-1;
+  @apply flex-1 min-w-0;
 }
 
 .signupGenerateButton {
-  @apply whitespace-nowrap rounded-md border border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 text-xs font-medium text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30;
+  @apply flex-shrink-0 whitespace-nowrap rounded-md border border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 text-xs font-medium text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30;
+}
+
+.passwordInputWrapper {
+  @apply relative w-full min-w-0 max-w-full;
+}
+
+.passwordInputField {
+  @apply w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white border-gray-300 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 pr-12;
+}
+
+.passwordToggleButton {
+  @apply absolute right-3 inset-y-0 flex items-center text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200;
 }
 
 .shellContainer {

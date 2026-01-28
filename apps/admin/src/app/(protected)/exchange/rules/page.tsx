@@ -1,5 +1,5 @@
-import { ClientBoundary, WaitForLoadingFallback } from '../../../../components';
 import { ExchangeRulesPageClient } from './ExchangeRulesPageClient';
+import { ClientBoundary, WaitForLoadingFallback } from '../../../../components';
 
 export default async function ExchangeRulesPage() {
   return (

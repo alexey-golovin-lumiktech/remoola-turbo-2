@@ -266,13 +266,13 @@ export type RecentPaymentRequest = PaymentRequest & {
 export type LedgerAnomaly = {
   id: string;
   type:
-  | `duplicate`
-  | `missing_ledger_entry`
-  | `dangling_ledger_entry`
-  | `unlinked_payment_ledger_entry`
-  | `amount_mismatch`
-  | `status_inconsistency`
-  | `premature_ledger_entry`;
+    | `duplicate`
+    | `missing_ledger_entry`
+    | `dangling_ledger_entry`
+    | `unlinked_payment_ledger_entry`
+    | `amount_mismatch`
+    | `status_inconsistency`
+    | `premature_ledger_entry`;
   description: string;
   paymentRequestId?: string;
   consumerId: string;

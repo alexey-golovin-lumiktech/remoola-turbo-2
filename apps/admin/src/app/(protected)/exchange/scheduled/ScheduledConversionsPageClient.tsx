@@ -40,9 +40,7 @@ export function ScheduledConversionsPageClient() {
     setConversions(data);
   }
 
-  useEffect(() => {
-    refresh();
-  }, []);
+  useEffect(() => void refresh());
 
   async function cancelConversion(conversion: ScheduledFxConversion) {
     const response = await fetch(`/api/exchange/scheduled/${conversion.id}/cancel`, {

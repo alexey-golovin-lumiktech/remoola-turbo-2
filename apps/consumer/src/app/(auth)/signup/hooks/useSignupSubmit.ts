@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { useSignupForm } from './useSignupForm';
-import { signupDetailsSchema, personalDetailsSchema, organizationSchema, addressDetailsSchema } from '../validation';
+import { addressDetailsSchema, organizationSchema, personalDetailsSchema, signupDetailsSchema } from '../validation';
 
 export function useSignupSubmit() {
   const router = useRouter();
@@ -18,12 +18,20 @@ export function useSignupSubmit() {
     setError(null);
 
     try {
-      // validate per step (rough)
-      signupDetailsSchema.parse(signupDetails);
-      personalDetailsSchema.parse(personalDetails);
+      const signupResult = signupDetailsSchema.safeParse(signupDetails);
+      if (!signupResult.success) throw new Error(`Please review your account details and try again.`);
 
-      if (isBusiness || isContractorEntity) organizationSchema.parse(organizationDetails);
-      if (!isBusiness) addressDetailsSchema.parse(addressDetails);
+      const personalResult = personalDetailsSchema.safeParse(personalDetails);
+      if (!personalResult.success) throw new Error(`Please review your personal details and try again.`);
+
+      if (isBusiness || isContractorEntity) {
+        const organizationResult = organizationSchema.safeParse(organizationDetails);
+        if (!organizationResult.success) throw new Error(`Please review your organization details and try again.`);
+      }
+      if (!isBusiness) {
+        const addressResult = addressDetailsSchema.safeParse(addressDetails);
+        if (!addressResult.success) throw new Error(`Please review your address details and try again.`);
+      }
 
       const payload = {
         ...signupDetails,

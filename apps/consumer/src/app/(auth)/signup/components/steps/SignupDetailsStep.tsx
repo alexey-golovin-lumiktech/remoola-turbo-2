@@ -1,9 +1,11 @@
 'use client';
 
-import { PasswordInput } from '@remoola/ui/PasswordInput';
+import { useState } from 'react';
+
 import { SelectWithClear } from '@remoola/ui/SelectWithClear';
 
 import styles from '../../../../../components/ui/classNames.module.css';
+import { PasswordInput } from '../../../../../components/ui/PasswordInput';
 import {
   STEP_NAME,
   type IHowDidHearAboutUs,
@@ -14,10 +16,13 @@ import {
 } from '../../../../../types';
 import { useSignupForm, useSignupSteps } from '../../hooks';
 import { generatePassword } from '../../utils';
+import { getFieldErrors, signupDetailsSchema } from '../../validation';
 import { PrevNextButtons } from '../PrevNextButtons';
 
 const {
+  errorTextClass,
   formInputFullWidth,
+  formInputError,
   signupGenerateButton,
   signupPasswordInput,
   signupPasswordRow,
@@ -50,8 +55,24 @@ const getToggleButtonClasses = (isActive: boolean, variant: `md` | `lg` = `md`) 
 export function SignupDetailsStep() {
   const { signupDetails: signup, updateSignup } = useSignupForm();
   const { markSubmitted, goNext } = useSignupSteps();
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const clearError = (field: string) => {
+    if (!fieldErrors[field]) return;
+    setFieldErrors((prev) => {
+      const { [field]: _ignored, ...rest } = prev; /* eslint-disable-line */
+      return rest;
+    });
+  };
 
   const handleSubmit = () => {
+    const result = signupDetailsSchema.safeParse(signup);
+    if (!result.success) {
+      setFieldErrors(getFieldErrors(result.error));
+      return;
+    }
+
+    setFieldErrors({});
     markSubmitted(STEP_NAME.SIGNUP_DETAILS);
     goNext();
   };
@@ -66,11 +87,15 @@ export function SignupDetailsStep() {
         <input
           type="email"
           value={signup.email}
-          onChange={(e) => updateSignup({ email: e.target.value })}
-          className={formInputFullWidth}
+          onChange={(e) => {
+            updateSignup({ email: e.target.value });
+            clearError(`email`);
+          }}
+          className={joinClasses(formInputFullWidth, fieldErrors.email && formInputError)}
           placeholder="you@example.com"
           required
         />
+        {fieldErrors.email && <p className={errorTextClass}>{fieldErrors.email}</p>}
       </div>
 
       <div className={signupStepGroupLg}>
@@ -80,8 +105,12 @@ export function SignupDetailsStep() {
           <div className={signupPasswordInput}>
             <PasswordInput
               value={signup.password}
-              onChange={(value) => updateSignup({ password: value })}
+              onChange={(value) => {
+                updateSignup({ password: value });
+                clearError(`password`);
+              }}
               placeholder="Enter password"
+              inputClassName={joinClasses(formInputFullWidth, fieldErrors.password && formInputError)}
             />
           </div>
 
@@ -92,21 +121,29 @@ export function SignupDetailsStep() {
               e.preventDefault();
               const generated = generatePassword(12);
               updateSignup({ password: generated, confirmPassword: generated });
+              clearError(`password`);
+              clearError(`confirmPassword`);
             }}
             className={signupGenerateButton}
           >
             Generate
           </button>
         </div>
+        {fieldErrors.password && <p className={errorTextClass}>{fieldErrors.password}</p>}
       </div>
 
       <div className={signupStepGroupLg}>
         <label className={signupStepLabelInline}>Confirm password</label>
         <PasswordInput
           value={signup.confirmPassword}
-          onChange={(value) => updateSignup({ confirmPassword: value })}
+          onChange={(value) => {
+            updateSignup({ confirmPassword: value });
+            clearError(`confirmPassword`);
+          }}
           placeholder="Confirm password"
+          inputClassName={joinClasses(formInputFullWidth, fieldErrors.confirmPassword && formInputError)}
         />
+        {fieldErrors.confirmPassword && <p className={errorTextClass}>{fieldErrors.confirmPassword}</p>}
       </div>
 
       <SelectWithClear<IHowDidHearAboutUs | null>
@@ -161,6 +198,7 @@ export function SignupDetailsStep() {
                 accountType: ACCOUNT_TYPE.BUSINESS,
                 contractorKind: CONTRACTOR_KIND.INDIVIDUAL, // must reset
               });
+              clearError(`accountType`);
             }}
             className={getToggleButtonClasses(signup.accountType === ACCOUNT_TYPE.BUSINESS)}
           >
@@ -176,12 +214,14 @@ export function SignupDetailsStep() {
                 accountType: ACCOUNT_TYPE.CONTRACTOR,
                 contractorKind: signup.contractorKind ?? CONTRACTOR_KIND.INDIVIDUAL,
               });
+              clearError(`accountType`);
             }}
             className={getToggleButtonClasses(signup.accountType === ACCOUNT_TYPE.CONTRACTOR)}
           >
             Contractor
           </button>
         </div>
+        {fieldErrors.accountType && <p className={errorTextClass}>{fieldErrors.accountType}</p>}
       </div>
 
       {/* Contractor kind (ONLY if contractor) */}
@@ -195,7 +235,8 @@ export function SignupDetailsStep() {
               onClick={(e) => (
                 e.preventDefault(),
                 e.stopPropagation(),
-                updateSignup({ contractorKind: CONTRACTOR_KIND.INDIVIDUAL })
+                updateSignup({ contractorKind: CONTRACTOR_KIND.INDIVIDUAL }),
+                clearError(`contractorKind`)
               )}
               className={getToggleButtonClasses(signup.contractorKind === CONTRACTOR_KIND.INDIVIDUAL)}
             >
@@ -207,13 +248,15 @@ export function SignupDetailsStep() {
               onClick={(e) => (
                 e.preventDefault(),
                 e.stopPropagation(),
-                updateSignup({ contractorKind: CONTRACTOR_KIND.ENTITY })
+                updateSignup({ contractorKind: CONTRACTOR_KIND.ENTITY }),
+                clearError(`contractorKind`)
               )}
               className={getToggleButtonClasses(signup.contractorKind === CONTRACTOR_KIND.ENTITY)}
             >
               Entity
             </button>
           </div>
+          {fieldErrors.contractorKind && <p className={errorTextClass}>{fieldErrors.contractorKind}</p>}
         </div>
       )}
 

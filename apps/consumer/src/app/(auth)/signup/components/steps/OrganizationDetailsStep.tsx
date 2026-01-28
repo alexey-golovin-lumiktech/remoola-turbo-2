@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+
 import { SelectWithClear } from '@remoola/ui/SelectWithClear';
 
 import styles from '../../../../../components/ui/classNames.module.css';
@@ -13,20 +15,46 @@ import {
   LABEL_SIZE,
 } from '../../../../../types';
 import { useSignupForm, useSignupSteps, useSignupSubmit } from '../../hooks';
+import { getFieldErrors, organizationSchema } from '../../validation';
 import { PrevNextButtons } from '../PrevNextButtons';
 
-const { errorTextClass, formInputFullWidth, signupStepCard, signupStepGroup, signupStepLabel, signupStepTitle } =
-  styles;
+const {
+  errorTextClass,
+  formInputFullWidth,
+  formInputError,
+  signupStepCard,
+  signupStepGroup,
+  signupStepLabel,
+  signupStepTitle,
+} = styles;
+
+const joinClasses = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(` `);
 
 export function OrganizationDetailsStep() {
   const { isBusiness, isContractorEntity, organizationDetails, updateOrganization } = useSignupForm();
   const { markSubmitted, goNext } = useSignupSteps();
   const { submit, loading, error } = useSignupSubmit();
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const clearError = (field: string) => {
+    if (!fieldErrors[field]) return;
+    setFieldErrors((prev) => {
+      const { [field]: _ignored, ...rest } = prev; /* eslint-disable-line */
+      return rest;
+    });
+  };
 
   const handleSubmit = () => {
+    const result = organizationSchema.safeParse(organizationDetails);
+    if (!result.success) {
+      setFieldErrors(getFieldErrors(result.error));
+      return;
+    }
+
+    setFieldErrors({});
     markSubmitted(STEP_NAME.ORGANIZATION_DETAILS);
     if (isBusiness || isContractorEntity) return submit();
-    else return goNext();
+    return goNext();
   };
 
   let prevNextButtonsText = `Next step`;
@@ -41,9 +69,13 @@ export function OrganizationDetailsStep() {
         <input
           type="text"
           value={organizationDetails.name}
-          onChange={(e) => updateOrganization({ name: e.target.value })}
-          className={formInputFullWidth}
+          onChange={(e) => {
+            updateOrganization({ name: e.target.value });
+            clearError(`name`);
+          }}
+          className={joinClasses(formInputFullWidth, fieldErrors.name && formInputError)}
         />
+        {fieldErrors.name && <p className={errorTextClass}>{fieldErrors.name}</p>}
       </div>
 
       <SelectWithClear<IConsumerRole | null>
@@ -52,6 +84,7 @@ export function OrganizationDetailsStep() {
         onChange={(consumerRole) => {
           const consumerRoleOther = consumerRole !== CONSUMER_ROLE.OTHER ? null : organizationDetails.consumerRoleOther;
           updateOrganization({ consumerRole, consumerRoleOther });
+          clearError(`consumerRole`);
         }}
         options={[
           { value: CONSUMER_ROLE.FOUNDER, label: CONSUMER_ROLE_LABEL[CONSUMER_ROLE.FOUNDER] },
@@ -72,11 +105,15 @@ export function OrganizationDetailsStep() {
         otherValue={organizationDetails.consumerRoleOther}
         onChangeOther={(consumerRoleOther) => updateOrganization({ consumerRoleOther })}
       />
+      {fieldErrors.consumerRole && <p className={errorTextClass}>{fieldErrors.consumerRole}</p>}
 
       <SelectWithClear<IOrganizationSizeLabel>
         label="Your Organization Size"
         value={SIZE_LABEL[organizationDetails.size!]}
-        onChange={(size) => updateOrganization({ size: LABEL_SIZE[size!] })}
+        onChange={(size) => {
+          updateOrganization({ size: LABEL_SIZE[size!] });
+          clearError(`size`);
+        }}
         options={[
           { label: `1-10 team members`, value: `1-10 team members` },
           { label: `11-100 team members`, value: `11-100 team members` },
@@ -85,6 +122,7 @@ export function OrganizationDetailsStep() {
         showOtherField={false}
         showNotSelected={false}
       />
+      {fieldErrors.size && <p className={errorTextClass}>{fieldErrors.size}</p>}
 
       {error && <p className={errorTextClass}>{error}</p>}
 

@@ -39,9 +39,7 @@ export function ExchangeRulesPageClient() {
     setRules(data);
   }
 
-  useEffect(() => {
-    refresh();
-  }, []);
+  useEffect(() => void refresh());
 
   async function toggleRule(rule: AutoConversionRule) {
     const response = await fetch(`/api/exchange/rules/${rule.id}`, {
@@ -86,13 +84,7 @@ export function ExchangeRulesPageClient() {
     if (status === `disabled` && rule.enabled) return false;
 
     if (!query.trim()) return true;
-    const target = [
-      rule.id,
-      rule.consumer?.email,
-      rule.consumerId,
-      rule.fromCurrency,
-      rule.toCurrency,
-    ]
+    const target = [rule.id, rule.consumer?.email, rule.consumerId, rule.fromCurrency, rule.toCurrency]
       .filter(Boolean)
       .join(` `)
       .toLowerCase();
@@ -118,7 +110,11 @@ export function ExchangeRulesPageClient() {
         </label>
         <label className={adminFormLabelBlock}>
           <span className={adminFormLabelText}>Status</span>
-          <select className={adminFormInput} value={status} onChange={(e) => setStatus(e.target.value as typeof status)}>
+          <select
+            className={adminFormInput}
+            value={status}
+            onChange={(e) => setStatus(e.target.value as typeof status)}
+          >
             <option value="all">All</option>
             <option value="enabled">Enabled</option>
             <option value="disabled">Disabled</option>
