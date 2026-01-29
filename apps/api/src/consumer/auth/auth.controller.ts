@@ -47,6 +47,12 @@ import {
 export class ConsumerAuthController {
   private readonly logger = new Logger(ConsumerAuthController.name);
   private readonly oauthStateTtlMs = 10 * 60 * 1000;
+  private readonly vercelCookieOptions = {
+    httpOnly: true,
+    secure: true,
+    sameSite: `none`,
+    path: `/`,
+  } as const;
 
   constructor(
     private readonly service: ConsumerAuthService,
@@ -58,14 +64,8 @@ export class ConsumerAuthController {
     const isProd = envs.NODE_ENV === `production`;
 
     if (envs.VERCEL !== 0) {
-      const vercelCookieOptions = {
-        httpOnly: true,
-        secure: true,
-        sameSite: `none`,
-        path: `/`,
-      } as const;
-      res.cookie(ACCESS_TOKEN_COOKIE_KEY, accessToken, { ...vercelCookieOptions, maxAge: JWT_ACCESS_TTL });
-      res.cookie(REFRESH_TOKEN_COOKIE_KEY, refreshToken, { ...vercelCookieOptions, maxAge: JWT_REFRESH_TTL });
+      res.cookie(ACCESS_TOKEN_COOKIE_KEY, accessToken, { ...this.vercelCookieOptions, maxAge: JWT_ACCESS_TTL });
+      res.cookie(REFRESH_TOKEN_COOKIE_KEY, refreshToken, { ...this.vercelCookieOptions, maxAge: JWT_REFRESH_TTL });
     } else {
       const sameSite = isProd ? (`none` as const) : (`lax` as const);
       const secure = isProd || process.env.COOKIE_SECURE == `true`;
@@ -83,27 +83,30 @@ export class ConsumerAuthController {
   }
 
   private getOAuthCookieOptions(req?: express.Request) {
-    const isProd = envs.NODE_ENV === `production`;
-    const isVercel = envs.VERCEL !== 0;
-    const forwardedProto = req?.headers?.[`x-forwarded-proto`];
-    const isSecureRequest =
-      req?.secure === true || (typeof forwardedProto === `string` && forwardedProto.split(`,`)[0]?.trim() === `https`);
-    const sameSite = isSecureRequest ? (`none` as const) : (`lax` as const);
-    const secure = isSecureRequest || isVercel || isProd || process.env.COOKIE_SECURE == `true`;
-
-    return {
-      httpOnly: true,
-      sameSite,
-      secure,
-      path: `/`,
-      signed: true,
-      maxAge: this.oauthStateTtlMs,
-    };
+    if (envs.VERCEL !== 0) {
+      return this.vercelCookieOptions;
+    } else {
+      const isProd = envs.NODE_ENV === `production`;
+      const isVercel = envs.VERCEL !== 0;
+      const forwardedProto = req?.headers?.[`x-forwarded-proto`];
+      const isSecureRequest =
+        req?.secure === true ||
+        (typeof forwardedProto === `string` && forwardedProto.split(`,`)[0]?.trim() === `https`);
+      const sameSite = isSecureRequest ? (`none` as const) : (`lax` as const);
+      const secure = isSecureRequest || isVercel || isProd || process.env.COOKIE_SECURE == `true`;
+      return {
+        httpOnly: true,
+        sameSite,
+        secure,
+        path: `/`,
+        signed: true,
+        maxAge: this.oauthStateTtlMs,
+      };
+    }
   }
 
   private getOAuthClearCookieOptions(req?: express.Request) {
-    const { httpOnly, sameSite, secure, path, signed } = this.getOAuthCookieOptions(req);
-    return { httpOnly, sameSite, secure, path, signed };
+    return this.getOAuthCookieOptions(req);
   }
 
   private normalizeOrigin(origin: string) {
