@@ -1,0 +1,93 @@
+import { BadRequestException } from '@nestjs/common';
+import { ApiProperty, ApiPropertyOptional, PickType } from '@nestjs/swagger';
+import { Expose, Transform } from 'class-transformer';
+
+import { $Enums, type PersonalDetailsModel } from '@remoola/database-2';
+
+import { OptionalNullableString } from '../../../common';
+import { toNativeDate } from '../../../shared-common';
+
+class PersonalDetailsDTO implements PersonalDetailsModel {
+  @Expose()
+  @ApiProperty()
+  id: string;
+
+  @Expose()
+  @ApiProperty()
+  citizenOf: string;
+
+  @Expose()
+  @ApiProperty()
+  @Transform(({ value }) => {
+    const native = toNativeDate(value);
+    if (isNaN(native.getTime())) throw new BadRequestException(`Invalid dateOfBirth value`);
+    return native;
+  })
+  dateOfBirth: Date;
+
+  @Expose()
+  @ApiProperty()
+  passportOrIdNumber: string;
+
+  @Expose()
+  @ApiProperty()
+  phoneNumber: string;
+
+  @Expose()
+  @ApiProperty({ enum: $Enums.LegalStatus })
+  legalStatus: $Enums.LegalStatus;
+
+  @Expose()
+  @ApiProperty()
+  countryOfTaxResidence: string;
+
+  @Expose()
+  @ApiProperty()
+  taxId: string;
+
+  @Expose()
+  @ApiProperty()
+  consumerId: string;
+
+  @Expose()
+  @ApiProperty()
+  createdAt: Date;
+
+  @Expose()
+  @ApiProperty()
+  updatedAt: Date;
+
+  @Expose()
+  @ApiProperty()
+  deletedAt: Date;
+
+  @Expose()
+  @ApiProperty()
+  firstName: string;
+
+  @Expose()
+  @ApiProperty()
+  lastName: string;
+}
+
+export class PersonalDetailsUpsert extends PickType(PersonalDetailsDTO, [
+  `citizenOf`,
+  `dateOfBirth`,
+  `passportOrIdNumber`,
+  `countryOfTaxResidence`,
+  `taxId`,
+  `phoneNumber`,
+  `firstName`,
+  `lastName`,
+] as const) {
+  @Expose()
+  @ApiPropertyOptional({ enum: $Enums.LegalStatus })
+  @OptionalNullableString()
+  legalStatus?: $Enums.LegalStatus;
+}
+
+export class PersonalDetailsUpsertOkResponse {
+  @Expose()
+  @ApiProperty()
+  personalDetailsId: string;
+}

@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+@theme {
+  --animate-fadeIn: fadeIn 200ms ease-out;
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+}
+
+/* Tailwind v4: make `dark:` respond to `.dark` class (not OS theme). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+html,body { height: 100%; }
+body {
+  background: linear-gradient(135deg,#f8fafc,#eef2ff);
+  font-family: ui-sans-serif,system-ui;
+  color: var(--ink);
+  transition: background-color 0.2s ease;
+}
+
+:where(.dark, [data-theme="dark"]) body {
+  background: linear-gradient(135deg,#0f172a,#1e293b);
+}
+
+:where(.dark, [data-theme="dark"]) {
+  color-scheme: dark;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #9aa4b2;
+}
+
+:where(.dark, [data-theme="dark"]) input::placeholder,
+:where(.dark, [data-theme="dark"]) textarea::placeholder {
+  color: #94a3b8;
+}
+
+.input {
+  @apply w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500;
+  @apply bg-white text-gray-900 border-gray-300;
+}
+
+:where(.dark, [data-theme="dark"]) .input {
+  @apply bg-slate-800 text-white border-slate-600;
+}
+
+.input-label {
+  @apply block text-sm font-medium text-gray-700 mb-1;
+}
+
+:where(.dark, [data-theme="dark"]) .input-label {
+  @apply text-gray-300;
+}
+
+.form-section {
+  @apply border p-6 rounded-xl bg-white shadow-sm space-y-6;
+  @apply border-gray-200;
+}
+
+:where(.dark, [data-theme="dark"]) .form-section {
+  @apply bg-slate-800 border-slate-600;
+}
+
+.form-grid {
+  @apply grid grid-cols-2 gap-4;
+}

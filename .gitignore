@@ -1,23 +1,34 @@
-# compiled output
-/dist
-/node_modules
-/build
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# Logs
-logs
-*.log
-npm-debug.log*
-pnpm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-lerna-debug.log*
+# Dependencies
+node_modules
+.pnp
+.pnp.js
 
-# OS
-.DS_Store
+# Local env files
+.env*
+!.env.example
 
-# Tests
-/coverage
-/.nyc_output
+# Testing
+.nyc_output
+blob-report/
+coverage
+test-results/
+playwright/.cache/
+playwright-report/
+
+
+# Turbo
+.turbo
+
+# Vercel
+.vercel
+
+# Build Outputs
+.next/
+out/
+build
+dist
 
 # IDEs and editors
 /.idea
@@ -35,52 +46,16 @@ lerna-debug.log*
 !.vscode/launch.json
 !.vscode/extensions.json
 
-# dotenv environment variable files
-.env
-.env.development.local
-.env.test.local
-.env.production.local
-.env.local
+# Debug
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# temp directory
-.temp
-.tmp
-
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
-
-# Diagnostic reports (https://nodejs.org/api/report.html)
-report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
-
-#
-/client_secret_287142264528-9j8ivu8qfeemn8fri1sv3pfej1g05h36.apps.googleusercontent.com.json
-/.env
-/.env.development
-/generate-entity.sh
-/z-me*
-/me*
-/**/yalc.lock
-/**/.yalc
-/tsconfig.build**
-/knexfile.d.ts
-/knexfile.js
-/knexfile.js.map
-
-.vercel
-
-/z-me*
-/me*
-./*.yml
-./*.sh
-./*.pdf
-./.env.development
-./.env.example
-./.env
-./zdocs.tmp
-./z-me-folder
-./env-copy.development.yml
-.env*.local
-.env*.vercel
+# Misc
+.DS_Store
+*.pem
+z-me*
+uploads
