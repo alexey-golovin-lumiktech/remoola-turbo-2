@@ -229,15 +229,15 @@
 }
 
 .cardBasePadded {
-  @apply rounded-2xl bg-white dark:bg-slate-800 shadow-sm border dark:border-slate-600 p-6;
+  @apply rounded-2xl bg-white dark:bg-slate-800 shadow-sm border dark:border-slate-600 p-4 sm:p-6;
 }
 
 .cardBaseSoft {
-  @apply rounded-2xl bg-white/90 dark:bg-slate-800/90 px-6 py-4 shadow-sm;
+  @apply rounded-2xl bg-white/90 dark:bg-slate-800/90 px-4 py-3 shadow-sm sm:px-6 sm:py-4;
 }
 
 .cardBaseSoftCompact {
-  @apply rounded-2xl bg-white/90 dark:bg-slate-800/90 p-4 shadow-sm;
+  @apply rounded-2xl bg-white/90 dark:bg-slate-800/90 p-3 shadow-sm sm:p-4;
 }
 
 .tableContainer {
@@ -1641,7 +1641,7 @@
 }
 
 .shellContainer {
-  @apply mx-auto flex gap-6 px-3 py-4 sm:px-6 lg:px-8;
+  @apply mx-auto flex min-h-screen flex-col gap-4 px-3 py-4 sm:px-6 lg:flex-row lg:gap-6 lg:px-8;
 }
 
 .shellAside {
@@ -1669,15 +1669,15 @@
 }
 
 .shellMain {
-  @apply flex-1;
+  @apply flex-1 min-w-0 pb-20 lg:pb-0;
 }
 
 .shellHeader {
-  @apply mb-5 flex items-center gap-3;
+  @apply mb-4 flex flex-col gap-3 sm:flex-row sm:items-center lg:mb-5;
 }
 
 .shellSearchWrap {
-  @apply relative w-full;
+  @apply relative w-full sm:max-w-xl;
 }
 
 .shellSearchInput {
@@ -1693,7 +1693,7 @@
 }
 
 .pageContainer {
-  @apply px-8 py-6;
+  @apply px-4 py-4 sm:px-6 lg:px-8 lg:py-6;
 }
 
 .pageTitle {
@@ -1705,7 +1705,35 @@
 }
 
 .pageStackContainer {
-  @apply flex flex-col gap-6 px-8 py-6;
+  @apply flex flex-col gap-5 px-4 py-4 sm:px-6 lg:px-8 lg:py-6;
+}
+
+.shellMobileHeader {
+  @apply mb-4 flex items-center justify-between gap-3 rounded-2xl bg-white/90 dark:bg-slate-900/80 px-4 py-3 shadow-sm ring-1 ring-black/5 dark:ring-white/10 lg:hidden;
+}
+
+.shellMobileBrand {
+  @apply flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white;
+}
+
+.shellMobileLogo {
+  @apply h-7 w-7 rounded-lg bg-blue-600/80;
+}
+
+.shellMobileNav {
+  @apply fixed bottom-0 left-0 right-0 z-30 border-t border-gray-200 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 backdrop-blur lg:hidden;
+}
+
+.shellMobileNavInner {
+  @apply mx-auto flex items-center justify-around px-3 py-2 text-xs font-medium text-gray-600 dark:text-slate-300;
+}
+
+.shellMobileNavLink {
+  @apply flex flex-col items-center gap-1 rounded-lg px-2 py-1 transition;
+}
+
+.shellMobileNavLinkActive {
+  @apply text-blue-600 dark:text-blue-400 bg-blue-50/70 dark:bg-blue-900/30;
 }
 
 .pageTitleGray {
