@@ -1,0 +1,5 @@
+-- CreateEnum
+CREATE TYPE "payment_rail_enum" AS ENUM ('INTERNAL', 'BANK_TRANSFER', 'SEPA_TRANSFER', 'SEPA_INSTANT', 'SWIFT_TRANSFER', 'ACH', 'WIRE', 'CARD', 'CARD_3DS', 'CARD_TOKENIZED', 'STRIPE_BALANCE', 'STRIPE_PAYOUT', 'STRIPE_REFUND', 'STRIPE_CHARGEBACK', 'PAYPAL', 'APPLE_PAY', 'GOOGLE_PAY', 'CASH', 'MANUAL');
+
+-- AlterTable
+ALTER TABLE "payment_request" ADD COLUMN     "payment_rail" "payment_rail_enum";

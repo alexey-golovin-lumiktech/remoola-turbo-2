@@ -1,0 +1,28 @@
+import { Body, Controller, Get, Param, Patch } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiBasicAuth } from '@nestjs/swagger';
+
+import { AdminConsumersService } from './admin-consumers.service';
+import { ConsumerVerificationUpdateDto } from '../../../dtos/admin';
+
+@ApiTags(`Admin: Consumers`)
+@ApiBearerAuth(`bearer`) // 👈 tells Swagger to attach Bearer token
+@ApiBasicAuth(`basic`) // 👈 optional, if this route also accepts Basic Auth
+@Controller(`admin/consumers`)
+export class AdminConsumersController {
+  constructor(private readonly service: AdminConsumersService) {}
+
+  @Get()
+  findAllConsumers() {
+    return this.service.findAllConsumers();
+  }
+
+  @Get(`:id`)
+  getById(@Param(`id`) id: string) {
+    return this.service.getById(id);
+  }
+
+  @Patch(`:id/verification`)
+  updateVerification(@Param(`id`) id: string, @Body() body: ConsumerVerificationUpdateDto) {
+    return this.service.updateVerification(id, body);
+  }
+}

@@ -1,146 +1,124 @@
-# WireBill
+# Turborepo starter
 
-````txt
-Cost of dependencies
+This is a community-maintained example. If you experience a problem, please submit a pull request with a fix. GitHub Issues will be closed.
 
+## Using this example
 
-┌───────────────────────────────────┬────────────┬────────┐
-│ name                              │ children   │ size   │
-├───────────────────────────────────┼────────────┼────────┤
-│ typescript                        │ 0          │ 30.54M │
-├───────────────────────────────────┼────────────┼────────┤
-│ prettier                          │ 0          │ 8.00M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ class-validator                   │ 0          │ 4.89M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ stripe                            │ 0          │ 4.47M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ rxjs                              │ 0          │ 4.29M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ moment                            │ 0          │ 4.15M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ eslint                            │ 0          │ 3.03M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ @aws-sdk/client-s3                │ 0          │ 2.89M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ @typescript-eslint/eslint-plugin  │ 0          │ 2.47M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ @nestjs/cli                       │ 0          │ 2.33M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ @types/node                       │ 0          │ 1.96M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ eslint-plugin-import              │ 0          │ 1.55M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ lodash                            │ 0          │ 1.35M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ rimraf                            │ 0          │ 1.12M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ @nestjs-modules/mailer            │ 0          │ 0.92M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ knex                              │ 0          │ 0.83M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ @types/lodash                     │ 0          │ 0.82M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ class-transformer                 │ 0          │ 0.74M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ ts-node                           │ 0          │ 0.72M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ google-auth-library               │ 0          │ 0.56M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ joi                               │ 0          │ 0.51M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ @nestjs/core                      │ 0          │ 0.50M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ nodemailer                        │ 0          │ 0.48M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ ts-loader                         │ 0          │ 0.46M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ @nestjs/common                    │ 0          │ 0.41M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ @nestjs/schematics                │ 0          │ 0.38M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ lint-staged                       │ 0          │ 0.32M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ puppeteer                         │ 0          │ 0.31M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ ts-jest                           │ 0          │ 0.29M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ @nestjs/swagger                   │ 0          │ 0.29M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ reflect-metadata                  │ 0          │ 0.23M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ tsconfig-paths                    │ 0          │ 0.21M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ express-session                   │ 0          │ 0.14M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ uuid                              │ 0          │ 0.12M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ @types/nodemailer                 │ 0          │ 0.08M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ pg                                │ 0          │ 0.08M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ source-map-support                │ 0          │ 0.08M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ dotenv                            │ 0          │ 0.08M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ @types/jest                       │ 0          │ 0.07M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ @types/pg                         │ 0          │ 0.06M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ @wirebill/shared-common           │ 0          │ 0.06M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ @nestjs/platform-express          │ 0          │ 0.06M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ @nestjs/jwt                       │ 0          │ 0.05M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ @nestjs/config                    │ 0          │ 0.05M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ @nestjs/schedule                  │ 0          │ 0.04M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ eslint-import-resolver-typescript │ 0          │ 0.04M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ eslint-plugin-simple-import-sort  │ 0          │ 0.04M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ @nestjs/testing                   │ 0          │ 0.03M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ eslint-plugin-prettier            │ 0          │ 0.03M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ ttypescript                       │ 0          │ 0.03M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ cross-env                         │ 0          │ 0.03M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ nestjs-stripe                     │ 0          │ 0.02M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ @types/express-session            │ 0          │ 0.02M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ supertest                         │ 0          │ 0.02M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ @wirebill/pdf-generator-package   │ 0          │ 0.02M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ eslint-config-prettier            │ 0          │ 0.02M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ @types/request                    │ 0          │ 0.02M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ @typescript-eslint/parser         │ 0          │ 0.02M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ @types/multer                     │ 0          │ 0.02M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ nestjs-knex                       │ 0          │ 0.01M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ dotenv-cli                        │ 0          │ 0.01M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ @types/express                    │ 0          │ 0.01M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ @types/supertest                  │ 0          │ 0.01M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ @types/uuid                       │ 0          │ 0.01M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ jest                              │ 0          │ 0.00M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ husky                             │ 0          │ 0.00M  │
-├───────────────────────────────────┼────────────┼────────┤
-│ 66 modules                        │ 0 children │ 83.39M │
-└───────────────────────────────────┴────────────┴────────┘
+Run the following command:
 
-```txt
-````
+```bash
+npx create-turbo@latest -e with-nestjs
+```
+
+## What's inside?
+
+This Turborepo includes the following packages & apps:
+
+### Apps and Packages
+
+```shell
+.
+├── apps
+│   ├── api                       # NestJS app (https://nestjs.com).
+│   └── web                       # Next.js app (https://nextjs.org).
+└── packages
+    ├── @remoola/api-types           # Shared `NestJS` resources.
+    ├── @remoola/eslint-config       # `eslint` configurations (includes `prettier`)
+    ├── @remoola/jest-config         # `jest` configurations
+    ├── @remoola/typescript-config   # `tsconfig.json`s used throughout the monorepo
+    └── @remoola/ui                  # Shareable stub React component library.
+```
+
+Each package and application are mostly written in [TypeScript](https://www.typescriptlang.org/).
+
+### Utilities
+
+This `Turborepo` has some additional tools already set for you:
+
+- [TypeScript](https://www.typescriptlang.org/) for static type-safety
+- [ESLint](https://eslint.org/) for code linting
+- [Prettier](https://prettier.io) for code formatting
+- [Jest](https://prettier.io) & [Playwright](https://playwright.dev/) for testing
+
+### Commands
+
+This `Turborepo` already configured useful commands for all your apps and packages.
+
+#### Build
+
+```bash
+# Will build all the app & packages with the supported `build` script.
+pnpm run build
+
+# ℹ️ If you plan to only build apps individually,
+# Please make sure you've built the packages first.
+```
+
+#### Develop
+
+```bash
+# Will run the development server for all the app & packages with the supported `dev` script.
+pnpm run dev
+```
+
+#### test
+
+```bash
+# Will launch a test suites for all the app & packages with the supported `test` script.
+pnpm run test
+
+# You can launch e2e testes with `test:e2e`
+pnpm run test:e2e
+
+# See `@remoola/jest-config` to customize the behavior.
+```
+
+#### Lint
+
+```bash
+# Will lint all the app & packages with the supported `lint` script.
+# See `@remoola/eslint-config` to customize the behavior.
+pnpm run lint
+```
+
+#### Format
+
+```bash
+# Will format all the supported `.ts,.js,json,.tsx,.jsx` files.
+# See `@remoola/eslint-config/prettier-base.js` to customize the behavior.
+pnpm format
+```
+
+### Remote Caching
+
+> [!TIP]
+> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+
+Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+
+By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+
+```bash
+npx turbo login
+```
+
+This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+
+Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+
+```bash
+npx turbo link
+```
+
+## Useful Links
+
+This example take some inspiration the [with-nextjs](https://github.com/vercel/turborepo/tree/main/examples/with-nextjs) `Turbo` example and [01-cats-app](https://github.com/nestjs/nest/tree/master/sample/01-cats-app) `NestJs` sample.
+
+Learn more about the power of Turborepo:
+
+- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
+- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
+- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
+- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
+- [Configuration Options](https://turborepo.com/docs/reference/configuration)
+- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)

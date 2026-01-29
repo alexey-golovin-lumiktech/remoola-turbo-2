@@ -4,37 +4,15 @@
     {
       "previewLimit": 50,
       "server": "127.0.0.1",
-      "port": 5433,
+      "port": 5432,
       "driver": "PostgreSQL",
-      "name": "wirebill",
-      "database": "wirebill",
-      "username": "wirebill",
-      "password": "wirebill"
+      "name": "remoola",
+      "database": "remoola",
+      "username": "remoola",
+      "password": "remoola"
     }
   ],
-  "editor.tabSize": 2,
-  "editor.codeActionsOnSave": {
-    "source.fixAll": "explicit"
-  },
-  "[typescript]": {
-    "editor.codeActionsOnSave": {
-      "source.fixAll": "explicit"
-    },
-    "editor.formatOnSave": true
-  },
-  "[javascript]": {
-    "editor.codeActionsOnSave": {
-      "source.fixAll": "explicit"
-    },
-    "editor.formatOnSave": true
-  },
-  "editor.formatOnSave": true,
-  "eslint.validate": [
-    "javascript"
-  ],
-  "files.exclude": {
-    "**/*.yalc*": true,
-  },
+  "typescript.preferences.quoteStyle": "single",
   "javascript.format.insertSpaceAfterOpeningAndBeforeClosingEmptyBraces": false,
   "typescript.format.insertSpaceAfterOpeningAndBeforeClosingEmptyBraces": false,
   "typescript.tsdk": "node_modules/typescript/lib",
@@ -42,5 +20,108 @@
   "typescript.preferences.importModuleSpecifier": "relative",
   "javascript.preferences.importModuleSpecifier": "relative",
   "typescript.preferences.importModuleSpecifierEnding": "auto",
-  "javascript.preferences.importModuleSpecifierEnding": "auto"
+  "javascript.preferences.importModuleSpecifierEnding": "auto",
+  // 🧩 --- ESLint Integration ---
+  "eslint.useFlatConfig": true,
+  "eslint.workingDirectories": [
+    {
+      "pattern": "apps/*"
+    },
+    {
+      "pattern": "packages/*"
+    }
+  ],
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ],
+  "eslint.run": "onType",
+  // 💾 --- Auto Fix + Formatting ---
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "always",
+    "source.fixAll.eslint": "always"
+  },
+  "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+  // 🎨 --- Prettier/Formatting Sync ---
+  "[typescript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+  },
+  // ⚙️ --- Editor Consistency ---
+  "files.eol": "\n",
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "editor.tabSize": 2,
+  "editor.detectIndentation": false,
+  "editor.wordWrap": "on",
+  "editor.quickSuggestions": {
+    "strings": true
+  },
+  // 🚀 --- Workspace Optimization ---
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/.next": true,
+    "**/out": true,
+    "**/build": true
+  },
+  "files.exclude": {
+    "**/.turbo": true,
+    "**/.DS_Store": true
+  },
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "change-case.default": [
+    "snake_case",
+    "camelCase",
+    "PascalCase",
+    "param-case",
+    "CONST_CASE"
+  ],
+  "change-case.js": [
+    "snake_case",
+    "camelCase",
+    "PascalCase",
+    "param-case",
+    "CONST_CASE"
+  ],
+  "change-case.ts": [
+    "snake_case",
+    "camelCase",
+    "PascalCase",
+    "param-case",
+    "CONST_CASE"
+  ],
+  "change-case.cs": [
+    "snake_case",
+    "camelCase",
+    "PascalCase",
+    "param-case",
+    "CONST_CASE"
+  ],
+  "diffEditor.ignoreTrimWhitespace": false,
+  "terminal.integrated.copyOnSelection": true,
+  "terminal.integrated.tabs.focusMode": "singleClick",
+  "editor.minimap.enabled": false,
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "javascript.updateImportsOnFileMove.enabled": "always",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "[snippets]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "[prisma]": {
+    "editor.defaultFormatter": "Prisma.prisma"
+  },
 }

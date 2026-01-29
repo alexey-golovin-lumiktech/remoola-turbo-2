@@ -1,0 +1,114 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "globalEnv": [
+    "NODE_ENV",
+    "NEXT_PUBLIC_API_BASE_URL",
+    "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+    "DATABASE_URL",
+    "REDIS_URL",
+    "OPENAI_API_KEY",
+    "JWT_EXPIRES_IN",
+    "JWT_REFRESH_TTL",
+    "JWT_ACCESS_TTL",
+    "JWT_SECRET",
+    "JWT_REFRESH_SECRET",
+    "S3_BUCKET",
+    "AWS_REGION",
+    "S3_PUBLIC_BASE",
+    "POSTGRES_TIMEZONE",
+    "POSTGRES_HOST",
+    "POSTGRES_PORT",
+    "POSTGRES_USER",
+    "POSTGRES_PASSWORD",
+    "POSTGRES_DB",
+    "POSTGRES_SSL",
+    "COOKIE_SECURE",
+    "SECURE_SESSION_SECRET",
+    "CORS_ALLOWED_ORIGINS",
+    "DEFAULT_ADMIN_EMAIL",
+    "DEFAULT_ADMIN_PASSWORD",
+    "SUPER_ADMIN_EMAIL",
+    "SUPER_ADMIN_PASSWORD",
+    "PORT",
+    "VERCEL",
+    "VERCEL_URL",
+    "JWT_ACCESS_SECRET",
+    "GOOGLE_CLIENT_ID",
+    "GOOGLE_CLIENT_SECRET",
+    "NEST_APP_EXTERNAL_ORIGIN",
+    "ADMIN_EMAIL",
+    "NODEMAILER_SMTP_HOST",
+    "NODEMAILER_SMTP_PORT",
+    "NODEMAILER_SMTP_USER",
+    "NODEMAILER_SMTP_USER_PASS",
+    "NODEMAILER_SMTP_DEFAULT_FROM",
+    "GOOGLE_API_KEY",
+    "GOOGLE_CALENDAR_SCOPES",
+    "STRIPE_PUBLISHABLE_KEY",
+    "STRIPE_SECRET_KEY",
+    "STRIPE_WEBHOOK_SECRET",
+    "STRIPE_WEBHOOK_SECRET_BILLING",
+    "NGROK_AUTH_TOKEN",
+    "NGROK_DOMAIN",
+    "AWS_FILE_UPLOAD_MAX_SIZE_BYTES",
+    "AWS_ACCESS_KEY_ID",
+    "AWS_SECRET_ACCESS_KEY",
+    "AWS_BUCKET",
+    "TURBO_TELEMETRY_DISABLED",
+    "DO_NOT_TRACK",
+    "HELMET_ENABLED"
+  ],
+  "ui": "stream",
+  "globalDependencies": [
+    "package.json",
+    "yarn.lock",
+    ".env",
+    ".env.*"
+  ],
+  "tasks": {
+    "dev": {
+      "dependsOn": [
+        "^db:generate"
+      ],
+      "cache": false,
+      "persistent": true
+    },
+    "build": {
+      "dependsOn": [
+        "^build",
+        "db:generate"
+      ],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".env*"
+      ],
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**",
+        "dist/**"
+      ],
+      "env": [
+        "DATABASE_URL"
+      ]
+    },
+    "lint": {},
+    "test": {},
+    "clean": {
+      "cache": false
+    },
+    "test:e2e": {},
+    "db:generate": {
+      "outputs": [
+        "generated/**"
+      ],
+      "cache": false
+    },
+    "db:migrate": {
+      "cache": false,
+      "persistent": true
+    },
+    "db:deploy": {
+      "cache": false
+    }
+  }
+}
