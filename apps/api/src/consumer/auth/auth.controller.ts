@@ -188,17 +188,9 @@ export class ConsumerAuthController {
     return url.toString();
   }
 
-  private createOAuthStateToken(payload: {
-    nonce: string;
-    codeVerifier: string;
-    nextPath: string;
-    createdAt: number;
-  }) {
+  private createOAuthStateToken(payload: { nonce: string; codeVerifier: string; nextPath: string; createdAt: number }) {
     const payloadBase64 = Buffer.from(JSON.stringify(payload)).toString(`base64url`);
-    const signature = crypto
-      .createHmac(`sha256`, envs.SECURE_SESSION_SECRET)
-      .update(payloadBase64)
-      .digest(`base64url`);
+    const signature = crypto.createHmac(`sha256`, envs.SECURE_SESSION_SECRET).update(payloadBase64).digest(`base64url`);
     return `${payloadBase64}.${signature}`;
   }
 
