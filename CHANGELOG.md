@@ -274,4 +274,34 @@
                   added dashboard API endpoints with client-side hooks,
                   and added admin API guard to prevent self-delete.
 
+- **2026-01-27:** Implemented consumer payment request creation and sending flow,
+                  added API endpoints for draft and send actions,
+                  improved currency selection and formatting consistency,
+                  applied role-based permissions for payment actions,
+                  and refined payment-related UI flows.
+
+- **2026-01-28:** Added FX automation UI with admin controls and scheduled conversions,
+                  implemented server-driven currency feeds,
+                  added supporting API endpoints and scheduler hooks,
+                  improved consumer signup validation with step-level errors,
+                  introduced consumer-specific password input component,
+                  refined signup UI styles and layouts,
+                  performed minor admin UI cleanup,
+                  and added comprehensive project and feature documentation
+                  covering the current codebase state.
+
+- **2026-01-29:** Added Google OAuth for consumers with PKCE-based authentication,
+                  integrated OAuth users into the existing signup flow with prefilled data,
+                  hardened OAuth state handling and validation,
+                  updated login UI to support Google sign-in,
+                  extended environment configuration for Google OAuth,
+                  adjusted cookie handling for OAuth-based auth,
+                  wrapped signup start page with ErrorBoundary and Suspense,
+                  added mobile navigation and responsive layout improvements,
+                  implemented mobile header and bottom navigation,
+                  refined shell layout and responsive breakpoints,
+                  updated README with full Remoola documentation and setup instructions,
+                  formatted OAuth utilities for readability,
+                  and merged Turborepo-related changes into main.
+
 ```
