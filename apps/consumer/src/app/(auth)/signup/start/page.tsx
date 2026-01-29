@@ -1,8 +1,9 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useRef } from 'react';
+import { Suspense, useEffect, useRef } from 'react';
 
+import { ErrorBoundary } from '../../../../components';
 import styles from '../../../../components/ui/classNames.module.css';
 import { type IAccountType, ACCOUNT_TYPE } from '../../../../types';
 import { useSignupForm } from '../hooks/useSignupForm';
@@ -27,7 +28,7 @@ const {
   signupStartTitle,
 } = styles;
 
-export default function ChooseAccountTypeStep() {
+function ChooseAccountTypeStepInner() {
   const router = useRouter();
   const params = useSearchParams();
   const { signupDetails: signup, updateSignup, updatePersonal, setGoogleSignupToken } = useSignupForm();
@@ -162,5 +163,15 @@ export default function ChooseAccountTypeStep() {
         </button>
       </div>
     </div>
+  );
+}
+
+export default function ChooseAccountTypeStep() {
+  return (
+    <ErrorBoundary>
+      <Suspense>
+        <ChooseAccountTypeStepInner />
+      </Suspense>
+    </ErrorBoundary>
   );
 }
