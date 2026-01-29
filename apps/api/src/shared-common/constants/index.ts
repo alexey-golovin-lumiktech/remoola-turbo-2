@@ -10,6 +10,7 @@ export const DEFAULT_DUE_DATE_IN_DAYS30 = 30 as const;
 export const PASSWORD_RE = /(?!.* )(?=(.*[A-Z]){2,})(?=.*?[a-z])(?=.*[1-9]{1,})(?=.*?[#?!@$%^&*-]).{8,}$/;
 export const ACCESS_TOKEN_COOKIE_KEY = `access_token` as const; // according to http protocol
 export const REFRESH_TOKEN_COOKIE_KEY = `refresh_token` as const; // according to http protocol
+export const GOOGLE_OAUTH_STATE_COOKIE_KEY = `google_oauth_state` as const;
 
 export const constants = {
   INVALID_CREDENTIALS,
@@ -23,4 +24,5 @@ export const constants = {
   PASSWORD_RE,
   ACCESS_TOKEN_COOKIE_KEY,
   REFRESH_TOKEN_COOKIE_KEY,
+  GOOGLE_OAUTH_STATE_COOKIE_KEY,
 } as const;

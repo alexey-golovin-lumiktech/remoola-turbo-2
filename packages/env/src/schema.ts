@@ -73,6 +73,7 @@ export const envSchema = z.object({
 
   // External services
   NEST_APP_EXTERNAL_ORIGIN: z.string().optional(),
+  CONSUMER_APP_ORIGIN: z.string().optional(),
 
   // Ngrok
   NGROK_AUTH_TOKEN: z.string().optional(),

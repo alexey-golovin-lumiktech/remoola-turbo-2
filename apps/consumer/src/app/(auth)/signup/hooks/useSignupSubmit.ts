@@ -8,8 +8,15 @@ import { addressDetailsSchema, organizationSchema, personalDetailsSchema, signup
 
 export function useSignupSubmit() {
   const router = useRouter();
-  const { isBusiness, isContractorEntity, signupDetails, personalDetails, organizationDetails, addressDetails } =
-    useSignupForm();
+  const {
+    isBusiness,
+    isContractorEntity,
+    signupDetails,
+    personalDetails,
+    organizationDetails,
+    addressDetails,
+    googleSignupToken,
+  } = useSignupForm();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,6 +45,7 @@ export function useSignupSubmit() {
         personalDetails: personalDetails,
         organizationDetails: isBusiness || isContractorEntity ? organizationDetails : null,
         addressDetails: isBusiness ? null : addressDetails,
+        ...(googleSignupToken ? { googleSignupToken } : {}),
       };
 
       const response = await fetch(`/api/signup`, {

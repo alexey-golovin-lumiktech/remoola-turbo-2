@@ -1,24 +1,47 @@
+import crypto from 'crypto';
+
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
-import { OAuth2Client } from 'google-auth-library';
+import { OAuth2Client, type TokenPayload } from 'google-auth-library';
+import { type CodeChallengeMethod } from 'google-auth-library/build/src/auth/oauth2client';
 
 import { $Enums, Prisma } from '@remoola/database-2';
 
 import { GoogleOAuthBody } from './dto/google-oauth.dto';
+import { envs } from '../../envs';
 import { PrismaService } from '../../shared/prisma.service';
 
 @Injectable()
 export class GoogleOAuthService {
   private client: OAuth2Client;
+  private readonly clientId: string;
+  private readonly redirectUri: string;
+  private readonly oauthScopes = [`openid`, `email`, `profile`];
 
   constructor(
     private readonly prisma: PrismaService,
     // private readonly authService: AuthService, // <– if you want to issue tokens here
   ) {
-    const clientId = process.env.GOOGLE_CLIENT_ID!;
-    if (!clientId) {
+    const clientId = envs.GOOGLE_CLIENT_ID;
+    const clientSecret = envs.GOOGLE_CLIENT_SECRET;
+    const redirectUri = `${envs.NEST_APP_EXTERNAL_ORIGIN}/consumer/auth/google/callback`;
+
+    if (!clientId || clientId === `GOOGLE_CLIENT_ID`) {
       throw new Error(`GOOGLE_CLIENT_ID is not configured`);
     }
-    this.client = new OAuth2Client(clientId);
+    if (!clientSecret || clientSecret === `GOOGLE_CLIENT_SECRET`) {
+      throw new Error(`GOOGLE_CLIENT_SECRET is not configured`);
+    }
+    if (!envs.NEST_APP_EXTERNAL_ORIGIN || envs.NEST_APP_EXTERNAL_ORIGIN === `NEST_APP_EXTERNAL_ORIGIN`) {
+      throw new Error(`NEST_APP_EXTERNAL_ORIGIN is not configured`);
+    }
+
+    this.clientId = clientId;
+    this.redirectUri = redirectUri;
+    this.client = new OAuth2Client({
+      clientId,
+      clientSecret,
+      redirectUri,
+    });
   }
 
   /**
@@ -39,11 +62,7 @@ export class GoogleOAuthService {
       throw new UnauthorizedException(`Google email is not verified`);
     }
 
-    // 1. Get or create consumer
-    const consumer = await this.upsertConsumerFromGooglePayload(email, payload);
-
-    // 2. Upsert GoogleProfileDetails
-    await this.upsertGoogleProfileDetails(consumer.id, payload);
+    const consumer = await this.loginWithPayload(email, payload);
 
     // 3. Optionally issue tokens via your existing auth service
     // const tokens = await this.authService.issueTokensForConsumer(consumer);
@@ -65,12 +84,21 @@ export class GoogleOAuthService {
     };
   }
 
-  private async verifyIdToken(idToken: string) {
-    const clientId = process.env.GOOGLE_CLIENT_ID!;
+  async loginWithPayload(email: string, payload: TokenPayload) {
+    // 1. Get or create consumer
+    const consumer = await this.upsertConsumerFromGooglePayload(email, payload);
+
+    // 2. Upsert GoogleProfileDetails
+    await this.upsertGoogleProfileDetails(consumer.id, payload);
+
+    return consumer;
+  }
+
+  async verifyIdToken(idToken: string, nonce?: string) {
     try {
       const ticket = await this.client.verifyIdToken({
         idToken,
-        audience: clientId,
+        audience: this.clientId,
       });
 
       const payload = ticket.getPayload();
@@ -78,10 +106,57 @@ export class GoogleOAuthService {
         throw new UnauthorizedException(`Invalid Google token payload`);
       }
 
+      if (nonce) {
+        if (!payload.nonce) {
+          throw new UnauthorizedException(`Missing Google nonce`);
+        }
+        if (payload.nonce !== nonce) {
+          throw new UnauthorizedException(`Invalid Google nonce`);
+        }
+      }
+
       return payload;
     } catch {
       throw new UnauthorizedException(`Invalid Google ID token`);
     }
+  }
+
+  buildAuthorizationUrl(state: string, codeChallenge: string, nonce: string) {
+    const options = {
+      scope: this.oauthScopes,
+      state,
+      nonce,
+      prompt: `select_account`,
+      include_granted_scopes: true,
+      code_challenge: codeChallenge,
+      code_challenge_method: `S256` as CodeChallengeMethod,
+      redirect_uri: this.redirectUri,
+      response_type: `code`,
+    };
+    return this.client.generateAuthUrl(options);
+  }
+
+  async exchangeCodeForPayload(code: string, codeVerifier: string, nonce: string) {
+    const tokenResponse = await this.client.getToken({
+      code,
+      codeVerifier,
+      redirect_uri: this.redirectUri,
+    });
+
+    const idToken = tokenResponse.tokens.id_token;
+    if (!idToken) {
+      throw new UnauthorizedException(`Missing ID token from Google`);
+    }
+
+    return this.verifyIdToken(idToken, nonce);
+  }
+
+  static createCodeVerifier() {
+    return crypto.randomBytes(32).toString(`base64url`);
+  }
+
+  static createCodeChallenge(codeVerifier: string) {
+    return crypto.createHash(`sha256`).update(codeVerifier).digest(`base64url`);
   }
 
   /**
@@ -96,13 +171,13 @@ export class GoogleOAuthService {
    *
    * You can later allow user to upgrade to BUSINESS or ENTITY etc.
    */
-  private async upsertConsumerFromGooglePayload(email: string, payload: Record<string, any>) {
+  private async upsertConsumerFromGooglePayload(email: string, payload: TokenPayload) {
     const existing = await this.prisma.consumerModel.findFirst({
       where: { email, deletedAt: null },
       include: { personalDetails: true },
     });
 
-    const hasNameUpdate = payload.firstName || payload.lastName;
+    const hasNameUpdate = payload.given_name || payload.family_name;
 
     if (existing) {
       const updateData: any = {};
@@ -118,16 +193,16 @@ export class GoogleOAuthService {
           // Update existing personalDetails row
           updateData.personalDetails = {
             update: {
-              ...(payload.firstName ? { firstName: payload.firstName } : {}),
-              ...(payload.lastName ? { lastName: payload.lastName } : {}),
+              ...(payload.given_name ? { firstName: payload.given_name } : {}),
+              ...(payload.family_name ? { lastName: payload.family_name } : {}),
             },
           };
         } else {
           // Create new personalDetails row
           updateData.personalDetails = {
             create: {
-              firstName: payload.firstName ?? null,
-              lastName: payload.lastName ?? null,
+              firstName: payload.given_name ?? null,
+              lastName: payload.family_name ?? null,
               citizenOf: null,
               dateOfBirth: null,
               passportOrIdNumber: null,
@@ -167,8 +242,8 @@ export class GoogleOAuthService {
           ...(hasNameUpdate && {
             personalDetails: {
               create: {
-                firstName: payload.firstName ?? null,
-                lastName: payload.lastName ?? null,
+                firstName: payload.given_name ?? null,
+                lastName: payload.family_name ?? null,
                 citizenOf: null,
                 dateOfBirth: null,
                 passportOrIdNumber: null,
@@ -191,10 +266,11 @@ export class GoogleOAuthService {
     }
   }
 
-  private async upsertGoogleProfileDetails(consumerId: string, payload: Record<string, any>) {
+  private async upsertGoogleProfileDetails(consumerId: string, payload: TokenPayload) {
     const { email, email_verified, name, given_name, family_name, picture, hd } = payload;
 
     const organization = typeof hd === `string` && hd.length > 0 ? (hd as string) : null;
+    const metadata = JSON.parse(JSON.stringify(payload)) as Prisma.InputJsonValue;
 
     await this.prisma.googleProfileDetailsModel.upsert({
       where: { consumerId },
@@ -206,7 +282,7 @@ export class GoogleOAuthService {
         familyName: (family_name as string) ?? null,
         picture: (picture as string) ?? null,
         organization,
-        metadata: payload,
+        metadata,
       },
       create: {
         email: email ?? ``,
@@ -216,7 +292,7 @@ export class GoogleOAuthService {
         familyName: (family_name as string) ?? null,
         picture: (picture as string) ?? null,
         organization,
-        metadata: payload,
+        metadata,
         consumer: {
           connect: { id: consumerId },
         },

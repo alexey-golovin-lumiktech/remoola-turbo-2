@@ -127,6 +127,12 @@ export class ConsumerSignup {
   password: string;
 
   @Expose()
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  googleSignupToken?: string;
+
+  @Expose()
   @ApiProperty({ example: $Enums.AccountType.CONTRACTOR, enum: $Enums.AccountType })
   @IsEnum($Enums.AccountType)
   accountType: $Enums.AccountType;

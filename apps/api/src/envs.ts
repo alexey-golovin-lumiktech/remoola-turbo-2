@@ -80,7 +80,8 @@ const nest = {
   PORT: z.coerce.number().optional().default(3000),
   NEST_APP_HOST: z.string().default(`127.0.0.1`),
   NEST_APP_EXTERNAL_ORIGIN: z.string().default(`NEST_APP_EXTERNAL_ORIGIN`),
-  CORS_ALLOWED_ORIGINS: zArray(z.string().min(1), [`http://localhost:3000`, `http://localhost:3001`]),
+  CONSUMER_APP_ORIGIN: z.string().default(`CONSUMER_APP_ORIGIN`),
+  CORS_ALLOWED_ORIGINS: zArray(z.string().min(1), [`http://localhost:3010`, `http://localhost:3001`]),
 };
 
 const google = {

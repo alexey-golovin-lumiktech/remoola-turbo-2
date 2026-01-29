@@ -29,6 +29,7 @@ interface SignupFormContextValue {
   updatePersonal: (patch: Partial<IPersonalDetails>) => void;
   updateOrganization: (patch: Partial<IOrganizationDetails>) => void;
   updateAddress: (patch: Partial<IAddressDetails>) => void;
+  setGoogleSignupToken: (token: string | null) => void;
 
   accountType: IAccountType;
   contractorKind: IContractorKind;
@@ -37,6 +38,7 @@ interface SignupFormContextValue {
   isBusiness: boolean;
   isContractorEntity: boolean;
   isContractorIndividual: boolean;
+  googleSignupToken: string | null;
 }
 
 const SignupFormContext = createContext<SignupFormContextValue | null>(null);
@@ -77,6 +79,7 @@ const initialState: ISignupFormState = {
     city: ``,
     street: ``,
   },
+  googleSignupToken: null,
 };
 
 export function SignupFormProvider({ children }: { children: ReactNode }) {
@@ -111,6 +114,10 @@ export function SignupFormProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  const setGoogleSignupToken = (token: string | null) => {
+    setState((prev) => ({ ...prev, googleSignupToken: token }));
+  };
+
   const value = useMemo<SignupFormContextValue>(
     () => ({
       state,
@@ -122,12 +129,14 @@ export function SignupFormProvider({ children }: { children: ReactNode }) {
       updatePersonal,
       updateOrganization,
       updateAddress,
+      setGoogleSignupToken,
       accountType: state.signupDetails.accountType!,
       contractorKind: state.signupDetails.contractorKind!,
       isContractor: state.signupDetails.accountType === ACCOUNT_TYPE.CONTRACTOR,
       isBusiness: state.signupDetails.accountType === ACCOUNT_TYPE.BUSINESS,
       isContractorEntity: state.signupDetails.contractorKind === CONTRACTOR_KIND.ENTITY,
       isContractorIndividual: state.signupDetails.contractorKind === CONTRACTOR_KIND.INDIVIDUAL,
+      googleSignupToken: state.googleSignupToken,
     }),
     [state],
   );

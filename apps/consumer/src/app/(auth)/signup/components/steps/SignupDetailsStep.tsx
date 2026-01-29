@@ -53,9 +53,10 @@ const getToggleButtonClasses = (isActive: boolean, variant: `md` | `lg` = `md`) 
 };
 
 export function SignupDetailsStep() {
-  const { signupDetails: signup, updateSignup } = useSignupForm();
+  const { signupDetails: signup, updateSignup, googleSignupToken } = useSignupForm();
   const { markSubmitted, goNext } = useSignupSteps();
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const emailLocked = Boolean(googleSignupToken);
 
   const clearError = (field: string) => {
     if (!fieldErrors[field]) return;
@@ -91,6 +92,7 @@ export function SignupDetailsStep() {
             updateSignup({ email: e.target.value });
             clearError(`email`);
           }}
+          disabled={emailLocked}
           className={joinClasses(formInputFullWidth, fieldErrors.email && formInputError)}
           placeholder="you@example.com"
           required

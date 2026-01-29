@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 const PUBLIC_PATHS = [`/login`, `/api/auth/login`];
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+const NEXT_PUBLIC_API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 // Token validation cache to avoid repeated backend calls
 const tokenCache = new Map<string, { valid: boolean; expires: number }>();
@@ -18,7 +18,7 @@ async function validateToken(token: string): Promise<boolean> {
     // Create cookie header to send to backend
     const cookieHeader = `access_token=${token}`;
 
-    const response = await fetch(`${API_BASE_URL}/auth/me`, {
+    const response = await fetch(`${NEXT_PUBLIC_API_BASE_URL}/auth/me`, {
       method: `GET`,
       headers: {
         'Content-Type': `application/json`,
@@ -41,7 +41,7 @@ async function validateToken(token: string): Promise<boolean> {
 
 async function refreshToken(refreshToken: string): Promise<{ accessToken?: string; success: boolean }> {
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+    const response = await fetch(`${NEXT_PUBLIC_API_BASE_URL}/auth/refresh`, {
       method: `POST`,
       headers: {
         'Content-Type': `application/json`,

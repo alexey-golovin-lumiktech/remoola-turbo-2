@@ -13,6 +13,18 @@ import { OAuth2Client } from 'google-auth-library';
 
 import { $Enums, Prisma, type ConsumerModel, type ResetPasswordModel } from '@remoola/database-2';
 
+type GoogleSignupPayload = {
+  type: `google_signup`;
+  email: string;
+  emailVerified: boolean;
+  name: string | null;
+  givenName: string | null;
+  familyName: string | null;
+  picture: string | null;
+  organization: string | null;
+  sub: string | null;
+};
+
 import { ConsumerSignup } from './dto';
 import { LoginBody } from '../../auth/dto/login.dto';
 import { CONSUMER } from '../../dtos';
@@ -33,6 +45,31 @@ export class ConsumerAuthService {
     private readonly mailingService: MailingService,
   ) {
     this.oAuth2Client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID!, process.env.GOOGLE_CLIENT_SECRET!);
+  }
+
+  private static readonly googleSignupTokenType = `google_signup` as const;
+
+  private toGoogleSignupPayload(payload: {
+    email?: string | null;
+    emailVerified?: boolean;
+    name?: string | null;
+    givenName?: string | null;
+    familyName?: string | null;
+    picture?: string | null;
+    organization?: string | null;
+    sub?: string | null;
+  }): GoogleSignupPayload {
+    return {
+      type: ConsumerAuthService.googleSignupTokenType,
+      email: payload.email ?? ``,
+      emailVerified: !!payload.emailVerified,
+      name: payload.name ?? null,
+      givenName: payload.givenName ?? null,
+      familyName: payload.familyName ?? null,
+      picture: payload.picture ?? null,
+      organization: payload.organization ?? null,
+      sub: payload.sub ?? null,
+    };
   }
 
   async googleOAuth(body: CONSUMER.GoogleSignin) {
@@ -69,6 +106,12 @@ export class ConsumerAuthService {
     }
   }
 
+  async findConsumerByEmail(email: string) {
+    return this.prisma.consumerModel.findFirst({
+      where: { email: email.toLowerCase(), deletedAt: null },
+    });
+  }
+
   async login(body: LoginBody) {
     const identity = await this.prisma.consumerModel.findFirst({
       where: { email: body.email, deletedAt: null },
@@ -94,6 +137,38 @@ export class ConsumerAuthService {
     const consumer = await this.prisma.consumerModel.findFirst({ where: { id: verified.identityId } });
     const access = await this.getAccessAndRefreshToken(consumer.id);
     return Object.assign(consumer, access);
+  }
+
+  async issueTokensForConsumer(identityId: ConsumerModel[`id`]) {
+    return this.getAccessAndRefreshToken(identityId);
+  }
+
+  async createGoogleSignupToken(payload: {
+    email?: string | null;
+    emailVerified?: boolean;
+    name?: string | null;
+    givenName?: string | null;
+    familyName?: string | null;
+    picture?: string | null;
+    organization?: string | null;
+    sub?: string | null;
+  }) {
+    const tokenPayload = this.toGoogleSignupPayload(payload);
+    return this.jwtService.signAsync(tokenPayload, { expiresIn: `10m` });
+  }
+
+  async verifyGoogleSignupToken(token: string) {
+    const decoded = this.jwtService.verify(token) as GoogleSignupPayload;
+    if (decoded?.type !== ConsumerAuthService.googleSignupTokenType) {
+      throw new BadRequestException(`Invalid Google signup token`);
+    }
+    if (!decoded.email) {
+      throw new BadRequestException(`Google signup token missing email`);
+    }
+    if (!decoded.emailVerified) {
+      throw new BadRequestException(`Google email is not verified`);
+    }
+    return decoded;
   }
 
   private extractConsumerFromGoogleProfile(dto: CONSUMER.CreateGoogleProfileDetails) {
@@ -208,11 +283,16 @@ export class ConsumerAuthService {
     this.mailingService.sendConsumerSignupVerificationEmail({ email: consumer.email, token, referer });
   }
 
-  async signup(dto: ConsumerSignup) {
+  async signup(dto: ConsumerSignup, googleSignupPayload?: GoogleSignupPayload) {
     this.ensureBusinessRules(dto);
 
+    const email = (googleSignupPayload?.email ?? dto.email).toLowerCase();
+    if (googleSignupPayload && dto.email && dto.email.toLowerCase() !== email) {
+      throw new BadRequestException(`Email does not match Google account`);
+    }
+
     const existing = await this.prisma.consumerModel.findFirst({
-      where: { email: dto.email.toLowerCase() },
+      where: { email },
       select: { id: true, deletedAt: true },
     });
 
@@ -269,12 +349,12 @@ export class ConsumerAuthService {
 
       const consumer = await this.prisma.consumerModel.create({
         data: {
-          email: dto.email.toLowerCase(),
+          email,
           accountType: dto.accountType,
           contractorKind: dto.accountType === $Enums.AccountType.CONTRACTOR ? (dto.contractorKind ?? null) : null,
           password: hash,
           salt,
-          verified: false,
+          verified: googleSignupPayload ? true : false,
           legalVerified: false,
           howDidHearAboutUs: dto.howDidHearAboutUs ?? null,
           howDidHearAboutUsOther: dto.howDidHearAboutUsOther ?? null,
@@ -284,6 +364,10 @@ export class ConsumerAuthService {
         },
         include: { addressDetails: true, personalDetails: true, organizationDetails: true },
       });
+
+      if (googleSignupPayload) {
+        await this.upsertGoogleProfileDetailsFromSignup(consumer.id, googleSignupPayload);
+      }
 
       return consumer;
     } catch (err) {
@@ -325,5 +409,36 @@ export class ConsumerAuthService {
     ) {
       throw new BadRequestException(`organization details are required for BUSINESS and ENTITY contractor`);
     }
+  }
+
+  private async upsertGoogleProfileDetailsFromSignup(consumerId: string, payload: GoogleSignupPayload) {
+    const metadata = JSON.parse(JSON.stringify(payload)) as Prisma.InputJsonValue;
+
+    await this.prisma.googleProfileDetailsModel.upsert({
+      where: { consumerId },
+      update: {
+        email: payload.email,
+        emailVerified: payload.emailVerified,
+        name: payload.name,
+        givenName: payload.givenName,
+        familyName: payload.familyName,
+        picture: payload.picture,
+        organization: payload.organization,
+        metadata,
+      },
+      create: {
+        email: payload.email,
+        emailVerified: payload.emailVerified,
+        name: payload.name,
+        givenName: payload.givenName,
+        familyName: payload.familyName,
+        picture: payload.picture,
+        organization: payload.organization,
+        metadata,
+        consumer: {
+          connect: { id: consumerId },
+        },
+      },
+    });
   }
 }

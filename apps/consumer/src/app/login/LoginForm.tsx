@@ -24,10 +24,17 @@ export default function LoginForm() {
   // read ?next=... from URL, fallback to /dashboard
   const rawNext = searchParams.get(`next`);
   const nextPath = rawNext && rawNext.length > 0 ? decodeURIComponent(rawNext) : `/dashboard`;
+  const oauthError = searchParams.get(`error`);
 
   const [email, setEmail] = useState(`user@example.com`);
   const [password, setPassword] = useState(`password`);
   const [err, setErr] = useState<string>();
+  const errorMessage = err || (oauthError ? `Google sign-in failed. Please try again.` : undefined);
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const googleStartUrl =
+    apiBaseUrl != null && apiBaseUrl.length > 0
+      ? `${apiBaseUrl}/consumer/auth/google/start?next=${encodeURIComponent(nextPath)}`
+      : null;
 
   const submitLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,8 +85,19 @@ export default function LoginForm() {
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
         />
-        {err && <p className={loginErrorText}>{err}</p>}
+        {errorMessage && <p className={loginErrorText}>{errorMessage}</p>}
         <button className={loginButton}>Login</button>
+        {googleStartUrl && (
+          <button
+            type="button"
+            className={loginButton}
+            onClick={() => {
+              window.location.href = googleStartUrl;
+            }}
+          >
+            Continue with Google
+          </button>
+        )}
       </form>
 
       <p className={loginFooter}>

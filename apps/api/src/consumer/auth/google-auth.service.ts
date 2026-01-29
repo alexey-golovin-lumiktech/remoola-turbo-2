@@ -26,14 +26,14 @@ export class GoogleAuthService {
   async googleOAuthNewWay(state: { href: string }) {
     if (!this.googleapisOauth2Client) throw new InternalServerErrorException(`Google API is not initialized`);
 
-    const opts = {
+    const options = {
       state: toBase64(state),
       access_type: `offline`,
       scope: envs.GOOGLE_CALENDAR_SCOPES,
       include_granted_scopes: true,
       redirect_uri: `${this.origin}/consumer/auth/google-redirect-new-way`,
     } satisfies Auth.GenerateAuthUrlOpts;
-    return { Location: this.googleapisOauth2Client.generateAuthUrl(opts) };
+    return { Location: this.googleapisOauth2Client.generateAuthUrl(options) };
   }
 
   async googleOAuthNewWayRedirect(query: CONSUMER.RedirectCallbackQuery) {

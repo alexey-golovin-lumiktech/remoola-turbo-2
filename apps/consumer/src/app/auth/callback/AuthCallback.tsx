@@ -18,13 +18,16 @@ export default function AuthCallback() {
     const interval = setInterval(() => {
       tries++;
 
-      // cookie MUST be httpOnly: check via document.cookie
-      const hasToken = document.cookie.includes(`access_token=`);
-
-      if (hasToken) {
-        clearInterval(interval);
-        router.replace(next);
-      }
+      fetch(`/api/me`, { credentials: `include`, cache: `no-store` })
+        .then((res) => {
+          if (res.ok) {
+            clearInterval(interval);
+            router.replace(next);
+          }
+        })
+        .catch(() => {
+          // ignore transient network errors
+        });
 
       // Safety exit: if token didn't appear after 5 seconds
       if (tries > 50) {

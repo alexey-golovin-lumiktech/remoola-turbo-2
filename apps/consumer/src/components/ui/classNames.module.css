@@ -909,7 +909,7 @@
 }
 
 .loginButton {
-  @apply rounded-md bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500 px-4 py-2 text-sm;
+  @apply w-full rounded-md bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500 px-4 py-2 text-sm;
 }
 
 .loginFooter {

@@ -1,7 +1,7 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useRef } from 'react';
 
 import styles from '../../../../components/ui/classNames.module.css';
 import { type IAccountType, ACCOUNT_TYPE } from '../../../../types';
@@ -29,7 +29,10 @@ const {
 
 export default function ChooseAccountTypeStep() {
   const router = useRouter();
-  const { signupDetails: signup, updateSignup } = useSignupForm();
+  const params = useSearchParams();
+  const { signupDetails: signup, updateSignup, updatePersonal, setGoogleSignupToken } = useSignupForm();
+  const googleSignupToken = params.get(`googleSignupToken`);
+  const hydratedRef = useRef(false);
 
   const selectType = (type: IAccountType) => {
     updateSignup({ accountType: type });
@@ -52,6 +55,37 @@ export default function ChooseAccountTypeStep() {
       updateSignup({ accountType: ACCOUNT_TYPE.CONTRACTOR });
     }
   }, [signup.accountType, updateSignup]);
+
+  useEffect(() => {
+    if (!googleSignupToken || hydratedRef.current) return;
+    hydratedRef.current = true;
+
+    const hydrateFromGoogle = async () => {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/consumer/auth/google/signup-session?token=${encodeURIComponent(
+            googleSignupToken,
+          )}`,
+          { credentials: `include` },
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data?.email) updateSignup({ email: data.email });
+        if (data?.givenName || data?.familyName) {
+          updatePersonal({
+            ...(data.givenName ? { firstName: data.givenName } : {}),
+            ...(data.familyName ? { lastName: data.familyName } : {}),
+          });
+        }
+        setGoogleSignupToken(googleSignupToken);
+        router.replace(`/signup/start`);
+      } catch {
+        // ignore hydration errors
+      }
+    };
+
+    hydrateFromGoogle();
+  }, [googleSignupToken, router, setGoogleSignupToken, updatePersonal, updateSignup]);
   if (!signup.accountType) return null;
 
   return (

@@ -8,4 +8,5 @@ export type ISignupFormState = {
   personalDetails: IPersonalDetails;
   organizationDetails: IOrganizationDetails;
   addressDetails: IAddressDetails;
+  googleSignupToken: string | null;
 };
