@@ -3,10 +3,10 @@ import { ApiBasicAuth, ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { type AdminModel } from '@remoola/database-2';
 
-import { UpdateAutoConversionRuleBody } from '../../../consumer/modules/exchange/dto/update-auto-conversion-rule.dto';
+import { AdminExchangeService } from './admin-exchange.service';
 import { JwtAuthGuard } from '../../../auth/jwt.guard';
 import { Identity } from '../../../common';
-import { AdminExchangeService } from './admin-exchange.service';
+import { UpdateAutoConversionRuleBody } from '../../../consumer/modules/exchange/dto/update-auto-conversion-rule.dto';
 
 @UseGuards(JwtAuthGuard)
 @ApiTags(`Admin: Exchange`)

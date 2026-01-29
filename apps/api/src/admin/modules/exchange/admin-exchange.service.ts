@@ -2,8 +2,8 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 
 import { $Enums } from '@remoola/database-2';
 
-import { UpdateAutoConversionRuleBody } from '../../../consumer/modules/exchange/dto/update-auto-conversion-rule.dto';
 import { ConsumerExchangeService } from '../../../consumer/modules/exchange/consumer-exchange.service';
+import { UpdateAutoConversionRuleBody } from '../../../consumer/modules/exchange/dto/update-auto-conversion-rule.dto';
 import { PrismaService } from '../../../shared/prisma.service';
 
 @Injectable()
@@ -55,8 +55,8 @@ export class AdminExchangeService {
 
     const minIntervalMinutes = body.minIntervalMinutes ?? rule.minIntervalMinutes;
     const nextRunAt =
-      body.minIntervalMinutes != null || body.enabled === true ? new Date() : rule.nextRunAt ?? new Date();
-    const maxConvertAmount = body.maxConvertAmount === null ? null : body.maxConvertAmount ?? undefined;
+      body.minIntervalMinutes != null || body.enabled === true ? new Date() : (rule.nextRunAt ?? new Date());
+    const maxConvertAmount = body.maxConvertAmount === null ? null : (body.maxConvertAmount ?? undefined);
 
     const updated = await this.prisma.walletAutoConversionRuleModel.update({
       where: { id: rule.id },

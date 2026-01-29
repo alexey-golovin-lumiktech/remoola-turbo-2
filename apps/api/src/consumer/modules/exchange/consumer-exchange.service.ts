@@ -125,10 +125,9 @@ export class ConsumerExchangeService {
 
     const minIntervalMinutes = body.minIntervalMinutes ?? rule.minIntervalMinutes;
     const nextRunAt =
-      body.minIntervalMinutes != null || body.enabled === true ? new Date() : rule.nextRunAt ?? new Date();
+      body.minIntervalMinutes != null || body.enabled === true ? new Date() : (rule.nextRunAt ?? new Date());
 
-    const maxConvertAmount =
-      body.maxConvertAmount === null ? null : body.maxConvertAmount ?? undefined;
+    const maxConvertAmount = body.maxConvertAmount === null ? null : (body.maxConvertAmount ?? undefined);
 
     const updated = await this.prisma.walletAutoConversionRuleModel.update({
       where: { id: rule.id },
@@ -503,10 +502,7 @@ export class ConsumerExchangeService {
     return Object.values($Enums.CurrencyCode);
   }
 
-  private normalizeRule(rule: {
-    targetBalance: any;
-    maxConvertAmount: any;
-  }) {
+  private normalizeRule(rule: { targetBalance: any; maxConvertAmount: any }) {
     return {
       ...rule,
       targetBalance: Number(rule.targetBalance),
@@ -579,8 +575,7 @@ export class ConsumerExchangeService {
 
       if (existingSource && !existingTarget) {
         const sourceMetadata = (existingSource.metadata ?? {}) as Record<string, unknown>;
-        const rateFromMetadata =
-          typeof sourceMetadata.rate === `number` ? sourceMetadata.rate : rate.rate;
+        const rateFromMetadata = typeof sourceMetadata.rate === `number` ? sourceMetadata.rate : rate.rate;
         const mergedMetadata = {
           ...sourceMetadata,
           ...(options?.metadata ?? {}),
