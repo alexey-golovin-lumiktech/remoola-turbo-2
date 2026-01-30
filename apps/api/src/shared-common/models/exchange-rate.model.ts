@@ -10,14 +10,14 @@ export type IExchangeRateModel = {
   rateAsk?: number | null;
   spreadBps?: number | null;
   status?: $Enums.ExchangeRateStatus;
-  effectiveAt?: Date;
-  expiresAt?: Date | null;
-  fetchedAt?: Date | null;
+  effectiveAt?: Date | string;
+  expiresAt?: Date | string | null;
+  fetchedAt?: Date | string | null;
   provider?: string | null;
   providerRateId?: string | null;
   confidence?: number | null;
   createdBy?: string | null;
   updatedBy?: string | null;
   approvedBy?: string | null;
-  approvedAt?: Date | null;
+  approvedAt?: Date | string | null;
 } & IBaseModel;

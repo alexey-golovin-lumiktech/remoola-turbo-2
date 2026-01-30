@@ -32,16 +32,16 @@ export class AdminExchangeService {
         ...(filters?.status && { status: filters.status }),
         ...(includeHistory
           ? {
-              ...(includeExpired
-                ? {}
-                : {
-                    OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
-                  }),
-            }
+            ...(includeExpired
+              ? {}
+              : {
+                OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+              }),
+          }
           : {
-              effectiveAt: { lte: now },
-              OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
-            }),
+            effectiveAt: { lte: now },
+            OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+          }),
       },
       orderBy: [{ fromCurrency: `asc` }, { toCurrency: `asc` }, { effectiveAt: `desc` }],
     });
@@ -186,7 +186,7 @@ export class AdminExchangeService {
       throw new BadRequestException(`Invalid expiresAt`);
     }
 
-    if (expiresAt && effectiveAt && expiresAt <= effectiveAt) {
+    if (expiresAt && requestedEffectiveAt && expiresAt <= requestedEffectiveAt) {
       throw new BadRequestException(`expiresAt must be after effectiveAt`);
     }
 
