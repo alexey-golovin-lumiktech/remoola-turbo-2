@@ -304,15 +304,19 @@
                   formatted OAuth utilities for readability,
                   and merged Turborepo-related changes into main.
 
-- **2026-01-30:** Added robust exchange rate management with versioned rates,
-                  approval workflow, provider metadata, and staleness handling,
-                  introduced admin and consumer API endpoints for exchange rates,
-                  updated UI for managing and viewing rates,
-                  applied currency-aware rounding rules,
-                  backfilled data with new uniqueness constraints,
-                  implemented secure OAuth token exchange flow to fix cross-domain
-                  cookie issues, added `/oauth/exchange` endpoint,
-                  simplified OAuth cookie handling logic,
-                  and updated auth callback flow for improved security.
+- **2026-01-30:** Implemented robust exchange rate management with versioned rates,
+                  approval workflow, provider metadata, staleness handling,
+                  currency-aware rounding rules, backfill migration, and new
+                  uniqueness constraints; added admin and consumer API endpoints
+                  and updated UI for managing and viewing exchange rates;
+                  improved exchange UI rate modal layout with two-column forms,
+                  enforced mutually exclusive create/edit modals, and simplified
+                  modal state handling; fixed OAuth cross-domain cookie issues by
+                  introducing a secure OAuth token exchange flow with a new
+                  `/oauth/exchange` endpoint; simplified OAuth cookie options and
+                  removed stale maxAge handling; added null-safety checks, fixed
+                  admin seeding logic, corrected exchange service indentation and
+                  variable references, and performed general cleanup and changelog
+                  updates.
 
 ```
