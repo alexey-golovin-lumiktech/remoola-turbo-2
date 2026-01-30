@@ -32,7 +32,20 @@ async function seed(prisma: PrismaClient): Promise<void> {
 
   const emails = admins.map((x) => x.email);
   const dbAdmins = await prisma.adminModel.findMany({ where: { email: { in: emails } } });
+
   for (const admin of admins) {
+    if (dbAdmins.length === 0) {
+      const { salt, hash } = await passwordUtils.hashPassword(admin.password);
+      await prisma.adminModel.create({
+        data: {
+          email: admin.email,
+          password: hash,
+          salt,
+          type: admin.type,
+        },
+      });
+      continue;
+    }
     for (const dbAdmin of dbAdmins) {
       if (dbAdmin.email === admin.email) {
         const valid = await passwordUtils.verifyPassword({

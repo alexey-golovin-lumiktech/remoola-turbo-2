@@ -181,22 +181,25 @@ export function ExchangeRatesPageClient() {
   async function createRate() {
     const result = createForm.validate();
     if (!result.success) return;
+    if (!(`data` in result)) return;
+    const data = result.data;
+    if (!data) return;
 
     setIsCreating(true);
     const payload = {
-      fromCurrency: result.data.fromCurrency,
-      toCurrency: result.data.toCurrency,
-      rate: Number(result.data.rate),
-      rateBid: parseOptionalNumber(result.data.rateBid),
-      rateAsk: parseOptionalNumber(result.data.rateAsk),
-      spreadBps: parseOptionalNumber(result.data.spreadBps),
-      status: result.data.status,
-      effectiveAt: parseOptionalDate(result.data.effectiveAt),
-      expiresAt: parseOptionalDate(result.data.expiresAt),
-      fetchedAt: parseOptionalDate(result.data.fetchedAt),
-      provider: result.data.provider?.trim() || undefined,
-      providerRateId: result.data.providerRateId?.trim() || undefined,
-      confidence: parseOptionalNumber(result.data.confidence),
+      fromCurrency: data.fromCurrency,
+      toCurrency: data.toCurrency,
+      rate: Number(data.rate),
+      rateBid: parseOptionalNumber(data.rateBid),
+      rateAsk: parseOptionalNumber(data.rateAsk),
+      spreadBps: parseOptionalNumber(data.spreadBps),
+      status: data.status,
+      effectiveAt: parseOptionalDate(data.effectiveAt),
+      expiresAt: parseOptionalDate(data.expiresAt),
+      fetchedAt: parseOptionalDate(data.fetchedAt),
+      provider: data.provider?.trim() || undefined,
+      providerRateId: data.providerRateId?.trim() || undefined,
+      confidence: parseOptionalNumber(data.confidence),
     };
 
     const response = await fetch(`/api/exchange/rates`, {
@@ -222,22 +225,25 @@ export function ExchangeRatesPageClient() {
     if (!editingRate) return;
     const result = editForm.validate();
     if (!result.success) return;
+    if (!(`data` in result)) return;
+    const data = result.data;
+    if (!data) return;
 
     setIsUpdating(true);
     const payload = {
-      fromCurrency: result.data.fromCurrency,
-      toCurrency: result.data.toCurrency,
-      rate: Number(result.data.rate),
-      rateBid: parseOptionalNumber(result.data.rateBid),
-      rateAsk: parseOptionalNumber(result.data.rateAsk),
-      spreadBps: parseOptionalNumber(result.data.spreadBps),
-      status: result.data.status,
-      effectiveAt: parseOptionalDate(result.data.effectiveAt),
-      expiresAt: parseOptionalDate(result.data.expiresAt),
-      fetchedAt: parseOptionalDate(result.data.fetchedAt),
-      provider: result.data.provider?.trim() || undefined,
-      providerRateId: result.data.providerRateId?.trim() || undefined,
-      confidence: parseOptionalNumber(result.data.confidence),
+      fromCurrency: data.fromCurrency,
+      toCurrency: data.toCurrency,
+      rate: Number(data.rate),
+      rateBid: parseOptionalNumber(data.rateBid),
+      rateAsk: parseOptionalNumber(data.rateAsk),
+      spreadBps: parseOptionalNumber(data.spreadBps),
+      status: data.status,
+      effectiveAt: parseOptionalDate(data.effectiveAt),
+      expiresAt: parseOptionalDate(data.expiresAt),
+      fetchedAt: parseOptionalDate(data.fetchedAt),
+      provider: data.provider?.trim() || undefined,
+      providerRateId: data.providerRateId?.trim() || undefined,
+      confidence: parseOptionalNumber(data.confidence),
     };
 
     const response = await fetch(`/api/exchange/rates/${editingRate.id}`, {
