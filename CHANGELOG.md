@@ -304,4 +304,13 @@
                   formatted OAuth utilities for readability,
                   and merged Turborepo-related changes into main.
 
+- **2026-01-30:** Fixed OAuth cross-domain cookie issues by implementing a secure
+                  OAuth token exchange flow,
+                  added a dedicated `/oauth/exchange` endpoint,
+                  updated auth callback to validate exchange tokens before authentication,
+                  simplified OAuth cookie option handling by removing Vercel-specific branching,
+                  moved cookie configuration to local scope,
+                  removed `maxAge` from OAuth cookie clearing to prevent stale data,
+                  and rolled back Docker changes that prevented container startup.
+
 ```
