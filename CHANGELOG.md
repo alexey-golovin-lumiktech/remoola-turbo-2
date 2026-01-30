@@ -314,9 +314,13 @@
                   modal state handling; fixed OAuth cross-domain cookie issues by
                   introducing a secure OAuth token exchange flow with a new
                   `/oauth/exchange` endpoint; simplified OAuth cookie options and
-                  removed stale maxAge handling; added null-safety checks, fixed
-                  admin seeding logic, corrected exchange service indentation and
-                  variable references, and performed general cleanup and changelog
-                  updates.
+                  removed stale maxAge handling; added email notifications for
+                  payment requests by introducing a dedicated payment request
+                  email template, implementing a shared mailer helper with
+                  centralized configuration, and notifying payers via email when
+                  a payment request is sent; added null-safety checks, fixed admin
+                  seeding logic, corrected exchange service indentation and
+                  variable references, and performed general cleanup and
+                  changelog updates.
 
 ```
