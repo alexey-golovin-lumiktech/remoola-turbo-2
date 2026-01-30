@@ -13,10 +13,10 @@ const BASE_NAV = [
   { href: `/payment-requests`, label: `Payment Requests` },
   { href: `/exchange/rules`, label: `Exchange Rules` },
   { href: `/exchange/scheduled`, label: `Scheduled FX` },
+  { href: `/exchange/rates`, label: `Exchange Rates` },
   { href: `/ledger`, label: `Ledger` },
   // later:
   // { href: "/resources", label: "Resources" },
-  // { href: "/exchange-rates", label: "Exchange Rates" },
 ];
 
 export function Sidebar() {

@@ -1,5 +1,6 @@
 'use client';
 
+import { formatCurrencyAmount } from '../../lib/currency';
 import styles from '../ui/classNames.module.css';
 
 const { balanceCard, balanceLabel, balanceValue, balancesLoading, balancesRow } = styles;
@@ -20,7 +21,7 @@ export function BalancesPanel({ balances }: BalancesPanelProps) {
         <div key={code} className={balanceCard}>
           <div className={balanceLabel}>{code} balance</div>
           <div className={balanceValue}>
-            {amount.toFixed(2)} {code}
+            {formatCurrencyAmount(amount, code)} {code}
           </div>
         </div>
       ))}

@@ -36,10 +36,72 @@ export const updateAdminSchema = z.object({
   action: z.enum([`delete`, `restore`]),
 });
 
+export const exchangeRateSchema = z
+  .object({
+    fromCurrency: z.string().min(1, `From currency is required`),
+    toCurrency: z.string().min(1, `To currency is required`),
+    rate: z
+      .string()
+      .trim()
+      .min(1, `Rate is required`)
+      .refine((value) => Number.isFinite(Number(value)) && Number(value) > 0, `Rate must be a positive number`),
+    rateBid: z
+      .string()
+      .trim()
+      .optional()
+      .refine((value) => value == null || value === `` || (Number.isFinite(Number(value)) && Number(value) > 0), {
+        message: `Bid must be a positive number`,
+      }),
+    rateAsk: z
+      .string()
+      .trim()
+      .optional()
+      .refine((value) => value == null || value === `` || (Number.isFinite(Number(value)) && Number(value) > 0), {
+        message: `Ask must be a positive number`,
+      }),
+    spreadBps: z
+      .string()
+      .trim()
+      .optional()
+      .refine(
+        (value) => value == null || value === `` || (Number.isFinite(Number(value)) && Number(value) >= 0),
+        `Spread must be a non-negative number`,
+      ),
+    status: z.enum([`DRAFT`, `APPROVED`, `DISABLED`]).optional(),
+    effectiveAt: z.string().trim().optional(),
+    expiresAt: z.string().trim().optional(),
+    fetchedAt: z.string().trim().optional(),
+    provider: z.string().trim().optional(),
+    providerRateId: z.string().trim().optional(),
+    confidence: z
+      .string()
+      .trim()
+      .optional()
+      .refine(
+        (value) =>
+          value == null ||
+          value === `` ||
+          (Number.isFinite(Number(value)) && Number(value) >= 0 && Number(value) <= 100),
+        `Confidence must be between 0 and 100`,
+      ),
+  })
+  .refine((data) => data.fromCurrency !== data.toCurrency, {
+    message: `Currencies must differ`,
+    path: [`toCurrency`],
+  })
+  .refine(
+    (data) => {
+      if (!data.rateBid || !data.rateAsk) return true;
+      return Number(data.rateBid) <= Number(data.rateAsk);
+    },
+    { message: `Bid cannot exceed ask`, path: [`rateBid`] },
+  );
+
 // Type inference from schemas
 export type CreateAdminForm = z.infer<typeof createAdminSchema>;
 export type ResetPasswordForm = z.infer<typeof resetPasswordSchema>;
 export type UpdateAdminForm = z.infer<typeof updateAdminSchema>;
+export type ExchangeRateForm = z.infer<typeof exchangeRateSchema>;
 
 // Validation helpers
 export function validateForm<T>(

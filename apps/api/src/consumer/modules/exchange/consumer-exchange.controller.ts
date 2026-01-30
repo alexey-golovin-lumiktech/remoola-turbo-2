@@ -6,6 +6,7 @@ import { type ConsumerModel } from '@remoola/database-2';
 import { ConsumerExchangeService } from './consumer-exchange.service';
 import { ConvertCurrencyBody } from './dto/convert.dto';
 import { CreateAutoConversionRuleBody } from './dto/create-auto-conversion-rule.dto';
+import { ExchangeRateBatchBody } from './dto/rate-batch.dto';
 import { ExchangeRateQuery } from './dto/rate-query.dto';
 import { ScheduleConversionBody } from './dto/schedule-conversion.dto';
 import { UpdateAutoConversionRuleBody } from './dto/update-auto-conversion-rule.dto';
@@ -20,6 +21,16 @@ export class ConsumerExchangeController {
   @Get(`rates`)
   getRate(@Query() query: ExchangeRateQuery) {
     return this.service.getRate(query.from, query.to);
+  }
+
+  @Post(`rates/batch`)
+  getRatesBatch(@Body() body: ExchangeRateBatchBody) {
+    return this.service.getRatesBatch(body.pairs);
+  }
+
+  @Post(`quote`)
+  quote(@Body() body: ConvertCurrencyBody) {
+    return this.service.quote(body);
   }
 
   @Post(`convert`)

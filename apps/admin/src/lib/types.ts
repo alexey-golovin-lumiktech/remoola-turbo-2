@@ -183,6 +183,30 @@ export type ScheduledFxConversion = {
   updatedAt: string;
 };
 
+export type ExchangeRate = {
+  id: string;
+  fromCurrency: CurrencyCode;
+  toCurrency: CurrencyCode;
+  rate: number;
+  rateBid?: number | null;
+  rateAsk?: number | null;
+  spreadBps?: number | null;
+  status?: `DRAFT` | `APPROVED` | `DISABLED`;
+  effectiveAt?: string;
+  expiresAt?: string | null;
+  fetchedAt?: string | null;
+  provider?: string | null;
+  providerRateId?: string | null;
+  confidence?: number | null;
+  createdBy?: string | null;
+  updatedBy?: string | null;
+  approvedBy?: string | null;
+  approvedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | null;
+};
+
 export type PageProps = { params: JSX.IntrinsicAttributes | PromiseLike<JSX.IntrinsicAttributes> };
 
 export type RouteHandlerContext<T extends Record<string, string>> = {

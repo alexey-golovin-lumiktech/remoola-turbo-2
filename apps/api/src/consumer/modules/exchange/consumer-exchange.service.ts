@@ -9,6 +9,7 @@ import { CreateAutoConversionRuleBody } from './dto/create-auto-conversion-rule.
 import { ScheduleConversionBody } from './dto/schedule-conversion.dto';
 import { UpdateAutoConversionRuleBody } from './dto/update-auto-conversion-rule.dto';
 import { PrismaService } from '../../../shared/prisma.service';
+import { getCurrencyFractionDigits } from '../../../shared-common';
 
 @Injectable()
 export class ConsumerExchangeService {
@@ -19,17 +20,38 @@ export class ConsumerExchangeService {
   async getRate(from: $Enums.CurrencyCode, to: $Enums.CurrencyCode) {
     if (from === to) return { rate: 1 };
 
+    const now = new Date();
     const rate = await this.prisma.exchangeRateModel.findFirst({
       where: {
         fromCurrency: from,
         toCurrency: to,
+        status: $Enums.ExchangeRateStatus.APPROVED,
         deletedAt: null,
+        effectiveAt: { lte: now },
+        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
       },
+      orderBy: [{ effectiveAt: `desc` }, { createdAt: `desc` }],
     });
 
     if (!rate) throw new NotFoundException(`Rate not available`);
 
-    return { rate: Number(rate.rate) };
+    const referenceTime = rate.fetchedAt ?? rate.effectiveAt ?? rate.createdAt;
+    if (referenceTime) {
+      const maxAgeMs = this.getMaxRateAgeMs();
+      if (now.getTime() - referenceTime.getTime() > maxAgeMs) {
+        throw new BadRequestException(`Rate is stale`);
+      }
+    }
+
+    const baseRate = Number(rate.rate);
+    const effectiveRate =
+      rate.rateBid != null
+        ? Number(rate.rateBid)
+        : rate.spreadBps != null
+          ? Number((baseRate * (1 - rate.spreadBps / 10_000)).toFixed(8))
+          : baseRate;
+
+    return { rate: effectiveRate };
   }
 
   async getBalanceByCurrency(consumerId: string): Promise<Record<$Enums.CurrencyCode, number>> {
@@ -57,6 +79,28 @@ export class ConsumerExchangeService {
     return this.convertInternal(consumerId, body, {
       metadata: { source: `manual` },
     });
+  }
+
+  async quote(body: ConvertCurrencyBody) {
+    const rate = await this.getRate(body.from, body.to);
+    const targetAmount = this.roundToCurrency(body.amount * rate.rate, body.to);
+    return {
+      from: body.from,
+      to: body.to,
+      rate: rate.rate,
+      sourceAmount: body.amount,
+      targetAmount,
+    };
+  }
+
+  async getRatesBatch(pairs: { from: $Enums.CurrencyCode; to: $Enums.CurrencyCode }[]) {
+    const results = await Promise.all(
+      pairs.map(async (pair) => {
+        const rate = await this.getRate(pair.from, pair.to);
+        return { from: pair.from, to: pair.to, rate: rate.rate };
+      }),
+    );
+    return { data: results };
   }
 
   async listAutoConversionRules(consumerId: string) {
@@ -543,7 +587,7 @@ export class ConsumerExchangeService {
     }
 
     const rate = await this.getRate(from, to);
-    const converted = Number((amount * rate.rate).toFixed(2));
+    const converted = this.roundToCurrency(amount * rate.rate, to);
 
     const idempotencyKeyPrefix = options?.idempotencyKeyPrefix;
     const targetKey = idempotencyKeyPrefix ? `${idempotencyKeyPrefix}:target` : null;
@@ -584,7 +628,7 @@ export class ConsumerExchangeService {
           rate: rateFromMetadata,
         };
         const sourceAmount = Math.abs(Number(existingSource.amount));
-        const convertedAmount = Number((sourceAmount * rateFromMetadata).toFixed(2));
+        const convertedAmount = this.roundToCurrency(sourceAmount * rateFromMetadata, to);
 
         const income = await this.prisma.ledgerEntryModel.create({
           data: {
@@ -659,5 +703,18 @@ export class ConsumerExchangeService {
         entryId: income.id,
       };
     });
+  }
+
+  private roundToCurrency(amount: number, currency: $Enums.CurrencyCode) {
+    const digits = getCurrencyFractionDigits(currency);
+    return Number(amount.toFixed(digits));
+  }
+
+  private getMaxRateAgeMs() {
+    const hours = Number(process.env.EXCHANGE_RATE_MAX_AGE_HOURS ?? 24);
+    if (!Number.isFinite(hours) || hours <= 0) {
+      return 24 * 60 * 60 * 1000;
+    }
+    return hours * 60 * 60 * 1000;
   }
 }

@@ -166,14 +166,33 @@ model ExchangeRateModel {
   fromCurrency CurrencyCode @map("from_currency")
   toCurrency   CurrencyCode @map("to_currency")
 
-  // Increased precision for FX
+  // Increased precision for FX (mid rate by default)
   rate Decimal @db.Decimal(18, 8)
+  rateBid Decimal? @map("rate_bid") @db.Decimal(18, 8)
+  rateAsk Decimal? @map("rate_ask") @db.Decimal(18, 8)
+  spreadBps Int? @map("spread_bps")
+
+  status      ExchangeRateStatus @default(APPROVED)
+  effectiveAt DateTime           @default(now()) @map("effective_at") @db.Timestamptz(6)
+  expiresAt   DateTime?          @map("expires_at") @db.Timestamptz(6)
+  fetchedAt   DateTime?          @map("fetched_at") @db.Timestamptz(6)
+
+  provider       String? @map("provider") @db.VarChar(255)
+  providerRateId String? @map("provider_rate_id") @db.VarChar(255)
+  confidence     Int?
+
+  createdBy  String?  @map("created_by") @db.Uuid
+  updatedBy  String?  @map("updated_by") @db.Uuid
+  approvedBy String?  @map("approved_by") @db.Uuid
+  approvedAt DateTime? @map("approved_at") @db.Timestamptz(6)
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
-  @@unique([fromCurrency, toCurrency, deletedAt])
+  @@index([fromCurrency, toCurrency, status, deletedAt])
+  @@index([effectiveAt, expiresAt])
+  @@unique([fromCurrency, toCurrency, effectiveAt, deletedAt])
   @@map("exchange_rate")
 }
 
@@ -622,6 +641,12 @@ enum CurrencyCode {
   RUB
 
   @@map("currency_code_enum")
+}
+
+enum ExchangeRateStatus {
+  DRAFT
+  APPROVED
+  DISABLED
 }
 
 enum TransactionFeesType {

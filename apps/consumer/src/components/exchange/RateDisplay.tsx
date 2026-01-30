@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import styles from '../ui/classNames.module.css';
 
@@ -15,6 +15,7 @@ const {
   rateRow,
   rateValue,
   rateValueChanged,
+  errorTextClass,
 } = styles;
 
 type RateDisplayProps = {
@@ -26,6 +27,8 @@ export function RateDisplay({ from, to }: RateDisplayProps) {
   const [rate, setRate] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [prevRate, setPrevRate] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const lastRateRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!from || !to) return;
@@ -35,13 +38,27 @@ export function RateDisplay({ from, to }: RateDisplayProps) {
     fetch(`/api/exchange/rates?from=${from}&to=${to}`, {
       credentials: `include`,
     })
-      .then((res) => res.json())
-      .then((data) => {
-        if (rate !== null) setPrevRate(rate);
+      .then(async (res) => {
+        if (!res.ok) {
+          const message = await res.text();
+          setRate(null);
+          setError(message || `Failed to fetch rate`);
+          return;
+        }
+        const data = await res.json();
+        if (lastRateRef.current !== null) {
+          setPrevRate(lastRateRef.current);
+        }
         setRate(data.rate);
+        lastRateRef.current = data.rate;
+        setError(null);
+      })
+      .catch(() => {
+        setRate(null);
+        setError(`Failed to fetch rate`);
       })
       .finally(() => setLoading(false));
-  }, [from, to, rate]);
+  }, [from, to]);
 
   const changed = prevRate !== null && rate !== null && prevRate !== rate;
 
@@ -57,19 +74,20 @@ export function RateDisplay({ from, to }: RateDisplayProps) {
             <span className={rateEquals}>=</span>
 
             <span className={`${rateValue} ${changed ? rateValueChanged : ``}`}>
-              {rate} {to}
+              {rate.toFixed(8)} {to}
             </span>
           </div>
 
           <div className={rateInverse}>
-            Inverse: 1 {to} = {(1 / rate).toFixed(4)} {from}
+            Inverse: 1 {to} = {(1 / rate).toFixed(6)} {from}
           </div>
 
           {changed && <div className={rateChangedText}>Rate changed (was {prevRate})</div>}
         </>
       )}
 
-      {!loading && rate === null && <div className={rateEmpty}>No rate available</div>}
+      {!loading && rate === null && !error && <div className={rateEmpty}>No rate available</div>}
+      {!loading && error && <div className={errorTextClass}>{error}</div>}
     </div>
   );
 }

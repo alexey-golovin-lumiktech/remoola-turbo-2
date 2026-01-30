@@ -70,7 +70,7 @@ async function seed(prisma: PrismaClient): Promise<void> {
     { fromCurrency: $Enums.CurrencyCode.AUD, toCurrency: $Enums.CurrencyCode.EUR, rate: 0.59 },
     { fromCurrency: $Enums.CurrencyCode.AUD, toCurrency: $Enums.CurrencyCode.GBP, rate: 0.52 },
   ];
-
+  await prisma.exchangeRateModel.deleteMany({});
   await prisma.exchangeRateModel.createMany({ data: lookup, skipDuplicates: true });
 }
 
