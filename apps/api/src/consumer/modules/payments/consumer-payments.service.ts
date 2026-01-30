@@ -7,10 +7,14 @@ import { $Enums } from '@remoola/database-2';
 
 import { CreatePaymentRequest, PaymentsHistoryQuery, TransferBody, WithdrawBody } from './dto';
 import { StartPayment } from './dto/start-payment.dto';
+import { MailingService } from '../../../shared/mailing.service';
 import { PrismaService } from '../../../shared/prisma.service';
 @Injectable()
 export class ConsumerPaymentsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly mailingService: MailingService,
+  ) {}
 
   async listPayments(params: {
     consumerId: string;
@@ -306,33 +310,109 @@ export class ConsumerPaymentsService {
   }
 
   async sendPaymentRequest(consumerId: string, paymentRequestId: string) {
-    const paymentRequest = await this.prisma.paymentRequestModel.findUnique({
-      where: { id: paymentRequestId },
-      select: { id: true, requesterId: true, status: true },
+    const result = await this.prisma.$transaction(async (tx) => {
+      const paymentRequest = await tx.paymentRequestModel.findUnique({
+        where: { id: paymentRequestId },
+        select: {
+          id: true,
+          requesterId: true,
+          payerId: true,
+          status: true,
+          amount: true,
+          currencyCode: true,
+          description: true,
+          dueDate: true,
+          payer: { select: { email: true } },
+          requester: { select: { email: true } },
+          _count: { select: { ledgerEntries: true } },
+        },
+      });
+
+      if (!paymentRequest) {
+        throw new NotFoundException(`Payment request not found`);
+      }
+
+      if (paymentRequest.requesterId !== consumerId) {
+        throw new ForbiddenException(`You do not have access to this payment request`);
+      }
+
+      if (paymentRequest.status !== $Enums.TransactionStatus.DRAFT) {
+        throw new BadRequestException(`Only draft requests can be sent`);
+      }
+
+      const amount = Number(paymentRequest.amount);
+      if (!Number.isFinite(amount) || amount <= 0) {
+        throw new BadRequestException(`Invalid amount`);
+      }
+
+      const updated = await tx.paymentRequestModel.update({
+        where: { id: paymentRequestId },
+        data: {
+          status: $Enums.TransactionStatus.PENDING,
+          sentDate: new Date(),
+          updatedBy: consumerId,
+        },
+      });
+
+      if (paymentRequest._count.ledgerEntries === 0) {
+        const ledgerId = randomUUID();
+
+        await tx.ledgerEntryModel.create({
+          data: {
+            ledgerId,
+            consumerId: paymentRequest.payerId,
+            paymentRequestId: paymentRequest.id,
+            type: $Enums.LedgerEntryType.USER_PAYMENT,
+            currencyCode: paymentRequest.currencyCode,
+            status: $Enums.TransactionStatus.PENDING,
+            amount: -amount,
+            createdBy: consumerId,
+            updatedBy: consumerId,
+            metadata: {
+              rail: $Enums.PaymentRail.CARD,
+              counterpartyId: paymentRequest.requesterId,
+            },
+          },
+        });
+
+        await tx.ledgerEntryModel.create({
+          data: {
+            ledgerId,
+            consumerId: paymentRequest.requesterId,
+            paymentRequestId: paymentRequest.id,
+            type: $Enums.LedgerEntryType.USER_PAYMENT,
+            currencyCode: paymentRequest.currencyCode,
+            status: $Enums.TransactionStatus.PENDING,
+            amount: amount,
+            createdBy: consumerId,
+            updatedBy: consumerId,
+            metadata: {
+              rail: $Enums.PaymentRail.CARD,
+              counterpartyId: paymentRequest.payerId,
+            },
+          },
+        });
+      }
+
+      return {
+        paymentRequestId: updated.id,
+        email: {
+          payerEmail: paymentRequest.payer.email,
+          requesterEmail: paymentRequest.requester.email,
+          amount,
+          currencyCode: paymentRequest.currencyCode,
+          description: paymentRequest.description,
+          dueDate: paymentRequest.dueDate,
+          paymentRequestId: paymentRequest.id,
+        },
+      };
     });
 
-    if (!paymentRequest) {
-      throw new NotFoundException(`Payment request not found`);
+    if (result.email.payerEmail) {
+      void this.mailingService.sendPaymentRequestEmail(result.email);
     }
 
-    if (paymentRequest.requesterId !== consumerId) {
-      throw new ForbiddenException(`You do not have access to this payment request`);
-    }
-
-    if (paymentRequest.status !== $Enums.TransactionStatus.DRAFT) {
-      throw new BadRequestException(`Only draft requests can be sent`);
-    }
-
-    const updated = await this.prisma.paymentRequestModel.update({
-      where: { id: paymentRequestId },
-      data: {
-        status: $Enums.TransactionStatus.PENDING,
-        sentDate: new Date(),
-        updatedBy: consumerId,
-      },
-    });
-
-    return { paymentRequestId: updated.id };
+    return { paymentRequestId: result.paymentRequestId };
   }
 
   async getBalancesCompleted(consumerId: string): Promise<Record<$Enums.CurrencyCode, number>> {

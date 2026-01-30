@@ -1,14 +1,13 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { MailerModule, MailerOptions } from '@nestjs-modules/mailer';
 
-import { envs, JWT_ACCESS_SECRET, JWT_ACCESS_TTL } from '../envs';
+import { JWT_ACCESS_SECRET, JWT_ACCESS_TTL } from '../envs';
 import { ConsumerAuthController } from './auth/auth.controller';
 import { ConsumerAuthService } from './auth/auth.service';
 import { GoogleAuthService } from './auth/google-auth.service';
 import { GoogleOAuthService } from './auth/google-oauth.service';
-import { MailingService } from '../shared/mailing.service';
+import { MailingModule } from '../shared/mailing.module';
 import { ConsumerDashboardModule } from './modules/consumer-dashboard/consumer-dashboard.module';
 import { ConsumerContactsModule } from './modules/contacts/consumer-contacts.module';
 import { ConsumerContractsModule } from './modules/contracts/consumer-contracts.module';
@@ -26,22 +25,7 @@ import { ConsumerSettingsModule } from './modules/settings/consumer-settings.mod
       secret: JWT_ACCESS_SECRET!,
       signOptions: { expiresIn: JWT_ACCESS_TTL },
     }),
-    MailerModule.forRootAsync({
-      useFactory: () => {
-        return {
-          transport: {
-            host: envs.NODEMAILER_SMTP_HOST,
-            port: envs.NODEMAILER_SMTP_PORT,
-            auth: {
-              user: envs.NODEMAILER_SMTP_USER,
-              pass: envs.NODEMAILER_SMTP_USER_PASS,
-            },
-            pool: true,
-          },
-          defaults: { from: envs.NODEMAILER_SMTP_DEFAULT_FROM },
-        } satisfies MailerOptions;
-      },
-    }),
+    MailingModule,
     ConsumerDashboardModule,
     ConsumerContactsModule,
     ConsumerContractsModule,
@@ -53,6 +37,6 @@ import { ConsumerSettingsModule } from './modules/settings/consumer-settings.mod
     ConsumerSettingsModule,
   ],
   controllers: [ConsumerAuthController],
-  providers: [MailingService, GoogleOAuthService, ConsumerAuthService, GoogleAuthService],
+  providers: [GoogleOAuthService, ConsumerAuthService, GoogleAuthService],
 })
 export class ConsumerModule {}

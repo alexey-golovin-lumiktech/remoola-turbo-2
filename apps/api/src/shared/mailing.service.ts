@@ -8,6 +8,7 @@ import {
   invitation,
   invoiceToHtml,
   outgoingInvoiceToHtml,
+  paymentRequest,
   payToContactPaymentInfo,
   signupCompletionToHtml,
 } from './mailing-utils';
@@ -91,6 +92,49 @@ export class MailingService {
     const subject = `Wirebill. Payment`;
     try {
       const sent = await this.mailerService.sendMail({ to: params.contactEmail, subject, html });
+      this.logger.log(`Email "${subject}" successfully sent to: ${sent.envelope.to.join(` & `)}`);
+    } catch (error) {
+      this.logger.error(error);
+    }
+  }
+
+  async sendPaymentRequestEmail(params: {
+    payerEmail: string;
+    requesterEmail: string;
+    amount: number;
+    currencyCode: string;
+    description?: string | null;
+    dueDate?: Date | null;
+    paymentRequestId: string;
+  }) {
+    const origin =
+      envs.CONSUMER_APP_ORIGIN && envs.CONSUMER_APP_ORIGIN !== `CONSUMER_APP_ORIGIN`
+        ? envs.CONSUMER_APP_ORIGIN
+        : envs.CORS_ALLOWED_ORIGINS?.[0];
+
+    if (!origin) {
+      this.logger.error(`CONSUMER_APP_ORIGIN is not configured`);
+      return;
+    }
+
+    const paymentRequestLink = new URL(`/payments/${params.paymentRequestId}`, origin).toString();
+    const descriptionLine = params.description ? `Description: ${params.description}` : `Description: —`;
+    const dueDateLine = params.dueDate ? `Due date: ${params.dueDate.toISOString().slice(0, 10)}` : `Due date: —`;
+
+    const html = paymentRequest.processor({
+      payerEmail: params.payerEmail,
+      requesterEmail: params.requesterEmail,
+      amount: params.amount.toFixed(2),
+      currencyCode: params.currencyCode,
+      descriptionLine,
+      dueDateLine,
+      paymentRequestLink,
+    });
+
+    const subject = `Wirebill. Payment request from ${params.requesterEmail}`;
+
+    try {
+      const sent = await this.mailerService.sendMail({ to: params.payerEmail, subject, html });
       this.logger.log(`Email "${subject}" successfully sent to: ${sent.envelope.to.join(` & `)}`);
     } catch (error) {
       this.logger.error(error);
