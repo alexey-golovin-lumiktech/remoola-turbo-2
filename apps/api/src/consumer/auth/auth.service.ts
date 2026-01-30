@@ -24,6 +24,11 @@ type GoogleSignupPayload = {
   organization: string | null;
   sub: string | null;
 };
+type OAuthExchangePayload = {
+  type: `oauth_exchange`;
+  identityId: string;
+  createdAt: number;
+};
 
 import { ConsumerSignup } from './dto';
 import { LoginBody } from '../../auth/dto/login.dto';
@@ -48,6 +53,7 @@ export class ConsumerAuthService {
   }
 
   private static readonly googleSignupTokenType = `google_signup` as const;
+  private static readonly oauthExchangeTokenType = `oauth_exchange` as const;
 
   private toGoogleSignupPayload(payload: {
     email?: string | null;
@@ -141,6 +147,23 @@ export class ConsumerAuthService {
 
   async issueTokensForConsumer(identityId: ConsumerModel[`id`]) {
     return this.getAccessAndRefreshToken(identityId);
+  }
+
+  async createOAuthExchangeToken(identityId: ConsumerModel[`id`]) {
+    const payload: OAuthExchangePayload = {
+      type: ConsumerAuthService.oauthExchangeTokenType,
+      identityId,
+      createdAt: Date.now(),
+    };
+    return this.jwtService.signAsync(payload, { expiresIn: `2m` });
+  }
+
+  async verifyOAuthExchangeToken(token: string) {
+    const decoded = this.jwtService.verify(token) as OAuthExchangePayload;
+    if (!decoded || decoded.type !== ConsumerAuthService.oauthExchangeTokenType || !decoded.identityId) {
+      throw new UnauthorizedException(`Invalid OAuth exchange token`);
+    }
+    return decoded;
   }
 
   async createGoogleSignupToken(payload: {

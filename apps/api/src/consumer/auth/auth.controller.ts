@@ -47,12 +47,6 @@ import {
 export class ConsumerAuthController {
   private readonly logger = new Logger(ConsumerAuthController.name);
   private readonly oauthStateTtlMs = 10 * 60 * 1000;
-  private readonly vercelCookieOptions = {
-    httpOnly: true,
-    secure: true,
-    sameSite: `none`,
-    path: `/`,
-  } as const;
 
   constructor(
     private readonly service: ConsumerAuthService,
@@ -64,8 +58,14 @@ export class ConsumerAuthController {
     const isProd = envs.NODE_ENV === `production`;
 
     if (envs.VERCEL !== 0) {
-      res.cookie(ACCESS_TOKEN_COOKIE_KEY, accessToken, { ...this.vercelCookieOptions, maxAge: JWT_ACCESS_TTL });
-      res.cookie(REFRESH_TOKEN_COOKIE_KEY, refreshToken, { ...this.vercelCookieOptions, maxAge: JWT_REFRESH_TTL });
+      const vercelCookieOptions = {
+        httpOnly: true,
+        secure: true,
+        sameSite: `none`,
+        path: `/`,
+      } as const;
+      res.cookie(ACCESS_TOKEN_COOKIE_KEY, accessToken, { ...vercelCookieOptions, maxAge: JWT_ACCESS_TTL });
+      res.cookie(REFRESH_TOKEN_COOKIE_KEY, refreshToken, { ...vercelCookieOptions, maxAge: JWT_REFRESH_TTL });
     } else {
       const sameSite = isProd ? (`none` as const) : (`lax` as const);
       const secure = isProd || process.env.COOKIE_SECURE == `true`;
@@ -83,30 +83,27 @@ export class ConsumerAuthController {
   }
 
   private getOAuthCookieOptions(req?: express.Request) {
-    if (envs.VERCEL !== 0) {
-      return this.vercelCookieOptions;
-    } else {
-      const isProd = envs.NODE_ENV === `production`;
-      const isVercel = envs.VERCEL !== 0;
-      const forwardedProto = req?.headers?.[`x-forwarded-proto`];
-      const isSecureRequest =
-        req?.secure === true ||
-        (typeof forwardedProto === `string` && forwardedProto.split(`,`)[0]?.trim() === `https`);
-      const sameSite = isSecureRequest ? (`none` as const) : (`lax` as const);
-      const secure = isSecureRequest || isVercel || isProd || process.env.COOKIE_SECURE == `true`;
-      return {
-        httpOnly: true,
-        sameSite,
-        secure,
-        path: `/`,
-        signed: true,
-        maxAge: this.oauthStateTtlMs,
-      };
-    }
+    const isProd = envs.NODE_ENV === `production`;
+    const isVercel = envs.VERCEL !== 0;
+    const forwardedProto = req?.headers?.[`x-forwarded-proto`];
+    const isSecureRequest =
+      req?.secure === true || (typeof forwardedProto === `string` && forwardedProto.split(`,`)[0]?.trim() === `https`);
+    const sameSite = isSecureRequest ? (`none` as const) : (`lax` as const);
+    const secure = isSecureRequest || isVercel || isProd || process.env.COOKIE_SECURE == `true`;
+
+    return {
+      httpOnly: true,
+      sameSite,
+      secure,
+      path: `/`,
+      signed: true,
+      maxAge: this.oauthStateTtlMs,
+    };
   }
 
   private getOAuthClearCookieOptions(req?: express.Request) {
-    return this.getOAuthCookieOptions(req);
+    const { httpOnly, sameSite, secure, path, signed } = this.getOAuthCookieOptions(req);
+    return { httpOnly, sameSite, secure, path, signed };
   }
 
   private normalizeOrigin(origin: string) {
@@ -145,7 +142,7 @@ export class ConsumerAuthController {
     return `/dashboard`;
   }
 
-  private buildConsumerRedirect(nextPath: string) {
+  private buildConsumerRedirect(nextPath: string, extraParams?: Record<string, string>) {
     const origin =
       envs.CONSUMER_APP_ORIGIN && envs.CONSUMER_APP_ORIGIN !== `CONSUMER_APP_ORIGIN`
         ? envs.CONSUMER_APP_ORIGIN
@@ -157,6 +154,11 @@ export class ConsumerAuthController {
 
     const url = new URL(`/auth/callback`, origin);
     url.searchParams.set(`next`, nextPath);
+    if (extraParams) {
+      for (const [key, value] of Object.entries(extraParams)) {
+        if (value) url.searchParams.set(key, value);
+      }
+    }
     return url.toString();
   }
 
@@ -328,9 +330,10 @@ export class ConsumerAuthController {
 
       const consumer = await this.googleOAuthServiceGPT.loginWithPayload(email, payload);
       const { accessToken, refreshToken } = await this.service.issueTokensForConsumer(consumer.id);
+      const exchangeToken = await this.service.createOAuthExchangeToken(consumer.id);
 
       this.setAuthCookies(response, accessToken, refreshToken);
-      const redirectUrl = this.buildConsumerRedirect(cookiePayload.nextPath);
+      const redirectUrl = this.buildConsumerRedirect(cookiePayload.nextPath, { oauthToken: exchangeToken });
       return response.redirect(redirectUrl);
     } catch (err) {
       this.logger.error(err);
@@ -395,6 +398,17 @@ export class ConsumerAuthController {
     const { accessToken, refreshToken } = await this.service.issueTokensForConsumer(result.consumer.id);
     this.setAuthCookies(res, accessToken, refreshToken);
     return { ...result.consumer, accessToken, refreshToken };
+  }
+
+  @PublicEndpoint()
+  @Post(`oauth/exchange`)
+  @HttpCode(HttpStatus.OK)
+  async oauthExchange(@Res({ passthrough: true }) res, @Body(`exchangeToken`) exchangeToken: string) {
+    if (!exchangeToken) throw new BadRequestException(`Missing exchange token`);
+    const decoded = await this.service.verifyOAuthExchangeToken(exchangeToken);
+    const { accessToken, refreshToken } = await this.service.issueTokensForConsumer(decoded.identityId);
+    this.setAuthCookies(res, accessToken, refreshToken);
+    return { accessToken, refreshToken };
   }
 
   @PublicEndpoint()
