@@ -1,0 +1,32 @@
+version: '3.8'
+services:
+  wb_postgres:
+    container_name: wb_postgres
+    image: postgres:latest
+    env_file:
+      - ../.env.$NODE_ENV
+    ports:
+      - "5433:5432"
+    volumes:
+      - wb_postgres_data:/data/db
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - wb_network
+    restart: unless-stopped
+
+  wb_adminer:
+    container_name: wb_adminer
+    image: adminer
+    restart: unless-stopped
+    ports:
+      - "9999:8080"
+    networks:
+      - wb_network
+
+volumes:
+  wb_postgres_data:
+
+
+networks:
+  wb_network:
+    driver: bridge
