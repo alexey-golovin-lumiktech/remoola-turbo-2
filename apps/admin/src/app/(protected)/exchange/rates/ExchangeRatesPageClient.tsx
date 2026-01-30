@@ -22,11 +22,13 @@ const {
   adminFormError,
   adminModalOverlay,
   adminModalCard,
+  adminModalCardWide,
   adminModalHeader,
   adminModalTitle,
   adminModalSubtitle,
   adminModalClose,
   adminModalBody,
+  adminModalBodyGrid,
   adminModalFooter,
   adminModalCancel,
   adminModalPrimary,
@@ -153,10 +155,12 @@ export function ExchangeRatesPageClient() {
 
   function openCreateModal() {
     createForm.reset();
+    setEditingRate(null);
     setCreateOpen(true);
   }
 
   function openEditModal(rate: ExchangeRate) {
+    setCreateOpen(false);
     editForm.reset();
     editForm.setValue(`fromCurrency`, rate.fromCurrency);
     editForm.setValue(`toCurrency`, rate.toCurrency);
@@ -326,7 +330,7 @@ export function ExchangeRatesPageClient() {
   ) {
     return (
       <div className={adminModalOverlay}>
-        <div className={adminModalCard}>
+        <div className={`${adminModalCard} ${adminModalCardWide}`}>
           <div className={adminModalHeader}>
             <div>
               <div className={adminModalTitle}>{submitLabel === `Create` ? `Create rate` : `Edit rate`}</div>
@@ -338,159 +342,161 @@ export function ExchangeRatesPageClient() {
           </div>
 
           <div className={adminModalBody}>
-            <label className={adminFormLabelBlock}>
-              <div className={adminFormLabelText}>From currency</div>
-              {renderCurrencyInput(
-                form.values.fromCurrency,
-                (value) => form.setValue(`fromCurrency`, value),
-                () => form.setTouched(`fromCurrency`),
-                disabled,
-                `USD`,
-              )}
-              {form.errors.fromCurrency && <div className={adminFormError}>{form.errors.fromCurrency}</div>}
-            </label>
+            <div className={adminModalBodyGrid}>
+              <label className={adminFormLabelBlock}>
+                <div className={adminFormLabelText}>From currency</div>
+                {renderCurrencyInput(
+                  form.values.fromCurrency,
+                  (value) => form.setValue(`fromCurrency`, value),
+                  () => form.setTouched(`fromCurrency`),
+                  disabled,
+                  `USD`,
+                )}
+                {form.errors.fromCurrency && <div className={adminFormError}>{form.errors.fromCurrency}</div>}
+              </label>
 
-            <label className={adminFormLabelBlock}>
-              <div className={adminFormLabelText}>To currency</div>
-              {renderCurrencyInput(
-                form.values.toCurrency,
-                (value) => form.setValue(`toCurrency`, value),
-                () => form.setTouched(`toCurrency`),
-                disabled,
-                `EUR`,
-              )}
-              {form.errors.toCurrency && <div className={adminFormError}>{form.errors.toCurrency}</div>}
-            </label>
+              <label className={adminFormLabelBlock}>
+                <div className={adminFormLabelText}>To currency</div>
+                {renderCurrencyInput(
+                  form.values.toCurrency,
+                  (value) => form.setValue(`toCurrency`, value),
+                  () => form.setTouched(`toCurrency`),
+                  disabled,
+                  `EUR`,
+                )}
+                {form.errors.toCurrency && <div className={adminFormError}>{form.errors.toCurrency}</div>}
+              </label>
 
-            <label className={adminFormLabelBlock}>
-              <div className={adminFormLabelText}>Rate</div>
-              <input
-                className={adminFormInput}
-                value={form.values.rate}
-                onChange={(e) => form.setValue(`rate`, e.target.value)}
-                onBlur={() => form.setTouched(`rate`)}
-                placeholder="1.23456789"
-                disabled={disabled}
-              />
-              {form.errors.rate && <div className={adminFormError}>{form.errors.rate}</div>}
-            </label>
+              <label className={adminFormLabelBlock}>
+                <div className={adminFormLabelText}>Rate</div>
+                <input
+                  className={adminFormInput}
+                  value={form.values.rate}
+                  onChange={(e) => form.setValue(`rate`, e.target.value)}
+                  onBlur={() => form.setTouched(`rate`)}
+                  placeholder="1.23456789"
+                  disabled={disabled}
+                />
+                {form.errors.rate && <div className={adminFormError}>{form.errors.rate}</div>}
+              </label>
 
-            <label className={adminFormLabelBlock}>
-              <div className={adminFormLabelText}>Bid</div>
-              <input
-                className={adminFormInput}
-                value={form.values.rateBid ?? ``}
-                onChange={(e) => form.setValue(`rateBid`, e.target.value)}
-                placeholder="Optional"
-                disabled={disabled}
-              />
-              {form.errors.rateBid && <div className={adminFormError}>{form.errors.rateBid}</div>}
-            </label>
+              <label className={adminFormLabelBlock}>
+                <div className={adminFormLabelText}>Bid</div>
+                <input
+                  className={adminFormInput}
+                  value={form.values.rateBid ?? ``}
+                  onChange={(e) => form.setValue(`rateBid`, e.target.value)}
+                  placeholder="Optional"
+                  disabled={disabled}
+                />
+                {form.errors.rateBid && <div className={adminFormError}>{form.errors.rateBid}</div>}
+              </label>
 
-            <label className={adminFormLabelBlock}>
-              <div className={adminFormLabelText}>Ask</div>
-              <input
-                className={adminFormInput}
-                value={form.values.rateAsk ?? ``}
-                onChange={(e) => form.setValue(`rateAsk`, e.target.value)}
-                placeholder="Optional"
-                disabled={disabled}
-              />
-              {form.errors.rateAsk && <div className={adminFormError}>{form.errors.rateAsk}</div>}
-            </label>
+              <label className={adminFormLabelBlock}>
+                <div className={adminFormLabelText}>Ask</div>
+                <input
+                  className={adminFormInput}
+                  value={form.values.rateAsk ?? ``}
+                  onChange={(e) => form.setValue(`rateAsk`, e.target.value)}
+                  placeholder="Optional"
+                  disabled={disabled}
+                />
+                {form.errors.rateAsk && <div className={adminFormError}>{form.errors.rateAsk}</div>}
+              </label>
 
-            <label className={adminFormLabelBlock}>
-              <div className={adminFormLabelText}>Spread (bps)</div>
-              <input
-                className={adminFormInput}
-                value={form.values.spreadBps ?? ``}
-                onChange={(e) => form.setValue(`spreadBps`, e.target.value)}
-                placeholder="Optional"
-                disabled={disabled}
-              />
-              {form.errors.spreadBps && <div className={adminFormError}>{form.errors.spreadBps}</div>}
-            </label>
+              <label className={adminFormLabelBlock}>
+                <div className={adminFormLabelText}>Spread (bps)</div>
+                <input
+                  className={adminFormInput}
+                  value={form.values.spreadBps ?? ``}
+                  onChange={(e) => form.setValue(`spreadBps`, e.target.value)}
+                  placeholder="Optional"
+                  disabled={disabled}
+                />
+                {form.errors.spreadBps && <div className={adminFormError}>{form.errors.spreadBps}</div>}
+              </label>
 
-            <label className={adminFormLabelBlock}>
-              <div className={adminFormLabelText}>Status</div>
-              <select
-                className={adminFormInput}
-                value={form.values.status ?? `APPROVED`}
-                onChange={(e) => form.setValue(`status`, e.target.value as ExchangeRateForm[`status`])}
-                disabled={disabled}
-              >
-                <option value="DRAFT">DRAFT</option>
-                <option value="APPROVED">APPROVED</option>
-                <option value="DISABLED">DISABLED</option>
-              </select>
-            </label>
+              <label className={adminFormLabelBlock}>
+                <div className={adminFormLabelText}>Status</div>
+                <select
+                  className={adminFormInput}
+                  value={form.values.status ?? `APPROVED`}
+                  onChange={(e) => form.setValue(`status`, e.target.value as ExchangeRateForm[`status`])}
+                  disabled={disabled}
+                >
+                  <option value="DRAFT">DRAFT</option>
+                  <option value="APPROVED">APPROVED</option>
+                  <option value="DISABLED">DISABLED</option>
+                </select>
+              </label>
 
-            <label className={adminFormLabelBlock}>
-              <div className={adminFormLabelText}>Effective at</div>
-              <input
-                className={adminFormInput}
-                type="datetime-local"
-                value={form.values.effectiveAt ?? ``}
-                onChange={(e) => form.setValue(`effectiveAt`, e.target.value)}
-                disabled={disabled}
-              />
-            </label>
+              <label className={adminFormLabelBlock}>
+                <div className={adminFormLabelText}>Effective at</div>
+                <input
+                  className={adminFormInput}
+                  type="datetime-local"
+                  value={form.values.effectiveAt ?? ``}
+                  onChange={(e) => form.setValue(`effectiveAt`, e.target.value)}
+                  disabled={disabled}
+                />
+              </label>
 
-            <label className={adminFormLabelBlock}>
-              <div className={adminFormLabelText}>Expires at</div>
-              <input
-                className={adminFormInput}
-                type="datetime-local"
-                value={form.values.expiresAt ?? ``}
-                onChange={(e) => form.setValue(`expiresAt`, e.target.value)}
-                disabled={disabled}
-              />
-            </label>
+              <label className={adminFormLabelBlock}>
+                <div className={adminFormLabelText}>Expires at</div>
+                <input
+                  className={adminFormInput}
+                  type="datetime-local"
+                  value={form.values.expiresAt ?? ``}
+                  onChange={(e) => form.setValue(`expiresAt`, e.target.value)}
+                  disabled={disabled}
+                />
+              </label>
 
-            <label className={adminFormLabelBlock}>
-              <div className={adminFormLabelText}>Fetched at</div>
-              <input
-                className={adminFormInput}
-                type="datetime-local"
-                value={form.values.fetchedAt ?? ``}
-                onChange={(e) => form.setValue(`fetchedAt`, e.target.value)}
-                disabled={disabled}
-              />
-            </label>
+              <label className={adminFormLabelBlock}>
+                <div className={adminFormLabelText}>Fetched at</div>
+                <input
+                  className={adminFormInput}
+                  type="datetime-local"
+                  value={form.values.fetchedAt ?? ``}
+                  onChange={(e) => form.setValue(`fetchedAt`, e.target.value)}
+                  disabled={disabled}
+                />
+              </label>
 
-            <label className={adminFormLabelBlock}>
-              <div className={adminFormLabelText}>Provider</div>
-              <input
-                className={adminFormInput}
-                value={form.values.provider ?? ``}
-                onChange={(e) => form.setValue(`provider`, e.target.value)}
-                placeholder="Optional"
-                disabled={disabled}
-              />
-            </label>
+              <label className={adminFormLabelBlock}>
+                <div className={adminFormLabelText}>Provider</div>
+                <input
+                  className={adminFormInput}
+                  value={form.values.provider ?? ``}
+                  onChange={(e) => form.setValue(`provider`, e.target.value)}
+                  placeholder="Optional"
+                  disabled={disabled}
+                />
+              </label>
 
-            <label className={adminFormLabelBlock}>
-              <div className={adminFormLabelText}>Provider rate id</div>
-              <input
-                className={adminFormInput}
-                value={form.values.providerRateId ?? ``}
-                onChange={(e) => form.setValue(`providerRateId`, e.target.value)}
-                placeholder="Optional"
-                disabled={disabled}
-              />
-            </label>
+              <label className={adminFormLabelBlock}>
+                <div className={adminFormLabelText}>Provider rate id</div>
+                <input
+                  className={adminFormInput}
+                  value={form.values.providerRateId ?? ``}
+                  onChange={(e) => form.setValue(`providerRateId`, e.target.value)}
+                  placeholder="Optional"
+                  disabled={disabled}
+                />
+              </label>
 
-            <label className={adminFormLabelBlock}>
-              <div className={adminFormLabelText}>Confidence</div>
-              <input
-                className={adminFormInput}
-                value={form.values.confidence ?? ``}
-                onChange={(e) => form.setValue(`confidence`, e.target.value)}
-                placeholder="0-100"
-                disabled={disabled}
-              />
-              {form.errors.confidence && <div className={adminFormError}>{form.errors.confidence}</div>}
-            </label>
+              <label className={adminFormLabelBlock}>
+                <div className={adminFormLabelText}>Confidence</div>
+                <input
+                  className={adminFormInput}
+                  value={form.values.confidence ?? ``}
+                  onChange={(e) => form.setValue(`confidence`, e.target.value)}
+                  placeholder="0-100"
+                  disabled={disabled}
+                />
+                {form.errors.confidence && <div className={adminFormError}>{form.errors.confidence}</div>}
+              </label>
+            </div>
 
             <div className={adminModalFooter}>
               <button
