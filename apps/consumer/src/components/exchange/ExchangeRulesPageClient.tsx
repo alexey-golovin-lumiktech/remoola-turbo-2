@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import styles from '../ui/classNames.module.css';
 
@@ -60,16 +60,16 @@ export function ExchangeRulesPageClient() {
 
   const heading = useMemo(() => (editingId ? `Edit Auto-Conversion Rule` : `Create Auto-Conversion Rule`), [editingId]);
 
-  async function loadRules() {
+  const loadRules = useCallback(async () => {
     const res = await fetch(`/api/exchange/rules`, { credentials: `include`, cache: `no-store` });
     if (!res.ok) return;
     const data = await res.json();
     setRules(data);
-  }
+  }, []);
 
   useEffect(() => {
-    loadRules();
-  }, []);
+    void loadRules();
+  }, [loadRules]);
 
   useEffect(() => {
     fetch(`/api/exchange/currencies`, { credentials: `include` })

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { DataTable } from '../../../../components';
 import styles from '../../../../components/ui/classNames.module.css';
@@ -34,12 +34,14 @@ export function ExchangeRulesPageClient() {
     return await response.json();
   }
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
     const data = await loadRules();
     setRules(data);
-  }
+  }, []);
 
-  useEffect(() => void refresh());
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
   async function toggleRule(rule: AutoConversionRule) {
     const response = await fetch(`/api/exchange/rules/${rule.id}`, {

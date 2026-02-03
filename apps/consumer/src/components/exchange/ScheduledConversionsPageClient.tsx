@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import styles from '../ui/classNames.module.css';
 
@@ -50,16 +50,16 @@ export function ScheduledConversionsPageClient() {
   const [loading, setLoading] = useState(false);
   const [currencies, setCurrencies] = useState<string[]>([...CURRENCIES]);
 
-  async function loadScheduled() {
+  const loadScheduled = useCallback(async () => {
     const res = await fetch(`/api/exchange/scheduled`, { credentials: `include`, cache: `no-store` });
     if (!res.ok) return;
     const data = await res.json();
     setScheduled(data);
-  }
+  }, []);
 
   useEffect(() => {
-    loadScheduled();
-  }, []);
+    void loadScheduled();
+  }, [loadScheduled]);
 
   useEffect(() => {
     fetch(`/api/exchange/currencies`, { credentials: `include` })

@@ -1,7 +1,11 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiBasicAuth } from '@nestjs/swagger';
 
+import { type AdminModel } from '@remoola/database-2';
+
 import { AdminPaymentRequestsService } from './admin-payment-requests.service';
+import { PaymentReversalBody, PaymentReversalKind } from './dto';
+import { Identity } from '../../../common';
 
 @ApiTags(`Admin: Payment Requests`)
 @ApiBearerAuth(`bearer`) // 👈 tells Swagger to attach Bearer token
@@ -18,5 +22,15 @@ export class AdminPaymentRequestsController {
   @Get(`:id`)
   geyById(@Param(`id`) id: string) {
     return this.service.geyById(id);
+  }
+
+  @Post(`:id/refund`)
+  createRefund(@Identity() admin: AdminModel, @Param(`id`) id: string, @Body() body: PaymentReversalBody) {
+    return this.service.createReversal(id, { ...body, kind: PaymentReversalKind.Refund }, admin.id);
+  }
+
+  @Post(`:id/chargeback`)
+  createChargeback(@Identity() admin: AdminModel, @Param(`id`) id: string, @Body() body: PaymentReversalBody) {
+    return this.service.createReversal(id, { ...body, kind: PaymentReversalKind.Chargeback }, admin.id);
   }
 }

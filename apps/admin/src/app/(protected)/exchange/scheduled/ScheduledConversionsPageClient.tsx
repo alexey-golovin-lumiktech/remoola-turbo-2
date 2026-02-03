@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { DataTable } from '../../../../components';
 import styles from '../../../../components/ui/classNames.module.css';
@@ -29,18 +29,20 @@ export function ScheduledConversionsPageClient() {
   const [query, setQuery] = useState(``);
   const [status, setStatus] = useState<string>(`all`);
 
-  async function loadConversions() {
+  const loadConversions = useCallback(async () => {
     const response = await fetch(`/api/exchange/scheduled`, { cache: `no-store`, credentials: `include` });
     if (!response.ok) return [];
     return await response.json();
-  }
+  }, []);
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
     const data = await loadConversions();
     setConversions(data);
-  }
+  }, [loadConversions]);
 
-  useEffect(() => void refresh());
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
   async function cancelConversion(conversion: ScheduledFxConversion) {
     const response = await fetch(`/api/exchange/scheduled/${conversion.id}/cancel`, {

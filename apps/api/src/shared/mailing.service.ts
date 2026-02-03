@@ -10,6 +10,8 @@ import {
   outgoingInvoiceToHtml,
   paymentRequest,
   payToContactPaymentInfo,
+  paymentRefund,
+  paymentChargeback,
   signupCompletionToHtml,
 } from './mailing-utils';
 import { envs } from '../envs';
@@ -135,6 +137,96 @@ export class MailingService {
 
     try {
       const sent = await this.mailerService.sendMail({ to: params.payerEmail, subject, html });
+      this.logger.log(`Email "${subject}" successfully sent to: ${sent.envelope.to.join(` & `)}`);
+    } catch (error) {
+      this.logger.error(error);
+    }
+  }
+
+  async sendPaymentRefundEmail(params: {
+    recipientEmail: string;
+    counterpartyEmail: string;
+    amount: number;
+    currencyCode: string;
+    reason?: string | null;
+    paymentRequestId: string;
+    role: `payer` | `requester`;
+  }) {
+    const origin =
+      envs.CONSUMER_APP_ORIGIN && envs.CONSUMER_APP_ORIGIN !== `CONSUMER_APP_ORIGIN`
+        ? envs.CONSUMER_APP_ORIGIN
+        : envs.CORS_ALLOWED_ORIGINS?.[0];
+
+    if (!origin) {
+      this.logger.error(`CONSUMER_APP_ORIGIN is not configured`);
+      return;
+    }
+
+    const paymentRequestLink = new URL(`/payments/${params.paymentRequestId}`, origin).toString();
+    const summaryLine =
+      params.role === `payer`
+        ? `Your payment to ${params.counterpartyEmail} was refunded.`
+        : `A payment from ${params.counterpartyEmail} was refunded.`;
+    const reasonLine = params.reason ? `Reason: ${params.reason}` : `Reason: —`;
+
+    const html = paymentRefund.processor({
+      recipientEmail: params.recipientEmail,
+      summaryLine,
+      amount: params.amount.toFixed(2),
+      currencyCode: params.currencyCode,
+      reasonLine,
+      paymentRequestLink,
+    });
+
+    const subject = `Wirebill. Payment refund`;
+
+    try {
+      const sent = await this.mailerService.sendMail({ to: params.recipientEmail, subject, html });
+      this.logger.log(`Email "${subject}" successfully sent to: ${sent.envelope.to.join(` & `)}`);
+    } catch (error) {
+      this.logger.error(error);
+    }
+  }
+
+  async sendPaymentChargebackEmail(params: {
+    recipientEmail: string;
+    counterpartyEmail: string;
+    amount: number;
+    currencyCode: string;
+    reason?: string | null;
+    paymentRequestId: string;
+    role: `payer` | `requester`;
+  }) {
+    const origin =
+      envs.CONSUMER_APP_ORIGIN && envs.CONSUMER_APP_ORIGIN !== `CONSUMER_APP_ORIGIN`
+        ? envs.CONSUMER_APP_ORIGIN
+        : envs.CORS_ALLOWED_ORIGINS?.[0];
+
+    if (!origin) {
+      this.logger.error(`CONSUMER_APP_ORIGIN is not configured`);
+      return;
+    }
+
+    const paymentRequestLink = new URL(`/payments/${params.paymentRequestId}`, origin).toString();
+    const summaryLine =
+      params.role === `payer`
+        ? `A chargeback was recorded for your payment to ${params.counterpartyEmail}.`
+        : `A chargeback was recorded for a payment from ${params.counterpartyEmail}.`;
+    const reasonLine = params.reason ? `Reason: ${params.reason}` : `Reason: —`;
+
+    const html = paymentChargeback.processor({
+      recipientEmail: params.recipientEmail,
+      summaryLine,
+      amount: params.amount.toFixed(2),
+      currencyCode: params.currencyCode,
+      reasonLine,
+      paymentRequestLink,
+    });
+
+    const subject = `Wirebill. Chargeback update`;
+
+    try {
+      const sent = await this.mailerService.sendMail({ to: params.recipientEmail, subject, html });
       this.logger.log(`Email "${subject}" successfully sent to: ${sent.envelope.to.join(` & `)}`);
     } catch (error) {
       this.logger.error(error);

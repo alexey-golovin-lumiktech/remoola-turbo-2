@@ -4,9 +4,10 @@ import { ConsumerPaymentMethodsController } from './consumer-payment-methods.con
 import { providers } from './providers';
 import { StripeWebhookController } from './stripe-webhook.controller';
 import { ConsumerStripeController } from './stripe.controller';
+import { MailingModule } from '../../../shared/mailing.module';
 
 @Module({
-  imports: [],
+  imports: [MailingModule],
   controllers: [StripeWebhookController, ConsumerStripeController, ConsumerPaymentMethodsController],
   providers: [...providers],
 })

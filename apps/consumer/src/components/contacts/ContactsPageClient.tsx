@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { ContactsTable } from './ContactsTable';
 import { CreateContactModal, DeleteContactModal, EditContactModal } from './modals';
@@ -24,7 +24,7 @@ export function ContactsPageClient() {
   const [editContact, setEditContact] = useState<ConsumerContact | null>(null);
   const [deleteContact, setDeleteContact] = useState<ConsumerContact | null>(null);
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
     const response = await fetch(`/api/contacts`, {
       method: `GET`,
       headers: { 'content-type': `application/json` },
@@ -34,9 +34,11 @@ export function ContactsPageClient() {
     if (!response.ok) throw new Error(`Something went wrong retrieve contacts`);
     const json = await response.json();
     setItems(json.items);
-  }
+  }, []);
 
-  useEffect(() => void refresh(), []);
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
   return (
     <div className={contactsPageContainer}>

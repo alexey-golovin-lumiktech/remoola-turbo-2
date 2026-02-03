@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { type ConsumerContactDetails } from '../../types';
 import styles from '../ui/classNames.module.css';
@@ -30,8 +30,8 @@ type ContactDetailsViewProps = { id: ConsumerContactDetails[`id`] };
 export function ContactDetailsView({ id }: ContactDetailsViewProps) {
   const [details, setDetails] = useState<ConsumerContactDetails>();
 
-  async function loadDetails(contactId: string) {
-    const res = await fetch(`/api/contacts/${contactId}/details`, {
+  const loadDetails = useCallback(async () => {
+    const res = await fetch(`/api/contacts/${id}/details`, {
       method: `GET`,
       headers: { 'content-type': `application/json` },
       credentials: `include`,
@@ -40,9 +40,11 @@ export function ContactDetailsView({ id }: ContactDetailsViewProps) {
     if (!res.ok) throw new Error(`Failed to load contact`);
     const json = await res.json();
     setDetails(json);
-  }
+  }, [id]);
 
-  useEffect(() => void loadDetails(id), [id]);
+  useEffect(() => {
+    void loadDetails();
+  }, [loadDetails]);
   if (!details) return null;
 
   return (

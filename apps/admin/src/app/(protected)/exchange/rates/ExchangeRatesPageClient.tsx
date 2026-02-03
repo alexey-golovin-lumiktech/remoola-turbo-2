@@ -93,11 +93,11 @@ export function ExchangeRatesPageClient() {
     return await response.json();
   }, [filterFrom, filterTo, filterStatus, includeHistory, includeExpired]);
 
-  async function loadCurrencies() {
+  const loadCurrencies = useCallback(async () => {
     const response = await fetch(`/api/exchange/currencies`, { cache: `no-store`, credentials: `include` });
     if (!response.ok) return [];
     return await response.json();
-  }
+  }, []);
 
   const refresh = useCallback(async () => {
     const data = await loadRates();
@@ -110,7 +110,7 @@ export function ExchangeRatesPageClient() {
 
   useEffect(() => {
     void loadCurrencies().then((data) => setCurrencies(Array.isArray(data) ? data : []));
-  }, []);
+  }, [loadCurrencies]);
 
   function toDateTimeLocal(value?: string | null) {
     if (!value) return ``;

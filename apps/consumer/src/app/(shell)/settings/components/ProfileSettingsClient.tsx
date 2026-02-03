@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { AddressDetailsForm } from './AddressDetailsForm';
@@ -16,9 +16,7 @@ export default function ProfileSettingsClient() {
   const [profile, setProfile] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => void load(), []);
-
-  async function load() {
+  const load = useCallback(async () => {
     setError(null);
 
     const response = await fetch(`/api/profile/me`, {
@@ -34,7 +32,11 @@ export default function ProfileSettingsClient() {
     }
 
     setProfile(await response.json());
-  }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   if (error) {
     return <p className={errorTextClass}>{error}</p>;

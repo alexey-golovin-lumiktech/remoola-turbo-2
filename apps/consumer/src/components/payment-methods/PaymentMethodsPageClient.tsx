@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { AddPaymentMethodModal, DeletePaymentMethodModal, EditPaymentMethodModal } from './modals';
 import { PaymentMethodsList } from './PaymentMethodsList';
@@ -15,7 +15,7 @@ export function PaymentMethodsPageClient() {
   const [editItem, setEditItem] = useState<PaymentMethodItem | null>(null);
   const [deleteItem, setDeleteItem] = useState<PaymentMethodItem | null>(null);
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
     const res = await fetch(`/api/payment-methods`, {
       method: `GET`,
       headers: { 'content-type': `application/json` },
@@ -24,9 +24,11 @@ export function PaymentMethodsPageClient() {
     });
     const data = await res.json();
     setPayments(data.items || []);
-  }
+  }, []);
 
-  useEffect(() => void refresh(), []);
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
   return (
     <div className={pageStackContainer}>

@@ -1,18 +1,25 @@
+import { randomUUID } from 'crypto';
+
 import { BadRequestException, Injectable, type RawBodyRequest } from '@nestjs/common';
 import express from 'express';
 import Stripe from 'stripe';
 
-import { $Enums } from '@remoola/database-2';
+import { $Enums, Prisma } from '@remoola/database-2';
 
 import { STRIPE_EVENT } from './events';
 import { envs } from '../../../envs';
+import { MailingService } from '../../../shared/mailing.service';
 import { PrismaService } from '../../../shared/prisma.service';
+import { getCurrencyFractionDigits } from '../../../shared-common';
 
 @Injectable()
 export class StripeWebhookService {
   private stripe: Stripe;
 
-  constructor(private prisma: PrismaService) {
+  constructor(
+    private prisma: PrismaService,
+    private readonly mailingService: MailingService,
+  ) {
     this.stripe = new Stripe(envs.STRIPE_SECRET_KEY, { apiVersion: `2025-11-17.clover` });
 
     // ONE-TIME MIGRATION: Attach existing payment methods to customer
@@ -56,6 +63,27 @@ export class StripeWebhookService {
         case STRIPE_EVENT.CHECKOUT_SESSION_COMPLETED: {
           console.log(`[INIT] ${event.type}`);
           await this.handleStripeSuccess(event.data.object);
+          console.log(`[DONE] ${event.type}`);
+          break;
+        }
+
+        case STRIPE_EVENT.CHARGE_REFUNDED: {
+          console.log(`[INIT] ${event.type}`);
+          await this.handleChargeRefunded(event.data.object as Stripe.Charge);
+          console.log(`[DONE] ${event.type}`);
+          break;
+        }
+
+        case STRIPE_EVENT.CHARGE_REFUND_UPDATED: {
+          await this.handleRefundUpdated(event.data.object as Stripe.Refund);
+          break;
+        }
+
+        case STRIPE_EVENT.CHARGE_DISPUTE_CREATED:
+        case STRIPE_EVENT.CHARGE_DISPUTE_UPDATED:
+        case STRIPE_EVENT.CHARGE_DISPUTE_CLOSED: {
+          console.log(`[INIT] ${event.type}`);
+          await this.handleChargeDispute(event.data.object as Stripe.Dispute);
           console.log(`[DONE] ${event.type}`);
           break;
         }
@@ -148,11 +176,21 @@ export class StripeWebhookService {
 
     if (!paymentRequestId || !consumerId) return;
 
+    let paymentIntentId: string | null = null;
+    if (session.payment_intent) {
+      if (typeof session.payment_intent === `string`) {
+        paymentIntentId = session.payment_intent;
+      } else {
+        paymentIntentId = session.payment_intent.id ?? null;
+      }
+    }
+
     // Update payment request and ledger entries to completed
     await this.prisma.ledgerEntryModel.updateMany({
-      where: { paymentRequestId },
+      where: { paymentRequestId, type: $Enums.LedgerEntryType.USER_PAYMENT },
       data: {
         status: $Enums.TransactionStatus.COMPLETED,
+        ...(paymentIntentId && { stripeId: paymentIntentId }),
         updatedBy: `stripe`,
       },
     });
@@ -429,6 +467,337 @@ export class StripeWebhookService {
         billingDetailsId: billingDetails?.id || null,
         consumerId,
       },
+    });
+  }
+
+  private async resolvePaymentRequestByPaymentIntent(paymentIntentId: string) {
+    const entry = await this.prisma.ledgerEntryModel.findFirst({
+      where: {
+        stripeId: paymentIntentId,
+        type: $Enums.LedgerEntryType.USER_PAYMENT,
+      },
+      select: {
+        paymentRequestId: true,
+        paymentRequest: {
+          select: {
+            id: true,
+            amount: true,
+            currencyCode: true,
+            payerId: true,
+            requesterId: true,
+          },
+        },
+      },
+      orderBy: { createdAt: `desc` },
+    });
+
+    if (!entry?.paymentRequest) return null;
+
+    return entry.paymentRequest;
+  }
+
+  private async createStripeReversal(params: {
+    paymentRequestId: string;
+    payerId: string;
+    requesterId: string;
+    currencyCode: $Enums.CurrencyCode;
+    requestAmount: number;
+    amount: number;
+    kind: `REFUND` | `CHARGEBACK`;
+    stripeObjectId?: string | null;
+    metadata?: Record<string, unknown>;
+  }) {
+    const {
+      paymentRequestId,
+      payerId,
+      requesterId,
+      currencyCode,
+      requestAmount,
+      amount,
+      kind,
+      stripeObjectId,
+      metadata = {},
+    } = params;
+
+    if (stripeObjectId) {
+      const existing = await this.prisma.ledgerEntryModel.findFirst({
+        where: { stripeId: stripeObjectId, type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL },
+        select: { id: true },
+      });
+      if (existing) return;
+    }
+
+    const reversalEntries = await this.prisma.ledgerEntryModel.findMany({
+      where: {
+        paymentRequestId,
+        type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
+        status: { in: [$Enums.TransactionStatus.COMPLETED, $Enums.TransactionStatus.PENDING] },
+      },
+      select: { amount: true },
+    });
+
+    const alreadyReversed = reversalEntries.reduce((sum, entry) => {
+      const entryAmount = Number(entry.amount);
+      return entryAmount > 0 ? sum + entryAmount : sum;
+    }, 0);
+
+    const remaining = requestAmount - alreadyReversed;
+    const finalAmount = Math.min(amount, remaining);
+    if (finalAmount <= 0) return;
+
+    const rail = kind === `CHARGEBACK` ? $Enums.PaymentRail.STRIPE_CHARGEBACK : $Enums.PaymentRail.STRIPE_REFUND;
+    const baseMetadata = {
+      rail,
+      reversalKind: kind,
+      source: `stripe`,
+      stripeObjectType: kind === `REFUND` ? `refund` : `dispute`,
+      ...metadata,
+    } as Prisma.InputJsonValue;
+
+    const ledgerId = randomUUID();
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.ledgerEntryModel.create({
+        data: {
+          ledgerId,
+          consumerId: payerId,
+          paymentRequestId,
+          type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
+          currencyCode,
+          status: $Enums.TransactionStatus.COMPLETED,
+          amount: finalAmount,
+          createdBy: `stripe`,
+          updatedBy: `stripe`,
+          metadata: baseMetadata,
+          stripeId: stripeObjectId ?? undefined,
+        },
+      });
+
+      await tx.ledgerEntryModel.create({
+        data: {
+          ledgerId,
+          consumerId: requesterId,
+          paymentRequestId,
+          type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
+          currencyCode,
+          status: $Enums.TransactionStatus.COMPLETED,
+          amount: -finalAmount,
+          createdBy: `stripe`,
+          updatedBy: `stripe`,
+          metadata: baseMetadata,
+          stripeId: stripeObjectId ?? undefined,
+        },
+      });
+    });
+
+    await this.sendReversalEmails({
+      paymentRequestId,
+      payerId,
+      requesterId,
+      amount: finalAmount,
+      currencyCode,
+      kind,
+      reason: typeof metadata?.reason === `string` ? metadata.reason : null,
+    });
+  }
+
+  private async sendReversalEmails(params: {
+    paymentRequestId: string;
+    payerId: string;
+    requesterId: string;
+    amount: number;
+    currencyCode: $Enums.CurrencyCode;
+    kind: `REFUND` | `CHARGEBACK`;
+    reason?: string | null;
+  }) {
+    const { paymentRequestId, payerId, requesterId, amount, currencyCode, kind, reason } = params;
+    const consumers = await this.prisma.consumerModel.findMany({
+      where: { id: { in: [payerId, requesterId] } },
+      select: { id: true, email: true },
+    });
+
+    const payer = consumers.find((consumer) => consumer.id === payerId);
+    const requester = consumers.find((consumer) => consumer.id === requesterId);
+
+    if (!payer?.email || !requester?.email) return;
+
+    if (kind === `REFUND`) {
+      await this.mailingService.sendPaymentRefundEmail({
+        recipientEmail: payer.email,
+        counterpartyEmail: requester.email,
+        amount,
+        currencyCode,
+        reason,
+        paymentRequestId,
+        role: `payer`,
+      });
+      await this.mailingService.sendPaymentRefundEmail({
+        recipientEmail: requester.email,
+        counterpartyEmail: payer.email,
+        amount,
+        currencyCode,
+        reason,
+        paymentRequestId,
+        role: `requester`,
+      });
+      return;
+    }
+
+    await this.mailingService.sendPaymentChargebackEmail({
+      recipientEmail: payer.email,
+      counterpartyEmail: requester.email,
+      amount,
+      currencyCode,
+      reason,
+      paymentRequestId,
+      role: `payer`,
+    });
+    await this.mailingService.sendPaymentChargebackEmail({
+      recipientEmail: requester.email,
+      counterpartyEmail: payer.email,
+      amount,
+      currencyCode,
+      reason,
+      paymentRequestId,
+      role: `requester`,
+    });
+  }
+
+  private async handleChargeRefunded(charge: Stripe.Charge) {
+    const paymentIntentId =
+      typeof charge.payment_intent === `string` ? charge.payment_intent : charge.payment_intent?.id;
+    if (!paymentIntentId) return;
+
+    const paymentRequest = await this.resolvePaymentRequestByPaymentIntent(paymentIntentId);
+    if (!paymentRequest) return;
+
+    const requestAmount = Number(paymentRequest.amount);
+    const digits = getCurrencyFractionDigits(paymentRequest.currencyCode);
+
+    for (const refund of charge.refunds?.data ?? []) {
+      if (refund.status && refund.status !== `succeeded`) continue;
+      const refundAmount = refund.amount / 10 ** digits;
+
+      await this.createStripeReversal({
+        paymentRequestId: paymentRequest.id,
+        payerId: paymentRequest.payerId,
+        requesterId: paymentRequest.requesterId,
+        currencyCode: paymentRequest.currencyCode,
+        requestAmount,
+        amount: refundAmount,
+        kind: `REFUND`,
+        stripeObjectId: refund.id,
+        metadata: {
+          stripeChargeId: charge.id,
+          stripeRefundId: refund.id,
+          stripePaymentIntentId: paymentIntentId,
+          reason: refund.reason ?? null,
+        },
+      });
+    }
+  }
+
+  private async handleRefundUpdated(refund: Stripe.Refund) {
+    const status =
+      refund.status === `succeeded`
+        ? $Enums.TransactionStatus.COMPLETED
+        : refund.status === `failed`
+          ? $Enums.TransactionStatus.DENIED
+          : $Enums.TransactionStatus.PENDING;
+
+    await this.prisma.ledgerEntryModel.updateMany({
+      where: { stripeId: refund.id, type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL },
+      data: { status, updatedBy: `stripe` },
+    });
+  }
+
+  private async handleChargeDispute(dispute: Stripe.Dispute) {
+    if (!dispute.charge || typeof dispute.charge !== `string`) return;
+
+    const charge = await this.stripe.charges.retrieve(dispute.charge);
+    const paymentIntentId =
+      typeof charge.payment_intent === `string` ? charge.payment_intent : charge.payment_intent?.id;
+    if (!paymentIntentId) return;
+
+    const paymentRequest = await this.resolvePaymentRequestByPaymentIntent(paymentIntentId);
+    if (!paymentRequest) return;
+
+    await this.recordDisputeStatus({
+      paymentIntentId,
+      dispute,
+    });
+
+    if (dispute.status !== `lost`) return;
+
+    const existingManualChargeback = await this.prisma.ledgerEntryModel.findMany({
+      where: {
+        paymentRequestId: paymentRequest.id,
+        type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
+      },
+      select: { metadata: true },
+    });
+
+    const hasManualChargeback = existingManualChargeback.some((entry) => {
+      if (!entry.metadata || typeof entry.metadata !== `object` || Array.isArray(entry.metadata)) return false;
+      const metadata = entry.metadata as Record<string, unknown>;
+      return metadata.source === `admin` && metadata.stripeObjectType === `manual_chargeback`;
+    });
+
+    if (hasManualChargeback) return;
+
+    const requestAmount = Number(paymentRequest.amount);
+    const digits = getCurrencyFractionDigits(paymentRequest.currencyCode);
+    const disputeAmount = dispute.amount / 10 ** digits;
+
+    await this.createStripeReversal({
+      paymentRequestId: paymentRequest.id,
+      payerId: paymentRequest.payerId,
+      requesterId: paymentRequest.requesterId,
+      currencyCode: paymentRequest.currencyCode,
+      requestAmount,
+      amount: disputeAmount,
+      kind: `CHARGEBACK`,
+      stripeObjectId: dispute.id,
+      metadata: {
+        stripeChargeId: charge.id,
+        stripeDisputeId: dispute.id,
+        stripePaymentIntentId: paymentIntentId,
+        reason: dispute.reason ?? null,
+        disputeStatus: dispute.status,
+      },
+    });
+  }
+
+  private async recordDisputeStatus(params: { paymentIntentId: string; dispute: Stripe.Dispute }) {
+    const { paymentIntentId, dispute } = params;
+    const entry = await this.prisma.ledgerEntryModel.findFirst({
+      where: {
+        stripeId: paymentIntentId,
+        type: $Enums.LedgerEntryType.USER_PAYMENT,
+      },
+      select: { id: true, metadata: true },
+      orderBy: { createdAt: `desc` },
+    });
+
+    if (!entry) return;
+
+    const baseMetadata =
+      entry.metadata && typeof entry.metadata === `object` && !Array.isArray(entry.metadata) ? entry.metadata : {};
+
+    const nextMetadata = {
+      ...(baseMetadata as Record<string, unknown>),
+      dispute: {
+        id: dispute.id,
+        status: dispute.status,
+        amount: dispute.amount,
+        reason: dispute.reason ?? null,
+        updatedAt: new Date().toISOString(),
+      },
+    } as Prisma.InputJsonValue;
+
+    await this.prisma.ledgerEntryModel.update({
+      where: { id: entry.id },
+      data: { metadata: nextMetadata, updatedBy: `stripe` },
     });
   }
 }
