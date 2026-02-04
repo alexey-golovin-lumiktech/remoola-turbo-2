@@ -25,6 +25,7 @@ Auth (`/admin/auth`):
 
 Admins (`/admin/admins`):
 - `GET /`: list admins.
+- `POST /`: create admin (SUPER only).
 - `GET /:adminId`: admin details.
 - `PATCH /:adminId/password`: change admin password (SUPER only).
 - `PATCH /:adminId`: delete or restore admin (SUPER only).
@@ -48,6 +49,8 @@ Ledger (`/admin/ledger`):
 Payment Requests (`/admin/payment-requests`):
 - `GET /`: list all payment requests.
 - `GET /:id`: payment request details.
+- `POST /:id/refund`: create refund reversal for a payment request.
+- `POST /:id/chargeback`: create chargeback reversal for a payment request.
 
 Exchange (`/admin/exchange`):
 - `GET /rules`: list auto-conversion rules across consumers.
@@ -56,6 +59,12 @@ Exchange (`/admin/exchange`):
 - `GET /scheduled`: list scheduled FX conversions.
 - `POST /scheduled/:conversionId/cancel`: cancel a scheduled conversion.
 - `POST /scheduled/:conversionId/execute`: force-execute a scheduled conversion.
+- `GET /rates`: list exchange rates (with query filters).
+- `GET /rates/:rateId`: get exchange rate details.
+- `POST /rates`: create exchange rate.
+- `PATCH /rates/:rateId`: update exchange rate.
+- `DELETE /rates/:rateId`: delete exchange rate.
+- `GET /currencies`: list supported currencies.
 
 ### Consumer APIs
 
@@ -69,8 +78,10 @@ Auth (`/consumer/auth`):
 - `POST /change-password`: request password recovery email.
 - `PATCH /change-password/:token`: reset password by token.
 - Google OAuth flows:
-  - `GET /google-new-way`: start new OAuth flow.
-  - `GET /google-redirect-new-way`: OAuth redirect handling.
+  - `GET /google/start`: start new OAuth flow.
+  - `GET /google/callback`: OAuth redirect handling.
+  - `GET /google/signup-session`: fetch OAuth signup session data.
+  - `POST /oauth/exchange`: exchange OAuth code for access/refresh tokens.
   - `POST /google-oauth`: legacy Google OAuth login.
   - `POST /google-login-gpt`: alternate OAuth flow.
 
@@ -96,7 +107,9 @@ Documents (`/consumer/documents`):
 
 Exchange (`/consumer/exchange`):
 - `GET /rates`: get FX rate for currency pair.
+- `POST /rates/batch`: get multiple exchange rates in batch.
 - `POST /convert`: currency conversion (consumer context).
+- `POST /quote`: get conversion quote without executing.
 - `GET /rules`: list auto-conversion rules.
 - `POST /rules`: create auto-conversion rule.
 - `PATCH /rules/:ruleId`: update auto-conversion rule.
@@ -168,6 +181,8 @@ Implemented screens:
 - `/(protected)/ledger`: ledger listing and ledger anomalies view.
 - `/(protected)/exchange/rules`: review auto-conversion rules.
 - `/(protected)/exchange/scheduled`: review scheduled FX conversions.
+- `/(protected)/exchange/rates`: manage exchange rates.
+- `/(protected)/ledger/anomalies`: dedicated ledger anomalies view.
 
 Dashboard widgets in `apps/admin/src/components/dashboard`:
 - Status totals and recent payment requests.
@@ -190,6 +205,7 @@ Auth and onboarding:
 - `/logout`: logout route.
 - `/auth/callback`: OAuth callback handling.
 - `/signup`: multi-step signup flow with address, personal, organization details.
+- `/signup/start`: account type selection step.
 - `/signup/start/contractor-kind`: contractor kind selection.
 - `/signup/verification` and `/signup/completed`: verification and completion states.
 

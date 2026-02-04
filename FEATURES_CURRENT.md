@@ -35,12 +35,13 @@ Consumer domain features:
 - Invoice generation for payment requests.
 
 Admin domain features:
-- Admin management (list, details, password change, delete/restore with SUPER guard).
+- Admin management (list, create, details, password change, delete/restore with SUPER guard).
 - Consumer management (list/details) and verification workflow (approve/reject/flag/more info).
 - Dashboard metrics: status totals, recent payment requests, ledger anomalies, verification queue.
 - Ledger list endpoint.
-- Payment requests listing and details.
+- Payment requests listing and details, plus refund and chargeback actions.
 - Admin-side migration endpoint for payment method migration.
+- Exchange rate management (list/create/update/delete) and supported currencies.
 
 Infrastructure and platform:
 - Health endpoints (`/health`, `/health/detailed`) for service and DB checks.
@@ -59,6 +60,7 @@ Admin UI with:
 - Consumer management pages (list and details + verification actions).
 - Payment request list and details views.
 - Ledger list view and anomalies view.
+- Exchange rate management pages (list, create, edit, delete).
 - Theme switching (light/dark/system) using CSS custom properties.
 
 Internal API proxy routes:
@@ -67,11 +69,14 @@ Internal API proxy routes:
 - Consumer management and verification proxy.
 - Dashboard proxy endpoints.
 - Ledger and payment requests proxy endpoints.
+- Payment request refund/chargeback proxy endpoints.
+- Exchange rate management and currency list proxy endpoints.
 
 ### Consumer App (Next.js)
 
 Consumer UI with:
 - Login, logout, OAuth callback, and signup flow (multi-step).
+- Signup start and completion confirmation pages.
 - Dashboard with summaries, tasks, and activity.
 - Contacts list, create/edit/delete, and detail pages.
 - Contracts list.
@@ -87,6 +92,8 @@ Internal API proxy routes:
 - Auth, signup, profile, settings.
 - Contacts, contracts, documents, exchange.
 - Payments, payment requests, payment methods, Stripe flows.
+- OAuth exchange proxy endpoint.
+- Exchange quote and batch rate proxy endpoints.
 
 ### Database (Prisma)
 
@@ -115,6 +122,9 @@ Confirmed as present in current code:
 - Admin dashboard metrics, verification workflow, and ledger access.
 - Theme switching for consumer and admin apps.
 - Health checks, security headers, rate limiting, logging.
+- Admin exchange rate management and supported currency listing.
+- Admin payment request refund and chargeback actions.
+- OAuth token exchange and batch exchange rates endpoints.
 
 Historical items not active as a standalone feature now:
 - A past "admin app Vercel deployment config" commit was explicitly reverted.

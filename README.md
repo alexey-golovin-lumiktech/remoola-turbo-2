@@ -75,3 +75,4 @@ yarn db:seed
 ## Documentation
 
 - `PROJECT_DOCUMENTATION.md` contains a deeper overview of API, admin, consumer, and database features.
+- `FEATURES_CURRENT.md` lists features that are implemented and present in the repo now.

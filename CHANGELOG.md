@@ -323,4 +323,13 @@
                   variable references, and performed general cleanup and
                   changelog updates.
 
+- **2026-02-02:** Added admin payment reversals (refund + chargeback actions),
+                  implemented Stripe refund support, handled dispute webhooks,
+                  captured reversal metadata, added idempotent reversal writes,
+                  and introduced a refund reconciliation scheduler.
+
+- **2026-02-03:** Added refund and chargeback email templates with notification
+                  wiring, implemented admin/consumer API routes and UI for
+                  reversals, and fixed multiple `useEffect` dependency loops.
+
 ```
