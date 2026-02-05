@@ -2,7 +2,7 @@
 
 import { useDashboard } from '../../lib/hooks';
 import { VerifyMeButton } from '../stripe';
-import { DashboardSkeleton } from '../ui';
+import { DashboardSkeleton, ErrorState } from '../ui';
 import { ActionRow } from './ActionRow';
 import { ActivityTimeline } from './ActivityTimeline';
 import { ComplianceTasksCard } from './ComplianceTasksCard';
@@ -13,50 +13,14 @@ import { QuickDocsCard } from './QuickDocsCard';
 import { SummaryCards } from './SummaryCards';
 import styles from '../ui/classNames.module.css';
 
-const {
-  cardBaseSoftCompact,
-  dashboardContainer,
-  dashboardGrid,
-  dashboardSidebar,
-  emptyStateContainer,
-  emptyStateIcon,
-  emptyStateIconSvg,
-  errorBoundaryText,
-  errorBoundaryTitle,
-  refreshButtonClass,
-  textCenter,
-} = styles;
+const { cardBaseSoftCompact, dashboardContainer, dashboardGrid, dashboardSidebar } = styles;
 // Type is inferred from the hook
 
 export function DashboardDataView() {
   const { data: dashboardData, error, isLoading } = useDashboard();
 
   if (error) {
-    return (
-      <div className={emptyStateContainer}>
-        <div className={textCenter}>
-          <div className={emptyStateIcon}>
-            <svg className={emptyStateIconSvg} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732
-                0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-              />
-            </svg>
-          </div>
-          <h2 className={errorBoundaryTitle}>Failed to load dashboard</h2>
-          <p className={errorBoundaryText}>{error}</p>
-          <button
-            onClick={(e) => (e.preventDefault(), e.stopPropagation(), window.location.reload())}
-            className={refreshButtonClass}
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
+    return <ErrorState title="Failed to load dashboard" message={error} />;
   }
 
   if (isLoading || !dashboardData) return <DashboardSkeleton />;

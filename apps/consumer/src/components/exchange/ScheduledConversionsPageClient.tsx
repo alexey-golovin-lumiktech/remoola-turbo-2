@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
+import { formatDateTimeForDisplay } from '../../lib/date-utils';
 import styles from '../ui/classNames.module.css';
 
 const {
@@ -197,7 +198,7 @@ export function ScheduledConversionsPageClient() {
                 {item.fromCurrency} → {item.toCurrency} | {item.amount}
               </div>
               <div>
-                execute {new Date(item.executeAt).toLocaleString()} | status {item.status} | attempts {item.attempts}
+                execute {formatDateTimeForDisplay(item.executeAt)} | status {item.status} | attempts {item.attempts}
               </div>
               {item.lastError && <div>last error: {item.lastError}</div>}
             </div>

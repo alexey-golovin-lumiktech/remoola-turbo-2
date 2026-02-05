@@ -1,23 +1,10 @@
 'use client';
 
 import { type ConsumerContactAddress, type ConsumerContact } from '../../types';
+import { DataTable, type Column } from '../ui';
 import styles from '../ui/classNames.module.css';
 
-const {
-  emptyStateText,
-  linkDanger,
-  linkPrimary,
-  tableBodyRowMuted,
-  tableCellBodySimple,
-  tableCellHeaderSimple,
-  tableHeaderRowMuted,
-  textMutedGrayStrong,
-  textMutedMixed,
-  textPrimary,
-  textRight,
-  textSm,
-  spaceX3,
-} = styles;
+const { linkDanger, linkPrimary, textMutedGrayStrong, textMutedMixed, textPrimary, textRight } = styles;
 
 type ContactsTableProps = {
   items: ConsumerContact[];
@@ -27,58 +14,60 @@ type ContactsTableProps = {
 };
 
 export function ContactsTable({ items, onDetailsAction, onEditAction, onDeleteAction }: ContactsTableProps) {
+  const columns: Column<ConsumerContact>[] = [
+    {
+      key: `name`,
+      header: `Name`,
+      render: (contact) => <span className={`font-medium ${textPrimary}`}>{contact.name ?? `—`}</span>,
+    },
+    {
+      key: `email`,
+      header: `Email`,
+      render: (contact) => <span className={textMutedGrayStrong}>{contact.email}</span>,
+    },
+    {
+      key: `address`,
+      header: `Address`,
+      render: (contact) => <span className={textMutedMixed}>{shortAddress(contact.address)}</span>,
+    },
+    {
+      key: `actions`,
+      header: `Actions`,
+      className: textRight,
+      render: (contact) => (
+        <div className={`space-x-3`}>
+          <button
+            onClick={(e) => (e.preventDefault(), e.stopPropagation(), onDetailsAction(contact))}
+            className={linkPrimary}
+          >
+            Details
+          </button>
+
+          <button
+            onClick={(e) => (e.preventDefault(), e.stopPropagation(), onEditAction(contact))}
+            className={linkPrimary}
+          >
+            Edit
+          </button>
+
+          <button
+            onClick={(e) => (e.preventDefault(), e.stopPropagation(), onDeleteAction(contact))}
+            className={linkDanger}
+          >
+            Delete
+          </button>
+        </div>
+      ),
+    },
+  ];
+
   return (
-    <table className={`w-full ${textSm}`}>
-      <thead>
-        <tr className={tableHeaderRowMuted}>
-          <th className={tableCellHeaderSimple}>Name</th>
-          <th>Email</th>
-          <th>Address</th>
-          <th className={textRight}>Actions</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        {items.length === 0 && (
-          <tr>
-            <td colSpan={4} className={emptyStateText}>
-              No contacts found.
-            </td>
-          </tr>
-        )}
-
-        {items.map((c) => (
-          <tr key={c.id} className={tableBodyRowMuted}>
-            <td className={`${tableCellBodySimple} font-medium ${textPrimary}`}>{c.name ?? `—`}</td>
-            <td className={textMutedGrayStrong}>{c.email}</td>
-            <td className={textMutedMixed}>{shortAddress(c.address)}</td>
-
-            <td className={`${textRight} ${spaceX3}`}>
-              <button
-                onClick={(e) => (e.preventDefault(), e.stopPropagation(), onDetailsAction(c))}
-                className={linkPrimary}
-              >
-                Details
-              </button>
-
-              <button
-                onClick={(e) => (e.preventDefault(), e.stopPropagation(), onEditAction(c))}
-                className={linkPrimary}
-              >
-                Edit
-              </button>
-
-              <button
-                onClick={(e) => (e.preventDefault(), e.stopPropagation(), onDeleteAction(c))}
-                className={linkDanger}
-              >
-                Delete
-              </button>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <DataTable
+      data={items}
+      columns={columns}
+      emptyMessage="No contacts found."
+      keyExtractor={(contact) => contact.id}
+    />
   );
 }
 

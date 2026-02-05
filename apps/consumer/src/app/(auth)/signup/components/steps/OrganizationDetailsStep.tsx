@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import { SelectWithClear } from '@remoola/ui/SelectWithClear';
 
+import { FormInput } from '../../../../../components/ui';
 import styles from '../../../../../components/ui/classNames.module.css';
 import {
   STEP_NAME,
@@ -18,17 +19,7 @@ import { useSignupForm, useSignupSteps, useSignupSubmit } from '../../hooks';
 import { getFieldErrors, organizationSchema } from '../../validation';
 import { PrevNextButtons } from '../PrevNextButtons';
 
-const {
-  errorTextClass,
-  formInputFullWidth,
-  formInputError,
-  signupStepCard,
-  signupStepGroup,
-  signupStepLabel,
-  signupStepTitle,
-} = styles;
-
-const joinClasses = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(` `);
+const { errorTextClass, signupStepCard, signupStepTitle } = styles;
 
 export function OrganizationDetailsStep() {
   const { isBusiness, isContractorEntity, organizationDetails, updateOrganization } = useSignupForm();
@@ -64,19 +55,13 @@ export function OrganizationDetailsStep() {
     <div className={signupStepCard}>
       <h1 className={signupStepTitle}>Organization details</h1>
 
-      <div className={signupStepGroup}>
-        <label className={signupStepLabel}>Organization name</label>
-        <input
-          type="text"
-          value={organizationDetails.name}
-          onChange={(e) => {
-            updateOrganization({ name: e.target.value });
-            clearError(`name`);
-          }}
-          className={joinClasses(formInputFullWidth, fieldErrors.name && formInputError)}
-        />
-        {fieldErrors.name && <p className={errorTextClass}>{fieldErrors.name}</p>}
-      </div>
+      <FormInput
+        label="Organization name"
+        value={organizationDetails.name}
+        onChange={(value) => updateOrganization({ name: value })}
+        error={fieldErrors.name}
+        onErrorClear={() => clearError(`name`)}
+      />
 
       <SelectWithClear<IConsumerRole | null>
         label="Your Role In Organization"

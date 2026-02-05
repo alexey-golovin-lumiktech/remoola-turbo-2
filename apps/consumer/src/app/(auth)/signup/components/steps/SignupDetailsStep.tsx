@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import { SelectWithClear } from '@remoola/ui/SelectWithClear';
 
+import { FormInput } from '../../../../../components/ui';
 import styles from '../../../../../components/ui/classNames.module.css';
 import { PasswordInput } from '../../../../../components/ui/PasswordInput';
 import {
@@ -84,20 +85,17 @@ export function SignupDetailsStep() {
       <p className={signupStepSubtitle}>Start by entering your basic account details.</p>
 
       <div className={signupStepGroupLg}>
-        <label className={signupStepLabelInline}>Email</label>
-        <input
+        <FormInput
+          label="Email"
           type="email"
           value={signup.email}
-          onChange={(e) => {
-            updateSignup({ email: e.target.value });
-            clearError(`email`);
-          }}
+          onChange={(value) => updateSignup({ email: value })}
+          error={fieldErrors.email}
+          onErrorClear={() => clearError(`email`)}
           disabled={emailLocked}
-          className={joinClasses(formInputFullWidth, fieldErrors.email && formInputError)}
           placeholder="you@example.com"
           required
         />
-        {fieldErrors.email && <p className={errorTextClass}>{fieldErrors.email}</p>}
       </div>
 
       <div className={signupStepGroupLg}>

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 
+import { formatDateTimeForDisplay } from '../../lib/date-utils';
 import { type ConsumerContactDetails } from '../../types';
 import styles from '../ui/classNames.module.css';
 
@@ -70,7 +71,7 @@ export function ContactDetailsView({ id }: ContactDetailsViewProps) {
               <div className={fontMedium}>
                 ${pr.amount} — {pr.status}
               </div>
-              <div className={contactDetailsPaymentMeta}>{new Date(pr.createdAt).toLocaleString()}</div>
+              <div className={contactDetailsPaymentMeta}>{formatDateTimeForDisplay(pr.createdAt)}</div>
             </Link>
           ))}
 

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { DocumentPreviewModal } from './DocumentPreviewModal';
+import { formatDateForDisplay } from '../../lib/date-utils';
 import styles from '../ui/classNames.module.css';
 
 const {
@@ -283,7 +284,7 @@ export function DocumentsList() {
 
                   <td className={`${tableCellBodyMd} ${textMuted}`}>{(d.size / 1024).toFixed(1)} KB</td>
 
-                  <td className={`${tableCellBodyMd} ${textMuted}`}>{new Date(d.createdAt).toLocaleDateString()}</td>
+                  <td className={`${tableCellBodyMd} ${textMuted}`}>{formatDateForDisplay(d.createdAt)}</td>
 
                   <td className={`${tableCellBodyMd} ${textRight} ${spaceX2}`}>
                     <button

@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import { SelectWithClear } from '@remoola/ui/SelectWithClear';
 
+import { FormInput, DateInput } from '../../../../../components/ui';
 import styles from '../../../../../components/ui/classNames.module.css';
 import {
   STEP_NAME,
@@ -16,18 +17,7 @@ import { useSignupForm, useSignupSteps } from '../../hooks';
 import { getFieldErrors, personalDetailsSchema } from '../../validation';
 import { PrevNextButtons } from '../PrevNextButtons';
 
-const {
-  errorTextClass,
-  formInputFullWidth,
-  formInputError,
-  signupStepCard,
-  signupStepGrid,
-  signupStepGroup,
-  signupStepLabel,
-  signupStepTitle,
-} = styles;
-
-const joinClasses = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(` `);
+const { signupStepCard, signupStepGrid, signupStepTitle } = styles;
 
 export function PersonalDetailsStep() {
   const { personalDetails: personal, updatePersonal } = useSignupForm();
@@ -59,61 +49,37 @@ export function PersonalDetailsStep() {
       <h1 className={signupStepTitle}>Personal details</h1>
 
       <div className={signupStepGrid}>
-        <div className={signupStepGroup}>
-          <label className={signupStepLabel}>First name</label>
-          <input
-            type="text"
-            value={personal.firstName}
-            onChange={(e) => {
-              updatePersonal({ firstName: e.target.value });
-              clearError(`firstName`);
-            }}
-            className={joinClasses(formInputFullWidth, fieldErrors.firstName && formInputError)}
-          />
-          {fieldErrors.firstName && <p className={errorTextClass}>{fieldErrors.firstName}</p>}
-        </div>
-        <div className={signupStepGroup}>
-          <label className={signupStepLabel}>Last name</label>
-          <input
-            type="text"
-            value={personal.lastName}
-            onChange={(e) => {
-              updatePersonal({ lastName: e.target.value });
-              clearError(`lastName`);
-            }}
-            className={joinClasses(formInputFullWidth, fieldErrors.lastName && formInputError)}
-          />
-          {fieldErrors.lastName && <p className={errorTextClass}>{fieldErrors.lastName}</p>}
-        </div>
+        <FormInput
+          label="First name"
+          value={personal.firstName}
+          onChange={(value) => updatePersonal({ firstName: value })}
+          error={fieldErrors.firstName}
+          onErrorClear={() => clearError(`firstName`)}
+        />
+        <FormInput
+          label="Last name"
+          value={personal.lastName}
+          onChange={(value) => updatePersonal({ lastName: value })}
+          error={fieldErrors.lastName}
+          onErrorClear={() => clearError(`lastName`)}
+        />
       </div>
 
-      <div className={signupStepGroup}>
-        <label className={signupStepLabel}>Citizen of</label>
-        <input
-          type="text"
-          value={personal.citizenOf}
-          onChange={(e) => {
-            updatePersonal({ citizenOf: e.target.value });
-            clearError(`citizenOf`);
-          }}
-          className={joinClasses(formInputFullWidth, fieldErrors.citizenOf && formInputError)}
-        />
-        {fieldErrors.citizenOf && <p className={errorTextClass}>{fieldErrors.citizenOf}</p>}
-      </div>
+      <FormInput
+        label="Citizen of"
+        value={personal.citizenOf}
+        onChange={(value) => updatePersonal({ citizenOf: value })}
+        error={fieldErrors.citizenOf}
+        onErrorClear={() => clearError(`citizenOf`)}
+      />
 
-      <div className={signupStepGroup}>
-        <label className={signupStepLabel}>Country of tax residence</label>
-        <input
-          type="text"
-          value={personal.countryOfTaxResidence}
-          onChange={(e) => {
-            updatePersonal({ countryOfTaxResidence: e.target.value });
-            clearError(`countryOfTaxResidence`);
-          }}
-          className={joinClasses(formInputFullWidth, fieldErrors.countryOfTaxResidence && formInputError)}
-        />
-        {fieldErrors.countryOfTaxResidence && <p className={errorTextClass}>{fieldErrors.countryOfTaxResidence}</p>}
-      </div>
+      <FormInput
+        label="Country of tax residence"
+        value={personal.countryOfTaxResidence}
+        onChange={(value) => updatePersonal({ countryOfTaxResidence: value })}
+        error={fieldErrors.countryOfTaxResidence}
+        onErrorClear={() => clearError(`countryOfTaxResidence`)}
+      />
 
       <SelectWithClear<ILegalStatusLabel | null>
         label="Legal Status"
@@ -129,53 +95,32 @@ export function PersonalDetailsStep() {
         showNotSelected={false}
       />
 
-      <div className={signupStepGroup}>
-        <label className={signupStepLabel}>Tax ID</label>
-        <input
-          type="text"
-          value={personal.taxId}
-          onChange={(e) => updatePersonal({ taxId: e.target.value })}
-          className={formInputFullWidth}
-        />
-      </div>
+      <FormInput label="Tax ID" value={personal.taxId} onChange={(value) => updatePersonal({ taxId: value })} />
 
-      <div className={signupStepGroup}>
-        <label className={signupStepLabel}>Date of birth</label>
-        <input
-          type="date"
-          value={personal.dateOfBirth}
-          onChange={(e) => {
-            updatePersonal({ dateOfBirth: e.target.value });
-            clearError(`dateOfBirth`);
-          }}
-          className={joinClasses(formInputFullWidth, fieldErrors.dateOfBirth && formInputError)}
-        />
-        {fieldErrors.dateOfBirth && <p className={errorTextClass}>{fieldErrors.dateOfBirth}</p>}
-      </div>
+      <DateInput
+        label="Date of birth"
+        value={personal.dateOfBirth}
+        onChange={(value) => updatePersonal({ dateOfBirth: value || `` })}
+        error={fieldErrors.dateOfBirth}
+        onErrorClear={() => clearError(`dateOfBirth`)}
+        placeholder="Select your date of birth"
+        required
+      />
 
-      <div className={signupStepGroup}>
-        <label className={signupStepLabel}>Passport/ID number</label>
-        <input
-          type="text"
-          value={personal.passportOrIdNumber}
-          onChange={(e) => updatePersonal({ passportOrIdNumber: e.target.value })}
-          className={formInputFullWidth}
-        />
-      </div>
+      <FormInput
+        label="Passport/ID number"
+        value={personal.passportOrIdNumber}
+        onChange={(value) => updatePersonal({ passportOrIdNumber: value })}
+      />
 
-      <div className={signupStepGroup}>
-        <label className={signupStepLabel}>Phone number</label>
-        <input
-          type="tel"
-          value={personal.phoneNumber}
-          onChange={(e) => {
-            updatePersonal({ phoneNumber: e.target.value });
-            clearError(`phoneNumber`);
-          }}
-          className={joinClasses(formInputFullWidth, fieldErrors.phoneNumber && formInputError)}
-        />
-        {fieldErrors.phoneNumber && <p className={errorTextClass}>{fieldErrors.phoneNumber}</p>}
-      </div>
+      <FormInput
+        label="Phone number"
+        type="tel"
+        value={personal.phoneNumber}
+        onChange={(value) => updatePersonal({ phoneNumber: value })}
+        error={fieldErrors.phoneNumber}
+        onErrorClear={() => clearError(`phoneNumber`)}
+      />
 
       <PrevNextButtons handleClick={() => handleSubmit()} />
     </div>

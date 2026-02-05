@@ -2,23 +2,14 @@
 
 import { useState } from 'react';
 
+import { FormInput } from '../../../../../components/ui';
 import styles from '../../../../../components/ui/classNames.module.css';
 import { STEP_NAME } from '../../../../../types';
 import { useSignupForm, useSignupSteps, useSignupSubmit } from '../../hooks';
 import { addressDetailsSchema, getFieldErrors } from '../../validation';
 import { PrevNextButtons } from '../PrevNextButtons';
 
-const {
-  errorTextClass,
-  formInputFullWidth,
-  formInputError,
-  signupStepCard,
-  signupStepGroup,
-  signupStepLabel,
-  signupStepTitle,
-} = styles;
-
-const joinClasses = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(` `);
+const { errorTextClass, signupStepCard, signupStepTitle } = styles;
 
 export function AddressDetailsStep() {
   const { isContractorIndividual, addressDetails, updateAddress } = useSignupForm();
@@ -55,71 +46,43 @@ export function AddressDetailsStep() {
     <div className={signupStepCard}>
       <h1 className={signupStepTitle}>Address details</h1>
 
-      <div className={signupStepGroup}>
-        <label className={signupStepLabel}>Postal code</label>
-        <input
-          type="text"
-          value={addressDetails.postalCode || ``}
-          onChange={(e) => {
-            updateAddress({ postalCode: e.target.value });
-            clearError(`postalCode`);
-          }}
-          className={joinClasses(formInputFullWidth, fieldErrors.postalCode && formInputError)}
-        />
-        {fieldErrors.postalCode && <p className={errorTextClass}>{fieldErrors.postalCode}</p>}
-      </div>
+      <FormInput
+        label="Postal code"
+        value={addressDetails.postalCode || ``}
+        onChange={(value) => updateAddress({ postalCode: value })}
+        error={fieldErrors.postalCode}
+        onErrorClear={() => clearError(`postalCode`)}
+      />
 
-      <div className={signupStepGroup}>
-        <label className={signupStepLabel}>Country</label>
-        <input
-          type="text"
-          value={addressDetails.country || ``}
-          onChange={(e) => {
-            updateAddress({ country: e.target.value });
-            clearError(`country`);
-          }}
-          className={joinClasses(formInputFullWidth, fieldErrors.country && formInputError)}
-        />
-        {fieldErrors.country && <p className={errorTextClass}>{fieldErrors.country}</p>}
-      </div>
+      <FormInput
+        label="Country"
+        value={addressDetails.country || ``}
+        onChange={(value) => updateAddress({ country: value })}
+        error={fieldErrors.country}
+        onErrorClear={() => clearError(`country`)}
+      />
 
-      <div className={signupStepGroup}>
-        <label className={signupStepLabel}>State / Region</label>
-        <input
-          type="text"
-          value={addressDetails.state || ``}
-          onChange={(e) => updateAddress({ state: e.target.value })}
-          className={formInputFullWidth}
-        />
-      </div>
+      <FormInput
+        label="State / Region"
+        value={addressDetails.state || ``}
+        onChange={(value) => updateAddress({ state: value })}
+      />
 
-      <div className={signupStepGroup}>
-        <label className={signupStepLabel}>City</label>
-        <input
-          type="text"
-          value={addressDetails.city || ``}
-          onChange={(e) => {
-            updateAddress({ city: e.target.value });
-            clearError(`city`);
-          }}
-          className={joinClasses(formInputFullWidth, fieldErrors.city && formInputError)}
-        />
-        {fieldErrors.city && <p className={errorTextClass}>{fieldErrors.city}</p>}
-      </div>
+      <FormInput
+        label="City"
+        value={addressDetails.city || ``}
+        onChange={(value) => updateAddress({ city: value })}
+        error={fieldErrors.city}
+        onErrorClear={() => clearError(`city`)}
+      />
 
-      <div className={signupStepGroup}>
-        <label className={signupStepLabel}>Street</label>
-        <input
-          type="text"
-          value={addressDetails.street || ``}
-          onChange={(e) => {
-            updateAddress({ street: e.target.value });
-            clearError(`street`);
-          }}
-          className={joinClasses(formInputFullWidth, fieldErrors.street && formInputError)}
-        />
-        {fieldErrors.street && <p className={errorTextClass}>{fieldErrors.street}</p>}
-      </div>
+      <FormInput
+        label="Street"
+        value={addressDetails.street || ``}
+        onChange={(value) => updateAddress({ street: value })}
+        error={fieldErrors.street}
+        onErrorClear={() => clearError(`street`)}
+      />
 
       {error && <p className={errorTextClass}>{error}</p>}
 
