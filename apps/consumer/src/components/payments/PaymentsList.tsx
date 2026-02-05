@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
+import { formatDateForDisplay } from '../../lib/date-utils';
 import { usePayments } from '../../lib/hooks';
 import { SkeletonTable } from '../ui';
 import { PaymentsFilters } from './PaymentsFilters';
@@ -187,7 +188,7 @@ export function PaymentsList() {
 
                   <td className={`${tableCellBodyLg} ${textMutedStrong}`}>{p.type}</td>
 
-                  <td className={`${tableCellBodyLg} ${textMuted}`}>{new Date(p.createdAt).toLocaleDateString()}</td>
+                  <td className={`${tableCellBodyLg} ${textMuted}`}>{formatDateForDisplay(p.createdAt)}</td>
 
                   <td className={`${tableCellBodyLg} ${textRight}`}>
                     <Link href={`/payments/${p.id}`} className={linkPrimaryMedium}>

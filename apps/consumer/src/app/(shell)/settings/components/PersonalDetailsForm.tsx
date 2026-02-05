@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 
+import { DateInput } from '../../../../components/ui';
 import styles from '../../../../components/ui/classNames.module.css';
 
 const { formGridClass, formGridSpan2, formSection, formSectionTitle, inputClass, inputLabel, primaryActionButton } =
@@ -17,7 +18,7 @@ export function PersonalDetailsForm({ profile, reload }: any) {
   const [passportOrIdNumber, setPassportOrIdNumber] = useState(pd.passportOrIdNumber ?? ``);
 
   const [legalStatus, setLegalStatus] = useState(pd.legalStatus ?? ``);
-  const [dateOfBirth, setDateOfBirth] = useState(pd.dateOfBirth ?? ``);
+  const [dateOfBirth, setDateOfBirth] = useState(pd.dateOfBirth || ``);
   const [countryOfTaxResidence, setCountryOfTaxResidence] = useState(pd.countryOfTaxResidence ?? ``);
   const [taxId, setTaxId] = useState(pd.taxId ?? ``);
   const [phoneNumber, setPhoneNumber] = useState(pd.phoneNumber ?? ``);
@@ -37,7 +38,7 @@ export function PersonalDetailsForm({ profile, reload }: any) {
           citizenOf,
           passportOrIdNumber,
           legalStatus,
-          dateOfBirth,
+          dateOfBirth: dateOfBirth || null,
           countryOfTaxResidence,
           taxId,
           phoneNumber,
@@ -91,8 +92,12 @@ export function PersonalDetailsForm({ profile, reload }: any) {
         </div>
 
         <div className={formGridSpan2}>
-          <label className={inputLabel}>Date Of Birth</label>
-          <input className={inputClass} value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} />
+          <DateInput
+            label="Date Of Birth"
+            value={dateOfBirth}
+            onChange={(value) => setDateOfBirth(value || ``)}
+            placeholder="Select your date of birth"
+          />
         </div>
 
         <div className={formGridSpan2}>

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
+import { formatDateForDisplay } from '../../lib/date-utils';
 import { type ConsumerContractItem } from '../../types';
 import styles from '../ui/classNames.module.css';
 
@@ -65,9 +66,7 @@ export function ContractsTable() {
           <tr key={row.id} className={tableBodyRowMutedStrong}>
             <td className={`${tableCellBodySimple} ${textPrimary}`}>{row.name}</td>
             <td className={`${textCapitalize} ${textMutedGrayAlt}`}>{row.lastStatus ?? `—`}</td>
-            <td className={textMutedGrayAlt}>
-              {row.lastActivity ? new Date(row.lastActivity).toLocaleDateString() : `—`}
-            </td>
+            <td className={textMutedGrayAlt}>{row.lastActivity ? formatDateForDisplay(row.lastActivity) : `—`}</td>
             <td className={textMutedGrayAlt}>{row.docs}</td>
             <td className={textRight}>
               {row.lastRequestId ? (

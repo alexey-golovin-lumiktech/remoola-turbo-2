@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
+import { formatDateTimeForDisplay } from '../../lib/date-utils';
 import styles from '../ui/classNames.module.css';
 
 const {
@@ -252,7 +253,7 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
 
             <div className={descriptionText}>{p.description || `No description`}</div>
 
-            <div className={timestampText}>Created: {new Date(p.createdAt).toLocaleString()}</div>
+            <div className={timestampText}>Created: {formatDateTimeForDisplay(p.createdAt)}</div>
           </div>
 
           {/* Timeline */}
@@ -266,7 +267,7 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
                 <div className={timelineTitle}>
                   {t.status} ({t.type})
                 </div>
-                <div className={timelineMeta}>{new Date(t.createdAt).toLocaleString()}</div>
+                <div className={timelineMeta}>{formatDateTimeForDisplay(t.createdAt)}</div>
               </div>
             ))}
           </div>

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { formatDateTimeForDisplay } from '../../lib/date-utils';
 import styles from '../ui/classNames.module.css';
 
 const {
@@ -282,8 +283,8 @@ export function ExchangeRulesPageClient() {
                 max {rule.maxConvertAmount ?? `—`} | every {rule.minIntervalMinutes} min
               </div>
               <div>
-                next: {rule.nextRunAt ? new Date(rule.nextRunAt).toLocaleString() : `—`} | last:{` `}
-                {rule.lastRunAt ? new Date(rule.lastRunAt).toLocaleString() : `—`}
+                next: {rule.nextRunAt ? formatDateTimeForDisplay(rule.nextRunAt) : `—`} | last:{` `}
+                {rule.lastRunAt ? formatDateTimeForDisplay(rule.lastRunAt) : `—`}
               </div>
             </div>
             <div className={gridGap4}>
