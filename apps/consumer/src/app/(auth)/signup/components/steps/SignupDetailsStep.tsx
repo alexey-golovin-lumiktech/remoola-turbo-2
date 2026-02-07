@@ -69,6 +69,7 @@ export function SignupDetailsStep() {
 
   const handleSubmit = () => {
     const result = signupDetailsSchema.safeParse(signup);
+    console.log(`result`, result);
     if (!result.success) {
       setFieldErrors(getFieldErrors(result.error));
       return;
@@ -196,7 +197,7 @@ export function SignupDetailsStep() {
               e.preventDefault();
               updateSignup({
                 accountType: ACCOUNT_TYPE.BUSINESS,
-                contractorKind: CONTRACTOR_KIND.INDIVIDUAL, // must reset
+                contractorKind: null, // must reset to null if switching from contractor
               });
               clearError(`accountType`);
             }}
