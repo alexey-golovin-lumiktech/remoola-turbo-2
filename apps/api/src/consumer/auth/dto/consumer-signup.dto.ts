@@ -121,10 +121,14 @@ export class ConsumerSignup {
   email: string;
 
   @Expose()
-  @ApiProperty({ example: `password@email.com` })
+  @ApiPropertyOptional({
+    example: `password@email.com`,
+    description: `Required for email signup; omit when using googleSignupToken`,
+  })
+  @ValidateIf((o) => !o.googleSignupToken)
   @MinLength(8)
   @IsString()
-  password: string;
+  password?: string;
 
   @Expose()
   @ApiPropertyOptional()

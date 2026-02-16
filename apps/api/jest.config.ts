@@ -1,3 +1,6 @@
 import { nestConfig } from '@remoola/jest-config';
 
-export default nestConfig;
+export default {
+  ...nestConfig,
+  testEnvironment: `node`,
+};

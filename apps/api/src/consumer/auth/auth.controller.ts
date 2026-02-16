@@ -23,7 +23,7 @@ import { ApiOperation, ApiOkResponse, ApiBody, ApiTags, ApiBasicAuth, ApiBearerA
 import express from 'express';
 import _ from 'lodash';
 
-import { type ConsumerModel } from '@remoola/database-2';
+import { $Enums, type ConsumerModel } from '@remoola/database-2';
 
 import { ConsumerAuthService } from './auth.service';
 import { ConsumerSignup, GoogleOAuthBody } from './dto';
@@ -178,7 +178,12 @@ export class ConsumerAuthController {
     return url.toString();
   }
 
-  private buildConsumerSignupRedirect(googleSignupToken: string) {
+  private buildConsumerSignupRedirect(
+    googleSignupToken: string,
+    nextPath?: string,
+    accountType?: string,
+    contractorKind?: string,
+  ) {
     const origin =
       envs.CONSUMER_APP_ORIGIN && envs.CONSUMER_APP_ORIGIN !== `CONSUMER_APP_ORIGIN`
         ? envs.CONSUMER_APP_ORIGIN
@@ -188,12 +193,22 @@ export class ConsumerAuthController {
       throw new InternalServerErrorException(`CONSUMER_APP_ORIGIN is not configured`);
     }
 
-    const url = new URL(`/signup/start`, origin);
+    const path = nextPath === `/signup` ? `/signup` : `/signup/start`;
+    const url = new URL(path, origin);
     url.searchParams.set(`googleSignupToken`, googleSignupToken);
+    if (accountType) url.searchParams.set(`accountType`, accountType);
+    if (contractorKind) url.searchParams.set(`contractorKind`, contractorKind);
     return url.toString();
   }
 
-  private createOAuthStateToken(payload: { nonce: string; codeVerifier: string; nextPath: string; createdAt: number }) {
+  private createOAuthStateToken(payload: {
+    nonce: string;
+    codeVerifier: string;
+    nextPath: string;
+    createdAt: number;
+    accountType?: string;
+    contractorKind?: string;
+  }) {
     const payloadBase64 = Buffer.from(JSON.stringify(payload)).toString(`base64url`);
     const signature = crypto.createHmac(`sha256`, envs.SECURE_SESSION_SECRET).update(payloadBase64).digest(`base64url`);
     return `${payloadBase64}.${signature}`;
@@ -213,6 +228,8 @@ export class ConsumerAuthController {
         codeVerifier: string;
         nextPath: string;
         createdAt: number;
+        accountType?: string;
+        contractorKind?: string;
       };
     } catch {
       return null;
@@ -232,7 +249,22 @@ export class ConsumerAuthController {
 
   @PublicEndpoint()
   @Get(`google/start`)
-  async googleOAuthStart(@Req() req: express.Request, @Res() response: express.Response, @Query(`next`) next?: string) {
+  async googleOAuthStart(
+    @Req() req: express.Request,
+    @Res() response: express.Response,
+    @Query(`next`) next?: string,
+    @Query(`accountType`) accountType?: string,
+    @Query(`contractorKind`) contractorKind?: string,
+  ) {
+    const validatedAccountType =
+      accountType === $Enums.AccountType.BUSINESS || accountType === $Enums.AccountType.CONTRACTOR
+        ? accountType
+        : undefined;
+    const validatedContractorKind =
+      contractorKind === $Enums.ContractorKind.INDIVIDUAL || contractorKind === $Enums.ContractorKind.ENTITY
+        ? contractorKind
+        : undefined;
+
     const nextPath = this.normalizeNextPath(next);
     const nonce = crypto.randomBytes(16).toString(`base64url`);
     const codeVerifier = GoogleOAuthService.createCodeVerifier();
@@ -243,6 +275,8 @@ export class ConsumerAuthController {
       codeVerifier,
       nextPath,
       createdAt: Date.now(),
+      accountType: validatedAccountType,
+      contractorKind: validatedContractorKind,
     });
     const cookiePayload = Buffer.from(
       JSON.stringify({
@@ -250,6 +284,8 @@ export class ConsumerAuthController {
         nonce,
         codeVerifier,
         nextPath,
+        accountType: validatedAccountType,
+        contractorKind: validatedContractorKind,
         createdAt: Date.now(),
       }),
     ).toString(`base64url`);
@@ -280,7 +316,15 @@ export class ConsumerAuthController {
     const fallbackCookie = envs.NODE_ENV !== `production` ? req.cookies?.[GOOGLE_OAUTH_STATE_COOKIE_KEY] : undefined;
     const stateCookie = signedCookie ?? fallbackCookie;
 
-    let cookiePayload: { stateToken: string; nonce: string; codeVerifier: string; nextPath: string; createdAt: number };
+    let cookiePayload: {
+      stateToken: string;
+      nonce: string;
+      codeVerifier: string;
+      nextPath: string;
+      createdAt: number;
+      accountType?: string;
+      contractorKind?: string;
+    };
     if (stateCookie) {
       try {
         cookiePayload = JSON.parse(Buffer.from(stateCookie, `base64url`).toString(`utf-8`));
@@ -291,7 +335,15 @@ export class ConsumerAuthController {
     } else if (state) {
       const parsed = this.parseOAuthStateToken(state);
       if (!parsed) return failureRedirect(`invalid_state`);
-      cookiePayload = { stateToken: state, ...parsed };
+      cookiePayload = {
+        stateToken: state,
+        nonce: parsed.nonce,
+        codeVerifier: parsed.codeVerifier,
+        nextPath: parsed.nextPath,
+        createdAt: parsed.createdAt,
+        accountType: parsed.accountType,
+        contractorKind: parsed.contractorKind,
+      };
     } else {
       return failureRedirect(`missing_state`);
     }
@@ -324,7 +376,12 @@ export class ConsumerAuthController {
           sub: (payload.sub as string) ?? null,
         });
 
-        const redirectUrl = this.buildConsumerSignupRedirect(googleSignupToken);
+        const redirectUrl = this.buildConsumerSignupRedirect(
+          googleSignupToken,
+          cookiePayload.nextPath,
+          cookiePayload.accountType,
+          cookiePayload.contractorKind,
+        );
         return response.redirect(redirectUrl);
       }
 

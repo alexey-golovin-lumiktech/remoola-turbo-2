@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
+import { $Enums } from '@remoola/database-2';
+
 import { DashboardData, ActivityItem, ComplianceTask, PendingRequest, QuickDoc } from './dtos/dashboard-data.dto';
 import { PrismaService } from '../../../shared/prisma.service';
 
@@ -169,7 +171,9 @@ export class ConsumerDashboardService {
       consumerResource.resource.originalName.toLowerCase().includes(`w9`),
     );
 
-    const isIndividualContractor = consumer.accountType === `CONTRACTOR` && consumer.contractorKind === `INDIVIDUAL`;
+    const isIndividualContractor =
+      consumer.accountType === $Enums.AccountType.CONTRACTOR &&
+      consumer.contractorKind === $Enums.ContractorKind.INDIVIDUAL;
     const pd = consumer.personalDetails;
     const profileComplete =
       !!pd &&

@@ -28,7 +28,9 @@ export class ConsumerPaymentsService {
     });
     if (!consumer) return;
     const pd = consumer.personalDetails;
-    const isIndividual = consumer.accountType === `CONTRACTOR` && consumer.contractorKind === `INDIVIDUAL`;
+    const isIndividual =
+      consumer.accountType === $Enums.AccountType.CONTRACTOR &&
+      consumer.contractorKind === $Enums.ContractorKind.INDIVIDUAL;
     const complete =
       pd &&
       (isIndividual

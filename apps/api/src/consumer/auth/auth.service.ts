@@ -326,7 +326,16 @@ export class ConsumerAuthService {
     // Note: With soft-delete uniqueness including deletedAt,
     // soft-deleted consumers can have their email re-used for new registrations
 
-    const { hash, salt } = await passwordUtils.hashPassword(dto.password);
+    let hash: string | null = null;
+    let salt: string | null = null;
+    if (!googleSignupPayload) {
+      if (!dto.password || dto.password.length < 8) {
+        throw new BadRequestException(`Password is required and must be at least 8 characters`);
+      }
+      const hashed = await passwordUtils.hashPassword(dto.password);
+      hash = hashed.hash;
+      salt = hashed.salt;
+    }
 
     try {
       let personalDetails;
@@ -375,8 +384,7 @@ export class ConsumerAuthService {
           email,
           accountType: dto.accountType,
           contractorKind: dto.accountType === $Enums.AccountType.CONTRACTOR ? (dto.contractorKind ?? null) : null,
-          password: hash,
-          salt,
+          ...(hash != null && salt != null ? { password: hash, salt } : {}),
           verified: googleSignupPayload ? true : false,
           legalVerified: false,
           howDidHearAboutUs: dto.howDidHearAboutUs ?? null,
