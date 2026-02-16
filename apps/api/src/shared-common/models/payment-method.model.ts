@@ -11,7 +11,7 @@ export type IPaymentMethodCommon = {
 
   billingDetailsId?: string;
   serviceFee?: number;
-} & IBaseModel //eslint-disable-line
+} & IBaseModel; //eslint-disable-line
 
 export type IPaymentMethodBankAccountModel = {
   type: typeof $Enums.PaymentMethodType.BANK_ACCOUNT;

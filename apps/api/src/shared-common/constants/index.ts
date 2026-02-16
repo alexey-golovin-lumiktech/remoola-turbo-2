@@ -1,4 +1,5 @@
-export const PASSWORD_NOT_SET_YET = `Consumer password is not set yet. Try using a different way to log in to the app, or restore your password ` as const; //eslint-disable-line
+export const PASSWORD_NOT_SET_YET =
+  `Consumer password is not set yet. Try using a different way to log in to the app, or restore your password ` as const; //eslint-disable-line
 
 export const INVALID_CREDENTIALS = `Invalid Credentials` as const;
 export const ADMIN_NOT_FOUND = `Admin not found` as const;

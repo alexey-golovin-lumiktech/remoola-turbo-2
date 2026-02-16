@@ -90,7 +90,8 @@ class PaymentRequestDTO extends BaseModel implements IPaymentRequestModel {
 
 export class PaymentRequestResponse
   extends OmitType(PaymentRequestDTO, [`deletedAt`] as const)
-  implements IPaymentRequestResponseExtended {
+  implements IPaymentRequestResponseExtended
+{
   @Expose()
   @ApiProperty()
   payerName: string;

@@ -13,6 +13,7 @@ List of features that are implemented and present in the repo now.
 ### Backend (API)
 
 Authentication and identity:
+
 - Admin auth with login, refresh, logout, and `/me` identity.
 - Consumer auth with login, refresh, logout, `/me`, and multi-step signup.
 - Password recovery and reset flow for consumers.
@@ -20,6 +21,7 @@ Authentication and identity:
 - Google OAuth endpoints for consumer login flows.
 
 Consumer domain features:
+
 - Dashboard aggregation endpoint.
 - Contacts CRUD and contact details.
 - Contracts listing.
@@ -35,6 +37,7 @@ Consumer domain features:
 - Invoice generation for payment requests.
 
 Admin domain features:
+
 - Admin management (list, create, details, password change, delete/restore with SUPER guard).
 - Consumer management (list/details) and verification workflow (approve/reject/flag/more info).
 - Dashboard metrics: status totals, recent payment requests, ledger anomalies, verification queue.
@@ -44,6 +47,7 @@ Admin domain features:
 - Exchange rate management (list/create/update/delete) and supported currencies.
 
 Infrastructure and platform:
+
 - Health endpoints (`/health`, `/health/detailed`) for service and DB checks.
 - CORS configuration and security headers (Helmet).
 - Rate limiting and response compression.
@@ -54,6 +58,7 @@ Infrastructure and platform:
 ### Admin App (Next.js)
 
 Admin UI with:
+
 - Login flow and authenticated protected sections.
 - Dashboard with metrics, verification queue, recent payment requests, and ledger anomalies.
 - Admin management pages (list and details).
@@ -64,6 +69,7 @@ Admin UI with:
 - Theme switching (light/dark/system) using CSS custom properties.
 
 Internal API proxy routes:
+
 - Admin auth proxy: login/logout/me.
 - Admin management proxy.
 - Consumer management and verification proxy.
@@ -75,6 +81,7 @@ Internal API proxy routes:
 ### Consumer App (Next.js)
 
 Consumer UI with:
+
 - Login, logout, OAuth callback, and signup flow (multi-step).
 - Signup start and completion confirmation pages.
 - Dashboard with summaries, tasks, and activity.
@@ -89,6 +96,7 @@ Consumer UI with:
 - Theme settings (light/dark/system).
 
 Internal API proxy routes:
+
 - Auth, signup, profile, settings.
 - Contacts, contracts, documents, exchange.
 - Payments, payment requests, payment methods, Stripe flows.
@@ -98,6 +106,7 @@ Internal API proxy routes:
 ### Database (Prisma)
 
 Key data models and relations:
+
 - Admins, consumers, access/refresh tokens, password reset tokens.
 - Consumer profile details (address, personal, organization, Google profile).
 - User settings (theme).
@@ -108,6 +117,7 @@ Key data models and relations:
 - Documents/resources with tagging and access control.
 
 Ledger and payments:
+
 - Signed ledger entries with idempotency key for exactly-once processing.
 - Payment rails, statuses, and fee handling enums.
 - Soft-delete strategy (deletedAt) with uniqueness scoped to non-deleted rows.
@@ -115,6 +125,7 @@ Ledger and payments:
 ## Comparison Notes (History vs Current State)
 
 Confirmed as present in current code:
+
 - Payment requests flow, payments, wallet/transfer/withdraw.
 - Exchange rates and conversion.
 - Stripe payment methods, setup intents, webhooks, and identity verification start.
@@ -127,5 +138,6 @@ Confirmed as present in current code:
 - OAuth token exchange and batch exchange rates endpoints.
 
 Historical items not active as a standalone feature now:
+
 - A past "admin app Vercel deployment config" commit was explicitly reverted.
 - Earlier admin SWR-based architecture was replaced with direct API proxy routes.
