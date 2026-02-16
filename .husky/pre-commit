@@ -2,4 +2,5 @@
 . "$(dirname -- "$0")/_/husky.sh"
 
 yarn lint
-yarn workspace @remoola/consumer run test --verbose
+yarn workspace @remoola/consumer run test --verbose --coverage=false
+yarn workspace @remoola/api run test --passWithNoTests --verbose --coverage=false
