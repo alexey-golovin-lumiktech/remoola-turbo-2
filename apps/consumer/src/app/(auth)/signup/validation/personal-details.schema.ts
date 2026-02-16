@@ -40,7 +40,13 @@ export const personalDetailsSchema = z.object({
     .string()
     .min(1, `Phone number is required`)
     .refine((v) => isValidPhoneNumber(v), `Please enter a valid phone number`),
-  taxId: z.string().min(1, `Tax ID is required`),
+  taxId: z
+    .string()
+    .min(1, `Tax ID is required`)
+    .refine(
+      (v) => /^[A-Za-z0-9\s\-.]+$/.test(v.trim()) && v.replace(/\s/g, ``).replace(/[-.]/g, ``).length >= 4,
+      `Please enter a valid Tax ID (at least 4 characters, letters and digits only)`,
+    ),
   countryOfTaxResidence: z.string().min(1, `Country of tax residence is required`),
   legalStatus: z.string().min(1, `Legal Status is required`),
   passportOrIdNumber: z.string().min(1, `Passport/ID number is required`),

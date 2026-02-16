@@ -2,9 +2,7 @@
 
 import { useState } from 'react';
 
-import { SelectWithClear } from '@remoola/ui/SelectWithClear';
-
-import { FormInput } from '../../../../../components/ui';
+import { FormInput, FormSelect } from '../../../../../components/ui';
 import styles from '../../../../../components/ui/classNames.module.css';
 import { PasswordInput } from '../../../../../components/ui/PasswordInput';
 import {
@@ -146,10 +144,11 @@ export function SignupDetailsStep() {
         {fieldErrors.confirmPassword && <p className={errorTextClass}>{fieldErrors.confirmPassword}</p>}
       </div>
 
-      <SelectWithClear<IHowDidHearAboutUs | null>
+      <FormSelect
         label="How Did You Hear About Us?"
-        value={signup.howDidHearAboutUs}
-        onChange={(howDidHearAboutUs) => {
+        value={signup.howDidHearAboutUs ?? ``}
+        onChange={(value) => {
+          const howDidHearAboutUs = value ? (value as IHowDidHearAboutUs) : null;
           const howDidHearAboutUsOther =
             howDidHearAboutUs !== HOW_DID_HEAR_ABOUT_US.OTHER ? null : signup.howDidHearAboutUsOther;
           updateSignup({ howDidHearAboutUs, howDidHearAboutUsOther });
@@ -180,10 +179,16 @@ export function SignupDetailsStep() {
           },
           { value: HOW_DID_HEAR_ABOUT_US.OTHER, label: HOW_DID_HEAR_ABOUT_US_LABEL[HOW_DID_HEAR_ABOUT_US.OTHER] },
         ]}
-        showNotSelected={false}
-        otherValue={signup.howDidHearAboutUsOther}
-        onChangeOther={(howDidHearAboutUsOther) => updateSignup({ howDidHearAboutUsOther })}
+        placeholder="Select or search..."
+        isClearable
       />
+      {signup.howDidHearAboutUs === HOW_DID_HEAR_ABOUT_US.OTHER && (
+        <FormInput
+          label="How did you hear about us? (other)"
+          value={signup.howDidHearAboutUsOther ?? ``}
+          onChange={(howDidHearAboutUsOther) => updateSignup({ howDidHearAboutUsOther })}
+        />
+      )}
 
       <div className={signupStepGroup}>
         <label className={signupStepLabelInline}>Account type</label>

@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import { FormInput, DateInput, CountrySelect, FormSelect, PhoneInput } from '../../../../../components/ui';
 import styles from '../../../../../components/ui/classNames.module.css';
 import { STEP_NAME, STATUS_LABEL, LABEL_STATUS, LEGAL_STATUS_LABEL } from '../../../../../types';
 import { useSignupForm, useSignupSteps } from '../../hooks';
+import { parseAddressFromString } from '../../utils/parseAddressFromString';
 import { getFieldErrors, entityDetailsSchema, personalDetailsSchema } from '../../validation';
 import { PrevNextButtons } from '../PrevNextButtons';
 
@@ -26,6 +27,26 @@ export function PersonalDetailsStep() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const isEntity = isBusiness || isContractorEntity;
+
+  const handleLegalAddressChange = useCallback(
+    (value: string) => {
+      updateAddress({ street: value });
+      if (!value.trim()) return;
+      const parsed = parseAddressFromString(value);
+      const updates: Parameters<typeof updateAddress>[0] = {};
+      if (parsed.postalCode) updates.postalCode = parsed.postalCode;
+      if (parsed.country) updates.country = parsed.country;
+      if (parsed.state) updates.state = parsed.state;
+      if (parsed.city) updates.city = parsed.city;
+      if (Object.keys(updates).length > 0) {
+        updateAddress(updates);
+      }
+      if (parsed.country) {
+        updatePersonal({ countryOfTaxResidence: parsed.country });
+      }
+    },
+    [updateAddress, updatePersonal],
+  );
 
   const clearError = (field: string) => {
     if (!fieldErrors[field]) return;
@@ -94,7 +115,7 @@ export function PersonalDetailsStep() {
         <FormInput
           label="Legal address"
           value={addressDetails.street || ``}
-          onChange={(value) => updateAddress({ street: value })}
+          onChange={handleLegalAddressChange}
           error={fieldErrors.legalAddress}
           onErrorClear={() => clearError(`legalAddress`)}
         />

@@ -2,9 +2,7 @@
 
 import { useState } from 'react';
 
-import { SelectWithClear } from '@remoola/ui/SelectWithClear';
-
-import { FormInput } from '../../../../../components/ui';
+import { FormInput, FormSelect } from '../../../../../components/ui';
 import styles from '../../../../../components/ui/classNames.module.css';
 import {
   STEP_NAME,
@@ -63,12 +61,12 @@ export function OrganizationDetailsStep() {
         onErrorClear={() => clearError(`name`)}
       />
 
-      <SelectWithClear<IConsumerRole | null>
+      <FormSelect
         label="Your Role In Organization"
-        value={organizationDetails.consumerRole}
+        value={organizationDetails.consumerRole ?? ``}
         onChange={(consumerRole) => {
           const consumerRoleOther = consumerRole !== CONSUMER_ROLE.OTHER ? null : organizationDetails.consumerRoleOther;
-          updateOrganization({ consumerRole, consumerRoleOther });
+          updateOrganization({ consumerRole: consumerRole as IConsumerRole, consumerRoleOther });
           clearError(`consumerRole`);
         }}
         options={[
@@ -86,28 +84,36 @@ export function OrganizationDetailsStep() {
           { value: CONSUMER_ROLE.ANALYSIS_DATA, label: CONSUMER_ROLE_LABEL[CONSUMER_ROLE.ANALYSIS_DATA] },
           { value: CONSUMER_ROLE.OTHER, label: CONSUMER_ROLE_LABEL[CONSUMER_ROLE.OTHER] },
         ]}
-        showNotSelected={false}
-        otherValue={organizationDetails.consumerRoleOther}
-        onChangeOther={(consumerRoleOther) => updateOrganization({ consumerRoleOther })}
+        error={fieldErrors.consumerRole}
+        onErrorClear={() => clearError(`consumerRole`)}
+        placeholder="Select or search role..."
+        isClearable
       />
-      {fieldErrors.consumerRole && <p className={errorTextClass}>{fieldErrors.consumerRole}</p>}
+      {organizationDetails.consumerRole === CONSUMER_ROLE.OTHER && (
+        <FormInput
+          label="Your role (other)"
+          value={organizationDetails.consumerRoleOther ?? ``}
+          onChange={(consumerRoleOther) => updateOrganization({ consumerRoleOther })}
+        />
+      )}
 
-      <SelectWithClear<IOrganizationSizeLabel>
+      <FormSelect
         label="Your Organization Size"
-        value={SIZE_LABEL[organizationDetails.size!]}
-        onChange={(size) => {
-          updateOrganization({ size: LABEL_SIZE[size!] });
+        value={SIZE_LABEL[organizationDetails.size!] ?? ``}
+        onChange={(value) => {
+          updateOrganization({ size: LABEL_SIZE[value as IOrganizationSizeLabel] });
           clearError(`size`);
         }}
         options={[
-          { label: `1-10 team members`, value: `1-10 team members` },
-          { label: `11-100 team members`, value: `11-100 team members` },
-          { label: `100+ team members`, value: `100+ team members` },
+          { value: `1-10 team members`, label: `1-10 team members` },
+          { value: `11-100 team members`, label: `11-100 team members` },
+          { value: `100+ team members`, label: `100+ team members` },
         ]}
-        showOtherField={false}
-        showNotSelected={false}
+        error={fieldErrors.size}
+        onErrorClear={() => clearError(`size`)}
+        placeholder="Select or search size..."
+        isClearable
       />
-      {fieldErrors.size && <p className={errorTextClass}>{fieldErrors.size}</p>}
 
       {error && <p className={errorTextClass}>{error}</p>}
 
