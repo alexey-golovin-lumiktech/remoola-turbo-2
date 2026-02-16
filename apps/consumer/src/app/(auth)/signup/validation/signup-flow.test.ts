@@ -4,6 +4,7 @@
  */
 import {
   addressDetailsSchema,
+  createSignupDetailsSchema,
   entityDetailsSchema,
   organizationSchema,
   personalDetailsSchema,
@@ -47,7 +48,7 @@ const validPersonalDetails = {
   legalStatus: LEGAL_STATUS.INDIVIDUAL,
   taxId: `123-45-6789`,
   dateOfBirth: `1990-01-15`,
-  passportOrIdNumber: `AB1234567`,
+  passportOrIdNumber: `123456789`, // US format: 9 digits
   phoneNumber: `+12025551234`,
 };
 
@@ -92,6 +93,27 @@ function validateContractorIndividualSignup(data: {
   addressDetails: typeof validAddressDetails;
 }) {
   const signupResult = signupDetailsSchema.safeParse(data.signupDetails);
+  if (!signupResult.success) return { valid: false, step: `signup` };
+
+  const personalResult = personalDetailsSchema.safeParse(data.personalDetails);
+  if (!personalResult.success) return { valid: false, step: `personal` };
+
+  const addressResult = addressDetailsSchema.safeParse(data.addressDetails);
+  if (!addressResult.success) return { valid: false, step: `address` };
+
+  return { valid: true };
+}
+
+function validateContractorIndividualGoogleSignup(data: {
+  signupDetails: Omit<SignupDetailsBase, `password` | `confirmPassword`> & {
+    password?: string;
+    confirmPassword?: string;
+  };
+  personalDetails: typeof validPersonalDetails;
+  addressDetails: typeof validAddressDetails;
+}) {
+  const googleSchema = createSignupDetailsSchema(true);
+  const signupResult = googleSchema.safeParse(data.signupDetails);
   if (!signupResult.success) return { valid: false, step: `signup` };
 
   const personalResult = personalDetailsSchema.safeParse(data.personalDetails);
@@ -190,6 +212,45 @@ describe(`signup flow validation`, () => {
       });
       expect(result.valid).toBe(false);
       expect(result.step).toBe(`address`);
+    });
+  });
+
+  describe(`Contractor Individual Google signup flow`, () => {
+    const googleSignupDetails = {
+      email: `user@gmail.com`,
+      accountType: ACCOUNT_TYPE.CONTRACTOR as const,
+      contractorKind: CONTRACTOR_KIND.INDIVIDUAL as const,
+      howDidHearAboutUs: null as const,
+      howDidHearAboutUsOther: null as const,
+    };
+
+    it(`passes when all data valid, password/confirmPassword omitted`, () => {
+      const result = validateContractorIndividualGoogleSignup({
+        signupDetails: googleSignupDetails,
+        personalDetails: validPersonalDetails,
+        addressDetails: validAddressDetails,
+      });
+      expect(result.valid).toBe(true);
+    });
+
+    it(`fails when email invalid (Google schema still requires valid email)`, () => {
+      const result = validateContractorIndividualGoogleSignup({
+        signupDetails: { ...googleSignupDetails, email: `invalid` },
+        personalDetails: validPersonalDetails,
+        addressDetails: validAddressDetails,
+      });
+      expect(result.valid).toBe(false);
+      expect(result.step).toBe(`signup`);
+    });
+
+    it(`fails when contractor kind missing`, () => {
+      const result = validateContractorIndividualGoogleSignup({
+        signupDetails: { ...googleSignupDetails, contractorKind: null },
+        personalDetails: validPersonalDetails,
+        addressDetails: validAddressDetails,
+      });
+      expect(result.valid).toBe(false);
+      expect(result.step).toBe(`signup`);
     });
   });
 

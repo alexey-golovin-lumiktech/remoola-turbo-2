@@ -58,4 +58,25 @@ describe(`addressDetailsSchema`, () => {
       }
     });
   });
+
+  describe(`multi-field validation (getFieldErrors for blur validation)`, () => {
+    it(`returns errors for all invalid fields at once`, () => {
+      const result = addressDetailsSchema.safeParse({
+        postalCode: ``,
+        country: ``,
+        state: ``,
+        city: ``,
+        street: ``,
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        const errors = getFieldErrors(result.error);
+        expect(errors.postalCode).toBe(`Postal code is required`);
+        expect(errors.country).toBe(`Country is required`);
+        expect(errors.state).toBe(`State / Region is required`);
+        expect(errors.city).toBe(`City is required`);
+        expect(errors.street).toBe(`Street is required`);
+      }
+    });
+  });
 });

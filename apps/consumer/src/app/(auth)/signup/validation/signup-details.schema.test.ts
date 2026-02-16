@@ -1,5 +1,5 @@
 import { getFieldErrors } from './field-errors';
-import { signupDetailsSchema } from './signup-details.schema';
+import { createSignupDetailsSchema, signupDetailsSchema } from './signup-details.schema';
 import { ACCOUNT_TYPE, CONTRACTOR_KIND } from '../../../../types';
 
 const validBase = {
@@ -141,6 +141,49 @@ describe(`signupDetailsSchema`, () => {
         const errors = getFieldErrors(result.error);
         expect(errors.confirmPassword).toBe(`Passwords do not match`);
       }
+    });
+  });
+
+  describe(`Google signup (createSignupDetailsSchema(true))`, () => {
+    const googleSchema = createSignupDetailsSchema(true);
+
+    it(`passes when email and account type valid, password/confirmPassword omitted`, () => {
+      const result = googleSchema.safeParse({
+        email: `user@gmail.com`,
+        password: undefined,
+        confirmPassword: undefined,
+        accountType: ACCOUNT_TYPE.CONTRACTOR,
+        contractorKind: CONTRACTOR_KIND.INDIVIDUAL,
+        howDidHearAboutUs: null,
+        howDidHearAboutUsOther: null,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it(`passes when email and account type valid, password/confirmPassword empty string`, () => {
+      const result = googleSchema.safeParse({
+        email: `user@gmail.com`,
+        password: ``,
+        confirmPassword: ``,
+        accountType: ACCOUNT_TYPE.BUSINESS,
+        contractorKind: null,
+        howDidHearAboutUs: null,
+        howDidHearAboutUsOther: null,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it(`still requires valid email`, () => {
+      const result = googleSchema.safeParse({
+        email: `invalid`,
+        password: undefined,
+        confirmPassword: undefined,
+        accountType: ACCOUNT_TYPE.BUSINESS,
+        contractorKind: null,
+        howDidHearAboutUs: null,
+        howDidHearAboutUsOther: null,
+      });
+      expect(result.success).toBe(false);
     });
   });
 });
