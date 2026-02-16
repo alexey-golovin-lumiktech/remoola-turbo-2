@@ -323,6 +323,9 @@
                   variable references, and performed general cleanup and
                   changelog updates.
 
+
+# Changelog (February 2026)
+
 - **2026-02-02:** Added admin payment reversals (refund + chargeback actions),
                   implemented Stripe refund support, handled dispute webhooks,
                   captured reversal metadata, added idempotent reversal writes,
