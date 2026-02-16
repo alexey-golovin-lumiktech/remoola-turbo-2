@@ -32,8 +32,7 @@ type AttachmentFields = OptionalResourceFields & RequiredResourceFields;
 
 export class PaymentRequestAttachmentResponse
   extends OmitType(PaymentRequestAttachmentDTO, [`deletedAt`] as const)
-  implements IPaymentRequestAttachmentResponse, AttachmentFields
-{
+  implements IPaymentRequestAttachmentResponse, AttachmentFields {
   @Expose()
   @ApiProperty()
   access?: $Enums.ResourceAccess;

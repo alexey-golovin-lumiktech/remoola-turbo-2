@@ -169,11 +169,24 @@ export class ConsumerDashboardService {
       consumerResource.resource.originalName.toLowerCase().includes(`w9`),
     );
 
+    const isIndividualContractor = consumer.accountType === `CONTRACTOR` && consumer.contractorKind === `INDIVIDUAL`;
+    const pd = consumer.personalDetails;
+    const profileComplete =
+      !!pd &&
+      (isIndividualContractor
+        ? !!pd.legalStatus && !!pd.taxId?.trim() && !!pd.passportOrIdNumber?.trim()
+        : !!pd.taxId?.trim() && !!pd.phoneNumber?.trim());
+
     return [
       {
         id: `kyc`,
         label: `Complete KYC`,
         completed: !!consumer.personalDetails,
+      },
+      {
+        id: `profile`,
+        label: `Complete your profile`,
+        completed: profileComplete,
       },
       {
         id: `w9`,

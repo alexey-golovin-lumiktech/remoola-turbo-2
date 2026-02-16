@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import { type $Enums } from '@remoola/database-2';
 
 import type {
@@ -53,8 +52,8 @@ export type WithoutDeletedAt<T> = T extends IBaseModel ? Omit<T, `deletedAt`> : 
 export type OnlyUpsertFields<T> = T extends IBaseModel & { consumerId?: string } //
   ? Omit<T, `id` | `createdAt` | `updatedAt` | `deletedAt` | `consumerId` | `metadata`>
   : T extends IBaseModel
-  ? Omit<T, `id` | `createdAt` | `updatedAt` | `deletedAt` | `metadata`>
-  : T;
+    ? Omit<T, `id` | `createdAt` | `updatedAt` | `deletedAt` | `metadata`>
+    : T;
 
 export type NameIdPair = { id: string; name: string };
 export type TypedNameIdPair<TId> = { id: TId; name: string };
@@ -67,14 +66,14 @@ export type AuditTimelineFieldName = OneOfObjectValues<typeof AuditTimelineField
 export type TimelineFilterField<T> = T extends IPaymentRequestModel
   ? PaymentRequestTimelineFieldName
   : T extends IPersonalDetailsModel
-  ? PersonalDetailsTimelineFieldName
-  : AuditTimelineFieldName;
+    ? PersonalDetailsTimelineFieldName
+    : AuditTimelineFieldName;
 
 export type TimelineFilterFieldValue<T> = T extends IPaymentRequestModel
   ? IPaymentRequestModel[TimelineFilterField<IPaymentRequestModel>]
   : T extends IPersonalDetailsModel
-  ? IPersonalDetailsModel[TimelineFilterField<IPersonalDetailsModel>]
-  : IBaseModel[TimelineFilterField<IBaseModel>];
+    ? IPersonalDetailsModel[TimelineFilterField<IPersonalDetailsModel>]
+    : IBaseModel[TimelineFilterField<IBaseModel>];
 
 export type ReqQueryTimelineFilter<T> = {
   field: TimelineFilterField<T | IBaseModel>;

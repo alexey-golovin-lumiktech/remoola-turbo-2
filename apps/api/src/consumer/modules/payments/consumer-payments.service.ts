@@ -16,6 +16,32 @@ export class ConsumerPaymentsService {
     private readonly mailingService: MailingService,
   ) {}
 
+  /** Ensures consumer has completed profile
+   * Legal Status
+   * Tax ID
+   * Passport/ID for individuals;
+   * Tax ID, Phone for entities). */
+  private async ensureProfileComplete(consumerId: string) {
+    const consumer = await this.prisma.consumerModel.findUnique({
+      where: { id: consumerId },
+      include: { personalDetails: true },
+    });
+    if (!consumer) return;
+    const pd = consumer.personalDetails;
+    const isIndividual = consumer.accountType === `CONTRACTOR` && consumer.contractorKind === `INDIVIDUAL`;
+    const complete =
+      pd &&
+      (isIndividual
+        ? pd.legalStatus && pd.taxId?.trim() && pd.passportOrIdNumber?.trim()
+        : pd.taxId?.trim() && pd.phoneNumber?.trim());
+    if (!complete) {
+      throw new BadRequestException(
+        /* eslint-disable-next-line */
+        `Please complete your profile (Legal Status, Tax ID, Passport/ID number) before creating requests or sending payments.`,
+      );
+    }
+  }
+
   async listPayments(params: {
     consumerId: string;
     page: number;
@@ -179,6 +205,8 @@ export class ConsumerPaymentsService {
   }
 
   async startPayment(consumerId: string, body: StartPayment) {
+    await this.ensureProfileComplete(consumerId);
+
     const recipient = await this.prisma.consumerModel.findFirst({
       where: { email: body.email, deletedAt: null },
     });
@@ -262,6 +290,8 @@ export class ConsumerPaymentsService {
   }
 
   async createPaymentRequest(consumerId: string, body: CreatePaymentRequest) {
+    await this.ensureProfileComplete(consumerId);
+
     const recipient = await this.prisma.consumerModel.findFirst({
       where: { email: body.email, deletedAt: null },
     });
@@ -310,6 +340,8 @@ export class ConsumerPaymentsService {
   }
 
   async sendPaymentRequest(consumerId: string, paymentRequestId: string) {
+    await this.ensureProfileComplete(consumerId);
+
     const result = await this.prisma.$transaction(async (tx) => {
       const paymentRequest = await tx.paymentRequestModel.findUnique({
         where: { id: paymentRequestId },
