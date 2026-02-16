@@ -87,6 +87,22 @@ describe(`personalDetailsSchema`, () => {
       }
     });
 
+    it(`fails when taxId is too short`, () => {
+      const result = personalDetailsSchema.safeParse({ ...validBase, taxId: `123` });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(getFieldErrors(result.error).taxId).toContain(`valid Tax ID`);
+      }
+    });
+
+    it(`fails when taxId contains invalid characters`, () => {
+      const result = personalDetailsSchema.safeParse({ ...validBase, taxId: `12-34#5678` });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(getFieldErrors(result.error).taxId).toContain(`valid Tax ID`);
+      }
+    });
+
     it(`fails when passportOrIdNumber is empty`, () => {
       const result = personalDetailsSchema.safeParse({ ...validBase, passportOrIdNumber: `` });
       expect(result.success).toBe(false);

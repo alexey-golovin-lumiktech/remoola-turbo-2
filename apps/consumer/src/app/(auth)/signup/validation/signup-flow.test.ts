@@ -223,4 +223,223 @@ describe(`signup flow validation`, () => {
       expect(result.step).toBe(`entity`);
     });
   });
+
+  describe(`Signup details - incorrect values`, () => {
+    it(`fails when email is invalid`, () => {
+      const result = validateBusinessSignup({
+        signupDetails: { ...validSignupDetails, email: `not-an-email` },
+        personalDetails: validPersonalDetails,
+        organizationDetails: validOrganizationDetails,
+        addressDetails: validAddressDetails,
+      });
+      expect(result.valid).toBe(false);
+      expect(result.step).toBe(`signup`);
+    });
+
+    it(`fails when password is too short`, () => {
+      const result = validateBusinessSignup({
+        signupDetails: { ...validSignupDetails, password: `short`, confirmPassword: `short` },
+        personalDetails: validPersonalDetails,
+        organizationDetails: validOrganizationDetails,
+        addressDetails: validAddressDetails,
+      });
+      expect(result.valid).toBe(false);
+      expect(result.step).toBe(`signup`);
+    });
+
+    it(`fails when passwords do not match`, () => {
+      const result = validateBusinessSignup({
+        signupDetails: {
+          ...validSignupDetails,
+          password: `password123`,
+          confirmPassword: `different456`,
+        },
+        personalDetails: validPersonalDetails,
+        organizationDetails: validOrganizationDetails,
+        addressDetails: validAddressDetails,
+      });
+      expect(result.valid).toBe(false);
+      expect(result.step).toBe(`signup`);
+    });
+
+    it(`fails when contractor has no contractor kind selected`, () => {
+      const result = validateContractorIndividualSignup({
+        signupDetails: {
+          ...validSignupDetails,
+          accountType: ACCOUNT_TYPE.CONTRACTOR,
+          contractorKind: null,
+        },
+        personalDetails: validPersonalDetails,
+        addressDetails: validAddressDetails,
+      });
+      expect(result.valid).toBe(false);
+      expect(result.step).toBe(`signup`);
+    });
+  });
+
+  describe(`Personal/Entity details - incorrect values`, () => {
+    it(`fails when taxId is invalid format (too short)`, () => {
+      const result = validateContractorIndividualSignup({
+        signupDetails: {
+          ...validSignupDetails,
+          accountType: ACCOUNT_TYPE.CONTRACTOR,
+          contractorKind: CONTRACTOR_KIND.INDIVIDUAL,
+        },
+        personalDetails: { ...validPersonalDetails, taxId: `123` },
+        addressDetails: validAddressDetails,
+      });
+      expect(result.valid).toBe(false);
+      expect(result.step).toBe(`personal`);
+    });
+
+    it(`fails when taxId contains invalid characters`, () => {
+      const result = validateBusinessSignup({
+        signupDetails: validSignupDetails,
+        personalDetails: { ...validPersonalDetails, taxId: `12#3456789` },
+        organizationDetails: validOrganizationDetails,
+        addressDetails: validAddressDetails,
+      });
+      expect(result.valid).toBe(false);
+      expect(result.step).toBe(`entity`);
+    });
+
+    it(`fails when phone number is invalid`, () => {
+      const result = validateContractorIndividualSignup({
+        signupDetails: {
+          ...validSignupDetails,
+          accountType: ACCOUNT_TYPE.CONTRACTOR,
+          contractorKind: CONTRACTOR_KIND.INDIVIDUAL,
+        },
+        personalDetails: { ...validPersonalDetails, phoneNumber: `invalid` },
+        addressDetails: validAddressDetails,
+      });
+      expect(result.valid).toBe(false);
+      expect(result.step).toBe(`personal`);
+    });
+  });
+
+  describe(`Address details - incorrect / missed values`, () => {
+    it(`fails when postal code is empty`, () => {
+      const result = validateBusinessSignup({
+        signupDetails: validSignupDetails,
+        personalDetails: validPersonalDetails,
+        organizationDetails: validOrganizationDetails,
+        addressDetails: { ...validAddressDetails, postalCode: `` },
+      });
+      expect(result.valid).toBe(false);
+      expect(result.step).toBe(`address`);
+    });
+
+    it(`fails when street is empty`, () => {
+      const result = validateBusinessSignup({
+        signupDetails: validSignupDetails,
+        personalDetails: validPersonalDetails,
+        organizationDetails: validOrganizationDetails,
+        addressDetails: { ...validAddressDetails, street: `` },
+      });
+      expect(result.valid).toBe(false);
+      expect(result.step).toBe(`entity`);
+    });
+
+    it(`fails when city is empty`, () => {
+      const result = validateBusinessSignup({
+        signupDetails: validSignupDetails,
+        personalDetails: validPersonalDetails,
+        organizationDetails: validOrganizationDetails,
+        addressDetails: { ...validAddressDetails, city: `` },
+      });
+      expect(result.valid).toBe(false);
+      expect(result.step).toBe(`address`);
+    });
+  });
+
+  describe(`Organization details - missed values`, () => {
+    it(`fails when organization name is empty (caught at entity step which uses it)`, () => {
+      const result = validateBusinessSignup({
+        signupDetails: validSignupDetails,
+        personalDetails: validPersonalDetails,
+        organizationDetails: { ...validOrganizationDetails, name: `` },
+        addressDetails: validAddressDetails,
+      });
+      expect(result.valid).toBe(false);
+      expect(result.step).toBe(`entity`);
+    });
+
+    it(`fails when consumer role is empty`, () => {
+      const result = validateBusinessSignup({
+        signupDetails: validSignupDetails,
+        personalDetails: validPersonalDetails,
+        organizationDetails: { ...validOrganizationDetails, consumerRole: `` as typeof CONSUMER_ROLE.FOUNDER },
+        addressDetails: validAddressDetails,
+      });
+      expect(result.valid).toBe(false);
+      expect(result.step).toBe(`organization`);
+    });
+
+    it(`fails when organization size is empty`, () => {
+      const result = validateBusinessSignup({
+        signupDetails: validSignupDetails,
+        personalDetails: validPersonalDetails,
+        organizationDetails: { ...validOrganizationDetails, size: `` as typeof ORGANIZATION_SIZE.SMALL },
+        addressDetails: validAddressDetails,
+      });
+      expect(result.valid).toBe(false);
+      expect(result.step).toBe(`organization`);
+    });
+  });
+
+  describe(`Lost filling / partial data`, () => {
+    it(`fails when personal details firstName is missing`, () => {
+      const result = validateContractorIndividualSignup({
+        signupDetails: {
+          ...validSignupDetails,
+          accountType: ACCOUNT_TYPE.CONTRACTOR,
+          contractorKind: CONTRACTOR_KIND.INDIVIDUAL,
+        },
+        personalDetails: { ...validPersonalDetails, firstName: `` },
+        addressDetails: validAddressDetails,
+      });
+      expect(result.valid).toBe(false);
+      expect(result.step).toBe(`personal`);
+    });
+
+    it(`fails when personal details citizenOf is missing`, () => {
+      const result = validateContractorIndividualSignup({
+        signupDetails: {
+          ...validSignupDetails,
+          accountType: ACCOUNT_TYPE.CONTRACTOR,
+          contractorKind: CONTRACTOR_KIND.INDIVIDUAL,
+        },
+        personalDetails: { ...validPersonalDetails, citizenOf: `` },
+        addressDetails: validAddressDetails,
+      });
+      expect(result.valid).toBe(false);
+      expect(result.step).toBe(`personal`);
+    });
+
+    it(`fails when address country is missing`, () => {
+      const result = validateContractorIndividualSignup({
+        signupDetails: {
+          ...validSignupDetails,
+          accountType: ACCOUNT_TYPE.CONTRACTOR,
+          contractorKind: CONTRACTOR_KIND.INDIVIDUAL,
+        },
+        personalDetails: validPersonalDetails,
+        addressDetails: { ...validAddressDetails, country: `` },
+      });
+      expect(result.valid).toBe(false);
+      expect(result.step).toBe(`address`);
+    });
+
+    it(`fails when address state is missing`, () => {
+      const result = validateBusinessSignup({
+        signupDetails: validSignupDetails,
+        personalDetails: validPersonalDetails,
+        organizationDetails: validOrganizationDetails,
+        addressDetails: { ...validAddressDetails, state: `` },
+      });
+      expect(result.valid).toBe(false);
+      expect(result.step).toBe(`address`);
+    });
+  });
 });

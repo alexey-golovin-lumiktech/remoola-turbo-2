@@ -42,6 +42,14 @@ describe(`entityDetailsSchema`, () => {
       }
     });
 
+    it(`fails when taxId is invalid format`, () => {
+      const result = entityDetailsSchema.safeParse({ ...validBase, taxId: `12#345` });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(getFieldErrors(result.error).taxId).toContain(`valid Tax ID`);
+      }
+    });
+
     it(`fails when phoneNumber is empty`, () => {
       const result = entityDetailsSchema.safeParse({ ...validBase, phoneNumber: `` });
       expect(result.success).toBe(false);
