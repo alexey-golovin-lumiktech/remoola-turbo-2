@@ -332,4 +332,31 @@
                   wiring, implemented admin/consumer API routes and UI for
                   reversals, and fixed multiple `useEffect` dependency loops.
 
+- **2026-02-04:** Updated documentation to cover payment reversal logic and
+                  exchange rate management features.
+
+- **2026-02-05:** Added reusable UI components and utilities including `FormInput`,
+                  `DateInput`, `DataTable`, and `ErrorState`; replaced inline inputs
+                  and custom tables across signup and settings forms; improved
+                  date-of-birth validation (age + format checks); introduced locale-
+                  aware date utilities and added `react-datepicker` dependency;
+                  updated project scripts and documentation.
+
+- **2026-02-07:** Fixed consumer signup process issues and stabilized validation flow.
+
+- **2026-02-16:** Strengthened consumer signup flow with improved validation logic,
+                  contractor/business switching fixes, Jest configuration and unit tests;
+                  enforced profile completion requirements before allowing payments;
+                  added CountrySelect and PhoneInput with E.164 validation and
+                  searchable country selection; introduced entity flow for business
+                  and contractor entities with dedicated schema validation; required
+                  legal status, tax ID, passport/ID where applicable; implemented
+                  phone number format validation; added address parsing and automatic
+                  prefill from legal address; migrated to `FormSelect` components;
+                  fixed organization step visibility logic; added Tax ID validation
+                  rules; extended signup schema tests and integration tests (56 tests);
+                  added consumer test execution to Husky pre-commit hook; and
+                  performed linting, formatting, and merge maintenance updates.
+
+
 ```
