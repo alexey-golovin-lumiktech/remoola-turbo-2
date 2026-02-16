@@ -35,12 +35,13 @@ const baseSteps: Record<IStepName, IStepMeta> = {
 
 export const steps = baseSteps;
 
-export const getSteps = (accountType: IAccountType, contractorKind: IContractorKind): StepsMap => {
+export const getSteps = (accountType: IAccountType, contractorKind: IContractorKind | null): StepsMap => {
   switch (accountType) {
     case ACCOUNT_TYPE.BUSINESS: {
       return {
         [STEP_NAME.SIGNUP_DETAILS]: steps[STEP_NAME.SIGNUP_DETAILS],
         [STEP_NAME.PERSONAL_DETAILS]: steps[STEP_NAME.PERSONAL_DETAILS],
+        [STEP_NAME.ADDRESS_DETAILS]: steps[STEP_NAME.ADDRESS_DETAILS],
         [STEP_NAME.ORGANIZATION_DETAILS]: steps[STEP_NAME.ORGANIZATION_DETAILS],
       };
     }

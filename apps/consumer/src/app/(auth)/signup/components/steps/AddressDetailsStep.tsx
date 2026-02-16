@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-import { FormInput } from '../../../../../components/ui';
+import { CountrySelect, FormInput } from '../../../../../components/ui';
 import styles from '../../../../../components/ui/classNames.module.css';
 import { STEP_NAME } from '../../../../../types';
 import { useSignupForm, useSignupSteps, useSignupSubmit } from '../../hooks';
@@ -12,7 +12,7 @@ import { PrevNextButtons } from '../PrevNextButtons';
 const { errorTextClass, signupStepCard, signupStepTitle } = styles;
 
 export function AddressDetailsStep() {
-  const { isContractorIndividual, addressDetails, updateAddress } = useSignupForm();
+  const { isContractorIndividual, isBusiness, addressDetails, updateAddress } = useSignupForm();
   const { markSubmitted, goNext } = useSignupSteps();
   const { submit, loading, error } = useSignupSubmit();
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -35,12 +35,12 @@ export function AddressDetailsStep() {
     setFieldErrors({});
     markSubmitted(STEP_NAME.ADDRESS_DETAILS);
 
-    if (isContractorIndividual) return submit();
+    if (isContractorIndividual || isBusiness) return submit();
     else return goNext();
   };
 
   let prevNextButtonsText = `Next step`;
-  if (isContractorIndividual) prevNextButtonsText = `Finish signup`;
+  if (isContractorIndividual || isBusiness) prevNextButtonsText = `Finish signup`;
 
   return (
     <div className={signupStepCard}>
@@ -54,7 +54,7 @@ export function AddressDetailsStep() {
         onErrorClear={() => clearError(`postalCode`)}
       />
 
-      <FormInput
+      <CountrySelect
         label="Country"
         value={addressDetails.country || ``}
         onChange={(value) => updateAddress({ country: value })}
@@ -66,6 +66,8 @@ export function AddressDetailsStep() {
         label="State / Region"
         value={addressDetails.state || ``}
         onChange={(value) => updateAddress({ state: value })}
+        error={fieldErrors.state}
+        onErrorClear={() => clearError(`state`)}
       />
 
       <FormInput

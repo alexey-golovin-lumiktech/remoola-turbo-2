@@ -67,3 +67,22 @@ textarea::placeholder {
 .form-grid {
   @apply grid grid-cols-2 gap-4;
 }
+
+/* react-phone-number-input dark theme */
+:where(.dark, [data-theme="dark"]) .PhoneInput {
+  color: rgb(248 250 252);
+}
+
+:where(.dark, [data-theme="dark"]) .PhoneInputInput {
+  background-color: rgb(30 41 59);
+  color: rgb(248 250 252);
+  border-color: rgb(71 85 105);
+}
+
+:where(.dark, [data-theme="dark"]) .PhoneInputInput::placeholder {
+  color: rgb(148 163 184);
+}
+
+:where(.dark, [data-theme="dark"]) .PhoneInputCountryIcon {
+  color: rgb(248 250 252);
+}

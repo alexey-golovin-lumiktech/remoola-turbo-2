@@ -117,6 +117,7 @@
 .rm-select__trigger {
   position: relative;
   width: 100%;
+  min-height: 42px;
   border: 1px solid var(--line);
   border-radius: 6px;
   padding: 8px 12px;

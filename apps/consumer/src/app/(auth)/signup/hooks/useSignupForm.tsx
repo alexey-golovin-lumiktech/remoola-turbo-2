@@ -105,11 +105,11 @@ export function SignupFormProvider({ children }: { children: ReactNode }) {
       ...prev,
       addressDetails: {
         ...prev.addressDetails,
-        ...(patch.postalCode && { postalCode: patch.postalCode?.trim() }),
-        ...(patch.country && { country: patch.country?.trim() }),
-        ...(patch.state && { state: patch.state?.trim() }),
-        ...(patch.city && { city: patch.city?.trim() }),
-        ...(patch.street && { street: patch.street?.trim() }),
+        ...(patch.postalCode !== undefined && { postalCode: patch.postalCode?.trim() ?? `` }),
+        ...(patch.country !== undefined && { country: patch.country?.trim() ?? `` }),
+        ...(patch.state !== undefined && { state: patch.state?.trim() ?? `` }),
+        ...(patch.city !== undefined && { city: patch.city?.trim() ?? `` }),
+        ...(patch.street !== undefined && { street: patch.street?.trim() ?? `` }),
       },
     }));
   };

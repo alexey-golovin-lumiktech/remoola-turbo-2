@@ -4,7 +4,13 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { useSignupForm } from './useSignupForm';
-import { addressDetailsSchema, organizationSchema, personalDetailsSchema, signupDetailsSchema } from '../validation';
+import {
+  addressDetailsSchema,
+  entityDetailsSchema,
+  organizationSchema,
+  personalDetailsSchema,
+  signupDetailsSchema,
+} from '../validation';
 
 export function useSignupSubmit() {
   const router = useRouter();
@@ -28,23 +34,44 @@ export function useSignupSubmit() {
       const signupResult = signupDetailsSchema.safeParse(signupDetails);
       if (!signupResult.success) throw new Error(`Please review your account details and try again.`);
 
-      const personalResult = personalDetailsSchema.safeParse(personalDetails);
-      if (!personalResult.success) throw new Error(`Please review your personal details and try again.`);
-
       if (isBusiness || isContractorEntity) {
+        const entityData = {
+          companyName: organizationDetails.name,
+          countryOfTaxResidence: personalDetails.countryOfTaxResidence,
+          taxId: personalDetails.taxId,
+          phoneNumber: personalDetails.phoneNumber,
+          legalAddress: addressDetails.street,
+        };
+        const entityResult = entityDetailsSchema.safeParse(entityData);
+        if (!entityResult.success) throw new Error(`Please review your entity details and try again.`);
+
         const organizationResult = organizationSchema.safeParse(organizationDetails);
         if (!organizationResult.success) throw new Error(`Please review your organization details and try again.`);
+      } else {
+        const personalResult = personalDetailsSchema.safeParse(personalDetails);
+        if (!personalResult.success) throw new Error(`Please review your personal details and try again.`);
       }
-      if (!isBusiness) {
-        const addressResult = addressDetailsSchema.safeParse(addressDetails);
-        if (!addressResult.success) throw new Error(`Please review your address details and try again.`);
-      }
+      const addressResult = addressDetailsSchema.safeParse(addressDetails);
+      if (!addressResult.success) throw new Error(`Please review your address details and try again.`);
 
       const payload = {
         ...signupDetails,
-        personalDetails: personalDetails,
+        personalDetails:
+          isBusiness || isContractorEntity
+            ? {
+                citizenOf: personalDetails.countryOfTaxResidence,
+                dateOfBirth: `1970-01-01`,
+                passportOrIdNumber: personalDetails.taxId || `N/A`,
+                countryOfTaxResidence: personalDetails.countryOfTaxResidence,
+                taxId: personalDetails.taxId,
+                phoneNumber: personalDetails.phoneNumber,
+                firstName: null,
+                lastName: null,
+                legalStatus: null,
+              }
+            : personalDetails,
         organizationDetails: isBusiness || isContractorEntity ? organizationDetails : null,
-        addressDetails: isBusiness ? null : addressDetails,
+        addressDetails,
         ...(googleSignupToken ? { googleSignupToken } : {}),
       };
 
