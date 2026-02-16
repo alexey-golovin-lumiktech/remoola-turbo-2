@@ -69,7 +69,6 @@ export function SignupDetailsStep() {
 
   const handleSubmit = () => {
     const result = signupDetailsSchema.safeParse(signup);
-    console.log(`result`, result);
     if (!result.success) {
       setFieldErrors(getFieldErrors(result.error));
       return;
@@ -200,6 +199,7 @@ export function SignupDetailsStep() {
                 contractorKind: null, // must reset to null if switching from contractor
               });
               clearError(`accountType`);
+              clearError(`contractorKind`);
             }}
             className={getToggleButtonClasses(signup.accountType === ACCOUNT_TYPE.BUSINESS)}
           >
@@ -216,13 +216,17 @@ export function SignupDetailsStep() {
                 contractorKind: signup.contractorKind ?? CONTRACTOR_KIND.INDIVIDUAL,
               });
               clearError(`accountType`);
+              clearError(`contractorKind`);
             }}
             className={getToggleButtonClasses(signup.accountType === ACCOUNT_TYPE.CONTRACTOR)}
           >
             Contractor
           </button>
         </div>
-        {fieldErrors.accountType && <p className={errorTextClass}>{fieldErrors.accountType}</p>}
+        {(fieldErrors.accountType ||
+          (fieldErrors.contractorKind && signup.accountType !== ACCOUNT_TYPE.CONTRACTOR)) && (
+          <p className={errorTextClass}>{fieldErrors.accountType ?? fieldErrors.contractorKind}</p>
+        )}
       </div>
 
       {/* Contractor kind (ONLY if contractor) */}
