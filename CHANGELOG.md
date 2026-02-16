@@ -348,7 +348,7 @@
 - **2026-02-07:** Fixed consumer signup process issues and stabilized validation flow.
 
 - **2026-02-16:** Strengthened consumer signup flow with improved validation logic,
-                  contractor/business switching fixes, Jest configuration and unit tests;
+                  contractor/business switching fixes, and extended schema coverage;
                   enforced profile completion requirements before allowing payments;
                   added CountrySelect and PhoneInput with E.164 validation and
                   searchable country selection; introduced entity flow for business
@@ -357,9 +357,16 @@
                   phone number format validation; added address parsing and automatic
                   prefill from legal address; migrated to `FormSelect` components;
                   fixed organization step visibility logic; added Tax ID validation
-                  rules; extended signup schema tests and integration tests (56 tests);
-                  added consumer test execution to Husky pre-commit hook; and
-                  performed linting, formatting, and merge maintenance updates.
+                  rules; introduced Google signup flow with optional password support,
+                  OAuth hydration (email, name, account type, contractor kind),
+                  cookie clearing logic, and dedicated signup-session routes;
+                  added account type propagation through OAuth redirect; added
+                  address blur validation and country-specific passport/ID rules;
+                  expanded consumer and API test coverage (Google signup scenarios,
+                  multi-field validation, schema edge cases); configured Jest
+                  environment for API tests; updated Husky pre-commit hook to run
+                  lint with `--force` and execute both consumer and API tests; and
+                  performed changelog and maintenance updates.
 
 
 ```
