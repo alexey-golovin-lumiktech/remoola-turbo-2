@@ -102,6 +102,14 @@ describe(`personalDetailsSchema`, () => {
         expect(getFieldErrors(result.error).phoneNumber).toBe(`Phone number is required`);
       }
     });
+
+    it(`fails when phoneNumber is invalid`, () => {
+      const result = personalDetailsSchema.safeParse({ ...validBase, phoneNumber: `invalid` });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(getFieldErrors(result.error).phoneNumber).toBe(`Please enter a valid phone number`);
+      }
+    });
   });
 
   describe(`dateOfBirth validation`, () => {

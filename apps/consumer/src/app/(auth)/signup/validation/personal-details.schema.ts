@@ -1,3 +1,4 @@
+import { isValidPhoneNumber } from 'libphonenumber-js';
 import { z } from 'zod';
 
 const isValidDate = (dateString: string): boolean => {
@@ -35,7 +36,10 @@ export const personalDetailsSchema = z.object({
     .refine(isNotFutureDate, `Date of birth cannot be in the future`)
     .refine(isAtLeast18YearsOld, `You must be at least 18 years old`),
   citizenOf: z.string().min(1, `Citizenship is required`),
-  phoneNumber: z.string().min(1, `Phone number is required`),
+  phoneNumber: z
+    .string()
+    .min(1, `Phone number is required`)
+    .refine((v) => isValidPhoneNumber(v), `Please enter a valid phone number`),
   taxId: z.string().min(1, `Tax ID is required`),
   countryOfTaxResidence: z.string().min(1, `Country of tax residence is required`),
   legalStatus: z.string().min(1, `Legal Status is required`),

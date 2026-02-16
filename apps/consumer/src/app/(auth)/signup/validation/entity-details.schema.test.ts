@@ -50,6 +50,14 @@ describe(`entityDetailsSchema`, () => {
       }
     });
 
+    it(`fails when phoneNumber is invalid`, () => {
+      const result = entityDetailsSchema.safeParse({ ...validBase, phoneNumber: `invalid` });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(getFieldErrors(result.error).phoneNumber).toBe(`Please enter a valid phone number`);
+      }
+    });
+
     it(`fails when legalAddress is empty`, () => {
       const result = entityDetailsSchema.safeParse({ ...validBase, legalAddress: `` });
       expect(result.success).toBe(false);
