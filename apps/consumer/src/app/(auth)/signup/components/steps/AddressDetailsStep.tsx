@@ -59,6 +59,12 @@ export function AddressDetailsStep() {
     });
   };
 
+  const validateOnBlur = () => {
+    const result = addressDetailsSchema.safeParse(addressDetails);
+    if (result.success) setFieldErrors({});
+    else setFieldErrors(getFieldErrors(result.error));
+  };
+
   const handleSubmit = () => {
     const result = addressDetailsSchema.safeParse(addressDetails);
     if (!result.success) {
@@ -84,6 +90,7 @@ export function AddressDetailsStep() {
         label="Postal code"
         value={addressDetails.postalCode || ``}
         onChange={(value) => updateAddress({ postalCode: value })}
+        onBlur={validateOnBlur}
         error={fieldErrors.postalCode}
         onErrorClear={() => clearError(`postalCode`)}
       />
@@ -92,6 +99,7 @@ export function AddressDetailsStep() {
         label="Country"
         value={addressDetails.country || ``}
         onChange={(value) => updateAddress({ country: value })}
+        onBlur={validateOnBlur}
         error={fieldErrors.country}
         onErrorClear={() => clearError(`country`)}
       />
@@ -100,6 +108,7 @@ export function AddressDetailsStep() {
         label="State / Region"
         value={addressDetails.state || ``}
         onChange={(value) => updateAddress({ state: value })}
+        onBlur={validateOnBlur}
         error={fieldErrors.state}
         onErrorClear={() => clearError(`state`)}
       />
@@ -108,6 +117,7 @@ export function AddressDetailsStep() {
         label="City"
         value={addressDetails.city || ``}
         onChange={(value) => updateAddress({ city: value })}
+        onBlur={validateOnBlur}
         error={fieldErrors.city}
         onErrorClear={() => clearError(`city`)}
       />
@@ -116,6 +126,7 @@ export function AddressDetailsStep() {
         label="Street"
         value={addressDetails.street || ``}
         onChange={(value) => updateAddress({ street: value })}
+        onBlur={validateOnBlur}
         error={fieldErrors.street}
         onErrorClear={() => clearError(`street`)}
       />

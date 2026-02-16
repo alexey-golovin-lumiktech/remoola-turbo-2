@@ -4,10 +4,12 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 
+import { GoogleIcon } from '../../components/ui';
 import styles from '../../components/ui/classNames.module.css';
 
 const {
   formInputFullWidth,
+  inlineFlexItemsCenterGap2,
   linkPrimary,
   loginButton,
   loginContainer,
@@ -91,11 +93,15 @@ export default function LoginForm() {
           <button
             type="button"
             className={loginButton}
-            onClick={() => {
+            onClick={async () => {
+              await fetch(`/api/consumer/auth/clear-cookies`, { method: `POST`, credentials: `include` });
               window.location.href = googleStartUrl;
             }}
           >
-            Continue with Google
+            <span className={inlineFlexItemsCenterGap2}>
+              <GoogleIcon size={20} />
+              Continue with Google
+            </span>
           </button>
         )}
       </form>

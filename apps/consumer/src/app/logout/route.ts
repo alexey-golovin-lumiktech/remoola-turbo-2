@@ -8,6 +8,7 @@ export async function GET(request: Request) {
   // Clear cookies
   response.cookies.set(`access_token`, ``, { path: `/`, maxAge: 0 });
   response.cookies.set(`refresh_token`, ``, { path: `/`, maxAge: 0 });
+  response.cookies.set(`google_oauth_state`, ``, { path: `/`, maxAge: 0 });
 
   return response;
 }

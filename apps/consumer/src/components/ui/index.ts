@@ -1,4 +1,5 @@
 export * from './ErrorBoundary';
+export * from './GoogleIcon';
 export * from './CountrySelect';
 export * from './FormSelect';
 export * from './Skeleton';

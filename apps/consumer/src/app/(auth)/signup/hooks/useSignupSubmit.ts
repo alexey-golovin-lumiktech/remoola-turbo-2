@@ -3,14 +3,15 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-import { useSignupForm } from './useSignupForm';
+import { omit } from '../utils';
 import {
   addressDetailsSchema,
+  createSignupDetailsSchema,
   entityDetailsSchema,
   organizationSchema,
   personalDetailsSchema,
-  signupDetailsSchema,
 } from '../validation';
+import { useSignupForm } from './useSignupForm';
 
 export function useSignupSubmit() {
   const router = useRouter();
@@ -31,7 +32,8 @@ export function useSignupSubmit() {
     setError(null);
 
     try {
-      const signupResult = signupDetailsSchema.safeParse(signupDetails);
+      const signupDetailsSchemaForContext = createSignupDetailsSchema(Boolean(googleSignupToken));
+      const signupResult = signupDetailsSchemaForContext.safeParse(signupDetails);
       if (!signupResult.success) throw new Error(`Please review your account details and try again.`);
 
       if (isBusiness || isContractorEntity) {
@@ -54,8 +56,9 @@ export function useSignupSubmit() {
       const addressResult = addressDetailsSchema.safeParse(addressDetails);
       if (!addressResult.success) throw new Error(`Please review your address details and try again.`);
 
+      const signupForPayload = googleSignupToken ? omit(signupDetails, `password`, `confirmPassword`) : undefined;
       const payload = {
-        ...signupDetails,
+        ...(signupForPayload ?? signupDetails),
         personalDetails:
           isBusiness || isContractorEntity
             ? {

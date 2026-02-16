@@ -14,6 +14,7 @@ export interface CountrySelectProps {
   onChange: (value: string) => void;
   error?: string;
   onErrorClear?: () => void;
+  onBlur?: () => void;
   /** When set, filter options to only show this country initially / as default */
   defaultOption?: string;
   placeholder?: string;
@@ -27,6 +28,7 @@ export function CountrySelect({
   onChange,
   error,
   onErrorClear,
+  onBlur,
   placeholder = `Select or search country...`,
 }: CountrySelectProps) {
   const { resolvedTheme } = useTheme();
@@ -48,6 +50,7 @@ export function CountrySelect({
         options={options}
         value={selectedOption}
         onChange={handleChange}
+        onBlur={onBlur}
         placeholder={placeholder}
         filterOption={(option, input) =>
           option.label.toLowerCase().includes(input.toLowerCase()) ||

@@ -30,7 +30,7 @@ const {
 
 export default function ChooseContractorKindStep() {
   const router = useRouter();
-  const { signupDetails: signup, updateSignup } = useSignupForm();
+  const { signupDetails: signup, updateSignup, googleSignupToken } = useSignupForm();
 
   const selectKind = (kind: IContractorKind) => {
     updateSignup({ contractorKind: kind });
@@ -38,7 +38,8 @@ export default function ChooseContractorKindStep() {
 
   const onNext = () => {
     if (!signup.contractorKind) return;
-    router.push(`/signup`);
+    const path = googleSignupToken ? `/signup?googleSignupToken=${encodeURIComponent(googleSignupToken)}` : `/signup`;
+    router.push(path);
   };
 
   const isSelected = (kind: IContractorKind) => signup.contractorKind === kind;

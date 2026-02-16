@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useMemo, useState } from 'react';
 
-import { FormInput, FormSelect } from '../../../../../components/ui';
+import { FormInput, FormSelect, GoogleIcon } from '../../../../../components/ui';
 import styles from '../../../../../components/ui/classNames.module.css';
 import { PasswordInput } from '../../../../../components/ui/PasswordInput';
 import {
@@ -15,13 +16,17 @@ import {
 } from '../../../../../types';
 import { useSignupForm, useSignupSteps } from '../../hooks';
 import { generatePassword } from '../../utils';
-import { getFieldErrors, signupDetailsSchema } from '../../validation';
+import { createSignupDetailsSchema, getFieldErrors } from '../../validation';
 import { PrevNextButtons } from '../PrevNextButtons';
 
 const {
   errorTextClass,
-  formInputFullWidth,
+  flexRowGap3,
   formInputError,
+  formInputFullWidth,
+  inlineFlexItemsCenterGap2,
+  loginButton,
+  mt4,
   signupGenerateButton,
   signupPasswordInput,
   signupPasswordRow,
@@ -31,7 +36,8 @@ const {
   signupStepLabelInline,
   signupStepSubtitle,
   signupStepTitleLg,
-  flexRowGap3,
+  textCenter,
+  textMutedGray,
 } = styles;
 
 const joinClasses = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(` `);
@@ -52,10 +58,24 @@ const getToggleButtonClasses = (isActive: boolean, variant: `md` | `lg` = `md`) 
 };
 
 export function SignupDetailsStep() {
+  const params = useSearchParams();
   const { signupDetails: signup, updateSignup, googleSignupToken } = useSignupForm();
+  const googleTokenFromUrl = params.get(`googleSignupToken`);
+  const isSigningUpViaGoogle = Boolean(googleSignupToken) || Boolean(googleTokenFromUrl);
+  const googleSignupStartUrl = useMemo(() => {
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    if (!apiBaseUrl || apiBaseUrl.length === 0) return null;
+    const url = new URL(`${apiBaseUrl}/consumer/auth/google/start`);
+    url.searchParams.set(`next`, `/signup`);
+    if (signup.accountType) url.searchParams.set(`accountType`, signup.accountType);
+    if (signup.accountType === `CONTRACTOR` && signup.contractorKind) {
+      url.searchParams.set(`contractorKind`, signup.contractorKind);
+    }
+    return url.toString();
+  }, [signup.accountType, signup.contractorKind]);
   const { markSubmitted, goNext } = useSignupSteps();
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const emailLocked = Boolean(googleSignupToken);
+  const emailLocked = isSigningUpViaGoogle;
 
   const clearError = (field: string) => {
     if (!fieldErrors[field]) return;
@@ -66,7 +86,8 @@ export function SignupDetailsStep() {
   };
 
   const handleSubmit = () => {
-    const result = signupDetailsSchema.safeParse(signup);
+    const schema = createSignupDetailsSchema(isSigningUpViaGoogle);
+    const result = schema.safeParse(signup);
     if (!result.success) {
       setFieldErrors(getFieldErrors(result.error));
       return;
@@ -96,53 +117,57 @@ export function SignupDetailsStep() {
         />
       </div>
 
-      <div className={signupStepGroupLg}>
-        <label className={signupStepLabelInline}>Password</label>
+      {!emailLocked && (
+        <>
+          <div className={signupStepGroupLg}>
+            <label className={signupStepLabelInline}>Password</label>
 
-        <div className={signupPasswordRow}>
-          <div className={signupPasswordInput}>
-            <PasswordInput
-              value={signup.password}
-              onChange={(value) => {
-                updateSignup({ password: value });
-                clearError(`password`);
-              }}
-              placeholder="Enter password"
-              inputClassName={joinClasses(formInputFullWidth, fieldErrors.password && formInputError)}
-            />
+            <div className={signupPasswordRow}>
+              <div className={signupPasswordInput}>
+                <PasswordInput
+                  value={signup.password}
+                  onChange={(value) => {
+                    updateSignup({ password: value });
+                    clearError(`password`);
+                  }}
+                  placeholder="Enter password"
+                  inputClassName={joinClasses(formInputFullWidth, fieldErrors.password && formInputError)}
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  const generated = generatePassword(12);
+                  updateSignup({ password: generated, confirmPassword: generated });
+                  clearError(`password`);
+                  clearError(`confirmPassword`);
+                }}
+                className={signupGenerateButton}
+              >
+                Generate
+              </button>
+            </div>
+            {fieldErrors.password && <p className={errorTextClass}>{fieldErrors.password}</p>}
           </div>
 
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              const generated = generatePassword(12);
-              updateSignup({ password: generated, confirmPassword: generated });
-              clearError(`password`);
-              clearError(`confirmPassword`);
-            }}
-            className={signupGenerateButton}
-          >
-            Generate
-          </button>
-        </div>
-        {fieldErrors.password && <p className={errorTextClass}>{fieldErrors.password}</p>}
-      </div>
-
-      <div className={signupStepGroupLg}>
-        <label className={signupStepLabelInline}>Confirm password</label>
-        <PasswordInput
-          value={signup.confirmPassword}
-          onChange={(value) => {
-            updateSignup({ confirmPassword: value });
-            clearError(`confirmPassword`);
-          }}
-          placeholder="Confirm password"
-          inputClassName={joinClasses(formInputFullWidth, fieldErrors.confirmPassword && formInputError)}
-        />
-        {fieldErrors.confirmPassword && <p className={errorTextClass}>{fieldErrors.confirmPassword}</p>}
-      </div>
+          <div className={signupStepGroupLg}>
+            <label className={signupStepLabelInline}>Confirm password</label>
+            <PasswordInput
+              value={signup.confirmPassword}
+              onChange={(value) => {
+                updateSignup({ confirmPassword: value });
+                clearError(`confirmPassword`);
+              }}
+              placeholder="Confirm password"
+              inputClassName={joinClasses(formInputFullWidth, fieldErrors.confirmPassword && formInputError)}
+            />
+            {fieldErrors.confirmPassword && <p className={errorTextClass}>{fieldErrors.confirmPassword}</p>}
+          </div>
+        </>
+      )}
 
       <FormSelect
         label="How Did You Hear About Us?"
@@ -271,6 +296,25 @@ export function SignupDetailsStep() {
       )}
 
       <PrevNextButtons nextLabel="Continue" handleClick={() => handleSubmit()} />
+
+      {googleSignupStartUrl && !emailLocked && (
+        <>
+          <p className={joinClasses(textCenter, textMutedGray, mt4)}>or</p>
+          <button
+            type="button"
+            className={loginButton}
+            onClick={async () => {
+              await fetch(`/api/consumer/auth/clear-cookies`, { method: `POST`, credentials: `include` });
+              window.location.href = googleSignupStartUrl;
+            }}
+          >
+            <span className={inlineFlexItemsCenterGap2}>
+              <GoogleIcon size={20} />
+              Sign up with Google
+            </span>
+          </button>
+        </>
+      )}
     </div>
   );
 }
