@@ -93,7 +93,7 @@ const jwt = {
 
 const nodemailer = {
   NODEMAILER_SMTP_HOST: z.string().default(`NODEMAILER_SMTP_HOST`),
-  NODEMAILER_SMTP_PORT: z.coerce.number(),
+  NODEMAILER_SMTP_PORT: z.coerce.number().default(587),
   NODEMAILER_SMTP_USER: z.string().default(`NODEMAILER_SMTP_USER`),
   NODEMAILER_SMTP_USER_PASS: z.string().default(`NODEMAILER_SMTP_USER_PASS`),
   NODEMAILER_SMTP_DEFAULT_FROM: z.string().default(`noreply@wirebill.com`),

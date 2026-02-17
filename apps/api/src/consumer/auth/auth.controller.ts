@@ -3,6 +3,7 @@ import { type IncomingHttpHeaders } from 'http';
 
 import {
   Body,
+  GoneException,
   Controller,
   Get,
   Headers,
@@ -21,14 +22,13 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiOkResponse, ApiBody, ApiTags, ApiBasicAuth, ApiBearerAuth } from '@nestjs/swagger';
 import express from 'express';
-import _ from 'lodash';
 
 import { $Enums, type ConsumerModel } from '@remoola/database-2';
 
 import { ConsumerAuthService } from './auth.service';
-import { ConsumerSignup, GoogleOAuthBody } from './dto';
-import { GoogleAuthService } from './google-auth.service';
+import { ConsumerSignup } from './dto';
 import { GoogleOAuthService } from './google-oauth.service';
+import { OAuthStateStoreService } from './oauth-state-store.service';
 import { Identity, PublicEndpoint } from '../../common';
 import { CONSUMER } from '../../dtos';
 import { envs, JWT_ACCESS_TTL, JWT_REFRESH_TTL } from '../../envs';
@@ -46,40 +46,42 @@ import {
 @Controller(`consumer/auth`)
 export class ConsumerAuthController {
   private readonly logger = new Logger(ConsumerAuthController.name);
-  private readonly oauthStateTtlMs = 10 * 60 * 1000;
+  private readonly oauthStateTtlMs = 5 * 60 * 1000;
+  private readonly maxOAuthNextPathLength = 512;
 
   constructor(
     private readonly service: ConsumerAuthService,
-    private readonly googleAuthService: GoogleAuthService,
     private readonly googleOAuthServiceGPT: GoogleOAuthService,
+    private readonly oauthStateStore: OAuthStateStoreService,
   ) {}
 
-  private setAuthCookies(res: express.Response, accessToken: string, refreshToken: string) {
+  private getAuthCookieOptions(req?: express.Request) {
     const isProd = envs.NODE_ENV === `production`;
+    const isVercel = envs.VERCEL !== 0;
+    const forwardedProto = req?.headers?.[`x-forwarded-proto`];
+    const isSecureRequest =
+      req?.secure === true || (typeof forwardedProto === `string` && forwardedProto.split(`,`)[0]?.trim() === `https`);
+    const sameSite = isSecureRequest || isProd || isVercel ? (`none` as const) : (`lax` as const);
+    const secure = isSecureRequest || isVercel || isProd || envs.COOKIE_SECURE;
 
-    if (envs.VERCEL !== 0) {
-      const vercelCookieOptions = {
-        httpOnly: true,
-        secure: true,
-        sameSite: `none`,
-        path: `/`,
-      } as const;
-      res.cookie(ACCESS_TOKEN_COOKIE_KEY, accessToken, { ...vercelCookieOptions, maxAge: JWT_ACCESS_TTL });
-      res.cookie(REFRESH_TOKEN_COOKIE_KEY, refreshToken, { ...vercelCookieOptions, maxAge: JWT_REFRESH_TTL });
-    } else {
-      const sameSite = isProd ? (`none` as const) : (`lax` as const);
-      const secure = isProd || envs.COOKIE_SECURE;
+    return {
+      httpOnly: true,
+      sameSite,
+      secure,
+      path: `/`,
+    };
+  }
 
-      const common = {
-        httpOnly: true,
-        sameSite,
-        secure,
-        path: `/`,
-      };
+  private setAuthCookies(res: express.Response, accessToken: string, refreshToken: string, req?: express.Request) {
+    const common = this.getAuthCookieOptions(req);
+    res.cookie(ACCESS_TOKEN_COOKIE_KEY, accessToken, { ...common, maxAge: JWT_ACCESS_TTL });
+    res.cookie(REFRESH_TOKEN_COOKIE_KEY, refreshToken, { ...common, maxAge: JWT_REFRESH_TTL });
+  }
 
-      res.cookie(ACCESS_TOKEN_COOKIE_KEY, accessToken, { ...common, maxAge: JWT_ACCESS_TTL });
-      res.cookie(REFRESH_TOKEN_COOKIE_KEY, refreshToken, { ...common, maxAge: JWT_REFRESH_TTL });
-    }
+  private clearAuthCookies(res: express.Response, req?: express.Request) {
+    const common = this.getAuthCookieOptions(req);
+    res.clearCookie(ACCESS_TOKEN_COOKIE_KEY, common);
+    res.clearCookie(REFRESH_TOKEN_COOKIE_KEY, common);
   }
 
   private getOAuthCookieOptions(req?: express.Request) {
@@ -96,14 +98,13 @@ export class ConsumerAuthController {
       sameSite,
       secure,
       path: `/`,
-      signed: true,
       maxAge: this.oauthStateTtlMs,
     };
   }
 
   private getOAuthClearCookieOptions(req?: express.Request) {
-    const { httpOnly, sameSite, secure, path, signed } = this.getOAuthCookieOptions(req);
-    return { httpOnly, sameSite, secure, path, signed };
+    const { httpOnly, sameSite, secure, path } = this.getOAuthCookieOptions(req);
+    return { httpOnly, sameSite, secure, path };
   }
 
   private normalizeOrigin(origin: string) {
@@ -127,13 +128,16 @@ export class ConsumerAuthController {
     if (!next) return `/dashboard`;
     if (next.startsWith(`/`)) {
       if (next.startsWith(`//`)) return `/dashboard`;
+      if (next.length > this.maxOAuthNextPathLength) return `/dashboard`;
       return next;
     }
 
     try {
       const url = new URL(next);
       if (this.allowedOrigins().has(this.normalizeOrigin(url.origin))) {
-        return `${url.pathname}${url.search}${url.hash}`;
+        const normalized = `${url.pathname}${url.search}${url.hash}`;
+        if (normalized.length > this.maxOAuthNextPathLength) return `/dashboard`;
+        return normalized;
       }
     } catch {
       // ignore invalid url
@@ -201,49 +205,14 @@ export class ConsumerAuthController {
     return url.toString();
   }
 
-  private createOAuthStateToken(payload: {
-    nonce: string;
-    codeVerifier: string;
-    nextPath: string;
-    createdAt: number;
-    accountType?: string;
-    contractorKind?: string;
-  }) {
-    const payloadBase64 = Buffer.from(JSON.stringify(payload)).toString(`base64url`);
-    const signature = crypto.createHmac(`sha256`, envs.SECURE_SESSION_SECRET).update(payloadBase64).digest(`base64url`);
-    return `${payloadBase64}.${signature}`;
-  }
-
-  private parseOAuthStateToken(stateToken: string) {
-    const [payloadBase64, signature] = stateToken.split(`.`);
-    if (!payloadBase64 || !signature) return null;
-    const expectedSignature = crypto
-      .createHmac(`sha256`, envs.SECURE_SESSION_SECRET)
-      .update(payloadBase64)
-      .digest(`base64url`);
-    if (signature !== expectedSignature) return null;
-    try {
-      return JSON.parse(Buffer.from(payloadBase64, `base64url`).toString(`utf-8`)) as {
-        nonce: string;
-        codeVerifier: string;
-        nextPath: string;
-        createdAt: number;
-        accountType?: string;
-        contractorKind?: string;
-      };
-    } catch {
-      return null;
-    }
-  }
-
   @Post(`login`)
   @PublicEndpoint()
   @ApiOperation({ operationId: `consumer_auth_login` })
   @ApiOkResponse({ type: CONSUMER.LoginResponse })
   @TransformResponse(CONSUMER.LoginResponse)
-  async login(@Res({ passthrough: true }) res, @Body() body: any) {
+  async login(@Req() req: express.Request, @Res({ passthrough: true }) res, @Body() body: any) {
     const data = await this.service.login(body);
-    this.setAuthCookies(res, data.accessToken, data.refreshToken);
+    this.setAuthCookies(res, data.accessToken, data.refreshToken, req);
     return data;
   }
 
@@ -270,27 +239,22 @@ export class ConsumerAuthController {
     const codeVerifier = GoogleOAuthService.createCodeVerifier();
     const codeChallenge = GoogleOAuthService.createCodeChallenge(codeVerifier);
 
-    const stateToken = this.createOAuthStateToken({
-      nonce,
-      codeVerifier,
-      nextPath,
-      createdAt: Date.now(),
-      accountType: validatedAccountType,
-      contractorKind: validatedContractorKind,
-    });
-    const cookiePayload = Buffer.from(
-      JSON.stringify({
-        stateToken,
+    const stateToken = this.oauthStateStore.createStateToken();
+    const createdAt = Date.now();
+    await this.oauthStateStore.save(
+      stateToken,
+      {
         nonce,
         codeVerifier,
         nextPath,
+        createdAt,
         accountType: validatedAccountType,
         contractorKind: validatedContractorKind,
-        createdAt: Date.now(),
-      }),
-    ).toString(`base64url`);
+      },
+      this.oauthStateTtlMs,
+    );
 
-    response.cookie(GOOGLE_OAUTH_STATE_COOKIE_KEY, cookiePayload, this.getOAuthCookieOptions(req));
+    response.cookie(GOOGLE_OAUTH_STATE_COOKIE_KEY, stateToken, this.getOAuthCookieOptions(req));
     const authUrl = this.googleOAuthServiceGPT.buildAuthorizationUrl(stateToken, codeChallenge, nonce);
     return response.redirect(authUrl);
   }
@@ -304,59 +268,30 @@ export class ConsumerAuthController {
     @Query(`state`) state?: string,
     @Query(`error`) error?: string,
   ) {
-    let shouldClearCookie = false;
+    const clearStateCookie = () =>
+      response.clearCookie(GOOGLE_OAUTH_STATE_COOKIE_KEY, this.getOAuthClearCookieOptions(req));
     const failureRedirect = (reason: string) => {
+      clearStateCookie();
       const url = this.buildConsumerLoginRedirect(reason);
       return response.redirect(url);
     };
 
     if (error) return failureRedirect(`access_denied`);
 
-    const signedCookie = req.signedCookies?.[GOOGLE_OAUTH_STATE_COOKIE_KEY];
-    const fallbackCookie = envs.NODE_ENV !== `production` ? req.cookies?.[GOOGLE_OAUTH_STATE_COOKIE_KEY] : undefined;
-    const stateCookie = signedCookie ?? fallbackCookie;
-
-    let cookiePayload: {
-      stateToken: string;
-      nonce: string;
-      codeVerifier: string;
-      nextPath: string;
-      createdAt: number;
-      accountType?: string;
-      contractorKind?: string;
-    };
-    if (stateCookie) {
-      try {
-        cookiePayload = JSON.parse(Buffer.from(stateCookie, `base64url`).toString(`utf-8`));
-      } catch {
-        return failureRedirect(`invalid_state`);
-      }
-      if (!state || state !== cookiePayload.stateToken) return failureRedirect(`invalid_state`);
-    } else if (state) {
-      const parsed = this.parseOAuthStateToken(state);
-      if (!parsed) return failureRedirect(`invalid_state`);
-      cookiePayload = {
-        stateToken: state,
-        nonce: parsed.nonce,
-        codeVerifier: parsed.codeVerifier,
-        nextPath: parsed.nextPath,
-        createdAt: parsed.createdAt,
-        accountType: parsed.accountType,
-        contractorKind: parsed.contractorKind,
-      };
-    } else {
-      return failureRedirect(`missing_state`);
-    }
-
-    if (Date.now() - cookiePayload.createdAt > this.oauthStateTtlMs) return failureRedirect(`expired_state`);
+    const stateCookie = req.cookies?.[GOOGLE_OAUTH_STATE_COOKIE_KEY];
+    if (!state) return failureRedirect(`invalid_state`);
+    if (stateCookie && stateCookie !== state) return failureRedirect(`invalid_state`);
     if (!code) return failureRedirect(`missing_code`);
 
+    const stateRecord = await this.oauthStateStore.consume(state);
+    if (!stateRecord) return failureRedirect(`expired_state`);
+    if (Date.now() - stateRecord.createdAt > this.oauthStateTtlMs) return failureRedirect(`expired_state`);
+
     try {
-      shouldClearCookie = true;
       const payload = await this.googleOAuthServiceGPT.exchangeCodeForPayload(
         code,
-        cookiePayload.codeVerifier,
-        cookiePayload.nonce,
+        stateRecord.codeVerifier,
+        stateRecord.nonce,
       );
 
       const email = payload.email?.toLowerCase();
@@ -376,11 +311,12 @@ export class ConsumerAuthController {
           sub: (payload.sub as string) ?? null,
         });
 
+        clearStateCookie();
         const redirectUrl = this.buildConsumerSignupRedirect(
           googleSignupToken,
-          cookiePayload.nextPath,
-          cookiePayload.accountType,
-          cookiePayload.contractorKind,
+          stateRecord.nextPath,
+          stateRecord.accountType,
+          stateRecord.contractorKind,
         );
         return response.redirect(redirectUrl);
       }
@@ -389,16 +325,13 @@ export class ConsumerAuthController {
       const { accessToken, refreshToken } = await this.service.issueTokensForConsumer(consumer.id);
       const exchangeToken = await this.service.createOAuthExchangeToken(consumer.id);
 
-      this.setAuthCookies(response, accessToken, refreshToken);
-      const redirectUrl = this.buildConsumerRedirect(cookiePayload.nextPath, { oauthToken: exchangeToken });
+      this.setAuthCookies(response, accessToken, refreshToken, req);
+      clearStateCookie();
+      const redirectUrl = this.buildConsumerRedirect(stateRecord.nextPath, { oauthToken: exchangeToken });
       return response.redirect(redirectUrl);
     } catch (err) {
       this.logger.error(err);
       return failureRedirect(`login_failed`);
-    } finally {
-      if (shouldClearCookie && !response.headersSent) {
-        response.clearCookie(GOOGLE_OAUTH_STATE_COOKIE_KEY, this.getOAuthClearCookieOptions(req));
-      }
     }
   }
 
@@ -420,52 +353,56 @@ export class ConsumerAuthController {
   @Get(`google-new-way`)
   @ApiOkResponse({ type: CONSUMER.GoogleOAuthNewWayResponse })
   @TransformResponse(CONSUMER.GoogleOAuthNewWayResponse)
-  googleOAuthNewWay(@Query() query: CONSUMER.GoogleOAuth2Query) {
-    return this.googleAuthService.googleOAuthNewWay(query);
+  googleOAuthNewWay() {
+    throw new GoneException(`Deprecated endpoint. Use /consumer/auth/google/start`);
   }
 
   @PublicEndpoint()
   @Get(`google-redirect-new-way`)
   @ApiOkResponse({ type: CONSUMER.LoginResponse })
   @TransformResponse(CONSUMER.LoginResponse)
-  async googleOAuthNewWayRedirect(@Res() response: express.Response, @Query() query: CONSUMER.RedirectCallbackQuery) {
-    const queryStateHref = _.get(query, `state.href`, null);
-    if (queryStateHref == null) {
-      this.logger.debug({ caller: this.googleOAuthNewWayRedirect.name, payload: { queryStateHref, query } });
-      return;
-    }
-    if (query?.error == null) await this.googleAuthService.googleOAuthNewWayRedirect(query);
-    const url = new URL(queryStateHref);
-    return response.status(301).redirect(url.origin + `/create-profile`);
+  googleOAuthNewWayRedirect() {
+    throw new GoneException(`Deprecated endpoint. Use /consumer/auth/google/start`);
   }
 
   @PublicEndpoint()
   @Post(`google-oauth`)
   @ApiOkResponse({ type: CONSUMER.LoginResponse })
   @TransformResponse(CONSUMER.LoginResponse)
-  googleOAuth(@Body() body: CONSUMER.GoogleSignin) {
-    return this.service.googleOAuth(removeNil(body));
+  googleOAuth() {
+    throw new GoneException(`Deprecated endpoint. Use Authorization Code flow via /consumer/auth/google/start`);
   }
 
   @PublicEndpoint()
   @Post(`google-login-gpt`)
   @HttpCode(HttpStatus.OK)
-  async googleLoginGPT(@Res({ passthrough: true }) res, @Body() body: GoogleOAuthBody) {
-    const result = await this.googleOAuthServiceGPT.googleLoginGPT(removeNil(body));
-    const { accessToken, refreshToken } = await this.service.issueTokensForConsumer(result.consumer.id);
-    this.setAuthCookies(res, accessToken, refreshToken);
-    return { ...result.consumer, accessToken, refreshToken };
+  googleLoginGPT() {
+    throw new GoneException(`Deprecated endpoint. Use Authorization Code flow via /consumer/auth/google/start`);
   }
 
   @PublicEndpoint()
   @Post(`oauth/exchange`)
   @HttpCode(HttpStatus.OK)
-  async oauthExchange(@Res({ passthrough: true }) res, @Body(`exchangeToken`) exchangeToken: string) {
+  async oauthExchange(
+    @Req() req: express.Request,
+    @Res({ passthrough: true }) res,
+    @Body(`exchangeToken`) exchangeToken: string,
+  ) {
     if (!exchangeToken) throw new BadRequestException(`Missing exchange token`);
     const decoded = await this.service.verifyOAuthExchangeToken(exchangeToken);
     const { accessToken, refreshToken } = await this.service.issueTokensForConsumer(decoded.identityId);
-    this.setAuthCookies(res, accessToken, refreshToken);
-    return { accessToken, refreshToken };
+    this.setAuthCookies(res, accessToken, refreshToken, req);
+    return { ok: true };
+  }
+
+  @PublicEndpoint()
+  @Post(`logout`)
+  @HttpCode(HttpStatus.OK)
+  async logout(@Req() req: express.Request, @Res({ passthrough: true }) res) {
+    await this.service.revokeSessionByRefreshToken(req.cookies?.[REFRESH_TOKEN_COOKIE_KEY]);
+    this.clearAuthCookies(res, req);
+    res.clearCookie(GOOGLE_OAUTH_STATE_COOKIE_KEY, this.getOAuthClearCookieOptions(req));
+    return { ok: true };
   }
 
   @PublicEndpoint()

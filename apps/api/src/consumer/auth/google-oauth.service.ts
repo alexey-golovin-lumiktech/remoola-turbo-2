@@ -87,6 +87,7 @@ export class GoogleOAuthService {
   async loginWithPayload(email: string, payload: TokenPayload) {
     // 1. Get or create consumer
     const consumer = await this.upsertConsumerFromGooglePayload(email, payload);
+    await this.assertSafeGoogleLink(consumer.id, payload);
 
     // 2. Upsert GoogleProfileDetails
     await this.upsertGoogleProfileDetails(consumer.id, payload);
@@ -298,5 +299,29 @@ export class GoogleOAuthService {
         },
       },
     });
+  }
+
+  private async assertSafeGoogleLink(consumerId: string, payload: TokenPayload) {
+    const incomingSub = typeof payload.sub === `string` && payload.sub.length > 0 ? payload.sub : null;
+    if (!incomingSub) return;
+
+    const existing = await this.prisma.googleProfileDetailsModel.findUnique({
+      where: { consumerId },
+      select: { metadata: true },
+    });
+    if (!existing?.metadata) return;
+
+    const existingSub = this.extractSubFromMetadata(existing.metadata);
+    if (!existingSub) return;
+    if (existingSub !== incomingSub) {
+      throw new UnauthorizedException(`Google account mismatch for existing user`);
+    }
+  }
+
+  private extractSubFromMetadata(metadata: Prisma.JsonValue) {
+    if (!metadata || typeof metadata !== `object` || Array.isArray(metadata)) return null;
+    const value = (metadata as Record<string, unknown>).sub;
+    if (typeof value === `string` && value.length > 0) return value;
+    return null;
   }
 }

@@ -56,11 +56,11 @@ export const envSchema = z.object({
   STRIPE_WEBHOOK_SECRET_BILLING: z.string().optional(),
 
   // Email
-  NODEMAILER_SMTP_HOST: z.string().optional(),
-  NODEMAILER_SMTP_PORT: z.coerce.number().optional(),
-  NODEMAILER_SMTP_USER: z.string().optional(),
-  NODEMAILER_SMTP_USER_PASS: z.string().optional(),
-  NODEMAILER_SMTP_DEFAULT_FROM: z.string().optional(),
+  NODEMAILER_SMTP_HOST: z.string().default(`NODEMAILER_SMTP_HOST`),
+  NODEMAILER_SMTP_PORT: z.coerce.number().default(587),
+  NODEMAILER_SMTP_USER: z.string().default(`NODEMAILER_SMTP_USER`),
+  NODEMAILER_SMTP_USER_PASS: z.string().default(`NODEMAILER_SMTP_USER_PASS`),
+  NODEMAILER_SMTP_DEFAULT_FROM: z.string().default(`noreply@wirebill.com`),
 
   // AWS
   AWS_FILE_UPLOAD_MAX_SIZE_BYTES: z.coerce.number().optional(),

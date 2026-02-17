@@ -141,16 +141,40 @@ function setupSwagger(app: any) {
 }
 
 async function bootstrap() {
+  const allowedOrigins = new Set<string>(
+    [
+      envs.CONSUMER_APP_ORIGIN,
+      envs.ADMIN_APP_ORIGIN,
+      envs.NEST_APP_EXTERNAL_ORIGIN?.replace(/\/api\/?$/, ``),
+      ...(envs.CORS_ALLOWED_ORIGINS || []),
+    ]
+      .filter(Boolean)
+      .map((x) => String(x).replace(/\/$/, ``)),
+  );
+
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     rawBody: true,
     cors: {
-      origin: true,
+      origin: (origin, callback) => {
+        if (!origin) {
+          // non-browser requests (health checks, server-to-server)
+          callback(null, true);
+          return;
+        }
+        const normalized = origin.replace(/\/$/, ``);
+        if (allowedOrigins.has(normalized)) {
+          callback(null, true);
+          return;
+        }
+        callback(new Error(`CORS origin denied`), false);
+      },
       credentials: true,
       exposedHeaders: [`set-cookie`, `content-range`, `content-type`],
     },
   });
 
   app.setGlobalPrefix(`api`);
+  app.set(`trust proxy`, 1);
   app.set(`query parser`, `extended`);
   app.use((req, res, next) => {
     const isSwagger = req.path.startsWith(`/docs`);

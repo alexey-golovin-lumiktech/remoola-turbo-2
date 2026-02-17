@@ -139,10 +139,23 @@ export class ConsumerAuthService {
     const verified = this.jwtService.verify<IJwtTokenPayload>(refreshToken);
     const exist = await this.prisma.accessRefreshTokenModel.findFirst({ where: { identityId: verified.identityId } });
     if (exist == null) throw new BadRequestException(`no identity record`);
+    if (exist.refreshToken !== refreshToken) throw new UnauthorizedException(`Invalid refresh token`);
 
     const consumer = await this.prisma.consumerModel.findFirst({ where: { id: verified.identityId } });
     const access = await this.getAccessAndRefreshToken(consumer.id);
     return Object.assign(consumer, access);
+  }
+
+  async revokeSessionByRefreshToken(refreshToken?: string | null) {
+    if (!refreshToken) return;
+    try {
+      const verified = this.jwtService.verify<IJwtTokenPayload>(refreshToken);
+      await this.prisma.accessRefreshTokenModel.deleteMany({
+        where: { identityId: verified.identityId, refreshToken },
+      });
+    } catch {
+      // ignore invalid token during logout
+    }
   }
 
   async issueTokensForConsumer(identityId: ConsumerModel[`id`]) {
