@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from 'react';
 
+import { type TVerificationStatus } from '@remoola/api-types';
+
 import { JsonView } from '../../../../components';
 import styles from '../../../../components/ui/classNames.module.css';
-import { type Consumer, type VerificationStatus } from '../../../../lib';
+import { type Consumer } from '../../../../lib';
 
 export function ConsumerDetailsPageClient({ consumerId }: { consumerId: string }) {
   const [consumerDetails, setConsumerDetails] = useState<Consumer | null>(null);
@@ -29,7 +31,7 @@ export function ConsumerDetailsPageClient({ consumerId }: { consumerId: string }
 
   if (!consumerDetails) return <div className={styles.adminTextGray600}>Consumer not found</div>;
 
-  const statusLabel = (status?: VerificationStatus | null) => {
+  const statusLabel = (status?: TVerificationStatus | null) => {
     switch (status) {
       case `APPROVED`:
         return `Approved`;
@@ -44,7 +46,7 @@ export function ConsumerDetailsPageClient({ consumerId }: { consumerId: string }
     }
   };
 
-  const statusClass = (status?: VerificationStatus | null) => {
+  const statusClass = (status?: TVerificationStatus | null) => {
     switch (status) {
       case `APPROVED`:
         return styles.adminStatusPillGood;

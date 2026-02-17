@@ -3,17 +3,12 @@
 import { useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
+import { type THowDidHearAboutUs, HowDidHearAboutUsValues, ContractorKinds, AccountTypes } from '@remoola/api-types';
+
 import { FormInput, FormSelect, GoogleIcon } from '../../../../../components/ui';
 import styles from '../../../../../components/ui/classNames.module.css';
 import { PasswordInput } from '../../../../../components/ui/PasswordInput';
-import {
-  STEP_NAME,
-  type IHowDidHearAboutUs,
-  HOW_DID_HEAR_ABOUT_US,
-  HOW_DID_HEAR_ABOUT_US_LABEL,
-  ACCOUNT_TYPE,
-  CONTRACTOR_KIND,
-} from '../../../../../types';
+import { STEP_NAME, HOW_DID_HEAR_ABOUT_US_LABEL } from '../../../../../types';
 import { useSignupForm, useSignupSteps } from '../../hooks';
 import { generatePassword } from '../../utils';
 import { createSignupDetailsSchema, getFieldErrors } from '../../validation';
@@ -173,41 +168,47 @@ export function SignupDetailsStep() {
         label="How Did You Hear About Us?"
         value={signup.howDidHearAboutUs ?? ``}
         onChange={(value) => {
-          const howDidHearAboutUs = value ? (value as IHowDidHearAboutUs) : null;
+          const howDidHearAboutUs = value ? (value as THowDidHearAboutUs) : null;
           const howDidHearAboutUsOther =
-            howDidHearAboutUs !== HOW_DID_HEAR_ABOUT_US.OTHER ? null : signup.howDidHearAboutUsOther;
+            howDidHearAboutUs !== HowDidHearAboutUsValues.OTHER ? null : signup.howDidHearAboutUsOther;
           updateSignup({ howDidHearAboutUs, howDidHearAboutUsOther });
         }}
         options={[
           {
-            value: HOW_DID_HEAR_ABOUT_US.EMPLOYER_COMPANY,
-            label: HOW_DID_HEAR_ABOUT_US_LABEL[HOW_DID_HEAR_ABOUT_US.EMPLOYER_COMPANY],
+            value: HowDidHearAboutUsValues.EMPLOYER_COMPANY,
+            label: HOW_DID_HEAR_ABOUT_US_LABEL[HowDidHearAboutUsValues.EMPLOYER_COMPANY],
           },
           {
-            value: HOW_DID_HEAR_ABOUT_US.EMPLOYEE_CONTRACTOR,
-            label: HOW_DID_HEAR_ABOUT_US_LABEL[HOW_DID_HEAR_ABOUT_US.EMPLOYEE_CONTRACTOR],
+            value: HowDidHearAboutUsValues.EMPLOYEE_CONTRACTOR,
+            label: HOW_DID_HEAR_ABOUT_US_LABEL[HowDidHearAboutUsValues.EMPLOYEE_CONTRACTOR],
           },
           {
-            value: HOW_DID_HEAR_ABOUT_US.REFERRED_RECOMMENDED,
-            label: HOW_DID_HEAR_ABOUT_US_LABEL[HOW_DID_HEAR_ABOUT_US.REFERRED_RECOMMENDED],
+            value: HowDidHearAboutUsValues.REFERRED_RECOMMENDED,
+            label: HOW_DID_HEAR_ABOUT_US_LABEL[HowDidHearAboutUsValues.REFERRED_RECOMMENDED],
           },
           {
-            value: HOW_DID_HEAR_ABOUT_US.EMAIL_INVITE,
-            label: HOW_DID_HEAR_ABOUT_US_LABEL[HOW_DID_HEAR_ABOUT_US.EMAIL_INVITE],
+            value: HowDidHearAboutUsValues.EMAIL_INVITE,
+            label: HOW_DID_HEAR_ABOUT_US_LABEL[HowDidHearAboutUsValues.EMAIL_INVITE],
           },
-          { value: HOW_DID_HEAR_ABOUT_US.GOOGLE, label: HOW_DID_HEAR_ABOUT_US_LABEL[HOW_DID_HEAR_ABOUT_US.GOOGLE] },
-          { value: HOW_DID_HEAR_ABOUT_US.FACEBOOK, label: HOW_DID_HEAR_ABOUT_US_LABEL[HOW_DID_HEAR_ABOUT_US.FACEBOOK] },
-          { value: HOW_DID_HEAR_ABOUT_US.TWITTER, label: HOW_DID_HEAR_ABOUT_US_LABEL[HOW_DID_HEAR_ABOUT_US.TWITTER] },
+          { value: HowDidHearAboutUsValues.GOOGLE, label: HOW_DID_HEAR_ABOUT_US_LABEL[HowDidHearAboutUsValues.GOOGLE] },
           {
-            value: HOW_DID_HEAR_ABOUT_US.LINKED_IN,
-            label: HOW_DID_HEAR_ABOUT_US_LABEL[HOW_DID_HEAR_ABOUT_US.LINKED_IN],
+            value: HowDidHearAboutUsValues.FACEBOOK,
+            label: HOW_DID_HEAR_ABOUT_US_LABEL[HowDidHearAboutUsValues.FACEBOOK],
           },
-          { value: HOW_DID_HEAR_ABOUT_US.OTHER, label: HOW_DID_HEAR_ABOUT_US_LABEL[HOW_DID_HEAR_ABOUT_US.OTHER] },
+          {
+            value: HowDidHearAboutUsValues.TWITTER,
+            label: HOW_DID_HEAR_ABOUT_US_LABEL[HowDidHearAboutUsValues.TWITTER],
+          },
+          {
+            value: HowDidHearAboutUsValues.LINKED_IN,
+            label: HOW_DID_HEAR_ABOUT_US_LABEL[HowDidHearAboutUsValues.LINKED_IN],
+          },
+          { value: HowDidHearAboutUsValues.OTHER, label: HOW_DID_HEAR_ABOUT_US_LABEL[HowDidHearAboutUsValues.OTHER] },
         ]}
         placeholder="Select or search..."
         isClearable
       />
-      {signup.howDidHearAboutUs === HOW_DID_HEAR_ABOUT_US.OTHER && (
+      {signup.howDidHearAboutUs === HowDidHearAboutUsValues.OTHER && (
         <FormInput
           label="How did you hear about us? (other)"
           value={signup.howDidHearAboutUsOther ?? ``}
@@ -225,13 +226,13 @@ export function SignupDetailsStep() {
               e.stopPropagation();
               e.preventDefault();
               updateSignup({
-                accountType: ACCOUNT_TYPE.BUSINESS,
+                accountType: AccountTypes.BUSINESS,
                 contractorKind: null, // must reset to null if switching from contractor
               });
               clearError(`accountType`);
               clearError(`contractorKind`);
             }}
-            className={getToggleButtonClasses(signup.accountType === ACCOUNT_TYPE.BUSINESS)}
+            className={getToggleButtonClasses(signup.accountType === AccountTypes.BUSINESS)}
           >
             Business
           </button>
@@ -242,25 +243,25 @@ export function SignupDetailsStep() {
               e.stopPropagation();
               e.preventDefault();
               updateSignup({
-                accountType: ACCOUNT_TYPE.CONTRACTOR,
-                contractorKind: signup.contractorKind ?? CONTRACTOR_KIND.INDIVIDUAL,
+                accountType: AccountTypes.CONTRACTOR,
+                contractorKind: signup.contractorKind ?? ContractorKinds.INDIVIDUAL,
               });
               clearError(`accountType`);
               clearError(`contractorKind`);
             }}
-            className={getToggleButtonClasses(signup.accountType === ACCOUNT_TYPE.CONTRACTOR)}
+            className={getToggleButtonClasses(signup.accountType === AccountTypes.CONTRACTOR)}
           >
             Contractor
           </button>
         </div>
         {(fieldErrors.accountType ||
-          (fieldErrors.contractorKind && signup.accountType !== ACCOUNT_TYPE.CONTRACTOR)) && (
+          (fieldErrors.contractorKind && signup.accountType !== AccountTypes.CONTRACTOR)) && (
           <p className={errorTextClass}>{fieldErrors.accountType ?? fieldErrors.contractorKind}</p>
         )}
       </div>
 
       {/* Contractor kind (ONLY if contractor) */}
-      {signup.accountType === ACCOUNT_TYPE.CONTRACTOR && (
+      {signup.accountType === AccountTypes.CONTRACTOR && (
         <div className={signupStepGroup}>
           <label className={signupStepLabelInline}>Contractor kind</label>
 
@@ -270,10 +271,10 @@ export function SignupDetailsStep() {
               onClick={(e) => (
                 e.preventDefault(),
                 e.stopPropagation(),
-                updateSignup({ contractorKind: CONTRACTOR_KIND.INDIVIDUAL }),
+                updateSignup({ contractorKind: ContractorKinds.INDIVIDUAL }),
                 clearError(`contractorKind`)
               )}
-              className={getToggleButtonClasses(signup.contractorKind === CONTRACTOR_KIND.INDIVIDUAL)}
+              className={getToggleButtonClasses(signup.contractorKind === ContractorKinds.INDIVIDUAL)}
             >
               Individual
             </button>
@@ -283,10 +284,10 @@ export function SignupDetailsStep() {
               onClick={(e) => (
                 e.preventDefault(),
                 e.stopPropagation(),
-                updateSignup({ contractorKind: CONTRACTOR_KIND.ENTITY }),
+                updateSignup({ contractorKind: ContractorKinds.ENTITY }),
                 clearError(`contractorKind`)
               )}
-              className={getToggleButtonClasses(signup.contractorKind === CONTRACTOR_KIND.ENTITY)}
+              className={getToggleButtonClasses(signup.contractorKind === ContractorKinds.ENTITY)}
             >
               Entity
             </button>

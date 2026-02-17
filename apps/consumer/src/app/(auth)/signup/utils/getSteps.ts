@@ -1,12 +1,6 @@
-import {
-  type IStepName,
-  type IStepMeta,
-  STEP_NAME,
-  type IAccountType,
-  type IContractorKind,
-  ACCOUNT_TYPE,
-  CONTRACTOR_KIND,
-} from '../../../../types';
+import { type TAccountType, type TContractorKind, AccountTypes, ContractorKinds } from '@remoola/api-types';
+
+import { type IStepName, type IStepMeta, STEP_NAME } from '../../../../types';
 
 export type StepsMap = Partial<Record<IStepName, IStepMeta>>;
 
@@ -35,9 +29,9 @@ const baseSteps: Record<IStepName, IStepMeta> = {
 
 export const steps = baseSteps;
 
-export const getSteps = (accountType: IAccountType, contractorKind: IContractorKind | null): StepsMap => {
+export const getSteps = (accountType: TAccountType, contractorKind: TContractorKind | null): StepsMap => {
   switch (accountType) {
-    case ACCOUNT_TYPE.BUSINESS: {
+    case AccountTypes.BUSINESS: {
       return {
         [STEP_NAME.SIGNUP_DETAILS]: steps[STEP_NAME.SIGNUP_DETAILS],
         [STEP_NAME.PERSONAL_DETAILS]: steps[STEP_NAME.PERSONAL_DETAILS],
@@ -45,16 +39,16 @@ export const getSteps = (accountType: IAccountType, contractorKind: IContractorK
         [STEP_NAME.ORGANIZATION_DETAILS]: steps[STEP_NAME.ORGANIZATION_DETAILS],
       };
     }
-    case ACCOUNT_TYPE.CONTRACTOR: {
+    case AccountTypes.CONTRACTOR: {
       switch (contractorKind) {
-        case CONTRACTOR_KIND.INDIVIDUAL: {
+        case ContractorKinds.INDIVIDUAL: {
           return {
             [STEP_NAME.SIGNUP_DETAILS]: steps[STEP_NAME.SIGNUP_DETAILS],
             [STEP_NAME.PERSONAL_DETAILS]: steps[STEP_NAME.PERSONAL_DETAILS],
             [STEP_NAME.ADDRESS_DETAILS]: steps[STEP_NAME.ADDRESS_DETAILS],
           };
         }
-        case CONTRACTOR_KIND.ENTITY: {
+        case ContractorKinds.ENTITY: {
           return {
             [STEP_NAME.SIGNUP_DETAILS]: steps[STEP_NAME.SIGNUP_DETAILS],
             [STEP_NAME.PERSONAL_DETAILS]: steps[STEP_NAME.PERSONAL_DETAILS],

@@ -3,8 +3,9 @@
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
+import { AccountTypes, ContractorKinds, type TContractorKind } from '@remoola/api-types';
+
 import styles from '../../../../../components/ui/classNames.module.css';
-import { type IContractorKind, ACCOUNT_TYPE, CONTRACTOR_KIND } from '../../../../../types';
 import { useSignupForm } from '../../hooks';
 
 const {
@@ -32,7 +33,7 @@ export default function ChooseContractorKindStep() {
   const router = useRouter();
   const { signupDetails: signup, updateSignup, googleSignupToken } = useSignupForm();
 
-  const selectKind = (kind: IContractorKind) => {
+  const selectKind = (kind: TContractorKind) => {
     updateSignup({ contractorKind: kind });
   };
 
@@ -42,16 +43,16 @@ export default function ChooseContractorKindStep() {
     router.push(path);
   };
 
-  const isSelected = (kind: IContractorKind) => signup.contractorKind === kind;
+  const isSelected = (kind: TContractorKind) => signup.contractorKind === kind;
 
   useEffect(() => {
-    // Guard: user must have chosen ACCOUNT_TYPE.CONTRACTOR
-    if (signup.accountType !== ACCOUNT_TYPE.CONTRACTOR) {
+    // Guard: user must have chosen AccountTypes.CONTRACTOR
+    if (signup.accountType !== AccountTypes.CONTRACTOR) {
       router.replace(`/signup/start`);
     }
 
-    if (signup.contractorKind === null && signup.accountType === ACCOUNT_TYPE.CONTRACTOR) {
-      updateSignup({ contractorKind: CONTRACTOR_KIND.INDIVIDUAL });
+    if (signup.contractorKind === null && signup.accountType === AccountTypes.CONTRACTOR) {
+      updateSignup({ contractorKind: ContractorKinds.INDIVIDUAL });
     }
   }, [signup.accountType, signup.contractorKind, updateSignup, router]);
   if (!signup.accountType) return null;
@@ -67,15 +68,15 @@ export default function ChooseContractorKindStep() {
         <div className={signupStartOptions}>
           <button
             type="button"
-            onClick={(e) => (e.preventDefault(), e.stopPropagation(), selectKind(CONTRACTOR_KIND.INDIVIDUAL))}
+            onClick={(e) => (e.preventDefault(), e.stopPropagation(), selectKind(ContractorKinds.INDIVIDUAL))}
             className={`${signupStartOptionBase} ${
-              isSelected(CONTRACTOR_KIND.INDIVIDUAL) ? signupStartOptionActive : signupStartOptionInactive
+              isSelected(ContractorKinds.INDIVIDUAL) ? signupStartOptionActive : signupStartOptionInactive
             }`}
           >
             <div className={signupStartOptionEmoji}>👤</div>
             <div
               className={`${signupStartOptionLabelBase} ${
-                isSelected(CONTRACTOR_KIND.INDIVIDUAL) ? signupStartOptionLabelActive : signupStartOptionLabelInactive
+                isSelected(ContractorKinds.INDIVIDUAL) ? signupStartOptionLabelActive : signupStartOptionLabelInactive
               }`}
             >
               INDIVIDUAL
@@ -84,15 +85,15 @@ export default function ChooseContractorKindStep() {
 
           <button
             type="button"
-            onClick={(e) => (e.preventDefault(), e.stopPropagation(), selectKind(CONTRACTOR_KIND.ENTITY))}
+            onClick={(e) => (e.preventDefault(), e.stopPropagation(), selectKind(ContractorKinds.ENTITY))}
             className={`${signupStartOptionBase} ${
-              isSelected(CONTRACTOR_KIND.ENTITY) ? signupStartOptionActive : signupStartOptionInactive
+              isSelected(ContractorKinds.ENTITY) ? signupStartOptionActive : signupStartOptionInactive
             }`}
           >
             <div className={signupStartOptionEmoji}>🏢</div>
             <div
               className={`${signupStartOptionLabelBase} ${
-                isSelected(CONTRACTOR_KIND.ENTITY) ? signupStartOptionLabelActive : signupStartOptionLabelInactive
+                isSelected(ContractorKinds.ENTITY) ? signupStartOptionLabelActive : signupStartOptionLabelInactive
               }`}
             >
               ENTITY
@@ -101,7 +102,7 @@ export default function ChooseContractorKindStep() {
         </div>
 
         {/* Description (optional, but matching previous screen style) */}
-        {signup.contractorKind === CONTRACTOR_KIND.INDIVIDUAL && (
+        {signup.contractorKind === ContractorKinds.INDIVIDUAL && (
           <div className={signupStartInfo}>
             <div className={signupStartInfoTitle}>As an individual contractor you can:</div>
             <ul className={signupStartList}>
@@ -113,7 +114,7 @@ export default function ChooseContractorKindStep() {
           </div>
         )}
 
-        {signup.contractorKind === CONTRACTOR_KIND.ENTITY && (
+        {signup.contractorKind === ContractorKinds.ENTITY && (
           <div className={signupStartInfo}>
             <div className={signupStartInfoTitle}>As an entity contractor you can:</div>
             <ul className={signupStartList}>

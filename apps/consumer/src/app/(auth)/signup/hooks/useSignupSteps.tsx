@@ -1,12 +1,8 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
 
-import {
-  type INormalizedStep,
-  type IStepName,
-  type IAccountType,
-  type IContractorKind,
-  STEP_NAME,
-} from '../../../../types';
+import { type TAccountType, type TContractorKind } from '@remoola/api-types';
+
+import { type INormalizedStep, type IStepName, STEP_NAME } from '../../../../types';
 import { getSteps } from '../utils/getSteps';
 import { normalizeSteps } from '../utils/normalizeSteps';
 
@@ -32,8 +28,8 @@ export function SignupStepsProvider({
   contractorKind,
 }: {
   children: ReactNode;
-  accountType: IAccountType;
-  contractorKind: IContractorKind;
+  accountType: TAccountType;
+  contractorKind: TContractorKind;
 }) {
   const stepsObj = useMemo(() => getSteps(accountType, contractorKind), [accountType, contractorKind]);
 

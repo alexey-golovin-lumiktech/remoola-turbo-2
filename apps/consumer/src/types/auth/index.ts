@@ -1,7 +1,5 @@
-export * from './account.types';
 export * from './address-details.types';
 export * from './consumer-role.types';
-export * from './contractor-kind.types';
 export * from './how-did-hear-about-us.types';
 export * from './legal-status.types';
 export * from './organization-details.types';

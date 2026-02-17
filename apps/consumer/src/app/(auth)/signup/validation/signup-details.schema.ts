@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { ACCOUNT_TYPE, CONTRACTOR_KIND } from '../../../../types';
+import { AccountTypes, ContractorKinds } from '@remoola/api-types';
 
 /** Schema for email/password signup (password required) */
 const signupDetailsBaseSchema = z.object({
@@ -12,8 +12,8 @@ const signupDetailsBaseSchema = z.object({
     }),
   password: z.string(),
   confirmPassword: z.string(),
-  accountType: z.enum(ACCOUNT_TYPE),
-  contractorKind: z.enum(CONTRACTOR_KIND).nullable(),
+  accountType: z.enum(AccountTypes),
+  contractorKind: z.enum(ContractorKinds).nullable(),
 });
 
 /** Returns schema for signup details. When hasGoogleToken, password/confirmPassword are optional. */

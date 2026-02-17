@@ -24,11 +24,6 @@ export type AdminMe = {
   type: AdminType;
 };
 
-export type AccountType = TAccountType;
-export type ContractorKind = TContractorKind;
-export type TransactionStatus = TTransactionStatus;
-export type VerificationStatus = TVerificationStatus;
-
 export type CurrencyCode = string; // keep flexible; you have a big enum
 
 export type ConsumerResource = {
@@ -44,11 +39,11 @@ export type ConsumerResource = {
 export type Consumer = {
   id: string;
   email: string;
-  accountType: AccountType;
-  contractorKind?: ContractorKind | null;
+  accountType: TAccountType;
+  contractorKind?: TContractorKind | null;
   verified?: boolean | null;
   legalVerified?: boolean | null;
-  verificationStatus?: VerificationStatus | null;
+  verificationStatus?: TVerificationStatus | null;
   verificationReason?: string | null;
   verificationUpdatedAt?: string | null;
   verificationUpdatedBy?: string | null;
@@ -106,7 +101,7 @@ export type GoogleProfileDetails = {
 export type PaymentRequest = {
   id: string;
   currencyCode: CurrencyCode;
-  status: TransactionStatus;
+  status: TTransactionStatus;
   paymentRail?: string | null;
   type?: string | null; // deprecated, keep nullable
   amount: string; // Decimal
@@ -131,7 +126,7 @@ export type LedgerEntry = {
   ledgerId: string;
   type: string;
   currencyCode: CurrencyCode;
-  status: TransactionStatus;
+  status: TTransactionStatus;
 
   amount: string; // Decimal signed
   feesType?: string | null;
@@ -267,7 +262,7 @@ export type DashboardStats = {
   };
   paymentRequests: {
     total: number;
-    byStatus: Record<TransactionStatus, number>;
+    byStatus: Record<TTransactionStatus, number>;
   };
   ledger: {
     total: number;
@@ -276,7 +271,7 @@ export type DashboardStats = {
 };
 
 export type PaymentRequestsByStatus = {
-  status: TransactionStatus;
+  status: TTransactionStatus;
   count: number;
   totalAmount: string;
 }[];

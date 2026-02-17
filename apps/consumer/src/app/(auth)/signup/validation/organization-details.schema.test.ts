@@ -1,11 +1,12 @@
+import { ConsumerRoles, OrganizationSizes } from '@remoola/api-types';
+
 import { getFieldErrors } from './field-errors';
 import { organizationSchema } from './organization-details.schema';
-import { CONSUMER_ROLE, ORGANIZATION_SIZE } from '../../../../types';
 
 const validBase = {
   name: `Acme Corp`,
-  consumerRole: CONSUMER_ROLE.FOUNDER,
-  size: ORGANIZATION_SIZE.SMALL,
+  consumerRole: ConsumerRoles.FOUNDER,
+  size: OrganizationSizes.SMALL,
 };
 
 describe(`organizationSchema`, () => {
@@ -16,7 +17,7 @@ describe(`organizationSchema`, () => {
     });
 
     it(`passes with different consumer roles`, () => {
-      const roles = [CONSUMER_ROLE.FINANCE, CONSUMER_ROLE.LEGAL, CONSUMER_ROLE.ENGINEERING];
+      const roles = [ConsumerRoles.FINANCE, ConsumerRoles.LEGAL, ConsumerRoles.ENGINEERING];
       for (const role of roles) {
         const result = organizationSchema.safeParse({ ...validBase, consumerRole: role });
         expect(result.success).toBe(true);
@@ -24,7 +25,7 @@ describe(`organizationSchema`, () => {
     });
 
     it(`passes with different organization sizes`, () => {
-      const sizes = [ORGANIZATION_SIZE.MEDIUM, ORGANIZATION_SIZE.LARGE];
+      const sizes = [OrganizationSizes.MEDIUM, OrganizationSizes.LARGE];
       for (const size of sizes) {
         const result = organizationSchema.safeParse({ ...validBase, size });
         expect(result.success).toBe(true);

@@ -3,18 +3,21 @@
 import { type ReactNode, useState, useMemo, createContext, useContext } from 'react';
 
 import {
+  type TAccountType,
+  type TContractorKind,
+  HowDidHearAboutUsValues,
+  OrganizationSizes,
+  AccountTypes,
+  ContractorKinds,
+  ConsumerRoles,
+} from '@remoola/api-types';
+
+import {
   type ISignupFormState,
   type ISignupDetails,
   type IPersonalDetails,
   type IOrganizationDetails,
   type IAddressDetails,
-  type IAccountType,
-  type IContractorKind,
-  HOW_DID_HEAR_ABOUT_US,
-  ORGANIZATION_SIZE,
-  CONSUMER_ROLE,
-  ACCOUNT_TYPE,
-  CONTRACTOR_KIND,
 } from '../../../../types';
 
 interface SignupFormContextValue {
@@ -31,8 +34,8 @@ interface SignupFormContextValue {
   updateAddress: (patch: Partial<IAddressDetails>) => void;
   setGoogleSignupToken: (token: string | null) => void;
 
-  accountType: IAccountType;
-  contractorKind: IContractorKind;
+  accountType: TAccountType;
+  contractorKind: TContractorKind;
 
   isContractor: boolean;
   isBusiness: boolean;
@@ -51,7 +54,7 @@ const initialState: ISignupFormState = {
     accountType: null,
     contractorKind: null,
 
-    howDidHearAboutUs: HOW_DID_HEAR_ABOUT_US.GOOGLE,
+    howDidHearAboutUs: HowDidHearAboutUsValues.GOOGLE,
     howDidHearAboutUsOther: null,
   },
   personalDetails: {
@@ -67,9 +70,9 @@ const initialState: ISignupFormState = {
   },
   organizationDetails: {
     name: ``,
-    size: ORGANIZATION_SIZE.SMALL,
+    size: OrganizationSizes.SMALL,
 
-    consumerRole: CONSUMER_ROLE.FOUNDER,
+    consumerRole: ConsumerRoles.FOUNDER,
     consumerRoleOther: null,
   },
   addressDetails: {
@@ -132,10 +135,10 @@ export function SignupFormProvider({ children }: { children: ReactNode }) {
       setGoogleSignupToken,
       accountType: state.signupDetails.accountType!,
       contractorKind: state.signupDetails.contractorKind!,
-      isContractor: state.signupDetails.accountType === ACCOUNT_TYPE.CONTRACTOR,
-      isBusiness: state.signupDetails.accountType === ACCOUNT_TYPE.BUSINESS,
-      isContractorEntity: state.signupDetails.contractorKind === CONTRACTOR_KIND.ENTITY,
-      isContractorIndividual: state.signupDetails.contractorKind === CONTRACTOR_KIND.INDIVIDUAL,
+      isContractor: state.signupDetails.accountType === AccountTypes.CONTRACTOR,
+      isBusiness: state.signupDetails.accountType === AccountTypes.BUSINESS,
+      isContractorEntity: state.signupDetails.contractorKind === ContractorKinds.ENTITY,
+      isContractorIndividual: state.signupDetails.contractorKind === ContractorKinds.INDIVIDUAL,
       googleSignupToken: state.googleSignupToken,
     }),
     [state],

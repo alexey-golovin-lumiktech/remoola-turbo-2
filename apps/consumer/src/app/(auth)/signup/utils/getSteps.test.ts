@@ -1,10 +1,12 @@
+import { AccountTypes, ContractorKinds } from '@remoola/api-types';
+
 import { getSteps } from './getSteps';
-import { ACCOUNT_TYPE, CONTRACTOR_KIND, STEP_NAME } from '../../../../types';
+import { STEP_NAME } from '../../../../types';
 
 describe(`getSteps`, () => {
   describe(`Business signup flow`, () => {
     it(`returns Signup -> Personal (Entity) -> Address -> Organization`, () => {
-      const steps = getSteps(ACCOUNT_TYPE.BUSINESS, null);
+      const steps = getSteps(AccountTypes.BUSINESS, null);
       expect(steps).toEqual({
         [STEP_NAME.SIGNUP_DETAILS]: expect.objectContaining({ stepNumber: 1 }),
         [STEP_NAME.PERSONAL_DETAILS]: expect.objectContaining({ stepNumber: 2 }),
@@ -17,7 +19,7 @@ describe(`getSteps`, () => {
 
   describe(`Contractor Individual signup flow`, () => {
     it(`returns Signup -> Personal -> Address (no Organization)`, () => {
-      const steps = getSteps(ACCOUNT_TYPE.CONTRACTOR, CONTRACTOR_KIND.INDIVIDUAL);
+      const steps = getSteps(AccountTypes.CONTRACTOR, ContractorKinds.INDIVIDUAL);
       expect(steps).toEqual({
         [STEP_NAME.SIGNUP_DETAILS]: expect.objectContaining({ stepNumber: 1 }),
         [STEP_NAME.PERSONAL_DETAILS]: expect.objectContaining({ stepNumber: 2 }),
@@ -30,7 +32,7 @@ describe(`getSteps`, () => {
 
   describe(`Contractor Entity signup flow`, () => {
     it(`returns Signup -> Personal (Entity) -> Address -> Organization`, () => {
-      const steps = getSteps(ACCOUNT_TYPE.CONTRACTOR, CONTRACTOR_KIND.ENTITY);
+      const steps = getSteps(AccountTypes.CONTRACTOR, ContractorKinds.ENTITY);
       expect(steps).toEqual({
         [STEP_NAME.SIGNUP_DETAILS]: expect.objectContaining({ stepNumber: 1 }),
         [STEP_NAME.PERSONAL_DETAILS]: expect.objectContaining({ stepNumber: 2 }),
@@ -43,12 +45,12 @@ describe(`getSteps`, () => {
 
   describe(`edge cases`, () => {
     it(`returns empty object when Contractor has null contractorKind`, () => {
-      const steps = getSteps(ACCOUNT_TYPE.CONTRACTOR, null);
+      const steps = getSteps(AccountTypes.CONTRACTOR, null);
       expect(steps).toEqual({});
     });
 
     it(`throws when contractorKind is unexpected`, () => {
-      expect(() => getSteps(ACCOUNT_TYPE.CONTRACTOR, `UNKNOWN` as any)).toThrow(`Unexpected contractor kind`);
+      expect(() => getSteps(AccountTypes.CONTRACTOR, `UNKNOWN` as any)).toThrow(`Unexpected contractor kind`);
     });
   });
 });

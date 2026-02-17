@@ -4,6 +4,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
+import { AccountTypes, ContractorKinds } from '@remoola/api-types';
+
 import {
   Stepper,
   SignupDetailsStep,
@@ -13,7 +15,7 @@ import {
 } from './components';
 import { useSignupForm, SignupStepsProvider, useSignupSteps } from './hooks';
 import styles from '../../../components/ui/classNames.module.css';
-import { ACCOUNT_TYPE, CONTRACTOR_KIND, STEP_NAME } from '../../../types';
+import { STEP_NAME } from '../../../types';
 
 const { errorTextClass, refreshButtonClass, signupFlowContainer, spaceY4 } = styles;
 
@@ -36,7 +38,7 @@ function SignupPageInner() {
 
   const urlAccountType = params.get(`accountType`);
   const urlContractorKind = params.get(`contractorKind`);
-  const hasAccountTypeInUrl = urlAccountType === ACCOUNT_TYPE.BUSINESS || urlAccountType === ACCOUNT_TYPE.CONTRACTOR;
+  const hasAccountTypeInUrl = urlAccountType === AccountTypes.BUSINESS || urlAccountType === AccountTypes.CONTRACTOR;
 
   useEffect(() => {
     if (!accountType && !googleSignupToken) router.replace(`/signup/start`);
@@ -65,8 +67,8 @@ function SignupPageInner() {
     if (hasAccountTypeInUrl) {
       const parsedAccountType = urlAccountType;
       const parsedContractorKind =
-        parsedAccountType === ACCOUNT_TYPE.CONTRACTOR &&
-        (urlContractorKind === CONTRACTOR_KIND.INDIVIDUAL || urlContractorKind === CONTRACTOR_KIND.ENTITY)
+        parsedAccountType === AccountTypes.CONTRACTOR &&
+        (urlContractorKind === ContractorKinds.INDIVIDUAL || urlContractorKind === ContractorKinds.ENTITY)
           ? urlContractorKind
           : null;
       updateSignup({ accountType: parsedAccountType, contractorKind: parsedContractorKind });

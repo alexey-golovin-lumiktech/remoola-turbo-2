@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { type ApiErrorShape, type ApiResponse as SharedApiResponse } from '@remoola/api-types';
+import { type ApiErrorShape, type ApiResponseShape } from '@remoola/api-types';
 
 // Enhanced error types
 export const ApiErrorSchema = z.object({
@@ -8,9 +8,6 @@ export const ApiErrorSchema = z.object({
   code: z.string().optional(),
   details: z.any().optional(),
 });
-
-export type ApiError = ApiErrorShape;
-export type ApiResponse<T> = SharedApiResponse<T>;
 
 // Enhanced API client with caching and deduplication
 export class ApiClient {
@@ -26,7 +23,7 @@ export class ApiClient {
     path: string,
     options: RequestInit = {},
     cacheConfig: { ttl?: number; skipCache?: boolean } = {},
-  ): Promise<ApiResponse<T>> {
+  ): Promise<ApiResponseShape<T>> {
     const { ttl = 5 * 60 * 1000, skipCache = false } = cacheConfig; // 5 minutes default
     const fullUrl = path;
     const cacheKey = `${fullUrl}:${JSON.stringify(options)}`;
@@ -60,7 +57,7 @@ export class ApiClient {
     options: RequestInit,
     cacheKey: string,
     ttl: number,
-  ): Promise<ApiResponse<T>> {
+  ): Promise<ApiResponseShape<T>> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
@@ -123,7 +120,7 @@ export class ApiClient {
     }
   }
 
-  private parseError(text: string): ApiError {
+  private parseError(text: string): ApiErrorShape {
     try {
       const parsed = JSON.parse(text);
       return ApiErrorSchema.parse(parsed);
@@ -194,7 +191,7 @@ export async function apiFetch<T>(
   }
 
   // Type assertion for error case
-  const errorResult = result as { ok: false; status: number; error: ApiError };
+  const errorResult = result as { ok: false; status: number; error: ApiErrorShape };
   return {
     ok: false,
     status: errorResult.status,

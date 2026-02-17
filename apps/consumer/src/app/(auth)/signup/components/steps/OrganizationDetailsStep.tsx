@@ -2,14 +2,14 @@
 
 import { useState } from 'react';
 
+import { ConsumerRoles, type TConsumerRole } from '@remoola/api-types';
+
 import { FormInput, FormSelect } from '../../../../../components/ui';
 import styles from '../../../../../components/ui/classNames.module.css';
 import {
   STEP_NAME,
-  type IConsumerRole,
-  CONSUMER_ROLE,
   CONSUMER_ROLE_LABEL,
-  type IOrganizationSizeLabel,
+  type TOrganizationSizeLabel,
   SIZE_LABEL,
   LABEL_SIZE,
 } from '../../../../../types';
@@ -65,31 +65,31 @@ export function OrganizationDetailsStep() {
         label="Your Role In Organization"
         value={organizationDetails.consumerRole ?? ``}
         onChange={(consumerRole) => {
-          const consumerRoleOther = consumerRole !== CONSUMER_ROLE.OTHER ? null : organizationDetails.consumerRoleOther;
-          updateOrganization({ consumerRole: consumerRole as IConsumerRole, consumerRoleOther });
+          const consumerRoleOther = consumerRole !== ConsumerRoles.OTHER ? null : organizationDetails.consumerRoleOther;
+          updateOrganization({ consumerRole: consumerRole as TConsumerRole, consumerRoleOther });
           clearError(`consumerRole`);
         }}
         options={[
-          { value: CONSUMER_ROLE.FOUNDER, label: CONSUMER_ROLE_LABEL[CONSUMER_ROLE.FOUNDER] },
-          { value: CONSUMER_ROLE.FINANCE, label: CONSUMER_ROLE_LABEL[CONSUMER_ROLE.FINANCE] },
-          { value: CONSUMER_ROLE.MARKETING, label: CONSUMER_ROLE_LABEL[CONSUMER_ROLE.MARKETING] },
-          { value: CONSUMER_ROLE.CUSTOMER_SUPPORT, label: CONSUMER_ROLE_LABEL[CONSUMER_ROLE.CUSTOMER_SUPPORT] },
-          { value: CONSUMER_ROLE.SALES, label: CONSUMER_ROLE_LABEL[CONSUMER_ROLE.SALES] },
-          { value: CONSUMER_ROLE.LEGAL, label: CONSUMER_ROLE_LABEL[CONSUMER_ROLE.LEGAL] },
-          { value: CONSUMER_ROLE.HUMAN_RESOURCE, label: CONSUMER_ROLE_LABEL[CONSUMER_ROLE.HUMAN_RESOURCE] },
-          { value: CONSUMER_ROLE.OPERATIONS, label: CONSUMER_ROLE_LABEL[CONSUMER_ROLE.OPERATIONS] },
-          { value: CONSUMER_ROLE.COMPLIANCE, label: CONSUMER_ROLE_LABEL[CONSUMER_ROLE.COMPLIANCE] },
-          { value: CONSUMER_ROLE.PRODUCT, label: CONSUMER_ROLE_LABEL[CONSUMER_ROLE.PRODUCT] },
-          { value: CONSUMER_ROLE.ENGINEERING, label: CONSUMER_ROLE_LABEL[CONSUMER_ROLE.ENGINEERING] },
-          { value: CONSUMER_ROLE.ANALYSIS_DATA, label: CONSUMER_ROLE_LABEL[CONSUMER_ROLE.ANALYSIS_DATA] },
-          { value: CONSUMER_ROLE.OTHER, label: CONSUMER_ROLE_LABEL[CONSUMER_ROLE.OTHER] },
+          { value: ConsumerRoles.FOUNDER, label: CONSUMER_ROLE_LABEL[ConsumerRoles.FOUNDER] },
+          { value: ConsumerRoles.FINANCE, label: CONSUMER_ROLE_LABEL[ConsumerRoles.FINANCE] },
+          { value: ConsumerRoles.MARKETING, label: CONSUMER_ROLE_LABEL[ConsumerRoles.MARKETING] },
+          { value: ConsumerRoles.CUSTOMER_SUPPORT, label: CONSUMER_ROLE_LABEL[ConsumerRoles.CUSTOMER_SUPPORT] },
+          { value: ConsumerRoles.SALES, label: CONSUMER_ROLE_LABEL[ConsumerRoles.SALES] },
+          { value: ConsumerRoles.LEGAL, label: CONSUMER_ROLE_LABEL[ConsumerRoles.LEGAL] },
+          { value: ConsumerRoles.HUMAN_RESOURCE, label: CONSUMER_ROLE_LABEL[ConsumerRoles.HUMAN_RESOURCE] },
+          { value: ConsumerRoles.OPERATIONS, label: CONSUMER_ROLE_LABEL[ConsumerRoles.OPERATIONS] },
+          { value: ConsumerRoles.COMPLIANCE, label: CONSUMER_ROLE_LABEL[ConsumerRoles.COMPLIANCE] },
+          { value: ConsumerRoles.PRODUCT, label: CONSUMER_ROLE_LABEL[ConsumerRoles.PRODUCT] },
+          { value: ConsumerRoles.ENGINEERING, label: CONSUMER_ROLE_LABEL[ConsumerRoles.ENGINEERING] },
+          { value: ConsumerRoles.ANALYSIS_DATA, label: CONSUMER_ROLE_LABEL[ConsumerRoles.ANALYSIS_DATA] },
+          { value: ConsumerRoles.OTHER, label: CONSUMER_ROLE_LABEL[ConsumerRoles.OTHER] },
         ]}
         error={fieldErrors.consumerRole}
         onErrorClear={() => clearError(`consumerRole`)}
         placeholder="Select or search role..."
         isClearable
       />
-      {organizationDetails.consumerRole === CONSUMER_ROLE.OTHER && (
+      {organizationDetails.consumerRole === ConsumerRoles.OTHER && (
         <FormInput
           label="Your role (other)"
           value={organizationDetails.consumerRoleOther ?? ``}
@@ -101,7 +101,7 @@ export function OrganizationDetailsStep() {
         label="Your Organization Size"
         value={SIZE_LABEL[organizationDetails.size!] ?? ``}
         onChange={(value) => {
-          updateOrganization({ size: LABEL_SIZE[value as IOrganizationSizeLabel] });
+          updateOrganization({ size: LABEL_SIZE[value as TOrganizationSizeLabel] });
           clearError(`size`);
         }}
         options={[

@@ -4,4 +4,4 @@ export type ApiErrorShape = {
   details?: unknown;
 };
 
-export type ApiResponse<T> = { ok: true; data: T } | { ok: false; status: number; error: ApiErrorShape };
+export type ApiResponseShape<T> = { ok: true; data: T } | { ok: false; status: number; error: ApiErrorShape };

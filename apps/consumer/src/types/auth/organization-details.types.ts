@@ -1,9 +1,8 @@
-import { type IConsumerRole } from './consumer-role.types';
-import { type IOrganizationSize } from './organization-size.types';
+import { type TOrganizationSize, type TConsumerRole } from '@remoola/api-types';
 
 export type IOrganizationDetails = {
   name: string;
-  size: null | IOrganizationSize;
-  consumerRole: null | IConsumerRole;
+  size: null | TOrganizationSize;
+  consumerRole: null | TConsumerRole;
   consumerRoleOther: null | string;
 };

@@ -1,6 +1,8 @@
 import { type SWRConfiguration } from 'swr';
 
-import { apiClient, type ApiResponse, type ApiError } from './api';
+import { type ApiErrorShape, type ApiResponseShape } from '@remoola/api-types';
+
+import { apiClient } from './api';
 
 // Enhanced SWR configuration
 export const swrConfig: SWRConfiguration = {
@@ -53,7 +55,7 @@ export const swrFetcher = async <T>(key: any): Promise<T> => {
   const response = await apiClient.get<T>(url, { skipCache: true }); // Let SWR handle caching
 
   if (!response.ok) {
-    const errorResult = response as { ok: false; status: number; error: ApiError };
+    const errorResult = response as { ok: false; status: number; error: ApiErrorShape };
     const error = new Error(errorResult.error.message) as any;
     error.status = errorResult.status;
     error.code = errorResult.error.code;
@@ -65,7 +67,7 @@ export const swrFetcher = async <T>(key: any): Promise<T> => {
 
 // Mutation fetcher for POST/PATCH/DELETE
 export const mutationFetcher = async <T>(url: string, options: { method: string; data?: any }): Promise<T> => {
-  let response: ApiResponse<T>;
+  let response: ApiResponseShape<T>;
 
   switch (options.method.toUpperCase()) {
     case `POST`:
@@ -82,7 +84,7 @@ export const mutationFetcher = async <T>(url: string, options: { method: string;
   }
 
   if (!response.ok) {
-    const errorResult = response as { ok: false; status: number; error: ApiError };
+    const errorResult = response as { ok: false; status: number; error: ApiErrorShape };
     const error = new Error(errorResult.error.message) as any;
     error.status = errorResult.status;
     error.code = errorResult.error.code;
