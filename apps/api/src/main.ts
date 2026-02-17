@@ -210,7 +210,7 @@ async function bootstrap() {
       console.log(`📗 Consumer Docs → ${appUrl}/docs/consumer`);
     });
 
-  if (envs.NGROK_AUTH_TOKEN !== `NGROK_AUTH_TOKEN` && envs.NGROK_DOMAIN !== `NGROK_DOMAIN`) {
+  if (envs.VERCEL === 0 && envs.NGROK_AUTH_TOKEN !== `NGROK_AUTH_TOKEN` && envs.NGROK_DOMAIN !== `NGROK_DOMAIN`) {
     const listener = await ngrok.forward({
       addr: port,
       authtoken: envs.NGROK_AUTH_TOKEN,

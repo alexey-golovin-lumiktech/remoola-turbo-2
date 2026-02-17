@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
+import { envs } from '../envs';
 import { PrismaService } from '../shared/prisma.service';
 
 @Injectable()
@@ -39,7 +40,7 @@ export class HealthService {
       uptime: process.uptime(),
       memory: process.memoryUsage(),
       version: process.version,
-      environment: process.env.NODE_ENV || `development`,
+      environment: envs.NODE_ENV || `development`,
     };
   }
 }

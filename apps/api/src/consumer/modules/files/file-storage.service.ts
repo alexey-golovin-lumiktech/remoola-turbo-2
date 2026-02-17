@@ -2,16 +2,22 @@ import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 
 import { envs } from '../../../envs';
 
 @Injectable()
 export class FileStorageService {
   private readonly useS3 = !!envs.AWS_BUCKET; // auto-switch mode
+
   private s3: S3Client | null = null;
 
   constructor() {
+    if (envs.VERCEL !== 0 && !envs.AWS_BUCKET) {
+      throw new InternalServerErrorException(
+        `AWS_BUCKET (S3) is required for file uploads on Vercel. Local filesystem is read-only.`,
+      );
+    }
     if (this.useS3) {
       const configuration = {
         region: envs.AWS_REGION,

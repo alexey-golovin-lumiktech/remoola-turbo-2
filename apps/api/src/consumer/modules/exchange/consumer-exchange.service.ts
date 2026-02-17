@@ -8,6 +8,7 @@ import { ConvertCurrencyBody } from './dto/convert.dto';
 import { CreateAutoConversionRuleBody } from './dto/create-auto-conversion-rule.dto';
 import { ScheduleConversionBody } from './dto/schedule-conversion.dto';
 import { UpdateAutoConversionRuleBody } from './dto/update-auto-conversion-rule.dto';
+import { envs } from '../../../envs';
 import { PrismaService } from '../../../shared/prisma.service';
 import { getCurrencyFractionDigits } from '../../../shared-common';
 
@@ -711,7 +712,7 @@ export class ConsumerExchangeService {
   }
 
   private getMaxRateAgeMs() {
-    const hours = Number(process.env.EXCHANGE_RATE_MAX_AGE_HOURS ?? 24);
+    const hours = envs.EXCHANGE_RATE_MAX_AGE_HOURS;
     if (!Number.isFinite(hours) || hours <= 0) {
       return 24 * 60 * 60 * 1000;
     }

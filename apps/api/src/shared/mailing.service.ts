@@ -26,7 +26,7 @@ export class MailingService {
     const html = `<pre><code>${JSON.stringify({ ...data }, null, 2)}</code></pre>`;
     const subject = `WB Logs`;
     try {
-      const sent = await this.mailerService.sendMail({ to: process.env.ADMIN_EMAIL!, subject, html });
+      const sent = await this.mailerService.sendMail({ to: envs.ADMIN_EMAIL!, subject, html });
       this.logger.log(`Email "${subject}" successfully sent to: ${sent.envelope.to.join(` & `)}`);
     } catch (error) {
       this.logger.error(error);
@@ -34,7 +34,7 @@ export class MailingService {
   }
 
   async sendConsumerSignupVerificationEmail(params: { email: string; token: string; referer: string }) {
-    let backendBaseURL = process.env.NEST_APP_EXTERNAL_ORIGIN! || `http://[::1]:3333/api`;
+    let backendBaseURL = envs.NEST_APP_EXTERNAL_ORIGIN! || `http://[::1]:3333/api`;
     if (envs.VERCEL !== 0) backendBaseURL = `https://remoola-turbo-2-api.vercel.app/api`;
 
     const emailConfirmationUrl = new URL(`${backendBaseURL}/consumer/auth/signup/verification`);

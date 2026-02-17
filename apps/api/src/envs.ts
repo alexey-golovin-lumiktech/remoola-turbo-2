@@ -1,37 +1,14 @@
-export const NODE_ENV = process.env.NODE_ENV || `production`;
-
-export const S3_BUCKET = process.env.S3_BUCKET;
-export const AWS_REGION = process.env.AWS_REGION;
-export const S3_PUBLIC_BASE = process.env.S3_PUBLIC_BASE;
-
-export const COOKIE_SECURE = process.env.COOKIE_SECURE;
-
-export const POSTGRES_TIMEZONE = process.env.POSTGRES_TIMEZONE || `UTC`;
-export const POSTGRES_HOST = process.env.POSTGRES_HOST || `127.0.0.1`;
-export const POSTGRES_PORT = process.env.POSTGRES_PORT || `5433`;
-export const POSTGRES_USER = process.env.POSTGRES_USER || `wirebill`;
-export const POSTGRES_PASSWORD = process.env.POSTGRES_PASSWORD || `wirebill`;
-export const POSTGRES_DB = process.env.POSTGRES_DB || `wirebill`;
-export const POSTGRES_SSL = process.env.POSTGRES_SSL;
+import z, { type ZodArray, type ZodDefault, type ZodType, type ZodTypeAny } from 'zod';
 
 export const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || `JWT_ACCESS_SECRET`;
 export const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || `JWT_REFRESH_SECRET`;
 
-export const DATABASE_URL =
-  process.env.DATABASE_URL ||
-  `postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}`;
-
 export const HOURS_24MS = 86400000 as const;
-export const DAYS_7MS = 604800000 as const;
-
 export const JWT_ACCESS_TTL = HOURS_24MS;
-export const JWT_REFRESH_TTL = DAYS_7MS;
-
-import z, { type ZodArray, type ZodDefault, type ZodType, type ZodTypeAny } from 'zod';
+export const JWT_REFRESH_TTL = 604800000 as const;
 
 const ENVIRONMENT = { PRODUCTION: `production`, STAGING: `staging`, DEVELOPMENT: `development`, TEST: `test` } as const;
 const environments = Object.values(ENVIRONMENT);
-export type Environment = (typeof ENVIRONMENT)[keyof typeof ENVIRONMENT];
 
 const node = {
   NODE_ENV: z
@@ -55,7 +32,7 @@ export function zBoolean(fallback = false): ZodType<boolean> {
   }, z.boolean());
 }
 
-export function zArray<T extends ZodTypeAny>(itemSchema: T, fallback: z.infer<T>[] = []): ZodDefault<ZodArray<T>> {
+function zArray<T extends ZodTypeAny>(itemSchema: T, fallback: z.infer<T>[] = []): ZodDefault<ZodArray<T>> {
   const arrWithDefault = z.array(itemSchema).default(fallback);
   return z.preprocess((raw) => {
     if (typeof raw === `string`) {
@@ -81,7 +58,24 @@ const nest = {
   NEST_APP_HOST: z.string().default(`127.0.0.1`),
   NEST_APP_EXTERNAL_ORIGIN: z.string().default(`NEST_APP_EXTERNAL_ORIGIN`),
   CONSUMER_APP_ORIGIN: z.string().default(`CONSUMER_APP_ORIGIN`),
-  CORS_ALLOWED_ORIGINS: zArray(z.string().min(1), [`http://localhost:3010`, `http://localhost:3001`]),
+  ADMIN_APP_ORIGIN: z.string().default(`ADMIN_APP_ORIGIN`),
+  CORS_ALLOWED_ORIGINS: zArray(z.string().min(1), [
+    // for admin app
+    `http://127.0.0.1:3010`,
+    `http://localhost:3010`,
+    `http://[::1]:3010`,
+    `https://remoola-turbo-2-admin.vercel.app`,
+    // for consumer app
+    `http://127.0.0.1:3001`,
+    `http://localhost:3001`,
+    `http://[::1]:3001`,
+    `https://remoola-turbo-2-consumer.vercel.app`,
+    // for api
+    `http://127.0.0.1:3333`,
+    `http://localhost:3333`,
+    `http://[::1]:3333`,
+    `https://remoola-turbo-2-api.vercel.app`,
+  ]),
 };
 
 const google = {
@@ -121,7 +115,7 @@ const aws = {
 };
 
 const logs = {
-  LONG_LOGS_ENABLED: z.coerce.boolean().default(false),
+  LONG_LOGS_ENABLED: zBoolean(false).optional().default(false),
 };
 
 const app = {
@@ -134,11 +128,7 @@ const app = {
 };
 
 const debugging = {
-  DEBUG_ALLOWED: z
-    .string()
-    .default(`FALSE`)
-    .transform((v) => v === `TRUE`)
-    .pipe(z.boolean()),
+  DEBUG_ALLOWED: zBoolean(false).optional().default(false),
 };
 
 const ngrok = {
@@ -159,6 +149,12 @@ const vercel = {
 
 const security = {
   HELMET_ENABLED: z.string().default(`DISABLED`),
+  COOKIE_SECURE: zBoolean(false).optional().default(false),
+};
+
+const common = {
+  // probably should be in consumer-exchange.service.ts but put here to avoid importing envs in service file
+  EXCHANGE_RATE_MAX_AGE_HOURS: z.coerce.number().optional().default(24),
 };
 
 const schema = z.object({
@@ -177,16 +173,9 @@ const schema = z.object({
   ...redis,
   ...vercel,
   ...security,
+  ...common,
 });
-
 const parsed = schema.safeParse(process.env);
 if (!parsed.success) throw new Error(JSON.stringify(parsed.error, null, 2));
 
 export const envs = { ...parsed.data, ENVIRONMENT, environments };
-
-export const check = (...args: string[]) => {
-  for (const arg of args) {
-    if (!(arg in envs)) throw new Error(`Missing env: ${arg}`);
-    if (envs[arg] === arg) throw new Error(`env: ${arg} is not provided`);
-  }
-};

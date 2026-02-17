@@ -34,7 +34,7 @@ import { ConsumerSignup } from './dto';
 import { LoginBody } from '../../auth/dto/login.dto';
 import { CONSUMER } from '../../dtos';
 import { IJwtTokenPayload } from '../../dtos/consumer';
-import { HOURS_24MS } from '../../envs';
+import { envs, HOURS_24MS } from '../../envs';
 import { MailingService } from '../../shared/mailing.service';
 import { PrismaService } from '../../shared/prisma.service';
 import { type IChangePasswordBody, type IChangePasswordParam, passwordUtils } from '../../shared-common';
@@ -49,7 +49,7 @@ export class ConsumerAuthService {
     private readonly prisma: PrismaService,
     private readonly mailingService: MailingService,
   ) {
-    this.oAuth2Client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID!, process.env.GOOGLE_CLIENT_SECRET!);
+    this.oAuth2Client = new OAuth2Client(envs.GOOGLE_CLIENT_ID!, envs.GOOGLE_CLIENT_SECRET!);
   }
 
   private static readonly googleSignupTokenType = `google_signup` as const;

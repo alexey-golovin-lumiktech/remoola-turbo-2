@@ -3,7 +3,7 @@ import { ApiTags, ApiResponse, ApiBody } from '@nestjs/swagger';
 import express from 'express';
 
 import { AuthService } from './auth.service';
-import { JWT_ACCESS_TTL } from '../envs';
+import { envs, JWT_ACCESS_TTL } from '../envs';
 import { ACCESS_TOKEN_COOKIE_KEY } from '../shared-common';
 import { LoginBody } from './dto/login.dto';
 import { RegisterBody } from './dto/register.dto';
@@ -47,7 +47,7 @@ export class AuthController {
   private setCookie(res: express.Response, accessToken: string) {
     res.cookie(ACCESS_TOKEN_COOKIE_KEY, accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === `production`,
+      secure: envs.NODE_ENV === `production`,
       sameSite: `strict`,
       path: `/`,
       maxAge: JWT_ACCESS_TTL,

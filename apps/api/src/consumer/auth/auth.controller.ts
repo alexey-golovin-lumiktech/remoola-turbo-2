@@ -68,7 +68,7 @@ export class ConsumerAuthController {
       res.cookie(REFRESH_TOKEN_COOKIE_KEY, refreshToken, { ...vercelCookieOptions, maxAge: JWT_REFRESH_TTL });
     } else {
       const sameSite = isProd ? (`none` as const) : (`lax` as const);
-      const secure = isProd || process.env.COOKIE_SECURE == `true`;
+      const secure = isProd || envs.COOKIE_SECURE;
 
       const common = {
         httpOnly: true,
@@ -89,7 +89,7 @@ export class ConsumerAuthController {
     const isSecureRequest =
       req?.secure === true || (typeof forwardedProto === `string` && forwardedProto.split(`,`)[0]?.trim() === `https`);
     const sameSite = isSecureRequest ? (`none` as const) : (`lax` as const);
-    const secure = isSecureRequest || isVercel || isProd || process.env.COOKIE_SECURE == `true`;
+    const secure = isSecureRequest || isVercel || isProd || envs.COOKIE_SECURE;
 
     return {
       httpOnly: true,

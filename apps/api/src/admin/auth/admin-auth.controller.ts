@@ -32,7 +32,7 @@ export class AdminAuthController {
       res.cookie(REFRESH_TOKEN_COOKIE_KEY, refreshToken, { ...vercelCookieOptions, maxAge: JWT_REFRESH_TTL });
     } else {
       const sameSite = isProd ? (`none` as const) : (`lax` as const);
-      const secure = isProd || process.env.COOKIE_SECURE == `true`;
+      const secure = isProd || envs.COOKIE_SECURE;
 
       const common = {
         httpOnly: true,
@@ -77,7 +77,7 @@ export class AdminAuthController {
         path: `/`,
       } as const;
     } else {
-      const isProd = process.env.NODE_ENV === `production`;
+      const isProd = envs.NODE_ENV === `production`;
       cookieOptions = {
         httpOnly: true,
         secure: isProd,
