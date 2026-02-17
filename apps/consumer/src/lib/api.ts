@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { type ApiErrorShape, type ApiResponse as SharedApiResponse } from '@remoola/api-types';
+
 // Enhanced error types
 export const ApiErrorSchema = z.object({
   message: z.string(),
@@ -7,8 +9,8 @@ export const ApiErrorSchema = z.object({
   details: z.any().optional(),
 });
 
-export type ApiError = z.infer<typeof ApiErrorSchema>;
-export type ApiResponse<T> = { ok: true; data: T } | { ok: false; status: number; error: ApiError };
+export type ApiError = ApiErrorShape;
+export type ApiResponse<T> = SharedApiResponse<T>;
 
 // Enhanced API client with caching and deduplication
 export class ApiClient {

@@ -174,7 +174,7 @@ async function bootstrap() {
   });
 
   const isOnVercel = envs.VERCEL === 1;
-  process.env.NO_COLOR = !isOnVercel ? `true` : undefined;
+  if (isOnVercel) process.env.NO_COLOR = `true`;
 
   app.setGlobalPrefix(`api`);
   app.set(`trust proxy`, 1);
@@ -237,7 +237,7 @@ async function bootstrap() {
       console.log(`📗 Consumer Docs → ${appUrl}/docs/consumer`);
     });
 
-  if (!isOnVercel && envs.NGROK_AUTH_TOKEN !== `NGROK_AUTH_TOKEN` && envs.NGROK_DOMAIN !== `NGROK_DOMAIN`) {
+  if (isOnVercel === false && envs.NGROK_AUTH_TOKEN !== `NGROK_AUTH_TOKEN` && envs.NGROK_DOMAIN !== `NGROK_DOMAIN`) {
     const listener = await ngrok.forward({
       addr: port,
       authtoken: envs.NGROK_AUTH_TOKEN,

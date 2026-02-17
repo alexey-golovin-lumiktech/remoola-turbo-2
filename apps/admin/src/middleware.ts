@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
+import { COOKIE_KEYS } from '@remoola/api-types';
+
 const PUBLIC_PATHS = [`/login`, `/api/auth/login`];
 const NEXT_PUBLIC_API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -16,7 +18,7 @@ async function validateToken(token: string): Promise<boolean> {
 
   try {
     // Create cookie header to send to backend
-    const cookieHeader = `access_token=${token}`;
+    const cookieHeader = `${COOKIE_KEYS.ACCESS_TOKEN}=${token}`;
 
     const response = await fetch(`${NEXT_PUBLIC_API_BASE_URL}/auth/me`, {
       method: `GET`,
@@ -74,8 +76,8 @@ export async function middleware(req: NextRequest) {
   }
 
   // Get tokens from cookies
-  const accessToken = req.cookies.get(`access_token`)?.value;
-  const refreshTokenValue = req.cookies.get(`refresh_token`)?.value;
+  const accessToken = req.cookies.get(COOKIE_KEYS.ACCESS_TOKEN)?.value;
+  const refreshTokenValue = req.cookies.get(COOKIE_KEYS.REFRESH_TOKEN)?.value;
 
   // For protected routes, require authentication
   if (!pathname.startsWith(`/api/`)) {
@@ -92,7 +94,7 @@ export async function middleware(req: NextRequest) {
         if (refreshResult.success && refreshResult.accessToken) {
           // Set new access token and continue
           const response = NextResponse.next();
-          response.cookies.set(`access_token`, refreshResult.accessToken, {
+          response.cookies.set(COOKIE_KEYS.ACCESS_TOKEN, refreshResult.accessToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === `production`,
             sameSite: `strict`,
