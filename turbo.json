@@ -58,7 +58,8 @@
     "AWS_BUCKET",
     "TURBO_TELEMETRY_DISABLED",
     "DO_NOT_TRACK",
-    "HELMET_ENABLED"
+    "HELMET_ENABLED",
+    "NO_COLOR"
   ],
   "ui": "stream",
   "globalDependencies": [
