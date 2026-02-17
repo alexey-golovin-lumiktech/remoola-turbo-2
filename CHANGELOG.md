@@ -368,5 +368,39 @@
                   lint with `--force` and execute both consumer and API tests; and
                   performed changelog and maintenance updates.
 
+- **2026-02-17:**
+                  **🚀 Feature**
+                  - Scaffolded new shared `@remoola/api-types` workspace package
+                    with domain modules: common / auth / payments / contacts / http
+                  - Expanded cross-app adoption of shared type contracts
+                  - Replaced `uuid` with Node `crypto.randomUUID()` to simplify runtime
 
+                  **🔐 Security**
+                  - Hardened Google OAuth for Vercel:
+                    - Moved OAuth `state` to one-time server-side storage
+                    - Fixed `invalid_state` production issues
+                    - Enforced stricter refresh/logout behavior
+                    - Deprecated legacy token-post OAuth endpoints
+                  - Tightened CORS, cookie, and proxy configuration for Vercel
+                  - Centralized environment validation and secure cookie handling
+
+                  **📦 Types & Contracts**
+                  - Migrated admin & consumer auth/signup/payment unions to `@remoola/api-types`
+                  - Centralized auth cookie keys under shared http module
+                  - Standardized API/SWR typing to `ApiResponseShape`
+                  - Removed duplicated literal unions and legacy auth type files
+                  - Reduced frontend/backend contract drift with shared exports
+
+                  **🛠 DevEx**
+                  - Simplified Vercel bootstrap guards
+                  - Replaced raw `process.env` access with validated `envs` usage
+                  - Added Vercel origins to global CORS configuration
+                  - Required `AWS_BUCKET` for Vercel file uploads
+                  - Updated turbo globalEnv configuration
+
+                  **🧹 Cleanup**
+                  - Removed unused runtime dependencies across API, frontend, database, and root workspace
+                  - Pruned unreferenced API files
+                  - Refreshed lockfile to reduce dependency surface
+                  - Removed obsolete exports and unused env variables
 ```
