@@ -1,19 +1,7 @@
-export const CONSUMER_ROLE = {
-  FOUNDER: `FOUNDER`,
-  FINANCE: `FINANCE`,
-  MARKETING: `MARKETING`,
-  CUSTOMER_SUPPORT: `CUSTOMER_SUPPORT`,
-  SALES: `SALES`,
-  LEGAL: `LEGAL`,
-  HUMAN_RESOURCE: `HUMAN_RESOURCE`,
-  OPERATIONS: `OPERATIONS`,
-  COMPLIANCE: `COMPLIANCE`,
-  PRODUCT: `PRODUCT`,
-  ENGINEERING: `ENGINEERING`,
-  ANALYSIS_DATA: `ANALYSIS_DATA`,
-  OTHER: `OTHER`,
-} as const;
-export type IConsumerRole = (typeof CONSUMER_ROLE)[keyof typeof CONSUMER_ROLE];
+import { ConsumerRoles, type TConsumerRole } from '@remoola/api-types';
+
+export const CONSUMER_ROLE = ConsumerRoles;
+export type IConsumerRole = TConsumerRole;
 
 export const CONSUMER_ROLE_LABEL = {
   [CONSUMER_ROLE.FOUNDER]: `Founder`,

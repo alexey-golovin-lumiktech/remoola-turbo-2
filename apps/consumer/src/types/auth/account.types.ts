@@ -1,2 +1,4 @@
-export const ACCOUNT_TYPE = { BUSINESS: `BUSINESS`, CONTRACTOR: `CONTRACTOR` } as const;
-export type IAccountType = (typeof ACCOUNT_TYPE)[keyof typeof ACCOUNT_TYPE];
+import { AccountTypes, type TAccountType } from '@remoola/api-types';
+
+export const ACCOUNT_TYPE = AccountTypes;
+export type IAccountType = TAccountType;

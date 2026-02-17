@@ -1,15 +1,7 @@
-export const HOW_DID_HEAR_ABOUT_US = {
-  EMPLOYER_COMPANY: `EMPLOYER_COMPANY`,
-  EMPLOYEE_CONTRACTOR: `EMPLOYEE_CONTRACTOR`,
-  REFERRED_RECOMMENDED: `REFERRED_RECOMMENDED`,
-  EMAIL_INVITE: `EMAIL_INVITE`,
-  GOOGLE: `GOOGLE`,
-  FACEBOOK: `FACEBOOK`,
-  TWITTER: `TWITTER`,
-  LINKED_IN: `LINKED_IN`,
-  OTHER: `OTHER`,
-} as const;
-export type IHowDidHearAboutUs = (typeof HOW_DID_HEAR_ABOUT_US)[keyof typeof HOW_DID_HEAR_ABOUT_US];
+import { HowDidHearAboutUsValues, type THowDidHearAboutUs } from '@remoola/api-types';
+
+export const HOW_DID_HEAR_ABOUT_US = HowDidHearAboutUsValues;
+export type IHowDidHearAboutUs = THowDidHearAboutUs;
 
 export const HOW_DID_HEAR_ABOUT_US_LABEL = {
   [HOW_DID_HEAR_ABOUT_US.EMPLOYER_COMPANY]: `Employer / Company`,

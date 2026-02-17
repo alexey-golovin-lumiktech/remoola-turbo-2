@@ -1,3 +1,4 @@
-export const CONTRACTOR_KIND = { ENTITY: `ENTITY`, INDIVIDUAL: `INDIVIDUAL` } as const;
+import { ContractorKinds, type TContractorKind } from '@remoola/api-types';
 
-export type IContractorKind = (typeof CONTRACTOR_KIND)[keyof typeof CONTRACTOR_KIND];
+export const CONTRACTOR_KIND = ContractorKinds;
+export type IContractorKind = TContractorKind;

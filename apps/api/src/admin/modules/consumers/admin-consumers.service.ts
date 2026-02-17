@@ -1,5 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 
+import { VerificationStatuses } from '@remoola/api-types';
+
 import { VerificationAction, type ConsumerVerificationUpdateDto } from '../../../dtos/admin';
 import { PrismaService } from '../../../shared/prisma.service';
 
@@ -40,7 +42,7 @@ export class AdminConsumersService {
           data: {
             verified: true,
             legalVerified: true,
-            verificationStatus: `APPROVED`,
+            verificationStatus: VerificationStatuses.APPROVED,
             verificationReason: payload.reason ?? null,
             verificationUpdatedAt: now,
           },
@@ -60,7 +62,7 @@ export class AdminConsumersService {
           data: {
             verified: false,
             legalVerified: false,
-            verificationStatus: `REJECTED`,
+            verificationStatus: VerificationStatuses.REJECTED,
             verificationReason: payload.reason ?? null,
             verificationUpdatedAt: now,
           },
@@ -80,7 +82,7 @@ export class AdminConsumersService {
           data: {
             verified: false,
             legalVerified: false,
-            verificationStatus: `MORE_INFO`,
+            verificationStatus: VerificationStatuses.MORE_INFO,
             verificationReason: payload.reason ?? null,
             verificationUpdatedAt: now,
           },
@@ -98,7 +100,7 @@ export class AdminConsumersService {
         return this.prisma.consumerModel.update({
           where: { id },
           data: {
-            verificationStatus: `FLAGGED`,
+            verificationStatus: VerificationStatuses.FLAGGED,
             verificationReason: payload.reason ?? null,
             verificationUpdatedAt: now,
           },

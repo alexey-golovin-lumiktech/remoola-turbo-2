@@ -1,5 +1,12 @@
 import { type JSX } from 'react';
 
+import {
+  type TAccountType,
+  type TContractorKind,
+  type TTransactionStatus,
+  type TVerificationStatus,
+} from '@remoola/api-types';
+
 export type AdminType = `SUPER` | `ADMIN`;
 
 export type AdminDetails = {
@@ -17,18 +24,10 @@ export type AdminMe = {
   type: AdminType;
 };
 
-export type AccountType = `BUSINESS` | `CONTRACTOR`;
-export type ContractorKind = `ENTITY` | `INDIVIDUAL`;
-export type TransactionStatus =
-  | `DRAFT`
-  | `WAITING`
-  | `WAITING_RECIPIENT_APPROVAL`
-  | `PENDING`
-  | `COMPLETED`
-  | `DENIED`
-  | `UNCOLLECTIBLE`;
-
-export type VerificationStatus = `PENDING` | `APPROVED` | `MORE_INFO` | `REJECTED` | `FLAGGED`;
+export type AccountType = TAccountType;
+export type ContractorKind = TContractorKind;
+export type TransactionStatus = TTransactionStatus;
+export type VerificationStatus = TVerificationStatus;
 
 export type CurrencyCode = string; // keep flexible; you have a big enum
 

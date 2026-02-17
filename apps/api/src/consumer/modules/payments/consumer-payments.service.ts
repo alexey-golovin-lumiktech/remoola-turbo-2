@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto';
 
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 
-import { PaymentDirection } from '@remoola/api-types';
+import { PaymentDirection, PaymentMethodTypes } from '@remoola/api-types';
 import { $Enums } from '@remoola/database-2';
 
 import { CreatePaymentRequest, PaymentsHistoryQuery, TransferBody, WithdrawBody } from './dto';
@@ -226,7 +226,8 @@ export class ConsumerPaymentsService {
       throw new BadRequestException(`Invalid amount`);
     }
 
-    const paymentRail = body.method === `CREDIT_CARD` ? $Enums.PaymentRail.CARD : $Enums.PaymentRail.BANK_TRANSFER;
+    const paymentRail =
+      body.method === PaymentMethodTypes.CREDIT_CARD ? $Enums.PaymentRail.CARD : $Enums.PaymentRail.BANK_TRANSFER;
 
     return this.prisma.$transaction(async (tx) => {
       // 🔐 Generate ledgerId INSIDE tx (idempotency-safe)

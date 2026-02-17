@@ -1,9 +1,7 @@
-export const LEGAL_STATUS = {
-  INDIVIDUAL: `INDIVIDUAL`,
-  INDIVIDUAL_ENTREPRENEUR: `INDIVIDUAL_ENTREPRENEUR`,
-  SOLE_TRADER: `SOLE_TRADER`,
-} as const;
-export type ILegalStatus = (typeof LEGAL_STATUS)[keyof typeof LEGAL_STATUS];
+import { LegalStatuses, type TLegalStatus } from '@remoola/api-types';
+
+export const LEGAL_STATUS = LegalStatuses;
+export type ILegalStatus = TLegalStatus;
 
 export const LEGAL_STATUS_LABEL = {
   [LEGAL_STATUS.INDIVIDUAL]: `Individual`,

@@ -1,6 +1,7 @@
-export const ORGANIZATION_SIZE = { SMALL: `SMALL`, MEDIUM: `MEDIUM`, LARGE: `LARGE` } as const;
+import { OrganizationSizes, type TOrganizationSize } from '@remoola/api-types';
 
-export type IOrganizationSize = (typeof ORGANIZATION_SIZE)[keyof typeof ORGANIZATION_SIZE];
+export const ORGANIZATION_SIZE = OrganizationSizes;
+export type IOrganizationSize = TOrganizationSize;
 
 export const ORGANIZATION_SIZE_LABEL = {
   [ORGANIZATION_SIZE.SMALL]: `1-10 team members`,
