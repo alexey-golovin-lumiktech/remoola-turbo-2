@@ -1,3 +1,5 @@
+import { COOKIE_KEYS } from '@remoola/api-types';
+
 export const PASSWORD_NOT_SET_YET =
   `Consumer password is not set yet. Try using a different way to log in to the app, or restore your password ` as const; //eslint-disable-line
 
@@ -9,9 +11,9 @@ export const INVALID_EMAIL = `Invalid email` as const;
 export const TEMPORARY_PASSWORD_LIFETIME_HOURS = 3 as const;
 export const DEFAULT_DUE_DATE_IN_DAYS30 = 30 as const;
 export const PASSWORD_RE = /(?!.* )(?=(.*[A-Z]){2,})(?=.*?[a-z])(?=.*[1-9]{1,})(?=.*?[#?!@$%^&*-]).{8,}$/;
-export const ACCESS_TOKEN_COOKIE_KEY = `access_token` as const; // according to http protocol
-export const REFRESH_TOKEN_COOKIE_KEY = `refresh_token` as const; // according to http protocol
-export const GOOGLE_OAUTH_STATE_COOKIE_KEY = `google_oauth_state` as const;
+export const ACCESS_TOKEN_COOKIE_KEY = COOKIE_KEYS.ACCESS_TOKEN;
+export const REFRESH_TOKEN_COOKIE_KEY = COOKIE_KEYS.REFRESH_TOKEN;
+export const GOOGLE_OAUTH_STATE_COOKIE_KEY = COOKIE_KEYS.GOOGLE_OAUTH_STATE;
 
 export const constants = {
   INVALID_CREDENTIALS,

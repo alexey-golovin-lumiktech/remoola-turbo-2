@@ -1,7 +1,9 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
+import { COOKIE_KEYS } from '@remoola/api-types';
+
 export function middleware(req: NextRequest) {
-  const token = req.cookies.get(`access_token`)?.value;
+  const token = req.cookies.get(COOKIE_KEYS.ACCESS_TOKEN)?.value;
 
   const isAuthPage = req.nextUrl.pathname.startsWith(`/login`) || req.nextUrl.pathname.startsWith(`/signup`);
   const isCallback = req.nextUrl.pathname.startsWith(`/auth/callback`);
