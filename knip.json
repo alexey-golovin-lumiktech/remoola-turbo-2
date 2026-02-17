@@ -1,0 +1,16 @@
+{
+  "ignoreFiles": [
+    ".eslintrc.mjs",
+    "**/eslint.config.mjs"
+  ],
+  "ignoreIssues": {
+    "apps/api/src/**/dto/**/*.ts": [
+      "exports",
+      "types"
+    ],
+    "apps/api/src/**/dtos/**/*.ts": [
+      "exports",
+      "types"
+    ]
+  }
+}
