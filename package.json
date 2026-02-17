@@ -38,10 +38,7 @@
     "turbo:dev:consumer": "turbo run dev --filter=@remoola/consumer",
     "turbo:dev:admin": "turbo run dev --filter=@remoola/admin"
   },
-  "dependencies": {
-    "@prisma/client": "^6.18.0",
-    "rimraf": "^6.0.1"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@remoola/eslint-config": "^0.0.0",
     "@remoola/typescript-config": "^0.0.0",
