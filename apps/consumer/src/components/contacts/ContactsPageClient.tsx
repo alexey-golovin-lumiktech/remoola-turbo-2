@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
 import { ContactsTable } from './ContactsTable';
@@ -19,8 +19,11 @@ const {
 
 export function ContactsPageClient() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [items, setItems] = useState<ConsumerContact[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
+  const [createInitialEmail, setCreateInitialEmail] = useState<string | null>(null);
+  const [returnToPath, setReturnToPath] = useState<string | null>(null);
   const [editContact, setEditContact] = useState<ConsumerContact | null>(null);
   const [deleteContact, setDeleteContact] = useState<ConsumerContact | null>(null);
 
@@ -40,6 +43,19 @@ export function ContactsPageClient() {
     void refresh();
   }, [refresh]);
 
+  useEffect(() => {
+    const shouldOpenCreate = searchParams.get(`create`) === `1`;
+    if (!shouldOpenCreate) return;
+
+    const prefillEmail = searchParams.get(`email`);
+    const returnTo = searchParams.get(`returnTo`);
+
+    setCreateInitialEmail(prefillEmail);
+    setReturnToPath(returnTo);
+    setCreateOpen(true);
+    router.replace(`/contacts`);
+  }, [searchParams, router]);
+
   return (
     <div className={contactsPageContainer}>
       <div className={contactsPageHeader}>
@@ -49,7 +65,13 @@ export function ContactsPageClient() {
         </div>
 
         <button
-          onClick={(e) => (e.preventDefault(), e.stopPropagation(), setCreateOpen(true))}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setCreateInitialEmail(null);
+            setReturnToPath(null);
+            setCreateOpen(true);
+          }}
           className={contactsAddButton}
         >
           + Add Contact
@@ -66,7 +88,23 @@ export function ContactsPageClient() {
       </div>
 
       {/* Modals */}
-      <CreateContactModal open={createOpen} onCloseAction={() => setCreateOpen(false)} onCreatedAction={refresh} />
+      <CreateContactModal
+        open={createOpen}
+        initialEmail={createInitialEmail}
+        onCloseAction={() => {
+          setCreateOpen(false);
+          setCreateInitialEmail(null);
+          setReturnToPath(null);
+        }}
+        onCreatedAction={async () => {
+          await refresh();
+          if (returnToPath) {
+            router.push(returnToPath);
+            return;
+          }
+          setReturnToPath(null);
+        }}
+      />
 
       <EditContactModal
         open={!!editContact}

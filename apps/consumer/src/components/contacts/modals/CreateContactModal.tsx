@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { createContactRequest } from '../../../lib/create-contact';
 import { type IAddressDetails } from '../../../types';
@@ -17,9 +17,14 @@ const {
   spaceY4,
 } = styles;
 
-type CreateContactModalProps = { open: boolean; onCloseAction: () => void; onCreatedAction: () => void };
+type CreateContactModalProps = {
+  open: boolean;
+  initialEmail?: string | null;
+  onCloseAction: () => void;
+  onCreatedAction: () => void;
+};
 
-export function CreateContactModal({ open, onCloseAction, onCreatedAction }: CreateContactModalProps) {
+export function CreateContactModal({ open, initialEmail, onCloseAction, onCreatedAction }: CreateContactModalProps) {
   const [email, setEmail] = useState<string | null>(null);
   const [name, setName] = useState<string | null>(null);
   const [address, setAddress] = useState<IAddressDetails>({
@@ -29,6 +34,13 @@ export function CreateContactModal({ open, onCloseAction, onCreatedAction }: Cre
     city: null,
     street: null,
   });
+
+  useEffect(() => {
+    if (!open) return;
+    if (initialEmail) {
+      setEmail(initialEmail);
+    }
+  }, [open, initialEmail]);
 
   if (!open) return null;
 
