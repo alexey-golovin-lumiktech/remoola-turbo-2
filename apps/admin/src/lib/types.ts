@@ -108,7 +108,6 @@ export type PaymentRequest = {
   description?: string | null;
 
   dueDate?: string | null;
-  expectationDate?: string | null;
   sentDate?: string | null;
 
   payerId: string;
@@ -141,6 +140,15 @@ export type LedgerEntry = {
 
   createdAt: string;
   updatedAt: string;
+};
+
+export type PaymentRequestExpectationDateArchive = {
+  id: string;
+  paymentRequestId: string;
+  expectationDate: string;
+  archivedAt: string;
+  migrationTag: string;
+  paymentRequestExists: boolean;
 };
 
 export type ScheduledFxConversionStatus = `PENDING` | `PROCESSING` | `EXECUTED` | `FAILED` | `CANCELLED`;

@@ -164,7 +164,6 @@ export class ConsumerPaymentsService {
       status: paymentRequest.status,
       description: paymentRequest.description,
       dueDate: paymentRequest.dueDate,
-      expectationDate: paymentRequest.expectationDate,
       sentDate: paymentRequest.sentDate,
       createdAt: paymentRequest.createdAt,
       updatedAt: paymentRequest.updatedAt,
@@ -322,7 +321,6 @@ export class ConsumerPaymentsService {
     };
 
     const dueDate = parseDate(body.dueDate);
-    const expectationDate = parseDate(body.expectationDate);
 
     const paymentRequest = await this.prisma.paymentRequestModel.create({
       data: {
@@ -332,7 +330,6 @@ export class ConsumerPaymentsService {
         amount,
         description: body.description ?? null,
         dueDate,
-        expectationDate,
         status: $Enums.TransactionStatus.DRAFT,
         createdBy: consumerId,
         updatedBy: consumerId,

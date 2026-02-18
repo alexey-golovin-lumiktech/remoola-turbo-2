@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiBasicAuth } from '@nestjs/swagger';
 
 import { type AdminModel } from '@remoola/database-2';
@@ -17,6 +17,15 @@ export class AdminPaymentRequestsController {
   @Get()
   findAllPaymentRequests() {
     return this.service.findAllPaymentRequests();
+  }
+
+  @Get(`expectation-date-archive`)
+  getExpectationDateArchive(@Query(`q`) query?: string, @Query(`limit`) limit?: string) {
+    const parsedLimit = limit ? Number(limit) : undefined;
+    return this.service.getExpectationDateArchive({
+      query,
+      limit: Number.isFinite(parsedLimit) ? parsedLimit : undefined,
+    });
   }
 
   @Get(`:id`)

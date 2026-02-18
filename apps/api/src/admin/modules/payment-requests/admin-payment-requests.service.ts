@@ -32,6 +32,61 @@ export class AdminPaymentRequestsService {
     return this.prisma.paymentRequestModel.findUnique({ where: { id } });
   }
 
+  async getExpectationDateArchive(params: { query?: string; limit?: number }) {
+    const { query } = params;
+    const limit = Math.min(Math.max(params.limit ?? 200, 1), 1000);
+
+    const whereClauses: Prisma.Sql[] = [];
+    if (query?.trim()) {
+      whereClauses.push(Prisma.sql`a.payment_request_id::text ILIKE ${`%${query.trim()}%`}`);
+    }
+
+    const whereSql = whereClauses.length > 0 ? Prisma.sql`WHERE ${Prisma.join(whereClauses, ` AND `)}` : Prisma.empty;
+
+    type ArchiveRow = {
+      id: bigint | number;
+      paymentRequestId: string;
+      expectationDate: Date;
+      archivedAt: Date;
+      migrationTag: string;
+      paymentRequestExists: boolean;
+    };
+
+    let rows: ArchiveRow[];
+    try {
+      rows = await this.prisma.$queryRaw<ArchiveRow[]>(Prisma.sql`
+        SELECT
+          a.id,
+          a.payment_request_id AS "paymentRequestId",
+          a.expectation_date AS "expectationDate",
+          a.archived_at AS "archivedAt",
+          a.migration_tag AS "migrationTag",
+          (pr.id IS NOT NULL) AS "paymentRequestExists"
+        FROM payment_request_expectation_date_archive a
+        LEFT JOIN payment_request pr ON pr.id = a.payment_request_id
+        ${whereSql}
+        ORDER BY a.archived_at DESC, a.id DESC
+        LIMIT ${limit}
+      `);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (message.includes(`payment_request_expectation_date_archive`)) {
+        rows = [];
+      } else {
+        throw error;
+      }
+    }
+
+    return rows.map((row) => ({
+      id: String(row.id),
+      paymentRequestId: row.paymentRequestId,
+      expectationDate: row.expectationDate,
+      archivedAt: row.archivedAt,
+      migrationTag: row.migrationTag,
+      paymentRequestExists: row.paymentRequestExists,
+    }));
+  }
+
   private buildReversalIdempotencyKey(payload: {
     paymentRequestId: string;
     kind: PaymentReversalCreate[`kind`];

@@ -32,10 +32,4 @@ export class CreatePaymentRequest {
   @IsOptional()
   @IsString()
   dueDate?: string;
-
-  @Expose()
-  @ApiProperty({ required: false })
-  @IsOptional()
-  @IsString()
-  expectationDate?: string;
 }

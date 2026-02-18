@@ -14,7 +14,6 @@ export type IPaymentRequestModel = {
 
   dueDate: Date;
   sentDate: Date;
-  expectationDate: Date;
 
   createdBy: string;
   updatedBy: string;

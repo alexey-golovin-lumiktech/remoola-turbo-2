@@ -67,11 +67,6 @@ class PaymentRequestDTO extends BaseModel implements IPaymentRequestModel {
 
   @Expose()
   @ApiProperty()
-  @IsDate()
-  expectationDate: Date;
-
-  @Expose()
-  @ApiProperty()
   @IsString()
   createdBy: string;
 

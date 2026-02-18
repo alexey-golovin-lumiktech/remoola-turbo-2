@@ -50,7 +50,6 @@ export function buildInvoiceHtmlV5(params: BuildInvoiceV5Params): string {
 
   const paymentTimeline = {
     created: payment.createdAt ? new Date(payment.createdAt).toISOString().slice(0, 10) : `—`,
-    expected: payment.expectationDate ? new Date(payment.expectationDate).toISOString().slice(0, 10) : `—`,
     completed: isPaid && tx?.createdAt ? new Date(tx.createdAt).toISOString().slice(0, 10) : `—`,
   };
 
@@ -389,10 +388,6 @@ td {
         <div class="timeline-row">
           <div class="timeline-label">Created</div>
           <div class="timeline-value">${paymentTimeline.created}</div>
-        </div>
-        <div class="timeline-row">
-          <div class="timeline-label">Expected</div>
-          <div class="timeline-value">${paymentTimeline.expected}</div>
         </div>
         <div class="timeline-row">
           <div class="timeline-label">Completed</div>

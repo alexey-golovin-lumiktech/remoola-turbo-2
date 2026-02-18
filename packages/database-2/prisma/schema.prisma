@@ -355,7 +355,6 @@ model PaymentRequestModel {
   amount          Decimal   @db.Decimal(9, 2)
   description     String?
   dueDate         DateTime? @map("due_date") @db.Timestamptz(6)
-  expectationDate DateTime? @map("expectation_date") @db.Timestamptz(6)
   sentDate        DateTime? @map("sent_date") @db.Timestamptz(6)
 
   payerId String        @map("payer_id") @db.Uuid

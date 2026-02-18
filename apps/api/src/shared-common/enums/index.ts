@@ -121,7 +121,6 @@ export const PGComparisonOperator = { lt: `<`, gt: `>`, gte: `>=`, lte: `<=`, eq
 export const PaymentRequestTimelineField = {
   dueDate: `dueDate`,
   sentDate: `sentDate`,
-  expectationDate: `expectationDate`,
 } as const;
 
 export const PersonalDetailsTimelineField = { dateOfBirth: `dateOfBirth` } as const;

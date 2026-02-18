@@ -19,7 +19,6 @@ export class PaymentRequestDetails {
 
   description: string | null;
   dueDate: string | null;
-  expectationDate: string | null;
   sentDate: string | null;
 
   createdAt: string;

@@ -4,7 +4,6 @@ export type CreatePaymentRequestPayload = {
   currencyCode?: string;
   description?: string;
   dueDate?: string;
-  expectationDate?: string;
 };
 
 export type PaymentRequestSummary = {

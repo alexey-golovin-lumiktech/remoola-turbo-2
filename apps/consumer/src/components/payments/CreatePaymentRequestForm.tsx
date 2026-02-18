@@ -19,7 +19,6 @@ export function CreatePaymentRequestForm() {
   const [currencyCode, setCurrencyCode] = useState<(typeof CURRENCIES)[number]>(`USD`);
   const [description, setDescription] = useState(``);
   const [dueDate, setDueDate] = useState(``);
-  const [expectationDate, setExpectationDate] = useState(``);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,7 +32,6 @@ export function CreatePaymentRequestForm() {
       currencyCode,
       description: description || undefined,
       dueDate: dueDate || undefined,
-      expectationDate: expectationDate || undefined,
     };
 
     const res = await fetch(`/api/payment-requests`, {
@@ -109,15 +107,6 @@ export function CreatePaymentRequestForm() {
 
       <FormField label="Due Date" description="Optional deadline for payment.">
         <input type="date" className={formFieldSpacing} value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
-      </FormField>
-
-      <FormField label="Expected Payment Date" description="Optional internal forecast.">
-        <input
-          type="date"
-          className={formFieldSpacing}
-          value={expectationDate}
-          onChange={(e) => setExpectationDate(e.target.value)}
-        />
       </FormField>
 
       {error && <div className={errorTextClass}>{error}</div>}
