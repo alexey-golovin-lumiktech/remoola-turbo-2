@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 
 import { type AccessRefreshTokenModel, type AdminModel } from '@remoola/database-2';
 
+import { Credentials } from '../../dtos/admin';
 import { IJwtTokenPayload } from '../../dtos/consumer';
 import { PrismaService } from '../../shared/prisma.service';
 import { constants, passwordUtils } from '../../shared-common';
@@ -29,7 +30,7 @@ export class AdminAuthService {
     return admin;
   }
 
-  async login(body: any) {
+  async login(body: Credentials) {
     const identity = await this.prisma.adminModel.findFirst({
       where: { email: body.email, deletedAt: null },
     });

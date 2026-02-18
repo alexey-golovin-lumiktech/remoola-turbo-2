@@ -11,8 +11,6 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  console.log(`GET`, url.href);
-
   const res = await fetch(url, {
     method: `GET`,
     headers: new Headers(req.headers),

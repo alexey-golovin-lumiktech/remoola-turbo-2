@@ -29,6 +29,7 @@ import { ConsumerAuthService } from './auth.service';
 import { ConsumerSignup } from './dto';
 import { GoogleOAuthService } from './google-oauth.service';
 import { OAuthStateStoreService } from './oauth-state-store.service';
+import { LoginBody } from '../../auth/dto/login.dto';
 import { Identity, PublicEndpoint } from '../../common';
 import { CONSUMER } from '../../dtos';
 import { envs, JWT_ACCESS_TTL, JWT_REFRESH_TTL } from '../../envs';
@@ -210,7 +211,7 @@ export class ConsumerAuthController {
   @ApiOperation({ operationId: `consumer_auth_login` })
   @ApiOkResponse({ type: CONSUMER.LoginResponse })
   @TransformResponse(CONSUMER.LoginResponse)
-  async login(@Req() req: express.Request, @Res({ passthrough: true }) res, @Body() body: any) {
+  async login(@Req() req: express.Request, @Res({ passthrough: true }) res, @Body() body: LoginBody) {
     const data = await this.service.login(body);
     this.setAuthCookies(res, data.accessToken, data.refreshToken, req);
     return data;

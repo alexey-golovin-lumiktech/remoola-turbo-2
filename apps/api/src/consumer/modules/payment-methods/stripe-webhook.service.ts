@@ -316,7 +316,7 @@ export class StripeWebhookService {
       for (const consumer of consumers) {
         if (consumer.paymentMethods.length === 0) continue;
 
-        console.log(`Migrating consumer: ${consumer.id} (${consumer.email})`);
+        console.log(`Migrating consumer: ${consumer.id}`);
         const { customerId } = await this.ensureStripeCustomer(consumer.id);
 
         for (const paymentMethod of consumer.paymentMethods) {

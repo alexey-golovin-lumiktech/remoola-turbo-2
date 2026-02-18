@@ -1,11 +1,13 @@
-import type { Config } from 'jest';
+import nextConfig from '@remoola/jest-config/next';
 
-const config: Config = {
-  preset: `ts-jest/presets/default`,
-  testEnvironment: `node`,
-  roots: [`<rootDir>/src`],
-  testMatch: [`**/*.test.ts`, `**/*.test.tsx`],
-  modulePathIgnorePatterns: [`<rootDir>/.next/`],
+const createNextConfig =
+  typeof nextConfig === `function` ? nextConfig : (nextConfig as unknown as { default: () => Promise<object> }).default;
+
+export default async () => {
+  const config = await createNextConfig();
+  return {
+    ...config,
+    testEnvironment: `node`,
+    roots: [`<rootDir>/src`],
+  };
 };
-
-export default config;

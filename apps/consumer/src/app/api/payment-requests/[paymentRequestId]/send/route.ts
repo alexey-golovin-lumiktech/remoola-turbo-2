@@ -7,7 +7,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pay
     const url = new URL(
       `${process.env.NEXT_PUBLIC_API_BASE_URL}/consumer/payment-requests/${(await params).paymentRequestId}/send`,
     );
-    console.log(`POST payment-requests/send`, url.href);
 
     return await proxyApiRequest(url.href, req, {
       timeout: 20000,

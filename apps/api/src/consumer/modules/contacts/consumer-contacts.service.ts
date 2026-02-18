@@ -1,4 +1,4 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 
 import { ConsumerContactDetails } from './dto/consumer-contact-details.dto';
 import { ConsumerContact, ConsumerCreateContact, ConsumerUpdateContact } from './dto/consumer-contact.dto';
@@ -13,7 +13,7 @@ export class ConsumerContactsService {
       where: { id, consumerId },
     });
 
-    if (!contact) throw new Error(`Contact not found`);
+    if (!contact) throw new NotFoundException(`Contact not found`);
 
     const paymentRequests = await this.prisma.paymentRequestModel.findMany({
       where: {

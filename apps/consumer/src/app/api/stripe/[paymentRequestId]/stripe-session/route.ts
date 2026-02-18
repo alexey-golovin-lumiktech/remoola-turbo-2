@@ -6,7 +6,6 @@ export async function POST(req: NextRequest, context: { params: Promise<{ paymen
   const url = new URL(
     `${process.env.NEXT_PUBLIC_API_BASE_URL}/consumer/stripe/${params.paymentRequestId}/stripe-session`,
   );
-  console.log(`POST`, url.href);
 
   const res = await fetch(url, {
     method: `POST`,

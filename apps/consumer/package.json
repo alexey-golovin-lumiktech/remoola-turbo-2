@@ -32,6 +32,7 @@
   },
   "devDependencies": {
     "@remoola/eslint-config": "^0.0.0",
+    "@remoola/jest-config": "^0.0.0",
     "@remoola/typescript-config": "^0.0.0",
     "@tailwindcss/postcss": "^4",
     "@types/jest": "^30.0.0",

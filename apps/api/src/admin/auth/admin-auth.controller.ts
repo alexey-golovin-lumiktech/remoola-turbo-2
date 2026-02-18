@@ -8,6 +8,7 @@ import { AdminAuthService } from './admin-auth.service';
 import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Identity, PublicEndpoint } from '../../common';
 import { ADMIN } from '../../dtos';
+import { Credentials } from '../../dtos/admin';
 import { envs, JWT_ACCESS_TTL, JWT_REFRESH_TTL } from '../../envs';
 import { ACCESS_TOKEN_COOKIE_KEY, REFRESH_TOKEN_COOKIE_KEY } from '../../shared-common';
 
@@ -50,7 +51,7 @@ export class AdminAuthController {
   @Post(`login`)
   @ApiOperation({ operationId: `admin_auth_login` })
   @ApiOkResponse({ type: ADMIN.Access })
-  async login(@Res({ passthrough: true }) res, @Body() body: any) {
+  async login(@Res({ passthrough: true }) res, @Body() body: Credentials) {
     const data = await this.service.login(body);
     this.setAuthCookies(res, data.accessToken, data.refreshToken);
     return data;

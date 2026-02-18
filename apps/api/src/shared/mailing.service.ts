@@ -26,8 +26,8 @@ export class MailingService {
     const html = `<pre><code>${JSON.stringify({ ...data }, null, 2)}</code></pre>`;
     const subject = `WB Logs`;
     try {
-      const sent = await this.mailerService.sendMail({ to: envs.ADMIN_EMAIL!, subject, html });
-      this.logger.log(`Email "${subject}" successfully sent to: ${sent.envelope.to.join(` & `)}`);
+      await this.mailerService.sendMail({ to: envs.ADMIN_EMAIL!, subject, html });
+      this.logger.log(`Email "${subject}" successfully sent`);
     } catch (error) {
       this.logger.error(error);
     }
@@ -43,8 +43,8 @@ export class MailingService {
     const html = signupCompletionToHtml.processor(emailConfirmationUrl.toString());
     const subject = `Welcome to Wirebill! Confirm your Email`;
     try {
-      const sent = await this.mailerService.sendMail({ to: params.email, subject, html });
-      this.logger.log(`Email "${subject}" successfully sent to: ${sent.envelope.to.join(` & `)}`);
+      await this.mailerService.sendMail({ to: params.email, subject, html });
+      this.logger.log(`Email "${subject}" successfully sent`);
     } catch (error) {
       this.logger.error(error);
     }
@@ -56,8 +56,8 @@ export class MailingService {
     const subject = `NEW INVOICE #${invoice.id}`;
     const attachments: ISendMailOptions[`attachments`] = [{ content, filename: `invoice-${invoice.id}.pdf` }];
     try {
-      const sent = await this.mailerService.sendMail({ to: invoice.referer, subject, html, attachments });
-      this.logger.log(`Email "${subject}" successfully sent to: ${sent.envelope.to.join(` & `)}`);
+      await this.mailerService.sendMail({ to: invoice.referer, subject, html, attachments });
+      this.logger.log(`Email "${subject}" successfully sent`);
     } catch (error) {
       this.logger.error(error);
     }
@@ -67,8 +67,8 @@ export class MailingService {
     const html = googleOAuthTmpPassword.processor();
     const subject = `Welcome to Wirebill! You successfully registered through Google OAuth`;
     try {
-      const sent = await this.mailerService.sendMail({ to: params.email, subject, html });
-      this.logger.log(`Email "${subject}" successfully sent to: ${sent.envelope.to.join(` & `)}`);
+      await this.mailerService.sendMail({ to: params.email, subject, html });
+      this.logger.log(`Email "${subject}" successfully sent`);
     } catch (error) {
       this.logger.error(error);
     }
@@ -78,8 +78,8 @@ export class MailingService {
     const html = forgotPassword.processor(params.forgotPasswordLink);
     const subject = `Wirebill. Password recovery`;
     try {
-      const sent = await this.mailerService.sendMail({ to: params.email, subject, html });
-      this.logger.log(`Email "${subject}" successfully sent to: ${sent.envelope.to.join(` & `)}`);
+      await this.mailerService.sendMail({ to: params.email, subject, html });
+      this.logger.log(`Email "${subject}" successfully sent`);
     } catch (error) {
       this.logger.error(error);
     }
@@ -93,8 +93,8 @@ export class MailingService {
     const html = payToContactPaymentInfo.processor(params);
     const subject = `Wirebill. Payment`;
     try {
-      const sent = await this.mailerService.sendMail({ to: params.contactEmail, subject, html });
-      this.logger.log(`Email "${subject}" successfully sent to: ${sent.envelope.to.join(` & `)}`);
+      await this.mailerService.sendMail({ to: params.contactEmail, subject, html });
+      this.logger.log(`Email "${subject}" successfully sent`);
     } catch (error) {
       this.logger.error(error);
     }
@@ -136,8 +136,8 @@ export class MailingService {
     const subject = `Wirebill. Payment request from ${params.requesterEmail}`;
 
     try {
-      const sent = await this.mailerService.sendMail({ to: params.payerEmail, subject, html });
-      this.logger.log(`Email "${subject}" successfully sent to: ${sent.envelope.to.join(` & `)}`);
+      await this.mailerService.sendMail({ to: params.payerEmail, subject, html });
+      this.logger.log(`Email "${subject}" successfully sent`);
     } catch (error) {
       this.logger.error(error);
     }
@@ -181,8 +181,8 @@ export class MailingService {
     const subject = `Wirebill. Payment refund`;
 
     try {
-      const sent = await this.mailerService.sendMail({ to: params.recipientEmail, subject, html });
-      this.logger.log(`Email "${subject}" successfully sent to: ${sent.envelope.to.join(` & `)}`);
+      await this.mailerService.sendMail({ to: params.recipientEmail, subject, html });
+      this.logger.log(`Email "${subject}" successfully sent`);
     } catch (error) {
       this.logger.error(error);
     }
@@ -226,8 +226,8 @@ export class MailingService {
     const subject = `Wirebill. Chargeback update`;
 
     try {
-      const sent = await this.mailerService.sendMail({ to: params.recipientEmail, subject, html });
-      this.logger.log(`Email "${subject}" successfully sent to: ${sent.envelope.to.join(` & `)}`);
+      await this.mailerService.sendMail({ to: params.recipientEmail, subject, html });
+      this.logger.log(`Email "${subject}" successfully sent`);
     } catch (error) {
       this.logger.error(error);
     }
@@ -237,8 +237,8 @@ export class MailingService {
     const html = invitation.processor(params);
     const subject = `Wirebill. Invitation`;
     try {
-      const sent = await this.mailerService.sendMail({ to: params.email, subject, html });
-      this.logger.log(`Email "${subject}" successfully sent to: ${sent.envelope.to.join(` & `)}`);
+      await this.mailerService.sendMail({ to: params.email, subject, html });
+      this.logger.log(`Email "${subject}" successfully sent`);
     } catch (error) {
       this.logger.error(error);
     }
