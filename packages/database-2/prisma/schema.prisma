@@ -9,7 +9,7 @@ datasource db {
 }
 
 model AccessRefreshTokenModel {
-  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
   identityId   String @map("identity_id") @db.Uuid
   accessToken  String @map("access_token") @db.Text
@@ -24,13 +24,13 @@ model AccessRefreshTokenModel {
 }
 
 model AddressDetailsModel {
-  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
-  postalCode String  @map("postal_code") @db.VarChar(255)
-  country    String  @db.VarChar(255)
-  city       String? @db.VarChar(255)
-  state      String? @db.VarChar(255)
-  street     String? @db.VarChar(255)
+  postalCode String  @map("postal_code") @db.Text
+  country    String  @db.Text
+  city       String? @db.Text
+  state      String? @db.Text
+  street     String? @db.Text
 
   consumerId String        @unique @db.Uuid
   consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -44,13 +44,13 @@ model AddressDetailsModel {
 }
 
 model AdminModel {
-  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
   type AdminType @default(ADMIN)
 
-  email    String @db.VarChar(255)
-  password String @db.VarChar(255)
-  salt     String @db.VarChar(255)
+  email    String @db.Text
+  password String @db.Text
+  salt     String @db.Text
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -61,10 +61,10 @@ model AdminModel {
 }
 
 model BillingDetailsModel {
-  id    String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  email String? @db.VarChar(255)
-  name  String? @db.VarChar(255)
-  phone String? @db.VarChar(255)
+  id    String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email String? @db.Text
+  name  String? @db.Text
+  phone String? @db.Text
 
   paymentMethods PaymentMethodModel[]
 
@@ -76,14 +76,14 @@ model BillingDetailsModel {
 }
 
 model ConsumerModel {
-  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
-  email          String          @db.VarChar(255)
+  email          String          @db.Text
   accountType    AccountType     @map("account_type")
   contractorKind ContractorKind? @map("contractor_kind")
 
-  password      String?  @db.VarChar(255)
-  salt          String?  @db.VarChar(255)
+  password      String?  @db.Text
+  salt          String?  @db.Text
   verified      Boolean? @default(false)
   legalVerified Boolean? @default(false) @map("legal_verified")
 
@@ -93,8 +93,8 @@ model ConsumerModel {
   verificationUpdatedBy String?            @map("verification_updated_by") @db.Uuid
 
   howDidHearAboutUs      HowDidHearAboutUs? @map("how_did_hear_about_us")
-  howDidHearAboutUsOther String?            @map("how_did_hear_about_us_other") @db.VarChar(255)
-  stripeCustomerId       String?            @map("stripe_customer_id") @db.VarChar(255)
+  howDidHearAboutUsOther String?            @map("how_did_hear_about_us_other") @db.Text
+  stripeCustomerId       String?            @map("stripe_customer_id") @db.Text
 
   addressDetails       AddressDetailsModel?
   personalDetails      PersonalDetailsModel?
@@ -123,7 +123,7 @@ model ConsumerModel {
 }
 
 model ConsumerResourceModel {
-  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
   consumerId String        @map("consumer_id") @db.Uuid
   consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -142,10 +142,10 @@ model ConsumerResourceModel {
 }
 
 model ContactModel {
-  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
-  email   String  @db.VarChar(255)
-  name    String? @db.VarChar(255)
+  email   String  @db.Text
+  name    String? @db.Text
   address Json
 
   consumerId String        @map("consumer_id") @db.Uuid
@@ -161,7 +161,7 @@ model ContactModel {
 }
 
 model ExchangeRateModel {
-  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
   fromCurrency CurrencyCode @map("from_currency")
   toCurrency   CurrencyCode @map("to_currency")
@@ -177,8 +177,8 @@ model ExchangeRateModel {
   expiresAt   DateTime?          @map("expires_at") @db.Timestamptz(6)
   fetchedAt   DateTime?          @map("fetched_at") @db.Timestamptz(6)
 
-  provider       String? @map("provider") @db.VarChar(255)
-  providerRateId String? @map("provider_rate_id") @db.VarChar(255)
+  provider       String? @map("provider") @db.Text
+  providerRateId String? @map("provider_rate_id") @db.Text
   confidence     Int?
 
   createdBy  String?  @map("created_by") @db.Uuid
@@ -197,7 +197,7 @@ model ExchangeRateModel {
 }
 
 model WalletAutoConversionRuleModel {
-  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
   consumerId String        @map("consumer_id") @db.Uuid
   consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -228,7 +228,7 @@ model WalletAutoConversionRuleModel {
 }
 
 model ScheduledFxConversionModel {
-  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
   consumerId String        @map("consumer_id") @db.Uuid
   consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -243,7 +243,7 @@ model ScheduledFxConversionModel {
   executedAt DateTime? @map("executed_at") @db.Timestamptz(6)
   failedAt   DateTime? @map("failed_at") @db.Timestamptz(6)
   attempts   Int @default(0)
-  lastError  String? @map("last_error") @db.VarChar(1024)
+  lastError  String? @map("last_error") @db.Text
   ledgerId   String? @map("ledger_id") @db.Uuid
 
   metadata Json?
@@ -258,15 +258,15 @@ model ScheduledFxConversionModel {
 }
 
 model GoogleProfileDetailsModel {
-  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
-  email         String  @db.VarChar(255)
+  email         String  @db.Text
   emailVerified Boolean @map("email_verified")
-  name          String? @db.VarChar(255)
-  givenName     String? @map("given_name") @db.VarChar(255)
-  familyName    String? @map("family_name") @db.VarChar(255)
-  picture       String? @db.VarChar(255)
-  organization  String? @db.VarChar(255)
+  name          String? @db.Text
+  givenName     String? @map("given_name") @db.Text
+  familyName    String? @map("family_name") @db.Text
+  picture       String? @db.Text
+  organization  String? @db.Text
   metadata      Json?
 
   consumerId String        @unique @db.Uuid
@@ -281,11 +281,11 @@ model GoogleProfileDetailsModel {
 }
 
 model OrganizationDetailsModel {
-  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
-  name              String           @db.VarChar(255)
+  name              String           @db.Text
   consumerRole      ConsumerRole?    @map("consumer_role")
-  consumerRoleOther String?          @map("consumer_role_other") @db.VarChar(255)
+  consumerRoleOther String?          @map("consumer_role_other") @db.Text
   size              OrganizationSize @default(SMALL)
 
   consumerId String        @unique @db.Uuid
@@ -300,28 +300,28 @@ model OrganizationDetailsModel {
 }
 
 model PaymentMethodModel {
-  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
   type PaymentMethodType
 
   // Stripe identity
-  stripePaymentMethodId String? @map("stripe_payment_method_id") @db.VarChar(255)
+  stripePaymentMethodId String? @map("stripe_payment_method_id") @db.Text
 
   // Stable dedupe key from Stripe when possible (card fingerprint / bank fingerprint)
-  stripeFingerprint String? @map("stripe_fingerprint") @db.VarChar(255)
+  stripeFingerprint String? @map("stripe_fingerprint") @db.Text
 
   defaultSelected Boolean @default(false) @map("default_selected")
 
   // Card-ish (optional because BANK_ACCOUNT exists)
-  brand    String? @db.VarChar(255)
-  last4    String? @db.VarChar(4)
-  expMonth String? @map("exp_month") @db.VarChar(2)
-  expYear  String? @map("exp_year") @db.VarChar(4)
+  brand    String? @db.Text
+  last4    String? @db.Text
+  expMonth String? @map("exp_month") @db.Text
+  expYear  String? @map("exp_year") @db.Text
 
   // Bank-ish (optional)
-  bankName     String?       @map("bank_name") @db.VarChar(255)
-  bankLast4    String?       @map("bank_last4") @db.VarChar(4)
-  bankCountry  String?       @map("bank_country") @db.VarChar(2)
+  bankName     String?       @map("bank_name") @db.Text
+  bankLast4    String?       @map("bank_last4") @db.Text
+  bankCountry  String?       @map("bank_country") @db.Text
   bankCurrency CurrencyCode? @map("bank_currency")
 
   serviceFee Int @default(0) @map("service_fee")
@@ -338,12 +338,13 @@ model PaymentMethodModel {
 
   @@unique([consumerId, stripePaymentMethodId, deletedAt])
   @@unique([consumerId, stripeFingerprint, deletedAt])
+  @@index([billingDetailsId])
   @@index([consumerId])
   @@map("payment_method")
 }
 
 model PaymentRequestModel {
-  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
   currencyCode CurrencyCode      @default(USD) @map("currency_code")
   status       TransactionStatus @default(DRAFT) @map("status")
@@ -353,7 +354,7 @@ model PaymentRequestModel {
   paymentRail PaymentRail?     @map("payment_rail")
 
   amount          Decimal   @db.Decimal(9, 2)
-  description     String?
+  description     String? @db.Text
   dueDate         DateTime? @map("due_date") @db.Timestamptz(6)
   sentDate        DateTime? @map("sent_date") @db.Timestamptz(6)
 
@@ -366,11 +367,11 @@ model PaymentRequestModel {
   attachments   PaymentRequestAttachmentModel[]
   ledgerEntries LedgerEntryModel[]
 
-  createdBy String?   @map("created_by") @db.VarChar(255)
+  createdBy String?   @map("created_by") @db.Text
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedBy String?   @map("updated_by") @db.VarChar(255)
+  updatedBy String?   @map("updated_by") @db.Text
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedBy String?   @map("deleted_by") @db.VarChar(255)
+  deletedBy String?   @map("deleted_by") @db.Text
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
   @@index([payerId])
@@ -380,7 +381,7 @@ model PaymentRequestModel {
 }
 
 model LedgerEntryModel {
-  id       String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   ledgerId String @map("ledger_id") @db.Uuid
 
   type         LedgerEntryType
@@ -397,10 +398,10 @@ model LedgerEntryModel {
   feesType   TransactionFeesType? @default(NO_FEES_INCLUDED)
   feesAmount Decimal?             @db.Decimal(9, 2)
 
-  stripeId String? @map("stripe_id") @db.VarChar(255)
+  stripeId String? @map("stripe_id") @db.Text
 
   // Ensures exactly-once ledger writes across retries/webhooks
-  idempotencyKey String? @map("idempotency_key") @db.VarChar(128)
+  idempotencyKey String? @map("idempotency_key") @db.Text
 
   metadata Json?
 
@@ -410,11 +411,11 @@ model LedgerEntryModel {
   paymentRequestId String?              @map("payment_request_id") @db.Uuid
   paymentRequest   PaymentRequestModel? @relation(fields: [paymentRequestId], references: [id], onDelete: SetNull)
 
-  createdBy String?   @map("created_by") @db.VarChar(255)
+  createdBy String?   @map("created_by") @db.Text
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedBy String?   @map("updated_by") @db.VarChar(255)
+  updatedBy String?   @map("updated_by") @db.Text
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedBy String?   @map("deleted_by") @db.VarChar(255)
+  deletedBy String?   @map("deleted_by") @db.Text
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
   @@unique([idempotencyKey])
@@ -425,7 +426,7 @@ model LedgerEntryModel {
 }
 
 model PaymentRequestAttachmentModel {
-  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
   paymentRequestId String              @map("payment_request_id") @db.Uuid
   paymentRequest   PaymentRequestModel @relation(fields: [paymentRequestId], references: [id], onDelete: Cascade)
@@ -448,18 +449,18 @@ model PaymentRequestAttachmentModel {
 }
 
 model PersonalDetailsModel {
-  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
   legalStatus LegalStatus? @map("legal_status")
 
-  citizenOf             String   @map("citizen_of") @db.VarChar(255)
+  citizenOf             String   @map("citizen_of") @db.Text
   dateOfBirth           DateTime @map("date_of_birth") @db.Timestamptz(6)
-  passportOrIdNumber    String   @map("passport_or_id_number") @db.VarChar(255)
-  countryOfTaxResidence String?  @map("country_of_tax_residence") @db.VarChar(255)
-  taxId                 String?  @map("tax_id") @db.VarChar(255)
-  phoneNumber           String?  @map("phone_number") @db.VarChar(255)
-  firstName             String?  @map("first_name") @db.VarChar(255)
-  lastName              String?  @map("last_name") @db.VarChar(255)
+  passportOrIdNumber    String   @map("passport_or_id_number") @db.Text
+  countryOfTaxResidence String?  @map("country_of_tax_residence") @db.Text
+  taxId                 String?  @map("tax_id") @db.Text
+  phoneNumber           String?  @map("phone_number") @db.Text
+  firstName             String?  @map("first_name") @db.Text
+  lastName              String?  @map("last_name") @db.Text
 
   consumerId String        @unique @db.Uuid
   consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -473,9 +474,9 @@ model PersonalDetailsModel {
 }
 
 model ResetPasswordModel {
-  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
-  token     String   @db.VarChar(255)
+  token     String   @db.Text
   expiredAt DateTime @map("expired_at") @db.Timestamptz(6)
 
   consumerId String        @map("consumer_id") @db.Uuid
@@ -491,17 +492,17 @@ model ResetPasswordModel {
 }
 
 model ResourceModel {
-  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
   // Use enum (you already defined it)
   access ResourceAccess @default(PUBLIC) @map("access")
 
-  originalName String @map("originalname") @db.VarChar(255)
-  mimetype     String @db.VarChar(255)
+  originalName String @map("originalname") @db.Text
+  mimetype     String @db.Text
   size         Int
-  bucket       String @db.VarChar(255)
-  key          String @db.VarChar(255)
-  downloadUrl  String @map("download_url") @db.VarChar(255)
+  bucket       String @db.Text
+  key          String @db.Text
+  downloadUrl  String @map("download_url") @db.Text
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -516,21 +517,27 @@ model ResourceModel {
 }
 
 model DocumentTagModel {
-  id   String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  name String @unique @db.VarChar(64)
+  id   String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name String @unique @db.Text
 
   resourceTags ResourceTagModel[]
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@map("document_tag")
 }
 
 model ResourceTagModel {
-  id         String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id         String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   resourceId String @map("resource_id") @db.Uuid
   tagId      String @map("tag_id") @db.Uuid
 
   resource ResourceModel    @relation(fields: [resourceId], references: [id], onDelete: Cascade)
   tag      DocumentTagModel @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@unique([resourceId, tagId])
   @@index([resourceId])
@@ -811,7 +818,7 @@ enum ScheduledFxConversionStatus {
 }
 
 model UserSettingsModel {
-  id String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
   theme Theme @default(SYSTEM)
 
