@@ -7,12 +7,7 @@
     "db:generate": "npx prisma generate",
     "build": "yarn db:generate && tsc -p tsconfig.build.json",
     "clean": "rm -rf ./node_modules ./dist ./generated/**",
-    "postinstall": "npx prisma generate",
-    "db:deploy": "DATABASE_URL=\"postgresql://neondb_owner:npg_hgTsd5jFfaR0@ep-restless-sky-ad6zq6qf-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require\" prisma migrate deploy",
-    "db:studio": "DATABASE_URL=\"postgresql://neondb_owner:npg_hgTsd5jFfaR0@ep-restless-sky-ad6zq6qf-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require\" prisma studio",
-    "db:migrate": "DATABASE_URL=\"postgresql://neondb_owner:npg_hgTsd5jFfaR0@ep-restless-sky-ad6zq6qf-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require\"  prisma migrate dev --skip-generate",
-    "db:push": "DATABASE_URL=\"postgresql://neondb_owner:npg_hgTsd5jFfaR0@ep-restless-sky-ad6zq6qf-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require\" prisma db push",
-    "db:reset": "DATABASE_URL=\"postgresql://neondb_owner:npg_hgTsd5jFfaR0@ep-restless-sky-ad6zq6qf-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require\" prisma migrate reset"
+    "postinstall": "npx prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^6.18.0",

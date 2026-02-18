@@ -18,9 +18,16 @@ class PaymentRequest extends BaseModel implements IPaymentRequestModel {
   requesterId: string;
 
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ required: false, nullable: true })
+  @ValidateIf((x) => x.value != null)
   @IsUUID(`all`)
-  payerId: string;
+  payerId: string | null;
+
+  @Expose()
+  @ApiProperty({ required: false, nullable: true })
+  @ValidateIf((x) => x.value != null)
+  @IsString()
+  payerEmail?: string | null;
 
   @Expose()
   @ApiProperty()

@@ -5,7 +5,8 @@ import type { IBaseModel } from './base.model';
 /* record is created when the request is created */
 export type IPaymentRequestModel = {
   requesterId: string; // consumer_id
-  payerId: string; // consumer_id
+  payerId: string | null; // consumer_id
+  payerEmail?: string | null; // email-only recipient fallback
   amount: number; // in cents
   currencyCode: $Enums.CurrencyCode;
   description: string;

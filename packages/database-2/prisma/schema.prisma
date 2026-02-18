@@ -358,8 +358,9 @@ model PaymentRequestModel {
   dueDate         DateTime? @map("due_date") @db.Timestamptz(6)
   sentDate        DateTime? @map("sent_date") @db.Timestamptz(6)
 
-  payerId String        @map("payer_id") @db.Uuid
-  payer   ConsumerModel @relation("PaymentRequestPayer", fields: [payerId], references: [id], onDelete: Cascade)
+  payerId    String?        @map("payer_id") @db.Uuid
+  payerEmail String?        @map("payer_email") @db.Text
+  payer      ConsumerModel? @relation("PaymentRequestPayer", fields: [payerId], references: [id], onDelete: SetNull)
 
   requesterId String        @map("requester_id") @db.Uuid
   requester   ConsumerModel @relation("PaymentRequestRequester", fields: [requesterId], references: [id], onDelete: Cascade)

@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 
 import { PaymentDirection, PaymentMethodTypes } from '@remoola/api-types';
 import { $Enums } from '@remoola/database-2';
@@ -11,6 +11,8 @@ import { MailingService } from '../../../shared/mailing.service';
 import { PrismaService } from '../../../shared/prisma.service';
 @Injectable()
 export class ConsumerPaymentsService {
+  private readonly logger = new Logger(ConsumerPaymentsService.name);
+
   constructor(
     private prisma: PrismaService,
     private readonly mailingService: MailingService,
@@ -53,9 +55,16 @@ export class ConsumerPaymentsService {
     search?: string;
   }) {
     const { consumerId, page, pageSize, status, type, search } = params;
+    const consumerEmail = await this.getConsumerEmail(consumerId);
 
     const where: any = {
-      OR: [{ payerId: consumerId }, { requesterId: consumerId }],
+      OR: [
+        { payerId: consumerId },
+        { requesterId: consumerId },
+        ...(consumerEmail
+          ? [{ payerId: null, payerEmail: { equals: consumerEmail, mode: `insensitive` as const } }]
+          : []),
+      ],
     };
 
     if (status) where.status = status;
@@ -94,6 +103,10 @@ export class ConsumerPaymentsService {
       const latestTx = paymentRequest.ledgerEntries[0];
 
       const counterparty = paymentRequest.payerId === consumerId ? paymentRequest.requester : paymentRequest.payer;
+      const counterpartyEmail =
+        paymentRequest.payerId === consumerId
+          ? paymentRequest.requester.email
+          : (paymentRequest.payer?.email ?? paymentRequest.payerEmail ?? ``);
 
       let latestTransaction;
       if (latestTx) {
@@ -114,8 +127,8 @@ export class ConsumerPaymentsService {
         createdAt: paymentRequest.createdAt.toISOString(),
 
         counterparty: {
-          id: counterparty.id,
-          email: counterparty.email,
+          id: counterparty?.id ?? ``,
+          email: counterpartyEmail,
         },
 
         latestTransaction: latestTransaction,
@@ -131,6 +144,7 @@ export class ConsumerPaymentsService {
   }
 
   async getPaymentView(consumerId: string, paymentRequestId: string) {
+    const consumerEmail = await this.getConsumerEmail(consumerId);
     const paymentRequest = await this.prisma.paymentRequestModel.findUnique({
       where: { id: paymentRequestId },
       include: {
@@ -151,11 +165,17 @@ export class ConsumerPaymentsService {
       throw new NotFoundException(`Payment request not found`);
     }
 
-    if (paymentRequest.payerId !== consumerId && paymentRequest.requesterId !== consumerId) {
+    const isEmailOnlyPayer =
+      !paymentRequest.payerId &&
+      !!paymentRequest.payerEmail &&
+      !!consumerEmail &&
+      paymentRequest.payerEmail.toLowerCase() === consumerEmail;
+
+    if (paymentRequest.payerId !== consumerId && paymentRequest.requesterId !== consumerId && !isEmailOnlyPayer) {
       throw new ForbiddenException(`You do not have access to this payment`);
     }
 
-    const isPayer = paymentRequest.payerId === consumerId;
+    const isPayer = paymentRequest.payerId === consumerId || isEmailOnlyPayer;
 
     return {
       id: paymentRequest.id,
@@ -170,7 +190,7 @@ export class ConsumerPaymentsService {
 
       role: isPayer ? `PAYER` : `REQUESTER`,
 
-      payer: paymentRequest.payer,
+      payer: paymentRequest.payer ?? { id: null, email: paymentRequest.payerEmail ?? null },
       requester: paymentRequest.requester,
       ledgerEntries: paymentRequest.ledgerEntries
         .map((entry) => {
@@ -293,16 +313,20 @@ export class ConsumerPaymentsService {
 
   async createPaymentRequest(consumerId: string, body: CreatePaymentRequest) {
     await this.ensureProfileComplete(consumerId);
+    const normalizedEmail = body.email.trim().toLowerCase();
 
     const recipient = await this.prisma.consumerModel.findFirst({
-      where: { email: body.email, deletedAt: null },
+      where: {
+        email: { equals: normalizedEmail, mode: `insensitive` },
+        deletedAt: null,
+      },
     });
 
-    if (!recipient) {
-      throw new BadRequestException(`Recipient not found`);
+    if (recipient?.id === consumerId) {
+      throw new BadRequestException(`You cannot request payment from yourself`);
     }
 
-    if (recipient.id === consumerId) {
+    if (!recipient && normalizedEmail === (await this.getConsumerEmail(consumerId))) {
       throw new BadRequestException(`You cannot request payment from yourself`);
     }
 
@@ -324,7 +348,8 @@ export class ConsumerPaymentsService {
 
     const paymentRequest = await this.prisma.paymentRequestModel.create({
       data: {
-        payerId: recipient.id,
+        payerId: recipient?.id ?? null,
+        payerEmail: recipient?.email ?? normalizedEmail,
         requesterId: consumerId,
         currencyCode: body.currencyCode ?? $Enums.CurrencyCode.USD,
         amount,
@@ -335,6 +360,15 @@ export class ConsumerPaymentsService {
         updatedBy: consumerId,
       },
     });
+
+    if (!recipient) {
+      this.logger.log({
+        event: `payment_request_created_without_registered_recipient`,
+        paymentRequestId: paymentRequest.id,
+        requesterId: consumerId,
+        payerEmail: normalizedEmail,
+      });
+    }
 
     return { paymentRequestId: paymentRequest.id };
   }
@@ -349,6 +383,7 @@ export class ConsumerPaymentsService {
           id: true,
           requesterId: true,
           payerId: true,
+          payerEmail: true,
           status: true,
           amount: true,
           currencyCode: true,
@@ -386,7 +421,15 @@ export class ConsumerPaymentsService {
         },
       });
 
-      if (paymentRequest._count.ledgerEntries === 0) {
+      if (!paymentRequest.payerId && paymentRequest._count.ledgerEntries > 0) {
+        throw new BadRequestException(`Invalid ledger state for email-only payment request`);
+      }
+
+      if (paymentRequest.payerId && paymentRequest._count.ledgerEntries > 0) {
+        throw new BadRequestException(`Invalid ledger state for draft payment request`);
+      }
+
+      if (paymentRequest._count.ledgerEntries === 0 && paymentRequest.payerId) {
         const ledgerId = randomUUID();
 
         await tx.ledgerEntryModel.create({
@@ -429,7 +472,7 @@ export class ConsumerPaymentsService {
       return {
         paymentRequestId: updated.id,
         email: {
-          payerEmail: paymentRequest.payer.email,
+          payerEmail: paymentRequest.payer?.email ?? paymentRequest.payerEmail ?? ``,
           requesterEmail: paymentRequest.requester.email,
           amount,
           currencyCode: paymentRequest.currencyCode,
@@ -466,6 +509,14 @@ export class ConsumerPaymentsService {
     }
 
     return result;
+  }
+
+  private async getConsumerEmail(consumerId: string): Promise<string | null> {
+    const consumer = await this.prisma.consumerModel.findUnique({
+      where: { id: consumerId },
+      select: { email: true },
+    });
+    return consumer?.email?.trim().toLowerCase() ?? null;
   }
 
   async getBalancesIncludePending(consumerId: string): Promise<Record<$Enums.CurrencyCode, number>> {

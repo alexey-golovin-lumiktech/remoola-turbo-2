@@ -15,6 +15,10 @@ export class ConsumerInvoiceService {
   ) {}
 
   async generateInvoice(paymentRequestId: string, consumerId: string, backendHost) {
+    const consumer = await this.prisma.consumerModel.findUnique({
+      where: { id: consumerId },
+      select: { email: true },
+    });
     const payment = await this.prisma.paymentRequestModel.findUnique({
       where: { id: paymentRequestId },
       include: {
@@ -30,8 +34,14 @@ export class ConsumerInvoiceService {
 
     if (!payment) throw new NotFoundException(`Payment request not found`);
 
+    const isEmailOnlyPayer =
+      !payment.payerId &&
+      !!payment.payerEmail &&
+      !!consumer?.email &&
+      payment.payerEmail.trim().toLowerCase() === consumer.email.trim().toLowerCase();
+
     // only payer or requester can generate invoice
-    if (payment.payerId !== consumerId && payment.requesterId !== consumerId) {
+    if (payment.payerId !== consumerId && payment.requesterId !== consumerId && !isEmailOnlyPayer) {
       throw new ForbiddenException(`You are not allowed to access this invoice`);
     }
 

@@ -1,3 +1,5 @@
+import { randomUUID } from 'crypto';
+
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import Stripe from 'stripe';
 
@@ -15,20 +17,127 @@ export class ConsumerStripeService {
     this.stripe = new Stripe(envs.STRIPE_SECRET_KEY, { apiVersion: `2025-11-17.clover` });
   }
 
-  async createStripeSession(consumerId: string, paymentRequestId: string, frontendBaseUrl: string) {
-    const pr = await this.prisma.paymentRequestModel.findFirst({
-      where: {
-        id: paymentRequestId,
-        payerId: consumerId,
-      },
+  private async getPaymentRequestForPayer(consumerId: string, paymentRequestId: string) {
+    const consumer = await this.prisma.consumerModel.findUnique({
+      where: { id: consumerId },
+      select: { email: true },
+    });
+
+    if (!consumer?.email) {
+      throw new NotFoundException(`Payment not found`);
+    }
+
+    const consumerEmail = consumer.email.trim().toLowerCase();
+
+    await this.prisma.$transaction(async (tx) => {
+      const paymentRequest = await tx.paymentRequestModel.findUnique({
+        where: { id: paymentRequestId },
+        include: { ledgerEntries: true },
+      });
+
+      if (!paymentRequest) {
+        throw new NotFoundException(`Payment not found`);
+      }
+
+      const canAccessAsPayer =
+        paymentRequest.payerId === consumerId ||
+        (!paymentRequest.payerId &&
+          !!paymentRequest.payerEmail &&
+          paymentRequest.payerEmail.trim().toLowerCase() === consumerEmail);
+
+      if (!canAccessAsPayer) {
+        throw new NotFoundException(`Payment not found`);
+      }
+
+      if (paymentRequest.status !== $Enums.TransactionStatus.PENDING) {
+        throw new ForbiddenException(`Payment already processed`);
+      }
+
+      if (!paymentRequest.payerId && paymentRequest.ledgerEntries.length > 0) {
+        throw new BadRequestException(`Invalid ledger state for email-only payment request`);
+      }
+
+      if (!paymentRequest.payerId) {
+        const claim = await tx.paymentRequestModel.updateMany({
+          where: {
+            id: paymentRequestId,
+            payerId: null,
+            payerEmail: { equals: consumerEmail, mode: `insensitive` },
+          },
+          data: {
+            payerId: consumerId,
+            updatedBy: consumerId,
+          },
+        });
+
+        if (claim.count === 0) {
+          throw new NotFoundException(`Payment not found`);
+        }
+
+        if (paymentRequest.ledgerEntries.length === 0) {
+          const amount = Number(paymentRequest.amount);
+          const ledgerId = randomUUID();
+
+          await tx.ledgerEntryModel.create({
+            data: {
+              ledgerId,
+              consumerId,
+              paymentRequestId: paymentRequest.id,
+              type: $Enums.LedgerEntryType.USER_PAYMENT,
+              currencyCode: paymentRequest.currencyCode,
+              status: $Enums.TransactionStatus.PENDING,
+              amount: -amount,
+              createdBy: consumerId,
+              updatedBy: consumerId,
+              metadata: {
+                rail: $Enums.PaymentRail.CARD,
+                counterpartyId: paymentRequest.requesterId,
+              },
+            },
+          });
+
+          await tx.ledgerEntryModel.create({
+            data: {
+              ledgerId,
+              consumerId: paymentRequest.requesterId,
+              paymentRequestId: paymentRequest.id,
+              type: $Enums.LedgerEntryType.USER_PAYMENT,
+              currencyCode: paymentRequest.currencyCode,
+              status: $Enums.TransactionStatus.PENDING,
+              amount: amount,
+              createdBy: consumerId,
+              updatedBy: consumerId,
+              metadata: {
+                rail: $Enums.PaymentRail.CARD,
+                counterpartyId: consumerId,
+              },
+            },
+          });
+        }
+      }
+    });
+
+    const paymentRequest = await this.prisma.paymentRequestModel.findUnique({
+      where: { id: paymentRequestId },
       include: {
         ledgerEntries: true,
         requester: true,
       },
     });
 
-    if (!pr) throw new NotFoundException(`Payment not found`);
-    if (pr.status !== $Enums.TransactionStatus.PENDING) throw new ForbiddenException(`Payment already processed`);
+    if (!paymentRequest || paymentRequest.payerId !== consumerId) {
+      throw new NotFoundException(`Payment not found`);
+    }
+
+    if (paymentRequest.status !== $Enums.TransactionStatus.PENDING) {
+      throw new ForbiddenException(`Payment already processed`);
+    }
+
+    return paymentRequest;
+  }
+
+  async createStripeSession(consumerId: string, paymentRequestId: string, frontendBaseUrl: string) {
+    const pr = await this.getPaymentRequestForPayer(consumerId, paymentRequestId);
 
     const amountCents = Math.round(Number(pr.amount) * 100);
 
@@ -237,21 +346,7 @@ export class ConsumerStripeService {
     }
 
     // 3) Get payment request details
-    const pr = await this.prisma.paymentRequestModel.findFirst({
-      where: {
-        id: paymentRequestId,
-        payerId: consumerId,
-      },
-      include: {
-        ledgerEntries: true,
-        requester: true,
-      },
-    });
-
-    if (!pr) throw new NotFoundException(`Payment request not found`);
-    if (pr.status !== $Enums.TransactionStatus.PENDING) {
-      throw new ForbiddenException(`Payment request already processed`);
-    }
+    const pr = await this.getPaymentRequestForPayer(consumerId, paymentRequestId);
 
     // 4) Ensure Stripe customer exists
     const { customerId } = await this.ensureStripeCustomer(consumerId);

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { createContactRequest } from '../../../lib/create-contact';
 import { type IAddressDetails } from '../../../types';
 import styles from '../../ui/classNames.module.css';
 
@@ -32,21 +33,10 @@ export function CreateContactModal({ open, onCloseAction, onCreatedAction }: Cre
   if (!open) return null;
 
   async function create() {
-    const res = await fetch(`/api/contacts`, {
-      method: `POST`,
-      headers: { 'content-type': `application/json` },
-      body: JSON.stringify({
-        email: email?.trim() ?? null,
-        name: name?.trim() ?? null,
-        address: {
-          postalCode: address.postalCode?.trim() ?? null,
-          country: address.country?.trim() ?? null,
-          state: address.state?.trim() ?? null,
-          city: address.city?.trim() ?? null,
-          street: address.street?.trim() ?? null,
-        },
-      }),
-      credentials: `include`,
+    const res = await createContactRequest({
+      email,
+      name,
+      address,
     });
     if (!res.ok) {
       const parsed = JSON.parse((await res.text()) || `{}`);
