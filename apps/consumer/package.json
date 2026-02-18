@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "next lint --max-warnings 0",
     "check-types": "tsc --noEmit",
-    "test": "jest",
+    "pretest": "node ../../scripts/ensure-local-development.js consumer:pretest && yarn workspace @remoola/test-db build",
+    "test": "node ../../scripts/ensure-local-development.js consumer:test && node ../../scripts/run-jest-with-memory-cap.js",
     "clean": "rm -rf ./node_modules ./.next"
   },
   "dependencies": {

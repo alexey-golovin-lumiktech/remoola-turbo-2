@@ -1,0 +1,47 @@
+{
+  "name": "@remoola/test-db",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "main": "./dist/entry.js",
+  "types": "./dist/entry.d.ts",
+  "files": [
+    "./dist/**"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/entry.js",
+      "require": "./dist/entry.js"
+    },
+    "./jest": {
+      "import": "./dist/jest.js",
+      "require": "./dist/jest.js"
+    },
+    "./environment": {
+      "import": "./dist/environment.js",
+      "require": "./dist/environment.js"
+    }
+  },
+  "scripts": {
+    "dev": "yarn build --watch",
+    "prebuild": "yarn workspace @remoola/db-fixtures build",
+    "build": "node ../../scripts/ensure-local-development.js test-db:build && tsc -b",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
+    "clean": "rm -rf ./node_modules ./dist"
+  },
+  "dependencies": {
+    "@remoola/database-2": "^0.0.0",
+    "@testcontainers/postgresql": "^11.12.0"
+  },
+  "devDependencies": {
+    "@remoola/eslint-config": "^0.0.0",
+    "@remoola/typescript-config": "^0.0.0",
+    "@types/node": "^22.10.7",
+    "ts-loader": "^9.4.3",
+    "ts-node": "^10.9.2",
+    "typescript": "5.8.2"
+  }
+}

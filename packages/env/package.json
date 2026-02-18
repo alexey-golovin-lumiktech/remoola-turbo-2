@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "yarn build --watch",
-    "build": "tsc -b -v",
+    "build": "tsc -b",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "clean": "rm -rf ./node_modules ./dist"
   },

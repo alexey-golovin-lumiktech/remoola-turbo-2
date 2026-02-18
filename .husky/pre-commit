@@ -2,5 +2,13 @@
 . "$(dirname -- "$0")/_/husky.sh"
 
 yarn lint
-yarn workspace @remoola/consumer run test --verbose --coverage=false
-yarn workspace @remoola/api run test --passWithNoTests --verbose --coverage=false
+# Build once to avoid repeated pretest noise in each app test run.
+yarn --silent workspace @remoola/test-db run build >/dev/null 2>&1
+(
+  cd apps/consumer &&
+    QUIET_MEMORY_GUARD=1 node ../../scripts/run-jest-with-memory-cap.js --passWithNoTests --verbose --coverage=false
+)
+(
+  cd apps/api &&
+    QUIET_MEMORY_GUARD=1 node ../../scripts/run-jest-with-memory-cap.js --passWithNoTests --verbose --coverage=false
+)
