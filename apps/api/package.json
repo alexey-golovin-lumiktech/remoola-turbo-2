@@ -64,7 +64,6 @@
     "@nestjs/testing": "^11.0.0",
     "@remoola/eslint-config": "^0.0.0",
     "@remoola/jest-config": "^0.0.0",
-    "@remoola/test-db": "^0.0.0",
     "@remoola/typescript-config": "^0.0.0",
     "@types/cookie-parser": "^1.4.9",
     "@types/express": "^4.17.17",
