@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { formatDateTimeForDisplay } from '../../lib/date-utils';
+import { getErrorMessageForUser } from '../../lib/error-messages';
 import styles from '../ui/classNames.module.css';
 
 const {
@@ -80,6 +81,7 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
   const [sending, setSending] = useState(false);
+  const [generatingInvoice, setGeneratingInvoice] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -174,14 +176,36 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
   }
 
   async function generateInvoice() {
-    const res = await fetch(`/api/payments/${paymentRequestId}/generate-invoice`, {
-      method: `POST`,
-      headers: { 'content-type': `application/json` },
-      credentials: `include`,
-    });
+    setGeneratingInvoice(true);
+    try {
+      const res = await fetch(`/api/payments/${paymentRequestId}/generate-invoice`, {
+        method: `POST`,
+        headers: { 'content-type': `application/json` },
+        credentials: `include`,
+      });
 
-    const json = await res.json();
-    console.log(`json`, json);
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        const code = body?.message ?? body?.code;
+        toast.error(getErrorMessageForUser(code, `Invoice could not be generated. Please try again.`));
+        return;
+      }
+
+      const paymentRes = await fetch(`/api/payments/${paymentRequestId}`, {
+        method: `GET`,
+        headers: { 'content-type': `application/json` },
+        credentials: `include`,
+        cache: `no-store`,
+      });
+      if (paymentRes.ok) {
+        const paymentJson = await paymentRes.json();
+        setData(paymentJson);
+      }
+    } catch {
+      toast.error(`Invoice could not be generated. Please try again.`);
+    } finally {
+      setGeneratingInvoice(false);
+    }
   }
 
   async function sendRequest() {
@@ -396,8 +420,12 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
             </button>
           )}
 
-          <button className={buttonPrimaryRounded} onClick={generateInvoice}>
-            Generate INVOICE
+          <button
+            className={`${buttonPrimaryRounded} ${generatingInvoice ? buttonDisabledCursor : ``}`}
+            onClick={generateInvoice}
+            disabled={generatingInvoice}
+          >
+            {generatingInvoice ? `Generating…` : `Generate INVOICE`}
           </button>
         </div>
       </div>

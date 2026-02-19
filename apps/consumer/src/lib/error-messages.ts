@@ -127,6 +127,7 @@ const MESSAGE_MAP: Record<string, string> = {
   // Invoice, Documents
   [errorCodes.PAYMENT_REQUEST_NOT_FOUND_INVOICE]: `We couldn't find this payment request to generate the invoice. The link may be wrong or the request was removed.`,
   [errorCodes.INVOICE_ACCESS_DENIED]: `You don't have permission to view this invoice. Only the payer or requester can access it.`,
+  [errorCodes.INVOICE_GENERATION_FAILED]: `Invoice could not be generated. Please try again in a moment.`,
   [errorCodes.PAYMENT_NOT_OWNED]: `This payment wasn't found or you don't have access to it. Only the payer or requester can access these documents.`,
   [errorCodes.DOCUMENT_ACCESS_DENIED]: `You don't have permission to view or edit this document. Check that you're signed in to the correct account.`,
 };

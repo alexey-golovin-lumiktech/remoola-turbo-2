@@ -152,6 +152,7 @@ export class ConsumerPaymentsService {
         payer: { select: { id: true, email: true } },
         requester: { select: { id: true, email: true } },
         attachments: {
+          orderBy: { createdAt: `desc` },
           include: {
             resource: true,
           },
