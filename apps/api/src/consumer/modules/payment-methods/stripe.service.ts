@@ -9,6 +9,7 @@ import { errorCodes } from '@remoola/shared-constants';
 import { ConfirmStripeSetupIntent, PayWithSavedPaymentMethod } from './dto/payment-method.dto';
 import { envs } from '../../../envs';
 import { PrismaService } from '../../../shared/prisma.service';
+import { getCurrencyFractionDigits } from '../../../shared-common';
 
 @Injectable()
 export class ConsumerStripeService {
@@ -160,7 +161,8 @@ export class ConsumerStripeService {
   async createStripeSession(consumerId: string, paymentRequestId: string, frontendBaseUrl: string) {
     const pr = await this.getPaymentRequestForPayer(consumerId, paymentRequestId);
 
-    const amountCents = Math.round(Number(pr.amount) * 100);
+    const digits = getCurrencyFractionDigits(pr.currencyCode);
+    const amountMinor = Math.round(Number(pr.amount) * 10 ** digits);
 
     // 1) Create Stripe Checkout session
     const session = await this.stripe.checkout.sessions.create({
@@ -173,7 +175,7 @@ export class ConsumerStripeService {
             product_data: {
               name: `Payment to ${pr.requester.email}`,
             },
-            unit_amount: amountCents,
+            unit_amount: amountMinor,
           },
           quantity: 1,
         },
@@ -368,12 +370,13 @@ export class ConsumerStripeService {
     // 4) Ensure Stripe customer exists
     const { customerId } = await this.ensureStripeCustomer(consumerId);
 
-    const amountCents = Math.round(Number(pr.amount) * 100);
+    const digits = getCurrencyFractionDigits(pr.currencyCode);
+    const amountMinor = Math.round(Number(pr.amount) * 10 ** digits);
 
     try {
       // 5) Create and confirm payment intent with saved payment method
       const paymentIntent = await this.stripe.paymentIntents.create({
-        amount: amountCents,
+        amount: amountMinor,
         currency: pr.currencyCode.toLowerCase(),
         customer: customerId,
         payment_method: paymentMethod.stripePaymentMethodId,

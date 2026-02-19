@@ -62,6 +62,7 @@ export class ConsumerExchangeService {
       where: {
         consumerId,
         status: $Enums.TransactionStatus.COMPLETED, // 👈 only settled funds
+        deletedAt: null,
       },
       _sum: {
         amount: true,
