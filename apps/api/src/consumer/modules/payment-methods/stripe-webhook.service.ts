@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 
-import { BadRequestException, Injectable, type RawBodyRequest } from '@nestjs/common';
+import { BadRequestException, Injectable, type RawBodyRequest, ServiceUnavailableException } from '@nestjs/common';
 import express from 'express';
 import Stripe from 'stripe';
 
@@ -569,6 +569,22 @@ export class StripeWebhookService {
     const ledgerId = randomUUID();
 
     await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${requesterId}::text)::bigint)`);
+
+      const requesterBalanceResult = await tx.ledgerEntryModel.aggregate({
+        where: {
+          consumerId: requesterId,
+          currencyCode,
+          status: $Enums.TransactionStatus.COMPLETED,
+          deletedAt: null,
+        },
+        _sum: { amount: true },
+      });
+      const requesterBalance = Number(requesterBalanceResult._sum.amount ?? 0);
+      if (requesterBalance < finalAmount) {
+        throw new ServiceUnavailableException(errorCodes.INSUFFICIENT_REQUESTER_BALANCE_REVERSAL_STRIPE);
+      }
+
       await tx.ledgerEntryModel.create({
         data: {
           ledgerId,

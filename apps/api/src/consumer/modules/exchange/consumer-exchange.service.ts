@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto';
 
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 
-import { $Enums } from '@remoola/database-2';
+import { $Enums, Prisma } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { ConvertCurrencyBody } from './dto/convert.dto';
@@ -663,6 +663,22 @@ export class ConsumerExchangeService {
     const metadata = { from, to, rate: rate.rate, ...(options?.metadata ?? {}) };
 
     return this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${consumerId}::text)::bigint)`);
+
+      const balanceResult = await tx.ledgerEntryModel.aggregate({
+        where: {
+          consumerId,
+          currencyCode: from,
+          status: $Enums.TransactionStatus.COMPLETED,
+          deletedAt: null,
+        },
+        _sum: { amount: true },
+      });
+      const balanceInsideTx = Number(balanceResult._sum.amount ?? 0);
+      if (amount > balanceInsideTx) {
+        throw new BadRequestException(errorCodes.INSUFFICIENT_CURRENCY_BALANCE);
+      }
+
       // 1️⃣ Source currency — money leaves
       await tx.ledgerEntryModel.create({
         data: {

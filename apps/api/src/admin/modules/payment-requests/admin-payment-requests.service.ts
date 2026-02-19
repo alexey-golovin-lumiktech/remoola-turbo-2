@@ -4,6 +4,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import Stripe from 'stripe';
 
 import { $Enums, Prisma } from '@remoola/database-2';
+import { errorCodes } from '@remoola/shared-constants';
 
 import { type PaymentReversalCreate } from './dto';
 import { envs } from '../../../envs';
@@ -306,6 +307,24 @@ export class AdminPaymentRequestsService {
     } as Prisma.InputJsonValue;
 
     await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw(
+        Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${paymentRequest.requesterId}::text)::bigint)`,
+      );
+
+      const requesterBalanceResult = await tx.ledgerEntryModel.aggregate({
+        where: {
+          consumerId: paymentRequest.requesterId,
+          currencyCode: paymentRequest.currencyCode,
+          status: $Enums.TransactionStatus.COMPLETED,
+          deletedAt: null,
+        },
+        _sum: { amount: true },
+      });
+      const requesterBalance = Number(requesterBalanceResult._sum.amount ?? 0);
+      if (requesterBalance < finalRequestedAmount) {
+        throw new BadRequestException(errorCodes.INSUFFICIENT_REQUESTER_BALANCE_REVERSAL_ADMIN);
+      }
+
       await tx.ledgerEntryModel.create({
         data: {
           ledgerId,
