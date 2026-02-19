@@ -94,7 +94,7 @@ export function SignupDetailsStep() {
   };
 
   return (
-    <div className={signupStepCard}>
+    <div className={signupStepCard} data-testid="consumer-signup-details-step">
       <h1 className={signupStepTitleLg}>Create your account</h1>
       <p className={signupStepSubtitle}>Start by entering your basic account details.</p>
 
@@ -102,6 +102,7 @@ export function SignupDetailsStep() {
         <FormInput
           label="Email"
           type="email"
+          data-testid="consumer-signup-input-email"
           value={signup.email}
           onChange={(value) => updateSignup({ email: value })}
           error={fieldErrors.email}
@@ -132,6 +133,7 @@ export function SignupDetailsStep() {
 
               <button
                 type="button"
+                data-testid="consumer-signup-btn-generate-password"
                 onClick={(e) => {
                   e.stopPropagation();
                   e.preventDefault();
@@ -222,6 +224,7 @@ export function SignupDetailsStep() {
         <div className={flexRowGap3}>
           <button
             type="button"
+            data-testid="consumer-signup-toggle-account-business"
             onClick={(e) => {
               e.stopPropagation();
               e.preventDefault();
@@ -239,6 +242,7 @@ export function SignupDetailsStep() {
 
           <button
             type="button"
+            data-testid="consumer-signup-toggle-account-contractor"
             onClick={(e) => {
               e.stopPropagation();
               e.preventDefault();
@@ -268,6 +272,7 @@ export function SignupDetailsStep() {
           <div className={flexRowGap3}>
             <button
               type="button"
+              data-testid="consumer-signup-toggle-contractor-individual"
               onClick={(e) => (
                 e.preventDefault(),
                 e.stopPropagation(),
@@ -281,6 +286,7 @@ export function SignupDetailsStep() {
 
             <button
               type="button"
+              data-testid="consumer-signup-toggle-contractor-entity"
               onClick={(e) => (
                 e.preventDefault(),
                 e.stopPropagation(),
@@ -304,6 +310,7 @@ export function SignupDetailsStep() {
           <button
             type="button"
             className={loginButton}
+            data-testid="consumer-signup-btn-google"
             onClick={async () => {
               await fetch(`/api/consumer/auth/clear-cookies`, { method: `POST`, credentials: `include` });
               window.location.href = googleSignupStartUrl;

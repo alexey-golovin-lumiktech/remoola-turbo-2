@@ -35,12 +35,12 @@ export function WithdrawTransferPageClient() {
 
   const entries = Object.entries(balances);
   return (
-    <div className={withdrawTransferContainer}>
+    <div className={withdrawTransferContainer} data-testid="consumer-withdraw-transfer-page">
       <h1 className={withdrawTransferTitle}>Withdraw And Transfer</h1>
 
       {entries.length > 0 &&
         entries.map(([currency, amount]) => (
-          <p key={currency} className={withdrawTransferBalance}>
+          <p key={currency} className={withdrawTransferBalance} data-testid={`consumer-withdraw-balance-${currency}`}>
             Available balance:{` `}
             <span className={withdrawTransferBalanceAmount}>
               {currency} {amount.toFixed(2)}

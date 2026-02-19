@@ -29,10 +29,10 @@ export function PrevNextButtons({
   const { goBack, goNext, isFirst, isLast } = useSignupSteps();
 
   return (
-    <div className={signupNavContainer}>
+    <div className={signupNavContainer} data-testid="consumer-signup-prev-next">
       <div className={signupNavRow}>
         {!isFirst ? (
-          <button type="button" onClick={goBack} className={signupBackLink}>
+          <button type="button" onClick={goBack} className={signupBackLink} data-testid="consumer-signup-btn-prev">
             ← Prev step
           </button>
         ) : (
@@ -41,7 +41,7 @@ export function PrevNextButtons({
 
         <div className={signupLoginText}>
           <span className={signupLoginPrefix}>Already have an account?</span>
-          <Link href="/login" className={signupLoginLink}>
+          <Link href="/login" className={signupLoginLink} data-testid="consumer-signup-link-login">
             Log in
           </Link>
         </div>
@@ -49,6 +49,7 @@ export function PrevNextButtons({
 
       <button
         type="button"
+        data-testid="consumer-signup-btn-next"
         onClick={(e) => {
           e.stopPropagation();
           e.preventDefault();

@@ -32,13 +32,13 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
     : `—`;
 
   return (
-    <section className={summaryGrid}>
-      <div className={cardBaseSoft}>
+    <section className={summaryGrid} data-testid="consumer-dashboard-summary-cards">
+      <div className={cardBaseSoft} data-testid="consumer-dashboard-summary-balance">
         <p className={summaryCardLabel}>Balance</p>
         <p className={summaryValueLg}>{formatMoney(summary.balanceCents)}</p>
       </div>
 
-      <div className={cardBaseSoft}>
+      <div className={cardBaseSoft} data-testid="consumer-dashboard-summary-contracts">
         <p className={summaryCardLabel}>Contracts</p>
         <p className={summaryValueMd}>
           {summary.activeRequests}
@@ -47,7 +47,7 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
         </p>
       </div>
 
-      <div className={cardBaseSoft}>
+      <div className={cardBaseSoft} data-testid="consumer-dashboard-summary-last-payment">
         <p className={summaryCardLabel}>Last payment</p>
         <p className={summaryValueSm}>{lastPaymentLabel}</p>
       </div>

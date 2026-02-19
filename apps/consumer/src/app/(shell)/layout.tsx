@@ -74,13 +74,13 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
   const mobileNavLinkActiveClass = `text-blue-600 dark:text-blue-400 bg-blue-50/70 dark:bg-blue-900/30`;
 
   return (
-    <div className={shellContainer}>
-      <aside className={shellAside}>
+    <div className={shellContainer} data-testid="consumer-shell">
+      <aside className={shellAside} data-testid="consumer-shell-sidebar">
         <div className={shellBrandRow}>
           <div className={shellBrandIcon} />
           <span className={shellBrandText}>Remoola</span>
         </div>
-        <nav className={shellNav}>
+        <nav className={shellNav} data-testid="consumer-shell-nav">
           <SidebarLink href="/dashboard" active={pathname == `/` || pathname.startsWith(`/dashboard`)}>
             Dashboard
           </SidebarLink>
@@ -119,28 +119,33 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
         </nav>
         <div className={shellFooter}>© Remoola 2025</div>
       </aside>
-      <main className={shellMain}>
-        <div className={mobileHeaderClass}>
+      <main className={shellMain} data-testid="consumer-shell-main">
+        <div className={mobileHeaderClass} data-testid="consumer-shell-mobile-header">
           <div className={mobileBrandClass}>
             <span className={mobileLogoClass} />
             Remoola
           </div>
-          <a href="/logout" className={shellLogout} aria-label="Log out">
+          <a href="/logout" className={shellLogout} aria-label="Log out" data-testid="consumer-shell-logout-mobile">
             ⎋
           </a>
         </div>
-        <header className={shellHeader}>
+        <header className={shellHeader} data-testid="consumer-shell-header">
           <div className={shellSearchWrap}>
-            <input placeholder="Search anything..." className={shellSearchInput} />
+            <input placeholder="Search anything..." className={shellSearchInput} data-testid="consumer-shell-search" />
             <span className={shellSearchHint}>⌘K</span>
           </div>
-          <a href="/logout" className={`${shellLogout} hidden lg:grid`} aria-label="Log out">
+          <a
+            href="/logout"
+            className={`${shellLogout} hidden lg:grid`}
+            aria-label="Log out"
+            data-testid="consumer-shell-logout"
+          >
             ⎋
           </a>
         </header>
         {children}
       </main>
-      <nav className={mobileNavClass} aria-label="Primary">
+      <nav className={mobileNavClass} aria-label="Primary" data-testid="consumer-shell-mobile-nav">
         <div className={mobileNavInnerClass}>
           {mobileNavItems.map((item) => (
             <a
@@ -148,6 +153,7 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
               href={item.href}
               className={`${mobileNavLinkClass} ${item.active ? mobileNavLinkActiveClass : ``}`}
               aria-current={item.active ? `page` : undefined}
+              data-testid={`consumer-shell-mobile-nav-${item.href.replace(/^\//, ``) || `dashboard`}`}
             >
               {item.label}
             </a>

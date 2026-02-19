@@ -5,7 +5,7 @@ const { cardBaseSoftCompact, pageStackContainer, pageSubtitleGray, pageTitleGray
 
 export default async function ContractsPage() {
   return (
-    <div className={pageStackContainer}>
+    <div className={pageStackContainer} data-testid="consumer-contracts-page">
       {/* Title */}
       <div>
         <h1 className={pageTitleGray}>Contracts</h1>
@@ -13,7 +13,7 @@ export default async function ContractsPage() {
       </div>
 
       {/* Table */}
-      <div className={cardBaseSoftCompact}>
+      <div className={cardBaseSoftCompact} data-testid="consumer-contracts-table-wrap">
         <ContractsTable />
       </div>
     </div>

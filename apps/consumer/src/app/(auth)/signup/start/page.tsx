@@ -170,16 +170,17 @@ function ChooseAccountTypeStepInner() {
   }
 
   return (
-    <div className={signupStartPageContainer}>
+    <div className={signupStartPageContainer} data-testid="consumer-signup-start-page">
       <div className={signupStartCard}>
         <div className={signupStartHeader}>
           <h2 className={signupStartSubtitle}>Let`s find the right account for your needs</h2>
           <h1 className={signupStartTitle}>I`m a</h1>
         </div>
 
-        <div className={signupStartOptions}>
+        <div className={signupStartOptions} data-testid="consumer-signup-start-options">
           <button
             type="button"
+            data-testid="consumer-signup-start-option-business"
             onClick={(e) => (e.preventDefault(), e.stopPropagation(), selectType(AccountTypes.BUSINESS))}
             className={`${signupStartOptionBase} ${
               isSelected(AccountTypes.BUSINESS) ? signupStartOptionActive : signupStartOptionInactive
@@ -197,6 +198,7 @@ function ChooseAccountTypeStepInner() {
 
           <button
             type="button"
+            data-testid="consumer-signup-start-option-contractor"
             onClick={(e) => (e.preventDefault(), e.stopPropagation(), selectType(AccountTypes.CONTRACTOR))}
             className={`${signupStartOptionBase} ${
               isSelected(AccountTypes.CONTRACTOR) ? signupStartOptionActive : signupStartOptionInactive
@@ -238,7 +240,12 @@ function ChooseAccountTypeStepInner() {
           </div>
         )}
 
-        <button disabled={!signup.accountType} onClick={onNext} className={signupStartNextButton}>
+        <button
+          data-testid="consumer-signup-start-btn-next"
+          disabled={!signup.accountType}
+          onClick={onNext}
+          className={signupStartNextButton}
+        >
           Next
         </button>
       </div>

@@ -26,7 +26,7 @@ export function DashboardDataView() {
   if (isLoading || !dashboardData) return <DashboardSkeleton />;
 
   return (
-    <div className={dashboardContainer}>
+    <div className={dashboardContainer} data-testid="consumer-dashboard">
       <DashboardHeader />
 
       <SummaryCards summary={dashboardData.summary} />
@@ -35,23 +35,23 @@ export function DashboardDataView() {
 
       <ActionRow />
 
-      <div className={cardBaseSoftCompact}>
+      <div className={cardBaseSoftCompact} data-testid="consumer-dashboard-pending-requests">
         <PendingRequestsTable pendingRequests={dashboardData.pendingRequests} />
       </div>
 
       <div className={dashboardGrid}>
-        <div className={cardBaseSoftCompact}>
+        <div className={cardBaseSoftCompact} data-testid="consumer-dashboard-activity">
           <ActivityTimeline activityTimelineItems={dashboardData.activity} />
         </div>
 
         <div className={dashboardSidebar}>
-          <div className={cardBaseSoftCompact}>
+          <div className={cardBaseSoftCompact} data-testid="consumer-dashboard-pending-withdrawals">
             <PendingWithdrawalsCard />
           </div>
-          <div className={cardBaseSoftCompact}>
+          <div className={cardBaseSoftCompact} data-testid="consumer-dashboard-compliance-tasks">
             <ComplianceTasksCard tasks={dashboardData.tasks} />
           </div>
-          <div className={cardBaseSoftCompact}>
+          <div className={cardBaseSoftCompact} data-testid="consumer-dashboard-quick-docs">
             <QuickDocsCard docs={dashboardData.quickDocs} />
           </div>
         </div>

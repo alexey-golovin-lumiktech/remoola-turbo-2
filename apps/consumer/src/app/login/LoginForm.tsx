@@ -71,11 +71,12 @@ export default function LoginForm() {
   };
 
   return (
-    <div className={loginContainer}>
+    <div className={loginContainer} data-testid="consumer-login-page">
       <h1 className={loginTitle}>Sign in</h1>
-      <form className={loginForm} onSubmit={submitLogin}>
+      <form className={loginForm} onSubmit={submitLogin} data-testid="consumer-login-form">
         <input
           className={formInputFullWidth}
+          data-testid="consumer-login-input-email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Email"
@@ -83,16 +84,24 @@ export default function LoginForm() {
         <input
           className={formInputFullWidth}
           type="password"
+          data-testid="consumer-login-input-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
         />
-        {errorMessage && <p className={loginErrorText}>{errorMessage}</p>}
-        <button className={loginButton}>Login</button>
+        {errorMessage && (
+          <p className={loginErrorText} data-testid="consumer-login-error">
+            {errorMessage}
+          </p>
+        )}
+        <button className={loginButton} type="submit" data-testid="consumer-login-btn-submit">
+          Login
+        </button>
         {googleStartUrl && (
           <button
             type="button"
             className={loginButton}
+            data-testid="consumer-login-btn-google"
             onClick={async () => {
               await fetch(`/api/consumer/auth/clear-cookies`, { method: `POST`, credentials: `include` });
               window.location.href = googleStartUrl;
@@ -108,7 +117,7 @@ export default function LoginForm() {
 
       <p className={loginFooter}>
         Need to create an account?{` `}
-        <Link href="/signup" className={linkPrimary}>
+        <Link href="/signup" className={linkPrimary} data-testid="consumer-login-link-signup">
           Sign Up
         </Link>
       </p>

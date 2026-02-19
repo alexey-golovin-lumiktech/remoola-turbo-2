@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function DocumentsPage() {
   return (
-    <div className={pageContainer}>
+    <div className={pageContainer} data-testid="consumer-documents-page">
       <h1 className={pageTitle}>Documents</h1>
       <p className={pageSubtitle}>Access all your uploaded and payment-related files.</p>
 

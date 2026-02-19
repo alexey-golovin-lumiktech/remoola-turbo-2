@@ -42,7 +42,7 @@ export function ContractsTable() {
   }, []);
 
   return (
-    <table className={`w-full ${textSm}`}>
+    <table className={`w-full ${textSm}`} data-testid="consumer-contracts-table">
       <thead>
         <tr className={tableHeaderRowMutedAlt}>
           <th className={tableCellHeaderSimple}>Contractor</th>

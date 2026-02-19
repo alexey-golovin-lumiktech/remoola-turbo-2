@@ -20,13 +20,13 @@ export function Stepper() {
   const currentIndex = steps.findIndex((s) => s.name === currentStep);
 
   return (
-    <div className={stepperContainer}>
+    <div className={stepperContainer} data-testid="consumer-signup-stepper">
       {steps.map((step, index) => {
         const isActive = index === currentIndex;
         const isCompleted = step.submitted || index < currentIndex;
 
         return (
-          <div key={step.name} className={stepperItem}>
+          <div key={step.name} className={stepperItem} data-testid={`consumer-signup-stepper-step-${step.name}`}>
             <div
               className={`${stepperCircleBase} ${isActive ? stepperCircleActive : ``} ${
                 isCompleted ? stepperCircleComplete : ``

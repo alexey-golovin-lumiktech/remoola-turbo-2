@@ -34,7 +34,7 @@ export function ErrorState({
   };
 
   return (
-    <div className={emptyStateContainer}>
+    <div className={emptyStateContainer} data-testid="consumer-error-state">
       <div className={textCenter}>
         <div className={emptyStateIcon}>
           <svg className={emptyStateIconSvg} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -51,6 +51,8 @@ export function ErrorState({
         {message && <p className={errorBoundaryText}>{message}</p>}
         {showRefreshButton && (
           <button
+            type="button"
+            data-testid="consumer-error-state-retry"
             onClick={(e) => (e.preventDefault(), e.stopPropagation(), handleRefresh())}
             className={refreshButtonClass}
           >

@@ -58,16 +58,17 @@ export default function ChooseContractorKindStep() {
   if (!signup.accountType) return null;
 
   return (
-    <div className={signupStartPageContainer}>
+    <div className={signupStartPageContainer} data-testid="consumer-signup-contractor-kind-page">
       <div className={signupStartCard}>
         <div className={signupStartHeader}>
           <h2 className={signupStartSubtitle}>Great! Now choose what type of contractor you are</h2>
           <h1 className={signupStartTitle}>I`m an</h1>
         </div>
 
-        <div className={signupStartOptions}>
+        <div className={signupStartOptions} data-testid="consumer-signup-contractor-kind-options">
           <button
             type="button"
+            data-testid="consumer-signup-contractor-kind-option-individual"
             onClick={(e) => (e.preventDefault(), e.stopPropagation(), selectKind(ContractorKinds.INDIVIDUAL))}
             className={`${signupStartOptionBase} ${
               isSelected(ContractorKinds.INDIVIDUAL) ? signupStartOptionActive : signupStartOptionInactive
@@ -85,6 +86,7 @@ export default function ChooseContractorKindStep() {
 
           <button
             type="button"
+            data-testid="consumer-signup-contractor-kind-option-entity"
             onClick={(e) => (e.preventDefault(), e.stopPropagation(), selectKind(ContractorKinds.ENTITY))}
             className={`${signupStartOptionBase} ${
               isSelected(ContractorKinds.ENTITY) ? signupStartOptionActive : signupStartOptionInactive
@@ -126,11 +128,17 @@ export default function ChooseContractorKindStep() {
           </div>
         )}
 
-        <button disabled={!signup.contractorKind} onClick={onNext} className={signupStartNextButton}>
+        <button
+          data-testid="consumer-signup-contractor-kind-btn-next"
+          disabled={!signup.contractorKind}
+          onClick={onNext}
+          className={signupStartNextButton}
+        >
           Next
         </button>
 
         <button
+          data-testid="consumer-signup-contractor-kind-btn-back"
           onClick={(e) => (e.preventDefault(), e.stopPropagation(), router.push(`/signup/start`))}
           className={signupStartBackButton}
           type="button"

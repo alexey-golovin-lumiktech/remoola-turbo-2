@@ -148,12 +148,13 @@ function SignupFlow({ hydrateError, onRetryHydrate }: { hydrateError: string | n
   const { currentStep } = useSignupSteps();
 
   return (
-    <div className={signupFlowContainer}>
+    <div className={signupFlowContainer} data-testid="consumer-signup-flow">
       {hydrateError && (
-        <div role="alert" className={`${spaceY4} mb-4 w-full max-w-md`}>
+        <div role="alert" className={`${spaceY4} mb-4 w-full max-w-md`} data-testid="consumer-signup-hydrate-error">
           <p className={errorTextClass}>{hydrateError}</p>
           <button
             type="button"
+            data-testid="consumer-signup-hydrate-retry"
             onClick={(e) => (e.preventDefault(), e.stopPropagation(), onRetryHydrate())}
             className={refreshButtonClass}
           >

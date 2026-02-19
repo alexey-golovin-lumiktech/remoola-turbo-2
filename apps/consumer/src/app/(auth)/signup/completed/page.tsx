@@ -18,7 +18,7 @@ const {
 
 export default function SignupCompletedPage() {
   return (
-    <div className={signupCompletedContainer}>
+    <div className={signupCompletedContainer} data-testid="consumer-signup-completed-page">
       <div className={signupCompletedCard}>
         <div className={signupCompletedIconWrap}>
           <svg className={signupCompletedIcon} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -38,7 +38,7 @@ export default function SignupCompletedPage() {
           Check your email and come back soon.
         </p>
 
-        <Link href="/login" className={signupCompletedButton}>
+        <Link href="/login" className={signupCompletedButton} data-testid="consumer-signup-completed-link-login">
           Click to Sign In
         </Link>
       </div>

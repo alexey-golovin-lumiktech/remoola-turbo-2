@@ -57,7 +57,7 @@ export function ContactsPageClient() {
   }, [searchParams, router]);
 
   return (
-    <div className={contactsPageContainer}>
+    <div className={contactsPageContainer} data-testid="consumer-contacts-page">
       <div className={contactsPageHeader}>
         <div>
           <h1 className={contactsPageTitle}>Contacts</h1>
@@ -65,6 +65,7 @@ export function ContactsPageClient() {
         </div>
 
         <button
+          data-testid="consumer-contacts-btn-add"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();

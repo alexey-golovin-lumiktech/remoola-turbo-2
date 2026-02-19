@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function PaymentsPage() {
   return (
-    <div className={pageContainer}>
+    <div className={pageContainer} data-testid="consumer-payments-page">
       <h1 className={pageTitle}>Payments</h1>
       <p className={pageSubtitle}>View your incoming and outgoing payments.</p>
 

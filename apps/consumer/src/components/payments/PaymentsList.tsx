@@ -124,7 +124,7 @@ export function PaymentsList() {
   }
 
   return (
-    <div className={spaceY6}>
+    <div className={spaceY6} data-testid="consumer-payments-list">
       <PaymentsFilters
         status={status}
         type={type}
@@ -138,7 +138,7 @@ export function PaymentsList() {
       {isLoading ? (
         <SkeletonTable rows={8} cols={6} />
       ) : (
-        <div className={tableContainer}>
+        <div className={tableContainer} data-testid="consumer-payments-table">
           <table className={`w-full ${textSm}`}>
             <thead>
               <tr className={tableHeaderRow}>

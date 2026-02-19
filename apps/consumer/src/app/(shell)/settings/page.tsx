@@ -5,7 +5,7 @@ const { settingsPageContainer, settingsPageTitle } = styles;
 
 export default async function SettingsPage() {
   return (
-    <div className={settingsPageContainer}>
+    <div className={settingsPageContainer} data-testid="consumer-settings-page">
       <h1 className={settingsPageTitle}>Profile Settings</h1>
       <ProfileSettingsClient />
     </div>
