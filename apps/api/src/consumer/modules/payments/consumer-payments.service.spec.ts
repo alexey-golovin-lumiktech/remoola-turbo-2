@@ -347,3 +347,114 @@ describe(`ConsumerPaymentsService.getPaymentView`, () => {
     expect(result.payer.email).toBe(`PAYER@example.com`);
   });
 });
+
+describe(`ConsumerPaymentsService.withdraw`, () => {
+  const consumerId = `consumer-1`;
+
+  it(`returns same entry when idempotency key is reused`, async () => {
+    const existingEntry = {
+      id: `entry-1`,
+      ledgerId: `ledger-1`,
+      consumerId,
+      type: $Enums.LedgerEntryType.USER_PAYOUT,
+      amount: -100,
+      status: $Enums.TransactionStatus.PENDING,
+      currencyCode: $Enums.CurrencyCode.USD,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      deletedAt: null,
+    };
+
+    const prisma = {
+      ledgerEntryModel: {
+        findFirst: jest.fn().mockResolvedValueOnce(null).mockResolvedValueOnce(existingEntry),
+        aggregate: jest.fn().mockResolvedValue({ _sum: { amount: 500 } }),
+        create: jest.fn().mockResolvedValue(existingEntry),
+      },
+      $transaction: jest.fn((fn: (tx: any) => Promise<any>) => {
+        const tx = {
+          $queryRaw: jest.fn().mockResolvedValue(undefined),
+          ledgerEntryModel: {
+            aggregate: jest.fn().mockResolvedValue({ _sum: { amount: 500 } }),
+            create: jest.fn().mockResolvedValue(existingEntry),
+          },
+        };
+        return fn(tx);
+      }),
+    } as any;
+
+    const service = new ConsumerPaymentsService(prisma, {} as any);
+    (service as any).ensureLimits = jest.fn().mockResolvedValue(undefined);
+
+    const body = { amount: `100` };
+    const first = await service.withdraw(consumerId, body, `key-1`);
+    const second = await service.withdraw(consumerId, body, `key-1`);
+
+    expect(first.id).toBe(`entry-1`);
+    expect(second.id).toBe(`entry-1`);
+    expect(prisma.ledgerEntryModel.findFirst).toHaveBeenCalledWith({
+      where: {
+        idempotencyKey: `withdraw:key-1`,
+        consumerId,
+        type: $Enums.LedgerEntryType.USER_PAYOUT,
+        deletedAt: null,
+      },
+    });
+  });
+});
+
+describe(`ConsumerPaymentsService.transfer`, () => {
+  const consumerId = `consumer-1`;
+
+  it(`returns same ledgerId when idempotency key is reused`, async () => {
+    const existingEntry = {
+      id: `entry-1`,
+      ledgerId: `ledger-1`,
+      consumerId,
+      type: $Enums.LedgerEntryType.USER_PAYMENT,
+      idempotencyKey: `transfer:key-1:sender`,
+      deletedAt: null,
+    };
+
+    const prisma = {
+      consumerModel: {
+        findFirst: jest.fn().mockResolvedValue({ id: `recipient-1`, email: `r@example.com` }),
+      },
+      ledgerEntryModel: {
+        findFirst: jest.fn().mockResolvedValue(null).mockResolvedValueOnce(existingEntry),
+        aggregate: jest.fn().mockResolvedValue({ _sum: { amount: 500 } }),
+        create: jest.fn().mockResolvedValue({}),
+      },
+      $transaction: jest.fn((fn: (tx: any) => Promise<any>) => {
+        const tx = {
+          $queryRaw: jest.fn().mockResolvedValue(undefined),
+          ledgerEntryModel: {
+            aggregate: jest.fn().mockResolvedValue({ _sum: { amount: 500 } }),
+            create: jest.fn().mockResolvedValue({}),
+          },
+        };
+        return fn(tx);
+      }),
+    } as any;
+
+    const service = new ConsumerPaymentsService(prisma, {} as any);
+    (service as any).ensureLimits = jest.fn().mockResolvedValue(undefined);
+
+    const body = { amount: `50`, recipient: `r@example.com` };
+    const first = await service.transfer(consumerId, body, `key-1`);
+    prisma.ledgerEntryModel.findFirst.mockResolvedValue(existingEntry);
+    const second = await service.transfer(consumerId, body, `key-1`);
+
+    expect(first.ledgerId).toBeDefined();
+    expect(second.ledgerId).toBe(`ledger-1`);
+    expect(prisma.ledgerEntryModel.findFirst).toHaveBeenCalledWith({
+      where: {
+        idempotencyKey: `transfer:key-1:sender`,
+        consumerId,
+        type: $Enums.LedgerEntryType.USER_PAYMENT,
+        deletedAt: null,
+      },
+      select: { ledgerId: true },
+    });
+  });
+});

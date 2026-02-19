@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto';
 import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 
 import { PaymentDirection, PaymentMethodTypes } from '@remoola/api-types';
-import { $Enums } from '@remoola/database-2';
+import { $Enums, Prisma } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { CreatePaymentRequest, PaymentsHistoryQuery, TransferBody, WithdrawBody } from './dto';
@@ -504,6 +504,7 @@ export class ConsumerPaymentsService {
       where: {
         consumerId,
         status: $Enums.TransactionStatus.COMPLETED,
+        deletedAt: null,
       },
       _sum: {
         amount: true,
@@ -535,6 +536,7 @@ export class ConsumerPaymentsService {
         status: {
           in: [$Enums.TransactionStatus.COMPLETED, $Enums.TransactionStatus.PENDING],
         },
+        deletedAt: null,
       },
       _sum: {
         amount: true,
@@ -555,6 +557,7 @@ export class ConsumerPaymentsService {
       where: {
         consumerId,
         status: $Enums.TransactionStatus.COMPLETED,
+        deletedAt: null,
       },
       _sum: {
         amount: true,
@@ -567,7 +570,7 @@ export class ConsumerPaymentsService {
   async getHistory(consumerId: string, query: PaymentsHistoryQuery) {
     const { direction, status, limit = 20, offset = 0 } = query;
 
-    const where: any = { consumerId };
+    const where: any = { consumerId, deletedAt: null };
 
     if (status) {
       where.status = status;
@@ -654,6 +657,7 @@ export class ConsumerPaymentsService {
         status: {
           in: [$Enums.TransactionStatus.PENDING, $Enums.TransactionStatus.COMPLETED],
         },
+        deletedAt: null,
       },
       _sum: { amount: true },
     });
@@ -675,7 +679,7 @@ export class ConsumerPaymentsService {
     }
   }
 
-  async withdraw(consumerId: string, body: WithdrawBody) {
+  async withdraw(consumerId: string, body: WithdrawBody, idempotencyKey: string | undefined) {
     const amount = Number(body.amount);
     if (!Number.isFinite(amount) || amount <= 0) {
       throw new BadRequestException(errorCodes.INVALID_AMOUNT_WITHDRAW);
@@ -683,63 +687,76 @@ export class ConsumerPaymentsService {
 
     await this.ensureLimits(consumerId, amount);
 
-    const balance = await this.getAvailableBalance(consumerId);
-    if (amount > balance) {
-      throw new BadRequestException(errorCodes.INSUFFICIENT_BALANCE_WITHDRAW);
+    const key = idempotencyKey?.trim();
+    if (key) {
+      const existing = await this.prisma.ledgerEntryModel.findFirst({
+        where: {
+          idempotencyKey: `withdraw:${key}`,
+          consumerId,
+          type: $Enums.LedgerEntryType.USER_PAYOUT,
+          deletedAt: null,
+        },
+      });
+      if (existing) return existing;
     }
 
     const ledgerId = randomUUID();
 
-    return this.prisma.$transaction(async (tx) => {
-      // 1️⃣ Ledger entry: money leaves user balance
-      const payoutEntry = await tx.ledgerEntryModel.create({
-        data: {
-          ledgerId,
-          consumerId,
-          type: $Enums.LedgerEntryType.USER_PAYOUT,
-          currencyCode: $Enums.CurrencyCode.USD,
-          status: $Enums.TransactionStatus.PENDING,
-          amount: -amount, // SIGNED
-          createdBy: consumerId,
-          updatedBy: consumerId,
-          metadata: {
-            rail: $Enums.PaymentRail.BANK_TRANSFER,
-            requesterId: consumerId,
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        await tx.$queryRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${consumerId}::text)::bigint)`);
+
+        const balanceResult = await tx.ledgerEntryModel.aggregate({
+          where: {
+            consumerId,
+            status: $Enums.TransactionStatus.COMPLETED,
+            deletedAt: null,
           },
-        },
-      });
+          _sum: { amount: true },
+        });
+        const balance = Number(balanceResult._sum.amount ?? 0);
+        if (amount > balance) {
+          throw new BadRequestException(errorCodes.INSUFFICIENT_BALANCE_WITHDRAW);
+        }
 
-      // 2️⃣ OPTIONAL: external payout (Stripe / bank)
-      // This does NOT change the ledger semantics
-      /*
-    const consumer = await tx.consumerModel.findUnique({
-      where: { id: consumerId },
-      select: { stripeCustomerId: true },
-    });
+        const payoutEntry = await tx.ledgerEntryModel.create({
+          data: {
+            ledgerId,
+            consumerId,
+            type: $Enums.LedgerEntryType.USER_PAYOUT,
+            currencyCode: $Enums.CurrencyCode.USD,
+            status: $Enums.TransactionStatus.PENDING,
+            amount: -amount,
+            createdBy: consumerId,
+            updatedBy: consumerId,
+            idempotencyKey: key ? `withdraw:${key}` : undefined,
+            metadata: {
+              rail: $Enums.PaymentRail.BANK_TRANSFER,
+              requesterId: consumerId,
+            },
+          },
+        });
 
-    if (consumer?.stripeCustomerId) {
-      const payout = await this.stripeService.createWithdrawalPayout({
-        consumerId,
-        stripeCustomerId: consumer.stripeCustomerId,
-        amount,
-        currency: 'usd',
-        ledgerId,
+        return payoutEntry;
       });
-
-      await tx.ledgerEntryModel.update({
-        where: { id: payoutEntry.id },
-        data: {
-          stripeId: payout.id,
-        },
-      });
+    } catch (err) {
+      if (err instanceof BadRequestException) throw err;
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === `P2002` && key) {
+        const existing = await this.prisma.ledgerEntryModel.findFirst({
+          where: {
+            idempotencyKey: `withdraw:${key}`,
+            consumerId,
+            type: $Enums.LedgerEntryType.USER_PAYOUT,
+            deletedAt: null,
+          },
+        });
+        if (existing) return existing;
+      }
+      throw err;
     }
-    */
-
-      return payoutEntry;
-    });
   }
 
-  async transfer(consumerId: string, body: TransferBody) {
+  async transfer(consumerId: string, body: TransferBody, idempotencyKey: string | undefined) {
     const amount = Number(body.amount);
     if (!Number.isFinite(amount) || amount <= 0) {
       throw new BadRequestException(errorCodes.INVALID_AMOUNT_TRANSFER);
@@ -747,14 +764,10 @@ export class ConsumerPaymentsService {
 
     await this.ensureLimits(consumerId, amount);
 
-    const balance = await this.getAvailableBalance(consumerId);
-    if (amount > balance) {
-      throw new BadRequestException(errorCodes.INSUFFICIENT_BALANCE_TRANSFER);
-    }
-
     const recipient = await this.prisma.consumerModel.findFirst({
       where: {
         OR: [{ email: body.recipient }, { personalDetails: { phoneNumber: body.recipient } }],
+        deletedAt: null,
       },
     });
 
@@ -766,48 +779,96 @@ export class ConsumerPaymentsService {
       throw new BadRequestException(errorCodes.CANNOT_TRANSFER_TO_SELF_TRANSFER);
     }
 
-    const ledgerId = randomUUID();
-
-    return this.prisma.$transaction(async (tx) => {
-      // Sender (money leaves)
-      await tx.ledgerEntryModel.create({
-        data: {
-          ledgerId,
+    const key = idempotencyKey?.trim();
+    if (key) {
+      const existing = await this.prisma.ledgerEntryModel.findFirst({
+        where: {
+          idempotencyKey: `transfer:${key}:sender`,
           consumerId,
           type: $Enums.LedgerEntryType.USER_PAYMENT,
-          currencyCode: $Enums.CurrencyCode.USD,
-          status: $Enums.TransactionStatus.COMPLETED,
-          amount: -amount, // SIGNED
-          createdBy: consumerId,
-          updatedBy: consumerId,
-          metadata: {
-            rail: $Enums.PaymentRail.BANK_TRANSFER,
-            senderId: consumerId,
-            recipientId: recipient.id,
-          },
+          deletedAt: null,
         },
+        select: { ledgerId: true },
       });
+      if (existing) return { ledgerId: existing.ledgerId };
+    }
 
-      // Recipient (money enters)
-      await tx.ledgerEntryModel.create({
-        data: {
-          ledgerId,
-          consumerId: recipient.id,
-          type: $Enums.LedgerEntryType.USER_PAYMENT,
-          currencyCode: $Enums.CurrencyCode.USD,
-          status: $Enums.TransactionStatus.COMPLETED,
-          amount: +amount, // SIGNED
-          createdBy: consumerId,
-          updatedBy: consumerId,
-          metadata: {
-            rail: $Enums.PaymentRail.BANK_TRANSFER,
-            senderId: consumerId,
-            recipientId: recipient.id,
+    const ledgerId = randomUUID();
+    const [firstId, secondId] = [consumerId, recipient.id].sort();
+
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        await tx.$queryRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${firstId}::text)::bigint)`);
+        await tx.$queryRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${secondId}::text)::bigint)`);
+
+        const balanceResult = await tx.ledgerEntryModel.aggregate({
+          where: {
+            consumerId,
+            status: $Enums.TransactionStatus.COMPLETED,
+            deletedAt: null,
           },
-        },
-      });
+          _sum: { amount: true },
+        });
+        const balance = Number(balanceResult._sum.amount ?? 0);
+        if (amount > balance) {
+          throw new BadRequestException(errorCodes.INSUFFICIENT_BALANCE_TRANSFER);
+        }
 
-      return { ledgerId };
-    });
+        await tx.ledgerEntryModel.create({
+          data: {
+            ledgerId,
+            consumerId,
+            type: $Enums.LedgerEntryType.USER_PAYMENT,
+            currencyCode: $Enums.CurrencyCode.USD,
+            status: $Enums.TransactionStatus.COMPLETED,
+            amount: -amount,
+            createdBy: consumerId,
+            updatedBy: consumerId,
+            idempotencyKey: key ? `transfer:${key}:sender` : undefined,
+            metadata: {
+              rail: $Enums.PaymentRail.BANK_TRANSFER,
+              senderId: consumerId,
+              recipientId: recipient.id,
+            },
+          },
+        });
+
+        await tx.ledgerEntryModel.create({
+          data: {
+            ledgerId,
+            consumerId: recipient.id,
+            type: $Enums.LedgerEntryType.USER_PAYMENT,
+            currencyCode: $Enums.CurrencyCode.USD,
+            status: $Enums.TransactionStatus.COMPLETED,
+            amount: +amount,
+            createdBy: consumerId,
+            updatedBy: consumerId,
+            idempotencyKey: key ? `transfer:${key}:recipient` : undefined,
+            metadata: {
+              rail: $Enums.PaymentRail.BANK_TRANSFER,
+              senderId: consumerId,
+              recipientId: recipient.id,
+            },
+          },
+        });
+
+        return { ledgerId };
+      });
+    } catch (err) {
+      if (err instanceof BadRequestException) throw err;
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === `P2002` && key) {
+        const existing = await this.prisma.ledgerEntryModel.findFirst({
+          where: {
+            idempotencyKey: `transfer:${key}:sender`,
+            consumerId,
+            type: $Enums.LedgerEntryType.USER_PAYMENT,
+            deletedAt: null,
+          },
+          select: { ledgerId: true },
+        });
+        if (existing) return { ledgerId: existing.ledgerId };
+      }
+      throw err;
+    }
   }
 }

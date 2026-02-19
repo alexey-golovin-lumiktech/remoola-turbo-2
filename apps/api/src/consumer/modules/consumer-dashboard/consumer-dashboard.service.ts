@@ -34,7 +34,7 @@ export class ConsumerDashboardService {
     const [balance, activeRequests, lastPayment] = await Promise.all([
       // Completed transactions → balance
       this.prisma.ledgerEntryModel.aggregate({
-        where: { consumerId, status: `COMPLETED` },
+        where: { consumerId, status: `COMPLETED`, deletedAt: null },
         _sum: { amount: true },
       }),
 
@@ -48,7 +48,7 @@ export class ConsumerDashboardService {
 
       // Last payment made
       this.prisma.ledgerEntryModel.findFirst({
-        where: { consumerId },
+        where: { consumerId, deletedAt: null },
         orderBy: { createdAt: `desc` },
         select: { createdAt: true },
       }),

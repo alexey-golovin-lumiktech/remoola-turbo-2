@@ -58,14 +58,24 @@ export class ConsumerPaymentsController {
 
   @Post(`withdraw`)
   @ApiOperation({ summary: `Withdraw funds from consumer balance` })
-  withdraw(@Identity() consumer: ConsumerModel, @Body() body: WithdrawBody) {
-    return this.service.withdraw(consumer.id, body);
+  withdraw(
+    @Identity() consumer: ConsumerModel,
+    @Body() body: WithdrawBody,
+    @Req() req: express.Request,
+  ) {
+    const idempotencyKey = req.get(`idempotency-key`) ?? undefined;
+    return this.service.withdraw(consumer.id, body, idempotencyKey);
   }
 
   @Post(`transfer`)
   @ApiOperation({ summary: `Transfer funds to another user` })
-  transfer(@Identity() consumer: ConsumerModel, @Body() body: TransferBody) {
-    return this.service.transfer(consumer.id, body);
+  transfer(
+    @Identity() consumer: ConsumerModel,
+    @Body() body: TransferBody,
+    @Req() req: express.Request,
+  ) {
+    const idempotencyKey = req.get(`idempotency-key`) ?? undefined;
+    return this.service.transfer(consumer.id, body, idempotencyKey);
   }
 
   @Get(`:paymentRequestId`)
