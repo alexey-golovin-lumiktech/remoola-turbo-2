@@ -136,13 +136,6 @@ const ngrok = {
   NGROK_DOMAIN: z.string().default(`NGROK_DOMAIN`),
 };
 
-const redis = {
-  REDIS_HOST: z.string().default(`127.0.0.1`),
-  REDIS_PORT: z.coerce.number().default(6379),
-  REDIS_PASSWORD: z.string().optional(),
-  REDIS_URL: z.string().optional(),
-};
-
 const vercel = {
   VERCEL: z.coerce.number().optional().default(0),
 };
@@ -170,7 +163,6 @@ const schema = z.object({
   ...app,
   ...debugging,
   ...ngrok,
-  ...redis,
   ...vercel,
   ...security,
   ...common,

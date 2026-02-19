@@ -1,18 +1,23 @@
 import { OAuthStateStoreService } from './oauth-state-store.service';
 
 describe(`OAuthStateStoreService`, () => {
-  let store: OAuthStateStoreService;
-
-  beforeEach(() => {
-    store = new OAuthStateStoreService();
-  });
-
-  afterEach(async () => {
-    await store.onModuleDestroy();
-  });
+  function makeService() {
+    const prisma = {
+      oauthStateModel: { create: jest.fn() },
+      $queryRaw: jest.fn(),
+    } as any;
+    const store = new OAuthStateStoreService(prisma);
+    return { store, prisma };
+  }
 
   it(`consumes state only once`, async () => {
+    const { store, prisma } = makeService();
     const token = store.createStateToken();
+    const payload = JSON.stringify([`nonce`, `verifier`, `/dashboard`, Date.now(), null, null]);
+
+    prisma.oauthStateModel.create.mockResolvedValue(undefined);
+    prisma.$queryRaw.mockResolvedValueOnce([{ payload }]).mockResolvedValueOnce([]);
+
     await store.save(
       token,
       {
@@ -33,7 +38,10 @@ describe(`OAuthStateStoreService`, () => {
   });
 
   it(`expires state records`, async () => {
+    const { store, prisma } = makeService();
     const token = store.createStateToken();
+
+    prisma.oauthStateModel.create.mockResolvedValue(undefined);
     await store.save(
       token,
       {
@@ -45,7 +53,7 @@ describe(`OAuthStateStoreService`, () => {
       1,
     );
 
-    await new Promise((resolve) => setTimeout(resolve, 5));
+    prisma.$queryRaw.mockResolvedValue([]);
     const consumed = await store.consume(token);
 
     expect(consumed).toBeNull();

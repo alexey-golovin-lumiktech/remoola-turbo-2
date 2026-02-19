@@ -23,6 +23,17 @@ model AccessRefreshTokenModel {
   @@map("access_refresh_token")
 }
 
+model OauthStateModel {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  stateKey  String   @unique @map("state_key") @db.Text
+  payload   String   @db.Text
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([expiresAt])
+  @@map("oauth_state")
+}
+
 model AddressDetailsModel {
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
@@ -113,6 +124,7 @@ model ConsumerModel {
   ledgerEntries     LedgerEntryModel[]
   autoConversionRules      WalletAutoConversionRuleModel[]
   scheduledFxConversions   ScheduledFxConversionModel[]
+  invoiceGenerationIdempotencies InvoiceGenerationIdempotencyModel[]
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -367,6 +379,7 @@ model PaymentRequestModel {
 
   attachments   PaymentRequestAttachmentModel[]
   ledgerEntries LedgerEntryModel[]
+  invoiceGenerationIdempotencies InvoiceGenerationIdempotencyModel[]
 
   createdBy String?   @map("created_by") @db.Text
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -449,6 +462,24 @@ model PaymentRequestAttachmentModel {
   @@map("payment_request_attachment")
 }
 
+/// Exactly-once invoice generation per idempotency key (retries / double-click).
+model InvoiceGenerationIdempotencyModel {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  idempotencyKey   String   @unique @map("idempotency_key") @db.Text
+  paymentRequestId String   @map("payment_request_id") @db.Uuid
+  requesterId      String   @map("requester_id") @db.Uuid
+  resourceId       String   @map("resource_id") @db.Uuid
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  paymentRequest PaymentRequestModel @relation(fields: [paymentRequestId], references: [id], onDelete: Cascade)
+  requester      ConsumerModel        @relation(fields: [requesterId], references: [id], onDelete: Cascade)
+  resource       ResourceModel        @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@index([paymentRequestId])
+  @@index([requesterId])
+  @@map("invoice_generation_idempotency")
+}
+
 model PersonalDetailsModel {
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
@@ -512,6 +543,7 @@ model ResourceModel {
   consumerResources ConsumerResourceModel[]
   attachments       PaymentRequestAttachmentModel[]
   resourceTags      ResourceTagModel[]
+  invoiceGenerationIdempotencies InvoiceGenerationIdempotencyModel[]
 
   @@index([access])
   @@map("resource")

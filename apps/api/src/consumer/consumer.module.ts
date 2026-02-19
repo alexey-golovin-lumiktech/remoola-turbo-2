@@ -7,6 +7,7 @@ import { ConsumerAuthController } from './auth/auth.controller';
 import { ConsumerAuthService } from './auth/auth.service';
 import { GoogleAuthService } from './auth/google-auth.service';
 import { GoogleOAuthService } from './auth/google-oauth.service';
+import { OauthStateCleanupScheduler } from './auth/oauth-state-cleanup.scheduler';
 import { OAuthStateStoreService } from './auth/oauth-state-store.service';
 import { MailingModule } from '../shared/mailing.module';
 import { ConsumerDashboardModule } from './modules/consumer-dashboard/consumer-dashboard.module';
@@ -38,6 +39,12 @@ import { ConsumerSettingsModule } from './modules/settings/consumer-settings.mod
     ConsumerSettingsModule,
   ],
   controllers: [ConsumerAuthController],
-  providers: [GoogleOAuthService, ConsumerAuthService, GoogleAuthService, OAuthStateStoreService],
+  providers: [
+    GoogleOAuthService,
+    ConsumerAuthService,
+    GoogleAuthService,
+    OAuthStateStoreService,
+    OauthStateCleanupScheduler,
+  ],
 })
 export class ConsumerModule {}

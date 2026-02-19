@@ -12,7 +12,6 @@ export const envSchema = z.object({
   NEXT_PUBLIC_API_BASE_URL: z.url().optional(),
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().optional(),
   DATABASE_URL: z.url().optional(),
-  REDIS_URL: z.url().optional(),
 
   OPENAI_API_KEY: z.string().optional(),
 

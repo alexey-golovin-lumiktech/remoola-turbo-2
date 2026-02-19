@@ -1,9 +1,11 @@
 import crypto from 'crypto';
 
-import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
-import Redis from 'ioredis';
+import { Injectable, OnModuleDestroy } from '@nestjs/common';
+
+import { Prisma } from '@remoola/database-2';
 
 import { envs } from '../../envs';
+import { PrismaService } from '../../shared/prisma.service';
 
 export type OAuthStateRecord = {
   nonce: string;
@@ -16,49 +18,10 @@ export type OAuthStateRecord = {
 
 @Injectable()
 export class OAuthStateStoreService implements OnModuleDestroy {
-  private readonly logger = new Logger(OAuthStateStoreService.name);
-  private readonly redisPrefix = `oauth:google:state:`;
-  private readonly memory = new Map<string, { record: OAuthStateRecord; expiresAt: number }>();
-  private redis?: Redis;
-  private readonly redisEnabled: boolean;
-
-  constructor() {
-    const hasExplicitRedisUrl = typeof envs.REDIS_URL === `string` && envs.REDIS_URL.trim().length > 0;
-    const hasCustomRedisHost =
-      envs.REDIS_HOST !== `127.0.0.1` || envs.REDIS_PORT !== 6379 || typeof envs.REDIS_PASSWORD === `string`;
-    this.redisEnabled = hasExplicitRedisUrl || hasCustomRedisHost;
-    if (!this.redisEnabled) return;
-
-    const redisUrl = envs.REDIS_URL?.trim();
-    if (redisUrl) {
-      this.redis = new Redis(redisUrl, {
-        lazyConnect: true,
-        enableReadyCheck: true,
-        maxRetriesPerRequest: 1,
-      });
-      return;
-    }
-
-    if (envs.REDIS_HOST) {
-      this.redis = new Redis({
-        host: envs.REDIS_HOST,
-        port: envs.REDIS_PORT,
-        password: envs.REDIS_PASSWORD || undefined,
-        lazyConnect: true,
-        enableReadyCheck: true,
-        maxRetriesPerRequest: 1,
-      });
-    }
-  }
+  constructor(private readonly prisma: PrismaService) {}
 
   async onModuleDestroy() {
-    if (this.redis) {
-      try {
-        await this.redis.quit();
-      } catch {
-        // ignore shutdown errors
-      }
-    }
+    // Prisma disconnect is handled by PrismaService
   }
 
   createStateToken() {
@@ -67,48 +30,29 @@ export class OAuthStateStoreService implements OnModuleDestroy {
     return `${random}.${signature}`;
   }
 
+  private stateKey(stateToken: string) {
+    return crypto.createHash(`sha256`).update(stateToken).digest(`base64url`);
+  }
+
   async save(stateToken: string, record: OAuthStateRecord, ttlMs: number) {
-    const ttlSeconds = Math.max(1, Math.floor(ttlMs / 1000));
-    const key = this.redisKey(stateToken);
+    const key = this.stateKey(stateToken);
+    const expiresAt = new Date(Date.now() + ttlMs);
     const payload = this.serialize(record);
-    const redis = await this.getRedis();
 
-    if (redis) {
-      await redis.set(key, payload, `EX`, ttlSeconds);
-      return;
-    }
-
-    const expiresAt = Date.now() + ttlMs;
-    this.memory.set(key, { record, expiresAt });
+    await this.prisma.oauthStateModel.create({
+      data: { stateKey: key, payload, expiresAt },
+    });
   }
 
   async consume(stateToken: string): Promise<OAuthStateRecord | null> {
-    const key = this.redisKey(stateToken);
-    const redis = await this.getRedis();
+    const key = this.stateKey(stateToken);
 
-    if (redis) {
-      let raw: string | null = null;
-      try {
-        raw = (await redis.call(`GETDEL`, key)) as string | null;
-      } catch {
-        raw = await redis.get(key);
-        if (raw) await redis.del(key);
-      }
-      if (!raw) return null;
-      return this.deserialize(raw);
-    }
-
-    const existing = this.memory.get(key);
-    if (!existing) return null;
-    this.memory.delete(key);
-    if (Date.now() > existing.expiresAt) return null;
-    return existing.record;
-  }
-
-  private redisKey(stateToken: string) {
-    // Keep redis keys compact to reduce memory overhead on low-tier plans.
-    const hashed = crypto.createHash(`sha256`).update(stateToken).digest(`base64url`);
-    return `${this.redisPrefix}${hashed}`;
+    const rows = await this.prisma.$queryRaw<{ payload: string }[]>(
+      Prisma.sql`DELETE FROM oauth_state WHERE state_key = ${key} AND expires_at > NOW() RETURNING payload`,
+    );
+    const raw = rows[0]?.payload;
+    if (!raw) return null;
+    return this.deserialize(raw);
   }
 
   private deserialize(raw: string) {
@@ -147,19 +91,5 @@ export class OAuthStateStoreService implements OnModuleDestroy {
       record.accountType ?? null,
       record.contractorKind ?? null,
     ]);
-  }
-
-  private async getRedis() {
-    if (!this.redisEnabled) return null;
-    if (!this.redis) return null;
-    try {
-      if (this.redis.status !== `ready`) {
-        await this.redis.connect();
-      }
-      return this.redis;
-    } catch {
-      this.logger.warn(`Redis unavailable for OAuth state store; using in-memory fallback`);
-      return null;
-    }
   }
 }
