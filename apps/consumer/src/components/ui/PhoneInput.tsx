@@ -1,12 +1,11 @@
 'use client';
 
-import dynamic from 'next/dynamic';
 import 'react-phone-number-input/style.css';
+import dynamic from 'next/dynamic';
+import { type Country } from 'react-phone-number-input';
 
 import styles from './classNames.module.css';
 import { getCountryCode } from '../../lib/countries';
-
-import type { Country } from 'react-phone-number-input';
 
 const { formInputFullWidth, signupStepLabel } = styles;
 

@@ -25,6 +25,7 @@ export class AdminConsumersService {
     contractorKind?: string;
     verificationStatus?: string;
     verified?: string;
+    includeDeleted?: boolean;
   }) {
     const pageSize = Math.min(Math.max(params?.pageSize ?? 10, 1), 500);
     const page = Math.max(params?.page ?? 1, 1);
@@ -53,7 +54,7 @@ export class AdminConsumersService {
       contractorKind && (accountType === undefined || accountType === $Enums.AccountType.CONTRACTOR);
 
     const where: Prisma.ConsumerModelWhereInput = {
-      deletedAt: null,
+      ...(params?.includeDeleted !== true && { deletedAt: null }),
       ...(accountType && { accountType }),
       ...(applyContractorKind && { contractorKind }),
       ...(verificationStatus && { verificationStatus }),

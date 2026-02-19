@@ -1,5 +1,5 @@
-import type { IAddressDetailsModel } from './address-details.model';
-import type { IBaseModel } from './base.model';
+import { type IAddressDetailsModel } from './address-details.model';
+import { type IBaseModel } from './base.model';
 
 export type IContactModel = {
   consumerId: string;

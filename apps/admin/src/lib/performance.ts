@@ -22,64 +22,6 @@ export function reportWebVitals(metric: NextWebVitalsMetric) {
   }
 }
 
-// Performance measurement utilities
-export class PerformanceMonitor {
-  private marks = new Map<string, number>();
-
-  start(markName: string) {
-    this.marks.set(markName, performance.now());
-  }
-
-  end(markName: string): number | null {
-    const startTime = this.marks.get(markName);
-    if (!startTime) return null;
-
-    const duration = performance.now() - startTime;
-    this.marks.delete(markName);
-
-    // Log slow operations
-    if (duration > 100) {
-      console.warn(`Slow operation: ${markName} took ${duration.toFixed(2)}ms`);
-    }
-
-    return duration;
-  }
-
-  measure<T>(markName: string, fn: () => T): T {
-    this.start(markName);
-    try {
-      return fn();
-    } finally {
-      this.end(markName);
-    }
-  }
-
-  async measureAsync<T>(markName: string, fn: () => Promise<T>): Promise<T> {
-    this.start(markName);
-    try {
-      return await fn();
-    } finally {
-      this.end(markName);
-    }
-  }
-}
-
-// Global performance monitor instance
-export const perfMonitor = new PerformanceMonitor();
-
-// React hook for measuring component performance
-export function usePerformanceMeasurement(componentName: string) {
-  const startTime = performance.now();
-
-  return () => {
-    const duration = performance.now() - startTime;
-    if (duration > 16.67) {
-      // More than one frame at 60fps
-      console.warn(`Slow render: ${componentName} took ${duration.toFixed(2)}ms`);
-    }
-  };
-}
-
 // Memory usage monitoring
 export function logMemoryUsage() {
   if (`memory` in performance) {
@@ -116,22 +58,4 @@ export function createPerformanceTrackedApiClient(apiClient: any) {
   };
 
   return apiClient;
-}
-
-// Bundle size monitoring
-export function logBundleSize() {
-  // This would typically be done in the build process
-  // For runtime monitoring, you can use:
-  if (typeof window !== `undefined`) {
-    const resources = performance.getEntriesByType(`resource`);
-    const scripts = resources.filter((r) => r.name.endsWith(`.js`));
-
-    scripts.forEach((script) => {
-      const entry = script as any;
-      if (entry.transferSize && entry.transferSize > 500000) {
-        // > 500KB
-        console.warn(`Large script: ${script.name} is ${(entry.transferSize / 1024 / 1024).toFixed(2)}MB`);
-      }
-    });
-  }
 }

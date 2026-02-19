@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import type { InvoiceItemsItem } from '../../types';
+import { type InvoiceItemsItem } from '../../types';
 
 const summaryTableTemplate = `
   <table style="width: 100%; border-collapse: collapse;">

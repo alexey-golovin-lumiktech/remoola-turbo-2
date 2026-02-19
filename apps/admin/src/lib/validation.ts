@@ -123,15 +123,6 @@ export function validateForm<T>(
   return { success: false, errors };
 }
 
-// Debounce utility for form inputs
-export function debounce<T extends (...args: any[]) => any>(func: T, wait: number): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout;
-  return (...args: Parameters<T>) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
-  };
-}
-
 // Form state management hook
 export function useFormValidation<T extends Record<string, any>>(schema: z.ZodSchema<T>, initialValues: T) {
   const [values, setValues] = useState<T>(initialValues);

@@ -1,7 +1,6 @@
 /* eslint-disable max-len */
 import { detailsSampleKeys } from '../../constants';
-
-import type { InvoiceInfo } from '../../types';
+import { type InvoiceInfo } from '../../types';
 
 const infoTableTemplate = `
   <table style="width: 100%; border-collapse: collapse;margin-bottom: 40px;">

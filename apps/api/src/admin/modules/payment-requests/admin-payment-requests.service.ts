@@ -27,7 +27,13 @@ export class AdminPaymentRequestsService {
   private static readonly TRANSACTION_STATUSES = Object.values($Enums.TransactionStatus) as string[];
 
   /** Bounded list for admin (AGENTS.md 6.10). Default cap 500. Search/filter fintech-safe (bounded, Prisma-only). */
-  async findAllPaymentRequests(params?: { page?: number; pageSize?: number; q?: string; status?: string }) {
+  async findAllPaymentRequests(params?: {
+    page?: number;
+    pageSize?: number;
+    q?: string;
+    status?: string;
+    includeDeleted?: boolean;
+  }) {
     const pageSize = Math.min(Math.max(params?.pageSize ?? 10, 1), 500);
     const page = Math.max(params?.page ?? 1, 1);
     const skip = (page - 1) * pageSize;
@@ -42,7 +48,7 @@ export class AdminPaymentRequestsService {
         : undefined;
 
     const where: Prisma.PaymentRequestModelWhereInput = {
-      deletedAt: null,
+      ...(params?.includeDeleted !== true && { deletedAt: null }),
       ...(status && { status }),
       ...(search && {
         OR: [
@@ -84,9 +90,11 @@ export class AdminPaymentRequestsService {
     });
   }
 
-  async getExpectationDateArchive(params: { query?: string; limit?: number }) {
+  async getExpectationDateArchive(params: { query?: string; page?: number; pageSize?: number }) {
     const { query } = params;
-    const limit = Math.min(Math.max(params.limit ?? 200, 1), 1000);
+    const page = Math.max(1, params.page ?? 1);
+    const pageSize = Math.min(100, Math.max(1, params.pageSize ?? 10));
+    const offset = (page - 1) * pageSize;
 
     const whereClauses: Prisma.Sql[] = [];
     if (query?.trim()) {
@@ -104,32 +112,47 @@ export class AdminPaymentRequestsService {
       paymentRequestExists: boolean;
     };
 
-    let rows: ArchiveRow[];
+    type CountRow = { count: bigint };
+
+    let total = 0;
+    let rows: ArchiveRow[] = [];
     try {
-      rows = await this.prisma.$queryRaw<ArchiveRow[]>(Prisma.sql`
-        SELECT
-          a.id,
-          a.payment_request_id AS "paymentRequestId",
-          a.expectation_date AS "expectationDate",
-          a.archived_at AS "archivedAt",
-          a.migration_tag AS "migrationTag",
-          (pr.id IS NOT NULL) AS "paymentRequestExists"
-        FROM payment_request_expectation_date_archive a
-        LEFT JOIN payment_request pr ON pr.id = a.payment_request_id
-        ${whereSql}
-        ORDER BY a.archived_at DESC, a.id DESC
-        LIMIT ${limit}
-      `);
+      const [countResult, rowsResult] = await Promise.all([
+        this.prisma.$queryRaw<CountRow[]>(Prisma.sql`
+          SELECT COUNT(*)::bigint AS count
+          FROM payment_request_expectation_date_archive a
+          LEFT JOIN payment_request pr ON pr.id = a.payment_request_id
+          ${whereSql}
+        `),
+        this.prisma.$queryRaw<ArchiveRow[]>(Prisma.sql`
+          SELECT
+            a.id,
+            a.payment_request_id AS "paymentRequestId",
+            a.expectation_date AS "expectationDate",
+            a.archived_at AS "archivedAt",
+            a.migration_tag AS "migrationTag",
+            (pr.id IS NOT NULL) AS "paymentRequestExists"
+          FROM payment_request_expectation_date_archive a
+          LEFT JOIN payment_request pr ON pr.id = a.payment_request_id
+          ${whereSql}
+          ORDER BY a.archived_at DESC, a.id DESC
+          LIMIT ${pageSize}
+          OFFSET ${offset}
+        `),
+      ]);
+      total = Number(countResult[0]?.count ?? 0);
+      rows = rowsResult;
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
       if (message.includes(`payment_request_expectation_date_archive`)) {
+        total = 0;
         rows = [];
       } else {
         throw error;
       }
     }
 
-    return rows.map((row) => ({
+    const items = rows.map((row) => ({
       id: String(row.id),
       paymentRequestId: row.paymentRequestId,
       expectationDate: row.expectationDate,
@@ -137,6 +160,8 @@ export class AdminPaymentRequestsService {
       migrationTag: row.migrationTag,
       paymentRequestExists: row.paymentRequestExists,
     }));
+
+    return { items, total, page, pageSize };
   }
 
   private buildReversalIdempotencyKey(payload: {

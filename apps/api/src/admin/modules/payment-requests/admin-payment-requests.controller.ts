@@ -4,8 +4,43 @@ import { ApiTags, ApiBearerAuth, ApiBasicAuth } from '@nestjs/swagger';
 import { type AdminModel } from '@remoola/database-2';
 
 import { AdminPaymentRequestsService } from './admin-payment-requests.service';
-import { PaymentReversalBody, PaymentReversalKind } from './dto';
+import {
+  AdminExpectationDateArchiveQuery,
+  AdminPaymentRequestsListQuery,
+  PaymentReversalBody,
+  PaymentReversalKind,
+} from './dto';
 import { Identity } from '../../../common';
+
+function one(v: string | string[] | undefined): string | undefined {
+  return (typeof v === `string` ? v : v?.[0])?.trim() || undefined;
+}
+
+function parsePaymentRequestsListQuery(dto: AdminPaymentRequestsListQuery) {
+  const pageRaw = one(dto.page as string | string[] | undefined);
+  const pageSizeRaw = one(dto.pageSize as string | string[] | undefined);
+  const pageNum = pageRaw != null && Number.isFinite(Number(pageRaw)) ? Number(pageRaw) : undefined;
+  const pageSizeNum = pageSizeRaw != null && Number.isFinite(Number(pageSizeRaw)) ? Number(pageSizeRaw) : undefined;
+  return {
+    page: pageNum,
+    pageSize: pageSizeNum,
+    q: one(dto.q as string | string[] | undefined),
+    status: one(dto.status as string | string[] | undefined),
+    includeDeleted: one(dto.includeDeleted as string | string[] | undefined) === `true`,
+  };
+}
+
+function parseExpectationDateArchiveQuery(dto: AdminExpectationDateArchiveQuery) {
+  const pageRaw = one(dto.page as string | string[] | undefined);
+  const pageSizeRaw = one(dto.pageSize as string | string[] | undefined);
+  const pageNum = pageRaw != null && Number.isFinite(Number(pageRaw)) ? Number(pageRaw) : undefined;
+  const pageSizeNum = pageSizeRaw != null && Number.isFinite(Number(pageSizeRaw)) ? Number(pageSizeRaw) : undefined;
+  return {
+    query: one(dto.q as string | string[] | undefined),
+    page: pageNum,
+    pageSize: pageSizeNum,
+  };
+}
 
 @ApiTags(`Admin: Payment Requests`)
 @ApiBearerAuth(`bearer`) // 👈 tells Swagger to attach Bearer token
@@ -15,29 +50,13 @@ export class AdminPaymentRequestsController {
   constructor(private readonly service: AdminPaymentRequestsService) {}
 
   @Get()
-  findAllPaymentRequests(
-    @Query(`page`) page?: string,
-    @Query(`pageSize`) pageSize?: string,
-    @Query(`q`) q?: string,
-    @Query(`status`) status?: string,
-  ) {
-    const pageNum = page != null && Number.isFinite(Number(page)) ? Number(page) : undefined;
-    const pageSizeNum = pageSize != null && Number.isFinite(Number(pageSize)) ? Number(pageSize) : undefined;
-    return this.service.findAllPaymentRequests({
-      page: pageNum,
-      pageSize: pageSizeNum,
-      q: q?.trim() || undefined,
-      status: status?.trim() || undefined,
-    });
+  findAllPaymentRequests(@Query() query: AdminPaymentRequestsListQuery) {
+    return this.service.findAllPaymentRequests(parsePaymentRequestsListQuery(query));
   }
 
   @Get(`expectation-date-archive`)
-  getExpectationDateArchive(@Query(`q`) query?: string, @Query(`limit`) limit?: string) {
-    const parsedLimit = limit ? Number(limit) : undefined;
-    return this.service.getExpectationDateArchive({
-      query,
-      limit: Number.isFinite(parsedLimit) ? parsedLimit : undefined,
-    });
+  getExpectationDateArchive(@Query() query: AdminExpectationDateArchiveQuery) {
+    return this.service.getExpectationDateArchive(parseExpectationDateArchiveQuery(query));
   }
 
   @Get(`:id`)

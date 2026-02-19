@@ -1,13 +1,12 @@
 import '@remoola/ui/styles.css';
 import './globals.css';
+import { type Metadata } from 'next';
 import { Toaster } from 'sonner';
 
 import { PerformanceProvider } from '../components/PerformanceProvider';
 import { SWRProvider } from '../components/SWRProvider';
 import { ThemeProvider } from '../components/ThemeProvider';
 import { reportWebVitals } from '../lib/performance';
-
-import type { Metadata } from 'next';
 
 // Web Vitals reporting for Next.js
 export { reportWebVitals };

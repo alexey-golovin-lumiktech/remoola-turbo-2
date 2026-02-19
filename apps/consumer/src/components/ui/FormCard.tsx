@@ -1,8 +1,8 @@
 'use client';
 
-import styles from './classNames.module.css';
+import { type ComponentPropsWithoutRef, type ReactNode } from 'react';
 
-import type { ComponentPropsWithoutRef, ReactNode } from 'react';
+import styles from './classNames.module.css';
 
 export interface FormCardProps extends ComponentPropsWithoutRef<`form`> {
   title?: any;

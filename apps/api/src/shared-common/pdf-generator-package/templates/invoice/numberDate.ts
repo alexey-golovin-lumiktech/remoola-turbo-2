@@ -1,4 +1,4 @@
-import type { Invoice } from '../../types';
+import { type Invoice } from '../../types';
 
 const numberDateTemplate = `
   <table style="width: unset; margin-bottom: 40px">

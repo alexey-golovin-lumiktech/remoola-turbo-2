@@ -41,8 +41,14 @@ export function useAuth() {
 }
 
 // Admin hooks
-export function useAdmins(includeDeleted = false) {
-  return useSWR<AdminDetails[]>(queryKeys.admins.list({ includeDeleted }));
+export function useAdmins(filters?: {
+  includeDeleted?: boolean;
+  q?: string;
+  type?: string;
+  page?: number;
+  pageSize?: number;
+}) {
+  return useSWR<PaginatedResponse<AdminDetails>>(queryKeys.admins.list(filters));
 }
 
 export function useAdmin(id: string) {

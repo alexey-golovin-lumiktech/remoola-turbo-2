@@ -1,4 +1,4 @@
-import type { OneOfObjectValues } from '../types';
+import { type OneOfObjectValues } from '../types';
 
 export * from './base.model';
 export * from './admin.model';

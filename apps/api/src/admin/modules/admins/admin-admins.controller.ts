@@ -5,9 +5,28 @@ import { type AdminModel } from '@remoola/database-2';
 import { adminErrorCodes } from '@remoola/shared-constants';
 
 import { AdminAdminsService } from './admin-admins.service';
+import { AdminAdminsListQuery } from './dto';
 import { JwtAuthGuard } from '../../../auth/jwt.guard';
 import { Identity } from '../../../common';
 import { StripeWebhookService } from '../../../consumer/modules/payment-methods/stripe-webhook.service';
+
+function one(v: string | string[] | undefined): string | undefined {
+  return (typeof v === `string` ? v : v?.[0])?.trim() || undefined;
+}
+
+function parseAdminsListQuery(dto: AdminAdminsListQuery) {
+  const pageRaw = one(dto.page as string | string[] | undefined);
+  const pageSizeRaw = one(dto.pageSize as string | string[] | undefined);
+  const pageNum = pageRaw != null && Number.isFinite(Number(pageRaw)) ? Number(pageRaw) : undefined;
+  const pageSizeNum = pageSizeRaw != null && Number.isFinite(Number(pageSizeRaw)) ? Number(pageSizeRaw) : undefined;
+  return {
+    includeDeleted: one(dto.includeDeleted as string | string[] | undefined) === `true`,
+    q: one(dto.q as string | string[] | undefined),
+    type: one(dto.type as string | string[] | undefined),
+    page: pageNum,
+    pageSize: pageSizeNum,
+  };
+}
 
 @UseGuards(JwtAuthGuard)
 @ApiTags(`Admin: Admins`)
@@ -21,9 +40,8 @@ export class AdminAdminsController {
   ) {}
 
   @Get()
-  findAllAdmins(@Identity() admin: AdminModel, @Query(`includeDeleted`) includeDeleted?: string) {
-    const includeDeletedBool = includeDeleted === `true`;
-    return this.service.findAllAdmins(admin, includeDeletedBool);
+  findAllAdmins(@Identity() admin: AdminModel, @Query() query: AdminAdminsListQuery) {
+    return this.service.findAllAdmins(admin, parseAdminsListQuery(query));
   }
 
   @Get(`:adminId`)

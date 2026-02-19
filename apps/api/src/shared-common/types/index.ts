@@ -1,21 +1,20 @@
 import { type $Enums } from '@remoola/database-2';
 
-import type {
-  SortDirection,
-  SortNulls,
-  StripeInvoiceStatus,
-  InvoiceType,
-  AuthHeader,
-  CredentialsSeparator,
-  Timeline,
-  CardBrand,
-  PGComparisonOperator,
-  PaymentRequestTimelineField,
-  PersonalDetailsTimelineField,
-  AuditTimelineField,
+import {
+  type AuditTimelineField,
+  type AuthHeader,
+  type CardBrand,
+  type CredentialsSeparator,
+  type InvoiceType,
+  type PaymentRequestTimelineField,
+  type PGComparisonOperator,
+  type PersonalDetailsTimelineField,
+  type SortDirection,
+  type SortNulls,
+  type StripeInvoiceStatus,
+  type Timeline,
 } from '../enums';
-import type { IPaymentRequestModel, IPersonalDetailsModel } from '../models';
-import type { IBaseModel } from '../models/base.model';
+import { type IBaseModel, type IPaymentRequestModel, type IPersonalDetailsModel } from '../models';
 
 export type OneOfObjectKeys<T> = keyof T;
 export type OneOfObjectValues<T> = T[OneOfObjectKeys<T>];

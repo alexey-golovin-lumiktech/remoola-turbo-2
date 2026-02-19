@@ -3,8 +3,7 @@ import { getInvoiceInfoTable } from './info';
 import { getInvoiceItemsTable } from './items';
 import { getInvoiceNumberDateTable } from './numberDate';
 import { getInvoiceSummaryTable } from './summary';
-
-import type { Invoice } from '../../types';
+import { type Invoice } from '../../types';
 
 const invoicePdfTemplate = `
 <!DOCTYPE html>

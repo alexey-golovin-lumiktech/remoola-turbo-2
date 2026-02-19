@@ -5,7 +5,13 @@ import { toast } from 'sonner';
 
 import { DataTable, TableSkeleton, SearchWithClear } from '../../../../components';
 import styles from '../../../../components/ui/classNames.module.css';
-import { exchangeRateSchema, useFormValidation, type ExchangeRate, type ExchangeRateForm } from '../../../../lib';
+import {
+  exchangeRateSchema,
+  useFormValidation,
+  type ExchangeRate,
+  type ExchangeRateForm,
+  type PaginatedResponse,
+} from '../../../../lib';
 import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../../../lib/error-messages';
 
 const {
@@ -19,6 +25,12 @@ const {
   adminActionButton,
   adminDeleteButton,
   adminActionRow,
+  adminFilterRow,
+  adminFilterLine1Actions,
+  adminFilterCheckboxesRow,
+  adminFilterCheckboxes,
+  adminCheckboxLabel,
+  adminCheckbox,
   adminFormLabelBlock,
   adminFormLabelText,
   adminFormInput,
@@ -46,13 +58,6 @@ const {
 
 const DEFAULT_PAGE_SIZE = 10;
 
-type RatesPaginatedResponse = {
-  items: ExchangeRate[];
-  total: number;
-  page: number;
-  pageSize: number;
-};
-
 export function ExchangeRatesPageClient() {
   const [rates, setRates] = useState<ExchangeRate[]>([]);
   const [total, setTotal] = useState(0);
@@ -67,6 +72,7 @@ export function ExchangeRatesPageClient() {
   const [filterStatus, setFilterStatus] = useState<string>(`all`);
   const [includeHistory, setIncludeHistory] = useState(false);
   const [includeExpired, setIncludeExpired] = useState(false);
+  const [includeDeleted, setIncludeDeleted] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [editingRate, setEditingRate] = useState<ExchangeRate | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -121,6 +127,7 @@ export function ExchangeRatesPageClient() {
     if (filterStatus !== `all`) params.set(`status`, filterStatus);
     if (includeHistory) params.set(`includeHistory`, `true`);
     if (includeExpired) params.set(`includeExpired`, `true`);
+    if (includeDeleted) params.set(`includeDeleted`, `true`);
     const suffix = `?${params.toString()}`;
     const response = await fetch(`/api/exchange/rates${suffix}`, {
       cache: `no-store`,
@@ -134,11 +141,11 @@ export function ExchangeRatesPageClient() {
       toast.error(getLocalToastMessage(localToastKeys.LOAD_EXCHANGE_RATES));
       return;
     }
-    const data = (await response.json()) as RatesPaginatedResponse;
+    const data = (await response.json()) as PaginatedResponse<ExchangeRate>;
     setRates(data?.items ?? []);
     setTotal(data?.total ?? 0);
     setLoading(false);
-  }, [page, pageSize, filterFrom, filterTo, filterStatus, includeHistory, includeExpired]);
+  }, [page, pageSize, filterFrom, filterTo, filterStatus, includeHistory, includeExpired, includeDeleted]);
 
   useEffect(() => {
     void refresh();
@@ -198,6 +205,7 @@ export function ExchangeRatesPageClient() {
     setFilterStatus(`all`);
     setIncludeHistory(false);
     setIncludeExpired(false);
+    setIncludeDeleted(false);
     setPage(1);
   }, []);
 
@@ -610,99 +618,121 @@ export function ExchangeRatesPageClient() {
           <h1 className={adminPageTitle}>Exchange Rates</h1>
           <p className={adminPageSubtitle}>Manage direct FX rates used in consumer conversions.</p>
         </div>
-        <button type="button" className={adminPrimaryButton} onClick={() => void refresh()} disabled={loading}>
-          {loading ? `Refreshing...` : `Refresh`}
-        </button>
-      </div>
-
-      <div className={adminActionRow}>
-        <label className={adminFormLabelBlock}>
-          <span className={adminFormLabelText}>Search</span>
-          <SearchWithClear value={query} onChangeAction={setQuery} placeholder="Pair, rate, id" />
-        </label>
-        <label className={adminFormLabelBlock}>
-          <span className={adminFormLabelText}>From</span>
-          <select
-            className={adminFormInput}
-            value={filterFrom}
-            onChange={(e) => {
-              setFilterFrom(e.target.value);
-              setPage(1);
-            }}
-          >
-            <option value="all">All</option>
-            {currencies.map((currency) => (
-              <option key={currency} value={currency}>
-                {currency}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className={adminFormLabelBlock}>
-          <span className={adminFormLabelText}>To</span>
-          <select
-            className={adminFormInput}
-            value={filterTo}
-            onChange={(e) => {
-              setFilterTo(e.target.value);
-              setPage(1);
-            }}
-          >
-            <option value="all">All</option>
-            {currencies.map((currency) => (
-              <option key={currency} value={currency}>
-                {currency}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className={adminFormLabelBlock}>
-          <span className={adminFormLabelText}>Status</span>
-          <select
-            className={adminFormInput}
-            value={filterStatus}
-            onChange={(e) => {
-              setFilterStatus(e.target.value);
-              setPage(1);
-            }}
-          >
-            <option value="all">All</option>
-            <option value="DRAFT">DRAFT</option>
-            <option value="APPROVED">APPROVED</option>
-            <option value="DISABLED">DISABLED</option>
-          </select>
-        </label>
-        <label className={adminFormLabelBlock}>
-          <span className={adminFormLabelText}>History</span>
-          <input
-            className={adminFormInput}
-            type="checkbox"
-            checked={includeHistory}
-            onChange={(e) => {
-              setIncludeHistory(e.target.checked);
-              setPage(1);
-            }}
-          />
-        </label>
-        <label className={adminFormLabelBlock}>
-          <span className={adminFormLabelText}>Expired</span>
-          <input
-            className={adminFormInput}
-            type="checkbox"
-            checked={includeExpired}
-            onChange={(e) => {
-              setIncludeExpired(e.target.checked);
-              setPage(1);
-            }}
-          />
-        </label>
         <div className={adminActionRow}>
-          <button type="button" className={adminPrimaryButton} onClick={resetFilters} disabled={loading}>
-            Reset filters
-          </button>
-          <button className={adminActionButton} onClick={openCreateModal} type="button">
+          <button type="button" className={adminPrimaryButton} onClick={openCreateModal}>
             Add rate
           </button>
+          <button type="button" className={adminPrimaryButton} onClick={() => void refresh()} disabled={loading}>
+            {loading ? `Refreshing...` : `Refresh`}
+          </button>
+        </div>
+      </div>
+
+      <div className={adminCard}>
+        <div className={adminCardContent}>
+          <div className={adminFilterRow}>
+            <label className={adminFormLabelBlock}>
+              <span className={adminFormLabelText}>Search</span>
+              <SearchWithClear value={query} onChangeAction={setQuery} placeholder="Pair, rate, id" />
+            </label>
+            <label className={adminFormLabelBlock}>
+              <span className={adminFormLabelText}>From</span>
+              <select
+                className={adminFormInput}
+                value={filterFrom}
+                onChange={(e) => {
+                  setFilterFrom(e.target.value);
+                  setPage(1);
+                }}
+              >
+                <option value="all">All</option>
+                {currencies.map((currency) => (
+                  <option key={currency} value={currency}>
+                    {currency}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className={adminFormLabelBlock}>
+              <span className={adminFormLabelText}>To</span>
+              <select
+                className={adminFormInput}
+                value={filterTo}
+                onChange={(e) => {
+                  setFilterTo(e.target.value);
+                  setPage(1);
+                }}
+              >
+                <option value="all">All</option>
+                {currencies.map((currency) => (
+                  <option key={currency} value={currency}>
+                    {currency}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className={adminFormLabelBlock}>
+              <span className={adminFormLabelText}>Status</span>
+              <select
+                className={adminFormInput}
+                value={filterStatus}
+                onChange={(e) => {
+                  setFilterStatus(e.target.value);
+                  setPage(1);
+                }}
+              >
+                <option value="all">All</option>
+                <option value="DRAFT">DRAFT</option>
+                <option value="APPROVED">APPROVED</option>
+                <option value="DISABLED">DISABLED</option>
+              </select>
+            </label>
+            <div className={adminFilterLine1Actions}>
+              <button type="button" className={adminPrimaryButton} onClick={resetFilters} disabled={loading}>
+                Reset
+              </button>
+            </div>
+          </div>
+          <div className={adminFilterCheckboxesRow}>
+            <div className={adminFilterCheckboxes}>
+              <label className={adminCheckboxLabel}>
+                <input
+                  type="checkbox"
+                  checked={includeHistory}
+                  onChange={(e) => {
+                    setIncludeHistory(e.target.checked);
+                    setPage(1);
+                  }}
+                  className={adminCheckbox}
+                />
+                History
+              </label>
+              <label className={adminCheckboxLabel}>
+                <input
+                  type="checkbox"
+                  checked={includeExpired}
+                  onChange={(e) => {
+                    setIncludeExpired(e.target.checked);
+                    setPage(1);
+                  }}
+                  className={adminCheckbox}
+                />
+                Expired
+              </label>
+              <label className={adminCheckboxLabel}>
+                <input
+                  type="checkbox"
+                  checked={includeDeleted}
+                  onChange={(e) => {
+                    setIncludeDeleted(e.target.checked);
+                    setPage(1);
+                  }}
+                  className={adminCheckbox}
+                />
+                Include deleted
+              </label>
+            </div>
+          </div>
         </div>
       </div>
 

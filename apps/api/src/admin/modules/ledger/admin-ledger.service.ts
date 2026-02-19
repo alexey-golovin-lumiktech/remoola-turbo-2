@@ -14,7 +14,14 @@ export class AdminLedgersService {
   constructor(private readonly prisma: PrismaService) {}
 
   /** Bounded list for admin (AGENTS.md 6.10). Search/filter fintech-safe. */
-  async findAll(params?: { page?: number; pageSize?: number; q?: string; type?: string; status?: string }) {
+  async findAll(params?: {
+    page?: number;
+    pageSize?: number;
+    q?: string;
+    type?: string;
+    status?: string;
+    includeDeleted?: boolean;
+  }) {
     const pageSize = Math.min(Math.max(params?.pageSize ?? 10, 1), 500);
     const page = Math.max(params?.page ?? 1, 1);
     const skip = (page - 1) * pageSize;
@@ -31,7 +38,7 @@ export class AdminLedgersService {
         : undefined;
 
     const where: Prisma.LedgerEntryModelWhereInput = {
-      deletedAt: null,
+      ...(params?.includeDeleted !== true && { deletedAt: null }),
       ...(type && { type }),
       ...(status && { status }),
       ...(search && {

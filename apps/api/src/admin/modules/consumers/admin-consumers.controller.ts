@@ -2,7 +2,30 @@ import { Body, Controller, Get, Param, Patch, Query } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiBasicAuth } from '@nestjs/swagger';
 
 import { AdminConsumersService } from './admin-consumers.service';
+import { AdminConsumersListQuery } from './dto';
 import { ConsumerVerificationUpdateDto } from '../../../dtos/admin';
+
+function one(v: string | string[] | undefined): string | undefined {
+  return (typeof v === `string` ? v : v?.[0])?.trim() || undefined;
+}
+
+function parseConsumersListQuery(dto: AdminConsumersListQuery) {
+  const pageRaw = one(dto.page as string | string[] | undefined);
+  const pageSizeRaw = one(dto.pageSize as string | string[] | undefined);
+  const pageNum = pageRaw != null && Number.isFinite(Number(pageRaw)) ? Number(pageRaw) : undefined;
+  const pageSizeNum = pageSizeRaw != null && Number.isFinite(Number(pageSizeRaw)) ? Number(pageSizeRaw) : undefined;
+  const includeDeleted = one(dto.includeDeleted as string | string[] | undefined) === `true`;
+  return {
+    page: pageNum,
+    pageSize: pageSizeNum,
+    q: one(dto.q as string | string[] | undefined),
+    accountType: one(dto.accountType as string | string[] | undefined),
+    contractorKind: one(dto.contractorKind as string | string[] | undefined),
+    verificationStatus: one(dto.verificationStatus as string | string[] | undefined),
+    verified: one(dto.verified as string | string[] | undefined),
+    includeDeleted,
+  };
+}
 
 @ApiTags(`Admin: Consumers`)
 @ApiBearerAuth(`bearer`) // 👈 tells Swagger to attach Bearer token
@@ -12,21 +35,8 @@ export class AdminConsumersController {
   constructor(private readonly service: AdminConsumersService) {}
 
   @Get()
-  findAllConsumers(@Query() query: Record<string, string | string[] | undefined>) {
-    const one = (v: string | string[] | undefined) => (typeof v === `string` ? v : v?.[0])?.trim() || undefined;
-    const pageRaw = one(query[`page`]);
-    const pageSizeRaw = one(query[`pageSize`]);
-    const pageNum = pageRaw != null && Number.isFinite(Number(pageRaw)) ? Number(pageRaw) : undefined;
-    const pageSizeNum = pageSizeRaw != null && Number.isFinite(Number(pageSizeRaw)) ? Number(pageSizeRaw) : undefined;
-    return this.service.findAllConsumers({
-      page: pageNum,
-      pageSize: pageSizeNum,
-      q: one(query[`q`]),
-      accountType: one(query[`accountType`]),
-      contractorKind: one(query[`contractorKind`]),
-      verificationStatus: one(query[`verificationStatus`]),
-      verified: one(query[`verified`]),
-    });
+  findAllConsumers(@Query() query: AdminConsumersListQuery) {
+    return this.service.findAllConsumers(parseConsumersListQuery(query));
   }
 
   @Get(`:id`)

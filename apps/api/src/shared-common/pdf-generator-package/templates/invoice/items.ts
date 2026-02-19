@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import type { InvoiceItemsItem } from '../../types';
+import { type InvoiceItemsItem } from '../../types';
 
 const itemsTableTemplate = `
   <table style="width: 100%; border-collapse: collapse;margin-bottom: 40px">

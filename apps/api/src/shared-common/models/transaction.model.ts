@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 import { type $Enums } from '@remoola/database-2';
 
-import type { IBaseModel } from './base.model';
+import { type IBaseModel } from './base.model';
 
 /* record should be created at the beginning of the payment request */
 export type ITransactionModel = {

@@ -46,4 +46,10 @@ export class ExchangeRateListQuery {
   @IsIn([`true`, `false`])
   @IsOptional()
   includeExpired?: string;
+
+  @Expose()
+  @ApiPropertyOptional({ description: `Include soft-deleted rates`, enum: [`true`, `false`] })
+  @IsIn([`true`, `false`])
+  @IsOptional()
+  includeDeleted?: string;
 }

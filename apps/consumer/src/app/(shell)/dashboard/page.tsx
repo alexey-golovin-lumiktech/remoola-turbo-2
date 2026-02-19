@@ -1,6 +1,6 @@
-import { DashboardDataView } from '../../../components';
+import { type Metadata } from 'next';
 
-import type { Metadata } from 'next';
+import { DashboardDataView } from '../../../components';
 
 export const metadata: Metadata = {
   title: `Client Dashboard - Remoola`,

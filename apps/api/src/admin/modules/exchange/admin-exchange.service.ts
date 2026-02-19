@@ -23,6 +23,7 @@ export class AdminExchangeService {
     status?: $Enums.ExchangeRateStatus;
     includeHistory?: string;
     includeExpired?: string;
+    includeDeleted?: boolean;
   }) {
     const now = new Date();
     const includeHistory = filters?.includeHistory === `true`;
@@ -32,7 +33,7 @@ export class AdminExchangeService {
     const skip = (page - 1) * pageSize;
 
     const where: Prisma.ExchangeRateModelWhereInput = {
-      deletedAt: null,
+      ...(filters?.includeDeleted !== true && { deletedAt: null }),
       ...(filters?.from && { fromCurrency: filters.from }),
       ...(filters?.to && { toCurrency: filters.to }),
       ...(filters?.status && { status: filters.status }),
@@ -313,32 +314,47 @@ export class AdminExchangeService {
 
   private static readonly SEARCH_MAX_LEN = 200;
 
-  async listRules(filters?: { q?: string; enabled?: string }) {
+  async listRules(filters?: {
+    q?: string;
+    enabled?: string;
+    page?: number;
+    pageSize?: number;
+    includeDeleted?: boolean;
+  }) {
     const search =
       typeof filters?.q === `string` && filters.q.trim().length > 0
         ? filters.q.trim().slice(0, AdminExchangeService.SEARCH_MAX_LEN)
         : undefined;
     const enabledFilter = filters?.enabled === `true` ? true : filters?.enabled === `false` ? false : undefined;
+    const page = Math.max(1, filters?.page ?? 1);
+    const pageSize = Math.min(100, Math.max(1, filters?.pageSize ?? 10));
 
     const where: Prisma.WalletAutoConversionRuleModelWhereInput = {
-      deletedAt: null,
+      ...(filters?.includeDeleted !== true && { deletedAt: null }),
       ...(enabledFilter !== undefined && { enabled: enabledFilter }),
       ...(search && { consumer: { email: { contains: search, mode: `insensitive` } } }),
     };
 
-    const rules = await this.prisma.walletAutoConversionRuleModel.findMany({
-      where,
-      include: {
-        consumer: { select: { id: true, email: true } },
-      },
-      orderBy: { createdAt: `desc` },
-    });
+    const [total, rules] = await Promise.all([
+      this.prisma.walletAutoConversionRuleModel.count({ where }),
+      this.prisma.walletAutoConversionRuleModel.findMany({
+        where,
+        include: {
+          consumer: { select: { id: true, email: true } },
+        },
+        orderBy: { createdAt: `desc` },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+    ]);
 
-    return rules.map((rule) => ({
+    const items = rules.map((rule) => ({
       ...rule,
       targetBalance: Number(rule.targetBalance),
       maxConvertAmount: rule.maxConvertAmount != null ? Number(rule.maxConvertAmount) : null,
     }));
+
+    return { items, total, page, pageSize };
   }
 
   async updateRule(ruleId: string, body: UpdateAutoConversionRuleBody) {
@@ -397,7 +413,13 @@ export class AdminExchangeService {
     });
   }
 
-  async listScheduledConversions(filters?: { q?: string; status?: string }) {
+  async listScheduledConversions(filters?: {
+    q?: string;
+    status?: string;
+    page?: number;
+    pageSize?: number;
+    includeDeleted?: boolean;
+  }) {
     const search =
       typeof filters?.q === `string` && filters.q.trim().length > 0
         ? filters.q.trim().slice(0, AdminExchangeService.SEARCH_MAX_LEN)
@@ -407,25 +429,34 @@ export class AdminExchangeService {
       Object.values($Enums.ScheduledFxConversionStatus).includes(filters.status as $Enums.ScheduledFxConversionStatus)
         ? (filters.status as $Enums.ScheduledFxConversionStatus)
         : undefined;
+    const page = Math.max(1, filters?.page ?? 1);
+    const pageSize = Math.min(100, Math.max(1, filters?.pageSize ?? 10));
 
     const where: Prisma.ScheduledFxConversionModelWhereInput = {
-      deletedAt: null,
+      ...(filters?.includeDeleted !== true && { deletedAt: null }),
       ...(statusFilter && { status: statusFilter }),
       ...(search && { consumer: { email: { contains: search, mode: `insensitive` } } }),
     };
 
-    const conversions = await this.prisma.scheduledFxConversionModel.findMany({
-      where,
-      include: {
-        consumer: { select: { id: true, email: true } },
-      },
-      orderBy: { executeAt: `desc` },
-    });
+    const [total, conversions] = await Promise.all([
+      this.prisma.scheduledFxConversionModel.count({ where }),
+      this.prisma.scheduledFxConversionModel.findMany({
+        where,
+        include: {
+          consumer: { select: { id: true, email: true } },
+        },
+        orderBy: { executeAt: `desc` },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+    ]);
 
-    return conversions.map((conversion) => ({
+    const items = conversions.map((conversion) => ({
       ...conversion,
       amount: Number(conversion.amount),
     }));
+
+    return { items, total, page, pageSize };
   }
 
   async cancelScheduledConversion(conversionId: string) {

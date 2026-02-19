@@ -2,16 +2,23 @@ import { type JSX } from 'react';
 
 import {
   type TAccountType,
+  type TAdminType,
+  type TConsumerRole,
   type TContractorKind,
+  type TLegalStatus,
+  type TLedgerEntryType,
+  type TOrganizationSize,
+  type TScheduledFxConversionStatus,
   type TTransactionStatus,
   type TVerificationStatus,
 } from '@remoola/api-types';
 
-export type AdminType = `SUPER` | `ADMIN`;
+/** Re-export for backward compatibility; use TAdminType from @remoola/api-types in new code. */
+export type AdminType = TAdminType;
 
 export type AdminDetails = {
   id: string;
-  type: AdminType;
+  type: TAdminType;
   email: string;
   createdAt: string;
   updatedAt: string;
@@ -21,7 +28,7 @@ export type AdminDetails = {
 export type AdminMe = {
   id: string;
   email: string;
-  type: AdminType;
+  type: TAdminType;
 };
 
 export type CurrencyCode = string; // keep flexible; you have a big enum
@@ -69,7 +76,7 @@ export type AddressDetails = {
 };
 
 export type PersonalDetails = {
-  legalStatus?: string | null;
+  legalStatus?: TLegalStatus | null;
   citizenOf: string;
   dateOfBirth: string;
   passportOrIdNumber: string;
@@ -82,9 +89,9 @@ export type PersonalDetails = {
 
 export type OrganizationDetails = {
   name: string;
-  consumerRole?: string | null;
+  consumerRole?: TConsumerRole | null;
   consumerRoleOther?: string | null;
-  size: `SMALL` | `MEDIUM` | `LARGE`;
+  size?: TOrganizationSize | null;
 };
 
 export type GoogleProfileDetails = {
@@ -133,7 +140,7 @@ export type PaginatedResponse<T> = {
 export type LedgerEntry = {
   id: string;
   ledgerId: string;
-  type: string;
+  type: TLedgerEntryType;
   currencyCode: CurrencyCode;
   status: TTransactionStatus;
 
@@ -161,7 +168,8 @@ export type PaymentRequestExpectationDateArchive = {
   paymentRequestExists: boolean;
 };
 
-export type ScheduledFxConversionStatus = `PENDING` | `PROCESSING` | `EXECUTED` | `FAILED` | `CANCELLED`;
+/** Re-export for backward compatibility; use TScheduledFxConversionStatus from @remoola/api-types in new code. */
+export type ScheduledFxConversionStatus = TScheduledFxConversionStatus;
 
 export type AutoConversionRule = {
   id: string;
@@ -233,7 +241,8 @@ export const queryKeys = {
     me: () => [`api/auth/me`] as const,
   },
   admins: {
-    list: (filters?: { includeDeleted?: boolean }) => [`api/admins`, filters] as const,
+    list: (filters?: { includeDeleted?: boolean; q?: string; type?: string; page?: number; pageSize?: number }) =>
+      [`api/admins`, filters] as const,
     detail: (id: string) => [`api/admins/${id}`] as const,
   },
   consumers: {
@@ -255,21 +264,6 @@ export const queryKeys = {
     verificationQueue: () => [`api/dashboard/verification-queue`] as const,
   },
 } as const;
-
-// Mutation types
-export type CreateAdminData = {
-  email: string;
-  password: string;
-  type: AdminType;
-};
-
-export type UpdateAdminData = {
-  action: `delete` | `restore`;
-};
-
-export type ResetPasswordData = {
-  password: string;
-};
 
 // Dashboard types
 export type DashboardStats = {

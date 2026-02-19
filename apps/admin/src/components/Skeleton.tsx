@@ -47,25 +47,7 @@ export function CardSkeleton() {
   );
 }
 
-// Form skeleton
-export function FormSkeleton({ fields = 3 }: { fields?: number }) {
-  return (
-    <div className={styles.adminSkeletonForm}>
-      {Array.from({ length: fields }).map((_, i) => (
-        <div key={i} className={styles.adminSkeletonFormField}>
-          <Skeleton className={styles.adminSkeletonFormLabel} />
-          <Skeleton className={styles.adminSkeletonFormInput} />
-        </div>
-      ))}
-      <div className={styles.adminSkeletonFormActions}>
-        <Skeleton className={styles.adminSkeletonFormButton} />
-        <Skeleton className={styles.adminSkeletonFormButton} />
-      </div>
-    </div>
-  );
-}
-
-// Page header skeleton
+// Page header skeleton (used by PageSkeleton)
 export function PageHeaderSkeleton() {
   return (
     <div className={styles.adminSkeletonPageHeader}>

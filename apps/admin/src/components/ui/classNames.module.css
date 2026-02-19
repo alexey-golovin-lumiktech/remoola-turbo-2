@@ -462,6 +462,26 @@
   @apply flex flex-wrap items-center gap-2;
 }
 
+/* Unified filter block: line 1 = filters + Reset (right); line 2 = checkboxes right */
+.adminFilterRow {
+  @apply flex flex-wrap items-end gap-4;
+}
+
+/* Right-aligned actions on line 1 (Reset, Add rate) */
+.adminFilterLine1Actions {
+  @apply ml-auto flex flex-wrap items-end gap-2;
+}
+
+/* Second row: checkboxes only, aligned right */
+.adminFilterCheckboxesRow {
+  @apply mt-3 flex flex-wrap items-end justify-end gap-4;
+}
+
+/* Checkbox group (used inside adminFilterCheckboxesRow) */
+.adminFilterCheckboxes {
+  @apply flex flex-wrap items-end gap-4;
+}
+
 .adminActionButton {
   @apply rounded-lg border border-[var(--line)] px-2 py-1 text-xs text-[var(--ink)] hover:bg-[var(--bg-0)];
 }

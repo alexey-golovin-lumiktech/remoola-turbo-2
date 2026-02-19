@@ -1,7 +1,7 @@
 import chromium from '@sparticuz/chromium';
 import puppeteer from 'puppeteer-core';
 
-import type { InvoiceInfoDetails, InvoiceInfoDetailsKey } from './types';
+import { type InvoiceInfoDetails, type InvoiceInfoDetailsKey } from './types';
 
 export const outputHtmlPath = `out.html` as const;
 export const outputPdfPath = `out.pdf` as const;

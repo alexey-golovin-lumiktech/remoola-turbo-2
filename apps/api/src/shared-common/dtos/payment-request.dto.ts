@@ -1,5 +1,5 @@
-import type { IPaymentRequestModel } from '../models/payment-request.model';
-import type { OnlyUpsertFields, WithoutDeletedAt } from '../types';
+import { type IPaymentRequestModel } from '../models/payment-request.model';
+import { type OnlyUpsertFields, type WithoutDeletedAt } from '../types';
 
 export type IPaymentRequestResponse = WithoutDeletedAt<IPaymentRequestModel>;
 export type IPaymentRequestCreate = OnlyUpsertFields<WithoutDeletedAt<IPaymentRequestModel>>;

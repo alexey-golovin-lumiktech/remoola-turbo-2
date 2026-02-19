@@ -1,28 +1,59 @@
 import { Injectable } from '@nestjs/common';
 
-import { type AdminModel } from '@remoola/database-2';
+import { $Enums, type AdminModel, Prisma } from '@remoola/database-2';
 
 import { PrismaService } from '../../../shared/prisma.service';
 import { hashPassword } from '../../../shared-common';
+
+const SEARCH_MAX_LEN = 200;
+const ADMIN_TYPES = Object.values($Enums.AdminType) as string[];
 
 @Injectable()
 export class AdminAdminsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAllAdmins(admin: AdminModel, includeDeleted?: boolean) {
-    return this.prisma.adminModel.findMany({
-      where: {
-        type: {
-          in:
-            admin.type === `SUPER` //
-              ? [`ADMIN`, `SUPER`]
-              : [`ADMIN`],
-        },
-        ...(admin.type === `ADMIN` && { id: { not: admin.id } }),
-        ...(includeDeleted !== true && { deletedAt: null }),
-      },
-      orderBy: { createdAt: `desc` },
-    });
+  async findAllAdmins(
+    admin: AdminModel,
+    options?: { includeDeleted?: boolean; q?: string; type?: string; page?: number; pageSize?: number },
+  ) {
+    const search =
+      typeof options?.q === `string` && options.q.trim().length > 0
+        ? options.q.trim().slice(0, SEARCH_MAX_LEN)
+        : undefined;
+    const typeFilter =
+      options?.type && ADMIN_TYPES.includes(options.type) ? (options.type as $Enums.AdminType) : undefined;
+
+    const allowedTypes =
+      admin.type === `SUPER` //
+        ? ([`ADMIN`, `SUPER`] as const)
+        : ([`ADMIN`] as const);
+    const typeConstraint =
+      typeFilter && (allowedTypes as readonly string[]).includes(typeFilter)
+        ? { type: typeFilter }
+        : { type: { in: [...allowedTypes] } };
+
+    const pageSize = Math.min(Math.max(options?.pageSize ?? 10, 1), 500);
+    const page = Math.max(options?.page ?? 1, 1);
+    const skip = (page - 1) * pageSize;
+
+    const where: Prisma.AdminModelWhereInput = {
+      ...typeConstraint,
+      ...(admin.type === `ADMIN` && { id: { not: admin.id } }),
+      ...(options?.includeDeleted !== true && { deletedAt: null }),
+      ...(search && { email: { contains: search, mode: `insensitive` } }),
+    };
+
+    const [items, total] = await Promise.all([
+      this.prisma.adminModel.findMany({
+        where,
+        orderBy: { createdAt: `desc` },
+        skip,
+        take: pageSize,
+      }),
+      this.prisma.adminModel.count({ where }),
+    ]);
+
+    return { items, total, page, pageSize };
   }
 
   async patchAdminPassword(adminId: string, password: string) {

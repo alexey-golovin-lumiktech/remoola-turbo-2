@@ -1,6 +1,6 @@
 import { type $Enums } from '@remoola/database-2';
 
-import type { IBaseModel } from './base.model';
+import { type IBaseModel } from './base.model';
 
 /* record is created when the request is created */
 export type IPaymentRequestModel = {

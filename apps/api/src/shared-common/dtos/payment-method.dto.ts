@@ -1,10 +1,10 @@
-import type {
-  IPaymentMethodModelType,
-  IPaymentMethodBankAccountModel,
-  IPaymentMethodCreditCardModel,
-  IPaymentMethodModel,
+import {
+  type IPaymentMethodBankAccountModel,
+  type IPaymentMethodCreditCardModel,
+  type IPaymentMethodModel,
+  type IPaymentMethodModelType,
 } from '../models/payment-method.model';
-import type { OnlyUpsertFields, WithoutDeletedAt } from '../types';
+import { type OnlyUpsertFields, type WithoutDeletedAt } from '../types';
 
 export type IPaymentMethodResponse = WithoutDeletedAt<IPaymentMethodModel>;
 export type IPaymentMethodCreate = OnlyUpsertFields<WithoutDeletedAt<IPaymentMethodModel>>;

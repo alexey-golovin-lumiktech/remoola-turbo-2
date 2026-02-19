@@ -1,5 +1,7 @@
 'use client';
 
+import { type ReactNode } from 'react';
+
 import styles from '../ui/classNames.module.css';
 
 const {
@@ -11,8 +13,6 @@ const {
   successModalOverlay,
   successModalTitle,
 } = styles;
-
-import type { ReactNode } from 'react';
 
 type SuccessModalProps = {
   open: boolean;

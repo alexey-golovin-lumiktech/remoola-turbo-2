@@ -1,5 +1,5 @@
-import type { ITransactionModel } from '../models/transaction.model';
-import type { OnlyUpsertFields, WithoutDeletedAt } from '../types';
+import { type ITransactionModel } from '../models/transaction.model';
+import { type OnlyUpsertFields, type WithoutDeletedAt } from '../types';
 
 export type ITransactionResponse = WithoutDeletedAt<ITransactionModel>;
 export type ITransactionCreate = OnlyUpsertFields<WithoutDeletedAt<ITransactionModel>>;

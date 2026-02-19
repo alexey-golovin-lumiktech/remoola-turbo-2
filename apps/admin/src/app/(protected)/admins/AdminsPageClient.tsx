@@ -4,10 +4,10 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
-import { DataTable, ErrorBoundary, PageSkeleton } from '../../../components';
+import { DataTable, ErrorBoundary, PageSkeleton, SearchWithClear } from '../../../components';
 import styles from '../../../components/ui/classNames.module.css';
 import { apiClient, useFormValidation, createAdminSchema, resetPasswordSchema, type AdminType } from '../../../lib';
-import { useAuth, useAdmins, useCreateAdmin, useResetAdminPassword } from '../../../lib/client';
+import { useDebouncedValue, useAuth, useAdmins, useCreateAdmin, useResetAdminPassword } from '../../../lib/client';
 import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../../lib/error-messages';
 
 function rowPill(text: string) {
@@ -36,15 +36,39 @@ export function AdminsPageClient() {
     }
   }, [me, authError, authLoading, router]);
 
+  const DEFAULT_PAGE_SIZE = 10;
+  const [q, setQ] = useState(``);
+  const qDebounced = useDebouncedValue(q, 400);
+  const [typeFilter, setTypeFilter] = useState(``);
   const [includeDeleted, setIncludeDeleted] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(DEFAULT_PAGE_SIZE);
 
   // Data fetching with SWR
   const {
-    data: admins,
+    data: adminsData,
     error: adminsError,
     isLoading: adminsLoading,
     mutate: mutateAdmins,
-  } = useAdmins(includeDeleted);
+  } = useAdmins({
+    includeDeleted,
+    q: qDebounced || undefined,
+    type: typeFilter || undefined,
+    page,
+    pageSize,
+  });
+
+  const total = adminsData?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const to = Math.min(page * pageSize, total);
+
+  const resetFilters = () => {
+    setQ(``);
+    setTypeFilter(``);
+    setIncludeDeleted(false);
+    setPage(1);
+  };
 
   useEffect(() => {
     if (adminsError)
@@ -70,14 +94,14 @@ export function AdminsPageClient() {
     password: ``,
   });
 
-  // Sorted admins
+  // Sorted admins (items already ordered by API; keep sort for consistency)
   const sortedAdmins = useMemo(() => {
-    if (!admins) return [];
-    return [...admins].sort((a, b) => {
+    const items = adminsData?.items ?? [];
+    return [...items].sort((a, b) => {
       if (a.type !== b.type) return a.type === `SUPER` ? -1 : 1;
       return a.email.localeCompare(b.email);
     });
-  }, [admins]);
+  }, [adminsData?.items]);
 
   // Form handlers with validation
   async function createAdmin() {
@@ -166,16 +190,6 @@ export function AdminsPageClient() {
           </div>
 
           <div className={styles.adminHeaderActions}>
-            <label className={styles.adminCheckboxLabel}>
-              <input
-                type="checkbox"
-                checked={includeDeleted}
-                onChange={(e) => setIncludeDeleted(e.target.checked)}
-                className={styles.adminCheckbox}
-              />
-              Include deleted
-            </label>
-
             <button
               type="button"
               className={styles.adminPrimaryButton}
@@ -194,6 +208,60 @@ export function AdminsPageClient() {
           </div>
         </div>
 
+        <div className={styles.adminCard}>
+          <div className={styles.adminCardContent}>
+            <div className={styles.adminFilterRow}>
+              <label className={styles.adminFormLabelBlock} style={{ marginBottom: 0 }}>
+                <span className={styles.adminFormLabelText}>Search</span>
+                <SearchWithClear
+                  value={q}
+                  onChangeAction={(v) => {
+                    setQ(v);
+                    setPage(1);
+                  }}
+                  placeholder="Email"
+                />
+              </label>
+              <label className={styles.adminFormLabelBlock} style={{ marginBottom: 0 }}>
+                <span className={styles.adminFormLabelText}>Type</span>
+                <select
+                  className={styles.adminFormInput}
+                  value={typeFilter}
+                  onChange={(e) => {
+                    setTypeFilter(e.target.value);
+                    setPage(1);
+                  }}
+                >
+                  <option value="">All</option>
+                  <option value="SUPER">SUPER</option>
+                  <option value="ADMIN">ADMIN</option>
+                </select>
+              </label>
+              <div className={styles.adminFilterLine1Actions}>
+                <button type="button" className={styles.adminPrimaryButton} onClick={resetFilters}>
+                  Reset
+                </button>
+              </div>
+            </div>
+            <div className={styles.adminFilterCheckboxesRow}>
+              <div className={styles.adminFilterCheckboxes}>
+                <label className={styles.adminCheckboxLabel} style={{ marginBottom: 0 }}>
+                  <input
+                    type="checkbox"
+                    checked={includeDeleted}
+                    onChange={(e) => {
+                      setIncludeDeleted(e.target.checked);
+                      setPage(1);
+                    }}
+                    className={styles.adminCheckbox}
+                  />
+                  Include deleted
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {adminsError && (
           <div className={styles.adminCard}>
             <div className={styles.adminCardContent}>
@@ -204,13 +272,42 @@ export function AdminsPageClient() {
           </div>
         )}
 
-        {sortedAdmins.length === 0 ? (
+        {total > 0 && (
+          <div className={styles.adminPaginationBar}>
+            <span className={styles.adminPaginationInfo}>
+              Showing {from}–{to} of {total}
+            </span>
+            <button
+              type="button"
+              className={styles.adminPaginationButton}
+              disabled={page <= 1 || adminsLoading}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              Previous
+            </button>
+            <span className={styles.adminPaginationInfo}>
+              Page {page} of {totalPages}
+            </span>
+            <button
+              type="button"
+              className={styles.adminPaginationButton}
+              disabled={page >= totalPages || adminsLoading}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            >
+              Next
+            </button>
+          </div>
+        )}
+
+        {!adminsLoading && total === 0 && (
           <div className={styles.adminCard}>
             <div className={styles.adminCardContent}>
               <div className={styles.adminTextGray500}>No admins</div>
             </div>
           </div>
-        ) : (
+        )}
+
+        {total > 0 && (
           <DataTable
             rows={sortedAdmins}
             getRowKeyAction={(a) => a.id}

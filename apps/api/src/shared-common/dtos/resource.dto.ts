@@ -1,5 +1,5 @@
-import type { IResourceModel } from '../models/resource.model';
-import type { OnlyUpsertFields, WithoutDeletedAt } from '../types';
+import { type IResourceModel } from '../models/resource.model';
+import { type OnlyUpsertFields, type WithoutDeletedAt } from '../types';
 
 export type IResourceResponse = WithoutDeletedAt<IResourceModel>;
 export type IResourceCreate = OnlyUpsertFields<WithoutDeletedAt<IResourceModel>>;

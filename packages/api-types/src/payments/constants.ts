@@ -15,7 +15,6 @@ export const TransactionStatus = {
   UNCOLLECTIBLE: `UNCOLLECTIBLE`,
 } as const;
 export type TTransactionStatus = (typeof TransactionStatus)[keyof typeof TransactionStatus];
-export const TransactionStatuses: TTransactionStatus[] = Object.values(TransactionStatus);
 
 export const PaymentMethodTypes = {
   CREDIT_CARD: `CREDIT_CARD`,

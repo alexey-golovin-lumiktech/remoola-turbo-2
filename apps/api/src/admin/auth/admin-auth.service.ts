@@ -15,21 +15,6 @@ export class AdminAuthService {
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
   ) {}
-  async getAuthenticatedAdmin(email: string, password: string) {
-    const admin = await this.prisma.adminModel.findFirst({
-      where: { email, deletedAt: null },
-    });
-    if (!admin) throw new BadRequestException(adminErrorCodes.ADMIN_INVALID_CREDENTIALS);
-
-    const isValidPassword = await passwordUtils.verifyPassword({
-      password,
-      storedHash: admin.password,
-      storedSalt: admin.salt,
-    });
-    if (!isValidPassword) throw new BadRequestException(adminErrorCodes.ADMIN_INVALID_CREDENTIALS);
-
-    return admin;
-  }
 
   async login(body: Credentials) {
     const identity = await this.prisma.adminModel.findFirst({

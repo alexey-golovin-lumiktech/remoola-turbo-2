@@ -4,11 +4,43 @@ import { ApiBasicAuth, ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { type AdminModel } from '@remoola/database-2';
 
 import { AdminExchangeService } from './admin-exchange.service';
-import { ExchangeRateListQuery } from './dto/exchange-rate-query.dto';
+import { AdminExchangeRulesListQuery, AdminExchangeScheduledListQuery, ExchangeRateListQuery } from './dto';
 import { JwtAuthGuard } from '../../../auth/jwt.guard';
 import { Identity } from '../../../common';
 import { UpdateAutoConversionRuleBody } from '../../../consumer/modules/exchange/dto/update-auto-conversion-rule.dto';
 import { ExchangeRateCreate, ExchangeRateUpdate } from '../../../dtos/admin/exchange-rate.dto';
+
+function one(v: string | string[] | undefined): string | undefined {
+  return (typeof v === `string` ? v : v?.[0])?.trim() || undefined;
+}
+
+function parseExchangeRulesListQuery(dto: AdminExchangeRulesListQuery) {
+  const pageRaw = one(dto.page as string | string[] | undefined);
+  const pageSizeRaw = one(dto.pageSize as string | string[] | undefined);
+  const pageNum = pageRaw != null && Number.isFinite(Number(pageRaw)) ? Number(pageRaw) : undefined;
+  const pageSizeNum = pageSizeRaw != null && Number.isFinite(Number(pageSizeRaw)) ? Number(pageSizeRaw) : undefined;
+  return {
+    q: one(dto.q as string | string[] | undefined),
+    enabled: one(dto.enabled as string | string[] | undefined),
+    page: pageNum,
+    pageSize: pageSizeNum,
+    includeDeleted: one(dto.includeDeleted as string | string[] | undefined) === `true`,
+  };
+}
+
+function parseExchangeScheduledListQuery(dto: AdminExchangeScheduledListQuery) {
+  const pageRaw = one(dto.page as string | string[] | undefined);
+  const pageSizeRaw = one(dto.pageSize as string | string[] | undefined);
+  const pageNum = pageRaw != null && Number.isFinite(Number(pageRaw)) ? Number(pageRaw) : undefined;
+  const pageSizeNum = pageSizeRaw != null && Number.isFinite(Number(pageSizeRaw)) ? Number(pageSizeRaw) : undefined;
+  return {
+    q: one(dto.q as string | string[] | undefined),
+    status: one(dto.status as string | string[] | undefined),
+    page: pageNum,
+    pageSize: pageSizeNum,
+    includeDeleted: one(dto.includeDeleted as string | string[] | undefined) === `true`,
+  };
+}
 
 @UseGuards(JwtAuthGuard)
 @ApiTags(`Admin: Exchange`)
@@ -27,6 +59,7 @@ export class AdminExchangeController {
       ...query,
       page: pageNum,
       pageSize: pageSizeNum,
+      includeDeleted: query.includeDeleted === `true`,
     });
   }
 
@@ -56,11 +89,8 @@ export class AdminExchangeController {
   }
 
   @Get(`rules`)
-  listRules(@Query(`q`) q?: string, @Query(`enabled`) enabled?: string) {
-    return this.service.listRules({
-      q: q?.trim() || undefined,
-      enabled: enabled?.trim() || undefined,
-    });
+  listRules(@Query() query: AdminExchangeRulesListQuery) {
+    return this.service.listRules(parseExchangeRulesListQuery(query));
   }
 
   @Patch(`rules/:ruleId`)
@@ -74,11 +104,8 @@ export class AdminExchangeController {
   }
 
   @Get(`scheduled`)
-  listScheduled(@Query(`q`) q?: string, @Query(`status`) status?: string) {
-    return this.service.listScheduledConversions({
-      q: q?.trim() || undefined,
-      status: status?.trim() || undefined,
-    });
+  listScheduled(@Query() query: AdminExchangeScheduledListQuery) {
+    return this.service.listScheduledConversions(parseExchangeScheduledListQuery(query));
   }
 
   @Post(`scheduled/:conversionId/cancel`)
