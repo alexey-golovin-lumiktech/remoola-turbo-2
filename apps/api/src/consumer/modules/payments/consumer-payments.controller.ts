@@ -1,8 +1,9 @@
-import { Controller, Post, Body, UseGuards, Param, Get, Query, Req } from '@nestjs/common';
+import { BadRequestException, Controller, Post, Body, UseGuards, Param, Get, Query, Req } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import express from 'express';
 
 import { type ConsumerModel } from '@remoola/database-2';
+import { errorCodes } from '@remoola/shared-constants';
 
 import { ConsumerInvoiceService } from './consumer-invoice.service';
 import { ConsumerPaymentsService } from './consumer-payments.service';
@@ -59,14 +60,20 @@ export class ConsumerPaymentsController {
   @Post(`withdraw`)
   @ApiOperation({ summary: `Withdraw funds from consumer balance` })
   withdraw(@Identity() consumer: ConsumerModel, @Body() body: WithdrawBody, @Req() req: express.Request) {
-    const idempotencyKey = req.get(`idempotency-key`) ?? undefined;
+    const idempotencyKey = req.get(`idempotency-key`)?.trim();
+    if (!idempotencyKey) {
+      throw new BadRequestException(errorCodes.IDEMPOTENCY_KEY_REQUIRED_WITHDRAW);
+    }
     return this.service.withdraw(consumer.id, body, idempotencyKey);
   }
 
   @Post(`transfer`)
   @ApiOperation({ summary: `Transfer funds to another user` })
   transfer(@Identity() consumer: ConsumerModel, @Body() body: TransferBody, @Req() req: express.Request) {
-    const idempotencyKey = req.get(`idempotency-key`) ?? undefined;
+    const idempotencyKey = req.get(`idempotency-key`)?.trim();
+    if (!idempotencyKey) {
+      throw new BadRequestException(errorCodes.IDEMPOTENCY_KEY_REQUIRED_TRANSFER);
+    }
     return this.service.transfer(consumer.id, body, idempotencyKey);
   }
 

@@ -49,9 +49,13 @@ export function WithdrawForm() {
 
     setLoading(true);
     try {
+      const idempotencyKey = crypto.randomUUID();
       const res = await fetch(`/api/payments/withdraw`, {
         method: `POST`,
-        headers: { 'content-type': `application/json` },
+        headers: {
+          'content-type': `application/json`,
+          'idempotency-key': idempotencyKey,
+        },
         credentials: `include`,
         body: JSON.stringify({ originalAmount: amount, amount: numericAmount, method }),
       });

@@ -30,6 +30,8 @@ const MESSAGE_MAP: Record<string, string> = {
   [errorCodes.INVALID_LEDGER_STATE_DRAFT]: `This draft payment request is in an unexpected state. Please refresh and try again or contact support.`,
   [errorCodes.AMOUNT_EXCEEDS_PER_OPERATION_LIMIT]: `This amount exceeds your per-transaction limit. Please enter a smaller amount or contact support to adjust your limits.`,
   [errorCodes.AMOUNT_EXCEEDS_DAILY_LIMIT]: `This amount would exceed your daily limit. You can try again tomorrow or use a smaller amount.`,
+  [errorCodes.IDEMPOTENCY_KEY_REQUIRED_WITHDRAW]: `A request id is required for withdrawals. Please refresh the page and try again.`,
+  [errorCodes.IDEMPOTENCY_KEY_REQUIRED_TRANSFER]: `A request id is required for transfers. Please refresh the page and try again.`,
 
   // Auth – login, signup, password, session
   [errorCodes.ACCOUNT_SUSPENDED]: `Your account has been suspended. Please contact support to resolve this.`,

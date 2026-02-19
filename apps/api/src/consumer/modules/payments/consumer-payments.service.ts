@@ -687,10 +687,13 @@ export class ConsumerPaymentsService {
     if (!Number.isFinite(amount) || amount <= 0) {
       throw new BadRequestException(errorCodes.INVALID_AMOUNT_WITHDRAW);
     }
+    if (!idempotencyKey?.trim()) {
+      throw new BadRequestException(errorCodes.IDEMPOTENCY_KEY_REQUIRED_WITHDRAW);
+    }
 
     await this.ensureLimits(consumerId, amount);
 
-    const key = idempotencyKey?.trim();
+    const key = idempotencyKey.trim();
     if (key) {
       const existing = await this.prisma.ledgerEntryModel.findFirst({
         where: {
@@ -732,7 +735,7 @@ export class ConsumerPaymentsService {
             amount: -amount,
             createdBy: consumerId,
             updatedBy: consumerId,
-            idempotencyKey: key ? `withdraw:${key}` : undefined,
+            idempotencyKey: `withdraw:${key}`,
             metadata: {
               rail: $Enums.PaymentRail.BANK_TRANSFER,
               requesterId: consumerId,
@@ -781,20 +784,21 @@ export class ConsumerPaymentsService {
     if (recipient.id === consumerId) {
       throw new BadRequestException(errorCodes.CANNOT_TRANSFER_TO_SELF_TRANSFER);
     }
-
-    const key = idempotencyKey?.trim();
-    if (key) {
-      const existing = await this.prisma.ledgerEntryModel.findFirst({
-        where: {
-          idempotencyKey: `transfer:${key}:sender`,
-          consumerId,
-          type: $Enums.LedgerEntryType.USER_PAYMENT,
-          deletedAt: null,
-        },
-        select: { ledgerId: true },
-      });
-      if (existing) return { ledgerId: existing.ledgerId };
+    if (!idempotencyKey?.trim()) {
+      throw new BadRequestException(errorCodes.IDEMPOTENCY_KEY_REQUIRED_TRANSFER);
     }
+
+    const key = idempotencyKey.trim();
+    const existing = await this.prisma.ledgerEntryModel.findFirst({
+      where: {
+        idempotencyKey: `transfer:${key}:sender`,
+        consumerId,
+        type: $Enums.LedgerEntryType.USER_PAYMENT,
+        deletedAt: null,
+      },
+      select: { ledgerId: true },
+    });
+    if (existing) return { ledgerId: existing.ledgerId };
 
     const ledgerId = randomUUID();
     const [firstId, secondId] = [consumerId, recipient.id].sort();
@@ -827,7 +831,7 @@ export class ConsumerPaymentsService {
             amount: -amount,
             createdBy: consumerId,
             updatedBy: consumerId,
-            idempotencyKey: key ? `transfer:${key}:sender` : undefined,
+            idempotencyKey: `transfer:${key}:sender`,
             metadata: {
               rail: $Enums.PaymentRail.BANK_TRANSFER,
               senderId: consumerId,
@@ -846,7 +850,7 @@ export class ConsumerPaymentsService {
             amount: +amount,
             createdBy: consumerId,
             updatedBy: consumerId,
-            idempotencyKey: key ? `transfer:${key}:recipient` : undefined,
+            idempotencyKey: `transfer:${key}:recipient`,
             metadata: {
               rail: $Enums.PaymentRail.BANK_TRANSFER,
               senderId: consumerId,

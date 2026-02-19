@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
+import { errorCodes } from '@remoola/shared-constants';
 
 import { ConsumerPaymentsService } from './consumer-payments.service';
 
@@ -351,6 +352,18 @@ describe(`ConsumerPaymentsService.getPaymentView`, () => {
 describe(`ConsumerPaymentsService.withdraw`, () => {
   const consumerId = `consumer-1`;
 
+  it(`throws when idempotency key is missing`, async () => {
+    const prisma = { ledgerEntryModel: {}, $transaction: jest.fn() } as any;
+    const service = new ConsumerPaymentsService(prisma, {} as any);
+    (service as any).ensureLimits = jest.fn().mockResolvedValue(undefined);
+
+    await expect(service.withdraw(consumerId, { amount: `100` }, undefined)).rejects.toThrow(BadRequestException);
+    await expect(service.withdraw(consumerId, { amount: `100` }, undefined)).rejects.toThrow(
+      errorCodes.IDEMPOTENCY_KEY_REQUIRED_WITHDRAW,
+    );
+    await expect(service.withdraw(consumerId, { amount: `100` }, `  `)).rejects.toThrow(BadRequestException);
+  });
+
   it(`returns same entry when idempotency key is reused`, async () => {
     const existingEntry = {
       id: `entry-1`,
@@ -405,6 +418,26 @@ describe(`ConsumerPaymentsService.withdraw`, () => {
 
 describe(`ConsumerPaymentsService.transfer`, () => {
   const consumerId = `consumer-1`;
+
+  it(`throws when idempotency key is missing`, async () => {
+    const prisma = {
+      consumerModel: { findFirst: jest.fn().mockResolvedValue({ id: `r1`, email: `r@x.com` }) },
+      ledgerEntryModel: {},
+      $transaction: jest.fn(),
+    } as any;
+    const service = new ConsumerPaymentsService(prisma, {} as any);
+    (service as any).ensureLimits = jest.fn().mockResolvedValue(undefined);
+
+    await expect(
+      service.transfer(consumerId, { amount: `50`, recipient: `r@x.com` }, undefined),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.transfer(consumerId, { amount: `50`, recipient: `r@x.com` }, undefined),
+    ).rejects.toThrow(errorCodes.IDEMPOTENCY_KEY_REQUIRED_TRANSFER);
+    await expect(
+      service.transfer(consumerId, { amount: `50`, recipient: `r@x.com` }, `  `),
+    ).rejects.toThrow(BadRequestException);
+  });
 
   it(`returns same ledgerId when idempotency key is reused`, async () => {
     const existingEntry = {

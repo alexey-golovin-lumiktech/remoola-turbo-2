@@ -40,9 +40,13 @@ export function TransferForm() {
 
     setLoading(true);
     try {
+      const idempotencyKey = crypto.randomUUID();
       const res = await fetch(`/api/payments/transfer`, {
         method: `POST`,
-        headers: { 'content-type': `application/json` },
+        headers: {
+          'content-type': `application/json`,
+          'idempotency-key': idempotencyKey,
+        },
         credentials: `include`,
         body: JSON.stringify({ amount: numericAmount, recipient: recipient.trim(), note: note || null }),
       });
