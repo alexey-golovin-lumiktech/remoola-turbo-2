@@ -1,0 +1,30 @@
+{
+  "name": "@remoola/db-fixtures",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "./dist/**"
+  ],
+  "scripts": {
+    "build": "node ../../scripts/ensure-local-development.js db-fixtures:build && yarn workspace @remoola/security-utils run build && tsc -b",
+    "clean": "rm -rf ./node_modules ./dist",
+    "cleanup": "node ./dist/cli.js cleanup",
+    "fill": "node ./dist/cli.js fill",
+    "refresh": "node ./dist/cli.js refresh --confirm",
+    "lint": "eslint \"src/**/*.ts\"",
+    "test": "yarn build && node --test dist/options.test.js"
+  },
+  "dependencies": {
+    "@remoola/database-2": "^0.0.0",
+    "@remoola/security-utils": "^0.0.0"
+  },
+  "devDependencies": {
+    "@remoola/eslint-config": "^0.0.0",
+    "@remoola/typescript-config": "^0.0.0",
+    "@types/node": "^22.10.7",
+    "typescript": "5.8.2"
+  }
+}
