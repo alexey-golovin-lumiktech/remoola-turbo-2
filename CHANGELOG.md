@@ -452,4 +452,96 @@
                   **🧹 Cleanup**
                   - Remove noisy debug logs from consumer API routes
                   - Remove unnecessary Next.js transpilation for admin
+
+- **2026-02-19:**
+                  **🚀 Feature**
+                  - Add full admin list pagination, filters, and debounced search across:
+                    - Admins, Consumers, Ledger, Payment Requests,
+                      Exchange Rules/Scheduled, Expectation Archive
+                  - Extract reusable *TableBlock components for all admin list views
+                  - Introduce shared admin list query types and constants in `@remoola/api-types`
+                  - Add fintech-safe withdraw/transfer:
+                    - Idempotency-key support
+                    - Balance checks inside DB transaction
+                    - Advisory locks to prevent race conditions
+                  - Require idempotency-key header for withdraw and transfer (400 if missing)
+                  - Replace Redis OAuth state store with PostgreSQL:
+                    - New `oauth_state` table
+                    - Atomic consume via DELETE RETURNING
+                    - Cleanup scheduler
+                  - Improve invoice generation:
+                    - Deduplicate within 60s window
+                    - Safe error wrapping (`INVOICE_GENERATION_FAILED`)
+                    - Payment view auto-refresh
+                  - Add Sonner toasts across consumer app
+                  - Add searchable selects, masked monetary inputs, DateInput
+                  - Add `data-testid` attributes across consumer UI
+                  - Introduce shared error codes via `@remoola/shared-constants`
+
+                  **🔐 Security**
+                  - Enforce non-negative consumer balances (exchange + reversals)
+                  - Add advisory locks + balance re-check inside transaction
+                  - Stripe reversals throw 503 for retry safety on insufficient balance
+                  - Harden PaymentRequest + Ledger idempotency:
+                    - Add idempotency keys to ledger entries
+                    - Make duplicate webhook/payment retries no-ops
+                  - Stripe amount calculation by currency fraction digits (fix JPY & non-2-decimal currencies)
+                  - Replace Redis OAuth state store with DB-backed secure implementation
+
+                  **📦 Types & Contracts**
+                  - Add admin list DTOs and query types in `@remoola/api-types`
+                  - Standardize paginated responses `{ items, total, page, pageSize }`
+                  - Add canonical error codes package and map to consumer-facing messages
+                  - Fix DTO whitelist using `@Expose()`
+                  - Remove legacy/unused DTOs and barrel exports
+                  - Default pageSize 10 across admin list endpoints
+
+                  **🛠 DevEx**
+                  - Add regression tests for:
+                    - Ledger balance correctness
+                    - Bounded history queries
+                    - Admin pagination
+                    - Withdraw/transfer idempotency
+                  - Cap findMany queries to prevent unbounded reads
+                  - Run Vercel guard build via Turbo to ensure proper package build order
+                  - Add bounded `take` limits (500 / 2000 caps)
+                  - Improve Next.js SSR hydration (stable FormSelect instanceId)
+
+                  **🧹 Cleanup**
+                  - Remove Redis, ioredis, and REDIS_* env vars
+                  - Drop unused DTOs and dead code
+                  - Remove unused admin perf helpers
+                  - Fix UUID query filters (use equals instead of contains)
+                  - Minor formatting and dependency cleanup
+
+- **2026-02-20:**
+
+                  **🚀 Feature**
+                  - Add admin list pagination + filters integration with shared types
+                  - Extract admin table blocks for modular list rendering
+                  - Add AdminAuthService unit tests (login/refresh success & failure)
+
+                  **📦 Types & Contracts**
+                  - Add admin list types:
+                    - `TAdminListPagination`
+                    - `TAdmin*ListQuery` variants
+                    - `AdminTypes`, `LedgerEntryTypes`,
+                      `ScheduledFxConversionStatuses`
+                  - Remove unused legacy types:
+                    - `ContactAddress`
+                    - `PaginationQuery`
+                    - `HTTP_HEADER_KEYS`
+                    - `TransactionStatuses`
+                  - Centralize admin list contracts in `@remoola/api-types`
+
+                  **🛠 DevEx**
+                  - Align shared-common DTO/model import style
+                  - Jest config adjustments
+                  - Simplify PageClients and remove perf helpers
+                  - Fix next.config + UI import inconsistencies
+
+                  **🧹 Cleanup**
+                  - Remove unused `getAuthenticatedAdmin` from AdminAuthService
+                  - Dead code removal across admin/API/api-types
+
 ```
