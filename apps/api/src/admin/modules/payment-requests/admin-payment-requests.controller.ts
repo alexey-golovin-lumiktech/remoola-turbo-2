@@ -15,8 +15,13 @@ export class AdminPaymentRequestsController {
   constructor(private readonly service: AdminPaymentRequestsService) {}
 
   @Get()
-  findAllPaymentRequests() {
-    return this.service.findAllPaymentRequests();
+  findAllPaymentRequests(@Query(`page`) page?: string, @Query(`pageSize`) pageSize?: string) {
+    const pageNum = page != null && Number.isFinite(Number(page)) ? Number(page) : undefined;
+    const pageSizeNum = pageSize != null && Number.isFinite(Number(pageSize)) ? Number(pageSize) : undefined;
+    return this.service.findAllPaymentRequests({
+      page: pageNum,
+      pageSize: pageSizeNum,
+    });
   }
 
   @Get(`expectation-date-archive`)

@@ -13,7 +13,8 @@ export function LedgerPageClient() {
     async function getLedger(): Promise<LedgerEntry[]> {
       const response = await fetch(`/api/ledger`, { cache: `no-store`, credentials: `include` });
       if (!response.ok) return [];
-      return await response.json();
+      const data = await response.json();
+      return Array.isArray(data) ? data : (data?.items ?? []);
     }
 
     getLedger().then(setLedgerEntries);

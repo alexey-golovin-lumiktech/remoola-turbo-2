@@ -4,6 +4,7 @@ import { $Enums } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { ConsumerPaymentsService } from './consumer-payments.service';
+import { TransferBody, WithdrawBody } from './dto';
 
 describe(`ConsumerPaymentsService.createPaymentRequest`, () => {
   const consumerId = `consumer-1`;
@@ -357,11 +358,15 @@ describe(`ConsumerPaymentsService.withdraw`, () => {
     const service = new ConsumerPaymentsService(prisma, {} as any);
     (service as any).ensureLimits = jest.fn().mockResolvedValue(undefined);
 
-    await expect(service.withdraw(consumerId, { amount: `100` }, undefined)).rejects.toThrow(BadRequestException);
-    await expect(service.withdraw(consumerId, { amount: `100` }, undefined)).rejects.toThrow(
+    await expect(service.withdraw(consumerId, { amount: 100 } as WithdrawBody, undefined)).rejects.toThrow(
+      BadRequestException,
+    );
+    await expect(service.withdraw(consumerId, { amount: 100 } as WithdrawBody, undefined)).rejects.toThrow(
       errorCodes.IDEMPOTENCY_KEY_REQUIRED_WITHDRAW,
     );
-    await expect(service.withdraw(consumerId, { amount: `100` }, `  `)).rejects.toThrow(BadRequestException);
+    await expect(service.withdraw(consumerId, { amount: 100 } as WithdrawBody, `  `)).rejects.toThrow(
+      BadRequestException,
+    );
   });
 
   it(`returns same entry when idempotency key is reused`, async () => {
@@ -399,7 +404,7 @@ describe(`ConsumerPaymentsService.withdraw`, () => {
     const service = new ConsumerPaymentsService(prisma, {} as any);
     (service as any).ensureLimits = jest.fn().mockResolvedValue(undefined);
 
-    const body = { amount: `100` };
+    const body: WithdrawBody = { amount: 100, method: $Enums.PaymentMethodType.BANK_ACCOUNT };
     const first = await service.withdraw(consumerId, body, `key-1`);
     const second = await service.withdraw(consumerId, body, `key-1`);
 
@@ -428,15 +433,14 @@ describe(`ConsumerPaymentsService.transfer`, () => {
     const service = new ConsumerPaymentsService(prisma, {} as any);
     (service as any).ensureLimits = jest.fn().mockResolvedValue(undefined);
 
-    await expect(
-      service.transfer(consumerId, { amount: `50`, recipient: `r@x.com` }, undefined),
-    ).rejects.toThrow(BadRequestException);
-    await expect(
-      service.transfer(consumerId, { amount: `50`, recipient: `r@x.com` }, undefined),
-    ).rejects.toThrow(errorCodes.IDEMPOTENCY_KEY_REQUIRED_TRANSFER);
-    await expect(
-      service.transfer(consumerId, { amount: `50`, recipient: `r@x.com` }, `  `),
-    ).rejects.toThrow(BadRequestException);
+    const bodyNoKey: TransferBody = { amount: 50, recipient: `r@x.com` };
+    await expect(service.transfer(consumerId, bodyNoKey, undefined)).rejects.toThrow(BadRequestException);
+    await expect(service.transfer(consumerId, bodyNoKey, undefined)).rejects.toThrow(
+      errorCodes.IDEMPOTENCY_KEY_REQUIRED_TRANSFER,
+    );
+    await expect(service.transfer(consumerId, { amount: 50, recipient: `r@x.com` }, `  `)).rejects.toThrow(
+      BadRequestException,
+    );
   });
 
   it(`returns same ledgerId when idempotency key is reused`, async () => {
@@ -473,7 +477,7 @@ describe(`ConsumerPaymentsService.transfer`, () => {
     const service = new ConsumerPaymentsService(prisma, {} as any);
     (service as any).ensureLimits = jest.fn().mockResolvedValue(undefined);
 
-    const body = { amount: `50`, recipient: `r@example.com` };
+    const body: TransferBody = { amount: 50, recipient: `r@example.com` };
     const first = await service.transfer(consumerId, body, `key-1`);
     prisma.ledgerEntryModel.findFirst.mockResolvedValue(existingEntry);
     const second = await service.transfer(consumerId, body, `key-1`);
@@ -489,5 +493,28 @@ describe(`ConsumerPaymentsService.transfer`, () => {
       },
       select: { ledgerId: true },
     });
+  });
+});
+
+describe(`ConsumerPaymentsService.getHistory`, () => {
+  const consumerId = `consumer-1`;
+
+  it(`uses bounded findMany (take cap 2000)`, async () => {
+    const findMany = jest.fn().mockResolvedValue([]);
+    const prisma = {
+      ledgerEntryModel: { findMany },
+    } as any;
+    const service = new ConsumerPaymentsService(prisma, {} as any);
+
+    await service.getHistory(consumerId, { limit: 20, offset: 0 });
+
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        take: expect.any(Number),
+      }),
+    );
+    const takeArg = (findMany.mock.calls[0][0] as { take: number }).take;
+    expect(takeArg).toBeLessThanOrEqual(2000);
+    expect(takeArg).toBeGreaterThan(0);
   });
 });

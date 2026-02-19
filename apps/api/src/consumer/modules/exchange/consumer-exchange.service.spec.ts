@@ -45,3 +45,24 @@ describe(`ConsumerExchangeService.convert`, () => {
     });
   });
 });
+
+describe(`ConsumerExchangeService.getBalanceByCurrency`, () => {
+  it(`excludes soft-deleted ledger entries (deletedAt: null in where)`, async () => {
+    const consumerId = `consumer-1`;
+    const groupBy = jest.fn().mockResolvedValue([{ currencyCode: $Enums.CurrencyCode.USD, _sum: { amount: 100 } }]);
+    const prisma = { ledgerEntryModel: { groupBy } } as any;
+    const service = new ConsumerExchangeService(prisma);
+
+    await service.getBalanceByCurrency(consumerId);
+
+    expect(groupBy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          consumerId,
+          status: $Enums.TransactionStatus.COMPLETED,
+          deletedAt: null,
+        }),
+      }),
+    );
+  });
+});

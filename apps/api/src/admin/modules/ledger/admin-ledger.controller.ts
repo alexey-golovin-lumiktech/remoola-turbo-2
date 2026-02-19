@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiBasicAuth } from '@nestjs/swagger';
 
 import { AdminLedgersService } from './admin-ledger.service';
@@ -11,7 +11,9 @@ export class AdminLedgersController {
   constructor(private readonly service: AdminLedgersService) {}
 
   @Get()
-  findAll() {
-    return this.service.findAll();
+  findAll(@Query(`page`) page?: string, @Query(`pageSize`) pageSize?: string) {
+    const pageNum = page != null && Number.isFinite(Number(page)) ? Number(page) : undefined;
+    const pageSizeNum = pageSize != null && Number.isFinite(Number(pageSize)) ? Number(pageSize) : undefined;
+    return this.service.findAll({ page: pageNum, pageSize: pageSizeNum });
   }
 }

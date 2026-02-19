@@ -13,7 +13,8 @@ export function PaymentRequestsPageClient() {
     async function loadPaymentRequests(): Promise<PaymentRequest[]> {
       const response = await fetch(`/api/payment-requests`, { cache: `no-store`, credentials: `include` });
       if (!response.ok) return [];
-      return await response.json();
+      const data = await response.json();
+      return Array.isArray(data) ? data : (data?.items ?? []);
     }
 
     loadPaymentRequests().then(setPaymentRequests);

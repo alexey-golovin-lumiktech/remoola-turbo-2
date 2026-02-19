@@ -583,7 +583,8 @@ export class ConsumerPaymentsService {
       where.amount = { lt: 0 };
     }
 
-    // Bound query: each ledger has ≥1 entry, typically 2; fetch enough for offset+limit items, cap at 2000 rows (AGENTS.md 6.10)
+    // Bound query: each ledger has ≥1 entry, typically 2;
+    // fetch enough for offset+limit items, cap at 2000 rows (AGENTS.md 6.10)
     const take = Math.min((offset + limit) * 2 + 50, 2000);
     const rows = await this.prisma.ledgerEntryModel.findMany({
       where,

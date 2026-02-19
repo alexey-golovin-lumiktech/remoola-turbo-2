@@ -23,10 +23,22 @@ export class AdminPaymentRequestsService {
     this.stripe = new Stripe(envs.STRIPE_SECRET_KEY, { apiVersion: `2025-11-17.clover` });
   }
 
-  async findAllPaymentRequests() {
-    return this.prisma.paymentRequestModel.findMany({
-      orderBy: { createdAt: `desc` },
-    });
+  /** Bounded list for admin (AGENTS.md 6.10). Default cap 500. */
+  async findAllPaymentRequests(params?: { page?: number; pageSize?: number }) {
+    const pageSize = Math.min(Math.max(params?.pageSize ?? 500, 1), 500);
+    const page = Math.max(params?.page ?? 1, 1);
+    const skip = (page - 1) * pageSize;
+
+    const [total, items] = await Promise.all([
+      this.prisma.paymentRequestModel.count(),
+      this.prisma.paymentRequestModel.findMany({
+        orderBy: { createdAt: `desc` },
+        skip,
+        take: pageSize,
+      }),
+    ]);
+
+    return { items, total, page, pageSize };
   }
 
   async geyById(id: string) {
