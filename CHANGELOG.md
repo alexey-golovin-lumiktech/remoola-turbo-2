@@ -403,4 +403,53 @@
                   - Pruned unreferenced API files
                   - Refreshed lockfile to reduce dependency surface
                   - Removed obsolete exports and unused env variables
+
+- **2026-02-18:**
+                  **🚀 Feature**
+                  - Add contact handoff flow from payment request modal:
+                    - Allow unknown-recipient flow (continue without contact / create contact with prefilled email)
+                    - Preserve draft values when returning from contact creation
+                    - Improve modal UX with default **Continue** action + **More Actions** dropdown
+                  - Allow email-only payers in payment requests:
+                    - Store `payerEmail` when `payerId` is missing
+                    - Support claiming email-only payer requests safely
+                    - Add confirmation flow to add/skip contact creation
+                  - Remove `expectationDate` from payment requests:
+                    - Archive historical data safely before column removal
+                    - Add admin endpoints & UI for archived expectation visibility
+                  - Introduce isolated temporary test DB harness (`@remoola/test-db`):
+                    - Per-file temporary Postgres instances
+                    - Docker-compose with testcontainers fallback
+                    - Automatic migrations + fixture seeding
+                    - Strict local-only isolation
+
+                  **🔐 Security**
+                  - Preserve ledger invariants while enabling email-only payers
+                  - Add regression tests to prevent ledger anomalies
+                  - Redact recipient details from mailer success logs
+                  - Extract password hashing & verification utilities into `security-utils` package
+                  - Enforce strict DB isolation for test runs to prevent accidental prod/dev cross-use
+
+                  **📦 Types & Contracts**
+                  - Tighten auth typing with explicit DTO usage
+                  - Replace untyped login bodies with structured DTOs
+                  - Use `NotFoundException` for safer contact lookups
+                  - Align Prisma schema with production-safe migrations:
+                    - Backfill tag timestamps
+                    - Convert string columns to `TEXT`
+                    - Enable `pgcrypto` UUID defaults
+                    - Add missing `billing_details_id` index
+                    - Prevent schema drift
+
+                  **🛠 DevEx**
+                  - Harden Turbo/Vercel build scope:
+                    - Remove test-only workspaces from app devDependencies
+                    - Prevent CI/npm resolution failures for private workspace packages
+                  - Switch consumer Jest config to shared `@remoola/jest-config`
+                  - Add PostgreSQL design rules documentation
+                  - Add `ADMIN_APP_ORIGIN` to turbo global environment
+
+                  **🧹 Cleanup**
+                  - Remove noisy debug logs from consumer API routes
+                  - Remove unnecessary Next.js transpilation for admin
 ```
