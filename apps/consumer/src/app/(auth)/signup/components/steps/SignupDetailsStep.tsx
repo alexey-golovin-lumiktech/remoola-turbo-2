@@ -2,6 +2,7 @@
 
 import { useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
+import { toast } from 'sonner';
 
 import { type THowDidHearAboutUs, HowDidHearAboutUsValues, ContractorKinds, AccountTypes } from '@remoola/api-types';
 
@@ -15,7 +16,6 @@ import { createSignupDetailsSchema, getFieldErrors } from '../../validation';
 import { PrevNextButtons } from '../PrevNextButtons';
 
 const {
-  errorTextClass,
   flexRowGap3,
   formInputError,
   formInputFullWidth,
@@ -84,7 +84,10 @@ export function SignupDetailsStep() {
     const schema = createSignupDetailsSchema(isSigningUpViaGoogle);
     const result = schema.safeParse(signup);
     if (!result.success) {
-      setFieldErrors(getFieldErrors(result.error));
+      const fieldErrors = getFieldErrors(result.error);
+      setFieldErrors(fieldErrors);
+      const firstMessage = Object.values(fieldErrors)[0];
+      if (firstMessage) toast.error(firstMessage);
       return;
     }
 
@@ -147,7 +150,6 @@ export function SignupDetailsStep() {
                 Generate
               </button>
             </div>
-            {fieldErrors.password && <p className={errorTextClass}>{fieldErrors.password}</p>}
           </div>
 
           <div className={signupStepGroupLg}>
@@ -161,7 +163,6 @@ export function SignupDetailsStep() {
               placeholder="Confirm password"
               inputClassName={joinClasses(formInputFullWidth, fieldErrors.confirmPassword && formInputError)}
             />
-            {fieldErrors.confirmPassword && <p className={errorTextClass}>{fieldErrors.confirmPassword}</p>}
           </div>
         </>
       )}
@@ -258,10 +259,6 @@ export function SignupDetailsStep() {
             Contractor
           </button>
         </div>
-        {(fieldErrors.accountType ||
-          (fieldErrors.contractorKind && signup.accountType !== AccountTypes.CONTRACTOR)) && (
-          <p className={errorTextClass}>{fieldErrors.accountType ?? fieldErrors.contractorKind}</p>
-        )}
       </div>
 
       {/* Contractor kind (ONLY if contractor) */}
@@ -298,7 +295,6 @@ export function SignupDetailsStep() {
               Entity
             </button>
           </div>
-          {fieldErrors.contractorKind && <p className={errorTextClass}>{fieldErrors.contractorKind}</p>}
         </div>
       )}
 

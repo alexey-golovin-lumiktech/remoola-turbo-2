@@ -4,7 +4,7 @@ import { type InputHTMLAttributes, forwardRef } from 'react';
 
 import styles from './classNames.module.css';
 
-const { errorTextClass, formInputFullWidth, formInputError } = styles;
+const { formInputFullWidth, formInputError } = styles;
 
 const joinClasses = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(` `);
 
@@ -34,7 +34,6 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
           onChange={handleChange}
           className={joinClasses(formInputFullWidth, error && formInputError, className)}
         />
-        {error && <p className={errorTextClass}>{error}</p>}
       </div>
     );
   },

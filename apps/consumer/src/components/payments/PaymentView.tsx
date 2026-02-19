@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 import { formatDateTimeForDisplay } from '../../lib/date-utils';
 import styles from '../ui/classNames.module.css';
@@ -21,7 +22,6 @@ const {
   cardBasePadded,
   cardHeaderRow,
   descriptionText,
-  errorTextClass,
   fontMedium,
   methodRowHeader,
   methodRowLeft,
@@ -32,6 +32,7 @@ const {
   paymentViewNotFound,
   paymentViewRightCol,
   paymentViewTitle,
+  textSecondary,
   radioPrimary,
   selectableCardActive,
   selectableCardBase,
@@ -94,6 +95,7 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
 
       if (!paymentRes.ok) {
         setLoading(false);
+        toast.error(`Payment not found`);
         return;
       }
 
@@ -144,9 +146,9 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
           // Payment successful, reload the page to show updated status
           window.location.reload();
         } else if (json.nextAction) {
-          alert(`Payment requires additional action. Please check your email or payment method for next steps.`);
+          toast.error(`Payment requires additional action. Please check your email or payment method for next steps.`);
         } else {
-          alert(`Payment failed: ${json.message || `Unknown error`}`);
+          toast.error(`Payment failed: ${json.message || `Unknown error`}`);
         }
       } else {
         // Pay with new payment method (checkout session)
@@ -161,11 +163,11 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
         if (json.url) {
           window.location.href = json.url;
         } else {
-          alert(`Cannot start payment`);
+          toast.error(`Cannot start payment`);
         }
       }
     } catch (error) {
-      alert(`Payment error: ${error instanceof Error ? error.message : `Unknown error`}`);
+      toast.error(`Payment error: ${error instanceof Error ? error.message : `Unknown error`}`);
     } finally {
       setPaying(false);
     }
@@ -193,13 +195,13 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        alert(err.message || `Failed to send request`);
+        toast.error(err.message || `Failed to send request`);
         return;
       }
 
       window.location.reload();
     } catch (error) {
-      alert(`Send error: ${error instanceof Error ? error.message : `Unknown error`}`);
+      toast.error(`Send error: ${error instanceof Error ? error.message : `Unknown error`}`);
     } finally {
       setSending(false);
     }
@@ -212,7 +214,7 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
   if (!data) {
     return (
       <div className={paymentViewNotFound}>
-        <div className={errorTextClass}>Payment not found</div>
+        <div className={textSecondary}>Payment not found</div>
       </div>
     );
   }

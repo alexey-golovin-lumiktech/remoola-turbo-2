@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 import { createContactRequest } from '../../../lib/create-contact';
 import { type IAddressDetails } from '../../../types';
@@ -52,7 +53,8 @@ export function CreateContactModal({ open, initialEmail, onCloseAction, onCreate
     });
     if (!res.ok) {
       const parsed = JSON.parse((await res.text()) || `{}`);
-      return alert(`An unexpected error occurred: ${parsed?.message || res.statusText}`);
+      toast.error(`An unexpected error occurred: ${parsed?.message || res.statusText}`);
+      return;
     }
     setEmail(null);
     setName(null);

@@ -6,7 +6,7 @@ import Select, { type SingleValue } from 'react-select';
 import styles from './classNames.module.css';
 import { useTheme } from '../ThemeProvider';
 
-const { formInputFullWidth, formInputError, errorTextClass, signupStepLabel } = styles;
+const { formInputFullWidth, formInputError, signupStepLabel } = styles;
 
 export interface FormSelectOption {
   value: string;
@@ -103,7 +103,6 @@ export function FormSelect({
           }),
         }}
       />
-      {error && <p className={errorTextClass}>{error}</p>}
     </div>
   );
 }

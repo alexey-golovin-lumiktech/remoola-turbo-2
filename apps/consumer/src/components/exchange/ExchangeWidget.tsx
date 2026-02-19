@@ -1,21 +1,22 @@
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
+import { toast } from 'sonner';
 
-import { RateDisplay } from './RateDisplay';
 import { formatCurrencyAmount, roundToCurrency } from '../../lib/currency';
+import { formatMonetaryDisplay, maskMonetary } from '../../lib/monetary';
+import { FormField, FormSelect, type FormSelectOption } from '../ui';
+import { RateDisplay } from './RateDisplay';
 import styles from '../ui/classNames.module.css';
 
 const {
   exchangeAvailable,
   exchangeButton,
   exchangeCard,
-  exchangeField,
   exchangeForm,
-  exchangeLabel,
   exchangeRateText,
   exchangeResultText,
-  errorTextClass,
+  formFieldSpacing,
 } = styles;
 
 const CURRENCIES = [`USD`, `EUR`, `JPY`, `GBP`, `AUD`] as const;
@@ -26,11 +27,10 @@ export function ExchangeWidget({ balances }: ExchangeWidgetProps) {
   const [from, setFrom] = useState(`USD`);
   const [to, setTo] = useState(`EUR`);
   const [amount, setAmount] = useState(``);
+  const [amountFocused, setAmountFocused] = useState(false);
   const [rate, setRate] = useState<number | null>(null);
   const [result, setResult] = useState<number | null>(null);
   const [currencies, setCurrencies] = useState<string[]>([...CURRENCIES]);
-  const [rateError, setRateError] = useState<string | null>(null);
-  const [convertError, setConvertError] = useState<string | null>(null);
 
   const available = balances[from] ?? 0;
   const amountValue = useMemo(() => Number(amount), [amount]);
@@ -60,16 +60,15 @@ export function ExchangeWidget({ balances }: ExchangeWidgetProps) {
           if (!res.ok) {
             const message = await res.text();
             setRate(null);
-            setRateError(message || `Failed to fetch rate`);
+            toast.error(message || `Failed to fetch rate`);
             return;
           }
           const data = await res.json();
-          setRateError(null);
           setRate(data.rate);
         })
         .catch(() => {
           setRate(null);
-          setRateError(`Failed to fetch rate`);
+          toast.error(`Failed to fetch rate`);
         });
     }
   }, [from, to]);
@@ -83,7 +82,6 @@ export function ExchangeWidget({ balances }: ExchangeWidgetProps) {
   }, [rate, amountValue, to]);
 
   async function convert() {
-    setConvertError(null);
     const res = await fetch(`/api/exchange/convert`, {
       method: `POST`,
       credentials: `include`,
@@ -97,12 +95,12 @@ export function ExchangeWidget({ balances }: ExchangeWidgetProps) {
 
     if (!res.ok) {
       const message = await res.text();
-      setConvertError(message || `Conversion failed`);
+      toast.error(message || `Conversion failed`);
       return;
     }
 
     const json = await res.json();
-    alert(`Converted! Received ${formatCurrencyAmount(json.targetAmount, json.to)} ${json.to}`);
+    toast.success(`Converted! Received ${formatCurrencyAmount(json.targetAmount, json.to)} ${json.to}`);
   }
 
   return (
@@ -112,35 +110,35 @@ export function ExchangeWidget({ balances }: ExchangeWidgetProps) {
       </div>
       <RateDisplay from={from} to={to} />
       <div className={exchangeForm}>
-        <div>
-          <label className={exchangeLabel}>From currency</label>
-          <select className={exchangeField} value={from} onChange={(e) => setFrom(e.target.value)}>
-            {currencies.map((c) => (
-              <option key={c}>{c}</option>
-            ))}
-          </select>
-        </div>
+        <FormSelect
+          label="From currency"
+          value={from}
+          onChange={setFrom}
+          options={currencies.map((c) => ({ value: c, label: c })) as FormSelectOption[]}
+          placeholder="Select currency..."
+          isClearable={false}
+        />
+        <FormSelect
+          label="To currency"
+          value={to}
+          onChange={setTo}
+          options={currencies.map((c) => ({ value: c, label: c })) as FormSelectOption[]}
+          placeholder="Select currency..."
+          isClearable={false}
+        />
 
-        <div>
-          <label className={exchangeLabel}>To currency</label>
-          <select className={exchangeField} value={to} onChange={(e) => setTo(e.target.value)}>
-            {currencies.map((c) => (
-              <option key={c}>{c}</option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className={exchangeLabel}>Amount</label>
+        <FormField label={`Amount (${from})`}>
           <input
-            className={exchangeField}
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            type="number"
-            min="0.01"
-            step="0.01"
+            type="text"
+            inputMode="decimal"
+            className={formFieldSpacing}
+            value={amountFocused ? amount : formatMonetaryDisplay(amount)}
+            onFocus={() => setAmountFocused(true)}
+            onBlur={() => setAmountFocused(false)}
+            onChange={(e) => setAmount(maskMonetary(e.target.value))}
+            placeholder="0.00"
           />
-        </div>
+        </FormField>
 
         {rate !== null && (
           <p className={exchangeRateText}>
@@ -153,9 +151,6 @@ export function ExchangeWidget({ balances }: ExchangeWidgetProps) {
             You will receive: {formatCurrencyAmount(result, to)} {to}
           </p>
         )}
-
-        {rateError && <p className={errorTextClass}>{rateError}</p>}
-        {convertError && <p className={errorTextClass}>{convertError}</p>}
 
         <button onClick={convert} disabled={!amount || !rate} className={exchangeButton}>
           Convert

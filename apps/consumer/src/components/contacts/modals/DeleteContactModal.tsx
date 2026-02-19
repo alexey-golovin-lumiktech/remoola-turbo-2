@@ -1,5 +1,7 @@
 'use client';
 
+import { toast } from 'sonner';
+
 import { type ConsumerContact } from '../../../types';
 import styles from '../../ui/classNames.module.css';
 
@@ -34,9 +36,10 @@ export function DeleteContactModal({ open, onCloseAction, contact, onDeletedActi
     if (res.ok) {
       onDeletedAction();
       onCloseAction();
+      return;
     }
     const parsed = JSON.parse((await res.text()) || `{}`);
-    alert(`An unexpected error occurred: ${parsed?.message || res.statusText}`);
+    toast.error(`An unexpected error occurred: ${parsed?.message || res.statusText}`);
   }
 
   return (

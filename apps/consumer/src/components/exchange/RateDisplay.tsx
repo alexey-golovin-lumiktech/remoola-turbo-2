@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 import styles from '../ui/classNames.module.css';
 
@@ -15,7 +16,6 @@ const {
   rateRow,
   rateValue,
   rateValueChanged,
-  errorTextClass,
 } = styles;
 
 type RateDisplayProps = {
@@ -42,7 +42,9 @@ export function RateDisplay({ from, to }: RateDisplayProps) {
         if (!res.ok) {
           const message = await res.text();
           setRate(null);
-          setError(message || `Failed to fetch rate`);
+          const msg = message || `Failed to fetch rate`;
+          setError(msg);
+          toast.error(msg);
           return;
         }
         const data = await res.json();
@@ -55,7 +57,9 @@ export function RateDisplay({ from, to }: RateDisplayProps) {
       })
       .catch(() => {
         setRate(null);
-        setError(`Failed to fetch rate`);
+        const msg = `Failed to fetch rate`;
+        setError(msg);
+        toast.error(msg);
       })
       .finally(() => setLoading(false));
   }, [from, to]);
@@ -87,7 +91,6 @@ export function RateDisplay({ from, to }: RateDisplayProps) {
       )}
 
       {!loading && rate === null && !error && <div className={rateEmpty}>No rate available</div>}
-      {!loading && error && <div className={errorTextClass}>{error}</div>}
     </div>
   );
 }

@@ -10,7 +10,7 @@ import { PersonalDetailsForm } from './PersonalDetailsForm';
 import { ThemeSettingsForm } from './ThemeSettingsForm';
 import styles from '../../../../components/ui/classNames.module.css';
 
-const { errorTextClass, spaceY10, textSecondary } = styles;
+const { spaceY10, textSecondary } = styles;
 
 export default function ProfileSettingsClient() {
   const [profile, setProfile] = useState<any>(null);
@@ -39,7 +39,7 @@ export default function ProfileSettingsClient() {
   }, [load]);
 
   if (error) {
-    return <p className={errorTextClass}>{error}</p>;
+    return <p className={textSecondary}>{error}</p>;
   }
 
   if (!profile) {

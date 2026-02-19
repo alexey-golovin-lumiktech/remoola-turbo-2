@@ -8,7 +8,7 @@ import { getCountryCode } from '../../lib/countries';
 
 import type { Country } from 'react-phone-number-input';
 
-const { formInputFullWidth, errorTextClass, signupStepLabel } = styles;
+const { formInputFullWidth, signupStepLabel } = styles;
 
 const PhoneInputWithCountry = dynamic(() => import(`react-phone-number-input`).then((mod) => mod.default), {
   ssr: false,
@@ -50,7 +50,6 @@ export function PhoneInput({
         placeholder={placeholder}
         className={formInputFullWidth}
       />
-      {error && <p className={errorTextClass}>{error}</p>}
     </div>
   );
 }

@@ -17,7 +17,7 @@ import { useSignupForm, SignupStepsProvider, useSignupSteps } from './hooks';
 import styles from '../../../components/ui/classNames.module.css';
 import { STEP_NAME } from '../../../types';
 
-const { errorTextClass, refreshButtonClass, signupFlowContainer, spaceY4 } = styles;
+const { refreshButtonClass, signupFlowContainer, spaceY4, textSecondary } = styles;
 
 function SignupPageInner() {
   const router = useRouter();
@@ -151,7 +151,7 @@ function SignupFlow({ hydrateError, onRetryHydrate }: { hydrateError: string | n
     <div className={signupFlowContainer} data-testid="consumer-signup-flow">
       {hydrateError && (
         <div role="alert" className={`${spaceY4} mb-4 w-full max-w-md`} data-testid="consumer-signup-hydrate-error">
-          <p className={errorTextClass}>{hydrateError}</p>
+          <p className={textSecondary}>{hydrateError}</p>
           <button
             type="button"
             data-testid="consumer-signup-hydrate-retry"

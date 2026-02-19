@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 import { omit } from '../utils';
 import {
@@ -97,7 +98,9 @@ export function useSignupSubmit() {
       await fetch(complete);
       router.push(`/signup/completed`);
     } catch (e: any) {
-      setError(e.message ?? `Unknown error`);
+      const msg = e.message ?? `Unknown error`;
+      setError(msg);
+      toast.error(msg);
       return { success: false, error: e.message };
     } finally {
       setLoading(false);

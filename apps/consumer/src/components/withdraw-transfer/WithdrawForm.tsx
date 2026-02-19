@@ -1,19 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 import { FormCard, FormField } from '../ui';
 import { SuccessModal } from './SuccessModal';
 import styles from '../ui/classNames.module.css';
 
-const {
-  errorTextClass,
-  formInputRoundedLgWithPrefix,
-  inputPrefixIcon,
-  flexRowGap3,
-  primaryButtonClass,
-  relativePosition,
-} = styles;
+const { formInputRoundedLgWithPrefix, inputPrefixIcon, flexRowGap3, primaryButtonClass, relativePosition } = styles;
 
 const joinClasses = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(` `);
 
@@ -36,21 +30,19 @@ export function WithdrawForm() {
   const [amount, setAmount] = useState(``);
   const [method, setMethod] = useState<`BANK_ACCOUNT` | `CREDIT_CARD` | ``>(``);
   const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState<string | undefined>();
   const [successOpen, setSuccessOpen] = useState(false);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErr(undefined);
 
     const numericAmount = Number(amount);
 
     if (!amount || isNaN(numericAmount) || numericAmount <= 0) {
-      setErr(`Please enter a valid amount.`);
+      toast.error(`Please enter a valid amount.`);
       return;
     }
     if (!method) {
-      setErr(`Please select a withdrawal method.`);
+      toast.error(`Please select a withdrawal method.`);
       return;
     }
 
@@ -72,7 +64,7 @@ export function WithdrawForm() {
       setAmount(``);
       setMethod(``);
     } catch (e: any) {
-      setErr(e?.message ?? `Withdrawal failed.`);
+      toast.error(e?.message ?? `Withdrawal failed.`);
     } finally {
       setLoading(false);
     }
@@ -125,8 +117,6 @@ export function WithdrawForm() {
           </button>
         </div>
       </FormField>
-
-      {err && <p className={errorTextClass}>{err}</p>}
 
       <button type="submit" disabled={loading} className={primaryButtonClass}>
         {loading ? `Processing…` : `Withdraw`}

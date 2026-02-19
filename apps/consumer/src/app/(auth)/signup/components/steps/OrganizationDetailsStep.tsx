@@ -17,12 +17,12 @@ import { useSignupForm, useSignupSteps, useSignupSubmit } from '../../hooks';
 import { getFieldErrors, organizationSchema } from '../../validation';
 import { PrevNextButtons } from '../PrevNextButtons';
 
-const { errorTextClass, signupStepCard, signupStepTitle } = styles;
+const { signupStepCard, signupStepTitle } = styles;
 
 export function OrganizationDetailsStep() {
   const { isBusiness, isContractorEntity, organizationDetails, updateOrganization } = useSignupForm();
   const { markSubmitted, goNext } = useSignupSteps();
-  const { submit, loading, error } = useSignupSubmit();
+  const { submit, loading } = useSignupSubmit();
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const clearError = (field: string) => {
@@ -114,8 +114,6 @@ export function OrganizationDetailsStep() {
         placeholder="Select or search size..."
         isClearable
       />
-
-      {error && <p className={errorTextClass}>{error}</p>}
 
       <PrevNextButtons nextLabel={loading ? `Submitting...` : prevNextButtonsText} handleClick={() => handleSubmit()} />
     </div>

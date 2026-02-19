@@ -10,13 +10,13 @@ import { parseAddressFromString } from '../../utils/parseAddressFromString';
 import { addressDetailsSchema, getFieldErrors } from '../../validation';
 import { PrevNextButtons } from '../PrevNextButtons';
 
-const { errorTextClass, signupStepCard, signupStepTitle } = styles;
+const { signupStepCard, signupStepTitle } = styles;
 
 export function AddressDetailsStep() {
   const { isContractorIndividual, isBusiness, isContractorEntity, addressDetails, personalDetails, updateAddress } =
     useSignupForm();
   const { markSubmitted, goNext } = useSignupSteps();
-  const { submit, loading, error } = useSignupSubmit();
+  const { submit, loading } = useSignupSubmit();
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const isEntity = isBusiness || isContractorEntity;
@@ -130,8 +130,6 @@ export function AddressDetailsStep() {
         error={fieldErrors.street}
         onErrorClear={() => clearError(`street`)}
       />
-
-      {error && <p className={errorTextClass}>{error}</p>}
 
       <PrevNextButtons nextLabel={loading ? `Submitting...` : prevNextButtonsText} handleClick={() => handleSubmit()} />
     </div>

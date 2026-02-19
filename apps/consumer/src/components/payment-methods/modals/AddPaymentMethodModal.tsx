@@ -3,6 +3,7 @@
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { useMemo, useState } from 'react';
+import { toast } from 'sonner';
 
 import { type StripeSetupIntentPayload, type PaymentMethodType, type CreatePaymentMethodDto } from '../../../types';
 import { useTheme } from '../../ThemeProvider';
@@ -102,7 +103,7 @@ function AddPaymentMethodModalInner({
 
     if (!siRes.ok) {
       setLoading(false);
-      alert(`Failed to create SetupIntent`);
+      toast.error(`Failed to create SetupIntent`);
       return;
     }
 
@@ -123,7 +124,7 @@ function AddPaymentMethodModalInner({
     });
 
     if (confirmRes?.error) {
-      alert(confirmRes.error.message);
+      toast.error(confirmRes.error.message);
       setLoading(false);
       return;
     }
@@ -168,7 +169,7 @@ function AddPaymentMethodModalInner({
       onCreated();
       onClose();
     } else {
-      alert(`Failed to add payment method`);
+      toast.error(`Failed to add payment method`);
     }
   }
 
@@ -200,7 +201,7 @@ function AddPaymentMethodModalInner({
       onCreated();
       onClose();
     } else {
-      alert(`Failed to add payment method`);
+      toast.error(`Failed to add payment method`);
     }
   }
 

@@ -1,8 +1,23 @@
 'use client';
 
+import { FormSelect, type FormSelectOption } from '../ui';
 import styles from '../ui/classNames.module.css';
 
-const { flexRowGap3ItemsCenter, formInputBase, searchInputClass, width64 } = styles;
+const { flexRowGap3ItemsCenter, searchInputClass, width64 } = styles;
+
+const STATUS_OPTIONS: FormSelectOption[] = [
+  { value: ``, label: `All statuses` },
+  { value: `PENDING`, label: `Pending` },
+  { value: `WAITING`, label: `Waiting` },
+  { value: `COMPLETED`, label: `Completed` },
+];
+
+const TYPE_OPTIONS: FormSelectOption[] = [
+  { value: ``, label: `All types` },
+  { value: `CREDIT_CARD`, label: `Credit Card` },
+  { value: `BANK_TRANSFER`, label: `Bank Transfer` },
+  { value: `CURRENCY_EXCHANGE`, label: `Currency Exchange` },
+];
 
 type PaymentsFiltersProps = {
   status: string;
@@ -32,21 +47,22 @@ export function PaymentsFilters({
         onChange={(e) => onSearchChangeAction(e.target.value)}
       />
 
-      {/* Status Filter */}
-      <select className={formInputBase} value={status} onChange={(e) => onStatusChangeAction(e.target.value)}>
-        <option value="">All statuses</option>
-        <option value="PENDING">Pending</option>
-        <option value="WAITING">Waiting</option>
-        <option value="COMPLETED">Completed</option>
-      </select>
-
-      {/* Type Filter */}
-      <select className={formInputBase} value={type} onChange={(e) => onTypeChangeAction(e.target.value)}>
-        <option value="">All types</option>
-        <option value="CREDIT_CARD">Credit Card</option>
-        <option value="BANK_TRANSFER">Bank Transfer</option>
-        <option value="CURRENCY_EXCHANGE">Currency Exchange</option>
-      </select>
+      <FormSelect
+        label="Status"
+        value={status}
+        onChange={onStatusChangeAction}
+        options={STATUS_OPTIONS}
+        placeholder="All statuses"
+        isClearable={false}
+      />
+      <FormSelect
+        label="Type"
+        value={type}
+        onChange={onTypeChangeAction}
+        options={TYPE_OPTIONS}
+        placeholder="All types"
+        isClearable={false}
+      />
     </div>
   );
 }

@@ -6,7 +6,7 @@ import styles from './classNames.module.css';
 import { getCountryOptions } from '../../lib/countries';
 import { useTheme } from '../ThemeProvider';
 
-const { formInputFullWidth, formInputError, errorTextClass, signupStepLabel } = styles;
+const { formInputFullWidth, formInputError, signupStepLabel } = styles;
 
 export interface CountrySelectProps {
   label: string;
@@ -95,7 +95,6 @@ export function CountrySelect({
           }),
         }}
       />
-      {error && <p className={errorTextClass}>{error}</p>}
     </div>
   );
 }

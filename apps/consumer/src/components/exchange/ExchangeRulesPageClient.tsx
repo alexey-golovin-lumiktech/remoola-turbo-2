@@ -1,8 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 
 import { formatDateTimeForDisplay } from '../../lib/date-utils';
+import { FormSelect, type FormSelectOption } from '../ui';
 import styles from '../ui/classNames.module.css';
 
 const {
@@ -19,6 +21,11 @@ const {
   actionButtonDanger,
   buttonSecondary,
 } = styles;
+
+const ENABLED_OPTIONS: FormSelectOption[] = [
+  { value: `yes`, label: `Yes` },
+  { value: `no`, label: `No` },
+];
 
 const CURRENCIES = [`USD`, `EUR`, `JPY`, `GBP`, `AUD`] as const;
 
@@ -132,7 +139,7 @@ export function ExchangeRulesPageClient() {
 
       if (!res.ok) {
         const message = await res.text();
-        alert(message || `Failed to save rule`);
+        toast.error(message || `Failed to save rule`);
         return;
       }
 
@@ -152,7 +159,7 @@ export function ExchangeRulesPageClient() {
     });
 
     if (!res.ok) {
-      alert(`Failed to update rule`);
+      toast.error(`Failed to update rule`);
       return;
     }
 
@@ -166,7 +173,7 @@ export function ExchangeRulesPageClient() {
       credentials: `include`,
     });
     if (!res.ok) {
-      alert(`Failed to delete rule`);
+      toast.error(`Failed to delete rule`);
       return;
     }
     await loadRules();
@@ -190,31 +197,22 @@ export function ExchangeRulesPageClient() {
         </div>
 
         <div className={exchangeForm}>
-          <div>
-            <label className={exchangeLabel}>From currency</label>
-            <select
-              className={exchangeField}
-              value={form.fromCurrency}
-              onChange={(e) => setForm((prev) => ({ ...prev, fromCurrency: e.target.value }))}
-            >
-              {currencies.map((c) => (
-                <option key={c}>{c}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className={exchangeLabel}>To currency</label>
-            <select
-              className={exchangeField}
-              value={form.toCurrency}
-              onChange={(e) => setForm((prev) => ({ ...prev, toCurrency: e.target.value }))}
-            >
-              {currencies.map((c) => (
-                <option key={c}>{c}</option>
-              ))}
-            </select>
-          </div>
+          <FormSelect
+            label="From currency"
+            value={form.fromCurrency}
+            onChange={(v) => setForm((prev) => ({ ...prev, fromCurrency: v }))}
+            options={currencies.map((c) => ({ value: c, label: c })) as FormSelectOption[]}
+            placeholder="Select currency..."
+            isClearable={false}
+          />
+          <FormSelect
+            label="To currency"
+            value={form.toCurrency}
+            onChange={(v) => setForm((prev) => ({ ...prev, toCurrency: v }))}
+            options={currencies.map((c) => ({ value: c, label: c })) as FormSelectOption[]}
+            placeholder="Select currency..."
+            isClearable={false}
+          />
 
           <div>
             <label className={exchangeLabel}>Target balance</label>
@@ -252,17 +250,14 @@ export function ExchangeRulesPageClient() {
             />
           </div>
 
-          <div>
-            <label className={exchangeLabel}>Enabled</label>
-            <select
-              className={exchangeField}
-              value={form.enabled ? `yes` : `no`}
-              onChange={(e) => setForm((prev) => ({ ...prev, enabled: e.target.value === `yes` }))}
-            >
-              <option value="yes">Yes</option>
-              <option value="no">No</option>
-            </select>
-          </div>
+          <FormSelect
+            label="Enabled"
+            value={form.enabled ? `yes` : `no`}
+            onChange={(v) => setForm((prev) => ({ ...prev, enabled: v === `yes` }))}
+            options={ENABLED_OPTIONS}
+            placeholder="Enabled"
+            isClearable={false}
+          />
 
           <button onClick={submit} disabled={loading} className={exchangeButton}>
             {editingId ? `Update rule` : `Create rule`}

@@ -1,5 +1,7 @@
 'use client';
 
+import { toast } from 'sonner';
+
 import { type PaymentMethodItem } from '../../../types';
 import styles from '../../ui/classNames.module.css';
 
@@ -44,7 +46,7 @@ export function DeletePaymentMethodModal({
       onDeletedAction();
       onCloseAction();
     } else {
-      alert(`Failed to delete payment method`);
+      toast.error(`Failed to delete payment method`);
     }
   }
 

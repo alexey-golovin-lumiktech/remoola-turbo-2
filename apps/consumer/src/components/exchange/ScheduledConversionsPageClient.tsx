@@ -1,8 +1,11 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 import { formatDateTimeForDisplay } from '../../lib/date-utils';
+import { formatMonetaryDisplay, maskMonetary } from '../../lib/monetary';
+import { FormField, FormSelect, type FormSelectOption } from '../ui';
 import styles from '../ui/classNames.module.css';
 
 const {
@@ -16,6 +19,7 @@ const {
   gridGap4,
   flexRowBetween,
   actionButtonDanger,
+  formFieldSpacing,
 } = styles;
 
 const CURRENCIES = [`USD`, `EUR`, `JPY`, `GBP`, `AUD`] as const;
@@ -48,6 +52,7 @@ const defaultForm: ScheduleForm = {
 export function ScheduledConversionsPageClient() {
   const [scheduled, setScheduled] = useState<ScheduledConversion[]>([]);
   const [form, setForm] = useState<ScheduleForm>(defaultForm);
+  const [amountFocused, setAmountFocused] = useState(false);
   const [loading, setLoading] = useState(false);
   const [currencies, setCurrencies] = useState<string[]>([...CURRENCIES]);
 
@@ -103,7 +108,7 @@ export function ScheduledConversionsPageClient() {
 
       if (!res.ok) {
         const message = await res.text();
-        alert(message || `Failed to schedule conversion`);
+        toast.error(message || `Failed to schedule conversion`);
         return;
       }
 
@@ -121,7 +126,7 @@ export function ScheduledConversionsPageClient() {
       credentials: `include`,
     });
     if (!res.ok) {
-      alert(`Failed to cancel scheduled conversion`);
+      toast.error(`Failed to cancel scheduled conversion`);
       return;
     }
     await loadScheduled();
@@ -134,43 +139,35 @@ export function ScheduledConversionsPageClient() {
       <div className={`${exchangeCard} ${gridGap4}`}>
         <strong>Schedule a conversion</strong>
         <div className={exchangeForm}>
-          <div>
-            <label className={exchangeLabel}>From currency</label>
-            <select
-              className={exchangeField}
-              value={form.fromCurrency}
-              onChange={(e) => setForm((prev) => ({ ...prev, fromCurrency: e.target.value }))}
-            >
-              {currencies.map((c) => (
-                <option key={c}>{c}</option>
-              ))}
-            </select>
-          </div>
+          <FormSelect
+            label="From currency"
+            value={form.fromCurrency}
+            onChange={(v) => setForm((prev) => ({ ...prev, fromCurrency: v }))}
+            options={currencies.map((c) => ({ value: c, label: c })) as FormSelectOption[]}
+            placeholder="Select currency..."
+            isClearable={false}
+          />
+          <FormSelect
+            label="To currency"
+            value={form.toCurrency}
+            onChange={(v) => setForm((prev) => ({ ...prev, toCurrency: v }))}
+            options={currencies.map((c) => ({ value: c, label: c })) as FormSelectOption[]}
+            placeholder="Select currency..."
+            isClearable={false}
+          />
 
-          <div>
-            <label className={exchangeLabel}>To currency</label>
-            <select
-              className={exchangeField}
-              value={form.toCurrency}
-              onChange={(e) => setForm((prev) => ({ ...prev, toCurrency: e.target.value }))}
-            >
-              {currencies.map((c) => (
-                <option key={c}>{c}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className={exchangeLabel}>Amount</label>
+          <FormField label="Amount">
             <input
-              className={exchangeField}
-              type="number"
-              min="0.01"
-              step="0.01"
-              value={form.amount}
-              onChange={(e) => setForm((prev) => ({ ...prev, amount: e.target.value }))}
+              type="text"
+              inputMode="decimal"
+              className={formFieldSpacing}
+              value={amountFocused ? form.amount : formatMonetaryDisplay(form.amount)}
+              onFocus={() => setAmountFocused(true)}
+              onBlur={() => setAmountFocused(false)}
+              onChange={(e) => setForm((prev) => ({ ...prev, amount: maskMonetary(e.target.value) }))}
+              placeholder="0.00"
             />
-          </div>
+          </FormField>
 
           <div>
             <label className={exchangeLabel}>Execute at</label>

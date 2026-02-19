@@ -2,11 +2,17 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
-import { FormField } from '../ui';
+import { FormField, FormSelect, type FormSelectOption } from '../ui';
 import styles from '../ui/classNames.module.css';
 
-const { buttonDisabledOpacity, buttonPrimaryRoundedCompact, formFieldSpacing, formInputFullWidth, spaceY4 } = styles;
+const { buttonDisabledOpacity, buttonPrimaryRoundedCompact, formFieldSpacing, spaceY4 } = styles;
+
+const PAYMENT_METHOD_OPTIONS: FormSelectOption[] = [
+  { value: `CREDIT_CARD`, label: `Credit Card` },
+  { value: `BANK_ACCOUNT`, label: `Bank Account` },
+];
 
 export function StartPaymentForm() {
   const router = useRouter();
@@ -39,7 +45,7 @@ export function StartPaymentForm() {
       router.push(`/payments/${data.paymentRequestId}`);
     } else {
       const err = await res.json().catch(() => ({}));
-      alert(err.message || `Payment failed`);
+      toast.error(err.message || `Payment failed`);
     }
   }
 
@@ -82,16 +88,14 @@ export function StartPaymentForm() {
         />
       </FormField>
 
-      <FormField label="Payment Method">
-        <select
-          className={formInputFullWidth}
-          value={method}
-          onChange={(e) => setMethod(e.target.value as `CREDIT_CARD` | `BANK_ACCOUNT`)}
-        >
-          <option value="CREDIT_CARD">Credit Card</option>
-          <option value="BANK_ACCOUNT">Bank Account</option>
-        </select>
-      </FormField>
+      <FormSelect
+        label="Payment Method"
+        value={method}
+        onChange={(v) => setMethod(v as `CREDIT_CARD` | `BANK_ACCOUNT`)}
+        options={PAYMENT_METHOD_OPTIONS}
+        placeholder="Select payment method..."
+        isClearable={false}
+      />
 
       <button disabled={loading} className={`${buttonPrimaryRoundedCompact} ${buttonDisabledOpacity}`}>
         {loading ? `Processing...` : `Send Payment`}

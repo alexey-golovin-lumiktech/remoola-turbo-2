@@ -1,10 +1,20 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 import { DocumentPreviewModal } from './DocumentPreviewModal';
 import { formatDateForDisplay } from '../../lib/date-utils';
+import { FormSelect, type FormSelectOption } from '../ui';
 import styles from '../ui/classNames.module.css';
+
+const DOC_KIND_OPTIONS: FormSelectOption[] = [
+  { value: ``, label: `All documents` },
+  { value: `PAYMENT`, label: `Payments` },
+  { value: `COMPLIANCE`, label: `Compliance` },
+  { value: `CONTRACT`, label: `Contracts` },
+  { value: `GENERAL`, label: `General` },
+];
 
 const {
   attachButton,
@@ -12,7 +22,6 @@ const {
   checkboxBase,
   dangerButtonSm,
   flexWrapItemsCenterGap4,
-  formInputBase,
   formInputSmall,
   hiddenInput,
   inlineFlexItemsCenterGap2,
@@ -110,7 +119,7 @@ export function DocumentsList() {
     e.target.value = ``;
 
     if (!res.ok) {
-      alert(`Upload failed`);
+      toast.error(`Upload failed`);
       return;
     }
 
@@ -129,7 +138,7 @@ export function DocumentsList() {
     });
 
     if (!res.ok) {
-      alert(`Failed to delete`);
+      toast.error(`Failed to delete`);
       return;
     }
 
@@ -138,7 +147,7 @@ export function DocumentsList() {
 
   async function handleAttachToPayment() {
     if (selected.size === 0 || !attachPaymentId.trim()) {
-      alert(`Select documents and provide a payment request ID.`);
+      toast.error(`Select documents and provide a payment request ID.`);
       return;
     }
 
@@ -153,11 +162,11 @@ export function DocumentsList() {
     });
 
     if (!res.ok) {
-      alert(`Failed to attach documents`);
+      toast.error(`Failed to attach documents`);
       return;
     }
 
-    alert(`Attached successfully`);
+    toast.success(`Attached successfully`);
     setAttachPaymentId(``);
   }
 
@@ -175,7 +184,7 @@ export function DocumentsList() {
     });
 
     if (!res.ok) {
-      alert(`Failed to update tags`);
+      toast.error(`Failed to update tags`);
       return;
     }
 
@@ -194,14 +203,14 @@ export function DocumentsList() {
           <input type="file" multiple className={hiddenInput} onChange={handleUpload} />
         </label>
 
-        {/* Filter */}
-        <select className={formInputBase} value={kind} onChange={(e) => setKind(e.target.value)}>
-          <option value="">All documents</option>
-          <option value="PAYMENT">Payments</option>
-          <option value="COMPLIANCE">Compliance</option>
-          <option value="CONTRACT">Contracts</option>
-          <option value="GENERAL">General</option>
-        </select>
+        <FormSelect
+          label="Document type"
+          value={kind}
+          onChange={setKind}
+          options={DOC_KIND_OPTIONS}
+          placeholder="All documents"
+          isClearable={false}
+        />
 
         {/* Bulk actions */}
         {hasSelected && (

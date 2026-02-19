@@ -2,8 +2,10 @@
 
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 import { createContactRequest } from '../../lib/create-contact';
+import { formatMonetaryDisplay, maskMonetary } from '../../lib/monetary';
 import {
   continueWithUnknownRecipient,
   hasContactForEmail,
@@ -13,27 +15,9 @@ import { type ConsumerContact, type CreatePaymentRequestPayload } from '../../ty
 import { DateInput, FormField, FormSelect, type FormSelectOption } from '../ui';
 import styles from '../ui/classNames.module.css';
 
-/** Restrict input to monetary format: digits, optional one decimal, max 2 decimal places. */
-function maskMonetary(value: string): string {
-  const digitsAndDot = value.replace(/[^\d.]/g, ``);
-  const parts = digitsAndDot.split(`.`);
-  if (parts.length > 2) return (parts[0] ?? ``) + `.` + parts.slice(1).join(``).slice(0, 2);
-  if (parts.length === 2) return (parts[0] ?? ``) + `.` + (parts[1] ?? ``).slice(0, 2);
-  return digitsAndDot;
-}
-
-/** Format raw amount for display with thousand separators and 2 decimals (e.g. 1234.56 → "1,234.56"). */
-function formatMonetaryDisplay(raw: string): string {
-  if (raw === ``) return ``;
-  const n = Number.parseFloat(raw);
-  if (Number.isNaN(n)) return raw;
-  return n.toLocaleString(`en-US`, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
 const {
   buttonDisabledOpacity,
   buttonPrimaryRoundedCompact,
-  errorTextClass,
   formFieldSpacing,
   modalButtonPrimary,
   modalButtonSecondary,
@@ -60,7 +44,6 @@ export function CreatePaymentRequestForm() {
   const [dueDate, setDueDate] = useState(``);
   const [loading, setLoading] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingPayload, setPendingPayload] = useState<CreatePaymentRequestPayload | null>(null);
   const [pendingEmail, setPendingEmail] = useState<string>(``);
@@ -148,7 +131,6 @@ export function CreatePaymentRequestForm() {
 
   async function submit() {
     setLoading(true);
-    setError(null);
 
     const normalizedEmail = normalizeEmail(email);
     const payload: CreatePaymentRequestPayload = {
@@ -172,7 +154,7 @@ export function CreatePaymentRequestForm() {
 
       await createPaymentRequest(payload);
     } catch (err) {
-      setError(err instanceof Error ? err.message : `Request creation failed`);
+      toast.error(err instanceof Error ? err.message : `Request creation failed`);
     } finally {
       setLoading(false);
     }
@@ -181,7 +163,6 @@ export function CreatePaymentRequestForm() {
   async function continueWithoutAdding() {
     if (!pendingPayload) return;
     setConfirmLoading(true);
-    setError(null);
     try {
       await continueWithUnknownRecipient({
         addToContacts: false,
@@ -192,7 +173,7 @@ export function CreatePaymentRequestForm() {
       });
       setConfirmOpen(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : `Request creation failed`);
+      toast.error(err instanceof Error ? err.message : `Request creation failed`);
     } finally {
       setConfirmLoading(false);
     }
@@ -201,7 +182,6 @@ export function CreatePaymentRequestForm() {
   async function addAndContinue() {
     if (!pendingPayload) return;
     setConfirmLoading(true);
-    setError(null);
     try {
       await continueWithUnknownRecipient({
         addToContacts: true,
@@ -230,7 +210,7 @@ export function CreatePaymentRequestForm() {
       });
       setConfirmOpen(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : `Failed to continue`);
+      toast.error(err instanceof Error ? err.message : `Failed to continue`);
     } finally {
       setConfirmLoading(false);
     }
@@ -320,8 +300,6 @@ export function CreatePaymentRequestForm() {
         />
       </FormField>
 
-      {!confirmOpen && error && <div className={errorTextClass}>{error}</div>}
-
       <button
         disabled={loading || confirmLoading}
         className={`${buttonPrimaryRoundedCompact} ${buttonDisabledOpacity}`}
@@ -336,7 +314,6 @@ export function CreatePaymentRequestForm() {
             <p className={modalParagraphClass}>
               You can add this contact now, or continue without adding it and still create the payment request.
             </p>
-            {error && <div className={errorTextClass}>{error}</div>}
             <div className="flex flex-wrap items-center justify-between gap-3 pt-4">
               <div className="flex flex-wrap gap-2">
                 <button

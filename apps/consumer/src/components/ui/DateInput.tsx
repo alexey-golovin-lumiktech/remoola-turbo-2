@@ -7,7 +7,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import styles from './classNames.module.css';
 import { getUserLocale } from '../../lib/date-utils';
 
-const { errorTextClass, formInputFullWidth, formInputError } = styles;
+const { formInputFullWidth, formInputError } = styles;
 
 const joinClasses = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(` `);
 
@@ -73,7 +73,6 @@ export const DateInput = ({
           calendarClassName="shadow-lg border border-gray-200"
         />
       </div>
-      {error && <p className={errorTextClass}>{error}</p>}
     </div>
   );
 };

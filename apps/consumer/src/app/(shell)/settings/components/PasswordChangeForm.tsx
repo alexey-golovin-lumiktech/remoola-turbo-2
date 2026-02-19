@@ -1,31 +1,20 @@
 'use client';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 import styles from '../../../../components/ui/classNames.module.css';
 
-const {
-  errorTextClass,
-  formGrid,
-  formSection,
-  formSectionTitle,
-  inputClass,
-  inputLabel,
-  primaryActionButton,
-  spaceY6,
-} = styles;
+const { formGrid, formSection, formSectionTitle, inputClass, inputLabel, primaryActionButton, spaceY6 } = styles;
 
 export function PasswordChangeForm({ reload }: any) {
   const [password, setPassword] = useState(``);
   const [confirm, setConfirm] = useState(``);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
   async function save(e?: React.FormEvent) {
     e?.preventDefault();
-    setError(null);
 
     if (password !== confirm) {
-      setError(`Passwords do not match`);
+      toast.error(`Passwords do not match`);
       return;
     }
 
@@ -39,7 +28,7 @@ export function PasswordChangeForm({ reload }: any) {
     });
 
     if (!response.ok) {
-      setError(`Failed to change password`);
+      toast.error(`Failed to change password`);
     } else {
       setPassword(``);
       setConfirm(``);
@@ -52,8 +41,6 @@ export function PasswordChangeForm({ reload }: any) {
   return (
     <section className={formSection}>
       <h2 className={formSectionTitle}>Change Password</h2>
-
-      {error && <p className={errorTextClass}>{error}</p>}
 
       <form onSubmit={save} className={spaceY6}>
         <input
