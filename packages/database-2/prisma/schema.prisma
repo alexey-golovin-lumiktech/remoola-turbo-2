@@ -116,15 +116,14 @@ model ConsumerModel {
   asPayerPaymentRequests     PaymentRequestModel[] @relation("PaymentRequestPayer")
   asRequesterPaymentRequests PaymentRequestModel[] @relation("PaymentRequestRequester")
 
-  consumerResources ConsumerResourceModel[]
-  contacts          ContactModel[]
-  paymentMethods    PaymentMethodModel[]
-  attachments       PaymentRequestAttachmentModel[]
-  passwordResets    ResetPasswordModel[]
-  ledgerEntries     LedgerEntryModel[]
-  autoConversionRules      WalletAutoConversionRuleModel[]
-  scheduledFxConversions   ScheduledFxConversionModel[]
-  invoiceGenerationIdempotencies InvoiceGenerationIdempotencyModel[]
+  consumerResources      ConsumerResourceModel[]
+  contacts               ContactModel[]
+  paymentMethods         PaymentMethodModel[]
+  attachments            PaymentRequestAttachmentModel[]
+  passwordResets         ResetPasswordModel[]
+  ledgerEntries          LedgerEntryModel[]
+  autoConversionRules    WalletAutoConversionRuleModel[]
+  scheduledFxConversions ScheduledFxConversionModel[]
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -179,10 +178,10 @@ model ExchangeRateModel {
   toCurrency   CurrencyCode @map("to_currency")
 
   // Increased precision for FX (mid rate by default)
-  rate Decimal @db.Decimal(18, 8)
-  rateBid Decimal? @map("rate_bid") @db.Decimal(18, 8)
-  rateAsk Decimal? @map("rate_ask") @db.Decimal(18, 8)
-  spreadBps Int? @map("spread_bps")
+  rate      Decimal  @db.Decimal(18, 8)
+  rateBid   Decimal? @map("rate_bid") @db.Decimal(18, 8)
+  rateAsk   Decimal? @map("rate_ask") @db.Decimal(18, 8)
+  spreadBps Int?     @map("spread_bps")
 
   status      ExchangeRateStatus @default(APPROVED)
   effectiveAt DateTime           @default(now()) @map("effective_at") @db.Timestamptz(6)
@@ -193,18 +192,18 @@ model ExchangeRateModel {
   providerRateId String? @map("provider_rate_id") @db.Text
   confidence     Int?
 
-  createdBy  String?  @map("created_by") @db.Uuid
-  updatedBy  String?  @map("updated_by") @db.Uuid
-  approvedBy String?  @map("approved_by") @db.Uuid
+  createdBy  String?   @map("created_by") @db.Uuid
+  updatedBy  String?   @map("updated_by") @db.Uuid
+  approvedBy String?   @map("approved_by") @db.Uuid
   approvedAt DateTime? @map("approved_at") @db.Timestamptz(6)
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
+  @@unique([fromCurrency, toCurrency, effectiveAt, deletedAt])
   @@index([fromCurrency, toCurrency, status, deletedAt])
   @@index([effectiveAt, expiresAt])
-  @@unique([fromCurrency, toCurrency, effectiveAt, deletedAt])
   @@map("exchange_rate")
 }
 
@@ -223,7 +222,7 @@ model WalletAutoConversionRuleModel {
   // Optional cap for a single auto-conversion.
   maxConvertAmount Decimal? @map("max_convert_amount") @db.Decimal(9, 2)
 
-  minIntervalMinutes Int @default(60) @map("min_interval_minutes")
+  minIntervalMinutes Int       @default(60) @map("min_interval_minutes")
   nextRunAt          DateTime? @map("next_run_at") @db.Timestamptz(6)
   lastRunAt          DateTime? @map("last_run_at") @db.Timestamptz(6)
 
@@ -247,16 +246,16 @@ model ScheduledFxConversionModel {
 
   fromCurrency CurrencyCode @map("from_currency")
   toCurrency   CurrencyCode @map("to_currency")
-  amount       Decimal @db.Decimal(9, 2)
+  amount       Decimal      @db.Decimal(9, 2)
 
-  status     ScheduledFxConversionStatus @default(PENDING)
-  executeAt  DateTime @map("execute_at") @db.Timestamptz(6)
-  processingAt DateTime? @map("processing_at") @db.Timestamptz(6)
-  executedAt DateTime? @map("executed_at") @db.Timestamptz(6)
-  failedAt   DateTime? @map("failed_at") @db.Timestamptz(6)
-  attempts   Int @default(0)
-  lastError  String? @map("last_error") @db.Text
-  ledgerId   String? @map("ledger_id") @db.Uuid
+  status       ScheduledFxConversionStatus @default(PENDING)
+  executeAt    DateTime                    @map("execute_at") @db.Timestamptz(6)
+  processingAt DateTime?                   @map("processing_at") @db.Timestamptz(6)
+  executedAt   DateTime?                   @map("executed_at") @db.Timestamptz(6)
+  failedAt     DateTime?                   @map("failed_at") @db.Timestamptz(6)
+  attempts     Int                         @default(0)
+  lastError    String?                     @map("last_error") @db.Text
+  ledgerId     String?                     @map("ledger_id") @db.Uuid
 
   metadata Json?
 
@@ -365,10 +364,10 @@ model PaymentRequestModel {
   type        TransactionType? @map("type")
   paymentRail PaymentRail?     @map("payment_rail")
 
-  amount          Decimal   @db.Decimal(9, 2)
-  description     String? @db.Text
-  dueDate         DateTime? @map("due_date") @db.Timestamptz(6)
-  sentDate        DateTime? @map("sent_date") @db.Timestamptz(6)
+  amount      Decimal   @db.Decimal(9, 2)
+  description String?   @db.Text
+  dueDate     DateTime? @map("due_date") @db.Timestamptz(6)
+  sentDate    DateTime? @map("sent_date") @db.Timestamptz(6)
 
   payerId    String?        @map("payer_id") @db.Uuid
   payerEmail String?        @map("payer_email") @db.Text
@@ -379,7 +378,6 @@ model PaymentRequestModel {
 
   attachments   PaymentRequestAttachmentModel[]
   ledgerEntries LedgerEntryModel[]
-  invoiceGenerationIdempotencies InvoiceGenerationIdempotencyModel[]
 
   createdBy String?   @map("created_by") @db.Text
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -463,22 +461,6 @@ model PaymentRequestAttachmentModel {
 }
 
 /// Exactly-once invoice generation per idempotency key (retries / double-click).
-model InvoiceGenerationIdempotencyModel {
-  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  idempotencyKey   String   @unique @map("idempotency_key") @db.Text
-  paymentRequestId String   @map("payment_request_id") @db.Uuid
-  requesterId      String   @map("requester_id") @db.Uuid
-  resourceId       String   @map("resource_id") @db.Uuid
-  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-
-  paymentRequest PaymentRequestModel @relation(fields: [paymentRequestId], references: [id], onDelete: Cascade)
-  requester      ConsumerModel        @relation(fields: [requesterId], references: [id], onDelete: Cascade)
-  resource       ResourceModel        @relation(fields: [resourceId], references: [id], onDelete: Cascade)
-
-  @@index([paymentRequestId])
-  @@index([requesterId])
-  @@map("invoice_generation_idempotency")
-}
 
 model PersonalDetailsModel {
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -543,7 +525,6 @@ model ResourceModel {
   consumerResources ConsumerResourceModel[]
   attachments       PaymentRequestAttachmentModel[]
   resourceTags      ResourceTagModel[]
-  invoiceGenerationIdempotencies InvoiceGenerationIdempotencyModel[]
 
   @@index([access])
   @@map("resource")
