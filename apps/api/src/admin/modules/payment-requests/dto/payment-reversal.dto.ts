@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Expose } from 'class-transformer';
 import { IsEnum, IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 
 export enum PaymentReversalKind {
@@ -7,16 +8,19 @@ export enum PaymentReversalKind {
 }
 
 export class PaymentReversalCreate {
+  @Expose()
   @ApiProperty({ enum: PaymentReversalKind })
   @IsEnum(PaymentReversalKind)
   kind: PaymentReversalKind;
 
+  @Expose()
   @ApiProperty({ required: false })
   @IsOptional()
   @IsNumber()
   @Min(0.01)
   amount?: number;
 
+  @Expose()
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
@@ -25,12 +29,14 @@ export class PaymentReversalCreate {
 }
 
 export class PaymentReversalBody {
+  @Expose()
   @ApiProperty({ required: false })
   @IsOptional()
   @IsNumber()
   @Min(0.01)
   amount?: number;
 
+  @Expose()
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
