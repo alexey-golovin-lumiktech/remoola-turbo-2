@@ -46,8 +46,14 @@ export class StripeWebhookService {
   }
 
   async processStripeEvent(req: RawBodyRequest<express.Request>, res: express.Response) {
-    if (envs.STRIPE_WEBHOOK_SECRET === `STRIPE_WEBHOOK_SECRET`) return;
-    if (!req.rawBody) return;
+    if (envs.STRIPE_WEBHOOK_SECRET === `STRIPE_WEBHOOK_SECRET`) {
+      res.status(200).json({ received: true });
+      return;
+    }
+    if (!req.rawBody) {
+      res.status(400).json({ received: false, error: `Missing raw body` });
+      return;
+    }
 
     try {
       const signature = req.headers[`stripe-signature`];
@@ -105,8 +111,8 @@ export class StripeWebhookService {
 
       res.json({ received: true });
       return;
-    } catch (err) {
-      res.status(400).send(`Webhook Error: ${err.message}`);
+    } catch {
+      res.status(400).json({ received: false, error: `Webhook processing failed` });
       return;
     }
   }
@@ -186,22 +192,27 @@ export class StripeWebhookService {
       }
     }
 
-    // Update payment request and ledger entries to completed
-    await this.prisma.ledgerEntryModel.updateMany({
-      where: { paymentRequestId, type: $Enums.LedgerEntryType.USER_PAYMENT },
-      data: {
-        status: $Enums.TransactionStatus.COMPLETED,
-        ...(paymentIntentId && { stripeId: paymentIntentId }),
-        updatedBy: `stripe`,
-      },
-    });
-
-    await this.prisma.paymentRequestModel.update({
-      where: { id: paymentRequestId },
-      data: {
-        status: $Enums.TransactionStatus.COMPLETED,
-        updatedBy: `stripe`,
-      },
+    // Only update if not already COMPLETED (idempotent for duplicate webhook delivery)
+    await this.prisma.$transaction(async (tx) => {
+      await tx.ledgerEntryModel.updateMany({
+        where: {
+          paymentRequestId,
+          type: $Enums.LedgerEntryType.USER_PAYMENT,
+          status: { not: $Enums.TransactionStatus.COMPLETED },
+        },
+        data: {
+          status: $Enums.TransactionStatus.COMPLETED,
+          ...(paymentIntentId && { stripeId: paymentIntentId }),
+          updatedBy: `stripe`,
+        },
+      });
+      await tx.paymentRequestModel.updateMany({
+        where: { id: paymentRequestId, status: { not: $Enums.TransactionStatus.COMPLETED } },
+        data: {
+          status: $Enums.TransactionStatus.COMPLETED,
+          updatedBy: `stripe`,
+        },
+      });
     });
 
     // Collect and store the payment method used in this checkout session

@@ -252,7 +252,8 @@ export function mapPrismaKnownError(error: Prisma.PrismaClientKnownRequestError)
     default:
       status = HttpStatus.INTERNAL_SERVER_ERROR;
       message = `Unhandled Prisma error (${error.code})`;
-      details = error.message;
+      // Do not expose raw Prisma message to client (internal/security)
+      details = undefined;
       break;
   }
 

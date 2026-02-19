@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto';
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import Stripe from 'stripe';
 
-import { $Enums } from '@remoola/database-2';
+import { $Enums, Prisma } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { ConfirmStripeSetupIntent, PayWithSavedPaymentMethod } from './dto/payment-method.dto';
@@ -78,42 +78,62 @@ export class ConsumerStripeService {
         if (paymentRequest.ledgerEntries.length === 0) {
           const amount = Number(paymentRequest.amount);
           const ledgerId = randomUUID();
+          const payerKey = `pr:${paymentRequest.id}:payer`;
+          const requesterKey = `pr:${paymentRequest.id}:requester`;
 
-          await tx.ledgerEntryModel.create({
-            data: {
-              ledgerId,
-              consumerId,
-              paymentRequestId: paymentRequest.id,
-              type: $Enums.LedgerEntryType.USER_PAYMENT,
-              currencyCode: paymentRequest.currencyCode,
-              status: $Enums.TransactionStatus.PENDING,
-              amount: -amount,
-              createdBy: consumerId,
-              updatedBy: consumerId,
-              metadata: {
-                rail: $Enums.PaymentRail.CARD,
-                counterpartyId: paymentRequest.requesterId,
+          try {
+            await tx.ledgerEntryModel.create({
+              data: {
+                ledgerId,
+                consumerId,
+                paymentRequestId: paymentRequest.id,
+                type: $Enums.LedgerEntryType.USER_PAYMENT,
+                currencyCode: paymentRequest.currencyCode,
+                status: $Enums.TransactionStatus.PENDING,
+                amount: -amount,
+                createdBy: consumerId,
+                updatedBy: consumerId,
+                idempotencyKey: payerKey,
+                metadata: {
+                  rail: $Enums.PaymentRail.CARD,
+                  counterpartyId: paymentRequest.requesterId,
+                },
               },
-            },
-          });
+            });
+          } catch (err) {
+            if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === `P2002`) {
+              // Another request created this entry (race); continue
+            } else {
+              throw err;
+            }
+          }
 
-          await tx.ledgerEntryModel.create({
-            data: {
-              ledgerId,
-              consumerId: paymentRequest.requesterId,
-              paymentRequestId: paymentRequest.id,
-              type: $Enums.LedgerEntryType.USER_PAYMENT,
-              currencyCode: paymentRequest.currencyCode,
-              status: $Enums.TransactionStatus.PENDING,
-              amount: amount,
-              createdBy: consumerId,
-              updatedBy: consumerId,
-              metadata: {
-                rail: $Enums.PaymentRail.CARD,
-                counterpartyId: consumerId,
+          try {
+            await tx.ledgerEntryModel.create({
+              data: {
+                ledgerId,
+                consumerId: paymentRequest.requesterId,
+                paymentRequestId: paymentRequest.id,
+                type: $Enums.LedgerEntryType.USER_PAYMENT,
+                currencyCode: paymentRequest.currencyCode,
+                status: $Enums.TransactionStatus.PENDING,
+                amount: amount,
+                createdBy: consumerId,
+                updatedBy: consumerId,
+                idempotencyKey: requesterKey,
+                metadata: {
+                  rail: $Enums.PaymentRail.CARD,
+                  counterpartyId: consumerId,
+                },
               },
-            },
-          });
+            });
+          } catch (err) {
+            if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === `P2002`) {
+              // Another request created this entry (race); continue
+            } else {
+              throw err;
+            }
+          }
         }
       }
     });
@@ -367,23 +387,27 @@ export class ConsumerStripeService {
         description: `Payment to ${pr.requester.email}`,
       });
 
-      // 6) Update database records
+      // 6) Update database records only if not already COMPLETED (idempotent if webhook also runs)
       if (paymentIntent.status === `succeeded`) {
-        await this.prisma.ledgerEntryModel.updateMany({
-          where: { paymentRequestId: pr.id },
-          data: {
-            status: $Enums.TransactionStatus.COMPLETED,
-            stripeId: paymentIntent.id,
-            updatedBy: `stripe`,
-          },
-        });
-
-        await this.prisma.paymentRequestModel.update({
-          where: { id: paymentRequestId },
-          data: {
-            status: $Enums.TransactionStatus.COMPLETED,
-            updatedBy: `stripe`,
-          },
+        await this.prisma.$transaction(async (tx) => {
+          await tx.ledgerEntryModel.updateMany({
+            where: {
+              paymentRequestId: pr.id,
+              status: { not: $Enums.TransactionStatus.COMPLETED },
+            },
+            data: {
+              status: $Enums.TransactionStatus.COMPLETED,
+              stripeId: paymentIntent.id,
+              updatedBy: `stripe`,
+            },
+          });
+          await tx.paymentRequestModel.updateMany({
+            where: { id: paymentRequestId, status: { not: $Enums.TransactionStatus.COMPLETED } },
+            data: {
+              status: $Enums.TransactionStatus.COMPLETED,
+              updatedBy: `stripe`,
+            },
+          });
         });
 
         return {

@@ -267,7 +267,7 @@ export class ConsumerPaymentsService {
         },
       });
 
-      // 2️⃣ PAYER ledger entry (money leaves)
+      // 2️⃣ PAYER ledger entry (money leaves) — idempotency key prevents duplicate entries on retry
       await tx.ledgerEntryModel.create({
         data: {
           ledgerId,
@@ -279,6 +279,7 @@ export class ConsumerPaymentsService {
           amount: -amount, // SIGNED
           createdBy: consumerId,
           updatedBy: consumerId,
+          idempotencyKey: `pr:${paymentRequest.id}:payer`,
           metadata: {
             rail: paymentRail,
             counterpartyId: recipient.id,
@@ -298,6 +299,7 @@ export class ConsumerPaymentsService {
           amount: amount, // SIGNED
           createdBy: consumerId,
           updatedBy: consumerId,
+          idempotencyKey: `pr:${paymentRequest.id}:requester`,
           metadata: {
             rail: paymentRail,
             counterpartyId: consumerId,
@@ -432,6 +434,8 @@ export class ConsumerPaymentsService {
 
       if (paymentRequest._count.ledgerEntries === 0 && paymentRequest.payerId) {
         const ledgerId = randomUUID();
+        const payerKey = `pr:${paymentRequest.id}:payer`;
+        const requesterKey = `pr:${paymentRequest.id}:requester`;
 
         await tx.ledgerEntryModel.create({
           data: {
@@ -444,6 +448,7 @@ export class ConsumerPaymentsService {
             amount: -amount,
             createdBy: consumerId,
             updatedBy: consumerId,
+            idempotencyKey: payerKey,
             metadata: {
               rail: $Enums.PaymentRail.CARD,
               counterpartyId: paymentRequest.requesterId,
@@ -462,6 +467,7 @@ export class ConsumerPaymentsService {
             amount: amount,
             createdBy: consumerId,
             updatedBy: consumerId,
+            idempotencyKey: requesterKey,
             metadata: {
               rail: $Enums.PaymentRail.CARD,
               counterpartyId: paymentRequest.payerId,

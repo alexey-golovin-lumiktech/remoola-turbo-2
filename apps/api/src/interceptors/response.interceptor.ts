@@ -1,4 +1,11 @@
-import { CallHandler, ExecutionContext, Injectable, NestInterceptor, SetMetadata } from '@nestjs/common';
+import {
+  CallHandler,
+  ExecutionContext,
+  Injectable,
+  InternalServerErrorException,
+  NestInterceptor,
+  SetMetadata,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ClassConstructor, plainToInstance } from 'class-transformer';
 import { map } from 'rxjs/operators';
@@ -33,8 +40,8 @@ export class TransformResponseInterceptor implements NestInterceptor {
           else result = plainToInstance(cls, res, opts);
 
           return result;
-        } catch (error: any) {
-          throw new Error(`Response transformation failed: ${error.message}`);
+        } catch {
+          throw new InternalServerErrorException(`Response transformation failed`);
         }
       }),
     );
