@@ -1,5 +1,7 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 
+import { errorCodes } from '@remoola/shared-constants';
+
 import { ConsumerContactDetails } from './dto/consumer-contact-details.dto';
 import { ConsumerContact, ConsumerCreateContact, ConsumerUpdateContact } from './dto/consumer-contact.dto';
 import { PrismaService } from '../../../shared/prisma.service';
@@ -13,7 +15,7 @@ export class ConsumerContactsService {
       where: { id, consumerId },
     });
 
-    if (!contact) throw new NotFoundException(`Contact not found`);
+    if (!contact) throw new NotFoundException(errorCodes.CONTACT_NOT_FOUND);
 
     const paymentRequests = await this.prisma.paymentRequestModel.findMany({
       where: {
@@ -71,7 +73,7 @@ export class ConsumerContactsService {
     });
 
     if (existByEmail) {
-      throw new ConflictException(`A contact with this email already exists.`);
+      throw new ConflictException(errorCodes.CONTACT_EMAIL_ALREADY_EXISTS);
     }
 
     return this.prisma.contactModel.create({

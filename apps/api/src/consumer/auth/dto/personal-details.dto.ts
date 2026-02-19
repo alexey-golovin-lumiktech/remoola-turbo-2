@@ -3,6 +3,7 @@ import { ApiProperty, ApiPropertyOptional, PickType } from '@nestjs/swagger';
 import { Expose, Transform } from 'class-transformer';
 
 import { $Enums, type PersonalDetailsModel } from '@remoola/database-2';
+import { errorCodes } from '@remoola/shared-constants';
 
 import { OptionalNullableString } from '../../../common';
 import { toNativeDate } from '../../../shared-common';
@@ -20,7 +21,7 @@ class PersonalDetailsDTO implements PersonalDetailsModel {
   @ApiProperty()
   @Transform(({ value }) => {
     const native = toNativeDate(value);
-    if (isNaN(native.getTime())) throw new BadRequestException(`Invalid dateOfBirth value`);
+    if (isNaN(native.getTime())) throw new BadRequestException(errorCodes.INVALID_DATE_OF_BIRTH);
     return native;
   })
   dateOfBirth: Date;

@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@remoola/api-types": "^0.0.0",
+    "@remoola/shared-constants": "^0.0.0",
     "@remoola/ui": "^0.0.0",
     "@stripe/react-stripe-js": "^5.4.1",
     "@stripe/stripe-js": "^8.5.3",

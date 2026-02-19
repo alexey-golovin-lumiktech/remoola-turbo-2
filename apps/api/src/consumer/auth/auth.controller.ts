@@ -24,6 +24,7 @@ import { ApiOperation, ApiOkResponse, ApiBody, ApiTags, ApiBasicAuth, ApiBearerA
 import express from 'express';
 
 import { $Enums, type ConsumerModel } from '@remoola/database-2';
+import { errorCodes } from '@remoola/shared-constants';
 
 import { ConsumerAuthService } from './auth.service';
 import { ConsumerSignup } from './dto';
@@ -296,8 +297,8 @@ export class ConsumerAuthController {
       );
 
       const email = payload.email?.toLowerCase();
-      if (!email) throw new BadRequestException(`Google account has no email`);
-      if (!payload.email_verified) throw new UnauthorizedException(`Google email is not verified`);
+      if (!email) throw new BadRequestException(errorCodes.GOOGLE_ACCOUNT_NO_EMAIL_CALLBACK);
+      if (!payload.email_verified) throw new UnauthorizedException(errorCodes.GOOGLE_EMAIL_NOT_VERIFIED_CALLBACK);
 
       const existing = await this.service.findConsumerByEmail(email);
       if (!existing) {
@@ -339,7 +340,7 @@ export class ConsumerAuthController {
   @PublicEndpoint()
   @Get(`google/signup-session`)
   async googleSignupSession(@Query(`token`) token: string) {
-    if (!token) throw new BadRequestException(`Missing signup token`);
+    if (!token) throw new BadRequestException(errorCodes.MISSING_SIGNUP_TOKEN);
     const payload = await this.service.verifyGoogleSignupToken(token);
 
     return {
@@ -389,7 +390,7 @@ export class ConsumerAuthController {
     @Res({ passthrough: true }) res,
     @Body(`exchangeToken`) exchangeToken: string,
   ) {
-    if (!exchangeToken) throw new BadRequestException(`Missing exchange token`);
+    if (!exchangeToken) throw new BadRequestException(errorCodes.MISSING_EXCHANGE_TOKEN);
     const decoded = await this.service.verifyOAuthExchangeToken(exchangeToken);
     const { accessToken, refreshToken } = await this.service.issueTokensForConsumer(decoded.identityId);
     this.setAuthCookies(res, accessToken, refreshToken, req);

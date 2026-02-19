@@ -1,4 +1,5 @@
 import { type Metadata } from 'next';
+import { Suspense } from 'react';
 
 import { CreatePaymentRequestForm } from '../../../../components';
 import styles from '../../../../components/ui/classNames.module.css';
@@ -16,7 +17,9 @@ export default function CreatePaymentRequestPage() {
       <p className={pageSubtitlePlain}>Draft an invoice-style request and send it when you’re ready.</p>
 
       <div className={startPaymentCard}>
-        <CreatePaymentRequestForm />
+        <Suspense fallback={<p aria-hidden>Loading…</p>}>
+          <CreatePaymentRequestForm />
+        </Suspense>
       </div>
     </div>
   );

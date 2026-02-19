@@ -4,6 +4,7 @@ import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundEx
 
 import { PaymentDirection, PaymentMethodTypes } from '@remoola/api-types';
 import { $Enums } from '@remoola/database-2';
+import { errorCodes } from '@remoola/shared-constants';
 
 import { CreatePaymentRequest, PaymentsHistoryQuery, TransferBody, WithdrawBody } from './dto';
 import { StartPayment } from './dto/start-payment.dto';
@@ -162,7 +163,7 @@ export class ConsumerPaymentsService {
     });
 
     if (!paymentRequest) {
-      throw new NotFoundException(`Payment request not found`);
+      throw new NotFoundException(errorCodes.PAYMENT_REQUEST_NOT_FOUND_GET);
     }
 
     const isEmailOnlyPayer =
@@ -172,7 +173,7 @@ export class ConsumerPaymentsService {
       paymentRequest.payerEmail.toLowerCase() === consumerEmail;
 
     if (paymentRequest.payerId !== consumerId && paymentRequest.requesterId !== consumerId && !isEmailOnlyPayer) {
-      throw new ForbiddenException(`You do not have access to this payment`);
+      throw new ForbiddenException(errorCodes.PAYMENT_ACCESS_DENIED_GET);
     }
 
     const isPayer = paymentRequest.payerId === consumerId || isEmailOnlyPayer;
@@ -233,16 +234,16 @@ export class ConsumerPaymentsService {
     });
 
     if (!recipient) {
-      throw new BadRequestException(`Recipient not found`);
+      throw new BadRequestException(errorCodes.RECIPIENT_NOT_FOUND_START_PAYMENT);
     }
 
     if (recipient.id === consumerId) {
-      throw new BadRequestException(`You cannot send payment to yourself`);
+      throw new BadRequestException(errorCodes.CANNOT_TRANSFER_TO_SELF_START_PAYMENT);
     }
 
     const amount = Number(body.amount);
     if (!Number.isFinite(amount) || amount <= 0) {
-      throw new BadRequestException(`Invalid amount`);
+      throw new BadRequestException(errorCodes.INVALID_AMOUNT_START_PAYMENT);
     }
 
     const paymentRail =
@@ -323,23 +324,23 @@ export class ConsumerPaymentsService {
     });
 
     if (recipient?.id === consumerId) {
-      throw new BadRequestException(`You cannot request payment from yourself`);
+      throw new BadRequestException(errorCodes.REQUEST_FROM_SELF_BY_ID);
     }
 
     if (!recipient && normalizedEmail === (await this.getConsumerEmail(consumerId))) {
-      throw new BadRequestException(`You cannot request payment from yourself`);
+      throw new BadRequestException(errorCodes.REQUEST_FROM_SELF_BY_EMAIL);
     }
 
     const amount = Number(body.amount);
     if (!Number.isFinite(amount) || amount <= 0) {
-      throw new BadRequestException(`Invalid amount`);
+      throw new BadRequestException(errorCodes.INVALID_AMOUNT_CREATE_REQUEST);
     }
 
     const parseDate = (value?: string) => {
       if (!value) return null;
       const date = new Date(value);
       if (Number.isNaN(date.getTime())) {
-        throw new BadRequestException(`Invalid date`);
+        throw new BadRequestException(errorCodes.INVALID_DATE);
       }
       return date;
     };
@@ -396,20 +397,20 @@ export class ConsumerPaymentsService {
       });
 
       if (!paymentRequest) {
-        throw new NotFoundException(`Payment request not found`);
+        throw new NotFoundException(errorCodes.PAYMENT_REQUEST_NOT_FOUND_SEND_DRAFT);
       }
 
       if (paymentRequest.requesterId !== consumerId) {
-        throw new ForbiddenException(`You do not have access to this payment request`);
+        throw new ForbiddenException(errorCodes.PAYMENT_ACCESS_DENIED_SEND_DRAFT);
       }
 
       if (paymentRequest.status !== $Enums.TransactionStatus.DRAFT) {
-        throw new BadRequestException(`Only draft requests can be sent`);
+        throw new BadRequestException(errorCodes.ONLY_DRAFT_REQUESTS_CAN_BE_SENT);
       }
 
       const amount = Number(paymentRequest.amount);
       if (!Number.isFinite(amount) || amount <= 0) {
-        throw new BadRequestException(`Invalid amount`);
+        throw new BadRequestException(errorCodes.INVALID_AMOUNT_SEND_DRAFT);
       }
 
       const updated = await tx.paymentRequestModel.update({
@@ -422,11 +423,11 @@ export class ConsumerPaymentsService {
       });
 
       if (!paymentRequest.payerId && paymentRequest._count.ledgerEntries > 0) {
-        throw new BadRequestException(`Invalid ledger state for email-only payment request`);
+        throw new BadRequestException(errorCodes.INVALID_LEDGER_STATE_EMAIL_PAYMENT_SEND);
       }
 
       if (paymentRequest.payerId && paymentRequest._count.ledgerEntries > 0) {
-        throw new BadRequestException(`Invalid ledger state for draft payment request`);
+        throw new BadRequestException(errorCodes.INVALID_LEDGER_STATE_DRAFT);
       }
 
       if (paymentRequest._count.ledgerEntries === 0 && paymentRequest.payerId) {
@@ -658,26 +659,26 @@ export class ConsumerPaymentsService {
     const { maxPerOperation, dailyLimit } = await this.getKycLimits(consumerId);
 
     if (amount > maxPerOperation) {
-      throw new BadRequestException(`Amount exceeds per-operation limit of ${maxPerOperation}.`);
+      throw new BadRequestException(errorCodes.AMOUNT_EXCEEDS_PER_OPERATION_LIMIT);
     }
 
     const todayTotal = await this.getTodayOutgoingTotal(consumerId);
     if (todayTotal + amount > dailyLimit) {
-      throw new BadRequestException(`Amount exceeds daily limit. Remaining today: ${dailyLimit - todayTotal}`);
+      throw new BadRequestException(errorCodes.AMOUNT_EXCEEDS_DAILY_LIMIT);
     }
   }
 
   async withdraw(consumerId: string, body: WithdrawBody) {
     const amount = Number(body.amount);
     if (!Number.isFinite(amount) || amount <= 0) {
-      throw new BadRequestException(`Invalid amount`);
+      throw new BadRequestException(errorCodes.INVALID_AMOUNT_WITHDRAW);
     }
 
     await this.ensureLimits(consumerId, amount);
 
     const balance = await this.getAvailableBalance(consumerId);
     if (amount > balance) {
-      throw new BadRequestException(`Insufficient balance`);
+      throw new BadRequestException(errorCodes.INSUFFICIENT_BALANCE_WITHDRAW);
     }
 
     const ledgerId = randomUUID();
@@ -734,14 +735,14 @@ export class ConsumerPaymentsService {
   async transfer(consumerId: string, body: TransferBody) {
     const amount = Number(body.amount);
     if (!Number.isFinite(amount) || amount <= 0) {
-      throw new BadRequestException(`Invalid amount`);
+      throw new BadRequestException(errorCodes.INVALID_AMOUNT_TRANSFER);
     }
 
     await this.ensureLimits(consumerId, amount);
 
     const balance = await this.getAvailableBalance(consumerId);
     if (amount > balance) {
-      throw new BadRequestException(`Insufficient balance`);
+      throw new BadRequestException(errorCodes.INSUFFICIENT_BALANCE_TRANSFER);
     }
 
     const recipient = await this.prisma.consumerModel.findFirst({
@@ -751,11 +752,11 @@ export class ConsumerPaymentsService {
     });
 
     if (!recipient) {
-      throw new NotFoundException(`Recipient not found`);
+      throw new NotFoundException(errorCodes.RECIPIENT_NOT_FOUND_TRANSFER);
     }
 
     if (recipient.id === consumerId) {
-      throw new BadRequestException(`Cannot transfer to yourself`);
+      throw new BadRequestException(errorCodes.CANNOT_TRANSFER_TO_SELF_TRANSFER);
     }
 
     const ledgerId = randomUUID();

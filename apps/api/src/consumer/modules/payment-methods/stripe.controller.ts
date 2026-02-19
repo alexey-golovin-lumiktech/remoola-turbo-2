@@ -3,6 +3,7 @@ import { ApiTags } from '@nestjs/swagger';
 import express from 'express';
 
 import { type ConsumerModel } from '@remoola/database-2';
+import { errorCodes } from '@remoola/shared-constants';
 
 import {
   ConfirmStripeSetupIntent,
@@ -24,7 +25,7 @@ export class ConsumerStripeController {
     @Req() req: express.Request,
   ) {
     const frontendBaseUrl = req.get(`origin`);
-    if (!frontendBaseUrl) throw new BadRequestException(`origin is required`);
+    if (!frontendBaseUrl) throw new BadRequestException(errorCodes.ORIGIN_REQUIRED);
     return this.service.createStripeSession(consumer.id, paymentRequestId, frontendBaseUrl);
   }
 

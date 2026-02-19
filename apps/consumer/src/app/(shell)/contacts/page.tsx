@@ -1,3 +1,5 @@
+import { Suspense } from 'react';
+
 import { ContactsPageClient } from '../../../components';
 import styles from '../../../components/ui/classNames.module.css';
 
@@ -12,7 +14,9 @@ export default async function ContactsPage() {
       </div>
 
       <div className={cardBaseSoftCompact}>
-        <ContactsPageClient />
+        <Suspense fallback={<p aria-hidden>Loading contacts…</p>}>
+          <ContactsPageClient />
+        </Suspense>
       </div>
     </div>
   );

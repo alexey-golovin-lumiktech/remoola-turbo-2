@@ -4,6 +4,7 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 import Stripe from 'stripe';
 
 import { $Enums } from '@remoola/database-2';
+import { errorCodes } from '@remoola/shared-constants';
 
 import { ConfirmStripeSetupIntent, PayWithSavedPaymentMethod } from './dto/payment-method.dto';
 import { envs } from '../../../envs';
@@ -24,7 +25,7 @@ export class ConsumerStripeService {
     });
 
     if (!consumer?.email) {
-      throw new NotFoundException(`Payment not found`);
+      throw new NotFoundException(errorCodes.PAYMENT_NOT_FOUND_STRIPE_CONSUMER);
     }
 
     const consumerEmail = consumer.email.trim().toLowerCase();
@@ -36,7 +37,7 @@ export class ConsumerStripeService {
       });
 
       if (!paymentRequest) {
-        throw new NotFoundException(`Payment not found`);
+        throw new NotFoundException(errorCodes.PAYMENT_NOT_FOUND_STRIPE_REQUEST);
       }
 
       const canAccessAsPayer =
@@ -46,15 +47,15 @@ export class ConsumerStripeService {
           paymentRequest.payerEmail.trim().toLowerCase() === consumerEmail);
 
       if (!canAccessAsPayer) {
-        throw new NotFoundException(`Payment not found`);
+        throw new NotFoundException(errorCodes.PAYMENT_NOT_FOUND_STRIPE_ACCESS);
       }
 
       if (paymentRequest.status !== $Enums.TransactionStatus.PENDING) {
-        throw new ForbiddenException(`Payment already processed`);
+        throw new ForbiddenException(errorCodes.PAYMENT_ALREADY_PROCESSED_CONFIRM);
       }
 
       if (!paymentRequest.payerId && paymentRequest.ledgerEntries.length > 0) {
-        throw new BadRequestException(`Invalid ledger state for email-only payment request`);
+        throw new BadRequestException(errorCodes.INVALID_LEDGER_STATE_EMAIL_PAYMENT_STRIPE);
       }
 
       if (!paymentRequest.payerId) {
@@ -71,7 +72,7 @@ export class ConsumerStripeService {
         });
 
         if (claim.count === 0) {
-          throw new NotFoundException(`Payment not found`);
+          throw new NotFoundException(errorCodes.PAYMENT_NOT_FOUND_STRIPE_CLAIM);
         }
 
         if (paymentRequest.ledgerEntries.length === 0) {
@@ -126,11 +127,11 @@ export class ConsumerStripeService {
     });
 
     if (!paymentRequest || paymentRequest.payerId !== consumerId) {
-      throw new NotFoundException(`Payment not found`);
+      throw new NotFoundException(errorCodes.PAYMENT_NOT_FOUND_STRIPE_CONFIRM);
     }
 
     if (paymentRequest.status !== $Enums.TransactionStatus.PENDING) {
-      throw new ForbiddenException(`Payment already processed`);
+      throw new ForbiddenException(errorCodes.PAYMENT_ALREADY_PROCESSED_PAY);
     }
 
     return paymentRequest;
@@ -187,7 +188,7 @@ export class ConsumerStripeService {
       where: { id: consumerId },
     });
 
-    if (!consumer) throw new BadRequestException(`Consumer not found`);
+    if (!consumer) throw new BadRequestException(errorCodes.CONSUMER_NOT_FOUND_STRIPE);
 
     if (consumer.stripeCustomerId) {
       return { consumer, customerId: consumer.stripeCustomerId };
@@ -216,7 +217,7 @@ export class ConsumerStripeService {
     });
 
     if (!intent.client_secret) {
-      throw new BadRequestException(`No client_secret from Stripe`);
+      throw new BadRequestException(errorCodes.STRIPE_NO_CLIENT_SECRET);
     }
 
     return { clientSecret: intent.client_secret };
@@ -229,16 +230,16 @@ export class ConsumerStripeService {
     const setupIntent = await this.stripe.setupIntents.retrieve(body.setupIntentId, { expand: [`payment_method`] });
 
     if (setupIntent.status !== `succeeded`) {
-      throw new BadRequestException(`SetupIntent not succeeded. Current status: ${setupIntent.status}`);
+      throw new BadRequestException(errorCodes.STRIPE_SETUP_INTENT_NOT_SUCCEEDED);
     }
 
     const pm = setupIntent.payment_method;
     if (!pm || typeof pm === `string`) {
-      throw new BadRequestException(`No payment_method on SetupIntent`);
+      throw new BadRequestException(errorCodes.STRIPE_NO_PAYMENT_METHOD);
     }
 
     if (pm.type !== `card` || !pm.card) {
-      throw new BadRequestException(`Only card payment methods supported`);
+      throw new BadRequestException(errorCodes.ONLY_CARD_PAYMENT_METHODS);
     }
 
     const card = pm.card;
@@ -288,13 +289,11 @@ export class ConsumerStripeService {
     });
 
     if (!paymentMethod) {
-      throw new BadRequestException(`Payment method not found or does not belong to consumer`);
+      throw new BadRequestException(errorCodes.PAYMENT_METHOD_NOT_FOUND);
     }
 
     if (!paymentMethod.stripePaymentMethodId) {
-      throw new BadRequestException(
-        `Payment method does not have a valid Stripe payment method ID. Please add a new payment method.`,
-      );
+      throw new BadRequestException(errorCodes.PAYMENT_METHOD_CANNOT_REUSE_NO_ID);
     }
 
     // 2) Double-check that the payment method is attached to customer
@@ -323,7 +322,7 @@ export class ConsumerStripeService {
                 stripePaymentMethodId: null,
               },
             });
-            throw new BadRequestException(`This payment method cannot be reused. Please add a new payment method.`);
+            throw new BadRequestException(errorCodes.PAYMENT_METHOD_CANNOT_REUSE_ATTACH);
           }
           throw attachError;
         }
@@ -338,9 +337,7 @@ export class ConsumerStripeService {
             stripePaymentMethodId: null,
           },
         });
-        throw new BadRequestException(
-          `This payment method cannot be reused due to Stripe security requirements. Please add a new payment method.`,
-        );
+        throw new BadRequestException(errorCodes.PAYMENT_METHOD_CANNOT_REUSE_VERIFY);
       }
       throw error;
     }

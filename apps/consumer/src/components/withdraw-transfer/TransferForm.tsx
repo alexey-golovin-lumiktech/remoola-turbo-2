@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 
 import { FormCard, FormField } from '../ui';
 import { SuccessModal } from './SuccessModal';
+import { getErrorMessageForUser } from '../../lib/error-messages';
 import styles from '../ui/classNames.module.css';
 
 const {
@@ -48,15 +49,23 @@ export function TransferForm() {
 
       if (!res.ok) {
         const text = await res.text();
-        throw new Error(text || `Transfer failed (${res.status})`);
+        let msg = text || `Transfer failed (${res.status})`;
+        try {
+          const body = JSON.parse(text) as { message?: string; code?: string };
+          msg = getErrorMessageForUser(body?.message ?? body?.code, msg);
+        } catch {
+          msg = getErrorMessageForUser(text || undefined, msg);
+        }
+        throw new Error(msg);
       }
 
       setSuccessOpen(true);
       setAmount(``);
       setRecipient(``);
       setNote(``);
-    } catch (e: any) {
-      toast.error(e?.message ?? `Transfer failed.`);
+    } catch (e: unknown) {
+      const raw = e instanceof Error ? e.message : `Transfer failed.`;
+      toast.error(getErrorMessageForUser(raw, raw));
     } finally {
       setLoading(false);
     }

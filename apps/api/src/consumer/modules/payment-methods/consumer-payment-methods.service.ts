@@ -1,5 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 
+import { errorCodes } from '@remoola/shared-constants';
+
 import {
   CreateManualPaymentMethod,
   PaymentMethodItem,
@@ -82,7 +84,7 @@ export class ConsumerPaymentMethodsService {
       include: { billingDetails: true },
     });
 
-    if (!pm) throw new BadRequestException(`Payment method not found`);
+    if (!pm) throw new BadRequestException(errorCodes.PAYMENT_METHOD_NOT_FOUND);
 
     if (body.defaultSelected) {
       // unset all others, set this one

@@ -32,6 +32,7 @@
     "@nestjs/throttler": "^6.3.0",
     "@ngrok/ngrok": "^1.6.0",
     "@remoola/api-types": "^0.0.0",
+    "@remoola/shared-constants": "^0.0.0",
     "@remoola/database-2": "^0.0.0",
     "@remoola/security-utils": "^0.0.0",
     "@sparticuz/chromium": "^143.0.0",

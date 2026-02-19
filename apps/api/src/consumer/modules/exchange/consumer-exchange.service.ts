@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
+import { errorCodes } from '@remoola/shared-constants';
 
 import { ConvertCurrencyBody } from './dto/convert.dto';
 import { CreateAutoConversionRuleBody } from './dto/create-auto-conversion-rule.dto';
@@ -34,13 +35,13 @@ export class ConsumerExchangeService {
       orderBy: [{ effectiveAt: `desc` }, { createdAt: `desc` }],
     });
 
-    if (!rate) throw new NotFoundException(`Rate not available`);
+    if (!rate) throw new NotFoundException(errorCodes.RATE_NOT_AVAILABLE);
 
     const referenceTime = rate.fetchedAt ?? rate.effectiveAt ?? rate.createdAt;
     if (referenceTime) {
       const maxAgeMs = this.getMaxRateAgeMs();
       if (now.getTime() - referenceTime.getTime() > maxAgeMs) {
-        throw new BadRequestException(`Rate is stale`);
+        throw new BadRequestException(errorCodes.RATE_STALE);
       }
     }
 
@@ -116,15 +117,15 @@ export class ConsumerExchangeService {
     const { from, to } = body;
 
     if (from === to) {
-      throw new BadRequestException(`Source and target currencies must differ`);
+      throw new BadRequestException(errorCodes.CURRENCIES_MUST_DIFFER_CREATE_RULE);
     }
 
     if (!Number.isFinite(body.targetBalance) || body.targetBalance < 0) {
-      throw new BadRequestException(`Invalid target balance`);
+      throw new BadRequestException(errorCodes.INVALID_TARGET_BALANCE_CREATE_RULE);
     }
 
     if (body.maxConvertAmount != null && body.maxConvertAmount <= 0) {
-      throw new BadRequestException(`Invalid max convert amount`);
+      throw new BadRequestException(errorCodes.INVALID_MAX_CONVERT_AMOUNT_CREATE_RULE);
     }
 
     const minIntervalMinutes = body.minIntervalMinutes ?? 60;
@@ -150,22 +151,22 @@ export class ConsumerExchangeService {
     });
 
     if (!rule) {
-      throw new NotFoundException(`Rule not found`);
+      throw new NotFoundException(errorCodes.RULE_NOT_FOUND_UPDATE);
     }
 
     const from = body.from ?? rule.fromCurrency;
     const to = body.to ?? rule.toCurrency;
 
     if (from === to) {
-      throw new BadRequestException(`Source and target currencies must differ`);
+      throw new BadRequestException(errorCodes.CURRENCIES_MUST_DIFFER_UPDATE_RULE);
     }
 
     if (body.targetBalance != null && (!Number.isFinite(body.targetBalance) || body.targetBalance < 0)) {
-      throw new BadRequestException(`Invalid target balance`);
+      throw new BadRequestException(errorCodes.INVALID_TARGET_BALANCE_UPDATE_RULE);
     }
 
     if (body.maxConvertAmount != null && body.maxConvertAmount <= 0) {
-      throw new BadRequestException(`Invalid max convert amount`);
+      throw new BadRequestException(errorCodes.INVALID_MAX_CONVERT_AMOUNT_UPDATE_RULE);
     }
 
     const minIntervalMinutes = body.minIntervalMinutes ?? rule.minIntervalMinutes;
@@ -195,7 +196,7 @@ export class ConsumerExchangeService {
     });
 
     if (!rule) {
-      throw new NotFoundException(`Rule not found`);
+      throw new NotFoundException(errorCodes.RULE_NOT_FOUND_DELETE);
     }
 
     await this.prisma.walletAutoConversionRuleModel.update({
@@ -218,20 +219,20 @@ export class ConsumerExchangeService {
     const { from, to, amount } = body;
 
     if (from === to) {
-      throw new BadRequestException(`Source and target currencies must differ`);
+      throw new BadRequestException(errorCodes.CURRENCIES_MUST_DIFFER_SCHEDULE);
     }
 
     if (!Number.isFinite(amount) || amount <= 0) {
-      throw new BadRequestException(`Invalid amount`);
+      throw new BadRequestException(errorCodes.INVALID_AMOUNT_SCHEDULE);
     }
 
     const executeAt = new Date(body.executeAt);
     if (Number.isNaN(executeAt.getTime())) {
-      throw new BadRequestException(`Invalid executeAt`);
+      throw new BadRequestException(errorCodes.INVALID_EXECUTE_AT);
     }
 
     if (executeAt.getTime() <= Date.now()) {
-      throw new BadRequestException(`executeAt must be in the future`);
+      throw new BadRequestException(errorCodes.EXECUTE_AT_MUST_BE_FUTURE);
     }
 
     const conversion = await this.prisma.scheduledFxConversionModel.create({
@@ -252,11 +253,11 @@ export class ConsumerExchangeService {
     });
 
     if (!conversion) {
-      throw new NotFoundException(`Scheduled conversion not found`);
+      throw new NotFoundException(errorCodes.SCHEDULED_CONVERSION_NOT_FOUND_CANCEL);
     }
 
     if (conversion.status !== $Enums.ScheduledFxConversionStatus.PENDING) {
-      throw new BadRequestException(`Only pending conversions can be cancelled`);
+      throw new BadRequestException(errorCodes.ONLY_PENDING_CONVERSIONS_CAN_CANCEL);
     }
 
     await this.prisma.scheduledFxConversionModel.update({
@@ -342,15 +343,15 @@ export class ConsumerExchangeService {
     });
 
     if (!conversion) {
-      throw new NotFoundException(`Scheduled conversion not found`);
+      throw new NotFoundException(errorCodes.SCHEDULED_CONVERSION_NOT_FOUND_EXECUTE);
     }
 
     if (conversion.status === $Enums.ScheduledFxConversionStatus.EXECUTED) {
-      throw new BadRequestException(`Conversion already executed`);
+      throw new BadRequestException(errorCodes.CONVERSION_ALREADY_EXECUTED);
     }
 
     if (conversion.status === $Enums.ScheduledFxConversionStatus.CANCELLED) {
-      throw new BadRequestException(`Conversion is cancelled`);
+      throw new BadRequestException(errorCodes.CONVERSION_CANCELLED);
     }
 
     const claimed = await this.prisma.scheduledFxConversionModel.updateMany({
@@ -366,7 +367,7 @@ export class ConsumerExchangeService {
     });
 
     if (!claimed.count) {
-      throw new BadRequestException(`Conversion is already processing`);
+      throw new BadRequestException(errorCodes.CONVERSION_ALREADY_PROCESSING);
     }
 
     try {
@@ -463,7 +464,7 @@ export class ConsumerExchangeService {
     });
 
     if (!rule) {
-      throw new NotFoundException(`Rule not found`);
+      throw new NotFoundException(errorCodes.RULE_NOT_FOUND_CONVERT);
     }
 
     const now = new Date();
@@ -573,18 +574,18 @@ export class ConsumerExchangeService {
     const { amount, from, to } = body;
 
     if (from === to) {
-      throw new BadRequestException(`Cannot convert into same currency`);
+      throw new BadRequestException(errorCodes.CANNOT_CONVERT_SAME_CURRENCY);
     }
 
     if (!Number.isFinite(amount) || amount <= 0) {
-      throw new BadRequestException(`Invalid amount`);
+      throw new BadRequestException(errorCodes.INVALID_AMOUNT_CONVERT);
     }
 
     const balances = await this.getBalanceByCurrency(consumerId);
     const available = balances[from] ?? 0;
 
     if (amount > available) {
-      throw new BadRequestException(`Insufficient ${from} balance`);
+      throw new BadRequestException(errorCodes.INSUFFICIENT_CURRENCY_BALANCE);
     }
 
     const rate = await this.getRate(from, to);

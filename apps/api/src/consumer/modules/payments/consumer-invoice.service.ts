@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
+import { errorCodes } from '@remoola/shared-constants';
 
 import { buildInvoiceHtmlV5 } from './templates';
 import { PrismaService } from '../../../shared/prisma.service';
@@ -32,7 +33,7 @@ export class ConsumerInvoiceService {
       },
     });
 
-    if (!payment) throw new NotFoundException(`Payment request not found`);
+    if (!payment) throw new NotFoundException(errorCodes.PAYMENT_REQUEST_NOT_FOUND_INVOICE);
 
     const isEmailOnlyPayer =
       !payment.payerId &&
@@ -42,7 +43,7 @@ export class ConsumerInvoiceService {
 
     // only payer or requester can generate invoice
     if (payment.payerId !== consumerId && payment.requesterId !== consumerId && !isEmailOnlyPayer) {
-      throw new ForbiddenException(`You are not allowed to access this invoice`);
+      throw new ForbiddenException(errorCodes.INVOICE_ACCESS_DENIED);
     }
 
     const invoiceNumber = `INV-${payment.status}-${payment.id.slice(0, 8)}-${Date.now()}`;

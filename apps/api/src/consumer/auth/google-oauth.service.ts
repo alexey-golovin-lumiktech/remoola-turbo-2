@@ -5,6 +5,7 @@ import { OAuth2Client, type TokenPayload } from 'google-auth-library';
 import { type CodeChallengeMethod } from 'google-auth-library/build/src/auth/oauth2client';
 
 import { $Enums, Prisma } from '@remoola/database-2';
+import { errorCodes } from '@remoola/shared-constants';
 
 import { GoogleOAuthBody } from './dto/google-oauth.dto';
 import { envs } from '../../envs';
@@ -56,10 +57,10 @@ export class GoogleOAuthService {
     const emailVerified = !!payload.email_verified;
 
     if (!email) {
-      throw new BadRequestException(`Google account has no email`);
+      throw new BadRequestException(errorCodes.GOOGLE_ACCOUNT_NO_EMAIL_LOGIN);
     }
     if (!emailVerified) {
-      throw new UnauthorizedException(`Google email is not verified`);
+      throw new UnauthorizedException(errorCodes.GOOGLE_EMAIL_NOT_VERIFIED_LOGIN);
     }
 
     const consumer = await this.loginWithPayload(email, payload);
@@ -104,21 +105,21 @@ export class GoogleOAuthService {
 
       const payload = ticket.getPayload();
       if (!payload) {
-        throw new UnauthorizedException(`Invalid Google token payload`);
+        throw new UnauthorizedException(errorCodes.INVALID_GOOGLE_TOKEN_PAYLOAD);
       }
 
       if (nonce) {
         if (!payload.nonce) {
-          throw new UnauthorizedException(`Missing Google nonce`);
+          throw new UnauthorizedException(errorCodes.MISSING_GOOGLE_NONCE);
         }
         if (payload.nonce !== nonce) {
-          throw new UnauthorizedException(`Invalid Google nonce`);
+          throw new UnauthorizedException(errorCodes.INVALID_GOOGLE_NONCE);
         }
       }
 
       return payload;
     } catch {
-      throw new UnauthorizedException(`Invalid Google ID token`);
+      throw new UnauthorizedException(errorCodes.INVALID_GOOGLE_ID_TOKEN);
     }
   }
 
@@ -146,7 +147,7 @@ export class GoogleOAuthService {
 
     const idToken = tokenResponse.tokens.id_token;
     if (!idToken) {
-      throw new UnauthorizedException(`Missing ID token from Google`);
+      throw new UnauthorizedException(errorCodes.MISSING_GOOGLE_ID_TOKEN);
     }
 
     return this.verifyIdToken(idToken, nonce);
@@ -314,7 +315,7 @@ export class GoogleOAuthService {
     const existingSub = this.extractSubFromMetadata(existing.metadata);
     if (!existingSub) return;
     if (existingSub !== incomingSub) {
-      throw new UnauthorizedException(`Google account mismatch for existing user`);
+      throw new UnauthorizedException(errorCodes.GOOGLE_ACCOUNT_MISMATCH);
     }
   }
 

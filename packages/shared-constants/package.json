@@ -1,0 +1,29 @@
+{
+  "name": "@remoola/shared-constants",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "dev": "yarn build --watch",
+    "build": "tsc -b",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
+    "clean": "rm -rf ./node_modules ./dist"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["./dist/**"],
+  "publishConfig": { "access": "public" },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@remoola/eslint-config": "^0.0.0",
+    "@remoola/typescript-config": "^0.0.0",
+    "@types/node": "^22.10.7",
+    "typescript": "5.8.2"
+  }
+}

@@ -12,6 +12,7 @@ import express from 'express';
 import { OAuth2Client } from 'google-auth-library';
 
 import { $Enums, Prisma, type ConsumerModel, type ResetPasswordModel } from '@remoola/database-2';
+import { errorCodes } from '@remoola/shared-constants';
 
 type GoogleSignupPayload = {
   type: `google_signup`;
@@ -91,14 +92,12 @@ export class ConsumerAuthService {
 
       if (!consumer) {
         consumer = await this.prisma.consumerModel.create({ data: { ...consumerData, accountType, contractorKind } });
-        if (consumer.deletedAt != null)
-          throw new BadRequestException(`ConsumerModel is suspended, please contact the support`);
+        if (consumer.deletedAt != null) throw new BadRequestException(errorCodes.ACCOUNT_SUSPENDED);
 
         const googleProfileDetails = await this.prisma.googleProfileDetailsModel.create({
           data: { consumerId: consumer.id, ...googleProfileDetailsInstance },
         });
-        if (googleProfileDetails.deletedAt != null)
-          throw new BadRequestException(`Profile is suspended, please contact the support`);
+        if (googleProfileDetails.deletedAt != null) throw new BadRequestException(errorCodes.PROFILE_SUSPENDED);
 
         // await this.mailingService.sendConsumerTemporaryPasswordForGoogleOAuth({ email: consumer.email });
       }
@@ -122,14 +121,14 @@ export class ConsumerAuthService {
     const identity = await this.prisma.consumerModel.findFirst({
       where: { email: body.email, deletedAt: null },
     });
-    if (!identity) throw new UnauthorizedException(`Invalid credentials`);
+    if (!identity) throw new UnauthorizedException(errorCodes.INVALID_CREDENTIALS);
 
     const valid = await passwordUtils.verifyPassword({
       password: body.password,
       storedHash: identity.password,
       storedSalt: identity.salt,
     });
-    if (!valid) throw new UnauthorizedException(`Invalid credentials`);
+    if (!valid) throw new UnauthorizedException(errorCodes.INVALID_CREDENTIALS);
 
     const access = await this.getAccessAndRefreshToken(identity.id);
     return { identity, ...access };
@@ -138,8 +137,8 @@ export class ConsumerAuthService {
   async refreshAccess(refreshToken: string) {
     const verified = this.jwtService.verify<IJwtTokenPayload>(refreshToken);
     const exist = await this.prisma.accessRefreshTokenModel.findFirst({ where: { identityId: verified.identityId } });
-    if (exist == null) throw new BadRequestException(`no identity record`);
-    if (exist.refreshToken !== refreshToken) throw new UnauthorizedException(`Invalid refresh token`);
+    if (exist == null) throw new BadRequestException(errorCodes.NO_IDENTITY_RECORD);
+    if (exist.refreshToken !== refreshToken) throw new UnauthorizedException(errorCodes.INVALID_REFRESH_TOKEN);
 
     const consumer = await this.prisma.consumerModel.findFirst({ where: { id: verified.identityId } });
     const access = await this.getAccessAndRefreshToken(consumer.id);
@@ -174,7 +173,7 @@ export class ConsumerAuthService {
   async verifyOAuthExchangeToken(token: string) {
     const decoded = this.jwtService.verify(token) as OAuthExchangePayload;
     if (!decoded || decoded.type !== ConsumerAuthService.oauthExchangeTokenType || !decoded.identityId) {
-      throw new UnauthorizedException(`Invalid OAuth exchange token`);
+      throw new UnauthorizedException(errorCodes.INVALID_OAUTH_EXCHANGE_TOKEN);
     }
     return decoded;
   }
@@ -196,13 +195,13 @@ export class ConsumerAuthService {
   async verifyGoogleSignupToken(token: string) {
     const decoded = this.jwtService.verify(token) as GoogleSignupPayload;
     if (decoded?.type !== ConsumerAuthService.googleSignupTokenType) {
-      throw new BadRequestException(`Invalid Google signup token`);
+      throw new BadRequestException(errorCodes.INVALID_GOOGLE_SIGNUP_TOKEN);
     }
     if (!decoded.email) {
-      throw new BadRequestException(`Google signup token missing email`);
+      throw new BadRequestException(errorCodes.GOOGLE_SIGNUP_MISSING_EMAIL);
     }
     if (!decoded.emailVerified) {
-      throw new BadRequestException(`Google email is not verified`);
+      throw new BadRequestException(errorCodes.GOOGLE_EMAIL_NOT_VERIFIED_SIGNUP);
     }
     return decoded;
   }
@@ -238,10 +237,10 @@ export class ConsumerAuthService {
   }
 
   async checkEmailAndSendRecoveryLink(body: Pick<IChangePasswordBody, `email`>, referer: string) {
-    if (body.email == null) throw new BadRequestException(`Email is required`);
+    if (body.email == null) throw new BadRequestException(errorCodes.EMAIL_REQUIRED);
 
     const consumer = await this.prisma.consumerModel.findFirst({ where: { email: body.email } });
-    if (!consumer) throw new BadRequestException(`Not found any consumer for email: ${body.email}`);
+    if (!consumer) throw new BadRequestException(errorCodes.CONSUMER_NOT_FOUND_FOR_EMAIL);
 
     const found = await this.prisma.resetPasswordModel.findFirst({ where: { consumerId: consumer.id } });
     const oneTimeAccessToken = await this.getAccessToken(consumer.id);
@@ -260,8 +259,8 @@ export class ConsumerAuthService {
   }
 
   async changePassword(body: Pick<IChangePasswordBody, `password`>, param: IChangePasswordParam) {
-    if (param.token == null) throw new BadRequestException(`Token is required`);
-    if (body.password == null) throw new BadRequestException(`Password is required`);
+    if (param.token == null) throw new BadRequestException(errorCodes.TOKEN_REQUIRED);
+    if (body.password == null) throw new BadRequestException(errorCodes.PASSWORD_REQUIRED);
 
     const verified = await this.verifyChangePasswordFlowToken(param.token);
     const { salt, hash } = await passwordUtils.hashPassword(body.password);
@@ -297,24 +296,24 @@ export class ConsumerAuthService {
 
   private async verifyChangePasswordFlowToken(token) {
     const verified = this.jwtService.verify<IJwtTokenPayload>(token);
-    if (!verified) throw new UnauthorizedException(`[verifyChangePasswordFlowToken] Invalid token`);
+    if (!verified) throw new UnauthorizedException(errorCodes.INVALID_CHANGE_PASSWORD_TOKEN);
 
     const consumer = await this.prisma.consumerModel.findFirst({
       where: { email: verified.email, id: verified.identityId },
     });
-    if (consumer == null) throw new UnauthorizedException(`ConsumerModel not found`);
+    if (consumer == null) throw new UnauthorizedException(errorCodes.CONSUMER_NOT_FOUND_CHANGE_PASSWORD);
 
     const record = this.prisma.resetPasswordModel.findFirst({
       where: { consumerId: consumer.id, token, expiredAt: { gte: new Date() } },
     });
-    if (record == null) throw new NotFoundException(`Change password flow is expired or not initialized`);
+    if (record == null) throw new NotFoundException(errorCodes.CHANGE_PASSWORD_FLOW_EXPIRED);
 
     return verified;
   }
 
   async completeProfileCreationAndSendVerificationEmail(consumerId: string, referer: string) {
     const consumer = await this.prisma.consumerModel.findFirst({ where: { id: consumerId } });
-    if (!consumer) throw new BadRequestException(`No consumer for provided consumerId: ${consumerId}`);
+    if (!consumer) throw new BadRequestException(errorCodes.CONSUMER_NOT_FOUND_COMPLETE_PROFILE);
     const token = await this.getAccessToken(consumer.id);
     this.mailingService.sendConsumerSignupVerificationEmail({ email: consumer.email, token, referer });
   }
@@ -324,7 +323,7 @@ export class ConsumerAuthService {
 
     const email = (googleSignupPayload?.email ?? dto.email).toLowerCase();
     if (googleSignupPayload && dto.email && dto.email.toLowerCase() !== email) {
-      throw new BadRequestException(`Email does not match Google account`);
+      throw new BadRequestException(errorCodes.EMAIL_MISMATCH_GOOGLE);
     }
 
     const existing = await this.prisma.consumerModel.findFirst({
@@ -333,7 +332,7 @@ export class ConsumerAuthService {
     });
 
     if (existing && !existing.deletedAt) {
-      throw new ConflictException(`Email is already registered`);
+      throw new ConflictException(errorCodes.EMAIL_ALREADY_REGISTERED_SIGNUP);
     }
 
     // Note: With soft-delete uniqueness including deletedAt,
@@ -343,7 +342,7 @@ export class ConsumerAuthService {
     let salt: string | null = null;
     if (!googleSignupPayload) {
       if (!dto.password || dto.password.length < 8) {
-        throw new BadRequestException(`Password is required and must be at least 8 characters`);
+        throw new BadRequestException(errorCodes.PASSWORD_REQUIREMENTS);
       }
       const hashed = await passwordUtils.hashPassword(dto.password);
       hash = hashed.hash;
@@ -417,7 +416,7 @@ export class ConsumerAuthService {
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === `P2002`) {
         // unique constraint violation (email)
-        throw new ConflictException(`Email is already registered`);
+        throw new ConflictException(errorCodes.EMAIL_ALREADY_REGISTERED_PRISMA);
       }
       throw err;
     }
@@ -429,11 +428,11 @@ export class ConsumerAuthService {
    */
   private ensureBusinessRules(dto: ConsumerSignup) {
     if (dto.accountType === $Enums.AccountType.CONTRACTOR && !dto.contractorKind) {
-      throw new BadRequestException(`contractorKind is required for CONTRACTOR accountType`);
+      throw new BadRequestException(errorCodes.CONTRACTOR_KIND_REQUIRED);
     }
 
     if (dto.accountType === $Enums.AccountType.BUSINESS && dto.contractorKind !== undefined) {
-      throw new BadRequestException(`contractorKind must not be provided for BUSINESS accountType`);
+      throw new BadRequestException(errorCodes.CONTRACTOR_KIND_NOT_FOR_BUSINESS);
     }
 
     // CONTRACTOR + INDIVIDUAL → personal required
@@ -442,7 +441,7 @@ export class ConsumerAuthService {
       dto.contractorKind === $Enums.ContractorKind.INDIVIDUAL &&
       !dto.personalDetails
     ) {
-      throw new BadRequestException(`personal details are required for INDIVIDUAL contractor`);
+      throw new BadRequestException(errorCodes.PERSONAL_DETAILS_REQUIRED);
     }
 
     // BUSINESS or CONTRACTOR + ENTITY → organization required
@@ -451,7 +450,7 @@ export class ConsumerAuthService {
         (dto.accountType === $Enums.AccountType.CONTRACTOR && dto.contractorKind === $Enums.ContractorKind.ENTITY)) &&
       !dto.organizationDetails
     ) {
-      throw new BadRequestException(`organization details are required for BUSINESS and ENTITY contractor`);
+      throw new BadRequestException(errorCodes.ORGANIZATION_DETAILS_REQUIRED);
     }
   }
 

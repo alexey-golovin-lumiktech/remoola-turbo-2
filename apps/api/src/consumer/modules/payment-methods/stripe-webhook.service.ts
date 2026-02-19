@@ -5,6 +5,7 @@ import express from 'express';
 import Stripe from 'stripe';
 
 import { $Enums, Prisma } from '@remoola/database-2';
+import { errorCodes } from '@remoola/shared-constants';
 
 import { STRIPE_EVENT } from './events';
 import { envs } from '../../../envs';
@@ -217,7 +218,7 @@ export class StripeWebhookService {
       where: { id: consumerId },
     });
 
-    if (!consumer) throw new BadRequestException(`Consumer not found`);
+    if (!consumer) throw new BadRequestException(errorCodes.CONSUMER_NOT_FOUND_WEBHOOK);
 
     if (consumer.stripeCustomerId) {
       return { consumer, customerId: consumer.stripeCustomerId };

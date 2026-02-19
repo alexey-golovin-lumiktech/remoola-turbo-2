@@ -1,6 +1,7 @@
 import { Injectable, ForbiddenException } from '@nestjs/common';
 
 import { $Enums } from '@remoola/database-2';
+import { errorCodes } from '@remoola/shared-constants';
 
 import { PrismaService } from '../../../shared/prisma.service';
 import { FileStorageService } from '../files/file-storage.service';
@@ -190,7 +191,7 @@ export class ConsumerDocumentsService {
     });
 
     if (!payment) {
-      throw new ForbiddenException(`Payment not found or not owned by you`);
+      throw new ForbiddenException(errorCodes.PAYMENT_NOT_OWNED);
     }
 
     const paymentRequestAttachments = await this.prisma.paymentRequestAttachmentModel.findMany({
@@ -224,7 +225,7 @@ export class ConsumerDocumentsService {
     });
 
     if (!consumerResource) {
-      throw new ForbiddenException(`No access to this document`);
+      throw new ForbiddenException(errorCodes.DOCUMENT_ACCESS_DENIED);
     }
 
     // normalize tags

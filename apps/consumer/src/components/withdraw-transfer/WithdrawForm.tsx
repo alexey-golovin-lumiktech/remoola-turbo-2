@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 
 import { FormCard, FormField } from '../ui';
 import { SuccessModal } from './SuccessModal';
+import { getErrorMessageForUser } from '../../lib/error-messages';
 import styles from '../ui/classNames.module.css';
 
 const { formInputRoundedLgWithPrefix, inputPrefixIcon, flexRowGap3, primaryButtonClass, relativePosition } = styles;
@@ -57,14 +58,22 @@ export function WithdrawForm() {
 
       if (!res.ok) {
         const text = await res.text();
-        throw new Error(text || `Withdrawal failed (${res.status})`);
+        let msg = text || `Withdrawal failed (${res.status})`;
+        try {
+          const body = JSON.parse(text) as { message?: string; code?: string };
+          msg = getErrorMessageForUser(body?.message ?? body?.code, msg);
+        } catch {
+          msg = getErrorMessageForUser(text || undefined, msg);
+        }
+        throw new Error(msg);
       }
 
       setSuccessOpen(true);
       setAmount(``);
       setMethod(``);
-    } catch (e: any) {
-      toast.error(e?.message ?? `Withdrawal failed.`);
+    } catch (e: unknown) {
+      const raw = e instanceof Error ? e.message : `Withdrawal failed.`;
+      toast.error(getErrorMessageForUser(raw, raw));
     } finally {
       setLoading(false);
     }
