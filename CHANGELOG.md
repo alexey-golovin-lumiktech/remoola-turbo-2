@@ -517,12 +517,16 @@
 - **2026-02-20:**
 
                   **🚀 Feature**
-                  - Add admin list pagination + filters integration with shared types
-                  - Extract admin table blocks for modular list rendering
-                  - Add AdminAuthService unit tests (login/refresh success & failure)
+                  - Add `@remoola/db-fixtures` package:
+                    - CLI utilities for database seeding
+                    - Shared seed helpers for local and test environments
+                    - Designed for isolation from production builds
+                  - Expand admin list pagination + filters integration using shared types
+                  - Extract reusable admin *TableBlock components
+                  - Add AdminAuthService unit tests (login/refresh success & failure paths)
 
                   **📦 Types & Contracts**
-                  - Add admin list types:
+                  - Add admin list types in `@remoola/api-types`:
                     - `TAdminListPagination`
                     - `TAdmin*ListQuery` variants
                     - `AdminTypes`, `LedgerEntryTypes`,
@@ -532,16 +536,22 @@
                     - `PaginationQuery`
                     - `HTTP_HEADER_KEYS`
                     - `TransactionStatuses`
-                  - Centralize admin list contracts in `@remoola/api-types`
+                  - Centralize admin list contracts in shared api-types workspace
 
                   **🛠 DevEx**
+                  - Sync project documentation with actual architecture:
+                    - Update README repo layout (db-fixtures, security-utils, shared-constants, test-db)
+                    - Align PROJECT_DOCUMENTATION with current API routes, DB models, enums, and packages
+                    - Refresh FEATURES_CURRENT to reflect real backend/admin/consumer capabilities
+                    - Add `PROJECT_SUMMARY.md` as high-level system overview
                   - Align shared-common DTO/model import style
                   - Jest config adjustments
-                  - Simplify PageClients and remove perf helpers
-                  - Fix next.config + UI import inconsistencies
+                  - Simplify PageClients and remove performance helpers
+                  - Fix next.config and UI import/format inconsistencies
 
                   **🧹 Cleanup**
                   - Remove unused `getAuthenticatedAdmin` from AdminAuthService
                   - Dead code removal across admin/API/api-types
+                  - Documentation consistency cleanup to prevent drift
 
 ```
