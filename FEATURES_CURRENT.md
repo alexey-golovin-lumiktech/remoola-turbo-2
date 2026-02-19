@@ -18,7 +18,7 @@ Authentication and identity:
 - Consumer auth with login, refresh, logout, `/me`, and multi-step signup.
 - Password recovery and reset flow for consumers.
 - Cookie-based JWT auth with access/refresh tokens.
-- Google OAuth endpoints for consumer login flows.
+- Google OAuth endpoints for consumer login flows (google/start, callback, signup-session, google-new-way, google-redirect-new-way, oauth/exchange, google-oauth, google-login-gpt).
 
 Consumer domain features:
 
@@ -42,12 +42,13 @@ Admin domain features:
 - Consumer management (list/details) and verification workflow (approve/reject/flag/more info).
 - Dashboard metrics: status totals, recent payment requests, ledger anomalies, verification queue.
 - Ledger list endpoint.
-- Payment requests listing and details, plus refund and chargeback actions.
+- Payment requests listing, expectation-date archive, details, plus refund and chargeback actions.
 - Admin-side migration endpoint for payment method migration.
 - Exchange rate management (list/create/update/delete) and supported currencies.
 
 Infrastructure and platform:
 
+- Root auth module at `/auth` (login, register, logout, me) in addition to admin/consumer namespaced auth.
 - Health endpoints (`/health`, `/health/detailed`) for service and DB checks.
 - CORS configuration and security headers (Helmet).
 - Rate limiting and response compression.
@@ -63,7 +64,7 @@ Admin UI with:
 - Dashboard with metrics, verification queue, recent payment requests, and ledger anomalies.
 - Admin management pages (list and details).
 - Consumer management pages (list and details + verification actions).
-- Payment request list and details views.
+- Payment request list, details, and expectation-date archive views.
 - Ledger list view and anomalies view.
 - Exchange rate management pages (list, create, edit, delete).
 - Theme switching (light/dark/system) using CSS custom properties.
@@ -74,7 +75,7 @@ Internal API proxy routes:
 - Admin management proxy.
 - Consumer management and verification proxy.
 - Dashboard proxy endpoints.
-- Ledger and payment requests proxy endpoints.
+- Ledger and payment requests proxy endpoints (including expectation-date-archive).
 - Payment request refund/chargeback proxy endpoints.
 - Exchange rate management and currency list proxy endpoints.
 
@@ -107,20 +108,24 @@ Internal API proxy routes:
 
 Key data models and relations:
 
-- Admins, consumers, access/refresh tokens, password reset tokens.
+- Admins, consumers, access/refresh tokens, OAuth state, password reset tokens.
 - Consumer profile details (address, personal, organization, Google profile).
 - User settings (theme).
 - Payment requests, payment request attachments, ledger entries.
 - Payment methods with Stripe identities and billing details.
-- Exchange rates and currency support.
+- Exchange rates, wallet auto-conversion rules, scheduled FX conversions.
 - Contacts.
 - Documents/resources with tagging and access control.
 
 Ledger and payments:
 
 - Signed ledger entries with idempotency key for exactly-once processing.
-- Payment rails, statuses, and fee handling enums.
+- Payment rails, statuses, fee handling, and enums (including ExchangeRateStatus, TransactionActionType, ScheduledFxConversionStatus).
 - Soft-delete strategy (deletedAt) with uniqueness scoped to non-deleted rows.
+
+Shared packages present in repo:
+
+- `api-types`, `database-2`, `db-fixtures`, `env`, `eslint-config`, `jest-config`, `security-utils`, `shared-constants`, `test-db`, `typescript-config`, `ui`.
 
 ## Comparison Notes (History vs Current State)
 

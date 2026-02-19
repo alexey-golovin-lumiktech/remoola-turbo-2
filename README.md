@@ -13,9 +13,13 @@ Remoola is a Turborepo monorepo for the Remoola platform: a NestJS API plus two 
 └── packages
     ├── api-types         # Shared API contracts/types
     ├── database-2        # Prisma schema, migrations, client
-    ├── env               # Shared env schema helpers
+    ├── db-fixtures       # DB fixture helpers for tests
+    ├── env               # Shared env schema (Zod)
     ├── eslint-config     # ESLint + Prettier configs
     ├── jest-config       # Jest configs
+    ├── security-utils    # Crypto, token, hashing helpers
+    ├── shared-constants  # Shared constants
+    ├── test-db           # Test DB utilities
     ├── typescript-config # Shared tsconfig presets
     └── ui                # Shared UI components
 ```
@@ -74,5 +78,7 @@ yarn db:seed
 
 ## Documentation
 
-- `PROJECT_DOCUMENTATION.md` contains a deeper overview of API, admin, consumer, and database features.
-- `FEATURES_CURRENT.md` lists features that are implemented and present in the repo now.
+- `PROJECT_SUMMARY.md` — high-level project overview (start here).
+- `AGENTS.md` — engineering rules and constraints for the monorepo (agents and contributors).
+- `PROJECT_DOCUMENTATION.md` — overview of API, admin, consumer, and database.
+- `FEATURES_CURRENT.md` — implemented features and current repo state.

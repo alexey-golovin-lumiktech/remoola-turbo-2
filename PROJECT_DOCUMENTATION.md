@@ -14,7 +14,7 @@ Remoola is a Turborepo monorepo with:
 
 ## API (NestJS) - Implemented Features
 
-Base backend lives in `apps/api`. The implemented features are organized under `admin` and `consumer` namespaces.
+Base backend lives in `apps/api`. The implemented features are organized under `admin` and `consumer` namespaces. A root `auth` module also exists (login, register, logout, me) at `/auth`.
 
 ### Admin APIs
 
@@ -55,6 +55,7 @@ Ledger (`/admin/ledger`):
 Payment Requests (`/admin/payment-requests`):
 
 - `GET /`: list all payment requests.
+- `GET /expectation-date-archive`: list payment requests in expectation-date archive (query params).
 - `GET /:id`: payment request details.
 - `POST /:id/refund`: create refund reversal for a payment request.
 - `POST /:id/chargeback`: create chargeback reversal for a payment request.
@@ -90,6 +91,7 @@ Auth (`/consumer/auth`):
   - `GET /google/start`: start new OAuth flow.
   - `GET /google/callback`: OAuth redirect handling.
   - `GET /google/signup-session`: fetch OAuth signup session data.
+  - `GET /google-new-way`, `GET /google-redirect-new-way`: alternate OAuth entry/redirect.
   - `POST /oauth/exchange`: exchange OAuth code for access/refresh tokens.
   - `POST /google-oauth`: legacy Google OAuth login.
   - `POST /google-login-gpt`: alternate OAuth flow.
@@ -200,7 +202,8 @@ Implemented screens:
 - `/(protected)/dashboard`: dashboard metrics and queues.
 - `/(protected)/admins`: admin list and admin details pages.
 - `/(protected)/consumers`: consumer list and consumer details pages.
-- `/(protected)/payment-requests`: list and details.
+- `/(protected)/payment-requests`: list, details, and expectation-date archive.
+- `/(protected)/payment-requests/expectation-date-archive`: expectation-date archive view.
 - `/(protected)/ledger`: ledger listing and ledger anomalies view.
 - `/(protected)/exchange/rules`: review auto-conversion rules.
 - `/(protected)/exchange/scheduled`: review scheduled FX conversions.
@@ -218,7 +221,7 @@ Internal Admin API routes (server-side):
 - Admin management routes (`/api/admins/*`).
 - Consumer management routes (`/api/consumers/*`, including verification updates).
 - Dashboard data routes (`/api/dashboard/*`).
-- Ledger and payment request data routes (`/api/ledger`, `/api/payment-requests/*`).
+- Ledger and payment request data routes (`/api/ledger`, `/api/payment-requests/*`, `/api/payment-requests/expectation-date-archive`).
 - Exchange routes (`/api/exchange/*`).
 
 ## Consumer App (Next.js)
@@ -270,6 +273,7 @@ Database schema is defined in `packages/database-2/prisma/schema.prisma`. The sy
 - `AdminModel`: admin users with role (`SUPER`, `ADMIN`), email, password, salt.
 - `ConsumerModel`: consumer accounts, account type, verification status, Stripe customer id, and relations to profile info and transactions.
 - `AccessRefreshTokenModel`: access/refresh token storage for identities.
+- `OauthStateModel`: OAuth state key and payload for flow continuity.
 - `ResetPasswordModel`: password reset token and expiration.
 
 ### Profile and Identity Details
@@ -287,6 +291,8 @@ Database schema is defined in `packages/database-2/prisma/schema.prisma`. The sy
 - `PaymentMethodModel`: consumer payment methods, Stripe identifiers, billing details, and card/bank metadata.
 - `BillingDetailsModel`: optional billing profile for payment methods.
 - `ExchangeRateModel`: currency exchange rates.
+- `WalletAutoConversionRuleModel`: auto-conversion rules for consumer wallets.
+- `ScheduledFxConversionModel`: scheduled FX conversions with status.
 
 ### Documents and Resources
 
@@ -305,8 +311,8 @@ Database schema is defined in `packages/database-2/prisma/schema.prisma`. The sy
 Enums define controlled values for:
 
 - Accounts and roles: `AccountType`, `AdminType`, `ConsumerRole`, `ContractorKind`, `LegalStatus`, `OrganizationSize`.
-- Payments and ledger: `PaymentMethodType`, `PaymentRail`, `TransactionStatus`, `TransactionType`, `TransactionFeesType`, `LedgerEntryType`.
-- FX and currencies: `CurrencyCode`.
+- Payments and ledger: `PaymentMethodType`, `PaymentRail`, `TransactionStatus`, `TransactionType`, `TransactionFeesType`, `TransactionActionType`, `LedgerEntryType`.
+- FX and currencies: `CurrencyCode`, `ExchangeRateStatus`, `ScheduledFxConversionStatus`.
 - Verification and settings: `VerificationStatus`, `Theme`, `ResourceAccess`, `HowDidHearAboutUs`.
 
 ### Soft Delete and Auditing
@@ -322,6 +328,10 @@ Shared packages used across apps:
 
 - `packages/api-types`: shared DTOs and type exports.
 - `packages/database-2`: Prisma schema, migrations, and generated client.
-- `packages/env`: runtime env schema and types.
+- `packages/db-fixtures`: DB fixture helpers for tests.
+- `packages/env`: runtime env schema and validation (Zod).
+- `packages/security-utils`: crypto, token, and hashing helpers.
+- `packages/shared-constants`: shared constants.
+- `packages/test-db`: test database utilities.
 - `packages/ui`: shared UI components.
 - `packages/eslint-config`, `packages/jest-config`, `packages/typescript-config`: tooling.
