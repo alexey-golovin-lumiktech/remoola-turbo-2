@@ -10,8 +10,25 @@ import {
   normalizeEmail,
 } from '../../lib/payment-request-recipient-flow';
 import { type ConsumerContact, type CreatePaymentRequestPayload } from '../../types';
-import { FormField } from '../ui';
+import { DateInput, FormField, FormSelect, type FormSelectOption } from '../ui';
 import styles from '../ui/classNames.module.css';
+
+/** Restrict input to monetary format: digits, optional one decimal, max 2 decimal places. */
+function maskMonetary(value: string): string {
+  const digitsAndDot = value.replace(/[^\d.]/g, ``);
+  const parts = digitsAndDot.split(`.`);
+  if (parts.length > 2) return (parts[0] ?? ``) + `.` + parts.slice(1).join(``).slice(0, 2);
+  if (parts.length === 2) return (parts[0] ?? ``) + `.` + (parts[1] ?? ``).slice(0, 2);
+  return digitsAndDot;
+}
+
+/** Format raw amount for display with thousand separators and 2 decimals (e.g. 1234.56 → "1,234.56"). */
+function formatMonetaryDisplay(raw: string): string {
+  if (raw === ``) return ``;
+  const n = Number.parseFloat(raw);
+  if (Number.isNaN(n)) return raw;
+  return n.toLocaleString(`en-US`, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
 
 const {
   buttonDisabledOpacity,
@@ -28,6 +45,7 @@ const {
 } = styles;
 
 const CURRENCIES = [`USD`, `EUR`, `GBP`, `JPY`, `AUD`] as const;
+const CURRENCY_OPTIONS: FormSelectOption[] = CURRENCIES.map((c) => ({ value: c, label: c }));
 const PAYMENT_REQUEST_DRAFT_STORAGE_KEY = `create-payment-request-draft`;
 
 export function CreatePaymentRequestForm() {
@@ -36,6 +54,7 @@ export function CreatePaymentRequestForm() {
 
   const [email, setEmail] = useState(``);
   const [amount, setAmount] = useState(``);
+  const [amountFocused, setAmountFocused] = useState(false);
   const [currencyCode, setCurrencyCode] = useState<(typeof CURRENCIES)[number]>(`USD`);
   const [description, setDescription] = useState(``);
   const [dueDate, setDueDate] = useState(``);
@@ -258,29 +277,29 @@ export function CreatePaymentRequestForm() {
       </FormField>
 
       <FormField label={`Amount (${currencyCode})`}>
-        <input
-          type="number"
-          step="0.01"
-          min="0.01"
-          required
-          className={formFieldSpacing}
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-        />
-      </FormField>
-
-      <FormField label="Currency">
-        <select
-          className={formFieldSpacing}
-          value={currencyCode}
-          onChange={(e) => setCurrencyCode(e.target.value as (typeof CURRENCIES)[number])}
-        >
-          {CURRENCIES.map((currency) => (
-            <option key={currency} value={currency}>
-              {currency}
-            </option>
-          ))}
-        </select>
+        <div className="flex flex-wrap items-stretch gap-2">
+          <input
+            type="text"
+            inputMode="decimal"
+            required
+            className={`${formFieldSpacing} min-w-0 flex-1`}
+            value={amountFocused ? amount : formatMonetaryDisplay(amount)}
+            onFocus={() => setAmountFocused(true)}
+            onBlur={() => setAmountFocused(false)}
+            onChange={(e) => setAmount(maskMonetary(e.target.value))}
+            placeholder="0.00"
+          />
+          <div className="w-28 shrink-0">
+            <FormSelect
+              label=""
+              value={currencyCode}
+              onChange={(v) => setCurrencyCode(v as (typeof CURRENCIES)[number])}
+              options={CURRENCY_OPTIONS}
+              placeholder="USD"
+              isClearable={false}
+            />
+          </div>
+        </div>
       </FormField>
 
       <FormField label="Description" description="Shown on the request.">
@@ -293,7 +312,12 @@ export function CreatePaymentRequestForm() {
       </FormField>
 
       <FormField label="Due Date" description="Optional deadline for payment.">
-        <input type="date" className={formFieldSpacing} value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+        <DateInput
+          label=""
+          value={dueDate || null}
+          onChange={(v) => setDueDate(v ?? ``)}
+          placeholder="Select due date"
+        />
       </FormField>
 
       {!confirmOpen && error && <div className={errorTextClass}>{error}</div>}

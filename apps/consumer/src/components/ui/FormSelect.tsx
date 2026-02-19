@@ -1,5 +1,6 @@
 'use client';
 
+import { useId } from 'react';
 import Select, { type SingleValue } from 'react-select';
 
 import styles from './classNames.module.css';
@@ -21,6 +22,8 @@ export interface FormSelectProps {
   onErrorClear?: () => void;
   placeholder?: string;
   isClearable?: boolean;
+  /** Stable id for the select (fixes SSR hydration when using react-select). Omit to use React useId(). */
+  instanceId?: string;
 }
 
 export function FormSelect({
@@ -32,9 +35,12 @@ export function FormSelect({
   onErrorClear,
   placeholder = `Select...`,
   isClearable = true,
+  instanceId: instanceIdProp,
 }: FormSelectProps) {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === `dark`;
+  const generatedId = useId();
+  const reactSelectId = instanceIdProp ?? generatedId;
   const selectedOption = value ? (options.find((o) => o.value === value) ?? { value, label: value }) : null;
 
   const handleChange = (opt: SingleValue<FormSelectOption>) => {
@@ -47,6 +53,7 @@ export function FormSelect({
     <div>
       <label className={signupStepLabel}>{label}</label>
       <Select<FormSelectOption>
+        instanceId={reactSelectId}
         isClearable={isClearable}
         isSearchable
         options={options}
