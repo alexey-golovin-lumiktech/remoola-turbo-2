@@ -2,7 +2,8 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 export async function proxyToBackend(req: NextRequest, backendPath: string) {
   const base = process.env.NEXT_PUBLIC_API_BASE_URL!;
-  const url = base + backendPath; //  new URL(backendPath, base);
+  const search = req.nextUrl?.search ?? ``;
+  const url = base + backendPath + search;
 
   const headers = new Headers(req.headers);
 

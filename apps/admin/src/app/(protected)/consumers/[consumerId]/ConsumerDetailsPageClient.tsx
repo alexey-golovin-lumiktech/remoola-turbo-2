@@ -1,17 +1,20 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 import { type TVerificationStatus } from '@remoola/api-types';
 
-import { JsonView } from '../../../../components';
+import { CardSkeleton, JsonView } from '../../../../components';
 import styles from '../../../../components/ui/classNames.module.css';
 import { type Consumer } from '../../../../lib';
+import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../../../lib/error-messages';
 
 export function ConsumerDetailsPageClient({ consumerId }: { consumerId: string }) {
   const [consumerDetails, setConsumerDetails] = useState<Consumer | null>(null);
+  const [loading, setLoading] = useState(true);
   const [verificationReason, setVerificationReason] = useState<string>(``);
-  const [verificationError, setVerificationError] = useState<string>(``);
   const [verificationLoading, setVerificationLoading] = useState(false);
 
   useEffect(() => {
@@ -21,15 +24,38 @@ export function ConsumerDetailsPageClient({ consumerId }: { consumerId: string }
       return (await response.json()) as Consumer;
     }
 
+    setLoading(true);
     loadConsumerDetails(consumerId).then((consumer) => {
       setConsumerDetails(consumer);
       if (consumer?.verificationReason) {
         setVerificationReason(consumer.verificationReason);
       }
+      setLoading(false);
     });
   }, [consumerId]);
 
-  if (!consumerDetails) return <div className={styles.adminTextGray600}>Consumer not found</div>;
+  if (loading) {
+    return (
+      <div className={styles.adminPageStack}>
+        <div className={styles.adminCard}>
+          <div className={styles.adminCardContent}>
+            <CardSkeleton />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!consumerDetails) {
+    return (
+      <div className={styles.adminPageStack}>
+        <div className={styles.adminTextGray600}>Consumer not found</div>
+        <Link href="/consumers" className={styles.adminPrimaryButton}>
+          Back to Consumers
+        </Link>
+      </div>
+    );
+  }
 
   const statusLabel = (status?: TVerificationStatus | null) => {
     switch (status) {
@@ -60,7 +86,6 @@ export function ConsumerDetailsPageClient({ consumerId }: { consumerId: string }
   };
 
   const updateVerification = async (action: `approve` | `reject` | `more_info` | `flag`) => {
-    setVerificationError(``);
     setVerificationLoading(true);
     try {
       const response = await fetch(`/api/consumers/${consumerId}/verification`, {
@@ -83,7 +108,9 @@ export function ConsumerDetailsPageClient({ consumerId }: { consumerId: string }
         setVerificationReason(updatedConsumer.verificationReason);
       }
     } catch (error: any) {
-      setVerificationError(error.message || `Failed to update verification status`);
+      toast.error(
+        getErrorMessageForUser(error.message, getLocalToastMessage(localToastKeys.VERIFICATION_UPDATE_FAILED)),
+      );
     } finally {
       setVerificationLoading(false);
     }
@@ -91,6 +118,9 @@ export function ConsumerDetailsPageClient({ consumerId }: { consumerId: string }
 
   return (
     <div className={styles.adminPageStack}>
+      <div className={styles.adminTextGray600} style={{ marginBottom: `0.5rem` }}>
+        <Link href="/consumers">← Back to Consumers</Link>
+      </div>
       <div>
         <div className={styles.adminTextGray500}>Consumer</div>
         <h1 className={styles.adminPageTitle}>{consumerDetails.email}</h1>
@@ -126,7 +156,6 @@ export function ConsumerDetailsPageClient({ consumerId }: { consumerId: string }
                   placeholder="Optional reason for the decision"
                 />
               </label>
-              {verificationError && <div className={styles.adminFormError}>{verificationError}</div>}
             </div>
 
             <div className={styles.adminModalFooter}>

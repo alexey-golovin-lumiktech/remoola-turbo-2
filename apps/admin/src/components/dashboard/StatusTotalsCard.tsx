@@ -1,10 +1,18 @@
 'use client';
 
+import { useEffect } from 'react';
+import { toast } from 'sonner';
+
 import { usePaymentRequestsByStatus } from '../../lib/client';
+import { getLocalToastMessage, localToastKeys } from '../../lib/error-messages';
 import styles from '../ui/classNames.module.css';
 
 export function StatusTotalsCard() {
-  const { data: statusData, error, isLoading } = usePaymentRequestsByStatus();
+  const { data: statusData, error, isLoading, mutate } = usePaymentRequestsByStatus();
+
+  useEffect(() => {
+    if (error) toast.error(getLocalToastMessage(localToastKeys.LOAD_STATUS_TOTALS));
+  }, [error]);
 
   if (isLoading) {
     return (
@@ -26,7 +34,9 @@ export function StatusTotalsCard() {
       <div className={styles.adminCard}>
         <div className={styles.adminCardTitle}>Totals by Status</div>
         <div className={styles.adminCardContent}>
-          <div className={styles.adminTextGray500}>Failed to load status totals</div>
+          <button type="button" className={styles.adminPrimaryButton} onClick={() => void mutate()}>
+            Retry
+          </button>
         </div>
       </div>
     );

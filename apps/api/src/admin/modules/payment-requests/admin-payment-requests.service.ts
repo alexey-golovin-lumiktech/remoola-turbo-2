@@ -4,7 +4,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import Stripe from 'stripe';
 
 import { $Enums, Prisma } from '@remoola/database-2';
-import { errorCodes } from '@remoola/shared-constants';
+import { adminErrorCodes, errorCodes } from '@remoola/shared-constants';
 
 import { type PaymentReversalCreate } from './dto';
 import { envs } from '../../../envs';
@@ -23,18 +23,51 @@ export class AdminPaymentRequestsService {
     this.stripe = new Stripe(envs.STRIPE_SECRET_KEY, { apiVersion: `2025-11-17.clover` });
   }
 
-  /** Bounded list for admin (AGENTS.md 6.10). Default cap 500. */
-  async findAllPaymentRequests(params?: { page?: number; pageSize?: number }) {
-    const pageSize = Math.min(Math.max(params?.pageSize ?? 500, 1), 500);
+  private static readonly SEARCH_MAX_LEN = 200;
+  private static readonly TRANSACTION_STATUSES = Object.values($Enums.TransactionStatus) as string[];
+
+  /** Bounded list for admin (AGENTS.md 6.10). Default cap 500. Search/filter fintech-safe (bounded, Prisma-only). */
+  async findAllPaymentRequests(params?: { page?: number; pageSize?: number; q?: string; status?: string }) {
+    const pageSize = Math.min(Math.max(params?.pageSize ?? 10, 1), 500);
     const page = Math.max(params?.page ?? 1, 1);
     const skip = (page - 1) * pageSize;
 
+    const search =
+      typeof params?.q === `string` && params.q.trim().length > 0
+        ? params.q.trim().slice(0, AdminPaymentRequestsService.SEARCH_MAX_LEN)
+        : undefined;
+    const status =
+      params?.status && AdminPaymentRequestsService.TRANSACTION_STATUSES.includes(params.status)
+        ? (params.status as $Enums.TransactionStatus)
+        : undefined;
+
+    const where: Prisma.PaymentRequestModelWhereInput = {
+      deletedAt: null,
+      ...(status && { status }),
+      ...(search && {
+        OR: [
+          { description: { contains: search, mode: `insensitive` } },
+          { payerEmail: { contains: search, mode: `insensitive` } },
+          { payer: { email: { contains: search, mode: `insensitive` } } },
+          { requester: { email: { contains: search, mode: `insensitive` } } },
+          ...(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(search)
+            ? [{ id: { equals: search } }]
+            : []),
+        ],
+      }),
+    };
+
     const [total, items] = await Promise.all([
-      this.prisma.paymentRequestModel.count(),
+      this.prisma.paymentRequestModel.count({ where }),
       this.prisma.paymentRequestModel.findMany({
+        where,
         orderBy: { createdAt: `desc` },
         skip,
         take: pageSize,
+        include: {
+          payer: { select: { id: true, email: true } },
+          requester: { select: { id: true, email: true } },
+        },
       }),
     ]);
 
@@ -42,7 +75,13 @@ export class AdminPaymentRequestsService {
   }
 
   async geyById(id: string) {
-    return this.prisma.paymentRequestModel.findUnique({ where: { id } });
+    return this.prisma.paymentRequestModel.findUnique({
+      where: { id },
+      include: {
+        payer: { select: { id: true, email: true } },
+        requester: { select: { id: true, email: true } },
+      },
+    });
   }
 
   async getExpectationDateArchive(params: { query?: string; limit?: number }) {
@@ -193,20 +232,20 @@ export class AdminPaymentRequestsService {
       },
     });
 
-    if (!paymentRequest) throw new NotFoundException(`Payment request not found`);
+    if (!paymentRequest) throw new NotFoundException(adminErrorCodes.ADMIN_PAYMENT_REQUEST_NOT_FOUND);
 
     if (paymentRequest.status !== $Enums.TransactionStatus.COMPLETED) {
-      throw new BadRequestException(`Only completed payment requests can be reversed`);
+      throw new BadRequestException(adminErrorCodes.ADMIN_ONLY_COMPLETED_CAN_BE_REVERSED);
     }
 
     const requestAmount = Number(paymentRequest.amount);
     if (!Number.isFinite(requestAmount) || requestAmount <= 0) {
-      throw new BadRequestException(`Invalid payment amount`);
+      throw new BadRequestException(adminErrorCodes.ADMIN_INVALID_PAYMENT_AMOUNT);
     }
 
     const requestedAmount = body.amount != null ? Number(body.amount) : undefined;
     if (requestedAmount != null && (!Number.isFinite(requestedAmount) || requestedAmount <= 0)) {
-      throw new BadRequestException(`Invalid reversal amount`);
+      throw new BadRequestException(adminErrorCodes.ADMIN_INVALID_REVERSAL_AMOUNT);
     }
 
     const originalLedgerId = paymentRequest.ledgerEntries.find(
@@ -241,12 +280,12 @@ export class AdminPaymentRequestsService {
 
     const remaining = requestAmount - alreadyReversed;
     if (remaining <= 0) {
-      throw new BadRequestException(`Payment request already fully reversed`);
+      throw new BadRequestException(adminErrorCodes.ADMIN_PAYMENT_REQUEST_ALREADY_FULLY_REVERSED);
     }
 
     const finalRequestedAmount = requestedAmount ?? remaining;
     if (finalRequestedAmount > remaining) {
-      throw new BadRequestException(`Reversal amount exceeds remaining balance`);
+      throw new BadRequestException(adminErrorCodes.ADMIN_REVERSAL_AMOUNT_EXCEEDS_REMAINING_BALANCE);
     }
 
     const idempotencyKeyBase = this.buildReversalIdempotencyKey({
@@ -278,7 +317,7 @@ export class AdminPaymentRequestsService {
 
     if (body.kind === `REFUND`) {
       if (!stripePaymentIntentId) {
-        throw new BadRequestException(`Stripe payment intent not found for refund`);
+        throw new BadRequestException(adminErrorCodes.ADMIN_STRIPE_PAYMENT_INTENT_NOT_FOUND_FOR_REFUND);
       }
 
       const digits = getCurrencyFractionDigits(paymentRequest.currencyCode);

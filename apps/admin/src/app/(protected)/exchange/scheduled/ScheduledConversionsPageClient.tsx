@@ -1,13 +1,18 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
-import { DataTable } from '../../../../components';
+import { DataTable, TableSkeleton, SearchWithClear } from '../../../../components';
 import styles from '../../../../components/ui/classNames.module.css';
 import { type ScheduledFxConversion } from '../../../../lib';
+import { useDebouncedValue } from '../../../../lib/client';
+import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../../../lib/error-messages';
 
 const {
   adminPageStack,
+  adminHeaderRow,
   adminPageTitle,
   adminPageSubtitle,
   adminMonoCode,
@@ -22,27 +27,48 @@ const {
   adminFormLabelBlock,
   adminFormLabelText,
   adminFormInput,
+  adminCard,
+  adminCardContent,
+  adminTextGray500,
+  adminPrimaryButton,
 } = styles;
 
 export function ScheduledConversionsPageClient() {
   const [conversions, setConversions] = useState<ScheduledFxConversion[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [query, setQuery] = useState(``);
+  const qDebounced = useDebouncedValue(query, 400);
   const [status, setStatus] = useState<string>(`all`);
 
-  const loadConversions = useCallback(async () => {
-    const response = await fetch(`/api/exchange/scheduled`, { cache: `no-store`, credentials: `include` });
-    if (!response.ok) return [];
-    return await response.json();
-  }, []);
-
   const refresh = useCallback(async () => {
-    const data = await loadConversions();
-    setConversions(data);
-  }, [loadConversions]);
+    setLoading(true);
+    setLoadError(null);
+    const params = new URLSearchParams();
+    if (qDebounced.trim()) params.set(`q`, qDebounced.trim());
+    if (status !== `all`) params.set(`status`, status);
+    const suffix = params.toString() ? `?${params.toString()}` : ``;
+    const response = await fetch(`/api/exchange/scheduled${suffix}`, { cache: `no-store`, credentials: `include` });
+    if (!response.ok) {
+      setConversions([]);
+      setLoadError(getLocalToastMessage(localToastKeys.LOAD_SCHEDULED_CONVERSIONS));
+      setLoading(false);
+      toast.error(getLocalToastMessage(localToastKeys.LOAD_SCHEDULED_CONVERSIONS));
+      return;
+    }
+    const data = await response.json();
+    setConversions(data ?? []);
+    setLoading(false);
+  }, [qDebounced, status]);
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  const resetFilters = useCallback(() => {
+    setQuery(``);
+    setStatus(`all`);
+  }, []);
 
   async function cancelConversion(conversion: ScheduledFxConversion) {
     const response = await fetch(`/api/exchange/scheduled/${conversion.id}/cancel`, {
@@ -52,7 +78,7 @@ export function ScheduledConversionsPageClient() {
     if (response.ok) {
       await refresh();
     } else {
-      alert(`Failed to cancel conversion`);
+      toast.error(getLocalToastMessage(localToastKeys.SCHEDULED_CANCEL_FAILED));
     }
   }
 
@@ -65,7 +91,7 @@ export function ScheduledConversionsPageClient() {
       await refresh();
     } else {
       const message = await response.text();
-      alert(message || `Failed to execute conversion`);
+      toast.error(getErrorMessageForUser(message, getLocalToastMessage(localToastKeys.SCHEDULED_EXECUTE_FAILED)));
     }
   }
 
@@ -79,39 +105,52 @@ export function ScheduledConversionsPageClient() {
     return <span className={adminStatusBadgeBase}>{status}</span>;
   }
 
-  const filteredConversions = conversions.filter((conversion) => {
-    if (status !== `all` && conversion.status !== status) return false;
-    if (!query.trim()) return true;
-    const target = [
-      conversion.id,
-      conversion.consumer?.email,
-      conversion.consumerId,
-      conversion.fromCurrency,
-      conversion.toCurrency,
-      conversion.ledgerId,
-    ]
-      .filter(Boolean)
-      .join(` `)
-      .toLowerCase();
-    return target.includes(query.trim().toLowerCase());
-  });
+  if (loading && conversions.length === 0 && !loadError) {
+    return (
+      <div className={adminPageStack}>
+        <div>
+          <h1 className={adminPageTitle}>Scheduled FX Conversions</h1>
+          <p className={adminPageSubtitle}>Review scheduled conversions and override execution.</p>
+        </div>
+        <TableSkeleton rows={8} columns={8} />
+      </div>
+    );
+  }
+
+  if (loadError && conversions.length === 0) {
+    return (
+      <div className={adminPageStack}>
+        <div>
+          <h1 className={adminPageTitle}>Scheduled FX Conversions</h1>
+          <p className={adminPageSubtitle}>Review scheduled conversions and override execution.</p>
+        </div>
+        <div className={adminCard}>
+          <div className={adminCardContent}>
+            <button type="button" className={adminPrimaryButton} onClick={() => void refresh()}>
+              Retry
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={adminPageStack}>
-      <div>
-        <h1 className={adminPageTitle}>Scheduled FX Conversions</h1>
-        <p className={adminPageSubtitle}>Review scheduled conversions and override execution.</p>
+      <div className={adminHeaderRow}>
+        <div>
+          <h1 className={adminPageTitle}>Scheduled FX Conversions</h1>
+          <p className={adminPageSubtitle}>Review scheduled conversions and override execution.</p>
+        </div>
+        <button type="button" className={adminPrimaryButton} onClick={() => void refresh()} disabled={loading}>
+          {loading ? `Refreshing...` : `Refresh`}
+        </button>
       </div>
 
       <div className={adminActionRow}>
         <label className={adminFormLabelBlock}>
           <span className={adminFormLabelText}>Search</span>
-          <input
-            className={adminFormInput}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Consumer email, conversion id, pair"
-          />
+          <SearchWithClear value={query} onChangeAction={setQuery} placeholder="Consumer email, conversion id, pair" />
         </label>
         <label className={adminFormLabelBlock}>
           <span className={adminFormLabelText}>Status</span>
@@ -124,73 +163,86 @@ export function ScheduledConversionsPageClient() {
             <option value="CANCELLED">CANCELLED</option>
           </select>
         </label>
+        <button type="button" className={adminPrimaryButton} onClick={resetFilters} disabled={loading}>
+          Reset filters
+        </button>
       </div>
 
-      <DataTable<ScheduledFxConversion>
-        rows={filteredConversions}
-        getRowKeyAction={(r) => r.id}
-        columns={[
-          {
-            key: `id`,
-            header: `ID`,
-            render: (r) => <span className={adminMonoCode}>{r.id.slice(0, 8)}…</span>,
-          },
-          {
-            key: `consumer`,
-            header: `Consumer`,
-            render: (r) => (
-              <span className={adminTextGray700}>{r.consumer?.email ?? r.consumerId.slice(0, 8) + `…`}</span>
-            ),
-          },
-          {
-            key: `pair`,
-            header: `Pair`,
-            render: (r) => (
-              <span className={adminTextGray700}>
-                {r.fromCurrency} → {r.toCurrency}
-              </span>
-            ),
-          },
-          {
-            key: `amount`,
-            header: `Amount`,
-            render: (r) => <span className={adminTextGray700}>{r.amount}</span>,
-          },
-          {
-            key: `status`,
-            header: `Status`,
-            render: (r) => renderStatus(r.status),
-          },
-          {
-            key: `execute`,
-            header: `Execute At`,
-            render: (r) => <span className={adminTextGray600}>{new Date(r.executeAt).toLocaleString()}</span>,
-          },
-          {
-            key: `attempts`,
-            header: `Attempts`,
-            render: (r) => <span className={adminTextGray600}>{r.attempts}</span>,
-          },
-          {
-            key: `actions`,
-            header: `Actions`,
-            render: (r) => (
-              <div className={adminActionRow}>
-                {(r.status === `PENDING` || r.status === `FAILED`) && (
-                  <button className={adminActionButton} onClick={() => executeConversion(r)} type="button">
-                    Execute now
-                  </button>
-                )}
-                {r.status === `PENDING` && (
-                  <button className={adminDeleteButton} onClick={() => cancelConversion(r)} type="button">
-                    Cancel
-                  </button>
-                )}
-              </div>
-            ),
-          },
-        ]}
-      />
+      {conversions.length === 0 ? (
+        <div className={adminCard}>
+          <div className={adminCardContent}>
+            <div className={adminTextGray500}>No scheduled conversions</div>
+          </div>
+        </div>
+      ) : (
+        <DataTable<ScheduledFxConversion>
+          rows={conversions}
+          getRowKeyAction={(r) => r.id}
+          columns={[
+            {
+              key: `id`,
+              header: `ID`,
+              render: (r) => <span className={adminMonoCode}>{r.id.slice(0, 8)}…</span>,
+            },
+            {
+              key: `consumer`,
+              header: `Consumer`,
+              render: (r) => (
+                <Link href={`/consumers/${r.consumerId}`} className={adminTextGray700}>
+                  {r.consumer?.email ?? r.consumerId.slice(0, 8) + `…`}
+                </Link>
+              ),
+            },
+            {
+              key: `pair`,
+              header: `Pair`,
+              render: (r) => (
+                <span className={adminTextGray700}>
+                  {r.fromCurrency} → {r.toCurrency}
+                </span>
+              ),
+            },
+            {
+              key: `amount`,
+              header: `Amount`,
+              render: (r) => <span className={adminTextGray700}>{r.amount}</span>,
+            },
+            {
+              key: `status`,
+              header: `Status`,
+              render: (r) => renderStatus(r.status),
+            },
+            {
+              key: `execute`,
+              header: `Execute At`,
+              render: (r) => <span className={adminTextGray600}>{new Date(r.executeAt).toLocaleString()}</span>,
+            },
+            {
+              key: `attempts`,
+              header: `Attempts`,
+              render: (r) => <span className={adminTextGray600}>{r.attempts}</span>,
+            },
+            {
+              key: `actions`,
+              header: `Actions`,
+              render: (r) => (
+                <div className={adminActionRow}>
+                  {(r.status === `PENDING` || r.status === `FAILED`) && (
+                    <button className={adminActionButton} onClick={() => executeConversion(r)} type="button">
+                      Execute now
+                    </button>
+                  )}
+                  {r.status === `PENDING` && (
+                    <button className={adminDeleteButton} onClick={() => cancelConversion(r)} type="button">
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              ),
+            },
+          ]}
+        />
+      )}
     </div>
   );
 }

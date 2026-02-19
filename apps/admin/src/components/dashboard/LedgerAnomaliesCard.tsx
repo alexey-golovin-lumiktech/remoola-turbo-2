@@ -1,12 +1,19 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect } from 'react';
+import { toast } from 'sonner';
 
 import { useLedgerAnomalies } from '../../lib/client';
+import { getLocalToastMessage, localToastKeys } from '../../lib/error-messages';
 import styles from '../ui/classNames.module.css';
 
 export function LedgerAnomaliesCard() {
-  const { data: anomalies, error, isLoading } = useLedgerAnomalies();
+  const { data: anomalies, error, isLoading, mutate } = useLedgerAnomalies();
+
+  useEffect(() => {
+    if (error) toast.error(getLocalToastMessage(localToastKeys.LOAD_LEDGER_ANOMALIES));
+  }, [error]);
 
   if (isLoading) {
     return (
@@ -27,7 +34,9 @@ export function LedgerAnomaliesCard() {
       <div className={styles.adminCard}>
         <div className={styles.adminCardTitle}>Ledger Anomalies</div>
         <div className={styles.adminCardContent}>
-          <div className={styles.adminTextGray500}>Failed to load ledger anomalies</div>
+          <button type="button" className={styles.adminPrimaryButton} onClick={() => void mutate()}>
+            Retry
+          </button>
         </div>
       </div>
     );

@@ -15,12 +15,19 @@ export class AdminPaymentRequestsController {
   constructor(private readonly service: AdminPaymentRequestsService) {}
 
   @Get()
-  findAllPaymentRequests(@Query(`page`) page?: string, @Query(`pageSize`) pageSize?: string) {
+  findAllPaymentRequests(
+    @Query(`page`) page?: string,
+    @Query(`pageSize`) pageSize?: string,
+    @Query(`q`) q?: string,
+    @Query(`status`) status?: string,
+  ) {
     const pageNum = page != null && Number.isFinite(Number(page)) ? Number(page) : undefined;
     const pageSizeNum = pageSize != null && Number.isFinite(Number(pageSize)) ? Number(pageSize) : undefined;
     return this.service.findAllPaymentRequests({
       page: pageNum,
       pageSize: pageSizeNum,
+      q: q?.trim() || undefined,
+      status: status?.trim() || undefined,
     });
   }
 

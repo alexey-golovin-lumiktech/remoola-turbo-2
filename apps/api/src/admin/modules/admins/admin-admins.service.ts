@@ -9,7 +9,7 @@ import { hashPassword } from '../../../shared-common';
 export class AdminAdminsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAllAdmins(admin: AdminModel) {
+  async findAllAdmins(admin: AdminModel, includeDeleted?: boolean) {
     return this.prisma.adminModel.findMany({
       where: {
         type: {
@@ -19,6 +19,7 @@ export class AdminAdminsService {
               : [`ADMIN`],
         },
         ...(admin.type === `ADMIN` && { id: { not: admin.id } }),
+        ...(includeDeleted !== true && { deletedAt: null }),
       },
       orderBy: { createdAt: `desc` },
     });

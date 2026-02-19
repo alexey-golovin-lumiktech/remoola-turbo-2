@@ -20,7 +20,14 @@ export class AdminExchangeController {
 
   @Get(`rates`)
   listRates(@Query() query: ExchangeRateListQuery) {
-    return this.service.listRates(query);
+    const pageNum = query.page != null && Number.isFinite(Number(query.page)) ? Number(query.page) : undefined;
+    const pageSizeNum =
+      query.pageSize != null && Number.isFinite(Number(query.pageSize)) ? Number(query.pageSize) : undefined;
+    return this.service.listRates({
+      ...query,
+      page: pageNum,
+      pageSize: pageSizeNum,
+    });
   }
 
   @Get(`rates/:rateId`)
@@ -49,8 +56,11 @@ export class AdminExchangeController {
   }
 
   @Get(`rules`)
-  listRules() {
-    return this.service.listRules();
+  listRules(@Query(`q`) q?: string, @Query(`enabled`) enabled?: string) {
+    return this.service.listRules({
+      q: q?.trim() || undefined,
+      enabled: enabled?.trim() || undefined,
+    });
   }
 
   @Patch(`rules/:ruleId`)
@@ -64,8 +74,11 @@ export class AdminExchangeController {
   }
 
   @Get(`scheduled`)
-  listScheduled() {
-    return this.service.listScheduledConversions();
+  listScheduled(@Query(`q`) q?: string, @Query(`status`) status?: string) {
+    return this.service.listScheduledConversions({
+      q: q?.trim() || undefined,
+      status: status?.trim() || undefined,
+    });
   }
 
   @Post(`scheduled/:conversionId/cancel`)

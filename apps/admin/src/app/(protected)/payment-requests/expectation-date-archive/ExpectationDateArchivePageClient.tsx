@@ -1,45 +1,48 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 
-import { DataTable } from '../../../../components';
+import { DataTable, TableSkeleton, SearchWithClear } from '../../../../components';
 import styles from '../../../../components/ui/classNames.module.css';
 import { type PaymentRequestExpectationDateArchive } from '../../../../lib';
+import { useDebouncedValue } from '../../../../lib/client';
+import { getLocalToastMessage, localToastKeys } from '../../../../lib/error-messages';
 
 export function ExpectationDateArchivePageClient() {
   const [rows, setRows] = useState<PaymentRequestExpectationDateArchive[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [queryInput, setQueryInput] = useState(``);
   const [query, setQuery] = useState(``);
+  const qDebounced = useDebouncedValue(query, 400);
+  const encodedQuery = useMemo(() => encodeURIComponent(qDebounced.trim()), [qDebounced]);
 
-  const encodedQuery = useMemo(() => encodeURIComponent(query.trim()), [query]);
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    const queryString = encodedQuery ? `?q=${encodedQuery}` : ``;
+    const response = await fetch(`/api/payment-requests/expectation-date-archive${queryString}`, {
+      cache: `no-store`,
+      credentials: `include`,
+    });
 
-  useEffect(() => {
-    async function load() {
-      setLoading(true);
-      setError(null);
-      const queryString = encodedQuery ? `?q=${encodedQuery}` : ``;
-      const response = await fetch(`/api/payment-requests/expectation-date-archive${queryString}`, {
-        cache: `no-store`,
-        credentials: `include`,
-      });
-
-      if (!response.ok) {
-        setRows([]);
-        setError(`Failed to load archive records`);
-        setLoading(false);
-        return;
-      }
-
-      const data = (await response.json()) as PaymentRequestExpectationDateArchive[];
-      setRows(data);
+    if (!response.ok) {
+      setRows([]);
+      setError(getLocalToastMessage(localToastKeys.LOAD_ARCHIVE_RECORDS));
       setLoading(false);
+      toast.error(getLocalToastMessage(localToastKeys.LOAD_ARCHIVE_RECORDS));
+      return;
     }
 
-    void load();
+    const data = (await response.json()) as PaymentRequestExpectationDateArchive[];
+    setRows(data);
+    setLoading(false);
   }, [encodedQuery]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   return (
     <div className={styles.adminPageStack}>
@@ -50,32 +53,49 @@ export function ExpectationDateArchivePageClient() {
             Archived values copied from removed `payment_request.expectation_date`.
           </p>
         </div>
-        <Link href="/payment-requests" className={styles.adminPrimaryButton}>
-          Payment requests
-        </Link>
+        <div className={styles.adminHeaderActions}>
+          <button type="button" className={styles.adminPrimaryButton} onClick={() => void load()} disabled={loading}>
+            {loading ? `Refreshing...` : `Refresh`}
+          </button>
+          <Link href="/payment-requests" className={styles.adminPrimaryButton}>
+            Payment requests
+          </Link>
+        </div>
       </div>
 
-      <form
-        className={styles.adminActionRow}
-        onSubmit={(event) => {
-          event.preventDefault();
-          setQuery(queryInput);
-        }}
-      >
-        <input
-          className={styles.adminFormInput}
-          value={queryInput}
-          onChange={(event) => setQueryInput(event.target.value)}
-          placeholder="Filter by payment request ID"
-        />
-        <button type="submit" className={styles.adminPrimaryButton} disabled={loading}>
-          {loading ? `Loading...` : `Search`}
+      <div className={styles.adminActionRow}>
+        <label className={styles.adminFormLabelBlock} style={{ marginBottom: 0 }}>
+          <span className={styles.adminFormLabelText}>Search</span>
+          <SearchWithClear value={query} onChangeAction={setQuery} placeholder="Filter by payment request ID" />
+        </label>
+        <button type="button" className={styles.adminPrimaryButton} onClick={() => setQuery(``)} disabled={loading}>
+          Reset filters
         </button>
-      </form>
+      </div>
 
-      {error && <div className={styles.adminAlertError}>{error}</div>}
+      {error && (
+        <div className={styles.adminCard}>
+          <div className={styles.adminCardContent}>
+            <button type="button" className={styles.adminPrimaryButton} onClick={() => void load()}>
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
 
-      {!error && (
+      {!error && loading && rows.length === 0 && <TableSkeleton rows={6} columns={4} />}
+
+      {!error && !loading && rows.length === 0 && (
+        <div className={styles.adminCard}>
+          <div className={styles.adminCardContent}>
+            <div className={styles.adminTextGray500}>
+              {query.trim() ? `No archive records match your search` : `No archive records`}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!error && rows.length > 0 && (
         <DataTable<PaymentRequestExpectationDateArchive>
           rows={rows}
           getRowKeyAction={(r) => r.id}

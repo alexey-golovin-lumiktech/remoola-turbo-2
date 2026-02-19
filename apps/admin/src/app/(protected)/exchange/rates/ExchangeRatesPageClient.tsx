@@ -1,13 +1,16 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 
-import { DataTable } from '../../../../components';
+import { DataTable, TableSkeleton, SearchWithClear } from '../../../../components';
 import styles from '../../../../components/ui/classNames.module.css';
 import { exchangeRateSchema, useFormValidation, type ExchangeRate, type ExchangeRateForm } from '../../../../lib';
+import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../../../lib/error-messages';
 
 const {
   adminPageStack,
+  adminHeaderRow,
   adminPageTitle,
   adminPageSubtitle,
   adminMonoCode,
@@ -32,10 +35,31 @@ const {
   adminModalFooter,
   adminModalCancel,
   adminModalPrimary,
+  adminCard,
+  adminCardContent,
+  adminTextGray500,
+  adminPrimaryButton,
+  adminPaginationBar,
+  adminPaginationInfo,
+  adminPaginationButton,
 } = styles;
+
+const DEFAULT_PAGE_SIZE = 10;
+
+type RatesPaginatedResponse = {
+  items: ExchangeRate[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
 
 export function ExchangeRatesPageClient() {
   const [rates, setRates] = useState<ExchangeRate[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [currencies, setCurrencies] = useState<string[]>([]);
   const [query, setQuery] = useState(``);
   const [filterFrom, setFilterFrom] = useState<string>(`all`);
@@ -80,19 +104,6 @@ export function ExchangeRatesPageClient() {
     confidence: ``,
   });
 
-  const loadRates = useCallback(async () => {
-    const params = new URLSearchParams();
-    if (filterFrom !== `all`) params.set(`from`, filterFrom);
-    if (filterTo !== `all`) params.set(`to`, filterTo);
-    if (filterStatus !== `all`) params.set(`status`, filterStatus);
-    if (includeHistory) params.set(`includeHistory`, `true`);
-    if (includeExpired) params.set(`includeExpired`, `true`);
-    const suffix = params.toString() ? `?${params.toString()}` : ``;
-    const response = await fetch(`/api/exchange/rates${suffix}`, { cache: `no-store`, credentials: `include` });
-    if (!response.ok) return [];
-    return await response.json();
-  }, [filterFrom, filterTo, filterStatus, includeHistory, includeExpired]);
-
   const loadCurrencies = useCallback(async () => {
     const response = await fetch(`/api/exchange/currencies`, { cache: `no-store`, credentials: `include` });
     if (!response.ok) return [];
@@ -100,9 +111,34 @@ export function ExchangeRatesPageClient() {
   }, []);
 
   const refresh = useCallback(async () => {
-    const data = await loadRates();
-    setRates(data);
-  }, [loadRates]);
+    setLoading(true);
+    setLoadError(null);
+    const params = new URLSearchParams();
+    params.set(`page`, String(page));
+    params.set(`pageSize`, String(pageSize));
+    if (filterFrom !== `all`) params.set(`from`, filterFrom);
+    if (filterTo !== `all`) params.set(`to`, filterTo);
+    if (filterStatus !== `all`) params.set(`status`, filterStatus);
+    if (includeHistory) params.set(`includeHistory`, `true`);
+    if (includeExpired) params.set(`includeExpired`, `true`);
+    const suffix = `?${params.toString()}`;
+    const response = await fetch(`/api/exchange/rates${suffix}`, {
+      cache: `no-store`,
+      credentials: `include`,
+    });
+    if (!response.ok) {
+      setRates([]);
+      setTotal(0);
+      setLoadError(getLocalToastMessage(localToastKeys.LOAD_EXCHANGE_RATES));
+      setLoading(false);
+      toast.error(getLocalToastMessage(localToastKeys.LOAD_EXCHANGE_RATES));
+      return;
+    }
+    const data = (await response.json()) as RatesPaginatedResponse;
+    setRates(data?.items ?? []);
+    setTotal(data?.total ?? 0);
+    setLoading(false);
+  }, [page, pageSize, filterFrom, filterTo, filterStatus, includeHistory, includeExpired]);
 
   useEffect(() => {
     void refresh();
@@ -132,11 +168,9 @@ export function ExchangeRatesPageClient() {
   }
 
   const filteredRates = useMemo(() => {
+    if (!query.trim()) return rates;
+    const q = query.trim().toLowerCase();
     return rates.filter((rate) => {
-      if (filterFrom !== `all` && rate.fromCurrency !== filterFrom) return false;
-      if (filterTo !== `all` && rate.toCurrency !== filterTo) return false;
-
-      if (!query.trim()) return true;
       const target = [
         rate.id,
         rate.fromCurrency,
@@ -149,9 +183,23 @@ export function ExchangeRatesPageClient() {
         .filter(Boolean)
         .join(` `)
         .toLowerCase();
-      return target.includes(query.trim().toLowerCase());
+      return target.includes(q);
     });
-  }, [rates, query, filterFrom, filterTo]);
+  }, [rates, query]);
+
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const to = Math.min(page * pageSize, total);
+
+  const resetFilters = useCallback(() => {
+    setQuery(``);
+    setFilterFrom(`all`);
+    setFilterTo(`all`);
+    setFilterStatus(`all`);
+    setIncludeHistory(false);
+    setIncludeExpired(false);
+    setPage(1);
+  }, []);
 
   function openCreateModal() {
     createForm.reset();
@@ -217,7 +265,7 @@ export function ExchangeRatesPageClient() {
 
     if (!response.ok) {
       const message = await response.text();
-      alert(message || `Failed to create exchange rate`);
+      toast.error(getErrorMessageForUser(message, getLocalToastMessage(localToastKeys.RATE_CREATE_FAILED)));
       return;
     }
 
@@ -261,7 +309,7 @@ export function ExchangeRatesPageClient() {
 
     if (!response.ok) {
       const message = await response.text();
-      alert(message || `Failed to update exchange rate`);
+      toast.error(getErrorMessageForUser(message, getLocalToastMessage(localToastKeys.RATE_UPDATE_FAILED)));
       return;
     }
 
@@ -277,7 +325,7 @@ export function ExchangeRatesPageClient() {
     });
     if (!response.ok) {
       const message = await response.text();
-      alert(message || `Failed to delete exchange rate`);
+      toast.error(getErrorMessageForUser(message, getLocalToastMessage(localToastKeys.RATE_DELETE_FAILED)));
       return;
     }
     await refresh();
@@ -336,7 +384,12 @@ export function ExchangeRatesPageClient() {
               <div className={adminModalTitle}>{submitLabel === `Create` ? `Create rate` : `Edit rate`}</div>
               <div className={adminModalSubtitle}>Manage direct exchange rates for conversions.</div>
             </div>
-            <button className={adminModalClose} onClick={(e) => (e.stopPropagation(), e.preventDefault(), onCancel())}>
+            <button
+              type="button"
+              className={adminModalClose}
+              onClick={(e) => (e.stopPropagation(), e.preventDefault(), onCancel())}
+              aria-label="Close"
+            >
               ✕
             </button>
           </div>
@@ -520,26 +573,63 @@ export function ExchangeRatesPageClient() {
     );
   }
 
+  if (loading && rates.length === 0 && !loadError) {
+    return (
+      <div className={adminPageStack}>
+        <div>
+          <h1 className={adminPageTitle}>Exchange Rates</h1>
+          <p className={adminPageSubtitle}>Manage direct FX rates used in consumer conversions.</p>
+        </div>
+        <TableSkeleton rows={8} columns={8} />
+      </div>
+    );
+  }
+
+  if (loadError && rates.length === 0) {
+    return (
+      <div className={adminPageStack}>
+        <div>
+          <h1 className={adminPageTitle}>Exchange Rates</h1>
+          <p className={adminPageSubtitle}>Manage direct FX rates used in consumer conversions.</p>
+        </div>
+        <div className={adminCard}>
+          <div className={adminCardContent}>
+            <button type="button" className={adminPrimaryButton} onClick={() => void refresh()}>
+              Retry
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={adminPageStack}>
-      <div>
-        <h1 className={adminPageTitle}>Exchange Rates</h1>
-        <p className={adminPageSubtitle}>Manage direct FX rates used in consumer conversions.</p>
+      <div className={adminHeaderRow}>
+        <div>
+          <h1 className={adminPageTitle}>Exchange Rates</h1>
+          <p className={adminPageSubtitle}>Manage direct FX rates used in consumer conversions.</p>
+        </div>
+        <button type="button" className={adminPrimaryButton} onClick={() => void refresh()} disabled={loading}>
+          {loading ? `Refreshing...` : `Refresh`}
+        </button>
       </div>
 
       <div className={adminActionRow}>
         <label className={adminFormLabelBlock}>
           <span className={adminFormLabelText}>Search</span>
-          <input
-            className={adminFormInput}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Pair, rate, id"
-          />
+          <SearchWithClear value={query} onChangeAction={setQuery} placeholder="Pair, rate, id" />
         </label>
         <label className={adminFormLabelBlock}>
           <span className={adminFormLabelText}>From</span>
-          <select className={adminFormInput} value={filterFrom} onChange={(e) => setFilterFrom(e.target.value)}>
+          <select
+            className={adminFormInput}
+            value={filterFrom}
+            onChange={(e) => {
+              setFilterFrom(e.target.value);
+              setPage(1);
+            }}
+          >
             <option value="all">All</option>
             {currencies.map((currency) => (
               <option key={currency} value={currency}>
@@ -550,7 +640,14 @@ export function ExchangeRatesPageClient() {
         </label>
         <label className={adminFormLabelBlock}>
           <span className={adminFormLabelText}>To</span>
-          <select className={adminFormInput} value={filterTo} onChange={(e) => setFilterTo(e.target.value)}>
+          <select
+            className={adminFormInput}
+            value={filterTo}
+            onChange={(e) => {
+              setFilterTo(e.target.value);
+              setPage(1);
+            }}
+          >
             <option value="all">All</option>
             {currencies.map((currency) => (
               <option key={currency} value={currency}>
@@ -561,7 +658,14 @@ export function ExchangeRatesPageClient() {
         </label>
         <label className={adminFormLabelBlock}>
           <span className={adminFormLabelText}>Status</span>
-          <select className={adminFormInput} value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+          <select
+            className={adminFormInput}
+            value={filterStatus}
+            onChange={(e) => {
+              setFilterStatus(e.target.value);
+              setPage(1);
+            }}
+          >
             <option value="all">All</option>
             <option value="DRAFT">DRAFT</option>
             <option value="APPROVED">APPROVED</option>
@@ -574,7 +678,10 @@ export function ExchangeRatesPageClient() {
             className={adminFormInput}
             type="checkbox"
             checked={includeHistory}
-            onChange={(e) => setIncludeHistory(e.target.checked)}
+            onChange={(e) => {
+              setIncludeHistory(e.target.checked);
+              setPage(1);
+            }}
           />
         </label>
         <label className={adminFormLabelBlock}>
@@ -583,80 +690,123 @@ export function ExchangeRatesPageClient() {
             className={adminFormInput}
             type="checkbox"
             checked={includeExpired}
-            onChange={(e) => setIncludeExpired(e.target.checked)}
+            onChange={(e) => {
+              setIncludeExpired(e.target.checked);
+              setPage(1);
+            }}
           />
         </label>
         <div className={adminActionRow}>
+          <button type="button" className={adminPrimaryButton} onClick={resetFilters} disabled={loading}>
+            Reset filters
+          </button>
           <button className={adminActionButton} onClick={openCreateModal} type="button">
             Add rate
           </button>
         </div>
       </div>
 
-      <DataTable<ExchangeRate>
-        rows={filteredRates}
-        getRowKeyAction={(r) => r.id}
-        columns={[
-          {
-            key: `id`,
-            header: `ID`,
-            render: (r) => <span className={adminMonoCode}>{r.id.slice(0, 8)}…</span>,
-          },
-          {
-            key: `pair`,
-            header: `Pair`,
-            render: (r) => (
-              <span className={adminTextGray700}>
-                {r.fromCurrency} → {r.toCurrency}
-              </span>
-            ),
-          },
-          {
-            key: `rate`,
-            header: `Rate`,
-            render: (r) => <span className={adminTextGray700}>{Number(r.rate).toFixed(8)}</span>,
-          },
-          {
-            key: `status`,
-            header: `Status`,
-            render: (r) => <span className={adminTextGray700}>{r.status ?? `APPROVED`}</span>,
-          },
-          {
-            key: `effective`,
-            header: `Effective`,
-            render: (r) =>
-              r.effectiveAt ? (
-                <span className={adminTextGray600}>{new Date(r.effectiveAt).toLocaleString()}</span>
-              ) : (
-                `—`
+      {total > 0 && (
+        <div className={adminPaginationBar}>
+          <span className={adminPaginationInfo}>
+            Showing {from}–{to} of {total}
+          </span>
+          <button
+            type="button"
+            className={adminPaginationButton}
+            disabled={page <= 1 || loading}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+          >
+            Previous
+          </button>
+          <span className={adminPaginationInfo}>
+            Page {page} of {totalPages}
+          </span>
+          <button
+            type="button"
+            className={adminPaginationButton}
+            disabled={page >= totalPages || loading}
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+          >
+            Next
+          </button>
+        </div>
+      )}
+
+      {!loading && total === 0 && (
+        <div className={adminCard}>
+          <div className={adminCardContent}>
+            <div className={adminTextGray500}>No exchange rates</div>
+          </div>
+        </div>
+      )}
+
+      {total > 0 && (
+        <DataTable<ExchangeRate>
+          rows={filteredRates}
+          getRowKeyAction={(r) => r.id}
+          columns={[
+            {
+              key: `id`,
+              header: `ID`,
+              render: (r) => <span className={adminMonoCode}>{r.id.slice(0, 8)}…</span>,
+            },
+            {
+              key: `pair`,
+              header: `Pair`,
+              render: (r) => (
+                <span className={adminTextGray700}>
+                  {r.fromCurrency} → {r.toCurrency}
+                </span>
               ),
-          },
-          {
-            key: `provider`,
-            header: `Provider`,
-            render: (r) => <span className={adminTextGray600}>{r.provider ?? `—`}</span>,
-          },
-          {
-            key: `updated`,
-            header: `Updated`,
-            render: (r) => <span className={adminTextGray600}>{new Date(r.updatedAt).toLocaleString()}</span>,
-          },
-          {
-            key: `actions`,
-            header: `Actions`,
-            render: (r) => (
-              <div className={adminActionRow}>
-                <button className={adminActionButton} onClick={() => openEditModal(r)} type="button">
-                  Edit
-                </button>
-                <button className={adminDeleteButton} onClick={() => deleteRate(r)} type="button">
-                  Delete
-                </button>
-              </div>
-            ),
-          },
-        ]}
-      />
+            },
+            {
+              key: `rate`,
+              header: `Rate`,
+              render: (r) => <span className={adminTextGray700}>{Number(r.rate).toFixed(8)}</span>,
+            },
+            {
+              key: `status`,
+              header: `Status`,
+              render: (r) => <span className={adminTextGray700}>{r.status ?? `APPROVED`}</span>,
+            },
+            {
+              key: `effective`,
+              header: `Effective`,
+              render: (r) =>
+                r.effectiveAt ? (
+                  <span className={adminTextGray600}>{new Date(r.effectiveAt).toLocaleString()}</span>
+                ) : (
+                  `—`
+                ),
+            },
+            {
+              key: `provider`,
+              header: `Provider`,
+              render: (r) => <span className={adminTextGray600}>{r.provider ?? `—`}</span>,
+            },
+            {
+              key: `updated`,
+              header: `Updated`,
+              render: (r) => <span className={adminTextGray600}>{new Date(r.updatedAt).toLocaleString()}</span>,
+            },
+            {
+              key: `actions`,
+              header: `Actions`,
+              render: (r) => (
+                <div className={adminActionRow}>
+                  <button className={adminActionButton} onClick={() => openEditModal(r)} type="button">
+                    Edit
+                  </button>
+                  <button className={adminDeleteButton} onClick={() => deleteRate(r)} type="button">
+                    Delete
+                  </button>
+                </div>
+              ),
+            },
+          ]}
+        />
+      )}
 
       {createOpen && renderRateForm(createForm, isCreating, `Create`, createRate, () => setCreateOpen(false))}
       {editingRate && renderRateForm(editForm, isUpdating, `Save`, updateRate, closeEditModal)}

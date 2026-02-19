@@ -1,12 +1,19 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect } from 'react';
+import { toast } from 'sonner';
 
 import { useRecentPaymentRequests } from '../../lib/client';
+import { getLocalToastMessage, localToastKeys } from '../../lib/error-messages';
 import styles from '../ui/classNames.module.css';
 
 export function RecentPaymentRequestsCard() {
-  const { data: recentRequests, error, isLoading } = useRecentPaymentRequests();
+  const { data: recentRequests, error, isLoading, mutate } = useRecentPaymentRequests();
+
+  useEffect(() => {
+    if (error) toast.error(getLocalToastMessage(localToastKeys.LOAD_RECENT_REQUESTS));
+  }, [error]);
 
   if (isLoading) {
     return (
@@ -28,7 +35,9 @@ export function RecentPaymentRequestsCard() {
       <div className={styles.adminCard}>
         <div className={styles.adminCardTitle}>Last 24h Payment Requests</div>
         <div className={styles.adminCardContent}>
-          <div className={styles.adminTextGray500}>Failed to load recent requests</div>
+          <button type="button" className={styles.adminPrimaryButton} onClick={() => void mutate()}>
+            Retry
+          </button>
         </div>
       </div>
     );

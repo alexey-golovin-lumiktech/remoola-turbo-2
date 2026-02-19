@@ -1,10 +1,22 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { IsEnum, IsIn, IsOptional } from 'class-validator';
+import { IsEnum, IsIn, IsOptional, IsString } from 'class-validator';
 
 import { $Enums } from '@remoola/database-2';
 
 export class ExchangeRateListQuery {
+  @Expose()
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  page?: string;
+
+  @Expose()
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  pageSize?: string;
+
   @Expose()
   @ApiPropertyOptional({ enum: $Enums.CurrencyCode })
   @IsEnum($Enums.CurrencyCode)

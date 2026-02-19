@@ -2,9 +2,11 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 import styles from '../../../components/ui/classNames.module.css';
 import { apiFetch } from '../../../lib';
+import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../../lib/error-messages';
 
 export function LoginPageClient() {
   const router = useRouter();
@@ -15,12 +17,14 @@ export function LoginPageClient() {
 
   const [email, setEmail] = useState(`super.admin@wirebill.com`);
   const [password, setPassword] = useState(`SuperWirebill@Admin123!`);
-  const [err, setErr] = useState<string>();
   const [loading, setLoading] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    setErr(undefined);
+    if (!email.trim() || !password.trim()) {
+      toast.error(getLocalToastMessage(localToastKeys.LOGIN_EMAIL_PASSWORD_REQUIRED));
+      return;
+    }
     setLoading(true);
 
     const response = await apiFetch<{ ok: true }>(`/api/auth/login`, {
@@ -30,9 +34,11 @@ export function LoginPageClient() {
 
     setLoading(false);
 
-    if (!response.ok) return setErr(response.message);
+    if (!response.ok) {
+      toast.error(getErrorMessageForUser(response.message, getLocalToastMessage(localToastKeys.UNEXPECTED_ERROR)));
+      return;
+    }
 
-    // Redirect to dashboard after successful login
     router.push(next);
     router.refresh();
   }
@@ -65,9 +71,7 @@ export function LoginPageClient() {
             />
           </label>
 
-          {err && <div className={styles.adminLoginError}>{err}</div>}
-
-          <button disabled={loading} className={styles.adminLoginButton}>
+          <button type="submit" disabled={loading} className={styles.adminLoginButton}>
             {loading ? `Signing in...` : `Sign in`}
           </button>
         </div>

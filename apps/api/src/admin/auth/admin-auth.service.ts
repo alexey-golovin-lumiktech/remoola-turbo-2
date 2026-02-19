@@ -2,11 +2,12 @@ import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/
 import { JwtService } from '@nestjs/jwt';
 
 import { type AccessRefreshTokenModel, type AdminModel } from '@remoola/database-2';
+import { adminErrorCodes } from '@remoola/shared-constants';
 
 import { Credentials } from '../../dtos/admin';
 import { IJwtTokenPayload } from '../../dtos/consumer';
 import { PrismaService } from '../../shared/prisma.service';
-import { constants, passwordUtils } from '../../shared-common';
+import { passwordUtils } from '../../shared-common';
 
 @Injectable()
 export class AdminAuthService {
@@ -18,14 +19,14 @@ export class AdminAuthService {
     const admin = await this.prisma.adminModel.findFirst({
       where: { email, deletedAt: null },
     });
-    if (!admin) throw new BadRequestException(constants.INVALID_CREDENTIALS);
+    if (!admin) throw new BadRequestException(adminErrorCodes.ADMIN_INVALID_CREDENTIALS);
 
     const isValidPassword = await passwordUtils.verifyPassword({
       password,
       storedHash: admin.password,
       storedSalt: admin.salt,
     });
-    if (!isValidPassword) throw new BadRequestException(constants.INVALID_CREDENTIALS);
+    if (!isValidPassword) throw new BadRequestException(adminErrorCodes.ADMIN_INVALID_CREDENTIALS);
 
     return admin;
   }
@@ -34,14 +35,14 @@ export class AdminAuthService {
     const identity = await this.prisma.adminModel.findFirst({
       where: { email: body.email, deletedAt: null },
     });
-    if (!identity) throw new UnauthorizedException(`Invalid credentials`);
+    if (!identity) throw new UnauthorizedException(adminErrorCodes.ADMIN_INVALID_CREDENTIALS);
 
     const valid = await passwordUtils.verifyPassword({
       password: body.password,
       storedHash: identity.password,
       storedSalt: identity.salt,
     });
-    if (!valid) throw new UnauthorizedException(`Invalid credentials`);
+    if (!valid) throw new UnauthorizedException(adminErrorCodes.ADMIN_INVALID_CREDENTIALS);
 
     const access = await this.getAccessAndRefreshToken(identity.id);
     return { identity, ...access };
@@ -50,8 +51,8 @@ export class AdminAuthService {
   async refreshAccess(refreshToken: string) {
     const verified = this.jwtService.verify<IJwtTokenPayload>(refreshToken);
     const exist = await this.prisma.accessRefreshTokenModel.findFirst({ where: { identityId: verified.identityId } });
-    if (exist == null) throw new BadRequestException(`no identity record`);
-    if (exist.refreshToken != refreshToken) throw new BadRequestException(`provided refresh token is not valid`);
+    if (exist == null) throw new BadRequestException(adminErrorCodes.ADMIN_NO_IDENTITY_RECORD);
+    if (exist.refreshToken != refreshToken) throw new BadRequestException(adminErrorCodes.ADMIN_REFRESH_TOKEN_INVALID);
 
     const admin = await this.prisma.adminModel.findFirst({ where: { id: verified.identityId } });
     const access = await this.getAccessAndRefreshToken(admin.id);

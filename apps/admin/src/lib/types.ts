@@ -110,7 +110,9 @@ export type PaymentRequest = {
   dueDate?: string | null;
   sentDate?: string | null;
 
-  payerId: string;
+  /** Null when payer is email-only (not yet claimed). Matches DB payment_request.payer_id. */
+  payerId?: string | null;
+  payerEmail?: string | null;
   requesterId: string;
 
   payer?: Pick<Consumer, `id` | `email`>;
@@ -118,6 +120,14 @@ export type PaymentRequest = {
 
   createdAt: string;
   updatedAt: string;
+};
+
+/** Response shape for GET /api/payment-requests and GET /api/ledger (paginated). */
+export type PaginatedResponse<T> = {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
 };
 
 export type LedgerEntry = {

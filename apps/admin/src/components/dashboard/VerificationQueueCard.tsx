@@ -1,13 +1,20 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect } from 'react';
+import { toast } from 'sonner';
 
 import { type VerificationQueueItem } from '../../lib';
 import { useVerificationQueue } from '../../lib/client';
+import { getLocalToastMessage, localToastKeys } from '../../lib/error-messages';
 import styles from '../ui/classNames.module.css';
 
 export function VerificationQueueCard() {
-  const { data: verificationQueue, error, isLoading } = useVerificationQueue();
+  const { data: verificationQueue, error, isLoading, mutate } = useVerificationQueue();
+
+  useEffect(() => {
+    if (error) toast.error(getLocalToastMessage(localToastKeys.LOAD_VERIFICATION_QUEUE));
+  }, [error]);
 
   if (isLoading) {
     return (
@@ -29,7 +36,9 @@ export function VerificationQueueCard() {
       <div className={styles.adminCard}>
         <div className={styles.adminCardTitle}>Verification Queue</div>
         <div className={styles.adminCardContent}>
-          <div className={styles.adminTextGray500}>Failed to load verification queue</div>
+          <button type="button" className={styles.adminPrimaryButton} onClick={() => void mutate()}>
+            Retry
+          </button>
         </div>
       </div>
     );

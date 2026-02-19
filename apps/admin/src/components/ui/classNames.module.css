@@ -338,6 +338,18 @@
   @apply text-sm text-[var(--muted)];
 }
 
+.adminPaginationBar {
+  @apply flex flex-wrap items-center gap-3;
+}
+
+.adminPaginationInfo {
+  @apply text-sm text-[var(--muted)];
+}
+
+.adminPaginationButton {
+  @apply rounded-lg border border-[var(--line)] px-3 py-1.5 text-sm text-[var(--ink)] hover:bg-[var(--bg-0)] disabled:opacity-50 disabled:pointer-events-none;
+}
+
 .adminDashboardGrid {
   @apply grid gap-4 md:grid-cols-3;
 }
@@ -508,6 +520,34 @@
 
 .adminFormInput {
   @apply w-full rounded-lg border border-[var(--line)] bg-[var(--card)] px-3 py-2 text-sm text-[var(--ink)];
+}
+
+.adminSearchInputWrap {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+.adminSearchInputWithClear {
+  padding-right: 2rem;
+}
+
+.adminSearchClearBtn {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 0 0.25rem;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 2px;
+}
+.adminSearchClearBtn:hover {
+  color: var(--ink);
 }
 
 .adminFormError {

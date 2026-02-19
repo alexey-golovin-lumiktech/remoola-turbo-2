@@ -1,5 +1,7 @@
 import '@remoola/ui/styles.css';
 import './globals.css';
+import { Toaster } from 'sonner';
+
 import { PerformanceProvider } from '../components/PerformanceProvider';
 import { SWRProvider } from '../components/SWRProvider';
 import { ThemeProvider } from '../components/ThemeProvider';
@@ -20,6 +22,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="en">
       <body>
         <ThemeProvider>
+          <Toaster richColors position="top-right" />
           <PerformanceProvider>
             <SWRProvider>{children}</SWRProvider>
           </PerformanceProvider>

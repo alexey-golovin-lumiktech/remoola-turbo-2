@@ -1,10 +1,13 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect } from 'react';
+import { toast } from 'sonner';
 
 import { PageSkeleton } from '../../../../components';
 import styles from '../../../../components/ui/classNames.module.css';
 import { useLedgerAnomalies } from '../../../../lib/client';
+import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../../../lib/error-messages';
 
 const typeLabelMap: Record<string, string> = {
   duplicate: `Duplicate Entry`,
@@ -27,7 +30,12 @@ const typeColorMap: Record<string, string> = {
 };
 
 export function LedgerAnomaliesPageClient() {
-  const { data: anomalies, error, isLoading } = useLedgerAnomalies();
+  const { data: anomalies, error, isLoading, isValidating, mutate } = useLedgerAnomalies();
+
+  useEffect(() => {
+    if (error)
+      toast.error(getErrorMessageForUser(error.message, getLocalToastMessage(localToastKeys.LOAD_LEDGER_ANOMALIES)));
+  }, [error]);
 
   if (isLoading) {
     return <PageSkeleton />;
@@ -41,12 +49,30 @@ export function LedgerAnomaliesPageClient() {
           <p className={styles.adminPageSubtitle}>Ledger inconsistencies and reconciliation issues.</p>
         </div>
 
-        <Link href="/ledger" className={styles.adminPrimaryButton}>
-          View ledger
-        </Link>
+        <div className={styles.adminHeaderActions}>
+          <button
+            type="button"
+            className={styles.adminPrimaryButton}
+            onClick={() => void mutate()}
+            disabled={isValidating}
+          >
+            {isValidating ? `Refreshing...` : `Refresh`}
+          </button>
+          <Link href="/ledger" className={styles.adminPrimaryButton}>
+            View ledger
+          </Link>
+        </div>
       </div>
 
-      {error && <div className={styles.adminAlertError}>{error.message || `Failed to load anomalies`}</div>}
+      {error && (
+        <div className={styles.adminCard}>
+          <div className={styles.adminCardContent}>
+            <button type="button" className={styles.adminPrimaryButton} onClick={() => void mutate()}>
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
 
       {!error && (!anomalies || anomalies.length === 0) && (
         <div className={styles.adminCard}>

@@ -4,7 +4,7 @@ import { $Enums } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { ConsumerPaymentsService } from './consumer-payments.service';
-import { TransferBody, WithdrawBody } from './dto';
+import { type TransferBody, type WithdrawBody } from './dto';
 
 describe(`ConsumerPaymentsService.createPaymentRequest`, () => {
   const consumerId = `consumer-1`;

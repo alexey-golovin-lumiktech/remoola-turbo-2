@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import useSWR from 'swr';
 import useSWRMutation from 'swr/mutation';
 
@@ -9,12 +10,27 @@ import {
   type Consumer,
   type PaymentRequest,
   type LedgerEntry,
+  type PaginatedResponse,
   type DashboardStats,
   type PaymentRequestsByStatus,
   type RecentPaymentRequest,
   type LedgerAnomaly,
   type VerificationQueueItem,
 } from './types';
+
+/** Debounced value for search; empty string syncs immediately (no delay). */
+export function useDebouncedValue(value: string, delayMs: number): string {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    if (value === ``) {
+      setDebounced(``);
+      return;
+    }
+    const t = setTimeout(() => setDebounced(value), delayMs);
+    return () => clearTimeout(t);
+  }, [value, delayMs]);
+  return debounced;
+}
 
 // Auth hooks
 export function useAuth() {
@@ -76,18 +92,18 @@ export function useConsumer(id: string) {
   return useSWR<Consumer>(queryKeys.consumers.detail(id));
 }
 
-// Payment request hooks
+// Payment request hooks (list is paginated: { items, total, page, pageSize })
 export function usePaymentRequests() {
-  return useSWR<PaymentRequest[]>(queryKeys.paymentRequests.list());
+  return useSWR<PaginatedResponse<PaymentRequest>>(queryKeys.paymentRequests.list());
 }
 
 export function usePaymentRequest(id: string) {
   return useSWR<PaymentRequest>(queryKeys.paymentRequests.detail(id));
 }
 
-// Ledger hooks
+// Ledger hooks (list is paginated: { items, total, page, pageSize })
 export function useLedgerEntries() {
-  return useSWR<LedgerEntry[]>(queryKeys.ledger.entries());
+  return useSWR<PaginatedResponse<LedgerEntry>>(queryKeys.ledger.entries());
 }
 
 // Dashboard hooks

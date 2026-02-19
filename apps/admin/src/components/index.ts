@@ -1,5 +1,6 @@
 export * from './ClientBoundary';
 export * from './DataTable';
+export * from './SearchWithClear';
 export * from './ErrorBoundary';
 export * from './JsonView';
 export * from './Sidebar';

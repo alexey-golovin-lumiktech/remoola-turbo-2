@@ -31,6 +31,7 @@ export default function LoginForm() {
   const [email, setEmail] = useState(`user@example.com`);
   const [password, setPassword] = useState(`password`);
   const [err, setErr] = useState<string>();
+  const [loading, setLoading] = useState(false);
   const errorMessage = err || (oauthError ? `Google sign-in failed. Please try again.` : undefined);
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
   const googleStartUrl =
@@ -41,33 +42,41 @@ export default function LoginForm() {
   const submitLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErr(undefined);
-
-    const loginRequest = await fetch(`/api/login`, {
-      method: `POST`,
-      headers: { 'content-type': `application/json` },
-      credentials: `include`,
-      body: JSON.stringify({ email, password }),
-    });
-
-    if (!loginRequest.ok) {
-      setErr(`Login failed (${loginRequest.status})`);
+    if (!email.trim() || !password.trim()) {
+      setErr(`Email and password are required.`);
       return;
     }
 
-    const meRequest = await fetch(`/api/me`, {
-      method: `GET`,
-      headers: { 'content-type': `application/json` },
-      credentials: `include`,
-      cache: `no-store`,
-    });
+    setLoading(true);
+    try {
+      const loginRequest = await fetch(`/api/login`, {
+        method: `POST`,
+        headers: { 'content-type': `application/json` },
+        credentials: `include`,
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (!meRequest.ok) {
-      setErr(`Logged in, but cookies not available. Check CORS/cookie attrs.`);
-      return;
+      if (!loginRequest.ok) {
+        setErr(`Login failed (${loginRequest.status})`);
+        return;
+      }
+
+      const meRequest = await fetch(`/api/me`, {
+        method: `GET`,
+        headers: { 'content-type': `application/json` },
+        credentials: `include`,
+        cache: `no-store`,
+      });
+
+      if (!meRequest.ok) {
+        setErr(`Logged in, but cookies not available. Check CORS/cookie attrs.`);
+        return;
+      }
+
+      router.replace(nextPath || `/dashboard`);
+    } finally {
+      setLoading(false);
     }
-
-    // ✅ redirect to ?next=... or /dashboard
-    router.replace(nextPath || `/dashboard`);
   };
 
   return (
@@ -77,6 +86,8 @@ export default function LoginForm() {
         <input
           className={formInputFullWidth}
           data-testid="consumer-login-input-email"
+          type="email"
+          autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Email"
@@ -85,23 +96,25 @@ export default function LoginForm() {
           className={formInputFullWidth}
           type="password"
           data-testid="consumer-login-input-password"
+          autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
         />
         {errorMessage && (
-          <p className={loginErrorText} data-testid="consumer-login-error">
+          <p className={loginErrorText} data-testid="consumer-login-error" role="alert">
             {errorMessage}
           </p>
         )}
-        <button className={loginButton} type="submit" data-testid="consumer-login-btn-submit">
-          Login
+        <button className={loginButton} type="submit" data-testid="consumer-login-btn-submit" disabled={loading}>
+          {loading ? `Signing in...` : `Login`}
         </button>
         {googleStartUrl && (
           <button
             type="button"
             className={loginButton}
             data-testid="consumer-login-btn-google"
+            disabled={loading}
             onClick={async () => {
               await fetch(`/api/consumer/auth/clear-cookies`, { method: `POST`, credentials: `include` });
               window.location.href = googleStartUrl;

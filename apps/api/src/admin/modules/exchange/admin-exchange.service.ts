@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
-import { $Enums } from '@remoola/database-2';
+import { $Enums, Prisma } from '@remoola/database-2';
+import { adminErrorCodes } from '@remoola/shared-constants';
 
 import { ConsumerExchangeService } from '../../../consumer/modules/exchange/consumer-exchange.service';
 import { UpdateAutoConversionRuleBody } from '../../../consumer/modules/exchange/dto/update-auto-conversion-rule.dto';
@@ -15,6 +16,8 @@ export class AdminExchangeService {
   ) {}
 
   async listRates(filters?: {
+    page?: number;
+    pageSize?: number;
     from?: $Enums.CurrencyCode;
     to?: $Enums.CurrencyCode;
     status?: $Enums.ExchangeRateStatus;
@@ -24,29 +27,45 @@ export class AdminExchangeService {
     const now = new Date();
     const includeHistory = filters?.includeHistory === `true`;
     const includeExpired = filters?.includeExpired === `true`;
-    const rates = await this.prisma.exchangeRateModel.findMany({
-      where: {
-        deletedAt: null,
-        ...(filters?.from && { fromCurrency: filters.from }),
-        ...(filters?.to && { toCurrency: filters.to }),
-        ...(filters?.status && { status: filters.status }),
-        ...(includeHistory
-          ? {
-              ...(includeExpired
-                ? {}
-                : {
-                    OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
-                  }),
-            }
-          : {
-              effectiveAt: { lte: now },
-              OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
-            }),
-      },
-      orderBy: [{ fromCurrency: `asc` }, { toCurrency: `asc` }, { effectiveAt: `desc` }],
-    });
+    const pageSize = Math.min(Math.max(filters?.pageSize ?? 10, 1), 500);
+    const page = Math.max(filters?.page ?? 1, 1);
+    const skip = (page - 1) * pageSize;
 
-    return rates.map((rate) => this.normalizeRate(rate));
+    const where: Prisma.ExchangeRateModelWhereInput = {
+      deletedAt: null,
+      ...(filters?.from && { fromCurrency: filters.from }),
+      ...(filters?.to && { toCurrency: filters.to }),
+      ...(filters?.status && { status: filters.status }),
+      ...(includeHistory
+        ? {
+            ...(includeExpired
+              ? {}
+              : {
+                  OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+                }),
+          }
+        : {
+            effectiveAt: { lte: now },
+            OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+          }),
+    };
+
+    const [rates, total] = await Promise.all([
+      this.prisma.exchangeRateModel.findMany({
+        where,
+        orderBy: [{ fromCurrency: `asc` }, { toCurrency: `asc` }, { effectiveAt: `desc` }],
+        skip,
+        take: pageSize,
+      }),
+      this.prisma.exchangeRateModel.count({ where }),
+    ]);
+
+    return {
+      items: rates.map((rate) => this.normalizeRate(rate)),
+      total,
+      page,
+      pageSize,
+    };
   }
 
   async getRateById(rateId: string) {
@@ -55,7 +74,7 @@ export class AdminExchangeService {
     });
 
     if (!rate) {
-      throw new NotFoundException(`Exchange rate not found`);
+      throw new NotFoundException(adminErrorCodes.ADMIN_EXCHANGE_RATE_NOT_FOUND);
     }
 
     return this.normalizeRate(rate);
@@ -63,35 +82,35 @@ export class AdminExchangeService {
 
   async createRate(body: ExchangeRateCreate, adminId?: string) {
     if (body.fromCurrency === body.toCurrency) {
-      throw new BadRequestException(`Source and target currencies must differ`);
+      throw new BadRequestException(adminErrorCodes.ADMIN_SOURCE_AND_TARGET_CURRENCIES_MUST_DIFFER);
     }
 
     if (!Number.isFinite(body.rate) || body.rate <= 0) {
-      throw new BadRequestException(`Invalid exchange rate`);
+      throw new BadRequestException(adminErrorCodes.ADMIN_INVALID_EXCHANGE_RATE);
     }
 
     if (body.rateBid != null && body.rateAsk != null && body.rateBid > body.rateAsk) {
-      throw new BadRequestException(`Bid rate cannot exceed ask rate`);
+      throw new BadRequestException(adminErrorCodes.ADMIN_BID_RATE_CANNOT_EXCEED_ASK_RATE);
     }
 
     if (body.confidence != null && (body.confidence < 0 || body.confidence > 100)) {
-      throw new BadRequestException(`Confidence must be between 0 and 100`);
+      throw new BadRequestException(adminErrorCodes.ADMIN_CONFIDENCE_MUST_BE_0_100);
     }
 
     const requestedEffectiveAt = body.effectiveAt ? new Date(body.effectiveAt) : new Date();
     if (Number.isNaN(requestedEffectiveAt.getTime())) {
-      throw new BadRequestException(`Invalid effectiveAt`);
+      throw new BadRequestException(adminErrorCodes.ADMIN_INVALID_EFFECTIVE_AT);
     }
 
     const expiresAt = body.expiresAt ? new Date(body.expiresAt) : null;
     if (body.expiresAt && Number.isNaN(expiresAt?.getTime() ?? NaN)) {
-      throw new BadRequestException(`Invalid expiresAt`);
+      throw new BadRequestException(adminErrorCodes.ADMIN_INVALID_EXPIRES_AT);
     }
 
     const effectiveAt = await this.ensureUniqueEffectiveAt(body.fromCurrency, body.toCurrency, requestedEffectiveAt);
 
     if (expiresAt && expiresAt <= effectiveAt) {
-      throw new BadRequestException(`expiresAt must be after effectiveAt`);
+      throw new BadRequestException(adminErrorCodes.ADMIN_EXPIRES_AT_MUST_BE_AFTER_EFFECTIVE_AT);
     }
 
     const status = body.status ?? $Enums.ExchangeRateStatus.DRAFT;
@@ -149,26 +168,26 @@ export class AdminExchangeService {
     });
 
     if (!existing) {
-      throw new NotFoundException(`Exchange rate not found`);
+      throw new NotFoundException(adminErrorCodes.ADMIN_EXCHANGE_RATE_NOT_FOUND);
     }
 
     const from = body.fromCurrency ?? existing.fromCurrency;
     const to = body.toCurrency ?? existing.toCurrency;
 
     if (from === to) {
-      throw new BadRequestException(`Source and target currencies must differ`);
+      throw new BadRequestException(adminErrorCodes.ADMIN_SOURCE_AND_TARGET_CURRENCIES_MUST_DIFFER);
     }
 
     if (body.rate != null && (!Number.isFinite(body.rate) || body.rate <= 0)) {
-      throw new BadRequestException(`Invalid exchange rate`);
+      throw new BadRequestException(adminErrorCodes.ADMIN_INVALID_EXCHANGE_RATE);
     }
 
     if (body.rateBid != null && body.rateAsk != null && body.rateBid > body.rateAsk) {
-      throw new BadRequestException(`Bid rate cannot exceed ask rate`);
+      throw new BadRequestException(adminErrorCodes.ADMIN_BID_RATE_CANNOT_EXCEED_ASK_RATE);
     }
 
     if (body.confidence != null && (body.confidence < 0 || body.confidence > 100)) {
-      throw new BadRequestException(`Confidence must be between 0 and 100`);
+      throw new BadRequestException(adminErrorCodes.ADMIN_CONFIDENCE_MUST_BE_0_100);
     }
 
     const shouldCreateNewVersion = existing.status === $Enums.ExchangeRateStatus.APPROVED;
@@ -178,16 +197,16 @@ export class AdminExchangeService {
         ? new Date()
         : (existing.effectiveAt ?? new Date());
     if (body.effectiveAt && Number.isNaN(requestedEffectiveAt.getTime())) {
-      throw new BadRequestException(`Invalid effectiveAt`);
+      throw new BadRequestException(adminErrorCodes.ADMIN_INVALID_EFFECTIVE_AT);
     }
 
     const expiresAt = body.expiresAt === null ? null : body.expiresAt ? new Date(body.expiresAt) : existing.expiresAt;
     if (body.expiresAt && Number.isNaN(expiresAt?.getTime() ?? NaN)) {
-      throw new BadRequestException(`Invalid expiresAt`);
+      throw new BadRequestException(adminErrorCodes.ADMIN_INVALID_EXPIRES_AT);
     }
 
     if (expiresAt && requestedEffectiveAt && expiresAt <= requestedEffectiveAt) {
-      throw new BadRequestException(`expiresAt must be after effectiveAt`);
+      throw new BadRequestException(adminErrorCodes.ADMIN_EXPIRES_AT_MUST_BE_AFTER_EFFECTIVE_AT);
     }
 
     const status = body.status ?? existing.status;
@@ -207,7 +226,7 @@ export class AdminExchangeService {
           },
         });
         if (conflict) {
-          throw new BadRequestException(`effectiveAt must be unique for this currency pair`);
+          throw new BadRequestException(adminErrorCodes.ADMIN_EFFECTIVE_AT_MUST_BE_UNIQUE_FOR_PAIR);
         }
       }
       const updated = await this.prisma.exchangeRateModel.update({
@@ -237,7 +256,7 @@ export class AdminExchangeService {
 
     const effectiveAt = await this.ensureUniqueEffectiveAt(from, to, requestedEffectiveAt, existing.id);
     if (expiresAt && effectiveAt && expiresAt <= effectiveAt) {
-      throw new BadRequestException(`expiresAt must be after effectiveAt`);
+      throw new BadRequestException(adminErrorCodes.ADMIN_EXPIRES_AT_MUST_BE_AFTER_EFFECTIVE_AT);
     }
 
     const rate = await this.prisma.$transaction(async (tx) => {
@@ -281,7 +300,7 @@ export class AdminExchangeService {
     });
 
     if (!existing) {
-      throw new NotFoundException(`Exchange rate not found`);
+      throw new NotFoundException(adminErrorCodes.ADMIN_EXCHANGE_RATE_NOT_FOUND);
     }
 
     await this.prisma.exchangeRateModel.update({
@@ -292,9 +311,23 @@ export class AdminExchangeService {
     return { rateId: existing.id };
   }
 
-  async listRules() {
+  private static readonly SEARCH_MAX_LEN = 200;
+
+  async listRules(filters?: { q?: string; enabled?: string }) {
+    const search =
+      typeof filters?.q === `string` && filters.q.trim().length > 0
+        ? filters.q.trim().slice(0, AdminExchangeService.SEARCH_MAX_LEN)
+        : undefined;
+    const enabledFilter = filters?.enabled === `true` ? true : filters?.enabled === `false` ? false : undefined;
+
+    const where: Prisma.WalletAutoConversionRuleModelWhereInput = {
+      deletedAt: null,
+      ...(enabledFilter !== undefined && { enabled: enabledFilter }),
+      ...(search && { consumer: { email: { contains: search, mode: `insensitive` } } }),
+    };
+
     const rules = await this.prisma.walletAutoConversionRuleModel.findMany({
-      where: { deletedAt: null },
+      where,
       include: {
         consumer: { select: { id: true, email: true } },
       },
@@ -314,22 +347,22 @@ export class AdminExchangeService {
     });
 
     if (!rule) {
-      throw new NotFoundException(`Rule not found`);
+      throw new NotFoundException(adminErrorCodes.ADMIN_RULE_NOT_FOUND);
     }
 
     const from = body.from ?? rule.fromCurrency;
     const to = body.to ?? rule.toCurrency;
 
     if (from === to) {
-      throw new BadRequestException(`Source and target currencies must differ`);
+      throw new BadRequestException(adminErrorCodes.ADMIN_SOURCE_AND_TARGET_CURRENCIES_MUST_DIFFER);
     }
 
     if (body.targetBalance != null && (!Number.isFinite(body.targetBalance) || body.targetBalance < 0)) {
-      throw new BadRequestException(`Invalid target balance`);
+      throw new BadRequestException(adminErrorCodes.ADMIN_INVALID_TARGET_BALANCE);
     }
 
     if (body.maxConvertAmount != null && body.maxConvertAmount <= 0) {
-      throw new BadRequestException(`Invalid max convert amount`);
+      throw new BadRequestException(adminErrorCodes.ADMIN_INVALID_MAX_CONVERT_AMOUNT);
     }
 
     const minIntervalMinutes = body.minIntervalMinutes ?? rule.minIntervalMinutes;
@@ -364,9 +397,25 @@ export class AdminExchangeService {
     });
   }
 
-  async listScheduledConversions() {
+  async listScheduledConversions(filters?: { q?: string; status?: string }) {
+    const search =
+      typeof filters?.q === `string` && filters.q.trim().length > 0
+        ? filters.q.trim().slice(0, AdminExchangeService.SEARCH_MAX_LEN)
+        : undefined;
+    const statusFilter =
+      filters?.status &&
+      Object.values($Enums.ScheduledFxConversionStatus).includes(filters.status as $Enums.ScheduledFxConversionStatus)
+        ? (filters.status as $Enums.ScheduledFxConversionStatus)
+        : undefined;
+
+    const where: Prisma.ScheduledFxConversionModelWhereInput = {
+      deletedAt: null,
+      ...(statusFilter && { status: statusFilter }),
+      ...(search && { consumer: { email: { contains: search, mode: `insensitive` } } }),
+    };
+
     const conversions = await this.prisma.scheduledFxConversionModel.findMany({
-      where: { deletedAt: null },
+      where,
       include: {
         consumer: { select: { id: true, email: true } },
       },
@@ -385,15 +434,15 @@ export class AdminExchangeService {
     });
 
     if (!conversion) {
-      throw new NotFoundException(`Scheduled conversion not found`);
+      throw new NotFoundException(adminErrorCodes.ADMIN_SCHEDULED_CONVERSION_NOT_FOUND);
     }
 
     if (conversion.status === $Enums.ScheduledFxConversionStatus.EXECUTED) {
-      throw new BadRequestException(`Conversion already executed`);
+      throw new BadRequestException(adminErrorCodes.ADMIN_CONVERSION_ALREADY_EXECUTED);
     }
 
     if (conversion.status === $Enums.ScheduledFxConversionStatus.CANCELLED) {
-      throw new BadRequestException(`Conversion already cancelled`);
+      throw new BadRequestException(adminErrorCodes.ADMIN_CONVERSION_ALREADY_CANCELLED);
     }
 
     const updated = await this.prisma.scheduledFxConversionModel.update({

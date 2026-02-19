@@ -1,5 +1,8 @@
 'use client';
 
+import { useEffect } from 'react';
+import { toast } from 'sonner';
+
 import {
   StatusTotalsCard,
   RecentPaymentRequestsCard,
@@ -8,18 +11,49 @@ import {
 } from '../../../components/dashboard';
 import styles from '../../../components/ui/classNames.module.css';
 import { useDashboardStats } from '../../../lib/client';
+import { getLocalToastMessage, localToastKeys } from '../../../lib/error-messages';
 
 export function DashboardPageClient() {
-  const { data: stats, isLoading: statsLoading } = useDashboardStats();
+  const {
+    data: stats,
+    error: statsError,
+    isLoading: statsLoading,
+    isValidating: statsValidating,
+    mutate: mutateStats,
+  } = useDashboardStats();
+
+  useEffect(() => {
+    if (statsError) toast.error(getLocalToastMessage(localToastKeys.LOAD_DASHBOARD_STATS));
+  }, [statsError]);
 
   return (
     <div className={styles.adminPageStack}>
-      <div>
-        <h1 className={styles.adminPageTitle}>Dashboard</h1>
-        <p className={styles.adminPageSubtitle}>
-          Overview of payment requests, ledger activity, and verification status.
-        </p>
+      <div className={styles.adminHeaderRow}>
+        <div>
+          <h1 className={styles.adminPageTitle}>Dashboard</h1>
+          <p className={styles.adminPageSubtitle}>
+            Overview of payment requests, ledger activity, and verification status.
+          </p>
+        </div>
+        <button
+          type="button"
+          className={styles.adminPrimaryButton}
+          onClick={() => void mutateStats()}
+          disabled={statsValidating}
+        >
+          {statsValidating ? `Refreshing...` : `Refresh`}
+        </button>
       </div>
+
+      {statsError && (
+        <div className={styles.adminCard}>
+          <div className={styles.adminCardContent}>
+            <button type="button" className={styles.adminPrimaryButton} onClick={() => void mutateStats()}>
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div className={styles.adminDashboardGrid}>

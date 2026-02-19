@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Query } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiBasicAuth } from '@nestjs/swagger';
 
 import { AdminConsumersService } from './admin-consumers.service';
@@ -12,8 +12,21 @@ export class AdminConsumersController {
   constructor(private readonly service: AdminConsumersService) {}
 
   @Get()
-  findAllConsumers() {
-    return this.service.findAllConsumers();
+  findAllConsumers(@Query() query: Record<string, string | string[] | undefined>) {
+    const one = (v: string | string[] | undefined) => (typeof v === `string` ? v : v?.[0])?.trim() || undefined;
+    const pageRaw = one(query[`page`]);
+    const pageSizeRaw = one(query[`pageSize`]);
+    const pageNum = pageRaw != null && Number.isFinite(Number(pageRaw)) ? Number(pageRaw) : undefined;
+    const pageSizeNum = pageSizeRaw != null && Number.isFinite(Number(pageSizeRaw)) ? Number(pageSizeRaw) : undefined;
+    return this.service.findAllConsumers({
+      page: pageNum,
+      pageSize: pageSizeNum,
+      q: one(query[`q`]),
+      accountType: one(query[`accountType`]),
+      contractorKind: one(query[`contractorKind`]),
+      verificationStatus: one(query[`verificationStatus`]),
+      verified: one(query[`verified`]),
+    });
   }
 
   @Get(`:id`)

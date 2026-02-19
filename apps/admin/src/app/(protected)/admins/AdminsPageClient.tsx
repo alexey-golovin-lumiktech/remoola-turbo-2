@@ -2,11 +2,13 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 
 import { DataTable, ErrorBoundary, PageSkeleton } from '../../../components';
 import styles from '../../../components/ui/classNames.module.css';
 import { apiClient, useFormValidation, createAdminSchema, resetPasswordSchema, type AdminType } from '../../../lib';
 import { useAuth, useAdmins, useCreateAdmin, useResetAdminPassword } from '../../../lib/client';
+import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../../lib/error-messages';
 
 function rowPill(text: string) {
   const cls = text === `SUPER` ? styles.adminRowPillSuper : styles.adminRowPillDefault;
@@ -35,7 +37,6 @@ export function AdminsPageClient() {
   }, [me, authError, authLoading, router]);
 
   const [includeDeleted, setIncludeDeleted] = useState(false);
-  const [err, setErr] = useState<string>();
 
   // Data fetching with SWR
   const {
@@ -44,6 +45,11 @@ export function AdminsPageClient() {
     isLoading: adminsLoading,
     mutate: mutateAdmins,
   } = useAdmins(includeDeleted);
+
+  useEffect(() => {
+    if (adminsError)
+      toast.error(getErrorMessageForUser(adminsError.message, getLocalToastMessage(localToastKeys.LOAD_ADMINS)));
+  }, [adminsError]);
 
   // Local state for forms
   const [createOpen, setCreateOpen] = useState(false);
@@ -64,9 +70,6 @@ export function AdminsPageClient() {
     password: ``,
   });
 
-  // Combine errors
-  const displayError = err || adminsError?.message;
-
   // Sorted admins
   const sortedAdmins = useMemo(() => {
     if (!admins) return [];
@@ -78,31 +81,24 @@ export function AdminsPageClient() {
 
   // Form handlers with validation
   async function createAdmin() {
-    setErr(undefined);
-
     const validation = createForm.validate();
     if (!validation.success) {
-      setErr(`Please fix the form errors`);
+      toast.error(getLocalToastMessage(localToastKeys.ADMIN_FORM_FIX_ERRORS));
       return;
     }
 
     try {
       await createAdminMutation.trigger(validation.data);
 
-      // Reset form and close modal
       createForm.reset();
       setCreateOpen(false);
-
-      // Refetch data
       mutateAdmins();
     } catch (error: any) {
-      setErr(error.message || `Failed to create admin`);
+      toast.error(getErrorMessageForUser(error.message, getLocalToastMessage(localToastKeys.ADMIN_CREATE_FAILED)));
     }
   }
 
   const softDeleteAdmin = async (adminId: string) => {
-    setErr(undefined);
-
     try {
       const response = await apiClient.patch(`admins/${adminId}`, { action: `delete` });
       if (!response.ok) {
@@ -110,12 +106,11 @@ export function AdminsPageClient() {
       }
       mutateAdmins();
     } catch (error: any) {
-      setErr(error.message || `Failed to delete admin`);
+      toast.error(getErrorMessageForUser(error.message, getLocalToastMessage(localToastKeys.ADMIN_DELETE_FAILED)));
     }
   };
 
   const restoreAdmin = async (adminId: string) => {
-    setErr(undefined);
     try {
       const response = await apiClient.patch(`admins/${adminId}`, { action: `restore` });
       if (!response.ok) {
@@ -123,17 +118,16 @@ export function AdminsPageClient() {
       }
       mutateAdmins();
     } catch (error: any) {
-      setErr(error.message || `Failed to restore admin`);
+      toast.error(getErrorMessageForUser(error.message, getLocalToastMessage(localToastKeys.ADMIN_RESTORE_FAILED)));
     }
   };
 
   async function submitResetPassword() {
     if (!resetPasswordAdminId) return;
-    setErr(undefined);
 
     const validation = resetPasswordForm.validate();
     if (!validation.success) {
-      setErr(`Please fix the form errors`);
+      toast.error(getLocalToastMessage(localToastKeys.ADMIN_FORM_FIX_ERRORS));
       return;
     }
 
@@ -146,7 +140,9 @@ export function AdminsPageClient() {
       setResetPasswordAdminId(null);
       resetPasswordForm.reset();
     } catch (error: any) {
-      setErr(error.message || `Failed to reset password`);
+      toast.error(
+        getErrorMessageForUser(error.message, getLocalToastMessage(localToastKeys.ADMIN_RESET_PASSWORD_FAILED)),
+      );
     }
   }
 
@@ -181,6 +177,14 @@ export function AdminsPageClient() {
             </label>
 
             <button
+              type="button"
+              className={styles.adminPrimaryButton}
+              onClick={(e) => (e.stopPropagation(), e.preventDefault(), void mutateAdmins())}
+            >
+              Refresh
+            </button>
+
+            <button
               onClick={(e) => (e.stopPropagation(), e.preventDefault(), setCreateOpen(true))}
               disabled={createAdminMutation.isMutating}
               className={styles.adminPrimaryButton}
@@ -190,81 +194,101 @@ export function AdminsPageClient() {
           </div>
         </div>
 
-        {displayError && <div className={styles.adminAlertError}>{displayError}</div>}
+        {adminsError && (
+          <div className={styles.adminCard}>
+            <div className={styles.adminCardContent}>
+              <button type="button" className={styles.adminPrimaryButton} onClick={() => void mutateAdmins()}>
+                Retry
+              </button>
+            </div>
+          </div>
+        )}
 
-        <DataTable
-          rows={sortedAdmins}
-          getRowKeyAction={(a) => a.id}
-          rowHrefAction={(r) => `/admins/${r.id}`}
-          columns={[
-            {
-              key: `type`,
-              header: `Type`,
-              render: (a) => rowPill(a.type),
-            },
-            {
-              key: `email`,
-              header: `Email`,
-              render: (a) => <span className={styles.adminTextMedium}>{a.email}</span>,
-            },
-            {
-              key: `status`,
-              header: `Status`,
-              render: (a) =>
-                a.deletedAt ? (
-                  <span className={`${styles.adminStatusBadgeBase} ${styles.adminStatusBadgeDeleted}`}>Deleted</span>
-                ) : (
-                  <span className={`${styles.adminStatusBadgeBase} ${styles.adminStatusBadgeActive}`}>Active</span>
-                ),
-            },
-            {
-              key: `created`,
-              header: `Created`,
-              render: (a) => <span className={styles.adminTextGray600}>{new Date(a.createdAt).toLocaleString()}</span>,
-            },
-            {
-              key: `updated`,
-              header: `Updated`,
-              render: (a) => <span className={styles.adminTextGray600}>{new Date(a.updatedAt).toLocaleString()}</span>,
-            },
-            {
-              key: `actions`,
-              header: `Actions`,
-              render: (a) => (
-                <div className={styles.adminActionRow}>
-                  <button
-                    className={styles.adminActionButton}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setResetPasswordAdminId(a.id);
-                      resetPasswordForm.reset();
-                    }}
-                  >
-                    Reset password
-                  </button>
-
-                  {!a.deletedAt ? (
-                    <button
-                      className={styles.adminDeleteButton}
-                      onClick={(e) => (e.stopPropagation(), e.preventDefault(), softDeleteAdmin(a.id))}
-                    >
-                      Delete
-                    </button>
+        {sortedAdmins.length === 0 ? (
+          <div className={styles.adminCard}>
+            <div className={styles.adminCardContent}>
+              <div className={styles.adminTextGray500}>No admins</div>
+            </div>
+          </div>
+        ) : (
+          <DataTable
+            rows={sortedAdmins}
+            getRowKeyAction={(a) => a.id}
+            rowHrefAction={(r) => `/admins/${r.id}`}
+            columns={[
+              {
+                key: `type`,
+                header: `Type`,
+                render: (a) => rowPill(a.type),
+              },
+              {
+                key: `email`,
+                header: `Email`,
+                render: (a) => <span className={styles.adminTextMedium}>{a.email}</span>,
+              },
+              {
+                key: `status`,
+                header: `Status`,
+                render: (a) =>
+                  a.deletedAt ? (
+                    <span className={`${styles.adminStatusBadgeBase} ${styles.adminStatusBadgeDeleted}`}>Deleted</span>
                   ) : (
+                    <span className={`${styles.adminStatusBadgeBase} ${styles.adminStatusBadgeActive}`}>Active</span>
+                  ),
+              },
+              {
+                key: `created`,
+                header: `Created`,
+                render: (a) => (
+                  <span className={styles.adminTextGray600}>{new Date(a.createdAt).toLocaleString()}</span>
+                ),
+              },
+              {
+                key: `updated`,
+                header: `Updated`,
+                render: (a) => (
+                  <span className={styles.adminTextGray600}>{new Date(a.updatedAt).toLocaleString()}</span>
+                ),
+              },
+              {
+                key: `actions`,
+                header: `Actions`,
+                render: (a) => (
+                  <div className={styles.adminActionRow}>
                     <button
-                      className={styles.adminRestoreButton}
-                      onClick={(e) => (e.stopPropagation(), e.preventDefault(), restoreAdmin(a.id))}
+                      className={styles.adminActionButton}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setResetPasswordAdminId(a.id);
+                        resetPasswordForm.reset();
+                      }}
                     >
-                      Restore
+                      Reset password
                     </button>
-                  )}
-                </div>
-              ),
-              className: `w-[260px]`,
-            },
-          ]}
-        />
+
+                    {!a.deletedAt ? (
+                      <button
+                        className={styles.adminDeleteButton}
+                        onClick={(e) => (e.stopPropagation(), e.preventDefault(), softDeleteAdmin(a.id))}
+                      >
+                        Delete
+                      </button>
+                    ) : (
+                      <button
+                        className={styles.adminRestoreButton}
+                        onClick={(e) => (e.stopPropagation(), e.preventDefault(), restoreAdmin(a.id))}
+                      >
+                        Restore
+                      </button>
+                    )}
+                  </div>
+                ),
+                className: `w-[260px]`,
+              },
+            ]}
+          />
+        )}
 
         {/* Create modal */}
         {createOpen && (
@@ -277,8 +301,10 @@ export function AdminsPageClient() {
                   <div className={styles.adminModalSubtitle}>Creates a new Admin record.</div>
                 </div>
                 <button
+                  type="button"
                   className={styles.adminModalClose}
                   onClick={(e) => (e.stopPropagation(), e.preventDefault(), setCreateOpen(false))}
+                  aria-label="Close"
                 >
                   ✕
                 </button>
@@ -362,8 +388,10 @@ export function AdminsPageClient() {
                   <div className={styles.adminModalSubtitle}>Sets a new password for this admin.</div>
                 </div>
                 <button
+                  type="button"
                   className={styles.adminModalClose}
                   onClick={(e) => (e.stopPropagation(), e.preventDefault(), setResetPasswordAdminId(null))}
+                  aria-label="Close"
                 >
                   ✕
                 </button>
