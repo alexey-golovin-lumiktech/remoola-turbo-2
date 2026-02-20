@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
+import { ALL_CURRENCY_CODES } from '@remoola/api-types';
+
 import { DataTable, TableSkeleton, SearchWithClear } from '../../../../components';
 import styles from '../../../../components/ui/classNames.module.css';
 import {
@@ -65,7 +67,7 @@ export function ExchangeRatesPageClient() {
   const [pageSize] = useState(DEFAULT_PAGE_SIZE);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [currencies, setCurrencies] = useState<string[]>([]);
+  const [currencies, setCurrencies] = useState<string[]>([...ALL_CURRENCY_CODES]);
   const [query, setQuery] = useState(``);
   const [filterFrom, setFilterFrom] = useState<string>(`all`);
   const [filterTo, setFilterTo] = useState<string>(`all`);
@@ -411,7 +413,7 @@ export function ExchangeRatesPageClient() {
                   (value) => form.setValue(`fromCurrency`, value),
                   () => form.setTouched(`fromCurrency`),
                   disabled,
-                  `USD`,
+                  ALL_CURRENCY_CODES[0],
                 )}
                 {form.errors.fromCurrency && <div className={adminFormError}>{form.errors.fromCurrency}</div>}
               </label>
@@ -423,7 +425,7 @@ export function ExchangeRatesPageClient() {
                   (value) => form.setValue(`toCurrency`, value),
                   () => form.setTouched(`toCurrency`),
                   disabled,
-                  `EUR`,
+                  ALL_CURRENCY_CODES[1],
                 )}
                 {form.errors.toCurrency && <div className={adminFormError}>{form.errors.toCurrency}</div>}
               </label>

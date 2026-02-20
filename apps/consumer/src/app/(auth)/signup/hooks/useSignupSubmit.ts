@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
+import { getErrorMessageForUser } from '../../../../lib/error-messages';
 import { omit } from '../utils';
 import {
   addressDetailsSchema,
@@ -97,11 +98,12 @@ export function useSignupSubmit() {
       );
       await fetch(complete);
       router.push(`/signup/completed`);
-    } catch (e: any) {
-      const msg = e.message ?? `Unknown error`;
+    } catch (e: unknown) {
+      const raw = e instanceof Error ? e.message : `Unknown error`;
+      const msg = getErrorMessageForUser(raw, `Failed to sign up. Please try again.`);
       setError(msg);
       toast.error(msg);
-      return { success: false, error: e.message };
+      return { success: false, error: raw };
     } finally {
       setLoading(false);
     }

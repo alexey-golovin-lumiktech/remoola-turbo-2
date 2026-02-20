@@ -73,4 +73,16 @@ export class ConsumerContactsResponse {
   @Expose()
   @ApiProperty({ type: [ConsumerContact] })
   items: ConsumerContact[];
+
+  @Expose()
+  @ApiProperty()
+  total: number;
+
+  @Expose()
+  @ApiProperty()
+  page: number;
+
+  @Expose()
+  @ApiProperty()
+  pageSize: number;
 }

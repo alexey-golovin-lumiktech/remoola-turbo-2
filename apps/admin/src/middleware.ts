@@ -18,9 +18,9 @@ async function validateToken(token: string): Promise<boolean> {
 
   try {
     // Create cookie header to send to backend
-    const cookieHeader = `${COOKIE_KEYS.ACCESS_TOKEN}=${token}`;
+    const cookieHeader = `${COOKIE_KEYS.ADMIN_ACCESS_TOKEN}=${token}`;
 
-    const response = await fetch(`${NEXT_PUBLIC_API_BASE_URL}/auth/me`, {
+    const response = await fetch(`${NEXT_PUBLIC_API_BASE_URL}/admin/auth/me`, {
       method: `GET`,
       headers: {
         'Content-Type': `application/json`,
@@ -35,15 +35,19 @@ async function validateToken(token: string): Promise<boolean> {
     tokenCache.set(token, { valid: isValid, expires: Date.now() + TOKEN_CACHE_TTL });
 
     return isValid;
-  } catch (error) {
-    console.error(`Token validation failed:`, error);
+  } catch {
+    // Do not log error object (may contain headers/cookies)
     return false;
   }
 }
 
-async function refreshToken(refreshToken: string): Promise<{ accessToken?: string; success: boolean }> {
+async function refreshToken(refreshToken: string): Promise<{
+  accessToken?: string;
+  refreshToken?: string;
+  success: boolean;
+}> {
   try {
-    const response = await fetch(`${NEXT_PUBLIC_API_BASE_URL}/auth/refresh`, {
+    const response = await fetch(`${NEXT_PUBLIC_API_BASE_URL}/admin/auth/refresh-access`, {
       method: `POST`,
       headers: {
         'Content-Type': `application/json`,
@@ -59,10 +63,11 @@ async function refreshToken(refreshToken: string): Promise<{ accessToken?: strin
     const data = await response.json();
     return {
       accessToken: data.accessToken,
+      refreshToken: data.refreshToken,
       success: true,
     };
-  } catch (error) {
-    console.error(`Token refresh failed:`, error);
+  } catch {
+    // Do not log error object (may contain tokens or sensitive data)
     return { success: false };
   }
 }
@@ -76,8 +81,8 @@ export async function middleware(req: NextRequest) {
   }
 
   // Get tokens from cookies
-  const accessToken = req.cookies.get(COOKIE_KEYS.ACCESS_TOKEN)?.value;
-  const refreshTokenValue = req.cookies.get(COOKIE_KEYS.REFRESH_TOKEN)?.value;
+  const accessToken = req.cookies.get(COOKIE_KEYS.ADMIN_ACCESS_TOKEN)?.value;
+  const refreshTokenValue = req.cookies.get(COOKIE_KEYS.ADMIN_REFRESH_TOKEN)?.value;
 
   // For protected routes, require authentication
   if (!pathname.startsWith(`/api/`)) {
@@ -92,14 +97,21 @@ export async function middleware(req: NextRequest) {
       if (refreshTokenValue) {
         const refreshResult = await refreshToken(refreshTokenValue);
         if (refreshResult.success && refreshResult.accessToken) {
-          // Set new access token and continue
           const response = NextResponse.next();
-          response.cookies.set(COOKIE_KEYS.ACCESS_TOKEN, refreshResult.accessToken, {
+          response.cookies.set(COOKIE_KEYS.ADMIN_ACCESS_TOKEN, refreshResult.accessToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === `production`,
             sameSite: `strict`,
             maxAge: 15 * 60, // 15 minutes
           });
+          if (refreshResult.refreshToken) {
+            response.cookies.set(COOKIE_KEYS.ADMIN_REFRESH_TOKEN, refreshResult.refreshToken, {
+              httpOnly: true,
+              secure: process.env.NODE_ENV === `production`,
+              sameSite: `strict`,
+              maxAge: 7 * 24 * 60 * 60, // 7 days
+            });
+          }
           return response;
         }
       }

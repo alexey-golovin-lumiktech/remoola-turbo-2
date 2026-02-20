@@ -28,8 +28,18 @@ export class ConsumerDocumentsController {
   constructor(private readonly documents: ConsumerDocumentsService) {}
 
   @Get()
-  list(@Identity() consumer: ConsumerModel, @Query(`kind`) kind?: string) {
-    return this.documents.getDocuments(consumer.id, kind);
+  list(
+    @Identity() consumer: ConsumerModel,
+    @Query(`kind`) kind?: string,
+    @Query(`page`) page?: string,
+    @Query(`pageSize`) pageSize?: string,
+  ) {
+    return this.documents.getDocuments(
+      consumer.id,
+      kind,
+      page ? Number(page) : undefined,
+      pageSize ? Number(pageSize) : undefined,
+    );
   }
 
   @Post(`upload`)

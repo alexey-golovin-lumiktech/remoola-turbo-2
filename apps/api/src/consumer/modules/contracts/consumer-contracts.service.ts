@@ -7,15 +7,29 @@ import { PrismaService } from '../../../shared/prisma.service';
 export class ConsumerContractsService {
   constructor(private prisma: PrismaService) {}
 
-  async getContracts(consumerId: string): Promise<ConsumerContractItem[]> {
-    // 1. Load contacts for this consumer
-    const contacts = await this.prisma.contactModel.findMany({
-      where: { consumerId },
-    });
+  async getContracts(
+    consumerId: string,
+    page = 1,
+    pageSize = 10,
+  ): Promise<{ items: ConsumerContractItem[]; total: number; page: number; pageSize: number }> {
+    const safePage = Math.max(1, Math.floor(Number(page)) || 1);
+    const safePageSize = Math.min(100, Math.max(1, Math.floor(Number(pageSize)) || 10));
+
+    const [total, contacts] = await Promise.all([
+      this.prisma.contactModel.count({ where: { consumerId } }),
+      this.prisma.contactModel.findMany({
+        where: { consumerId },
+        orderBy: { updatedAt: `desc` },
+        skip: (safePage - 1) * safePageSize,
+        take: safePageSize,
+      }),
+    ]);
 
     const emails = contacts.map((contact) => contact.email);
+    if (emails.length === 0) {
+      return { items: [], total, page: safePage, pageSize: safePageSize };
+    }
 
-    // 2. Load payment requests involving these emails
     const paymentRequests = await this.prisma.paymentRequestModel.findMany({
       where: {
         OR: [{ payer: { email: { in: emails } } }, { requester: { email: { in: emails } } }],
@@ -31,8 +45,7 @@ export class ConsumerContractsService {
       },
     });
 
-    // 3. Build contract rows
-    return contacts.map((contact) => {
+    const items: ConsumerContractItem[] = contacts.map((contact) => {
       const filteredPaymentRequests = paymentRequests.filter(
         (paymentRequest) =>
           paymentRequest.payer?.email === contact.email || paymentRequest.requester?.email === contact.email,
@@ -52,5 +65,7 @@ export class ConsumerContractsService {
         docs: filteredPaymentRequests.reduce((sum, paymentRequest) => sum + paymentRequest.attachments.length, 0),
       };
     });
+
+    return { items, total, page: safePage, pageSize: safePageSize };
   }
 }

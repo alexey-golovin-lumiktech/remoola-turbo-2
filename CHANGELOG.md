@@ -517,6 +517,12 @@
 - **2026-02-20:**
 
                   **🚀 Feature**
+                  - Rename `UserSettingsModel` → `ConsumerSettingsModel` (consumer-only preferences),
+                    add `AdminSettingsModel` (admin-only preferences), table renames to
+                    `consumer_settings` / `admin_settings`
+                  - Add `preferredCurrency` to ConsumerSettingsModel (display default only; fintech-safe allowlist),
+                    GET `consumer/settings` and PUT `consumer/settings/preferred-currency` API,
+                    consumer app defaults amount currency from preferred currency on Start Payment and Create Payment Request
                   - Add `@remoola/db-fixtures` package:
                     - CLI utilities for database seeding
                     - Shared seed helpers for local and test environments

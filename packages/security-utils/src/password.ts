@@ -1,5 +1,20 @@
 import * as crypto from 'crypto';
 
+/**
+ * Timing-safe string comparison. Use for tokens/secrets to reduce timing attack surface.
+ * Requires same-length buffers; different length returns false (catch from timingSafeEqual).
+ */
+export function secureCompare(a: string, b: string): boolean {
+  try {
+    const bufA = Buffer.from(a, `utf8`);
+    const bufB = Buffer.from(b, `utf8`);
+    if (bufA.length !== bufB.length) return false;
+    return crypto.timingSafeEqual(bufA, bufB);
+  } catch {
+    return false;
+  }
+}
+
 const getHashingSalt = (rounds = 10) => {
   return crypto.randomBytes(Math.ceil(rounds / 2)).toString(`hex`);
 };
@@ -52,4 +67,5 @@ export const passwordUtils = {
   generateStrongPassword,
   verifyPassword,
   hashPassword,
+  secureCompare,
 };

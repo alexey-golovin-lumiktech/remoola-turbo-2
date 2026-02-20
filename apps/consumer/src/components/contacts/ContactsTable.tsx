@@ -4,7 +4,16 @@ import { type ConsumerContactAddress, type ConsumerContact } from '../../types';
 import { DataTable, type Column } from '../ui';
 import styles from '../ui/classNames.module.css';
 
-const { linkDanger, linkPrimary, textMutedGrayStrong, textMutedMixed, textPrimary, textRight } = styles;
+const {
+  linkDanger,
+  linkPrimary,
+  tableCellBodyMd,
+  tableCellHeaderMd,
+  textMutedGrayStrong,
+  textMutedMixed,
+  textPrimary,
+  textRight,
+} = styles;
 
 type ContactsTableProps = {
   items: ConsumerContact[];
@@ -18,22 +27,29 @@ export function ContactsTable({ items, onDetailsAction, onEditAction, onDeleteAc
     {
       key: `name`,
       header: `Name`,
+      headerClassName: tableCellHeaderMd,
+      className: tableCellBodyMd,
       render: (contact) => <span className={`font-medium ${textPrimary}`}>{contact.name ?? `—`}</span>,
     },
     {
       key: `email`,
       header: `Email`,
+      headerClassName: tableCellHeaderMd,
+      className: tableCellBodyMd,
       render: (contact) => <span className={textMutedGrayStrong}>{contact.email}</span>,
     },
     {
       key: `address`,
       header: `Address`,
+      headerClassName: tableCellHeaderMd,
+      className: tableCellBodyMd,
       render: (contact) => <span className={textMutedMixed}>{shortAddress(contact.address)}</span>,
     },
     {
       key: `actions`,
       header: `Actions`,
-      className: textRight,
+      headerClassName: tableCellHeaderMd,
+      className: `${tableCellBodyMd} ${textRight}`,
       render: (contact) => (
         <div className={`space-x-3`}>
           <button

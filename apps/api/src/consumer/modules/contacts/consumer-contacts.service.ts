@@ -53,18 +53,32 @@ export class ConsumerContactsService {
     };
   }
 
-  async list(consumerId: string): Promise<ConsumerContact[]> {
-    const contacts = await this.prisma.contactModel.findMany({
-      where: { consumerId },
-      orderBy: { createdAt: `desc` },
-    });
+  async list(
+    consumerId: string,
+    page = 1,
+    pageSize = 10,
+  ): Promise<{ items: ConsumerContact[]; total: number; page: number; pageSize: number }> {
+    const safePage = Math.max(1, Math.floor(Number(page)) || 1);
+    const safePageSize = Math.min(100, Math.max(1, Math.floor(Number(pageSize)) || 10));
 
-    return contacts.map((contact) => ({
+    const [total, contacts] = await Promise.all([
+      this.prisma.contactModel.count({ where: { consumerId } }),
+      this.prisma.contactModel.findMany({
+        where: { consumerId },
+        orderBy: { createdAt: `desc` },
+        skip: (safePage - 1) * safePageSize,
+        take: safePageSize,
+      }),
+    ]);
+
+    const items = contacts.map((contact) => ({
       id: contact.id,
       email: contact.email,
       name: contact.name,
       address: JSON.parse(JSON.stringify(contact.address)),
     }));
+
+    return { items, total, page: safePage, pageSize: safePageSize };
   }
 
   async create(consumerId: string, body: ConsumerCreateContact) {

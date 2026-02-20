@@ -57,7 +57,7 @@ export function CountrySelect({
           option.value.toLowerCase().includes(input.toLowerCase())
         }
         classNames={{
-          control: () => `${formInputFullWidth} ${error ? formInputError : ``} border-gray-300 dark:border-slate-600`,
+          control: () => `${formInputFullWidth} ${error ? formInputError : ``}`,
         }}
         styles={{
           control: (base) => ({
@@ -70,7 +70,7 @@ export function CountrySelect({
           }),
           valueContainer: (base) => ({
             ...base,
-            padding: `6px 8px`,
+            padding: `8px 12px`,
           }),
           singleValue: (base) => ({
             ...base,

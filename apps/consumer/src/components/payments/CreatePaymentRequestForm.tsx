@@ -4,15 +4,17 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
+import { ALL_CURRENCY_CODES, type TCurrencyCode } from '@remoola/api-types';
+
 import { createContactRequest } from '../../lib/create-contact';
-import { formatMonetaryDisplay, maskMonetary } from '../../lib/monetary';
+import { getErrorMessageForUser } from '../../lib/error-messages';
 import {
   continueWithUnknownRecipient,
   hasContactForEmail,
   normalizeEmail,
 } from '../../lib/payment-request-recipient-flow';
 import { type ConsumerContact, type CreatePaymentRequestPayload } from '../../types';
-import { DateInput, FormField, FormSelect, type FormSelectOption } from '../ui';
+import { AmountCurrencyInput, DateInput, FormField, RecipientEmailField } from '../ui';
 import styles from '../ui/classNames.module.css';
 
 const {
@@ -27,9 +29,6 @@ const {
   modalTitleClass,
   spaceY4,
 } = styles;
-
-const CURRENCIES = [`USD`, `EUR`, `GBP`, `JPY`, `AUD`] as const;
-const CURRENCY_OPTIONS: FormSelectOption[] = CURRENCIES.map((c) => ({ value: c, label: c }));
 const PAYMENT_REQUEST_DRAFT_STORAGE_KEY = `create-payment-request-draft`;
 
 export function CreatePaymentRequestForm() {
@@ -38,8 +37,7 @@ export function CreatePaymentRequestForm() {
 
   const [email, setEmail] = useState(``);
   const [amount, setAmount] = useState(``);
-  const [amountFocused, setAmountFocused] = useState(false);
-  const [currencyCode, setCurrencyCode] = useState<(typeof CURRENCIES)[number]>(`USD`);
+  const [currencyCode, setCurrencyCode] = useState<TCurrencyCode>(`USD`);
   const [description, setDescription] = useState(``);
   const [dueDate, setDueDate] = useState(``);
   const [loading, setLoading] = useState(false);
@@ -49,6 +47,24 @@ export function CreatePaymentRequestForm() {
   const [pendingEmail, setPendingEmail] = useState<string>(``);
   const [actionsOpen, setActionsOpen] = useState(false);
   const actionsMenuRef = useRef<HTMLDivElement | null>(null);
+  const [defaultCurrencyLoaded, setDefaultCurrencyLoaded] = useState(false);
+
+  useEffect(() => {
+    if (defaultCurrencyLoaded) return;
+    let cancelled = false;
+    fetch(`/api/settings`, { credentials: `include`, cache: `no-store` })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { preferredCurrency?: TCurrencyCode | null } | null) => {
+        if (cancelled || !data?.preferredCurrency) return;
+        if (ALL_CURRENCY_CODES.includes(data.preferredCurrency)) {
+          setCurrencyCode(data.preferredCurrency);
+        }
+      })
+      .finally(() => setDefaultCurrencyLoaded(true));
+    return () => {
+      cancelled = true;
+    };
+  }, [defaultCurrencyLoaded]);
 
   useEffect(() => {
     if (searchParams.get(`resumePaymentRequest`) !== `1`) return;
@@ -60,7 +76,7 @@ export function CreatePaymentRequestForm() {
       const draft = JSON.parse(saved) as {
         email?: string;
         amount?: string;
-        currencyCode?: (typeof CURRENCIES)[number];
+        currencyCode?: TCurrencyCode;
         description?: string;
         dueDate?: string;
       };
@@ -130,9 +146,19 @@ export function CreatePaymentRequestForm() {
   }
 
   async function submit() {
+    const normalizedEmail = normalizeEmail(email);
+    if (!normalizedEmail || !normalizedEmail.includes(`@`)) {
+      toast.error(`Please enter a valid recipient email.`);
+      return;
+    }
+    const numericAmount = Number(amount);
+    if (!amount || Number.isNaN(numericAmount) || numericAmount <= 0) {
+      toast.error(`Please enter a valid amount.`);
+      return;
+    }
+
     setLoading(true);
 
-    const normalizedEmail = normalizeEmail(email);
     const payload: CreatePaymentRequestPayload = {
       email: normalizedEmail,
       amount,
@@ -154,7 +180,8 @@ export function CreatePaymentRequestForm() {
 
       await createPaymentRequest(payload);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : `Request creation failed`);
+      const raw = err instanceof Error ? err.message : `Request creation failed`;
+      toast.error(getErrorMessageForUser(raw, `We couldn't create the payment request. Please try again.`));
     } finally {
       setLoading(false);
     }
@@ -173,7 +200,8 @@ export function CreatePaymentRequestForm() {
       });
       setConfirmOpen(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : `Request creation failed`);
+      const raw = err instanceof Error ? err.message : `Request creation failed`;
+      toast.error(getErrorMessageForUser(raw, `We couldn't create the payment request. Please try again.`));
     } finally {
       setConfirmLoading(false);
     }
@@ -210,7 +238,8 @@ export function CreatePaymentRequestForm() {
       });
       setConfirmOpen(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : `Failed to continue`);
+      const raw = err instanceof Error ? err.message : `Failed to continue`;
+      toast.error(getErrorMessageForUser(raw, `We couldn't add the contact or create the request. Please try again.`));
     } finally {
       setConfirmLoading(false);
     }
@@ -246,41 +275,22 @@ export function CreatePaymentRequestForm() {
       }}
       className={spaceY4}
     >
-      <FormField label="Recipient Email" description="We’ll notify them once you send the request.">
-        <input
-          type="email"
-          required
-          className={formFieldSpacing}
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-      </FormField>
+      <RecipientEmailField
+        label="Recipient Email"
+        description="We’ll notify them once you send the request."
+        value={email}
+        onChange={setEmail}
+        required
+      />
 
-      <FormField label={`Amount (${currencyCode})`}>
-        <div className="flex flex-wrap items-stretch gap-2">
-          <input
-            type="text"
-            inputMode="decimal"
-            required
-            className={`${formFieldSpacing} min-w-0 flex-1`}
-            value={amountFocused ? amount : formatMonetaryDisplay(amount)}
-            onFocus={() => setAmountFocused(true)}
-            onBlur={() => setAmountFocused(false)}
-            onChange={(e) => setAmount(maskMonetary(e.target.value))}
-            placeholder="0.00"
-          />
-          <div className="w-28 shrink-0">
-            <FormSelect
-              label=""
-              value={currencyCode}
-              onChange={(v) => setCurrencyCode(v as (typeof CURRENCIES)[number])}
-              options={CURRENCY_OPTIONS}
-              placeholder="USD"
-              isClearable={false}
-            />
-          </div>
-        </div>
-      </FormField>
+      <AmountCurrencyInput
+        amount={amount}
+        onAmountChange={setAmount}
+        currencyCode={currencyCode}
+        onCurrencyChange={setCurrencyCode}
+        required
+        placeholder="0.00"
+      />
 
       <FormField label="Description" description="Shown on the request.">
         <textarea

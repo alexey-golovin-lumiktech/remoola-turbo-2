@@ -20,9 +20,9 @@ export async function GET(request: Request) {
 
   const response = NextResponse.redirect(`${origin}/login`);
 
-  // Clear cookies
-  response.cookies.set(COOKIE_KEYS.ACCESS_TOKEN, ``, { path: `/`, maxAge: 0 });
-  response.cookies.set(COOKIE_KEYS.REFRESH_TOKEN, ``, { path: `/`, maxAge: 0 });
+  // Clear consumer auth cookies only (admin cookies unchanged for same-browser coexistence)
+  response.cookies.set(COOKIE_KEYS.CONSUMER_ACCESS_TOKEN, ``, { path: `/`, maxAge: 0 });
+  response.cookies.set(COOKIE_KEYS.CONSUMER_REFRESH_TOKEN, ``, { path: `/`, maxAge: 0 });
   response.cookies.set(COOKIE_KEYS.GOOGLE_OAUTH_STATE, ``, { path: `/`, maxAge: 0 });
 
   return response;

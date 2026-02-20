@@ -13,7 +13,26 @@ export class ConsumerDocumentsService {
     private storage: FileStorageService,
   ) {}
 
-  async getDocuments(consumerId: string, kind?: string) {
+  async getDocuments(
+    consumerId: string,
+    kind?: string,
+    page = 1,
+    pageSize = 10,
+  ): Promise<{
+    items: Array<{
+      id: string;
+      name: string;
+      size: number;
+      createdAt: string;
+      downloadUrl: string;
+      mimetype: string | null;
+      kind: string;
+      tags: string[];
+    }>;
+    total: number;
+    page: number;
+    pageSize: number;
+  }> {
     const consumerResources = await this.prisma.consumerResourceModel.findMany({
       where: { consumerId },
       include: {
@@ -100,7 +119,13 @@ export class ConsumerDocumentsService {
       result = result.filter((document) => document.kind === kind.toUpperCase());
     }
 
-    return result;
+    const total = result.length;
+    const safePage = Math.max(1, Math.floor(Number(page)) || 1);
+    const safePageSize = Math.min(100, Math.max(1, Math.floor(Number(pageSize)) || 10));
+    const start = (safePage - 1) * safePageSize;
+    const items = result.slice(start, start + safePageSize);
+
+    return { items, total, page: safePage, pageSize: safePageSize };
   }
 
   private detectKind(filename: string): string {

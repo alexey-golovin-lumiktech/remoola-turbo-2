@@ -1,4 +1,6 @@
+export * from './AmountCurrencyInput';
 export * from './ErrorBoundary';
+export * from './RecipientEmailField';
 export * from './GoogleIcon';
 export * from './CountrySelect';
 export * from './FormSelect';
@@ -11,3 +13,4 @@ export * from './PhoneInput';
 export * from './DateInput';
 export * from './DataTable';
 export * from './ErrorState';
+export * from './PaginationBar';

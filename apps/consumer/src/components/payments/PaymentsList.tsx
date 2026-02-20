@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react';
 
 import { formatDateForDisplay } from '../../lib/date-utils';
 import { usePayments } from '../../lib/hooks';
-import { SkeletonTable } from '../ui';
+import { PaginationBar, SkeletonTable } from '../ui';
 import { PaymentsFilters } from './PaymentsFilters';
 import styles from '../ui/classNames.module.css';
 
@@ -15,13 +15,10 @@ const {
   badgeDefault,
   badgePending,
   badgeWaiting,
-  buttonSecondary,
   cursorPointer,
   emptyStateContainer,
   emptyStateIcon,
   emptyStateIconSvg,
-  flexJustifyEnd,
-  gap2,
   linkPrimaryMedium,
   refreshButtonClass,
   spaceY6,
@@ -88,8 +85,6 @@ export function PaymentsList() {
 
   const payments = data?.items || [];
   const total = data?.total || 0;
-
-  const totalPages = useMemo(() => Math.ceil(total / pageSize), [total, pageSize]);
 
   if (error) {
     return (
@@ -203,31 +198,8 @@ export function PaymentsList() {
       )}
 
       {/* Pagination */}
-      {totalPages > 1 && !isLoading && (
-        <div className={`${flexJustifyEnd} ${gap2}`}>
-          <button
-            disabled={page <= 1}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setPage((p: number) => p - 1);
-            }}
-            className={buttonSecondary}
-          >
-            Previous
-          </button>
-          <button
-            disabled={page >= totalPages}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setPage((p: number) => p + 1);
-            }}
-            className={buttonSecondary}
-          >
-            Next
-          </button>
-        </div>
+      {total > 0 && (
+        <PaginationBar total={total} page={page} pageSize={pageSize} onPageChange={setPage} loading={isLoading} />
       )}
     </div>
   );

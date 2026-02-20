@@ -1,28 +1,36 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-import { FormCard, FormField } from '../ui';
+import { ALL_CURRENCY_CODES, type TCurrencyCode } from '@remoola/api-types';
+
+import { usePreferredCurrency } from '../../lib/hooks';
+import { AmountCurrencyInput, FormCard, FormField, RecipientEmailField } from '../ui';
 import { SuccessModal } from './SuccessModal';
 import { getErrorMessageForUser } from '../../lib/error-messages';
 import styles from '../ui/classNames.module.css';
 
-const {
-  formInputRoundedLg,
-  formInputRoundedLgWithPrefix,
-  inputPrefixIcon,
-  primaryButtonClass,
-  relativePosition,
-  textMutedSlate,
-} = styles;
+const { formInputRoundedLg, primaryButtonClass, textMutedSlate } = styles;
 
 export function TransferForm() {
+  const { preferredCurrency } = usePreferredCurrency();
   const [amount, setAmount] = useState(``);
+  const defaultCurrency: TCurrencyCode =
+    preferredCurrency && ALL_CURRENCY_CODES.includes(preferredCurrency as TCurrencyCode)
+      ? (preferredCurrency as TCurrencyCode)
+      : `USD`;
+  const [currencyCode, setCurrencyCode] = useState<TCurrencyCode>(defaultCurrency);
   const [recipient, setRecipient] = useState(``);
   const [note, setNote] = useState(``);
   const [loading, setLoading] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
+
+  useEffect(() => {
+    if (preferredCurrency && ALL_CURRENCY_CODES.includes(preferredCurrency as TCurrencyCode)) {
+      setCurrencyCode(preferredCurrency as TCurrencyCode);
+    }
+  }, [preferredCurrency]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,7 +56,12 @@ export function TransferForm() {
           'idempotency-key': idempotencyKey,
         },
         credentials: `include`,
-        body: JSON.stringify({ amount: numericAmount, recipient: recipient.trim(), note: note || null }),
+        body: JSON.stringify({
+          amount: numericAmount,
+          currencyCode,
+          recipient: recipient.trim(),
+          note: note || null,
+        }),
       });
 
       if (!res.ok) {
@@ -60,11 +73,17 @@ export function TransferForm() {
         } catch {
           msg = getErrorMessageForUser(text || undefined, msg);
         }
-        throw new Error(msg);
+        toast.error(msg);
+        return;
       }
 
       setSuccessOpen(true);
       setAmount(``);
+      setCurrencyCode(
+        preferredCurrency && ALL_CURRENCY_CODES.includes(preferredCurrency as TCurrencyCode)
+          ? (preferredCurrency as TCurrencyCode)
+          : `USD`,
+      );
       setRecipient(``);
       setNote(``);
     } catch (e: unknown) {
@@ -81,29 +100,22 @@ export function TransferForm() {
       title="Transfer to another person"
       description="Send money to another user using their email number."
     >
-      <FormField label="Amount">
-        <div className={relativePosition}>
-          <span className={inputPrefixIcon}>$</span>
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            className={formInputRoundedLgWithPrefix}
-            placeholder="0.00"
-          />
-        </div>
-      </FormField>
+      <AmountCurrencyInput
+        amount={amount}
+        onAmountChange={setAmount}
+        currencyCode={currencyCode}
+        onCurrencyChange={setCurrencyCode}
+        placeholder="0.00"
+      />
 
-      <FormField label="Recipient (email)">
-        <input
-          value={recipient}
-          onChange={(e) => setRecipient(e.target.value)}
-          className={formInputRoundedLg}
-          placeholder="example@email.com"
-        />
-      </FormField>
+      <RecipientEmailField
+        label="Recipient (email)"
+        description="Enter the email of the Remoola user you want to send money to."
+        value={recipient}
+        onChange={setRecipient}
+        placeholder="example@email.com"
+        inputClassName={formInputRoundedLg}
+      />
 
       <FormField
         label={

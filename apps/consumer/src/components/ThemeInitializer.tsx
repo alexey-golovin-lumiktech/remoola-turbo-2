@@ -3,15 +3,14 @@
 import { useEffect } from 'react';
 
 import { Theme, useTheme } from './ThemeProvider';
+import { handleSessionExpired } from '../lib/session-expired';
 
 export function ThemeInitializer() {
   const { setTheme } = useTheme();
 
   useEffect(() => {
-    // Only run on client side
     if (typeof window === `undefined`) return;
 
-    // Load user's theme preference from API
     const loadUserTheme = async () => {
       try {
         const response = await fetch(`/api/settings/theme`, {
@@ -20,6 +19,10 @@ export function ThemeInitializer() {
           credentials: `include`,
         });
 
+        if (response.status === 401) {
+          handleSessionExpired();
+          return;
+        }
         if (response.ok) {
           const data = await response.json();
           if (data.theme) {
@@ -28,9 +31,8 @@ export function ThemeInitializer() {
             setTheme(Theme.SYSTEM);
           }
         }
-      } catch (error) {
-        console.warn(`Failed to load user theme preference:`, error);
-        // Fall back to localStorage or system preference
+      } catch {
+        // Fall back to system preference; do not log or surface
       }
     };
 

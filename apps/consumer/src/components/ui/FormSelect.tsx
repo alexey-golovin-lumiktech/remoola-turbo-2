@@ -51,7 +51,7 @@ export function FormSelect({
 
   return (
     <div>
-      <label className={signupStepLabel}>{label}</label>
+      {label ? <label className={signupStepLabel}>{label}</label> : null}
       <Select<FormSelectOption>
         instanceId={reactSelectId}
         isClearable={isClearable}
@@ -65,7 +65,7 @@ export function FormSelect({
           option.value.toLowerCase().includes(input.toLowerCase())
         }
         classNames={{
-          control: () => `${formInputFullWidth} ${error ? formInputError : ``} border-gray-300 dark:border-slate-600`,
+          control: () => `${formInputFullWidth} ${error ? formInputError : ``}`,
         }}
         styles={{
           control: (base) => ({
@@ -78,7 +78,7 @@ export function FormSelect({
           }),
           valueContainer: (base) => ({
             ...base,
-            padding: `6px 8px`,
+            padding: `8px 12px`,
           }),
           singleValue: (base) => ({
             ...base,

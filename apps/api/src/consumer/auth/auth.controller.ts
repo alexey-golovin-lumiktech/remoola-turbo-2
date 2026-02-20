@@ -21,6 +21,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { ApiOperation, ApiOkResponse, ApiBody, ApiTags, ApiBasicAuth, ApiBearerAuth } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import express from 'express';
 
 import { $Enums, type ConsumerModel } from '@remoola/database-2';
@@ -36,9 +37,9 @@ import { CONSUMER } from '../../dtos';
 import { envs, JWT_ACCESS_TTL, JWT_REFRESH_TTL } from '../../envs';
 import { TransformResponse } from '../../interceptors';
 import {
-  ACCESS_TOKEN_COOKIE_KEY,
+  CONSUMER_ACCESS_TOKEN_COOKIE_KEY,
+  CONSUMER_REFRESH_TOKEN_COOKIE_KEY,
   GOOGLE_OAUTH_STATE_COOKIE_KEY,
-  REFRESH_TOKEN_COOKIE_KEY,
   removeNil,
 } from '../../shared-common';
 
@@ -76,14 +77,14 @@ export class ConsumerAuthController {
 
   private setAuthCookies(res: express.Response, accessToken: string, refreshToken: string, req?: express.Request) {
     const common = this.getAuthCookieOptions(req);
-    res.cookie(ACCESS_TOKEN_COOKIE_KEY, accessToken, { ...common, maxAge: JWT_ACCESS_TTL });
-    res.cookie(REFRESH_TOKEN_COOKIE_KEY, refreshToken, { ...common, maxAge: JWT_REFRESH_TTL });
+    res.cookie(CONSUMER_ACCESS_TOKEN_COOKIE_KEY, accessToken, { ...common, maxAge: JWT_ACCESS_TTL });
+    res.cookie(CONSUMER_REFRESH_TOKEN_COOKIE_KEY, refreshToken, { ...common, maxAge: JWT_REFRESH_TTL });
   }
 
   private clearAuthCookies(res: express.Response, req?: express.Request) {
     const common = this.getAuthCookieOptions(req);
-    res.clearCookie(ACCESS_TOKEN_COOKIE_KEY, common);
-    res.clearCookie(REFRESH_TOKEN_COOKIE_KEY, common);
+    res.clearCookie(CONSUMER_ACCESS_TOKEN_COOKIE_KEY, common);
+    res.clearCookie(CONSUMER_REFRESH_TOKEN_COOKIE_KEY, common);
   }
 
   private getOAuthCookieOptions(req?: express.Request) {
@@ -207,13 +208,19 @@ export class ConsumerAuthController {
     return url.toString();
   }
 
-  @Post(`login`)
   @PublicEndpoint()
+  @Post(`login`)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ operationId: `consumer_auth_login` })
   @ApiOkResponse({ type: CONSUMER.LoginResponse })
   @TransformResponse(CONSUMER.LoginResponse)
   async login(@Req() req: express.Request, @Res({ passthrough: true }) res, @Body() body: LoginBody) {
-    const data = await this.service.login(body);
+    const ipAddress = req.ip ?? req.headers[`x-forwarded-for`] ?? null;
+    const userAgent = req.headers[`user-agent`] ?? null;
+    const data = await this.service.login(body, {
+      ipAddress: typeof ipAddress === `string` ? ipAddress : (ipAddress?.[0] ?? null),
+      userAgent: typeof userAgent === `string` ? userAgent : null,
+    });
     this.setAuthCookies(res, data.accessToken, data.refreshToken, req);
     return data;
   }
@@ -384,6 +391,7 @@ export class ConsumerAuthController {
 
   @PublicEndpoint()
   @Post(`oauth/exchange`)
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   async oauthExchange(
     @Req() req: express.Request,
@@ -401,7 +409,12 @@ export class ConsumerAuthController {
   @Post(`logout`)
   @HttpCode(HttpStatus.OK)
   async logout(@Req() req: express.Request, @Res({ passthrough: true }) res) {
-    await this.service.revokeSessionByRefreshToken(req.cookies?.[REFRESH_TOKEN_COOKIE_KEY]);
+    const ipAddress = req.ip ?? req.headers[`x-forwarded-for`] ?? null;
+    const userAgent = req.headers[`user-agent`] ?? null;
+    await this.service.revokeSessionByRefreshTokenAndAudit(req.cookies?.[CONSUMER_REFRESH_TOKEN_COOKIE_KEY], {
+      ipAddress: typeof ipAddress === `string` ? ipAddress : Array.isArray(ipAddress) ? ipAddress[0] : null,
+      userAgent: typeof userAgent === `string` ? userAgent : null,
+    });
     this.clearAuthCookies(res, req);
     res.clearCookie(GOOGLE_OAUTH_STATE_COOKIE_KEY, this.getOAuthClearCookieOptions(req));
     return { ok: true };
@@ -409,6 +422,7 @@ export class ConsumerAuthController {
 
   @PublicEndpoint()
   @Post(`refresh-access`)
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   @ApiOperation({ operationId: `refresh_access` })
   @ApiBody({ schema: { type: `object`, properties: { refreshToken: { type: `string` } } } })
   @ApiOkResponse({ type: CONSUMER.LoginResponse })
@@ -418,14 +432,16 @@ export class ConsumerAuthController {
 
   @PublicEndpoint()
   @Post(`change-password`)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   checkEmailAndSendRecoveryLink(@Headers() headers: IncomingHttpHeaders, @Body() body: { email: string }) {
     const referer = headers.origin || headers.referer;
-    if (!referer) throw new InternalServerErrorException(`Unexpected referer(origin): ${referer}`);
+    if (!referer) throw new InternalServerErrorException(`Request origin required`);
     return this.service.checkEmailAndSendRecoveryLink(removeNil(body), referer);
   }
 
   @PublicEndpoint()
   @Patch(`change-password/:token`)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   changePassword(@Param() param: CONSUMER.ChangePasswordParam, @Body() body: CONSUMER.ChangePasswordBody) {
     return this.service.changePassword(removeNil(body), removeNil(param));
   }
@@ -437,6 +453,7 @@ export class ConsumerAuthController {
 
   @PublicEndpoint()
   @Post(`signup`)
+  @Throttle({ default: { limit: 15, ttl: 60000 } })
   @HttpCode(HttpStatus.CREATED)
   async signup(@Body() body: ConsumerSignup) {
     const payload = removeNil(body);
@@ -450,7 +467,7 @@ export class ConsumerAuthController {
   @Get(`signup/:consumerId/complete-profile-creation`)
   completeProfileCreation(@Req() req: express.Request, @Param(`consumerId`) consumerId: string) {
     const referer = req.headers.origin || req.headers.referer;
-    if (!referer) throw new InternalServerErrorException(`Unexpected referer(origin): ${referer}`);
+    if (!referer) throw new InternalServerErrorException(`Request origin required`);
     this.service.completeProfileCreationAndSendVerificationEmail(consumerId, referer);
     return `success`;
   }
@@ -458,7 +475,7 @@ export class ConsumerAuthController {
   @PublicEndpoint()
   @Get(`signup/verification`)
   signupVerification(@Query(`referer`) referer: string, @Query(`token`) token: string, @Res() res: express.Response) {
-    if (!referer) throw new InternalServerErrorException(`Unexpected referer(origin): ${referer}`);
+    if (!referer) throw new InternalServerErrorException(`Request origin required`);
     return this.service.signupVerification(token, res, referer);
   }
 }

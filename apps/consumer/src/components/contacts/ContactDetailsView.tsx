@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { formatDateTimeForDisplay } from '../../lib/date-utils';
 import { type ConsumerContactDetails } from '../../types';
+import { ErrorState } from '../ui';
 import styles from '../ui/classNames.module.css';
 
 const {
@@ -30,15 +31,20 @@ type ContactDetailsViewProps = { id: ConsumerContactDetails[`id`] };
 
 export function ContactDetailsView({ id }: ContactDetailsViewProps) {
   const [details, setDetails] = useState<ConsumerContactDetails>();
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const loadDetails = useCallback(async () => {
+    setLoadError(null);
     const res = await fetch(`/api/contacts/${id}/details`, {
       method: `GET`,
       headers: { 'content-type': `application/json` },
       credentials: `include`,
       cache: `no-store`,
     });
-    if (!res.ok) throw new Error(`Failed to load contact`);
+    if (!res.ok) {
+      setLoadError(`Failed to load contact`);
+      return;
+    }
     const json = await res.json();
     setDetails(json);
   }, [id]);
@@ -46,6 +52,10 @@ export function ContactDetailsView({ id }: ContactDetailsViewProps) {
   useEffect(() => {
     void loadDetails();
   }, [loadDetails]);
+
+  if (loadError) {
+    return <ErrorState title="Failed to load contact" message={loadError} onRetry={() => void loadDetails()} />;
+  }
   if (!details) return null;
 
   return (

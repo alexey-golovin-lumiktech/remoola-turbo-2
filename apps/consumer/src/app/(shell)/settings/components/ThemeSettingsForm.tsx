@@ -54,12 +54,22 @@ const themeConfigOptions: ThemeConfigOptions[] = [
   },
 ];
 
-export function ThemeSettingsForm() {
+interface ThemeSettingsFormProps {
+  /** When provided, used as initial theme and theme is not fetched on mount (avoids duplicate GET). */
+  initialTheme?: string | null;
+}
+
+export function ThemeSettingsForm({ initialTheme }: ThemeSettingsFormProps = {}) {
   const { theme, setTheme } = useTheme();
   const [loading, setLoading] = useState(false);
 
-  // Load user settings on mount
+  // Load user theme on mount when parent did not provide initial settings
   useEffect(() => {
+    if (initialTheme !== undefined) {
+      const normalized = initialTheme ? initialTheme.toLowerCase() : Theme.SYSTEM;
+      setTheme(normalized as ITheme);
+      return;
+    }
     async function loadSettings() {
       try {
         const response = await fetch(`/api/settings/theme`, {
@@ -82,7 +92,7 @@ export function ThemeSettingsForm() {
     }
 
     loadSettings();
-  }, [setTheme]);
+  }, [initialTheme, setTheme]);
 
   async function updateTheme(newTheme: ITheme) {
     setLoading(true);
@@ -101,7 +111,7 @@ export function ThemeSettingsForm() {
       setTheme(newTheme);
       toast.success(`Theme updated successfully`);
     } catch (error) {
-      toast.error(`Failed to update theme`);
+      toast.error(`We couldn't update your theme. Please try again.`);
       console.error(`Theme update error:`, error);
     } finally {
       setLoading(false);

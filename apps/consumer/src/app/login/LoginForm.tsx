@@ -2,10 +2,13 @@
 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { GoogleIcon } from '../../components/ui';
 import styles from '../../components/ui/classNames.module.css';
+import { resetSessionExpiredHandled, SESSION_EXPIRED_QUERY } from '../../lib/session-expired';
+
+const CLEAR_COOKIES_URL = `/api/consumer/auth/clear-cookies`;
 
 const {
   formInputFullWidth,
@@ -22,6 +25,22 @@ const {
 export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  useEffect(() => {
+    resetSessionExpiredHandled();
+  }, []);
+
+  const clearedSessionExpiredRef = useRef(false);
+  useEffect(() => {
+    if (searchParams.get(SESSION_EXPIRED_QUERY) !== `1` || clearedSessionExpiredRef.current) return;
+    clearedSessionExpiredRef.current = true;
+    fetch(CLEAR_COOKIES_URL, { method: `POST`, credentials: `include` }).finally(() => {
+      const url = new URL(window.location.href);
+      url.searchParams.delete(SESSION_EXPIRED_QUERY);
+      if (!url.searchParams.toString()) url.search = ``;
+      window.history.replaceState(null, ``, url.pathname + url.search);
+    });
+  }, [searchParams]);
 
   // read ?next=... from URL, fallback to /dashboard
   const rawNext = searchParams.get(`next`);
@@ -88,6 +107,7 @@ export default function LoginForm() {
           data-testid="consumer-login-input-email"
           type="email"
           autoComplete="email"
+          required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Email"
@@ -97,6 +117,7 @@ export default function LoginForm() {
           type="password"
           data-testid="consumer-login-input-password"
           autoComplete="current-password"
+          required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"

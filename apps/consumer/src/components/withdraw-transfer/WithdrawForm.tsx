@@ -1,14 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-import { FormCard, FormField } from '../ui';
+import { ALL_CURRENCY_CODES, type TCurrencyCode } from '@remoola/api-types';
+
+import { usePreferredCurrency } from '../../lib/hooks';
+import { AmountCurrencyInput, FormCard, FormField } from '../ui';
 import { SuccessModal } from './SuccessModal';
 import { getErrorMessageForUser } from '../../lib/error-messages';
 import styles from '../ui/classNames.module.css';
 
-const { formInputRoundedLgWithPrefix, inputPrefixIcon, flexRowGap3, primaryButtonClass, relativePosition } = styles;
+const { flexRowGap3, primaryButtonClass } = styles;
 
 const joinClasses = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(` `);
 
@@ -28,10 +31,22 @@ const getToggleButtonClasses = (isActive: boolean, variant: `md` | `lg` = `md`) 
 };
 
 export function WithdrawForm() {
+  const { preferredCurrency } = usePreferredCurrency();
   const [amount, setAmount] = useState(``);
+  const defaultCurrency: TCurrencyCode =
+    preferredCurrency && ALL_CURRENCY_CODES.includes(preferredCurrency as TCurrencyCode)
+      ? (preferredCurrency as TCurrencyCode)
+      : `USD`;
+  const [currencyCode, setCurrencyCode] = useState<TCurrencyCode>(defaultCurrency);
   const [method, setMethod] = useState<`BANK_ACCOUNT` | `CREDIT_CARD` | ``>(``);
   const [loading, setLoading] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
+
+  useEffect(() => {
+    if (preferredCurrency && ALL_CURRENCY_CODES.includes(preferredCurrency as TCurrencyCode)) {
+      setCurrencyCode(preferredCurrency as TCurrencyCode);
+    }
+  }, [preferredCurrency]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,7 +72,12 @@ export function WithdrawForm() {
           'idempotency-key': idempotencyKey,
         },
         credentials: `include`,
-        body: JSON.stringify({ originalAmount: amount, amount: numericAmount, method }),
+        body: JSON.stringify({
+          originalAmount: amount,
+          amount: numericAmount,
+          currencyCode,
+          method,
+        }),
       });
 
       if (!res.ok) {
@@ -69,11 +89,17 @@ export function WithdrawForm() {
         } catch {
           msg = getErrorMessageForUser(text || undefined, msg);
         }
-        throw new Error(msg);
+        toast.error(msg);
+        return;
       }
 
       setSuccessOpen(true);
       setAmount(``);
+      setCurrencyCode(
+        preferredCurrency && ALL_CURRENCY_CODES.includes(preferredCurrency as TCurrencyCode)
+          ? (preferredCurrency as TCurrencyCode)
+          : `USD`,
+      );
       setMethod(``);
     } catch (e: unknown) {
       const raw = e instanceof Error ? e.message : `Withdrawal failed.`;
@@ -89,20 +115,13 @@ export function WithdrawForm() {
       title="Withdraw funds"
       description="Send money from your balance to your card or bank account."
     >
-      <FormField label="Amount">
-        <div className={relativePosition}>
-          <span className={inputPrefixIcon}>$</span>
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            className={formInputRoundedLgWithPrefix}
-            placeholder="0.00"
-          />
-        </div>
-      </FormField>
+      <AmountCurrencyInput
+        amount={amount}
+        onAmountChange={setAmount}
+        currencyCode={currencyCode}
+        onCurrencyChange={setCurrencyCode}
+        placeholder="0.00"
+      />
 
       <FormField label="Withdraw to">
         <div className={flexRowGap3}>

@@ -6,38 +6,47 @@ import { useCallback, useEffect, useState } from 'react';
 import { ContactsTable } from './ContactsTable';
 import { CreateContactModal, DeleteContactModal, EditContactModal } from './modals';
 import { type ConsumerContact } from '../../types';
+import { ErrorState, PaginationBar } from '../ui';
 import styles from '../ui/classNames.module.css';
 
-const {
-  cardBaseSoftCompact,
-  contactsAddButton,
-  contactsPageContainer,
-  contactsPageHeader,
-  contactsPageSubtitle,
-  contactsPageTitle,
-} = styles;
+const DEFAULT_PAGE_SIZE = 10;
+
+const { contactsAddButton, filterRowControlHeight, filterRowWrapAlignEnd, spaceY6 } = styles;
 
 export function ContactsPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(DEFAULT_PAGE_SIZE);
   const [items, setItems] = useState<ConsumerContact[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
   const [createInitialEmail, setCreateInitialEmail] = useState<string | null>(null);
   const [returnToPath, setReturnToPath] = useState<string | null>(null);
   const [editContact, setEditContact] = useState<ConsumerContact | null>(null);
   const [deleteContact, setDeleteContact] = useState<ConsumerContact | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    const response = await fetch(`/api/contacts`, {
+    setLoadError(null);
+    setLoading(true);
+    const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+    const response = await fetch(`/api/contacts?${params}`, {
       method: `GET`,
       headers: { 'content-type': `application/json` },
       credentials: `include`,
       cache: `no-store`,
     });
-    if (!response.ok) throw new Error(`Something went wrong retrieve contacts`);
+    setLoading(false);
+    if (!response.ok) {
+      setLoadError(`Something went wrong retrieving contacts`);
+      return;
+    }
     const json = await response.json();
-    setItems(json.items);
-  }, []);
+    setItems(json.items ?? []);
+    setTotal(Number(json?.total ?? 0));
+  }, [page, pageSize]);
 
   useEffect(() => {
     void refresh();
@@ -56,37 +65,44 @@ export function ContactsPageClient() {
     router.replace(`/contacts`);
   }, [searchParams, router]);
 
+  if (loadError) {
+    return (
+      <div data-testid="consumer-contacts-page-client">
+        <ErrorState title="Failed to load contacts" message={loadError} onRetry={() => void refresh()} />
+      </div>
+    );
+  }
+
   return (
-    <div className={contactsPageContainer} data-testid="consumer-contacts-page">
-      <div className={contactsPageHeader}>
-        <div>
-          <h1 className={contactsPageTitle}>Contacts</h1>
-          <p className={contactsPageSubtitle}>Saved contractors and business contacts.</p>
+    <div className={spaceY6} data-testid="consumer-contacts-page-client">
+      <div className={filterRowWrapAlignEnd}>
+        <div className={filterRowControlHeight}>
+          <button
+            data-testid="consumer-contacts-btn-add"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setCreateInitialEmail(null);
+              setReturnToPath(null);
+              setCreateOpen(true);
+            }}
+            className={contactsAddButton}
+          >
+            + Add Contact
+          </button>
         </div>
-
-        <button
-          data-testid="consumer-contacts-btn-add"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setCreateInitialEmail(null);
-            setReturnToPath(null);
-            setCreateOpen(true);
-          }}
-          className={contactsAddButton}
-        >
-          + Add Contact
-        </button>
       </div>
 
-      <div className={cardBaseSoftCompact}>
-        <ContactsTable
-          items={items}
-          onEditAction={(contact) => setEditContact(contact)}
-          onDeleteAction={(contact) => setDeleteContact(contact)}
-          onDetailsAction={(contact) => router.push(`contacts/${contact.id}/details`)}
-        />
-      </div>
+      {total > 0 && (
+        <PaginationBar total={total} page={page} pageSize={pageSize} onPageChange={setPage} loading={loading} />
+      )}
+
+      <ContactsTable
+        items={items}
+        onEditAction={(contact) => setEditContact(contact)}
+        onDeleteAction={(contact) => setDeleteContact(contact)}
+        onDetailsAction={(contact) => router.push(`contacts/${contact.id}/details`)}
+      />
 
       {/* Modals */}
       <CreateContactModal
@@ -98,6 +114,7 @@ export function ContactsPageClient() {
           setReturnToPath(null);
         }}
         onCreatedAction={async () => {
+          setPage(1);
           await refresh();
           if (returnToPath) {
             router.push(returnToPath);

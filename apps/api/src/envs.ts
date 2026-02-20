@@ -3,9 +3,28 @@ import z, { type ZodArray, type ZodDefault, type ZodType, type ZodTypeAny } from
 export const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || `JWT_ACCESS_SECRET`;
 export const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || `JWT_REFRESH_SECRET`;
 
+/**
+ * Parse expiry string (e.g. '15m', '168h', '1d', '60s') to milliseconds.
+ * Used for cookie maxAge and any ms-based TTL. Fintech-safe defaults: short access (15m), limited refresh (7d).
+ */
+export function parseExpiresToMs(value: string): number {
+  const s = String(value).trim();
+  const match = /^(\d+)(s|m|h|d)$/i.exec(s);
+  if (!match) {
+    const fallback = 15 * 60 * 1000;
+    return fallback;
+  }
+  const n = parseInt(match[1], 10);
+  const unit = match[2].toLowerCase();
+  if (unit === `s`) return n * 1000;
+  if (unit === `m`) return n * 60 * 1000;
+  if (unit === `h`) return n * 60 * 60 * 1000;
+  if (unit === `d`) return n * 24 * 60 * 60 * 1000;
+  return 15 * 60 * 1000;
+}
+
+/** 24 hours in ms (e.g. for password-reset link validity). */
 export const HOURS_24MS = 86400000 as const;
-export const JWT_ACCESS_TTL = HOURS_24MS;
-export const JWT_REFRESH_TTL = 604800000 as const;
 
 const ENVIRONMENT = { PRODUCTION: `production`, STAGING: `staging`, DEVELOPMENT: `development`, TEST: `test` } as const;
 const environments = Object.values(ENVIRONMENT);
@@ -91,6 +110,13 @@ const jwt = {
   JWT_REFRESH_TOKEN_EXPIRES_IN: z.string().default(`168h`),
 };
 
+const authLockout = {
+  AUTH_MAX_FAILED_ATTEMPTS: z.coerce.number().min(1).max(20).default(5),
+  AUTH_LOCKOUT_DURATION_MINUTES: z.coerce.number().min(1).max(120).default(15),
+  AUTH_PER_EMAIL_RATE_LIMIT: z.coerce.number().min(5).max(50).default(10),
+  AUTH_PER_EMAIL_RATE_WINDOW_MINUTES: z.coerce.number().min(1).max(60).default(15),
+};
+
 const nodemailer = {
   NODEMAILER_SMTP_HOST: z.string().default(`NODEMAILER_SMTP_HOST`),
   NODEMAILER_SMTP_PORT: z.coerce.number().default(587),
@@ -156,6 +182,7 @@ const schema = z.object({
   ...nest,
   ...google,
   ...jwt,
+  ...authLockout,
   ...nodemailer,
   ...stripe,
   ...aws,
@@ -171,3 +198,12 @@ const parsed = schema.safeParse(process.env);
 if (!parsed.success) throw new Error(JSON.stringify(parsed.error, null, 2));
 
 export const envs = { ...parsed.data, ENVIRONMENT, environments };
+
+/** Cookie maxAge in ms. Derived from JWT_ACCESS_TOKEN_EXPIRES_IN (fintech-safe default: 15m). */
+export const JWT_ACCESS_TTL = parseExpiresToMs(envs.JWT_ACCESS_TOKEN_EXPIRES_IN);
+/** Cookie maxAge in ms. Derived from JWT_REFRESH_TOKEN_EXPIRES_IN (default: 168h = 7d). */
+export const JWT_REFRESH_TTL = parseExpiresToMs(envs.JWT_REFRESH_TOKEN_EXPIRES_IN);
+/** JWT sign expiresIn in seconds (number). */
+export const JWT_ACCESS_TTL_SECONDS = Math.round(JWT_ACCESS_TTL / 1000);
+/** JWT sign expiresIn in seconds (number). */
+export const JWT_REFRESH_TTL_SECONDS = Math.round(JWT_REFRESH_TTL / 1000);

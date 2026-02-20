@@ -37,6 +37,8 @@ const MESSAGE_MAP: Record<string, string> = {
   [errorCodes.ACCOUNT_SUSPENDED]: `Your account has been suspended. Please contact support to resolve this.`,
   [errorCodes.PROFILE_SUSPENDED]: `Your profile has been suspended. Please contact support for assistance.`,
   [errorCodes.INVALID_CREDENTIALS]: `The email or password you entered is incorrect. Please try again or reset your password.`,
+  [errorCodes.ACCOUNT_TEMPORARILY_LOCKED]: `Too many failed sign-in attempts. Please try again in a few minutes.`,
+  [errorCodes.TOO_MANY_LOGIN_ATTEMPTS]: `Too many sign-in attempts for this email. Please wait a few minutes and try again.`,
   [errorCodes.NO_IDENTITY_RECORD]: `Your session could not be found. Please sign in again.`,
   [errorCodes.INVALID_REFRESH_TOKEN]: `Your session has expired. Please sign in again.`,
   [errorCodes.INVALID_OAUTH_EXCHANGE_TOKEN]: `Your sign-in link has expired or is invalid. Please start the sign-in process again.`,

@@ -1,42 +1,43 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
-import { formatCurrencyAmount, roundToCurrency } from '../../lib/currency';
-import { formatMonetaryDisplay, maskMonetary } from '../../lib/monetary';
-import { FormField, FormSelect, type FormSelectOption } from '../ui';
+import { ALL_CURRENCY_CODES, type TCurrencyCode } from '@remoola/api-types';
+
 import { RateDisplay } from './RateDisplay';
+import { formatCurrencyAmount, roundToCurrency } from '../../lib/currency';
+import { getErrorMessageForUser } from '../../lib/error-messages';
+import { firstOtherCurrency, usePreferredCurrency } from '../../lib/hooks';
+import { handleSessionExpired } from '../../lib/session-expired';
+import { AmountCurrencyInput, FormSelect, type FormSelectOption } from '../ui';
 import styles from '../ui/classNames.module.css';
 
-const {
-  exchangeAvailable,
-  exchangeButton,
-  exchangeCard,
-  exchangeForm,
-  exchangeRateText,
-  exchangeResultText,
-  formFieldSpacing,
-} = styles;
-
-const CURRENCIES = [`USD`, `EUR`, `JPY`, `GBP`, `AUD`] as const;
+const { exchangeAvailable, exchangeButton, exchangeCard, exchangeForm, exchangeRateText, exchangeResultText } = styles;
 
 type ExchangeWidgetProps = { balances: Record<string, number> };
 
 export function ExchangeWidget({ balances }: ExchangeWidgetProps) {
-  const [from, setFrom] = useState(`USD`);
-  const [to, setTo] = useState(`EUR`);
+  const { preferredCurrency, loaded: settingsLoaded } = usePreferredCurrency();
+  const [from, setFrom] = useState<TCurrencyCode>(ALL_CURRENCY_CODES[0]);
+  const [to, setTo] = useState<TCurrencyCode>(ALL_CURRENCY_CODES[1]);
   const [amount, setAmount] = useState(``);
-  const [amountFocused, setAmountFocused] = useState(false);
   const [rate, setRate] = useState<number | null>(null);
   const [result, setResult] = useState<number | null>(null);
-  const [currencies, setCurrencies] = useState<string[]>([...CURRENCIES]);
+  const [currencies, setCurrencies] = useState<string[]>([...ALL_CURRENCY_CODES]);
+  const preferredAppliedRef = useRef(false);
 
   const available = balances[from] ?? 0;
   const amountValue = useMemo(() => Number(amount), [amount]);
   useEffect(() => {
     fetch(`/api/exchange/currencies`, { credentials: `include` })
-      .then((res) => (res.ok ? res.json() : null))
+      .then((res) => {
+        if (res.status === 401) {
+          handleSessionExpired();
+          return null;
+        }
+        return res.ok ? res.json() : null;
+      })
       .then((data) => {
         if (Array.isArray(data) && data.length) {
           setCurrencies(data);
@@ -48,29 +49,46 @@ export function ExchangeWidget({ balances }: ExchangeWidgetProps) {
   useEffect(() => {
     if (!currencies.length) return;
     if (!currencies.includes(from) || !currencies.includes(to)) {
-      setFrom(currencies[0] ?? `USD`);
-      setTo(currencies[1] ?? currencies[0] ?? `EUR`);
+      setFrom((currencies[0] ?? ALL_CURRENCY_CODES[0]) as TCurrencyCode);
+      setTo((currencies[1] ?? currencies[0] ?? ALL_CURRENCY_CODES[1]) as TCurrencyCode);
     }
   }, [currencies, from, to]);
 
   useEffect(() => {
-    if (from && to) {
-      fetch(`/api/exchange/rates?from=${from}&to=${to}`)
-        .then(async (res) => {
-          if (!res.ok) {
-            const message = await res.text();
-            setRate(null);
-            toast.error(message || `Failed to fetch rate`);
-            return;
-          }
-          const data = await res.json();
-          setRate(data.rate);
-        })
-        .catch(() => {
+    if (!settingsLoaded || !currencies.length || preferredAppliedRef.current) return;
+    if (!preferredCurrency || !currencies.includes(preferredCurrency)) return;
+    preferredAppliedRef.current = true;
+    setFrom(preferredCurrency);
+    setTo(firstOtherCurrency(currencies, preferredCurrency) as TCurrencyCode);
+  }, [settingsLoaded, currencies, preferredCurrency]);
+
+  useEffect(() => {
+    if (!from || !to) return;
+    fetch(`/api/exchange/rates?from=${from}&to=${to}`, { credentials: `include` })
+      .then(async (res) => {
+        if (res.status === 401) {
+          handleSessionExpired();
+          return;
+        }
+        if (!res.ok) {
           setRate(null);
-          toast.error(`Failed to fetch rate`);
-        });
-    }
+          let msg = `Failed to fetch rate`;
+          try {
+            const body = (await res.json()) as { message?: string };
+            msg = getErrorMessageForUser(body?.message, msg);
+          } catch {
+            // keep default msg
+          }
+          toast.error(msg);
+          return;
+        }
+        const data = (await res.json()) as { rate?: number };
+        setRate(typeof data?.rate === `number` ? data.rate : null);
+      })
+      .catch(() => {
+        setRate(null);
+        toast.error(`Failed to fetch rate`);
+      });
   }, [from, to]);
 
   useEffect(() => {
@@ -93,9 +111,12 @@ export function ExchangeWidget({ balances }: ExchangeWidgetProps) {
       }),
     });
 
+    if (res.status === 401) {
+      handleSessionExpired();
+      return;
+    }
     if (!res.ok) {
-      const message = await res.text();
-      toast.error(message || `Conversion failed`);
+      toast.error(`Conversion failed`);
       return;
     }
 
@@ -110,35 +131,23 @@ export function ExchangeWidget({ balances }: ExchangeWidgetProps) {
       </div>
       <RateDisplay from={from} to={to} />
       <div className={exchangeForm}>
-        <FormSelect
-          label="From currency"
-          value={from}
-          onChange={setFrom}
-          options={currencies.map((c) => ({ value: c, label: c })) as FormSelectOption[]}
-          placeholder="Select currency..."
-          isClearable={false}
+        <AmountCurrencyInput
+          label={`Amount (${from})`}
+          amount={amount}
+          onAmountChange={setAmount}
+          currencyCode={from}
+          onCurrencyChange={setFrom}
+          currencyOptions={currencies.map((c) => ({ value: c, label: c }))}
+          placeholder="0.00"
         />
         <FormSelect
           label="To currency"
           value={to}
-          onChange={setTo}
+          onChange={(v) => setTo(v as TCurrencyCode)}
           options={currencies.map((c) => ({ value: c, label: c })) as FormSelectOption[]}
           placeholder="Select currency..."
           isClearable={false}
         />
-
-        <FormField label={`Amount (${from})`}>
-          <input
-            type="text"
-            inputMode="decimal"
-            className={formFieldSpacing}
-            value={amountFocused ? amount : formatMonetaryDisplay(amount)}
-            onFocus={() => setAmountFocused(true)}
-            onBlur={() => setAmountFocused(false)}
-            onChange={(e) => setAmount(maskMonetary(e.target.value))}
-            placeholder="0.00"
-          />
-        </FormField>
 
         {rate !== null && (
           <p className={exchangeRateText}>

@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 
-import { JWT_ACCESS_SECRET, JWT_ACCESS_TTL } from '../envs';
+import { JWT_ACCESS_SECRET, JWT_ACCESS_TTL_SECONDS } from '../envs';
 import { ConsumerAuthController } from './auth/auth.controller';
 import { ConsumerAuthService } from './auth/auth.service';
 import { GoogleAuthService } from './auth/google-auth.service';
@@ -25,7 +25,7 @@ import { ConsumerSettingsModule } from './modules/settings/consumer-settings.mod
     PassportModule,
     JwtModule.register({
       secret: JWT_ACCESS_SECRET!,
-      signOptions: { expiresIn: JWT_ACCESS_TTL },
+      signOptions: { expiresIn: JWT_ACCESS_TTL_SECONDS },
     }),
     MailingModule,
     ConsumerDashboardModule,

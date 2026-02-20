@@ -1,26 +1,35 @@
-import { type CanActivate, type ExecutionContext, ForbiddenException, Logger } from '@nestjs/common';
+import {
+  type CanActivate,
+  type ExecutionContext,
+  ForbiddenException,
+  Logger,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { type Reflector } from '@nestjs/core';
 import { type JwtService } from '@nestjs/jwt';
 
 import { IDENTITY, type IIdentity, IS_PUBLIC } from '../common';
 import { type IJwtTokenPayload } from '../dtos/consumer';
 import { type PrismaService } from '../shared/prisma.service';
-import { ACCESS_TOKEN_COOKIE_KEY } from '../shared-common';
+import { ADMIN_ACCESS_TOKEN_COOKIE_KEY, CONSUMER_ACCESS_TOKEN_COOKIE_KEY, secureCompare } from '../shared-common';
 
 import type express from 'express';
 
-const ADMIN_API_URL_STARTS = `/api/admin/`;
-const CONSUMER_API_URL_STARTS = `/api/consumer/`;
+const ADMIN_API_PATH_PREFIX = `/api/admin/`;
+const CONSUMER_API_PATH_PREFIX = `/api/consumer/`;
 
+function getAccessTokenCookieKey(path: string): string {
+  if (path.startsWith(ADMIN_API_PATH_PREFIX)) return ADMIN_ACCESS_TOKEN_COOKIE_KEY;
+  if (path.startsWith(CONSUMER_API_PATH_PREFIX)) return CONSUMER_ACCESS_TOKEN_COOKIE_KEY;
+  return CONSUMER_ACCESS_TOKEN_COOKIE_KEY;
+}
+
+/** User-facing and log-safe messages (no tokens or PII). */
 const GuardMessage = {
-  UNEXPECTED: (type: string) => `[AuthGuard] unexpected auth header type: ${type}`,
-  INVALID_CREDENTIALS: `[AuthGuard] invalid email or password`,
-  INVALID_TOKEN: `[AuthGuard] invalid token`,
-  PROVIDED_TOKEN_IS_EXPIRED_OR_NOT_IN_REPOSITORY: `[AuthGuard] provided token is expired or not in repository`,
-  NO_IDENTITY: `[AuthGuard] no identity for given credentials.`,
-  NOT_VERIFIED: `[AuthGuard] probably your email address is not verified yet. Check you email address`,
-  ONLY_FOR_ADMINS: `[AuthGuard] only for admins`,
-  ONLY_FOR_CONSUMERS: `[AuthGuard] only for consumers`,
+  INVALID_TOKEN: `Invalid or expired token`,
+  NO_IDENTITY_RECORD: `Authentication record not found`,
+  ONLY_FOR_ADMINS: `Access restricted to administrators`,
+  ONLY_FOR_CONSUMERS: `Access restricted to consumers`,
 } as const;
 
 export class AuthGuard implements CanActivate {
@@ -37,10 +46,13 @@ export class AuthGuard implements CanActivate {
     const isPublic = this.reflector.get<boolean>(IS_PUBLIC, context.getHandler());
     if (isPublic) return true;
 
-    const cookieAccessToken = request.cookies[ACCESS_TOKEN_COOKIE_KEY];
-    if (cookieAccessToken) return await this.bearerProcessor(cookieAccessToken, request);
-
-    return false;
+    const path = request.path ?? request.url?.split(`?`)[0] ?? ``;
+    const cookieKey = getAccessTokenCookieKey(path);
+    const cookieAccessToken = request.cookies[cookieKey];
+    if (!cookieAccessToken) {
+      throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
+    }
+    return await this.bearerProcessor(cookieAccessToken, request);
   }
 
   private getAdminByIdentityId(identityId: string) {
@@ -62,23 +74,29 @@ export class AuthGuard implements CanActivate {
   }
 
   private async bearerProcessor(accessToken: string, request: express.Request) {
-    const verified = this.jwtService.verify<IJwtTokenPayload>(accessToken);
-    if (verified == null) {
-      return this.throwForbiddenException(`[AuthGuard][bearerProcessor] invalid token. no verified`);
+    let verified: IJwtTokenPayload;
+    try {
+      verified = this.jwtService.verify<IJwtTokenPayload>(accessToken);
+    } catch {
+      this.logger.warn(`AuthGuard: JWT verification failed`);
+      throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
     }
 
-    if (!verified.identityId) {
-      return this.throwForbiddenException(`[AuthGuard][bearerProcessor] invalid token. no identity id`);
+    if (!verified?.identityId) {
+      this.logger.warn(`AuthGuard: token missing identityId`);
+      throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
     }
 
     const identityAccess = await this.findIdentityAccess({ identityId: verified.identityId, accessToken });
 
     if (identityAccess == null) {
-      return this.throwForbiddenException(`no identity record`);
+      this.logger.warn(`AuthGuard: no identity access record`);
+      throw new UnauthorizedException(GuardMessage.NO_IDENTITY_RECORD);
     }
 
-    if (identityAccess.accessToken != accessToken) {
-      return this.throwForbiddenException(`provided access token is not valid`);
+    if (!secureCompare(identityAccess.accessToken, accessToken)) {
+      this.logger.warn(`AuthGuard: token mismatch with stored value`);
+      throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
     }
 
     const admin = await this.getAdminByIdentityId(verified.identityId);
@@ -86,15 +104,19 @@ export class AuthGuard implements CanActivate {
     const identity = admin ?? consumer;
 
     if (identity == null) {
-      return this.throwForbiddenException(GuardMessage.NO_IDENTITY);
+      this.logger.warn(`AuthGuard: no identity for verified identityId`);
+      throw new UnauthorizedException(GuardMessage.NO_IDENTITY_RECORD);
     }
 
-    if (request.url.startsWith(ADMIN_API_URL_STARTS) && !admin) {
-      return this.throwForbiddenException(GuardMessage.ONLY_FOR_ADMINS);
+    const path = request.path ?? request.url?.split(`?`)[0] ?? ``;
+    if (path.startsWith(ADMIN_API_PATH_PREFIX) && !admin) {
+      this.logger.warn(`AuthGuard: consumer attempted admin path`);
+      throw new ForbiddenException(GuardMessage.ONLY_FOR_ADMINS);
     }
 
-    if (request.url.startsWith(CONSUMER_API_URL_STARTS) && !consumer) {
-      return this.throwForbiddenException(GuardMessage.ONLY_FOR_CONSUMERS);
+    if (path.startsWith(CONSUMER_API_PATH_PREFIX) && !consumer) {
+      this.logger.warn(`AuthGuard: admin attempted consumer path`);
+      throw new ForbiddenException(GuardMessage.ONLY_FOR_CONSUMERS);
     }
 
     this.assignRequestIdentity(request, identity, admin?.type ?? `consumer`);
@@ -104,11 +126,5 @@ export class AuthGuard implements CanActivate {
   assignRequestIdentity(request: express.Request, incoming: IIdentity, type: string): void {
     const identity = { [IDENTITY]: { id: incoming.id, email: incoming.email, type } };
     Object.assign(request, identity);
-  }
-
-  private throwForbiddenException(message: string): never {
-    this.logger.error(message);
-
-    throw new ForbiddenException(message);
   }
 }

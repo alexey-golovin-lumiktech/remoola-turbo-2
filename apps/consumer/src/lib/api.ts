@@ -2,6 +2,8 @@ import { z } from 'zod';
 
 import { type ApiErrorShape, type ApiResponseShape } from '@remoola/api-types';
 
+import { handleSessionExpired, UNAUTHORIZED_MESSAGE } from './session-expired';
+
 // Enhanced error types
 export const ApiErrorSchema = z.object({
   message: z.string(),
@@ -11,6 +13,31 @@ export const ApiErrorSchema = z.object({
 
 export type ApiError = ApiErrorShape;
 export type ApiResponse<T> = ApiResponseShape<T>;
+
+const CONSUMER_REFRESH_URL = `/api/consumer/auth/refresh`;
+
+/** Single in-flight refresh promise so concurrent 401s share one refresh. */
+let refreshPromise: Promise<boolean> | null = null;
+
+async function tryRefreshTokens(): Promise<boolean> {
+  if (refreshPromise) return refreshPromise;
+  refreshPromise = (async () => {
+    try {
+      const res = await fetch(CONSUMER_REFRESH_URL, {
+        method: `POST`,
+        credentials: `include`,
+        headers: { 'content-type': `application/json` },
+        signal: AbortSignal.timeout(10000),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+  return refreshPromise;
+}
 
 // Enhanced API client with caching and deduplication
 export class ApiClient {
@@ -79,12 +106,38 @@ export class ApiClient {
 
       if (!response.ok) {
         const errorText = await response.text();
-        const error = this.parseError(errorText);
-
+        const parsed = this.parseError(errorText);
+        if (response.status === 401) {
+          const refreshed = await tryRefreshTokens();
+          if (refreshed) {
+            const retryResponse = await fetch(url, {
+              ...options,
+              signal: controller.signal,
+              credentials: `include`,
+              headers: {
+                'Content-Type': `application/json`,
+                ...options.headers,
+              },
+            });
+            if (retryResponse.ok) {
+              const data = await retryResponse.json();
+              if (!options.method || options.method === `GET`) {
+                this.cache.set(cacheKey, { data, timestamp: Date.now(), ttl });
+              }
+              return { ok: true, data };
+            }
+          }
+          handleSessionExpired();
+          return {
+            ok: false,
+            status: 401,
+            error: { message: UNAUTHORIZED_MESSAGE, code: `UNAUTHORIZED` },
+          };
+        }
         return {
           ok: false,
           status: response.status,
-          error,
+          error: parsed,
         };
       }
 

@@ -1,11 +1,16 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
+import { ALL_CURRENCY_CODES } from '@remoola/api-types';
+
 import { formatDateTimeForDisplay } from '../../lib/date-utils';
-import { FormSelect, type FormSelectOption } from '../ui';
+import { firstOtherCurrency, usePreferredCurrency } from '../../lib/hooks';
+import { FormSelect, type FormSelectOption, PaginationBar } from '../ui';
 import styles from '../ui/classNames.module.css';
+
+const DEFAULT_PAGE_SIZE = 10;
 
 const {
   exchangePageContainer,
@@ -26,8 +31,6 @@ const ENABLED_OPTIONS: FormSelectOption[] = [
   { value: `yes`, label: `Yes` },
   { value: `no`, label: `No` },
 ];
-
-const CURRENCIES = [`USD`, `EUR`, `JPY`, `GBP`, `AUD`] as const;
 
 type Rule = {
   id: string;
@@ -51,8 +54,8 @@ type RuleForm = {
 };
 
 const defaultForm: RuleForm = {
-  fromCurrency: `USD`,
-  toCurrency: `EUR`,
+  fromCurrency: ALL_CURRENCY_CODES[0],
+  toCurrency: ALL_CURRENCY_CODES[1],
   targetBalance: `0`,
   maxConvertAmount: ``,
   minIntervalMinutes: `60`,
@@ -60,20 +63,30 @@ const defaultForm: RuleForm = {
 };
 
 export function ExchangeRulesPageClient() {
+  const { preferredCurrency, loaded: settingsLoaded } = usePreferredCurrency();
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [total, setTotal] = useState(0);
   const [rules, setRules] = useState<Rule[]>([]);
   const [form, setForm] = useState<RuleForm>(defaultForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [currencies, setCurrencies] = useState<string[]>([...CURRENCIES]);
+  const [loadingList, setLoadingList] = useState(true);
+  const [currencies, setCurrencies] = useState<string[]>([...ALL_CURRENCY_CODES]);
+  const preferredAppliedRef = useRef(false);
 
   const heading = useMemo(() => (editingId ? `Edit Auto-Conversion Rule` : `Create Auto-Conversion Rule`), [editingId]);
 
   const loadRules = useCallback(async () => {
-    const res = await fetch(`/api/exchange/rules`, { credentials: `include`, cache: `no-store` });
+    setLoadingList(true);
+    const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+    const res = await fetch(`/api/exchange/rules?${params}`, { credentials: `include`, cache: `no-store` });
+    setLoadingList(false);
     if (!res.ok) return;
     const data = await res.json();
-    setRules(data);
-  }, []);
+    setRules(data.items ?? []);
+    setTotal(Number(data?.total ?? 0));
+  }, [page, pageSize]);
 
   useEffect(() => {
     void loadRules();
@@ -101,7 +114,19 @@ export function ExchangeRulesPageClient() {
     }
   }, [currencies, form.fromCurrency, form.toCurrency]);
 
+  useEffect(() => {
+    if (!settingsLoaded || !currencies.length || editingId !== null || preferredAppliedRef.current) return;
+    if (!preferredCurrency || !currencies.includes(preferredCurrency)) return;
+    preferredAppliedRef.current = true;
+    setForm((prev) => ({
+      ...prev,
+      fromCurrency: preferredCurrency,
+      toCurrency: firstOtherCurrency(currencies, preferredCurrency),
+    }));
+  }, [settingsLoaded, currencies, preferredCurrency, editingId]);
+
   function resetForm() {
+    preferredAppliedRef.current = false;
     setForm(defaultForm);
     setEditingId(null);
   }
@@ -267,7 +292,10 @@ export function ExchangeRulesPageClient() {
 
       <div className={`${exchangeCard} ${gridGap4}`}>
         <strong>Existing rules</strong>
-        {rules.length === 0 && <div>No rules yet.</div>}
+        {total > 0 && (
+          <PaginationBar total={total} page={page} pageSize={pageSize} onPageChange={setPage} loading={loadingList} />
+        )}
+        {rules.length === 0 && !loadingList && <div>No rules yet.</div>}
         {rules.map((rule) => (
           <div key={rule.id} className={flexRowBetween}>
             <div>

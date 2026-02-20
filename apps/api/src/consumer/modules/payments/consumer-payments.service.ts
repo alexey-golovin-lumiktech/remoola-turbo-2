@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto';
 
 import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 
-import { PaymentDirection, PaymentMethodTypes } from '@remoola/api-types';
+import { ALL_CURRENCY_CODES, PaymentDirection, PaymentMethodTypes } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
@@ -726,12 +726,16 @@ export class ConsumerPaymentsService {
           throw new BadRequestException(errorCodes.INSUFFICIENT_BALANCE_WITHDRAW);
         }
 
+        const withdrawCurrency =
+          body.currencyCode && ALL_CURRENCY_CODES.includes(body.currencyCode)
+            ? (body.currencyCode as $Enums.CurrencyCode)
+            : $Enums.CurrencyCode.USD;
         const payoutEntry = await tx.ledgerEntryModel.create({
           data: {
             ledgerId,
             consumerId,
             type: $Enums.LedgerEntryType.USER_PAYOUT,
-            currencyCode: $Enums.CurrencyCode.USD,
+            currencyCode: withdrawCurrency,
             status: $Enums.TransactionStatus.PENDING,
             amount: -amount,
             createdBy: consumerId,
@@ -822,12 +826,16 @@ export class ConsumerPaymentsService {
           throw new BadRequestException(errorCodes.INSUFFICIENT_BALANCE_TRANSFER);
         }
 
+        const transferCurrency =
+          body.currencyCode && ALL_CURRENCY_CODES.includes(body.currencyCode)
+            ? (body.currencyCode as $Enums.CurrencyCode)
+            : $Enums.CurrencyCode.USD;
         await tx.ledgerEntryModel.create({
           data: {
             ledgerId,
             consumerId,
             type: $Enums.LedgerEntryType.USER_PAYMENT,
-            currencyCode: $Enums.CurrencyCode.USD,
+            currencyCode: transferCurrency,
             status: $Enums.TransactionStatus.COMPLETED,
             amount: -amount,
             createdBy: consumerId,
@@ -846,7 +854,7 @@ export class ConsumerPaymentsService {
             ledgerId,
             consumerId: recipient.id,
             type: $Enums.LedgerEntryType.USER_PAYMENT,
-            currencyCode: $Enums.CurrencyCode.USD,
+            currencyCode: transferCurrency,
             status: $Enums.TransactionStatus.COMPLETED,
             amount: +amount,
             createdBy: consumerId,

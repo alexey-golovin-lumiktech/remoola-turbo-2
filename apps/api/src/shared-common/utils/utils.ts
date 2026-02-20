@@ -1,1 +1,7 @@
-export { generateStrongPassword, hashPassword, passwordUtils, verifyPassword } from '@remoola/security-utils';
+export {
+  generateStrongPassword,
+  hashPassword,
+  passwordUtils,
+  secureCompare,
+  verifyPassword,
+} from '@remoola/security-utils';

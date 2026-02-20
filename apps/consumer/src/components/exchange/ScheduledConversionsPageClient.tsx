@@ -1,12 +1,16 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
+import { ALL_CURRENCY_CODES, type TCurrencyCode } from '@remoola/api-types';
+
 import { formatDateTimeForDisplay } from '../../lib/date-utils';
-import { formatMonetaryDisplay, maskMonetary } from '../../lib/monetary';
-import { FormField, FormSelect, type FormSelectOption } from '../ui';
+import { firstOtherCurrency, usePreferredCurrency } from '../../lib/hooks';
+import { AmountCurrencyInput, FormSelect, type FormSelectOption, PaginationBar } from '../ui';
 import styles from '../ui/classNames.module.css';
+
+const DEFAULT_PAGE_SIZE = 10;
 
 const {
   exchangePageContainer,
@@ -19,10 +23,7 @@ const {
   gridGap4,
   flexRowBetween,
   actionButtonDanger,
-  formFieldSpacing,
 } = styles;
-
-const CURRENCIES = [`USD`, `EUR`, `JPY`, `GBP`, `AUD`] as const;
 
 type ScheduledConversion = {
   id: string;
@@ -43,25 +44,34 @@ type ScheduleForm = {
 };
 
 const defaultForm: ScheduleForm = {
-  fromCurrency: `USD`,
-  toCurrency: `EUR`,
+  fromCurrency: ALL_CURRENCY_CODES[0],
+  toCurrency: ALL_CURRENCY_CODES[1],
   amount: ``,
   executeAt: ``,
 };
 
 export function ScheduledConversionsPageClient() {
+  const { preferredCurrency, loaded: settingsLoaded } = usePreferredCurrency();
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [total, setTotal] = useState(0);
   const [scheduled, setScheduled] = useState<ScheduledConversion[]>([]);
-  const [form, setForm] = useState<ScheduleForm>(defaultForm);
-  const [amountFocused, setAmountFocused] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [currencies, setCurrencies] = useState<string[]>([...CURRENCIES]);
+  const [loadingList, setLoadingList] = useState(true);
+  const [currencies, setCurrencies] = useState<string[]>([...ALL_CURRENCY_CODES]);
+  const [form, setForm] = useState<ScheduleForm>(defaultForm);
+  const preferredAppliedRef = useRef(false);
 
   const loadScheduled = useCallback(async () => {
-    const res = await fetch(`/api/exchange/scheduled`, { credentials: `include`, cache: `no-store` });
+    setLoadingList(true);
+    const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+    const res = await fetch(`/api/exchange/scheduled?${params}`, { credentials: `include`, cache: `no-store` });
+    setLoadingList(false);
     if (!res.ok) return;
     const data = await res.json();
-    setScheduled(data);
-  }, []);
+    setScheduled(data.items ?? []);
+    setTotal(Number(data?.total ?? 0));
+  }, [page, pageSize]);
 
   useEffect(() => {
     void loadScheduled();
@@ -80,23 +90,51 @@ export function ScheduledConversionsPageClient() {
 
   useEffect(() => {
     if (!currencies.length) return;
-    if (!currencies.includes(form.fromCurrency) || !currencies.includes(form.toCurrency)) {
-      setForm((prev) => ({
+    setForm((prev) => {
+      const needSync = !currencies.includes(prev.fromCurrency) || !currencies.includes(prev.toCurrency);
+      if (!needSync) return prev;
+      return {
         ...prev,
         fromCurrency: currencies[0] ?? prev.fromCurrency,
         toCurrency: currencies[1] ?? currencies[0] ?? prev.toCurrency,
-      }));
-    }
-  }, [currencies, form.fromCurrency, form.toCurrency]);
+      };
+    });
+  }, [currencies]);
+
+  useEffect(() => {
+    if (!settingsLoaded || !currencies.length || preferredAppliedRef.current) return;
+    if (!preferredCurrency || !currencies.includes(preferredCurrency)) return;
+    preferredAppliedRef.current = true;
+    setForm((prev) => ({
+      ...prev,
+      fromCurrency: preferredCurrency,
+      toCurrency: firstOtherCurrency(currencies, preferredCurrency),
+    }));
+  }, [settingsLoaded, currencies, preferredCurrency]);
 
   async function submit() {
+    const numericAmount = Number(form.amount?.replace(/,/g, ``) ?? 0);
+    if (!form.amount || Number.isNaN(numericAmount) || numericAmount <= 0) {
+      toast.error(`Please enter a valid amount.`);
+      return;
+    }
+    const executeAtDate = form.executeAt ? new Date(form.executeAt) : null;
+    if (!executeAtDate || !executeAtDate.getTime()) {
+      toast.error(`Please select a date and time for the conversion.`);
+      return;
+    }
+    if (executeAtDate.getTime() <= Date.now()) {
+      toast.error(`Please select a future date and time.`);
+      return;
+    }
+
     setLoading(true);
     try {
       const payload = {
         from: form.fromCurrency,
         to: form.toCurrency,
-        amount: Number(form.amount),
-        executeAt: new Date(form.executeAt).toISOString(),
+        amount: numericAmount,
+        executeAt: executeAtDate.toISOString(),
       };
 
       const res = await fetch(`/api/exchange/scheduled`, {
@@ -113,6 +151,7 @@ export function ScheduledConversionsPageClient() {
       }
 
       setForm(defaultForm);
+      setPage(1);
       await loadScheduled();
     } finally {
       setLoading(false);
@@ -139,14 +178,16 @@ export function ScheduledConversionsPageClient() {
       <div className={`${exchangeCard} ${gridGap4}`}>
         <strong>Schedule a conversion</strong>
         <div className={exchangeForm}>
-          <FormSelect
-            label="From currency"
-            value={form.fromCurrency}
-            onChange={(v) => setForm((prev) => ({ ...prev, fromCurrency: v }))}
-            options={currencies.map((c) => ({ value: c, label: c })) as FormSelectOption[]}
-            placeholder="Select currency..."
-            isClearable={false}
+          <AmountCurrencyInput
+            label={`Amount (${form.fromCurrency})`}
+            amount={form.amount}
+            onAmountChange={(v) => setForm((prev) => ({ ...prev, amount: v }))}
+            currencyCode={form.fromCurrency as TCurrencyCode}
+            onCurrencyChange={(v) => setForm((prev) => ({ ...prev, fromCurrency: v }))}
+            currencyOptions={currencies.map((c) => ({ value: c, label: c }))}
+            placeholder="0.00"
           />
+
           <FormSelect
             label="To currency"
             value={form.toCurrency}
@@ -155,19 +196,6 @@ export function ScheduledConversionsPageClient() {
             placeholder="Select currency..."
             isClearable={false}
           />
-
-          <FormField label="Amount">
-            <input
-              type="text"
-              inputMode="decimal"
-              className={formFieldSpacing}
-              value={amountFocused ? form.amount : formatMonetaryDisplay(form.amount)}
-              onFocus={() => setAmountFocused(true)}
-              onBlur={() => setAmountFocused(false)}
-              onChange={(e) => setForm((prev) => ({ ...prev, amount: maskMonetary(e.target.value) }))}
-              placeholder="0.00"
-            />
-          </FormField>
 
           <div>
             <label className={exchangeLabel}>Execute at</label>
@@ -187,7 +215,10 @@ export function ScheduledConversionsPageClient() {
 
       <div className={`${exchangeCard} ${gridGap4}`}>
         <strong>Upcoming and past</strong>
-        {scheduled.length === 0 && <div>No scheduled conversions.</div>}
+        {total > 0 && (
+          <PaginationBar total={total} page={page} pageSize={pageSize} onPageChange={setPage} loading={loadingList} />
+        )}
+        {scheduled.length === 0 && !loadingList && <div>No scheduled conversions.</div>}
         {scheduled.map((item) => (
           <div key={item.id} className={flexRowBetween}>
             <div>

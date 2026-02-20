@@ -13,6 +13,14 @@ export function PasswordChangeForm({ reload }: any) {
   async function save(e?: React.FormEvent) {
     e?.preventDefault();
 
+    if (!password.trim() || !confirm.trim()) {
+      toast.error(`Please enter and confirm your new password.`);
+      return;
+    }
+    if (password.length < 8) {
+      toast.error(`Your password must be at least 8 characters long.`);
+      return;
+    }
     if (password !== confirm) {
       toast.error(`Passwords do not match`);
       return;
@@ -58,9 +66,12 @@ export function PasswordChangeForm({ reload }: any) {
             <input
               type="password"
               autoComplete="new-password"
+              required
+              minLength={8}
               className={inputClass}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              placeholder="At least 8 characters"
             />
           </div>
 
@@ -69,9 +80,12 @@ export function PasswordChangeForm({ reload }: any) {
             <input
               type="password"
               autoComplete="new-password"
+              required
+              minLength={8}
               className={inputClass}
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
+              placeholder="Re-enter new password"
             />
           </div>
         </div>

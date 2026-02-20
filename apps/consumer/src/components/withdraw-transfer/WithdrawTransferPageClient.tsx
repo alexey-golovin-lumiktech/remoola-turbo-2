@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 
 import { TransferForm } from './TransferForm';
 import { WithdrawForm } from './WithdrawForm';
+import { handleSessionExpired } from '../../lib/session-expired';
 import styles from '../ui/classNames.module.css';
 
 const {
@@ -24,6 +25,10 @@ export function WithdrawTransferPageClient() {
       const res = await fetch(`/api/payments/balance`, {
         credentials: `include`,
       });
+      if (res.status === 401) {
+        handleSessionExpired();
+        return;
+      }
       if (!res.ok) return;
 
       const json = (await res.json()) as BalanceMap;

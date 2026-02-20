@@ -30,7 +30,7 @@ const APP_TABLES = [
   `resource`,
   `document_tag`,
   `resource_tag`,
-  `user_settings`,
+  `consumer_settings`,
 ] as const;
 
 type SeedSummary = {
@@ -215,7 +215,7 @@ export async function cleanupFixtures(prisma: PrismaClient): Promise<void> {
     await prisma.scheduledFxConversionModel.deleteMany({
       where: { consumerId: { in: consumerIds } },
     });
-    await prisma.userSettingsModel.deleteMany({
+    await prisma.consumerSettingsModel.deleteMany({
       where: { consumerId: { in: consumerIds } },
     });
     await prisma.addressDetailsModel.deleteMany({
@@ -364,7 +364,7 @@ export async function seedAllTables(prisma: PrismaClient, options: FixtureOption
         metadata: { source: FIXTURE_PREFIX, index: i },
       },
     });
-    await prisma.userSettingsModel.create({
+    await prisma.consumerSettingsModel.create({
       data: {
         consumerId,
         theme: i % 2 === 0 ? $Enums.Theme.LIGHT : $Enums.Theme.DARK,
@@ -390,7 +390,7 @@ export async function seedAllTables(prisma: PrismaClient, options: FixtureOption
   inserted.personal_details = consumers.length;
   inserted.organization_details = consumers.length;
   inserted.google_profile_details = consumers.length;
-  inserted.user_settings = consumers.length;
+  inserted.consumer_settings = consumers.length;
   inserted.contact = consumers.length;
   inserted.access_refresh_token = consumers.length;
 

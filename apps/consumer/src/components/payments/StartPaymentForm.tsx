@@ -1,10 +1,12 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-import { FormField, FormSelect, type FormSelectOption } from '../ui';
+import { ALL_CURRENCY_CODES, type TCurrencyCode } from '@remoola/api-types';
+
+import { AmountCurrencyInput, FormField, FormSelect, RecipientEmailField, type FormSelectOption } from '../ui';
 import styles from '../ui/classNames.module.css';
 
 const { buttonDisabledOpacity, buttonPrimaryRoundedCompact, formFieldSpacing, spaceY4 } = styles;
@@ -19,11 +21,41 @@ export function StartPaymentForm() {
 
   const [email, setEmail] = useState(``);
   const [amount, setAmount] = useState(``);
+  const [currencyCode, setCurrencyCode] = useState<TCurrencyCode>(`USD`);
+  const [defaultCurrencyLoaded, setDefaultCurrencyLoaded] = useState(false);
+
+  useEffect(() => {
+    if (defaultCurrencyLoaded) return;
+    let cancelled = false;
+    fetch(`/api/settings`, { credentials: `include`, cache: `no-store` })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { preferredCurrency?: TCurrencyCode | null } | null) => {
+        if (cancelled || !data?.preferredCurrency) return;
+        if (ALL_CURRENCY_CODES.includes(data.preferredCurrency)) {
+          setCurrencyCode(data.preferredCurrency);
+        }
+      })
+      .finally(() => setDefaultCurrencyLoaded(true));
+    return () => {
+      cancelled = true;
+    };
+  }, [defaultCurrencyLoaded]);
   const [description, setDescription] = useState(``);
   const [method, setMethod] = useState<`CREDIT_CARD` | `BANK_ACCOUNT`>(`CREDIT_CARD`);
   const [loading, setLoading] = useState(false);
 
   async function submit() {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      toast.error(`Please enter recipient email.`);
+      return;
+    }
+    const numericAmount = Number(amount);
+    if (!amount || Number.isNaN(numericAmount) || numericAmount <= 0) {
+      toast.error(`Please enter a valid amount.`);
+      return;
+    }
+
     setLoading(true);
 
     const res = await fetch(`/api/payments/start`, {
@@ -31,8 +63,9 @@ export function StartPaymentForm() {
       credentials: `include`,
       headers: { 'content-type': `application/json` },
       body: JSON.stringify({
-        email,
+        email: trimmedEmail,
         amount,
+        currencyCode,
         description,
         method,
       }),
@@ -57,27 +90,22 @@ export function StartPaymentForm() {
       }}
       className={spaceY4}
     >
-      <FormField label="Recipient Email">
-        <input
-          type="email"
-          required
-          className={formFieldSpacing}
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-      </FormField>
+      <RecipientEmailField
+        label="Recipient Email"
+        description="We'll send the payment to this address. They can pay with card or bank."
+        value={email}
+        onChange={setEmail}
+        required
+      />
 
-      <FormField label="Amount (USD)">
-        <input
-          type="number"
-          step="0.01"
-          min="0.01"
-          required
-          className={formFieldSpacing}
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-        />
-      </FormField>
+      <AmountCurrencyInput
+        amount={amount}
+        onAmountChange={setAmount}
+        currencyCode={currencyCode}
+        onCurrencyChange={setCurrencyCode}
+        required
+        placeholder="0.00"
+      />
 
       <FormField label="Description">
         <textarea

@@ -102,7 +102,7 @@ Dashboard (`/consumer/dashboard`):
 
 Contacts (`/consumer/contacts`):
 
-- `GET /`: list contacts.
+- `GET /`: list contacts (query: `page`, `pageSize`; response: `items`, `total`, `page`, `pageSize`).
 - `POST /`: create contact.
 - `PATCH /:id`: update contact.
 - `DELETE /:id`: delete contact.
@@ -110,11 +110,11 @@ Contacts (`/consumer/contacts`):
 
 Contracts (`/consumer/contracts`):
 
-- `GET /`: list contracts for consumer.
+- `GET /`: list contracts for consumer (query: `page`, `pageSize`; response: `items`, `total`, `page`, `pageSize`).
 
 Documents (`/consumer/documents`):
 
-- `GET /`: list documents (optional kind filter).
+- `GET /`: list documents (query: `kind`, `page`, `pageSize`; response: `items`, `total`, `page`, `pageSize`).
 - `POST /upload`: upload multiple documents.
 - `POST /bulk-delete`: delete multiple documents.
 - `POST /attach-to-payment`: attach documents to payment requests.
@@ -126,14 +126,14 @@ Exchange (`/consumer/exchange`):
 - `POST /rates/batch`: get multiple exchange rates in batch.
 - `POST /convert`: currency conversion (consumer context).
 - `POST /quote`: get conversion quote without executing.
-- `GET /rules`: list auto-conversion rules.
+- `GET /rules`: list auto-conversion rules (query: `page`, `pageSize`; response: `items`, `total`, `page`, `pageSize`).
 - `POST /rules`: create auto-conversion rule.
 - `PATCH /rules/:ruleId`: update auto-conversion rule.
 - `DELETE /rules/:ruleId`: delete auto-conversion rule.
-- `GET /scheduled`: list scheduled FX conversions.
+- `GET /scheduled`: list scheduled FX conversions (query: `page`, `pageSize`; response: `items`, `total`, `page`, `pageSize`).
 - `POST /scheduled`: create scheduled FX conversion.
 - `POST /scheduled/:conversionId/cancel`: cancel scheduled conversion.
-- `GET /currencies`: list supported currency codes.
+- `GET /currencies`: list supported currency codes (aligned with api-types `ALL_CURRENCY_CODES`).
 
 Payment Methods (`/consumer/payment-methods`):
 
@@ -181,6 +181,8 @@ Settings (`/consumer/settings`):
 
 - `GET /theme`: get theme settings.
 - `PUT /theme`: update theme settings.
+- `GET /preferred-currency`: get preferred display currency.
+- `PUT /preferred-currency`: update preferred display currency (allowlist in api-types).
 
 ### Shared Backend Capabilities
 
@@ -241,19 +243,21 @@ Auth and onboarding:
 Main shell routes:
 
 - `/dashboard`: consumer dashboard with summaries and tasks.
-- `/contacts`: list and manage contacts, contact details view.
-- `/contracts`: contract list.
-- `/documents`: documents list, upload, tags, attach to payments.
-- `/exchange`: currency exchange, balances, rates.
-- `/exchange/rules`: manage auto-conversion rules.
-- `/exchange/scheduled`: manage scheduled FX conversions.
+- `/contacts`: list (paginated) and manage contacts, contact details view; layout aligned with Documents.
+- `/contracts`: contract list (paginated).
+- `/documents`: documents list (paginated), upload, tags, attach to payments.
+- `/exchange`: currency exchange, balances, rates; currency options from api-types.
+- `/exchange/rules`: manage auto-conversion rules (list paginated).
+- `/exchange/scheduled`: manage scheduled FX conversions (list paginated).
 - `/payment-methods`: manage saved payment methods.
 - `/payment-requests/new`: create new payment request.
-- `/payments`: list payments and filters.
+- `/payments`: list payments (paginated) and filters.
 - `/payments/[paymentRequestId]`: payment details view.
 - `/payments/start`: start a payment flow.
 - `/withdraw-transfer`: withdraw and transfer forms.
-- `/settings`: profile, address, organization, password, and theme settings.
+- `/settings`: profile, address, organization, password, theme, and preferred currency settings.
+
+Consumer UI shared patterns: pagination bar (Showing X–Y of Z, Previous/Next) on list tables; amount+currency input and recipient email field components; form controls 42px height and rounded-lg; Contacts and Documents share same page layout (pageContainer, filter row, table container).
 
 Internal Consumer API routes:
 
@@ -262,7 +266,7 @@ Internal Consumer API routes:
 - Payment methods and Stripe flows.
 - Payments list/history/balance/start/withdraw/transfer.
 - Payment request creation and send.
-- Profile and theme settings.
+- Profile, theme, and preferred-currency settings.
 
 ## Database (Prisma)
 
@@ -282,7 +286,8 @@ Database schema is defined in `packages/database-2/prisma/schema.prisma`. The sy
 - `PersonalDetailsModel`: personal profile details (one-to-one).
 - `OrganizationDetailsModel`: organization details and role (one-to-one).
 - `GoogleProfileDetailsModel`: Google OAuth profile info (one-to-one).
-- `UserSettingsModel`: theme settings (one-to-one).
+- `ConsumerSettingsModel`: consumer-only preferences (theme, preferred display currency; one-to-one). Preferred currency is UI default only, not used for pricing.
+- `AdminSettingsModel`: admin-only preferences (theme; one-to-one).
 
 ### Payments and Ledger
 
@@ -326,7 +331,7 @@ Most models include:
 
 Shared packages used across apps:
 
-- `packages/api-types`: shared DTOs and type exports.
+- `packages/api-types`: shared DTOs and type exports; pagination (`PaginatedResponsePage<T>`); currency (`ALL_CURRENCY_CODES`, `TCurrencyCode`, `getCurrencySymbol`); consumer settings (e.g. preferred currency allowlist).
 - `packages/database-2`: Prisma schema, migrations, and generated client.
 - `packages/db-fixtures`: DB fixture helpers for tests.
 - `packages/env`: runtime env schema and validation (Zod).

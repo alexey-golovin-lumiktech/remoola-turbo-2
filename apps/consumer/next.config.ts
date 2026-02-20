@@ -2,15 +2,21 @@ import path from 'path';
 
 import { type NextConfig } from 'next';
 
+const packages = [
+  `lucide-react`, //
+  `sonner`,
+  `framer-motion`,
+  `@remoola/api-types`,
+  `@remoola/shared-constants`,
+  `@remoola/ui`,
+];
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  transpilePackages: [`@remoola/ui`],
+  transpilePackages: packages,
   outputFileTracingRoot: path.join(__dirname, `../../`),
   allowedDevOrigins: [`localhost`, `127.0.0.1`, `remoola-turbo-2-api.vercel.app`],
-  experimental: {
-    externalDir: true,
-    optimizePackageImports: [`lucide-react`, `framer-motion`, `@remoola/ui`],
-  },
+  experimental: { externalDir: true, optimizePackageImports: packages },
 
   // Performance optimizations
   poweredByHeader: false,
@@ -49,7 +55,43 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  // Webpack optimizations
+  // Turbopack (next dev --turbopack): path aliases from tsconfig are read automatically;
+  // optimizePackageImports is applied by Turbopack without extra config.
+  turbopack: {
+    resolveExtensions: [
+      `.ts`,
+      `.tsx`,
+      `.js`,
+      `.jsx`,
+      `.json`,
+      `.css`,
+      `.scss`,
+      `.sass`,
+      `.less`,
+      `.svg`,
+      `.png`,
+      `.jpg`,
+      `.jpeg`,
+      `.gif`,
+      `.webp`,
+      `.avif`,
+      `.woff`,
+      `.woff2`,
+      `.eot`,
+      `.ttf`,
+      `.otf`,
+      `.md`,
+      `.mdx`,
+      `.graphql`,
+      `.gql`,
+      `.yaml`,
+      `.yml`,
+      `.mjs`,
+      `.cjs`,
+    ],
+  },
+
+  // Webpack optimizations (production build only; ignored when using Turbopack in dev)
   webpack: (config, { dev, isServer }) => {
     // Optimize bundle splitting
     if (!dev && !isServer) {

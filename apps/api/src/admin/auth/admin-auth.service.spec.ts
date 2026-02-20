@@ -5,6 +5,7 @@ import { Test, type TestingModule } from '@nestjs/testing';
 import { adminErrorCodes } from '@remoola/shared-constants';
 
 import { AdminAuthService } from './admin-auth.service';
+import { AuthAuditService } from '../../shared/auth-audit.service';
 import { PrismaService } from '../../shared/prisma.service';
 import { passwordUtils } from '../../shared-common';
 
@@ -12,6 +13,7 @@ jest.mock(`../../shared-common`, () => ({
   passwordUtils: {
     verifyPassword: jest.fn(),
   },
+  secureCompare: jest.fn((a: string, b: string) => a === b),
 }));
 
 const mockVerifyPassword = passwordUtils.verifyPassword as jest.MockedFunction<typeof passwordUtils.verifyPassword>;
@@ -39,11 +41,19 @@ describe(`AdminAuthService`, () => {
       verify: jest.fn(),
     };
 
+    const authAudit = {
+      checkLockoutAndRateLimit: jest.fn().mockResolvedValue(undefined),
+      recordAudit: jest.fn().mockResolvedValue(undefined),
+      recordFailedAttempt: jest.fn().mockResolvedValue(undefined),
+      clearLockout: jest.fn().mockResolvedValue(undefined),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AdminAuthService,
         { provide: PrismaService, useValue: prisma },
         { provide: JwtService, useValue: jwtService },
+        { provide: AuthAuditService, useValue: authAudit },
       ],
     }).compile();
 
@@ -129,12 +139,15 @@ describe(`AdminAuthService`, () => {
       deletedAt: null,
     };
 
-    it(`throws when refresh token is invalid (JWT verify fails)`, async () => {
+    it(`throws BadRequestException when refresh token is invalid (JWT verify fails)`, async () => {
       jwtService.verify.mockImplementation(() => {
         throw new Error(`invalid token`);
       });
 
-      await expect(service.refreshAccess(refreshToken)).rejects.toThrow(`invalid token`);
+      await expect(service.refreshAccess(refreshToken)).rejects.toThrow(BadRequestException);
+      await expect(service.refreshAccess(refreshToken)).rejects.toMatchObject({
+        response: expect.objectContaining({ message: adminErrorCodes.ADMIN_REFRESH_TOKEN_INVALID }),
+      });
       expect(prisma.accessRefreshTokenModel.findFirst).not.toHaveBeenCalled();
     });
 

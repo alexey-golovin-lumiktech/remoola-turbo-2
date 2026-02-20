@@ -3,7 +3,7 @@
 import { FormSelect, type FormSelectOption } from '../ui';
 import styles from '../ui/classNames.module.css';
 
-const { flexRowGap3ItemsCenter, searchInputClass, width64 } = styles;
+const { filterRowControlHeight, filterRowGap3AlignEnd, filterRowSearchInput, width64 } = styles;
 
 const STATUS_OPTIONS: FormSelectOption[] = [
   { value: ``, label: `All statuses` },
@@ -37,18 +37,20 @@ export function PaymentsFilters({
   onSearchChangeAction,
 }: PaymentsFiltersProps) {
   return (
-    <div className={flexRowGap3ItemsCenter}>
-      {/* Search */}
-      <input
-        type="text"
-        placeholder="Search…"
-        className={`${width64} ${searchInputClass}`}
-        value={search}
-        onChange={(e) => onSearchChangeAction(e.target.value)}
-      />
+    <div className={filterRowGap3AlignEnd}>
+      {/* Search — fixed 42px height so it aligns with selects */}
+      <div className={`${filterRowControlHeight} ${width64}`}>
+        <input
+          type="text"
+          placeholder="Search…"
+          className={`${filterRowSearchInput} h-full w-full`}
+          value={search}
+          onChange={(e) => onSearchChangeAction(e.target.value)}
+        />
+      </div>
 
       <FormSelect
-        label="Status"
+        label=""
         value={status}
         onChange={onStatusChangeAction}
         options={STATUS_OPTIONS}
@@ -56,7 +58,7 @@ export function PaymentsFilters({
         isClearable={false}
       />
       <FormSelect
-        label="Type"
+        label=""
         value={type}
         onChange={onTypeChangeAction}
         options={TYPE_OPTIONS}

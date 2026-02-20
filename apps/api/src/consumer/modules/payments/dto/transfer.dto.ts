@@ -1,6 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { IsNumber, IsString, Min } from 'class-validator';
+import { IsIn, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+
+import { ALL_CURRENCY_CODES } from '@remoola/api-types';
 
 export class TransferBody {
   @Expose()
@@ -8,6 +10,12 @@ export class TransferBody {
   @IsNumber()
   @Min(1)
   amount!: number;
+
+  @Expose()
+  @ApiPropertyOptional({ enum: ALL_CURRENCY_CODES, description: `Currency for the transfer (default USD)` })
+  @IsOptional()
+  @IsIn(ALL_CURRENCY_CODES)
+  currencyCode?: (typeof ALL_CURRENCY_CODES)[number];
 
   @Expose()
   @ApiProperty()

@@ -106,12 +106,31 @@ export class ConsumerExchangeService {
     return { data: results };
   }
 
-  async listAutoConversionRules(consumerId: string) {
-    const rules = await this.prisma.walletAutoConversionRuleModel.findMany({
-      where: { consumerId, deletedAt: null },
-      orderBy: { createdAt: `desc` },
-    });
-    return rules.map((rule) => this.normalizeRule(rule));
+  async listAutoConversionRules(
+    consumerId: string,
+    page = 1,
+    pageSize = 10,
+  ): Promise<{
+    items: ReturnType<ConsumerExchangeService[`normalizeRule`]>[];
+    total: number;
+    page: number;
+    pageSize: number;
+  }> {
+    const safePage = Math.max(1, Math.floor(Number(page)) || 1);
+    const safePageSize = Math.min(100, Math.max(1, Math.floor(Number(pageSize)) || 10));
+
+    const [total, rules] = await Promise.all([
+      this.prisma.walletAutoConversionRuleModel.count({ where: { consumerId, deletedAt: null } }),
+      this.prisma.walletAutoConversionRuleModel.findMany({
+        where: { consumerId, deletedAt: null },
+        orderBy: { createdAt: `desc` },
+        skip: (safePage - 1) * safePageSize,
+        take: safePageSize,
+      }),
+    ]);
+
+    const items = rules.map((rule) => this.normalizeRule(rule));
+    return { items, total, page: safePage, pageSize: safePageSize };
   }
 
   async createAutoConversionRule(consumerId: string, body: CreateAutoConversionRuleBody) {
@@ -208,12 +227,31 @@ export class ConsumerExchangeService {
     return { ruleId: rule.id };
   }
 
-  async listScheduledConversions(consumerId: string) {
-    const conversions = await this.prisma.scheduledFxConversionModel.findMany({
-      where: { consumerId, deletedAt: null },
-      orderBy: { executeAt: `desc` },
-    });
-    return conversions.map((conversion) => this.normalizeScheduledConversion(conversion));
+  async listScheduledConversions(
+    consumerId: string,
+    page = 1,
+    pageSize = 10,
+  ): Promise<{
+    items: ReturnType<ConsumerExchangeService[`normalizeScheduledConversion`]>[];
+    total: number;
+    page: number;
+    pageSize: number;
+  }> {
+    const safePage = Math.max(1, Math.floor(Number(page)) || 1);
+    const safePageSize = Math.min(100, Math.max(1, Math.floor(Number(pageSize)) || 10));
+
+    const [total, conversions] = await Promise.all([
+      this.prisma.scheduledFxConversionModel.count({ where: { consumerId, deletedAt: null } }),
+      this.prisma.scheduledFxConversionModel.findMany({
+        where: { consumerId, deletedAt: null },
+        orderBy: { executeAt: `desc` },
+        skip: (safePage - 1) * safePageSize,
+        take: safePageSize,
+      }),
+    ]);
+
+    const items = conversions.map((conversion) => this.normalizeScheduledConversion(conversion));
+    return { items, total, page: safePage, pageSize: safePageSize };
   }
 
   async scheduleConversion(consumerId: string, body: ScheduleConversionBody) {

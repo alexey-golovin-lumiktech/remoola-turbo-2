@@ -18,9 +18,9 @@
 
 ## What each app does
 
-- **API** — Auth (admin + consumer), dashboard stats, consumers & admins management, payment requests (list, archive, refund, chargeback), ledger, exchange rates and rules, scheduled FX, Stripe integration, documents, contacts, contracts, profile and settings.
-- **Admin** — Login, dashboard (stats, verification queue, recent requests, ledger anomalies), admins CRUD, consumers list/details and verification, payment requests (list, details, expectation-date archive), ledger and anomalies, exchange (rules, scheduled, rates).
-- **Consumer** — Login, signup (multi-step), OAuth, dashboard, contacts, contracts, documents, payment methods (incl. Stripe), payment requests and payments (list, start, withdraw, transfer), exchange and rules, profile and theme settings.
+- **API** — Auth (admin + consumer), dashboard stats, consumers & admins management, payment requests (list, archive, refund, chargeback), ledger, exchange rates and rules, scheduled FX, Stripe integration, documents, contacts, contracts, profile and settings. Consumer list endpoints (contacts, contracts, documents, payments, exchange rules, scheduled) support pagination (`page`, `pageSize`).
+- **Admin** — Login, dashboard (stats, verification queue, recent requests, ledger anomalies), admins CRUD, consumers list/details and verification, payment requests (list, details, expectation-date archive), ledger and anomalies, exchange (rules, scheduled, rates). Exchange uses api-types currency codes.
+- **Consumer** — Login, signup (multi-step), OAuth, dashboard, contacts, contracts, documents (all list tables paginated), payment methods (incl. Stripe), payment requests and payments (list, start, withdraw, transfer), exchange and rules, profile, theme and preferred-currency settings. Currency options and shared UI (PaginationBar, AmountCurrencyInput) use api-types.
 
 ---
 

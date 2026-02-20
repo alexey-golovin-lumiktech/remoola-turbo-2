@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { toast } from 'sonner';
 
+import { getErrorMessageForUser } from '../../lib/error-messages';
+import { handleSessionExpired } from '../../lib/session-expired';
 import styles from '../ui/classNames.module.css';
 
 const {
@@ -39,27 +40,34 @@ export function RateDisplay({ from, to }: RateDisplayProps) {
       credentials: `include`,
     })
       .then(async (res) => {
-        if (!res.ok) {
-          const message = await res.text();
-          setRate(null);
-          const msg = message || `Failed to fetch rate`;
-          setError(msg);
-          toast.error(msg);
+        if (res.status === 401) {
+          handleSessionExpired();
           return;
         }
-        const data = await res.json();
+        if (!res.ok) {
+          setRate(null);
+          let msg = `Failed to fetch rate`;
+          try {
+            const body = (await res.json()) as { message?: string };
+            msg = getErrorMessageForUser(body?.message, msg);
+          } catch {
+            // keep default
+          }
+          setError(msg);
+          return;
+        }
+        const data = (await res.json()) as { rate?: number };
+        const rateVal = typeof data?.rate === `number` ? data.rate : null;
         if (lastRateRef.current !== null) {
           setPrevRate(lastRateRef.current);
         }
-        setRate(data.rate);
-        lastRateRef.current = data.rate;
+        setRate(rateVal);
+        lastRateRef.current = rateVal;
         setError(null);
       })
       .catch(() => {
         setRate(null);
-        const msg = `Failed to fetch rate`;
-        setError(msg);
-        toast.error(msg);
+        setError(`Failed to fetch rate`);
       })
       .finally(() => setLoading(false));
   }, [from, to]);
@@ -90,6 +98,7 @@ export function RateDisplay({ from, to }: RateDisplayProps) {
         </>
       )}
 
+      {!loading && rate === null && error && <div className={rateEmpty}>{error}</div>}
       {!loading && rate === null && !error && <div className={rateEmpty}>No rate available</div>}
     </div>
   );

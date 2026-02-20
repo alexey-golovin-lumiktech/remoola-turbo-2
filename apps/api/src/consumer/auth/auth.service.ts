@@ -35,10 +35,13 @@ import { ConsumerSignup } from './dto';
 import { LoginBody } from '../../auth/dto/login.dto';
 import { CONSUMER } from '../../dtos';
 import { IJwtTokenPayload } from '../../dtos/consumer';
-import { envs, HOURS_24MS } from '../../envs';
+import { envs, HOURS_24MS, JWT_ACCESS_TTL_SECONDS, JWT_REFRESH_TTL_SECONDS } from '../../envs';
+import { AuthAuditService, AUTH_AUDIT_EVENTS, AUTH_IDENTITY_TYPES } from '../../shared/auth-audit.service';
 import { MailingService } from '../../shared/mailing.service';
 import { PrismaService } from '../../shared/prisma.service';
-import { type IChangePasswordBody, type IChangePasswordParam, passwordUtils } from '../../shared-common';
+import { type IChangePasswordBody, type IChangePasswordParam, passwordUtils, secureCompare } from '../../shared-common';
+
+export type LoginContext = { ipAddress?: string | null; userAgent?: string | null };
 
 @Injectable()
 export class ConsumerAuthService {
@@ -49,6 +52,7 @@ export class ConsumerAuthService {
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
     private readonly mailingService: MailingService,
+    private readonly authAudit: AuthAuditService,
   ) {
     this.oAuth2Client = new OAuth2Client(envs.GOOGLE_CLIENT_ID!, envs.GOOGLE_CLIENT_SECRET!);
   }
@@ -106,7 +110,9 @@ export class ConsumerAuthService {
 
       return consumer;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.warn(`ConsumerAuth: Google OAuth failed`, {
+        message: error instanceof Error ? error.message : `Unknown`,
+      });
       throw new InternalServerErrorException();
     }
   }
@@ -117,9 +123,12 @@ export class ConsumerAuthService {
     });
   }
 
-  async login(body: LoginBody) {
+  async login(body: LoginBody, ctx?: LoginContext) {
+    const email = body.email?.trim()?.toLowerCase() ?? ``;
+    await this.authAudit.checkLockoutAndRateLimit(AUTH_IDENTITY_TYPES.consumer, email);
+
     const identity = await this.prisma.consumerModel.findFirst({
-      where: { email: body.email, deletedAt: null },
+      where: { email, deletedAt: null },
     });
     if (!identity) throw new UnauthorizedException(errorCodes.INVALID_CREDENTIALS);
 
@@ -128,19 +137,58 @@ export class ConsumerAuthService {
       storedHash: identity.password,
       storedSalt: identity.salt,
     });
-    if (!valid) throw new UnauthorizedException(errorCodes.INVALID_CREDENTIALS);
+
+    if (!valid) {
+      await this.authAudit.recordAudit({
+        identityType: AUTH_IDENTITY_TYPES.consumer,
+        identityId: identity.id,
+        email: identity.email,
+        event: AUTH_AUDIT_EVENTS.login_failure,
+        ipAddress: ctx?.ipAddress,
+        userAgent: ctx?.userAgent,
+      });
+      await this.authAudit.recordFailedAttempt(AUTH_IDENTITY_TYPES.consumer, identity.email);
+      throw new UnauthorizedException(errorCodes.INVALID_CREDENTIALS);
+    }
+
+    await this.authAudit.recordAudit({
+      identityType: AUTH_IDENTITY_TYPES.consumer,
+      identityId: identity.id,
+      email: identity.email,
+      event: AUTH_AUDIT_EVENTS.login_success,
+      ipAddress: ctx?.ipAddress,
+      userAgent: ctx?.userAgent,
+    });
+    await this.authAudit.clearLockout(AUTH_IDENTITY_TYPES.consumer, identity.email);
 
     const access = await this.getAccessAndRefreshToken(identity.id);
     return { identity, ...access };
   }
 
   async refreshAccess(refreshToken: string) {
-    const verified = this.jwtService.verify<IJwtTokenPayload>(refreshToken);
+    let verified: IJwtTokenPayload;
+    try {
+      verified = this.jwtService.verify<IJwtTokenPayload>(refreshToken);
+    } catch {
+      this.logger.warn(`ConsumerAuth: refresh token verification failed`);
+      throw new UnauthorizedException(errorCodes.INVALID_REFRESH_TOKEN);
+    }
+
     const exist = await this.prisma.accessRefreshTokenModel.findFirst({ where: { identityId: verified.identityId } });
-    if (exist == null) throw new BadRequestException(errorCodes.NO_IDENTITY_RECORD);
-    if (exist.refreshToken !== refreshToken) throw new UnauthorizedException(errorCodes.INVALID_REFRESH_TOKEN);
+    if (exist == null) {
+      this.logger.warn(`ConsumerAuth: no identity record for refresh`);
+      throw new BadRequestException(errorCodes.NO_IDENTITY_RECORD);
+    }
+    if (!secureCompare(exist.refreshToken, refreshToken)) {
+      this.logger.warn(`ConsumerAuth: refresh token mismatch`);
+      throw new UnauthorizedException(errorCodes.INVALID_REFRESH_TOKEN);
+    }
 
     const consumer = await this.prisma.consumerModel.findFirst({ where: { id: verified.identityId } });
+    if (!consumer) {
+      this.logger.warn(`ConsumerAuth: consumer not found for identity`);
+      throw new BadRequestException(errorCodes.NO_IDENTITY_RECORD);
+    }
     const access = await this.getAccessAndRefreshToken(consumer.id);
     return Object.assign(consumer, access);
   }
@@ -154,6 +202,29 @@ export class ConsumerAuthService {
       });
     } catch {
       // ignore invalid token during logout
+    }
+  }
+
+  async revokeSessionByRefreshTokenAndAudit(refreshToken?: string | null, ctx?: LoginContext): Promise<void> {
+    if (!refreshToken) return;
+    try {
+      const verified = this.jwtService.verify<IJwtTokenPayload>(refreshToken);
+      const consumer = await this.prisma.consumerModel.findFirst({
+        where: { id: verified.identityId, deletedAt: null },
+      });
+      await this.revokeSessionByRefreshToken(refreshToken);
+      if (consumer) {
+        await this.authAudit.recordAudit({
+          identityType: AUTH_IDENTITY_TYPES.consumer,
+          identityId: consumer.id,
+          email: consumer.email,
+          event: AUTH_AUDIT_EVENTS.logout,
+          ipAddress: ctx?.ipAddress,
+          userAgent: ctx?.userAgent,
+        });
+      }
+    } catch {
+      await this.revokeSessionByRefreshToken(refreshToken);
     }
   }
 
@@ -171,7 +242,13 @@ export class ConsumerAuthService {
   }
 
   async verifyOAuthExchangeToken(token: string) {
-    const decoded = this.jwtService.verify(token) as OAuthExchangePayload;
+    let decoded: OAuthExchangePayload;
+    try {
+      decoded = this.jwtService.verify(token) as OAuthExchangePayload;
+    } catch {
+      this.logger.warn(`ConsumerAuth: OAuth exchange token verification failed`);
+      throw new UnauthorizedException(errorCodes.INVALID_OAUTH_EXCHANGE_TOKEN);
+    }
     if (!decoded || decoded.type !== ConsumerAuthService.oauthExchangeTokenType || !decoded.identityId) {
       throw new UnauthorizedException(errorCodes.INVALID_OAUTH_EXCHANGE_TOKEN);
     }
@@ -193,7 +270,13 @@ export class ConsumerAuthService {
   }
 
   async verifyGoogleSignupToken(token: string) {
-    const decoded = this.jwtService.verify(token) as GoogleSignupPayload;
+    let decoded: GoogleSignupPayload;
+    try {
+      decoded = this.jwtService.verify(token) as GoogleSignupPayload;
+    } catch {
+      this.logger.warn(`ConsumerAuth: Google signup token verification failed`);
+      throw new BadRequestException(errorCodes.INVALID_GOOGLE_SIGNUP_TOKEN);
+    }
     if (decoded?.type !== ConsumerAuthService.googleSignupTokenType) {
       throw new BadRequestException(errorCodes.INVALID_GOOGLE_SIGNUP_TOKEN);
     }
@@ -285,18 +368,22 @@ export class ConsumerAuthService {
   }
 
   private getAccessToken(identityId: string) {
-    return this.jwtService //
-      .signAsync({ identityId, type: `access` }, { expiresIn: 86400 }); //86400 ~ 24hrs in milliseconds
+    return this.jwtService.signAsync({ identityId, type: `access` }, { expiresIn: JWT_ACCESS_TTL_SECONDS });
   }
 
   private getRefreshToken(identityId: string) {
-    return this.jwtService //
-      .signAsync({ identityId, type: `refresh` }, { expiresIn: 604800 }); //604800 ~ 7days in seconds
+    return this.jwtService.signAsync({ identityId, type: `refresh` }, { expiresIn: JWT_REFRESH_TTL_SECONDS });
   }
 
-  private async verifyChangePasswordFlowToken(token) {
-    const verified = this.jwtService.verify<IJwtTokenPayload>(token);
-    if (!verified) throw new UnauthorizedException(errorCodes.INVALID_CHANGE_PASSWORD_TOKEN);
+  private async verifyChangePasswordFlowToken(token: string) {
+    let verified: IJwtTokenPayload;
+    try {
+      verified = this.jwtService.verify<IJwtTokenPayload>(token);
+    } catch {
+      this.logger.warn(`ConsumerAuth: change-password token verification failed`);
+      throw new UnauthorizedException(errorCodes.INVALID_CHANGE_PASSWORD_TOKEN);
+    }
+    if (!verified?.identityId) throw new UnauthorizedException(errorCodes.INVALID_CHANGE_PASSWORD_TOKEN);
 
     const consumer = await this.prisma.consumerModel.findFirst({
       where: { email: verified.email, id: verified.identityId },

@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
 import { type ConsumerModel } from '@remoola/database-2';
@@ -15,9 +15,12 @@ export class ConsumerContactsController {
   constructor(private service: ConsumerContactsService) {}
 
   @Get()
-  async list(@Identity() consumer: ConsumerModel): Promise<ConsumerContactsResponse> {
-    const items = await this.service.list(consumer.id);
-    return { items };
+  async list(
+    @Identity() consumer: ConsumerModel,
+    @Query(`page`) page?: string,
+    @Query(`pageSize`) pageSize?: string,
+  ): Promise<ConsumerContactsResponse> {
+    return this.service.list(consumer.id, page ? Number(page) : undefined, pageSize ? Number(pageSize) : undefined);
   }
 
   @Post()

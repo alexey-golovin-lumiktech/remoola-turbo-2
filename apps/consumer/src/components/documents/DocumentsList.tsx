@@ -5,8 +5,10 @@ import { toast } from 'sonner';
 
 import { DocumentPreviewModal } from './DocumentPreviewModal';
 import { formatDateForDisplay } from '../../lib/date-utils';
-import { FormSelect, type FormSelectOption } from '../ui';
+import { FormSelect, type FormSelectOption, PaginationBar } from '../ui';
 import styles from '../ui/classNames.module.css';
+
+const DEFAULT_PAGE_SIZE = 10;
 
 const DOC_KIND_OPTIONS: FormSelectOption[] = [
   { value: ``, label: `All documents` },
@@ -21,7 +23,9 @@ const {
   bulkActionsRow,
   checkboxBase,
   dangerButtonSm,
-  flexWrapItemsCenterGap4,
+  filterRowControlHeight,
+  filterRowWrapAlignEnd,
+  formInputFilterRow,
   formInputSmall,
   hiddenInput,
   inlineFlexItemsCenterGap2,
@@ -56,7 +60,12 @@ type Doc = {
 type PreviewDoc = Doc | null;
 
 export function DocumentsList() {
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [total, setTotal] = useState(0);
   const [docs, setDocs] = useState<Doc[]>([]);
+  const docsList = Array.isArray(docs) ? docs : [];
+  const [loading, setLoading] = useState(true);
   const [kind, setKind] = useState(``);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [uploading, setUploading] = useState(false);
@@ -64,7 +73,8 @@ export function DocumentsList() {
   const [attachPaymentId, setAttachPaymentId] = useState(``);
 
   const load = useCallback(async () => {
-    const params = new URLSearchParams();
+    setLoading(true);
+    const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
     if (kind) params.append(`kind`, kind);
 
     const res = await fetch(`/api/documents?${params}`, {
@@ -74,11 +84,17 @@ export function DocumentsList() {
       cache: `no-store`,
     });
 
+    setLoading(false);
     if (!res.ok) return;
 
-    setDocs(await res.json());
+    const json = await res.json();
+    // Support both paginated { items, total, page, pageSize } and legacy array response
+    const items = Array.isArray(json) ? json : (json?.items ?? []);
+    const totalCount = Array.isArray(json) ? json.length : Number(json?.total ?? 0);
+    setDocs(Array.isArray(items) ? items : []);
+    setTotal(totalCount);
     setSelected(new Set());
-  }, [kind]);
+  }, [kind, page, pageSize]);
 
   useEffect(() => {
     load();
@@ -94,10 +110,10 @@ export function DocumentsList() {
   }
 
   function toggleSelectAll() {
-    if (selected.size === docs.length) {
+    if (selected.size === docsList.length) {
       setSelected(new Set());
     } else {
-      setSelected(new Set(docs.map((d) => d.id)));
+      setSelected(new Set(docsList.map((d) => d.id)));
     }
   }
 
@@ -123,6 +139,7 @@ export function DocumentsList() {
       return;
     }
 
+    setPage(1);
     await load();
   }
 
@@ -195,18 +212,26 @@ export function DocumentsList() {
 
   return (
     <div className={spaceY6}>
-      {/* Top actions: upload, filters, bulk actions */}
-      <div className={flexWrapItemsCenterGap4}>
-        {/* Upload */}
-        <label className={`${inlineFlexItemsCenterGap2} ${uploadButtonPrimary}`}>
-          {uploading ? `Uploading...` : `Upload documents`}
-          <input type="file" multiple className={hiddenInput} onChange={handleUpload} />
-        </label>
+      {/* Top actions: upload, filters, bulk actions — align button and select by bottom */}
+      <div className={filterRowWrapAlignEnd}>
+        {/* Upload — fixed 42px height so it aligns with Document type select */}
+        <div className={filterRowControlHeight}>
+          <label
+            className={`${inlineFlexItemsCenterGap2} ${uploadButtonPrimary} h-full w-full cursor-pointer`}
+            style={{ margin: 0 }}
+          >
+            {uploading ? `Uploading...` : `Upload documents`}
+            <input type="file" multiple className={hiddenInput} onChange={handleUpload} />
+          </label>
+        </div>
 
         <FormSelect
-          label="Document type"
+          label=""
           value={kind}
-          onChange={setKind}
+          onChange={(v) => {
+            setKind(v);
+            setPage(1);
+          }}
           options={DOC_KIND_OPTIONS}
           placeholder="All documents"
           isClearable={false}
@@ -223,7 +248,7 @@ export function DocumentsList() {
               <input
                 type="text"
                 placeholder="Payment request ID"
-                className={formInputSmall}
+                className={formInputFilterRow}
                 value={attachPaymentId}
                 onChange={(e) => setAttachPaymentId(e.target.value)}
               />
@@ -235,6 +260,10 @@ export function DocumentsList() {
         )}
       </div>
 
+      {total > 0 && (
+        <PaginationBar total={total} page={page} pageSize={pageSize} onPageChange={setPage} loading={loading} />
+      )}
+
       {/* Table */}
       <div className={tableContainer}>
         <table className={`w-full ${textSm}`}>
@@ -243,7 +272,7 @@ export function DocumentsList() {
               <th className={tableCellHeaderMd}>
                 <input
                   type="checkbox"
-                  checked={selected.size === docs.length && docs.length > 0}
+                  checked={selected.size === docsList.length && docsList.length > 0}
                   onChange={toggleSelectAll}
                   className={checkboxBase}
                 />
@@ -258,7 +287,7 @@ export function DocumentsList() {
           </thead>
 
           <tbody>
-            {docs.length === 0 && (
+            {docsList.length === 0 && (
               <tr>
                 <td colSpan={7} className={tableEmptyCell}>
                   No documents found
@@ -266,7 +295,7 @@ export function DocumentsList() {
               </tr>
             )}
 
-            {docs.map((d) => {
+            {docsList.map((d) => {
               const checked = selected.has(d.id);
               return (
                 <tr key={d.id} className={tableBodyRow}>

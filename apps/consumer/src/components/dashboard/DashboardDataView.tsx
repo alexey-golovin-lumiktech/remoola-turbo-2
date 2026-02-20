@@ -16,14 +16,63 @@ import styles from '../ui/classNames.module.css';
 const { cardBaseSoftCompact, dashboardContainer, dashboardGrid, dashboardSidebar } = styles;
 // Type is inferred from the hook
 
+function getErrorMessage(error: unknown): string {
+  if (typeof error === `string`) return error;
+  if (error instanceof Error) return error.message;
+  return `Failed to load dashboard`;
+}
+
+function isUnauthorizedError(error: unknown): boolean {
+  const e = error as { status?: number };
+  return e?.status === 401;
+}
+
 export function DashboardDataView() {
   const { data: dashboardData, error, isLoading } = useDashboard();
 
   if (error) {
-    return <ErrorState title="Failed to load dashboard" message={error} />;
+    // 401: session expired – handleSessionExpired() already shows toast and redirects; avoid duplicate UI
+    if (isUnauthorizedError(error)) {
+      return (
+        <div className={dashboardContainer} style={{ padding: `2rem`, textAlign: `center` }}>
+          <p style={{ color: `var(--color-muted, #64748b)` }}>Redirecting to sign in…</p>
+        </div>
+      );
+    }
+    return (
+      <ErrorState
+        title="Failed to load dashboard"
+        message={getErrorMessage(error)}
+        onRetry={() => window.location.reload()}
+      />
+    );
   }
 
   if (isLoading || !dashboardData) return <DashboardSkeleton />;
+
+  const summary = dashboardData?.summary as
+    | { balanceCents?: number; activeRequests?: number; lastPaymentAt?: string | null }
+    | undefined;
+  const hasValidShape =
+    dashboardData &&
+    typeof dashboardData === `object` &&
+    Array.isArray(dashboardData.pendingRequests) &&
+    Array.isArray(dashboardData.activity) &&
+    Array.isArray(dashboardData.tasks) &&
+    Array.isArray(dashboardData.quickDocs) &&
+    summary != null &&
+    typeof summary.balanceCents === `number` &&
+    typeof summary.activeRequests === `number`;
+
+  if (!hasValidShape) {
+    return (
+      <ErrorState
+        title="Failed to load dashboard"
+        message="Invalid data received. Please try again."
+        onRetry={() => window.location.reload()}
+      />
+    );
+  }
 
   return (
     <div className={dashboardContainer} data-testid="consumer-dashboard">

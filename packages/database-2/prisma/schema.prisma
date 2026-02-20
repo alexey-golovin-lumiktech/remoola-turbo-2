@@ -23,6 +23,36 @@ model AccessRefreshTokenModel {
   @@map("access_refresh_token")
 }
 
+/// Fintech-safe: audit of login/logout and per-email lockout after N failed attempts.
+model AuthAuditLogModel {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  identityType String   @map("identity_type") @db.Text
+  identityId   String?  @map("identity_id") @db.Uuid
+  email        String   @db.Text
+  event        String   @db.Text
+  ipAddress    String?  @map("ip_address") @db.Text
+  userAgent    String?  @map("user_agent") @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([email, createdAt])
+  @@index([identityId, createdAt])
+  @@map("auth_audit_log")
+}
+
+model AuthLoginLockoutModel {
+  identityType   String    @map("identity_type") @db.Text
+  email          String    @db.Text
+  attemptCount   Int       @map("attempt_count") @default(0)
+  firstAttemptAt DateTime? @map("first_attempt_at") @db.Timestamptz(6)
+  lockedUntil    DateTime? @map("locked_until") @db.Timestamptz(6)
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@id([identityType, email])
+  @@map("auth_login_lockout")
+}
+
 model OauthStateModel {
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   stateKey  String   @unique @map("state_key") @db.Text
@@ -62,6 +92,8 @@ model AdminModel {
   email    String @db.Text
   password String @db.Text
   salt     String @db.Text
+
+  adminSettings AdminSettingsModel?
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -111,7 +143,7 @@ model ConsumerModel {
   personalDetails      PersonalDetailsModel?
   organizationDetails  OrganizationDetailsModel?
   googleProfileDetails GoogleProfileDetailsModel?
-  userSettings         UserSettingsModel?
+  consumerSettings     ConsumerSettingsModel?
 
   asPayerPaymentRequests     PaymentRequestModel[] @relation("PaymentRequestPayer")
   asRequesterPaymentRequests PaymentRequestModel[] @relation("PaymentRequestRequester")
@@ -831,10 +863,12 @@ enum ScheduledFxConversionStatus {
   @@map("scheduled_fx_conversion_status_enum")
 }
 
-model UserSettingsModel {
+/// Consumer-only preferences (display/UX). Not used for pricing or compliance.
+model ConsumerSettingsModel {
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
-  theme Theme @default(SYSTEM)
+  theme             Theme         @default(SYSTEM)
+  preferredCurrency CurrencyCode? @map("preferred_currency")
 
   consumerId String        @unique @db.Uuid
   consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -844,5 +878,22 @@ model UserSettingsModel {
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
   @@unique([consumerId, deletedAt])
-  @@map("user_settings")
+  @@map("consumer_settings")
+}
+
+/// Admin-only preferences (display/UX).
+model AdminSettingsModel {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  theme Theme @default(SYSTEM)
+
+  adminId String      @unique @db.Uuid
+  admin   AdminModel  @relation(fields: [adminId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@unique([adminId, deletedAt])
+  @@map("admin_settings")
 }

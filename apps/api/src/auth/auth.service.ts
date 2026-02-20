@@ -1,18 +1,20 @@
 import * as crypto from 'crypto';
 
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 
 import { $Enums } from '@remoola/database-2';
 
-import { JWT_REFRESH_SECRET, JWT_ACCESS_SECRET, JWT_ACCESS_TTL, JWT_REFRESH_TTL } from '../envs';
+import { JWT_ACCESS_SECRET, JWT_ACCESS_TTL_SECONDS, JWT_REFRESH_SECRET, JWT_REFRESH_TTL } from '../envs';
 import { PrismaService } from '../shared/prisma.service';
 import { LoginBody } from './dto/login.dto';
 import { RegisterBody } from './dto/register.dto';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
@@ -57,7 +59,7 @@ export class AuthService {
       { sub: user.id, email: user.email },
       {
         secret: JWT_ACCESS_SECRET,
-        expiresIn: JWT_ACCESS_TTL,
+        expiresIn: JWT_ACCESS_TTL_SECONDS,
       },
     );
   }
@@ -77,9 +79,18 @@ export class AuthService {
   }
 
   async refresh(refreshToken: string) {
-    const payload = this.jwt.verify(refreshToken, { secret: JWT_REFRESH_SECRET });
+    let payload: { sub: string };
+    try {
+      payload = this.jwt.verify(refreshToken, { secret: JWT_REFRESH_SECRET }) as { sub: string };
+    } catch {
+      this.logger.warn(`Auth: refresh token verification failed`);
+      throw new UnauthorizedException(`Invalid or expired refresh token`);
+    }
     const identity = await this.prisma.adminModel.findUnique({ where: { id: payload.sub } });
-    if (!identity) throw new UnauthorizedException(`User not found`);
+    if (!identity) {
+      this.logger.warn(`Auth: user not found for refresh`);
+      throw new UnauthorizedException(`User not found`);
+    }
     const accessToken = this.signAccess(identity);
     return { ...identity, accessToken };
   }

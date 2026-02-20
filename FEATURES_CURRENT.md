@@ -23,17 +23,17 @@ Authentication and identity:
 Consumer domain features:
 
 - Dashboard aggregation endpoint.
-- Contacts CRUD and contact details.
-- Contracts listing.
-- Document upload, tagging, and attachment to payments.
-- Exchange rates, currency conversion, auto-conversion rules, scheduled FX conversions, and admin review/override.
+- Contacts CRUD and contact details (list paginated: page, pageSize).
+- Contracts listing (paginated).
+- Document upload, tagging, and attachment to payments (documents list paginated).
+- Exchange rates, currency conversion, auto-conversion rules, scheduled FX conversions (rules and scheduled lists paginated), and admin review/override.
 - Payment methods CRUD (manual) and Stripe payment method metadata lookup.
 - Stripe checkout sessions, setup intents, confirmations, saved-method payments.
 - Stripe webhooks, including identity verification start.
 - Payments list, balance, history, start payment, withdraw, transfer, and payment view.
 - Payment request creation and send flow.
 - Profile management (personal, address, organization) and password change.
-- User settings for theme preference.
+- User settings for theme preference and preferred display currency (api-types allowlist).
 - Invoice generation for payment requests.
 
 Admin domain features:
@@ -83,23 +83,24 @@ Internal API proxy routes:
 
 Consumer UI with:
 
-- Login, logout, OAuth callback, and signup flow (multi-step).
+- Login, logout, OAuth callback, and signup flow (multi-step); auth refresh and session-expired handling.
 - Signup start and completion confirmation pages.
 - Dashboard with summaries, tasks, and activity.
-- Contacts list, create/edit/delete, and detail pages.
-- Contracts list.
-- Documents upload, list, tagging, and attach-to-payment flow.
-- Exchange screen with rates, balances, and conversion.
+- Contacts list (paginated, layout aligned with Documents), create/edit/delete, and detail pages.
+- Contracts list (paginated).
+- Documents upload, list (paginated), tagging, and attach-to-payment flow.
+- Exchange screen with rates, balances, and conversion; currency options from api-types (ALL_CURRENCY_CODES).
 - Payment methods management, including Stripe setup flows.
 - Payment requests creation and send flow.
-- Payments list, details, start payment, transfer, withdraw, and invoice generation.
+- Payments list (paginated, filters), details, start payment, transfer, withdraw, and invoice generation.
 - Profile settings (personal, address, organization, password).
-- Theme settings (light/dark/system).
+- Theme and preferred currency settings (light/dark/system; currency from api-types allowlist).
+- Shared UI: PaginationBar (Showing X–Y of Z, Previous/Next), AmountCurrencyInput, RecipientEmailField; form controls 42px/rounded-lg; Contacts and Documents pages share same layout pattern.
 
 Internal API proxy routes:
 
-- Auth, signup, profile, settings.
-- Contacts, contracts, documents, exchange.
+- Auth (including refresh), signup, profile, settings (theme, preferred-currency).
+- Contacts, contracts, documents, exchange (query params forwarded, including page/pageSize).
 - Payments, payment requests, payment methods, Stripe flows.
 - OAuth exchange proxy endpoint.
 - Exchange quote and batch rate proxy endpoints.
@@ -125,7 +126,8 @@ Ledger and payments:
 
 Shared packages present in repo:
 
-- `api-types`, `database-2`, `db-fixtures`, `env`, `eslint-config`, `jest-config`, `security-utils`, `shared-constants`, `test-db`, `typescript-config`, `ui`.
+- `api-types`: shared DTOs, PaginatedResponsePage, currency (ALL_CURRENCY_CODES, TCurrencyCode, getCurrencySymbol), consumer settings (e.g. preferred currency allowlist).
+- `database-2`, `db-fixtures`, `env`, `eslint-config`, `jest-config`, `security-utils`, `shared-constants`, `test-db`, `typescript-config`, `ui`.
 
 ## Comparison Notes (History vs Current State)
 

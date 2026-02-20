@@ -39,8 +39,12 @@ export class ConsumerExchangeController {
   }
 
   @Get(`rules`)
-  listRules(@Identity() consumer: ConsumerModel) {
-    return this.service.listAutoConversionRules(consumer.id);
+  listRules(@Identity() consumer: ConsumerModel, @Query(`page`) page?: string, @Query(`pageSize`) pageSize?: string) {
+    return this.service.listAutoConversionRules(
+      consumer.id,
+      page ? Number(page) : undefined,
+      pageSize ? Number(pageSize) : undefined,
+    );
   }
 
   @Post(`rules`)
@@ -63,8 +67,16 @@ export class ConsumerExchangeController {
   }
 
   @Get(`scheduled`)
-  listScheduled(@Identity() consumer: ConsumerModel) {
-    return this.service.listScheduledConversions(consumer.id);
+  listScheduled(
+    @Identity() consumer: ConsumerModel,
+    @Query(`page`) page?: string,
+    @Query(`pageSize`) pageSize?: string,
+  ) {
+    return this.service.listScheduledConversions(
+      consumer.id,
+      page ? Number(page) : undefined,
+      pageSize ? Number(pageSize) : undefined,
+    );
   }
 
   @Post(`scheduled`)
