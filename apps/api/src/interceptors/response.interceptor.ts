@@ -17,7 +17,7 @@ export const TransformResponse = <T>(cls: ClassConstructor<T>) => SetMetadata(DT
 export class TransformResponseInterceptor implements NestInterceptor {
   constructor(private readonly reflector: Reflector) {}
 
-  intercept(context: ExecutionContext, next: CallHandler<any>) {
+  intercept(context: ExecutionContext, next: CallHandler<unknown>) {
     return next.handle().pipe(
       map((res) => {
         if (res == null) return null;

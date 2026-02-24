@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsIn, IsOptional, IsString } from 'class-validator';
 
-import { ScheduledFxConversionStatuses, type TAdminExchangeScheduledListQuery } from '@remoola/api-types';
+import { SCHEDULED_FX_CONVERSION_STATUSES, type TAdminExchangeScheduledListQuery } from '@remoola/api-types';
 
 import { AdminListPagination } from '../../../dto';
 
@@ -11,9 +11,9 @@ export class AdminExchangeScheduledListQuery extends AdminListPagination impleme
   @IsString()
   q?: string;
 
-  @ApiPropertyOptional({ enum: Object.values(ScheduledFxConversionStatuses) })
+  @ApiPropertyOptional({ enum: SCHEDULED_FX_CONVERSION_STATUSES })
   @IsOptional()
-  @IsIn(Object.values(ScheduledFxConversionStatuses))
+  @IsIn(SCHEDULED_FX_CONVERSION_STATUSES)
   status?: TAdminExchangeScheduledListQuery[`status`];
 
   @ApiPropertyOptional()

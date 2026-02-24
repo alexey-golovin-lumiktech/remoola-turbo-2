@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+import { ADMIN_TYPE } from '@remoola/api-types';
+
 import { apiFetch, type AdminMe } from '../lib';
 import styles from './ui/classNames.module.css';
 
@@ -31,7 +33,7 @@ export function Sidebar() {
     })();
   }, []);
 
-  if (me?.type === `SUPER` && BASE_NAV.every((x) => x.href !== `/admins`)) {
+  if (me?.type === ADMIN_TYPE.SUPER && BASE_NAV.every((x) => x.href !== `/admins`)) {
     BASE_NAV.unshift({ href: `/admins`, label: `Admins` });
   }
 

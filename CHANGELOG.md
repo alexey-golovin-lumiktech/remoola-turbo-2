@@ -520,7 +520,7 @@
                     - Contacts, Contracts, Documents, Payments,
                       Exchange Rules, Scheduled Conversions
                     - Introduce `PaginationBar` component (positioned outside table card for Contracts)
-                  - Replace hardcoded currency arrays with `ALL_CURRENCY_CODES` from `@remoola/api-types`
+                  - Replace hardcoded currency arrays with `CURRENCY_CODES` from `@remoola/api-types`
                   - Add consumer preferred currency setting (API + UI with allowlist validation)
                   - Introduce new UI components:
                     - `AmountCurrencyInput`

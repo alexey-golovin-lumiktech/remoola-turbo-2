@@ -3,12 +3,19 @@
 import { useId, useState } from 'react';
 import Select, { type SingleValue } from 'react-select';
 
-import { ALL_CURRENCY_CODES, getCurrencySymbol, type TCurrencyCode } from '@remoola/api-types';
+import {
+  CURRENCY_CODE,
+  CURRENCY_CODES,
+  getCurrencySymbol,
+  isCurrencyCode,
+  type TCurrencyCode,
+  toCurrency,
+} from '@remoola/api-types';
 
+import styles from './classNames.module.css';
 import { FormField } from './FormField';
 import { formatMonetaryDisplay, maskMonetary } from '../../lib/monetary';
 import { useTheme } from '../ThemeProvider';
-import styles from './classNames.module.css';
 
 const {
   amountCurrencyAmountPart,
@@ -20,11 +27,11 @@ const {
   inputPrefixIcon,
 } = styles;
 
-const DEFAULT_CURRENCY_OPTIONS = ALL_CURRENCY_CODES.map((c) => ({ value: c, label: c }));
+const DEFAULT_CURRENCY_OPTIONS = CURRENCY_CODES.map((c) => ({ value: c, label: c }));
 
 export interface AmountCurrencyInputOption {
-  value: string;
-  label: string;
+  value: TCurrencyCode;
+  label: TCurrencyCode;
 }
 
 export interface AmountCurrencyInputProps {
@@ -71,10 +78,8 @@ export function AmountCurrencyInput({
       : null;
 
   const handleCurrencyChange = (opt: SingleValue<AmountCurrencyInputOption>) => {
-    const v = opt?.value ?? ``;
-    if ((ALL_CURRENCY_CODES as readonly string[]).includes(v)) {
-      onCurrencyChange(v as TCurrencyCode);
-    }
+    const value = opt?.value ?? ``;
+    if (isCurrencyCode(value)) onCurrencyChange(toCurrency(value));
   };
 
   const displayLabel = label ?? `Amount (${currencyCode})`;
@@ -112,7 +117,7 @@ export function AmountCurrencyInput({
             options={currencyOptions}
             value={selectedOption}
             onChange={handleCurrencyChange}
-            placeholder={currencyCode || `USD`}
+            placeholder={currencyCode || CURRENCY_CODE.USD}
             menuPortalTarget={typeof document !== `undefined` ? document.body : undefined}
             menuPosition="fixed"
             filterOption={(option, input) =>

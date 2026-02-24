@@ -2,7 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsEnum, IsIn, IsNumber, IsOptional, Min } from 'class-validator';
 
-import { ALL_CURRENCY_CODES } from '@remoola/api-types';
+import { CURRENCY_CODES, TCurrencyCode } from '@remoola/api-types';
 import { $Enums } from '@remoola/database-2';
 
 export class WithdrawBody {
@@ -13,10 +13,10 @@ export class WithdrawBody {
   amount!: number;
 
   @Expose()
-  @ApiPropertyOptional({ enum: ALL_CURRENCY_CODES, description: `Currency for the withdrawal (default USD)` })
+  @ApiPropertyOptional({ enum: CURRENCY_CODES, description: `Currency for the withdrawal (default USD)` })
   @IsOptional()
-  @IsIn(ALL_CURRENCY_CODES)
-  currencyCode?: (typeof ALL_CURRENCY_CODES)[number];
+  @IsIn(CURRENCY_CODES)
+  currencyCode?: TCurrencyCode;
 
   @Expose()
   @ApiProperty({ enum: $Enums.PaymentMethodType })

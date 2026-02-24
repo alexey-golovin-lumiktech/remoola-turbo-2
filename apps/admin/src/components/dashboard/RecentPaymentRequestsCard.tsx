@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 
+import { CURRENCY_CODE } from '@remoola/api-types';
+
 import { useRecentPaymentRequests } from '../../lib/client';
 import { getLocalToastMessage, localToastKeys } from '../../lib/error-messages';
 import styles from '../ui/classNames.module.css';
@@ -75,7 +77,7 @@ export function RecentPaymentRequestsCard() {
     const num = parseFloat(amount);
     return new Intl.NumberFormat(`en-US`, {
       style: `currency`,
-      currency: `USD`,
+      currency: CURRENCY_CODE.USD,
     }).format(num);
   };
 

@@ -4,7 +4,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { ALL_CURRENCY_CODES, type TCurrencyCode } from '@remoola/api-types';
+import { CURRENCY_CODE, isCurrencyCode, type TCurrencyCode } from '@remoola/api-types';
 
 import { createContactRequest } from '../../lib/create-contact';
 import { getErrorMessageForUser } from '../../lib/error-messages';
@@ -37,7 +37,7 @@ export function CreatePaymentRequestForm() {
 
   const [email, setEmail] = useState(``);
   const [amount, setAmount] = useState(``);
-  const [currencyCode, setCurrencyCode] = useState<TCurrencyCode>(`USD`);
+  const [currencyCode, setCurrencyCode] = useState<TCurrencyCode>(CURRENCY_CODE.USD);
   const [description, setDescription] = useState(``);
   const [dueDate, setDueDate] = useState(``);
   const [loading, setLoading] = useState(false);
@@ -56,7 +56,7 @@ export function CreatePaymentRequestForm() {
       .then((r) => (r.ok ? r.json() : null))
       .then((data: { preferredCurrency?: TCurrencyCode | null } | null) => {
         if (cancelled || !data?.preferredCurrency) return;
-        if (ALL_CURRENCY_CODES.includes(data.preferredCurrency)) {
+        if (isCurrencyCode(data.preferredCurrency)) {
           setCurrencyCode(data.preferredCurrency);
         }
       })
@@ -83,7 +83,7 @@ export function CreatePaymentRequestForm() {
 
       setEmail(draft.email ?? ``);
       setAmount(draft.amount ?? ``);
-      setCurrencyCode(draft.currencyCode ?? `USD`);
+      setCurrencyCode(draft.currencyCode ?? CURRENCY_CODE.USD);
       setDescription(draft.description ?? ``);
       setDueDate(draft.dueDate ?? ``);
       sessionStorage.removeItem(PAYMENT_REQUEST_DRAFT_STORAGE_KEY);
@@ -381,7 +381,7 @@ export function CreatePaymentRequestForm() {
                         setActionsOpen(false);
                         addFullContact();
                       }}
-                      className="block w-full border-t border-gray-200 px-4 py-2.5 text-left text-sm 
+                      className="block w-full border-t border-gray-200 px-4 py-2.5 text-left text-sm
                       font-medium text-gray-900 hover:bg-gray-100
                        dark:border-slate-700 dark:text-gray-100 dark:hover:bg-slate-700"
                       disabled={confirmLoading}

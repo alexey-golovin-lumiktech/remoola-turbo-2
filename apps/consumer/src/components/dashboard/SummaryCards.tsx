@@ -1,5 +1,7 @@
 'use client';
 
+import { CURRENCY_CODE, type TCurrencyCode } from '@remoola/api-types';
+
 import { type IDashboardSummary } from '../../types';
 import styles from '../ui/classNames.module.css';
 
@@ -13,7 +15,7 @@ const {
   summaryValueSm,
 } = styles;
 
-function formatMoney(cents: number, currency = `USD`) {
+function formatMoney(cents: number, currency: TCurrencyCode = CURRENCY_CODE.USD): string {
   return new Intl.NumberFormat(undefined, {
     style: `currency`,
     currency,

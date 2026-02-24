@@ -1,4 +1,4 @@
-import { $Enums } from '@remoola/database-2';
+import { CURRENCY_CODE } from '@remoola/api-types';
 
 import { formatCurrency } from '../../../../shared-common';
 
@@ -18,16 +18,16 @@ const ReplacementsRegExpMapping = {
   InvoiceTax: new RegExp(`{{invoiceTax}}`, `gi`),
 };
 
-export const processor = (item: any, tax?: number) => {
+export const processor = (item: { description: string; amount: number }, tax?: number) => {
   let calculatedItemSubtotal = item.amount;
   if (tax) calculatedItemSubtotal = item.amount + (item.amount / 100) * tax;
 
   return html
     .replace(ReplacementsRegExpMapping.ItemDescription, item.description)
-    .replace(ReplacementsRegExpMapping.ItemAmount, formatCurrency(item.amount, $Enums.CurrencyCode.USD))
+    .replace(ReplacementsRegExpMapping.ItemAmount, formatCurrency(item.amount, CURRENCY_CODE.USD))
     .replace(
       ReplacementsRegExpMapping.CalculatedItemSubtotal,
-      formatCurrency(calculatedItemSubtotal, $Enums.CurrencyCode.USD),
+      formatCurrency(calculatedItemSubtotal, CURRENCY_CODE.USD),
     )
     .replace(ReplacementsRegExpMapping.InvoiceTax, tax ? tax + `%` : `--`);
 };

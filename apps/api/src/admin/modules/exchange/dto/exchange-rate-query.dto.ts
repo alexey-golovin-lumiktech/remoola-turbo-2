@@ -2,6 +2,7 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsEnum, IsIn, IsOptional, IsString } from 'class-validator';
 
+import { BOOLEAN_QUERY_VALUES, type TBooleanQueryValue } from '@remoola/api-types';
 import { $Enums } from '@remoola/database-2';
 
 export class ExchangeRateListQuery {
@@ -36,20 +37,20 @@ export class ExchangeRateListQuery {
   status?: $Enums.ExchangeRateStatus;
 
   @Expose()
-  @ApiPropertyOptional({ description: `Include expired/effective history`, enum: [`true`, `false`] })
-  @IsIn([`true`, `false`])
+  @ApiPropertyOptional({ description: `Include expired/effective history`, enum: BOOLEAN_QUERY_VALUES })
+  @IsIn(BOOLEAN_QUERY_VALUES)
   @IsOptional()
-  includeHistory?: string;
+  includeHistory?: TBooleanQueryValue;
 
   @Expose()
-  @ApiPropertyOptional({ description: `Include expired rows`, enum: [`true`, `false`] })
-  @IsIn([`true`, `false`])
+  @ApiPropertyOptional({ description: `Include expired rows`, enum: BOOLEAN_QUERY_VALUES })
+  @IsIn(BOOLEAN_QUERY_VALUES)
   @IsOptional()
-  includeExpired?: string;
+  includeExpired?: TBooleanQueryValue;
 
   @Expose()
-  @ApiPropertyOptional({ description: `Include soft-deleted rates`, enum: [`true`, `false`] })
-  @IsIn([`true`, `false`])
+  @ApiPropertyOptional({ description: `Include soft-deleted rates`, enum: BOOLEAN_QUERY_VALUES })
+  @IsIn(BOOLEAN_QUERY_VALUES)
   @IsOptional()
-  includeDeleted?: string;
+  includeDeleted?: TBooleanQueryValue;
 }

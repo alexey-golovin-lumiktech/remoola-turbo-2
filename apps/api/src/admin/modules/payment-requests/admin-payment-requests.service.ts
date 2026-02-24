@@ -80,7 +80,7 @@ export class AdminPaymentRequestsService {
     return { items, total, page, pageSize };
   }
 
-  async geyById(id: string) {
+  async getById(id: string) {
     return this.prisma.paymentRequestModel.findUnique({
       where: { id },
       include: {

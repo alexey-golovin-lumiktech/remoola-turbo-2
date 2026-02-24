@@ -2,20 +2,13 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsIn, IsOptional, IsString } from 'class-validator';
 
-export const VerificationAction = {
-  APPROVE: `approve`,
-  REJECT: `reject`,
-  MORE_INFO: `more_info`,
-  FLAG: `flag`,
-} as const;
+import { type TVerificationAction, VERIFICATION_ACTIONS } from '@remoola/api-types';
 
-export type VerificationAction = (typeof VerificationAction)[keyof typeof VerificationAction];
-
-export class ConsumerVerificationUpdateDto {
+export class ConsumerVerificationUpdate {
   @Expose()
-  @ApiProperty({ required: true, enum: Object.values(VerificationAction) })
-  @IsIn(Object.values(VerificationAction))
-  action: VerificationAction;
+  @ApiProperty({ required: true, enum: VERIFICATION_ACTIONS })
+  @IsIn(VERIFICATION_ACTIONS)
+  action: TVerificationAction;
 
   @Expose()
   @ApiProperty({ required: false, default: null })

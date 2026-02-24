@@ -3,12 +3,12 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
-import { ALL_CURRENCY_CODES, type TCurrencyCode } from '@remoola/api-types';
+import { CURRENCY_CODE, CURRENCY_CODES, toCurrencyOrDefault, type TCurrencyCode } from '@remoola/api-types';
 
 import { RateDisplay } from './RateDisplay';
 import { formatCurrencyAmount, roundToCurrency } from '../../lib/currency';
 import { getErrorMessageForUser } from '../../lib/error-messages';
-import { firstOtherCurrency, usePreferredCurrency } from '../../lib/hooks';
+import { usePreferredCurrency } from '../../lib/hooks';
 import { handleSessionExpired } from '../../lib/session-expired';
 import { AmountCurrencyInput, FormSelect, type FormSelectOption } from '../ui';
 import styles from '../ui/classNames.module.css';
@@ -19,12 +19,12 @@ type ExchangeWidgetProps = { balances: Record<string, number> };
 
 export function ExchangeWidget({ balances }: ExchangeWidgetProps) {
   const { preferredCurrency, loaded: settingsLoaded } = usePreferredCurrency();
-  const [from, setFrom] = useState<TCurrencyCode>(ALL_CURRENCY_CODES[0]);
-  const [to, setTo] = useState<TCurrencyCode>(ALL_CURRENCY_CODES[1]);
+  const [from, setFrom] = useState<TCurrencyCode>(CURRENCY_CODE.USD);
+  const [to, setTo] = useState<TCurrencyCode>(CURRENCY_CODE.EUR);
   const [amount, setAmount] = useState(``);
   const [rate, setRate] = useState<number | null>(null);
   const [result, setResult] = useState<number | null>(null);
-  const [currencies, setCurrencies] = useState<string[]>([...ALL_CURRENCY_CODES]);
+  const [currencies, setCurrencies] = useState([...CURRENCY_CODES]);
   const preferredAppliedRef = useRef(false);
 
   const available = balances[from] ?? 0;
@@ -49,8 +49,8 @@ export function ExchangeWidget({ balances }: ExchangeWidgetProps) {
   useEffect(() => {
     if (!currencies.length) return;
     if (!currencies.includes(from) || !currencies.includes(to)) {
-      setFrom((currencies[0] ?? ALL_CURRENCY_CODES[0]) as TCurrencyCode);
-      setTo((currencies[1] ?? currencies[0] ?? ALL_CURRENCY_CODES[1]) as TCurrencyCode);
+      setFrom(currencies[0] ?? CURRENCY_CODE.USD);
+      setTo(currencies[1] ?? currencies[0] ?? CURRENCY_CODE.EUR);
     }
   }, [currencies, from, to]);
 
@@ -59,7 +59,7 @@ export function ExchangeWidget({ balances }: ExchangeWidgetProps) {
     if (!preferredCurrency || !currencies.includes(preferredCurrency)) return;
     preferredAppliedRef.current = true;
     setFrom(preferredCurrency);
-    setTo(firstOtherCurrency(currencies, preferredCurrency) as TCurrencyCode);
+    setTo(toCurrencyOrDefault(preferredCurrency, CURRENCY_CODE.USD));
   }, [settingsLoaded, currencies, preferredCurrency]);
 
   useEffect(() => {

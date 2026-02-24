@@ -182,7 +182,7 @@ export class GoogleOAuthService {
     const hasNameUpdate = payload.given_name || payload.family_name;
 
     if (existing) {
-      const updateData: any = {};
+      const updateData: Prisma.ConsumerModelUpdateInput = {};
 
       // Mark verified if Google says so
       if (!existing.verified && payload.email_verified) {

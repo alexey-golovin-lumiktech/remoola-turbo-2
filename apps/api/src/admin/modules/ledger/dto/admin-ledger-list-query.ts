@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsIn, IsOptional, IsString } from 'class-validator';
 
-import { LedgerEntryTypes, TransactionStatus, type TAdminLedgerListQuery } from '@remoola/api-types';
+import { LEDGER_ENTRY_TYPE_VALUES, TRANSACTION_STATUSES, type TAdminLedgerListQuery } from '@remoola/api-types';
 
 import { AdminListPagination } from '../../../dto';
 
@@ -11,14 +11,14 @@ export class AdminLedgerListQuery extends AdminListPagination implements TAdminL
   @IsString()
   q?: string;
 
-  @ApiPropertyOptional({ enum: Object.values(LedgerEntryTypes) })
+  @ApiPropertyOptional({ enum: LEDGER_ENTRY_TYPE_VALUES })
   @IsOptional()
-  @IsIn(Object.values(LedgerEntryTypes))
+  @IsIn(LEDGER_ENTRY_TYPE_VALUES)
   type?: TAdminLedgerListQuery[`type`];
 
-  @ApiPropertyOptional({ enum: Object.values(TransactionStatus) })
+  @ApiPropertyOptional({ enum: TRANSACTION_STATUSES })
   @IsOptional()
-  @IsIn(Object.values(TransactionStatus))
+  @IsIn(TRANSACTION_STATUSES)
   status?: TAdminLedgerListQuery[`status`];
 
   @ApiPropertyOptional()

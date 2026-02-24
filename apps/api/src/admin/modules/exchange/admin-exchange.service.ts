@@ -501,7 +501,7 @@ export class AdminExchangeService {
     return Object.values($Enums.CurrencyCode);
   }
 
-  private normalizeRate(rate: { rate: any; rateBid?: any; rateAsk?: any }) {
+  private normalizeRate(rate: { rate: unknown; rateBid?: unknown; rateAsk?: unknown }) {
     return {
       ...rate,
       rate: Number(rate.rate),

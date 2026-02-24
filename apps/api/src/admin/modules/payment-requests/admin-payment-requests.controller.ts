@@ -1,15 +1,12 @@
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiBasicAuth } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 
+import { PAYMENT_REVERSAL_KIND } from '@remoola/api-types';
 import { type AdminModel } from '@remoola/database-2';
 
 import { AdminPaymentRequestsService } from './admin-payment-requests.service';
-import {
-  AdminExpectationDateArchiveQuery,
-  AdminPaymentRequestsListQuery,
-  PaymentReversalBody,
-  PaymentReversalKind,
-} from './dto';
+import { AdminExpectationDateArchiveQuery, AdminPaymentRequestsListQuery, PaymentReversalBody } from './dto';
 import { Identity } from '../../../common';
 
 function one(v: string | string[] | undefined): string | undefined {
@@ -60,17 +57,19 @@ export class AdminPaymentRequestsController {
   }
 
   @Get(`:id`)
-  geyById(@Param(`id`) id: string) {
-    return this.service.geyById(id);
+  getById(@Param(`id`) id: string) {
+    return this.service.getById(id);
   }
 
   @Post(`:id/refund`)
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   createRefund(@Identity() admin: AdminModel, @Param(`id`) id: string, @Body() body: PaymentReversalBody) {
-    return this.service.createReversal(id, { ...body, kind: PaymentReversalKind.Refund }, admin.id);
+    return this.service.createReversal(id, { ...body, kind: PAYMENT_REVERSAL_KIND.REFUND }, admin.id);
   }
 
   @Post(`:id/chargeback`)
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   createChargeback(@Identity() admin: AdminModel, @Param(`id`) id: string, @Body() body: PaymentReversalBody) {
-    return this.service.createReversal(id, { ...body, kind: PaymentReversalKind.Chargeback }, admin.id);
+    return this.service.createReversal(id, { ...body, kind: PAYMENT_REVERSAL_KIND.CHARGEBACK }, admin.id);
   }
 }

@@ -4,9 +4,9 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { type ConsumerModel } from '@remoola/database-2';
 
 import { ConsumerSettingsService } from './consumer-settings.service';
-import { PatchConsumerSettingsDto } from './dto/patch-consumer-settings.dto';
-import { UpdatePreferredCurrencyDto } from './dto/update-preferred-currency.dto';
-import { UpdateThemeDto } from './dto/update-theme.dto';
+import { PatchConsumerSettings } from './dto/patch-consumer-settings.dto';
+import { UpdatePreferredCurrency } from './dto/update-preferred-currency.dto';
+import { UpdateTheme } from './dto/update-theme.dto';
 import { JwtAuthGuard } from '../../../auth/jwt.guard';
 import { Identity } from '../../../common';
 
@@ -26,7 +26,7 @@ export class ConsumerSettingsController {
   @Patch()
   @ApiOperation({ summary: `Partially update consumer settings (theme and/or preferred currency)` })
   @ApiResponse({ status: 200, description: `Settings updated successfully` })
-  async patchSettings(@Identity() consumer: ConsumerModel, @Body() dto: PatchConsumerSettingsDto) {
+  async patchSettings(@Identity() consumer: ConsumerModel, @Body() dto: PatchConsumerSettings) {
     return this.settingsService.patchSettings(consumer.id, dto);
   }
 
@@ -40,14 +40,14 @@ export class ConsumerSettingsController {
   @Put(`theme`)
   @ApiOperation({ summary: `Update user theme settings` })
   @ApiResponse({ status: 200, description: `Theme settings updated successfully` })
-  async updateThemeSettings(@Identity() consumer: ConsumerModel, @Body() updateThemeDto: UpdateThemeDto) {
+  async updateThemeSettings(@Identity() consumer: ConsumerModel, @Body() updateThemeDto: UpdateTheme) {
     return this.settingsService.updateThemeSettings(consumer.id, updateThemeDto);
   }
 
   @Put(`preferred-currency`)
   @ApiOperation({ summary: `Update preferred display currency (UI default only)` })
   @ApiResponse({ status: 200, description: `Preferred currency updated successfully` })
-  async updatePreferredCurrency(@Identity() consumer: ConsumerModel, @Body() dto: UpdatePreferredCurrencyDto) {
+  async updatePreferredCurrency(@Identity() consumer: ConsumerModel, @Body() dto: UpdatePreferredCurrency) {
     return this.settingsService.updatePreferredCurrency(consumer.id, dto);
   }
 }

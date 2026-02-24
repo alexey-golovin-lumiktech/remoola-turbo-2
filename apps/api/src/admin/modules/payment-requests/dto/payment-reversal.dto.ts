@@ -1,17 +1,18 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { IsEnum, IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import { IsIn, IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 
-export enum PaymentReversalKind {
-  Refund = `REFUND`,
-  Chargeback = `CHARGEBACK`,
-}
+import { PAYMENT_REVERSAL_KINDS, type TPaymentReversalKind } from '@remoola/api-types';
 
 export class PaymentReversalCreate {
   @Expose()
-  @ApiProperty({ enum: PaymentReversalKind })
-  @IsEnum(PaymentReversalKind)
-  kind: PaymentReversalKind;
+  @ApiProperty({
+    enum: PAYMENT_REVERSAL_KINDS,
+    description: `Type of payment reversal`,
+    example: `REFUND`,
+  })
+  @IsIn(PAYMENT_REVERSAL_KINDS)
+  kind: TPaymentReversalKind;
 
   @Expose()
   @ApiProperty({ required: false })

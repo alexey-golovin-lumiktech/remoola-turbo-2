@@ -3,10 +3,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { ALL_CURRENCY_CODES, type TCurrencyCode } from '@remoola/api-types';
+import {
+  CURRENCY_CODE,
+  type TCurrencyCode,
+  SCHEDULED_FX_CONVERSION_STATUS,
+  CURRENCY_CODES,
+  toCurrencyOrDefault,
+} from '@remoola/api-types';
 
 import { formatDateTimeForDisplay } from '../../lib/date-utils';
-import { firstOtherCurrency, usePreferredCurrency } from '../../lib/hooks';
+import { usePreferredCurrency } from '../../lib/hooks';
 import { AmountCurrencyInput, FormSelect, type FormSelectOption, PaginationBar } from '../ui';
 import styles from '../ui/classNames.module.css';
 
@@ -27,8 +33,8 @@ const {
 
 type ScheduledConversion = {
   id: string;
-  fromCurrency: string;
-  toCurrency: string;
+  fromCurrency: TCurrencyCode;
+  toCurrency: TCurrencyCode;
   amount: number;
   status: string;
   executeAt: string;
@@ -37,15 +43,15 @@ type ScheduledConversion = {
 };
 
 type ScheduleForm = {
-  fromCurrency: string;
-  toCurrency: string;
+  fromCurrency: TCurrencyCode;
+  toCurrency: TCurrencyCode;
   amount: string;
   executeAt: string;
 };
 
 const defaultForm: ScheduleForm = {
-  fromCurrency: ALL_CURRENCY_CODES[0],
-  toCurrency: ALL_CURRENCY_CODES[1],
+  fromCurrency: CURRENCY_CODE.USD,
+  toCurrency: CURRENCY_CODE.EUR,
   amount: ``,
   executeAt: ``,
 };
@@ -58,7 +64,7 @@ export function ScheduledConversionsPageClient() {
   const [scheduled, setScheduled] = useState<ScheduledConversion[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingList, setLoadingList] = useState(true);
-  const [currencies, setCurrencies] = useState<string[]>([...ALL_CURRENCY_CODES]);
+  const [currencies, setCurrencies] = useState([...CURRENCY_CODES]);
   const [form, setForm] = useState<ScheduleForm>(defaultForm);
   const preferredAppliedRef = useRef(false);
 
@@ -108,7 +114,7 @@ export function ScheduledConversionsPageClient() {
     setForm((prev) => ({
       ...prev,
       fromCurrency: preferredCurrency,
-      toCurrency: firstOtherCurrency(currencies, preferredCurrency),
+      toCurrency: toCurrencyOrDefault(preferredCurrency, CURRENCY_CODE.USD),
     }));
   }, [settingsLoaded, currencies, preferredCurrency]);
 
@@ -182,7 +188,7 @@ export function ScheduledConversionsPageClient() {
             label={`Amount (${form.fromCurrency})`}
             amount={form.amount}
             onAmountChange={(v) => setForm((prev) => ({ ...prev, amount: v }))}
-            currencyCode={form.fromCurrency as TCurrencyCode}
+            currencyCode={form.fromCurrency}
             onCurrencyChange={(v) => setForm((prev) => ({ ...prev, fromCurrency: v }))}
             currencyOptions={currencies.map((c) => ({ value: c, label: c }))}
             placeholder="0.00"
@@ -191,7 +197,7 @@ export function ScheduledConversionsPageClient() {
           <FormSelect
             label="To currency"
             value={form.toCurrency}
-            onChange={(v) => setForm((prev) => ({ ...prev, toCurrency: v }))}
+            onChange={(v) => setForm((prev) => ({ ...prev, toCurrency: v as TCurrencyCode }))}
             options={currencies.map((c) => ({ value: c, label: c })) as FormSelectOption[]}
             placeholder="Select currency..."
             isClearable={false}
@@ -230,7 +236,7 @@ export function ScheduledConversionsPageClient() {
               </div>
               {item.lastError && <div>last error: {item.lastError}</div>}
             </div>
-            {item.status === `PENDING` && (
+            {item.status === SCHEDULED_FX_CONVERSION_STATUS.PENDING && (
               <button className={actionButtonDanger} onClick={() => cancelConversion(item)} type="button">
                 Cancel
               </button>

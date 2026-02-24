@@ -1,6 +1,6 @@
-import { type TPaymentMethodType } from '@remoola/api-types';
+import { type TPaymentMethod } from '@remoola/api-types';
 
-export type PaymentMethodType = TPaymentMethodType;
+export type PaymentMethodType = TPaymentMethod;
 
 export type BillingDetails = {
   id: string;

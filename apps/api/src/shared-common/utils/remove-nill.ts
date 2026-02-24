@@ -1,12 +1,15 @@
-export const isUndefined = (value: unknown) => /undefined/gi.test(String(value).toLowerCase());
-export const isNull = (value: unknown) => /null/gi.test(String(value).toLowerCase());
-export const isNill = (value: unknown) => isNull(value) || isUndefined(value);
+/** Strict checks for JS undefined/null only. Do not treat string "null"/"undefined" as nil (fintech-safe). */
+export const isUndefined = (value: unknown): value is undefined => value === undefined;
+export const isNull = (value: unknown): value is null => value === null;
+export const isNill = (value: unknown): value is null | undefined => value == null;
 export const isDateObject = (value: unknown) => value instanceof Date;
 
 /**
  * @DESCRIPTION to reduce data size through excluding `null` and `undefined` attributes
- * @IMPORTANT Use this decorator **only** for outgoing data (e.g. responses or any data you send out).
- * @DO_NOT use it on incoming data.
+ * @IMPORTANT Prefer use **only** for outgoing data (e.g. responses or any data you send out).
+ * For incoming data: do not use where you need to distinguish "field omitted" vs "field set to null".
+ * Exception: auth/signup request bodies where optional
+ * fields are not explicitly set to null — use is acceptable to normalize before service layer.
  *
  * We distinguish three attribute states:
  * 1. `undefined` — the attribute was not provided; do not apply it in processing.
@@ -20,14 +23,14 @@ export const removeNil = <T>(input: T): T => {
   }
 
   if (!isNull(input) && typeof input === `object` && !isDateObject(input)) {
-    const obj = input as Record<string, any>;
-    const result: Record<string, any> = {};
+    const obj = input as Record<string, unknown>;
+    const result: Record<string, unknown> = {};
 
     for (const [key, value] of Object.entries(obj)) {
       if (isNill(value)) continue;
 
       const cleanedValue = removeNil(value);
-      if (!isUndefined(cleanedValue)) result[key] = cleanedValue;
+      if (!isNill(cleanedValue)) result[key] = cleanedValue;
     }
 
     return result as unknown as T;

@@ -1,11 +1,11 @@
-export const PaymentDirection = {
+export const PAYMENT_DIRECTION = {
   INCOME: `INCOME`,
   OUTCOME: `OUTCOME`,
 } as const;
-export type TPaymentDirection = (typeof PaymentDirection)[keyof typeof PaymentDirection];
-export const PaymentDirections: TPaymentDirection[] = Object.values(PaymentDirection);
+export type TPaymentDirection = (typeof PAYMENT_DIRECTION)[keyof typeof PAYMENT_DIRECTION];
+export const PAYMENT_DIRECTIONS = [PAYMENT_DIRECTION.INCOME, PAYMENT_DIRECTION.OUTCOME] as const;
 
-export const TransactionStatus = {
+export const TRANSACTION_STATUS = {
   DRAFT: `DRAFT`,
   WAITING: `WAITING`,
   WAITING_RECIPIENT_APPROVAL: `WAITING_RECIPIENT_APPROVAL`,
@@ -14,10 +14,20 @@ export const TransactionStatus = {
   DENIED: `DENIED`,
   UNCOLLECTIBLE: `UNCOLLECTIBLE`,
 } as const;
-export type TTransactionStatus = (typeof TransactionStatus)[keyof typeof TransactionStatus];
+export type TTransactionStatus = (typeof TRANSACTION_STATUS)[keyof typeof TRANSACTION_STATUS];
+export const TRANSACTION_STATUSES = [
+  TRANSACTION_STATUS.DRAFT,
+  TRANSACTION_STATUS.WAITING,
+  TRANSACTION_STATUS.WAITING_RECIPIENT_APPROVAL,
+  TRANSACTION_STATUS.PENDING,
+  TRANSACTION_STATUS.COMPLETED,
+  TRANSACTION_STATUS.DENIED,
+  TRANSACTION_STATUS.UNCOLLECTIBLE,
+] as const;
 
-export const PaymentMethodTypes = {
+export const PAYMENT_METHOD = {
   CREDIT_CARD: `CREDIT_CARD`,
   BANK_ACCOUNT: `BANK_ACCOUNT`,
 } as const;
-export type TPaymentMethodType = (typeof PaymentMethodTypes)[keyof typeof PaymentMethodTypes];
+export type TPaymentMethod = (typeof PAYMENT_METHOD)[keyof typeof PAYMENT_METHOD];
+export const PAYMENT_METHODS = [PAYMENT_METHOD.CREDIT_CARD, PAYMENT_METHOD.BANK_ACCOUNT] as const;

@@ -13,6 +13,7 @@ import {
   paymentRefund,
   paymentChargeback,
   signupCompletionToHtml,
+  type InvoiceForTemplate,
 } from './mailing-utils';
 import { envs } from '../envs';
 
@@ -22,8 +23,8 @@ export class MailingService {
 
   constructor(private mailerService: MailerService) {}
 
-  async sendLogsEmail(data: any = null) {
-    const html = `<pre><code>${JSON.stringify({ ...data }, null, 2)}</code></pre>`;
+  async sendLogsEmail(data: unknown = null) {
+    const html = `<pre><code>${JSON.stringify(data ?? {}, null, 2)}</code></pre>`;
     const subject = `WB Logs`;
     try {
       await this.mailerService.sendMail({ to: envs.ADMIN_EMAIL!, subject, html });
@@ -50,7 +51,7 @@ export class MailingService {
     }
   }
 
-  async sendOutgoingInvoiceEmail(invoice: any /* CONSUMER.InvoiceResponse */) {
+  async sendOutgoingInvoiceEmail(invoice: InvoiceForTemplate) {
     const html = outgoingInvoiceToHtml.processor(invoice);
     const content = await generatePdf({ rawHtml: invoiceToHtml.processor(invoice) });
     const subject = `NEW INVOICE #${invoice.id}`;

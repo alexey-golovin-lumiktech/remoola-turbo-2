@@ -78,7 +78,8 @@ yarn db:seed
 
 ## Documentation
 
+- `README.md` — this file (setup, commands, repo layout).
 - `PROJECT_SUMMARY.md` — high-level project overview (start here).
 - `AGENTS.md` — engineering rules and constraints for the monorepo (agents and contributors).
-- `PROJECT_DOCUMENTATION.md` — overview of API, admin, consumer, and database.
+- `PROJECT_DOCUMENTATION.md` — overview of API (base path `/api`), admin, consumer, and database.
 - `FEATURES_CURRENT.md` — implemented features and current repo state.

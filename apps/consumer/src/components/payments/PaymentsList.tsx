@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
+import { TRANSACTION_STATUS } from '@remoola/api-types';
+
 import { formatDateForDisplay } from '../../lib/date-utils';
 import { usePayments } from '../../lib/hooks';
 import { PaginationBar, SkeletonTable } from '../ui';
@@ -168,11 +170,11 @@ export function PaymentsList() {
                   <td className={tableCellBodyLg}>
                     <span
                       className={`${badgeBase} ${
-                        p.status === `PENDING`
+                        p.status === TRANSACTION_STATUS.PENDING
                           ? badgePending
-                          : p.status === `COMPLETED`
+                          : p.status === TRANSACTION_STATUS.COMPLETED
                             ? badgeCompleted
-                            : p.status === `WAITING`
+                            : p.status === TRANSACTION_STATUS.WAITING
                               ? badgeWaiting
                               : badgeDefault
                       }`}

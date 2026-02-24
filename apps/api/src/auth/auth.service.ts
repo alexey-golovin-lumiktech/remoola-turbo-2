@@ -38,7 +38,7 @@ export class AuthService {
     });
 
     const accessToken = this.signAccess(identity);
-    return { ...identity, accessToken };
+    return { ...this.toSafeIdentity(identity), accessToken };
   }
 
   async login(body: LoginBody) {
@@ -51,10 +51,15 @@ export class AuthService {
     if (!valid) throw new UnauthorizedException(`Invalid credentials`);
 
     const accessToken = this.signAccess(identity);
-    return { ...identity, accessToken };
+    return { ...this.toSafeIdentity(identity), accessToken };
   }
 
-  private signAccess(user: any) {
+  /** Return only safe admin fields for response (never password/salt). */
+  private toSafeIdentity(admin: { id: string; email: string; type: $Enums.AdminType }) {
+    return { id: admin.id, email: admin.email, type: admin.type };
+  }
+
+  private signAccess(user: { id: string; email: string }) {
     return this.jwt.sign(
       { sub: user.id, email: user.email },
       {
@@ -92,6 +97,6 @@ export class AuthService {
       throw new UnauthorizedException(`User not found`);
     }
     const accessToken = this.signAccess(identity);
-    return { ...identity, accessToken };
+    return { ...this.toSafeIdentity(identity), accessToken };
   }
 }

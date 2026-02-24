@@ -5,3 +5,4 @@ export * from './exchange';
 export * from './ledger';
 export * from './pagination';
 export * from './payment-requests';
+export * from './payment-reversal';

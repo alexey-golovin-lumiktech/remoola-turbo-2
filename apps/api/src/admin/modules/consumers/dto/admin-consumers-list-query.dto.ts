@@ -1,7 +1,12 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsIn, IsOptional, IsString } from 'class-validator';
 
-import { AccountTypes, ContractorKinds, VerificationStatuses, type TAdminConsumersListQuery } from '@remoola/api-types';
+import {
+  ACCOUNT_TYPES,
+  CONTRACTOR_KINDS,
+  VERIFICATION_STATUSES,
+  type TAdminConsumersListQuery,
+} from '@remoola/api-types';
 
 import { AdminListPagination } from '../../../dto';
 
@@ -11,19 +16,19 @@ export class AdminConsumersListQuery extends AdminListPagination implements TAdm
   @IsString()
   q?: string;
 
-  @ApiPropertyOptional({ enum: Object.values(AccountTypes) })
+  @ApiPropertyOptional({ enum: ACCOUNT_TYPES })
   @IsOptional()
-  @IsIn(Object.values(AccountTypes))
+  @IsIn(ACCOUNT_TYPES)
   accountType?: TAdminConsumersListQuery[`accountType`];
 
-  @ApiPropertyOptional({ enum: Object.values(ContractorKinds) })
+  @ApiPropertyOptional({ enum: CONTRACTOR_KINDS })
   @IsOptional()
-  @IsIn(Object.values(ContractorKinds))
+  @IsIn(CONTRACTOR_KINDS)
   contractorKind?: TAdminConsumersListQuery[`contractorKind`];
 
-  @ApiPropertyOptional({ enum: Object.values(VerificationStatuses) })
+  @ApiPropertyOptional({ enum: VERIFICATION_STATUSES })
   @IsOptional()
-  @IsIn(Object.values(VerificationStatuses))
+  @IsIn(VERIFICATION_STATUSES)
   verificationStatus?: TAdminConsumersListQuery[`verificationStatus`];
 
   @ApiPropertyOptional()

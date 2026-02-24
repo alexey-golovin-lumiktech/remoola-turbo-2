@@ -1,6 +1,6 @@
 /* eslint-disable max-len */
 
-import { $Enums } from '@remoola/database-2';
+import { CURRENCY_CODE } from '@remoola/api-types';
 
 import { envs } from '../../../../envs';
 import { formatCurrency } from '../../../../shared-common';
@@ -31,7 +31,9 @@ const ReplacementsRegExpMapping = {
   InvoiceSubtotal: new RegExp(`{{invoiceSubtotal}}`, `gi`),
 };
 
-export const processor = (invoice: any /* CONSUMER.InvoiceResponse */) => {
+import type { InvoiceForTemplate } from './invoice';
+
+export const processor = (invoice: InvoiceForTemplate) => {
   const backendBaseURL = envs.NEST_APP_EXTERNAL_ORIGIN; //@IMPORTANT_NOTE: should be changed in future
   const invoiceLink = new URL(`consumer/payment-choices`, backendBaseURL);
   invoiceLink.searchParams.append(`invoiceId`, invoice.id);
@@ -41,5 +43,5 @@ export const processor = (invoice: any /* CONSUMER.InvoiceResponse */) => {
     .replace(ReplacementsRegExpMapping.InvoiceCreatorEmail, invoice.creator)
     .replace(ReplacementsRegExpMapping.InvoiceId, invoice.id)
     .replace(ReplacementsRegExpMapping.InvoiceLink, invoiceLink.toString())
-    .replace(ReplacementsRegExpMapping.InvoiceSubtotal, formatCurrency(invoice.subtotal, $Enums.CurrencyCode.USD));
+    .replace(ReplacementsRegExpMapping.InvoiceSubtotal, formatCurrency(invoice.subtotal, CURRENCY_CODE.USD));
 };

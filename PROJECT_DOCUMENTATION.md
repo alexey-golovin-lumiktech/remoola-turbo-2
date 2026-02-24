@@ -14,7 +14,7 @@ Remoola is a Turborepo monorepo with:
 
 ## API (NestJS) - Implemented Features
 
-Base backend lives in `apps/api`. The implemented features are organized under `admin` and `consumer` namespaces. A root `auth` module also exists (login, register, logout, me) at `/auth`.
+Base backend lives in `apps/api`. All API routes use the global prefix `/api` (e.g. `/api/admin/auth`, `/api/consumer/auth`, `/api/auth`). The implemented features are organized under `admin` and `consumer` namespaces. A root `auth` module also exists (login, register, logout, me) at `/api/auth`.
 
 ### Admin APIs
 
@@ -133,7 +133,7 @@ Exchange (`/consumer/exchange`):
 - `GET /scheduled`: list scheduled FX conversions (query: `page`, `pageSize`; response: `items`, `total`, `page`, `pageSize`).
 - `POST /scheduled`: create scheduled FX conversion.
 - `POST /scheduled/:conversionId/cancel`: cancel scheduled conversion.
-- `GET /currencies`: list supported currency codes (aligned with api-types `ALL_CURRENCY_CODES`).
+- `GET /currencies`: list supported currency codes (aligned with api-types `CURRENCY_CODES`).
 
 Payment Methods (`/consumer/payment-methods`):
 
@@ -191,6 +191,7 @@ Common infrastructure in `apps/api/src/shared` and `apps/api/src/shared-common`:
 - Prisma DB module and service.
 - Email templates and mailing service.
 - JWT auth guard and interceptors.
+- Auth audit (login success/failure tracking) and account lockout (per-email after N failures).
 - Error filtering and logging.
 - Common DTOs used across admin and consumer APIs.
 
@@ -331,7 +332,7 @@ Most models include:
 
 Shared packages used across apps:
 
-- `packages/api-types`: shared DTOs and type exports; pagination (`PaginatedResponsePage<T>`); currency (`ALL_CURRENCY_CODES`, `TCurrencyCode`, `getCurrencySymbol`); consumer settings (e.g. preferred currency allowlist).
+- `packages/api-types`: shared DTOs and type exports; pagination (`PaginatedResponsePage<T>`); currency (`CURRENCY_CODES`, `CURRENCY_CODE`, `TCurrencyCode`, `getCurrencySymbol`, `isCurrencyCode`); consumer settings (theme `THEME`, preferred currency allowlist); admin payment reversal (`PAYMENT_REVERSAL_KIND`); query params (`BOOLEAN_QUERY_VALUE`).
 - `packages/database-2`: Prisma schema, migrations, and generated client.
 - `packages/db-fixtures`: DB fixture helpers for tests.
 - `packages/env`: runtime env schema and validation (Zod).

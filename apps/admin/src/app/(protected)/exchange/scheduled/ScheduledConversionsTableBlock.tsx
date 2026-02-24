@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-import { type TAdminExchangeScheduledListQuery } from '@remoola/api-types';
+import { type TAdminExchangeScheduledListQuery, SCHEDULED_FX_CONVERSION_STATUS } from '@remoola/api-types';
 
 import { DataTable, TableSkeleton } from '../../../../components';
 import styles from '../../../../components/ui/classNames.module.css';
@@ -239,12 +239,13 @@ export function ScheduledConversionsTableBlock({
               header: `Actions`,
               render: (r) => (
                 <div className={adminActionRow}>
-                  {(r.status === `PENDING` || r.status === `FAILED`) && (
+                  {(r.status === SCHEDULED_FX_CONVERSION_STATUS.PENDING ||
+                    r.status === SCHEDULED_FX_CONVERSION_STATUS.FAILED) && (
                     <button className={adminActionButton} onClick={() => executeConversion(r)} type="button">
                       Execute now
                     </button>
                   )}
-                  {r.status === `PENDING` && (
+                  {r.status === SCHEDULED_FX_CONVERSION_STATUS.PENDING && (
                     <button className={adminDeleteButton} onClick={() => cancelConversion(r)} type="button">
                       Cancel
                     </button>

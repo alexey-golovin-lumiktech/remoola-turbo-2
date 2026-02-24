@@ -69,7 +69,7 @@ export class ConsumerExchangeService {
       },
     });
 
-    const result: Record<$Enums.CurrencyCode, number> = {} as any;
+    const result = {} as Record<$Enums.CurrencyCode, number>;
 
     for (const row of rows) {
       result[row.currencyCode] = Number(row._sum.amount ?? 0);
@@ -587,7 +587,7 @@ export class ConsumerExchangeService {
     return Object.values($Enums.CurrencyCode);
   }
 
-  private normalizeRule(rule: { targetBalance: any; maxConvertAmount: any }) {
+  private normalizeRule(rule: { targetBalance: unknown; maxConvertAmount: unknown }) {
     return {
       ...rule,
       targetBalance: Number(rule.targetBalance),
@@ -595,7 +595,7 @@ export class ConsumerExchangeService {
     };
   }
 
-  private normalizeScheduledConversion(conversion: { amount: any }) {
+  private normalizeScheduledConversion(conversion: { amount: unknown }) {
     return {
       ...conversion,
       amount: Number(conversion.amount),

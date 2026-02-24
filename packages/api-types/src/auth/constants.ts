@@ -1,30 +1,38 @@
-export const AccountTypes = {
+export const ACCOUNT_TYPE = {
   BUSINESS: `BUSINESS`,
   CONTRACTOR: `CONTRACTOR`,
 } as const;
-export type TAccountType = (typeof AccountTypes)[keyof typeof AccountTypes];
+export type TAccountType = (typeof ACCOUNT_TYPE)[keyof typeof ACCOUNT_TYPE];
+export const ACCOUNT_TYPES = [ACCOUNT_TYPE.BUSINESS, ACCOUNT_TYPE.CONTRACTOR] as const;
 
-export const ContractorKinds = {
+export const CONTRACTOR_KIND = {
   ENTITY: `ENTITY`,
   INDIVIDUAL: `INDIVIDUAL`,
 } as const;
-export type TContractorKind = (typeof ContractorKinds)[keyof typeof ContractorKinds];
+export type TContractorKind = (typeof CONTRACTOR_KIND)[keyof typeof CONTRACTOR_KIND];
+export const CONTRACTOR_KINDS = [CONTRACTOR_KIND.ENTITY, CONTRACTOR_KIND.INDIVIDUAL] as const;
 
-export const LegalStatuses = {
+export const LEGAL_STATUS = {
   INDIVIDUAL: `INDIVIDUAL`,
   INDIVIDUAL_ENTREPRENEUR: `INDIVIDUAL_ENTREPRENEUR`,
   SOLE_TRADER: `SOLE_TRADER`,
 } as const;
-export type TLegalStatus = (typeof LegalStatuses)[keyof typeof LegalStatuses];
+export type TLegalStatus = (typeof LEGAL_STATUS)[keyof typeof LEGAL_STATUS];
+export const LEGAL_STATUSES = [
+  LEGAL_STATUS.INDIVIDUAL,
+  LEGAL_STATUS.INDIVIDUAL_ENTREPRENEUR,
+  LEGAL_STATUS.SOLE_TRADER,
+] as const;
 
-export const OrganizationSizes = {
+export const ORGANIZATION_SIZE = {
   SMALL: `SMALL`,
   MEDIUM: `MEDIUM`,
   LARGE: `LARGE`,
 } as const;
-export type TOrganizationSize = (typeof OrganizationSizes)[keyof typeof OrganizationSizes];
+export type TOrganizationSize = (typeof ORGANIZATION_SIZE)[keyof typeof ORGANIZATION_SIZE];
+export const ORGANIZATION_SIZES = [ORGANIZATION_SIZE.SMALL, ORGANIZATION_SIZE.MEDIUM, ORGANIZATION_SIZE.LARGE] as const;
 
-export const ConsumerRoles = {
+export const CONSUMER_ROLE = {
   FOUNDER: `FOUNDER`,
   FINANCE: `FINANCE`,
   MARKETING: `MARKETING`,
@@ -39,9 +47,24 @@ export const ConsumerRoles = {
   ANALYSIS_DATA: `ANALYSIS_DATA`,
   OTHER: `OTHER`,
 } as const;
-export type TConsumerRole = (typeof ConsumerRoles)[keyof typeof ConsumerRoles];
+export type TConsumerRole = (typeof CONSUMER_ROLE)[keyof typeof CONSUMER_ROLE];
+export const CONSUMER_ROLES = [
+  CONSUMER_ROLE.FOUNDER,
+  CONSUMER_ROLE.FINANCE,
+  CONSUMER_ROLE.MARKETING,
+  CONSUMER_ROLE.CUSTOMER_SUPPORT,
+  CONSUMER_ROLE.SALES,
+  CONSUMER_ROLE.LEGAL,
+  CONSUMER_ROLE.HUMAN_RESOURCE,
+  CONSUMER_ROLE.OPERATIONS,
+  CONSUMER_ROLE.COMPLIANCE,
+  CONSUMER_ROLE.PRODUCT,
+  CONSUMER_ROLE.ENGINEERING,
+  CONSUMER_ROLE.ANALYSIS_DATA,
+  CONSUMER_ROLE.OTHER,
+] as const;
 
-export const HowDidHearAboutUsValues = {
+export const HOW_DID_HEAR_ABOUT_US = {
   EMPLOYER_COMPANY: `EMPLOYER_COMPANY`,
   EMPLOYEE_CONTRACTOR: `EMPLOYEE_CONTRACTOR`,
   REFERRED_RECOMMENDED: `REFERRED_RECOMMENDED`,
@@ -52,13 +75,31 @@ export const HowDidHearAboutUsValues = {
   LINKED_IN: `LINKED_IN`,
   OTHER: `OTHER`,
 } as const;
-export type THowDidHearAboutUs = (typeof HowDidHearAboutUsValues)[keyof typeof HowDidHearAboutUsValues];
+export type THowDidHearAboutUs = (typeof HOW_DID_HEAR_ABOUT_US)[keyof typeof HOW_DID_HEAR_ABOUT_US];
+export const HOW_DID_HEAR_ABOUT_US_VALUES = [
+  HOW_DID_HEAR_ABOUT_US.EMPLOYER_COMPANY,
+  HOW_DID_HEAR_ABOUT_US.EMPLOYEE_CONTRACTOR,
+  HOW_DID_HEAR_ABOUT_US.REFERRED_RECOMMENDED,
+  HOW_DID_HEAR_ABOUT_US.EMAIL_INVITE,
+  HOW_DID_HEAR_ABOUT_US.GOOGLE,
+  HOW_DID_HEAR_ABOUT_US.FACEBOOK,
+  HOW_DID_HEAR_ABOUT_US.TWITTER,
+  HOW_DID_HEAR_ABOUT_US.LINKED_IN,
+  HOW_DID_HEAR_ABOUT_US.OTHER,
+] as const;
 
-export const VerificationStatuses = {
+export const VERIFICATION_STATUS = {
   PENDING: `PENDING`,
   APPROVED: `APPROVED`,
   MORE_INFO: `MORE_INFO`,
   REJECTED: `REJECTED`,
   FLAGGED: `FLAGGED`,
 } as const;
-export type TVerificationStatus = (typeof VerificationStatuses)[keyof typeof VerificationStatuses];
+export type TVerificationStatus = (typeof VERIFICATION_STATUS)[keyof typeof VERIFICATION_STATUS];
+export const VERIFICATION_STATUSES = [
+  VERIFICATION_STATUS.PENDING,
+  VERIFICATION_STATUS.APPROVED,
+  VERIFICATION_STATUS.MORE_INFO,
+  VERIFICATION_STATUS.REJECTED,
+  VERIFICATION_STATUS.FLAGGED,
+] as const;

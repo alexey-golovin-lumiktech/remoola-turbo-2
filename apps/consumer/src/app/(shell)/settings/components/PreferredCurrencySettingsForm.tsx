@@ -3,31 +3,28 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-import { ALLOWED_PREFERRED_CURRENCIES, type TPreferredCurrency } from '@remoola/api-types';
+import { CURRENCY_CODES, type TCurrencyCode } from '@remoola/api-types';
 
 import { FormSelect, type FormSelectOption } from '../../../../components/ui';
 import styles from '../../../../components/ui/classNames.module.css';
 
 const { themeCard, themeDescription, themeTitle, themeUpdating } = styles;
 
-const CURRENCY_OPTIONS: FormSelectOption[] = ALLOWED_PREFERRED_CURRENCIES.map((c) => ({
+const CURRENCY_OPTIONS: FormSelectOption[] = CURRENCY_CODES.map((c) => ({
   value: c,
   label: c,
 }));
 
 interface PreferredCurrencySettingsFormProps {
-  preferredCurrency: TPreferredCurrency | null;
-  onUpdated: (value: TPreferredCurrency | null) => void;
+  preferredCurrency: TCurrencyCode | null;
+  onUpdated: (value: TCurrencyCode | null) => void;
 }
 
 export function PreferredCurrencySettingsForm({ preferredCurrency, onUpdated }: PreferredCurrencySettingsFormProps) {
   const [loading, setLoading] = useState(false);
   const value = preferredCurrency ?? ``;
 
-  async function handleChange(newValue: string) {
-    const currency = newValue as TPreferredCurrency;
-    if (!ALLOWED_PREFERRED_CURRENCIES.includes(currency)) return;
-
+  async function handleChange(currency: string) {
     setLoading(true);
     try {
       const response = await fetch(`/api/settings`, {
@@ -42,7 +39,7 @@ export function PreferredCurrencySettingsForm({ preferredCurrency, onUpdated }: 
         throw new Error(err.message ?? `Failed to update`);
       }
 
-      const data = (await response.json()) as { preferredCurrency: TPreferredCurrency | null };
+      const data = (await response.json()) as { preferredCurrency: TCurrencyCode | null };
       onUpdated(data.preferredCurrency);
       toast.success(`Preferred currency updated`);
     } catch (error) {

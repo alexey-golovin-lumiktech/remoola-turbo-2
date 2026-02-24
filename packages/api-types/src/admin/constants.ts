@@ -2,13 +2,14 @@
  * Admin-only enums used in list query params (aligned with DB enums).
  */
 
-export const AdminTypes = {
+export const ADMIN_TYPE = {
   SUPER: `SUPER`,
   ADMIN: `ADMIN`,
 } as const;
-export type TAdminType = (typeof AdminTypes)[keyof typeof AdminTypes];
+export type TAdminType = (typeof ADMIN_TYPE)[keyof typeof ADMIN_TYPE];
+export const ADMIN_TYPES = [ADMIN_TYPE.SUPER, ADMIN_TYPE.ADMIN] as const;
 
-export const LedgerEntryTypes = {
+export const LEDGER_ENTRY_TYPES = {
   USER_PAYMENT: `USER_PAYMENT`,
   USER_PAYMENT_REVERSAL: `USER_PAYMENT_REVERSAL`,
   PLATFORM_FEE: `PLATFORM_FEE`,
@@ -20,9 +21,21 @@ export const LedgerEntryTypes = {
   INTERNAL_TRANSFER: `INTERNAL_TRANSFER`,
   CURRENCY_EXCHANGE: `CURRENCY_EXCHANGE`,
 } as const;
-export type TLedgerEntryType = (typeof LedgerEntryTypes)[keyof typeof LedgerEntryTypes];
+export type TLedgerEntryType = (typeof LEDGER_ENTRY_TYPES)[keyof typeof LEDGER_ENTRY_TYPES];
+export const LEDGER_ENTRY_TYPE_VALUES = [
+  LEDGER_ENTRY_TYPES.USER_PAYMENT,
+  LEDGER_ENTRY_TYPES.USER_PAYMENT_REVERSAL,
+  LEDGER_ENTRY_TYPES.PLATFORM_FEE,
+  LEDGER_ENTRY_TYPES.PLATFORM_FEE_REVERSAL,
+  LEDGER_ENTRY_TYPES.USER_DEPOSIT,
+  LEDGER_ENTRY_TYPES.USER_DEPOSIT_REVERSAL,
+  LEDGER_ENTRY_TYPES.USER_PAYOUT,
+  LEDGER_ENTRY_TYPES.USER_PAYOUT_REVERSAL,
+  LEDGER_ENTRY_TYPES.INTERNAL_TRANSFER,
+  LEDGER_ENTRY_TYPES.CURRENCY_EXCHANGE,
+] as const;
 
-export const ScheduledFxConversionStatuses = {
+export const SCHEDULED_FX_CONVERSION_STATUS = {
   PENDING: `PENDING`,
   PROCESSING: `PROCESSING`,
   EXECUTED: `EXECUTED`,
@@ -30,4 +43,26 @@ export const ScheduledFxConversionStatuses = {
   CANCELLED: `CANCELLED`,
 } as const;
 export type TScheduledFxConversionStatus =
-  (typeof ScheduledFxConversionStatuses)[keyof typeof ScheduledFxConversionStatuses];
+  (typeof SCHEDULED_FX_CONVERSION_STATUS)[keyof typeof SCHEDULED_FX_CONVERSION_STATUS];
+export const SCHEDULED_FX_CONVERSION_STATUSES = [
+  SCHEDULED_FX_CONVERSION_STATUS.PENDING,
+  SCHEDULED_FX_CONVERSION_STATUS.PROCESSING,
+  SCHEDULED_FX_CONVERSION_STATUS.EXECUTED,
+  SCHEDULED_FX_CONVERSION_STATUS.FAILED,
+  SCHEDULED_FX_CONVERSION_STATUS.CANCELLED,
+] as const;
+
+export const VERIFICATION_ACTION = {
+  APPROVE: `approve`,
+  REJECT: `reject`,
+  MORE_INFO: `more_info`,
+  FLAG: `flag`,
+} as const;
+
+export type TVerificationAction = (typeof VERIFICATION_ACTION)[keyof typeof VERIFICATION_ACTION];
+export const VERIFICATION_ACTIONS = [
+  VERIFICATION_ACTION.APPROVE,
+  VERIFICATION_ACTION.REJECT,
+  VERIFICATION_ACTION.MORE_INFO,
+  VERIFICATION_ACTION.FLAG,
+] as const;

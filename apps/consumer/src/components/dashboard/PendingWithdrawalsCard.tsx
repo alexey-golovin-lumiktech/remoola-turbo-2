@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-import { PaymentDirection, TransactionStatus } from '@remoola/api-types';
+import { PAYMENT_DIRECTION, TRANSACTION_STATUS } from '@remoola/api-types';
 
 import styles from '../ui/classNames.module.css';
 
@@ -37,8 +37,8 @@ export function PendingWithdrawalsCard() {
     const load = async () => {
       try {
         const search = new URLSearchParams({
-          direction: PaymentDirection.OUTCOME,
-          status: TransactionStatus.PENDING,
+          direction: PAYMENT_DIRECTION.OUTCOME,
+          status: TRANSACTION_STATUS.PENDING,
           limit: `5`,
         });
         const res = await fetch(`/api/payments/history?${search.toString()}`, { credentials: `include` });

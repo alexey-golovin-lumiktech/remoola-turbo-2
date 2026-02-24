@@ -3,12 +3,12 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-import { ALL_CURRENCY_CODES, type TCurrencyCode } from '@remoola/api-types';
+import { CURRENCY_CODE, isCurrencyCode, type TCurrencyCode } from '@remoola/api-types';
 
-import { usePreferredCurrency } from '../../lib/hooks';
-import { AmountCurrencyInput, FormCard, FormField, RecipientEmailField } from '../ui';
 import { SuccessModal } from './SuccessModal';
 import { getErrorMessageForUser } from '../../lib/error-messages';
+import { usePreferredCurrency } from '../../lib/hooks';
+import { AmountCurrencyInput, FormCard, FormField, RecipientEmailField } from '../ui';
 import styles from '../ui/classNames.module.css';
 
 const { formInputRoundedLg, primaryButtonClass, textMutedSlate } = styles;
@@ -17,9 +17,7 @@ export function TransferForm() {
   const { preferredCurrency } = usePreferredCurrency();
   const [amount, setAmount] = useState(``);
   const defaultCurrency: TCurrencyCode =
-    preferredCurrency && ALL_CURRENCY_CODES.includes(preferredCurrency as TCurrencyCode)
-      ? (preferredCurrency as TCurrencyCode)
-      : `USD`;
+    preferredCurrency && isCurrencyCode(preferredCurrency ?? ``) ? preferredCurrency : CURRENCY_CODE.USD;
   const [currencyCode, setCurrencyCode] = useState<TCurrencyCode>(defaultCurrency);
   const [recipient, setRecipient] = useState(``);
   const [note, setNote] = useState(``);
@@ -27,8 +25,8 @@ export function TransferForm() {
   const [successOpen, setSuccessOpen] = useState(false);
 
   useEffect(() => {
-    if (preferredCurrency && ALL_CURRENCY_CODES.includes(preferredCurrency as TCurrencyCode)) {
-      setCurrencyCode(preferredCurrency as TCurrencyCode);
+    if (preferredCurrency && isCurrencyCode(preferredCurrency)) {
+      setCurrencyCode(preferredCurrency);
     }
   }, [preferredCurrency]);
 
@@ -79,11 +77,7 @@ export function TransferForm() {
 
       setSuccessOpen(true);
       setAmount(``);
-      setCurrencyCode(
-        preferredCurrency && ALL_CURRENCY_CODES.includes(preferredCurrency as TCurrencyCode)
-          ? (preferredCurrency as TCurrencyCode)
-          : `USD`,
-      );
+      setCurrencyCode(preferredCurrency && isCurrencyCode(preferredCurrency) ? preferredCurrency : CURRENCY_CODE.USD);
       setRecipient(``);
       setNote(``);
     } catch (e: unknown) {

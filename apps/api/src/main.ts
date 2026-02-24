@@ -108,7 +108,7 @@ const opts = {
   ],
 };
 
-function setupSwagger(app: any) {
+function setupSwagger(app: INestApplication) {
   const adminConfig = new DocumentBuilder()
     .addBasicAuth({ type: `http`, scheme: `basic` }, `basic`)
     .addBearerAuth({ type: `http`, scheme: `bearer` }, `bearer`)
@@ -238,15 +238,20 @@ async function bootstrap() {
     });
 
   if (isOnVercel === false && envs.NGROK_AUTH_TOKEN !== `NGROK_AUTH_TOKEN` && envs.NGROK_DOMAIN !== `NGROK_DOMAIN`) {
-    const listener = await ngrok.forward({
-      addr: port,
-      authtoken: envs.NGROK_AUTH_TOKEN,
-      domain: envs.NGROK_DOMAIN,
-      compression: false,
-      force_new_session: true,
-    });
+    try {
+      const listener = await ngrok.forward({
+        addr: port,
+        authtoken: envs.NGROK_AUTH_TOKEN,
+        domain: envs.NGROK_DOMAIN,
+        compression: false,
+        force_new_session: true,
+      });
 
-    console.log(`Ingress ngrok established at: ${listener.url()}`);
+      console.log(`Ingress ngrok established at: ${listener.url()}`);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.log(`⚠️  Ingress ngrok unavailable: ${msg}`);
+    }
   }
 
   return app;
@@ -267,9 +272,9 @@ function killAppWithGrace(app: INestApplication) {
   }
 
   process.stdin.resume();
-  process.on(`unhandledRejection`, (error: Error | any) => {
-    if (error.code == `ERR_HTTP_HEADERS_SENT`)
-      return console.log(`ERR_HTTP_HEADERS_SENT with error code: ${error.code}`);
+  process.on(`unhandledRejection`, (error: unknown) => {
+    const err = error as { code?: string };
+    if (err?.code == `ERR_HTTP_HEADERS_SENT`) return console.log(`ERR_HTTP_HEADERS_SENT with error code: ${err.code}`);
     console.error({ error, caller: bootstrap.name, message: `Unhandled rejection` });
     process.exit(1);
   });

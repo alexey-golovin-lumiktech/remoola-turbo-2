@@ -1,22 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { IsEnum } from 'class-validator';
+import { IsIn } from 'class-validator';
 
-import { $Enums } from '@remoola/database-2';
+import { CURRENCY_CODE, CURRENCY_CODES, TCurrencyCode } from '@remoola/api-types';
 
-export class UpdatePreferredCurrencyDto {
+export class UpdatePreferredCurrency {
   @Expose()
   @ApiProperty({
-    enum: [
-      $Enums.CurrencyCode.USD,
-      $Enums.CurrencyCode.EUR,
-      $Enums.CurrencyCode.GBP,
-      $Enums.CurrencyCode.JPY,
-      $Enums.CurrencyCode.AUD,
-    ],
+    enum: CURRENCY_CODES,
     description: `Preferred display currency (UI default only)`,
-    example: $Enums.CurrencyCode.USD,
+    example: CURRENCY_CODE.USD,
   })
-  @IsEnum($Enums.CurrencyCode)
-  preferredCurrency!: $Enums.CurrencyCode;
+  @IsIn(CURRENCY_CODES)
+  preferredCurrency!: TCurrencyCode;
 }

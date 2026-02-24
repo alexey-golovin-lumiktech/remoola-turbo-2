@@ -1,21 +1,21 @@
-import { OrganizationSizes } from '@remoola/api-types';
+import { ORGANIZATION_SIZE } from '@remoola/api-types';
 
 export const ORGANIZATION_SIZE_LABEL = {
-  [OrganizationSizes.SMALL]: `1-10 team members`,
-  [OrganizationSizes.MEDIUM]: `11-100 team members`,
-  [OrganizationSizes.LARGE]: `100+ team members`,
+  [ORGANIZATION_SIZE.SMALL]: `1-10 team members`,
+  [ORGANIZATION_SIZE.MEDIUM]: `11-100 team members`,
+  [ORGANIZATION_SIZE.LARGE]: `100+ team members`,
 } as const;
 
 export type TOrganizationSizeLabel = (typeof ORGANIZATION_SIZE_LABEL)[keyof typeof ORGANIZATION_SIZE_LABEL];
 
 export const SIZE_LABEL = {
-  [OrganizationSizes.SMALL]: ORGANIZATION_SIZE_LABEL[OrganizationSizes.SMALL],
-  [OrganizationSizes.MEDIUM]: ORGANIZATION_SIZE_LABEL[OrganizationSizes.MEDIUM],
-  [OrganizationSizes.LARGE]: ORGANIZATION_SIZE_LABEL[OrganizationSizes.LARGE],
+  [ORGANIZATION_SIZE.SMALL]: ORGANIZATION_SIZE_LABEL[ORGANIZATION_SIZE.SMALL],
+  [ORGANIZATION_SIZE.MEDIUM]: ORGANIZATION_SIZE_LABEL[ORGANIZATION_SIZE.MEDIUM],
+  [ORGANIZATION_SIZE.LARGE]: ORGANIZATION_SIZE_LABEL[ORGANIZATION_SIZE.LARGE],
 };
 
 export const LABEL_SIZE = {
-  [ORGANIZATION_SIZE_LABEL[OrganizationSizes.SMALL]]: OrganizationSizes.SMALL,
-  [ORGANIZATION_SIZE_LABEL[OrganizationSizes.MEDIUM]]: OrganizationSizes.MEDIUM,
-  [ORGANIZATION_SIZE_LABEL[OrganizationSizes.LARGE]]: OrganizationSizes.LARGE,
+  [ORGANIZATION_SIZE_LABEL[ORGANIZATION_SIZE.SMALL]]: ORGANIZATION_SIZE.SMALL,
+  [ORGANIZATION_SIZE_LABEL[ORGANIZATION_SIZE.MEDIUM]]: ORGANIZATION_SIZE.MEDIUM,
+  [ORGANIZATION_SIZE_LABEL[ORGANIZATION_SIZE.LARGE]]: ORGANIZATION_SIZE.LARGE,
 };

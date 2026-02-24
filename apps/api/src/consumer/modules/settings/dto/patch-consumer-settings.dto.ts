@@ -1,27 +1,25 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { IsEnum, IsIn, IsOptional } from 'class-validator';
+import { IsIn, IsOptional } from 'class-validator';
 
-import { ALLOWED_PREFERRED_CURRENCIES } from '@remoola/api-types';
+import { CURRENCY_CODES, TCurrencyCode, THEMES, type TTheme } from '@remoola/api-types';
 
-import { Theme } from './update-theme.dto';
-
-export class PatchConsumerSettingsDto {
+export class PatchConsumerSettings {
   @Expose()
   @ApiPropertyOptional({
-    enum: [`LIGHT`, `DARK`, `SYSTEM`],
+    enum: THEMES,
     description: `Theme preference`,
   })
   @IsOptional()
-  @IsEnum(Theme)
-  theme?: Theme;
+  @IsIn(THEMES)
+  theme?: TTheme;
 
   @Expose()
   @ApiPropertyOptional({
-    enum: ALLOWED_PREFERRED_CURRENCIES,
+    enum: CURRENCY_CODES,
     description: `Preferred display currency (UI default only; fintech-safe allowlist)`,
   })
   @IsOptional()
-  @IsIn(ALLOWED_PREFERRED_CURRENCIES)
-  preferredCurrency?: (typeof ALLOWED_PREFERRED_CURRENCIES)[number];
+  @IsIn(CURRENCY_CODES)
+  preferredCurrency?: TCurrencyCode;
 }

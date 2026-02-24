@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-import type { ConsumerSettingsResponse, TPreferredCurrency } from '@remoola/api-types';
+import { type ConsumerSettingsResponse, type TCurrencyCode, ACCOUNT_TYPE } from '@remoola/api-types';
 
 import { AddressDetailsForm } from './AddressDetailsForm';
 import { OrganizationDetailsForm } from './OrganizationDetailsForm';
@@ -58,7 +58,7 @@ export default function ProfileSettingsClient() {
     void loadSettings();
   }, [loadSettings]);
 
-  const handlePreferredCurrencyUpdated = useCallback((preferredCurrency: TPreferredCurrency | null) => {
+  const handlePreferredCurrencyUpdated = useCallback((preferredCurrency: TCurrencyCode | null) => {
     setSettings((prev) => (prev ? { ...prev, preferredCurrency } : { theme: null, preferredCurrency }));
   }, []);
 
@@ -79,7 +79,7 @@ export default function ProfileSettingsClient() {
       />
       <PersonalDetailsForm profile={profile} reload={load} />
       <AddressDetailsForm profile={profile} reload={load} />
-      {profile.accountType === `BUSINESS` && <OrganizationDetailsForm profile={profile} reload={load} />}
+      {profile.accountType === ACCOUNT_TYPE.BUSINESS && <OrganizationDetailsForm profile={profile} reload={load} />}
 
       <PasswordChangeForm reload={load} />
     </div>

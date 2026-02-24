@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsIn, IsOptional, IsString } from 'class-validator';
 
-import { TransactionStatus, type TAdminPaymentRequestsListQuery } from '@remoola/api-types';
+import { TRANSACTION_STATUSES, type TAdminPaymentRequestsListQuery } from '@remoola/api-types';
 
 import { AdminListPagination } from '../../../dto';
 
@@ -11,9 +11,9 @@ export class AdminPaymentRequestsListQuery extends AdminListPagination implement
   @IsString()
   q?: string;
 
-  @ApiPropertyOptional({ enum: Object.values(TransactionStatus) })
+  @ApiPropertyOptional({ enum: TRANSACTION_STATUSES })
   @IsOptional()
-  @IsIn(Object.values(TransactionStatus))
+  @IsIn(TRANSACTION_STATUSES)
   status?: TAdminPaymentRequestsListQuery[`status`];
 
   @ApiPropertyOptional()

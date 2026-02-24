@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { type TAccountType, AccountTypes } from '@remoola/api-types';
+import { type TAccountType, ACCOUNT_TYPE } from '@remoola/api-types';
 
 import { ErrorBoundary, ErrorState } from '../../../../components';
 import styles from '../../../../components/ui/classNames.module.css';
@@ -67,7 +67,7 @@ function ChooseAccountTypeStepInner() {
   const onNext = () => {
     if (!signup.accountType) return;
 
-    if (signup.accountType === AccountTypes.BUSINESS) {
+    if (signup.accountType === ACCOUNT_TYPE.BUSINESS) {
       const path = googleSignupToken ? `/signup?googleSignupToken=${encodeURIComponent(googleSignupToken)}` : `/signup`;
       router.push(path);
     } else {
@@ -82,7 +82,7 @@ function ChooseAccountTypeStepInner() {
 
   useEffect(() => {
     if (signup.accountType === null) {
-      updateSignup({ accountType: AccountTypes.CONTRACTOR });
+      updateSignup({ accountType: ACCOUNT_TYPE.CONTRACTOR });
     }
   }, [signup.accountType, updateSignup]);
 
@@ -134,7 +134,7 @@ function ChooseAccountTypeStepInner() {
       } finally {
         if (isMountedRef.current && !failed) {
           updateSignup({
-            accountType: AccountTypes.CONTRACTOR,
+            accountType: ACCOUNT_TYPE.CONTRACTOR,
             contractorKind: null,
             ...(fetchedEmail ? { email: fetchedEmail } : {}),
           });
@@ -181,15 +181,15 @@ function ChooseAccountTypeStepInner() {
           <button
             type="button"
             data-testid="consumer-signup-start-option-business"
-            onClick={(e) => (e.preventDefault(), e.stopPropagation(), selectType(AccountTypes.BUSINESS))}
+            onClick={(e) => (e.preventDefault(), e.stopPropagation(), selectType(ACCOUNT_TYPE.BUSINESS))}
             className={`${signupStartOptionBase} ${
-              isSelected(AccountTypes.BUSINESS) ? signupStartOptionActive : signupStartOptionInactive
+              isSelected(ACCOUNT_TYPE.BUSINESS) ? signupStartOptionActive : signupStartOptionInactive
             }`}
           >
             <div className={signupStartOptionEmoji}>📄</div>
             <div
               className={`${signupStartOptionLabelBase} ${
-                isSelected(AccountTypes.BUSINESS) ? signupStartOptionLabelActive : signupStartOptionLabelInactive
+                isSelected(ACCOUNT_TYPE.BUSINESS) ? signupStartOptionLabelActive : signupStartOptionLabelInactive
               }`}
             >
               BUSINESS
@@ -199,15 +199,15 @@ function ChooseAccountTypeStepInner() {
           <button
             type="button"
             data-testid="consumer-signup-start-option-contractor"
-            onClick={(e) => (e.preventDefault(), e.stopPropagation(), selectType(AccountTypes.CONTRACTOR))}
+            onClick={(e) => (e.preventDefault(), e.stopPropagation(), selectType(ACCOUNT_TYPE.CONTRACTOR))}
             className={`${signupStartOptionBase} ${
-              isSelected(AccountTypes.CONTRACTOR) ? signupStartOptionActive : signupStartOptionInactive
+              isSelected(ACCOUNT_TYPE.CONTRACTOR) ? signupStartOptionActive : signupStartOptionInactive
             }`}
           >
             <div className={signupStartOptionEmoji}>🏠</div>
             <div
               className={`${signupStartOptionLabelBase} ${
-                isSelected(AccountTypes.CONTRACTOR) ? signupStartOptionLabelActive : signupStartOptionLabelInactive
+                isSelected(ACCOUNT_TYPE.CONTRACTOR) ? signupStartOptionLabelActive : signupStartOptionLabelInactive
               }`}
             >
               CONTRACTOR
@@ -216,7 +216,7 @@ function ChooseAccountTypeStepInner() {
         </div>
 
         {/* === Helpful Description (only when contractor selected) === */}
-        {signup.accountType === AccountTypes.CONTRACTOR && (
+        {signup.accountType === ACCOUNT_TYPE.CONTRACTOR && (
           <div className={signupStartInfo}>
             <div className={signupStartInfoTitle}>Sign up as a contractor to:</div>
             <ul className={signupStartList}>
@@ -228,7 +228,7 @@ function ChooseAccountTypeStepInner() {
           </div>
         )}
 
-        {signup.accountType === AccountTypes.BUSINESS && (
+        {signup.accountType === ACCOUNT_TYPE.BUSINESS && (
           <div className={signupStartInfo}>
             <div className={signupStartInfoTitle}>Sign up as a contractor to:</div>
             <ul className={signupStartList}>

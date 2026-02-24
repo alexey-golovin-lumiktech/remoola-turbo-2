@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { AccountTypes, ContractorKinds } from '@remoola/api-types';
+import { ACCOUNT_TYPE, CONTRACTOR_KIND } from '@remoola/api-types';
 
 import {
   Stepper,
@@ -38,11 +38,11 @@ function SignupPageInner() {
 
   const urlAccountType = params.get(`accountType`);
   const urlContractorKind = params.get(`contractorKind`);
-  const hasAccountTypeInUrl = urlAccountType === AccountTypes.BUSINESS || urlAccountType === AccountTypes.CONTRACTOR;
+  const hasAccountTypeInUrl = urlAccountType === ACCOUNT_TYPE.BUSINESS || urlAccountType === ACCOUNT_TYPE.CONTRACTOR;
 
   useEffect(() => {
     if (!accountType && !googleSignupToken) router.replace(`/signup/start`);
-    else if (accountType === `CONTRACTOR` && !contractorKind && !googleSignupToken) {
+    else if (accountType === ACCOUNT_TYPE.CONTRACTOR && !contractorKind && !googleSignupToken) {
       router.replace(`/signup/start/contractor-kind`);
     } else if (googleSignupToken && !accountType && !hasAccountTypeInUrl) {
       // Token in URL but no accountType in URL or form (e.g. direct link)—redirect to pick account type
@@ -67,8 +67,8 @@ function SignupPageInner() {
     if (hasAccountTypeInUrl) {
       const parsedAccountType = urlAccountType;
       const parsedContractorKind =
-        parsedAccountType === AccountTypes.CONTRACTOR &&
-        (urlContractorKind === ContractorKinds.INDIVIDUAL || urlContractorKind === ContractorKinds.ENTITY)
+        parsedAccountType === ACCOUNT_TYPE.CONTRACTOR &&
+        (urlContractorKind === CONTRACTOR_KIND.INDIVIDUAL || urlContractorKind === CONTRACTOR_KIND.ENTITY)
           ? urlContractorKind
           : null;
       updateSignup({ accountType: parsedAccountType, contractorKind: parsedContractorKind });

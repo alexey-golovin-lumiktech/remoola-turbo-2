@@ -52,6 +52,7 @@ yarn dev
 | File | Purpose |
 |------|---------|
 | `README.md` | Setup, commands, repo layout |
+| `PROJECT_SUMMARY.md` | High-level overview (start here) |
 | `AGENTS.md` | Engineering rules and constraints |
 | `PROJECT_DOCUMENTATION.md` | Full API, screens, DB schema, packages |
 | `FEATURES_CURRENT.md` | Implemented features and current state |

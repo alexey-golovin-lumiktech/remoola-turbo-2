@@ -3,7 +3,7 @@ import { ApiTags, ApiBearerAuth, ApiBasicAuth } from '@nestjs/swagger';
 
 import { AdminConsumersService } from './admin-consumers.service';
 import { AdminConsumersListQuery } from './dto';
-import { ConsumerVerificationUpdateDto } from '../../../dtos/admin';
+import { ConsumerVerificationUpdate } from '../../../dtos/admin';
 
 function one(v: string | string[] | undefined): string | undefined {
   return (typeof v === `string` ? v : v?.[0])?.trim() || undefined;
@@ -45,7 +45,7 @@ export class AdminConsumersController {
   }
 
   @Patch(`:id/verification`)
-  updateVerification(@Param(`id`) id: string, @Body() body: ConsumerVerificationUpdateDto) {
+  updateVerification(@Param(`id`) id: string, @Body() body: ConsumerVerificationUpdate) {
     return this.service.updateVerification(id, body);
   }
 }

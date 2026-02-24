@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
+import { ADMIN_TYPE } from '@remoola/api-types';
 import { $Enums, type AdminModel, Prisma } from '@remoola/database-2';
 
 import { PrismaService } from '../../../shared/prisma.service';
@@ -24,7 +25,7 @@ export class AdminAdminsService {
       options?.type && ADMIN_TYPES.includes(options.type) ? (options.type as $Enums.AdminType) : undefined;
 
     const allowedTypes =
-      admin.type === `SUPER` //
+      admin.type === ADMIN_TYPE.SUPER //
         ? ([`ADMIN`, `SUPER`] as const)
         : ([`ADMIN`] as const);
     const typeConstraint =
@@ -38,7 +39,7 @@ export class AdminAdminsService {
 
     const where: Prisma.AdminModelWhereInput = {
       ...typeConstraint,
-      ...(admin.type === `ADMIN` && { id: { not: admin.id } }),
+      ...(admin.type === ADMIN_TYPE.ADMIN && { id: { not: admin.id } }),
       ...(options?.includeDeleted !== true && { deletedAt: null }),
       ...(search && { email: { contains: search, mode: `insensitive` } }),
     };

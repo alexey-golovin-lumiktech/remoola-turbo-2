@@ -3,6 +3,8 @@
 import { Check, Clipboard, FileDown } from 'lucide-react';
 import { useState } from 'react';
 
+import { type TCurrencyCode } from '@remoola/api-types';
+
 import styles from '../ui/classNames.module.css';
 
 const {
@@ -36,7 +38,7 @@ const {
 
 type BankDetails = {
   amount: number;
-  currency: string;
+  currency: TCurrencyCode;
   reference: string;
   beneficiary: string;
   accountNumber: string;

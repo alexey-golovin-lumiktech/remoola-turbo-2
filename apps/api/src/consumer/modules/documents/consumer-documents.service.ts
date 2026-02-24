@@ -137,7 +137,7 @@ export class ConsumerDocumentsService {
   }
 
   async uploadDocuments(consumerId: string, files: Express.Multer.File[], backendHost) {
-    const created: any[] = [];
+    const created: string[] = [];
 
     for (const file of files) {
       const originalName = Buffer.from(file.originalname, `latin1`).toString(`utf8`);

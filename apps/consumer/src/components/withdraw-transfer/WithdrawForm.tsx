@@ -3,12 +3,12 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-import { ALL_CURRENCY_CODES, type TCurrencyCode } from '@remoola/api-types';
+import { CURRENCY_CODE, isCurrencyCode, type TCurrencyCode } from '@remoola/api-types';
 
-import { usePreferredCurrency } from '../../lib/hooks';
-import { AmountCurrencyInput, FormCard, FormField } from '../ui';
 import { SuccessModal } from './SuccessModal';
 import { getErrorMessageForUser } from '../../lib/error-messages';
+import { usePreferredCurrency } from '../../lib/hooks';
+import { AmountCurrencyInput, FormCard, FormField } from '../ui';
 import styles from '../ui/classNames.module.css';
 
 const { flexRowGap3, primaryButtonClass } = styles;
@@ -34,17 +34,15 @@ export function WithdrawForm() {
   const { preferredCurrency } = usePreferredCurrency();
   const [amount, setAmount] = useState(``);
   const defaultCurrency: TCurrencyCode =
-    preferredCurrency && ALL_CURRENCY_CODES.includes(preferredCurrency as TCurrencyCode)
-      ? (preferredCurrency as TCurrencyCode)
-      : `USD`;
+    preferredCurrency && isCurrencyCode(preferredCurrency) ? preferredCurrency : CURRENCY_CODE.USD;
   const [currencyCode, setCurrencyCode] = useState<TCurrencyCode>(defaultCurrency);
   const [method, setMethod] = useState<`BANK_ACCOUNT` | `CREDIT_CARD` | ``>(``);
   const [loading, setLoading] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
 
   useEffect(() => {
-    if (preferredCurrency && ALL_CURRENCY_CODES.includes(preferredCurrency as TCurrencyCode)) {
-      setCurrencyCode(preferredCurrency as TCurrencyCode);
+    if (preferredCurrency && isCurrencyCode(preferredCurrency)) {
+      setCurrencyCode(preferredCurrency);
     }
   }, [preferredCurrency]);
 
@@ -95,11 +93,7 @@ export function WithdrawForm() {
 
       setSuccessOpen(true);
       setAmount(``);
-      setCurrencyCode(
-        preferredCurrency && ALL_CURRENCY_CODES.includes(preferredCurrency as TCurrencyCode)
-          ? (preferredCurrency as TCurrencyCode)
-          : `USD`,
-      );
+      setCurrencyCode(preferredCurrency && isCurrencyCode(preferredCurrency) ? preferredCurrency : CURRENCY_CODE.USD);
       setMethod(``);
     } catch (e: unknown) {
       const raw = e instanceof Error ? e.message : `Withdrawal failed.`;

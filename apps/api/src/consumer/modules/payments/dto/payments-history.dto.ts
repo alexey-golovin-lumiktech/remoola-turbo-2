@@ -1,17 +1,17 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { IsEnum, IsInt, IsOptional, Min } from 'class-validator';
+import { IsEnum, IsIn, IsInt, IsOptional, Min } from 'class-validator';
 
-import { PaymentDirections, type TPaymentDirection } from '@remoola/api-types';
+import { PAYMENT_DIRECTIONS, type TPaymentDirection } from '@remoola/api-types';
 import { $Enums } from '@remoola/database-2';
 
 export class PaymentsHistoryQuery {
   @Expose()
   @ApiPropertyOptional({
-    enum: PaymentDirections,
+    enum: PAYMENT_DIRECTIONS,
     description: `Filter by money direction: INCOME = received, OUTCOME = sent`,
   })
-  @IsEnum(PaymentDirections)
+  @IsIn(PAYMENT_DIRECTIONS)
   @IsOptional()
   direction?: TPaymentDirection;
 

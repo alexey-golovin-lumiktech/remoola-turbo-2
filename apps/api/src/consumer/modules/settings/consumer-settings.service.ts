@@ -1,23 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 
-import { ALLOWED_PREFERRED_CURRENCIES } from '@remoola/api-types';
+import { CURRENCY_CODES, TCurrencyCode, toCurrencyOrNull, toCurrencyOrUndefined } from '@remoola/api-types';
 import { $Enums } from '@remoola/database-2';
 
-import { UpdatePreferredCurrencyDto } from './dto/update-preferred-currency.dto';
-import { UpdateThemeDto } from './dto/update-theme.dto';
+import { UpdatePreferredCurrency } from './dto/update-preferred-currency.dto';
+import { UpdateTheme } from './dto/update-theme.dto';
 import { PrismaService } from '../../../shared/prisma.service';
 
-import type { PatchConsumerSettingsDto } from './dto/patch-consumer-settings.dto';
+import type { PatchConsumerSettings } from './dto/patch-consumer-settings.dto';
 
 /** Map api-types allowlist to Prisma enum for DB writes. Fintech-safe: server enforces allowlist. */
-const ALLOWED_SET: Set<string> = new Set(ALLOWED_PREFERRED_CURRENCIES);
-const TO_ENUM: Record<string, $Enums.CurrencyCode> = {
-  USD: $Enums.CurrencyCode.USD,
-  EUR: $Enums.CurrencyCode.EUR,
-  GBP: $Enums.CurrencyCode.GBP,
-  JPY: $Enums.CurrencyCode.JPY,
-  AUD: $Enums.CurrencyCode.AUD,
-};
+const ALLOWED_SET: Set<string> = new Set(CURRENCY_CODES);
 
 @Injectable()
 export class ConsumerSettingsService {
@@ -31,12 +24,9 @@ export class ConsumerSettingsService {
       },
     });
 
-    const preferredCurrency = settings?.preferredCurrency ?? null;
-    const preferredCurrencySafe = preferredCurrency && ALLOWED_SET.has(preferredCurrency) ? preferredCurrency : null;
-
     return {
       theme: settings?.theme ?? null,
-      preferredCurrency: preferredCurrencySafe,
+      preferredCurrency: toCurrencyOrNull(settings?.preferredCurrency),
     };
   }
 
@@ -52,7 +42,7 @@ export class ConsumerSettingsService {
     };
   }
 
-  async updateThemeSettings(consumerId: string, updateThemeDto: UpdateThemeDto) {
+  async updateThemeSettings(consumerId: string, updateThemeDto: UpdateTheme) {
     const settings = await this.prisma.consumerSettingsModel.upsert({
       where: {
         consumerId,
@@ -73,10 +63,10 @@ export class ConsumerSettingsService {
     };
   }
 
-  async updatePreferredCurrency(consumerId: string, dto: UpdatePreferredCurrencyDto) {
-    const enumValue = TO_ENUM[dto.preferredCurrency];
-    if (!enumValue || !ALLOWED_SET.has(dto.preferredCurrency)) {
-      throw new Error(`Unsupported preferred currency`);
+  async updatePreferredCurrency(consumerId: string, dto: UpdatePreferredCurrency) {
+    const preferredCurrency = toCurrencyOrUndefined(dto.preferredCurrency);
+    if (preferredCurrency === undefined) {
+      throw new BadRequestException(`Unsupported preferred currency`);
     }
 
     const settings = await this.prisma.consumerSettingsModel.upsert({
@@ -85,12 +75,12 @@ export class ConsumerSettingsService {
         deletedAt: null,
       },
       update: {
-        preferredCurrency: enumValue,
+        preferredCurrency,
         updatedAt: new Date(),
       },
       create: {
         consumerId,
-        preferredCurrency: enumValue,
+        preferredCurrency,
       },
     });
 
@@ -100,10 +90,10 @@ export class ConsumerSettingsService {
   }
 
   /** Partial update; only provided fields are applied. Fintech-safe: preferredCurrency validated against allowlist. */
-  async patchSettings(consumerId: string, dto: PatchConsumerSettingsDto) {
+  async patchSettings(consumerId: string, dto: PatchConsumerSettings) {
     const update: {
       theme?: $Enums.Theme;
-      preferredCurrency?: $Enums.CurrencyCode | null;
+      preferredCurrency?: TCurrencyCode;
       updatedAt: Date;
     } = { updatedAt: new Date() };
 
@@ -111,10 +101,8 @@ export class ConsumerSettingsService {
       update.theme = dto.theme as $Enums.Theme;
     }
     if (dto.preferredCurrency !== undefined) {
-      if (!ALLOWED_SET.has(dto.preferredCurrency)) {
-        throw new Error(`Unsupported preferred currency`);
-      }
-      update.preferredCurrency = TO_ENUM[dto.preferredCurrency];
+      const preferredCurrency = toCurrencyOrUndefined(dto.preferredCurrency);
+      if (preferredCurrency !== undefined) update.preferredCurrency = preferredCurrency;
     }
 
     const settings = await this.prisma.consumerSettingsModel.upsert({

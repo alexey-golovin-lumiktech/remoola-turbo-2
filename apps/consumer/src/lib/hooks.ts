@@ -2,22 +2,22 @@ import { useEffect, useState } from 'react';
 import useSWR from 'swr';
 import useSWRMutation from 'swr/mutation';
 
-import { ALLOWED_PREFERRED_CURRENCIES, type TPreferredCurrency } from '@remoola/api-types';
+import { isCurrencyCode, type TCurrencyCode } from '@remoola/api-types';
 
 import { mutationFetcher } from './swr-config';
 
 /** Preferred currency from consumer settings (display default only). Fetches once per mount. */
-export function usePreferredCurrency(): { preferredCurrency: TPreferredCurrency | null; loaded: boolean } {
-  const [preferredCurrency, setPreferredCurrency] = useState<TPreferredCurrency | null>(null);
+export function usePreferredCurrency(): { preferredCurrency: TCurrencyCode | null; loaded: boolean } {
+  const [preferredCurrency, setPreferredCurrency] = useState<TCurrencyCode | null>(null);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     fetch(`/api/settings`, { credentials: `include`, cache: `no-store` })
       .then((r) => (r.ok ? r.json() : null))
-      .then((data: { preferredCurrency?: TPreferredCurrency | null } | null) => {
+      .then((data: { preferredCurrency?: TCurrencyCode | null } | null) => {
         if (!data?.preferredCurrency) {
           setPreferredCurrency(null);
-        } else if (ALLOWED_PREFERRED_CURRENCIES.includes(data.preferredCurrency)) {
+        } else if (isCurrencyCode(data.preferredCurrency)) {
           setPreferredCurrency(data.preferredCurrency);
         } else {
           setPreferredCurrency(null);
@@ -27,12 +27,6 @@ export function usePreferredCurrency(): { preferredCurrency: TPreferredCurrency 
   }, []);
 
   return { preferredCurrency, loaded };
-}
-
-/** Pick first currency in list that is not the given one (for exchange "to" default). */
-export function firstOtherCurrency(currencies: string[], from: string): string {
-  const other = currencies.find((c) => c !== from);
-  return other ?? currencies[0] ?? `USD`;
 }
 
 // Query keys for consistent caching

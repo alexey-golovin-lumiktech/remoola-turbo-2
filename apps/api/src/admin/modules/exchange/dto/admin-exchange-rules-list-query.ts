@@ -1,11 +1,9 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsIn, IsOptional, IsString } from 'class-validator';
 
-import { type TAdminExchangeRulesListQuery } from '@remoola/api-types';
+import { BOOLEAN_QUERY_VALUES, type TBooleanQueryValue, type TAdminExchangeRulesListQuery } from '@remoola/api-types';
 
 import { AdminListPagination } from '../../../dto';
-
-const ENABLED_VALUES = [`true`, `false`] as const;
 
 export class AdminExchangeRulesListQuery extends AdminListPagination implements TAdminExchangeRulesListQuery {
   @ApiPropertyOptional()
@@ -13,13 +11,13 @@ export class AdminExchangeRulesListQuery extends AdminListPagination implements 
   @IsString()
   q?: string;
 
-  @ApiPropertyOptional({ enum: ENABLED_VALUES })
+  @ApiPropertyOptional({ enum: BOOLEAN_QUERY_VALUES })
   @IsOptional()
-  @IsIn(ENABLED_VALUES)
-  enabled?: string;
+  @IsIn(BOOLEAN_QUERY_VALUES)
+  enabled?: TBooleanQueryValue;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ enum: BOOLEAN_QUERY_VALUES })
   @IsOptional()
-  @IsString()
-  includeDeleted?: string;
+  @IsIn(BOOLEAN_QUERY_VALUES)
+  includeDeleted?: TBooleanQueryValue;
 }

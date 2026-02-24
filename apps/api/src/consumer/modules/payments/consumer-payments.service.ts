@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto';
 
 import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 
-import { ALL_CURRENCY_CODES, PaymentDirection, PaymentMethodTypes } from '@remoola/api-types';
+import { PAYMENT_DIRECTION, PAYMENT_METHOD, toCurrencyOrDefault } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
@@ -58,26 +58,40 @@ export class ConsumerPaymentsService {
     const { consumerId, page, pageSize, status, type, search } = params;
     const consumerEmail = await this.getConsumerEmail(consumerId);
 
-    const where: any = {
-      OR: [
-        { payerId: consumerId },
-        { requesterId: consumerId },
-        ...(consumerEmail
-          ? [{ payerId: null, payerEmail: { equals: consumerEmail, mode: `insensitive` as const } }]
-          : []),
-      ],
-    };
-
-    if (status) where.status = status;
-    if (type) where.type = type;
-
-    if (search) {
-      where.OR = [
-        { description: { contains: search, mode: `insensitive` } },
-        { requester: { email: { contains: search, mode: `insensitive` } } },
-        { payer: { email: { contains: search, mode: `insensitive` } } },
-      ];
-    }
+    const where: Prisma.PaymentRequestModelWhereInput = search
+      ? {
+          AND: [
+            {
+              OR: [
+                { payerId: consumerId },
+                { requesterId: consumerId },
+                ...(consumerEmail
+                  ? [{ payerId: null, payerEmail: { equals: consumerEmail, mode: `insensitive` as const } }]
+                  : []),
+              ],
+            },
+            {
+              OR: [
+                { description: { contains: search, mode: `insensitive` } },
+                { requester: { email: { contains: search, mode: `insensitive` } } },
+                { payer: { email: { contains: search, mode: `insensitive` } } },
+              ],
+            },
+          ],
+          ...(status && { status: status as $Enums.TransactionStatus }),
+          ...(type && { type: type as $Enums.TransactionType }),
+        }
+      : {
+          OR: [
+            { payerId: consumerId },
+            { requesterId: consumerId },
+            ...(consumerEmail
+              ? [{ payerId: null, payerEmail: { equals: consumerEmail, mode: `insensitive` as const } }]
+              : []),
+          ],
+          ...(status && { status: status as $Enums.TransactionStatus }),
+          ...(type && { type: type as $Enums.TransactionType }),
+        };
 
     const [total, paymentRequests] = await Promise.all([
       this.prisma.paymentRequestModel.count({ where }),
@@ -204,7 +218,7 @@ export class ConsumerPaymentsService {
             ledgerId: entry.ledgerId,
             currencyCode: entry.currencyCode,
             amount,
-            direction: amount > 0 ? PaymentDirection.INCOME : PaymentDirection.OUTCOME,
+            direction: amount > 0 ? PAYMENT_DIRECTION.INCOME : PAYMENT_DIRECTION.OUTCOME,
             status: entry.status,
             type: entry.type,
             createdAt: entry.createdAt,
@@ -248,7 +262,7 @@ export class ConsumerPaymentsService {
     }
 
     const paymentRail =
-      body.method === PaymentMethodTypes.CREDIT_CARD ? $Enums.PaymentRail.CARD : $Enums.PaymentRail.BANK_TRANSFER;
+      body.method === PAYMENT_METHOD.CREDIT_CARD ? $Enums.PaymentRail.CARD : $Enums.PaymentRail.BANK_TRANSFER;
 
     return this.prisma.$transaction(async (tx) => {
       // 🔐 Generate ledgerId INSIDE tx (idempotency-safe)
@@ -511,7 +525,7 @@ export class ConsumerPaymentsService {
       },
     });
 
-    const result: Record<$Enums.CurrencyCode, number> = {} as any;
+    const result = {} as Record<$Enums.CurrencyCode, number>;
 
     for (const row of rows) {
       result[row.currencyCode] = Number(row._sum.amount ?? 0);
@@ -543,7 +557,7 @@ export class ConsumerPaymentsService {
       },
     });
 
-    const result: Record<$Enums.CurrencyCode, number> = {} as any;
+    const result = {} as Record<$Enums.CurrencyCode, number>;
 
     for (const row of rows) {
       result[row.currencyCode] = Number(row._sum.amount ?? 0);
@@ -570,16 +584,16 @@ export class ConsumerPaymentsService {
   async getHistory(consumerId: string, query: PaymentsHistoryQuery) {
     const { direction, status, limit = 20, offset = 0 } = query;
 
-    const where: any = { consumerId, deletedAt: null };
+    const where: Prisma.LedgerEntryModelWhereInput = { consumerId, deletedAt: null };
 
     if (status) {
       where.status = status;
     }
 
     // direction filter via signed amount
-    if (direction === PaymentDirection.INCOME) {
+    if (direction === PAYMENT_DIRECTION.INCOME) {
       where.amount = { gt: 0 };
-    } else if (direction === PaymentDirection.OUTCOME) {
+    } else if (direction === PAYMENT_DIRECTION.OUTCOME) {
       where.amount = { lt: 0 };
     }
 
@@ -617,7 +631,7 @@ export class ConsumerPaymentsService {
           status: entry.status,
           currencyCode: entry.currencyCode,
           amount: amount,
-          direction: amount ? PaymentDirection.INCOME : PaymentDirection.OUTCOME,
+          direction: amount > 0 ? PAYMENT_DIRECTION.INCOME : PAYMENT_DIRECTION.OUTCOME,
           createdAt: entry.createdAt,
           rail: metadata.rail ?? null,
           paymentRequestId: entry.paymentRequestId ?? null,
@@ -726,10 +740,7 @@ export class ConsumerPaymentsService {
           throw new BadRequestException(errorCodes.INSUFFICIENT_BALANCE_WITHDRAW);
         }
 
-        const withdrawCurrency =
-          body.currencyCode && ALL_CURRENCY_CODES.includes(body.currencyCode)
-            ? (body.currencyCode as $Enums.CurrencyCode)
-            : $Enums.CurrencyCode.USD;
+        const withdrawCurrency = toCurrencyOrDefault(body.currencyCode, $Enums.CurrencyCode.USD);
         const payoutEntry = await tx.ledgerEntryModel.create({
           data: {
             ledgerId,
@@ -826,10 +837,7 @@ export class ConsumerPaymentsService {
           throw new BadRequestException(errorCodes.INSUFFICIENT_BALANCE_TRANSFER);
         }
 
-        const transferCurrency =
-          body.currencyCode && ALL_CURRENCY_CODES.includes(body.currencyCode)
-            ? (body.currencyCode as $Enums.CurrencyCode)
-            : $Enums.CurrencyCode.USD;
+        const transferCurrency = toCurrencyOrDefault(body.currencyCode, $Enums.CurrencyCode.USD);
         await tx.ledgerEntryModel.create({
           data: {
             ledgerId,

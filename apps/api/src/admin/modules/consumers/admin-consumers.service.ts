@@ -1,10 +1,10 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 
-import { VerificationStatuses } from '@remoola/api-types';
+import { VERIFICATION_ACTION, VERIFICATION_STATUS } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
 import { adminErrorCodes } from '@remoola/shared-constants';
 
-import { VerificationAction, type ConsumerVerificationUpdateDto } from '../../../dtos/admin';
+import { type ConsumerVerificationUpdate } from '../../../dtos/admin';
 import { PrismaService } from '../../../shared/prisma.service';
 
 const SEARCH_MAX_LEN = 200;
@@ -92,17 +92,17 @@ export class AdminConsumersService {
     });
   }
 
-  async updateVerification(id: string, payload: ConsumerVerificationUpdateDto) {
+  async updateVerification(id: string, payload: ConsumerVerificationUpdate) {
     const now = new Date();
 
     switch (payload.action) {
-      case VerificationAction.APPROVE:
+      case VERIFICATION_ACTION.APPROVE:
         return this.prisma.consumerModel.update({
           where: { id },
           data: {
             verified: true,
             legalVerified: true,
-            verificationStatus: VerificationStatuses.APPROVED,
+            verificationStatus: VERIFICATION_STATUS.APPROVED,
             verificationReason: payload.reason ?? null,
             verificationUpdatedAt: now,
           },
@@ -116,13 +116,13 @@ export class AdminConsumersService {
             },
           },
         });
-      case VerificationAction.REJECT:
+      case VERIFICATION_ACTION.REJECT:
         return this.prisma.consumerModel.update({
           where: { id },
           data: {
             verified: false,
             legalVerified: false,
-            verificationStatus: VerificationStatuses.REJECTED,
+            verificationStatus: VERIFICATION_STATUS.REJECTED,
             verificationReason: payload.reason ?? null,
             verificationUpdatedAt: now,
           },
@@ -136,13 +136,13 @@ export class AdminConsumersService {
             },
           },
         });
-      case VerificationAction.MORE_INFO:
+      case VERIFICATION_ACTION.MORE_INFO:
         return this.prisma.consumerModel.update({
           where: { id },
           data: {
             verified: false,
             legalVerified: false,
-            verificationStatus: VerificationStatuses.MORE_INFO,
+            verificationStatus: VERIFICATION_STATUS.MORE_INFO,
             verificationReason: payload.reason ?? null,
             verificationUpdatedAt: now,
           },
@@ -156,11 +156,11 @@ export class AdminConsumersService {
             },
           },
         });
-      case VerificationAction.FLAG:
+      case VERIFICATION_ACTION.FLAG:
         return this.prisma.consumerModel.update({
           where: { id },
           data: {
-            verificationStatus: VerificationStatuses.FLAGGED,
+            verificationStatus: VERIFICATION_STATUS.FLAGGED,
             verificationReason: payload.reason ?? null,
             verificationUpdatedAt: now,
           },

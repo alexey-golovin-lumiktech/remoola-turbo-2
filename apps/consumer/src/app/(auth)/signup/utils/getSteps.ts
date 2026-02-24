@@ -1,4 +1,4 @@
-import { type TAccountType, type TContractorKind, AccountTypes, ContractorKinds } from '@remoola/api-types';
+import { type TAccountType, type TContractorKind, ACCOUNT_TYPE, CONTRACTOR_KIND } from '@remoola/api-types';
 
 import { type IStepName, type IStepMeta, STEP_NAME } from '../../../../types';
 
@@ -31,7 +31,7 @@ export const steps = baseSteps;
 
 export const getSteps = (accountType: TAccountType, contractorKind: TContractorKind | null): StepsMap => {
   switch (accountType) {
-    case AccountTypes.BUSINESS: {
+    case ACCOUNT_TYPE.BUSINESS: {
       return {
         [STEP_NAME.SIGNUP_DETAILS]: steps[STEP_NAME.SIGNUP_DETAILS],
         [STEP_NAME.PERSONAL_DETAILS]: steps[STEP_NAME.PERSONAL_DETAILS],
@@ -39,16 +39,16 @@ export const getSteps = (accountType: TAccountType, contractorKind: TContractorK
         [STEP_NAME.ORGANIZATION_DETAILS]: steps[STEP_NAME.ORGANIZATION_DETAILS],
       };
     }
-    case AccountTypes.CONTRACTOR: {
+    case ACCOUNT_TYPE.CONTRACTOR: {
       switch (contractorKind) {
-        case ContractorKinds.INDIVIDUAL: {
+        case CONTRACTOR_KIND.INDIVIDUAL: {
           return {
             [STEP_NAME.SIGNUP_DETAILS]: steps[STEP_NAME.SIGNUP_DETAILS],
             [STEP_NAME.PERSONAL_DETAILS]: steps[STEP_NAME.PERSONAL_DETAILS],
             [STEP_NAME.ADDRESS_DETAILS]: steps[STEP_NAME.ADDRESS_DETAILS],
           };
         }
-        case ContractorKinds.ENTITY: {
+        case CONTRACTOR_KIND.ENTITY: {
           return {
             [STEP_NAME.SIGNUP_DETAILS]: steps[STEP_NAME.SIGNUP_DETAILS],
             [STEP_NAME.PERSONAL_DETAILS]: steps[STEP_NAME.PERSONAL_DETAILS],

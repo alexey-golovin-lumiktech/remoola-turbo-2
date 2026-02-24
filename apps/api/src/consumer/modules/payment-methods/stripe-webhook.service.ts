@@ -1,6 +1,12 @@
 import { randomUUID } from 'crypto';
 
-import { BadRequestException, Injectable, type RawBodyRequest, ServiceUnavailableException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  type RawBodyRequest,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import express from 'express';
 import Stripe from 'stripe';
 
@@ -15,6 +21,7 @@ import { getCurrencyFractionDigits } from '../../../shared-common';
 
 @Injectable()
 export class StripeWebhookService {
+  private readonly logger = new Logger(StripeWebhookService.name);
   private stripe: Stripe;
 
   constructor(
@@ -22,11 +29,6 @@ export class StripeWebhookService {
     private readonly mailingService: MailingService,
   ) {
     this.stripe = new Stripe(envs.STRIPE_SECRET_KEY, { apiVersion: `2025-11-17.clover` });
-
-    // ONE-TIME MIGRATION: Attach existing payment methods to customer
-    // This fixes payment methods collected before customer attachment was implemented
-    // TODO: Remove this code after migration completes (check logs for completion)
-    // this.runPaymentMethodMigration();
   }
 
   async startVerifyMeStripeSession(consumerId: string) {
@@ -61,23 +63,23 @@ export class StripeWebhookService {
 
       switch (event.type) {
         case STRIPE_EVENT.IDENTITY_VERIFICATION_SESSION_VERIFIED: {
-          console.log(`[INIT] ${event.type}`);
+          this.logger.log({ message: `Webhook processing`, eventType: event.type });
           await this.handleVerified(event.data.object);
-          console.log(`[DONE] ${event.type}`);
+          this.logger.log({ message: `Webhook processed`, eventType: event.type });
           break;
         }
 
         case STRIPE_EVENT.CHECKOUT_SESSION_COMPLETED: {
-          console.log(`[INIT] ${event.type}`);
+          this.logger.log({ message: `Webhook processing`, eventType: event.type });
           await this.handleStripeSuccess(event.data.object);
-          console.log(`[DONE] ${event.type}`);
+          this.logger.log({ message: `Webhook processed`, eventType: event.type });
           break;
         }
 
         case STRIPE_EVENT.CHARGE_REFUNDED: {
-          console.log(`[INIT] ${event.type}`);
+          this.logger.log({ message: `Webhook processing`, eventType: event.type });
           await this.handleChargeRefunded(event.data.object as Stripe.Charge);
-          console.log(`[DONE] ${event.type}`);
+          this.logger.log({ message: `Webhook processed`, eventType: event.type });
           break;
         }
 
@@ -89,9 +91,9 @@ export class StripeWebhookService {
         case STRIPE_EVENT.CHARGE_DISPUTE_CREATED:
         case STRIPE_EVENT.CHARGE_DISPUTE_UPDATED:
         case STRIPE_EVENT.CHARGE_DISPUTE_CLOSED: {
-          console.log(`[INIT] ${event.type}`);
+          this.logger.log({ message: `Webhook processing`, eventType: event.type });
           await this.handleChargeDispute(event.data.object as Stripe.Dispute);
-          console.log(`[DONE] ${event.type}`);
+          this.logger.log({ message: `Webhook processed`, eventType: event.type });
           break;
         }
 
@@ -104,7 +106,7 @@ export class StripeWebhookService {
           break;
 
         default: {
-          console.log(`[SKIP] ${event.type}`);
+          this.logger.debug({ message: `Webhook skipped`, eventType: event.type });
           break;
         }
       }
@@ -142,7 +144,7 @@ export class StripeWebhookService {
   private async handleVerified(session: Stripe.Identity.VerificationSession) {
     const consumerId = session.metadata?.consumerId;
     if (!consumerId) {
-      console.error(`NO consumerId: ${consumerId}`);
+      this.logger.warn({ message: `Verification session missing consumerId in metadata` });
       return;
     }
 
@@ -151,7 +153,7 @@ export class StripeWebhookService {
       include: { personalDetails: true },
     });
     if (!consumer) {
-      console.error(`NO consumer for id: ${consumerId}`);
+      this.logger.warn({ message: `Consumer not found for verification session` });
       return;
     }
 
@@ -219,7 +221,10 @@ export class StripeWebhookService {
     try {
       await this.collectPaymentMethodFromCheckout(session, consumerId);
     } catch (error) {
-      console.error(`Failed to collect payment method from checkout session:`, error);
+      this.logger.warn({
+        message: `Failed to collect payment method from checkout session`,
+        error: error instanceof Error ? error.message : String(error),
+      });
       // Don't fail the entire webhook if payment method collection fails
     }
   }
@@ -247,75 +252,9 @@ export class StripeWebhookService {
     return { consumer, customerId: customer.id };
   }
 
-  private async runPaymentMethodMigration() {
-    try {
-      // Migrate payment methods for a specific user
-      const email = `alexey.golovin@lumiktech.com`;
-      const consumer = await this.prisma.consumerModel.findFirst({
-        where: { email },
-        include: { paymentMethods: true },
-      });
-
-      if (!consumer) {
-        console.log(`Consumer not found for migration`);
-        return;
-      }
-
-      console.log(`Starting payment method migration for consumer:`, consumer.id);
-      const { customerId } = await this.ensureStripeCustomer(consumer.id);
-      console.log(`Customer ID:`, customerId);
-
-      let attachedCount = 0;
-      let failedCount = 0;
-
-      for (const paymentMethod of consumer.paymentMethods) {
-        if (!paymentMethod.stripePaymentMethodId) {
-          console.log(`Skipping payment method without Stripe ID:`, paymentMethod.id);
-          continue;
-        }
-
-        try {
-          await this.stripe.paymentMethods.attach(paymentMethod.stripePaymentMethodId, {
-            customer: customerId,
-          });
-          console.log(
-            `✅ Payment method attached successfully:`,
-            paymentMethod.id,
-            paymentMethod.stripePaymentMethodId,
-          );
-          attachedCount++;
-        } catch (error: any) {
-          if (
-            error.type === `invalid_request_error` &&
-            (error.message.includes(`previously used without being attached`) ||
-              error.message.includes(`was previously used without being attached`))
-          ) {
-            console.log(`❌ Payment method cannot be reused (used without customer):`, paymentMethod.id);
-            // Mark this payment method as unusable - users will need to add new ones via setup intent
-            await this.prisma.paymentMethodModel.update({
-              where: { id: paymentMethod.id },
-              data: {
-                deletedAt: new Date(),
-                stripePaymentMethodId: null, // Clear the unusable Stripe ID
-              },
-            });
-            console.log(`🗑️ Marked payment method as deleted:`, paymentMethod.id);
-          } else {
-            console.log(`❌ Unexpected error attaching payment method:`, paymentMethod.id, error.message);
-          }
-          failedCount++;
-        }
-      }
-
-      console.log(`Migration completed: ${attachedCount} attached, ${failedCount} failed`);
-    } catch (error: any) {
-      console.error(`Migration failed:`, error.message);
-    }
-  }
-
   // Manual migration method - can be called from an admin endpoint
   async migrateAllPaymentMethods() {
-    console.log(`Starting comprehensive payment method migration for all consumers...`);
+    this.logger.log({ message: `Payment method migration started` });
 
     try {
       const consumers = await this.prisma.consumerModel.findMany({
@@ -328,7 +267,7 @@ export class StripeWebhookService {
       for (const consumer of consumers) {
         if (consumer.paymentMethods.length === 0) continue;
 
-        console.log(`Migrating consumer: ${consumer.id}`);
+        this.logger.debug({ message: `Migrating consumer payment methods` });
         const { customerId } = await this.ensureStripeCustomer(consumer.id);
 
         for (const paymentMethod of consumer.paymentMethods) {
@@ -340,13 +279,15 @@ export class StripeWebhookService {
             await this.stripe.paymentMethods.attach(paymentMethod.stripePaymentMethodId, {
               customer: customerId,
             });
-            console.log(`✅ Attached: ${paymentMethod.id} for consumer ${consumer.id}`);
+            this.logger.debug({ message: `Payment method attached`, paymentMethodId: paymentMethod.id });
             totalAttached++;
-          } catch (error: any) {
+          } catch (error: unknown) {
+            const err = error as { type?: string; message?: string };
             if (
-              error.type === `invalid_request_error` &&
-              (error.message.includes(`previously used without being attached`) ||
-                error.message.includes(`was previously used without being attached`))
+              err?.type === `invalid_request_error` &&
+              typeof err?.message === `string` &&
+              (err.message.includes(`previously used without being attached`) ||
+                err.message.includes(`was previously used without being attached`))
             ) {
               await this.prisma.paymentMethodModel.update({
                 where: { id: paymentMethod.id },
@@ -355,19 +296,28 @@ export class StripeWebhookService {
                   stripePaymentMethodId: null,
                 },
               });
-              console.log(`🗑️ Marked unusable: ${paymentMethod.id} for consumer ${consumer.id}`);
+              this.logger.debug({ message: `Payment method marked unusable`, paymentMethodId: paymentMethod.id });
             } else {
-              console.log(`❌ Error: ${paymentMethod.id} for consumer ${consumer.id}: ${error.message}`);
+              this.logger.warn({
+                message: `Migration attach error`,
+                paymentMethodId: paymentMethod.id,
+                error: err?.message ?? String(error),
+              });
             }
             totalFailed++;
           }
         }
       }
 
-      console.log(`Migration completed: ${totalAttached} attached, ${totalFailed} failed/removed`);
+      this.logger.log({
+        message: `Migration completed`,
+        attached: totalAttached,
+        failed: totalFailed,
+      });
       return { success: true, attached: totalAttached, failed: totalFailed };
-    } catch (error: any) {
-      console.error(`Migration failed:`, error.message);
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      this.logger.error({ message: `Migration failed`, error: err?.message ?? String(error) });
       throw error;
     }
   }
@@ -400,16 +350,20 @@ export class StripeWebhookService {
       await this.stripe.paymentMethods.attach(paymentMethod.id, {
         customer: customerId,
       });
-      console.log(`Payment method attached to customer successfully`);
-    } catch (error: any) {
+      this.logger.debug({ message: `Payment method attached to customer` });
+    } catch (error: unknown) {
+      const err = error as { type?: string; message?: string } | null | undefined;
       // Handle different types of attachment errors
-      if (error.type === `invalid_request_error` && error.message.includes(`previously used without being attached`)) {
-        console.log(`Payment method cannot be reused (used without customer), skipping storage`);
+      if (err?.type === `invalid_request_error` && err?.message?.includes(`previously used without being attached`)) {
+        this.logger.debug({ message: `Payment method cannot be reused (used without customer), skipping storage` });
         return; // Don't store this payment method since it can't be reused
-      } else if (error.type === `invalid_request_error` && error.message.includes(`already attached`)) {
-        console.log(`Payment method already attached to customer, continuing...`);
+      } else if (err?.type === `invalid_request_error` && err?.message?.includes(`already attached`)) {
+        this.logger.debug({ message: `Payment method already attached to customer, continuing` });
       } else {
-        console.log(`Payment method attachment warning:`, error.message);
+        this.logger.warn({
+          message: `Payment method attachment warning`,
+          error: err?.message ?? String(error),
+        });
       }
     }
 
@@ -454,8 +408,7 @@ export class StripeWebhookService {
       expYear = paymentMethod.card.exp_year ? String(paymentMethod.card.exp_year) : undefined;
     } else {
       // For other payment method types, we might not have detailed info
-      // This could be expanded to handle other payment method types
-      console.log(`Unsupported payment method type: ${paymentMethod.type}`);
+      this.logger.debug({ message: `Unsupported payment method type for storage`, type: paymentMethod.type });
       return;
     }
 

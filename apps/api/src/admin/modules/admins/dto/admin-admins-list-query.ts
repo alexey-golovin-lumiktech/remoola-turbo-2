@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsIn, IsOptional, IsString } from 'class-validator';
 
-import { AdminTypes, type TAdminAdminsListQuery } from '@remoola/api-types';
+import { ADMIN_TYPES, type TAdminAdminsListQuery } from '@remoola/api-types';
 
 import { AdminListPagination } from '../../../dto';
 
@@ -11,9 +11,9 @@ export class AdminAdminsListQuery extends AdminListPagination implements TAdminA
   @IsString()
   q?: string;
 
-  @ApiPropertyOptional({ enum: Object.values(AdminTypes) })
+  @ApiPropertyOptional({ enum: ADMIN_TYPES })
   @IsOptional()
-  @IsIn(Object.values(AdminTypes))
+  @IsIn(ADMIN_TYPES)
   type?: TAdminAdminsListQuery[`type`];
 
   @ApiPropertyOptional()

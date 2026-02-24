@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-import { ALL_CURRENCY_CODES, type TCurrencyCode } from '@remoola/api-types';
+import { CURRENCY_CODE, isCurrencyCode, type TCurrencyCode } from '@remoola/api-types';
 
 import { AmountCurrencyInput, FormField, FormSelect, RecipientEmailField, type FormSelectOption } from '../ui';
 import styles from '../ui/classNames.module.css';
@@ -21,7 +21,7 @@ export function StartPaymentForm() {
 
   const [email, setEmail] = useState(``);
   const [amount, setAmount] = useState(``);
-  const [currencyCode, setCurrencyCode] = useState<TCurrencyCode>(`USD`);
+  const [currencyCode, setCurrencyCode] = useState<TCurrencyCode>(CURRENCY_CODE.USD);
   const [defaultCurrencyLoaded, setDefaultCurrencyLoaded] = useState(false);
 
   useEffect(() => {
@@ -31,7 +31,7 @@ export function StartPaymentForm() {
       .then((r) => (r.ok ? r.json() : null))
       .then((data: { preferredCurrency?: TCurrencyCode | null } | null) => {
         if (cancelled || !data?.preferredCurrency) return;
-        if (ALL_CURRENCY_CODES.includes(data.preferredCurrency)) {
+        if (isCurrencyCode(data.preferredCurrency)) {
           setCurrencyCode(data.preferredCurrency);
         }
       })

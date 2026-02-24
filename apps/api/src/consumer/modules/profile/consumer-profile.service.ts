@@ -20,7 +20,7 @@ export class ConsumerProfileService {
   }
 
   async updateProfile(consumerId: string, body: UpdateConsumerProfileBody) {
-    const updates: any = {};
+    const updates: Record<string, unknown> = {};
 
     if (body.personalDetails) {
       const current = await this.prisma.personalDetailsModel.findFirst({ where: { consumerId } });

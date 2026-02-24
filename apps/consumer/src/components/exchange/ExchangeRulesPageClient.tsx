@@ -3,10 +3,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { ALL_CURRENCY_CODES } from '@remoola/api-types';
+import { CURRENCY_CODE, CURRENCY_CODES, toCurrencyOrDefault, type TCurrencyCode } from '@remoola/api-types';
 
 import { formatDateTimeForDisplay } from '../../lib/date-utils';
-import { firstOtherCurrency, usePreferredCurrency } from '../../lib/hooks';
+import { usePreferredCurrency } from '../../lib/hooks';
 import { FormSelect, type FormSelectOption, PaginationBar } from '../ui';
 import styles from '../ui/classNames.module.css';
 
@@ -34,8 +34,8 @@ const ENABLED_OPTIONS: FormSelectOption[] = [
 
 type Rule = {
   id: string;
-  fromCurrency: string;
-  toCurrency: string;
+  fromCurrency: TCurrencyCode;
+  toCurrency: TCurrencyCode;
   targetBalance: number;
   maxConvertAmount?: number | null;
   minIntervalMinutes: number;
@@ -45,8 +45,8 @@ type Rule = {
 };
 
 type RuleForm = {
-  fromCurrency: string;
-  toCurrency: string;
+  fromCurrency: TCurrencyCode;
+  toCurrency: TCurrencyCode;
   targetBalance: string;
   maxConvertAmount: string;
   minIntervalMinutes: string;
@@ -54,8 +54,8 @@ type RuleForm = {
 };
 
 const defaultForm: RuleForm = {
-  fromCurrency: ALL_CURRENCY_CODES[0],
-  toCurrency: ALL_CURRENCY_CODES[1],
+  fromCurrency: CURRENCY_CODE.USD,
+  toCurrency: CURRENCY_CODE.EUR,
   targetBalance: `0`,
   maxConvertAmount: ``,
   minIntervalMinutes: `60`,
@@ -72,7 +72,7 @@ export function ExchangeRulesPageClient() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingList, setLoadingList] = useState(true);
-  const [currencies, setCurrencies] = useState<string[]>([...ALL_CURRENCY_CODES]);
+  const [currencies, setCurrencies] = useState([...CURRENCY_CODES]);
   const preferredAppliedRef = useRef(false);
 
   const heading = useMemo(() => (editingId ? `Edit Auto-Conversion Rule` : `Create Auto-Conversion Rule`), [editingId]);
@@ -121,7 +121,7 @@ export function ExchangeRulesPageClient() {
     setForm((prev) => ({
       ...prev,
       fromCurrency: preferredCurrency,
-      toCurrency: firstOtherCurrency(currencies, preferredCurrency),
+      toCurrency: toCurrencyOrDefault(preferredCurrency, CURRENCY_CODE.USD),
     }));
   }, [settingsLoaded, currencies, preferredCurrency, editingId]);
 
@@ -225,7 +225,7 @@ export function ExchangeRulesPageClient() {
           <FormSelect
             label="From currency"
             value={form.fromCurrency}
-            onChange={(v) => setForm((prev) => ({ ...prev, fromCurrency: v }))}
+            onChange={(v) => setForm((prev) => ({ ...prev, fromCurrency: v as TCurrencyCode }))}
             options={currencies.map((c) => ({ value: c, label: c })) as FormSelectOption[]}
             placeholder="Select currency..."
             isClearable={false}
@@ -233,7 +233,7 @@ export function ExchangeRulesPageClient() {
           <FormSelect
             label="To currency"
             value={form.toCurrency}
-            onChange={(v) => setForm((prev) => ({ ...prev, toCurrency: v }))}
+            onChange={(v) => setForm((prev) => ({ ...prev, toCurrency: v as TCurrencyCode }))}
             options={currencies.map((c) => ({ value: c, label: c })) as FormSelectOption[]}
             placeholder="Select currency..."
             isClearable={false}

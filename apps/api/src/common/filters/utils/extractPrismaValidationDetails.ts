@@ -16,7 +16,8 @@ export function extractPrismaValidationDetails(error: Prisma.PrismaClientValidat
     .replace(/[ \t]{2,}/g, ` `)
     .trim();
 
-  const sentence = (e: { field?: string; issue: string; expected?: string; received?: string }): string => {
+  type DetectorResult = { field?: string; issue: string; expected?: string; received?: string };
+  const sentence = (e: DetectorResult): string => {
     const parts = [];
     if (e.field) parts.push(`Field \`${e.field}\``);
     parts.push(e.issue);
@@ -26,7 +27,7 @@ export function extractPrismaValidationDetails(error: Prisma.PrismaClientValidat
     return text.endsWith(`.`) ? text : `${text}.`;
   };
 
-  const detectors: ((m: string) => any | null)[] = [
+  const detectors: ((m: string) => DetectorResult | null)[] = [
     // Must not be null / undefined
     (m) => {
       const r = m.match(/Argument\s+`(.+?)`\s+must\s+not\s+be\s+(null|undefined)/i);

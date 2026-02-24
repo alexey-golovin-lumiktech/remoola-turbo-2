@@ -1,4 +1,4 @@
-import { AccountTypes, ContractorKinds } from '@remoola/api-types';
+import { ACCOUNT_TYPE, CONTRACTOR_KIND } from '@remoola/api-types';
 
 import { getFieldErrors } from './field-errors';
 import { createSignupDetailsSchema, signupDetailsSchema } from './signup-details.schema';
@@ -14,7 +14,7 @@ describe(`signupDetailsSchema`, () => {
     it(`passes when Business selected with contractorKind null`, () => {
       const result = signupDetailsSchema.safeParse({
         ...validBase,
-        accountType: AccountTypes.BUSINESS,
+        accountType: ACCOUNT_TYPE.BUSINESS,
         contractorKind: null,
         howDidHearAboutUs: null,
         howDidHearAboutUsOther: null,
@@ -25,8 +25,8 @@ describe(`signupDetailsSchema`, () => {
     it(`fails when Business selected with contractorKind set (must be null)`, () => {
       const result = signupDetailsSchema.safeParse({
         ...validBase,
-        accountType: AccountTypes.BUSINESS,
-        contractorKind: ContractorKinds.INDIVIDUAL,
+        accountType: ACCOUNT_TYPE.BUSINESS,
+        contractorKind: CONTRACTOR_KIND.INDIVIDUAL,
         howDidHearAboutUs: null,
         howDidHearAboutUsOther: null,
       });
@@ -40,8 +40,8 @@ describe(`signupDetailsSchema`, () => {
     it(`passes when Contractor selected with Individual`, () => {
       const result = signupDetailsSchema.safeParse({
         ...validBase,
-        accountType: AccountTypes.CONTRACTOR,
-        contractorKind: ContractorKinds.INDIVIDUAL,
+        accountType: ACCOUNT_TYPE.CONTRACTOR,
+        contractorKind: CONTRACTOR_KIND.INDIVIDUAL,
         howDidHearAboutUs: null,
         howDidHearAboutUsOther: null,
       });
@@ -51,8 +51,8 @@ describe(`signupDetailsSchema`, () => {
     it(`passes when Contractor selected with Entity`, () => {
       const result = signupDetailsSchema.safeParse({
         ...validBase,
-        accountType: AccountTypes.CONTRACTOR,
-        contractorKind: ContractorKinds.ENTITY,
+        accountType: ACCOUNT_TYPE.CONTRACTOR,
+        contractorKind: CONTRACTOR_KIND.ENTITY,
         howDidHearAboutUs: null,
         howDidHearAboutUsOther: null,
       });
@@ -62,7 +62,7 @@ describe(`signupDetailsSchema`, () => {
     it(`fails when Contractor selected with contractorKind null`, () => {
       const result = signupDetailsSchema.safeParse({
         ...validBase,
-        accountType: AccountTypes.CONTRACTOR,
+        accountType: ACCOUNT_TYPE.CONTRACTOR,
         contractorKind: null,
         howDidHearAboutUs: null,
         howDidHearAboutUsOther: null,
@@ -80,7 +80,7 @@ describe(`signupDetailsSchema`, () => {
       const result = signupDetailsSchema.safeParse({
         ...validBase,
         email: ``,
-        accountType: AccountTypes.BUSINESS,
+        accountType: ACCOUNT_TYPE.BUSINESS,
         contractorKind: null,
         howDidHearAboutUs: null,
         howDidHearAboutUsOther: null,
@@ -96,7 +96,7 @@ describe(`signupDetailsSchema`, () => {
       const result = signupDetailsSchema.safeParse({
         ...validBase,
         email: `not-an-email`,
-        accountType: AccountTypes.BUSINESS,
+        accountType: ACCOUNT_TYPE.BUSINESS,
         contractorKind: null,
         howDidHearAboutUs: null,
         howDidHearAboutUsOther: null,
@@ -115,7 +115,7 @@ describe(`signupDetailsSchema`, () => {
         ...validBase,
         password: `short`,
         confirmPassword: `short`,
-        accountType: AccountTypes.BUSINESS,
+        accountType: ACCOUNT_TYPE.BUSINESS,
         contractorKind: null,
         howDidHearAboutUs: null,
         howDidHearAboutUsOther: null,
@@ -132,7 +132,7 @@ describe(`signupDetailsSchema`, () => {
         ...validBase,
         password: `password123`,
         confirmPassword: `different456`,
-        accountType: AccountTypes.BUSINESS,
+        accountType: ACCOUNT_TYPE.BUSINESS,
         contractorKind: null,
         howDidHearAboutUs: null,
         howDidHearAboutUsOther: null,
@@ -153,8 +153,8 @@ describe(`signupDetailsSchema`, () => {
         email: `user@gmail.com`,
         password: undefined,
         confirmPassword: undefined,
-        accountType: AccountTypes.CONTRACTOR,
-        contractorKind: ContractorKinds.INDIVIDUAL,
+        accountType: ACCOUNT_TYPE.CONTRACTOR,
+        contractorKind: CONTRACTOR_KIND.INDIVIDUAL,
         howDidHearAboutUs: null,
         howDidHearAboutUsOther: null,
       });
@@ -166,7 +166,7 @@ describe(`signupDetailsSchema`, () => {
         email: `user@gmail.com`,
         password: ``,
         confirmPassword: ``,
-        accountType: AccountTypes.BUSINESS,
+        accountType: ACCOUNT_TYPE.BUSINESS,
         contractorKind: null,
         howDidHearAboutUs: null,
         howDidHearAboutUsOther: null,
@@ -179,7 +179,7 @@ describe(`signupDetailsSchema`, () => {
         email: `invalid`,
         password: undefined,
         confirmPassword: undefined,
-        accountType: AccountTypes.BUSINESS,
+        accountType: ACCOUNT_TYPE.BUSINESS,
         contractorKind: null,
         howDidHearAboutUs: null,
         howDidHearAboutUsOther: null,

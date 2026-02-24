@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
+import { ADMIN_TYPE } from '@remoola/api-types';
+
 import { DataTable, ErrorBoundary, PageSkeleton, SearchWithClear } from '../../../components';
 import styles from '../../../components/ui/classNames.module.css';
 import { apiClient, useFormValidation, createAdminSchema, resetPasswordSchema, type AdminType } from '../../../lib';
@@ -11,7 +13,7 @@ import { useDebouncedValue, useAuth, useAdmins, useCreateAdmin, useResetAdminPas
 import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../../lib/error-messages';
 
 function rowPill(text: string) {
-  const cls = text === `SUPER` ? styles.adminRowPillSuper : styles.adminRowPillDefault;
+  const cls = text === ADMIN_TYPE.SUPER ? styles.adminRowPillSuper : styles.adminRowPillDefault;
   return <span className={`${styles.adminRowPillBase} ${cls}`}>{text}</span>;
 }
 
@@ -30,7 +32,7 @@ export function AdminsPageClient() {
       return;
     }
 
-    if (me.type !== `SUPER`) {
+    if (me.type !== ADMIN_TYPE.SUPER) {
       router.push(`/dashboard`);
       return;
     }
@@ -98,7 +100,7 @@ export function AdminsPageClient() {
   const sortedAdmins = useMemo(() => {
     const items = adminsData?.items ?? [];
     return [...items].sort((a, b) => {
-      if (a.type !== b.type) return a.type === `SUPER` ? -1 : 1;
+      if (a.type !== b.type) return a.type === ADMIN_TYPE.SUPER ? -1 : 1;
       return a.email.localeCompare(b.email);
     });
   }, [adminsData?.items]);
@@ -176,7 +178,7 @@ export function AdminsPageClient() {
   }
 
   // Don't render if not authorized
-  if (!me || me.type !== `SUPER`) {
+  if (!me || me.type !== ADMIN_TYPE.SUPER) {
     return null;
   }
 

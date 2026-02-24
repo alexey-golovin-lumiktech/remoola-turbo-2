@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import Stripe from 'stripe';
 
@@ -9,6 +9,7 @@ import { PrismaService } from '../../../shared/prisma.service';
 
 @Injectable()
 export class StripeReversalScheduler {
+  private readonly logger = new Logger(StripeReversalScheduler.name);
   private stripe: Stripe;
 
   constructor(private readonly prisma: PrismaService) {
@@ -43,8 +44,13 @@ export class StripeReversalScheduler {
           where: { stripeId, type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL },
           data: { status, updatedBy: `stripe-reconcile` },
         });
-      } catch (error) {
-        console.error(`Failed to reconcile refund ${stripeId}:`, error);
+      } catch (error: unknown) {
+        const err = error as { message?: string };
+        this.logger.warn({
+          message: `Failed to reconcile refund`,
+          stripeId,
+          error: err?.message ?? String(error),
+        });
       }
     }
   }

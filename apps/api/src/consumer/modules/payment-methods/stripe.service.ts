@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import Stripe from 'stripe';
 
 import { $Enums, Prisma } from '@remoola/database-2';
@@ -13,6 +13,7 @@ import { getCurrencyFractionDigits } from '../../../shared-common';
 
 @Injectable()
 export class ConsumerStripeService {
+  private readonly logger = new Logger(ConsumerStripeService.name);
   private stripe: Stripe;
 
   constructor(private prisma: PrismaService) {
@@ -330,11 +331,16 @@ export class ConsumerStripeService {
           await this.stripe.paymentMethods.attach(paymentMethod.stripePaymentMethodId, {
             customer: customerId,
           });
-          console.warn(`Attached orphaned payment method to customer:`, paymentMethod.id);
-        } catch (attachError: any) {
+          this.logger.warn({
+            message: `Attached orphaned payment method to customer`,
+            paymentMethodId: paymentMethod.id,
+          });
+        } catch (attachError: unknown) {
+          const err = attachError as { type?: string; message?: string };
           if (
-            attachError.type === `invalid_request_error` &&
-            attachError.message.includes(`previously used without being attached`)
+            err?.type === `invalid_request_error` &&
+            typeof err?.message === `string` &&
+            err.message.includes(`previously used without being attached`)
           ) {
             // This payment method cannot be used - mark as deleted
             await this.prisma.paymentMethodModel.update({
@@ -346,11 +352,16 @@ export class ConsumerStripeService {
             });
             throw new BadRequestException(errorCodes.PAYMENT_METHOD_CANNOT_REUSE_ATTACH);
           }
-          throw attachError;
+          throw attachError as Error;
         }
       }
-    } catch (error: any) {
-      if (error.type === `invalid_request_error` && error.message.includes(`previously used without being attached`)) {
+    } catch (error: unknown) {
+      const err = error as { type?: string; message?: string };
+      if (
+        err?.type === `invalid_request_error` &&
+        typeof err?.message === `string` &&
+        err.message.includes(`previously used without being attached`)
+      ) {
         // Mark as deleted and inform user
         await this.prisma.paymentMethodModel.update({
           where: { id: paymentMethod.id },
@@ -427,9 +438,12 @@ export class ConsumerStripeService {
           nextAction: paymentIntent.next_action,
         };
       }
-    } catch (error) {
-      // Handle Stripe errors
-      console.error(`Payment with saved payment method failed:`, error);
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      this.logger.warn({
+        message: `Payment with saved payment method failed`,
+        error: err?.message ?? String(error),
+      });
 
       // Update ledger entries to failed status
       await this.prisma.ledgerEntryModel.updateMany({

@@ -1,20 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { IsEnum } from 'class-validator';
+import { IsIn } from 'class-validator';
 
-export enum Theme {
-  LIGHT = `LIGHT`,
-  DARK = `DARK`,
-  SYSTEM = `SYSTEM`,
-}
+import { THEMES, type TTheme } from '@remoola/api-types';
 
-export class UpdateThemeDto {
+export class UpdateTheme {
   @Expose()
   @ApiProperty({
-    enum: Theme,
+    enum: THEMES,
     description: `Theme preference`,
-    example: Theme.LIGHT,
+    example: `LIGHT`,
   })
-  @IsEnum(Theme)
-  theme: Theme;
+  @IsIn(THEMES)
+  theme: TTheme;
 }

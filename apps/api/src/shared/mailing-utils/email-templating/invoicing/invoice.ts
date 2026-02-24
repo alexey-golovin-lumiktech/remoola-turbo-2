@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 import moment from 'moment';
 
-import { $Enums } from '@remoola/database-2';
+import { CURRENCY_CODE } from '@remoola/api-types';
 
 import * as invoiceItemToHtml from './invoiceItem';
 import { formatCurrency } from '../../../../shared-common';
@@ -92,8 +92,21 @@ const ReplacementsRegExpMapping = {
   InvoiceItemsHtml: new RegExp(`{{invoiceItemsHtml}}`, `gi`) /* new */,
 };
 
-export const processor = (rawInvoice: any) => {
-  const invoice = rawInvoice; // @IMPORTANT_NOTE: plainToInstance(CONSUMER.InvoiceResponse, rawInvoice)
+/** Minimal shape for invoice HTML processor (id, dates, creator, referer, totals, items). */
+export type InvoiceForTemplate = {
+  id: string;
+  createdAt: string;
+  dueDateInDays: string;
+  creator: string;
+  referer: string;
+  total: number;
+  subtotal: number;
+  tax?: number;
+  items: { description: string; amount: number }[];
+};
+
+export const processor = (rawInvoice: InvoiceForTemplate) => {
+  const invoice = rawInvoice;
   const itemsHtml = invoice.items.map((item) => invoiceItemToHtml.processor(item, invoice.tax)).join(`\n`);
   const payOnlineBeLink = `http://some-link`;
 
@@ -103,8 +116,8 @@ export const processor = (rawInvoice: any) => {
     .replace(ReplacementsRegExpMapping.InvoiceDueDate, moment(invoice.dueDateInDays).format(`ll`))
     .replace(ReplacementsRegExpMapping.InvoiceCreatorEmail, invoice.creator)
     .replace(ReplacementsRegExpMapping.InvoiceRefererEmail, invoice.referer)
-    .replace(ReplacementsRegExpMapping.InvoiceTotal, formatCurrency(invoice.total, $Enums.CurrencyCode.USD))
-    .replace(ReplacementsRegExpMapping.InvoiceSubtotal, formatCurrency(invoice.subtotal, $Enums.CurrencyCode.USD))
+    .replace(ReplacementsRegExpMapping.InvoiceTotal, formatCurrency(invoice.total, CURRENCY_CODE.USD))
+    .replace(ReplacementsRegExpMapping.InvoiceSubtotal, formatCurrency(invoice.subtotal, CURRENCY_CODE.USD))
     .replace(ReplacementsRegExpMapping.ToPayOnlineInvoiceLink, payOnlineBeLink)
     .replace(ReplacementsRegExpMapping.InvoiceItemsHtml, itemsHtml);
 };

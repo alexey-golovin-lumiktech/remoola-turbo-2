@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
+import { TRANSACTION_STATUS } from '@remoola/api-types';
+
 import { formatDateTimeForDisplay } from '../../lib/date-utils';
 import { getErrorMessageForUser } from '../../lib/error-messages';
 import styles from '../ui/classNames.module.css';
@@ -270,7 +272,11 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
 
               <span
                 className={`${badgeBaseStrong} ${
-                  p.status === `PENDING` ? badgePending : p.status === `COMPLETED` ? badgeCompleted : badgeNeutral
+                  p.status === TRANSACTION_STATUS.PENDING
+                    ? badgePending
+                    : p.status === TRANSACTION_STATUS.COMPLETED
+                      ? badgeCompleted
+                      : badgeNeutral
                 }`}
               >
                 {p.status}
@@ -320,7 +326,7 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
           </div>
 
           {/* Payment Method Selection */}
-          {p.status === `PENDING` && p.role === `PAYER` && paymentMethods.length > 0 && (
+          {p.status === TRANSACTION_STATUS.PENDING && p.role === `PAYER` && paymentMethods.length > 0 && (
             <div className={cardBasePadded}>
               <h3 className={sectionTitle}>Select Payment Method</h3>
               <div className={spaceY3}>
@@ -400,7 +406,7 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
           )}
 
           {/* Action Button */}
-          {p.status === `PENDING` && p.role === `PAYER` && (
+          {p.status === TRANSACTION_STATUS.PENDING && p.role === `PAYER` && (
             <button
               className={`${buttonPrimaryRounded} ${buttonDisabledCursor}`}
               onClick={payNow}

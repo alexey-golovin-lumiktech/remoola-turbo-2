@@ -300,10 +300,10 @@ export class ConsumerAuthService {
   }
 
   async signupVerification(token: string, res: express.Response, referer) {
-    const decoded: any = this.jwtService.decode(token);
+    const decoded = this.jwtService.decode(token) as { identityId?: string } | null;
     const redirectUrl = new URL(`signup/verification`, referer);
     const identity = await this.prisma.consumerModel.findFirst({
-      where: { id: decoded.identityId, deletedAt: null },
+      where: { id: decoded?.identityId ?? ``, deletedAt: null },
     });
 
     if (identity?.email) {

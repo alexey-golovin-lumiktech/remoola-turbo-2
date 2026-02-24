@@ -1,4 +1,4 @@
-import { LegalStatuses } from '@remoola/api-types';
+import { LEGAL_STATUS } from '@remoola/api-types';
 
 import { getFieldErrors } from './field-errors';
 import { personalDetailsSchema } from './personal-details.schema';
@@ -8,7 +8,7 @@ const validBase = {
   lastName: `Doe`,
   citizenOf: `United States`,
   countryOfTaxResidence: `United States`,
-  legalStatus: LegalStatuses.INDIVIDUAL,
+  legalStatus: LEGAL_STATUS.INDIVIDUAL,
   taxId: `123-45-6789`,
   dateOfBirth: `1990-01-15`,
   passportOrIdNumber: `123456789`, // US format: 9 digits
@@ -25,7 +25,7 @@ describe(`personalDetailsSchema`, () => {
     it(`passes with Individual Entrepreneur legal status`, () => {
       const result = personalDetailsSchema.safeParse({
         ...validBase,
-        legalStatus: LegalStatuses.INDIVIDUAL_ENTREPRENEUR,
+        legalStatus: LEGAL_STATUS.INDIVIDUAL_ENTREPRENEUR,
       });
       expect(result.success).toBe(true);
     });
@@ -33,7 +33,7 @@ describe(`personalDetailsSchema`, () => {
     it(`passes with Sole Trader legal status`, () => {
       const result = personalDetailsSchema.safeParse({
         ...validBase,
-        legalStatus: LegalStatuses.SOLE_TRADER,
+        legalStatus: LEGAL_STATUS.SOLE_TRADER,
       });
       expect(result.success).toBe(true);
     });

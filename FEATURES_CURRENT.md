@@ -18,6 +18,7 @@ Authentication and identity:
 - Consumer auth with login, refresh, logout, `/me`, and multi-step signup.
 - Password recovery and reset flow for consumers.
 - Cookie-based JWT auth with access/refresh tokens.
+- Login audit (success/failure tracking) and account lockout (per-email after N failures).
 - Google OAuth endpoints for consumer login flows (google/start, callback, signup-session, google-new-way, google-redirect-new-way, oauth/exchange, google-oauth, google-login-gpt).
 
 Consumer domain features:
@@ -89,7 +90,7 @@ Consumer UI with:
 - Contacts list (paginated, layout aligned with Documents), create/edit/delete, and detail pages.
 - Contracts list (paginated).
 - Documents upload, list (paginated), tagging, and attach-to-payment flow.
-- Exchange screen with rates, balances, and conversion; currency options from api-types (ALL_CURRENCY_CODES).
+- Exchange screen with rates, balances, and conversion; currency options from api-types (CURRENCY_CODES).
 - Payment methods management, including Stripe setup flows.
 - Payment requests creation and send flow.
 - Payments list (paginated, filters), details, start payment, transfer, withdraw, and invoice generation.
@@ -111,7 +112,8 @@ Key data models and relations:
 
 - Admins, consumers, access/refresh tokens, OAuth state, password reset tokens.
 - Consumer profile details (address, personal, organization, Google profile).
-- User settings (theme).
+- Consumer settings (theme, preferred display currency); Admin settings (theme).
+- Auth audit and login lockout records.
 - Payment requests, payment request attachments, ledger entries.
 - Payment methods with Stripe identities and billing details.
 - Exchange rates, wallet auto-conversion rules, scheduled FX conversions.
@@ -126,7 +128,7 @@ Ledger and payments:
 
 Shared packages present in repo:
 
-- `api-types`: shared DTOs, PaginatedResponsePage, currency (ALL_CURRENCY_CODES, TCurrencyCode, getCurrencySymbol), consumer settings (e.g. preferred currency allowlist).
+- `api-types`: shared DTOs, PaginatedResponsePage, currency (CURRENCY_CODES, TCurrencyCode, getCurrencySymbol), consumer settings (theme THEME, preferred currency allowlist), admin payment reversal (PAYMENT_REVERSAL_KIND), query params (BOOLEAN_QUERY_VALUE).
 - `database-2`, `db-fixtures`, `env`, `eslint-config`, `jest-config`, `security-utils`, `shared-constants`, `test-db`, `typescript-config`, `ui`.
 
 ## Comparison Notes (History vs Current State)

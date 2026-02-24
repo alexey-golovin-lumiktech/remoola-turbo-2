@@ -2,7 +2,7 @@
  * Integration tests for signup validation flow across all account types.
  * Mimics the validation logic in useSignupSubmit.
  */
-import { ContractorKinds, AccountTypes, LegalStatuses, OrganizationSizes, ConsumerRoles } from '@remoola/api-types';
+import { CONTRACTOR_KIND, ACCOUNT_TYPE, LEGAL_STATUS, ORGANIZATION_SIZE, CONSUMER_ROLE } from '@remoola/api-types';
 
 import {
   addressDetailsSchema,
@@ -17,8 +17,8 @@ type SignupDetailsBase = {
   email: string;
   password: string;
   confirmPassword: string;
-  accountType: typeof AccountTypes.BUSINESS | typeof AccountTypes.CONTRACTOR;
-  contractorKind: typeof ContractorKinds.INDIVIDUAL | typeof ContractorKinds.ENTITY | null;
+  accountType: typeof ACCOUNT_TYPE.BUSINESS | typeof ACCOUNT_TYPE.CONTRACTOR;
+  contractorKind: typeof CONTRACTOR_KIND.INDIVIDUAL | typeof CONTRACTOR_KIND.ENTITY | null;
   howDidHearAboutUs: null;
   howDidHearAboutUsOther: null;
 };
@@ -27,7 +27,7 @@ const validSignupDetails: SignupDetailsBase = {
   email: `test@example.com`,
   password: `password123`,
   confirmPassword: `password123`,
-  accountType: AccountTypes.BUSINESS,
+  accountType: ACCOUNT_TYPE.BUSINESS,
   contractorKind: null,
   howDidHearAboutUs: null,
   howDidHearAboutUsOther: null,
@@ -46,7 +46,7 @@ const validPersonalDetails = {
   lastName: `Doe`,
   citizenOf: `United States`,
   countryOfTaxResidence: `United States`,
-  legalStatus: LegalStatuses.INDIVIDUAL,
+  legalStatus: LEGAL_STATUS.INDIVIDUAL,
   taxId: `123-45-6789`,
   dateOfBirth: `1990-01-15`,
   passportOrIdNumber: `123456789`, // US format: 9 digits
@@ -55,8 +55,8 @@ const validPersonalDetails = {
 
 const validOrganizationDetails = {
   name: `Acme Corp`,
-  consumerRole: ConsumerRoles.FOUNDER,
-  size: OrganizationSizes.SMALL,
+  consumerRole: CONSUMER_ROLE.FOUNDER,
+  size: ORGANIZATION_SIZE.SMALL,
   consumerRoleOther: null,
 };
 
@@ -134,7 +134,7 @@ function validateContractorEntitySignup(data: {
 }) {
   return validateBusinessSignup({
     ...data,
-    signupDetails: { ...data.signupDetails, accountType: AccountTypes.CONTRACTOR } as SignupDetailsBase,
+    signupDetails: { ...data.signupDetails, accountType: ACCOUNT_TYPE.CONTRACTOR } as SignupDetailsBase,
   });
 }
 
@@ -178,8 +178,8 @@ describe(`signup flow validation`, () => {
       const result = validateContractorIndividualSignup({
         signupDetails: {
           ...validSignupDetails,
-          accountType: AccountTypes.CONTRACTOR,
-          contractorKind: ContractorKinds.INDIVIDUAL,
+          accountType: ACCOUNT_TYPE.CONTRACTOR,
+          contractorKind: CONTRACTOR_KIND.INDIVIDUAL,
         },
         personalDetails: validPersonalDetails,
         addressDetails: validAddressDetails,
@@ -191,8 +191,8 @@ describe(`signup flow validation`, () => {
       const result = validateContractorIndividualSignup({
         signupDetails: {
           ...validSignupDetails,
-          accountType: AccountTypes.CONTRACTOR,
-          contractorKind: ContractorKinds.INDIVIDUAL,
+          accountType: ACCOUNT_TYPE.CONTRACTOR,
+          contractorKind: CONTRACTOR_KIND.INDIVIDUAL,
         },
         personalDetails: { ...validPersonalDetails, legalStatus: `` } as unknown as typeof validPersonalDetails,
         addressDetails: validAddressDetails,
@@ -205,8 +205,8 @@ describe(`signup flow validation`, () => {
       const result = validateContractorIndividualSignup({
         signupDetails: {
           ...validSignupDetails,
-          accountType: AccountTypes.CONTRACTOR,
-          contractorKind: ContractorKinds.INDIVIDUAL,
+          accountType: ACCOUNT_TYPE.CONTRACTOR,
+          contractorKind: CONTRACTOR_KIND.INDIVIDUAL,
         },
         personalDetails: validPersonalDetails,
         addressDetails: { ...validAddressDetails, state: `` },
@@ -219,8 +219,8 @@ describe(`signup flow validation`, () => {
   describe(`Contractor Individual Google signup flow`, () => {
     const googleSignupDetails = {
       email: `user@gmail.com`,
-      accountType: AccountTypes.CONTRACTOR,
-      contractorKind: ContractorKinds.INDIVIDUAL,
+      accountType: ACCOUNT_TYPE.CONTRACTOR,
+      contractorKind: CONTRACTOR_KIND.INDIVIDUAL,
       howDidHearAboutUs: null,
       howDidHearAboutUsOther: null,
     };
@@ -260,8 +260,8 @@ describe(`signup flow validation`, () => {
       const result = validateContractorEntitySignup({
         signupDetails: {
           ...validSignupDetails,
-          accountType: AccountTypes.CONTRACTOR,
-          contractorKind: ContractorKinds.ENTITY,
+          accountType: ACCOUNT_TYPE.CONTRACTOR,
+          contractorKind: CONTRACTOR_KIND.ENTITY,
         },
         personalDetails: validPersonalDetails,
         organizationDetails: validOrganizationDetails,
@@ -274,8 +274,8 @@ describe(`signup flow validation`, () => {
       const result = validateContractorEntitySignup({
         signupDetails: {
           ...validSignupDetails,
-          accountType: AccountTypes.CONTRACTOR,
-          contractorKind: ContractorKinds.ENTITY,
+          accountType: ACCOUNT_TYPE.CONTRACTOR,
+          contractorKind: CONTRACTOR_KIND.ENTITY,
         },
         personalDetails: { ...validPersonalDetails, taxId: `` },
         organizationDetails: validOrganizationDetails,
@@ -328,7 +328,7 @@ describe(`signup flow validation`, () => {
       const result = validateContractorIndividualSignup({
         signupDetails: {
           ...validSignupDetails,
-          accountType: AccountTypes.CONTRACTOR,
+          accountType: ACCOUNT_TYPE.CONTRACTOR,
           contractorKind: null,
         },
         personalDetails: validPersonalDetails,
@@ -344,8 +344,8 @@ describe(`signup flow validation`, () => {
       const result = validateContractorIndividualSignup({
         signupDetails: {
           ...validSignupDetails,
-          accountType: AccountTypes.CONTRACTOR,
-          contractorKind: ContractorKinds.INDIVIDUAL,
+          accountType: ACCOUNT_TYPE.CONTRACTOR,
+          contractorKind: CONTRACTOR_KIND.INDIVIDUAL,
         },
         personalDetails: { ...validPersonalDetails, taxId: `123` },
         addressDetails: validAddressDetails,
@@ -369,8 +369,8 @@ describe(`signup flow validation`, () => {
       const result = validateContractorIndividualSignup({
         signupDetails: {
           ...validSignupDetails,
-          accountType: AccountTypes.CONTRACTOR,
-          contractorKind: ContractorKinds.INDIVIDUAL,
+          accountType: ACCOUNT_TYPE.CONTRACTOR,
+          contractorKind: CONTRACTOR_KIND.INDIVIDUAL,
         },
         personalDetails: { ...validPersonalDetails, phoneNumber: `invalid` },
         addressDetails: validAddressDetails,
@@ -431,7 +431,7 @@ describe(`signup flow validation`, () => {
       const result = validateBusinessSignup({
         signupDetails: validSignupDetails,
         personalDetails: validPersonalDetails,
-        organizationDetails: { ...validOrganizationDetails, consumerRole: `` as typeof ConsumerRoles.FOUNDER },
+        organizationDetails: { ...validOrganizationDetails, consumerRole: `` as typeof CONSUMER_ROLE.FOUNDER },
         addressDetails: validAddressDetails,
       });
       expect(result.valid).toBe(false);
@@ -442,7 +442,7 @@ describe(`signup flow validation`, () => {
       const result = validateBusinessSignup({
         signupDetails: validSignupDetails,
         personalDetails: validPersonalDetails,
-        organizationDetails: { ...validOrganizationDetails, size: `` as typeof OrganizationSizes.SMALL },
+        organizationDetails: { ...validOrganizationDetails, size: `` as typeof ORGANIZATION_SIZE.SMALL },
         addressDetails: validAddressDetails,
       });
       expect(result.valid).toBe(false);
@@ -455,8 +455,8 @@ describe(`signup flow validation`, () => {
       const result = validateContractorIndividualSignup({
         signupDetails: {
           ...validSignupDetails,
-          accountType: AccountTypes.CONTRACTOR,
-          contractorKind: ContractorKinds.INDIVIDUAL,
+          accountType: ACCOUNT_TYPE.CONTRACTOR,
+          contractorKind: CONTRACTOR_KIND.INDIVIDUAL,
         },
         personalDetails: { ...validPersonalDetails, firstName: `` },
         addressDetails: validAddressDetails,
@@ -469,8 +469,8 @@ describe(`signup flow validation`, () => {
       const result = validateContractorIndividualSignup({
         signupDetails: {
           ...validSignupDetails,
-          accountType: AccountTypes.CONTRACTOR,
-          contractorKind: ContractorKinds.INDIVIDUAL,
+          accountType: ACCOUNT_TYPE.CONTRACTOR,
+          contractorKind: CONTRACTOR_KIND.INDIVIDUAL,
         },
         personalDetails: { ...validPersonalDetails, citizenOf: `` },
         addressDetails: validAddressDetails,
@@ -483,8 +483,8 @@ describe(`signup flow validation`, () => {
       const result = validateContractorIndividualSignup({
         signupDetails: {
           ...validSignupDetails,
-          accountType: AccountTypes.CONTRACTOR,
-          contractorKind: ContractorKinds.INDIVIDUAL,
+          accountType: ACCOUNT_TYPE.CONTRACTOR,
+          contractorKind: CONTRACTOR_KIND.INDIVIDUAL,
         },
         personalDetails: validPersonalDetails,
         addressDetails: { ...validAddressDetails, country: `` },

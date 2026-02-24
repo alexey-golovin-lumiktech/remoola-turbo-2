@@ -13,23 +13,24 @@ import { JwtAuthGuard } from './jwt.guard';
 @ApiTags(`Auth`)
 @Controller(`auth`)
 export class AuthController {
-  constructor(private readonly auth: AuthService) {}
+  constructor(private readonly service: AuthService) {}
 
   @Post(`login`)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiBody({ type: LoginBody })
   @ApiResponse({ status: 200, description: `Successful login` })
   async login(@Res({ passthrough: true }) res: express.Response, @Body() body: LoginBody) {
-    const { accessToken, ...identity } = await this.auth.login(body);
+    const { accessToken, ...identity } = await this.service.login(body);
     this.setCookie(res, accessToken);
     return { identity };
   }
 
   @Post(`register`)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiBody({ type: RegisterBody })
   @ApiResponse({ status: 201, description: `User registered successfully` })
   async register(@Res({ passthrough: true }) res: express.Response, @Body() body: RegisterBody) {
-    const { accessToken, ...identity } = await this.auth.register(body);
+    const { accessToken, ...identity } = await this.service.register(body);
     this.setCookie(res, accessToken);
     return { identity };
   }
