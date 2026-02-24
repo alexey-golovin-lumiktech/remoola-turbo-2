@@ -515,49 +515,45 @@
                   - Minor formatting and dependency cleanup
 
 - **2026-02-20:**
-
                   **🚀 Feature**
-                  - Rename `UserSettingsModel` → `ConsumerSettingsModel` (consumer-only preferences),
-                    add `AdminSettingsModel` (admin-only preferences), table renames to
-                    `consumer_settings` / `admin_settings`
-                  - Add `preferredCurrency` to ConsumerSettingsModel (display default only; fintech-safe allowlist),
-                    GET `consumer/settings` and PUT `consumer/settings/preferred-currency` API,
-                    consumer app defaults amount currency from preferred currency on Start Payment and Create Payment Request
-                  - Add `@remoola/db-fixtures` package:
-                    - CLI utilities for database seeding
-                    - Shared seed helpers for local and test environments
-                    - Designed for isolation from production builds
-                  - Expand admin list pagination + filters integration using shared types
-                  - Extract reusable admin *TableBlock components
-                  - Add AdminAuthService unit tests (login/refresh success & failure paths)
+                  - Add pagination to consumer list endpoints:
+                    - Contacts, Contracts, Documents, Payments,
+                      Exchange Rules, Scheduled Conversions
+                    - Introduce `PaginationBar` component (positioned outside table card for Contracts)
+                  - Replace hardcoded currency arrays with `ALL_CURRENCY_CODES` from `@remoola/api-types`
+                  - Add consumer preferred currency setting (API + UI with allowlist validation)
+                  - Introduce new UI components:
+                    - `AmountCurrencyInput`
+                    - `RecipientEmailField`
+                  - Align consumer layouts (Contacts/Documents consistency)
+                  - Standardize form controls (42px height, `rounded-lg`)
+                  - Add authentication audit + lockout mechanism (migrations + shared module)
+
+                  **🔐 Security**
+                  - Add login audit tracking and account lockout protections
+                  - Improve auth refresh + session-expired handling logic
+                  - Enforce currency allowlist via shared api-types contracts
 
                   **📦 Types & Contracts**
-                  - Add admin list types in `@remoola/api-types`:
-                    - `TAdminListPagination`
-                    - `TAdmin*ListQuery` variants
-                    - `AdminTypes`, `LedgerEntryTypes`,
-                      `ScheduledFxConversionStatuses`
-                  - Remove unused legacy types:
-                    - `ContactAddress`
-                    - `PaginationQuery`
-                    - `HTTP_HEADER_KEYS`
-                    - `TransactionStatuses`
-                  - Centralize admin list contracts in shared api-types workspace
+                  - Add `PaginatedResponsePage` to `@remoola/api-types`
+                  - Centralize currency types in shared package
+                  - Add consumer settings types to shared contracts
+                  - Remove hardcoded currency arrays across apps
 
                   **🛠 DevEx**
-                  - Sync project documentation with actual architecture:
-                    - Update README repo layout (db-fixtures, security-utils, shared-constants, test-db)
-                    - Align PROJECT_DOCUMENTATION with current API routes, DB models, enums, and packages
-                    - Refresh FEATURES_CURRENT to reflect real backend/admin/consumer capabilities
-                    - Add `PROJECT_SUMMARY.md` as high-level system overview
-                  - Align shared-common DTO/model import style
-                  - Jest config adjustments
-                  - Simplify PageClients and remove performance helpers
-                  - Fix next.config and UI import/format inconsistencies
+                  - Add new `db-fixtures` workspace package with CLI and seed utilities
+                  - Sync and expand documentation:
+                    - Update README repo layout
+                    - Align PROJECT_DOCUMENTATION with current API/DB state
+                    - Refresh FEATURES_CURRENT
+                    - Add `PROJECT_SUMMARY.md`
+                  - Update docs to reflect OAuth routes, expectation archive,
+                    package structure, DB models/enums
 
                   **🧹 Cleanup**
-                  - Remove unused `getAuthenticatedAdmin` from AdminAuthService
-                  - Dead code removal across admin/API/api-types
-                  - Documentation consistency cleanup to prevent drift
+                  - Remove hardcoded CURRENCIES constants
+                  - Align UI structure and table wrapping patterns
+                  - Minor formatting and structural improvements
+
 
 ```
