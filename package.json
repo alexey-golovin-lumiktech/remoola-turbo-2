@@ -37,7 +37,8 @@
     "lint:fix:admin": "yarn workspace @remoola/admin run lint --fix",
     "turbo:dev:api": "turbo run dev --filter=@remoola/api",
     "turbo:dev:consumer": "turbo run dev --filter=@remoola/consumer",
-    "turbo:dev:admin": "turbo run dev --filter=@remoola/admin"
+    "turbo:dev:admin": "turbo run dev --filter=@remoola/admin",
+    "deps:sync": "node scripts/sync-dependency-versions.js"
   },
   "dependencies": {},
   "devDependencies": {

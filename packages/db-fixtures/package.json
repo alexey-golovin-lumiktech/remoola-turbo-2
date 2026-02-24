@@ -24,7 +24,7 @@
   "devDependencies": {
     "@remoola/eslint-config": "^0.0.0",
     "@remoola/typescript-config": "^0.0.0",
-    "@types/node": "^22.10.7",
+    "@types/node": "^24.3.0",
     "typescript": "5.8.2"
   }
 }

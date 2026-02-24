@@ -557,62 +557,67 @@
 
 - **2026-02-24:**
                   **🚀 Feature**
-                  - Standardize shared domain constants across the entire monorepo via `@remoola/api-types`
-                  - Introduce shared modules:
-                    - `consumer/theme.ts` (`THEME`)
-                    - `payment-reversal.ts` (`PAYMENT_REVERSAL_KIND`)
-                    - `query-params.ts` (`BOOLEAN_QUERY_VALUE`)
-                  - Add currency utilities:
+                  - Standardize shared domain constants across platform via `@remoola/api-types`
+                  - Introduce new shared modules:
+                    - `consumer/theme` (`THEME`)
+                    - `payment-reversal` (`PAYMENT_REVERSAL_KIND`)
+                    - `query-params` (`BOOLEAN_QUERY_VALUE`)
+                  - Add currency helper utilities:
                     - `isCurrencyCode`
-                    - `toCurrencyOr*` helpers
+                    - `toCurrencyOr*`
                     - `getCurrencySymbol(TCurrencyCode)`
-                  - Apply shared constants across:
-                    - signup flows
-                    - consumer settings
-                    - payments and exchange workflows
-                    - FX scheduling and dashboard logic
-                  - Add API throttling protection for refund and chargeback endpoints
+                  - Apply shared constants across API, Admin, and Consumer flows:
+                    - Signup and consumer settings
+                    - Payments and reversals
+                    - Exchange and withdraw workflows
+                    - Dashboard and FX scheduling
 
                   **🔐 Security**
-                  - Add `@Throttle` protection to payment reversal (refund/chargeback) endpoints
-                  - Strengthen request sanitization via improved `remove-nill` recursive cleanup
-                  - Improve null/undefined handling safety in API payload processing
+                  - Add `@Throttle` protection to refund and chargeback endpoints
+                  - Restore strict validation for Google Sign-In credentials
+                    (`@IsString()` enforcement)
+                  - Improve null/undefined sanitization via hardened `remove-nill`
+                    recursive cleanup logic
 
                   **📦 Types & Contracts**
-                  - Rename enum-style constants to `SCREAMING_SNAKE_CASE` for consistency
-                  - Add standardized exported value arrays:
+                  - Standardize enum-like constants to `SCREAMING_SNAKE_CASE`
+                  - Introduce shared constant arrays:
                     - `ADMIN_TYPES`
                     - `ACCOUNT_TYPES`
                     - `CONTRACTOR_KINDS`
                     - `LEGAL_STATUSES`
                     - `ORGANIZATION_SIZES`
                     - `CONSUMER_ROLES`
-                    - `HOW_DID_HEAR_ABOUT_US_VALUES`
-                    - `VERIFICATION_STATUSES`
                     - `TRANSACTION_STATUSES`
+                    - `VERIFICATION_STATUSES`
                     - `LEDGER_ENTRY_TYPE_VALUES`
                     - `SCHEDULED_FX_CONVERSION_STATUSES`
+                    - `HOW_DID_HEAR_ABOUT_US_VALUES`
                   - Currency refactor:
-                    - `ALL_CURRENCY_CODES` → `CURRENCY_CODE` + `CURRENCY_CODES`
-                  - Align API, admin, and consumer DTOs/services with shared contracts
-                  - Remove legacy `entry.ts` and reorganize api-types exports
+                    - Replace `ALL_CURRENCY_CODES`
+                      → `CURRENCY_CODE` + `CURRENCY_CODES`
+                  - Align DTOs and services across API/Admin/Consumer with shared contracts
+                  - Fix DTO issues:
+                    - Remove duplicate `@ApiProperty` declaration
+                    - Use type-only imports for currency DTOs
 
                   **🛠 DevEx**
-                  - Fix typo `geyById` → `getById` in payment request service
-                  - Synchronize auth, Stripe, payments, mailing, and invoicing modules with shared types
-                  - Update documentation ecosystem:
+                  - Improve Swagger/OpenAPI documentation:
+                    - Add descriptions to DTO properties across admin,
+                      consumer, and common modules
+                  - Sync documentation ecosystem:
+                    - CHANGELOG
                     - README
                     - PROJECT_DOCUMENTATION
                     - PROJECT_SUMMARY
                     - FEATURES_CURRENT
-                    - CHANGELOG
                   - Document `/api` prefix usage and auth audit/lockout behavior
-                  - Add `REDIS_URL` to Turbo environment configuration
-                  - Restructure previous **2026-02-20** changelog entry
+                  - Add `REDIS_URL` to Turbo global environment configuration
 
                   **🧹 Cleanup**
-                  - Remove legacy constants and duplicated enum definitions across apps
-                  - Replace local constants with shared api-types imports
-                  - Improve recursive object cleanup typing (`Record<string, unknown>`)
-                  - Normalize imports across admin, API, and consumer applications
+                  - Remove legacy `entry.ts` exports from api-types
+                  - Reorder barrel exports for clearer module structure
+                  - Fix typo `geyById` → `getById`
+                  - Improve typing safety using `Record<string, unknown>`
+                  - Align imports across apps to shared constants
 ```
