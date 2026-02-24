@@ -13,20 +13,20 @@ import { BaseModel } from '../common';
 
 class OrganizationDetailsDTO extends BaseModel implements IOrganizationDetailsModel {
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ description: `Organization or company name` })
   name: string;
 
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ description: `Organization size category (e.g., SMALL, MEDIUM, LARGE, ENTERPRISE)` })
   @IsIn(Object.values($Enums.OrganizationSize))
   size: $Enums.OrganizationSize;
 
   @Expose()
-  @ApiProperty({ required: true })
+  @ApiProperty({ description: `User role within the organization (e.g., OWNER, ADMIN, MEMBER)`, required: true })
   consumerRole: null | $Enums.ConsumerRole;
 
   @Expose()
-  @ApiProperty({ required: true })
+  @ApiProperty({ description: `Custom role description if consumerRole is "Other"`, required: true })
   consumerRoleOther: null | string;
 }
 

@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 
-import { CURRENCY_CODES, TCurrencyCode, toCurrencyOrNull, toCurrencyOrUndefined } from '@remoola/api-types';
+import { CURRENCY_CODES, type TCurrencyCode, toCurrencyOrNull, toCurrencyOrUndefined } from '@remoola/api-types';
 import { $Enums } from '@remoola/database-2';
 
 import { UpdatePreferredCurrency } from './dto/update-preferred-currency.dto';
@@ -8,9 +8,6 @@ import { UpdateTheme } from './dto/update-theme.dto';
 import { PrismaService } from '../../../shared/prisma.service';
 
 import type { PatchConsumerSettings } from './dto/patch-consumer-settings.dto';
-
-/** Map api-types allowlist to Prisma enum for DB writes. Fintech-safe: server enforces allowlist. */
-const ALLOWED_SET: Set<string> = new Set(CURRENCY_CODES);
 
 @Injectable()
 export class ConsumerSettingsService {
@@ -121,7 +118,7 @@ export class ConsumerSettingsService {
     const preferredCurrency = settings.preferredCurrency ?? null;
     return {
       theme: settings.theme,
-      preferredCurrency: preferredCurrency && ALLOWED_SET.has(preferredCurrency) ? preferredCurrency : null,
+      preferredCurrency: preferredCurrency && CURRENCY_CODES.includes(preferredCurrency) ? preferredCurrency : null,
     };
   }
 }

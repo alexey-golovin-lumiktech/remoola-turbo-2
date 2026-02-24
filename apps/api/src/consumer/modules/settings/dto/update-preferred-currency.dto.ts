@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsIn } from 'class-validator';
 
-import { CURRENCY_CODE, CURRENCY_CODES, TCurrencyCode } from '@remoola/api-types';
+import { CURRENCY_CODE, CURRENCY_CODES, type TCurrencyCode } from '@remoola/api-types';
 
 export class UpdatePreferredCurrency {
   @Expose()

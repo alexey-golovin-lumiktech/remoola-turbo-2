@@ -13,21 +13,21 @@ import { BaseModel } from '../common';
 
 class Contact extends BaseModel implements IContactModel {
   @Expose()
-  @ApiProperty({ required: true })
+  @ApiProperty({ description: `ID of the consumer who owns this contact`, required: true })
   consumerId: string;
 
   @Expose()
-  @ApiProperty({ required: true })
+  @ApiProperty({ description: `Contact email address`, required: true })
   @IsEmail()
   @IsNotEmpty()
   email: string;
 
   @Expose()
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: `Contact name (optional, can be company or person name)`, required: false })
   name?: string;
 
   @Expose()
-  @ApiProperty({ required: true, type: AddressDetailsCreate })
+  @ApiProperty({ description: `Contact address details`, required: true, type: AddressDetailsCreate })
   address: AddressDetailsCreate;
 }
 
@@ -35,11 +35,11 @@ export class ContactResponse extends OmitType(Contact, [`deletedAt`] as const) i
 
 export class ContactListResponse {
   @Expose()
-  @ApiProperty({ required: true })
+  @ApiProperty({ description: `Total number of contacts in the result set`, required: true })
   count: number;
 
   @Expose()
-  @ApiProperty({ required: true, type: [ContactResponse] })
+  @ApiProperty({ description: `Array of contact records`, required: true, type: [ContactResponse] })
   @Type(() => ContactResponse)
   data: ContactResponse[];
 }

@@ -1,7 +1,7 @@
 import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger';
 import { Exclude, Expose } from 'class-transformer';
 import { IsIn, IsString, ValidateIf } from 'class-validator';
-import { TokenPayload as ITokenPayload } from 'google-auth-library';
+import { type TokenPayload as ITokenPayload } from 'google-auth-library';
 
 import { $Enums } from '@remoola/database-2';
 
@@ -25,34 +25,34 @@ export type ITokenPayloadPick = Pick<
 
 export class CreateGoogleProfileDetails implements IGoogleProfileDetailsCreate {
   @Expose()
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: `Full name from Google profile`, required: false })
   name?: string;
 
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ description: `Google account email address` })
   email: string;
 
   @Expose()
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: `Profile picture URL from Google`, required: false })
   picture?: string;
 
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ description: `Whether the Google email has been verified` })
   emailVerified: boolean;
 
   @Exclude()
   data: string;
 
   @Expose()
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: `Given name (first name) from Google profile`, required: false })
   givenName?: string;
 
   @Expose()
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: `Family name (last name) from Google profile`, required: false })
   familyName?: string;
 
   @Expose()
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: `Google Workspace organization domain`, required: false })
   organization?: string;
 
   constructor(payload: ITokenPayload) {
@@ -69,18 +69,18 @@ export class CreateGoogleProfileDetails implements IGoogleProfileDetailsCreate {
 
 export class GoogleSignin {
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ description: `Google ID token from Google Sign-In credential response` })
   @IsString()
   credential: string;
 
   @Expose()
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: `Account type to associate with Google sign-in`, required: false })
   @ValidateIf((_, value) => value != null)
   @IsIn(Object.values($Enums.AccountType))
   accountType?: $Enums.AccountType;
 
   @Expose()
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: `Contractor kind to associate with Google sign-in`, required: false })
   @ValidateIf((_, value) => value != null)
   @IsIn(Object.values($Enums.ContractorKind))
   contractorKind?: $Enums.ContractorKind;
@@ -88,35 +88,35 @@ export class GoogleSignin {
 
 class GoogleProfileDetails extends BaseModel implements IGoogleProfileDetailsModel {
   @Expose()
-  @ApiProperty({ required: true })
+  @ApiProperty({ description: `Whether the Google email has been verified`, required: true })
   emailVerified: boolean;
 
   @Expose()
-  @ApiProperty({ required: true })
+  @ApiProperty({ description: `Google account email address`, required: true })
   email: string;
 
   @Expose()
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: `Full name from Google profile`, required: false })
   name?: string;
 
   @Expose()
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: `Given name (first name) from Google profile`, required: false })
   givenName?: string;
 
   @Expose()
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: `Family name (last name) from Google profile`, required: false })
   familyName?: string;
 
   @Expose()
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: `Profile picture URL from Google`, required: false })
   picture?: string;
 
   @Expose()
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: `Google Workspace organization domain`, required: false })
   organization?: string;
 
   @Expose()
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: `Additional metadata stored as JSON string`, required: false })
   metadata?: string;
 }
 

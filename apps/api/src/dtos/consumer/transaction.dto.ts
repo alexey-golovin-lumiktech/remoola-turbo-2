@@ -17,56 +17,70 @@ import { BaseModel } from '../common';
 class Transaction extends BaseModel implements ITransactionModel {
   @Expose()
   @IsUUID(`all`)
-  @ApiProperty()
+  @ApiProperty({ description: `ID of the consumer who owns this transaction` })
   consumerId: string;
 
   @Expose()
   @IsString()
   @IsNotEmpty()
-  @ApiProperty({ required: false, default: null })
+  @ApiProperty({
+    description: `Unique transaction code/reference (optional, auto-generated if not provided)`,
+    required: false,
+    default: null,
+  })
   code?: string = null;
 
   @Expose()
   @IsString()
   @IsIn(Object.values($Enums.TransactionType))
-  @ApiProperty({ enum: Object.values($Enums.TransactionType) })
+  @ApiProperty({
+    description: `Transaction type (e.g., PAYMENT, REFUND, TRANSFER, FEE)`,
+    enum: Object.values($Enums.TransactionType),
+  })
   type: $Enums.TransactionType;
 
   @Expose()
-  @ApiProperty({ required: true })
+  @ApiProperty({ description: `Transaction amount in the specified currency (major units)`, required: true })
   amount: number;
 
   @Expose()
   @IsString()
   @IsIn(Object.values($Enums.CurrencyCode))
-  @ApiProperty({ enum: Object.values($Enums.CurrencyCode) })
+  @ApiProperty({ description: `Currency code (ISO 4217)`, enum: Object.values($Enums.CurrencyCode) })
   currencyCode: $Enums.CurrencyCode;
 
   @Expose()
   @IsString()
   @IsIn(Object.values($Enums.TransactionStatus))
-  @ApiProperty({ enum: Object.values($Enums.TransactionStatus) })
+  @ApiProperty({
+    description: `Transaction status (PENDING, COMPLETED, FAILED, CANCELLED)`,
+    enum: Object.values($Enums.TransactionStatus),
+  })
   status: $Enums.TransactionStatus;
 
   @Expose()
   @IsString()
   @IsNotEmpty()
-  @ApiProperty({ required: true })
+  @ApiProperty({ description: `ID of the user who created the transaction`, required: true })
   createdBy: string;
 
   @Expose()
   @IsString()
   @IsNotEmpty()
-  @ApiProperty({ required: true })
+  @ApiProperty({ description: `ID of the user who last updated the transaction`, required: true })
   updatedBy: string;
 
   @Expose()
-  @ApiProperty({ required: false, default: null })
+  @ApiProperty({
+    description: `ID of the user who soft-deleted the transaction (null if not deleted)`,
+    required: false,
+    default: null,
+  })
   deletedBy?: string = null;
 
   @Expose()
   @IsUUID(`all`)
-  @ApiProperty()
+  @ApiProperty({ description: `ID of the associated payment request (if applicable)`, required: false })
   paymentRequestId?: string;
 
   @Expose()
@@ -74,6 +88,7 @@ class Transaction extends BaseModel implements ITransactionModel {
   @IsIn(Object.values($Enums.TransactionFeesType))
   @IsString()
   @ApiProperty({
+    description: `Fees type indicating how fees are handled (NO_FEES_INCLUDED, FEES_INCLUDED)`,
     enum: Object.values($Enums.TransactionFeesType),
     default: $Enums.TransactionFeesType.NO_FEES_INCLUDED,
     required: false,
@@ -81,15 +96,15 @@ class Transaction extends BaseModel implements ITransactionModel {
   feesType?: $Enums.TransactionFeesType = $Enums.TransactionFeesType.NO_FEES_INCLUDED;
 
   @Expose()
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: `Fees amount in the transaction currency`, required: false })
   feesAmount?: number = null;
 
   @Expose()
-  @ApiProperty({ required: false, default: null })
+  @ApiProperty({ description: `Stripe transaction ID for payment processing tracking`, required: false, default: null })
   stripeId?: string = null;
 
   @Expose()
-  @ApiProperty({ required: false, default: null })
+  @ApiProperty({ description: `Stripe fee percentage for this transaction`, required: false, default: null })
   stripeFeeInPercents?: number = null;
 }
 
@@ -99,11 +114,11 @@ export class TransactionResponse
 
 export class TransactionListResponse {
   @Expose()
-  @ApiProperty({ required: true })
+  @ApiProperty({ description: `Total number of transactions in the result set`, required: true })
   count: number;
 
   @Expose()
-  @ApiProperty({ required: true, type: [TransactionResponse] })
+  @ApiProperty({ description: `Array of transaction records`, required: true, type: [TransactionResponse] })
   @Type(() => TransactionResponse)
   data: TransactionResponse[];
 }
@@ -131,22 +146,27 @@ export class TransactionUpdate extends PartialType(TransactionCreate) implements
 
 export class GetConsumerBallanceResult implements IGetConsumerBallanceResult {
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ description: `Currency code for the balance amount` })
   currencyCode: $Enums.CurrencyCode;
 
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ description: `Balance amount in the specified currency (major units)` })
   amount: number;
 }
 
 export class GetConsumerBallanceParams implements IGetConsumerBallanceParams {
   @Expose()
-  @ApiProperty({ required: true })
+  @ApiProperty({ description: `Consumer ID to fetch balance for`, required: true })
   @IsUUID(`all`)
   consumerId: string;
 
   @Expose()
-  @ApiProperty({ required: false, enum: Object.values($Enums.CurrencyCode), default: null })
+  @ApiProperty({
+    description: `Optional currency code to filter balance by currency`,
+    required: false,
+    enum: Object.values($Enums.CurrencyCode),
+    default: null,
+  })
   @ValidateIf((x) => x.value != null)
   @IsIn(Object.values($Enums.CurrencyCode))
   currencyCode?: $Enums.CurrencyCode = null;

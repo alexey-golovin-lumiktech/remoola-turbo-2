@@ -11,23 +11,23 @@ import { BaseModel } from '../common';
 
 class AddressDetails extends BaseModel implements IAddressDetailsModel {
   @Expose()
-  @ApiProperty({ required: true })
+  @ApiProperty({ description: `Postal or ZIP code for the address`, required: true })
   postalCode: string;
 
   @Expose()
-  @ApiProperty({ required: true })
+  @ApiProperty({ description: `Country name or ISO country code`, required: true })
   country: string;
 
   @Expose()
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: `State, province, or region (optional for some countries)`, required: false })
   state?: string = null;
 
   @Expose()
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: `City or locality name`, required: false })
   city?: string = null;
 
   @Expose()
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: `Street address (street name, number, apartment)`, required: false })
   street?: string = null;
 }
 
@@ -37,11 +37,11 @@ export class AddressDetailsResponse
 
 export class AddressDetailsListResponse {
   @Expose()
-  @ApiProperty({ required: true })
+  @ApiProperty({ description: `Total number of addresses in the result set`, required: true })
   count: number;
 
   @Expose()
-  @ApiProperty({ required: true, type: [AddressDetailsResponse] })
+  @ApiProperty({ description: `Array of address records`, required: true, type: [AddressDetailsResponse] })
   @Type(() => AddressDetailsResponse)
   data: AddressDetailsResponse[];
 }

@@ -14,13 +14,13 @@ import { BaseModel } from '../common';
 
 class ExchangeRate extends BaseModel implements IExchangeRateModel {
   @Expose()
-  @ApiProperty({ enum: Object.values($Enums.CurrencyCode) })
+  @ApiProperty({ description: `Source currency code (ISO 4217)`, enum: Object.values($Enums.CurrencyCode) })
   @IsString()
   @IsIn(Object.values($Enums.CurrencyCode))
   fromCurrency: $Enums.CurrencyCode;
 
   @Expose()
-  @ApiProperty({ enum: Object.values($Enums.CurrencyCode) })
+  @ApiProperty({ description: `Target currency code (ISO 4217)`, enum: Object.values($Enums.CurrencyCode) })
   @IsString()
   @IsIn(Object.values($Enums.CurrencyCode))
   toCurrency: $Enums.CurrencyCode;
@@ -30,62 +30,65 @@ class ExchangeRate extends BaseModel implements IExchangeRateModel {
   rate: number;
 
   @Expose()
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: `Bid price for the currency pair (buy price)` })
   @IsOptional()
   @IsNumber()
   rateBid?: number | null;
 
   @Expose()
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: `Ask price for the currency pair (sell price)` })
   @IsOptional()
   @IsNumber()
   rateAsk?: number | null;
 
   @Expose()
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: `Spread in basis points (1 bp = 0.01%)` })
   @IsOptional()
   @IsInt()
   @Min(0)
   spreadBps?: number | null;
 
   @Expose()
-  @ApiPropertyOptional({ enum: Object.values($Enums.ExchangeRateStatus) })
+  @ApiPropertyOptional({
+    description: `Exchange rate status (PENDING, ACTIVE, EXPIRED, REJECTED)`,
+    enum: Object.values($Enums.ExchangeRateStatus),
+  })
   @IsOptional()
   @IsEnum($Enums.ExchangeRateStatus)
   status?: $Enums.ExchangeRateStatus;
 
   @Expose()
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: `Date when the exchange rate becomes effective (ISO 8601)` })
   @IsOptional()
   @IsDateString()
   effectiveAt?: string;
 
   @Expose()
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: `Date when the exchange rate expires (ISO 8601)` })
   @IsOptional()
   @IsDateString()
   expiresAt?: string | null;
 
   @Expose()
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: `Timestamp when the rate was fetched from the provider (ISO 8601)` })
   @IsOptional()
   @IsDateString()
   fetchedAt?: string | null;
 
   @Expose()
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: `Name of the rate provider (e.g., "exchangerate-api.com", "fixer.io")` })
   @IsOptional()
   @IsString()
   provider?: string | null;
 
   @Expose()
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: `Provider-specific rate ID for reference and auditing` })
   @IsOptional()
   @IsString()
   providerRateId?: string | null;
 
   @Expose()
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: `Confidence score (0-100) indicating data reliability` })
   @IsOptional()
   @IsInt()
   @Min(0)
@@ -93,25 +96,25 @@ class ExchangeRate extends BaseModel implements IExchangeRateModel {
   confidence?: number | null;
 
   @Expose()
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: `ID of the admin who created this exchange rate record` })
   @IsOptional()
   @IsString()
   createdBy?: string | null;
 
   @Expose()
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: `ID of the admin who last updated this exchange rate record` })
   @IsOptional()
   @IsString()
   updatedBy?: string | null;
 
   @Expose()
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: `ID of the admin who approved this exchange rate` })
   @IsOptional()
   @IsString()
   approvedBy?: string | null;
 
   @Expose()
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: `Timestamp when the exchange rate was approved (ISO 8601)` })
   @IsOptional()
   @IsDateString()
   approvedAt?: string | null;
@@ -123,11 +126,11 @@ export class ExchangeRateResponse
 
 export class ExchangeRatesListResponse {
   @Expose()
-  @ApiProperty({ required: true })
+  @ApiProperty({ description: `Total number of exchange rates in the result set`, required: true })
   count: number;
 
   @Expose()
-  @ApiProperty({ required: true, type: [ExchangeRateResponse] })
+  @ApiProperty({ description: `Array of exchange rate records`, required: true, type: [ExchangeRateResponse] })
   @Type(() => ExchangeRateResponse)
   data: ExchangeRateResponse[];
 }

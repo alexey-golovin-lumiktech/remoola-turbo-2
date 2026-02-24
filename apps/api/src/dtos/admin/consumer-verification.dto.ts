@@ -6,12 +6,16 @@ import { type TVerificationAction, VERIFICATION_ACTIONS } from '@remoola/api-typ
 
 export class ConsumerVerificationUpdate {
   @Expose()
-  @ApiProperty({ required: true, enum: VERIFICATION_ACTIONS })
+  @ApiProperty({
+    description: `Verification action to perform (APPROVE, REJECT, REQUEST_CHANGES)`,
+    required: true,
+    enum: VERIFICATION_ACTIONS,
+  })
   @IsIn(VERIFICATION_ACTIONS)
   action: TVerificationAction;
 
   @Expose()
-  @ApiProperty({ required: false, default: null })
+  @ApiProperty({ description: `Optional reason for rejection or request for changes`, required: false, default: null })
   @IsOptional()
   @IsString()
   reason?: string | null;

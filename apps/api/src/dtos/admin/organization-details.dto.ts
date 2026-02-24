@@ -8,19 +8,19 @@ import { BaseModel } from '../common';
 
 class OrganizationDetails extends BaseModel implements IOrganizationDetailsModel {
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ description: `Organization or company name` })
   name: string;
 
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ description: `Organization size category (e.g., SMALL, MEDIUM, LARGE, ENTERPRISE)` })
   size: $Enums.OrganizationSize;
 
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ description: `User role within the organization (e.g., OWNER, ADMIN, MEMBER)` })
   consumerRole: null | $Enums.ConsumerRole;
 
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ description: `Custom role description if consumerRole is "Other"` })
   consumerRoleOther: null | string;
 }
 
@@ -30,29 +30,33 @@ export class OrganizationDetailsResponse
 
 export class OrganizationDetailsListResponse {
   @Expose()
-  @ApiProperty({ required: true })
+  @ApiProperty({ description: `Total number of organization details in the result set`, required: true })
   count: number;
 
   @Expose()
-  @ApiProperty({ required: true, type: [OrganizationDetailsResponse] })
+  @ApiProperty({
+    description: `Array of organization detail records`,
+    required: true,
+    type: [OrganizationDetailsResponse],
+  })
   @Type(() => OrganizationDetailsResponse)
   data: OrganizationDetailsResponse[];
 }
 
 export class OrganizationDetailsUpdate implements IOrganizationDetailsUpdate {
   @Expose()
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: `Organization or company name`, required: false })
   name?: string;
 
   @Expose()
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: `Organization size category`, required: false })
   size?: $Enums.OrganizationSize;
 
   @Expose()
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: `User role within the organization`, required: false })
   consumerRole?: null | $Enums.ConsumerRole;
 
   @Expose()
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: `Custom role description if consumerRole is "Other"`, required: false })
   consumerRoleOther?: null | string;
 }

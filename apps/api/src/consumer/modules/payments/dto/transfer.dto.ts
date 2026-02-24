@@ -2,7 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsIn, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
-import { CURRENCY_CODES, TCurrencyCode } from '@remoola/api-types';
+import { CURRENCY_CODES, type TCurrencyCode } from '@remoola/api-types';
 
 export class TransferBody {
   @Expose()

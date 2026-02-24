@@ -11,35 +11,35 @@ import { BaseModel } from '../common';
 
 class GoogleProfileDetails extends BaseModel implements IGoogleProfileDetailsModel {
   @Expose()
-  @ApiProperty({ required: true })
+  @ApiProperty({ description: `Whether the Google email has been verified`, required: true })
   emailVerified: boolean;
 
   @Expose()
-  @ApiProperty({ required: true })
+  @ApiProperty({ description: `Google account email address`, required: true })
   email: string;
 
   @Expose()
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: `Full name from Google profile`, required: false })
   name?: string;
 
   @Expose()
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: `Given name (first name) from Google profile`, required: false })
   givenName?: string;
 
   @Expose()
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: `Family name (last name) from Google profile`, required: false })
   familyName?: string;
 
   @Expose()
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: `Profile picture URL from Google`, required: false })
   picture?: string;
 
   @Expose()
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: `Google Workspace organization domain`, required: false })
   organization?: string;
 
   @Expose()
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: `Additional metadata stored as JSON string`, required: false })
   metadata?: string;
 }
 
@@ -49,11 +49,11 @@ export class GoogleProfileDetailsResponse
 
 export class GoogleProfileDetailsListResponse {
   @Expose()
-  @ApiProperty({ required: true })
+  @ApiProperty({ description: `Total number of Google profiles in the result set`, required: true })
   count: number;
 
   @Expose()
-  @ApiProperty({ required: true, type: [GoogleProfileDetailsResponse] })
+  @ApiProperty({ description: `Array of Google profile records`, required: true, type: [GoogleProfileDetailsResponse] })
   @Type(() => GoogleProfileDetailsResponse)
   data: GoogleProfileDetailsResponse[];
 }

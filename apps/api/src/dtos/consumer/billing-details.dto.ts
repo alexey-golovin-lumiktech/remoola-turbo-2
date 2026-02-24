@@ -12,18 +12,18 @@ import { BaseModel } from '../common';
 
 class BillingDetails extends BaseModel implements IBillingDetailsModel {
   @Expose()
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: `Billing email address for invoices and payment notifications`, required: false })
   @IsEmail()
   @ValidateIf(({ value }) => value != null)
   email?: string;
 
   @Expose()
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: `Billing name (individual or company name)`, required: false })
   @ValidateIf(({ value }) => value != null)
   name?: string;
 
   @Expose()
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: `Billing phone number in E.164 format`, required: false })
   @IsPhoneNumber()
   @ValidateIf(({ value }) => value != null)
   phone?: string;

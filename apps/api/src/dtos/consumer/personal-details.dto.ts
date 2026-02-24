@@ -13,32 +13,36 @@ import { BaseModel } from '../common';
 
 class PersonalDetails extends BaseModel implements IPersonalDetailsModel {
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ description: `Country of citizenship (ISO 3166-1 alpha-2 country code)` })
   citizenOf: string;
 
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ description: `Date of birth (ISO 8601 date format)` })
   dateOfBirth: string;
 
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ description: `Passport or national ID number for identity verification` })
   passportOrIdNumber: string;
 
   @Expose()
-  @ApiProperty({ enum: Object.values($Enums.LegalStatus), required: false })
+  @ApiProperty({
+    description: `Legal status (e.g., CITIZEN, RESIDENT, NON_RESIDENT)`,
+    required: false,
+    enum: Object.values($Enums.LegalStatus),
+  })
   @ValidateIf(({ value }) => value != null)
   legalStatus?: $Enums.LegalStatus;
 
   @Expose()
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: `Country of tax residence (ISO 3166-1 alpha-2)`, required: false })
   countryOfTaxResidence?: string;
 
   @Expose()
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: `Tax identification number (TIN, SSN, NIF, etc.)`, required: false })
   taxId?: string;
 
   @Expose()
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: `Contact phone number in E.164 format`, required: false })
   phoneNumber?: string;
 }
 

@@ -14,15 +14,15 @@ import { BaseModel } from '../common';
 
 class PaymentRequestAttachmentDTO extends BaseModel implements PaymentRequestAttachmentModel {
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ description: `ID of the user who requested the attachment` })
   requesterId: string;
 
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ description: `ID of the payment request this attachment belongs to` })
   paymentRequestId: string;
 
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ description: `ID of the resource (file) attached to the payment request` })
   resourceId: string;
 }
 
@@ -34,41 +34,43 @@ export class PaymentRequestAttachmentResponse
   extends OmitType(PaymentRequestAttachmentDTO, [`deletedAt`] as const)
   implements IPaymentRequestAttachmentResponse, AttachmentFields {
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ description: `Resource access level (PUBLIC, PRIVATE, AUTHENTICATED)` })
   access?: $Enums.ResourceAccess;
 
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ description: `MIME type of the attached file (e.g., "application/pdf", "image/png")` })
   mimetype?: string;
 
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ description: `File size in bytes` })
   size?: number;
 
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ description: `Storage bucket name where the file is stored` })
   bucket?: string;
 
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ description: `Storage key (path) for the file in the bucket` })
   key?: string;
 
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ description: `Original filename as uploaded by the user` })
   originalName: string;
 
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ description: `Pre-signed download URL for accessing the file` })
   downloadUrl: string;
 }
 
 export class PaymentRequestAttachmentListResponse {
   @Expose()
-  @ApiProperty({ required: true })
+  @ApiProperty({ description: `Total number of attachments in the result set`, required: true })
   count: number;
 
   @Expose()
-  @ApiProperty({ required: true, type: [PaymentRequestAttachmentResponse] })
+  @ApiProperty({
+    description: `Array of payment request attachment records`, required: true, type: [PaymentRequestAttachmentResponse]
+  })
   @Type(() => PaymentRequestAttachmentResponse)
   data: PaymentRequestAttachmentResponse[];
 }

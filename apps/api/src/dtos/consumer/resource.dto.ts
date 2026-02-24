@@ -13,31 +13,31 @@ import { BaseModel } from '../common';
 
 class Resource extends BaseModel implements IResourceModel {
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ description: `Resource access level (PUBLIC, PRIVATE, AUTHENTICATED)` })
   access?: $Enums.ResourceAccess;
 
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ description: `Original filename as uploaded by the user` })
   originalName: string;
 
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ description: `MIME type of the file (e.g., "application/pdf", "image/png")` })
   mimetype: string;
 
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ description: `File size in bytes` })
   size: number;
 
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ description: `Storage bucket name where the file is stored` })
   bucket: string;
 
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ description: `Storage key (path) for the file in the bucket` })
   key: string;
 
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ description: `Pre-signed download URL for accessing the file` })
   downloadUrl: string;
 }
 
@@ -45,11 +45,11 @@ export class ResourceResponse extends OmitType(Resource, [`deletedAt`] as const)
 
 export class ResourceListResponse {
   @Expose()
-  @ApiProperty({ required: true })
+  @ApiProperty({ description: `Total number of resources in the result set`, required: true })
   count: number;
 
   @Expose()
-  @ApiProperty({ required: true, type: [ResourceResponse] })
+  @ApiProperty({ description: `Array of resource records`, required: true, type: [ResourceResponse] })
   @Type(() => ResourceResponse)
   data: ResourceResponse[];
 }

@@ -4,11 +4,11 @@ import { IsNumber } from 'class-validator';
 
 export class ListResponse<TDtoClassOrType> {
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ description: `Total number of items in the result set` })
   @IsNumber()
   count: number;
 
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ description: `Array of items in the result set` })
   data: TDtoClassOrType[];
 }

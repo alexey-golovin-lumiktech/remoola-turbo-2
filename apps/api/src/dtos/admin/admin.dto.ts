@@ -10,17 +10,17 @@ import { BaseModel } from '../common';
 class Admin extends BaseModel implements IAdminModel {
   @Expose()
   @IsString()
-  @ApiProperty()
+  @ApiProperty({ description: `Admin email address (used for authentication)` })
   email: string;
 
   @Expose()
   @IsIn(Object.values($Enums.AdminType))
-  @ApiProperty({ enum: Object.values($Enums.AdminType) })
+  @ApiProperty({ description: `Admin type (SUPER_ADMIN, ADMIN, SUPPORT)`, enum: Object.values($Enums.AdminType) })
   type: $Enums.AdminType;
 
   @Expose()
   @IsString()
-  @ApiProperty()
+  @ApiProperty({ description: `Bcrypt-hashed password (write-only, never returned in responses)` })
   password: string;
 
   @Exclude()
@@ -32,11 +32,11 @@ export class AdminResponse extends OmitType(Admin, [`deletedAt`] as const) imple
 
 export class AdminListResponse {
   @Expose()
-  @ApiProperty({ required: true })
+  @ApiProperty({ description: `Total number of admins in the result set`, required: true })
   count: number;
 
   @Expose()
-  @ApiProperty({ required: true, type: [AdminResponse] })
+  @ApiProperty({ description: `Array of admin records`, required: true, type: [AdminResponse] })
   @Type(() => AdminResponse)
   data: AdminResponse[];
 }

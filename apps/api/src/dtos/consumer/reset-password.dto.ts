@@ -6,13 +6,13 @@ import { type IChangePasswordBody, type IChangePasswordParam } from '../../share
 
 export class ChangePasswordBody implements IChangePasswordBody {
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ description: `Email address for password reset (optional if token is provided)` })
   @IsEmail()
   @ValidateIf(({ value }) => value != null)
   email?: string = null;
 
   @Expose()
-  @ApiProperty()
+  @ApiProperty({ description: `New password (optional if email is provided for reset request)` })
   @IsString()
   @ValidateIf(({ value }) => value != null)
   password?: string = null;
@@ -22,6 +22,6 @@ export class ChangePasswordParam implements IChangePasswordParam {
   @Expose()
   @IsNotEmpty()
   @IsString()
-  @ApiProperty()
+  @ApiProperty({ description: `Password reset token from email link` })
   token: string;
 }
