@@ -2,7 +2,7 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsIn, IsOptional } from 'class-validator';
 
-import { CURRENCY_CODES, TCurrencyCode, THEMES, type TTheme } from '@remoola/api-types';
+import { CURRENCY_CODES, type TCurrencyCode, THEMES, type TTheme } from '@remoola/api-types';
 
 export class PatchConsumerSettings {
   @Expose()
