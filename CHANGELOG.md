@@ -620,4 +620,64 @@
                   - Fix typo `geyById` → `getById`
                   - Improve typing safety using `Record<string, unknown>`
                   - Align imports across apps to shared constants
+
+- **2026-02-25:**
+                **🚀 Feature — Financial Safety Architecture**
+                - Introduce append-only financial ledger model via `LedgerEntryOutcome`
+                  (ledger entries are no longer mutated)
+                - Derive effective ledger state from latest outcome using PostgreSQL
+                  `LATERAL` queries
+                - Align admin ledger and payment-request services with outcome-based
+                  balance calculations
+                - Update Stripe payout, verification, and payment-intent handlers
+                  to append outcomes instead of modifying ledger rows
+
+                **🔐 Financial & Concurrency Safety**
+                - Protect balance calculations using `SELECT FOR UPDATE`
+                  row-level locking on ledger entries
+                - Introduce operation-scoped PostgreSQL advisory locks:
+                  - `consumerId:exchange`
+                  - `consumerId:withdraw`
+                  - `consumerId:transfer`
+                - Enforce deterministic lock ordering for transfers to prevent deadlocks
+                - Implement Stripe webhook at-most-once processing:
+                  - Add `StripeWebhookEventModel`
+                  - Enforce unique Stripe event IDs
+                  - Safely return `200 OK` on duplicate webhook retries (`P2002`)
+
+                **🗄 Database & Migrations**
+                - Add append-only ledger migration:
+                  - `ledger_entry_outcome_append_only`
+                - Add webhook deduplication migration:
+                  - `stripe_webhook_event_dedup`
+                - Standardize schema naming:
+                  - `standardize_columns_snake_case`
+                - Apply Prisma `@map("snake_case")` alignment for remaining columns
+                - Add migration READMEs under
+                  `packages/database-2/prisma/migrations`
+
+                **🧪 Testing & Reliability**
+                - Add concurrency test coverage:
+                  - `consumer-exchange.concurrency.spec`
+                  - `consumer-payments.concurrency.spec`
+                - Add `critical-updates.e2e-spec`
+                - Promote temporary DB isolation tests into full e2e test suite
+                - Strengthen financial race-condition validation scenarios
+
+                **🛠 DevEx & Documentation**
+                - Add financial architecture documentation:
+                  `docs/FINANCIAL_SAFETY_AND_DB_COMPLIANCE.md`
+                - Move major project documentation into `/docs`:
+                  - FEATURES_CURRENT
+                  - PROJECT_DOCUMENTATION
+                  - PROJECT_SUMMARY
+                - Refresh PostgreSQL design rules documentation
+                - Improve application health checks and bootstrap process
+
+                **🧹 Cleanup & Alignment**
+                - Update consumer profile DTOs and profile service alignment
+                - Improve `OrganizationDetailsForm` handling
+                - Adjust Turbo build configuration and Jest e2e setup
+                - Normalize schema and service consistency across admin,
+                  consumer, and API modules
 ```
