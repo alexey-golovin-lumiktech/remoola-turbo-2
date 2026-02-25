@@ -40,9 +40,21 @@ export class StripeReversalScheduler {
               ? $Enums.TransactionStatus.DENIED
               : $Enums.TransactionStatus.PENDING;
 
-        await this.prisma.ledgerEntryModel.updateMany({
-          where: { stripeId, type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL },
-          data: { status, updatedBy: `stripe-reconcile` },
+        await this.prisma.$transaction(async (tx) => {
+          const entries = await tx.ledgerEntryModel.findMany({
+            where: { stripeId, type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL },
+            select: { id: true },
+          });
+          for (const entry of entries) {
+            await tx.ledgerEntryOutcomeModel.create({
+              data: {
+                ledgerEntryId: entry.id,
+                status,
+                source: `stripe-reconcile`,
+                externalId: stripeId,
+              },
+            });
+          }
         });
       } catch (error: unknown) {
         const err = error as { message?: string };

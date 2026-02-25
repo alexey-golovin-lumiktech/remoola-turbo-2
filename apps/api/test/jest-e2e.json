@@ -5,12 +5,18 @@
     "ts"
   ],
   "rootDir": ".",
-  "testEnvironment": "node",
+  "testEnvironment": "@remoola/test-db/environment",
   "setupFiles": [
     "<rootDir>/setup-e2e-env.ts"
   ],
   "testRegex": ".e2e-spec.ts$",
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
-  }
+  },
+  "maxWorkers": 1,
+  "forceExit": true,
+  "detectOpenHandles": true,
+  "errorOnDeprecated": true,
+  "verbose": true,
+  "collectCoverage": false
 }

@@ -110,11 +110,10 @@ Internal API proxy routes:
 
 Key data models and relations:
 
-- Admins, consumers, access/refresh tokens, OAuth state, password reset tokens.
+- Admins, consumers, access/refresh tokens, OAuth state, password reset tokens, Stripe webhook event dedup (`StripeWebhookEventModel`), auth audit and lockout.
 - Consumer profile details (address, personal, organization, Google profile).
 - Consumer settings (theme, preferred display currency); Admin settings (theme).
-- Auth audit and login lockout records.
-- Payment requests, payment request attachments, ledger entries.
+- Payment requests, payment request attachments, ledger entries; ledger entry outcomes and disputes (append-only).
 - Payment methods with Stripe identities and billing details.
 - Exchange rates, wallet auto-conversion rules, scheduled FX conversions.
 - Contacts.
@@ -122,14 +121,21 @@ Key data models and relations:
 
 Ledger and payments:
 
-- Signed ledger entries with idempotency key for exactly-once processing.
+- Signed ledger entries with idempotency key for exactly-once processing; **append-only** financial history (no UPDATE/DELETE on ledger rows); status transitions and dispute data in `LedgerEntryOutcomeModel` and `LedgerEntryDisputeModel` with DB trigger syncing `ledger_entry.status`.
+- Stripe webhook event deduplication via `StripeWebhookEventModel` (unique `event_id`); insert-before-handling for at-most-once processing.
 - Payment rails, statuses, fee handling, and enums (including ExchangeRateStatus, TransactionActionType, ScheduledFxConversionStatus).
 - Soft-delete strategy (deletedAt) with uniqueness scoped to non-deleted rows.
+- Database column naming: snake_case in schema (Prisma fields use `@map("snake_case")` where needed).
 
 Shared packages present in repo:
 
 - `api-types`: shared DTOs, PaginatedResponsePage, currency (CURRENCY_CODES, TCurrencyCode, getCurrencySymbol), consumer settings (theme THEME, preferred currency allowlist), admin payment reversal (PAYMENT_REVERSAL_KIND), query params (BOOLEAN_QUERY_VALUE).
 - `database-2`, `db-fixtures`, `env`, `eslint-config`, `jest-config`, `security-utils`, `shared-constants`, `test-db`, `typescript-config`, `ui`.
+
+Infrastructure and testing:
+
+- Root `yarn test` and `yarn test:e2e` are gated by `scripts/ensure-local-development.js`: they run only in local development and are blocked in CI and on Vercel to avoid accidental production/CI DB usage.
+- Fintech safety and DB compliance are documented in `docs/FINANCIAL_SAFETY_AND_DB_COMPLIANCE.md`; schema design rules in `docs/postgresql-design-rules.md`.
 
 ## Comparison Notes (History vs Current State)
 

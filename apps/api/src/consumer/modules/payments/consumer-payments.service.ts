@@ -598,7 +598,7 @@ export class ConsumerPaymentsService {
     }
 
     // Bound query: each ledger has ≥1 entry, typically 2;
-    // fetch enough for offset+limit items, cap at 2000 rows (AGENTS.md 6.10)
+    // fetch enough for offset+limit items, cap at 2000 rows to prevent abuse (fintech audit)
     const take = Math.min((offset + limit) * 2 + 50, 2000);
     const rows = await this.prisma.ledgerEntryModel.findMany({
       where,
@@ -725,17 +725,26 @@ export class ConsumerPaymentsService {
 
     try {
       return await this.prisma.$transaction(async (tx) => {
-        await tx.$queryRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${consumerId}::text)::bigint)`);
+        // 🔐 Lock with operation-specific key to prevent cross-operation collisions
+        await tx.$queryRaw(Prisma.sql`
+          SELECT pg_advisory_xact_lock(hashtext((${consumerId} || ':withdraw')::text)::bigint)
+        `);
 
-        const balanceResult = await tx.ledgerEntryModel.aggregate({
-          where: {
-            consumerId,
-            status: $Enums.TransactionStatus.COMPLETED,
-            deletedAt: null,
-          },
-          _sum: { amount: true },
-        });
-        const balance = Number(balanceResult._sum.amount ?? 0);
+        // 🔐 SELECT FOR UPDATE to lock rows; effective status from latest outcome (append-only, no trigger UPDATE)
+        const balanceResult = await tx.$queryRaw<{ balance: number }[]>`
+          SELECT COALESCE(SUM(le.amount), 0)::numeric AS balance
+          FROM ledger_entry le
+          LEFT JOIN LATERAL (
+            SELECT o.status FROM ledger_entry_outcome o
+            WHERE o.ledger_entry_id = le.id
+            ORDER BY o.created_at DESC LIMIT 1
+          ) latest ON true
+          WHERE le.consumer_id = ${consumerId}
+            AND COALESCE(latest.status, le.status) = ${$Enums.TransactionStatus.COMPLETED}::"TransactionStatus"
+            AND le.deleted_at IS NULL
+          FOR UPDATE OF le
+        `;
+        const balance = Number(balanceResult[0]?.balance ?? 0);
         if (amount > balance) {
           throw new BadRequestException(errorCodes.INSUFFICIENT_BALANCE_WITHDRAW);
         }
@@ -821,18 +830,29 @@ export class ConsumerPaymentsService {
 
     try {
       return await this.prisma.$transaction(async (tx) => {
-        await tx.$queryRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${firstId}::text)::bigint)`);
-        await tx.$queryRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${secondId}::text)::bigint)`);
+        // 🔐 Lock both consumers with operation-specific keys (sorted to prevent deadlocks)
+        await tx.$queryRaw(Prisma.sql`
+          SELECT pg_advisory_xact_lock(hashtext((${firstId} || ':transfer')::text)::bigint)
+        `);
+        await tx.$queryRaw(Prisma.sql`
+          SELECT pg_advisory_xact_lock(hashtext((${secondId} || ':transfer')::text)::bigint)
+        `);
 
-        const balanceResult = await tx.ledgerEntryModel.aggregate({
-          where: {
-            consumerId,
-            status: $Enums.TransactionStatus.COMPLETED,
-            deletedAt: null,
-          },
-          _sum: { amount: true },
-        });
-        const balance = Number(balanceResult._sum.amount ?? 0);
+        // 🔐 SELECT FOR UPDATE to lock rows; effective status from latest outcome (append-only, no trigger UPDATE)
+        const balanceResult = await tx.$queryRaw<{ balance: number }[]>`
+          SELECT COALESCE(SUM(le.amount), 0)::numeric AS balance
+          FROM ledger_entry le
+          LEFT JOIN LATERAL (
+            SELECT o.status FROM ledger_entry_outcome o
+            WHERE o.ledger_entry_id = le.id
+            ORDER BY o.created_at DESC LIMIT 1
+          ) latest ON true
+          WHERE le.consumer_id = ${consumerId}
+            AND COALESCE(latest.status, le.status) = ${$Enums.TransactionStatus.COMPLETED}::"TransactionStatus"
+            AND le.deleted_at IS NULL
+          FOR UPDATE OF le
+        `;
+        const balance = Number(balanceResult[0]?.balance ?? 0);
         if (amount > balance) {
           throw new BadRequestException(errorCodes.INSUFFICIENT_BALANCE_TRANSFER);
         }

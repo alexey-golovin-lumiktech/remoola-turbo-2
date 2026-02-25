@@ -73,7 +73,11 @@ export class UpdateConsumerProfileOrganizationDetails {
 
   @Expose()
   @ApiProperty({ required: false, isArray: false })
-  registrationNumber?: string | null;
+  consumerRole?: string | null;
+
+  @Expose()
+  @ApiProperty({ required: false, isArray: false })
+  consumerRoleOther?: string | null;
 }
 
 export class UpdateConsumerProfileBody {

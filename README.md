@@ -64,7 +64,7 @@ yarn start
 yarn lint
 yarn format
 
-# tests
+# tests (run only in local dev; blocked in CI/Vercel by scripts/ensure-local-development.js)
 yarn test
 yarn test:e2e
 
@@ -80,6 +80,7 @@ yarn db:seed
 
 - `README.md` — this file (setup, commands, repo layout).
 - `PROJECT_SUMMARY.md` — high-level project overview (start here).
-- `AGENTS.md` — engineering rules and constraints for the monorepo (agents and contributors).
 - `PROJECT_DOCUMENTATION.md` — overview of API (base path `/api`), admin, consumer, and database.
 - `FEATURES_CURRENT.md` — implemented features and current repo state.
+- `docs/FINANCIAL_SAFETY_AND_DB_COMPLIANCE.md` — fintech safety, ledger invariants, idempotency.
+- `docs/postgresql-design-rules.md` — PostgreSQL schema and migration rules.

@@ -13,7 +13,7 @@ const TRANSACTION_STATUSES = Object.values($Enums.TransactionStatus) as string[]
 export class AdminLedgersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  /** Bounded list for admin (AGENTS.md 6.10). Search/filter fintech-safe. */
+  /** Bounded list for admin. Search/filter fintech-safe. */
   async findAll(params?: {
     page?: number;
     pageSize?: number;

@@ -1,10 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 import { envs } from '../envs';
 import { PrismaService } from '../shared/prisma.service';
 
 @Injectable()
 export class HealthService {
+  private readonly logger = new Logger(HealthService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async getHealthStatus() {
@@ -20,14 +22,15 @@ export class HealthService {
         },
       };
     } catch (error) {
-      console.error(`Health check database error:`, error);
+      this.logger.error(`Health check database error`, error);
       return {
         status: `error`,
         timestamp: new Date().toISOString(),
         services: {
           database: `error`,
         },
-        error: error.message,
+        // Do not expose internal error.message to clients (fintech audit)
+        error: `Database check failed`,
       };
     }
   }

@@ -1,6 +1,10 @@
-# 25 PostgreSQL Database Design Rules
+# Remoola PostgreSQL Database Design Rules (Fintech Edition) — v2
 
-Source: [Habr — 25 Iron Rules of PostgreSQL Database Design](https://habr.com/ru/articles/996560/)
+Based on: **Habr — 25 Iron Rules of PostgreSQL Database Design** (adapted + hardened for Remoola fintech workflows).  
+Last updated: **2026-02-25**.
+
+> **Default rule:** follow these unless an exception is explicitly justified in the PR description
+> (what you gain, what you risk, how you mitigate).
 
 ---
 
@@ -25,20 +29,21 @@ CREATE TABLE users (
 );
 ```
 
-### 2. Every Table MUST Have created_at and updated_at
+> **Fintech note:** surrogate PK does not replace business uniqueness — keep UNIQUE constraints on business identifiers.
+
+### 2. Every *Mutable Business* Table MUST Have created_at and updated_at
 **Criticality: maximum**
 
 Without timestamps you cannot debug incidents, build audit trails, or run incremental ETL. Use `TIMESTAMPTZ`, not `TIMESTAMP`.
 
+✅ Default for business tables:
+
 ```sql
--- ✅ Correct
 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-
--- ❌ Incorrect
--- No timestamp columns at all
--- Or TIMESTAMP without timezone
 ```
+
+✅ Common exceptions (allowed): **static/lookup tables** (currencies, ISO codes) when justified.
 
 ### 3. Use TIMESTAMPTZ, Not TIMESTAMP
 **Criticality: high**
@@ -53,10 +58,12 @@ event_time TIMESTAMPTZ NOT NULL
 event_time TIMESTAMP
 ```
 
-### 4. Use TEXT Instead of VARCHAR(n)
+### 4. Use TEXT Instead of VARCHAR(n) (Unless Semantically Fixed-Length)
 **Criticality: normal**
 
-In PostgreSQL, `TEXT` and `VARCHAR` have identical performance. `VARCHAR(n)` only adds a CHECK constraint you'll need to migrate when requirements change. Use `CHECK` for validation.
+In PostgreSQL, `TEXT` and `VARCHAR` have identical performance. `VARCHAR(n)` only adds a CHECK constraint you'll need to migrate when requirements change.
+
+✅ Default: use `TEXT` + explicit `CHECK` constraints.
 
 ```sql
 -- ✅ Correct
@@ -67,13 +74,18 @@ CONSTRAINT chk_name_len CHECK(length(name) <= 255)
 name VARCHAR(255)
 ```
 
+✅ Allowed exceptions (fixed-length semantics):
+- `currency_code` (3)
+- `country_code` (2)
+- hashes / fixed tokens
+
 ### 5. Use UUID for IDs, Prefer UUID v7
 **Criticality: maximum**
 
-Use UUID for all primary keys. Avoid INT/BIGINT/SERIAL for IDs — UUIDs are globally unique, work without coordination in distributed systems, and avoid sequential bottlenecks. Prefer UUID v7 (time-sortable, index-friendly) over UUID v4 (random). In PostgreSQL 18+ use `gen_random_uuid()` or `uuid_generate_v7()`; for older versions use `gen_random_uuid()` or generate UUID v7 in the application.
+Use UUID for all primary keys. Avoid INT/BIGINT/SERIAL for IDs — UUIDs are globally unique and avoid coordination. Prefer UUID v7 (time-sortable, index-friendly) over UUID v4.
 
 ```sql
--- ✅ Correct
+-- ✅ Correct (safe default)
 id UUID PRIMARY KEY DEFAULT gen_random_uuid()
 
 -- With PostgreSQL 18+ (UUID v7, time-sortable):
@@ -83,6 +95,8 @@ id UUID PRIMARY KEY DEFAULT uuidv7()
 id SERIAL PRIMARY KEY
 id BIGSERIAL PRIMARY KEY
 ```
+
+> **Performance escape hatch (rare):** for *extremely hot write* tables, `BIGINT` internal PK + `UUID` public id can be justified, but only with evidence and clear exposure rules.
 
 ---
 
@@ -119,6 +133,8 @@ REFERENCES users(id) ON DELETE SET NULL
 REFERENCES accounts(id)
 ```
 
+> **Fintech rule:** never cascade-delete **ledger / payment history / audit** data.
+
 ### 8. Use Junction Tables for M:N
 **Criticality: maximum**
 
@@ -146,26 +162,25 @@ PostgreSQL does NOT create indexes automatically for FKs.
 ```sql
 -- ✅ Correct
 CREATE INDEX idx_orders_user_id ON orders(user_id);
-
--- ❌ Incorrect
--- FK without index = seq scan on JOIN
 ```
 
-### 10. Prefer Soft Delete for Critical Business Data
+### 10. Prefer Soft Delete for *User-Facing* Business Entities (Not for Ledgers/Audit)
 **Criticality: high**
 
-Add a `deleted_at` column. Use partial indexes.
+Soft delete is useful for user-facing data (users, contacts, documents) but **dangerous** when applied blindly.
+
+✅ For user-facing entities:
 
 ```sql
--- ✅ Correct
 deleted_at TIMESTAMPTZ DEFAULT NULL;
 
 CREATE INDEX idx_users_active ON users(email)
 WHERE deleted_at IS NULL;
-
--- ❌ Incorrect
-DELETE FROM users WHERE id = '...';
 ```
+
+❌ For ledgers/audit/payment history:
+- do **not** soft delete
+- treat as immutable append-only history (see Rule 28)
 
 ---
 
@@ -174,21 +189,17 @@ DELETE FROM users WHERE id = '...';
 ### 11. Normalize to 3NF Minimum, Denormalize Consciously
 **Criticality: maximum**
 
-Document why you denormalized.
+Document why you denormalized (what query it accelerates, what consistency risk it adds).
 
 ### 12. Use NOT NULL by Default, NULL Only Intentionally
 **Criticality: maximum**
 
-`NULL` introduces three-valued logic. `NULL != NULL`, aggregates silently skip `NULL`. Each nullable column forces `COALESCE` everywhere.
+`NULL` introduces three-valued logic. Each nullable column forces `COALESCE` everywhere.
 
 ```sql
 -- ✅ Correct
 status TEXT NOT NULL DEFAULT 'pending',
 deleted_at TIMESTAMPTZ  -- NULL intentionally
-
--- ❌ Incorrect
-name TEXT
-price NUMERIC
 ```
 
 ### 13. Use CHECK Constraints for Validation
@@ -200,57 +211,43 @@ Database constraints are the last line of defense and always run.
 -- ✅ Correct
 CONSTRAINT chk_price_positive CHECK (price > 0),
 CONSTRAINT chk_status_valid CHECK (status IN ('active','inactive','suspended'))
-
--- ❌ Incorrect
--- Validation only in API
 ```
 
-### 14. Use NUMERIC for Money, Never FLOAT/DOUBLE
+### 14. Use NUMERIC for Money, Never FLOAT/DOUBLE (Or Store Cents as BIGINT)
 **Criticality: maximum**
 
-`NUMERIC(precision, scale)` gives exact decimal math. Or store cents as `BIGINT`.
+`NUMERIC(precision, scale)` gives exact decimal math. Or store cents as `BIGINT` for throughput.
 
 ```sql
 -- ✅ Correct
 price NUMERIC(12,2) NOT NULL,
 balance NUMERIC(15,2) NOT NULL
 -- or: price_cents BIGINT NOT NULL
-
--- ❌ Incorrect
-price FLOAT
-price DOUBLE PRECISION
 ```
 
 ### 15. Use ENUM Cautiously — Prefer CHECK or Lookup Tables
 **Criticality: normal**
 
-PostgreSQL ENUMs cannot be easily changed. CHECK constraints or lookup tables are more flexible.
+PostgreSQL ENUMs are harder to evolve. CHECK constraints or lookup tables are more flexible.
 
 ```sql
 -- ✅ Correct: CHECK
 status TEXT NOT NULL CHECK(status IN ('draft','published'))
-
--- Or: lookup table for many values
-REFERENCES statuses(code)
-
--- ❌ Incorrect
-CREATE TYPE status AS ENUM('draft','published');
 ```
 
 ---
 
 ## IV. Indexing and Performance
 
-### 16. Create Indexes for Every WHERE, JOIN, and ORDER BY
+### 16. Create Indexes for Every *Proven* WHERE, JOIN, and ORDER BY Pattern
 **Criticality: maximum**
+
+Indexes are not free (write overhead + storage). The rule is: **index the patterns you actually use** (based on EXPLAIN and workload).
 
 ```sql
 -- ✅ Correct
 CREATE INDEX idx_orders_user_status
 ON orders(user_id, status) WHERE deleted_at IS NULL;
-
--- ❌ Incorrect
--- "We'll add indexes when it gets slow"
 ```
 
 ### 17. Use Partial Indexes
@@ -262,21 +259,17 @@ Index only the rows you need.
 -- ✅ Correct
 CREATE INDEX idx_orders_pending
 ON orders(created_at) WHERE status = 'pending';
-
--- ❌ Incorrect
-CREATE INDEX idx_orders_created ON orders(created_at);
--- indexes ALL rows for 5% of queries
 ```
 
 ### 18. Use EXPLAIN ANALYZE Before Deploying Queries
 **Criticality: high**
 
-`Seq Scan` on a large table = add an index.
+`Seq Scan` on a large table = investigate indexing or query rewrite.
 
 ### 19. Use Connection Pooling (PgBouncer)
 **Criticality: maximum**
 
-Each PostgreSQL connection costs ~10 MB RAM. PgBouncer multiplexes connections.
+Each PostgreSQL connection is expensive. PgBouncer multiplexes connections.
 
 ```
 App → PgBouncer (port 6432) → PostgreSQL
@@ -293,35 +286,38 @@ default_pool_size = 20
 
 Strategy: add new column → backfill → switch reads → remove old.
 
-```sql
--- ✅ Correct
-ALTER TABLE users ADD COLUMN name_new TEXT;
--- Backfill in batches → switch application → remove old
+For **standardizing column names** (e.g. camelCase → snake_case): use a migration with `RENAME COLUMN` only — no data loss. Deploy order:
+1) run migration
+2) deploy app with updated Prisma `@map` + raw SQL
+3) keep a short maintenance window so old app is not running against renamed columns
 
--- ❌ Incorrect
-ALTER TABLE users RENAME COLUMN name TO full_name;
+```sql
+-- ✅ Correct (additive, zero-downtime)
+ALTER TABLE users ADD COLUMN name_new TEXT;
+
+-- ✅ Correct (standardization only: rename to snake_case, no data loss)
+ALTER TABLE ledger_entry RENAME COLUMN "currencyCode" TO "currency_code";
 ```
 
 ### 21. Use UUID v7 When Available
 **Criticality: high**
 
-UUID v7 embeds a timestamp and is time-sortable — better for B-tree indexes and `ORDER BY created_at`-style queries than random UUID v4. Use `uuidv7()` in PostgreSQL 18+, or the `pg_uuidv7` extension / app-side generation for older versions.
+UUID v7 is time-sortable and index-friendlier than random UUID v4.
 
 ### 22. Always Use Transactions for Multi-Step Operations
 **Criticality: maximum**
 
 ```sql
--- ✅ Correct
 BEGIN;
   UPDATE accounts SET balance = balance - 100 WHERE id = '...';
   UPDATE accounts SET balance = balance + 100 WHERE id = '...';
 COMMIT;
 ```
 
-### 23. Partition Large Tables (100M+ Rows)
+### 23. Partition Large Tables When Growth Impacts Vacuum/Latency (Often 10M–100M+)
 **Criticality: high**
 
-Partition by time (RANGE) or tenant (LIST/HASH).
+Partition by time (RANGE) or tenant (LIST/HASH) when table size harms performance/ops.
 
 ```sql
 CREATE TABLE events (
@@ -337,17 +333,14 @@ CREATE TABLE events (
 `JSONB` supports indexes (GIN) and containment operators (`@>`, `?`).
 
 ```sql
--- ✅ Correct
 metadata JSONB NOT NULL DEFAULT '{}';
 CREATE INDEX idx_meta_gin ON products USING GIN(metadata);
-
--- ❌ Incorrect
-metadata JSON
-metadata TEXT
 ```
 
-### 25. Use Row-Level Security (RLS) for Multi-Tenant Apps
+### 25. Use Row-Level Security (RLS) for Multi-Tenant Apps (Benchmark Carefully)
 **Criticality: normal**
+
+RLS can be great for tenant isolation but can also impact performance if misconfigured.
 
 ```sql
 ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
@@ -356,49 +349,76 @@ CREATE POLICY tenant_isolation ON documents
 USING (tenant_id = current_setting('app.tenant_id'));
 ```
 
+### 26. Column Names MUST Be snake_case — Any camelCase Field MUST Use @map(snake_case)
+**Criticality: maximum (Remoola / Prisma)**
+
+All database column names must be snake_case.
+
+- **Any camelCase Prisma field** that maps to a DB column MUST have `@map("snake_case")`.
+- Raw SQL must reference the real column names (snake_case).
+- To unify existing camelCase columns: migration with `RENAME COLUMN` only + coordinated deploy.
+
+---
+
+## VI. Fintech-Grade Additions (Remoola-Required)
+
+### 27. Idempotency MUST Be Enforced at the Database Level
+**Criticality: maximum**
+
+Any operation that can charge, transfer, create ledger entries, or handle webhooks must have an idempotency key and a UNIQUE constraint to prevent double-processing.
+
+Examples:
+- `UNIQUE(consumer_id, idempotency_key)`
+- `UNIQUE(payment_request_id, idempotency_key)`
+- `UNIQUE(provider, provider_event_id)` for webhooks
+
+### 28. Ledger / Payment History Tables Are Append-Only
+**Criticality: maximum**
+
+- **No UPDATE** to money history.
+- **No DELETE** (hard or soft) of ledger/payment history.
+- Corrections must be done via **reversals / compensating rows**.
+
+### 29. Every Money-Impacting Row Must Be Traceable
+**Criticality: maximum**
+
+Store enough metadata to reconstruct causality and reconcile:
+- `correlation_id`
+- `idempotency_key`
+- `source` (module/job/webhook)
+- external provider ids (e.g., Stripe event/payment intent ids)
+
+### 30. Money Moves Must Be Atomic
+**Criticality: maximum**
+
+All multi-step financial state transitions must be wrapped in a single transaction:
+- create/confirm payment intent
+- insert ledger entries
+- update balances (if you store them)
+- record audit/event rows
+
 ---
 
 ## Naming Cheat Sheet
 
-| Element        | Convention                                                        |
-|----------------|-------------------------------------------------------------------|
-| Tables         | Plural, `snake_case`: `users`, `order_items`                       |
-| Primary keys   | Always `id` with type `UUID`                                        |
-| Foreign keys   | Pattern `{singular_table}_id`: `user_id`, `order_id`               |
-| Indexes        | Pattern `idx_{table}_{columns}`: `idx_users_email`                 |
-| Constraints    | Pattern `chk_{table}_{desc}` or `uq_{table}_{cols}`                |
-| Timestamps     | `created_at` + `updated_at`, always `TIMESTAMPTZ`                   |
+| Element        | Convention |
+|----------------|------------|
+| Tables         | Plural, `snake_case`: `users`, `order_items` |
+| Columns        | Always `snake_case` in DB; Prisma camelCase columns must use `@map("snake_case")` |
+| Primary keys   | Always `id` with type `UUID` |
+| Foreign keys   | `{singular_table}_id`: `user_id`, `order_id` |
+| Indexes        | `idx_{table}_{columns}`: `idx_users_email` |
+| Constraints    | `chk_{table}_{desc}`, `uq_{table}_{cols}` |
+| Timestamps     | `created_at` + `updated_at`, `TIMESTAMPTZ` |
 
 ---
 
-## Verification Against PostgreSQL Best Practices
+## PR Gate Checklist (Schema / Money Path)
 
-Rules below have been cross-checked against [PostgreSQL official documentation](https://www.postgresql.org/docs/) and widely cited best practices.
-
-| Rule | PostgreSQL Docs / Source | Status |
-|------|---------------------------|--------|
-| **1** Surrogate PK | Common practice; natural keys change | ✓ Validated |
-| **2** created_at/updated_at | Industry standard for auditing, ETL | ✓ Validated |
-| **3** TIMESTAMPTZ | [datatype-datetime](https://www.postgresql.org/docs/current/datatype-datetime.html): TIMESTAMP without timezone discards zone info | ✓ Validated |
-| **4** TEXT vs VARCHAR(n) | [datatype-character](https://www.postgresql.org/docs/current/datatype-character.html): *"There is no performance difference among these types"*; varchar(n) adds length check only | ✓ Validated |
-| **5** UUID for IDs | [UUID type](https://www.postgresql.org/docs/current/datatype-uuid.html); [uuidv7() in PG 18](https://www.postgresql.org/docs/current/functions-uuid.html) | ✓ Validated |
-| **6** Explicit FKs | Referential integrity best practice | ✓ Validated |
-| **7** ON DELETE | [ddl-constraints](https://www.postgresql.org/docs/current/ddl-constraints.html): RESTRICT, CASCADE, SET NULL documented | ✓ Validated |
-| **8** Junction tables | Normalization; arrays/csv not indexable, no FK | ✓ Validated |
-| **9** Index every FK | [PostgreSQL does NOT auto-index FKs](https://dba.stackexchange.com/questions/75894/postgresql-do-foreign-key-constraints-automatically-create-indexes) (unlike MySQL); manual index required | ✓ Validated |
-| **10** Soft delete | Common pattern; partial indexes for `deleted_at IS NULL` | ✓ Validated |
-| **11** 3NF | Standard normalization guidance | ✓ Validated |
-| **12** NOT NULL default | NULL introduces three-valued logic | ✓ Validated |
-| **13** CHECK constraints | [ddl-constraints](https://www.postgresql.org/docs/current/ddl-constraints.html): database-level validation | ✓ Validated |
-| **14** NUMERIC for money | [datatype-numeric](https://www.postgresql.org/docs/current/datatype-numeric.html): *"exact storage for monetary amounts"*; FLOAT causes rounding errors | ✓ Validated |
-| **15** ENUM caution | [ALTER TYPE](https://www.postgresql.org/docs/current/sql-altertype.html): can ADD VALUE, cannot remove; recreating type required | ✓ Validated |
-| **16** Indexes for WHERE/JOIN/ORDER BY | Sequential scan vs index scan; [indexes](https://www.postgresql.org/docs/current/indexes.html) | ✓ Validated |
-| **17** Partial indexes | [indexes-partial](https://www.postgresql.org/docs/current/indexes-partial.html): WHERE clause on index creation | ✓ Validated |
-| **18** EXPLAIN ANALYZE | [using-explain](https://www.postgresql.org/docs/current/using-explain.html): execution plan analysis | ✓ Validated |
-| **19** PgBouncer | ~10MB RAM per connection; connection pooling standard | ✓ Validated |
-| **20** Migration strategy | Zero-downtime: add column → backfill → switch → drop | ✓ Validated |
-| **21** UUID v7 | [uuidv7() in PostgreSQL 18](https://www.postgresql.org/docs/18/functions-uuid.html); time-sortable, index-friendly | ✓ Validated |
-| **22** Transactions | Basic ACID; multi-step ops must be atomic | ✓ Validated |
-| **23** Partitioning | [ddl-partitioning](https://www.postgresql.org/docs/current/ddl-partitioning.html): RANGE, LIST, HASH | ✓ Validated |
-| **24** JSONB | [datatype-json](https://www.postgresql.org/docs/current/datatype-json.html): binary format, GIN indexes, `@>` `?` operators; JSON re-parses on read | ✓ Validated |
-| **25** RLS | [ddl-rowsecurity](https://www.postgresql.org/docs/current/ddl-rowsecurity.html): Row-Level Security for multi-tenant isolation | ✓ Validated |
+1) Idempotency constraint exists for any re-tryable money workflow (Rule 27)  
+2) Ledger/history immutability respected (Rule 28)  
+3) Transaction wraps all multi-step money operations (Rule 30)  
+4) FKs exist + FK indexes exist (Rules 6, 9)  
+5) NOT NULL + CHECK/UNIQUE enforce invariants (Rules 12–15)  
+6) Migration is additive + deploy-safe (Rule 20)  
+7) Column naming + Prisma `@map` compliance (Rule 26)  

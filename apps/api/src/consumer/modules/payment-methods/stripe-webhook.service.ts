@@ -61,6 +61,20 @@ export class StripeWebhookService {
       const signature = req.headers[`stripe-signature`];
       const event = this.stripe.webhooks.constructEvent(req.rawBody, signature, envs.STRIPE_WEBHOOK_SECRET);
 
+      // At-most-once: deduplicate by Stripe event id (defense in depth)
+      try {
+        await this.prisma.stripeWebhookEventModel.create({
+          data: { eventId: event.id },
+        });
+      } catch (dedupErr) {
+        if (dedupErr instanceof Prisma.PrismaClientKnownRequestError && dedupErr.code === `P2002`) {
+          this.logger.debug({ message: `Stripe webhook already processed`, eventId: event.id, eventType: event.type });
+          res.status(200).json({ received: true });
+          return;
+        }
+        throw dedupErr;
+      }
+
       switch (event.type) {
         case STRIPE_EVENT.IDENTITY_VERIFICATION_SESSION_VERIFIED: {
           this.logger.log({ message: `Webhook processing`, eventType: event.type });
@@ -124,9 +138,14 @@ export class StripeWebhookService {
 
     if (!payout.metadata?.transactionId) return;
 
-    await this.prisma.ledgerEntryModel.updateMany({
-      where: { id: payout.metadata.transactionId },
-      data: { status: $Enums.TransactionStatus.COMPLETED },
+    // Append-only: record outcome; trigger syncs to ledger_entry.status (AGENTS 6.10)
+    await this.prisma.ledgerEntryOutcomeModel.create({
+      data: {
+        ledgerEntryId: payout.metadata.transactionId,
+        status: $Enums.TransactionStatus.COMPLETED,
+        source: `stripe`,
+        externalId: payout.id,
+      },
     });
   }
 
@@ -135,9 +154,14 @@ export class StripeWebhookService {
 
     if (!payout.metadata?.transactionId) return;
 
-    await this.prisma.ledgerEntryModel.updateMany({
-      where: { id: payout.metadata.transactionId },
-      data: { status: $Enums.TransactionStatus.DENIED },
+    // Append-only: record outcome; trigger syncs to ledger_entry.status (AGENTS 6.10)
+    await this.prisma.ledgerEntryOutcomeModel.create({
+      data: {
+        ledgerEntryId: payout.metadata.transactionId,
+        status: $Enums.TransactionStatus.DENIED,
+        source: `stripe`,
+        externalId: payout.id,
+      },
     });
   }
 
@@ -194,20 +218,26 @@ export class StripeWebhookService {
       }
     }
 
-    // Only update if not already COMPLETED (idempotent for duplicate webhook delivery)
+    // Append-only: record outcome for each non-completed USER_PAYMENT entry; trigger syncs status (AGENTS 6.10)
     await this.prisma.$transaction(async (tx) => {
-      await tx.ledgerEntryModel.updateMany({
+      const entries = await tx.ledgerEntryModel.findMany({
         where: {
           paymentRequestId,
           type: $Enums.LedgerEntryType.USER_PAYMENT,
           status: { not: $Enums.TransactionStatus.COMPLETED },
         },
-        data: {
-          status: $Enums.TransactionStatus.COMPLETED,
-          ...(paymentIntentId && { stripeId: paymentIntentId }),
-          updatedBy: `stripe`,
-        },
+        select: { id: true },
       });
+      for (const entry of entries) {
+        await tx.ledgerEntryOutcomeModel.create({
+          data: {
+            ledgerEntryId: entry.id,
+            status: $Enums.TransactionStatus.COMPLETED,
+            source: `stripe`,
+            externalId: paymentIntentId ?? undefined,
+          },
+        });
+      }
       await tx.paymentRequestModel.updateMany({
         where: { id: paymentRequestId, status: { not: $Enums.TransactionStatus.COMPLETED } },
         data: {
@@ -436,6 +466,29 @@ export class StripeWebhookService {
   }
 
   private async resolvePaymentRequestByPaymentIntent(paymentIntentId: string) {
+    // Look up by outcome.externalId (payment intent id) or legacy ledger_entry.stripe_id
+    const byOutcome = await this.prisma.ledgerEntryOutcomeModel.findFirst({
+      where: { externalId: paymentIntentId },
+      orderBy: { createdAt: `desc` },
+      select: {
+        ledgerEntry: {
+          select: {
+            paymentRequestId: true,
+            paymentRequest: {
+              select: {
+                id: true,
+                amount: true,
+                currencyCode: true,
+                payerId: true,
+                requesterId: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    if (byOutcome?.ledgerEntry?.paymentRequest) return byOutcome.ledgerEntry.paymentRequest;
+
     const entry = await this.prisma.ledgerEntryModel.findFirst({
       where: {
         stripeId: paymentIntentId,
@@ -522,18 +575,27 @@ export class StripeWebhookService {
     const ledgerId = randomUUID();
 
     await this.prisma.$transaction(async (tx) => {
-      await tx.$queryRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${requesterId}::text)::bigint)`);
+      // 🔐 Lock with operation-specific key to prevent cross-operation collisions
+      await tx.$queryRaw(Prisma.sql`
+        SELECT pg_advisory_xact_lock(hashtext((${requesterId} || ':stripe-reversal')::text)::bigint)
+      `);
 
-      const requesterBalanceResult = await tx.ledgerEntryModel.aggregate({
-        where: {
-          consumerId: requesterId,
-          currencyCode,
-          status: $Enums.TransactionStatus.COMPLETED,
-          deletedAt: null,
-        },
-        _sum: { amount: true },
-      });
-      const requesterBalance = Number(requesterBalanceResult._sum.amount ?? 0);
+      // 🔐 SELECT FOR UPDATE to lock rows; effective status from latest outcome (append-only, no trigger UPDATE)
+      const requesterBalanceResult = await tx.$queryRaw<{ balance: number }[]>`
+        SELECT COALESCE(SUM(le.amount), 0)::numeric AS balance
+        FROM ledger_entry le
+        LEFT JOIN LATERAL (
+          SELECT o.status FROM ledger_entry_outcome o
+          WHERE o.ledger_entry_id = le.id
+          ORDER BY o.created_at DESC LIMIT 1
+        ) latest ON true
+        WHERE le.consumer_id = ${requesterId}
+          AND le.currency_code = ${currencyCode}::"CurrencyCode"
+          AND COALESCE(latest.status, le.status) = ${$Enums.TransactionStatus.COMPLETED}::"TransactionStatus"
+          AND le.deleted_at IS NULL
+        FOR UPDATE OF le
+      `;
+      const requesterBalance = Number(requesterBalanceResult[0]?.balance ?? 0);
       if (requesterBalance < finalAmount) {
         throw new ServiceUnavailableException(errorCodes.INSUFFICIENT_REQUESTER_BALANCE_REVERSAL_STRIPE);
       }
@@ -686,9 +748,21 @@ export class StripeWebhookService {
           ? $Enums.TransactionStatus.DENIED
           : $Enums.TransactionStatus.PENDING;
 
-    await this.prisma.ledgerEntryModel.updateMany({
-      where: { stripeId: refund.id, type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL },
-      data: { status, updatedBy: `stripe` },
+    await this.prisma.$transaction(async (tx) => {
+      const entries = await tx.ledgerEntryModel.findMany({
+        where: { stripeId: refund.id, type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL },
+        select: { id: true },
+      });
+      for (const entry of entries) {
+        await tx.ledgerEntryOutcomeModel.create({
+          data: {
+            ledgerEntryId: entry.id,
+            status,
+            source: `stripe`,
+            externalId: refund.id,
+          },
+        });
+      }
     });
   }
 
@@ -756,29 +830,43 @@ export class StripeWebhookService {
         stripeId: paymentIntentId,
         type: $Enums.LedgerEntryType.USER_PAYMENT,
       },
-      select: { id: true, metadata: true },
+      select: { id: true },
       orderBy: { createdAt: `desc` },
     });
+    if (!entry) {
+      const byOutcome = await this.prisma.ledgerEntryOutcomeModel.findFirst({
+        where: { externalId: paymentIntentId },
+        orderBy: { createdAt: `desc` },
+        select: { ledgerEntryId: true },
+      });
+      if (!byOutcome) return;
+      await this.prisma.ledgerEntryDisputeModel.create({
+        data: {
+          ledgerEntryId: byOutcome.ledgerEntryId,
+          stripeDisputeId: dispute.id,
+          metadata: {
+            status: dispute.status,
+            amount: dispute.amount,
+            reason: dispute.reason ?? null,
+            updatedAt: new Date().toISOString(),
+          },
+        },
+      });
+      return;
+    }
 
-    if (!entry) return;
-
-    const baseMetadata =
-      entry.metadata && typeof entry.metadata === `object` && !Array.isArray(entry.metadata) ? entry.metadata : {};
-
-    const nextMetadata = {
-      ...(baseMetadata as Record<string, unknown>),
-      dispute: {
-        id: dispute.id,
-        status: dispute.status,
-        amount: dispute.amount,
-        reason: dispute.reason ?? null,
-        updatedAt: new Date().toISOString(),
+    // Append-only: record dispute in ledger_entry_dispute (AGENTS 6.10)
+    await this.prisma.ledgerEntryDisputeModel.create({
+      data: {
+        ledgerEntryId: entry.id,
+        stripeDisputeId: dispute.id,
+        metadata: {
+          status: dispute.status,
+          amount: dispute.amount,
+          reason: dispute.reason ?? null,
+          updatedAt: new Date().toISOString(),
+        },
       },
-    } as Prisma.InputJsonValue;
-
-    await this.prisma.ledgerEntryModel.update({
-      where: { id: entry.id },
-      data: { metadata: nextMetadata, updatedBy: `stripe` },
     });
   }
 }

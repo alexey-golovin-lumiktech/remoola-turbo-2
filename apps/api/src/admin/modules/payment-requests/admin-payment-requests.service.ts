@@ -26,7 +26,7 @@ export class AdminPaymentRequestsService {
   private static readonly SEARCH_MAX_LEN = 200;
   private static readonly TRANSACTION_STATUSES = Object.values($Enums.TransactionStatus) as string[];
 
-  /** Bounded list for admin (AGENTS.md 6.10). Default cap 500. Search/filter fintech-safe (bounded, Prisma-only). */
+  /** Bounded list for admin. Default cap 500. Search/filter fintech-safe (bounded, Prisma-only). */
   async findAllPaymentRequests(params?: {
     page?: number;
     pageSize?: number;
@@ -97,8 +97,12 @@ export class AdminPaymentRequestsService {
     const offset = (page - 1) * pageSize;
 
     const whereClauses: Prisma.Sql[] = [];
-    if (query?.trim()) {
-      whereClauses.push(Prisma.sql`a.payment_request_id::text ILIKE ${`%${query.trim()}%`}`);
+    const searchQuery =
+      typeof query === `string` && query.trim().length > 0
+        ? query.trim().slice(0, AdminPaymentRequestsService.SEARCH_MAX_LEN)
+        : undefined;
+    if (searchQuery) {
+      whereClauses.push(Prisma.sql`a.payment_request_id::text ILIKE ${`%${searchQuery}%`}`);
     }
 
     const whereSql = whereClauses.length > 0 ? Prisma.sql`WHERE ${Prisma.join(whereClauses, ` AND `)}` : Prisma.empty;
@@ -383,20 +387,29 @@ export class AdminPaymentRequestsService {
     } as Prisma.InputJsonValue;
 
     await this.prisma.$transaction(async (tx) => {
+      // 🔐 Lock with operation-specific key to prevent cross-operation collisions
       await tx.$queryRaw(
-        Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${paymentRequest.requesterId}::text)::bigint)`,
+        Prisma.sql`
+          SELECT pg_advisory_xact_lock(hashtext((${paymentRequest.requesterId} || ':reversal')::text)::bigint)
+        `,
       );
 
-      const requesterBalanceResult = await tx.ledgerEntryModel.aggregate({
-        where: {
-          consumerId: paymentRequest.requesterId,
-          currencyCode: paymentRequest.currencyCode,
-          status: $Enums.TransactionStatus.COMPLETED,
-          deletedAt: null,
-        },
-        _sum: { amount: true },
-      });
-      const requesterBalance = Number(requesterBalanceResult._sum.amount ?? 0);
+      // 🔐 SELECT FOR UPDATE to lock rows; effective status from latest outcome (append-only, no trigger UPDATE)
+      const requesterBalanceResult = await tx.$queryRaw<{ balance: number }[]>`
+        SELECT COALESCE(SUM(le.amount), 0)::numeric AS balance
+        FROM ledger_entry le
+        LEFT JOIN LATERAL (
+          SELECT o.status FROM ledger_entry_outcome o
+          WHERE o.ledger_entry_id = le.id
+          ORDER BY o.created_at DESC LIMIT 1
+        ) latest ON true
+        WHERE le.consumer_id = ${paymentRequest.requesterId}
+          AND le.currency_code = ${paymentRequest.currencyCode}::"CurrencyCode"
+          AND COALESCE(latest.status, le.status) = ${$Enums.TransactionStatus.COMPLETED}::"TransactionStatus"
+          AND le.deleted_at IS NULL
+        FOR UPDATE OF le
+      `;
+      const requesterBalance = Number(requesterBalanceResult[0]?.balance ?? 0);
       if (requesterBalance < finalRequestedAmount) {
         throw new BadRequestException(errorCodes.INSUFFICIENT_REQUESTER_BALANCE_REVERSAL_ADMIN);
       }

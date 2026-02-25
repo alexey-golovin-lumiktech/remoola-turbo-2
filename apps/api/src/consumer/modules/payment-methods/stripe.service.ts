@@ -186,11 +186,21 @@ export class ConsumerStripeService {
       metadata: { paymentRequestId: pr.id, consumerId },
     });
 
-    // 2) Update transaction to Waiting status
-    await this.prisma.ledgerEntryModel.updateMany({
+    // 2) Append-only: record WAITING outcome; trigger syncs to ledger_entry.status (AGENTS 6.10)
+    const entries = await this.prisma.ledgerEntryModel.findMany({
       where: { paymentRequestId: pr.id },
-      data: { status: `WAITING`, stripeId: session.id },
+      select: { id: true },
     });
+    for (const entry of entries) {
+      await this.prisma.ledgerEntryOutcomeModel.create({
+        data: {
+          ledgerEntryId: entry.id,
+          status: $Enums.TransactionStatus.WAITING,
+          source: `stripe`,
+          externalId: session.id,
+        },
+      });
+    }
 
     return { url: session.url };
   }
@@ -401,20 +411,26 @@ export class ConsumerStripeService {
         description: `Payment to ${pr.requester.email}`,
       });
 
-      // 6) Update database records only if not already COMPLETED (idempotent if webhook also runs)
+      // 6) Append-only: record COMPLETED outcome for non-completed entries; trigger syncs status (AGENTS 6.10)
       if (paymentIntent.status === `succeeded`) {
         await this.prisma.$transaction(async (tx) => {
-          await tx.ledgerEntryModel.updateMany({
+          const ledgerEntries = await tx.ledgerEntryModel.findMany({
             where: {
               paymentRequestId: pr.id,
               status: { not: $Enums.TransactionStatus.COMPLETED },
             },
-            data: {
-              status: $Enums.TransactionStatus.COMPLETED,
-              stripeId: paymentIntent.id,
-              updatedBy: `stripe`,
-            },
+            select: { id: true },
           });
+          for (const entry of ledgerEntries) {
+            await tx.ledgerEntryOutcomeModel.create({
+              data: {
+                ledgerEntryId: entry.id,
+                status: $Enums.TransactionStatus.COMPLETED,
+                source: `stripe`,
+                externalId: paymentIntent.id,
+              },
+            });
+          }
           await tx.paymentRequestModel.updateMany({
             where: { id: paymentRequestId, status: { not: $Enums.TransactionStatus.COMPLETED } },
             data: {
@@ -445,14 +461,20 @@ export class ConsumerStripeService {
         error: err?.message ?? String(error),
       });
 
-      // Update ledger entries to failed status
-      await this.prisma.ledgerEntryModel.updateMany({
+      // Append-only: record DENIED outcome; trigger syncs to ledger_entry.status (AGENTS 6.10)
+      const entries = await this.prisma.ledgerEntryModel.findMany({
         where: { paymentRequestId: pr.id },
-        data: {
-          status: $Enums.TransactionStatus.DENIED,
-          updatedBy: `stripe`,
-        },
+        select: { id: true },
       });
+      for (const entry of entries) {
+        await this.prisma.ledgerEntryOutcomeModel.create({
+          data: {
+            ledgerEntryId: entry.id,
+            status: $Enums.TransactionStatus.DENIED,
+            source: `stripe`,
+          },
+        });
+      }
 
       throw error;
     }

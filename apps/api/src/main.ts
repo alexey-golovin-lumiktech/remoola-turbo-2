@@ -1,6 +1,6 @@
 import { join } from 'path';
 
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { type INestApplication } from '@nestjs/common/interfaces';
 import { NestFactory, Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
@@ -23,6 +23,8 @@ import { AuthGuard } from './guards';
 import { TransformResponseInterceptor } from './interceptors';
 import { PrismaService } from './shared/prisma.service';
 import { passwordUtils } from './shared-common';
+
+const logger = new Logger(`Bootstrap`);
 
 async function seed(prisma: PrismaClient): Promise<void> {
   const admins = [
@@ -232,9 +234,9 @@ async function bootstrap() {
     .listen(port)
     .then(app.getUrl)
     .then((appUrl) => {
-      console.log(`🚀 API running on ${appUrl}/api`);
-      console.log(`📘 Admin Docs → ${appUrl}/docs/admin`);
-      console.log(`📗 Consumer Docs → ${appUrl}/docs/consumer`);
+      logger.log(`🚀 API running on ${appUrl}/api`);
+      logger.log(`📘 Admin Docs → ${appUrl}/docs/admin`);
+      logger.log(`📗 Consumer Docs → ${appUrl}/docs/consumer`);
     });
 
   if (isOnVercel === false && envs.NGROK_AUTH_TOKEN !== `NGROK_AUTH_TOKEN` && envs.NGROK_DOMAIN !== `NGROK_DOMAIN`) {
@@ -247,10 +249,10 @@ async function bootstrap() {
         force_new_session: true,
       });
 
-      console.log(`Ingress ngrok established at: ${listener.url()}`);
+      logger.log(`Ingress ngrok established at: ${listener.url()}`);
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : String(error);
-      console.log(`⚠️  Ingress ngrok unavailable: ${msg}`);
+      logger.warn(`⚠️  Ingress ngrok unavailable: ${msg}`);
     }
   }
 
@@ -259,14 +261,14 @@ async function bootstrap() {
 
 void bootstrap()
   .then(killAppWithGrace)
-  .catch((e) => console.error(String(e) || `Bootstrap err`));
+  .catch((e) => logger.error(`Bootstrap error: ${e instanceof Error ? e.message : String(e)}`));
 
 function killAppWithGrace(app: INestApplication) {
   async function exitHandler(options: { cleanup?: boolean; exit?: boolean }, exitCode?: number) {
     await app.close();
 
-    if (options.cleanup) console.log(`App stopped: clean`);
-    if (exitCode || exitCode === 0) console.log(`App stopped: exit code: ${exitCode}`);
+    if (options.cleanup) logger.log(`App stopped: clean`);
+    if (exitCode || exitCode === 0) logger.log(`App stopped: exit code: ${exitCode}`);
     setTimeout(() => process.exit(1), 5000);
     process.exit(0);
   }
@@ -274,8 +276,11 @@ function killAppWithGrace(app: INestApplication) {
   process.stdin.resume();
   process.on(`unhandledRejection`, (error: unknown) => {
     const err = error as { code?: string };
-    if (err?.code == `ERR_HTTP_HEADERS_SENT`) return console.log(`ERR_HTTP_HEADERS_SENT with error code: ${err.code}`);
-    console.error({ error, caller: bootstrap.name, message: `Unhandled rejection` });
+    if (err?.code == `ERR_HTTP_HEADERS_SENT`) {
+      logger.log(`ERR_HTTP_HEADERS_SENT with error code: ${err.code}`);
+      return;
+    }
+    logger.error({ error, caller: bootstrap.name, message: `Unhandled rejection` });
     process.exit(1);
   });
   process.on(`exit`, exitHandler.bind(null, { cleanup: true }));

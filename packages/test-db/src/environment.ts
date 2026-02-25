@@ -55,10 +55,12 @@ export default class TemporaryDatabaseEnvironment extends NodeEnvironment {
     for (const candidate of originalCandidates) {
       const candidateIdentity = this.toComparableDbIdentity(candidate);
       if (candidateIdentity === temporaryIdentity) {
+        /* eslint-disable */
         throw new Error(
           `Temporary test database resolves to the same DB as existing local env (${candidateIdentity}). ` +
-            `Refusing to run tests against a non-isolated database.`,
+          `Refusing to run tests against a non-isolated database.`,
         );
+        /* eslint-enable */
       }
     }
 
@@ -98,7 +100,22 @@ export default class TemporaryDatabaseEnvironment extends NodeEnvironment {
     }
   }
 
+  private static isVercel(): boolean {
+    const v = process.env.VERCEL;
+    if (v !== undefined && v !== `` && v !== `0` && String(v).toLowerCase() !== `false`) return true;
+    if (process.env.VERCEL_ENV ?? process.env.VERCEL_URL) return true;
+    return false;
+  }
+
   async setup(): Promise<void> {
+    if (TemporaryDatabaseEnvironment.isVercel()) {
+      /* eslint-disable */
+      throw new Error(
+        `@remoola/test-db must not run on Vercel (VERCEL/VERCEL_ENV/VERCEL_URL detected). ` +
+        `E2E tests with temporary databases are for local or CI only.`,
+      );
+      /* eslint-enable */
+    }
     await super.setup();
     const handle = await createTemporaryDatabase();
     this.previousDatabaseUrl = this.global.process?.env.DATABASE_URL;

@@ -64,11 +64,16 @@ export class ConsumerProfileService {
 
     if (body.organizationDetails) {
       const current = await this.prisma.organizationDetailsModel.findFirst({ where: { consumerId } });
+      const consumerRole = body.organizationDetails.consumerRole ?? current?.consumerRole ?? null;
+      const consumerRoleOther =
+        consumerRole === `OTHER`
+          ? (body.organizationDetails.consumerRoleOther ?? current?.consumerRoleOther ?? null)
+          : null;
       const patch = {
-        name: body.organizationDetails.name || current.name,
-        consumerRole: current.consumerRole,
-        consumerRoleOther: current.consumerRoleOther,
-        size: body.organizationDetails.size || current.size,
+        name: body.organizationDetails.name || current?.name || ``,
+        consumerRole,
+        consumerRoleOther,
+        size: body.organizationDetails.size || current?.size || `SMALL`,
       };
 
       updates.organizationDetails = {

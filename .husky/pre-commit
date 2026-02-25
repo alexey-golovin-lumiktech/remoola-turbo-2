@@ -12,3 +12,4 @@ yarn --silent workspace @remoola/test-db run build >/dev/null 2>&1
   cd apps/api &&
     QUIET_MEMORY_GUARD=1 node ../../scripts/run-jest-with-memory-cap.js --passWithNoTests --verbose --coverage=false
 )
+(cd apps/api && QUIET_MEMORY_GUARD=1 yarn test:e2e)

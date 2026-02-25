@@ -64,6 +64,16 @@ model OauthStateModel {
   @@map("oauth_state")
 }
 
+/// Fintech-safe: at-most-once Stripe webhook processing by event id.
+model StripeWebhookEventModel {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  eventId   String   @unique @map("event_id") @db.Text
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("stripe_webhook_event")
+}
+
 model AddressDetailsModel {
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
@@ -73,7 +83,7 @@ model AddressDetailsModel {
   state      String? @db.Text
   street     String? @db.Text
 
-  consumerId String        @unique @db.Uuid
+  consumerId String        @unique @map("consumer_id") @db.Uuid
   consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -87,7 +97,7 @@ model AddressDetailsModel {
 model AdminModel {
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
-  type AdminType @default(ADMIN)
+  type AdminType @default(ADMIN) @map("type")
 
   email    String @db.Text
   password String @db.Text
@@ -215,14 +225,14 @@ model ExchangeRateModel {
   rateAsk   Decimal? @map("rate_ask") @db.Decimal(18, 8)
   spreadBps Int?     @map("spread_bps")
 
-  status      ExchangeRateStatus @default(APPROVED)
+  status      ExchangeRateStatus @default(APPROVED) @map("status")
   effectiveAt DateTime           @default(now()) @map("effective_at") @db.Timestamptz(6)
   expiresAt   DateTime?          @map("expires_at") @db.Timestamptz(6)
   fetchedAt   DateTime?          @map("fetched_at") @db.Timestamptz(6)
 
   provider       String? @map("provider") @db.Text
   providerRateId String? @map("provider_rate_id") @db.Text
-  confidence     Int?
+  confidence     Int?    @map("confidence")
 
   createdBy  String?   @map("created_by") @db.Uuid
   updatedBy  String?   @map("updated_by") @db.Uuid
@@ -280,7 +290,7 @@ model ScheduledFxConversionModel {
   toCurrency   CurrencyCode @map("to_currency")
   amount       Decimal      @db.Decimal(9, 2)
 
-  status       ScheduledFxConversionStatus @default(PENDING)
+  status       ScheduledFxConversionStatus @default(PENDING) @map("status")
   executeAt    DateTime                    @map("execute_at") @db.Timestamptz(6)
   processingAt DateTime?                   @map("processing_at") @db.Timestamptz(6)
   executedAt   DateTime?                   @map("executed_at") @db.Timestamptz(6)
@@ -312,7 +322,7 @@ model GoogleProfileDetailsModel {
   organization  String? @db.Text
   metadata      Json?
 
-  consumerId String        @unique @db.Uuid
+  consumerId String        @unique @map("consumer_id") @db.Uuid
   consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -331,7 +341,7 @@ model OrganizationDetailsModel {
   consumerRoleOther String?          @map("consumer_role_other") @db.Text
   size              OrganizationSize @default(SMALL)
 
-  consumerId String        @unique @db.Uuid
+  consumerId String        @unique @map("consumer_id") @db.Uuid
   consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -345,7 +355,7 @@ model OrganizationDetailsModel {
 model PaymentMethodModel {
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
-  type PaymentMethodType
+  type PaymentMethodType @map("type")
 
   // Stripe identity
   stripePaymentMethodId String? @map("stripe_payment_method_id") @db.Text
@@ -428,9 +438,9 @@ model LedgerEntryModel {
   id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   ledgerId String @map("ledger_id") @db.Uuid
 
-  type         LedgerEntryType
-  currencyCode CurrencyCode
-  status       TransactionStatus
+  type         LedgerEntryType   @map("type")
+  currencyCode CurrencyCode     @map("currency_code")
+  status       TransactionStatus @map("status")
 
   /**
    * SIGNED:
@@ -439,8 +449,8 @@ model LedgerEntryModel {
    */
   amount Decimal @db.Decimal(9, 2)
 
-  feesType   TransactionFeesType? @default(NO_FEES_INCLUDED)
-  feesAmount Decimal?             @db.Decimal(9, 2)
+  feesType   TransactionFeesType? @default(NO_FEES_INCLUDED) @map("fees_type")
+  feesAmount Decimal?             @db.Decimal(9, 2) @map("fees_amount")
 
   stripeId String? @map("stripe_id") @db.Text
 
@@ -466,7 +476,38 @@ model LedgerEntryModel {
   @@index([paymentRequestId])
   @@index([consumerId])
   @@index([ledgerId])
+  outcomes LedgerEntryOutcomeModel[]
+  disputes LedgerEntryDisputeModel[]
   @@map("ledger_entry")
+}
+
+/// Append-only status transitions (AGENTS 6.10). App only INSERTs; trigger syncs to ledger_entry.status.
+model LedgerEntryOutcomeModel {
+  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ledgerEntryId  String           @map("ledger_entry_id") @db.Uuid
+  status         TransactionStatus @map("status")
+  source         String?          @db.Text
+  externalId     String?          @map("external_id") @db.Text
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  ledgerEntry LedgerEntryModel @relation(fields: [ledgerEntryId], references: [id], onDelete: Restrict)
+
+  @@index([ledgerEntryId, createdAt(sort: Desc)])
+  @@map("ledger_entry_outcome")
+}
+
+/// Append-only dispute log; no UPDATE to ledger_entry.metadata.
+model LedgerEntryDisputeModel {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ledgerEntryId   String   @map("ledger_entry_id") @db.Uuid
+  stripeDisputeId String   @map("stripe_dispute_id") @db.Text
+  metadata        Json     @default("{}")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  ledgerEntry LedgerEntryModel @relation(fields: [ledgerEntryId], references: [id], onDelete: Restrict)
+
+  @@index([ledgerEntryId])
+  @@map("ledger_entry_dispute")
 }
 
 model PaymentRequestAttachmentModel {
@@ -508,7 +549,7 @@ model PersonalDetailsModel {
   firstName             String?  @map("first_name") @db.Text
   lastName              String?  @map("last_name") @db.Text
 
-  consumerId String        @unique @db.Uuid
+  consumerId String        @unique @map("consumer_id") @db.Uuid
   consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -543,7 +584,7 @@ model ResourceModel {
   // Use enum (you already defined it)
   access ResourceAccess @default(PUBLIC) @map("access")
 
-  originalName String @map("originalname") @db.Text
+  originalName String @map("original_name") @db.Text
   mimetype     String @db.Text
   size         Int
   bucket       String @db.Text
@@ -870,7 +911,7 @@ model ConsumerSettingsModel {
   theme             Theme         @default(SYSTEM)
   preferredCurrency CurrencyCode? @map("preferred_currency")
 
-  consumerId String        @unique @db.Uuid
+  consumerId String        @unique @map("consumer_id") @db.Uuid
   consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -887,7 +928,7 @@ model AdminSettingsModel {
 
   theme Theme @default(SYSTEM)
 
-  adminId String      @unique @db.Uuid
+  adminId String      @unique @map("admin_id") @db.Uuid
   admin   AdminModel  @relation(fields: [adminId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)

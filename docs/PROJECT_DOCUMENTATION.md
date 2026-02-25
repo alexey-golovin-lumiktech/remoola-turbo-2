@@ -271,15 +271,17 @@ Internal Consumer API routes:
 
 ## Database (Prisma)
 
-Database schema is defined in `packages/database-2/prisma/schema.prisma`. The system uses soft-delete (`deletedAt`) on most models.
+Database schema is defined in `packages/database-2/prisma/schema.prisma`. The system uses soft-delete (`deletedAt`) on most models. Column names in the database are **snake_case** (Prisma fields use `@map("snake_case")` where needed). Financial history (ledger entries) is append-only; see `docs/FINANCIAL_SAFETY_AND_DB_COMPLIANCE.md` and `docs/postgresql-design-rules.md` for design rules.
 
 ### Core Models
 
-- `AdminModel`: admin users with role (`SUPER`, `ADMIN`), email, password, salt.
+- `AdminModel`: admin users with type (`AdminType`: `SUPER`, `ADMIN`), email, password, salt.
 - `ConsumerModel`: consumer accounts, account type, verification status, Stripe customer id, and relations to profile info and transactions.
 - `AccessRefreshTokenModel`: access/refresh token storage for identities.
 - `OauthStateModel`: OAuth state key and payload for flow continuity.
 - `ResetPasswordModel`: password reset token and expiration.
+- `StripeWebhookEventModel`: deduplication of Stripe webhook events by unique `event_id` (at-most-once processing).
+- `AuthAuditLogModel`, `AuthLoginLockoutModel`: login audit and per-email lockout.
 
 ### Profile and Identity Details
 
@@ -293,7 +295,9 @@ Database schema is defined in `packages/database-2/prisma/schema.prisma`. The sy
 ### Payments and Ledger
 
 - `PaymentRequestModel`: payment request between payer and requester, amount, status, rail, dates, and attachments.
-- `LedgerEntryModel`: ledger entries with type, status, signed amount, fees, idempotency key, and optional payment request link.
+- `LedgerEntryModel`: ledger entries with type, status, signed amount, fees, idempotency key, and optional payment request link. **Append-only** in application code; status transitions and dispute data are written to outcome/dispute tables; a DB trigger syncs latest outcome to `ledger_entry.status`.
+- `LedgerEntryOutcomeModel`: append-only status transitions for ledger entries (AGENTS §6.10).
+- `LedgerEntryDisputeModel`: append-only dispute log for Stripe disputes.
 - `PaymentMethodModel`: consumer payment methods, Stripe identifiers, billing details, and card/bank metadata.
 - `BillingDetailsModel`: optional billing profile for payment methods.
 - `ExchangeRateModel`: currency exchange rates.
@@ -341,3 +345,8 @@ Shared packages used across apps:
 - `packages/test-db`: test database utilities.
 - `packages/ui`: shared UI components.
 - `packages/eslint-config`, `packages/jest-config`, `packages/typescript-config`: tooling.
+
+## Additional documentation
+
+- `docs/FINANCIAL_SAFETY_AND_DB_COMPLIANCE.md`: fintech safety, ledger invariants, idempotency, concurrency, risk audit.
+- `docs/postgresql-design-rules.md`: PostgreSQL design rules (schema, migrations, naming).

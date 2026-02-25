@@ -390,8 +390,20 @@ describe(`ConsumerPaymentsService.withdraw`, () => {
         create: jest.fn().mockResolvedValue(existingEntry),
       },
       $transaction: jest.fn((fn: (tx: any) => Promise<any>) => {
+        const queryToStr = (q: unknown): string =>
+          typeof q === `string`
+            ? q
+            : q && typeof q === `object` && (q as any).strings
+              ? (q as any).strings.join(`?`)
+              : String(q);
         const tx = {
-          $queryRaw: jest.fn().mockResolvedValue(undefined),
+          $queryRaw: jest.fn().mockImplementation((query) => {
+            const queryStr = queryToStr(query);
+            if (queryStr.includes(`pg_advisory_xact_lock`)) return Promise.resolve([]);
+            if (queryStr.includes(`SUM(amount)`) || queryStr.includes(`SUM(le.amount)`))
+              return Promise.resolve([{ balance: 500 }]);
+            return Promise.resolve(undefined);
+          }),
           ledgerEntryModel: {
             aggregate: jest.fn().mockResolvedValue({ _sum: { amount: 500 } }),
             create: jest.fn().mockResolvedValue(existingEntry),
