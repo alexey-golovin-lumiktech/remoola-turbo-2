@@ -21,7 +21,7 @@
     "dev": "turbo run dev --parallel",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "db:generate": "turbo run db:generate",
-    "postinstall": "turbo run build --filter=\"./packages/*\" --filter=\"!@remoola/db-fixtures\" --filter=\"!@remoola/test-db\"",
+    "postinstall": "turbo run build --filter=\"./packages/*\" --filter=\"!@remoola/db-fixtures\" --filter=\"!@remoola/test-db\" --filter=\"!@remoola/api-e2e\"",
     "lint": "turbo run lint",
     "start": "turbo run start --parallel",
     "test": "node ./scripts/ensure-local-development.js root:test && turbo run test",
@@ -38,7 +38,7 @@
     "turbo:dev:api": "turbo run dev --filter=@remoola/api",
     "turbo:dev:consumer": "turbo run dev --filter=@remoola/consumer",
     "turbo:dev:admin": "turbo run dev --filter=@remoola/admin",
-    "deps:sync": "node scripts/sync-dependency-versions.js"
+    "deps:sync": "bash scripts/sync-dependency-versions.sh"
   },
   "dependencies": {},
   "devDependencies": {

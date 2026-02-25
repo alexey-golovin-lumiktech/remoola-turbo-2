@@ -1,0 +1,17 @@
+{
+  "name": "@remoola/api-e2e",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "pretest": "node ../../scripts/ensure-local-development.js api-e2e:pretest && yarn workspace @remoola/test-db build",
+    "test": "node ../../scripts/run-jest-with-memory-cap.js --config ./jest-e2e.json",
+    "test:e2e": "node ../../scripts/run-jest-with-memory-cap.js --config ./jest-e2e.json"
+  },
+  "devDependencies": {
+    "@remoola/jest-config": "^0.0.0",
+    "@remoola/test-db": "^0.0.0",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.6",
+    "typescript": "5.8.2"
+  }
+}
