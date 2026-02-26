@@ -17,8 +17,7 @@ async function main(): Promise<void> {
   const prisma = new PrismaClient();
   try {
     const summary = await seedAllTables(prisma, options);
-    // CLI utility, emit concise structured output.
-    console.log(JSON.stringify(summary, null, 2));
+    process.stdout.write(JSON.stringify(summary, null, 2) + `\n`);
   } finally {
     await prisma.$disconnect();
   }
@@ -26,6 +25,6 @@ async function main(): Promise<void> {
 
 main().catch((error: unknown) => {
   const message = error instanceof Error ? error.message : String(error);
-  console.error(message);
+  process.stderr.write(`${message}\n`);
   process.exit(1);
 });

@@ -3,6 +3,7 @@ import { BadRequestException } from '@nestjs/common';
 import { $Enums } from '@remoola/database-2';
 
 import { ConsumerExchangeService } from './consumer-exchange.service';
+import { BalanceCalculationService } from '../../../shared/balance-calculation.service';
 
 describe(`ConsumerExchangeService.convert`, () => {
   it(`throws INSUFFICIENT_CURRENCY_BALANCE when balance inside transaction is less than amount`, async () => {
@@ -57,7 +58,12 @@ describe(`ConsumerExchangeService.convert`, () => {
       }),
     } as any;
 
-    const service = new ConsumerExchangeService(prisma);
+    const balanceService = {
+      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: { USD: 0 } }),
+      calculateInTransaction: jest.fn().mockResolvedValue(0),
+    } as any;
+
+    const service = new ConsumerExchangeService(prisma, balanceService);
 
     await expect(
       service.convert(consumerId, { from: $Enums.CurrencyCode.USD, to: $Enums.CurrencyCode.EUR, amount: 50 }),
@@ -68,13 +74,15 @@ describe(`ConsumerExchangeService.convert`, () => {
 describe(`ConsumerExchangeService.getBalanceByCurrency`, () => {
   it(`returns balance by currency using effective status (outcome or entry)`, async () => {
     const consumerId = `consumer-1`;
-    const queryRaw = jest.fn().mockResolvedValue([{ currency_code: $Enums.CurrencyCode.USD, sum_amount: `100` }]);
-    const prisma = { $queryRaw: queryRaw } as any;
-    const service = new ConsumerExchangeService(prisma);
+    const balanceService = {
+      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: { USD: 100 } }),
+    } as any;
+    const prisma = {} as any;
+    const service = new ConsumerExchangeService(prisma, balanceService);
 
     const result = await service.getBalanceByCurrency(consumerId);
 
-    expect(queryRaw).toHaveBeenCalled();
+    expect(balanceService.calculateMultiCurrency).toHaveBeenCalledWith(consumerId);
     expect(result).toEqual({ USD: 100 });
   });
 });

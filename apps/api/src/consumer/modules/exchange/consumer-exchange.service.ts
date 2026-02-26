@@ -10,6 +10,7 @@ import { CreateAutoConversionRuleBody } from './dto/create-auto-conversion-rule.
 import { ScheduleConversionBody } from './dto/schedule-conversion.dto';
 import { UpdateAutoConversionRuleBody } from './dto/update-auto-conversion-rule.dto';
 import { envs } from '../../../envs';
+import { BalanceCalculationService } from '../../../shared/balance-calculation.service';
 import { PrismaService } from '../../../shared/prisma.service';
 import { getCurrencyFractionDigits } from '../../../shared-common';
 
@@ -17,7 +18,10 @@ import { getCurrencyFractionDigits } from '../../../shared-common';
 export class ConsumerExchangeService {
   private readonly logger = new Logger(ConsumerExchangeService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly balanceService: BalanceCalculationService,
+  ) {}
 
   async getRate(from: $Enums.CurrencyCode, to: $Enums.CurrencyCode) {
     if (from === to) return { rate: 1 };
@@ -57,27 +61,8 @@ export class ConsumerExchangeService {
   }
 
   async getBalanceByCurrency(consumerId: string): Promise<Record<$Enums.CurrencyCode, number>> {
-    const rows = await this.prisma.$queryRaw<
-      Array<{ currency_code: $Enums.CurrencyCode; sum_amount: string }>
-    >(Prisma.sql`
-      SELECT le.currency_code, COALESCE(SUM(le.amount), 0) AS sum_amount
-      FROM ledger_entry le
-      LEFT JOIN LATERAL (
-        SELECT o.status FROM ledger_entry_outcome o
-        WHERE o.ledger_entry_id = le.id
-        ORDER BY o.created_at DESC LIMIT 1
-      ) latest ON true
-        WHERE le.consumer_id::text = ${consumerId}
-          AND (COALESCE(latest.status, le.status))::text = ${$Enums.TransactionStatus.COMPLETED}
-          AND le.deleted_at IS NULL
-      GROUP BY le.currency_code
-    `);
-
-    const result = {} as Record<$Enums.CurrencyCode, number>;
-    for (const row of rows) {
-      result[row.currency_code] = Number(row.sum_amount);
-    }
-    return result;
+    const result = await this.balanceService.calculateMultiCurrency(consumerId);
+    return result.balances;
   }
 
   async convert(consumerId: string, body: ConvertCurrencyBody) {
@@ -585,7 +570,7 @@ export class ConsumerExchangeService {
     },
     initiatedBy: { source: string; actorId?: string },
   ) {
-    const balances = await this.getBalanceByCurrency(rule.consumerId);
+    const balances = await this.balanceService.calculateMultiCurrency(rule.consumerId);
     const available = balances[rule.fromCurrency] ?? 0;
     const targetBalance = Number(rule.targetBalance);
 
@@ -674,8 +659,8 @@ export class ConsumerExchangeService {
         throw new BadRequestException(errorCodes.INVALID_AMOUNT_CONVERT);
       }
 
-      const balances = await this.getBalanceByCurrency(consumerId);
-      const available = balances[from] ?? 0;
+      const balances = await this.balanceService.calculateMultiCurrency(consumerId);
+      const available = balances.balances[from] ?? 0;
 
       if (amount > available) {
         throw new BadRequestException(errorCodes.INSUFFICIENT_CURRENCY_BALANCE);
@@ -761,21 +746,8 @@ export class ConsumerExchangeService {
         SELECT pg_advisory_xact_lock(hashtext((${consumerId} || ':exchange')::text)::bigint)
       `);
 
-        // Balance check: advisory lock above serializes per consumer; no FOR UPDATE on aggregate (raw-sql-issues.md)
-        const balanceResult = await tx.$queryRaw<{ balance: number }[]>`
-        SELECT COALESCE(SUM(le.amount), 0) AS balance
-        FROM ledger_entry le
-        LEFT JOIN LATERAL (
-          SELECT o.status FROM ledger_entry_outcome o
-          WHERE o.ledger_entry_id = le.id
-          ORDER BY o.created_at DESC LIMIT 1
-        ) latest ON true
-        WHERE le.consumer_id::text = ${consumerId}
-          AND le.currency_code::text = ${from}
-          AND (COALESCE(latest.status, le.status))::text = ${$Enums.TransactionStatus.COMPLETED}
-          AND le.deleted_at IS NULL
-      `;
-        const balanceInsideTx = Number(balanceResult[0]?.balance ?? 0);
+        // Balance check using centralized service (advisory lock above serializes per consumer)
+        const balanceInsideTx = await this.balanceService.calculateInTransaction(tx, consumerId, from);
         if (amount > balanceInsideTx) {
           throw new BadRequestException(errorCodes.INSUFFICIENT_CURRENCY_BALANCE);
         }

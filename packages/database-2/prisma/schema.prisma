@@ -27,12 +27,12 @@ model AccessRefreshTokenModel {
 model AuthAuditLogModel {
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
-  identityType String   @map("identity_type") @db.Text
-  identityId   String?  @map("identity_id") @db.Uuid
-  email        String   @db.Text
-  event        String   @db.Text
-  ipAddress    String?  @map("ip_address") @db.Text
-  userAgent    String?  @map("user_agent") @db.Text
+  identityType String  @map("identity_type") @db.Text
+  identityId   String? @map("identity_id") @db.Uuid
+  email        String  @db.Text
+  event        String  @db.Text
+  ipAddress    String? @map("ip_address") @db.Text
+  userAgent    String? @map("user_agent") @db.Text
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
@@ -44,7 +44,7 @@ model AuthAuditLogModel {
 model AuthLoginLockoutModel {
   identityType   String    @map("identity_type") @db.Text
   email          String    @db.Text
-  attemptCount   Int       @map("attempt_count") @default(0)
+  attemptCount   Int       @default(0) @map("attempt_count")
   firstAttemptAt DateTime? @map("first_attempt_at") @db.Timestamptz(6)
   lockedUntil    DateTime? @map("locked_until") @db.Timestamptz(6)
   updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -415,9 +415,9 @@ model PaymentRequestModel {
   payerEmail String?        @map("payer_email") @db.Text
   payer      ConsumerModel? @relation("PaymentRequestPayer", fields: [payerId], references: [id], onDelete: SetNull)
 
-  requesterId   String?         @map("requester_id") @db.Uuid
+  requesterId    String?        @map("requester_id") @db.Uuid
   requesterEmail String?        @map("requester_email") @db.Text
-  requester     ConsumerModel? @relation("PaymentRequestRequester", fields: [requesterId], references: [id], onDelete: SetNull)
+  requester      ConsumerModel? @relation("PaymentRequestRequester", fields: [requesterId], references: [id], onDelete: SetNull)
 
   attachments   PaymentRequestAttachmentModel[]
   ledgerEntries LedgerEntryModel[]
@@ -440,7 +440,7 @@ model LedgerEntryModel {
   ledgerId String @map("ledger_id") @db.Uuid
 
   type         LedgerEntryType   @map("type")
-  currencyCode CurrencyCode     @map("currency_code")
+  currencyCode CurrencyCode      @map("currency_code")
   status       TransactionStatus @map("status")
 
   /**
@@ -451,7 +451,7 @@ model LedgerEntryModel {
   amount Decimal @db.Decimal(9, 2)
 
   feesType   TransactionFeesType? @default(NO_FEES_INCLUDED) @map("fees_type")
-  feesAmount Decimal?             @db.Decimal(9, 2) @map("fees_amount")
+  feesAmount Decimal?             @map("fees_amount") @db.Decimal(9, 2)
 
   stripeId String? @map("stripe_id") @db.Text
 
@@ -466,30 +466,30 @@ model LedgerEntryModel {
   paymentRequestId String?              @map("payment_request_id") @db.Uuid
   paymentRequest   PaymentRequestModel? @relation(fields: [paymentRequestId], references: [id], onDelete: SetNull)
 
-  createdBy String?   @map("created_by") @db.Text
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedBy String?   @map("updated_by") @db.Text
-  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedBy String?   @map("deleted_by") @db.Text
-  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+  createdBy String?                   @map("created_by") @db.Text
+  createdAt DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedBy String?                   @map("updated_by") @db.Text
+  updatedAt DateTime                  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedBy String?                   @map("deleted_by") @db.Text
+  deletedAt DateTime?                 @map("deleted_at") @db.Timestamptz(6)
+  outcomes  LedgerEntryOutcomeModel[]
+  disputes  LedgerEntryDisputeModel[]
 
   @@unique([idempotencyKey])
   @@index([paymentRequestId])
   @@index([consumerId])
   @@index([ledgerId])
-  outcomes LedgerEntryOutcomeModel[]
-  disputes LedgerEntryDisputeModel[]
   @@map("ledger_entry")
 }
 
 /// Append-only status transitions (AGENTS 6.10). App only INSERTs; trigger syncs to ledger_entry.status.
 model LedgerEntryOutcomeModel {
-  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  ledgerEntryId  String           @map("ledger_entry_id") @db.Uuid
-  status         TransactionStatus @map("status")
-  source         String?          @db.Text
-  externalId     String?          @map("external_id") @db.Text
-  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  id            String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ledgerEntryId String            @map("ledger_entry_id") @db.Uuid
+  status        TransactionStatus @map("status")
+  source        String?           @db.Text
+  externalId    String?           @map("external_id") @db.Text
+  createdAt     DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
 
   ledgerEntry LedgerEntryModel @relation(fields: [ledgerEntryId], references: [id], onDelete: Restrict)
 
@@ -929,8 +929,8 @@ model AdminSettingsModel {
 
   theme Theme @default(SYSTEM)
 
-  adminId String      @unique @map("admin_id") @db.Uuid
-  admin   AdminModel  @relation(fields: [adminId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  adminId String     @unique @map("admin_id") @db.Uuid
+  admin   AdminModel @relation(fields: [adminId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)

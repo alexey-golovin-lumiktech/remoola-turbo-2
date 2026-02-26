@@ -10,6 +10,7 @@ import { $Enums } from '@remoola/database-2';
 
 import { ConsumerPaymentsService } from './consumer-payments.service';
 import { type TransferBody, type WithdrawBody } from './dto';
+import { BalanceCalculationService } from '../../../shared/balance-calculation.service';
 
 describe(`ConsumerPaymentsService - Concurrency Safety`, () => {
   const consumerId = `consumer-test-1`;
@@ -94,7 +95,8 @@ describe(`ConsumerPaymentsService - Concurrency Safety`, () => {
 
   function createService(prisma: any) {
     const mailingService = {} as any;
-    const service = new ConsumerPaymentsService(prisma, mailingService);
+    const balanceService = new BalanceCalculationService(prisma);
+    const service = new ConsumerPaymentsService(prisma, mailingService, balanceService);
     (service as any).ensureLimits = jest.fn().mockResolvedValue(undefined);
     return service;
   }

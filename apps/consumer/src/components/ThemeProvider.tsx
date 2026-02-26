@@ -2,6 +2,8 @@
 
 import React, { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
+import { clientLogger } from '../lib/logger';
+
 export const Theme = { LIGHT: `light`, DARK: `dark`, SYSTEM: `system` } as const;
 export type ITheme = (typeof Theme)[keyof typeof Theme];
 
@@ -51,7 +53,9 @@ export function ThemeProvider({
         setTheme(stored);
       }
     } catch (error) {
-      console.warn(`Failed to load theme from localStorage:`, error);
+      clientLogger.warn(`Failed to load theme from localStorage`, {
+        reason: error instanceof Error ? error.message : String(error),
+      });
     }
     setMounted(true);
   }, [storageKey]);
@@ -88,7 +92,9 @@ export function ThemeProvider({
     try {
       localStorage.setItem(storageKey, theme);
     } catch (error) {
-      console.warn(`Failed to save theme to localStorage:`, error);
+      clientLogger.warn(`Failed to save theme to localStorage`, {
+        reason: error instanceof Error ? error.message : String(error),
+      });
     }
   }, [theme, storageKey]);
 

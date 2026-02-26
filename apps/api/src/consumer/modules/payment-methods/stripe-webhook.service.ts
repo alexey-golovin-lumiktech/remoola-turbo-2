@@ -15,6 +15,7 @@ import { errorCodes } from '@remoola/shared-constants';
 
 import { STRIPE_EVENT } from './events';
 import { envs } from '../../../envs';
+import { BalanceCalculationService } from '../../../shared/balance-calculation.service';
 import { MailingService } from '../../../shared/mailing.service';
 import { PrismaService } from '../../../shared/prisma.service';
 import { getCurrencyFractionDigits } from '../../../shared-common';
@@ -27,6 +28,7 @@ export class StripeWebhookService {
   constructor(
     private prisma: PrismaService,
     private readonly mailingService: MailingService,
+    private readonly balanceService: BalanceCalculationService,
   ) {
     this.stripe = new Stripe(envs.STRIPE_SECRET_KEY, { apiVersion: `2025-11-17.clover` });
   }
@@ -586,21 +588,8 @@ export class StripeWebhookService {
           SELECT pg_advisory_xact_lock(hashtext((${requesterId} || ':stripe-reversal')::text)::bigint)
         `);
 
-        // Balance check: advisory lock above serializes per consumer; no FOR UPDATE on aggregate (raw-sql-issues.md)
-        const requesterBalanceResult = await tx.$queryRaw<{ balance: number }[]>`
-          SELECT COALESCE(SUM(le.amount), 0) AS balance
-          FROM ledger_entry le
-          LEFT JOIN LATERAL (
-            SELECT o.status FROM ledger_entry_outcome o
-            WHERE o.ledger_entry_id = le.id
-            ORDER BY o.created_at DESC LIMIT 1
-          ) latest ON true
-          WHERE le.consumer_id::text = ${requesterId}
-            AND le.currency_code::text = ${currencyCode}
-            AND (COALESCE(latest.status, le.status))::text = ${$Enums.TransactionStatus.COMPLETED}
-            AND le.deleted_at IS NULL
-        `;
-        const requesterBalance = Number(requesterBalanceResult[0]?.balance ?? 0);
+        // Balance check using centralized service (advisory lock above serializes per consumer)
+        const requesterBalance = await this.balanceService.calculateInTransaction(tx, requesterId, currencyCode);
         if (requesterBalance < finalAmount) {
           throw new ServiceUnavailableException(errorCodes.INSUFFICIENT_REQUESTER_BALANCE_REVERSAL_STRIPE);
         }

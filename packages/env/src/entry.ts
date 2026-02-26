@@ -4,8 +4,10 @@ const currentEnv = loadAndValidate(`initial`);
 
 function loadAndValidate(mode: `initial` | `reload`) {
   const parsed = envSchema.parse(process.env);
+  // In dev only, log that env loaded; never log parsed values (may contain secrets)
   if (parsed.ENABLE_DEBUG && parsed.NODE_ENV === `development`) {
-    console.debug(`[${mode}] ✅ Loaded environment:`, parsed);
+    const keys = Object.keys(parsed).sort();
+    process.stderr.write(`[env] ${mode} loaded (keys: ${keys.length})\n`);
   }
   return parsed;
 }

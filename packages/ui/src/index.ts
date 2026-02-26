@@ -4,6 +4,7 @@ export * from './Card';
 export { cn } from './cn';
 export * from './DataTable';
 export * from './Input';
+export { createClientLogger } from './logger';
 export * from './PasswordInput';
 export * from './Pill';
 export * from './Progress';

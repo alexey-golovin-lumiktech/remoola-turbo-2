@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'crypto';
 
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import Stripe from 'stripe';
 
 import { $Enums, Prisma } from '@remoola/database-2';
@@ -8,17 +8,20 @@ import { adminErrorCodes, errorCodes } from '@remoola/shared-constants';
 
 import { type PaymentReversalCreate } from './dto';
 import { envs } from '../../../envs';
+import { BalanceCalculationService } from '../../../shared/balance-calculation.service';
 import { MailingService } from '../../../shared/mailing.service';
 import { PrismaService } from '../../../shared/prisma.service';
 import { getCurrencyFractionDigits } from '../../../shared-common';
 
 @Injectable()
 export class AdminPaymentRequestsService {
+  private readonly logger = new Logger(AdminPaymentRequestsService.name);
   private stripe: Stripe;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly mailingService: MailingService,
+    private readonly balanceService: BalanceCalculationService,
   ) {
     this.stripe = new Stripe(envs.STRIPE_SECRET_KEY, { apiVersion: `2025-11-17.clover` });
   }
@@ -419,21 +422,12 @@ export class AdminPaymentRequestsService {
           `,
         );
 
-        // Balance check: advisory lock above serializes per consumer; no FOR UPDATE on aggregate (raw-sql-issues.md)
-        const requesterBalanceResult = await tx.$queryRaw<{ balance: number }[]>`
-          SELECT COALESCE(SUM(le.amount), 0) AS balance
-          FROM ledger_entry le
-          LEFT JOIN LATERAL (
-            SELECT o.status FROM ledger_entry_outcome o
-            WHERE o.ledger_entry_id = le.id
-            ORDER BY o.created_at DESC LIMIT 1
-          ) latest ON true
-          WHERE le.consumer_id::text = ${paymentRequest.requesterId}
-            AND le.currency_code::text = ${paymentRequest.currencyCode}
-            AND (COALESCE(latest.status, le.status))::text = ${$Enums.TransactionStatus.COMPLETED}
-            AND le.deleted_at IS NULL
-        `;
-        const requesterBalance = Number(requesterBalanceResult[0]?.balance ?? 0);
+        // Balance check using centralized service (advisory lock above serializes per consumer)
+        const requesterBalance = await this.balanceService.calculateInTransaction(
+          tx,
+          paymentRequest.requesterId,
+          paymentRequest.currencyCode,
+        );
         if (requesterBalance < finalRequestedAmount) {
           throw new BadRequestException(errorCodes.INSUFFICIENT_REQUESTER_BALANCE_REVERSAL_ADMIN);
         }

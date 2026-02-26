@@ -15,6 +15,16 @@ export default [
     },
   },
   {
+    files: [
+      '**/__tests__/**/*.{ts,tsx}',
+      '**/?(*.)+(spec|test).{ts,tsx}',
+    ],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+    },
+  },
+  {
     ignores: ['.prettierrc.mjs', 'eslint.config.mjs'],
   },
 ];

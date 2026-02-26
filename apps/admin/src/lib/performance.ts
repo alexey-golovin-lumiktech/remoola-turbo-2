@@ -1,25 +1,16 @@
 // Performance monitoring utilities
 import { type NextWebVitalsMetric } from 'next/app';
 
-// Web Vitals reporting
-export function reportWebVitals(metric: NextWebVitalsMetric) {
-  // In production, send to analytics service
-  if (process.env.NODE_ENV === `production`) {
-    // Example: send to Google Analytics, Datadog, etc.
-    console.log(`Web Vital:`, {
-      name: metric.name,
-      value: metric.value,
-      id: metric.id,
-      timestamp: Date.now(),
-    });
+import { clientLogger } from './logger';
 
-    // You could send this to your analytics service:
-    // analytics.track('web_vital', {
-    //   name: metric.name,
-    //   value: metric.value,
-    //   id: metric.id,
-    // });
-  }
+// Web Vitals reporting (dev only via logger; in production wire to analytics.track etc.)
+export function reportWebVitals(metric: NextWebVitalsMetric) {
+  clientLogger.info(`Web Vital`, {
+    name: metric.name,
+    value: metric.value,
+    id: metric.id,
+    timestamp: Date.now(),
+  });
 }
 
 interface PerformanceMemory {
@@ -28,12 +19,12 @@ interface PerformanceMemory {
   jsHeapSizeLimit: number;
 }
 
-// Memory usage monitoring
+// Memory usage monitoring (dev only via logger)
 export function logMemoryUsage() {
   const perf = performance as Performance & { memory?: PerformanceMemory };
   if (perf.memory) {
     const mem = perf.memory;
-    console.log(`Memory usage:`, {
+    clientLogger.info(`Memory usage`, {
       used: Math.round(mem.usedJSHeapSize / 1024 / 1024) + `MB`,
       total: Math.round(mem.totalJSHeapSize / 1024 / 1024) + `MB`,
       limit: Math.round(mem.jsHeapSizeLimit / 1024 / 1024) + `MB`,
@@ -55,15 +46,18 @@ export function createPerformanceTrackedApiClient(apiClient: ApiClientWithFetch)
       const result = await originalFetch(...args);
       const duration = performance.now() - startTime;
 
-      // Log slow API calls
       if (duration > 1000) {
-        console.warn(`Slow API call: ${args[0]} took ${duration.toFixed(2)}ms`);
+        clientLogger.warn(`Slow API call`, { path: args[0], durationMs: duration.toFixed(2) });
       }
 
       return result;
     } catch (error) {
       const duration = performance.now() - startTime;
-      console.error(`Failed API call: ${args[0]} took ${duration.toFixed(2)}ms`, error);
+      clientLogger.error(`Failed API call`, {
+        path: args[0],
+        durationMs: duration.toFixed(2),
+        reason: error instanceof Error ? error.message : String(error),
+      });
       throw error;
     }
   };

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ISendMailOptions, MailerService } from '@nestjs-modules/mailer';
 
 import { generatePdf } from '../shared-common';
@@ -19,7 +19,7 @@ import { envs } from '../envs';
 
 @Injectable()
 export class MailingService {
-  private readonly logger = console;
+  private readonly logger = new Logger(MailingService.name);
 
   constructor(private mailerService: MailerService) {}
 
@@ -30,7 +30,7 @@ export class MailingService {
       await this.mailerService.sendMail({ to: envs.ADMIN_EMAIL!, subject, html });
       this.logger.log(`Email "${subject}" successfully sent`);
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(`Email send failed: ${subject}`, error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -47,7 +47,7 @@ export class MailingService {
       await this.mailerService.sendMail({ to: params.email, subject, html });
       this.logger.log(`Email "${subject}" successfully sent`);
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(`Email send failed: ${subject}`, error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -60,7 +60,7 @@ export class MailingService {
       await this.mailerService.sendMail({ to: invoice.referer, subject, html, attachments });
       this.logger.log(`Email "${subject}" successfully sent`);
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(`Email send failed: ${subject}`, error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -71,7 +71,7 @@ export class MailingService {
       await this.mailerService.sendMail({ to: params.email, subject, html });
       this.logger.log(`Email "${subject}" successfully sent`);
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(`Email send failed: ${subject}`, error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -82,7 +82,7 @@ export class MailingService {
       await this.mailerService.sendMail({ to: params.email, subject, html });
       this.logger.log(`Email "${subject}" successfully sent`);
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(`Email send failed: ${subject}`, error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -97,7 +97,7 @@ export class MailingService {
       await this.mailerService.sendMail({ to: params.contactEmail, subject, html });
       this.logger.log(`Email "${subject}" successfully sent`);
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(`Email send failed: ${subject}`, error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -140,7 +140,7 @@ export class MailingService {
       await this.mailerService.sendMail({ to: params.payerEmail, subject, html });
       this.logger.log(`Email "${subject}" successfully sent`);
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(`Email send failed: ${subject}`, error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -185,7 +185,7 @@ export class MailingService {
       await this.mailerService.sendMail({ to: params.recipientEmail, subject, html });
       this.logger.log(`Email "${subject}" successfully sent`);
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(`Email send failed: ${subject}`, error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -230,7 +230,7 @@ export class MailingService {
       await this.mailerService.sendMail({ to: params.recipientEmail, subject, html });
       this.logger.log(`Email "${subject}" successfully sent`);
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(`Email send failed: ${subject}`, error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -241,7 +241,7 @@ export class MailingService {
       await this.mailerService.sendMail({ to: params.email, subject, html });
       this.logger.log(`Email "${subject}" successfully sent`);
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(`Email send failed: ${subject}`, error instanceof Error ? error.message : String(error));
     }
   }
 }

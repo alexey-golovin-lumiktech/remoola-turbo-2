@@ -8,8 +8,10 @@ import { errorCodes } from '@remoola/shared-constants';
 
 import { CreatePaymentRequest, PaymentsHistoryQuery, TransferBody, WithdrawBody } from './dto';
 import { StartPayment } from './dto/start-payment.dto';
+import { BalanceCalculationService, BalanceCalculationMode } from '../../../shared/balance-calculation.service';
 import { MailingService } from '../../../shared/mailing.service';
 import { PrismaService } from '../../../shared/prisma.service';
+
 @Injectable()
 export class ConsumerPaymentsService {
   private readonly logger = new Logger(ConsumerPaymentsService.name);
@@ -17,6 +19,7 @@ export class ConsumerPaymentsService {
   constructor(
     private prisma: PrismaService,
     private readonly mailingService: MailingService,
+    private readonly balanceService: BalanceCalculationService,
   ) {}
 
   /** Ensures consumer has completed profile
@@ -527,27 +530,10 @@ export class ConsumerPaymentsService {
 
   async getBalancesCompleted(consumerId: string): Promise<Record<$Enums.CurrencyCode, number>> {
     try {
-      const rows = await this.prisma.$queryRaw<
-        Array<{ currency_code: $Enums.CurrencyCode; sum_amount: string }>
-      >(Prisma.sql`
-        SELECT le.currency_code, COALESCE(SUM(le.amount), 0) AS sum_amount
-        FROM ledger_entry le
-        LEFT JOIN LATERAL (
-          SELECT o.status FROM ledger_entry_outcome o
-          WHERE o.ledger_entry_id = le.id
-          ORDER BY o.created_at DESC LIMIT 1
-        ) latest ON true
-        WHERE le.consumer_id::text = ${consumerId}
-          AND (COALESCE(latest.status, le.status))::text = ${$Enums.TransactionStatus.COMPLETED}
-          AND le.deleted_at IS NULL
-        GROUP BY le.currency_code
-      `);
-
-      const result = {} as Record<$Enums.CurrencyCode, number>;
-      for (const row of rows) {
-        result[row.currency_code] = Number(row.sum_amount);
-      }
-      return result;
+      const result = await this.balanceService.calculateMultiCurrency(consumerId, {
+        mode: BalanceCalculationMode.COMPLETED,
+      });
+      return result.balances;
     } catch (error) {
       this.logger.error(`Failed to get balances by currency`, {
         consumerId,
@@ -567,44 +553,15 @@ export class ConsumerPaymentsService {
   }
 
   async getBalancesIncludePending(consumerId: string): Promise<Record<$Enums.CurrencyCode, number>> {
-    const rows = await this.prisma.$queryRaw<
-      Array<{ currency_code: $Enums.CurrencyCode; sum_amount: string }>
-    >(Prisma.sql`
-      SELECT le.currency_code, COALESCE(SUM(le.amount), 0) AS sum_amount
-      FROM ledger_entry le
-      LEFT JOIN LATERAL (
-        SELECT o.status FROM ledger_entry_outcome o
-        WHERE o.ledger_entry_id = le.id
-        ORDER BY o.created_at DESC LIMIT 1
-      ) latest ON true
-      WHERE le.consumer_id::text = ${consumerId}
-        AND ((COALESCE(latest.status, le.status))::text = ${$Enums.TransactionStatus.COMPLETED}
-             OR (COALESCE(latest.status, le.status))::text = ${$Enums.TransactionStatus.PENDING})
-        AND le.deleted_at IS NULL
-      GROUP BY le.currency_code
-    `);
-
-    const result = {} as Record<$Enums.CurrencyCode, number>;
-    for (const row of rows) {
-      result[row.currency_code] = Number(row.sum_amount);
-    }
-    return result;
+    const result = await this.balanceService.calculateMultiCurrency(consumerId, {
+      mode: BalanceCalculationMode.COMPLETED_AND_PENDING,
+    });
+    return result.balances;
   }
 
   async getAvailableBalance(consumerId: string): Promise<number> {
-    const rows = await this.prisma.$queryRaw<Array<{ balance: string | null }>>(Prisma.sql`
-        SELECT COALESCE(SUM(le.amount), 0) AS balance
-      FROM ledger_entry le
-      LEFT JOIN LATERAL (
-        SELECT o.status FROM ledger_entry_outcome o
-        WHERE o.ledger_entry_id = le.id
-        ORDER BY o.created_at DESC LIMIT 1
-      ) latest ON true
-      WHERE le.consumer_id::text = ${consumerId}
-        AND (COALESCE(latest.status, le.status))::text = ${$Enums.TransactionStatus.COMPLETED}
-        AND le.deleted_at IS NULL
-    `);
-    return Number(rows[0]?.balance ?? 0);
+    const result = await this.balanceService.calculateSingle(consumerId);
+    return result.balance;
   }
 
   async getHistory(consumerId: string, query: PaymentsHistoryQuery) {
@@ -757,20 +714,8 @@ export class ConsumerPaymentsService {
           SELECT pg_advisory_xact_lock(hashtext((${consumerId} || ':withdraw')::text)::bigint)
         `);
 
-        // Balance check: advisory lock above serializes per consumer; no FOR UPDATE on aggregate (raw-sql-issues.md)
-        const balanceResult = await tx.$queryRaw<{ balance: number }[]>`
-          SELECT COALESCE(SUM(le.amount), 0) AS balance
-          FROM ledger_entry le
-          LEFT JOIN LATERAL (
-            SELECT o.status FROM ledger_entry_outcome o
-            WHERE o.ledger_entry_id = le.id
-            ORDER BY o.created_at DESC LIMIT 1
-          ) latest ON true
-          WHERE le.consumer_id::text = ${consumerId}
-            AND (COALESCE(latest.status, le.status))::text = ${$Enums.TransactionStatus.COMPLETED}
-            AND le.deleted_at IS NULL
-        `;
-        const balance = Number(balanceResult[0]?.balance ?? 0);
+        // Balance check using centralized service (advisory lock above serializes per consumer)
+        const balance = await this.balanceService.calculateInTransaction(tx, consumerId, $Enums.CurrencyCode.USD);
         if (amount > balance) {
           throw new BadRequestException(errorCodes.INSUFFICIENT_BALANCE_WITHDRAW);
         }
@@ -858,6 +803,8 @@ export class ConsumerPaymentsService {
 
     try {
       return await this.prisma.$transaction(async (tx) => {
+        const transferCurrency = toCurrencyOrDefault(body.currencyCode, $Enums.CurrencyCode.USD);
+
         // 🔐 Lock both consumers with operation-specific keys (sorted to prevent deadlocks)
         await tx.$executeRaw(Prisma.sql`
           SELECT pg_advisory_xact_lock(hashtext((${firstId} || ':transfer')::text)::bigint)
@@ -866,25 +813,12 @@ export class ConsumerPaymentsService {
           SELECT pg_advisory_xact_lock(hashtext((${secondId} || ':transfer')::text)::bigint)
         `);
 
-        // Balance check: advisory locks above serialize per consumer; no FOR UPDATE on aggregate (raw-sql-issues.md)
-        const balanceResult = await tx.$queryRaw<{ balance: number }[]>`
-          SELECT COALESCE(SUM(le.amount), 0) AS balance
-          FROM ledger_entry le
-          LEFT JOIN LATERAL (
-            SELECT o.status FROM ledger_entry_outcome o
-            WHERE o.ledger_entry_id = le.id
-            ORDER BY o.created_at DESC LIMIT 1
-          ) latest ON true
-          WHERE le.consumer_id::text = ${consumerId}
-            AND (COALESCE(latest.status, le.status))::text = ${$Enums.TransactionStatus.COMPLETED}
-            AND le.deleted_at IS NULL
-        `;
-        const balance = Number(balanceResult[0]?.balance ?? 0);
+        // Balance check using centralized service (advisory locks above serialize per consumer)
+        const balance = await this.balanceService.calculateInTransaction(tx, consumerId, transferCurrency);
         if (amount > balance) {
           throw new BadRequestException(errorCodes.INSUFFICIENT_BALANCE_TRANSFER);
         }
 
-        const transferCurrency = toCurrencyOrDefault(body.currencyCode, $Enums.CurrencyCode.USD);
         await tx.ledgerEntryModel.create({
           data: {
             ledgerId,

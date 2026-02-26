@@ -7,6 +7,7 @@ import { CURRENCY_CODES, type TCurrencyCode } from '@remoola/api-types';
 
 import { FormSelect, type FormSelectOption } from '../../../../components/ui';
 import styles from '../../../../components/ui/classNames.module.css';
+import { clientLogger } from '../../../../lib/logger';
 
 const { themeCard, themeDescription, themeTitle, themeUpdating } = styles;
 
@@ -44,7 +45,9 @@ export function PreferredCurrencySettingsForm({ preferredCurrency, onUpdated }: 
       toast.success(`Preferred currency updated`);
     } catch (error) {
       toast.error(`We couldn't update your preferred currency. Please try again.`);
-      console.error(`Preferred currency update error:`, error);
+      clientLogger.error(`Preferred currency update error`, {
+        reason: error instanceof Error ? error.message : String(error),
+      });
     } finally {
       setLoading(false);
     }

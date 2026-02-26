@@ -2,6 +2,7 @@
 
 import React, { Component, type ErrorInfo, type ReactNode } from 'react';
 
+import { clientLogger } from '../lib/logger';
 import styles from './ui/classNames.module.css';
 
 interface Props {
@@ -25,8 +26,10 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Log to error reporting service in production
-    console.error(`Error caught by boundary:`, error, errorInfo);
+    clientLogger.error(`Error caught by boundary`, {
+      message: error.message,
+      componentStack: errorInfo.componentStack ?? undefined,
+    });
   }
 
   render() {

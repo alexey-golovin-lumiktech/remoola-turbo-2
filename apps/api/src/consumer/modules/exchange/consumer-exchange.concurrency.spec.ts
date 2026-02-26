@@ -5,6 +5,7 @@
 import { $Enums } from '@remoola/database-2';
 
 import { ConsumerExchangeService } from './consumer-exchange.service';
+import { BalanceCalculationService } from '../../../shared/balance-calculation.service';
 
 describe(`ConsumerExchangeService - Concurrency Safety`, () => {
   const consumerId = `consumer-exchange-test`;
@@ -79,9 +80,10 @@ describe(`ConsumerExchangeService - Concurrency Safety`, () => {
             create: jest.fn().mockResolvedValue({ id: `ledger-entry-1` }),
           },
         };
-        await fn(tx);
+        const result = await fn(tx);
         // Expose call log on prisma mock (both $executeRaw and $queryRaw)
         (prisma.$queryRaw as any)._txCallLog = txQueryCallLog;
+        return result;
       }),
     } as any;
 
@@ -89,7 +91,8 @@ describe(`ConsumerExchangeService - Concurrency Safety`, () => {
   }
 
   function createService(prisma: any) {
-    return new ConsumerExchangeService(prisma);
+    const balanceService = new BalanceCalculationService(prisma);
+    return new ConsumerExchangeService(prisma, balanceService);
   }
 
   describe(`Exchange - Concurrent Requests`, () => {

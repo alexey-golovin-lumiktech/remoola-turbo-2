@@ -2,8 +2,12 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 import { type ApiErrorShape } from '@remoola/api-types';
 
+import { clientLogger } from './logger';
+
 export function handleApiError(error: unknown): NextResponse<ApiErrorShape> {
-  console.error(`API Error:`, error);
+  clientLogger.error(`API Error`, {
+    message: error instanceof Error ? error.message : String(error),
+  });
 
   if (error instanceof Error) {
     // Check for specific error types

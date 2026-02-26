@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 
 import { Theme, useTheme, type ITheme } from '../../../../components/ThemeProvider';
 import styles from '../../../../components/ui/classNames.module.css';
+import { clientLogger } from '../../../../lib/logger';
 
 const {
   themeCard,
@@ -87,7 +88,9 @@ export function ThemeSettingsForm({ initialTheme }: ThemeSettingsFormProps = {})
           }
         }
       } catch (error) {
-        console.warn(`Failed to load theme settings:`, error);
+        clientLogger.warn(`Failed to load theme settings`, {
+          reason: error instanceof Error ? error.message : String(error),
+        });
       }
     }
 
@@ -112,7 +115,9 @@ export function ThemeSettingsForm({ initialTheme }: ThemeSettingsFormProps = {})
       toast.success(`Theme updated successfully`);
     } catch (error) {
       toast.error(`We couldn't update your theme. Please try again.`);
-      console.error(`Theme update error:`, error);
+      clientLogger.error(`Theme update error`, {
+        reason: error instanceof Error ? error.message : String(error),
+      });
     } finally {
       setLoading(false);
     }

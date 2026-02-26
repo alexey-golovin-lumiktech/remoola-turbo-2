@@ -6,6 +6,7 @@ import { errorCodes } from '@remoola/shared-constants';
 import { ConsumerPaymentsService } from './consumer-payments.service';
 import { type TransferBody, type WithdrawBody } from './dto';
 import { type StartPayment } from './dto/start-payment.dto';
+import { BalanceCalculationService } from '../../../shared/balance-calculation.service';
 
 describe(`ConsumerPaymentsService.createPaymentRequest`, () => {
   const consumerId = `consumer-1`;
@@ -40,7 +41,12 @@ describe(`ConsumerPaymentsService.createPaymentRequest`, () => {
     } as any;
 
     const mailingService = {} as any;
-    const service = new ConsumerPaymentsService(prisma, mailingService);
+    const balanceService = {
+      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn().mockResolvedValue(100),
+    } as any;
+    const service = new ConsumerPaymentsService(prisma as any, mailingService, balanceService);
 
     return { service, prisma };
   }
@@ -158,7 +164,12 @@ describe(`ConsumerPaymentsService.startPayment`, () => {
       },
       $transaction: jest.fn((fn: (t: typeof tx) => Promise<unknown>) => fn(tx)),
     } as any;
-    const service = new ConsumerPaymentsService(prisma, {} as any);
+    const balanceService = {
+      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn().mockResolvedValue(100),
+    } as any;
+    const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
     return { service, prisma, tx };
   }
 
@@ -327,7 +338,13 @@ describe(`ConsumerPaymentsService.sendPaymentRequest`, () => {
       sendPaymentRequestEmail: jest.fn(async () => undefined),
     } as any;
 
-    const service = new ConsumerPaymentsService(prisma, mailingService);
+    const balanceService = {
+      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn().mockResolvedValue(100),
+    } as any;
+
+    const service = new ConsumerPaymentsService(prisma, mailingService, balanceService);
     return { service, prisma, tx, mailingService };
   }
 
@@ -483,7 +500,12 @@ describe(`ConsumerPaymentsService.getPaymentView`, () => {
       },
     } as any;
 
-    const service = new ConsumerPaymentsService(prisma, {} as any);
+    const balanceService = {
+      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn().mockResolvedValue(100),
+    } as any;
+    const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
     return { service, prisma };
   }
 
@@ -520,7 +542,12 @@ describe(`ConsumerPaymentsService.withdraw`, () => {
 
   it(`throws when idempotency key is missing`, async () => {
     const prisma = { ledgerEntryModel: {}, $transaction: jest.fn() } as any;
-    const service = new ConsumerPaymentsService(prisma, {} as any);
+    const balanceService = {
+      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn().mockResolvedValue(100),
+    } as any;
+    const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
     (service as any).ensureLimits = jest.fn().mockResolvedValue(undefined);
 
     await expect(service.withdraw(consumerId, { amount: 100 } as WithdrawBody, undefined)).rejects.toThrow(
@@ -583,7 +610,12 @@ describe(`ConsumerPaymentsService.withdraw`, () => {
       }),
     } as any;
 
-    const service = new ConsumerPaymentsService(prisma, {} as any);
+    const balanceService = {
+      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn().mockResolvedValue(100),
+    } as any;
+    const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
     (service as any).ensureLimits = jest.fn().mockResolvedValue(undefined);
 
     const body: WithdrawBody = { amount: 100, method: $Enums.PaymentMethodType.BANK_ACCOUNT };
@@ -627,7 +659,12 @@ describe(`ConsumerPaymentsService.transfer`, () => {
       ledgerEntryModel: {},
       $transaction: jest.fn(),
     } as any;
-    const service = new ConsumerPaymentsService(prisma, {} as any);
+    const balanceService = {
+      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn().mockResolvedValue(100),
+    } as any;
+    const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
     (service as any).ensureLimits = jest.fn().mockResolvedValue(undefined);
 
     const bodyNoKey: TransferBody = { amount: 50, recipient: `r@x.com` };
@@ -661,7 +698,12 @@ describe(`ConsumerPaymentsService.transfer`, () => {
       }),
     } as any;
 
-    const service = new ConsumerPaymentsService(prisma, {} as any);
+    const balanceService = {
+      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn().mockResolvedValue(100),
+    } as any;
+    const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
     (service as any).ensureLimits = jest.fn().mockResolvedValue(undefined);
 
     const body: TransferBody = { amount: 2, recipient: `2@email.com`, currencyCode: $Enums.CurrencyCode.USD };
@@ -730,7 +772,12 @@ describe(`ConsumerPaymentsService.transfer`, () => {
       $transaction: transactionSpy,
     } as any;
 
-    const service = new ConsumerPaymentsService(prisma, {} as any);
+    const balanceService = {
+      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn().mockResolvedValue(100),
+    } as any;
+    const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
     (service as any).ensureLimits = jest.fn().mockResolvedValue(undefined);
 
     const body: TransferBody = { amount: 50, recipient: `r@example.com` };
@@ -771,7 +818,12 @@ describe(`ConsumerPaymentsService.transfer`, () => {
       }),
     } as any;
 
-    const service = new ConsumerPaymentsService(prisma, {} as any);
+    const balanceService = {
+      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn().mockResolvedValue(100),
+    } as any;
+    const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
     (service as any).ensureLimits = jest.fn().mockResolvedValue(undefined);
 
     const body: TransferBody = { amount: 2, recipient: `2@email.com` };
@@ -789,7 +841,12 @@ describe(`ConsumerPaymentsService.getHistory`, () => {
     const prisma = {
       ledgerEntryModel: { findMany },
     } as any;
-    const service = new ConsumerPaymentsService(prisma, {} as any);
+    const balanceService = {
+      calculateMultiCurrency: jest.fn().mockResolvedValue({ balances: {} }),
+      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn().mockResolvedValue(100),
+    } as any;
+    const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
 
     await service.getHistory(consumerId, { limit: 20, offset: 0 });
 

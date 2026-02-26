@@ -3,6 +3,7 @@
 import React, { Component, type ReactNode } from 'react';
 
 import styles from './classNames.module.css';
+import { clientLogger } from '../../lib/logger';
 
 const {
   emptyStateIcon,
@@ -43,11 +44,10 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    // Log error to monitoring service
-    console.error(`Error caught by boundary:`, error, errorInfo);
-
-    // In production, you might want to send this to an error reporting service
-    // like Sentry, LogRocket, or similar
+    clientLogger.error(`Error caught by boundary`, {
+      message: error.message,
+      componentStack: errorInfo.componentStack ?? undefined,
+    });
   }
 
   render() {

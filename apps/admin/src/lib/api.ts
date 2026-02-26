@@ -1,5 +1,7 @@
 import { ApiErrorSchema, type ApiErrorShape, type ApiResponseShape } from '@remoola/api-types';
 
+import { clientLogger } from './logger';
+
 export { ApiErrorSchema };
 
 // Enhanced API client with caching and deduplication
@@ -81,9 +83,9 @@ export class ApiClient {
       // Handle streaming for large responses
       const contentLength = response.headers.get(`content-length`);
       if (contentLength && parseInt(contentLength) > 1024 * 1024) {
-        // > 1MB
-        // For now, still read as text but log warning
-        console.warn(`Large response detected, consider implementing streaming`);
+        clientLogger.warn(`Large response detected, consider implementing streaming`, {
+          contentLength: contentLength,
+        });
       }
 
       const data = await response.json();

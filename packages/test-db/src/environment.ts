@@ -131,7 +131,10 @@ export default class TemporaryDatabaseEnvironment extends NodeEnvironment {
     process.env.TEST_DATABASE_URL = handle.databaseUrl;
     this.currentDatabaseUrl = handle.databaseUrl;
     this.temporaryDatabaseHandle = handle;
-    console.info(`[test-db] ${this.redactDatabaseUrl(handle.databaseUrl)}`);
+    const { TEST_DB_VERBOSE } = { ...process.env };
+    if (TEST_DB_VERBOSE === `1`) {
+      process.stderr.write(`[test-db] ${this.redactDatabaseUrl(handle.databaseUrl)}\n`);
+    }
   }
 
   async teardown(): Promise<void> {
