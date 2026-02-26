@@ -1,6 +1,12 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
+# Skip lint and tests when commit has no code changes (e.g. docs, CHANGELOG only)
+if ! sh "$(dirname -- "$0")/../scripts/pre-commit-needs-lint-and-tests.sh"; then
+  echo "No apps/ or packages/ code changes; skipping lint and tests."
+  exit 0
+fi
+
 yarn lint
 # Build once to avoid repeated pretest noise in each app test run.
 yarn --silent workspace @remoola/test-db run build >/dev/null 2>&1
