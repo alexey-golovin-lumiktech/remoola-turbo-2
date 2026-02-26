@@ -3,32 +3,56 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-import { DateInput } from '../../../../components/ui';
+import { PersonalDetailsFields, type PersonalDetailsValues } from '../../../../components/personal-details';
 import styles from '../../../../components/ui/classNames.module.css';
-import { type ConsumerProfile } from '../../../../types';
+import { getFieldErrors, personalDetailsSchema } from '../../../../lib/validation';
+import { type ConsumerProfile, LABEL_STATUS } from '../../../../types';
 
-const { formGridClass, formGridSpan2, formSection, formSectionTitle, inputClass, inputLabel, primaryActionButton } =
-  styles;
+const { formSection, formSectionTitle, primaryActionButton } = styles;
 
 type PersonalDetailsFormProps = { profile: ConsumerProfile; reload: () => void | Promise<void> };
 
+function toFormValues(pd: ConsumerProfile[`personalDetails`]): PersonalDetailsValues {
+  const raw = pd ?? {};
+  const legalStatusRaw = raw.legalStatus ?? ``;
+  const legalStatus = legalStatusRaw
+    ? ((LABEL_STATUS as Record<string, string>)[legalStatusRaw] ?? legalStatusRaw)
+    : ``;
+  return {
+    firstName: raw.firstName ?? ``,
+    lastName: raw.lastName ?? ``,
+    citizenOf: raw.citizenOf ?? ``,
+    countryOfTaxResidence: raw.countryOfTaxResidence ?? ``,
+    legalStatus,
+    taxId: raw.taxId ?? ``,
+    dateOfBirth: raw.dateOfBirth ?? ``,
+    passportOrIdNumber: raw.passportOrIdNumber ?? ``,
+    phoneNumber: raw.phoneNumber ?? ``,
+  };
+}
+
 export function PersonalDetailsForm({ profile, reload }: PersonalDetailsFormProps) {
-  const pd = profile.personalDetails ?? {};
-
-  const [firstName, setFirstName] = useState(pd.firstName ?? ``);
-  const [lastName, setLastName] = useState(pd.lastName ?? ``);
-  const [citizenOf, setCitizenOf] = useState(pd.citizenOf ?? ``);
-  const [passportOrIdNumber, setPassportOrIdNumber] = useState(pd.passportOrIdNumber ?? ``);
-
-  const [legalStatus, setLegalStatus] = useState(pd.legalStatus ?? ``);
-  const [dateOfBirth, setDateOfBirth] = useState(pd.dateOfBirth || ``);
-  const [countryOfTaxResidence, setCountryOfTaxResidence] = useState(pd.countryOfTaxResidence ?? ``);
-  const [taxId, setTaxId] = useState(pd.taxId ?? ``);
-  const [phoneNumber, setPhoneNumber] = useState(pd.phoneNumber ?? ``);
-
+  const [values, setValues] = useState<PersonalDetailsValues>(() => toFormValues(profile.personalDetails));
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
+  const handleChange = (field: keyof PersonalDetailsValues, value: string) => {
+    setValues((prev) => ({ ...prev, [field]: value }));
+    if (fieldErrors[field]) {
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  };
+
   async function save() {
+    const result = personalDetailsSchema.safeParse(values);
+    if (!result.success) {
+      setFieldErrors(getFieldErrors(result.error));
+      return;
+    }
     setSaving(true);
     const response = await fetch(`/api/profile/update`, {
       method: `PATCH`,
@@ -36,15 +60,15 @@ export function PersonalDetailsForm({ profile, reload }: PersonalDetailsFormProp
       credentials: `include`,
       body: JSON.stringify({
         personalDetails: {
-          firstName,
-          lastName,
-          citizenOf,
-          passportOrIdNumber,
-          legalStatus,
-          dateOfBirth: dateOfBirth || null,
-          countryOfTaxResidence,
-          taxId,
-          phoneNumber,
+          firstName: values.firstName,
+          lastName: values.lastName,
+          citizenOf: values.citizenOf,
+          passportOrIdNumber: values.passportOrIdNumber,
+          legalStatus: values.legalStatus || null,
+          dateOfBirth: values.dateOfBirth || null,
+          countryOfTaxResidence: values.countryOfTaxResidence,
+          taxId: values.taxId,
+          phoneNumber: values.phoneNumber,
         },
       }),
     });
@@ -57,6 +81,7 @@ export function PersonalDetailsForm({ profile, reload }: PersonalDetailsFormProp
     }
 
     toast.success(`Personal information updated successfully`);
+    setFieldErrors({});
     reload();
   }
 
@@ -64,64 +89,18 @@ export function PersonalDetailsForm({ profile, reload }: PersonalDetailsFormProp
     <section className={formSection}>
       <h2 className={formSectionTitle}>Personal Details</h2>
 
-      <div className={formGridClass}>
-        <div>
-          <label className={inputLabel}>First Name</label>
-          <input className={inputClass} value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-        </div>
-
-        <div>
-          <label className={inputLabel}>Last Name</label>
-          <input className={inputClass} value={lastName} onChange={(e) => setLastName(e.target.value)} />
-        </div>
-
-        <div className={formGridSpan2}>
-          <label className={inputLabel}>Citizen of</label>
-          <input className={inputClass} value={citizenOf} onChange={(e) => setCitizenOf(e.target.value)} />
-        </div>
-
-        <div className={formGridSpan2}>
-          <label className={inputLabel}>Passport / ID Number</label>
-          <input
-            className={inputClass}
-            value={passportOrIdNumber}
-            onChange={(e) => setPassportOrIdNumber(e.target.value)}
-          />
-        </div>
-
-        <div className={formGridSpan2}>
-          <label className={inputLabel}>Legal Status</label>
-          <input className={inputClass} value={legalStatus} onChange={(e) => setLegalStatus(e.target.value)} />
-        </div>
-
-        <div className={formGridSpan2}>
-          <DateInput
-            label="Date Of Birth"
-            value={dateOfBirth}
-            onChange={(value) => setDateOfBirth(value || ``)}
-            placeholder="Select your date of birth"
-          />
-        </div>
-
-        <div className={formGridSpan2}>
-          <label className={inputLabel}>Country Of Tax Residence</label>
-          <input
-            className={inputClass}
-            value={countryOfTaxResidence}
-            onChange={(e) => setCountryOfTaxResidence(e.target.value)}
-          />
-        </div>
-
-        <div className={formGridSpan2}>
-          <label className={inputLabel}>Tax ID</label>
-          <input className={inputClass} value={taxId} onChange={(e) => setTaxId(e.target.value)} />
-        </div>
-
-        <div className={formGridSpan2}>
-          <label className={inputLabel}>Phone number</label>
-          <input className={inputClass} value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
-        </div>
-      </div>
+      <PersonalDetailsFields
+        values={values}
+        onChange={handleChange}
+        errors={fieldErrors}
+        onErrorClear={(field) =>
+          setFieldErrors((prev) => {
+            const next = { ...prev };
+            delete next[field];
+            return next;
+          })
+        }
+      />
 
       <button disabled={saving} onClick={save} className={primaryActionButton}>
         {saving ? `Saving...` : `Save Changes`}

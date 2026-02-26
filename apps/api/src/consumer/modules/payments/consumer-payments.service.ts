@@ -50,6 +50,30 @@ export class ConsumerPaymentsService {
     }
   }
 
+  /**
+   * Asserts profile is complete before starting identity verification.
+   * Same rules as ensureProfileComplete; throws with PROFILE_INCOMPLETE_VERIFY for client mapping.
+   */
+  async assertProfileCompleteForVerification(consumerId: string): Promise<void> {
+    const consumer = await this.prisma.consumerModel.findUnique({
+      where: { id: consumerId },
+      include: { personalDetails: true },
+    });
+    if (!consumer) return;
+    const pd = consumer.personalDetails;
+    const isIndividual =
+      consumer.accountType === $Enums.AccountType.CONTRACTOR &&
+      consumer.contractorKind === $Enums.ContractorKind.INDIVIDUAL;
+    const complete =
+      pd &&
+      (isIndividual
+        ? pd.legalStatus && pd.taxId?.trim() && pd.passportOrIdNumber?.trim()
+        : pd.taxId?.trim() && pd.phoneNumber?.trim());
+    if (!complete) {
+      throw new BadRequestException(errorCodes.PROFILE_INCOMPLETE_VERIFY);
+    }
+  }
+
   async listPayments(params: {
     consumerId: string;
     page: number;

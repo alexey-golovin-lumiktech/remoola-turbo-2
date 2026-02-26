@@ -1,6 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { IsOptional } from 'class-validator';
+import { IsEnum, IsOptional } from 'class-validator';
+
+import { $Enums } from '@remoola/database-2';
 
 export class UpdateConsumerProfilePersonalDetails {
   @Expose()
@@ -20,8 +22,10 @@ export class UpdateConsumerProfilePersonalDetails {
   passportOrIdNumber?: string | null;
 
   @Expose()
-  @ApiProperty({ required: false, isArray: false })
-  legalStatus?: string | null;
+  @ApiProperty({ required: false, enum: $Enums.LegalStatus })
+  @IsOptional()
+  @IsEnum($Enums.LegalStatus)
+  legalStatus?: $Enums.LegalStatus | null;
 
   @Expose()
   @ApiProperty({ required: false, isArray: false })

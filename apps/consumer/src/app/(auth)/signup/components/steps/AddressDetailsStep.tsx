@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
-import { CountrySelect, FormInput } from '../../../../../components/ui';
+import { AddressDetailsFields, type AddressDetailsValues } from '../../../../../components/address-details';
 import styles from '../../../../../components/ui/classNames.module.css';
 import { STEP_NAME } from '../../../../../types';
 import { useSignupForm, useSignupSteps, useSignupSubmit } from '../../hooks';
@@ -51,13 +51,13 @@ export function AddressDetailsStep() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- deps omitted to avoid loop on update
   }, [isEntity, addressDetails.street]);
 
-  const clearError = (field: string) => {
-    if (!fieldErrors[field]) return;
+  const clearError = useCallback((field: string) => {
     setFieldErrors((prev) => {
+      if (!prev[field]) return prev;
       const { [field]: _ignored, ...rest } = prev; /* eslint-disable-line */
       return rest;
     });
-  };
+  }, []);
 
   const validateOnBlur = () => {
     const result = addressDetailsSchema.safeParse(addressDetails);
@@ -82,53 +82,32 @@ export function AddressDetailsStep() {
   let prevNextButtonsText = `Next step`;
   if (isContractorIndividual) prevNextButtonsText = `Finish signup`;
 
+  const handleAddressChange = useCallback(
+    (field: keyof AddressDetailsValues, value: string) => {
+      updateAddress({ [field]: value });
+      clearError(field);
+    },
+    [updateAddress, clearError],
+  );
+
+  const values = {
+    postalCode: addressDetails.postalCode ?? ``,
+    country: addressDetails.country ?? ``,
+    state: addressDetails.state ?? ``,
+    city: addressDetails.city ?? ``,
+    street: addressDetails.street ?? ``,
+  };
+
   return (
     <div className={signupStepCard}>
       <h1 className={signupStepTitle}>Address details</h1>
 
-      <FormInput
-        label="Postal code"
-        value={addressDetails.postalCode || ``}
-        onChange={(value) => updateAddress({ postalCode: value })}
+      <AddressDetailsFields
+        values={values}
+        onChange={handleAddressChange}
+        errors={fieldErrors}
+        onErrorClear={clearError}
         onBlur={validateOnBlur}
-        error={fieldErrors.postalCode}
-        onErrorClear={() => clearError(`postalCode`)}
-      />
-
-      <CountrySelect
-        label="Country"
-        value={addressDetails.country || ``}
-        onChange={(value) => updateAddress({ country: value })}
-        onBlur={validateOnBlur}
-        error={fieldErrors.country}
-        onErrorClear={() => clearError(`country`)}
-      />
-
-      <FormInput
-        label="State / Region"
-        value={addressDetails.state || ``}
-        onChange={(value) => updateAddress({ state: value })}
-        onBlur={validateOnBlur}
-        error={fieldErrors.state}
-        onErrorClear={() => clearError(`state`)}
-      />
-
-      <FormInput
-        label="City"
-        value={addressDetails.city || ``}
-        onChange={(value) => updateAddress({ city: value })}
-        onBlur={validateOnBlur}
-        error={fieldErrors.city}
-        onErrorClear={() => clearError(`city`)}
-      />
-
-      <FormInput
-        label="Street"
-        value={addressDetails.street || ``}
-        onChange={(value) => updateAddress({ street: value })}
-        onBlur={validateOnBlur}
-        error={fieldErrors.street}
-        onErrorClear={() => clearError(`street`)}
       />
 
       <PrevNextButtons nextLabel={loading ? `Submitting...` : prevNextButtonsText} handleClick={() => handleSubmit()} />

@@ -1,9 +1,2 @@
-import { z } from 'zod';
-
-export const addressDetailsSchema = z.object({
-  postalCode: z.string().min(1, `Postal code is required`),
-  country: z.string().min(1, `Country is required`),
-  state: z.string().min(1, `State / Region is required`),
-  city: z.string().min(1, `City is required`),
-  street: z.string().min(1, `Street is required`),
-});
+/** Re-export for backward compatibility. Source of truth: lib/validation/address-details.schema.ts */
+export { addressDetailsSchema } from '../../../../lib/validation/address-details.schema';

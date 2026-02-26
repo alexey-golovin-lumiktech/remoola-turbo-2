@@ -24,16 +24,19 @@ export class ConsumerProfileService {
 
     if (body.personalDetails) {
       const current = await this.prisma.personalDetailsModel.findFirst({ where: { consumerId } });
+      const rawDob = body.personalDetails.dateOfBirth?.trim();
+      const dateOfBirth =
+        rawDob && !Number.isNaN(new Date(rawDob).getTime()) ? new Date(rawDob) : (current?.dateOfBirth ?? new Date(0));
       const patch = {
-        firstName: body.personalDetails.firstName || current.firstName,
-        lastName: body.personalDetails.lastName || current.lastName,
-        citizenOf: body.personalDetails.citizenOf || current.citizenOf,
-        passportOrIdNumber: body.personalDetails.passportOrIdNumber || current.passportOrIdNumber,
-        legalStatus: body.personalDetails.legalStatus || current.legalStatus,
-        dateOfBirth: body.personalDetails.dateOfBirth || current.dateOfBirth,
-        countryOfTaxResidence: body.personalDetails.countryOfTaxResidence || current.countryOfTaxResidence,
-        taxId: body.personalDetails.taxId || current.taxId,
-        phoneNumber: body.personalDetails.phoneNumber || current.phoneNumber,
+        firstName: body.personalDetails.firstName || current?.firstName,
+        lastName: body.personalDetails.lastName || current?.lastName,
+        citizenOf: body.personalDetails.citizenOf || current?.citizenOf,
+        passportOrIdNumber: body.personalDetails.passportOrIdNumber || current?.passportOrIdNumber,
+        legalStatus: body.personalDetails.legalStatus ?? current?.legalStatus ?? null,
+        dateOfBirth,
+        countryOfTaxResidence: body.personalDetails.countryOfTaxResidence || current?.countryOfTaxResidence,
+        taxId: body.personalDetails.taxId || current?.taxId,
+        phoneNumber: body.personalDetails.phoneNumber || current?.phoneNumber,
       };
 
       updates.personalDetails = {

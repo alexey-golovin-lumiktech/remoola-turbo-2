@@ -839,6 +839,25 @@
 
 - **2026-02-26:**
                 ### 🚀 Feature
+                - Verify Me / Complete your profile: dashboard shows “Complete
+                  your profile” (link to settings) when required signup/profile
+                  fields are missing; “Verify Me” when profile complete; API
+                  stripe/verify/start returns 400 PROFILE_INCOMPLETE_VERIFY when
+                  profile incomplete; ConsumerPaymentsService.assertProfileCompleteForVerification;
+                  AdminAdminsModule and ConsumerPaymentMethodsModule import
+                  ConsumerPaymentsModule so StripeWebhookService can assert
+                  profile complete; tests for UI condition
+                  (isProfileCompleteFromTasks) and API validation
+                - Shared Personal Details form: PersonalDetailsFields component
+                  and lib/validation (personalDetailsSchema, getFieldErrors);
+                  reused in signup PersonalDetailsStep and Profile Settings
+                  PersonalDetailsForm; Legal status select + enum validation in
+                  profile; API profile update: dateOfBirth string→Date conversion,
+                  legalStatus @IsEnum
+                - Shared Address Details form: AddressDetailsFields component
+                  and lib/validation addressDetailsSchema; reused in signup
+                  AddressDetailsStep and Profile Settings AddressDetailsForm;
+                  client validation on save for profile address details
                 - Consumer profile types and typed settings form props
                   (ConsumerProfile, PasswordChangeForm, PersonalDetailsForm,
                   AddressDetailsForm, ProfileSettingsClient); PaymentView and
@@ -946,6 +965,11 @@
                 - db-fixtures and seed comments updated
 
                 ### 🧹 Cleanup
+                - Signup steps (AddressDetailsStep, PersonalDetailsStep): React
+                  hooks lint — clearError wrapped in useCallback; handlePersonalChange
+                  and values defined before conditional return (rules of hooks);
+                  exhaustive-deps satisfied for handleAddressChange and
+                  handlePersonalChange
                 - Consolidate shared types and format helpers to reduce
                   contract drift and duplicate logic; invoice template (invoice.v5)
                   null-safe for payer/requester (fallback to payerEmail or "—")

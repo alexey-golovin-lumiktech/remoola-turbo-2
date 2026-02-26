@@ -1,44 +1,75 @@
 'use client';
+
 import { useState } from 'react';
 import { toast } from 'sonner';
 
+import { AddressDetailsFields, type AddressDetailsValues } from '../../../../components/address-details';
 import styles from '../../../../components/ui/classNames.module.css';
+import { addressDetailsSchema, getFieldErrors } from '../../../../lib/validation';
 import { type ConsumerProfile } from '../../../../types';
 
-const { formGridClass, formGridSpan2, formSection, formSectionTitle, inputClass, inputLabel, primaryActionButton } =
-  styles;
+const { formSection, formSectionTitle, formGridClass, primaryActionButton } = styles;
 
 type AddressDetailsFormProps = { profile: ConsumerProfile; reload: () => void | Promise<void> };
 
-export function AddressDetailsForm({ profile, reload }: AddressDetailsFormProps) {
-  const ad = profile.addressDetails ?? {};
+function toFormValues(ad: ConsumerProfile[`addressDetails`]): AddressDetailsValues {
+  const raw = ad ?? {};
+  return {
+    postalCode: raw.postalCode ?? ``,
+    country: raw.country ?? ``,
+    state: raw.state ?? ``,
+    city: raw.city ?? ``,
+    street: raw.street ?? ``,
+  };
+}
 
-  const [postalCode, setPostalCode] = useState(ad.postalCode ?? ``);
-  const [country, setCountry] = useState(ad.country ?? ``);
-  const [city, setCity] = useState(ad.city ?? ``);
-  const [street, setStreet] = useState(ad.street ?? ``);
-  const [state, setState] = useState(ad.state ?? ``);
+export function AddressDetailsForm({ profile, reload }: AddressDetailsFormProps) {
+  const [values, setValues] = useState<AddressDetailsValues>(() => toFormValues(profile.addressDetails));
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
+  const handleChange = (field: keyof AddressDetailsValues, value: string) => {
+    setValues((prev) => ({ ...prev, [field]: value }));
+    if (fieldErrors[field]) {
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  };
+
   async function save() {
+    const result = addressDetailsSchema.safeParse(values);
+    if (!result.success) {
+      setFieldErrors(getFieldErrors(result.error));
+      return;
+    }
     setSaving(true);
     const response = await fetch(`/api/profile/update`, {
       method: `PATCH`,
       headers: { 'content-type': `application/json` },
       credentials: `include`,
       body: JSON.stringify({
-        addressDetails: { postalCode, country, city, street, state },
+        addressDetails: {
+          postalCode: values.postalCode,
+          country: values.country,
+          state: values.state,
+          city: values.city,
+          street: values.street,
+        },
       }),
     });
 
     setSaving(false);
 
     if (!response.ok) {
-      toast.error(`Failed to update personal information`);
+      toast.error(`Failed to update address details`);
       return;
     }
 
-    toast.success(`Personal information updated successfully`);
+    toast.success(`Address details updated successfully`);
+    setFieldErrors({});
     reload();
   }
 
@@ -47,30 +78,18 @@ export function AddressDetailsForm({ profile, reload }: AddressDetailsFormProps)
       <h2 className={formSectionTitle}>Address Details</h2>
 
       <div className={formGridClass}>
-        <div>
-          <label className={inputLabel}>Postal Code</label>
-          <input className={inputClass} value={postalCode} onChange={(e) => setPostalCode(e.target.value)} />
-        </div>
-
-        <div>
-          <label className={inputLabel}>Country</label>
-          <input className={inputClass} value={country} onChange={(e) => setCountry(e.target.value)} />
-        </div>
-
-        <div className={formGridSpan2}>
-          <label className={inputLabel}>City</label>
-          <input className={inputClass} value={city} onChange={(e) => setCity(e.target.value)} />
-        </div>
-
-        <div className={formGridSpan2}>
-          <label className={inputLabel}>Street</label>
-          <input className={inputClass} value={street} onChange={(e) => setStreet(e.target.value)} />
-        </div>
-
-        <div className={formGridSpan2}>
-          <label className={inputLabel}>State</label>
-          <input className={inputClass} value={state} onChange={(e) => setState(e.target.value)} />
-        </div>
+        <AddressDetailsFields
+          values={values}
+          onChange={handleChange}
+          errors={fieldErrors}
+          onErrorClear={(field) =>
+            setFieldErrors((prev) => {
+              const next = { ...prev };
+              delete next[field];
+              return next;
+            })
+          }
+        />
       </div>
 
       <button disabled={saving} onClick={save} className={primaryActionButton}>

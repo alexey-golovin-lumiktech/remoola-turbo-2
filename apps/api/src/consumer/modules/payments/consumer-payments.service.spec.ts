@@ -833,6 +833,104 @@ describe(`ConsumerPaymentsService.transfer`, () => {
   });
 });
 
+describe(`ConsumerPaymentsService.assertProfileCompleteForVerification`, () => {
+  const consumerId = `consumer-1`;
+
+  function makeService(consumer: unknown) {
+    const prisma = {
+      consumerModel: {
+        findUnique: jest.fn().mockResolvedValue(consumer),
+      },
+    } as any;
+    const service = new ConsumerPaymentsService(prisma, {} as any, {} as any);
+    return { service, prisma };
+  }
+
+  it(`throws PROFILE_INCOMPLETE_VERIFY when consumer has no personal details`, async () => {
+    const { service } = makeService({
+      id: consumerId,
+      accountType: $Enums.AccountType.CONTRACTOR,
+      contractorKind: $Enums.ContractorKind.INDIVIDUAL,
+      personalDetails: null,
+    });
+    await expect(service.assertProfileCompleteForVerification(consumerId)).rejects.toThrow(BadRequestException);
+    await expect(service.assertProfileCompleteForVerification(consumerId)).rejects.toThrow(
+      errorCodes.PROFILE_INCOMPLETE_VERIFY,
+    );
+  });
+
+  it(`throws PROFILE_INCOMPLETE_VERIFY when individual contractor missing legalStatus`, async () => {
+    const { service } = makeService({
+      id: consumerId,
+      accountType: $Enums.AccountType.CONTRACTOR,
+      contractorKind: $Enums.ContractorKind.INDIVIDUAL,
+      personalDetails: {
+        legalStatus: null,
+        taxId: `123`,
+        passportOrIdNumber: `id123`,
+        phoneNumber: null,
+      },
+    });
+    await expect(service.assertProfileCompleteForVerification(consumerId)).rejects.toThrow(BadRequestException);
+    await expect(service.assertProfileCompleteForVerification(consumerId)).rejects.toThrow(
+      errorCodes.PROFILE_INCOMPLETE_VERIFY,
+    );
+  });
+
+  it(`throws PROFILE_INCOMPLETE_VERIFY when entity missing phoneNumber`, async () => {
+    const { service } = makeService({
+      id: consumerId,
+      accountType: $Enums.AccountType.BUSINESS,
+      contractorKind: null,
+      personalDetails: {
+        legalStatus: $Enums.LegalStatus.INDIVIDUAL,
+        taxId: `tax1`,
+        passportOrIdNumber: null,
+        phoneNumber: null,
+      },
+    });
+    await expect(service.assertProfileCompleteForVerification(consumerId)).rejects.toThrow(BadRequestException);
+    await expect(service.assertProfileCompleteForVerification(consumerId)).rejects.toThrow(
+      errorCodes.PROFILE_INCOMPLETE_VERIFY,
+    );
+  });
+
+  it(`does not throw when individual contractor profile complete`, async () => {
+    const { service } = makeService({
+      id: consumerId,
+      accountType: $Enums.AccountType.CONTRACTOR,
+      contractorKind: $Enums.ContractorKind.INDIVIDUAL,
+      personalDetails: {
+        legalStatus: $Enums.LegalStatus.INDIVIDUAL,
+        taxId: `tax1`,
+        passportOrIdNumber: `id1`,
+        phoneNumber: null,
+      },
+    });
+    await expect(service.assertProfileCompleteForVerification(consumerId)).resolves.toBeUndefined();
+  });
+
+  it(`does not throw when business profile complete`, async () => {
+    const { service } = makeService({
+      id: consumerId,
+      accountType: $Enums.AccountType.BUSINESS,
+      contractorKind: null,
+      personalDetails: {
+        legalStatus: $Enums.LegalStatus.INDIVIDUAL,
+        taxId: `tax1`,
+        passportOrIdNumber: null,
+        phoneNumber: `+15551234567`,
+      },
+    });
+    await expect(service.assertProfileCompleteForVerification(consumerId)).resolves.toBeUndefined();
+  });
+
+  it(`does not throw when consumer not found (no-op)`, async () => {
+    const { service } = makeService(null);
+    await expect(service.assertProfileCompleteForVerification(consumerId)).resolves.toBeUndefined();
+  });
+});
+
 describe(`ConsumerPaymentsService.getHistory`, () => {
   const consumerId = `consumer-1`;
 

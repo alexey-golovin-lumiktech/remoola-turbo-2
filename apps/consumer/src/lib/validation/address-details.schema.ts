@@ -1,0 +1,10 @@
+import { z } from 'zod';
+
+/** Schema for address details. Reused by signup and profile settings. */
+export const addressDetailsSchema = z.object({
+  postalCode: z.string().min(1, `Postal code is required`),
+  country: z.string().min(1, `Country is required`),
+  state: z.string().min(1, `State / Region is required`),
+  city: z.string().min(1, `City is required`),
+  street: z.string().min(1, `Street is required`),
+});

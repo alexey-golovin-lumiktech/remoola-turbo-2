@@ -19,6 +19,7 @@ import { BalanceCalculationService } from '../../../shared/balance-calculation.s
 import { MailingService } from '../../../shared/mailing.service';
 import { PrismaService } from '../../../shared/prisma.service';
 import { getCurrencyFractionDigits } from '../../../shared-common';
+import { ConsumerPaymentsService } from '../payments/consumer-payments.service';
 
 @Injectable()
 export class StripeWebhookService {
@@ -29,11 +30,13 @@ export class StripeWebhookService {
     private prisma: PrismaService,
     private readonly mailingService: MailingService,
     private readonly balanceService: BalanceCalculationService,
+    private readonly consumerPaymentsService: ConsumerPaymentsService,
   ) {
     this.stripe = new Stripe(envs.STRIPE_SECRET_KEY, { apiVersion: `2025-11-17.clover` });
   }
 
   async startVerifyMeStripeSession(consumerId: string) {
+    await this.consumerPaymentsService.assertProfileCompleteForVerification(consumerId);
     const session = await this.stripe.identity.verificationSessions.create({
       type: `document`,
       metadata: { consumerId }, // important

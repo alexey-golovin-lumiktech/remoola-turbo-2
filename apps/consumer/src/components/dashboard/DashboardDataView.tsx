@@ -1,5 +1,6 @@
 'use client';
 
+import { isProfileCompleteFromTasks } from './profileCompleteFromTasks';
 import { useDashboard } from '../../lib/hooks';
 import { VerifyMeButton } from '../stripe';
 import { DashboardSkeleton, ErrorState } from '../ui';
@@ -74,13 +75,15 @@ export function DashboardDataView() {
     );
   }
 
+  const profileComplete = isProfileCompleteFromTasks(dashboardData.tasks);
+
   return (
     <div className={dashboardContainer} data-testid="consumer-dashboard">
       <DashboardHeader />
 
       <SummaryCards summary={dashboardData.summary} />
 
-      <VerifyMeButton />
+      <VerifyMeButton profileComplete={profileComplete} />
 
       <ActionRow />
 

@@ -53,6 +53,7 @@ const MESSAGE_MAP: Record<string, string> = {
   [errorCodes.CONSUMER_NOT_FOUND_CHANGE_PASSWORD]: `We couldn't find your account for this password reset. Please request a new reset link.`,
   [errorCodes.CHANGE_PASSWORD_FLOW_EXPIRED]: `This password reset has expired. Please request a new link from the forgot-password page.`,
   [errorCodes.CONSUMER_NOT_FOUND_COMPLETE_PROFILE]: `We couldn't find your account to send the verification email. Please sign in again or contact support.`,
+  [errorCodes.PROFILE_INCOMPLETE_VERIFY]: `Complete your profile (Legal Status, Tax ID, and ID number for individuals; Tax ID and phone for businesses) before starting identity verification.`,
   [errorCodes.EMAIL_MISMATCH_GOOGLE]: `The email you entered doesn't match your Google account. Please use the same email or sign in with Google.`,
   [errorCodes.EMAIL_ALREADY_REGISTERED_SIGNUP]: `This email is already registered. Sign in instead or use a different email to sign up.`,
   [errorCodes.EMAIL_ALREADY_REGISTERED_PRISMA]: `This email is already in use. Please sign in or use a different email.`,

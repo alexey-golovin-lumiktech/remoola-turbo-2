@@ -2,15 +2,16 @@
 
 import { useCallback, useState } from 'react';
 
-import { FormInput, DateInput, CountrySelect, FormSelect, PhoneInput } from '../../../../../components/ui';
+import { PersonalDetailsFields } from '../../../../../components/personal-details';
+import { FormInput, CountrySelect, PhoneInput } from '../../../../../components/ui';
 import styles from '../../../../../components/ui/classNames.module.css';
-import { STEP_NAME, STATUS_LABEL, LABEL_STATUS, LEGAL_STATUS_LABEL } from '../../../../../types';
+import { STEP_NAME } from '../../../../../types';
 import { useSignupForm, useSignupSteps } from '../../hooks';
 import { parseAddressFromString } from '../../utils/parseAddressFromString';
 import { getFieldErrors, entityDetailsSchema, personalDetailsSchema } from '../../validation';
 import { PrevNextButtons } from '../PrevNextButtons';
 
-const { signupStepCard, signupStepGrid, signupStepTitle } = styles;
+const { signupStepCard, signupStepTitle } = styles;
 
 export function PersonalDetailsStep() {
   const {
@@ -48,12 +49,36 @@ export function PersonalDetailsStep() {
     [updateAddress, updatePersonal],
   );
 
-  const clearError = (field: string) => {
-    if (!fieldErrors[field]) return;
+  const clearError = useCallback((field: string) => {
     setFieldErrors((prev) => {
+      if (!prev[field]) return prev;
       const { [field]: _ignored, ...rest } = prev; /* eslint-disable-line */
       return rest;
     });
+  }, []);
+
+  const handlePersonalChange = useCallback(
+    (field: string, value: string) => {
+      if (field === `citizenOf`) {
+        updatePersonal({ citizenOf: value, countryOfTaxResidence: value });
+      } else {
+        updatePersonal({ [field]: value } as Parameters<typeof updatePersonal>[0]);
+      }
+      clearError(field);
+    },
+    [updatePersonal, clearError],
+  );
+
+  const values = {
+    firstName: personal.firstName ?? ``,
+    lastName: personal.lastName ?? ``,
+    citizenOf: personal.citizenOf ?? ``,
+    countryOfTaxResidence: personal.countryOfTaxResidence ?? ``,
+    legalStatus: personal.legalStatus ?? ``,
+    taxId: personal.taxId ?? ``,
+    dateOfBirth: personal.dateOfBirth ?? ``,
+    passportOrIdNumber: personal.passportOrIdNumber ?? ``,
+    phoneNumber: personal.phoneNumber ?? ``,
   };
 
   const handleSubmit = () => {
@@ -138,95 +163,12 @@ export function PersonalDetailsStep() {
     <div className={signupStepCard}>
       <h1 className={signupStepTitle}>Personal details</h1>
 
-      <div className={signupStepGrid}>
-        <FormInput
-          label="First name"
-          value={personal.firstName}
-          onChange={(value) => updatePersonal({ firstName: value })}
-          error={fieldErrors.firstName}
-          onErrorClear={() => clearError(`firstName`)}
-        />
-        <FormInput
-          label="Last name"
-          value={personal.lastName}
-          onChange={(value) => updatePersonal({ lastName: value })}
-          error={fieldErrors.lastName}
-          onErrorClear={() => clearError(`lastName`)}
-        />
-      </div>
-
-      <CountrySelect
-        label="Citizen of"
-        value={personal.citizenOf}
-        onChange={(value) =>
-          updatePersonal({
-            citizenOf: value,
-            countryOfTaxResidence: value,
-          })
-        }
-        error={fieldErrors.citizenOf}
-        onErrorClear={() => clearError(`citizenOf`)}
-      />
-
-      <CountrySelect
-        label="Country of tax residence"
-        value={personal.countryOfTaxResidence}
-        onChange={(value) => updatePersonal({ countryOfTaxResidence: value })}
-        error={fieldErrors.countryOfTaxResidence}
-        onErrorClear={() => clearError(`countryOfTaxResidence`)}
-      />
-
-      <FormSelect
-        label="Legal Status"
-        value={STATUS_LABEL[personal.legalStatus!] ?? ``}
-        onChange={(value) => {
-          updatePersonal({ legalStatus: LABEL_STATUS[value as keyof typeof LABEL_STATUS] });
-          clearError(`legalStatus`);
-        }}
-        options={[
-          { label: LEGAL_STATUS_LABEL.INDIVIDUAL, value: LEGAL_STATUS_LABEL.INDIVIDUAL },
-          { label: LEGAL_STATUS_LABEL.INDIVIDUAL_ENTREPRENEUR, value: LEGAL_STATUS_LABEL.INDIVIDUAL_ENTREPRENEUR },
-          { label: LEGAL_STATUS_LABEL.SOLE_TRADER, value: LEGAL_STATUS_LABEL.SOLE_TRADER },
-        ]}
-        error={fieldErrors.legalStatus}
-        onErrorClear={() => clearError(`legalStatus`)}
-        placeholder="Select legal status..."
-        isClearable={false}
-      />
-
-      <FormInput
-        label="Tax ID"
-        value={personal.taxId}
-        onChange={(value) => updatePersonal({ taxId: value })}
-        error={fieldErrors.taxId}
-        onErrorClear={() => clearError(`taxId`)}
-      />
-
-      <DateInput
-        label="Date of birth"
-        value={personal.dateOfBirth}
-        onChange={(value) => updatePersonal({ dateOfBirth: value || `` })}
-        error={fieldErrors.dateOfBirth}
-        onErrorClear={() => clearError(`dateOfBirth`)}
-        placeholder="Select your date of birth"
-        required
-      />
-
-      <FormInput
-        label="Passport/ID number"
-        value={personal.passportOrIdNumber}
-        onChange={(value) => updatePersonal({ passportOrIdNumber: value })}
-        error={fieldErrors.passportOrIdNumber}
-        onErrorClear={() => clearError(`passportOrIdNumber`)}
-      />
-
-      <PhoneInput
-        label="Phone number"
-        value={personal.phoneNumber}
-        onChange={(value) => updatePersonal({ phoneNumber: value ?? `` })}
-        error={fieldErrors.phoneNumber}
-        onErrorClear={() => clearError(`phoneNumber`)}
-        defaultCountryName={personal.countryOfTaxResidence || undefined}
+      <PersonalDetailsFields
+        values={values}
+        onChange={handlePersonalChange}
+        errors={fieldErrors}
+        onErrorClear={clearError}
+        dateOfBirthRequired
       />
 
       <PrevNextButtons handleClick={() => handleSubmit()} />
