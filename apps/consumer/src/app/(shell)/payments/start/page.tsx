@@ -1,4 +1,5 @@
 import { type Metadata } from 'next';
+import { Suspense } from 'react';
 
 import { StartPaymentForm } from '../../../../components';
 import styles from '../../../../components/ui/classNames.module.css';
@@ -16,7 +17,9 @@ export default function StartPaymentPage() {
       <p className={pageSubtitlePlain}>Send a quick one-off payment to a contractor or client.</p>
 
       <div className={startPaymentCard}>
-        <StartPaymentForm />
+        <Suspense fallback={<p aria-hidden>Loading…</p>}>
+          <StartPaymentForm />
+        </Suspense>
       </div>
     </div>
   );
