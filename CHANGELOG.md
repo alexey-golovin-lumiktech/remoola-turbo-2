@@ -976,7 +976,7 @@
                 - Type-safety pass across admin and consumer apps; explicit
                   return types and error narrowing; no new any or weakened types
 
-                ### 📋 Remoola v3 — Balance + logging (2026-02-26)
+                ### 📋 Balance + logging (2026-02-26)
                 - **apps/api** [FINANCIAL]: Add `BalanceCalculationService` and
                   `BalanceCalculationModule`; admin reversal, consumer exchange,
                   payments, Stripe webhook use shared balance service with same
