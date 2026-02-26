@@ -67,8 +67,8 @@ export default class TemporaryDatabaseEnvironment extends NodeEnvironment {
     if (originalCandidates.length === 0) return;
 
     const marker = `isolation-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const temporaryPrisma = new PrismaClient({ datasources: { db: { url: temporaryDatabaseUrl } } });
-    const originalPrisma = new PrismaClient({ datasources: { db: { url: originalCandidates[0] } } });
+    const temporaryPrisma = new PrismaClient({ datasourceUrl: temporaryDatabaseUrl });
+    const originalPrisma = new PrismaClient({ datasourceUrl: originalCandidates[0] });
     try {
       await temporaryPrisma.$executeRawUnsafe(
         `CREATE TABLE IF NOT EXISTS "__temp_db_guard" (id SERIAL PRIMARY KEY, marker TEXT NOT NULL)`,

@@ -74,6 +74,7 @@ export class ConsumerPaymentsService {
               OR: [
                 { description: { contains: search, mode: `insensitive` } },
                 { requester: { email: { contains: search, mode: `insensitive` } } },
+                { requesterEmail: { contains: search, mode: `insensitive` } },
                 { payer: { email: { contains: search, mode: `insensitive` } } },
               ],
             },
@@ -120,7 +121,7 @@ export class ConsumerPaymentsService {
       const counterparty = paymentRequest.payerId === consumerId ? paymentRequest.requester : paymentRequest.payer;
       const counterpartyEmail =
         paymentRequest.payerId === consumerId
-          ? paymentRequest.requester.email
+          ? (paymentRequest.requester?.email ?? paymentRequest.requesterEmail ?? ``)
           : (paymentRequest.payer?.email ?? paymentRequest.payerEmail ?? ``);
 
       let latestTransaction;
@@ -207,7 +208,7 @@ export class ConsumerPaymentsService {
       role: isPayer ? `PAYER` : `REQUESTER`,
 
       payer: paymentRequest.payer ?? { id: null, email: paymentRequest.payerEmail ?? null },
-      requester: paymentRequest.requester,
+      requester: paymentRequest.requester ?? { id: null, email: paymentRequest.requesterEmail ?? null },
       ledgerEntries: paymentRequest.ledgerEntries
         .map((entry) => {
           const metadata = JSON.parse(JSON.stringify(entry.metadata || {}));
@@ -244,15 +245,20 @@ export class ConsumerPaymentsService {
   async startPayment(consumerId: string, body: StartPayment) {
     await this.ensureProfileComplete(consumerId);
 
-    const recipient = await this.prisma.consumerModel.findFirst({
-      where: { email: body.email, deletedAt: null },
-    });
+    const normalizedEmail = body.email.trim().toLowerCase();
 
-    if (!recipient) {
-      throw new BadRequestException(errorCodes.RECIPIENT_NOT_FOUND_START_PAYMENT);
+    if (normalizedEmail === (await this.getConsumerEmail(consumerId))) {
+      throw new BadRequestException(errorCodes.CANNOT_TRANSFER_TO_SELF_START_PAYMENT);
     }
 
-    if (recipient.id === consumerId) {
+    const recipient = await this.prisma.consumerModel.findFirst({
+      where: {
+        email: { equals: normalizedEmail, mode: `insensitive` },
+        deletedAt: null,
+      },
+    });
+
+    if (recipient?.id === consumerId) {
       throw new BadRequestException(errorCodes.CANNOT_TRANSFER_TO_SELF_START_PAYMENT);
     }
 
@@ -265,14 +271,13 @@ export class ConsumerPaymentsService {
       body.method === PAYMENT_METHOD.CREDIT_CARD ? $Enums.PaymentRail.CARD : $Enums.PaymentRail.BANK_TRANSFER;
 
     return this.prisma.$transaction(async (tx) => {
-      // 🔐 Generate ledgerId INSIDE tx (idempotency-safe)
       const ledgerId = randomUUID();
 
-      // 1️⃣ Create payment request (business intent)
       const paymentRequest = await tx.paymentRequestModel.create({
         data: {
           payerId: consumerId,
-          requesterId: recipient.id,
+          requesterId: recipient?.id ?? null,
+          requesterEmail: recipient?.email ?? normalizedEmail,
           currencyCode: $Enums.CurrencyCode.USD,
           amount,
           description: body.description ?? null,
@@ -282,7 +287,6 @@ export class ConsumerPaymentsService {
         },
       });
 
-      // 2️⃣ PAYER ledger entry (money leaves) — idempotency key prevents duplicate entries on retry
       await tx.ledgerEntryModel.create({
         data: {
           ledgerId,
@@ -291,36 +295,44 @@ export class ConsumerPaymentsService {
           type: $Enums.LedgerEntryType.USER_PAYMENT,
           currencyCode: $Enums.CurrencyCode.USD,
           status: $Enums.TransactionStatus.PENDING,
-          amount: -amount, // SIGNED
+          amount: -amount,
           createdBy: consumerId,
           updatedBy: consumerId,
           idempotencyKey: `pr:${paymentRequest.id}:payer`,
           metadata: {
             rail: paymentRail,
-            counterpartyId: recipient.id,
+            ...(recipient ? { counterpartyId: recipient.id } : {}),
           },
         },
       });
 
-      // 3️⃣ RECIPIENT ledger entry (money enters)
-      await tx.ledgerEntryModel.create({
-        data: {
-          ledgerId,
-          consumerId: recipient.id,
-          paymentRequestId: paymentRequest.id,
-          type: $Enums.LedgerEntryType.USER_PAYMENT,
-          currencyCode: $Enums.CurrencyCode.USD,
-          status: $Enums.TransactionStatus.PENDING,
-          amount: amount, // SIGNED
-          createdBy: consumerId,
-          updatedBy: consumerId,
-          idempotencyKey: `pr:${paymentRequest.id}:requester`,
-          metadata: {
-            rail: paymentRail,
-            counterpartyId: consumerId,
+      if (recipient) {
+        await tx.ledgerEntryModel.create({
+          data: {
+            ledgerId,
+            consumerId: recipient.id,
+            paymentRequestId: paymentRequest.id,
+            type: $Enums.LedgerEntryType.USER_PAYMENT,
+            currencyCode: $Enums.CurrencyCode.USD,
+            status: $Enums.TransactionStatus.PENDING,
+            amount: amount,
+            createdBy: consumerId,
+            updatedBy: consumerId,
+            idempotencyKey: `pr:${paymentRequest.id}:requester`,
+            metadata: {
+              rail: paymentRail,
+              counterpartyId: consumerId,
+            },
           },
-        },
-      });
+        });
+      } else {
+        this.logger.log({
+          event: `start_payment_created_without_registered_recipient`,
+          paymentRequestId: paymentRequest.id,
+          payerId: consumerId,
+          requesterEmail: normalizedEmail,
+        });
+      }
 
       return {
         paymentRequestId: paymentRequest.id,
@@ -400,6 +412,7 @@ export class ConsumerPaymentsService {
         select: {
           id: true,
           requesterId: true,
+          requesterEmail: true,
           payerId: true,
           payerEmail: true,
           status: true,
@@ -447,7 +460,7 @@ export class ConsumerPaymentsService {
         throw new BadRequestException(errorCodes.INVALID_LEDGER_STATE_DRAFT);
       }
 
-      if (paymentRequest._count.ledgerEntries === 0 && paymentRequest.payerId) {
+      if (paymentRequest._count.ledgerEntries === 0 && paymentRequest.payerId && paymentRequest.requesterId) {
         const ledgerId = randomUUID();
         const payerKey = `pr:${paymentRequest.id}:payer`;
         const requesterKey = `pr:${paymentRequest.id}:requester`;
@@ -495,7 +508,7 @@ export class ConsumerPaymentsService {
         paymentRequestId: updated.id,
         email: {
           payerEmail: paymentRequest.payer?.email ?? paymentRequest.payerEmail ?? ``,
-          requesterEmail: paymentRequest.requester.email,
+          requesterEmail: paymentRequest.requester?.email ?? paymentRequest.requesterEmail ?? ``,
           amount,
           currencyCode: paymentRequest.currencyCode,
           description: paymentRequest.description,
@@ -513,25 +526,36 @@ export class ConsumerPaymentsService {
   }
 
   async getBalancesCompleted(consumerId: string): Promise<Record<$Enums.CurrencyCode, number>> {
-    const rows = await this.prisma.ledgerEntryModel.groupBy({
-      by: [`currencyCode`],
-      where: {
+    try {
+      const rows = await this.prisma.$queryRaw<
+        Array<{ currency_code: $Enums.CurrencyCode; sum_amount: string }>
+      >(Prisma.sql`
+        SELECT le.currency_code, COALESCE(SUM(le.amount), 0) AS sum_amount
+        FROM ledger_entry le
+        LEFT JOIN LATERAL (
+          SELECT o.status FROM ledger_entry_outcome o
+          WHERE o.ledger_entry_id = le.id
+          ORDER BY o.created_at DESC LIMIT 1
+        ) latest ON true
+        WHERE le.consumer_id::text = ${consumerId}
+          AND (COALESCE(latest.status, le.status))::text = ${$Enums.TransactionStatus.COMPLETED}
+          AND le.deleted_at IS NULL
+        GROUP BY le.currency_code
+      `);
+
+      const result = {} as Record<$Enums.CurrencyCode, number>;
+      for (const row of rows) {
+        result[row.currency_code] = Number(row.sum_amount);
+      }
+      return result;
+    } catch (error) {
+      this.logger.error(`Failed to get balances by currency`, {
         consumerId,
-        status: $Enums.TransactionStatus.COMPLETED,
-        deletedAt: null,
-      },
-      _sum: {
-        amount: true,
-      },
-    });
-
-    const result = {} as Record<$Enums.CurrencyCode, number>;
-
-    for (const row of rows) {
-      result[row.currencyCode] = Number(row._sum.amount ?? 0);
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      throw error;
     }
-
-    return result;
   }
 
   private async getConsumerEmail(consumerId: string): Promise<string | null> {
@@ -543,42 +567,44 @@ export class ConsumerPaymentsService {
   }
 
   async getBalancesIncludePending(consumerId: string): Promise<Record<$Enums.CurrencyCode, number>> {
-    const rows = await this.prisma.ledgerEntryModel.groupBy({
-      by: [`currencyCode`],
-      where: {
-        consumerId,
-        status: {
-          in: [$Enums.TransactionStatus.COMPLETED, $Enums.TransactionStatus.PENDING],
-        },
-        deletedAt: null,
-      },
-      _sum: {
-        amount: true,
-      },
-    });
+    const rows = await this.prisma.$queryRaw<
+      Array<{ currency_code: $Enums.CurrencyCode; sum_amount: string }>
+    >(Prisma.sql`
+      SELECT le.currency_code, COALESCE(SUM(le.amount), 0) AS sum_amount
+      FROM ledger_entry le
+      LEFT JOIN LATERAL (
+        SELECT o.status FROM ledger_entry_outcome o
+        WHERE o.ledger_entry_id = le.id
+        ORDER BY o.created_at DESC LIMIT 1
+      ) latest ON true
+      WHERE le.consumer_id::text = ${consumerId}
+        AND ((COALESCE(latest.status, le.status))::text = ${$Enums.TransactionStatus.COMPLETED}
+             OR (COALESCE(latest.status, le.status))::text = ${$Enums.TransactionStatus.PENDING})
+        AND le.deleted_at IS NULL
+      GROUP BY le.currency_code
+    `);
 
     const result = {} as Record<$Enums.CurrencyCode, number>;
-
     for (const row of rows) {
-      result[row.currencyCode] = Number(row._sum.amount ?? 0);
+      result[row.currency_code] = Number(row.sum_amount);
     }
-
     return result;
   }
 
   async getAvailableBalance(consumerId: string): Promise<number> {
-    const result = await this.prisma.ledgerEntryModel.aggregate({
-      where: {
-        consumerId,
-        status: $Enums.TransactionStatus.COMPLETED,
-        deletedAt: null,
-      },
-      _sum: {
-        amount: true,
-      },
-    });
-
-    return Number(result._sum.amount ?? 0);
+    const rows = await this.prisma.$queryRaw<Array<{ balance: string | null }>>(Prisma.sql`
+        SELECT COALESCE(SUM(le.amount), 0) AS balance
+      FROM ledger_entry le
+      LEFT JOIN LATERAL (
+        SELECT o.status FROM ledger_entry_outcome o
+        WHERE o.ledger_entry_id = le.id
+        ORDER BY o.created_at DESC LIMIT 1
+      ) latest ON true
+      WHERE le.consumer_id::text = ${consumerId}
+        AND (COALESCE(latest.status, le.status))::text = ${$Enums.TransactionStatus.COMPLETED}
+        AND le.deleted_at IS NULL
+    `);
+    return Number(rows[0]?.balance ?? 0);
   }
 
   async getHistory(consumerId: string, query: PaymentsHistoryQuery) {
@@ -667,21 +693,22 @@ export class ConsumerPaymentsService {
     const start = new Date();
     start.setHours(0, 0, 0, 0);
 
-    const result = await this.prisma.ledgerEntryModel.aggregate({
-      where: {
-        consumerId,
-        amount: { lt: 0 }, // 👈 outgoing money
-        createdAt: { gte: start },
-        status: {
-          in: [$Enums.TransactionStatus.PENDING, $Enums.TransactionStatus.COMPLETED],
-        },
-        deletedAt: null,
-      },
-      _sum: { amount: true },
-    });
-
-    // amount is negative → return absolute value
-    return Math.abs(Number(result._sum.amount ?? 0));
+    const rows = await this.prisma.$queryRaw<Array<{ total: string | null }>>(Prisma.sql`
+      SELECT COALESCE(SUM(le.amount), 0) AS total
+      FROM ledger_entry le
+      LEFT JOIN LATERAL (
+        SELECT o.status FROM ledger_entry_outcome o
+        WHERE o.ledger_entry_id = le.id
+        ORDER BY o.created_at DESC LIMIT 1
+      ) latest ON true
+      WHERE le.consumer_id::text = ${consumerId}
+        AND le.amount < 0
+        AND le.created_at >= ${start}
+        AND ((COALESCE(latest.status, le.status))::text = ${$Enums.TransactionStatus.PENDING}
+             OR (COALESCE(latest.status, le.status))::text = ${$Enums.TransactionStatus.COMPLETED})
+        AND le.deleted_at IS NULL
+    `);
+    return Math.abs(Number(rows[0]?.total ?? 0));
   }
 
   private async ensureLimits(consumerId: string, amount: number) {
@@ -706,43 +733,42 @@ export class ConsumerPaymentsService {
       throw new BadRequestException(errorCodes.IDEMPOTENCY_KEY_REQUIRED_WITHDRAW);
     }
 
-    await this.ensureLimits(consumerId, amount);
-
     const key = idempotencyKey.trim();
-    if (key) {
-      const existing = await this.prisma.ledgerEntryModel.findFirst({
-        where: {
-          idempotencyKey: `withdraw:${key}`,
-          consumerId,
-          type: $Enums.LedgerEntryType.USER_PAYOUT,
-          deletedAt: null,
-        },
-      });
-      if (existing) return existing;
-    }
+
+    // ✅ EARLY IDEMPOTENCY CHECK: Before any business logic (limits, balance, etc.)
+    const existing = await this.prisma.ledgerEntryModel.findFirst({
+      where: {
+        idempotencyKey: `withdraw:${key}`,
+        consumerId,
+        type: $Enums.LedgerEntryType.USER_PAYOUT,
+        deletedAt: null,
+      },
+    });
+    if (existing) return existing;
+
+    await this.ensureLimits(consumerId, amount);
 
     const ledgerId = randomUUID();
 
     try {
       return await this.prisma.$transaction(async (tx) => {
         // 🔐 Lock with operation-specific key to prevent cross-operation collisions
-        await tx.$queryRaw(Prisma.sql`
+        await tx.$executeRaw(Prisma.sql`
           SELECT pg_advisory_xact_lock(hashtext((${consumerId} || ':withdraw')::text)::bigint)
         `);
 
-        // 🔐 SELECT FOR UPDATE to lock rows; effective status from latest outcome (append-only, no trigger UPDATE)
+        // Balance check: advisory lock above serializes per consumer; no FOR UPDATE on aggregate (raw-sql-issues.md)
         const balanceResult = await tx.$queryRaw<{ balance: number }[]>`
-          SELECT COALESCE(SUM(le.amount), 0)::numeric AS balance
+          SELECT COALESCE(SUM(le.amount), 0) AS balance
           FROM ledger_entry le
           LEFT JOIN LATERAL (
             SELECT o.status FROM ledger_entry_outcome o
             WHERE o.ledger_entry_id = le.id
             ORDER BY o.created_at DESC LIMIT 1
           ) latest ON true
-          WHERE le.consumer_id = ${consumerId}
-            AND COALESCE(latest.status, le.status) = ${$Enums.TransactionStatus.COMPLETED}::"TransactionStatus"
+          WHERE le.consumer_id::text = ${consumerId}
+            AND (COALESCE(latest.status, le.status))::text = ${$Enums.TransactionStatus.COMPLETED}
             AND le.deleted_at IS NULL
-          FOR UPDATE OF le
         `;
         const balance = Number(balanceResult[0]?.balance ?? 0);
         if (amount > balance) {
@@ -773,7 +799,7 @@ export class ConsumerPaymentsService {
     } catch (err) {
       if (err instanceof BadRequestException) throw err;
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === `P2002` && key) {
-        const existing = await this.prisma.ledgerEntryModel.findFirst({
+        const existingWithdraw = await this.prisma.ledgerEntryModel.findFirst({
           where: {
             idempotencyKey: `withdraw:${key}`,
             consumerId,
@@ -781,7 +807,7 @@ export class ConsumerPaymentsService {
             deletedAt: null,
           },
         });
-        if (existing) return existing;
+        if (existingWithdraw) return existingWithdraw;
       }
       throw err;
     }
@@ -792,6 +818,23 @@ export class ConsumerPaymentsService {
     if (!Number.isFinite(amount) || amount <= 0) {
       throw new BadRequestException(errorCodes.INVALID_AMOUNT_TRANSFER);
     }
+    if (!idempotencyKey?.trim()) {
+      throw new BadRequestException(errorCodes.IDEMPOTENCY_KEY_REQUIRED_TRANSFER);
+    }
+
+    const key = idempotencyKey.trim();
+
+    // ✅ EARLY IDEMPOTENCY CHECK: Before any business logic (limits, recipient lookup, etc.)
+    const existing = await this.prisma.ledgerEntryModel.findFirst({
+      where: {
+        idempotencyKey: `transfer:${key}:sender`,
+        consumerId,
+        type: $Enums.LedgerEntryType.USER_PAYMENT,
+        deletedAt: null,
+      },
+      select: { ledgerId: true },
+    });
+    if (existing) return { ledgerId: existing.ledgerId };
 
     await this.ensureLimits(consumerId, amount);
 
@@ -809,21 +852,6 @@ export class ConsumerPaymentsService {
     if (recipient.id === consumerId) {
       throw new BadRequestException(errorCodes.CANNOT_TRANSFER_TO_SELF_TRANSFER);
     }
-    if (!idempotencyKey?.trim()) {
-      throw new BadRequestException(errorCodes.IDEMPOTENCY_KEY_REQUIRED_TRANSFER);
-    }
-
-    const key = idempotencyKey.trim();
-    const existing = await this.prisma.ledgerEntryModel.findFirst({
-      where: {
-        idempotencyKey: `transfer:${key}:sender`,
-        consumerId,
-        type: $Enums.LedgerEntryType.USER_PAYMENT,
-        deletedAt: null,
-      },
-      select: { ledgerId: true },
-    });
-    if (existing) return { ledgerId: existing.ledgerId };
 
     const ledgerId = randomUUID();
     const [firstId, secondId] = [consumerId, recipient.id].sort();
@@ -831,26 +859,25 @@ export class ConsumerPaymentsService {
     try {
       return await this.prisma.$transaction(async (tx) => {
         // 🔐 Lock both consumers with operation-specific keys (sorted to prevent deadlocks)
-        await tx.$queryRaw(Prisma.sql`
+        await tx.$executeRaw(Prisma.sql`
           SELECT pg_advisory_xact_lock(hashtext((${firstId} || ':transfer')::text)::bigint)
         `);
-        await tx.$queryRaw(Prisma.sql`
+        await tx.$executeRaw(Prisma.sql`
           SELECT pg_advisory_xact_lock(hashtext((${secondId} || ':transfer')::text)::bigint)
         `);
 
-        // 🔐 SELECT FOR UPDATE to lock rows; effective status from latest outcome (append-only, no trigger UPDATE)
+        // Balance check: advisory locks above serialize per consumer; no FOR UPDATE on aggregate (raw-sql-issues.md)
         const balanceResult = await tx.$queryRaw<{ balance: number }[]>`
-          SELECT COALESCE(SUM(le.amount), 0)::numeric AS balance
+          SELECT COALESCE(SUM(le.amount), 0) AS balance
           FROM ledger_entry le
           LEFT JOIN LATERAL (
             SELECT o.status FROM ledger_entry_outcome o
             WHERE o.ledger_entry_id = le.id
             ORDER BY o.created_at DESC LIMIT 1
           ) latest ON true
-          WHERE le.consumer_id = ${consumerId}
-            AND COALESCE(latest.status, le.status) = ${$Enums.TransactionStatus.COMPLETED}::"TransactionStatus"
+          WHERE le.consumer_id::text = ${consumerId}
+            AND (COALESCE(latest.status, le.status))::text = ${$Enums.TransactionStatus.COMPLETED}
             AND le.deleted_at IS NULL
-          FOR UPDATE OF le
         `;
         const balance = Number(balanceResult[0]?.balance ?? 0);
         if (amount > balance) {
@@ -901,7 +928,7 @@ export class ConsumerPaymentsService {
     } catch (err) {
       if (err instanceof BadRequestException) throw err;
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === `P2002` && key) {
-        const existing = await this.prisma.ledgerEntryModel.findFirst({
+        const existingTransfer = await this.prisma.ledgerEntryModel.findFirst({
           where: {
             idempotencyKey: `transfer:${key}:sender`,
             consumerId,
@@ -910,7 +937,7 @@ export class ConsumerPaymentsService {
           },
           select: { ledgerId: true },
         });
-        if (existing) return { ledgerId: existing.ledgerId };
+        if (existingTransfer) return { ledgerId: existingTransfer.ledgerId };
       }
       throw err;
     }

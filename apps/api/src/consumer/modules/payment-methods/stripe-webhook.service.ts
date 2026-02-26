@@ -481,6 +481,7 @@ export class StripeWebhookService {
                 currencyCode: true,
                 payerId: true,
                 requesterId: true,
+                requesterEmail: true,
               },
             },
           },
@@ -503,6 +504,7 @@ export class StripeWebhookService {
             currencyCode: true,
             payerId: true,
             requesterId: true,
+            requesterEmail: true,
           },
         },
       },
@@ -516,8 +518,9 @@ export class StripeWebhookService {
 
   private async createStripeReversal(params: {
     paymentRequestId: string;
-    payerId: string;
-    requesterId: string;
+    payerId: string | null;
+    requesterId: string | null;
+    requesterEmail?: string | null;
     currencyCode: $Enums.CurrencyCode;
     requestAmount: number;
     amount: number;
@@ -529,6 +532,7 @@ export class StripeWebhookService {
       paymentRequestId,
       payerId,
       requesterId,
+      requesterEmail,
       currencyCode,
       requestAmount,
       amount,
@@ -536,6 +540,8 @@ export class StripeWebhookService {
       stripeObjectId,
       metadata = {},
     } = params;
+
+    if (!payerId) return;
 
     if (stripeObjectId) {
       const existing = await this.prisma.ledgerEntryModel.findFirst({
@@ -575,29 +581,29 @@ export class StripeWebhookService {
     const ledgerId = randomUUID();
 
     await this.prisma.$transaction(async (tx) => {
-      // 🔐 Lock with operation-specific key to prevent cross-operation collisions
-      await tx.$queryRaw(Prisma.sql`
-        SELECT pg_advisory_xact_lock(hashtext((${requesterId} || ':stripe-reversal')::text)::bigint)
-      `);
+      if (requesterId) {
+        await tx.$executeRaw(Prisma.sql`
+          SELECT pg_advisory_xact_lock(hashtext((${requesterId} || ':stripe-reversal')::text)::bigint)
+        `);
 
-      // 🔐 SELECT FOR UPDATE to lock rows; effective status from latest outcome (append-only, no trigger UPDATE)
-      const requesterBalanceResult = await tx.$queryRaw<{ balance: number }[]>`
-        SELECT COALESCE(SUM(le.amount), 0)::numeric AS balance
-        FROM ledger_entry le
-        LEFT JOIN LATERAL (
-          SELECT o.status FROM ledger_entry_outcome o
-          WHERE o.ledger_entry_id = le.id
-          ORDER BY o.created_at DESC LIMIT 1
-        ) latest ON true
-        WHERE le.consumer_id = ${requesterId}
-          AND le.currency_code = ${currencyCode}::"CurrencyCode"
-          AND COALESCE(latest.status, le.status) = ${$Enums.TransactionStatus.COMPLETED}::"TransactionStatus"
-          AND le.deleted_at IS NULL
-        FOR UPDATE OF le
-      `;
-      const requesterBalance = Number(requesterBalanceResult[0]?.balance ?? 0);
-      if (requesterBalance < finalAmount) {
-        throw new ServiceUnavailableException(errorCodes.INSUFFICIENT_REQUESTER_BALANCE_REVERSAL_STRIPE);
+        // Balance check: advisory lock above serializes per consumer; no FOR UPDATE on aggregate (raw-sql-issues.md)
+        const requesterBalanceResult = await tx.$queryRaw<{ balance: number }[]>`
+          SELECT COALESCE(SUM(le.amount), 0) AS balance
+          FROM ledger_entry le
+          LEFT JOIN LATERAL (
+            SELECT o.status FROM ledger_entry_outcome o
+            WHERE o.ledger_entry_id = le.id
+            ORDER BY o.created_at DESC LIMIT 1
+          ) latest ON true
+          WHERE le.consumer_id::text = ${requesterId}
+            AND le.currency_code::text = ${currencyCode}
+            AND (COALESCE(latest.status, le.status))::text = ${$Enums.TransactionStatus.COMPLETED}
+            AND le.deleted_at IS NULL
+        `;
+        const requesterBalance = Number(requesterBalanceResult[0]?.balance ?? 0);
+        if (requesterBalance < finalAmount) {
+          throw new ServiceUnavailableException(errorCodes.INSUFFICIENT_REQUESTER_BALANCE_REVERSAL_STRIPE);
+        }
       }
 
       await tx.ledgerEntryModel.create({
@@ -616,27 +622,30 @@ export class StripeWebhookService {
         },
       });
 
-      await tx.ledgerEntryModel.create({
-        data: {
-          ledgerId,
-          consumerId: requesterId,
-          paymentRequestId,
-          type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
-          currencyCode,
-          status: $Enums.TransactionStatus.COMPLETED,
-          amount: -finalAmount,
-          createdBy: `stripe`,
-          updatedBy: `stripe`,
-          metadata: baseMetadata,
-          stripeId: stripeObjectId ?? undefined,
-        },
-      });
+      if (requesterId) {
+        await tx.ledgerEntryModel.create({
+          data: {
+            ledgerId,
+            consumerId: requesterId,
+            paymentRequestId,
+            type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
+            currencyCode,
+            status: $Enums.TransactionStatus.COMPLETED,
+            amount: -finalAmount,
+            createdBy: `stripe`,
+            updatedBy: `stripe`,
+            metadata: baseMetadata,
+            stripeId: stripeObjectId ?? undefined,
+          },
+        });
+      }
     });
 
     await this.sendReversalEmails({
       paymentRequestId,
       payerId,
       requesterId,
+      requesterEmail: requesterEmail ?? undefined,
       amount: finalAmount,
       currencyCode,
       kind,
@@ -647,35 +656,62 @@ export class StripeWebhookService {
   private async sendReversalEmails(params: {
     paymentRequestId: string;
     payerId: string;
-    requesterId: string;
+    requesterId: string | null;
+    requesterEmail?: string;
     amount: number;
     currencyCode: $Enums.CurrencyCode;
     kind: `REFUND` | `CHARGEBACK`;
     reason?: string | null;
   }) {
-    const { paymentRequestId, payerId, requesterId, amount, currencyCode, kind, reason } = params;
+    const { paymentRequestId, payerId, requesterId, requesterEmail, amount, currencyCode, kind, reason } = params;
+    const consumerIds = [payerId, ...(requesterId ? [requesterId] : [])];
     const consumers = await this.prisma.consumerModel.findMany({
-      where: { id: { in: [payerId, requesterId] } },
+      where: { id: { in: consumerIds } },
       select: { id: true, email: true },
     });
 
     const payer = consumers.find((consumer) => consumer.id === payerId);
-    const requester = consumers.find((consumer) => consumer.id === requesterId);
+    const requester = requesterId ? consumers.find((consumer) => consumer.id === requesterId) : null;
+    const requesterEmailResolved = requester?.email ?? requesterEmail ?? ``;
 
-    if (!payer?.email || !requester?.email) return;
+    if (!payer?.email) return;
 
     if (kind === `REFUND`) {
       await this.mailingService.sendPaymentRefundEmail({
         recipientEmail: payer.email,
-        counterpartyEmail: requester.email,
+        counterpartyEmail: requesterEmailResolved,
         amount,
         currencyCode,
         reason,
         paymentRequestId,
         role: `payer`,
       });
-      await this.mailingService.sendPaymentRefundEmail({
-        recipientEmail: requester.email,
+      if (requesterEmailResolved) {
+        await this.mailingService.sendPaymentRefundEmail({
+          recipientEmail: requesterEmailResolved,
+          counterpartyEmail: payer.email,
+          amount,
+          currencyCode,
+          reason,
+          paymentRequestId,
+          role: `requester`,
+        });
+      }
+      return;
+    }
+
+    await this.mailingService.sendPaymentChargebackEmail({
+      recipientEmail: payer.email,
+      counterpartyEmail: requesterEmailResolved,
+      amount,
+      currencyCode,
+      reason,
+      paymentRequestId,
+      role: `payer`,
+    });
+    if (requesterEmailResolved) {
+      await this.mailingService.sendPaymentChargebackEmail({
+        recipientEmail: requesterEmailResolved,
         counterpartyEmail: payer.email,
         amount,
         currencyCode,
@@ -683,27 +719,7 @@ export class StripeWebhookService {
         paymentRequestId,
         role: `requester`,
       });
-      return;
     }
-
-    await this.mailingService.sendPaymentChargebackEmail({
-      recipientEmail: payer.email,
-      counterpartyEmail: requester.email,
-      amount,
-      currencyCode,
-      reason,
-      paymentRequestId,
-      role: `payer`,
-    });
-    await this.mailingService.sendPaymentChargebackEmail({
-      recipientEmail: requester.email,
-      counterpartyEmail: payer.email,
-      amount,
-      currencyCode,
-      reason,
-      paymentRequestId,
-      role: `requester`,
-    });
   }
 
   private async handleChargeRefunded(charge: Stripe.Charge) {
@@ -725,6 +741,7 @@ export class StripeWebhookService {
         paymentRequestId: paymentRequest.id,
         payerId: paymentRequest.payerId,
         requesterId: paymentRequest.requesterId,
+        requesterEmail: paymentRequest.requesterEmail,
         currencyCode: paymentRequest.currencyCode,
         requestAmount,
         amount: refundAmount,
@@ -808,6 +825,7 @@ export class StripeWebhookService {
       paymentRequestId: paymentRequest.id,
       payerId: paymentRequest.payerId,
       requesterId: paymentRequest.requesterId,
+      requesterEmail: paymentRequest.requesterEmail,
       currencyCode: paymentRequest.currencyCode,
       requestAmount,
       amount: disputeAmount,

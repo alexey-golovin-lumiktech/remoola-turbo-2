@@ -12,5 +12,6 @@
   "detectOpenHandles": true,
   "errorOnDeprecated": true,
   "verbose": true,
-  "collectCoverage": false
+  "collectCoverage": false,
+  "cache": false
 }

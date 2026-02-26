@@ -1,42 +1,63 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
-import { $Enums } from '@remoola/database-2';
+import { $Enums, Prisma } from '@remoola/database-2';
 
 import { DashboardData, ActivityItem, ComplianceTask, PendingRequest, QuickDoc } from './dtos/dashboard-data.dto';
 import { PrismaService } from '../../../shared/prisma.service';
 
 @Injectable()
 export class ConsumerDashboardService {
+  private readonly logger = new Logger(ConsumerDashboardService.name);
   constructor(private prisma: PrismaService) {}
 
   /** Main entry point */
   async getDashboardData(consumerId: string): Promise<DashboardData> {
-    const [summary, pendingRequests, activity, tasks, quickDocs] = await Promise.all([
-      this.buildSummary(consumerId),
-      this.buildPendingRequests(consumerId),
-      this.buildActivity(consumerId),
-      this.buildTasks(consumerId),
-      this.buildQuickDocs(consumerId),
-    ]);
+    try {
+      const [summary, pendingRequests, activity, tasks, quickDocs] = await Promise.all([
+        this.buildSummary(consumerId),
+        this.buildPendingRequests(consumerId),
+        this.buildActivity(consumerId),
+        this.buildTasks(consumerId),
+        this.buildQuickDocs(consumerId),
+      ]);
 
-    const response = {
-      summary,
-      pendingRequests,
-      activity,
-      tasks,
-      quickDocs,
-    };
+      const response = {
+        summary,
+        pendingRequests,
+        activity,
+        tasks,
+        quickDocs,
+      };
 
-    return response;
+      return response;
+    } catch (error) {
+      this.logger.error(`Failed to build dashboard data`, {
+        consumerId,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      throw error;
+    }
   }
 
   private async buildSummary(consumerId: string) {
-    const [balance, activeRequests, lastPayment] = await Promise.all([
-      // Completed transactions → balance
-      this.prisma.ledgerEntryModel.aggregate({
-        where: { consumerId, status: `COMPLETED`, deletedAt: null },
-        _sum: { amount: true },
-      }),
+    const completedStatus = $Enums.TransactionStatus.COMPLETED;
+    const [balanceResult, activeRequests, lastPayment] = await Promise.all([
+      // Balance from effective status (latest outcome or entry.status) — append-only outcomes
+      // Uses LATERAL join pattern (raw-sql-issues.md)
+      // for optimal performance with index on ledger_entry_outcome(ledger_entry_id, created_at DESC)
+      this.prisma.$queryRaw<Array<{ balance: string | null }>>(Prisma.sql`
+        SELECT COALESCE(SUM(le.amount), 0) AS balance
+        FROM ledger_entry le
+        LEFT JOIN LATERAL (
+          SELECT o.status FROM ledger_entry_outcome o
+          WHERE o.ledger_entry_id = le.id
+          ORDER BY o.created_at DESC LIMIT 1
+        ) latest ON true
+        WHERE le.consumer_id::text = ${consumerId}
+          AND (COALESCE(latest.status, le.status))::text = ${completedStatus}
+          AND le.deleted_at IS NULL
+      `),
 
       // Active payment requests count
       this.prisma.paymentRequestModel.count({
@@ -54,8 +75,9 @@ export class ConsumerDashboardService {
       }),
     ]);
 
+    const balanceSum = balanceResult[0]?.balance != null ? Number(balanceResult[0].balance) : 0;
     return {
-      balanceCents: balance._sum.amount ? Number(balance._sum.amount) * 100 : 0,
+      balanceCents: Math.round(balanceSum * 100),
 
       activeRequests,
       lastPaymentAt: lastPayment?.createdAt ?? null,
@@ -77,7 +99,7 @@ export class ConsumerDashboardService {
 
     return paymentRequests.map((paymentRequest) => ({
       id: paymentRequest.id,
-      counterpartyName: paymentRequest.requester.email,
+      counterpartyName: paymentRequest.requester?.email ?? paymentRequest.requesterEmail ?? ``,
       amount: Number(paymentRequest.amount),
       currencyCode: paymentRequest.currencyCode,
       status: paymentRequest.status,

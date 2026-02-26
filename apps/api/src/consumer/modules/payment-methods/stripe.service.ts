@@ -78,6 +78,9 @@ export class ConsumerStripeService {
         }
 
         if (paymentRequest.ledgerEntries.length === 0) {
+          if (!paymentRequest.requesterId) {
+            throw new BadRequestException(errorCodes.INVALID_LEDGER_STATE_EMAIL_PAYMENT_STRIPE);
+          }
           const amount = Number(paymentRequest.amount);
           const ledgerId = randomUUID();
           const payerKey = `pr:${paymentRequest.id}:payer`;
@@ -174,7 +177,7 @@ export class ConsumerStripeService {
           price_data: {
             currency: pr.currencyCode.toLowerCase(),
             product_data: {
-              name: `Payment to ${pr.requester.email}`,
+              name: `Payment to ${pr.requester?.email ?? pr.requesterEmail ?? `recipient`}`,
             },
             unit_amount: amountMinor,
           },
@@ -408,7 +411,7 @@ export class ConsumerStripeService {
           consumerId,
           paymentMethodId: paymentMethod.id,
         },
-        description: `Payment to ${pr.requester.email}`,
+        description: `Payment to ${pr.requester?.email ?? pr.requesterEmail ?? `recipient`}`,
       });
 
       // 6) Append-only: record COMPLETED outcome for non-completed entries; trigger syncs status (AGENTS 6.10)

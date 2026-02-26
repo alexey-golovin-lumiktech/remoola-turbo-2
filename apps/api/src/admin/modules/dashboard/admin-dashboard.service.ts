@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
+import { $Enums, Prisma } from '@remoola/database-2';
+
 import { PrismaService } from '../../../shared/prisma.service';
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
@@ -160,7 +162,7 @@ export class AdminDashboardService {
       },
       orderBy: { createdAt: `desc` },
       take: MISSING_LEDGER_LIMIT,
-      select: { id: true, requesterId: true, createdAt: true },
+      select: { id: true, requesterId: true, payerId: true, createdAt: true },
     });
 
     for (const request of missingLedgerRequests) {
@@ -169,7 +171,7 @@ export class AdminDashboardService {
         type: `missing_ledger_entry`,
         description: `Completed payment request has no ledger entries.`,
         paymentRequestId: request.id,
-        consumerId: request.requesterId,
+        consumerId: request.requesterId ?? request.payerId ?? undefined,
         createdAt: request.createdAt.toISOString(),
       });
     }
@@ -231,6 +233,7 @@ export class AdminDashboardService {
         id: true,
         amount: true,
         requesterId: true,
+        payerId: true,
         createdAt: true,
         ledgerEntries: {
           select: {
@@ -249,13 +252,15 @@ export class AdminDashboardService {
         (entry) => Math.abs(Math.abs(Number(entry.amount)) - requestAmount) <= AMOUNT_MISMATCH_TOLERANCE,
       );
 
+      const consumerId = request.requesterId ?? request.payerId ?? undefined;
+
       if (matchingEntries.length === 0) {
         anomalies.push({
           id: `amount:${request.id}`,
           type: `amount_mismatch`,
           description: `No USER_PAYMENT ledger entry matches request amount ${requestAmount.toFixed(2)}.`,
           paymentRequestId: request.id,
-          consumerId: request.requesterId,
+          consumerId,
           createdAt: request.createdAt.toISOString(),
         });
         continue;
@@ -270,55 +275,66 @@ export class AdminDashboardService {
           type: `amount_mismatch`,
           description: `Expected both debit and credit USER_PAYMENT entries for ${requestAmount.toFixed(2)}.`,
           paymentRequestId: request.id,
-          consumerId: request.requesterId,
+          consumerId,
           createdAt: request.createdAt.toISOString(),
         });
       }
     }
 
-    const statusMismatchRequests = await this.prisma.paymentRequestModel.findMany({
-      where: {
-        status: `COMPLETED`,
-        ledgerEntries: {
-          some: { status: { not: `COMPLETED` } },
-        },
-      },
-      orderBy: { createdAt: `desc` },
-      take: STATUS_MISMATCH_LIMIT,
-      select: { id: true, requesterId: true, createdAt: true },
-    });
+    // Use effective status (latest outcome or entry.status) so append-only outcomes are respected
+    const statusMismatchRows = await this.prisma.$queryRaw<
+      Array<{ id: string; requester_id: string | null; payer_id: string | null; created_at: Date }>
+    >(Prisma.sql`
+      SELECT DISTINCT pr.id, pr.requester_id, pr.payer_id, pr.created_at
+      FROM payment_request pr
+      INNER JOIN ledger_entry le ON le.payment_request_id = pr.id AND le.deleted_at IS NULL
+      LEFT JOIN LATERAL (
+        SELECT o.status FROM ledger_entry_outcome o
+        WHERE o.ledger_entry_id = le.id
+        ORDER BY o.created_at DESC LIMIT 1
+      ) latest ON true
+      WHERE pr.status::text = ${$Enums.TransactionStatus.COMPLETED}
+        AND (COALESCE(latest.status, le.status))::text <> ${$Enums.TransactionStatus.COMPLETED}
+      ORDER BY pr.created_at DESC
+      LIMIT ${STATUS_MISMATCH_LIMIT}
+    `);
 
-    for (const request of statusMismatchRequests) {
+    for (const request of statusMismatchRows) {
       anomalies.push({
         id: `status:${request.id}`,
         type: `status_inconsistency`,
         description: `Ledger entries do not align with completed request status.`,
         paymentRequestId: request.id,
-        consumerId: request.requesterId,
-        createdAt: request.createdAt.toISOString(),
+        consumerId: request.requester_id ?? request.payer_id ?? undefined,
+        createdAt: new Date(request.created_at).toISOString(),
       });
     }
 
-    const prematureLedgerRequests = await this.prisma.paymentRequestModel.findMany({
-      where: {
-        status: { not: `COMPLETED` },
-        ledgerEntries: {
-          some: { status: `COMPLETED` },
-        },
-      },
-      orderBy: { createdAt: `desc` },
-      take: PREMATURE_LEDGER_LIMIT,
-      select: { id: true, requesterId: true, createdAt: true },
-    });
+    const prematureRows = await this.prisma.$queryRaw<
+      Array<{ id: string; requester_id: string | null; payer_id: string | null; created_at: Date }>
+    >(Prisma.sql`
+      SELECT DISTINCT pr.id, pr.requester_id, pr.payer_id, pr.created_at
+      FROM payment_request pr
+      INNER JOIN ledger_entry le ON le.payment_request_id = pr.id AND le.deleted_at IS NULL
+      LEFT JOIN LATERAL (
+        SELECT o.status FROM ledger_entry_outcome o
+        WHERE o.ledger_entry_id = le.id
+        ORDER BY o.created_at DESC LIMIT 1
+      ) latest ON true
+      WHERE pr.status::text <> ${$Enums.TransactionStatus.COMPLETED}
+        AND (COALESCE(latest.status, le.status))::text = ${$Enums.TransactionStatus.COMPLETED}
+      ORDER BY pr.created_at DESC
+      LIMIT ${PREMATURE_LEDGER_LIMIT}
+    `);
 
-    for (const request of prematureLedgerRequests) {
+    for (const request of prematureRows) {
       anomalies.push({
         id: `premature:${request.id}`,
         type: `premature_ledger_entry`,
         description: `Non-completed request has completed ledger entries.`,
         paymentRequestId: request.id,
-        consumerId: request.requesterId,
-        createdAt: request.createdAt.toISOString(),
+        consumerId: request.requester_id ?? request.payer_id ?? undefined,
+        createdAt: new Date(request.created_at).toISOString(),
       });
     }
 

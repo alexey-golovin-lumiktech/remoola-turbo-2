@@ -40,6 +40,9 @@ describe(`ConsumerExchangeService - Concurrency Safety`, () => {
         if (queryStr.includes(`pg_advisory_xact_lock`)) {
           return Promise.resolve([]);
         }
+        if (queryStr.includes(`GROUP BY`) && queryStr.includes(`currency_code`)) {
+          return Promise.resolve([{ currency_code: $Enums.CurrencyCode.USD, sum_amount: String(balance) }]);
+        }
         if (queryStr.includes(`SUM(amount)`) || queryStr.includes(`SUM(le.amount)`)) {
           return Promise.resolve([{ balance }]);
         }
@@ -48,13 +51,24 @@ describe(`ConsumerExchangeService - Concurrency Safety`, () => {
       $transaction: jest.fn(async (fn: (tx: any) => Promise<any>) => {
         const txQueryCallLog: string[] = [];
         const tx = {
+          $executeRaw: jest.fn().mockImplementation((query: unknown) => {
+            const queryStr = queryToString(query);
+            txQueryCallLog.push(queryStr);
+            return Promise.resolve(undefined);
+          }),
           $queryRaw: jest.fn().mockImplementation((query) => {
             const queryStr = queryToString(query);
             txQueryCallLog.push(queryStr);
             if (queryStr.includes(`pg_advisory_xact_lock`)) {
               return Promise.resolve([]);
             }
+            if (queryStr.includes(`GROUP BY`) && queryStr.includes(`currency_code`)) {
+              return Promise.resolve([{ currency_code: $Enums.CurrencyCode.USD, sum_amount: String(balance) }]);
+            }
             if (queryStr.includes(`SUM(amount)`) || queryStr.includes(`SUM(le.amount)`)) {
+              return Promise.resolve([{ balance }]);
+            }
+            if (queryStr.includes(`COALESCE(SUM(le.amount)`)) {
               return Promise.resolve([{ balance }]);
             }
             return Promise.resolve(undefined);
@@ -66,7 +80,7 @@ describe(`ConsumerExchangeService - Concurrency Safety`, () => {
           },
         };
         await fn(tx);
-        // Expose call log on prisma mock
+        // Expose call log on prisma mock (both $executeRaw and $queryRaw)
         (prisma.$queryRaw as any)._txCallLog = txQueryCallLog;
       }),
     } as any;
@@ -98,7 +112,7 @@ describe(`ConsumerExchangeService - Concurrency Safety`, () => {
       expect(hasExchangeLock).toBe(true);
     });
 
-    it(`should use SELECT FOR UPDATE for balance check`, async () => {
+    it(`should run balance check inside transaction`, async () => {
       const prisma = createMockPrisma({ balance: 1000 });
       const service = createService(prisma);
 
@@ -111,11 +125,12 @@ describe(`ConsumerExchangeService - Concurrency Safety`, () => {
       const txCallLog = (prisma.$queryRaw as any)._txCallLog as string[];
       expect(txCallLog).toBeDefined();
 
-      const hasForUpdate = txCallLog.some((q: string) => q.includes(`FOR UPDATE`));
-      expect(hasForUpdate).toBe(true);
+      // Balance is checked via raw SQL (COALESCE(SUM(le.amount))); serialization is via advisory lock
+      const hasBalanceCheck = txCallLog.some((q: string) => q.includes(`SUM(le.amount)`) || q.includes(`COALESCE(SUM`));
+      expect(hasBalanceCheck).toBe(true);
     });
 
-    it(`should lock specific currency balance`, async () => {
+    it(`should filter balance check by currency`, async () => {
       const prisma = createMockPrisma({ balance: 1000 });
       const service = createService(prisma);
 
@@ -129,11 +144,10 @@ describe(`ConsumerExchangeService - Concurrency Safety`, () => {
       expect(txCallLog).toBeDefined();
 
       const balanceCheckCalls = txCallLog.filter(
-        (q: string) => (q.includes(`SUM(amount)`) || q.includes(`SUM(le.amount)`)) && q.includes(`FOR UPDATE`),
+        (q: string) => (q.includes(`SUM(le.amount)`) || q.includes(`COALESCE(SUM`)) && q.includes(`currency_code`),
       );
 
       expect(balanceCheckCalls.length).toBeGreaterThan(0);
-      // Should filter by specific currency
       const balanceQuery = balanceCheckCalls[0];
       expect(balanceQuery).toContain(`currency_code`);
     });

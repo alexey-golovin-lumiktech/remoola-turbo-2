@@ -54,9 +54,13 @@ describe(`ConsumerPaymentsService - Concurrency Safety`, () => {
         return Promise.resolve(undefined);
       }),
       $transaction: jest.fn(async (fn: (tx: any) => Promise<any>) => {
-        // Reset call log for transaction-internal calls
         const txQueryCallLog: string[] = [];
         const tx = {
+          $executeRaw: jest.fn().mockImplementation((query: unknown) => {
+            const queryStr = queryToString(query);
+            txQueryCallLog.push(queryStr);
+            return Promise.resolve(undefined);
+          }),
           $queryRaw: jest.fn().mockImplementation((query) => {
             const queryStr = queryToString(query);
             txQueryCallLog.push(queryStr);
@@ -66,18 +70,18 @@ describe(`ConsumerPaymentsService - Concurrency Safety`, () => {
             if (queryStr.includes(`SUM(amount)`) || queryStr.includes(`SUM(le.amount)`)) {
               return Promise.resolve([{ balance }]);
             }
+            if (queryStr.includes(`COALESCE(SUM(le.amount)`)) {
+              return Promise.resolve([{ balance }]);
+            }
             return Promise.resolve(undefined);
           }),
           ledgerEntryModel: {
             findFirst: jest.fn().mockResolvedValue(null),
             create: jest.fn().mockResolvedValue({ id: `ledger-entry-1` }),
           },
-          // Expose call log for assertions
-          _queryCallLog: txQueryCallLog,
         };
 
         const result = await fn(tx);
-        // Copy transaction calls to main mock for inspection
         (prisma.$queryRaw as any)._txCallLog = txQueryCallLog;
         return result;
       }),
@@ -121,7 +125,7 @@ describe(`ConsumerPaymentsService - Concurrency Safety`, () => {
       });
     });
 
-    it(`should use advisory lock and SELECT FOR UPDATE in transaction`, async () => {
+    it(`should use advisory lock and balance check in transaction`, async () => {
       const prisma = createMockPrisma({ balance: 100 });
       const service = createService(prisma);
 
@@ -132,7 +136,6 @@ describe(`ConsumerPaymentsService - Concurrency Safety`, () => {
       };
       await service.withdraw(consumerId, withdrawBody, `key-1`);
 
-      // Check that advisory lock was called with withdraw-specific key
       const txCallLog = (prisma.$queryRaw as any)._txCallLog as string[];
       expect(txCallLog).toBeDefined();
 
@@ -141,8 +144,9 @@ describe(`ConsumerPaymentsService - Concurrency Safety`, () => {
       );
       expect(hasAdvisoryLock).toBe(true);
 
-      const hasForUpdate = txCallLog.some((q: string) => q.includes(`FOR UPDATE`));
-      expect(hasForUpdate).toBe(true);
+      // Balance is checked via raw SQL (COALESCE(SUM(le.amount))); serialization is via advisory lock
+      const hasBalanceCheck = txCallLog.some((q: string) => q.includes(`SUM(le.amount)`) || q.includes(`COALESCE(SUM`));
+      expect(hasBalanceCheck).toBe(true);
     });
   });
 
@@ -178,6 +182,7 @@ describe(`ConsumerPaymentsService - Concurrency Safety`, () => {
       const txCallLog = (prisma.$queryRaw as any)._txCallLog as string[];
       expect(txCallLog).toBeDefined();
 
+      // Advisory locks are executed via $executeRaw; both are logged in _txCallLog
       const lockCalls = txCallLog.filter((q: string) => q.includes(`pg_advisory_xact_lock`));
       expect(lockCalls.length).toBe(2);
 
@@ -188,8 +193,8 @@ describe(`ConsumerPaymentsService - Concurrency Safety`, () => {
     });
   });
 
-  describe(`Balance Check - SELECT FOR UPDATE`, () => {
-    it(`should use SELECT FOR UPDATE for withdraw balance check`, async () => {
+  describe(`Balance Check`, () => {
+    it(`should run withdraw balance check inside transaction`, async () => {
       const prisma = createMockPrisma({ balance: 100 });
       const service = createService(prisma);
 
@@ -203,13 +208,13 @@ describe(`ConsumerPaymentsService - Concurrency Safety`, () => {
       const txCallLog = (prisma.$queryRaw as any)._txCallLog as string[];
 
       const balanceCheckCalls = txCallLog.filter(
-        (q: string) => (q.includes(`SUM(amount)`) || q.includes(`SUM(le.amount)`)) && q.includes(`FOR UPDATE`),
+        (q: string) => q.includes(`SUM(le.amount)`) || q.includes(`COALESCE(SUM`),
       );
 
       expect(balanceCheckCalls.length).toBeGreaterThan(0);
     });
 
-    it(`should use SELECT FOR UPDATE for transfer balance check`, async () => {
+    it(`should run transfer balance check inside transaction`, async () => {
       const prisma = createMockPrisma({ balance: 100 });
       const service = createService(prisma);
 
@@ -223,7 +228,7 @@ describe(`ConsumerPaymentsService - Concurrency Safety`, () => {
       const txCallLog = (prisma.$queryRaw as any)._txCallLog as string[];
 
       const balanceCheckCalls = txCallLog.filter(
-        (q: string) => (q.includes(`SUM(amount)`) || q.includes(`SUM(le.amount)`)) && q.includes(`FOR UPDATE`),
+        (q: string) => q.includes(`SUM(le.amount)`) || q.includes(`COALESCE(SUM`),
       );
 
       expect(balanceCheckCalls.length).toBeGreaterThan(0);

@@ -680,4 +680,78 @@
                 - Adjust Turbo build configuration and Jest e2e setup
                 - Normalize schema and service consistency across admin,
                   consumer, and API modules
+
+- **2026-02-26:**
+                **🚀 Feature**
+                - Payments: pay-by-email for unregistered recipients; store
+                  `requester_email`, optional `requester_id`; reversal and ledger
+                  requester entry only when `requester_id` present; counterparty
+                  from `requester_email` when requester not in DB
+                - Balance and anomaly logic use effective ledger status:
+                  append-only outcomes; status from latest outcome via LATERAL
+                  join; dashboard (admin + consumer), exchange, payments, Stripe
+                  webhook updated; snake_case columns, parameterized raw SQL
+                - Serialization: advisory lock retained for exchange, withdraw,
+                  transfer, reversal; FOR UPDATE removed from aggregate balance
+                  queries; locking per consumer
+                - Admin reversal: auth audit log event PAYMENT_REVERSAL; balance
+                  check and advisory lock only when `requester_id` present
+                - Consumer startPayment: unregistered recipient
+                  (`requester_id` null, `requester_email` set); Stripe ledger
+                  returns INVALID_LEDGER_STATE_EMAIL_PAYMENT_STRIPE when no
+                  entries and no `requester_id`
+                - StartPaymentForm: send to email not in contacts; confirmation
+                  modal (continue / add contact and continue / add full contact)
+                - WithdrawTransferPageClient: use BalancesPanel
+                - Admin payment-requests archive: WHERE from Prisma.sql
+                  fragments only (parameterized)
+
+                **🔐 Security / Financial Safety**
+                - Ledger: effective status for balance/anomalies; no
+                  UPDATE/DELETE on financial history; double-entry and
+                  idempotency unchanged
+                - Payments: requester optional; reversal and startPayment
+                  handle null requester; idempotency keys unchanged
+                - Stripe webhooks: reversal idempotency and replay safety
+                  unchanged; requester ledger entry only when `requester_id`
+                  present
+                - Auth: admin reversal audit log only; no token/session changes
+                - Money: rounding, minor units, currency/amount handling
+                  unchanged
+                - Concurrency: advisory lock retained; FOR UPDATE removed from
+                  aggregate SUM; serialization via advisory lock per consumer
+
+                **🗄 Database & Migrations**
+                - Migration `20260225160000_payment_request_requester_email`:
+                  add `requester_email` (TEXT), `requester_id` nullable, FK
+                  ON DELETE SET NULL; additive, backward compatible
+                - Prisma schema: `requesterId` optional, `requesterEmail`;
+                  relation SetNull
+                - Effective-status queries: raw SQL with LATERAL join;
+                  snake_case columns; parameterized; no data migration; backward
+                  compatible
+                - Rollback: deploy previous app; migration rollback documented;
+                  prefer fixing forward; migration README for deploy order
+
+                **📦 Types & Contracts**
+                - Admin, consumer, Stripe flows use `requesterEmail` and handle
+                  null `requesterId`; shared shapes aligned for pay-by-email
+
+                **🧪 Testing & Reliability**
+                - Exchange: getBalanceByCurrency and concurrency specs
+                  (effective status, $executeRaw, balance without FOR UPDATE)
+                - Payments: startPayment unit tests (registered, unregistered,
+                  self-by-id, self-by-email, invalid amount); transfer happy
+                  path; concurrency specs (advisory lock + balance check)
+                - Existing coverage for reversals and dashboard preserved
+                - Concurrency tests cover advisory lock and balance-check races
+
+                **🛠 DevEx & Infrastructure**
+                - test-db: PrismaClient datasourceUrl; Jest cache false
+                - API e2e: config path updated
+                - docs/project-design-rules.md added
+                - db-fixtures and seed comments updated
+
+                **🧹 Cleanup**
+                - None
 ```

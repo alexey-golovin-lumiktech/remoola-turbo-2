@@ -1,3 +1,12 @@
+/**
+ * ⚠️ WARNING: This file uses $executeRawUnsafe for fixture management.
+ *
+ * These patterns are acceptable ONLY because:
+ * 1. All inputs are controlled by test/fixture code (no user input).
+ * 2. Dynamic table names cannot be parameterized in PostgreSQL.
+ *
+ * DO NOT copy these patterns to production code. See raw-sql-issues.md.
+ */
 import { randomUUID } from 'crypto';
 
 import { $Enums, Prisma, type PrismaClient } from '@remoola/database-2';
@@ -675,6 +684,8 @@ export async function seedAllTables(prisma: PrismaClient, options: FixtureOption
   inserted.scheduled_fx_conversion = options.perTable;
 
   try {
+    // Table has no UNIQUE on payment_request_id; ON CONFLICT DO NOTHING
+    // is a no-op unless a constraint is added (raw-sql-issues.md).
     await prisma.$executeRawUnsafe(`
       INSERT INTO "payment_request_expectation_date_archive" (
         "payment_request_id",

@@ -5,6 +5,7 @@ import { errorCodes } from '@remoola/shared-constants';
 
 import { ConsumerPaymentsService } from './consumer-payments.service';
 import { type TransferBody, type WithdrawBody } from './dto';
+import { type StartPayment } from './dto/start-payment.dto';
 
 describe(`ConsumerPaymentsService.createPaymentRequest`, () => {
   const consumerId = `consumer-1`;
@@ -119,6 +120,170 @@ describe(`ConsumerPaymentsService.createPaymentRequest`, () => {
         email: `REQUESTER@example.com`,
         amount: `10`,
         currencyCode: $Enums.CurrencyCode.USD,
+      }),
+    ).rejects.toThrow(BadRequestException);
+  });
+});
+
+describe(`ConsumerPaymentsService.startPayment`, () => {
+  const consumerId = `consumer-1`;
+  const payerEmail = `payer@example.com`;
+  const completeConsumerProfile = {
+    id: consumerId,
+    email: payerEmail,
+    accountType: $Enums.AccountType.CONTRACTOR,
+    contractorKind: $Enums.ContractorKind.INDIVIDUAL,
+    personalDetails: {
+      legalStatus: $Enums.LegalStatus.INDIVIDUAL,
+      taxId: `tax-id`,
+      passportOrIdNumber: `passport`,
+      phoneNumber: null,
+    },
+  };
+
+  function makeService() {
+    const tx = {
+      paymentRequestModel: { create: jest.fn().mockResolvedValue({ id: `pr-1` }) },
+      ledgerEntryModel: { create: jest.fn().mockResolvedValue({}) },
+    };
+    const prisma = {
+      consumerModel: {
+        findUnique: jest.fn(async (args: { select?: { email?: boolean }; include?: unknown }) => {
+          if (args.select?.email) {
+            return { email: payerEmail };
+          }
+          return completeConsumerProfile;
+        }),
+        findFirst: jest.fn(),
+      },
+      $transaction: jest.fn((fn: (t: typeof tx) => Promise<unknown>) => fn(tx)),
+    } as any;
+    const service = new ConsumerPaymentsService(prisma, {} as any);
+    return { service, prisma, tx };
+  }
+
+  it(`creates payment and ledger when recipient exists (case-insensitive email)`, async () => {
+    const { service, prisma, tx } = makeService();
+    prisma.consumerModel.findFirst.mockResolvedValue({
+      id: `recipient-1`,
+      email: `recipient@example.com`,
+    });
+
+    const body: StartPayment = {
+      email: `RECIPIENT@example.com`,
+      amount: `50.00`,
+      description: `Test`,
+      method: $Enums.PaymentMethodType.CREDIT_CARD,
+    };
+
+    const result = await service.startPayment(consumerId, body);
+
+    expect(result).toEqual({ paymentRequestId: `pr-1`, ledgerId: expect.any(String) });
+    expect(prisma.consumerModel.findFirst).toHaveBeenCalledWith({
+      where: {
+        email: { equals: `recipient@example.com`, mode: `insensitive` },
+        deletedAt: null,
+      },
+    });
+    expect(tx.paymentRequestModel.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          payerId: consumerId,
+          requesterId: `recipient-1`,
+          requesterEmail: `recipient@example.com`,
+          amount: 50,
+        }),
+      }),
+    );
+  });
+
+  it(`creates payment with unregistered recipient when recipient not found`, async () => {
+    const { service, prisma, tx } = makeService();
+    prisma.consumerModel.findFirst.mockResolvedValue(null);
+
+    const result = await service.startPayment(consumerId, {
+      email: `unknown@example.com`,
+      amount: `10`,
+      method: $Enums.PaymentMethodType.BANK_ACCOUNT,
+    });
+
+    expect(result).toEqual({ paymentRequestId: `pr-1`, ledgerId: expect.any(String) });
+    expect(tx.paymentRequestModel.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          payerId: consumerId,
+          requesterId: null,
+          requesterEmail: `unknown@example.com`,
+          amount: 10,
+        }),
+      }),
+    );
+    expect(tx.ledgerEntryModel.create).toHaveBeenCalledTimes(1);
+  });
+
+  it(`rejects when recipient is self (by id)`, async () => {
+    const { service, prisma } = makeService();
+    prisma.consumerModel.findFirst.mockResolvedValue({
+      id: consumerId,
+      email: `other@example.com`,
+    });
+
+    await expect(
+      service.startPayment(consumerId, {
+        email: `other@example.com`,
+        amount: `10`,
+        method: $Enums.PaymentMethodType.CREDIT_CARD,
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.startPayment(consumerId, {
+        email: `other@example.com`,
+        amount: `10`,
+        method: $Enums.PaymentMethodType.CREDIT_CARD,
+      }),
+    ).rejects.toThrow(errorCodes.CANNOT_TRANSFER_TO_SELF_START_PAYMENT);
+  });
+
+  it(`rejects when recipient email equals current user email (self by email)`, async () => {
+    const { service, prisma } = makeService();
+    prisma.consumerModel.findFirst.mockResolvedValue(null);
+
+    await expect(
+      service.startPayment(consumerId, {
+        email: `PAYER@example.com`,
+        amount: `10`,
+        method: $Enums.PaymentMethodType.CREDIT_CARD,
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.startPayment(consumerId, {
+        email: `PAYER@example.com`,
+        amount: `10`,
+        method: $Enums.PaymentMethodType.CREDIT_CARD,
+      }),
+    ).rejects.toThrow(errorCodes.CANNOT_TRANSFER_TO_SELF_START_PAYMENT);
+    expect(prisma.consumerModel.findFirst).not.toHaveBeenCalled();
+  });
+
+  it(`rejects invalid amount`, async () => {
+    const { service, prisma } = makeService();
+    prisma.consumerModel.findFirst.mockResolvedValue({
+      id: `recipient-1`,
+      email: `r@example.com`,
+    });
+
+    await expect(
+      service.startPayment(consumerId, {
+        email: `r@example.com`,
+        amount: `0`,
+        method: $Enums.PaymentMethodType.CREDIT_CARD,
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.startPayment(consumerId, {
+        email: `r@example.com`,
+        amount: `-1`,
+        method: $Enums.PaymentMethodType.CREDIT_CARD,
       }),
     ).rejects.toThrow(BadRequestException);
   });
@@ -397,10 +562,15 @@ describe(`ConsumerPaymentsService.withdraw`, () => {
               ? (q as any).strings.join(`?`)
               : String(q);
         const tx = {
+          $executeRaw: jest.fn().mockResolvedValue(undefined),
           $queryRaw: jest.fn().mockImplementation((query) => {
             const queryStr = queryToStr(query);
             if (queryStr.includes(`pg_advisory_xact_lock`)) return Promise.resolve([]);
-            if (queryStr.includes(`SUM(amount)`) || queryStr.includes(`SUM(le.amount)`))
+            if (
+              queryStr.includes(`SUM(amount)`) ||
+              queryStr.includes(`SUM(le.amount)`) ||
+              queryStr.includes(`COALESCE(SUM`)
+            )
               return Promise.resolve([{ balance: 500 }]);
             return Promise.resolve(undefined);
           }),
@@ -435,6 +605,21 @@ describe(`ConsumerPaymentsService.withdraw`, () => {
 
 describe(`ConsumerPaymentsService.transfer`, () => {
   const consumerId = `consumer-1`;
+  const recipientId = `consumer-2`;
+
+  function queryRawImpl(balance: number) {
+    return jest.fn().mockImplementation((query: unknown) => {
+      const str =
+        typeof query === `string`
+          ? query
+          : query && typeof query === `object` && (query as { strings?: string[] }).strings
+            ? (query as { strings: string[] }).strings.join(`?`)
+            : String(query);
+      if (str.includes(`pg_advisory_xact_lock`)) return Promise.resolve([]);
+      if (str.includes(`SUM(le.amount)`)) return Promise.resolve([{ balance }]);
+      return Promise.resolve(undefined);
+    });
+  }
 
   it(`throws when idempotency key is missing`, async () => {
     const prisma = {
@@ -455,7 +640,66 @@ describe(`ConsumerPaymentsService.transfer`, () => {
     );
   });
 
-  it(`returns same ledgerId when idempotency key is reused`, async () => {
+  /* eslint-disable-next-line max-len */
+  it(`happy path: creates exactly two ledger entries (debit sender, credit receiver) with same ledgerId and preserves ledger neutrality`, async () => {
+    const createSpy = jest.fn().mockResolvedValue({});
+    const prisma = {
+      consumerModel: {
+        findFirst: jest.fn().mockResolvedValue({ id: recipientId, email: `2@email.com` }),
+      },
+      ledgerEntryModel: {
+        findFirst: jest.fn().mockResolvedValue(null),
+        create: createSpy,
+      },
+      $transaction: jest.fn((fn: (tx: any) => Promise<any>) => {
+        const tx = {
+          $executeRaw: jest.fn().mockResolvedValue(undefined),
+          $queryRaw: queryRawImpl(10),
+          ledgerEntryModel: { create: createSpy },
+        };
+        return fn(tx);
+      }),
+    } as any;
+
+    const service = new ConsumerPaymentsService(prisma, {} as any);
+    (service as any).ensureLimits = jest.fn().mockResolvedValue(undefined);
+
+    const body: TransferBody = { amount: 2, recipient: `2@email.com`, currencyCode: $Enums.CurrencyCode.USD };
+    const result = await service.transfer(consumerId, body, `idem-key-1`);
+
+    expect(result.ledgerId).toBeDefined();
+    expect(createSpy).toHaveBeenCalledTimes(2);
+
+    const [senderCall, receiverCall] = createSpy.mock.calls;
+    const senderData = senderCall[0].data;
+    const receiverData = receiverCall[0].data;
+
+    expect(senderData.consumerId).toBe(consumerId);
+    expect(senderData.amount).toBe(-2);
+    expect(senderData.idempotencyKey).toBe(`transfer:idem-key-1:sender`);
+    expect(senderData.ledgerId).toBe(result.ledgerId);
+    expect(senderData.status).toBe($Enums.TransactionStatus.COMPLETED);
+    expect(senderData.metadata).toMatchObject({
+      rail: $Enums.PaymentRail.BANK_TRANSFER,
+      senderId: consumerId,
+      recipientId,
+    });
+
+    expect(receiverData.consumerId).toBe(recipientId);
+    expect(receiverData.amount).toBe(2);
+    expect(receiverData.idempotencyKey).toBe(`transfer:idem-key-1:recipient`);
+    expect(receiverData.ledgerId).toBe(result.ledgerId);
+    expect(receiverData.status).toBe($Enums.TransactionStatus.COMPLETED);
+    expect(receiverData.metadata).toMatchObject({
+      rail: $Enums.PaymentRail.BANK_TRANSFER,
+      senderId: consumerId,
+      recipientId,
+    });
+
+    expect(Number(senderData.amount) + Number(receiverData.amount)).toBe(0);
+  });
+
+  it(`returns same ledgerId when idempotency key is reused and does not create duplicate ledger entries`, async () => {
     const existingEntry = {
       id: `entry-1`,
       ledgerId: `ledger-1`,
@@ -465,25 +709,25 @@ describe(`ConsumerPaymentsService.transfer`, () => {
       deletedAt: null,
     };
 
+    const createSpy = jest.fn().mockResolvedValue({});
+    const transactionSpy = jest.fn((fn: (tx: any) => Promise<any>) => {
+      const tx = {
+        $executeRaw: jest.fn().mockResolvedValue(undefined),
+        $queryRaw: queryRawImpl(500),
+        ledgerEntryModel: { create: createSpy },
+      };
+      return fn(tx);
+    });
+
     const prisma = {
       consumerModel: {
-        findFirst: jest.fn().mockResolvedValue({ id: `recipient-1`, email: `r@example.com` }),
+        findFirst: jest.fn().mockResolvedValue({ id: recipientId, email: `r@example.com` }),
       },
       ledgerEntryModel: {
-        findFirst: jest.fn().mockResolvedValue(null).mockResolvedValueOnce(existingEntry),
-        aggregate: jest.fn().mockResolvedValue({ _sum: { amount: 500 } }),
-        create: jest.fn().mockResolvedValue({}),
+        findFirst: jest.fn().mockResolvedValueOnce(null).mockResolvedValue(existingEntry),
+        create: createSpy,
       },
-      $transaction: jest.fn((fn: (tx: any) => Promise<any>) => {
-        const tx = {
-          $queryRaw: jest.fn().mockResolvedValue(undefined),
-          ledgerEntryModel: {
-            aggregate: jest.fn().mockResolvedValue({ _sum: { amount: 500 } }),
-            create: jest.fn().mockResolvedValue({}),
-          },
-        };
-        return fn(tx);
-      }),
+      $transaction: transactionSpy,
     } as any;
 
     const service = new ConsumerPaymentsService(prisma, {} as any);
@@ -491,11 +735,12 @@ describe(`ConsumerPaymentsService.transfer`, () => {
 
     const body: TransferBody = { amount: 50, recipient: `r@example.com` };
     const first = await service.transfer(consumerId, body, `key-1`);
-    prisma.ledgerEntryModel.findFirst.mockResolvedValue(existingEntry);
     const second = await service.transfer(consumerId, body, `key-1`);
 
     expect(first.ledgerId).toBeDefined();
     expect(second.ledgerId).toBe(`ledger-1`);
+    expect(transactionSpy).toHaveBeenCalledTimes(1);
+    expect(createSpy).toHaveBeenCalledTimes(2);
     expect(prisma.ledgerEntryModel.findFirst).toHaveBeenCalledWith({
       where: {
         idempotencyKey: `transfer:key-1:sender`,
@@ -505,6 +750,34 @@ describe(`ConsumerPaymentsService.transfer`, () => {
       },
       select: { ledgerId: true },
     });
+  });
+
+  /* eslint-disable-next-line max-len */
+  it(`atomic failure: when second ledger create throws, transaction throws and no partial state is returned`, async () => {
+    const createSpy = jest.fn().mockResolvedValueOnce({}).mockRejectedValueOnce(new Error(`DB failure`));
+
+    const prisma = {
+      consumerModel: {
+        findFirst: jest.fn().mockResolvedValue({ id: recipientId, email: `2@email.com` }),
+      },
+      ledgerEntryModel: { findFirst: jest.fn().mockResolvedValue(null), create: createSpy },
+      $transaction: jest.fn((fn: (tx: any) => Promise<any>) => {
+        const tx = {
+          $executeRaw: jest.fn().mockResolvedValue(undefined),
+          $queryRaw: queryRawImpl(10),
+          ledgerEntryModel: { create: createSpy },
+        };
+        return fn(tx);
+      }),
+    } as any;
+
+    const service = new ConsumerPaymentsService(prisma, {} as any);
+    (service as any).ensureLimits = jest.fn().mockResolvedValue(undefined);
+
+    const body: TransferBody = { amount: 2, recipient: `2@email.com` };
+
+    await expect(service.transfer(consumerId, body, `idem-atomic-1`)).rejects.toThrow(`DB failure`);
+    expect(createSpy).toHaveBeenCalledTimes(2);
   });
 });
 

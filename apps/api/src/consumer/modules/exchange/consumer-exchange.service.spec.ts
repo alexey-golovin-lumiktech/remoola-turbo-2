@@ -66,22 +66,15 @@ describe(`ConsumerExchangeService.convert`, () => {
 });
 
 describe(`ConsumerExchangeService.getBalanceByCurrency`, () => {
-  it(`excludes soft-deleted ledger entries (deletedAt: null in where)`, async () => {
+  it(`returns balance by currency using effective status (outcome or entry)`, async () => {
     const consumerId = `consumer-1`;
-    const groupBy = jest.fn().mockResolvedValue([{ currencyCode: $Enums.CurrencyCode.USD, _sum: { amount: 100 } }]);
-    const prisma = { ledgerEntryModel: { groupBy } } as any;
+    const queryRaw = jest.fn().mockResolvedValue([{ currency_code: $Enums.CurrencyCode.USD, sum_amount: `100` }]);
+    const prisma = { $queryRaw: queryRaw } as any;
     const service = new ConsumerExchangeService(prisma);
 
-    await service.getBalanceByCurrency(consumerId);
+    const result = await service.getBalanceByCurrency(consumerId);
 
-    expect(groupBy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          consumerId,
-          status: $Enums.TransactionStatus.COMPLETED,
-          deletedAt: null,
-        }),
-      }),
-    );
+    expect(queryRaw).toHaveBeenCalled();
+    expect(result).toEqual({ USD: 100 });
   });
 });

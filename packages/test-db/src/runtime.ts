@@ -73,7 +73,7 @@ function runDockerCompose(args: string[], repoRoot: string, env: NodeJS.ProcessE
 async function waitForDatabaseReady(databaseUrl: string): Promise<void> {
   const maxAttempts = 60;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    const prisma = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
+    const prisma = new PrismaClient({ datasourceUrl: databaseUrl });
     try {
       await prisma.$queryRaw`SELECT 1`;
       return;

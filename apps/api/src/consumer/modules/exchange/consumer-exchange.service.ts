@@ -57,31 +57,47 @@ export class ConsumerExchangeService {
   }
 
   async getBalanceByCurrency(consumerId: string): Promise<Record<$Enums.CurrencyCode, number>> {
-    const rows = await this.prisma.ledgerEntryModel.groupBy({
-      by: [`currencyCode`],
-      where: {
-        consumerId,
-        status: $Enums.TransactionStatus.COMPLETED, // 👈 only settled funds
-        deletedAt: null,
-      },
-      _sum: {
-        amount: true,
-      },
-    });
+    const rows = await this.prisma.$queryRaw<
+      Array<{ currency_code: $Enums.CurrencyCode; sum_amount: string }>
+    >(Prisma.sql`
+      SELECT le.currency_code, COALESCE(SUM(le.amount), 0) AS sum_amount
+      FROM ledger_entry le
+      LEFT JOIN LATERAL (
+        SELECT o.status FROM ledger_entry_outcome o
+        WHERE o.ledger_entry_id = le.id
+        ORDER BY o.created_at DESC LIMIT 1
+      ) latest ON true
+        WHERE le.consumer_id::text = ${consumerId}
+          AND (COALESCE(latest.status, le.status))::text = ${$Enums.TransactionStatus.COMPLETED}
+          AND le.deleted_at IS NULL
+      GROUP BY le.currency_code
+    `);
 
     const result = {} as Record<$Enums.CurrencyCode, number>;
-
     for (const row of rows) {
-      result[row.currencyCode] = Number(row._sum.amount ?? 0);
+      result[row.currency_code] = Number(row.sum_amount);
     }
-
     return result;
   }
 
   async convert(consumerId: string, body: ConvertCurrencyBody) {
-    return this.convertInternal(consumerId, body, {
-      metadata: { source: `manual` },
-    });
+    try {
+      return this.convertInternal(consumerId, body, {
+        metadata: { source: `manual` },
+      });
+    } catch (error) {
+      if (error instanceof BadRequestException || error instanceof NotFoundException) {
+        throw error;
+      }
+      this.logger.error(`Currency conversion failed`, {
+        consumerId,
+        from: body.from,
+        to: body.to,
+        amount: body.amount,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
   }
 
   async quote(body: ConvertCurrencyBody) {
@@ -322,11 +338,16 @@ export class ConsumerExchangeService {
       take: 25,
     });
 
+    let processedCount = 0;
+    let failedCount = 0;
+
     for (const conversion of due) {
+      // ✅ Atomic claim with optimistic locking (includes deletedAt for safety)
       const claimed = await this.prisma.scheduledFxConversionModel.updateMany({
         where: {
           id: conversion.id,
           status: $Enums.ScheduledFxConversionStatus.PENDING,
+          deletedAt: null,
         },
         data: {
           status: $Enums.ScheduledFxConversionStatus.PROCESSING,
@@ -335,7 +356,12 @@ export class ConsumerExchangeService {
         },
       });
 
-      if (!claimed.count) continue;
+      if (!claimed.count) {
+        this.logger.debug(`Scheduled conversion already claimed or processed: ${conversion.id}`);
+        continue;
+      }
+
+      processedCount++;
 
       try {
         const result = await this.convertInternal(
@@ -361,6 +387,7 @@ export class ConsumerExchangeService {
           },
         });
       } catch (error) {
+        failedCount++;
         const message = error instanceof Error ? error.message : `Unknown error`;
         this.logger.warn(`Scheduled conversion failed (${conversion.id}): ${message}`);
 
@@ -373,6 +400,10 @@ export class ConsumerExchangeService {
           },
         });
       }
+    }
+
+    if (processedCount > 0 || failedCount > 0) {
+      this.logger.log(`Scheduled conversions: processed=${processedCount}, failed=${failedCount}`);
     }
   }
 
@@ -470,7 +501,11 @@ export class ConsumerExchangeService {
       take: 50,
     });
 
+    let processedCount = 0;
+    let failedCount = 0;
+
     for (const rule of rules) {
+      // ✅ Atomic claim: update nextRunAt to prevent concurrent processing
       const claimed = await this.prisma.walletAutoConversionRuleModel.updateMany({
         where: {
           id: rule.id,
@@ -484,16 +519,34 @@ export class ConsumerExchangeService {
         },
       });
 
-      if (!claimed.count) continue;
+      if (!claimed.count) {
+        this.logger.debug(`Auto conversion rule already claimed: ${rule.id}`);
+        continue;
+      }
+
+      processedCount++;
 
       try {
         await this.executeAutoConversionRule(rule, {
           source: `auto_rule`,
         });
       } catch (error) {
+        failedCount++;
         const message = error instanceof Error ? error.message : `Unknown error`;
         this.logger.warn(`Auto conversion rule failed (${rule.id}): ${message}`);
+
+        // ✅ Reset nextRunAt on failure to allow retry sooner (5 minutes)
+        await this.prisma.walletAutoConversionRuleModel.update({
+          where: { id: rule.id },
+          data: {
+            nextRunAt: new Date(now.getTime() + 5 * 60 * 1000),
+          },
+        });
       }
+    }
+
+    if (processedCount > 0 || failedCount > 0) {
+      this.logger.log(`Auto conversion rules: processed=${processedCount}, failed=${failedCount}`);
     }
   }
 
@@ -610,165 +663,177 @@ export class ConsumerExchangeService {
       idempotencyKeyPrefix?: string;
     },
   ) {
-    const { amount, from, to } = body;
+    try {
+      const { amount, from, to } = body;
 
-    if (from === to) {
-      throw new BadRequestException(errorCodes.CANNOT_CONVERT_SAME_CURRENCY);
-    }
-
-    if (!Number.isFinite(amount) || amount <= 0) {
-      throw new BadRequestException(errorCodes.INVALID_AMOUNT_CONVERT);
-    }
-
-    const balances = await this.getBalanceByCurrency(consumerId);
-    const available = balances[from] ?? 0;
-
-    if (amount > available) {
-      throw new BadRequestException(errorCodes.INSUFFICIENT_CURRENCY_BALANCE);
-    }
-
-    const rate = await this.getRate(from, to);
-    const converted = this.roundToCurrency(amount * rate.rate, to);
-
-    const idempotencyKeyPrefix = options?.idempotencyKeyPrefix;
-    const targetKey = idempotencyKeyPrefix ? `${idempotencyKeyPrefix}:target` : null;
-    const sourceKey = idempotencyKeyPrefix ? `${idempotencyKeyPrefix}:source` : null;
-
-    if (idempotencyKeyPrefix) {
-      const [existingTarget, existingSource] = await Promise.all([
-        this.prisma.ledgerEntryModel.findFirst({
-          where: { idempotencyKey: targetKey ?? undefined, consumerId },
-        }),
-        this.prisma.ledgerEntryModel.findFirst({
-          where: { idempotencyKey: sourceKey ?? undefined, consumerId },
-        }),
-      ]);
-
-      if (existingTarget) {
-        const metadata = (existingTarget.metadata ?? {}) as Record<string, unknown>;
-        const rateFromMetadata = typeof metadata.rate === `number` ? metadata.rate : undefined;
-        return {
-          from,
-          to,
-          rate: rateFromMetadata ?? rate.rate,
-          sourceAmount: amount,
-          targetAmount: Number(existingTarget.amount),
-          ledgerId: existingTarget.ledgerId,
-          entryId: existingTarget.id,
-        };
+      if (from === to) {
+        throw new BadRequestException(errorCodes.CANNOT_CONVERT_SAME_CURRENCY);
       }
 
-      if (existingSource && !existingTarget) {
-        const sourceMetadata = (existingSource.metadata ?? {}) as Record<string, unknown>;
-        const rateFromMetadata = typeof sourceMetadata.rate === `number` ? sourceMetadata.rate : rate.rate;
-        const mergedMetadata = {
-          ...sourceMetadata,
-          ...(options?.metadata ?? {}),
-          from,
-          to,
-          rate: rateFromMetadata,
-        };
-        const sourceAmount = Math.abs(Number(existingSource.amount));
-        const convertedAmount = this.roundToCurrency(sourceAmount * rateFromMetadata, to);
-
-        const income = await this.prisma.ledgerEntryModel.create({
-          data: {
-            ledgerId: existingSource.ledgerId,
-            consumerId,
-            type: $Enums.LedgerEntryType.CURRENCY_EXCHANGE,
-            currencyCode: to,
-            status: $Enums.TransactionStatus.COMPLETED,
-            amount: +convertedAmount,
-            createdBy: consumerId,
-            updatedBy: consumerId,
-            idempotencyKey: targetKey ?? undefined,
-            metadata: mergedMetadata,
-          },
-        });
-
-        return {
-          from,
-          to,
-          rate: rateFromMetadata,
-          sourceAmount,
-          targetAmount: convertedAmount,
-          ledgerId: income.ledgerId,
-          entryId: income.id,
-        };
+      if (!Number.isFinite(amount) || amount <= 0) {
+        throw new BadRequestException(errorCodes.INVALID_AMOUNT_CONVERT);
       }
-    }
 
-    const ledgerId = randomUUID();
-    const metadata = { from, to, rate: rate.rate, ...(options?.metadata ?? {}) };
+      const balances = await this.getBalanceByCurrency(consumerId);
+      const available = balances[from] ?? 0;
 
-    return this.prisma.$transaction(async (tx) => {
-      // 🔐 Lock with operation-specific key to prevent cross-operation collisions
-      await tx.$queryRaw(Prisma.sql`
+      if (amount > available) {
+        throw new BadRequestException(errorCodes.INSUFFICIENT_CURRENCY_BALANCE);
+      }
+
+      const rate = await this.getRate(from, to);
+      const converted = this.roundToCurrency(amount * rate.rate, to);
+
+      const idempotencyKeyPrefix = options?.idempotencyKeyPrefix;
+      const targetKey = idempotencyKeyPrefix ? `${idempotencyKeyPrefix}:target` : null;
+      const sourceKey = idempotencyKeyPrefix ? `${idempotencyKeyPrefix}:source` : null;
+
+      if (idempotencyKeyPrefix) {
+        const [existingTarget, existingSource] = await Promise.all([
+          this.prisma.ledgerEntryModel.findFirst({
+            where: { idempotencyKey: targetKey ?? undefined, consumerId },
+          }),
+          this.prisma.ledgerEntryModel.findFirst({
+            where: { idempotencyKey: sourceKey ?? undefined, consumerId },
+          }),
+        ]);
+
+        if (existingTarget) {
+          const metadata = (existingTarget.metadata ?? {}) as Record<string, unknown>;
+          const rateFromMetadata = typeof metadata.rate === `number` ? metadata.rate : undefined;
+          return {
+            from,
+            to,
+            rate: rateFromMetadata ?? rate.rate,
+            sourceAmount: amount,
+            targetAmount: Number(existingTarget.amount),
+            ledgerId: existingTarget.ledgerId,
+            entryId: existingTarget.id,
+          };
+        }
+
+        if (existingSource && !existingTarget) {
+          const sourceMetadata = (existingSource.metadata ?? {}) as Record<string, unknown>;
+          const rateFromMetadata = typeof sourceMetadata.rate === `number` ? sourceMetadata.rate : rate.rate;
+          const mergedMetadata = {
+            ...sourceMetadata,
+            ...(options?.metadata ?? {}),
+            from,
+            to,
+            rate: rateFromMetadata,
+          };
+          const sourceAmount = Math.abs(Number(existingSource.amount));
+          const convertedAmount = this.roundToCurrency(sourceAmount * rateFromMetadata, to);
+
+          const income = await this.prisma.ledgerEntryModel.create({
+            data: {
+              ledgerId: existingSource.ledgerId,
+              consumerId,
+              type: $Enums.LedgerEntryType.CURRENCY_EXCHANGE,
+              currencyCode: to,
+              status: $Enums.TransactionStatus.COMPLETED,
+              amount: +convertedAmount,
+              createdBy: consumerId,
+              updatedBy: consumerId,
+              idempotencyKey: targetKey ?? undefined,
+              metadata: mergedMetadata,
+            },
+          });
+
+          return {
+            from,
+            to,
+            rate: rateFromMetadata,
+            sourceAmount,
+            targetAmount: convertedAmount,
+            ledgerId: income.ledgerId,
+            entryId: income.id,
+          };
+        }
+      }
+
+      const ledgerId = randomUUID();
+      const metadata = { from, to, rate: rate.rate, ...(options?.metadata ?? {}) };
+
+      return this.prisma.$transaction(async (tx) => {
+        // 🔐 Lock with operation-specific key to prevent cross-operation collisions
+        await tx.$executeRaw(Prisma.sql`
         SELECT pg_advisory_xact_lock(hashtext((${consumerId} || ':exchange')::text)::bigint)
       `);
 
-      // 🔐 SELECT FOR UPDATE to lock rows; effective status from latest outcome (append-only, no trigger UPDATE)
-      const balanceResult = await tx.$queryRaw<{ balance: number }[]>`
-        SELECT COALESCE(SUM(le.amount), 0)::numeric AS balance
+        // Balance check: advisory lock above serializes per consumer; no FOR UPDATE on aggregate (raw-sql-issues.md)
+        const balanceResult = await tx.$queryRaw<{ balance: number }[]>`
+        SELECT COALESCE(SUM(le.amount), 0) AS balance
         FROM ledger_entry le
         LEFT JOIN LATERAL (
           SELECT o.status FROM ledger_entry_outcome o
           WHERE o.ledger_entry_id = le.id
           ORDER BY o.created_at DESC LIMIT 1
         ) latest ON true
-        WHERE le.consumer_id = ${consumerId}
-          AND le.currency_code = ${from}::"CurrencyCode"
-          AND COALESCE(latest.status, le.status) = ${$Enums.TransactionStatus.COMPLETED}::"TransactionStatus"
+        WHERE le.consumer_id::text = ${consumerId}
+          AND le.currency_code::text = ${from}
+          AND (COALESCE(latest.status, le.status))::text = ${$Enums.TransactionStatus.COMPLETED}
           AND le.deleted_at IS NULL
-        FOR UPDATE OF le
       `;
-      const balanceInsideTx = Number(balanceResult[0]?.balance ?? 0);
-      if (amount > balanceInsideTx) {
-        throw new BadRequestException(errorCodes.INSUFFICIENT_CURRENCY_BALANCE);
+        const balanceInsideTx = Number(balanceResult[0]?.balance ?? 0);
+        if (amount > balanceInsideTx) {
+          throw new BadRequestException(errorCodes.INSUFFICIENT_CURRENCY_BALANCE);
+        }
+
+        // 1️⃣ Source currency — money leaves
+        await tx.ledgerEntryModel.create({
+          data: {
+            ledgerId,
+            consumerId,
+            type: $Enums.LedgerEntryType.CURRENCY_EXCHANGE,
+            currencyCode: from,
+            status: $Enums.TransactionStatus.COMPLETED,
+            amount: -amount, // SIGNED
+            createdBy: consumerId,
+            updatedBy: consumerId,
+            idempotencyKey: sourceKey ?? undefined,
+            metadata,
+          },
+        });
+
+        // 2️⃣ Target currency — money enters
+        const income = await tx.ledgerEntryModel.create({
+          data: {
+            ledgerId,
+            consumerId,
+            type: $Enums.LedgerEntryType.CURRENCY_EXCHANGE,
+            currencyCode: to,
+            status: $Enums.TransactionStatus.COMPLETED,
+            amount: +converted, // SIGNED
+            createdBy: consumerId,
+            updatedBy: consumerId,
+            idempotencyKey: targetKey ?? undefined,
+            metadata,
+          },
+        });
+
+        return {
+          from,
+          to,
+          rate: rate.rate,
+          sourceAmount: amount,
+          targetAmount: converted,
+          ledgerId,
+          entryId: income.id,
+        };
+      });
+    } catch (error) {
+      // Skip logging expected client errors (validation / business rules)
+      if (error instanceof BadRequestException || error instanceof NotFoundException) {
+        throw error;
       }
-
-      // 1️⃣ Source currency — money leaves
-      await tx.ledgerEntryModel.create({
-        data: {
-          ledgerId,
-          consumerId,
-          type: $Enums.LedgerEntryType.CURRENCY_EXCHANGE,
-          currencyCode: from,
-          status: $Enums.TransactionStatus.COMPLETED,
-          amount: -amount, // SIGNED
-          createdBy: consumerId,
-          updatedBy: consumerId,
-          idempotencyKey: sourceKey ?? undefined,
-          metadata,
-        },
+      this.logger.error(`Currency conversion internal failed`, {
+        consumerId,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
       });
-
-      // 2️⃣ Target currency — money enters
-      const income = await tx.ledgerEntryModel.create({
-        data: {
-          ledgerId,
-          consumerId,
-          type: $Enums.LedgerEntryType.CURRENCY_EXCHANGE,
-          currencyCode: to,
-          status: $Enums.TransactionStatus.COMPLETED,
-          amount: +converted, // SIGNED
-          createdBy: consumerId,
-          updatedBy: consumerId,
-          idempotencyKey: targetKey ?? undefined,
-          metadata,
-        },
-      });
-
-      return {
-        from,
-        to,
-        rate: rate.rate,
-        sourceAmount: amount,
-        targetAmount: converted,
-        ledgerId,
-        entryId: income.id,
-      };
-    });
+      throw error;
+    }
   }
 
   private roundToCurrency(amount: number, currency: $Enums.CurrencyCode) {

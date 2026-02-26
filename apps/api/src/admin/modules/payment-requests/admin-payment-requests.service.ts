@@ -105,6 +105,7 @@ export class AdminPaymentRequestsService {
       whereClauses.push(Prisma.sql`a.payment_request_id::text ILIKE ${`%${searchQuery}%`}`);
     }
 
+    // Built from Prisma.sql fragments only (parameterized); raw-sql-issues.md
     const whereSql = whereClauses.length > 0 ? Prisma.sql`WHERE ${Prisma.join(whereClauses, ` AND `)}` : Prisma.empty;
 
     type ArchiveRow = {
@@ -121,28 +122,33 @@ export class AdminPaymentRequestsService {
     let total = 0;
     let rows: ArchiveRow[] = [];
     try {
+      // payment_request_expectation_date_archive: raw table (no Prisma model); raw-sql-issues.md
+      const countQuery = Prisma.sql`
+        SELECT COUNT(*)::bigint AS count
+        FROM payment_request_expectation_date_archive a
+        LEFT JOIN payment_request pr ON pr.id = a.payment_request_id
+      `;
+      const rowsQuery = Prisma.sql`
+        SELECT
+          a.id,
+          a.payment_request_id AS "paymentRequestId",
+          a.expectation_date AS "expectationDate",
+          a.archived_at AS "archivedAt",
+          a.migration_tag AS "migrationTag",
+          (pr.id IS NOT NULL) AS "paymentRequestExists"
+        FROM payment_request_expectation_date_archive a
+        LEFT JOIN payment_request pr ON pr.id = a.payment_request_id
+      `;
+
       const [countResult, rowsResult] = await Promise.all([
-        this.prisma.$queryRaw<CountRow[]>(Prisma.sql`
-          SELECT COUNT(*)::bigint AS count
-          FROM payment_request_expectation_date_archive a
-          LEFT JOIN payment_request pr ON pr.id = a.payment_request_id
-          ${whereSql}
-        `),
-        this.prisma.$queryRaw<ArchiveRow[]>(Prisma.sql`
-          SELECT
-            a.id,
-            a.payment_request_id AS "paymentRequestId",
-            a.expectation_date AS "expectationDate",
-            a.archived_at AS "archivedAt",
-            a.migration_tag AS "migrationTag",
-            (pr.id IS NOT NULL) AS "paymentRequestExists"
-          FROM payment_request_expectation_date_archive a
-          LEFT JOIN payment_request pr ON pr.id = a.payment_request_id
-          ${whereSql}
-          ORDER BY a.archived_at DESC, a.id DESC
-          LIMIT ${pageSize}
-          OFFSET ${offset}
-        `),
+        this.prisma.$queryRaw<CountRow[]>(whereClauses.length > 0 ? Prisma.sql`${countQuery} ${whereSql}` : countQuery),
+        this.prisma.$queryRaw<ArchiveRow[]>(
+          /* eslint-disable */
+          whereClauses.length > 0
+            ? Prisma.sql`${rowsQuery} ${whereSql} ORDER BY a.archived_at DESC, a.id DESC LIMIT ${pageSize} OFFSET ${offset}`
+            : Prisma.sql`${rowsQuery} ORDER BY a.archived_at DESC, a.id DESC LIMIT ${pageSize} OFFSET ${offset}`,
+          /* eslint-enable */
+        ),
       ]);
       total = Number(countResult[0]?.count ?? 0);
       rows = rowsResult;
@@ -185,35 +191,62 @@ export class AdminPaymentRequestsService {
   private async sendReversalEmails(params: {
     paymentRequestId: string;
     payerId: string;
-    requesterId: string;
+    requesterId: string | null;
+    requesterEmail?: string | null;
     amount: number;
     currencyCode: $Enums.CurrencyCode;
     kind: PaymentReversalCreate[`kind`];
     reason?: string | null;
   }) {
-    const { paymentRequestId, payerId, requesterId, amount, currencyCode, kind, reason } = params;
+    const { paymentRequestId, payerId, requesterId, requesterEmail, amount, currencyCode, kind, reason } = params;
+    const consumerIds = [payerId, ...(requesterId ? [requesterId] : [])];
     const consumers = await this.prisma.consumerModel.findMany({
-      where: { id: { in: [payerId, requesterId] } },
+      where: { id: { in: consumerIds } },
       select: { id: true, email: true },
     });
 
     const payer = consumers.find((consumer) => consumer.id === payerId);
-    const requester = consumers.find((consumer) => consumer.id === requesterId);
+    const requester = requesterId ? consumers.find((consumer) => consumer.id === requesterId) : null;
+    const requesterEmailResolved = requester?.email ?? requesterEmail ?? ``;
 
-    if (!payer?.email || !requester?.email) return;
+    if (!payer?.email) return;
 
     if (kind === `REFUND`) {
       await this.mailingService.sendPaymentRefundEmail({
         recipientEmail: payer.email,
-        counterpartyEmail: requester.email,
+        counterpartyEmail: requesterEmailResolved,
         amount,
         currencyCode,
         reason,
         paymentRequestId,
         role: `payer`,
       });
-      await this.mailingService.sendPaymentRefundEmail({
-        recipientEmail: requester.email,
+      if (requesterEmailResolved) {
+        await this.mailingService.sendPaymentRefundEmail({
+          recipientEmail: requesterEmailResolved,
+          counterpartyEmail: payer.email,
+          amount,
+          currencyCode,
+          reason,
+          paymentRequestId,
+          role: `requester`,
+        });
+      }
+      return;
+    }
+
+    await this.mailingService.sendPaymentChargebackEmail({
+      recipientEmail: payer.email,
+      counterpartyEmail: requesterEmailResolved,
+      amount,
+      currencyCode,
+      reason,
+      paymentRequestId,
+      role: `payer`,
+    });
+    if (requesterEmailResolved) {
+      await this.mailingService.sendPaymentChargebackEmail({
+        recipientEmail: requesterEmailResolved,
         counterpartyEmail: payer.email,
         amount,
         currencyCode,
@@ -221,27 +254,7 @@ export class AdminPaymentRequestsService {
         paymentRequestId,
         role: `requester`,
       });
-      return;
     }
-
-    await this.mailingService.sendPaymentChargebackEmail({
-      recipientEmail: payer.email,
-      counterpartyEmail: requester.email,
-      amount,
-      currencyCode,
-      reason,
-      paymentRequestId,
-      role: `payer`,
-    });
-    await this.mailingService.sendPaymentChargebackEmail({
-      recipientEmail: requester.email,
-      counterpartyEmail: payer.email,
-      amount,
-      currencyCode,
-      reason,
-      paymentRequestId,
-      role: `requester`,
-    });
   }
 
   async createReversal(paymentRequestId: string, body: PaymentReversalCreate, adminId: string) {
@@ -254,6 +267,7 @@ export class AdminPaymentRequestsService {
         status: true,
         payerId: true,
         requesterId: true,
+        requesterEmail: true,
         ledgerEntries: {
           where: { type: $Enums.LedgerEntryType.USER_PAYMENT },
           select: { ledgerId: true, status: true },
@@ -262,6 +276,10 @@ export class AdminPaymentRequestsService {
     });
 
     if (!paymentRequest) throw new NotFoundException(adminErrorCodes.ADMIN_PAYMENT_REQUEST_NOT_FOUND);
+
+    if (!paymentRequest.payerId) {
+      throw new BadRequestException(adminErrorCodes.ADMIN_PAYMENT_REQUEST_NOT_FOUND);
+    }
 
     if (paymentRequest.status !== $Enums.TransactionStatus.COMPLETED) {
       throw new BadRequestException(adminErrorCodes.ADMIN_ONLY_COMPLETED_CAN_BE_REVERSED);
@@ -386,32 +404,39 @@ export class AdminPaymentRequestsService {
       stripeRefundId,
     } as Prisma.InputJsonValue;
 
-    await this.prisma.$transaction(async (tx) => {
-      // 🔐 Lock with operation-specific key to prevent cross-operation collisions
-      await tx.$queryRaw(
-        Prisma.sql`
-          SELECT pg_advisory_xact_lock(hashtext((${paymentRequest.requesterId} || ':reversal')::text)::bigint)
-        `,
-      );
+    // ✅ Get admin email for audit logging
+    const admin = await this.prisma.adminModel.findUnique({
+      where: { id: adminId },
+      select: { email: true },
+    });
+    const adminEmail = admin?.email ?? `unknown`;
 
-      // 🔐 SELECT FOR UPDATE to lock rows; effective status from latest outcome (append-only, no trigger UPDATE)
-      const requesterBalanceResult = await tx.$queryRaw<{ balance: number }[]>`
-        SELECT COALESCE(SUM(le.amount), 0)::numeric AS balance
-        FROM ledger_entry le
-        LEFT JOIN LATERAL (
-          SELECT o.status FROM ledger_entry_outcome o
-          WHERE o.ledger_entry_id = le.id
-          ORDER BY o.created_at DESC LIMIT 1
-        ) latest ON true
-        WHERE le.consumer_id = ${paymentRequest.requesterId}
-          AND le.currency_code = ${paymentRequest.currencyCode}::"CurrencyCode"
-          AND COALESCE(latest.status, le.status) = ${$Enums.TransactionStatus.COMPLETED}::"TransactionStatus"
-          AND le.deleted_at IS NULL
-        FOR UPDATE OF le
-      `;
-      const requesterBalance = Number(requesterBalanceResult[0]?.balance ?? 0);
-      if (requesterBalance < finalRequestedAmount) {
-        throw new BadRequestException(errorCodes.INSUFFICIENT_REQUESTER_BALANCE_REVERSAL_ADMIN);
+    await this.prisma.$transaction(async (tx) => {
+      if (paymentRequest.requesterId) {
+        await tx.$executeRaw(
+          Prisma.sql`
+            SELECT pg_advisory_xact_lock(hashtext((${paymentRequest.requesterId} || ':reversal')::text)::bigint)
+          `,
+        );
+
+        // Balance check: advisory lock above serializes per consumer; no FOR UPDATE on aggregate (raw-sql-issues.md)
+        const requesterBalanceResult = await tx.$queryRaw<{ balance: number }[]>`
+          SELECT COALESCE(SUM(le.amount), 0) AS balance
+          FROM ledger_entry le
+          LEFT JOIN LATERAL (
+            SELECT o.status FROM ledger_entry_outcome o
+            WHERE o.ledger_entry_id = le.id
+            ORDER BY o.created_at DESC LIMIT 1
+          ) latest ON true
+          WHERE le.consumer_id::text = ${paymentRequest.requesterId}
+            AND le.currency_code::text = ${paymentRequest.currencyCode}
+            AND (COALESCE(latest.status, le.status))::text = ${$Enums.TransactionStatus.COMPLETED}
+            AND le.deleted_at IS NULL
+        `;
+        const requesterBalance = Number(requesterBalanceResult[0]?.balance ?? 0);
+        if (requesterBalance < finalRequestedAmount) {
+          throw new BadRequestException(errorCodes.INSUFFICIENT_REQUESTER_BALANCE_REVERSAL_ADMIN);
+        }
       }
 
       await tx.ledgerEntryModel.create({
@@ -431,20 +456,34 @@ export class AdminPaymentRequestsService {
         },
       });
 
-      await tx.ledgerEntryModel.create({
+      if (paymentRequest.requesterId) {
+        await tx.ledgerEntryModel.create({
+          data: {
+            ledgerId,
+            consumerId: paymentRequest.requesterId,
+            paymentRequestId,
+            type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
+            currencyCode: paymentRequest.currencyCode,
+            status: reversalStatus,
+            amount: -finalRequestedAmount,
+            createdBy: adminId,
+            updatedBy: adminId,
+            metadata,
+            idempotencyKey: `${idempotencyKeyBase}:requester`,
+            stripeId: stripeRefundId ?? undefined,
+          },
+        });
+      }
+
+      // ✅ AUDIT LOG: Record admin financial action for compliance
+      await tx.authAuditLogModel.create({
         data: {
-          ledgerId,
-          consumerId: paymentRequest.requesterId,
-          paymentRequestId,
-          type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
-          currencyCode: paymentRequest.currencyCode,
-          status: reversalStatus,
-          amount: -finalRequestedAmount,
-          createdBy: adminId,
-          updatedBy: adminId,
-          metadata,
-          idempotencyKey: `${idempotencyKeyBase}:requester`,
-          stripeId: stripeRefundId ?? undefined,
+          identityType: `ADMIN`,
+          identityId: adminId,
+          email: adminEmail,
+          event: `PAYMENT_REVERSAL_${body.kind}`,
+          ipAddress: null,
+          userAgent: null,
         },
       });
     });
@@ -453,6 +492,7 @@ export class AdminPaymentRequestsService {
       paymentRequestId,
       payerId: paymentRequest.payerId,
       requesterId: paymentRequest.requesterId,
+      requesterEmail: paymentRequest.requesterEmail,
       amount: finalRequestedAmount,
       currencyCode: paymentRequest.currencyCode,
       kind: body.kind,
