@@ -720,6 +720,8 @@
                   unchanged
                 - Concurrency: advisory lock retained; FOR UPDATE removed from
                   aggregate SUM; serialization via advisory lock per consumer
+                - Centralized currency/amount formatting (display-only,
+                  Intl.NumberFormat); no change to money math or minor units
 
                 **🗄 Database & Migrations**
                 - Migration `20260225160000_payment_request_requester_email`:
@@ -732,10 +734,17 @@
                   compatible
                 - Rollback: deploy previous app; migration rollback documented;
                   prefer fixing forward; migration README for deploy order
+                - Types/format refactor: no new migrations; rollback revert-only
 
                 **📦 Types & Contracts**
                 - Admin, consumer, Stripe flows use `requesterEmail` and handle
                   null `requesterId`; shared shapes aligned for pay-by-email
+                - Consolidate shared types: single source for consumer contact,
+                  address-details, payment-methods, payment-requests in
+                  packages/api-types; ApiErrorSchema (Zod) and ApiErrorShape
+                  centralized (error details z.unknown()); apps/api common DTOs
+                  for address-details and contact, admin/consumer re-export;
+                  backward-compatible contract alignment
 
                 **🧪 Testing & Reliability**
                 - Exchange: getBalanceByCurrency and concurrency specs
@@ -745,13 +754,23 @@
                   path; concurrency specs (advisory lock + balance check)
                 - Existing coverage for reversals and dashboard preserved
                 - Concurrency tests cover advisory lock and balance-check races
+                - consumer: currency.test.ts (formatCurrencyDisplay,
+                  formatCentsToDisplay); admin: format.test.ts (formatAmount);
+                  api: invoice.v5.spec.ts (null payer/requester, payerEmail
+                  fallback, amount/currency render)
 
                 **🛠 DevEx & Infrastructure**
                 - test-db: PrismaClient datasourceUrl; Jest cache false
+                - admin: Jest config and format tests; shared formatAmount and
+                  ApiErrorSchema from api-types; consumer: shared currency
+                  helpers and api-types for types and error handling
                 - API e2e: config path updated
                 - docs/project-design-rules.md added
                 - db-fixtures and seed comments updated
 
                 **🧹 Cleanup**
-                - None
+                - Consolidate shared types and format helpers to reduce
+                  contract drift and duplicate logic; invoice template (invoice.v5)
+                  null-safe for payer/requester (fallback to payerEmail or "—");
+                  docs: code-duplication-audit.md (audit only)
 ```
