@@ -1,64 +1,18 @@
-import { type TPaymentMethod } from '@remoola/api-types';
+/**
+ * Payment method types. Re-exported from @remoola/api-types with backward-compatible aliases.
+ */
+import {
+  type CreatePaymentMethodPayload,
+  type TConsumerBillingDetails,
+  type TConsumerPaymentMethodItem,
+  type TPaymentMethod,
+  type TStripeSetupIntentPayload,
+  type UpdatePaymentMethodPayload,
+} from '@remoola/api-types';
 
 export type PaymentMethodType = TPaymentMethod;
-
-export type BillingDetails = {
-  id: string;
-  name: string | null;
-  email: string | null;
-  phone: string | null;
-};
-
-export type PaymentMethodItem = {
-  id: string;
-
-  type: PaymentMethodType;
-
-  defaultSelected: boolean;
-  brand: string;
-  last4: string;
-
-  expMonth?: string | null;
-  expYear?: string | null;
-
-  serviceFee: number;
-
-  billingDetails?: BillingDetails | null;
-
-  billingDetailsId: string;
-  consumerId: string;
-
-  createdAt: string;
-  updatedAt: string;
-  deletedAt?: string | null;
-};
-
-export type CreatePaymentMethodDto = {
-  type: PaymentMethodType;
-
-  defaultSelected?: boolean;
-
-  brand?: string;
-  last4?: string;
-  expMonth?: string;
-  expYear?: string;
-
-  billingName?: string;
-  billingEmail?: string;
-  billingPhone?: string;
-
-  setupIntentId?: string;
-  stripePaymentMethodId?: string;
-};
-
-export type UpdatePaymentMethodDto = {
-  billingName?: string;
-  billingEmail?: string;
-  billingPhone?: string;
-  defaultSelected?: boolean;
-};
-
-export type StripeSetupIntentPayload = {
-  clientSecret: string;
-  setupIntentId: string;
-};
+export type BillingDetails = TConsumerBillingDetails;
+export type PaymentMethodItem = TConsumerPaymentMethodItem;
+export type CreatePaymentMethodDto = CreatePaymentMethodPayload;
+export type UpdatePaymentMethodDto = UpdatePaymentMethodPayload;
+export type StripeSetupIntentPayload = TStripeSetupIntentPayload;

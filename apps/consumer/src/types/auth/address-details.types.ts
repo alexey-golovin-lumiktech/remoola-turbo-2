@@ -1,7 +1,6 @@
-export type IAddressDetails = {
-  postalCode: string | null;
-  country: string | null;
-  state: string | null;
-  city: string | null;
-  street: string | null;
-};
+/**
+ * Address details for forms. Re-exported from @remoola/api-types.
+ */
+import { type TAddressDetails } from '@remoola/api-types';
+
+export type IAddressDetails = TAddressDetails;

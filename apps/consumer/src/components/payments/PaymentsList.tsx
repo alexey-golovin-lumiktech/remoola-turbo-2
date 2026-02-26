@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 
 import { TRANSACTION_STATUS } from '@remoola/api-types';
 
+import { formatCurrencyDisplay } from '../../lib/currency';
 import { formatDateForDisplay } from '../../lib/date-utils';
 import { usePayments } from '../../lib/hooks';
 import { PaginationBar, SkeletonTable } from '../ui';
@@ -39,10 +40,6 @@ const {
   textSecondary,
   textXsMuted,
 } = styles;
-
-function formatAmount(amount: number, currencyCode: string) {
-  return new Intl.NumberFormat(undefined, { style: `currency`, currency: currencyCode }).format(amount);
-}
 
 type PaymentItem = {
   id: string;
@@ -164,7 +161,7 @@ export function PaymentsList() {
                   </td>
 
                   <td className={`${tableCellBodyLg} font-semibold ${textPrimary}`}>
-                    {formatAmount(p.amount, p.currencyCode)}
+                    {formatCurrencyDisplay(p.amount, p.currencyCode)}
                   </td>
 
                   <td className={tableCellBodyLg}>

@@ -3,10 +3,9 @@
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 
-import { CURRENCY_CODE } from '@remoola/api-types';
-
 import { usePaymentRequestsByStatus } from '../../lib/client';
 import { getLocalToastMessage, localToastKeys } from '../../lib/error-messages';
+import { formatAmount } from '../../lib/format';
 import styles from '../ui/classNames.module.css';
 
 export function StatusTotalsCard() {
@@ -70,14 +69,6 @@ export function StatusTotalsCard() {
       default:
         return styles.adminStatusPillNeutral;
     }
-  };
-
-  const formatAmount = (amount: string) => {
-    const num = parseFloat(amount);
-    return new Intl.NumberFormat(`en-US`, {
-      style: `currency`,
-      currency: CURRENCY_CODE.USD,
-    }).format(num);
   };
 
   return (

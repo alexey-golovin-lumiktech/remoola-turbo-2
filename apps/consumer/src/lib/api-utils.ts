@@ -1,12 +1,8 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
-export interface ApiError {
-  message: string;
-  code?: string;
-  statusCode?: number;
-}
+import { type ApiErrorShape } from '@remoola/api-types';
 
-export function handleApiError(error: unknown): NextResponse<ApiError> {
+export function handleApiError(error: unknown): NextResponse<ApiErrorShape> {
   console.error(`API Error:`, error);
 
   if (error instanceof Error) {

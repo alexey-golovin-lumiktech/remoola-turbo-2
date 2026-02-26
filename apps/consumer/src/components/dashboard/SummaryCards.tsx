@@ -1,7 +1,8 @@
 'use client';
 
-import { CURRENCY_CODE, type TCurrencyCode } from '@remoola/api-types';
+import { CURRENCY_CODE } from '@remoola/api-types';
 
+import { formatCentsToDisplay } from '../../lib/currency';
 import { type IDashboardSummary } from '../../types';
 import styles from '../ui/classNames.module.css';
 
@@ -14,14 +15,6 @@ const {
   summaryValueMeta,
   summaryValueSm,
 } = styles;
-
-function formatMoney(cents: number, currency: TCurrencyCode = CURRENCY_CODE.USD): string {
-  return new Intl.NumberFormat(undefined, {
-    style: `currency`,
-    currency,
-    minimumFractionDigits: 2,
-  }).format(cents / 100);
-}
 
 type SummaryCardsProps = { summary: IDashboardSummary };
 
@@ -37,7 +30,7 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
     <section className={summaryGrid} data-testid="consumer-dashboard-summary-cards">
       <div className={cardBaseSoft} data-testid="consumer-dashboard-summary-balance">
         <p className={summaryCardLabel}>Balance</p>
-        <p className={summaryValueLg}>{formatMoney(summary.balanceCents)}</p>
+        <p className={summaryValueLg}>{formatCentsToDisplay(summary.balanceCents, CURRENCY_CODE.USD)}</p>
       </div>
 
       <div className={cardBaseSoft} data-testid="consumer-dashboard-summary-contracts">

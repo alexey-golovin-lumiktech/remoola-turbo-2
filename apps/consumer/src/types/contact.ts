@@ -1,37 +1,16 @@
-export type ConsumerContactAddress = {
-  postalCode: string;
-  country: string;
-  state: string;
-  city: string;
-  street: string;
-};
+/**
+ * Consumer contact types. Re-exported from @remoola/api-types for backward compatibility.
+ */
+import {
+  type TConsumerContact,
+  type TConsumerContactAddress,
+  type TConsumerContactDetails,
+  type TConsumerContactDetailsDocument,
+  type TConsumerContactDetailsPaymentRequest,
+} from '@remoola/api-types';
 
-export type ConsumerContact = {
-  id: string;
-  email: string;
-  name: string | null;
-  address: ConsumerContactAddress;
-};
-
-export type ConsumerContactDetails = {
-  id: string;
-  email: string;
-  name: string;
-  address: ConsumerContactAddress;
-  paymentRequests: ConsumerPaymentRequest[];
-  documents: ConsumerDocument[];
-};
-
-export type ConsumerPaymentRequest = {
-  id: string;
-  amount: string;
-  status: string;
-  createdAt: Date;
-};
-
-export type ConsumerDocument = {
-  id: string;
-  name: string;
-  url: string;
-  createdAt: Date;
-};
+export type ConsumerContactAddress = TConsumerContactAddress;
+export type ConsumerContact = TConsumerContact;
+export type ConsumerContactDetails = TConsumerContactDetails;
+export type ConsumerPaymentRequest = TConsumerContactDetailsPaymentRequest;
+export type ConsumerDocument = TConsumerContactDetailsDocument;

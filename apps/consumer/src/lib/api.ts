@@ -1,16 +1,8 @@
-import { z } from 'zod';
-
-import { type ApiErrorShape, type ApiResponseShape } from '@remoola/api-types';
+import { ApiErrorSchema, type ApiErrorShape, type ApiResponseShape } from '@remoola/api-types';
 
 import { handleSessionExpired, UNAUTHORIZED_MESSAGE } from './session-expired';
 
-// Enhanced error types
-export const ApiErrorSchema = z.object({
-  message: z.string(),
-  code: z.string().optional(),
-  details: z.any().optional(),
-});
-
+export { ApiErrorSchema };
 export type ApiError = ApiErrorShape;
 export type ApiResponse<T> = ApiResponseShape<T>;
 

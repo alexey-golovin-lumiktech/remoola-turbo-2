@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 import { type InvoicePayment } from './types';
 
 type CompanyInfo = {
@@ -34,8 +35,8 @@ export function buildInvoiceHtmlV5(params: BuildInvoiceV5Params): string {
     ...params.company,
   };
 
-  const payer = payment.payer;
-  const requester = payment.requester;
+  const payer = payment.payer ?? null;
+  const requester = payment.requester ?? null;
   const tx = payment.ledgerEntries?.[0] ?? null;
 
   const amount = Number(payment.amount ?? 0);
@@ -367,18 +368,22 @@ td {
       <div>
         <div class="section-title">Billed To</div>
         <div class="info-text">
-          ${payer.personalDetails?.firstName ?? ``} ${payer.personalDetails?.lastName ?? ``}<br />
-          ${payer.email}<br />
-          ${payer.addressDetails?.country ?? ``}
+          ${
+            payer
+              ? `${payer.personalDetails?.firstName ?? ``} ${payer.personalDetails?.lastName ?? ``}<br />${payer.email}<br />${payer.addressDetails?.country ?? ``}`
+              : ((payment as { payerEmail?: string | null }).payerEmail ?? `—`)
+          }
         </div>
       </div>
 
       <div style="margin-top:16px;">
         <div class="section-title">Requester</div>
         <div class="info-text">
-          ${requester.personalDetails?.firstName ?? ``}
-          ${requester.personalDetails?.lastName ?? ``}<br />
-          ${requester.email}
+          ${
+            requester
+              ? `${requester.personalDetails?.firstName ?? ``} ${requester.personalDetails?.lastName ?? ``}<br />${requester.email}`
+              : `—`
+          }
         </div>
       </div>
 

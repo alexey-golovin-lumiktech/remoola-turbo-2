@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 
 import { TRANSACTION_STATUS } from '@remoola/api-types';
 
+import { formatCurrencyDisplay } from '../../lib/currency';
 import { formatDateTimeForDisplay } from '../../lib/date-utils';
 import { getErrorMessageForUser } from '../../lib/error-messages';
 import styles from '../ui/classNames.module.css';
@@ -53,10 +54,6 @@ const {
   timelineTitle,
   timestampText,
 } = styles;
-
-function formatAmount(amount: number, currencyCode: string) {
-  return new Intl.NumberFormat(undefined, { style: `currency`, currency: currencyCode }).format(amount);
-}
 
 type PaymentViewProps = { paymentRequestId: string };
 
@@ -268,7 +265,7 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
           {/* Summary Card */}
           <div className={cardBasePadded}>
             <div className={cardHeaderRow}>
-              <div className={amountTitle}>{formatAmount(p.amount, p.currencyCode)}</div>
+              <div className={amountTitle}>{formatCurrencyDisplay(p.amount, p.currencyCode)}</div>
 
               <span
                 className={`${badgeBaseStrong} ${

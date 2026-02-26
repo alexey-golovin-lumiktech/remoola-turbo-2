@@ -1,5 +1,6 @@
 'use client';
 
+import { formatCurrencyDisplay } from '../../lib/currency';
 import { type IPendingRequest } from '../../types';
 import styles from '../ui/classNames.module.css';
 
@@ -18,13 +19,6 @@ const {
   pendingRequestsTableWrapper,
   pendingRequestsTitle,
 } = styles;
-
-function formatAmount(amount: number, currency: string) {
-  return new Intl.NumberFormat(undefined, {
-    style: `currency`,
-    currency,
-  }).format(amount);
-}
 
 type PendingRequestsTableProps = { pendingRequests: IPendingRequest[] };
 
@@ -58,7 +52,7 @@ export function PendingRequestsTable({ pendingRequests }: PendingRequestsTablePr
               <tr key={pendingRequest.id}>
                 <td className={pendingRequestsCell}>{pendingRequest.counterpartyName}</td>
                 <td className={pendingRequestsCell}>
-                  {formatAmount(pendingRequest.amount, pendingRequest.currencyCode)}
+                  {formatCurrencyDisplay(pendingRequest.amount, pendingRequest.currencyCode)}
                 </td>
                 <td className={pendingRequestsStatus}>{pendingRequest.status.replace(/_/g, ` `)}</td>
                 <td className={pendingRequestsDate}>

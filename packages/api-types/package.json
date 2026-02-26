@@ -27,7 +27,9 @@
       "require": "./dist/*.js"
     }
   },
-  "dependencies": {},
+  "dependencies": {
+    "zod": "^4.0.17"
+  },
   "devDependencies": {
     "@remoola/eslint-config": "^0.0.0",
     "@remoola/typescript-config": "^0.0.0",

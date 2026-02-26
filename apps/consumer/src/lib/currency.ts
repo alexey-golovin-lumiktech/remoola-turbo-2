@@ -24,3 +24,13 @@ export function formatCurrencyAmount(amount: number, currency: string) {
   const digits = getCurrencyFractionDigits(currency);
   return Number(amount).toFixed(digits);
 }
+
+/** Format amount as currency for display (e.g. $1,234.56). Use in lists and detail views. */
+export function formatCurrencyDisplay(amount: number, currencyCode: string): string {
+  return new Intl.NumberFormat(undefined, { style: `currency`, currency: currencyCode }).format(amount);
+}
+
+/** Format cents as currency for display (e.g. balance in cents → $12.34). */
+export function formatCentsToDisplay(cents: number, currencyCode: string): string {
+  return formatCurrencyDisplay(cents / 100, currencyCode);
+}
