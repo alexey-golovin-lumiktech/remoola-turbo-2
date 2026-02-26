@@ -22,10 +22,17 @@ export function reportWebVitals(metric: NextWebVitalsMetric) {
   }
 }
 
+interface PerformanceMemory {
+  usedJSHeapSize: number;
+  totalJSHeapSize: number;
+  jsHeapSizeLimit: number;
+}
+
 // Memory usage monitoring
 export function logMemoryUsage() {
-  if (`memory` in performance) {
-    const mem = (performance as any).memory;
+  const perf = performance as Performance & { memory?: PerformanceMemory };
+  if (perf.memory) {
+    const mem = perf.memory;
     console.log(`Memory usage:`, {
       used: Math.round(mem.usedJSHeapSize / 1024 / 1024) + `MB`,
       total: Math.round(mem.totalJSHeapSize / 1024 / 1024) + `MB`,
@@ -35,10 +42,14 @@ export function logMemoryUsage() {
 }
 
 // API performance monitoring
-export function createPerformanceTrackedApiClient(apiClient: any) {
+interface ApiClientWithFetch {
+  fetch: (path: string, options?: RequestInit, cacheConfig?: { ttl?: number; skipCache?: boolean }) => Promise<unknown>;
+}
+
+export function createPerformanceTrackedApiClient(apiClient: ApiClientWithFetch) {
   const originalFetch = apiClient.fetch.bind(apiClient);
 
-  apiClient.fetch = async (...args: any[]) => {
+  apiClient.fetch = async (...args: Parameters<ApiClientWithFetch[`fetch`]>) => {
     const startTime = performance.now();
     try {
       const result = await originalFetch(...args);

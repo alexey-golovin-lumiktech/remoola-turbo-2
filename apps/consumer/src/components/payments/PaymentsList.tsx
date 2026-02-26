@@ -68,7 +68,7 @@ export function PaymentsList() {
   const [search, setSearch] = useState(``);
 
   const queryParams = useMemo(() => {
-    const params: Record<string, any> = {
+    const params: Record<string, string> = {
       page: page.toString(),
       pageSize: pageSize.toString(),
     };

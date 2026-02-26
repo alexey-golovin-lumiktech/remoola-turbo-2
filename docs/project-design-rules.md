@@ -71,9 +71,9 @@ Forbidden:
 Allowed shared locations:
 
 - `packages/api-types`
-- `packages/database`
+- `packages/database-2`
 - `packages/ui`
-- other explicit shared packages
+- other explicit shared packages (e.g. `packages/env`, `packages/security-utils`)
 
 Rules:
 

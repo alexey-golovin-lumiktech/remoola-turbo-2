@@ -19,7 +19,7 @@ export const swrConfig: SWRConfiguration = {
 };
 
 // Convert SWR query key to URL
-function queryKeyToUrl(key: any): string {
+function queryKeyToUrl(key: unknown): string {
   if (typeof key === `string`) {
     return key;
   }
@@ -50,15 +50,16 @@ function queryKeyToUrl(key: any): string {
 }
 
 // Enhanced fetcher that works with our ApiClient
-export const swrFetcher = async <T>(key: any): Promise<T> => {
+export const swrFetcher = async <T>(key: unknown): Promise<T> => {
   const url = queryKeyToUrl(key);
   const response = await apiClient.get<T>(url, { skipCache: true }); // Let SWR handle caching
 
   if (!response.ok) {
     const errorResult = response as { ok: false; status: number; error: ApiErrorShape };
-    const error = new Error(errorResult.error.message) as any;
-    error.status = errorResult.status;
-    error.code = errorResult.error.code;
+    const error = Object.assign(new Error(errorResult.error.message), {
+      status: errorResult.status,
+      code: errorResult.error.code,
+    });
     throw error;
   }
 
@@ -66,7 +67,7 @@ export const swrFetcher = async <T>(key: any): Promise<T> => {
 };
 
 // Mutation fetcher for POST/PATCH/DELETE
-export const mutationFetcher = async <T>(url: string, options: { method: string; data?: any }): Promise<T> => {
+export const mutationFetcher = async <T>(url: string, options: { method: string; data?: unknown }): Promise<T> => {
   let response: ApiResponseShape<T>;
 
   switch (options.method.toUpperCase()) {
@@ -85,9 +86,10 @@ export const mutationFetcher = async <T>(url: string, options: { method: string;
 
   if (!response.ok) {
     const errorResult = response as { ok: false; status: number; error: ApiErrorShape };
-    const error = new Error(errorResult.error.message) as any;
-    error.status = errorResult.status;
-    error.code = errorResult.error.code;
+    const error = Object.assign(new Error(errorResult.error.message), {
+      status: errorResult.status,
+      code: errorResult.error.code,
+    });
     throw error;
   }
 

@@ -3,11 +3,14 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 
 import styles from '../../../../components/ui/classNames.module.css';
+import { type ConsumerProfile } from '../../../../types';
 
 const { formGridClass, formGridSpan2, formSection, formSectionTitle, inputClass, inputLabel, primaryActionButton } =
   styles;
 
-export function AddressDetailsForm({ profile, reload }: any) {
+type AddressDetailsFormProps = { profile: ConsumerProfile; reload: () => void | Promise<void> };
+
+export function AddressDetailsForm({ profile, reload }: AddressDetailsFormProps) {
   const ad = profile.addressDetails ?? {};
 
   const [postalCode, setPostalCode] = useState(ad.postalCode ?? ``);

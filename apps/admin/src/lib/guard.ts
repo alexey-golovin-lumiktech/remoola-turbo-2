@@ -1,7 +1,10 @@
 import { type AdminMe } from './types';
 
 export async function getAdminMe(): Promise<AdminMe | null> {
-  const response = await fetch(`/api/auth/me`, { cache: `no-store`, credentials: `include` as any });
+  const response = await fetch(`/api/auth/me`, {
+    cache: `no-store`,
+    credentials: `include`,
+  } as RequestInit);
   if (!response.ok) return null;
   return await response.json();
 }

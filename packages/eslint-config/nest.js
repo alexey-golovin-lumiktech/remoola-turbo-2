@@ -35,7 +35,7 @@ export const nestJsConfig = [
         { prefer: 'type-imports', fixStyle: 'inline-type-imports' },
       ],
 
-      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/no-floating-promises": "off",
       "@typescript-eslint/no-unsafe-argument": "off",
       "@typescript-eslint/no-unsafe-return": "off",

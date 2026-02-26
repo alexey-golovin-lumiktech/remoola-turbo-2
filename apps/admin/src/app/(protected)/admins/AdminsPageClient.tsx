@@ -119,8 +119,9 @@ export function AdminsPageClient() {
       createForm.reset();
       setCreateOpen(false);
       mutateAdmins();
-    } catch (error: any) {
-      toast.error(getErrorMessageForUser(error.message, getLocalToastMessage(localToastKeys.ADMIN_CREATE_FAILED)));
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error(getErrorMessageForUser(message, getLocalToastMessage(localToastKeys.ADMIN_CREATE_FAILED)));
     }
   }
 
@@ -131,8 +132,9 @@ export function AdminsPageClient() {
         throw new Error(response.error.message);
       }
       mutateAdmins();
-    } catch (error: any) {
-      toast.error(getErrorMessageForUser(error.message, getLocalToastMessage(localToastKeys.ADMIN_DELETE_FAILED)));
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error(getErrorMessageForUser(message, getLocalToastMessage(localToastKeys.ADMIN_DELETE_FAILED)));
     }
   };
 
@@ -143,8 +145,9 @@ export function AdminsPageClient() {
         throw new Error(response.error.message);
       }
       mutateAdmins();
-    } catch (error: any) {
-      toast.error(getErrorMessageForUser(error.message, getLocalToastMessage(localToastKeys.ADMIN_RESTORE_FAILED)));
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error(getErrorMessageForUser(message, getLocalToastMessage(localToastKeys.ADMIN_RESTORE_FAILED)));
     }
   };
 
@@ -165,10 +168,9 @@ export function AdminsPageClient() {
 
       setResetPasswordAdminId(null);
       resetPasswordForm.reset();
-    } catch (error: any) {
-      toast.error(
-        getErrorMessageForUser(error.message, getLocalToastMessage(localToastKeys.ADMIN_RESET_PASSWORD_FAILED)),
-      );
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error(getErrorMessageForUser(message, getLocalToastMessage(localToastKeys.ADMIN_RESET_PASSWORD_FAILED)));
     }
   }
 

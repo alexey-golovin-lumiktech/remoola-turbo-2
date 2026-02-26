@@ -5,11 +5,14 @@ import { toast } from 'sonner';
 
 import { DateInput } from '../../../../components/ui';
 import styles from '../../../../components/ui/classNames.module.css';
+import { type ConsumerProfile } from '../../../../types';
 
 const { formGridClass, formGridSpan2, formSection, formSectionTitle, inputClass, inputLabel, primaryActionButton } =
   styles;
 
-export function PersonalDetailsForm({ profile, reload }: any) {
+type PersonalDetailsFormProps = { profile: ConsumerProfile; reload: () => void | Promise<void> };
+
+export function PersonalDetailsForm({ profile, reload }: PersonalDetailsFormProps) {
   const pd = profile.personalDetails ?? {};
 
   const [firstName, setFirstName] = useState(pd.firstName ?? ``);

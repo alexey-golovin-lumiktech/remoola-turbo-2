@@ -73,8 +73,23 @@ type PaymentMethod = {
   } | null;
 };
 
+type LedgerEntryItem = { id: string; status: string; type: string; createdAt: string };
+type AttachmentItem = { id: string; name: string; size: number; downloadUrl: string };
+
+type PaymentRequestDetail = {
+  id: string;
+  amount: number;
+  currencyCode: string;
+  status: string;
+  description: string | null;
+  createdAt: string;
+  ledgerEntries: LedgerEntryItem[];
+  attachments: AttachmentItem[];
+  [key: string]: unknown;
+};
+
 export function PaymentView({ paymentRequestId }: PaymentViewProps) {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<PaymentRequestDetail | null>(null);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<string>(``);
   const [loading, setLoading] = useState(true);
@@ -101,7 +116,7 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
       }
 
       const paymentJson = await paymentRes.json();
-      setData(paymentJson);
+      setData(paymentJson as PaymentRequestDetail);
 
       // Load payment methods
       const methodsRes = await fetch(`/api/payment-methods`, {
@@ -198,7 +213,7 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
       });
       if (paymentRes.ok) {
         const paymentJson = await paymentRes.json();
-        setData(paymentJson);
+        setData(paymentJson as PaymentRequestDetail);
       }
     } catch {
       toast.error(`Invoice could not be generated. Please try again.`);
@@ -289,7 +304,7 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
           <div className={cardBasePadded}>
             <h2 className={sectionTitle}>Timeline</h2>
 
-            {p.ledgerEntries.map((t: any) => (
+            {p.ledgerEntries.map((t: LedgerEntryItem) => (
               <div key={t.id} className={timelineItem}>
                 <div className={timelineDot}></div>
 
@@ -309,7 +324,7 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
 
             {p.attachments.length === 0 && <div className={textXsMuted}>No attachments</div>}
 
-            {p.attachments.map((a: any) => (
+            {p.attachments.map((a: AttachmentItem) => (
               <div key={a.id} className={attachmentRow}>
                 <div>
                   <div className={attachmentName}>{a.name}</div>

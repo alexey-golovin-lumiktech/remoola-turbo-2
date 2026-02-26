@@ -58,8 +58,8 @@ export function useAdmin(id: string) {
 export function useCreateAdmin() {
   return useSWRMutation(
     queryKeys.admins.list(),
-    async (key: any, { arg }: { arg: any }) => {
-      return mutationFetcher(key, { method: `POST`, data: arg });
+    async (key: unknown, { arg }: { arg: unknown }) => {
+      return mutationFetcher(String(key), { method: `POST`, data: arg });
     },
     {
       onSuccess: () => {
@@ -72,8 +72,8 @@ export function useCreateAdmin() {
 export function useUpdateAdmin(id: string) {
   return useSWRMutation(
     queryKeys.admins.detail(id),
-    async (key: any, { arg }: { arg: any }) => {
-      return mutationFetcher(key, { method: `PATCH`, data: arg });
+    async (key: unknown, { arg }: { arg: unknown }) => {
+      return mutationFetcher(String(key), { method: `PATCH`, data: arg });
     },
     {
       onSuccess: () => {
@@ -84,8 +84,8 @@ export function useUpdateAdmin(id: string) {
 }
 
 export function useResetAdminPassword(id: string) {
-  return useSWRMutation(`admins/${id}/password`, async (key: any, { arg }: { arg: any }) => {
-    return mutationFetcher(key, { method: `PATCH`, data: arg });
+  return useSWRMutation(`admins/${id}/password`, async (key: unknown, { arg }: { arg: unknown }) => {
+    return mutationFetcher(String(key), { method: `PATCH`, data: arg });
   });
 }
 
@@ -138,14 +138,14 @@ export function useOptimisticMutation<TData>(
   key: string,
   updater: (currentData: TData | undefined) => TData,
   options?: {
-    onError?: (error: Error, key: string, config: any) => void;
-    onSuccess?: (data: any, key: string, config: any) => void;
+    onError?: (error: Error, key: string, config: unknown) => void;
+    onSuccess?: (data: unknown, key: string, config: unknown) => void;
   },
 ) {
   return useSWRMutation(
     key,
-    async (key: any, { arg }: { arg: any }) => {
-      return mutationFetcher(key, { method: `POST`, data: arg });
+    async (keyArg: unknown, { arg }: { arg: unknown }) => {
+      return mutationFetcher(String(keyArg), { method: `POST`, data: arg });
     },
     {
       optimisticData: updater,

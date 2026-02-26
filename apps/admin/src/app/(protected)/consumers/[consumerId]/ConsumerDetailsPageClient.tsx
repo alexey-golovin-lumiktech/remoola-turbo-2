@@ -107,10 +107,9 @@ export function ConsumerDetailsPageClient({ consumerId }: { consumerId: string }
       if (updatedConsumer.verificationReason) {
         setVerificationReason(updatedConsumer.verificationReason);
       }
-    } catch (error: any) {
-      toast.error(
-        getErrorMessageForUser(error.message, getLocalToastMessage(localToastKeys.VERIFICATION_UPDATE_FAILED)),
-      );
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error(getErrorMessageForUser(message, getLocalToastMessage(localToastKeys.VERIFICATION_UPDATE_FAILED)));
     } finally {
       setVerificationLoading(false);
     }

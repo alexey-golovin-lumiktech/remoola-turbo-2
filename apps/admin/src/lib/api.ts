@@ -4,8 +4,8 @@ export { ApiErrorSchema };
 
 // Enhanced API client with caching and deduplication
 export class ApiClient {
-  private cache = new Map<string, { data: any; timestamp: number; ttl: number }>();
-  private pendingRequests = new Map<string, Promise<any>>();
+  private cache = new Map<string, { data: unknown; timestamp: number; ttl: number }>();
+  private pendingRequests = new Map<string, Promise<ApiResponseShape<unknown>>>();
   private baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || ``;
 
   constructor(baseURL?: string) {
@@ -25,13 +25,13 @@ export class ApiClient {
     if ((!skipCache && !options.method) || options.method === `GET`) {
       const cached = this.cache.get(cacheKey);
       if (cached && Date.now() - cached.timestamp < cached.ttl) {
-        return { ok: true, data: cached.data };
+        return { ok: true, data: cached.data as T };
       }
     }
 
     // Deduplicate concurrent requests
     if (this.pendingRequests.has(cacheKey)) {
-      return this.pendingRequests.get(cacheKey)!;
+      return this.pendingRequests.get(cacheKey)! as Promise<ApiResponseShape<T>>;
     }
 
     const request = this.makeRequest<T>(fullUrl, options, cacheKey, ttl);
@@ -94,10 +94,10 @@ export class ApiClient {
       }
 
       return { ok: true, data };
-    } catch (error: any) {
+    } catch (error: unknown) {
       clearTimeout(timeoutId);
 
-      if (error.name === `AbortError`) {
+      if (error instanceof Error && error.name === `AbortError`) {
         return {
           ok: false,
           status: 408,
@@ -127,7 +127,7 @@ export class ApiClient {
     return this.fetch<T>(path, { method: `GET` }, cacheConfig);
   }
 
-  post<T>(path: string, data?: any) {
+  post<T>(path: string, data?: unknown) {
     return this.fetch<T>(
       path,
       {
@@ -138,7 +138,7 @@ export class ApiClient {
     );
   }
 
-  patch<T>(path: string, data?: any) {
+  patch<T>(path: string, data?: unknown) {
     return this.fetch<T>(
       path,
       {
@@ -176,7 +176,7 @@ export const apiClient = new ApiClient();
 export async function apiFetch<T>(
   path: string,
   init?: RequestInit,
-): Promise<{ ok: true; data: T } | { ok: false; status: number; message: string; raw?: any }> {
+): Promise<{ ok: true; data: T } | { ok: false; status: number; message: string; raw?: unknown }> {
   const result = await apiClient.fetch<T>(path, init, { skipCache: true });
 
   if (result.ok) {

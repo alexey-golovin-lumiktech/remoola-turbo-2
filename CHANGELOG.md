@@ -683,6 +683,10 @@
 
 - **2026-02-26:**
                 **🚀 Feature**
+                - Consumer profile types and typed settings form props
+                  (ConsumerProfile, PasswordChangeForm, PersonalDetailsForm,
+                  AddressDetailsForm, ProfileSettingsClient); PaymentView and
+                  PaymentsList typed state and params
                 - Payments: pay-by-email for unregistered recipients; store
                   `requester_email`, optional `requester_id`; reversal and ledger
                   requester entry only when `requester_id` present; counterparty
@@ -745,6 +749,17 @@
                   centralized (error details z.unknown()); apps/api common DTOs
                   for address-details and contact, admin/consumer re-export;
                   backward-compatible contract alignment
+                - Type-safety pass: replace `any` with domain types and
+                  `unknown` plus narrowing in admin/consumer api, guard,
+                  api-utils, FormCard, AddPaymentMethodModal, hooks, swr-config,
+                  validation, performance; ConsumerProfile and typed settings
+                  form props; PaymentView/PaymentsList typed state and params;
+                  consumer mutationFetcher key-to-URL fix; ESLint
+                  no-explicit-any warn; remove unused tryCodeOrNull from
+                  shared-constants
+                - Build fixes: PaymentRequestDetail explicit amount,
+                  currencyCode, status (formatCurrencyDisplay); FormCard
+                  Omit form `title` for ReactNode override and backtick quotes
 
                 **🧪 Testing & Reliability**
                 - Exchange: getBalanceByCurrency and concurrency specs
@@ -758,6 +773,8 @@
                   formatCentsToDisplay); admin: format.test.ts (formatAmount);
                   api: invoice.v5.spec.ts (null payer/requester, payerEmail
                   fallback, amount/currency render)
+                - getSteps.test: TContractorKind assert instead of any;
+                  remaining any limited to API spec mocks (test-only)
 
                 **🛠 DevEx & Infrastructure**
                 - test-db: PrismaClient datasourceUrl; Jest cache false
@@ -765,12 +782,17 @@
                   ApiErrorSchema from api-types; consumer: shared currency
                   helpers and api-types for types and error handling
                 - API e2e: config path updated
-                - docs/project-design-rules.md added
+                - docs/project-design-rules.md added; project-design-rules
+                  references packages/database-2
+                - README and docs index: all doc paths use docs/ prefix;
+                  project-design-rules in PROJECT_SUMMARY and
+                  PROJECT_DOCUMENTATION
                 - db-fixtures and seed comments updated
 
                 **🧹 Cleanup**
                 - Consolidate shared types and format helpers to reduce
                   contract drift and duplicate logic; invoice template (invoice.v5)
-                  null-safe for payer/requester (fallback to payerEmail or "—");
-                  docs: code-duplication-audit.md (audit only)
+                  null-safe for payer/requester (fallback to payerEmail or "—")
+                - Type-safety pass across admin and consumer apps; explicit
+                  return types and error narrowing; no new any or weakened types
 ```

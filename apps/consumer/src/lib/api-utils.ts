@@ -27,15 +27,15 @@ export function handleApiError(error: unknown): NextResponse<ApiErrorShape> {
       );
     }
 
-    // Check if it's our custom error format
-    const customError = error as any;
-    if (customError.statusCode) {
+    // Check if it's our custom error format (e.g. Nest HTTP exception)
+    const err = error as { statusCode?: number; code?: string };
+    if (err.statusCode != null) {
       return NextResponse.json(
         {
           message: error.message,
-          code: customError.code,
+          code: err.code ?? `INTERNAL_ERROR`,
         },
-        { status: customError.statusCode },
+        { status: err.statusCode },
       );
     }
 

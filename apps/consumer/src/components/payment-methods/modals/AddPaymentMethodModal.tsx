@@ -141,7 +141,7 @@ function AddPaymentMethodModalInner({
     const cardMeta = await metaRes.json();
 
     // 3) Save method in Nest backend
-    const payload: CreatePaymentMethodDto & any = {
+    const payload: CreatePaymentMethodDto = {
       type: `CREDIT_CARD`,
       setupIntentId,
       defaultSelected,

@@ -35,7 +35,7 @@ export const queryKeys = {
     main: () => [`api/dashboard`],
   },
   payments: {
-    list: (params?: Record<string, any>) => [`api/payments`, params],
+    list: (params?: Record<string, string | undefined>) => [`api/payments`, params],
     detail: (id: string) => [`api/payments/${id}`],
     balance: () => [`api/payments/balance`],
     history: () => [`api/payments/history`],
@@ -55,7 +55,7 @@ export function useDashboard() {
 }
 
 // Payments hooks
-export function usePayments(params?: Record<string, any>) {
+export function usePayments(params?: Record<string, string | undefined>) {
   return useSWR(queryKeys.payments.list(params));
 }
 
@@ -75,7 +75,7 @@ export function usePaymentHistory() {
 export function useCreatePayment() {
   return useSWRMutation(
     queryKeys.payments.list(),
-    async (key: any, { arg }: { arg: any }) => {
+    async (key: unknown, { arg }: { arg: unknown }) => {
       return mutationFetcher(key, { method: `POST`, data: arg });
     },
     {
@@ -87,13 +87,13 @@ export function useCreatePayment() {
 }
 
 export function useUpdatePayment(id: string) {
-  return useSWRMutation(queryKeys.payments.detail(id), async (key: any, { arg }: { arg: any }) => {
+  return useSWRMutation(queryKeys.payments.detail(id), async (key: unknown, { arg }: { arg: unknown }) => {
     return mutationFetcher(key, { method: `PATCH`, data: arg });
   });
 }
 
 export function useStartPayment() {
-  return useSWRMutation(`payments/start`, async (key: any, { arg }: { arg: any }) => {
+  return useSWRMutation(`payments/start`, async (key: unknown, { arg }: { arg: unknown }) => {
     return mutationFetcher(key, { method: `POST`, data: arg });
   });
 }
@@ -109,13 +109,13 @@ export function useContact(id: string) {
 
 // Contact mutations
 export function useCreateContact() {
-  return useSWRMutation(queryKeys.contacts.list(), async (key: any, { arg }: { arg: any }) => {
+  return useSWRMutation(queryKeys.contacts.list(), async (key: unknown, { arg }: { arg: unknown }) => {
     return mutationFetcher(key, { method: `POST`, data: arg });
   });
 }
 
 export function useUpdateContact(id: string) {
-  return useSWRMutation(queryKeys.contacts.detail(id), async (key: any, { arg }: { arg: any }) => {
+  return useSWRMutation(queryKeys.contacts.detail(id), async (key: unknown, { arg }: { arg: unknown }) => {
     return mutationFetcher(key, { method: `PATCH`, data: arg });
   });
 }
@@ -123,11 +123,11 @@ export function useUpdateContact(id: string) {
 export function useDeleteContact(id: string) {
   return useSWRMutation(
     queryKeys.contacts.detail(id),
-    async (/* eslint-disable-line @typescript-eslint/no-unused-vars */ key: any, _arg: { arg: any }) => {
+    async (/* eslint-disable-line @typescript-eslint/no-unused-vars */ key: unknown, _arg: { arg: unknown }) => {
       return mutationFetcher(key, { method: `DELETE` });
     },
     {
-      optimisticData: (/* eslint-disable-line @typescript-eslint/no-unused-vars */ _currentData: any) => {
+      optimisticData: (/* eslint-disable-line @typescript-eslint/no-unused-vars */ _currentData: unknown) => {
         // Optimistically remove the contact from the list
         return null;
       },
@@ -141,7 +141,7 @@ export function useExchangeRates(params?: { from: string; to: string }) {
 }
 
 export function useConvertCurrency() {
-  return useSWRMutation(`exchange/convert`, async (key: any, { arg }: { arg: any }) => {
+  return useSWRMutation(`exchange/convert`, async (key: unknown, { arg }: { arg: unknown }) => {
     return mutationFetcher(key, { method: `POST`, data: arg });
   });
 }
@@ -151,13 +151,13 @@ export function useOptimisticMutation<TData>(
   key: string,
   updater: (currentData: TData | undefined) => TData,
   options?: {
-    onError?: (error: Error, key: string, config: any) => void;
-    onSuccess?: (data: any, key: string, config: any) => void;
+    onError?: (error: Error, key: string, config: unknown) => void;
+    onSuccess?: (data: unknown, key: string, config: unknown) => void;
   },
 ) {
   return useSWRMutation(
     key,
-    async (_key: any, { arg }: { arg: any }) => {
+    async (_key: unknown, { arg }: { arg: unknown }) => {
       return mutationFetcher(key, { method: `POST`, data: arg });
     },
     {

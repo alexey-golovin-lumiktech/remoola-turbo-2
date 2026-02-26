@@ -124,7 +124,7 @@ export function validateForm<T>(
 }
 
 // Form state management hook
-export function useFormValidation<T extends Record<string, any>>(schema: z.ZodSchema<T>, initialValues: T) {
+export function useFormValidation<T extends Record<string, unknown>>(schema: z.ZodSchema<T>, initialValues: T) {
   const [values, setValues] = useState<T>(initialValues);
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
   const [touched, setTouchedState] = useState<Record<string, boolean>>({});
@@ -141,7 +141,7 @@ export function useFormValidation<T extends Record<string, any>>(schema: z.ZodSc
   }, [schema, values]);
 
   const setValue = useCallback(
-    (field: keyof T, value: any) => {
+    (field: keyof T, value: T[keyof T]) => {
       setValues((prev) => ({ ...prev, [field]: value }));
       if (touched[field as string]) {
         // Clear error when user starts typing

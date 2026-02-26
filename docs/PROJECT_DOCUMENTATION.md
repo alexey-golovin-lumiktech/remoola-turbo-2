@@ -349,4 +349,5 @@ Shared packages used across apps:
 ## Additional documentation
 
 - `docs/FINANCIAL_SAFETY_AND_DB_COMPLIANCE.md`: fintech safety, ledger invariants, idempotency, concurrency, risk audit.
+- `docs/project-design-rules.md`: project design rules (dead code, boundaries, naming, migrations).
 - `docs/postgresql-design-rules.md`: PostgreSQL design rules (schema, migrations, naming).

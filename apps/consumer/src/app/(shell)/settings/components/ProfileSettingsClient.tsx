@@ -12,11 +12,12 @@ import { PersonalDetailsForm } from './PersonalDetailsForm';
 import { PreferredCurrencySettingsForm } from './PreferredCurrencySettingsForm';
 import { ThemeSettingsForm } from './ThemeSettingsForm';
 import styles from '../../../../components/ui/classNames.module.css';
+import { type ConsumerProfile } from '../../../../types';
 
 const { spaceY10, textSecondary } = styles;
 
 export default function ProfileSettingsClient() {
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<ConsumerProfile | null>(null);
   const [settings, setSettings] = useState<ConsumerSettingsResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,7 +36,7 @@ export default function ProfileSettingsClient() {
       return;
     }
 
-    setProfile(await response.json());
+    setProfile((await response.json()) as ConsumerProfile);
   }, []);
 
   const loadSettings = useCallback(async () => {

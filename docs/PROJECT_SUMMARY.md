@@ -54,8 +54,9 @@ Note: `yarn test` and `yarn test:e2e` are intended for local development only; t
 | File | Purpose |
 |------|---------|
 | `README.md` | Setup, commands, repo layout |
-| `PROJECT_SUMMARY.md` | High-level overview (start here) |
-| `PROJECT_DOCUMENTATION.md` | Full API, screens, DB schema, packages |
-| `FEATURES_CURRENT.md` | Implemented features and current state |
+| `docs/PROJECT_SUMMARY.md` | High-level overview (this file; start here) |
+| `docs/PROJECT_DOCUMENTATION.md` | Full API, screens, DB schema, packages |
+| `docs/FEATURES_CURRENT.md` | Implemented features and current state |
 | `docs/FINANCIAL_SAFETY_AND_DB_COMPLIANCE.md` | Fintech safety, ledger invariants, idempotency |
+| `docs/project-design-rules.md` | Project design rules (boundaries, naming, migrations) |
 | `docs/postgresql-design-rules.md` | PostgreSQL design rules |

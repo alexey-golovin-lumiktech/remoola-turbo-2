@@ -6,7 +6,9 @@ import styles from '../../../../components/ui/classNames.module.css';
 
 const { formGrid, formSection, formSectionTitle, inputClass, inputLabel, primaryActionButton, spaceY6 } = styles;
 
-export function PasswordChangeForm({ reload }: any) {
+type PasswordChangeFormProps = { reload: () => void | Promise<void> };
+
+export function PasswordChangeForm({ reload }: PasswordChangeFormProps) {
   const [password, setPassword] = useState(``);
   const [confirm, setConfirm] = useState(``);
   const [saving, setSaving] = useState(false);

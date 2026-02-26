@@ -79,8 +79,9 @@ yarn db:seed
 ## Documentation
 
 - `README.md` — this file (setup, commands, repo layout).
-- `PROJECT_SUMMARY.md` — high-level project overview (start here).
-- `PROJECT_DOCUMENTATION.md` — overview of API (base path `/api`), admin, consumer, and database.
-- `FEATURES_CURRENT.md` — implemented features and current repo state.
+- `docs/PROJECT_SUMMARY.md` — high-level project overview (start here).
+- `docs/PROJECT_DOCUMENTATION.md` — overview of API (base path `/api`), admin, consumer, and database.
+- `docs/FEATURES_CURRENT.md` — implemented features and current repo state.
 - `docs/FINANCIAL_SAFETY_AND_DB_COMPLIANCE.md` — fintech safety, ledger invariants, idempotency.
+- `docs/project-design-rules.md` — project design rules (dead code, boundaries, naming, migrations).
 - `docs/postgresql-design-rules.md` — PostgreSQL schema and migration rules.

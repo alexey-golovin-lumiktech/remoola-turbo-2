@@ -4,8 +4,8 @@ import { type ComponentPropsWithoutRef, type ReactNode } from 'react';
 
 import styles from './classNames.module.css';
 
-export interface FormCardProps extends ComponentPropsWithoutRef<`form`> {
-  title?: any;
+export interface FormCardProps extends Omit<ComponentPropsWithoutRef<`form`>, `title`> {
+  title?: ReactNode;
   description?: ReactNode;
 }
 

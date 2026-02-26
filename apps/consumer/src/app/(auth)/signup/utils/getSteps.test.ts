@@ -1,4 +1,4 @@
-import { ACCOUNT_TYPE, CONTRACTOR_KIND } from '@remoola/api-types';
+import { ACCOUNT_TYPE, CONTRACTOR_KIND, type TContractorKind } from '@remoola/api-types';
 
 import { getSteps } from './getSteps';
 import { STEP_NAME } from '../../../../types';
@@ -50,7 +50,9 @@ describe(`getSteps`, () => {
     });
 
     it(`throws when contractorKind is unexpected`, () => {
-      expect(() => getSteps(ACCOUNT_TYPE.CONTRACTOR, `UNKNOWN` as any)).toThrow(`Unexpected contractor kind`);
+      expect(() => getSteps(ACCOUNT_TYPE.CONTRACTOR, `UNKNOWN` as TContractorKind)).toThrow(
+        `Unexpected contractor kind`,
+      );
     });
   });
 });

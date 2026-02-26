@@ -190,8 +190,4 @@ export const adminErrorCodes = {
 
 export type AdminErrorCode = (typeof adminErrorCodes)[keyof typeof adminErrorCodes];
 
-export function tryCodeOrNull(code: string): ErrorCode | null {
-  return Object.values(errorCodes).includes(code as ErrorCode) ? (code as ErrorCode) : null;
-}
-
 export type ErrorCode = (typeof errorCodes)[keyof typeof errorCodes];
