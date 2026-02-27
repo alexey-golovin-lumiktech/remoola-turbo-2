@@ -6,6 +6,7 @@ import { adminErrorCodes } from '@remoola/shared-constants';
 import { ConsumerExchangeService } from '../../../consumer/modules/exchange/consumer-exchange.service';
 import { UpdateAutoConversionRuleBody } from '../../../consumer/modules/exchange/dto/update-auto-conversion-rule.dto';
 import { type ExchangeRateCreate, type ExchangeRateUpdate } from '../../../dtos/admin/exchange-rate.dto';
+import { AdminActionAuditService, ADMIN_ACTION_AUDIT_ACTIONS } from '../../../shared/admin-action-audit.service';
 import { PrismaService } from '../../../shared/prisma.service';
 
 @Injectable()
@@ -13,6 +14,7 @@ export class AdminExchangeService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly exchangeService: ConsumerExchangeService,
+    private readonly adminActionAudit: AdminActionAuditService,
   ) {}
 
   async listRates(filters?: {
@@ -160,6 +162,14 @@ export class AdminExchangeService {
       });
     });
 
+    if (adminId) {
+      await this.adminActionAudit.record({
+        adminId,
+        action: ADMIN_ACTION_AUDIT_ACTIONS.exchange_rate_create,
+        resource: `exchange_rate`,
+        resourceId: rate.id,
+      });
+    }
     return this.normalizeRate(rate);
   }
 
@@ -292,6 +302,14 @@ export class AdminExchangeService {
       });
     });
 
+    if (adminId) {
+      await this.adminActionAudit.record({
+        adminId,
+        action: ADMIN_ACTION_AUDIT_ACTIONS.exchange_rate_update,
+        resource: `exchange_rate`,
+        resourceId: rateId,
+      });
+    }
     return this.normalizeRate(rate);
   }
 
@@ -309,6 +327,14 @@ export class AdminExchangeService {
       data: { deletedAt: new Date(), status: $Enums.ExchangeRateStatus.DISABLED, updatedBy: adminId ?? null },
     });
 
+    if (adminId) {
+      await this.adminActionAudit.record({
+        adminId,
+        action: ADMIN_ACTION_AUDIT_ACTIONS.exchange_rate_delete,
+        resource: `exchange_rate`,
+        resourceId: rateId,
+      });
+    }
     return { rateId: existing.id };
   }
 
@@ -407,10 +433,19 @@ export class AdminExchangeService {
   }
 
   async runRuleNow(ruleId: string, adminId?: string) {
-    return this.exchangeService.runAutoConversionRuleNow(ruleId, {
+    const result = await this.exchangeService.runAutoConversionRuleNow(ruleId, {
       source: `admin_rule_run`,
       actorId: adminId,
     });
+    if (adminId) {
+      await this.adminActionAudit.record({
+        adminId,
+        action: ADMIN_ACTION_AUDIT_ACTIONS.exchange_rule_run,
+        resource: `exchange_rule`,
+        resourceId: ruleId,
+      });
+    }
+    return result;
   }
 
   async listScheduledConversions(filters?: {
@@ -459,7 +494,7 @@ export class AdminExchangeService {
     return { items, total, page, pageSize };
   }
 
-  async cancelScheduledConversion(conversionId: string) {
+  async cancelScheduledConversion(conversionId: string, adminId?: string) {
     const conversion = await this.prisma.scheduledFxConversionModel.findFirst({
       where: { id: conversionId, deletedAt: null },
     });
@@ -484,6 +519,14 @@ export class AdminExchangeService {
       },
     });
 
+    if (adminId) {
+      await this.adminActionAudit.record({
+        adminId,
+        action: ADMIN_ACTION_AUDIT_ACTIONS.exchange_scheduled_cancel,
+        resource: `scheduled_fx_conversion`,
+        resourceId: conversionId,
+      });
+    }
     return {
       conversionId: updated.id,
       status: updated.status,
@@ -491,10 +534,19 @@ export class AdminExchangeService {
   }
 
   async executeScheduledConversion(conversionId: string, adminId?: string) {
-    return this.exchangeService.executeScheduledConversionNow(conversionId, {
+    const result = await this.exchangeService.executeScheduledConversionNow(conversionId, {
       source: `admin`,
       actorId: adminId,
     });
+    if (adminId) {
+      await this.adminActionAudit.record({
+        adminId,
+        action: ADMIN_ACTION_AUDIT_ACTIONS.exchange_scheduled_execute,
+        resource: `scheduled_fx_conversion`,
+        resourceId: conversionId,
+      });
+    }
+    return result;
   }
 
   listCurrencies() {

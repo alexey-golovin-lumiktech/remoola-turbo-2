@@ -834,7 +834,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-02-26</summary>
 
 - **2026-02-26:**
@@ -1005,6 +1005,46 @@
                   read-only (SUM over ledger_entry). Idempotency DB-enforced
                   unchanged; advisory locks still acquired by callers before
                   balance check in tx.
+
+</details>
+
+<details open>
+<summary>2026-02-27</summary>
+
+- **2026-02-27:**
+  ### 🚀 Feature
+  - Admin app: centralized 401 / session-expired flow — toast, call to
+    `/api/auth/logout` to clear cookies, redirect to login; `handleSessionExpired`
+    in API client on 401; `resetSessionExpiredHandled()` on login page mount.
+  - Backend: admin action audit log — new table `admin_action_audit_log` and
+    migration; `AdminActionAuditService` records payment_refund, payment_chargeback,
+    admin_password_change, admin_delete, admin_restore, consumer_verification_update,
+    exchange rate CRUD and scheduled actions (with adminId where available).
+  - Admin audit module: GET `/admin/audit/auth` and GET `/admin/audit/actions`
+    (SUPER-only), pagination and filters (email, date range, action); DTOs and
+    service; error code `ADMIN_ONLY_SUPER_CAN_VIEW_AUDIT`.
+  - Admin app: Audit page (Auth log and Actions tabs), proxy API routes, SWR
+    hooks and types, Sidebar link for SUPER admins; filters and table layout
+    aligned with Exchange Rate view.
+
+  ### 🔐 Security / Financial Safety
+  - Session expiry handling ensures tokens and cookies are cleared before
+    redirect; audit log is append-only and does not affect main transaction flows.
+  - SUPER-only access to audit endpoints enforced in controller.
+
+  ### 🗄 Database & Migrations
+  - Migration `20260227120000_admin_action_audit_log`: creates
+    `admin_action_audit_log` (admin_id, action, resource, resource_id, metadata,
+    ip_address, user_agent, created_at) with indexes; FK to admin.
+
+  ### 🛠 DevEx & Infrastructure
+  - db-fixtures: `APP_TABLES` extended with `auth_audit_log`, `auth_login_lockout`,
+    `admin_action_audit_log`, `ledger_entry_outcome`, `ledger_entry_dispute` for
+    refresh truncate; expectation_date_archive insert summary only when table
+    exists (table removed in prior migration); README documents truncated tables.
+  - Admin list views (Ledger, Payment Requests, Consumers, Exchange Rules,
+    Scheduled, Admins, Expectation Date Archive, Ledger Anomalies): header
+    actions use `adminActionRow`; loading states aligned with Exchange Rate view.
 
 </details>
 

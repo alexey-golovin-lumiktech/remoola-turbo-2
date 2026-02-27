@@ -6,8 +6,8 @@ export type FixtureOptions = {
   confirm: boolean;
 };
 
-const DEFAULT_PER_TABLE = 20;
-const MAX_PER_TABLE = 20;
+const DEFAULT_PER_TABLE = 200;
+const MAX_PER_TABLE = 200;
 const MIN_PER_TABLE = 1;
 
 function clampPerTable(value: number): number {

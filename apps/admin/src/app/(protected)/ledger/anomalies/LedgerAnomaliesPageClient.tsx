@@ -38,7 +38,15 @@ export function LedgerAnomaliesPageClient() {
   }, [error]);
 
   if (isLoading) {
-    return <PageSkeleton />;
+    return (
+      <div className={styles.adminPageStack}>
+        <div>
+          <h1 className={styles.adminPageTitle}>Ledger Anomalies</h1>
+          <p className={styles.adminPageSubtitle}>Ledger inconsistencies and reconciliation issues.</p>
+        </div>
+        <PageSkeleton />
+      </div>
+    );
   }
 
   return (
@@ -48,8 +56,7 @@ export function LedgerAnomaliesPageClient() {
           <h1 className={styles.adminPageTitle}>Ledger Anomalies</h1>
           <p className={styles.adminPageSubtitle}>Ledger inconsistencies and reconciliation issues.</p>
         </div>
-
-        <div className={styles.adminHeaderActions}>
+        <div className={styles.adminActionRow}>
           <button
             type="button"
             className={styles.adminPrimaryButton}

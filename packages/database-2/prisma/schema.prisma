@@ -41,6 +41,27 @@ model AuthAuditLogModel {
   @@map("auth_audit_log")
 }
 
+/// Fintech-safe: append-only audit of sensitive admin actions (refund, chargeback, admin CRUD, verification, exchange, etc.).
+model AdminActionAuditLogModel {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  adminId   String     @map("admin_id") @db.Uuid
+  admin     AdminModel @relation(fields: [adminId], references: [id], onDelete: NoAction)
+  action    String     @db.Text
+  resource  String     @db.Text
+  resourceId String?   @map("resource_id") @db.Text
+  metadata  Json?      @db.JsonB
+  ipAddress String?   @map("ip_address") @db.Text
+  userAgent String?   @map("user_agent") @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([adminId, createdAt])
+  @@index([action, createdAt])
+  @@index([resource, createdAt])
+  @@map("admin_action_audit_log")
+}
+
 model AuthLoginLockoutModel {
   identityType   String    @map("identity_type") @db.Text
   email          String    @db.Text
@@ -103,7 +124,8 @@ model AdminModel {
   password String @db.Text
   salt     String @db.Text
 
-  adminSettings AdminSettingsModel?
+  adminSettings        AdminSettingsModel?
+  adminActionAuditLogs AdminActionAuditLogModel[]
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)

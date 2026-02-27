@@ -193,7 +193,7 @@ export function AdminsPageClient() {
             <p className={styles.adminPageSubtitle}>Manage Admins (SUPER-only).</p>
           </div>
 
-          <div className={styles.adminHeaderActions}>
+          <div className={styles.adminActionRow}>
             <button
               type="button"
               className={styles.adminPrimaryButton}
@@ -201,7 +201,6 @@ export function AdminsPageClient() {
             >
               Refresh
             </button>
-
             <button
               onClick={(e) => (e.stopPropagation(), e.preventDefault(), setCreateOpen(true))}
               disabled={createAdminMutation.isMutating}

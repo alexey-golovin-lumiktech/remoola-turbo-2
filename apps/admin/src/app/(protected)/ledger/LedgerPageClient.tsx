@@ -40,9 +40,11 @@ export function LedgerPageClient() {
           <h1 className={styles.adminPageTitle}>Ledger</h1>
           <p className={styles.adminPageSubtitle}>Ledger Entry (signed amounts, idempotencyKey, stripeId).</p>
         </div>
-        <button type="button" className={styles.adminPrimaryButton} onClick={handleRefresh}>
-          Refresh
-        </button>
+        <div className={styles.adminActionRow}>
+          <button type="button" className={styles.adminPrimaryButton} onClick={handleRefresh}>
+            Refresh
+          </button>
+        </div>
       </div>
 
       <div className={styles.adminCard}>

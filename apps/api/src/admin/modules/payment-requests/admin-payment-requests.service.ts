@@ -8,6 +8,7 @@ import { adminErrorCodes, errorCodes } from '@remoola/shared-constants';
 
 import { type PaymentReversalCreate } from './dto';
 import { envs } from '../../../envs';
+import { AdminActionAuditService, ADMIN_ACTION_AUDIT_ACTIONS } from '../../../shared/admin-action-audit.service';
 import { BalanceCalculationService } from '../../../shared/balance-calculation.service';
 import { MailingService } from '../../../shared/mailing.service';
 import { PrismaService } from '../../../shared/prisma.service';
@@ -22,6 +23,7 @@ export class AdminPaymentRequestsService {
     private readonly prisma: PrismaService,
     private readonly mailingService: MailingService,
     private readonly balanceService: BalanceCalculationService,
+    private readonly adminActionAudit: AdminActionAuditService,
   ) {
     this.stripe = new Stripe(envs.STRIPE_SECRET_KEY, { apiVersion: `2025-11-17.clover` });
   }
@@ -407,13 +409,6 @@ export class AdminPaymentRequestsService {
       stripeRefundId,
     } as Prisma.InputJsonValue;
 
-    // ✅ Get admin email for audit logging
-    const admin = await this.prisma.adminModel.findUnique({
-      where: { id: adminId },
-      select: { email: true },
-    });
-    const adminEmail = admin?.email ?? `unknown`;
-
     await this.prisma.$transaction(async (tx) => {
       if (paymentRequest.requesterId) {
         await tx.$executeRaw(
@@ -468,18 +463,21 @@ export class AdminPaymentRequestsService {
           },
         });
       }
+    });
 
-      // ✅ AUDIT LOG: Record admin financial action for compliance
-      await tx.authAuditLogModel.create({
-        data: {
-          identityType: `ADMIN`,
-          identityId: adminId,
-          email: adminEmail,
-          event: `PAYMENT_REVERSAL_${body.kind}`,
-          ipAddress: null,
-          userAgent: null,
-        },
-      });
+    await this.adminActionAudit.record({
+      adminId,
+      action:
+        body.kind === `REFUND`
+          ? ADMIN_ACTION_AUDIT_ACTIONS.payment_refund
+          : ADMIN_ACTION_AUDIT_ACTIONS.payment_chargeback,
+      resource: `payment_request`,
+      resourceId: paymentRequestId,
+      metadata: {
+        amount: finalRequestedAmount,
+        currencyCode: paymentRequest.currencyCode,
+        ledgerId,
+      },
     });
 
     await this.sendReversalEmails({

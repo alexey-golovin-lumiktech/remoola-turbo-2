@@ -6,6 +6,7 @@ import { JWT_ACCESS_SECRET, JWT_ACCESS_TTL_SECONDS } from '../envs';
 import { AdminAuthController } from './auth/admin-auth.controller';
 import { AdminAuthService } from './auth/admin-auth.service';
 import { AdminAdminsModule } from './modules/admins/admin-admins.module';
+import { AdminAuditModule } from './modules/audit/admin-audit.module';
 import { AdminConsumersModule } from './modules/consumers/admin-consumers.module';
 import { AdminDashboardModule } from './modules/dashboard/admin-dashboard.module';
 import { AdminExchangeModule } from './modules/exchange/admin-exchange.module';
@@ -21,6 +22,7 @@ import { ConsumerPaymentMethodsModule } from '../consumer/modules/payment-method
       signOptions: { expiresIn: JWT_ACCESS_TTL_SECONDS },
     }),
     AdminAdminsModule,
+    AdminAuditModule,
     AdminConsumersModule,
     AdminLedgersModule,
     AdminPaymentRequestsModule,

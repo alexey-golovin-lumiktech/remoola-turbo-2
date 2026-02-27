@@ -46,9 +46,11 @@ export function PaymentRequestsPageClient() {
           <h1 className={styles.adminPageTitle}>Payment Requests</h1>
           <p className={styles.adminPageSubtitle}>Payment Request (payer/requester, status, rail, dates).</p>
         </div>
-        <button type="button" className={styles.adminPrimaryButton} onClick={handleRefresh}>
-          Refresh
-        </button>
+        <div className={styles.adminActionRow}>
+          <button type="button" className={styles.adminPrimaryButton} onClick={handleRefresh}>
+            Refresh
+          </button>
+        </div>
       </div>
 
       <div className={styles.adminCard}>

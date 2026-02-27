@@ -233,6 +233,31 @@ export type RouteHandlerContext<T extends Record<string, string>> = {
   params: Promise<T>;
 };
 
+// Audit log types (SUPER-only)
+export type AuthAuditItem = {
+  id: string;
+  identityType: string;
+  identityId: string | null;
+  email: string;
+  event: string;
+  ipAddress: string | null;
+  userAgent: string | null;
+  createdAt: string;
+};
+
+export type ActionAuditItem = {
+  id: string;
+  adminId: string;
+  adminEmail: string | null;
+  action: string;
+  resource: string;
+  resourceId: string | null;
+  metadata: unknown;
+  ipAddress: string | null;
+  userAgent: string | null;
+  createdAt: string;
+};
+
 // Enhanced API types are defined in api.ts
 
 // Query keys for consistent caching
@@ -262,6 +287,19 @@ export const queryKeys = {
     recentPaymentRequests: () => [`api/dashboard/recent-payment-requests`] as const,
     ledgerAnomalies: () => [`api/dashboard/ledger-anomalies`] as const,
     verificationQueue: () => [`api/dashboard/verification-queue`] as const,
+  },
+  audit: {
+    auth: (filters?: { email?: string; dateFrom?: string; dateTo?: string; page?: number; pageSize?: number }) =>
+      [`api/audit/auth`, filters] as const,
+    actions: (filters?: {
+      action?: string;
+      adminId?: string;
+      email?: string;
+      dateFrom?: string;
+      dateTo?: string;
+      page?: number;
+      pageSize?: number;
+    }) => [`api/audit/actions`, filters] as const,
   },
 } as const;
 

@@ -12,6 +12,7 @@ const DEFAULT_PAGE_SIZE = 10;
 const {
   adminPageStack,
   adminHeaderRow,
+  adminActionRow,
   adminPageTitle,
   adminPageSubtitle,
   adminFormLabelBlock,
@@ -59,9 +60,11 @@ export function ExchangeRulesPageClient() {
           <h1 className={adminPageTitle}>Exchange Rules</h1>
           <p className={adminPageSubtitle}>Review and override customer auto-conversion rules.</p>
         </div>
-        <button type="button" className={adminPrimaryButton} onClick={handleRefresh}>
-          Refresh
-        </button>
+        <div className={adminActionRow}>
+          <button type="button" className={adminPrimaryButton} onClick={handleRefresh}>
+            Refresh
+          </button>
+        </div>
       </div>
 
       <div className={adminCard}>

@@ -34,7 +34,7 @@ export function ExpectationDateArchivePageClient() {
             Archived values copied from removed `payment_request.expectation_date`.
           </p>
         </div>
-        <div className={styles.adminHeaderActions}>
+        <div className={styles.adminActionRow}>
           <button type="button" className={styles.adminPrimaryButton} onClick={handleRefresh}>
             Refresh
           </button>

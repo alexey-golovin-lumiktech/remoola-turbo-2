@@ -33,8 +33,9 @@ export function Sidebar() {
     })();
   }, []);
 
-  if (me?.type === ADMIN_TYPE.SUPER && BASE_NAV.every((x) => x.href !== `/admins`)) {
-    BASE_NAV.unshift({ href: `/admins`, label: `Admins` });
+  if (me?.type === ADMIN_TYPE.SUPER) {
+    if (BASE_NAV.every((x) => x.href !== `/audit`)) BASE_NAV.unshift({ href: `/audit`, label: `Audit` });
+    if (BASE_NAV.every((x) => x.href !== `/admins`)) BASE_NAV.unshift({ href: `/admins`, label: `Admins` });
   }
 
   return (

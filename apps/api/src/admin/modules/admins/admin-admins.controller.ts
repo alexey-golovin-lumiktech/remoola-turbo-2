@@ -1,5 +1,6 @@
-import { BadRequestException, Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiBasicAuth } from '@nestjs/swagger';
+import express from 'express';
 
 import { type AdminModel } from '@remoola/database-2';
 import { adminErrorCodes } from '@remoola/shared-constants';
@@ -9,6 +10,7 @@ import { AdminAdminsListQuery } from './dto';
 import { JwtAuthGuard } from '../../../auth/jwt.guard';
 import { Identity } from '../../../common';
 import { StripeWebhookService } from '../../../consumer/modules/payment-methods/stripe-webhook.service';
+import { AdminActionAuditService, ADMIN_ACTION_AUDIT_ACTIONS } from '../../../shared/admin-action-audit.service';
 
 function one(v: string | string[] | undefined): string | undefined {
   return (typeof v === `string` ? v : v?.[0])?.trim() || undefined;
@@ -28,6 +30,15 @@ function parseAdminsListQuery(dto: AdminAdminsListQuery) {
   };
 }
 
+function getIpAndUserAgent(req: express.Request): { ipAddress: string | null; userAgent: string | null } {
+  const ipAddress = req.ip ?? req.headers[`x-forwarded-for`];
+  const userAgent = req.headers[`user-agent`] ?? null;
+  return {
+    ipAddress: typeof ipAddress === `string` ? ipAddress : Array.isArray(ipAddress) ? (ipAddress[0] ?? null) : null,
+    userAgent: typeof userAgent === `string` ? userAgent : null,
+  };
+}
+
 @UseGuards(JwtAuthGuard)
 @ApiTags(`Admin: Admins`)
 @ApiBearerAuth(`bearer`) // 👈 tells Swagger to attach Bearer token
@@ -37,6 +48,7 @@ export class AdminAdminsController {
   constructor(
     private readonly service: AdminAdminsService,
     private readonly stripeWebhookService: StripeWebhookService,
+    private readonly adminActionAudit: AdminActionAuditService,
   ) {}
 
   @Get()
@@ -50,22 +62,34 @@ export class AdminAdminsController {
   }
 
   @Patch(`:adminId/password`)
-  patchAdminPassword(
+  async patchAdminPassword(
     @Identity() admin: AdminModel,
     @Param(`adminId`) adminId: string,
     @Body(`password`) password: string,
+    @Req() req: express.Request,
   ) {
     if (admin.type !== `SUPER`) {
       throw new BadRequestException(adminErrorCodes.ADMIN_ONLY_SUPER_CAN_CHANGE_PASSWORDS);
     }
-    return this.service.patchAdminPassword(adminId, password);
+    const result = await this.service.patchAdminPassword(adminId, password);
+    const { ipAddress, userAgent } = getIpAndUserAgent(req);
+    await this.adminActionAudit.record({
+      adminId: admin.id,
+      action: ADMIN_ACTION_AUDIT_ACTIONS.admin_password_change,
+      resource: `admin`,
+      resourceId: adminId,
+      ipAddress,
+      userAgent,
+    });
+    return result;
   }
 
   @Patch(`:adminId`)
-  updateAdmin(
+  async updateAdmin(
     @Identity() admin: AdminModel,
     @Param(`adminId`) adminId: string,
     @Body(`action`) action: `delete` | `restore`,
+    @Req() req: express.Request,
   ) {
     if (admin.type !== `SUPER`) {
       throw new BadRequestException(adminErrorCodes.ADMIN_ONLY_SUPER_CAN_UPDATE_ADMINS);
@@ -76,7 +100,17 @@ export class AdminAdminsController {
     if (action === `delete` && adminId === admin.id) {
       throw new BadRequestException(adminErrorCodes.ADMIN_CANNOT_DELETE_YOURSELF);
     }
-    return this.service.updateAdminStatus(adminId, action);
+    const result = await this.service.updateAdminStatus(adminId, action);
+    const { ipAddress, userAgent } = getIpAndUserAgent(req);
+    await this.adminActionAudit.record({
+      adminId: admin.id,
+      action: action === `delete` ? ADMIN_ACTION_AUDIT_ACTIONS.admin_delete : ADMIN_ACTION_AUDIT_ACTIONS.admin_restore,
+      resource: `admin`,
+      resourceId: adminId,
+      ipAddress,
+      userAgent,
+    });
+    return result;
   }
 
   @Post(`system/migrate-payment-methods`)

@@ -5,8 +5,10 @@ import useSWRMutation from 'swr/mutation';
 import { mutationFetcher } from './swr-config';
 import {
   queryKeys,
+  type ActionAuditItem,
   type AdminDetails,
   type AdminMe,
+  type AuthAuditItem,
   type Consumer,
   type PaymentRequest,
   type LedgerEntry,
@@ -131,6 +133,28 @@ export function useLedgerAnomalies() {
 
 export function useVerificationQueue() {
   return useSWR<VerificationQueueItem[]>(queryKeys.dashboard.verificationQueue());
+}
+
+export function useAuditAuth(filters?: {
+  email?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  page?: number;
+  pageSize?: number;
+}) {
+  return useSWR<PaginatedResponse<AuthAuditItem>>(queryKeys.audit.auth(filters));
+}
+
+export function useAuditActions(filters?: {
+  action?: string;
+  adminId?: string;
+  email?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  page?: number;
+  pageSize?: number;
+}) {
+  return useSWR<PaginatedResponse<ActionAuditItem>>(queryKeys.audit.actions(filters));
 }
 
 // Generic mutation hook for optimistic updates

@@ -5,6 +5,7 @@ import { $Enums, Prisma } from '@remoola/database-2';
 import { adminErrorCodes } from '@remoola/shared-constants';
 
 import { type ConsumerVerificationUpdate } from '../../../dtos/admin';
+import { AdminActionAuditService, ADMIN_ACTION_AUDIT_ACTIONS } from '../../../shared/admin-action-audit.service';
 import { PrismaService } from '../../../shared/prisma.service';
 
 const SEARCH_MAX_LEN = 200;
@@ -14,7 +15,10 @@ const CONTRACTOR_KINDS = Object.values($Enums.ContractorKind) as string[];
 
 @Injectable()
 export class AdminConsumersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly adminActionAudit: AdminActionAuditService,
+  ) {}
 
   /** Bounded list with search/filter (fintech-safe). */
   async findAllConsumers(params?: {
@@ -92,12 +96,20 @@ export class AdminConsumersService {
     });
   }
 
-  async updateVerification(id: string, payload: ConsumerVerificationUpdate) {
+  async updateVerification(id: string, payload: ConsumerVerificationUpdate, adminId: string) {
     const now = new Date();
+    const includeRelation = {
+      personalDetails: true,
+      organizationDetails: true,
+      addressDetails: true,
+      googleProfileDetails: true,
+      consumerResources: { include: { resource: true } },
+    };
 
+    let result;
     switch (payload.action) {
       case VERIFICATION_ACTION.APPROVE:
-        return this.prisma.consumerModel.update({
+        result = await this.prisma.consumerModel.update({
           where: { id },
           data: {
             verified: true,
@@ -106,18 +118,11 @@ export class AdminConsumersService {
             verificationReason: payload.reason ?? null,
             verificationUpdatedAt: now,
           },
-          include: {
-            personalDetails: true,
-            organizationDetails: true,
-            addressDetails: true,
-            googleProfileDetails: true,
-            consumerResources: {
-              include: { resource: true },
-            },
-          },
+          include: includeRelation,
         });
+        break;
       case VERIFICATION_ACTION.REJECT:
-        return this.prisma.consumerModel.update({
+        result = await this.prisma.consumerModel.update({
           where: { id },
           data: {
             verified: false,
@@ -126,18 +131,11 @@ export class AdminConsumersService {
             verificationReason: payload.reason ?? null,
             verificationUpdatedAt: now,
           },
-          include: {
-            personalDetails: true,
-            organizationDetails: true,
-            addressDetails: true,
-            googleProfileDetails: true,
-            consumerResources: {
-              include: { resource: true },
-            },
-          },
+          include: includeRelation,
         });
+        break;
       case VERIFICATION_ACTION.MORE_INFO:
-        return this.prisma.consumerModel.update({
+        result = await this.prisma.consumerModel.update({
           where: { id },
           data: {
             verified: false,
@@ -146,36 +144,31 @@ export class AdminConsumersService {
             verificationReason: payload.reason ?? null,
             verificationUpdatedAt: now,
           },
-          include: {
-            personalDetails: true,
-            organizationDetails: true,
-            addressDetails: true,
-            googleProfileDetails: true,
-            consumerResources: {
-              include: { resource: true },
-            },
-          },
+          include: includeRelation,
         });
+        break;
       case VERIFICATION_ACTION.FLAG:
-        return this.prisma.consumerModel.update({
+        result = await this.prisma.consumerModel.update({
           where: { id },
           data: {
             verificationStatus: VERIFICATION_STATUS.FLAGGED,
             verificationReason: payload.reason ?? null,
             verificationUpdatedAt: now,
           },
-          include: {
-            personalDetails: true,
-            organizationDetails: true,
-            addressDetails: true,
-            googleProfileDetails: true,
-            consumerResources: {
-              include: { resource: true },
-            },
-          },
+          include: includeRelation,
         });
+        break;
       default:
         throw new BadRequestException(adminErrorCodes.ADMIN_UNSUPPORTED_VERIFICATION_ACTION);
     }
+
+    await this.adminActionAudit.record({
+      adminId,
+      action: ADMIN_ACTION_AUDIT_ACTIONS.consumer_verification_update,
+      resource: `consumer`,
+      resourceId: id,
+      metadata: { action: payload.action, reason: payload.reason ?? null },
+    });
+    return result;
   }
 }

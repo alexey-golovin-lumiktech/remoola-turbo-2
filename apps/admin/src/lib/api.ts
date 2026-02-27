@@ -1,6 +1,7 @@
 import { ApiErrorSchema, type ApiErrorShape, type ApiResponseShape } from '@remoola/api-types';
 
 import { clientLogger } from './logger';
+import { handleSessionExpired, UNAUTHORIZED_MESSAGE } from './session-expired';
 
 export { ApiErrorSchema };
 
@@ -72,7 +73,14 @@ export class ApiClient {
       if (!response.ok) {
         const errorText = await response.text();
         const error = this.parseError(errorText);
-
+        if (response.status === 401) {
+          handleSessionExpired();
+          return {
+            ok: false,
+            status: 401,
+            error: { message: UNAUTHORIZED_MESSAGE, code: `UNAUTHORIZED` },
+          };
+        }
         return {
           ok: false,
           status: response.status,

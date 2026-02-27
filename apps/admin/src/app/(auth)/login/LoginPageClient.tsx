@@ -1,17 +1,21 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import styles from '../../../components/ui/classNames.module.css';
-import { apiFetch } from '../../../lib';
+import { apiFetch, resetSessionExpiredHandled } from '../../../lib';
 import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../../lib/error-messages';
 
 export function LoginPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const rawNext = searchParams.get(`next`) || `/dashboard`;
+
+  useEffect(() => {
+    resetSessionExpiredHandled();
+  }, []);
 
   const next = rawNext === `/` || rawNext === `/login` ? `/dashboard` : rawNext;
 

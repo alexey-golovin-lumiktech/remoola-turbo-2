@@ -1,8 +1,12 @@
-import { Body, Controller, Get, Param, Patch, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiBasicAuth } from '@nestjs/swagger';
+
+import { type AdminModel } from '@remoola/database-2';
 
 import { AdminConsumersService } from './admin-consumers.service';
 import { AdminConsumersListQuery } from './dto';
+import { JwtAuthGuard } from '../../../auth/jwt.guard';
+import { Identity } from '../../../common';
 import { ConsumerVerificationUpdate } from '../../../dtos/admin';
 
 function one(v: string | string[] | undefined): string | undefined {
@@ -27,6 +31,7 @@ function parseConsumersListQuery(dto: AdminConsumersListQuery) {
   };
 }
 
+@UseGuards(JwtAuthGuard)
 @ApiTags(`Admin: Consumers`)
 @ApiBearerAuth(`bearer`) // 👈 tells Swagger to attach Bearer token
 @ApiBasicAuth(`basic`) // 👈 optional, if this route also accepts Basic Auth
@@ -45,7 +50,7 @@ export class AdminConsumersController {
   }
 
   @Patch(`:id/verification`)
-  updateVerification(@Param(`id`) id: string, @Body() body: ConsumerVerificationUpdate) {
-    return this.service.updateVerification(id, body);
+  updateVerification(@Identity() admin: AdminModel, @Param(`id`) id: string, @Body() body: ConsumerVerificationUpdate) {
+    return this.service.updateVerification(id, body, admin.id);
   }
 }

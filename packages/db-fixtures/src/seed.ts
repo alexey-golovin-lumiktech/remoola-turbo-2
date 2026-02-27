@@ -17,7 +17,12 @@ import { type FixtureOptions } from './options';
 const FIXTURE_PREFIX = `fixture`;
 const SEED_RUN_SUFFIX = randomUUID().slice(0, 8);
 
+/** Tables truncated in refresh mode. Order: children before
+ * parents where FK exists. CASCADE truncates tables that reference these. */
 const APP_TABLES = [
+  `auth_audit_log`,
+  `auth_login_lockout`,
+  `admin_action_audit_log`,
   `access_refresh_token`,
   `address_details`,
   `admin`,
@@ -32,6 +37,8 @@ const APP_TABLES = [
   `organization_details`,
   `payment_method`,
   `payment_request`,
+  `ledger_entry_outcome`,
+  `ledger_entry_dispute`,
   `ledger_entry`,
   `payment_request_attachment`,
   `personal_details`,
@@ -684,8 +691,7 @@ export async function seedAllTables(prisma: PrismaClient, options: FixtureOption
   inserted.scheduled_fx_conversion = options.perTable;
 
   try {
-    // Table has no UNIQUE on payment_request_id; ON CONFLICT DO NOTHING
-    // is a no-op unless a constraint is added (raw-sql-issues.md).
+    // Table was dropped in migration 20260219140433; skip if missing.
     await prisma.$executeRawUnsafe(`
       INSERT INTO "payment_request_expectation_date_archive" (
         "payment_request_id",
@@ -701,11 +707,10 @@ export async function seedAllTables(prisma: PrismaClient, options: FixtureOption
       LIMIT ${paymentRequestTarget}
       ON CONFLICT DO NOTHING
     `);
+    inserted.payment_request_expectation_date_archive = paymentRequestTarget;
   } catch {
-    // Archive table may not exist in DBs where migration is not applied yet.
+    // Table no longer exists in current schema (removed in get_rid_unused migration).
   }
-
-  inserted.payment_request_expectation_date_archive = paymentRequestTarget;
 
   return {
     perTableLimit: options.perTable,

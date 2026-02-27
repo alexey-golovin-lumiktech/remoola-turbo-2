@@ -109,8 +109,8 @@ export class AdminExchangeController {
   }
 
   @Post(`scheduled/:conversionId/cancel`)
-  cancelScheduled(@Param(`conversionId`) conversionId: string) {
-    return this.service.cancelScheduledConversion(conversionId);
+  cancelScheduled(@Identity() admin: AdminModel, @Param(`conversionId`) conversionId: string) {
+    return this.service.cancelScheduledConversion(conversionId, admin.id);
   }
 
   @Post(`scheduled/:conversionId/execute`)

@@ -45,9 +45,11 @@ export function ConsumersPageClient() {
           <h1 className={styles.adminPageTitle}>Consumers</h1>
           <p className={styles.adminPageSubtitle}>Consumer + joined details (personal/org/address/google).</p>
         </div>
-        <button type="button" className={styles.adminPrimaryButton} onClick={handleRefresh}>
-          Refresh
-        </button>
+        <div className={styles.adminActionRow}>
+          <button type="button" className={styles.adminPrimaryButton} onClick={handleRefresh}>
+            Refresh
+          </button>
+        </div>
       </div>
 
       <div className={styles.adminCard}>
