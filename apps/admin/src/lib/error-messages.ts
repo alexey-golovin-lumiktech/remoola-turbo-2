@@ -32,6 +32,7 @@ const API_ERROR_MAP: Record<string, string> = {
   [adminErrorCodes.ADMIN_UNSUPPORTED_ADMIN_ACTION]: `This action is not supported.`,
   [adminErrorCodes.ADMIN_CANNOT_DELETE_YOURSELF]: `You cannot delete your own admin account.`,
   [adminErrorCodes.ADMIN_ONLY_SUPER_CAN_RUN_MIGRATIONS]: `Only SUPER admins can run system migrations.`,
+  [adminErrorCodes.ADMIN_ONLY_SUPER_CAN_VIEW_AUDIT]: `Only SUPER admins can view audit logs.`,
   [adminErrorCodes.ADMIN_PASSWORD_CONFIRMATION_REQUIRED]: `Re-enter your password to confirm this action.`,
   [adminErrorCodes.ADMIN_PASSWORD_CONFIRMATION_INVALID]: `Password does not match. Try again.`,
 
@@ -102,6 +103,8 @@ export const localToastKeys = {
   LOAD_STATUS_TOTALS: `LOAD_STATUS_TOTALS`,
   LOAD_RECENT_REQUESTS: `LOAD_RECENT_REQUESTS`,
   LOAD_VERIFICATION_QUEUE: `LOAD_VERIFICATION_QUEUE`,
+  LOAD_AUDIT_AUTH: `LOAD_AUDIT_AUTH`,
+  LOAD_AUDIT_ACTIONS: `LOAD_AUDIT_ACTIONS`,
 
   // Payment request / reversal
   REVERSAL_ONLY_COMPLETED: `REVERSAL_ONLY_COMPLETED`,
@@ -160,6 +163,8 @@ const LOCAL_TOAST_MESSAGE_MAP: Record<string, string> = {
   [localToastKeys.LOAD_STATUS_TOTALS]: `Couldn't load status totals`,
   [localToastKeys.LOAD_RECENT_REQUESTS]: `Couldn't load recent requests`,
   [localToastKeys.LOAD_VERIFICATION_QUEUE]: `Couldn't load verification queue`,
+  [localToastKeys.LOAD_AUDIT_AUTH]: `Couldn't load auth audit`,
+  [localToastKeys.LOAD_AUDIT_ACTIONS]: `Couldn't load action audit`,
 
   // Payment request detail — reversal form / confirm
   [localToastKeys.REVERSAL_ONLY_COMPLETED]: `Only completed requests can be reversed`,

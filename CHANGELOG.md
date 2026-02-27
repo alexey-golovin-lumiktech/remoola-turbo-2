@@ -1026,6 +1026,10 @@
   - Admin app: Audit page (Auth log and Actions tabs), proxy API routes, SWR
     hooks and types, Sidebar link for SUPER admins; filters and table layout
     aligned with Exchange Rate view.
+  - Admin audit: Next.js proxy routes GET `/api/audit/auth` and
+    GET `/api/audit/actions` and `/audit` page with Auth log and Actions tabs
+    (filters, pagination, SUPER-only redirect); local toast keys and error
+    mapping for audit load failures.
 
   ### 🔐 Security / Financial Safety
   - Session expiry handling ensures tokens and cookies are cleared before
