@@ -78,6 +78,8 @@ yarn db:seed
 
 ## Documentation
 
+Project root `docs/` are synced(single source of truth for features, API, safety, and design rules).
+
 - `README.md` — this file (setup, commands, repo layout).
 - `docs/PROJECT_SUMMARY.md` — high-level project overview (start here).
 - `docs/PROJECT_DOCUMENTATION.md` — overview of API (base path `/api`), admin, consumer, and database.

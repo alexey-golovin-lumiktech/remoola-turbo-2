@@ -30,6 +30,7 @@ export function LedgerTableBlock({
   typeFilter,
   statusFilter,
   includeDeleted,
+  refreshKey,
 }: LedgerTableBlockProps) {
   const [items, setItems] = useState<LedgerEntry[]>([]);
   const [total, setTotal] = useState(0);
@@ -67,7 +68,8 @@ export function LedgerTableBlock({
     setItems(data.items ?? []);
     setTotal(data.total ?? 0);
     setLoading(false);
-  }, [page, pageSize, q, typeFilter, statusFilter, includeDeleted]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refreshKey triggers refetch when Refresh is clicked
+  }, [page, pageSize, q, typeFilter, statusFilter, includeDeleted, refreshKey]);
 
   useEffect(() => {
     void load();
@@ -119,6 +121,11 @@ export function LedgerTableBlock({
           >
             Next
           </button>
+          {loading && items.length > 0 && (
+            <span className={styles.adminTextGray500} style={{ marginLeft: `0.5rem` }}>
+              Updating…
+            </span>
+          )}
         </div>
       )}
 
@@ -131,81 +138,102 @@ export function LedgerTableBlock({
       )}
 
       {total > 0 && (
-        <DataTable<LedgerEntry>
-          rows={items}
-          getRowKeyAction={(r) => r.id}
-          columns={[
-            {
-              key: `ledgerId`,
-              header: `Ledger`,
-              render: (r) => <span className={styles.adminMonoCode}>{r.ledgerId.slice(0, 8)}…</span>,
-            },
-            {
-              key: `consumer`,
-              header: `Consumer`,
-              render: (r) => (
-                <Link href={`/consumers/${r.consumerId}`} className={styles.adminMonoCode}>
-                  {r.consumerId.slice(0, 8)}…
-                </Link>
-              ),
-            },
-            {
-              key: `paymentRequest`,
-              header: `Payment Request`,
-              render: (r) =>
-                r.paymentRequestId ? (
-                  <Link href={`/payment-requests/${r.paymentRequestId}`} className={styles.adminMonoCode}>
-                    {r.paymentRequestId.slice(0, 8)}…
+        <div style={{ position: `relative` }}>
+          {loading && items.length > 0 && (
+            <div
+              style={{
+                position: `absolute`,
+                inset: 0,
+                background: `rgba(255,255,255,0.5)`,
+                display: `flex`,
+                alignItems: `center`,
+                justifyContent: `center`,
+                zIndex: 1,
+                pointerEvents: `none`,
+              }}
+              aria-hidden
+            >
+              <span className={styles.adminTextGray500}>Updating table…</span>
+            </div>
+          )}
+          <DataTable<LedgerEntry>
+            rows={items}
+            getRowKeyAction={(r) => r.id}
+            columns={[
+              {
+                key: `ledgerId`,
+                header: `Ledger`,
+                render: (r) => <span className={styles.adminMonoCode}>{r.ledgerId.slice(0, 8)}…</span>,
+              },
+              {
+                key: `consumer`,
+                header: `Consumer`,
+                render: (r) => (
+                  <Link href={`/consumers/${r.consumerId}`} className={styles.adminMonoCode}>
+                    {r.consumerId.slice(0, 8)}…
                   </Link>
-                ) : (
-                  <span className={styles.adminTextGray600}>—</span>
                 ),
-            },
-            {
-              key: `type`,
-              header: `Type`,
-              render: (r) => <span className={styles.adminTextGray700}>{r.type}</span>,
-            },
-            {
-              key: `status`,
-              header: `Status`,
-              render: (r) => <StatusPill value={r.status} />,
-            },
-            {
-              key: `amt`,
-              header: `Amount`,
-              render: (r) => (
-                <span className={styles.adminTextMedium}>
-                  {r.currencyCode} {r.amount}
-                </span>
-              ),
-            },
-            {
-              key: `fees`,
-              header: `Fees`,
-              render: (r) => (
-                <span className={styles.adminTextGray700}>
-                  {r.feesAmount ? `${r.feesAmount} (${r.feesType})` : `—`}
-                </span>
-              ),
-            },
-            {
-              key: `stripe`,
-              header: `Stripe`,
-              render: (r) => <span className={styles.adminTextGray600}>{r.stripeId ?? `—`}</span>,
-            },
-            {
-              key: `idem`,
-              header: `Idempotency`,
-              render: (r) => <span className={styles.adminTextGray600}>{r.idempotencyKey ?? `—`}</span>,
-            },
-            {
-              key: `created`,
-              header: `Created`,
-              render: (r) => <span className={styles.adminTextGray600}>{new Date(r.createdAt).toLocaleString()}</span>,
-            },
-          ]}
-        />
+              },
+              {
+                key: `paymentRequest`,
+                header: `Payment Request`,
+                render: (r) =>
+                  r.paymentRequestId ? (
+                    <Link href={`/payment-requests/${r.paymentRequestId}`} className={styles.adminMonoCode}>
+                      {r.paymentRequestId.slice(0, 8)}…
+                    </Link>
+                  ) : (
+                    <span className={styles.adminTextGray600}>—</span>
+                  ),
+              },
+              {
+                key: `type`,
+                header: `Type`,
+                render: (r) => <span className={styles.adminTextGray700}>{r.type}</span>,
+              },
+              {
+                key: `status`,
+                header: `Status`,
+                render: (r) => <StatusPill value={r.status} />,
+              },
+              {
+                key: `amt`,
+                header: `Amount`,
+                render: (r) => (
+                  <span className={styles.adminTextMedium}>
+                    {r.currencyCode} {r.amount}
+                  </span>
+                ),
+              },
+              {
+                key: `fees`,
+                header: `Fees`,
+                render: (r) => (
+                  <span className={styles.adminTextGray700}>
+                    {r.feesAmount ? `${r.feesAmount} (${r.feesType})` : `—`}
+                  </span>
+                ),
+              },
+              {
+                key: `stripe`,
+                header: `Stripe`,
+                render: (r) => <span className={styles.adminTextGray600}>{r.stripeId ?? `—`}</span>,
+              },
+              {
+                key: `idem`,
+                header: `Idempotency`,
+                render: (r) => <span className={styles.adminTextGray600}>{r.idempotencyKey ?? `—`}</span>,
+              },
+              {
+                key: `created`,
+                header: `Created`,
+                render: (r) => (
+                  <span className={styles.adminTextGray600}>{new Date(r.createdAt).toLocaleString()}</span>
+                ),
+              },
+            ]}
+          />
+        </div>
       )}
     </>
   );

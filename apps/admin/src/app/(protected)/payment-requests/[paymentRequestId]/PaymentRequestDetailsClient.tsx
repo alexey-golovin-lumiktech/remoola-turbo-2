@@ -18,6 +18,7 @@ export function PaymentRequestDetailsClient({ paymentRequestId }: { paymentReque
   const [submitStatus, setSubmitStatus] = useState<`idle` | `submitting` | `success` | `error`>(`idle`);
   const [didInitAmount, setDidInitAmount] = useState(false);
   const [showReversalConfirmModal, setShowReversalConfirmModal] = useState(false);
+  const [reversalPasswordConfirmation, setReversalPasswordConfirmation] = useState(``);
 
   const loadPaymentRequest = useCallback(async (requestId: string): Promise<PaymentRequest | null> => {
     const response = await fetch(`/api/payment-requests/${requestId}`, { cache: `no-store`, credentials: `include` });
@@ -85,7 +86,13 @@ export function PaymentRequestDetailsClient({ paymentRequestId }: { paymentReque
 
   async function confirmReversal() {
     if (!canReverse) return;
+    const passwordTrimmed = reversalPasswordConfirmation.trim();
+    if (!passwordTrimmed) {
+      toast.error(getLocalToastMessage(localToastKeys.STEP_UP_PASSWORD_REQUIRED));
+      return;
+    }
     setShowReversalConfirmModal(false);
+    setReversalPasswordConfirmation(``);
     setSubmitStatus(`submitting`);
 
     const normalizedAmount = amount.trim();
@@ -101,6 +108,7 @@ export function PaymentRequestDetailsClient({ paymentRequestId }: { paymentReque
         body: JSON.stringify({
           amount: parsedAmount,
           reason: reason.trim() || undefined,
+          passwordConfirmation: passwordTrimmed,
         }),
       });
 
@@ -153,9 +161,11 @@ export function PaymentRequestDetailsClient({ paymentRequestId }: { paymentReque
         <div className={styles.adminCardTitle}>Refund / Chargeback</div>
         <div className={styles.adminCardContent}>
           <form className={styles.adminPageStack} onSubmit={openReversalConfirmModal}>
-            <label className={styles.adminFormLabelBlock}>
+            <label className={styles.adminFormLabelBlock} htmlFor="reversal-action">
               <span className={styles.adminFormLabelText}>Action</span>
               <select
+                id="reversal-action"
+                name="reversalType"
                 className={styles.adminFormInput}
                 value={reversalType}
                 onChange={(event) => setReversalType(event.target.value as `refund` | `chargeback`)}
@@ -164,22 +174,32 @@ export function PaymentRequestDetailsClient({ paymentRequestId }: { paymentReque
                 <option value="chargeback">Chargeback</option>
               </select>
             </label>
-            <label className={styles.adminFormLabelBlock}>
+            <label className={styles.adminFormLabelBlock} htmlFor="reversal-amount">
               <span className={styles.adminFormLabelText}>Amount</span>
               <input
+                id="reversal-amount"
+                name="amount"
                 className={styles.adminFormInput}
                 value={amount}
                 onChange={(event) => setAmount(event.target.value)}
                 placeholder={`Defaults to full amount`}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
               />
             </label>
-            <label className={styles.adminFormLabelBlock}>
+            <label className={styles.adminFormLabelBlock} htmlFor="reversal-reason">
               <span className={styles.adminFormLabelText}>Reason (optional)</span>
               <textarea
+                id="reversal-reason"
+                name="reason"
                 className={styles.adminFormInput}
                 value={reason}
                 onChange={(event) => setReason(event.target.value)}
                 rows={3}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
               />
             </label>
 
@@ -225,16 +245,37 @@ export function PaymentRequestDetailsClient({ paymentRequestId }: { paymentReque
               </button>
             </div>
             <div className={styles.adminModalBody}>
+              <label className={styles.adminFormLabelBlock} htmlFor="reversal-password-confirm">
+                <span className={styles.adminFormLabelText}>Re-enter your password to continue</span>
+                <input
+                  id="reversal-password-confirm"
+                  name="passwordConfirmation"
+                  type="password"
+                  className={styles.adminFormInput}
+                  value={reversalPasswordConfirmation}
+                  onChange={(e) => setReversalPasswordConfirmation(e.target.value)}
+                  placeholder="Your password"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                />
+              </label>
               <div className={styles.adminModalFooter}>
                 <button
                   className={styles.adminModalCancel}
-                  onClick={(e) => (e.stopPropagation(), e.preventDefault(), setShowReversalConfirmModal(false))}
+                  onClick={(e) => (
+                    e.stopPropagation(),
+                    e.preventDefault(),
+                    setShowReversalConfirmModal(false),
+                    setReversalPasswordConfirmation(``)
+                  )}
                 >
                   Cancel
                 </button>
                 <button
                   className={styles.adminModalPrimary}
                   onClick={(e) => (e.stopPropagation(), e.preventDefault(), void confirmReversal())}
+                  disabled={!reversalPasswordConfirmation.trim()}
                 >
                   Confirm
                 </button>

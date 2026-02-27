@@ -47,6 +47,7 @@ export function ScheduledConversionsTableBlock({
   q,
   status,
   includeDeleted,
+  refreshKey,
 }: ScheduledConversionsTableBlockProps) {
   const [conversions, setConversions] = useState<ScheduledFxConversion[]>([]);
   const [total, setTotal] = useState(0);
@@ -84,7 +85,8 @@ export function ScheduledConversionsTableBlock({
     setConversions(data?.items ?? []);
     setTotal(data?.total ?? 0);
     setLoading(false);
-  }, [page, pageSize, q, status, includeDeleted]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refreshKey triggers refetch when Refresh is clicked
+  }, [page, pageSize, q, status, includeDeleted, refreshKey]);
 
   useEffect(() => {
     void load();
@@ -177,6 +179,11 @@ export function ScheduledConversionsTableBlock({
           >
             Next
           </button>
+          {loading && conversions.length > 0 && (
+            <span className={adminTextGray500} style={{ marginLeft: `0.5rem` }}>
+              Updating…
+            </span>
+          )}
         </div>
       )}
 
@@ -187,74 +194,93 @@ export function ScheduledConversionsTableBlock({
           </div>
         </div>
       ) : conversions.length > 0 ? (
-        <DataTable<ScheduledFxConversion>
-          rows={conversions}
-          getRowKeyAction={(r) => r.id}
-          columns={[
-            {
-              key: `id`,
-              header: `ID`,
-              render: (r) => <span className={adminMonoCode}>{r.id.slice(0, 8)}…</span>,
-            },
-            {
-              key: `consumer`,
-              header: `Consumer`,
-              render: (r) => (
-                <Link href={`/consumers/${r.consumerId}`} className={adminTextGray700}>
-                  {r.consumer?.email ?? r.consumerId.slice(0, 8) + `…`}
-                </Link>
-              ),
-            },
-            {
-              key: `pair`,
-              header: `Pair`,
-              render: (r) => (
-                <span className={adminTextGray700}>
-                  {r.fromCurrency} → {r.toCurrency}
-                </span>
-              ),
-            },
-            {
-              key: `amount`,
-              header: `Amount`,
-              render: (r) => <span className={adminTextGray700}>{r.amount}</span>,
-            },
-            {
-              key: `status`,
-              header: `Status`,
-              render: (r) => renderStatus(r.status),
-            },
-            {
-              key: `execute`,
-              header: `Execute At`,
-              render: (r) => <span className={adminTextGray600}>{new Date(r.executeAt).toLocaleString()}</span>,
-            },
-            {
-              key: `attempts`,
-              header: `Attempts`,
-              render: (r) => <span className={adminTextGray600}>{r.attempts}</span>,
-            },
-            {
-              key: `actions`,
-              header: `Actions`,
-              render: (r) => (
-                <div className={adminActionRow}>
-                  {(r.status === SCHEDULED_FX_CONVERSION_STATUS.PENDING ||
-                    r.status === SCHEDULED_FX_CONVERSION_STATUS.FAILED) && (
-                    <button className={adminActionButton} onClick={() => executeConversion(r)} type="button">
-                      Execute now
-                    </button>
-                  )}
-                  {r.status === SCHEDULED_FX_CONVERSION_STATUS.PENDING && (
-                    <button className={adminDeleteButton} onClick={() => cancelConversion(r)} type="button">
-                      Cancel
-                    </button>
-                  )}
-                </div>
-              ),
-            },
-          ]}
-        />
+        <div style={{ position: `relative` }}>
+          {loading && conversions.length > 0 && (
+            <div
+              style={{
+                position: `absolute`,
+                inset: 0,
+                background: `rgba(255,255,255,0.5)`,
+                display: `flex`,
+                alignItems: `center`,
+                justifyContent: `center`,
+                zIndex: 1,
+                pointerEvents: `none`,
+              }}
+              aria-hidden
+            >
+              <span className={adminTextGray500}>Updating table…</span>
+            </div>
+          )}
+          <DataTable<ScheduledFxConversion>
+            rows={conversions}
+            getRowKeyAction={(r) => r.id}
+            columns={[
+              {
+                key: `id`,
+                header: `ID`,
+                render: (r) => <span className={adminMonoCode}>{r.id.slice(0, 8)}…</span>,
+              },
+              {
+                key: `consumer`,
+                header: `Consumer`,
+                render: (r) => (
+                  <Link href={`/consumers/${r.consumerId}`} className={adminTextGray700}>
+                    {r.consumer?.email ?? r.consumerId.slice(0, 8) + `…`}
+                  </Link>
+                ),
+              },
+              {
+                key: `pair`,
+                header: `Pair`,
+                render: (r) => (
+                  <span className={adminTextGray700}>
+                    {r.fromCurrency} → {r.toCurrency}
+                  </span>
+                ),
+              },
+              {
+                key: `amount`,
+                header: `Amount`,
+                render: (r) => <span className={adminTextGray700}>{r.amount}</span>,
+              },
+              {
+                key: `status`,
+                header: `Status`,
+                render: (r) => renderStatus(r.status),
+              },
+              {
+                key: `execute`,
+                header: `Execute At`,
+                render: (r) => <span className={adminTextGray600}>{new Date(r.executeAt).toLocaleString()}</span>,
+              },
+              {
+                key: `attempts`,
+                header: `Attempts`,
+                render: (r) => <span className={adminTextGray600}>{r.attempts}</span>,
+              },
+              {
+                key: `actions`,
+                header: `Actions`,
+                render: (r) => (
+                  <div className={adminActionRow}>
+                    {(r.status === SCHEDULED_FX_CONVERSION_STATUS.PENDING ||
+                      r.status === SCHEDULED_FX_CONVERSION_STATUS.FAILED) && (
+                      <button className={adminActionButton} onClick={() => executeConversion(r)} type="button">
+                        Execute now
+                      </button>
+                    )}
+                    {r.status === SCHEDULED_FX_CONVERSION_STATUS.PENDING && (
+                      <button className={adminDeleteButton} onClick={() => cancelConversion(r)} type="button">
+                        Cancel
+                      </button>
+                    )}
+                  </div>
+                ),
+              },
+            ]}
+          />
+        </div>
       ) : null}
     </>
   );

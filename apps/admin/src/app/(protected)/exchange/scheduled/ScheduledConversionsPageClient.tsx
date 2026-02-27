@@ -70,17 +70,25 @@ export function ScheduledConversionsPageClient() {
       <div className={adminCard}>
         <div className={adminCardContent}>
           <div className={adminFilterRow}>
-            <label className={adminFormLabelBlock}>
+            <label className={adminFormLabelBlock} htmlFor="scheduled-conversions-search">
               <span className={adminFormLabelText}>Search</span>
               <SearchWithClear
+                id="scheduled-conversions-search"
+                name="q"
                 value={query}
                 onChangeAction={setQuery}
                 placeholder="Consumer email, conversion id, pair"
               />
             </label>
-            <label className={adminFormLabelBlock}>
+            <label className={adminFormLabelBlock} htmlFor="scheduled-conversions-status">
               <span className={adminFormLabelText}>Status</span>
-              <select className={adminFormInput} value={status} onChange={(e) => setStatus(e.target.value)}>
+              <select
+                id="scheduled-conversions-status"
+                name="status"
+                className={adminFormInput}
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+              >
                 <option value="all">All</option>
                 <option value="PENDING">PENDING</option>
                 <option value="PROCESSING">PROCESSING</option>
@@ -97,8 +105,10 @@ export function ScheduledConversionsPageClient() {
           </div>
           <div className={adminFilterCheckboxesRow}>
             <div className={adminFilterCheckboxes}>
-              <label className={adminCheckboxLabel}>
+              <label className={adminCheckboxLabel} htmlFor="scheduled-conversions-include-deleted">
                 <input
+                  id="scheduled-conversions-include-deleted"
+                  name="includeDeleted"
                   type="checkbox"
                   checked={includeDeleted}
                   onChange={(e) => {

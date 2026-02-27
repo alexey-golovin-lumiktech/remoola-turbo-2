@@ -50,9 +50,11 @@ export function LedgerPageClient() {
       <div className={styles.adminCard}>
         <div className={styles.adminCardContent}>
           <div className={styles.adminFilterRow}>
-            <label className={styles.adminFormLabelBlock} style={{ marginBottom: 0 }}>
+            <label className={styles.adminFormLabelBlock} style={{ marginBottom: 0 }} htmlFor="ledger-search">
               <span className={styles.adminFormLabelText}>Search</span>
               <SearchWithClear
+                id="ledger-search"
+                name="q"
                 value={q}
                 onChangeAction={(v) => {
                   setQ(v);
@@ -61,9 +63,11 @@ export function LedgerPageClient() {
                 placeholder="ID, ledger ID, payment request ID"
               />
             </label>
-            <label className={styles.adminFormLabelBlock} style={{ marginBottom: 0 }}>
+            <label className={styles.adminFormLabelBlock} style={{ marginBottom: 0 }} htmlFor="ledger-type-filter">
               <span className={styles.adminFormLabelText}>Type</span>
               <select
+                id="ledger-type-filter"
+                name="typeFilter"
                 className={styles.adminFormInput}
                 value={typeFilter}
                 onChange={(e) => {
@@ -79,9 +83,11 @@ export function LedgerPageClient() {
                 ))}
               </select>
             </label>
-            <label className={styles.adminFormLabelBlock} style={{ marginBottom: 0 }}>
+            <label className={styles.adminFormLabelBlock} style={{ marginBottom: 0 }} htmlFor="ledger-status-filter">
               <span className={styles.adminFormLabelText}>Status</span>
               <select
+                id="ledger-status-filter"
+                name="statusFilter"
                 className={styles.adminFormInput}
                 value={statusFilter}
                 onChange={(e) => {
@@ -105,8 +111,10 @@ export function LedgerPageClient() {
           </div>
           <div className={styles.adminFilterCheckboxesRow}>
             <div className={styles.adminFilterCheckboxes}>
-              <label className={styles.adminCheckboxLabel} style={{ marginBottom: 0 }}>
+              <label className={styles.adminCheckboxLabel} style={{ marginBottom: 0 }} htmlFor="ledger-include-deleted">
                 <input
+                  id="ledger-include-deleted"
+                  name="includeDeleted"
                   type="checkbox"
                   checked={includeDeleted}
                   onChange={(e) => {

@@ -27,6 +27,7 @@ export function PaymentRequestsTableBlock({
   q,
   status,
   includeDeleted,
+  refreshKey,
 }: PaymentRequestsTableBlockProps) {
   const [items, setItems] = useState<PaymentRequest[]>([]);
   const [total, setTotal] = useState(0);
@@ -63,7 +64,8 @@ export function PaymentRequestsTableBlock({
     setItems(data.items ?? []);
     setTotal(data.total ?? 0);
     setLoading(false);
-  }, [page, pageSize, q, status, includeDeleted]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refreshKey triggers refetch when Refresh is clicked
+  }, [page, pageSize, q, status, includeDeleted, refreshKey]);
 
   useEffect(() => {
     void load();
@@ -115,6 +117,11 @@ export function PaymentRequestsTableBlock({
           >
             Next
           </button>
+          {loading && items.length > 0 && (
+            <span className={styles.adminTextGray500} style={{ marginLeft: `0.5rem` }}>
+              Updating…
+            </span>
+          )}
         </div>
       )}
 
@@ -127,60 +134,81 @@ export function PaymentRequestsTableBlock({
       )}
 
       {total > 0 && (
-        <DataTable<PaymentRequest>
-          rows={items}
-          getRowKeyAction={(r) => r.id}
-          rowHrefAction={(r) => `/payment-requests/${r.id}`}
-          columns={[
-            {
-              key: `id`,
-              header: `ID`,
-              render: (r) => <span className={styles.adminMonoCode}>{r.id ? `${r.id.slice(0, 8)}…` : `—`}</span>,
-            },
-            {
-              key: `status`,
-              header: `Status`,
-              render: (r) => <StatusPill value={r.status} />,
-            },
-            {
-              key: `amount`,
-              header: `Amount`,
-              render: (r) => (
-                <span className={styles.adminTextMedium}>
-                  {r.currencyCode} {r.amount}
-                </span>
-              ),
-            },
-            {
-              key: `rail`,
-              header: `Rail`,
-              render: (r) => <span className={styles.adminTextGray700}>{r.paymentRail ?? `—`}</span>,
-            },
-            {
-              key: `payer`,
-              header: `Payer`,
-              render: (r) => (
-                <span className={styles.adminTextGray700}>
-                  {r.payer?.email ?? r.payerEmail ?? (r.payerId ? `${r.payerId.slice(0, 8)}…` : `—`)}
-                </span>
-              ),
-            },
-            {
-              key: `req`,
-              header: `Requester`,
-              render: (r) => (
-                <span className={styles.adminTextGray700}>
-                  {r.requester?.email ?? (r.requesterId ? `${r.requesterId.slice(0, 8)}…` : `—`)}
-                </span>
-              ),
-            },
-            {
-              key: `created`,
-              header: `Created`,
-              render: (r) => <span className={styles.adminTextGray600}>{new Date(r.createdAt).toLocaleString()}</span>,
-            },
-          ]}
-        />
+        <div style={{ position: `relative` }}>
+          {loading && items.length > 0 && (
+            <div
+              style={{
+                position: `absolute`,
+                inset: 0,
+                background: `rgba(255,255,255,0.5)`,
+                display: `flex`,
+                alignItems: `center`,
+                justifyContent: `center`,
+                zIndex: 1,
+                pointerEvents: `none`,
+              }}
+              aria-hidden
+            >
+              <span className={styles.adminTextGray500}>Updating table…</span>
+            </div>
+          )}
+          <DataTable<PaymentRequest>
+            rows={items}
+            getRowKeyAction={(r) => r.id}
+            rowHrefAction={(r) => `/payment-requests/${r.id}`}
+            columns={[
+              {
+                key: `id`,
+                header: `ID`,
+                render: (r) => <span className={styles.adminMonoCode}>{r.id ? `${r.id.slice(0, 8)}…` : `—`}</span>,
+              },
+              {
+                key: `status`,
+                header: `Status`,
+                render: (r) => <StatusPill value={r.status} />,
+              },
+              {
+                key: `amount`,
+                header: `Amount`,
+                render: (r) => (
+                  <span className={styles.adminTextMedium}>
+                    {r.currencyCode} {r.amount}
+                  </span>
+                ),
+              },
+              {
+                key: `rail`,
+                header: `Rail`,
+                render: (r) => <span className={styles.adminTextGray700}>{r.paymentRail ?? `—`}</span>,
+              },
+              {
+                key: `payer`,
+                header: `Payer`,
+                render: (r) => (
+                  <span className={styles.adminTextGray700}>
+                    {r.payer?.email ?? r.payerEmail ?? (r.payerId ? `${r.payerId.slice(0, 8)}…` : `—`)}
+                  </span>
+                ),
+              },
+              {
+                key: `req`,
+                header: `Requester`,
+                render: (r) => (
+                  <span className={styles.adminTextGray700}>
+                    {r.requester?.email ?? (r.requesterId ? `${r.requesterId.slice(0, 8)}…` : `—`)}
+                  </span>
+                ),
+              },
+              {
+                key: `created`,
+                header: `Created`,
+                render: (r) => (
+                  <span className={styles.adminTextGray600}>{new Date(r.createdAt).toLocaleString()}</span>
+                ),
+              },
+            ]}
+          />
+        </div>
       )}
     </>
   );

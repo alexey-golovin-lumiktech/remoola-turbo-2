@@ -55,9 +55,11 @@ export function ConsumersPageClient() {
       <div className={styles.adminCard}>
         <div className={styles.adminCardContent}>
           <div className={styles.adminFilterRow}>
-            <label className={styles.adminFormLabelBlock} style={{ marginBottom: 0 }}>
+            <label className={styles.adminFormLabelBlock} style={{ marginBottom: 0 }} htmlFor="consumers-search">
               <span className={styles.adminFormLabelText}>Search</span>
               <SearchWithClear
+                id="consumers-search"
+                name="q"
                 value={q}
                 onChangeAction={(v) => {
                   setQ(v);
@@ -66,9 +68,11 @@ export function ConsumersPageClient() {
                 placeholder="Email"
               />
             </label>
-            <label className={styles.adminFormLabelBlock} style={{ marginBottom: 0 }}>
+            <label className={styles.adminFormLabelBlock} style={{ marginBottom: 0 }} htmlFor="consumers-account-type">
               <span className={styles.adminFormLabelText}>Account type</span>
               <select
+                id="consumers-account-type"
+                name="accountType"
                 className={styles.adminFormInput}
                 value={accountType}
                 onChange={(e) => {
@@ -86,9 +90,15 @@ export function ConsumersPageClient() {
                 ))}
               </select>
             </label>
-            <label className={styles.adminFormLabelBlock} style={{ marginBottom: 0 }}>
+            <label
+              className={styles.adminFormLabelBlock}
+              style={{ marginBottom: 0 }}
+              htmlFor="consumers-contractor-kind"
+            >
               <span className={styles.adminFormLabelText}>Contractor Kind</span>
               <select
+                id="consumers-contractor-kind"
+                name="contractorKind"
                 className={styles.adminFormInput}
                 value={contractorKind}
                 onChange={(e) => {
@@ -110,9 +120,15 @@ export function ConsumersPageClient() {
                 ))}
               </select>
             </label>
-            <label className={styles.adminFormLabelBlock} style={{ marginBottom: 0 }}>
+            <label
+              className={styles.adminFormLabelBlock}
+              style={{ marginBottom: 0 }}
+              htmlFor="consumers-verification-status"
+            >
               <span className={styles.adminFormLabelText}>Verification</span>
               <select
+                id="consumers-verification-status"
+                name="verificationStatus"
                 className={styles.adminFormInput}
                 value={verificationStatus}
                 onChange={(e) => {
@@ -128,9 +144,11 @@ export function ConsumersPageClient() {
                 ))}
               </select>
             </label>
-            <label className={styles.adminFormLabelBlock} style={{ marginBottom: 0 }}>
+            <label className={styles.adminFormLabelBlock} style={{ marginBottom: 0 }} htmlFor="consumers-verified">
               <span className={styles.adminFormLabelText}>Verified</span>
               <select
+                id="consumers-verified"
+                name="verified"
                 className={styles.adminFormInput}
                 value={verified}
                 onChange={(e) => {
@@ -151,8 +169,14 @@ export function ConsumersPageClient() {
           </div>
           <div className={styles.adminFilterCheckboxesRow}>
             <div className={styles.adminFilterCheckboxes}>
-              <label className={styles.adminCheckboxLabel} style={{ marginBottom: 0 }}>
+              <label
+                className={styles.adminCheckboxLabel}
+                style={{ marginBottom: 0 }}
+                htmlFor="consumers-include-deleted"
+              >
                 <input
+                  id="consumers-include-deleted"
+                  name="includeDeleted"
                   type="checkbox"
                   checked={includeDeleted}
                   onChange={(e) => {

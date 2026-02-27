@@ -1045,6 +1045,51 @@
   - Admin list views (Ledger, Payment Requests, Consumers, Exchange Rules,
     Scheduled, Admins, Expectation Date Archive, Ledger Anomalies): header
     actions use `adminActionRow`; loading states aligned with Exchange Rate view.
+  - **Re-auth / step-up for critical actions**: Refund, chargeback, admin
+    delete, and admin password reset require re-entry of current admin password.
+    Backend: `AdminAuthService.verifyStepUp(adminId, passwordConfirmation)`;
+    `AdminAuthModule` exported for use in payment-requests and admins modules;
+    `PaymentReversalBody` and admin DTOs (`AdminPasswordPatchBody`,
+    `AdminUpdateBody`) include `passwordConfirmation`; error codes
+    `ADMIN_PASSWORD_CONFIRMATION_REQUIRED`, `ADMIN_PASSWORD_CONFIRMATION_INVALID`.
+    Admin app: reversal confirm modal and delete/reset-password modals show
+    "Re-enter your password to continue"; requests send `passwordConfirmation`.
+  - E2E: `admin-step-up.e2e-spec.ts` covers step-up on admin password reset
+    and admin delete (password confirmation required).
+
+  ### Fixed
+  - Admin list views: filter/search no longer triggers full view refresh;
+    `useAdmins` uses `keepPreviousData` and table-only "Updating…" overlay;
+    same overlay and pagination "Updating…" on Consumers, Payment Requests,
+    Ledger, Exchange Rules, Scheduled, Expectation Date Archive, Exchange Rates.
+  - Admins view: row action buttons (Reset password, Delete, Restore) stop
+    propagation so clicking them does not navigate via row link; `type="button"`
+    on all action and Create admin buttons.
+  - Admins view: reset password and search no longer autofilled by browser;
+    search placeholder "Search by email", modal password fields
+    `autoComplete="new-password"`.
+  - Admin reset password mutation: request URL fixed to `/api/admins/:id/password`
+    (origin-relative) so PATCH reaches Next.js API route.
+  - Admins list API: `useAdmins` key built via `adminsListUrl(filters)` so
+    query params are always sent; search and filters work reliably.
+  - Search inputs: native clear button hidden via CSS for
+    `adminSearchInputWithClear` so only one clear control is visible.
+  - Table block Refresh: `refreshKey` in `load` dependency array (with
+    eslint-disable) so Refresh button triggers refetch in all list table blocks.
+
+  ### Changed
+  - Admin app: all text inputs and textareas set
+    `autoComplete="off"` (or `new-password` where appropriate),
+    `autoCorrect="off"`, `autoCapitalize="off"` to avoid autofill/autocorrect.
+  - Admin API DTOs: `@Expose()` added on all properties of list/query DTOs
+    (admin-list-pagination, exchange rules/scheduled, consumers, ledger,
+    payment-requests, expectation-date-archive, audit auth/actions).
+  - Admin app forms: inputs and textareas have `id`/`name`; labels use
+    `htmlFor` for accessibility and correct form association.
+
+  ### 📄 Documentation
+  - Project root `docs/` and README.md updated with
+    doc-sync note (setup/commands/layout only).
 
 </details>
 

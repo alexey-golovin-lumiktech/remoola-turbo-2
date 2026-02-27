@@ -54,24 +54,32 @@ export function LoginPageClient() {
         <p className={styles.adminLoginSubtitle}>Sign in to manage Remoola.</p>
 
         <div className={styles.adminLoginFields}>
-          <label className={styles.adminLoginLabel}>
+          <label className={styles.adminLoginLabel} htmlFor="login-email">
             <div className={styles.adminLoginLabelText}>Email</div>
             <input
+              id="login-email"
+              name="email"
               className={styles.adminLoginInput}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
             />
           </label>
 
-          <label className={styles.adminLoginLabel}>
+          <label className={styles.adminLoginLabel} htmlFor="login-password">
             <div className={styles.adminLoginLabelText}>Password</div>
             <input
+              id="login-password"
+              name="password"
               className={styles.adminLoginInput}
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
             />
           </label>
 

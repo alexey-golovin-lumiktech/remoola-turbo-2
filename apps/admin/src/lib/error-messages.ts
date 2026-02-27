@@ -32,6 +32,8 @@ const API_ERROR_MAP: Record<string, string> = {
   [adminErrorCodes.ADMIN_UNSUPPORTED_ADMIN_ACTION]: `This action is not supported.`,
   [adminErrorCodes.ADMIN_CANNOT_DELETE_YOURSELF]: `You cannot delete your own admin account.`,
   [adminErrorCodes.ADMIN_ONLY_SUPER_CAN_RUN_MIGRATIONS]: `Only SUPER admins can run system migrations.`,
+  [adminErrorCodes.ADMIN_PASSWORD_CONFIRMATION_REQUIRED]: `Re-enter your password to confirm this action.`,
+  [adminErrorCodes.ADMIN_PASSWORD_CONFIRMATION_INVALID]: `Password does not match. Try again.`,
 
   // Admin consumers — verification
   [adminErrorCodes.ADMIN_UNSUPPORTED_VERIFICATION_ACTION]: `This verification action is not supported.`,
@@ -107,6 +109,9 @@ export const localToastKeys = {
   REVERSAL_CREATE_FAILED: `REVERSAL_CREATE_FAILED`,
   REVERSAL_CREATED: `REVERSAL_CREATED`,
 
+  // Step-up / re-auth
+  STEP_UP_PASSWORD_REQUIRED: `STEP_UP_PASSWORD_REQUIRED`,
+
   // Admins
   ADMIN_FORM_FIX_ERRORS: `ADMIN_FORM_FIX_ERRORS`,
   ADMIN_CREATE_FAILED: `ADMIN_CREATE_FAILED`,
@@ -161,6 +166,7 @@ const LOCAL_TOAST_MESSAGE_MAP: Record<string, string> = {
   [localToastKeys.REVERSAL_VALID_AMOUNT]: `Enter a valid amount`,
   [localToastKeys.REVERSAL_CREATE_FAILED]: `Couldn't create reversal`,
   [localToastKeys.REVERSAL_CREATED]: `Reversal created`,
+  [localToastKeys.STEP_UP_PASSWORD_REQUIRED]: `Re-enter your password to continue`,
 
   // Admins page — create modal, row actions, reset-password modal
   [localToastKeys.ADMIN_FORM_FIX_ERRORS]: `Fix form errors`,

@@ -6,11 +6,12 @@ import { type AdminModel } from '@remoola/database-2';
 import { adminErrorCodes } from '@remoola/shared-constants';
 
 import { AdminAdminsService } from './admin-admins.service';
-import { AdminAdminsListQuery } from './dto';
+import { AdminAdminsListQuery, AdminPasswordPatchBody, AdminUpdateBody } from './dto';
 import { JwtAuthGuard } from '../../../auth/jwt.guard';
 import { Identity } from '../../../common';
 import { StripeWebhookService } from '../../../consumer/modules/payment-methods/stripe-webhook.service';
 import { AdminActionAuditService, ADMIN_ACTION_AUDIT_ACTIONS } from '../../../shared/admin-action-audit.service';
+import { AdminAuthService } from '../../auth/admin-auth.service';
 
 function one(v: string | string[] | undefined): string | undefined {
   return (typeof v === `string` ? v : v?.[0])?.trim() || undefined;
@@ -47,6 +48,7 @@ function getIpAndUserAgent(req: express.Request): { ipAddress: string | null; us
 export class AdminAdminsController {
   constructor(
     private readonly service: AdminAdminsService,
+    private readonly adminAuthService: AdminAuthService,
     private readonly stripeWebhookService: StripeWebhookService,
     private readonly adminActionAudit: AdminActionAuditService,
   ) {}
@@ -65,13 +67,14 @@ export class AdminAdminsController {
   async patchAdminPassword(
     @Identity() admin: AdminModel,
     @Param(`adminId`) adminId: string,
-    @Body(`password`) password: string,
+    @Body() body: AdminPasswordPatchBody,
     @Req() req: express.Request,
   ) {
     if (admin.type !== `SUPER`) {
       throw new BadRequestException(adminErrorCodes.ADMIN_ONLY_SUPER_CAN_CHANGE_PASSWORDS);
     }
-    const result = await this.service.patchAdminPassword(adminId, password);
+    await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
+    const result = await this.service.patchAdminPassword(adminId, body.password);
     const { ipAddress, userAgent } = getIpAndUserAgent(req);
     await this.adminActionAudit.record({
       adminId: admin.id,
@@ -88,17 +91,25 @@ export class AdminAdminsController {
   async updateAdmin(
     @Identity() admin: AdminModel,
     @Param(`adminId`) adminId: string,
-    @Body(`action`) action: `delete` | `restore`,
+    @Body() body: AdminUpdateBody,
     @Req() req: express.Request,
   ) {
     if (admin.type !== `SUPER`) {
       throw new BadRequestException(adminErrorCodes.ADMIN_ONLY_SUPER_CAN_UPDATE_ADMINS);
     }
+    const action = body.action;
     if (action !== `delete` && action !== `restore`) {
       throw new BadRequestException(adminErrorCodes.ADMIN_UNSUPPORTED_ADMIN_ACTION);
     }
     if (action === `delete` && adminId === admin.id) {
       throw new BadRequestException(adminErrorCodes.ADMIN_CANNOT_DELETE_YOURSELF);
+    }
+    if (action === `delete`) {
+      const confirmation = typeof body.passwordConfirmation === `string` ? body.passwordConfirmation.trim() : ``;
+      if (confirmation.length === 0) {
+        throw new BadRequestException(adminErrorCodes.ADMIN_PASSWORD_CONFIRMATION_REQUIRED);
+      }
+      await this.adminAuthService.verifyStepUp(admin.id, confirmation);
     }
     const result = await this.service.updateAdminStatus(adminId, action);
     const { ipAddress, userAgent } = getIpAndUserAgent(req);

@@ -56,9 +56,11 @@ export function PaymentRequestsPageClient() {
       <div className={styles.adminCard}>
         <div className={styles.adminCardContent}>
           <div className={styles.adminFilterRow}>
-            <label className={styles.adminFormLabelBlock} style={{ marginBottom: 0 }}>
+            <label className={styles.adminFormLabelBlock} style={{ marginBottom: 0 }} htmlFor="payment-requests-search">
               <span className={styles.adminFormLabelText}>Search</span>
               <SearchWithClear
+                id="payment-requests-search"
+                name="q"
                 value={q}
                 onChangeAction={(v) => {
                   setQ(v);
@@ -67,9 +69,11 @@ export function PaymentRequestsPageClient() {
                 placeholder="ID, description, payer or requester email"
               />
             </label>
-            <label className={styles.adminFormLabelBlock} style={{ marginBottom: 0 }}>
+            <label className={styles.adminFormLabelBlock} style={{ marginBottom: 0 }} htmlFor="payment-requests-status">
               <span className={styles.adminFormLabelText}>Status</span>
               <select
+                id="payment-requests-status"
+                name="status"
                 className={styles.adminFormInput}
                 value={status}
                 onChange={(e) => {
@@ -93,8 +97,14 @@ export function PaymentRequestsPageClient() {
           </div>
           <div className={styles.adminFilterCheckboxesRow}>
             <div className={styles.adminFilterCheckboxes}>
-              <label className={styles.adminCheckboxLabel} style={{ marginBottom: 0 }}>
+              <label
+                className={styles.adminCheckboxLabel}
+                style={{ marginBottom: 0 }}
+                htmlFor="payment-requests-include-deleted"
+              >
                 <input
+                  id="payment-requests-include-deleted"
+                  name="includeDeleted"
                   type="checkbox"
                   checked={includeDeleted}
                   onChange={(e) => {

@@ -43,4 +43,11 @@ export class PaymentReversalBody {
   @IsString()
   @MaxLength(500)
   reason?: string;
+
+  /** Step-up: re-enter current admin password to confirm refund/chargeback. */
+  @Expose()
+  @ApiProperty({ required: true, description: `Current admin password (step-up confirmation)` })
+  @IsString()
+  @MaxLength(256)
+  passwordConfirmation!: string;
 }

@@ -1,10 +1,8 @@
 import { Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 
-import { JWT_ACCESS_SECRET, JWT_ACCESS_TTL_SECONDS } from '../envs';
 import { AdminAuthController } from './auth/admin-auth.controller';
-import { AdminAuthService } from './auth/admin-auth.service';
+import { AdminAuthModule } from './auth/admin-auth.module';
 import { AdminAdminsModule } from './modules/admins/admin-admins.module';
 import { AdminAuditModule } from './modules/audit/admin-audit.module';
 import { AdminConsumersModule } from './modules/consumers/admin-consumers.module';
@@ -17,10 +15,7 @@ import { ConsumerPaymentMethodsModule } from '../consumer/modules/payment-method
 @Module({
   imports: [
     PassportModule,
-    JwtModule.register({
-      secret: JWT_ACCESS_SECRET!,
-      signOptions: { expiresIn: JWT_ACCESS_TTL_SECONDS },
-    }),
+    AdminAuthModule,
     AdminAdminsModule,
     AdminAuditModule,
     AdminConsumersModule,
@@ -31,6 +26,5 @@ import { ConsumerPaymentMethodsModule } from '../consumer/modules/payment-method
     ConsumerPaymentMethodsModule,
   ],
   controllers: [AdminAuthController],
-  providers: [AdminAuthService],
 })
 export class AdminModule {}

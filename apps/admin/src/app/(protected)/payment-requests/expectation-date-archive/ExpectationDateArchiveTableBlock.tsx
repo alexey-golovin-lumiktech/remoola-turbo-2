@@ -24,6 +24,7 @@ export function ExpectationDateArchiveTableBlock({
   pageSize,
   onPageChangeAction,
   q,
+  refreshKey,
 }: ExpectationDateArchiveTableBlockProps) {
   const [rows, setRows] = useState<PaymentRequestExpectationDateArchive[]>([]);
   const [total, setTotal] = useState(0);
@@ -58,7 +59,8 @@ export function ExpectationDateArchiveTableBlock({
     setRows(data?.items ?? []);
     setTotal(data?.total ?? 0);
     setLoading(false);
-  }, [page, pageSize, q]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refreshKey triggers refetch when Refresh is clicked
+  }, [page, pageSize, q, refreshKey]);
 
   useEffect(() => {
     void load();
@@ -110,6 +112,11 @@ export function ExpectationDateArchiveTableBlock({
           >
             Next
           </button>
+          {loading && rows.length > 0 && (
+            <span className={styles.adminTextGray500} style={{ marginLeft: `0.5rem` }}>
+              Updating…
+            </span>
+          )}
         </div>
       )}
 
@@ -124,47 +131,68 @@ export function ExpectationDateArchiveTableBlock({
       )}
 
       {!error && rows.length > 0 && (
-        <DataTable<PaymentRequestExpectationDateArchive>
-          rows={rows}
-          getRowKeyAction={(r) => r.id}
-          columns={[
-            {
-              key: `paymentRequestId`,
-              header: `Payment Request`,
-              render: (r) => (
-                <Link href={`/payment-requests/${r.paymentRequestId}`} className="text-blue-600 hover:text-blue-800">
-                  <span className={styles.adminMonoCode}>{r.paymentRequestId}</span>
-                </Link>
-              ),
-            },
-            {
-              key: `expectationDate`,
-              header: `Archived Expectation Date`,
-              render: (r) => (
-                <span className={styles.adminTextGray700}>{new Date(r.expectationDate).toISOString()}</span>
-              ),
-            },
-            {
-              key: `archivedAt`,
-              header: `Archived At`,
-              render: (r) => <span className={styles.adminTextGray600}>{new Date(r.archivedAt).toLocaleString()}</span>,
-            },
-            {
-              key: `migrationTag`,
-              header: `Migration`,
-              render: (r) => <span className={styles.adminMonoCode}>{r.migrationTag}</span>,
-            },
-            {
-              key: `exists`,
-              header: `Payment Request Exists`,
-              render: (r) => (
-                <span className={styles.adminTextGray700}>
-                  {r.paymentRequestExists ? `Yes` : `No (still archived)`}
-                </span>
-              ),
-            },
-          ]}
-        />
+        <div style={{ position: `relative` }}>
+          {loading && rows.length > 0 && (
+            <div
+              style={{
+                position: `absolute`,
+                inset: 0,
+                background: `rgba(255,255,255,0.5)`,
+                display: `flex`,
+                alignItems: `center`,
+                justifyContent: `center`,
+                zIndex: 1,
+                pointerEvents: `none`,
+              }}
+              aria-hidden
+            >
+              <span className={styles.adminTextGray500}>Updating table…</span>
+            </div>
+          )}
+          <DataTable<PaymentRequestExpectationDateArchive>
+            rows={rows}
+            getRowKeyAction={(r) => r.id}
+            columns={[
+              {
+                key: `paymentRequestId`,
+                header: `Payment Request`,
+                render: (r) => (
+                  <Link href={`/payment-requests/${r.paymentRequestId}`} className="text-blue-600 hover:text-blue-800">
+                    <span className={styles.adminMonoCode}>{r.paymentRequestId}</span>
+                  </Link>
+                ),
+              },
+              {
+                key: `expectationDate`,
+                header: `Archived Expectation Date`,
+                render: (r) => (
+                  <span className={styles.adminTextGray700}>{new Date(r.expectationDate).toISOString()}</span>
+                ),
+              },
+              {
+                key: `archivedAt`,
+                header: `Archived At`,
+                render: (r) => (
+                  <span className={styles.adminTextGray600}>{new Date(r.archivedAt).toLocaleString()}</span>
+                ),
+              },
+              {
+                key: `migrationTag`,
+                header: `Migration`,
+                render: (r) => <span className={styles.adminMonoCode}>{r.migrationTag}</span>,
+              },
+              {
+                key: `exists`,
+                header: `Payment Request Exists`,
+                render: (r) => (
+                  <span className={styles.adminTextGray700}>
+                    {r.paymentRequestExists ? `Yes` : `No (still archived)`}
+                  </span>
+                ),
+              },
+            ]}
+          />
+        </div>
       )}
     </>
   );

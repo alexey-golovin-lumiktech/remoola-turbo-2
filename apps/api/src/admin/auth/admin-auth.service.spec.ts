@@ -201,4 +201,69 @@ describe(`AdminAuthService`, () => {
       });
     });
   });
+
+  describe(`verifyStepUp`, () => {
+    const adminId = `admin-id`;
+    const admin = {
+      id: adminId,
+      password: `stored-hash`,
+      salt: `stored-salt`,
+    };
+
+    it(`throws BadRequestException when passwordConfirmation is empty`, async () => {
+      await expect(service.verifyStepUp(adminId, ``)).rejects.toThrow(BadRequestException);
+      await expect(service.verifyStepUp(adminId, ``)).rejects.toMatchObject({
+        response: expect.objectContaining({ message: adminErrorCodes.ADMIN_PASSWORD_CONFIRMATION_REQUIRED }),
+      });
+      expect(prisma.adminModel.findFirst).not.toHaveBeenCalled();
+    });
+
+    it(`throws BadRequestException when passwordConfirmation is only whitespace`, async () => {
+      await expect(service.verifyStepUp(adminId, `   `)).rejects.toThrow(BadRequestException);
+      await expect(service.verifyStepUp(adminId, `   `)).rejects.toMatchObject({
+        response: expect.objectContaining({ message: adminErrorCodes.ADMIN_PASSWORD_CONFIRMATION_REQUIRED }),
+      });
+      expect(prisma.adminModel.findFirst).not.toHaveBeenCalled();
+    });
+
+    it(`throws UnauthorizedException when admin not found`, async () => {
+      prisma.adminModel.findFirst.mockResolvedValue(null);
+
+      await expect(service.verifyStepUp(adminId, `correct-password`)).rejects.toThrow(UnauthorizedException);
+      await expect(service.verifyStepUp(adminId, `correct-password`)).rejects.toMatchObject({
+        response: expect.objectContaining({ message: adminErrorCodes.ADMIN_PASSWORD_CONFIRMATION_INVALID }),
+      });
+      expect(prisma.adminModel.findFirst).toHaveBeenCalledWith({
+        where: { id: adminId, deletedAt: null },
+        select: { id: true, password: true, salt: true },
+      });
+    });
+
+    it(`throws UnauthorizedException when password does not match`, async () => {
+      prisma.adminModel.findFirst.mockResolvedValue(admin);
+      mockVerifyPassword.mockResolvedValue(false);
+
+      await expect(service.verifyStepUp(adminId, `wrong-password`)).rejects.toThrow(UnauthorizedException);
+      await expect(service.verifyStepUp(adminId, `wrong-password`)).rejects.toMatchObject({
+        response: expect.objectContaining({ message: adminErrorCodes.ADMIN_PASSWORD_CONFIRMATION_INVALID }),
+      });
+      expect(mockVerifyPassword).toHaveBeenCalledWith({
+        password: `wrong-password`,
+        storedHash: admin.password,
+        storedSalt: admin.salt,
+      });
+    });
+
+    it(`resolves when password matches`, async () => {
+      prisma.adminModel.findFirst.mockResolvedValue(admin);
+      mockVerifyPassword.mockResolvedValue(true);
+
+      await expect(service.verifyStepUp(adminId, `correct-password`)).resolves.toBeUndefined();
+      expect(mockVerifyPassword).toHaveBeenCalledWith({
+        password: `correct-password`,
+        storedHash: admin.password,
+        storedSalt: admin.salt,
+      });
+    });
+  });
 });

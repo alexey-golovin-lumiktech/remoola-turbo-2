@@ -153,7 +153,10 @@ Stripe (`/consumer/stripe`):
 Webhooks (`/consumer/webhooks`):
 
 - `POST /`: Stripe webhook handler.
-- `POST /stripe/verify/start`: start Stripe identity verification.
+- `POST /stripe/verify/start`: start Stripe identity verification; requires
+  profile complete (personal details: legal status, tax ID, passport/ID for
+  individuals; tax ID and phone for entities). Returns 400
+  PROFILE_INCOMPLETE_VERIFY when incomplete.
 
 Payments (`/consumer/payments`):
 

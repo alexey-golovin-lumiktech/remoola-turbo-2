@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import useSWR from 'swr';
 import useSWRMutation from 'swr/mutation';
 
-import { mutationFetcher } from './swr-config';
+import { mutationFetcher, swrFetcher } from './swr-config';
 import {
   queryKeys,
   type ActionAuditItem,
@@ -42,6 +42,26 @@ export function useAuth() {
   });
 }
 
+// Build admins list URL with query params so search/filters always work
+function adminsListUrl(filters?: {
+  includeDeleted?: boolean;
+  q?: string;
+  type?: string;
+  page?: number;
+  pageSize?: number;
+}): string {
+  const params = new URLSearchParams();
+  if (filters) {
+    if (filters.includeDeleted === true) params.set(`includeDeleted`, `true`);
+    if (filters.q != null && String(filters.q).trim() !== ``) params.set(`q`, String(filters.q).trim());
+    if (filters.type != null && String(filters.type).trim() !== ``) params.set(`type`, String(filters.type).trim());
+    if (filters.page != null && Number.isFinite(filters.page)) params.set(`page`, String(filters.page));
+    if (filters.pageSize != null && Number.isFinite(filters.pageSize)) params.set(`pageSize`, String(filters.pageSize));
+  }
+  const search = params.toString();
+  return `/api/admins${search ? `?${search}` : ``}`;
+}
+
 // Admin hooks
 export function useAdmins(filters?: {
   includeDeleted?: boolean;
@@ -50,7 +70,9 @@ export function useAdmins(filters?: {
   page?: number;
   pageSize?: number;
 }) {
-  return useSWR<PaginatedResponse<AdminDetails>>(queryKeys.admins.list(filters));
+  return useSWR<PaginatedResponse<AdminDetails>>(adminsListUrl(filters), swrFetcher, {
+    keepPreviousData: true,
+  });
 }
 
 export function useAdmin(id: string) {
@@ -86,7 +108,7 @@ export function useUpdateAdmin(id: string) {
 }
 
 export function useResetAdminPassword(id: string) {
-  return useSWRMutation(`admins/${id}/password`, async (key: unknown, { arg }: { arg: unknown }) => {
+  return useSWRMutation(`/api/admins/${id}/password`, async (key: unknown, { arg }: { arg: unknown }) => {
     return mutationFetcher(String(key), { method: `PATCH`, data: arg });
   });
 }

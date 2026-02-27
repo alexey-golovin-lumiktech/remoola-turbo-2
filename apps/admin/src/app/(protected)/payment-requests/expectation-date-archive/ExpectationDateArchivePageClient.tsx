@@ -47,9 +47,15 @@ export function ExpectationDateArchivePageClient() {
       <div className={styles.adminCard}>
         <div className={styles.adminCardContent}>
           <div className={styles.adminFilterRow}>
-            <label className={styles.adminFormLabelBlock}>
+            <label className={styles.adminFormLabelBlock} htmlFor="expectation-date-archive-search">
               <span className={styles.adminFormLabelText}>Search</span>
-              <SearchWithClear value={query} onChangeAction={setQuery} placeholder="Filter by payment request ID" />
+              <SearchWithClear
+                id="expectation-date-archive-search"
+                name="q"
+                value={query}
+                onChangeAction={setQuery}
+                placeholder="Filter by payment request ID"
+              />
             </label>
             <div className={styles.adminFilterLine1Actions}>
               <button

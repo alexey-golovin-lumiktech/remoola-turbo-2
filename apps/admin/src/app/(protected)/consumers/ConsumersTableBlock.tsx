@@ -33,6 +33,7 @@ export function ConsumersTableBlock({
   verificationStatus,
   verified,
   includeDeleted,
+  refreshKey,
 }: ConsumersTableBlockProps) {
   const [items, setItems] = useState<Consumer[]>([]);
   const [total, setTotal] = useState(0);
@@ -72,16 +73,8 @@ export function ConsumersTableBlock({
     setItems(data.items ?? []);
     setTotal(data.total ?? 0);
     setLoading(false);
-  }, [
-    page, //
-    pageSize,
-    q,
-    accountType,
-    contractorKind,
-    verificationStatus,
-    verified,
-    includeDeleted,
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refreshKey triggers refetch when Refresh is clicked
+  }, [page, pageSize, q, accountType, contractorKind, verificationStatus, verified, includeDeleted, refreshKey]);
 
   useEffect(() => {
     void load();
@@ -133,6 +126,11 @@ export function ConsumersTableBlock({
           >
             Next
           </button>
+          {loading && items.length > 0 && (
+            <span className={styles.adminTextGray500} style={{ marginLeft: `0.5rem` }}>
+              Updating…
+            </span>
+          )}
         </div>
       )}
 
@@ -145,43 +143,64 @@ export function ConsumersTableBlock({
       )}
 
       {total > 0 && (
-        <DataTable<Consumer>
-          rows={items}
-          getRowKeyAction={(c) => c.id}
-          rowHrefAction={(c) => `/consumers/${c.id}`}
-          columns={[
-            {
-              key: `email`,
-              header: `Email`,
-              render: (c) => <span className={styles.adminTextMedium}>{c.email}</span>,
-            },
-            {
-              key: `type`,
-              header: `Account`,
-              render: (c) => (
-                <span>
-                  {c.accountType}
-                  {c.contractorKind ? ` / ${c.contractorKind}` : ``}
-                </span>
-              ),
-            },
-            {
-              key: `verified`,
-              header: `Verified`,
-              render: (c) => <span>{String(c.verified ?? false)}</span>,
-            },
-            {
-              key: `legal`,
-              header: `Legal Verified`,
-              render: (c) => <span>{String(c.legalVerified ?? false)}</span>,
-            },
-            {
-              key: `created`,
-              header: `Created`,
-              render: (c) => <span className={styles.adminTextGray600}>{new Date(c.createdAt).toLocaleString()}</span>,
-            },
-          ]}
-        />
+        <div style={{ position: `relative` }}>
+          {loading && items.length > 0 && (
+            <div
+              style={{
+                position: `absolute`,
+                inset: 0,
+                background: `rgba(255,255,255,0.5)`,
+                display: `flex`,
+                alignItems: `center`,
+                justifyContent: `center`,
+                zIndex: 1,
+                pointerEvents: `none`,
+              }}
+              aria-hidden
+            >
+              <span className={styles.adminTextGray500}>Updating table…</span>
+            </div>
+          )}
+          <DataTable<Consumer>
+            rows={items}
+            getRowKeyAction={(c) => c.id}
+            rowHrefAction={(c) => `/consumers/${c.id}`}
+            columns={[
+              {
+                key: `email`,
+                header: `Email`,
+                render: (c) => <span className={styles.adminTextMedium}>{c.email}</span>,
+              },
+              {
+                key: `type`,
+                header: `Account`,
+                render: (c) => (
+                  <span>
+                    {c.accountType}
+                    {c.contractorKind ? ` / ${c.contractorKind}` : ``}
+                  </span>
+                ),
+              },
+              {
+                key: `verified`,
+                header: `Verified`,
+                render: (c) => <span>{String(c.verified ?? false)}</span>,
+              },
+              {
+                key: `legal`,
+                header: `Legal Verified`,
+                render: (c) => <span>{String(c.legalVerified ?? false)}</span>,
+              },
+              {
+                key: `created`,
+                header: `Created`,
+                render: (c) => (
+                  <span className={styles.adminTextGray600}>{new Date(c.createdAt).toLocaleString()}</span>
+                ),
+              },
+            ]}
+          />
+        </div>
       )}
     </>
   );

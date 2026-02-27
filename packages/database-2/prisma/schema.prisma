@@ -45,14 +45,14 @@ model AuthAuditLogModel {
 model AdminActionAuditLogModel {
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
-  adminId   String     @map("admin_id") @db.Uuid
-  admin     AdminModel @relation(fields: [adminId], references: [id], onDelete: NoAction)
-  action    String     @db.Text
-  resource  String     @db.Text
-  resourceId String?   @map("resource_id") @db.Text
-  metadata  Json?      @db.JsonB
-  ipAddress String?   @map("ip_address") @db.Text
-  userAgent String?   @map("user_agent") @db.Text
+  adminId    String     @map("admin_id") @db.Uuid
+  admin      AdminModel @relation(fields: [adminId], references: [id], onDelete: NoAction)
+  action     String     @db.Text
+  resource   String     @db.Text
+  resourceId String?    @map("resource_id") @db.Text
+  metadata   Json?      @db.JsonB
+  ipAddress  String?    @map("ip_address") @db.Text
+  userAgent  String?    @map("user_agent") @db.Text
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 

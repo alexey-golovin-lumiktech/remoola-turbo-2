@@ -145,14 +145,19 @@ export function ConsumerDetailsPageClient({ consumerId }: { consumerId: string }
             </div>
 
             <div className="mt-3">
-              <label className={styles.adminFormLabelBlock}>
+              <label className={styles.adminFormLabelBlock} htmlFor="consumer-verification-reason">
                 <div className={styles.adminFormLabelText}>Reason / Notes</div>
                 <textarea
+                  id="consumer-verification-reason"
+                  name="verificationReason"
                   className={styles.adminFormInput}
                   rows={3}
                   value={verificationReason}
                   onChange={(e) => setVerificationReason(e.target.value)}
                   placeholder="Optional reason for the decision"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
                 />
               </label>
             </div>

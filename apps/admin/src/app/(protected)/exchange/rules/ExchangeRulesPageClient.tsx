@@ -70,13 +70,21 @@ export function ExchangeRulesPageClient() {
       <div className={adminCard}>
         <div className={adminCardContent}>
           <div className={adminFilterRow}>
-            <label className={adminFormLabelBlock}>
+            <label className={adminFormLabelBlock} htmlFor="exchange-rules-search">
               <span className={adminFormLabelText}>Search</span>
-              <SearchWithClear value={query} onChangeAction={setQuery} placeholder="Consumer email, rule id, pair" />
+              <SearchWithClear
+                id="exchange-rules-search"
+                name="q"
+                value={query}
+                onChangeAction={setQuery}
+                placeholder="Consumer email, rule id, pair"
+              />
             </label>
-            <label className={adminFormLabelBlock}>
+            <label className={adminFormLabelBlock} htmlFor="exchange-rules-status">
               <span className={adminFormLabelText}>Enabled</span>
               <select
+                id="exchange-rules-status"
+                name="status"
                 className={adminFormInput}
                 value={status}
                 onChange={(e) => setStatus(e.target.value as typeof status)}
@@ -94,8 +102,10 @@ export function ExchangeRulesPageClient() {
           </div>
           <div className={adminFilterCheckboxesRow}>
             <div className={adminFilterCheckboxes}>
-              <label className={adminCheckboxLabel}>
+              <label className={adminCheckboxLabel} htmlFor="exchange-rules-include-deleted">
                 <input
+                  id="exchange-rules-include-deleted"
+                  name="includeDeleted"
                   type="checkbox"
                   checked={includeDeleted}
                   onChange={(e) => {

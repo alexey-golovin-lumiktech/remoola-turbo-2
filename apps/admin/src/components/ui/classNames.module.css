@@ -552,6 +552,15 @@
   padding-right: 2rem;
 }
 
+/* Hide native search clear (×) so only our custom clear button shows */
+.adminSearchInputWithClear::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+.adminSearchInputWithClear::-moz-search-cancel-button {
+  display: none;
+}
+
 .adminSearchClearBtn {
   position: absolute;
   right: 0.5rem;

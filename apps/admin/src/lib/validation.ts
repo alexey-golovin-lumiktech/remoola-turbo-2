@@ -30,6 +30,7 @@ export const createAdminSchema = z.object({
 
 export const resetPasswordSchema = z.object({
   password: passwordSchema,
+  passwordConfirmation: z.string().min(1, `Re-enter your password to continue`),
 });
 
 export const updateAdminSchema = z.object({

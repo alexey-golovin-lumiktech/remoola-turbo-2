@@ -38,7 +38,8 @@
     "turbo:dev:api": "turbo run dev --filter=@remoola/api",
     "turbo:dev:consumer": "turbo run dev --filter=@remoola/consumer",
     "turbo:dev:admin": "turbo run dev --filter=@remoola/admin",
-    "deps:sync": "bash scripts/sync-dependency-versions.sh"
+    "deps:sync": "bash scripts/sync-dependency-versions.sh",
+    "lint:fix:apps": "yarn lint:fix:api && yarn lint:fix:consumer && yarn lint:fix:admin"
   },
   "dependencies": {},
   "devDependencies": {

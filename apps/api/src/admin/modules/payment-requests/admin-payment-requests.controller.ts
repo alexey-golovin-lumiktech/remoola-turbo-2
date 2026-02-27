@@ -8,6 +8,7 @@ import { type AdminModel } from '@remoola/database-2';
 import { AdminPaymentRequestsService } from './admin-payment-requests.service';
 import { AdminExpectationDateArchiveQuery, AdminPaymentRequestsListQuery, PaymentReversalBody } from './dto';
 import { Identity } from '../../../common';
+import { AdminAuthService } from '../../auth/admin-auth.service';
 
 function one(v: string | string[] | undefined): string | undefined {
   return (typeof v === `string` ? v : v?.[0])?.trim() || undefined;
@@ -44,7 +45,10 @@ function parseExpectationDateArchiveQuery(dto: AdminExpectationDateArchiveQuery)
 @ApiBasicAuth(`basic`) // 👈 optional, if this route also accepts Basic Auth
 @Controller(`admin/payment-requests`)
 export class AdminPaymentRequestsController {
-  constructor(private readonly service: AdminPaymentRequestsService) {}
+  constructor(
+    private readonly service: AdminPaymentRequestsService,
+    private readonly adminAuthService: AdminAuthService,
+  ) {}
 
   @Get()
   findAllPaymentRequests(@Query() query: AdminPaymentRequestsListQuery) {
@@ -63,13 +67,17 @@ export class AdminPaymentRequestsController {
 
   @Post(`:id/refund`)
   @Throttle({ default: { limit: 20, ttl: 60000 } })
-  createRefund(@Identity() admin: AdminModel, @Param(`id`) id: string, @Body() body: PaymentReversalBody) {
-    return this.service.createReversal(id, { ...body, kind: PAYMENT_REVERSAL_KIND.REFUND }, admin.id);
+  async createRefund(@Identity() admin: AdminModel, @Param(`id`) id: string, @Body() body: PaymentReversalBody) {
+    await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
+    const { amount, reason } = body;
+    return this.service.createReversal(id, { amount, reason, kind: PAYMENT_REVERSAL_KIND.REFUND }, admin.id);
   }
 
   @Post(`:id/chargeback`)
   @Throttle({ default: { limit: 20, ttl: 60000 } })
-  createChargeback(@Identity() admin: AdminModel, @Param(`id`) id: string, @Body() body: PaymentReversalBody) {
-    return this.service.createReversal(id, { ...body, kind: PAYMENT_REVERSAL_KIND.CHARGEBACK }, admin.id);
+  async createChargeback(@Identity() admin: AdminModel, @Param(`id`) id: string, @Body() body: PaymentReversalBody) {
+    await this.adminAuthService.verifyStepUp(admin.id, body.passwordConfirmation);
+    const { amount, reason } = body;
+    return this.service.createReversal(id, { amount, reason, kind: PAYMENT_REVERSAL_KIND.CHARGEBACK }, admin.id);
   }
 }
