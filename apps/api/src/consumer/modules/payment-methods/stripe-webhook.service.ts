@@ -14,6 +14,7 @@ import { $Enums, Prisma } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { STRIPE_EVENT } from './events';
+import { createOutcomeIdempotent } from './ledger-outcome-idempotent';
 import { envs } from '../../../envs';
 import { BalanceCalculationService } from '../../../shared/balance-calculation.service';
 import { MailingService } from '../../../shared/mailing.service';
@@ -53,8 +54,8 @@ export class StripeWebhookService {
   }
 
   async processStripeEvent(req: RawBodyRequest<express.Request>, res: express.Response) {
-    if (envs.STRIPE_WEBHOOK_SECRET === `STRIPE_WEBHOOK_SECRET`) {
-      res.status(200).json({ received: true });
+    if (!envs.STRIPE_WEBHOOK_SECRET || envs.STRIPE_WEBHOOK_SECRET === `STRIPE_WEBHOOK_SECRET`) {
+      res.status(401).json({ received: false, error: `Webhook secret not configured` });
       return;
     }
     if (!req.rawBody) {
@@ -143,15 +144,17 @@ export class StripeWebhookService {
 
     if (!payout.metadata?.transactionId) return;
 
-    // Append-only: record outcome; trigger syncs to ledger_entry.status (AGENTS 6.10)
-    await this.prisma.ledgerEntryOutcomeModel.create({
-      data: {
+    // Append-only: record outcome; idempotent on retry (P2002 = already processed)
+    await createOutcomeIdempotent(
+      this.prisma,
+      {
         ledgerEntryId: payout.metadata.transactionId,
         status: $Enums.TransactionStatus.COMPLETED,
         source: `stripe`,
         externalId: payout.id,
       },
-    });
+      this.logger,
+    );
   }
 
   private async handlePayoutFailed(event: Stripe.Event) {
@@ -159,15 +162,17 @@ export class StripeWebhookService {
 
     if (!payout.metadata?.transactionId) return;
 
-    // Append-only: record outcome; trigger syncs to ledger_entry.status (AGENTS 6.10)
-    await this.prisma.ledgerEntryOutcomeModel.create({
-      data: {
+    // Append-only: record outcome; idempotent on retry (P2002 = already processed)
+    await createOutcomeIdempotent(
+      this.prisma,
+      {
         ledgerEntryId: payout.metadata.transactionId,
         status: $Enums.TransactionStatus.DENIED,
         source: `stripe`,
         externalId: payout.id,
       },
-    });
+      this.logger,
+    );
   }
 
   private async handleVerified(session: Stripe.Identity.VerificationSession) {
@@ -234,14 +239,16 @@ export class StripeWebhookService {
         select: { id: true },
       });
       for (const entry of entries) {
-        await tx.ledgerEntryOutcomeModel.create({
-          data: {
+        await createOutcomeIdempotent(
+          tx,
+          {
             ledgerEntryId: entry.id,
             status: $Enums.TransactionStatus.COMPLETED,
             source: `stripe`,
             externalId: paymentIntentId ?? undefined,
           },
-        });
+          this.logger,
+        );
       }
       await tx.paymentRequestModel.updateMany({
         where: { id: paymentRequestId, status: { not: $Enums.TransactionStatus.COMPLETED } },
@@ -548,13 +555,10 @@ export class StripeWebhookService {
 
     if (!payerId) return;
 
-    if (stripeObjectId) {
-      const existing = await this.prisma.ledgerEntryModel.findFirst({
-        where: { stripeId: stripeObjectId, type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL },
-        select: { id: true },
-      });
-      if (existing) return;
-    }
+    const kindLower = kind.toLowerCase();
+    const idempotencyKeyPayer = stripeObjectId != null ? `reversal:${kindLower}:${stripeObjectId}:payer` : undefined;
+    const idempotencyKeyRequester =
+      stripeObjectId != null ? `reversal:${kindLower}:${stripeObjectId}:requester` : undefined;
 
     const reversalEntries = await this.prisma.ledgerEntryModel.findMany({
       where: {
@@ -585,53 +589,63 @@ export class StripeWebhookService {
 
     const ledgerId = randomUUID();
 
-    await this.prisma.$transaction(async (tx) => {
-      if (requesterId) {
-        await tx.$executeRaw(Prisma.sql`
-          SELECT pg_advisory_xact_lock(hashtext((${requesterId} || ':stripe-reversal')::text)::bigint)
-        `);
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        if (requesterId) {
+          await tx.$executeRaw(Prisma.sql`
+            SELECT pg_advisory_xact_lock(hashtext((${requesterId} || ':stripe-reversal')::text)::bigint)
+          `);
 
-        // Balance check using centralized service (advisory lock above serializes per consumer)
-        const requesterBalance = await this.balanceService.calculateInTransaction(tx, requesterId, currencyCode);
-        if (requesterBalance < finalAmount) {
-          throw new ServiceUnavailableException(errorCodes.INSUFFICIENT_REQUESTER_BALANCE_REVERSAL_STRIPE);
+          // Balance check using centralized service (advisory lock above serializes per consumer)
+          const requesterBalance = await this.balanceService.calculateInTransaction(tx, requesterId, currencyCode);
+          if (requesterBalance < finalAmount) {
+            throw new ServiceUnavailableException(errorCodes.INSUFFICIENT_REQUESTER_BALANCE_REVERSAL_STRIPE);
+          }
         }
-      }
 
-      await tx.ledgerEntryModel.create({
-        data: {
-          ledgerId,
-          consumerId: payerId,
-          paymentRequestId,
-          type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
-          currencyCode,
-          status: $Enums.TransactionStatus.COMPLETED,
-          amount: finalAmount,
-          createdBy: `stripe`,
-          updatedBy: `stripe`,
-          metadata: baseMetadata,
-          stripeId: stripeObjectId ?? undefined,
-        },
-      });
-
-      if (requesterId) {
         await tx.ledgerEntryModel.create({
           data: {
             ledgerId,
-            consumerId: requesterId,
+            consumerId: payerId,
             paymentRequestId,
             type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
             currencyCode,
             status: $Enums.TransactionStatus.COMPLETED,
-            amount: -finalAmount,
+            amount: finalAmount,
             createdBy: `stripe`,
             updatedBy: `stripe`,
             metadata: baseMetadata,
             stripeId: stripeObjectId ?? undefined,
+            idempotencyKey: idempotencyKeyPayer ?? undefined,
           },
         });
+
+        if (requesterId) {
+          await tx.ledgerEntryModel.create({
+            data: {
+              ledgerId,
+              consumerId: requesterId,
+              paymentRequestId,
+              type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
+              currencyCode,
+              status: $Enums.TransactionStatus.COMPLETED,
+              amount: -finalAmount,
+              createdBy: `stripe`,
+              updatedBy: `stripe`,
+              metadata: baseMetadata,
+              stripeId: stripeObjectId ?? undefined,
+              idempotencyKey: idempotencyKeyRequester ?? undefined,
+            },
+          });
+        }
+      });
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === `P2002`) {
+        this.logger.debug(`Reversal already created (idempotent skip)`);
+        return;
       }
-    });
+      throw err;
+    }
 
     await this.sendReversalEmails({
       paymentRequestId,
@@ -763,14 +777,16 @@ export class StripeWebhookService {
         select: { id: true },
       });
       for (const entry of entries) {
-        await tx.ledgerEntryOutcomeModel.create({
-          data: {
+        await createOutcomeIdempotent(
+          tx,
+          {
             ledgerEntryId: entry.id,
             status,
             source: `stripe`,
             externalId: refund.id,
           },
-        });
+          this.logger,
+        );
       }
     });
   }

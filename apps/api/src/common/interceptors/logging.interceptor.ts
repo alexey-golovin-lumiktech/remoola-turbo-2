@@ -12,7 +12,8 @@ export class LoggingInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const request = context.switchToHttp().getRequest<RequestWithCorrelationId>();
     const response = context.switchToHttp().getResponse<Response>();
-    const { method, url, correlationId } = request;
+    const { method, correlationId } = request;
+    const path = request.path ?? request.url?.split(`?`)[0] ?? request.url ?? ``;
     const userAgent = request.get(`User-Agent`) || ``;
     const startTime = Date.now();
 
@@ -20,7 +21,7 @@ export class LoggingInterceptor implements NestInterceptor {
       message: `Request started`,
       correlationId,
       method,
-      url,
+      path,
       userAgent,
       timestamp: new Date().toISOString(),
     });
@@ -34,7 +35,7 @@ export class LoggingInterceptor implements NestInterceptor {
           message: `Request completed`,
           correlationId,
           method,
-          url,
+          path,
           statusCode,
           duration: `${duration}ms`,
           timestamp: new Date().toISOString(),

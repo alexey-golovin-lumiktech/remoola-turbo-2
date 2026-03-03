@@ -1112,7 +1112,26 @@
     dropdown `"Name — email"`, clear button, keyboard support (arrows + Enter),
     and no silent email mutation; used in `CreatePaymentRequestForm`,
     `StartPaymentForm`, and `TransferForm`.
-  - No ledger or idempotency changes; no new migrations.
+  - No ledger or idempotency changes in this feature; no new migrations.
+
+  ### 🔐 Security / Financial Safety
+  - Ledger & payment idempotency (docs/LEDGER_PAYMENT_AUDIT.md): outcome
+    creation with `externalId` now uses `createOutcomeIdempotent()`; P2002
+    is caught and treated as already-processed (Stripe webhook, stripe.service,
+    stripe-reversal.scheduler).
+  - `createStripeReversal` now sets deterministic `idempotencyKey` on both
+    ledger entry creates (`reversal:${kind}:${stripeObjectId}:payer` /
+    `:requester`); on P2002 returns without sending emails.
+
+  ### 🗄 Database & Migrations
+  - Migration `20260303120000_ledger_entry_outcome_unique_external`: adds
+    unique partial index on `ledger_entry_outcome(ledger_entry_id, external_id)`
+    where `external_id IS NOT NULL`; preflight SQL for duplicate check and
+    rollback steps documented in migration README.
+  - Migration `20260303140000_exchange_rate_status_enum_snake_case`: renames
+    PostgreSQL enum `"ExchangeRateStatus"` → `"exchange_rate_status_enum"` to
+    align with Prisma `@@map` and snake_case DB naming (MIGRATION_AUDIT.md
+    BLOCKER 1); schema updated with `@@map("exchange_rate_status_enum")`.
 
   ### ♻️ Refactor
   - Consumer app uses shared SVG icons from `@remoola/ui`.

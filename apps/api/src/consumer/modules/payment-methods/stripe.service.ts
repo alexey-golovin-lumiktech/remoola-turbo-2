@@ -7,6 +7,7 @@ import { $Enums, Prisma } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { ConfirmStripeSetupIntent, PayWithSavedPaymentMethod } from './dto/payment-method.dto';
+import { createOutcomeIdempotent } from './ledger-outcome-idempotent';
 import { envs } from '../../../envs';
 import { PrismaService } from '../../../shared/prisma.service';
 import { getCurrencyFractionDigits } from '../../../shared-common';
@@ -189,20 +190,22 @@ export class ConsumerStripeService {
       metadata: { paymentRequestId: pr.id, consumerId },
     });
 
-    // 2) Append-only: record WAITING outcome; trigger syncs to ledger_entry.status (AGENTS 6.10)
+    // 2) Append-only: record WAITING outcome; idempotent on retry (P2002 = already processed)
     const entries = await this.prisma.ledgerEntryModel.findMany({
       where: { paymentRequestId: pr.id },
       select: { id: true },
     });
     for (const entry of entries) {
-      await this.prisma.ledgerEntryOutcomeModel.create({
-        data: {
+      await createOutcomeIdempotent(
+        this.prisma,
+        {
           ledgerEntryId: entry.id,
           status: $Enums.TransactionStatus.WAITING,
           source: `stripe`,
           externalId: session.id,
         },
-      });
+        this.logger,
+      );
     }
 
     return { url: session.url };
@@ -414,7 +417,7 @@ export class ConsumerStripeService {
         description: `Payment to ${pr.requester?.email ?? pr.requesterEmail ?? `recipient`}`,
       });
 
-      // 6) Append-only: record COMPLETED outcome for non-completed entries; trigger syncs status (AGENTS 6.10)
+      // 6) Append-only: record COMPLETED outcome; idempotent on retry (P2002 = already processed)
       if (paymentIntent.status === `succeeded`) {
         await this.prisma.$transaction(async (tx) => {
           const ledgerEntries = await tx.ledgerEntryModel.findMany({
@@ -425,14 +428,16 @@ export class ConsumerStripeService {
             select: { id: true },
           });
           for (const entry of ledgerEntries) {
-            await tx.ledgerEntryOutcomeModel.create({
-              data: {
+            await createOutcomeIdempotent(
+              tx,
+              {
                 ledgerEntryId: entry.id,
                 status: $Enums.TransactionStatus.COMPLETED,
                 source: `stripe`,
                 externalId: paymentIntent.id,
               },
-            });
+              this.logger,
+            );
           }
           await tx.paymentRequestModel.updateMany({
             where: { id: paymentRequestId, status: { not: $Enums.TransactionStatus.COMPLETED } },

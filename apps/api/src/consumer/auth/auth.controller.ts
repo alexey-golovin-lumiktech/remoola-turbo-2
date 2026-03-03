@@ -339,7 +339,8 @@ export class ConsumerAuthController {
       const redirectUrl = this.buildConsumerRedirect(stateRecord.nextPath, { oauthToken: exchangeToken });
       return response.redirect(redirectUrl);
     } catch (err) {
-      this.logger.error(err);
+      const message = err instanceof Error ? err.message : `OAuth callback failed`;
+      this.logger.error(message);
       return failureRedirect(`login_failed`);
     }
   }

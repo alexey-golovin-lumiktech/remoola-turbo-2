@@ -763,6 +763,8 @@ enum ExchangeRateStatus {
   DRAFT
   APPROVED
   DISABLED
+
+  @@map("exchange_rate_status_enum")
 }
 
 enum TransactionFeesType {

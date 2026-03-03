@@ -4,6 +4,7 @@ import Stripe from 'stripe';
 
 import { $Enums } from '@remoola/database-2';
 
+import { createOutcomeIdempotent } from './ledger-outcome-idempotent';
 import { envs } from '../../../envs';
 import { PrismaService } from '../../../shared/prisma.service';
 
@@ -46,14 +47,16 @@ export class StripeReversalScheduler {
             select: { id: true },
           });
           for (const entry of entries) {
-            await tx.ledgerEntryOutcomeModel.create({
-              data: {
+            await createOutcomeIdempotent(
+              tx,
+              {
                 ledgerEntryId: entry.id,
                 status,
                 source: `stripe-reconcile`,
                 externalId: stripeId,
               },
-            });
+              this.logger,
+            );
           }
         });
       } catch (error: unknown) {
