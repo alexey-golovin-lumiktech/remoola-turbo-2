@@ -31,7 +31,7 @@ export function PasswordInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className={joinClasses(`w-full pr-12`, inputClassName)}
+        className={joinClasses(`w-full`, `pr-12`, inputClassName)}
       />
       <button
         type="button"

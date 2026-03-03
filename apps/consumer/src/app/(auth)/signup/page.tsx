@@ -150,7 +150,16 @@ function SignupFlow({ hydrateError, onRetryHydrate }: { hydrateError: string | n
   return (
     <div className={signupFlowContainer} data-testid="consumer-signup-flow">
       {hydrateError && (
-        <div role="alert" className={`${spaceY4} mb-4 w-full max-w-md`} data-testid="consumer-signup-hydrate-error">
+        <div
+          role="alert"
+          className={`
+            ${spaceY4}
+            w-full
+            max-w-md
+            mb-4
+          `}
+          data-testid="consumer-signup-hydrate-error"
+        >
           <p className={textSecondary}>{hydrateError}</p>
           <button
             type="button"

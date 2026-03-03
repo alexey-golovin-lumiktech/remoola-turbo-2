@@ -65,7 +65,13 @@ export function ContractsTable() {
   return (
     <>
       <div className={cardBaseSoftCompact} data-testid="consumer-contracts-table-wrap">
-        <table className={`w-full ${textSm}`} data-testid="consumer-contracts-table">
+        <table
+          className={`
+            w-full
+            ${textSm}
+          `}
+          data-testid="consumer-contracts-table"
+        >
           <thead>
             <tr className={tableHeaderRowMutedAlt}>
               <th className={tableCellHeaderSimple}>Contractor</th>
@@ -87,8 +93,22 @@ export function ContractsTable() {
 
             {contracts.map((row) => (
               <tr key={row.id} className={tableBodyRowMutedStrong}>
-                <td className={`${tableCellBodySimple} ${textPrimary}`}>{row.name}</td>
-                <td className={`${textCapitalize} ${textMutedGrayAlt}`}>{row.lastStatus ?? `—`}</td>
+                <td
+                  className={`
+                    ${tableCellBodySimple}
+                    ${textPrimary}
+                  `}
+                >
+                  {row.name}
+                </td>
+                <td
+                  className={`
+                    ${textCapitalize}
+                    ${textMutedGrayAlt}
+                  `}
+                >
+                  {row.lastStatus ?? `—`}
+                </td>
                 <td className={textMutedGrayAlt}>{row.lastActivity ? formatDateForDisplay(row.lastActivity) : `—`}</td>
                 <td className={textMutedGrayAlt}>{row.docs}</td>
                 <td className={textRight}>

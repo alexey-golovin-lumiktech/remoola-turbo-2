@@ -217,7 +217,13 @@ export function DocumentsList() {
         {/* Upload — fixed 42px height so it aligns with Document type select */}
         <div className={filterRowControlHeight}>
           <label
-            className={`${inlineFlexItemsCenterGap2} ${uploadButtonPrimary} h-full w-full cursor-pointer`}
+            className={`
+              ${inlineFlexItemsCenterGap2}
+              ${uploadButtonPrimary}
+              h-full
+              w-full
+              cursor-pointer
+            `}
             style={{ margin: 0 }}
           >
             {uploading ? `Uploading...` : `Upload documents`}
@@ -266,7 +272,12 @@ export function DocumentsList() {
 
       {/* Table */}
       <div className={tableContainer}>
-        <table className={`w-full ${textSm}`}>
+        <table
+          className={`
+            w-full
+            ${textSm}
+          `}
+        >
           <thead>
             <tr className={tableHeaderRow}>
               <th className={tableCellHeaderMd}>
@@ -307,13 +318,24 @@ export function DocumentsList() {
                     />
                   </td>
 
-                  <td className={`${tableCellBodyMd} font-medium ${textPrimary}`}>{d.name}</td>
+                  <td
+                    className={`
+                      ${tableCellBodyMd}
+                      font-medium
+                      ${textPrimary}
+                    `}
+                  >
+                    {d.name}
+                  </td>
 
                   <td className={`${tableCellBodyMd} ${textMuted}`}>{d.kind}</td>
 
                   <td className={tableCellBodyMd}>
                     <input
-                      className={`${formInputSmall} ${width40}`}
+                      className={`
+                        ${formInputSmall}
+                        ${width40}
+                      `}
                       defaultValue={d.tags.join(`, `)}
                       onBlur={(e) => handleTagsChange(d.id, e.target.value)}
                       placeholder="comma,separated,tags"
@@ -324,7 +346,13 @@ export function DocumentsList() {
 
                   <td className={`${tableCellBodyMd} ${textMuted}`}>{formatDateForDisplay(d.createdAt)}</td>
 
-                  <td className={`${tableCellBodyMd} ${textRight} ${spaceX2}`}>
+                  <td
+                    className={`
+                      ${tableCellBodyMd}
+                      ${textRight}
+                      ${spaceX2}
+                    `}
+                  >
                     <button
                       type="button"
                       className={linkPrimaryXs}

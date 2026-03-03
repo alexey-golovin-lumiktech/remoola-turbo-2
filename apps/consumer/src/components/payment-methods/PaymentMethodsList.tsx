@@ -82,7 +82,12 @@ function PaymentMethodRow({
           <div className={paymentMethodRowMeta}>{payment.billingDetails?.name ?? `No billing name`}</div>
 
           {payment.defaultSelected && (
-            <span className={`mt-1 ${badgeDefaultInline}`}>
+            <span
+              className={`
+                mt-1
+                ${badgeDefaultInline}
+              `}
+            >
               <StarIcon size={12} /> Default
             </span>
           )}
@@ -90,7 +95,12 @@ function PaymentMethodRow({
       </div>
 
       {/* ACTIONS */}
-      <div className={`${flexRowGap3} ${textSm}`}>
+      <div
+        className={`
+          ${flexRowGap3}
+          ${textSm}
+        `}
+      >
         <button
           className={actionButtonPrimary}
           onClick={(e) => (e.stopPropagation(), e.preventDefault(), onEdit(payment))}

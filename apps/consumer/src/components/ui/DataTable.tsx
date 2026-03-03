@@ -36,7 +36,13 @@ export function DataTable<T>({
 }: DataTableProps<T>) {
   return (
     <div className={tableContainer}>
-      <table className={`w-full ${textSm} ${containerClassName}`}>
+      <table
+        className={`
+          w-full
+          ${textSm}
+          ${containerClassName}
+        `}
+      >
         <thead>
           <tr className={headerRowClassName}>
             {columns.map((column) => (

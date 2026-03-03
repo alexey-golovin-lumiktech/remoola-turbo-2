@@ -71,7 +71,12 @@ export function CreateContactModal({ open, initialEmail, onCloseAction, onCreate
 
   return (
     <div className={modalOverlayClass}>
-      <div className={`${modalContentMd} ${spaceY4}`}>
+      <div
+        className={`
+          ${modalContentMd}
+          ${spaceY4}
+        `}
+      >
         <h2 className={modalTitleClass}>Create Contact</h2>
 
         <input

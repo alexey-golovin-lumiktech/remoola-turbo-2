@@ -181,7 +181,12 @@ export function ScheduledConversionsPageClient() {
     <div className={exchangePageContainer}>
       <h1 className={exchangePageTitle}>Scheduled Conversions</h1>
 
-      <div className={`${exchangeCard} ${gridGap4}`}>
+      <div
+        className={`
+          ${exchangeCard}
+          ${gridGap4}
+        `}
+      >
         <strong>Schedule a conversion</strong>
         <div className={exchangeForm}>
           <AmountCurrencyInput
@@ -219,7 +224,12 @@ export function ScheduledConversionsPageClient() {
         </div>
       </div>
 
-      <div className={`${exchangeCard} ${gridGap4}`}>
+      <div
+        className={`
+          ${exchangeCard}
+          ${gridGap4}
+        `}
+      >
         <strong>Upcoming and past</strong>
         {total > 0 && (
           <PaginationBar total={total} page={page} pageSize={pageSize} onPageChange={setPage} loading={loadingList} />

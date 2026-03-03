@@ -136,7 +136,11 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
           </div>
           <a
             href="/logout"
-            className={`${shellLogout} hidden lg:grid`}
+            className={`
+              ${shellLogout}
+              hidden
+              lg:grid
+            `}
             aria-label="Log out"
             data-testid="consumer-shell-logout"
           >
@@ -151,7 +155,10 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
             <a
               key={item.href}
               href={item.href}
-              className={`${mobileNavLinkClass} ${item.active ? mobileNavLinkActiveClass : ``}`}
+              className={`
+                ${mobileNavLinkClass}
+                ${item.active ? mobileNavLinkActiveClass : ``}
+              `}
               aria-current={item.active ? `page` : undefined}
               data-testid={`consumer-shell-mobile-nav-${item.href.replace(/^\//, ``) || `dashboard`}`}
             >

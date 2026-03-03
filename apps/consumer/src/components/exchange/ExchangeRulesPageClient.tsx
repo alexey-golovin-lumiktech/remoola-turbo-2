@@ -209,7 +209,12 @@ export function ExchangeRulesPageClient() {
     <div className={exchangePageContainer}>
       <h1 className={exchangePageTitle}>Auto-Conversion Rules</h1>
 
-      <div className={`${exchangeCard} ${gridGap4}`}>
+      <div
+        className={`
+          ${exchangeCard}
+          ${gridGap4}
+        `}
+      >
         <div className={flexRowBetween}>
           <div>
             <strong>{heading}</strong>
@@ -290,7 +295,12 @@ export function ExchangeRulesPageClient() {
         </div>
       </div>
 
-      <div className={`${exchangeCard} ${gridGap4}`}>
+      <div
+        className={`
+          ${exchangeCard}
+          ${gridGap4}
+        `}
+      >
         <strong>Existing rules</strong>
         {total > 0 && (
           <PaginationBar total={total} page={page} pageSize={pageSize} onPageChange={setPage} loading={loadingList} />

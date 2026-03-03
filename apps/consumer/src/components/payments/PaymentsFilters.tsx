@@ -39,11 +39,20 @@ export function PaymentsFilters({
   return (
     <div className={filterRowGap3AlignEnd}>
       {/* Search — fixed 42px height so it aligns with selects */}
-      <div className={`${filterRowControlHeight} ${width64}`}>
+      <div
+        className={`
+          ${filterRowControlHeight}
+          ${width64}
+        `}
+      >
         <input
           type="text"
           placeholder="Search…"
-          className={`${filterRowSearchInput} h-full w-full`}
+          className={`
+            ${filterRowSearchInput}
+            h-full
+            w-full
+          `}
           value={search}
           onChange={(e) => onSearchChangeAction(e.target.value)}
         />

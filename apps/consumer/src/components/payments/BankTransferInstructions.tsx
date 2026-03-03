@@ -164,7 +164,12 @@ export function BankTransferInstructions({ details }: BankTransferInstructionsPr
 function Step({ active, label }: { active?: boolean; label: string }) {
   return (
     <div className={stepContainer}>
-      <div className={`${stepIconBase} ` + (active ? stepIconActive : stepIconInactive)}>
+      <div
+        className={`
+          ${stepIconBase}
+          ${active ? stepIconActive : stepIconInactive}
+        `}
+      >
         <CheckIcon size={14} />
       </div>
       <span className={active ? stepLabelActive : stepLabelInactive}>{label}</span>

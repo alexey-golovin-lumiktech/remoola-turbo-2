@@ -29,7 +29,16 @@ export function ContactsTable({ items, onDetailsAction, onEditAction, onDeleteAc
       header: `Name`,
       headerClassName: tableCellHeaderMd,
       className: tableCellBodyMd,
-      render: (contact) => <span className={`font-medium ${textPrimary}`}>{contact.name ?? `—`}</span>,
+      render: (contact) => (
+        <span
+          className={`
+            font-medium
+            ${textPrimary}
+          `}
+        >
+          {contact.name ?? `—`}
+        </span>
+      ),
     },
     {
       key: `email`,
@@ -51,7 +60,11 @@ export function ContactsTable({ items, onDetailsAction, onEditAction, onDeleteAc
       headerClassName: tableCellHeaderMd,
       className: `${tableCellBodyMd} ${textRight}`,
       render: (contact) => (
-        <div className={`space-x-3`}>
+        <div
+          className={`
+            space-x-3
+          `}
+        >
           <button
             onClick={(e) => (e.preventDefault(), e.stopPropagation(), onDetailsAction(contact))}
             className={linkPrimary}

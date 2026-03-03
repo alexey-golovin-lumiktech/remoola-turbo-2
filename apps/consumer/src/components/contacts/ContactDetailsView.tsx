@@ -96,7 +96,14 @@ export function ContactDetailsView({ id }: ContactDetailsViewProps) {
         <div className={contactDetailsDocsGrid}>
           {details.documents.map((doc) => (
             <div key={doc.id} className={contactDetailsDocCard}>
-              <div className={`${fontMedium} ${textPrimary}`}>{doc.name}</div>
+              <div
+                className={`
+                  ${fontMedium}
+                  ${textPrimary}
+                `}
+              >
+                {doc.name}
+              </div>
               <a href={doc.url} target="_blank" className={linkPrimaryUnderlineSm} rel="noreferrer">
                 Download
               </a>

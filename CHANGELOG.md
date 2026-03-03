@@ -1106,7 +1106,9 @@
   CreditCard, Landmark, Star, Pencil, Trash, Clipboard, FileDown icons to
   `packages/ui`; `apps/consumer` now imports these from `@remoola/ui` and
   `lucide-react` was removed from consumer. Root script `typecheck` added
-  (`turbo run check-types`); `check-types` task added to `turbo.json`.
+  (`turbo run check-types`); `check-types` task added to `turbo.json`.  Tailwind `className` formatting per `governance/07_UI_TAILWIND_CLASSNAME_FORMAT.md`:
+  multiline, one utility per line, in `apps/consumer` and `packages/ui`. No
+  visual or behavior change.
 
 </details>
 

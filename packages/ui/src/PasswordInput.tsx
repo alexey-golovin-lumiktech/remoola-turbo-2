@@ -54,7 +54,18 @@ export function PasswordInput({ value, onChange, placeholder, name, className, i
   };
 
   return (
-    <div className={joinClasses(`relative w-full min-w-0 max-w-full overflow-hidden`, className)}>
+    <div
+      className={joinClasses(
+        `
+          relative
+          w-full
+          min-w-0
+          max-w-full
+          overflow-hidden
+        `,
+        className
+      )}
+    >
       <input
         type={show ? `text` : `password`}
         name={name}

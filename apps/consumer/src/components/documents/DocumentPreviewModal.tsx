@@ -71,7 +71,10 @@ export function DocumentPreviewModal({ open, onClose, doc }: DocumentPreviewModa
     <div className={docPreviewOverlay}>
       <div
         ref={fullscreenRef}
-        className={`${docPreviewModal} ${isFullscreen ? docPreviewFullscreen : ``}`}
+        className={`
+          ${docPreviewModal}
+          ${isFullscreen ? docPreviewFullscreen : ``}
+        `}
         style={!isFullscreen ? { width: size.width, height: size.height } : {}}
       >
         {/* Top bar */}

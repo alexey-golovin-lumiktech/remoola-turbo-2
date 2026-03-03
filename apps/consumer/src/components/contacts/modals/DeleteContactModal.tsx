@@ -46,11 +46,21 @@ export function DeleteContactModal({ open, onCloseAction, contact, onDeletedActi
     <div className={modalOverlayClass}>
       <div className={modalContentMd}>
         <h2 className={modalTitleClass}>Delete Contact</h2>
-        <p className={`${modalParagraphClass} ${py2}`}>
+        <p
+          className={`
+            ${modalParagraphClass}
+            ${py2}
+          `}
+        >
           Are you sure you want to delete &quot;{contact.name ?? contact.email}&quot;?
         </p>
 
-        <div className={`${modalFooterActions} ${mt4}`}>
+        <div
+          className={`
+            ${modalFooterActions}
+            ${mt4}
+          `}
+        >
           <button onClick={onCloseAction} className={modalButtonSecondary}>
             Cancel
           </button>

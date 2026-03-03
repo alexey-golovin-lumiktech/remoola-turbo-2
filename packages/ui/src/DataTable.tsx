@@ -18,7 +18,13 @@ export function DataTable<T>({
 }) {
   return (
     <div className="rm-tablewrap">
-      <table className="rm-table text-left text-sm">
+      <table
+        className={`
+          rm-table
+          text-left
+          text-sm
+        `}
+      >
         <thead>
           <tr className="text-gray-500">
             {columns.map((c) => (

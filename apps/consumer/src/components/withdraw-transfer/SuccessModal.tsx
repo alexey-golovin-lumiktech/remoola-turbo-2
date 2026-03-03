@@ -33,7 +33,14 @@ export function SuccessModal({ open, title, description, onCloseAction, actions 
 
         <div className={flexRowGap3}>
           {actions}
-          <button type="button" onClick={onCloseAction} className={`${modalButtonPrimary} ${mlAuto}`}>
+          <button
+            type="button"
+            onClick={onCloseAction}
+            className={`
+              ${modalButtonPrimary}
+              ${mlAuto}
+            `}
+          >
             OK
           </button>
         </div>

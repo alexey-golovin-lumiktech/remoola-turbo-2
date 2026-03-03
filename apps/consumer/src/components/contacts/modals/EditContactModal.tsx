@@ -71,7 +71,12 @@ export function EditContactModal({ open, onCloseAction, onUpdatedAction, contact
 
   return (
     <div className={modalOverlayClass}>
-      <div className={`${modalContentMd} ${spaceY4}`}>
+      <div
+        className={`
+          ${modalContentMd}
+          ${spaceY4}
+        `}
+      >
         <h2 className={modalTitleClass}>Edit Contact</h2>
 
         {/* Contact name */}

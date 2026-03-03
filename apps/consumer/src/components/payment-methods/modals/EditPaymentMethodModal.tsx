@@ -91,7 +91,13 @@ export function EditPaymentMethodModal({
 
   return (
     <div className={modalOverlayClass} onClick={closeIfAllowed}>
-      <div className={`${modalContentLg} space-y-5`} onClick={(e) => e.stopPropagation()}>
+      <div
+        className={`
+          ${modalContentLg}
+          space-y-5
+        `}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className={modalHeaderRow}>
           <h2 className={modalTitleClass}>Edit payment method</h2>
@@ -101,9 +107,19 @@ export function EditPaymentMethodModal({
         </div>
 
         {/* Metadata block (non-editable) */}
-        <div className={`${modalInfoCard} ${p4}`}>
+        <div
+          className={`
+            ${modalInfoCard}
+            ${p4}
+          `}
+        >
           <div className={modalMetaLabel}>Type:</div>
-          <div className={`${modalMetaValue} ${mb2}`}>
+          <div
+            className={`
+              ${modalMetaValue}
+              ${mb2}
+            `}
+          >
             {paymentMethod.type === `CREDIT_CARD` ? `Credit Card` : `Bank Account`}
           </div>
 
@@ -113,7 +129,12 @@ export function EditPaymentMethodModal({
           </div>
 
           {paymentMethod.expMonth && paymentMethod.expYear && (
-            <div className={`${modalInfoSubtext} ${mt1}`}>
+            <div
+              className={`
+                ${modalInfoSubtext}
+                ${mt1}
+              `}
+            >
               Expires {paymentMethod.expMonth}/{paymentMethod.expYear}
             </div>
           )}
@@ -142,7 +163,15 @@ export function EditPaymentMethodModal({
             className={modalFieldVariant}
           />
 
-          <label className={`${flexRowItemsCenter} ${gap2} ${textSm} ${mt3} ${textMutedGrayStrong}`}>
+          <label
+            className={`
+              ${flexRowItemsCenter}
+              ${gap2}
+              ${textSm}
+              ${mt3}
+              ${textMutedGrayStrong}
+            `}
+          >
             <input
               type="checkbox"
               checked={defaultSelected}

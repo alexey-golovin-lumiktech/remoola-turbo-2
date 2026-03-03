@@ -283,13 +283,16 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
               <div className={amountTitle}>{formatCurrencyDisplay(p.amount, p.currencyCode)}</div>
 
               <span
-                className={`${badgeBaseStrong} ${
-                  p.status === TRANSACTION_STATUS.PENDING
-                    ? badgePending
-                    : p.status === TRANSACTION_STATUS.COMPLETED
-                      ? badgeCompleted
-                      : badgeNeutral
-                }`}
+                className={`
+                  ${badgeBaseStrong}
+                  ${
+                    p.status === TRANSACTION_STATUS.PENDING
+                      ? badgePending
+                      : p.status === TRANSACTION_STATUS.COMPLETED
+                        ? badgeCompleted
+                        : badgeNeutral
+                  }
+                `}
               >
                 {p.status}
               </span>
@@ -345,9 +348,10 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
                 {paymentMethods.map((method) => (
                   <div
                     key={method.id}
-                    className={`${selectableCardBase} ${
-                      selectedPaymentMethodId === method.id ? selectableCardActive : selectableCardInactive
-                    }`}
+                    className={`
+                      ${selectableCardBase}
+                      ${selectedPaymentMethodId === method.id ? selectableCardActive : selectableCardInactive}
+                    `}
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -367,29 +371,55 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
                           className={radioPrimary}
                         />
                         <div>
-                          <div className={`${fontMedium} ${textPrimary}`}>
+                          <div
+                            className={`
+                              ${fontMedium}
+                              ${textPrimary}
+                            `}
+                          >
                             {method.brand} ****{method.last4}
                             {method.defaultSelected && <span className={badgeDefaultSm}>Default</span>}
                           </div>
                           {method.expMonth && method.expYear && (
-                            <div className={`${textSm} ${textMutedGray}`}>
+                            <div
+                              className={`
+                                ${textSm}
+                                ${textMutedGray}
+                              `}
+                            >
                               Expires {String(method.expMonth).padStart(2, `0`)}/{method.expYear}
                             </div>
                           )}
                           {method.billingDetails?.name && (
-                            <div className={`${textSm} ${textMutedGray}`}>{method.billingDetails.name}</div>
+                            <div
+                              className={`
+                                ${textSm}
+                                ${textMutedGray}
+                              `}
+                            >
+                              {method.billingDetails.name}
+                            </div>
                           )}
                         </div>
                       </div>
-                      <div className={`${textSm} ${textMutedGray} ${textCapitalize}`}>{method.type.toLowerCase()}</div>
+                      <div
+                        className={`
+                          ${textSm}
+                          ${textMutedGray}
+                          ${textCapitalize}
+                        `}
+                      >
+                        {method.type.toLowerCase()}
+                      </div>
                     </div>
                   </div>
                 ))}
 
                 <div
-                  className={`${selectableCardBase} ${
-                    selectedPaymentMethodId === `` ? selectableCardActive : selectableCardInactive
-                  }`}
+                  className={`
+                    ${selectableCardBase}
+                    ${selectedPaymentMethodId === `` ? selectableCardActive : selectableCardInactive}
+                  `}
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -408,8 +438,22 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
                       className={radioPrimary}
                     />
                     <div>
-                      <div className={`${fontMedium} ${textPrimary}`}>Add New Payment Method</div>
-                      <div className={`${textSm} ${textMutedGray}`}>Enter new card or bank details</div>
+                      <div
+                        className={`
+                          ${fontMedium}
+                          ${textPrimary}
+                        `}
+                      >
+                        Add New Payment Method
+                      </div>
+                      <div
+                        className={`
+                          ${textSm}
+                          ${textMutedGray}
+                        `}
+                      >
+                        Enter new card or bank details
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -420,7 +464,10 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
           {/* Action Button */}
           {p.status === TRANSACTION_STATUS.PENDING && p.role === `PAYER` && (
             <button
-              className={`${buttonPrimaryRounded} ${buttonDisabledCursor}`}
+              className={`
+                ${buttonPrimaryRounded}
+                ${buttonDisabledCursor}
+              `}
               onClick={payNow}
               disabled={paying} //
             >
@@ -430,7 +477,10 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
 
           {p.status === `DRAFT` && p.role === `REQUESTER` && (
             <button
-              className={`${buttonPrimaryRounded} ${buttonDisabledCursor}`}
+              className={`
+                ${buttonPrimaryRounded}
+                ${buttonDisabledCursor}
+              `}
               onClick={sendRequest}
               disabled={sending}
             >
@@ -439,7 +489,10 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
           )}
 
           <button
-            className={`${buttonPrimaryRounded} ${generatingInvoice ? buttonDisabledCursor : ``}`}
+            className={`
+              ${buttonPrimaryRounded}
+              ${generatingInvoice ? buttonDisabledCursor : ``}
+            `}
             onClick={generateInvoice}
             disabled={generatingInvoice}
           >

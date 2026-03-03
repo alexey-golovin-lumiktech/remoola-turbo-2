@@ -54,12 +54,32 @@ export function DeletePaymentMethodModal({
     <div className={modalOverlayClass} onClick={(e) => (e.stopPropagation(), e.preventDefault(), onCloseAction())}>
       <div className={modalContentMd} onClick={(e) => (e.stopPropagation(), e.preventDefault())}>
         {/* HEADER */}
-        <h2 className={`${modalTitleClass} mb-4`}>Delete payment method</h2>
+        <h2
+          className={`
+            ${modalTitleClass}
+            mb-4
+          `}
+        >
+          Delete payment method
+        </h2>
 
         {/* BODY */}
-        <p className={`${modalParagraphClass} mb-4`}>Are you sure you want to delete this payment method?</p>
+        <p
+          className={`
+            ${modalParagraphClass}
+            mb-4
+          `}
+        >
+          Are you sure you want to delete this payment method?
+        </p>
 
-        <div className={`${modalInfoCard} p-3 mb-4`}>
+        <div
+          className={`
+            ${modalInfoCard}
+            p-3
+            mb-4
+          `}
+        >
           <div className={modalInfoTitle}>
             {paymentMethod.type === `CREDIT_CARD`
               ? `${paymentMethod.brand} •••• ${paymentMethod.last4}`

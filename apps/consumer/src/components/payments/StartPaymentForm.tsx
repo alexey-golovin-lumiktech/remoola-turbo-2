@@ -320,37 +320,77 @@ export function StartPaymentForm() {
 
       <button
         disabled={loading || confirmLoading}
-        className={`${buttonPrimaryRoundedCompact} ${buttonDisabledOpacity}`}
+        className={`
+          ${buttonPrimaryRoundedCompact}
+          ${buttonDisabledOpacity}
+        `}
       >
         {loading ? `Processing...` : `Send Payment`}
       </button>
 
       {confirmOpen && (
         <div className={modalOverlayClass}>
-          <div className={`${modalContentLg} ${spaceY4}`}>
+          <div
+            className={`
+              ${modalContentLg}
+              ${spaceY4}
+            `}
+          >
             <h2 className={modalTitleClass}>This email isn&apos;t in your contacts. Add it automatically?</h2>
             <p className={modalParagraphClass}>
               You can add this contact now, or continue without adding it and still send the payment.
             </p>
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-4">
-              <div className="flex flex-wrap gap-2">
+            <div
+              className={`
+                flex
+                flex-wrap
+                items-center
+                justify-between
+                gap-3
+                pt-4
+              `}
+            >
+              <div
+                className={`
+                  flex
+                  flex-wrap
+                  gap-2
+                `}
+              >
                 <button
                   type="button"
                   onClick={() => setConfirmOpen(false)}
-                  className={`${modalButtonSecondary} whitespace-nowrap`}
+                  className={`
+                    ${modalButtonSecondary}
+                    whitespace-nowrap
+                  `}
                   disabled={confirmLoading}
                 >
                   Cancel
                 </button>
               </div>
-              <div ref={actionsMenuRef} className="relative">
-                <div className="flex items-center gap-2">
+              <div
+                ref={actionsMenuRef}
+                className={`
+                  relative
+                `}
+              >
+                <div
+                  className={`
+                    flex
+                    items-center
+                    gap-2
+                  `}
+                >
                   <button
                     type="button"
                     onClick={() => {
                       void continueWithoutAdding();
                     }}
-                    className={`${modalButtonPrimary} whitespace-nowrap`}
+                    className={`
+                      ${modalButtonPrimary}
+                      whitespace-nowrap
+                    `}
                     disabled={confirmLoading}
                   >
                     {confirmLoading ? `Working...` : `Continue`}
@@ -358,7 +398,13 @@ export function StartPaymentForm() {
                   <button
                     type="button"
                     onClick={() => setActionsOpen((open) => !open)}
-                    className={`${modalButtonSecondary} inline-flex items-center gap-1 whitespace-nowrap`}
+                    className={`
+                      ${modalButtonSecondary}
+                      inline-flex
+                      items-center
+                      gap-1
+                      whitespace-nowrap
+                    `}
                     disabled={confirmLoading}
                   >
                     More Actions
@@ -367,9 +413,22 @@ export function StartPaymentForm() {
                 </div>
                 {actionsOpen && (
                   <div
-                    className="absolute bottom-full right-0 z-10 mb-2 min-w-[18rem]
-                  overflow-hidden
-                   rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-slate-600 dark:bg-slate-800"
+                    className={`
+                      absolute
+                      bottom-full
+                      right-0
+                      z-10
+                      min-w-[18rem]
+                      mb-2
+                      overflow-hidden
+                      rounded-xl
+                      border
+                      border-gray-200
+                      bg-white
+                      shadow-2xl
+                      dark:border-slate-600
+                      dark:bg-slate-800
+                    `}
                   >
                     <button
                       type="button"
@@ -377,8 +436,19 @@ export function StartPaymentForm() {
                         setActionsOpen(false);
                         void addAndContinue();
                       }}
-                      className="block w-full px-4 py-2.5 text-left text-sm font-medium
-                       text-gray-900 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-slate-700"
+                      className={`
+                        block
+                        w-full
+                        px-4
+                        py-2.5
+                        text-left
+                        text-sm
+                        font-medium
+                        text-gray-900
+                        hover:bg-gray-100
+                        dark:text-gray-100
+                        dark:hover:bg-slate-700
+                      `}
                       disabled={confirmLoading}
                     >
                       Add Contact and Continue
@@ -389,9 +459,22 @@ export function StartPaymentForm() {
                         setActionsOpen(false);
                         addFullContact();
                       }}
-                      className="block w-full border-t border-gray-200 px-4 py-2.5 text-left text-sm
-                      font-medium text-gray-900 hover:bg-gray-100
-                       dark:border-slate-700 dark:text-gray-100 dark:hover:bg-slate-700"
+                      className={`
+                        block
+                        w-full
+                        border-t
+                        border-gray-200
+                        px-4
+                        py-2.5
+                        text-left
+                        text-sm
+                        font-medium
+                        text-gray-900
+                        hover:bg-gray-100
+                        dark:border-slate-700
+                        dark:text-gray-100
+                        dark:hover:bg-slate-700
+                      `}
                       disabled={confirmLoading}
                     >
                       Add Full Contact

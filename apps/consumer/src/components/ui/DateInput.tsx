@@ -59,7 +59,11 @@ export const DateInput = ({
   return (
     <div>
       <label className={styles.signupStepLabel}>{label}</label>
-      <div className="relative">
+      <div
+        className={`
+          relative
+        `}
+      >
         <DatePicker
           selected={selectedDate}
           onChange={handleDateChange}
@@ -68,9 +72,17 @@ export const DateInput = ({
           disabled={disabled}
           required={required}
           className={joinClasses(formInputFullWidth, error && formInputError, className)}
-          wrapperClassName="w-full"
-          popperClassName="z-50"
-          calendarClassName="shadow-lg border border-gray-200"
+          wrapperClassName={`
+            w-full
+          `}
+          popperClassName={`
+            z-50
+          `}
+          calendarClassName={`
+            border
+            border-gray-200
+            shadow-lg
+          `}
         />
       </div>
     </div>

@@ -14,8 +14,27 @@ export function Card({ title, actions, children, className, headClassName, bodyC
   return (
     <div className={cn(`rm-card`, className)}>
       {(title || actions) && (
-        <div className={cn(`rm-card__head flex items-center justify-between gap-3`, headClassName)}>
-          <div className="text-sm font-semibold text-gray-900">{title}</div>
+        <div
+          className={cn(
+            `
+              rm-card__head
+              flex
+              items-center
+              justify-between
+              gap-3
+            `,
+            headClassName
+          )}
+        >
+          <div
+            className={`
+              text-sm
+              font-semibold
+              text-gray-900
+            `}
+          >
+            {title}
+          </div>
           {actions}
         </div>
       )}

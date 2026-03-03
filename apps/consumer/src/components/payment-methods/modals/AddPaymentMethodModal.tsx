@@ -218,8 +218,21 @@ function AddPaymentMethodModalInner({
       className={modalOverlayClass}
       onClick={(e) => (e.stopPropagation(), e.preventDefault(), !loading && onClose())}
     >
-      <div className={`${modalContentLg} space-y-5`} onClick={(e) => e.stopPropagation()}>
-        <h2 className={`${modalTitleClass} mb-2`}>Add payment method</h2>
+      <div
+        className={`
+          ${modalContentLg}
+          space-y-5
+        `}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2
+          className={`
+            ${modalTitleClass}
+            mb-2
+          `}
+        >
+          Add payment method
+        </h2>
 
         {/* Method selector */}
         <div className={flexRowGap3}>
@@ -270,14 +283,25 @@ function AddPaymentMethodModalInner({
 
         {/* Card form */}
         {methodType === `CREDIT_CARD` && (
-          <div className={`${modalInfoCard} ${p4}`}>
+          <div
+            className={`
+              ${modalInfoCard}
+              ${p4}
+            `}
+          >
             <CardElement className={p2} options={cardElementOptions} />
           </div>
         )}
 
         {/* Bank form */}
         {methodType === `BANK_ACCOUNT` && (
-          <div className={`${modalInfoCard} ${spaceY3} ${p4}`}>
+          <div
+            className={`
+              ${modalInfoCard}
+              ${spaceY3}
+              ${p4}
+            `}
+          >
             <input
               placeholder="Bank name"
               value={bankName}
@@ -301,7 +325,14 @@ function AddPaymentMethodModalInner({
           </div>
         )}
 
-        <label className={`${flexRowItemsCenter} ${gap2} ${textSm} ${textMutedGrayStrong}`}>
+        <label
+          className={`
+            ${flexRowItemsCenter}
+            ${gap2}
+            ${textSm}
+            ${textMutedGrayStrong}
+          `}
+        >
           <input
             type="checkbox"
             checked={defaultSelected}

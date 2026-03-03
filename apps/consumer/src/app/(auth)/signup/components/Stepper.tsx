@@ -28,14 +28,22 @@ export function Stepper() {
         return (
           <div key={step.name} className={stepperItem} data-testid={`consumer-signup-stepper-step-${step.name}`}>
             <div
-              className={`${stepperCircleBase} ${isActive ? stepperCircleActive : ``} ${
-                isCompleted ? stepperCircleComplete : ``
-              } ${!isActive && !isCompleted ? stepperCircleInactive : ``}`}
+              className={`
+                ${stepperCircleBase}
+                ${isActive ? stepperCircleActive : ``}
+                ${isCompleted ? stepperCircleComplete : ``}
+                ${!isActive && !isCompleted ? stepperCircleInactive : ``}
+              `}
             >
               {isCompleted ? `✓` : index + 1}
             </div>
 
-            <span className={`${stepperLabelBase} ${isActive ? stepperLabelActive : stepperLabelInactive}`}>
+            <span
+              className={`
+                ${stepperLabelBase}
+                ${isActive ? stepperLabelActive : stepperLabelInactive}
+              `}
+            >
               {step.label}
             </span>
           </div>

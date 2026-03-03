@@ -12,7 +12,13 @@ export interface FormCardProps extends Omit<ComponentPropsWithoutRef<`form`>, `t
 export function FormCard({ title, description, children, className = ``, ...props }: FormCardProps) {
   const { formCardBase, formCardDescription, formCardTitle } = styles;
   return (
-    <form {...props} className={`${formCardBase} ${className}`.trim()}>
+    <form
+      {...props}
+      className={`
+        ${formCardBase}
+        ${className}
+      `.trim()}
+    >
       {title && <h2 className={formCardTitle}>{title}</h2>}
       {description && <p className={formCardDescription}>{description}</p>}
       {children}

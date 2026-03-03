@@ -100,8 +100,24 @@ export function PaymentsList() {
               />
             </svg>
           </div>
-          <h2 className={`text-xl font-semibold ${textPrimary} mb-2`}>Failed to load payments</h2>
-          <p className={`${textSecondary} mb-6`}>{error.message}</p>
+          <h2
+            className={`
+              text-xl
+              font-semibold
+              mb-2
+              ${textPrimary}
+            `}
+          >
+            Failed to load payments
+          </h2>
+          <p
+            className={`
+              ${textSecondary}
+              mb-6
+            `}
+          >
+            {error.message}
+          </p>
           <button
             onClick={(e) => {
               e.preventDefault();
@@ -133,7 +149,12 @@ export function PaymentsList() {
         <SkeletonTable rows={8} cols={6} />
       ) : (
         <div className={tableContainer} data-testid="consumer-payments-table">
-          <table className={`w-full ${textSm}`}>
+          <table
+            className={`
+              w-full
+              ${textSm}
+            `}
+          >
             <thead>
               <tr className={tableHeaderRow}>
                 <th className={tableCellHeaderLg}>Counterparty</th>
@@ -154,13 +175,32 @@ export function PaymentsList() {
               )}
 
               {payments.map((p: PaymentItem) => (
-                <tr key={p.id} className={`${tableBodyRow} ${cursorPointer}`}>
+                <tr
+                  key={p.id}
+                  className={`
+                    ${tableBodyRow}
+                    ${cursorPointer}
+                  `}
+                >
                   <td className={tableCellBodyLg}>
-                    <div className={`font-medium ${textPrimary}`}>{p.counterparty.email}</div>
+                    <div
+                      className={`
+                        font-medium
+                        ${textPrimary}
+                      `}
+                    >
+                      {p.counterparty.email}
+                    </div>
                     <div className={textXsMuted}>{p.description || `—`}</div>
                   </td>
 
-                  <td className={`${tableCellBodyLg} font-semibold ${textPrimary}`}>
+                  <td
+                    className={`
+                      ${tableCellBodyLg}
+                      font-semibold
+                      ${textPrimary}
+                    `}
+                  >
                     {formatCurrencyDisplay(p.amount, p.currencyCode)}
                   </td>
 

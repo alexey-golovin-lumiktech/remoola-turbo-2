@@ -85,7 +85,12 @@ export function RateDisplay({ from, to }: RateDisplayProps) {
 
             <span className={rateEquals}>=</span>
 
-            <span className={`${rateValue} ${changed ? rateValueChanged : ``}`}>
+            <span
+              className={`
+                ${rateValue}
+                ${changed ? rateValueChanged : ``}
+              `}
+            >
               {rate.toFixed(8)} {to}
             </span>
           </div>

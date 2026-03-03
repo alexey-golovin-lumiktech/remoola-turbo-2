@@ -85,7 +85,13 @@ export function SelectWithClear<T extends string | null>({
             ×
           </button>
         ) : (
-          <button type="button" className="rm-select__chevron pointer-events-none">
+          <button
+            type="button"
+            className={`
+              rm-select__chevron
+              pointer-events-none
+            `}
+          >
             {open ? `▲` : `▼`}
           </button>
         )}
@@ -102,7 +108,10 @@ export function SelectWithClear<T extends string | null>({
                 e.stopPropagation();
                 handleSelect(null);
               }}
-              className="rm-select__option rm-select__option--placeholder"
+              className={`
+                rm-select__option
+                rm-select__option--placeholder
+              `}
             >
               {placeholder}
             </div>
@@ -116,7 +125,10 @@ export function SelectWithClear<T extends string | null>({
                 e.stopPropagation();
                 handleSelect(opt.value);
               }}
-              className={`rm-select__option ${value === opt.value ? `rm-select__option--active` : ``}`}
+              className={`
+                rm-select__option
+                ${value === opt.value ? `rm-select__option--active` : ``}
+              `}
             >
               {opt.label}
             </div>
@@ -129,7 +141,10 @@ export function SelectWithClear<T extends string | null>({
                 e.stopPropagation();
                 handleSelect(`Other` as T);
               }}
-              className={`rm-select__option ${value === `Other` ? `rm-select__option--active` : ``}`}
+              className={`
+                rm-select__option
+                ${value === `Other` ? `rm-select__option--active` : ``}
+              `}
             >
               Other
             </div>
