@@ -7,13 +7,12 @@ import {
 } from '@nestjs/common';
 import { type Reflector } from '@nestjs/core';
 import { type JwtService } from '@nestjs/jwt';
+import { type Request as TExpressRequest } from 'express';
 
 import { IDENTITY, type IIdentity, IS_PUBLIC } from '../common';
 import { type IJwtTokenPayload } from '../dtos/consumer';
 import { type PrismaService } from '../shared/prisma.service';
 import { ADMIN_ACCESS_TOKEN_COOKIE_KEY, CONSUMER_ACCESS_TOKEN_COOKIE_KEY, secureCompare } from '../shared-common';
-
-import type express from 'express';
 
 const ADMIN_API_PATH_PREFIX = `/api/admin/`;
 const CONSUMER_API_PATH_PREFIX = `/api/consumer/`;
@@ -42,7 +41,7 @@ export class AuthGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext) {
-    const request: express.Request = context.switchToHttp().getRequest();
+    const request: TExpressRequest = context.switchToHttp().getRequest();
     const isPublic = this.reflector.get<boolean>(IS_PUBLIC, context.getHandler());
     if (isPublic) return true;
 
@@ -73,7 +72,7 @@ export class AuthGuard implements CanActivate {
     });
   }
 
-  private async bearerProcessor(accessToken: string, request: express.Request) {
+  private async bearerProcessor(accessToken: string, request: TExpressRequest) {
     let verified: IJwtTokenPayload;
     try {
       verified = this.jwtService.verify<IJwtTokenPayload>(accessToken);
@@ -123,7 +122,7 @@ export class AuthGuard implements CanActivate {
     return true;
   }
 
-  assignRequestIdentity(request: express.Request, incoming: IIdentity, type: string): void {
+  assignRequestIdentity(request: TExpressRequest, incoming: IIdentity, type: string): void {
     const identity = { [IDENTITY]: { id: incoming.id, email: incoming.email, type } };
     Object.assign(request, identity);
   }

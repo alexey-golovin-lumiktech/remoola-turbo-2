@@ -1,7 +1,8 @@
 import { ConsumerDetailsPageClient } from './ConsumerDetailsPageClient';
 import { ClientBoundary, WaitForLoadingFallback } from '../../../../components';
+import { type PageProps } from '../../../../lib/types';
 
-export default async function ConsumerDetailsPage(props: PageProps<`/consumers/[consumerId]`>) {
+export default async function ConsumerDetailsPage(props: PageProps<{ consumerId: string }>) {
   const params = await props.params;
   return (
     <ClientBoundary fallback={<WaitForLoadingFallback />}>

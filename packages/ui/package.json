@@ -21,7 +21,7 @@
     "build": "tsc",
     "lint": "eslint . --max-warnings 0",
     "generate:component": "turbo gen react-component",
-    "check-types": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
     "clean": "rm -rf ./node_modules ./dist"
   },
   "sideEffects": [

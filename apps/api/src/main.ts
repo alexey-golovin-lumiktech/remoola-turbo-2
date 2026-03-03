@@ -6,7 +6,6 @@ import { NestFactory, Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { type NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import * as ngrok from '@ngrok/ngrok';
 import compression from 'compression';
 import { default as cookieParser } from 'cookie-parser';
 import * as express from 'express';
@@ -20,6 +19,7 @@ import { PrismaExceptionFilter, CorrelationIdMiddleware, LoggingInterceptor } fr
 import { ConsumerModule } from './consumer/consumer.module';
 import { envs } from './envs';
 import { AuthGuard } from './guards';
+import { NgrokIngressService } from './infrastructure/ngrok/ngrok-ingress.service';
 import { TransformResponseInterceptor } from './interceptors';
 import { PrismaService } from './shared/prisma.service';
 import { passwordUtils } from './shared-common';
@@ -174,6 +174,7 @@ async function bootstrap() {
       exposedHeaders: [`set-cookie`, `content-range`, `content-type`],
     },
   });
+  app.enableShutdownHooks();
 
   const isOnVercel = envs.VERCEL === 1;
   if (isOnVercel) process.env.NO_COLOR = `true`;
@@ -240,20 +241,13 @@ async function bootstrap() {
     });
 
   if (isOnVercel === false && envs.NGROK_AUTH_TOKEN !== `NGROK_AUTH_TOKEN` && envs.NGROK_DOMAIN !== `NGROK_DOMAIN`) {
-    try {
-      const listener = await ngrok.forward({
-        addr: port,
-        authtoken: envs.NGROK_AUTH_TOKEN,
-        domain: envs.NGROK_DOMAIN,
-        compression: false,
-        force_new_session: true,
-      });
+    const ngrokService = app.get(NgrokIngressService);
 
-      logger.log(`Ingress ngrok established at: ${listener.url()}`);
-    } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error);
-      logger.warn(`⚠️  Ingress ngrok unavailable: ${msg}`);
-    }
+    await ngrokService.startIfEnabled({
+      port,
+      authtoken: envs.NGROK_AUTH_TOKEN,
+      domain: envs.NGROK_DOMAIN,
+    });
   }
 
   return app;

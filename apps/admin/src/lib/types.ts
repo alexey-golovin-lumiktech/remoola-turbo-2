@@ -1,5 +1,3 @@
-import { type JSX } from 'react';
-
 import {
   type TAccountType,
   type TAdminType,
@@ -227,7 +225,7 @@ export type ExchangeRate = {
   deletedAt?: string | null;
 };
 
-export type PageProps = { params: JSX.IntrinsicAttributes | PromiseLike<JSX.IntrinsicAttributes> };
+export type PageProps<T extends Record<string, string> = Record<string, string>> = { params: Promise<T> };
 
 export type RouteHandlerContext<T extends Record<string, string>> = {
   params: Promise<T>;

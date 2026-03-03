@@ -2,6 +2,7 @@
 
 import { CURRENCY_CODE } from '@remoola/api-types';
 
+import { type InvoiceForTemplate } from './invoice';
 import { envs } from '../../../../envs';
 import { formatCurrency } from '../../../../shared-common';
 
@@ -30,8 +31,6 @@ const ReplacementsRegExpMapping = {
   InvoiceLink: new RegExp(`{{invoiceLink}}`, `gi`),
   InvoiceSubtotal: new RegExp(`{{invoiceSubtotal}}`, `gi`),
 };
-
-import type { InvoiceForTemplate } from './invoice';
 
 export const processor = (invoice: InvoiceForTemplate) => {
   const backendBaseURL = envs.NEST_APP_EXTERNAL_ORIGIN; //@IMPORTANT_NOTE: should be changed in future

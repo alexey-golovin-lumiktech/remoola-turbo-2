@@ -99,7 +99,7 @@
       ]
     },
     "lint": {},
-    "check-types": {},
+    "typecheck": {},
     "test": {},
     "clean": {
       "cache": false

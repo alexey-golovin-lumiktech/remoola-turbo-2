@@ -3,11 +3,10 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { CURRENCY_CODES, type TCurrencyCode, toCurrencyOrNull, toCurrencyOrUndefined } from '@remoola/api-types';
 import { $Enums } from '@remoola/database-2';
 
+import { type PatchConsumerSettings } from './dto/patch-consumer-settings.dto';
 import { UpdatePreferredCurrency } from './dto/update-preferred-currency.dto';
 import { UpdateTheme } from './dto/update-theme.dto';
 import { PrismaService } from '../../../shared/prisma.service';
-
-import type { PatchConsumerSettings } from './dto/patch-consumer-settings.dto';
 
 @Injectable()
 export class ConsumerSettingsService {
