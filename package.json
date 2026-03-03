@@ -23,6 +23,7 @@
     "db:generate": "turbo run db:generate",
     "postinstall": "turbo run build --filter=\"./packages/*\" --filter=\"!@remoola/db-fixtures\" --filter=\"!@remoola/test-db\" --filter=\"!@remoola/api-e2e\"",
     "lint": "turbo run lint",
+    "typecheck": "turbo run check-types",
     "start": "turbo run start --parallel",
     "test": "node ./scripts/ensure-local-development.js root:test && turbo run test",
     "test:e2e": "node ./scripts/ensure-local-development.js root:test:e2e && turbo run test:e2e",

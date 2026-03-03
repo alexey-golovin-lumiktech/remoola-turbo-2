@@ -1,6 +1,6 @@
 'use client';
 
-import { CreditCard, Landmark, Star, Pencil, Trash2 } from 'lucide-react';
+import { CreditCardIcon, LandmarkIcon, StarIcon, PencilIcon, TrashIcon } from '@remoola/ui';
 
 import { type PaymentMethodItem } from '../../types';
 import styles from '../ui/classNames.module.css';
@@ -83,7 +83,7 @@ function PaymentMethodRow({
 
           {payment.defaultSelected && (
             <span className={`mt-1 ${badgeDefaultInline}`}>
-              <Star size={12} /> Default
+              <StarIcon size={12} /> Default
             </span>
           )}
         </div>
@@ -95,7 +95,7 @@ function PaymentMethodRow({
           className={actionButtonPrimary}
           onClick={(e) => (e.stopPropagation(), e.preventDefault(), onEdit(payment))}
         >
-          <Pencil size={14} />
+          <PencilIcon size={14} />
           Edit
         </button>
 
@@ -103,7 +103,7 @@ function PaymentMethodRow({
           className={actionButtonDanger}
           onClick={(e) => (e.stopPropagation(), e.preventDefault(), onDelete(payment))}
         >
-          <Trash2 size={14} />
+          <TrashIcon size={14} />
           Delete
         </button>
       </div>
@@ -117,14 +117,14 @@ function PaymentMethodRow({
 
 function getPaymentMethodIcon(payment: PaymentMethodItem) {
   if (payment.type === `BANK_ACCOUNT`) {
-    return <Landmark size={22} />;
+    return <LandmarkIcon size={22} />;
   }
 
   const brand = payment.brand?.toLowerCase() ?? ``;
 
-  if (brand.includes(`visa`)) return <CreditCard size={22} />;
-  if (brand.includes(`mastercard`)) return <CreditCard size={22} />;
-  if (brand.includes(`amex`) || brand.includes(`american express`)) return <CreditCard size={22} />;
+  if (brand.includes(`visa`)) return <CreditCardIcon size={22} />;
+  if (brand.includes(`mastercard`)) return <CreditCardIcon size={22} />;
+  if (brand.includes(`amex`) || brand.includes(`american express`)) return <CreditCardIcon size={22} />;
 
-  return <CreditCard size={22} />;
+  return <CreditCardIcon size={22} />;
 }

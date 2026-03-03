@@ -1,9 +1,9 @@
 'use client';
 
-import { Check, Clipboard, FileDown } from 'lucide-react';
 import { useState } from 'react';
 
 import { type TCurrencyCode } from '@remoola/api-types';
+import { CheckIcon, ClipboardIcon, FileDownIcon } from '@remoola/ui';
 
 import styles from '../ui/classNames.module.css';
 
@@ -86,7 +86,7 @@ export function BankTransferInstructions({ details }: BankTransferInstructionsPr
         </div>
 
         <button className={bankTransferDownloadButton}>
-          <FileDown size={18} />
+          <FileDownIcon size={18} />
           Download Invoice PDF
         </button>
       </div>
@@ -165,7 +165,7 @@ function Step({ active, label }: { active?: boolean; label: string }) {
   return (
     <div className={stepContainer}>
       <div className={`${stepIconBase} ` + (active ? stepIconActive : stepIconInactive)}>
-        <Check size={14} />
+        <CheckIcon size={14} />
       </div>
       <span className={active ? stepLabelActive : stepLabelInactive}>{label}</span>
     </div>
@@ -193,7 +193,7 @@ function Field({
         <div className={fieldValue}>{value}</div>
 
         <button className={fieldCopyButton} onClick={onCopy}>
-          {copied ? <Check size={18} className={fieldCopyIconActive} /> : <Clipboard size={18} />}
+          {copied ? <CheckIcon size={18} className={fieldCopyIconActive} /> : <ClipboardIcon size={18} />}
         </button>
       </div>
 

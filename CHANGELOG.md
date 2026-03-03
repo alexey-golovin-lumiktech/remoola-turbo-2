@@ -1,6 +1,6 @@
 # Changelog
 
-- [September 2025](#changelog-september-2025) · [October 2025](#changelog-october-2025) · [November 2025](#changelog-november-2025) · [December 2025](#changelog-december-2025) · [January 2026](#changelog-january-2026) · [February 2026](#changelog-february-2026)
+- [September 2025](#changelog-september-2025) · [October 2025](#changelog-october-2025) · [November 2025](#changelog-november-2025) · [December 2025](#changelog-december-2025) · [January 2026](#changelog-january-2026) · [February 2026](#changelog-february-2026) · [March 2026](#changelog-march-2026)
 
 ---
 
@@ -1008,7 +1008,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-02-27</summary>
 
 - **2026-02-27:**
@@ -1094,6 +1094,19 @@
   ### 📄 Documentation
   - Project root `docs/` and README.md updated with
     doc-sync note (setup/commands/layout only).
+
+</details>
+
+<details open>
+<summary><strong>Changelog (March 2026)</strong></summary>
+
+# Changelog (March 2026)
+
+- **2026-03-03:** Consumer app uses shared SVG icons from `@remoola/ui`. Added
+  CreditCard, Landmark, Star, Pencil, Trash, Clipboard, FileDown icons to
+  `packages/ui`; `apps/consumer` now imports these from `@remoola/ui` and
+  `lucide-react` was removed from consumer. Root script `typecheck` added
+  (`turbo run check-types`); `check-types` task added to `turbo.json`.
 
 </details>
 

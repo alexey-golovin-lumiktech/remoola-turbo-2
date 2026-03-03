@@ -3,7 +3,6 @@ import path from 'path';
 import { type NextConfig } from 'next';
 
 const packages = [
-  `lucide-react`, //
   `sonner`,
   `framer-motion`,
   `@remoola/api-types`,
