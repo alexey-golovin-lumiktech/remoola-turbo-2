@@ -3,12 +3,39 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 import { errorCodes } from '@remoola/shared-constants';
 
 import { ConsumerContactDetails } from './dto/consumer-contact-details.dto';
-import { ConsumerContact, ConsumerCreateContact, ConsumerUpdateContact } from './dto/consumer-contact.dto';
+import {
+  ConsumerContact,
+  ConsumerContactSearchItem,
+  ConsumerCreateContact,
+  ConsumerUpdateContact,
+} from './dto/consumer-contact.dto';
 import { PrismaService } from '../../../shared/prisma.service';
 
 @Injectable()
 export class ConsumerContactsService {
   constructor(private prisma: PrismaService) {}
+
+  async search(consumerId: string, query: string, limit = 10): Promise<ConsumerContactSearchItem[]> {
+    const safeLimit = Math.min(20, Math.max(1, Math.floor(Number(limit)) || 10));
+    const term = `${query.trim()}`;
+    if (!term) return [];
+
+    const contacts = await this.prisma.contactModel.findMany({
+      where: {
+        consumerId,
+        OR: [{ email: { contains: term, mode: `insensitive` } }, { name: { contains: term, mode: `insensitive` } }],
+      },
+      select: { id: true, name: true, email: true },
+      take: safeLimit,
+      orderBy: { createdAt: `desc` },
+    });
+
+    return contacts.map((c) => ({
+      id: c.id,
+      name: c.name,
+      email: c.email,
+    }));
+  }
 
   async getDetails(id: string, consumerId: string): Promise<ConsumerContactDetails> {
     const contact = await this.prisma.contactModel.findFirst({

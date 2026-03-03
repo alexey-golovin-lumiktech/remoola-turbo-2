@@ -102,7 +102,9 @@ Dashboard (`/consumer/dashboard`):
 
 Contacts (`/consumer/contacts`):
 
-- `GET /`: list contacts (query: `page`, `pageSize`; response: `items`, `total`, `page`, `pageSize`).
+- `GET /`: list contacts (query: `page`, `pageSize`; response: `items`, `total`, `page`, `pageSize`). If
+  `query` is present, returns search results (array of `{ id, name, email }`, default `limit=10`) for
+  autocomplete; filtered by authenticated consumer, search by email/name ILIKE.
 - `POST /`: create contact.
 - `PATCH /:id`: update contact.
 - `DELETE /:id`: delete contact.

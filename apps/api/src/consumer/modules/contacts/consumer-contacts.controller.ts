@@ -4,7 +4,12 @@ import { ApiTags } from '@nestjs/swagger';
 import { type ConsumerModel } from '@remoola/database-2';
 
 import { ConsumerContactsService } from './consumer-contacts.service';
-import { ConsumerContactsResponse, ConsumerCreateContact, ConsumerUpdateContact } from './dto/consumer-contact.dto';
+import {
+  ConsumerContactSearchItem,
+  ConsumerContactsResponse,
+  ConsumerCreateContact,
+  ConsumerUpdateContact,
+} from './dto/consumer-contact.dto';
 import { JwtAuthGuard } from '../../../auth/jwt.guard';
 import { Identity } from '../../../common';
 
@@ -17,9 +22,14 @@ export class ConsumerContactsController {
   @Get()
   async list(
     @Identity() consumer: ConsumerModel,
+    @Query(`query`) query?: string,
+    @Query(`limit`) limit?: string,
     @Query(`page`) page?: string,
     @Query(`pageSize`) pageSize?: string,
-  ): Promise<ConsumerContactsResponse> {
+  ): Promise<ConsumerContactsResponse | ConsumerContactSearchItem[]> {
+    if (query != null && query.trim() !== ``) {
+      return this.service.search(consumer.id, query, limit ? Number(limit) : 10);
+    }
     return this.service.list(consumer.id, page ? Number(page) : undefined, pageSize ? Number(pageSize) : undefined);
   }
 

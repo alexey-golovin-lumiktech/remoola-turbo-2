@@ -69,6 +69,20 @@ export class ConsumerUpdateContact {
   address?: ConsumerContactAddress;
 }
 
+export class ConsumerContactSearchItem {
+  @Expose()
+  @ApiProperty()
+  id: string;
+
+  @Expose()
+  @ApiProperty()
+  name: string | null;
+
+  @Expose()
+  @ApiProperty()
+  email: string;
+}
+
 export class ConsumerContactsResponse {
   @Expose()
   @ApiProperty({ type: [ConsumerContact] })

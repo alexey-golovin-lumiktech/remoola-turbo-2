@@ -1102,13 +1102,28 @@
 
 # Changelog (March 2026)
 
-- **2026-03-03:** Consumer app uses shared SVG icons from `@remoola/ui`. Added
-  CreditCard, Landmark, Star, Pencil, Trash, Clipboard, FileDown icons to
-  `packages/ui`; `apps/consumer` now imports these from `@remoola/ui` and
-  `lucide-react` was removed from consumer. Root script `typecheck` added
-  (`turbo run check-types`); `check-types` task added to `turbo.json`.  Tailwind `className` formatting per `governance/07_UI_TAILWIND_CLASSNAME_FORMAT.md`:
-  multiline, one utility per line, in `apps/consumer` and `packages/ui`. No
-  visual or behavior change.
+- **2026-03-03:**
+  ### 🚀 Feature
+  - Recipient email autocomplete (consumer + API).
+  - Backend: `GET /consumer/contacts?query=<string>&limit=10` returns minimal
+    contact list (`id`, `name`, `email`) filtered by authenticated consumer,
+    with email/name ILIKE search.
+  - Frontend: `RecipientEmailField` upgraded with debounced search (300ms),
+    dropdown `"Name — email"`, clear button, keyboard support (arrows + Enter),
+    and no silent email mutation; used in `CreatePaymentRequestForm`,
+    `StartPaymentForm`, and `TransferForm`.
+  - No ledger or idempotency changes; no new migrations.
+
+  ### ♻️ Refactor
+  - Consumer app uses shared SVG icons from `@remoola/ui`.
+  - Added `CreditCard`, `Landmark`, `Star`, `Pencil`, `Trash`, `Clipboard`,
+    and `FileDown` icons to `packages/ui`; `apps/consumer` now imports these
+    from `@remoola/ui`, and `lucide-react` was removed from consumer.
+  - Root script `typecheck` standardized to `turbo run typecheck`; `typecheck`
+    task used in `turbo.json`.
+  - Tailwind `className` formatting per
+    `governance/07_UI_TAILWIND_CLASSNAME_FORMAT.md` (multiline, one utility per
+    line) in `apps/consumer` and `packages/ui` with no visual behavior change.
 
 </details>
 

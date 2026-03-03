@@ -24,7 +24,9 @@ Authentication and identity:
 Consumer domain features:
 
 - Dashboard aggregation endpoint.
-- Contacts CRUD and contact details (list paginated: page, pageSize).
+- Contacts CRUD and contact details (list paginated: page, pageSize). Search for
+  autocomplete: GET `consumer/contacts?query=<string>&limit=10` returns minimal
+  list (id, name, email) filtered by authenticated consumer (email/name ILIKE).
 - Contracts listing (paginated).
 - Document upload, tagging, and attachment to payments (documents list paginated).
 - Exchange rates, currency conversion, auto-conversion rules, scheduled FX conversions (rules and scheduled lists paginated), and admin review/override.
@@ -103,7 +105,10 @@ Consumer UI with:
 - Payments list (paginated, filters), details, start payment, transfer, withdraw, and invoice generation.
 - Profile settings (personal, address, organization, password).
 - Theme and preferred currency settings (light/dark/system; currency from api-types allowlist).
-- Shared UI: PaginationBar (Showing X–Y of Z, Previous/Next), AmountCurrencyInput, RecipientEmailField; form controls 42px/rounded-lg; Contacts and Documents pages share same layout pattern.
+- Shared UI: PaginationBar (Showing X–Y of Z, Previous/Next), AmountCurrencyInput,
+  RecipientEmailField (with recipient email autocomplete: debounced contact search,
+  dropdown "Name — email", clear, keyboard accessible); form controls 42px/rounded-lg;
+  Contacts and Documents pages share same layout pattern.
 
 Internal API proxy routes:
 
