@@ -63,22 +63,32 @@ export class StripeWebhookService {
       return;
     }
 
+    const signatureRaw = req.headers[`stripe-signature`];
+    const signature = Array.isArray(signatureRaw) ? signatureRaw[0] : signatureRaw;
+    if (!signature || typeof signature !== `string`) {
+      res.status(401).json({ received: false, error: `Missing webhook signature` });
+      return;
+    }
+
     try {
-      const signature = req.headers[`stripe-signature`];
       const event = this.stripe.webhooks.constructEvent(req.rawBody, signature, envs.STRIPE_WEBHOOK_SECRET);
 
-      // At-most-once: deduplicate by Stripe event id (defense in depth)
+      // Dedupe marker by Stripe event id. On duplicates, continue processing idempotently
+      // so retries can recover from any prior partial failure after marker insertion.
       try {
         await this.prisma.stripeWebhookEventModel.create({
           data: { eventId: event.id },
         });
       } catch (dedupErr) {
         if (dedupErr instanceof Prisma.PrismaClientKnownRequestError && dedupErr.code === `P2002`) {
-          this.logger.debug({ message: `Stripe webhook already processed`, eventId: event.id, eventType: event.type });
-          res.status(200).json({ received: true });
-          return;
+          this.logger.debug({
+            message: `Stripe webhook duplicate event detected, reprocessing idempotently`,
+            eventId: event.id,
+            eventType: event.type,
+          });
+        } else {
+          throw dedupErr;
         }
-        throw dedupErr;
       }
 
       switch (event.type) {
@@ -144,17 +154,19 @@ export class StripeWebhookService {
 
     if (!payout.metadata?.transactionId) return;
 
-    // Append-only: record outcome; idempotent on retry (P2002 = already processed)
-    await createOutcomeIdempotent(
-      this.prisma,
-      {
-        ledgerEntryId: payout.metadata.transactionId,
-        status: $Enums.TransactionStatus.COMPLETED,
-        source: `stripe`,
-        externalId: payout.id,
-      },
-      this.logger,
-    );
+    // Append-only: record outcome in tx for parity with DENIED path.
+    await this.prisma.$transaction(async (tx) => {
+      await createOutcomeIdempotent(
+        tx,
+        {
+          ledgerEntryId: payout.metadata!.transactionId,
+          status: $Enums.TransactionStatus.COMPLETED,
+          source: `stripe`,
+          externalId: payout.id,
+        },
+        this.logger,
+      );
+    });
   }
 
   private async handlePayoutFailed(event: Stripe.Event) {
@@ -162,17 +174,19 @@ export class StripeWebhookService {
 
     if (!payout.metadata?.transactionId) return;
 
-    // Append-only: record outcome; idempotent on retry (P2002 = already processed)
-    await createOutcomeIdempotent(
-      this.prisma,
-      {
-        ledgerEntryId: payout.metadata.transactionId,
-        status: $Enums.TransactionStatus.DENIED,
-        source: `stripe`,
-        externalId: payout.id,
-      },
-      this.logger,
-    );
+    // Append-only: record outcome in tx for parity with stripe.service DENIED path
+    await this.prisma.$transaction(async (tx) => {
+      await createOutcomeIdempotent(
+        tx,
+        {
+          ledgerEntryId: payout.metadata!.transactionId,
+          status: $Enums.TransactionStatus.DENIED,
+          source: `stripe`,
+          externalId: payout.id,
+        },
+        this.logger,
+      );
+    });
   }
 
   private async handleVerified(session: Stripe.Identity.VerificationSession) {
@@ -262,11 +276,8 @@ export class StripeWebhookService {
     // Collect and store the payment method used in this checkout session
     try {
       await this.collectPaymentMethodFromCheckout(session, consumerId);
-    } catch (error) {
-      this.logger.warn({
-        message: `Failed to collect payment method from checkout session`,
-        error: error instanceof Error ? error.message : String(error),
-      });
+    } catch {
+      this.logger.warn({ message: `Failed to collect payment method from checkout session` });
       // Don't fail the entire webhook if payment method collection fails
     }
   }
@@ -343,7 +354,6 @@ export class StripeWebhookService {
               this.logger.warn({
                 message: `Migration attach error`,
                 paymentMethodId: paymentMethod.id,
-                error: err?.message ?? String(error),
               });
             }
             totalFailed++;
@@ -358,8 +368,7 @@ export class StripeWebhookService {
       });
       return { success: true, attached: totalAttached, failed: totalFailed };
     } catch (error: unknown) {
-      const err = error as { message?: string };
-      this.logger.error({ message: `Migration failed`, error: err?.message ?? String(error) });
+      this.logger.error({ message: `Migration failed` });
       throw error;
     }
   }
@@ -402,10 +411,7 @@ export class StripeWebhookService {
       } else if (err?.type === `invalid_request_error` && err?.message?.includes(`already attached`)) {
         this.logger.debug({ message: `Payment method already attached to customer, continuing` });
       } else {
-        this.logger.warn({
-          message: `Payment method attachment warning`,
-          error: err?.message ?? String(error),
-        });
+        this.logger.warn({ message: `Payment method attachment warning` });
       }
     }
 
@@ -596,10 +602,13 @@ export class StripeWebhookService {
             SELECT pg_advisory_xact_lock(hashtext((${requesterId} || ':stripe-reversal')::text)::bigint)
           `);
 
-          // Balance check using centralized service (advisory lock above serializes per consumer)
-          const requesterBalance = await this.balanceService.calculateInTransaction(tx, requesterId, currencyCode);
-          if (requesterBalance < finalAmount) {
-            throw new ServiceUnavailableException(errorCodes.INSUFFICIENT_REQUESTER_BALANCE_REVERSAL_STRIPE);
+          // REFUND follows Stripe external source of truth. Once Stripe confirms refund,
+          // internal reversal must be appended idempotently even if requester balance changed.
+          if (kind === `CHARGEBACK`) {
+            const requesterBalance = await this.balanceService.calculateInTransaction(tx, requesterId, currencyCode);
+            if (requesterBalance < finalAmount) {
+              throw new ServiceUnavailableException(errorCodes.INSUFFICIENT_REQUESTER_BALANCE_REVERSAL_STRIPE);
+            }
           }
         }
 

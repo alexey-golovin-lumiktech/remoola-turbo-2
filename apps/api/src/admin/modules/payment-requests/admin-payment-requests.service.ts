@@ -409,61 +409,83 @@ export class AdminPaymentRequestsService {
       stripeRefundId,
     } as Prisma.InputJsonValue;
 
-    await this.prisma.$transaction(async (tx) => {
-      if (paymentRequest.requesterId) {
-        await tx.$executeRaw(
-          Prisma.sql`
-            SELECT pg_advisory_xact_lock(hashtext((${paymentRequest.requesterId} || ':reversal')::text)::bigint)
-          `,
-        );
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        if (paymentRequest.requesterId) {
+          await tx.$executeRaw(
+            Prisma.sql`
+              SELECT pg_advisory_xact_lock(hashtext((${paymentRequest.requesterId} || ':reversal')::text)::bigint)
+            `,
+          );
 
-        // Balance check using centralized service (advisory lock above serializes per consumer)
-        const requesterBalance = await this.balanceService.calculateInTransaction(
-          tx,
-          paymentRequest.requesterId,
-          paymentRequest.currencyCode,
-        );
-        if (requesterBalance < finalRequestedAmount) {
-          throw new BadRequestException(errorCodes.INSUFFICIENT_REQUESTER_BALANCE_REVERSAL_ADMIN);
+          // REFUND uses Stripe as external source of truth.
+          // Once refund succeeds, ledger reversal must be appended idempotently even if
+          // requester balance changed due to concurrent activity.
+          if (body.kind === `CHARGEBACK`) {
+            const requesterBalance = await this.balanceService.calculateInTransaction(
+              tx,
+              paymentRequest.requesterId,
+              paymentRequest.currencyCode,
+            );
+            if (requesterBalance < finalRequestedAmount) {
+              throw new BadRequestException(errorCodes.INSUFFICIENT_REQUESTER_BALANCE_REVERSAL_ADMIN);
+            }
+          }
         }
-      }
 
-      await tx.ledgerEntryModel.create({
-        data: {
-          ledgerId,
-          consumerId: paymentRequest.payerId,
-          paymentRequestId,
-          type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
-          currencyCode: paymentRequest.currencyCode,
-          status: reversalStatus,
-          amount: finalRequestedAmount,
-          createdBy: adminId,
-          updatedBy: adminId,
-          metadata,
-          idempotencyKey: `${idempotencyKeyBase}:payer`,
-          stripeId: stripeRefundId ?? undefined,
-        },
-      });
-
-      if (paymentRequest.requesterId) {
         await tx.ledgerEntryModel.create({
           data: {
             ledgerId,
-            consumerId: paymentRequest.requesterId,
+            consumerId: paymentRequest.payerId,
             paymentRequestId,
             type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
             currencyCode: paymentRequest.currencyCode,
             status: reversalStatus,
-            amount: -finalRequestedAmount,
+            amount: finalRequestedAmount,
             createdBy: adminId,
             updatedBy: adminId,
             metadata,
-            idempotencyKey: `${idempotencyKeyBase}:requester`,
+            idempotencyKey: `${idempotencyKeyBase}:payer`,
             stripeId: stripeRefundId ?? undefined,
           },
         });
+
+        if (paymentRequest.requesterId) {
+          await tx.ledgerEntryModel.create({
+            data: {
+              ledgerId,
+              consumerId: paymentRequest.requesterId,
+              paymentRequestId,
+              type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
+              currencyCode: paymentRequest.currencyCode,
+              status: reversalStatus,
+              amount: -finalRequestedAmount,
+              createdBy: adminId,
+              updatedBy: adminId,
+              metadata,
+              idempotencyKey: `${idempotencyKeyBase}:requester`,
+              stripeId: stripeRefundId ?? undefined,
+            },
+          });
+        }
+      });
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === `P2002`) {
+        const existingReversal = await this.prisma.ledgerEntryModel.findFirst({
+          where: { idempotencyKey: `${idempotencyKeyBase}:payer` },
+          select: { ledgerId: true, amount: true },
+        });
+        if (existingReversal) {
+          return {
+            ledgerId: existingReversal.ledgerId,
+            amount: Number(existingReversal.amount),
+            remaining: Math.max(0, remaining - Number(existingReversal.amount)),
+            kind: body.kind,
+          };
+        }
       }
-    });
+      throw err;
+    }
 
     await this.adminActionAudit.record({
       adminId,

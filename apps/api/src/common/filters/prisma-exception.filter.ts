@@ -22,7 +22,9 @@ export class PrismaExceptionFilter implements ExceptionFilter {
 
     if (exception instanceof Prisma.PrismaClientValidationError) {
       status = HttpStatus.BAD_REQUEST;
-      message = extractPrismaValidationDetails(exception);
+      // In production, keep validation errors generic to avoid exposing query/schema internals.
+      message =
+        process.env.NODE_ENV === `production` ? `Invalid request data` : extractPrismaValidationDetails(exception);
     } else if (exception instanceof Prisma.PrismaClientKnownRequestError) {
       const known = mapPrismaKnownError(exception);
       status = known.status;

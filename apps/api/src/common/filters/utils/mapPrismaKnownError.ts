@@ -257,5 +257,8 @@ export function mapPrismaKnownError(error: Prisma.PrismaClientKnownRequestError)
       break;
   }
 
+  // We may parse details from Prisma meta above for internal mapping,
+  // but client responses must never expose schema/constraint information.
+  details = undefined;
   return { status, message, details };
 }

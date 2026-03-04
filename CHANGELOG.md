@@ -1169,6 +1169,57 @@
     soft-delete (`consumer.deleted_at`) for production consumers with financial
     history.
 
+  ### ♻️ Audit follow-up
+  - **Ledger:** COMPLETED_AND_PENDING balance now uses
+    `IN ('COMPLETED','PENDING')`; added `balance-calculation.service.spec.ts`
+    and `getBalancesIncludePending` test.
+  - **Exchange:** Recovery path moved inside transaction with advisory lock;
+    P2002 handled (return existing).
+  - **Stripe:** DENIED outcome in `stripe.service` now uses
+    `createOutcomeIdempotent` with `externalId`.
+  - **Security:** `getBalancesCompleted` throws generic
+    `InternalServerErrorException`; mailing logs no longer log subject/error
+    message; `mapPrismaKnownError` omits details in API response. Mailing
+    success logs now use generic "Email sent successfully" (no subject).
+  - **Docs:** `docs/FINANCIAL_SAFETY_AND_DB_COMPLIANCE.md` updated (FOR UPDATE vs
+    advisory lock; migration backfill/lock notes; balance mode note).
+
+  ### Optionals
+  - **Docs:** Exchange row in critical surfaces now notes serialization:
+    advisory lock + re-read target in tx (no FOR UPDATE on balance rows).
+  - **Stripe:** DENIED outcome loop wrapped in `$transaction` for atomicity.
+  - **Logging:** `getBalancesCompleted` and Stripe webhook paths
+    (`collectPaymentMethodFromCheckout`, migration attach, migration failed,
+    payment method attachment) log only generic messages (no `error.message`/
+    stack) to avoid internal/Stripe text in logs.
+  - **Stripe webhook:** `handlePayoutFailed` now records DENIED outcome inside
+    `$transaction` for parity with `stripe.service` DENIED path.
+  - **Security (review):** `stripe.service` `payWithSavedPaymentMethod` now
+    throws generic `InternalServerErrorException('Payment could not be completed')`
+    instead of rethrowing Stripe errors, so clients never receive Stripe/internal
+    messages. `getBalancesIncludePending` now catches and throws generic error for
+    parity with `getBalancesCompleted`.
+  - **Ledger idempotency (review):** admin reversal now handles `P2002` by
+    re-reading reversal by idempotency key and returning existing result for
+    duplicate requests.
+  - **Stripe webhook consistency:** `handlePayoutPaid` now records COMPLETED
+    outcome inside `$transaction` (parity with `handlePayoutFailed`).
+  - **Validation security:** Prisma validation errors return generic
+    `Invalid request data` in production.
+  - **Payments API hardening:** `withdraw` and `transfer` now return generic
+    `InternalServerErrorException('An unexpected error occurred')` for
+    unexpected non-business failures (while preserving existing `BadRequest`
+    and idempotent duplicate handling).
+  - **Admin reversal policy:** Stripe `REFUND` now uses external-source-of-truth
+    flow: after successful Stripe refund, internal reversal is appended
+    idempotently without requester-balance gating. `CHARGEBACK` keeps in-tx
+    balance validation under `:reversal` advisory lock.
+  - **Webhook idempotency:** duplicate Stripe webhook events are now reprocessed
+    idempotently (not short-circuited) to recover from partial failures.
+  - **Webhook reversal policy:** Stripe webhook `REFUND` reversal now mirrors admin
+    policy: external-source-of-truth flow appends reversal idempotently without
+    requester-balance gating; `CHARGEBACK` keeps in-tx balance validation.
+
 </details>
 
 </details>

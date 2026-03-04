@@ -6,7 +6,7 @@ import { errorCodes } from '@remoola/shared-constants';
 import { ConsumerPaymentsService } from './consumer-payments.service';
 import { type TransferBody, type WithdrawBody } from './dto';
 import { type StartPayment } from './dto/start-payment.dto';
-import { BalanceCalculationService } from '../../../shared/balance-calculation.service';
+import { BalanceCalculationMode, BalanceCalculationService } from '../../../shared/balance-calculation.service';
 
 describe(`ConsumerPaymentsService.createPaymentRequest`, () => {
   const consumerId = `consumer-1`;
@@ -828,7 +828,7 @@ describe(`ConsumerPaymentsService.transfer`, () => {
 
     const body: TransferBody = { amount: 2, recipient: `2@email.com` };
 
-    await expect(service.transfer(consumerId, body, `idem-atomic-1`)).rejects.toThrow(`DB failure`);
+    await expect(service.transfer(consumerId, body, `idem-atomic-1`)).rejects.toThrow(`An unexpected error occurred`);
     expect(createSpy).toHaveBeenCalledTimes(2);
   });
 });
@@ -956,5 +956,31 @@ describe(`ConsumerPaymentsService.getHistory`, () => {
     const takeArg = (findMany.mock.calls[0][0] as { take: number }).take;
     expect(takeArg).toBeLessThanOrEqual(2000);
     expect(takeArg).toBeGreaterThan(0);
+  });
+});
+
+describe(`ConsumerPaymentsService.getBalancesIncludePending`, () => {
+  const consumerId = `consumer-1`;
+
+  it(`calls balanceService.calculateMultiCurrency with COMPLETED_AND_PENDING and returns balances`, async () => {
+    const balances = { [$Enums.CurrencyCode.USD]: 75, [$Enums.CurrencyCode.EUR]: 20 };
+    const balanceService = {
+      calculateMultiCurrency: jest
+        .fn()
+        .mockResolvedValue({ balances, mode: `COMPLETED_AND_PENDING`, calculatedAt: new Date() }),
+      calculateSingle: jest.fn().mockResolvedValue({ balance: 100 }),
+      calculateInTransaction: jest.fn().mockResolvedValue(100),
+    } as any;
+    const prisma = {} as any;
+    const service = new ConsumerPaymentsService(prisma, {} as any, balanceService);
+
+    const result = await service.getBalancesIncludePending(consumerId);
+
+    expect(balanceService.calculateMultiCurrency).toHaveBeenCalledWith(consumerId, {
+      mode: BalanceCalculationMode.COMPLETED_AND_PENDING,
+    });
+    expect(result).toEqual(balances);
+    expect(result.USD).toBe(75);
+    expect(result.EUR).toBe(20);
   });
 });

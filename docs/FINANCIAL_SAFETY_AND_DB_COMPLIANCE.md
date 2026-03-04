@@ -22,9 +22,9 @@ This document consolidates fintech safety and DB compliance work: design-rule co
 
 ### 1.2 Current state (after fixes)
 
-- **Ledger / financial history:** Append-only. No application-level UPDATE/DELETE on `ledger_entry`; status transitions and dispute data go to `ledger_entry_outcome` and `ledger_entry_dispute`; DB trigger syncs `ledger_entry.status` for existing balance queries.
+- **Ledger / financial history:** Append-only. No application-level UPDATE/DELETE on `ledger_entry`; status transitions and dispute data go to `ledger_entry_outcome` and `ledger_entry_dispute`; DB trigger syncs `ledger_entry.status` for existing balance queries. Balance for "completed only" uses status `= COMPLETED`; balance including pending uses `IN ('COMPLETED','PENDING')` (not a single string equality).
 - **Idempotency:** DB-enforced where required: `ledger_entry.idempotency_key` unique; `stripe_webhook_event.event_id` unique; insert-before-handling for webhooks.
-- **Concurrency:** Operation-specific advisory locks (`:withdraw`, `:transfer`, `:exchange`, `:reversal`, `:stripe-reversal`); balance read via `SELECT ... FOR UPDATE` inside same transaction.
+- **Concurrency:** Operation-specific advisory locks (`:withdraw`, `:transfer`, `:exchange`, `:reversal`, `:stripe-reversal`). Balance is read inside the same transaction; serialization is by advisory lock per (consumer, operation). Row-level lock (`SELECT ... FOR UPDATE`) is not required for correctness with this design—double-spend is prevented by the advisory lock.
 - **Raw SQL:** Parameterized (`Prisma.sql`); DB column names used (`consumer_id`, `deleted_at`, etc.); health does not expose raw `error.message`; archive search `query` capped.
 - **Tests:** Concurrency specs and unit specs updated; TypeScript and tests pass in `apps/api`.
 
@@ -62,7 +62,7 @@ This document consolidates fintech safety and DB compliance work: design-rule co
 ## 3. Invariants (non-negotiable rules)
 
 - **Stripe:** A Stripe event id MUST be processed at most once (enforced by unique `stripe_webhook_event.event_id` + insert-before-handling).
-- **Ledger:** Balance used for any debit/reversal MUST be read inside a DB transaction with row-level lock (`SELECT ... FOR UPDATE`) and advisory lock to avoid concurrent use of same balance.
+- **Ledger:** Balance used for debits and internal reversals MUST be read inside a DB transaction with advisory lock to avoid concurrent use of same balance. Serialization is by advisory lock per (consumer, operation). Optionally, row-level lock (`SELECT ... FOR UPDATE`) may be used for stricter isolation; current implementation relies on advisory locks only. **Exception:** Stripe `REFUND` flows (admin + webhook) follow external-source-of-truth policy (Stripe outcome first, then internal append-only reversal).
 - **Ledger writes:** No application-level UPDATE/DELETE on financial history; corrections via reversal or compensating records; status/dispute via append-only outcome/dispute tables.
 - **Amounts:** No float; amounts as Prisma `Decimal` / DB `NUMERIC`; currency matches where required.
 - **Retries:** Stripe replay → 200 + no reprocess. Same idempotency key → return existing result or no-op.
@@ -77,9 +77,9 @@ This document consolidates fintech safety and DB compliance work: design-rule co
 
 | Risk | Mitigation |
 |------|------------|
-| Ledger inconsistencies (wrong balance, partial writes) | Balance read inside `$transaction` with `SELECT ... FOR UPDATE`; all subsequent ledger writes in same transaction; append-only outcome/dispute; trigger for read path. |
+| Ledger inconsistencies (wrong balance, partial writes) | Balance read inside `$transaction` with advisory lock; all subsequent ledger writes in same transaction; append-only outcome/dispute; trigger for read path. Serialization by advisory lock per (consumer, operation). |
 | Idempotency violations (double charge, duplicate rows) | Stripe: dedup by `event_id` unique before processing. Withdraw/transfer/exchange/reversal: idempotency keys; DB unique on `ledger_entry.idempotency_key`; P2002 handled. |
-| Race conditions (concurrent withdraw/transfer/exchange) | Advisory lock per consumer + operation suffix; transfer acquires two locks in sorted order; balance under `FOR UPDATE`. |
+| Race conditions (concurrent withdraw/transfer/exchange) | Advisory lock per consumer + operation suffix; transfer acquires two locks in sorted order; balance read inside same transaction. |
 | Broken state machine / invalid status | Status transitions via outcome table + trigger; no direct UPDATE on ledger_entry for status. |
 | Migration / schema mismatch | Additive migrations; raw SQL uses actual DB column names (`consumer_id`, `deleted_at`, `currency_code`, etc.). |
 | SQL injection / info leakage | All production raw queries parameterized (`Prisma.sql`); health response does not expose raw `error.message`; archive search `query` capped. |
@@ -88,7 +88,7 @@ This document consolidates fintech safety and DB compliance work: design-rule co
 
 | Risk | Mitigation |
 |------|------------|
-| Revenue leakage / double charge | Webhook dedup; idempotency keys; FOR UPDATE prevents overdraw. |
+| Revenue leakage / double charge | Webhook dedup; idempotency keys; advisory lock prevents overdraw. |
 | Reconciliation / audit | Single transaction boundary; append-only history; structured logs; no PII/secrets in logs. |
 | Support burden from inconsistent state | At-most-once webhook processing and locked balance logic reduce duplicate or partial states. |
 
@@ -98,11 +98,11 @@ This document consolidates fintech safety and DB compliance work: design-rule co
 
 | Surface | Location | Safeguards |
 |---------|----------|------------|
-| Exchange | `ConsumerExchangeService.convert` | Advisory lock `:exchange`; balance via raw `SELECT ... FOR UPDATE` (currency-filtered). |
-| Withdraw | `ConsumerPaymentsService.withdraw` | Advisory lock `:withdraw`; balance via raw `SELECT ... FOR UPDATE`; idempotency key. |
-| Transfer | `ConsumerPaymentsService.transfer` | Two advisory locks `:transfer` in sorted order; balance via raw `SELECT ... FOR UPDATE`; idempotency key. |
-| Admin reversal | `AdminPaymentRequestsService` | Advisory lock `:reversal`; balance via raw `SELECT ... FOR UPDATE`; idempotency. |
-| Stripe reversal | `StripeWebhookService` (e.g. charge refunded) | Advisory lock `:stripe-reversal`; balance via raw `SELECT ... FOR UPDATE`; webhook dedup by `event_id` before handler. |
+| Exchange | `ConsumerExchangeService.convert` | Advisory lock `:exchange`; balance via raw SQL inside same transaction; idempotency (incl. recovery path in tx + P2002). Serialization: advisory lock + re-read target in tx (no FOR UPDATE on balance rows). |
+| Withdraw | `ConsumerPaymentsService.withdraw` | Advisory lock `:withdraw`; balance via raw SQL inside same transaction; idempotency key. |
+| Transfer | `ConsumerPaymentsService.transfer` | Two advisory locks `:transfer` in sorted order; balance via raw SQL inside same transaction; idempotency key. |
+| Admin reversal | `AdminPaymentRequestsService` | Advisory lock `:reversal`; `CHARGEBACK` validates requester balance inside tx. `REFUND` uses Stripe as source of truth and appends reversal idempotently after Stripe refund. |
+| Stripe reversal | `StripeWebhookService` (e.g. charge refunded) | Advisory lock `:stripe-reversal`; `CHARGEBACK` validates requester balance in tx. `REFUND` follows Stripe external source of truth and appends reversal idempotently. |
 | Stripe webhook entry | `processStripeEvent` | Insert into `stripe_webhook_event` first; on P2002 return 200. |
 | Ledger status / dispute | Stripe webhook handlers, reversal scheduler | Append-only: `ledgerEntryOutcomeModel.create`, `ledgerEntryDisputeModel.create`; no `ledgerEntryModel.update`/`updateMany`. |
 
@@ -134,9 +134,9 @@ Production raw queries use **parameterized** APIs; DB column names are **snake_c
 
 | Item | How it is satisfied |
 |------|--------------------|
-| **Idempotency** | Stripe: key = event id; unique on `stripe_webhook_event.event_id`; replay → 200 + no-op. Ledger: unique on `ledger_entry.idempotency_key`; caller-provided or derived keys for withdraw/transfer/exchange/reversal. |
-| **Atomicity & transactions** | All balance read + ledger writes for each operation in one `$transaction`; no partial state. |
-| **Concurrency** | Advisory lock per (consumer, operation) + `SELECT ... FOR UPDATE` on balance rows; transfer locks in sorted order. |
+| **Idempotency** | Stripe: key = event id; unique on `stripe_webhook_event.event_id`; duplicate events are reprocessed idempotently (not hard-skipped) to recover from partial failures. Ledger: unique on `ledger_entry.idempotency_key`; caller-provided or derived keys for withdraw/transfer/exchange/reversal. |
+| **Atomicity & transactions** | Balance read + ledger writes run in one `$transaction` for internal money operations. For Stripe `REFUND` (admin + webhook), external Stripe refund is treated as source of truth and internal reversal is appended idempotently afterward. |
+| **Concurrency** | Advisory lock per (consumer, operation); balance read inside same transaction; transfer locks in sorted order. |
 | **Append-only financial history** | No UPDATE/DELETE on ledger_entry for status/dispute; outcome and dispute tables + trigger. |
 | **AuthZ / tenancy** | consumerId/requesterId from auth context; no trust of client ids for money movement. |
 | **Logging & audit** | Structured Logger; correlationId; no secrets/PII in logs. |
@@ -155,6 +155,13 @@ Production raw queries use **parameterized** APIs; DB column names are **snake_c
 | `20260304120000_ledger_entry_outcome_dispute_cascade` | `ledger_entry_outcome` and `ledger_entry_dispute` FKs: ON DELETE RESTRICT → CASCADE; consumer delete cascades. Prefer soft-delete for production. |
 
 **Deploy order:** Run `prisma migrate deploy` (or `migrate dev`) for these migrations before deploying the app.
+
+### 8.1 Migration safety: backfill and lock
+
+- **Additive-first:** Prefer new columns/tables/indexes without DROP on hot paths (`ledger_entry`, `ledger_entry_outcome`, `stripe_webhook_event`, critical auth tables).
+- **Backfill:** For new NOT NULL columns, run backfill (e.g. UPDATE with default or from archive) **before** applying the migration that adds the constraint, or use a DEFAULT in the migration; document in the migration README.
+- **Lock:** ALTER TABLE / DROP INDEX can hold brief locks; prefer low-load windows for migrations that touch high-traffic tables. Long-running backfills should not run inside a single transaction that holds locks for the full duration.
+- **Rollback:** Document down/rollback SQL in migration READMEs where the migration is non-trivial (e.g. DROP COLUMN, FK change).
 
 ---
 

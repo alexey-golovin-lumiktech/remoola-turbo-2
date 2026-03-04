@@ -1,6 +1,13 @@
 import { randomUUID } from 'crypto';
 
-import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import Stripe from 'stripe';
 
 import { $Enums, Prisma } from '@remoola/database-2';
@@ -368,7 +375,7 @@ export class ConsumerStripeService {
             });
             throw new BadRequestException(errorCodes.PAYMENT_METHOD_CANNOT_REUSE_ATTACH);
           }
-          throw attachError as Error;
+          throw new InternalServerErrorException(`Payment could not be completed`);
         }
       }
     } catch (error: unknown) {
@@ -388,7 +395,7 @@ export class ConsumerStripeService {
         });
         throw new BadRequestException(errorCodes.PAYMENT_METHOD_CANNOT_REUSE_VERIFY);
       }
-      throw error;
+      throw new InternalServerErrorException(`Payment could not be completed`);
     }
 
     // 3) Get payment request details
@@ -462,29 +469,30 @@ export class ConsumerStripeService {
           nextAction: paymentIntent.next_action,
         };
       }
-    } catch (error: unknown) {
-      const err = error as { message?: string };
-      this.logger.warn({
-        message: `Payment with saved payment method failed`,
-        error: err?.message ?? String(error),
-      });
+    } catch {
+      this.logger.warn({ message: `Payment with saved payment method failed` });
 
-      // Append-only: record DENIED outcome; trigger syncs to ledger_entry.status (AGENTS 6.10)
-      const entries = await this.prisma.ledgerEntryModel.findMany({
-        where: { paymentRequestId: pr.id },
-        select: { id: true },
-      });
-      for (const entry of entries) {
-        await this.prisma.ledgerEntryOutcomeModel.create({
-          data: {
-            ledgerEntryId: entry.id,
-            status: $Enums.TransactionStatus.DENIED,
-            source: `stripe`,
-          },
+      // Append-only: record DENIED outcome (idempotent on retry via externalId); single tx for atomicity
+      await this.prisma.$transaction(async (tx) => {
+        const entries = await tx.ledgerEntryModel.findMany({
+          where: { paymentRequestId: pr.id },
+          select: { id: true },
         });
-      }
+        for (const entry of entries) {
+          await createOutcomeIdempotent(
+            tx,
+            {
+              ledgerEntryId: entry.id,
+              status: $Enums.TransactionStatus.DENIED,
+              source: `stripe`,
+              externalId: `denied:stripe:pr:${pr.id}:entry:${entry.id}`,
+            },
+            this.logger,
+          );
+        }
+      });
 
-      throw error;
+      throw new InternalServerErrorException(`Payment could not be completed`);
     }
   }
 }

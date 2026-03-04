@@ -115,7 +115,7 @@ export class BalanceCalculationService {
       `);
     }
 
-    const statusFilter = this.buildStatusFilter(mode);
+    const statusCondition = this.buildStatusCondition(mode);
     const currencyFilter = currency ? Prisma.sql`AND le.currency_code::text = ${currency}` : Prisma.empty;
 
     const rows = await this.prisma.$queryRaw<Array<{ currency_code: $Enums.CurrencyCode; balance: string }>>(
@@ -128,7 +128,7 @@ export class BalanceCalculationService {
           ORDER BY o.created_at DESC LIMIT 1
         ) latest ON true
         WHERE le.consumer_id::text = ${consumerId}
-          AND (COALESCE(latest.status, le.status))::text = ${statusFilter}
+          ${statusCondition}
           AND le.deleted_at IS NULL
           ${currencyFilter}
         GROUP BY le.currency_code
@@ -180,7 +180,7 @@ export class BalanceCalculationService {
       `);
     }
 
-    const statusFilter = this.buildStatusFilter(mode);
+    const statusCondition = this.buildStatusCondition(mode);
 
     const rows = await this.prisma.$queryRaw<Array<{ currency_code: $Enums.CurrencyCode; sum_amount: string }>>(
       Prisma.sql`
@@ -192,7 +192,7 @@ export class BalanceCalculationService {
           ORDER BY o.created_at DESC LIMIT 1
         ) latest ON true
         WHERE le.consumer_id::text = ${consumerId}
-          AND (COALESCE(latest.status, le.status))::text = ${statusFilter}
+          ${statusCondition}
           AND le.deleted_at IS NULL
         GROUP BY le.currency_code
       `,
@@ -245,7 +245,7 @@ export class BalanceCalculationService {
       `);
     }
 
-    const statusFilter = this.buildStatusFilter(mode);
+    const statusCondition = this.buildStatusCondition(mode);
     const currencyFilter = currency ? Prisma.sql`AND le.currency_code::text = ${currency}` : Prisma.empty;
 
     const rows = await tx.$queryRaw<Array<{ balance: string }>>(
@@ -258,7 +258,7 @@ export class BalanceCalculationService {
           ORDER BY o.created_at DESC LIMIT 1
         ) latest ON true
         WHERE le.consumer_id::text = ${consumerId}
-          AND (COALESCE(latest.status, le.status))::text = ${statusFilter}
+          ${statusCondition}
           AND le.deleted_at IS NULL
           ${currencyFilter}
       `,
@@ -305,18 +305,19 @@ export class BalanceCalculationService {
   }
 
   /**
-   * Build status filter SQL fragment based on calculation mode.
+   * Build status condition SQL fragment for WHERE clause.
+   * COMPLETED_AND_PENDING uses IN ('COMPLETED','PENDING'); COMPLETED uses equality.
    */
-  private buildStatusFilter(mode: BalanceCalculationMode): string {
+  private buildStatusCondition(mode: BalanceCalculationMode): Prisma.Sql {
     switch (mode) {
-      case BalanceCalculationMode.COMPLETED:
-        return $Enums.TransactionStatus.COMPLETED;
       case BalanceCalculationMode.COMPLETED_AND_PENDING:
-        // For this mode, we need to check for both statuses
-        // This is handled specially in the query
-        return `${$Enums.TransactionStatus.COMPLETED},${$Enums.TransactionStatus.PENDING}`;
+        return Prisma.sql`
+          AND (COALESCE(latest.status, le.status))::text
+          IN (${$Enums.TransactionStatus.COMPLETED}, ${$Enums.TransactionStatus.PENDING})
+        `;
+      case BalanceCalculationMode.COMPLETED:
       default:
-        return $Enums.TransactionStatus.COMPLETED;
+        return Prisma.sql`AND (COALESCE(latest.status, le.status))::text = ${$Enums.TransactionStatus.COMPLETED}`;
     }
   }
 }

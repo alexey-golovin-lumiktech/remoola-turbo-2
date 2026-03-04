@@ -698,42 +698,86 @@ export class ConsumerExchangeService {
         }
 
         if (existingSource && !existingTarget) {
-          const sourceMetadata = (existingSource.metadata ?? {}) as Record<string, unknown>;
-          const rateFromMetadata = typeof sourceMetadata.rate === `number` ? sourceMetadata.rate : rate.rate;
-          const mergedMetadata = {
-            ...sourceMetadata,
-            ...(options?.metadata ?? {}),
-            from,
-            to,
-            rate: rateFromMetadata,
-          };
-          const sourceAmount = Math.abs(Number(existingSource.amount));
-          const convertedAmount = this.roundToCurrency(sourceAmount * rateFromMetadata, to);
+          return this.prisma.$transaction(async (tx) => {
+            await tx.$executeRaw(Prisma.sql`
+              SELECT pg_advisory_xact_lock(hashtext((${consumerId} || ':exchange')::text)::bigint)
+            `);
 
-          const income = await this.prisma.ledgerEntryModel.create({
-            data: {
-              ledgerId: existingSource.ledgerId,
-              consumerId,
-              type: $Enums.LedgerEntryType.CURRENCY_EXCHANGE,
-              currencyCode: to,
-              status: $Enums.TransactionStatus.COMPLETED,
-              amount: +convertedAmount,
-              createdBy: consumerId,
-              updatedBy: consumerId,
-              idempotencyKey: targetKey ?? undefined,
-              metadata: mergedMetadata,
-            },
+            const targetInsideTx = await tx.ledgerEntryModel.findFirst({
+              where: { idempotencyKey: targetKey ?? undefined, consumerId },
+            });
+            if (targetInsideTx) {
+              const metadata = (targetInsideTx.metadata ?? {}) as Record<string, unknown>;
+              const rateFromMetadata = typeof metadata.rate === `number` ? metadata.rate : rate.rate;
+              return {
+                from,
+                to,
+                rate: rateFromMetadata,
+                sourceAmount: Math.abs(Number(existingSource.amount)),
+                targetAmount: Number(targetInsideTx.amount),
+                ledgerId: targetInsideTx.ledgerId,
+                entryId: targetInsideTx.id,
+              };
+            }
+
+            const sourceMetadata = (existingSource.metadata ?? {}) as Record<string, unknown>;
+            const rateFromMetadata = typeof sourceMetadata.rate === `number` ? sourceMetadata.rate : rate.rate;
+            const mergedMetadata = {
+              ...sourceMetadata,
+              ...(options?.metadata ?? {}),
+              from,
+              to,
+              rate: rateFromMetadata,
+            };
+            const sourceAmount = Math.abs(Number(existingSource.amount));
+            const convertedAmount = this.roundToCurrency(sourceAmount * rateFromMetadata, to);
+
+            try {
+              const income = await tx.ledgerEntryModel.create({
+                data: {
+                  ledgerId: existingSource.ledgerId,
+                  consumerId,
+                  type: $Enums.LedgerEntryType.CURRENCY_EXCHANGE,
+                  currencyCode: to,
+                  status: $Enums.TransactionStatus.COMPLETED,
+                  amount: +convertedAmount,
+                  createdBy: consumerId,
+                  updatedBy: consumerId,
+                  idempotencyKey: targetKey ?? undefined,
+                  metadata: mergedMetadata,
+                },
+              });
+              return {
+                from,
+                to,
+                rate: rateFromMetadata,
+                sourceAmount,
+                targetAmount: convertedAmount,
+                ledgerId: income.ledgerId,
+                entryId: income.id,
+              };
+            } catch (err) {
+              if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === `P2002`) {
+                const existing = await tx.ledgerEntryModel.findFirst({
+                  where: { idempotencyKey: targetKey ?? undefined, consumerId },
+                });
+                if (existing) {
+                  const meta = (existing.metadata ?? {}) as Record<string, unknown>;
+                  const r = typeof meta.rate === `number` ? meta.rate : rate.rate;
+                  return {
+                    from,
+                    to,
+                    rate: r,
+                    sourceAmount,
+                    targetAmount: Number(existing.amount),
+                    ledgerId: existing.ledgerId,
+                    entryId: existing.id,
+                  };
+                }
+              }
+              throw err;
+            }
           });
-
-          return {
-            from,
-            to,
-            rate: rateFromMetadata,
-            sourceAmount,
-            targetAmount: convertedAmount,
-            ledgerId: income.ledgerId,
-            entryId: income.id,
-          };
         }
       }
 

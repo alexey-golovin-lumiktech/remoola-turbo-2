@@ -1,6 +1,13 @@
 import { randomUUID } from 'crypto';
 
-import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 
 import { PAYMENT_DIRECTION, PAYMENT_METHOD, toCurrencyOrDefault } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
@@ -558,13 +565,9 @@ export class ConsumerPaymentsService {
         mode: BalanceCalculationMode.COMPLETED,
       });
       return result.balances;
-    } catch (error) {
-      this.logger.error(`Failed to get balances by currency`, {
-        consumerId,
-        error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
-      });
-      throw error;
+    } catch {
+      this.logger.error(`Balance calculation failed`, { consumerId });
+      throw new InternalServerErrorException(`An unexpected error occurred`);
     }
   }
 
@@ -577,10 +580,15 @@ export class ConsumerPaymentsService {
   }
 
   async getBalancesIncludePending(consumerId: string): Promise<Record<$Enums.CurrencyCode, number>> {
-    const result = await this.balanceService.calculateMultiCurrency(consumerId, {
-      mode: BalanceCalculationMode.COMPLETED_AND_PENDING,
-    });
-    return result.balances;
+    try {
+      const result = await this.balanceService.calculateMultiCurrency(consumerId, {
+        mode: BalanceCalculationMode.COMPLETED_AND_PENDING,
+      });
+      return result.balances;
+    } catch {
+      this.logger.error(`Balance calculation failed`, { consumerId });
+      throw new InternalServerErrorException(`An unexpected error occurred`);
+    }
   }
 
   async getAvailableBalance(consumerId: string): Promise<number> {
@@ -778,7 +786,8 @@ export class ConsumerPaymentsService {
         });
         if (existingWithdraw) return existingWithdraw;
       }
-      throw err;
+      this.logger.error(`Withdraw failed`, { consumerId });
+      throw new InternalServerErrorException(`An unexpected error occurred`);
     }
   }
 
@@ -897,7 +906,8 @@ export class ConsumerPaymentsService {
         });
         if (existingTransfer) return { ledgerId: existingTransfer.ledgerId };
       }
-      throw err;
+      this.logger.error(`Transfer failed`, { consumerId });
+      throw new InternalServerErrorException(`An unexpected error occurred`);
     }
   }
 }
