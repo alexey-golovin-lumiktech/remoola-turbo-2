@@ -419,7 +419,7 @@
 
 ---
 
-<details open>
+<details>
 <summary><strong>Changelog (February 2026)</strong></summary>
 
 # Changelog (February 2026)
@@ -1097,10 +1097,17 @@
 
 </details>
 
+</details>
+
+---
+
 <details open>
 <summary><strong>Changelog (March 2026)</strong></summary>
 
 # Changelog (March 2026)
+
+<details>
+<summary>2026-03-03</summary>
 
 - **2026-03-03:**
   ### 🚀 Feature
@@ -1143,6 +1150,24 @@
   - Tailwind `className` formatting per
     `governance/07_UI_TAILWIND_CLASSNAME_FORMAT.md` (multiline, one utility per
     line) in `apps/consumer` and `packages/ui` with no visual behavior change.
+
+</details>
+
+<details open>
+<summary>2026-03-04</summary>
+
+- **2026-03-04:**
+  ### 📄 Documentation
+  - `docs/LEDGER_PAYMENT_AUDIT.md`: ledger append-only note updated; production
+    consumers with financial history must use soft-delete. Dev/staging may
+    hard-delete consumer via Prisma Studio (cascade removes related rows).
+
+  ### 🗄 Database & Migrations
+  - Migration `20260304120000_ledger_entry_outcome_dispute_cascade`: changes
+    `ledger_entry_outcome` and `ledger_entry_dispute` FKs from ON DELETE RESTRICT
+    to ON DELETE CASCADE; consumer delete (e.g. Prisma Studio) cascades. Prefer
+    soft-delete (`consumer.deleted_at`) for production consumers with financial
+    history.
 
 </details>
 

@@ -1,6 +1,6 @@
 # Financial Safety & Database Compliance
 
-**Last updated:** 2026-02-25  
+**Last updated:** 2026-03-04  
 **Scope:** Remoola monorepo — ledger, payments, Stripe webhooks, raw SQL, PostgreSQL design rules  
 **Status:** Audit complete; critical fixes applied (append-only ledger, idempotency, raw SQL, health/archive).
 
@@ -45,7 +45,7 @@ This document consolidates fintech safety and DB compliance work: design-rule co
 | Area | Change |
 |------|--------|
 | **Schema** | `LedgerEntryOutcomeModel`, `LedgerEntryDisputeModel`; relations `LedgerEntryModel.outcomes`, `LedgerEntryModel.disputes`. |
-| **Migrations** | `20260225045952_stripe_webhook_event_dedup` (additive); `20260225120000_standardize_columns_snake_case` (RENAME only); `20260225140000_ledger_entry_outcome_append_only` (additive). |
+| **Migrations** | `20260225045952_stripe_webhook_event_dedup` (additive); `20260225120000_standardize_columns_snake_case` (RENAME only); `20260225140000_ledger_entry_outcome_append_only` (additive); `20260303120000_ledger_entry_outcome_unique_external` (additive); `20260304120000_ledger_entry_outcome_dispute_cascade` (FK RESTRICT→CASCADE). |
 | **Stripe webhook** | Insert into `stripe_webhook_event` first; on P2002 return 200. Ledger status/dispute via `ledgerEntryOutcomeModel.create` / `ledgerEntryDisputeModel.create` (no `ledgerEntryModel.update`/`updateMany`). |
 | **Stripe service / reversal scheduler** | Replaced `ledgerEntryModel.updateMany` with find + `ledgerEntryOutcomeModel.create` per entry. |
 
@@ -67,6 +67,7 @@ This document consolidates fintech safety and DB compliance work: design-rule co
 - **Amounts:** No float; amounts as Prisma `Decimal` / DB `NUMERIC`; currency matches where required.
 - **Retries:** Stripe replay → 200 + no reprocess. Same idempotency key → return existing result or no-op.
 - **Transfer lock order:** Locks for the two consumers are taken in deterministic sorted order to prevent deadlock.
+- **Consumer deletion:** Hard-deleting a consumer (or cascade from consumer delete) permanently removes ledger entries and audit trail. For production consumers with financial history, use soft-delete (`consumer.deleted_at`). In dev/staging, delete consumer via Prisma Studio or direct SQL; cascade will remove related rows.
 
 ---
 
@@ -150,6 +151,8 @@ Production raw queries use **parameterized** APIs; DB column names are **snake_c
 | `20260225045952_stripe_webhook_event_dedup` | Creates `stripe_webhook_event` with unique `event_id`. Additive. |
 | `20260225120000_standardize_columns_snake_case` | RENAME COLUMN only; no DROP. Deploy before app with updated `@map` and raw SQL. |
 | `20260225140000_ledger_entry_outcome_append_only` | Creates `ledger_entry_outcome`, `ledger_entry_dispute`; trigger `sync_ledger_entry_status_from_outcome`. Additive. |
+| `20260303120000_ledger_entry_outcome_unique_external` | Partial unique index on `(ledger_entry_id, external_id)` where `external_id IS NOT NULL`; outcome idempotency. Additive. |
+| `20260304120000_ledger_entry_outcome_dispute_cascade` | `ledger_entry_outcome` and `ledger_entry_dispute` FKs: ON DELETE RESTRICT → CASCADE; consumer delete cascades. Prefer soft-delete for production. |
 
 **Deploy order:** Run `prisma migrate deploy` (or `migrate dev`) for these migrations before deploying the app.
 

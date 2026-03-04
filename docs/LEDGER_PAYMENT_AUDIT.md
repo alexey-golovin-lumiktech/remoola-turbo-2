@@ -40,7 +40,7 @@
 ## NOTE (positive)
 
 - **Admin ledger service** (`apps/api/src/admin/modules/ledger/admin-ledger.service.ts`): Read-only (findAll with search/filter). No ledger or balance writes.
-- **Ledger append-only:** No `ledgerEntryModel.update` or `ledgerEntryModel.delete` in app code; only `create`. Fixtures use `deleteMany` in seed only.
+- **Ledger append-only:** No `ledgerEntryModel.update` or `ledgerEntryModel.delete` in apps/api; only `create`. Fixtures use `deleteMany` in seed only. In dev/staging, consumer delete (e.g. via Prisma Studio) cascades and may remove ledger entries; production consumers with financial history must use soft-delete.
 - **Balance calculation** (`apps/api/src/shared/balance-calculation.service.ts`): Balance is derived via SUM over ledger entries with LATERAL join for effective status; no balance table or direct balance writes. Advisory locks (`pg_advisory_xact_lock`) used when `acquireLock: true`.
 - **Consumer withdraw/transfer** (`consumer-payments.service.ts`): Early idempotency check by `idempotencyKey`, then `$transaction` with advisory lock and balance check; ledger creates use unique `idempotencyKey`; P2002 on duplicate key is handled and existing entry returned.
 - **Admin reversal** (`admin-payment-requests.service.ts`): Idempotency by `idempotencyKey` prefix, `$transaction` with advisory lock and balance check; ledger creates use idempotency keys.
