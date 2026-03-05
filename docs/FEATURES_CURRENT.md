@@ -19,7 +19,8 @@ Authentication and identity:
 - Password recovery and reset flow for consumers.
 - Cookie-based JWT auth with access/refresh tokens.
 - Login audit (success/failure tracking) and account lockout (per-email after N failures).
-- Google OAuth endpoints for consumer login flows (google/start, callback, signup-session, google-new-way, google-redirect-new-way, oauth/exchange, google-oauth, google-login-gpt).
+- Google OAuth endpoints for consumer login flows (google/start, callback, signup-session, google-new-way, google-redirect-new-way, oauth/exchange, google-oauth, google-login-gpt). OAuth `/google/start` accepts optional `returnOrigin` query parameter for multi-app consumer deployments (validated against CORS_ALLOWED_ORIGINS).
+- Database connection retry logic (30 attempts, 500ms delay) in API bootstrap.
 
 Consumer domain features:
 
@@ -117,6 +118,15 @@ Internal API proxy routes:
 - Payments, payment requests, payment methods, Stripe flows.
 - OAuth exchange proxy endpoint.
 - Exchange quote and batch rate proxy endpoints.
+
+### Consumer Mobile App (Next.js)
+
+Mobile-first consumer app running on port 3002:
+
+- Shares backend API with desktop consumer app (`apps/consumer`).
+- Mobile-optimized layouts and navigation.
+- Supports Google OAuth with `returnOrigin` parameter for proper redirect after authentication.
+- CORS configured for localhost:3002 and Vercel deployment.
 
 ### Database (Prisma)
 

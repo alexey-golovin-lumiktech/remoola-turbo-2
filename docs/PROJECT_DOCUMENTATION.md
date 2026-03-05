@@ -9,6 +9,7 @@ Remoola is a Turborepo monorepo with:
 - `apps/api`: NestJS backend (REST APIs).
 - `apps/admin`: Next.js admin dashboard.
 - `apps/consumer`: Next.js consumer portal.
+- `apps/consumer-mobile`: Next.js mobile-first consumer app (port 3002).
 - `packages/database-2`: Prisma schema, migrations, and generated client.
 - Shared packages for types, UI, linting, and TS config.
 
@@ -88,8 +89,8 @@ Auth (`/consumer/auth`):
 - `POST /change-password`: request password recovery email.
 - `PATCH /change-password/:token`: reset password by token.
 - Google OAuth flows:
-  - `GET /google/start`: start new OAuth flow.
-  - `GET /google/callback`: OAuth redirect handling.
+  - `GET /google/start`: start new OAuth flow. Accepts optional `returnOrigin` query parameter to specify the consumer app origin (validated against CORS_ALLOWED_ORIGINS) for redirect after authentication. Useful for multi-app deployments (e.g., desktop consumer on port 3001, mobile consumer on port 3002).
+  - `GET /google/callback`: OAuth redirect handling; uses stored `returnOrigin` from state.
   - `GET /google/signup-session`: fetch OAuth signup session data.
   - `GET /google-new-way`, `GET /google-redirect-new-way`: alternate OAuth entry/redirect.
   - `POST /oauth/exchange`: exchange OAuth code for access/refresh tokens.
@@ -235,6 +236,10 @@ Internal Admin API routes (server-side):
 ## Consumer App (Next.js)
 
 Consumer UI is in `apps/consumer`, with internal API handlers in `apps/consumer/src/app/api` to call the backend.
+
+## Consumer Mobile App (Next.js)
+
+Mobile-first consumer UI is in `apps/consumer-mobile`, running on port 3002. Follows the same architecture as the desktop consumer app with mobile-optimized layouts. Uses Google OAuth with `returnOrigin` parameter for proper redirect handling in multi-app deployments.
 
 Auth and onboarding:
 

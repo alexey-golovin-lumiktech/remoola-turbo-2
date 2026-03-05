@@ -10,7 +10,8 @@
 |-------------|----------------|-------------------------------------------|
 | **Backend** | `apps/api`     | NestJS REST API (admin + consumer namespaces) |
 | **Admin UI**| `apps/admin`   | Next.js dashboard for operators            |
-| **Consumer UI** | `apps/consumer` | Next.js portal for end users           |
+| **Consumer UI** | `apps/consumer` | Next.js consumer portal (desktop)       |
+| **Consumer Mobile** | `apps/consumer-mobile` | Next.js mobile-first consumer app (port 3002) |
 | **Database**| `packages/database-2` | Prisma schema, migrations, client  |
 | **Shared**  | `packages/api-types`, `env`, `ui`, etc. | Types, env, UI, tooling |
 
@@ -18,9 +19,10 @@
 
 ## What each app does
 
-- **API** — Auth (admin + consumer), dashboard stats, consumers & admins management, payment requests (list, archive, refund, chargeback), ledger (append-only financial history; status via outcome/dispute tables), exchange rates and rules, scheduled FX, Stripe integration (webhook event dedup), documents, contacts, contracts, profile and settings. Consumer list endpoints (contacts, contracts, documents, payments, exchange rules, scheduled) support pagination (`page`, `pageSize`).
+- **API** — Auth (admin + consumer), dashboard stats, consumers & admins management, payment requests (list, archive, refund, chargeback), ledger (append-only financial history; status via outcome/dispute tables), exchange rates and rules, scheduled FX, Stripe integration (webhook event dedup), documents, contacts, contracts, profile and settings. Consumer list endpoints (contacts, contracts, documents, payments, exchange rules, scheduled) support pagination (`page`, `pageSize`). Google OAuth supports optional `returnOrigin` query parameter for multi-app deployments.
 - **Admin** — Login, dashboard (stats, verification queue, recent requests, ledger anomalies), admins CRUD, consumers list/details and verification, payment requests (list, details, expectation-date archive), ledger and anomalies, exchange (rules, scheduled, rates). Exchange uses api-types currency codes.
 - **Consumer** — Login, signup (multi-step), OAuth, dashboard, contacts, contracts, documents (all list tables paginated), payment methods (incl. Stripe), payment requests and payments (list, start, withdraw, transfer), exchange and rules, profile, theme and preferred-currency settings. Currency options and shared UI (PaginationBar, AmountCurrencyInput) use api-types.
+- **Consumer Mobile** — Mobile-first Next.js app running on port 3002. Shares backend API with desktop consumer app. Supports Google OAuth with `returnOrigin` parameter for proper redirect after authentication.
 
 ---
 

@@ -7,9 +7,10 @@ Remoola is a Turborepo monorepo for the Remoola platform: a NestJS API plus two 
 ```text
 .
 ├── apps
-│   ├── api            # NestJS backend (REST APIs)
-│   ├── admin          # Next.js admin dashboard
-│   └── consumer       # Next.js consumer portal
+│   ├── api              # NestJS backend (REST APIs)
+│   ├── admin            # Next.js admin dashboard
+│   ├── consumer         # Next.js consumer portal
+│   └── consumer-mobile  # Next.js mobile-first consumer app
 └── packages
     ├── api-types         # Shared API contracts/types
     ├── database-2        # Prisma schema, migrations, client
@@ -55,6 +56,7 @@ yarn dev
 yarn dev:api
 yarn dev:admin
 yarn dev:consumer
+yarn dev:consumer-mobile
 
 # build & start
 yarn build

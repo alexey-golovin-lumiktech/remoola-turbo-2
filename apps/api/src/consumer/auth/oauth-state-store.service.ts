@@ -14,6 +14,7 @@ export type OAuthStateRecord = {
   createdAt: number;
   accountType?: string;
   contractorKind?: string;
+  returnOrigin?: string;
 };
 
 @Injectable()
@@ -57,9 +58,9 @@ export class OAuthStateStoreService implements OnModuleDestroy {
 
   private deserialize(raw: string) {
     try {
-      const parsed = JSON.parse(raw) as [string, string, string, number, string | null, string | null];
+      const parsed = JSON.parse(raw) as [string, string, string, number, string | null, string | null, string | null];
       if (!Array.isArray(parsed) || parsed.length < 4) return null;
-      const [nonce, codeVerifier, nextPath, createdAt, accountType, contractorKind] = parsed;
+      const [nonce, codeVerifier, nextPath, createdAt, accountType, contractorKind, returnOrigin] = parsed;
       if (
         typeof nonce !== `string` ||
         typeof codeVerifier !== `string` ||
@@ -76,6 +77,7 @@ export class OAuthStateStoreService implements OnModuleDestroy {
         createdAt,
         accountType: accountType ?? undefined,
         contractorKind: contractorKind ?? undefined,
+        returnOrigin: returnOrigin ?? undefined,
       };
     } catch {
       return null;
@@ -90,6 +92,7 @@ export class OAuthStateStoreService implements OnModuleDestroy {
       record.createdAt,
       record.accountType ?? null,
       record.contractorKind ?? null,
+      record.returnOrigin ?? null,
     ]);
   }
 }

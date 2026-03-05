@@ -12,15 +12,11 @@
       "password": "remoola"
     }
   ],
-  "typescript.preferences.quoteStyle": "single",
-  "javascript.format.insertSpaceAfterOpeningAndBeforeClosingEmptyBraces": false,
-  "typescript.format.insertSpaceAfterOpeningAndBeforeClosingEmptyBraces": false,
-  "typescript.tsdk": "node_modules/typescript/lib",
-  "task.allowAutomaticTasks": "off",
-  "typescript.preferences.importModuleSpecifier": "relative",
-  "javascript.preferences.importModuleSpecifier": "relative",
-  "typescript.preferences.importModuleSpecifierEnding": "auto",
-  "javascript.preferences.importModuleSpecifierEnding": "auto",
+  "js/ts.preferences.quoteStyle": "single",
+  "js/ts.format.insertSpaceAfterOpeningAndBeforeClosingEmptyBraces": false,
+  "js/ts.tsdk.path": "node_modules/typescript/lib",
+  "js/ts.preferences.importModuleSpecifier": "relative",
+  "js/ts.preferences.importModuleSpecifierEnding": "auto",
   // 🧩 --- ESLint Integration ---
   "eslint.useFlatConfig": true,
   "eslint.workingDirectories": [
@@ -68,17 +64,46 @@
   "editor.quickSuggestions": {
     "strings": true
   },
-  // 🚀 --- Workspace Optimization ---
+  // 🚀 --- Workspace Optimization (Enhanced for File Watcher) ---
   "search.exclude": {
     "**/node_modules": true,
     "**/dist": true,
     "**/.next": true,
     "**/out": true,
-    "**/build": true
+    "**/build": true,
+    "**/.turbo": true,
+    "**/coverage": true,
+    "**/test-results": true,
+    "**/playwright-report": true,
+    "**/.cache": true,
+    "**/tmp": true,
+    "**/temp": true
   },
   "files.exclude": {
     "**/.turbo": true,
     "**/.DS_Store": true
+  },
+  // 🔍 --- File Watcher Exclusions (Reduces inotify load) ---
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/dist/**": true,
+    "**/build/**": true,
+    "**/.next/**": true,
+    "**/.turbo/**": true,
+    "**/coverage/**": true,
+    "**/test-results/**": true,
+    "**/playwright-report/**": true,
+    "**/.cache/**": true,
+    "**/tmp/**": true,
+    "**/temp/**": true,
+    "**/*.log": true,
+    "**/logs/**": true,
+    "**/.yarn/cache/**": true,
+    "**/.pnp/**": true,
+    "**/.eslintcache": true,
+    "**/uploads/**": true
   },
   "[json]": {
     "editor.defaultFormatter": "vscode.json-language-features"
@@ -115,13 +140,12 @@
   "terminal.integrated.copyOnSelection": true,
   "terminal.integrated.tabs.focusMode": "singleClick",
   "editor.minimap.enabled": false,
-  "typescript.updateImportsOnFileMove.enabled": "always",
-  "javascript.updateImportsOnFileMove.enabled": "always",
-  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "js/ts.updateImportsOnFileMove.enabled": "always",
+  "js/ts.tsdk.promptToUseWorkspaceVersion": true,
   "[snippets]": {
     "editor.defaultFormatter": "vscode.json-language-features"
   },
   "[prisma]": {
     "editor.defaultFormatter": "Prisma.prisma"
-  },
+  }
 }

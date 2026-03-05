@@ -1153,7 +1153,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-03-04</summary>
 
 - **2026-03-04:**
@@ -1219,6 +1219,43 @@
   - **Webhook reversal policy:** Stripe webhook `REFUND` reversal now mirrors admin
     policy: external-source-of-truth flow appends reversal idempotently without
     requester-balance gating; `CHARGEBACK` keeps in-tx balance validation.
+
+</details>
+
+<details open>
+<summary>2026-03-05</summary>
+
+- **2026-03-05:**
+  ### 🚀 Feature
+  - Scaffold consumer(mobile) app
+    - BFF architecture with 50+ API route handlers
+    - Features: auth, payments, contacts, documents, exchange, settings
+    - Mobile-optimized layouts and responsive navigation
+  - Add OAuth `returnOrigin` parameter support for multi-app consumer deployments
+  - Add database connection retry logic (30 attempts, 500ms delay) before bootstrap
+  - Extend CORS configuration to include consumer(mobile)
+
+  ### 🔐 Security
+  - Validate `returnOrigin` against CORS_ALLOWED_ORIGINS before using in OAuth redirect
+  - Persist validated `returnOrigin` in OAuth state for callback flow
+  - Add rate limiting to OAuth `/google/start` endpoint (20 requests/min)
+  - Remove PII from OAuth error logs
+  - Add PII redaction to client-side logger (email/phone masking, secret redaction)
+
+  ### 🛠 DevEx
+  - Update project docs
+  - Add governance exemption for logger abstraction layer console usage
+
+  ### 📄 Documentation
+  - Document OAuth `returnOrigin` parameter usage in API docs
+  - Document CORS configuration for three apps (admin, consumer, consumer-mobile)
+
+  ### ✅ Governance & Review
+  - Resolved: logging exemption, PII removal, test documentation
+  - Issues fixed: rate limiting, CORS verification
+  - TypeScript: ✅ No errors, Linting: ✅ Pass, Tests: ✅ 65/65 passing
+  - Monorepo boundaries: ✅ No cross-app imports
+  - Backward compatibility: ✅ OAuth state handles 6 or 7 fields
 
 </details>
 

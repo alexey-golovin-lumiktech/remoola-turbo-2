@@ -26,6 +26,25 @@ import { passwordUtils } from './shared-common';
 
 const logger = new Logger(`Bootstrap`);
 
+const DB_CONNECT_MAX_ATTEMPTS = 30;
+const DB_CONNECT_DELAY_MS = 500;
+
+async function waitForDatabase(prisma: PrismaClient): Promise<void> {
+  for (let attempt = 1; attempt <= DB_CONNECT_MAX_ATTEMPTS; attempt++) {
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      if (attempt > 1) logger.log(`Database ready after ${attempt} attempt(s)`);
+      return;
+    } catch (e) {
+      if (attempt === DB_CONNECT_MAX_ATTEMPTS) throw e;
+      logger.warn(
+        `Database not ready (attempt ${attempt}/${DB_CONNECT_MAX_ATTEMPTS}), retrying in ${DB_CONNECT_DELAY_MS}ms...`,
+      );
+      await new Promise((r) => setTimeout(r, DB_CONNECT_DELAY_MS));
+    }
+  }
+}
+
 async function seed(prisma: PrismaClient): Promise<void> {
   const admins = [
     { type: $Enums.AdminType.ADMIN, email: envs.DEFAULT_ADMIN_EMAIL, password: envs.DEFAULT_ADMIN_PASSWORD },
@@ -225,6 +244,7 @@ async function bootstrap() {
   const reflector = app.get(Reflector);
   const jwtService = app.get(JwtService);
   const prisma = app.get(PrismaService);
+  await waitForDatabase(prisma);
   await seed(prisma);
   app.useGlobalGuards(new AuthGuard(reflector, jwtService, prisma));
   app.useGlobalInterceptors(new TransformResponseInterceptor(reflector), new LoggingInterceptor());

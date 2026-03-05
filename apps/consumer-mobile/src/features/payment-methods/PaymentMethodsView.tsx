@@ -1,0 +1,699 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { useState, useTransition } from 'react';
+
+import { setDefaultPaymentMethodAction, deletePaymentMethodAction } from './actions';
+import { AddPaymentMethodModal } from './ui/AddPaymentMethodModal';
+import { Button } from '../../shared/ui/Button';
+import { EmptyState } from '../../shared/ui/EmptyState';
+import { Modal } from '../../shared/ui/Modal';
+
+import type { PaymentMethodItem } from './queries';
+
+interface PaymentMethodsViewProps {
+  items: PaymentMethodItem[];
+}
+
+function getField(item: PaymentMethodItem, key: string): unknown {
+  if (item == null || typeof item !== `object`) return undefined;
+  return key in item ? item[key] : undefined;
+}
+
+export function PaymentMethodsView({ items }: PaymentMethodsViewProps) {
+  const router = useRouter();
+  const [, startTransition] = useTransition();
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodItem | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isSettingDefault, setIsSettingDefault] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSetDefault(methodId: string) {
+    setIsSettingDefault(methodId);
+    setError(null);
+    try {
+      const result = await setDefaultPaymentMethodAction(methodId);
+      if (!result.ok) {
+        setError(result.error.message);
+        return;
+      }
+      startTransition(() => {
+        router.refresh();
+      });
+    } catch {
+      setError(`Failed to set default payment method. Please try again.`);
+    } finally {
+      setIsSettingDefault(null);
+    }
+  }
+
+  async function handleDelete(methodId: string) {
+    setIsDeleting(true);
+    setError(null);
+    try {
+      const result = await deletePaymentMethodAction(methodId);
+      if (!result.ok) {
+        setError(result.error.message);
+        return;
+      }
+      setDeleteModalOpen(false);
+      setSelectedMethod(null);
+      startTransition(() => {
+        router.refresh();
+      });
+    } catch {
+      setError(`Failed to delete payment method. Please try again.`);
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
+  if (items.length === 0) {
+    return (
+      <>
+        <div
+          className="
+            space-y-6
+          "
+          data-testid="consumer-mobile-payment-methods"
+        >
+          <div
+            className="
+              flex
+              flex-col
+              items-stretch
+              gap-3
+              sm:flex-row
+              sm:items-center
+              sm:justify-between
+            "
+          >
+            <div>
+              <h1
+                className="
+                  text-2xl
+                  font-bold
+                  text-slate-900
+                  dark:text-white
+                "
+              >
+                Payment methods
+              </h1>
+              <p
+                className="
+                  mt-1
+                  text-sm
+                  text-slate-600
+                  dark:text-slate-400
+                "
+              >
+                Add cards or bank accounts for quick payments
+              </p>
+            </div>
+          </div>
+          <EmptyState
+            icon={
+              <svg
+                className="
+                  h-10
+                  w-10
+                "
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                />
+              </svg>
+            }
+            title="No payment methods yet"
+            description="Add your first payment method to start making and receiving payments quickly and securely."
+            action={{
+              label: `Add method`,
+              onClick: () => setAddModalOpen(true),
+            }}
+          />
+        </div>
+
+        <AddPaymentMethodModal
+          isOpen={addModalOpen}
+          onClose={() => setAddModalOpen(false)}
+          onSuccess={() => {
+            startTransition(() => {
+              router.refresh();
+            });
+          }}
+        />
+      </>
+    );
+  }
+
+  return (
+    <>
+      <div
+        className="
+          space-y-6
+        "
+        data-testid="consumer-mobile-payment-methods"
+      >
+        {error && (
+          <div
+            className="
+              rounded-lg
+              border
+              border-red-200
+              bg-red-50
+              p-4
+              dark:border-red-800
+              dark:bg-red-900/20
+            "
+          >
+            <p
+              className="
+                text-sm
+                text-red-800
+                dark:text-red-300
+              "
+            >
+              {error}
+            </p>
+          </div>
+        )}
+
+        <div
+          className="
+            flex
+            flex-col
+            items-stretch
+            gap-3
+            sm:flex-row
+            sm:items-center
+            sm:justify-between
+          "
+        >
+          <div>
+            <h1
+              className="
+                text-2xl
+                font-bold
+                text-slate-900
+                dark:text-white
+              "
+            >
+              Payment methods
+            </h1>
+            <p
+              className="
+                mt-1
+                text-sm
+                text-slate-600
+                dark:text-slate-400
+              "
+            >
+              Manage your cards and bank accounts
+            </p>
+          </div>
+          <Button
+            variant="primary"
+            size="md"
+            onClick={() => setAddModalOpen(true)}
+            className="
+              min-h-[44px]
+              w-full
+              sm:w-auto
+            "
+          >
+            <svg
+              className="
+                h-5
+                w-5
+              "
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2.5}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            <span
+              className="
+                ml-2
+                font-semibold
+              "
+            >
+              Add method
+            </span>
+          </Button>
+        </div>
+
+        <div
+          className="
+            grid
+            gap-3
+            sm:grid-cols-2
+            lg:grid-cols-3
+            xl:grid-cols-4
+          "
+        >
+          {items.map((item) => {
+            const id = getField(item, `id`) as string | undefined;
+            const brand = getField(item, `brand`) as string | undefined;
+            const last4 = getField(item, `last4`) as string | undefined;
+            const type = getField(item, `type`) as string | undefined;
+            const expMonth = getField(item, `expMonth`) as number | undefined;
+            const expYear = getField(item, `expYear`) as number | undefined;
+            const defaultSelected = getField(item, `defaultSelected`) as boolean | undefined;
+            const billingDetails = getField(item, `billingDetails`) as { name?: string } | undefined;
+
+            const key = id ?? String(Math.random());
+            const isLoadingThis = isSettingDefault === id;
+
+            return (
+              <div
+                key={key}
+                className="
+                  group
+                  relative
+                  overflow-hidden
+                  rounded-2xl
+                  border
+                  border-slate-200
+                  bg-white
+                  p-4
+                  shadow-sm
+                  transition-all
+                  duration-200
+                  hover:border-primary-300
+                  hover:shadow-md
+                  active:scale-[0.98]
+                  dark:border-slate-700
+                  dark:bg-slate-800
+                  dark:hover:border-primary-600
+                  sm:p-5
+                "
+              >
+                {defaultSelected && (
+                  <div
+                    className="
+                      absolute
+                      right-0
+                      top-0
+                      rounded-bl-xl
+                      bg-gradient-to-br
+                      from-primary-500
+                      to-primary-600
+                      px-3
+                      py-1.5
+                      text-xs
+                      font-semibold
+                      text-white
+                      shadow-sm
+                    "
+                  >
+                    Default
+                  </div>
+                )}
+
+                <div
+                  className="
+                    mb-4
+                    flex
+                    items-start
+                    gap-3
+                  "
+                >
+                  <div
+                    className="
+                      flex
+                      h-14
+                      w-14
+                      shrink-0
+                      items-center
+                      justify-center
+                      rounded-xl
+                      bg-gradient-to-br
+                      from-primary-500
+                      to-primary-600
+                      text-white
+                      shadow-sm
+                      transition-transform
+                      duration-200
+                      group-hover:scale-105
+                    "
+                  >
+                    {type === `BANK_ACCOUNT` ? (
+                      <svg
+                        className="
+                          h-7
+                          w-7
+                        "
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"
+                        />
+                      </svg>
+                    ) : (
+                      <svg
+                        className="
+                          h-7
+                          w-7
+                        "
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                        />
+                      </svg>
+                    )}
+                  </div>
+                  <div
+                    className="
+                      flex-1
+                      min-w-0
+                    "
+                  >
+                    <div
+                      className="
+                        mb-0.5
+                        text-xs
+                        font-medium
+                        uppercase
+                        tracking-wide
+                        text-slate-500
+                        dark:text-slate-400
+                      "
+                    >
+                      {type === `BANK_ACCOUNT` ? `Bank account` : brand}
+                    </div>
+                    <div
+                      className="
+                        text-lg
+                        font-bold
+                        tracking-tight
+                        text-slate-900
+                        dark:text-white
+                        sm:text-xl
+                      "
+                    >
+                      •••• {last4 ?? `****`}
+                    </div>
+                    {expMonth && expYear && (
+                      <div
+                        className="
+                          mt-1.5
+                          flex
+                          items-center
+                          gap-1
+                          text-xs
+                          text-slate-600
+                          dark:text-slate-400
+                        "
+                      >
+                        <svg
+                          className="
+                            h-3.5
+                            w-3.5
+                          "
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                          />
+                        </svg>
+                        <span>
+                          Expires {String(expMonth).padStart(2, `0`)}/{expYear}
+                        </span>
+                      </div>
+                    )}
+                    {billingDetails?.name && (
+                      <div
+                        className="
+                          mt-1.5
+                          flex
+                          items-center
+                          gap-1
+                          truncate
+                          text-xs
+                          text-slate-600
+                          dark:text-slate-400
+                        "
+                        title={billingDetails.name}
+                      >
+                        <svg
+                          className="
+                            h-3.5
+                            w-3.5
+                            shrink-0
+                          "
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                          />
+                        </svg>
+                        <span className="truncate">{billingDetails.name}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div
+                  className="
+                    flex
+                    gap-2
+                  "
+                >
+                  {!defaultSelected && id && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSetDefault(id)}
+                      isLoading={isLoadingThis}
+                      disabled={isLoadingThis}
+                      className="
+                        min-h-[40px]
+                        flex-1
+                        text-xs
+                        font-medium
+                      "
+                    >
+                      <svg
+                        className="
+                          mr-1.5
+                          h-3.5
+                          w-3.5
+                        "
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2.5}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      Set default
+                    </Button>
+                  )}
+                  {id && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedMethod(item);
+                        setDeleteModalOpen(true);
+                      }}
+                      className="
+                        min-h-[40px]
+                        flex-1
+                        text-xs
+                        font-medium
+                        text-red-600
+                        hover:border-red-300
+                        hover:bg-red-50
+                        dark:text-red-400
+                        dark:hover:border-red-700
+                        dark:hover:bg-red-900/20
+                      "
+                    >
+                      <svg
+                        className="
+                          mr-1.5
+                          h-3.5
+                          w-3.5
+                        "
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2.5}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                      </svg>
+                      Delete
+                    </Button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <Modal
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          if (!isDeleting) {
+            setDeleteModalOpen(false);
+            setError(null);
+          }
+        }}
+        title="Delete payment method"
+      >
+        <div
+          className="
+            space-y-4
+          "
+        >
+          {error && (
+            <div
+              className="
+                rounded-lg
+                border
+                border-red-200
+                bg-red-50
+                p-3
+                dark:border-red-800
+                dark:bg-red-900/20
+              "
+            >
+              <p
+                className="
+                  text-sm
+                  text-red-800
+                  dark:text-red-300
+                "
+              >
+                {error}
+              </p>
+            </div>
+          )}
+          <p
+            className="
+              text-sm
+              text-slate-600
+              dark:text-slate-400
+            "
+          >
+            Are you sure you want to delete this payment method? This action cannot be undone.
+          </p>
+          {selectedMethod && (
+            <div
+              className="
+                rounded-lg
+                border
+                border-slate-200
+                bg-slate-50
+                p-4
+                dark:border-slate-700
+                dark:bg-slate-700/50
+              "
+            >
+              <div
+                className="
+                  text-sm
+                  font-medium
+                  text-slate-900
+                  dark:text-white
+                "
+              >
+                {getField(selectedMethod, `brand`) as string} •••• {getField(selectedMethod, `last4`) as string}
+              </div>
+            </div>
+          )}
+          <div
+            className="
+              flex
+              flex-col
+              gap-3
+              pt-2
+              sm:flex-row
+            "
+          >
+            <Button
+              variant="outline"
+              size="md"
+              onClick={() => {
+                setDeleteModalOpen(false);
+                setError(null);
+              }}
+              disabled={isDeleting}
+              className="
+                min-h-[44px]
+                flex-1
+              "
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              size="md"
+              onClick={() => {
+                if (selectedMethod) {
+                  const id = getField(selectedMethod, `id`) as string | undefined;
+                  if (id) handleDelete(id);
+                }
+              }}
+              isLoading={isDeleting}
+              disabled={isDeleting}
+              className="
+                min-h-[44px]
+                flex-1
+              "
+            >
+              Delete
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <AddPaymentMethodModal
+        isOpen={addModalOpen}
+        onClose={() => setAddModalOpen(false)}
+        onSuccess={() => {
+          startTransition(() => {
+            router.refresh();
+          });
+        }}
+      />
+    </>
+  );
+}
