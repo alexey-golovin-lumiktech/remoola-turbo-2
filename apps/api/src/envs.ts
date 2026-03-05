@@ -79,17 +79,22 @@ const nest = {
   CONSUMER_APP_ORIGIN: z.string().default(`CONSUMER_APP_ORIGIN`),
   ADMIN_APP_ORIGIN: z.string().default(`ADMIN_APP_ORIGIN`),
   CORS_ALLOWED_ORIGINS: zArray(z.string().min(1), [
-    // for admin app
+    // for consumer-mobile app (port 3002)
+    `http://127.0.0.1:3002`,
+    `http://localhost:3002`,
+    `http://[::1]:3002`,
+    `https://remoola-turbo-2-consumer-mobile.vercel.app`,
+    // for admin app (port 3010)
     `http://127.0.0.1:3010`,
     `http://localhost:3010`,
     `http://[::1]:3010`,
     `https://remoola-turbo-2-admin.vercel.app`,
-    // for consumer app
+    // for consumer app (port 3001)
     `http://127.0.0.1:3001`,
     `http://localhost:3001`,
     `http://[::1]:3001`,
     `https://remoola-turbo-2-consumer.vercel.app`,
-    // for api
+    // for api (port 3333)
     `http://127.0.0.1:3333`,
     `http://localhost:3333`,
     `http://[::1]:3333`,

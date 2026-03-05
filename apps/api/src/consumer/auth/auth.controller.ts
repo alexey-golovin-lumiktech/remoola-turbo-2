@@ -149,11 +149,29 @@ export class ConsumerAuthController {
     return `/dashboard`;
   }
 
-  private buildConsumerRedirect(nextPath: string, extraParams?: Record<string, string>) {
+  private validateReturnOrigin(returnOrigin?: string): string | undefined {
+    if (!returnOrigin) return undefined;
+
+    try {
+      const url = new URL(returnOrigin);
+      const normalized = this.normalizeOrigin(url.origin);
+
+      if (this.allowedOrigins().has(normalized)) {
+        return normalized;
+      }
+    } catch {
+      // ignore invalid url
+    }
+
+    return undefined;
+  }
+
+  private buildConsumerRedirect(nextPath: string, extraParams?: Record<string, string>, returnOrigin?: string) {
     const origin =
-      envs.CONSUMER_APP_ORIGIN && envs.CONSUMER_APP_ORIGIN !== `CONSUMER_APP_ORIGIN`
+      returnOrigin ||
+      (envs.CONSUMER_APP_ORIGIN && envs.CONSUMER_APP_ORIGIN !== `CONSUMER_APP_ORIGIN`
         ? envs.CONSUMER_APP_ORIGIN
-        : envs.CORS_ALLOWED_ORIGINS?.[0];
+        : envs.CORS_ALLOWED_ORIGINS?.[0]);
 
     if (!origin) {
       throw new InternalServerErrorException(`CONSUMER_APP_ORIGIN is not configured`);
@@ -169,11 +187,12 @@ export class ConsumerAuthController {
     return url.toString();
   }
 
-  private buildConsumerLoginRedirect(errorCode: string) {
+  private buildConsumerLoginRedirect(errorCode: string, returnOrigin?: string) {
     const origin =
-      envs.CONSUMER_APP_ORIGIN && envs.CONSUMER_APP_ORIGIN !== `CONSUMER_APP_ORIGIN`
+      returnOrigin ||
+      (envs.CONSUMER_APP_ORIGIN && envs.CONSUMER_APP_ORIGIN !== `CONSUMER_APP_ORIGIN`
         ? envs.CONSUMER_APP_ORIGIN
-        : envs.CORS_ALLOWED_ORIGINS?.[0];
+        : envs.CORS_ALLOWED_ORIGINS?.[0]);
 
     if (!origin) {
       throw new InternalServerErrorException(`CONSUMER_APP_ORIGIN is not configured`);
@@ -190,11 +209,13 @@ export class ConsumerAuthController {
     nextPath?: string,
     accountType?: string,
     contractorKind?: string,
+    returnOrigin?: string,
   ) {
     const origin =
-      envs.CONSUMER_APP_ORIGIN && envs.CONSUMER_APP_ORIGIN !== `CONSUMER_APP_ORIGIN`
+      returnOrigin ||
+      (envs.CONSUMER_APP_ORIGIN && envs.CONSUMER_APP_ORIGIN !== `CONSUMER_APP_ORIGIN`
         ? envs.CONSUMER_APP_ORIGIN
-        : envs.CORS_ALLOWED_ORIGINS?.[0];
+        : envs.CORS_ALLOWED_ORIGINS?.[0]);
 
     if (!origin) {
       throw new InternalServerErrorException(`CONSUMER_APP_ORIGIN is not configured`);
@@ -225,6 +246,7 @@ export class ConsumerAuthController {
     return data;
   }
 
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   @PublicEndpoint()
   @Get(`google/start`)
   async googleOAuthStart(
@@ -233,6 +255,7 @@ export class ConsumerAuthController {
     @Query(`next`) next?: string,
     @Query(`accountType`) accountType?: string,
     @Query(`contractorKind`) contractorKind?: string,
+    @Query(`returnOrigin`) returnOrigin?: string,
   ) {
     const validatedAccountType =
       accountType === $Enums.AccountType.BUSINESS || accountType === $Enums.AccountType.CONTRACTOR
@@ -243,6 +266,7 @@ export class ConsumerAuthController {
         ? contractorKind
         : undefined;
 
+    const validatedReturnOrigin = this.validateReturnOrigin(returnOrigin);
     const nextPath = this.normalizeNextPath(next);
     const nonce = crypto.randomBytes(16).toString(`base64url`);
     const codeVerifier = GoogleOAuthService.createCodeVerifier();
@@ -259,6 +283,7 @@ export class ConsumerAuthController {
         createdAt,
         accountType: validatedAccountType,
         contractorKind: validatedContractorKind,
+        returnOrigin: validatedReturnOrigin,
       },
       this.oauthStateTtlMs,
     );
@@ -279,9 +304,10 @@ export class ConsumerAuthController {
   ) {
     const clearStateCookie = () =>
       response.clearCookie(GOOGLE_OAUTH_STATE_COOKIE_KEY, this.getOAuthClearCookieOptions(req));
-    const failureRedirect = (reason: string) => {
+
+    const failureRedirect = (reason: string, returnOrigin?: string) => {
       clearStateCookie();
-      const url = this.buildConsumerLoginRedirect(reason);
+      const url = this.buildConsumerLoginRedirect(reason, returnOrigin);
       return response.redirect(url);
     };
 
@@ -295,6 +321,8 @@ export class ConsumerAuthController {
     const stateRecord = await this.oauthStateStore.consume(state);
     if (!stateRecord) return failureRedirect(`expired_state`);
     if (Date.now() - stateRecord.createdAt > this.oauthStateTtlMs) return failureRedirect(`expired_state`);
+
+    const stateReturnOrigin = stateRecord.returnOrigin;
 
     try {
       const payload = await this.googleOAuthServiceGPT.exchangeCodeForPayload(
@@ -326,6 +354,7 @@ export class ConsumerAuthController {
           stateRecord.nextPath,
           stateRecord.accountType,
           stateRecord.contractorKind,
+          stateRecord.returnOrigin,
         );
         return response.redirect(redirectUrl);
       }
@@ -336,12 +365,18 @@ export class ConsumerAuthController {
 
       this.setAuthCookies(response, accessToken, refreshToken, req);
       clearStateCookie();
-      const redirectUrl = this.buildConsumerRedirect(stateRecord.nextPath, { oauthToken: exchangeToken });
+      const redirectUrl = this.buildConsumerRedirect(
+        stateRecord.nextPath,
+        { oauthToken: exchangeToken },
+        stateRecord.returnOrigin,
+      );
       return response.redirect(redirectUrl);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : `OAuth callback failed`;
-      this.logger.error(message);
-      return failureRedirect(`login_failed`);
+    } catch {
+      this.logger.error(`OAuth callback failed`, {
+        hasStateRecord: !!stateRecord,
+        hasReturnOrigin: !!stateReturnOrigin,
+      });
+      return failureRedirect(`login_failed`, stateReturnOrigin);
     }
   }
 
