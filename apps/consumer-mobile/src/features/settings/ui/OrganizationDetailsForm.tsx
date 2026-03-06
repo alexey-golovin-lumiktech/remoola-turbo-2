@@ -35,9 +35,9 @@ const CONSUMER_ROLE_OPTIONS = [
 ];
 
 const SIZE_OPTIONS = [
-  { value: `1-10`, label: `1-10 team members` },
-  { value: `11-100`, label: `11-100 team members` },
-  { value: `100+`, label: `100+ team members` },
+  { value: `SMALL`, label: `1-10 team members` },
+  { value: `MEDIUM`, label: `11-100 team members` },
+  { value: `LARGE`, label: `100+ team members` },
 ];
 
 export function OrganizationDetailsForm({ profile }: OrganizationDetailsFormProps) {
@@ -63,7 +63,7 @@ export function OrganizationDetailsForm({ profile }: OrganizationDetailsFormProp
 
   return (
     <FormCard title="Organization Details" description="Information about your organization">
-      <form action={formAction} className="space-y-4">
+      <form action={formAction} className={`space-y-5`}>
         <FormField label="Organization Name" htmlFor="name" error={fieldErrors.name}>
           <FormInput
             id="name"
@@ -72,6 +72,7 @@ export function OrganizationDetailsForm({ profile }: OrganizationDetailsFormProp
             defaultValue={org.name ?? ``}
             error={!!fieldErrors.name}
             placeholder="Your company name"
+            className={`min-h-11`}
           />
         </FormField>
 
@@ -83,6 +84,7 @@ export function OrganizationDetailsForm({ profile }: OrganizationDetailsFormProp
             defaultValue={org.consumerRole ?? ``}
             error={!!fieldErrors.consumerRole}
             placeholder="Select your role"
+            className={`min-h-11`}
             onChange={(e) => setShowOtherRole(e.currentTarget.value === CONSUMER_ROLE.OTHER)}
           />
         </FormField>
@@ -96,6 +98,7 @@ export function OrganizationDetailsForm({ profile }: OrganizationDetailsFormProp
               defaultValue={org.consumerRoleOther ?? ``}
               error={!!fieldErrors.consumerRoleOther}
               placeholder="Your role"
+              className={`min-h-11`}
             />
           </FormField>
         )}
@@ -108,11 +111,24 @@ export function OrganizationDetailsForm({ profile }: OrganizationDetailsFormProp
             defaultValue={org.size ?? ``}
             error={!!fieldErrors.size}
             placeholder="Select organization size"
+            className={`min-h-11`}
           />
         </FormField>
 
-        <div className="flex justify-end">
-          <Button type="submit" variant="primary" isLoading={isPending} disabled={isPending}>
+        <div className={`flex justify-end pt-2`}>
+          <Button
+            type="submit"
+            variant="primary"
+            isLoading={isPending}
+            disabled={isPending}
+            className={`
+              min-h-11
+              shadow-lg
+              shadow-primary-500/30
+              hover:shadow-xl
+              hover:shadow-primary-500/40
+            `}
+          >
             {isPending ? `Saving...` : `Save Changes`}
           </Button>
         </div>

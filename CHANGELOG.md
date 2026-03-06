@@ -1283,6 +1283,10 @@
     - Document cards with improved layout, icons, and action buttons
     - Tag display with overflow handling (show first 3 + count)
     - Preview and attachment actions repositioned for better UX
+  - Consumer mobile shared UI library:
+    - Comprehensive icon library: 49 SVG icon components with unified `IconProps` interface
+    - New shared UI components: `IconBadge` (gradient variants, sizes, rings), `PageHeader` (mobile-optimized with sticky header support), `SearchInput` (with clear button and debounced interaction)
+    - Brand assets: favicon.ico and icon.svg for consumer-mobile app
 
   ### 🔐 Security
   - Centralized OAuth crypto utilities in `@remoola/security-utils`:
@@ -1291,6 +1295,11 @@
     - Nonce generation for replay protection
     - SHA-256 state hashing for storage keys
   - Auditable crypto layer: all OAuth crypto calls now use centralized utilities instead of inline implementations
+
+  ### 🧪 Testing
+  - Added comprehensive test coverage for consumer-mobile:
+    - `client.test.ts`: token refresh flows, SWR fetcher, fetchWithAuth, retry logic, session expiry handling
+    - `middleware.test.ts`: Next.js middleware auth flows, token validation, refresh token rotation, OAuth callback handling
 
   ### ♻️ Refactor
   - Extracted duplicate origin validation logic into `OriginResolverService`

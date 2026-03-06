@@ -21,7 +21,7 @@ export function PrevNextButtons({ onNext, nextLabel }: PrevNextButtonsProps) {
       }
       data-testid="consumer-signup-prev-next"
     >
-      <div className="space-y-3">
+      <div className={`space-y-3`}>
         <button
           type="button"
           data-testid="consumer-signup-btn-next"
@@ -34,7 +34,15 @@ export function PrevNextButtons({ onNext, nextLabel }: PrevNextButtonsProps) {
         >
           {label}
         </button>
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        <div
+          className={`
+          flex
+          flex-wrap
+          items-center
+          justify-between
+          gap-2
+        `}
+        >
           {!isFirst ? (
             <button
               type="button"
@@ -50,11 +58,11 @@ export function PrevNextButtons({ onNext, nextLabel }: PrevNextButtonsProps) {
           ) : (
             <span />
           )}
-          <span className="text-sm text-slate-500 dark:text-slate-400">
+          <span className={`text-sm text-slate-500 dark:text-slate-400`}>
             Already have an account?{` `}
             <Link
               href="/login"
-              className="font-medium text-primary-600 underline"
+              className={`font-medium text-primary-600 underline`}
               data-testid="consumer-signup-link-login"
             >
               Log in

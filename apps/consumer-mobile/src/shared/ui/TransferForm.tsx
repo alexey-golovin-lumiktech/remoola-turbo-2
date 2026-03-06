@@ -87,7 +87,7 @@ export function TransferForm({ availableCurrencies, contacts, onSubmit, onSucces
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className={`space-y-4`}>
       <FormField label="Amount" htmlFor="transfer-amount" error={errors.amount} required>
         <AmountCurrencyInput
           id="transfer-amount"
@@ -127,8 +127,8 @@ export function TransferForm({ availableCurrencies, contacts, onSubmit, onSucces
         />
       </FormField>
 
-      <div className="flex gap-3 pt-2">
-        <Button type="submit" variant="primary" size="md" isLoading={isLoading} className="flex-1">
+      <div className={`flex gap-3 pt-2`}>
+        <Button type="submit" variant="primary" size="md" isLoading={isLoading} className={`flex-1`}>
           Transfer funds
         </Button>
       </div>

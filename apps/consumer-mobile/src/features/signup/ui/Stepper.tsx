@@ -2,6 +2,7 @@
 
 import { CheckCircleIcon, ClipboardIcon, HomeIcon, LandmarkIcon, UserIcon } from '@remoola/ui';
 
+import { CheckIcon } from '../../../shared/ui/icons/CheckIcon';
 import { useSignupForm } from '../SignupFormContext';
 import { useSignupSteps } from '../SignupStepsContext';
 import { STEP_ENTITY_LABEL, STEP_NAME, type StepName } from '../stepNames';
@@ -22,17 +23,59 @@ export function Stepper() {
   const progressPercentage = Math.round(((currentIndex + 1) / stepCount) * 100);
 
   return (
-    <div className="mb-2" data-testid="consumer-signup-stepper">
-      <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+    <div className={`mb-2`} data-testid="consumer-signup-stepper">
+      <div
+        className={`
+        mb-3
+        flex
+        items-center
+        justify-between
+      `}
+      >
+        <p
+          className={`
+          text-sm
+          font-medium
+          text-neutral-700
+          dark:text-neutral-300
+        `}
+        >
           Step {currentIndex + 1} of {stepCount}
         </p>
-        <p className="text-xs font-semibold text-primary-600 dark:text-primary-400">{progressPercentage}% complete</p>
+        <p
+          className={`
+          text-xs
+          font-semibold
+          text-primary-600
+          dark:text-primary-400
+        `}
+        >
+          {progressPercentage}% complete
+        </p>
       </div>
 
-      <div className="mb-4 h-1.5 w-full overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
+      <div
+        className={`
+        mb-4
+        h-1.5
+        w-full
+        overflow-hidden
+        rounded-full
+        bg-neutral-100
+        dark:bg-neutral-800
+      `}
+      >
         <div
-          className="h-full rounded-full bg-gradient-to-r from-primary-500 to-primary-600 transition-all duration-500 ease-out"
+          className={`
+            h-full
+            rounded-full
+            bg-gradient-to-r
+            from-primary-500
+            to-primary-600
+            transition-all
+            duration-500
+            ease-out
+          `}
           style={{ width: `${progressPercentage}%` }}
           role="progressbar"
           aria-valuenow={progressPercentage}
@@ -42,7 +85,7 @@ export function Stepper() {
         />
       </div>
 
-      <div className="flex justify-between gap-1">
+      <div className={`flex justify-between gap-1`}>
         {steps.map((step, index) => {
           const isActive = index === currentIndex;
           const isCompleted = step.submitted || index < currentIndex;
@@ -52,7 +95,15 @@ export function Stepper() {
           return (
             <div
               key={step.name}
-              className="relative flex min-w-0 flex-1 flex-col items-center gap-1"
+              className={`
+                relative
+                flex
+                min-w-0
+                flex-1
+                flex-col
+                items-center
+                gap-1
+              `}
               data-testid={`consumer-signup-stepper-step-${step.name.replace(/\s/g, `-`)}`}
               aria-current={isActive ? `step` : undefined}
             >
@@ -77,20 +128,14 @@ export function Stepper() {
               >
                 {StepIcon ? (
                   isCompleted && !isActive ? (
-                    <CheckCircleIcon size={16} className="shrink-0" />
+                    <CheckCircleIcon size={16} className={`shrink-0`} />
                   ) : (
-                    <StepIcon size={16} className="shrink-0" />
+                    <StepIcon size={16} className={`shrink-0`} />
                   )
                 ) : isCompleted && !isActive ? (
-                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
+                  <CheckIcon className={`h-5 w-5`} />
                 ) : (
-                  <span className="text-sm font-semibold">{index + 1}</span>
+                  <span className={`text-sm font-semibold`}>{index + 1}</span>
                 )}
               </div>
               <span

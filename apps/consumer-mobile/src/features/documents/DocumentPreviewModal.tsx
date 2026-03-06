@@ -78,7 +78,7 @@ export function DocumentPreviewModal({
         items-end
         justify-center
         sm:items-center
-        ${isFullscreen ? `bg-black` : `bg-slate-900/50 p-0 sm:p-4 backdrop-blur-sm`}
+        ${isFullscreen ? `bg-black` : `bg-slate-900/60 p-0 sm:p-4 backdrop-blur-md`}
       `}
       role="dialog"
       aria-modal="true"
@@ -102,68 +102,141 @@ export function DocumentPreviewModal({
           flex
           flex-col
           overflow-hidden
-          bg-white
-          shadow-xl
-          dark:bg-slate-800
-          ${isFullscreen ? `h-screen w-screen` : `h-[90vh] w-full rounded-t-2xl sm:max-w-4xl sm:rounded-2xl`}
+          shadow-2xl
+          ${isFullscreen ? `h-screen w-screen bg-slate-900` : `h-[95vh] w-full rounded-t-3xl sm:max-w-5xl sm:rounded-3xl bg-white dark:bg-slate-800`}
         `}
       >
         <div
           className={`
             flex
-            items-center
-            justify-between
+            flex-col
             border-b
-            border-slate-200
-            px-4
+            bg-linear-to-r
+            from-white
+            via-slate-50
+            to-white
+            px-3
             py-3
+            sm:flex-row
+            sm:items-center
+            sm:px-5
+            sm:py-4
             dark:border-slate-700
+            dark:from-slate-800
+            dark:via-slate-900
+            dark:to-slate-800
+            backdrop-blur-sm
           `}
         >
           <div
             className={`
-              flex-1
-              min-w-0
+              flex
+              items-center
+              justify-between
+              gap-2
+              mb-2
+              sm:mb-0
+              sm:flex-1
             `}
           >
-            <h2
-              id="document-preview-title"
+            <div
               className={`
-                truncate
-                text-lg
-                font-semibold
-                text-slate-900
-                dark:text-white
+                flex-1
+                min-w-0
               `}
             >
-              {documentName}
-            </h2>
+              <h2
+                id="document-preview-title"
+                className={`
+                  truncate
+                  text-base
+                  sm:text-lg
+                  font-bold
+                  text-slate-900
+                  dark:text-white
+                `}
+              >
+                {documentName}
+              </h2>
+            </div>
+
+            {!isFullscreen && (
+              <button
+                onClick={onClose}
+                className={`
+                  shrink-0
+                  min-h-10
+                  sm:hidden
+                  rounded-xl
+                  p-2
+                  text-slate-600
+                  transition-all
+                  hover:bg-slate-100
+                  hover:text-slate-900
+                  focus:outline-none
+                  focus:ring-2
+                  focus:ring-primary-500
+                  dark:text-slate-400
+                  dark:hover:bg-slate-700
+                  dark:hover:text-white
+                  active:scale-95
+                `}
+                aria-label="Close preview"
+              >
+                <svg
+                  className={`
+                    h-5
+                    w-5
+                  `}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
           </div>
 
           <div
             className={`
               flex
               items-center
+              justify-center
               gap-2
-              ml-4
+              sm:ml-4
             `}
           >
             <button
               onClick={handleDownload}
               className={`
-                min-h-[44px]
-                rounded-lg
-                p-2
+                flex-1
+                sm:flex-none
+                min-h-10
+                sm:min-h-11
+                rounded-xl
+                px-4
+                py-2
+                sm:p-2.5
                 text-slate-600
-                transition-colors
+                font-semibold
+                sm:font-normal
+                text-sm
+                transition-all
                 hover:bg-slate-100
                 hover:text-slate-900
+                hover:shadow-md
                 focus:outline-none
                 focus:ring-2
                 focus:ring-primary-500
                 dark:text-slate-400
                 dark:hover:bg-slate-700
                 dark:hover:text-white
+                active:scale-95
+                flex
+                items-center
+                justify-center
+                gap-2
               `}
               aria-label="Download document"
             >
@@ -183,56 +256,77 @@ export function DocumentPreviewModal({
                   d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
                 />
               </svg>
+              <span className={`sm:hidden`}>Download</span>
             </button>
 
             <button
               onClick={() => setIsFullscreen(!isFullscreen)}
               className={`
-                min-h-[44px]
-                rounded-lg
-                p-2
+                flex-1
+                sm:flex-none
+                min-h-10
+                sm:min-h-11
+                rounded-xl
+                px-4
+                py-2
+                sm:p-2.5
                 text-slate-600
-                transition-colors
+                font-semibold
+                sm:font-normal
+                text-sm
+                transition-all
                 hover:bg-slate-100
                 hover:text-slate-900
+                hover:shadow-md
                 focus:outline-none
                 focus:ring-2
                 focus:ring-primary-500
                 dark:text-slate-400
                 dark:hover:bg-slate-700
                 dark:hover:text-white
+                active:scale-95
+                flex
+                items-center
+                justify-center
+                gap-2
               `}
               aria-label={isFullscreen ? `Exit fullscreen` : `Enter fullscreen`}
             >
               {isFullscreen ? (
-                <svg
-                  className={`
-                    h-5
-                    w-5
-                  `}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <>
+                  <svg
+                    className={`
+                      h-5
+                      w-5
+                    `}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  <span className={`sm:hidden`}>Exit</span>
+                </>
               ) : (
-                <svg
-                  className={`
-                    h-5
-                    w-5
-                  `}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
-                  />
-                </svg>
+                <>
+                  <svg
+                    className={`
+                      h-5
+                      w-5
+                    `}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
+                    />
+                  </svg>
+                  <span className={`sm:hidden`}>Fullscreen</span>
+                </>
               )}
             </button>
 
@@ -240,19 +334,25 @@ export function DocumentPreviewModal({
               <button
                 onClick={onClose}
                 className={`
-                  min-h-[44px]
-                  rounded-lg
-                  p-2
+                  hidden
+                  sm:flex
+                  min-h-11
+                  rounded-xl
+                  p-2.5
                   text-slate-600
-                  transition-colors
+                  transition-all
                   hover:bg-slate-100
                   hover:text-slate-900
+                  hover:shadow-md
                   focus:outline-none
                   focus:ring-2
                   focus:ring-primary-500
                   dark:text-slate-400
                   dark:hover:bg-slate-700
                   dark:hover:text-white
+                  active:scale-95
+                  items-center
+                  justify-center
                 `}
                 aria-label="Close preview"
               >
@@ -276,8 +376,8 @@ export function DocumentPreviewModal({
           className={`
             flex-1
             overflow-auto
-            bg-slate-100
-            dark:bg-slate-900
+            bg-slate-50
+            dark:bg-slate-950
           `}
         >
           {isImage ? (
@@ -326,20 +426,25 @@ export function DocumentPreviewModal({
               <div
                 className={`
                   flex
-                  h-16
-                  w-16
+                  h-20
+                  w-20
                   items-center
                   justify-center
-                  rounded-full
-                  bg-slate-200
-                  dark:bg-slate-700
+                  rounded-2xl
+                  bg-linear-to-br
+                  from-slate-200
+                  to-slate-300
+                  shadow-xl
+                  dark:from-slate-700
+                  dark:to-slate-800
                 `}
               >
                 <svg
                   className={`
-                    h-8
-                    w-8
+                    h-10
+                    w-10
                     text-slate-500
+                    dark:text-slate-400
                   `}
                   fill="currentColor"
                   viewBox="0 0 20 20"
@@ -353,9 +458,9 @@ export function DocumentPreviewModal({
               </div>
               <p
                 className={`
-                  mt-4
-                  text-sm
-                  font-medium
+                  mt-6
+                  text-base
+                  font-bold
                   text-slate-900
                   dark:text-white
                 `}
@@ -364,8 +469,8 @@ export function DocumentPreviewModal({
               </p>
               <p
                 className={`
-                  mt-1
-                  text-xs
+                  mt-2
+                  text-sm
                   text-slate-600
                   dark:text-slate-400
                 `}
@@ -375,25 +480,31 @@ export function DocumentPreviewModal({
               <button
                 onClick={handleDownload}
                 className={`
-                  mt-6
+                  mt-8
                   inline-flex
-                  min-h-[44px]
+                  min-h-12
                   items-center
-                  rounded-lg
-                  bg-primary-600
-                  px-6
-                  py-2.5
+                  gap-2
+                  rounded-xl
+                  bg-linear-to-r
+                  from-primary-600
+                  to-primary-700
+                  px-8
+                  py-3
                   text-sm
-                  font-semibold
+                  font-bold
                   text-white
-                  shadow-sm
+                  shadow-lg
+                  shadow-primary-500/30
                   transition-all
-                  hover:bg-primary-700
-                  hover:shadow-md
+                  hover:shadow-xl
+                  hover:shadow-primary-500/40
+                  hover:scale-105
                   focus:outline-none
                   focus:ring-2
                   focus:ring-primary-500
                   focus:ring-offset-2
+                  active:scale-95
                 `}
               >
                 Download

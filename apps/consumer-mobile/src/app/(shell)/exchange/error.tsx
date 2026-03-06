@@ -8,13 +8,7 @@ export default function ExchangeError({ error, reset }: { error: Error & { diges
   useEffect(() => {}, [error]);
 
   return (
-    <div
-      className="
-        mx-auto
-        max-w-md
-        p-4
-      "
-    >
+    <div className={`mx-auto max-w-md p-4`}>
       <ErrorState
         title="Failed to load exchange"
         message="We couldn't load the exchange page. Please try again."

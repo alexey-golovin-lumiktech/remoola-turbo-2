@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
 
+import { clientLogger } from '../../../lib/logger';
+import { showErrorToast, showSuccessToast } from '../../../lib/toast.client';
 import { Button } from '../../../shared/ui/Button';
 import { Modal } from '../../../shared/ui/Modal';
 import { attachDocumentToPayment } from '../actions';
@@ -33,7 +35,7 @@ export function PaymentPickerModal({ documentId, onClose }: PaymentPickerModalPr
 
   const [payments, setPayments] = useState<PaymentSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState(false);
   const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -47,14 +49,19 @@ export function PaymentPickerModal({ documentId, onClose }: PaymentPickerModalPr
         const items = Array.isArray(data) ? data : (data.items ?? []);
         setPayments(items);
       } catch (err) {
-        setError(err instanceof Error ? err.message : `Failed to load payments`);
+        clientLogger.error(`Failed to fetch payments for document attachment`, {
+          documentId,
+          error: err,
+        });
+        setFetchError(true);
+        showErrorToast(err instanceof Error ? err.message : `Failed to load payments`);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchPayments();
-  }, []);
+  }, [documentId]);
 
   const handleAttach = async () => {
     if (!selectedPaymentId) return;
@@ -65,12 +72,18 @@ export function PaymentPickerModal({ documentId, onClose }: PaymentPickerModalPr
     });
 
     if (result.ok) {
+      showSuccessToast(`Document attached to payment`);
       startTransition(() => {
         router.refresh();
       });
       onClose();
     } else {
-      setError(result.error.message);
+      clientLogger.error(`Failed to attach document to payment`, {
+        documentId,
+        paymentRequestId: selectedPaymentId,
+        error: result.error,
+      });
+      showErrorToast(result.error.message, { code: result.error.code });
     }
   };
 
@@ -142,23 +155,22 @@ export function PaymentPickerModal({ documentId, onClose }: PaymentPickerModalPr
               />
             ))}
           </div>
-        ) : error ? (
+        ) : fetchError ? (
           <div
             className={`
-              rounded-lg
-              border
-              border-red-200
-              bg-red-50
-              px-4
-              py-3
-              text-sm
-              text-red-800
-              dark:border-red-900
-              dark:bg-red-950
-              dark:text-red-200
+              py-8
+              text-center
             `}
           >
-            {error}
+            <p
+              className={`
+                text-sm
+                text-slate-500
+                dark:text-slate-400
+              `}
+            >
+              Failed to load payments. Please try again.
+            </p>
           </div>
         ) : payments.length === 0 ? (
           <div

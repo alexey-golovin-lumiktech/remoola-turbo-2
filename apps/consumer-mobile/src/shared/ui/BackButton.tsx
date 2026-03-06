@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 
+import { ChevronLeftIcon } from './icons/ChevronLeftIcon';
+
 interface BackButtonProps {
   href: string;
   label?: string;
@@ -33,16 +35,16 @@ export function BackButton({ href, label = `Back`, className = `` }: BackButtonP
       }
       aria-label={label}
     >
-      <svg
-        className="h-5 w-5 transition-transform group-hover:-translate-x-0.5"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
+      <ChevronLeftIcon
+        className={`
+        h-5
+        w-5
+        transition-transform
+        group-hover:-translate-x-0.5
+      `}
         aria-hidden="true"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-      </svg>
-      <span className="hidden sm:inline">{label}</span>
+      />
+      <span className={`hidden sm:inline`}>{label}</span>
     </Link>
   );
 }

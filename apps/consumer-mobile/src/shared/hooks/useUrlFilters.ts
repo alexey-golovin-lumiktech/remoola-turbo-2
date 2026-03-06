@@ -61,7 +61,7 @@ export function useUrlFilters<T extends Record<string, string | string[] | undef
   };
 }
 
-export function parseSearchParams<T extends Record<string, unknown>>(
+export function parseUrlSearchParams<T extends Record<string, unknown>>(
   searchParams: URLSearchParams | Record<string, string | string[] | undefined>,
   schema?: {
     [K in keyof T]?: (value: string) => T[K];

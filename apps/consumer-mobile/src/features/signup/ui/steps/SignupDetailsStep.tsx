@@ -12,6 +12,9 @@ import {
 import { GoogleIcon, PasswordInput } from '@remoola/ui';
 
 import { getApiBaseUrlOptional } from '../../../../lib/config.client';
+import { CheckCircleIcon } from '../../../../shared/ui/icons/CheckCircleIcon';
+import { ExclamationCircleIcon } from '../../../../shared/ui/icons/ExclamationCircleIcon';
+import { InformationCircleIcon } from '../../../../shared/ui/icons/InformationCircleIcon';
 import { useSignupForm } from '../../SignupFormContext';
 import { useSignupSteps } from '../../SignupStepsContext';
 import { STEP_NAME } from '../../stepNames';
@@ -130,15 +133,42 @@ export function SignupDetailsStep() {
   };
 
   return (
-    <div className="rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
-      <div className="p-4 sm:p-6">
-        <h1 className="mb-4 text-lg font-semibold text-neutral-900 dark:text-white">Signup details</h1>
+    <div
+      className={`
+      rounded-xl
+      border
+      border-neutral-200
+      bg-white
+      shadow-sm
+      dark:border-neutral-700
+      dark:bg-neutral-900
+    `}
+    >
+      <div className={`p-4 sm:p-6`}>
+        <h1
+          className={`
+          mb-4
+          text-lg
+          font-semibold
+          text-neutral-900
+          dark:text-white
+        `}
+        >
+          Signup details
+        </h1>
         {!isGoogleSignup && (
           <>
-            <div className="mb-4">
+            <div className={`mb-4`}>
               <label
                 htmlFor="sd-email"
-                className="mb-1.5 block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+                className={`
+                  mb-1.5
+                  block
+                  text-sm
+                  font-medium
+                  text-neutral-700
+                  dark:text-neutral-300
+                `}
               >
                 Email address
               </label>
@@ -163,24 +193,33 @@ export function SignupDetailsStep() {
               {fieldErrors.email && (
                 <p
                   id="sd-email-err"
-                  className="mt-1.5 flex items-center gap-1 text-xs text-red-600 dark:text-red-400"
+                  className={`
+                    mt-1.5
+                    flex
+                    items-center
+                    gap-1
+                    text-xs
+                    text-red-600
+                    dark:text-red-400
+                  `}
                   role="alert"
                 >
-                  <svg className="h-4 w-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fillRule="evenodd"
-                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
+                  <ExclamationCircleIcon className={`h-4 w-4 shrink-0`} />
                   {fieldErrors.email}
                 </p>
               )}
             </div>
-            <div className="mb-4">
+            <div className={`mb-4`}>
               <label
                 htmlFor="sd-password"
-                className="mb-1.5 block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+                className={`
+                  mb-1.5
+                  block
+                  text-sm
+                  font-medium
+                  text-neutral-700
+                  dark:text-neutral-300
+                `}
               >
                 Password
               </label>
@@ -196,12 +235,12 @@ export function SignupDetailsStep() {
                 }
               />
               {signupDetails.password && (
-                <div className="mt-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-neutral-600 dark:text-neutral-400">Password strength:</span>
+                <div className={`mt-2`}>
+                  <div className={`flex items-center justify-between`}>
+                    <span className={`text-xs text-neutral-600 dark:text-neutral-400`}>Password strength:</span>
                     <span className={`text-xs font-medium ${passwordStrength.color}`}>{passwordStrength.label}</span>
                   </div>
-                  <div className="mt-1 flex gap-1">
+                  <div className={`mt-1 flex gap-1`}>
                     {[...Array(5)].map((_, i) => (
                       <div
                         key={i}
@@ -222,27 +261,43 @@ export function SignupDetailsStep() {
               {fieldErrors.password && (
                 <p
                   id="sd-password-err"
-                  className="mt-1.5 flex items-center gap-1 text-xs text-red-600 dark:text-red-400"
+                  className={`
+                    mt-1.5
+                    flex
+                    items-center
+                    gap-1
+                    text-xs
+                    text-red-600
+                    dark:text-red-400
+                  `}
                   role="alert"
                 >
-                  <svg className="h-4 w-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fillRule="evenodd"
-                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
+                  <ExclamationCircleIcon className={`h-4 w-4 shrink-0`} />
                   {fieldErrors.password}
                 </p>
               )}
-              <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+              <p
+                className={`
+                mt-1.5
+                text-xs
+                text-neutral-500
+                dark:text-neutral-400
+              `}
+              >
                 At least 8 characters with mixed case, numbers & symbols
               </p>
             </div>
-            <div className="mb-4">
+            <div className={`mb-4`}>
               <label
                 htmlFor="sd-confirm"
-                className="mb-1.5 block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+                className={`
+                  mb-1.5
+                  block
+                  text-sm
+                  font-medium
+                  text-neutral-700
+                  dark:text-neutral-300
+                `}
               >
                 Confirm password
               </label>
@@ -258,30 +313,36 @@ export function SignupDetailsStep() {
                 }
               />
               {signupDetails.confirmPassword && signupDetails.confirmPassword === signupDetails.password && (
-                <p className="mt-1.5 flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
-                  <svg className="h-4 w-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
+                <p
+                  className={`
+                  mt-1.5
+                  flex
+                  items-center
+                  gap-1
+                  text-xs
+                  text-green-600
+                  dark:text-green-400
+                `}
+                >
+                  <CheckCircleIcon className={`h-4 w-4 shrink-0`} />
                   Passwords match
                 </p>
               )}
               {fieldErrors.confirmPassword && (
                 <p
                   id="sd-confirm-err"
-                  className="mt-1.5 flex items-center gap-1 text-xs text-red-600 dark:text-red-400"
+                  className={`
+                    mt-1.5
+                    flex
+                    items-center
+                    gap-1
+                    text-xs
+                    text-red-600
+                    dark:text-red-400
+                  `}
                   role="alert"
                 >
-                  <svg className="h-4 w-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fillRule="evenodd"
-                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
+                  <ExclamationCircleIcon className={`h-4 w-4 shrink-0`} />
                   {fieldErrors.confirmPassword}
                 </p>
               )}
@@ -289,27 +350,55 @@ export function SignupDetailsStep() {
           </>
         )}
         {isGoogleSignup && signupDetails.email && (
-          <div className="mb-4 rounded-lg bg-primary-50 p-3 dark:bg-primary-900/20">
-            <p className="flex items-center gap-2 text-sm text-primary-700 dark:text-primary-300">
-              <svg className="h-5 w-5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                  clipRule="evenodd"
-                />
-              </svg>
+          <div
+            className={`
+            mb-4
+            rounded-lg
+            bg-primary-50
+            p-3
+            dark:bg-primary-900/20
+          `}
+          >
+            <p
+              className={`
+              flex
+              items-center
+              gap-2
+              text-sm
+              text-primary-700
+              dark:text-primary-300
+            `}
+            >
+              <InformationCircleIcon className={`h-5 w-5 shrink-0`} />
               Signing up with {signupDetails.email}
             </p>
           </div>
         )}
         {isGoogleSignup && googleSignupStartUrl && (
-          <p className="mb-4 text-sm text-neutral-500 dark:text-neutral-400">
+          <p
+            className={`
+            mb-4
+            text-sm
+            text-neutral-500
+            dark:text-neutral-400
+          `}
+          >
             Google sign-up started. To use email/password instead, go back.
           </p>
         )}
-        <div className="mb-3">
-          <label htmlFor="sd-how" className="mb-1.5 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-            How did you hear about us? <span className="text-neutral-400">(Optional)</span>
+        <div className={`mb-3`}>
+          <label
+            htmlFor="sd-how"
+            className={`
+            mb-1.5
+            block
+            text-sm
+            font-medium
+            text-neutral-700
+            dark:text-neutral-300
+          `}
+          >
+            How did you hear about us? <span className={`text-neutral-400`}>(Optional)</span>
           </label>
           <select
             id="sd-how"
@@ -336,13 +425,50 @@ export function SignupDetailsStep() {
       <PrevNextButtons onNext={handleNext} />
 
       {googleSignupStartUrl && !isGoogleSignup && (
-        <div className="border-t border-neutral-200 p-4 dark:border-neutral-700 sm:p-6">
-          <div className="relative mb-4">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-neutral-200 dark:border-neutral-700" />
+        <div
+          className={`
+          border-t
+          border-neutral-200
+          p-4
+          dark:border-neutral-700
+          sm:p-6
+        `}
+        >
+          <div className={`relative mb-4`}>
+            <div
+              className={`
+              absolute
+              inset-0
+              flex
+              items-center
+            `}
+            >
+              <div
+                className={`
+                w-full
+                border-t
+                border-neutral-200
+                dark:border-neutral-700
+              `}
+              />
             </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="bg-white px-3 text-neutral-500 dark:bg-neutral-900 dark:text-neutral-400">
+            <div
+              className={`
+              relative
+              flex
+              justify-center
+              text-xs
+            `}
+            >
+              <span
+                className={`
+                bg-white
+                px-3
+                text-neutral-500
+                dark:bg-neutral-900
+                dark:text-neutral-400
+              `}
+              >
                 Or sign up with
               </span>
             </div>
@@ -363,7 +489,14 @@ export function SignupDetailsStep() {
             }
             data-testid="consumer-mobile-signup-google"
           >
-            <span className="flex items-center justify-center gap-3">
+            <span
+              className={`
+              flex
+              items-center
+              justify-center
+              gap-3
+            `}
+            >
               <GoogleIcon size={20} />
               Sign up with Google
             </span>

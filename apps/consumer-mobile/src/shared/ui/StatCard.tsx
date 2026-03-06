@@ -1,5 +1,8 @@
 import { type ReactNode } from 'react';
 
+import { ArrowDownIcon } from './icons/ArrowDownIcon';
+import { ArrowUpIcon } from './icons/ArrowUpIcon';
+
 interface StatCardProps {
   label: string;
   value: string | number;
@@ -14,50 +17,136 @@ interface StatCardProps {
 export function StatCard({ label, value, icon, trend, className }: StatCardProps) {
   return (
     <div
-      className={`group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-md dark:border-slate-700 dark:bg-slate-800 ${className ?? ``}`}
+      className={`group relative overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/50 p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-slate-300 hover:-translate-y-0.5 dark:border-slate-700 dark:from-slate-800 dark:to-slate-800/50 dark:hover:border-slate-600 ${className ?? ``}`}
     >
-      <div className="absolute right-0 top-0 h-24 w-24 translate-x-8 -translate-y-8 rounded-full bg-gradient-to-br from-primary-500/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+      <div
+        className={`
+        absolute
+        right-0
+        top-0
+        h-32
+        w-32
+        translate-x-10
+        -translate-y-10
+        rounded-full
+        bg-gradient-to-br
+        from-primary-500/10
+        via-primary-400/5
+        to-transparent
+        opacity-0
+        transition-opacity
+        duration-300
+        group-hover:opacity-100
+        blur-2xl
+      `}
+      />
 
-      <div className="relative">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</p>
-            <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{value}</p>
+      <div className={`relative`}>
+        <div
+          className={`
+          flex
+          items-start
+          justify-between
+          gap-3
+        `}
+        >
+          <div className={`flex-1 min-w-0`}>
+            <p
+              className={`
+              text-xs
+              font-bold
+              uppercase
+              tracking-wider
+              text-slate-500
+              dark:text-slate-400
+            `}
+            >
+              {label}
+            </p>
+            <p
+              className={`
+              mt-2.5
+              text-3xl
+              font-extrabold
+              text-slate-900
+              dark:text-white
+              truncate
+            `}
+            >
+              {value}
+            </p>
           </div>
           {icon && (
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-50 text-primary-600 transition-transform duration-300 group-hover:scale-110 dark:bg-primary-900/20 dark:text-primary-400">
+            <div
+              className={`
+              flex
+              h-12
+              w-12
+              shrink-0
+              items-center
+              justify-center
+              rounded-xl
+              bg-gradient-to-br
+              from-primary-100
+              to-primary-50
+              text-primary-600
+              shadow-sm
+              transition-all
+              duration-300
+              group-hover:scale-110
+              group-hover:shadow-md
+              dark:from-primary-900/30
+              dark:to-primary-900/20
+              dark:text-primary-400
+            `}
+            >
               {icon}
             </div>
           )}
         </div>
 
         {trend && (
-          <div className="mt-3 flex items-center gap-1">
+          <div
+            className={`
+            mt-4
+            flex
+            items-center
+            gap-1.5
+            pt-3
+            border-t
+            border-slate-100
+            dark:border-slate-700/50
+          `}
+          >
             {trend.direction === `up` && (
-              <svg className="h-4 w-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z"
-                  clipRule="evenodd"
-                />
-              </svg>
+              <ArrowUpIcon
+                className={`
+                h-4
+                w-4
+                text-green-600
+                dark:text-green-400
+              `}
+                strokeWidth={2.5}
+              />
             )}
             {trend.direction === `down` && (
-              <svg className="h-4 w-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z"
-                  clipRule="evenodd"
-                />
-              </svg>
+              <ArrowDownIcon
+                className={`
+                h-4
+                w-4
+                text-red-600
+                dark:text-red-400
+              `}
+                strokeWidth={2.5}
+              />
             )}
             <span
-              className={`text-xs font-medium ${
+              className={`text-sm font-semibold ${
                 trend.direction === `up`
-                  ? `text-green-600`
+                  ? `text-green-600 dark:text-green-400`
                   : trend.direction === `down`
-                    ? `text-red-600`
-                    : `text-slate-600`
+                    ? `text-red-600 dark:text-red-400`
+                    : `text-slate-600 dark:text-slate-400`
               }`}
             >
               {trend.value}

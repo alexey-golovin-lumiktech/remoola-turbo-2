@@ -37,7 +37,7 @@ export function AddressDetailsForm({ profile }: AddressDetailsFormProps) {
 
   return (
     <FormCard title="Address Details" description="Your residential or business address">
-      <form action={formAction} className="space-y-4">
+      <form action={formAction} className={`space-y-5`}>
         <FormField label="Street Address" htmlFor="street" error={fieldErrors.street} required>
           <FormInput
             id="street"
@@ -47,10 +47,11 @@ export function AddressDetailsForm({ profile }: AddressDetailsFormProps) {
             error={!!fieldErrors.street}
             placeholder="123 Main Street"
             required
+            className={`min-h-[44px]`}
           />
         </FormField>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className={`grid gap-4 sm:grid-cols-2`}>
           <FormField label="City" htmlFor="city" error={fieldErrors.city} required>
             <FormInput
               id="city"
@@ -60,6 +61,7 @@ export function AddressDetailsForm({ profile }: AddressDetailsFormProps) {
               error={!!fieldErrors.city}
               placeholder="New York"
               required
+              className={`min-h-[44px]`}
             />
           </FormField>
 
@@ -71,11 +73,12 @@ export function AddressDetailsForm({ profile }: AddressDetailsFormProps) {
               defaultValue={ad.state ?? ``}
               error={!!fieldErrors.state}
               placeholder="NY"
+              className={`min-h-[44px]`}
             />
           </FormField>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className={`grid gap-4 sm:grid-cols-2`}>
           <FormField label="Postal Code" htmlFor="postalCode" error={fieldErrors.postalCode} required>
             <FormInput
               id="postalCode"
@@ -85,6 +88,7 @@ export function AddressDetailsForm({ profile }: AddressDetailsFormProps) {
               error={!!fieldErrors.postalCode}
               placeholder="10001"
               required
+              className={`min-h-[44px]`}
             />
           </FormField>
 
@@ -97,12 +101,25 @@ export function AddressDetailsForm({ profile }: AddressDetailsFormProps) {
               error={!!fieldErrors.country}
               placeholder="United States"
               required
+              className={`min-h-[44px]`}
             />
           </FormField>
         </div>
 
-        <div className="flex justify-end">
-          <Button type="submit" variant="primary" isLoading={isPending} disabled={isPending}>
+        <div className={`flex justify-end pt-2`}>
+          <Button
+            type="submit"
+            variant="primary"
+            isLoading={isPending}
+            disabled={isPending}
+            className={`
+              min-h-[44px]
+              shadow-lg
+              shadow-primary-500/30
+              hover:shadow-xl
+              hover:shadow-primary-500/40
+            `}
+          >
             {isPending ? `Saving...` : `Save Changes`}
           </Button>
         </div>

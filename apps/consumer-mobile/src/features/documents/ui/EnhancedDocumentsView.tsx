@@ -3,16 +3,23 @@
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
-import { showErrorToast, showSuccessToast } from '../../../lib/toast.client';
-import { Button } from '../../../shared/ui/Button';
-import { EmptyState } from '../../../shared/ui/EmptyState';
-import { bulkDeleteDocuments } from '../actions';
-import { DocumentPreviewModal } from '../DocumentPreviewModal';
 import { ConfirmationModal } from './ConfirmationModal';
 import { DocumentFilterBar } from './DocumentFilterBar';
 import { DocumentUploadButton } from './DocumentUploadButton';
 import { PaymentPickerModal } from './PaymentPickerModal';
 import { TagEditor } from './TagEditor';
+import { showErrorToast, showSuccessToast } from '../../../lib/toast.client';
+import { Button } from '../../../shared/ui/Button';
+import { EmptyState } from '../../../shared/ui/EmptyState';
+import { CheckIcon } from '../../../shared/ui/icons/CheckIcon';
+import { DocumentIcon } from '../../../shared/ui/icons/DocumentIcon';
+import { EyeIcon } from '../../../shared/ui/icons/EyeIcon';
+import { PaperclipIcon } from '../../../shared/ui/icons/PaperclipIcon';
+import { SearchIcon } from '../../../shared/ui/icons/SearchIcon';
+import { TagIcon } from '../../../shared/ui/icons/TagIcon';
+import { TrashIcon } from '../../../shared/ui/icons/TrashIcon';
+import { bulkDeleteDocuments } from '../actions';
+import { DocumentPreviewModal } from '../DocumentPreviewModal';
 
 import type { DocumentItem } from '../queries';
 import type { DocumentKind } from '../schemas';
@@ -108,41 +115,68 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
           animate-fadeIn
         `}
       >
+        <div className={`flex flex-col gap-4`}>
+          <DocumentFilterBar activeFilter={filterKind} onFilterChange={setFilterKind} filterCounts={filterCounts} />
+          <div className={`flex justify-center sm:justify-end`}>
+            <DocumentUploadButton onUploadComplete={handleUploadComplete} />
+          </div>
+        </div>
         <div
           className={`
-            flex
-            flex-col
-            gap-3
-            sm:flex-row
-            sm:items-center
-            sm:justify-between
+            rounded-3xl
+            border-2
+            border-dashed
+            border-slate-300/50
+            bg-linear-to-br
+            from-slate-100/50
+            via-white
+            to-slate-100/50
+            px-8
+            py-20
+            text-center
+            shadow-2xl
+            dark:border-slate-700/50
+            dark:from-slate-800/30
+            dark:via-slate-900/50
+            dark:to-slate-800/30
+            sm:px-10
+            sm:py-24
+            backdrop-blur-sm
           `}
         >
-          <DocumentFilterBar activeFilter={filterKind} onFilterChange={setFilterKind} filterCounts={filterCounts} />
-          <DocumentUploadButton onUploadComplete={handleUploadComplete} />
+          <div
+            className={`
+            mx-auto
+            mb-8
+            flex
+            h-24
+            w-24
+            items-center
+            justify-center
+            rounded-3xl
+            bg-linear-to-br
+            from-slate-200
+            via-slate-100
+            to-slate-200
+            text-slate-400
+            shadow-2xl
+            ring-4
+            ring-slate-200/50
+            dark:from-slate-700
+            dark:via-slate-800
+            dark:to-slate-700
+            dark:text-slate-500
+            dark:ring-slate-700/50
+          `}
+          >
+            <DocumentIcon className={`h-12 w-12`} strokeWidth={1.5} />
+          </div>
+          <EmptyState
+            icon={null}
+            title="No documents yet"
+            description="Upload documents to keep track of invoices, receipts, and contracts."
+          />
         </div>
-        <EmptyState
-          icon={
-            <svg
-              className={`
-                h-12
-                w-12
-              `}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-              />
-            </svg>
-          }
-          title="No documents yet"
-          description="Upload documents to keep track of invoices, receipts, and contracts."
-        />
       </div>
     );
   }
@@ -150,23 +184,16 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
   return (
     <div
       className={`
-        space-y-4
+        space-y-6
         animate-fadeIn
       `}
       data-testid="enhanced-documents-view"
     >
-      <div
-        className={`
-          flex
-          flex-col
-          gap-3
-          sm:flex-row
-          sm:items-center
-          sm:justify-between
-        `}
-      >
+      <div className={`flex flex-col gap-4`}>
         <DocumentFilterBar activeFilter={filterKind} onFilterChange={setFilterKind} filterCounts={filterCounts} />
-        <DocumentUploadButton onUploadComplete={handleUploadComplete} />
+        <div className={`flex justify-center sm:justify-end`}>
+          <DocumentUploadButton onUploadComplete={handleUploadComplete} />
+        </div>
       </div>
 
       {selectedDocs.size > 0 && (
@@ -178,46 +205,46 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
             justify-between
             rounded-2xl
             border
-            border-primary-200
-            bg-gradient-to-r
-            from-primary-50
-            to-primary-100
+            border-primary-500/20
+            bg-linear-to-r
+            from-primary-600
+            via-primary-700
+            to-primary-600
             px-5
-            py-3
-            shadow-sm
-            dark:border-primary-900
-            dark:from-primary-950
-            dark:to-primary-900
+            py-4
+            shadow-xl
+            shadow-primary-500/30
+            dark:border-primary-500/30
+            dark:from-primary-800
+            dark:via-primary-900
+            dark:to-primary-800
+            dark:shadow-primary-900/40
+            backdrop-blur-sm
           `}
         >
-          <span
-            className={`
-              text-sm
-              font-semibold
-              text-primary-900
-              dark:text-primary-100
-            `}
-          >
-            {selectedDocs.size} document{selectedDocs.size === 1 ? `` : `s`} selected
-          </span>
-          <Button variant="danger" size="sm" onClick={() => setShowDeleteConfirm(true)} disabled={isPending}>
-            <svg
+          <div className={`flex items-center gap-3`}>
+            <div
               className={`
-                mr-1.5
-                h-4
-                w-4
-              `}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+              flex
+              h-11
+              w-11
+              items-center
+              justify-center
+              rounded-xl
+              bg-white/20
+              text-white
+              shadow-lg
+              backdrop-blur-sm
+            `}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-              />
-            </svg>
+              <CheckIcon className={`h-5 w-5`} strokeWidth={2.5} />
+            </div>
+            <span className={`text-sm font-bold text-white`}>
+              {selectedDocs.size} document{selectedDocs.size === 1 ? `` : `s`} selected
+            </span>
+          </div>
+          <Button variant="danger" size="sm" onClick={() => setShowDeleteConfirm(true)} disabled={isPending}>
+            <TrashIcon className={`mr-1.5 h-4 w-4`} />
             Delete
           </Button>
         </div>
@@ -228,59 +255,60 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
           className={`
             animate-fadeIn
             flex
-            min-h-[300px]
+            min-h-100
             flex-col
             items-center
             justify-center
-            rounded-2xl
+            rounded-3xl
             border-2
             border-dashed
-            border-slate-200
-            bg-slate-50/50
-            px-6
-            py-12
+            border-slate-300/50
+            bg-linear-to-br
+            from-slate-100/50
+            via-white
+            to-slate-100/50
+            px-8
+            py-20
             text-center
-            dark:border-slate-700
-            dark:bg-slate-800/30
-            sm:min-h-[400px]
+            shadow-2xl
+            dark:border-slate-700/50
+            dark:from-slate-800/30
+            dark:via-slate-900/50
+            dark:to-slate-800/30
+            sm:min-h-112.5
+            backdrop-blur-sm
           `}
         >
           <div
             className={`
-              mb-4
+              mb-8
               flex
-              h-16
-              w-16
+              h-24
+              w-24
               items-center
               justify-center
-              rounded-full
-              bg-slate-100
+              rounded-3xl
+              bg-linear-to-br
+              from-slate-200
+              via-slate-100
+              to-slate-200
               text-slate-400
-              dark:bg-slate-800
+              shadow-2xl
+              ring-4
+              ring-slate-200/50
+              dark:from-slate-700
+              dark:via-slate-800
+              dark:to-slate-700
               dark:text-slate-500
+              dark:ring-slate-700/50
             `}
           >
-            <svg
-              className={`
-                h-8
-                w-8
-              `}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
+            <SearchIcon className={`h-12 w-12`} strokeWidth={1.5} />
           </div>
           <h3
             className={`
-              text-lg
-              font-semibold
+              text-2xl
+              font-bold
               text-slate-900
               dark:text-white
             `}
@@ -289,14 +317,14 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
           </h3>
           <p
             className={`
-              mt-2
+              mt-4
               max-w-sm
-              text-sm
+              text-base
               text-slate-600
               dark:text-slate-400
             `}
           >
-            Try adjusting your filter or upload new documents.
+            Try adjusting your filter or upload new documents to get started.
           </p>
         </div>
       ) : (
@@ -306,24 +334,35 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
               flex
               items-center
               justify-between
-              border-b
-              border-slate-200
-              pb-3
-              dark:border-slate-700
+              rounded-2xl
+              border
+              border-slate-200/50
+              bg-linear-to-r
+              from-slate-50
+              via-white
+              to-slate-50
+              px-5
+              py-4
+              shadow-md
+              dark:border-slate-700/50
+              dark:from-slate-800/50
+              dark:via-slate-800/30
+              dark:to-slate-800/50
+              backdrop-blur-sm
             `}
           >
             <button
               onClick={handleToggleAll}
               className={`
                 flex
-                min-h-[44px]
+                min-h-11
                 items-center
-                gap-2.5
-                rounded-lg
-                px-3
-                py-2
+                gap-3
+                rounded-xl
+                px-4
+                py-2.5
                 text-sm
-                font-medium
+                font-semibold
                 text-slate-700
                 transition-all
                 duration-200
@@ -333,8 +372,9 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
                 focus:ring-2
                 focus:ring-primary-500
                 focus:ring-offset-2
-                dark:text-slate-300
-                dark:hover:bg-slate-800
+                dark:text-slate-200
+                dark:hover:bg-slate-700/50
+                hover:shadow-sm
               `}
               aria-label={allSelected ? `Deselect all` : `Select all`}
             >
@@ -348,23 +388,33 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
                 className={`
                   h-5
                   w-5
-                  rounded
+                  rounded-lg
                   border-2
                   border-slate-300
                   text-primary-600
                   transition-all
                   focus:ring-primary-500
                   dark:border-slate-600
+                  cursor-pointer
                 `}
               />
               <span>{allSelected ? `Deselect All` : `Select All`}</span>
             </button>
             <span
               className={`
+                rounded-full
+                bg-linear-to-r
+                from-slate-200
+                to-slate-300
+                px-4
+                py-2
                 text-xs
-                font-medium
-                text-slate-500
-                dark:text-slate-400
+                font-extrabold
+                text-slate-700
+                shadow-sm
+                dark:from-slate-700
+                dark:to-slate-800
+                dark:text-slate-200
               `}
             >
               {filteredItems.length} document{filteredItems.length === 1 ? `` : `s`}
@@ -373,11 +423,7 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
 
           <div
             className={`
-              grid
-              grid-cols-1
-              gap-3
-              sm:grid-cols-2
-              lg:grid-cols-3
+              space-y-4
             `}
           >
             {filteredItems.map((item) => {
@@ -397,40 +443,28 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
                     relative
                     overflow-hidden
                     rounded-2xl
-                    border
                     transition-all
                     duration-300
                     ${
                       isSelected
-                        ? `border-primary-500 bg-gradient-to-br from-primary-50 to-white shadow-lg shadow-primary-100 dark:border-primary-600 dark:from-primary-950 dark:to-slate-800 dark:shadow-primary-900/20`
-                        : `border-slate-200 bg-white shadow-sm hover:shadow-lg hover:border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-slate-600`
+                        ? `bg-linear-to-br from-primary-600 via-primary-700 to-primary-800 shadow-2xl shadow-primary-500/40 border border-primary-500/30 scale-[1.02]`
+                        : `bg-linear-to-br from-slate-800 via-slate-900 to-slate-800 border border-slate-700/50 hover:border-slate-600 shadow-xl hover:shadow-2xl hover:scale-[1.01]`
                     }
                   `}
                 >
                   <div
                     className={`
                       absolute
-                      left-0
-                      top-0
-                      h-full
-                      w-1
-                      transition-all
-                      duration-300
-                      ${isSelected ? `bg-primary-500` : `bg-primary-500 opacity-0 group-hover:opacity-100`}
+                      inset-0
+                      bg-linear-to-br
+                      from-transparent
+                      via-transparent
+                      to-black/10
+                      pointer-events-none
                     `}
                   />
-                  <div
-                    className={`
-                      p-4
-                    `}
-                  >
-                    <div
-                      className={`
-                        flex
-                        items-start
-                        gap-3
-                      `}
-                    >
+                  <div className={`p-5 relative z-10`}>
+                    <div className={`flex items-start gap-4`}>
                       {id && (
                         <button
                           onClick={() => handleToggleDoc(id)}
@@ -440,9 +474,10 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
                             active:scale-90
                             focus:outline-none
                             focus:ring-2
-                            focus:ring-primary-500
+                            focus:ring-white/50
                             focus:ring-offset-2
-                            rounded
+                            focus:ring-offset-slate-900
+                            rounded-lg
                           `}
                           aria-label={`Select ${name ?? id}`}
                         >
@@ -453,196 +488,126 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
                             className={`
                               h-5
                               w-5
-                              rounded
+                              rounded-lg
                               border-2
-                              border-slate-300
                               text-primary-600
                               transition-all
-                              focus:ring-primary-500
-                              dark:border-slate-600
+                              focus:ring-white/50
+                              cursor-pointer
+                              ${isSelected ? `border-white/50 bg-white/20` : `border-slate-600 bg-slate-800/50`}
                             `}
                           />
                         </button>
                       )}
-                      <div
-                        className={`
-                          flex-1
-                          min-w-0
-                        `}
-                      >
+                      <div className={`flex-1 min-w-0`}>
                         <div
                           className={`
                             flex
-                            items-start
-                            gap-3
+                            items-center
+                            justify-between
+                            gap-4
+                            mb-3
                           `}
                         >
                           <div
                             className={`
-                              flex
-                              h-12
-                              w-12
-                              shrink-0
-                              items-center
-                              justify-center
-                              rounded-xl
-                              transition-colors
-                              ${
-                                isSelected
-                                  ? `bg-primary-100 text-primary-600 dark:bg-primary-900 dark:text-primary-300`
-                                  : `bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300`
-                              }
-                            `}
+                            flex
+                            items-center
+                            gap-3
+                            flex-1
+                            min-w-0
+                          `}
                           >
-                            <svg
-                              className={`
-                                h-6
-                                w-6
-                              `}
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                              />
-                            </svg>
-                          </div>
-                          <div
-                            className={`
-                              flex-1
-                              min-w-0
-                            `}
-                          >
-                            <button
-                              onClick={() => setPreviewDoc(item)}
-                              className={`
-                                block
-                                w-full
-                                truncate
-                                text-left
-                                text-base
-                                font-semibold
-                                transition-colors
-                                focus:outline-none
-                                focus:ring-2
-                                focus:ring-primary-500
-                                focus:ring-offset-2
-                                rounded
-                                ${
-                                  isSelected
-                                    ? `text-primary-900 dark:text-primary-100`
-                                    : `text-slate-900 hover:text-primary-600 dark:text-white dark:hover:text-primary-400`
-                                }
-                              `}
-                            >
-                              {name ?? id ?? `Document`}
-                            </button>
                             <div
-                              className={`
-                                mt-1.5
-                                flex
-                                flex-wrap
-                                items-center
-                                gap-2
-                              `}
+                              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl shadow-lg transition-all duration-300 ${isSelected ? `bg-white/20 text-white backdrop-blur-sm ring-2 ring-white/30` : `bg-slate-700/80 text-slate-300 group-hover:bg-slate-600 backdrop-blur-sm`}`}
                             >
-                              {createdAt && (
-                                <p
-                                  className={`
-                                    text-xs
-                                    font-medium
-                                    text-slate-500
-                                    dark:text-slate-400
-                                  `}
-                                >
-                                  {new Date(createdAt).toLocaleDateString(undefined, {
-                                    year: `numeric`,
-                                    month: `short`,
-                                    day: `numeric`,
-                                  })}
-                                </p>
-                              )}
-                              <span
+                              <DocumentIcon className={`h-6 w-6`} strokeWidth={2} />
+                            </div>
+                            <div className={`flex-1 min-w-0`}>
+                              <button
+                                onClick={() => setPreviewDoc(item)}
                                 className={`
-                                  inline-flex
-                                  items-center
-                                  rounded-full
-                                  px-2.5
+                                  block
+                                  w-full
+                                  truncate
+                                  text-left
+                                  text-base
+                                  font-bold
+                                  transition-colors
+                                  focus:outline-none
+                                  focus:ring-2
+                                  focus:ring-white/50
+                                  focus:ring-offset-2
+                                  focus:ring-offset-slate-900
+                                  rounded-lg
+                                  px-1
                                   py-0.5
-                                  text-xs
-                                  font-semibold
-                                  ${
-                                    kind === `Payment`
-                                      ? `bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300`
-                                      : kind === `Compliance`
-                                        ? `bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300`
-                                        : kind === `Contract`
-                                          ? `bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300`
-                                          : `bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300`
-                                  }
+                                  ${isSelected ? `text-white` : `text-slate-100 hover:text-white`}
                                 `}
                               >
-                                {kind}
-                              </span>
+                                {name ?? id ?? `Document`}
+                              </button>
                             </div>
                           </div>
                           {id && (
                             <button
                               onClick={() => setPreviewDoc(item)}
-                              className={`
-                                shrink-0
-                                rounded-lg
-                                p-2
-                                transition-all
-                                active:scale-90
-                                focus:outline-none
-                                focus:ring-2
-                                focus:ring-primary-500
-                                focus:ring-offset-2
-                                ${
-                                  isSelected
-                                    ? `text-primary-600 hover:bg-primary-100 dark:text-primary-400 dark:hover:bg-primary-900`
-                                    : `text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-700 dark:hover:text-slate-300`
-                                }
-                              `}
+                              className={`shrink-0 rounded-xl p-2.5 transition-all duration-200 active:scale-90 focus:outline-none focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-slate-900 shadow-md ${isSelected ? `bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm` : `text-slate-300 hover:bg-slate-700/50 hover:text-white backdrop-blur-sm`}`}
                               aria-label="Preview document"
                             >
-                              <svg
-                                className={`
-                                  h-5
-                                  w-5
-                                `}
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                />
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                                />
-                              </svg>
+                              <EyeIcon className={`h-5 w-5`} strokeWidth={2} />
                             </button>
                           )}
+                        </div>
+                        <div
+                          className={`
+                            flex
+                            flex-wrap
+                            items-center
+                            gap-2.5
+                            mb-3.5
+                          `}
+                        >
+                          {createdAt && (
+                            <p className={`text-xs font-semibold ${isSelected ? `text-white/90` : `text-slate-400`}`}>
+                              {new Date(createdAt).toLocaleDateString(undefined, {
+                                year: `numeric`,
+                                month: `short`,
+                                day: `numeric`,
+                              })}
+                            </p>
+                          )}
+                          <span
+                            className={`
+                              inline-flex
+                              items-center
+                              rounded-full
+                              px-3
+                              py-1.5
+                              text-xs
+                              font-extrabold
+                              shadow-md
+                              ${
+                                kind === `Payment`
+                                  ? `bg-emerald-500/20 text-emerald-300 ring-1 ring-emerald-400/30`
+                                  : kind === `Compliance`
+                                    ? `bg-blue-500/20 text-blue-300 ring-1 ring-blue-400/30`
+                                    : kind === `Contract`
+                                      ? `bg-purple-500/20 text-purple-300 ring-1 ring-purple-400/30`
+                                      : `bg-slate-600/30 text-slate-300 ring-1 ring-slate-500/30`
+                              }
+                            `}
+                          >
+                            {kind}
+                          </span>
                         </div>
                         {tags.length > 0 && (
                           <div
                             className={`
-                              mt-2.5
                               flex
                               flex-wrap
-                              gap-1.5
+                              gap-2
+                              mb-4
                             `}
                           >
                             {tags.slice(0, 3).map((tag, index) => (
@@ -651,15 +616,13 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
                                 className={`
                                   inline-flex
                                   items-center
-                                  rounded-md
-                                  bg-primary-100
-                                  px-2
-                                  py-0.5
+                                  rounded-lg
+                                  px-2.5
+                                  py-1
                                   text-xs
-                                  font-medium
-                                  text-primary-700
-                                  dark:bg-primary-900
-                                  dark:text-primary-300
+                                  font-semibold
+                                  shadow-sm
+                                  ${isSelected ? `bg-white/15 text-white ring-1 ring-white/20` : `bg-slate-700/60 text-slate-300 ring-1 ring-slate-600/50`}
                                 `}
                               >
                                 {tag}
@@ -670,15 +633,15 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
                                 className={`
                                   inline-flex
                                   items-center
-                                  rounded-md
-                                  bg-slate-100
-                                  px-2
-                                  py-0.5
+                                  rounded-lg
+                                  px-2.5
+                                  py-1
                                   text-xs
-                                  font-medium
-                                  text-slate-600
-                                  dark:bg-slate-700
-                                  dark:text-slate-400
+                                  font-semibold
+                                  bg-slate-700/40
+                                  text-slate-400
+                                  ring-1
+                                  ring-slate-600/50
                                 `}
                               >
                                 +{tags.length - 3}
@@ -687,114 +650,40 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
                           </div>
                         )}
                         {id && (
-                          <div
-                            className={`
-                              mt-4
-                              grid
-                              grid-cols-2
-                              gap-2
-                            `}
-                          >
+                          <div className={`grid grid-cols-2 gap-3`}>
                             <button
                               onClick={() => setEditingTagsFor(id)}
-                              className={`
-                                flex
-                                min-h-[44px]
-                                items-center
-                                justify-center
-                                gap-2
-                                rounded-xl
-                                border
-                                border-slate-300
-                                bg-white
-                                px-3
-                                py-2.5
-                                text-sm
-                                font-medium
-                                text-slate-700
-                                transition-all
-                                duration-200
-                                hover:bg-slate-50
-                                hover:border-slate-400
-                                hover:shadow-sm
-                                active:scale-95
-                                focus:outline-none
-                                focus:ring-2
-                                focus:ring-primary-500
-                                focus:ring-offset-2
-                                dark:border-slate-600
-                                dark:bg-slate-700
-                                dark:text-slate-300
-                                dark:hover:bg-slate-600
-                              `}
+                              // eslint-disable-next-line max-len
+                              className={`flex min-h-11 items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold transition-all duration-200 active:scale-95 focus:outline-none focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-slate-900 shadow-md ${isSelected ? `border-white/30 bg-white/10 text-white hover:bg-white/15 backdrop-blur-sm` : `border-slate-600/50 bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 hover:border-slate-500/50 backdrop-blur-sm`}`}
                             >
-                              <svg
-                                className={`
-                                  h-4
-                                  w-4
-                                `}
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-                                />
-                              </svg>
+                              <TagIcon className={`h-4 w-4`} strokeWidth={2} />
                               <span>Tags</span>
                             </button>
                             <button
                               onClick={() => setAttachingDocId(id)}
-                              className={`
-                                flex
-                                min-h-[44px]
+                              className={`flex
+                                min-h-11
                                 items-center
                                 justify-center
                                 gap-2
                                 rounded-xl
                                 border
-                                border-slate-300
-                                bg-white
-                                px-3
+                                px-4
                                 py-2.5
                                 text-sm
-                                font-medium
-                                text-slate-700
+                                font-bold
                                 transition-all
                                 duration-200
-                                hover:bg-slate-50
-                                hover:border-slate-400
-                                hover:shadow-sm
                                 active:scale-95
                                 focus:outline-none
                                 focus:ring-2
-                                focus:ring-primary-500
+                                focus:ring-white/50
                                 focus:ring-offset-2
-                                dark:border-slate-600
-                                dark:bg-slate-700
-                                dark:text-slate-300
-                                dark:hover:bg-slate-600
-                              `}
+                                focus:ring-offset-slate-900
+                                shadow-md
+                                ${isSelected ? `border-white/30 bg-white/10 text-white hover:bg-white/15 backdrop-blur-sm` : `border-slate-600/50 bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 hover:border-slate-500/50 backdrop-blur-sm`}`}
                             >
-                              <svg
-                                className={`
-                                  h-4
-                                  w-4
-                                `}
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
-                                />
-                              </svg>
+                              <PaperclipIcon className={`h-4 w-4`} strokeWidth={2.5} />
                               <span>Attach</span>
                             </button>
                           </div>
@@ -834,24 +723,14 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
               dark:bg-red-900
             `}
           >
-            <svg
+            <TrashIcon
               className={`
                 h-6
                 w-6
                 text-red-600
                 dark:text-red-400
               `}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-              />
-            </svg>
+            />
           </div>
         }
       />
@@ -885,13 +764,13 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
 
       {attachingDocId && <PaymentPickerModal documentId={attachingDocId} onClose={() => setAttachingDocId(null)} />}
 
-      {previewDoc && (previewDoc.url as string | undefined) && (
+      {previewDoc && (previewDoc.downloadUrl as string | undefined) && (
         <DocumentPreviewModal
           isOpen={!!previewDoc}
           onClose={() => setPreviewDoc(null)}
-          documentUrl={previewDoc.url as string}
+          documentUrl={previewDoc.downloadUrl as string}
           documentName={(previewDoc.name as string) ?? `Document`}
-          documentType={(previewDoc.mimeType as string) ?? `application/pdf`}
+          documentType={(previewDoc.mimetype as string) ?? `application/pdf`}
         />
       )}
     </div>

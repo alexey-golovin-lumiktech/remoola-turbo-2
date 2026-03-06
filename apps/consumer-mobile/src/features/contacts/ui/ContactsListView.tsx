@@ -10,6 +10,16 @@ import { EditContactModal, type EditContactData } from './EditContactModal';
 import { useDebounce } from '../../../shared/hooks/useDebounce';
 import { Avatar } from '../../../shared/ui/Avatar';
 import { Button } from '../../../shared/ui/Button';
+import { IconBadge } from '../../../shared/ui/IconBadge';
+import { CheckIcon } from '../../../shared/ui/icons/CheckIcon';
+import { ChevronRightIcon } from '../../../shared/ui/icons/ChevronRightIcon';
+import { PencilIcon } from '../../../shared/ui/icons/PencilIcon';
+import { PlusIcon } from '../../../shared/ui/icons/PlusIcon';
+import { SearchIcon } from '../../../shared/ui/icons/SearchIcon';
+import { TrashIcon } from '../../../shared/ui/icons/TrashIcon';
+import { UsersIcon } from '../../../shared/ui/icons/UsersIcon';
+import { PageHeader } from '../../../shared/ui/PageHeader';
+import { SearchInput } from '../../../shared/ui/SearchInput';
 import { createContactAction, updateContactAction, deleteContactAction } from '../actions';
 
 import type { Contact } from '../schemas';
@@ -98,437 +108,446 @@ export function ContactsListView({ contacts }: ContactsListViewProps) {
 
   return (
     <div
-      className="
-        space-y-6
-      "
+      className={`
+        min-h-full
+        bg-gradient-to-br
+        from-slate-50
+        via-white
+        to-slate-50
+        dark:from-slate-950
+        dark:via-slate-900
+        dark:to-slate-950
+      `}
       data-testid="consumer-mobile-contacts-list"
     >
+      <PageHeader
+        icon={<IconBadge icon={<UsersIcon className={`h-6 w-6 text-white`} />} hasRing />}
+        title="Contacts"
+        subtitle={`${contacts.length} ${contacts.length === 1 ? `contact` : `contacts`} in your network`}
+        actions={
+          <Button
+            variant="primary"
+            size="md"
+            onClick={() => {
+              setInitialEmail(null);
+              setCreateModalOpen(true);
+            }}
+            className={`
+              min-h-11
+              shadow-lg
+              shadow-primary-500/30
+              hover:shadow-xl
+              hover:shadow-primary-500/40
+              transition-all
+              duration-200
+              active:scale-95
+            `}
+          >
+            <PlusIcon className={`h-5 w-5`} />
+            <span className={`ml-2`}>Add Contact</span>
+          </Button>
+        }
+      />
+
       <div
-        className="
-          flex
-          flex-col
-          items-stretch
-          justify-between
-          gap-4
-          sm:flex-row
-          sm:items-center
-        "
+        className={`
+        mx-auto
+        max-w-6xl
+        px-4
+        pt-6
+        pb-6
+        sm:px-6
+        sm:pt-8
+        lg:px-8
+        space-y-6
+        animate-fadeIn
+      `}
       >
-        <h1
-          className="
-            text-2xl
-            font-bold
-            text-slate-900
-            dark:text-white
-          "
-        >
-          Contacts
-        </h1>
-        <Button
-          variant="primary"
-          size="md"
-          onClick={() => {
-            setInitialEmail(null);
-            setCreateModalOpen(true);
-          }}
-          className="
-            min-h-[44px]
-            w-full
-            sm:w-auto
-          "
-        >
-          <svg
-            className="
-              h-5
-              w-5
-            "
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          <span
-            className="
-              ml-2
-            "
-          >
-            Add Contact
-          </span>
-        </Button>
-      </div>
-
-      {contacts.length > 0 && (
-        <div
-          className="
-            relative
-          "
-        >
-          <div
-            className="
-              pointer-events-none
-              absolute
-              inset-y-0
-              left-0
-              flex
-              items-center
-              pl-3
-            "
-          >
-            <svg
-              className="
-                h-5
-                w-5
-                text-slate-400
-              "
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-          </div>
-          <input
-            type="search"
-            placeholder="Search contacts..."
+        {contacts.length > 0 && (
+          <SearchInput
             value={searchQuery}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            className="
-              input
-              min-h-[44px]
-              w-full
-              pl-10
-            "
+            onChange={handleSearchChange}
+            placeholder="Search by name, email, or ID..."
           />
-        </div>
-      )}
+        )}
 
-      {contacts.length === 0 ? (
-        <div
-          className="
-            flex
-            min-h-[300px]
-            flex-col
-            items-center
-            justify-center
+        {contacts.length === 0 ? (
+          <div
+            className={`
+            animate-fadeIn
             rounded-2xl
             border-2
             border-dashed
             border-slate-200
-            bg-slate-50/50
-            px-6
-            py-12
-            text-center
+            bg-gradient-to-br
+            from-slate-50/50
+            to-white/50
             dark:border-slate-700
-            dark:bg-slate-800/30
-          "
-        >
+            dark:from-slate-800/50
+            dark:to-slate-900/50
+            px-6
+            py-16
+            text-center
+            shadow-inner
+          `}
+          >
+            <div
+              className={`
+              mx-auto
+              mb-6
+              flex
+              h-20
+              w-20
+              items-center
+              justify-center
+              rounded-3xl
+              bg-gradient-to-br
+              from-slate-100
+              to-slate-200
+              text-slate-400
+              shadow-lg
+              ring-8
+              ring-slate-100/50
+              dark:from-slate-700
+              dark:to-slate-800
+              dark:text-slate-500
+              dark:ring-slate-800/50
+            `}
+            >
+              <UsersIcon className={`h-10 w-10`} strokeWidth={1.5} />
+            </div>
+            <h3
+              className={`
+              text-xl
+              font-bold
+              text-slate-900
+              dark:text-slate-100
+            `}
+            >
+              No contacts yet
+            </h3>
+            <p
+              className={`
+              mt-3
+              max-w-sm
+              mx-auto
+              text-base
+              text-slate-600
+              dark:text-slate-400
+            `}
+            >
+              Add contacts to easily send payments and manage your network.
+            </p>
+            <div className={`mt-6`}>
+              <Button
+                variant="primary"
+                size="md"
+                onClick={() => {
+                  setInitialEmail(null);
+                  setCreateModalOpen(true);
+                }}
+                className={`
+                  min-h-11
+                  shadow-lg
+                  shadow-primary-500/30
+                  hover:shadow-xl
+                  hover:shadow-primary-500/40
+                  transition-all
+                  duration-200
+                  active:scale-95
+                `}
+              >
+                <PlusIcon className={`h-5 w-5`} />
+                <span className={`ml-2`}>Add your first contact</span>
+              </Button>
+            </div>
+          </div>
+        ) : filteredContacts.length === 0 ? (
           <div
-            className="
+            className={`
+            animate-fadeIn
+            rounded-2xl
+            border
+            border-slate-200
+            bg-gradient-to-br
+            from-slate-50
+            to-white
+            dark:border-slate-700
+            dark:from-slate-800/50
+            dark:to-slate-900/50
+            p-8
+            text-center
+            shadow-sm
+          `}
+          >
+            <div
+              className={`
+              mx-auto
               mb-4
               flex
               h-16
               w-16
               items-center
               justify-center
-              rounded-full
+              rounded-2xl
               bg-slate-100
-              text-slate-400
               dark:bg-slate-800
-              dark:text-slate-500
-            "
-          >
-            <svg
-              className="
+              shadow-md
+            `}
+            >
+              <SearchIcon
+                className={`
                 h-8
                 w-8
-              "
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                text-slate-400
+                dark:text-slate-500
+              `}
               />
-            </svg>
-          </div>
-          <h3
-            className="
+            </div>
+            <h3
+              className={`
               text-lg
-              font-semibold
+              font-bold
               text-slate-900
-              dark:text-white
-            "
-          >
-            No contacts yet
-          </h3>
-          <p
-            className="
+              dark:text-slate-100
+            `}
+            >
+              No results found
+            </h3>
+            <p
+              className={`
               mt-2
-              max-w-sm
               text-sm
               text-slate-600
               dark:text-slate-400
-            "
-          >
-            Add contacts to easily send payments and manage your network.
-          </p>
-          <div
-            className="
-              mt-6
-            "
-          >
-            <Button
-              variant="primary"
-              size="md"
-              onClick={() => {
-                setInitialEmail(null);
-                setCreateModalOpen(true);
-              }}
-              className="
-                min-h-[44px]
-              "
+            `}
             >
-              Add your first contact
-            </Button>
+              No contacts found matching &quot;{searchQuery}&quot;
+            </p>
+            <p
+              className={`
+              mt-1
+              text-xs
+              text-slate-500
+              dark:text-slate-500
+            `}
+            >
+              Try adjusting your search or add a new contact
+            </p>
           </div>
-        </div>
-      ) : filteredContacts.length === 0 ? (
-        <div
-          className="
-            rounded-lg
-            border
-            border-slate-200
-            bg-slate-50
-            p-8
-            text-center
-            dark:border-slate-700
-            dark:bg-slate-800/50
-          "
-        >
-          <p
-            className="
-              text-sm
-              text-slate-600
-              dark:text-slate-400
-            "
-          >
-            No contacts found matching &quot;{searchQuery}&quot;
-          </p>
-        </div>
-      ) : (
-        <div
-          className="
+        ) : (
+          <div
+            className={`
             grid
-            gap-3
+            gap-4
             sm:grid-cols-2
-          "
-        >
-          {filteredContacts.map((c) => (
-            <div
-              key={c.id}
-              className="
-                group
-                relative
-                overflow-hidden
-                rounded-xl
-                border
-                border-slate-200
-                bg-white
-                shadow-sm
-                transition-all
-                duration-200
-                hover:shadow-md
-                dark:border-slate-700
-                dark:bg-slate-800
-              "
-            >
+            lg:grid-cols-3
+          `}
+          >
+            {filteredContacts.map((c, index) => (
               <div
-                className="
+                key={c.id}
+                className={`
+                  group
+                  relative
+                  overflow-hidden
+                  rounded-2xl
+                  border
+                  border-slate-200
+                  bg-white
+                  shadow-sm
+                  transition-all
+                  duration-200
+                  hover:shadow-lg
+                  hover:border-slate-300
+                  dark:border-slate-700
+                  dark:bg-slate-800
+                  dark:hover:border-slate-600
+                  animate-fadeIn
+                `}
+                style={{ animationDelay: `${index * 30}ms` }}
+              >
+                <div
+                  className={`
                   absolute
                   right-0
                   top-0
                   h-full
                   w-1
-                  bg-primary-500
+                  bg-gradient-to-b
+                  from-primary-500
+                  to-primary-600
                   opacity-0
                   transition-opacity
                   duration-200
                   group-hover:opacity-100
-                "
-              />
+                `}
+                />
 
-              <Link
-                href={`/contacts/${c.id}/details`}
-                className="
-                  block
-                  p-4
-                "
-              >
-                <div
-                  className="
-                    flex
-                    items-center
-                    gap-3
-                  "
-                >
-                  <Avatar name={c.name ?? undefined} email={c.email ?? undefined} size="md" />
-                  <div
-                    className="
-                      min-w-0
-                      flex-1
-                    "
-                  >
-                    <p
-                      className="
-                        truncate
-                        font-semibold
-                        text-slate-900
-                        dark:text-white
-                      "
-                    >
-                      {c.name ?? c.email ?? c.id.slice(0, 8)}
-                    </p>
-                    {c.email && c.name && (
-                      <p
-                        className="
-                          truncate
-                          text-sm
-                          text-slate-600
-                          dark:text-slate-400
-                        "
+                <Link href={`/contacts/${c.id}/details`} className={`block p-5`}>
+                  <div className={`flex items-start gap-4`}>
+                    <div className={`relative`}>
+                      <Avatar name={c.name ?? undefined} email={c.email ?? undefined} size="lg" />
+                      <div
+                        className={`
+                        absolute
+                        -bottom-1
+                        -right-1
+                        flex
+                        h-6
+                        w-6
+                        items-center
+                        justify-center
+                        rounded-full
+                        bg-green-500
+                        ring-2
+                        ring-white
+                        dark:ring-slate-800
+                        shadow-sm
+                      `}
                       >
-                        {c.email}
-                      </p>
-                    )}
+                        <CheckIcon className={`h-3 w-3 text-white`} />
+                      </div>
+                    </div>
+                    <div className={`min-w-0 flex-1`}>
+                      <div
+                        className={`
+                        flex
+                        items-start
+                        justify-between
+                        gap-2
+                      `}
+                      >
+                        <div className={`min-w-0 flex-1`}>
+                          <p
+                            className={`
+                            truncate
+                            font-bold
+                            text-slate-900
+                            dark:text-white
+                            text-base
+                          `}
+                          >
+                            {c.name ?? c.email ?? `Contact`}
+                          </p>
+                          {c.email && c.name && (
+                            <p
+                              className={`
+                              truncate
+                              text-sm
+                              text-slate-600
+                              dark:text-slate-400
+                              mt-0.5
+                            `}
+                            >
+                              {c.email}
+                            </p>
+                          )}
+                          <p
+                            className={`
+                            truncate
+                            text-xs
+                            text-slate-500
+                            dark:text-slate-500
+                            mt-1
+                            font-mono
+                          `}
+                          >
+                            ID: {c.id.slice(0, 8)}...
+                          </p>
+                        </div>
+                        <ChevronRightIcon
+                          className={`
+                          h-5
+                          w-5
+                          shrink-0
+                          text-slate-400
+                          transition-all
+                          duration-200
+                          group-hover:translate-x-1
+                          group-hover:text-primary-500
+                        `}
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <svg
-                    className="
-                      h-5
-                      w-5
-                      shrink-0
-                      text-slate-400
-                      transition-transform
-                      duration-200
-                      group-hover:translate-x-1
-                    "
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
-              </Link>
+                </Link>
 
-              <div
-                className="
+                <div
+                  className={`
                   flex
                   border-t
                   border-slate-200
                   dark:border-slate-700
-                "
-              >
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setEditContact(c);
-                  }}
-                  className="
-                    flex
-                    min-h-[44px]
-                    flex-1
-                    items-center
-                    justify-center
-                    gap-2
-                    px-4
-                    py-3
-                    text-sm
-                    font-medium
-                    text-slate-700
-                    transition-colors
-                    hover:bg-slate-50
-                    dark:text-slate-300
-                    dark:hover:bg-slate-700
-                  "
+                  bg-slate-50/50
+                  dark:bg-slate-900/30
+                `}
                 >
-                  <svg
-                    className="
-                      h-4
-                      w-4
-                    "
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setEditContact(c);
+                    }}
+                    className={`
+                      flex
+                      min-h-11
+                      flex-1
+                      items-center
+                      justify-center
+                      gap-2
+                      px-4
+                      py-3
+                      text-sm
+                      font-semibold
+                      text-slate-700
+                      transition-all
+                      hover:bg-slate-100
+                      dark:text-slate-300
+                      dark:hover:bg-slate-800/50
+                      active:scale-95
+                    `}
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                    />
-                  </svg>
-                  Edit
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setDeleteContact(c);
-                  }}
-                  className="
-                    flex
-                    min-h-[44px]
-                    flex-1
-                    items-center
-                    justify-center
-                    gap-2
-                    border-l
-                    border-slate-200
-                    px-4
-                    py-3
-                    text-sm
-                    font-medium
-                    text-red-600
-                    transition-colors
-                    hover:bg-red-50
-                    dark:border-slate-700
-                    dark:text-red-400
-                    dark:hover:bg-red-900/10
-                  "
-                >
-                  <svg
-                    className="
-                      h-4
-                      w-4
-                    "
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+                    <PencilIcon className={`h-4 w-4`} strokeWidth={2} />
+                    Edit
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setDeleteContact(c);
+                    }}
+                    className={`
+                      flex
+                      min-h-11
+                      flex-1
+                      items-center
+                      justify-center
+                      gap-2
+                      border-l
+                      border-slate-200
+                      px-4
+                      py-3
+                      text-sm
+                      font-semibold
+                      text-red-600
+                      transition-all
+                      hover:bg-red-50
+                      dark:border-slate-700
+                      dark:text-red-400
+                      dark:hover:bg-red-900/20
+                      active:scale-95
+                    `}
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                  </svg>
-                  Delete
-                </button>
+                    <TrashIcon className={`h-4 w-4`} strokeWidth={2} />
+                    Delete
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
 
       <CreateContactModal
         isOpen={createModalOpen}

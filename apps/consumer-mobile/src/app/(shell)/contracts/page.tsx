@@ -1,6 +1,7 @@
 import { headers } from 'next/headers';
 
-import { getContractsList, ContractsListView } from '../../../features/contracts';
+import { getContractsList } from '../../../features/contracts/queries';
+import { ContractsListView } from '../../../features/contracts/ui/ContractsListView';
 
 export default async function ContractsPage() {
   const headersList = await headers();

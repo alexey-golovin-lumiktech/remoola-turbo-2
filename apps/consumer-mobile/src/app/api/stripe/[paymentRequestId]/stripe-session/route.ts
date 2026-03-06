@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
-import { paymentParamsSchema } from '../../../../../features/payments';
+import { paymentParamsSchema } from '../../../../../features/payments/schemas';
 import { getEnv } from '../../../../../lib/env.server';
 
 export async function POST(req: NextRequest, context: { params: Promise<{ paymentRequestId: string }> }) {

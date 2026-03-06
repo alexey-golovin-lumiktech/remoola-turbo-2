@@ -5,6 +5,11 @@ import { useState } from 'react';
 
 import { AmountCurrencyInput } from '../../../shared/ui/AmountCurrencyInput';
 import { Button } from '../../../shared/ui/Button';
+import { AlertTriangleIcon } from '../../../shared/ui/icons/AlertTriangleIcon';
+import { CheckIcon } from '../../../shared/ui/icons/CheckIcon';
+import { ClockIcon } from '../../../shared/ui/icons/ClockIcon';
+import { CurrencyDollarIcon } from '../../../shared/ui/icons/CurrencyDollarIcon';
+import { ExchangeIcon } from '../../../shared/ui/icons/ExchangeIcon';
 import { getExchangeQuote, executeExchange } from '../actions';
 
 interface Currency {
@@ -109,84 +114,90 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
 
   return (
     <div
-      className="
-        overflow-hidden
-        rounded-xl
-        border
-        border-slate-200
-        bg-white
-        shadow-sm
-        dark:border-slate-700
-        dark:bg-slate-800
-      "
+      className={`
+      overflow-hidden
+      rounded-2xl
+      border
+      border-slate-700
+      bg-slate-800/90
+      shadow-xl
+      transition-all
+      duration-300
+      hover:shadow-2xl
+    `}
     >
       <div
-        className="
-          border-b
-          border-slate-200
-          bg-slate-50
-          px-4
-          py-3
-          dark:border-slate-700
-          dark:bg-slate-800/50
-        "
+        className={`
+        border-b
+        border-slate-700
+        bg-gradient-to-br
+        from-slate-800
+        to-slate-900
+        px-5
+        py-4
+      `}
       >
-        <h3
-          className="
-            text-lg
-            font-semibold
-            text-slate-900
-            dark:text-white
-          "
-        >
-          Exchange currency
-        </h3>
-        <p
-          className="
-            mt-1
-            text-xs
-            text-slate-600
-            dark:text-slate-400
-          "
-        >
-          Convert between currencies at live exchange rates
-        </p>
+        <div className={`flex items-start gap-3`}>
+          <div
+            className={`
+            flex
+            h-10
+            w-10
+            items-center
+            justify-center
+            rounded-xl
+            bg-gradient-to-br
+            from-primary-500
+            to-primary-600
+            shadow-lg
+          `}
+          >
+            <ExchangeIcon className={`h-5 w-5 text-white`} strokeWidth={2} />
+          </div>
+          <div className={`flex-1`}>
+            <h3 className={`text-lg font-bold text-slate-100`}>Exchange currency</h3>
+            <p
+              className={`
+              mt-0.5
+              text-xs
+              font-medium
+              text-slate-400
+            `}
+            >
+              Convert between currencies at live exchange rates
+            </p>
+          </div>
+        </div>
       </div>
 
-      <div
-        className="
-          space-y-4
-          p-4
-        "
-      >
+      <div className={`space-y-5 p-5`}>
         <div>
           <div
-            className="
-              mb-1.5
-              flex
-              items-center
-              justify-between
-            "
+            className={`
+            mb-2
+            flex
+            items-center
+            justify-between
+          `}
           >
             <label
-              className="
-                block
-                text-sm
-                font-medium
-                text-slate-900
-                dark:text-white
-              "
+              className={`
+              flex
+              items-center
+              gap-1.5
+              text-sm
+              font-bold
+              text-slate-200
+            `}
             >
+              <CurrencyDollarIcon className={`h-4 w-4 text-slate-400`} strokeWidth={2} />
               From
             </label>
-            <span
-              className="
-                text-xs
-                text-slate-500
-                dark:text-slate-400
-              "
-            >
-              Available: {getBalanceForCurrency(fromCurrency).toFixed(2)} {fromCurrency}
+            <span className={`text-xs font-semibold text-slate-400`}>
+              Available:{` `}
+              <span className={`text-slate-300`}>
+                {getBalanceForCurrency(fromCurrency).toFixed(2)} {fromCurrency}
+              </span>
             </span>
           </div>
           <AmountCurrencyInput
@@ -210,65 +221,65 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
           />
         </div>
 
-        <div
-          className="
-            flex
-            justify-center
-          "
-        >
+        <div className={`flex justify-center`}>
           <button
             onClick={handleSwapCurrencies}
-            className="
-              min-h-[44px]
-              min-w-[44px]
-              rounded-full
-              bg-slate-100
-              p-2
-              text-slate-600
+            className={`
+              group
+              flex
+              min-h-[48px]
+              min-w-[48px]
+              items-center
+              justify-center
+              rounded-2xl
+              bg-gradient-to-br
+              from-slate-700
+              to-slate-800
+              p-3
+              text-slate-300
+              shadow-lg
               transition-all
-              hover:rotate-180
-              hover:bg-slate-200
+              duration-300
+              hover:from-primary-600
+              hover:to-primary-700
+              hover:text-white
+              hover:shadow-xl
+              hover:scale-110
               focus:outline-none
               focus:ring-2
               focus:ring-primary-500
-              dark:bg-slate-700
-              dark:text-slate-400
-              dark:hover:bg-slate-600
-            "
+              focus:ring-offset-2
+              focus:ring-offset-slate-800
+              active:scale-95
+            `}
             aria-label="Swap currencies"
           >
-            <svg
-              className="
-                h-5
-                w-5
+            <ExchangeIcon
+              className={`
+                h-6
+                w-6
                 transition-transform
-                duration-300
-              "
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-              />
-            </svg>
+                duration-500
+                group-hover:rotate-180
+              `}
+              strokeWidth={2.5}
+            />
           </button>
         </div>
 
         <div>
           <label
-            className="
-              mb-1.5
-              block
-              text-sm
-              font-medium
-              text-slate-900
-              dark:text-white
-            "
+            className={`
+            mb-2
+            flex
+            items-center
+            gap-1.5
+            text-sm
+            font-bold
+            text-slate-200
+          `}
           >
+            <CurrencyDollarIcon className={`h-4 w-4 text-slate-400`} strokeWidth={2} />
             To
           </label>
           <AmountCurrencyInput
@@ -289,102 +300,115 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
 
         {quote && (
           <div
-            className="
-              rounded-lg
-              bg-blue-50
-              p-3
-              dark:bg-blue-900/20
-            "
+            className={`
+            animate-slideDown
+            rounded-xl
+            border
+            border-blue-700
+            bg-gradient-to-br
+            from-blue-900/50
+            to-blue-800/30
+            p-4
+            shadow-lg
+          `}
           >
             <div
-              className="
-                flex
-                items-center
-                justify-between
-              "
+              className={`
+              flex
+              items-center
+              justify-between
+              mb-2
+            `}
             >
-              <span
-                className="
-                  text-xs
-                  font-medium
-                  text-blue-900
-                  dark:text-blue-300
-                "
-              >
-                Exchange rate
-              </span>
-              <span
-                className="
-                  text-sm
-                  font-bold
-                  text-blue-900
-                  dark:text-blue-300
-                "
-              >
+              <span className={`text-sm font-bold text-blue-300`}>Exchange rate</span>
+              <span className={`text-base font-extrabold text-blue-200`}>
                 1 {fromCurrency} = {quote.rate.toFixed(4)} {toCurrency}
               </span>
             </div>
-            <p
-              className="
-                mt-1
-                text-xs
-                text-blue-700
-                dark:text-blue-400
-              "
-            >
-              Updated {new Date(quote.timestamp).toLocaleTimeString()}
-            </p>
+            <div className={`flex items-center gap-1.5`}>
+              <ClockIcon className={`h-3.5 w-3.5 text-blue-400`} />
+              <p className={`text-xs font-medium text-blue-300`}>
+                Updated {new Date(quote.timestamp).toLocaleTimeString()}
+              </p>
+            </div>
           </div>
         )}
 
         {success && (
           <div
-            className="
-              rounded-lg
-              bg-green-50
-              p-3
-              dark:bg-green-900/20
-            "
+            className={`
+            animate-slideDown
+            rounded-xl
+            border
+            border-green-700
+            bg-gradient-to-br
+            from-green-900/50
+            to-green-800/30
+            p-4
+            shadow-lg
+          `}
           >
-            <p
-              className="
-                text-sm
-                text-green-800
-                dark:text-green-300
-              "
-            >
-              {success}
-            </p>
+            <div className={`flex items-start gap-3`}>
+              <div
+                className={`
+                flex
+                h-8
+                w-8
+                shrink-0
+                items-center
+                justify-center
+                rounded-full
+                bg-green-500
+              `}
+              >
+                <CheckIcon className={`h-5 w-5 text-white`} strokeWidth={3} />
+              </div>
+              <p className={`text-sm font-semibold text-green-200`}>{success}</p>
+            </div>
           </div>
         )}
 
         {error && (
           <div
-            className="
-              rounded-lg
-              bg-red-50
-              p-3
-              dark:bg-red-900/20
-            "
+            className={`
+            animate-slideDown
+            rounded-xl
+            border
+            border-red-700
+            bg-gradient-to-br
+            from-red-900/50
+            to-red-800/30
+            p-4
+            shadow-lg
+          `}
           >
-            <p
-              className="
-                text-sm
-                text-red-800
-                dark:text-red-300
-              "
-            >
-              {error}
-            </p>
+            <div className={`flex items-start gap-3`}>
+              <div
+                className={`
+                flex
+                h-8
+                w-8
+                shrink-0
+                items-center
+                justify-center
+                rounded-full
+                bg-red-500
+              `}
+              >
+                <AlertTriangleIcon className={`h-5 w-5 text-white`} strokeWidth={2} />
+              </div>
+              <p className={`text-sm font-semibold text-red-200`}>{error}</p>
+            </div>
           </div>
         )}
 
         <div
-          className="
-            flex
-            gap-2
-            pt-2
-          "
+          className={`
+          grid
+          grid-cols-2
+          gap-3
+          pt-2
+        `}
         >
           <Button
             variant="outline"
@@ -392,9 +416,7 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
             onClick={handleGetQuote}
             isLoading={isLoading}
             disabled={!amount || parseFloat(amount) <= 0}
-            className="
-              flex-1
-            "
+            className={`min-h-[48px] font-bold`}
           >
             Get quote
           </Button>
@@ -404,9 +426,7 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
             onClick={handleExchange}
             isLoading={isLoading}
             disabled={!amount || parseFloat(amount) <= 0}
-            className="
-              flex-1
-            "
+            className={`min-h-[48px] font-bold`}
           >
             {quote ? `Exchange now` : `Get quote`}
           </Button>

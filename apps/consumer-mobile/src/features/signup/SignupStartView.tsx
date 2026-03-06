@@ -7,6 +7,7 @@ import { ACCOUNT_TYPE, type TAccountType } from '@remoola/api-types';
 import { ClipboardIcon, UserIcon } from '@remoola/ui';
 
 import { useSignupForm } from './SignupFormContext';
+import { InformationCircleIcon } from '../../shared/ui/icons/InformationCircleIcon';
 
 export function SignupStartView() {
   const router = useRouter();
@@ -111,19 +112,62 @@ export function SignupStartView() {
   }, [signupDetails.accountType, updateSignup]);
 
   return (
-    <div className="mx-auto max-w-md space-y-6 px-3 py-4 sm:px-4" data-testid="consumer-signup-start-page">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">Welcome to Remoola</h1>
-        <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+    <div
+      className={`
+      mx-auto
+      max-w-md
+      space-y-6
+      px-3
+      py-4
+      sm:px-4
+    `}
+      data-testid="consumer-signup-start-page"
+    >
+      <div className={`text-center`}>
+        <h1
+          className={`
+          text-2xl
+          font-bold
+          text-neutral-900
+          dark:text-white
+        `}
+        >
+          Welcome to Remoola
+        </h1>
+        <p
+          className={`
+          mt-2
+          text-sm
+          text-neutral-600
+          dark:text-neutral-400
+        `}
+        >
           Let&apos;s get started by setting up your account
         </p>
       </div>
 
       {hydrateError && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900/50 dark:bg-red-900/20">
-          <div className="flex items-start gap-3">
+        <div
+          className={`
+          rounded-lg
+          border
+          border-red-200
+          bg-red-50
+          p-4
+          dark:border-red-900/50
+          dark:bg-red-900/20
+        `}
+        >
+          <div className={`flex items-start gap-3`}>
             <svg
-              className="mt-0.5 h-5 w-5 shrink-0 text-red-600 dark:text-red-400"
+              className={`
+                mt-0.5
+                h-5
+                w-5
+                shrink-0
+                text-red-600
+                dark:text-red-400
+              `}
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -135,15 +179,32 @@ export function SignupStartView() {
                 d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-red-900 dark:text-red-200">{hydrateError}</p>
+            <div className={`flex-1`}>
+              <p
+                className={`
+                text-sm
+                font-semibold
+                text-red-900
+                dark:text-red-200
+              `}
+              >
+                {hydrateError}
+              </p>
               <button
                 type="button"
                 onClick={() => {
                   hydratedRef.current = false;
                   setRetryTrigger((t) => t + 1);
                 }}
-                className="mt-2 text-sm font-medium text-red-700 hover:text-red-800 dark:text-red-300 dark:hover:text-red-200"
+                className={`
+                  mt-2
+                  text-sm
+                  font-medium
+                  text-red-700
+                  hover:text-red-800
+                  dark:text-red-300
+                  dark:hover:text-red-200
+                `}
               >
                 Retry
               </button>
@@ -152,30 +213,78 @@ export function SignupStartView() {
         </div>
       )}
 
-      <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
+      <div
+        className={`
+        rounded-2xl
+        border
+        border-neutral-200
+        bg-white
+        p-6
+        shadow-sm
+        dark:border-neutral-700
+        dark:bg-neutral-900
+      `}
+      >
         {googleSignupTokenFromUrl && signupDetails.email && (
-          <div className="mb-4 rounded-lg bg-primary-50 p-3 dark:bg-primary-900/20">
-            <p className="flex items-center gap-2 text-sm text-primary-700 dark:text-primary-300">
-              <svg className="h-5 w-5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                  clipRule="evenodd"
-                />
-              </svg>
+          <div
+            className={`
+            mb-4
+            rounded-lg
+            bg-primary-50
+            p-3
+            dark:bg-primary-900/20
+          `}
+          >
+            <p
+              className={`
+              flex
+              items-center
+              gap-2
+              text-sm
+              text-primary-700
+              dark:text-primary-300
+            `}
+            >
+              <InformationCircleIcon className={`h-5 w-5 shrink-0`} />
               Signing up with {signupDetails.email}
             </p>
           </div>
         )}
-        <div className="mb-6">
-          <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">Step 1 of 4</p>
-          <h2 className="mt-1 text-xl font-semibold text-neutral-900 dark:text-white">Choose your account type</h2>
-          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+        <div className={`mb-6`}>
+          <p
+            className={`
+            text-sm
+            font-medium
+            text-neutral-500
+            dark:text-neutral-400
+          `}
+          >
+            Step 1 of 4
+          </p>
+          <h2
+            className={`
+            mt-1
+            text-xl
+            font-semibold
+            text-neutral-900
+            dark:text-white
+          `}
+          >
+            Choose your account type
+          </h2>
+          <p
+            className={`
+            mt-1
+            text-sm
+            text-neutral-600
+            dark:text-neutral-400
+          `}
+          >
             Select the option that best describes you
           </p>
         </div>
 
-        <div className="space-y-3" data-testid="consumer-signup-start-options">
+        <div className={`space-y-3`} data-testid="consumer-signup-start-options">
           <button
             type="button"
             data-testid="consumer-signup-start-option-contractor"
@@ -191,7 +300,15 @@ export function SignupStartView() {
             }`}
           >
             {isSelected(ACCOUNT_TYPE.CONTRACTOR) && (
-              <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 to-transparent" />
+              <div
+                className={`
+                absolute
+                inset-0
+                bg-gradient-to-br
+                from-primary-500/5
+                to-transparent
+              `}
+              />
             )}
             <div
               className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-all ${
@@ -202,8 +319,8 @@ export function SignupStartView() {
             >
               <UserIcon size={24} />
             </div>
-            <div className="relative flex-1">
-              <div className="flex items-center gap-2">
+            <div className={`relative flex-1`}>
+              <div className={`flex items-center gap-2`}>
                 <span
                   className={`text-lg font-semibold ${
                     isSelected(ACCOUNT_TYPE.CONTRACTOR)
@@ -215,7 +332,12 @@ export function SignupStartView() {
                 </span>
                 {isSelected(ACCOUNT_TYPE.CONTRACTOR) && (
                   <svg
-                    className="h-5 w-5 text-primary-600 dark:text-primary-400"
+                    className={`
+                      h-5
+                      w-5
+                      text-primary-600
+                      dark:text-primary-400
+                    `}
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -227,7 +349,14 @@ export function SignupStartView() {
                   </svg>
                 )}
               </div>
-              <p className="mt-0.5 text-sm text-neutral-600 dark:text-neutral-400">
+              <p
+                className={`
+                mt-0.5
+                text-sm
+                text-neutral-600
+                dark:text-neutral-400
+              `}
+              >
                 For freelancers and independent workers
               </p>
             </div>
@@ -248,7 +377,15 @@ export function SignupStartView() {
             }`}
           >
             {isSelected(ACCOUNT_TYPE.BUSINESS) && (
-              <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 to-transparent" />
+              <div
+                className={`
+                absolute
+                inset-0
+                bg-gradient-to-br
+                from-primary-500/5
+                to-transparent
+              `}
+              />
             )}
             <div
               className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-all ${
@@ -259,8 +396,8 @@ export function SignupStartView() {
             >
               <ClipboardIcon size={24} />
             </div>
-            <div className="relative flex-1">
-              <div className="flex items-center gap-2">
+            <div className={`relative flex-1`}>
+              <div className={`flex items-center gap-2`}>
                 <span
                   className={`text-lg font-semibold ${
                     isSelected(ACCOUNT_TYPE.BUSINESS)
@@ -272,7 +409,12 @@ export function SignupStartView() {
                 </span>
                 {isSelected(ACCOUNT_TYPE.BUSINESS) && (
                   <svg
-                    className="h-5 w-5 text-primary-600 dark:text-primary-400"
+                    className={`
+                      h-5
+                      w-5
+                      text-primary-600
+                      dark:text-primary-400
+                    `}
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -284,7 +426,16 @@ export function SignupStartView() {
                   </svg>
                 )}
               </div>
-              <p className="mt-0.5 text-sm text-neutral-600 dark:text-neutral-400">For companies and organizations</p>
+              <p
+                className={`
+                mt-0.5
+                text-sm
+                text-neutral-600
+                dark:text-neutral-400
+              `}
+              >
+                For companies and organizations
+              </p>
             </div>
           </button>
         </div>
@@ -304,11 +455,24 @@ export function SignupStartView() {
         </button>
       </div>
 
-      <p className="text-center text-sm text-neutral-600 dark:text-neutral-400">
+      <p
+        className={`
+        text-center
+        text-sm
+        text-neutral-600
+        dark:text-neutral-400
+      `}
+      >
         Already have an account?{` `}
         <a
           href="/login"
-          className="font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+          className={`
+            font-semibold
+            text-primary-600
+            hover:text-primary-700
+            dark:text-primary-400
+            dark:hover:text-primary-300
+          `}
         >
           Sign in
         </a>

@@ -41,7 +41,7 @@ export function SendPaymentRequestButton({ paymentRequestId, status }: SendPayme
       size="lg"
       onClick={() => mutate(undefined)}
       isLoading={isLoading}
-      className="flex-1"
+      className={`flex-1`}
       data-testid="send-payment-request-btn"
     >
       {isLoading ? `Sending...` : `Send request`}

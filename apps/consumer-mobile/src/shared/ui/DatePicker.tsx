@@ -6,6 +6,8 @@ import { DayPicker } from 'react-day-picker';
 import { createPortal } from 'react-dom';
 import 'react-day-picker/dist/style.css';
 
+import { CalendarIcon } from './icons/CalendarIcon';
+
 interface DatePickerProps {
   id?: string;
   value?: string;
@@ -89,7 +91,7 @@ export function DatePicker({
   const displayValue = selectedDate ? format(selectedDate, `MMM d, yyyy`) : ``;
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className={`relative`}>
       {/* Input trigger */}
       <button
         ref={buttonRef}
@@ -124,22 +126,13 @@ export function DatePicker({
           }
         `}
       >
-        <span className="flex items-center justify-between">
+        <span className={`flex items-center justify-between`}>
           <span>{displayValue || placeholder}</span>
-          <svg
+          <CalendarIcon
             className={`ml-2 h-5 w-5 flex-shrink-0 ${error ? `text-red-400 dark:text-red-500` : `text-slate-400 dark:text-slate-500`}`}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+            strokeWidth={2}
             aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
-          </svg>
+          />
         </span>
       </button>
 
@@ -148,7 +141,7 @@ export function DatePicker({
         createPortal(
           <>
             {/* Backdrop */}
-            <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} aria-hidden="true" />
+            <div className={`fixed inset-0 z-40`} onClick={() => setIsOpen(false)} aria-hidden="true" />
 
             {/* Calendar - positioned absolutely relative to viewport */}
             <div
@@ -158,7 +151,7 @@ export function DatePicker({
                 left: `${position.left}px`,
                 minWidth: `${position.width}px`,
               }}
-              className="
+              className={`
                 z-50
                 max-h-[calc(100vh-100px)]
                 overflow-auto
@@ -170,7 +163,7 @@ export function DatePicker({
                 shadow-xl
                 dark:border-slate-700
                 dark:bg-slate-800
-              "
+              `}
               role="dialog"
               aria-label="Choose date"
             >
@@ -179,7 +172,7 @@ export function DatePicker({
                 selected={selectedDate}
                 onSelect={handleSelect}
                 disabled={[...(minDate ? [{ before: minDate }] : []), ...(maxDate ? [{ after: maxDate }] : [])]}
-                className="rdp-custom"
+                className={`rdp-custom`}
                 classNames={{
                   months: `flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0`,
                   month: `space-y-4`,
@@ -204,11 +197,32 @@ export function DatePicker({
               />
 
               {/* Footer with today and clear buttons */}
-              <div className="mt-3 flex items-center justify-between border-t border-slate-200 pt-3 dark:border-slate-700">
+              <div
+                className={`
+                mt-3
+                flex
+                items-center
+                justify-between
+                border-t
+                border-slate-200
+                pt-3
+                dark:border-slate-700
+              `}
+              >
                 <button
                   type="button"
                   onClick={() => handleSelect(new Date())}
-                  className="rounded-md px-3 py-1.5 text-sm font-medium text-primary-600 hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-900/20"
+                  className={`
+                    rounded-md
+                    px-3
+                    py-1.5
+                    text-sm
+                    font-medium
+                    text-primary-600
+                    hover:bg-primary-50
+                    dark:text-primary-400
+                    dark:hover:bg-primary-900/20
+                  `}
                 >
                   Today
                 </button>
@@ -219,7 +233,17 @@ export function DatePicker({
                       onChange?.(``);
                       setIsOpen(false);
                     }}
-                    className="rounded-md px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700"
+                    className={`
+                      rounded-md
+                      px-3
+                      py-1.5
+                      text-sm
+                      font-medium
+                      text-slate-600
+                      hover:bg-slate-100
+                      dark:text-slate-400
+                      dark:hover:bg-slate-700
+                    `}
                   >
                     Clear
                   </button>

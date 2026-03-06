@@ -18,7 +18,22 @@ function SignupStepsContent() {
   const { currentStep } = useSignupSteps();
   return (
     <>
-      <div className="sticky top-0 z-10 mb-3 bg-gradient-to-b from-[#f8fafc] via-[#f8fafc] to-transparent pb-2 pt-1 dark:from-[#0f172a] dark:via-[#0f172a]">
+      <div
+        className={`
+        sticky
+        top-0
+        z-10
+        mb-3
+        bg-gradient-to-b
+        from-[#f8fafc]
+        via-[#f8fafc]
+        to-transparent
+        pb-2
+        pt-1
+        dark:from-[#0f172a]
+        dark:via-[#0f172a]
+      `}
+      >
         <Stepper />
       </div>
       {currentStep === STEP_NAME.SIGNUP_DETAILS && <SignupDetailsStep />}
@@ -115,11 +130,36 @@ export function SignupFlowView() {
 
   if (hydrateError) {
     return (
-      <div className="mx-auto max-w-md px-3 py-4 sm:px-4">
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900/50 dark:bg-red-900/20">
-          <div className="flex items-start gap-3">
+      <div
+        className={`
+        mx-auto
+        max-w-md
+        px-3
+        py-4
+        sm:px-4
+      `}
+      >
+        <div
+          className={`
+          rounded-lg
+          border
+          border-red-200
+          bg-red-50
+          p-4
+          dark:border-red-900/50
+          dark:bg-red-900/20
+        `}
+        >
+          <div className={`flex items-start gap-3`}>
             <svg
-              className="mt-0.5 h-5 w-5 shrink-0 text-red-600 dark:text-red-400"
+              className={`
+                mt-0.5
+                h-5
+                w-5
+                shrink-0
+                text-red-600
+                dark:text-red-400
+              `}
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -131,15 +171,32 @@ export function SignupFlowView() {
                 d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-red-900 dark:text-red-200">{hydrateError}</p>
+            <div className={`flex-1`}>
+              <p
+                className={`
+                text-sm
+                font-semibold
+                text-red-900
+                dark:text-red-200
+              `}
+              >
+                {hydrateError}
+              </p>
               <button
                 type="button"
                 onClick={() => {
                   hydratedRef.current = false;
                   setRetryTrigger((t) => t + 1);
                 }}
-                className="mt-2 text-sm font-medium text-red-700 hover:text-red-800 dark:text-red-300 dark:hover:text-red-200"
+                className={`
+                  mt-2
+                  text-sm
+                  font-medium
+                  text-red-700
+                  hover:text-red-800
+                  dark:text-red-300
+                  dark:hover:text-red-200
+                `}
               >
                 Retry
               </button>
@@ -158,7 +215,16 @@ export function SignupFlowView() {
 
   return (
     <SignupStepsProvider accountType={accountType} contractorKind={kind}>
-      <div className="mx-auto max-w-md px-3 py-4 sm:px-4" data-testid="consumer-signup-flow">
+      <div
+        className={`
+        mx-auto
+        max-w-md
+        px-3
+        py-4
+        sm:px-4
+      `}
+        data-testid="consumer-signup-flow"
+      >
         <SignupStepsContent />
       </div>
     </SignupStepsProvider>

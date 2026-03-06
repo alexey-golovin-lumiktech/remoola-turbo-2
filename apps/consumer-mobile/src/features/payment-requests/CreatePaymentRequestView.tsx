@@ -65,12 +65,41 @@ export function CreatePaymentRequestView() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-4 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-neutral-900"
+      className={`
+        space-y-4
+        rounded-xl
+        border
+        border-neutral-200
+        bg-white
+        p-6
+        shadow-sm
+        dark:border-neutral-700
+        dark:bg-neutral-900
+      `}
       data-testid="create-payment-request-form"
     >
-      <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">New payment request</h2>
+      <h2
+        className={`
+        text-lg
+        font-semibold
+        text-neutral-900
+        dark:text-white
+      `}
+      >
+        New payment request
+      </h2>
       <div>
-        <label htmlFor="pr-email" className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+        <label
+          htmlFor="pr-email"
+          className={`
+          mb-1
+          block
+          text-sm
+          font-medium
+          text-neutral-700
+          dark:text-neutral-300
+        `}
+        >
           Recipient email
         </label>
         <input
@@ -78,12 +107,22 @@ export function CreatePaymentRequestView() {
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="input"
+          className={`input`}
           required
         />
       </div>
       <div>
-        <label htmlFor="pr-amount" className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+        <label
+          htmlFor="pr-amount"
+          className={`
+          mb-1
+          block
+          text-sm
+          font-medium
+          text-neutral-700
+          dark:text-neutral-300
+        `}
+        >
           Amount
         </label>
         <input
@@ -92,19 +131,29 @@ export function CreatePaymentRequestView() {
           inputMode="decimal"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
-          className="input"
+          className={`input`}
           required
         />
       </div>
       <div>
-        <label htmlFor="pr-currency" className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+        <label
+          htmlFor="pr-currency"
+          className={`
+          mb-1
+          block
+          text-sm
+          font-medium
+          text-neutral-700
+          dark:text-neutral-300
+        `}
+        >
           Currency
         </label>
         <select
           id="pr-currency"
           value={currencyCode}
           onChange={(e) => setCurrencyCode(e.target.value as TCurrencyCode)}
-          className="input"
+          className={`input`}
         >
           <option value={CURRENCY_CODE.USD}>USD</option>
           <option value={CURRENCY_CODE.EUR}>EUR</option>
@@ -114,7 +163,14 @@ export function CreatePaymentRequestView() {
       <div>
         <label
           htmlFor="pr-description"
-          className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+          className={`
+            mb-1
+            block
+            text-sm
+            font-medium
+            text-neutral-700
+            dark:text-neutral-300
+          `}
         >
           Description (optional)
         </label>
@@ -123,14 +179,30 @@ export function CreatePaymentRequestView() {
           type="text"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          className="input"
+          className={`input`}
         />
       </div>
       <div>
-        <label htmlFor="pr-due" className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+        <label
+          htmlFor="pr-due"
+          className={`
+          mb-1
+          block
+          text-sm
+          font-medium
+          text-neutral-700
+          dark:text-neutral-300
+        `}
+        >
           Due date (optional)
         </label>
-        <input id="pr-due" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="input" />
+        <input
+          id="pr-due"
+          type="date"
+          value={dueDate}
+          onChange={(e) => setDueDate(e.target.value)}
+          className={`input`}
+        />
       </div>
       <button
         type="submit"

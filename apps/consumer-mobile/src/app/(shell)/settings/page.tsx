@@ -1,6 +1,7 @@
 import { headers } from 'next/headers';
 
-import { getProfile, getSettings, SettingsView } from '../../../features/settings';
+import { getProfile, getSettings } from '../../../features/settings/queries';
+import { SettingsView } from '../../../features/settings/ui/SettingsView';
 
 export default async function SettingsPage() {
   const headersList = await headers();

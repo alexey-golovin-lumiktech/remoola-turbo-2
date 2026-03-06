@@ -1,5 +1,15 @@
 import Link from 'next/link';
 
+import { CalendarIcon } from '../../../shared/ui/icons/CalendarIcon';
+import { ChevronLeftIcon } from '../../../shared/ui/icons/ChevronLeftIcon';
+import { ChevronRightIcon } from '../../../shared/ui/icons/ChevronRightIcon';
+import { ClipboardCopyIcon } from '../../../shared/ui/icons/ClipboardCopyIcon';
+import { CurrencyDollarIcon } from '../../../shared/ui/icons/CurrencyDollarIcon';
+import { DocumentIcon } from '../../../shared/ui/icons/DocumentIcon';
+import { DownloadIcon } from '../../../shared/ui/icons/DownloadIcon';
+import { MailIcon } from '../../../shared/ui/icons/MailIcon';
+import { UserIcon } from '../../../shared/ui/icons/UserIcon';
+
 import type { ContactDetails } from '../schemas';
 
 interface ContactDetailViewProps {
@@ -27,185 +37,1044 @@ function formatAddress(address: ContactDetails[`address`]): string | null {
   return parts.length > 0 ? parts.join(`, `) : null;
 }
 
+function getInitials(name: string | null | undefined, email: string | null | undefined): string {
+  if (name) {
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      const first = parts[0]?.[0];
+      const last = parts[parts.length - 1]?.[0];
+      if (first && last) {
+        return `${first}${last}`.toUpperCase();
+      }
+    }
+    return name.slice(0, 2).toUpperCase();
+  }
+  if (email) {
+    return email.slice(0, 2).toUpperCase();
+  }
+  return `??`;
+}
+
 export function ContactDetailView({ contactDetails, contactId }: ContactDetailViewProps) {
   if (!contactDetails) {
     return (
-      <div className="space-y-4" data-testid="consumer-mobile-contact-detail">
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-8 text-center dark:border-slate-700 dark:bg-slate-800/50">
-          <p className="text-sm text-slate-600 dark:text-slate-400">Contact not found.</p>
+      <div className={`space-y-6 px-4 py-6`} data-testid="consumer-mobile-contact-detail">
+        <div
+          className={`
+          rounded-xl
+          border
+          border-slate-200
+          bg-gradient-to-br
+          from-slate-50
+          to-slate-100/50
+          p-12
+          text-center
+          shadow-sm
+          dark:border-slate-700
+          dark:from-slate-800/50
+          dark:to-slate-800/30
+        `}
+        >
+          <div
+            className={`
+            mx-auto
+            mb-4
+            flex
+            h-16
+            w-16
+            items-center
+            justify-center
+            rounded-full
+            bg-slate-200
+            dark:bg-slate-700
+          `}
+          >
+            <UserIcon size={32} className={`text-slate-400 dark:text-slate-500`} />
+          </div>
+          <h2
+            className={`
+            mb-2
+            text-lg
+            font-semibold
+            text-slate-900
+            dark:text-white
+          `}
+          >
+            Contact Not Found
+          </h2>
+          <p className={`text-sm text-slate-600 dark:text-slate-400`}>
+            The contact you&apos;re looking for doesn&apos;t exist or has been removed.
+          </p>
         </div>
         <Link
           href="/contacts"
-          className="inline-flex min-h-[44px] items-center justify-center rounded-lg bg-slate-200 px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-300 dark:bg-slate-700 dark:text-white dark:hover:bg-slate-600"
+          className={`
+            inline-flex
+            min-h-[44px]
+            items-center
+            justify-center
+            gap-2
+            rounded-xl
+            bg-gradient-to-r
+            from-primary-600
+            to-primary-700
+            px-6
+            py-3
+            text-sm
+            font-semibold
+            text-white
+            shadow-md
+            shadow-primary-500/20
+            transition-all
+            hover:shadow-lg
+            hover:shadow-primary-500/30
+            active:scale-[0.98]
+            dark:from-primary-500
+            dark:to-primary-600
+          `}
         >
-          Back to contacts
+          <ChevronLeftIcon size={18} />
+          Back to Contacts
         </Link>
       </div>
     );
   }
 
   const formattedAddress = formatAddress(contactDetails.address);
+  const initials = getInitials(contactDetails.name, contactDetails.email);
+  const totalPayments = contactDetails.paymentRequests.length;
+  const completedPayments = contactDetails.paymentRequests.filter((pr) => pr.status === `completed`).length;
+  const totalDocuments = contactDetails.documents.length;
 
   return (
-    <div className="space-y-6" data-testid="consumer-mobile-contact-detail">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-            {contactDetails.name ?? contactDetails.email ?? contactId.slice(0, 8)}
-          </h1>
-          {contactDetails.name && contactDetails.email && (
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{contactDetails.email}</p>
-          )}
-        </div>
+    <div className={`space-y-6 px-4 py-6`} data-testid="consumer-mobile-contact-detail">
+      <div
+        className={`
+        flex
+        items-start
+        justify-between
+        gap-4
+      `}
+      >
         <Link
           href="/contacts"
-          className="inline-flex min-h-[44px] items-center justify-center rounded-lg bg-slate-200 px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-300 dark:bg-slate-700 dark:text-white dark:hover:bg-slate-600"
+          className={`
+            inline-flex
+            min-h-[44px]
+            items-center
+            justify-center
+            gap-2
+            rounded-xl
+            bg-white
+            px-4
+            py-2.5
+            text-sm
+            font-medium
+            text-slate-700
+            shadow-sm
+            ring-1
+            ring-slate-200
+            transition-all
+            hover:bg-slate-50
+            hover:shadow
+            active:scale-[0.98]
+            dark:bg-slate-800
+            dark:text-slate-300
+            dark:ring-slate-700
+            dark:hover:bg-slate-700
+          `}
         >
+          <ChevronLeftIcon size={18} />
           Back
         </Link>
       </div>
 
-      <div className="space-y-4">
-        <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-white">Contact Information</h2>
-          <dl className="space-y-3 text-sm">
-            {contactDetails.email && (
-              <div>
-                <dt className="text-slate-500 dark:text-slate-400">Email</dt>
-                <dd className="mt-1 font-medium text-slate-900 dark:text-white">
+      <div
+        className={`
+        overflow-hidden
+        rounded-2xl
+        bg-gradient-to-br
+        from-primary-500
+        via-primary-600
+        to-primary-700
+        p-6
+        shadow-xl
+        shadow-primary-500/20
+        dark:from-primary-600
+        dark:via-primary-700
+        dark:to-primary-800
+      `}
+      >
+        <div className={`flex items-start gap-4`}>
+          <div
+            className={`
+            flex
+            h-16
+            w-16
+            shrink-0
+            items-center
+            justify-center
+            rounded-2xl
+            bg-white/20
+            backdrop-blur-sm
+            ring-2
+            ring-white/30
+          `}
+          >
+            <span className={`text-2xl font-bold text-white`}>{initials}</span>
+          </div>
+          <div className={`min-w-0 flex-1 pt-1`}>
+            <h1
+              className={`
+              truncate
+              text-xl
+              font-bold
+              text-white
+              sm:text-2xl
+            `}
+            >
+              {contactDetails.name ?? contactDetails.email ?? contactId.slice(0, 8)}
+            </h1>
+            {contactDetails.name && contactDetails.email && (
+              <div
+                className={`
+                mt-2
+                flex
+                items-center
+                gap-2
+                text-primary-50
+              `}
+              >
+                <MailIcon size={16} className={`shrink-0`} />
+                <p className={`truncate text-sm`}>{contactDetails.email}</p>
+              </div>
+            )}
+            {contactDetails.createdAt && (
+              <div
+                className={`
+                mt-1.5
+                flex
+                items-center
+                gap-2
+                text-primary-100
+              `}
+              >
+                <CalendarIcon size={14} className={`shrink-0`} />
+                <p className={`text-xs`}>Member since {formatDate(contactDetails.createdAt)}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className={`grid grid-cols-3 gap-3`}>
+        <div
+          className={`
+          rounded-xl
+          bg-white
+          p-4
+          shadow-sm
+          ring-1
+          ring-slate-200
+          dark:bg-slate-800
+          dark:ring-slate-700
+        `}
+        >
+          <div
+            className={`
+            mb-2
+            flex
+            items-center
+            justify-center
+            text-primary-600
+            dark:text-primary-400
+          `}
+          >
+            <CurrencyDollarIcon size={28} />
+          </div>
+          <p
+            className={`
+            text-center
+            text-2xl
+            font-bold
+            text-slate-900
+            dark:text-white
+          `}
+          >
+            {totalPayments}
+          </p>
+          <p
+            className={`
+            mt-1
+            text-center
+            text-xs
+            text-slate-600
+            dark:text-slate-400
+          `}
+          >
+            Payments
+          </p>
+        </div>
+        <div
+          className={`
+          rounded-xl
+          bg-white
+          p-4
+          shadow-sm
+          ring-1
+          ring-slate-200
+          dark:bg-slate-800
+          dark:ring-slate-700
+        `}
+        >
+          <div
+            className={`
+            mb-2
+            flex
+            items-center
+            justify-center
+            text-green-600
+            dark:text-green-400
+          `}
+          >
+            <svg className={`h-7 w-7`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <p
+            className={`
+            text-center
+            text-2xl
+            font-bold
+            text-slate-900
+            dark:text-white
+          `}
+          >
+            {completedPayments}
+          </p>
+          <p
+            className={`
+            mt-1
+            text-center
+            text-xs
+            text-slate-600
+            dark:text-slate-400
+          `}
+          >
+            Completed
+          </p>
+        </div>
+        <div
+          className={`
+          rounded-xl
+          bg-white
+          p-4
+          shadow-sm
+          ring-1
+          ring-slate-200
+          dark:bg-slate-800
+          dark:ring-slate-700
+        `}
+        >
+          <div
+            className={`
+            mb-2
+            flex
+            items-center
+            justify-center
+            text-blue-600
+            dark:text-blue-400
+          `}
+          >
+            <DocumentIcon size={28} />
+          </div>
+          <p
+            className={`
+            text-center
+            text-2xl
+            font-bold
+            text-slate-900
+            dark:text-white
+          `}
+          >
+            {totalDocuments}
+          </p>
+          <p
+            className={`
+            mt-1
+            text-center
+            text-xs
+            text-slate-600
+            dark:text-slate-400
+          `}
+          >
+            Documents
+          </p>
+        </div>
+      </div>
+
+      <div
+        className={`
+        rounded-xl
+        bg-white
+        p-5
+        shadow-sm
+        ring-1
+        ring-slate-200
+        dark:bg-slate-800
+        dark:ring-slate-700
+      `}
+      >
+        <div
+          className={`
+          mb-4
+          flex
+          items-center
+          gap-2
+        `}
+        >
+          <div
+            className={`
+            flex
+            h-8
+            w-8
+            items-center
+            justify-center
+            rounded-lg
+            bg-primary-100
+            dark:bg-primary-900/30
+          `}
+          >
+            <UserIcon size={18} className={`text-primary-600 dark:text-primary-400`} />
+          </div>
+          <h2
+            className={`
+            text-base
+            font-semibold
+            text-slate-900
+            dark:text-white
+          `}
+          >
+            Contact Information
+          </h2>
+        </div>
+        <dl className={`space-y-3`}>
+          {contactDetails.email && (
+            <div
+              className={`
+              flex
+              items-start
+              gap-3
+              rounded-lg
+              bg-slate-50
+              p-3
+              dark:bg-slate-700/30
+            `}
+            >
+              <div
+                className={`
+                flex
+                h-10
+                w-10
+                shrink-0
+                items-center
+                justify-center
+                rounded-lg
+                bg-blue-100
+                dark:bg-blue-900/30
+              `}
+              >
+                <MailIcon size={18} className={`text-blue-600 dark:text-blue-400`} />
+              </div>
+              <div className={`min-w-0 flex-1 pt-1`}>
+                <dt
+                  className={`
+                  text-xs
+                  font-medium
+                  text-slate-500
+                  dark:text-slate-400
+                `}
+                >
+                  Email Address
+                </dt>
+                <dd className={`mt-0.5`}>
                   <a
                     href={`mailto:${contactDetails.email}`}
-                    className="text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+                    className={`
+                      truncate
+                      text-sm
+                      font-medium
+                      text-primary-600
+                      hover:text-primary-700
+                      hover:underline
+                      dark:text-primary-400
+                      dark:hover:text-primary-300
+                    `}
                   >
                     {contactDetails.email}
                   </a>
                 </dd>
               </div>
-            )}
-            {formattedAddress && (
-              <div>
-                <dt className="text-slate-500 dark:text-slate-400">Address</dt>
-                <dd className="mt-1 font-medium text-slate-900 dark:text-white">{formattedAddress}</dd>
-              </div>
-            )}
-            <div>
-              <dt className="text-slate-500 dark:text-slate-400">Contact ID</dt>
-              <dd className="mt-1 font-mono text-xs text-slate-700 dark:text-slate-300">{contactDetails.id}</dd>
             </div>
-            {contactDetails.createdAt && (
-              <div>
-                <dt className="text-slate-500 dark:text-slate-400">Created</dt>
-                <dd className="mt-1 font-medium text-slate-900 dark:text-white">
-                  {formatDate(contactDetails.createdAt)}
+          )}
+          {formattedAddress && (
+            <div
+              className={`
+              flex
+              items-start
+              gap-3
+              rounded-lg
+              bg-slate-50
+              p-3
+              dark:bg-slate-700/30
+            `}
+            >
+              <div
+                className={`
+                flex
+                h-10
+                w-10
+                shrink-0
+                items-center
+                justify-center
+                rounded-lg
+                bg-purple-100
+                dark:bg-purple-900/30
+              `}
+              >
+                <svg
+                  className={`
+                    h-5
+                    w-5
+                    text-purple-600
+                    dark:text-purple-400
+                  `}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                  />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <div className={`min-w-0 flex-1 pt-1`}>
+                <dt
+                  className={`
+                  text-xs
+                  font-medium
+                  text-slate-500
+                  dark:text-slate-400
+                `}
+                >
+                  Address
+                </dt>
+                <dd
+                  className={`
+                  mt-0.5
+                  text-sm
+                  font-medium
+                  text-slate-900
+                  dark:text-white
+                `}
+                >
+                  {formattedAddress}
                 </dd>
               </div>
-            )}
-          </dl>
-        </div>
-
-        <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-white">Payment Requests</h2>
-          {contactDetails.paymentRequests.length === 0 ? (
-            <p className="text-sm text-slate-500 dark:text-slate-400">No payment requests</p>
-          ) : (
-            <div className="space-y-2">
-              {contactDetails.paymentRequests.map((pr) => (
-                <Link
-                  key={pr.id}
-                  href={`/payments/${pr.id}`}
-                  className="group block rounded-lg border border-slate-200 p-3 transition-colors hover:border-primary-300 hover:bg-primary-50 dark:border-slate-700 dark:hover:border-primary-700 dark:hover:bg-primary-900/10"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-slate-900 dark:text-white">${pr.amount}</span>
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                            pr.status === `completed`
-                              ? `bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400`
-                              : pr.status === `pending`
-                                ? `bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400`
-                                : `bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300`
-                          }`}
-                        >
-                          {pr.status}
-                        </span>
-                      </div>
-                      {pr.description && (
-                        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{pr.description}</p>
-                      )}
-                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-500">{formatDate(pr.createdAt)}</p>
-                    </div>
-                    <svg
-                      className="h-5 w-5 shrink-0 text-slate-400 transition-transform group-hover:translate-x-1"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                </Link>
-              ))}
             </div>
           )}
-        </div>
+          <div
+            className={`
+            flex
+            items-start
+            gap-3
+            rounded-lg
+            bg-slate-50
+            p-3
+            dark:bg-slate-700/30
+          `}
+          >
+            <div
+              className={`
+              flex
+              h-10
+              w-10
+              shrink-0
+              items-center
+              justify-center
+              rounded-lg
+              bg-slate-200
+              dark:bg-slate-700
+            `}
+            >
+              <ClipboardCopyIcon size={18} className={`text-slate-600 dark:text-slate-400`} />
+            </div>
+            <div className={`min-w-0 flex-1 pt-1`}>
+              <dt
+                className={`
+                text-xs
+                font-medium
+                text-slate-500
+                dark:text-slate-400
+              `}
+              >
+                Contact ID
+              </dt>
+              <dd
+                className={`
+                mt-0.5
+                truncate
+                font-mono
+                text-xs
+                text-slate-700
+                dark:text-slate-300
+              `}
+              >
+                {contactDetails.id}
+              </dd>
+            </div>
+          </div>
+        </dl>
+      </div>
 
-        <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-white">Documents</h2>
-          {contactDetails.documents.length === 0 ? (
-            <p className="text-sm text-slate-500 dark:text-slate-400">No documents</p>
-          ) : (
-            <div className="space-y-2">
-              {contactDetails.documents.map((doc) => (
+      <div
+        className={`
+        rounded-xl
+        bg-white
+        p-5
+        shadow-sm
+        ring-1
+        ring-slate-200
+        dark:bg-slate-800
+        dark:ring-slate-700
+      `}
+      >
+        <div
+          className={`
+          mb-4
+          flex
+          items-center
+          justify-between
+        `}
+        >
+          <div className={`flex items-center gap-2`}>
+            <div
+              className={`
+              flex
+              h-8
+              w-8
+              items-center
+              justify-center
+              rounded-lg
+              bg-green-100
+              dark:bg-green-900/30
+            `}
+            >
+              <CurrencyDollarIcon size={18} className={`text-green-600 dark:text-green-400`} />
+            </div>
+            <h2
+              className={`
+              text-base
+              font-semibold
+              text-slate-900
+              dark:text-white
+            `}
+            >
+              Payment Requests
+            </h2>
+          </div>
+          {totalPayments > 0 && (
+            <span
+              className={`
+              rounded-full
+              bg-slate-100
+              px-2.5
+              py-1
+              text-xs
+              font-semibold
+              text-slate-700
+              dark:bg-slate-700
+              dark:text-slate-300
+            `}
+            >
+              {totalPayments}
+            </span>
+          )}
+        </div>
+        {contactDetails.paymentRequests.length === 0 ? (
+          <div
+            className={`
+            rounded-lg
+            bg-slate-50
+            p-8
+            text-center
+            dark:bg-slate-700/30
+          `}
+          >
+            <div
+              className={`
+              mx-auto
+              mb-3
+              flex
+              h-12
+              w-12
+              items-center
+              justify-center
+              rounded-full
+              bg-slate-200
+              dark:bg-slate-700
+            `}
+            >
+              <CurrencyDollarIcon size={24} className={`text-slate-400`} />
+            </div>
+            <p
+              className={`
+              text-sm
+              font-medium
+              text-slate-600
+              dark:text-slate-400
+            `}
+            >
+              No payment requests yet
+            </p>
+            <p
+              className={`
+              mt-1
+              text-xs
+              text-slate-500
+              dark:text-slate-500
+            `}
+            >
+              Payment history will appear here
+            </p>
+          </div>
+        ) : (
+          <div className={`space-y-2`}>
+            {contactDetails.paymentRequests.map((pr) => (
+              <Link
+                key={pr.id}
+                href={`/payments/${pr.id}`}
+                className={`
+                  group
+                  block
+                  rounded-lg
+                  border
+                  border-slate-200
+                  bg-slate-50/50
+                  p-4
+                  transition-all
+                  hover:border-primary-300
+                  hover:bg-primary-50
+                  hover:shadow-md
+                  active:scale-[0.99]
+                  dark:border-slate-700
+                  dark:bg-slate-700/20
+                  dark:hover:border-primary-700
+                  dark:hover:bg-primary-900/10
+                `}
+              >
                 <div
-                  key={doc.id}
-                  className="flex items-center justify-between rounded-lg border border-slate-200 p-3 dark:border-slate-700"
+                  className={`
+                  flex
+                  items-start
+                  justify-between
+                  gap-3
+                `}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700">
-                      <svg
-                        className="h-5 w-5 text-slate-600 dark:text-slate-400"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
+                  <div className={`flex-1`}>
+                    <div className={`flex items-center gap-2`}>
+                      <span
+                        className={`
+                        text-lg
+                        font-bold
+                        text-slate-900
+                        dark:text-white
+                      `}
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                        />
-                      </svg>
+                        ${pr.amount}
+                      </span>
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                          pr.status === `completed`
+                            ? `bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400`
+                            : pr.status === `pending`
+                              ? `bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400`
+                              : `bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300`
+                        }`}
+                      >
+                        {pr.status}
+                      </span>
                     </div>
-                    <div>
-                      <p className="font-medium text-slate-900 dark:text-white">{doc.name}</p>
-                      {doc.createdAt && (
-                        <p className="text-xs text-slate-500 dark:text-slate-500">{formatDate(doc.createdAt)}</p>
-                      )}
+                    {pr.description && (
+                      <p
+                        className={`
+                        mt-1.5
+                        text-sm
+                        text-slate-600
+                        dark:text-slate-400
+                      `}
+                      >
+                        {pr.description}
+                      </p>
+                    )}
+                    <div
+                      className={`
+                      mt-2
+                      flex
+                      items-center
+                      gap-1.5
+                      text-xs
+                      text-slate-500
+                      dark:text-slate-500
+                    `}
+                    >
+                      <CalendarIcon size={14} />
+                      {formatDate(pr.createdAt)}
                     </div>
                   </div>
-                  <a
-                    href={doc.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700"
+                  <div
+                    className={`
+                    flex
+                    h-10
+                    w-10
+                    shrink-0
+                    items-center
+                    justify-center
+                    rounded-lg
+                    bg-white
+                    transition-transform
+                    group-hover:translate-x-1
+                    group-hover:bg-primary-100
+                    dark:bg-slate-800
+                    dark:group-hover:bg-primary-900/30
+                  `}
                   >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                      />
-                    </svg>
-                    Download
-                  </a>
+                    <ChevronRightIcon
+                      size={20}
+                      className={`text-slate-400 group-hover:text-primary-600 dark:group-hover:text-primary-400`}
+                    />
+                  </div>
                 </div>
-              ))}
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div
+        className={`
+        rounded-xl
+        bg-white
+        p-5
+        shadow-sm
+        ring-1
+        ring-slate-200
+        dark:bg-slate-800
+        dark:ring-slate-700
+      `}
+      >
+        <div
+          className={`
+          mb-4
+          flex
+          items-center
+          justify-between
+        `}
+        >
+          <div className={`flex items-center gap-2`}>
+            <div
+              className={`
+              flex
+              h-8
+              w-8
+              items-center
+              justify-center
+              rounded-lg
+              bg-blue-100
+              dark:bg-blue-900/30
+            `}
+            >
+              <DocumentIcon size={18} className={`text-blue-600 dark:text-blue-400`} />
             </div>
+            <h2
+              className={`
+              text-base
+              font-semibold
+              text-slate-900
+              dark:text-white
+            `}
+            >
+              Documents
+            </h2>
+          </div>
+          {totalDocuments > 0 && (
+            <span
+              className={`
+              rounded-full
+              bg-slate-100
+              px-2.5
+              py-1
+              text-xs
+              font-semibold
+              text-slate-700
+              dark:bg-slate-700
+              dark:text-slate-300
+            `}
+            >
+              {totalDocuments}
+            </span>
           )}
         </div>
+        {contactDetails.documents.length === 0 ? (
+          <div
+            className={`
+            rounded-lg
+            bg-slate-50
+            p-8
+            text-center
+            dark:bg-slate-700/30
+          `}
+          >
+            <div
+              className={`
+              mx-auto
+              mb-3
+              flex
+              h-12
+              w-12
+              items-center
+              justify-center
+              rounded-full
+              bg-slate-200
+              dark:bg-slate-700
+            `}
+            >
+              <DocumentIcon size={24} className={`text-slate-400`} />
+            </div>
+            <p
+              className={`
+              text-sm
+              font-medium
+              text-slate-600
+              dark:text-slate-400
+            `}
+            >
+              No documents yet
+            </p>
+            <p
+              className={`
+              mt-1
+              text-xs
+              text-slate-500
+              dark:text-slate-500
+            `}
+            >
+              Uploaded documents will appear here
+            </p>
+          </div>
+        ) : (
+          <div className={`space-y-2`}>
+            {contactDetails.documents.map((doc) => (
+              <div
+                key={doc.id}
+                className={`
+                  group
+                  flex
+                  items-center
+                  justify-between
+                  gap-3
+                  rounded-lg
+                  border
+                  border-slate-200
+                  bg-slate-50/50
+                  p-4
+                  transition-all
+                  hover:border-blue-300
+                  hover:bg-blue-50/50
+                  dark:border-slate-700
+                  dark:bg-slate-700/20
+                  dark:hover:border-blue-700
+                  dark:hover:bg-blue-900/10
+                `}
+              >
+                <div className={`flex items-center gap-3`}>
+                  <div
+                    className={`
+                    flex
+                    h-12
+                    w-12
+                    shrink-0
+                    items-center
+                    justify-center
+                    rounded-lg
+                    bg-gradient-to-br
+                    from-blue-100
+                    to-blue-200
+                    dark:from-blue-900/30
+                    dark:to-blue-800/20
+                  `}
+                  >
+                    <DocumentIcon size={22} className={`text-blue-600 dark:text-blue-400`} />
+                  </div>
+                  <div>
+                    <p className={`font-semibold text-slate-900 dark:text-white`}>{doc.name}</p>
+                    {doc.createdAt && (
+                      <div
+                        className={`
+                        mt-1
+                        flex
+                        items-center
+                        gap-1.5
+                        text-xs
+                        text-slate-500
+                        dark:text-slate-500
+                      `}
+                      >
+                        <CalendarIcon size={12} />
+                        {formatDate(doc.createdAt)}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <a
+                  href={doc.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`
+                    inline-flex
+                    min-h-[44px]
+                    items-center
+                    gap-2
+                    rounded-lg
+                    bg-gradient-to-r
+                    from-primary-600
+                    to-primary-700
+                    px-4
+                    py-2
+                    text-sm
+                    font-semibold
+                    text-white
+                    shadow-md
+                    shadow-primary-500/20
+                    transition-all
+                    hover:shadow-lg
+                    hover:shadow-primary-500/30
+                    active:scale-[0.98]
+                    dark:from-primary-500
+                    dark:to-primary-600
+                  `}
+                >
+                  <DownloadIcon size={16} strokeWidth={2} />
+                  Download
+                </a>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

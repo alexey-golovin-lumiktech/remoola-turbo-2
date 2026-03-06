@@ -63,25 +63,17 @@ export function StripeProvider({ children, clientSecret }: StripeProviderProps) 
   if (error) {
     return (
       <div
-        className="
-          rounded-lg
-          border
-          border-red-200
-          bg-red-50
-          p-4
-          dark:border-red-800
-          dark:bg-red-900/20
-        "
+        className={`
+  rounded-lg
+  border
+  border-red-200
+  bg-red-50
+  p-4
+  dark:border-red-800
+  dark:bg-red-900/20
+        `}
       >
-        <p
-          className="
-            text-sm
-            text-red-800
-            dark:text-red-300
-          "
-        >
-          {error}
-        </p>
+        <p className={`text-sm text-red-800 dark:text-red-300`}>{error}</p>
       </div>
     );
   }
@@ -89,23 +81,23 @@ export function StripeProvider({ children, clientSecret }: StripeProviderProps) 
   if (!stripe) {
     return (
       <div
-        className="
-          flex
-          items-center
-          justify-center
-          p-8
-        "
+        className={`
+  flex
+  items-center
+  justify-center
+  p-8
+        `}
       >
         <div
-          className="
-            h-8
-            w-8
-            animate-spin
-            rounded-full
-            border-4
-            border-slate-200
-            border-t-primary-600
-          "
+          className={`
+  h-8
+  w-8
+  animate-spin
+  rounded-full
+  border-4
+  border-slate-200
+  border-t-primary-600
+          `}
         />
       </div>
     );

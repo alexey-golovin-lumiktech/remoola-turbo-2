@@ -55,8 +55,8 @@ export function ConfirmationModal({
         className={`
           fixed
           inset-0
-          bg-slate-900/50
-          backdrop-blur-sm
+          bg-slate-900/60
+          backdrop-blur-md
           transition-opacity
         `}
         onClick={onClose}
@@ -70,17 +70,17 @@ export function ConfirmationModal({
           w-full
           max-w-md
           overflow-hidden
-          rounded-t-2xl
+          rounded-t-3xl
           bg-white
-          shadow-xl
-          sm:rounded-2xl
+          shadow-2xl
+          sm:rounded-3xl
           dark:bg-slate-800
         `}
       >
         <div
           className={`
             px-6
-            py-4
+            py-5
           `}
         >
           {icon && (
@@ -88,7 +88,7 @@ export function ConfirmationModal({
               className={`
                 flex
                 justify-center
-                mb-4
+                mb-5
               `}
             >
               {icon}
@@ -97,20 +97,22 @@ export function ConfirmationModal({
           <h2
             id="confirmation-title"
             className={`
-              text-lg
-              font-semibold
+              text-xl
+              font-bold
               text-slate-900
               dark:text-white
+              text-center
             `}
           >
             {title}
           </h2>
           <p
             className={`
-              mt-2
+              mt-3
               text-sm
               text-slate-600
               dark:text-slate-400
+              text-center
             `}
           >
             {message}
@@ -122,12 +124,17 @@ export function ConfirmationModal({
             flex
             gap-3
             border-t
-            border-slate-200
-            bg-slate-50
+            bg-gradient-to-r
+            from-slate-50
+            via-white
+            to-slate-50
             px-6
             py-4
             dark:border-slate-700
-            dark:bg-slate-800/50
+            dark:from-slate-800/50
+            dark:via-slate-900/50
+            dark:to-slate-800/50
+            backdrop-blur-sm
           `}
         >
           <Button

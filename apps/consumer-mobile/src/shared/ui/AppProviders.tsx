@@ -30,9 +30,35 @@ class AppErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryS
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 px-6">
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200">Something went wrong</h2>
-          <p className="text-center text-sm text-slate-600 dark:text-slate-400">
+        <div
+          className={`
+          flex
+          min-h-[50vh]
+          flex-col
+          items-center
+          justify-center
+          gap-4
+          px-6
+        `}
+        >
+          <h2
+            className={`
+            text-lg
+            font-semibold
+            text-slate-800
+            dark:text-slate-200
+          `}
+          >
+            Something went wrong
+          </h2>
+          <p
+            className={`
+            text-center
+            text-sm
+            text-slate-600
+            dark:text-slate-400
+          `}
+          >
             We encountered an unexpected error. Please try refreshing the page.
           </p>
           <button

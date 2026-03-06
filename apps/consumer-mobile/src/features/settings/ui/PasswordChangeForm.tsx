@@ -35,7 +35,7 @@ export function PasswordChangeForm() {
       title="Change Password"
       description="Update your password to keep your account secure. Minimum 8 characters."
     >
-      <form id="password-form" action={formAction} className="space-y-4">
+      <form id="password-form" action={formAction} className={`space-y-5`}>
         <input
           type="text"
           autoComplete="username"
@@ -43,7 +43,13 @@ export function PasswordChangeForm() {
           readOnly
           aria-hidden="true"
           tabIndex={-1}
-          className="absolute left-[-9999px] h-px w-px opacity-0"
+          className={`
+            absolute
+            left-[-9999px]
+            h-px
+            w-px
+            opacity-0
+          `}
         />
 
         <FormField label="New Password" htmlFor="password" error={fieldErrors.password} required>
@@ -56,6 +62,7 @@ export function PasswordChangeForm() {
             placeholder="At least 8 characters"
             minLength={8}
             required
+            className={`min-h-[44px]`}
           />
         </FormField>
 
@@ -69,11 +76,24 @@ export function PasswordChangeForm() {
             placeholder="Re-enter new password"
             minLength={8}
             required
+            className={`min-h-[44px]`}
           />
         </FormField>
 
-        <div className="flex justify-end">
-          <Button type="submit" variant="primary" isLoading={isPending} disabled={isPending}>
+        <div className={`flex justify-end pt-2`}>
+          <Button
+            type="submit"
+            variant="primary"
+            isLoading={isPending}
+            disabled={isPending}
+            className={`
+              min-h-[44px]
+              shadow-lg
+              shadow-primary-500/30
+              hover:shadow-xl
+              hover:shadow-primary-500/40
+            `}
+          >
             {isPending ? `Changing...` : `Change Password`}
           </Button>
         </div>

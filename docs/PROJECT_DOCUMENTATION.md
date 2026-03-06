@@ -249,6 +249,26 @@ Mobile-first consumer UI is in `apps/consumer-mobile`, running on port 3002. Fol
 - **Visual Polish**: Gradients, shadows, backdrop blur effects, improved spacing and typography
 - **Responsive Design**: Sticky headers with backdrop blur, mobile-first layouts that scale to desktop
 
+### Shared UI Library (`apps/consumer-mobile/src/shared/ui`)
+
+- **Icon Library** (`icons/`): 49 SVG icon components with unified `IconProps` interface:
+  - Navigation & Actions: ArrowDown, ArrowRight, ArrowUp, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Home, Plus, Refresh, Search, X
+  - Financial: Bank, CreditCard, CurrencyDollar, Exchange, TrendingUp
+  - Documents & Files: Clipboard, ClipboardCopy, ClipboardList, Document, Download, Paperclip, Upload
+  - Communication: Bell, Mail, Phone
+  - User & Settings: Lock, Logout, Settings, User, Users
+  - Status & Feedback: AlertTriangle, Check, CheckCircle, ExclamationCircle, InformationCircle, Spinner, XCircle
+  - UI Controls: Calendar, Clock, DotsVertical, Eye, EyeOff, Filter, Lightning, Pencil, SwitchHorizontal, Tag, Trash
+- **IconBadge**: Gradient-styled icon container with variants (primary, success, info, warning, danger, secondary), sizes (sm, md, lg), optional ring effects, and interactive hover animations
+- **PageHeader**: Mobile-optimized page header component with icon, title, subtitle, badge, and actions slots; supports sticky positioning with backdrop blur
+- **SearchInput**: Search input component with magnifying glass icon, clear button (when value present), and mobile-friendly 44px minimum touch target
+- **Brand Assets**: `favicon.ico` and `icon.svg` for PWA and browser tab display
+
+### Test Coverage
+
+- `src/lib/client.test.ts`: Token refresh flows, SWR fetcher, fetchWithAuth utility, retry logic, session expiry handling, query key to URL conversion
+- `src/middleware.test.ts`: Next.js middleware authentication flows, token validation, refresh token rotation, OAuth callback handling, cookie security settings
+
 Auth and onboarding:
 
 - `/login`: login form.

@@ -86,7 +86,7 @@ export function WithdrawForm({ availableCurrencies, paymentMethods, onSubmit, on
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className={`space-y-4`}>
       <FormField label="Amount" htmlFor="withdraw-amount" error={errors.amount} required>
         <AmountCurrencyInput
           id="withdraw-amount"
@@ -126,8 +126,8 @@ export function WithdrawForm({ availableCurrencies, paymentMethods, onSubmit, on
         />
       </FormField>
 
-      <div className="flex gap-3 pt-2">
-        <Button type="submit" variant="primary" size="md" isLoading={isLoading} className="flex-1">
+      <div className={`flex gap-3 pt-2`}>
+        <Button type="submit" variant="primary" size="md" isLoading={isLoading} className={`flex-1`}>
           Withdraw funds
         </Button>
       </div>

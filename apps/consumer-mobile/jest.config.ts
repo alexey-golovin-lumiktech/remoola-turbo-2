@@ -7,6 +7,9 @@ export default async () => {
   const config = await createNextConfig();
   return {
     ...config,
+    verbose: true,
+    collectCoverage: false,
+    cache: false,
     testEnvironment: `node`,
     roots: [`<rootDir>/src`],
   };

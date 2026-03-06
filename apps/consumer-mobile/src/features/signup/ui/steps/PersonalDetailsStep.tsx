@@ -65,10 +65,30 @@ export function PersonalDetailsStep() {
 
   if (isEntity) {
     return (
-      <div className="rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
-        <div className="p-4 sm:p-6">
-          <h1 className="mb-4 text-lg font-semibold text-neutral-900 dark:text-white">Entity details</h1>
-          <div className="space-y-3">
+      <div
+        className={`
+        rounded-xl
+        border
+        border-neutral-200
+        bg-white
+        shadow-sm
+        dark:border-neutral-700
+        dark:bg-neutral-900
+      `}
+      >
+        <div className={`p-4 sm:p-6`}>
+          <h1
+            className={`
+            mb-4
+            text-lg
+            font-semibold
+            text-neutral-900
+            dark:text-white
+          `}
+          >
+            Entity details
+          </h1>
+          <div className={`space-y-3`}>
             <div>
               <label htmlFor="pe-company" className={labelClass}>
                 Company name
@@ -188,10 +208,30 @@ export function PersonalDetailsStep() {
   }
 
   return (
-    <div className="rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
-      <div className="p-4 sm:p-6">
-        <h1 className="mb-4 text-lg font-semibold text-neutral-900 dark:text-white">Personal details</h1>
-        <div className="space-y-3">
+    <div
+      className={`
+      rounded-xl
+      border
+      border-neutral-200
+      bg-white
+      shadow-sm
+      dark:border-neutral-700
+      dark:bg-neutral-900
+    `}
+    >
+      <div className={`p-4 sm:p-6`}>
+        <h1
+          className={`
+          mb-4
+          text-lg
+          font-semibold
+          text-neutral-900
+          dark:text-white
+        `}
+        >
+          Personal details
+        </h1>
+        <div className={`space-y-3`}>
           {(
             [
               { key: `firstName` as const, label: `First name`, type: `text` as const, autoComplete: `given-name` },

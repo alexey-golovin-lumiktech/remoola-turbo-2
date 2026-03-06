@@ -59,7 +59,16 @@ export default function AuthCallback() {
   }, [router, next, oauthToken]);
 
   return (
-    <div className="flex min-h-[50vh] items-center justify-center text-neutral-600" data-testid="auth-callback">
+    <div
+      className={`
+      flex
+      min-h-[50vh]
+      items-center
+      justify-center
+      text-neutral-600
+    `}
+      data-testid="auth-callback"
+    >
       Redirecting…
     </div>
   );

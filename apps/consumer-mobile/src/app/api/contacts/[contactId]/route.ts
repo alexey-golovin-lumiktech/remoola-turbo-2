@@ -1,6 +1,6 @@
 import { type NextRequest } from 'next/server';
 
-import { contactParamsSchema } from '../../../../features/contacts';
+import { contactParamsSchema } from '../../../../features/contacts/schemas';
 import { getEnv } from '../../../../lib/env.server';
 
 async function proxyContact(contactId: string, req: NextRequest, method: string) {

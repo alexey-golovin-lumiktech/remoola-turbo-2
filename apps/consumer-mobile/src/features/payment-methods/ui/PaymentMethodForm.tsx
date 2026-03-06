@@ -240,19 +240,9 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="
-        space-y-4
-      "
-    >
+    <form onSubmit={handleSubmit} className={`space-y-4`}>
       {/* Method Type Toggle */}
-      <div
-        className="
-          flex
-          gap-3
-        "
-      >
+      <div className={`flex gap-3`}>
         <button
           type="button"
           onClick={() => {
@@ -334,73 +324,61 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
       </div>
 
       {/* Billing Details */}
-      <div
-        className="
-          space-y-3
-        "
-      >
-        <label
-          className="
-            block
-          "
-        >
+      <div className={`space-y-3`}>
+        <label className={`block`}>
           <span
-            className="
-              mb-1
-              block
-              text-sm
-              font-medium
-              text-slate-700
-              dark:text-slate-300
-            "
+            className={`
+  mb-1
+  block
+  text-sm
+  font-medium
+  text-slate-700
+  dark:text-slate-300
+            `}
           >
-            Cardholder name <span className="text-red-500">*</span>
+            Cardholder name <span className={`text-red-500`}>*</span>
           </span>
           <input
             type="text"
             placeholder="John Doe"
             value={billingName}
             onChange={(e) => setBillingName(e.target.value)}
-            className="
-              w-full
-              min-h-[44px]
-              rounded-lg
-              border
-              border-slate-300
-              bg-white
-              px-4
-              py-2
-              text-sm
-              text-slate-900
-              placeholder-slate-400
-              transition-colors
-              focus:border-primary-500
-              focus:outline-none
-              focus:ring-2
-              focus:ring-primary-500/20
-              dark:border-slate-600
-              dark:bg-slate-800
-              dark:text-white
-              dark:placeholder-slate-500
-              dark:focus:border-primary-400
-            "
+            className={`
+  w-full
+  min-h-[44px]
+  rounded-lg
+  border
+  border-slate-300
+  bg-white
+  px-4
+  py-2
+  text-sm
+  text-slate-900
+  placeholder-slate-400
+  transition-colors
+  focus:border-primary-500
+  focus:outline-none
+  focus:ring-2
+  focus:ring-primary-500/20
+  dark:border-slate-600
+  dark:bg-slate-800
+  dark:text-white
+  dark:placeholder-slate-500
+  dark:focus:border-primary-400
+            `}
           />
         </label>
 
-        <label
-          className="
-            block
-          "
-        >
+        <label className={`block`}>
           <span
-            className="
-              mb-1
-              block
-              text-sm
-              font-medium
-              text-slate-700
-              dark:text-slate-300
-            "
+            className={`
+  mb-1
+  block
+  text-sm
+  font-medium
+  text-slate-700
+  dark:text-slate-300
+            `}
           >
             Email (optional)
           </span>
@@ -409,46 +387,42 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
             placeholder="john@example.com"
             value={billingEmail}
             onChange={(e) => setBillingEmail(e.target.value)}
-            className="
-              w-full
-              min-h-[44px]
-              rounded-lg
-              border
-              border-slate-300
-              bg-white
-              px-4
-              py-2
-              text-sm
-              text-slate-900
-              placeholder-slate-400
-              transition-colors
-              focus:border-primary-500
-              focus:outline-none
-              focus:ring-2
-              focus:ring-primary-500/20
-              dark:border-slate-600
-              dark:bg-slate-800
-              dark:text-white
-              dark:placeholder-slate-500
-              dark:focus:border-primary-400
-            "
+            className={`
+  w-full
+  min-h-[44px]
+  rounded-lg
+  border
+  border-slate-300
+  bg-white
+  px-4
+  py-2
+  text-sm
+  text-slate-900
+  placeholder-slate-400
+  transition-colors
+  focus:border-primary-500
+  focus:outline-none
+  focus:ring-2
+  focus:ring-primary-500/20
+  dark:border-slate-600
+  dark:bg-slate-800
+  dark:text-white
+  dark:placeholder-slate-500
+  dark:focus:border-primary-400
+            `}
           />
         </label>
 
-        <label
-          className="
-            block
-          "
-        >
+        <label className={`block`}>
           <span
-            className="
-              mb-1
-              block
-              text-sm
-              font-medium
-              text-slate-700
-              dark:text-slate-300
-            "
+            className={`
+  mb-1
+  block
+  text-sm
+  font-medium
+  text-slate-700
+  dark:text-slate-300
+            `}
           >
             Phone (optional)
           </span>
@@ -457,29 +431,29 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
             placeholder="+1 (555) 000-0000"
             value={billingPhone}
             onChange={(e) => setBillingPhone(e.target.value)}
-            className="
-              w-full
-              min-h-[44px]
-              rounded-lg
-              border
-              border-slate-300
-              bg-white
-              px-4
-              py-2
-              text-sm
-              text-slate-900
-              placeholder-slate-400
-              transition-colors
-              focus:border-primary-500
-              focus:outline-none
-              focus:ring-2
-              focus:ring-primary-500/20
-              dark:border-slate-600
-              dark:bg-slate-800
-              dark:text-white
-              dark:placeholder-slate-500
-              dark:focus:border-primary-400
-            "
+            className={`
+  w-full
+  min-h-[44px]
+  rounded-lg
+  border
+  border-slate-300
+  bg-white
+  px-4
+  py-2
+  text-sm
+  text-slate-900
+  placeholder-slate-400
+  transition-colors
+  focus:border-primary-500
+  focus:outline-none
+  focus:ring-2
+  focus:ring-primary-500/20
+  dark:border-slate-600
+  dark:bg-slate-800
+  dark:text-white
+  dark:placeholder-slate-500
+  dark:focus:border-primary-400
+            `}
           />
         </label>
       </div>
@@ -487,25 +461,25 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
       {/* Card Details (Credit Card only) */}
       {methodType === `CREDIT_CARD` && (
         <div
-          className="
-            rounded-lg
-            border
-            border-slate-300
-            bg-white
-            p-4
-            dark:border-slate-600
-            dark:bg-slate-800
-          "
+          className={`
+  rounded-lg
+  border
+  border-slate-300
+  bg-white
+  p-4
+  dark:border-slate-600
+  dark:bg-slate-800
+          `}
         >
           <label
-            className="
-              mb-2
-              block
-              text-sm
-              font-medium
-              text-slate-700
-              dark:text-slate-300
-            "
+            className={`
+  mb-2
+  block
+  text-sm
+  font-medium
+  text-slate-700
+  dark:text-slate-300
+            `}
           >
             Card details
           </label>
@@ -515,123 +489,107 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
 
       {/* Bank Account Details (Bank Account only) */}
       {methodType === `BANK_ACCOUNT` && (
-        <div
-          className="
-            space-y-3
-          "
-        >
-          <label
-            className="
-              block
-            "
-          >
+        <div className={`space-y-3`}>
+          <label className={`block`}>
             <span
-              className="
-                mb-1
-                block
-                text-sm
-                font-medium
-                text-slate-700
-                dark:text-slate-300
-              "
+              className={`
+  mb-1
+  block
+  text-sm
+  font-medium
+  text-slate-700
+  dark:text-slate-300
+              `}
             >
-              Bank name <span className="text-red-500">*</span>
+              Bank name <span className={`text-red-500`}>*</span>
             </span>
             <input
               type="text"
               placeholder="Chase Bank"
               value={bankName}
               onChange={(e) => setBankName(e.target.value)}
-              className="
-                w-full
-                min-h-[44px]
-                rounded-lg
-                border
-                border-slate-300
-                bg-white
-                px-4
-                py-2
-                text-sm
-                text-slate-900
-                placeholder-slate-400
-                transition-colors
-                focus:border-primary-500
-                focus:outline-none
-                focus:ring-2
-                focus:ring-primary-500/20
-                dark:border-slate-600
-                dark:bg-slate-800
-                dark:text-white
-                dark:placeholder-slate-500
-                dark:focus:border-primary-400
-              "
+              className={`
+  w-full
+  min-h-[44px]
+  rounded-lg
+  border
+  border-slate-300
+  bg-white
+  px-4
+  py-2
+  text-sm
+  text-slate-900
+  placeholder-slate-400
+  transition-colors
+  focus:border-primary-500
+  focus:outline-none
+  focus:ring-2
+  focus:ring-primary-500/20
+  dark:border-slate-600
+  dark:bg-slate-800
+  dark:text-white
+  dark:placeholder-slate-500
+  dark:focus:border-primary-400
+              `}
             />
           </label>
 
-          <label
-            className="
-              block
-            "
-          >
+          <label className={`block`}>
             <span
-              className="
-                mb-1
-                block
-                text-sm
-                font-medium
-                text-slate-700
-                dark:text-slate-300
-              "
+              className={`
+  mb-1
+  block
+  text-sm
+  font-medium
+  text-slate-700
+  dark:text-slate-300
+              `}
             >
-              Account number <span className="text-red-500">*</span>
+              Account number <span className={`text-red-500`}>*</span>
             </span>
             <input
               type="text"
               placeholder="000123456789"
               value={bankAccount}
               onChange={(e) => setBankAccount(e.target.value.replace(/\D/g, ``))}
-              className="
-                w-full
-                min-h-[44px]
-                rounded-lg
-                border
-                border-slate-300
-                bg-white
-                px-4
-                py-2
-                text-sm
-                text-slate-900
-                placeholder-slate-400
-                transition-colors
-                focus:border-primary-500
-                focus:outline-none
-                focus:ring-2
-                focus:ring-primary-500/20
-                dark:border-slate-600
-                dark:bg-slate-800
-                dark:text-white
-                dark:placeholder-slate-500
-                dark:focus:border-primary-400
-              "
+              className={`
+  w-full
+  min-h-[44px]
+  rounded-lg
+  border
+  border-slate-300
+  bg-white
+  px-4
+  py-2
+  text-sm
+  text-slate-900
+  placeholder-slate-400
+  transition-colors
+  focus:border-primary-500
+  focus:outline-none
+  focus:ring-2
+  focus:ring-primary-500/20
+  dark:border-slate-600
+  dark:bg-slate-800
+  dark:text-white
+  dark:placeholder-slate-500
+  dark:focus:border-primary-400
+              `}
             />
           </label>
 
-          <label
-            className="
-              block
-            "
-          >
+          <label className={`block`}>
             <span
-              className="
-                mb-1
-                block
-                text-sm
-                font-medium
-                text-slate-700
-                dark:text-slate-300
-              "
+              className={`
+  mb-1
+  block
+  text-sm
+  font-medium
+  text-slate-700
+  dark:text-slate-300
+              `}
             >
-              Routing number <span className="text-red-500">*</span>
+              Routing number <span className={`text-red-500`}>*</span>
             </span>
             <input
               type="text"
@@ -639,37 +597,37 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
               value={bankRouting}
               onChange={(e) => setBankRouting(e.target.value.replace(/\D/g, ``).slice(0, 9))}
               maxLength={9}
-              className="
-                w-full
-                min-h-[44px]
-                rounded-lg
-                border
-                border-slate-300
-                bg-white
-                px-4
-                py-2
-                text-sm
-                text-slate-900
-                placeholder-slate-400
-                transition-colors
-                focus:border-primary-500
-                focus:outline-none
-                focus:ring-2
-                focus:ring-primary-500/20
-                dark:border-slate-600
-                dark:bg-slate-800
-                dark:text-white
-                dark:placeholder-slate-500
-                dark:focus:border-primary-400
-              "
+              className={`
+  w-full
+  min-h-[44px]
+  rounded-lg
+  border
+  border-slate-300
+  bg-white
+  px-4
+  py-2
+  text-sm
+  text-slate-900
+  placeholder-slate-400
+  transition-colors
+  focus:border-primary-500
+  focus:outline-none
+  focus:ring-2
+  focus:ring-primary-500/20
+  dark:border-slate-600
+  dark:bg-slate-800
+  dark:text-white
+  dark:placeholder-slate-500
+  dark:focus:border-primary-400
+              `}
             />
             <p
-              className="
-                mt-1
-                text-xs
-                text-slate-500
-                dark:text-slate-400
-              "
+              className={`
+  mt-1
+  text-xs
+  text-slate-500
+  dark:text-slate-400
+              `}
             >
               9-digit number found on your checks
             </p>
@@ -678,71 +636,63 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
       )}
 
       <label
-        className="
-          flex
-          items-center
-          gap-3
-          text-sm
-          text-slate-700
-          dark:text-slate-300
-        "
+        className={`
+  flex
+  items-center
+  gap-3
+  text-sm
+  text-slate-700
+  dark:text-slate-300
+        `}
       >
         <input
           type="checkbox"
           checked={defaultSelected}
           onChange={(e) => setDefaultSelected(e.target.checked)}
-          className="
-            h-5
-            w-5
-            min-h-[20px]
-            min-w-[20px]
-            rounded
-            border-slate-300
-            text-primary-600
-            transition-colors
-            focus:ring-2
-            focus:ring-primary-500/20
-            dark:border-slate-600
-            dark:bg-slate-700
-            dark:checked:bg-primary-600
-          "
+          className={`
+  h-5
+  w-5
+  min-h-[20px]
+  min-w-[20px]
+  rounded
+  border-slate-300
+  text-primary-600
+  transition-colors
+  focus:ring-2
+  focus:ring-primary-500/20
+  dark:border-slate-600
+  dark:bg-slate-700
+  dark:checked:bg-primary-600
+          `}
         />
         <span>Set as default payment method</span>
       </label>
 
       {error && (
         <div
-          className="
-            rounded-lg
-            border
-            border-red-200
-            bg-red-50
-            p-3
-            dark:border-red-800
-            dark:bg-red-900/20
-          "
+          className={`
+  rounded-lg
+  border
+  border-red-200
+  bg-red-50
+  p-3
+  dark:border-red-800
+  dark:bg-red-900/20
+          `}
           role="alert"
         >
-          <p
-            className="
-              text-sm
-              text-red-800
-              dark:text-red-300
-            "
-          >
-            {error}
-          </p>
+          <p className={`text-sm text-red-800 dark:text-red-300`}>{error}</p>
         </div>
       )}
 
       <div
-        className="
-          flex
-          flex-col
-          gap-3
-          pt-2
-          sm:flex-row
-        "
+        className={`
+  flex
+  flex-col
+  gap-3
+  pt-2
+  sm:flex-row
+        `}
       >
         <Button
           type="button"
@@ -750,10 +700,7 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
           size="md"
           onClick={onCancel}
           disabled={isSubmitting}
-          className="
-            min-h-[44px]
-            flex-1
-          "
+          className={`min-h-[44px] flex-1`}
         >
           Cancel
         </Button>
@@ -763,10 +710,7 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
           size="md"
           isLoading={isSubmitting}
           disabled={methodType === `CREDIT_CARD` ? !stripe || !elements || isSubmitting : isSubmitting}
-          className="
-            min-h-[44px]
-            flex-1
-          "
+          className={`min-h-[44px] flex-1`}
         >
           Add method
         </Button>

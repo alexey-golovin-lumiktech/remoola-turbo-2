@@ -46,24 +46,20 @@ export const AmountCurrencyInput = forwardRef<HTMLInputElement, AmountCurrencyIn
     const currentSymbol = uniqueCurrencies.find((c) => c.code === selectedCurrency)?.symbol ?? `$`;
 
     return (
-      <div
-        className="
-          relative
-        "
-      >
+      <div className={`relative`}>
         <div
-          className="
-            pointer-events-none
-            absolute
-            left-3
-            top-1/2
-            z-10
-            -translate-y-1/2
-            text-base
-            font-semibold
-            text-slate-600
-            dark:text-slate-400
-          "
+          className={`
+  pointer-events-none
+  absolute
+  left-3
+  top-1/2
+  z-10
+  -translate-y-1/2
+  text-base
+  font-semibold
+  text-slate-600
+  dark:text-slate-400
+          `}
         >
           {currentSymbol}
         </div>
@@ -79,42 +75,42 @@ export const AmountCurrencyInput = forwardRef<HTMLInputElement, AmountCurrencyIn
         />
 
         <div
-          className="
-            absolute
-            right-2
-            top-1/2
-            z-10
-            -translate-y-1/2
-          "
+          className={`
+  absolute
+  right-2
+  top-1/2
+  z-10
+  -translate-y-1/2
+          `}
         >
           <select
             value={selectedCurrency}
             onChange={(e) => handleCurrencyChange(e.target.value)}
-            className="
-              h-10
-              min-w-[70px]
-              appearance-none
-              rounded-lg
-              border
-              border-slate-300
-              bg-white
-              px-3
-              pr-8
-              text-sm
-              font-semibold
-              text-slate-900
-              transition-colors
-              hover:border-slate-400
-              hover:bg-slate-50
-              focus:border-primary-500
-              focus:outline-none
-              focus:ring-2
-              focus:ring-primary-500
-              dark:border-slate-600
-              dark:bg-slate-700
-              dark:text-white
-              dark:hover:bg-slate-600
-            "
+            className={`
+  h-10
+  min-w-[70px]
+  appearance-none
+  rounded-lg
+  border
+  border-slate-300
+  bg-white
+  px-3
+  pr-8
+  text-sm
+  font-semibold
+  text-slate-900
+  transition-colors
+  hover:border-slate-400
+  hover:bg-slate-50
+  focus:border-primary-500
+  focus:outline-none
+  focus:ring-2
+  focus:ring-primary-500
+  dark:border-slate-600
+  dark:bg-slate-700
+  dark:text-white
+  dark:hover:bg-slate-600
+            `}
             style={{
               backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
               backgroundPosition: `right 0.5rem center`,

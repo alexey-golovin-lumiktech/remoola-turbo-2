@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
+import { clientLogger } from '../../../lib/logger';
+import { showErrorToast, showSuccessToast, showWarningToast } from '../../../lib/toast.client';
 import { Button } from '../../../shared/ui/Button';
 import { Modal } from '../../../shared/ui/Modal';
 import { updateDocumentTags } from '../actions';
@@ -23,47 +25,49 @@ export function TagEditor({ docId, initialTags = [], onClose }: TagEditorProps) 
 
   const [tags, setTags] = useState<string[]>(initialTags);
   const [inputValue, setInputValue] = useState(``);
-  const [error, setError] = useState<string | null>(null);
 
   const handleAddTag = () => {
     const trimmed = inputValue.trim();
     if (!trimmed) return;
 
     if (tags.length >= 10) {
-      setError(`Maximum 10 tags allowed`);
+      showWarningToast(`Maximum 10 tags allowed`);
       return;
     }
 
     if (trimmed.length > 50) {
-      setError(`Tag must be 50 characters or less`);
+      showWarningToast(`Tag must be 50 characters or less`);
       return;
     }
 
     if (tags.includes(trimmed)) {
-      setError(`Tag already exists`);
+      showWarningToast(`Tag already exists`);
       return;
     }
 
     setTags([...tags, trimmed]);
     setInputValue(``);
-    setError(null);
   };
 
   const handleRemoveTag = (index: number) => {
     setTags(tags.filter((_, i) => i !== index));
-    setError(null);
   };
 
   const handleSave = async () => {
     const result = await updateDocumentTags(docId, { tags });
 
     if (result.ok) {
+      showSuccessToast(`Tags updated successfully`);
       startTransition(() => {
         router.refresh();
       });
       onClose();
     } else {
-      setError(result.error.message);
+      clientLogger.error(`Failed to update document tags`, {
+        docId,
+        error: result.error,
+      });
+      showErrorToast(result.error.message, { code: result.error.code });
     }
   };
 
@@ -170,26 +174,6 @@ export function TagEditor({ docId, initialTags = [], onClose }: TagEditorProps) 
             </Button>
           </div>
         </div>
-
-        {error && (
-          <div
-            className={`
-              rounded-lg
-              border
-              border-red-200
-              bg-red-50
-              px-3
-              py-2
-              text-sm
-              text-red-800
-              dark:border-red-900
-              dark:bg-red-950
-              dark:text-red-200
-            `}
-          >
-            {error}
-          </div>
-        )}
 
         <div>
           <p

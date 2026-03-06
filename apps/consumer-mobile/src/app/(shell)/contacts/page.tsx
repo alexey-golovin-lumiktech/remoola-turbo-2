@@ -1,6 +1,7 @@
 import { headers } from 'next/headers';
 
-import { getContactsList, ContactsListView } from '../../../features/contacts';
+import { getContactsList } from '../../../features/contacts/queries';
+import { ContactsListView } from '../../../features/contacts/ui/ContactsListView';
 
 export default async function ContactsPage() {
   const headersList = await headers();

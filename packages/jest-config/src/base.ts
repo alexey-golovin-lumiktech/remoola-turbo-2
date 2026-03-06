@@ -1,9 +1,7 @@
 import { type Config } from 'jest';
 
 export const config = {
-  collectCoverage: true,
-  coverageDirectory: 'coverage',
-  coverageProvider: 'v8',
+  collectCoverage: false,
   moduleFileExtensions: ['js', 'ts', 'json'],
   testEnvironment: 'jsdom',
   cache: false,

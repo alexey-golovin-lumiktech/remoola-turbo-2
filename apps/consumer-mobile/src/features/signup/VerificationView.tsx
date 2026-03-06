@@ -22,9 +22,26 @@ export function VerificationView() {
 
   if (!email) {
     return (
-      <div className="mx-auto max-w-md space-y-4 p-4 text-center">
-        <h1 className="text-xl font-semibold text-neutral-900 dark:text-white">Invalid verification link</h1>
-        <p className="text-neutral-600 dark:text-neutral-400">Missing email parameter.</p>
+      <div
+        className={`
+        mx-auto
+        max-w-md
+        space-y-4
+        p-4
+        text-center
+      `}
+      >
+        <h1
+          className={`
+          text-xl
+          font-semibold
+          text-neutral-900
+          dark:text-white
+        `}
+        >
+          Invalid verification link
+        </h1>
+        <p className={`text-neutral-600 dark:text-neutral-400`}>Missing email parameter.</p>
         <Link href="/signup" className={linkClass}>
           Go back to signup
         </Link>
@@ -35,12 +52,29 @@ export function VerificationView() {
   const decodedEmail = decodeURIComponent(email);
 
   return (
-    <div className="mx-auto max-w-md space-y-4 p-4 text-center">
+    <div
+      className={`
+      mx-auto
+      max-w-md
+      space-y-4
+      p-4
+      text-center
+    `}
+    >
       {status === `success` && (
         <>
-          <h1 className="text-xl font-semibold text-green-700 dark:text-green-400">Email Verified</h1>
-          <p className="text-neutral-600 dark:text-neutral-400">
-            Your email <span className="font-medium text-neutral-900 dark:text-white">{decodedEmail}</span> has been
+          <h1
+            className={`
+            text-xl
+            font-semibold
+            text-green-700
+            dark:text-green-400
+          `}
+          >
+            Email Verified
+          </h1>
+          <p className={`text-neutral-600 dark:text-neutral-400`}>
+            Your email <span className={`font-medium text-neutral-900 dark:text-white`}>{decodedEmail}</span> has been
             successfully verified.
           </p>
           <Link href="/login" className={linkClass}>
@@ -50,10 +84,19 @@ export function VerificationView() {
       )}
       {status === `failed` && (
         <>
-          <h1 className="text-xl font-semibold text-red-700 dark:text-red-400">Verification Failed</h1>
-          <p className="text-neutral-600 dark:text-neutral-400">
-            The verification link for <span className="font-medium dark:text-white">{decodedEmail}</span> is invalid or
-            expired.
+          <h1
+            className={`
+            text-xl
+            font-semibold
+            text-red-700
+            dark:text-red-400
+          `}
+          >
+            Verification Failed
+          </h1>
+          <p className={`text-neutral-600 dark:text-neutral-400`}>
+            The verification link for <span className={`font-medium dark:text-white`}>{decodedEmail}</span> is invalid
+            or expired.
           </p>
           <Link href="/signup" className={linkClass}>
             Try signing up again
@@ -62,8 +105,17 @@ export function VerificationView() {
       )}
       {status === `unknown` && (
         <>
-          <h1 className="text-xl font-semibold text-neutral-900 dark:text-white">Checking Verification...</h1>
-          <p className="text-neutral-500 dark:text-neutral-400">Please wait a moment.</p>
+          <h1
+            className={`
+            text-xl
+            font-semibold
+            text-neutral-900
+            dark:text-white
+          `}
+          >
+            Checking Verification...
+          </h1>
+          <p className={`text-neutral-500 dark:text-neutral-400`}>Please wait a moment.</p>
         </>
       )}
     </div>

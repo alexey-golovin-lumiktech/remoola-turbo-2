@@ -25,14 +25,72 @@ export function PendingRequestsTable({ requests, maxItems = 5 }: PendingRequests
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
-      <div className="border-b border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800/50">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Pending requests</h3>
+    <div
+      className={`
+        overflow-hidden
+        rounded-2xl
+        border
+        border-slate-700
+        bg-gradient-to-br
+        from-slate-800
+        to-slate-900
+        shadow-xl
+        animate-fadeIn
+      `}
+      style={{ animationDelay: `100ms` }}
+    >
+      <div
+        className={`
+        border-b
+        border-slate-700/80
+        bg-gradient-to-r
+        from-slate-800
+        via-slate-850
+        to-slate-900
+        px-6
+        py-4
+      `}
+      >
+        <div className={`flex items-center justify-between`}>
+          <div className={`flex items-center gap-2.5`}>
+            <div
+              className={`
+              flex
+              h-10
+              w-10
+              items-center
+              justify-center
+              rounded-xl
+              bg-amber-500/10
+              border
+              border-amber-500/20
+            `}
+            >
+              <svg
+                className={`h-5 w-5 text-amber-400`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2.5}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className={`text-lg font-bold text-slate-100`}>Pending requests</h3>
+          </div>
           {requests.length > maxItems && (
             <Link
               href="/payments"
-              className="text-xs font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400"
+              className={`
+                text-sm
+                font-bold
+                text-primary-400
+                hover:text-primary-300
+                transition-all
+                hover:underline
+                decoration-2
+                underline-offset-4
+              `}
             >
               View all ({requests.length})
             </Link>
@@ -40,31 +98,94 @@ export function PendingRequestsTable({ requests, maxItems = 5 }: PendingRequests
         </div>
       </div>
 
-      <div className="divide-y divide-slate-200 dark:divide-slate-700">
-        {displayedRequests.map((req) => (
+      <div className={`divide-y divide-slate-700/50`}>
+        {displayedRequests.map((req, index) => (
           <Link
             key={req.id}
             href={`/payments/${req.id}`}
-            className="group block px-4 py-3 transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/50"
+            className={`
+              group
+              block
+              px-6
+              py-4
+              transition-all
+              duration-200
+              hover:bg-slate-700/40
+              active:scale-[0.98]
+              animate-fadeIn
+            `}
+            style={{ animationDelay: `${100 + index * 50}ms` }}
           >
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <p className="truncate text-sm font-medium text-slate-900 dark:text-white">{req.counterpartyName}</p>
-                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+            <div
+              className={`
+              flex
+              items-center
+              justify-between
+              gap-4
+            `}
+            >
+              <div className={`flex-1 min-w-0`}>
+                <p
+                  className={`
+                  truncate
+                  text-base
+                  font-bold
+                  text-slate-100
+                  group-hover:text-white
+                  transition-colors
+                `}
+                >
+                  {req.counterpartyName}
+                </p>
+                <p
+                  className={`
+                  mt-1
+                  text-sm
+                  font-semibold
+                  text-slate-400
+                  group-hover:text-slate-300
+                  transition-colors
+                `}
+                >
                   {req.amount.toFixed(2)} {req.currencyCode}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+              <div className={`flex items-center gap-3`}>
+                <span
+                  className={`
+                  inline-flex
+                  items-center
+                  rounded-full
+                  bg-amber-900/50
+                  px-3
+                  py-1.5
+                  text-xs
+                  font-bold
+                  text-amber-300
+                  border
+                  border-amber-700/50
+                  shadow-sm
+                `}
+                >
                   {req.status}
                 </span>
                 <svg
-                  className="h-4 w-4 text-slate-400 transition-transform group-hover:translate-x-0.5"
+                  className={`
+                    h-5
+                    w-5
+                    shrink-0
+                    text-slate-500
+                    transition-all
+                    duration-200
+                    group-hover:translate-x-1
+                    group-hover:text-slate-300
+                  `}
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
+                  strokeWidth={2.5}
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                 </svg>
               </div>
             </div>

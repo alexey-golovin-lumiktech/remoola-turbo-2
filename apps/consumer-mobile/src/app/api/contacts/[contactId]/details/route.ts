@@ -1,6 +1,6 @@
 import { type NextRequest } from 'next/server';
 
-import { contactParamsSchema } from '../../../../../features/contacts';
+import { contactParamsSchema } from '../../../../../features/contacts/schemas';
 import { getEnv } from '../../../../../lib/env.server';
 
 export async function GET(req: NextRequest, context: { params: Promise<{ contactId: string }> }) {

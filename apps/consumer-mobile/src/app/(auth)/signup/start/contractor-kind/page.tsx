@@ -4,7 +4,7 @@ import { ContractorKindView } from '../../../../../features/signup/ContractorKin
 
 export default function SignupContractorKindPage() {
   return (
-    <Suspense fallback={<p className="p-4 text-neutral-600">Loading...</p>}>
+    <Suspense fallback={<p className={`p-4 text-neutral-600`}>Loading...</p>}>
       <ContractorKindView />
     </Suspense>
   );

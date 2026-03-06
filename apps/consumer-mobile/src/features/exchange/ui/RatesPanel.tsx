@@ -2,6 +2,13 @@
 
 import { useState } from 'react';
 
+import { ArrowDownIcon } from '../../../shared/ui/icons/ArrowDownIcon';
+import { ArrowUpIcon } from '../../../shared/ui/icons/ArrowUpIcon';
+import { ChevronRightIcon } from '../../../shared/ui/icons/ChevronRightIcon';
+import { ClockIcon } from '../../../shared/ui/icons/ClockIcon';
+import { RefreshIcon } from '../../../shared/ui/icons/RefreshIcon';
+import { TrendingUpIcon } from '../../../shared/ui/icons/TrendingUpIcon';
+
 interface ExchangeRate {
   from: string;
   to: string;
@@ -35,249 +42,121 @@ export function RatesPanel({ rates }: RatesPanelProps) {
 
   return (
     <div
-      className="
-        overflow-hidden
-        rounded-xl
-        border
-        border-slate-200
-        bg-white
-        shadow-sm
-        dark:border-slate-700
-        dark:bg-slate-800
-      "
+      className={`
+      overflow-hidden
+      rounded-2xl
+      border
+      border-slate-700
+      bg-slate-800/90
+      shadow-lg
+    `}
     >
       <div
-        className="
-          flex
-          items-center
-          justify-between
-          border-b
-          border-slate-200
-          bg-slate-50
-          px-4
-          py-3
-          dark:border-slate-700
-          dark:bg-slate-800/50
-        "
+        className={`
+        flex
+        items-center
+        justify-between
+        border-b
+        border-slate-700
+        bg-gradient-to-r
+        from-slate-800
+        to-slate-900
+        px-5
+        py-4
+      `}
       >
-        <h3
-          className="
-            text-sm
-            font-semibold
-            text-slate-900
-            dark:text-white
-          "
-        >
-          Exchange rates
-        </h3>
+        <div className={`flex items-center gap-2`}>
+          <TrendingUpIcon className={`h-5 w-5 text-primary-400`} strokeWidth={2} />
+          <h3 className={`text-base font-bold text-slate-100`}>Exchange rates</h3>
+        </div>
         <button
           onClick={handleRefresh}
           disabled={isRefreshing}
-          className="
+          className={`
             flex
             min-h-[44px]
             min-w-[44px]
             items-center
             justify-center
-            rounded-lg
-            text-sm
-            text-primary-600
-            transition-colors
-            hover:bg-slate-100
+            rounded-xl
+            text-primary-400
+            transition-all
+            hover:bg-slate-700
             focus:outline-none
             focus:ring-2
             focus:ring-primary-500
             disabled:opacity-50
-            dark:text-primary-400
-            dark:hover:bg-slate-700
-          "
+            active:scale-95
+          `}
           aria-label="Refresh rates"
         >
-          <svg
-            className={`
-              h-5
-              w-5
-              ${isRefreshing ? `animate-spin` : ``}
-            `}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-            />
-          </svg>
+          <RefreshIcon className={`h-5 w-5 ${isRefreshing ? `animate-spin` : ``}`} strokeWidth={2} />
         </button>
       </div>
 
-      <div
-        className="
-          divide-y
-          divide-slate-200
-          dark:divide-slate-700
-        "
-      >
-        {rates.map((rate) => (
+      <div className={`divide-y divide-slate-700`}>
+        {rates.map((rate, index) => (
           <div
             key={`${rate.from}-${rate.to}`}
-            className="
-              px-4
-              py-3
-            "
+            className={`
+              px-5
+              py-4
+              transition-colors
+              hover:bg-slate-700/30
+              animate-fadeIn
+            `}
+            style={{ animationDelay: `${index * 50}ms` }}
           >
-            <div
-              className="
-                flex
-                items-center
-                justify-between
-              "
-            >
-              <div
-                className="
+            <div className={`flex items-center justify-between`}>
+              <div className={`flex items-center gap-3`}>
+                <div
+                  className={`
                   flex
                   items-center
                   gap-2
-                "
-              >
-                <div
-                  className="
-                    flex
-                    items-baseline
-                    gap-1
-                  "
+                  rounded-lg
+                  bg-slate-900/50
+                  px-3
+                  py-2
+                  border
+                  border-slate-700
+                `}
                 >
-                  <span
-                    className="
-                      text-xs
-                      font-medium
-                      text-slate-600
-                      dark:text-slate-400
-                    "
-                  >
-                    {rate.from}
-                  </span>
-                  <svg
-                    className="
-                      h-4
-                      w-4
-                      text-slate-400
-                    "
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                  <span
-                    className="
-                      text-xs
-                      font-medium
-                      text-slate-600
-                      dark:text-slate-400
-                    "
-                  >
-                    {rate.to}
-                  </span>
+                  <span className={`text-sm font-bold text-slate-300`}>{rate.from}</span>
+                  <ChevronRightIcon className={`h-4 w-4 text-slate-500`} />
+                  <span className={`text-sm font-bold text-slate-300`}>{rate.to}</span>
                 </div>
               </div>
 
-              <div
-                className="
-                  flex
-                  items-center
-                  gap-2
-                "
-              >
-                <span
-                  className="
-                    text-base
-                    font-bold
-                    text-slate-900
-                    dark:text-white
-                  "
-                >
-                  {rate.rate.toFixed(4)}
-                </span>
+              <div className={`flex items-center gap-3`}>
+                <span className={`text-lg font-extrabold text-slate-100`}>{rate.rate.toFixed(4)}</span>
 
                 {rate.trend && (
                   <div
-                    className="
-                      flex
-                      items-center
-                    "
+                    className={`
+                    flex
+                    items-center
+                    justify-center
+                    w-6
+                  `}
                   >
-                    {rate.trend === `up` && (
-                      <svg
-                        className="
-                          h-4
-                          w-4
-                          text-green-600
-                        "
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    )}
-                    {rate.trend === `down` && (
-                      <svg
-                        className="
-                          h-4
-                          w-4
-                          text-red-600
-                        "
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    )}
+                    {rate.trend === `up` && <ArrowUpIcon className={`h-5 w-5 text-green-500`} />}
+                    {rate.trend === `down` && <ArrowDownIcon className={`h-5 w-5 text-red-500`} />}
                   </div>
                 )}
               </div>
             </div>
 
             <div
-              className="
-                mt-1
-                flex
-                items-center
-                gap-1
-              "
+              className={`
+              mt-2
+              flex
+              items-center
+              gap-1.5
+            `}
             >
-              <svg
-                className="
-                  h-3
-                  w-3
-                  text-slate-400
-                "
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              <span
-                className="
-                  text-xs
-                  text-slate-500
-                  dark:text-slate-500
-                "
-              >
+              <ClockIcon className={`h-3.5 w-3.5 text-slate-500`} />
+              <span className={`text-xs font-medium text-slate-500`}>
                 {new Date(rate.timestamp).toLocaleTimeString(undefined, {
                   hour: `2-digit`,
                   minute: `2-digit`,

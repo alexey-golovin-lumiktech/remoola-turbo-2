@@ -16,13 +16,7 @@ export default function PaymentMethodsError({ error, reset }: PaymentMethodsErro
   }, [error]);
 
   return (
-    <div
-      className="
-        mx-auto
-        max-w-md
-        p-4
-      "
-    >
+    <div className={`mx-auto max-w-md p-4`}>
       <ErrorState
         title="Failed to load payment methods"
         message="We couldn't load your payment methods. Please try again."

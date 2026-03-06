@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { loginSchema } from '../../../features/auth';
+import { loginSchema } from '../../../features/auth/schemas';
 import { getEnv } from '../../../lib/env.server';
 
 export async function POST(req: Request) {

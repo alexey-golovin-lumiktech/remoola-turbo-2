@@ -41,13 +41,60 @@ export function ContractorKindView() {
 
   return (
     <div
-      className="mx-auto max-w-md space-y-4 px-3 py-4 sm:space-y-6 sm:px-4"
+      className={`
+        mx-auto
+        max-w-md
+        space-y-4
+        px-3
+        py-4
+        sm:space-y-6
+        sm:px-4
+      `}
       data-testid="consumer-signup-contractor-kind-page"
     >
-      <div className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm sm:p-6 dark:border-neutral-700 dark:bg-neutral-900">
-        <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">Choose contractor type</p>
-        <h1 className="mt-1 text-xl font-semibold text-neutral-900 dark:text-white">I&apos;m an</h1>
-        <div className="mt-6 flex flex-col gap-3" data-testid="consumer-signup-contractor-kind-options">
+      <div
+        className={`
+        rounded-xl
+        border
+        border-neutral-200
+        bg-white
+        p-4
+        shadow-sm
+        sm:p-6
+        dark:border-neutral-700
+        dark:bg-neutral-900
+      `}
+      >
+        <p
+          className={`
+          text-sm
+          font-medium
+          text-neutral-500
+          dark:text-neutral-400
+        `}
+        >
+          Choose contractor type
+        </p>
+        <h1
+          className={`
+          mt-1
+          text-xl
+          font-semibold
+          text-neutral-900
+          dark:text-white
+        `}
+        >
+          I&apos;m an
+        </h1>
+        <div
+          className={`
+          mt-6
+          flex
+          flex-col
+          gap-3
+        `}
+          data-testid="consumer-signup-contractor-kind-options"
+        >
           <button
             type="button"
             data-testid="consumer-signup-contractor-kind-option-individual"
@@ -120,7 +167,25 @@ export function ContractorKindView() {
           data-testid="consumer-signup-contractor-kind-btn-next"
           disabled={!signupDetails.contractorKind}
           onClick={onNext}
-          className="mt-6 min-h-[44px] w-full rounded-xl bg-primary-600 px-4 py-3 font-semibold text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 dark:bg-primary-500 dark:hover:bg-primary-600"
+          className={`
+            mt-6
+            min-h-[44px]
+            w-full
+            rounded-xl
+            bg-primary-600
+            px-4
+            py-3
+            font-semibold
+            text-white
+            hover:bg-primary-700
+            focus:outline-none
+            focus:ring-2
+            focus:ring-primary-500
+            focus:ring-offset-2
+            disabled:opacity-50
+            dark:bg-primary-500
+            dark:hover:bg-primary-600
+          `}
         >
           Next
         </button>
@@ -132,7 +197,26 @@ export function ContractorKindView() {
             e.stopPropagation();
             onBack();
           }}
-          className="mt-3 min-h-[44px] w-full rounded-xl border border-neutral-300 px-4 py-3 font-medium text-neutral-700 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:border-neutral-600 dark:hover:bg-neutral-800 dark:text-neutral-200"
+          className={`
+            mt-3
+            min-h-[44px]
+            w-full
+            rounded-xl
+            border
+            border-neutral-300
+            px-4
+            py-3
+            font-medium
+            text-neutral-700
+            hover:bg-neutral-50
+            focus:outline-none
+            focus:ring-2
+            focus:ring-primary-500
+            focus:ring-offset-2
+            dark:border-neutral-600
+            dark:hover:bg-neutral-800
+            dark:text-neutral-200
+          `}
         >
           ← Back
         </button>

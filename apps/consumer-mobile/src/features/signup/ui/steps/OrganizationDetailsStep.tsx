@@ -62,10 +62,30 @@ export function OrganizationDetailsStep() {
   const errorClass = `mt-1 text-sm text-red-600`;
 
   return (
-    <div className="rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
-      <div className="p-4 sm:p-6">
-        <h1 className="mb-4 text-lg font-semibold text-neutral-900 dark:text-white">Organization details</h1>
-        <div className="space-y-3">
+    <div
+      className={`
+      rounded-xl
+      border
+      border-neutral-200
+      bg-white
+      shadow-sm
+      dark:border-neutral-700
+      dark:bg-neutral-900
+    `}
+    >
+      <div className={`p-4 sm:p-6`}>
+        <h1
+          className={`
+          mb-4
+          text-lg
+          font-semibold
+          text-neutral-900
+          dark:text-white
+        `}
+        >
+          Organization details
+        </h1>
+        <div className={`space-y-3`}>
           <div>
             <label htmlFor="od-name" className={labelClass}>
               Organization name

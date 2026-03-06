@@ -1,6 +1,7 @@
 import { headers } from 'next/headers';
 
-import { getBalance, getPayments, PaymentsListView } from '../../../features/payments';
+import { getBalance, getPayments } from '../../../features/payments/queries';
+import { PaymentsListView } from '../../../features/payments/ui/PaymentsListView';
 
 interface PaymentsPageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;

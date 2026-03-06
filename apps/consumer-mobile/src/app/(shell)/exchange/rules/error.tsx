@@ -14,13 +14,7 @@ export default function ExchangeRulesError({
   useEffect(() => {}, [error]);
 
   return (
-    <div
-      className="
-        mx-auto
-        max-w-md
-        p-4
-      "
-    >
+    <div className={`mx-auto max-w-md p-4`}>
       <ErrorState
         title="Failed to load rules"
         message="We couldn't load your exchange rules. Please try again."

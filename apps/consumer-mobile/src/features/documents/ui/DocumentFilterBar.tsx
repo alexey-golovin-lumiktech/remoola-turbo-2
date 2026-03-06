@@ -17,85 +17,95 @@ const filters: { value: DocumentKind; label: string }[] = [
 ];
 
 /**
- * DocumentFilterBar - Compact filter chips for mobile with counts
- * Shows active filter count and provides quick filter switching
- * Mobile-first with horizontal scroll, wraps nicely on desktop
+ * DocumentFilterBar - Compact filter chips optimized for mobile
+ * 2-row grid on mobile showing all filters, wraps naturally on desktop
+ * No horizontal scrolling needed
  */
 export function DocumentFilterBar({ activeFilter, onFilterChange, filterCounts }: DocumentFilterBarProps) {
   return (
-    <div
-      className={`
-        -mx-1
-        flex
-        flex-wrap
-        gap-2
-        px-1
-        py-2
-        sm:flex-nowrap
-        sm:overflow-x-auto
-      `}
-      style={{ scrollbarWidth: `thin` }}
-    >
-      {filters.map((filter) => {
-        const isActive = activeFilter === filter.value;
-        const count = filterCounts[filter.value] ?? 0;
-        return (
-          <button
-            key={filter.value}
-            onClick={() => onFilterChange(filter.value)}
-            className={`
-              group
-              relative
-              flex
-              min-h-[44px]
-              shrink-0
-              items-center
-              gap-2
-              rounded-full
-              px-4
-              py-2
-              text-sm
-              font-semibold
-              transition-all
-              duration-200
-              active:scale-95
-              focus:outline-none
-              focus:ring-2
-              focus:ring-primary-500
-              focus:ring-offset-2
-              ${
-                isActive
-                  ? `bg-primary-600 text-white shadow-md shadow-primary-200 dark:shadow-primary-900/40`
-                  : `bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 hover:border-slate-400 hover:shadow-sm dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600 dark:hover:bg-slate-700`
-              }
-            `}
-            aria-pressed={isActive}
-          >
-            <span>{filter.label}</span>
-            <span
+    <div className={`w-full`}>
+      <div
+        className={`
+          grid
+          grid-cols-3
+          gap-2.5
+          py-2
+          sm:flex
+          sm:flex-wrap
+          sm:gap-3
+        `}
+      >
+        {filters.map((filter) => {
+          const isActive = activeFilter === filter.value;
+          const count = filterCounts[filter.value] ?? 0;
+          return (
+            <button
+              key={filter.value}
+              onClick={() => onFilterChange(filter.value)}
               className={`
+                group
+                relative
                 flex
-                h-5
-                min-w-[20px]
+                min-h-12
+                flex-col
                 items-center
                 justify-center
-                rounded-full
-                px-1.5
+                gap-1.5
+                rounded-xl
+                px-4
+                py-2.5
                 text-xs
                 font-bold
-                transition-colors
+                transition-all
+                duration-300
+                active:scale-95
+                focus:outline-none
+                focus:ring-2
+                focus:ring-primary-500
+                focus:ring-offset-1
+                sm:flex-row
+                sm:gap-2.5
+                sm:rounded-2xl
+                sm:px-5
+                sm:py-3
+                sm:text-sm
                 ${
                   isActive
-                    ? `bg-white/20 text-white`
-                    : `bg-slate-100 text-slate-600 group-hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-400`
+                    ? `bg-gradient-to-br from-primary-600 via-primary-700 to-primary-600 text-white shadow-xl shadow-primary-500/40 dark:shadow-primary-900/60 ring-2 ring-primary-500/30 scale-105`
+                    : `bg-gradient-to-br from-slate-800 via-slate-900 to-slate-800 text-slate-300 border border-slate-700/50 hover:border-slate-600 hover:shadow-lg hover:scale-[1.02] dark:from-slate-800 dark:via-slate-900 dark:to-slate-800 dark:text-slate-300 dark:border-slate-700/50 dark:hover:border-slate-600`
                 }
               `}
+              aria-pressed={isActive}
             >
-              {count}
-            </span>
-          </button>
-        );
-      })}
+              <span className={`whitespace-nowrap leading-none font-extrabold`}>{filter.label}</span>
+              <span
+                className={`
+                  flex
+                  h-6
+                  min-w-6
+                  items-center
+                  justify-center
+                  rounded-full
+                  px-2
+                  text-xs
+                  font-black
+                  transition-all
+                  duration-300
+                  leading-none
+                  shadow-md
+                  ${
+                    isActive
+                      ? `bg-white/30 text-white backdrop-blur-sm ring-1 ring-white/20`
+                      : `bg-slate-700/80 text-slate-300 group-hover:bg-slate-600 dark:bg-slate-700/80 dark:text-slate-300 dark:group-hover:bg-slate-600`
+                  }
+                `}
+              >
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

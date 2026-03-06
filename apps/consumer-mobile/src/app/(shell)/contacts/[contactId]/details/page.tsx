@@ -1,6 +1,8 @@
 import { headers } from 'next/headers';
 
-import { contactParamsSchema, getContactDetailsFull, ContactDetailView } from '../../../../../features/contacts';
+import { getContactDetailsFull } from '../../../../../features/contacts/queries';
+import { contactParamsSchema } from '../../../../../features/contacts/schemas';
+import { ContactDetailView } from '../../../../../features/contacts/ui/ContactDetailView';
 
 interface ContactDetailPageProps {
   params: Promise<{ contactId: string }>;
@@ -8,7 +10,7 @@ interface ContactDetailPageProps {
 
 export default async function ContactDetailPage({ params }: ContactDetailPageProps) {
   const parsed = contactParamsSchema.safeParse(await params);
-  if (!parsed.success) return <div className="text-sm text-slate-600">Invalid contact id.</div>;
+  if (!parsed.success) return <div className={`text-sm text-slate-600`}>Invalid contact id.</div>;
   const { contactId } = parsed.data;
   const headersList = await headers();
   const cookie = headersList.get(`cookie`);

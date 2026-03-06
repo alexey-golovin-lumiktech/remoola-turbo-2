@@ -211,23 +211,64 @@ export function PaymentDetailView({ paymentRequestId, data }: PaymentDetailViewP
   }
 
   return (
-    <div className="space-y-6" data-testid="consumer-mobile-payment-detail">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+    <div className={`space-y-6`} data-testid="consumer-mobile-payment-detail">
+      <div className={`flex items-center justify-between`}>
+        <h1
+          className={`
+          text-2xl
+          font-bold
+          text-slate-900
+          dark:text-white
+        `}
+        >
           Payment #{paymentRequestId.slice(0, 6).toUpperCase()}
         </h1>
       </div>
 
       <Card noPadding>
         <CardHeader>
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
-              <div className="text-3xl font-bold text-slate-900 dark:text-white">
+          <div
+            className={`
+            flex
+            items-start
+            justify-between
+            gap-4
+          `}
+          >
+            <div className={`flex-1`}>
+              <div
+                className={`
+                text-3xl
+                font-bold
+                text-slate-900
+                dark:text-white
+              `}
+              >
                 {formatCurrency(amount, currencyCode)}
               </div>
-              {description && <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{description}</p>}
+              {description && (
+                <p
+                  className={`
+                mt-2
+                text-sm
+                text-slate-600
+                dark:text-slate-400
+              `}
+                >
+                  {description}
+                </p>
+              )}
               {createdAt && (
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-500">Created: {formatDateTime(createdAt)}</p>
+                <p
+                  className={`
+                  mt-1
+                  text-xs
+                  text-slate-500
+                  dark:text-slate-500
+                `}
+                >
+                  Created: {formatDateTime(createdAt)}
+                </p>
               )}
             </div>
             <StatusBadge status={status} />
@@ -235,19 +276,59 @@ export function PaymentDetailView({ paymentRequestId, data }: PaymentDetailViewP
         </CardHeader>
 
         {ledgerEntries.length > 0 && (
-          <CardContent className="border-b border-slate-200 dark:border-slate-700">
-            <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Timeline</h2>
-            <div className="space-y-4">
+          <CardContent className={`border-b border-slate-200 dark:border-slate-700`}>
+            <h2
+              className={`
+              mb-4
+              text-lg
+              font-semibold
+              text-slate-900
+              dark:text-white
+            `}
+            >
+              Timeline
+            </h2>
+            <div className={`space-y-4`}>
               {ledgerEntries.map((entry) => (
-                <div key={entry.id} className="flex gap-3">
-                  <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900/20">
-                    <div className="h-2.5 w-2.5 rounded-full bg-primary-600 dark:bg-primary-400" />
+                <div key={entry.id} className={`flex gap-3`}>
+                  <div
+                    className={`
+                    relative
+                    flex
+                    h-8
+                    w-8
+                    shrink-0
+                    items-center
+                    justify-center
+                    rounded-full
+                    bg-primary-100
+                    dark:bg-primary-900/20
+                  `}
+                  >
+                    <div
+                      className={`
+                      h-2.5
+                      w-2.5
+                      rounded-full
+                      bg-primary-600
+                      dark:bg-primary-400
+                    `}
+                    />
                   </div>
-                  <div className="flex-1 pt-0.5">
-                    <div className="text-sm font-medium text-slate-900 dark:text-white">
+                  <div className={`flex-1 pt-0.5`}>
+                    <div
+                      className={`
+                      text-sm
+                      font-medium
+                      text-slate-900
+                      dark:text-white
+                    `}
+                    >
                       {entry.status} ({entry.type})
                     </div>
-                    <div className="text-xs text-slate-500 dark:text-slate-500">{formatDateTime(entry.createdAt)}</div>
+                    <div className={`text-xs text-slate-500 dark:text-slate-500`}>
+                      {formatDateTime(entry.createdAt)}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -257,17 +338,56 @@ export function PaymentDetailView({ paymentRequestId, data }: PaymentDetailViewP
 
         {attachments.length > 0 && (
           <CardContent>
-            <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Attachments</h2>
-            <div className="space-y-2">
+            <h2
+              className={`
+              mb-4
+              text-lg
+              font-semibold
+              text-slate-900
+              dark:text-white
+            `}
+            >
+              Attachments
+            </h2>
+            <div className={`space-y-2`}>
               {attachments.map((attachment) => (
                 <div
                   key={attachment.id}
-                  className="flex items-center justify-between rounded-lg border border-slate-200 p-3 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-700/50"
+                  className={`
+                    flex
+                    items-center
+                    justify-between
+                    rounded-lg
+                    border
+                    border-slate-200
+                    p-3
+                    transition-colors
+                    hover:bg-slate-50
+                    dark:border-slate-700
+                    dark:hover:bg-slate-700/50
+                  `}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700">
+                  <div className={`flex items-center gap-3`}>
+                    <div
+                      className={`
+                      flex
+                      h-10
+                      w-10
+                      shrink-0
+                      items-center
+                      justify-center
+                      rounded-lg
+                      bg-slate-100
+                      dark:bg-slate-700
+                    `}
+                    >
                       <svg
-                        className="h-5 w-5 text-slate-600 dark:text-slate-400"
+                        className={`
+                          h-5
+                          w-5
+                          text-slate-600
+                          dark:text-slate-400
+                        `}
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -281,8 +401,17 @@ export function PaymentDetailView({ paymentRequestId, data }: PaymentDetailViewP
                       </svg>
                     </div>
                     <div>
-                      <div className="text-sm font-medium text-slate-900 dark:text-white">{attachment.name}</div>
-                      <div className="text-xs text-slate-500 dark:text-slate-500">
+                      <div
+                        className={`
+                        text-sm
+                        font-medium
+                        text-slate-900
+                        dark:text-white
+                      `}
+                      >
+                        {attachment.name}
+                      </div>
+                      <div className={`text-xs text-slate-500 dark:text-slate-500`}>
                         {formatFileSize(attachment.size)}
                       </div>
                     </div>
@@ -291,7 +420,19 @@ export function PaymentDetailView({ paymentRequestId, data }: PaymentDetailViewP
                     href={attachment.downloadUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="rounded-lg px-3 py-1.5 text-sm font-medium text-primary-600 transition-colors hover:bg-primary-50 hover:text-primary-700 dark:text-primary-400 dark:hover:bg-primary-900/20"
+                    className={`
+                      rounded-lg
+                      px-3
+                      py-1.5
+                      text-sm
+                      font-medium
+                      text-primary-600
+                      transition-colors
+                      hover:bg-primary-50
+                      hover:text-primary-700
+                      dark:text-primary-400
+                      dark:hover:bg-primary-900/20
+                    `}
                   >
                     Download
                   </a>
@@ -306,32 +447,65 @@ export function PaymentDetailView({ paymentRequestId, data }: PaymentDetailViewP
         <>
           {loadingMethods ? (
             <Card>
-              <div className="flex items-center justify-center py-8">
-                <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400">
+              <div
+                className={`
+                flex
+                items-center
+                justify-center
+                py-8
+              `}
+              >
+                <div
+                  className={`
+                  flex
+                  items-center
+                  gap-3
+                  text-slate-600
+                  dark:text-slate-400
+                `}
+                >
                   <svg
-                    className="h-5 w-5 animate-spin"
+                    className={`h-5 w-5 animate-spin`}
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
                     viewBox="0 0 24 24"
                   >
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <circle className={`opacity-25`} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path
-                      className="opacity-75"
+                      className={`opacity-75`}
                       fill="currentColor"
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     />
                   </svg>
-                  <span className="text-sm">Loading payment methods...</span>
+                  <span className={`text-sm`}>Loading payment methods...</span>
                 </div>
               </div>
             </Card>
           ) : paymentMethods.length > 0 ? (
             <Card noPadding>
               <CardHeader>
-                <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Select payment method</h2>
-                <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">Choose how you would like to pay</p>
+                <h2
+                  className={`
+                  text-lg
+                  font-semibold
+                  text-slate-900
+                  dark:text-white
+                `}
+                >
+                  Select payment method
+                </h2>
+                <p
+                  className={`
+                  mt-1
+                  text-sm
+                  text-slate-600
+                  dark:text-slate-400
+                `}
+                >
+                  Choose how you would like to pay
+                </p>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className={`space-y-3`}>
                 {paymentMethods.map((method) => (
                   <button
                     key={method.id}
@@ -343,38 +517,94 @@ export function PaymentDetailView({ paymentRequestId, data }: PaymentDetailViewP
                         : `border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:hover:border-slate-600`
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-start gap-3">
+                    <div
+                      className={`
+                      flex
+                      items-start
+                      justify-between
+                      gap-3
+                    `}
+                    >
+                      <div className={`flex items-start gap-3`}>
                         <input
                           type="radio"
                           checked={selectedMethodId === method.id}
                           onChange={() => setSelectedMethodId(method.id)}
-                          className="mt-0.5 h-4 w-4 text-primary-600 focus:ring-primary-500"
+                          className={`
+                            mt-0.5
+                            h-4
+                            w-4
+                            text-primary-600
+                            focus:ring-primary-500
+                          `}
                         />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 text-sm font-medium text-slate-900 dark:text-white">
-                            <span className="capitalize">{method.brand}</span>
-                            <span className="text-slate-600 dark:text-slate-400">••••</span>
+                        <div className={`flex-1`}>
+                          <div
+                            className={`
+                            flex
+                            items-center
+                            gap-2
+                            text-sm
+                            font-medium
+                            text-slate-900
+                            dark:text-white
+                          `}
+                          >
+                            <span className={`capitalize`}>{method.brand}</span>
+                            <span className={`text-slate-600 dark:text-slate-400`}>••••</span>
                             <span>{method.last4}</span>
                             {method.defaultSelected && (
-                              <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                              <span
+                                className={`
+                                rounded-full
+                                bg-green-100
+                                px-2
+                                py-0.5
+                                text-xs
+                                font-medium
+                                text-green-700
+                                dark:bg-green-900/30
+                                dark:text-green-400
+                              `}
+                              >
                                 Default
                               </span>
                             )}
                           </div>
                           {method.expMonth && method.expYear && (
-                            <div className="mt-1 text-xs text-slate-500 dark:text-slate-500">
+                            <div
+                              className={`
+                              mt-1
+                              text-xs
+                              text-slate-500
+                              dark:text-slate-500
+                            `}
+                            >
                               Expires {String(method.expMonth).padStart(2, `0`)}/{method.expYear}
                             </div>
                           )}
                           {method.billingDetails?.name && (
-                            <div className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+                            <div
+                              className={`
+                              mt-1
+                              text-xs
+                              text-slate-600
+                              dark:text-slate-400
+                            `}
+                            >
                               {method.billingDetails.name}
                             </div>
                           )}
                         </div>
                       </div>
-                      <div className="text-xs capitalize text-slate-500 dark:text-slate-500">
+                      <div
+                        className={`
+                        text-xs
+                        capitalize
+                        text-slate-500
+                        dark:text-slate-500
+                      `}
+                      >
                         {method.type.toLowerCase()}
                       </div>
                     </div>
@@ -389,16 +619,30 @@ export function PaymentDetailView({ paymentRequestId, data }: PaymentDetailViewP
                       : `border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:hover:border-slate-600`
                   }`}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className={`flex items-center gap-3`}>
                     <input
                       type="radio"
                       checked={selectedMethodId === ``}
                       onChange={() => setSelectedMethodId(``)}
-                      className="h-4 w-4 text-primary-600 focus:ring-primary-500"
+                      className={`
+                        h-4
+                        w-4
+                        text-primary-600
+                        focus:ring-primary-500
+                      `}
                     />
                     <div>
-                      <div className="text-sm font-medium text-slate-900 dark:text-white">Add new payment method</div>
-                      <div className="text-xs text-slate-500 dark:text-slate-500">Enter new card or bank details</div>
+                      <div
+                        className={`
+                        text-sm
+                        font-medium
+                        text-slate-900
+                        dark:text-white
+                      `}
+                      >
+                        Add new payment method
+                      </div>
+                      <div className={`text-xs text-slate-500 dark:text-slate-500`}>Enter new card or bank details</div>
                     </div>
                   </div>
                 </button>
@@ -408,9 +652,16 @@ export function PaymentDetailView({ paymentRequestId, data }: PaymentDetailViewP
         </>
       )}
 
-      <div className="flex flex-col gap-3 sm:flex-row">
+      <div
+        className={`
+        flex
+        flex-col
+        gap-3
+        sm:flex-row
+      `}
+      >
         {isPending && isPayer && (
-          <Button variant="primary" size="lg" onClick={handlePayNow} isLoading={paying} className="flex-1">
+          <Button variant="primary" size="lg" onClick={handlePayNow} isLoading={paying} className={`flex-1`}>
             {paying ? `Processing payment...` : `Pay now`}
           </Button>
         )}
@@ -420,7 +671,7 @@ export function PaymentDetailView({ paymentRequestId, data }: PaymentDetailViewP
           size="lg"
           onClick={handleGenerateInvoice}
           isLoading={generatingInvoice}
-          className="flex-1"
+          className={`flex-1`}
         >
           {generatingInvoice ? `Generating...` : `Generate invoice`}
         </Button>

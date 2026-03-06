@@ -141,6 +141,17 @@ Mobile-first consumer app running on port 3002:
   - Null-safety for document preview modal
 - Supports Google OAuth with `returnOrigin` parameter for proper redirect after authentication.
 - CORS configured for localhost:3002 and Vercel deployment.
+- Shared UI library:
+  - **Icon library**: 49 SVG icon components (Alert, Arrow, Bank, Bell, Calendar, Check, Chevron, Clipboard, Clock, CreditCard, Currency, Document, Dots, Download, Exchange, Exclamation, Eye, Filter, Home, Information, Lightning, Lock, Logout, Mail, Paperclip, Pencil, Phone, Plus, Refresh, Search, Settings, Spinner, Switch, Tag, Trash, Trending, Upload, User, Users, X icons) with unified `IconProps` interface
+  - **IconBadge**: gradient-styled icon container with variants (primary, success, info, warning, danger, secondary), sizes (sm, md, lg), optional ring effects, and interactive animations
+  - **PageHeader**: mobile-optimized page header with icon, title, subtitle, badge, and action slots; supports sticky header with backdrop blur
+  - **SearchInput**: search input with magnifying glass icon, clear button, debounced interaction, and mobile-friendly 44px touch targets
+  - **Brand assets**: favicon.ico and icon.svg for PWA support
+- Test coverage:
+  - Token refresh flows (SWR fetcher, fetchWithAuth)
+  - Middleware auth flows (token validation, refresh rotation, OAuth callback)
+  - Session expiry and redirect handling
+  - Retry logic and error recovery
 
 ### Database (Prisma)
 

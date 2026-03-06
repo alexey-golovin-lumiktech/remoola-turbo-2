@@ -8,7 +8,23 @@ export const swrConfig: SWRConfiguration = {
   errorRetryCount: 3,
   shouldRetryOnError: (error: unknown) => {
     const err = error as { status?: number };
-    return (err?.status ?? 0) >= 500;
+    // Don't retry 401 (handled by fetcher), don't retry 4xx client errors
+    // Only retry 5xx server errors
+    const status = err?.status ?? 0;
+    if (status === 401) return false; // Already handled in fetcher
+    if (status >= 400 && status < 500) return false; // Client errors
+    return status >= 500; // Retry server errors
+  },
+  onError: (error: unknown) => {
+    const err = error as { status?: number; message?: string };
+    // If session expired error reaches here (shouldn't normally happen due to fetcher handling),
+    // ensure we redirect to login
+    if (err.status === 401 || err.message?.toLowerCase().includes(`session expired`)) {
+      if (typeof window !== `undefined`) {
+        const currentPath = window.location.pathname;
+        window.location.href = `/login?session_expired=true&next=${encodeURIComponent(currentPath)}`;
+      }
+    }
   },
 };
 
@@ -30,9 +46,112 @@ function queryKeyToUrl(key: unknown): string {
   throw new Error(`Invalid query key: ${JSON.stringify(key)}`);
 }
 
+/**
+ * Fetch wrapper with automatic token refresh on 401 errors.
+ * Use this for client-side API calls that need authentication.
+ *
+ * @example
+ * const data = await fetchWithAuth('/api/profile', { method: 'GET' });
+ */
+export async function fetchWithAuth<T = unknown>(
+  url: string,
+  init?: RequestInit,
+): Promise<{ ok: true; data: T; status: number } | { ok: false; error: string; status: number }> {
+  let res = await fetch(url, {
+    ...init,
+    credentials: `include`,
+    cache: `no-store`,
+  });
+
+  // If 401 Unauthorized, attempt token refresh and retry once
+  if (res.status === 401) {
+    try {
+      const refreshRes = await fetch(`/api/consumer/auth/refresh`, {
+        method: `POST`,
+        credentials: `include`,
+        cache: `no-store`,
+      });
+
+      if (refreshRes.ok) {
+        // Token refreshed successfully, retry original request
+        res = await fetch(url, {
+          ...init,
+          credentials: `include`,
+          cache: `no-store`,
+        });
+      } else {
+        // Refresh failed, redirect to login with session expired message
+        if (typeof window !== `undefined`) {
+          const currentPath = window.location.pathname;
+          window.location.href = `/login?session_expired=true&next=${encodeURIComponent(currentPath)}`;
+        }
+        return { ok: false, error: `Session expired`, status: 401 };
+      }
+    } catch {
+      // Refresh request failed, redirect to login
+      if (typeof window !== `undefined`) {
+        const currentPath = window.location.pathname;
+        window.location.href = `/login?session_expired=true&next=${encodeURIComponent(currentPath)}`;
+      }
+      return { ok: false, error: `Session expired`, status: 401 };
+    }
+  }
+
+  if (!res.ok) {
+    const text = await res.text();
+    let message = `Request failed with ${res.status}`;
+    try {
+      const json = JSON.parse(text) as { message?: string };
+      if (json.message) message = json.message;
+    } catch {
+      if (text) message = text.slice(0, 200);
+    }
+    return { ok: false, error: message, status: res.status };
+  }
+
+  try {
+    const data = (await res.json()) as T;
+    return { ok: true, data, status: res.status };
+  } catch {
+    // If response is not JSON, return empty object
+    return { ok: true, data: {} as T, status: res.status };
+  }
+}
+
 export async function swrFetcher<T>(key: unknown): Promise<T> {
   const url = queryKeyToUrl(key);
-  const res = await fetch(url, { credentials: `include`, cache: `no-store` });
+  let res = await fetch(url, { credentials: `include`, cache: `no-store` });
+
+  // If 401 Unauthorized, attempt token refresh and retry once
+  if (res.status === 401) {
+    try {
+      const refreshRes = await fetch(`/api/consumer/auth/refresh`, {
+        method: `POST`,
+        credentials: `include`,
+        cache: `no-store`,
+      });
+
+      if (refreshRes.ok) {
+        // Token refreshed successfully, retry original request
+        res = await fetch(url, { credentials: `include`, cache: `no-store` });
+      } else {
+        // Refresh failed, redirect to login with session expired message
+        if (typeof window !== `undefined`) {
+          const currentPath = window.location.pathname;
+          window.location.href = `/login?session_expired=true&next=${encodeURIComponent(currentPath)}`;
+        }
+        throw new Error(`Session expired`);
+      }
+    } catch {
+      // Refresh request failed, redirect to login
+      if (typeof window !== `undefined`) {
+        const currentPath = window.location.pathname;
+        window.location.href = `/login?session_expired=true&next=${encodeURIComponent(currentPath)}`;
+      }
+      throw new Error(`Session expired`);
+    }
+  }
+
   if (!res.ok) {
     const text = await res.text();
     let message = `Request failed with ${res.status}`;

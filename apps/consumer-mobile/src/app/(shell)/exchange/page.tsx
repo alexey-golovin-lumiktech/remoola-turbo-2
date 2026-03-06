@@ -6,6 +6,10 @@ import { ExchangeWidget } from '../../../features/exchange/ui/ExchangeWidget';
 import { RatesPanel } from '../../../features/exchange/ui/RatesPanel';
 import { normalizeCurrencies, type Currency } from '../../../lib/currency-utils';
 import { getEnv } from '../../../lib/env.server';
+import { CalendarIcon } from '../../../shared/ui/icons/CalendarIcon';
+import { ClipboardListIcon } from '../../../shared/ui/icons/ClipboardListIcon';
+import { ExchangeIcon } from '../../../shared/ui/icons/ExchangeIcon';
+import { SettingsIcon } from '../../../shared/ui/icons/SettingsIcon';
 
 interface Balance {
   currency: string;
@@ -72,152 +76,280 @@ async function fetchExchangeData(): Promise<ExchangeData> {
   }
 }
 
-const linkClass = `
-flex
-min-h-[44px]
-items-center
-justify-between
-rounded-lg
-border
-border-slate-200
-bg-white
-p-4
-font-medium
-text-slate-900
-transition-colors
-hover:bg-slate-50
-focus:outline-none
-focus:ring-2
-focus:ring-primary-500
-dark:border-slate-700
-dark:bg-slate-800
-dark:text-white
-dark:hover:bg-slate-700/50
-`;
-
 export default async function ExchangePage() {
   const data = await fetchExchangeData();
 
   return (
     <div
-      className="
-        mx-auto
-        max-w-2xl
-        space-y-6
-        p-4
-        pb-24
-      "
+      className={`
+      min-h-full
+      bg-gradient-to-br
+      from-slate-50
+      via-white
+      to-slate-50
+      dark:from-slate-950
+      dark:via-slate-900
+      dark:to-slate-950
+    `}
     >
-      <div>
-        <h1
-          className="
-            text-2xl
+      <div
+        className={`
+        bg-white/90
+        dark:bg-slate-900/90
+        border-b
+        border-slate-200/60
+        dark:border-slate-700/60
+        shadow-sm
+        shadow-slate-200/50
+        dark:shadow-slate-950/50
+        px-4
+        py-5
+        sm:px-6
+        sm:py-6
+        lg:px-8
+      `}
+      >
+        <div className={`mx-auto max-w-6xl`}>
+          <div className={`flex items-center gap-3`}>
+            <div
+              className={`
+              flex
+              h-12
+              w-12
+              items-center
+              justify-center
+              rounded-2xl
+              bg-gradient-to-br
+              from-primary-500
+              to-primary-600
+              shadow-lg
+              shadow-primary-500/30
+              ring-4
+              ring-primary-50
+              dark:ring-primary-950
+              dark:shadow-primary-900/40
+            `}
+            >
+              <ExchangeIcon className={`h-6 w-6 text-white`} strokeWidth={2} />
+            </div>
+            <div>
+              <h1
+                className={`
+                text-3xl
+                font-extrabold
+                tracking-tight
+                text-slate-900
+                sm:text-4xl
+                dark:text-white
+              `}
+              >
+                Exchange
+              </h1>
+              <p
+                className={`
+                text-sm
+                font-medium
+                text-slate-600
+                dark:text-slate-400
+              `}
+              >
+                Convert currency and manage exchange rules
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        className={`
+        mx-auto
+        max-w-6xl
+        px-4
+        pt-6
+        pb-6
+        sm:px-6
+        sm:pt-8
+        lg:px-8
+        space-y-6
+        animate-fadeIn
+      `}
+      >
+        <ExchangeWidget availableCurrencies={data.currencies ?? []} balances={data.balances ?? []} />
+
+        {data.balances && data.balances.length > 0 && <BalancesPanel balances={data.balances} />}
+
+        {data.rates && data.rates.length > 0 && <RatesPanel rates={data.rates} />}
+
+        <div className={`space-y-4`}>
+          <h2
+            className={`
+            text-xl
             font-bold
             text-slate-900
             dark:text-white
-          "
-        >
-          Exchange
-        </h1>
-        <p
-          className="
-            mt-1
-            text-sm
-            text-slate-600
-            dark:text-slate-400
-          "
-        >
-          Convert currency and manage exchange rules
-        </p>
-      </div>
-
-      <ExchangeWidget availableCurrencies={data.currencies ?? []} balances={data.balances ?? []} />
-
-      {data.balances && data.balances.length > 0 && <BalancesPanel balances={data.balances} />}
-
-      {data.rates && data.rates.length > 0 && <RatesPanel rates={data.rates} />}
-
-      <div
-        className="
-          space-y-3
-        "
-      >
-        <h2
-          className="
-            text-lg
-            font-semibold
-            text-slate-900
-            dark:text-white
-          "
-        >
-          Manage
-        </h2>
-
-        <Link href="/exchange/scheduled" className={linkClass}>
-          <div>
-            <div
-              className="
-                font-semibold
-              "
-            >
-              Scheduled conversions
-            </div>
-            <div
-              className="
-                text-xs
-                text-slate-500
-                dark:text-slate-400
-              "
-            >
-              View and manage scheduled exchanges
-            </div>
-          </div>
-          <svg
-            className="
+            flex
+            items-center
+            gap-2
+          `}
+          >
+            <SettingsIcon
+              className={`
               h-5
               w-5
-              text-slate-400
-            "
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </Link>
+              text-primary-600
+              dark:text-primary-400
+            `}
+              strokeWidth={2}
+            />
+            Manage
+          </h2>
 
-        <Link href="/exchange/rules" className={linkClass}>
-          <div>
-            <div
-              className="
-                font-semibold
-              "
+          <div className={`grid gap-3 sm:grid-cols-2`}>
+            <Link
+              href="/exchange/scheduled"
+              className={`
+                group
+                overflow-hidden
+                rounded-2xl
+                border
+                border-slate-700
+                bg-slate-800/90
+                shadow-lg
+                transition-all
+                duration-300
+                hover:bg-slate-800
+                hover:shadow-xl
+                hover:scale-[1.02]
+              `}
             >
-              Exchange rules
-            </div>
-            <div
-              className="
-                text-xs
-                text-slate-500
-                dark:text-slate-400
-              "
+              <div className={`p-4`}>
+                <div className={`flex items-start gap-3`}>
+                  <div
+                    className={`
+                    flex
+                    h-12
+                    w-12
+                    shrink-0
+                    items-center
+                    justify-center
+                    rounded-xl
+                    bg-blue-900/50
+                    text-blue-400
+                    transition-colors
+                    group-hover:bg-blue-900
+                    group-hover:text-blue-300
+                  `}
+                  >
+                    <CalendarIcon className={`h-6 w-6`} strokeWidth={2} />
+                  </div>
+                  <div className={`flex-1 min-w-0`}>
+                    <h3
+                      className={`
+                      text-base
+                      font-bold
+                      text-slate-100
+                      group-hover:text-white
+                      transition-colors
+                    `}
+                    >
+                      Scheduled conversions
+                    </h3>
+                    <p className={`mt-1 text-sm text-slate-400`}>View and manage scheduled exchanges</p>
+                  </div>
+                  <svg
+                    className={`
+                      h-5
+                      w-5
+                      shrink-0
+                      text-slate-500
+                      transition-transform
+                      group-hover:translate-x-1
+                      group-hover:text-slate-400
+                    `}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </div>
+            </Link>
+
+            <Link
+              href="/exchange/rules"
+              className={`
+                group
+                overflow-hidden
+                rounded-2xl
+                border
+                border-slate-700
+                bg-slate-800/90
+                shadow-lg
+                transition-all
+                duration-300
+                hover:bg-slate-800
+                hover:shadow-xl
+                hover:scale-[1.02]
+              `}
             >
-              Set up automatic exchange rules
-            </div>
+              <div className={`p-4`}>
+                <div className={`flex items-start gap-3`}>
+                  <div
+                    className={`
+                    flex
+                    h-12
+                    w-12
+                    shrink-0
+                    items-center
+                    justify-center
+                    rounded-xl
+                    bg-purple-900/50
+                    text-purple-400
+                    transition-colors
+                    group-hover:bg-purple-900
+                    group-hover:text-purple-300
+                  `}
+                  >
+                    <ClipboardListIcon className={`h-6 w-6`} strokeWidth={2} />
+                  </div>
+                  <div className={`flex-1 min-w-0`}>
+                    <h3
+                      className={`
+                      text-base
+                      font-bold
+                      text-slate-100
+                      group-hover:text-white
+                      transition-colors
+                    `}
+                    >
+                      Exchange rules
+                    </h3>
+                    <p className={`mt-1 text-sm text-slate-400`}>Set up automatic exchange rules</p>
+                  </div>
+                  <svg
+                    className={`
+                      h-5
+                      w-5
+                      shrink-0
+                      text-slate-500
+                      transition-transform
+                      group-hover:translate-x-1
+                      group-hover:text-slate-400
+                    `}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </div>
+            </Link>
           </div>
-          <svg
-            className="
-              h-5
-              w-5
-              text-slate-400
-            "
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </Link>
+        </div>
       </div>
     </div>
   );

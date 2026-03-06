@@ -2,12 +2,13 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { toast } from 'sonner';
 
 import { ACCOUNT_TYPE } from '@remoola/api-types';
 
 import { useSignupForm } from './SignupFormContext';
 import { getApiBaseUrlOptional } from '../../lib/config.client';
+import { clientLogger } from '../../lib/logger';
+import { showErrorToast } from '../../lib/toast.client';
 
 export function SignupFormView() {
   const router = useRouter();
@@ -27,7 +28,6 @@ export function SignupFormView() {
     googleSignupToken,
   } = useSignupForm();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!signupDetails.accountType && !googleSignupTokenFromUrl) {
@@ -81,7 +81,6 @@ export function SignupFormView() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     setLoading(true);
     try {
       const payload = buildPayload();
@@ -105,34 +104,63 @@ export function SignupFormView() {
       router.push(`/signup/completed`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : `Failed to sign up. Please try again.`;
-      setError(msg);
-      toast.error(msg);
+      clientLogger.error(`Signup failed`, {
+        error: err,
+        accountType: signupDetails.accountType,
+      });
+      showErrorToast(msg);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="mx-auto max-w-md space-y-6 p-4" data-testid="consumer-signup-flow">
+    <div
+      className={`
+      mx-auto
+      max-w-md
+      space-y-6
+      p-4
+    `}
+      data-testid="consumer-signup-flow"
+    >
       <form
         onSubmit={handleSubmit}
-        className="space-y-4 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-neutral-900"
+        className={`
+          space-y-4
+          rounded-xl
+          border
+          border-neutral-200
+          bg-white
+          p-6
+          shadow-sm
+          dark:border-neutral-700
+          dark:bg-neutral-900
+        `}
       >
-        <h1 className="text-xl font-semibold text-neutral-900 dark:text-white">Sign up</h1>
-        {error && (
-          <p
-            role="alert"
-            className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400"
-          >
-            {error}
-          </p>
-        )}
+        <h1
+          className={`
+          text-xl
+          font-semibold
+          text-neutral-900
+          dark:text-white
+        `}
+        >
+          Sign up
+        </h1>
         {!isGoogleSignup && (
           <>
             <div>
               <label
                 htmlFor="signup-email"
-                className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+                className={`
+                  mb-1
+                  block
+                  text-sm
+                  font-medium
+                  text-neutral-700
+                  dark:text-neutral-300
+                `}
               >
                 Email
               </label>
@@ -141,14 +169,21 @@ export function SignupFormView() {
                 type="email"
                 value={signupDetails.email}
                 onChange={(e) => updateSignup({ email: e.target.value })}
-                className="input"
+                className={`input`}
                 required
               />
             </div>
             <div>
               <label
                 htmlFor="signup-password"
-                className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+                className={`
+                  mb-1
+                  block
+                  text-sm
+                  font-medium
+                  text-neutral-700
+                  dark:text-neutral-300
+                `}
               >
                 Password
               </label>
@@ -157,14 +192,21 @@ export function SignupFormView() {
                 type="password"
                 value={signupDetails.password}
                 onChange={(e) => updateSignup({ password: e.target.value })}
-                className="input"
+                className={`input`}
                 required={!isGoogleSignup}
               />
             </div>
             <div>
               <label
                 htmlFor="signup-confirm"
-                className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+                className={`
+                  mb-1
+                  block
+                  text-sm
+                  font-medium
+                  text-neutral-700
+                  dark:text-neutral-300
+                `}
               >
                 Confirm password
               </label>
@@ -173,19 +215,26 @@ export function SignupFormView() {
                 type="password"
                 value={signupDetails.confirmPassword}
                 onChange={(e) => updateSignup({ confirmPassword: e.target.value })}
-                className="input"
+                className={`input`}
                 required={!isGoogleSignup}
               />
             </div>
           </>
         )}
         {isGoogleSignup && signupDetails.email && (
-          <p className="text-sm text-neutral-600 dark:text-neutral-400">Signing up with {signupDetails.email}</p>
+          <p className={`text-sm text-neutral-600 dark:text-neutral-400`}>Signing up with {signupDetails.email}</p>
         )}
         <div>
           <label
             htmlFor="signup-firstName"
-            className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+            className={`
+              mb-1
+              block
+              text-sm
+              font-medium
+              text-neutral-700
+              dark:text-neutral-300
+            `}
           >
             First name
           </label>
@@ -194,13 +243,20 @@ export function SignupFormView() {
             type="text"
             value={personalDetails.firstName}
             onChange={(e) => updatePersonal({ firstName: e.target.value })}
-            className="input"
+            className={`input`}
           />
         </div>
         <div>
           <label
             htmlFor="signup-lastName"
-            className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+            className={`
+              mb-1
+              block
+              text-sm
+              font-medium
+              text-neutral-700
+              dark:text-neutral-300
+            `}
           >
             Last name
           </label>
@@ -209,14 +265,21 @@ export function SignupFormView() {
             type="text"
             value={personalDetails.lastName}
             onChange={(e) => updatePersonal({ lastName: e.target.value })}
-            className="input"
+            className={`input`}
           />
         </div>
         {(isBusiness || isContractorEntity) && (
           <div>
             <label
               htmlFor="signup-org-name"
-              className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+              className={`
+                mb-1
+                block
+                text-sm
+                font-medium
+                text-neutral-700
+                dark:text-neutral-300
+              `}
             >
               Organization name
             </label>
@@ -225,14 +288,21 @@ export function SignupFormView() {
               type="text"
               value={organizationDetails.name}
               onChange={(e) => updateOrganization({ name: e.target.value })}
-              className="input"
+              className={`input`}
             />
           </div>
         )}
         <div>
           <label
             htmlFor="signup-country"
-            className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+            className={`
+              mb-1
+              block
+              text-sm
+              font-medium
+              text-neutral-700
+              dark:text-neutral-300
+            `}
           >
             Country
           </label>
@@ -241,13 +311,20 @@ export function SignupFormView() {
             type="text"
             value={addressDetails.country}
             onChange={(e) => updateAddress({ country: e.target.value })}
-            className="input"
+            className={`input`}
           />
         </div>
         <div>
           <label
             htmlFor="signup-street"
-            className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+            className={`
+              mb-1
+              block
+              text-sm
+              font-medium
+              text-neutral-700
+              dark:text-neutral-300
+            `}
           >
             Address
           </label>
@@ -256,7 +333,7 @@ export function SignupFormView() {
             type="text"
             value={addressDetails.street}
             onChange={(e) => updateAddress({ street: e.target.value })}
-            className="input"
+            className={`input`}
           />
         </div>
         <button

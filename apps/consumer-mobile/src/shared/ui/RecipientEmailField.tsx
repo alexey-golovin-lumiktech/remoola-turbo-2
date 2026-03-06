@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { FormField } from './FormField';
 import { FormInput } from './FormInput';
+import { SpinnerIcon } from './icons/SpinnerIcon';
+import { XIcon } from './icons/XIcon';
 
 const DEBOUNCE_MS = 300;
 const SEARCH_LIMIT = 10;
@@ -176,8 +178,8 @@ export function RecipientEmailField({
 
   return (
     <FormField label={label} htmlFor="recipient-email-input" error={error} required={required}>
-      <div ref={containerRef} className="relative">
-        <div className="relative">
+      <div ref={containerRef} className={`relative`}>
+        <div className={`relative`}>
           <FormInput
             id="recipient-email-input"
             type="email"
@@ -202,12 +204,23 @@ export function RecipientEmailField({
             <button
               type="button"
               onClick={handleClear}
-              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-700 dark:hover:text-slate-300"
+              className={`
+                absolute
+                right-3
+                top-1/2
+                -translate-y-1/2
+                rounded-lg
+                p-1.5
+                text-slate-400
+                transition-colors
+                hover:bg-slate-100
+                hover:text-slate-600
+                dark:hover:bg-slate-700
+                dark:hover:text-slate-300
+              `}
               aria-label="Clear"
             >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <XIcon className={`h-5 w-5`} strokeWidth={2} />
             </button>
           )}
         </div>
@@ -216,19 +229,36 @@ export function RecipientEmailField({
             ref={listboxRef}
             id="recipient-email-listbox"
             role="listbox"
-            className="absolute z-50 mt-2 max-h-60 w-full overflow-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-800"
+            className={`
+              absolute
+              z-50
+              mt-2
+              max-h-60
+              w-full
+              overflow-auto
+              rounded-lg
+              border
+              border-slate-200
+              bg-white
+              py-1
+              shadow-lg
+              dark:border-slate-700
+              dark:bg-slate-800
+            `}
           >
             {loading ? (
-              <li className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400" role="option">
-                <div className="flex items-center gap-2">
-                  <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
+              <li
+                className={`
+                px-4
+                py-3
+                text-sm
+                text-slate-500
+                dark:text-slate-400
+              `}
+                role="option"
+              >
+                <div className={`flex items-center gap-2`}>
+                  <SpinnerIcon className={`h-4 w-4`} />
                   Searching contacts...
                 </div>
               </li>
@@ -251,18 +281,61 @@ export function RecipientEmailField({
                     onMouseEnter={() => setHighlightIndex(index)}
                     onClick={() => selectContact(contact)}
                   >
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">
+                    <div className={`flex items-center gap-2`}>
+                      <div
+                        className={`
+                        flex
+                        h-8
+                        w-8
+                        shrink-0
+                        items-center
+                        justify-center
+                        rounded-full
+                        bg-primary-100
+                        text-xs
+                        font-semibold
+                        text-primary-700
+                        dark:bg-primary-900/30
+                        dark:text-primary-300
+                      `}
+                      >
                         {contactInitial.toUpperCase()}
                       </div>
-                      <div className="min-w-0 flex-1">
+                      <div className={`min-w-0 flex-1`}>
                         {contact.name ? (
                           <>
-                            <div className="truncate font-medium text-slate-900 dark:text-white">{contact.name}</div>
-                            <div className="truncate text-xs text-slate-500 dark:text-slate-400">{contact.email}</div>
+                            <div
+                              className={`
+                              truncate
+                              font-medium
+                              text-slate-900
+                              dark:text-white
+                            `}
+                            >
+                              {contact.name}
+                            </div>
+                            <div
+                              className={`
+                              truncate
+                              text-xs
+                              text-slate-500
+                              dark:text-slate-400
+                            `}
+                            >
+                              {contact.email}
+                            </div>
                           </>
                         ) : (
-                          <div className="truncate font-medium text-slate-900 dark:text-white">{contact.email}</div>
+                          <div
+                            className={`
+                            truncate
+                            font-medium
+                            text-slate-900
+                            dark:text-white
+                          `}
+                          >
+                            {contact.email}
+                          </div>
                         )}
                       </div>
                     </div>

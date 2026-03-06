@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
-import { omit } from '../../../shared/utils';
+import { omit } from '../../../shared/utils/object-utils';
 import { withdrawFundsAction, transferFundsAction } from '../actions';
 import { type Balance } from '../schemas';
 
@@ -79,45 +79,45 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
 
   return (
     <div
-      className="
-        mx-auto
-        max-w-2xl
-        space-y-6
-        p-4
-        pb-20
-      "
+      className={`
+  mx-auto
+  max-w-2xl
+  space-y-6
+  p-4
+  pb-20
+      `}
     >
       <div>
         <h1
-          className="
-            text-2xl
-            font-bold
-            text-slate-900
-            dark:text-white
-          "
+          className={`
+  text-2xl
+  font-bold
+  text-slate-900
+  dark:text-white
+          `}
         >
           Withdraw & Transfer
         </h1>
         <p
-          className="
-            mt-1
-            text-sm
-            text-slate-600
-            dark:text-slate-400
-          "
+          className={`
+  mt-1
+  text-sm
+  text-slate-600
+  dark:text-slate-400
+          `}
         >
           Available balance: {balanceDisplay}
         </p>
       </div>
 
       <div
-        className="
-          flex
-          gap-2
-          border-b
-          border-slate-200
-          dark:border-slate-700
-        "
+        className={`
+  flex
+  gap-2
+  border-b
+  border-slate-200
+  dark:border-slate-700
+        `}
       >
         <button
           type="button"
@@ -169,34 +169,28 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
 
       {success && (
         <div
-          className="
-            animate-fadeIn
-            rounded-lg
-            border
-            border-green-200
-            bg-green-50
-            p-4
-            dark:border-green-900/50
-            dark:bg-green-900/20
-          "
+          className={`
+  animate-fadeIn
+  rounded-lg
+  border
+  border-green-200
+  bg-green-50
+  p-4
+  dark:border-green-900/50
+  dark:bg-green-900/20
+          `}
           role="alert"
         >
-          <div
-            className="
-              flex
-              items-start
-              gap-3
-            "
-          >
+          <div className={`flex items-start gap-3`}>
             <svg
-              className="
-                mt-0.5
-                h-5
-                w-5
-                shrink-0
-                text-green-600
-                dark:text-green-400
-              "
+              className={`
+  mt-0.5
+  h-5
+  w-5
+  shrink-0
+  text-green-600
+  dark:text-green-400
+              `}
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -204,12 +198,12 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
             <p
-              className="
-                text-sm
-                font-medium
-                text-green-900
-                dark:text-green-200
-              "
+              className={`
+  text-sm
+  font-medium
+  text-green-900
+  dark:text-green-200
+              `}
             >
               {success}
             </p>
@@ -218,35 +212,30 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
       )}
 
       <div
-        className="
-          rounded-2xl
-          border
-          border-slate-200
-          bg-white
-          p-6
-          shadow-sm
-          dark:border-slate-700
-          dark:bg-slate-900
-        "
+        className={`
+  rounded-2xl
+  border
+  border-slate-200
+  bg-white
+  p-6
+  shadow-sm
+  dark:border-slate-700
+  dark:bg-slate-900
+        `}
       >
         {activeTab === `withdraw` ? (
-          <form
-            onSubmit={handleWithdrawSubmit}
-            className="
-              space-y-5
-            "
-          >
+          <form onSubmit={handleWithdrawSubmit} className={`space-y-5`}>
             <div>
               <label
                 htmlFor="withdraw-amount"
-                className="
-                  mb-2
-                  block
-                  text-sm
-                  font-medium
-                  text-slate-700
-                  dark:text-slate-300
-                "
+                className={`
+  mb-2
+  block
+  text-sm
+  font-medium
+  text-slate-700
+  dark:text-slate-300
+                `}
               >
                 Amount *
               </label>
@@ -270,12 +259,12 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
               {errors.amount && (
                 <p
                   id="withdraw-amount-error"
-                  className="
-                    mt-1.5
-                    text-xs
-                    text-red-600
-                    dark:text-red-400
-                  "
+                  className={`
+  mt-1.5
+  text-xs
+  text-red-600
+  dark:text-red-400
+                  `}
                   role="alert"
                 >
                   {errors.amount}
@@ -286,14 +275,14 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
             <div>
               <label
                 htmlFor="withdraw-currency"
-                className="
-                  mb-2
-                  block
-                  text-sm
-                  font-medium
-                  text-slate-700
-                  dark:text-slate-300
-                "
+                className={`
+  mb-2
+  block
+  text-sm
+  font-medium
+  text-slate-700
+  dark:text-slate-300
+                `}
               >
                 Currency *
               </label>
@@ -301,7 +290,7 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
                 id="withdraw-currency"
                 value={withdrawData.currency}
                 onChange={(e) => setWithdrawData((prev) => ({ ...prev, currency: e.target.value }))}
-                className="input"
+                className={`input`}
               >
                 <option value="USD">USD</option>
                 <option value="EUR">EUR</option>
@@ -312,14 +301,14 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
             <div>
               <label
                 htmlFor="withdraw-payment-method"
-                className="
-                  mb-2
-                  block
-                  text-sm
-                  font-medium
-                  text-slate-700
-                  dark:text-slate-300
-                "
+                className={`
+  mb-2
+  block
+  text-sm
+  font-medium
+  text-slate-700
+  dark:text-slate-300
+                `}
               >
                 Payment Method *
               </label>
@@ -341,12 +330,12 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
               {errors.paymentMethodId && (
                 <p
                   id="withdraw-payment-method-error"
-                  className="
-                    mt-1.5
-                    text-xs
-                    text-red-600
-                    dark:text-red-400
-                  "
+                  className={`
+  mt-1.5
+  text-xs
+  text-red-600
+  dark:text-red-400
+                  `}
                   role="alert"
                 >
                   {errors.paymentMethodId}
@@ -357,14 +346,14 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
             <div>
               <label
                 htmlFor="withdraw-note"
-                className="
-                  mb-2
-                  block
-                  text-sm
-                  font-medium
-                  text-slate-700
-                  dark:text-slate-300
-                "
+                className={`
+  mb-2
+  block
+  text-sm
+  font-medium
+  text-slate-700
+  dark:text-slate-300
+                `}
               >
                 Note (optional)
               </label>
@@ -372,7 +361,7 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
                 id="withdraw-note"
                 value={withdrawData.note}
                 onChange={(e) => setWithdrawData((prev) => ({ ...prev, note: e.target.value }))}
-                className="input"
+                className={`input`}
                 placeholder="Add a note for your records"
                 rows={3}
                 maxLength={200}
@@ -381,72 +370,59 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
 
             {errors.submit && (
               <div
-                className="
-                  rounded-lg
-                  bg-red-50
-                  p-3
-                  dark:bg-red-900/20
-                "
+                className={`
+  rounded-lg
+  bg-red-50
+  p-3
+  dark:bg-red-900/20
+                `}
                 role="alert"
               >
-                <p
-                  className="
-                    text-sm
-                    text-red-800
-                    dark:text-red-300
-                  "
-                >
-                  {errors.submit}
-                </p>
+                <p className={`text-sm text-red-800 dark:text-red-300`}>{errors.submit}</p>
               </div>
             )}
 
             <button
               type="submit"
               disabled={isPending}
-              className="
-                min-h-[48px]
-                w-full
-                rounded-xl
-                bg-primary-600
-                px-4
-                py-3
-                text-sm
-                font-semibold
-                text-white
-                shadow-sm
-                transition-all
-                hover:bg-primary-700
-                hover:shadow-md
-                focus:outline-none
-                focus:ring-2
-                focus:ring-primary-500
-                focus:ring-offset-2
-                disabled:cursor-not-allowed
-                disabled:opacity-60
-              "
+              className={`
+  min-h-[48px]
+  w-full
+  rounded-xl
+  bg-primary-600
+  px-4
+  py-3
+  text-sm
+  font-semibold
+  text-white
+  shadow-sm
+  transition-all
+  hover:bg-primary-700
+  hover:shadow-md
+  focus:outline-none
+  focus:ring-2
+  focus:ring-primary-500
+  focus:ring-offset-2
+  disabled:cursor-not-allowed
+  disabled:opacity-60
+              `}
             >
               {isPending ? `Processing...` : `Withdraw funds`}
             </button>
           </form>
         ) : (
-          <form
-            onSubmit={handleTransferSubmit}
-            className="
-              space-y-5
-            "
-          >
+          <form onSubmit={handleTransferSubmit} className={`space-y-5`}>
             <div>
               <label
                 htmlFor="transfer-amount"
-                className="
-                  mb-2
-                  block
-                  text-sm
-                  font-medium
-                  text-slate-700
-                  dark:text-slate-300
-                "
+                className={`
+  mb-2
+  block
+  text-sm
+  font-medium
+  text-slate-700
+  dark:text-slate-300
+                `}
               >
                 Amount *
               </label>
@@ -470,12 +446,12 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
               {errors.amount && (
                 <p
                   id="transfer-amount-error"
-                  className="
-                    mt-1.5
-                    text-xs
-                    text-red-600
-                    dark:text-red-400
-                  "
+                  className={`
+  mt-1.5
+  text-xs
+  text-red-600
+  dark:text-red-400
+                  `}
                   role="alert"
                 >
                   {errors.amount}
@@ -486,14 +462,14 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
             <div>
               <label
                 htmlFor="transfer-currency"
-                className="
-                  mb-2
-                  block
-                  text-sm
-                  font-medium
-                  text-slate-700
-                  dark:text-slate-300
-                "
+                className={`
+  mb-2
+  block
+  text-sm
+  font-medium
+  text-slate-700
+  dark:text-slate-300
+                `}
               >
                 Currency *
               </label>
@@ -501,7 +477,7 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
                 id="transfer-currency"
                 value={transferData.currency}
                 onChange={(e) => setTransferData((prev) => ({ ...prev, currency: e.target.value }))}
-                className="input"
+                className={`input`}
               >
                 <option value="USD">USD</option>
                 <option value="EUR">EUR</option>
@@ -512,14 +488,14 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
             <div>
               <label
                 htmlFor="transfer-recipient"
-                className="
-                  mb-2
-                  block
-                  text-sm
-                  font-medium
-                  text-slate-700
-                  dark:text-slate-300
-                "
+                className={`
+  mb-2
+  block
+  text-sm
+  font-medium
+  text-slate-700
+  dark:text-slate-300
+                `}
               >
                 Recipient *
               </label>
@@ -541,12 +517,12 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
               {errors.recipientId && (
                 <p
                   id="transfer-recipient-error"
-                  className="
-                    mt-1.5
-                    text-xs
-                    text-red-600
-                    dark:text-red-400
-                  "
+                  className={`
+  mt-1.5
+  text-xs
+  text-red-600
+  dark:text-red-400
+                  `}
                   role="alert"
                 >
                   {errors.recipientId}
@@ -557,14 +533,14 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
             <div>
               <label
                 htmlFor="transfer-note"
-                className="
-                  mb-2
-                  block
-                  text-sm
-                  font-medium
-                  text-slate-700
-                  dark:text-slate-300
-                "
+                className={`
+  mb-2
+  block
+  text-sm
+  font-medium
+  text-slate-700
+  dark:text-slate-300
+                `}
               >
                 Note (optional)
               </label>
@@ -572,7 +548,7 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
                 id="transfer-note"
                 value={transferData.note}
                 onChange={(e) => setTransferData((prev) => ({ ...prev, note: e.target.value }))}
-                className="input"
+                className={`input`}
                 placeholder="Add a message for the recipient"
                 rows={3}
                 maxLength={200}
@@ -581,50 +557,42 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
 
             {errors.submit && (
               <div
-                className="
-                  rounded-lg
-                  bg-red-50
-                  p-3
-                  dark:bg-red-900/20
-                "
+                className={`
+  rounded-lg
+  bg-red-50
+  p-3
+  dark:bg-red-900/20
+                `}
                 role="alert"
               >
-                <p
-                  className="
-                    text-sm
-                    text-red-800
-                    dark:text-red-300
-                  "
-                >
-                  {errors.submit}
-                </p>
+                <p className={`text-sm text-red-800 dark:text-red-300`}>{errors.submit}</p>
               </div>
             )}
 
             <button
               type="submit"
               disabled={isPending}
-              className="
-                min-h-[48px]
-                w-full
-                rounded-xl
-                bg-primary-600
-                px-4
-                py-3
-                text-sm
-                font-semibold
-                text-white
-                shadow-sm
-                transition-all
-                hover:bg-primary-700
-                hover:shadow-md
-                focus:outline-none
-                focus:ring-2
-                focus:ring-primary-500
-                focus:ring-offset-2
-                disabled:cursor-not-allowed
-                disabled:opacity-60
-              "
+              className={`
+  min-h-[48px]
+  w-full
+  rounded-xl
+  bg-primary-600
+  px-4
+  py-3
+  text-sm
+  font-semibold
+  text-white
+  shadow-sm
+  transition-all
+  hover:bg-primary-700
+  hover:shadow-md
+  focus:outline-none
+  focus:ring-2
+  focus:ring-primary-500
+  focus:ring-offset-2
+  disabled:cursor-not-allowed
+  disabled:opacity-60
+              `}
             >
               {isPending ? `Processing...` : `Transfer funds`}
             </button>

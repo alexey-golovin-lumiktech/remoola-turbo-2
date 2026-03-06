@@ -14,13 +14,7 @@ export default function ExchangeScheduledError({
   useEffect(() => {}, [error]);
 
   return (
-    <div
-      className="
-        mx-auto
-        max-w-md
-        p-4
-      "
-    >
+    <div className={`mx-auto max-w-md p-4`}>
       <ErrorState
         title="Failed to load scheduled conversions"
         message="We couldn't load your scheduled conversions. Please try again."

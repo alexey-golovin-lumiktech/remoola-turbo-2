@@ -2,7 +2,7 @@ import '@remoola/ui/styles.css';
 import './globals.css';
 import { type Metadata, type Viewport } from 'next';
 
-import { AppProviders } from '../shared/ui';
+import { AppProviders } from '../shared/ui/AppProviders';
 
 export const metadata: Metadata = {
   title: `Remoola`,
