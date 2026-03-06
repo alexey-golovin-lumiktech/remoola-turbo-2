@@ -1,10 +1,9 @@
-import crypto from 'crypto';
-
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { OAuth2Client, type TokenPayload } from 'google-auth-library';
 import { type CodeChallengeMethod } from 'google-auth-library/build/src/auth/oauth2client';
 
 import { $Enums, Prisma } from '@remoola/database-2';
+import { oauthCrypto } from '@remoola/security-utils';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { GoogleOAuthBody } from './dto/google-oauth.dto';
@@ -154,11 +153,11 @@ export class GoogleOAuthService {
   }
 
   static createCodeVerifier() {
-    return crypto.randomBytes(32).toString(`base64url`);
+    return oauthCrypto.generatePKCEVerifier();
   }
 
   static createCodeChallenge(codeVerifier: string) {
-    return crypto.createHash(`sha256`).update(codeVerifier).digest(`base64url`);
+    return oauthCrypto.generatePKCEChallenge(codeVerifier);
   }
 
   /**

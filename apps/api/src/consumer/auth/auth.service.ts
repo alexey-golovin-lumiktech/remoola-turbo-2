@@ -38,6 +38,7 @@ import { IJwtTokenPayload } from '../../dtos/consumer';
 import { envs, HOURS_24MS, JWT_ACCESS_TTL_SECONDS, JWT_REFRESH_TTL_SECONDS } from '../../envs';
 import { AuthAuditService, AUTH_AUDIT_EVENTS, AUTH_IDENTITY_TYPES } from '../../shared/auth-audit.service';
 import { MailingService } from '../../shared/mailing.service';
+import { OriginResolverService } from '../../shared/origin-resolver.service';
 import { PrismaService } from '../../shared/prisma.service';
 import { type IChangePasswordBody, type IChangePasswordParam, passwordUtils, secureCompare } from '../../shared-common';
 
@@ -53,6 +54,7 @@ export class ConsumerAuthService {
     private readonly prisma: PrismaService,
     private readonly mailingService: MailingService,
     private readonly authAudit: AuthAuditService,
+    private readonly originResolver: OriginResolverService,
   ) {
     this.oAuth2Client = new OAuth2Client(envs.GOOGLE_CLIENT_ID!, envs.GOOGLE_CLIENT_SECRET!);
   }
@@ -299,9 +301,14 @@ export class ConsumerAuthService {
     return { email, firstName, lastName };
   }
 
-  async signupVerification(token: string, res: express.Response, referer) {
+  async signupVerification(token: string, res: express.Response, referer: string) {
+    const validatedOrigin = this.originResolver.validateReturnOrigin(referer);
+    if (!validatedOrigin) {
+      throw new BadRequestException(`Invalid referer origin`);
+    }
+
     const decoded = this.jwtService.decode(token) as { identityId?: string } | null;
-    const redirectUrl = new URL(`signup/verification`, referer);
+    const redirectUrl = new URL(`signup/verification`, validatedOrigin);
     const identity = await this.prisma.consumerModel.findFirst({
       where: { id: decoded?.identityId ?? ``, deletedAt: null },
     });
@@ -322,6 +329,11 @@ export class ConsumerAuthService {
   async checkEmailAndSendRecoveryLink(body: Pick<IChangePasswordBody, `email`>, referer: string) {
     if (body.email == null) throw new BadRequestException(errorCodes.EMAIL_REQUIRED);
 
+    const validatedOrigin = this.originResolver.validateReturnOrigin(referer);
+    if (!validatedOrigin) {
+      throw new BadRequestException(`Invalid referer origin`);
+    }
+
     const consumer = await this.prisma.consumerModel.findFirst({ where: { email: body.email } });
     if (!consumer) throw new BadRequestException(errorCodes.CONSUMER_NOT_FOUND_FOR_EMAIL);
 
@@ -333,7 +345,7 @@ export class ConsumerAuthService {
     if (!found) record = await this.prisma.resetPasswordModel.create({ data: resetPasswordData });
     else record = await this.prisma.resetPasswordModel.update({ where: { id: found.id }, data: resetPasswordData });
 
-    const forgotPasswordLink = new URL(`change-password`, referer);
+    const forgotPasswordLink = new URL(`change-password`, validatedOrigin);
     forgotPasswordLink.searchParams.append(`token`, record.token);
     this.mailingService.sendForgotPasswordEmail({
       forgotPasswordLink: forgotPasswordLink.toString(),
@@ -399,10 +411,15 @@ export class ConsumerAuthService {
   }
 
   async completeProfileCreationAndSendVerificationEmail(consumerId: string, referer: string) {
+    const validatedOrigin = this.originResolver.validateReturnOrigin(referer);
+    if (!validatedOrigin) {
+      throw new BadRequestException(`Invalid referer origin`);
+    }
+
     const consumer = await this.prisma.consumerModel.findFirst({ where: { id: consumerId } });
     if (!consumer) throw new BadRequestException(errorCodes.CONSUMER_NOT_FOUND_COMPLETE_PROFILE);
     const token = await this.getAccessToken(consumer.id);
-    this.mailingService.sendConsumerSignupVerificationEmail({ email: consumer.email, token, referer });
+    this.mailingService.sendConsumerSignupVerificationEmail({ email: consumer.email, token, referer: validatedOrigin });
   }
 
   async signup(dto: ConsumerSignup, googleSignupPayload?: GoogleSignupPayload) {

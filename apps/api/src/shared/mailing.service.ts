@@ -16,12 +16,16 @@ import {
   type InvoiceForTemplate,
 } from './mailing-utils';
 import { envs } from '../envs';
+import { OriginResolverService } from './origin-resolver.service';
 
 @Injectable()
 export class MailingService {
   private readonly logger = new Logger(MailingService.name);
 
-  constructor(private mailerService: MailerService) {}
+  constructor(
+    private mailerService: MailerService,
+    private originResolver: OriginResolverService,
+  ) {}
 
   async sendLogsEmail(data: unknown = null) {
     const html = `<pre><code>${JSON.stringify(data ?? {}, null, 2)}</code></pre>`;
@@ -110,10 +114,7 @@ export class MailingService {
     dueDate?: Date | null;
     paymentRequestId: string;
   }) {
-    const origin =
-      envs.CONSUMER_APP_ORIGIN && envs.CONSUMER_APP_ORIGIN !== `CONSUMER_APP_ORIGIN`
-        ? envs.CONSUMER_APP_ORIGIN
-        : envs.CORS_ALLOWED_ORIGINS?.[0];
+    const origin = this.originResolver.resolveConsumerOrigin();
 
     if (!origin) {
       this.logger.error(`CONSUMER_APP_ORIGIN is not configured`);
@@ -153,10 +154,7 @@ export class MailingService {
     paymentRequestId: string;
     role: `payer` | `requester`;
   }) {
-    const origin =
-      envs.CONSUMER_APP_ORIGIN && envs.CONSUMER_APP_ORIGIN !== `CONSUMER_APP_ORIGIN`
-        ? envs.CONSUMER_APP_ORIGIN
-        : envs.CORS_ALLOWED_ORIGINS?.[0];
+    const origin = this.originResolver.resolveConsumerOrigin();
 
     if (!origin) {
       this.logger.error(`CONSUMER_APP_ORIGIN is not configured`);
@@ -198,10 +196,7 @@ export class MailingService {
     paymentRequestId: string;
     role: `payer` | `requester`;
   }) {
-    const origin =
-      envs.CONSUMER_APP_ORIGIN && envs.CONSUMER_APP_ORIGIN !== `CONSUMER_APP_ORIGIN`
-        ? envs.CONSUMER_APP_ORIGIN
-        : envs.CORS_ALLOWED_ORIGINS?.[0];
+    const origin = this.originResolver.resolveConsumerOrigin();
 
     if (!origin) {
       this.logger.error(`CONSUMER_APP_ORIGIN is not configured`);

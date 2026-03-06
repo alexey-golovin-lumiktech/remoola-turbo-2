@@ -1,4 +1,3 @@
-import crypto from 'crypto';
 import { type IncomingHttpHeaders } from 'http';
 
 import {
@@ -25,6 +24,7 @@ import { Throttle } from '@nestjs/throttler';
 import express from 'express';
 
 import { $Enums, type ConsumerModel } from '@remoola/database-2';
+import { oauthCrypto } from '@remoola/security-utils';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { ConsumerAuthService } from './auth.service';
@@ -36,6 +36,7 @@ import { Identity, PublicEndpoint } from '../../common';
 import { CONSUMER } from '../../dtos';
 import { envs, JWT_ACCESS_TTL, JWT_REFRESH_TTL } from '../../envs';
 import { TransformResponse } from '../../interceptors';
+import { OriginResolverService } from '../../shared/origin-resolver.service';
 import {
   CONSUMER_ACCESS_TOKEN_COOKIE_KEY,
   CONSUMER_REFRESH_TOKEN_COOKIE_KEY,
@@ -56,6 +57,7 @@ export class ConsumerAuthController {
     private readonly service: ConsumerAuthService,
     private readonly googleOAuthServiceGPT: GoogleOAuthService,
     private readonly oauthStateStore: OAuthStateStoreService,
+    private readonly originResolver: OriginResolverService,
   ) {}
 
   private getAuthCookieOptions(req?: express.Request) {
@@ -110,23 +112,6 @@ export class ConsumerAuthController {
     return { httpOnly, sameSite, secure, path };
   }
 
-  private normalizeOrigin(origin: string) {
-    return origin.replace(/\/$/, ``);
-  }
-
-  private allowedOrigins() {
-    const origins = new Set<string>();
-    if (envs.CONSUMER_APP_ORIGIN && envs.CONSUMER_APP_ORIGIN !== `CONSUMER_APP_ORIGIN`) {
-      origins.add(this.normalizeOrigin(envs.CONSUMER_APP_ORIGIN));
-    }
-    if (Array.isArray(envs.CORS_ALLOWED_ORIGINS)) {
-      for (const origin of envs.CORS_ALLOWED_ORIGINS) {
-        if (origin) origins.add(this.normalizeOrigin(origin));
-      }
-    }
-    return origins;
-  }
-
   private normalizeNextPath(next?: string) {
     if (!next) return `/dashboard`;
     if (next.startsWith(`/`)) {
@@ -137,7 +122,7 @@ export class ConsumerAuthController {
 
     try {
       const url = new URL(next);
-      if (this.allowedOrigins().has(this.normalizeOrigin(url.origin))) {
+      if (this.originResolver.getAllowedOrigins().has(this.originResolver.normalizeOrigin(url.origin))) {
         const normalized = `${url.pathname}${url.search}${url.hash}`;
         if (normalized.length > this.maxOAuthNextPathLength) return `/dashboard`;
         return normalized;
@@ -150,28 +135,11 @@ export class ConsumerAuthController {
   }
 
   private validateReturnOrigin(returnOrigin?: string): string | undefined {
-    if (!returnOrigin) return undefined;
-
-    try {
-      const url = new URL(returnOrigin);
-      const normalized = this.normalizeOrigin(url.origin);
-
-      if (this.allowedOrigins().has(normalized)) {
-        return normalized;
-      }
-    } catch {
-      // ignore invalid url
-    }
-
-    return undefined;
+    return this.originResolver.validateReturnOrigin(returnOrigin);
   }
 
   private buildConsumerRedirect(nextPath: string, extraParams?: Record<string, string>, returnOrigin?: string) {
-    const origin =
-      returnOrigin ||
-      (envs.CONSUMER_APP_ORIGIN && envs.CONSUMER_APP_ORIGIN !== `CONSUMER_APP_ORIGIN`
-        ? envs.CONSUMER_APP_ORIGIN
-        : envs.CORS_ALLOWED_ORIGINS?.[0]);
+    const origin = this.originResolver.resolveConsumerOrigin(returnOrigin);
 
     if (!origin) {
       throw new InternalServerErrorException(`CONSUMER_APP_ORIGIN is not configured`);
@@ -188,11 +156,7 @@ export class ConsumerAuthController {
   }
 
   private buildConsumerLoginRedirect(errorCode: string, returnOrigin?: string) {
-    const origin =
-      returnOrigin ||
-      (envs.CONSUMER_APP_ORIGIN && envs.CONSUMER_APP_ORIGIN !== `CONSUMER_APP_ORIGIN`
-        ? envs.CONSUMER_APP_ORIGIN
-        : envs.CORS_ALLOWED_ORIGINS?.[0]);
+    const origin = this.originResolver.resolveConsumerOrigin(returnOrigin);
 
     if (!origin) {
       throw new InternalServerErrorException(`CONSUMER_APP_ORIGIN is not configured`);
@@ -211,11 +175,7 @@ export class ConsumerAuthController {
     contractorKind?: string,
     returnOrigin?: string,
   ) {
-    const origin =
-      returnOrigin ||
-      (envs.CONSUMER_APP_ORIGIN && envs.CONSUMER_APP_ORIGIN !== `CONSUMER_APP_ORIGIN`
-        ? envs.CONSUMER_APP_ORIGIN
-        : envs.CORS_ALLOWED_ORIGINS?.[0]);
+    const origin = this.originResolver.resolveConsumerOrigin(returnOrigin);
 
     if (!origin) {
       throw new InternalServerErrorException(`CONSUMER_APP_ORIGIN is not configured`);
@@ -268,7 +228,7 @@ export class ConsumerAuthController {
 
     const validatedReturnOrigin = this.validateReturnOrigin(returnOrigin);
     const nextPath = this.normalizeNextPath(next);
-    const nonce = crypto.randomBytes(16).toString(`base64url`);
+    const nonce = oauthCrypto.generateOAuthNonce();
     const codeVerifier = GoogleOAuthService.createCodeVerifier();
     const codeChallenge = GoogleOAuthService.createCodeChallenge(codeVerifier);
 

@@ -19,7 +19,8 @@ Authentication and identity:
 - Password recovery and reset flow for consumers.
 - Cookie-based JWT auth with access/refresh tokens.
 - Login audit (success/failure tracking) and account lockout (per-email after N failures).
-- Google OAuth endpoints for consumer login flows (google/start, callback, signup-session, google-new-way, google-redirect-new-way, oauth/exchange, google-oauth, google-login-gpt). OAuth `/google/start` accepts optional `returnOrigin` query parameter for multi-app consumer deployments (validated against CORS_ALLOWED_ORIGINS).
+- Google OAuth endpoints for consumer login flows (google/start, callback, signup-session, google-new-way, google-redirect-new-way, oauth/exchange, google-oauth, google-login-gpt). OAuth `/google/start` accepts optional `returnOrigin` query parameter for multi-app consumer deployments (validated against CORS_ALLOWED_ORIGINS). Origin resolution via `OriginResolverService` (supports CONSUMER_APP_ORIGIN, CONSUMER_MOBILE_APP_ORIGIN, ADMIN_APP_ORIGIN).
+- OAuth crypto utilities via `@remoola/security-utils` (PKCE, nonce, state signing/hashing).
 - Database connection retry logic (30 attempts, 500ms delay) in API bootstrap.
 
 Consumer domain features:
@@ -152,7 +153,7 @@ Ledger and payments:
 Shared packages present in repo:
 
 - `api-types`: shared DTOs, PaginatedResponsePage, currency (CURRENCY_CODES, TCurrencyCode, getCurrencySymbol), consumer settings (theme THEME, preferred currency allowlist), admin payment reversal (PAYMENT_REVERSAL_KIND), query params (BOOLEAN_QUERY_VALUE).
-- `database-2`, `db-fixtures`, `env`, `eslint-config`, `jest-config`, `security-utils`, `shared-constants`, `test-db`, `typescript-config`, `ui`.
+- `database-2`, `db-fixtures`, `env`, `eslint-config`, `jest-config`, `security-utils` (crypto, hashing, OAuth utilities), `shared-constants`, `test-db`, `typescript-config`, `ui`.
 
 Infrastructure and testing:
 

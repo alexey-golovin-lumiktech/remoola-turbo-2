@@ -1222,7 +1222,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-03-05</summary>
 
 - **2026-03-05:**
@@ -1256,6 +1256,46 @@
   - TypeScript: ✅ No errors, Linting: ✅ Pass, Tests: ✅ 65/65 passing
   - Monorepo boundaries: ✅ No cross-app imports
   - Backward compatibility: ✅ OAuth state handles 6 or 7 fields
+
+</details>
+
+<details open>
+<summary>2026-03-06</summary>
+
+- **2026-03-06:**
+  ### 🚀 Feature
+  - Multi-app origin support for OAuth flows:
+    - Added `CONSUMER_MOBILE_APP_ORIGIN` env var for mobile app deployments
+    - Added `ADMIN_APP_ORIGIN` to schema for completeness
+  - Centralized origin validation:
+    - New `OriginResolverService` for validating and resolving OAuth return origins
+    - Consolidates origin validation logic across auth flows
+    - Supports fallback chain: validated returnOrigin → CONSUMER_APP_ORIGIN → CONSUMER_MOBILE_APP_ORIGIN → CORS_ALLOWED_ORIGINS[0]
+
+  ### 🔐 Security
+  - Centralized OAuth crypto utilities in `@remoola/security-utils`:
+    - PKCE code verifier/challenge generation (RFC 7636)
+    - OAuth state token generation with HMAC signing
+    - Nonce generation for replay protection
+    - SHA-256 state hashing for storage keys
+  - Auditable crypto layer: all OAuth crypto calls now use centralized utilities instead of inline implementations
+
+  ### ♻️ Refactor
+  - Extracted duplicate origin validation logic into `OriginResolverService`
+  - Replaced inline crypto calls in `AuthController` and `GoogleOAuthService` with `@remoola/security-utils` utilities
+  - Updated `OAuthStateStoreService` to use centralized crypto helpers
+  - Aligned all consumer auth services to use `OriginResolverService` for origin validation
+
+  ### 🛠 DevEx
+  - Reusable OAuth crypto utilities available in `@remoola/security-utils/oauth-crypto`:
+    - `generateOAuthState()` — secure state token generation
+    - `signOAuthState(state, secret)` — HMAC-SHA256 signing
+    - `hashOAuthState(token)` — SHA-256 hashing for storage
+    - `generateOAuthNonce()` — nonce generation
+    - `generatePKCEVerifier()` — PKCE verifier
+    - `generatePKCEChallenge(verifier)` — PKCE challenge (S256)
+  - Updated `.env.example` files with `CONSUMER_MOBILE_APP_ORIGIN` and `ADMIN_APP_ORIGIN`
+  - Added `CONSUMER_MOBILE_APP_ORIGIN` to `turbo.json` globalEnv for build-time availability
 
 </details>
 

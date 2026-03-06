@@ -165,6 +165,7 @@ async function bootstrap() {
   const allowedOrigins = new Set<string>(
     [
       envs.CONSUMER_APP_ORIGIN,
+      envs.CONSUMER_MOBILE_APP_ORIGIN,
       envs.ADMIN_APP_ORIGIN,
       envs.NEST_APP_EXTERNAL_ORIGIN?.replace(/\/api\/?$/, ``),
       ...(envs.CORS_ALLOWED_ORIGINS || []),

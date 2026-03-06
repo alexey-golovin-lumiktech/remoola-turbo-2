@@ -3,6 +3,7 @@ import { MailerModule, type MailerOptions } from '@nestjs-modules/mailer';
 
 import { envs } from '../envs';
 import { MailingService } from './mailing.service';
+import { OriginResolverService } from './origin-resolver.service';
 
 @Module({
   imports: [
@@ -23,7 +24,7 @@ import { MailingService } from './mailing.service';
       },
     }),
   ],
-  providers: [MailingService],
+  providers: [MailingService, OriginResolverService],
   exports: [MailingService],
 })
 export class MailingModule {}

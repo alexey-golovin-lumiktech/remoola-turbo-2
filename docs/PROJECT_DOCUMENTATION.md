@@ -89,7 +89,7 @@ Auth (`/consumer/auth`):
 - `POST /change-password`: request password recovery email.
 - `PATCH /change-password/:token`: reset password by token.
 - Google OAuth flows:
-  - `GET /google/start`: start new OAuth flow. Accepts optional `returnOrigin` query parameter to specify the consumer app origin (validated against CORS_ALLOWED_ORIGINS) for redirect after authentication. Useful for multi-app deployments (e.g., desktop consumer on port 3001, mobile consumer on port 3002).
+  - `GET /google/start`: start new OAuth flow. Accepts optional `returnOrigin` query parameter to specify the consumer app origin (validated against CORS_ALLOWED_ORIGINS via `OriginResolverService`) for redirect after authentication. Useful for multi-app deployments (e.g., desktop consumer on port 3001, mobile consumer on port 3002). Supports CONSUMER_APP_ORIGIN, CONSUMER_MOBILE_APP_ORIGIN, and ADMIN_APP_ORIGIN.
   - `GET /google/callback`: OAuth redirect handling; uses stored `returnOrigin` from state.
   - `GET /google/signup-session`: fetch OAuth signup session data.
   - `GET /google-new-way`, `GET /google-redirect-new-way`: alternate OAuth entry/redirect.
@@ -200,6 +200,7 @@ Common infrastructure in `apps/api/src/shared` and `apps/api/src/shared-common`:
 - Auth audit (login success/failure tracking) and account lockout (per-email after N failures).
 - Error filtering and logging.
 - Common DTOs used across admin and consumer APIs.
+- `OriginResolverService`: centralized origin validation for OAuth flows (CONSUMER_APP_ORIGIN, CONSUMER_MOBILE_APP_ORIGIN, ADMIN_APP_ORIGIN).
 
 ## Admin App (Next.js)
 
@@ -349,8 +350,8 @@ Shared packages used across apps:
 - `packages/api-types`: shared DTOs and type exports; pagination (`PaginatedResponsePage<T>`); currency (`CURRENCY_CODES`, `CURRENCY_CODE`, `TCurrencyCode`, `getCurrencySymbol`, `isCurrencyCode`); consumer settings (theme `THEME`, preferred currency allowlist); admin payment reversal (`PAYMENT_REVERSAL_KIND`); query params (`BOOLEAN_QUERY_VALUE`).
 - `packages/database-2`: Prisma schema, migrations, and generated client.
 - `packages/db-fixtures`: DB fixture helpers for tests.
-- `packages/env`: runtime env schema and validation (Zod).
-- `packages/security-utils`: crypto, token, and hashing helpers.
+- `packages/env`: runtime env schema and validation (Zod). Includes CONSUMER_APP_ORIGIN, CONSUMER_MOBILE_APP_ORIGIN, and ADMIN_APP_ORIGIN.
+- `packages/security-utils`: crypto, token, hashing helpers, and OAuth crypto utilities (PKCE verifier/challenge, state signing/hashing, nonce generation).
 - `packages/shared-constants`: shared constants.
 - `packages/test-db`: test database utilities.
 - `packages/ui`: shared UI components.

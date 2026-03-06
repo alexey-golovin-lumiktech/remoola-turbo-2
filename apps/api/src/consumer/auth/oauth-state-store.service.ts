@@ -1,8 +1,7 @@
-import crypto from 'crypto';
-
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
 
 import { Prisma } from '@remoola/database-2';
+import { oauthCrypto } from '@remoola/security-utils';
 
 import { envs } from '../../envs';
 import { PrismaService } from '../../shared/prisma.service';
@@ -26,13 +25,13 @@ export class OAuthStateStoreService implements OnModuleDestroy {
   }
 
   createStateToken() {
-    const random = crypto.randomBytes(32).toString(`base64url`);
-    const signature = crypto.createHmac(`sha256`, envs.SECURE_SESSION_SECRET).update(random).digest(`base64url`);
+    const random = oauthCrypto.generateOAuthState();
+    const signature = oauthCrypto.signOAuthState(random, envs.SECURE_SESSION_SECRET);
     return `${random}.${signature}`;
   }
 
   private stateKey(stateToken: string) {
-    return crypto.createHash(`sha256`).update(stateToken).digest(`base64url`);
+    return oauthCrypto.hashOAuthState(stateToken);
   }
 
   async save(stateToken: string, record: OAuthStateRecord, ttlMs: number) {

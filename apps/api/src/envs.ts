@@ -77,6 +77,7 @@ const nest = {
   NEST_APP_HOST: z.string().default(`127.0.0.1`),
   NEST_APP_EXTERNAL_ORIGIN: z.string().default(`NEST_APP_EXTERNAL_ORIGIN`),
   CONSUMER_APP_ORIGIN: z.string().default(`CONSUMER_APP_ORIGIN`),
+  CONSUMER_MOBILE_APP_ORIGIN: z.string().default(`CONSUMER_MOBILE_APP_ORIGIN`),
   ADMIN_APP_ORIGIN: z.string().default(`ADMIN_APP_ORIGIN`),
   CORS_ALLOWED_ORIGINS: zArray(z.string().min(1), [
     // for consumer-mobile app (port 3002)
