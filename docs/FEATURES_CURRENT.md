@@ -125,7 +125,20 @@ Internal API proxy routes:
 Mobile-first consumer app running on port 3002:
 
 - Shares backend API with desktop consumer app (`apps/consumer`).
-- Mobile-optimized layouts and navigation.
+- Mobile-optimized layouts and navigation with enhanced touch interactions.
+- Enhanced documents view:
+  - Card-based responsive grid (1/2/3 columns based on screen size)
+  - Filter chips with document counts per category (All, Payment, Compliance, Contract, General)
+  - Skeleton loading states matching actual UI structure
+  - Improved empty states with icons and helpful messaging
+  - Sticky header with backdrop blur for better scrolling experience
+  - Visual enhancements: gradients, shadows, animations, improved spacing
+  - Better mobile scroll behavior with touch optimization
+  - Enhanced upload button with progress indication and visual feedback
+  - Document cards with improved layout and action buttons (Tags, Attach)
+  - Tag display with overflow handling (show first 3 + count badge)
+  - Preview and selection improvements with better touch targets
+  - Null-safety for document preview modal
 - Supports Google OAuth with `returnOrigin` parameter for proper redirect after authentication.
 - CORS configured for localhost:3002 and Vercel deployment.
 

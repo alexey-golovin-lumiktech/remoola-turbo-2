@@ -54,6 +54,8 @@ export function DocumentPreviewModal({
 
   if (!isOpen) return null;
 
+  if (!documentUrl) return null;
+
   const isImage = documentType?.startsWith(`image/`);
   const isPdf = documentType === `application/pdf`;
 

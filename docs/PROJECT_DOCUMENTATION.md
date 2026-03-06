@@ -240,7 +240,14 @@ Consumer UI is in `apps/consumer`, with internal API handlers in `apps/consumer/
 
 ## Consumer Mobile App (Next.js)
 
-Mobile-first consumer UI is in `apps/consumer-mobile`, running on port 3002. Follows the same architecture as the desktop consumer app with mobile-optimized layouts. Uses Google OAuth with `returnOrigin` parameter for proper redirect handling in multi-app deployments.
+Mobile-first consumer UI is in `apps/consumer-mobile`, running on port 3002. Follows the same architecture as the desktop consumer app with mobile-optimized layouts and enhanced touch interactions. Uses Google OAuth with `returnOrigin` parameter for proper redirect handling in multi-app deployments.
+
+### Enhanced UI Features
+
+- **Documents View**: Card-based responsive grid layout (1/2/3 columns), filter chips with counts, skeleton loading states, improved empty states
+- **Touch-Optimized**: 44px minimum touch targets, swipe gestures, smooth animations
+- **Visual Polish**: Gradients, shadows, backdrop blur effects, improved spacing and typography
+- **Responsive Design**: Sticky headers with backdrop blur, mobile-first layouts that scale to desktop
 
 Auth and onboarding:
 

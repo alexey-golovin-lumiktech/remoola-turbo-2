@@ -1271,6 +1271,18 @@
     - New `OriginResolverService` for validating and resolving OAuth return origins
     - Consolidates origin validation logic across auth flows
     - Supports fallback chain: validated returnOrigin → CONSUMER_APP_ORIGIN → CONSUMER_MOBILE_APP_ORIGIN → CORS_ALLOWED_ORIGINS[0]
+  - Consumer mobile documents view enhancements:
+    - Enhanced documents loading skeleton with realistic card-based layout
+    - Upgraded documents page with sticky header and improved responsive layout
+    - Card-based document grid (responsive: 1/2/3 columns)
+    - Filter chips with document counts per category
+    - Visual improvements: gradients, shadows, animations, better spacing
+    - Enhanced empty states with icons and improved messaging
+    - Better mobile scroll behavior and touch interactions
+    - Improved upload button with enhanced visual feedback and progress indication
+    - Document cards with improved layout, icons, and action buttons
+    - Tag display with overflow handling (show first 3 + count)
+    - Preview and attachment actions repositioned for better UX
 
   ### 🔐 Security
   - Centralized OAuth crypto utilities in `@remoola/security-utils`:
@@ -1296,6 +1308,11 @@
     - `generatePKCEChallenge(verifier)` — PKCE challenge (S256)
   - Updated `.env.example` files with `CONSUMER_MOBILE_APP_ORIGIN` and `ADMIN_APP_ORIGIN`
   - Added `CONSUMER_MOBILE_APP_ORIGIN` to `turbo.json` globalEnv for build-time availability
+
+  ### 🐛 Fixed
+  - Added null-safety check in `DocumentPreviewModal` to prevent rendering without valid URL
+  - Fixed document preview modal only opening when URL is available
+  - Added proper null-handling for document URL before preview modal invocation
 
 </details>
 

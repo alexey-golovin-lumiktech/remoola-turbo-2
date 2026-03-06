@@ -86,10 +86,12 @@ body {
   font-family: ui-sans-serif, system-ui, sans-serif;
   color: var(--ink, #0f172a);
   transition: background-color 0.2s ease;
+  background-attachment: fixed;
 }
 
 :where(.dark, [data-theme="dark"]) body {
   background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  background-attachment: fixed;
 }
 :where(.dark, [data-theme="dark"]) {
   color-scheme: dark;
@@ -103,6 +105,29 @@ body {
     min-height: 44px;
     min-width: 44px;
   }
+}
+
+/* Better scroll behavior for mobile */
+* {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.scrollbar-thin::-webkit-scrollbar {
+  height: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgb(203, 213, 225);
+  border-radius: 2px;
+}
+
+:where(.dark, [data-theme="dark"]) .scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgb(71, 85, 105);
 }
 
 input::placeholder,
