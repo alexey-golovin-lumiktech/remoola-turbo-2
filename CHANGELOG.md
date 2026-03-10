@@ -1259,7 +1259,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-03-06</summary>
 
 - **2026-03-06:**
@@ -1325,7 +1325,7 @@
 
 </details>
 
-<details>
+<details open>
 <summary>2026-03-10</summary>
 
 - **2026-03-10:**
