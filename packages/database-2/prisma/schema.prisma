@@ -23,6 +23,34 @@ model AccessRefreshTokenModel {
   @@map("access_refresh_token")
 }
 
+model AuthSessionModel {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  consumerId String        @map("consumer_id") @db.Uuid
+  consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  sessionFamilyId  String  @map("session_family_id") @db.Uuid
+  refreshTokenHash String  @unique @map("refresh_token_hash") @db.Text
+
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(6)
+  lastUsedAt DateTime  @default(now()) @map("last_used_at") @db.Timestamptz(6)
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamptz(6)
+
+  replacedById      String?           @map("replaced_by_id") @db.Uuid
+  replacedBySession AuthSessionModel? @relation("SessionReplacement", fields: [replacedById], references: [id], onDelete: SetNull)
+  replacedSessions  AuthSessionModel[] @relation("SessionReplacement")
+
+  invalidatedReason String? @map("invalidated_reason") @db.Text
+
+  @@index([consumerId, revokedAt])
+  @@index([sessionFamilyId, revokedAt])
+  @@index([expiresAt])
+  @@index([replacedById])
+  @@map("auth_sessions")
+}
+
 /// Fintech-safe: audit of login/logout and per-email lockout after N failed attempts.
 model AuthAuditLogModel {
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -185,6 +213,7 @@ model ConsumerModel {
   paymentMethods         PaymentMethodModel[]
   attachments            PaymentRequestAttachmentModel[]
   passwordResets         ResetPasswordModel[]
+  authSessions           AuthSessionModel[]
   ledgerEntries          LedgerEntryModel[]
   autoConversionRules    WalletAutoConversionRuleModel[]
   scheduledFxConversions ScheduledFxConversionModel[]

@@ -3,15 +3,18 @@ import { ApiBasicAuth, ApiBearerAuth, ApiBody, ApiOkResponse, ApiOperation, ApiT
 import { Throttle } from '@nestjs/throttler';
 import express from 'express';
 
-import { type AdminModel } from '@remoola/database-2';
-
 import { AdminAuthService } from './admin-auth.service';
 import { JwtAuthGuard } from '../../auth/jwt.guard';
-import { Identity, PublicEndpoint } from '../../common';
+import { Identity, type IIdentityContext, PublicEndpoint } from '../../common';
 import { ADMIN } from '../../dtos';
 import { Credentials } from '../../dtos/admin';
-import { envs, JWT_ACCESS_TTL, JWT_REFRESH_TTL } from '../../envs';
-import { ADMIN_ACCESS_TOKEN_COOKIE_KEY, ADMIN_REFRESH_TOKEN_COOKIE_KEY } from '../../shared-common';
+import { JWT_ACCESS_TTL, JWT_REFRESH_TTL } from '../../envs';
+import {
+  ADMIN_ACCESS_TOKEN_COOKIE_KEY,
+  ADMIN_REFRESH_TOKEN_COOKIE_KEY,
+  getApiAdminAuthCookieClearOptions,
+  getApiAdminAuthCookieOptions,
+} from '../../shared-common';
 
 @ApiTags(`Admin: Auth`)
 @ApiBearerAuth(`bearer`) // 👈 tells Swagger to attach Bearer token
@@ -21,31 +24,9 @@ export class AdminAuthController {
   constructor(private readonly service: AdminAuthService) {}
 
   private setAuthCookies(res: express.Response, accessToken: string, refreshToken: string) {
-    const isProd = envs.NODE_ENV === `production`;
-
-    if (envs.VERCEL !== 0) {
-      const vercelCookieOptions = {
-        httpOnly: true,
-        secure: true,
-        sameSite: `none`,
-        path: `/`,
-      } as const;
-      res.cookie(ADMIN_ACCESS_TOKEN_COOKIE_KEY, accessToken, { ...vercelCookieOptions, maxAge: JWT_ACCESS_TTL });
-      res.cookie(ADMIN_REFRESH_TOKEN_COOKIE_KEY, refreshToken, { ...vercelCookieOptions, maxAge: JWT_REFRESH_TTL });
-    } else {
-      const sameSite = isProd ? (`none` as const) : (`lax` as const);
-      const secure = isProd || envs.COOKIE_SECURE;
-
-      const common = {
-        httpOnly: true,
-        sameSite,
-        secure,
-        path: `/`,
-      };
-
-      res.cookie(ADMIN_ACCESS_TOKEN_COOKIE_KEY, accessToken, { ...common, maxAge: JWT_ACCESS_TTL });
-      res.cookie(ADMIN_REFRESH_TOKEN_COOKIE_KEY, refreshToken, { ...common, maxAge: JWT_REFRESH_TTL });
-    }
+    const common = getApiAdminAuthCookieOptions();
+    res.cookie(ADMIN_ACCESS_TOKEN_COOKIE_KEY, accessToken, { ...common, maxAge: JWT_ACCESS_TTL });
+    res.cookie(ADMIN_REFRESH_TOKEN_COOKIE_KEY, refreshToken, { ...common, maxAge: JWT_REFRESH_TTL });
   }
 
   @PublicEndpoint()
@@ -83,24 +64,7 @@ export class AdminAuthController {
       userAgent: typeof userAgent === `string` ? userAgent : null,
     });
 
-    let cookieOptions;
-    if (envs.VERCEL !== 0) {
-      cookieOptions = {
-        httpOnly: true,
-        secure: true,
-        sameSite: `none`,
-        path: `/`,
-      } as const;
-    } else {
-      const isProd = envs.NODE_ENV === `production`;
-      cookieOptions = {
-        httpOnly: true,
-        secure: isProd,
-        sameSite: isProd ? `none` : `lax`,
-        path: `/`,
-      };
-    }
-
+    const cookieOptions = getApiAdminAuthCookieClearOptions();
     res.clearCookie(ADMIN_ACCESS_TOKEN_COOKIE_KEY, cookieOptions);
     res.clearCookie(ADMIN_REFRESH_TOKEN_COOKIE_KEY, cookieOptions);
     return { ok: true };
@@ -108,7 +72,7 @@ export class AdminAuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get(`me`)
-  async me(@Identity() admin: AdminModel) {
-    return admin;
+  async me(@Identity() identity: IIdentityContext) {
+    return identity;
   }
 }

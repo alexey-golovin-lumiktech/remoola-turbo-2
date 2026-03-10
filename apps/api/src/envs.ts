@@ -84,6 +84,9 @@ const nest = {
     `http://127.0.0.1:3002`,
     `http://localhost:3002`,
     `http://[::1]:3002`,
+    `https://127.0.0.1:3002`,
+    `https://localhost:3002`,
+    `https://[::1]:3002`,
     `https://remoola-turbo-2-consumer-mobile.vercel.app`,
     // for admin app (port 3010)
     `http://127.0.0.1:3010`,
@@ -94,6 +97,9 @@ const nest = {
     `http://127.0.0.1:3001`,
     `http://localhost:3001`,
     `http://[::1]:3001`,
+    `https://127.0.0.1:3001`,
+    `https://localhost:3001`,
+    `https://[::1]:3001`,
     `https://remoola-turbo-2-consumer.vercel.app`,
     // for api (port 3333)
     `http://127.0.0.1:3333`,

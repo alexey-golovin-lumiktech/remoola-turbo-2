@@ -23,7 +23,8 @@ import { ApiOperation, ApiOkResponse, ApiBody, ApiTags, ApiBasicAuth, ApiBearerA
 import { Throttle } from '@nestjs/throttler';
 import express from 'express';
 
-import { $Enums, type ConsumerModel } from '@remoola/database-2';
+import { getConsumerRefreshTokenCookieKeysForRead, getCookieClearOptions } from '@remoola/api-types';
+import { $Enums } from '@remoola/database-2';
 import { oauthCrypto } from '@remoola/security-utils';
 import { errorCodes } from '@remoola/shared-constants';
 
@@ -32,15 +33,21 @@ import { ConsumerSignup } from './dto';
 import { GoogleOAuthService } from './google-oauth.service';
 import { OAuthStateStoreService } from './oauth-state-store.service';
 import { LoginBody } from '../../auth/dto/login.dto';
-import { Identity, PublicEndpoint } from '../../common';
+import { Identity, type IIdentityContext, PublicEndpoint } from '../../common';
 import { CONSUMER } from '../../dtos';
-import { envs, JWT_ACCESS_TTL, JWT_REFRESH_TTL } from '../../envs';
+import { JWT_ACCESS_TTL, JWT_REFRESH_TTL } from '../../envs';
 import { TransformResponse } from '../../interceptors';
 import { OriginResolverService } from '../../shared/origin-resolver.service';
 import {
-  CONSUMER_ACCESS_TOKEN_COOKIE_KEY,
-  CONSUMER_REFRESH_TOKEN_COOKIE_KEY,
+  CSRF_TOKEN_COOKIE_KEY,
   GOOGLE_OAUTH_STATE_COOKIE_KEY,
+  getApiConsumerAccessTokenCookieKey,
+  getApiConsumerAuthCookieClearOptions,
+  getApiConsumerAuthCookieOptions,
+  getApiConsumerCsrfCookieClearOptions,
+  getApiConsumerCsrfCookieOptions,
+  getApiConsumerRefreshTokenCookieKey,
+  getApiOAuthStateCookieOptions,
   removeNil,
 } from '../../shared-common';
 
@@ -60,56 +67,36 @@ export class ConsumerAuthController {
     private readonly originResolver: OriginResolverService,
   ) {}
 
-  private getAuthCookieOptions(req?: express.Request) {
-    const isProd = envs.NODE_ENV === `production`;
-    const isVercel = envs.VERCEL !== 0;
-    const forwardedProto = req?.headers?.[`x-forwarded-proto`];
-    const isSecureRequest =
-      req?.secure === true || (typeof forwardedProto === `string` && forwardedProto.split(`,`)[0]?.trim() === `https`);
-    const sameSite = isSecureRequest || isProd || isVercel ? (`none` as const) : (`lax` as const);
-    const secure = isSecureRequest || isVercel || isProd || envs.COOKIE_SECURE;
-
-    return {
-      httpOnly: true,
-      sameSite,
-      secure,
-      path: `/`,
-    };
+  private getRefreshTokenFromRequest(req: express.Request): string | undefined {
+    return getConsumerRefreshTokenCookieKeysForRead()
+      .map((key) => req.cookies?.[key])
+      .find((value): value is string => typeof value === `string` && value.length > 0);
   }
 
-  private setAuthCookies(res: express.Response, accessToken: string, refreshToken: string, req?: express.Request) {
-    const common = this.getAuthCookieOptions(req);
-    res.cookie(CONSUMER_ACCESS_TOKEN_COOKIE_KEY, accessToken, { ...common, maxAge: JWT_ACCESS_TTL });
-    res.cookie(CONSUMER_REFRESH_TOKEN_COOKIE_KEY, refreshToken, { ...common, maxAge: JWT_REFRESH_TTL });
+  private setAuthCookies(req: express.Request, res: express.Response, accessToken: string, refreshToken: string) {
+    const common = getApiConsumerAuthCookieOptions(req);
+    res.cookie(getApiConsumerAccessTokenCookieKey(req), accessToken, { ...common, maxAge: JWT_ACCESS_TTL });
+    res.cookie(getApiConsumerRefreshTokenCookieKey(req), refreshToken, { ...common, maxAge: JWT_REFRESH_TTL });
+    res.cookie(CSRF_TOKEN_COOKIE_KEY, oauthCrypto.generateOAuthState(), getApiConsumerCsrfCookieOptions(req));
   }
 
-  private clearAuthCookies(res: express.Response, req?: express.Request) {
-    const common = this.getAuthCookieOptions(req);
-    res.clearCookie(CONSUMER_ACCESS_TOKEN_COOKIE_KEY, common);
-    res.clearCookie(CONSUMER_REFRESH_TOKEN_COOKIE_KEY, common);
+  private clearAuthCookies(req: express.Request, res: express.Response) {
+    const authCookieOptions = getApiConsumerAuthCookieClearOptions(req);
+    const csrfCookieOptions = getApiConsumerCsrfCookieClearOptions(req);
+    res.clearCookie(getApiConsumerAccessTokenCookieKey(req), authCookieOptions);
+    res.clearCookie(getApiConsumerRefreshTokenCookieKey(req), authCookieOptions);
+    res.clearCookie(CSRF_TOKEN_COOKIE_KEY, csrfCookieOptions);
   }
 
   private getOAuthCookieOptions(req?: express.Request) {
-    const isProd = envs.NODE_ENV === `production`;
-    const isVercel = envs.VERCEL !== 0;
-    const forwardedProto = req?.headers?.[`x-forwarded-proto`];
-    const isSecureRequest =
-      req?.secure === true || (typeof forwardedProto === `string` && forwardedProto.split(`,`)[0]?.trim() === `https`);
-    const sameSite = isSecureRequest ? (`none` as const) : (`lax` as const);
-    const secure = isSecureRequest || isVercel || isProd || envs.COOKIE_SECURE;
-
     return {
-      httpOnly: true,
-      sameSite,
-      secure,
-      path: `/`,
+      ...getApiOAuthStateCookieOptions(req),
       maxAge: this.oauthStateTtlMs,
     };
   }
 
   private getOAuthClearCookieOptions(req?: express.Request) {
-    const { httpOnly, sameSite, secure, path } = this.getOAuthCookieOptions(req);
-    return { httpOnly, sameSite, secure, path };
+    return getCookieClearOptions(this.getOAuthCookieOptions(req));
   }
 
   private normalizeNextPath(next?: string) {
@@ -136,6 +123,19 @@ export class ConsumerAuthController {
 
   private validateReturnOrigin(returnOrigin?: string): string | undefined {
     return this.originResolver.validateReturnOrigin(returnOrigin);
+  }
+
+  private ensureCsrf(req: express.Request) {
+    const originHeader = req.headers.origin;
+    if (typeof originHeader === `string` && !this.originResolver.validateReturnOrigin(originHeader)) {
+      throw new UnauthorizedException(`Invalid request origin`);
+    }
+    const csrfHeader = req.headers[`x-csrf-token`];
+    const csrfCookie = req.cookies?.[CSRF_TOKEN_COOKIE_KEY];
+    const value = typeof csrfHeader === `string` ? csrfHeader : Array.isArray(csrfHeader) ? csrfHeader[0] : undefined;
+    if (!value || !csrfCookie || csrfCookie !== value) {
+      throw new UnauthorizedException(`Invalid CSRF token`);
+    }
   }
 
   private buildConsumerRedirect(nextPath: string, extraParams?: Record<string, string>, returnOrigin?: string) {
@@ -202,7 +202,7 @@ export class ConsumerAuthController {
       ipAddress: typeof ipAddress === `string` ? ipAddress : (ipAddress?.[0] ?? null),
       userAgent: typeof userAgent === `string` ? userAgent : null,
     });
-    this.setAuthCookies(res, data.accessToken, data.refreshToken, req);
+    this.setAuthCookies(req, res, data.accessToken, data.refreshToken);
     return data;
   }
 
@@ -323,7 +323,7 @@ export class ConsumerAuthController {
       const { accessToken, refreshToken } = await this.service.issueTokensForConsumer(consumer.id);
       const exchangeToken = await this.service.createOAuthExchangeToken(consumer.id);
 
-      this.setAuthCookies(response, accessToken, refreshToken, req);
+      this.setAuthCookies(req, response, accessToken, refreshToken);
       clearStateCookie();
       const redirectUrl = this.buildConsumerRedirect(
         stateRecord.nextPath,
@@ -397,7 +397,7 @@ export class ConsumerAuthController {
     if (!exchangeToken) throw new BadRequestException(errorCodes.MISSING_EXCHANGE_TOKEN);
     const decoded = await this.service.verifyOAuthExchangeToken(exchangeToken);
     const { accessToken, refreshToken } = await this.service.issueTokensForConsumer(decoded.identityId);
-    this.setAuthCookies(res, accessToken, refreshToken, req);
+    this.setAuthCookies(req, res, accessToken, refreshToken);
     return { ok: true };
   }
 
@@ -405,25 +405,70 @@ export class ConsumerAuthController {
   @Post(`logout`)
   @HttpCode(HttpStatus.OK)
   async logout(@Req() req: express.Request, @Res({ passthrough: true }) res) {
+    this.ensureCsrf(req);
     const ipAddress = req.ip ?? req.headers[`x-forwarded-for`] ?? null;
     const userAgent = req.headers[`user-agent`] ?? null;
-    await this.service.revokeSessionByRefreshTokenAndAudit(req.cookies?.[CONSUMER_REFRESH_TOKEN_COOKIE_KEY], {
+    await this.service.revokeSessionByRefreshTokenAndAudit(this.getRefreshTokenFromRequest(req), {
       ipAddress: typeof ipAddress === `string` ? ipAddress : Array.isArray(ipAddress) ? ipAddress[0] : null,
       userAgent: typeof userAgent === `string` ? userAgent : null,
     });
-    this.clearAuthCookies(res, req);
+    this.clearAuthCookies(req, res);
     res.clearCookie(GOOGLE_OAUTH_STATE_COOKIE_KEY, this.getOAuthClearCookieOptions(req));
     return { ok: true };
   }
 
   @PublicEndpoint()
-  @Post(`refresh-access`)
+  @Post(`refresh`)
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   @ApiOperation({ operationId: `refresh_access` })
+  @ApiOkResponse({ type: CONSUMER.LoginResponse })
+  async refreshAccess(@Req() req: express.Request, @Res({ passthrough: true }) res) {
+    this.ensureCsrf(req);
+    const ipAddress = req.ip ?? req.headers[`x-forwarded-for`] ?? null;
+    const userAgent = req.headers[`user-agent`] ?? null;
+    const refreshToken = this.getRefreshTokenFromRequest(req);
+    if (!refreshToken) throw new UnauthorizedException(errorCodes.INVALID_REFRESH_TOKEN);
+    const data = await this.service.refreshAccess(refreshToken, {
+      ipAddress: typeof ipAddress === `string` ? ipAddress : (ipAddress?.[0] ?? null),
+      userAgent: typeof userAgent === `string` ? userAgent : null,
+    });
+    this.setAuthCookies(req, res, data.accessToken, data.refreshToken);
+    return data;
+  }
+
+  @PublicEndpoint()
+  @Post(`refresh-access`)
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
+  @ApiOperation({ operationId: `refresh_access_legacy` })
   @ApiBody({ schema: { type: `object`, properties: { refreshToken: { type: `string` } } } })
   @ApiOkResponse({ type: CONSUMER.LoginResponse })
-  refreshAccess(@Body(`refreshToken`) refreshToken: string) {
-    return this.service.refreshAccess(refreshToken);
+  async refreshAccessLegacy(
+    @Req() req: express.Request,
+    @Res({ passthrough: true }) res,
+    @Body(`refreshToken`) refreshToken: string,
+  ) {
+    const data = await this.service.refreshAccess(refreshToken);
+    this.setAuthCookies(req, res, data.accessToken, data.refreshToken);
+    return data;
+  }
+
+  @Post(`logout-all`)
+  @HttpCode(HttpStatus.OK)
+  async logoutAll(
+    @Req() req: express.Request,
+    @Identity() identity: IIdentityContext,
+    @Res({ passthrough: true }) res,
+  ) {
+    this.ensureCsrf(req);
+    const ipAddress = req.ip ?? req.headers[`x-forwarded-for`] ?? null;
+    const userAgent = req.headers[`user-agent`] ?? null;
+    await this.service.revokeAllSessionsByConsumerIdAndAudit(identity.id, {
+      ipAddress: typeof ipAddress === `string` ? ipAddress : Array.isArray(ipAddress) ? ipAddress[0] : null,
+      userAgent: typeof userAgent === `string` ? userAgent : null,
+    });
+    this.clearAuthCookies(req, res);
+    res.clearCookie(GOOGLE_OAUTH_STATE_COOKIE_KEY, this.getOAuthClearCookieOptions(req));
+    return { ok: true };
   }
 
   @PublicEndpoint()
@@ -443,8 +488,8 @@ export class ConsumerAuthController {
   }
 
   @Get(`me`)
-  me(@Identity() consumer: ConsumerModel) {
-    return consumer;
+  me(@Identity() identity: IIdentityContext) {
+    return identity;
   }
 
   @PublicEndpoint()

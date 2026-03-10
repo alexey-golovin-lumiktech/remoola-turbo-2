@@ -1325,4 +1325,24 @@
 
 </details>
 
+<details>
+<summary>2026-03-10</summary>
+
+- **2026-03-10:**
+  ### 🔐 Security
+  - Auth cookie policy refactor: single source of truth for cookie names and options.
+  - Shared policy in `@remoola/api-types` (http/auth-cookie-policy); API (`apps/api` shared-common), admin, consumer, and consumer-mobile use the same policy.
+  - Production/Vercel uses __Host- prefixed cookie names (RFC 6265); local development uses plain names; secure/sameSite/path from policy only.
+
+  ### 🗄 Database & Migrations
+  - Migration `20260310123000_consumer_auth_sessions`: additive `auth_sessions` table for consumer auth.
+  - Database-backed sessions: hashed refresh token storage, `session_family_id`, `replaced_by_id` for refresh rotation lineage, `revoked_at` and `invalidated_reason` for revocation.
+  - No destructive changes to existing auth tables; allows gradual migration from legacy access/refresh flows.
+
+  ### ♻️ Refactor
+  - Cookie keys and options centralized; controllers and middleware no longer determine cookie mode.
+  - Admin and consumer auth controllers, Next.js middleware and API routes (login, logout, refresh, clear-cookies, me, oauth/exchange) aligned to shared policy across apps/admin, apps/api, apps/consumer, apps/consumer-mobile.
+
+</details>
+
 </details>

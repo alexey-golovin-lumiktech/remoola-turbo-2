@@ -1,371 +1,78 @@
-import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
-import { NextRequest, NextResponse } from 'next/server';
+import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { NextRequest } from 'next/server';
+
+import { COOKIE_KEYS } from '@remoola/api-types';
 
 import { middleware } from './middleware';
 
-// Mock environment variables
-const mockEnv = {
-  NEXT_PUBLIC_API_BASE_URL: `https://api.example.com`,
-  NODE_ENV: `test`,
-};
+type MockFetch = jest.MockedFunction<typeof fetch>;
 
-process.env.NEXT_PUBLIC_API_BASE_URL = mockEnv.NEXT_PUBLIC_API_BASE_URL;
-process.env.NODE_ENV = mockEnv.NODE_ENV;
+function createRequest(pathname: string, cookies: Record<string, string> = {}): NextRequest {
+  const req = new NextRequest(`https://example.com${pathname}`);
+  for (const [k, v] of Object.entries(cookies)) {
+    req.cookies.set(k, v);
+  }
+  return req;
+}
 
-describe.skip(`Middleware - Token Refresh`, () => {
-  const mockFetch = jest.fn();
+describe(`middleware`, () => {
   const originalFetch = global.fetch;
+  let mockFetch: MockFetch;
 
   beforeEach(() => {
-    global.fetch = mockFetch as any;
-    mockFetch.mockClear();
+    process.env.NEXT_PUBLIC_API_BASE_URL = `https://api.example.com`;
+    mockFetch = jest.fn() as MockFetch;
+    global.fetch = mockFetch;
   });
 
   afterEach(() => {
     global.fetch = originalFetch;
   });
 
-  const createRequest = (pathname: string, cookies: Record<string, string> = {}) => {
-    const url = `https://example.com${pathname}`;
-    const req = new NextRequest(url);
-
-    // Set cookies
-    Object.entries(cookies).forEach(([key, value]) => {
-      req.cookies.set(key, value);
-    });
-
-    return req;
-  };
-
-  describe(`Public routes (auth pages)`, () => {
-    it(`should allow access to login page without token`, async () => {
-      const req = createRequest(`/login`);
-      const response = await middleware(req);
-
-      // Should pass through without redirect
-      expect(response?.status).not.toBe(307);
-    });
-
-    it(`should allow access to signup page without token`, async () => {
-      const req = createRequest(`/signup`);
-      const response = await middleware(req);
-
-      expect(response?.status).not.toBe(307);
-    });
-
-    it(`should redirect to dashboard if accessing login with valid token`, async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-      });
-
-      const req = createRequest(`/login`, {
-        'consumer-access-token': `valid-access-token`,
-      });
-
-      const response = await middleware(req);
-
-      // Middleware should redirect to dashboard
-      if (response?.status === 307) {
-        expect(response.headers.get(`location`)).toContain(`/dashboard`);
-      } else {
-        // If not redirecting, that's also acceptable based on middleware logic
-        expect(response?.status).toBeLessThan(400);
-      }
-    });
+  it(`redirects protected pages to login when no access cookie`, async () => {
+    const response = await middleware(createRequest(`/dashboard`));
+    expect(response.status).toBe(307);
+    expect(response.headers.get(`location`)).toContain(`/login?next=%2Fdashboard`);
   });
 
-  describe(`Protected routes - Valid token`, () => {
-    it(`should validate access token for protected routes`, async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
+  it(`refreshes expired access token once`, async () => {
+    mockFetch.mockResolvedValueOnce(new Response(`unauthorized`, { status: 401 }));
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ accessToken: `new-a` }), {
         status: 200,
-      });
+        headers: {
+          [`set-cookie`]: `${COOKIE_KEYS.CONSUMER_ACCESS_TOKEN}=new-a; Path=/; HttpOnly; SameSite=Lax`,
+        },
+      }),
+    );
 
-      const req = createRequest(`/dashboard`, {
-        'consumer-access-token': `valid-access-token`,
-      });
+    const response = await middleware(
+      createRequest(`/dashboard`, {
+        [COOKIE_KEYS.CONSUMER_ACCESS_TOKEN]: `expired-a`,
+        [COOKIE_KEYS.CONSUMER_REFRESH_TOKEN]: `valid-r`,
+        [COOKIE_KEYS.CSRF_TOKEN]: `csrf`,
+      }),
+    );
 
-      const response = await middleware(req);
-
-      // Middleware behavior may vary - focus on what we can control
-      // If fetch was called, verify it was called correctly
-      if (mockFetch.mock.calls.length > 0) {
-        expect(mockFetch).toHaveBeenCalledWith(
-          `https://api.example.com/consumer/auth/me`,
-          expect.objectContaining({
-            method: `GET`,
-          }),
-        );
-      }
-
-      // Should either allow access or handle auth properly
-      expect(response).toBeDefined();
-    });
+    expect(response.status).not.toBe(307);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(String(mockFetch.mock.calls[1]?.[0])).toContain(`/consumer/auth/refresh`);
+    expect(response.headers.get(`set-cookie`)).toContain(`${COOKIE_KEYS.CONSUMER_ACCESS_TOKEN}=new-a`);
   });
 
-  describe(`Protected routes - Expired access token, valid refresh token`, () => {
-    it(`should attempt to refresh expired token`, async () => {
-      // Access token validation fails
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 401,
-      });
+  it(`redirects to login when refresh fails`, async () => {
+    mockFetch.mockResolvedValueOnce(new Response(`unauthorized`, { status: 401 }));
+    mockFetch.mockResolvedValueOnce(new Response(`unauthorized`, { status: 401 }));
 
-      // Refresh succeeds
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({
-          accessToken: `new-access-token`,
-          refreshToken: `new-refresh-token`,
-        }),
-      });
+    const response = await middleware(
+      createRequest(`/settings`, {
+        [COOKIE_KEYS.CONSUMER_ACCESS_TOKEN]: `expired-a`,
+        [COOKIE_KEYS.CONSUMER_REFRESH_TOKEN]: `expired-r`,
+        [COOKIE_KEYS.CSRF_TOKEN]: `csrf`,
+      }),
+    );
 
-      const req = createRequest(`/dashboard`, {
-        'consumer-access-token': `expired-access-token`,
-        'consumer-refresh-token': `valid-refresh-token`,
-      });
-
-      const response = await middleware(req);
-
-      // Check if refresh was attempted
-      if (mockFetch.mock.calls.length >= 2) {
-        // Should have called validate and refresh
-        expect(mockFetch.mock.calls.length).toBeGreaterThanOrEqual(2);
-
-        // Verify refresh endpoint was called
-        const refreshCall = mockFetch.mock.calls.find((call) => call[0]?.includes(`refresh-access`));
-        if (refreshCall) {
-          expect(refreshCall[0]).toContain(`refresh-access`);
-        }
-      }
-
-      // Response should be defined
-      expect(response).toBeDefined();
-    });
-
-    it(`should handle refresh token response`, async () => {
-      // Access token validation fails
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 401,
-      });
-
-      // Refresh succeeds but doesn't return new refresh token
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({
-          accessToken: `new-access-token`,
-        }),
-      });
-
-      const req = createRequest(`/dashboard`, {
-        'consumer-access-token': `expired-access-token`,
-        'consumer-refresh-token': `valid-refresh-token`,
-      });
-
-      const response = await middleware(req);
-
-      // Should handle the refresh response
-      expect(response).toBeDefined();
-    });
-  });
-
-  describe(`Protected routes - Both tokens expired`, () => {
-    it(`should redirect to login when both tokens invalid`, async () => {
-      // Access token validation fails
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 401,
-      });
-
-      // Refresh fails
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 401,
-      });
-
-      const req = createRequest(`/dashboard`, {
-        'consumer-access-token': `expired-access-token`,
-        'consumer-refresh-token': `expired-refresh-token`,
-      });
-
-      const response = await middleware(req);
-
-      expect(response?.status).toBe(307); // Redirect
-      expect(response?.headers.get(`location`)).toContain(`/login`);
-      expect(response?.headers.get(`location`)).toContain(`next=%2Fdashboard`);
-    });
-
-    it(`should redirect to login when refresh returns no access token`, async () => {
-      // Access token validation fails
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 401,
-      });
-
-      // Refresh succeeds but returns no accessToken
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({}),
-      });
-
-      const req = createRequest(`/settings`, {
-        'consumer-access-token': `expired-access-token`,
-        'consumer-refresh-token': `valid-refresh-token`,
-      });
-
-      const response = await middleware(req);
-
-      expect(response?.status).toBe(307);
-      expect(response?.headers.get(`location`)).toContain(`/login?next=%2Fsettings`);
-    });
-
-    it(`should redirect to login when refresh throws error`, async () => {
-      // Access token validation fails
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 401,
-      });
-
-      // Refresh throws network error
-      mockFetch.mockRejectedValueOnce(new Error(`Network error`));
-
-      const req = createRequest(`/payments`, {
-        'consumer-access-token': `expired-access-token`,
-        'consumer-refresh-token': `valid-refresh-token`,
-      });
-
-      const response = await middleware(req);
-
-      expect(response?.status).toBe(307);
-      expect(response?.headers.get(`location`)).toContain(`/login?next=%2Fpayments`);
-    });
-  });
-
-  describe(`Protected routes - No tokens`, () => {
-    it(`should redirect to login when no access token`, async () => {
-      const req = createRequest(`/dashboard`);
-      const response = await middleware(req);
-
-      expect(response?.status).toBe(307);
-      expect(response?.headers.get(`location`)).toContain(`/login?next=%2Fdashboard`);
-      expect(mockFetch).not.toHaveBeenCalled(); // No validation call
-    });
-  });
-
-  describe(`OAuth callback`, () => {
-    it(`should allow access to callback without validation`, async () => {
-      const req = createRequest(`/auth/callback`);
-      const response = await middleware(req);
-
-      expect(response?.status).not.toBe(302);
-      expect(mockFetch).not.toHaveBeenCalled();
-    });
-  });
-
-  describe(`Cookie settings`, () => {
-    it(`should set cookies with correct security settings in production`, async () => {
-      const originalNodeEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = `production`;
-
-      // Access token validation fails
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 401,
-      });
-
-      // Refresh succeeds
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({
-          accessToken: `new-token`,
-          refreshToken: `new-refresh`,
-        }),
-      });
-
-      const req = createRequest(`/dashboard`, {
-        'consumer-access-token': `expired`,
-        'consumer-refresh-token': `valid`,
-      });
-
-      const response = await middleware(req);
-
-      // Check if cookies were set (implementation dependent)
-      if (mockFetch.mock.calls.length >= 2 && response) {
-        const accessCookie = response.cookies.get(`consumer-access-token`);
-        const refreshCookie = response.cookies.get(`consumer-refresh-token`);
-
-        // If cookies were set, verify security settings
-        if (accessCookie && refreshCookie) {
-          expect(accessCookie.httpOnly).toBe(true);
-          expect(accessCookie.secure).toBe(true);
-          expect(accessCookie.sameSite).toBe(`none`);
-
-          expect(refreshCookie.httpOnly).toBe(true);
-          expect(refreshCookie.secure).toBe(true);
-          expect(refreshCookie.sameSite).toBe(`none`);
-        }
-      }
-
-      process.env.NODE_ENV = originalNodeEnv;
-    });
-
-    it(`should set cookies with lax sameSite in development`, async () => {
-      const originalNodeEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = `development`;
-
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 401,
-      });
-
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: async () => ({
-          accessToken: `new-token`,
-          refreshToken: `new-refresh`,
-        }),
-      });
-
-      const req = createRequest(`/dashboard`, {
-        'consumer-access-token': `expired`,
-        'consumer-refresh-token': `valid`,
-      });
-
-      const response = await middleware(req);
-
-      // Check if cookies were set
-      if (mockFetch.mock.calls.length >= 2 && response) {
-        const accessCookie = response.cookies.get(`consumer-access-token`);
-        if (accessCookie) {
-          expect(accessCookie.sameSite).toBe(`lax`);
-          expect(accessCookie.secure).toBe(false);
-        }
-      }
-
-      process.env.NODE_ENV = originalNodeEnv;
-    });
-  });
-
-  describe(`Token validation timeout`, () => {
-    it(`should handle validation timeout gracefully`, async () => {
-      // Simulate timeout by rejecting
-      mockFetch.mockRejectedValueOnce(new Error(`Timeout`));
-
-      const req = createRequest(`/dashboard`, {
-        'consumer-access-token': `valid-token`,
-      });
-
-      const response = await middleware(req);
-
-      // Should handle error gracefully (either redirect or allow with fallback)
-      expect(response).toBeDefined();
-    });
+    expect(response.status).toBe(307);
+    expect(response.headers.get(`location`)).toContain(`/login?next=%2Fsettings`);
   });
 });

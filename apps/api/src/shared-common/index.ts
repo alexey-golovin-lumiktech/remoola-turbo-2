@@ -1,4 +1,5 @@
 export * from './constants';
+export * from './auth-cookie-policy';
 export * from './dtos';
 export * from './enums';
 export * from './models';

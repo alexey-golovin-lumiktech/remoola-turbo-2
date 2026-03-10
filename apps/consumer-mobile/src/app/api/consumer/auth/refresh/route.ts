@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 
+import { appendSetCookies } from '../../../../../lib/api-utils';
+import { getCsrfTokenFromRequest } from '../../../../../lib/auth-cookie-policy';
 import { getEnv } from '../../../../../lib/env.server';
 import { serverLogger } from '../../../../../lib/logger.server';
 
 /**
- * POST /api/consumer/auth/refresh
- * Refreshes the authentication token for the current user session.
- * This endpoint proxies the request to the backend API.
+ * BFF: forwards cookies and CSRF to backend; forwards backend Set-Cookie unchanged
+ * (access, refresh, csrf) so token rotation works. See auth-cookie-policy rule.
  */
 export async function POST(req: Request) {
   const env = getEnv();
@@ -17,28 +18,25 @@ export async function POST(req: Request) {
   }
 
   try {
+    const csrfToken = getCsrfTokenFromRequest(req);
+    const forwardHeaders = new Headers(req.headers);
+    forwardHeaders.delete(`host`);
+    if (csrfToken) forwardHeaders.set(`x-csrf-token`, csrfToken);
+
     const url = new URL(`${baseUrl}/consumer/auth/refresh`);
     const res = await fetch(url, {
       method: `POST`,
-      headers: {
-        ...Object.fromEntries(new Headers(req.headers)),
-        'content-type': `application/json`,
-      },
-      credentials: `include`,
+      headers: forwardHeaders,
       cache: `no-store`,
     });
 
-    const cookie = res.headers.get(`set-cookie`);
     const data = await res.text();
-
-    const headers: HeadersInit = {};
-    if (cookie) {
-      headers[`set-cookie`] = cookie;
-    }
+    const responseHeaders = new Headers();
+    appendSetCookies(responseHeaders, res.headers);
 
     return new NextResponse(data, {
       status: res.status,
-      headers,
+      headers: responseHeaders,
     });
   } catch (error) {
     serverLogger.error(`Auth refresh failed`, {

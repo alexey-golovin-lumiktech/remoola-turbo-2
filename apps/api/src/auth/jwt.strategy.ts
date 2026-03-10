@@ -3,20 +3,17 @@ import { PassportStrategy } from '@nestjs/passport';
 import express from 'express';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
-import { JWT_ACCESS_SECRET } from '../envs';
-import { ADMIN_ACCESS_TOKEN_COOKIE_KEY, CONSUMER_ACCESS_TOKEN_COOKIE_KEY } from '../shared-common';
+import { resolveAccessTokenCookieKeysForPath } from '@remoola/api-types';
 
-const ADMIN_API_PATH_PREFIX = `/api/admin/`;
-const CONSUMER_API_PATH_PREFIX = `/api/consumer/`;
+import { JWT_ACCESS_SECRET } from '../envs';
 
 function cookieExtractorByPath(req: express.Request): string | null {
   const path = req?.path ?? req?.url?.split(`?`)[0] ?? ``;
-  const key = path.startsWith(ADMIN_API_PATH_PREFIX)
-    ? ADMIN_ACCESS_TOKEN_COOKIE_KEY
-    : path.startsWith(CONSUMER_API_PATH_PREFIX)
-      ? CONSUMER_ACCESS_TOKEN_COOKIE_KEY
-      : CONSUMER_ACCESS_TOKEN_COOKIE_KEY;
-  return req?.cookies?.[key] ?? null;
+  for (const key of resolveAccessTokenCookieKeysForPath(path)) {
+    const value = req?.cookies?.[key];
+    if (value) return value;
+  }
+  return null;
 }
 
 @Injectable()
@@ -29,7 +26,11 @@ export class JwtStrategy extends PassportStrategy(Strategy, `jwt`) {
     });
   }
 
-  validate(payload: { sub: string; email?: string }) {
+  validate(payload: { sub: string; email?: string; typ?: string }): { id: string; email?: string } | null {
+    // Reject non-access tokens (e.g. refresh tokens with typ:'refresh') as a defence-in-depth measure.
+    // The global AuthGuard runs first and enforces cookie-only auth; this check closes the gap
+    // for any path where JwtAuthGuard is used without the global guard.
+    if (payload.typ !== undefined && payload.typ !== `access`) return null;
     return { id: payload.sub, email: payload.email };
   }
 }

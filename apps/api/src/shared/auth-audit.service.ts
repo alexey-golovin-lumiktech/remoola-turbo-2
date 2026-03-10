@@ -18,7 +18,12 @@ export const AUTH_IDENTITY_TYPES = {
 export const AUTH_AUDIT_EVENTS = {
   login_success: `login_success`,
   login_failure: `login_failure`,
+  refresh_success: `refresh_success`,
+  refresh_failure: `refresh_failure`,
+  refresh_reuse: `refresh_reuse`,
   logout: `logout`,
+  logout_all: `logout_all`,
+  password_change: `password_change`,
 } as const;
 
 export type AuthAuditEvent = (typeof AUTH_AUDIT_EVENTS)[keyof typeof AUTH_AUDIT_EVENTS];

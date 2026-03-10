@@ -4,6 +4,32 @@ import { type ApiErrorShape } from '@remoola/api-types';
 
 import { clientLogger } from './logger';
 
+/**
+ * Returns all Set-Cookie header values from a Response.
+ * Uses getSetCookie() (Node.js 18.14+) for correct multi-cookie support.
+ * Falls back to get('set-cookie'), which in some undici versions returns only
+ * the first value — using the array form ensures all three cookies
+ * (__Host-access_token, __Host-refresh_token, csrf_token) are forwarded.
+ */
+export function getSetCookieValues(headers: Headers): string[] {
+  const h = headers as Headers & { getSetCookie?: () => string[] };
+  if (typeof h.getSetCookie === `function`) {
+    return h.getSetCookie();
+  }
+  const value = headers.get(`set-cookie`);
+  return value ? [value] : [];
+}
+
+/**
+ * Appends all Set-Cookie values from sourceHeaders into responseHeaders as
+ * separate headers (required by RFC 6265 — do NOT combine into one value).
+ */
+export function appendSetCookies(responseHeaders: Headers, sourceHeaders: Headers): void {
+  for (const cookie of getSetCookieValues(sourceHeaders)) {
+    responseHeaders.append(`set-cookie`, cookie);
+  }
+}
+
 export function handleApiError(error: unknown): NextResponse<ApiErrorShape> {
   clientLogger.error(`API Error`, {
     message: error instanceof Error ? error.message : String(error),
@@ -55,16 +81,15 @@ export async function proxyApiRequest(
 
       clearTimeout(timeoutId);
       const responseClone = response.clone();
-      const cookie = response.headers.get(`set-cookie`);
       let body: string;
       try {
         body = await responseClone.text();
       } catch {
         body = ``;
       }
-      const headers: Record<string, string> = {};
-      if (cookie) headers[`set-cookie`] = cookie;
-      return new NextResponse(body, { status: response.status, headers });
+      const responseHeaders = new Headers();
+      appendSetCookies(responseHeaders, response.headers);
+      return new NextResponse(body, { status: response.status, headers: responseHeaders });
     } catch (error) {
       lastError = error;
       if (error instanceof Response && error.status >= 400 && error.status < 500) break;

@@ -1,20 +1,20 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
-import { COOKIE_KEYS } from '@remoola/api-types';
+import { COOKIE_KEYS, getConsumerAccessTokenCookieKey, getConsumerRefreshTokenCookieKey } from '@remoola/api-types';
+
+import { appendSetCookies } from './lib/api-utils';
+import { getConsumerMobileCookieRuntime } from './lib/auth-cookie-policy';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 const ME_URL = API_BASE ? `${API_BASE}/consumer/auth/me` : null;
-const REFRESH_URL = API_BASE ? `${API_BASE}/consumer/auth/refresh-access` : null;
+const REFRESH_URL = API_BASE ? `${API_BASE}/consumer/auth/refresh` : null;
 
-const ACCESS_MAX_AGE_SEC = 15 * 60;
-const REFRESH_MAX_AGE_SEC = 7 * 24 * 60 * 60;
-
-async function validateAccessToken(accessToken: string): Promise<boolean> {
+async function validateAccessToken(accessToken: string, accessCookieKey: string): Promise<boolean> {
   if (!ME_URL) return false;
   try {
     const res = await fetch(ME_URL, {
       method: `GET`,
-      headers: { Cookie: `${COOKIE_KEYS.CONSUMER_ACCESS_TOKEN}=${accessToken}` },
+      headers: { Cookie: `${accessCookieKey}=${accessToken}` },
       signal: AbortSignal.timeout(5000),
     });
     return res.ok;
@@ -23,34 +23,36 @@ async function validateAccessToken(accessToken: string): Promise<boolean> {
   }
 }
 
-async function refreshAccess(refreshToken: string): Promise<{ accessToken?: string; refreshToken?: string } | null> {
+async function refreshAccess(
+  refreshToken: string,
+  refreshCookieKey: string,
+  reqCookies: { csrfToken?: string },
+): Promise<Response | null> {
   if (!REFRESH_URL) return null;
   try {
+    const csrfToken = reqCookies.csrfToken;
+    const cookieHeader = `${refreshCookieKey}=${refreshToken}; ${COOKIE_KEYS.CSRF_TOKEN}=${csrfToken ?? ``}`;
     const res = await fetch(REFRESH_URL, {
       method: `POST`,
-      headers: { 'content-type': `application/json` },
-      body: JSON.stringify({ refreshToken }),
+      headers: {
+        Cookie: cookieHeader,
+        ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
+      },
       signal: AbortSignal.timeout(10000),
     });
-    if (!res.ok) return null;
-    const data = (await res.json()) as { accessToken?: string; refreshToken?: string };
-    return data?.accessToken ? data : null;
+    return res.ok ? res : null;
   } catch {
     return null;
   }
 }
 
-function setAuthCookies(res: NextResponse, accessToken: string, refreshToken: string) {
-  const isProd = process.env.NODE_ENV === `production`;
-  const sameSite: `lax` | `none` = isProd ? `none` : `lax`;
-  const opts = { path: `/`, httpOnly: true, secure: isProd, sameSite };
-  res.cookies.set(COOKIE_KEYS.CONSUMER_ACCESS_TOKEN, accessToken, { ...opts, maxAge: ACCESS_MAX_AGE_SEC });
-  res.cookies.set(COOKIE_KEYS.CONSUMER_REFRESH_TOKEN, refreshToken, { ...opts, maxAge: REFRESH_MAX_AGE_SEC });
-}
-
 export async function middleware(req: NextRequest) {
-  const accessToken = req.cookies.get(COOKIE_KEYS.CONSUMER_ACCESS_TOKEN)?.value;
-  const refreshToken = req.cookies.get(COOKIE_KEYS.CONSUMER_REFRESH_TOKEN)?.value;
+  const runtime = getConsumerMobileCookieRuntime(req);
+  const accessCookieKey = getConsumerAccessTokenCookieKey(runtime);
+  const refreshCookieKey = getConsumerRefreshTokenCookieKey(runtime);
+  const accessToken = req.cookies.get(accessCookieKey)?.value;
+  const refreshToken = req.cookies.get(refreshCookieKey)?.value;
+  const csrfToken = req.cookies.get(COOKIE_KEYS.CSRF_TOKEN)?.value;
 
   const isAuthPage = req.nextUrl.pathname.startsWith(`/login`) || req.nextUrl.pathname.startsWith(`/signup`);
   const isCallback = req.nextUrl.pathname.startsWith(`/auth/callback`);
@@ -67,13 +69,13 @@ export async function middleware(req: NextRequest) {
   }
 
   if (isProtected && accessToken) {
-    const valid = await validateAccessToken(accessToken);
+    const valid = await validateAccessToken(accessToken, accessCookieKey);
     if (valid) return NextResponse.next();
     if (refreshToken) {
-      const tokens = await refreshAccess(refreshToken);
-      if (tokens?.accessToken) {
+      const refreshResponse = await refreshAccess(refreshToken, refreshCookieKey, { csrfToken });
+      if (refreshResponse) {
         const res = NextResponse.next();
-        setAuthCookies(res, tokens.accessToken, tokens.refreshToken ?? refreshToken);
+        appendSetCookies(res.headers, refreshResponse.headers);
         return res;
       }
     }

@@ -45,7 +45,7 @@ This document consolidates fintech safety and DB compliance work: design-rule co
 | Area | Change |
 |------|--------|
 | **Schema** | `LedgerEntryOutcomeModel`, `LedgerEntryDisputeModel`; relations `LedgerEntryModel.outcomes`, `LedgerEntryModel.disputes`. |
-| **Migrations** | `20260225045952_stripe_webhook_event_dedup` (additive); `20260225120000_standardize_columns_snake_case` (RENAME only); `20260225140000_ledger_entry_outcome_append_only` (additive); `20260303120000_ledger_entry_outcome_unique_external` (additive); `20260304120000_ledger_entry_outcome_dispute_cascade` (FK RESTRICT→CASCADE). |
+| **Migrations** | `20260225045952_stripe_webhook_event_dedup` (additive); `20260225120000_standardize_columns_snake_case` (RENAME only); `20260225140000_ledger_entry_outcome_append_only` (additive); `20260303120000_ledger_entry_outcome_unique_external` (additive); `20260304120000_ledger_entry_outcome_dispute_cascade` (FK RESTRICT→CASCADE); `20260310123000_consumer_auth_sessions` (additive, auth_sessions table for consumer sessions). |
 | **Stripe webhook** | Insert into `stripe_webhook_event` first; on P2002 return 200. Ledger status/dispute via `ledgerEntryOutcomeModel.create` / `ledgerEntryDisputeModel.create` (no `ledgerEntryModel.update`/`updateMany`). |
 | **Stripe service / reversal scheduler** | Replaced `ledgerEntryModel.updateMany` with find + `ledgerEntryOutcomeModel.create` per entry. |
 

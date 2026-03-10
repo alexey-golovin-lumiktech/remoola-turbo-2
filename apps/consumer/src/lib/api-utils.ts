@@ -4,6 +4,26 @@ import { type ApiErrorShape } from '@remoola/api-types';
 
 import { clientLogger } from './logger';
 
+/**
+ * Returns all Set-Cookie header values from a Response.
+ * Uses getSetCookie() when available so auth routes preserve access, refresh,
+ * and csrf cookies instead of collapsing them into one header.
+ */
+export function getSetCookieValues(headers: Headers): string[] {
+  const h = headers as Headers & { getSetCookie?: () => string[] };
+  if (typeof h.getSetCookie === `function`) {
+    return h.getSetCookie();
+  }
+  const value = headers.get(`set-cookie`);
+  return value ? [value] : [];
+}
+
+export function appendSetCookies(responseHeaders: Headers, sourceHeaders: Headers): void {
+  for (const cookie of getSetCookieValues(sourceHeaders)) {
+    responseHeaders.append(`set-cookie`, cookie);
+  }
+}
+
 export function handleApiError(error: unknown): NextResponse<ApiErrorShape> {
   clientLogger.error(`API Error`, {
     message: error instanceof Error ? error.message : String(error),
@@ -91,7 +111,6 @@ export async function proxyApiRequest(
 
       // Clone the response to get headers and body
       const responseClone = response.clone();
-      const cookie = response.headers.get(`set-cookie`);
 
       let body: string;
       try {
@@ -100,12 +119,12 @@ export async function proxyApiRequest(
         body = ``;
       }
 
-      const headers: Record<string, string> = {};
-      if (cookie) headers[`set-cookie`] = cookie;
+      const responseHeaders = new Headers();
+      appendSetCookies(responseHeaders, response.headers);
 
       return new NextResponse(body, {
         status: response.status,
-        headers,
+        headers: responseHeaders,
       });
     } catch (error) {
       lastError = error;

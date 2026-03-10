@@ -1,4 +1,4 @@
-import { ApiErrorSchema, type ApiErrorShape, type ApiResponseShape } from '@remoola/api-types';
+import { ApiErrorSchema, COOKIE_KEYS, type ApiErrorShape, type ApiResponseShape } from '@remoola/api-types';
 
 import { handleSessionExpired, UNAUTHORIZED_MESSAGE } from './session-expired';
 
@@ -11,6 +11,24 @@ const CONSUMER_REFRESH_URL = `/api/consumer/auth/refresh`;
 /** Single in-flight refresh promise so concurrent 401s share one refresh. */
 let refreshPromise: Promise<boolean> | null = null;
 
+function getCsrfTokenFromCookie(): string | null {
+  if (typeof document === `undefined`) return null;
+  const key = `${COOKIE_KEYS.CSRF_TOKEN}=`;
+  const parts = document.cookie.split(`;`);
+  for (const part of parts) {
+    const trimmed = part.trim();
+    if (trimmed.startsWith(key)) {
+      return decodeURIComponent(trimmed.slice(key.length));
+    }
+  }
+  return null;
+}
+
+function getCsrfHeader(): HeadersInit | undefined {
+  const csrf = getCsrfTokenFromCookie();
+  return csrf ? { 'x-csrf-token': csrf } : undefined;
+}
+
 async function tryRefreshTokens(): Promise<boolean> {
   if (refreshPromise) return refreshPromise;
   refreshPromise = (async () => {
@@ -18,7 +36,7 @@ async function tryRefreshTokens(): Promise<boolean> {
       const res = await fetch(CONSUMER_REFRESH_URL, {
         method: `POST`,
         credentials: `include`,
-        headers: { 'content-type': `application/json` },
+        headers: getCsrfHeader(),
         signal: AbortSignal.timeout(10000),
       });
       return res.ok;
@@ -108,6 +126,7 @@ export class ApiClient {
               credentials: `include`,
               headers: {
                 'Content-Type': `application/json`,
+                ...getCsrfHeader(),
                 ...options.headers,
               },
             });

@@ -9,19 +9,15 @@ import { type Reflector } from '@nestjs/core';
 import { type JwtService } from '@nestjs/jwt';
 import { type Request as TExpressRequest } from 'express';
 
-import { IDENTITY, type IIdentity, IS_PUBLIC } from '../common';
+import { resolveAccessTokenCookieKeysForPath } from '@remoola/api-types';
+
+import { IDENTITY, type IIdentity, type IIdentityContext, IS_PUBLIC } from '../common';
 import { type IJwtTokenPayload } from '../dtos/consumer';
 import { type PrismaService } from '../shared/prisma.service';
-import { ADMIN_ACCESS_TOKEN_COOKIE_KEY, CONSUMER_ACCESS_TOKEN_COOKIE_KEY, secureCompare } from '../shared-common';
+import { secureCompare } from '../shared-common';
 
-const ADMIN_API_PATH_PREFIX = `/api/admin/`;
 const CONSUMER_API_PATH_PREFIX = `/api/consumer/`;
-
-function getAccessTokenCookieKey(path: string): string {
-  if (path.startsWith(ADMIN_API_PATH_PREFIX)) return ADMIN_ACCESS_TOKEN_COOKIE_KEY;
-  if (path.startsWith(CONSUMER_API_PATH_PREFIX)) return CONSUMER_ACCESS_TOKEN_COOKIE_KEY;
-  return CONSUMER_ACCESS_TOKEN_COOKIE_KEY;
-}
+const ADMIN_API_PATH_PREFIX = `/api/admin/`;
 
 /** User-facing and log-safe messages (no tokens or PII). */
 const GuardMessage = {
@@ -46,8 +42,9 @@ export class AuthGuard implements CanActivate {
     if (isPublic) return true;
 
     const path = request.path ?? request.url?.split(`?`)[0] ?? ``;
-    const cookieKey = getAccessTokenCookieKey(path);
-    const cookieAccessToken = request.cookies[cookieKey];
+    const cookieAccessToken = resolveAccessTokenCookieKeysForPath(path)
+      .map((key) => request.cookies[key])
+      .find((value): value is string => typeof value === `string` && value.length > 0);
     if (!cookieAccessToken) {
       throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
     }
@@ -81,25 +78,46 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
     }
 
-    if (!verified?.identityId) {
+    // Reject refresh or other token types (consumer access and refresh share same secret).
+    if (verified.typ !== undefined && verified.typ !== `access`) {
+      this.logger.warn(`AuthGuard: token typ is not access`);
+      throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
+    }
+
+    const identityId = verified.identityId ?? verified.sub;
+    if (!identityId) {
       this.logger.warn(`AuthGuard: token missing identityId`);
       throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
     }
 
-    const identityAccess = await this.findIdentityAccess({ identityId: verified.identityId, accessToken });
-
-    if (identityAccess == null) {
-      this.logger.warn(`AuthGuard: no identity access record`);
-      throw new UnauthorizedException(GuardMessage.NO_IDENTITY_RECORD);
+    const path = request.path ?? request.url?.split(`?`)[0] ?? ``;
+    const isConsumerPath = path.startsWith(CONSUMER_API_PATH_PREFIX);
+    if (isConsumerPath) {
+      if (!verified.sid) {
+        this.logger.warn(`AuthGuard: consumer access token missing sid`);
+        throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
+      }
+      const session = await this.prisma.authSessionModel.findFirst({
+        where: { id: verified.sid, consumerId: identityId, revokedAt: null },
+      });
+      if (session == null || session.expiresAt < new Date()) {
+        this.logger.warn(`AuthGuard: consumer session not found or expired`);
+        throw new UnauthorizedException(GuardMessage.NO_IDENTITY_RECORD);
+      }
+    } else {
+      const identityAccess = await this.findIdentityAccess({ identityId, accessToken });
+      if (identityAccess == null) {
+        this.logger.warn(`AuthGuard: no identity access record`);
+        throw new UnauthorizedException(GuardMessage.NO_IDENTITY_RECORD);
+      }
+      if (!secureCompare(identityAccess.accessToken, accessToken)) {
+        this.logger.warn(`AuthGuard: token mismatch with stored value`);
+        throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
+      }
     }
 
-    if (!secureCompare(identityAccess.accessToken, accessToken)) {
-      this.logger.warn(`AuthGuard: token mismatch with stored value`);
-      throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
-    }
-
-    const admin = await this.getAdminByIdentityId(verified.identityId);
-    const consumer = await this.getConsumerByIdentityId(verified.identityId);
+    const admin = await this.getAdminByIdentityId(identityId);
+    const consumer = await this.getConsumerByIdentityId(identityId);
     const identity = admin ?? consumer;
 
     if (identity == null) {
@@ -107,7 +125,6 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException(GuardMessage.NO_IDENTITY_RECORD);
     }
 
-    const path = request.path ?? request.url?.split(`?`)[0] ?? ``;
     if (path.startsWith(ADMIN_API_PATH_PREFIX) && !admin) {
       this.logger.warn(`AuthGuard: consumer attempted admin path`);
       throw new ForbiddenException(GuardMessage.ONLY_FOR_ADMINS);
@@ -123,7 +140,7 @@ export class AuthGuard implements CanActivate {
   }
 
   assignRequestIdentity(request: TExpressRequest, incoming: IIdentity, type: string): void {
-    const identity = { [IDENTITY]: { id: incoming.id, email: incoming.email, type } };
-    Object.assign(request, identity);
+    const ctx: IIdentityContext = { id: incoming.id, email: incoming.email, type };
+    Object.assign(request, { [IDENTITY]: ctx });
   }
 }

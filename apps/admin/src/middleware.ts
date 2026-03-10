@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-import { COOKIE_KEYS } from '@remoola/api-types';
+import { COOKIE_KEYS, getAdminAuthCookieOptions } from '@remoola/api-types';
 
 const PUBLIC_PATHS = [`/login`, `/api/auth/login`];
 const NEXT_PUBLIC_API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -8,6 +8,14 @@ const NEXT_PUBLIC_API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 // Token validation cache to avoid repeated backend calls
 const tokenCache = new Map<string, { valid: boolean; expires: number }>();
 const TOKEN_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function getAdminCookieOptions() {
+  return getAdminAuthCookieOptions({
+    isProduction: process.env.NODE_ENV === `production`,
+    isVercel: process.env.VERCEL === `1`,
+    cookieSecure: process.env.COOKIE_SECURE === `true`,
+  });
+}
 
 async function validateToken(token: string): Promise<boolean> {
   // Check cache first
@@ -98,17 +106,14 @@ export async function middleware(req: NextRequest) {
         const refreshResult = await refreshToken(refreshTokenValue);
         if (refreshResult.success && refreshResult.accessToken) {
           const response = NextResponse.next();
+          const cookieOptions = getAdminCookieOptions();
           response.cookies.set(COOKIE_KEYS.ADMIN_ACCESS_TOKEN, refreshResult.accessToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === `production`,
-            sameSite: `strict`,
+            ...cookieOptions,
             maxAge: 15 * 60, // 15 minutes
           });
           if (refreshResult.refreshToken) {
             response.cookies.set(COOKIE_KEYS.ADMIN_REFRESH_TOKEN, refreshResult.refreshToken, {
-              httpOnly: true,
-              secure: process.env.NODE_ENV === `production`,
-              sameSite: `strict`,
+              ...cookieOptions,
               maxAge: 7 * 24 * 60 * 60, // 7 days
             });
           }

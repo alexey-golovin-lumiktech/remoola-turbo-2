@@ -1,5 +1,7 @@
 import { type SWRConfiguration } from 'swr';
 
+import { COOKIE_KEYS } from '@remoola/api-types';
+
 export const swrConfig: SWRConfiguration = {
   revalidateOnFocus: false,
   revalidateOnReconnect: true,
@@ -27,6 +29,24 @@ export const swrConfig: SWRConfiguration = {
     }
   },
 };
+
+function getCsrfTokenFromCookie(): string | null {
+  if (typeof document === `undefined`) return null;
+  const key = `${COOKIE_KEYS.CSRF_TOKEN}=`;
+  const parts = document.cookie.split(`;`);
+  for (const part of parts) {
+    const trimmed = part.trim();
+    if (trimmed.startsWith(key)) {
+      return decodeURIComponent(trimmed.slice(key.length));
+    }
+  }
+  return null;
+}
+
+function getCsrfHeader(): HeadersInit | undefined {
+  const csrf = getCsrfTokenFromCookie();
+  return csrf ? { 'x-csrf-token': csrf } : undefined;
+}
 
 function queryKeyToUrl(key: unknown): string {
   if (typeof key === `string`) return key.startsWith(`/`) ? key : `/${key}`;
@@ -70,14 +90,19 @@ export async function fetchWithAuth<T = unknown>(
         method: `POST`,
         credentials: `include`,
         cache: `no-store`,
+        headers: getCsrfHeader(),
       });
 
       if (refreshRes.ok) {
-        // Token refreshed successfully, retry original request
+        // Token refreshed successfully; retry with updated cookies and CSRF
+        const retryHeaders = new Headers(init?.headers);
+        const csrf = getCsrfHeader();
+        if (csrf) Object.entries(csrf).forEach(([k, v]) => retryHeaders.set(k, v));
         res = await fetch(url, {
           ...init,
           credentials: `include`,
           cache: `no-store`,
+          headers: retryHeaders,
         });
       } else {
         // Refresh failed, redirect to login with session expired message
@@ -129,11 +154,16 @@ export async function swrFetcher<T>(key: unknown): Promise<T> {
         method: `POST`,
         credentials: `include`,
         cache: `no-store`,
+        headers: getCsrfHeader(),
       });
 
       if (refreshRes.ok) {
-        // Token refreshed successfully, retry original request
-        res = await fetch(url, { credentials: `include`, cache: `no-store` });
+        // Token refreshed successfully; retry with updated cookies and CSRF
+        res = await fetch(url, {
+          credentials: `include`,
+          cache: `no-store`,
+          headers: getCsrfHeader(),
+        });
       } else {
         // Refresh failed, redirect to login with session expired message
         if (typeof window !== `undefined`) {

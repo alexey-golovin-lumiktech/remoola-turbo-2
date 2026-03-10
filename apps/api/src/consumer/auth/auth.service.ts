@@ -12,6 +12,7 @@ import express from 'express';
 import { OAuth2Client } from 'google-auth-library';
 
 import { $Enums, Prisma, type ConsumerModel, type ResetPasswordModel } from '@remoola/database-2';
+import { oauthCrypto } from '@remoola/security-utils';
 import { errorCodes } from '@remoola/shared-constants';
 
 type GoogleSignupPayload = {
@@ -48,6 +49,8 @@ export type LoginContext = { ipAddress?: string | null; userAgent?: string | nul
 export class ConsumerAuthService {
   private readonly logger = new Logger(ConsumerAuthService.name);
   private readonly oAuth2Client: OAuth2Client;
+  private static readonly accessRole = `USER` as const;
+  private static readonly accessPermissions = [`contacts.read`] as const;
 
   constructor(
     private readonly jwtService: JwtService,
@@ -163,35 +166,102 @@ export class ConsumerAuthService {
     });
     await this.authAudit.clearLockout(AUTH_IDENTITY_TYPES.consumer, identity.email);
 
-    const access = await this.getAccessAndRefreshToken(identity.id);
+    const access = await this.createSessionAndIssueTokens(identity.id);
     return { identity, ...access };
   }
 
-  async refreshAccess(refreshToken: string) {
+  async refreshAccess(refreshToken: string, ctx?: LoginContext) {
     let verified: IJwtTokenPayload;
     try {
       verified = this.jwtService.verify<IJwtTokenPayload>(refreshToken);
     } catch {
       this.logger.warn(`ConsumerAuth: refresh token verification failed`);
+      await this.authAudit.recordAudit({
+        identityType: AUTH_IDENTITY_TYPES.consumer,
+        email: `unknown`,
+        event: AUTH_AUDIT_EVENTS.refresh_failure,
+        ipAddress: ctx?.ipAddress,
+        userAgent: ctx?.userAgent,
+      });
       throw new UnauthorizedException(errorCodes.INVALID_REFRESH_TOKEN);
     }
 
-    const exist = await this.prisma.accessRefreshTokenModel.findFirst({ where: { identityId: verified.identityId } });
-    if (exist == null) {
-      this.logger.warn(`ConsumerAuth: no identity record for refresh`);
+    const identityId = this.resolveIdentityId(verified);
+    const sessionId = verified.sid;
+    if (!identityId || !sessionId || !this.isRefreshPayload(verified)) {
+      this.logger.warn(`ConsumerAuth: invalid refresh payload`);
+      throw new UnauthorizedException(errorCodes.INVALID_REFRESH_TOKEN);
+    }
+
+    const session = await this.prisma.authSessionModel.findFirst({
+      where: { id: sessionId, consumerId: identityId },
+    });
+    if (session == null) {
+      this.logger.warn(`ConsumerAuth: no auth session for refresh`);
       throw new BadRequestException(errorCodes.NO_IDENTITY_RECORD);
     }
-    if (!secureCompare(exist.refreshToken, refreshToken)) {
+
+    const refreshTokenHash = this.hashToken(refreshToken);
+    const matchesStoredHash = secureCompare(session.refreshTokenHash, refreshTokenHash);
+    if (!matchesStoredHash) {
+      if (session.replacedById || session.revokedAt) {
+        await this.revokeSessionFamily(session.sessionFamilyId, `refresh_reuse_detected`);
+        const reusedConsumer = await this.prisma.consumerModel.findFirst({ where: { id: identityId } });
+        await this.authAudit.recordAudit({
+          identityType: AUTH_IDENTITY_TYPES.consumer,
+          identityId,
+          email: reusedConsumer?.email ?? `unknown`,
+          event: AUTH_AUDIT_EVENTS.refresh_reuse,
+          ipAddress: ctx?.ipAddress,
+          userAgent: ctx?.userAgent,
+        });
+      } else {
+        const maybeConsumer = await this.prisma.consumerModel.findFirst({ where: { id: identityId } });
+        await this.authAudit.recordAudit({
+          identityType: AUTH_IDENTITY_TYPES.consumer,
+          identityId,
+          email: maybeConsumer?.email ?? `unknown`,
+          event: AUTH_AUDIT_EVENTS.refresh_failure,
+          ipAddress: ctx?.ipAddress,
+          userAgent: ctx?.userAgent,
+        });
+      }
       this.logger.warn(`ConsumerAuth: refresh token mismatch`);
       throw new UnauthorizedException(errorCodes.INVALID_REFRESH_TOKEN);
     }
+    if (session.revokedAt || session.expiresAt < new Date()) {
+      this.logger.warn(`ConsumerAuth: refresh token is revoked or expired`);
+      throw new UnauthorizedException(errorCodes.INVALID_REFRESH_TOKEN);
+    }
 
-    const consumer = await this.prisma.consumerModel.findFirst({ where: { id: verified.identityId } });
+    const consumer = await this.prisma.consumerModel.findFirst({ where: { id: identityId, deletedAt: null } });
     if (!consumer) {
       this.logger.warn(`ConsumerAuth: consumer not found for identity`);
       throw new BadRequestException(errorCodes.NO_IDENTITY_RECORD);
     }
-    const access = await this.getAccessAndRefreshToken(consumer.id);
+
+    const access = await this.prisma.$transaction(async (tx) => {
+      const next = await this.createSessionAndIssueTokens(consumer.id, session.sessionFamilyId, tx);
+      await tx.authSessionModel.update({
+        where: { id: session.id },
+        data: {
+          revokedAt: new Date(),
+          replacedById: next.sessionId,
+          invalidatedReason: `rotated`,
+          lastUsedAt: new Date(),
+        },
+      });
+      return next;
+    });
+
+    await this.authAudit.recordAudit({
+      identityType: AUTH_IDENTITY_TYPES.consumer,
+      identityId: consumer.id,
+      email: consumer.email,
+      event: AUTH_AUDIT_EVENTS.refresh_success,
+      ipAddress: ctx?.ipAddress,
+      userAgent: ctx?.userAgent,
+    });
     return Object.assign(consumer, access);
   }
 
@@ -199,8 +269,16 @@ export class ConsumerAuthService {
     if (!refreshToken) return;
     try {
       const verified = this.jwtService.verify<IJwtTokenPayload>(refreshToken);
-      await this.prisma.accessRefreshTokenModel.deleteMany({
-        where: { identityId: verified.identityId, refreshToken },
+      const identityId = this.resolveIdentityId(verified);
+      if (!identityId || !verified.sid) return;
+      await this.prisma.authSessionModel.updateMany({
+        where: {
+          id: verified.sid,
+          consumerId: identityId,
+          refreshTokenHash: this.hashToken(refreshToken),
+          revokedAt: null,
+        },
+        data: { revokedAt: new Date(), invalidatedReason: `logout`, lastUsedAt: new Date() },
       });
     } catch {
       // ignore invalid token during logout
@@ -231,7 +309,27 @@ export class ConsumerAuthService {
   }
 
   async issueTokensForConsumer(identityId: ConsumerModel[`id`]) {
-    return this.getAccessAndRefreshToken(identityId);
+    return this.createSessionAndIssueTokens(identityId);
+  }
+
+  async revokeAllSessionsByConsumerIdAndAudit(identityId: ConsumerModel[`id`], ctx?: LoginContext): Promise<void> {
+    const consumer = await this.prisma.consumerModel.findFirst({
+      where: { id: identityId, deletedAt: null },
+      select: { id: true, email: true },
+    });
+    if (!consumer) return;
+    await this.prisma.authSessionModel.updateMany({
+      where: { consumerId: consumer.id, revokedAt: null },
+      data: { revokedAt: new Date(), invalidatedReason: `logout_all`, lastUsedAt: new Date() },
+    });
+    await this.authAudit.recordAudit({
+      identityType: AUTH_IDENTITY_TYPES.consumer,
+      identityId: consumer.id,
+      email: consumer.email,
+      event: AUTH_AUDIT_EVENTS.logout_all,
+      ipAddress: ctx?.ipAddress,
+      userAgent: ctx?.userAgent,
+    });
   }
 
   async createOAuthExchangeToken(identityId: ConsumerModel[`id`]) {
@@ -364,27 +462,96 @@ export class ConsumerAuthService {
       data: { salt, password: hash },
     });
     await this.prisma.resetPasswordModel.deleteMany({ where: { consumerId: verified.identityId } });
+
+    const consumer = await this.prisma.consumerModel.findFirst({
+      where: { id: verified.identityId },
+      select: { id: true, email: true },
+    });
+    if (consumer) {
+      await this.authAudit.recordAudit({
+        identityType: AUTH_IDENTITY_TYPES.consumer,
+        identityId: consumer.id,
+        email: consumer.email,
+        event: AUTH_AUDIT_EVENTS.password_change,
+      });
+    }
+
     return true;
   }
 
-  private async getAccessAndRefreshToken(identityId: ConsumerModel[`id`]) {
-    const accessToken = await this.getAccessToken(identityId);
-    const refreshToken = await this.getRefreshToken(identityId);
-    const found = await this.prisma.accessRefreshTokenModel.findFirst({ where: { identityId } });
+  private async createSessionAndIssueTokens(
+    identityId: ConsumerModel[`id`],
+    sessionFamilyId?: string,
+    tx?: Prisma.TransactionClient,
+  ) {
+    const db = tx ?? this.prisma;
+    const temporaryHash = `pending:${oauthCrypto.generateOAuthState()}`;
+    const expiresAt = new Date(Date.now() + JWT_REFRESH_TTL_SECONDS * 1000);
 
-    const data = { accessToken, refreshToken };
-    if (!found) await this.prisma.accessRefreshTokenModel.create({ data: { ...data, identityId } });
-    else await this.prisma.accessRefreshTokenModel.update({ where: { id: found.id }, data });
+    const created = await db.authSessionModel.create({
+      data: {
+        consumerId: identityId,
+        sessionFamilyId: sessionFamilyId ?? identityId,
+        refreshTokenHash: temporaryHash,
+        expiresAt,
+      },
+    });
 
-    return data;
+    const effectiveSessionFamilyId = sessionFamilyId ?? created.id;
+    const accessToken = await this.getAccessToken(identityId, created.id);
+    const refreshToken = await this.getRefreshToken(identityId, created.id, effectiveSessionFamilyId);
+    const refreshTokenHash = this.hashToken(refreshToken);
+
+    await db.authSessionModel.update({
+      where: { id: created.id },
+      data: {
+        sessionFamilyId: effectiveSessionFamilyId,
+        refreshTokenHash,
+        lastUsedAt: new Date(),
+      },
+    });
+
+    return { accessToken, refreshToken, sessionId: created.id, sessionFamilyId: effectiveSessionFamilyId };
   }
 
-  private getAccessToken(identityId: string) {
-    return this.jwtService.signAsync({ identityId, type: `access` }, { expiresIn: JWT_ACCESS_TTL_SECONDS });
+  private getAccessToken(identityId: string, sessionId?: string) {
+    const payload = sessionId
+      ? {
+          sub: identityId,
+          identityId,
+          sid: sessionId,
+          typ: `access` as const,
+          role: ConsumerAuthService.accessRole,
+          permissions: ConsumerAuthService.accessPermissions,
+        }
+      : { sub: identityId, identityId, typ: `access` as const };
+    return this.jwtService.signAsync(payload, { expiresIn: JWT_ACCESS_TTL_SECONDS });
   }
 
-  private getRefreshToken(identityId: string) {
-    return this.jwtService.signAsync({ identityId, type: `refresh` }, { expiresIn: JWT_REFRESH_TTL_SECONDS });
+  private getRefreshToken(identityId: string, sessionId: string, sessionFamilyId: string) {
+    return this.jwtService.signAsync(
+      { sub: identityId, identityId, sid: sessionId, fid: sessionFamilyId, typ: `refresh` },
+      { expiresIn: JWT_REFRESH_TTL_SECONDS },
+    );
+  }
+
+  private resolveIdentityId(payload: IJwtTokenPayload): string | null {
+    return payload.identityId ?? payload.sub ?? null;
+  }
+
+  private isRefreshPayload(payload: IJwtTokenPayload): boolean {
+    return payload.typ === `refresh` || (payload as { type?: string }).type === `refresh`;
+  }
+
+  private hashToken(token: string): string {
+    return oauthCrypto.hashOAuthState(token);
+  }
+
+  private async revokeSessionFamily(sessionFamilyId: string, reason: string): Promise<void> {
+    await this.prisma.authSessionModel.updateMany({
+      where: { sessionFamilyId, revokedAt: null },
+      data: { revokedAt: new Date(), invalidatedReason: reason, lastUsedAt: new Date() },
+    });
   }
 
   private async verifyChangePasswordFlowToken(token: string) {
@@ -402,7 +569,7 @@ export class ConsumerAuthService {
     });
     if (consumer == null) throw new UnauthorizedException(errorCodes.CONSUMER_NOT_FOUND_CHANGE_PASSWORD);
 
-    const record = this.prisma.resetPasswordModel.findFirst({
+    const record = await this.prisma.resetPasswordModel.findFirst({
       where: { consumerId: consumer.id, token, expiredAt: { gte: new Date() } },
     });
     if (record == null) throw new NotFoundException(errorCodes.CHANGE_PASSWORD_FLOW_EXPIRED);

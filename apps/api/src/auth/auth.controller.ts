@@ -4,11 +4,15 @@ import { Throttle } from '@nestjs/throttler';
 import express from 'express';
 
 import { AuthService } from './auth.service';
-import { envs, JWT_ACCESS_TTL } from '../envs';
-import { ACCESS_TOKEN_COOKIE_KEY } from '../shared-common';
+import { JWT_ACCESS_TTL } from '../envs';
 import { LoginBody } from './dto/login.dto';
 import { RegisterBody } from './dto/register.dto';
 import { JwtAuthGuard } from './jwt.guard';
+import {
+  getApiConsumerAccessTokenCookieKey,
+  getApiConsumerAuthCookieClearOptions,
+  getApiConsumerAuthCookieOptions,
+} from '../shared-common';
 
 @ApiTags(`Auth`)
 @Controller(`auth`)
@@ -19,9 +23,9 @@ export class AuthController {
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiBody({ type: LoginBody })
   @ApiResponse({ status: 200, description: `Successful login` })
-  async login(@Res({ passthrough: true }) res: express.Response, @Body() body: LoginBody) {
+  async login(@Req() req: express.Request, @Res({ passthrough: true }) res: express.Response, @Body() body: LoginBody) {
     const { accessToken, ...identity } = await this.service.login(body);
-    this.setCookie(res, accessToken);
+    this.setCookie(req, res, accessToken);
     return { identity };
   }
 
@@ -29,21 +33,19 @@ export class AuthController {
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiBody({ type: RegisterBody })
   @ApiResponse({ status: 201, description: `User registered successfully` })
-  async register(@Res({ passthrough: true }) res: express.Response, @Body() body: RegisterBody) {
+  async register(
+    @Req() req: express.Request,
+    @Res({ passthrough: true }) res: express.Response,
+    @Body() body: RegisterBody,
+  ) {
     const { accessToken, ...identity } = await this.service.register(body);
-    this.setCookie(res, accessToken);
+    this.setCookie(req, res, accessToken);
     return { identity };
   }
 
   @Post(`logout`)
-  async logout(@Res({ passthrough: true }) res: express.Response) {
-    const opts = {
-      path: `/`,
-      httpOnly: true,
-      secure: envs.NODE_ENV === `production`,
-      sameSite: `strict` as const,
-    };
-    res.clearCookie(ACCESS_TOKEN_COOKIE_KEY, opts);
+  async logout(@Req() req: express.Request, @Res({ passthrough: true }) res: express.Response) {
+    res.clearCookie(getApiConsumerAccessTokenCookieKey(req), getApiConsumerAuthCookieClearOptions(req));
     return { message: `Logged out` };
   }
 
@@ -53,12 +55,9 @@ export class AuthController {
     return { identity: req.user };
   }
 
-  private setCookie(res: express.Response, accessToken: string) {
-    res.cookie(ACCESS_TOKEN_COOKIE_KEY, accessToken, {
-      httpOnly: true,
-      secure: envs.NODE_ENV === `production`,
-      sameSite: `strict`,
-      path: `/`,
+  private setCookie(req: express.Request, res: express.Response, accessToken: string) {
+    res.cookie(getApiConsumerAccessTokenCookieKey(req), accessToken, {
+      ...getApiConsumerAuthCookieOptions(req),
       maxAge: JWT_ACCESS_TTL,
     });
   }

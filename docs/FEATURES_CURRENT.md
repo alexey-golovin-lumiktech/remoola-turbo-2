@@ -17,7 +17,8 @@ Authentication and identity:
 - Admin auth with login, refresh, logout, and `/me` identity.
 - Consumer auth with login, refresh, logout, `/me`, and multi-step signup.
 - Password recovery and reset flow for consumers.
-- Cookie-based JWT auth with access/refresh tokens.
+- Cookie-based JWT auth with access/refresh tokens. Shared auth cookie policy: cookie names and options from `@remoola/api-types` (http/auth-cookie-policy); API and Next.js apps (admin, consumer, consumer-mobile) use the same policy; production uses __Host- prefixed names (RFC 6265).
+- Consumer auth sessions: `auth_sessions` table for database-backed consumer sessions; hashed refresh token storage; session family and refresh rotation lineage (`session_family_id`, `replaced_by_id`); revocation metadata (`revoked_at`, `invalidated_reason`). Migration `20260310123000_consumer_auth_sessions`.
 - Login audit (success/failure tracking) and account lockout (per-email after N failures).
 - Google OAuth endpoints for consumer login flows (google/start, callback, signup-session, google-new-way, google-redirect-new-way, oauth/exchange, google-oauth, google-login-gpt). OAuth `/google/start` accepts optional `returnOrigin` query parameter for multi-app consumer deployments (validated against CORS_ALLOWED_ORIGINS). Origin resolution via `OriginResolverService` (supports CONSUMER_APP_ORIGIN, CONSUMER_MOBILE_APP_ORIGIN, ADMIN_APP_ORIGIN).
 - OAuth crypto utilities via `@remoola/security-utils` (PKCE, nonce, state signing/hashing).

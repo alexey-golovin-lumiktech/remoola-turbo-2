@@ -197,6 +197,7 @@ Common infrastructure in `apps/api/src/shared` and `apps/api/src/shared-common`:
 - Prisma DB module and service.
 - Email templates and mailing service.
 - JWT auth guard and interceptors.
+- Shared auth cookie policy (cookie names and options from `@remoola/api-types`; __Host- prefix in production); consumer auth backed by `auth_sessions` table (hashed refresh, rotation lineage, revocation).
 - Auth audit (login success/failure tracking) and account lockout (per-email after N failures).
 - Error filtering and logging.
 - Common DTOs used across admin and consumer APIs.

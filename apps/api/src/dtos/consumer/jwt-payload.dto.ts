@@ -4,8 +4,13 @@ import { IsEmail, IsNumber, IsString } from 'class-validator';
 import { type ConsumerModel } from '@remoola/database-2';
 
 export type IJwtTokenPayload = {
-  identityId: ConsumerModel[`id`];
-  email: ConsumerModel[`email`];
+  sub?: ConsumerModel[`id`];
+  identityId?: ConsumerModel[`id`];
+  sid?: string;
+  typ?: `access` | `refresh`;
+  role?: `USER`;
+  permissions?: string[];
+  email?: ConsumerModel[`email`];
   iat?: number;
   exp?: number;
 };
@@ -13,7 +18,11 @@ export type IJwtTokenPayload = {
 export class JwtTokenPayloadDTO implements IJwtTokenPayload {
   @Expose()
   @IsString()
-  identityId: string;
+  identityId?: string;
+
+  @Expose()
+  @IsString()
+  sid?: string;
 
   @Expose()
   @IsEmail()

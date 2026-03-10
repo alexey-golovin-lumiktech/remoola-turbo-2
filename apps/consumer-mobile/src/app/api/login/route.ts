@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { loginSchema } from '../../../features/auth/schemas';
+import { appendSetCookies } from '../../../lib/api-utils';
 import { getEnv } from '../../../lib/env.server';
 
 export async function POST(req: Request) {
@@ -22,18 +23,20 @@ export async function POST(req: Request) {
     );
   }
 
+  const forwardHeaders = new Headers(req.headers);
+  forwardHeaders.delete(`host`);
+  forwardHeaders.set(`content-type`, `application/json`);
+
   const url = new URL(`${baseUrl}/consumer/auth/login`);
   const res = await fetch(url, {
     method: `POST`,
-    headers: { ...Object.fromEntries(new Headers(req.headers)), 'content-type': `application/json` },
-    credentials: `include`,
+    headers: forwardHeaders,
     body: JSON.stringify(parsed.data),
     cache: `no-store`,
   });
 
-  const cookie = res.headers.get(`set-cookie`);
   const data = await res.text();
-  const headers: HeadersInit = {};
-  if (cookie) headers[`set-cookie`] = cookie;
-  return new NextResponse(data, { status: res.status, headers });
+  const responseHeaders = new Headers();
+  appendSetCookies(responseHeaders, res.headers);
+  return new NextResponse(data, { status: res.status, headers: responseHeaders });
 }
