@@ -205,13 +205,13 @@ export function PaymentPickerModal({ documentId, onClose }: PaymentPickerModalPr
                   onClick={() => setSelectedPaymentId(payment.id)}
                   className={`
                     w-full
-                    min-h-[44px]
+                    min-h-11
                     rounded-lg
                     border
                     p-4
                     text-left
                     transition-all
-                    focus:outline-none
+                    focus:outline-hidden
                     focus:ring-2
                     focus:ring-primary-500
                     ${
@@ -232,7 +232,7 @@ export function PaymentPickerModal({ documentId, onClose }: PaymentPickerModalPr
                     <div
                       className={`
                         flex-1
-                        min-w-0
+                        min-w-5
                       `}
                     >
                       <p

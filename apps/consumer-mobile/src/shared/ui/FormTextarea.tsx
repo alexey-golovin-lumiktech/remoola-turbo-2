@@ -14,10 +14,10 @@ export const FormTextarea = forwardRef<HTMLTextAreaElement, FormTextareaProps>(
       <textarea
         ref={ref}
         className={`
-          min-h-[88px] w-full rounded-lg border px-4 py-2.5 text-base
+          min-h-22 w-full rounded-lg border px-4 py-2.5 text-base
           transition-colors duration-200
           placeholder:text-slate-400 dark:placeholder:text-slate-500
-          focus:outline-none focus:ring-2 focus:ring-offset-2
+          focus:outline-hidden focus:ring-2 focus:ring-offset-2
           disabled:cursor-not-allowed disabled:opacity-50
           ${
             error

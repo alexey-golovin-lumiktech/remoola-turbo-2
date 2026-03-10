@@ -103,7 +103,7 @@ export function DatePicker({
         aria-required={required}
         aria-invalid={error}
         className={`
-          min-h-[44px]
+          min-h-11
           w-full
           rounded-lg
           border
@@ -113,7 +113,7 @@ export function DatePicker({
           text-base
           transition-colors
           duration-200
-          focus:outline-none
+          focus:outline-hidden
           focus:ring-2
           focus:ring-offset-2
           disabled:cursor-not-allowed
@@ -129,7 +129,7 @@ export function DatePicker({
         <span className={`flex items-center justify-between`}>
           <span>{displayValue || placeholder}</span>
           <CalendarIcon
-            className={`ml-2 h-5 w-5 flex-shrink-0 ${error ? `text-red-400 dark:text-red-500` : `text-slate-400 dark:text-slate-500`}`}
+            className={`ml-2 h-5 w-5 shrink-0 ${error ? `text-red-400 dark:text-red-500` : `text-slate-400 dark:text-slate-500`}`}
             strokeWidth={2}
             aria-hidden="true"
           />

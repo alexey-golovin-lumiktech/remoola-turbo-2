@@ -139,7 +139,7 @@ export function SignupDetailsStep() {
       border
       border-neutral-200
       bg-white
-      shadow-sm
+      shadow-xs
       dark:border-neutral-700
       dark:bg-neutral-900
     `}
@@ -481,10 +481,10 @@ export function SignupDetailsStep() {
               window.location.href = googleSignupStartUrl;
             }}
             className={
-              `group relative min-h-[48px] w-full overflow-hidden rounded-xl border border-neutral-200 ` +
-              `bg-white px-4 py-3 text-sm font-semibold text-neutral-700 shadow-sm transition-all ` +
+              `group relative min-h-12 w-full overflow-hidden rounded-xl border border-neutral-200 ` +
+              `bg-white px-4 py-3 text-sm font-semibold text-neutral-700 shadow-xs transition-all ` +
               `hover:border-neutral-300 hover:bg-neutral-50 hover:shadow-md ` +
-              `focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:ring-offset-2 ` +
+              `focus:outline-hidden focus:ring-2 focus:ring-neutral-500 focus:ring-offset-2 ` +
               `dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:border-neutral-600 dark:hover:bg-neutral-700`
             }
             data-testid="consumer-mobile-signup-google"

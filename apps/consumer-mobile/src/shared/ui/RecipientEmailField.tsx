@@ -273,7 +273,7 @@ export function RecipientEmailField({
                     id={`recipient-email-option-${contact.id}`}
                     role="option"
                     aria-selected={isHighlighted}
-                    className={`min-h-[44px] cursor-pointer px-4 py-3 text-sm transition-colors ${
+                    className={`min-h-11 cursor-pointer px-4 py-3 text-sm transition-colors ${
                       isHighlighted
                         ? `bg-primary-50 dark:bg-primary-900/20`
                         : `hover:bg-slate-50 dark:hover:bg-slate-700`

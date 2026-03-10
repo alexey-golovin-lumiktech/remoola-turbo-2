@@ -124,7 +124,7 @@ export function ConfirmationModal({
             flex
             gap-3
             border-t
-            bg-gradient-to-r
+            bg-linear-to-r
             from-slate-50
             via-white
             to-slate-50
@@ -134,7 +134,7 @@ export function ConfirmationModal({
             dark:from-slate-800/50
             dark:via-slate-900/50
             dark:to-slate-800/50
-            backdrop-blur-sm
+            backdrop-blur-xs
           `}
         >
           <Button

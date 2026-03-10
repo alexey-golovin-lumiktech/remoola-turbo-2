@@ -242,7 +242,7 @@ export function RulesView({ rules, currencies }: RulesViewProps) {
                 className={`
   h-5
   w-5
-  rounded
+  rounded-xs
   border-slate-300
   text-primary-600
   focus:ring-2
@@ -380,14 +380,14 @@ export function RulesView({ rules, currencies }: RulesViewProps) {
                 <button
                   onClick={() => handleToggleEnabled(rule)}
                   className={`
-  min-h-[44px]
-  min-w-[44px]
+  min-h-11
+  min-w-11
   rounded-lg
   p-2
   text-slate-600
   transition-colors
   hover:bg-slate-100
-  focus:outline-none
+  focus:outline-hidden
   focus:ring-2
   focus:ring-primary-500
   dark:text-slate-400
@@ -411,14 +411,14 @@ export function RulesView({ rules, currencies }: RulesViewProps) {
                 <button
                   onClick={() => openEditModal(rule)}
                   className={`
-  min-h-[44px]
-  min-w-[44px]
+  min-h-11
+  min-w-11
   rounded-lg
   p-2
   text-slate-600
   transition-colors
   hover:bg-slate-100
-  focus:outline-none
+  focus:outline-hidden
   focus:ring-2
   focus:ring-primary-500
   dark:text-slate-400
@@ -438,14 +438,14 @@ export function RulesView({ rules, currencies }: RulesViewProps) {
                 <button
                   onClick={() => openDeleteModal(rule)}
                   className={`
-  min-h-[44px]
-  min-w-[44px]
+  min-h-11
+  min-w-11
   rounded-lg
   p-2
   text-red-600
   transition-colors
   hover:bg-red-50
-  focus:outline-none
+  focus:outline-hidden
   focus:ring-2
   focus:ring-red-500
   dark:text-red-400
@@ -522,7 +522,7 @@ export function RulesView({ rules, currencies }: RulesViewProps) {
               className={`
   h-5
   w-5
-  rounded
+  rounded-xs
   border-slate-300
   text-primary-600
   focus:ring-2
@@ -600,7 +600,7 @@ export function RulesView({ rules, currencies }: RulesViewProps) {
               className={`
   h-5
   w-5
-  rounded
+  rounded-xs
   border-slate-300
   text-primary-600
   focus:ring-2

@@ -220,7 +220,7 @@ export function SignupStartView() {
         border-neutral-200
         bg-white
         p-6
-        shadow-sm
+        shadow-xs
         dark:border-neutral-700
         dark:bg-neutral-900
       `}
@@ -293,10 +293,10 @@ export function SignupStartView() {
               e.stopPropagation();
               selectType(ACCOUNT_TYPE.CONTRACTOR);
             }}
-            className={`group relative flex min-h-[72px] w-full items-center gap-4 overflow-hidden rounded-xl border-2 px-5 py-4 text-left transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
+            className={`group relative flex min-h-18 w-full items-center gap-4 overflow-hidden rounded-xl border-2 px-5 py-4 text-left transition-all focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
               isSelected(ACCOUNT_TYPE.CONTRACTOR)
                 ? `border-primary-500 bg-primary-50 shadow-md dark:border-primary-400 dark:bg-primary-900/20`
-                : `border-neutral-200 bg-white hover:border-primary-300 hover:shadow-sm dark:border-neutral-600 dark:bg-neutral-800 dark:hover:border-neutral-500`
+                : `border-neutral-200 bg-white hover:border-primary-300 hover:shadow-xs dark:border-neutral-600 dark:bg-neutral-800 dark:hover:border-neutral-500`
             }`}
           >
             {isSelected(ACCOUNT_TYPE.CONTRACTOR) && (
@@ -304,7 +304,7 @@ export function SignupStartView() {
                 className={`
                 absolute
                 inset-0
-                bg-gradient-to-br
+                bg-linear-to-br
                 from-primary-500/5
                 to-transparent
               `}
@@ -370,10 +370,10 @@ export function SignupStartView() {
               e.stopPropagation();
               selectType(ACCOUNT_TYPE.BUSINESS);
             }}
-            className={`group relative flex min-h-[72px] w-full items-center gap-4 overflow-hidden rounded-xl border-2 px-5 py-4 text-left transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
+            className={`group relative flex min-h-18 w-full items-center gap-4 overflow-hidden rounded-xl border-2 px-5 py-4 text-left transition-all focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
               isSelected(ACCOUNT_TYPE.BUSINESS)
                 ? `border-primary-500 bg-primary-50 shadow-md dark:border-primary-400 dark:bg-primary-900/20`
-                : `border-neutral-200 bg-white hover:border-primary-300 hover:shadow-sm dark:border-neutral-600 dark:bg-neutral-800 dark:hover:border-neutral-500`
+                : `border-neutral-200 bg-white hover:border-primary-300 hover:shadow-xs dark:border-neutral-600 dark:bg-neutral-800 dark:hover:border-neutral-500`
             }`}
           >
             {isSelected(ACCOUNT_TYPE.BUSINESS) && (
@@ -381,7 +381,7 @@ export function SignupStartView() {
                 className={`
                 absolute
                 inset-0
-                bg-gradient-to-br
+                bg-linear-to-br
                 from-primary-500/5
                 to-transparent
               `}
@@ -446,9 +446,9 @@ export function SignupStartView() {
           disabled={!signupDetails.accountType}
           onClick={onNext}
           className={
-            `mt-6 min-h-[48px] w-full rounded-xl bg-primary-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all ` +
-            `hover:bg-primary-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ` +
-            `disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-primary-600 disabled:hover:shadow-sm`
+            `mt-6 min-h-12 w-full rounded-xl bg-primary-600 px-4 py-3 text-sm font-semibold text-white shadow-xs transition-all ` +
+            `hover:bg-primary-700 hover:shadow-md focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ` +
+            `disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-primary-600 disabled:hover:shadow-xs`
           }
         >
           Continue

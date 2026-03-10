@@ -148,7 +148,7 @@ export function TagEditor({ docId, initialTags = [], onClose }: TagEditorProps) 
               onKeyDown={handleKeyDown}
               placeholder="Enter tag name"
               className={`
-                min-h-[44px]
+                min-h-11
                 flex-1
                 rounded-lg
                 border
@@ -159,7 +159,7 @@ export function TagEditor({ docId, initialTags = [], onClose }: TagEditorProps) 
                 text-slate-900
                 placeholder-slate-400
                 focus:border-primary-500
-                focus:outline-none
+                focus:outline-hidden
                 focus:ring-2
                 focus:ring-primary-500
                 dark:border-slate-600
@@ -233,7 +233,7 @@ export function TagEditor({ docId, initialTags = [], onClose }: TagEditorProps) 
                       p-0.5
                       transition-colors
                       hover:bg-primary-200
-                      focus:outline-none
+                      focus:outline-hidden
                       focus:ring-2
                       focus:ring-primary-500
                       dark:hover:bg-primary-800

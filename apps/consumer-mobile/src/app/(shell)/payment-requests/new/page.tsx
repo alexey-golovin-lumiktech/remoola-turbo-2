@@ -34,7 +34,7 @@ export default function CreatePaymentRequestPage() {
         border-slate-200
         bg-white
         p-6
-        shadow-sm
+        shadow-xs
         dark:border-slate-700
         dark:bg-slate-800
       `}

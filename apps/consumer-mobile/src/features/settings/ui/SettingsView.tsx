@@ -27,7 +27,7 @@ export function SettingsView({ profile, settings }: SettingsViewProps) {
       <div
         className={`
           min-h-full
-          bg-gradient-to-br
+          bg-linear-to-br
           from-slate-50
           via-white
           to-slate-50
@@ -44,7 +44,7 @@ export function SettingsView({ profile, settings }: SettingsViewProps) {
           border-b
           border-slate-200/80
           dark:border-slate-700/80
-          shadow-sm
+          shadow-xs
           backdrop-blur-lg
           px-4
           py-6
@@ -63,7 +63,7 @@ export function SettingsView({ profile, settings }: SettingsViewProps) {
                 items-center
                 justify-center
                 rounded-2xl
-                bg-gradient-to-br
+                bg-linear-to-br
                 from-primary-500
                 to-primary-600
                 shadow-lg
@@ -122,7 +122,7 @@ export function SettingsView({ profile, settings }: SettingsViewProps) {
             border-2
             border-dashed
             border-slate-200
-            bg-gradient-to-br
+            bg-linear-to-br
             from-slate-50/50
             to-white/50
             dark:border-slate-700
@@ -144,7 +144,7 @@ export function SettingsView({ profile, settings }: SettingsViewProps) {
               items-center
               justify-center
               rounded-3xl
-              bg-gradient-to-br
+              bg-linear-to-br
               from-slate-100
               to-slate-200
               text-slate-400
@@ -193,7 +193,7 @@ export function SettingsView({ profile, settings }: SettingsViewProps) {
     <div
       className={`
         min-h-full
-        bg-gradient-to-br
+        bg-linear-to-br
         from-slate-50
         via-white
         to-slate-50
@@ -210,7 +210,7 @@ export function SettingsView({ profile, settings }: SettingsViewProps) {
         border-b
         border-slate-200/80
         dark:border-slate-700/80
-        shadow-sm
+        shadow-xs
         backdrop-blur-lg
         px-4
         py-6
@@ -229,7 +229,7 @@ export function SettingsView({ profile, settings }: SettingsViewProps) {
               items-center
               justify-center
               rounded-2xl
-              bg-gradient-to-br
+              bg-linear-to-br
               from-primary-500
               to-primary-600
               shadow-lg
@@ -302,7 +302,7 @@ export function SettingsView({ profile, settings }: SettingsViewProps) {
             border-slate-200
             px-6
             py-5
-            bg-gradient-to-r
+            bg-linear-to-r
             from-slate-50
             to-white
             dark:border-slate-700
@@ -319,7 +319,7 @@ export function SettingsView({ profile, settings }: SettingsViewProps) {
                 items-center
                 justify-center
                 rounded-xl
-                bg-gradient-to-br
+                bg-linear-to-br
                 from-primary-500
                 to-primary-600
                 shadow-md
@@ -382,12 +382,12 @@ export function SettingsView({ profile, settings }: SettingsViewProps) {
                   items-center
                   justify-center
                   rounded-xl
-                  bg-gradient-to-br
+                  bg-linear-to-br
                   from-primary-50
                   to-primary-100
                   dark:from-primary-900/20
                   dark:to-primary-900/10
-                  shadow-sm
+                  shadow-xs
                   ring-1
                   ring-primary-100
                   dark:ring-primary-900/30
@@ -444,12 +444,12 @@ export function SettingsView({ profile, settings }: SettingsViewProps) {
                   items-center
                   justify-center
                   rounded-xl
-                  bg-gradient-to-br
+                  bg-linear-to-br
                   from-secondary-50
                   to-secondary-100
                   dark:from-secondary-900/20
                   dark:to-secondary-900/10
-                  shadow-sm
+                  shadow-xs
                   ring-1
                   ring-secondary-100
                   dark:ring-secondary-900/30

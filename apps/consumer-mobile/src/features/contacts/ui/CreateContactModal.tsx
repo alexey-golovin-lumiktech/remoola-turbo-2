@@ -116,7 +116,7 @@ export function CreateContactModal({ isOpen, onClose, onSubmit, initialEmail }: 
             placeholder="john@example.com"
             error={!!errors.email}
             autoFocus
-            className={`min-h-[44px]`}
+            className={`min-h-11`}
           />
         </FormField>
 
@@ -127,7 +127,7 @@ export function CreateContactModal({ isOpen, onClose, onSubmit, initialEmail }: 
             onChange={(e) => setName(e.target.value)}
             placeholder="John Doe (optional)"
             error={!!errors.name}
-            className={`min-h-[44px]`}
+            className={`min-h-11`}
           />
         </FormField>
 
@@ -189,7 +189,7 @@ export function CreateContactModal({ isOpen, onClose, onSubmit, initialEmail }: 
                   value={address.street ?? ``}
                   onChange={(e) => setAddress((a) => ({ ...a, street: e.target.value || null }))}
                   placeholder="123 Main Street"
-                  className={`min-h-[44px]`}
+                  className={`min-h-11`}
                 />
               </FormField>
 
@@ -200,7 +200,7 @@ export function CreateContactModal({ isOpen, onClose, onSubmit, initialEmail }: 
                     value={address.city ?? ``}
                     onChange={(e) => setAddress((a) => ({ ...a, city: e.target.value || null }))}
                     placeholder="San Francisco"
-                    className={`min-h-[44px]`}
+                    className={`min-h-11`}
                   />
                 </FormField>
 
@@ -210,7 +210,7 @@ export function CreateContactModal({ isOpen, onClose, onSubmit, initialEmail }: 
                     value={address.state ?? ``}
                     onChange={(e) => setAddress((a) => ({ ...a, state: e.target.value || null }))}
                     placeholder="CA"
-                    className={`min-h-[44px]`}
+                    className={`min-h-11`}
                   />
                 </FormField>
               </div>
@@ -222,7 +222,7 @@ export function CreateContactModal({ isOpen, onClose, onSubmit, initialEmail }: 
                     value={address.postalCode ?? ``}
                     onChange={(e) => setAddress((a) => ({ ...a, postalCode: e.target.value || null }))}
                     placeholder="94102"
-                    className={`min-h-[44px]`}
+                    className={`min-h-11`}
                   />
                 </FormField>
 
@@ -232,7 +232,7 @@ export function CreateContactModal({ isOpen, onClose, onSubmit, initialEmail }: 
                     value={address.country ?? ``}
                     onChange={(e) => setAddress((a) => ({ ...a, country: e.target.value || null }))}
                     placeholder="USA"
-                    className={`min-h-[44px]`}
+                    className={`min-h-11`}
                   />
                 </FormField>
               </div>
@@ -295,7 +295,7 @@ export function CreateContactModal({ isOpen, onClose, onSubmit, initialEmail }: 
   sm:flex-row
         `}
         >
-          <Button type="button" variant="outline" size="md" onClick={handleClose} className={`min-h-[44px] flex-1`}>
+          <Button type="button" variant="outline" size="md" onClick={handleClose} className={`min-h-11 flex-1`}>
             Cancel
           </Button>
           <Button
@@ -304,7 +304,7 @@ export function CreateContactModal({ isOpen, onClose, onSubmit, initialEmail }: 
             size="md"
             isLoading={isLoading}
             className={`
-  min-h-[44px]
+  min-h-11
   flex-1
   shadow-lg
   shadow-primary-500/30

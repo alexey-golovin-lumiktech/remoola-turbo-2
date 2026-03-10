@@ -37,7 +37,7 @@ export const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
           ref={ref}
           type="date"
           className={`
-            min-h-[44px]
+            min-h-11
             w-full
             rounded-lg
             border
@@ -47,7 +47,7 @@ export const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
             transition-colors
             duration-200
             placeholder:text-slate-400
-            focus:outline-none
+            focus:outline-hidden
             focus:ring-2
             focus:ring-offset-2
             disabled:cursor-not-allowed

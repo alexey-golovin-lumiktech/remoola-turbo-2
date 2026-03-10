@@ -122,7 +122,7 @@ export function Modal({ isOpen, onClose, title, children, footer, size = `md` }:
                 transition-all
                 hover:bg-slate-100
                 hover:text-slate-600
-                focus:outline-none
+                focus:outline-hidden
                 focus:ring-2
                 focus:ring-primary-500
                 focus:ring-offset-2
@@ -158,7 +158,7 @@ export function Modal({ isOpen, onClose, title, children, footer, size = `md` }:
             py-4
             dark:border-slate-700
             dark:bg-slate-800/50
-            backdrop-blur-sm
+            backdrop-blur-xs
           `}
           >
             {footer}

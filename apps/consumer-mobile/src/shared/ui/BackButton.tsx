@@ -28,7 +28,7 @@ export function BackButton({ href, label = `Back`, className = `` }: BackButtonP
     <Link
       href={href}
       className={
-        `group inline-flex min-h-[44px] min-w-[44px] items-center gap-2 rounded-lg px-3 py-2 ` +
+        `group inline-flex min-h-11 min-w-11 items-center gap-2 rounded-lg px-3 py-2 ` +
         `text-sm font-medium text-slate-600 transition-all hover:bg-slate-100 hover:text-slate-900 ` +
         `dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white ` +
         `active:scale-95 ${className}`

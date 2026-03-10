@@ -514,7 +514,7 @@ export function PaymentDetailView({ paymentRequestId, data }: PaymentDetailViewP
                     className={`group w-full rounded-lg border p-4 text-left transition-all ${
                       selectedMethodId === method.id
                         ? `border-primary-500 bg-primary-50 ring-2 ring-primary-500 ring-offset-2 dark:border-primary-400 dark:bg-primary-900/20`
-                        : `border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:hover:border-slate-600`
+                        : `border-slate-200 bg-white hover:border-slate-300 hover:shadow-xs dark:border-slate-700 dark:bg-slate-800 dark:hover:border-slate-600`
                     }`}
                   >
                     <div
@@ -616,7 +616,7 @@ export function PaymentDetailView({ paymentRequestId, data }: PaymentDetailViewP
                   className={`group w-full rounded-lg border p-4 text-left transition-all ${
                     selectedMethodId === ``
                       ? `border-primary-500 bg-primary-50 ring-2 ring-primary-500 ring-offset-2 dark:border-primary-400 dark:bg-primary-900/20`
-                      : `border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:hover:border-slate-600`
+                      : `border-slate-200 bg-white hover:border-slate-300 hover:shadow-xs dark:border-slate-700 dark:bg-slate-800 dark:hover:border-slate-600`
                   }`}
                 >
                   <div className={`flex items-center gap-3`}>

@@ -68,7 +68,7 @@ export function OrganizationDetailsStep() {
       border
       border-neutral-200
       bg-white
-      shadow-sm
+      shadow-xs
       dark:border-neutral-700
       dark:bg-neutral-900
     `}

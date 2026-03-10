@@ -133,7 +133,7 @@ export function SignupFormView() {
           border-neutral-200
           bg-white
           p-6
-          shadow-sm
+          shadow-xs
           dark:border-neutral-700
           dark:bg-neutral-900
         `}
@@ -340,8 +340,8 @@ export function SignupFormView() {
           type="submit"
           disabled={loading}
           className={
-            `min-h-[44px] w-full rounded-lg bg-primary-600 px-4 py-3 font-medium text-white ` +
-            `focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50`
+            `min-h-11 w-full rounded-lg bg-primary-600 px-4 py-3 font-medium text-white ` +
+            `focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50`
           }
         >
           {loading ? `Submitting...` : `Sign up`}

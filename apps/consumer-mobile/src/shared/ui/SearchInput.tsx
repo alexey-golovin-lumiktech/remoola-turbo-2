@@ -50,7 +50,7 @@ export function SearchInput({ value, onChange, placeholder = `Search...`, onClea
         onChange={(e) => onChange(e.target.value)}
         className={`
           w-full
-          min-h-[44px]
+          min-h-11
           pl-11
           pr-12
           py-3
@@ -62,17 +62,17 @@ export function SearchInput({ value, onChange, placeholder = `Search...`, onClea
           bg-white
           text-slate-900
           placeholder-slate-400
-          shadow-sm
+          shadow-xs
           transition-all
           duration-200
           ease-out
-          focus:outline-none
+          focus:outline-hidden
           focus:ring-2
           focus:ring-primary-500/50
           focus:border-primary-500
           focus:shadow-md
           hover:border-slate-400
-          hover:shadow
+          hover:shadow-sm
           dark:border-slate-700
           dark:bg-slate-800
           dark:text-slate-100

@@ -53,7 +53,7 @@ export function SuccessModal({ isOpen, onClose, title, message, actionLabel, act
           fixed
           inset-0
           bg-slate-900/50
-          backdrop-blur-sm
+          backdrop-blur-xs
           transition-opacity
         `}
         onClick={onClose}

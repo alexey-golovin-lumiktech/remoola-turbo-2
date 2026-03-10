@@ -26,7 +26,7 @@ export function CompletedView() {
         border-neutral-200
         bg-white
         p-5
-        shadow-sm
+        shadow-xs
         sm:p-8
         dark:border-neutral-700
         dark:bg-neutral-900
@@ -78,7 +78,7 @@ export function CompletedView() {
           className={`
             mt-6
             inline-block
-            min-h-[44px]
+            min-h-11
             w-full
             rounded-xl
             bg-primary-600
@@ -87,7 +87,7 @@ export function CompletedView() {
             font-semibold
             text-white
             hover:bg-primary-700
-            focus:outline-none
+            focus:outline-hidden
             focus:ring-2
             focus:ring-primary-500
             focus:ring-offset-2

@@ -15,7 +15,7 @@ interface FormCardProps {
 export function FormCard({ title, description, children, footer, className = `` }: FormCardProps) {
   return (
     <div
-      className={`overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800 ${className}`}
+      className={`overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs dark:border-slate-700 dark:bg-slate-800 ${className}`}
     >
       {(title || description) && (
         <div

@@ -242,7 +242,7 @@ export function LoginForm({ nextPath, sessionExpired }: { nextPath: string; sess
   border-slate-200
   bg-white
   p-6
-  shadow-sm
+  shadow-xs
   dark:border-slate-700
   dark:bg-slate-900
           `}
@@ -417,10 +417,10 @@ export function LoginForm({ nextPath, sessionExpired }: { nextPath: string; sess
             <button
               type="submit"
               className={
-                `group relative min-h-[48px] w-full overflow-hidden rounded-xl bg-primary-600 px-4 py-3 ` +
-                `text-sm font-semibold text-white shadow-sm transition-all ` +
-                `hover:bg-primary-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ` +
-                `disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-primary-600 disabled:hover:shadow-sm`
+                `group relative min-h-12 w-full overflow-hidden rounded-xl bg-primary-600 px-4 py-3 ` +
+                `text-sm font-semibold text-white shadow-xs transition-all ` +
+                `hover:bg-primary-700 hover:shadow-md focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ` +
+                `disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-primary-600 disabled:hover:shadow-xs`
               }
               disabled={loading || !isFormValid}
               data-testid="consumer-mobile-login-submit"
@@ -492,11 +492,11 @@ export function LoginForm({ nextPath, sessionExpired }: { nextPath: string; sess
                   }}
                   disabled={loading}
                   className={
-                    `group relative min-h-[48px] w-full overflow-hidden rounded-xl border border-slate-200 ` +
-                    `bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition-all ` +
+                    `group relative min-h-12 w-full overflow-hidden rounded-xl border border-slate-200 ` +
+                    `bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-xs transition-all ` +
                     `hover:border-slate-300 hover:bg-slate-50 hover:shadow-md ` +
-                    `focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 ` +
-                    `disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-slate-200 disabled:hover:bg-white disabled:hover:shadow-sm ` +
+                    `focus:outline-hidden focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 ` +
+                    `disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-slate-200 disabled:hover:bg-white disabled:hover:shadow-xs ` +
                     `dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-700`
                   }
                   data-testid="consumer-mobile-login-google"

@@ -12,7 +12,7 @@ interface PageHeaderProps {
 export function PageHeader({ icon, title, subtitle, actions, badge, className = `` }: PageHeaderProps) {
   return (
     <div
-      className={`bg-white/95 dark:bg-slate-900/95 border-b border-slate-200/80 dark:border-slate-700/80 shadow-sm backdrop-blur-lg px-4 py-6 sm:px-6 sm:py-7 lg:px-8 ${className}`}
+      className={`bg-white/95 dark:bg-slate-900/95 border-b border-slate-200/80 dark:border-slate-700/80 shadow-xs backdrop-blur-lg px-4 py-6 sm:px-6 sm:py-7 lg:px-8 ${className}`}
     >
       <div className={`mx-auto max-w-6xl`}>
         <div

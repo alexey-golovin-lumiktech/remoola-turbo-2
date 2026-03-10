@@ -117,7 +117,7 @@ export function DeleteContactModal({ isOpen, onClose, contact, onSubmit }: Delet
           sm:flex-row
         `}
         >
-          <Button type="button" variant="outline" size="md" onClick={onClose} className={`min-h-[44px] flex-1`}>
+          <Button type="button" variant="outline" size="md" onClick={onClose} className={`min-h-11 flex-1`}>
             Cancel
           </Button>
           <Button
@@ -127,7 +127,7 @@ export function DeleteContactModal({ isOpen, onClose, contact, onSubmit }: Delet
             isLoading={isLoading}
             onClick={handleDelete}
             className={`
-              min-h-[44px]
+              min-h-11
               flex-1
               shadow-lg
               shadow-red-500/30

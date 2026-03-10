@@ -25,7 +25,7 @@ export function Card({ children, className = ``, noPadding = false }: CardProps)
   const paddingClass = noPadding ? `` : `p-6`;
   return (
     <div
-      className={`overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800 ${paddingClass} ${className}`}
+      className={`overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs dark:border-slate-700 dark:bg-slate-800 ${paddingClass} ${className}`}
     >
       {children}
     </div>

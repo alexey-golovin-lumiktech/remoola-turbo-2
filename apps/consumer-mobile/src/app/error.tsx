@@ -43,8 +43,8 @@ export default function RootError({ error, reset }: { error: Error & { digest?: 
         type="button"
         onClick={reset}
         className={
-          `min-h-[44px] min-w-[44px] rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white ` +
-          `focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`
+          `min-h-11 min-w-11 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white ` +
+          `focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`
         }
       >
         Try again

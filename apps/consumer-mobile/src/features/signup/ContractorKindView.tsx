@@ -59,7 +59,7 @@ export function ContractorKindView() {
         border-neutral-200
         bg-white
         p-4
-        shadow-sm
+        shadow-xs
         sm:p-6
         dark:border-neutral-700
         dark:bg-neutral-900
@@ -103,7 +103,7 @@ export function ContractorKindView() {
               e.stopPropagation();
               selectKind(CONTRACTOR_KIND.INDIVIDUAL);
             }}
-            className={`flex min-h-[52px] items-center gap-4 rounded-xl border-2 px-4 py-3 text-left transition focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
+            className={`flex min-h-13 items-center gap-4 rounded-xl border-2 px-4 py-3 text-left transition focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
               isSelected(CONTRACTOR_KIND.INDIVIDUAL)
                 ? `border-primary-500 bg-primary-50 dark:bg-primary-900/20 dark:border-primary-400`
                 : `border-neutral-200 bg-white hover:border-neutral-300 dark:border-neutral-600 dark:bg-neutral-800 dark:hover:border-neutral-500`
@@ -136,7 +136,7 @@ export function ContractorKindView() {
               e.stopPropagation();
               selectKind(CONTRACTOR_KIND.ENTITY);
             }}
-            className={`flex min-h-[52px] items-center gap-4 rounded-xl border-2 px-4 py-3 text-left transition focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
+            className={`flex min-h-13 items-center gap-4 rounded-xl border-2 px-4 py-3 text-left transition focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
               isSelected(CONTRACTOR_KIND.ENTITY)
                 ? `border-primary-500 bg-primary-50 dark:bg-primary-900/20 dark:border-primary-400`
                 : `border-neutral-200 bg-white hover:border-neutral-300 dark:border-neutral-600 dark:bg-neutral-800 dark:hover:border-neutral-500`
@@ -169,7 +169,7 @@ export function ContractorKindView() {
           onClick={onNext}
           className={`
             mt-6
-            min-h-[44px]
+            min-h-11
             w-full
             rounded-xl
             bg-primary-600
@@ -178,7 +178,7 @@ export function ContractorKindView() {
             font-semibold
             text-white
             hover:bg-primary-700
-            focus:outline-none
+            focus:outline-hidden
             focus:ring-2
             focus:ring-primary-500
             focus:ring-offset-2
@@ -199,7 +199,7 @@ export function ContractorKindView() {
           }}
           className={`
             mt-3
-            min-h-[44px]
+            min-h-11
             w-full
             rounded-xl
             border
@@ -209,7 +209,7 @@ export function ContractorKindView() {
             font-medium
             text-neutral-700
             hover:bg-neutral-50
-            focus:outline-none
+            focus:outline-hidden
             focus:ring-2
             focus:ring-primary-500
             focus:ring-offset-2

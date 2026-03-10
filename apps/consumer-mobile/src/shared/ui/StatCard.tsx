@@ -17,7 +17,7 @@ interface StatCardProps {
 export function StatCard({ label, value, icon, trend, className }: StatCardProps) {
   return (
     <div
-      className={`group relative overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/50 p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-slate-300 hover:-translate-y-0.5 dark:border-slate-700 dark:from-slate-800 dark:to-slate-800/50 dark:hover:border-slate-600 ${className ?? ``}`}
+      className={`group relative overflow-hidden rounded-2xl border border-slate-200 bg-linear-to-br from-white to-slate-50/50 p-6 shadow-xs transition-all duration-300 hover:shadow-xl hover:border-slate-300 hover:-translate-y-0.5 dark:border-slate-700 dark:from-slate-800 dark:to-slate-800/50 dark:hover:border-slate-600 ${className ?? ``}`}
     >
       <div
         className={`
@@ -29,7 +29,7 @@ export function StatCard({ label, value, icon, trend, className }: StatCardProps
         translate-x-10
         -translate-y-10
         rounded-full
-        bg-gradient-to-br
+        bg-linear-to-br
         from-primary-500/10
         via-primary-400/5
         to-transparent
@@ -86,11 +86,11 @@ export function StatCard({ label, value, icon, trend, className }: StatCardProps
               items-center
               justify-center
               rounded-xl
-              bg-gradient-to-br
+              bg-linear-to-br
               from-primary-100
               to-primary-50
               text-primary-600
-              shadow-sm
+              shadow-xs
               transition-all
               duration-300
               group-hover:scale-110

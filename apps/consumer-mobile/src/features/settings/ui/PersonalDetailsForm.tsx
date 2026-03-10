@@ -55,7 +55,7 @@ export function PersonalDetailsForm({ profile }: PersonalDetailsFormProps) {
               defaultValue={pd.firstName ?? ``}
               error={!!fieldErrors.firstName}
               required
-              className={`min-h-[44px]`}
+              className={`min-h-11`}
             />
           </FormField>
 
@@ -67,7 +67,7 @@ export function PersonalDetailsForm({ profile }: PersonalDetailsFormProps) {
               defaultValue={pd.lastName ?? ``}
               error={!!fieldErrors.lastName}
               required
-              className={`min-h-[44px]`}
+              className={`min-h-11`}
             />
           </FormField>
         </div>
@@ -82,7 +82,7 @@ export function PersonalDetailsForm({ profile }: PersonalDetailsFormProps) {
               error={!!fieldErrors.citizenOf}
               placeholder="e.g., United States"
               required
-              className={`min-h-[44px]`}
+              className={`min-h-11`}
             />
           </FormField>
 
@@ -100,7 +100,7 @@ export function PersonalDetailsForm({ profile }: PersonalDetailsFormProps) {
               error={!!fieldErrors.countryOfTaxResidence}
               placeholder="e.g., United States"
               required
-              className={`min-h-[44px]`}
+              className={`min-h-11`}
             />
           </FormField>
         </div>
@@ -113,7 +113,7 @@ export function PersonalDetailsForm({ profile }: PersonalDetailsFormProps) {
             defaultValue={pd.legalStatus ?? ``}
             error={!!fieldErrors.legalStatus}
             placeholder="Select legal status"
-            className={`min-h-[44px]`}
+            className={`min-h-11`}
           />
         </FormField>
 
@@ -126,7 +126,7 @@ export function PersonalDetailsForm({ profile }: PersonalDetailsFormProps) {
               defaultValue={pd.taxId ?? ``}
               error={!!fieldErrors.taxId}
               placeholder="Optional"
-              className={`min-h-[44px]`}
+              className={`min-h-11`}
             />
           </FormField>
 
@@ -137,7 +137,7 @@ export function PersonalDetailsForm({ profile }: PersonalDetailsFormProps) {
               defaultValue={pd.dateOfBirth ?? ``}
               error={!!fieldErrors.dateOfBirth}
               max={new Date().toISOString().split(`T`)[0]}
-              className={`min-h-[44px]`}
+              className={`min-h-11`}
             />
           </FormField>
         </div>
@@ -151,7 +151,7 @@ export function PersonalDetailsForm({ profile }: PersonalDetailsFormProps) {
               defaultValue={pd.passportOrIdNumber ?? ``}
               error={!!fieldErrors.passportOrIdNumber}
               placeholder="Optional"
-              className={`min-h-[44px]`}
+              className={`min-h-11`}
             />
           </FormField>
 
@@ -163,7 +163,7 @@ export function PersonalDetailsForm({ profile }: PersonalDetailsFormProps) {
               defaultValue={pd.phoneNumber ?? ``}
               error={!!fieldErrors.phoneNumber}
               placeholder="Optional"
-              className={`min-h-[44px]`}
+              className={`min-h-11`}
             />
           </FormField>
         </div>
@@ -175,7 +175,7 @@ export function PersonalDetailsForm({ profile }: PersonalDetailsFormProps) {
             isLoading={isPending}
             disabled={isPending}
             className={`
-              min-h-[44px]
+              min-h-11
               shadow-lg
               shadow-primary-500/30
               hover:shadow-xl

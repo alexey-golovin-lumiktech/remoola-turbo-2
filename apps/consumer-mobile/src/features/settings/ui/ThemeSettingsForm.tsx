@@ -78,10 +78,10 @@ export function ThemeSettingsForm({ initialTheme }: ThemeSettingsFormProps) {
             <label
               key={option.value}
               className={
-                `group flex min-h-[60px] cursor-pointer items-center gap-4 rounded-xl border-2 px-4 py-3.5 transition-all duration-200 ` +
+                `group flex min-h-15 cursor-pointer items-center gap-4 rounded-xl border-2 px-4 py-3.5 transition-all duration-200 ` +
                 (isActive
-                  ? `border-primary-500 bg-gradient-to-r from-primary-50 to-primary-100/50 shadow-md shadow-primary-500/10 dark:border-primary-400 dark:from-primary-900/30 dark:to-primary-900/20 dark:shadow-primary-900/20`
-                  : `border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm dark:border-slate-600 dark:bg-slate-800/50 dark:hover:border-slate-500`) +
+                  ? `border-primary-500 bg-linear-to-r from-primary-50 to-primary-100/50 shadow-md shadow-primary-500/10 dark:border-primary-400 dark:from-primary-900/30 dark:to-primary-900/20 dark:shadow-primary-900/20`
+                  : `border-slate-200 bg-white hover:border-slate-300 hover:shadow-xs dark:border-slate-600 dark:bg-slate-800/50 dark:hover:border-slate-500`) +
                 (loading ? ` cursor-not-allowed opacity-60` : ` hover:scale-[1.01] active:scale-[0.99]`)
               }
             >

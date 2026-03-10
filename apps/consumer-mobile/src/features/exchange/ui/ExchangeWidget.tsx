@@ -130,7 +130,7 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
         className={`
         border-b
         border-slate-700
-        bg-gradient-to-br
+        bg-linear-to-br
         from-slate-800
         to-slate-900
         px-5
@@ -146,7 +146,7 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
             items-center
             justify-center
             rounded-xl
-            bg-gradient-to-br
+            bg-linear-to-br
             from-primary-500
             to-primary-600
             shadow-lg
@@ -227,12 +227,12 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
             className={`
               group
               flex
-              min-h-[48px]
-              min-w-[48px]
+              min-h-12
+              min-w-12
               items-center
               justify-center
               rounded-2xl
-              bg-gradient-to-br
+              bg-linear-to-br
               from-slate-700
               to-slate-800
               p-3
@@ -245,7 +245,7 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
               hover:text-white
               hover:shadow-xl
               hover:scale-110
-              focus:outline-none
+              focus:outline-hidden
               focus:ring-2
               focus:ring-primary-500
               focus:ring-offset-2
@@ -305,7 +305,7 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
             rounded-xl
             border
             border-blue-700
-            bg-gradient-to-br
+            bg-linear-to-br
             from-blue-900/50
             to-blue-800/30
             p-4
@@ -341,7 +341,7 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
             rounded-xl
             border
             border-green-700
-            bg-gradient-to-br
+            bg-linear-to-br
             from-green-900/50
             to-green-800/30
             p-4
@@ -375,7 +375,7 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
             rounded-xl
             border
             border-red-700
-            bg-gradient-to-br
+            bg-linear-to-br
             from-red-900/50
             to-red-800/30
             p-4
@@ -416,7 +416,7 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
             onClick={handleGetQuote}
             isLoading={isLoading}
             disabled={!amount || parseFloat(amount) <= 0}
-            className={`min-h-[48px] font-bold`}
+            className={`min-h-12 font-bold`}
           >
             Get quote
           </Button>
@@ -426,7 +426,7 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
             onClick={handleExchange}
             isLoading={isLoading}
             disabled={!amount || parseFloat(amount) <= 0}
-            className={`min-h-[48px] font-bold`}
+            className={`min-h-12 font-bold`}
           >
             {quote ? `Exchange now` : `Get quote`}
           </Button>

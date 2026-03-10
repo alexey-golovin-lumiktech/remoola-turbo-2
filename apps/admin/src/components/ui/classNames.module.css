@@ -179,7 +179,7 @@
 }
 
 .adminErrorBoundaryContainer {
-  @apply min-h-[400px] flex items-center justify-center;
+  @apply min-h-100 flex items-center justify-center;
 }
 
 .adminErrorBoundaryCard {
@@ -203,7 +203,7 @@
 }
 
 .adminErrorFallbackContainer {
-  @apply min-h-[200px] flex items-center justify-center;
+  @apply min-h-50 flex items-center justify-center;
 }
 
 .adminErrorFallbackCard {
@@ -219,7 +219,7 @@
 }
 
 .adminErrorFallbackButton {
-  @apply px-3 py-1.5 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors;
+  @apply px-3 py-1.5 bg-red-500 text-white text-sm rounded-sm hover:bg-red-600 transition-colors;
 }
 
 .adminJsonView {
@@ -303,7 +303,7 @@
 }
 
 .adminLoginSkeletonTitle {
-  @apply h-6 w-32 rounded bg-[var(--bg-1)];
+  @apply h-6 w-32 rounded-sm bg-[var(--bg-1)];
 }
 
 .adminLoginSkeletonFields {
@@ -311,7 +311,7 @@
 }
 
 .adminLoginSkeletonField {
-  @apply h-10 rounded bg-[var(--bg-1)];
+  @apply h-10 rounded-sm bg-[var(--bg-1)];
 }
 
 .adminProtectedLayout {

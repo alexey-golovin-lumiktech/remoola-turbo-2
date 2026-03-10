@@ -1343,6 +1343,9 @@
   - Cookie keys and options centralized; controllers and middleware no longer determine cookie mode.
   - Admin and consumer auth controllers, Next.js middleware and API routes (login, logout, refresh, clear-cookies, me, oauth/exchange) aligned to shared policy across apps/admin, apps/api, apps/consumer, apps/consumer-mobile.
 
+  ### 🛠 DevEx
+  - Tailwind v4 canonical class renames across apps/admin, apps/consumer, apps/consumer-mobile (outline, shadow, rounded, blur, flex, etc.; no API, DB, or ledger changes).
+
 </details>
 
 </details>

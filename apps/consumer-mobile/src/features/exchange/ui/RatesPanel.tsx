@@ -58,7 +58,7 @@ export function RatesPanel({ rates }: RatesPanelProps) {
         justify-between
         border-b
         border-slate-700
-        bg-gradient-to-r
+        bg-linear-to-r
         from-slate-800
         to-slate-900
         px-5
@@ -74,15 +74,15 @@ export function RatesPanel({ rates }: RatesPanelProps) {
           disabled={isRefreshing}
           className={`
             flex
-            min-h-[44px]
-            min-w-[44px]
+            min-h-11
+            min-w-11
             items-center
             justify-center
             rounded-xl
             text-primary-400
             transition-all
             hover:bg-slate-700
-            focus:outline-none
+            focus:outline-hidden
             focus:ring-2
             focus:ring-primary-500
             disabled:opacity-50

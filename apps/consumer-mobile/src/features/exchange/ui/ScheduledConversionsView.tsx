@@ -177,14 +177,14 @@ export function ScheduledConversionsView({ conversions }: ScheduledConversionsVi
                 <button
                   onClick={() => openCancelModal(conversion)}
                   className={`
-  min-h-[44px]
-  min-w-[44px]
+  min-h-11
+  min-w-11
   rounded-lg
   p-2
   text-red-600
   transition-colors
   hover:bg-red-50
-  focus:outline-none
+  focus:outline-hidden
   focus:ring-2
   focus:ring-red-500
   dark:text-red-400

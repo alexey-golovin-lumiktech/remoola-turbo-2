@@ -23,7 +23,7 @@ export function BalancesPanel({ balances, onSelectCurrency }: BalancesPanelProps
         border-2
         border-dashed
         border-slate-700
-        bg-gradient-to-br
+        bg-linear-to-br
         from-slate-800/50
         to-slate-900/50
         shadow-inner
@@ -80,7 +80,7 @@ export function BalancesPanel({ balances, onSelectCurrency }: BalancesPanelProps
         className={`
         border-b
         border-slate-700
-        bg-gradient-to-r
+        bg-linear-to-r
         from-slate-800
         to-slate-900
         px-5
@@ -112,7 +112,7 @@ export function BalancesPanel({ balances, onSelectCurrency }: BalancesPanelProps
             onClick={() => onSelectCurrency?.(balance.currency)}
             className={`
               group
-              min-h-[60px]
+              min-h-15
               w-full
               px-5
               py-4
@@ -134,7 +134,7 @@ export function BalancesPanel({ balances, onSelectCurrency }: BalancesPanelProps
                   items-center
                   justify-center
                   rounded-xl
-                  bg-gradient-to-br
+                  bg-linear-to-br
                   from-primary-500
                   to-primary-600
                   shadow-md

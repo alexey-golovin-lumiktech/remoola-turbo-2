@@ -28,7 +28,7 @@ export function ErrorState({
     <div
       className={`
   flex
-  min-h-[400px]
+  min-h-100
   items-center
   justify-center
   px-6
@@ -93,7 +93,7 @@ export function ErrorState({
             className={`
   mt-6
   inline-flex
-  min-h-[44px]
+  min-h-11
   items-center
   rounded-lg
   bg-primary-600
@@ -102,11 +102,11 @@ export function ErrorState({
   text-sm
   font-semibold
   text-white
-  shadow-sm
+  shadow-xs
   transition-all
   hover:bg-primary-700
   hover:shadow-md
-  focus:outline-none
+  focus:outline-hidden
   focus:ring-2
   focus:ring-primary-500
   focus:ring-offset-2

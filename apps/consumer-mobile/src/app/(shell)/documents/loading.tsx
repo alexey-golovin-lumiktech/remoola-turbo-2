@@ -35,7 +35,7 @@ export default function DocumentsLoading() {
   h-4
   w-64
   animate-shimmer
-  rounded
+  rounded-xs
   bg-slate-100
   dark:bg-slate-800
             `}
@@ -117,7 +117,7 @@ export default function DocumentsLoading() {
   h-4
   w-20
   animate-shimmer
-  rounded
+  rounded-xs
   bg-slate-100
   dark:bg-slate-800
               `}
@@ -142,7 +142,7 @@ export default function DocumentsLoading() {
   border-slate-200
   bg-white
   p-4
-  shadow-sm
+  shadow-xs
   dark:border-slate-700
   dark:bg-slate-800
                 `}
@@ -154,7 +154,7 @@ export default function DocumentsLoading() {
   h-5
   w-5
   animate-shimmer
-  rounded
+  rounded-xs
   bg-slate-200
   dark:bg-slate-700
                     `}
@@ -178,7 +178,7 @@ export default function DocumentsLoading() {
   h-5
   w-3/4
   animate-shimmer
-  rounded
+  rounded-xs
   bg-slate-200
   dark:bg-slate-700
                           `}
@@ -189,7 +189,7 @@ export default function DocumentsLoading() {
   h-4
   w-20
   animate-shimmer
-  rounded
+  rounded-xs
   bg-slate-100
   dark:bg-slate-800
                             `}

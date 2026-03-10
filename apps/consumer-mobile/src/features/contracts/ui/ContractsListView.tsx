@@ -66,7 +66,7 @@ export function ContractsListView({ contracts, total }: ContractsListViewProps) 
     <div
       className={`
       min-h-full
-      bg-gradient-to-br
+      bg-linear-to-br
       from-slate-50
       via-white
       to-slate-50
@@ -114,7 +114,7 @@ export function ContractsListView({ contracts, total }: ContractsListViewProps) 
             border-2
             border-dashed
             border-slate-300
-            bg-gradient-to-br
+            bg-linear-to-br
             from-slate-50
             to-white
             px-6
@@ -136,7 +136,7 @@ export function ContractsListView({ contracts, total }: ContractsListViewProps) 
               items-center
               justify-center
               rounded-3xl
-              bg-gradient-to-br
+              bg-linear-to-br
               from-slate-100
               to-slate-200
               text-slate-400
@@ -405,7 +405,7 @@ export function ContractsListView({ contracts, total }: ContractsListViewProps) 
                     disabled={currentPage === 1}
                     className={`
                     inline-flex
-                    min-h-[40px]
+                    min-h-10
                     items-center
                     rounded-xl
                     border
@@ -433,7 +433,7 @@ export function ContractsListView({ contracts, total }: ContractsListViewProps) 
                     disabled={currentPage === totalPages}
                     className={`
                     inline-flex
-                    min-h-[40px]
+                    min-h-10
                     items-center
                     rounded-xl
                     border

@@ -14,12 +14,12 @@ interface IconBadgeProps {
 }
 
 const variantStyles: Record<IconBadgeVariant, string> = {
-  primary: `bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-primary-500/30`,
-  success: `bg-gradient-to-br from-green-500 to-green-600 text-white`,
-  info: `bg-gradient-to-br from-blue-500 to-blue-600 text-white`,
-  warning: `bg-gradient-to-br from-yellow-500 to-yellow-600 text-white`,
-  danger: `bg-gradient-to-br from-red-500 to-red-600 text-white`,
-  secondary: `bg-gradient-to-br from-slate-500 to-slate-600 text-white`,
+  primary: `bg-linear-to-br from-primary-500 to-primary-600 text-white shadow-primary-500/30`,
+  success: `bg-linear-to-br from-green-500 to-green-600 text-white`,
+  info: `bg-linear-to-br from-blue-500 to-blue-600 text-white`,
+  warning: `bg-linear-to-br from-yellow-500 to-yellow-600 text-white`,
+  danger: `bg-linear-to-br from-red-500 to-red-600 text-white`,
+  secondary: `bg-linear-to-br from-slate-500 to-slate-600 text-white`,
 };
 
 const variantRingStyles: Record<IconBadgeVariant, string> = {

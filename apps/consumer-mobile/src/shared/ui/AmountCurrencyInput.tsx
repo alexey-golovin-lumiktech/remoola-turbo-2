@@ -88,7 +88,7 @@ export const AmountCurrencyInput = forwardRef<HTMLInputElement, AmountCurrencyIn
             onChange={(e) => handleCurrencyChange(e.target.value)}
             className={`
   h-10
-  min-w-[70px]
+  min-w-17.5
   appearance-none
   rounded-lg
   border
@@ -103,7 +103,7 @@ export const AmountCurrencyInput = forwardRef<HTMLInputElement, AmountCurrencyIn
   hover:border-slate-400
   hover:bg-slate-50
   focus:border-primary-500
-  focus:outline-none
+  focus:outline-hidden
   focus:ring-2
   focus:ring-primary-500
   dark:border-slate-600

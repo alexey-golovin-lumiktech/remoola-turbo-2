@@ -41,7 +41,7 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
   dark:bg-slate-900/80
   px-4
   py-3
-  shadow-sm
+  shadow-xs
   ring-1
   ring-black/5
   dark:ring-white/10
@@ -58,7 +58,7 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
   dark:border-slate-700
   bg-white/95
   dark:bg-slate-900/95
-  backdrop-blur
+  backdrop-blur-sm
   lg:hidden`;
   const mobileNavInnerClass = `mx-auto
   flex

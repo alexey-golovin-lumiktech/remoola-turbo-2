@@ -18,7 +18,7 @@ export default async function PaymentDetailPage({ params }: PaymentDetailPagePro
       <div
         className={`
         flex
-        min-h-[400px]
+        min-h-100
         items-center
         justify-center
       `}

@@ -141,7 +141,7 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
             dark:to-slate-800/30
             sm:px-10
             sm:py-24
-            backdrop-blur-sm
+            backdrop-blur-xs
           `}
         >
           <div
@@ -219,7 +219,7 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
             dark:via-primary-900
             dark:to-primary-800
             dark:shadow-primary-900/40
-            backdrop-blur-sm
+            backdrop-blur-xs
           `}
         >
           <div className={`flex items-center gap-3`}>
@@ -234,7 +234,7 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
               bg-white/20
               text-white
               shadow-lg
-              backdrop-blur-sm
+              backdrop-blur-xs
             `}
             >
               <CheckIcon className={`h-5 w-5`} strokeWidth={2.5} />
@@ -276,7 +276,7 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
             dark:via-slate-900/50
             dark:to-slate-800/30
             sm:min-h-112.5
-            backdrop-blur-sm
+            backdrop-blur-xs
           `}
         >
           <div
@@ -348,7 +348,7 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
               dark:from-slate-800/50
               dark:via-slate-800/30
               dark:to-slate-800/50
-              backdrop-blur-sm
+              backdrop-blur-xs
             `}
           >
             <button
@@ -368,13 +368,13 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
                 duration-200
                 hover:bg-slate-100
                 active:scale-95
-                focus:outline-none
+                focus:outline-hidden
                 focus:ring-2
                 focus:ring-primary-500
                 focus:ring-offset-2
                 dark:text-slate-200
                 dark:hover:bg-slate-700/50
-                hover:shadow-sm
+                hover:shadow-xs
               `}
               aria-label={allSelected ? `Deselect all` : `Select all`}
             >
@@ -411,7 +411,7 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
                 text-xs
                 font-extrabold
                 text-slate-700
-                shadow-sm
+                shadow-xs
                 dark:from-slate-700
                 dark:to-slate-800
                 dark:text-slate-200
@@ -472,7 +472,7 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
                             mt-0.5
                             transition-transform
                             active:scale-90
-                            focus:outline-none
+                            focus:outline-hidden
                             focus:ring-2
                             focus:ring-white/50
                             focus:ring-offset-2
@@ -519,7 +519,7 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
                           `}
                           >
                             <div
-                              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl shadow-lg transition-all duration-300 ${isSelected ? `bg-white/20 text-white backdrop-blur-sm ring-2 ring-white/30` : `bg-slate-700/80 text-slate-300 group-hover:bg-slate-600 backdrop-blur-sm`}`}
+                              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl shadow-lg transition-all duration-300 ${isSelected ? `bg-white/20 text-white backdrop-blur-xs ring-2 ring-white/30` : `bg-slate-700/80 text-slate-300 group-hover:bg-slate-600 backdrop-blur-xs`}`}
                             >
                               <DocumentIcon className={`h-6 w-6`} strokeWidth={2} />
                             </div>
@@ -534,7 +534,7 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
                                   text-base
                                   font-bold
                                   transition-colors
-                                  focus:outline-none
+                                  focus:outline-hidden
                                   focus:ring-2
                                   focus:ring-white/50
                                   focus:ring-offset-2
@@ -552,7 +552,7 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
                           {id && (
                             <button
                               onClick={() => setPreviewDoc(item)}
-                              className={`shrink-0 rounded-xl p-2.5 transition-all duration-200 active:scale-90 focus:outline-none focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-slate-900 shadow-md ${isSelected ? `bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm` : `text-slate-300 hover:bg-slate-700/50 hover:text-white backdrop-blur-sm`}`}
+                              className={`shrink-0 rounded-xl p-2.5 transition-all duration-200 active:scale-90 focus:outline-hidden focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-slate-900 shadow-md ${isSelected ? `bg-white/10 text-white hover:bg-white/20 backdrop-blur-xs` : `text-slate-300 hover:bg-slate-700/50 hover:text-white backdrop-blur-xs`}`}
                               aria-label="Preview document"
                             >
                               <EyeIcon className={`h-5 w-5`} strokeWidth={2} />
@@ -621,7 +621,7 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
                                   py-1
                                   text-xs
                                   font-semibold
-                                  shadow-sm
+                                  shadow-xs
                                   ${isSelected ? `bg-white/15 text-white ring-1 ring-white/20` : `bg-slate-700/60 text-slate-300 ring-1 ring-slate-600/50`}
                                 `}
                               >
@@ -654,7 +654,7 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
                             <button
                               onClick={() => setEditingTagsFor(id)}
                               // eslint-disable-next-line max-len
-                              className={`flex min-h-11 items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold transition-all duration-200 active:scale-95 focus:outline-none focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-slate-900 shadow-md ${isSelected ? `border-white/30 bg-white/10 text-white hover:bg-white/15 backdrop-blur-sm` : `border-slate-600/50 bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 hover:border-slate-500/50 backdrop-blur-sm`}`}
+                              className={`flex min-h-11 items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold transition-all duration-200 active:scale-95 focus:outline-hidden focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-slate-900 shadow-md ${isSelected ? `border-white/30 bg-white/10 text-white hover:bg-white/15 backdrop-blur-xs` : `border-slate-600/50 bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 hover:border-slate-500/50 backdrop-blur-xs`}`}
                             >
                               <TagIcon className={`h-4 w-4`} strokeWidth={2} />
                               <span>Tags</span>
@@ -675,13 +675,13 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
                                 transition-all
                                 duration-200
                                 active:scale-95
-                                focus:outline-none
+                                focus:outline-hidden
                                 focus:ring-2
                                 focus:ring-white/50
                                 focus:ring-offset-2
                                 focus:ring-offset-slate-900
                                 shadow-md
-                                ${isSelected ? `border-white/30 bg-white/10 text-white hover:bg-white/15 backdrop-blur-sm` : `border-slate-600/50 bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 hover:border-slate-500/50 backdrop-blur-sm`}`}
+                                ${isSelected ? `border-white/30 bg-white/10 text-white hover:bg-white/15 backdrop-blur-xs` : `border-slate-600/50 bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 hover:border-slate-500/50 backdrop-blur-xs`}`}
                             >
                               <PaperclipIcon className={`h-4 w-4`} strokeWidth={2.5} />
                               <span>Attach</span>

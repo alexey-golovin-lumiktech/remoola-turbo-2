@@ -125,7 +125,7 @@ export function DocumentPreviewModal({
             dark:from-slate-800
             dark:via-slate-900
             dark:to-slate-800
-            backdrop-blur-sm
+            backdrop-blur-xs
           `}
         >
           <div
@@ -173,7 +173,7 @@ export function DocumentPreviewModal({
                   transition-all
                   hover:bg-slate-100
                   hover:text-slate-900
-                  focus:outline-none
+                  focus:outline-hidden
                   focus:ring-2
                   focus:ring-primary-500
                   dark:text-slate-400
@@ -226,7 +226,7 @@ export function DocumentPreviewModal({
                 hover:bg-slate-100
                 hover:text-slate-900
                 hover:shadow-md
-                focus:outline-none
+                focus:outline-hidden
                 focus:ring-2
                 focus:ring-primary-500
                 dark:text-slate-400
@@ -278,7 +278,7 @@ export function DocumentPreviewModal({
                 hover:bg-slate-100
                 hover:text-slate-900
                 hover:shadow-md
-                focus:outline-none
+                focus:outline-hidden
                 focus:ring-2
                 focus:ring-primary-500
                 dark:text-slate-400
@@ -344,7 +344,7 @@ export function DocumentPreviewModal({
                   hover:bg-slate-100
                   hover:text-slate-900
                   hover:shadow-md
-                  focus:outline-none
+                  focus:outline-hidden
                   focus:ring-2
                   focus:ring-primary-500
                   dark:text-slate-400
@@ -500,7 +500,7 @@ export function DocumentPreviewModal({
                   hover:shadow-xl
                   hover:shadow-primary-500/40
                   hover:scale-105
-                  focus:outline-none
+                  focus:outline-hidden
                   focus:ring-2
                   focus:ring-primary-500
                   focus:ring-offset-2

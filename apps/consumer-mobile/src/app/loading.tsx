@@ -33,7 +33,7 @@ export default function RootLoading() {
           h-3
           w-24
           animate-pulse
-          rounded
+          rounded-xs
           bg-slate-200
           dark:bg-slate-700
         `}

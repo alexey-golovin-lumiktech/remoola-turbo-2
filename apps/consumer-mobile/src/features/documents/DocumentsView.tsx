@@ -52,7 +52,7 @@ export function DocumentsView({ items }: DocumentsViewProps) {
                 border-slate-200
                 bg-white
                 p-4
-                shadow-sm
+                shadow-xs
                 transition-all
                 duration-200
                 hover:shadow-md

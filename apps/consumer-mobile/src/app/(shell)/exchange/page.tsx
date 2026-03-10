@@ -83,7 +83,7 @@ export default async function ExchangePage() {
     <div
       className={`
       min-h-full
-      bg-gradient-to-br
+      bg-linear-to-br
       from-slate-50
       via-white
       to-slate-50
@@ -99,7 +99,7 @@ export default async function ExchangePage() {
         border-b
         border-slate-200/60
         dark:border-slate-700/60
-        shadow-sm
+        shadow-xs
         shadow-slate-200/50
         dark:shadow-slate-950/50
         px-4
@@ -119,7 +119,7 @@ export default async function ExchangePage() {
               items-center
               justify-center
               rounded-2xl
-              bg-gradient-to-br
+              bg-linear-to-br
               from-primary-500
               to-primary-600
               shadow-lg

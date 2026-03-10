@@ -30,7 +30,7 @@ export function ComplianceTasksCard({ tasks }: ComplianceTasksCardProps) {
       border
       border-slate-200
       bg-white
-      shadow-sm
+      shadow-xs
       dark:border-slate-700
       dark:bg-slate-800
     `}
@@ -100,7 +100,7 @@ export function ComplianceTasksCard({ tasks }: ComplianceTasksCardProps) {
                 shrink-0
                 items-center
                 justify-center
-                rounded
+                rounded-xs
                 border-2
                 border-slate-300
                 dark:border-slate-600
@@ -120,7 +120,7 @@ export function ComplianceTasksCard({ tasks }: ComplianceTasksCardProps) {
               </p>
               <button
                 className={`
-                  rounded
+                  rounded-xs
                   px-2
                   py-1
                   text-xs

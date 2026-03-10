@@ -7,7 +7,7 @@ export default function DashboardLoading() {
           h-8
           w-32
           bg-slate-200
-          rounded
+          rounded-xs
           dark:bg-slate-700
         `}
         />
@@ -16,7 +16,7 @@ export default function DashboardLoading() {
           h-5
           w-24
           bg-slate-200
-          rounded
+          rounded-xs
           dark:bg-slate-700
         `}
         />

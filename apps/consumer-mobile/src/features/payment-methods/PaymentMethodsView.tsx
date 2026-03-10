@@ -237,7 +237,7 @@ export function PaymentMethodsView({ items }: PaymentMethodsViewProps) {
   border-slate-200
   bg-white
   p-4
-  shadow-sm
+  shadow-xs
   transition-all
   duration-200
   hover:border-primary-300
@@ -264,7 +264,7 @@ export function PaymentMethodsView({ items }: PaymentMethodsViewProps) {
   text-xs
   font-semibold
   text-white
-  shadow-sm
+  shadow-xs
                     `}
                   >
                     Default
@@ -292,7 +292,7 @@ export function PaymentMethodsView({ items }: PaymentMethodsViewProps) {
   from-primary-500
   to-primary-600
   text-white
-  shadow-sm
+  shadow-xs
   transition-transform
   duration-200
   group-hover:scale-105

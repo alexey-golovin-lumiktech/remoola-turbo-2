@@ -32,7 +32,7 @@ export function QuickDocsCard({ documents, maxItems = 3 }: QuickDocsCardProps) {
       border
       border-slate-200
       bg-white
-      shadow-sm
+      shadow-xs
       dark:border-slate-700
       dark:bg-slate-800
     `}

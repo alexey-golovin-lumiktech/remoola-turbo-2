@@ -4,11 +4,11 @@
 
 /* Canonical form control: rounded-lg, px-3 py-2, min-h-[42px], same border/bg/focus */
 .formInputBase {
-  @apply min-h-[42px] rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500;
+  @apply min-h-[42px] rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500;
 }
 
 .formInputFullWidth {
-  @apply mt-1 w-full min-h-[42px] rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500;
+  @apply mt-1 w-full min-h-[42px] rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500;
 }
 
 .formInputError {
@@ -16,30 +16,30 @@
 }
 
 .formFieldSpacing {
-  @apply mt-1 w-full min-h-[42px] rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500;
+  @apply mt-1 w-full min-h-[42px] rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500;
 }
 
 .formInputRoundedLg {
-  @apply mt-1 w-full min-h-[42px] rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500;
+  @apply mt-1 w-full min-h-[42px] rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500;
 }
 
 .formInputRoundedLgWithPrefix {
-  @apply mt-1 w-full min-h-[42px] rounded-lg border border-gray-300 dark:border-slate-600 pl-7 pr-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500;
+  @apply mt-1 w-full min-h-[42px] rounded-lg border border-gray-300 dark:border-slate-600 pl-7 pr-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500;
 }
 
 .formInputSmall {
-  @apply min-h-[32px] rounded-lg border border-gray-300 dark:border-slate-600 px-2 py-1 text-xs bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500;
+  @apply min-h-[32px] rounded-lg border border-gray-300 dark:border-slate-600 px-2 py-1 text-xs bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500;
 }
 
 /* Same height as filter row buttons (42px) for inputs in action rows */
 .formInputFilterRow {
-  @apply w-full min-h-[42px] rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500;
+  @apply w-full min-h-[42px] rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500;
   height: 42px;
   box-sizing: border-box;
 }
 
 .searchInputClass {
-  @apply min-h-[42px] rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500;
+  @apply min-h-[42px] rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-hidden focus:ring-2 focus:ring-blue-500;
 }
 
 /* Search + selects row: same height (42px) and align by bottom */
@@ -50,14 +50,14 @@
 }
 
 .filterRowSearchInput {
-  @apply rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500;
+  @apply rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-hidden focus:ring-2 focus:ring-blue-500;
   height: 42px;
   min-height: 42px;
   box-sizing: border-box;
 }
 
 .modalFieldVariant {
-  @apply w-full min-h-[42px] rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500;
+  @apply w-full min-h-[42px] rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500;
 }
 
 .primaryButtonClass {
@@ -179,7 +179,7 @@
 }
 
 .successModalOverlay {
-  @apply fixed inset-0 z-40 flex items-center justify-center bg-black/30 dark:bg-black/60 backdrop-blur-sm;
+  @apply fixed inset-0 z-40 flex items-center justify-center bg-black/30 dark:bg-black/60 backdrop-blur-xs;
 }
 
 .successModalContent {
@@ -247,23 +247,23 @@
 }
 
 .cardBase {
-  @apply rounded-2xl bg-white dark:bg-slate-800 shadow-sm border dark:border-slate-600;
+  @apply rounded-2xl bg-white dark:bg-slate-800 shadow-xs border dark:border-slate-600;
 }
 
 .cardBasePadded {
-  @apply rounded-2xl bg-white dark:bg-slate-800 shadow-sm border dark:border-slate-600 p-4 sm:p-6;
+  @apply rounded-2xl bg-white dark:bg-slate-800 shadow-xs border dark:border-slate-600 p-4 sm:p-6;
 }
 
 .cardBaseSoft {
-  @apply rounded-2xl bg-white/90 dark:bg-slate-800/90 px-4 py-3 shadow-sm sm:px-6 sm:py-4;
+  @apply rounded-2xl bg-white/90 dark:bg-slate-800/90 px-4 py-3 shadow-xs sm:px-6 sm:py-4;
 }
 
 .cardBaseSoftCompact {
-  @apply rounded-2xl bg-white/90 dark:bg-slate-800/90 p-3 shadow-sm sm:p-4;
+  @apply rounded-2xl bg-white/90 dark:bg-slate-800/90 p-3 shadow-xs sm:p-4;
 }
 
 .tableContainer {
-  @apply bg-white dark:bg-slate-800 rounded-2xl shadow-sm border dark:border-slate-600;
+  @apply bg-white dark:bg-slate-800 rounded-2xl shadow-xs border dark:border-slate-600;
 }
 
 .tableHeaderRow {
@@ -343,11 +343,11 @@
 }
 
 .buttonPrimaryRounded {
-  @apply min-h-[42px] rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500 px-6 py-2 text-sm font-medium shadow;
+  @apply min-h-[42px] rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500 px-6 py-2 text-sm font-medium shadow-sm;
 }
 
 .buttonPrimaryRoundedCompact {
-  @apply w-full min-h-[42px] rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500 px-6 py-2 text-sm font-semibold shadow;
+  @apply w-full min-h-[42px] rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500 px-6 py-2 text-sm font-semibold shadow-sm;
 }
 
 .buttonPrimarySm {
@@ -355,7 +355,7 @@
 }
 
 .buttonSecondary {
-  @apply min-h-[42px] px-4 py-2 rounded-lg bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 shadow-sm text-gray-700 dark:text-gray-200 text-sm disabled:opacity-50;
+  @apply min-h-[42px] px-4 py-2 rounded-lg bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 shadow-xs text-gray-700 dark:text-gray-200 text-sm disabled:opacity-50;
 }
 
 .buttonDisabledCursor {
@@ -393,12 +393,12 @@
 }
 
 .amountCurrencyInput {
-  @apply min-h-[42px] w-full min-w-0 border-0 bg-transparent px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-0;
+  @apply min-h-[42px] w-full min-w-0 border-0 bg-transparent px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-hidden focus:ring-0;
   padding-left: 2.25rem;
 }
 
 .amountCurrencyInputNoPrefix {
-  @apply min-h-[42px] w-full min-w-0 border-0 bg-transparent px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-0;
+  @apply min-h-[42px] w-full min-w-0 border-0 bg-transparent px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-hidden focus:ring-0;
 }
 
 .amountCurrencyDivider {
@@ -411,11 +411,11 @@
 }
 
 .checkboxBase {
-  @apply rounded border-slate-300 dark:border-slate-600 text-blue-600 dark:text-blue-400;
+  @apply rounded-sm border-slate-300 dark:border-slate-600 text-blue-600 dark:text-blue-400;
 }
 
 .checkboxPrimary {
-  @apply h-4 w-4 rounded border-gray-300 dark:border-slate-600 text-blue-600 dark:text-blue-400;
+  @apply h-4 w-4 rounded-sm border-gray-300 dark:border-slate-600 text-blue-600 dark:text-blue-400;
 }
 
 .checkboxSmall {
@@ -427,7 +427,7 @@
 }
 
 .emptyStateContainer {
-  @apply flex items-center justify-center min-h-[400px] p-8;
+  @apply flex items-center justify-center min-h-100 p-8;
 }
 
 .emptyStateIcon {
@@ -455,7 +455,7 @@
 }
 
 .paymentMethodRow {
-  @apply flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-xl border dark:border-slate-600 shadow-sm hover:shadow transition;
+  @apply flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-xl border dark:border-slate-600 shadow-xs hover:shadow-sm transition;
 }
 
 .paymentMethodRowIcon {
@@ -649,7 +649,7 @@
 }
 
 .uploadButtonPrimary {
-  @apply rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500 px-4 py-2 text-sm font-semibold shadow cursor-pointer;
+  @apply rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500 px-4 py-2 text-sm font-semibold shadow-sm cursor-pointer;
   height: 42px;
   min-height: 42px;
   box-sizing: border-box;
@@ -839,11 +839,11 @@
 }
 
 .bankTransferDownloadButton {
-  @apply flex items-center gap-2 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500 rounded-lg shadow-sm;
+  @apply flex items-center gap-2 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500 rounded-lg shadow-xs;
 }
 
 .bankTransferCard {
-  @apply border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-6;
+  @apply border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-2xl shadow-xs p-6;
 }
 
 .bankTransferCardTitle {
@@ -855,7 +855,7 @@
 }
 
 .bankTransferContinueButton {
-  @apply w-full min-h-[42px] mt-10 rounded-lg bg-green-600 hover:bg-green-700 dark:hover:bg-green-500 text-white font-semibold text-sm py-2 shadow;
+  @apply w-full min-h-[42px] mt-10 rounded-lg bg-green-600 hover:bg-green-700 dark:hover:bg-green-500 text-white font-semibold text-sm py-2 shadow-sm;
 }
 
 .stepContainer {
@@ -943,7 +943,7 @@
 }
 
 .docPreviewActionButtonSquare {
-  @apply px-2 py-1 border border-gray-200 dark:border-slate-600 rounded text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700;
+  @apply px-2 py-1 border border-gray-200 dark:border-slate-600 rounded-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700;
 }
 
 .docPreviewZoomLabel {
@@ -1043,7 +1043,7 @@
 }
 
 .contactsAddButton {
-  @apply min-h-[42px] px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500 shadow-sm transition;
+  @apply min-h-[42px] px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500 shadow-xs transition;
 }
 
 .contactDetailsContainer {
@@ -1059,7 +1059,7 @@
 }
 
 .contactDetailsCard {
-  @apply rounded-xl bg-white dark:bg-slate-800 p-4 shadow dark:border dark:border-slate-600;
+  @apply rounded-xl bg-white dark:bg-slate-800 p-4 shadow-sm dark:border dark:border-slate-600;
 }
 
 .contactDetailsCardTitle {
@@ -1079,7 +1079,7 @@
 }
 
 .contactDetailsPaymentLink {
-  @apply block border border-gray-200 dark:border-slate-600 px-4 py-2 rounded hover:bg-gray-50 dark:hover:bg-slate-700/50 text-gray-900 dark:text-white;
+  @apply block border border-gray-200 dark:border-slate-600 px-4 py-2 rounded-sm hover:bg-gray-50 dark:hover:bg-slate-700/50 text-gray-900 dark:text-white;
 }
 
 .contactDetailsPaymentMeta {
@@ -1095,7 +1095,7 @@
 }
 
 .contactDetailsDocCard {
-  @apply border border-gray-200 dark:border-slate-600 rounded p-3 bg-gray-50 dark:bg-slate-700;
+  @apply border border-gray-200 dark:border-slate-600 rounded-sm p-3 bg-gray-50 dark:bg-slate-700;
 }
 
 .contactModalInput {
@@ -1119,7 +1119,7 @@
 }
 
 .formCardBase {
-  @apply space-y-4 rounded-xl border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 p-6 shadow-sm;
+  @apply space-y-4 rounded-xl border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 p-6 shadow-xs;
 }
 
 .formCardTitle {
@@ -1139,7 +1139,7 @@
 }
 
 .errorBoundaryContainer {
-  @apply flex flex-col items-center justify-center min-h-[400px] p-8 text-center;
+  @apply flex flex-col items-center justify-center min-h-100 p-8 text-center;
 }
 
 .errorBoundaryTitle {
@@ -1167,7 +1167,7 @@
 }
 
 .errorDetailsPre {
-  @apply mt-2 p-4 bg-gray-100 dark:bg-slate-800 rounded text-xs overflow-auto max-w-full text-gray-900 dark:text-gray-100;
+  @apply mt-2 p-4 bg-gray-100 dark:bg-slate-800 rounded-sm text-xs overflow-auto max-w-full text-gray-900 dark:text-gray-100;
 }
 
 .sectionErrorFallback {
@@ -1347,7 +1347,7 @@
 }
 
 .pendingWithdrawalsCard {
-  @apply border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-xl p-4 shadow-sm;
+  @apply border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-xl p-4 shadow-xs;
 }
 
 .pendingWithdrawalsHeader {
@@ -1447,7 +1447,7 @@
 }
 
 .actionRowCard {
-  @apply flex items-center justify-between rounded-2xl bg-white/90 dark:bg-slate-800/90 px-6 py-4 shadow-sm;
+  @apply flex items-center justify-between rounded-2xl bg-white/90 dark:bg-slate-800/90 px-6 py-4 shadow-xs;
 }
 
 .actionRowTitle {
@@ -1459,7 +1459,7 @@
 }
 
 .actionRowButton {
-  @apply rounded-full bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500 px-5 py-2 text-sm font-semibold shadow;
+  @apply rounded-full bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500 px-5 py-2 text-sm font-semibold shadow-sm;
 }
 
 .signupNavContainer {
@@ -1519,7 +1519,7 @@
 }
 
 .signupStartOptionActive {
-  @apply border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20 shadow-sm;
+  @apply border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20 shadow-xs;
 }
 
 .signupStartOptionInactive {
@@ -1567,7 +1567,7 @@
 }
 
 .signupCompletedCard {
-  @apply w-full max-w-md rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-8 shadow-sm text-center;
+  @apply w-full max-w-md rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-8 shadow-xs text-center;
 }
 
 .signupCompletedIconWrap {
@@ -1675,7 +1675,7 @@
 }
 
 .signupStepCard {
-  @apply w-full max-w-md space-y-4 rounded bg-white dark:bg-slate-800 p-6 shadow-sm;
+  @apply w-full max-w-md space-y-4 rounded-sm bg-white dark:bg-slate-800 p-6 shadow-xs;
 }
 
 .signupStepTitle {
@@ -1727,7 +1727,7 @@
 }
 
 .passwordInputField {
-  @apply w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white border-gray-300 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 pr-12;
+  @apply w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white border-gray-300 dark:border-slate-600 focus:outline-hidden focus:ring-2 focus:ring-blue-500 pr-12;
 }
 
 .passwordToggleButton {
@@ -1775,7 +1775,7 @@
 }
 
 .shellSearchInput {
-  @apply w-full rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-2 text-sm shadow-sm outline-none focus:ring-2 focus:ring-blue-500 dark:text-white dark:placeholder:text-gray-400;
+  @apply w-full rounded-lg border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 px-4 py-2 text-sm shadow-xs outline-hidden focus:ring-2 focus:ring-blue-500 dark:text-white dark:placeholder:text-gray-400;
   height: 42px;
   min-height: 42px;
   box-sizing: border-box;
@@ -1786,7 +1786,7 @@
 }
 
 .shellLogout {
-  @apply grid h-10 w-10 place-items-center rounded-full bg-white dark:bg-slate-800 shadow-sm ring-1 ring-black/5 dark:ring-white/10 dark:text-white;
+  @apply grid h-10 w-10 place-items-center rounded-full bg-white dark:bg-slate-800 shadow-xs ring-1 ring-black/5 dark:ring-white/10 dark:text-white;
 }
 
 .pageContainer {
@@ -1806,7 +1806,7 @@
 }
 
 .shellMobileHeader {
-  @apply mb-4 flex items-center justify-between gap-3 rounded-2xl bg-white/90 dark:bg-slate-900/80 px-4 py-3 shadow-sm ring-1 ring-black/5 dark:ring-white/10 lg:hidden;
+  @apply mb-4 flex items-center justify-between gap-3 rounded-2xl bg-white/90 dark:bg-slate-900/80 px-4 py-3 shadow-xs ring-1 ring-black/5 dark:ring-white/10 lg:hidden;
 }
 
 .shellMobileBrand {
@@ -1818,7 +1818,7 @@
 }
 
 .shellMobileNav {
-  @apply fixed bottom-0 left-0 right-0 z-30 border-t border-gray-200 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 backdrop-blur lg:hidden;
+  @apply fixed bottom-0 left-0 right-0 z-30 border-t border-gray-200 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm lg:hidden;
 }
 
 .shellMobileNavInner {
@@ -1850,7 +1850,7 @@
 }
 
 .startPaymentCard {
-  @apply rounded-2xl bg-white dark:bg-slate-800 p-6 shadow-sm max-w-xl border border-slate-200 dark:border-slate-600;
+  @apply rounded-2xl bg-white dark:bg-slate-800 p-6 shadow-xs max-w-xl border border-slate-200 dark:border-slate-600;
 }
 
 .pageHeaderRow {
@@ -1870,7 +1870,7 @@
 }
 
 .formSection {
-  @apply border p-6 rounded-xl bg-white shadow-sm space-y-6 border-gray-200 dark:bg-slate-800 dark:border-slate-600;
+  @apply border p-6 rounded-xl bg-white shadow-xs space-y-6 border-gray-200 dark:bg-slate-800 dark:border-slate-600;
 }
 
 .formSectionTitle {
@@ -1886,7 +1886,7 @@
 }
 
 .inputClass {
-  @apply w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 border-gray-300 dark:bg-slate-800 dark:text-white dark:border-slate-600;
+  @apply w-full rounded-lg border px-3 py-2 text-sm shadow-xs focus:outline-hidden focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 border-gray-300 dark:bg-slate-800 dark:text-white dark:border-slate-600;
 }
 
 .formGridClass {
@@ -1898,7 +1898,7 @@
 }
 
 .themeCard {
-  @apply border p-6 rounded-xl bg-white dark:bg-slate-800 shadow-sm dark:border-slate-600;
+  @apply border p-6 rounded-xl bg-white dark:bg-slate-800 shadow-xs dark:border-slate-600;
 }
 
 .themeTitle {
@@ -1978,7 +1978,7 @@
 }
 
 .balanceCard {
-  @apply flex-1 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 p-4 text-center shadow-sm;
+  @apply flex-1 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 p-4 text-center shadow-xs;
 }
 
 .balanceLabel {
@@ -2030,7 +2030,7 @@
 }
 
 .exchangeCard {
-  @apply rounded-xl border bg-white dark:bg-slate-800 p-6 shadow dark:border-slate-600;
+  @apply rounded-xl border bg-white dark:bg-slate-800 p-6 shadow-sm dark:border-slate-600;
 }
 
 .exchangeAvailable {
@@ -2046,7 +2046,7 @@
 }
 
 .exchangeField {
-  @apply border border-gray-300 dark:border-slate-600 rounded p-2 w-full bg-white dark:bg-slate-800 text-gray-900 dark:text-white;
+  @apply border border-gray-300 dark:border-slate-600 rounded-sm p-2 w-full bg-white dark:bg-slate-800 text-gray-900 dark:text-white;
 }
 
 .exchangeRateText {
@@ -2106,7 +2106,7 @@
 }
 
 .skeletonCard {
-  @apply rounded-2xl bg-white/90 dark:bg-slate-800/90 p-6 shadow-sm;
+  @apply rounded-2xl bg-white/90 dark:bg-slate-800/90 p-6 shadow-xs;
 }
 
 .skeletonCardTitle {
@@ -2122,7 +2122,7 @@
 }
 
 .skeletonTableContainer {
-  @apply bg-white dark:bg-slate-800 rounded-2xl shadow-sm border dark:border-slate-600;
+  @apply bg-white dark:bg-slate-800 rounded-2xl shadow-xs border dark:border-slate-600;
 }
 
 .skeletonTablePadding {

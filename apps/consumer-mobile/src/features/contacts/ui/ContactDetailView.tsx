@@ -64,12 +64,12 @@ export function ContactDetailView({ contactDetails, contactId }: ContactDetailVi
           rounded-xl
           border
           border-slate-200
-          bg-gradient-to-br
+          bg-linear-to-br
           from-slate-50
           to-slate-100/50
           p-12
           text-center
-          shadow-sm
+          shadow-xs
           dark:border-slate-700
           dark:from-slate-800/50
           dark:to-slate-800/30
@@ -110,12 +110,12 @@ export function ContactDetailView({ contactDetails, contactId }: ContactDetailVi
           href="/contacts"
           className={`
             inline-flex
-            min-h-[44px]
+            min-h-11
             items-center
             justify-center
             gap-2
             rounded-xl
-            bg-gradient-to-r
+            bg-linear-to-r
             from-primary-600
             to-primary-700
             px-6
@@ -160,7 +160,7 @@ export function ContactDetailView({ contactDetails, contactId }: ContactDetailVi
           href="/contacts"
           className={`
             inline-flex
-            min-h-[44px]
+            min-h-11
             items-center
             justify-center
             gap-2
@@ -171,12 +171,12 @@ export function ContactDetailView({ contactDetails, contactId }: ContactDetailVi
             text-sm
             font-medium
             text-slate-700
-            shadow-sm
+            shadow-xs
             ring-1
             ring-slate-200
             transition-all
             hover:bg-slate-50
-            hover:shadow
+            hover:shadow-xs
             active:scale-[0.98]
             dark:bg-slate-800
             dark:text-slate-300
@@ -193,7 +193,7 @@ export function ContactDetailView({ contactDetails, contactId }: ContactDetailVi
         className={`
         overflow-hidden
         rounded-2xl
-        bg-gradient-to-br
+        bg-linear-to-br
         from-primary-500
         via-primary-600
         to-primary-700
@@ -216,7 +216,7 @@ export function ContactDetailView({ contactDetails, contactId }: ContactDetailVi
             justify-center
             rounded-2xl
             bg-white/20
-            backdrop-blur-sm
+            backdrop-blur-xs
             ring-2
             ring-white/30
           `}
@@ -273,7 +273,7 @@ export function ContactDetailView({ contactDetails, contactId }: ContactDetailVi
           rounded-xl
           bg-white
           p-4
-          shadow-sm
+          shadow-xs
           ring-1
           ring-slate-200
           dark:bg-slate-800
@@ -320,7 +320,7 @@ export function ContactDetailView({ contactDetails, contactId }: ContactDetailVi
           rounded-xl
           bg-white
           p-4
-          shadow-sm
+          shadow-xs
           ring-1
           ring-slate-200
           dark:bg-slate-800
@@ -369,7 +369,7 @@ export function ContactDetailView({ contactDetails, contactId }: ContactDetailVi
           rounded-xl
           bg-white
           p-4
-          shadow-sm
+          shadow-xs
           ring-1
           ring-slate-200
           dark:bg-slate-800
@@ -418,7 +418,7 @@ export function ContactDetailView({ contactDetails, contactId }: ContactDetailVi
         rounded-xl
         bg-white
         p-5
-        shadow-sm
+        shadow-xs
         ring-1
         ring-slate-200
         dark:bg-slate-800
@@ -646,7 +646,7 @@ export function ContactDetailView({ contactDetails, contactId }: ContactDetailVi
         rounded-xl
         bg-white
         p-5
-        shadow-sm
+        shadow-xs
         ring-1
         ring-slate-200
         dark:bg-slate-800
@@ -870,7 +870,7 @@ export function ContactDetailView({ contactDetails, contactId }: ContactDetailVi
         rounded-xl
         bg-white
         p-5
-        shadow-sm
+        shadow-xs
         ring-1
         ring-slate-200
         dark:bg-slate-800
@@ -1011,7 +1011,7 @@ export function ContactDetailView({ contactDetails, contactId }: ContactDetailVi
                     items-center
                     justify-center
                     rounded-lg
-                    bg-gradient-to-br
+                    bg-linear-to-br
                     from-blue-100
                     to-blue-200
                     dark:from-blue-900/30
@@ -1046,11 +1046,11 @@ export function ContactDetailView({ contactDetails, contactId }: ContactDetailVi
                   rel="noopener noreferrer"
                   className={`
                     inline-flex
-                    min-h-[44px]
+                    min-h-11
                     items-center
                     gap-2
                     rounded-lg
-                    bg-gradient-to-r
+                    bg-linear-to-r
                     from-primary-600
                     to-primary-700
                     px-4

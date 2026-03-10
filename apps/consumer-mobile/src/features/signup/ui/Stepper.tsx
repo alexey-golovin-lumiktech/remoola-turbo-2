@@ -69,7 +69,7 @@ export function Stepper() {
           className={`
             h-full
             rounded-full
-            bg-gradient-to-r
+            bg-linear-to-r
             from-primary-500
             to-primary-600
             transition-all
@@ -98,7 +98,7 @@ export function Stepper() {
               className={`
                 relative
                 flex
-                min-w-0
+                min-w-5
                 flex-1
                 flex-col
                 items-center

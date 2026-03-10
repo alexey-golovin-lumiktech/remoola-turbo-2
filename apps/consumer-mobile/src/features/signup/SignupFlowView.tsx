@@ -24,7 +24,7 @@ function SignupStepsContent() {
         top-0
         z-10
         mb-3
-        bg-gradient-to-b
+        bg-linear-to-b
         from-[#f8fafc]
         via-[#f8fafc]
         to-transparent

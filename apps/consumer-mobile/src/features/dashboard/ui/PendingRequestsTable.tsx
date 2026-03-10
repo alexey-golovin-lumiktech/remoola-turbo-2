@@ -31,7 +31,7 @@ export function PendingRequestsTable({ requests, maxItems = 5 }: PendingRequests
         rounded-2xl
         border
         border-slate-700
-        bg-gradient-to-br
+        bg-linear-to-br
         from-slate-800
         to-slate-900
         shadow-xl
@@ -43,7 +43,7 @@ export function PendingRequestsTable({ requests, maxItems = 5 }: PendingRequests
         className={`
         border-b
         border-slate-700/80
-        bg-gradient-to-r
+        bg-linear-to-r
         from-slate-800
         via-slate-850
         to-slate-900
@@ -164,7 +164,7 @@ export function PendingRequestsTable({ requests, maxItems = 5 }: PendingRequests
                   text-amber-300
                   border
                   border-amber-700/50
-                  shadow-sm
+                  shadow-xs
                 `}
                 >
                   {req.status}

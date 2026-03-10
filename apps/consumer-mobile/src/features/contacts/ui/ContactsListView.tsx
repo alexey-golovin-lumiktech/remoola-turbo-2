@@ -110,7 +110,7 @@ export function ContactsListView({ contacts }: ContactsListViewProps) {
     <div
       className={`
         min-h-full
-        bg-gradient-to-br
+        bg-linear-to-br
         from-slate-50
         via-white
         to-slate-50
@@ -179,7 +179,7 @@ export function ContactsListView({ contacts }: ContactsListViewProps) {
             border-2
             border-dashed
             border-slate-200
-            bg-gradient-to-br
+            bg-linear-to-br
             from-slate-50/50
             to-white/50
             dark:border-slate-700
@@ -201,7 +201,7 @@ export function ContactsListView({ contacts }: ContactsListViewProps) {
               items-center
               justify-center
               rounded-3xl
-              bg-gradient-to-br
+              bg-linear-to-br
               from-slate-100
               to-slate-200
               text-slate-400
@@ -269,7 +269,7 @@ export function ContactsListView({ contacts }: ContactsListViewProps) {
             rounded-2xl
             border
             border-slate-200
-            bg-gradient-to-br
+            bg-linear-to-br
             from-slate-50
             to-white
             dark:border-slate-700
@@ -277,7 +277,7 @@ export function ContactsListView({ contacts }: ContactsListViewProps) {
             dark:to-slate-900/50
             p-8
             text-center
-            shadow-sm
+            shadow-xs
           `}
           >
             <div
@@ -355,7 +355,7 @@ export function ContactsListView({ contacts }: ContactsListViewProps) {
                   border
                   border-slate-200
                   bg-white
-                  shadow-sm
+                  shadow-xs
                   transition-all
                   duration-200
                   hover:shadow-lg
@@ -374,7 +374,7 @@ export function ContactsListView({ contacts }: ContactsListViewProps) {
                   top-0
                   h-full
                   w-1
-                  bg-gradient-to-b
+                  bg-linear-to-b
                   from-primary-500
                   to-primary-600
                   opacity-0
@@ -403,7 +403,7 @@ export function ContactsListView({ contacts }: ContactsListViewProps) {
                         ring-2
                         ring-white
                         dark:ring-slate-800
-                        shadow-sm
+                        shadow-xs
                       `}
                       >
                         <CheckIcon className={`h-3 w-3 text-white`} />

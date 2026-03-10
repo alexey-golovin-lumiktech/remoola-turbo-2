@@ -16,10 +16,10 @@ export const FormSelect = forwardRef<HTMLSelectElement, FormSelectProps>(
       <select
         ref={ref}
         className={`
-          min-h-[44px] w-full appearance-none rounded-lg border px-4 py-2.5 text-base
+          min-h-11 w-full appearance-none rounded-lg border px-4 py-2.5 text-base
           transition-colors duration-200
           bg-[length:1rem_1rem] bg-[right_0.75rem_center] bg-no-repeat
-          focus:outline-none focus:ring-2 focus:ring-offset-2
+          focus:outline-hidden focus:ring-2 focus:ring-offset-2
           disabled:cursor-not-allowed disabled:opacity-50
           ${
             error

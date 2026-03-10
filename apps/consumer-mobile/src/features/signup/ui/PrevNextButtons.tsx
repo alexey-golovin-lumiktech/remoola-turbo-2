@@ -17,7 +17,7 @@ export function PrevNextButtons({ onNext, nextLabel }: PrevNextButtonsProps) {
     <div
       className={
         `border-t border-neutral-100 bg-white/95 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 ` +
-        `backdrop-blur sm:px-6 dark:border-neutral-800 dark:bg-neutral-900/95`
+        `backdrop-blur-xs sm:px-6 dark:border-neutral-800 dark:bg-neutral-900/95`
       }
       data-testid="consumer-signup-prev-next"
     >
@@ -27,8 +27,8 @@ export function PrevNextButtons({ onNext, nextLabel }: PrevNextButtonsProps) {
           data-testid="consumer-signup-btn-next"
           onClick={onNext}
           className={
-            `min-h-[44px] w-full rounded-xl bg-primary-600 px-4 py-3 font-semibold text-white ` +
-            `hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ` +
+            `min-h-11 w-full rounded-xl bg-primary-600 px-4 py-3 font-semibold text-white ` +
+            `hover:bg-primary-700 focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ` +
             `disabled:opacity-50 dark:bg-primary-500 dark:hover:bg-primary-600`
           }
         >

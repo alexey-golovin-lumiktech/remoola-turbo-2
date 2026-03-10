@@ -59,7 +59,7 @@ export function DocumentFilterBar({ activeFilter, onFilterChange, filterCounts }
                 transition-all
                 duration-300
                 active:scale-95
-                focus:outline-none
+                focus:outline-hidden
                 focus:ring-2
                 focus:ring-primary-500
                 focus:ring-offset-1
@@ -71,8 +71,8 @@ export function DocumentFilterBar({ activeFilter, onFilterChange, filterCounts }
                 sm:text-sm
                 ${
                   isActive
-                    ? `bg-gradient-to-br from-primary-600 via-primary-700 to-primary-600 text-white shadow-xl shadow-primary-500/40 dark:shadow-primary-900/60 ring-2 ring-primary-500/30 scale-105`
-                    : `bg-gradient-to-br from-slate-800 via-slate-900 to-slate-800 text-slate-300 border border-slate-700/50 hover:border-slate-600 hover:shadow-lg hover:scale-[1.02] dark:from-slate-800 dark:via-slate-900 dark:to-slate-800 dark:text-slate-300 dark:border-slate-700/50 dark:hover:border-slate-600`
+                    ? `bg-linear-to-br from-primary-600 via-primary-700 to-primary-600 text-white shadow-xl shadow-primary-500/40 dark:shadow-primary-900/60 ring-2 ring-primary-500/30 scale-105`
+                    : `bg-linear-to-br from-slate-800 via-slate-900 to-slate-800 text-slate-300 border border-slate-700/50 hover:border-slate-600 hover:shadow-lg hover:scale-[1.02] dark:from-slate-800 dark:via-slate-900 dark:to-slate-800 dark:text-slate-300 dark:border-slate-700/50 dark:hover:border-slate-600`
                 }
               `}
               aria-pressed={isActive}
@@ -95,7 +95,7 @@ export function DocumentFilterBar({ activeFilter, onFilterChange, filterCounts }
                   shadow-md
                   ${
                     isActive
-                      ? `bg-white/30 text-white backdrop-blur-sm ring-1 ring-white/20`
+                      ? `bg-white/30 text-white backdrop-blur-xs ring-1 ring-white/20`
                       : `bg-slate-700/80 text-slate-300 group-hover:bg-slate-600 dark:bg-slate-700/80 dark:text-slate-300 dark:group-hover:bg-slate-600`
                   }
                 `}

@@ -251,7 +251,7 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
           }}
           className={`
             flex-1
-            min-h-[44px]
+            min-h-11
             rounded-lg
             px-4
             py-2
@@ -263,7 +263,7 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
                 ? `
                     bg-primary-600
                     text-white
-                    shadow-sm
+                    shadow-xs
                     hover:bg-primary-700
                   `
                 : `
@@ -290,7 +290,7 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
           }}
           className={`
             flex-1
-            min-h-[44px]
+            min-h-11
             rounded-lg
             px-4
             py-2
@@ -302,7 +302,7 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
                 ? `
                     bg-primary-600
                     text-white
-                    shadow-sm
+                    shadow-xs
                     hover:bg-primary-700
                   `
                 : `
@@ -345,7 +345,7 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
             onChange={(e) => setBillingName(e.target.value)}
             className={`
   w-full
-  min-h-[44px]
+  min-h-11
   rounded-lg
   border
   border-slate-300
@@ -357,7 +357,7 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
   placeholder-slate-400
   transition-colors
   focus:border-primary-500
-  focus:outline-none
+  focus:outline-hidden
   focus:ring-2
   focus:ring-primary-500/20
   dark:border-slate-600
@@ -389,7 +389,7 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
             onChange={(e) => setBillingEmail(e.target.value)}
             className={`
   w-full
-  min-h-[44px]
+  min-h-11
   rounded-lg
   border
   border-slate-300
@@ -401,7 +401,7 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
   placeholder-slate-400
   transition-colors
   focus:border-primary-500
-  focus:outline-none
+  focus:outline-hidden
   focus:ring-2
   focus:ring-primary-500/20
   dark:border-slate-600
@@ -433,7 +433,7 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
             onChange={(e) => setBillingPhone(e.target.value)}
             className={`
   w-full
-  min-h-[44px]
+  min-h-11
   rounded-lg
   border
   border-slate-300
@@ -445,7 +445,7 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
   placeholder-slate-400
   transition-colors
   focus:border-primary-500
-  focus:outline-none
+  focus:outline-hidden
   focus:ring-2
   focus:ring-primary-500/20
   dark:border-slate-600
@@ -510,7 +510,7 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
               onChange={(e) => setBankName(e.target.value)}
               className={`
   w-full
-  min-h-[44px]
+  min-h-11
   rounded-lg
   border
   border-slate-300
@@ -522,7 +522,7 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
   placeholder-slate-400
   transition-colors
   focus:border-primary-500
-  focus:outline-none
+  focus:outline-hidden
   focus:ring-2
   focus:ring-primary-500/20
   dark:border-slate-600
@@ -554,7 +554,7 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
               onChange={(e) => setBankAccount(e.target.value.replace(/\D/g, ``))}
               className={`
   w-full
-  min-h-[44px]
+  min-h-11
   rounded-lg
   border
   border-slate-300
@@ -566,7 +566,7 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
   placeholder-slate-400
   transition-colors
   focus:border-primary-500
-  focus:outline-none
+  focus:outline-hidden
   focus:ring-2
   focus:ring-primary-500/20
   dark:border-slate-600
@@ -599,7 +599,7 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
               maxLength={9}
               className={`
   w-full
-  min-h-[44px]
+  min-h-11
   rounded-lg
   border
   border-slate-300
@@ -611,7 +611,7 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
   placeholder-slate-400
   transition-colors
   focus:border-primary-500
-  focus:outline-none
+  focus:outline-hidden
   focus:ring-2
   focus:ring-primary-500/20
   dark:border-slate-600
@@ -652,9 +652,9 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
           className={`
   h-5
   w-5
-  min-h-[20px]
-  min-w-[20px]
-  rounded
+  min-h-5
+  min-w-5
+  rounded-xs
   border-slate-300
   text-primary-600
   transition-colors
@@ -700,7 +700,7 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
           size="md"
           onClick={onCancel}
           disabled={isSubmitting}
-          className={`min-h-[44px] flex-1`}
+          className={`min-h-11 flex-1`}
         >
           Cancel
         </Button>
@@ -710,7 +710,7 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
           size="md"
           isLoading={isSubmitting}
           disabled={methodType === `CREDIT_CARD` ? !stripe || !elements || isSubmitting : isSubmitting}
-          className={`min-h-[44px] flex-1`}
+          className={`min-h-11 flex-1`}
         >
           Add method
         </Button>

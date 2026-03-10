@@ -14,10 +14,10 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
       <input
         ref={ref}
         className={`
-          min-h-[44px] w-full rounded-xl border-2 px-4 py-3 text-base font-medium
+          min-h-11 w-full rounded-xl border-2 px-4 py-3 text-base font-medium
           transition-all duration-200 ease-out
           placeholder:text-slate-400 dark:placeholder:text-slate-500
-          focus:outline-none focus:ring-2 focus:ring-offset-2
+          focus:outline-hidden focus:ring-2 focus:ring-offset-2
           disabled:cursor-not-allowed disabled:opacity-60 disabled:bg-slate-50 dark:disabled:bg-slate-900
           ${
             error

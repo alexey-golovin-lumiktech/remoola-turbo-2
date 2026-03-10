@@ -83,7 +83,7 @@ export function PaymentsListView({ balance, payments, total, currentPage = 1, pa
     <div
       className={`
       min-h-full
-      bg-gradient-to-br
+      bg-linear-to-br
       from-slate-50
       via-white
       to-slate-50
@@ -102,7 +102,7 @@ export function PaymentsListView({ balance, payments, total, currentPage = 1, pa
               href="/withdraw-transfer"
               className={`
                 inline-flex
-                min-h-[44px]
+                min-h-11
                 items-center
                 gap-2
                 rounded-xl
@@ -119,7 +119,7 @@ export function PaymentsListView({ balance, payments, total, currentPage = 1, pa
                 hover:bg-slate-700
                 hover:shadow-lg
                 active:scale-95
-                focus:outline-none
+                focus:outline-hidden
                 focus:ring-2
                 focus:ring-slate-500
                 focus:ring-offset-2
@@ -132,7 +132,7 @@ export function PaymentsListView({ balance, payments, total, currentPage = 1, pa
               href="/payment-requests/new"
               className={`
                 inline-flex
-                min-h-[44px]
+                min-h-11
                 items-center
                 rounded-xl
                 border-2
@@ -149,7 +149,7 @@ export function PaymentsListView({ balance, payments, total, currentPage = 1, pa
                 hover:text-white
                 hover:shadow-lg
                 active:scale-95
-                focus:outline-none
+                focus:outline-hidden
                 focus:ring-2
                 focus:ring-primary-500
                 focus:ring-offset-2
@@ -165,10 +165,10 @@ export function PaymentsListView({ balance, payments, total, currentPage = 1, pa
               href="/payments/start"
               className={`
                 inline-flex
-                min-h-[44px]
+                min-h-11
                 items-center
                 rounded-xl
-                bg-gradient-to-r
+                bg-linear-to-r
                 from-primary-600
                 to-primary-700
                 px-4
@@ -183,7 +183,7 @@ export function PaymentsListView({ balance, payments, total, currentPage = 1, pa
                 hover:to-primary-800
                 hover:shadow-xl
                 active:scale-95
-                focus:outline-none
+                focus:outline-hidden
                 focus:ring-2
                 focus:ring-primary-500
                 focus:ring-offset-2
@@ -266,7 +266,7 @@ export function PaymentsListView({ balance, payments, total, currentPage = 1, pa
                     rounded-2xl
                     border
                     border-slate-700
-                    bg-gradient-to-br
+                    bg-linear-to-br
                     from-slate-800
                     to-slate-900
                     p-5
@@ -365,7 +365,7 @@ export function PaymentsListView({ balance, payments, total, currentPage = 1, pa
                     { value: `WAITING`, label: `Waiting` },
                     { value: `FAILED`, label: `Failed` },
                   ]}
-                  className={`min-w-[140px] flex-1 sm:flex-none`}
+                  className={`min-w-35 flex-1 sm:flex-none`}
                 />
                 <FormSelect
                   value={typeFilter}
@@ -376,7 +376,7 @@ export function PaymentsListView({ balance, payments, total, currentPage = 1, pa
                     { value: `BANK_TRANSFER`, label: `Bank Transfer` },
                     { value: `CURRENCY_EXCHANGE`, label: `Currency Exchange` },
                   ]}
-                  className={`min-w-[140px] flex-1 sm:flex-none`}
+                  className={`min-w-35 flex-1 sm:flex-none`}
                 />
                 {hasUrlFilters && (
                   <Button
@@ -386,7 +386,7 @@ export function PaymentsListView({ balance, payments, total, currentPage = 1, pa
                     className={`
                       flex-1
                       sm:flex-none
-                      min-h-[44px]
+                      min-h-11
                       font-semibold
                     `}
                   >
@@ -404,7 +404,7 @@ export function PaymentsListView({ balance, payments, total, currentPage = 1, pa
                 border-2
                 border-dashed
                 border-slate-700
-                bg-gradient-to-br
+                bg-linear-to-br
                 from-slate-800/50
                 to-slate-900/50
                 px-6
@@ -586,7 +586,7 @@ export function PaymentsListView({ balance, payments, total, currentPage = 1, pa
                     <div className={`flex items-center gap-2`}>
                       <Link
                         href={currentPage > 1 ? `/payments?page=${currentPage - 1}` : `/payments?page=1`}
-                        className={`inline-flex min-h-[40px] items-center rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm font-semibold text-slate-300 shadow-sm transition-all hover:bg-slate-700 active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-500 ${currentPage === 1 ? `pointer-events-none opacity-40` : ``}`}
+                        className={`inline-flex min-h-10 items-center rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm font-semibold text-slate-300 shadow-xs transition-all hover:bg-slate-700 active:scale-95 focus:outline-hidden focus:ring-2 focus:ring-primary-500 ${currentPage === 1 ? `pointer-events-none opacity-40` : ``}`}
                         aria-disabled={currentPage === 1}
                       >
                         Previous
@@ -600,7 +600,7 @@ export function PaymentsListView({ balance, payments, total, currentPage = 1, pa
                             ? `/payments?page=${currentPage + 1}`
                             : `/payments?page=${totalPages}`
                         }
-                        className={`inline-flex min-h-[40px] items-center rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm font-semibold text-slate-300 shadow-sm transition-all hover:bg-slate-700 active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary-500 ${currentPage === totalPages ? `pointer-events-none opacity-40` : ``}`}
+                        className={`inline-flex min-h-10 items-center rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm font-semibold text-slate-300 shadow-xs transition-all hover:bg-slate-700 active:scale-95 focus:outline-hidden focus:ring-2 focus:ring-primary-500 ${currentPage === totalPages ? `pointer-events-none opacity-40` : ``}`}
                         aria-disabled={currentPage === totalPages}
                       >
                         Next

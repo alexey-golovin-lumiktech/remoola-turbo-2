@@ -62,7 +62,7 @@ export function PasswordChangeForm() {
             placeholder="At least 8 characters"
             minLength={8}
             required
-            className={`min-h-[44px]`}
+            className={`min-h-11`}
           />
         </FormField>
 
@@ -76,7 +76,7 @@ export function PasswordChangeForm() {
             placeholder="Re-enter new password"
             minLength={8}
             required
-            className={`min-h-[44px]`}
+            className={`min-h-11`}
           />
         </FormField>
 
@@ -87,7 +87,7 @@ export function PasswordChangeForm() {
             isLoading={isPending}
             disabled={isPending}
             className={`
-              min-h-[44px]
+              min-h-11
               shadow-lg
               shadow-primary-500/30
               hover:shadow-xl

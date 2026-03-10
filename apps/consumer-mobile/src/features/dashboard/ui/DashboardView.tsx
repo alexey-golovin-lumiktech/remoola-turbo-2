@@ -28,7 +28,7 @@ export function DashboardView({ data }: DashboardViewProps) {
       <div
         className={`
         min-h-full
-        bg-gradient-to-br
+        bg-linear-to-br
         from-slate-50
         via-white
         to-slate-50
@@ -55,7 +55,7 @@ export function DashboardView({ data }: DashboardViewProps) {
             border-2
             border-dashed
             border-slate-700
-            bg-gradient-to-br
+            bg-linear-to-br
             from-slate-800/50
             to-slate-900/50
             p-8
@@ -110,7 +110,7 @@ export function DashboardView({ data }: DashboardViewProps) {
     <div
       className={`
       min-h-full
-      bg-gradient-to-br
+      bg-linear-to-br
       from-slate-50
       via-white
       to-slate-50
@@ -178,7 +178,7 @@ export function DashboardView({ data }: DashboardViewProps) {
             rounded-2xl
             border
             border-slate-700
-            bg-gradient-to-br
+            bg-linear-to-br
             from-slate-800
             to-slate-900
             p-5
@@ -256,7 +256,7 @@ export function DashboardView({ data }: DashboardViewProps) {
               rounded-2xl
               border
               border-slate-700
-              bg-gradient-to-br
+              bg-linear-to-br
               from-slate-800
               to-slate-900
               p-5
@@ -340,7 +340,7 @@ export function DashboardView({ data }: DashboardViewProps) {
                 border-2
                 border-dashed
                 border-slate-700
-                bg-gradient-to-br
+                bg-linear-to-br
                 from-slate-800/50
                 to-slate-900/50
                 px-6
@@ -360,7 +360,7 @@ export function DashboardView({ data }: DashboardViewProps) {
                 items-center
                 justify-center
                 rounded-3xl
-                bg-gradient-to-br
+                bg-linear-to-br
                 from-slate-100
                 to-slate-200
                 text-slate-400
@@ -394,7 +394,7 @@ export function DashboardView({ data }: DashboardViewProps) {
                   inline-flex
                   items-center
                   rounded-xl
-                  bg-gradient-to-r
+                  bg-linear-to-r
                   from-primary-600
                   to-primary-700
                   px-4

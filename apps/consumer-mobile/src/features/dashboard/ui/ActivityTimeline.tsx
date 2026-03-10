@@ -51,7 +51,7 @@ export function ActivityTimeline({ activities, maxItems = 5 }: ActivityTimelineP
         className={`
         border-b
         border-slate-700
-        bg-gradient-to-r
+        bg-linear-to-r
         from-slate-800
         to-slate-900
         px-5
@@ -105,7 +105,7 @@ export function ActivityTimeline({ activities, maxItems = 5 }: ActivityTimelineP
                   items-center
                   justify-center
                   rounded-xl
-                  bg-gradient-to-br
+                  bg-linear-to-br
                   from-primary-500
                   to-primary-600
                   text-white

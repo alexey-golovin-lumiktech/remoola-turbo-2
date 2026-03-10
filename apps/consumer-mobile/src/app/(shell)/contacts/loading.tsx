@@ -52,7 +52,7 @@ export default function ContactsLoading() {
   border
   border-slate-200
   bg-white
-  shadow-sm
+  shadow-xs
   dark:border-slate-700
   dark:bg-slate-800
             `}
@@ -76,7 +76,7 @@ export default function ContactsLoading() {
   h-5
   w-32
   animate-pulse
-  rounded
+  rounded-xs
   bg-slate-200
   dark:bg-slate-700
                     `}
@@ -86,7 +86,7 @@ export default function ContactsLoading() {
   h-4
   w-48
   animate-pulse
-  rounded
+  rounded-xs
   bg-slate-200
   dark:bg-slate-700
                     `}

@@ -5,7 +5,7 @@ export default function PaymentNotFound() {
     <div
       className={`
       flex
-      min-h-[500px]
+      min-h-125
       items-center
       justify-center
     `}
@@ -62,7 +62,7 @@ export default function PaymentNotFound() {
           className={`
             mt-6
             inline-flex
-            min-h-[44px]
+            min-h-11
             items-center
             rounded-lg
             bg-primary-600
@@ -71,11 +71,11 @@ export default function PaymentNotFound() {
             text-sm
             font-semibold
             text-white
-            shadow-sm
+            shadow-xs
             transition-all
             hover:bg-primary-700
             hover:shadow-md
-            focus:outline-none
+            focus:outline-hidden
             focus:ring-2
             focus:ring-primary-500
             focus:ring-offset-2

@@ -61,7 +61,7 @@ export function PaymentFilters({ onFilterChange, onReset }: PaymentFiltersProps)
         onClick={() => setIsOpen(!isOpen)}
         className={`
           inline-flex
-          min-h-[44px]
+          min-h-11
           items-center
           gap-2
           rounded-lg
@@ -75,7 +75,7 @@ export function PaymentFilters({ onFilterChange, onReset }: PaymentFiltersProps)
           text-slate-900
           transition-colors
           hover:bg-slate-50
-          focus:outline-none
+          focus:outline-hidden
           focus:ring-2
           focus:ring-primary-500
           dark:border-slate-600

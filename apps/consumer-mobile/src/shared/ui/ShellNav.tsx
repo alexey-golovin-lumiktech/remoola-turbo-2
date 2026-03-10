@@ -49,7 +49,7 @@ export function ShellHeader() {
     <header
       className={
         `flex min-h-14 shrink-0 items-center justify-between gap-3 border-b border-slate-200 ` +
-        `bg-white/95 px-4 py-3 backdrop-blur-sm dark:border-slate-700 dark:bg-slate-900/95`
+        `bg-white/95 px-4 py-3 backdrop-blur-xs dark:border-slate-700 dark:bg-slate-900/95`
       }
     >
       <div className={`flex items-center gap-2`}>
@@ -61,11 +61,11 @@ export function ShellHeader() {
           items-center
           justify-center
           rounded-lg
-          bg-gradient-to-br
+          bg-linear-to-br
           from-primary-500
           to-primary-700
           text-white
-          shadow-sm
+          shadow-xs
         `}
         >
           <span className={`text-sm font-bold`}>R</span>
@@ -104,7 +104,7 @@ export function ShellNav() {
     <nav
       className={
         `flex shrink-0 items-center justify-around border-t border-slate-200 ` +
-        `bg-white/95 px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur-sm ` +
+        `bg-white/95 px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur-xs ` +
         `shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] dark:border-slate-700 dark:bg-slate-900/95`
       }
       aria-label="Primary"
@@ -113,7 +113,7 @@ export function ShellNav() {
       {navItems.map((item) => {
         const active = pathname === item.href || (item.href !== `/dashboard` && pathname.startsWith(item.href));
         const linkClass =
-          `relative flex min-h-[44px] min-w-[44px] flex-col items-center justify-center gap-1 rounded-xl ` +
+          `relative flex min-h-11 min-w-11 flex-col items-center justify-center gap-1 rounded-xl ` +
           `px-3 py-2 text-[11px] font-medium transition-all duration-200 ` +
           (active
             ? `scale-105 text-primary-600 dark:text-primary-400`

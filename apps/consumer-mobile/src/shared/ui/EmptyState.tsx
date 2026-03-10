@@ -19,7 +19,7 @@ export function EmptyState({ icon, title, description, action }: EmptyStateProps
       className={`
       animate-fadeIn
       flex
-      min-h-[400px]
+      min-h-100
       flex-col
       items-center
       justify-center
@@ -27,13 +27,13 @@ export function EmptyState({ icon, title, description, action }: EmptyStateProps
       border-2
       border-dashed
       border-slate-200
-      bg-gradient-to-br
+      bg-linear-to-br
       from-slate-50/50
       to-white
       px-6
       py-16
       text-center
-      shadow-sm
+      shadow-xs
       dark:border-slate-700
       dark:from-slate-800/30
       dark:to-slate-900/30
@@ -49,7 +49,7 @@ export function EmptyState({ icon, title, description, action }: EmptyStateProps
           items-center
           justify-center
           rounded-2xl
-          bg-gradient-to-br
+          bg-linear-to-br
           from-primary-100
           to-primary-50
           text-primary-500
@@ -114,7 +114,7 @@ export function EmptyState({ icon, title, description, action }: EmptyStateProps
                 hover:shadow-primary-300
                 hover:-translate-y-0.5
                 active:translate-y-0
-                focus:outline-none
+                focus:outline-hidden
                 focus:ring-2
                 focus:ring-primary-500
                 focus:ring-offset-2
@@ -156,7 +156,7 @@ export function EmptyState({ icon, title, description, action }: EmptyStateProps
                 hover:shadow-primary-300
                 hover:-translate-y-0.5
                 active:translate-y-0
-                focus:outline-none
+                focus:outline-hidden
                 focus:ring-2
                 focus:ring-primary-500
                 focus:ring-offset-2

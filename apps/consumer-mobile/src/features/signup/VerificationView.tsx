@@ -17,8 +17,8 @@ export function VerificationView() {
   }, [verified]);
 
   const linkClass =
-    `inline-flex min-h-[44px] items-center justify-center rounded-lg bg-primary-600 px-4 py-2 ` +
-    `font-medium text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2`;
+    `inline-flex min-h-11 items-center justify-center rounded-lg bg-primary-600 px-4 py-2 ` +
+    `font-medium text-white focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2`;
 
   if (!email) {
     return (

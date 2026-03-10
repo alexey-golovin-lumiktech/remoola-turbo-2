@@ -51,7 +51,7 @@ export function PreferredCurrencyForm({ initialCurrency }: PreferredCurrencyForm
             value={selectedCurrency}
             placeholder="USD"
             disabled={isPending}
-            className={`min-h-[44px]`}
+            className={`min-h-11`}
             onChange={(e) => {
               const newValue = e.currentTarget.value;
               setSelectedCurrency(newValue);

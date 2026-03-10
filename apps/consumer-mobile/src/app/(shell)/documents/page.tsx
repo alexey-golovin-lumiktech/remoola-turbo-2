@@ -12,7 +12,7 @@ export default async function DocumentsPage() {
       className={`
   relative
   min-h-full
-  bg-gradient-to-br
+  bg-linear-to-br
   from-slate-50
   via-white
   to-slate-50
@@ -29,7 +29,7 @@ export default async function DocumentsPage() {
   border-b
   border-slate-200/80
   dark:border-slate-700/80
-  shadow-sm
+  shadow-xs
   backdrop-blur-lg
   px-4
   py-6
@@ -59,7 +59,7 @@ export default async function DocumentsPage() {
   items-center
   justify-center
   rounded-2xl
-  bg-gradient-to-br
+  bg-linear-to-br
   from-primary-500
   to-primary-600
   shadow-lg

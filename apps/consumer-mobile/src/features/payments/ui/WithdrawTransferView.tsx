@@ -127,7 +127,7 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
             setSuccess(null);
           }}
           className={`
-            min-h-[44px]
+            min-h-11
             px-4
             py-2
             text-sm
@@ -150,7 +150,7 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
             setSuccess(null);
           }}
           className={`
-            min-h-[44px]
+            min-h-11
             px-4
             py-2
             text-sm
@@ -218,7 +218,7 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
   border-slate-200
   bg-white
   p-6
-  shadow-sm
+  shadow-xs
   dark:border-slate-700
   dark:bg-slate-900
         `}
@@ -386,7 +386,7 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
               type="submit"
               disabled={isPending}
               className={`
-  min-h-[48px]
+  min-h-12
   w-full
   rounded-xl
   bg-primary-600
@@ -395,11 +395,11 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
   text-sm
   font-semibold
   text-white
-  shadow-sm
+  shadow-xs
   transition-all
   hover:bg-primary-700
   hover:shadow-md
-  focus:outline-none
+  focus:outline-hidden
   focus:ring-2
   focus:ring-primary-500
   focus:ring-offset-2
@@ -573,7 +573,7 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
               type="submit"
               disabled={isPending}
               className={`
-  min-h-[48px]
+  min-h-12
   w-full
   rounded-xl
   bg-primary-600
@@ -582,11 +582,11 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
   text-sm
   font-semibold
   text-white
-  shadow-sm
+  shadow-xs
   transition-all
   hover:bg-primary-700
   hover:shadow-md
-  focus:outline-none
+  focus:outline-hidden
   focus:ring-2
   focus:ring-primary-500
   focus:ring-offset-2

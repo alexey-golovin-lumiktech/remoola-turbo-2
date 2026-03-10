@@ -36,8 +36,8 @@ export default function NotFound() {
       <Link
         href="/"
         className={`
-          min-h-[44px]
-          min-w-[44px]
+          min-h-11
+          min-w-11
           flex
           items-center
           justify-center
@@ -48,7 +48,7 @@ export default function NotFound() {
           text-sm
           font-medium
           text-white
-          focus:outline-none
+          focus:outline-hidden
           focus:ring-2
           focus:ring-blue-500
           focus:ring-offset-2

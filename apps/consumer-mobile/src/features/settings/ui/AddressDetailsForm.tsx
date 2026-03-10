@@ -47,7 +47,7 @@ export function AddressDetailsForm({ profile }: AddressDetailsFormProps) {
             error={!!fieldErrors.street}
             placeholder="123 Main Street"
             required
-            className={`min-h-[44px]`}
+            className={`min-h-11`}
           />
         </FormField>
 
@@ -61,7 +61,7 @@ export function AddressDetailsForm({ profile }: AddressDetailsFormProps) {
               error={!!fieldErrors.city}
               placeholder="New York"
               required
-              className={`min-h-[44px]`}
+              className={`min-h-11`}
             />
           </FormField>
 
@@ -73,7 +73,7 @@ export function AddressDetailsForm({ profile }: AddressDetailsFormProps) {
               defaultValue={ad.state ?? ``}
               error={!!fieldErrors.state}
               placeholder="NY"
-              className={`min-h-[44px]`}
+              className={`min-h-11`}
             />
           </FormField>
         </div>
@@ -88,7 +88,7 @@ export function AddressDetailsForm({ profile }: AddressDetailsFormProps) {
               error={!!fieldErrors.postalCode}
               placeholder="10001"
               required
-              className={`min-h-[44px]`}
+              className={`min-h-11`}
             />
           </FormField>
 
@@ -101,7 +101,7 @@ export function AddressDetailsForm({ profile }: AddressDetailsFormProps) {
               error={!!fieldErrors.country}
               placeholder="United States"
               required
-              className={`min-h-[44px]`}
+              className={`min-h-11`}
             />
           </FormField>
         </div>
@@ -113,7 +113,7 @@ export function AddressDetailsForm({ profile }: AddressDetailsFormProps) {
             isLoading={isPending}
             disabled={isPending}
             className={`
-              min-h-[44px]
+              min-h-11
               shadow-lg
               shadow-primary-500/30
               hover:shadow-xl
