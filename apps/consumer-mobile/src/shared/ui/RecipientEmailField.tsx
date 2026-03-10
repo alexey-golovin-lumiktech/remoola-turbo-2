@@ -55,11 +55,12 @@ export function RecipientEmailField({
       setLoading(false);
       return;
     }
+    if (typeof window === `undefined`) return;
     if (abortRef.current) abortRef.current.abort();
     abortRef.current = new AbortController();
     setLoading(true);
 
-    const url = new URL(`/api/contacts`, typeof window !== `undefined` ? window.location.origin : ``);
+    const url = new URL(`/api/contacts`, window.location.origin);
     url.searchParams.set(`query`, q);
     url.searchParams.set(`limit`, String(SEARCH_LIMIT));
 

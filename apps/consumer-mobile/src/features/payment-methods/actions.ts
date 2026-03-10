@@ -250,8 +250,8 @@ export async function addPaymentMethodAction(input: AddPaymentMethodInput): Prom
       billingPhone: validation.data.billingPhone || undefined,
       brand: validation.data.brand,
       last4: validation.data.last4,
-      expMonth: validation.data.expMonth,
-      expYear: validation.data.expYear,
+      expMonth: String(validation.data.expMonth).padStart(2, `0`),
+      expYear: String(validation.data.expYear),
       stripePaymentMethodId: validation.data.stripePaymentMethodId,
     };
 

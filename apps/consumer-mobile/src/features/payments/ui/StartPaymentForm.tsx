@@ -163,6 +163,8 @@ export function StartPaymentForm({ defaultCurrency = `USD` }: StartPaymentFormPr
     } catch {
       showWarningToast(`Could not add contact, but continuing with payment`);
       await sendPayment(pendingEmail);
+    } finally {
+      setIsLoading(false);
     }
   }
 

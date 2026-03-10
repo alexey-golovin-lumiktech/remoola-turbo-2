@@ -174,6 +174,8 @@ export function CreatePaymentRequestForm({ defaultCurrency = `USD` }: CreatePaym
     } catch {
       showWarningToast(`Could not add contact, but continuing with request`);
       await createPaymentRequest(pendingEmail);
+    } finally {
+      setIsLoading(false);
     }
   }
 
