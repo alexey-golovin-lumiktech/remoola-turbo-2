@@ -4,14 +4,12 @@ import 'react-phone-number-input/style.css';
 import dynamic from 'next/dynamic';
 import { type Country } from 'react-phone-number-input';
 
+import { FORM_ERROR_CLASS, FORM_LABEL_CLASS } from './form-classes';
 import { getCountryCode } from '../../lib/countries';
 
 const PhoneInputWithCountry = dynamic(() => import(`react-phone-number-input`).then((mod) => mod.default), {
   ssr: false,
 });
-
-const labelClass = `mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300`;
-const errorClass = `mt-1 text-sm text-red-600 dark:text-red-400`;
 
 const phoneInputWrapperClass =
   `min-h-11 w-full rounded-lg border border-neutral-300 px-3 py-2 text-base text-neutral-900 ` +
@@ -47,7 +45,7 @@ export function PhoneInput({
 
   return (
     <div>
-      <label htmlFor={id} className={labelClass}>
+      <label htmlFor={id} className={FORM_LABEL_CLASS}>
         {label}
       </label>
       <PhoneInputWithCountry
@@ -62,7 +60,7 @@ export function PhoneInput({
         className={`${phoneInputWrapperClass} ${error ? phoneInputWrapperErrorClass : ``}`}
       />
       {error && (
-        <p className={errorClass} role="alert">
+        <p className={FORM_ERROR_CLASS} role="alert">
           {error}
         </p>
       )}

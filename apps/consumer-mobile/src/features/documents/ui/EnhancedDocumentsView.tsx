@@ -3,13 +3,13 @@
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
-import { ConfirmationModal } from './ConfirmationModal';
 import { DocumentFilterBar } from './DocumentFilterBar';
 import { DocumentUploadButton } from './DocumentUploadButton';
 import { PaymentPickerModal } from './PaymentPickerModal';
 import { TagEditor } from './TagEditor';
 import { showErrorToast, showSuccessToast } from '../../../lib/toast.client';
 import { Button } from '../../../shared/ui/Button';
+import { ConfirmationModal } from '../../../shared/ui/ConfirmationModal';
 import { EmptyState } from '../../../shared/ui/EmptyState';
 import { CheckIcon } from '../../../shared/ui/icons/CheckIcon';
 import { DocumentIcon } from '../../../shared/ui/icons/DocumentIcon';
@@ -18,6 +18,7 @@ import { PaperclipIcon } from '../../../shared/ui/icons/PaperclipIcon';
 import { SearchIcon } from '../../../shared/ui/icons/SearchIcon';
 import { TagIcon } from '../../../shared/ui/icons/TagIcon';
 import { TrashIcon } from '../../../shared/ui/icons/TrashIcon';
+import { SegmentedButton } from '../../../shared/ui/SegmentedButton';
 import { bulkDeleteDocuments } from '../actions';
 import { DocumentPreviewModal } from '../DocumentPreviewModal';
 import { type DocumentItem } from '../queries';
@@ -690,43 +691,22 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
                         )}
                         {id && (
                           <div className={`grid grid-cols-2 gap-3`}>
-                            <button
+                            <SegmentedButton
+                              active={isSelected}
                               onClick={() => setEditingTagsFor(id)}
-                              // eslint-disable-next-line max-len
-                              className={`flex min-h-11 items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold transition-all duration-200 active:scale-95 focus:outline-hidden focus:ring-2 focus:ring-primary-500/50 focus:ring-offset-2 focus:ring-offset-slate-100 dark:focus:ring-white/50 dark:focus:ring-offset-slate-900 shadow-md ${isSelected ? `border-white/30 bg-white/10 text-white hover:bg-white/15 backdrop-blur-xs` : `border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200 hover:border-slate-300 dark:border-slate-600/50 dark:bg-slate-700/50 dark:text-slate-300 dark:hover:bg-slate-600/50 dark:hover:border-slate-500/50 backdrop-blur-xs`}`}
+                              aria-label="Edit tags"
                             >
                               <TagIcon className={`h-4 w-4`} strokeWidth={2} />
                               <span>Tags</span>
-                            </button>
-                            <button
+                            </SegmentedButton>
+                            <SegmentedButton
+                              active={isSelected}
                               onClick={() => setAttachingDocId(id)}
-                              className={`flex
-                                min-h-11
-                                items-center
-                                justify-center
-                                gap-2
-                                rounded-xl
-                                border
-                                px-4
-                                py-2.5
-                                text-sm
-                                font-bold
-                                transition-all
-                                duration-200
-                                active:scale-95
-                                focus:outline-hidden
-                                focus:ring-2
-                                focus:ring-primary-500/50
-                                focus:ring-offset-2
-                                focus:ring-offset-slate-100
-                                dark:focus:ring-white/50
-                                dark:focus:ring-offset-slate-900
-                                shadow-md
-                                ${isSelected ? `border-white/30 bg-white/10 text-white hover:bg-white/15 backdrop-blur-xs` : `border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200 hover:border-slate-300 dark:border-slate-600/50 dark:bg-slate-700/50 dark:text-slate-300 dark:hover:bg-slate-600/50 dark:hover:border-slate-500/50 backdrop-blur-xs`}`}
+                              aria-label="Attach to payment"
                             >
                               <PaperclipIcon className={`h-4 w-4`} strokeWidth={2.5} />
                               <span>Attach</span>
-                            </button>
+                            </SegmentedButton>
                           </div>
                         )}
                       </div>

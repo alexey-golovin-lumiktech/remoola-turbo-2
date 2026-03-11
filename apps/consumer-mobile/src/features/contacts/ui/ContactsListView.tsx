@@ -10,6 +10,7 @@ import { EditContactModal, type EditContactData } from './EditContactModal';
 import { useDebounce } from '../../../shared/hooks/useDebounce';
 import { Avatar } from '../../../shared/ui/Avatar';
 import { Button } from '../../../shared/ui/Button';
+import { EmptyState } from '../../../shared/ui/EmptyState';
 import { IconBadge } from '../../../shared/ui/IconBadge';
 import { CheckIcon } from '../../../shared/ui/icons/CheckIcon';
 import { ChevronRightIcon } from '../../../shared/ui/icons/ChevronRightIcon';
@@ -262,78 +263,18 @@ export function ContactsListView({ contacts }: ContactsListViewProps) {
             </div>
           </div>
         ) : filteredContacts.length === 0 ? (
-          <div
-            className={`
-            animate-fadeIn
-            rounded-2xl
-            border
-            border-slate-200
-            bg-linear-to-br
-            from-slate-50
-            to-white
-            dark:border-slate-700
-            dark:from-slate-800/50
-            dark:to-slate-900/50
-            p-8
-            text-center
-            shadow-xs
-          `}
-          >
-            <div
-              className={`
-              mx-auto
-              mb-4
-              flex
-              h-16
-              w-16
-              items-center
-              justify-center
-              rounded-2xl
-              bg-slate-100
-              dark:bg-slate-800
-              shadow-md
-            `}
-            >
-              <SearchIcon
-                className={`
-                h-8
-                w-8
-                text-slate-400
-                dark:text-slate-500
-              `}
-              />
-            </div>
-            <h3
-              className={`
-              text-lg
-              font-bold
-              text-slate-900
-              dark:text-slate-100
-            `}
-            >
-              No results found
-            </h3>
-            <p
-              className={`
-              mt-2
-              text-sm
-              text-slate-600
-              dark:text-slate-400
-            `}
-            >
-              No contacts found matching &quot;{searchQuery}&quot;
-            </p>
-            <p
-              className={`
-              mt-1
-              text-xs
-              text-slate-500
-              dark:text-slate-500
-            `}
-            >
-              Try adjusting your search or add a new contact
-            </p>
-          </div>
+          <EmptyState
+            icon={<SearchIcon className={`h-8 w-8 text-slate-400 dark:text-slate-500`} />}
+            title="No results found"
+            description={`No contacts found matching "${searchQuery}". Try adjusting your search or add a new contact.`}
+            action={{
+              label: `Add contact`,
+              onClick: () => {
+                setInitialEmail(null);
+                setCreateModalOpen(true);
+              },
+            }}
+          />
         ) : (
           <div
             className={`

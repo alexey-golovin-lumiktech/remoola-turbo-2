@@ -1,5 +1,3 @@
-import Link from 'next/link';
-
 import { ACCOUNT_TYPE } from '@remoola/api-types';
 
 import { AddressDetailsForm } from './AddressDetailsForm';
@@ -8,12 +6,14 @@ import { PasswordChangeForm } from './PasswordChangeForm';
 import { PersonalDetailsForm } from './PersonalDetailsForm';
 import { PreferredCurrencyForm } from './PreferredCurrencyForm';
 import { ThemeSettingsForm } from './ThemeSettingsForm';
+import { IconBadge } from '../../../shared/ui/IconBadge';
 import { AlertTriangleIcon } from '../../../shared/ui/icons/AlertTriangleIcon';
-import { ChevronRightIcon } from '../../../shared/ui/icons/ChevronRightIcon';
 import { CreditCardIcon } from '../../../shared/ui/icons/CreditCardIcon';
 import { DocumentIcon } from '../../../shared/ui/icons/DocumentIcon';
 import { LinkIcon } from '../../../shared/ui/icons/LinkIcon';
 import { SettingsIcon } from '../../../shared/ui/icons/SettingsIcon';
+import { NavCard } from '../../../shared/ui/NavCard';
+import { PageHeader } from '../../../shared/ui/PageHeader';
 import { type Profile, type Settings } from '../schemas';
 
 interface SettingsViewProps {
@@ -37,72 +37,11 @@ export function SettingsView({ profile, settings }: SettingsViewProps) {
         `}
         data-testid="consumer-mobile-settings-view"
       >
-        <div
-          className={`
-          bg-white/95
-          dark:bg-slate-900/95
-          border-b
-          border-slate-200/80
-          dark:border-slate-700/80
-          shadow-xs
-          backdrop-blur-lg
-          px-4
-          py-6
-          sm:px-6
-          sm:py-7
-          lg:px-8
-        `}
-        >
-          <div className={`mx-auto max-w-6xl`}>
-            <div className={`flex items-center gap-4`}>
-              <div
-                className={`
-                flex
-                h-12
-                w-12
-                items-center
-                justify-center
-                rounded-2xl
-                bg-linear-to-br
-                from-primary-500
-                to-primary-600
-                shadow-lg
-                shadow-primary-500/30
-                ring-4
-                ring-primary-50
-                dark:ring-primary-950
-                dark:shadow-primary-900/40
-              `}
-              >
-                <SettingsIcon className={`h-6 w-6 text-white`} />
-              </div>
-              <div>
-                <h1
-                  className={`
-                  text-3xl
-                  font-extrabold
-                  tracking-tight
-                  text-slate-900
-                  sm:text-4xl
-                  dark:text-white
-                `}
-                >
-                  Settings
-                </h1>
-                <p
-                  className={`
-                  text-sm
-                  font-medium
-                  text-slate-600
-                  dark:text-slate-400
-                `}
-                >
-                  Unable to load profile
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <PageHeader
+          icon={<IconBadge icon={<SettingsIcon className={`h-6 w-6 text-white`} />} hasRing />}
+          title="Settings"
+          subtitle="Unable to load profile"
+        />
         <div
           className={`
           mx-auto
@@ -345,130 +284,36 @@ export function SettingsView({ profile, settings }: SettingsViewProps) {
             </div>
           </div>
           <div className={`divide-y divide-slate-200 dark:divide-slate-700`}>
-            <Link
+            <NavCard
               href="/payment-methods"
-              className={`
-                group
-                flex
-                min-h-18
-                items-center
-                justify-between
-                px-6
-                py-5
-                transition-all
-                hover:bg-slate-50
-                dark:hover:bg-slate-700/50
-                active:scale-[0.99]
-              `}
-            >
-              <div className={`flex items-center gap-4`}>
-                <div
-                  className={`
-                  flex
-                  h-12
-                  w-12
-                  items-center
-                  justify-center
-                  rounded-xl
-                  bg-linear-to-br
-                  from-primary-50
-                  to-primary-100
-                  dark:from-primary-900/20
-                  dark:to-primary-900/10
-                  shadow-xs
-                  ring-1
-                  ring-primary-100
-                  dark:ring-primary-900/30
-                `}
-                >
-                  <CreditCardIcon
-                    className={`
-                    h-6
-                    w-6
-                    text-primary-600
-                    dark:text-primary-400
-                  `}
-                  />
-                </div>
-                <div>
-                  <h3 className={`font-semibold text-slate-900 dark:text-white`}>Payment Methods</h3>
-                  <p className={`text-sm text-slate-600 dark:text-slate-400`}>Manage cards and bank accounts</p>
-                </div>
-              </div>
-              <ChevronRightIcon
-                className={`
-                h-5
-                w-5
-                text-slate-400
-                transition-all
-                group-hover:translate-x-1
-                group-hover:text-primary-500
-                dark:text-slate-500
-              `}
-              />
-            </Link>
-            <Link
+              icon={<CreditCardIcon className={`h-6 w-6 text-primary-600 dark:text-primary-400`} />}
+              title="Payment Methods"
+              subtitle="Manage cards and bank accounts"
+            />
+            <NavCard
               href="/documents"
-              className={`
-                group
+              icon={<DocumentIcon className={`h-6 w-6 text-secondary-600 dark:text-secondary-400`} />}
+              title="Documents"
+              subtitle="View and manage your documents"
+              iconContainerClassName={`
                 flex
-                min-h-18
+                h-12
+                w-12
+                shrink-0
                 items-center
-                justify-between
-                px-6
-                py-5
-                transition-all
-                hover:bg-slate-50
-                dark:hover:bg-slate-700/50
-                active:scale-[0.99]
+                justify-center
+                rounded-xl
+                bg-linear-to-br
+                from-secondary-50
+                to-secondary-100
+                shadow-xs
+                ring-1
+                ring-secondary-100
+                dark:from-secondary-900/20
+                dark:to-secondary-900/10
+                dark:ring-secondary-900/30
               `}
-            >
-              <div className={`flex items-center gap-4`}>
-                <div
-                  className={`
-                  flex
-                  h-12
-                  w-12
-                  items-center
-                  justify-center
-                  rounded-xl
-                  bg-linear-to-br
-                  from-secondary-50
-                  to-secondary-100
-                  dark:from-secondary-900/20
-                  dark:to-secondary-900/10
-                  shadow-xs
-                  ring-1
-                  ring-secondary-100
-                  dark:ring-secondary-900/30
-                `}
-                >
-                  <DocumentIcon
-                    className={`
-                    h-6
-                    w-6
-                    text-secondary-600
-                    dark:text-secondary-400
-                  `}
-                  />
-                </div>
-                <div>
-                  <h3 className={`font-semibold text-slate-900 dark:text-white`}>Documents</h3>
-                  <p className={`text-sm text-slate-600 dark:text-slate-400`}>View and manage your documents</p>
-                </div>
-              </div>
-              <ChevronRightIcon
-                className={`
-                h-5
-                w-5
-                text-slate-400
-                transition-all
-                group-hover:translate-x-1
-                group-hover:text-primary-500
-                dark:text-slate-500
-              `}
-              />
-            </Link>
+            />
           </div>
         </div>
 

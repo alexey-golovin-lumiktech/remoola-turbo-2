@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react';
 
 import { CountrySelect } from '../../../../shared/ui/CountrySelect';
+import { FORM_ERROR_CLASS, FORM_LABEL_CLASS } from '../../../../shared/ui/form-classes';
 import { PhoneInput } from '../../../../shared/ui/PhoneInput';
 import { useSignupForm } from '../../SignupFormContext';
 import { useSignupSteps } from '../../SignupStepsContext';
@@ -83,9 +84,6 @@ export function PersonalDetailsStep() {
     goNext();
   }, [isEntity, organizationDetails.name, personalDetails, addressDetails.street, markSubmitted, goNext]);
 
-  const labelClass = `mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300`;
-  const errorClass = `mt-1 text-sm text-red-600`;
-
   if (isEntity) {
     return (
       <div
@@ -113,7 +111,7 @@ export function PersonalDetailsStep() {
           </h1>
           <div className={`space-y-3`}>
             <div>
-              <label htmlFor="pe-company" className={labelClass}>
+              <label htmlFor="pe-company" className={FORM_LABEL_CLASS}>
                 Company name
               </label>
               <input
@@ -129,7 +127,7 @@ export function PersonalDetailsStep() {
                 aria-describedby={fieldErrors.companyName ? `pe-company-err` : undefined}
               />
               {fieldErrors.companyName && (
-                <p id="pe-company-err" className={errorClass} role="alert">
+                <p id="pe-company-err" className={FORM_ERROR_CLASS} role="alert">
                   {fieldErrors.companyName}
                 </p>
               )}
@@ -143,7 +141,7 @@ export function PersonalDetailsStep() {
               onErrorClear={() => clearError(`countryOfTaxResidence`)}
             />
             <div>
-              <label htmlFor="pe-taxid" className={labelClass}>
+              <label htmlFor="pe-taxid" className={FORM_LABEL_CLASS}>
                 Tax ID
               </label>
               <input
@@ -159,7 +157,7 @@ export function PersonalDetailsStep() {
                 aria-describedby={fieldErrors.taxId ? `pe-taxid-err` : undefined}
               />
               {fieldErrors.taxId && (
-                <p id="pe-taxid-err" className={errorClass} role="alert">
+                <p id="pe-taxid-err" className={FORM_ERROR_CLASS} role="alert">
                   {fieldErrors.taxId}
                 </p>
               )}
@@ -175,7 +173,7 @@ export function PersonalDetailsStep() {
               placeholder="+1 (555) 000-0000"
             />
             <div>
-              <label htmlFor="pe-legal-address" className={labelClass}>
+              <label htmlFor="pe-legal-address" className={FORM_LABEL_CLASS}>
                 Legal address
               </label>
               <input
@@ -191,7 +189,7 @@ export function PersonalDetailsStep() {
                 aria-describedby={fieldErrors.legalAddress ? `pe-legal-address-err` : undefined}
               />
               {fieldErrors.legalAddress && (
-                <p id="pe-legal-address-err" className={errorClass} role="alert">
+                <p id="pe-legal-address-err" className={FORM_ERROR_CLASS} role="alert">
                   {fieldErrors.legalAddress}
                 </p>
               )}
@@ -291,7 +289,7 @@ export function PersonalDetailsStep() {
             };
             return (
               <div key={key}>
-                <label htmlFor={`pi-${key}`} className={labelClass}>
+                <label htmlFor={`pi-${key}`} className={FORM_LABEL_CLASS}>
                   {label}
                 </label>
                 <input
@@ -307,7 +305,7 @@ export function PersonalDetailsStep() {
                   aria-describedby={hasError ? errId : undefined}
                 />
                 {hasError && (
-                  <p id={errId} className={errorClass} role="alert">
+                  <p id={errId} className={FORM_ERROR_CLASS} role="alert">
                     {fieldErrors[key]}
                   </p>
                 )}

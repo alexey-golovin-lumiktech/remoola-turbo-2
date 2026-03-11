@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
+import { FORM_ERROR_CLASS, FORM_LABEL_CLASS } from '../../../../shared/ui/form-classes';
 import { useSignupForm } from '../../SignupFormContext';
 import { useSignupSteps } from '../../SignupStepsContext';
 import { STEP_NAME } from '../../stepNames';
@@ -81,9 +82,6 @@ export function AddressDetailsStep() {
 
   const nextLabel = loading ? `Submitting...` : isContractorIndividual ? `Finish signup` : undefined;
 
-  const labelClass = `mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300`;
-  const errorClass = `mt-1 text-sm text-red-600`;
-
   const fields: {
     key: keyof typeof addressDetails;
     label: string;
@@ -127,7 +125,7 @@ export function AddressDetailsStep() {
             const hasError = !!fieldErrors[key];
             return (
               <div key={key}>
-                <label htmlFor={`ad-${key}`} className={labelClass}>
+                <label htmlFor={`ad-${key}`} className={FORM_LABEL_CLASS}>
                   {label}
                 </label>
                 <input
@@ -144,7 +142,7 @@ export function AddressDetailsStep() {
                   aria-describedby={hasError ? errId : undefined}
                 />
                 {hasError && (
-                  <p id={errId} className={errorClass} role="alert">
+                  <p id={errId} className={FORM_ERROR_CLASS} role="alert">
                     {fieldErrors[key]}
                   </p>
                 )}

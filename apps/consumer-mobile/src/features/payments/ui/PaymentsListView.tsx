@@ -17,6 +17,7 @@ import { SearchIcon } from '../../../shared/ui/icons/SearchIcon';
 import { SwitchHorizontalIcon } from '../../../shared/ui/icons/SwitchHorizontalIcon';
 import { UsersIcon } from '../../../shared/ui/icons/UsersIcon';
 import { PageHeader } from '../../../shared/ui/PageHeader';
+import { PaginationButton } from '../../../shared/ui/PaginationButton';
 import { SearchInput } from '../../../shared/ui/SearchInput';
 import { StatusBadge } from '../../../shared/ui/StatusBadge';
 import { formatCurrency, formatRelativeDate } from '../../../shared/utils/date-format';
@@ -514,27 +515,27 @@ export function PaymentsListView({ balance, payments, total, currentPage = 1, pa
                       Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, total)} of {total}
                     </div>
                     <div className={`flex items-center gap-2`}>
-                      <Link
+                      <PaginationButton
                         href={currentPage > 1 ? `/payments?page=${currentPage - 1}` : `/payments?page=1`}
-                        className={`inline-flex min-h-10 items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-xs transition-all hover:bg-slate-100 active:scale-95 focus:outline-hidden focus:ring-2 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 ${currentPage === 1 ? `pointer-events-none opacity-40` : ``}`}
+                        disabled={currentPage === 1}
                         aria-disabled={currentPage === 1}
                       >
                         Previous
-                      </Link>
+                      </PaginationButton>
                       <span className={`text-sm font-medium text-slate-600 dark:text-slate-400`}>
                         {currentPage} / {totalPages}
                       </span>
-                      <Link
+                      <PaginationButton
                         href={
                           currentPage < totalPages
                             ? `/payments?page=${currentPage + 1}`
                             : `/payments?page=${totalPages}`
                         }
-                        className={`inline-flex min-h-10 items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-xs transition-all hover:bg-slate-100 active:scale-95 focus:outline-hidden focus:ring-2 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 ${currentPage === totalPages ? `pointer-events-none opacity-40` : ``}`}
+                        disabled={currentPage === totalPages}
                         aria-disabled={currentPage === totalPages}
                       >
                         Next
-                      </Link>
+                      </PaginationButton>
                     </div>
                   </div>
                 )}

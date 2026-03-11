@@ -4,6 +4,7 @@ import { CardElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { useState, useMemo } from 'react';
 
 import { clientLogger } from '../../../lib/logger';
+import { AlertBanner } from '../../../shared/ui/AlertBanner';
 import { Button } from '../../../shared/ui/Button';
 import { useTheme } from '../../../shared/ui/ThemeProvider';
 import { addPaymentMethodAction, addBankAccountAction } from '../actions';
@@ -668,22 +669,7 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
         <span>Set as default payment method</span>
       </label>
 
-      {error && (
-        <div
-          className={`
-  rounded-lg
-  border
-  border-red-200
-  bg-red-50
-  p-3
-  dark:border-red-800
-  dark:bg-red-900/20
-          `}
-          role="alert"
-        >
-          <p className={`text-sm text-red-800 dark:text-red-300`}>{error}</p>
-        </div>
-      )}
+      {error && <AlertBanner message={error} role="alert" />}
 
       <div
         className={`

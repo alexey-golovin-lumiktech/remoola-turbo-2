@@ -5,6 +5,7 @@ import { loadStripe, type Stripe, type Appearance } from '@stripe/stripe-js';
 import { type ReactNode, useEffect, useState, useMemo } from 'react';
 
 import { getClientEnv } from '../../lib/env.client';
+import { AlertBanner } from '../ui/AlertBanner';
 import { useTheme } from '../ui/ThemeProvider';
 
 let stripePromise: Promise<Stripe | null> | null = null;
@@ -61,21 +62,7 @@ export function StripeProvider({ children, clientSecret }: StripeProviderProps) 
   }, [resolvedTheme]);
 
   if (error) {
-    return (
-      <div
-        className={`
-  rounded-lg
-  border
-  border-red-200
-  bg-red-50
-  p-4
-  dark:border-red-800
-  dark:bg-red-900/20
-        `}
-      >
-        <p className={`text-sm text-red-800 dark:text-red-300`}>{error}</p>
-      </div>
-    );
+    return <AlertBanner message={error} />;
   }
 
   if (!stripe) {

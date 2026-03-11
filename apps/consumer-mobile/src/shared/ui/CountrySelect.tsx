@@ -2,6 +2,7 @@
 
 import Select, { type SingleValue } from 'react-select';
 
+import { FORM_ERROR_CLASS, FORM_LABEL_CLASS } from './form-classes';
 import { useTheme } from './ThemeProvider';
 import { getCountryOptions } from '../../lib/countries';
 
@@ -19,9 +20,6 @@ export interface CountrySelectProps {
 }
 
 const options = getCountryOptions();
-
-const labelClass = `mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300`;
-const errorClass = `mt-1 text-sm text-red-600 dark:text-red-400`;
 
 export function CountrySelect({
   label,
@@ -46,7 +44,7 @@ export function CountrySelect({
 
   return (
     <div className={className}>
-      <label htmlFor={id} className={labelClass}>
+      <label htmlFor={id} className={FORM_LABEL_CLASS}>
         {label}
       </label>
       <Select<{ value: string; label: string }>
@@ -107,7 +105,7 @@ export function CountrySelect({
         }}
       />
       {error && (
-        <p className={errorClass} role="alert">
+        <p className={FORM_ERROR_CLASS} role="alert">
           {error}
         </p>
       )}

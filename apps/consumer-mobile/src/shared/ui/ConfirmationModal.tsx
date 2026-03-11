@@ -2,7 +2,8 @@
 
 import { type ReactNode } from 'react';
 
-import { Button } from '../../../shared/ui/Button';
+import { AlertBanner } from './AlertBanner';
+import { Button } from './Button';
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -15,6 +16,8 @@ interface ConfirmationModalProps {
   variant?: `danger` | `primary`;
   isLoading?: boolean;
   icon?: ReactNode;
+  /** Optional error message shown above the main message (e.g. after a failed submit) */
+  error?: string | null;
 }
 
 /**
@@ -32,6 +35,7 @@ export function ConfirmationModal({
   variant = `primary`,
   isLoading = false,
   icon,
+  error,
 }: ConfirmationModalProps) {
   if (!isOpen) return null;
 
@@ -107,6 +111,7 @@ export function ConfirmationModal({
           >
             {title}
           </h2>
+          {error != null && error !== `` && <AlertBanner message={error} className={`mt-3`} />}
           <p
             className={`
               mt-3

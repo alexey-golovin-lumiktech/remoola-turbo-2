@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
+import { AlertBanner } from '../../../shared/ui/AlertBanner';
 import { CheckIcon } from '../../../shared/ui/icons/CheckIcon';
 import { omit } from '../../../shared/utils/object-utils';
 import { withdrawFundsAction, transferFundsAction } from '../actions';
@@ -364,19 +365,7 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
               />
             </div>
 
-            {errors.submit && (
-              <div
-                className={`
-  rounded-lg
-  bg-red-50
-  p-3
-  dark:bg-red-900/20
-                `}
-                role="alert"
-              >
-                <p className={`text-sm text-red-800 dark:text-red-300`}>{errors.submit}</p>
-              </div>
-            )}
+            {errors.submit && <AlertBanner message={errors.submit} role="alert" />}
 
             <button
               type="submit"
@@ -551,19 +540,7 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
               />
             </div>
 
-            {errors.submit && (
-              <div
-                className={`
-  rounded-lg
-  bg-red-50
-  p-3
-  dark:bg-red-900/20
-                `}
-                role="alert"
-              >
-                <p className={`text-sm text-red-800 dark:text-red-300`}>{errors.submit}</p>
-              </div>
-            )}
+            {errors.submit && <AlertBanner message={errors.submit} role="alert" />}
 
             <button
               type="submit"

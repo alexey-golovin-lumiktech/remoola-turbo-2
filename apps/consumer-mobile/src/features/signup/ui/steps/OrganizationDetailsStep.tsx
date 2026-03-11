@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 
 import { CONSUMER_ROLE, ORGANIZATION_SIZE, type TConsumerRole } from '@remoola/api-types';
 
+import { FORM_ERROR_CLASS, FORM_LABEL_CLASS } from '../../../../shared/ui/form-classes';
 import { useSignupForm } from '../../SignupFormContext';
 import { useSignupSteps } from '../../SignupStepsContext';
 import { STEP_NAME } from '../../stepNames';
@@ -79,9 +80,6 @@ export function OrganizationDetailsStep() {
 
   const nextLabel = loading ? `Submitting...` : `Finish signup`;
 
-  const labelClass = `mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300`;
-  const errorClass = `mt-1 text-sm text-red-600`;
-
   return (
     <div
       className={`
@@ -108,7 +106,7 @@ export function OrganizationDetailsStep() {
         </h1>
         <div className={`space-y-3`}>
           <div>
-            <label htmlFor="od-name" className={labelClass}>
+            <label htmlFor="od-name" className={FORM_LABEL_CLASS}>
               Organization name
             </label>
             <input
@@ -124,13 +122,13 @@ export function OrganizationDetailsStep() {
               aria-describedby={fieldErrors.name ? `od-name-err` : undefined}
             />
             {fieldErrors.name && (
-              <p id="od-name-err" className={errorClass} role="alert">
+              <p id="od-name-err" className={FORM_ERROR_CLASS} role="alert">
                 {fieldErrors.name}
               </p>
             )}
           </div>
           <div>
-            <label htmlFor="od-role" className={labelClass}>
+            <label htmlFor="od-role" className={FORM_LABEL_CLASS}>
               Your role in the organization
             </label>
             <select
@@ -158,13 +156,13 @@ export function OrganizationDetailsStep() {
               ))}
             </select>
             {fieldErrors.consumerRole && (
-              <p id="od-role-err" className={errorClass} role="alert">
+              <p id="od-role-err" className={FORM_ERROR_CLASS} role="alert">
                 {fieldErrors.consumerRole}
               </p>
             )}
             {organizationDetails.consumerRole === CONSUMER_ROLE.OTHER && (
               <div className={`mt-3`}>
-                <label htmlFor="od-role-other" className={labelClass}>
+                <label htmlFor="od-role-other" className={FORM_LABEL_CLASS}>
                   Your role (other)
                 </label>
                 <input
@@ -180,7 +178,7 @@ export function OrganizationDetailsStep() {
             )}
           </div>
           <div>
-            <label htmlFor="od-size" className={labelClass}>
+            <label htmlFor="od-size" className={FORM_LABEL_CLASS}>
               Organization size
             </label>
             <select
@@ -210,7 +208,7 @@ export function OrganizationDetailsStep() {
               ))}
             </select>
             {fieldErrors.size && (
-              <p id="od-size-err" className={errorClass} role="alert">
+              <p id="od-size-err" className={FORM_ERROR_CLASS} role="alert">
                 {fieldErrors.size}
               </p>
             )}

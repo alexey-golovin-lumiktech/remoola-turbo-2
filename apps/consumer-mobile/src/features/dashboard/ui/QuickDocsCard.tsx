@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
-import { ChevronRightIcon } from '../../../shared/ui/icons/ChevronRightIcon';
 import { DocumentIcon } from '../../../shared/ui/icons/DocumentIcon';
+import { NavCard } from '../../../shared/ui/NavCard';
 
 interface QuickDoc {
   id: string;
@@ -76,23 +76,28 @@ export function QuickDocsCard({ documents, maxItems = 3 }: QuickDocsCardProps) {
 
       <div className={`divide-y divide-slate-200 dark:divide-slate-700`}>
         {displayedDocs.map((doc) => (
-          <Link
+          <NavCard
             key={doc.id}
             href={`/documents#${doc.id}`}
+            icon={<DocumentIcon className={`h-5 w-5`} />}
+            title={doc.name}
+            subtitle={new Date(doc.createdAt).toLocaleDateString(undefined, {
+              month: `short`,
+              day: `numeric`,
+              year: `numeric`,
+            })}
             className={`
               group
               flex
               items-center
-              gap-3
+              justify-between
               px-4
               py-3
               transition-colors
               hover:bg-slate-50
               dark:hover:bg-slate-700/50
             `}
-          >
-            <div
-              className={`
+            iconContainerClassName={`
               flex
               h-10
               w-10
@@ -105,49 +110,7 @@ export function QuickDocsCard({ documents, maxItems = 3 }: QuickDocsCardProps) {
               dark:bg-blue-900/30
               dark:text-blue-400
             `}
-            >
-              <DocumentIcon className={`h-5 w-5`} />
-            </div>
-
-            <div className={`flex-1 min-w-0`}>
-              <p
-                className={`
-                truncate
-                text-sm
-                font-medium
-                text-slate-900
-                dark:text-white
-              `}
-              >
-                {doc.name}
-              </p>
-              <p
-                className={`
-                mt-0.5
-                text-xs
-                text-slate-500
-                dark:text-slate-400
-              `}
-              >
-                {new Date(doc.createdAt).toLocaleDateString(undefined, {
-                  month: `short`,
-                  day: `numeric`,
-                  year: `numeric`,
-                })}
-              </p>
-            </div>
-
-            <ChevronRightIcon
-              className={`
-              h-4
-              w-4
-              shrink-0
-              text-slate-400
-              transition-transform
-              group-hover:translate-x-0.5
-            `}
-            />
-          </Link>
+          />
         ))}
       </div>
     </div>

@@ -8,11 +8,11 @@ import { clientLogger } from '../../../lib/logger';
 import { showErrorToast, showWarningToast } from '../../../lib/toast.client';
 import { AmountCurrencyInput } from '../../../shared/ui/AmountCurrencyInput';
 import { Button } from '../../../shared/ui/Button';
+import { EmailNotInContactsModal } from '../../../shared/ui/EmailNotInContactsModal';
 import { FormField } from '../../../shared/ui/FormField';
 import { FormInput } from '../../../shared/ui/FormInput';
 import { FormSelect } from '../../../shared/ui/FormSelect';
 import { FormTextarea } from '../../../shared/ui/FormTextarea';
-import { Modal } from '../../../shared/ui/Modal';
 
 interface StartPaymentFormProps {
   defaultCurrency?: string;
@@ -251,33 +251,14 @@ export function StartPaymentForm({ defaultCurrency = `USD` }: StartPaymentFormPr
         </div>
       </form>
 
-      <Modal isOpen={showConfirmModal} onClose={() => setShowConfirmModal(false)} title="Email not in contacts">
-        <div className={`space-y-4`}>
-          <p className={`text-sm text-slate-600 dark:text-slate-400`}>
-            The email <strong className={`text-slate-900 dark:text-white`}>{pendingEmail}</strong> isn&apos;t in your
-            contacts. Would you like to add it before sending the payment?
-          </p>
-
-          <div
-            className={`
-            flex
-            flex-col
-            gap-2
-            pt-2
-          `}
-          >
-            <Button variant="primary" size="md" onClick={handleAddContactAndContinue} className={`w-full`}>
-              Add contact and continue
-            </Button>
-            <Button variant="outline" size="md" onClick={handleContinueWithoutContact} className={`w-full`}>
-              Continue without adding
-            </Button>
-            <Button variant="ghost" size="md" onClick={() => setShowConfirmModal(false)} className={`w-full`}>
-              Cancel
-            </Button>
-          </div>
-        </div>
-      </Modal>
+      <EmailNotInContactsModal
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        email={pendingEmail}
+        onAddAndContinue={handleAddContactAndContinue}
+        onContinueWithout={handleContinueWithoutContact}
+        variant="payment"
+      />
     </>
   );
 }

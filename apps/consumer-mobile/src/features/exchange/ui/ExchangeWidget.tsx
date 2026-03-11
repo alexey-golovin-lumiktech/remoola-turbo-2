@@ -422,32 +422,47 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
 
         <div
           className={`
-          grid
-          grid-cols-2
+          flex
+          flex-wrap
           gap-3
           pt-2
         `}
         >
-          <Button
-            variant="outline"
-            size="md"
-            onClick={handleGetQuote}
-            isLoading={isLoading}
-            disabled={!amount || parseFloat(amount) <= 0 || isSameCurrency}
-            className={`min-h-12 font-bold`}
-          >
-            Get quote
-          </Button>
-          <Button
-            variant="primary"
-            size="md"
-            onClick={handleExchange}
-            isLoading={isLoading}
-            disabled={!amount || parseFloat(amount) <= 0 || isSameCurrency}
-            className={`min-h-12 font-bold`}
-          >
-            {quote ? `Exchange now` : `Get quote`}
-          </Button>
+          {quote ? (
+            <>
+              <Button
+                variant="outline"
+                size="md"
+                onClick={handleGetQuote}
+                isLoading={isLoading}
+                disabled={!amount || parseFloat(amount) <= 0 || isSameCurrency}
+                className={`min-h-12 font-bold`}
+              >
+                Get new quote
+              </Button>
+              <Button
+                variant="primary"
+                size="md"
+                onClick={handleExchange}
+                isLoading={isLoading}
+                disabled={!amount || parseFloat(amount) <= 0 || isSameCurrency}
+                className={`min-h-12 font-bold`}
+              >
+                Exchange now
+              </Button>
+            </>
+          ) : (
+            <Button
+              variant="primary"
+              size="md"
+              onClick={handleExchange}
+              isLoading={isLoading}
+              disabled={!amount || parseFloat(amount) <= 0 || isSameCurrency}
+              className={`min-h-12 font-bold`}
+            >
+              Get quote
+            </Button>
+          )}
         </div>
       </div>
     </div>

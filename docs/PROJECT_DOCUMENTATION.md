@@ -252,6 +252,8 @@ Mobile-first consumer UI is in `apps/consumer-mobile`, running on port 3002. Fol
 
 ### Shared UI Library (`apps/consumer-mobile/src/shared/ui`)
 
+- **ConfirmationModal**: Reusable confirmation dialog (moved from documents feature); supports title, message, confirm/cancel labels, danger variant, optional error text.
+- **Shared components**: AlertBanner, FilterChip, IconButton, NavCard, PaginationButton, SegmentedButton, form-classes; EmailNotInContactsModal for payment flows.
 - **Icon Library** (`icons/`): 49 SVG icon components with unified `IconProps` interface:
   - Navigation & Actions: ArrowDown, ArrowRight, ArrowUp, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Home, Plus, Refresh, Search, X
   - Financial: Bank, CreditCard, CurrencyDollar, Exchange, TrendingUp

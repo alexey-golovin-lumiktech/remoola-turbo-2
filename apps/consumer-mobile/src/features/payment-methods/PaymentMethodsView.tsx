@@ -9,6 +9,7 @@ import { AddPaymentMethodModal } from './ui/AddPaymentMethodModal';
 import { clientLogger } from '../../lib/logger';
 import { showErrorToast, showSuccessToast } from '../../lib/toast.client';
 import { Button } from '../../shared/ui/Button';
+import { ConfirmationModal } from '../../shared/ui/ConfirmationModal';
 import { EmptyState } from '../../shared/ui/EmptyState';
 import { BankIcon } from '../../shared/ui/icons/BankIcon';
 import { CalendarIcon } from '../../shared/ui/icons/CalendarIcon';
@@ -17,7 +18,6 @@ import { CreditCardIcon } from '../../shared/ui/icons/CreditCardIcon';
 import { PlusIcon } from '../../shared/ui/icons/PlusIcon';
 import { TrashIcon } from '../../shared/ui/icons/TrashIcon';
 import { UserIcon } from '../../shared/ui/icons/UserIcon';
-import { Modal } from '../../shared/ui/Modal';
 
 interface PaymentMethodsViewProps {
   items: PaymentMethodItem[];
@@ -419,81 +419,30 @@ export function PaymentMethodsView({ items }: PaymentMethodsViewProps) {
         </div>
       </div>
 
-      <Modal
+      <ConfirmationModal
         isOpen={deleteModalOpen}
         onClose={() => {
           if (!isDeleting) {
             setDeleteModalOpen(false);
           }
         }}
+        onConfirm={() => {
+          if (selectedMethod) {
+            const id = getField(selectedMethod, `id`) as string | undefined;
+            if (id) handleDelete(id);
+          }
+        }}
         title="Delete payment method"
-      >
-        <div className={`space-y-4`}>
-          <p className={`text-sm text-slate-600 dark:text-slate-400`}>
-            Are you sure you want to delete this payment method? This action cannot be undone.
-          </p>
-          {selectedMethod && (
-            <div
-              className={`
-  rounded-lg
-  border
-  border-slate-200
-  bg-slate-50
-  p-4
-  dark:border-slate-700
-  dark:bg-slate-700/50
-              `}
-            >
-              <div
-                className={`
-  text-sm
-  font-medium
-  text-slate-900
-  dark:text-white
-                `}
-              >
-                {getField(selectedMethod, `brand`) as string} •••• {getField(selectedMethod, `last4`) as string}
-              </div>
-            </div>
-          )}
-          <div
-            className={`
-  flex
-  flex-col
-  gap-3
-  pt-2
-  sm:flex-row
-            `}
-          >
-            <Button
-              variant="outline"
-              size="md"
-              onClick={() => {
-                setDeleteModalOpen(false);
-              }}
-              disabled={isDeleting}
-              className={`min-h-11 flex-1`}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="danger"
-              size="md"
-              onClick={() => {
-                if (selectedMethod) {
-                  const id = getField(selectedMethod, `id`) as string | undefined;
-                  if (id) handleDelete(id);
-                }
-              }}
-              isLoading={isDeleting}
-              disabled={isDeleting}
-              className={`min-h-11 flex-1`}
-            >
-              Delete
-            </Button>
-          </div>
-        </div>
-      </Modal>
+        message={
+          selectedMethod
+            ? `Are you sure you want to delete this payment method (${getField(selectedMethod, `brand`) as string} •••• ${getField(selectedMethod, `last4`) as string})? This action cannot be undone.`
+            : `Are you sure you want to delete this payment method? This action cannot be undone.`
+        }
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={isDeleting}
+      />
 
       <AddPaymentMethodModal
         isOpen={addModalOpen}

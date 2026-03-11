@@ -5,10 +5,9 @@ import { useState } from 'react';
 
 import { clientLogger } from '../../../lib/logger';
 import { showErrorToast, showSuccessToast } from '../../../lib/toast.client';
-import { Button } from '../../../shared/ui/Button';
+import { ConfirmationModal } from '../../../shared/ui/ConfirmationModal';
 import { EmptyState } from '../../../shared/ui/EmptyState';
 import { XIcon } from '../../../shared/ui/icons/XIcon';
-import { Modal } from '../../../shared/ui/Modal';
 import { StatusBadge } from '../../../shared/ui/StatusBadge';
 import { cancelScheduledConversion } from '../actions';
 
@@ -201,32 +200,17 @@ export function ScheduledConversionsView({ conversions }: ScheduledConversionsVi
         ))}
       </div>
 
-      <Modal isOpen={isCancelModalOpen} onClose={() => setIsCancelModalOpen(false)} title="Cancel scheduled conversion">
-        <div className={`space-y-4`}>
-          <p className={`text-sm text-slate-600 dark:text-slate-400`}>
-            Are you sure you want to cancel this scheduled conversion of{` `}
-            <strong>
-              {selectedConversion?.amount} {selectedConversion?.fromCurrency} → {selectedConversion?.toCurrency}
-            </strong>
-            ?
-          </p>
-
-          <div className={`flex gap-2 pt-2`}>
-            <Button
-              variant="outline"
-              size="md"
-              onClick={() => setIsCancelModalOpen(false)}
-              disabled={isLoading}
-              className={`flex-1`}
-            >
-              Keep conversion
-            </Button>
-            <Button variant="danger" size="md" onClick={handleCancel} isLoading={isLoading} className={`flex-1`}>
-              Cancel conversion
-            </Button>
-          </div>
-        </div>
-      </Modal>
+      <ConfirmationModal
+        isOpen={isCancelModalOpen}
+        onClose={() => setIsCancelModalOpen(false)}
+        onConfirm={handleCancel}
+        title="Cancel scheduled conversion"
+        message={`Are you sure you want to cancel this scheduled conversion of ${selectedConversion?.amount ?? ``} ${selectedConversion?.fromCurrency ?? ``} → ${selectedConversion?.toCurrency ?? ``}?`}
+        confirmText="Cancel conversion"
+        cancelText="Keep conversion"
+        variant="danger"
+        isLoading={isLoading}
+      />
     </div>
   );
 }

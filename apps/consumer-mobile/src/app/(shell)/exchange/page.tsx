@@ -1,5 +1,4 @@
 import { cookies } from 'next/headers';
-import Link from 'next/link';
 
 import { type IConsumerExchangeBalance } from '@remoola/api-types';
 
@@ -9,10 +8,10 @@ import { RatesPanel } from '../../../features/exchange/ui/RatesPanel';
 import { getCurrencySymbol, normalizeCurrencies, type Currency } from '../../../lib/currency-utils';
 import { getEnv } from '../../../lib/env.server';
 import { CalendarIcon } from '../../../shared/ui/icons/CalendarIcon';
-import { ChevronRightIcon } from '../../../shared/ui/icons/ChevronRightIcon';
 import { ClipboardListIcon } from '../../../shared/ui/icons/ClipboardListIcon';
 import { ExchangeIcon } from '../../../shared/ui/icons/ExchangeIcon';
 import { SettingsIcon } from '../../../shared/ui/icons/SettingsIcon';
+import { NavCard } from '../../../shared/ui/NavCard';
 
 interface ExchangeRate {
   from: string;
@@ -221,8 +220,12 @@ export default async function ExchangePage() {
           </h2>
 
           <div className={`grid gap-3 sm:grid-cols-2`}>
-            <Link
+            <NavCard
               href="/exchange/scheduled"
+              icon={<CalendarIcon className={`h-6 w-6`} strokeWidth={2} />}
+              title="Scheduled conversions"
+              subtitle="View and manage scheduled exchanges"
+              alignStart
               className={`
                 group
                 overflow-hidden
@@ -230,77 +233,42 @@ export default async function ExchangePage() {
                 border
                 border-slate-200
                 bg-white
+                p-4
                 shadow-lg
                 transition-all
                 duration-300
+                hover:scale-[1.02]
                 hover:bg-slate-50
                 hover:shadow-xl
-                hover:scale-[1.02]
                 dark:border-slate-700
                 dark:bg-slate-800/90
                 dark:hover:bg-slate-800
               `}
-            >
-              <div className={`p-4`}>
-                <div className={`flex items-start gap-3`}>
-                  <div
-                    className={`
-                    flex
-                    h-12
-                    w-12
-                    shrink-0
-                    items-center
-                    justify-center
-                    rounded-xl
-                    bg-blue-100
-                    text-blue-600
-                    transition-colors
-                    group-hover:bg-blue-200
-                    group-hover:text-blue-700
-                    dark:bg-blue-900/50
-                    dark:text-blue-400
-                    dark:group-hover:bg-blue-900
-                    dark:group-hover:text-blue-300
-                  `}
-                  >
-                    <CalendarIcon className={`h-6 w-6`} strokeWidth={2} />
-                  </div>
-                  <div className={`flex-1 min-w-0`}>
-                    <h3
-                      className={`
-                      text-base
-                      font-bold
-                      text-slate-900
-                      transition-colors
-                      group-hover:text-slate-800
-                      dark:text-slate-100
-                      dark:group-hover:text-white
-                    `}
-                    >
-                      Scheduled conversions
-                    </h3>
-                    <p className={`mt-1 text-sm text-slate-500 dark:text-slate-400`}>
-                      View and manage scheduled exchanges
-                    </p>
-                  </div>
-                  <ChevronRightIcon
-                    className={`
-                      h-5
-                      w-5
-                      shrink-0
-                      text-slate-500
-                      transition-transform
-                      group-hover:translate-x-1
-                      group-hover:text-slate-700
-                      dark:group-hover:text-slate-400
-                    `}
-                  />
-                </div>
-              </div>
-            </Link>
-
-            <Link
+              iconContainerClassName={`
+                flex
+                h-12
+                w-12
+                shrink-0
+                items-center
+                justify-center
+                rounded-xl
+                bg-blue-100
+                text-blue-600
+                transition-colors
+                group-hover:bg-blue-200
+                group-hover:text-blue-700
+                dark:bg-blue-900/50
+                dark:text-blue-400
+                dark:group-hover:bg-blue-900
+                dark:group-hover:text-blue-300
+              `}
+            />
+            <NavCard
               href="/exchange/rules"
+              icon={<ClipboardListIcon className={`h-6 w-6`} strokeWidth={2} />}
+              title="Exchange rules"
+              subtitle="Set up automatic exchange rules"
+              alignStart
               className={`
                 group
                 overflow-hidden
@@ -308,72 +276,36 @@ export default async function ExchangePage() {
                 border
                 border-slate-200
                 bg-white
+                p-4
                 shadow-lg
                 transition-all
                 duration-300
+                hover:scale-[1.02]
                 hover:bg-slate-50
                 hover:shadow-xl
-                hover:scale-[1.02]
                 dark:border-slate-700
                 dark:bg-slate-800/90
                 dark:hover:bg-slate-800
               `}
-            >
-              <div className={`p-4`}>
-                <div className={`flex items-start gap-3`}>
-                  <div
-                    className={`
-                    flex
-                    h-12
-                    w-12
-                    shrink-0
-                    items-center
-                    justify-center
-                    rounded-xl
-                    bg-purple-100
-                    text-purple-600
-                    transition-colors
-                    group-hover:bg-purple-200
-                    group-hover:text-purple-700
-                    dark:bg-purple-900/50
-                    dark:text-purple-400
-                    dark:group-hover:bg-purple-900
-                    dark:group-hover:text-purple-300
-                  `}
-                  >
-                    <ClipboardListIcon className={`h-6 w-6`} strokeWidth={2} />
-                  </div>
-                  <div className={`flex-1 min-w-0`}>
-                    <h3
-                      className={`
-                      text-base
-                      font-bold
-                      text-slate-900
-                      transition-colors
-                      group-hover:text-slate-800
-                      dark:text-slate-100
-                      dark:group-hover:text-white
-                    `}
-                    >
-                      Exchange rules
-                    </h3>
-                    <p className={`mt-1 text-sm text-slate-500 dark:text-slate-400`}>Set up automatic exchange rules</p>
-                  </div>
-                  <ChevronRightIcon
-                    className={`
-                      h-5
-                      w-5
-                      shrink-0
-                      text-slate-500
-                      transition-transform
-                      group-hover:translate-x-1
-                      group-hover:text-slate-700
-                      dark:group-hover:text-slate-400
-                    `}
-                  />
-                </div>
-              </div>
-            </Link>
+              iconContainerClassName={`
+                flex
+                h-12
+                w-12
+                shrink-0
+                items-center
+                justify-center
+                rounded-xl
+                bg-purple-100
+                text-purple-600
+                transition-colors
+                group-hover:bg-purple-200
+                group-hover:text-purple-700
+                dark:bg-purple-900/50
+                dark:text-purple-400
+                dark:group-hover:bg-purple-900
+                dark:group-hover:text-purple-300
+              `}
+            />
           </div>
         </div>
       </div>
