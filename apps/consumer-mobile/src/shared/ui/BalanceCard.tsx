@@ -37,12 +37,12 @@ export function BalanceCard({
   const isNegative = amountCents < 0;
 
   const amountColor = isNegative
-    ? `text-amber-400 dark:text-amber-300`
+    ? `text-amber-600 dark:text-amber-300`
     : isPositive
-      ? `text-emerald-400 dark:text-emerald-300`
-      : `text-slate-100`;
+      ? `text-emerald-600 dark:text-emerald-300`
+      : `text-slate-600 dark:text-slate-100`;
 
-  const iconVariant = isNegative ? `warning` : isPositive ? `success` : `secondary`;
+  const iconVariant = isNegative ? `warning` : isPositive ? `success` : `primary`;
 
   return (
     <article
@@ -51,10 +51,10 @@ export function BalanceCard({
         overflow-hidden
         rounded-2xl
         border
-        border-slate-700
+        border-slate-200
         bg-linear-to-br
-        from-slate-800
-        to-slate-900
+        from-white
+        to-slate-50
         p-5
         shadow-lg
         transition-all
@@ -62,6 +62,9 @@ export function BalanceCard({
         hover:shadow-xl
         hover:scale-105
         animate-fadeIn
+        dark:border-slate-700
+        dark:from-slate-800
+        dark:to-slate-900
       `}
       style={animationDelay != null ? { animationDelay: `${animationDelay}ms` } : undefined}
       aria-label={`${label ?? currencyCode}: ${formatted}`}
@@ -83,14 +86,17 @@ export function BalanceCard({
         <span
           className={`
             rounded-lg
-            bg-slate-900/50
+            border
+            border-slate-200
+            bg-slate-100
             px-2.5
             py-1
             text-xs
             font-bold
-            text-slate-300
-            border
-            border-slate-700
+            text-slate-700
+            dark:border-slate-700
+            dark:bg-slate-900/50
+            dark:text-slate-300
           `}
         >
           {label ?? currencyCode}
@@ -104,7 +110,8 @@ export function BalanceCard({
           mt-2
           text-xs
           font-semibold
-          text-slate-400
+          text-slate-500
+          dark:text-slate-400
         `}
       >
         {subtitle}

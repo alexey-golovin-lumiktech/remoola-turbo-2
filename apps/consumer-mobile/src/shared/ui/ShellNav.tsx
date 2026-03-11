@@ -10,6 +10,7 @@ import { HomeIcon } from './icons/HomeIcon';
 import { LogoutIcon } from './icons/LogoutIcon';
 import { SettingsIcon } from './icons/SettingsIcon';
 import { UsersIcon } from './icons/UsersIcon';
+import { ThemeSwitcher } from './ThemeSwitcher';
 
 const navItems = [
   {
@@ -81,18 +82,27 @@ export function ShellHeader() {
           Remoola
         </span>
       </div>
-      <a
-        href="/logout"
-        className={
-          `group flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-lg px-3 text-sm font-medium ` +
-          `text-slate-600 transition-all hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white`
-        }
-        aria-label="Log out"
-        data-testid="consumer-mobile-shell-logout"
+      <div
+        className={`
+          flex
+          items-center
+          gap-1
+        `}
       >
-        <LogoutIcon className={`h-5 w-5`} />
-        <span className={`hidden sm:inline`}>Log out</span>
-      </a>
+        <ThemeSwitcher />
+        <a
+          href="/logout"
+          className={
+            `group flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-lg px-3 text-sm font-medium ` +
+            `text-slate-600 transition-all hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white`
+          }
+          aria-label="Log out"
+          data-testid="consumer-mobile-shell-logout"
+        >
+          <LogoutIcon className={`h-5 w-5`} />
+          <span className={`hidden sm:inline`}>Log out</span>
+        </a>
+      </div>
     </header>
   );
 }

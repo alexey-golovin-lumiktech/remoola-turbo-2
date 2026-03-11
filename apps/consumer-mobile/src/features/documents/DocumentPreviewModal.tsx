@@ -83,7 +83,7 @@ export function DocumentPreviewModal({
         items-end
         justify-center
         sm:items-center
-        ${isFullscreen ? `bg-black` : `bg-slate-900/60 p-0 sm:p-4 backdrop-blur-md`}
+        ${isFullscreen ? `bg-black` : `bg-black/20 p-0 sm:p-4 backdrop-blur-md dark:bg-slate-900/60`}
       `}
       role="dialog"
       aria-modal="true"

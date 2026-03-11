@@ -40,27 +40,32 @@ export function ActivityTimeline({ activities, maxItems = 5 }: ActivityTimelineP
         overflow-hidden
         rounded-2xl
         border
-        border-slate-700
-        bg-slate-800/90
+        border-slate-200
+        bg-white
         shadow-lg
         animate-fadeIn
+        dark:border-slate-700
+        dark:bg-slate-800/90
       `}
       style={{ animationDelay: `150ms` }}
     >
       <div
         className={`
         border-b
-        border-slate-700
+        border-slate-200
         bg-linear-to-r
-        from-slate-800
-        to-slate-900
+        from-slate-50
+        to-slate-100
         px-5
         py-4
+        dark:border-slate-700
+        dark:from-slate-800
+        dark:to-slate-900
       `}
       >
         <div className={`flex items-center gap-2`}>
-          <LightningIcon className={`h-5 w-5 text-primary-400`} strokeWidth={2} />
-          <h3 className={`text-base font-bold text-slate-100`}>Recent activity</h3>
+          <LightningIcon className={`h-5 w-5 text-primary-500 dark:text-primary-400`} strokeWidth={2} />
+          <h3 className={`text-base font-bold text-slate-900 dark:text-slate-100`}>Recent activity</h3>
         </div>
       </div>
 
@@ -89,7 +94,8 @@ export function ActivityTimeline({ activities, maxItems = 5 }: ActivityTimelineP
                   top-10
                   h-full
                   w-px
-                  bg-slate-700
+                  bg-slate-200
+                  dark:bg-slate-700
                 `}
                   />
                 )}
@@ -116,14 +122,15 @@ export function ActivityTimeline({ activities, maxItems = 5 }: ActivityTimelineP
                 </div>
 
                 <div className={`flex-1 pt-1`}>
-                  <p className={`text-sm font-bold text-slate-100`}>{activity.label}</p>
+                  <p className={`text-sm font-bold text-slate-900 dark:text-slate-100`}>{activity.label}</p>
                   {activity.description && (
                     <p
                       className={`
                       mt-1
                       text-sm
                       font-medium
-                      text-slate-400
+                      text-slate-500
+                      dark:text-slate-400
                     `}
                     >
                       {activity.description}

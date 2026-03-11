@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
 import { clientLogger } from '../../../lib/logger';
@@ -29,17 +29,23 @@ interface ThemeSettingsFormProps {
 export function ThemeSettingsForm({ initialTheme }: ThemeSettingsFormProps) {
   const { theme, setTheme } = useTheme();
   const [loading, setLoading] = useState(false);
+  const hasSyncedInitialTheme = useRef(false);
 
+  // Sync server theme into context only once on mount so we don't overwrite user's
+  // selection when parent re-renders with stale settings before refetch.
   useEffect(() => {
-    if (initialTheme !== undefined && initialTheme !== null) {
-      const normalized = initialTheme.toLowerCase() as ITheme;
-      if ([Theme.LIGHT, Theme.DARK, Theme.SYSTEM].includes(normalized)) {
-        setTheme(normalized);
-      }
-    }
+    if (initialTheme === undefined || initialTheme === null) return;
+    if (hasSyncedInitialTheme.current) return;
+    const normalized = initialTheme.toLowerCase() as ITheme;
+    if (![Theme.LIGHT, Theme.DARK, Theme.SYSTEM].includes(normalized)) return;
+    hasSyncedInitialTheme.current = true;
+    setTheme(normalized);
   }, [initialTheme, setTheme]);
 
   async function updateTheme(newTheme: ITheme) {
+    if (newTheme === theme) return;
+    const previousTheme = theme;
+    setTheme(newTheme);
     setLoading(true);
     try {
       const response = await fetch(`/api/settings/theme`, {
@@ -53,9 +59,9 @@ export function ThemeSettingsForm({ initialTheme }: ThemeSettingsFormProps) {
         throw new Error(`Failed to update theme`);
       }
 
-      setTheme(newTheme);
       toast.success(`Theme updated`);
     } catch (error) {
+      setTheme(previousTheme);
       toast.error(`We couldn't update your theme. Please try again.`);
       clientLogger.error(`Theme update error`, {
         reason: error instanceof Error ? error.message : String(error),
@@ -70,7 +76,13 @@ export function ThemeSettingsForm({ initialTheme }: ThemeSettingsFormProps) {
       title="Theme"
       description="Choose how Remoola looks to you. Select a theme or follow your system preference."
     >
-      <fieldset disabled={loading} className={`space-y-3`} data-testid="theme-settings-form">
+      <fieldset
+        disabled={loading}
+        className={`
+          space-y-3
+        `}
+        data-testid="theme-settings-form"
+      >
         <legend className={`sr-only`}>Theme preference</legend>
         {themeOptions.map((option) => {
           const isActive = theme === option.value;
@@ -78,11 +90,51 @@ export function ThemeSettingsForm({ initialTheme }: ThemeSettingsFormProps) {
             <label
               key={option.value}
               className={
-                `group flex min-h-15 cursor-pointer items-center gap-4 rounded-xl border-2 px-4 py-3.5 transition-all duration-200 ` +
+                `
+                group
+                flex
+                min-h-15
+                cursor-pointer
+                items-center
+                gap-4
+                rounded-xl
+                border-2
+                px-4
+                py-3.5
+                transition-all
+                duration-200
+                ` +
                 (isActive
-                  ? `border-primary-500 bg-linear-to-r from-primary-50 to-primary-100/50 shadow-md shadow-primary-500/10 dark:border-primary-400 dark:from-primary-900/30 dark:to-primary-900/20 dark:shadow-primary-900/20`
-                  : `border-slate-200 bg-white hover:border-slate-300 hover:shadow-xs dark:border-slate-600 dark:bg-slate-800/50 dark:hover:border-slate-500`) +
-                (loading ? ` cursor-not-allowed opacity-60` : ` hover:scale-[1.01] active:scale-[0.99]`)
+                  ? `
+                border-primary-500
+                bg-linear-to-r
+                from-primary-50
+                to-primary-100/50
+                shadow-md
+                shadow-primary-500/10
+                dark:border-primary-400
+                dark:from-primary-900/30
+                dark:to-primary-900/20
+                dark:shadow-primary-900/20
+                `
+                  : `
+                border-slate-200
+                bg-white
+                hover:border-slate-300
+                hover:shadow-xs
+                dark:border-slate-600
+                dark:bg-slate-800/50
+                dark:hover:border-slate-500
+                `) +
+                (loading
+                  ? `
+                cursor-not-allowed
+                opacity-60
+                `
+                  : `
+                hover:scale-[1.01]
+                active:scale-[0.99]
+                `)
               }
             >
               <input
@@ -94,10 +146,21 @@ export function ThemeSettingsForm({ initialTheme }: ThemeSettingsFormProps) {
                 className={`sr-only`}
                 disabled={loading}
               />
-              <span className={`text-2xl shrink-0`} aria-hidden="true">
+              <span
+                className={`
+                  text-2xl
+                  shrink-0
+                `}
+                aria-hidden="true"
+              >
                 {option.icon}
               </span>
-              <div className={`flex-1 min-w-0`}>
+              <div
+                className={`
+                  flex-1
+                  min-w-0
+                `}
+              >
                 <div
                   className={`
                   text-base
@@ -108,9 +171,17 @@ export function ThemeSettingsForm({ initialTheme }: ThemeSettingsFormProps) {
                 >
                   {option.label}
                 </div>
-                <div className={`text-sm text-slate-600 dark:text-slate-400`}>{option.description}</div>
+                <div
+                  className={`
+                    text-sm
+                    text-slate-600
+                    dark:text-slate-400
+                  `}
+                >
+                  {option.description}
+                </div>
               </div>
-              {isActive && (
+              {isActive ? (
                 <div
                   className={`
                     flex
@@ -127,15 +198,21 @@ export function ThemeSettingsForm({ initialTheme }: ThemeSettingsFormProps) {
                   `}
                   aria-hidden="true"
                 >
-                  <CheckIcon className={`h-3.5 w-3.5 text-white`} />
+                  <CheckIcon
+                    className={`
+                      h-3.5
+                      w-3.5
+                      text-white
+                    `}
+                  />
                 </div>
-              )}
+              ) : null}
             </label>
           );
         })}
       </fieldset>
 
-      {loading && (
+      {loading ? (
         <div
           className={`
             mt-4
@@ -169,7 +246,7 @@ export function ThemeSettingsForm({ initialTheme }: ThemeSettingsFormProps) {
             Updating theme…
           </p>
         </div>
-      )}
+      ) : null}
     </FormCard>
   );
 }

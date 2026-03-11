@@ -31,6 +31,11 @@ export function useTheme() {
 
 const STORAGE_KEY = `remoola-theme`;
 
+/**
+ * Theme is read from localStorage on mount and applied immediately. When authenticated,
+ * ThemeInitializer then fetches the server theme and overwrites context (and we persist
+ * that to localStorage), so server wins for the next load.
+ */
 function applyThemeToDocument(nextTheme: `light` | `dark`) {
   const root = window.document.documentElement;
   const body = window.document.body;
@@ -51,23 +56,29 @@ export function ThemeProvider({
 }) {
   const [theme, setTheme] = useState<ITheme>(defaultTheme);
   const [resolvedTheme, setResolvedTheme] = useState<ITheme>(Theme.LIGHT);
-  const [mounted, setMounted] = useState(false);
+  const [storageRead, setStorageRead] = useState(false);
 
+  // Read from localStorage first so we never apply theme from default (SYSTEM) before
+  // we know the user's stored preference — avoids a brief dark flash when OS is dark.
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY) as ITheme | null;
       if (stored && [Theme.LIGHT, Theme.DARK, Theme.SYSTEM].includes(stored as ITheme)) {
         setTheme(stored as ITheme);
       }
+      setStorageRead(true);
     } catch (error) {
       clientLogger.warn(`Failed to load theme from localStorage`, {
         reason: error instanceof Error ? error.message : String(error),
       });
+      setStorageRead(true);
     }
-    setMounted(true);
   }, []);
 
+  // Apply theme only after we've read from localStorage so we don't flash OS theme first.
   useEffect(() => {
+    if (!storageRead) return;
+
     const resolveSystem = () => (window.matchMedia(`(prefers-color-scheme: dark)`).matches ? Theme.DARK : Theme.LIGHT);
 
     const nextTheme = theme === Theme.SYSTEM ? resolveSystem() : theme;
@@ -81,7 +92,7 @@ export function ThemeProvider({
         reason: error instanceof Error ? error.message : String(error),
       });
     }
-  }, [theme]);
+  }, [theme, storageRead]);
 
   useEffect(() => {
     if (theme !== Theme.SYSTEM) return;
@@ -101,12 +112,8 @@ export function ThemeProvider({
     theme,
     resolvedTheme,
     setTheme,
-    toggleTheme: () => setTheme((prev) => (prev === Theme.LIGHT ? Theme.DARK : Theme.LIGHT)),
+    toggleTheme: () => setTheme(resolvedTheme === Theme.LIGHT ? Theme.DARK : Theme.LIGHT),
   };
-
-  if (!mounted) {
-    return <>{children}</>;
-  }
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }

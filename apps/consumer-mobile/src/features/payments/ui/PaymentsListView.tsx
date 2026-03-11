@@ -100,16 +100,20 @@ export function PaymentsListView({ balance, payments, total, currentPage = 1, pa
                 gap-2
                 rounded-xl
                 border
-                border-slate-700
-                bg-slate-800
+                border-slate-200
+                bg-slate-100
                 px-4
                 py-2.5
                 text-sm
                 font-bold
-                text-slate-200
+                text-slate-800
                 shadow-md
                 transition-all
-                hover:bg-slate-700
+                hover:bg-slate-200
+                dark:border-slate-700
+                dark:bg-slate-800
+                dark:text-slate-200
+                dark:hover:bg-slate-700
                 hover:shadow-lg
                 active:scale-95
                 focus:outline-hidden
@@ -316,14 +320,17 @@ export function PaymentsListView({ balance, payments, total, currentPage = 1, pa
                 rounded-2xl
                 border-2
                 border-dashed
-                border-slate-700
+                border-slate-200
                 bg-linear-to-br
-                from-slate-800/50
-                to-slate-900/50
+                from-slate-50
+                to-slate-100
                 px-6
                 py-16
                 text-center
                 shadow-inner
+                dark:border-slate-700
+                dark:from-slate-800/50
+                dark:to-slate-900/50
               `}
               >
                 <div
@@ -336,14 +343,15 @@ export function PaymentsListView({ balance, payments, total, currentPage = 1, pa
                   items-center
                   justify-center
                   rounded-2xl
-                  bg-slate-700
+                  bg-slate-200
                   shadow-lg
+                  dark:bg-slate-700
                 `}
                 >
-                  <SearchIcon className={`h-8 w-8 text-slate-400`} />
+                  <SearchIcon className={`h-8 w-8 text-slate-500 dark:text-slate-400`} />
                 </div>
-                <p className={`text-base font-bold text-slate-200`}>No payments found</p>
-                <p className={`mt-2 text-sm text-slate-400`}>
+                <p className={`text-base font-bold text-slate-800 dark:text-slate-200`}>No payments found</p>
+                <p className={`mt-2 text-sm text-slate-500 dark:text-slate-400`}>
                   No payments match your search criteria. Try adjusting your filters.
                 </p>
               </div>
@@ -369,13 +377,16 @@ export function PaymentsListView({ balance, payments, total, currentPage = 1, pa
                         overflow-hidden
                         rounded-2xl
                         border
-                        border-slate-700
-                        bg-slate-800/90
+                        border-slate-200
+                        bg-white
                         shadow-lg
                         transition-all
                         duration-300
-                        hover:bg-slate-800
+                        hover:bg-slate-50
                         hover:shadow-xl
+                        dark:border-slate-700
+                        dark:bg-slate-800/90
+                        dark:hover:bg-slate-800
                       `}
                       >
                         <div className={`p-4`}>
@@ -397,9 +408,11 @@ export function PaymentsListView({ balance, payments, total, currentPage = 1, pa
                                     truncate
                                     text-base
                                     font-bold
-                                    text-slate-100
-                                    group-hover:text-white
+                                    text-slate-900
                                     transition-colors
+                                    group-hover:text-slate-800
+                                    dark:text-slate-100
+                                    dark:group-hover:text-white
                                   `}
                                   >
                                     {payment.counterparty.email}
@@ -411,7 +424,8 @@ export function PaymentsListView({ balance, payments, total, currentPage = 1, pa
                                       truncate
                                       text-sm
                                       font-medium
-                                      text-slate-400
+                                      text-slate-500
+                                      dark:text-slate-400
                                     `}
                                     >
                                       {payment.description}
@@ -430,7 +444,7 @@ export function PaymentsListView({ balance, payments, total, currentPage = 1, pa
                               `}
                               >
                                 <div>
-                                  <p className={`text-xl font-extrabold text-slate-100`}>
+                                  <p className={`text-xl font-extrabold text-slate-900 dark:text-slate-100`}>
                                     {formatCurrency(payment.amount / 100, payment.currencyCode)}
                                   </p>
                                   <div
@@ -455,7 +469,8 @@ export function PaymentsListView({ balance, payments, total, currentPage = 1, pa
                                   flex
                                   items-center
                                   gap-2
-                                  text-primary-400
+                                  text-primary-600
+                                  dark:text-primary-400
                                 `}
                                 >
                                   <span className={`text-sm font-bold`}>View</span>
@@ -486,25 +501,27 @@ export function PaymentsListView({ balance, payments, total, currentPage = 1, pa
                     justify-between
                     rounded-xl
                     border
-                    border-slate-700
-                    bg-slate-800/50
+                    border-slate-200
+                    bg-slate-50
                     px-5
                     py-3
                     shadow-md
+                    dark:border-slate-700
+                    dark:bg-slate-800/50
                   `}
                   >
-                    <div className={`text-sm font-medium text-slate-400`}>
+                    <div className={`text-sm font-medium text-slate-600 dark:text-slate-400`}>
                       Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, total)} of {total}
                     </div>
                     <div className={`flex items-center gap-2`}>
                       <Link
                         href={currentPage > 1 ? `/payments?page=${currentPage - 1}` : `/payments?page=1`}
-                        className={`inline-flex min-h-10 items-center rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm font-semibold text-slate-300 shadow-xs transition-all hover:bg-slate-700 active:scale-95 focus:outline-hidden focus:ring-2 focus:ring-primary-500 ${currentPage === 1 ? `pointer-events-none opacity-40` : ``}`}
+                        className={`inline-flex min-h-10 items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-xs transition-all hover:bg-slate-100 active:scale-95 focus:outline-hidden focus:ring-2 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 ${currentPage === 1 ? `pointer-events-none opacity-40` : ``}`}
                         aria-disabled={currentPage === 1}
                       >
                         Previous
                       </Link>
-                      <span className={`text-sm font-medium text-slate-400`}>
+                      <span className={`text-sm font-medium text-slate-600 dark:text-slate-400`}>
                         {currentPage} / {totalPages}
                       </span>
                       <Link
@@ -513,7 +530,7 @@ export function PaymentsListView({ balance, payments, total, currentPage = 1, pa
                             ? `/payments?page=${currentPage + 1}`
                             : `/payments?page=${totalPages}`
                         }
-                        className={`inline-flex min-h-10 items-center rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm font-semibold text-slate-300 shadow-xs transition-all hover:bg-slate-700 active:scale-95 focus:outline-hidden focus:ring-2 focus:ring-primary-500 ${currentPage === totalPages ? `pointer-events-none opacity-40` : ``}`}
+                        className={`inline-flex min-h-10 items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-xs transition-all hover:bg-slate-100 active:scale-95 focus:outline-hidden focus:ring-2 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 ${currentPage === totalPages ? `pointer-events-none opacity-40` : ``}`}
                         aria-disabled={currentPage === totalPages}
                       >
                         Next

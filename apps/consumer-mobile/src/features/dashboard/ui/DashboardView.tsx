@@ -48,12 +48,15 @@ export function DashboardView({ data }: DashboardViewProps) {
             rounded-2xl
             border-2
             border-dashed
-            border-slate-700
+            border-slate-200
             bg-linear-to-br
-            from-slate-800/50
-            to-slate-900/50
+            from-slate-50
+            to-slate-100
             p-8
             shadow-inner
+            dark:border-slate-700
+            dark:from-slate-800/50
+            dark:to-slate-900/50
           `}
           >
             <div
@@ -66,18 +69,20 @@ export function DashboardView({ data }: DashboardViewProps) {
               items-center
               justify-center
               rounded-2xl
-              bg-slate-700
+              bg-slate-200
               shadow-lg
+              dark:bg-slate-700
             `}
             >
-              <InformationCircleIcon className={`h-8 w-8 text-slate-400`} />
+              <InformationCircleIcon className={`h-8 w-8 text-slate-500 dark:text-slate-400`} />
             </div>
             <p
               className={`
               text-center
               text-base
               font-bold
-              text-slate-200
+              text-slate-800
+              dark:text-slate-200
             `}
             >
               Unable to load dashboard
@@ -87,7 +92,8 @@ export function DashboardView({ data }: DashboardViewProps) {
               mt-2
               text-center
               text-sm
-              text-slate-400
+              text-slate-500
+              dark:text-slate-400
             `}
             >
               Please try again later.
@@ -178,10 +184,10 @@ export function DashboardView({ data }: DashboardViewProps) {
               overflow-hidden
               rounded-2xl
               border
-              border-slate-700
+              border-slate-200
               bg-linear-to-br
-              from-slate-800
-              to-slate-900
+              from-white
+              to-slate-50
               p-5
               shadow-lg
               transition-all
@@ -189,6 +195,9 @@ export function DashboardView({ data }: DashboardViewProps) {
               hover:shadow-xl
               hover:scale-105
               animate-fadeIn
+              dark:border-slate-700
+              dark:from-slate-800
+              dark:to-slate-900
             `}
             style={{ animationDelay: `50ms` }}
           >
@@ -202,27 +211,33 @@ export function DashboardView({ data }: DashboardViewProps) {
             >
               <IconBadge
                 icon={<ClipboardListIcon className={`h-6 w-6 text-white`} />}
-                variant="info"
+                variant="primary"
                 rounded="xl"
                 interactive
               />
               <span
                 className={`
                 rounded-lg
-                bg-slate-900/50
+                border
+                border-slate-200
+                bg-slate-100
                 px-2.5
                 py-1
                 text-xs
                 font-bold
-                text-slate-300
-                border
-                border-slate-700
+                text-slate-700
+                dark:border-slate-700
+                dark:bg-slate-900/50
+                dark:text-slate-300
               `}
               >
                 Requests
               </span>
             </div>
-            <div className={`text-3xl font-extrabold text-slate-100`} data-testid="dashboard-active-requests">
+            <div
+              className={`text-3xl font-extrabold text-slate-900 dark:text-slate-100`}
+              data-testid="dashboard-active-requests"
+            >
               {summary.activeRequests}
             </div>
             <div
@@ -230,7 +245,8 @@ export function DashboardView({ data }: DashboardViewProps) {
               mt-2
               text-xs
               font-semibold
-              text-slate-400
+              text-slate-500
+              dark:text-slate-400
             `}
             >
               Active payment requests
@@ -248,14 +264,17 @@ export function DashboardView({ data }: DashboardViewProps) {
                 rounded-2xl
                 border-2
                 border-dashed
-                border-slate-700
+                border-slate-200
                 bg-linear-to-br
-                from-slate-800/50
-                to-slate-900/50
+                from-slate-50
+                to-slate-100
                 px-6
                 py-16
                 text-center
                 shadow-inner
+                dark:border-slate-700
+                dark:from-slate-800/50
+                dark:to-slate-900/50
               `}
               style={{ animationDelay: `100ms` }}
             >
@@ -284,14 +303,15 @@ export function DashboardView({ data }: DashboardViewProps) {
               >
                 <DocumentIcon className={`h-10 w-10`} strokeWidth={1.5} />
               </div>
-              <h3 className={`text-xl font-bold text-slate-100`}>No pending requests</h3>
+              <h3 className={`text-xl font-bold text-slate-900 dark:text-slate-100`}>No pending requests</h3>
               <p
                 className={`
                 mt-3
                 max-w-sm
                 mx-auto
                 text-base
-                text-slate-400
+                text-slate-500
+                dark:text-slate-400
               `}
               >
                 You&apos;re all caught up! Create a new payment request to get started.

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { GoogleIcon } from '@remoola/ui';
 
@@ -37,12 +37,18 @@ export function LoginForm({ nextPath, sessionExpired }: { nextPath: string; sess
   const googleStartUrl = useMemo(() => {
     const base = getApiBaseUrlOptional();
     if (!base) return null;
-    if (typeof window === `undefined`) return null;
     const url = new URL(`${base}/consumer/auth/google/start`);
     url.searchParams.set(`next`, encodeURIComponent(nextPath));
-    url.searchParams.set(`returnOrigin`, window.location.origin);
     return url.toString();
   }, [nextPath]);
+
+  const handleGoogleSignIn = useCallback(async () => {
+    if (!googleStartUrl) return;
+    const url = new URL(googleStartUrl);
+    url.searchParams.set(`returnOrigin`, window.location.origin);
+    await fetch(`/api/consumer/auth/clear-cookies`, { method: `POST`, credentials: `include` });
+    window.location.href = url.toString();
+  }, [googleStartUrl]);
 
   useEffect(() => {
     emailInputRef.current?.focus();
@@ -279,7 +285,7 @@ export function LoginForm({ nextPath, sessionExpired }: { nextPath: string; sess
                 aria-describedby={fieldErrors.email ? `login-email-error` : undefined}
                 data-testid="consumer-mobile-login-email"
               />
-              {fieldErrors.email && (
+              {fieldErrors.email ? (
                 <p
                   id="login-email-error"
                   className={`
@@ -292,7 +298,7 @@ export function LoginForm({ nextPath, sessionExpired }: { nextPath: string; sess
                 >
                   {fieldErrors.email}
                 </p>
-              )}
+              ) : null}
             </div>
 
             <div>
@@ -363,7 +369,7 @@ export function LoginForm({ nextPath, sessionExpired }: { nextPath: string; sess
                   {showPassword ? <EyeOffIcon className={`h-5 w-5`} /> : <EyeIcon className={`h-5 w-5`} />}
                 </button>
               </div>
-              {fieldErrors.password && (
+              {fieldErrors.password ? (
                 <p
                   id="login-password-error"
                   className={`
@@ -376,10 +382,10 @@ export function LoginForm({ nextPath, sessionExpired }: { nextPath: string; sess
                 >
                   {fieldErrors.password}
                 </p>
-              )}
+              ) : null}
             </div>
 
-            {errorMessage && (
+            {errorMessage ? (
               <div
                 className={`
   animate-fadeIn
@@ -412,7 +418,7 @@ export function LoginForm({ nextPath, sessionExpired }: { nextPath: string; sess
                   </p>
                 </div>
               </div>
-            )}
+            ) : null}
 
             <button
               type="submit"
@@ -442,7 +448,7 @@ export function LoginForm({ nextPath, sessionExpired }: { nextPath: string; sess
               )}
             </button>
 
-            {googleStartUrl && (
+            {googleStartUrl ? (
               <>
                 <div className={`relative my-5`}>
                   <div
@@ -486,10 +492,7 @@ export function LoginForm({ nextPath, sessionExpired }: { nextPath: string; sess
 
                 <button
                   type="button"
-                  onClick={async () => {
-                    await fetch(`/api/consumer/auth/clear-cookies`, { method: `POST`, credentials: `include` });
-                    window.location.href = googleStartUrl;
-                  }}
+                  onClick={handleGoogleSignIn}
                   disabled={loading}
                   className={
                     `group relative min-h-12 w-full overflow-hidden rounded-xl border border-slate-200 ` +
@@ -514,7 +517,7 @@ export function LoginForm({ nextPath, sessionExpired }: { nextPath: string; sess
                   </span>
                 </button>
               </>
-            )}
+            ) : null}
           </form>
         </div>
 

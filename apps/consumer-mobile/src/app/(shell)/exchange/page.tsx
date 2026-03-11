@@ -228,14 +228,17 @@ export default async function ExchangePage() {
                 overflow-hidden
                 rounded-2xl
                 border
-                border-slate-700
-                bg-slate-800/90
+                border-slate-200
+                bg-white
                 shadow-lg
                 transition-all
                 duration-300
-                hover:bg-slate-800
+                hover:bg-slate-50
                 hover:shadow-xl
                 hover:scale-[1.02]
+                dark:border-slate-700
+                dark:bg-slate-800/90
+                dark:hover:bg-slate-800
               `}
             >
               <div className={`p-4`}>
@@ -249,11 +252,15 @@ export default async function ExchangePage() {
                     items-center
                     justify-center
                     rounded-xl
-                    bg-blue-900/50
-                    text-blue-400
+                    bg-blue-100
+                    text-blue-600
                     transition-colors
-                    group-hover:bg-blue-900
-                    group-hover:text-blue-300
+                    group-hover:bg-blue-200
+                    group-hover:text-blue-700
+                    dark:bg-blue-900/50
+                    dark:text-blue-400
+                    dark:group-hover:bg-blue-900
+                    dark:group-hover:text-blue-300
                   `}
                   >
                     <CalendarIcon className={`h-6 w-6`} strokeWidth={2} />
@@ -263,14 +270,18 @@ export default async function ExchangePage() {
                       className={`
                       text-base
                       font-bold
-                      text-slate-100
-                      group-hover:text-white
+                      text-slate-900
                       transition-colors
+                      group-hover:text-slate-800
+                      dark:text-slate-100
+                      dark:group-hover:text-white
                     `}
                     >
                       Scheduled conversions
                     </h3>
-                    <p className={`mt-1 text-sm text-slate-400`}>View and manage scheduled exchanges</p>
+                    <p className={`mt-1 text-sm text-slate-500 dark:text-slate-400`}>
+                      View and manage scheduled exchanges
+                    </p>
                   </div>
                   <ChevronRightIcon
                     className={`
@@ -280,7 +291,8 @@ export default async function ExchangePage() {
                       text-slate-500
                       transition-transform
                       group-hover:translate-x-1
-                      group-hover:text-slate-400
+                      group-hover:text-slate-700
+                      dark:group-hover:text-slate-400
                     `}
                   />
                 </div>
@@ -294,14 +306,17 @@ export default async function ExchangePage() {
                 overflow-hidden
                 rounded-2xl
                 border
-                border-slate-700
-                bg-slate-800/90
+                border-slate-200
+                bg-white
                 shadow-lg
                 transition-all
                 duration-300
-                hover:bg-slate-800
+                hover:bg-slate-50
                 hover:shadow-xl
                 hover:scale-[1.02]
+                dark:border-slate-700
+                dark:bg-slate-800/90
+                dark:hover:bg-slate-800
               `}
             >
               <div className={`p-4`}>
@@ -315,11 +330,15 @@ export default async function ExchangePage() {
                     items-center
                     justify-center
                     rounded-xl
-                    bg-purple-900/50
-                    text-purple-400
+                    bg-purple-100
+                    text-purple-600
                     transition-colors
-                    group-hover:bg-purple-900
-                    group-hover:text-purple-300
+                    group-hover:bg-purple-200
+                    group-hover:text-purple-700
+                    dark:bg-purple-900/50
+                    dark:text-purple-400
+                    dark:group-hover:bg-purple-900
+                    dark:group-hover:text-purple-300
                   `}
                   >
                     <ClipboardListIcon className={`h-6 w-6`} strokeWidth={2} />
@@ -329,14 +348,16 @@ export default async function ExchangePage() {
                       className={`
                       text-base
                       font-bold
-                      text-slate-100
-                      group-hover:text-white
+                      text-slate-900
                       transition-colors
+                      group-hover:text-slate-800
+                      dark:text-slate-100
+                      dark:group-hover:text-white
                     `}
                     >
                       Exchange rules
                     </h3>
-                    <p className={`mt-1 text-sm text-slate-400`}>Set up automatic exchange rules</p>
+                    <p className={`mt-1 text-sm text-slate-500 dark:text-slate-400`}>Set up automatic exchange rules</p>
                   </div>
                   <ChevronRightIcon
                     className={`
@@ -346,7 +367,8 @@ export default async function ExchangePage() {
                       text-slate-500
                       transition-transform
                       group-hover:translate-x-1
-                      group-hover:text-slate-400
+                      group-hover:text-slate-700
+                      dark:group-hover:text-slate-400
                     `}
                   />
                 </div>

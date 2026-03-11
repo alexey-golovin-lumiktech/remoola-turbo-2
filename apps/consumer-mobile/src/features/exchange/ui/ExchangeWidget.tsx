@@ -111,23 +111,28 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
       overflow-hidden
       rounded-2xl
       border
-      border-slate-700
-      bg-slate-800/90
+      border-slate-200
+      bg-white
       shadow-xl
       transition-all
       duration-300
       hover:shadow-2xl
+      dark:border-slate-700
+      dark:bg-slate-800/90
     `}
     >
       <div
         className={`
         border-b
-        border-slate-700
+        border-slate-200
         bg-linear-to-br
-        from-slate-800
-        to-slate-900
+        from-slate-50
+        to-slate-100
         px-5
         py-4
+        dark:border-slate-700
+        dark:from-slate-800
+        dark:to-slate-900
       `}
       >
         <div className={`flex items-start gap-3`}>
@@ -148,13 +153,14 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
             <ExchangeIcon className={`h-5 w-5 text-white`} strokeWidth={2} />
           </div>
           <div className={`flex-1`}>
-            <h3 className={`text-lg font-bold text-slate-100`}>Exchange currency</h3>
+            <h3 className={`text-lg font-bold text-slate-900 dark:text-slate-100`}>Exchange currency</h3>
             <p
               className={`
               mt-0.5
               text-xs
               font-medium
-              text-slate-400
+              text-slate-500
+              dark:text-slate-400
             `}
             >
               Convert between currencies at live exchange rates
@@ -180,15 +186,16 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
               gap-1.5
               text-sm
               font-bold
-              text-slate-200
+              text-slate-800
+              dark:text-slate-200
             `}
             >
-              <CurrencyDollarIcon className={`h-4 w-4 text-slate-400`} strokeWidth={2} />
+              <CurrencyDollarIcon className={`h-4 w-4 text-slate-500 dark:text-slate-400`} strokeWidth={2} />
               From
             </label>
-            <span className={`text-xs font-semibold text-slate-400`}>
+            <span className={`text-xs font-semibold text-slate-500 dark:text-slate-400`}>
               Available:{` `}
-              <span className={`text-slate-300`}>
+              <span className={`text-slate-700 dark:text-slate-300`}>
                 {getBalanceForCurrency(fromCurrency).toFixed(2)} {fromCurrency}
               </span>
             </span>
@@ -226,10 +233,10 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
               justify-center
               rounded-2xl
               bg-linear-to-br
-              from-slate-700
-              to-slate-800
+              from-slate-200
+              to-slate-300
               p-3
-              text-slate-300
+              text-slate-600
               shadow-lg
               transition-all
               duration-300
@@ -242,8 +249,12 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
               focus:ring-2
               focus:ring-primary-500
               focus:ring-offset-2
-              focus:ring-offset-slate-800
+              focus:ring-offset-white
               active:scale-95
+              dark:from-slate-700
+              dark:to-slate-800
+              dark:text-slate-300
+              dark:focus:ring-offset-slate-800
             `}
             aria-label="Swap currencies"
           >
@@ -269,10 +280,11 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
             gap-1.5
             text-sm
             font-bold
-            text-slate-200
+            text-slate-800
+            dark:text-slate-200
           `}
           >
-            <CurrencyDollarIcon className={`h-4 w-4 text-slate-400`} strokeWidth={2} />
+            <CurrencyDollarIcon className={`h-4 w-4 text-slate-500 dark:text-slate-400`} strokeWidth={2} />
             To
           </label>
           <AmountCurrencyInput
@@ -297,12 +309,15 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
             animate-slideDown
             rounded-xl
             border
-            border-blue-700
+            border-blue-200
             bg-linear-to-br
-            from-blue-900/50
-            to-blue-800/30
+            from-blue-50
+            to-blue-100/50
             p-4
             shadow-lg
+            dark:border-blue-700
+            dark:from-blue-900/50
+            dark:to-blue-800/30
           `}
           >
             <div
@@ -313,14 +328,14 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
               mb-2
             `}
             >
-              <span className={`text-sm font-bold text-blue-300`}>Exchange rate</span>
-              <span className={`text-base font-extrabold text-blue-200`}>
+              <span className={`text-sm font-bold text-blue-700 dark:text-blue-300`}>Exchange rate</span>
+              <span className={`text-base font-extrabold text-blue-800 dark:text-blue-200`}>
                 1 {fromCurrency} = {quote.rate.toFixed(4)} {toCurrency}
               </span>
             </div>
             <div className={`flex items-center gap-1.5`}>
-              <ClockIcon className={`h-3.5 w-3.5 text-blue-400`} />
-              <p className={`text-xs font-medium text-blue-300`}>
+              <ClockIcon className={`h-3.5 w-3.5 text-blue-600 dark:text-blue-400`} />
+              <p className={`text-xs font-medium text-blue-600 dark:text-blue-300`}>
                 {(() => {
                   const date = quote.timestamp ? new Date(quote.timestamp) : new Date();
                   const timeLabel = Number.isNaN(date.getTime()) ? `just now` : date.toLocaleTimeString();
@@ -337,12 +352,15 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
             animate-slideDown
             rounded-xl
             border
-            border-green-700
+            border-green-200
             bg-linear-to-br
-            from-green-900/50
-            to-green-800/30
+            from-green-50
+            to-green-100/50
             p-4
             shadow-lg
+            dark:border-green-700
+            dark:from-green-900/50
+            dark:to-green-800/30
           `}
           >
             <div className={`flex items-start gap-3`}>
@@ -360,7 +378,7 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
               >
                 <CheckIcon className={`h-5 w-5 text-white`} strokeWidth={3} />
               </div>
-              <p className={`text-sm font-semibold text-green-200`}>{success}</p>
+              <p className={`text-sm font-semibold text-green-800 dark:text-green-200`}>{success}</p>
             </div>
           </div>
         )}
@@ -371,12 +389,15 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
             animate-slideDown
             rounded-xl
             border
-            border-red-700
+            border-red-200
             bg-linear-to-br
-            from-red-900/50
-            to-red-800/30
+            from-red-50
+            to-red-100/50
             p-4
             shadow-lg
+            dark:border-red-700
+            dark:from-red-900/50
+            dark:to-red-800/30
           `}
           >
             <div className={`flex items-start gap-3`}>
@@ -394,7 +415,7 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
               >
                 <AlertTriangleIcon className={`h-5 w-5 text-white`} strokeWidth={2} />
               </div>
-              <p className={`text-sm font-semibold text-red-200`}>{error}</p>
+              <p className={`text-sm font-semibold text-red-800 dark:text-red-200`}>{error}</p>
             </div>
           </div>
         )}

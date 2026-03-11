@@ -447,7 +447,7 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
                     ${
                       isSelected
                         ? `bg-linear-to-br from-primary-600 via-primary-700 to-primary-800 shadow-2xl shadow-primary-500/40 border border-primary-500/30 scale-[1.02]`
-                        : `bg-linear-to-br from-slate-800 via-slate-900 to-slate-800 border border-slate-700/50 hover:border-slate-600 shadow-xl hover:shadow-2xl hover:scale-[1.01]`
+                        : `border border-slate-200 bg-linear-to-br from-white via-slate-50 to-white shadow-xl hover:border-slate-300 hover:shadow-2xl hover:scale-[1.01] dark:border-slate-700/50 dark:from-slate-800 dark:via-slate-900 dark:to-slate-800 dark:hover:border-slate-600`
                     }
                   `}
                 >
@@ -475,7 +475,8 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
                             focus:ring-2
                             focus:ring-white/50
                             focus:ring-offset-2
-                            focus:ring-offset-slate-900
+                            focus:ring-offset-slate-100
+                            dark:focus:ring-offset-slate-900
                             rounded-lg
                           `}
                           aria-label={`Select ${name ?? id}`}
@@ -493,7 +494,7 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
                               transition-all
                               focus:ring-white/50
                               cursor-pointer
-                              ${isSelected ? `border-white/50 bg-white/20` : `border-slate-600 bg-slate-800/50`}
+                              ${isSelected ? `border-white/50 bg-white/20` : `border-slate-300 bg-slate-100 dark:border-slate-600 dark:bg-slate-800/50`}
                             `}
                           />
                         </button>
@@ -518,7 +519,7 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
                           `}
                           >
                             <div
-                              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl shadow-lg transition-all duration-300 ${isSelected ? `bg-white/20 text-white backdrop-blur-xs ring-2 ring-white/30` : `bg-slate-700/80 text-slate-300 group-hover:bg-slate-600 backdrop-blur-xs`}`}
+                              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl shadow-lg transition-all duration-300 ${isSelected ? `bg-white/20 text-white backdrop-blur-xs ring-2 ring-white/30` : `bg-slate-200 text-slate-600 group-hover:bg-slate-300 dark:bg-slate-700/80 dark:text-slate-300 dark:group-hover:bg-slate-600 backdrop-blur-xs`}`}
                             >
                               <DocumentIcon className={`h-6 w-6`} strokeWidth={2} />
                             </div>
@@ -537,11 +538,12 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
                                   focus:ring-2
                                   focus:ring-white/50
                                   focus:ring-offset-2
-                                  focus:ring-offset-slate-900
+                                  focus:ring-offset-slate-100
+                                  dark:focus:ring-offset-slate-900
                                   rounded-lg
                                   px-1
                                   py-0.5
-                                  ${isSelected ? `text-white` : `text-slate-100 hover:text-white`}
+                                  ${isSelected ? `text-white` : `text-slate-900 hover:text-slate-700 dark:text-slate-100 dark:hover:text-white`}
                                 `}
                               >
                                 {name ?? id ?? `Document`}
@@ -551,7 +553,40 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
                           {id && (
                             <button
                               onClick={() => setPreviewDoc(item)}
-                              className={`shrink-0 rounded-xl p-2.5 transition-all duration-200 active:scale-90 focus:outline-hidden focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-slate-900 shadow-md ${isSelected ? `bg-white/10 text-white hover:bg-white/20 backdrop-blur-xs` : `text-slate-300 hover:bg-slate-700/50 hover:text-white backdrop-blur-xs`}`}
+                              className={`
+                                shrink-0
+                                rounded-xl
+                                p-2.5
+                                transition-all
+                                duration-200
+                                active:scale-90
+                                focus:outline-hidden
+                                focus:ring-2
+                                focus:ring-primary-500/50
+                                focus:ring-offset-2
+                                focus:ring-offset-slate-100
+                                dark:focus:ring-white/50
+                                dark:focus:ring-offset-slate-900
+                                shadow-md
+                                ${
+                                  isSelected
+                                    ? `
+                                bg-white/10
+                                text-white
+                                hover:bg-white/20
+                                backdrop-blur-xs
+                                `
+                                    : `
+                                text-slate-500
+                                hover:bg-slate-200
+                                hover:text-slate-700
+                                dark:text-slate-300
+                                dark:hover:bg-slate-700/50
+                                dark:hover:text-white
+                                backdrop-blur-xs
+                                `
+                                }
+                              `}
                               aria-label="Preview document"
                             >
                               <EyeIcon className={`h-5 w-5`} strokeWidth={2} />
@@ -568,7 +603,9 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
                           `}
                         >
                           {createdAt && (
-                            <p className={`text-xs font-semibold ${isSelected ? `text-white/90` : `text-slate-400`}`}>
+                            <p
+                              className={`text-xs font-semibold ${isSelected ? `text-white/90` : `text-slate-500 dark:text-slate-400`}`}
+                            >
                               {new Date(createdAt).toLocaleDateString(undefined, {
                                 year: `numeric`,
                                 month: `short`,
@@ -593,7 +630,7 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
                                     ? `bg-blue-500/20 text-blue-300 ring-1 ring-blue-400/30`
                                     : kind === `Contract`
                                       ? `bg-purple-500/20 text-purple-300 ring-1 ring-purple-400/30`
-                                      : `bg-slate-600/30 text-slate-300 ring-1 ring-slate-500/30`
+                                      : `bg-slate-200 text-slate-700 ring-1 ring-slate-300 dark:bg-slate-600/30 dark:text-slate-300 dark:ring-slate-500/30`
                               }
                             `}
                           >
@@ -621,7 +658,7 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
                                   text-xs
                                   font-semibold
                                   shadow-xs
-                                  ${isSelected ? `bg-white/15 text-white ring-1 ring-white/20` : `bg-slate-700/60 text-slate-300 ring-1 ring-slate-600/50`}
+                                  ${isSelected ? `bg-white/15 text-white ring-1 ring-white/20` : `bg-slate-100 text-slate-700 ring-1 ring-slate-200 dark:bg-slate-700/60 dark:text-slate-300 dark:ring-slate-600/50`}
                                 `}
                               >
                                 {tag}
@@ -637,10 +674,13 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
                                   py-1
                                   text-xs
                                   font-semibold
-                                  bg-slate-700/40
-                                  text-slate-400
+                                  bg-slate-100
+                                  text-slate-600
                                   ring-1
-                                  ring-slate-600/50
+                                  ring-slate-200
+                                  dark:bg-slate-700/40
+                                  dark:text-slate-400
+                                  dark:ring-slate-600/50
                                 `}
                               >
                                 +{tags.length - 3}
@@ -653,7 +693,7 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
                             <button
                               onClick={() => setEditingTagsFor(id)}
                               // eslint-disable-next-line max-len
-                              className={`flex min-h-11 items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold transition-all duration-200 active:scale-95 focus:outline-hidden focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-slate-900 shadow-md ${isSelected ? `border-white/30 bg-white/10 text-white hover:bg-white/15 backdrop-blur-xs` : `border-slate-600/50 bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 hover:border-slate-500/50 backdrop-blur-xs`}`}
+                              className={`flex min-h-11 items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold transition-all duration-200 active:scale-95 focus:outline-hidden focus:ring-2 focus:ring-primary-500/50 focus:ring-offset-2 focus:ring-offset-slate-100 dark:focus:ring-white/50 dark:focus:ring-offset-slate-900 shadow-md ${isSelected ? `border-white/30 bg-white/10 text-white hover:bg-white/15 backdrop-blur-xs` : `border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200 hover:border-slate-300 dark:border-slate-600/50 dark:bg-slate-700/50 dark:text-slate-300 dark:hover:bg-slate-600/50 dark:hover:border-slate-500/50 backdrop-blur-xs`}`}
                             >
                               <TagIcon className={`h-4 w-4`} strokeWidth={2} />
                               <span>Tags</span>
@@ -676,11 +716,13 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
                                 active:scale-95
                                 focus:outline-hidden
                                 focus:ring-2
-                                focus:ring-white/50
+                                focus:ring-primary-500/50
                                 focus:ring-offset-2
-                                focus:ring-offset-slate-900
+                                focus:ring-offset-slate-100
+                                dark:focus:ring-white/50
+                                dark:focus:ring-offset-slate-900
                                 shadow-md
-                                ${isSelected ? `border-white/30 bg-white/10 text-white hover:bg-white/15 backdrop-blur-xs` : `border-slate-600/50 bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 hover:border-slate-500/50 backdrop-blur-xs`}`}
+                                ${isSelected ? `border-white/30 bg-white/10 text-white hover:bg-white/15 backdrop-blur-xs` : `border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200 hover:border-slate-300 dark:border-slate-600/50 dark:bg-slate-700/50 dark:text-slate-300 dark:hover:bg-slate-600/50 dark:hover:border-slate-500/50 backdrop-blur-xs`}`}
                             >
                               <PaperclipIcon className={`h-4 w-4`} strokeWidth={2.5} />
                               <span>Attach</span>

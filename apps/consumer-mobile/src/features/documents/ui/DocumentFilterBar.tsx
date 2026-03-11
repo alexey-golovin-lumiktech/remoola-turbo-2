@@ -72,7 +72,7 @@ export function DocumentFilterBar({ activeFilter, onFilterChange, filterCounts }
                 ${
                   isActive
                     ? `bg-linear-to-br from-primary-600 via-primary-700 to-primary-600 text-white shadow-xl shadow-primary-500/40 dark:shadow-primary-900/60 ring-2 ring-primary-500/30 scale-105`
-                    : `bg-linear-to-br from-slate-800 via-slate-900 to-slate-800 text-slate-300 border border-slate-700/50 hover:border-slate-600 hover:shadow-lg hover:scale-[1.02] dark:from-slate-800 dark:via-slate-900 dark:to-slate-800 dark:text-slate-300 dark:border-slate-700/50 dark:hover:border-slate-600`
+                    : `border border-slate-200 bg-linear-to-br from-slate-100 via-white to-slate-100 text-slate-700 hover:border-slate-300 hover:shadow-lg hover:scale-[1.02] dark:border-slate-700/50 dark:from-slate-800 dark:via-slate-900 dark:to-slate-800 dark:text-slate-300 dark:hover:border-slate-600`
                 }
               `}
               aria-pressed={isActive}
@@ -96,7 +96,7 @@ export function DocumentFilterBar({ activeFilter, onFilterChange, filterCounts }
                   ${
                     isActive
                       ? `bg-white/30 text-white backdrop-blur-xs ring-1 ring-white/20`
-                      : `bg-slate-700/80 text-slate-300 group-hover:bg-slate-600 dark:bg-slate-700/80 dark:text-slate-300 dark:group-hover:bg-slate-600`
+                      : `bg-slate-200 text-slate-700 group-hover:bg-slate-300 dark:bg-slate-700/80 dark:text-slate-300 dark:group-hover:bg-slate-600`
                   }
                 `}
               >

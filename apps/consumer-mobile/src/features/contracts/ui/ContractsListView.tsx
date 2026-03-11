@@ -184,16 +184,17 @@ export function ContractsListView({ contracts, total }: ContractsListViewProps) 
                     overflow-hidden
                     rounded-2xl
                     border
-                    border-slate-700
-                    bg-slate-800/90
+                    border-slate-200
+                    bg-white
                     shadow-lg
                     transition-all
                     duration-300
-                    hover:bg-slate-800
+                    hover:bg-slate-50
                     hover:shadow-xl
                     hover:scale-[1.01]
                     dark:border-slate-700
                     dark:bg-slate-800/90
+                    dark:hover:bg-slate-800
                     animate-fadeIn
                   `}
                   style={{ animationDelay: `${index * 50}ms` }}
@@ -216,7 +217,8 @@ export function ContractsListView({ contracts, total }: ContractsListViewProps) 
                             rounded-full
                             bg-green-500
                             ring-2
-                            ring-slate-800
+                            ring-white
+                            dark:ring-slate-800
                           `}
                           >
                             <CheckIcon className={`h-3.5 w-3.5 text-white`} strokeWidth={3} />
@@ -239,9 +241,11 @@ export function ContractsListView({ contracts, total }: ContractsListViewProps) 
                               truncate
                               text-lg
                               font-bold
-                              text-slate-100
-                              group-hover:text-white
+                              text-slate-900
                               transition-colors
+                              group-hover:text-slate-800
+                              dark:text-slate-100
+                              dark:group-hover:text-white
                             `}
                             >
                               {contract.name}
@@ -251,7 +255,8 @@ export function ContractsListView({ contracts, total }: ContractsListViewProps) 
                               truncate
                               text-sm
                               font-medium
-                              text-slate-400
+                              text-slate-500
+                              dark:text-slate-400
                             `}
                             >
                               {contract.email}
@@ -275,13 +280,16 @@ export function ContractsListView({ contracts, total }: ContractsListViewProps) 
                           <div
                             className={`
                             rounded-xl
-                            bg-slate-900/50
+                            border
+                            border-slate-200
+                            bg-slate-50
                             px-3
                             py-2.5
-                            border
-                            border-slate-700/50
                             transition-colors
-                            group-hover:border-slate-600
+                            group-hover:border-slate-300
+                            dark:border-slate-700/50
+                            dark:bg-slate-900/50
+                            dark:group-hover:border-slate-600
                           `}
                           >
                             <div
@@ -293,20 +301,27 @@ export function ContractsListView({ contracts, total }: ContractsListViewProps) 
                             `}
                             >
                               <CalendarIcon className={`h-3.5 w-3.5 text-slate-500`} />
-                              <p className={`text-xs font-semibold text-slate-400`}>Last Activity</p>
+                              <p className={`text-xs font-semibold text-slate-500 dark:text-slate-400`}>
+                                Last Activity
+                              </p>
                             </div>
-                            <p className={`text-sm font-bold text-slate-200`}>{formatDate(contract.lastActivity)}</p>
+                            <p className={`text-sm font-bold text-slate-800 dark:text-slate-200`}>
+                              {formatDate(contract.lastActivity)}
+                            </p>
                           </div>
                           <div
                             className={`
                             rounded-xl
-                            bg-slate-900/50
+                            border
+                            border-slate-200
+                            bg-slate-50
                             px-3
                             py-2.5
-                            border
-                            border-slate-700/50
                             transition-colors
-                            group-hover:border-slate-600
+                            group-hover:border-slate-300
+                            dark:border-slate-700/50
+                            dark:bg-slate-900/50
+                            dark:group-hover:border-slate-600
                           `}
                           >
                             <div
@@ -318,9 +333,9 @@ export function ContractsListView({ contracts, total }: ContractsListViewProps) 
                             `}
                             >
                               <DocumentIcon className={`h-3.5 w-3.5 text-slate-500`} />
-                              <p className={`text-xs font-semibold text-slate-400`}>Documents</p>
+                              <p className={`text-xs font-semibold text-slate-500 dark:text-slate-400`}>Documents</p>
                             </div>
-                            <p className={`text-sm font-bold text-slate-200`}>{contract.docs}</p>
+                            <p className={`text-sm font-bold text-slate-800 dark:text-slate-200`}>{contract.docs}</p>
                           </div>
                         </div>
                       </div>
@@ -328,7 +343,7 @@ export function ContractsListView({ contracts, total }: ContractsListViewProps) 
                   </div>
 
                   {contract.lastRequestId && (
-                    <div className={`border-t border-slate-700`}>
+                    <div className={`border-t border-slate-200 dark:border-slate-700`}>
                       <Link
                         href={`/payments/${contract.lastRequestId}`}
                         className={`
@@ -340,11 +355,14 @@ export function ContractsListView({ contracts, total }: ContractsListViewProps) 
                           py-3.5
                           text-sm
                           font-bold
-                          text-primary-400
+                          text-primary-600
                           transition-all
-                          hover:bg-primary-900/20
-                          hover:text-primary-300
+                          hover:bg-primary-50
+                          hover:text-primary-700
                           active:scale-[0.98]
+                          dark:text-primary-400
+                          dark:hover:bg-primary-900/20
+                          dark:hover:text-primary-300
                         `}
                       >
                         <span>View Latest Payment</span>
@@ -365,11 +383,13 @@ export function ContractsListView({ contracts, total }: ContractsListViewProps) 
                     <div
                       className={`
                       border-t
-                      border-slate-700
-                      bg-slate-900/30
+                      border-slate-200
+                      bg-slate-50
                       px-4
                       py-3
                       text-center
+                      dark:border-slate-700
+                      dark:bg-slate-900/30
                     `}
                     >
                       <p className={`text-sm font-semibold text-slate-500`}>No payments yet</p>
@@ -387,13 +407,15 @@ export function ContractsListView({ contracts, total }: ContractsListViewProps) 
                 justify-between
                 rounded-xl
                 border
-                border-slate-700
-                bg-slate-800/50
+                border-slate-200
+                bg-slate-50
                 px-4
                 py-3
+                dark:border-slate-700
+                dark:bg-slate-800/50
               `}
               >
-                <p className={`text-sm font-medium text-slate-400`}>
+                <p className={`text-sm font-medium text-slate-600 dark:text-slate-400`}>
                   Showing {(currentPage - 1) * itemsPerPage + 1} to{` `}
                   {Math.min(currentPage * itemsPerPage, filteredContracts.length)} of {filteredContracts.length}
                 </p>
@@ -408,23 +430,27 @@ export function ContractsListView({ contracts, total }: ContractsListViewProps) 
                     items-center
                     rounded-xl
                     border
-                    border-slate-700
-                    bg-slate-800
+                    border-slate-200
+                    bg-white
                     px-3
                     py-2
                     text-sm
                     font-semibold
-                    text-slate-300
+                    text-slate-700
                     transition-all
-                    hover:bg-slate-700
+                    hover:bg-slate-100
                     active:scale-95
                     disabled:cursor-not-allowed
                     disabled:opacity-40
+                    dark:border-slate-700
+                    dark:bg-slate-800
+                    dark:text-slate-300
+                    dark:hover:bg-slate-700
                   `}
                   >
                     Previous
                   </button>
-                  <span className={`text-sm font-medium text-slate-400`}>
+                  <span className={`text-sm font-medium text-slate-600 dark:text-slate-400`}>
                     {currentPage} / {totalPages}
                   </span>
                   <button
@@ -436,18 +462,22 @@ export function ContractsListView({ contracts, total }: ContractsListViewProps) 
                     items-center
                     rounded-xl
                     border
-                    border-slate-700
-                    bg-slate-800
+                    border-slate-200
+                    bg-white
                     px-3
                     py-2
                     text-sm
                     font-semibold
-                    text-slate-300
+                    text-slate-700
                     transition-all
-                    hover:bg-slate-700
+                    hover:bg-slate-100
                     active:scale-95
                     disabled:cursor-not-allowed
                     disabled:opacity-40
+                    dark:border-slate-700
+                    dark:bg-slate-800
+                    dark:text-slate-300
+                    dark:hover:bg-slate-700
                   `}
                   >
                     Next

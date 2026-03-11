@@ -33,25 +33,31 @@ export function PendingRequestsTable({ requests, maxItems = 5 }: PendingRequests
         overflow-hidden
         rounded-2xl
         border
-        border-slate-700
+        border-slate-200
         bg-linear-to-br
-        from-slate-800
-        to-slate-900
+        from-white
+        to-slate-50
         shadow-xl
         animate-fadeIn
+        dark:border-slate-700
+        dark:from-slate-800
+        dark:to-slate-900
       `}
       style={{ animationDelay: `100ms` }}
     >
       <div
         className={`
         border-b
-        border-slate-700/80
+        border-slate-200
         bg-linear-to-r
-        from-slate-800
-        via-slate-850
-        to-slate-900
+        from-slate-50
+        to-slate-100
         px-6
         py-4
+        dark:border-slate-700/80
+        dark:from-slate-800
+        dark:via-slate-800
+        dark:to-slate-900
       `}
       >
         <div className={`flex items-center justify-between`}>
@@ -64,14 +70,14 @@ export function PendingRequestsTable({ requests, maxItems = 5 }: PendingRequests
               items-center
               justify-center
               rounded-xl
-              bg-amber-500/10
               border
               border-amber-500/20
+              bg-amber-500/10
             `}
             >
-              <ClockIcon className={`h-5 w-5 text-amber-400`} strokeWidth={2.5} />
+              <ClockIcon className={`h-5 w-5 text-amber-600 dark:text-amber-400`} strokeWidth={2.5} />
             </div>
-            <h3 className={`text-lg font-bold text-slate-100`}>Pending requests</h3>
+            <h3 className={`text-lg font-bold text-slate-900 dark:text-slate-100`}>Pending requests</h3>
           </div>
           {requests.length > maxItems && (
             <Link
@@ -79,12 +85,14 @@ export function PendingRequestsTable({ requests, maxItems = 5 }: PendingRequests
               className={`
                 text-sm
                 font-bold
-                text-primary-400
-                hover:text-primary-300
+                text-primary-600
                 transition-all
                 hover:underline
                 decoration-2
                 underline-offset-4
+                hover:text-primary-500
+                dark:text-primary-400
+                dark:hover:text-primary-300
               `}
             >
               View all ({requests.length})
@@ -93,7 +101,7 @@ export function PendingRequestsTable({ requests, maxItems = 5 }: PendingRequests
         </div>
       </div>
 
-      <div className={`divide-y divide-slate-700/50`}>
+      <div className={`divide-y divide-slate-200 dark:divide-slate-700/50`}>
         {displayedRequests.map((req, index) => (
           <Link
             key={req.id}
@@ -105,9 +113,10 @@ export function PendingRequestsTable({ requests, maxItems = 5 }: PendingRequests
               py-4
               transition-all
               duration-200
-              hover:bg-slate-700/40
+              hover:bg-slate-100
               active:scale-[0.98]
               animate-fadeIn
+              dark:hover:bg-slate-700/40
             `}
             style={{ animationDelay: `${100 + index * 50}ms` }}
           >
@@ -125,9 +134,11 @@ export function PendingRequestsTable({ requests, maxItems = 5 }: PendingRequests
                   truncate
                   text-base
                   font-bold
-                  text-slate-100
-                  group-hover:text-white
+                  text-slate-900
                   transition-colors
+                  group-hover:text-slate-800
+                  dark:text-slate-100
+                  dark:group-hover:text-white
                 `}
                 >
                   {req.counterpartyName}
@@ -137,9 +148,11 @@ export function PendingRequestsTable({ requests, maxItems = 5 }: PendingRequests
                   mt-1
                   text-sm
                   font-semibold
-                  text-slate-400
-                  group-hover:text-slate-300
+                  text-slate-500
                   transition-colors
+                  group-hover:text-slate-600
+                  dark:text-slate-400
+                  dark:group-hover:text-slate-300
                 `}
                 >
                   {req.amount.toFixed(2)} {req.currencyCode}
@@ -151,15 +164,18 @@ export function PendingRequestsTable({ requests, maxItems = 5 }: PendingRequests
                   inline-flex
                   items-center
                   rounded-full
-                  bg-amber-900/50
+                  border
+                  border-amber-600/50
+                  bg-amber-100
                   px-3
                   py-1.5
                   text-xs
                   font-bold
-                  text-amber-300
-                  border
-                  border-amber-700/50
+                  text-amber-800
                   shadow-xs
+                  dark:border-amber-700/50
+                  dark:bg-amber-900/50
+                  dark:text-amber-300
                 `}
                 >
                   {req.status}
@@ -173,7 +189,8 @@ export function PendingRequestsTable({ requests, maxItems = 5 }: PendingRequests
                     transition-all
                     duration-200
                     group-hover:translate-x-1
-                    group-hover:text-slate-300
+                    group-hover:text-slate-700
+                    dark:group-hover:text-slate-300
                   `}
                   strokeWidth={2.5}
                 />

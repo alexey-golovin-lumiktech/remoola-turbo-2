@@ -1,6 +1,6 @@
 # Consumer-mobile
 
-Mobile-first Next.js App Router app for Remoola consumers. Runs on port **3002**.
+Mobile-first Next.js App Router app for Remoola consumers. Runs on port **3002**. Supports light/dark theme (ThemeProvider, ThemeSwitcher, settings).
 
 ## Development
 

@@ -55,9 +55,10 @@ export function ConfirmationModal({
         className={`
           fixed
           inset-0
-          bg-slate-900/60
+          bg-black/20
           backdrop-blur-md
           transition-opacity
+          dark:bg-slate-900/60
         `}
         onClick={onClose}
         aria-hidden="true"

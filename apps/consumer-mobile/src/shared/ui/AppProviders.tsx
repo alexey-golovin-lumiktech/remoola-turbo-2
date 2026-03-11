@@ -4,6 +4,7 @@ import { Component, type ReactNode } from 'react';
 import { Toaster } from 'sonner';
 import { SWRConfig } from 'swr';
 
+import { ThemeColorMeta } from './ThemeColorMeta';
 import { ThemeInitializer } from './ThemeInitializer';
 import { ThemeProvider } from './ThemeProvider';
 import { swrConfig, swrFetcher } from '../../lib/client';
@@ -64,10 +65,21 @@ class AppErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryS
           <button
             type="button"
             onClick={() => window.location.reload()}
-            className={
-              `min-h-11 min-w-11 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white ` +
-              `focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`
-            }
+            className={`
+              min-h-11
+              min-w-11
+              rounded-lg
+              bg-blue-600
+              px-4
+              py-2
+              text-sm
+              font-medium
+              text-white
+              focus:outline-hidden
+              focus:ring-2
+              focus:ring-blue-500
+              focus:ring-offset-2
+            `}
           >
             Refresh Page
           </button>
@@ -82,6 +94,7 @@ export function AppProviders({ children }: AppProvidersProps) {
   return (
     <ThemeProvider>
       <ThemeInitializer />
+      <ThemeColorMeta />
       <AppErrorBoundary>
         <SWRConfig value={{ ...swrConfig, fetcher: swrFetcher }}>
           <Toaster

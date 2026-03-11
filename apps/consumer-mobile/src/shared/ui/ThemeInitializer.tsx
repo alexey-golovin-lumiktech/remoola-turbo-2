@@ -2,9 +2,14 @@
 
 import { useEffect } from 'react';
 
-import { Theme, useTheme } from './ThemeProvider';
+import { Theme, useTheme, type ITheme } from './ThemeProvider';
 import { clientLogger } from '../../lib/logger';
 
+/**
+ * Loads theme from the settings API when authenticated. Server is the source of truth;
+ * on successful GET we set theme in context and ThemeProvider persists it to localStorage
+ * so the next load is consistent.
+ */
 export function ThemeInitializer() {
   const { setTheme } = useTheme();
 
@@ -24,7 +29,10 @@ export function ThemeInitializer() {
         if (response.ok) {
           const data = (await response.json()) as { theme?: string };
           if (data.theme) {
-            setTheme(data.theme.toLowerCase() as typeof Theme.LIGHT);
+            const normalized = data.theme.toLowerCase();
+            if ([Theme.LIGHT, Theme.DARK, Theme.SYSTEM].includes(normalized as ITheme)) {
+              setTheme(normalized as ITheme);
+            }
           } else {
             setTheme(Theme.SYSTEM);
           }

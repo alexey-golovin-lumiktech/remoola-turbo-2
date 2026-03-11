@@ -46,9 +46,11 @@ export function RatesPanel({ rates }: RatesPanelProps) {
       overflow-hidden
       rounded-2xl
       border
-      border-slate-700
-      bg-slate-800/90
+      border-slate-200
+      bg-white
       shadow-lg
+      dark:border-slate-700
+      dark:bg-slate-800/90
     `}
     >
       <div
@@ -57,17 +59,20 @@ export function RatesPanel({ rates }: RatesPanelProps) {
         items-center
         justify-between
         border-b
-        border-slate-700
+        border-slate-200
         bg-linear-to-r
-        from-slate-800
-        to-slate-900
+        from-slate-50
+        to-slate-100
         px-5
         py-4
+        dark:border-slate-700
+        dark:from-slate-800
+        dark:to-slate-900
       `}
       >
         <div className={`flex items-center gap-2`}>
-          <TrendingUpIcon className={`h-5 w-5 text-primary-400`} strokeWidth={2} />
-          <h3 className={`text-base font-bold text-slate-100`}>Exchange rates</h3>
+          <TrendingUpIcon className={`h-5 w-5 text-primary-600 dark:text-primary-400`} strokeWidth={2} />
+          <h3 className={`text-base font-bold text-slate-900 dark:text-slate-100`}>Exchange rates</h3>
         </div>
         <button
           onClick={handleRefresh}
@@ -79,14 +84,16 @@ export function RatesPanel({ rates }: RatesPanelProps) {
             items-center
             justify-center
             rounded-xl
-            text-primary-400
+            text-primary-600
             transition-all
-            hover:bg-slate-700
+            hover:bg-slate-100
             focus:outline-hidden
             focus:ring-2
             focus:ring-primary-500
             disabled:opacity-50
             active:scale-95
+            dark:text-primary-400
+            dark:hover:bg-slate-700
           `}
           aria-label="Refresh rates"
         >
@@ -94,7 +101,7 @@ export function RatesPanel({ rates }: RatesPanelProps) {
         </button>
       </div>
 
-      <div className={`divide-y divide-slate-700`}>
+      <div className={`divide-y divide-slate-200 dark:divide-slate-700`}>
         {rates.map((rate, index) => (
           <div
             key={`${rate.from}-${rate.to}`}
@@ -102,8 +109,9 @@ export function RatesPanel({ rates }: RatesPanelProps) {
               px-5
               py-4
               transition-colors
-              hover:bg-slate-700/30
+              hover:bg-slate-50
               animate-fadeIn
+              dark:hover:bg-slate-700/30
             `}
             style={{ animationDelay: `${index * 50}ms` }}
           >
@@ -115,21 +123,25 @@ export function RatesPanel({ rates }: RatesPanelProps) {
                   items-center
                   gap-2
                   rounded-lg
-                  bg-slate-900/50
+                  border
+                  border-slate-200
+                  bg-slate-50
                   px-3
                   py-2
-                  border
-                  border-slate-700
+                  dark:border-slate-700
+                  dark:bg-slate-900/50
                 `}
                 >
-                  <span className={`text-sm font-bold text-slate-300`}>{rate.from}</span>
+                  <span className={`text-sm font-bold text-slate-700 dark:text-slate-300`}>{rate.from}</span>
                   <ChevronRightIcon className={`h-4 w-4 text-slate-500`} />
-                  <span className={`text-sm font-bold text-slate-300`}>{rate.to}</span>
+                  <span className={`text-sm font-bold text-slate-700 dark:text-slate-300`}>{rate.to}</span>
                 </div>
               </div>
 
               <div className={`flex items-center gap-3`}>
-                <span className={`text-lg font-extrabold text-slate-100`}>{rate.rate.toFixed(4)}</span>
+                <span className={`text-lg font-extrabold text-slate-900 dark:text-slate-100`}>
+                  {rate.rate.toFixed(4)}
+                </span>
 
                 {rate.trend && (
                   <div

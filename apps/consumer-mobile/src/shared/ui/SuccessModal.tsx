@@ -52,9 +52,10 @@ export function SuccessModal({ isOpen, onClose, title, message, actionLabel, act
         className={`
           fixed
           inset-0
-          bg-slate-900/50
+          bg-black/20
           backdrop-blur-xs
           transition-opacity
+          dark:bg-slate-900/50
         `}
         onClick={onClose}
         aria-hidden="true"
