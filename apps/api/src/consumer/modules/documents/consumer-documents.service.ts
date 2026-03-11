@@ -200,6 +200,7 @@ export class ConsumerDocumentsService {
   }
 
   async attachToPayment(consumerId: string, paymentRequestId: string, resourceIds: string[]) {
+    const ids = Array.isArray(resourceIds) ? resourceIds : [];
     const payment = await this.prisma.paymentRequestModel.findFirst({
       where: {
         OR: [
@@ -222,14 +223,14 @@ export class ConsumerDocumentsService {
     const paymentRequestAttachments = await this.prisma.paymentRequestAttachmentModel.findMany({
       where: {
         paymentRequestId,
-        resourceId: { in: resourceIds },
+        resourceId: { in: ids },
       },
       select: { resourceId: true },
     });
 
     const existingAttachmentResourceIds = new Set(paymentRequestAttachments.map((attachment) => attachment.resourceId));
 
-    const toCreate = resourceIds.filter((resourceId) => !existingAttachmentResourceIds.has(resourceId));
+    const toCreate = ids.filter((resourceId) => !existingAttachmentResourceIds.has(resourceId));
 
     await this.prisma.paymentRequestAttachmentModel.createMany({
       data: toCreate.map((resourceId) => ({

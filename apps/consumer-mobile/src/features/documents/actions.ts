@@ -153,8 +153,8 @@ export async function attachDocumentToPayment(input: AttachToPaymentInput): Prom
         Cookie: cookie,
       },
       body: JSON.stringify({
-        documentId: parsed.data.documentId,
         paymentRequestId: parsed.data.paymentRequestId,
+        resourceIds: [parsed.data.documentId],
       }),
       credentials: `include`,
       signal: AbortSignal.timeout(10000),
@@ -172,7 +172,7 @@ export async function attachDocumentToPayment(input: AttachToPaymentInput): Prom
     }
 
     revalidatePath(`/documents`);
-    revalidatePath(`/payments/[paymentRequestId]`, `page`);
+    revalidatePath(`/payments/${parsed.data.paymentRequestId}`);
 
     return { ok: true, data: undefined };
   } catch (error) {
