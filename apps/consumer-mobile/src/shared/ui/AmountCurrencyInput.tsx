@@ -1,6 +1,6 @@
 'use client';
 
-import { type InputHTMLAttributes, forwardRef, useState } from 'react';
+import { type InputHTMLAttributes, forwardRef, useEffect, useState } from 'react';
 
 import { FormInput } from './FormInput';
 
@@ -32,6 +32,10 @@ export const AmountCurrencyInput = forwardRef<HTMLInputElement, AmountCurrencyIn
     ref,
   ) => {
     const [selectedCurrency, setSelectedCurrency] = useState(currency);
+
+    useEffect(() => {
+      setSelectedCurrency(currency);
+    }, [currency]);
 
     const handleCurrencyChange = (newCurrency: string) => {
       setSelectedCurrency(newCurrency);

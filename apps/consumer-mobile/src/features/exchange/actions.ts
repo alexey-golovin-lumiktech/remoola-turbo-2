@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 
+import type { IConsumerExchangeConversion, IConsumerExchangeQuote } from '@remoola/api-types';
+
 import {
   exchangeConversionSchema,
   exchangeQuoteSchema,
@@ -19,27 +21,6 @@ interface AppError {
 
 type AppResult<T> = { ok: true; data: T } | { ok: false; error: AppError };
 
-interface ExchangeQuote {
-  from: string;
-  to: string;
-  rate: number;
-  amountFrom: number;
-  amountTo: number;
-  timestamp: string;
-  expiresAt?: string;
-}
-
-interface ExchangeConversion {
-  id: string;
-  fromCurrency: string;
-  toCurrency: string;
-  amountFrom: number;
-  amountTo: number;
-  rate: number;
-  status: string;
-  createdAt: string;
-}
-
 interface ExchangeRule {
   id: string;
   name: string;
@@ -53,7 +34,7 @@ export async function getExchangeQuote(
   fromCurrency: string,
   toCurrency: string,
   amount: number,
-): Promise<AppResult<ExchangeQuote>> {
+): Promise<AppResult<IConsumerExchangeQuote>> {
   const parsed = exchangeQuoteSchema.safeParse({ fromCurrency, toCurrency, amount });
 
   if (!parsed.success) {
@@ -81,13 +62,19 @@ export async function getExchangeQuote(
     const cookieStore = await cookies();
     const cookie = cookieStore.toString();
 
+    const body = {
+      from: parsed.data.fromCurrency,
+      to: parsed.data.toCurrency,
+      amount: parsed.data.amount,
+    };
+
     const res = await fetch(`${baseUrl}/consumer/exchange/quote`, {
       method: `POST`,
       headers: {
         'Content-Type': `application/json`,
         Cookie: cookie,
       },
-      body: JSON.stringify(parsed.data),
+      body: JSON.stringify(body),
       cache: `no-store`,
     });
 
@@ -103,7 +90,16 @@ export async function getExchangeQuote(
     }
 
     const data = await res.json();
-    return { ok: true, data };
+    const num = (v: unknown): number => (typeof v === `number` && Number.isFinite(v) ? v : 0);
+    const quote: IConsumerExchangeQuote = {
+      from: typeof data.from === `string` ? data.from : ``,
+      to: typeof data.to === `string` ? data.to : ``,
+      rate: num(data.rate),
+      amountFrom: num(data.sourceAmount),
+      amountTo: num(data.targetAmount),
+      timestamp: typeof data.timestamp === `string` ? data.timestamp : new Date().toISOString(),
+    };
+    return { ok: true, data: quote };
   } catch (error) {
     return {
       ok: false,
@@ -120,7 +116,7 @@ export async function executeExchange(
   toCurrency: string,
   amount: number,
   idempotencyKey?: string,
-): Promise<AppResult<ExchangeConversion>> {
+): Promise<AppResult<IConsumerExchangeConversion>> {
   const parsed = exchangeConversionSchema.safeParse({ fromCurrency, toCurrency, amount });
 
   if (!parsed.success) {
@@ -157,10 +153,16 @@ export async function executeExchange(
       headers[`Idempotency-Key`] = idempotencyKey;
     }
 
+    const body = {
+      from: parsed.data.fromCurrency,
+      to: parsed.data.toCurrency,
+      amount: parsed.data.amount,
+    };
+
     const res = await fetch(`${baseUrl}/consumer/exchange/convert`, {
       method: `POST`,
       headers,
-      body: JSON.stringify(parsed.data),
+      body: JSON.stringify(body),
       cache: `no-store`,
     });
 
@@ -176,11 +178,22 @@ export async function executeExchange(
     }
 
     const data = await res.json();
+    const num = (v: unknown): number => (typeof v === `number` && Number.isFinite(v) ? v : 0);
+    const conversion: IConsumerExchangeConversion = {
+      id: typeof data.entryId === `string` ? data.entryId : typeof data.id === `string` ? data.id : ``,
+      fromCurrency: typeof data.from === `string` ? data.from : ``,
+      toCurrency: typeof data.to === `string` ? data.to : ``,
+      amountFrom: num(data.sourceAmount),
+      amountTo: num(data.targetAmount),
+      rate: num(data.rate),
+      status: typeof data.status === `string` ? data.status : `completed`,
+      createdAt: typeof data.createdAt === `string` ? data.createdAt : new Date().toISOString(),
+    };
 
     revalidatePath(`/exchange`);
     revalidatePath(`/dashboard`);
 
-    return { ok: true, data };
+    return { ok: true, data: conversion };
   } catch (error) {
     return {
       ok: false,

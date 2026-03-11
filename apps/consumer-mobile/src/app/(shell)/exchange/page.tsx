@@ -1,22 +1,18 @@
 import { cookies } from 'next/headers';
 import Link from 'next/link';
 
+import type { IConsumerExchangeBalance } from '@remoola/api-types';
+
 import { BalancesPanel } from '../../../features/exchange/ui/BalancesPanel';
 import { ExchangeWidget } from '../../../features/exchange/ui/ExchangeWidget';
 import { RatesPanel } from '../../../features/exchange/ui/RatesPanel';
-import { normalizeCurrencies, type Currency } from '../../../lib/currency-utils';
+import { getCurrencySymbol, normalizeCurrencies, type Currency } from '../../../lib/currency-utils';
 import { getEnv } from '../../../lib/env.server';
 import { CalendarIcon } from '../../../shared/ui/icons/CalendarIcon';
 import { ChevronRightIcon } from '../../../shared/ui/icons/ChevronRightIcon';
 import { ClipboardListIcon } from '../../../shared/ui/icons/ClipboardListIcon';
 import { ExchangeIcon } from '../../../shared/ui/icons/ExchangeIcon';
 import { SettingsIcon } from '../../../shared/ui/icons/SettingsIcon';
-
-interface Balance {
-  currency: string;
-  amountCents: number;
-  symbol: string;
-}
 
 interface ExchangeRate {
   from: string;
@@ -28,8 +24,27 @@ interface ExchangeRate {
 
 interface ExchangeData {
   currencies?: Currency[];
-  balances?: Balance[];
+  balances?: IConsumerExchangeBalance[];
   rates?: ExchangeRate[];
+}
+
+function isBalanceRecord(x: unknown): x is Record<string, number> {
+  if (typeof x !== `object` || x === null || Array.isArray(x)) return false;
+  return Object.entries(x).every(([k, v]) => typeof k === `string` && typeof v === `number`);
+}
+
+function normalizeBalancesFromApi(data: unknown): IConsumerExchangeBalance[] {
+  if (Array.isArray(data)) return data as IConsumerExchangeBalance[];
+  if (isBalanceRecord(data)) {
+    return Object.entries(data).map(([code, amountCents]) => ({
+      currency: code,
+      amountCents,
+      symbol: getCurrencySymbol(code),
+    }));
+  }
+  const items = (data as { items?: unknown[] })?.items;
+  if (Array.isArray(items)) return items as IConsumerExchangeBalance[];
+  return [];
 }
 
 async function fetchExchangeData(): Promise<ExchangeData> {
@@ -60,12 +75,12 @@ async function fetchExchangeData(): Promise<ExchangeData> {
     ]);
 
     const currencies = currenciesRes.ok ? await currenciesRes.json() : [];
-    const balances = balancesRes.ok ? await balancesRes.json() : [];
+    const balancesRaw = balancesRes.ok ? await balancesRes.json() : [];
     const rates = ratesRes.ok ? await ratesRes.json() : [];
 
     return {
       currencies: normalizeCurrencies(Array.isArray(currencies) ? currencies : (currencies?.items ?? [])),
-      balances: Array.isArray(balances) ? balances : (balances?.items ?? []),
+      balances: normalizeBalancesFromApi(balancesRaw),
       rates: Array.isArray(rates) ? rates : (rates?.items ?? []),
     };
   } catch {

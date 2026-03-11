@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import type { IConsumerExchangeBalance, IConsumerExchangeQuote } from '@remoola/api-types';
+
 import { AmountCurrencyInput } from '../../../shared/ui/AmountCurrencyInput';
 import { Button } from '../../../shared/ui/Button';
 import { AlertTriangleIcon } from '../../../shared/ui/icons/AlertTriangleIcon';
@@ -18,25 +20,9 @@ interface Currency {
   name?: string;
 }
 
-interface Balance {
-  currency: string;
-  amountCents: number;
-  symbol: string;
-}
-
-interface ExchangeQuote {
-  from: string;
-  to: string;
-  rate: number;
-  amountFrom: number;
-  amountTo: number;
-  timestamp: string;
-  expiresAt?: string;
-}
-
 interface ExchangeWidgetProps {
   availableCurrencies: Currency[];
-  balances?: Balance[];
+  balances?: IConsumerExchangeBalance[];
 }
 
 export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidgetProps) {
@@ -44,12 +30,18 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
   const [fromCurrency, setFromCurrency] = useState(`USD`);
   const [toCurrency, setToCurrency] = useState(`EUR`);
   const [amount, setAmount] = useState(``);
-  const [quote, setQuote] = useState<ExchangeQuote | null>(null);
+  const [quote, setQuote] = useState<IConsumerExchangeQuote | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  const isSameCurrency = fromCurrency === toCurrency;
+
   const handleGetQuote = async () => {
+    if (isSameCurrency) {
+      setError(`Please select different source and target currencies`);
+      return;
+    }
     if (!amount || parseFloat(amount) <= 0) {
       setError(`Please enter a valid amount`);
       return;
@@ -103,6 +95,7 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
     setFromCurrency(toCurrency);
     setToCurrency(fromCurrency);
     setQuote(null);
+    setError(null);
   };
 
   const convertedAmount = quote ? quote.amountTo : 0;
@@ -328,7 +321,11 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
             <div className={`flex items-center gap-1.5`}>
               <ClockIcon className={`h-3.5 w-3.5 text-blue-400`} />
               <p className={`text-xs font-medium text-blue-300`}>
-                Updated {new Date(quote.timestamp).toLocaleTimeString()}
+                {(() => {
+                  const date = quote.timestamp ? new Date(quote.timestamp) : new Date();
+                  const timeLabel = Number.isNaN(date.getTime()) ? `just now` : date.toLocaleTimeString();
+                  return `Updated ${timeLabel}`;
+                })()}
               </p>
             </div>
           </div>
@@ -415,7 +412,7 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
             size="md"
             onClick={handleGetQuote}
             isLoading={isLoading}
-            disabled={!amount || parseFloat(amount) <= 0}
+            disabled={!amount || parseFloat(amount) <= 0 || isSameCurrency}
             className={`min-h-12 font-bold`}
           >
             Get quote
@@ -425,7 +422,7 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
             size="md"
             onClick={handleExchange}
             isLoading={isLoading}
-            disabled={!amount || parseFloat(amount) <= 0}
+            disabled={!amount || parseFloat(amount) <= 0 || isSameCurrency}
             className={`min-h-12 font-bold`}
           >
             {quote ? `Exchange now` : `Get quote`}

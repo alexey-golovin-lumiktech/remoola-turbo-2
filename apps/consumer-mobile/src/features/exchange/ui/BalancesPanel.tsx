@@ -1,14 +1,10 @@
+import type { IConsumerExchangeBalance } from '@remoola/api-types';
+
 import { CurrencyDollarIcon } from '../../../shared/ui/icons/CurrencyDollarIcon';
 import { UsersIcon } from '../../../shared/ui/icons/UsersIcon';
 
-interface Balance {
-  currency: string;
-  amountCents: number;
-  symbol: string;
-}
-
 interface BalancesPanelProps {
-  balances: Balance[];
+  balances: IConsumerExchangeBalance[];
   onSelectCurrency?: (currency: string) => void;
 }
 
