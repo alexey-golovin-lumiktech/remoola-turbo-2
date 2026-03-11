@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 
+import { clientLogger } from '../../lib/logger';
 import { showErrorToast, showWarningToast } from '../../lib/toast.client';
 import { AmountCurrencyInput } from '../../shared/ui/AmountCurrencyInput';
 import { Button } from '../../shared/ui/Button';
@@ -40,7 +41,9 @@ export function CreatePaymentRequestForm({ defaultCurrency = `USD` }: CreatePaym
           setCurrency(data.preferredCurrency);
         }
       })
-      .catch(() => {});
+      .catch((err) => {
+        clientLogger.warn(`Failed to load preferred currency for form`, { err });
+      });
   }, []);
 
   function validate(): boolean {

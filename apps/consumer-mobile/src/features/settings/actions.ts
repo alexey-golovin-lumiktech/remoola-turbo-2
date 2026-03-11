@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 import { z } from 'zod';
 
+import { getRequestOrigin } from '../../lib/request-origin';
+
 type ActionResult<T> =
   | { ok: true; data: T }
   | { ok: false; error: { code: string; message: string; fields?: Record<string, string> } };
@@ -73,9 +75,7 @@ export async function updatePersonalDetailsAction(formData: FormData): Promise<A
 
   try {
     const headersList = await headers();
-    const host = headersList.get(`host`) ?? `localhost:3003`;
-    const protocol = process.env.NODE_ENV === `production` ? `https` : `http`;
-    const baseUrl = `${protocol}://${host}`;
+    const baseUrl = getRequestOrigin();
     const cookie = headersList.get(`cookie`);
 
     const response = await fetch(`${baseUrl}/api/profile/update`, {
@@ -132,9 +132,7 @@ export async function updateAddressDetailsAction(formData: FormData): Promise<Ac
 
   try {
     const headersList = await headers();
-    const host = headersList.get(`host`) ?? `localhost:3003`;
-    const protocol = process.env.NODE_ENV === `production` ? `https` : `http`;
-    const baseUrl = `${protocol}://${host}`;
+    const baseUrl = getRequestOrigin();
     const cookie = headersList.get(`cookie`);
 
     const response = await fetch(`${baseUrl}/api/profile/update`, {
@@ -190,9 +188,7 @@ export async function updateOrganizationDetailsAction(formData: FormData): Promi
 
   try {
     const headersList = await headers();
-    const host = headersList.get(`host`) ?? `localhost:3003`;
-    const protocol = process.env.NODE_ENV === `production` ? `https` : `http`;
-    const baseUrl = `${protocol}://${host}`;
+    const baseUrl = getRequestOrigin();
     const cookie = headersList.get(`cookie`);
 
     const response = await fetch(`${baseUrl}/api/profile/update`, {
@@ -246,9 +242,7 @@ export async function updatePasswordAction(formData: FormData): Promise<ActionRe
 
   try {
     const headersList = await headers();
-    const host = headersList.get(`host`) ?? `localhost:3003`;
-    const protocol = process.env.NODE_ENV === `production` ? `https` : `http`;
-    const baseUrl = `${protocol}://${host}`;
+    const baseUrl = getRequestOrigin();
     const cookie = headersList.get(`cookie`);
 
     const response = await fetch(`${baseUrl}/api/profile/password`, {
@@ -299,9 +293,7 @@ export async function updatePreferredCurrencyAction(
 
   try {
     const headersList = await headers();
-    const host = headersList.get(`host`) ?? `localhost:3003`;
-    const protocol = process.env.NODE_ENV === `production` ? `https` : `http`;
-    const baseUrl = `${protocol}://${host}`;
+    const baseUrl = getRequestOrigin();
     const cookie = headersList.get(`cookie`);
 
     const response = await fetch(`${baseUrl}/api/settings`, {

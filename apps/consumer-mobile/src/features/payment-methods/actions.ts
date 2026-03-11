@@ -195,7 +195,10 @@ const addPaymentMethodSchema = z.object({
   brand: z.string().min(1),
   last4: z.string().length(4),
   expMonth: z.coerce.number().int().min(1).max(12),
-  expYear: z.coerce.number().int().min(2024),
+  expYear: z.coerce
+    .number()
+    .int()
+    .refine((y) => y >= new Date().getFullYear(), { message: `Expiry year must be current year or in the future` }),
 });
 
 type AddPaymentMethodInput = z.infer<typeof addPaymentMethodSchema>;

@@ -68,6 +68,14 @@ describe(`client auth helpers`, () => {
     const win = (globalThis as { window?: { location: Location } }).window;
     expect(win?.location.href).toContain(`next=%2Fsettings`);
   });
+
+  it(`fetchWithAuth returns error when response is not JSON`, async () => {
+    mockFetch.mockResolvedValueOnce(new Response(`not json`, { status: 200 }));
+
+    const result = await fetchWithAuth(`/api/settings`, { method: `GET` });
+
+    expect(result).toEqual({ ok: false, error: `Invalid response (not JSON)`, status: 200 });
+  });
 });
 
 describe(`swrConfig`, () => {

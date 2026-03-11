@@ -17,16 +17,16 @@ export function ThemeColorMeta() {
   const { resolvedTheme } = useTheme();
 
   useEffect(() => {
-    const color = THEME_COLORS[resolvedTheme] ?? THEME_COLORS[Theme.LIGHT];
-    const metas = document.querySelectorAll<HTMLMetaElement>(`meta[name="theme-color"]`);
+    const color = THEME_COLORS[resolvedTheme] ?? THEME_COLORS[Theme.LIGHT] ?? `#f8fafc`;
+    const metas = document.querySelectorAll(`meta[name="theme-color"]`);
     if (metas.length > 0) {
       metas.forEach((meta) => {
-        meta.content = color;
+        meta.setAttribute(`content`, color);
       });
     } else {
       const meta = document.createElement(`meta`);
-      meta.name = `theme-color`;
-      meta.content = color;
+      meta.setAttribute(`name`, `theme-color`);
+      meta.setAttribute(`content`, color);
       document.head.appendChild(meta);
     }
   }, [resolvedTheme]);

@@ -3,6 +3,8 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 
+import { clientLogger } from '../../../lib/logger';
+
 export default function AuthCallback() {
   const router = useRouter();
   const params = useSearchParams();
@@ -44,7 +46,9 @@ export default function AuthCallback() {
       };
 
       run()
-        .catch(() => {})
+        .catch((err) => {
+          clientLogger.warn(`Auth callback run failed`, { err });
+        })
         .finally(() => {
           inFlight = false;
         });

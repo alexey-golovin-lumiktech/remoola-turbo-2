@@ -138,8 +138,7 @@ export async function fetchWithAuth<T = unknown>(
     const data = (await res.json()) as T;
     return { ok: true, data, status: res.status };
   } catch {
-    // If response is not JSON, return empty object
-    return { ok: true, data: {} as T, status: res.status };
+    return { ok: false, error: `Invalid response (not JSON)`, status: res.status };
   }
 }
 
