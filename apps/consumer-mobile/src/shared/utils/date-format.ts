@@ -60,6 +60,18 @@ export function formatCurrency(amount: number, currency: string): string {
   }).format(amount);
 }
 
+/** Formats amount for balance display so negative is always "-$33.00" (minus before symbol). */
+export function formatBalanceCurrency(amountMajor: number, currency: string): string {
+  const abs = Math.abs(amountMajor);
+  const formatted = new Intl.NumberFormat(`en-US`, {
+    style: `currency`,
+    currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(abs);
+  return amountMajor < 0 ? `-${formatted}` : formatted;
+}
+
 export function formatCompactNumber(num: number): string {
   return new Intl.NumberFormat(`en-US`, {
     notation: `compact`,

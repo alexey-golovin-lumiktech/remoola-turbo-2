@@ -5,6 +5,7 @@ import { useMemo } from 'react';
 
 import { useUrlFilters } from '../../../shared/hooks/useUrlFilters';
 import { Avatar } from '../../../shared/ui/Avatar';
+import { BalanceCard } from '../../../shared/ui/BalanceCard';
 import { Button } from '../../../shared/ui/Button';
 import { EmptyState } from '../../../shared/ui/EmptyState';
 import { FormSelect } from '../../../shared/ui/FormSelect';
@@ -12,7 +13,6 @@ import { IconBadge } from '../../../shared/ui/IconBadge';
 import { ChevronRightIcon } from '../../../shared/ui/icons/ChevronRightIcon';
 import { ClockIcon } from '../../../shared/ui/icons/ClockIcon';
 import { CreditCardIcon } from '../../../shared/ui/icons/CreditCardIcon';
-import { CurrencyDollarIcon } from '../../../shared/ui/icons/CurrencyDollarIcon';
 import { SearchIcon } from '../../../shared/ui/icons/SearchIcon';
 import { SwitchHorizontalIcon } from '../../../shared/ui/icons/SwitchHorizontalIcon';
 import { UsersIcon } from '../../../shared/ui/icons/UsersIcon';
@@ -29,14 +29,6 @@ interface PaymentsListViewProps {
   total: number;
   currentPage?: number;
   pageSize?: number;
-}
-
-function formatCents(cents: number): string {
-  return new Intl.NumberFormat(undefined, {
-    style: `decimal`,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(cents / 100);
 }
 
 interface PaymentFilters {
@@ -250,68 +242,12 @@ export function PaymentsListView({ balance, payments, total, currentPage = 1, pa
             `}
             >
               {balanceEntries.map(([currency, amountCents], index) => (
-                <div
+                <BalanceCard
                   key={currency}
-                  className={`
-                    group
-                    overflow-hidden
-                    rounded-2xl
-                    border
-                    border-slate-700
-                    bg-linear-to-br
-                    from-slate-800
-                    to-slate-900
-                    p-5
-                    shadow-lg
-                    transition-all
-                    duration-300
-                    hover:shadow-xl
-                    hover:scale-105
-                    animate-fadeIn
-                  `}
-                  style={{ animationDelay: `${index * 50}ms` }}
-                >
-                  <div
-                    className={`
-                    flex
-                    items-start
-                    justify-between
-                    mb-3
-                  `}
-                  >
-                    <IconBadge
-                      icon={<CurrencyDollarIcon className={`h-6 w-6 text-white`} />}
-                      rounded="xl"
-                      interactive
-                    />
-                    <span
-                      className={`
-                      rounded-lg
-                      bg-slate-900/50
-                      px-2.5
-                      py-1
-                      text-xs
-                      font-bold
-                      text-slate-300
-                      border
-                      border-slate-700
-                    `}
-                    >
-                      {currency}
-                    </span>
-                  </div>
-                  <div className={`text-3xl font-extrabold text-slate-100`}>{formatCents(amountCents)}</div>
-                  <div
-                    className={`
-                    mt-2
-                    text-xs
-                    font-semibold
-                    text-slate-400
-                  `}
-                  >
-                    Available balance
-                  </div>
-                </div>
+                  amountCents={amountCents}
+                  currencyCode={currency}
+                  animationDelay={index * 50}
+                />
               ))}
             </div>
           </section>

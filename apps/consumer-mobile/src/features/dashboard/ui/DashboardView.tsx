@@ -2,10 +2,10 @@ import { ActivityTimeline } from './ActivityTimeline';
 import { ComplianceTasksCard } from './ComplianceTasksCard';
 import { PendingRequestsTable } from './PendingRequestsTable';
 import { QuickDocsCard } from './QuickDocsCard';
+import { BalanceCard } from '../../../shared/ui/BalanceCard';
 import { IconBadge } from '../../../shared/ui/IconBadge';
 import { CalendarIcon } from '../../../shared/ui/icons/CalendarIcon';
 import { ClipboardListIcon } from '../../../shared/ui/icons/ClipboardListIcon';
-import { CurrencyDollarIcon } from '../../../shared/ui/icons/CurrencyDollarIcon';
 import { DocumentIcon } from '../../../shared/ui/icons/DocumentIcon';
 import { HomeIcon } from '../../../shared/ui/icons/HomeIcon';
 import { InformationCircleIcon } from '../../../shared/ui/icons/InformationCircleIcon';
@@ -14,14 +14,6 @@ import { type DashboardData } from '../schemas';
 
 interface DashboardViewProps {
   data: DashboardData | null;
-}
-
-function formatCents(cents: number): string {
-  return new Intl.NumberFormat(undefined, {
-    style: `decimal`,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(cents / 100);
 }
 
 export function DashboardView({ data }: DashboardViewProps) {
@@ -173,69 +165,12 @@ export function DashboardView({ data }: DashboardViewProps) {
         data-testid="consumer-mobile-dashboard-view"
       >
         <div className={`grid gap-4 sm:grid-cols-2`}>
-          <div
-            className={`
-            group
-            overflow-hidden
-            rounded-2xl
-            border
-            border-slate-700
-            bg-linear-to-br
-            from-slate-800
-            to-slate-900
-            p-5
-            shadow-lg
-            transition-all
-            duration-300
-            hover:shadow-xl
-            hover:scale-105
-            animate-fadeIn
-          `}
-          >
-            <div
-              className={`
-              flex
-              items-start
-              justify-between
-              mb-3
-            `}
-            >
-              <IconBadge
-                icon={<CurrencyDollarIcon className={`h-6 w-6 text-white`} />}
-                variant="success"
-                rounded="xl"
-                interactive
-              />
-              <span
-                className={`
-                rounded-lg
-                bg-slate-900/50
-                px-2.5
-                py-1
-                text-xs
-                font-bold
-                text-slate-300
-                border
-                border-slate-700
-              `}
-              >
-                Balance
-              </span>
-            </div>
-            <div className={`text-3xl font-extrabold text-slate-100`} data-testid="dashboard-balance">
-              ${formatCents(summary.balanceCents)}
-            </div>
-            <div
-              className={`
-              mt-2
-              text-xs
-              font-semibold
-              text-slate-400
-            `}
-            >
-              Total available
-            </div>
-          </div>
+          <BalanceCard
+            amountCents={summary.balanceCents}
+            currencyCode="USD"
+            label="Balance"
+            testId="dashboard-balance"
+          />
 
           <div
             className={`

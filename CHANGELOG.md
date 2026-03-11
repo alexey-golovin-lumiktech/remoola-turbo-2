@@ -1325,7 +1325,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-03-10</summary>
 
 - **2026-03-10:**
@@ -1348,10 +1348,13 @@
 
 </details>
 
-<details>
+<details open>
 <summary>2026-03-11</summary>
 
 - **2026-03-11:**
+  ### 🐛 Fixes
+  - **Balance display:** Dashboard and Payments now show the same balance value. API dashboard summary used to treat ledger sum as dollars and multiply by 100; ledger stores minor units (cents), so `balanceCents` is now derived without the extra factor (apps/api consumer-dashboard).
+  - **Balance format:** Negative balance displays as `-$33.00` (minus before symbol). Added `formatBalanceCurrency` and shared `BalanceCard`; Dashboard and Payments use the same card and formatting (apps/consumer-mobile).
   ### 🛠 DevEx
   - Consumer mobile: replaced inline SVGs with shared icon components; added MapPinIcon, LinkIcon, ArrowsPointingOutIcon, PlayIcon, PauseCircleIcon (UI refactor only).
 

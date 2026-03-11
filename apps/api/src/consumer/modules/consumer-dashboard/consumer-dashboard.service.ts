@@ -75,9 +75,10 @@ export class ConsumerDashboardService {
       }),
     ]);
 
+    // Ledger amount is stored in minor units (cents); same as BalanceCalculationService / payments balance.
     const balanceSum = balanceResult[0]?.balance != null ? Number(balanceResult[0].balance) : 0;
     return {
-      balanceCents: Math.round(balanceSum * 100),
+      balanceCents: Math.round(balanceSum),
 
       activeRequests,
       lastPaymentAt: lastPayment?.createdAt ?? null,
