@@ -7,6 +7,8 @@ import { ACCOUNT_TYPE, type TAccountType } from '@remoola/api-types';
 import { ClipboardIcon, UserIcon } from '@remoola/ui';
 
 import { useSignupForm } from './SignupFormContext';
+import { CheckCircleIcon } from '../../shared/ui/icons/CheckCircleIcon';
+import { ExclamationCircleIcon } from '../../shared/ui/icons/ExclamationCircleIcon';
 import { InformationCircleIcon } from '../../shared/ui/icons/InformationCircleIcon';
 
 export function SignupStartView() {
@@ -159,7 +161,7 @@ export function SignupStartView() {
         `}
         >
           <div className={`flex items-start gap-3`}>
-            <svg
+            <ExclamationCircleIcon
               className={`
                 mt-0.5
                 h-5
@@ -168,17 +170,7 @@ export function SignupStartView() {
                 text-red-600
                 dark:text-red-400
               `}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
+            />
             <div className={`flex-1`}>
               <p
                 className={`
@@ -331,22 +323,14 @@ export function SignupStartView() {
                   Contractor
                 </span>
                 {isSelected(ACCOUNT_TYPE.CONTRACTOR) && (
-                  <svg
+                  <CheckCircleIcon
                     className={`
                       h-5
                       w-5
                       text-primary-600
                       dark:text-primary-400
                     `}
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
+                  />
                 )}
               </div>
               <p
@@ -408,22 +392,14 @@ export function SignupStartView() {
                   Business
                 </span>
                 {isSelected(ACCOUNT_TYPE.BUSINESS) && (
-                  <svg
+                  <CheckCircleIcon
                     className={`
                       h-5
                       w-5
                       text-primary-600
                       dark:text-primary-400
                     `}
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
+                  />
                 )}
               </div>
               <p

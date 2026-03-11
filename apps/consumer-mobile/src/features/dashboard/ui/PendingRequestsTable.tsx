@@ -1,5 +1,8 @@
 import Link from 'next/link';
 
+import { ChevronRightIcon } from '../../../shared/ui/icons/ChevronRightIcon';
+import { ClockIcon } from '../../../shared/ui/icons/ClockIcon';
+
 interface PendingRequest {
   id: string;
   counterpartyName: string;
@@ -66,15 +69,7 @@ export function PendingRequestsTable({ requests, maxItems = 5 }: PendingRequests
               border-amber-500/20
             `}
             >
-              <svg
-                className={`h-5 w-5 text-amber-400`}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2.5}
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+              <ClockIcon className={`h-5 w-5 text-amber-400`} strokeWidth={2.5} />
             </div>
             <h3 className={`text-lg font-bold text-slate-100`}>Pending requests</h3>
           </div>
@@ -169,7 +164,7 @@ export function PendingRequestsTable({ requests, maxItems = 5 }: PendingRequests
                 >
                   {req.status}
                 </span>
-                <svg
+                <ChevronRightIcon
                   className={`
                     h-5
                     w-5
@@ -180,13 +175,8 @@ export function PendingRequestsTable({ requests, maxItems = 5 }: PendingRequests
                     group-hover:translate-x-1
                     group-hover:text-slate-300
                   `}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
                   strokeWidth={2.5}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
+                />
               </div>
             </div>
           </Link>

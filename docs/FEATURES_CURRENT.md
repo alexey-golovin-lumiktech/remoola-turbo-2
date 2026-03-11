@@ -143,7 +143,7 @@ Mobile-first consumer app running on port 3002:
 - Supports Google OAuth with `returnOrigin` parameter for proper redirect after authentication.
 - CORS configured for localhost:3002 and Vercel deployment.
 - Shared UI library:
-  - **Icon library**: 49 SVG icon components (Alert, Arrow, Bank, Bell, Calendar, Check, Chevron, Clipboard, Clock, CreditCard, Currency, Document, Dots, Download, Exchange, Exclamation, Eye, Filter, Home, Information, Lightning, Lock, Logout, Mail, Paperclip, Pencil, Phone, Plus, Refresh, Search, Settings, Spinner, Switch, Tag, Trash, Trending, Upload, User, Users, X icons) with unified `IconProps` interface
+  - **Icon library**: 54 SVG icon components (Alert, Arrow, ArrowsPointingOut, Bank, Bell, Calendar, Check, Chevron, Clipboard, Clock, CreditCard, Currency, Document, Dots, Download, Exchange, Exclamation, Eye, Filter, Home, Information, Lightning, Link, Lock, Logout, Mail, MapPin, Paperclip, PauseCircle, Pencil, Phone, Play, Plus, Refresh, Search, Settings, Spinner, Switch, Tag, Trash, Trending, Upload, User, Users, X icons) with unified `IconProps` interface
   - **IconBadge**: gradient-styled icon container with variants (primary, success, info, warning, danger, secondary), sizes (sm, md, lg), optional ring effects, and interactive animations
   - **PageHeader**: mobile-optimized page header with icon, title, subtitle, badge, and action slots; supports sticky header with backdrop blur
   - **SearchInput**: search input with magnifying glass icon, clear button, debounced interaction, and mobile-friendly 44px touch targets

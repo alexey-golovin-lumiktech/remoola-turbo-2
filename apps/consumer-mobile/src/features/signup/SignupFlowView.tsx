@@ -13,6 +13,7 @@ import { AddressDetailsStep } from './ui/steps/AddressDetailsStep';
 import { OrganizationDetailsStep } from './ui/steps/OrganizationDetailsStep';
 import { PersonalDetailsStep } from './ui/steps/PersonalDetailsStep';
 import { SignupDetailsStep } from './ui/steps/SignupDetailsStep';
+import { ExclamationCircleIcon } from '../../shared/ui/icons/ExclamationCircleIcon';
 
 function SignupStepsContent() {
   const { currentStep } = useSignupSteps();
@@ -151,7 +152,7 @@ export function SignupFlowView() {
         `}
         >
           <div className={`flex items-start gap-3`}>
-            <svg
+            <ExclamationCircleIcon
               className={`
                 mt-0.5
                 h-5
@@ -160,17 +161,7 @@ export function SignupFlowView() {
                 text-red-600
                 dark:text-red-400
               `}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
+            />
             <div className={`flex-1`}>
               <p
                 className={`

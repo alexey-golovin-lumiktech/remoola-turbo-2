@@ -7,6 +7,7 @@ import { RatesPanel } from '../../../features/exchange/ui/RatesPanel';
 import { normalizeCurrencies, type Currency } from '../../../lib/currency-utils';
 import { getEnv } from '../../../lib/env.server';
 import { CalendarIcon } from '../../../shared/ui/icons/CalendarIcon';
+import { ChevronRightIcon } from '../../../shared/ui/icons/ChevronRightIcon';
 import { ClipboardListIcon } from '../../../shared/ui/icons/ClipboardListIcon';
 import { ExchangeIcon } from '../../../shared/ui/icons/ExchangeIcon';
 import { SettingsIcon } from '../../../shared/ui/icons/SettingsIcon';
@@ -256,7 +257,7 @@ export default async function ExchangePage() {
                     </h3>
                     <p className={`mt-1 text-sm text-slate-400`}>View and manage scheduled exchanges</p>
                   </div>
-                  <svg
+                  <ChevronRightIcon
                     className={`
                       h-5
                       w-5
@@ -266,13 +267,7 @@ export default async function ExchangePage() {
                       group-hover:translate-x-1
                       group-hover:text-slate-400
                     `}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                  </svg>
+                  />
                 </div>
               </div>
             </Link>
@@ -328,7 +323,7 @@ export default async function ExchangePage() {
                     </h3>
                     <p className={`mt-1 text-sm text-slate-400`}>Set up automatic exchange rules</p>
                   </div>
-                  <svg
+                  <ChevronRightIcon
                     className={`
                       h-5
                       w-5
@@ -338,13 +333,7 @@ export default async function ExchangePage() {
                       group-hover:translate-x-1
                       group-hover:text-slate-400
                     `}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                  </svg>
+                  />
                 </div>
               </div>
             </Link>

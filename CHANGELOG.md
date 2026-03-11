@@ -1348,4 +1348,13 @@
 
 </details>
 
+<details>
+<summary>2026-03-11</summary>
+
+- **2026-03-11:**
+  ### 🛠 DevEx
+  - Consumer mobile: replaced inline SVGs with shared icon components; added MapPinIcon, LinkIcon, ArrowsPointingOutIcon, PlayIcon, PauseCircleIcon (UI refactor only).
+
+</details>
+
 </details>

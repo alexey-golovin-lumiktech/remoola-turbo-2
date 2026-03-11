@@ -5,6 +5,9 @@ import { useState, useEffect } from 'react';
 import { Button } from '../../../shared/ui/Button';
 import { FormField } from '../../../shared/ui/FormField';
 import { FormInput } from '../../../shared/ui/FormInput';
+import { ChevronDownIcon } from '../../../shared/ui/icons/ChevronDownIcon';
+import { MapPinIcon } from '../../../shared/ui/icons/MapPinIcon';
+import { XCircleIcon } from '../../../shared/ui/icons/XCircleIcon';
 import { Modal } from '../../../shared/ui/Modal';
 
 import type { Contact, ContactAddress } from '../schemas';
@@ -160,31 +163,12 @@ export function EditContactModal({ isOpen, onClose, contact, onSubmit }: EditCon
             `}
           >
             <div className={`flex items-center gap-2`}>
-              <svg
-                className={`h-5 w-5 text-slate-500`}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
+              <MapPinIcon className={`h-5 w-5 text-slate-500`} />
               <span>Address (optional)</span>
             </div>
-            <svg
+            <ChevronDownIcon
               className={`h-5 w-5 transition-transform duration-200 ${showAddress ? `rotate-180` : ``}`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
+            />
           </button>
 
           {showAddress && (
@@ -260,7 +244,7 @@ export function EditContactModal({ isOpen, onClose, contact, onSubmit }: EditCon
           `}
           >
             <div className={`flex items-start gap-3`}>
-              <svg
+              <XCircleIcon
                 className={`
                   h-5
                   w-5
@@ -269,15 +253,7 @@ export function EditContactModal({ isOpen, onClose, contact, onSubmit }: EditCon
                   shrink-0
                   mt-0.5
                 `}
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clipRule="evenodd"
-                />
-              </svg>
+              />
               <p
                 className={`
                 text-sm

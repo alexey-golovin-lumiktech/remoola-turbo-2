@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
+import { CheckIcon } from '../../../shared/ui/icons/CheckIcon';
 import { omit } from '../../../shared/utils/object-utils';
 import { withdrawFundsAction, transferFundsAction } from '../actions';
 import { type Balance } from '../schemas';
@@ -182,7 +183,7 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
           role="alert"
         >
           <div className={`flex items-start gap-3`}>
-            <svg
+            <CheckIcon
               className={`
   mt-0.5
   h-5
@@ -191,12 +192,7 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
   text-green-600
   dark:text-green-400
               `}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
+            />
             <p
               className={`
   text-sm

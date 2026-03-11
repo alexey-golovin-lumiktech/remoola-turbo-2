@@ -2,6 +2,11 @@
 
 import { useEffect, useState } from 'react';
 
+import { ArrowsPointingOutIcon } from '../../shared/ui/icons/ArrowsPointingOutIcon';
+import { DocumentIcon } from '../../shared/ui/icons/DocumentIcon';
+import { DownloadIcon } from '../../shared/ui/icons/DownloadIcon';
+import { XIcon } from '../../shared/ui/icons/XIcon';
+
 interface DocumentPreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -183,17 +188,7 @@ export function DocumentPreviewModal({
                 `}
                 aria-label="Close preview"
               >
-                <svg
-                  className={`
-                    h-5
-                    w-5
-                  `}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <XIcon className={`h-5 w-5`} />
               </button>
             )}
           </div>
@@ -240,22 +235,7 @@ export function DocumentPreviewModal({
               `}
               aria-label="Download document"
             >
-              <svg
-                className={`
-                  h-5
-                  w-5
-                `}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                />
-              </svg>
+              <DownloadIcon className={`h-5 w-5`} />
               <span className={`sm:hidden`}>Download</span>
             </button>
 
@@ -294,37 +274,12 @@ export function DocumentPreviewModal({
             >
               {isFullscreen ? (
                 <>
-                  <svg
-                    className={`
-                      h-5
-                      w-5
-                    `}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <XIcon className={`h-5 w-5`} />
                   <span className={`sm:hidden`}>Exit</span>
                 </>
               ) : (
                 <>
-                  <svg
-                    className={`
-                      h-5
-                      w-5
-                    `}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
-                    />
-                  </svg>
+                  <ArrowsPointingOutIcon className={`h-5 w-5`} />
                   <span className={`sm:hidden`}>Fullscreen</span>
                 </>
               )}
@@ -356,17 +311,7 @@ export function DocumentPreviewModal({
                 `}
                 aria-label="Close preview"
               >
-                <svg
-                  className={`
-                    h-5
-                    w-5
-                  `}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <XIcon className={`h-5 w-5`} />
               </button>
             )}
           </div>
@@ -439,22 +384,14 @@ export function DocumentPreviewModal({
                   dark:to-slate-800
                 `}
               >
-                <svg
+                <DocumentIcon
                   className={`
                     h-10
                     w-10
                     text-slate-500
                     dark:text-slate-400
                   `}
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+                />
               </div>
               <p
                 className={`

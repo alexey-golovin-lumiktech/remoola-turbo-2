@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { CalendarIcon } from '../../../shared/ui/icons/CalendarIcon';
+import { CheckIcon } from '../../../shared/ui/icons/CheckIcon';
 import { ChevronLeftIcon } from '../../../shared/ui/icons/ChevronLeftIcon';
 import { ChevronRightIcon } from '../../../shared/ui/icons/ChevronRightIcon';
 import { ClipboardCopyIcon } from '../../../shared/ui/icons/ClipboardCopyIcon';
@@ -8,6 +9,7 @@ import { CurrencyDollarIcon } from '../../../shared/ui/icons/CurrencyDollarIcon'
 import { DocumentIcon } from '../../../shared/ui/icons/DocumentIcon';
 import { DownloadIcon } from '../../../shared/ui/icons/DownloadIcon';
 import { MailIcon } from '../../../shared/ui/icons/MailIcon';
+import { MapPinIcon } from '../../../shared/ui/icons/MapPinIcon';
 import { UserIcon } from '../../../shared/ui/icons/UserIcon';
 
 import type { ContactDetails } from '../schemas';
@@ -337,9 +339,7 @@ export function ContactDetailView({ contactDetails, contactId }: ContactDetailVi
             dark:text-green-400
           `}
           >
-            <svg className={`h-7 w-7`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
+            <CheckIcon className={`h-7 w-7`} strokeWidth={2.5} />
           </div>
           <p
             className={`
@@ -542,25 +542,14 @@ export function ContactDetailView({ contactDetails, contactId }: ContactDetailVi
                 dark:bg-purple-900/30
               `}
               >
-                <svg
+                <MapPinIcon
                   className={`
                     h-5
                     w-5
                     text-purple-600
                     dark:text-purple-400
                   `}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                  />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
+                />
               </div>
               <div className={`min-w-0 flex-1 pt-1`}>
                 <dt

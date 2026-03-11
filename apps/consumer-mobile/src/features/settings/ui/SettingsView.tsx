@@ -12,6 +12,7 @@ import { AlertTriangleIcon } from '../../../shared/ui/icons/AlertTriangleIcon';
 import { ChevronRightIcon } from '../../../shared/ui/icons/ChevronRightIcon';
 import { CreditCardIcon } from '../../../shared/ui/icons/CreditCardIcon';
 import { DocumentIcon } from '../../../shared/ui/icons/DocumentIcon';
+import { LinkIcon } from '../../../shared/ui/icons/LinkIcon';
 import { SettingsIcon } from '../../../shared/ui/icons/SettingsIcon';
 
 import type { Profile, Settings } from '../schemas';
@@ -325,19 +326,7 @@ export function SettingsView({ profile, settings }: SettingsViewProps) {
                 shadow-md
               `}
               >
-                <svg
-                  className={`h-5 w-5 text-white`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-                  />
-                </svg>
+                <LinkIcon className={`h-5 w-5 text-white`} />
               </div>
               <div>
                 <h2

@@ -7,6 +7,7 @@ import { clientLogger } from '../../../lib/logger';
 import { showErrorToast, showSuccessToast } from '../../../lib/toast.client';
 import { Button } from '../../../shared/ui/Button';
 import { EmptyState } from '../../../shared/ui/EmptyState';
+import { XIcon } from '../../../shared/ui/icons/XIcon';
 import { Modal } from '../../../shared/ui/Modal';
 import { StatusBadge } from '../../../shared/ui/StatusBadge';
 import { cancelScheduledConversion } from '../actions';
@@ -192,9 +193,7 @@ export function ScheduledConversionsView({ conversions }: ScheduledConversionsVi
                   `}
                   aria-label="Cancel conversion"
                 >
-                  <svg className={`h-5 w-5`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <XIcon className={`h-5 w-5`} />
                 </button>
               )}
             </div>

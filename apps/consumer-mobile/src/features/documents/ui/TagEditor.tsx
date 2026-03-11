@@ -6,6 +6,7 @@ import { useState, useTransition } from 'react';
 import { clientLogger } from '../../../lib/logger';
 import { showErrorToast, showSuccessToast, showWarningToast } from '../../../lib/toast.client';
 import { Button } from '../../../shared/ui/Button';
+import { XIcon } from '../../../shared/ui/icons/XIcon';
 import { Modal } from '../../../shared/ui/Modal';
 import { updateDocumentTags } from '../actions';
 
@@ -240,17 +241,7 @@ export function TagEditor({ docId, initialTags = [], onClose }: TagEditorProps) 
                     `}
                     aria-label={`Remove ${tag}`}
                   >
-                    <svg
-                      className={`
-                        h-4
-                        w-4
-                      `}
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    <XIcon className={`h-4 w-4`} />
                   </button>
                 </span>
               ))}
