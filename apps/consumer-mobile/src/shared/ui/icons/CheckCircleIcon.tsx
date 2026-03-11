@@ -1,4 +1,4 @@
-import type { IconProps } from './IconProps';
+import { type IconProps } from './IconProps';
 
 export function CheckCircleIcon({ className = `h-6 w-6` }: IconProps) {
   return (

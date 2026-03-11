@@ -1,4 +1,4 @@
-import type { IconProps } from './IconProps';
+import { type IconProps } from './IconProps';
 
 export function BankIcon({ className = `h-6 w-6`, strokeWidth = 2 }: IconProps) {
   return (

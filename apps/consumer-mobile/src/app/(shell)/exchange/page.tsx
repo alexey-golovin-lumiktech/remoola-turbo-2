@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import Link from 'next/link';
 
-import type { IConsumerExchangeBalance } from '@remoola/api-types';
+import { type IConsumerExchangeBalance } from '@remoola/api-types';
 
 import { BalancesPanel } from '../../../features/exchange/ui/BalancesPanel';
 import { ExchangeWidget } from '../../../features/exchange/ui/ExchangeWidget';

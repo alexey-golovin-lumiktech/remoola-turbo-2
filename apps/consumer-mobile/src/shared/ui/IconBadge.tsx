@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { type ReactNode } from 'react';
 
 type IconBadgeVariant = `primary` | `success` | `info` | `warning` | `danger` | `secondary`;
 type IconBadgeSize = `sm` | `md` | `lg`;

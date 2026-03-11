@@ -1,6 +1,6 @@
-import { StripeWebhookService } from './stripe-webhook.service';
+import { type default as express } from 'express';
 
-import type express from 'express';
+import { StripeWebhookService } from './stripe-webhook.service';
 
 jest.mock(`../../../envs`, () => ({
   envs: {

@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-import type { IConsumerExchangeBalance, IConsumerExchangeQuote } from '@remoola/api-types';
+import { type IConsumerExchangeBalance, type IConsumerExchangeQuote } from '@remoola/api-types';
 
 import { AmountCurrencyInput } from '../../../shared/ui/AmountCurrencyInput';
 import { Button } from '../../../shared/ui/Button';

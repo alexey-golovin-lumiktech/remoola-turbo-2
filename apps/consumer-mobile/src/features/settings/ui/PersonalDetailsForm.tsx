@@ -10,8 +10,7 @@ import { FormField } from '../../../shared/ui/FormField';
 import { FormInput } from '../../../shared/ui/FormInput';
 import { FormSelect } from '../../../shared/ui/FormSelect';
 import { updatePersonalDetailsAction } from '../actions';
-
-import type { Profile } from '../schemas';
+import { type Profile } from '../schemas';
 
 interface PersonalDetailsFormProps {
   profile: Profile;

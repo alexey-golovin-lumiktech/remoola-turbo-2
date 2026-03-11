@@ -4,10 +4,9 @@ import { type ReactNode, createContext, useCallback, useContext, useMemo, useSta
 
 import { type TAccountType, type TContractorKind } from '@remoola/api-types';
 
+import { type NormalizedStep, type StepName } from './stepNames';
 import { getSteps } from './utils/getSteps';
 import { normalizeSteps } from './utils/normalizeSteps';
-
-import type { NormalizedStep, StepName } from './stepNames';
 
 interface SignupStepsContextValue {
   steps: NormalizedStep[];

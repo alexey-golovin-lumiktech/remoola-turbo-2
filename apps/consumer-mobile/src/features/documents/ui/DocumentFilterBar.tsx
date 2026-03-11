@@ -1,6 +1,6 @@
 'use client';
 
-import type { DocumentKind } from '../schemas';
+import { type DocumentKind } from '../schemas';
 
 interface DocumentFilterBarProps {
   activeFilter: DocumentKind;

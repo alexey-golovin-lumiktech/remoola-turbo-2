@@ -21,8 +21,7 @@ import { UsersIcon } from '../../../shared/ui/icons/UsersIcon';
 import { PageHeader } from '../../../shared/ui/PageHeader';
 import { SearchInput } from '../../../shared/ui/SearchInput';
 import { createContactAction, updateContactAction, deleteContactAction } from '../actions';
-
-import type { Contact } from '../schemas';
+import { type Contact } from '../schemas';
 
 interface ContactsListViewProps {
   contacts: Contact[];

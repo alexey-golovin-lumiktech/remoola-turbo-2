@@ -20,9 +20,8 @@ import { TagIcon } from '../../../shared/ui/icons/TagIcon';
 import { TrashIcon } from '../../../shared/ui/icons/TrashIcon';
 import { bulkDeleteDocuments } from '../actions';
 import { DocumentPreviewModal } from '../DocumentPreviewModal';
-
-import type { DocumentItem } from '../queries';
-import type { DocumentKind } from '../schemas';
+import { type DocumentItem } from '../queries';
+import { type DocumentKind } from '../schemas';
 
 interface EnhancedDocumentsViewProps {
   items: DocumentItem[];

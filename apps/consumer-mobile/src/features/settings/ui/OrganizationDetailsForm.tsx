@@ -11,8 +11,7 @@ import { FormField } from '../../../shared/ui/FormField';
 import { FormInput } from '../../../shared/ui/FormInput';
 import { FormSelect } from '../../../shared/ui/FormSelect';
 import { updateOrganizationDetailsAction } from '../actions';
-
-import type { Profile } from '../schemas';
+import { type Profile } from '../schemas';
 
 interface OrganizationDetailsFormProps {
   profile: Profile;

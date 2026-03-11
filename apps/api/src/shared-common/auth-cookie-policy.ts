@@ -1,3 +1,5 @@
+import { type default as express } from 'express';
+
 import {
   getConsumerAccessTokenCookieKey,
   getAdminAuthCookieOptions,
@@ -14,8 +16,6 @@ import {
 } from '@remoola/api-types';
 
 import { envs, JWT_REFRESH_TTL } from '../envs';
-
-import type express from 'express';
 
 function getApiAuthCookieRuntime(): AuthCookieRuntime {
   return {

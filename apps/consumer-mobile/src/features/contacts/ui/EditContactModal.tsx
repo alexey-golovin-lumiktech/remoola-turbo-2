@@ -9,8 +9,7 @@ import { ChevronDownIcon } from '../../../shared/ui/icons/ChevronDownIcon';
 import { MapPinIcon } from '../../../shared/ui/icons/MapPinIcon';
 import { XCircleIcon } from '../../../shared/ui/icons/XCircleIcon';
 import { Modal } from '../../../shared/ui/Modal';
-
-import type { Contact, ContactAddress } from '../schemas';
+import { type Contact, type ContactAddress } from '../schemas';
 
 interface EditContactModalProps {
   isOpen: boolean;

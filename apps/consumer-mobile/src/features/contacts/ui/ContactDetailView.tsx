@@ -11,8 +11,7 @@ import { DownloadIcon } from '../../../shared/ui/icons/DownloadIcon';
 import { MailIcon } from '../../../shared/ui/icons/MailIcon';
 import { MapPinIcon } from '../../../shared/ui/icons/MapPinIcon';
 import { UserIcon } from '../../../shared/ui/icons/UserIcon';
-
-import type { ContactDetails } from '../schemas';
+import { type ContactDetails } from '../schemas';
 
 interface ContactDetailViewProps {
   contactDetails: ContactDetails | null;

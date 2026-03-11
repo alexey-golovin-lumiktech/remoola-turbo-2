@@ -1,7 +1,6 @@
+import { type DocumentItem } from './queries';
 import { EmptyState } from '../../shared/ui/EmptyState';
 import { DocumentIcon } from '../../shared/ui/icons/DocumentIcon';
-
-import type { DocumentItem } from './queries';
 
 interface DocumentsViewProps {
   items: DocumentItem[];

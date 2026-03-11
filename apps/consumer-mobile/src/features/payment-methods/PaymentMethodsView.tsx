@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
 import { setDefaultPaymentMethodAction, deletePaymentMethodAction } from './actions';
+import { type PaymentMethodItem } from './queries';
 import { AddPaymentMethodModal } from './ui/AddPaymentMethodModal';
 import { clientLogger } from '../../lib/logger';
 import { showErrorToast, showSuccessToast } from '../../lib/toast.client';
@@ -17,8 +18,6 @@ import { PlusIcon } from '../../shared/ui/icons/PlusIcon';
 import { TrashIcon } from '../../shared/ui/icons/TrashIcon';
 import { UserIcon } from '../../shared/ui/icons/UserIcon';
 import { Modal } from '../../shared/ui/Modal';
-
-import type { PaymentMethodItem } from './queries';
 
 interface PaymentMethodsViewProps {
   items: PaymentMethodItem[];

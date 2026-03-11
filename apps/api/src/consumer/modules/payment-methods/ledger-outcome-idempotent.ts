@@ -1,6 +1,6 @@
-import { Prisma } from '@remoola/database-2';
+import { type Logger } from '@nestjs/common';
 
-import type { Logger } from '@nestjs/common';
+import { Prisma } from '@remoola/database-2';
 
 /** Client that has ledgerEntryOutcomeModel (PrismaService or transaction client). */
 type LedgerOutcomeClient = {

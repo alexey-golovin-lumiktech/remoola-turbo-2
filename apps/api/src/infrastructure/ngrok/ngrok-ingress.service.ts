@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnApplicationShutdown } from '@nestjs/common';
+import { type Listener } from '@ngrok/ngrok';
 
 import type * as NgrokModule from '@ngrok/ngrok';
-import type { Listener } from '@ngrok/ngrok';
 
 @Injectable()
 export class NgrokIngressService implements OnApplicationShutdown {

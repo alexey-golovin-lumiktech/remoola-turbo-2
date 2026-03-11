@@ -14,8 +14,7 @@ import { CreditCardIcon } from '../../../shared/ui/icons/CreditCardIcon';
 import { DocumentIcon } from '../../../shared/ui/icons/DocumentIcon';
 import { LinkIcon } from '../../../shared/ui/icons/LinkIcon';
 import { SettingsIcon } from '../../../shared/ui/icons/SettingsIcon';
-
-import type { Profile, Settings } from '../schemas';
+import { type Profile, type Settings } from '../schemas';
 
 interface SettingsViewProps {
   profile: Profile | null;

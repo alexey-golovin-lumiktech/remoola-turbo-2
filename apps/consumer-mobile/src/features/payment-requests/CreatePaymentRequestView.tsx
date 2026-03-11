@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 
 import { CURRENCY_CODE, type TCurrencyCode } from '@remoola/api-types';
 
-import type { CreatePaymentRequestPayload } from './schemas';
+import { type CreatePaymentRequestPayload } from './schemas';
 
 export function CreatePaymentRequestView() {
   const router = useRouter();

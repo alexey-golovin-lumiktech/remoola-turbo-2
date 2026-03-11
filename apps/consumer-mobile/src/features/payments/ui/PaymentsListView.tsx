@@ -20,8 +20,7 @@ import { PageHeader } from '../../../shared/ui/PageHeader';
 import { SearchInput } from '../../../shared/ui/SearchInput';
 import { StatusBadge } from '../../../shared/ui/StatusBadge';
 import { formatCurrency, formatRelativeDate } from '../../../shared/utils/date-format';
-
-import type { Balance, PaymentItem } from '../schemas';
+import { type Balance, type PaymentItem } from '../schemas';
 
 interface PaymentsListViewProps {
   balance: Balance | null;

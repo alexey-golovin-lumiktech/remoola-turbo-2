@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 
-import type { IConsumerExchangeConversion, IConsumerExchangeQuote } from '@remoola/api-types';
+import { type IConsumerExchangeConversion, type IConsumerExchangeQuote } from '@remoola/api-types';
 
 import {
   exchangeConversionSchema,

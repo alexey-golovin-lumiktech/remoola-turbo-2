@@ -15,8 +15,7 @@ import { UsersIcon } from '../../../shared/ui/icons/UsersIcon';
 import { PageHeader } from '../../../shared/ui/PageHeader';
 import { SearchInput } from '../../../shared/ui/SearchInput';
 import { StatusBadge } from '../../../shared/ui/StatusBadge';
-
-import type { Contract } from '../schemas';
+import { type Contract } from '../schemas';
 
 interface ContractsListViewProps {
   contracts: Contract[];

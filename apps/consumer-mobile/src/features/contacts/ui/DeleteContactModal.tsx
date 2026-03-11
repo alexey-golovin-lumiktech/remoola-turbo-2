@@ -7,8 +7,7 @@ import { showErrorToast, showSuccessToast } from '../../../lib/toast.client';
 import { Button } from '../../../shared/ui/Button';
 import { AlertTriangleIcon } from '../../../shared/ui/icons/AlertTriangleIcon';
 import { Modal } from '../../../shared/ui/Modal';
-
-import type { Contact } from '../schemas';
+import { type Contact } from '../schemas';
 
 interface DeleteContactModalProps {
   isOpen: boolean;

@@ -1,3 +1,5 @@
+import { type NextResponse } from 'next/server';
+
 import {
   COOKIE_KEYS,
   getConsumerAccessTokenCookieKey,
@@ -8,8 +10,6 @@ import {
   getOAuthStateCookieOptions,
   type OAuthCookieRuntime,
 } from '@remoola/api-types';
-
-import type { NextResponse } from 'next/server';
 
 function isSecureRequest(request: Request): boolean {
   const forwardedProto = request.headers.get(`x-forwarded-proto`);

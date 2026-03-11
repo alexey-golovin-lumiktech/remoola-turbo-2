@@ -1,4 +1,4 @@
-import type { IConsumerExchangeBalance } from '@remoola/api-types';
+import { type IConsumerExchangeBalance } from '@remoola/api-types';
 
 import { CurrencyDollarIcon } from '../../../shared/ui/icons/CurrencyDollarIcon';
 import { UsersIcon } from '../../../shared/ui/icons/UsersIcon';

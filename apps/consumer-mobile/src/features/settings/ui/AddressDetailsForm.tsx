@@ -8,8 +8,7 @@ import { FormCard } from '../../../shared/ui/FormCard';
 import { FormField } from '../../../shared/ui/FormField';
 import { FormInput } from '../../../shared/ui/FormInput';
 import { updateAddressDetailsAction } from '../actions';
-
-import type { Profile } from '../schemas';
+import { type Profile } from '../schemas';
 
 interface AddressDetailsFormProps {
   profile: Profile;
