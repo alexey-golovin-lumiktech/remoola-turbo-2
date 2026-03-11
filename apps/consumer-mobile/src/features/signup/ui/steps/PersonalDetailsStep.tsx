@@ -2,9 +2,12 @@
 
 import { useCallback, useState } from 'react';
 
+import { CountrySelect } from '../../../../shared/ui/CountrySelect';
+import { PhoneInput } from '../../../../shared/ui/PhoneInput';
 import { useSignupForm } from '../../SignupFormContext';
 import { useSignupSteps } from '../../SignupStepsContext';
 import { STEP_NAME } from '../../stepNames';
+import { parseAddressFromString } from '../../utils/parseAddressFromString';
 import { entityDetailsSchema, getFieldErrors, personalDetailsSchema } from '../../validation';
 import { SIGNUP_INPUT_CLASS } from '../inputClass';
 import { PrevNextButtons } from '../PrevNextButtons';
@@ -24,6 +27,26 @@ export function PersonalDetailsStep() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const isEntity = isBusiness || isContractorEntity;
+
+  const handleLegalAddressChange = useCallback(
+    (value: string) => {
+      updateAddress({ street: value });
+      if (!value.trim()) return;
+      const parsed = parseAddressFromString(value);
+      const updates: Parameters<typeof updateAddress>[0] = {};
+      if (parsed.postalCode) updates.postalCode = parsed.postalCode;
+      if (parsed.country) updates.country = parsed.country;
+      if (parsed.state) updates.state = parsed.state;
+      if (parsed.city) updates.city = parsed.city;
+      if (Object.keys(updates).length > 0) {
+        updateAddress(updates);
+      }
+      if (parsed.country) {
+        updatePersonal({ countryOfTaxResidence: parsed.country });
+      }
+    },
+    [updateAddress, updatePersonal],
+  );
 
   const clearError = useCallback((field: string) => {
     setFieldErrors((prev) => {
@@ -111,28 +134,14 @@ export function PersonalDetailsStep() {
                 </p>
               )}
             </div>
-            <div>
-              <label htmlFor="pe-tax-residence" className={labelClass}>
-                Country of tax residence
-              </label>
-              <input
-                id="pe-tax-residence"
-                type="text"
-                autoComplete="country-name"
-                placeholder="e.g. United States"
-                value={personalDetails.countryOfTaxResidence}
-                onChange={(e) => updatePersonal({ countryOfTaxResidence: e.target.value })}
-                className={SIGNUP_INPUT_CLASS}
-                onFocus={() => clearError(`countryOfTaxResidence`)}
-                aria-invalid={!!fieldErrors.countryOfTaxResidence || undefined}
-                aria-describedby={fieldErrors.countryOfTaxResidence ? `pe-tax-residence-err` : undefined}
-              />
-              {fieldErrors.countryOfTaxResidence && (
-                <p id="pe-tax-residence-err" className={errorClass} role="alert">
-                  {fieldErrors.countryOfTaxResidence}
-                </p>
-              )}
-            </div>
+            <CountrySelect
+              id="pe-tax-residence"
+              label="Country of tax residence"
+              value={personalDetails.countryOfTaxResidence}
+              onChange={(value) => updatePersonal({ countryOfTaxResidence: value })}
+              error={fieldErrors.countryOfTaxResidence}
+              onErrorClear={() => clearError(`countryOfTaxResidence`)}
+            />
             <div>
               <label htmlFor="pe-taxid" className={labelClass}>
                 Tax ID
@@ -155,29 +164,16 @@ export function PersonalDetailsStep() {
                 </p>
               )}
             </div>
-            <div>
-              <label htmlFor="pe-phone" className={labelClass}>
-                Phone number
-              </label>
-              <input
-                id="pe-phone"
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                placeholder="+1 (555) 000-0000"
-                value={personalDetails.phoneNumber}
-                onChange={(e) => updatePersonal({ phoneNumber: e.target.value })}
-                className={SIGNUP_INPUT_CLASS}
-                onFocus={() => clearError(`phoneNumber`)}
-                aria-invalid={!!fieldErrors.phoneNumber || undefined}
-                aria-describedby={fieldErrors.phoneNumber ? `pe-phone-err` : undefined}
-              />
-              {fieldErrors.phoneNumber && (
-                <p id="pe-phone-err" className={errorClass} role="alert">
-                  {fieldErrors.phoneNumber}
-                </p>
-              )}
-            </div>
+            <PhoneInput
+              id="pe-phone"
+              label="Phone number"
+              value={personalDetails.phoneNumber}
+              onChange={(value) => updatePersonal({ phoneNumber: value ?? `` })}
+              error={fieldErrors.phoneNumber}
+              onErrorClear={() => clearError(`phoneNumber`)}
+              defaultCountryName={personalDetails.countryOfTaxResidence || undefined}
+              placeholder="+1 (555) 000-0000"
+            />
             <div>
               <label htmlFor="pe-legal-address" className={labelClass}>
                 Legal address
@@ -188,7 +184,7 @@ export function PersonalDetailsStep() {
                 autoComplete="street-address"
                 placeholder="123 Main St, Suite 100"
                 value={addressDetails.street}
-                onChange={(e) => updateAddress({ street: e.target.value })}
+                onChange={(e) => handleLegalAddressChange(e.target.value)}
                 className={SIGNUP_INPUT_CLASS}
                 onFocus={() => clearError(`legalAddress`)}
                 aria-invalid={!!fieldErrors.legalAddress || undefined}
@@ -255,8 +251,44 @@ export function PersonalDetailsStep() {
               { key: `phoneNumber` as const, label: `Phone number`, type: `tel` as const, autoComplete: `tel` },
             ] as const
           ).map(({ key, label, type, autoComplete }) => {
+            if (key === `citizenOf`) {
+              return (
+                <CountrySelect
+                  key={key}
+                  id={`pi-${key}`}
+                  label={label}
+                  value={personalDetails.citizenOf ?? ``}
+                  onChange={(value) => {
+                    updatePersonal({ citizenOf: value, countryOfTaxResidence: value });
+                    clearError(`citizenOf`);
+                  }}
+                  error={fieldErrors.citizenOf}
+                  onErrorClear={() => clearError(`citizenOf`)}
+                />
+              );
+            }
+            if (key === `countryOfTaxResidence`) {
+              return (
+                <CountrySelect
+                  key={key}
+                  id={`pi-${key}`}
+                  label={label}
+                  value={personalDetails.countryOfTaxResidence ?? ``}
+                  onChange={(value) => {
+                    updatePersonal({ countryOfTaxResidence: value });
+                    clearError(`countryOfTaxResidence`);
+                  }}
+                  error={fieldErrors.countryOfTaxResidence}
+                  onErrorClear={() => clearError(`countryOfTaxResidence`)}
+                />
+              );
+            }
             const errId = `pi-${key}-err`;
             const hasError = !!fieldErrors[key];
+            const handleChange = (value: string) => {
+              updatePersonal({ [key]: value });
+              clearError(key);
+            };
             return (
               <div key={key}>
                 <label htmlFor={`pi-${key}`} className={labelClass}>
@@ -268,7 +300,7 @@ export function PersonalDetailsStep() {
                   inputMode={type === `tel` ? `tel` : undefined}
                   autoComplete={autoComplete}
                   value={personalDetails[key] ?? ``}
-                  onChange={(e) => updatePersonal({ [key]: e.target.value })}
+                  onChange={(e) => handleChange(e.target.value)}
                   className={SIGNUP_INPUT_CLASS}
                   onFocus={() => clearError(key)}
                   aria-invalid={hasError || undefined}

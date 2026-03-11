@@ -1,20 +1,53 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { useSignupForm } from '../../SignupFormContext';
 import { useSignupSteps } from '../../SignupStepsContext';
 import { STEP_NAME } from '../../stepNames';
 import { useSignupSubmit } from '../../useSignupSubmit';
+import { parseAddressFromString } from '../../utils/parseAddressFromString';
 import { addressDetailsSchema, getFieldErrors } from '../../validation';
 import { SIGNUP_INPUT_CLASS } from '../inputClass';
 import { PrevNextButtons } from '../PrevNextButtons';
 
 export function AddressDetailsStep() {
-  const { isContractorIndividual, addressDetails, updateAddress } = useSignupForm();
+  const { isContractorIndividual, isBusiness, isContractorEntity, addressDetails, personalDetails, updateAddress } =
+    useSignupForm();
   const { markSubmitted, goNext } = useSignupSteps();
   const { submit, loading } = useSignupSubmit();
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const isEntity = isBusiness || isContractorEntity;
+
+  // Prefill / normalize address details from Legal address (Personal step) for Business / Contractor Entity
+  useEffect(() => {
+    if (!isEntity || !addressDetails.street?.trim()) return;
+
+    const parsed = parseAddressFromString(addressDetails.street);
+    const updates: Partial<typeof addressDetails> = {};
+    const needsPrefill =
+      !addressDetails.postalCode?.trim() &&
+      !addressDetails.country?.trim() &&
+      !addressDetails.state?.trim() &&
+      !addressDetails.city?.trim();
+
+    if (parsed.street && parsed.street !== addressDetails.street) {
+      updates.street = parsed.street;
+    }
+    if (needsPrefill) {
+      if (parsed.postalCode) updates.postalCode = parsed.postalCode;
+      if (parsed.country) updates.country = parsed.country;
+      if (parsed.state) updates.state = parsed.state;
+      if (parsed.city) updates.city = parsed.city;
+    }
+    if (Object.keys(updates).length > 0) {
+      updateAddress(updates);
+    } else if (needsPrefill && personalDetails.countryOfTaxResidence?.trim()) {
+      updateAddress({ country: personalDetails.countryOfTaxResidence });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deps omitted to avoid loop on update
+  }, [isEntity, addressDetails.street]);
 
   const clearError = useCallback((field: string) => {
     setFieldErrors((prev) => {
@@ -24,6 +57,12 @@ export function AddressDetailsStep() {
       return rest;
     });
   }, []);
+
+  const validateOnBlur = useCallback(() => {
+    const result = addressDetailsSchema.safeParse(addressDetails);
+    if (result.success) setFieldErrors({});
+    else setFieldErrors(getFieldErrors(result.error));
+  }, [addressDetails]);
 
   const handleNext = useCallback(() => {
     const result = addressDetailsSchema.safeParse(addressDetails);
@@ -98,6 +137,7 @@ export function AddressDetailsStep() {
                   autoComplete={autoComplete}
                   value={addressDetails[key] ?? ``}
                   onChange={(e) => updateAddress({ [key]: e.target.value })}
+                  onBlur={validateOnBlur}
                   className={SIGNUP_INPUT_CLASS}
                   onFocus={() => clearError(key)}
                   aria-invalid={hasError || undefined}

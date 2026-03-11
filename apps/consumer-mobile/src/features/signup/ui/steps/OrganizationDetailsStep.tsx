@@ -12,6 +12,7 @@ import { getFieldErrors, organizationSchema } from '../../validation';
 import { SIGNUP_INPUT_CLASS } from '../inputClass';
 import { PrevNextButtons } from '../PrevNextButtons';
 
+/** Role options aligned with consumer app (CONSUMER_ROLE_LABEL). */
 const ROLE_OPTIONS: { value: TConsumerRole; label: string }[] = [
   { value: CONSUMER_ROLE.FOUNDER, label: `Founder` },
   { value: CONSUMER_ROLE.FINANCE, label: `Finance` },
@@ -21,14 +22,34 @@ const ROLE_OPTIONS: { value: TConsumerRole; label: string }[] = [
   { value: CONSUMER_ROLE.LEGAL, label: `Legal` },
   { value: CONSUMER_ROLE.HUMAN_RESOURCE, label: `Human resource` },
   { value: CONSUMER_ROLE.OPERATIONS, label: `Operations` },
+  { value: CONSUMER_ROLE.COMPLIANCE, label: `Compliance` },
+  { value: CONSUMER_ROLE.PRODUCT, label: `Product` },
+  { value: CONSUMER_ROLE.ENGINEERING, label: `Engineering` },
+  { value: CONSUMER_ROLE.ANALYSIS_DATA, label: `Analysis/Data` },
   { value: CONSUMER_ROLE.OTHER, label: `Other` },
 ];
 
+/** Size display labels aligned with consumer (1-10 / 11-100 / 100+). */
+const SIZE_LABEL: Record<(typeof ORGANIZATION_SIZE)[keyof typeof ORGANIZATION_SIZE], string> = {
+  [ORGANIZATION_SIZE.SMALL]: `1-10 team members`,
+  [ORGANIZATION_SIZE.MEDIUM]: `11-100 team members`,
+  [ORGANIZATION_SIZE.LARGE]: `100+ team members`,
+};
+
 const SIZE_OPTIONS = [
-  { value: ORGANIZATION_SIZE.SMALL, label: `Small` },
-  { value: ORGANIZATION_SIZE.MEDIUM, label: `Medium` },
-  { value: ORGANIZATION_SIZE.LARGE, label: `Large` },
-];
+  { value: SIZE_LABEL[ORGANIZATION_SIZE.SMALL], label: SIZE_LABEL[ORGANIZATION_SIZE.SMALL] },
+  { value: SIZE_LABEL[ORGANIZATION_SIZE.MEDIUM], label: SIZE_LABEL[ORGANIZATION_SIZE.MEDIUM] },
+  { value: SIZE_LABEL[ORGANIZATION_SIZE.LARGE], label: SIZE_LABEL[ORGANIZATION_SIZE.LARGE] },
+] as const;
+
+const LABEL_SIZE: Record<
+  (typeof SIZE_OPTIONS)[number][`value`],
+  (typeof ORGANIZATION_SIZE)[keyof typeof ORGANIZATION_SIZE]
+> = {
+  [SIZE_LABEL[ORGANIZATION_SIZE.SMALL]]: ORGANIZATION_SIZE.SMALL,
+  [SIZE_LABEL[ORGANIZATION_SIZE.MEDIUM]]: ORGANIZATION_SIZE.MEDIUM,
+  [SIZE_LABEL[ORGANIZATION_SIZE.LARGE]]: ORGANIZATION_SIZE.LARGE,
+};
 
 export function OrganizationDetailsStep() {
   const { organizationDetails, updateOrganization } = useSignupForm();
@@ -115,13 +136,13 @@ export function OrganizationDetailsStep() {
             <select
               id="od-role"
               value={organizationDetails.consumerRole ?? ``}
-              onChange={(e) =>
-                updateOrganization({
-                  consumerRole: (e.target.value || ``) as TConsumerRole,
-                  consumerRoleOther:
-                    e.target.value === CONSUMER_ROLE.OTHER ? organizationDetails.consumerRoleOther : null,
-                })
-              }
+              onChange={(e) => {
+                const consumerRole = (e.target.value || ``) as TConsumerRole;
+                const consumerRoleOther =
+                  consumerRole !== CONSUMER_ROLE.OTHER ? null : organizationDetails.consumerRoleOther;
+                updateOrganization({ consumerRole, consumerRoleOther });
+                clearError(`consumerRole`);
+              }}
               className={SIGNUP_INPUT_CLASS}
               onFocus={() => clearError(`consumerRole`)}
               aria-invalid={!!fieldErrors.consumerRole || undefined}
@@ -141,6 +162,22 @@ export function OrganizationDetailsStep() {
                 {fieldErrors.consumerRole}
               </p>
             )}
+            {organizationDetails.consumerRole === CONSUMER_ROLE.OTHER && (
+              <div className={`mt-3`}>
+                <label htmlFor="od-role-other" className={labelClass}>
+                  Your role (other)
+                </label>
+                <input
+                  id="od-role-other"
+                  type="text"
+                  autoComplete="off"
+                  placeholder="Please specify"
+                  value={organizationDetails.consumerRoleOther ?? ``}
+                  onChange={(e) => updateOrganization({ consumerRoleOther: e.target.value })}
+                  className={SIGNUP_INPUT_CLASS}
+                />
+              </div>
+            )}
           </div>
           <div>
             <label htmlFor="od-size" className={labelClass}>
@@ -148,13 +185,16 @@ export function OrganizationDetailsStep() {
             </label>
             <select
               id="od-size"
-              value={organizationDetails.size ?? ``}
-              onChange={(e) =>
+              value={organizationDetails.size ? (SIZE_LABEL[organizationDetails.size] ?? ``) : ``}
+              onChange={(e) => {
+                const value = e.target.value;
                 updateOrganization({
-                  size: (e.target.value ||
-                    ORGANIZATION_SIZE.SMALL) as (typeof ORGANIZATION_SIZE)[keyof typeof ORGANIZATION_SIZE],
-                })
-              }
+                  size: value
+                    ? (LABEL_SIZE[value as keyof typeof LABEL_SIZE] ?? ORGANIZATION_SIZE.SMALL)
+                    : ORGANIZATION_SIZE.SMALL,
+                });
+                clearError(`size`);
+              }}
               className={SIGNUP_INPUT_CLASS}
               onFocus={() => clearError(`size`)}
               aria-invalid={!!fieldErrors.size || undefined}

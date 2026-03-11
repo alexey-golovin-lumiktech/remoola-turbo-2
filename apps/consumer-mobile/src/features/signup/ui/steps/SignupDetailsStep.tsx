@@ -2,6 +2,7 @@
 
 import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 import {
   ACCOUNT_TYPE,
@@ -100,7 +101,10 @@ export function SignupDetailsStep() {
     const schema = createSignupDetailsSchema(isGoogleSignup);
     const result = schema.safeParse(signupDetails);
     if (!result.success) {
-      setFieldErrors(getFieldErrors(result.error));
+      const fieldErrorsMap = getFieldErrors(result.error);
+      setFieldErrors(fieldErrorsMap);
+      const firstMessage = Object.values(fieldErrorsMap)[0];
+      if (firstMessage) toast.error(firstMessage);
       return;
     }
     setFieldErrors({});
@@ -230,7 +234,7 @@ export function SignupDetailsStep() {
                 placeholder="Create a strong password"
                 inputClassName={
                   fieldErrors.password
-                    ? SIGNUP_INPUT_CLASS + ` border-red-500 ring-2 ring-2-500/20`
+                    ? SIGNUP_INPUT_CLASS + ` border-red-500 ring-2 ring-red-500/20`
                     : SIGNUP_INPUT_CLASS
                 }
               />
@@ -405,9 +409,10 @@ export function SignupDetailsStep() {
             value={signupDetails.howDidHearAboutUs ?? ``}
             onChange={(e) => {
               const v = e.target.value;
-              updateSignup({
-                howDidHearAboutUs: v ? (v as THowDidHearAboutUs) : null,
-              });
+              const howDidHearAboutUs = v ? (v as THowDidHearAboutUs) : null;
+              const howDidHearAboutUsOther =
+                howDidHearAboutUs !== HOW_DID_HEAR_ABOUT_US.OTHER ? null : signupDetails.howDidHearAboutUsOther;
+              updateSignup({ howDidHearAboutUs, howDidHearAboutUsOther });
             }}
             className={SIGNUP_INPUT_CLASS}
           >
@@ -421,6 +426,32 @@ export function SignupDetailsStep() {
             ))}
           </select>
         </div>
+        {signupDetails.howDidHearAboutUs === HOW_DID_HEAR_ABOUT_US.OTHER && (
+          <div className={`mb-3`}>
+            <label
+              htmlFor="sd-how-other"
+              className={`
+                mb-1.5
+                block
+                text-sm
+                font-medium
+                text-neutral-700
+                dark:text-neutral-300
+              `}
+            >
+              How did you hear about us? (other)
+            </label>
+            <input
+              id="sd-how-other"
+              type="text"
+              autoComplete="off"
+              placeholder="Please specify"
+              value={signupDetails.howDidHearAboutUsOther ?? ``}
+              onChange={(e) => updateSignup({ howDidHearAboutUsOther: e.target.value })}
+              className={SIGNUP_INPUT_CLASS}
+            />
+          </div>
+        )}
       </div>
       <PrevNextButtons onNext={handleNext} />
 
