@@ -1,5 +1,7 @@
 # Financial Safety & Database Compliance
 
+**Canonical:** [governance/04_FINANCIAL_SAFETY_COMPLIANCE.md](../governance/04_FINANCIAL_SAFETY_COMPLIANCE.md) — edit there.
+
 **Last updated:** 2026-03-12  
 **Scope:** Remoola monorepo — ledger, payments, Stripe webhooks, raw SQL, PostgreSQL design rules  
 **Status:** Audit complete; critical fixes applied (append-only ledger, idempotency, raw SQL, health/archive).
