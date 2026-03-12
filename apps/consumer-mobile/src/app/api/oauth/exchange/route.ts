@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { appendSetCookies } from '../../../../lib/api-utils';
+import { appendSetCookies, buildForwardHeaders } from '../../../../lib/api-utils';
 import { getEnv } from '../../../../lib/env.server';
 
 export async function POST(req: Request) {
@@ -15,7 +15,7 @@ export async function POST(req: Request) {
   // Forward client headers but strip hop-by-hop headers that must not be proxied.
   // In particular, 'host' must not be forwarded — it should reflect the target server,
   // not the consumer-mobile origin, otherwise some reverse-proxies reject the request.
-  const forwardHeaders = new Headers(req.headers);
+  const forwardHeaders = buildForwardHeaders(req.headers);
   forwardHeaders.delete(`host`);
 
   const res = await fetch(url, {

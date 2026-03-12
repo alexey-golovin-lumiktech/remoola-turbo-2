@@ -4,6 +4,21 @@ import { type ApiErrorShape } from '@remoola/api-types';
 
 import { clientLogger } from './logger';
 
+const DEFAULT_MAX_JSON_BODY_BYTES = 1024 * 1024; // 1 MB
+const FORWARDED_HEADER_ALLOWLIST = new Set([
+  `accept`,
+  `accept-language`,
+  `authorization`,
+  `content-type`,
+  `cookie`,
+  `idempotency-key`,
+  `origin`,
+  `user-agent`,
+  `x-correlation-id`,
+  `x-csrf-token`,
+  `x-request-id`,
+]);
+
 /**
  * Returns all Set-Cookie header values from a Response.
  * Uses getSetCookie() (Node.js 18.14+) for correct multi-cookie support.
@@ -28,6 +43,69 @@ export function appendSetCookies(responseHeaders: Headers, sourceHeaders: Header
   for (const cookie of getSetCookieValues(sourceHeaders)) {
     responseHeaders.append(`set-cookie`, cookie);
   }
+}
+
+export function buildForwardHeaders(sourceHeaders: Headers): Headers {
+  const headers = new Headers();
+  for (const [name, value] of sourceHeaders.entries()) {
+    const headerName = name.toLowerCase();
+    if (FORWARDED_HEADER_ALLOWLIST.has(headerName) || headerName.startsWith(`x-remoola-`)) {
+      headers.append(name, value);
+    }
+  }
+  return headers;
+}
+
+/**
+ * Validates that a mutation request carries a JSON body.
+ * Backward compatibility: empty mutation bodies are allowed and forwarded as empty strings.
+ * For non-empty bodies, Content-Type must be application/json and body must be valid JSON.
+ * Returns the raw body string on success so callers can forward it without reading the stream twice.
+ */
+export async function requireJsonBody(
+  req: NextRequest,
+  options: { allowEmpty?: boolean; maxBytes?: number } = {},
+): Promise<{ ok: true; body: string } | { ok: false; response: NextResponse }> {
+  const { allowEmpty = false, maxBytes = DEFAULT_MAX_JSON_BODY_BYTES } = options;
+  const contentType = req.headers.get(`content-type`) ?? ``;
+  const contentLengthHeader = req.headers.get(`content-length`);
+  const parsedContentLength = contentLengthHeader ? Number(contentLengthHeader) : NaN;
+  if (Number.isFinite(parsedContentLength) && parsedContentLength > maxBytes) {
+    return {
+      ok: false,
+      response: NextResponse.json({ message: `Request body too large`, code: `PAYLOAD_TOO_LARGE` }, { status: 413 }),
+    };
+  }
+  let body: string;
+  try {
+    body = await req.text();
+    if (Buffer.byteLength(body, `utf8`) > maxBytes) {
+      return {
+        ok: false,
+        response: NextResponse.json({ message: `Request body too large`, code: `PAYLOAD_TOO_LARGE` }, { status: 413 }),
+      };
+    }
+    if (body.trim().length === 0) {
+      if (allowEmpty || contentLengthHeader == null || parsedContentLength === 0) return { ok: true, body };
+      throw new Error(`Empty JSON body`);
+    }
+    if (!contentType.includes(`application/json`)) {
+      return {
+        ok: false,
+        response: NextResponse.json(
+          { message: `Content-Type must be application/json`, code: `INVALID_CONTENT_TYPE` },
+          { status: 400 },
+        ),
+      };
+    }
+    JSON.parse(body);
+  } catch {
+    return {
+      ok: false,
+      response: NextResponse.json({ message: `Invalid JSON body`, code: `INVALID_JSON` }, { status: 400 }),
+    };
+  }
+  return { ok: true, body };
 }
 
 export function handleApiError(error: unknown): NextResponse<ApiErrorShape> {
@@ -72,8 +150,9 @@ export async function proxyApiRequest(
 
       const response = await fetch(backendUrl, {
         method: req.method,
-        headers: new Headers(req.headers),
+        headers: buildForwardHeaders(req.headers),
         credentials: `include`,
+        cache: `no-store`,
         ...(req.body && { duplex: `half` }),
         signal: controller.signal,
         ...(req.method !== `GET` && req.method !== `HEAD` && { body: req.body }),

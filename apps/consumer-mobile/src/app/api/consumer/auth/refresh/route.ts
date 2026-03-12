@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { appendSetCookies } from '../../../../../lib/api-utils';
+import { appendSetCookies, buildForwardHeaders } from '../../../../../lib/api-utils';
 import { getCsrfTokenFromRequest } from '../../../../../lib/auth-cookie-policy';
 import { getEnv } from '../../../../../lib/env.server';
 import { serverLogger } from '../../../../../lib/logger.server';
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
 
   try {
     const csrfToken = getCsrfTokenFromRequest(req);
-    const forwardHeaders = new Headers(req.headers);
+    const forwardHeaders = buildForwardHeaders(req.headers);
     forwardHeaders.delete(`host`);
     if (csrfToken) forwardHeaders.set(`x-csrf-token`, csrfToken);
 
@@ -40,8 +40,7 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     serverLogger.error(`Auth refresh failed`, {
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
+      error: error instanceof Error ? error : String(error),
     });
     return NextResponse.json(
       {

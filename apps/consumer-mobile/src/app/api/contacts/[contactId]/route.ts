@@ -1,9 +1,10 @@
 import { type NextRequest } from 'next/server';
 
 import { contactParamsSchema } from '../../../../features/contacts/schemas';
+import { appendSetCookies, requireJsonBody, buildForwardHeaders } from '../../../../lib/api-utils';
 import { getEnv } from '../../../../lib/env.server';
 
-async function proxyContact(contactId: string, req: NextRequest, method: string) {
+async function proxyContact(contactId: string, req: NextRequest, method: string, body?: string) {
   const env = getEnv();
   const baseUrl = env.NEXT_PUBLIC_API_BASE_URL;
   if (!baseUrl) {
@@ -12,15 +13,15 @@ async function proxyContact(contactId: string, req: NextRequest, method: string)
   const url = new URL(`${baseUrl}/consumer/contacts/${contactId}`);
   const res = await fetch(url, {
     method,
-    headers: new Headers(req.headers),
+    headers: buildForwardHeaders(req.headers),
     credentials: `include`,
-    ...(method !== `GET` && method !== `DELETE` && { body: await req.clone().text() }),
+    cache: `no-store`,
+    ...(body !== undefined && { body }),
   });
-  const cookie = res.headers.get(`set-cookie`);
   const data = await res.text();
-  const headers: HeadersInit = {};
-  if (cookie) headers[`set-cookie`] = cookie;
-  return new Response(data, { status: res.status, headers });
+  const responseHeaders = new Headers();
+  appendSetCookies(responseHeaders, res.headers);
+  return new Response(data, { status: res.status, headers: responseHeaders });
 }
 
 function parseContactParams(params: { contactId: string }) {
@@ -40,7 +41,9 @@ export async function GET(req: NextRequest, context: { params: Promise<{ contact
 export async function PATCH(req: NextRequest, context: { params: Promise<{ contactId: string }> }) {
   const params = parseContactParams(await context.params);
   if (!params) return Response.json({ code: `VALIDATION_ERROR`, message: `Invalid route params` }, { status: 400 });
-  return proxyContact(params.contactId, req, `PATCH`);
+  const bodyResult = await requireJsonBody(req);
+  if (!bodyResult.ok) return bodyResult.response;
+  return proxyContact(params.contactId, req, `PATCH`, bodyResult.body);
 }
 
 export async function DELETE(req: NextRequest, context: { params: Promise<{ contactId: string }> }) {

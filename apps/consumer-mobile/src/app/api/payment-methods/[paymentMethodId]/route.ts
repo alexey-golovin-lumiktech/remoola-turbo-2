@@ -1,9 +1,10 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
 import { parsePaymentMethodParams } from '../../../../features/payment-methods/schemas';
+import { appendSetCookies, requireJsonBody, buildForwardHeaders } from '../../../../lib/api-utils';
 import { getEnv } from '../../../../lib/env.server';
 
-async function proxyPaymentMethod(paymentMethodId: string, req: NextRequest, method: string) {
+async function proxyPaymentMethod(paymentMethodId: string, req: NextRequest, method: string, body?: string) {
   const env = getEnv();
   const baseUrl = env.NEXT_PUBLIC_API_BASE_URL;
   if (!baseUrl) {
@@ -12,16 +13,15 @@ async function proxyPaymentMethod(paymentMethodId: string, req: NextRequest, met
   const url = new URL(`${baseUrl}/consumer/payment-methods/${paymentMethodId}`);
   const res = await fetch(url, {
     method,
-    headers: new Headers(req.headers),
+    headers: buildForwardHeaders(req.headers),
     credentials: `include`,
-    cache: method === `GET` ? `no-store` : undefined,
-    ...(method !== `GET` && method !== `DELETE` && { body: await req.clone().text() }),
+    cache: `no-store`,
+    ...(body !== undefined && { body }),
   });
-  const cookie = res.headers.get(`set-cookie`);
   const data = await res.text();
-  const headers: HeadersInit = {};
-  if (cookie) headers[`set-cookie`] = cookie;
-  return new NextResponse(data, { status: res.status, headers });
+  const responseHeaders = new Headers();
+  appendSetCookies(responseHeaders, res.headers);
+  return new NextResponse(data, { status: res.status, headers: responseHeaders });
 }
 
 export async function GET(req: NextRequest, context: { params: Promise<{ paymentMethodId: string }> }) {
@@ -39,7 +39,9 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ payme
   if (`error` in parsed) {
     return NextResponse.json({ code: `VALIDATION_ERROR`, message: parsed.error }, { status: 400 });
   }
-  return proxyPaymentMethod(parsed.paymentMethodId, req, `PATCH`);
+  const bodyResult = await requireJsonBody(req);
+  if (!bodyResult.ok) return bodyResult.response;
+  return proxyPaymentMethod(parsed.paymentMethodId, req, `PATCH`, bodyResult.body);
 }
 
 export async function DELETE(req: NextRequest, context: { params: Promise<{ paymentMethodId: string }> }) {

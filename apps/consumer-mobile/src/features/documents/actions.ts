@@ -73,6 +73,7 @@ export async function bulkDeleteDocuments(input: BulkDeleteInput): Promise<Actio
       },
       body: JSON.stringify({ documentIds: parsed.data.documentIds }),
       credentials: `include`,
+      cache: `no-store`,
       signal: AbortSignal.timeout(15000),
     });
 
@@ -157,6 +158,7 @@ export async function attachDocumentToPayment(input: AttachToPaymentInput): Prom
         resourceIds: [parsed.data.documentId],
       }),
       credentials: `include`,
+      cache: `no-store`,
       signal: AbortSignal.timeout(10000),
     });
 
@@ -239,6 +241,7 @@ export async function updateDocumentTags(docId: string, input: UpdateTagsInput):
       },
       body: JSON.stringify({ tags: parsed.data.tags }),
       credentials: `include`,
+      cache: `no-store`,
       signal: AbortSignal.timeout(10000),
     });
 
@@ -305,6 +308,7 @@ export async function deleteDocument(docId: string): Promise<ActionResult> {
         Cookie: cookie,
       },
       credentials: `include`,
+      cache: `no-store`,
       signal: AbortSignal.timeout(10000),
     });
 

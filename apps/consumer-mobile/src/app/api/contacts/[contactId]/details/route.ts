@@ -1,6 +1,7 @@
 import { type NextRequest } from 'next/server';
 
 import { contactParamsSchema } from '../../../../../features/contacts/schemas';
+import { appendSetCookies, buildForwardHeaders } from '../../../../../lib/api-utils';
 import { getEnv } from '../../../../../lib/env.server';
 
 export async function GET(req: NextRequest, context: { params: Promise<{ contactId: string }> }) {
@@ -17,13 +18,12 @@ export async function GET(req: NextRequest, context: { params: Promise<{ contact
   const url = new URL(`${baseUrl}/consumer/contacts/${contactId}/details`);
   const res = await fetch(url, {
     method: `GET`,
-    headers: new Headers(req.headers),
+    headers: buildForwardHeaders(req.headers),
     credentials: `include`,
     cache: `no-store`,
   });
-  const cookie = res.headers.get(`set-cookie`);
   const data = await res.text();
-  const headers: HeadersInit = {};
-  if (cookie) headers[`set-cookie`] = cookie;
-  return new Response(data, { status: res.status, headers });
+  const responseHeaders = new Headers();
+  appendSetCookies(responseHeaders, res.headers);
+  return new Response(data, { status: res.status, headers: responseHeaders });
 }

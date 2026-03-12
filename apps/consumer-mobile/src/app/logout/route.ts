@@ -20,6 +20,7 @@ export async function GET(request: Request) {
           ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
         },
         credentials: `include`,
+        cache: `no-store`,
       });
       appendSetCookies(response.headers, backendResponse.headers);
       return response;

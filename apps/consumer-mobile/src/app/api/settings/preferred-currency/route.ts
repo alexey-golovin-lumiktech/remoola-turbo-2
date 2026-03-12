@@ -1,8 +1,11 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
+import { appendSetCookies, requireJsonBody, buildForwardHeaders } from '../../../../lib/api-utils';
 import { getEnv } from '../../../../lib/env.server';
 
 export async function PUT(req: NextRequest) {
+  const bodyResult = await requireJsonBody(req);
+  if (!bodyResult.ok) return bodyResult.response;
   const env = getEnv();
   const baseUrl = env.NEXT_PUBLIC_API_BASE_URL;
   if (!baseUrl) {
@@ -11,13 +14,13 @@ export async function PUT(req: NextRequest) {
   const url = new URL(`${baseUrl}/consumer/settings/preferred-currency`);
   const res = await fetch(url, {
     method: `PUT`,
-    headers: new Headers(req.headers),
+    headers: buildForwardHeaders(req.headers),
     credentials: `include`,
-    body: await req.clone().text(),
+    cache: `no-store`,
+    body: bodyResult.body,
   });
-  const cookie = res.headers.get(`set-cookie`);
   const data = await res.text();
-  const headers: HeadersInit = {};
-  if (cookie) headers[`set-cookie`] = cookie;
-  return new NextResponse(data, { status: res.status, headers });
+  const responseHeaders = new Headers();
+  appendSetCookies(responseHeaders, res.headers);
+  return new NextResponse(data, { status: res.status, headers: responseHeaders });
 }

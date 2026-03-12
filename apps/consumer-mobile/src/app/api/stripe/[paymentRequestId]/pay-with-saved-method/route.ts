@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
 import { paymentParamsSchema } from '../../../../../features/payments/schemas';
+import { appendSetCookies, requireJsonBody, buildForwardHeaders } from '../../../../../lib/api-utils';
 import { getEnv } from '../../../../../lib/env.server';
 
 export async function POST(req: NextRequest, context: { params: Promise<{ paymentRequestId: string }> }) {
@@ -9,6 +10,8 @@ export async function POST(req: NextRequest, context: { params: Promise<{ paymen
   if (!parsed.success) {
     return NextResponse.json({ code: `VALIDATION_ERROR`, message: `Invalid paymentRequestId` }, { status: 400 });
   }
+  const bodyResult = await requireJsonBody(req);
+  if (!bodyResult.ok) return bodyResult.response;
   const env = getEnv();
   const baseUrl = env.NEXT_PUBLIC_API_BASE_URL;
   if (!baseUrl) {
@@ -17,11 +20,13 @@ export async function POST(req: NextRequest, context: { params: Promise<{ paymen
   const url = new URL(`${baseUrl}/consumer/stripe/${parsed.data.paymentRequestId}/pay-with-saved-method`);
   const res = await fetch(url, {
     method: `POST`,
-    headers: new Headers(req.headers),
+    headers: buildForwardHeaders(req.headers),
     credentials: `include`,
-    body: await req.clone().text(),
+    cache: `no-store`,
+    body: bodyResult.body,
   });
-  const cookie = res.headers.get(`set-cookie`);
   const data = await res.text();
-  return new NextResponse(data, { status: res.status, headers: cookie ? { 'set-cookie': cookie } : {} });
+  const responseHeaders = new Headers();
+  appendSetCookies(responseHeaders, res.headers);
+  return new NextResponse(data, { status: res.status, headers: responseHeaders });
 }

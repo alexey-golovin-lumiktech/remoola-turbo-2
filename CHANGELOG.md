@@ -1371,6 +1371,11 @@
 - **2026-03-12:**
   ### ♻️ Refactor
   - **Consumer mobile – centralized error messaging:** New `apps/consumer-mobile/src/lib/error-messages.ts` maps API error codes (`@remoola/shared-constants`) to user-facing messages and defines local toast keys for client-side failures; 37 files switched to `getErrorMessageForUser`, `getLocalToastMessage`, and `showErrorToast` for consistent, safe user-facing toasts. No API, ledger, or migration changes.
+  - **Cookie forwarding and fetch cache:** Admin proxy uses multi-cookie forwarding (`getSetCookie`/`appendSetCookies`) so all auth cookies are preserved; consumer and consumer-mobile API routes use `appendSetCookies` for all proxy responses; consumer-mobile `proxyApiRequest` and logout/middleware/documents server-action fetches use `cache: no-store`. No new packages or schema changes.
+  - **BFF mutation contract hardening:** Consumer and consumer-mobile mutation proxy routes now enforce `application/json` and valid JSON payloads before forwarding; invalid content type/body returns `400` (`INVALID_CONTENT_TYPE`/`INVALID_JSON`), oversized JSON returns `413` (`PAYLOAD_TOO_LARGE`), and invoice generation accepts an empty JSON body for backward compatibility.
+
+  ### 🔐 Security
+  - **Header forwarding hardening at proxy boundaries:** Shared BFF proxy helpers now forward an explicit header allowlist (instead of broad pass-through), while preserving multi-cookie `Set-Cookie` propagation and `cache: no-store` behavior on authenticated route flows; admin proxy mutation routes now enforce JSON payload validation plus request-size limits with `413 PAYLOAD_TOO_LARGE` on oversize requests.
 
   ### 🛠 DevEx
   - Single source for API-code → user message and local-toast copy in consumer-mobile; add new codes/keys in `error-messages.ts` when introducing new API errors or client-side toast scenarios.

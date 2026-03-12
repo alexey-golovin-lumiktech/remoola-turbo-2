@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
+import { appendSetCookies, buildForwardHeaders } from '../../../../lib/api-utils';
 import { getEnv } from '../../../../lib/env.server';
 
 export async function POST(req: NextRequest) {
@@ -13,12 +14,12 @@ export async function POST(req: NextRequest) {
     method: `POST`,
     body: req.body,
     credentials: `include`,
-    headers: new Headers(req.headers),
+    cache: `no-store`,
+    headers: buildForwardHeaders(req.headers),
     duplex: `half`,
   } as RequestInit);
-  const cookie = res.headers.get(`set-cookie`);
   const data = await res.arrayBuffer();
-  const headers: HeadersInit = {};
-  if (cookie) headers[`set-cookie`] = cookie;
-  return new NextResponse(data, { status: res.status, headers });
+  const responseHeaders = new Headers();
+  appendSetCookies(responseHeaders, res.headers);
+  return new NextResponse(data, { status: res.status, headers: responseHeaders });
 }

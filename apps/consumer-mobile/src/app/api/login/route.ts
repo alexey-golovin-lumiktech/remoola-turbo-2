@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { loginSchema } from '../../../features/auth/schemas';
-import { appendSetCookies } from '../../../lib/api-utils';
+import { appendSetCookies, buildForwardHeaders } from '../../../lib/api-utils';
 import { getEnv } from '../../../lib/env.server';
 
 export async function POST(req: Request) {
@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const forwardHeaders = new Headers(req.headers);
+  const forwardHeaders = buildForwardHeaders(req.headers);
   forwardHeaders.delete(`host`);
   forwardHeaders.set(`content-type`, `application/json`);
 

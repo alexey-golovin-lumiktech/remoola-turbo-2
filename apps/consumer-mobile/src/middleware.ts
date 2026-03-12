@@ -16,6 +16,7 @@ async function validateAccessToken(accessToken: string, accessCookieKey: string)
       method: `GET`,
       headers: { Cookie: `${accessCookieKey}=${accessToken}` },
       signal: AbortSignal.timeout(5000),
+      cache: `no-store`,
     });
     return res.ok;
   } catch {
@@ -39,6 +40,7 @@ async function refreshAccess(
         ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
       },
       signal: AbortSignal.timeout(10000),
+      cache: `no-store`,
     });
     return res.ok ? res : null;
   } catch {

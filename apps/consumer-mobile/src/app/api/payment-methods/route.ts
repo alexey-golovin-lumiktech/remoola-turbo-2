@@ -1,8 +1,9 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
+import { appendSetCookies, requireJsonBody, buildForwardHeaders } from '../../../lib/api-utils';
 import { getEnv } from '../../../lib/env.server';
 
-async function proxyPaymentMethods(req: NextRequest, method: string) {
+async function proxyPaymentMethods(req: NextRequest, method: string, body?: string) {
   const env = getEnv();
   const baseUrl = env.NEXT_PUBLIC_API_BASE_URL;
   if (!baseUrl) {
@@ -11,16 +12,15 @@ async function proxyPaymentMethods(req: NextRequest, method: string) {
   const url = new URL(`${baseUrl}/consumer/payment-methods`);
   const res = await fetch(url, {
     method,
-    headers: new Headers(req.headers),
+    headers: buildForwardHeaders(req.headers),
     credentials: `include`,
-    cache: method === `GET` ? `no-store` : undefined,
-    ...(method !== `GET` && { body: await req.clone().text() }),
+    cache: `no-store`,
+    ...(body !== undefined && { body }),
   });
-  const cookie = res.headers.get(`set-cookie`);
   const data = await res.text();
-  const headers: HeadersInit = {};
-  if (cookie) headers[`set-cookie`] = cookie;
-  return new NextResponse(data, { status: res.status, headers });
+  const responseHeaders = new Headers();
+  appendSetCookies(responseHeaders, res.headers);
+  return new NextResponse(data, { status: res.status, headers: responseHeaders });
 }
 
 export async function GET(req: NextRequest) {
@@ -28,5 +28,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  return proxyPaymentMethods(req, `POST`);
+  const bodyResult = await requireJsonBody(req);
+  if (!bodyResult.ok) return bodyResult.response;
+  return proxyPaymentMethods(req, `POST`, bodyResult.body);
 }

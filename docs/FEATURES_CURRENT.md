@@ -90,6 +90,8 @@ Internal API proxy routes:
 - Payment request refund/chargeback proxy endpoints.
 - Exchange rate management and currency list proxy endpoints.
 - Audit proxy: GET `/api/audit/auth`, GET `/api/audit/actions`.
+- Proxy forwards all Set-Cookie headers (multi-cookie via `getSetCookie`/`appendSetCookies`).
+- Admin proxy mutation boundaries enforce JSON payload contracts (`application/json`, valid JSON), reject oversized payloads (`413 PAYLOAD_TOO_LARGE`), and forward an allowlisted request-header set (`cookie`, content negotiation, idempotency/correlation, csrf, `x-remoola-*`).
 
 ### Consumer App (Next.js)
 
@@ -120,12 +122,15 @@ Internal API proxy routes:
 - Payments, payment requests, payment methods, Stripe flows.
 - OAuth exchange proxy endpoint.
 - Exchange quote and batch rate proxy endpoints.
+- Proxy responses forward all Set-Cookie headers (`appendSetCookies`); authenticated proxy and server fetches use `cache: no-store`.
+- Mutation proxy endpoints enforce JSON boundary validation before backend forwarding (`Content-Type: application/json`, valid JSON body); invalid requests return `400` (`INVALID_CONTENT_TYPE`/`INVALID_JSON`) and oversized JSON payloads return `413` (`PAYLOAD_TOO_LARGE`).
 
 ### Consumer Mobile App (Next.js)
 
 Mobile-first consumer app running on port 3002:
 
-- Shares backend API with desktop consumer app (`apps/consumer`).
+- Shares backend API with desktop consumer app (`apps/consumer`). BFF proxy routes forward all Set-Cookie headers (`appendSetCookies`); `proxyApiRequest` and authenticated fetches (logout, middleware, documents/settings actions) use `cache: no-store`.
+- Mutation proxy endpoints enforce JSON boundary validation before backend forwarding (`Content-Type: application/json`, valid JSON body); invalid requests return `400` (`INVALID_CONTENT_TYPE`/`INVALID_JSON`) and oversized JSON payloads return `413` (`PAYLOAD_TOO_LARGE`).
 - Mobile-optimized layouts and navigation with enhanced touch interactions.
 - Enhanced documents view:
   - Card-based responsive grid (1/2/3 columns based on screen size)

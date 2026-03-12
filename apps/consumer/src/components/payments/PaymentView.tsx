@@ -196,6 +196,7 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
         method: `POST`,
         headers: { 'content-type': `application/json` },
         credentials: `include`,
+        body: JSON.stringify({}),
       });
 
       if (!res.ok) {

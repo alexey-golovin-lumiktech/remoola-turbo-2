@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
-import { appendSetCookies } from '../../../../../lib/api-utils';
+import { appendSetCookies, buildForwardHeaders } from '../../../../../lib/api-utils';
 import { getCsrfTokenFromRequest } from '../../../../../lib/auth-cookie-policy';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const csrfToken = getCsrfTokenFromRequest(req);
-    const forwardHeaders = new Headers(req.headers);
+    const forwardHeaders = buildForwardHeaders(req.headers);
     forwardHeaders.delete(`host`);
     if (csrfToken) forwardHeaders.set(`x-csrf-token`, csrfToken);
 

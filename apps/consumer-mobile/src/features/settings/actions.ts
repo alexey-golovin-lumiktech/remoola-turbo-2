@@ -111,24 +111,12 @@ export async function updatePersonalDetailsAction(formData: FormData): Promise<A
     });
 
     if (!response.ok) {
-      const { errorText, errorData } = await readErrorResponse(response);
-      let message: string = `Failed to update personal details`;
-      const url = `${baseUrl}/api/profile/update`;
-      const bodyPreview = JSON.stringify({ personalDetails: parsed.data });
-      message += ` (URL: ${url}, Body: ${bodyPreview})`;
-      console.log(`message1`, message);
-
-      if (typeof errorData?.message === `string`) message += ` errorData.message: ` + errorData.message;
-      console.log(`message2`, message);
-      if (typeof errorData?.error === `string`) message += ` errorData.error: ` + errorData.error;
-      console.log(`message3`, message);
-      if (errorText) message += ` Error text: "${errorText}"`;
-      console.log(`message4`, message);
+      const errorText = await response.text();
       return {
         ok: false,
         error: {
           code: `UPDATE_FAILED`,
-          message: message,
+          message: errorText ?? `Failed to update personal details`,
         },
       };
     }

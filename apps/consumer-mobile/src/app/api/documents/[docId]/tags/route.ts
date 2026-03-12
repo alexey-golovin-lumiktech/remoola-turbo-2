@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
 import { parseDocParams } from '../../../../../features/documents/schemas';
+import { appendSetCookies, requireJsonBody, buildForwardHeaders } from '../../../../../lib/api-utils';
 import { getEnv } from '../../../../../lib/env.server';
 
 export async function POST(req: NextRequest, context: { params: Promise<{ docId: string }> }) {
@@ -9,6 +10,8 @@ export async function POST(req: NextRequest, context: { params: Promise<{ docId:
   if (`error` in parsed) {
     return NextResponse.json({ code: `VALIDATION_ERROR`, message: parsed.error }, { status: 400 });
   }
+  const bodyResult = await requireJsonBody(req);
+  if (!bodyResult.ok) return bodyResult.response;
   const env = getEnv();
   const baseUrl = env.NEXT_PUBLIC_API_BASE_URL;
   if (!baseUrl) {
@@ -17,13 +20,13 @@ export async function POST(req: NextRequest, context: { params: Promise<{ docId:
   const url = new URL(`${baseUrl}/consumer/documents/${parsed.docId}/tags`);
   const res = await fetch(url, {
     method: `POST`,
-    headers: new Headers(req.headers),
+    headers: buildForwardHeaders(req.headers),
     credentials: `include`,
-    body: await req.clone().text(),
+    cache: `no-store`,
+    body: bodyResult.body,
   });
-  const cookie = res.headers.get(`set-cookie`);
   const data = await res.text();
-  const headers: HeadersInit = {};
-  if (cookie) headers[`set-cookie`] = cookie;
-  return new NextResponse(data, { status: res.status, headers });
+  const responseHeaders = new Headers();
+  appendSetCookies(responseHeaders, res.headers);
+  return new NextResponse(data, { status: res.status, headers: responseHeaders });
 }

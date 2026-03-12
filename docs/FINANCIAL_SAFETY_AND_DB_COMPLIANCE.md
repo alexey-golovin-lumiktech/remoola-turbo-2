@@ -1,6 +1,6 @@
 # Financial Safety & Database Compliance
 
-**Last updated:** 2026-03-04  
+**Last updated:** 2026-03-12  
 **Scope:** Remoola monorepo — ledger, payments, Stripe webhooks, raw SQL, PostgreSQL design rules  
 **Status:** Audit complete; critical fixes applied (append-only ledger, idempotency, raw SQL, health/archive).
 
@@ -27,6 +27,7 @@ This document consolidates fintech safety and DB compliance work: design-rule co
 - **Concurrency:** Operation-specific advisory locks (`:withdraw`, `:transfer`, `:exchange`, `:reversal`, `:stripe-reversal`). Balance is read inside the same transaction; serialization is by advisory lock per (consumer, operation). Row-level lock (`SELECT ... FOR UPDATE`) is not required for correctness with this design—double-spend is prevented by the advisory lock.
 - **Raw SQL:** Parameterized (`Prisma.sql`); DB column names used (`consumer_id`, `deleted_at`, etc.); health does not expose raw `error.message`; archive search `query` capped.
 - **Tests:** Concurrency specs and unit specs updated; TypeScript and tests pass in `apps/api`.
+- **BFF proxy boundaries (admin/consumer/consumer-mobile):** Proxy routes forward an explicit header allowlist (instead of raw header passthrough), preserve all `Set-Cookie` headers, enforce JSON mutation boundaries (`application/json` + valid JSON), and reject oversized JSON payloads with `413 PAYLOAD_TOO_LARGE`.
 
 ---
 
@@ -105,6 +106,7 @@ This document consolidates fintech safety and DB compliance work: design-rule co
 | Stripe reversal | `StripeWebhookService` (e.g. charge refunded) | Advisory lock `:stripe-reversal`; `CHARGEBACK` validates requester balance in tx. `REFUND` follows Stripe external source of truth and appends reversal idempotently. |
 | Stripe webhook entry | `processStripeEvent` | Insert into `stripe_webhook_event` first; on P2002 return 200. |
 | Ledger status / dispute | Stripe webhook handlers, reversal scheduler | Append-only: `ledgerEntryOutcomeModel.create`, `ledgerEntryDisputeModel.create`; no `ledgerEntryModel.update`/`updateMany`. |
+| BFF request boundary | `apps/admin/src/lib/proxy.ts`, `apps/consumer/src/lib/api-utils.ts`, `apps/consumer-mobile/src/lib/api-utils.ts` | Header allowlist forwarding, multi-cookie passthrough, mutation JSON validation, payload-size limits, `cache: no-store` on authenticated proxy fetches. |
 
 ---
 
