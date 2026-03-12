@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 import { z } from 'zod';
 
-import { getRequestOrigin } from '../../lib/request-origin';
+import { getBypassHeaders, getRequestOrigin } from '../../lib/request-origin';
 
 type ActionResult<T> =
   | { ok: true; data: T }
@@ -104,6 +104,7 @@ export async function updatePersonalDetailsAction(formData: FormData): Promise<A
       headers: {
         'content-type': `application/json`,
         cookie: cookie ?? ``,
+        ...getBypassHeaders(),
       },
       body: JSON.stringify({ personalDetails: parsed.data }),
       cache: `no-store`,
@@ -173,6 +174,7 @@ export async function updateAddressDetailsAction(formData: FormData): Promise<Ac
       headers: {
         'content-type': `application/json`,
         cookie: cookie ?? ``,
+        ...getBypassHeaders(),
       },
       body: JSON.stringify({ addressDetails: parsed.data }),
       cache: `no-store`,
@@ -229,6 +231,7 @@ export async function updateOrganizationDetailsAction(formData: FormData): Promi
       headers: {
         'content-type': `application/json`,
         cookie: cookie ?? ``,
+        ...getBypassHeaders(),
       },
       body: JSON.stringify({ organizationDetails: parsed.data }),
       cache: `no-store`,
@@ -283,6 +286,7 @@ export async function updatePasswordAction(formData: FormData): Promise<ActionRe
       headers: {
         'content-type': `application/json`,
         cookie: cookie ?? ``,
+        ...getBypassHeaders(),
       },
       body: JSON.stringify({ password: parsed.data.password }),
       cache: `no-store`,
@@ -334,6 +338,7 @@ export async function updatePreferredCurrencyAction(
       headers: {
         'content-type': `application/json`,
         cookie: cookie ?? ``,
+        ...getBypassHeaders(),
       },
       body: JSON.stringify({ preferredCurrency: parsed.data.preferredCurrency }),
       cache: `no-store`,
