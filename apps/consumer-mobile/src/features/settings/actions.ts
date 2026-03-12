@@ -89,12 +89,25 @@ export async function updatePersonalDetailsAction(formData: FormData): Promise<A
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      const clonedResponse = response.clone();
+      const errorText = await clonedResponse
+        .text()
+        .catch((toTextError) => (console.log(`toTextError`, toTextError), `Failed to read error response as text`));
+      const errorData = await clonedResponse
+        .json()
+        .catch((toJsonError) => (console.log(`toJsonError`, toJsonError), `Failed to parse error response as JSON`));
+      let message: string = `Failed to update personal details`;
+      if (errorData.message) message += ` errorData.message: ` + errorData.message;
+      if (errorData.error) message += ` errorData.error: ` + errorData.error;
+      if (errorText) message += ` Error text: "${errorText}"`;
+      const url = `${baseUrl}/api/profile/update`;
+      const bodyPreview = JSON.stringify({ personalDetails: parsed.data });
+      message += ` (URL: ${url}, Body: ${bodyPreview})`;
       return {
         ok: false,
         error: {
           code: `UPDATE_FAILED`,
-          message: errorData.message ?? errorData.error ?? `Failed to update personal details`,
+          message: message,
         },
       };
     }
