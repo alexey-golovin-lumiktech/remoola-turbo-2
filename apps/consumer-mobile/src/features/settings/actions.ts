@@ -51,6 +51,27 @@ const preferredCurrencySchema = z.object({
   preferredCurrency: z.string(),
 });
 
+function parseErrorResponseBody(body: string): Record<string, unknown> | null {
+  if (!body) return null;
+  try {
+    const parsed: unknown = JSON.parse(body);
+    return parsed !== null && typeof parsed === `object` ? (parsed as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function readErrorResponse(response: Response): Promise<{
+  errorText: string;
+  errorData: Record<string, unknown> | null;
+}> {
+  const errorText = await response.text().catch(() => `Failed to read error response as text`);
+  return {
+    errorText,
+    errorData: parseErrorResponseBody(errorText),
+  };
+}
+
 export async function updatePersonalDetailsAction(formData: FormData): Promise<ActionResult<{ success: boolean }>> {
   const rawData = {
     firstName: formData.get(`firstName`)?.toString() ?? ``,
@@ -89,20 +110,16 @@ export async function updatePersonalDetailsAction(formData: FormData): Promise<A
     });
 
     if (!response.ok) {
-      const clonedResponse = response.clone();
-      const errorText = await clonedResponse
-        .text()
-        .catch((toTextError) => (console.log(`toTextError`, toTextError), `Failed to read error response as text`));
-      const errorData = await clonedResponse
-        .json()
-        .catch((toJsonError) => (console.log(`toJsonError`, toJsonError), `Failed to parse error response as JSON`));
+      const { errorText, errorData } = await readErrorResponse(response);
       let message: string = `Failed to update personal details`;
-      if (errorData.message) message += ` errorData.message: ` + errorData.message;
-      if (errorData.error) message += ` errorData.error: ` + errorData.error;
-      if (errorText) message += ` Error text: "${errorText}"`;
       const url = `${baseUrl}/api/profile/update`;
       const bodyPreview = JSON.stringify({ personalDetails: parsed.data });
       message += ` (URL: ${url}, Body: ${bodyPreview})`;
+      console.log(`message1`, message);
+
+      if (typeof errorData?.message === `string`) message += ` errorData.message: ` + errorData.message;
+      if (typeof errorData?.error === `string`) message += ` errorData.error: ` + errorData.error;
+      if (errorText) message += ` Error text: "${errorText}"`;
       return {
         ok: false,
         error: {
