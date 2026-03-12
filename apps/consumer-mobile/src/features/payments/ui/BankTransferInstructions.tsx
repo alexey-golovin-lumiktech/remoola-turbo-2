@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { getLocalToastMessage, localToastKeys } from '../../../lib/error-messages';
 import { showErrorToast } from '../../../lib/toast.client';
 import { Button } from '../../../shared/ui/Button';
 import { BellIcon } from '../../../shared/ui/icons/BellIcon';
@@ -41,7 +42,7 @@ export function BankTransferInstructions({
       setCopiedField(fieldName);
       setTimeout(() => setCopiedField(null), 2000);
     } catch {
-      showErrorToast(`Failed to copy. Please copy manually.`, { code: `CLIPBOARD_ERROR` });
+      showErrorToast(getLocalToastMessage(localToastKeys.CLIPBOARD_ERROR), { code: localToastKeys.CLIPBOARD_ERROR });
     }
   };
 

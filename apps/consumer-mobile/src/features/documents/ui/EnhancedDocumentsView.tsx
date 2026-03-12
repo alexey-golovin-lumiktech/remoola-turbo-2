@@ -7,6 +7,7 @@ import { DocumentFilterBar } from './DocumentFilterBar';
 import { DocumentUploadButton } from './DocumentUploadButton';
 import { PaymentPickerModal } from './PaymentPickerModal';
 import { TagEditor } from './TagEditor';
+import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../../lib/error-messages';
 import { showErrorToast, showSuccessToast } from '../../../lib/toast.client';
 import { Button } from '../../../shared/ui/Button';
 import { ConfirmationModal } from '../../../shared/ui/ConfirmationModal';
@@ -40,7 +41,6 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
   const [selectedDocs, setSelectedDocs] = useState<Set<string>>(new Set());
   const [filterKind, setFilterKind] = useState<DocumentKind>(`All`);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [editingTagsFor, setEditingTagsFor] = useState<string | null>(null);
   const [previewDoc, setPreviewDoc] = useState<DocumentItem | null>(null);
   const [attachingDocId, setAttachingDocId] = useState<string | null>(null);
@@ -91,13 +91,15 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
       showSuccessToast(`${docIds.length} document${docIds.length > 1 ? `s` : ``} deleted successfully`);
       setShowDeleteConfirm(false);
       setSelectedDocs(new Set());
-      setDeleteError(null);
       startTransition(() => {
         router.refresh();
       });
     } else {
-      showErrorToast(result.error.message, { code: result.error.code });
-      setDeleteError(result.error.message);
+      const msg = getErrorMessageForUser(
+        result.error.code,
+        getLocalToastMessage(localToastKeys.DOCUMENTS_DELETE_FAILED),
+      );
+      showErrorToast(msg, { code: result.error.code });
     }
   };
 
@@ -723,7 +725,6 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
         isOpen={showDeleteConfirm}
         onClose={() => {
           setShowDeleteConfirm(false);
-          setDeleteError(null);
         }}
         onConfirm={handleBulkDelete}
         title="Delete Documents"
@@ -755,26 +756,6 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
           </div>
         }
       />
-      {deleteError && (
-        <div
-          className={`
-            rounded-lg
-            border
-            border-red-200
-            bg-red-50
-            px-4
-            py-3
-            text-sm
-            text-red-800
-            dark:border-red-900
-            dark:bg-red-950
-            dark:text-red-200
-          `}
-        >
-          {deleteError}
-        </div>
-      )}
-
       {editingTagsFor && (
         <TagEditor
           docId={editingTagsFor}

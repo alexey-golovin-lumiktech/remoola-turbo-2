@@ -6,6 +6,7 @@ import { useState, useTransition } from 'react';
 import { setDefaultPaymentMethodAction, deletePaymentMethodAction } from './actions';
 import { type PaymentMethodItem } from './queries';
 import { AddPaymentMethodModal } from './ui/AddPaymentMethodModal';
+import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../lib/error-messages';
 import { clientLogger } from '../../lib/logger';
 import { showErrorToast, showSuccessToast } from '../../lib/toast.client';
 import { Button } from '../../shared/ui/Button';
@@ -46,7 +47,10 @@ export function PaymentMethodsView({ items }: PaymentMethodsViewProps) {
           methodId,
           error: result.error,
         });
-        showErrorToast(result.error.message, { code: result.error.code });
+        showErrorToast(
+          getErrorMessageForUser(result.error.code, getLocalToastMessage(localToastKeys.UNEXPECTED_ERROR)),
+          { code: result.error.code },
+        );
         return;
       }
       showSuccessToast(`Default payment method updated`);
@@ -58,7 +62,7 @@ export function PaymentMethodsView({ items }: PaymentMethodsViewProps) {
         methodId,
         error: err,
       });
-      showErrorToast(`Failed to set default payment method. Please try again.`);
+      showErrorToast(getLocalToastMessage(localToastKeys.UNEXPECTED_ERROR));
     } finally {
       setIsSettingDefault(null);
     }
@@ -73,7 +77,10 @@ export function PaymentMethodsView({ items }: PaymentMethodsViewProps) {
           methodId,
           error: result.error,
         });
-        showErrorToast(result.error.message, { code: result.error.code });
+        showErrorToast(
+          getErrorMessageForUser(result.error.code, getLocalToastMessage(localToastKeys.PAYMENT_METHOD_DELETE_FAILED)),
+          { code: result.error.code },
+        );
         return;
       }
       showSuccessToast(`Payment method removed`);
@@ -87,7 +94,7 @@ export function PaymentMethodsView({ items }: PaymentMethodsViewProps) {
         methodId,
         error: err,
       });
-      showErrorToast(`Failed to delete payment method. Please try again.`);
+      showErrorToast(getLocalToastMessage(localToastKeys.PAYMENT_METHOD_DELETE_FAILED));
     } finally {
       setIsDeleting(false);
     }

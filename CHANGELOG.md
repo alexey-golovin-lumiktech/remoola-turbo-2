@@ -1348,7 +1348,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-03-11</summary>
 
 - **2026-03-11:**
@@ -1362,6 +1362,18 @@
   - **Theme hydration (mobile):** Fixed theme flash/mismatch on load; initializer and color-meta ensure consistent theme before paint.
   ### 🛠 DevEx
   - Consumer mobile: replaced inline SVGs with shared icon components; added MapPinIcon, LinkIcon, ArrowsPointingOutIcon, PlayIcon, PauseCircleIcon (UI refactor only).
+
+</details>
+
+<details open>
+<summary>2026-03-12</summary>
+
+- **2026-03-12:**
+  ### ♻️ Refactor
+  - **Consumer mobile – centralized error messaging:** New `apps/consumer-mobile/src/lib/error-messages.ts` maps API error codes (`@remoola/shared-constants`) to user-facing messages and defines local toast keys for client-side failures; 37 files switched to `getErrorMessageForUser`, `getLocalToastMessage`, and `showErrorToast` for consistent, safe user-facing toasts. No API, ledger, or migration changes.
+
+  ### 🛠 DevEx
+  - Single source for API-code → user message and local-toast copy in consumer-mobile; add new codes/keys in `error-messages.ts` when introducing new API errors or client-side toast scenarios.
 
 </details>
 

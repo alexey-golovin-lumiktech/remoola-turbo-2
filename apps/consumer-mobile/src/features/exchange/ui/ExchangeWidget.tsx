@@ -5,9 +5,10 @@ import { useState } from 'react';
 
 import { type IConsumerExchangeBalance, type IConsumerExchangeQuote } from '@remoola/api-types';
 
+import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../../lib/error-messages';
+import { showErrorToast } from '../../../lib/toast.client';
 import { AmountCurrencyInput } from '../../../shared/ui/AmountCurrencyInput';
 import { Button } from '../../../shared/ui/Button';
-import { AlertTriangleIcon } from '../../../shared/ui/icons/AlertTriangleIcon';
 import { CheckIcon } from '../../../shared/ui/icons/CheckIcon';
 import { ClockIcon } from '../../../shared/ui/icons/ClockIcon';
 import { CurrencyDollarIcon } from '../../../shared/ui/icons/CurrencyDollarIcon';
@@ -32,29 +33,30 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
   const [amount, setAmount] = useState(``);
   const [quote, setQuote] = useState<IConsumerExchangeQuote | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   const isSameCurrency = fromCurrency === toCurrency;
 
   const handleGetQuote = async () => {
     if (isSameCurrency) {
-      setError(`Please select different source and target currencies`);
+      showErrorToast(`Please select different source and target currencies`);
       return;
     }
     if (!amount || parseFloat(amount) <= 0) {
-      setError(`Please enter a valid amount`);
+      showErrorToast(`Please enter a valid amount`);
       return;
     }
 
     setIsLoading(true);
-    setError(null);
     setSuccess(null);
 
     const result = await getExchangeQuote(fromCurrency, toCurrency, parseFloat(amount));
 
     if (!result.ok) {
-      setError(result.error.message);
+      showErrorToast(
+        getErrorMessageForUser(result.error.code, getLocalToastMessage(localToastKeys.CONVERSION_FAILED)),
+        { code: result.error.code },
+      );
       setQuote(null);
       setIsLoading(false);
       return;
@@ -71,14 +73,16 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
     }
 
     setIsLoading(true);
-    setError(null);
     setSuccess(null);
 
     const idempotencyKey = `exchange-${Date.now()}-${Math.random()}`;
     const result = await executeExchange(fromCurrency, toCurrency, parseFloat(amount), idempotencyKey);
 
     if (!result.ok) {
-      setError(result.error.message);
+      showErrorToast(
+        getErrorMessageForUser(result.error.code, getLocalToastMessage(localToastKeys.CONVERSION_FAILED)),
+        { code: result.error.code },
+      );
       setIsLoading(false);
       return;
     }
@@ -95,7 +99,6 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
     setFromCurrency(toCurrency);
     setToCurrency(fromCurrency);
     setQuote(null);
-    setError(null);
   };
 
   const convertedAmount = quote ? quote.amountTo : 0;
@@ -205,19 +208,16 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
             onChange={(e) => {
               setAmount(e.target.value);
               setQuote(null);
-              setError(null);
               setSuccess(null);
             }}
             currency={fromCurrency}
             onCurrencyChange={(curr) => {
               setFromCurrency(curr);
               setQuote(null);
-              setError(null);
               setSuccess(null);
             }}
             availableCurrencies={availableCurrencies}
             placeholder="0.00"
-            error={!!error}
           />
         </div>
 
@@ -293,7 +293,6 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
             onCurrencyChange={(curr) => {
               setToCurrency(curr);
               setQuote(null);
-              setError(null);
               setSuccess(null);
             }}
             availableCurrencies={availableCurrencies}
@@ -379,43 +378,6 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
                 <CheckIcon className={`h-5 w-5 text-white`} strokeWidth={3} />
               </div>
               <p className={`text-sm font-semibold text-green-800 dark:text-green-200`}>{success}</p>
-            </div>
-          </div>
-        )}
-
-        {error && (
-          <div
-            className={`
-            animate-slideDown
-            rounded-xl
-            border
-            border-red-200
-            bg-linear-to-br
-            from-red-50
-            to-red-100/50
-            p-4
-            shadow-lg
-            dark:border-red-700
-            dark:from-red-900/50
-            dark:to-red-800/30
-          `}
-          >
-            <div className={`flex items-start gap-3`}>
-              <div
-                className={`
-                flex
-                h-8
-                w-8
-                shrink-0
-                items-center
-                justify-center
-                rounded-full
-                bg-red-500
-              `}
-              >
-                <AlertTriangleIcon className={`h-5 w-5 text-white`} strokeWidth={2} />
-              </div>
-              <p className={`text-sm font-semibold text-red-800 dark:text-red-200`}>{error}</p>
             </div>
           </div>
         )}

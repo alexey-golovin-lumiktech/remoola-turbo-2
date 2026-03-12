@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState, useTransition } from 'react';
 import { CreateContactModal, type CreateContactData } from './CreateContactModal';
 import { DeleteContactModal } from './DeleteContactModal';
 import { EditContactModal, type EditContactData } from './EditContactModal';
+import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../../lib/error-messages';
 import { useDebounce } from '../../../shared/hooks/useDebounce';
 import { Avatar } from '../../../shared/ui/Avatar';
 import { Button } from '../../../shared/ui/Button';
@@ -75,7 +76,9 @@ export function ContactsListView({ contacts }: ContactsListViewProps) {
   const handleCreateContact = async (data: CreateContactData) => {
     const result = await createContactAction(data);
     if (!result.ok) {
-      throw new Error(result.error.message);
+      throw new Error(
+        getErrorMessageForUser(result.error.code, getLocalToastMessage(localToastKeys.CONTACT_UNEXPECTED_ERROR)),
+      );
     }
     startTransition(() => {
       router.refresh();
@@ -87,7 +90,9 @@ export function ContactsListView({ contacts }: ContactsListViewProps) {
   const handleUpdateContact = async (contactId: string, data: EditContactData) => {
     const result = await updateContactAction(contactId, data);
     if (!result.ok) {
-      throw new Error(result.error.message);
+      throw new Error(
+        getErrorMessageForUser(result.error.code, getLocalToastMessage(localToastKeys.CONTACT_UNEXPECTED_ERROR)),
+      );
     }
     startTransition(() => {
       router.refresh();
@@ -98,7 +103,9 @@ export function ContactsListView({ contacts }: ContactsListViewProps) {
   const handleDeleteContact = async (contactId: string) => {
     const result = await deleteContactAction(contactId);
     if (!result.ok) {
-      throw new Error(result.error.message);
+      throw new Error(
+        getErrorMessageForUser(result.error.code, getLocalToastMessage(localToastKeys.CONTACT_UNEXPECTED_ERROR)),
+      );
     }
     startTransition(() => {
       router.refresh();

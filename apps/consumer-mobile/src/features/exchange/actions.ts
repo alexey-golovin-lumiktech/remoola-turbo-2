@@ -130,17 +130,17 @@ export async function executeExchange(
     };
   }
 
-  const env = getEnv();
-  const baseUrl = env.NEXT_PUBLIC_API_BASE_URL;
-
-  if (!baseUrl) {
-    return {
-      ok: false,
-      error: { code: `CONFIG_ERROR`, message: `API not configured` },
-    };
-  }
-
   try {
+    const env = getEnv();
+    const baseUrl = env.NEXT_PUBLIC_API_BASE_URL;
+
+    if (!baseUrl) {
+      return {
+        ok: false,
+        error: { code: `CONFIG_ERROR`, message: `API not configured` },
+      };
+    }
+
     const cookieStore = await cookies();
     const cookie = cookieStore.toString();
 
@@ -177,17 +177,17 @@ export async function executeExchange(
       };
     }
 
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
     const num = (v: unknown): number => (typeof v === `number` && Number.isFinite(v) ? v : 0);
     const conversion: IConsumerExchangeConversion = {
-      id: typeof data.entryId === `string` ? data.entryId : typeof data.id === `string` ? data.id : ``,
-      fromCurrency: typeof data.from === `string` ? data.from : ``,
-      toCurrency: typeof data.to === `string` ? data.to : ``,
-      amountFrom: num(data.sourceAmount),
-      amountTo: num(data.targetAmount),
-      rate: num(data.rate),
-      status: typeof data.status === `string` ? data.status : `completed`,
-      createdAt: typeof data.createdAt === `string` ? data.createdAt : new Date().toISOString(),
+      id: typeof data?.entryId === `string` ? data.entryId : typeof data?.id === `string` ? data.id : ``,
+      fromCurrency: typeof data?.from === `string` ? data.from : ``,
+      toCurrency: typeof data?.to === `string` ? data.to : ``,
+      amountFrom: num(data?.sourceAmount),
+      amountTo: num(data?.targetAmount),
+      rate: num(data?.rate),
+      status: typeof data?.status === `string` ? data.status : `completed`,
+      createdAt: typeof data?.createdAt === `string` ? data.createdAt : new Date().toISOString(),
     };
 
     revalidatePath(`/exchange`);

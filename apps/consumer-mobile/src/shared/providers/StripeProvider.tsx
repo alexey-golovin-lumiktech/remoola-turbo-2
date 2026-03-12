@@ -5,7 +5,8 @@ import { loadStripe, type Stripe, type Appearance } from '@stripe/stripe-js';
 import { type ReactNode, useEffect, useState, useMemo } from 'react';
 
 import { getClientEnv } from '../../lib/env.client';
-import { AlertBanner } from '../ui/AlertBanner';
+import { clientLogger } from '../../lib/logger';
+import { showErrorToast } from '../../lib/toast.client';
 import { useTheme } from '../ui/ThemeProvider';
 
 let stripePromise: Promise<Stripe | null> | null = null;
@@ -34,11 +35,17 @@ export function StripeProvider({ children, clientSecret }: StripeProviderProps) 
         if (stripeInstance) {
           setStripe(stripeInstance);
         } else {
-          setError(`Failed to load Stripe`);
+          const msg = `Failed to load Stripe`;
+          clientLogger.error(msg);
+          showErrorToast(msg);
+          setError(msg);
         }
       })
       .catch(() => {
-        setError(`Failed to initialize Stripe`);
+        const msg = `Failed to initialize Stripe`;
+        clientLogger.error(msg);
+        showErrorToast(msg);
+        setError(msg);
       });
   }, []);
 
@@ -62,7 +69,11 @@ export function StripeProvider({ children, clientSecret }: StripeProviderProps) 
   }, [resolvedTheme]);
 
   if (error) {
-    return <AlertBanner message={error} />;
+    return (
+      <p className={`px-4 py-3 text-center text-sm text-slate-600 dark:text-slate-400`}>
+        Payment setup unavailable. Please refresh the app.
+      </p>
+    );
   }
 
   if (!stripe) {

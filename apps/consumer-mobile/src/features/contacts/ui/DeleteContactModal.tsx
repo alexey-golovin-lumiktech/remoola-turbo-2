@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { getLocalToastMessage, localToastKeys } from '../../../lib/error-messages';
 import { clientLogger } from '../../../lib/logger';
 import { showErrorToast, showSuccessToast } from '../../../lib/toast.client';
 import { ConfirmationModal } from '../../../shared/ui/ConfirmationModal';
@@ -32,7 +33,7 @@ export function DeleteContactModal({ isOpen, onClose, contact, onSubmit }: Delet
         contactId: contact.id,
         error: err,
       });
-      showErrorToast(err instanceof Error ? err.message : `Failed to delete contact. Please try again.`);
+      showErrorToast(getLocalToastMessage(localToastKeys.CONTACT_UNEXPECTED_ERROR));
     } finally {
       setIsLoading(false);
     }

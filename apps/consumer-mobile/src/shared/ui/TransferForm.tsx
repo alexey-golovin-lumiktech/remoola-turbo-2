@@ -7,6 +7,7 @@ import { Button } from './Button';
 import { FormField } from './FormField';
 import { FormInput } from './FormInput';
 import { FormSelect } from './FormSelect';
+import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../lib/error-messages';
 import { showErrorToast, showSuccessToast } from '../../lib/toast.client';
 
 interface TransferFormProps {
@@ -65,7 +66,10 @@ export function TransferForm({ availableCurrencies, contacts, onSubmit, onSucces
       });
 
       if (!result.ok && result.error) {
-        showErrorToast(result.error.message, { code: result.error.code });
+        showErrorToast(
+          getErrorMessageForUser(result.error.code, getLocalToastMessage(localToastKeys.UNEXPECTED_ERROR)),
+          { code: result.error.code },
+        );
         return;
       }
 
@@ -80,7 +84,7 @@ export function TransferForm({ availableCurrencies, contacts, onSubmit, onSucces
 
       onSuccess?.();
     } catch {
-      showErrorToast(`Transfer failed. Please try again.`, { code: `TRANSFER_FAILED` });
+      showErrorToast(getLocalToastMessage(localToastKeys.UNEXPECTED_ERROR), { code: `TRANSFER_FAILED` });
     } finally {
       setIsLoading(false);
     }

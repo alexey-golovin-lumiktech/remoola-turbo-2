@@ -2,11 +2,12 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { toast } from 'sonner';
 
 import { CURRENCY_CODE, type TCurrencyCode } from '@remoola/api-types';
 
 import { type CreatePaymentRequestPayload } from './schemas';
+import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../lib/error-messages';
+import { showErrorToast } from '../../lib/toast.client';
 
 export function CreatePaymentRequestView() {
   const router = useRouter();
@@ -21,12 +22,12 @@ export function CreatePaymentRequestView() {
     e.preventDefault();
     const normalizedEmail = email.trim().toLowerCase();
     if (!normalizedEmail || !normalizedEmail.includes(`@`)) {
-      toast.error(`Please enter a valid recipient email.`);
+      showErrorToast(getLocalToastMessage(localToastKeys.VALIDATION_RECIPIENT_EMAIL));
       return;
     }
     const numericAmount = Number(amount);
     if (!amount || Number.isNaN(numericAmount) || numericAmount <= 0) {
-      toast.error(`Please enter a valid amount.`);
+      showErrorToast(getLocalToastMessage(localToastKeys.VALIDATION_AMOUNT));
       return;
     }
     setLoading(true);
@@ -45,8 +46,15 @@ export function CreatePaymentRequestView() {
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
-        const err = (await res.json().catch(() => ({}))) as { message?: string };
-        throw new Error(err.message ?? `Request creation failed`);
+        const err = (await res.json().catch(() => ({}))) as { code?: string; message?: string };
+        const code = err.code;
+        const msg = getErrorMessageForUser(
+          code,
+          err.message ?? getLocalToastMessage(localToastKeys.PAYMENT_REQUEST_CREATE_FAILED),
+        );
+        showErrorToast(msg, code ? { code } : undefined);
+        setLoading(false);
+        return;
       }
       const data = (await res.json()) as { paymentRequestId?: string };
       if (data.paymentRequestId) {
@@ -54,9 +62,8 @@ export function CreatePaymentRequestView() {
       } else {
         router.push(`/payments`);
       }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : `Request creation failed`;
-      toast.error(msg);
+    } catch {
+      showErrorToast(getLocalToastMessage(localToastKeys.PAYMENT_REQUEST_CREATE_FAILED));
     } finally {
       setLoading(false);
     }

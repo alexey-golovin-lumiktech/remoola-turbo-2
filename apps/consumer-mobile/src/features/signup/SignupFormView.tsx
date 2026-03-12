@@ -7,6 +7,7 @@ import { ACCOUNT_TYPE } from '@remoola/api-types';
 
 import { useSignupForm } from './SignupFormContext';
 import { getApiBaseUrlOptional } from '../../lib/config.client';
+import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../lib/error-messages';
 import { clientLogger } from '../../lib/logger';
 import { showErrorToast } from '../../lib/toast.client';
 
@@ -91,8 +92,14 @@ export function SignupFormView() {
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { message?: string };
-        throw new Error(data?.message ?? `Failed to sign up`);
+        const data = (await res.json().catch(() => ({}))) as { code?: string; message?: string };
+        const msg = getErrorMessageForUser(
+          data.code,
+          data.message ?? getLocalToastMessage(localToastKeys.UNEXPECTED_ERROR),
+        );
+        showErrorToast(msg, data.code ? { code: data.code } : undefined);
+        setLoading(false);
+        return;
       }
       const json = (await res.json()) as { consumer?: { id?: string } };
       const baseUrl = getApiBaseUrlOptional();
@@ -103,12 +110,11 @@ export function SignupFormView() {
       }
       router.push(`/signup/completed`);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : `Failed to sign up. Please try again.`;
       clientLogger.error(`Signup failed`, {
         error: err,
         accountType: signupDetails.accountType,
       });
-      showErrorToast(msg);
+      showErrorToast(getLocalToastMessage(localToastKeys.UNEXPECTED_ERROR));
     } finally {
       setLoading(false);
     }

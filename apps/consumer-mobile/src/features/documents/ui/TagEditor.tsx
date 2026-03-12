@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
+import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../../lib/error-messages';
 import { clientLogger } from '../../../lib/logger';
 import { showErrorToast, showSuccessToast, showWarningToast } from '../../../lib/toast.client';
 import { Button } from '../../../shared/ui/Button';
@@ -68,7 +69,10 @@ export function TagEditor({ docId, initialTags = [], onClose }: TagEditorProps) 
         docId,
         error: result.error,
       });
-      showErrorToast(result.error.message, { code: result.error.code });
+      showErrorToast(
+        getErrorMessageForUser(result.error.code, getLocalToastMessage(localToastKeys.DOCUMENTS_UPDATE_TAGS_FAILED)),
+        { code: result.error.code },
+      );
     }
   };
 

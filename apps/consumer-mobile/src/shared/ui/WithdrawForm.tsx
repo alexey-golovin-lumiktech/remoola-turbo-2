@@ -7,6 +7,7 @@ import { Button } from './Button';
 import { FormField } from './FormField';
 import { FormInput } from './FormInput';
 import { FormSelect } from './FormSelect';
+import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../lib/error-messages';
 import { showErrorToast, showSuccessToast } from '../../lib/toast.client';
 
 interface WithdrawFormProps {
@@ -65,7 +66,10 @@ export function WithdrawForm({ availableCurrencies, paymentMethods, onSubmit, on
       });
 
       if (!result.ok && result.error) {
-        showErrorToast(result.error.message, { code: result.error.code });
+        showErrorToast(
+          getErrorMessageForUser(result.error.code, getLocalToastMessage(localToastKeys.UNEXPECTED_ERROR)),
+          { code: result.error.code },
+        );
         return;
       }
 
@@ -79,7 +83,7 @@ export function WithdrawForm({ availableCurrencies, paymentMethods, onSubmit, on
 
       onSuccess?.();
     } catch {
-      showErrorToast(`Withdrawal failed. Please try again.`, { code: `WITHDRAW_FAILED` });
+      showErrorToast(getLocalToastMessage(localToastKeys.UNEXPECTED_ERROR), { code: `WITHDRAW_FAILED` });
     } finally {
       setIsLoading(false);
     }

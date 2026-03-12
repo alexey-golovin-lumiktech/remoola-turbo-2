@@ -22,26 +22,8 @@
 
 import { toast } from 'sonner';
 
+import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from './error-messages';
 import { clientLogger } from './logger';
-
-/**
- * User-facing error codes that map to friendly messages
- */
-const ERROR_CODE_MESSAGES: Record<string, string> = {
-  VALIDATION_ERROR: `Please check your input and try again`,
-  CONFIG_ERROR: `Service temporarily unavailable`,
-  API_ERROR: `Unable to complete request`,
-  NETWORK_ERROR: `Check your connection and try again`,
-  PAYMENT_START_FAILED: `Unable to start payment`,
-  WITHDRAW_FAILED: `Withdrawal could not be completed`,
-  TRANSFER_FAILED: `Transfer could not be completed`,
-  INSUFFICIENT_FUNDS: `Insufficient funds in your account`,
-  PAYMENT_METHOD_REQUIRED: `Please add a payment method first`,
-  RATE_LIMIT_EXCEEDED: `Too many attempts. Please try again later`,
-  UNAUTHORIZED: `Your session has expired. Please sign in again`,
-  FORBIDDEN: `You do not have permission to perform this action`,
-  NOT_FOUND: `The requested resource was not found`,
-};
 
 interface ToastErrorOptions {
   code?: string;
@@ -55,14 +37,12 @@ interface ToastErrorOptions {
  * Logs technical details for debugging
  */
 export function showErrorToast(message: string, options?: ToastErrorOptions): string | number {
-  const { code, correlationId, duration = 5000 } = options ?? {};
+  const { code, correlationId, duration = 6000 } = options ?? {};
 
-  // Get friendly message from code if available
-  const friendlyMessage = code && ERROR_CODE_MESSAGES[code] ? ERROR_CODE_MESSAGES[code] : message;
+  const friendlyMessage = code ? getErrorMessageForUser(code, message) : message;
 
-  // Log technical details for debugging (dev only)
+  // Log only code/correlationId/displayedMessage — never raw `message` (may contain server-supplied PII)
   clientLogger.error(`Toast error displayed`, {
-    message,
     code,
     correlationId,
     displayedMessage: friendlyMessage,
@@ -159,7 +139,9 @@ export async function handleActionResult<T>(
   const result = await actionPromise;
 
   if (!result.ok) {
-    showErrorToast(result.error.message, { code: result.error.code });
+    showErrorToast(getErrorMessageForUser(result.error.code, getLocalToastMessage(localToastKeys.UNEXPECTED_ERROR)), {
+      code: result.error.code,
+    });
     return false;
   }
 

@@ -3,7 +3,8 @@
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
-import { AlertBanner } from '../../../shared/ui/AlertBanner';
+import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../../lib/error-messages';
+import { showErrorToast } from '../../../lib/toast.client';
 import { CheckIcon } from '../../../shared/ui/icons/CheckIcon';
 import { omit } from '../../../shared/utils/object-utils';
 import { withdrawFundsAction, transferFundsAction } from '../actions';
@@ -37,7 +38,14 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
     });
 
     if (!result.ok) {
-      setErrors(result.error.fields ?? { submit: result.error.message });
+      if (result.error.fields) {
+        setErrors(result.error.fields);
+      } else {
+        showErrorToast(
+          getErrorMessageForUser(result.error.code, getLocalToastMessage(localToastKeys.UNEXPECTED_ERROR)),
+          { code: result.error.code },
+        );
+      }
       return;
     }
 
@@ -61,7 +69,14 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
     });
 
     if (!result.ok) {
-      setErrors(result.error.fields ?? { submit: result.error.message });
+      if (result.error.fields) {
+        setErrors(result.error.fields);
+      } else {
+        showErrorToast(
+          getErrorMessageForUser(result.error.code, getLocalToastMessage(localToastKeys.UNEXPECTED_ERROR)),
+          { code: result.error.code },
+        );
+      }
       return;
     }
 
@@ -365,8 +380,6 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
               />
             </div>
 
-            {errors.submit && <AlertBanner message={errors.submit} role="alert" />}
-
             <button
               type="submit"
               disabled={isPending}
@@ -539,8 +552,6 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
                 maxLength={200}
               />
             </div>
-
-            {errors.submit && <AlertBanner message={errors.submit} role="alert" />}
 
             <button
               type="submit"

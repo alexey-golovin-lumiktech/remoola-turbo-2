@@ -2,9 +2,10 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { toast } from 'sonner';
 
 import { SendPaymentRequestButton } from './SendPaymentRequestButton';
+import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../../lib/error-messages';
+import { showErrorToast, showSuccessToast } from '../../../lib/toast.client';
 import { Button } from '../../../shared/ui/Button';
 import { Card, CardHeader, CardContent } from '../../../shared/ui/Card';
 import { DocumentIcon } from '../../../shared/ui/icons/DocumentIcon';
@@ -127,8 +128,8 @@ export function PaymentDetailView({ paymentRequestId, data }: PaymentDetailViewP
             }
           }
         })
-        .catch((err) => {
-          toast.error(err instanceof Error ? err.message : `Failed to load payment methods`);
+        .catch(() => {
+          showErrorToast(getLocalToastMessage(localToastKeys.PAYMENT_NOT_FOUND));
         })
         .finally(() => {
           setLoadingMethods(false);
@@ -148,19 +149,26 @@ export function PaymentDetailView({ paymentRequestId, data }: PaymentDetailViewP
         });
 
         if (!res.ok) {
-          const errorData = await res.json().catch(() => ({}));
-          throw new Error(errorData.message || `Payment failed`);
+          const errorData = (await res.json().catch(() => ({}))) as { code?: string; message?: string };
+          showErrorToast(getErrorMessageForUser(errorData.code, errorData.message ?? `Payment failed`), {
+            code: errorData.code,
+          });
+          setPaying(false);
+          return;
         }
 
         const json = await res.json();
 
         if (json.success) {
-          toast.success(`Payment completed successfully!`);
+          showSuccessToast(`Payment completed successfully!`);
           router.refresh();
         } else if (json.nextAction) {
-          toast.error(`Payment requires additional action. Please check your email or payment method for next steps.`);
+          showErrorToast(getLocalToastMessage(localToastKeys.PAYMENT_REQUIRES_ACTION));
         } else {
-          throw new Error(json.message || `Payment failed`);
+          const errData = json as { code?: string; message?: string };
+          showErrorToast(getErrorMessageForUser(errData.code, errData.message ?? `Payment failed`), {
+            code: errData.code,
+          });
         }
       } else {
         const res = await fetch(`/api/stripe/${paymentRequestId}/stripe-session`, {
@@ -180,9 +188,8 @@ export function PaymentDetailView({ paymentRequestId, data }: PaymentDetailViewP
           throw new Error(`Cannot start payment`);
         }
       }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : `Payment error`;
-      toast.error(errorMessage);
+    } catch {
+      showErrorToast(getLocalToastMessage(localToastKeys.PAYMENT_START_FAILED));
     } finally {
       setPaying(false);
     }
@@ -198,15 +205,22 @@ export function PaymentDetailView({ paymentRequestId, data }: PaymentDetailViewP
       });
 
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.message || errorData.code || `Invoice generation failed`);
+        const errorData = (await res.json().catch(() => ({}))) as { code?: string; message?: string };
+        showErrorToast(
+          getErrorMessageForUser(
+            errorData.code,
+            errorData.message ?? getLocalToastMessage(localToastKeys.UNEXPECTED_ERROR),
+          ),
+          { code: errorData.code },
+        );
+        setGeneratingInvoice(false);
+        return;
       }
 
-      toast.success(`Invoice generated successfully!`);
+      showSuccessToast(`Invoice generated successfully!`);
       router.refresh();
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : `Invoice generation failed`;
-      toast.error(errorMessage);
+    } catch {
+      showErrorToast(getLocalToastMessage(localToastKeys.UNEXPECTED_ERROR));
     } finally {
       setGeneratingInvoice(false);
     }

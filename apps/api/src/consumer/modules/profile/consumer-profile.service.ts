@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 import { UpdateConsumerProfileBody, UpdateConsumerPasswordBody } from './dtos';
 import { PrismaService } from '../../../shared/prisma.service';
@@ -6,6 +6,8 @@ import { passwordUtils } from '../../../shared-common';
 
 @Injectable()
 export class ConsumerProfileService {
+  private readonly logger = new Logger(ConsumerProfileService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async getProfile(consumerId: string) {
@@ -87,15 +89,27 @@ export class ConsumerProfileService {
       };
     }
 
-    return this.prisma.consumerModel.update({
-      where: { id: consumerId },
-      data: updates,
-      include: {
-        personalDetails: true,
-        addressDetails: true,
-        organizationDetails: true,
-      },
-    });
+    try {
+      return await this.prisma.consumerModel.update({
+        where: { id: consumerId },
+        data: updates,
+        include: {
+          personalDetails: true,
+          addressDetails: true,
+          organizationDetails: true,
+        },
+      });
+    } catch (error) {
+      // #region agent log
+      this.logger.error(`updateProfile failed`, {
+        consumerId,
+        updates: JSON.stringify(updates),
+        error:
+          error instanceof Error ? { name: error.name, message: error.message, stack: error.stack } : String(error),
+      });
+      // #endregion
+      throw error;
+    }
   }
 
   async changePassword(consumerId: string, body: UpdateConsumerPasswordBody) {

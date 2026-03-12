@@ -94,7 +94,7 @@ export async function updatePersonalDetailsAction(formData: FormData): Promise<A
         ok: false,
         error: {
           code: `UPDATE_FAILED`,
-          message: errorData.message ?? `Failed to update personal details`,
+          message: errorData.message ?? errorData.error ?? `Failed to update personal details`,
         },
       };
     }
@@ -151,7 +151,7 @@ export async function updateAddressDetailsAction(formData: FormData): Promise<Ac
         ok: false,
         error: {
           code: `UPDATE_FAILED`,
-          message: errorData.message ?? `Failed to update address details`,
+          message: errorData.message ?? errorData.error ?? `Failed to update address details`,
         },
       };
     }
@@ -207,7 +207,7 @@ export async function updateOrganizationDetailsAction(formData: FormData): Promi
         ok: false,
         error: {
           code: `UPDATE_FAILED`,
-          message: errorData.message ?? `Failed to update organization details`,
+          message: errorData.message ?? errorData.error ?? `Failed to update organization details`,
         },
       };
     }
@@ -261,7 +261,7 @@ export async function updatePasswordAction(formData: FormData): Promise<ActionRe
         ok: false,
         error: {
           code: `UPDATE_FAILED`,
-          message: errorData.message ?? `Failed to change password`,
+          message: errorData.message ?? errorData.error ?? `Failed to change password`,
         },
       };
     }
@@ -312,7 +312,7 @@ export async function updatePreferredCurrencyAction(
         ok: false,
         error: {
           code: `UPDATE_FAILED`,
-          message: errorData.message ?? `Failed to update preferred currency`,
+          message: errorData.message ?? errorData.error ?? `Failed to update preferred currency`,
         },
       };
     }

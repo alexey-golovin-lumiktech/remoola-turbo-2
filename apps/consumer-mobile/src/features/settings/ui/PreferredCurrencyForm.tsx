@@ -1,10 +1,11 @@
 'use client';
 
 import { useActionState, useState, startTransition } from 'react';
-import { toast } from 'sonner';
 
 import { CURRENCY_CODES } from '@remoola/api-types';
 
+import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../../lib/error-messages';
+import { showErrorToast, showSuccessToast } from '../../../lib/toast.client';
 import { FormCard } from '../../../shared/ui/FormCard';
 import { FormField } from '../../../shared/ui/FormField';
 import { FormSelect } from '../../../shared/ui/FormSelect';
@@ -27,11 +28,13 @@ export function PreferredCurrencyForm({ initialCurrency }: PreferredCurrencyForm
     const result = await updatePreferredCurrencyAction(formData);
 
     if (!result.ok) {
-      toast.error(result.error.message);
+      showErrorToast(getErrorMessageForUser(result.error.code, getLocalToastMessage(localToastKeys.UNEXPECTED_ERROR)), {
+        code: result.error.code,
+      });
       return result;
     }
 
-    toast.success(`Preferred currency updated`);
+    showSuccessToast(`Preferred currency updated`);
     if (result.data.preferredCurrency) {
       setSelectedCurrency(result.data.preferredCurrency);
     }

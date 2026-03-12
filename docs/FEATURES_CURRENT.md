@@ -148,6 +148,7 @@ Mobile-first consumer app running on port 3002:
   - **PageHeader**: mobile-optimized page header with icon, title, subtitle, badge, and action slots; supports sticky header with backdrop blur
   - **SearchInput**: search input with magnifying glass icon, clear button, debounced interaction, and mobile-friendly 44px touch targets
   - **Brand assets**: favicon.ico and icon.svg for PWA support
+- Centralized error messaging: `src/lib/error-messages.ts` maps API error codes (from `@remoola/shared-constants`) to user-facing messages and defines local toast keys for client-side failures; 37 files use `getErrorMessageForUser`, `getLocalToastMessage`, and `showErrorToast` (toast.client.ts) for consistent, safe user-facing toasts.
 - Test coverage:
   - Token refresh flows (SWR fetcher, fetchWithAuth)
   - Middleware auth flows (token validation, refresh rotation, OAuth callback)

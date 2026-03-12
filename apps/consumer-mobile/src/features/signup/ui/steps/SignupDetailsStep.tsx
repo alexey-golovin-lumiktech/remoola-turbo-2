@@ -2,7 +2,6 @@
 
 import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { toast } from 'sonner';
 
 import {
   ACCOUNT_TYPE,
@@ -13,6 +12,8 @@ import {
 import { GoogleIcon, PasswordInput } from '@remoola/ui';
 
 import { getApiBaseUrlOptional } from '../../../../lib/config.client';
+import { getLocalToastMessage, localToastKeys } from '../../../../lib/error-messages';
+import { showErrorToast } from '../../../../lib/toast.client';
 import { CheckCircleIcon } from '../../../../shared/ui/icons/CheckCircleIcon';
 import { ExclamationCircleIcon } from '../../../../shared/ui/icons/ExclamationCircleIcon';
 import { InformationCircleIcon } from '../../../../shared/ui/icons/InformationCircleIcon';
@@ -103,8 +104,9 @@ export function SignupDetailsStep() {
     if (!result.success) {
       const fieldErrorsMap = getFieldErrors(result.error);
       setFieldErrors(fieldErrorsMap);
-      const firstMessage = Object.values(fieldErrorsMap)[0];
-      if (firstMessage) toast.error(firstMessage);
+      if (Object.keys(fieldErrorsMap).length > 0) {
+        showErrorToast(getLocalToastMessage(localToastKeys.VALIDATION_SIGNUP_DETAILS));
+      }
       return;
     }
     setFieldErrors({});

@@ -1,8 +1,9 @@
 'use client';
 
 import { useActionState, useState } from 'react';
-import { toast } from 'sonner';
 
+import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../../lib/error-messages';
+import { showErrorToast, showSuccessToast } from '../../../lib/toast.client';
 import { Button } from '../../../shared/ui/Button';
 import { FormCard } from '../../../shared/ui/FormCard';
 import { FormField } from '../../../shared/ui/FormField';
@@ -20,11 +21,14 @@ export function PasswordChangeForm() {
       if (result.error.fields) {
         setFieldErrors(result.error.fields);
       }
-      toast.error(result.error.message);
+      showErrorToast(
+        getErrorMessageForUser(result.error.code, getLocalToastMessage(localToastKeys.PASSWORD_CHANGE_FAILED)),
+        { code: result.error.code },
+      );
       return result;
     }
 
-    toast.success(`Password changed successfully`);
+    showSuccessToast(`Password changed successfully`);
     const form = document.getElementById(`password-form`) as HTMLFormElement;
     form?.reset();
     return result;

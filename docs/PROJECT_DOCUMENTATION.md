@@ -266,6 +266,7 @@ Mobile-first consumer UI is in `apps/consumer-mobile`, running on port 3002. Fol
 - **PageHeader**: Mobile-optimized page header component with icon, title, subtitle, badge, and actions slots; supports sticky positioning with backdrop blur
 - **SearchInput**: Search input component with magnifying glass icon, clear button (when value present), and mobile-friendly 44px minimum touch target
 - **Brand Assets**: `favicon.ico` and `icon.svg` for PWA and browser tab display
+- **Error messaging** (`src/lib/error-messages.ts`, `src/lib/toast.client.ts`): API error codes and local toast keys mapped to user-facing messages; use `getErrorMessageForUser`, `getLocalToastMessage`, and `showErrorToast` for consistent toasts across the app
 
 ### Test Coverage
 

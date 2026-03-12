@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react';
 
+import { getLocalToastMessage, localToastKeys } from '../../../lib/error-messages';
+import { showErrorToast } from '../../../lib/toast.client';
 import { Button } from '../../../shared/ui/Button';
 import { FormField } from '../../../shared/ui/FormField';
 import { FormInput } from '../../../shared/ui/FormInput';
 import { ChevronDownIcon } from '../../../shared/ui/icons/ChevronDownIcon';
 import { MapPinIcon } from '../../../shared/ui/icons/MapPinIcon';
-import { XCircleIcon } from '../../../shared/ui/icons/XCircleIcon';
 import { Modal } from '../../../shared/ui/Modal';
 import { type Contact, type ContactAddress } from '../schemas';
 
@@ -94,7 +95,7 @@ export function EditContactModal({ isOpen, onClose, contact, onSubmit }: EditCon
 
       onClose();
     } catch {
-      setErrors({ submit: `Failed to update contact. Please try again.` });
+      showErrorToast(getLocalToastMessage(localToastKeys.CONTACT_UNEXPECTED_ERROR));
     } finally {
       setIsLoading(false);
     }
@@ -228,44 +229,6 @@ export function EditContactModal({ isOpen, onClose, contact, onSubmit }: EditCon
             </div>
           )}
         </div>
-
-        {errors.submit && (
-          <div
-            className={`
-            rounded-xl
-            border
-            border-red-200
-            bg-red-50
-            p-4
-            dark:border-red-800
-            dark:bg-red-900/20
-            animate-fadeIn
-          `}
-          >
-            <div className={`flex items-start gap-3`}>
-              <XCircleIcon
-                className={`
-                  h-5
-                  w-5
-                  text-red-600
-                  dark:text-red-400
-                  shrink-0
-                  mt-0.5
-                `}
-              />
-              <p
-                className={`
-                text-sm
-                font-medium
-                text-red-800
-                dark:text-red-300
-              `}
-              >
-                {errors.submit}
-              </p>
-            </div>
-          </div>
-        )}
 
         <div
           className={`

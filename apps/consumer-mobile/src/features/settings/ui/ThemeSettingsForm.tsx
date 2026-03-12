@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { toast } from 'sonner';
 
+import { getLocalToastMessage, localToastKeys } from '../../../lib/error-messages';
 import { clientLogger } from '../../../lib/logger';
+import { showErrorToast, showSuccessToast } from '../../../lib/toast.client';
 import { FormCard } from '../../../shared/ui/FormCard';
 import { CheckIcon } from '../../../shared/ui/icons/CheckIcon';
 import { SpinnerIcon } from '../../../shared/ui/icons/SpinnerIcon';
@@ -59,10 +60,10 @@ export function ThemeSettingsForm({ initialTheme }: ThemeSettingsFormProps) {
         throw new Error(`Failed to update theme`);
       }
 
-      toast.success(`Theme updated`);
+      showSuccessToast(`Theme updated`);
     } catch (error) {
       setTheme(previousTheme);
-      toast.error(`We couldn't update your theme. Please try again.`);
+      showErrorToast(getLocalToastMessage(localToastKeys.THEME_UPDATE_FAILED));
       clientLogger.error(`Theme update error`, {
         reason: error instanceof Error ? error.message : String(error),
       });

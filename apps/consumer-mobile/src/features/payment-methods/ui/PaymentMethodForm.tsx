@@ -3,8 +3,9 @@
 import { CardElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { useState, useMemo } from 'react';
 
+import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../../lib/error-messages';
 import { clientLogger } from '../../../lib/logger';
-import { AlertBanner } from '../../../shared/ui/AlertBanner';
+import { showErrorToast } from '../../../lib/toast.client';
 import { Button } from '../../../shared/ui/Button';
 import { useTheme } from '../../../shared/ui/ThemeProvider';
 import { addPaymentMethodAction, addBankAccountAction } from '../actions';
@@ -21,7 +22,6 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
   const elements = useElements();
   const { resolvedTheme } = useTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [methodType, setMethodType] = useState<PaymentMethodType>(`CREDIT_CARD`);
 
   const [billingName, setBillingName] = useState(``);
@@ -57,12 +57,12 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
 
   const handleCardSubmit = async () => {
     if (!stripe || !elements) {
-      setError(`Stripe is not initialized. Please refresh and try again.`);
+      showErrorToast(`Stripe is not initialized. Please refresh and try again.`);
       return false;
     }
 
     if (!billingName.trim()) {
-      setError(`Cardholder name is required.`);
+      showErrorToast(`Cardholder name is required.`);
       return false;
     }
 
@@ -106,16 +106,13 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
       });
 
       if (confirmError) {
-        switch (confirmError.type) {
-          case `card_error`:
-            setError(confirmError.message ?? `Your card was declined. Please try another card.`);
-            break;
-          case `validation_error`:
-            setError(confirmError.message ?? `Please check your card details and try again.`);
-            break;
-          default:
-            setError(confirmError.message ?? `An unexpected error occurred. Please try again.`);
-        }
+        const msg =
+          confirmError.type === `card_error`
+            ? (confirmError.message ?? `Your card was declined. Please try another card.`)
+            : confirmError.type === `validation_error`
+              ? (confirmError.message ?? `Please check your card details and try again.`)
+              : (confirmError.message ?? `An unexpected error occurred. Please try again.`);
+        showErrorToast(msg);
         return false;
       }
 
@@ -159,45 +156,48 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
       const result = await addPaymentMethodAction(paymentMethodData);
 
       if (!result.ok) {
-        setError(result.error.message);
+        showErrorToast(
+          getErrorMessageForUser(result.error.code, getLocalToastMessage(localToastKeys.PAYMENT_METHOD_ADD_FAILED)),
+          { code: result.error.code },
+        );
         return false;
       }
 
       return true;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : `An unexpected error occurred`);
+    } catch {
+      showErrorToast(getLocalToastMessage(localToastKeys.PAYMENT_METHOD_ADD_FAILED));
       return false;
     }
   };
 
   const handleBankSubmit = async () => {
     if (!billingName.trim()) {
-      setError(`Billing name is required.`);
+      showErrorToast(`Billing name is required.`);
       return false;
     }
 
     if (!bankName.trim()) {
-      setError(`Bank name is required.`);
+      showErrorToast(`Bank name is required.`);
       return false;
     }
 
     if (!bankAccount.trim()) {
-      setError(`Account number is required.`);
+      showErrorToast(`Account number is required.`);
       return false;
     }
 
     if (!bankRouting.trim()) {
-      setError(`Routing number is required.`);
+      showErrorToast(`Routing number is required.`);
       return false;
     }
 
     if (bankAccount.length < 4) {
-      setError(`Account number must be at least 4 digits.`);
+      showErrorToast(`Account number must be at least 4 digits.`);
       return false;
     }
 
     if (bankRouting.length !== 9) {
-      setError(`Routing number must be 9 digits.`);
+      showErrorToast(`Routing number must be 9 digits.`);
       return false;
     }
 
@@ -214,13 +214,16 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
       });
 
       if (!result.ok) {
-        setError(result.error.message);
+        showErrorToast(
+          getErrorMessageForUser(result.error.code, getLocalToastMessage(localToastKeys.PAYMENT_METHOD_ADD_FAILED)),
+          { code: result.error.code },
+        );
         return false;
       }
 
       return true;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : `An unexpected error occurred`);
+    } catch {
+      showErrorToast(getLocalToastMessage(localToastKeys.PAYMENT_METHOD_ADD_FAILED));
       return false;
     }
   };
@@ -229,7 +232,6 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
     e.preventDefault();
 
     setIsSubmitting(true);
-    setError(null);
 
     const success = methodType === `CREDIT_CARD` ? await handleCardSubmit() : await handleBankSubmit();
 
@@ -248,7 +250,6 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
           type="button"
           onClick={() => {
             setMethodType(`CREDIT_CARD`);
-            setError(null);
           }}
           className={`
             flex-1
@@ -287,7 +288,6 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
           type="button"
           onClick={() => {
             setMethodType(`BANK_ACCOUNT`);
-            setError(null);
           }}
           className={`
             flex-1
@@ -668,8 +668,6 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
         />
         <span>Set as default payment method</span>
       </label>
-
-      {error && <AlertBanner message={error} role="alert" />}
 
       <div
         className={`

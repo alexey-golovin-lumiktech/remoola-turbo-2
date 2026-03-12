@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
 
+import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../../lib/error-messages';
 import { clientLogger } from '../../../lib/logger';
 import { showErrorToast, showSuccessToast } from '../../../lib/toast.client';
 import { Button } from '../../../shared/ui/Button';
@@ -54,7 +55,7 @@ export function PaymentPickerModal({ documentId, onClose }: PaymentPickerModalPr
           error: err,
         });
         setFetchError(true);
-        showErrorToast(err instanceof Error ? err.message : `Failed to load payments`);
+        showErrorToast(getLocalToastMessage(localToastKeys.PAYMENT_NOT_FOUND));
       } finally {
         setIsLoading(false);
       }
@@ -83,7 +84,10 @@ export function PaymentPickerModal({ documentId, onClose }: PaymentPickerModalPr
         paymentRequestId: selectedPaymentId,
         error: result.error,
       });
-      showErrorToast(result.error.message, { code: result.error.code });
+      showErrorToast(
+        getErrorMessageForUser(result.error.code, getLocalToastMessage(localToastKeys.DOCUMENTS_ATTACH_FAILED)),
+        { code: result.error.code },
+      );
     }
   };
 

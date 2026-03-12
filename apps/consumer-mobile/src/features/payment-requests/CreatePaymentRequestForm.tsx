@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 
+import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../lib/error-messages';
 import { clientLogger } from '../../lib/logger';
 import { showErrorToast, showWarningToast } from '../../lib/toast.client';
 import { AmountCurrencyInput } from '../../shared/ui/AmountCurrencyInput';
@@ -130,13 +131,20 @@ export function CreatePaymentRequestForm({ defaultCurrency = `USD` }: CreatePaym
         const data = await res.json();
         router.push(`/payments/${data.paymentRequestId}`);
       } else {
-        const err = await res.json().catch(() => ({}));
-        showErrorToast(err.message || `Failed to create payment request. Please try again.`, {
-          code: err.code || `REQUEST_FAILED`,
-        });
+        const err = (await res.json().catch(() => ({}))) as { code?: string; message?: string };
+        const code = err.code ?? `REQUEST_FAILED`;
+        showErrorToast(
+          getErrorMessageForUser(
+            code,
+            err.message ?? getLocalToastMessage(localToastKeys.PAYMENT_REQUEST_CREATE_FAILED),
+          ),
+          {
+            code,
+          },
+        );
       }
     } catch {
-      showErrorToast(`Failed to create payment request. Please try again.`, { code: `REQUEST_FAILED` });
+      showErrorToast(getLocalToastMessage(localToastKeys.PAYMENT_REQUEST_CREATE_FAILED));
     } finally {
       setIsLoading(false);
     }

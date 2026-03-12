@@ -71,16 +71,17 @@ export async function startPaymentAction(input: unknown) {
     });
 
     if (!res.ok) {
+      const errorData = (await res.json().catch(() => ({}))) as { code?: string; message?: string };
       serverLogger.error(`Payment start failed`, {
         correlationId,
         status: res.status,
-        statusText: res.statusText,
+        errorCode: errorData.code,
       });
       return {
         ok: false as const,
         error: {
-          code: `PAYMENT_START_FAILED`,
-          message: `Unable to start payment. Please try again.`,
+          code: errorData.code ?? `PAYMENT_START_FAILED`,
+          message: errorData.message ?? `Unable to start payment. Please try again.`,
         },
       };
     }

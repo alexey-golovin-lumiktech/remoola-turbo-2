@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../../lib/error-messages';
 import { clientLogger } from '../../../lib/logger';
 import { showErrorToast, showSuccessToast } from '../../../lib/toast.client';
 import { ConfirmationModal } from '../../../shared/ui/ConfirmationModal';
@@ -48,7 +49,13 @@ export function ScheduledConversionsView({ conversions }: ScheduledConversionsVi
         conversionId: selectedConversion.id,
         error: result.error,
       });
-      showErrorToast(result.error.message, { code: result.error.code });
+      showErrorToast(
+        getErrorMessageForUser(
+          result.error.code,
+          getLocalToastMessage(localToastKeys.SCHEDULED_CONVERSION_CANCEL_FAILED),
+        ),
+        { code: result.error.code },
+      );
       setIsLoading(false);
       return;
     }

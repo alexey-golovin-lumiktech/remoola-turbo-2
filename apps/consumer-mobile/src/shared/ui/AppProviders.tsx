@@ -101,14 +101,12 @@ export function AppProviders({ children }: AppProvidersProps) {
             richColors
             position="top-center"
             toastOptions={{
-              // Mobile-friendly styling
+              duration: 6000,
               style: {
                 maxWidth: `90vw`,
               },
-              // Ensure touch targets are at least 44px for accessibility
               className: `min-h-11`,
             }}
-            // Close on swipe for mobile UX
             closeButton
           />
           {children}

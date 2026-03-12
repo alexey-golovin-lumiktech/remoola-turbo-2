@@ -3,7 +3,8 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-import { AlertBanner } from '../../../shared/ui/AlertBanner';
+import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../../lib/error-messages';
+import { showErrorToast } from '../../../lib/toast.client';
 import { Button } from '../../../shared/ui/Button';
 import { ConfirmationModal } from '../../../shared/ui/ConfirmationModal';
 import { EmptyState } from '../../../shared/ui/EmptyState';
@@ -50,7 +51,6 @@ export function RulesView({ rules, currencies }: RulesViewProps) {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedRule, setSelectedRule] = useState<ExchangeRule | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: ``,
@@ -61,7 +61,6 @@ export function RulesView({ rules, currencies }: RulesViewProps) {
 
   const handleCreate = async () => {
     setIsLoading(true);
-    setError(null);
 
     const result = await createExchangeRule(
       formData.name,
@@ -71,7 +70,9 @@ export function RulesView({ rules, currencies }: RulesViewProps) {
     );
 
     if (!result.ok) {
-      setError(result.error.message);
+      showErrorToast(getErrorMessageForUser(result.error.code, getLocalToastMessage(localToastKeys.RULE_SAVE_FAILED)), {
+        code: result.error.code,
+      });
       setIsLoading(false);
       return;
     }
@@ -86,7 +87,6 @@ export function RulesView({ rules, currencies }: RulesViewProps) {
     if (!selectedRule) return;
 
     setIsLoading(true);
-    setError(null);
 
     const result = await updateExchangeRule(selectedRule.id, {
       name: formData.name,
@@ -94,7 +94,10 @@ export function RulesView({ rules, currencies }: RulesViewProps) {
     });
 
     if (!result.ok) {
-      setError(result.error.message);
+      showErrorToast(
+        getErrorMessageForUser(result.error.code, getLocalToastMessage(localToastKeys.RULE_UPDATE_FAILED)),
+        { code: result.error.code },
+      );
       setIsLoading(false);
       return;
     }
@@ -109,12 +112,14 @@ export function RulesView({ rules, currencies }: RulesViewProps) {
     if (!selectedRule) return;
 
     setIsLoading(true);
-    setError(null);
 
     const result = await deleteExchangeRule(selectedRule.id);
 
     if (!result.ok) {
-      setError(result.error.message);
+      showErrorToast(
+        getErrorMessageForUser(result.error.code, getLocalToastMessage(localToastKeys.RULE_DELETE_FAILED)),
+        { code: result.error.code },
+      );
       setIsLoading(false);
       return;
     }
@@ -141,13 +146,11 @@ export function RulesView({ rules, currencies }: RulesViewProps) {
       toCurrency: rule.toCurrency,
       enabled: rule.enabled,
     });
-    setError(null);
     setIsEditModalOpen(true);
   };
 
   const openDeleteModal = (rule: ExchangeRule) => {
     setSelectedRule(rule);
-    setError(null);
     setIsDeleteModalOpen(true);
   };
 
@@ -157,7 +160,6 @@ export function RulesView({ rules, currencies }: RulesViewProps) {
       size="md"
       onClick={() => {
         setFormData({ name: ``, fromCurrency: `USD`, toCurrency: `EUR`, enabled: true });
-        setError(null);
         setIsCreateModalOpen(true);
       }}
     >
@@ -201,7 +203,6 @@ export function RulesView({ rules, currencies }: RulesViewProps) {
               label: `Create your first rule`,
               onClick: () => {
                 setFormData({ name: ``, fromCurrency: `USD`, toCurrency: `EUR`, enabled: true });
-                setError(null);
                 setIsCreateModalOpen(true);
               },
             }}
@@ -209,8 +210,6 @@ export function RulesView({ rules, currencies }: RulesViewProps) {
 
           <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title="Create exchange rule">
             <div className={`space-y-4`}>
-              {error && <AlertBanner message={error} role="alert" />}
-
               <FormField label="Rule name" htmlFor="name" required>
                 <FormInput
                   id="name"
@@ -248,22 +247,22 @@ export function RulesView({ rules, currencies }: RulesViewProps) {
                   checked={formData.enabled}
                   onChange={(e) => setFormData({ ...formData, enabled: e.target.checked })}
                   className={`
-  h-5
-  w-5
-  rounded-xs
-  border-slate-300
-  text-primary-600
-  focus:ring-2
-  focus:ring-primary-500
+                    h-5
+                    w-5
+                    rounded-xs
+                    border-slate-300
+                    text-primary-600
+                    focus:ring-2
+                    focus:ring-primary-500
                 `}
                 />
                 <label
                   htmlFor="enabled"
                   className={`
-  text-sm
-  font-medium
-  text-slate-900
-  dark:text-white
+                    text-sm
+                    font-medium
+                    text-slate-900
+                    dark:text-white
                 `}
                 >
                   Enable rule
@@ -402,8 +401,6 @@ export function RulesView({ rules, currencies }: RulesViewProps) {
 
         <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title="Create exchange rule">
           <div className={`space-y-4`}>
-            {error && <AlertBanner message={error} role="alert" />}
-
             <FormField label="Rule name" htmlFor="name-create" required>
               <FormInput
                 id="name-create"
@@ -489,8 +486,6 @@ export function RulesView({ rules, currencies }: RulesViewProps) {
 
         <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Edit exchange rule">
           <div className={`space-y-4`}>
-            {error && <AlertBanner message={error} role="alert" />}
-
             <FormField label="Rule name" htmlFor="name-edit" required>
               <FormInput
                 id="name-edit"
@@ -556,10 +551,7 @@ export function RulesView({ rules, currencies }: RulesViewProps) {
 
         <ConfirmationModal
           isOpen={isDeleteModalOpen}
-          onClose={() => {
-            setIsDeleteModalOpen(false);
-            setError(null);
-          }}
+          onClose={() => setIsDeleteModalOpen(false)}
           onConfirm={handleDelete}
           title="Delete exchange rule"
           message={`Are you sure you want to delete the rule ${selectedRule?.name ?? ``}? This action cannot be undone.`}
@@ -567,7 +559,6 @@ export function RulesView({ rules, currencies }: RulesViewProps) {
           cancelText="Cancel"
           variant="danger"
           isLoading={isLoading}
-          error={error ?? undefined}
         />
       </div>
     </div>

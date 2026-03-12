@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 
+import { getLocalToastMessage, localToastKeys } from '../../../lib/error-messages';
 import { clientLogger } from '../../../lib/logger';
 import { showErrorToast, showSuccessToast, showWarningToast } from '../../../lib/toast.client';
 import { Button } from '../../../shared/ui/Button';
@@ -69,7 +70,7 @@ export function DocumentUploadButton({ onUploadComplete }: DocumentUploadButtonP
             status: xhr.status,
             fileCount: files.length,
           });
-          showErrorToast(`Upload failed. Please try again.`);
+          showErrorToast(getLocalToastMessage(localToastKeys.DOCUMENTS_UPLOAD_FAILED));
         }
       });
 
@@ -79,7 +80,7 @@ export function DocumentUploadButton({ onUploadComplete }: DocumentUploadButtonP
         clientLogger.error(`Document upload network error`, {
           fileCount: files.length,
         });
-        showErrorToast(`Network error. Please check your connection.`);
+        showErrorToast(getLocalToastMessage(localToastKeys.UNEXPECTED_ERROR));
       });
 
       xhr.open(`POST`, `/api/documents/upload`);
@@ -91,7 +92,7 @@ export function DocumentUploadButton({ onUploadComplete }: DocumentUploadButtonP
         error: err,
         fileCount: files.length,
       });
-      showErrorToast(err instanceof Error ? err.message : `Upload failed`);
+      showErrorToast(getLocalToastMessage(localToastKeys.DOCUMENTS_UPLOAD_FAILED));
     }
   };
 
