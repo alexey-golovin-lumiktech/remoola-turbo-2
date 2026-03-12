@@ -118,8 +118,11 @@ export async function updatePersonalDetailsAction(formData: FormData): Promise<A
       console.log(`message1`, message);
 
       if (typeof errorData?.message === `string`) message += ` errorData.message: ` + errorData.message;
+      console.log(`message2`, message);
       if (typeof errorData?.error === `string`) message += ` errorData.error: ` + errorData.error;
+      console.log(`message3`, message);
       if (errorText) message += ` Error text: "${errorText}"`;
+      console.log(`message4`, message);
       return {
         ok: false,
         error: {
