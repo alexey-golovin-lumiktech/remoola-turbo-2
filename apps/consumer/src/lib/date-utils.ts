@@ -1,4 +1,13 @@
 /**
+ * Normalize to yyyy-MM-dd for <input type="date"> when the value is from the API.
+ * Uses string-slice only (no Date parsing) to avoid timezone shifts for ISO datetimes.
+ */
+export function toDateOnly(value: string | undefined | null): string {
+  if (value == null || value === ``) return ``;
+  return value.includes(`T`) ? value.slice(0, 10) : value;
+}
+
+/**
  * Formats a date string for HTML date inputs (YYYY-MM-DD format)
  * Handles both ISO strings and YYYY-MM-DD strings
  */

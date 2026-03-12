@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 
 import { PersonalDetailsFields, type PersonalDetailsValues } from '../../../../components/personal-details';
 import styles from '../../../../components/ui/classNames.module.css';
+import { toDateOnly } from '../../../../lib/date-utils';
 import { getFieldErrors, personalDetailsSchema } from '../../../../lib/validation';
 import { type ConsumerProfile, LABEL_STATUS } from '../../../../types';
 
@@ -25,7 +26,7 @@ function toFormValues(pd: ConsumerProfile[`personalDetails`]): PersonalDetailsVa
     countryOfTaxResidence: raw.countryOfTaxResidence ?? ``,
     legalStatus,
     taxId: raw.taxId ?? ``,
-    dateOfBirth: raw.dateOfBirth ?? ``,
+    dateOfBirth: toDateOnly(raw.dateOfBirth ?? ``),
     passportOrIdNumber: raw.passportOrIdNumber ?? ``,
     phoneNumber: raw.phoneNumber ?? ``,
   };

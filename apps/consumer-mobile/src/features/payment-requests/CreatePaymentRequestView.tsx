@@ -8,6 +8,7 @@ import { CURRENCY_CODE, type TCurrencyCode } from '@remoola/api-types';
 import { type CreatePaymentRequestPayload } from './schemas';
 import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../lib/error-messages';
 import { showErrorToast } from '../../lib/toast.client';
+import { DateInput } from '../../shared/ui/DateInput';
 
 export function CreatePaymentRequestView() {
   const router = useRouter();
@@ -203,11 +204,11 @@ export function CreatePaymentRequestView() {
         >
           Due date (optional)
         </label>
-        <input
+        <DateInput
           id="pr-due"
-          type="date"
           value={dueDate}
           onChange={(e) => setDueDate(e.target.value)}
+          min={new Date().toISOString().split(`T`)[0]}
           className={`input`}
         />
       </div>

@@ -3,6 +3,7 @@
 import { forwardRef, type InputHTMLAttributes } from 'react';
 
 import { CalendarIcon } from './icons/CalendarIcon';
+import { toDateOnly } from '../../lib/date-utils';
 
 interface DateInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, `type`> {
   error?: boolean;
@@ -30,12 +31,20 @@ interface DateInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, `ty
  * </FormField>
  */
 export const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
-  ({ error = false, showIcon = true, className = ``, ...props }, ref) => {
+  ({ error = false, showIcon = true, className = ``, value, defaultValue, ...props }, ref) => {
+    const dateValue = value !== undefined ? toDateOnly(String(value)) : undefined;
+    const dateDefaultValue = defaultValue !== undefined ? toDateOnly(String(defaultValue)) : undefined;
     return (
       <div className={`relative`}>
         <input
           ref={ref}
           type="date"
+          {...props}
+          {...(value !== undefined
+            ? { value: dateValue }
+            : defaultValue !== undefined
+              ? { defaultValue: dateDefaultValue }
+              : {})}
           className={`
             min-h-11
             w-full
@@ -67,7 +76,6 @@ export const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
             }
             ${className}
           `}
-          {...props}
         />
         {showIcon && (
           <div

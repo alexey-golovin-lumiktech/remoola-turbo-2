@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from 'react';
 
+import { toDateOnly } from '../../../../lib/date-utils';
 import { CountrySelect } from '../../../../shared/ui/CountrySelect';
 import { FORM_ERROR_CLASS, FORM_LABEL_CLASS } from '../../../../shared/ui/form-classes';
 import { PhoneInput } from '../../../../shared/ui/PhoneInput';
@@ -297,7 +298,7 @@ export function PersonalDetailsStep() {
                   type={type}
                   inputMode={type === `tel` ? `tel` : undefined}
                   autoComplete={autoComplete}
-                  value={personalDetails[key] ?? ``}
+                  value={type === `date` ? toDateOnly(personalDetails[key] ?? ``) : (personalDetails[key] ?? ``)}
                   onChange={(e) => handleChange(e.target.value)}
                   className={SIGNUP_INPUT_CLASS}
                   onFocus={() => clearError(key)}
