@@ -1,0 +1,14 @@
+/* TransferForm.module.css */
+@reference "tailwindcss";
+
+.form {
+  @apply space-y-4;
+}
+
+.actions {
+  @apply flex gap-3 pt-2;
+}
+
+.submitButton {
+  @apply flex-1;
+}

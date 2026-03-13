@@ -7,6 +7,7 @@ import { Button } from './Button';
 import { FormField } from './FormField';
 import { FormInput } from './FormInput';
 import { FormSelect } from './FormSelect';
+import styles from './WithdrawForm.module.css';
 import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../lib/error-messages';
 import { showErrorToast, showSuccessToast } from '../../lib/toast.client';
 
@@ -90,7 +91,7 @@ export function WithdrawForm({ availableCurrencies, paymentMethods, onSubmit, on
   };
 
   return (
-    <form onSubmit={handleSubmit} className={`space-y-4`}>
+    <form onSubmit={handleSubmit} className={styles.form}>
       <FormField label="Amount" htmlFor="withdraw-amount" error={errors.amount} required>
         <AmountCurrencyInput
           id="withdraw-amount"
@@ -130,8 +131,8 @@ export function WithdrawForm({ availableCurrencies, paymentMethods, onSubmit, on
         />
       </FormField>
 
-      <div className={`flex gap-3 pt-2`}>
-        <Button type="submit" variant="primary" size="md" isLoading={isLoading} className={`flex-1`}>
+      <div className={styles.actions}>
+        <Button type="submit" variant="primary" size="md" isLoading={isLoading} className={styles.submitButton}>
           Withdraw funds
         </Button>
       </div>

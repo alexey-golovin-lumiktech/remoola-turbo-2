@@ -2,6 +2,9 @@
 
 import Link from 'next/link';
 
+import { cn } from '@remoola/ui';
+
+import styles from './BackButton.module.css';
 import { ChevronLeftIcon } from './icons/ChevronLeftIcon';
 
 interface BackButtonProps {
@@ -25,26 +28,9 @@ interface BackButtonProps {
  */
 export function BackButton({ href, label = `Back`, className = `` }: BackButtonProps) {
   return (
-    <Link
-      href={href}
-      className={
-        `group inline-flex min-h-11 min-w-11 items-center gap-2 rounded-lg px-3 py-2 ` +
-        `text-sm font-medium text-slate-600 transition-all hover:bg-slate-100 hover:text-slate-900 ` +
-        `dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white ` +
-        `active:scale-95 ${className}`
-      }
-      aria-label={label}
-    >
-      <ChevronLeftIcon
-        className={`
-        h-5
-        w-5
-        transition-transform
-        group-hover:-translate-x-0.5
-      `}
-        aria-hidden="true"
-      />
-      <span className={`hidden sm:inline`}>{label}</span>
+    <Link href={href} className={cn(styles.root, className)} aria-label={label}>
+      <ChevronLeftIcon className={styles.icon} aria-hidden="true" />
+      <span className={styles.label}>{label}</span>
     </Link>
   );
 }

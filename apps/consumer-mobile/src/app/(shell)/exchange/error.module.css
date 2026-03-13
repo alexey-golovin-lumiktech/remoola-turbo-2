@@ -1,0 +1,6 @@
+/* (shell)/exchange/error.module.css */
+@reference "tailwindcss";
+
+.wrapper {
+  @apply mx-auto max-w-md p-4;
+}

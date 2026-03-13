@@ -1,0 +1,168 @@
+/* BankTransferInstructions.module.css */
+@reference "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.main {
+  @apply space-y-6;
+}
+
+.alert {
+  @apply overflow-hidden rounded-xl border border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-900/20;
+}
+
+.alertRow {
+  @apply flex items-start gap-3 p-4;
+}
+
+.alertIcon {
+  @apply mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white dark:bg-blue-500;
+}
+
+.alertIconSvg {
+  @apply h-5 w-5;
+}
+
+.alertContent {
+  @apply flex-1;
+}
+
+.alertTitle {
+  @apply text-sm font-semibold text-blue-900 dark:text-blue-100;
+}
+
+.alertText {
+  @apply mt-1 text-xs text-blue-800 dark:text-blue-200;
+}
+
+.amountCard {
+  @apply rounded-xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-700 dark:bg-slate-800;
+}
+
+.amountRow {
+  @apply flex items-center justify-between;
+}
+
+.amountLabel {
+  @apply text-sm font-medium text-slate-600 dark:text-slate-400;
+}
+
+.amountValue {
+  @apply mt-1 text-3xl font-bold text-slate-900 dark:text-white;
+}
+
+.downloadBtnIcon {
+  @apply mr-2 h-4 w-4;
+}
+
+.detailsCard {
+  @apply overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs dark:border-slate-700 dark:bg-slate-800;
+}
+
+.detailsHeader {
+  @apply border-b border-slate-200 p-6 dark:border-slate-700;
+}
+
+.detailsTitle {
+  @apply text-lg font-semibold text-slate-900 dark:text-white;
+}
+
+.detailsBody {
+  @apply space-y-1 p-6;
+}
+
+.swiftNote {
+  @apply border-t border-slate-200 bg-amber-50 p-4 dark:border-slate-700 dark:bg-amber-900/20;
+}
+
+.swiftNoteRow {
+  @apply flex gap-3;
+}
+
+.swiftNoteIcon {
+  @apply flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-600 text-white dark:bg-amber-500;
+}
+
+.swiftNoteIconSvg {
+  @apply h-4 w-4;
+}
+
+.swiftNoteContent {
+  @apply flex-1;
+}
+
+.swiftNoteTitle {
+  @apply text-sm font-semibold text-amber-900 dark:text-amber-100;
+}
+
+.swiftNoteText {
+  @apply mt-0.5 text-xs text-amber-800 dark:text-amber-200;
+}
+
+.continueBtn {
+  @apply w-full;
+}
+
+/* BankField */
+.field {
+  @apply rounded-lg p-4 transition-colors;
+}
+
+.fieldHighlight {
+  @apply bg-amber-50 dark:bg-amber-900/20;
+}
+
+.fieldNormal {
+  @apply bg-slate-50 hover:bg-slate-100 dark:bg-slate-700/50 dark:hover:bg-slate-700;
+}
+
+.fieldRow {
+  @apply flex items-start justify-between gap-3;
+}
+
+.fieldContent {
+  @apply min-w-0 flex-1;
+}
+
+.fieldLabel {
+  @apply text-xs font-medium uppercase tracking-wide;
+}
+
+.fieldLabelHighlight {
+  @apply text-amber-700 dark:text-amber-400;
+}
+
+.fieldLabelNormal {
+  @apply text-slate-500 dark:text-slate-400;
+}
+
+.fieldValue {
+  @apply mt-1 break-all font-mono text-sm font-semibold;
+}
+
+.fieldValueHighlight {
+  @apply text-amber-900 dark:text-amber-100;
+}
+
+.fieldValueNormal {
+  @apply text-slate-900 dark:text-white;
+}
+
+.fieldHint {
+  @apply mt-1 text-xs text-slate-600 dark:text-slate-400;
+}
+
+.copyBtn {
+  @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-all;
+}
+
+.copyBtnCopied {
+  @apply bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300;
+}
+
+.copyBtnDefault {
+  @apply text-slate-500 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-600;
+}
+
+.copyBtnIcon {
+  @apply h-5 w-5;
+}

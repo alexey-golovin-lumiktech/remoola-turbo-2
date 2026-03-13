@@ -1,5 +1,6 @@
 import { type ReactNode } from 'react';
 
+import styles from './ErrorState.module.css';
 import { AlertTriangleIcon } from './icons/AlertTriangleIcon';
 
 interface ErrorStateProps {
@@ -25,96 +26,21 @@ export function ErrorState({
   showRetry = true,
 }: ErrorStateProps) {
   return (
-    <div
-      className={`
-  flex
-  min-h-100
-  items-center
-  justify-center
-  px-6
-  py-12
-      `}
-    >
-      <div className={`max-w-md text-center`}>
-        <div
-          className={`
-  mx-auto
-  flex
-  h-16
-  w-16
-  items-center
-  justify-center
-  rounded-full
-  bg-red-100
-  dark:bg-red-900/30
-          `}
-        >
-          {icon ?? (
-            <AlertTriangleIcon
-              className={`
-  h-8
-  w-8
-  text-red-600
-  dark:text-red-400
-            `}
-              strokeWidth={2}
-              aria-hidden="true"
-            />
-          )}
+    <div className={styles.root}>
+      <div className={styles.inner}>
+        <div className={styles.iconWrap}>
+          {icon ?? <AlertTriangleIcon className={styles.icon} strokeWidth={2} aria-hidden="true" />}
         </div>
 
-        <h2
-          className={`
-  mt-4
-  text-xl
-  font-semibold
-  text-slate-900
-  dark:text-white
-          `}
-        >
-          {title}
-        </h2>
+        <h2 className={styles.title}>{title}</h2>
 
-        <p
-          className={`
-  mt-2
-  text-sm
-  text-slate-600
-  dark:text-slate-400
-          `}
-        >
-          {message}
-        </p>
+        <p className={styles.message}>{message}</p>
 
-        {showRetry && onRetry && (
-          <button
-            type="button"
-            onClick={onRetry}
-            className={`
-  mt-6
-  inline-flex
-  min-h-11
-  items-center
-  rounded-lg
-  bg-primary-600
-  px-6
-  py-2.5
-  text-sm
-  font-semibold
-  text-white
-  shadow-xs
-  transition-all
-  hover:bg-primary-700
-  hover:shadow-md
-  focus:outline-hidden
-  focus:ring-2
-  focus:ring-primary-500
-  focus:ring-offset-2
-            `}
-          >
+        {showRetry && onRetry ? (
+          <button type="button" onClick={onRetry} className={styles.retryButton}>
             {retryLabel}
           </button>
-        )}
+        ) : null}
       </div>
     </div>
   );

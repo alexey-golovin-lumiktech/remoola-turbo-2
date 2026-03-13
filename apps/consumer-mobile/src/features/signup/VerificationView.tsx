@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+import styles from './VerificationView.module.css';
+
 export function VerificationView() {
   const searchParams = useSearchParams();
   const email = searchParams.get(`email`);
@@ -16,33 +18,12 @@ export function VerificationView() {
     else setStatus(`unknown`);
   }, [verified]);
 
-  const linkClass =
-    `inline-flex min-h-11 items-center justify-center rounded-lg bg-primary-600 px-4 py-2 ` +
-    `font-medium text-white focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2`;
-
   if (!email) {
     return (
-      <div
-        className={`
-        mx-auto
-        max-w-md
-        space-y-4
-        p-4
-        text-center
-      `}
-      >
-        <h1
-          className={`
-          text-xl
-          font-semibold
-          text-neutral-900
-          dark:text-white
-        `}
-        >
-          Invalid verification link
-        </h1>
-        <p className={`text-neutral-600 dark:text-neutral-400`}>Missing email parameter.</p>
-        <Link href="/signup" className={linkClass}>
+      <div className={styles.container}>
+        <h1 className={styles.title}>Invalid verification link</h1>
+        <p className={styles.textMuted}>Missing email parameter.</p>
+        <Link href="/signup" prefetch={false} className={styles.linkBtn}>
           Go back to signup
         </Link>
       </div>
@@ -52,72 +33,36 @@ export function VerificationView() {
   const decodedEmail = decodeURIComponent(email);
 
   return (
-    <div
-      className={`
-      mx-auto
-      max-w-md
-      space-y-4
-      p-4
-      text-center
-    `}
-    >
-      {status === `success` && (
+    <div className={styles.container}>
+      {status === `success` ? (
         <>
-          <h1
-            className={`
-            text-xl
-            font-semibold
-            text-green-700
-            dark:text-green-400
-          `}
-          >
-            Email Verified
-          </h1>
-          <p className={`text-neutral-600 dark:text-neutral-400`}>
-            Your email <span className={`font-medium text-neutral-900 dark:text-white`}>{decodedEmail}</span> has been
-            successfully verified.
+          <h1 className={styles.titleSuccess}>Email Verified</h1>
+          <p className={styles.textMuted}>
+            Your email <span className={styles.emailHighlight}>{decodedEmail}</span> has been successfully verified.
           </p>
-          <Link href="/login" className={linkClass}>
+          <Link href="/login" prefetch={false} className={styles.linkBtn}>
             Continue to Login
           </Link>
         </>
-      )}
-      {status === `failed` && (
+      ) : null}
+      {status === `failed` ? (
         <>
-          <h1
-            className={`
-            text-xl
-            font-semibold
-            text-red-700
-            dark:text-red-400
-          `}
-          >
-            Verification Failed
-          </h1>
-          <p className={`text-neutral-600 dark:text-neutral-400`}>
-            The verification link for <span className={`font-medium dark:text-white`}>{decodedEmail}</span> is invalid
-            or expired.
+          <h1 className={styles.titleFailed}>Verification Failed</h1>
+          <p className={styles.textMuted}>
+            The verification link for <span className={styles.emailHighlight}>{decodedEmail}</span> is invalid or
+            expired.
           </p>
-          <Link href="/signup" className={linkClass}>
+          <Link href="/signup" prefetch={false} className={styles.linkBtn}>
             Try signing up again
           </Link>
         </>
-      )}
-      {status === `unknown` && (
+      ) : null}
+      {status === `unknown` ? (
         <>
-          <h1
-            className={`
-            text-xl
-            font-semibold
-            text-neutral-900
-            dark:text-white
-          `}
-          >
-            Checking Verification...
-          </h1>
-          <p className={`text-neutral-500 dark:text-neutral-400`}>Please wait a moment.</p>
+          <h1 className={styles.title}>Checking Verification...</h1>
+          <p className={styles.textUnknown}>Please wait a moment.</p>
         </>
-      )}
+      ) : null}
     </div>
   );
 }

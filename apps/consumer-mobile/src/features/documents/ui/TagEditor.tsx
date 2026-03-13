@@ -10,6 +10,7 @@ import { Button } from '../../../shared/ui/Button';
 import { XIcon } from '../../../shared/ui/icons/XIcon';
 import { Modal } from '../../../shared/ui/Modal';
 import { updateDocumentTags } from '../actions';
+import styles from './TagEditor.module.css';
 
 interface TagEditorProps {
   docId: string;
@@ -90,20 +91,8 @@ export function TagEditor({ docId, initialTags = [], onClose }: TagEditorProps) 
       title="Edit Tags"
       size="md"
       footer={
-        <div
-          className={`
-            flex
-            gap-3
-          `}
-        >
-          <Button
-            variant="outline"
-            onClick={onClose}
-            disabled={isPending}
-            className={`
-              flex-1
-            `}
-          >
+        <div className={styles.footer}>
+          <Button variant="outline" onClick={onClose} disabled={isPending} className={styles.footerBtn}>
             Cancel
           </Button>
           <Button
@@ -111,40 +100,19 @@ export function TagEditor({ docId, initialTags = [], onClose }: TagEditorProps) 
             onClick={handleSave}
             isLoading={isPending}
             disabled={isPending}
-            className={`
-              flex-1
-            `}
+            className={styles.footerBtn}
           >
             Save
           </Button>
         </div>
       }
     >
-      <div
-        className={`
-          space-y-4
-        `}
-      >
+      <div className={styles.body}>
         <div>
-          <label
-            htmlFor="tag-input"
-            className={`
-              block
-              text-sm
-              font-medium
-              text-slate-700
-              dark:text-slate-300
-            `}
-          >
+          <label htmlFor="tag-input" className={styles.label}>
             Add Tag
           </label>
-          <div
-            className={`
-              mt-1
-              flex
-              gap-2
-            `}
-          >
+          <div className={styles.inputRow}>
             <input
               id="tag-input"
               type="text"
@@ -152,26 +120,7 @@ export function TagEditor({ docId, initialTags = [], onClose }: TagEditorProps) 
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Enter tag name"
-              className={`
-                min-h-11
-                flex-1
-                rounded-lg
-                border
-                border-slate-300
-                px-3
-                py-2
-                text-sm
-                text-slate-900
-                placeholder-slate-400
-                focus:border-primary-500
-                focus:outline-hidden
-                focus:ring-2
-                focus:ring-primary-500
-                dark:border-slate-600
-                dark:bg-slate-700
-                dark:text-white
-                dark:placeholder-slate-500
-              `}
+              className={styles.input}
               maxLength={50}
             />
             <Button onClick={handleAddTag} disabled={!inputValue.trim() || isPending} size="md">
@@ -181,71 +130,21 @@ export function TagEditor({ docId, initialTags = [], onClose }: TagEditorProps) 
         </div>
 
         <div>
-          <p
-            className={`
-              mb-2
-              text-sm
-              font-medium
-              text-slate-700
-              dark:text-slate-300
-            `}
-          >
-            Tags ({tags.length}/10)
-          </p>
+          <p className={styles.tagsLabel}>Tags ({tags.length}/10)</p>
           {tags.length === 0 ? (
-            <p
-              className={`
-                text-sm
-                text-slate-500
-                dark:text-slate-400
-              `}
-            >
-              No tags added yet
-            </p>
+            <p className={styles.emptyText}>No tags added yet</p>
           ) : (
-            <div
-              className={`
-                flex
-                flex-wrap
-                gap-2
-              `}
-            >
+            <div className={styles.tagsList}>
               {tags.map((tag, index) => (
-                <span
-                  key={`${tag}-${index}`}
-                  className={`
-                    inline-flex
-                    items-center
-                    gap-1
-                    rounded-md
-                    bg-primary-100
-                    px-3
-                    py-1.5
-                    text-sm
-                    font-medium
-                    text-primary-700
-                    dark:bg-primary-900
-                    dark:text-primary-300
-                  `}
-                >
+                <span key={`${tag}-${index}`} className={styles.tag}>
                   {tag}
                   <button
                     onClick={() => handleRemoveTag(index)}
                     disabled={isPending}
-                    className={`
-                      ml-1
-                      rounded-full
-                      p-0.5
-                      transition-colors
-                      hover:bg-primary-200
-                      focus:outline-hidden
-                      focus:ring-2
-                      focus:ring-primary-500
-                      dark:hover:bg-primary-800
-                    `}
+                    className={styles.tagRemoveBtn}
                     aria-label={`Remove ${tag}`}
                   >
-                    <XIcon className={`h-4 w-4`} />
+                    <XIcon className={styles.tagRemoveIcon} />
                   </button>
                 </span>
               ))}

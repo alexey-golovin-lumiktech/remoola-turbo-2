@@ -131,6 +131,7 @@ Mobile-first consumer app running on port 3002:
 
 - Shares backend API with desktop consumer app (`apps/consumer`). BFF proxy routes forward all Set-Cookie headers (`appendSetCookies`); `proxyApiRequest` and authenticated fetches (logout, middleware, documents/settings actions) use `cache: no-store`.
 - Mutation proxy endpoints enforce JSON boundary validation before backend forwarding (`Content-Type: application/json`, valid JSON body); invalid requests return `400` (`INVALID_CONTENT_TYPE`/`INVALID_JSON`) and oversized JSON payloads return `413` (`PAYLOAD_TOO_LARGE`).
+- Styling architecture is CSS Modules-first across app routes, feature views, and shared UI (`*.module.css`), replacing large inline utility-class blocks in TSX.
 - Mobile-optimized layouts and navigation with enhanced touch interactions.
 - Enhanced documents view:
   - Card-based responsive grid (1/2/3 columns based on screen size)
@@ -154,6 +155,10 @@ Mobile-first consumer app running on port 3002:
   - **SearchInput**: search input with magnifying glass icon, clear button, debounced interaction, and mobile-friendly 44px touch targets
   - **Brand assets**: favicon.ico and icon.svg for PWA support
 - Centralized error messaging: `src/lib/error-messages.ts` maps API error codes (from `@remoola/shared-constants`) to user-facing messages and defines local toast keys for client-side failures; 37 files use `getErrorMessageForUser`, `getLocalToastMessage`, and `showErrorToast` (toast.client.ts) for consistent, safe user-facing toasts.
+- Auth hardening in consumer-mobile:
+  - login `next` parameter is sanitized and defaults to `/dashboard` for unsafe inputs,
+  - middleware detects obviously invalid cookie-token shapes before backend round-trips,
+  - middleware emits refresh telemetry headers (`x-remoola-auth-refresh-*`) and `server-timing` metrics.
 - Test coverage:
   - Token refresh flows (SWR fetcher, fetchWithAuth)
   - Middleware auth flows (token validation, refresh rotation, OAuth callback)
@@ -185,6 +190,7 @@ Shared packages present in repo:
 
 - `api-types`: shared DTOs, PaginatedResponsePage, currency (CURRENCY_CODES, TCurrencyCode, getCurrencySymbol), consumer settings (theme THEME, preferred currency allowlist), admin payment reversal (PAYMENT_REVERSAL_KIND), query params (BOOLEAN_QUERY_VALUE).
 - `database-2`, `db-fixtures`, `env`, `eslint-config`, `jest-config`, `security-utils` (crypto, hashing, OAuth utilities), `shared-constants`, `test-db`, `typescript-config`, `ui`.
+- `ui`: `cn()` now uses `tailwind-merge` to safely collapse conflicting Tailwind utility classes.
 
 Infrastructure and testing:
 

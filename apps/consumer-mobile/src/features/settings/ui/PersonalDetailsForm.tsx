@@ -12,6 +12,7 @@ import { FormInput } from '../../../shared/ui/FormInput';
 import { FormSelect } from '../../../shared/ui/FormSelect';
 import { updatePersonalDetailsAction } from '../actions';
 import { type Profile } from '../schemas';
+import styles from './PersonalDetailsForm.module.css';
 
 interface PersonalDetailsFormProps {
   profile: Profile;
@@ -48,8 +49,8 @@ export function PersonalDetailsForm({ profile }: PersonalDetailsFormProps) {
 
   return (
     <FormCard title="Personal Details" description="Your personal information for compliance and verification purposes">
-      <form action={formAction} className={`space-y-5`}>
-        <div className={`grid gap-4 sm:grid-cols-2`}>
+      <form action={formAction} className={styles.form}>
+        <div className={styles.gridRow}>
           <FormField label="First Name" htmlFor="firstName" error={fieldErrors.firstName} required>
             <FormInput
               id="firstName"
@@ -58,7 +59,7 @@ export function PersonalDetailsForm({ profile }: PersonalDetailsFormProps) {
               defaultValue={pd.firstName ?? ``}
               error={!!fieldErrors.firstName}
               required
-              className={`min-h-11`}
+              className={styles.inputMinHeight}
             />
           </FormField>
 
@@ -70,12 +71,12 @@ export function PersonalDetailsForm({ profile }: PersonalDetailsFormProps) {
               defaultValue={pd.lastName ?? ``}
               error={!!fieldErrors.lastName}
               required
-              className={`min-h-11`}
+              className={styles.inputMinHeight}
             />
           </FormField>
         </div>
 
-        <div className={`grid gap-4 sm:grid-cols-2`}>
+        <div className={styles.gridRow}>
           <FormField label="Country of Citizenship" htmlFor="citizenOf" error={fieldErrors.citizenOf} required>
             <FormInput
               id="citizenOf"
@@ -85,7 +86,7 @@ export function PersonalDetailsForm({ profile }: PersonalDetailsFormProps) {
               error={!!fieldErrors.citizenOf}
               placeholder="e.g., United States"
               required
-              className={`min-h-11`}
+              className={styles.inputMinHeight}
             />
           </FormField>
 
@@ -103,7 +104,7 @@ export function PersonalDetailsForm({ profile }: PersonalDetailsFormProps) {
               error={!!fieldErrors.countryOfTaxResidence}
               placeholder="e.g., United States"
               required
-              className={`min-h-11`}
+              className={styles.inputMinHeight}
             />
           </FormField>
         </div>
@@ -116,11 +117,11 @@ export function PersonalDetailsForm({ profile }: PersonalDetailsFormProps) {
             defaultValue={pd.legalStatus ?? ``}
             error={!!fieldErrors.legalStatus}
             placeholder="Select legal status"
-            className={`min-h-11`}
+            className={styles.inputMinHeight}
           />
         </FormField>
 
-        <div className={`grid gap-4 sm:grid-cols-2`}>
+        <div className={styles.gridRow}>
           <FormField label="Tax ID" htmlFor="taxId" error={fieldErrors.taxId}>
             <FormInput
               id="taxId"
@@ -129,7 +130,7 @@ export function PersonalDetailsForm({ profile }: PersonalDetailsFormProps) {
               defaultValue={pd.taxId ?? ``}
               error={!!fieldErrors.taxId}
               placeholder="Optional"
-              className={`min-h-11`}
+              className={styles.inputMinHeight}
             />
           </FormField>
 
@@ -140,12 +141,12 @@ export function PersonalDetailsForm({ profile }: PersonalDetailsFormProps) {
               defaultValue={pd.dateOfBirth ?? ``}
               error={!!fieldErrors.dateOfBirth}
               max={new Date().toISOString().split(`T`)[0]}
-              className={`min-h-11`}
+              className={styles.inputMinHeight}
             />
           </FormField>
         </div>
 
-        <div className={`grid gap-4 sm:grid-cols-2`}>
+        <div className={styles.gridRow}>
           <FormField label="Passport or ID Number" htmlFor="passportOrIdNumber" error={fieldErrors.passportOrIdNumber}>
             <FormInput
               id="passportOrIdNumber"
@@ -154,7 +155,7 @@ export function PersonalDetailsForm({ profile }: PersonalDetailsFormProps) {
               defaultValue={pd.passportOrIdNumber ?? ``}
               error={!!fieldErrors.passportOrIdNumber}
               placeholder="Optional"
-              className={`min-h-11`}
+              className={styles.inputMinHeight}
             />
           </FormField>
 
@@ -166,24 +167,18 @@ export function PersonalDetailsForm({ profile }: PersonalDetailsFormProps) {
               defaultValue={pd.phoneNumber ?? ``}
               error={!!fieldErrors.phoneNumber}
               placeholder="Optional"
-              className={`min-h-11`}
+              className={styles.inputMinHeight}
             />
           </FormField>
         </div>
 
-        <div className={`flex justify-end pt-2`}>
+        <div className={styles.actions}>
           <Button
             type="submit"
             variant="primary"
             isLoading={isPending}
             disabled={isPending}
-            className={`
-              min-h-11
-              shadow-lg
-              shadow-primary-500/30
-              hover:shadow-xl
-              hover:shadow-primary-500/40
-            `}
+            className={styles.submitBtn}
           >
             {isPending ? `Saving...` : `Save Changes`}
           </Button>

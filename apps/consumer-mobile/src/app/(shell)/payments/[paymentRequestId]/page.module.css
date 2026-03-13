@@ -1,0 +1,23 @@
+@reference "tailwindcss";
+@reference "../../../globals.css";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.root {
+  @apply space-y-4;
+}
+
+.errorRoot {
+  @apply flex min-h-100 items-center justify-center;
+}
+
+.errorInner {
+  @apply text-center;
+}
+
+.errorTitle {
+  @apply text-lg font-semibold text-slate-900 dark:text-white;
+}
+
+.errorText {
+  @apply mt-2 text-sm text-slate-600 dark:text-slate-400;
+}

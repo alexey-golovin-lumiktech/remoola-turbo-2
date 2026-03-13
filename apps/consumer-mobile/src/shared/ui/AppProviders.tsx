@@ -4,6 +4,7 @@ import { Component, type ReactNode } from 'react';
 import { Toaster } from 'sonner';
 import { SWRConfig } from 'swr';
 
+import styles from './AppProviders.module.css';
 import { ThemeColorMeta } from './ThemeColorMeta';
 import { ThemeInitializer } from './ThemeInitializer';
 import { ThemeProvider } from './ThemeProvider';
@@ -31,56 +32,10 @@ class AppErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryS
   render() {
     if (this.state.hasError) {
       return (
-        <div
-          className={`
-          flex
-          min-h-[50vh]
-          flex-col
-          items-center
-          justify-center
-          gap-4
-          px-6
-        `}
-        >
-          <h2
-            className={`
-            text-lg
-            font-semibold
-            text-slate-800
-            dark:text-slate-200
-          `}
-          >
-            Something went wrong
-          </h2>
-          <p
-            className={`
-            text-center
-            text-sm
-            text-slate-600
-            dark:text-slate-400
-          `}
-          >
-            We encountered an unexpected error. Please try refreshing the page.
-          </p>
-          <button
-            type="button"
-            onClick={() => window.location.reload()}
-            className={`
-              min-h-11
-              min-w-11
-              rounded-lg
-              bg-blue-600
-              px-4
-              py-2
-              text-sm
-              font-medium
-              text-white
-              focus:outline-hidden
-              focus:ring-2
-              focus:ring-blue-500
-              focus:ring-offset-2
-            `}
-          >
+        <div className={styles.errorRoot}>
+          <h2 className={styles.errorTitle}>Something went wrong</h2>
+          <p className={styles.errorText}>We encountered an unexpected error. Please try refreshing the page.</p>
+          <button type="button" onClick={() => window.location.reload()} className={styles.refreshButton}>
             Refresh Page
           </button>
         </div>

@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 
+import styles from './DocumentUploadButton.module.css';
 import { getLocalToastMessage, localToastKeys } from '../../../lib/error-messages';
 import { clientLogger } from '../../../lib/logger';
 import { showErrorToast, showSuccessToast, showWarningToast } from '../../../lib/toast.client';
@@ -97,20 +98,14 @@ export function DocumentUploadButton({ onUploadComplete }: DocumentUploadButtonP
   };
 
   return (
-    <div
-      className={`
-        relative
-      `}
-    >
+    <div className={styles.wrap}>
       <input
         ref={fileInputRef}
         type="file"
         multiple
         accept=".pdf,.png,.jpg,.jpeg,.gif,.doc,.docx,.xls,.xlsx"
         onChange={handleFileChange}
-        className={`
-          hidden
-        `}
+        className={styles.input}
         aria-label="Upload documents"
       />
       <Button
@@ -119,28 +114,17 @@ export function DocumentUploadButton({ onUploadComplete }: DocumentUploadButtonP
         isLoading={isUploading}
         variant="primary"
         size="md"
-        className={`
-          shadow-xl
-          shadow-primary-500/30
-          hover:shadow-2xl
-          hover:shadow-primary-500/40
-        `}
+        className={styles.btn}
       >
         {isUploading ? (
-          <div
-            className={`
-              flex
-              items-center
-              gap-2.5
-            `}
-          >
-            <SpinnerIcon className={`h-5 w-5 animate-spin`} />
-            <span className={`font-bold`}>{uploadProgress}%</span>
+          <div className={styles.loadingRow}>
+            <SpinnerIcon className={`${styles.icon} animate-spin`} />
+            <span className={styles.loadingText}>{uploadProgress}%</span>
           </div>
         ) : (
           <>
-            <UploadIcon className={`h-5 w-5`} strokeWidth={2.5} />
-            <span className={`ml-2 font-bold`}>Upload</span>
+            <UploadIcon className={styles.icon} strokeWidth={2.5} />
+            <span className={styles.labelText}>Upload</span>
           </>
         )}
       </Button>

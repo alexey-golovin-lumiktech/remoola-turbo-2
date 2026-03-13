@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import styles from './RatesPanel.module.css';
 import { ArrowDownIcon } from '../../../shared/ui/icons/ArrowDownIcon';
 import { ArrowUpIcon } from '../../../shared/ui/icons/ArrowUpIcon';
 import { ChevronRightIcon } from '../../../shared/ui/icons/ChevronRightIcon';
@@ -41,134 +42,51 @@ export function RatesPanel({ rates }: RatesPanelProps) {
   }
 
   return (
-    <div
-      className={`
-      overflow-hidden
-      rounded-2xl
-      border
-      border-slate-200
-      bg-white
-      shadow-lg
-      dark:border-slate-700
-      dark:bg-slate-800/90
-    `}
-    >
-      <div
-        className={`
-        flex
-        items-center
-        justify-between
-        border-b
-        border-slate-200
-        bg-linear-to-r
-        from-slate-50
-        to-slate-100
-        px-5
-        py-4
-        dark:border-slate-700
-        dark:from-slate-800
-        dark:to-slate-900
-      `}
-      >
-        <div className={`flex items-center gap-2`}>
-          <TrendingUpIcon className={`h-5 w-5 text-primary-600 dark:text-primary-400`} strokeWidth={2} />
-          <h3 className={`text-base font-bold text-slate-900 dark:text-slate-100`}>Exchange rates</h3>
+    <div className={styles.card}>
+      <div className={styles.header}>
+        <div className={styles.headerLeft}>
+          <TrendingUpIcon className={styles.headerIcon} strokeWidth={2} />
+          <h3 className={styles.headerTitle}>Exchange rates</h3>
         </div>
         <button
           onClick={handleRefresh}
           disabled={isRefreshing}
-          className={`
-            flex
-            min-h-11
-            min-w-11
-            items-center
-            justify-center
-            rounded-xl
-            text-primary-600
-            transition-all
-            hover:bg-slate-100
-            focus:outline-hidden
-            focus:ring-2
-            focus:ring-primary-500
-            disabled:opacity-50
-            active:scale-95
-            dark:text-primary-400
-            dark:hover:bg-slate-700
-          `}
+          className={styles.refreshBtn}
           aria-label="Refresh rates"
         >
-          <RefreshIcon className={`h-5 w-5 ${isRefreshing ? `animate-spin` : ``}`} strokeWidth={2} />
+          <RefreshIcon className={`${styles.refreshIcon} ${isRefreshing ? `animate-spin` : ``}`} strokeWidth={2} />
         </button>
       </div>
 
-      <div className={`divide-y divide-slate-200 dark:divide-slate-700`}>
+      <div className={styles.list}>
         {rates.map((rate, index) => (
-          <div
-            key={`${rate.from}-${rate.to}`}
-            className={`
-              px-5
-              py-4
-              transition-colors
-              hover:bg-slate-50
-              animate-fadeIn
-              dark:hover:bg-slate-700/30
-            `}
-            style={{ animationDelay: `${index * 50}ms` }}
-          >
-            <div className={`flex items-center justify-between`}>
-              <div className={`flex items-center gap-3`}>
-                <div
-                  className={`
-                  flex
-                  items-center
-                  gap-2
-                  rounded-lg
-                  border
-                  border-slate-200
-                  bg-slate-50
-                  px-3
-                  py-2
-                  dark:border-slate-700
-                  dark:bg-slate-900/50
-                `}
-                >
-                  <span className={`text-sm font-bold text-slate-700 dark:text-slate-300`}>{rate.from}</span>
-                  <ChevronRightIcon className={`h-4 w-4 text-slate-500`} />
-                  <span className={`text-sm font-bold text-slate-700 dark:text-slate-300`}>{rate.to}</span>
+          <div key={`${rate.from}-${rate.to}`} className={styles.row} style={{ animationDelay: `${index * 50}ms` }}>
+            <div className={styles.rowContent}>
+              <div className={styles.pairWrap}>
+                <div className={styles.pairBadge}>
+                  <span className={styles.pairFrom}>{rate.from}</span>
+                  <ChevronRightIcon className={styles.pairArrow} />
+                  <span className={styles.pairTo}>{rate.to}</span>
                 </div>
               </div>
 
-              <div className={`flex items-center gap-3`}>
-                <span className={`text-lg font-extrabold text-slate-900 dark:text-slate-100`}>
-                  {rate.rate.toFixed(4)}
-                </span>
-
-                {rate.trend && (
-                  <div
-                    className={`
-                    flex
-                    items-center
-                    justify-center
-                    w-6
-                  `}
-                  >
-                    {rate.trend === `up` && <ArrowUpIcon className={`h-5 w-5 text-green-500`} />}
-                    {rate.trend === `down` && <ArrowDownIcon className={`h-5 w-5 text-red-500`} />}
+              <div className={styles.rateWrap}>
+                <span className={styles.rateValue}>{rate.rate.toFixed(4)}</span>
+                {rate.trend ? (
+                  <div className={styles.trendWrap}>
+                    {rate.trend === `up` ? (
+                      <ArrowUpIcon className={styles.trendUp} />
+                    ) : rate.trend === `down` ? (
+                      <ArrowDownIcon className={styles.trendDown} />
+                    ) : null}
                   </div>
-                )}
+                ) : null}
               </div>
             </div>
 
-            <div
-              className={`
-              mt-2
-              flex
-              items-center
-              gap-1.5
-            `}
-            >
-              <ClockIcon className={`h-3.5 w-3.5 text-slate-500`} />
-              <span className={`text-xs font-medium text-slate-500`}>
+            <div className={styles.metaRow}>
+              <ClockIcon className={styles.metaIcon} />
+              <span className={styles.metaText}>
                 {new Date(rate.timestamp).toLocaleTimeString(undefined, {
                   hour: `2-digit`,
                   minute: `2-digit`,

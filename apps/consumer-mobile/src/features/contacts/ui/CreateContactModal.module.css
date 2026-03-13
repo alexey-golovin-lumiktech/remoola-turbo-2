@@ -1,0 +1,56 @@
+/* CreateContactModal.module.css - primary-*, animate-slideDown */
+@reference "tailwindcss";
+@reference "../../../app/globals.css";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.form {
+  @apply space-y-5;
+}
+
+.inputHeight {
+  @apply min-h-11;
+}
+
+.section {
+  @apply border-t border-slate-200 pt-5 dark:border-slate-700;
+}
+
+.addressTrigger {
+  @apply flex w-full items-center justify-between rounded-xl p-3 text-sm font-semibold text-slate-700 transition-all hover:bg-slate-100 active:scale-[0.98] dark:text-slate-300 dark:hover:bg-slate-800;
+}
+
+.addressTriggerLeft {
+  @apply flex items-center gap-2;
+}
+
+.addressTriggerIcon {
+  @apply h-5 w-5 text-slate-500;
+}
+
+.chevron {
+  @apply h-5 w-5 transition-transform duration-200;
+}
+
+.chevronOpen {
+  @apply rotate-180;
+}
+
+.addressPanel {
+  @apply mt-4 space-y-4 animate-slideDown;
+}
+
+.grid2 {
+  @apply grid gap-4 sm:grid-cols-2;
+}
+
+.actions {
+  @apply flex flex-col gap-3 pt-3 sm:flex-row;
+}
+
+.actionBtn {
+  @apply min-h-11 flex-1;
+}
+
+.submitBtn {
+  @apply min-h-11 flex-1 shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40;
+}

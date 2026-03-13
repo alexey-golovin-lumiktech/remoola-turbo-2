@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 
 import { Button } from './Button';
 import { CheckIcon } from './icons/CheckIcon';
+import styles from './SuccessModal.module.css';
 
 interface SuccessModalProps {
   isOpen: boolean;
@@ -33,112 +34,30 @@ export function SuccessModal({ isOpen, onClose, title, message, actionLabel, act
   if (!isOpen) return null;
 
   return (
-    <div
-      className={`
-        fixed
-        inset-0
-        z-50
-        flex
-        items-end
-        justify-center
-        sm:items-center
-        sm:p-4
-      `}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="success-modal-title"
-    >
-      <div
-        className={`
-          fixed
-          inset-0
-          bg-black/20
-          backdrop-blur-xs
-          transition-opacity
-          dark:bg-slate-900/50
-        `}
-        onClick={onClose}
-        aria-hidden="true"
-      />
+    <div className={styles.overlay} role="dialog" aria-modal="true" aria-labelledby="success-modal-title">
+      <div className={styles.scrim} onClick={onClose} aria-hidden="true" />
 
-      <div
-        className={`
-        relative
-        z-10
-        w-full
-        max-w-sm
-        overflow-hidden
-        rounded-t-2xl
-        bg-white
-        shadow-xl
-        sm:rounded-2xl
-        dark:bg-slate-800
-      `}
-      >
-        <div className={`px-6 py-8 text-center`}>
-          <div
-            className={`
-            mx-auto
-            flex
-            h-16
-            w-16
-            items-center
-            justify-center
-            rounded-full
-            bg-green-100
-            dark:bg-green-900/30
-          `}
-          >
-            <CheckIcon
-              className={`
-              h-8
-              w-8
-              text-green-600
-              dark:text-green-400
-            `}
-            />
+      <div className={styles.panel}>
+        <div className={styles.content}>
+          <div className={styles.iconWrap}>
+            <CheckIcon className={styles.icon} />
           </div>
 
-          <h2
-            id="success-modal-title"
-            className={`
-            mt-4
-            text-xl
-            font-semibold
-            text-slate-900
-            dark:text-white
-          `}
-          >
+          <h2 id="success-modal-title" className={styles.title}>
             {title}
           </h2>
 
-          <p
-            className={`
-            mt-2
-            text-sm
-            text-slate-600
-            dark:text-slate-400
-          `}
-          >
-            {message}
-          </p>
+          <p className={styles.message}>{message}</p>
 
-          <div
-            className={`
-            mt-6
-            flex
-            flex-col
-            gap-3
-          `}
-          >
-            {actionHref && actionLabel && (
+          <div className={styles.actions}>
+            {actionHref && actionLabel ? (
               <a href={actionHref}>
-                <Button variant="primary" size="md" className={`w-full`}>
+                <Button variant="primary" size="md" className={styles.actionFullWidth}>
                   {actionLabel}
                 </Button>
               </a>
-            )}
-            <Button variant="outline" size="md" onClick={onClose} className={`w-full`}>
+            ) : null}
+            <Button variant="outline" size="md" onClick={onClose} className={styles.actionFullWidth}>
               Close
             </Button>
           </div>

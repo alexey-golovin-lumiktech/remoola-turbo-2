@@ -4,6 +4,7 @@ import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe, type Stripe, type Appearance } from '@stripe/stripe-js';
 import { type ReactNode, useEffect, useState, useMemo } from 'react';
 
+import styles from './StripeProvider.module.css';
 import { getClientEnv } from '../../lib/env.client';
 import { clientLogger } from '../../lib/logger';
 import { showErrorToast } from '../../lib/toast.client';
@@ -69,34 +70,13 @@ export function StripeProvider({ children, clientSecret }: StripeProviderProps) 
   }, [resolvedTheme]);
 
   if (error) {
-    return (
-      <p className={`px-4 py-3 text-center text-sm text-slate-600 dark:text-slate-400`}>
-        Payment setup unavailable. Please refresh the app.
-      </p>
-    );
+    return <p className={styles.errorText}>Payment setup unavailable. Please refresh the app.</p>;
   }
 
   if (!stripe) {
     return (
-      <div
-        className={`
-  flex
-  items-center
-  justify-center
-  p-8
-        `}
-      >
-        <div
-          className={`
-  h-8
-  w-8
-  animate-spin
-  rounded-full
-  border-4
-  border-slate-200
-  border-t-primary-600
-          `}
-        />
+      <div className={styles.loadingRoot}>
+        <div className={styles.spinner} />
       </div>
     );
   }

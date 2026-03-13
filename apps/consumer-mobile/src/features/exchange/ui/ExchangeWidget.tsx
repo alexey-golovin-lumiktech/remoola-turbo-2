@@ -14,6 +14,7 @@ import { ClockIcon } from '../../../shared/ui/icons/ClockIcon';
 import { CurrencyDollarIcon } from '../../../shared/ui/icons/CurrencyDollarIcon';
 import { ExchangeIcon } from '../../../shared/ui/icons/ExchangeIcon';
 import { getExchangeQuote, executeExchange } from '../actions';
+import styles from './ExchangeWidget.module.css';
 
 interface Currency {
   code: string;
@@ -109,96 +110,29 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
   };
 
   return (
-    <div
-      className={`
-      overflow-hidden
-      rounded-2xl
-      border
-      border-slate-200
-      bg-white
-      shadow-xl
-      transition-all
-      duration-300
-      hover:shadow-2xl
-      dark:border-slate-700
-      dark:bg-slate-800/90
-    `}
-    >
-      <div
-        className={`
-        border-b
-        border-slate-200
-        bg-linear-to-br
-        from-slate-50
-        to-slate-100
-        px-5
-        py-4
-        dark:border-slate-700
-        dark:from-slate-800
-        dark:to-slate-900
-      `}
-      >
-        <div className={`flex items-start gap-3`}>
-          <div
-            className={`
-            flex
-            h-10
-            w-10
-            items-center
-            justify-center
-            rounded-xl
-            bg-linear-to-br
-            from-primary-500
-            to-primary-600
-            shadow-lg
-          `}
-          >
-            <ExchangeIcon className={`h-5 w-5 text-white`} strokeWidth={2} />
+    <div className={styles.card}>
+      <div className={styles.header}>
+        <div className={styles.headerRow}>
+          <div className={styles.headerIconWrap}>
+            <ExchangeIcon className={styles.headerIcon} strokeWidth={2} />
           </div>
-          <div className={`flex-1`}>
-            <h3 className={`text-lg font-bold text-slate-900 dark:text-slate-100`}>Exchange currency</h3>
-            <p
-              className={`
-              mt-0.5
-              text-xs
-              font-medium
-              text-slate-500
-              dark:text-slate-400
-            `}
-            >
-              Convert between currencies at live exchange rates
-            </p>
+          <div className={styles.headerText}>
+            <h3 className={styles.headerTitle}>Exchange currency</h3>
+            <p className={styles.headerSubtitle}>Convert between currencies at live exchange rates</p>
           </div>
         </div>
       </div>
 
-      <div className={`space-y-5 p-5`}>
+      <div className={styles.body}>
         <div>
-          <div
-            className={`
-            mb-2
-            flex
-            items-center
-            justify-between
-          `}
-          >
-            <label
-              className={`
-              flex
-              items-center
-              gap-1.5
-              text-sm
-              font-bold
-              text-slate-800
-              dark:text-slate-200
-            `}
-            >
-              <CurrencyDollarIcon className={`h-4 w-4 text-slate-500 dark:text-slate-400`} strokeWidth={2} />
+          <div className={styles.fieldRow}>
+            <label className={styles.fieldLabel}>
+              <CurrencyDollarIcon className={styles.fieldLabelIcon} strokeWidth={2} />
               From
             </label>
-            <span className={`text-xs font-semibold text-slate-500 dark:text-slate-400`}>
+            <span className={styles.availableLabel}>
               Available:{` `}
-              <span className={`text-slate-700 dark:text-slate-300`}>
+              <span className={styles.availableValue}>
                 {getBalanceForCurrency(fromCurrency).toFixed(2)} {fromCurrency}
               </span>
             </span>
@@ -221,70 +155,15 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
           />
         </div>
 
-        <div className={`flex justify-center`}>
-          <button
-            onClick={handleSwapCurrencies}
-            className={`
-              group
-              flex
-              min-h-12
-              min-w-12
-              items-center
-              justify-center
-              rounded-2xl
-              bg-linear-to-br
-              from-slate-200
-              to-slate-300
-              p-3
-              text-slate-600
-              shadow-lg
-              transition-all
-              duration-300
-              hover:from-primary-600
-              hover:to-primary-700
-              hover:text-white
-              hover:shadow-xl
-              hover:scale-110
-              focus:outline-hidden
-              focus:ring-2
-              focus:ring-primary-500
-              focus:ring-offset-2
-              focus:ring-offset-white
-              active:scale-95
-              dark:from-slate-700
-              dark:to-slate-800
-              dark:text-slate-300
-              dark:focus:ring-offset-slate-800
-            `}
-            aria-label="Swap currencies"
-          >
-            <ExchangeIcon
-              className={`
-                h-6
-                w-6
-                transition-transform
-                duration-500
-                group-hover:rotate-180
-              `}
-              strokeWidth={2.5}
-            />
+        <div className={styles.swapWrap}>
+          <button onClick={handleSwapCurrencies} className={styles.swapBtn} aria-label="Swap currencies">
+            <ExchangeIcon className={styles.swapIcon} strokeWidth={2.5} />
           </button>
         </div>
 
         <div>
-          <label
-            className={`
-            mb-2
-            flex
-            items-center
-            gap-1.5
-            text-sm
-            font-bold
-            text-slate-800
-            dark:text-slate-200
-          `}
-          >
-            <CurrencyDollarIcon className={`h-4 w-4 text-slate-500 dark:text-slate-400`} strokeWidth={2} />
+          <label className={styles.toLabel}>
+            <CurrencyDollarIcon className={styles.fieldLabelIcon} strokeWidth={2} />
             To
           </label>
           <AmountCurrencyInput
@@ -302,39 +181,17 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
           />
         </div>
 
-        {quote && (
-          <div
-            className={`
-            animate-slideDown
-            rounded-xl
-            border
-            border-blue-200
-            bg-linear-to-br
-            from-blue-50
-            to-blue-100/50
-            p-4
-            shadow-lg
-            dark:border-blue-700
-            dark:from-blue-900/50
-            dark:to-blue-800/30
-          `}
-          >
-            <div
-              className={`
-              flex
-              items-center
-              justify-between
-              mb-2
-            `}
-            >
-              <span className={`text-sm font-bold text-blue-700 dark:text-blue-300`}>Exchange rate</span>
-              <span className={`text-base font-extrabold text-blue-800 dark:text-blue-200`}>
+        {quote ? (
+          <div className={styles.quoteBox}>
+            <div className={styles.quoteRow}>
+              <span className={styles.quoteLabel}>Exchange rate</span>
+              <span className={styles.quoteValue}>
                 1 {fromCurrency} = {quote.rate.toFixed(4)} {toCurrency}
               </span>
             </div>
-            <div className={`flex items-center gap-1.5`}>
-              <ClockIcon className={`h-3.5 w-3.5 text-blue-600 dark:text-blue-400`} />
-              <p className={`text-xs font-medium text-blue-600 dark:text-blue-300`}>
+            <div className={styles.quoteMeta}>
+              <ClockIcon className={styles.quoteMetaIcon} />
+              <p className={styles.quoteMetaText}>
                 {(() => {
                   const date = quote.timestamp ? new Date(quote.timestamp) : new Date();
                   const timeLabel = Number.isNaN(date.getTime()) ? `just now` : date.toLocaleTimeString();
@@ -343,53 +200,20 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
               </p>
             </div>
           </div>
-        )}
+        ) : null}
 
-        {success && (
-          <div
-            className={`
-            animate-slideDown
-            rounded-xl
-            border
-            border-green-200
-            bg-linear-to-br
-            from-green-50
-            to-green-100/50
-            p-4
-            shadow-lg
-            dark:border-green-700
-            dark:from-green-900/50
-            dark:to-green-800/30
-          `}
-          >
-            <div className={`flex items-start gap-3`}>
-              <div
-                className={`
-                flex
-                h-8
-                w-8
-                shrink-0
-                items-center
-                justify-center
-                rounded-full
-                bg-green-500
-              `}
-              >
-                <CheckIcon className={`h-5 w-5 text-white`} strokeWidth={3} />
+        {success ? (
+          <div className={styles.successBox}>
+            <div className={styles.successRow}>
+              <div className={styles.successIconWrap}>
+                <CheckIcon className={styles.successIcon} strokeWidth={3} />
               </div>
-              <p className={`text-sm font-semibold text-green-800 dark:text-green-200`}>{success}</p>
+              <p className={styles.successText}>{success}</p>
             </div>
           </div>
-        )}
+        ) : null}
 
-        <div
-          className={`
-          flex
-          flex-wrap
-          gap-3
-          pt-2
-        `}
-        >
+        <div className={styles.actions}>
           {quote ? (
             <>
               <Button
@@ -398,7 +222,7 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
                 onClick={handleGetQuote}
                 isLoading={isLoading}
                 disabled={!amount || parseFloat(amount) <= 0 || isSameCurrency}
-                className={`min-h-12 font-bold`}
+                className={styles.actionBtn}
               >
                 Get new quote
               </Button>
@@ -408,7 +232,7 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
                 onClick={handleExchange}
                 isLoading={isLoading}
                 disabled={!amount || parseFloat(amount) <= 0 || isSameCurrency}
-                className={`min-h-12 font-bold`}
+                className={styles.actionBtn}
               >
                 Exchange now
               </Button>
@@ -420,7 +244,7 @@ export function ExchangeWidget({ availableCurrencies, balances }: ExchangeWidget
               onClick={handleExchange}
               isLoading={isLoading}
               disabled={!amount || parseFloat(amount) <= 0 || isSameCurrency}
-              className={`min-h-12 font-bold`}
+              className={styles.actionBtn}
             >
               Get quote
             </Button>

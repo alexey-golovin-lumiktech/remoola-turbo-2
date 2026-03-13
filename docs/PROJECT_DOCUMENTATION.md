@@ -243,6 +243,12 @@ Consumer UI is in `apps/consumer`, with internal API handlers in `apps/consumer/
 
 Mobile-first consumer UI is in `apps/consumer-mobile`, running on port 3002. Follows the same architecture as the desktop consumer app with mobile-optimized layouts and enhanced touch interactions. Uses Google OAuth with `returnOrigin` parameter for proper redirect handling in multi-app deployments.
 
+Recent hardening and architecture updates:
+
+- Styling migrated to CSS Modules across routes/features/shared UI (`*.module.css`) to keep presentation separated from TSX logic.
+- Login `next` query handling is sanitized (unsafe absolute/protocol-relative/malformed/CRLF values are rejected and fallback to `/dashboard`).
+- Middleware refresh flow emits `x-remoola-auth-refresh-*` headers and `server-timing` metrics for refresh observability and avoids auth-page redirect loops with expired cookies.
+
 ### Enhanced UI Features
 
 - **Documents View**: Card-based responsive grid layout (1/2/3 columns), filter chips with counts, skeleton loading states, improved empty states
@@ -386,6 +392,7 @@ Shared packages used across apps:
 - `packages/shared-constants`: shared constants.
 - `packages/test-db`: test database utilities.
 - `packages/ui`: shared UI components.
+- `packages/ui`: shared UI components and `cn()` class merging via `tailwind-merge`.
 - `packages/eslint-config`, `packages/jest-config`, `packages/typescript-config`: tooling.
 
 ## Additional documentation

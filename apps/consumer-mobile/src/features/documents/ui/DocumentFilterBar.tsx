@@ -2,6 +2,7 @@
 
 import { FilterChip } from '../../../shared/ui/FilterChip';
 import { type DocumentKind } from '../schemas';
+import styles from './DocumentFilterBar.module.css';
 
 interface DocumentFilterBarProps {
   activeFilter: DocumentKind;
@@ -24,18 +25,8 @@ const filters: { value: DocumentKind; label: string }[] = [
  */
 export function DocumentFilterBar({ activeFilter, onFilterChange, filterCounts }: DocumentFilterBarProps) {
   return (
-    <div className={`w-full`}>
-      <div
-        className={`
-          grid
-          grid-cols-3
-          gap-2.5
-          py-2
-          sm:flex
-          sm:flex-wrap
-          sm:gap-3
-        `}
-      >
+    <div className={styles.root}>
+      <div className={styles.grid}>
         {filters.map((filter) => (
           <FilterChip
             key={filter.value}

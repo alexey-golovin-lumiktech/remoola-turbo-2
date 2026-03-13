@@ -1,0 +1,133 @@
+/* DatePicker.module.css - primary-*, dark, DayPicker classNames */
+@reference "tailwindcss";
+@reference "../../app/globals.css";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.container {
+  @apply relative;
+}
+
+.trigger {
+  @apply min-h-11 w-full rounded-lg border px-4 py-2.5 text-left text-base transition-colors duration-200 focus:outline-hidden focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+.triggerPlaceholder {
+  @apply text-slate-400 dark:text-slate-500;
+}
+
+.triggerDefault {
+  @apply border-slate-300 bg-white text-slate-900 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white;
+}
+
+.triggerError {
+  @apply border-red-300 bg-red-50 text-red-900 focus:border-red-500 focus:ring-red-500 dark:border-red-700 dark:bg-red-900/10 dark:text-red-100;
+}
+
+.triggerInner {
+  @apply flex items-center justify-between;
+}
+
+.calendarIconDefault {
+  @apply ml-2 h-5 w-5 shrink-0 text-slate-400 dark:text-slate-500;
+}
+
+.calendarIconError {
+  @apply ml-2 h-5 w-5 shrink-0 text-red-400 dark:text-red-500;
+}
+
+.backdrop {
+  @apply fixed inset-0 z-40;
+}
+
+.popover {
+  @apply z-50 max-h-[calc(100vh-100px)] overflow-auto rounded-lg border border-slate-200 bg-white p-4 shadow-xl dark:border-slate-700 dark:bg-slate-800;
+}
+
+.footer {
+  @apply mt-3 flex items-center justify-between border-t border-slate-200 pt-3 dark:border-slate-700;
+}
+
+.todayBtn {
+  @apply rounded-md px-3 py-1.5 text-sm font-medium text-primary-600 hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-900/20;
+}
+
+.clearBtn {
+  @apply rounded-md px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700;
+}
+
+/* react-day-picker classNames */
+.rdpMonths {
+  @apply flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0;
+}
+
+.rdpMonth {
+  @apply space-y-4;
+}
+
+.rdpCaption {
+  @apply flex justify-center pt-1 relative items-center;
+}
+
+.rdpCaptionLabel {
+  @apply text-sm font-medium text-slate-900 dark:text-white;
+}
+
+.rdpNav {
+  @apply space-x-1 flex items-center;
+}
+
+.rdpNavButton {
+  @apply h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 inline-flex items-center justify-center rounded-md text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-700;
+}
+
+.rdpNavButtonPrevious {
+  @apply absolute left-1;
+}
+
+.rdpNavButtonNext {
+  @apply absolute right-1;
+}
+
+.rdpTable {
+  @apply w-full border-collapse space-y-1;
+}
+
+.rdpHeadRow {
+  @apply flex;
+}
+
+.rdpHeadCell {
+  @apply text-slate-500 dark:text-slate-400 rounded-md w-9 font-normal text-[0.8rem];
+}
+
+.rdpRow {
+  @apply flex w-full mt-2;
+}
+
+.rdpCell {
+  @apply relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-primary-50 dark:[&:has([aria-selected])]:bg-primary-900/20;
+}
+
+.rdpDay {
+  @apply h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md;
+}
+
+.rdpDaySelected {
+  @apply bg-primary-600 text-white hover:bg-primary-700 hover:text-white focus:bg-primary-700 focus:text-white dark:bg-primary-600 dark:text-white dark:hover:bg-primary-500 dark:focus:bg-primary-500;
+}
+
+.rdpDayToday {
+  @apply bg-slate-100 text-slate-900 dark:bg-slate-700 dark:text-white;
+}
+
+.rdpDayOutside {
+  @apply text-slate-400 opacity-50 dark:text-slate-500;
+}
+
+.rdpDayDisabled {
+  @apply text-slate-400 opacity-50 cursor-not-allowed dark:text-slate-500;
+}
+
+.rdpDayHidden {
+  @apply invisible;
+}

@@ -1,0 +1,36 @@
+/* FilterChip.module.css - globals for primary-* */
+@reference "tailwindcss";
+@reference "../../app/globals.css";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.base {
+  @apply relative flex min-h-12 flex-col items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-bold transition-all duration-300 active:scale-95 focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 sm:flex-row sm:gap-2.5 sm:rounded-2xl sm:px-5 sm:py-3 sm:text-sm;
+}
+
+.active {
+  @apply bg-linear-to-br from-primary-600 via-primary-700 to-primary-600 text-white shadow-xl shadow-primary-500/40 ring-2 ring-primary-500/30 scale-105 dark:shadow-primary-900/60;
+}
+
+.inactive {
+  @apply border border-slate-200 bg-linear-to-br from-slate-100 via-white to-slate-100 text-slate-700 hover:scale-[1.02] hover:border-slate-300 hover:shadow-lg dark:border-slate-700/50 dark:from-slate-800 dark:via-slate-900 dark:to-slate-800 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:shadow-slate-950/40;
+}
+
+.label {
+  @apply whitespace-nowrap font-extrabold leading-none;
+}
+
+.countBadge {
+  @apply flex h-6 min-w-6 items-center justify-center rounded-full px-2 text-xs font-black leading-none shadow-md transition-all duration-300;
+}
+
+.countBadgeActive {
+  @apply bg-white/30 text-white backdrop-blur-xs ring-1 ring-white/20;
+}
+
+.countBadgeInactive {
+  @apply bg-slate-200 text-slate-700 dark:bg-slate-700/80 dark:text-slate-300;
+}
+
+.inactive:hover .countBadgeInactive {
+  @apply bg-slate-300 dark:bg-slate-600;
+}

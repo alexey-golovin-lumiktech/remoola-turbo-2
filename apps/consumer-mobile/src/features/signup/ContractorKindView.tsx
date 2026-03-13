@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import { ACCOUNT_TYPE, CONTRACTOR_KIND, type TContractorKind } from '@remoola/api-types';
 import { LandmarkIcon, UserIcon } from '@remoola/ui';
 
+import styles from './ContractorKindView.module.css';
 import { useSignupForm } from './SignupFormContext';
 
 export function ContractorKindView() {
@@ -40,61 +41,11 @@ export function ContractorKindView() {
   if (!signupDetails.accountType) return null;
 
   return (
-    <div
-      className={`
-        mx-auto
-        max-w-md
-        space-y-4
-        px-3
-        py-4
-        sm:space-y-6
-        sm:px-4
-      `}
-      data-testid="consumer-signup-contractor-kind-page"
-    >
-      <div
-        className={`
-        rounded-xl
-        border
-        border-neutral-200
-        bg-white
-        p-4
-        shadow-xs
-        sm:p-6
-        dark:border-neutral-700
-        dark:bg-neutral-900
-      `}
-      >
-        <p
-          className={`
-          text-sm
-          font-medium
-          text-neutral-500
-          dark:text-neutral-400
-        `}
-        >
-          Choose contractor type
-        </p>
-        <h1
-          className={`
-          mt-1
-          text-xl
-          font-semibold
-          text-neutral-900
-          dark:text-white
-        `}
-        >
-          I&apos;m an
-        </h1>
-        <div
-          className={`
-          mt-6
-          flex
-          flex-col
-          gap-3
-        `}
-          data-testid="consumer-signup-contractor-kind-options"
-        >
+    <div className={styles.root} data-testid="consumer-signup-contractor-kind-page">
+      <div className={styles.card}>
+        <p className={styles.stepLabel}>Choose contractor type</p>
+        <h1 className={styles.stepTitle}>I&apos;m an</h1>
+        <div className={styles.options} data-testid="consumer-signup-contractor-kind-options">
           <button
             type="button"
             data-testid="consumer-signup-contractor-kind-option-individual"
@@ -103,27 +54,19 @@ export function ContractorKindView() {
               e.stopPropagation();
               selectKind(CONTRACTOR_KIND.INDIVIDUAL);
             }}
-            className={`flex min-h-13 items-center gap-4 rounded-xl border-2 px-4 py-3 text-left transition focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
-              isSelected(CONTRACTOR_KIND.INDIVIDUAL)
-                ? `border-primary-500 bg-primary-50 dark:bg-primary-900/20 dark:border-primary-400`
-                : `border-neutral-200 bg-white hover:border-neutral-300 dark:border-neutral-600 dark:bg-neutral-800 dark:hover:border-neutral-500`
-            }`}
+            className={`${styles.optionBtn} ${isSelected(CONTRACTOR_KIND.INDIVIDUAL) ? styles.optionBtnSelected : styles.optionBtnUnselected}`}
           >
             <span
               className={
-                isSelected(CONTRACTOR_KIND.INDIVIDUAL)
-                  ? `text-primary-600 dark:text-primary-400`
-                  : `text-neutral-500 dark:text-neutral-400`
+                isSelected(CONTRACTOR_KIND.INDIVIDUAL) ? styles.optionIconSelected : styles.optionIconUnselected
               }
             >
               <UserIcon size={28} />
             </span>
             <span
-              className={`font-semibold ${
-                isSelected(CONTRACTOR_KIND.INDIVIDUAL)
-                  ? `text-primary-700 dark:text-primary-300`
-                  : `text-neutral-700 dark:text-neutral-200`
-              }`}
+              className={
+                isSelected(CONTRACTOR_KIND.INDIVIDUAL) ? styles.optionTitleSelected : styles.optionTitleUnselected
+              }
             >
               Individual
             </span>
@@ -136,27 +79,15 @@ export function ContractorKindView() {
               e.stopPropagation();
               selectKind(CONTRACTOR_KIND.ENTITY);
             }}
-            className={`flex min-h-13 items-center gap-4 rounded-xl border-2 px-4 py-3 text-left transition focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
-              isSelected(CONTRACTOR_KIND.ENTITY)
-                ? `border-primary-500 bg-primary-50 dark:bg-primary-900/20 dark:border-primary-400`
-                : `border-neutral-200 bg-white hover:border-neutral-300 dark:border-neutral-600 dark:bg-neutral-800 dark:hover:border-neutral-500`
-            }`}
+            className={`${styles.optionBtn} ${isSelected(CONTRACTOR_KIND.ENTITY) ? styles.optionBtnSelected : styles.optionBtnUnselected}`}
           >
             <span
-              className={
-                isSelected(CONTRACTOR_KIND.ENTITY)
-                  ? `text-primary-600 dark:text-primary-400`
-                  : `text-neutral-500 dark:text-neutral-400`
-              }
+              className={isSelected(CONTRACTOR_KIND.ENTITY) ? styles.optionIconSelected : styles.optionIconUnselected}
             >
               <LandmarkIcon size={28} />
             </span>
             <span
-              className={`font-semibold ${
-                isSelected(CONTRACTOR_KIND.ENTITY)
-                  ? `text-primary-700 dark:text-primary-300`
-                  : `text-neutral-700 dark:text-neutral-200`
-              }`}
+              className={isSelected(CONTRACTOR_KIND.ENTITY) ? styles.optionTitleSelected : styles.optionTitleUnselected}
             >
               Entity
             </span>
@@ -167,25 +98,7 @@ export function ContractorKindView() {
           data-testid="consumer-signup-contractor-kind-btn-next"
           disabled={!signupDetails.contractorKind}
           onClick={onNext}
-          className={`
-            mt-6
-            min-h-11
-            w-full
-            rounded-xl
-            bg-primary-600
-            px-4
-            py-3
-            font-semibold
-            text-white
-            hover:bg-primary-700
-            focus:outline-hidden
-            focus:ring-2
-            focus:ring-primary-500
-            focus:ring-offset-2
-            disabled:opacity-50
-            dark:bg-primary-500
-            dark:hover:bg-primary-600
-          `}
+          className={styles.nextBtn}
         >
           Next
         </button>
@@ -197,26 +110,7 @@ export function ContractorKindView() {
             e.stopPropagation();
             onBack();
           }}
-          className={`
-            mt-3
-            min-h-11
-            w-full
-            rounded-xl
-            border
-            border-neutral-300
-            px-4
-            py-3
-            font-medium
-            text-neutral-700
-            hover:bg-neutral-50
-            focus:outline-hidden
-            focus:ring-2
-            focus:ring-primary-500
-            focus:ring-offset-2
-            dark:border-neutral-600
-            dark:hover:bg-neutral-800
-            dark:text-neutral-200
-          `}
+          className={styles.backBtn}
         >
           ← Back
         </button>

@@ -1,5 +1,6 @@
 import { type ReactNode } from 'react';
 
+import styles from './EmptyState.module.css';
 import { ArrowRightIcon } from './icons/ArrowRightIcon';
 
 interface EmptyStateProps {
@@ -15,168 +16,25 @@ interface EmptyStateProps {
 
 export function EmptyState({ icon, title, description, action }: EmptyStateProps) {
   return (
-    <div
-      className={`
-      animate-fadeIn
-      flex
-      min-h-100
-      flex-col
-      items-center
-      justify-center
-      rounded-3xl
-      border-2
-      border-dashed
-      border-slate-200
-      bg-linear-to-br
-      from-slate-50/50
-      to-white
-      px-6
-      py-16
-      text-center
-      shadow-xs
-      dark:border-slate-700
-      dark:from-slate-800/30
-      dark:to-slate-900/30
-    `}
-    >
-      {icon && (
-        <div
-          className={`
-          mb-6
-          flex
-          h-20
-          w-20
-          items-center
-          justify-center
-          rounded-2xl
-          bg-linear-to-br
-          from-primary-100
-          to-primary-50
-          text-primary-500
-          shadow-lg
-          shadow-primary-100/50
-          dark:from-primary-900/40
-          dark:to-primary-800/30
-          dark:text-primary-400
-          dark:shadow-primary-900/20
-        `}
-        >
-          {icon}
-        </div>
-      )}
-      <h3
-        className={`
-        text-xl
-        font-bold
-        text-slate-900
-        dark:text-white
-      `}
-      >
-        {title}
-      </h3>
-      {description && (
-        <p
-          className={`
-          mt-3
-          max-w-md
-          text-base
-          leading-relaxed
-          text-slate-600
-          dark:text-slate-400
-        `}
-        >
-          {description}
-        </p>
-      )}
-      {action && (
-        <div className={`mt-8`}>
+    <div className={styles.root}>
+      {icon ? <div className={styles.iconWrap}>{icon}</div> : null}
+      <h3 className={styles.title}>{title}</h3>
+      {description ? <p className={styles.description}>{description}</p> : null}
+      {action ? (
+        <div className={styles.actionWrap}>
           {action.href ? (
-            <a
-              href={action.href}
-              className={`
-                group
-                inline-flex
-                min-h-12
-                items-center
-                gap-2
-                rounded-xl
-                bg-primary-600
-                px-6
-                py-3
-                text-base
-                font-semibold
-                text-white
-                shadow-lg
-                shadow-primary-200
-                transition-all
-                hover:bg-primary-700
-                hover:shadow-xl
-                hover:shadow-primary-300
-                hover:-translate-y-0.5
-                active:translate-y-0
-                focus:outline-hidden
-                focus:ring-2
-                focus:ring-primary-500
-                focus:ring-offset-2
-                dark:shadow-primary-900/40
-              `}
-            >
+            <a href={action.href} className={styles.actionButton}>
               {action.label}
-              <ArrowRightIcon
-                className={`
-                h-5
-                w-5
-                transition-transform
-                group-hover:translate-x-0.5
-              `}
-                strokeWidth={2}
-              />
+              <ArrowRightIcon className={styles.actionIcon} strokeWidth={2} />
             </a>
           ) : (
-            <button
-              onClick={action.onClick}
-              className={`
-                group
-                inline-flex
-                min-h-12
-                items-center
-                gap-2
-                rounded-xl
-                bg-primary-600
-                px-6
-                py-3
-                text-base
-                font-semibold
-                text-white
-                shadow-lg
-                shadow-primary-200
-                transition-all
-                hover:bg-primary-700
-                hover:shadow-xl
-                hover:shadow-primary-300
-                hover:-translate-y-0.5
-                active:translate-y-0
-                focus:outline-hidden
-                focus:ring-2
-                focus:ring-primary-500
-                focus:ring-offset-2
-                dark:shadow-primary-900/40
-              `}
-            >
+            <button type="button" onClick={action.onClick} className={styles.actionButton}>
               {action.label}
-              <ArrowRightIcon
-                className={`
-                h-5
-                w-5
-                transition-transform
-                group-hover:translate-x-0.5
-              `}
-                strokeWidth={2}
-              />
+              <ArrowRightIcon className={styles.actionIcon} strokeWidth={2} />
             </button>
           )}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

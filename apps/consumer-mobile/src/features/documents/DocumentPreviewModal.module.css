@@ -1,0 +1,112 @@
+/* DocumentPreviewModal.module.css - primary-* */
+@reference "tailwindcss";
+@reference "../../app/globals.css";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.overlay {
+  @apply fixed inset-0 z-50 flex items-end justify-center sm:items-center;
+}
+
+.overlayFullscreen {
+  @apply bg-black;
+}
+
+.overlayNormal {
+  @apply bg-black/20 p-0 backdrop-blur-md sm:p-4 dark:bg-slate-900/60;
+}
+
+.backdrop {
+  @apply fixed inset-0;
+}
+
+.panel {
+  @apply relative z-10 flex flex-col overflow-hidden shadow-2xl;
+}
+
+.panelFullscreen {
+  @apply h-screen w-screen bg-slate-900;
+}
+
+.panelNormal {
+  @apply h-[95vh] w-full rounded-t-3xl bg-white sm:max-w-5xl sm:rounded-3xl dark:bg-slate-800;
+}
+
+.header {
+  @apply flex flex-col border-b bg-gradient-to-r from-white via-slate-50 to-white px-3 py-3 backdrop-blur-xs sm:flex-row sm:items-center sm:px-5 sm:py-4 dark:border-slate-700 dark:from-slate-800 dark:via-slate-900 dark:to-slate-800;
+}
+
+.headerLeft {
+  @apply mb-2 flex items-center justify-between gap-2 sm:mb-0 sm:flex-1;
+}
+
+.titleWrap {
+  @apply min-w-0 flex-1;
+}
+
+.title {
+  @apply truncate text-base font-bold text-slate-900 sm:text-lg dark:text-white;
+}
+
+.closeBtnMobile {
+  @apply flex min-h-10 shrink-0 items-center justify-center rounded-xl p-2 text-slate-600 transition-all hover:bg-slate-100 hover:text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-primary-500 active:scale-95 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white sm:hidden;
+}
+
+.headerRight {
+  @apply flex items-center justify-center gap-2 sm:ml-4;
+}
+
+.actionBtn {
+  @apply flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-slate-600 transition-all hover:bg-slate-100 hover:text-slate-900 hover:shadow-md focus:outline-hidden focus:ring-2 focus:ring-primary-500 active:scale-95 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white sm:min-h-11 sm:flex-none sm:p-2.5 sm:font-normal;
+}
+
+.actionBtnLabel {
+  @apply sm:hidden;
+}
+
+.iconBtn {
+  @apply h-5 w-5;
+}
+
+.closeBtnDesktop {
+  @apply hidden min-h-11 items-center justify-center rounded-xl p-2.5 text-slate-600 transition-all hover:bg-slate-100 hover:text-slate-900 hover:shadow-md focus:outline-hidden focus:ring-2 focus:ring-primary-500 active:scale-95 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white sm:flex;
+}
+
+.body {
+  @apply flex-1 overflow-auto bg-slate-50 dark:bg-slate-950;
+}
+
+.imageWrap {
+  @apply flex h-full items-center justify-center p-4;
+}
+
+.image {
+  @apply max-h-full max-w-full object-contain;
+}
+
+.iframe {
+  @apply h-full w-full;
+}
+
+.fallbackWrap {
+  @apply flex h-full flex-col items-center justify-center p-8 text-center;
+}
+
+.fallbackIconWrap {
+  @apply flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-200 to-slate-300 shadow-xl dark:from-slate-700 dark:to-slate-800;
+}
+
+.fallbackIcon {
+  @apply h-10 w-10 text-slate-500 dark:text-slate-400;
+}
+
+.fallbackTitle {
+  @apply mt-6 text-base font-bold text-slate-900 dark:text-white;
+}
+
+.fallbackSub {
+  @apply mt-2 text-sm text-slate-600 dark:text-slate-400;
+}
+
+.fallbackBtn {
+  @apply mt-8 inline-flex min-h-12 items-center gap-2 rounded-xl bg-gradient-to-r from-primary-600 to-primary-700 px-8 py-3 text-sm font-bold text-white shadow-lg shadow-primary-500/30 transition-all hover:scale-105 hover:shadow-xl hover:shadow-primary-500/40 focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 active:scale-95;
+}

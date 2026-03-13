@@ -1,0 +1,32 @@
+/* DocumentUploadButton.module.css - primary-* */
+@reference "tailwindcss";
+@reference "../../../app/globals.css";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.wrap {
+  @apply relative;
+}
+
+.input {
+  @apply hidden;
+}
+
+.btn {
+  @apply shadow-xl shadow-primary-500/30 hover:shadow-2xl hover:shadow-primary-500/40;
+}
+
+.loadingRow {
+  @apply flex items-center gap-2.5;
+}
+
+.loadingText {
+  @apply font-bold;
+}
+
+.labelText {
+  @apply ml-2 font-bold;
+}
+
+.icon {
+  @apply h-5 w-5;
+}

@@ -7,6 +7,7 @@ import { ACCOUNT_TYPE, type TAccountType } from '@remoola/api-types';
 import { ClipboardIcon, UserIcon } from '@remoola/ui';
 
 import { useSignupForm } from './SignupFormContext';
+import styles from './SignupStartView.module.css';
 import { CheckCircleIcon } from '../../shared/ui/icons/CheckCircleIcon';
 import { ExclamationCircleIcon } from '../../shared/ui/icons/ExclamationCircleIcon';
 import { InformationCircleIcon } from '../../shared/ui/icons/InformationCircleIcon';
@@ -114,169 +115,49 @@ export function SignupStartView() {
   }, [signupDetails.accountType, updateSignup]);
 
   return (
-    <div
-      className={`
-      mx-auto
-      max-w-md
-      space-y-6
-      px-3
-      py-4
-      sm:px-4
-    `}
-      data-testid="consumer-signup-start-page"
-    >
-      <div className={`text-center`}>
-        <h1
-          className={`
-          text-2xl
-          font-bold
-          text-neutral-900
-          dark:text-white
-        `}
-        >
-          Welcome to Remoola
-        </h1>
-        <p
-          className={`
-          mt-2
-          text-sm
-          text-neutral-600
-          dark:text-neutral-400
-        `}
-        >
-          Let&apos;s get started by setting up your account
-        </p>
+    <div className={styles.root} data-testid="consumer-signup-start-page">
+      <div className={styles.header}>
+        <h1 className={styles.title}>Welcome to Remoola</h1>
+        <p className={styles.subtitle}>Let&apos;s get started by setting up your account</p>
       </div>
 
-      {hydrateError && (
-        <div
-          className={`
-          rounded-lg
-          border
-          border-red-200
-          bg-red-50
-          p-4
-          dark:border-red-900/50
-          dark:bg-red-900/20
-        `}
-        >
-          <div className={`flex items-start gap-3`}>
-            <ExclamationCircleIcon
-              className={`
-                mt-0.5
-                h-5
-                w-5
-                shrink-0
-                text-red-600
-                dark:text-red-400
-              `}
-            />
-            <div className={`flex-1`}>
-              <p
-                className={`
-                text-sm
-                font-semibold
-                text-red-900
-                dark:text-red-200
-              `}
-              >
-                {hydrateError}
-              </p>
+      {hydrateError ? (
+        <div className={styles.errorCard}>
+          <div className={styles.errorInner}>
+            <ExclamationCircleIcon className={styles.errorIcon} />
+            <div className={styles.errorContent}>
+              <p className={styles.errorTitle}>{hydrateError}</p>
               <button
                 type="button"
                 onClick={() => {
                   hydratedRef.current = false;
                   setRetryTrigger((t) => t + 1);
                 }}
-                className={`
-                  mt-2
-                  text-sm
-                  font-medium
-                  text-red-700
-                  hover:text-red-800
-                  dark:text-red-300
-                  dark:hover:text-red-200
-                `}
+                className={styles.retryBtn}
               >
                 Retry
               </button>
             </div>
           </div>
         </div>
-      )}
+      ) : null}
 
-      <div
-        className={`
-        rounded-2xl
-        border
-        border-neutral-200
-        bg-white
-        p-6
-        shadow-xs
-        dark:border-neutral-700
-        dark:bg-neutral-900
-      `}
-      >
-        {googleSignupTokenFromUrl && signupDetails.email && (
-          <div
-            className={`
-            mb-4
-            rounded-lg
-            bg-primary-50
-            p-3
-            dark:bg-primary-900/20
-          `}
-          >
-            <p
-              className={`
-              flex
-              items-center
-              gap-2
-              text-sm
-              text-primary-700
-              dark:text-primary-300
-            `}
-            >
-              <InformationCircleIcon className={`h-5 w-5 shrink-0`} />
+      <div className={styles.card}>
+        {googleSignupTokenFromUrl && signupDetails.email ? (
+          <div className={styles.googleBanner}>
+            <p className={styles.googleBannerText}>
+              <InformationCircleIcon className={styles.googleBannerIcon} />
               Signing up with {signupDetails.email}
             </p>
           </div>
-        )}
-        <div className={`mb-6`}>
-          <p
-            className={`
-            text-sm
-            font-medium
-            text-neutral-500
-            dark:text-neutral-400
-          `}
-          >
-            Step 1 of 4
-          </p>
-          <h2
-            className={`
-            mt-1
-            text-xl
-            font-semibold
-            text-neutral-900
-            dark:text-white
-          `}
-          >
-            Choose your account type
-          </h2>
-          <p
-            className={`
-            mt-1
-            text-sm
-            text-neutral-600
-            dark:text-neutral-400
-          `}
-          >
-            Select the option that best describes you
-          </p>
+        ) : null}
+        <div className={styles.stepSection}>
+          <p className={styles.stepLabel}>Step 1 of 4</p>
+          <h2 className={styles.stepTitle}>Choose your account type</h2>
+          <p className={styles.stepSub}>Select the option that best describes you</p>
         </div>
 
-        <div className={`space-y-3`} data-testid="consumer-signup-start-options">
+        <div className={styles.options} data-testid="consumer-signup-start-options">
           <button
             type="button"
             data-testid="consumer-signup-start-option-contractor"
@@ -285,64 +166,26 @@ export function SignupStartView() {
               e.stopPropagation();
               selectType(ACCOUNT_TYPE.CONTRACTOR);
             }}
-            className={`group relative flex min-h-18 w-full items-center gap-4 overflow-hidden rounded-xl border-2 px-5 py-4 text-left transition-all focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
-              isSelected(ACCOUNT_TYPE.CONTRACTOR)
-                ? `border-primary-500 bg-primary-50 shadow-md dark:border-primary-400 dark:bg-primary-900/20`
-                : `border-neutral-200 bg-white hover:border-primary-300 hover:shadow-xs dark:border-neutral-600 dark:bg-neutral-800 dark:hover:border-neutral-500`
-            }`}
+            className={`${styles.optionBtn} ${isSelected(ACCOUNT_TYPE.CONTRACTOR) ? styles.optionBtnSelected : styles.optionBtnUnselected}`}
           >
-            {isSelected(ACCOUNT_TYPE.CONTRACTOR) && (
-              <div
-                className={`
-                absolute
-                inset-0
-                bg-linear-to-br
-                from-primary-500/5
-                to-transparent
-              `}
-              />
-            )}
+            {isSelected(ACCOUNT_TYPE.CONTRACTOR) ? <div className={styles.optionOverlay} /> : null}
             <div
-              className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-all ${
-                isSelected(ACCOUNT_TYPE.CONTRACTOR)
-                  ? `bg-primary-600 text-white shadow-lg dark:bg-primary-500`
-                  : `bg-neutral-100 text-neutral-500 group-hover:bg-neutral-200 dark:bg-neutral-700 dark:text-neutral-400`
-              }`}
+              className={`${styles.optionIconWrap} ${isSelected(ACCOUNT_TYPE.CONTRACTOR) ? styles.optionIconWrapSelected : styles.optionIconWrapUnselected}`}
             >
               <UserIcon size={24} />
             </div>
-            <div className={`relative flex-1`}>
-              <div className={`flex items-center gap-2`}>
+            <div className={styles.optionContent}>
+              <div className={styles.optionTitleRow}>
                 <span
-                  className={`text-lg font-semibold ${
-                    isSelected(ACCOUNT_TYPE.CONTRACTOR)
-                      ? `text-primary-700 dark:text-primary-300`
-                      : `text-neutral-700 dark:text-neutral-200`
-                  }`}
+                  className={
+                    isSelected(ACCOUNT_TYPE.CONTRACTOR) ? styles.optionTitleSelected : styles.optionTitleUnselected
+                  }
                 >
                   Contractor
                 </span>
-                {isSelected(ACCOUNT_TYPE.CONTRACTOR) && (
-                  <CheckCircleIcon
-                    className={`
-                      h-5
-                      w-5
-                      text-primary-600
-                      dark:text-primary-400
-                    `}
-                  />
-                )}
+                {isSelected(ACCOUNT_TYPE.CONTRACTOR) ? <CheckCircleIcon className={styles.checkIcon} /> : null}
               </div>
-              <p
-                className={`
-                mt-0.5
-                text-sm
-                text-neutral-600
-                dark:text-neutral-400
-              `}
-              >
-                For freelancers and independent workers
-              </p>
+              <p className={styles.optionDesc}>For freelancers and independent workers</p>
             </div>
           </button>
 
@@ -354,64 +197,26 @@ export function SignupStartView() {
               e.stopPropagation();
               selectType(ACCOUNT_TYPE.BUSINESS);
             }}
-            className={`group relative flex min-h-18 w-full items-center gap-4 overflow-hidden rounded-xl border-2 px-5 py-4 text-left transition-all focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
-              isSelected(ACCOUNT_TYPE.BUSINESS)
-                ? `border-primary-500 bg-primary-50 shadow-md dark:border-primary-400 dark:bg-primary-900/20`
-                : `border-neutral-200 bg-white hover:border-primary-300 hover:shadow-xs dark:border-neutral-600 dark:bg-neutral-800 dark:hover:border-neutral-500`
-            }`}
+            className={`${styles.optionBtn} ${isSelected(ACCOUNT_TYPE.BUSINESS) ? styles.optionBtnSelected : styles.optionBtnUnselected}`}
           >
-            {isSelected(ACCOUNT_TYPE.BUSINESS) && (
-              <div
-                className={`
-                absolute
-                inset-0
-                bg-linear-to-br
-                from-primary-500/5
-                to-transparent
-              `}
-              />
-            )}
+            {isSelected(ACCOUNT_TYPE.BUSINESS) ? <div className={styles.optionOverlay} /> : null}
             <div
-              className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-all ${
-                isSelected(ACCOUNT_TYPE.BUSINESS)
-                  ? `bg-primary-600 text-white shadow-lg dark:bg-primary-500`
-                  : `bg-neutral-100 text-neutral-500 group-hover:bg-neutral-200 dark:bg-neutral-700 dark:text-neutral-400`
-              }`}
+              className={`${styles.optionIconWrap} ${isSelected(ACCOUNT_TYPE.BUSINESS) ? styles.optionIconWrapSelected : styles.optionIconWrapUnselected}`}
             >
               <ClipboardIcon size={24} />
             </div>
-            <div className={`relative flex-1`}>
-              <div className={`flex items-center gap-2`}>
+            <div className={styles.optionContent}>
+              <div className={styles.optionTitleRow}>
                 <span
-                  className={`text-lg font-semibold ${
-                    isSelected(ACCOUNT_TYPE.BUSINESS)
-                      ? `text-primary-700 dark:text-primary-300`
-                      : `text-neutral-700 dark:text-neutral-200`
-                  }`}
+                  className={
+                    isSelected(ACCOUNT_TYPE.BUSINESS) ? styles.optionTitleSelected : styles.optionTitleUnselected
+                  }
                 >
                   Business
                 </span>
-                {isSelected(ACCOUNT_TYPE.BUSINESS) && (
-                  <CheckCircleIcon
-                    className={`
-                      h-5
-                      w-5
-                      text-primary-600
-                      dark:text-primary-400
-                    `}
-                  />
-                )}
+                {isSelected(ACCOUNT_TYPE.BUSINESS) ? <CheckCircleIcon className={styles.checkIcon} /> : null}
               </div>
-              <p
-                className={`
-                mt-0.5
-                text-sm
-                text-neutral-600
-                dark:text-neutral-400
-              `}
-              >
-                For companies and organizations
-              </p>
+              <p className={styles.optionDesc}>For companies and organizations</p>
             </div>
           </button>
         </div>
@@ -421,35 +226,15 @@ export function SignupStartView() {
           data-testid="consumer-signup-start-btn-next"
           disabled={!signupDetails.accountType}
           onClick={onNext}
-          className={
-            `mt-6 min-h-12 w-full rounded-xl bg-primary-600 px-4 py-3 text-sm font-semibold text-white shadow-xs transition-all ` +
-            `hover:bg-primary-700 hover:shadow-md focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ` +
-            `disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-primary-600 disabled:hover:shadow-xs`
-          }
+          className={styles.nextBtn}
         >
           Continue
         </button>
       </div>
 
-      <p
-        className={`
-        text-center
-        text-sm
-        text-neutral-600
-        dark:text-neutral-400
-      `}
-      >
+      <p className={styles.footer}>
         Already have an account?{` `}
-        <a
-          href="/login"
-          className={`
-            font-semibold
-            text-primary-600
-            hover:text-primary-700
-            dark:text-primary-400
-            dark:hover:text-primary-300
-          `}
-        >
+        <a href="/login" className={styles.signinLink}>
           Sign in
         </a>
       </p>

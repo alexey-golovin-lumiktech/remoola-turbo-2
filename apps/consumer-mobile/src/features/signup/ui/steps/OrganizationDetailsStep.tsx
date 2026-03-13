@@ -12,6 +12,7 @@ import { useSignupSubmit } from '../../useSignupSubmit';
 import { getFieldErrors, organizationSchema } from '../../validation';
 import { SIGNUP_INPUT_CLASS } from '../inputClass';
 import { PrevNextButtons } from '../PrevNextButtons';
+import styles from './OrganizationDetailsStep.module.css';
 
 /** Role options aligned with consumer app (CONSUMER_ROLE_LABEL). */
 const ROLE_OPTIONS: { value: TConsumerRole; label: string }[] = [
@@ -81,30 +82,10 @@ export function OrganizationDetailsStep() {
   const nextLabel = loading ? `Submitting...` : `Finish signup`;
 
   return (
-    <div
-      className={`
-      rounded-xl
-      border
-      border-neutral-200
-      bg-white
-      shadow-xs
-      dark:border-neutral-700
-      dark:bg-neutral-900
-    `}
-    >
-      <div className={`p-4 sm:p-6`}>
-        <h1
-          className={`
-          mb-4
-          text-lg
-          font-semibold
-          text-neutral-900
-          dark:text-white
-        `}
-        >
-          Organization details
-        </h1>
-        <div className={`space-y-3`}>
+    <div className={styles.card}>
+      <div className={styles.content}>
+        <h1 className={styles.title}>Organization details</h1>
+        <div className={styles.fields}>
           <div>
             <label htmlFor="od-name" className={FORM_LABEL_CLASS}>
               Organization name
@@ -121,11 +102,11 @@ export function OrganizationDetailsStep() {
               aria-invalid={!!fieldErrors.name || undefined}
               aria-describedby={fieldErrors.name ? `od-name-err` : undefined}
             />
-            {fieldErrors.name && (
+            {fieldErrors.name ? (
               <p id="od-name-err" className={FORM_ERROR_CLASS} role="alert">
                 {fieldErrors.name}
               </p>
-            )}
+            ) : null}
           </div>
           <div>
             <label htmlFor="od-role" className={FORM_LABEL_CLASS}>
@@ -155,13 +136,13 @@ export function OrganizationDetailsStep() {
                 </option>
               ))}
             </select>
-            {fieldErrors.consumerRole && (
+            {fieldErrors.consumerRole ? (
               <p id="od-role-err" className={FORM_ERROR_CLASS} role="alert">
                 {fieldErrors.consumerRole}
               </p>
-            )}
-            {organizationDetails.consumerRole === CONSUMER_ROLE.OTHER && (
-              <div className={`mt-3`}>
+            ) : null}
+            {organizationDetails.consumerRole === CONSUMER_ROLE.OTHER ? (
+              <div className={styles.roleOtherField}>
                 <label htmlFor="od-role-other" className={FORM_LABEL_CLASS}>
                   Your role (other)
                 </label>
@@ -175,7 +156,7 @@ export function OrganizationDetailsStep() {
                   className={SIGNUP_INPUT_CLASS}
                 />
               </div>
-            )}
+            ) : null}
           </div>
           <div>
             <label htmlFor="od-size" className={FORM_LABEL_CLASS}>
@@ -207,11 +188,11 @@ export function OrganizationDetailsStep() {
                 </option>
               ))}
             </select>
-            {fieldErrors.size && (
+            {fieldErrors.size ? (
               <p id="od-size-err" className={FORM_ERROR_CLASS} role="alert">
                 {fieldErrors.size}
               </p>
-            )}
+            ) : null}
           </div>
         </div>
       </div>

@@ -1,0 +1,68 @@
+/* (shell)/contacts/loading.module.css */
+@reference "tailwindcss";
+@reference "../../globals.css";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.wrapper {
+  @apply space-y-6;
+}
+
+.header {
+  @apply flex items-center justify-between gap-4;
+}
+
+.titleBar {
+  @apply h-8 w-32 animate-pulse rounded-lg bg-slate-200 dark:bg-slate-700;
+}
+
+.actionBar {
+  @apply h-11 w-36 animate-pulse rounded-lg bg-slate-200 dark:bg-slate-700;
+}
+
+.searchBar {
+  @apply h-11 w-full animate-pulse rounded-lg bg-slate-200 dark:bg-slate-700;
+}
+
+.grid {
+  @apply grid gap-3 sm:grid-cols-2;
+}
+
+.card {
+  @apply overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs dark:border-slate-700 dark:bg-slate-800;
+}
+
+.cardBody {
+  @apply p-4;
+}
+
+.cardRow {
+  @apply flex items-center gap-3;
+}
+
+.avatar {
+  @apply h-10 w-10 shrink-0 animate-pulse rounded-full bg-slate-200 dark:bg-slate-700;
+}
+
+.cardContent {
+  @apply min-w-0 flex-1 space-y-2;
+}
+
+.cardLine1 {
+  @apply h-5 w-32 animate-pulse rounded-xs bg-slate-200 dark:bg-slate-700;
+}
+
+.cardLine2 {
+  @apply h-4 w-48 animate-pulse rounded-xs bg-slate-200 dark:bg-slate-700;
+}
+
+.cardFooter {
+  @apply flex border-t border-slate-200 dark:border-slate-700;
+}
+
+.cardFooterBtn {
+  @apply h-11 flex-1 animate-pulse bg-slate-50 dark:bg-slate-700/30;
+}
+
+.cardFooterBtnRight {
+  @apply h-11 flex-1 animate-pulse border-l border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-700/30;
+}

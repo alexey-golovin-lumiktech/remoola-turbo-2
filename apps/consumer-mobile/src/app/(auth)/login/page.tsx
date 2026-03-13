@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 
+import styles from './page.module.css';
 import { parseSearchParams } from '../../../features/auth/schemas';
 import { LoginForm } from '../../../features/auth/ui/LoginForm';
 
@@ -7,35 +8,19 @@ interface LoginPageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
+function LoginPageSuspenseFallback() {
+  return (
+    <div className={styles.fallback} aria-busy="true">
+      <div className={styles.spinner} />
+    </div>
+  );
+}
+
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = await searchParams;
   const { nextPath, sessionExpired } = parseSearchParams(params);
-
   return (
-    <Suspense
-      fallback={
-        <div
-          className={`
-            flex
-            min-h-screen
-            items-center
-            justify-center
-          `}
-          aria-busy="true"
-        >
-          <div
-            className={`
-              h-8
-              w-8
-              animate-pulse
-              rounded-full
-              bg-slate-300
-              dark:bg-slate-600
-            `}
-          />
-        </div>
-      }
-    >
+    <Suspense fallback={<LoginPageSuspenseFallback />}>
       <LoginForm nextPath={nextPath} sessionExpired={sessionExpired} />
     </Suspense>
   );

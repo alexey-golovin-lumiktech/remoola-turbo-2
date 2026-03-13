@@ -1,3 +1,7 @@
+import { cn } from '@remoola/ui';
+
+import styles from './Avatar.module.css';
+
 interface AvatarProps {
   name?: string;
   email?: string;
@@ -5,10 +9,46 @@ interface AvatarProps {
   className?: string;
 }
 
-const sizeClasses = {
-  sm: `h-8 w-8 text-xs`,
-  md: `h-10 w-10 text-sm`,
-  lg: `h-12 w-12 text-base`,
+const sizeClass = { sm: styles.sizeSm, md: styles.sizeMd, lg: styles.sizeLg } as const;
+
+const colorKeys = [
+  `red-500`,
+  `orange-500`,
+  `amber-500`,
+  `yellow-500`,
+  `lime-500`,
+  `green-500`,
+  `emerald-500`,
+  `teal-500`,
+  `cyan-500`,
+  `sky-500`,
+  `blue-500`,
+  `indigo-500`,
+  `violet-500`,
+  `purple-500`,
+  `fuchsia-500`,
+  `pink-500`,
+  `rose-500`,
+] as const;
+
+const colorClassMap: Record<string, string | undefined> = {
+  'red-500': styles.colorRed500,
+  'orange-500': styles.colorOrange500,
+  'amber-500': styles.colorAmber500,
+  'yellow-500': styles.colorYellow500,
+  'lime-500': styles.colorLime500,
+  'green-500': styles.colorGreen500,
+  'emerald-500': styles.colorEmerald500,
+  'teal-500': styles.colorTeal500,
+  'cyan-500': styles.colorCyan500,
+  'sky-500': styles.colorSky500,
+  'blue-500': styles.colorBlue500,
+  'indigo-500': styles.colorIndigo500,
+  'violet-500': styles.colorViolet500,
+  'purple-500': styles.colorPurple500,
+  'fuchsia-500': styles.colorFuchsia500,
+  'pink-500': styles.colorPink500,
+  'rose-500': styles.colorRose500,
 };
 
 function getInitials(name?: string, email?: string): string {
@@ -29,41 +69,22 @@ function getInitials(name?: string, email?: string): string {
   return `?`;
 }
 
-function getColorFromString(str: string): string {
-  const colors = [
-    `bg-red-500`,
-    `bg-orange-500`,
-    `bg-amber-500`,
-    `bg-yellow-500`,
-    `bg-lime-500`,
-    `bg-green-500`,
-    `bg-emerald-500`,
-    `bg-teal-500`,
-    `bg-cyan-500`,
-    `bg-sky-500`,
-    `bg-blue-500`,
-    `bg-indigo-500`,
-    `bg-violet-500`,
-    `bg-purple-500`,
-    `bg-fuchsia-500`,
-    `bg-pink-500`,
-    `bg-rose-500`,
-  ];
-
+function getColorKeyFromString(str: string): string {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     hash = str.charCodeAt(i) + ((hash << 5) - hash);
   }
-  return colors[Math.abs(hash) % colors.length] ?? `bg-slate-500`;
+  return colorKeys[Math.abs(hash) % colorKeys.length] ?? `slate-500`;
 }
 
 export function Avatar({ name, email, size = `md`, className }: AvatarProps) {
   const initials = getInitials(name, email);
-  const colorClass = getColorFromString(name ?? email ?? ``);
+  const colorKey = getColorKeyFromString(name ?? email ?? ``);
+  const colorClass = colorClassMap[colorKey] ?? styles.colorSlate500;
 
   return (
     <div
-      className={`flex shrink-0 items-center justify-center rounded-full font-semibold text-white ${sizeClasses[size]} ${colorClass} ${className ?? ``}`}
+      className={cn(styles.root, sizeClass[size], colorClass, className)}
       aria-label={name ?? email ?? `User avatar`}
     >
       {initials}

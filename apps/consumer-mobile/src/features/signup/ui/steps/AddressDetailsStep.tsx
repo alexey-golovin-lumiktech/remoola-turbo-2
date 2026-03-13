@@ -11,6 +11,7 @@ import { parseAddressFromString } from '../../utils/parseAddressFromString';
 import { addressDetailsSchema, getFieldErrors } from '../../validation';
 import { SIGNUP_INPUT_CLASS } from '../inputClass';
 import { PrevNextButtons } from '../PrevNextButtons';
+import styles from './AddressDetailsStep.module.css';
 
 export function AddressDetailsStep() {
   const { isContractorIndividual, isBusiness, isContractorEntity, addressDetails, personalDetails, updateAddress } =
@@ -96,30 +97,10 @@ export function AddressDetailsStep() {
   ];
 
   return (
-    <div
-      className={`
-      rounded-xl
-      border
-      border-neutral-200
-      bg-white
-      shadow-xs
-      dark:border-neutral-700
-      dark:bg-neutral-900
-    `}
-    >
-      <div className={`p-4 sm:p-6`}>
-        <h1
-          className={`
-          mb-4
-          text-lg
-          font-semibold
-          text-neutral-900
-          dark:text-white
-        `}
-        >
-          Address details
-        </h1>
-        <div className={`space-y-3`}>
+    <div className={styles.card}>
+      <div className={styles.content}>
+        <h1 className={styles.title}>Address details</h1>
+        <div className={styles.fields}>
           {fields.map(({ key, label, autoComplete, inputMode }) => {
             const errId = `ad-${key}-err`;
             const hasError = !!fieldErrors[key];
@@ -141,11 +122,11 @@ export function AddressDetailsStep() {
                   aria-invalid={hasError || undefined}
                   aria-describedby={hasError ? errId : undefined}
                 />
-                {hasError && (
+                {hasError ? (
                   <p id={errId} className={FORM_ERROR_CLASS} role="alert">
                     {fieldErrors[key]}
                   </p>
-                )}
+                ) : null}
               </div>
             );
           })}

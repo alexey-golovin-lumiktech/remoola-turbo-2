@@ -10,6 +10,7 @@ import { FormField } from '../../../shared/ui/FormField';
 import { FormInput } from '../../../shared/ui/FormInput';
 import { updateAddressDetailsAction } from '../actions';
 import { type Profile } from '../schemas';
+import styles from './AddressDetailsForm.module.css';
 
 interface AddressDetailsFormProps {
   profile: Profile;
@@ -40,7 +41,7 @@ export function AddressDetailsForm({ profile }: AddressDetailsFormProps) {
 
   return (
     <FormCard title="Address Details" description="Your residential or business address">
-      <form action={formAction} className={`space-y-5`}>
+      <form action={formAction} className={styles.form}>
         <FormField label="Street Address" htmlFor="street" error={fieldErrors.street} required>
           <FormInput
             id="street"
@@ -50,11 +51,11 @@ export function AddressDetailsForm({ profile }: AddressDetailsFormProps) {
             error={!!fieldErrors.street}
             placeholder="123 Main Street"
             required
-            className={`min-h-11`}
+            className={styles.inputMinHeight}
           />
         </FormField>
 
-        <div className={`grid gap-4 sm:grid-cols-2`}>
+        <div className={styles.gridRow}>
           <FormField label="City" htmlFor="city" error={fieldErrors.city} required>
             <FormInput
               id="city"
@@ -64,7 +65,7 @@ export function AddressDetailsForm({ profile }: AddressDetailsFormProps) {
               error={!!fieldErrors.city}
               placeholder="New York"
               required
-              className={`min-h-11`}
+              className={styles.inputMinHeight}
             />
           </FormField>
 
@@ -76,12 +77,12 @@ export function AddressDetailsForm({ profile }: AddressDetailsFormProps) {
               defaultValue={ad.state ?? ``}
               error={!!fieldErrors.state}
               placeholder="NY"
-              className={`min-h-11`}
+              className={styles.inputMinHeight}
             />
           </FormField>
         </div>
 
-        <div className={`grid gap-4 sm:grid-cols-2`}>
+        <div className={styles.gridRow}>
           <FormField label="Postal Code" htmlFor="postalCode" error={fieldErrors.postalCode} required>
             <FormInput
               id="postalCode"
@@ -91,7 +92,7 @@ export function AddressDetailsForm({ profile }: AddressDetailsFormProps) {
               error={!!fieldErrors.postalCode}
               placeholder="10001"
               required
-              className={`min-h-11`}
+              className={styles.inputMinHeight}
             />
           </FormField>
 
@@ -104,24 +105,18 @@ export function AddressDetailsForm({ profile }: AddressDetailsFormProps) {
               error={!!fieldErrors.country}
               placeholder="United States"
               required
-              className={`min-h-11`}
+              className={styles.inputMinHeight}
             />
           </FormField>
         </div>
 
-        <div className={`flex justify-end pt-2`}>
+        <div className={styles.actions}>
           <Button
             type="submit"
             variant="primary"
             isLoading={isPending}
             disabled={isPending}
-            className={`
-              min-h-11
-              shadow-lg
-              shadow-primary-500/30
-              hover:shadow-xl
-              hover:shadow-primary-500/40
-            `}
+            className={styles.submitBtn}
           >
             {isPending ? `Saving...` : `Save Changes`}
           </Button>

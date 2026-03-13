@@ -11,6 +11,7 @@ import { HomeIcon } from '../../../shared/ui/icons/HomeIcon';
 import { InformationCircleIcon } from '../../../shared/ui/icons/InformationCircleIcon';
 import { PageHeader } from '../../../shared/ui/PageHeader';
 import { type DashboardData } from '../schemas';
+import styles from './DashboardView.module.css';
 
 interface DashboardViewProps {
   data: DashboardData | null;
@@ -19,85 +20,14 @@ interface DashboardViewProps {
 export function DashboardView({ data }: DashboardViewProps) {
   if (!data) {
     return (
-      <div
-        className={`
-        min-h-full
-        bg-linear-to-br
-        from-slate-50
-        via-white
-        to-slate-50
-        dark:from-slate-950
-        dark:via-slate-900
-        dark:to-slate-950
-      `}
-      >
-        <div
-          className={`
-          mx-auto
-          max-w-6xl
-          px-4
-          pt-6
-          sm:px-6
-          sm:pt-8
-          lg:px-8
-        `}
-        >
-          <div
-            className={`
-            animate-fadeIn
-            rounded-2xl
-            border-2
-            border-dashed
-            border-slate-200
-            bg-linear-to-br
-            from-slate-50
-            to-slate-100
-            p-8
-            shadow-inner
-            dark:border-slate-700
-            dark:from-slate-800/50
-            dark:to-slate-900/50
-          `}
-          >
-            <div
-              className={`
-              mx-auto
-              mb-4
-              flex
-              h-16
-              w-16
-              items-center
-              justify-center
-              rounded-2xl
-              bg-slate-200
-              shadow-lg
-              dark:bg-slate-700
-            `}
-            >
-              <InformationCircleIcon className={`h-8 w-8 text-slate-500 dark:text-slate-400`} />
+      <div className={styles.pageBg}>
+        <div className={styles.errorMain}>
+          <div className={styles.errorCard}>
+            <div className={styles.errorIcon}>
+              <InformationCircleIcon className={styles.errorIconSvg} />
             </div>
-            <p
-              className={`
-              text-center
-              text-base
-              font-bold
-              text-slate-800
-              dark:text-slate-200
-            `}
-            >
-              Unable to load dashboard
-            </p>
-            <p
-              className={`
-              mt-2
-              text-center
-              text-sm
-              text-slate-500
-              dark:text-slate-400
-            `}
-            >
-              Please try again later.
-            </p>
+            <p className={styles.errorTitle}>Unable to load dashboard</p>
+            <p className={styles.errorMessage}>Please try again later.</p>
           </div>
         </div>
       </div>
@@ -107,70 +37,23 @@ export function DashboardView({ data }: DashboardViewProps) {
   const { summary, pendingRequests, activity, tasks, quickDocs } = data;
 
   return (
-    <div
-      className={`
-      min-h-full
-      bg-linear-to-br
-      from-slate-50
-      via-white
-      to-slate-50
-      dark:from-slate-950
-      dark:via-slate-900
-      dark:to-slate-950
-    `}
-    >
+    <div className={styles.pageBg}>
       <PageHeader
-        icon={<IconBadge icon={<HomeIcon className={`h-6 w-6 text-white`} />} hasRing />}
+        icon={<IconBadge icon={<HomeIcon className={styles.iconWhite} />} hasRing />}
         title="Dashboard"
         subtitle="Welcome back! Here's your overview"
         badge={
-          <div
-            className={`
-            hidden
-            sm:flex
-            items-center
-            gap-2
-            rounded-xl
-            bg-slate-100
-            px-4
-            py-2
-            dark:bg-slate-800
-            border
-            border-slate-200
-            dark:border-slate-700
-          `}
-          >
-            <CalendarIcon className={`h-4 w-4 text-slate-500`} />
-            <span
-              className={`
-              text-sm
-              font-semibold
-              text-slate-700
-              dark:text-slate-300
-            `}
-            >
+          <div className={styles.badge}>
+            <CalendarIcon className={styles.badgeIcon} />
+            <span className={styles.badgeText}>
               {new Date().toLocaleDateString(undefined, { weekday: `short`, month: `short`, day: `numeric` })}
             </span>
           </div>
         }
       />
 
-      <div
-        className={`
-          mx-auto
-          max-w-6xl
-          px-4
-          pt-6
-          pb-6
-          sm:px-6
-          sm:pt-8
-          lg:px-8
-          space-y-6
-          animate-fadeIn
-        `}
-        data-testid="consumer-mobile-dashboard-view"
-      >
-        <div className={`grid gap-4 sm:grid-cols-2`}>
+      <div className={styles.main} data-testid="consumer-mobile-dashboard-view">
+        <div className={styles.grid2}>
           <BalanceCard
             amountCents={summary.balanceCents}
             currencyCode="USD"
@@ -178,180 +61,48 @@ export function DashboardView({ data }: DashboardViewProps) {
             testId="dashboard-balance"
           />
 
-          <div
-            className={`
-              group
-              overflow-hidden
-              rounded-2xl
-              border
-              border-slate-200
-              bg-linear-to-br
-              from-white
-              to-slate-50
-              p-5
-              shadow-lg
-              transition-all
-              duration-300
-              hover:shadow-xl
-              hover:scale-105
-              animate-fadeIn
-              dark:border-slate-700
-              dark:from-slate-800
-              dark:to-slate-900
-            `}
-            style={{ animationDelay: `50ms` }}
-          >
-            <div
-              className={`
-              flex
-              items-start
-              justify-between
-              mb-3
-            `}
-            >
+          <div className={styles.requestsCard} style={{ animationDelay: `50ms` }}>
+            <div className={styles.requestsCardHeader}>
               <IconBadge
-                icon={<ClipboardListIcon className={`h-6 w-6 text-white`} />}
+                icon={<ClipboardListIcon className={styles.clipboardIcon} />}
                 variant="primary"
                 rounded="xl"
                 interactive
               />
-              <span
-                className={`
-                rounded-lg
-                border
-                border-slate-200
-                bg-slate-100
-                px-2.5
-                py-1
-                text-xs
-                font-bold
-                text-slate-700
-                dark:border-slate-700
-                dark:bg-slate-900/50
-                dark:text-slate-300
-              `}
-              >
-                Requests
-              </span>
+              <span className={styles.requestsCardBadge}>Requests</span>
             </div>
-            <div
-              className={`text-3xl font-extrabold text-slate-900 dark:text-slate-100`}
-              data-testid="dashboard-active-requests"
-            >
+            <div className={styles.requestsCardValue} data-testid="dashboard-active-requests">
               {summary.activeRequests}
             </div>
-            <div
-              className={`
-              mt-2
-              text-xs
-              font-semibold
-              text-slate-500
-              dark:text-slate-400
-            `}
-            >
-              Active payment requests
-            </div>
+            <div className={styles.requestsCardLabel}>Active payment requests</div>
           </div>
         </div>
 
-        <div className={`grid gap-4 lg:grid-cols-2`}>
+        <div className={styles.grid2Lg}>
           {pendingRequests.length > 0 ? (
             <PendingRequestsTable requests={pendingRequests} maxItems={5} />
           ) : (
-            <div
-              className={`
-                animate-fadeIn
-                rounded-2xl
-                border-2
-                border-dashed
-                border-slate-200
-                bg-linear-to-br
-                from-slate-50
-                to-slate-100
-                px-6
-                py-16
-                text-center
-                shadow-inner
-                dark:border-slate-700
-                dark:from-slate-800/50
-                dark:to-slate-900/50
-              `}
-              style={{ animationDelay: `100ms` }}
-            >
-              <div
-                className={`
-                mx-auto
-                mb-6
-                flex
-                h-20
-                w-20
-                items-center
-                justify-center
-                rounded-3xl
-                bg-linear-to-br
-                from-slate-100
-                to-slate-200
-                text-slate-400
-                shadow-lg
-                ring-8
-                ring-slate-100/50
-                dark:from-slate-700
-                dark:to-slate-800
-                dark:text-slate-500
-                dark:ring-slate-800/50
-              `}
-              >
-                <DocumentIcon className={`h-10 w-10`} strokeWidth={1.5} />
+            <div className={styles.emptyPending} style={{ animationDelay: `100ms` }}>
+              <div className={styles.emptyPendingIcon}>
+                <DocumentIcon className={styles.emptyPendingIconSvg} strokeWidth={1.5} />
               </div>
-              <h3 className={`text-xl font-bold text-slate-900 dark:text-slate-100`}>No pending requests</h3>
-              <p
-                className={`
-                mt-3
-                max-w-sm
-                mx-auto
-                text-base
-                text-slate-500
-                dark:text-slate-400
-              `}
-              >
+              <h3 className={styles.emptyPendingTitle}>No pending requests</h3>
+              <p className={styles.emptyPendingMessage}>
                 You&apos;re all caught up! Create a new payment request to get started.
               </p>
-              <a
-                href="/payment-requests/new"
-                className={`
-                  mt-6
-                  inline-flex
-                  items-center
-                  rounded-xl
-                  bg-linear-to-r
-                  from-primary-600
-                  to-primary-700
-                  px-4
-                  py-2.5
-                  text-sm
-                  font-bold
-                  text-white
-                  shadow-lg
-                  shadow-primary-500/30
-                  transition-all
-                  hover:from-primary-700
-                  hover:to-primary-800
-                  hover:shadow-xl
-                  active:scale-95
-                `}
-              >
+              <a href="/payment-requests/new" className={styles.createRequestLink}>
                 Create request
               </a>
             </div>
           )}
 
-          {tasks && tasks.length > 0 && <ComplianceTasksCard tasks={tasks} />}
+          {tasks?.length > 0 ? <ComplianceTasksCard tasks={tasks} /> : null}
         </div>
 
-        <div className={`grid gap-4 lg:grid-cols-2`}>
-          {activity && activity.length > 0 && <ActivityTimeline activities={activity} maxItems={5} />}
+        <div className={styles.grid2Lg}>
+          {activity?.length > 0 ? <ActivityTimeline activities={activity} maxItems={5} /> : null}
 
-          {quickDocs && quickDocs.length > 0 && <QuickDocsCard documents={quickDocs} maxItems={3} />}
+          {quickDocs?.length > 0 ? <QuickDocsCard documents={quickDocs} maxItems={3} /> : null}
         </div>
       </div>
     </div>

@@ -1,62 +1,20 @@
+import styles from './loading.module.css';
+
 export default function DashboardLoading() {
   return (
-    <div className={`space-y-6 animate-pulse`}>
-      <div className={`flex items-center justify-between`}>
-        <div
-          className={`
-          h-8
-          w-32
-          bg-slate-200
-          rounded-xs
-          dark:bg-slate-700
-        `}
-        />
-        <div
-          className={`
-          h-5
-          w-24
-          bg-slate-200
-          rounded-xs
-          dark:bg-slate-700
-        `}
-        />
+    <div className={styles.wrapper}>
+      <div className={styles.header}>
+        <div className={styles.headerLeft} />
+        <div className={styles.headerRight} />
       </div>
 
-      <div className={`grid gap-4 sm:grid-cols-2`}>
-        <div
-          className={`
-          h-32
-          bg-slate-200
-          rounded-xl
-          dark:bg-slate-700
-        `}
-        />
-        <div
-          className={`
-          h-32
-          bg-slate-200
-          rounded-xl
-          dark:bg-slate-700
-        `}
-        />
+      <div className={styles.grid}>
+        <div className={styles.card} />
+        <div className={styles.card} />
       </div>
 
-      <div
-        className={`
-        h-64
-        bg-slate-200
-        rounded-xl
-        dark:bg-slate-700
-      `}
-      />
-      <div
-        className={`
-        h-48
-        bg-slate-200
-        rounded-xl
-        dark:bg-slate-700
-      `}
-      />
+      <div className={styles.blockLg} />
+      <div className={styles.blockMd} />
     </div>
   );
 }

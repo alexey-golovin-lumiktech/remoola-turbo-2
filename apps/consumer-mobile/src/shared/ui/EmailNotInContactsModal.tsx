@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from './Button';
+import styles from './EmailNotInContactsModal.module.css';
 import { Modal } from './Modal';
 
 interface EmailNotInContactsModalProps {
@@ -34,28 +35,21 @@ export function EmailNotInContactsModal({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Email not in contacts" size="sm">
-      <div className={`space-y-4`}>
-        <p className={`text-sm text-slate-600 dark:text-slate-400`}>
-          The email <strong className={`text-slate-900 dark:text-white`}>{email}</strong> isn&apos;t in your contacts.
+      <div className={styles.content}>
+        <p className={styles.message}>
+          The email <strong className={styles.emailStrong}>{email}</strong> isn&apos;t in your contacts.
           {` `}
           {suffix}
         </p>
 
-        <div
-          className={`
-            flex
-            flex-col
-            gap-2
-            pt-2
-          `}
-        >
-          <Button variant="primary" size="md" onClick={onAddAndContinue} className={`w-full`}>
+        <div className={styles.actions}>
+          <Button variant="primary" size="md" onClick={onAddAndContinue} className={styles.buttonFull}>
             Add contact and continue
           </Button>
-          <Button variant="outline" size="md" onClick={onContinueWithout} className={`w-full`}>
+          <Button variant="outline" size="md" onClick={onContinueWithout} className={styles.buttonFull}>
             Continue without adding
           </Button>
-          <Button variant="ghost" size="md" onClick={onClose} className={`w-full`}>
+          <Button variant="ghost" size="md" onClick={onClose} className={styles.buttonFull}>
             Cancel
           </Button>
         </div>

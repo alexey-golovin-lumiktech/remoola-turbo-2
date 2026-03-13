@@ -1,0 +1,57 @@
+/* ThemeSwitcher.module.css - primary-*, dark */
+@reference "tailwindcss";
+@reference "../../app/globals.css";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.container {
+  @apply relative;
+}
+
+.trigger {
+  @apply flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-lg px-2.5 text-slate-600 transition-all duration-200 hover:bg-slate-100 hover:text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-primary-500/50 focus:ring-offset-2 focus:ring-offset-white disabled:opacity-60 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white dark:focus:ring-offset-slate-900;
+}
+
+.chevron {
+  @apply h-4 w-4 transition-transform duration-200;
+}
+
+.chevronOpen {
+  @apply rotate-180;
+}
+
+.dropdown {
+  @apply fixed z-9999 mt-0 min-w-44 overflow-hidden rounded-xl border border-slate-200 bg-white py-1.5 shadow-xl ring-1 ring-slate-900/5 transition-all duration-200 ease-out dark:border-slate-600 dark:bg-slate-800 dark:ring-white/5;
+}
+
+.option {
+  @apply flex w-full min-h-11 items-center justify-between gap-3 px-4 py-2.5 text-left text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700;
+}
+
+.optionLeft {
+  @apply flex items-center gap-3;
+}
+
+.optionLabels {
+  @apply flex flex-col items-start;
+}
+
+.optionDescription {
+  @apply text-xs font-normal text-slate-500 dark:text-slate-400;
+}
+
+.checkIcon {
+  @apply h-4 w-4 shrink-0 text-primary-600 dark:text-primary-400;
+}
+
+/* Option icon colors (used as className on SVG wrappers) */
+.iconSun {
+  @apply shrink-0 text-amber-500;
+}
+
+.iconMoon {
+  @apply shrink-0 text-indigo-400;
+}
+
+.iconSystem {
+  @apply shrink-0 text-slate-500 dark:text-slate-400;
+}

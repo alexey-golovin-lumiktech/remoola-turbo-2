@@ -1,5 +1,9 @@
 import { type ReactNode } from 'react';
 
+import { cn } from '@remoola/ui';
+
+import styles from './IconBadge.module.css';
+
 type IconBadgeVariant = `primary` | `success` | `info` | `warning` | `danger` | `secondary`;
 type IconBadgeSize = `sm` | `md` | `lg`;
 
@@ -13,34 +17,40 @@ interface IconBadgeProps {
   className?: string;
 }
 
-const variantStyles: Record<IconBadgeVariant, string> = {
-  primary: `bg-linear-to-br from-primary-500 to-primary-600 text-white shadow-primary-500/30`,
-  success: `bg-linear-to-br from-green-500 to-green-600 text-white`,
-  info: `bg-linear-to-br from-blue-500 to-blue-600 text-white`,
-  warning: `bg-linear-to-br from-yellow-500 to-yellow-600 text-white`,
-  danger: `bg-linear-to-br from-red-500 to-red-600 text-white`,
-  secondary: `bg-linear-to-br from-slate-500 to-slate-600 text-white`,
+const variantClass: Record<IconBadgeVariant, string | undefined> = {
+  primary: styles.variantPrimary,
+  success: styles.variantSuccess,
+  info: styles.variantInfo,
+  warning: styles.variantWarning,
+  danger: styles.variantDanger,
+  secondary: styles.variantSecondary,
 };
 
-const variantRingStyles: Record<IconBadgeVariant, string> = {
-  primary: `ring-4 ring-primary-50 dark:ring-primary-950`,
-  success: `ring-4 ring-green-50 dark:ring-green-950`,
-  info: `ring-4 ring-blue-50 dark:ring-blue-950`,
-  warning: `ring-4 ring-yellow-50 dark:ring-yellow-950`,
-  danger: `ring-4 ring-red-50 dark:ring-red-950`,
-  secondary: `ring-4 ring-slate-50 dark:ring-slate-950`,
+const variantRingClass: Record<IconBadgeVariant, string | undefined> = {
+  primary: styles.ringPrimary,
+  success: styles.ringSuccess,
+  info: styles.ringInfo,
+  warning: styles.ringWarning,
+  danger: styles.ringDanger,
+  secondary: styles.ringSecondary,
 };
 
-const sizeStyles: Record<IconBadgeSize, { container: string; icon: string }> = {
-  sm: { container: `h-10 w-10`, icon: `h-5 w-5` },
-  md: { container: `h-12 w-12`, icon: `h-6 w-6` },
-  lg: { container: `h-16 w-16`, icon: `h-8 w-8` },
+const sizeContainerClass: Record<IconBadgeSize, string | undefined> = {
+  sm: styles.sizeSm,
+  md: styles.sizeMd,
+  lg: styles.sizeLg,
 };
 
-const roundedStyles = {
-  xl: `rounded-xl`,
-  '2xl': `rounded-2xl`,
-  '3xl': `rounded-3xl`,
+const sizeIconClass: Record<IconBadgeSize, string | undefined> = {
+  sm: styles.iconSm,
+  md: styles.iconMd,
+  lg: styles.iconLg,
+};
+
+const roundedClass: Record<`xl` | `2xl` | `3xl`, string | undefined> = {
+  xl: styles.roundedXl,
+  '2xl': styles.rounded2xl,
+  '3xl': styles.rounded3xl,
 };
 
 export function IconBadge({
@@ -52,17 +62,19 @@ export function IconBadge({
   rounded = `2xl`,
   className = ``,
 }: IconBadgeProps) {
-  const containerSize = sizeStyles[size].container;
-  const roundedClass = roundedStyles[rounded];
-  const variantClass = variantStyles[variant];
-  const ringClass = hasRing ? variantRingStyles[variant] : ``;
-  const interactiveClass = interactive ? `transition-transform duration-200 group-hover:scale-110` : ``;
-
   return (
     <div
-      className={`flex items-center justify-center shadow-lg ${containerSize} ${roundedClass} ${variantClass} ${ringClass} ${interactiveClass} ${className}`}
+      className={cn(
+        styles.root,
+        sizeContainerClass[size],
+        roundedClass[rounded],
+        variantClass[variant],
+        hasRing && variantRingClass[variant],
+        interactive && styles.rootInteractive,
+        className,
+      )}
     >
-      <div className={sizeStyles[size].icon}>{icon}</div>
+      <div className={sizeIconClass[size]}>{icon}</div>
     </div>
   );
 }

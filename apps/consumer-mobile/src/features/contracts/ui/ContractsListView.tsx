@@ -16,6 +16,7 @@ import { PageHeader } from '../../../shared/ui/PageHeader';
 import { SearchInput } from '../../../shared/ui/SearchInput';
 import { StatusBadge } from '../../../shared/ui/StatusBadge';
 import { type Contract } from '../schemas';
+import styles from './ContractsListView.module.css';
 
 interface ContractsListViewProps {
   contracts: Contract[];
@@ -51,440 +52,139 @@ export function ContractsListView({ contracts, total }: ContractsListViewProps) 
   const totalPages = Math.ceil(filteredContracts.length / itemsPerPage);
   const paginatedContracts = filteredContracts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  if (contracts.length === 0) {
-    return (
-      <EmptyState
-        icon={<DocumentIcon className={`h-8 w-8`} />}
-        title="No contracts yet"
-        description="Your contractor relationships will appear here once you start making payments."
-      />
-    );
-  }
-
   return (
-    <div
-      className={`
-      min-h-full
-      bg-linear-to-br
-      from-slate-50
-      via-white
-      to-slate-50
-      dark:from-slate-950
-      dark:via-slate-900
-      dark:to-slate-950
-    `}
-    >
+    <div className={styles.pageBg}>
       <PageHeader
-        icon={<IconBadge icon={<UsersIcon className={`h-6 w-6 text-white`} />} hasRing />}
+        icon={<IconBadge icon={<UsersIcon className={styles.iconWhite} />} hasRing />}
         title="Contracts"
         subtitle={`${total} ${total === 1 ? `contractor` : `contractors`}`}
       />
 
-      <div
-        className={`
-          mx-auto
-          max-w-6xl
-          px-4
-          pt-6
-          pb-6
-          sm:px-6
-          sm:pt-8
-          lg:px-8
-          space-y-5
-          animate-fadeIn
-        `}
-        data-testid="consumer-mobile-contracts-list"
-      >
-        <SearchInput
-          value={searchQuery}
-          onChange={(value) => {
-            setSearchQuery(value);
-            setCurrentPage(1);
-          }}
-          onClear={() => setCurrentPage(1)}
-          placeholder="Search contractors..."
-        />
+      <div className={styles.main} data-testid="consumer-mobile-contracts-list">
+        {contracts.length === 0 ? (
+          <EmptyState
+            icon={<DocumentIcon className={styles.emptyIcon} />}
+            title="No contracts yet"
+            description="Your contractor relationships will appear here once you start making payments."
+          />
+        ) : null}
 
-        {filteredContracts.length === 0 ? (
-          <div
-            className={`
-            animate-fadeIn
-            rounded-2xl
-            border-2
-            border-dashed
-            border-slate-300
-            bg-linear-to-br
-            from-slate-50
-            to-white
-            px-6
-            py-16
-            text-center
-            shadow-inner
-            dark:border-slate-700
-            dark:from-slate-800/50
-            dark:to-slate-900/50
-          `}
-          >
-            <div
-              className={`
-              mx-auto
-              mb-6
-              flex
-              h-20
-              w-20
-              items-center
-              justify-center
-              rounded-3xl
-              bg-linear-to-br
-              from-slate-100
-              to-slate-200
-              text-slate-400
-              shadow-lg
-              ring-8
-              ring-slate-100/50
-              dark:from-slate-700
-              dark:to-slate-800
-              dark:text-slate-500
-              dark:ring-slate-800/50
-            `}
-            >
-              <SearchIcon className={`h-10 w-10`} strokeWidth={1.5} />
+        {contracts.length > 0 ? (
+          <SearchInput
+            value={searchQuery}
+            onChange={(value) => {
+              setSearchQuery(value);
+              setCurrentPage(1);
+            }}
+            onClear={() => setCurrentPage(1)}
+            placeholder="Search contractors..."
+          />
+        ) : null}
+
+        {contracts.length > 0 && filteredContracts.length === 0 ? (
+          <div className={styles.emptySearch}>
+            <div className={styles.emptySearchIcon}>
+              <SearchIcon className={styles.searchIcon} strokeWidth={1.5} />
             </div>
-            <h3
-              className={`
-              text-xl
-              font-bold
-              text-slate-900
-              dark:text-white
-            `}
-            >
-              No contractors found
-            </h3>
-            <p
-              className={`
-              mt-3
-              max-w-sm
-              mx-auto
-              text-base
-              text-slate-600
-              dark:text-slate-400
-            `}
-            >
+            <h3 className={styles.emptySearchTitle}>No contractors found</h3>
+            <p className={styles.emptySearchMessage}>
               No results matching &quot;{searchQuery}&quot;. Try adjusting your search.
             </p>
           </div>
         ) : (
           <>
-            <div className={`space-y-3`}>
+            <div className={styles.list}>
               {paginatedContracts.map((contract, index) => (
-                <div
-                  key={contract.id}
-                  className={`
-                    group
-                    overflow-hidden
-                    rounded-2xl
-                    border
-                    border-slate-200
-                    bg-white
-                    shadow-lg
-                    transition-all
-                    duration-300
-                    hover:bg-slate-50
-                    hover:shadow-xl
-                    hover:scale-[1.01]
-                    dark:border-slate-700
-                    dark:bg-slate-800/90
-                    dark:hover:bg-slate-800
-                    animate-fadeIn
-                  `}
-                  style={{ animationDelay: `${index * 50}ms` }}
-                >
-                  <div className={`p-4`}>
-                    <div className={`flex items-start gap-4`}>
-                      <div className={`relative`}>
+                <div key={contract.id} className={styles.card} style={{ animationDelay: `${index * 50}ms` }}>
+                  <div className={styles.cardBody}>
+                    <div className={styles.cardRow}>
+                      <div className={styles.avatarWrap}>
                         <Avatar name={contract.name} email={contract.email} size="lg" />
-                        {contract.lastStatus === `completed` && (
-                          <div
-                            className={`
-                            absolute
-                            -bottom-1
-                            -right-1
-                            flex
-                            h-6
-                            w-6
-                            items-center
-                            justify-center
-                            rounded-full
-                            bg-green-500
-                            ring-2
-                            ring-white
-                            dark:ring-slate-800
-                          `}
-                          >
-                            <CheckIcon className={`h-3.5 w-3.5 text-white`} strokeWidth={3} />
+                        {contract.lastStatus === `completed` ? (
+                          <div className={styles.checkBadge}>
+                            <CheckIcon className={styles.checkIcon} strokeWidth={3} />
                           </div>
-                        )}
+                        ) : null}
                       </div>
-                      <div className={`min-w-0 flex-1`}>
-                        <div
-                          className={`
-                          flex
-                          items-start
-                          justify-between
-                          gap-2
-                          mb-2
-                        `}
-                        >
-                          <div className={`min-w-0 flex-1`}>
-                            <h3
-                              className={`
-                              truncate
-                              text-lg
-                              font-bold
-                              text-slate-900
-                              transition-colors
-                              group-hover:text-slate-800
-                              dark:text-slate-100
-                              dark:group-hover:text-white
-                            `}
-                            >
-                              {contract.name}
-                            </h3>
-                            <p
-                              className={`
-                              truncate
-                              text-sm
-                              font-medium
-                              text-slate-500
-                              dark:text-slate-400
-                            `}
-                            >
-                              {contract.email}
-                            </p>
+                      <div className={styles.cardContent}>
+                        <div className={styles.cardHeader}>
+                          <div className={styles.cardHeaderLeft}>
+                            <h3 className={styles.cardTitle}>{contract.name}</h3>
+                            <p className={styles.cardEmail}>{contract.email}</p>
                           </div>
-                          {contract.lastStatus && (
-                            <div className={`shrink-0`}>
+                          {contract.lastStatus ? (
+                            <div className={styles.shrink0}>
                               <StatusBadge status={contract.lastStatus} />
                             </div>
-                          )}
+                          ) : null}
                         </div>
 
-                        <div
-                          className={`
-                          mt-3
-                          grid
-                          grid-cols-2
-                          gap-2.5
-                        `}
-                        >
-                          <div
-                            className={`
-                            rounded-xl
-                            border
-                            border-slate-200
-                            bg-slate-50
-                            px-3
-                            py-2.5
-                            transition-colors
-                            group-hover:border-slate-300
-                            dark:border-slate-700/50
-                            dark:bg-slate-900/50
-                            dark:group-hover:border-slate-600
-                          `}
-                          >
-                            <div
-                              className={`
-                              flex
-                              items-center
-                              gap-1.5
-                              mb-1
-                            `}
-                            >
-                              <CalendarIcon className={`h-3.5 w-3.5 text-slate-500`} />
-                              <p className={`text-xs font-semibold text-slate-500 dark:text-slate-400`}>
-                                Last Activity
-                              </p>
+                        <div className={styles.statGrid}>
+                          <div className={styles.statBox}>
+                            <div className={styles.statLabelRow}>
+                              <CalendarIcon className={styles.statIcon} />
+                              <p className={styles.statLabel}>Last Activity</p>
                             </div>
-                            <p className={`text-sm font-bold text-slate-800 dark:text-slate-200`}>
-                              {formatDate(contract.lastActivity)}
-                            </p>
+                            <p className={styles.statValue}>{formatDate(contract.lastActivity)}</p>
                           </div>
-                          <div
-                            className={`
-                            rounded-xl
-                            border
-                            border-slate-200
-                            bg-slate-50
-                            px-3
-                            py-2.5
-                            transition-colors
-                            group-hover:border-slate-300
-                            dark:border-slate-700/50
-                            dark:bg-slate-900/50
-                            dark:group-hover:border-slate-600
-                          `}
-                          >
-                            <div
-                              className={`
-                              flex
-                              items-center
-                              gap-1.5
-                              mb-1
-                            `}
-                            >
-                              <DocumentIcon className={`h-3.5 w-3.5 text-slate-500`} />
-                              <p className={`text-xs font-semibold text-slate-500 dark:text-slate-400`}>Documents</p>
+                          <div className={styles.statBox}>
+                            <div className={styles.statLabelRow}>
+                              <DocumentIcon className={styles.statIcon} />
+                              <p className={styles.statLabel}>Documents</p>
                             </div>
-                            <p className={`text-sm font-bold text-slate-800 dark:text-slate-200`}>{contract.docs}</p>
+                            <p className={styles.statValue}>{contract.docs}</p>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  {contract.lastRequestId && (
-                    <div className={`border-t border-slate-200 dark:border-slate-700`}>
-                      <Link
-                        href={`/payments/${contract.lastRequestId}`}
-                        className={`
-                          flex
-                          items-center
-                          justify-center
-                          gap-2
-                          px-4
-                          py-3.5
-                          text-sm
-                          font-bold
-                          text-primary-600
-                          transition-all
-                          hover:bg-primary-50
-                          hover:text-primary-700
-                          active:scale-[0.98]
-                          dark:text-primary-400
-                          dark:hover:bg-primary-900/20
-                          dark:hover:text-primary-300
-                        `}
-                      >
+                  {contract.lastRequestId ? (
+                    <div className={styles.divider}>
+                      <Link href={`/payments/${contract.lastRequestId}`} className={styles.viewPaymentLink}>
                         <span>View Latest Payment</span>
-                        <ChevronRightIcon
-                          className={`
-                            h-4
-                            w-4
-                            transition-transform
-                            group-hover:translate-x-0.5
-                          `}
-                          strokeWidth={2.5}
-                        />
+                        <ChevronRightIcon className={styles.linkIcon} strokeWidth={2.5} />
                       </Link>
                     </div>
-                  )}
+                  ) : null}
 
-                  {!contract.lastRequestId && (
-                    <div
-                      className={`
-                      border-t
-                      border-slate-200
-                      bg-slate-50
-                      px-4
-                      py-3
-                      text-center
-                      dark:border-slate-700
-                      dark:bg-slate-900/30
-                    `}
-                    >
-                      <p className={`text-sm font-semibold text-slate-500`}>No payments yet</p>
+                  {!contract.lastRequestId ? (
+                    <div className={styles.noPayments}>
+                      <p className={styles.noPaymentsText}>No payments yet</p>
                     </div>
-                  )}
+                  ) : null}
                 </div>
               ))}
             </div>
 
-            {totalPages > 1 && (
-              <div
-                className={`
-                flex
-                items-center
-                justify-between
-                rounded-xl
-                border
-                border-slate-200
-                bg-slate-50
-                px-4
-                py-3
-                dark:border-slate-700
-                dark:bg-slate-800/50
-              `}
-              >
-                <p className={`text-sm font-medium text-slate-600 dark:text-slate-400`}>
+            {totalPages > 1 ? (
+              <div className={styles.pagination}>
+                <p className={styles.paginationText}>
                   Showing {(currentPage - 1) * itemsPerPage + 1} to{` `}
                   {Math.min(currentPage * itemsPerPage, filteredContracts.length)} of {filteredContracts.length}
                 </p>
 
-                <div className={`flex items-center gap-2`}>
+                <div className={styles.paginationControls}>
                   <button
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
-                    className={`
-                    inline-flex
-                    min-h-10
-                    items-center
-                    rounded-xl
-                    border
-                    border-slate-200
-                    bg-white
-                    px-3
-                    py-2
-                    text-sm
-                    font-semibold
-                    text-slate-700
-                    transition-all
-                    hover:bg-slate-100
-                    active:scale-95
-                    disabled:cursor-not-allowed
-                    disabled:opacity-40
-                    dark:border-slate-700
-                    dark:bg-slate-800
-                    dark:text-slate-300
-                    dark:hover:bg-slate-700
-                  `}
+                    className={styles.paginationBtn}
                   >
                     Previous
                   </button>
-                  <span className={`text-sm font-medium text-slate-600 dark:text-slate-400`}>
+                  <span className={styles.pageInfo}>
                     {currentPage} / {totalPages}
                   </span>
                   <button
                     onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                     disabled={currentPage === totalPages}
-                    className={`
-                    inline-flex
-                    min-h-10
-                    items-center
-                    rounded-xl
-                    border
-                    border-slate-200
-                    bg-white
-                    px-3
-                    py-2
-                    text-sm
-                    font-semibold
-                    text-slate-700
-                    transition-all
-                    hover:bg-slate-100
-                    active:scale-95
-                    disabled:cursor-not-allowed
-                    disabled:opacity-40
-                    dark:border-slate-700
-                    dark:bg-slate-800
-                    dark:text-slate-300
-                    dark:hover:bg-slate-700
-                  `}
+                    className={styles.paginationBtn}
                   >
                     Next
                   </button>
                 </div>
               </div>
-            )}
+            ) : null}
           </>
         )}
       </div>

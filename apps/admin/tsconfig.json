@@ -2,9 +2,8 @@
   "extends": "@remoola/typescript-config/nextjs.json",
   "compilerOptions": {
     "plugins": [
-      {
-        "name": "next"
-      }
+      { "name": "next" },
+      { "name": "typescript-plugin-css-modules" }
     ]
   },
   "include": [

@@ -3,6 +3,9 @@
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 
+import { cn } from '@remoola/ui';
+
+import styles from './PaymentDetailView.module.css';
 import { SendPaymentRequestButton } from './SendPaymentRequestButton';
 import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../../lib/error-messages';
 import { showErrorToast, showSuccessToast } from '../../../lib/toast.client';
@@ -227,218 +230,64 @@ export function PaymentDetailView({ paymentRequestId, data }: PaymentDetailViewP
   }
 
   return (
-    <div className={`space-y-6`} data-testid="consumer-mobile-payment-detail">
-      <div className={`flex items-center justify-between`}>
-        <h1
-          className={`
-          text-2xl
-          font-bold
-          text-slate-900
-          dark:text-white
-        `}
-        >
-          Payment #{paymentRequestId.slice(0, 6).toUpperCase()}
-        </h1>
+    <div className={styles.wrap} data-testid="consumer-mobile-payment-detail">
+      <div className={styles.headerRow}>
+        <h1 className={styles.title}>Payment #{paymentRequestId.slice(0, 6).toUpperCase()}</h1>
       </div>
 
       <Card noPadding>
         <CardHeader>
-          <div
-            className={`
-            flex
-            items-start
-            justify-between
-            gap-4
-          `}
-          >
-            <div className={`flex-1`}>
-              <div
-                className={`
-                text-3xl
-                font-bold
-                text-slate-900
-                dark:text-white
-              `}
-              >
-                {formatCurrency(amount, currencyCode)}
-              </div>
-              {description && (
-                <p
-                  className={`
-                mt-2
-                text-sm
-                text-slate-600
-                dark:text-slate-400
-              `}
-                >
-                  {description}
-                </p>
-              )}
-              {createdAt && (
-                <p
-                  className={`
-                  mt-1
-                  text-xs
-                  text-slate-500
-                  dark:text-slate-500
-                `}
-                >
-                  Created: {formatDateTime(createdAt)}
-                </p>
-              )}
+          <div className={styles.cardHeaderRow}>
+            <div className={styles.cardHeaderLeft}>
+              <div className={styles.amount}>{formatCurrency(amount, currencyCode)}</div>
+              {description ? <p className={styles.description}>{description}</p> : null}
+              {createdAt ? <p className={styles.meta}>Created: {formatDateTime(createdAt)}</p> : null}
             </div>
             <StatusBadge status={status} />
           </div>
         </CardHeader>
 
-        {ledgerEntries.length > 0 && (
-          <CardContent className={`border-b border-slate-200 dark:border-slate-700`}>
-            <h2
-              className={`
-              mb-4
-              text-lg
-              font-semibold
-              text-slate-900
-              dark:text-white
-            `}
-            >
-              Timeline
-            </h2>
-            <div className={`space-y-4`}>
+        {ledgerEntries.length > 0 ? (
+          <CardContent className={styles.timelineSection}>
+            <h2 className={styles.sectionTitle}>Timeline</h2>
+            <div className={styles.timelineList}>
               {ledgerEntries.map((entry) => (
-                <div key={entry.id} className={`flex gap-3`}>
-                  <div
-                    className={`
-                    relative
-                    flex
-                    h-8
-                    w-8
-                    shrink-0
-                    items-center
-                    justify-center
-                    rounded-full
-                    bg-primary-100
-                    dark:bg-primary-900/20
-                  `}
-                  >
-                    <div
-                      className={`
-                      h-2.5
-                      w-2.5
-                      rounded-full
-                      bg-primary-600
-                      dark:bg-primary-400
-                    `}
-                    />
+                <div key={entry.id} className={styles.timelineItem}>
+                  <div className={styles.timelineDotWrap}>
+                    <div className={styles.timelineDot} />
                   </div>
-                  <div className={`flex-1 pt-0.5`}>
-                    <div
-                      className={`
-                      text-sm
-                      font-medium
-                      text-slate-900
-                      dark:text-white
-                    `}
-                    >
+                  <div className={styles.timelineBody}>
+                    <div className={styles.timelineLabel}>
                       {entry.status} ({entry.type})
                     </div>
-                    <div className={`text-xs text-slate-500 dark:text-slate-500`}>
-                      {formatDateTime(entry.createdAt)}
-                    </div>
+                    <div className={styles.timelineTime}>{formatDateTime(entry.createdAt)}</div>
                   </div>
                 </div>
               ))}
             </div>
           </CardContent>
-        )}
+        ) : null}
 
-        {attachments.length > 0 && (
+        {attachments.length > 0 ? (
           <CardContent>
-            <h2
-              className={`
-              mb-4
-              text-lg
-              font-semibold
-              text-slate-900
-              dark:text-white
-            `}
-            >
-              Attachments
-            </h2>
-            <div className={`space-y-2`}>
+            <h2 className={styles.sectionTitle}>Attachments</h2>
+            <div className={styles.attachmentsList}>
               {attachments.map((attachment) => (
-                <div
-                  key={attachment.id}
-                  className={`
-                    flex
-                    items-center
-                    justify-between
-                    rounded-lg
-                    border
-                    border-slate-200
-                    p-3
-                    transition-colors
-                    hover:bg-slate-50
-                    dark:border-slate-700
-                    dark:hover:bg-slate-700/50
-                  `}
-                >
-                  <div className={`flex items-center gap-3`}>
-                    <div
-                      className={`
-                      flex
-                      h-10
-                      w-10
-                      shrink-0
-                      items-center
-                      justify-center
-                      rounded-lg
-                      bg-slate-100
-                      dark:bg-slate-700
-                    `}
-                    >
-                      <DocumentIcon
-                        className={`
-                          h-5
-                          w-5
-                          text-slate-600
-                          dark:text-slate-400
-                        `}
-                      />
+                <div key={attachment.id} className={styles.attachmentRow}>
+                  <div className={styles.attachmentLeft}>
+                    <div className={styles.attachmentIconWrap}>
+                      <DocumentIcon className={styles.attachmentIcon} />
                     </div>
                     <div>
-                      <div
-                        className={`
-                        text-sm
-                        font-medium
-                        text-slate-900
-                        dark:text-white
-                      `}
-                      >
-                        {attachment.name}
-                      </div>
-                      <div className={`text-xs text-slate-500 dark:text-slate-500`}>
-                        {formatFileSize(attachment.size)}
-                      </div>
+                      <div className={styles.attachmentName}>{attachment.name}</div>
+                      <div className={styles.attachmentSize}>{formatFileSize(attachment.size)}</div>
                     </div>
                   </div>
                   <a
                     href={attachment.downloadUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`
-                      rounded-lg
-                      px-3
-                      py-1.5
-                      text-sm
-                      font-medium
-                      text-primary-600
-                      transition-colors
-                      hover:bg-primary-50
-                      hover:text-primary-700
-                      dark:text-primary-400
-                      dark:hover:bg-primary-900/20
-                    `}
+                    className={styles.downloadLink}
                   >
                     Download
                   </a>
@@ -446,197 +295,84 @@ export function PaymentDetailView({ paymentRequestId, data }: PaymentDetailViewP
               ))}
             </div>
           </CardContent>
-        )}
+        ) : null}
       </Card>
 
-      {isPending && isPayer && (
+      {isPending && isPayer ? (
         <>
           {loadingMethods ? (
             <Card>
-              <div
-                className={`
-                flex
-                items-center
-                justify-center
-                py-8
-              `}
-              >
-                <div
-                  className={`
-                  flex
-                  items-center
-                  gap-3
-                  text-slate-600
-                  dark:text-slate-400
-                `}
-                >
-                  <SpinnerIcon className={`h-5 w-5 animate-spin`} />
-                  <span className={`text-sm`}>Loading payment methods...</span>
+              <div className={styles.loadingWrap}>
+                <div className={styles.loadingContent}>
+                  <SpinnerIcon className={styles.loadingSpinner} />
+                  <span className={styles.loadingText}>Loading payment methods...</span>
                 </div>
               </div>
             </Card>
           ) : paymentMethods.length > 0 ? (
             <Card noPadding>
               <CardHeader>
-                <h2
-                  className={`
-                  text-lg
-                  font-semibold
-                  text-slate-900
-                  dark:text-white
-                `}
-                >
-                  Select payment method
-                </h2>
-                <p
-                  className={`
-                  mt-1
-                  text-sm
-                  text-slate-600
-                  dark:text-slate-400
-                `}
-                >
-                  Choose how you would like to pay
-                </p>
+                <h2 className={styles.methodCardTitle}>Select payment method</h2>
+                <p className={styles.methodCardSub}>Choose how you would like to pay</p>
               </CardHeader>
-              <CardContent className={`space-y-3`}>
+              <CardContent className={styles.methodList}>
                 {paymentMethods.map((method) => (
                   <button
                     key={method.id}
                     type="button"
                     onClick={() => setSelectedMethodId(method.id)}
-                    className={`group w-full rounded-lg border p-4 text-left transition-all ${
-                      selectedMethodId === method.id
-                        ? `border-primary-500 bg-primary-50 ring-2 ring-primary-500 ring-offset-2 dark:border-primary-400 dark:bg-primary-900/20`
-                        : `border-slate-200 bg-white hover:border-slate-300 hover:shadow-xs dark:border-slate-700 dark:bg-slate-800 dark:hover:border-slate-600`
-                    }`}
+                    className={cn(
+                      styles.methodOption,
+                      selectedMethodId === method.id ? styles.methodOptionSelected : styles.methodOptionDefault,
+                    )}
                   >
-                    <div
-                      className={`
-                      flex
-                      items-start
-                      justify-between
-                      gap-3
-                    `}
-                    >
-                      <div className={`flex items-start gap-3`}>
+                    <div className={styles.methodOptionRow}>
+                      <div className={styles.methodOptionLeft}>
                         <input
                           type="radio"
                           checked={selectedMethodId === method.id}
                           onChange={() => setSelectedMethodId(method.id)}
-                          className={`
-                            mt-0.5
-                            h-4
-                            w-4
-                            text-primary-600
-                            focus:ring-primary-500
-                          `}
+                          className={styles.methodRadio}
                         />
-                        <div className={`flex-1`}>
-                          <div
-                            className={`
-                            flex
-                            items-center
-                            gap-2
-                            text-sm
-                            font-medium
-                            text-slate-900
-                            dark:text-white
-                          `}
-                          >
-                            <span className={`capitalize`}>{method.brand}</span>
-                            <span className={`text-slate-600 dark:text-slate-400`}>••••</span>
+                        <div className={styles.methodOptionMain}>
+                          <div className={styles.methodOptionTitleRow}>
+                            <span className="capitalize">{method.brand}</span>
+                            <span className={styles.methodOptionMask}>••••</span>
                             <span>{method.last4}</span>
-                            {method.defaultSelected && (
-                              <span
-                                className={`
-                                rounded-full
-                                bg-green-100
-                                px-2
-                                py-0.5
-                                text-xs
-                                font-medium
-                                text-green-700
-                                dark:bg-green-900/30
-                                dark:text-green-400
-                              `}
-                              >
-                                Default
-                              </span>
-                            )}
+                            {method.defaultSelected ? <span className={styles.methodDefaultBadge}>Default</span> : null}
                           </div>
-                          {method.expMonth && method.expYear && (
-                            <div
-                              className={`
-                              mt-1
-                              text-xs
-                              text-slate-500
-                              dark:text-slate-500
-                            `}
-                            >
+                          {method.expMonth && method.expYear ? (
+                            <div className={styles.methodExp}>
                               Expires {String(method.expMonth).padStart(2, `0`)}/{method.expYear}
                             </div>
-                          )}
-                          {method.billingDetails?.name && (
-                            <div
-                              className={`
-                              mt-1
-                              text-xs
-                              text-slate-600
-                              dark:text-slate-400
-                            `}
-                            >
-                              {method.billingDetails.name}
-                            </div>
-                          )}
+                          ) : null}
+                          {method.billingDetails?.name ? (
+                            <div className={styles.methodBilling}>{method.billingDetails.name}</div>
+                          ) : null}
                         </div>
                       </div>
-                      <div
-                        className={`
-                        text-xs
-                        capitalize
-                        text-slate-500
-                        dark:text-slate-500
-                      `}
-                      >
-                        {method.type.toLowerCase()}
-                      </div>
+                      <div className={styles.methodType}>{method.type.toLowerCase()}</div>
                     </div>
                   </button>
                 ))}
                 <button
                   type="button"
                   onClick={() => setSelectedMethodId(``)}
-                  className={`group w-full rounded-lg border p-4 text-left transition-all ${
-                    selectedMethodId === ``
-                      ? `border-primary-500 bg-primary-50 ring-2 ring-primary-500 ring-offset-2 dark:border-primary-400 dark:bg-primary-900/20`
-                      : `border-slate-200 bg-white hover:border-slate-300 hover:shadow-xs dark:border-slate-700 dark:bg-slate-800 dark:hover:border-slate-600`
-                  }`}
+                  className={cn(
+                    styles.methodOption,
+                    selectedMethodId === `` ? styles.methodOptionSelected : styles.methodOptionDefault,
+                  )}
                 >
-                  <div className={`flex items-center gap-3`}>
+                  <div className={styles.methodAddNewRow}>
                     <input
                       type="radio"
                       checked={selectedMethodId === ``}
                       onChange={() => setSelectedMethodId(``)}
-                      className={`
-                        h-4
-                        w-4
-                        text-primary-600
-                        focus:ring-primary-500
-                      `}
+                      className={styles.methodRadioSimple}
                     />
                     <div>
-                      <div
-                        className={`
-                        text-sm
-                        font-medium
-                        text-slate-900
-                        dark:text-white
-                      `}
-                      >
-                        Add new payment method
-                      </div>
-                      <div className={`text-xs text-slate-500 dark:text-slate-500`}>Enter new card or bank details</div>
+                      <div className={styles.methodAddNewTitle}>Add new payment method</div>
+                      <div className={styles.methodAddNewSub}>Enter new card or bank details</div>
                     </div>
                   </div>
                 </button>
@@ -644,28 +380,23 @@ export function PaymentDetailView({ paymentRequestId, data }: PaymentDetailViewP
             </Card>
           ) : null}
         </>
-      )}
+      ) : null}
 
-      <div
-        className={`
-        flex
-        flex-col
-        gap-3
-        sm:flex-row
-      `}
-      >
-        {isPending && isPayer && (
-          <Button variant="primary" size="lg" onClick={handlePayNow} isLoading={paying} className={`flex-1`}>
+      <div className={styles.actions}>
+        {isPending && isPayer ? (
+          <Button variant="primary" size="lg" onClick={handlePayNow} isLoading={paying} className={styles.actionBtn}>
             {paying ? `Processing payment...` : `Pay now`}
           </Button>
-        )}
-        {isDraft && isRequester && <SendPaymentRequestButton paymentRequestId={paymentRequestId} status={status} />}
+        ) : null}
+        {isDraft && isRequester ? (
+          <SendPaymentRequestButton paymentRequestId={paymentRequestId} status={status} />
+        ) : null}
         <Button
           variant="outline"
           size="lg"
           onClick={handleGenerateInvoice}
           isLoading={generatingInvoice}
-          className={`flex-1`}
+          className={styles.actionBtn}
         >
           {generatingInvoice ? `Generating...` : `Generate invoice`}
         </Button>

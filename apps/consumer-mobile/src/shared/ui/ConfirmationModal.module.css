@@ -1,0 +1,39 @@
+/* ConfirmationModal.module.css */
+@reference "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.overlay {
+  @apply fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4;
+}
+
+.scrim {
+  @apply fixed inset-0 bg-black/20 backdrop-blur-md transition-opacity dark:bg-slate-900/60;
+}
+
+.panel {
+  @apply relative z-10 w-full max-w-md overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl dark:bg-slate-800;
+}
+
+.content {
+  @apply px-6 py-5;
+}
+
+.iconWrap {
+  @apply mb-5 flex justify-center;
+}
+
+.title {
+  @apply text-center text-xl font-bold text-slate-900 dark:text-white;
+}
+
+.message {
+  @apply mt-3 text-center text-sm text-slate-600 dark:text-slate-400;
+}
+
+.footer {
+  @apply flex gap-3 border-t bg-linear-to-r from-slate-50 via-white to-slate-50 px-6 py-4 dark:border-slate-700 dark:from-slate-800/50 dark:via-slate-900/50 dark:to-slate-800/50 backdrop-blur-xs;
+}
+
+.footerButton {
+  @apply flex-1;
+}

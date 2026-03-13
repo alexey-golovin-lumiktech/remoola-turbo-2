@@ -1,0 +1,48 @@
+/* documents page - primary-* from globals */
+@reference "tailwindcss";
+@reference "../../globals.css";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.root {
+  @apply relative min-h-full bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950;
+}
+
+.header {
+  @apply border-b border-slate-200/80 bg-white/95 px-4 py-6 shadow-xs backdrop-blur-lg dark:border-slate-700/80 dark:bg-slate-900/95 sm:px-6 sm:py-7 lg:px-8;
+}
+
+.headerInner {
+  @apply mx-auto max-w-6xl;
+}
+
+.headerRow {
+  @apply flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between;
+}
+
+.headerContent {
+  @apply space-y-2;
+}
+
+.headerIconRow {
+  @apply flex items-center gap-4;
+}
+
+.headerIconWrap {
+  @apply flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 shadow-lg shadow-primary-500/30 ring-4 ring-primary-50 dark:ring-primary-950 dark:shadow-primary-900/40;
+}
+
+.headerIcon {
+  @apply h-6 w-6 text-white;
+}
+
+.title {
+  @apply text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl dark:text-white;
+}
+
+.subtitle {
+  @apply pl-0.5 text-sm font-medium text-slate-600 sm:text-base dark:text-slate-400;
+}
+
+.main {
+  @apply mx-auto max-w-6xl px-4 pb-6 pt-6 sm:px-6 sm:pt-8 lg:px-8;
+}

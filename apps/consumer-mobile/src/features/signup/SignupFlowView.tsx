@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { ACCOUNT_TYPE, CONTRACTOR_KIND } from '@remoola/api-types';
 
+import styles from './SignupFlowView.module.css';
 import { useSignupForm } from './SignupFormContext';
 import { SignupStepsProvider, useSignupSteps } from './SignupStepsContext';
 import { STEP_NAME } from './stepNames';
@@ -19,28 +20,13 @@ function SignupStepsContent() {
   const { currentStep } = useSignupSteps();
   return (
     <>
-      <div
-        className={`
-        sticky
-        top-0
-        z-10
-        mb-3
-        bg-linear-to-b
-        from-[#f8fafc]
-        via-[#f8fafc]
-        to-transparent
-        pb-2
-        pt-1
-        dark:from-[#0f172a]
-        dark:via-[#0f172a]
-      `}
-      >
+      <div className={styles.stickyHeader}>
         <Stepper />
       </div>
-      {currentStep === STEP_NAME.SIGNUP_DETAILS && <SignupDetailsStep />}
-      {currentStep === STEP_NAME.PERSONAL_DETAILS && <PersonalDetailsStep />}
-      {currentStep === STEP_NAME.ADDRESS_DETAILS && <AddressDetailsStep />}
-      {currentStep === STEP_NAME.ORGANIZATION_DETAILS && <OrganizationDetailsStep />}
+      {currentStep === STEP_NAME.SIGNUP_DETAILS ? <SignupDetailsStep /> : null}
+      {currentStep === STEP_NAME.PERSONAL_DETAILS ? <PersonalDetailsStep /> : null}
+      {currentStep === STEP_NAME.ADDRESS_DETAILS ? <AddressDetailsStep /> : null}
+      {currentStep === STEP_NAME.ORGANIZATION_DETAILS ? <OrganizationDetailsStep /> : null}
     </>
   );
 }
@@ -131,63 +117,19 @@ export function SignupFlowView() {
 
   if (hydrateError) {
     return (
-      <div
-        className={`
-        mx-auto
-        max-w-md
-        px-3
-        py-4
-        sm:px-4
-      `}
-      >
-        <div
-          className={`
-          rounded-lg
-          border
-          border-red-200
-          bg-red-50
-          p-4
-          dark:border-red-900/50
-          dark:bg-red-900/20
-        `}
-        >
-          <div className={`flex items-start gap-3`}>
-            <ExclamationCircleIcon
-              className={`
-                mt-0.5
-                h-5
-                w-5
-                shrink-0
-                text-red-600
-                dark:text-red-400
-              `}
-            />
-            <div className={`flex-1`}>
-              <p
-                className={`
-                text-sm
-                font-semibold
-                text-red-900
-                dark:text-red-200
-              `}
-              >
-                {hydrateError}
-              </p>
+      <div className={styles.container}>
+        <div className={styles.errorCard}>
+          <div className={styles.errorInner}>
+            <ExclamationCircleIcon className={styles.errorIcon} />
+            <div className={styles.errorContent}>
+              <p className={styles.errorTitle}>{hydrateError}</p>
               <button
                 type="button"
                 onClick={() => {
                   hydratedRef.current = false;
                   setRetryTrigger((t) => t + 1);
                 }}
-                className={`
-                  mt-2
-                  text-sm
-                  font-medium
-                  text-red-700
-                  hover:text-red-800
-                  dark:text-red-300
-                  dark:hover:text-red-200
-                `}
+                className={styles.retryBtn}
               >
                 Retry
               </button>
@@ -206,16 +148,7 @@ export function SignupFlowView() {
 
   return (
     <SignupStepsProvider accountType={accountType} contractorKind={kind}>
-      <div
-        className={`
-        mx-auto
-        max-w-md
-        px-3
-        py-4
-        sm:px-4
-      `}
-        data-testid="consumer-signup-flow"
-      >
+      <div className={styles.container} data-testid="consumer-signup-flow">
         <SignupStepsContent />
       </div>
     </SignupStepsProvider>

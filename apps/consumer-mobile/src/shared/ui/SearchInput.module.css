@@ -1,0 +1,28 @@
+/* SearchInput.module.css - globals for focus:ring-primary-500, focus:border-primary-500 */
+@reference "tailwindcss";
+@reference "../../app/globals.css";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.root {
+  @apply relative;
+}
+
+.iconWrap {
+  @apply pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4;
+}
+
+.icon {
+  @apply h-5 w-5 text-slate-400 transition-colors dark:text-slate-500;
+}
+
+.input {
+  @apply w-full min-h-11 rounded-xl border-2 border-slate-300 bg-white py-3 pl-11 pr-12 text-base font-medium text-slate-900 shadow-xs transition-all duration-200 ease-out placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 focus:shadow-md hover:border-slate-400 hover:shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-primary-500 dark:hover:border-slate-600;
+}
+
+.clearButton {
+  @apply absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-slate-400 transition-all duration-200 hover:bg-slate-100 hover:text-slate-600 active:scale-95 dark:hover:bg-slate-700 dark:hover:text-slate-300;
+}
+
+.clearIcon {
+  @apply h-4 w-4;
+}

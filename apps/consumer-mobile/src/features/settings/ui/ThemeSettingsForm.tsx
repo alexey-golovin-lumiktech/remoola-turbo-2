@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 
+import styles from './ThemeSettingsForm.module.css';
 import { getLocalToastMessage, localToastKeys } from '../../../lib/error-messages';
 import { clientLogger } from '../../../lib/logger';
 import { showErrorToast, showSuccessToast } from '../../../lib/toast.client';
@@ -77,66 +78,14 @@ export function ThemeSettingsForm({ initialTheme }: ThemeSettingsFormProps) {
       title="Theme"
       description="Choose how Remoola looks to you. Select a theme or follow your system preference."
     >
-      <fieldset
-        disabled={loading}
-        className={`
-          space-y-3
-        `}
-        data-testid="theme-settings-form"
-      >
-        <legend className={`sr-only`}>Theme preference</legend>
+      <fieldset disabled={loading} className={styles.fieldset} data-testid="theme-settings-form">
+        <legend className={styles.srOnly}>Theme preference</legend>
         {themeOptions.map((option) => {
           const isActive = theme === option.value;
           return (
             <label
               key={option.value}
-              className={
-                `
-                group
-                flex
-                min-h-15
-                cursor-pointer
-                items-center
-                gap-4
-                rounded-xl
-                border-2
-                px-4
-                py-3.5
-                transition-all
-                duration-200
-                ` +
-                (isActive
-                  ? `
-                border-primary-500
-                bg-linear-to-r
-                from-primary-50
-                to-primary-100/50
-                shadow-md
-                shadow-primary-500/10
-                dark:border-primary-400
-                dark:from-primary-900/30
-                dark:to-primary-900/20
-                dark:shadow-primary-900/20
-                `
-                  : `
-                border-slate-200
-                bg-white
-                hover:border-slate-300
-                hover:shadow-xs
-                dark:border-slate-600
-                dark:bg-slate-800/50
-                dark:hover:border-slate-500
-                `) +
-                (loading
-                  ? `
-                cursor-not-allowed
-                opacity-60
-                `
-                  : `
-                hover:scale-[1.01]
-                active:scale-[0.99]
-                `)
-              }
+              className={`${styles.option} ${isActive ? styles.optionActive : styles.optionInactive} ${loading ? styles.optionLoading : styles.optionInteractive}`}
             >
               <input
                 type="radio"
@@ -144,68 +93,19 @@ export function ThemeSettingsForm({ initialTheme }: ThemeSettingsFormProps) {
                 value={option.value}
                 checked={isActive}
                 onChange={(e) => updateTheme(e.target.value as ITheme)}
-                className={`sr-only`}
+                className={styles.srOnly}
                 disabled={loading}
               />
-              <span
-                className={`
-                  text-2xl
-                  shrink-0
-                `}
-                aria-hidden="true"
-              >
+              <span className={styles.optionIcon} aria-hidden="true">
                 {option.icon}
               </span>
-              <div
-                className={`
-                  flex-1
-                  min-w-0
-                `}
-              >
-                <div
-                  className={`
-                  text-base
-                  font-bold
-                  text-slate-900
-                  dark:text-white
-                `}
-                >
-                  {option.label}
-                </div>
-                <div
-                  className={`
-                    text-sm
-                    text-slate-600
-                    dark:text-slate-400
-                  `}
-                >
-                  {option.description}
-                </div>
+              <div className={styles.optionContent}>
+                <div className={styles.optionTitle}>{option.label}</div>
+                <div className={styles.optionDescription}>{option.description}</div>
               </div>
               {isActive ? (
-                <div
-                  className={`
-                    flex
-                    h-6
-                    w-6
-                    shrink-0
-                    items-center
-                    justify-center
-                    rounded-full
-                    bg-primary-600
-                    dark:bg-primary-500
-                    shadow-lg
-                    shadow-primary-500/50
-                  `}
-                  aria-hidden="true"
-                >
-                  <CheckIcon
-                    className={`
-                      h-3.5
-                      w-3.5
-                      text-white
-                    `}
-                  />
+                <div className={styles.checkWrap} aria-hidden="true">
+                  <CheckIcon className={styles.checkIcon} />
                 </div>
               ) : null}
             </label>
@@ -214,38 +114,9 @@ export function ThemeSettingsForm({ initialTheme }: ThemeSettingsFormProps) {
       </fieldset>
 
       {loading ? (
-        <div
-          className={`
-            mt-4
-            flex
-            items-center
-            gap-2
-            rounded-lg
-            bg-primary-50
-            px-3
-            py-2
-            dark:bg-primary-900/20
-          `}
-          role="status"
-        >
-          <SpinnerIcon
-            className={`
-            h-4
-            w-4
-            text-primary-600
-            dark:text-primary-400
-          `}
-          />
-          <p
-            className={`
-            text-sm
-            font-medium
-            text-primary-700
-            dark:text-primary-300
-          `}
-          >
-            Updating theme…
-          </p>
+        <div className={styles.loadingBanner} role="status">
+          <SpinnerIcon className={styles.spinnerIcon} />
+          <p className={styles.loadingText}>Updating theme…</p>
         </div>
       ) : null}
     </FormCard>

@@ -11,6 +11,7 @@ import { ChevronDownIcon } from '../../../shared/ui/icons/ChevronDownIcon';
 import { MapPinIcon } from '../../../shared/ui/icons/MapPinIcon';
 import { Modal } from '../../../shared/ui/Modal';
 import { type ContactAddress } from '../schemas';
+import styles from './CreateContactModal.module.css';
 
 interface CreateContactModalProps {
   isOpen: boolean;
@@ -108,7 +109,7 @@ export function CreateContactModal({ isOpen, onClose, onSubmit, initialEmail }: 
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="Add new contact" size="lg">
-      <form onSubmit={handleSubmit} className={`space-y-5`}>
+      <form onSubmit={handleSubmit} className={styles.form}>
         <FormField label="Email" htmlFor="contact-email" error={errors.email} required>
           <FormInput
             id="contact-email"
@@ -118,7 +119,7 @@ export function CreateContactModal({ isOpen, onClose, onSubmit, initialEmail }: 
             placeholder="john@example.com"
             error={!!errors.email}
             autoFocus
-            className={`min-h-11`}
+            className={styles.inputHeight}
           />
         </FormField>
 
@@ -129,67 +130,39 @@ export function CreateContactModal({ isOpen, onClose, onSubmit, initialEmail }: 
             onChange={(e) => setName(e.target.value)}
             placeholder="John Doe (optional)"
             error={!!errors.name}
-            className={`min-h-11`}
+            className={styles.inputHeight}
           />
         </FormField>
 
-        <div
-          className={`
-  border-t
-  border-slate-200
-  pt-5
-  dark:border-slate-700
-        `}
-        >
-          <button
-            type="button"
-            onClick={() => setShowAddress(!showAddress)}
-            className={`
-  flex
-  w-full
-  items-center
-  justify-between
-  rounded-xl
-  p-3
-  text-sm
-  font-semibold
-  text-slate-700
-  transition-all
-  hover:bg-slate-100
-  dark:text-slate-300
-  dark:hover:bg-slate-800
-  active:scale-98
-            `}
-          >
-            <div className={`flex items-center gap-2`}>
-              <MapPinIcon className={`h-5 w-5 text-slate-500`} />
+        <div className={styles.section}>
+          <button type="button" onClick={() => setShowAddress(!showAddress)} className={styles.addressTrigger}>
+            <div className={styles.addressTriggerLeft}>
+              <MapPinIcon className={styles.addressTriggerIcon} />
               <span>Address (optional)</span>
             </div>
-            <ChevronDownIcon
-              className={`h-5 w-5 transition-transform duration-200 ${showAddress ? `rotate-180` : ``}`}
-            />
+            <ChevronDownIcon className={`${styles.chevron} ${showAddress ? styles.chevronOpen : ``}`} />
           </button>
 
-          {showAddress && (
-            <div className={`mt-4 space-y-4 animate-slideDown`}>
+          {showAddress ? (
+            <div className={styles.addressPanel}>
               <FormField label="Street" htmlFor="contact-street">
                 <FormInput
                   id="contact-street"
                   value={address.street ?? ``}
                   onChange={(e) => setAddress((a) => ({ ...a, street: e.target.value || null }))}
                   placeholder="123 Main Street"
-                  className={`min-h-11`}
+                  className={styles.inputHeight}
                 />
               </FormField>
 
-              <div className={`grid gap-4 sm:grid-cols-2`}>
+              <div className={styles.grid2}>
                 <FormField label="City" htmlFor="contact-city">
                   <FormInput
                     id="contact-city"
                     value={address.city ?? ``}
                     onChange={(e) => setAddress((a) => ({ ...a, city: e.target.value || null }))}
                     placeholder="San Francisco"
-                    className={`min-h-11`}
+                    className={styles.inputHeight}
                   />
                 </FormField>
 
@@ -199,19 +172,19 @@ export function CreateContactModal({ isOpen, onClose, onSubmit, initialEmail }: 
                     value={address.state ?? ``}
                     onChange={(e) => setAddress((a) => ({ ...a, state: e.target.value || null }))}
                     placeholder="CA"
-                    className={`min-h-11`}
+                    className={styles.inputHeight}
                   />
                 </FormField>
               </div>
 
-              <div className={`grid gap-4 sm:grid-cols-2`}>
+              <div className={styles.grid2}>
                 <FormField label="Postal Code" htmlFor="contact-postal">
                   <FormInput
                     id="contact-postal"
                     value={address.postalCode ?? ``}
                     onChange={(e) => setAddress((a) => ({ ...a, postalCode: e.target.value || null }))}
                     placeholder="94102"
-                    className={`min-h-11`}
+                    className={styles.inputHeight}
                   />
                 </FormField>
 
@@ -221,40 +194,19 @@ export function CreateContactModal({ isOpen, onClose, onSubmit, initialEmail }: 
                     value={address.country ?? ``}
                     onChange={(e) => setAddress((a) => ({ ...a, country: e.target.value || null }))}
                     placeholder="USA"
-                    className={`min-h-11`}
+                    className={styles.inputHeight}
                   />
                 </FormField>
               </div>
             </div>
-          )}
+          ) : null}
         </div>
 
-        <div
-          className={`
-  flex
-  flex-col
-  gap-3
-  pt-3
-  sm:flex-row
-        `}
-        >
-          <Button type="button" variant="outline" size="md" onClick={handleClose} className={`min-h-11 flex-1`}>
+        <div className={styles.actions}>
+          <Button type="button" variant="outline" size="md" onClick={handleClose} className={styles.actionBtn}>
             Cancel
           </Button>
-          <Button
-            type="submit"
-            variant="primary"
-            size="md"
-            isLoading={isLoading}
-            className={`
-  min-h-11
-  flex-1
-  shadow-lg
-  shadow-primary-500/30
-  hover:shadow-xl
-  hover:shadow-primary-500/40
-            `}
-          >
+          <Button type="submit" variant="primary" size="md" isLoading={isLoading} className={styles.submitBtn}>
             Add contact
           </Button>
         </div>

@@ -22,6 +22,7 @@ import { Modal } from '../../../shared/ui/Modal';
 import { PageHeader } from '../../../shared/ui/PageHeader';
 import { StatusBadge } from '../../../shared/ui/StatusBadge';
 import { createExchangeRule, updateExchangeRule, deleteExchangeRule } from '../actions';
+import styles from './RulesView.module.css';
 
 interface ExchangeRule {
   id: string;
@@ -167,35 +168,16 @@ export function RulesView({ rules, currencies }: RulesViewProps) {
     </Button>
   );
 
-  if (rules.length === 0) {
-    return (
-      <div
-        className={`
-          min-h-full
-          bg-linear-to-br
-          from-slate-50
-          via-white
-          to-slate-50
-          dark:from-slate-950
-          dark:via-slate-900
-          dark:to-slate-950
-        `}
-      >
-        <PageHeader
-          icon={<IconBadge icon={<ClipboardListIcon className={`h-6 w-6 text-white`} />} hasRing />}
-          title="Exchange rules"
-          actions={createRuleAction}
-        />
-        <div
-          className={`
-            mx-auto
-            max-w-md
-            space-y-4
-            p-4
-            sm:px-6
-            sm:pt-6
-          `}
-        >
+  return (
+    <div className={styles.root}>
+      <PageHeader
+        icon={<IconBadge icon={<ClipboardListIcon className={styles.headerIcon} />} hasRing />}
+        title="Exchange rules"
+        subtitle={rules.length > 0 ? `${rules.length} ${rules.length === 1 ? `rule` : `rules`}` : undefined}
+        actions={createRuleAction}
+      />
+      <div className={styles.main}>
+        {rules.length === 0 ? (
           <EmptyState
             title="No exchange rules"
             description="Create automatic exchange rules to convert currencies based on conditions."
@@ -207,200 +189,53 @@ export function RulesView({ rules, currencies }: RulesViewProps) {
               },
             }}
           />
+        ) : null}
 
-          <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title="Create exchange rule">
-            <div className={`space-y-4`}>
-              <FormField label="Rule name" htmlFor="name" required>
-                <FormInput
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g., Auto-convert USD to EUR"
-                  required
-                />
-              </FormField>
-
-              <FormField label="From currency" htmlFor="fromCurrency" required>
-                <FormSelect
-                  id="fromCurrency"
-                  value={formData.fromCurrency}
-                  onChange={(e) => setFormData({ ...formData, fromCurrency: e.target.value })}
-                  options={currencies.map((c) => ({ value: c.code, label: `${c.code} - ${c.name ?? c.symbol}` }))}
-                  required
-                />
-              </FormField>
-
-              <FormField label="To currency" htmlFor="toCurrency" required>
-                <FormSelect
-                  id="toCurrency"
-                  value={formData.toCurrency}
-                  onChange={(e) => setFormData({ ...formData, toCurrency: e.target.value })}
-                  options={currencies.map((c) => ({ value: c.code, label: `${c.code} - ${c.name ?? c.symbol}` }))}
-                  required
-                />
-              </FormField>
-
-              <div className={`flex items-center gap-2`}>
-                <input
-                  type="checkbox"
-                  id="enabled"
-                  checked={formData.enabled}
-                  onChange={(e) => setFormData({ ...formData, enabled: e.target.checked })}
-                  className={`
-                    h-5
-                    w-5
-                    rounded-xs
-                    border-slate-300
-                    text-primary-600
-                    focus:ring-2
-                    focus:ring-primary-500
-                `}
-                />
-                <label
-                  htmlFor="enabled"
-                  className={`
-                    text-sm
-                    font-medium
-                    text-slate-900
-                    dark:text-white
-                `}
-                >
-                  Enable rule
-                </label>
-              </div>
-
-              <div className={`flex gap-2 pt-2`}>
-                <Button
-                  variant="outline"
-                  size="md"
-                  onClick={() => setIsCreateModalOpen(false)}
-                  disabled={isLoading}
-                  className={`flex-1`}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="primary"
-                  size="md"
-                  onClick={handleCreate}
-                  isLoading={isLoading}
-                  disabled={!formData.name || !formData.fromCurrency || !formData.toCurrency}
-                  className={`flex-1`}
-                >
-                  Create rule
-                </Button>
-              </div>
-            </div>
-          </Modal>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className={`
-        min-h-full
-        bg-linear-to-br
-        from-slate-50
-        via-white
-        to-slate-50
-        dark:from-slate-950
-        dark:via-slate-900
-        dark:to-slate-950
-      `}
-    >
-      <PageHeader
-        icon={<IconBadge icon={<ClipboardListIcon className={`h-6 w-6 text-white`} />} hasRing />}
-        title="Exchange rules"
-        subtitle={rules.length > 0 ? `${rules.length} ${rules.length === 1 ? `rule` : `rules`}` : undefined}
-        actions={createRuleAction}
-      />
-      <div
-        className={`
-          mx-auto
-          max-w-md
-          space-y-4
-          p-4
-          sm:px-6
-          sm:pt-6
-        `}
-      >
-        <div className={`space-y-3`}>
-          {rules.map((rule) => (
-            <div
-              key={rule.id}
-              className={`
-  rounded-lg
-  border
-  border-slate-200
-  bg-white
-  p-4
-  dark:border-slate-700
-  dark:bg-slate-800
-            `}
-            >
-              <div className={`flex items-start justify-between`}>
-                <div className={`flex-1`}>
-                  <div className={`flex items-center gap-2`}>
-                    <h3
-                      className={`
-  text-sm
-  font-semibold
-  text-slate-900
-  dark:text-white
-                    `}
-                    >
-                      {rule.name}
-                    </h3>
-                    <StatusBadge
-                      status={rule.enabled ? `Active` : `Inactive`}
-                      variant={rule.enabled ? `success` : `default`}
-                    />
+        {rules.length > 0 ? (
+          <div className={styles.list}>
+            {rules.map((rule) => (
+              <div key={rule.id} className={styles.card}>
+                <div className={styles.cardRow}>
+                  <div className={styles.cardLeft}>
+                    <div className={styles.cardTitleRow}>
+                      <h3 className={styles.cardTitle}>{rule.name}</h3>
+                      <StatusBadge
+                        status={rule.enabled ? `Active` : `Inactive`}
+                        variant={rule.enabled ? `success` : `default`}
+                      />
+                    </div>
+                    <p className={styles.cardSub}>
+                      {rule.fromCurrency} → {rule.toCurrency}
+                    </p>
+                    <p className={styles.cardMeta}>Created {new Date(rule.createdAt).toLocaleDateString()}</p>
                   </div>
-                  <p
-                    className={`
-  mt-1
-  text-sm
-  text-slate-600
-  dark:text-slate-400
-                  `}
-                  >
-                    {rule.fromCurrency} → {rule.toCurrency}
-                  </p>
-                  <p
-                    className={`
-  mt-1
-  text-xs
-  text-slate-500
-  dark:text-slate-500
-                  `}
-                  >
-                    Created {new Date(rule.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
 
-                <div className={`flex gap-1`}>
-                  <IconButton
-                    onClick={() => handleToggleEnabled(rule)}
-                    aria-label={rule.enabled ? `Disable rule` : `Enable rule`}
-                  >
-                    {rule.enabled ? <PauseCircleIcon className={`h-5 w-5`} /> : <PlayIcon className={`h-5 w-5`} />}
-                  </IconButton>
-                  <IconButton onClick={() => openEditModal(rule)} aria-label="Edit rule">
-                    <PencilIcon className={`h-5 w-5`} />
-                  </IconButton>
-                  <IconButton onClick={() => openDeleteModal(rule)} aria-label="Delete rule" variant="danger">
-                    <TrashIcon className={`h-5 w-5`} />
-                  </IconButton>
+                  <div className={styles.cardActions}>
+                    <IconButton
+                      onClick={() => handleToggleEnabled(rule)}
+                      aria-label={rule.enabled ? `Disable rule` : `Enable rule`}
+                    >
+                      {rule.enabled ? (
+                        <PauseCircleIcon className={styles.iconSize} />
+                      ) : (
+                        <PlayIcon className={styles.iconSize} />
+                      )}
+                    </IconButton>
+                    <IconButton onClick={() => openEditModal(rule)} aria-label="Edit rule">
+                      <PencilIcon className={styles.iconSize} />
+                    </IconButton>
+                    <IconButton onClick={() => openDeleteModal(rule)} aria-label="Delete rule" variant="danger">
+                      <TrashIcon className={styles.iconSize} />
+                    </IconButton>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : null}
 
         <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title="Create exchange rule">
-          <div className={`space-y-4`}>
+          <div className={styles.formBody}>
             <FormField label="Rule name" htmlFor="name-create" required>
               <FormInput
                 id="name-create"
@@ -431,42 +266,26 @@ export function RulesView({ rules, currencies }: RulesViewProps) {
               />
             </FormField>
 
-            <div className={`flex items-center gap-2`}>
+            <div className={styles.checkboxRow}>
               <input
                 type="checkbox"
                 id="enabled-create"
                 checked={formData.enabled}
                 onChange={(e) => setFormData({ ...formData, enabled: e.target.checked })}
-                className={`
-  h-5
-  w-5
-  rounded-xs
-  border-slate-300
-  text-primary-600
-  focus:ring-2
-  focus:ring-primary-500
-              `}
+                className={styles.checkbox}
               />
-              <label
-                htmlFor="enabled-create"
-                className={`
-  text-sm
-  font-medium
-  text-slate-900
-  dark:text-white
-              `}
-              >
+              <label htmlFor="enabled-create" className={styles.checkboxLabel}>
                 Enable rule
               </label>
             </div>
 
-            <div className={`flex gap-2 pt-2`}>
+            <div className={styles.formActions}>
               <Button
                 variant="outline"
                 size="md"
                 onClick={() => setIsCreateModalOpen(false)}
                 disabled={isLoading}
-                className={`flex-1`}
+                className={styles.formBtn}
               >
                 Cancel
               </Button>
@@ -476,7 +295,7 @@ export function RulesView({ rules, currencies }: RulesViewProps) {
                 onClick={handleCreate}
                 isLoading={isLoading}
                 disabled={!formData.name || !formData.fromCurrency || !formData.toCurrency}
-                className={`flex-1`}
+                className={styles.formBtn}
               >
                 Create rule
               </Button>
@@ -485,7 +304,7 @@ export function RulesView({ rules, currencies }: RulesViewProps) {
         </Modal>
 
         <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Edit exchange rule">
-          <div className={`space-y-4`}>
+          <div className={styles.formBody}>
             <FormField label="Rule name" htmlFor="name-edit" required>
               <FormInput
                 id="name-edit"
@@ -496,42 +315,26 @@ export function RulesView({ rules, currencies }: RulesViewProps) {
               />
             </FormField>
 
-            <div className={`flex items-center gap-2`}>
+            <div className={styles.checkboxRow}>
               <input
                 type="checkbox"
                 id="enabled-edit"
                 checked={formData.enabled}
                 onChange={(e) => setFormData({ ...formData, enabled: e.target.checked })}
-                className={`
-  h-5
-  w-5
-  rounded-xs
-  border-slate-300
-  text-primary-600
-  focus:ring-2
-  focus:ring-primary-500
-              `}
+                className={styles.checkbox}
               />
-              <label
-                htmlFor="enabled-edit"
-                className={`
-  text-sm
-  font-medium
-  text-slate-900
-  dark:text-white
-              `}
-              >
+              <label htmlFor="enabled-edit" className={styles.checkboxLabel}>
                 Enable rule
               </label>
             </div>
 
-            <div className={`flex gap-2 pt-2`}>
+            <div className={styles.formActions}>
               <Button
                 variant="outline"
                 size="md"
                 onClick={() => setIsEditModalOpen(false)}
                 disabled={isLoading}
-                className={`flex-1`}
+                className={styles.formBtn}
               >
                 Cancel
               </Button>
@@ -541,7 +344,7 @@ export function RulesView({ rules, currencies }: RulesViewProps) {
                 onClick={handleEdit}
                 isLoading={isLoading}
                 disabled={!formData.name}
-                className={`flex-1`}
+                className={styles.formBtn}
               >
                 Save changes
               </Button>

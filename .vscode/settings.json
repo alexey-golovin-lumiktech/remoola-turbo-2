@@ -1,5 +1,14 @@
 {
   "cSpell.words": [],
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+  "editor.quickSuggestions": {
+    "strings": "on"
+  },
+  "tailwindCSS.includeLanguages": {
+    "plaintext": "html"
+  },
   "sqltools.connections": [
     {
       "previewLimit": 50,
@@ -61,9 +70,6 @@
   "editor.tabSize": 2,
   "editor.detectIndentation": false,
   "editor.wordWrap": "on",
-  "editor.quickSuggestions": {
-    "strings": true
-  },
   // 🚀 --- Workspace Optimization (Enhanced for File Watcher) ---
   "search.exclude": {
     "**/node_modules": true,
@@ -147,5 +153,24 @@
   },
   "[prisma]": {
     "editor.defaultFormatter": "Prisma.prisma"
-  }
+  },
+  "reactTsScss.renameSelector": true,
+  "reactTsScss.autoComplete": true,
+  "reactTsScss.definition": true,
+  "reactTsScss.peekProperties": true,
+  "reactTsScss.cssAutoComplete": true,
+  "reactTsScss.cssDefinitions": true,
+  "reactTsScss.diagnostics": true,
+  "reactTsScss.baseDir": "src",
+  "reactTsScss.cssSyntaxColor": true,
+  "reactTsScss.tsCleanUpDefs": true,
+  "reactTsScss.cleanUpDefs": [
+    "*.module.css",
+    "*.module.scss",
+    "*.module.sass",
+    "*.module.less",
+    "*.module.styl"
+  ],
+  "reactTsScss.references": true,
+  "reactTsScss.codelens": false,
 }

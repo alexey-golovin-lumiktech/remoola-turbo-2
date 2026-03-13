@@ -4,20 +4,15 @@ import 'react-phone-number-input/style.css';
 import dynamic from 'next/dynamic';
 import { type Country } from 'react-phone-number-input';
 
+import { cn } from '@remoola/ui';
+
 import { FORM_ERROR_CLASS, FORM_LABEL_CLASS } from './form-classes';
+import styles from './PhoneInput.module.css';
 import { getCountryCode } from '../../lib/countries';
 
 const PhoneInputWithCountry = dynamic(() => import(`react-phone-number-input`).then((mod) => mod.default), {
   ssr: false,
 });
-
-const phoneInputWrapperClass =
-  `min-h-11 w-full rounded-lg border border-neutral-300 px-3 py-2 text-base text-neutral-900 ` +
-  `focus-within:outline-hidden focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-primary-500 ` +
-  `dark:border-neutral-600 dark:bg-neutral-800 dark:text-white ` +
-  `dark:focus-within:ring-primary-400 dark:focus-within:border-primary-400`;
-
-const phoneInputWrapperErrorClass = `border-red-500 ring-2 ring-red-500/20 dark:border-red-500`;
 
 export interface PhoneInputProps {
   label: string;
@@ -57,13 +52,13 @@ export function PhoneInput({
           if (error && onErrorClear) onErrorClear();
         }}
         placeholder={placeholder}
-        className={`${phoneInputWrapperClass} ${error ? phoneInputWrapperErrorClass : ``}`}
+        className={cn(styles.wrapper, error && styles.wrapperError)}
       />
-      {error && (
+      {error ? (
         <p className={FORM_ERROR_CLASS} role="alert">
           {error}
         </p>
-      )}
+      ) : null}
     </div>
   );
 }

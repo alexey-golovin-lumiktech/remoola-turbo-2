@@ -2,7 +2,17 @@
 
 import { type ReactNode, useEffect } from 'react';
 
+import { cn } from '@remoola/ui';
+
 import { XIcon } from './icons/XIcon';
+import styles from './Modal.module.css';
+
+const panelSizeClass = {
+  sm: styles.panelSm,
+  md: styles.panelMd,
+  lg: styles.panelLg,
+  xl: styles.panelXl,
+} as const;
 
 interface ModalProps {
   isOpen: boolean;
@@ -43,128 +53,36 @@ export function Modal({ isOpen, onClose, title, children, footer, size = `md` }:
 
   if (!isOpen) return null;
 
-  const sizeStyles = {
-    sm: `max-w-sm`,
-    md: `max-w-md`,
-    lg: `max-w-lg`,
-    xl: `max-w-xl`,
-  };
-
   return (
     <div
-      className={`
-        fixed
-        inset-0
-        z-50
-        flex
-        items-end
-        justify-center
-        sm:items-center
-        sm:p-4
-        animate-in
-        fade-in
-        duration-200
-      `}
+      className={cn(styles.overlay, `animate-in fade-in duration-200`)}
       role="dialog"
       aria-modal="true"
       aria-labelledby={title ? `modal-title` : undefined}
     >
-      <div
-        className={`
-          fixed
-          inset-0
-          bg-black/20
-          backdrop-blur-md
-          transition-opacity
-          dark:bg-slate-900/60
-        `}
-        onClick={onClose}
-        aria-hidden="true"
-      />
+      <div className={styles.scrim} onClick={onClose} aria-hidden="true" />
 
       <div
-        className={`
-          relative z-10 w-full overflow-hidden rounded-t-3xl bg-white shadow-2xl
-          sm:rounded-3xl ${sizeStyles[size]}
-          dark:bg-slate-800 border border-slate-200 dark:border-slate-700
-          animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200
-        `}
+        className={cn(
+          styles.panel,
+          panelSizeClass[size],
+          `animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200`,
+        )}
       >
-        {title && (
-          <div
-            className={`
-            flex
-            items-center
-            justify-between
-            border-b
-            border-slate-200
-            px-6
-            py-5
-            dark:border-slate-700
-          `}
-          >
-            <h2
-              id="modal-title"
-              className={`
-              text-xl
-              font-bold
-              text-slate-900
-              dark:text-white
-            `}
-            >
+        {title ? (
+          <div className={styles.header}>
+            <h2 id="modal-title" className={styles.title}>
               {title}
             </h2>
-            <button
-              onClick={onClose}
-              className={`
-                rounded-xl
-                p-2
-                text-slate-400
-                transition-all
-                hover:bg-slate-100
-                hover:text-slate-600
-                focus:outline-hidden
-                focus:ring-2
-                focus:ring-primary-500
-                focus:ring-offset-2
-                active:scale-95
-                dark:hover:bg-slate-700
-                dark:hover:text-slate-300
-              `}
-              aria-label="Close modal"
-            >
-              <XIcon className={`h-6 w-6`} strokeWidth={2} />
+            <button type="button" onClick={onClose} className={styles.closeButton} aria-label="Close modal">
+              <XIcon className={styles.closeIcon} strokeWidth={2} />
             </button>
           </div>
-        )}
+        ) : null}
 
-        <div
-          className={`
-          max-h-[70vh]
-          overflow-y-auto
-          px-6
-          py-5
-        `}
-        >
-          {children}
-        </div>
+        <div className={styles.body}>{children}</div>
 
-        {footer && (
-          <div
-            className={`
-            border-t
-            border-slate-200
-            bg-slate-50/50
-            px-6
-            py-4
-            dark:border-slate-700
-            dark:bg-slate-800/50
-            backdrop-blur-xs
-          `}
-          >
-            {footer}
-          </div>
-        )}
+        {footer ? <div className={styles.footer}>{footer}</div> : null}
       </div>
     </div>
   );

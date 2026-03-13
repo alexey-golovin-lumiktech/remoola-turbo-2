@@ -11,6 +11,7 @@ import { FormField } from '../../../shared/ui/FormField';
 import { FormSelect } from '../../../shared/ui/FormSelect';
 import { SpinnerIcon } from '../../../shared/ui/icons/SpinnerIcon';
 import { updatePreferredCurrencyAction } from '../actions';
+import styles from './PreferredCurrencyForm.module.css';
 
 interface PreferredCurrencyFormProps {
   initialCurrency: string | null;
@@ -46,7 +47,7 @@ export function PreferredCurrencyForm({ initialCurrency }: PreferredCurrencyForm
       title="Preferred Currency"
       description="Default currency for new payment requests and forms. Display only; server validates amounts."
     >
-      <form action={formAction} className={`space-y-5`}>
+      <form action={formAction} className={styles.form}>
         <FormField label="Currency" htmlFor="preferredCurrency">
           <FormSelect
             id="preferredCurrency"
@@ -55,7 +56,7 @@ export function PreferredCurrencyForm({ initialCurrency }: PreferredCurrencyForm
             value={selectedCurrency}
             placeholder="USD"
             disabled={isPending}
-            className={`min-h-11`}
+            className={styles.inputMinHeight}
             onChange={(e) => {
               const newValue = e.currentTarget.value;
               setSelectedCurrency(newValue);
@@ -70,41 +71,12 @@ export function PreferredCurrencyForm({ initialCurrency }: PreferredCurrencyForm
           />
         </FormField>
 
-        {isPending && (
-          <div
-            className={`
-              flex
-              items-center
-              gap-2
-              rounded-lg
-              bg-primary-50
-              px-3
-              py-2
-              dark:bg-primary-900/20
-            `}
-            role="status"
-          >
-            <SpinnerIcon
-              className={`
-                h-4
-                w-4
-                animate-spin
-                text-primary-600
-                dark:text-primary-400
-              `}
-            />
-            <p
-              className={`
-              text-sm
-              font-medium
-              text-primary-700
-              dark:text-primary-300
-            `}
-            >
-              Updating currency...
-            </p>
+        {isPending ? (
+          <div className={styles.loadingBanner} role="status">
+            <SpinnerIcon className={styles.spinnerIcon} />
+            <p className={styles.loadingText}>Updating currency...</p>
           </div>
-        )}
+        ) : null}
       </form>
     </FormCard>
   );

@@ -1,0 +1,104 @@
+/* PaymentPickerModal.module.css - primary-* */
+@reference "tailwindcss";
+@reference "../../../app/globals.css";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.footer {
+  @apply flex gap-3;
+}
+
+.footerBtn {
+  @apply flex-1;
+}
+
+.body {
+  @apply space-y-4;
+}
+
+.loadingWrap {
+  @apply space-y-3;
+}
+
+.skeleton {
+  @apply h-20 animate-pulse rounded-lg bg-slate-200 dark:bg-slate-700;
+}
+
+.emptyWrap {
+  @apply py-8 text-center;
+}
+
+.emptyText {
+  @apply text-sm text-slate-500 dark:text-slate-400;
+}
+
+.list {
+  @apply max-h-[60vh] space-y-2 overflow-y-auto;
+}
+
+.item {
+  @apply w-full min-h-11 rounded-lg border p-4 text-left transition-all focus:outline-hidden focus:ring-2 focus:ring-primary-500;
+}
+
+.itemSelected {
+  @apply border-primary-500 bg-primary-50 dark:border-primary-600 dark:bg-primary-950;
+}
+
+.itemUnselected {
+  @apply border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700;
+}
+
+.itemRow {
+  @apply flex items-start justify-between gap-3;
+}
+
+.itemContent {
+  @apply min-w-5 flex-1;
+}
+
+.itemTitle {
+  @apply truncate font-semibold;
+}
+
+.itemSelected .itemTitle {
+  @apply text-primary-900 dark:text-primary-100;
+}
+
+.itemUnselected .itemTitle {
+  @apply text-slate-900 dark:text-white;
+}
+
+.itemSub {
+  @apply mt-0.5 truncate text-sm;
+}
+
+.itemSelected .itemSub {
+  @apply text-primary-700 dark:text-primary-300;
+}
+
+.itemUnselected .itemSub {
+  @apply text-slate-600 dark:text-slate-400;
+}
+
+.itemDate {
+  @apply mt-1 text-xs;
+}
+
+.itemSelected .itemDate {
+  @apply text-primary-600 dark:text-primary-400;
+}
+
+.itemUnselected .itemDate {
+  @apply text-slate-500 dark:text-slate-500;
+}
+
+.itemAmount {
+  @apply shrink-0 text-right font-semibold;
+}
+
+.itemSelected .itemAmount {
+  @apply text-primary-900 dark:text-primary-100;
+}
+
+.itemUnselected .itemAmount {
+  @apply text-slate-900 dark:text-white;
+}

@@ -1,0 +1,10 @@
+/* layout.module.css */
+@reference "tailwindcss";
+
+.shell {
+  @apply flex h-screen flex-col overflow-hidden;
+}
+
+.main {
+  @apply flex-1 overflow-y-auto overflow-x-hidden;
+}

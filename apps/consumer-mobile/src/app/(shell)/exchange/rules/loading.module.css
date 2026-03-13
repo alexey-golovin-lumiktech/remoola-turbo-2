@@ -1,0 +1,9 @@
+@reference "tailwindcss";
+
+.wrapper {
+  @apply mx-auto max-w-md space-y-4 p-4;
+}
+
+.titleSkeleton {
+  @apply h-7 w-48;
+}

@@ -7,6 +7,7 @@ import { Button } from './Button';
 import { FormField } from './FormField';
 import { FormInput } from './FormInput';
 import { FormSelect } from './FormSelect';
+import styles from './TransferForm.module.css';
 import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../lib/error-messages';
 import { showErrorToast, showSuccessToast } from '../../lib/toast.client';
 
@@ -91,7 +92,7 @@ export function TransferForm({ availableCurrencies, contacts, onSubmit, onSucces
   };
 
   return (
-    <form onSubmit={handleSubmit} className={`space-y-4`}>
+    <form onSubmit={handleSubmit} className={styles.form}>
       <FormField label="Amount" htmlFor="transfer-amount" error={errors.amount} required>
         <AmountCurrencyInput
           id="transfer-amount"
@@ -131,8 +132,8 @@ export function TransferForm({ availableCurrencies, contacts, onSubmit, onSucces
         />
       </FormField>
 
-      <div className={`flex gap-3 pt-2`}>
-        <Button type="submit" variant="primary" size="md" isLoading={isLoading} className={`flex-1`}>
+      <div className={styles.actions}>
+        <Button type="submit" variant="primary" size="md" isLoading={isLoading} className={styles.submitButton}>
           Transfer funds
         </Button>
       </div>

@@ -1,5 +1,8 @@
 import { type ButtonHTMLAttributes, forwardRef } from 'react';
 
+import { cn } from '@remoola/ui';
+
+import styles from './Button.module.css';
 import { SpinnerIcon } from './icons/SpinnerIcon';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -8,76 +11,29 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   isLoading?: boolean;
 }
 
+const sizeClass = { sm: styles.sizeSm, md: styles.sizeMd, lg: styles.sizeLg } as const;
+const variantClass = {
+  primary: styles.variantPrimary,
+  secondary: styles.variantSecondary,
+  outline: styles.variantOutline,
+  ghost: styles.variantGhost,
+  danger: styles.variantDanger,
+} as const;
+
 /**
  * Button - Reusable button component with multiple variants
  * Follows mobile-first design with proper touch targets (min-height: 44px)
  */
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ variant = `primary`, size = `md`, isLoading = false, disabled, children, className = ``, ...props }, ref) => {
-    const baseStyles = `
-      inline-flex items-center justify-center rounded-xl font-semibold
-      transition-all duration-200 ease-out
-      focus:outline-hidden focus:ring-2 focus:ring-offset-2
-      disabled:cursor-not-allowed disabled:opacity-60
-      active:scale-95
-    `;
-
-    const sizeStyles = {
-      sm: `min-h-9 px-3.5 py-2 text-sm gap-1.5`,
-      md: `min-h-11 px-5 py-2.5 text-base gap-2`,
-      lg: `min-h-13 px-7 py-3.5 text-lg gap-2.5`,
-    };
-
-    const variantStyles = {
-      primary: `
-        bg-linear-to-r from-primary-600 to-primary-700 text-white shadow-md shadow-primary-500/25
-        hover:from-primary-700 hover:to-primary-800 hover:shadow-lg hover:shadow-primary-500/35
-        focus:ring-primary-500 focus:ring-offset-2
-        dark:shadow-primary-900/50
-      `,
-      secondary: `
-        bg-linear-to-r from-slate-600 to-slate-700 text-white shadow-md shadow-slate-500/20
-        hover:from-slate-700 hover:to-slate-800 hover:shadow-lg hover:shadow-slate-500/30
-        focus:ring-slate-500 focus:ring-offset-2
-        dark:from-slate-700 dark:to-slate-800
-      `,
-      outline: `
-        border-2 border-slate-300 bg-white text-slate-900 shadow-xs
-        hover:bg-slate-50 hover:border-slate-400 hover:shadow-xs
-        focus:ring-slate-500 focus:ring-offset-2
-        dark:border-slate-600 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700
-      `,
-      ghost: `
-        bg-transparent text-slate-700 shadow-none
-        hover:bg-slate-100 hover:text-slate-900
-        focus:ring-slate-500 focus:ring-offset-2
-        dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white
-      `,
-      danger: `
-        bg-linear-to-r from-red-600 to-red-700 text-white shadow-md shadow-red-500/25
-        hover:from-red-700 hover:to-red-800 hover:shadow-lg hover:shadow-red-500/35
-        focus:ring-red-500 focus:ring-offset-2
-        dark:shadow-red-900/50
-      `,
-    };
-
     return (
       <button
         ref={ref}
         disabled={disabled || isLoading}
-        className={`${baseStyles} ${sizeStyles[size]} ${variantStyles[variant]} ${className}`}
+        className={cn(styles.base, sizeClass[size], variantClass[variant], className)}
         {...props}
       >
-        {isLoading && (
-          <SpinnerIcon
-            className={`
-              mr-2
-              h-4
-              w-4
-              animate-spin
-            `}
-          />
-        )}
+        {isLoading ? <SpinnerIcon className={styles.spinner} /> : null}
         {children}
       </button>
     );

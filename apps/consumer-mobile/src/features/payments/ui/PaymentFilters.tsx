@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import styles from './PaymentFilters.module.css';
 import { Button } from '../../../shared/ui/Button';
 import { DateInput } from '../../../shared/ui/DateInput';
 import { FormField } from '../../../shared/ui/FormField';
@@ -56,89 +57,18 @@ export function PaymentFilters({ onFilterChange, onReset }: PaymentFiltersProps)
   const activeFilterCount = Object.values(filters).filter((v) => v).length;
 
   return (
-    <div className={`relative`}>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`
-          inline-flex
-          min-h-11
-          items-center
-          gap-2
-          rounded-lg
-          border
-          border-slate-300
-          bg-white
-          px-4
-          py-2
-          text-sm
-          font-medium
-          text-slate-900
-          transition-colors
-          hover:bg-slate-50
-          focus:outline-hidden
-          focus:ring-2
-          focus:ring-primary-500
-          dark:border-slate-600
-          dark:bg-slate-800
-          dark:text-white
-          dark:hover:bg-slate-700
-        `}
-      >
-        <FilterIcon className={`h-5 w-5`} strokeWidth={2} />
+    <div className={styles.wrap}>
+      <button onClick={() => setIsOpen(!isOpen)} className={styles.trigger}>
+        <FilterIcon className={styles.triggerIcon} strokeWidth={2} />
         Filters
-        {activeFilterCount > 0 && (
-          <span
-            className={`
-            flex
-            h-5
-            w-5
-            items-center
-            justify-center
-            rounded-full
-            bg-primary-600
-            text-xs
-            font-semibold
-            text-white
-          `}
-          >
-            {activeFilterCount}
-          </span>
-        )}
+        {activeFilterCount > 0 ? <span className={styles.badge}>{activeFilterCount}</span> : null}
       </button>
 
-      {isOpen && (
-        <div
-          className={`
-          absolute
-          right-0
-          top-full
-          z-20
-          mt-2
-          w-80
-          rounded-xl
-          border
-          border-slate-200
-          bg-white
-          p-4
-          shadow-xl
-          dark:border-slate-700
-          dark:bg-slate-800
-        `}
-        >
-          <div className={`space-y-4`}>
+      {isOpen ? (
+        <div className={styles.dropdown}>
+          <div className={styles.body}>
             <div>
-              <label
-                className={`
-                mb-1.5
-                block
-                text-sm
-                font-medium
-                text-slate-900
-                dark:text-white
-              `}
-              >
-                Status
-              </label>
+              <label className={styles.label}>Status</label>
               <FormSelect
                 options={statusOptions}
                 value={filters.status ?? ``}
@@ -147,18 +77,7 @@ export function PaymentFilters({ onFilterChange, onReset }: PaymentFiltersProps)
             </div>
 
             <div>
-              <label
-                className={`
-                mb-1.5
-                block
-                text-sm
-                font-medium
-                text-slate-900
-                dark:text-white
-              `}
-              >
-                Currency
-              </label>
+              <label className={styles.label}>Currency</label>
               <FormSelect
                 options={currencyOptions}
                 value={filters.currencyCode ?? ``}
@@ -166,7 +85,7 @@ export function PaymentFilters({ onFilterChange, onReset }: PaymentFiltersProps)
               />
             </div>
 
-            <div className={`grid grid-cols-2 gap-3`}>
+            <div className={styles.dateGrid}>
               <FormField label="From" htmlFor="dateFrom">
                 <DateInput
                   id="dateFrom"
@@ -183,17 +102,17 @@ export function PaymentFilters({ onFilterChange, onReset }: PaymentFiltersProps)
               </FormField>
             </div>
 
-            <div className={`flex gap-2 pt-2`}>
-              <Button variant="outline" size="sm" onClick={handleReset} className={`flex-1`}>
+            <div className={styles.actions}>
+              <Button variant="outline" size="sm" onClick={handleReset} className={styles.actionBtn}>
                 Reset
               </Button>
-              <Button variant="primary" size="sm" onClick={handleApply} className={`flex-1`}>
+              <Button variant="primary" size="sm" onClick={handleApply} className={styles.actionBtn}>
                 Apply
               </Button>
             </div>
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

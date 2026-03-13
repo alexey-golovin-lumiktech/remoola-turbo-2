@@ -1,249 +1,50 @@
+import styles from './loading.module.css';
+
 export default function DocumentsLoading() {
   return (
-    <div className={`min-h-screen pb-20`}>
-      <div
-        className={`
-  sticky
-  top-0
-  z-10
-  backdrop-blur-xl
-  bg-white/80
-  dark:bg-slate-900/80
-  border-b
-  border-slate-200/50
-  dark:border-slate-700/50
-  px-4
-  py-4
-  sm:px-6
-  lg:px-8
-        `}
-      >
-        <div className={`mx-auto max-w-5xl`}>
-          <div
-            className={`
-  h-8
-  w-48
-  animate-shimmer
-  rounded-lg
-  bg-slate-200
-  dark:bg-slate-700
-            `}
-          />
-          <div
-            className={`
-  mt-2
-  h-4
-  w-64
-  animate-shimmer
-  rounded-xs
-  bg-slate-100
-  dark:bg-slate-800
-            `}
-          />
+    <div className={styles.page}>
+      <div className={styles.stickyHeader}>
+        <div className={styles.headerInner}>
+          <div className={styles.headerTitle} />
+          <div className={styles.headerSub} />
         </div>
       </div>
-      <div
-        className={`
-  mx-auto
-  max-w-5xl
-  px-4
-  pt-4
-  sm:px-6
-  lg:px-8
-        `}
-      >
-        <div className={`space-y-4 animate-fadeIn`}>
-          <div
-            className={`
-  flex
-  flex-col
-  gap-3
-  sm:flex-row
-  sm:items-center
-  sm:justify-between
-            `}
-          >
-            <div className={`flex flex-wrap gap-2`}>
+      <div className={styles.main}>
+        <div className={styles.content}>
+          <div className={styles.toolbar}>
+            <div className={styles.chips}>
               {[1, 2, 3, 4, 5].map((i) => (
-                <div
-                  key={i}
-                  className={`
-  h-11
-  w-24
-  shrink-0
-  animate-shimmer
-  rounded-full
-  bg-slate-200
-  dark:bg-slate-700
-                  `}
-                />
+                <div key={i} className={styles.chip} />
               ))}
             </div>
-            <div
-              className={`
-  h-11
-  w-28
-  animate-shimmer
-  rounded-lg
-  bg-slate-200
-  dark:bg-slate-700
-              `}
-            />
+            <div className={styles.toolbarAction} />
           </div>
 
-          <div
-            className={`
-  flex
-  items-center
-  justify-between
-  border-b
-  border-slate-200
-  pb-3
-  dark:border-slate-700
-            `}
-          >
-            <div
-              className={`
-  h-11
-  w-32
-  animate-shimmer
-  rounded-lg
-  bg-slate-200
-  dark:bg-slate-700
-              `}
-            />
-            <div
-              className={`
-  h-4
-  w-20
-  animate-shimmer
-  rounded-xs
-  bg-slate-100
-  dark:bg-slate-800
-              `}
-            />
+          <div className={styles.tabsRow}>
+            <div className={styles.tabLabel} />
+            <div className={styles.tabMeta} />
           </div>
 
-          <div
-            className={`
-  grid
-  grid-cols-1
-  gap-3
-  sm:grid-cols-2
-  lg:grid-cols-3
-            `}
-          >
+          <div className={styles.grid}>
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div
-                key={i}
-                className={`
-  rounded-2xl
-  border
-  border-slate-200
-  bg-white
-  p-4
-  shadow-xs
-  dark:border-slate-700
-  dark:bg-slate-800
-                `}
-              >
-                <div className={`flex items-start gap-3`}>
-                  <div
-                    className={`
-  mt-0.5
-  h-5
-  w-5
-  animate-shimmer
-  rounded-xs
-  bg-slate-200
-  dark:bg-slate-700
-                    `}
-                  />
-                  <div className={`flex-1 min-w-0`}>
-                    <div className={`flex items-start gap-3`}>
-                      <div
-                        className={`
-  h-12
-  w-12
-  shrink-0
-  animate-shimmer
-  rounded-xl
-  bg-slate-200
-  dark:bg-slate-700
-                        `}
-                      />
-                      <div className={`flex-1 min-w-0`}>
-                        <div
-                          className={`
-  h-5
-  w-3/4
-  animate-shimmer
-  rounded-xs
-  bg-slate-200
-  dark:bg-slate-700
-                          `}
-                        />
-                        <div className={`mt-2 flex gap-2`}>
-                          <div
-                            className={`
-  h-4
-  w-20
-  animate-shimmer
-  rounded-xs
-  bg-slate-100
-  dark:bg-slate-800
-                            `}
-                          />
-                          <div
-                            className={`
-  h-4
-  w-16
-  animate-shimmer
-  rounded-full
-  bg-slate-100
-  dark:bg-slate-800
-                            `}
-                          />
+              <div key={i} className={styles.card}>
+                <div className={styles.cardRow}>
+                  <div className={styles.cardCheck} />
+                  <div className={styles.cardContent}>
+                    <div className={styles.cardInner}>
+                      <div className={styles.cardThumb} />
+                      <div className={styles.cardText}>
+                        <div className={styles.cardTitle} />
+                        <div className={styles.cardMeta}>
+                          <div className={styles.cardMetaA} />
+                          <div className={styles.cardMetaB} />
                         </div>
                       </div>
-                      <div
-                        className={`
-  h-9
-  w-9
-  shrink-0
-  animate-shimmer
-  rounded-lg
-  bg-slate-100
-  dark:bg-slate-800
-                        `}
-                      />
+                      <div className={styles.cardAction} />
                     </div>
-                    <div
-                      className={`
-  mt-4
-  grid
-  grid-cols-2
-  gap-2
-                      `}
-                    >
-                      <div
-                        className={`
-  h-11
-  animate-shimmer
-  rounded-xl
-  bg-slate-200
-  dark:bg-slate-700
-                        `}
-                      />
-                      <div
-                        className={`
-  h-11
-  animate-shimmer
-  rounded-xl
-  bg-slate-200
-  dark:bg-slate-700
-                        `}
-                      />
+                    <div className={styles.cardActions}>
+                      <div className={styles.cardBtn} />
+                      <div className={styles.cardBtn} />
                     </div>
                   </div>
                 </div>

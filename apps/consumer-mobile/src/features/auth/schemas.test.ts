@@ -46,4 +46,34 @@ describe(`parseSearchParams`, () => {
     const { nextPath } = parseSearchParams({ next: [`/payments`] });
     expect(nextPath).toBe(`/payments`);
   });
+
+  it(`returns default nextPath when next is absolute http URL`, () => {
+    const { nextPath } = parseSearchParams({ next: `https://evil.com` });
+    expect(nextPath).toBe(`/dashboard`);
+  });
+
+  it(`returns default nextPath when next is protocol-relative URL`, () => {
+    const { nextPath } = parseSearchParams({ next: `//evil.com` });
+    expect(nextPath).toBe(`/dashboard`);
+  });
+
+  it(`returns default nextPath when next is javascript URL`, () => {
+    const { nextPath } = parseSearchParams({ next: `javascript:alert(1)` });
+    expect(nextPath).toBe(`/dashboard`);
+  });
+
+  it(`returns default nextPath when next decodes to protocol-relative URL`, () => {
+    const { nextPath } = parseSearchParams({ next: `%2F%2Fevil.example%2Fphish` });
+    expect(nextPath).toBe(`/dashboard`);
+  });
+
+  it(`returns default nextPath when next has malformed encoding`, () => {
+    const { nextPath } = parseSearchParams({ next: `%E0%A4%A` });
+    expect(nextPath).toBe(`/dashboard`);
+  });
+
+  it(`returns default nextPath when next contains CRLF`, () => {
+    const { nextPath } = parseSearchParams({ next: `/dashboard%0d%0aSet-Cookie%3Aevil%3D1` });
+    expect(nextPath).toBe(`/dashboard`);
+  });
 });

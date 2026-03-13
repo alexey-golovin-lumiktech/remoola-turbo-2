@@ -1,29 +1,20 @@
+import styles from './loading.module.css';
 import { SkeletonCard, SkeletonList, SkeletonText } from '../../../shared/ui/SkeletonLoader';
 
 export default function ExchangeLoading() {
   return (
-    <div
-      className={`
-  mx-auto
-  max-w-2xl
-  space-y-6
-  p-4
-  pb-24
-      `}
-    >
-      <div>
-        <SkeletonText className={`h-8 w-48`} />
-        <SkeletonText className={`mt-1 h-4 w-64`} />
+    <div className={styles.wrapper}>
+      <div className={styles.headerBlock}>
+        <SkeletonText className={styles.titleSkeleton} />
+        <SkeletonText className={styles.subtitleSkeleton} />
       </div>
 
       <SkeletonCard />
-
+      <SkeletonCard />
       <SkeletonCard />
 
-      <SkeletonCard />
-
-      <div className={`space-y-3`}>
-        <SkeletonText className={`h-6 w-32`} />
+      <div className={styles.section}>
+        <SkeletonText className={styles.sectionTitle} />
         <SkeletonList count={2} />
       </div>
     </div>

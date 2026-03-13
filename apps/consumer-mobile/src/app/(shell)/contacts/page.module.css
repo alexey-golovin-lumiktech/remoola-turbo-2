@@ -1,0 +1,11 @@
+@reference "tailwindcss";
+@reference "../../globals.css";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.fallback {
+  @apply flex min-h-screen items-center justify-center;
+}
+
+.spinner {
+  @apply h-8 w-8 animate-pulse rounded-full bg-slate-300 dark:bg-slate-600;
+}

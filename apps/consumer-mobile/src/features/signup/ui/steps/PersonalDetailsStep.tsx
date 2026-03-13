@@ -13,6 +13,7 @@ import { parseAddressFromString } from '../../utils/parseAddressFromString';
 import { entityDetailsSchema, getFieldErrors, personalDetailsSchema } from '../../validation';
 import { SIGNUP_INPUT_CLASS } from '../inputClass';
 import { PrevNextButtons } from '../PrevNextButtons';
+import styles from './PersonalDetailsStep.module.css';
 
 export function PersonalDetailsStep() {
   const {
@@ -127,11 +128,11 @@ export function PersonalDetailsStep() {
                 aria-invalid={!!fieldErrors.companyName || undefined}
                 aria-describedby={fieldErrors.companyName ? `pe-company-err` : undefined}
               />
-              {fieldErrors.companyName && (
+              {fieldErrors.companyName ? (
                 <p id="pe-company-err" className={FORM_ERROR_CLASS} role="alert">
                   {fieldErrors.companyName}
                 </p>
-              )}
+              ) : null}
             </div>
             <CountrySelect
               id="pe-tax-residence"
@@ -157,11 +158,11 @@ export function PersonalDetailsStep() {
                 aria-invalid={!!fieldErrors.taxId || undefined}
                 aria-describedby={fieldErrors.taxId ? `pe-taxid-err` : undefined}
               />
-              {fieldErrors.taxId && (
+              {fieldErrors.taxId ? (
                 <p id="pe-taxid-err" className={FORM_ERROR_CLASS} role="alert">
                   {fieldErrors.taxId}
                 </p>
-              )}
+              ) : null}
             </div>
             <PhoneInput
               id="pe-phone"
@@ -189,11 +190,11 @@ export function PersonalDetailsStep() {
                 aria-invalid={!!fieldErrors.legalAddress || undefined}
                 aria-describedby={fieldErrors.legalAddress ? `pe-legal-address-err` : undefined}
               />
-              {fieldErrors.legalAddress && (
+              {fieldErrors.legalAddress ? (
                 <p id="pe-legal-address-err" className={FORM_ERROR_CLASS} role="alert">
                   {fieldErrors.legalAddress}
                 </p>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
@@ -203,30 +204,10 @@ export function PersonalDetailsStep() {
   }
 
   return (
-    <div
-      className={`
-      rounded-xl
-      border
-      border-neutral-200
-      bg-white
-      shadow-xs
-      dark:border-neutral-700
-      dark:bg-neutral-900
-    `}
-    >
-      <div className={`p-4 sm:p-6`}>
-        <h1
-          className={`
-          mb-4
-          text-lg
-          font-semibold
-          text-neutral-900
-          dark:text-white
-        `}
-        >
-          Personal details
-        </h1>
-        <div className={`space-y-3`}>
+    <div className={styles.card}>
+      <div className={styles.content}>
+        <h1 className={styles.title}>Personal details</h1>
+        <div className={styles.fields}>
           {(
             [
               { key: `firstName` as const, label: `First name`, type: `text` as const, autoComplete: `given-name` },
@@ -305,11 +286,11 @@ export function PersonalDetailsStep() {
                   aria-invalid={hasError || undefined}
                   aria-describedby={hasError ? errId : undefined}
                 />
-                {hasError && (
+                {hasError ? (
                   <p id={errId} className={FORM_ERROR_CLASS} role="alert">
                     {fieldErrors[key]}
                   </p>
-                )}
+                ) : null}
               </div>
             );
           })}

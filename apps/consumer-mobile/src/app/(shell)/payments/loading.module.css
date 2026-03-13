@@ -1,0 +1,36 @@
+/* (shell)/payments/loading.module.css */
+@reference "tailwindcss";
+@reference "../../globals.css";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.wrapper {
+  @apply space-y-6 animate-pulse;
+}
+
+.header {
+  @apply flex items-center justify-between;
+}
+
+.headerLeft {
+  @apply h-8 w-32 rounded bg-slate-200 dark:bg-slate-700;
+}
+
+.headerRight {
+  @apply h-11 w-32 rounded-lg bg-slate-200 dark:bg-slate-700;
+}
+
+.grid {
+  @apply grid gap-4 sm:grid-cols-2 lg:grid-cols-3;
+}
+
+.tile {
+  @apply h-28 rounded-xl bg-slate-200 dark:bg-slate-700;
+}
+
+.list {
+  @apply space-y-2;
+}
+
+.listItem {
+  @apply h-24 rounded-xl bg-slate-200 dark:bg-slate-700;
+}

@@ -1,17 +1,10 @@
+import styles from './loading.module.css';
 import { SkeletonList, SkeletonText } from '../../../../shared/ui/SkeletonLoader';
 
 export default function ExchangeRulesLoading() {
   return (
-    <div
-      className={`
-        mx-auto
-        max-w-md
-        space-y-4
-        p-4
-      `}
-    >
-      <SkeletonText className={`h-7 w-48`} />
-
+    <div className={styles.wrapper}>
+      <SkeletonText className={styles.titleSkeleton} />
       <SkeletonList count={3} />
     </div>
   );

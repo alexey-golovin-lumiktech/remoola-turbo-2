@@ -1,0 +1,188 @@
+/* PaymentsListView.module.css - primary-*, animate-fadeIn; no group (use .card:hover) */
+@reference "tailwindcss";
+@reference "../../../app/globals.css";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.pageBg {
+  @apply min-h-full bg-linear-to-br from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950;
+}
+
+.headerIcon {
+  @apply h-6 w-6 text-white;
+}
+
+.withdrawLink {
+  @apply inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-slate-100 px-4 py-2.5 text-sm font-bold text-slate-800 shadow-md transition-all focus:outline-hidden focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 active:scale-95 hover:bg-slate-200 hover:shadow-lg dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700;
+}
+
+.withdrawLinkIcon {
+  @apply h-4 w-4;
+}
+
+.requestLink {
+  @apply inline-flex min-h-11 items-center rounded-xl border-2 border-primary-600 bg-transparent px-4 py-2.5 text-sm font-bold text-primary-600 shadow-md transition-all focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 active:scale-95 hover:bg-primary-600 hover:text-white hover:shadow-lg dark:border-primary-500 dark:text-primary-400 dark:hover:bg-primary-500 dark:hover:text-white;
+}
+
+.sendLink {
+  @apply inline-flex min-h-11 items-center rounded-xl bg-linear-to-r from-primary-600 to-primary-700 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary-500/30 transition-all focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 active:scale-95 hover:from-primary-700 hover:to-primary-800 hover:shadow-xl;
+}
+
+.main {
+  @apply mx-auto max-w-6xl space-y-6 px-4 pt-6 pb-6 animate-fadeIn sm:px-6 sm:pt-8 lg:px-8;
+}
+
+.balanceSection {
+  @apply animate-fadeIn;
+}
+
+.balanceHeader {
+  @apply mb-4 flex items-center gap-2;
+}
+
+.balanceIcon {
+  @apply h-5 w-5 text-primary-600 dark:text-primary-400;
+}
+
+.balanceTitle {
+  @apply text-xl font-bold text-slate-900 dark:text-white;
+}
+
+.balanceGrid {
+  @apply grid gap-4 sm:grid-cols-2 lg:grid-cols-3;
+}
+
+.listSection {
+  @apply animate-fadeIn space-y-5;
+}
+
+.filtersWrap {
+  @apply space-y-3;
+}
+
+.filtersRow {
+  @apply flex flex-wrap gap-3;
+}
+
+.filterSelect {
+  @apply min-w-35 flex-1 sm:flex-none;
+}
+
+.clearFiltersBtn {
+  @apply flex-1 min-h-11 font-semibold sm:flex-none;
+}
+
+.emptySearch {
+  @apply animate-fadeIn rounded-2xl border-2 border-dashed border-slate-200 bg-linear-to-br from-slate-50 to-slate-100 px-6 py-16 text-center shadow-inner dark:border-slate-700 dark:from-slate-800/50 dark:to-slate-900/50;
+}
+
+.emptySearchIcon {
+  @apply mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-200 shadow-lg dark:bg-slate-700;
+}
+
+.emptySearchIconSvg {
+  @apply h-8 w-8 text-slate-500 dark:text-slate-400;
+}
+
+.emptySearchTitle {
+  @apply text-base font-bold text-slate-800 dark:text-slate-200;
+}
+
+.emptySearchMessage {
+  @apply mt-2 text-sm text-slate-500 dark:text-slate-400;
+}
+
+.list {
+  @apply space-y-3;
+}
+
+.cardLink {
+  @apply block transition-all duration-300 animate-fadeIn hover:scale-[1.02];
+}
+
+.card {
+  @apply overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg transition-all duration-300 dark:border-slate-700 dark:bg-slate-800/90 hover:bg-slate-50 hover:shadow-xl dark:hover:bg-slate-800 dark:hover:shadow-slate-950/40;
+}
+
+.card:hover .cardTitle {
+  @apply text-slate-800 dark:text-white;
+}
+
+.card:hover .viewIcon {
+  @apply translate-x-1;
+}
+
+.cardBody {
+  @apply p-4;
+}
+
+.cardRow {
+  @apply flex items-start gap-4;
+}
+
+.cardContent {
+  @apply min-w-0 flex-1;
+}
+
+.cardHeader {
+  @apply mb-2 flex items-start justify-between gap-2;
+}
+
+.cardHeaderLeft {
+  @apply min-w-0 flex-1;
+}
+
+.cardTitle {
+  @apply truncate text-base font-bold text-slate-900 transition-colors dark:text-slate-100;
+}
+
+.cardDescription {
+  @apply mt-0.5 truncate text-sm font-medium text-slate-500 dark:text-slate-400;
+}
+
+.cardFooter {
+  @apply mt-3 flex items-center justify-between;
+}
+
+.cardAmount {
+  @apply text-xl font-extrabold text-slate-900 dark:text-slate-100;
+}
+
+.cardDateRow {
+  @apply mt-1 flex items-center gap-1.5;
+}
+
+.cardDateIcon {
+  @apply h-3.5 w-3.5 text-slate-500;
+}
+
+.cardDateText {
+  @apply text-xs font-medium text-slate-500;
+}
+
+.viewLink {
+  @apply flex items-center gap-2 text-primary-600 dark:text-primary-400;
+}
+
+.viewLinkText {
+  @apply text-sm font-bold;
+}
+
+.viewIcon {
+  @apply h-5 w-5 transition-transform;
+}
+
+.pagination {
+  @apply flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-5 py-3 shadow-md dark:border-slate-700 dark:bg-slate-800/50;
+}
+
+.paginationText {
+  @apply text-sm font-medium text-slate-600 dark:text-slate-400;
+}
+
+.paginationControls {
+  @apply flex items-center gap-2;
+}
+
+.paginationPage {
+  @apply text-sm font-medium text-slate-600 dark:text-slate-400;
+}

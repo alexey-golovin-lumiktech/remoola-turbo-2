@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import styles from './BankTransferInstructions.module.css';
 import { getLocalToastMessage, localToastKeys } from '../../../lib/error-messages';
 import { showErrorToast } from '../../../lib/toast.client';
 import { Button } from '../../../shared/ui/Button';
@@ -47,62 +48,15 @@ export function BankTransferInstructions({
   };
 
   return (
-    <div className={`space-y-6`}>
-      <div
-        className={`
-        overflow-hidden
-        rounded-xl
-        border
-        border-blue-200
-        bg-blue-50
-        dark:border-blue-900
-        dark:bg-blue-900/20
-      `}
-      >
-        <div
-          className={`
-          flex
-          items-start
-          gap-3
-          p-4
-        `}
-        >
-          <div
-            className={`
-            mt-0.5
-            flex
-            h-8
-            w-8
-            shrink-0
-            items-center
-            justify-center
-            rounded-full
-            bg-blue-600
-            text-white
-            dark:bg-blue-500
-          `}
-          >
-            <InformationCircleIcon className={`h-5 w-5`} />
+    <div className={styles.main}>
+      <div className={styles.alert}>
+        <div className={styles.alertRow}>
+          <div className={styles.alertIcon}>
+            <InformationCircleIcon className={styles.alertIconSvg} />
           </div>
-          <div className={`flex-1`}>
-            <h3
-              className={`
-              text-sm
-              font-semibold
-              text-blue-900
-              dark:text-blue-100
-            `}
-            >
-              Action needed
-            </h3>
-            <p
-              className={`
-              mt-1
-              text-xs
-              text-blue-800
-              dark:text-blue-200
-            `}
-            >
+          <div className={styles.alertContent}>
+            <h3 className={styles.alertTitle}>Action needed</h3>
+            <p className={styles.alertText}>
               Send money from your bank using the instructions below. Include the reference code to ensure proper
               processing.
             </p>
@@ -110,85 +64,30 @@ export function BankTransferInstructions({
         </div>
       </div>
 
-      {amount != null && (
-        <div
-          className={`
-          rounded-xl
-          border
-          border-slate-200
-          bg-white
-          p-6
-          shadow-xs
-          dark:border-slate-700
-          dark:bg-slate-800
-        `}
-        >
-          <div className={`flex items-center justify-between`}>
+      {amount != null ? (
+        <div className={styles.amountCard}>
+          <div className={styles.amountRow}>
             <div>
-              <p
-                className={`
-                text-sm
-                font-medium
-                text-slate-600
-                dark:text-slate-400
-              `}
-              >
-                Amount due
-              </p>
-              <p
-                className={`
-                mt-1
-                text-3xl
-                font-bold
-                text-slate-900
-                dark:text-white
-              `}
-              >
+              <p className={styles.amountLabel}>Amount due</p>
+              <p className={styles.amountValue}>
                 {new Intl.NumberFormat(undefined, { style: `currency`, currency }).format(amount / 100)}
               </p>
             </div>
             <Button variant="outline" size="sm">
-              <DownloadIcon className={`mr-2 h-4 w-4`} />
+              <DownloadIcon className={styles.downloadBtnIcon} />
               Download PDF
             </Button>
           </div>
         </div>
-      )}
+      ) : null}
 
-      <div
-        className={`
-        overflow-hidden
-        rounded-xl
-        border
-        border-slate-200
-        bg-white
-        shadow-xs
-        dark:border-slate-700
-        dark:bg-slate-800
-      `}
-      >
-        <div
-          className={`
-          border-b
-          border-slate-200
-          p-6
-          dark:border-slate-700
-        `}
-        >
-          <h2
-            className={`
-            text-lg
-            font-semibold
-            text-slate-900
-            dark:text-white
-          `}
-          >
-            Wire transfer details
-          </h2>
+      <div className={styles.detailsCard}>
+        <div className={styles.detailsHeader}>
+          <h2 className={styles.detailsTitle}>Wire transfer details</h2>
         </div>
 
-        <div className={`space-y-1 p-6`}>
-          {referenceCode && (
+        <div className={styles.detailsBody}>
+          {referenceCode ? (
             <BankField
               label="Reference code"
               value={referenceCode}
@@ -197,120 +96,82 @@ export function BankTransferInstructions({
               highlight
               hint="Include this ID in your payment for faster processing"
             />
-          )}
+          ) : null}
 
-          {bankName && (
+          {bankName ? (
             <BankField
               label="Bank name"
               value={bankName}
               copied={copiedField === `bankName`}
               onCopy={() => copyToClipboard(bankName, `bankName`)}
             />
-          )}
+          ) : null}
 
-          {accountHolder && (
+          {accountHolder ? (
             <BankField
               label="Beneficiary"
               value={accountHolder}
               copied={copiedField === `accountHolder`}
               onCopy={() => copyToClipboard(accountHolder, `accountHolder`)}
             />
-          )}
+          ) : null}
 
-          {accountNumber && (
+          {accountNumber ? (
             <BankField
               label="Account number"
               value={accountNumber}
               copied={copiedField === `accountNumber`}
               onCopy={() => copyToClipboard(accountNumber, `accountNumber`)}
             />
-          )}
+          ) : null}
 
-          {routingNumber && (
+          {routingNumber ? (
             <BankField
               label="Routing number"
               value={routingNumber}
               copied={copiedField === `routingNumber`}
               onCopy={() => copyToClipboard(routingNumber, `routingNumber`)}
             />
-          )}
+          ) : null}
 
-          {swiftCode && (
+          {swiftCode ? (
             <BankField
               label="SWIFT code"
               value={swiftCode}
               copied={copiedField === `swiftCode`}
               onCopy={() => copyToClipboard(swiftCode, `swiftCode`)}
             />
-          )}
+          ) : null}
 
-          {address && (
+          {address ? (
             <BankField
               label="Bank address"
               value={address}
               copied={copiedField === `address`}
               onCopy={() => copyToClipboard(address, `address`)}
             />
-          )}
+          ) : null}
         </div>
 
-        {swiftCode && (
-          <div
-            className={`
-            border-t
-            border-slate-200
-            bg-amber-50
-            p-4
-            dark:border-slate-700
-            dark:bg-amber-900/20
-          `}
-          >
-            <div className={`flex gap-3`}>
-              <div
-                className={`
-                flex
-                h-6
-                w-6
-                shrink-0
-                items-center
-                justify-center
-                rounded-full
-                bg-amber-600
-                text-white
-                dark:bg-amber-500
-              `}
-              >
-                <BellIcon className={`h-4 w-4`} />
+        {swiftCode ? (
+          <div className={styles.swiftNote}>
+            <div className={styles.swiftNoteRow}>
+              <div className={styles.swiftNoteIcon}>
+                <BellIcon className={styles.swiftNoteIconSvg} />
               </div>
-              <div className={`flex-1`}>
-                <p
-                  className={`
-                  text-sm
-                  font-semibold
-                  text-amber-900
-                  dark:text-amber-100
-                `}
-                >
-                  Important
-                </p>
-                <p
-                  className={`
-                  mt-0.5
-                  text-xs
-                  text-amber-800
-                  dark:text-amber-200
-                `}
-                >
+              <div className={styles.swiftNoteContent}>
+                <p className={styles.swiftNoteTitle}>Important</p>
+                <p className={styles.swiftNoteText}>
                   <strong>Select &quot;OUR&quot;</strong> for SWIFT transfer fees. This ensures the recipient receives
                   your full payment amount.
                 </p>
               </div>
             </div>
           </div>
-        )}
+        ) : null}
       </div>
 
-      <Button variant="primary" size="lg" className={`w-full`}>
+      <Button variant="primary" size="lg" className={styles.continueBtn}>
         Continue to payment
       </Button>
     </div>
@@ -328,55 +189,27 @@ interface BankFieldProps {
 
 function BankField({ label, value, copied, onCopy, highlight = false, hint }: BankFieldProps) {
   return (
-    <div
-      className={`rounded-lg p-4 transition-colors ${
-        highlight
-          ? `bg-amber-50 dark:bg-amber-900/20`
-          : `bg-slate-50 hover:bg-slate-100 dark:bg-slate-700/50 dark:hover:bg-slate-700`
-      }`}
-    >
-      <div
-        className={`
-        flex
-        items-start
-        justify-between
-        gap-3
-      `}
-      >
-        <div className={`min-w-0 flex-1`}>
-          <p
-            className={`text-xs font-medium uppercase tracking-wide ${highlight ? `text-amber-700 dark:text-amber-400` : `text-slate-500 dark:text-slate-400`}`}
-          >
+    <div className={`${styles.field} ${highlight ? styles.fieldHighlight : styles.fieldNormal}`}>
+      <div className={styles.fieldRow}>
+        <div className={styles.fieldContent}>
+          <p className={`${styles.fieldLabel} ${highlight ? styles.fieldLabelHighlight : styles.fieldLabelNormal}`}>
             {label}
           </p>
-          <p
-            className={`mt-1 break-all font-mono text-sm font-semibold ${highlight ? `text-amber-900 dark:text-amber-100` : `text-slate-900 dark:text-white`}`}
-          >
+          <p className={`${styles.fieldValue} ${highlight ? styles.fieldValueHighlight : styles.fieldValueNormal}`}>
             {value}
           </p>
-          {hint && (
-            <p
-              className={`
-            mt-1
-            text-xs
-            text-slate-600
-            dark:text-slate-400
-          `}
-            >
-              {hint}
-            </p>
-          )}
+          {hint ? <p className={styles.fieldHint}>{hint}</p> : null}
         </div>
         <button
           onClick={onCopy}
-          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-all ${
-            copied
-              ? `bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300`
-              : `text-slate-500 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-600`
-          }`}
+          className={`${styles.copyBtn} ${copied ? styles.copyBtnCopied : styles.copyBtnDefault}`}
           aria-label={`Copy ${label}`}
         >
-          {copied ? <CheckIcon className={`h-5 w-5`} /> : <ClipboardCopyIcon className={`h-5 w-5`} strokeWidth={2} />}
+          {copied ? (
+            <CheckIcon className={styles.copyBtnIcon} />
+          ) : (
+            <ClipboardCopyIcon className={styles.copyBtnIcon} strokeWidth={2} />
+          )}
         </button>
       </div>
     </div>

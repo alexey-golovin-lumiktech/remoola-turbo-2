@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 
+import styles from './error.module.css';
 import { clientLogger } from '../../../lib/logger';
 import { ErrorState } from '../../../shared/ui/ErrorState';
 
@@ -16,7 +17,7 @@ export default function PaymentMethodsError({ error, reset }: PaymentMethodsErro
   }, [error]);
 
   return (
-    <div className={`mx-auto max-w-md p-4`}>
+    <div className={styles.wrapper}>
       <ErrorState
         title="Failed to load payment methods"
         message="We couldn't load your payment methods. Please try again."

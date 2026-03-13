@@ -2,10 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { cn } from '@remoola/ui';
+
 import { FormField } from './FormField';
 import { FormInput } from './FormInput';
 import { SpinnerIcon } from './icons/SpinnerIcon';
 import { XIcon } from './icons/XIcon';
+import styles from './RecipientEmailField.module.css';
 
 const DEBOUNCE_MS = 300;
 const SEARCH_LIMIT = 10;
@@ -179,8 +182,8 @@ export function RecipientEmailField({
 
   return (
     <FormField label={label} htmlFor="recipient-email-input" error={error} required={required}>
-      <div ref={containerRef} className={`relative`}>
-        <div className={`relative`}>
+      <div ref={containerRef} className={styles.container}>
+        <div className={styles.inner}>
           <FormInput
             id="recipient-email-input"
             type="email"
@@ -201,65 +204,18 @@ export function RecipientEmailField({
                 : undefined
             }
           />
-          {value && (
-            <button
-              type="button"
-              onClick={handleClear}
-              className={`
-                absolute
-                right-3
-                top-1/2
-                -translate-y-1/2
-                rounded-lg
-                p-1.5
-                text-slate-400
-                transition-colors
-                hover:bg-slate-100
-                hover:text-slate-600
-                dark:hover:bg-slate-700
-                dark:hover:text-slate-300
-              `}
-              aria-label="Clear"
-            >
-              <XIcon className={`h-5 w-5`} strokeWidth={2} />
+          {value ? (
+            <button type="button" onClick={handleClear} className={styles.clearButton} aria-label="Clear">
+              <XIcon className={styles.clearIcon} strokeWidth={2} />
             </button>
-          )}
+          ) : null}
         </div>
-        {showDropdown && (
-          <ul
-            ref={listboxRef}
-            id="recipient-email-listbox"
-            role="listbox"
-            className={`
-              absolute
-              z-50
-              mt-2
-              max-h-60
-              w-full
-              overflow-auto
-              rounded-lg
-              border
-              border-slate-200
-              bg-white
-              py-1
-              shadow-lg
-              dark:border-slate-700
-              dark:bg-slate-800
-            `}
-          >
+        {showDropdown ? (
+          <ul ref={listboxRef} id="recipient-email-listbox" role="listbox" className={styles.listbox}>
             {loading ? (
-              <li
-                className={`
-                px-4
-                py-3
-                text-sm
-                text-slate-500
-                dark:text-slate-400
-              `}
-                role="option"
-              >
-                <div className={`flex items-center gap-2`}>
-                  <SpinnerIcon className={`h-4 w-4`} />
+              <li className={styles.loadingOption} role="option">
+                <div className={styles.loadingContent}>
+                  <SpinnerIcon className={styles.loadingSpinner} />
                   Searching contacts...
                 </div>
               </li>
@@ -274,69 +230,24 @@ export function RecipientEmailField({
                     id={`recipient-email-option-${contact.id}`}
                     role="option"
                     aria-selected={isHighlighted}
-                    className={`min-h-11 cursor-pointer px-4 py-3 text-sm transition-colors ${
-                      isHighlighted
-                        ? `bg-primary-50 dark:bg-primary-900/20`
-                        : `hover:bg-slate-50 dark:hover:bg-slate-700`
-                    } ${isSelected ? `font-semibold` : ``}`}
+                    className={cn(
+                      styles.option,
+                      isHighlighted ? styles.optionHighlighted : styles.optionHover,
+                      isSelected && styles.optionSelected,
+                    )}
                     onMouseEnter={() => setHighlightIndex(index)}
                     onClick={() => selectContact(contact)}
                   >
-                    <div className={`flex items-center gap-2`}>
-                      <div
-                        className={`
-                        flex
-                        h-8
-                        w-8
-                        shrink-0
-                        items-center
-                        justify-center
-                        rounded-full
-                        bg-primary-100
-                        text-xs
-                        font-semibold
-                        text-primary-700
-                        dark:bg-primary-900/30
-                        dark:text-primary-300
-                      `}
-                      >
-                        {contactInitial.toUpperCase()}
-                      </div>
-                      <div className={`min-w-0 flex-1`}>
+                    <div className={styles.optionContent}>
+                      <div className={styles.avatar}>{contactInitial.toUpperCase()}</div>
+                      <div className={styles.optionText}>
                         {contact.name ? (
                           <>
-                            <div
-                              className={`
-                              truncate
-                              font-medium
-                              text-slate-900
-                              dark:text-white
-                            `}
-                            >
-                              {contact.name}
-                            </div>
-                            <div
-                              className={`
-                              truncate
-                              text-xs
-                              text-slate-500
-                              dark:text-slate-400
-                            `}
-                            >
-                              {contact.email}
-                            </div>
+                            <div className={styles.optionName}>{contact.name}</div>
+                            <div className={styles.optionEmail}>{contact.email}</div>
                           </>
                         ) : (
-                          <div
-                            className={`
-                            truncate
-                            font-medium
-                            text-slate-900
-                            dark:text-white
-                          `}
-                          >
-                            {contact.email}
-                          </div>
+                          <div className={styles.optionName}>{contact.email}</div>
                         )}
                       </div>
                     </div>
@@ -345,7 +256,7 @@ export function RecipientEmailField({
               })
             )}
           </ul>
-        )}
+        ) : null}
       </div>
     </FormField>
   );

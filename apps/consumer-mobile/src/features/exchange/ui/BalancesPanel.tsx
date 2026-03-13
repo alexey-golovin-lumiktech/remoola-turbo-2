@@ -2,6 +2,7 @@
 
 import { type IConsumerExchangeBalance } from '@remoola/api-types';
 
+import styles from './BalancesPanel.module.css';
 import { CurrencyDollarIcon } from '../../../shared/ui/icons/CurrencyDollarIcon';
 import { UsersIcon } from '../../../shared/ui/icons/UsersIcon';
 
@@ -17,239 +18,46 @@ export function BalancesPanel({ balances, onSelectCurrency }: BalancesPanelProps
 
   if (balances.length === 0) {
     return (
-      <div
-        className={`
-        overflow-hidden
-        rounded-2xl
-        border-2
-        border-dashed
-        border-slate-200
-        bg-linear-to-br
-        from-slate-50
-        to-slate-100
-        shadow-inner
-        dark:border-slate-700
-        dark:from-slate-800/50
-        dark:to-slate-900/50
-      `}
-      >
-        <div
-          className={`
-            p-8
-            text-center
-          `}
-        >
-          <div
-            className={`
-            mx-auto
-            mb-4
-            flex
-            h-16
-            w-16
-            items-center
-            justify-center
-            rounded-2xl
-            bg-slate-200
-            shadow-lg
-            dark:bg-slate-700
-          `}
-          >
-            <CurrencyDollarIcon
-              className={`
-                h-8
-                w-8
-                text-slate-500
-                dark:text-slate-400
-              `}
-            />
+      <div className={styles.empty}>
+        <div className={styles.emptyInner}>
+          <div className={styles.emptyIcon}>
+            <CurrencyDollarIcon className={styles.emptyIconSvg} />
           </div>
-          <p
-            className={`
-              text-base
-              font-bold
-              text-slate-800
-              dark:text-slate-200
-            `}
-          >
-            No balances
-          </p>
-          <p
-            className={`
-              mt-2
-              text-sm
-              text-slate-500
-              dark:text-slate-400
-            `}
-          >
-            Make a payment to see your currency balances
-          </p>
+          <p className={styles.emptyTitle}>No balances</p>
+          <p className={styles.emptyText}>Make a payment to see your currency balances</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div
-      className={`
-      overflow-hidden
-      rounded-2xl
-      border
-      border-slate-200
-      bg-white
-      shadow-lg
-      dark:border-slate-700
-      dark:bg-slate-800/90
-    `}
-    >
-      <div
-        className={`
-        border-b
-        border-slate-200
-        bg-linear-to-r
-        from-slate-50
-        to-slate-100
-        px-5
-        py-4
-        dark:border-slate-700
-        dark:from-slate-800
-        dark:to-slate-900
-      `}
-      >
-        <div
-          className={`
-            flex
-            items-center
-            gap-2
-          `}
-        >
-          <UsersIcon
-            className={`
-              h-5
-              w-5
-              text-primary-600
-              dark:text-primary-400
-            `}
-          />
-          <h3
-            className={`
-              text-base
-              font-bold
-              text-slate-900
-              dark:text-slate-100
-            `}
-          >
-            Your balances
-          </h3>
+    <div className={styles.card}>
+      <div className={styles.header}>
+        <div className={styles.headerRow}>
+          <UsersIcon className={styles.headerIcon} />
+          <h3 className={styles.headerTitle}>Your balances</h3>
         </div>
       </div>
 
-      <div
-        className={`
-          divide-y
-          divide-slate-200
-          dark:divide-slate-700
-        `}
-      >
+      <div className={styles.list}>
         {balances.map((balance, index) => (
           <button
             key={balance.currency}
             onClick={() => onSelectCurrency?.(balance.currency)}
-            className={`
-              group
-              min-h-15
-              w-full
-              px-5
-              py-4
-              text-left
-              transition-all
-              duration-200
-              animate-fadeIn
-              ${
-                onSelectCurrency
-                  ? `
-              hover:bg-slate-50
-              active:scale-[0.99]
-              dark:hover:bg-slate-700/50
-              `
-                  : `
-              cursor-default
-              `
-              }
-            `}
+            className={`${styles.row} ${onSelectCurrency ? styles.rowClickable : styles.rowStatic}`}
             style={{ animationDelay: `${index * 50}ms` }}
           >
-            <div
-              className={`
-                flex
-                items-center
-                justify-between
-              `}
-            >
-              <div
-                className={`
-                  flex
-                  items-center
-                  gap-3.5
-                `}
-              >
-                <div
-                  className={`
-                  flex
-                  h-12
-                  w-12
-                  items-center
-                  justify-center
-                  rounded-xl
-                  bg-linear-to-br
-                  from-primary-500
-                  to-primary-600
-                  shadow-md
-                  transition-transform
-                  duration-200
-                  group-hover:scale-110
-                `}
-                >
-                  <span
-                    className={`
-                      text-base
-                      font-extrabold
-                      text-white
-                    `}
-                  >
-                    {balance.symbol}
-                  </span>
+            <div className={styles.rowContent}>
+              <div className={styles.rowLeft}>
+                <div className={styles.iconWrap}>
+                  <span className={styles.iconSymbol}>{balance.symbol}</span>
                 </div>
                 <div>
-                  <p
-                    className={`
-                      text-base
-                      font-bold
-                      text-slate-900
-                      dark:text-slate-100
-                    `}
-                  >
-                    {balance.currency}
-                  </p>
-                  <p
-                    className={`
-                      text-xs
-                      font-medium
-                      text-slate-500
-                      dark:text-slate-400
-                    `}
-                  >
-                    Available balance
-                  </p>
+                  <p className={styles.rowLabel}>{balance.currency}</p>
+                  <p className={styles.rowSub}>Available balance</p>
                 </div>
               </div>
-              <p
-                className={`
-                  text-xl
-                  font-extrabold
-                  text-slate-900
-                  dark:text-slate-100
-                `}
-              >
+              <p className={styles.rowAmount}>
                 {balance.symbol}
                 {formatAmount(balance.amountCents)}
               </p>
@@ -258,59 +66,14 @@ export function BalancesPanel({ balances, onSelectCurrency }: BalancesPanelProps
         ))}
       </div>
 
-      <div
-        className={`
-        border-t
-        border-slate-200
-        bg-slate-50
-        px-5
-        py-3
-        dark:border-slate-700
-        dark:bg-slate-900/50
-      `}
-      >
-        <div
-          className={`
-            flex
-            items-center
-            justify-between
-          `}
-        >
-          <span
-            className={`
-              text-xs
-              font-semibold
-              text-slate-500
-              dark:text-slate-400
-            `}
-          >
+      <div className={styles.footer}>
+        <div className={styles.footerRow}>
+          <span className={styles.footerText}>
             Total: {balances.length} {balances.length === 1 ? `currency` : `currencies`}
           </span>
-          <div
-            className={`
-              flex
-              items-center
-              gap-1.5
-            `}
-          >
-            <div
-              className={`
-              h-2
-              w-2
-              rounded-full
-              bg-green-500
-              animate-pulse
-            `}
-            />
-            <span
-              className={`
-                text-xs
-                font-medium
-                text-slate-500
-              `}
-            >
-              Live
-            </span>
+          <div className={styles.liveRow}>
+            <div className={styles.liveDot} />
+            <span className={styles.liveLabel}>Live</span>
           </div>
         </div>
       </div>

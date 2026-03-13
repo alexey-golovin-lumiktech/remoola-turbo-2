@@ -3,12 +3,14 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 
+import styles from './AuthCallback.module.css';
+import { parseSearchParams } from '../../../features/auth/schemas';
 import { clientLogger } from '../../../lib/logger';
 
 export default function AuthCallback() {
   const router = useRouter();
   const params = useSearchParams();
-  const next = params.get(`next`) ?? `/dashboard`;
+  const { nextPath: next } = parseSearchParams({ next: params.get(`next`) ?? undefined });
   const oauthToken = params.get(`oauthToken`);
 
   useEffect(() => {
@@ -63,16 +65,7 @@ export default function AuthCallback() {
   }, [router, next, oauthToken]);
 
   return (
-    <div
-      className={`
-      flex
-      min-h-[50vh]
-      items-center
-      justify-center
-      text-neutral-600
-    `}
-      data-testid="auth-callback"
-    >
+    <div className={styles.wrapper} data-testid="auth-callback">
       Redirecting…
     </div>
   );

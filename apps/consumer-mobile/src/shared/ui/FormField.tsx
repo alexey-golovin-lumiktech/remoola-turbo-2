@@ -1,5 +1,9 @@
 import { type ReactNode } from 'react';
 
+import { cn } from '@remoola/ui';
+
+import styles from './FormField.module.css';
+
 interface FormFieldProps {
   label: string;
   htmlFor: string;
@@ -16,38 +20,29 @@ interface FormFieldProps {
  */
 export function FormField({ label, htmlFor, error, hint, required = false, children, className = `` }: FormFieldProps) {
   return (
-    <div className={`space-y-1.5 ${className}`}>
-      <label
-        htmlFor={htmlFor}
-        className={`
-        block
-        text-sm
-        font-medium
-        text-slate-900
-        dark:text-white
-      `}
-      >
+    <div className={cn(styles.root, className)}>
+      <label htmlFor={htmlFor} className={styles.label}>
         {label}
-        {required && (
-          <span className={`ml-1 text-red-600 dark:text-red-400`} aria-label="required">
+        {required ? (
+          <span className={styles.required} aria-label="required">
             *
           </span>
-        )}
+        ) : null}
       </label>
 
       {children}
 
-      {hint && !error && (
-        <p className={`text-xs text-slate-500 dark:text-slate-400`} id={`${htmlFor}-hint`}>
+      {hint && !error ? (
+        <p className={styles.hint} id={`${htmlFor}-hint`}>
           {hint}
         </p>
-      )}
+      ) : null}
 
-      {error && (
-        <p className={`text-xs text-red-600 dark:text-red-400`} id={`${htmlFor}-error`} role="alert">
+      {error ? (
+        <p className={styles.error} id={`${htmlFor}-error`} role="alert">
           {error}
         </p>
-      )}
+      ) : null}
     </div>
   );
 }

@@ -9,6 +9,7 @@ import { showErrorToast, showSuccessToast } from '../../../lib/toast.client';
 import { Button } from '../../../shared/ui/Button';
 import { Modal } from '../../../shared/ui/Modal';
 import { attachDocumentToPayment } from '../actions';
+import styles from './PaymentPickerModal.module.css';
 
 interface PaymentPickerModalProps {
   documentId: string;
@@ -105,20 +106,8 @@ export function PaymentPickerModal({ documentId, onClose }: PaymentPickerModalPr
       title="Attach to Payment"
       size="md"
       footer={
-        <div
-          className={`
-            flex
-            gap-3
-          `}
-        >
-          <Button
-            variant="outline"
-            onClick={onClose}
-            disabled={isPending}
-            className={`
-              flex-1
-            `}
-          >
+        <div className={styles.footer}>
+          <Button variant="outline" onClick={onClose} disabled={isPending} className={styles.footerBtn}>
             Cancel
           </Button>
           <Button
@@ -126,145 +115,43 @@ export function PaymentPickerModal({ documentId, onClose }: PaymentPickerModalPr
             onClick={handleAttach}
             isLoading={isPending}
             disabled={isPending || !selectedPaymentId}
-            className={`
-              flex-1
-            `}
+            className={styles.footerBtn}
           >
             Attach
           </Button>
         </div>
       }
     >
-      <div
-        className={`
-          space-y-4
-        `}
-      >
+      <div className={styles.body}>
         {isLoading ? (
-          <div
-            className={`
-              space-y-3
-            `}
-          >
+          <div className={styles.loadingWrap}>
             {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className={`
-                  h-20
-                  animate-pulse
-                  rounded-lg
-                  bg-slate-200
-                  dark:bg-slate-700
-                `}
-              />
+              <div key={i} className={styles.skeleton} />
             ))}
           </div>
         ) : fetchError ? (
-          <div
-            className={`
-              py-8
-              text-center
-            `}
-          >
-            <p
-              className={`
-                text-sm
-                text-slate-500
-                dark:text-slate-400
-              `}
-            >
-              Failed to load payments. Please try again.
-            </p>
+          <div className={styles.emptyWrap}>
+            <p className={styles.emptyText}>Failed to load payments. Please try again.</p>
           </div>
         ) : payments.length === 0 ? (
-          <div
-            className={`
-              py-8
-              text-center
-            `}
-          >
-            <p
-              className={`
-                text-sm
-                text-slate-500
-                dark:text-slate-400
-              `}
-            >
-              No payments available
-            </p>
+          <div className={styles.emptyWrap}>
+            <p className={styles.emptyText}>No payments available</p>
           </div>
         ) : (
-          <div
-            className={`
-              max-h-[60vh]
-              space-y-2
-              overflow-y-auto
-            `}
-          >
+          <div className={styles.list}>
             {payments.map((payment) => {
               const isSelected = selectedPaymentId === payment.id;
               return (
                 <button
                   key={payment.id}
                   onClick={() => setSelectedPaymentId(payment.id)}
-                  className={`
-                    w-full
-                    min-h-11
-                    rounded-lg
-                    border
-                    p-4
-                    text-left
-                    transition-all
-                    focus:outline-hidden
-                    focus:ring-2
-                    focus:ring-primary-500
-                    ${
-                      isSelected
-                        ? `border-primary-500 bg-primary-50 dark:border-primary-600 dark:bg-primary-950`
-                        : `border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700`
-                    }
-                  `}
+                  className={`${styles.item} ${isSelected ? styles.itemSelected : styles.itemUnselected}`}
                 >
-                  <div
-                    className={`
-                      flex
-                      items-start
-                      justify-between
-                      gap-3
-                    `}
-                  >
-                    <div
-                      className={`
-                        flex-1
-                        min-w-5
-                      `}
-                    >
-                      <p
-                        className={`
-                          truncate
-                          font-semibold
-                          ${isSelected ? `text-primary-900 dark:text-primary-100` : `text-slate-900 dark:text-white`}
-                        `}
-                      >
-                        {payment.description || `Payment`}
-                      </p>
-                      <p
-                        className={`
-                          mt-0.5
-                          truncate
-                          text-sm
-                          ${isSelected ? `text-primary-700 dark:text-primary-300` : `text-slate-600 dark:text-slate-400`}
-                        `}
-                      >
-                        {payment.counterparty.email}
-                      </p>
-                      <p
-                        className={`
-                          mt-1
-                          text-xs
-                          ${isSelected ? `text-primary-600 dark:text-primary-400` : `text-slate-500 dark:text-slate-500`}
-                        `}
-                      >
+                  <div className={styles.itemRow}>
+                    <div className={styles.itemContent}>
+                      <p className={styles.itemTitle}>{payment.description || `Payment`}</p>
+                      <p className={styles.itemSub}>{payment.counterparty.email}</p>
+                      <p className={styles.itemDate}>
                         {new Date(payment.createdAt).toLocaleDateString(undefined, {
                           year: `numeric`,
                           month: `short`,
@@ -272,21 +159,7 @@ export function PaymentPickerModal({ documentId, onClose }: PaymentPickerModalPr
                         })}
                       </p>
                     </div>
-                    <div
-                      className={`
-                        shrink-0
-                        text-right
-                      `}
-                    >
-                      <p
-                        className={`
-                          font-semibold
-                          ${isSelected ? `text-primary-900 dark:text-primary-100` : `text-slate-900 dark:text-white`}
-                        `}
-                      >
-                        {formatAmount(payment.amount, payment.currencyCode)}
-                      </p>
-                    </div>
+                    <div className={styles.itemAmount}>{formatAmount(payment.amount, payment.currencyCode)}</div>
                   </div>
                 </button>
               );

@@ -13,6 +13,7 @@ import { FormInput } from '../../../shared/ui/FormInput';
 import { FormSelect } from '../../../shared/ui/FormSelect';
 import { updateOrganizationDetailsAction } from '../actions';
 import { type Profile } from '../schemas';
+import styles from './OrganizationDetailsForm.module.css';
 
 interface OrganizationDetailsFormProps {
   profile: Profile;
@@ -66,7 +67,7 @@ export function OrganizationDetailsForm({ profile }: OrganizationDetailsFormProp
 
   return (
     <FormCard title="Organization Details" description="Information about your organization">
-      <form action={formAction} className={`space-y-5`}>
+      <form action={formAction} className={styles.form}>
         <FormField label="Organization Name" htmlFor="name" error={fieldErrors.name}>
           <FormInput
             id="name"
@@ -75,7 +76,7 @@ export function OrganizationDetailsForm({ profile }: OrganizationDetailsFormProp
             defaultValue={org.name ?? ``}
             error={!!fieldErrors.name}
             placeholder="Your company name"
-            className={`min-h-11`}
+            className={styles.inputMinHeight}
           />
         </FormField>
 
@@ -87,12 +88,12 @@ export function OrganizationDetailsForm({ profile }: OrganizationDetailsFormProp
             defaultValue={org.consumerRole ?? ``}
             error={!!fieldErrors.consumerRole}
             placeholder="Select your role"
-            className={`min-h-11`}
+            className={styles.inputMinHeight}
             onChange={(e) => setShowOtherRole(e.currentTarget.value === CONSUMER_ROLE.OTHER)}
           />
         </FormField>
 
-        {showOtherRole && (
+        {showOtherRole ? (
           <FormField label="Please Specify Your Role" htmlFor="consumerRoleOther" error={fieldErrors.consumerRoleOther}>
             <FormInput
               id="consumerRoleOther"
@@ -101,10 +102,10 @@ export function OrganizationDetailsForm({ profile }: OrganizationDetailsFormProp
               defaultValue={org.consumerRoleOther ?? ``}
               error={!!fieldErrors.consumerRoleOther}
               placeholder="Your role"
-              className={`min-h-11`}
+              className={styles.inputMinHeight}
             />
           </FormField>
-        )}
+        ) : null}
 
         <FormField label="Organization Size" htmlFor="size" error={fieldErrors.size}>
           <FormSelect
@@ -114,23 +115,17 @@ export function OrganizationDetailsForm({ profile }: OrganizationDetailsFormProp
             defaultValue={org.size ?? ``}
             error={!!fieldErrors.size}
             placeholder="Select organization size"
-            className={`min-h-11`}
+            className={styles.inputMinHeight}
           />
         </FormField>
 
-        <div className={`flex justify-end pt-2`}>
+        <div className={styles.actions}>
           <Button
             type="submit"
             variant="primary"
             isLoading={isPending}
             disabled={isPending}
-            className={`
-              min-h-11
-              shadow-lg
-              shadow-primary-500/30
-              hover:shadow-xl
-              hover:shadow-primary-500/40
-            `}
+            className={styles.submitBtn}
           >
             {isPending ? `Saving...` : `Save Changes`}
           </Button>

@@ -3,12 +3,15 @@
 import { CardElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { useState, useMemo } from 'react';
 
+import { cn } from '@remoola/ui';
+
 import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../../lib/error-messages';
 import { clientLogger } from '../../../lib/logger';
 import { showErrorToast } from '../../../lib/toast.client';
 import { Button } from '../../../shared/ui/Button';
 import { useTheme } from '../../../shared/ui/ThemeProvider';
 import { addPaymentMethodAction, addBankAccountAction } from '../actions';
+import styles from './PaymentMethodForm.module.css';
 
 type PaymentMethodType = `CREDIT_CARD` | `BANK_ACCOUNT`;
 
@@ -243,354 +246,109 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
   };
 
   return (
-    <form onSubmit={handleSubmit} className={`space-y-4`}>
+    <form onSubmit={handleSubmit} className={styles.form}>
       {/* Method Type Toggle */}
-      <div className={`flex gap-3`}>
+      <div className={styles.toggleRow}>
         <button
           type="button"
-          onClick={() => {
-            setMethodType(`CREDIT_CARD`);
-          }}
-          className={`
-            flex-1
-            min-h-11
-            rounded-lg
-            px-4
-            py-2
-            text-sm
-            font-medium
-            transition-all
-            ${
-              methodType === `CREDIT_CARD`
-                ? `
-                    bg-primary-600
-                    text-white
-                    shadow-xs
-                    hover:bg-primary-700
-                  `
-                : `
-                    border
-                    border-slate-300
-                    bg-white
-                    text-slate-700
-                    hover:bg-slate-50
-                    dark:border-slate-600
-                    dark:bg-slate-800
-                    dark:text-slate-300
-                    dark:hover:bg-slate-700
-                  `
-            }
-          `}
+          onClick={() => setMethodType(`CREDIT_CARD`)}
+          className={cn(
+            styles.toggleBtn,
+            methodType === `CREDIT_CARD` ? styles.toggleBtnActive : styles.toggleBtnInactive,
+          )}
         >
           Credit Card
         </button>
         <button
           type="button"
-          onClick={() => {
-            setMethodType(`BANK_ACCOUNT`);
-          }}
-          className={`
-            flex-1
-            min-h-11
-            rounded-lg
-            px-4
-            py-2
-            text-sm
-            font-medium
-            transition-all
-            ${
-              methodType === `BANK_ACCOUNT`
-                ? `
-                    bg-primary-600
-                    text-white
-                    shadow-xs
-                    hover:bg-primary-700
-                  `
-                : `
-                    border
-                    border-slate-300
-                    bg-white
-                    text-slate-700
-                    hover:bg-slate-50
-                    dark:border-slate-600
-                    dark:bg-slate-800
-                    dark:text-slate-300
-                    dark:hover:bg-slate-700
-                  `
-            }
-          `}
+          onClick={() => setMethodType(`BANK_ACCOUNT`)}
+          className={cn(
+            styles.toggleBtn,
+            methodType === `BANK_ACCOUNT` ? styles.toggleBtnActive : styles.toggleBtnInactive,
+          )}
         >
           Bank Account
         </button>
       </div>
 
       {/* Billing Details */}
-      <div className={`space-y-3`}>
-        <label className={`block`}>
-          <span
-            className={`
-  mb-1
-  block
-  text-sm
-  font-medium
-  text-slate-700
-  dark:text-slate-300
-            `}
-          >
-            Cardholder name <span className={`text-red-500`}>*</span>
+      <div className={styles.billingSection}>
+        <label className={styles.labelBlock}>
+          <span className={styles.labelText}>
+            Cardholder name <span className={styles.requiredStar}>*</span>
           </span>
           <input
             type="text"
             placeholder="John Doe"
             value={billingName}
             onChange={(e) => setBillingName(e.target.value)}
-            className={`
-  w-full
-  min-h-11
-  rounded-lg
-  border
-  border-slate-300
-  bg-white
-  px-4
-  py-2
-  text-sm
-  text-slate-900
-  placeholder-slate-400
-  transition-colors
-  focus:border-primary-500
-  focus:outline-hidden
-  focus:ring-2
-  focus:ring-primary-500/20
-  dark:border-slate-600
-  dark:bg-slate-800
-  dark:text-white
-  dark:placeholder-slate-500
-  dark:focus:border-primary-400
-            `}
+            className={styles.input}
           />
         </label>
 
-        <label className={`block`}>
-          <span
-            className={`
-  mb-1
-  block
-  text-sm
-  font-medium
-  text-slate-700
-  dark:text-slate-300
-            `}
-          >
-            Email (optional)
-          </span>
+        <label className={styles.labelBlock}>
+          <span className={styles.labelText}>Email (optional)</span>
           <input
             type="email"
             placeholder="john@example.com"
             value={billingEmail}
             onChange={(e) => setBillingEmail(e.target.value)}
-            className={`
-  w-full
-  min-h-11
-  rounded-lg
-  border
-  border-slate-300
-  bg-white
-  px-4
-  py-2
-  text-sm
-  text-slate-900
-  placeholder-slate-400
-  transition-colors
-  focus:border-primary-500
-  focus:outline-hidden
-  focus:ring-2
-  focus:ring-primary-500/20
-  dark:border-slate-600
-  dark:bg-slate-800
-  dark:text-white
-  dark:placeholder-slate-500
-  dark:focus:border-primary-400
-            `}
+            className={styles.input}
           />
         </label>
 
-        <label className={`block`}>
-          <span
-            className={`
-  mb-1
-  block
-  text-sm
-  font-medium
-  text-slate-700
-  dark:text-slate-300
-            `}
-          >
-            Phone (optional)
-          </span>
+        <label className={styles.labelBlock}>
+          <span className={styles.labelText}>Phone (optional)</span>
           <input
             type="tel"
             placeholder="+1 (555) 000-0000"
             value={billingPhone}
             onChange={(e) => setBillingPhone(e.target.value)}
-            className={`
-  w-full
-  min-h-11
-  rounded-lg
-  border
-  border-slate-300
-  bg-white
-  px-4
-  py-2
-  text-sm
-  text-slate-900
-  placeholder-slate-400
-  transition-colors
-  focus:border-primary-500
-  focus:outline-hidden
-  focus:ring-2
-  focus:ring-primary-500/20
-  dark:border-slate-600
-  dark:bg-slate-800
-  dark:text-white
-  dark:placeholder-slate-500
-  dark:focus:border-primary-400
-            `}
+            className={styles.input}
           />
         </label>
       </div>
 
       {/* Card Details (Credit Card only) */}
-      {methodType === `CREDIT_CARD` && (
-        <div
-          className={`
-  rounded-lg
-  border
-  border-slate-300
-  bg-white
-  p-4
-  dark:border-slate-600
-  dark:bg-slate-800
-          `}
-        >
-          <label
-            className={`
-  mb-2
-  block
-  text-sm
-  font-medium
-  text-slate-700
-  dark:text-slate-300
-            `}
-          >
-            Card details
-          </label>
+      {methodType === `CREDIT_CARD` ? (
+        <div className={styles.cardSection}>
+          <label className={styles.cardSectionLabel}>Card details</label>
           <CardElement options={cardElementOptions} />
         </div>
-      )}
+      ) : null}
 
       {/* Bank Account Details (Bank Account only) */}
-      {methodType === `BANK_ACCOUNT` && (
-        <div className={`space-y-3`}>
-          <label className={`block`}>
-            <span
-              className={`
-  mb-1
-  block
-  text-sm
-  font-medium
-  text-slate-700
-  dark:text-slate-300
-              `}
-            >
-              Bank name <span className={`text-red-500`}>*</span>
+      {methodType === `BANK_ACCOUNT` ? (
+        <div className={styles.bankSection}>
+          <label className={styles.labelBlock}>
+            <span className={styles.labelText}>
+              Bank name <span className={styles.requiredStar}>*</span>
             </span>
             <input
               type="text"
               placeholder="Chase Bank"
               value={bankName}
               onChange={(e) => setBankName(e.target.value)}
-              className={`
-  w-full
-  min-h-11
-  rounded-lg
-  border
-  border-slate-300
-  bg-white
-  px-4
-  py-2
-  text-sm
-  text-slate-900
-  placeholder-slate-400
-  transition-colors
-  focus:border-primary-500
-  focus:outline-hidden
-  focus:ring-2
-  focus:ring-primary-500/20
-  dark:border-slate-600
-  dark:bg-slate-800
-  dark:text-white
-  dark:placeholder-slate-500
-  dark:focus:border-primary-400
-              `}
+              className={styles.input}
             />
           </label>
 
-          <label className={`block`}>
-            <span
-              className={`
-  mb-1
-  block
-  text-sm
-  font-medium
-  text-slate-700
-  dark:text-slate-300
-              `}
-            >
-              Account number <span className={`text-red-500`}>*</span>
+          <label className={styles.labelBlock}>
+            <span className={styles.labelText}>
+              Account number <span className={styles.requiredStar}>*</span>
             </span>
             <input
               type="text"
               placeholder="000123456789"
               value={bankAccount}
               onChange={(e) => setBankAccount(e.target.value.replace(/\D/g, ``))}
-              className={`
-  w-full
-  min-h-11
-  rounded-lg
-  border
-  border-slate-300
-  bg-white
-  px-4
-  py-2
-  text-sm
-  text-slate-900
-  placeholder-slate-400
-  transition-colors
-  focus:border-primary-500
-  focus:outline-hidden
-  focus:ring-2
-  focus:ring-primary-500/20
-  dark:border-slate-600
-  dark:bg-slate-800
-  dark:text-white
-  dark:placeholder-slate-500
-  dark:focus:border-primary-400
-              `}
+              className={styles.input}
             />
           </label>
 
-          <label className={`block`}>
-            <span
-              className={`
-  mb-1
-  block
-  text-sm
-  font-medium
-  text-slate-700
-  dark:text-slate-300
-              `}
-            >
-              Routing number <span className={`text-red-500`}>*</span>
+          <label className={styles.labelBlock}>
+            <span className={styles.labelText}>
+              Routing number <span className={styles.requiredStar}>*</span>
             </span>
             <input
               type="text"
@@ -598,93 +356,31 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
               value={bankRouting}
               onChange={(e) => setBankRouting(e.target.value.replace(/\D/g, ``).slice(0, 9))}
               maxLength={9}
-              className={`
-  w-full
-  min-h-11
-  rounded-lg
-  border
-  border-slate-300
-  bg-white
-  px-4
-  py-2
-  text-sm
-  text-slate-900
-  placeholder-slate-400
-  transition-colors
-  focus:border-primary-500
-  focus:outline-hidden
-  focus:ring-2
-  focus:ring-primary-500/20
-  dark:border-slate-600
-  dark:bg-slate-800
-  dark:text-white
-  dark:placeholder-slate-500
-  dark:focus:border-primary-400
-              `}
+              className={styles.input}
             />
-            <p
-              className={`
-  mt-1
-  text-xs
-  text-slate-500
-  dark:text-slate-400
-              `}
-            >
-              9-digit number found on your checks
-            </p>
+            <p className={styles.bankHint}>9-digit number found on your checks</p>
           </label>
         </div>
-      )}
+      ) : null}
 
-      <label
-        className={`
-  flex
-  items-center
-  gap-3
-  text-sm
-  text-slate-700
-  dark:text-slate-300
-        `}
-      >
+      <label className={styles.checkboxRow}>
         <input
           type="checkbox"
           checked={defaultSelected}
           onChange={(e) => setDefaultSelected(e.target.checked)}
-          className={`
-  h-5
-  w-5
-  min-h-5
-  min-w-5
-  rounded-xs
-  border-slate-300
-  text-primary-600
-  transition-colors
-  focus:ring-2
-  focus:ring-primary-500/20
-  dark:border-slate-600
-  dark:bg-slate-700
-  dark:checked:bg-primary-600
-          `}
+          className={styles.checkbox}
         />
         <span>Set as default payment method</span>
       </label>
 
-      <div
-        className={`
-  flex
-  flex-col
-  gap-3
-  pt-2
-  sm:flex-row
-        `}
-      >
+      <div className={styles.actions}>
         <Button
           type="button"
           variant="outline"
           size="md"
           onClick={onCancel}
           disabled={isSubmitting}
-          className={`min-h-11 flex-1`}
+          className={styles.actionBtn}
         >
           Cancel
         </Button>
@@ -694,7 +390,7 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
           size="md"
           isLoading={isSubmitting}
           disabled={methodType === `CREDIT_CARD` ? !stripe || !elements || isSubmitting : isSubmitting}
-          className={`min-h-11 flex-1`}
+          className={styles.actionBtn}
         >
           Add method
         </Button>

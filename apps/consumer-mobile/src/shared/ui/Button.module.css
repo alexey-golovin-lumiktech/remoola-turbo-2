@@ -1,0 +1,44 @@
+/* Button.module.css - tailwindcss for utilities, globals for @theme (primary-*, etc.) */
+@reference "tailwindcss";
+@reference "../../app/globals.css";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.base {
+  @apply inline-flex items-center justify-center rounded-xl font-semibold transition-all duration-200 ease-out focus:outline-hidden focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 active:scale-95;
+}
+
+.sizeSm {
+  @apply min-h-9 px-3.5 py-2 text-sm gap-1.5;
+}
+
+.sizeMd {
+  @apply min-h-11 px-5 py-2.5 text-base gap-2;
+}
+
+.sizeLg {
+  @apply min-h-13 px-7 py-3.5 text-lg gap-2.5;
+}
+
+.variantPrimary {
+  @apply bg-linear-to-r from-primary-600 to-primary-700 text-white shadow-md shadow-primary-500/25 hover:from-primary-700 hover:to-primary-800 hover:shadow-lg hover:shadow-primary-500/35 focus:ring-primary-500 focus:ring-offset-2 dark:shadow-primary-900/50 dark:hover:from-primary-500 dark:hover:to-primary-600 dark:hover:shadow-primary-900/60;
+}
+
+.variantSecondary {
+  @apply bg-linear-to-r from-slate-600 to-slate-700 text-white shadow-md shadow-slate-500/20 hover:from-slate-700 hover:to-slate-800 hover:shadow-lg hover:shadow-slate-500/30 focus:ring-slate-500 focus:ring-offset-2 dark:from-slate-700 dark:to-slate-800 dark:hover:from-slate-600 dark:hover:to-slate-700 dark:hover:shadow-slate-900/40;
+}
+
+.variantOutline {
+  @apply border-2 border-slate-300 bg-white text-slate-900 shadow-xs hover:bg-slate-50 hover:border-slate-400 hover:shadow-xs focus:ring-slate-500 focus:ring-offset-2 dark:border-slate-600 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700;
+}
+
+.variantGhost {
+  @apply bg-transparent text-slate-700 shadow-none hover:bg-slate-100 hover:text-slate-900 focus:ring-slate-500 focus:ring-offset-2 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white;
+}
+
+.variantDanger {
+  @apply bg-linear-to-r from-red-600 to-red-700 text-white shadow-md shadow-red-500/25 hover:from-red-700 hover:to-red-800 hover:shadow-lg hover:shadow-red-500/35 focus:ring-red-500 focus:ring-offset-2 dark:shadow-red-900/50 dark:hover:from-red-500 dark:hover:to-red-600 dark:hover:shadow-red-900/60;
+}
+
+.spinner {
+  @apply mr-2 h-4 w-4 animate-spin;
+}

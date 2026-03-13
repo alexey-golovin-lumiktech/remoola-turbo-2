@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import { CURRENCY_CODE, type TCurrencyCode } from '@remoola/api-types';
 
+import styles from './CreatePaymentRequestView.module.css';
 import { type CreatePaymentRequestPayload } from './schemas';
 import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../lib/error-messages';
 import { showErrorToast } from '../../lib/toast.client';
@@ -71,43 +72,10 @@ export function CreatePaymentRequestView() {
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className={`
-        space-y-4
-        rounded-xl
-        border
-        border-neutral-200
-        bg-white
-        p-6
-        shadow-xs
-        dark:border-neutral-700
-        dark:bg-neutral-900
-      `}
-      data-testid="create-payment-request-form"
-    >
-      <h2
-        className={`
-        text-lg
-        font-semibold
-        text-neutral-900
-        dark:text-white
-      `}
-      >
-        New payment request
-      </h2>
+    <form onSubmit={handleSubmit} className={styles.form} data-testid="create-payment-request-form">
+      <h2 className={styles.title}>New payment request</h2>
       <div>
-        <label
-          htmlFor="pr-email"
-          className={`
-          mb-1
-          block
-          text-sm
-          font-medium
-          text-neutral-700
-          dark:text-neutral-300
-        `}
-        >
+        <label htmlFor="pr-email" className={styles.label}>
           Recipient email
         </label>
         <input
@@ -115,22 +83,12 @@ export function CreatePaymentRequestView() {
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className={`input`}
+          className="input"
           required
         />
       </div>
       <div>
-        <label
-          htmlFor="pr-amount"
-          className={`
-          mb-1
-          block
-          text-sm
-          font-medium
-          text-neutral-700
-          dark:text-neutral-300
-        `}
-        >
+        <label htmlFor="pr-amount" className={styles.label}>
           Amount
         </label>
         <input
@@ -139,29 +97,19 @@ export function CreatePaymentRequestView() {
           inputMode="decimal"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
-          className={`input`}
+          className="input"
           required
         />
       </div>
       <div>
-        <label
-          htmlFor="pr-currency"
-          className={`
-          mb-1
-          block
-          text-sm
-          font-medium
-          text-neutral-700
-          dark:text-neutral-300
-        `}
-        >
+        <label htmlFor="pr-currency" className={styles.label}>
           Currency
         </label>
         <select
           id="pr-currency"
           value={currencyCode}
           onChange={(e) => setCurrencyCode(e.target.value as TCurrencyCode)}
-          className={`input`}
+          className="input"
         >
           <option value={CURRENCY_CODE.USD}>USD</option>
           <option value={CURRENCY_CODE.EUR}>EUR</option>
@@ -169,17 +117,7 @@ export function CreatePaymentRequestView() {
         </select>
       </div>
       <div>
-        <label
-          htmlFor="pr-description"
-          className={`
-            mb-1
-            block
-            text-sm
-            font-medium
-            text-neutral-700
-            dark:text-neutral-300
-          `}
-        >
+        <label htmlFor="pr-description" className={styles.label}>
           Description (optional)
         </label>
         <input
@@ -187,21 +125,11 @@ export function CreatePaymentRequestView() {
           type="text"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          className={`input`}
+          className="input"
         />
       </div>
       <div>
-        <label
-          htmlFor="pr-due"
-          className={`
-          mb-1
-          block
-          text-sm
-          font-medium
-          text-neutral-700
-          dark:text-neutral-300
-        `}
-        >
+        <label htmlFor="pr-due" className={styles.label}>
           Due date (optional)
         </label>
         <DateInput
@@ -209,17 +137,10 @@ export function CreatePaymentRequestView() {
           value={dueDate}
           onChange={(e) => setDueDate(e.target.value)}
           min={new Date().toISOString().split(`T`)[0]}
-          className={`input`}
+          className="input"
         />
       </div>
-      <button
-        type="submit"
-        disabled={loading}
-        className={
-          `min-h-11 w-full rounded-lg bg-primary-600 px-4 py-3 font-medium text-white ` +
-          `focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50`
-        }
-      >
+      <button type="submit" disabled={loading} className={styles.submitBtn}>
         {loading ? `Creating…` : `Create payment request`}
       </button>
     </form>

@@ -1,3 +1,4 @@
+import styles from './ActivityTimeline.module.css';
 import { ClockIcon } from '../../../shared/ui/icons/ClockIcon';
 import { CreditCardIcon } from '../../../shared/ui/icons/CreditCardIcon';
 import { DocumentIcon } from '../../../shared/ui/icons/DocumentIcon';
@@ -17,12 +18,19 @@ interface ActivityTimelineProps {
   maxItems?: number;
 }
 
-const activityIcons = {
-  payment: <CreditCardIcon className={`h-4 w-4`} />,
-  document: <DocumentIcon className={`h-4 w-4`} />,
-  contact: <UserIcon className={`h-4 w-4`} />,
-  default: <ClockIcon className={`h-4 w-4`} />,
-};
+function getActivityIcon(kind: string, className: string) {
+  const iconProps = { className };
+  switch (kind) {
+    case `payment`:
+      return <CreditCardIcon {...iconProps} />;
+    case `document`:
+      return <DocumentIcon {...iconProps} />;
+    case `contact`:
+      return <UserIcon {...iconProps} />;
+    default:
+      return <ClockIcon {...iconProps} />;
+  }
+}
 
 /**
  * ActivityTimeline - Timeline view of recent activities
@@ -35,117 +43,32 @@ export function ActivityTimeline({ activities, maxItems = 5 }: ActivityTimelineP
   }
 
   return (
-    <div
-      className={`
-        overflow-hidden
-        rounded-2xl
-        border
-        border-slate-200
-        bg-white
-        shadow-lg
-        animate-fadeIn
-        dark:border-slate-700
-        dark:bg-slate-800/90
-      `}
-      style={{ animationDelay: `150ms` }}
-    >
-      <div
-        className={`
-        border-b
-        border-slate-200
-        bg-linear-to-r
-        from-slate-50
-        to-slate-100
-        px-5
-        py-4
-        dark:border-slate-700
-        dark:from-slate-800
-        dark:to-slate-900
-      `}
-      >
-        <div className={`flex items-center gap-2`}>
-          <LightningIcon className={`h-5 w-5 text-primary-500 dark:text-primary-400`} strokeWidth={2} />
-          <h3 className={`text-base font-bold text-slate-900 dark:text-slate-100`}>Recent activity</h3>
+    <div className={styles.card} style={{ animationDelay: `150ms` }}>
+      <div className={styles.header}>
+        <div className={styles.headerRow}>
+          <LightningIcon className={styles.headerIcon} strokeWidth={2} />
+          <h3 className={styles.headerTitle}>Recent activity</h3>
         </div>
       </div>
 
-      <div className={`px-5 py-4`}>
-        <div className={`relative space-y-4`}>
+      <div className={styles.content}>
+        <div className={styles.list}>
           {displayedActivities.map((activity, index) => {
-            const icon = activityIcons[activity.kind as keyof typeof activityIcons] ?? activityIcons.default;
+            const icon = getActivityIcon(activity.kind, styles.icon ?? ``);
             const isLast = index === displayedActivities.length - 1;
 
             return (
-              <div
-                key={activity.id}
-                className={`
-                  relative
-                  flex
-                  gap-4
-                  animate-fadeIn
-                `}
-                style={{ animationDelay: `${150 + index * 50}ms` }}
-              >
-                {!isLast && (
-                  <div
-                    className={`
-                  absolute
-                  left-5
-                  top-10
-                  h-full
-                  w-px
-                  bg-slate-200
-                  dark:bg-slate-700
-                `}
-                  />
-                )}
+              <div key={activity.id} className={styles.row} style={{ animationDelay: `${150 + index * 50}ms` }}>
+                {!isLast ? <div className={styles.line} /> : null}
 
-                <div
-                  className={`
-                  relative
-                  z-10
-                  flex
-                  h-10
-                  w-10
-                  shrink-0
-                  items-center
-                  justify-center
-                  rounded-xl
-                  bg-linear-to-br
-                  from-primary-500
-                  to-primary-600
-                  text-white
-                  shadow-md
-                `}
-                >
-                  {icon}
-                </div>
+                <div className={styles.iconWrap}>{icon}</div>
 
-                <div className={`flex-1 pt-1`}>
-                  <p className={`text-sm font-bold text-slate-900 dark:text-slate-100`}>{activity.label}</p>
-                  {activity.description && (
-                    <p
-                      className={`
-                      mt-1
-                      text-sm
-                      font-medium
-                      text-slate-500
-                      dark:text-slate-400
-                    `}
-                    >
-                      {activity.description}
-                    </p>
-                  )}
-                  <div
-                    className={`
-                    mt-2
-                    flex
-                    items-center
-                    gap-1.5
-                  `}
-                  >
-                    <ClockIcon className={`h-3.5 w-3.5 text-slate-500`} />
-                    <p className={`text-xs font-medium text-slate-500`}>
+                <div className={styles.body}>
+                  <p className={styles.label}>{activity.label}</p>
+                  {activity.description ? <p className={styles.description}>{activity.description}</p> : null}
+                  <div className={styles.metaRow}>
+                    <ClockIcon className={styles.metaIcon} />
+                    <p className={styles.metaText}>
                       {new Date(activity.createdAt).toLocaleString(undefined, {
                         month: `short`,
                         day: `numeric`,

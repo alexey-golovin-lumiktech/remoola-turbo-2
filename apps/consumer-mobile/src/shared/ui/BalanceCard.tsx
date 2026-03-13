@@ -1,8 +1,9 @@
 'use client';
 
+import styles from './BalanceCard.module.css';
 import { IconBadge } from './IconBadge';
-import { CurrencyDollarIcon } from './icons/CurrencyDollarIcon';
 import { formatBalanceCurrency } from '../utils/date-format';
+import { CurrencyDollarIcon } from './icons/CurrencyDollarIcon';
 
 export interface BalanceCardProps {
   /** Balance amount in minor units (cents) */
@@ -36,86 +37,29 @@ export function BalanceCard({
   const isPositive = amountCents > 0;
   const isNegative = amountCents < 0;
 
-  const amountColor = isNegative
-    ? `text-amber-600 dark:text-amber-300`
-    : isPositive
-      ? `text-emerald-600 dark:text-emerald-300`
-      : `text-slate-600 dark:text-slate-100`;
+  const amountColorClass = isNegative ? styles.amountNegative : isPositive ? styles.amountPositive : styles.amountZero;
 
   const iconVariant = isNegative ? `warning` : isPositive ? `success` : `primary`;
 
   return (
     <article
-      className={`
-        group
-        overflow-hidden
-        rounded-2xl
-        border
-        border-slate-200
-        bg-linear-to-br
-        from-white
-        to-slate-50
-        p-5
-        shadow-lg
-        transition-all
-        duration-300
-        hover:shadow-xl
-        hover:scale-105
-        animate-fadeIn
-        dark:border-slate-700
-        dark:from-slate-800
-        dark:to-slate-900
-      `}
+      className={styles.root}
       style={animationDelay != null ? { animationDelay: `${animationDelay}ms` } : undefined}
       aria-label={`${label ?? currencyCode}: ${formatted}`}
     >
-      <div
-        className={`
-          flex
-          items-start
-          justify-between
-          mb-3
-        `}
-      >
+      <div className={styles.header}>
         <IconBadge
-          icon={<CurrencyDollarIcon className={`h-6 w-6 text-white`} />}
+          icon={<CurrencyDollarIcon className="h-6 w-6 text-white" />}
           variant={iconVariant}
           rounded="xl"
           interactive
         />
-        <span
-          className={`
-            rounded-lg
-            border
-            border-slate-200
-            bg-slate-100
-            px-2.5
-            py-1
-            text-xs
-            font-bold
-            text-slate-700
-            dark:border-slate-700
-            dark:bg-slate-900/50
-            dark:text-slate-300
-          `}
-        >
-          {label ?? currencyCode}
-        </span>
+        <span className={styles.currencyBadge}>{label ?? currencyCode}</span>
       </div>
-      <p className={`text-3xl font-extrabold tabular-nums ${amountColor}`} data-testid={testId}>
+      <p className={`${styles.amount} ${amountColorClass}`} data-testid={testId}>
         {formatted}
       </p>
-      <p
-        className={`
-          mt-2
-          text-xs
-          font-semibold
-          text-slate-500
-          dark:text-slate-400
-        `}
-      >
-        {subtitle}
-      </p>
+      <p className={styles.subtitle}>{subtitle}</p>
     </article>
   );
 }

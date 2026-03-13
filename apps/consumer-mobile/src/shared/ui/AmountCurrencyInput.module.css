@@ -1,0 +1,24 @@
+/* AmountCurrencyInput.module.css - primary-*, dark */
+@reference "tailwindcss";
+@reference "../../app/globals.css";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.wrapper {
+  @apply relative;
+}
+
+.symbolPrefix {
+  @apply pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-base font-semibold text-slate-600 dark:text-slate-400;
+}
+
+.inputPadding {
+  @apply pl-10 pr-24;
+}
+
+.selectWrapper {
+  @apply absolute right-2 top-1/2 z-10 -translate-y-1/2;
+}
+
+.select {
+  @apply h-10 min-w-17.5 appearance-none rounded-lg border border-slate-300 bg-white px-3 pr-8 text-sm font-semibold text-slate-900 transition-colors hover:border-slate-400 hover:bg-slate-50 focus:border-primary-500 focus:outline-hidden focus:ring-2 focus:ring-primary-500 dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:hover:bg-slate-600;
+}

@@ -8,6 +8,7 @@ import { showErrorToast, showSuccessToast } from '../../../lib/toast.client';
 import { ConfirmationModal } from '../../../shared/ui/ConfirmationModal';
 import { AlertTriangleIcon } from '../../../shared/ui/icons/AlertTriangleIcon';
 import { type Contact } from '../schemas';
+import styles from './DeleteContactModal.module.css';
 
 interface DeleteContactModalProps {
   isOpen: boolean;
@@ -56,23 +57,8 @@ export function DeleteContactModal({ isOpen, onClose, contact, onSubmit }: Delet
       variant="danger"
       isLoading={isLoading}
       icon={
-        <div
-          className={`
-            flex
-            h-10
-            w-10
-            shrink-0
-            items-center
-            justify-center
-            rounded-full
-            bg-red-600
-            shadow-lg
-            shadow-red-600/30
-            dark:bg-red-500
-            dark:shadow-red-900/40
-          `}
-        >
-          <AlertTriangleIcon className={`h-6 w-6 text-white`} />
+        <div className={styles.iconWrap}>
+          <AlertTriangleIcon className={styles.icon} />
         </div>
       }
     />

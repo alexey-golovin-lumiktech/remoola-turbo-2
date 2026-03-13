@@ -24,6 +24,7 @@ import { bulkDeleteDocuments } from '../actions';
 import { DocumentPreviewModal } from '../DocumentPreviewModal';
 import { type DocumentItem } from '../queries';
 import { type DocumentKind } from '../schemas';
+import styles from './EnhancedDocumentsView.module.css';
 
 interface EnhancedDocumentsViewProps {
   items: DocumentItem[];
@@ -111,67 +112,16 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
 
   if (filteredItems.length === 0 && filterKind === `All`) {
     return (
-      <div
-        className={`
-          space-y-6
-          animate-fadeIn
-        `}
-      >
-        <div className={`flex flex-col gap-4`}>
+      <div className={styles.main}>
+        <div className={styles.topBar}>
           <DocumentFilterBar activeFilter={filterKind} onFilterChange={setFilterKind} filterCounts={filterCounts} />
-          <div className={`flex justify-center sm:justify-end`}>
+          <div className={styles.uploadWrap}>
             <DocumentUploadButton onUploadComplete={handleUploadComplete} />
           </div>
         </div>
-        <div
-          className={`
-            rounded-3xl
-            border-2
-            border-dashed
-            border-slate-300/50
-            bg-linear-to-br
-            from-slate-100/50
-            via-white
-            to-slate-100/50
-            px-8
-            py-20
-            text-center
-            shadow-2xl
-            dark:border-slate-700/50
-            dark:from-slate-800/30
-            dark:via-slate-900/50
-            dark:to-slate-800/30
-            sm:px-10
-            sm:py-24
-            backdrop-blur-xs
-          `}
-        >
-          <div
-            className={`
-            mx-auto
-            mb-8
-            flex
-            h-24
-            w-24
-            items-center
-            justify-center
-            rounded-3xl
-            bg-linear-to-br
-            from-slate-200
-            via-slate-100
-            to-slate-200
-            text-slate-400
-            shadow-2xl
-            ring-4
-            ring-slate-200/50
-            dark:from-slate-700
-            dark:via-slate-800
-            dark:to-slate-700
-            dark:text-slate-500
-            dark:ring-slate-700/50
-          `}
-          >
-            <DocumentIcon className={`h-12 w-12`} strokeWidth={1.5} />
+        <div className={styles.emptyBlock}>
+          <div className={styles.emptyIcon}>
+            <DocumentIcon className={styles.emptyIconSvg} strokeWidth={1.5} />
           </div>
           <EmptyState
             icon={null}
@@ -184,200 +134,45 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
   }
 
   return (
-    <div
-      className={`
-        space-y-6
-        animate-fadeIn
-      `}
-      data-testid="enhanced-documents-view"
-    >
-      <div className={`flex flex-col gap-4`}>
+    <div className={styles.main} data-testid="enhanced-documents-view">
+      <div className={styles.topBar}>
         <DocumentFilterBar activeFilter={filterKind} onFilterChange={setFilterKind} filterCounts={filterCounts} />
-        <div className={`flex justify-center sm:justify-end`}>
+        <div className={styles.uploadWrap}>
           <DocumentUploadButton onUploadComplete={handleUploadComplete} />
         </div>
       </div>
 
-      {selectedDocs.size > 0 && (
-        <div
-          className={`
-            animate-slideDown
-            flex
-            items-center
-            justify-between
-            rounded-2xl
-            border
-            border-primary-500/20
-            bg-linear-to-r
-            from-primary-600
-            via-primary-700
-            to-primary-600
-            px-5
-            py-4
-            shadow-xl
-            shadow-primary-500/30
-            dark:border-primary-500/30
-            dark:from-primary-800
-            dark:via-primary-900
-            dark:to-primary-800
-            dark:shadow-primary-900/40
-            backdrop-blur-xs
-          `}
-        >
-          <div className={`flex items-center gap-3`}>
-            <div
-              className={`
-              flex
-              h-11
-              w-11
-              items-center
-              justify-center
-              rounded-xl
-              bg-white/20
-              text-white
-              shadow-lg
-              backdrop-blur-xs
-            `}
-            >
-              <CheckIcon className={`h-5 w-5`} strokeWidth={2.5} />
+      {selectedDocs.size > 0 ? (
+        <div className={styles.selectionBar}>
+          <div className="flex items-center gap-3">
+            <div className={styles.selectionBarIcon}>
+              <CheckIcon className={styles.selectionBarIconSvg} strokeWidth={2.5} />
             </div>
-            <span className={`text-sm font-bold text-white`}>
+            <span className={styles.selectionBarText}>
               {selectedDocs.size} document{selectedDocs.size === 1 ? `` : `s`} selected
             </span>
           </div>
           <Button variant="danger" size="sm" onClick={() => setShowDeleteConfirm(true)} disabled={isPending}>
-            <TrashIcon className={`mr-1.5 h-4 w-4`} />
+            <TrashIcon className="mr-1.5 h-4 w-4" />
             Delete
           </Button>
         </div>
-      )}
+      ) : null}
 
       {filteredItems.length === 0 ? (
-        <div
-          className={`
-            animate-fadeIn
-            flex
-            min-h-100
-            flex-col
-            items-center
-            justify-center
-            rounded-3xl
-            border-2
-            border-dashed
-            border-slate-300/50
-            bg-linear-to-br
-            from-slate-100/50
-            via-white
-            to-slate-100/50
-            px-8
-            py-20
-            text-center
-            shadow-2xl
-            dark:border-slate-700/50
-            dark:from-slate-800/30
-            dark:via-slate-900/50
-            dark:to-slate-800/30
-            sm:min-h-112.5
-            backdrop-blur-xs
-          `}
-        >
-          <div
-            className={`
-              mb-8
-              flex
-              h-24
-              w-24
-              items-center
-              justify-center
-              rounded-3xl
-              bg-linear-to-br
-              from-slate-200
-              via-slate-100
-              to-slate-200
-              text-slate-400
-              shadow-2xl
-              ring-4
-              ring-slate-200/50
-              dark:from-slate-700
-              dark:via-slate-800
-              dark:to-slate-700
-              dark:text-slate-500
-              dark:ring-slate-700/50
-            `}
-          >
-            <SearchIcon className={`h-12 w-12`} strokeWidth={1.5} />
+        <div className={styles.emptyBlockFiltered}>
+          <div className={styles.emptyIconFiltered}>
+            <SearchIcon className={styles.emptyIconSvg} strokeWidth={1.5} />
           </div>
-          <h3
-            className={`
-              text-2xl
-              font-bold
-              text-slate-900
-              dark:text-white
-            `}
-          >
-            No documents found
-          </h3>
-          <p
-            className={`
-              mt-4
-              max-w-sm
-              text-base
-              text-slate-600
-              dark:text-slate-400
-            `}
-          >
-            Try adjusting your filter or upload new documents to get started.
-          </p>
+          <h3 className={styles.emptyTitle}>No documents found</h3>
+          <p className={styles.emptyMessage}>Try adjusting your filter or upload new documents to get started.</p>
         </div>
       ) : (
         <>
-          <div
-            className={`
-              flex
-              items-center
-              justify-between
-              rounded-2xl
-              border
-              border-slate-200/50
-              bg-linear-to-r
-              from-slate-50
-              via-white
-              to-slate-50
-              px-5
-              py-4
-              shadow-md
-              dark:border-slate-700/50
-              dark:from-slate-800/50
-              dark:via-slate-800/30
-              dark:to-slate-800/50
-              backdrop-blur-xs
-            `}
-          >
+          <div className={styles.toolbar}>
             <button
               onClick={handleToggleAll}
-              className={`
-                flex
-                min-h-11
-                items-center
-                gap-3
-                rounded-xl
-                px-4
-                py-2.5
-                text-sm
-                font-semibold
-                text-slate-700
-                transition-all
-                duration-200
-                hover:bg-slate-100
-                active:scale-95
-                focus:outline-hidden
-                focus:ring-2
-                focus:ring-primary-500
-                focus:ring-offset-2
-                dark:text-slate-200
-                dark:hover:bg-slate-700/50
-                hover:shadow-xs
-              `}
+              className={styles.selectAllBtn}
               aria-label={allSelected ? `Deselect all` : `Select all`}
             >
               <input
@@ -387,47 +182,16 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
                 ref={(input) => {
                   if (input) input.indeterminate = someSelected;
                 }}
-                className={`
-                  h-5
-                  w-5
-                  rounded-lg
-                  border-2
-                  border-slate-300
-                  text-primary-600
-                  transition-all
-                  focus:ring-primary-500
-                  dark:border-slate-600
-                  cursor-pointer
-                `}
+                className={styles.selectAllCheckbox}
               />
               <span>{allSelected ? `Deselect All` : `Select All`}</span>
             </button>
-            <span
-              className={`
-                rounded-full
-                bg-linear-to-r
-                from-slate-200
-                to-slate-300
-                px-4
-                py-2
-                text-xs
-                font-extrabold
-                text-slate-700
-                shadow-xs
-                dark:from-slate-700
-                dark:to-slate-800
-                dark:text-slate-200
-              `}
-            >
+            <span className={styles.countBadge}>
               {filteredItems.length} document{filteredItems.length === 1 ? `` : `s`}
             </span>
           </div>
 
-          <div
-            className={`
-              space-y-4
-            `}
-          >
+          <div className={styles.list}>
             {filteredItems.map((item) => {
               const id = item.id as string | undefined;
               const name = item.name as string | undefined;
@@ -438,267 +202,88 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
               const isSelected = id ? selectedDocs.has(id) : false;
 
               return (
-                <div
-                  key={key}
-                  className={`
-                    group
-                    relative
-                    overflow-hidden
-                    rounded-2xl
-                    transition-all
-                    duration-300
-                    ${
-                      isSelected
-                        ? `bg-linear-to-br from-primary-600 via-primary-700 to-primary-800 shadow-2xl shadow-primary-500/40 border border-primary-500/30 scale-[1.02]`
-                        : `border border-slate-200 bg-linear-to-br from-white via-slate-50 to-white shadow-xl hover:border-slate-300 hover:shadow-2xl hover:scale-[1.01] dark:border-slate-700/50 dark:from-slate-800 dark:via-slate-900 dark:to-slate-800 dark:hover:border-slate-600`
-                    }
-                  `}
-                >
-                  <div
-                    className={`
-                      absolute
-                      inset-0
-                      bg-linear-to-br
-                      from-transparent
-                      via-transparent
-                      to-black/10
-                      pointer-events-none
-                    `}
-                  />
-                  <div className={`p-5 relative z-10`}>
-                    <div className={`flex items-start gap-4`}>
-                      {id && (
+                <div key={key} className={`${styles.card} ${isSelected ? styles.cardSelected : styles.cardUnselected}`}>
+                  <div className={styles.cardOverlay} />
+                  <div className={styles.cardBody}>
+                    <div className={styles.cardRow}>
+                      {id ? (
                         <button
                           onClick={() => handleToggleDoc(id)}
-                          className={`
-                            mt-0.5
-                            transition-transform
-                            active:scale-90
-                            focus:outline-hidden
-                            focus:ring-2
-                            focus:ring-white/50
-                            focus:ring-offset-2
-                            focus:ring-offset-slate-100
-                            dark:focus:ring-offset-slate-900
-                            rounded-lg
-                          `}
+                          className={styles.cardCheckboxWrap}
                           aria-label={`Select ${name ?? id}`}
                         >
                           <input
                             type="checkbox"
                             checked={isSelected}
                             onChange={() => {}}
-                            className={`
-                              h-5
-                              w-5
-                              rounded-lg
-                              border-2
-                              text-primary-600
-                              transition-all
-                              focus:ring-white/50
-                              cursor-pointer
-                              ${isSelected ? `border-white/50 bg-white/20` : `border-slate-300 bg-slate-100 dark:border-slate-600 dark:bg-slate-800/50`}
-                            `}
+                            className={styles.cardCheckbox}
                           />
                         </button>
-                      )}
-                      <div className={`flex-1 min-w-0`}>
-                        <div
-                          className={`
-                            flex
-                            items-center
-                            justify-between
-                            gap-4
-                            mb-3
-                          `}
-                        >
-                          <div
-                            className={`
-                            flex
-                            items-center
-                            gap-3
-                            flex-1
-                            min-w-0
-                          `}
-                          >
-                            <div
-                              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl shadow-lg transition-all duration-300 ${isSelected ? `bg-white/20 text-white backdrop-blur-xs ring-2 ring-white/30` : `bg-slate-200 text-slate-600 group-hover:bg-slate-300 dark:bg-slate-700/80 dark:text-slate-300 dark:group-hover:bg-slate-600 backdrop-blur-xs`}`}
-                            >
-                              <DocumentIcon className={`h-6 w-6`} strokeWidth={2} />
+                      ) : null}
+                      <div className={styles.cardContent}>
+                        <div className={styles.cardHeaderRow}>
+                          <div className={styles.cardHeaderLeft}>
+                            <div className={styles.cardIconWrap}>
+                              <DocumentIcon className={styles.cardIconSvg} strokeWidth={2} />
                             </div>
-                            <div className={`flex-1 min-w-0`}>
-                              <button
-                                onClick={() => setPreviewDoc(item)}
-                                className={`
-                                  block
-                                  w-full
-                                  truncate
-                                  text-left
-                                  text-base
-                                  font-bold
-                                  transition-colors
-                                  focus:outline-hidden
-                                  focus:ring-2
-                                  focus:ring-white/50
-                                  focus:ring-offset-2
-                                  focus:ring-offset-slate-100
-                                  dark:focus:ring-offset-slate-900
-                                  rounded-lg
-                                  px-1
-                                  py-0.5
-                                  ${isSelected ? `text-white` : `text-slate-900 hover:text-slate-700 dark:text-slate-100 dark:hover:text-white`}
-                                `}
-                              >
+                            <div className="min-w-0 flex-1">
+                              <button onClick={() => setPreviewDoc(item)} className={styles.cardTitleBtn}>
                                 {name ?? id ?? `Document`}
                               </button>
                             </div>
                           </div>
-                          {id && (
+                          {id ? (
                             <button
                               onClick={() => setPreviewDoc(item)}
-                              className={`
-                                shrink-0
-                                rounded-xl
-                                p-2.5
-                                transition-all
-                                duration-200
-                                active:scale-90
-                                focus:outline-hidden
-                                focus:ring-2
-                                focus:ring-primary-500/50
-                                focus:ring-offset-2
-                                focus:ring-offset-slate-100
-                                dark:focus:ring-white/50
-                                dark:focus:ring-offset-slate-900
-                                shadow-md
-                                ${
-                                  isSelected
-                                    ? `
-                                bg-white/10
-                                text-white
-                                hover:bg-white/20
-                                backdrop-blur-xs
-                                `
-                                    : `
-                                text-slate-500
-                                hover:bg-slate-200
-                                hover:text-slate-700
-                                dark:text-slate-300
-                                dark:hover:bg-slate-700/50
-                                dark:hover:text-white
-                                backdrop-blur-xs
-                                `
-                                }
-                              `}
+                              className={styles.previewBtn}
                               aria-label="Preview document"
                             >
-                              <EyeIcon className={`h-5 w-5`} strokeWidth={2} />
+                              <EyeIcon className={styles.previewBtnIcon} strokeWidth={2} />
                             </button>
-                          )}
+                          ) : null}
                         </div>
-                        <div
-                          className={`
-                            flex
-                            flex-wrap
-                            items-center
-                            gap-2.5
-                            mb-3.5
-                          `}
-                        >
-                          {createdAt && (
-                            <p
-                              className={`text-xs font-semibold ${isSelected ? `text-white/90` : `text-slate-500 dark:text-slate-400`}`}
-                            >
+                        <div className={styles.metaRow}>
+                          {createdAt ? (
+                            <p className={styles.dateText}>
                               {new Date(createdAt).toLocaleDateString(undefined, {
                                 year: `numeric`,
                                 month: `short`,
                                 day: `numeric`,
                               })}
                             </p>
-                          )}
+                          ) : null}
                           <span
-                            className={`
-                              inline-flex
-                              items-center
-                              rounded-full
-                              px-3
-                              py-1.5
-                              text-xs
-                              font-extrabold
-                              shadow-md
-                              ${
-                                kind === `Payment`
-                                  ? `bg-emerald-500/20 text-emerald-300 ring-1 ring-emerald-400/30`
-                                  : kind === `Compliance`
-                                    ? `bg-blue-500/20 text-blue-300 ring-1 ring-blue-400/30`
-                                    : kind === `Contract`
-                                      ? `bg-purple-500/20 text-purple-300 ring-1 ring-purple-400/30`
-                                      : `bg-slate-200 text-slate-700 ring-1 ring-slate-300 dark:bg-slate-600/30 dark:text-slate-300 dark:ring-slate-500/30`
-                              }
-                            `}
+                            className={`${styles.kindBadge} ${
+                              kind === `Payment`
+                                ? styles.kindPayment
+                                : kind === `Compliance`
+                                  ? styles.kindCompliance
+                                  : kind === `Contract`
+                                    ? styles.kindContract
+                                    : styles.kindGeneral
+                            }`}
                           >
                             {kind}
                           </span>
                         </div>
-                        {tags.length > 0 && (
-                          <div
-                            className={`
-                              flex
-                              flex-wrap
-                              gap-2
-                              mb-4
-                            `}
-                          >
+                        {tags.length > 0 ? (
+                          <div className={styles.tagsRow}>
                             {tags.slice(0, 3).map((tag, index) => (
-                              <span
-                                key={`${id}-tag-${index}`}
-                                className={`
-                                  inline-flex
-                                  items-center
-                                  rounded-lg
-                                  px-2.5
-                                  py-1
-                                  text-xs
-                                  font-semibold
-                                  shadow-xs
-                                  ${isSelected ? `bg-white/15 text-white ring-1 ring-white/20` : `bg-slate-100 text-slate-700 ring-1 ring-slate-200 dark:bg-slate-700/60 dark:text-slate-300 dark:ring-slate-600/50`}
-                                `}
-                              >
+                              <span key={`${id}-tag-${index}`} className={styles.tagChip}>
                                 {tag}
                               </span>
                             ))}
-                            {tags.length > 3 && (
-                              <span
-                                className={`
-                                  inline-flex
-                                  items-center
-                                  rounded-lg
-                                  px-2.5
-                                  py-1
-                                  text-xs
-                                  font-semibold
-                                  bg-slate-100
-                                  text-slate-600
-                                  ring-1
-                                  ring-slate-200
-                                  dark:bg-slate-700/40
-                                  dark:text-slate-400
-                                  dark:ring-slate-600/50
-                                `}
-                              >
-                                +{tags.length - 3}
-                              </span>
-                            )}
+                            {tags.length > 3 ? <span className={styles.tagMore}>+{tags.length - 3}</span> : null}
                           </div>
-                        )}
-                        {id && (
-                          <div className={`grid grid-cols-2 gap-3`}>
+                        ) : null}
+                        {id ? (
+                          <div className={styles.actionsGrid}>
                             <SegmentedButton
                               active={isSelected}
                               onClick={() => setEditingTagsFor(id)}
                               aria-label="Edit tags"
                             >
-                              <TagIcon className={`h-4 w-4`} strokeWidth={2} />
+                              <TagIcon className="h-4 w-4" strokeWidth={2} />
                               <span>Tags</span>
                             </SegmentedButton>
                             <SegmentedButton
@@ -706,11 +291,11 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
                               onClick={() => setAttachingDocId(id)}
                               aria-label="Attach to payment"
                             >
-                              <PaperclipIcon className={`h-4 w-4`} strokeWidth={2.5} />
+                              <PaperclipIcon className="h-4 w-4" strokeWidth={2.5} />
                               <span>Attach</span>
                             </SegmentedButton>
                           </div>
-                        )}
+                        ) : null}
                       </div>
                     </div>
                   </div>
@@ -733,40 +318,24 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
         variant="danger"
         isLoading={isPending}
         icon={
-          <div
-            className={`
-              flex
-              h-12
-              w-12
-              items-center
-              justify-center
-              rounded-full
-              bg-red-100
-              dark:bg-red-900
-            `}
-          >
-            <TrashIcon
-              className={`
-                h-6
-                w-6
-                text-red-600
-                dark:text-red-400
-              `}
-            />
+          <div className={styles.confirmIconWrap}>
+            <TrashIcon className={styles.confirmIcon} />
           </div>
         }
       />
-      {editingTagsFor && (
+      {editingTagsFor ? (
         <TagEditor
           docId={editingTagsFor}
           initialTags={(items.find((i) => i.id === editingTagsFor)?.tags as string[]) ?? []}
           onClose={() => setEditingTagsFor(null)}
         />
-      )}
+      ) : null}
 
-      {attachingDocId && <PaymentPickerModal documentId={attachingDocId} onClose={() => setAttachingDocId(null)} />}
+      {attachingDocId ? (
+        <PaymentPickerModal documentId={attachingDocId} onClose={() => setAttachingDocId(null)} />
+      ) : null}
 
-      {previewDoc && (previewDoc.downloadUrl as string | undefined) && (
+      {previewDoc && (previewDoc.downloadUrl as string | undefined) ? (
         <DocumentPreviewModal
           isOpen={!!previewDoc}
           onClose={() => setPreviewDoc(null)}
@@ -774,7 +343,7 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
           documentName={(previewDoc.name as string) ?? `Document`}
           documentType={(previewDoc.mimetype as string) ?? `application/pdf`}
         />
-      )}
+      ) : null}
     </div>
   );
 }

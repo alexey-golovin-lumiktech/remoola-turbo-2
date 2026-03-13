@@ -1,0 +1,24 @@
+/* AddressDetailsForm.module.css - primary-* from globals */
+@reference "tailwindcss";
+@reference "../../../app/globals.css";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.form {
+  @apply space-y-5;
+}
+
+.gridRow {
+  @apply grid gap-4 sm:grid-cols-2;
+}
+
+.inputMinHeight {
+  @apply min-h-11;
+}
+
+.actions {
+  @apply flex justify-end pt-2;
+}
+
+.submitBtn {
+  @apply min-h-11 shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40;
+}

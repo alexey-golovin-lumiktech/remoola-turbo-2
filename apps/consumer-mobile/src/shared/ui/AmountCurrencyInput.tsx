@@ -2,6 +2,9 @@
 
 import { type InputHTMLAttributes, forwardRef, useEffect, useState } from 'react';
 
+import { cn } from '@remoola/ui';
+
+import styles from './AmountCurrencyInput.module.css';
 import { FormInput } from './FormInput';
 
 interface AmountCurrencyInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, `type`> {
@@ -50,23 +53,8 @@ export const AmountCurrencyInput = forwardRef<HTMLInputElement, AmountCurrencyIn
     const currentSymbol = uniqueCurrencies.find((c) => c.code === selectedCurrency)?.symbol ?? `$`;
 
     return (
-      <div className={`relative`}>
-        <div
-          className={`
-  pointer-events-none
-  absolute
-  left-3
-  top-1/2
-  z-10
-  -translate-y-1/2
-  text-base
-  font-semibold
-  text-slate-600
-  dark:text-slate-400
-          `}
-        >
-          {currentSymbol}
-        </div>
+      <div className={styles.wrapper}>
+        <div className={styles.symbolPrefix}>{currentSymbol}</div>
 
         <FormInput
           ref={ref}
@@ -74,47 +62,15 @@ export const AmountCurrencyInput = forwardRef<HTMLInputElement, AmountCurrencyIn
           step="0.01"
           min="0"
           error={error}
-          className={`pl-10 pr-24 ${className}`}
+          className={cn(styles.inputPadding, className)}
           {...props}
         />
 
-        <div
-          className={`
-  absolute
-  right-2
-  top-1/2
-  z-10
-  -translate-y-1/2
-          `}
-        >
+        <div className={styles.selectWrapper}>
           <select
             value={selectedCurrency}
             onChange={(e) => handleCurrencyChange(e.target.value)}
-            className={`
-  h-10
-  min-w-17.5
-  appearance-none
-  rounded-lg
-  border
-  border-slate-300
-  bg-white
-  px-3
-  pr-8
-  text-sm
-  font-semibold
-  text-slate-900
-  transition-colors
-  hover:border-slate-400
-  hover:bg-slate-50
-  focus:border-primary-500
-  focus:outline-hidden
-  focus:ring-2
-  focus:ring-primary-500
-  dark:border-slate-600
-  dark:bg-slate-700
-  dark:text-white
-  dark:hover:bg-slate-600
-            `}
+            className={styles.select}
             style={{
               backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
               backgroundPosition: `right 0.5rem center`,

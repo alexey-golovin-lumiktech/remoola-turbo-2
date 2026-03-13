@@ -1,0 +1,36 @@
+/* EmptyState.module.css - tailwindcss for utilities (e.g. group), globals for @theme */
+@reference "tailwindcss";
+@reference "../../app/globals.css";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.root {
+  @apply animate-fadeIn flex min-h-100 flex-col items-center justify-center rounded-3xl border-2 border-dashed border-slate-200 bg-linear-to-br from-slate-50/50 to-white px-6 py-16 text-center shadow-xs dark:border-slate-700 dark:from-slate-800/30 dark:to-slate-900/30;
+}
+
+.iconWrap {
+  @apply mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-linear-to-br from-primary-100 to-primary-50 text-primary-500 shadow-lg shadow-primary-100/50 dark:from-primary-900/40 dark:to-primary-800/30 dark:text-primary-400 dark:shadow-primary-900/20;
+}
+
+.title {
+  @apply text-xl font-bold text-slate-900 dark:text-white;
+}
+
+.description {
+  @apply mt-3 max-w-md text-base leading-relaxed text-slate-600 dark:text-slate-400;
+}
+
+.actionWrap {
+  @apply mt-8;
+}
+
+.actionButton {
+  @apply inline-flex min-h-12 items-center gap-2 rounded-xl bg-primary-600 px-6 py-3 text-base font-semibold text-white shadow-lg shadow-primary-200 transition-all hover:bg-primary-700 hover:shadow-xl hover:shadow-primary-300 hover:-translate-y-0.5 active:translate-y-0 focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:shadow-primary-900/40 dark:hover:bg-primary-600 dark:hover:shadow-primary-900/60;
+}
+
+.actionIcon {
+  @apply h-5 w-5 transition-transform;
+}
+
+.actionButton:hover .actionIcon {
+  @apply translate-x-0.5;
+}

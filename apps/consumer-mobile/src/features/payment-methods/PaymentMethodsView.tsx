@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
 import { setDefaultPaymentMethodAction, deletePaymentMethodAction } from './actions';
+import styles from './PaymentMethodsView.module.css';
 import { type PaymentMethodItem } from './queries';
 import { AddPaymentMethodModal } from './ui/AddPaymentMethodModal';
 import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../lib/error-messages';
@@ -103,43 +104,15 @@ export function PaymentMethodsView({ items }: PaymentMethodsViewProps) {
   if (items.length === 0) {
     return (
       <>
-        <div className={`space-y-6`} data-testid="consumer-mobile-payment-methods">
-          <div
-            className={`
-  flex
-  flex-col
-  items-stretch
-  gap-3
-  sm:flex-row
-  sm:items-center
-  sm:justify-between
-            `}
-          >
+        <div className={styles.wrap} data-testid="consumer-mobile-payment-methods">
+          <div className={styles.headerRow}>
             <div>
-              <h1
-                className={`
-  text-2xl
-  font-bold
-  text-slate-900
-  dark:text-white
-                `}
-              >
-                Payment methods
-              </h1>
-              <p
-                className={`
-  mt-1
-  text-sm
-  text-slate-600
-  dark:text-slate-400
-                `}
-              >
-                Add cards or bank accounts for quick payments
-              </p>
+              <h1 className={styles.title}>Payment methods</h1>
+              <p className={styles.subtitle}>Add cards or bank accounts for quick payments</p>
             </div>
           </div>
           <EmptyState
-            icon={<CreditCardIcon className={`h-10 w-10`} strokeWidth={1.5} />}
+            icon={<CreditCardIcon className={styles.emptyIcon} strokeWidth={1.5} />}
             title="No payment methods yet"
             description="Add your first payment method to start making and receiving payments quickly and securely."
             action={{
@@ -164,60 +137,19 @@ export function PaymentMethodsView({ items }: PaymentMethodsViewProps) {
 
   return (
     <>
-      <div className={`space-y-6`} data-testid="consumer-mobile-payment-methods">
-        <div
-          className={`
-  flex
-  flex-col
-  items-stretch
-  gap-3
-  sm:flex-row
-  sm:items-center
-  sm:justify-between
-          `}
-        >
+      <div className={styles.wrap} data-testid="consumer-mobile-payment-methods">
+        <div className={styles.headerRow}>
           <div>
-            <h1
-              className={`
-  text-2xl
-  font-bold
-  text-slate-900
-  dark:text-white
-              `}
-            >
-              Payment methods
-            </h1>
-            <p
-              className={`
-  mt-1
-  text-sm
-  text-slate-600
-  dark:text-slate-400
-              `}
-            >
-              Manage your cards and bank accounts
-            </p>
+            <h1 className={styles.title}>Payment methods</h1>
+            <p className={styles.subtitle}>Manage your cards and bank accounts</p>
           </div>
-          <Button
-            variant="primary"
-            size="md"
-            onClick={() => setAddModalOpen(true)}
-            className={`min-h-11 w-full sm:w-auto`}
-          >
-            <PlusIcon className={`h-5 w-5`} strokeWidth={2.5} />
-            <span className={`ml-2 font-semibold`}>Add method</span>
+          <Button variant="primary" size="md" onClick={() => setAddModalOpen(true)} className={styles.addBtn}>
+            <PlusIcon className={styles.addBtnIcon} strokeWidth={2.5} />
+            <span className={styles.addBtnLabel}>Add method</span>
           </Button>
         </div>
 
-        <div
-          className={`
-  grid
-  gap-3
-  sm:grid-cols-2
-  lg:grid-cols-3
-  xl:grid-cols-4
-          `}
-        >
+        <div className={styles.grid}>
           {items.map((item) => {
             const id = getField(item, `id`) as string | undefined;
             const brand = getField(item, `brand`) as string | undefined;
@@ -232,169 +164,52 @@ export function PaymentMethodsView({ items }: PaymentMethodsViewProps) {
             const isLoadingThis = isSettingDefault === id;
 
             return (
-              <div
-                key={key}
-                className={`
-  group
-  relative
-  overflow-hidden
-  rounded-2xl
-  border
-  border-slate-200
-  bg-white
-  p-4
-  shadow-xs
-  transition-all
-  duration-200
-  hover:border-primary-300
-  hover:shadow-md
-  active:scale-[0.98]
-  dark:border-slate-700
-  dark:bg-slate-800
-  dark:hover:border-primary-600
-  sm:p-5
-                `}
-              >
-                {defaultSelected && (
-                  <div
-                    className={`
-  absolute
-  right-0
-  top-0
-  rounded-bl-xl
-  bg-linear-to-br
-  from-primary-500
-  to-primary-600
-  px-3
-  py-1.5
-  text-xs
-  font-semibold
-  text-white
-  shadow-xs
-                    `}
-                  >
-                    Default
-                  </div>
-                )}
+              <div key={key} className={styles.card}>
+                {defaultSelected ? <div className={styles.defaultBadge}>Default</div> : null}
 
-                <div
-                  className={`
-  mb-4
-  flex
-  items-start
-  gap-3
-                  `}
-                >
-                  <div
-                    className={`
-  flex
-  h-14
-  w-14
-  shrink-0
-  items-center
-  justify-center
-  rounded-xl
-  bg-linear-to-br
-  from-primary-500
-  to-primary-600
-  text-white
-  shadow-xs
-  transition-transform
-  duration-200
-  group-hover:scale-105
-                    `}
-                  >
+                <div className={styles.cardTop}>
+                  <div className={styles.cardIconWrap}>
                     {type === `BANK_ACCOUNT` ? (
-                      <BankIcon className={`h-7 w-7`} strokeWidth={2} />
+                      <BankIcon className={styles.cardIcon} strokeWidth={2} />
                     ) : (
-                      <CreditCardIcon className={`h-7 w-7`} />
+                      <CreditCardIcon className={styles.cardIcon} />
                     )}
                   </div>
-                  <div className={`flex-1 min-w-0`}>
-                    <div
-                      className={`
-  mb-0.5
-  text-xs
-  font-medium
-  uppercase
-  tracking-wide
-  text-slate-500
-  dark:text-slate-400
-                      `}
-                    >
-                      {type === `BANK_ACCOUNT` ? `Bank account` : brand}
-                    </div>
-                    <div
-                      className={`
-  text-lg
-  font-bold
-  tracking-tight
-  text-slate-900
-  dark:text-white
-  sm:text-xl
-                      `}
-                    >
-                      •••• {last4 ?? `****`}
-                    </div>
-                    {expMonth && expYear && (
-                      <div
-                        className={`
-  mt-1.5
-  flex
-  items-center
-  gap-1
-  text-xs
-  text-slate-600
-  dark:text-slate-400
-                      `}
-                      >
-                        <CalendarIcon className={`h-3.5 w-3.5`} />
+                  <div className={styles.cardMain}>
+                    <div className={styles.cardType}>{type === `BANK_ACCOUNT` ? `Bank account` : brand}</div>
+                    <div className={styles.cardNumber}>•••• {last4 ?? `****`}</div>
+                    {expMonth && expYear ? (
+                      <div className={styles.cardExp}>
+                        <CalendarIcon className={styles.cardExpIcon} />
                         <span>
                           Expires {String(expMonth).padStart(2, `0`)}/{expYear}
                         </span>
                       </div>
-                    )}
-                    {billingDetails?.name && (
-                      <div
-                        className={`
-  mt-1.5
-  flex
-  items-center
-  gap-1
-  truncate
-  text-xs
-  text-slate-600
-  dark:text-slate-400
-                        `}
-                        title={billingDetails.name}
-                      >
-                        <UserIcon className={`h-3.5 w-3.5 shrink-0`} />
-                        <span className={`truncate`}>{billingDetails.name}</span>
+                    ) : null}
+                    {billingDetails?.name ? (
+                      <div className={styles.cardBilling} title={billingDetails.name}>
+                        <UserIcon className={styles.cardBillingIcon} />
+                        <span className={styles.cardBillingName}>{billingDetails.name}</span>
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 </div>
 
-                <div className={`flex gap-2`}>
-                  {!defaultSelected && id && (
+                <div className={styles.cardActions}>
+                  {!defaultSelected && id ? (
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleSetDefault(id)}
                       isLoading={isLoadingThis}
                       disabled={isLoadingThis}
-                      className={`
-  min-h-10
-  flex-1
-  text-xs
-  font-medium
-                      `}
+                      className={styles.setDefaultBtn}
                     >
-                      <CheckIcon className={`mr-1.5 h-3.5 w-3.5`} strokeWidth={2.5} />
+                      <CheckIcon className={styles.setDefaultIcon} strokeWidth={2.5} />
                       Set default
                     </Button>
-                  )}
-                  {id && (
+                  ) : null}
+                  {id ? (
                     <Button
                       variant="outline"
                       size="sm"
@@ -402,23 +217,12 @@ export function PaymentMethodsView({ items }: PaymentMethodsViewProps) {
                         setSelectedMethod(item);
                         setDeleteModalOpen(true);
                       }}
-                      className={`
-  min-h-10
-  flex-1
-  text-xs
-  font-medium
-  text-red-600
-  hover:border-red-300
-  hover:bg-red-50
-  dark:text-red-400
-  dark:hover:border-red-700
-  dark:hover:bg-red-900/20
-                      `}
+                      className={styles.deleteBtn}
                     >
-                      <TrashIcon className={`mr-1.5 h-3.5 w-3.5`} strokeWidth={2.5} />
+                      <TrashIcon className={styles.deleteIcon} strokeWidth={2.5} />
                       Delete
                     </Button>
-                  )}
+                  ) : null}
                 </div>
               </div>
             );

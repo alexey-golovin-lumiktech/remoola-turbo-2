@@ -1,0 +1,39 @@
+/* PageHeader.module.css */
+@reference "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.root {
+  @apply border-b border-slate-200/80 bg-white/95 px-4 py-6 shadow-xs backdrop-blur-lg dark:border-slate-700/80 dark:bg-slate-900/95 sm:px-6 sm:py-7 lg:px-8;
+}
+
+.inner {
+  @apply mx-auto max-w-6xl;
+}
+
+.row {
+  @apply flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between;
+}
+
+.titleRow {
+  @apply flex items-center gap-4;
+}
+
+.titleBlock {
+  @apply flex-1;
+}
+
+.badgeRow {
+  @apply flex flex-wrap items-center gap-3;
+}
+
+.title {
+  @apply text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-4xl;
+}
+
+.subtitle {
+  @apply mt-1.5 text-sm font-medium text-slate-600 dark:text-slate-400;
+}
+
+.actions {
+  @apply flex flex-wrap gap-2.5;
+}

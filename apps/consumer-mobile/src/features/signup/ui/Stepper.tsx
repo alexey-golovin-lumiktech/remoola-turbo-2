@@ -6,6 +6,7 @@ import { CheckIcon } from '../../../shared/ui/icons/CheckIcon';
 import { useSignupForm } from '../SignupFormContext';
 import { useSignupSteps } from '../SignupStepsContext';
 import { STEP_ENTITY_LABEL, STEP_NAME, type StepName } from '../stepNames';
+import styles from './Stepper.module.css';
 
 const STEP_ICONS: Record<StepName, React.ComponentType<{ size?: number; className?: string }>> = {
   [STEP_NAME.SIGNUP_DETAILS]: ClipboardIcon,
@@ -23,59 +24,17 @@ export function Stepper() {
   const progressPercentage = Math.round(((currentIndex + 1) / stepCount) * 100);
 
   return (
-    <div className={`mb-2`} data-testid="consumer-signup-stepper">
-      <div
-        className={`
-        mb-3
-        flex
-        items-center
-        justify-between
-      `}
-      >
-        <p
-          className={`
-          text-sm
-          font-medium
-          text-neutral-700
-          dark:text-neutral-300
-        `}
-        >
+    <div className={styles.root} data-testid="consumer-signup-stepper">
+      <div className={styles.header}>
+        <p className={styles.stepLabel}>
           Step {currentIndex + 1} of {stepCount}
         </p>
-        <p
-          className={`
-          text-xs
-          font-semibold
-          text-primary-600
-          dark:text-primary-400
-        `}
-        >
-          {progressPercentage}% complete
-        </p>
+        <p className={styles.percentLabel}>{progressPercentage}% complete</p>
       </div>
 
-      <div
-        className={`
-        mb-4
-        h-1.5
-        w-full
-        overflow-hidden
-        rounded-full
-        bg-neutral-100
-        dark:bg-neutral-800
-      `}
-      >
+      <div className={styles.track}>
         <div
-          className={`
-            h-full
-            rounded-full
-            bg-linear-to-r
-            from-primary-500
-            to-primary-600
-            transition-all
-            duration-500
-            ease-out
-          `}
+          className={styles.bar}
           style={{ width: `${progressPercentage}%` }}
           role="progressbar"
           aria-valuenow={progressPercentage}
@@ -85,7 +44,7 @@ export function Stepper() {
         />
       </div>
 
-      <div className={`flex justify-between gap-1`}>
+      <div className={styles.steps}>
         {steps.map((step, index) => {
           const isActive = index === currentIndex;
           const isCompleted = step.submitted || index < currentIndex;
@@ -95,58 +54,38 @@ export function Stepper() {
           return (
             <div
               key={step.name}
-              className={`
-                relative
-                flex
-                min-w-5
-                flex-1
-                flex-col
-                items-center
-                gap-1
-              `}
+              className={styles.step}
               data-testid={`consumer-signup-stepper-step-${step.name.replace(/\s/g, `-`)}`}
               aria-current={isActive ? `step` : undefined}
             >
-              {index > 0 && (
+              {index > 0 ? (
                 <div
-                  className={`absolute left-0 right-1/2 top-3.5 -z-10 h-0.5 transition-colors duration-300 ${
-                    isCompleted || index <= currentIndex
-                      ? `bg-green-400 dark:bg-green-600`
-                      : `bg-neutral-200 dark:bg-neutral-700`
+                  className={`${styles.connector} ${
+                    isCompleted || index <= currentIndex ? styles.connectorCompleted : styles.connectorIncomplete
                   }`}
                 />
-              )}
+              ) : null}
               <div
-                className={
-                  `relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all duration-300 ` +
-                  (isActive
-                    ? `scale-110 bg-primary-600 text-white shadow-lg ring-2 ring-primary-200 ring-offset-2 dark:ring-primary-900/50`
-                    : isCompleted
-                      ? `bg-green-500 text-white shadow-md dark:bg-green-600`
-                      : `bg-neutral-200 text-neutral-500 dark:bg-neutral-700 dark:text-neutral-400`)
-                }
+                className={`${styles.circle} ${
+                  isActive ? styles.circleActive : isCompleted ? styles.circleCompleted : styles.circleDefault
+                }`}
               >
                 {StepIcon ? (
                   isCompleted && !isActive ? (
-                    <CheckCircleIcon size={16} className={`shrink-0`} />
+                    <CheckCircleIcon size={16} className={styles.icon} />
                   ) : (
-                    <StepIcon size={16} className={`shrink-0`} />
+                    <StepIcon size={16} className={styles.icon} />
                   )
                 ) : isCompleted && !isActive ? (
-                  <CheckIcon className={`h-5 w-5`} />
+                  <CheckIcon className={styles.checkIcon} />
                 ) : (
-                  <span className={`text-sm font-semibold`}>{index + 1}</span>
+                  <span className={styles.stepNumber}>{index + 1}</span>
                 )}
               </div>
               <span
-                className={
-                  `w-full truncate text-center text-[11px] leading-tight transition-colors duration-200 ` +
-                  (isActive
-                    ? `font-bold text-primary-700 dark:text-primary-300`
-                    : isCompleted
-                      ? `font-medium text-green-700 dark:text-green-400`
-                      : `text-neutral-500 dark:text-neutral-500`)
-                }
+                className={`${styles.label} ${
+                  isActive ? styles.labelActive : isCompleted ? styles.labelCompleted : styles.labelDefault
+                }`}
               >
                 {displayLabel}
               </span>

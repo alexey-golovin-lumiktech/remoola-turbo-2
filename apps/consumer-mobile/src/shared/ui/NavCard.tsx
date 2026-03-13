@@ -3,51 +3,10 @@
 import Link from 'next/link';
 import { type ReactNode } from 'react';
 
+import { cn } from '@remoola/ui';
+
 import { ChevronRightIcon } from './icons/ChevronRightIcon';
-
-const defaultRowClassName = `
-  group
-  flex
-  min-h-18
-  items-center
-  justify-between
-  px-6
-  py-5
-  transition-all
-  hover:bg-slate-50
-  dark:hover:bg-slate-700/50
-  active:scale-[0.99]
-`;
-
-const defaultIconContainerClassName = `
-  flex
-  h-12
-  w-12
-  shrink-0
-  items-center
-  justify-center
-  rounded-xl
-  bg-linear-to-br
-  from-primary-50
-  to-primary-100
-  shadow-xs
-  ring-1
-  ring-primary-100
-  dark:from-primary-900/20
-  dark:to-primary-900/10
-  dark:ring-primary-900/30
-`;
-
-const defaultChevronClassName = `
-  h-5
-  w-5
-  shrink-0
-  text-slate-400
-  transition-all
-  group-hover:translate-x-1
-  group-hover:text-primary-500
-  dark:text-slate-500
-`;
+import styles from './NavCard.module.css';
 
 interface NavCardBaseProps {
   icon: ReactNode;
@@ -82,43 +41,39 @@ export function NavCard({
   icon,
   title,
   subtitle,
-  iconContainerClassName = defaultIconContainerClassName,
+  iconContainerClassName,
   trailing,
-  className = defaultRowClassName,
+  className,
   alignStart = false,
 }: NavCardProps) {
-  const innerFlex = alignStart ? `flex items-start gap-3` : `flex items-center gap-4`;
-  const textWrapper = `flex-1 min-w-0`;
-  const titleClass = alignStart
-    ? `truncate text-base font-bold text-slate-900 transition-colors group-hover:text-slate-800 dark:text-slate-100 dark:group-hover:text-white`
-    : `truncate font-semibold text-slate-900 dark:text-white`;
-  const subtitleClass = alignStart
-    ? `mt-1 text-sm text-slate-500 dark:text-slate-400`
-    : `text-sm text-slate-600 dark:text-slate-400`;
+  const rowClass = cn(alignStart ? styles.rowAlignStart : styles.row, className);
+  const innerClass = alignStart ? styles.innerAlignStart : styles.inner;
+  const titleClass = alignStart ? styles.titleAlignStart : styles.title;
+  const subtitleClass = alignStart ? styles.subtitleAlignStart : styles.subtitle;
 
   const content = (
     <>
-      <div className={innerFlex}>
-        <div className={iconContainerClassName}>{icon}</div>
-        <div className={textWrapper}>
+      <div className={innerClass}>
+        <div className={cn(styles.iconContainer, iconContainerClassName)}>{icon}</div>
+        <div className={styles.textWrapper}>
           <h3 className={titleClass}>{title}</h3>
-          {subtitle != null && <p className={subtitleClass}>{subtitle}</p>}
+          {subtitle != null ? <p className={subtitleClass}>{subtitle}</p> : null}
         </div>
       </div>
-      {trailing ?? <ChevronRightIcon className={defaultChevronClassName} />}
+      {trailing ?? <ChevronRightIcon className={styles.chevron} />}
     </>
   );
 
   if (href != null) {
     return (
-      <Link href={href} className={className}>
+      <Link href={href} className={rowClass}>
         {content}
       </Link>
     );
   }
 
   return (
-    <button type="button" onClick={onClick} className={className}>
+    <button type="button" onClick={onClick} className={rowClass}>
       {content}
     </button>
   );

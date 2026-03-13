@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState, useTransition } from 'react';
 
+import styles from './ContactsListView.module.css';
 import { CreateContactModal, type CreateContactData } from './CreateContactModal';
 import { DeleteContactModal } from './DeleteContactModal';
 import { EditContactModal, type EditContactData } from './EditContactModal';
@@ -114,21 +115,9 @@ export function ContactsListView({ contacts }: ContactsListViewProps) {
   };
 
   return (
-    <div
-      className={`
-        min-h-full
-        bg-linear-to-br
-        from-slate-50
-        via-white
-        to-slate-50
-        dark:from-slate-950
-        dark:via-slate-900
-        dark:to-slate-950
-      `}
-      data-testid="consumer-mobile-contacts-list"
-    >
+    <div className={styles.pageBg} data-testid="consumer-mobile-contacts-list">
       <PageHeader
-        icon={<IconBadge icon={<UsersIcon className={`h-6 w-6 text-white`} />} hasRing />}
+        icon={<IconBadge icon={<UsersIcon className={styles.headerIcon} />} hasRing />}
         title="Contacts"
         subtitle={`${contacts.length} ${contacts.length === 1 ? `contact` : `contacts`} in your network`}
         actions={
@@ -139,113 +128,31 @@ export function ContactsListView({ contacts }: ContactsListViewProps) {
               setInitialEmail(null);
               setCreateModalOpen(true);
             }}
-            className={`
-              min-h-11
-              shadow-lg
-              shadow-primary-500/30
-              hover:shadow-xl
-              hover:shadow-primary-500/40
-              transition-all
-              duration-200
-              active:scale-95
-            `}
+            className={styles.addBtn}
           >
-            <PlusIcon className={`h-5 w-5`} />
-            <span className={`ml-2`}>Add Contact</span>
+            <PlusIcon className={styles.addBtnIcon} />
+            <span className={styles.addBtnText}>Add Contact</span>
           </Button>
         }
       />
 
-      <div
-        className={`
-        mx-auto
-        max-w-6xl
-        px-4
-        pt-6
-        pb-6
-        sm:px-6
-        sm:pt-8
-        lg:px-8
-        space-y-6
-        animate-fadeIn
-      `}
-      >
-        {contacts.length > 0 && (
+      <div className={styles.main}>
+        {contacts.length > 0 ? (
           <SearchInput
             value={searchQuery}
             onChange={handleSearchChange}
             placeholder="Search by name, email, or ID..."
           />
-        )}
+        ) : null}
 
         {contacts.length === 0 ? (
-          <div
-            className={`
-            animate-fadeIn
-            rounded-2xl
-            border-2
-            border-dashed
-            border-slate-200
-            bg-linear-to-br
-            from-slate-50/50
-            to-white/50
-            dark:border-slate-700
-            dark:from-slate-800/50
-            dark:to-slate-900/50
-            px-6
-            py-16
-            text-center
-            shadow-inner
-          `}
-          >
-            <div
-              className={`
-              mx-auto
-              mb-6
-              flex
-              h-20
-              w-20
-              items-center
-              justify-center
-              rounded-3xl
-              bg-linear-to-br
-              from-slate-100
-              to-slate-200
-              text-slate-400
-              shadow-lg
-              ring-8
-              ring-slate-100/50
-              dark:from-slate-700
-              dark:to-slate-800
-              dark:text-slate-500
-              dark:ring-slate-800/50
-            `}
-            >
-              <UsersIcon className={`h-10 w-10`} strokeWidth={1.5} />
+          <div className={styles.emptyState}>
+            <div className={styles.emptyStateIcon}>
+              <UsersIcon className={styles.emptyStateIconSvg} strokeWidth={1.5} />
             </div>
-            <h3
-              className={`
-              text-xl
-              font-bold
-              text-slate-900
-              dark:text-slate-100
-            `}
-            >
-              No contacts yet
-            </h3>
-            <p
-              className={`
-              mt-3
-              max-w-sm
-              mx-auto
-              text-base
-              text-slate-600
-              dark:text-slate-400
-            `}
-            >
-              Add contacts to easily send payments and manage your network.
-            </p>
-            <div className={`mt-6`}>
+            <h3 className={styles.emptyStateTitle}>No contacts yet</h3>
+            <p className={styles.emptyStateMessage}>Add contacts to easily send payments and manage your network.</p>
+            <div className={styles.emptyStateBtnWrap}>
               <Button
                 variant="primary"
                 size="md"
@@ -253,19 +160,10 @@ export function ContactsListView({ contacts }: ContactsListViewProps) {
                   setInitialEmail(null);
                   setCreateModalOpen(true);
                 }}
-                className={`
-                  min-h-11
-                  shadow-lg
-                  shadow-primary-500/30
-                  hover:shadow-xl
-                  hover:shadow-primary-500/40
-                  transition-all
-                  duration-200
-                  active:scale-95
-                `}
+                className={styles.addBtn}
               >
-                <PlusIcon className={`h-5 w-5`} />
-                <span className={`ml-2`}>Add your first contact</span>
+                <PlusIcon className={styles.addBtnIcon} />
+                <span className={styles.addBtnText}>Add your first contact</span>
               </Button>
             </div>
           </div>
@@ -283,179 +181,42 @@ export function ContactsListView({ contacts }: ContactsListViewProps) {
             }}
           />
         ) : (
-          <div
-            className={`
-            grid
-            gap-4
-            sm:grid-cols-2
-            lg:grid-cols-3
-          `}
-          >
+          <div className={styles.list}>
             {filteredContacts.map((c, index) => (
-              <div
-                key={c.id}
-                className={`
-                  group
-                  relative
-                  overflow-hidden
-                  rounded-2xl
-                  border
-                  border-slate-200
-                  bg-white
-                  shadow-xs
-                  transition-all
-                  duration-200
-                  hover:shadow-lg
-                  hover:border-slate-300
-                  dark:border-slate-700
-                  dark:bg-slate-800
-                  dark:hover:border-slate-600
-                  animate-fadeIn
-                `}
-                style={{ animationDelay: `${index * 30}ms` }}
-              >
-                <div
-                  className={`
-                  absolute
-                  right-0
-                  top-0
-                  h-full
-                  w-1
-                  bg-linear-to-b
-                  from-primary-500
-                  to-primary-600
-                  opacity-0
-                  transition-opacity
-                  duration-200
-                  group-hover:opacity-100
-                `}
-                />
+              <div key={c.id} className={styles.card} style={{ animationDelay: `${index * 30}ms` }}>
+                <div className={styles.cardAccent} />
 
-                <Link href={`/contacts/${c.id}/details`} className={`block p-5`}>
-                  <div className={`flex items-start gap-4`}>
-                    <div className={`relative`}>
+                <Link href={`/contacts/${c.id}/details`} className={styles.cardLink}>
+                  <div className={styles.cardRow}>
+                    <div className={styles.avatarWrap}>
                       <Avatar name={c.name ?? undefined} email={c.email ?? undefined} size="lg" />
-                      <div
-                        className={`
-                        absolute
-                        -bottom-1
-                        -right-1
-                        flex
-                        h-6
-                        w-6
-                        items-center
-                        justify-center
-                        rounded-full
-                        bg-green-500
-                        ring-2
-                        ring-white
-                        dark:ring-slate-800
-                        shadow-xs
-                      `}
-                      >
-                        <CheckIcon className={`h-3 w-3 text-white`} />
+                      <div className={styles.checkBadge}>
+                        <CheckIcon className={styles.checkIcon} />
                       </div>
                     </div>
-                    <div className={`min-w-0 flex-1`}>
-                      <div
-                        className={`
-                        flex
-                        items-start
-                        justify-between
-                        gap-2
-                      `}
-                      >
-                        <div className={`min-w-0 flex-1`}>
-                          <p
-                            className={`
-                            truncate
-                            font-bold
-                            text-slate-900
-                            dark:text-white
-                            text-base
-                          `}
-                          >
-                            {c.name ?? c.email ?? `Contact`}
-                          </p>
-                          {c.email && c.name && (
-                            <p
-                              className={`
-                              truncate
-                              text-sm
-                              text-slate-600
-                              dark:text-slate-400
-                              mt-0.5
-                            `}
-                            >
-                              {c.email}
-                            </p>
-                          )}
-                          <p
-                            className={`
-                            truncate
-                            text-xs
-                            text-slate-500
-                            dark:text-slate-500
-                            mt-1
-                            font-mono
-                          `}
-                          >
-                            ID: {c.id.slice(0, 8)}...
-                          </p>
+                    <div className={styles.cardContent}>
+                      <div className={styles.cardHeaderRow}>
+                        <div className={styles.cardHeaderLeft}>
+                          <p className={styles.cardTitle}>{c.name ?? c.email ?? `Contact`}</p>
+                          {c.email && c.name ? <p className={styles.cardEmail}>{c.email}</p> : null}
+                          <p className={styles.cardId}>ID: {c.id.slice(0, 8)}...</p>
                         </div>
-                        <ChevronRightIcon
-                          className={`
-                          h-5
-                          w-5
-                          shrink-0
-                          text-slate-400
-                          transition-all
-                          duration-200
-                          group-hover:translate-x-1
-                          group-hover:text-primary-500
-                        `}
-                        />
+                        <ChevronRightIcon className={styles.chevron} />
                       </div>
                     </div>
                   </div>
                 </Link>
 
-                <div
-                  className={`
-                  flex
-                  border-t
-                  border-slate-200
-                  dark:border-slate-700
-                  bg-slate-50/50
-                  dark:bg-slate-900/30
-                `}
-                >
+                <div className={styles.cardActions}>
                   <button
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
                       setEditContact(c);
                     }}
-                    className={`
-                      flex
-                      min-h-11
-                      flex-1
-                      items-center
-                      justify-center
-                      gap-2
-                      px-4
-                      py-3
-                      text-sm
-                      font-semibold
-                      text-slate-700
-                      transition-all
-                      hover:bg-slate-100
-                      dark:text-slate-300
-                      dark:hover:bg-slate-800/50
-                      active:scale-95
-                    `}
+                    className={styles.actionBtn}
                   >
-                    <PencilIcon className={`h-4 w-4`} strokeWidth={2} />
+                    <PencilIcon className={styles.actionBtnIcon} strokeWidth={2} />
                     Edit
                   </button>
                   <button
@@ -464,29 +225,9 @@ export function ContactsListView({ contacts }: ContactsListViewProps) {
                       e.stopPropagation();
                       setDeleteContact(c);
                     }}
-                    className={`
-                      flex
-                      min-h-11
-                      flex-1
-                      items-center
-                      justify-center
-                      gap-2
-                      border-l
-                      border-slate-200
-                      px-4
-                      py-3
-                      text-sm
-                      font-semibold
-                      text-red-600
-                      transition-all
-                      hover:bg-red-50
-                      dark:border-slate-700
-                      dark:text-red-400
-                      dark:hover:bg-red-900/20
-                      active:scale-95
-                    `}
+                    className={styles.actionBtnDelete}
                   >
-                    <TrashIcon className={`h-4 w-4`} strokeWidth={2} />
+                    <TrashIcon className={styles.actionBtnIcon} strokeWidth={2} />
                     Delete
                   </button>
                 </div>

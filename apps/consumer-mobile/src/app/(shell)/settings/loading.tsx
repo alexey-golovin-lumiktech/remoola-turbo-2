@@ -1,41 +1,13 @@
+import styles from './loading.module.css';
+
 export default function SettingsLoading() {
   return (
-    <div className={`space-y-6 animate-pulse`}>
-      <div
-        className={`
-        h-8
-        w-32
-        bg-slate-200
-        rounded
-        dark:bg-slate-700
-      `}
-      />
-
-      <div className={`space-y-4`}>
-        <div
-          className={`
-          h-64
-          bg-slate-200
-          rounded-xl
-          dark:bg-slate-700
-        `}
-        />
-        <div
-          className={`
-          h-48
-          bg-slate-200
-          rounded-xl
-          dark:bg-slate-700
-        `}
-        />
-        <div
-          className={`
-          h-32
-          bg-slate-200
-          rounded-xl
-          dark:bg-slate-700
-        `}
-        />
+    <div className={styles.wrapper}>
+      <div className={styles.titleBar} />
+      <div className={styles.section}>
+        <div className={styles.blockLg} />
+        <div className={styles.blockMd} />
+        <div className={styles.blockSm} />
       </div>
     </div>
   );

@@ -1365,7 +1365,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-03-12</summary>
 
 - **2026-03-12:**
@@ -1380,6 +1380,37 @@
 
   ### 🛠 DevEx
   - Single source for API-code → user message and local-toast copy in consumer-mobile; add new codes/keys in `error-messages.ts` when introducing new API errors or client-side toast scenarios.
+
+</details>
+
+<details open>
+<summary>2026-03-13</summary>
+
+- **2026-03-13:**
+  ### 🚀 Feature
+  - Consumer mobile UI migration to CSS Modules across app routes, feature views,
+    and shared UI components; styling extracted from TSX into colocated
+    `*.module.css` files with no intentional API/ledger behavior changes.
+  - Shared `cn()` helper in `packages/ui` now uses `tailwind-merge` to resolve
+    conflicting utility classes deterministically.
+
+  ### 🔐 Security
+  - Consumer mobile login `next` parameter is sanitized to prevent unsafe redirects
+    (`http(s)://`, `//`, malformed encodings, and CRLF payloads now fall back to
+    `/dashboard`).
+  - Consumer mobile middleware hardening:
+    - validates obvious cookie-token corruption before backend calls,
+    - avoids auth-page redirect loops when access token is expired/invalid,
+    - emits refresh-attempt telemetry headers (`x-remoola-auth-refresh-*`) and
+      `server-timing` metrics for auth refresh observability.
+
+  ### 🛠 DevEx
+  - React/React DOM and corresponding type packages aligned to `19.2.1` across
+    `apps/admin`, `apps/consumer`, `apps/consumer-mobile`, and `packages/ui`.
+  - Added `typescript-plugin-css-modules` to app TS configs for CSS Module typing
+    and editor diagnostics in admin, consumer, and consumer-mobile.
+  - Added Yarn registry pin in root `.yarnrc.yml`
+    (`npmRegistryServer: "https://registry.npmjs.org"`), with lockfile refresh.
 
 </details>
 

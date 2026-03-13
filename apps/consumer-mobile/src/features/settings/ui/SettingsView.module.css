@@ -1,0 +1,108 @@
+/* SettingsView.module.css - primary-*, secondary-*, animate-fadeIn */
+@reference "tailwindcss";
+@reference "../../../app/globals.css";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.root {
+  @apply min-h-full bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950;
+}
+
+.headerIcon {
+  @apply h-6 w-6 text-white;
+}
+
+.errorMain {
+  @apply mx-auto max-w-6xl px-4 pb-6 pt-6 sm:px-6 sm:pt-8 lg:px-8;
+}
+
+.errorCard {
+  @apply animate-fadeIn rounded-2xl border-2 border-dashed border-slate-200 bg-gradient-to-br from-slate-50/50 to-white/50 px-6 py-16 text-center shadow-inner dark:border-slate-700 dark:from-slate-800/50 dark:to-slate-900/50;
+}
+
+.errorIconWrap {
+  @apply mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-slate-100 to-slate-200 text-slate-400 shadow-lg ring-8 ring-slate-100/50 dark:from-slate-700 dark:to-slate-800 dark:text-slate-500 dark:ring-slate-800/50;
+}
+
+.errorIcon {
+  @apply h-10 w-10;
+}
+
+.errorTitle {
+  @apply text-xl font-bold text-slate-900 dark:text-slate-100;
+}
+
+.errorText {
+  @apply mx-auto mt-3 max-w-sm text-base text-slate-600 dark:text-slate-400;
+}
+
+.headerBar {
+  @apply border-b border-slate-200/80 bg-white/95 px-4 py-6 shadow-xs backdrop-blur-lg dark:border-slate-700/80 dark:bg-slate-900/95 sm:px-6 sm:py-7 lg:px-8;
+}
+
+.headerInner {
+  @apply mx-auto max-w-6xl;
+}
+
+.headerRow {
+  @apply flex items-center gap-4;
+}
+
+.headerIconWrap {
+  @apply flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 shadow-lg shadow-primary-500/30 ring-4 ring-primary-50 dark:ring-primary-950 dark:shadow-primary-900/40;
+}
+
+.headerTitle {
+  @apply text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl dark:text-white;
+}
+
+.headerSubtitle {
+  @apply text-sm font-medium text-slate-600 dark:text-slate-400;
+}
+
+.main {
+  @apply mx-auto max-w-6xl space-y-6 px-4 pb-6 pt-6 animate-fadeIn sm:px-6 sm:pt-8 lg:px-8;
+}
+
+.card {
+  @apply overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-md dark:border-slate-700 dark:bg-slate-800;
+}
+
+.cardHeader {
+  @apply border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white px-6 py-5 dark:border-slate-700 dark:from-slate-800 dark:to-slate-800/50;
+}
+
+.cardHeaderRow {
+  @apply flex items-center gap-3;
+}
+
+.cardHeaderIconWrap {
+  @apply flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 shadow-md;
+}
+
+.cardHeaderIcon {
+  @apply h-5 w-5 text-white;
+}
+
+.cardHeaderTitle {
+  @apply text-lg font-bold text-slate-900 dark:text-white;
+}
+
+.cardHeaderSub {
+  @apply text-sm text-slate-600 dark:text-slate-400;
+}
+
+.cardList {
+  @apply divide-y divide-slate-200 dark:divide-slate-700;
+}
+
+.navCardIcon {
+  @apply h-6 w-6 text-primary-600 dark:text-primary-400;
+}
+
+.docIconWrap {
+  @apply flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-secondary-50 to-secondary-100 shadow-xs ring-1 ring-secondary-100 dark:from-secondary-900/20 dark:to-secondary-900/10 dark:ring-secondary-900/30;
+}
+
+.docIcon {
+  @apply h-6 w-6 text-secondary-600 dark:text-secondary-400;
+}

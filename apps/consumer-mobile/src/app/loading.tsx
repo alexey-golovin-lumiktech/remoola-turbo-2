@@ -1,43 +1,11 @@
+import styles from './loading.module.css';
+
 export default function RootLoading() {
   return (
-    <div
-      className={`
-      flex
-      min-h-screen
-      items-center
-      justify-center
-    `}
-      aria-busy="true"
-      aria-label="Loading"
-    >
-      <div
-        className={`
-        flex
-        flex-col
-        items-center
-        gap-4
-      `}
-      >
-        <div
-          className={`
-          h-10
-          w-10
-          animate-pulse
-          rounded-full
-          bg-slate-300
-          dark:bg-slate-600
-        `}
-        />
-        <div
-          className={`
-          h-3
-          w-24
-          animate-pulse
-          rounded-xs
-          bg-slate-200
-          dark:bg-slate-700
-        `}
-        />
+    <div className={styles.wrapper} aria-busy="true" aria-label="Loading">
+      <div className={styles.content}>
+        <div className={styles.spinner} />
+        <div className={styles.bar} />
       </div>
     </div>
   );

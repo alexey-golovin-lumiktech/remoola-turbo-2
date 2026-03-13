@@ -1,0 +1,27 @@
+/* FormCard.module.css */
+@reference "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.root {
+  @apply overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs dark:border-slate-700 dark:bg-slate-800;
+}
+
+.header {
+  @apply border-b border-slate-200 bg-slate-50 px-4 py-4 dark:border-slate-700 dark:bg-slate-800/50 sm:px-6;
+}
+
+.title {
+  @apply text-lg font-semibold text-slate-900 dark:text-white;
+}
+
+.description {
+  @apply mt-1 text-sm text-slate-600 dark:text-slate-400;
+}
+
+.body {
+  @apply px-4 py-5 sm:px-6;
+}
+
+.footer {
+  @apply border-t border-slate-200 bg-slate-50 px-4 py-4 dark:border-slate-700 dark:bg-slate-800/50 sm:px-6;
+}
