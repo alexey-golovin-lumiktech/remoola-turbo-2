@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { type ApiErrorShape } from '@remoola/api-types';
 
 import { clientLogger } from './logger';
+import { getBypassHeaders } from './request-origin';
 
 const DEFAULT_MAX_JSON_BODY_BYTES = 1024 * 1024; // 1 MB
 const FORWARDED_HEADER_ALLOWLIST = new Set([
@@ -53,6 +54,7 @@ export function buildForwardHeaders(sourceHeaders: Headers): Headers {
       headers.append(name, value);
     }
   }
+  for (const [k, v] of Object.entries(getBypassHeaders())) headers.set(k, v);
   return headers;
 }
 

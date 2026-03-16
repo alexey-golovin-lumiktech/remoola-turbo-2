@@ -19,6 +19,20 @@ describe(`createOutcomeIdempotent`, () => {
     } as Parameters<typeof createOutcomeIdempotent>[0];
   }
 
+  function makeKnownRequestError(
+    code: string,
+    target?: string | string[],
+  ): Prisma.PrismaClientKnownRequestError & { meta?: { target?: unknown } } {
+    const error = new Prisma.PrismaClientKnownRequestError(`Prisma error`, {
+      code,
+      clientVersion: `6.x`,
+    }) as Prisma.PrismaClientKnownRequestError & { meta?: { target?: unknown } };
+    if (target !== undefined) {
+      error.meta = { target };
+    }
+    return error;
+  }
+
   it(`calls create once and does not throw on success`, async () => {
     const create = jest.fn().mockResolvedValue(undefined);
     const client = makeClient(create);
@@ -37,12 +51,7 @@ describe(`createOutcomeIdempotent`, () => {
   });
 
   it(`on P2002 returns without throwing (idempotent skip)`, async () => {
-    const create = jest.fn().mockRejectedValue(
-      new Prisma.PrismaClientKnownRequestError(`Unique constraint`, {
-        code: `P2002`,
-        clientVersion: `6.x`,
-      }),
-    );
+    const create = jest.fn().mockRejectedValue(makeKnownRequestError(`P2002`, [`ledger_entry_id`, `external_id`]));
     const client = makeClient(create);
     const logger = { debug: jest.fn() } as unknown as Logger;
 
@@ -53,12 +62,9 @@ describe(`createOutcomeIdempotent`, () => {
   });
 
   it(`on P2002 without logger does not throw`, async () => {
-    const create = jest.fn().mockRejectedValue(
-      new Prisma.PrismaClientKnownRequestError(`Unique constraint`, {
-        code: `P2002`,
-        clientVersion: `6.x`,
-      }),
-    );
+    const create = jest
+      .fn()
+      .mockRejectedValue(makeKnownRequestError(`P2002`, `idx_ledger_entry_outcome_ledger_entry_external`));
     const client = makeClient(create);
 
     await expect(createOutcomeIdempotent(client, data)).resolves.toBeUndefined();
@@ -74,16 +80,20 @@ describe(`createOutcomeIdempotent`, () => {
   });
 
   it(`on other Prisma code rethrows`, async () => {
-    const create = jest.fn().mockRejectedValue(
-      new Prisma.PrismaClientKnownRequestError(`Record not found`, {
-        code: `P2025`,
-        clientVersion: `6.x`,
-      }),
-    );
+    const create = jest.fn().mockRejectedValue(makeKnownRequestError(`P2025`));
     const client = makeClient(create);
 
     await expect(createOutcomeIdempotent(client, data)).rejects.toMatchObject({
       code: `P2025`,
+    });
+  });
+
+  it(`rethrows P2002 when unique target is unrelated`, async () => {
+    const create = jest.fn().mockRejectedValue(makeKnownRequestError(`P2002`, [`some_other_unique`]));
+    const client = makeClient(create);
+
+    await expect(createOutcomeIdempotent(client, data)).rejects.toMatchObject({
+      code: `P2002`,
     });
   });
 });

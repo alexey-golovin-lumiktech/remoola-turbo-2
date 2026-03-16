@@ -11,12 +11,31 @@ import {
   PayWithSavedPaymentMethod,
 } from './dto/payment-method.dto';
 import { ConsumerStripeService } from './stripe.service';
-import { Identity } from '../../../common';
+import { Identity, TrackConsumerAction } from '../../../common';
+import { OriginResolverService } from '../../../shared/origin-resolver.service';
 
 @ApiTags(`Consumer: stripe`)
 @Controller(`consumer/stripe`)
 export class ConsumerStripeController {
-  constructor(private readonly service: ConsumerStripeService) {}
+  private static readonly IDEMPOTENCY_KEY_MAX_LENGTH = 128;
+  private static readonly IDEMPOTENCY_KEY_ALLOWED_REGEX = /^[A-Za-z0-9._:-]+$/;
+
+  constructor(
+    private readonly service: ConsumerStripeService,
+    private readonly originResolver: OriginResolverService,
+  ) {}
+
+  private resolveIdempotencyKey(idempotencyHeader: string | undefined): string {
+    const trimmed = idempotencyHeader?.trim();
+    if (!trimmed) throw new BadRequestException(errorCodes.IDEMPOTENCY_KEY_REQUIRED_PAY_WITH_SAVED_METHOD);
+    if (
+      trimmed.length > ConsumerStripeController.IDEMPOTENCY_KEY_MAX_LENGTH ||
+      !ConsumerStripeController.IDEMPOTENCY_KEY_ALLOWED_REGEX.test(trimmed)
+    ) {
+      throw new BadRequestException(errorCodes.IDEMPOTENCY_KEY_REQUIRED_PAY_WITH_SAVED_METHOD);
+    }
+    return trimmed;
+  }
 
   @Post(`:paymentRequestId/stripe-session`)
   async createStripeSession(
@@ -24,7 +43,8 @@ export class ConsumerStripeController {
     @Param(`paymentRequestId`) paymentRequestId: string,
     @Req() req: express.Request,
   ) {
-    const frontendBaseUrl = req.get(`origin`);
+    const frontendBaseUrl =
+      this.originResolver.validateReturnOrigin(req.get(`origin`)) ?? this.originResolver.resolveConsumerOrigin();
     if (!frontendBaseUrl) throw new BadRequestException(errorCodes.ORIGIN_REQUIRED);
     return this.service.createStripeSession(consumer.id, paymentRequestId, frontendBaseUrl);
   }
@@ -34,6 +54,7 @@ export class ConsumerStripeController {
     return this.service.createStripeSetupIntent(consumer.id);
   }
 
+  @TrackConsumerAction({ action: `consumer.payments.confirm`, resource: `payments` })
   @Post(`confirm`)
   async confirmStripeSetupIntent(
     @Identity() consumer: ConsumerModel, //
@@ -43,16 +64,22 @@ export class ConsumerStripeController {
   }
 
   @Post(`payment-method/metadata`)
-  async getPaymentMethodMetadata(@Body(`stripePaymentMethodId`) stripePaymentMethodId: string) {
-    return this.service.getPaymentMethodMetadata(stripePaymentMethodId);
+  async getPaymentMethodMetadata(
+    @Identity() consumer: ConsumerModel,
+    @Body(`stripePaymentMethodId`) stripePaymentMethodId: string,
+  ) {
+    return this.service.getPaymentMethodMetadata(consumer.id, stripePaymentMethodId);
   }
 
+  @TrackConsumerAction({ action: `consumer.payments.pay_with_saved_method`, resource: `payments` })
   @Post(`:paymentRequestId/pay-with-saved-method`)
   async payWithSavedPaymentMethod(
     @Identity() consumer: ConsumerModel,
     @Param(`paymentRequestId`) paymentRequestId: string,
     @Body() body: PayWithSavedPaymentMethod,
+    @Req() req: express.Request,
   ) {
-    return this.service.payWithSavedPaymentMethod(consumer.id, paymentRequestId, body);
+    const idempotencyKey = this.resolveIdempotencyKey(req.get(`idempotency-key`));
+    return this.service.payWithSavedPaymentMethod(consumer.id, paymentRequestId, body, idempotencyKey);
   }
 }

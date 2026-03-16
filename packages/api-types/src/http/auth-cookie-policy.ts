@@ -1,5 +1,8 @@
 import { COOKIE_KEYS, type TCookieKey } from './constants';
 
+/** Max age for device cookie in seconds (e.g. 365 days). */
+export const DEVICE_COOKIE_MAX_AGE_SECONDS = 365 * 24 * 60 * 60;
+
 const ROOT_COOKIE_PATH = `/` as const;
 const ADMIN_API_PATH_PREFIX = `/api/admin/`;
 const CONSUMER_API_PATH_PREFIX = `/api/consumer/`;
@@ -46,6 +49,25 @@ export function getConsumerAccessTokenCookieKey(runtime: ConsumerCookieRuntime):
   return shouldUseLocalConsumerCookieFallback(runtime)
     ? COOKIE_KEYS.LOCAL_CONSUMER_ACCESS_TOKEN
     : COOKIE_KEYS.CONSUMER_ACCESS_TOKEN;
+}
+
+export function getConsumerDeviceCookieKey(runtime: ConsumerCookieRuntime): TCookieKey {
+  return shouldUseLocalConsumerCookieFallback(runtime)
+    ? COOKIE_KEYS.LOCAL_CONSUMER_DEVICE_ID
+    : COOKIE_KEYS.CONSUMER_DEVICE_ID;
+}
+
+export function getConsumerDeviceCookieKeysForRead(): readonly TCookieKey[] {
+  return [COOKIE_KEYS.CONSUMER_DEVICE_ID, COOKIE_KEYS.LOCAL_CONSUMER_DEVICE_ID];
+}
+
+export function getConsumerDeviceCookieOptions(runtime: ConsumerCookieRuntime): SharedHttpOnlyCookieOptions {
+  return {
+    httpOnly: true,
+    sameSite: `lax`,
+    secure: resolveConsumerSecure(runtime),
+    path: ROOT_COOKIE_PATH,
+  };
 }
 
 export function getConsumerRefreshTokenCookieKey(runtime: ConsumerCookieRuntime): TCookieKey {

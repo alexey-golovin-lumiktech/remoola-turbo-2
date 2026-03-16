@@ -10,7 +10,7 @@ import { ConsumerPaymentsService } from './consumer-payments.service';
 import { PaymentsHistoryQuery, TransferBody, WithdrawBody } from './dto';
 import { StartPayment } from './dto/start-payment.dto';
 import { JwtAuthGuard } from '../../../auth/jwt.guard';
-import { Identity } from '../../../common';
+import { Identity, TrackConsumerAction } from '../../../common';
 
 @ApiTags(`Consumer: Payments`)
 @Controller(`consumer/payments`)
@@ -40,6 +40,7 @@ export class ConsumerPaymentsController {
     });
   }
 
+  @TrackConsumerAction({ action: `consumer.payments.start`, resource: `payments` })
   @Post(`start`)
   startPayment(@Identity() consumer: ConsumerModel, @Body() body: StartPayment) {
     return this.service.startPayment(consumer.id, body);
@@ -57,6 +58,7 @@ export class ConsumerPaymentsController {
     return this.service.getHistory(consumer.id, query);
   }
 
+  @TrackConsumerAction({ action: `consumer.payments.withdraw`, resource: `payments` })
   @Post(`withdraw`)
   @ApiOperation({ summary: `Withdraw funds from consumer balance` })
   withdraw(@Identity() consumer: ConsumerModel, @Body() body: WithdrawBody, @Req() req: express.Request) {
@@ -67,6 +69,7 @@ export class ConsumerPaymentsController {
     return this.service.withdraw(consumer.id, body, idempotencyKey);
   }
 
+  @TrackConsumerAction({ action: `consumer.payments.transfer`, resource: `payments` })
   @Post(`transfer`)
   @ApiOperation({ summary: `Transfer funds to another user` })
   transfer(@Identity() consumer: ConsumerModel, @Body() body: TransferBody, @Req() req: express.Request) {

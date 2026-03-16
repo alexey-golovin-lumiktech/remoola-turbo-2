@@ -203,6 +203,21 @@ Common infrastructure in `apps/api/src/shared` and `apps/api/src/shared-common`:
 - Common DTOs used across admin and consumer APIs.
 - `OriginResolverService`: centralized origin validation for OAuth flows (CONSUMER_APP_ORIGIN, CONSUMER_MOBILE_APP_ORIGIN, ADMIN_APP_ORIGIN).
 
+Recent runtime hardening (API pipeline and scheduler safety):
+
+- Global request pipeline wiring in `apps/api/src/main.ts` now explicitly includes:
+  - `CorrelationIdMiddleware` (normalizes/sets `x-correlation-id`),
+  - `deviceIdMiddleware` (consumer-path browser identity resolution),
+  - `ConsumerActionInterceptor` (decorator-gated append-only action logging).
+- `StripeReversalScheduler` (`apps/api/src/consumer/modules/payment-methods/stripe-reversal.scheduler.ts`) uses transaction-scoped advisory lock selection and bounded per-run reconciliation to reduce pooled-connection lock hazards while preserving idempotent outcome writes.
+- `StripeWebhookService.processStripeEvent` top-level failure path logs sanitized warning telemetry (`stripe_webhook_processing_failed`) without exposing raw webhook payload/error text in logs.
+- Consumer and consumer-mobile BFF mutation routes preserve idempotency/correlation header forwarding and backend `Set-Cookie` passthrough behavior for auth/payment compatibility.
+
+Consumer/browser tracking reference:
+
+- `docs/CONSUMER_BROWSER_IDENTITY_TRACKING.md`: browser identity (`deviceId`), action tracking (`@TrackConsumerAction` + interceptor), append-only `consumer_action_log`, compatibility contracts, and verification checklist.
+- OAuth state-cookie compatibility fallback (`CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK`) is restricted to development/test only; startup/runtime block it in staging/production.
+
 ## Admin App (Next.js)
 
 Admin UI is in `apps/admin`. It has server routes and internal API handlers under `apps/admin/src/app/api` to communicate with the backend.
@@ -321,6 +336,11 @@ Internal Consumer API routes:
 
 Database schema is defined in `packages/database-2/prisma/schema.prisma`. The system uses soft-delete (`deletedAt`) on most models. Column names in the database are **snake_case** (Prisma fields use `@map("snake_case")` where needed). Financial history (ledger entries) is append-only; see `docs/FINANCIAL_SAFETY_AND_DB_COMPLIANCE.md` and `docs/postgresql-design-rules.md` for design rules.
 
+Migration rollout note (ledger dispute uniqueness):
+
+- Migration `20260316150500_enforce_ledger_entry_dispute_unique` prefers a non-transactional predeploy step on non-empty databases: precreate the unique index concurrently, then run the migration to attach the constraint using that index.
+- For CI/ephemeral databases, the migration includes an in-transaction fallback that creates the index when missing; this path is compatibility-safe but may hold stronger locks on non-empty datasets.
+
 ### Core Models
 
 - `AdminModel`: admin users with type (`AdminType`: `SUPER`, `ADMIN`), email, password, salt.
@@ -330,6 +350,7 @@ Database schema is defined in `packages/database-2/prisma/schema.prisma`. The sy
 - `ResetPasswordModel`: password reset token and expiration.
 - `StripeWebhookEventModel`: deduplication of Stripe webhook events by unique `event_id` (at-most-once processing).
 - `AuthAuditLogModel`, `AuthLoginLockoutModel`: login audit and per-email lockout.
+- `ConsumerActionLogModel`: append-only consumer action telemetry. Uses monthly partitioning by `created_at`; the primary key is intentionally `(id, created_at)` so uniqueness remains valid under partitioning rules.
 
 ### Profile and Identity Details
 
@@ -391,7 +412,6 @@ Shared packages used across apps:
 - `packages/security-utils`: crypto, token, hashing helpers, and OAuth crypto utilities (PKCE verifier/challenge, state signing/hashing, nonce generation).
 - `packages/shared-constants`: shared constants.
 - `packages/test-db`: test database utilities.
-- `packages/ui`: shared UI components.
 - `packages/ui`: shared UI components and `cn()` class merging via `tailwind-merge`.
 - `packages/eslint-config`, `packages/jest-config`, `packages/typescript-config`: tooling.
 

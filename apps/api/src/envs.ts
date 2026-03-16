@@ -84,9 +84,6 @@ const nest = {
     `http://127.0.0.1:3002`,
     `http://localhost:3002`,
     `http://[::1]:3002`,
-    `https://127.0.0.1:3002`,
-    `https://localhost:3002`,
-    `https://[::1]:3002`,
     `https://remoola-turbo-2-consumer-mobile.vercel.app`,
     // for admin app (port 3010)
     `http://127.0.0.1:3010`,
@@ -97,9 +94,6 @@ const nest = {
     `http://127.0.0.1:3001`,
     `http://localhost:3001`,
     `http://[::1]:3001`,
-    `https://127.0.0.1:3001`,
-    `https://localhost:3001`,
-    `https://[::1]:3001`,
     `https://remoola-turbo-2-consumer.vercel.app`,
     // for api (port 3333)
     `http://127.0.0.1:3333`,
@@ -163,6 +157,7 @@ const app = {
   DEFAULT_ADMIN_PASSWORD: z.string().default(`RegularWirebill@Admin123!`),
   SUPER_ADMIN_EMAIL: z.string().default(`super.admin@wirebill.com`),
   SUPER_ADMIN_PASSWORD: z.string().default(`SuperWirebill@Admin123!`),
+  ALLOW_PRODUCTION_BOOTSTRAP_SEED: zBoolean(false).optional().default(false),
 };
 
 const debugging = {
@@ -186,6 +181,22 @@ const security = {
 const common = {
   // probably should be in consumer-exchange.service.ts but put here to avoid importing envs in service file
   EXCHANGE_RATE_MAX_AGE_HOURS: z.coerce.number().optional().default(24),
+  CONSUMER_DEVICE_ID_ALLOW_UNSIGNED_FALLBACK: zBoolean(false).optional().default(false),
+  CONSUMER_ACTION_LOG_RETENTION_DAYS: z.coerce.number().min(7).max(3650).default(30),
+  CONSUMER_ACTION_LOG_PARTITION_PRECREATE_MONTHS: z.coerce.number().min(1).max(12).default(2),
+  CONSUMER_ACTION_LOG_MAINTENANCE_CRON: z.string().default(`17 */6 * * *`),
+  CONSUMER_ACTION_LOG_RETENTION_CRON: z.string().default(`23 3 * * *`),
+  CONSUMER_ACTION_LOG_BACKPRESSURE_ENABLED: zBoolean(true).optional().default(true),
+  CONSUMER_ACTION_LOG_LOW_PRIORITY_MAX_PER_SECOND: z.coerce.number().min(10).max(5000).default(250),
+  CONSUMER_ACTION_LOG_OVERFLOW_SAMPLE_RATE: z.coerce.number().min(0).max(1).default(0.1),
+  CONSUMER_ACTION_LOG_BACKPRESSURE_SUMMARY_INTERVAL_SECONDS: z.coerce.number().min(5).max(3600).default(60),
+  CONSUMER_ACTION_LOG_BACKPRESSURE_SUMMARY_MIN_DROPPED: z.coerce.number().min(1).max(100000).default(10),
+  CONSUMER_ACTION_LOG_CALLBACK_FAILURE_RATE_LIMIT_ENABLED: zBoolean(true).optional().default(true),
+  CONSUMER_ACTION_LOG_CALLBACK_FAILURE_MAX_PER_WINDOW: z.coerce.number().min(1).max(10000).default(30),
+  CONSUMER_ACTION_LOG_CALLBACK_FAILURE_WINDOW_SECONDS: z.coerce.number().min(1).max(3600).default(60),
+  CONSUMER_ACTION_LOG_STORE_IP_ADDRESS: zBoolean(false).optional().default(false),
+  CONSUMER_ACTION_LOG_STORE_USER_AGENT: zBoolean(false).optional().default(false),
+  CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK: zBoolean(false).optional().default(false),
 };
 
 const schema = z.object({
@@ -208,6 +219,61 @@ const schema = z.object({
 });
 const parsed = schema.safeParse(process.env);
 if (!parsed.success) throw new Error(JSON.stringify(parsed.error, null, 2));
+const isProduction = parsed.data.NODE_ENV === ENVIRONMENT.PRODUCTION;
+
+function isPlaceholderOrMissing(value: string | undefined, placeholders: readonly string[]): boolean {
+  if (!value) return true;
+  return placeholders.includes(value);
+}
+if (
+  isProduction &&
+  (!parsed.data.SECURE_SESSION_SECRET || parsed.data.SECURE_SESSION_SECRET === `SECURE_SESSION_SECRET`)
+) {
+  throw new Error(`SECURE_SESSION_SECRET must be explicitly configured in production`);
+}
+if (isProduction && parsed.data.CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK) {
+  throw new Error(`CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK must remain disabled in production`);
+}
+if (
+  (parsed.data.NODE_ENV === ENVIRONMENT.STAGING || parsed.data.NODE_ENV === ENVIRONMENT.PRODUCTION) &&
+  parsed.data.CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK
+) {
+  throw new Error(`CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK is allowed only in development/test`);
+}
+if (isProduction) {
+  const requiredNonPlaceholder: Array<{ key: string; value: string | undefined; placeholders: readonly string[] }> = [
+    { key: `JWT_ACCESS_SECRET`, value: JWT_ACCESS_SECRET, placeholders: [`JWT_ACCESS_SECRET`] },
+    { key: `JWT_REFRESH_SECRET`, value: JWT_REFRESH_SECRET, placeholders: [`JWT_REFRESH_SECRET`] },
+    { key: `JWT_SECRET`, value: parsed.data.JWT_SECRET, placeholders: [`JWT_SECRET`] },
+    { key: `STRIPE_SECRET_KEY`, value: parsed.data.STRIPE_SECRET_KEY, placeholders: [`STRIPE_SECRET_KEY`] },
+    { key: `STRIPE_WEBHOOK_SECRET`, value: parsed.data.STRIPE_WEBHOOK_SECRET, placeholders: [`STRIPE_WEBHOOK_SECRET`] },
+    {
+      key: `DEFAULT_ADMIN_PASSWORD`,
+      value: parsed.data.DEFAULT_ADMIN_PASSWORD,
+      placeholders: [`RegularWirebill@Admin123!`],
+    },
+    { key: `SUPER_ADMIN_PASSWORD`, value: parsed.data.SUPER_ADMIN_PASSWORD, placeholders: [`SuperWirebill@Admin123!`] },
+    {
+      key: `NEST_APP_EXTERNAL_ORIGIN`,
+      value: parsed.data.NEST_APP_EXTERNAL_ORIGIN,
+      placeholders: [`NEST_APP_EXTERNAL_ORIGIN`],
+    },
+    {
+      key: `CONSUMER_APP_ORIGIN`,
+      value: parsed.data.CONSUMER_APP_ORIGIN,
+      placeholders: [`CONSUMER_APP_ORIGIN`],
+    },
+  ];
+  const invalidKeys = requiredNonPlaceholder
+    .filter(({ value, placeholders }) => isPlaceholderOrMissing(value, placeholders))
+    .map(({ key }) => key);
+  if (invalidKeys.length > 0) {
+    throw new Error(
+      `Production env contains missing/placeholder sensitive values: ${invalidKeys.join(`, `)}. ` +
+        `Set explicit secrets before startup.`,
+    );
+  }
+}
 
 export const envs = { ...parsed.data, ENVIRONMENT, environments };
 

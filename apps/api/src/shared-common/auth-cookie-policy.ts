@@ -4,10 +4,14 @@ import {
   getConsumerAccessTokenCookieKey,
   getAdminAuthCookieOptions,
   getConsumerAuthCookieOptions,
+  getConsumerDeviceCookieKey,
+  getConsumerDeviceCookieOptions,
+  getConsumerDeviceCookieKeysForRead,
   getConsumerRefreshTokenCookieKey,
   getCookieClearOptions,
   getCsrfCookieOptions,
   getOAuthStateCookieOptions,
+  DEVICE_COOKIE_MAX_AGE_SECONDS,
   type AuthCookieRuntime,
   type ConsumerCookieRuntime,
   type SharedHttpOnlyCookieOptions,
@@ -85,4 +89,28 @@ export function getApiOAuthStateCookieOptions(req?: express.Request): SharedHttp
     ...getApiAuthCookieRuntime(),
     isSecureRequest: isSecureExpressRequest(req),
   });
+}
+
+export function getApiConsumerDeviceCookieKey(req?: express.Request): TCookieKey {
+  return getConsumerDeviceCookieKey(getApiConsumerCookieRuntime(req));
+}
+
+export function getApiConsumerDeviceCookieKeysForRead(): readonly TCookieKey[] {
+  return getConsumerDeviceCookieKeysForRead();
+}
+
+export function getApiConsumerDeviceCookieOptions(
+  req?: express.Request,
+): SharedHttpOnlyCookieOptions & { maxAge: number } {
+  return {
+    ...getConsumerDeviceCookieOptions(getApiConsumerCookieRuntime(req)),
+    // Express expects maxAge in milliseconds.
+    maxAge: DEVICE_COOKIE_MAX_AGE_SECONDS * 1000,
+  };
+}
+
+export function getApiConsumerDeviceCookieClearOptions(
+  req?: express.Request,
+): Pick<SharedHttpOnlyCookieOptions, `httpOnly` | `path` | `sameSite` | `secure`> {
+  return getCookieClearOptions(getApiConsumerDeviceCookieOptions(req));
 }

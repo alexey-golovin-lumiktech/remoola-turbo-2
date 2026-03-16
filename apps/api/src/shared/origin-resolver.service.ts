@@ -7,6 +7,7 @@ export class OriginResolverService {
   private readonly defaultOriginPlaceholder = `CONSUMER_APP_ORIGIN`;
   private readonly mobileOriginPlaceholder = `CONSUMER_MOBILE_APP_ORIGIN`;
   private readonly adminOriginPlaceholder = `ADMIN_APP_ORIGIN`;
+  private readonly localDevAllowedPorts = new Set([`3001`, `3002`, `3010`, `3333`]);
 
   normalizeOrigin(origin: string): string {
     return origin.replace(/\/$/, ``);
@@ -14,6 +15,20 @@ export class OriginResolverService {
 
   private isValidOrigin(origin: string | undefined, placeholder: string): boolean {
     return !!origin && origin !== placeholder;
+  }
+
+  private isDevOrTestEnv(): boolean {
+    return envs.NODE_ENV === envs.ENVIRONMENT.DEVELOPMENT || envs.NODE_ENV === envs.ENVIRONMENT.TEST;
+  }
+
+  private isLoopbackHost(hostname: string): boolean {
+    return hostname === `localhost` || hostname === `127.0.0.1` || hostname === `[::1]` || hostname === `::1`;
+  }
+
+  private isAllowedLocalDevOrigin(origin: URL): boolean {
+    if (!this.isDevOrTestEnv()) return false;
+    if (!this.isLoopbackHost(origin.hostname)) return false;
+    return this.localDevAllowedPorts.has(origin.port);
   }
 
   getAllowedOrigins(): Set<string> {
@@ -48,6 +63,12 @@ export class OriginResolverService {
       const normalized = this.normalizeOrigin(url.origin);
 
       if (this.getAllowedOrigins().has(normalized)) {
+        return normalized;
+      }
+
+      // Keep local OAuth redirects stable during development/test even when
+      // CORS_ALLOWED_ORIGINS is narrowed by env overrides.
+      if (this.isAllowedLocalDevOrigin(url)) {
         return normalized;
       }
     } catch {

@@ -2,7 +2,7 @@
 
 **Canonical:** [governance/04_FINANCIAL_SAFETY_COMPLIANCE.md](../governance/04_FINANCIAL_SAFETY_COMPLIANCE.md) — edit there.
 
-**Last updated:** 2026-03-12  
+**Last updated:** 2026-03-16  
 **Scope:** Remoola monorepo — ledger, payments, Stripe webhooks, raw SQL, PostgreSQL design rules  
 **Status:** Audit complete; critical fixes applied (append-only ledger, idempotency, raw SQL, health/archive).
 
@@ -27,7 +27,7 @@ This document consolidates fintech safety and DB compliance work: design-rule co
 - **Ledger / financial history:** Append-only. No application-level UPDATE/DELETE on `ledger_entry`; status transitions and dispute data go to `ledger_entry_outcome` and `ledger_entry_dispute`; DB trigger syncs `ledger_entry.status` for existing balance queries. Balance for "completed only" uses status `= COMPLETED`; balance including pending uses `IN ('COMPLETED','PENDING')` (not a single string equality).
 - **Idempotency:** DB-enforced where required: `ledger_entry.idempotency_key` unique; `stripe_webhook_event.event_id` unique; insert-before-handling for webhooks.
 - **Concurrency:** Operation-specific advisory locks (`:withdraw`, `:transfer`, `:exchange`, `:reversal`, `:stripe-reversal`). Balance is read inside the same transaction; serialization is by advisory lock per (consumer, operation). Row-level lock (`SELECT ... FOR UPDATE`) is not required for correctness with this design—double-spend is prevented by the advisory lock.
-- **Raw SQL:** Parameterized (`Prisma.sql`); DB column names used (`consumer_id`, `deleted_at`, etc.); health does not expose raw `error.message`; archive search `query` capped.
+- **Raw SQL / webhook failure telemetry:** Parameterized (`Prisma.sql`); DB column names used (`consumer_id`, `deleted_at`, etc.); health does not expose raw `error.message`; Stripe webhook top-level failures emit sanitized warning telemetry only (`stripe_webhook_processing_failed`, no raw payload/error text); archive search `query` capped.
 - **Tests:** Concurrency specs and unit specs updated; TypeScript and tests pass in `apps/api`.
 - **BFF proxy boundaries (admin/consumer/consumer-mobile):** Proxy routes forward an explicit header allowlist (instead of raw header passthrough), preserve all `Set-Cookie` headers, enforce JSON mutation boundaries (`application/json` + valid JSON), and reject oversized JSON payloads with `413 PAYLOAD_TOO_LARGE`.
 
@@ -48,7 +48,7 @@ This document consolidates fintech safety and DB compliance work: design-rule co
 | Area | Change |
 |------|--------|
 | **Schema** | `LedgerEntryOutcomeModel`, `LedgerEntryDisputeModel`; relations `LedgerEntryModel.outcomes`, `LedgerEntryModel.disputes`. |
-| **Migrations** | `20260225045952_stripe_webhook_event_dedup` (additive); `20260225120000_standardize_columns_snake_case` (RENAME only); `20260225140000_ledger_entry_outcome_append_only` (additive); `20260303120000_ledger_entry_outcome_unique_external` (additive); `20260304120000_ledger_entry_outcome_dispute_cascade` (FK RESTRICT→CASCADE); `20260310123000_consumer_auth_sessions` (additive, auth_sessions table for consumer sessions). |
+| **Migrations** | `20260225045952_stripe_webhook_event_dedup` (additive); `20260225120000_standardize_columns_snake_case` (RENAME only); `20260225140000_ledger_entry_outcome_append_only` (additive); `20260303120000_ledger_entry_outcome_unique_external` (additive); `20260304120000_ledger_entry_outcome_dispute_cascade` (FK RESTRICT→CASCADE); `20260310123000_consumer_auth_sessions` (additive, auth_sessions table for consumer sessions); `20260316150500_enforce_ledger_entry_dispute_unique` (constraint attach with predeploy-concurrent preferred path and CI-safe in-migration fallback). |
 | **Stripe webhook** | Insert into `stripe_webhook_event` first; on P2002 return 200. Ledger status/dispute via `ledgerEntryOutcomeModel.create` / `ledgerEntryDisputeModel.create` (no `ledgerEntryModel.update`/`updateMany`). |
 | **Stripe service / reversal scheduler** | Replaced `ledgerEntryModel.updateMany` with find + `ledgerEntryOutcomeModel.create` per entry. |
 
@@ -85,7 +85,7 @@ This document consolidates fintech safety and DB compliance work: design-rule co
 | Race conditions (concurrent withdraw/transfer/exchange) | Advisory lock per consumer + operation suffix; transfer acquires two locks in sorted order; balance read inside same transaction. |
 | Broken state machine / invalid status | Status transitions via outcome table + trigger; no direct UPDATE on ledger_entry for status. |
 | Migration / schema mismatch | Additive migrations; raw SQL uses actual DB column names (`consumer_id`, `deleted_at`, `currency_code`, etc.). |
-| SQL injection / info leakage | All production raw queries parameterized (`Prisma.sql`); health response does not expose raw `error.message`; archive search `query` capped. |
+| SQL injection / info leakage | All production raw queries parameterized (`Prisma.sql`); health response does not expose raw `error.message`; Stripe webhook top-level failure logging is sanitized; archive search `query` capped. |
 
 ### 4.2 Business risks
 
@@ -157,6 +157,7 @@ Production raw queries use **parameterized** APIs; DB column names are **snake_c
 | `20260225140000_ledger_entry_outcome_append_only` | Creates `ledger_entry_outcome`, `ledger_entry_dispute`; trigger `sync_ledger_entry_status_from_outcome`. Additive. |
 | `20260303120000_ledger_entry_outcome_unique_external` | Partial unique index on `(ledger_entry_id, external_id)` where `external_id IS NOT NULL`; outcome idempotency. Additive. |
 | `20260304120000_ledger_entry_outcome_dispute_cascade` | `ledger_entry_outcome` and `ledger_entry_dispute` FKs: ON DELETE RESTRICT → CASCADE; consumer delete cascades. Prefer soft-delete for production. |
+| `20260316150500_enforce_ledger_entry_dispute_unique` | Enforces `UNIQUE(ledger_entry_id, stripe_dispute_id)` by attaching a named unique index; preferred rollout is predeploy `CREATE UNIQUE INDEX CONCURRENTLY`, with CI-safe in-migration fallback index creation if missing. |
 
 **Deploy order:** Run `prisma migrate deploy` (or `migrate dev`) for these migrations before deploying the app.
 

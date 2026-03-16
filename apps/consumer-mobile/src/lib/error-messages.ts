@@ -127,6 +127,7 @@ const MESSAGE_MAP: Record<string, string> = {
   [errorCodes.PAYMENT_METHOD_CANNOT_REUSE_NO_ID]: `This payment method can't be used because it's not fully set up. Please add a new card.`,
   [errorCodes.PAYMENT_METHOD_CANNOT_REUSE_ATTACH]: `This card can't be used again for security reasons. Please add a new card to pay.`,
   [errorCodes.PAYMENT_METHOD_CANNOT_REUSE_VERIFY]: `This card can't be used again. Please add a new card and try the payment again.`,
+  [errorCodes.IDEMPOTENCY_KEY_REQUIRED_PAY_WITH_SAVED_METHOD]: `A request id is required to pay with a saved payment method. Please refresh the app and try again.`,
 
   // Invoice, Documents
   [errorCodes.PAYMENT_REQUEST_NOT_FOUND_INVOICE]: `We couldn't find this payment request to generate the invoice. The link may be wrong or the request was removed.`,

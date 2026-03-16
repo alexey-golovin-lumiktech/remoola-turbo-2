@@ -7,6 +7,7 @@ import {
   InternalServerErrorException,
   Logger,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import Stripe from 'stripe';
 
@@ -26,6 +27,41 @@ export class ConsumerStripeService {
 
   constructor(private prisma: PrismaService) {
     this.stripe = new Stripe(envs.STRIPE_SECRET_KEY, { apiVersion: `2025-11-17.clover` });
+  }
+
+  private isTransientStripeError(error: unknown): boolean {
+    if (!(error instanceof Stripe.errors.StripeError)) return false;
+    return (
+      error.type === `StripeAPIError` ||
+      error.type === `StripeConnectionError` ||
+      error.type === `StripeRateLimitError` ||
+      error.type === `StripeIdempotencyError`
+    );
+  }
+
+  private shouldAppendDeniedOutcome(error: unknown): boolean {
+    if (error instanceof Stripe.errors.StripeError) {
+      return error.type === `StripeCardError`;
+    }
+    if (typeof error === `object` && error != null && `type` in error) {
+      return (error as { type?: unknown }).type === `StripeCardError`;
+    }
+    return false;
+  }
+
+  private buildCheckoutSessionIdempotencyKey(paymentRequestId: string): string {
+    // One checkout-session side effect per payment request.
+    return `checkout-session:${paymentRequestId}`;
+  }
+
+  private buildSavedMethodIdempotencyKey(paymentRequestId: string): string {
+    // Deliberately scoped to paymentRequestId (not payment method id) to enforce
+    // at-most-once external charge attempt per request across retries/replays.
+    return `saved-method:${paymentRequestId}`;
+  }
+
+  private buildEnsureCustomerIdempotencyKey(consumerId: string): string {
+    return `ensure-customer:${consumerId}`;
   }
 
   private async getPaymentRequestForPayer(consumerId: string, paymentRequestId: string) {
@@ -177,25 +213,28 @@ export class ConsumerStripeService {
     const amountMinor = Math.round(Number(pr.amount) * 10 ** digits);
 
     // 1) Create Stripe Checkout session
-    const session = await this.stripe.checkout.sessions.create({
-      payment_method_types: [`card`],
-      mode: `payment`,
-      line_items: [
-        {
-          price_data: {
-            currency: pr.currencyCode.toLowerCase(),
-            product_data: {
-              name: `Payment to ${pr.requester?.email ?? pr.requesterEmail ?? `recipient`}`,
+    const session = await this.stripe.checkout.sessions.create(
+      {
+        payment_method_types: [`card`],
+        mode: `payment`,
+        line_items: [
+          {
+            price_data: {
+              currency: pr.currencyCode.toLowerCase(),
+              product_data: {
+                name: `Payment to ${pr.requester?.email ?? pr.requesterEmail ?? `recipient`}`,
+              },
+              unit_amount: amountMinor,
             },
-            unit_amount: amountMinor,
+            quantity: 1,
           },
-          quantity: 1,
-        },
-      ],
-      success_url: `${frontendBaseUrl}/payments/${pr.id}?success=1`,
-      cancel_url: `${frontendBaseUrl}/payments/${pr.id}?canceled=1`,
-      metadata: { paymentRequestId: pr.id, consumerId },
-    });
+        ],
+        success_url: `${frontendBaseUrl}/payments/${pr.id}?success=1`,
+        cancel_url: `${frontendBaseUrl}/payments/${pr.id}?canceled=1`,
+        metadata: { paymentRequestId: pr.id, consumerId },
+      },
+      { idempotencyKey: this.buildCheckoutSessionIdempotencyKey(pr.id) },
+    );
 
     // 2) Append-only: record WAITING outcome; idempotent on retry (P2002 = already processed)
     const entries = await this.prisma.ledgerEntryModel.findMany({
@@ -218,8 +257,19 @@ export class ConsumerStripeService {
     return { url: session.url };
   }
 
-  async getPaymentMethodMetadata(paymentMethodId: string) {
-    const pm = await this.stripe.paymentMethods.retrieve(paymentMethodId);
+  async getPaymentMethodMetadata(consumerId: string, stripePaymentMethodId: string) {
+    const owned = await this.prisma.paymentMethodModel.findFirst({
+      where: {
+        consumerId,
+        stripePaymentMethodId,
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+    if (!owned) {
+      throw new BadRequestException(errorCodes.PAYMENT_METHOD_NOT_FOUND);
+    }
+    const pm = await this.stripe.paymentMethods.retrieve(stripePaymentMethodId);
 
     return {
       brand: pm.card?.brand,
@@ -240,14 +290,26 @@ export class ConsumerStripeService {
       return { consumer, customerId: consumer.stripeCustomerId };
     }
 
-    const customer = await this.stripe.customers.create({
-      email: consumer.email,
-    });
+    const customer = await this.stripe.customers.create(
+      {
+        email: consumer.email,
+      },
+      { idempotencyKey: this.buildEnsureCustomerIdempotencyKey(consumer.id) },
+    );
 
-    await this.prisma.consumerModel.update({
-      where: { id: consumer.id },
+    const claimed = await this.prisma.consumerModel.updateMany({
+      where: { id: consumer.id, stripeCustomerId: null },
       data: { stripeCustomerId: customer.id },
     });
+    if (claimed.count === 0) {
+      const existing = await this.prisma.consumerModel.findUnique({
+        where: { id: consumer.id },
+        select: { stripeCustomerId: true },
+      });
+      if (existing?.stripeCustomerId) {
+        return { consumer, customerId: existing.stripeCustomerId };
+      }
+    }
 
     return { consumer, customerId: customer.id };
   }
@@ -323,7 +385,12 @@ export class ConsumerStripeService {
   }
 
   // Pay with saved payment method
-  async payWithSavedPaymentMethod(consumerId: string, paymentRequestId: string, body: PayWithSavedPaymentMethod) {
+  async payWithSavedPaymentMethod(
+    consumerId: string,
+    paymentRequestId: string,
+    body: PayWithSavedPaymentMethod,
+    idempotencyKey: string,
+  ) {
     // 1) Validate payment method belongs to consumer
     const paymentMethod = await this.prisma.paymentMethodModel.findFirst({
       where: {
@@ -409,20 +476,24 @@ export class ConsumerStripeService {
 
     try {
       // 5) Create and confirm payment intent with saved payment method
-      const paymentIntent = await this.stripe.paymentIntents.create({
-        amount: amountMinor,
-        currency: pr.currencyCode.toLowerCase(),
-        customer: customerId,
-        payment_method: paymentMethod.stripePaymentMethodId,
-        confirm: true, // Confirm immediately since payment method is saved
-        off_session: true, // This is an off-session payment
-        metadata: {
-          paymentRequestId: pr.id,
-          consumerId,
-          paymentMethodId: paymentMethod.id,
+      const paymentIntent = await this.stripe.paymentIntents.create(
+        {
+          amount: amountMinor,
+          currency: pr.currencyCode.toLowerCase(),
+          customer: customerId,
+          payment_method: paymentMethod.stripePaymentMethodId,
+          confirm: true, // Confirm immediately since payment method is saved
+          off_session: true, // This is an off-session payment
+          metadata: {
+            paymentRequestId: pr.id,
+            consumerId,
+            paymentMethodId: paymentMethod.id,
+            clientIdempotencyKey: idempotencyKey,
+          },
+          description: `Payment to ${pr.requester?.email ?? pr.requesterEmail ?? `recipient`}`,
         },
-        description: `Payment to ${pr.requester?.email ?? pr.requesterEmail ?? `recipient`}`,
-      });
+        { idempotencyKey: this.buildSavedMethodIdempotencyKey(paymentRequestId) },
+      );
 
       // 6) Append-only: record COMPLETED outcome; idempotent on retry (P2002 = already processed)
       if (paymentIntent.status === `succeeded`) {
@@ -469,28 +540,38 @@ export class ConsumerStripeService {
           nextAction: paymentIntent.next_action,
         };
       }
-    } catch {
-      this.logger.warn({ message: `Payment with saved payment method failed` });
-
-      // Append-only: record DENIED outcome (idempotent on retry via externalId); single tx for atomicity
-      await this.prisma.$transaction(async (tx) => {
-        const entries = await tx.ledgerEntryModel.findMany({
-          where: { paymentRequestId: pr.id },
-          select: { id: true },
-        });
-        for (const entry of entries) {
-          await createOutcomeIdempotent(
-            tx,
-            {
-              ledgerEntryId: entry.id,
-              status: $Enums.TransactionStatus.DENIED,
-              source: `stripe`,
-              externalId: `denied:stripe:pr:${pr.id}:entry:${entry.id}`,
-            },
-            this.logger,
-          );
-        }
+    } catch (error) {
+      this.logger.warn({
+        message: `Payment with saved payment method failed`,
+        stripeErrorType: error instanceof Stripe.errors.StripeError ? error.type : null,
       });
+
+      if (this.isTransientStripeError(error)) {
+        throw new ServiceUnavailableException(`Payment processing temporarily unavailable`);
+      }
+
+      if (this.shouldAppendDeniedOutcome(error)) {
+        // Append DENIED only for terminal card declines.
+        await this.prisma.$transaction(async (tx) => {
+          const entries = await tx.ledgerEntryModel.findMany({
+            where: { paymentRequestId: pr.id },
+            select: { id: true },
+          });
+          for (const entry of entries) {
+            await createOutcomeIdempotent(
+              tx,
+              {
+                ledgerEntryId: entry.id,
+                status: $Enums.TransactionStatus.DENIED,
+                source: `stripe`,
+                externalId: `denied:stripe:pr:${pr.id}:entry:${entry.id}`,
+              },
+              this.logger,
+            );
+          }
+        });
+        throw new BadRequestException(`Payment could not be completed`);
+      }
 
       throw new InternalServerErrorException(`Payment could not be completed`);
     }

@@ -18,5 +18,9 @@ export const COOKIE_KEYS = {
   LOCAL_CONSUMER_REFRESH_TOKEN: LOCAL_CONSUMER_REFRESH_TOKEN,
   GOOGLE_OAUTH_STATE: `google_oauth_state`,
   CSRF_TOKEN: `csrf_token`,
+  /** Consumer device id (backend-issued); host-only in production. */
+  CONSUMER_DEVICE_ID: `__Host-device_id`,
+  /** Local HTTP fallback when __Host-* cannot be set. */
+  LOCAL_CONSUMER_DEVICE_ID: `consumer_device_id`,
 } as const;
 export type TCookieKey = (typeof COOKIE_KEYS)[keyof typeof COOKIE_KEYS];

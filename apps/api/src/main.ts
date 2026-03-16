@@ -15,12 +15,19 @@ import { $Enums, type PrismaClient } from '@remoola/database-2';
 
 import { AdminModule } from './admin/admin.module';
 import { AppModule } from './app.module';
-import { PrismaExceptionFilter, CorrelationIdMiddleware, LoggingInterceptor } from './common';
+import {
+  ConsumerActionInterceptor,
+  PrismaExceptionFilter,
+  CorrelationIdMiddleware,
+  deviceIdMiddleware,
+  LoggingInterceptor,
+} from './common';
 import { ConsumerModule } from './consumer/consumer.module';
 import { envs } from './envs';
 import { AuthGuard } from './guards';
 import { NgrokIngressService } from './infrastructure/ngrok/ngrok-ingress.service';
 import { TransformResponseInterceptor } from './interceptors';
+import { ConsumerActionLogService } from './shared/consumer-action-log.service';
 import { PrismaService } from './shared/prisma.service';
 import { passwordUtils } from './shared-common';
 
@@ -198,6 +205,12 @@ async function bootstrap() {
 
   const isOnVercel = envs.VERCEL === 1;
   if (isOnVercel) process.env.NO_COLOR = `true`;
+  if (envs.CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK) {
+    logger.warn(
+      `CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK is enabled; ` +
+        `restrict to controlled non-production debugging only`,
+    );
+  }
 
   app.setGlobalPrefix(`api`);
   app.set(`trust proxy`, 1);
@@ -215,6 +228,7 @@ async function bootstrap() {
   });
   app.use(express.urlencoded({ extended: true, limit: `10mb` }));
   app.use(cookieParser(envs.SECURE_SESSION_SECRET));
+  app.use(deviceIdMiddleware);
   app.use(`/uploads`, express.static(join(process.cwd(), `uploads`)));
   app.use((req, res, next) => {
     if (req.path === `/` || req.path === `/api`) {
@@ -245,10 +259,20 @@ async function bootstrap() {
   const reflector = app.get(Reflector);
   const jwtService = app.get(JwtService);
   const prisma = app.get(PrismaService);
+  const consumerActionLog = app.get(ConsumerActionLogService);
   await waitForDatabase(prisma);
-  await seed(prisma);
+  const shouldRunBootstrapSeed = envs.NODE_ENV !== envs.ENVIRONMENT.PRODUCTION || envs.ALLOW_PRODUCTION_BOOTSTRAP_SEED;
+  if (shouldRunBootstrapSeed) {
+    await seed(prisma);
+  } else {
+    logger.log(`Skipping bootstrap seed in production (ALLOW_PRODUCTION_BOOTSTRAP_SEED=false)`);
+  }
   app.useGlobalGuards(new AuthGuard(reflector, jwtService, prisma));
-  app.useGlobalInterceptors(new TransformResponseInterceptor(reflector), new LoggingInterceptor());
+  app.useGlobalInterceptors(
+    new TransformResponseInterceptor(reflector),
+    new LoggingInterceptor(),
+    new ConsumerActionInterceptor(consumerActionLog, reflector),
+  );
   app.useGlobalFilters(new PrismaExceptionFilter());
 
   const port = envs.PORT || 3000;

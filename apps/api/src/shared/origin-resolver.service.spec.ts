@@ -5,6 +5,13 @@ import { envs } from '../envs';
 
 jest.mock(`../envs`, () => ({
   envs: {
+    NODE_ENV: `test`,
+    ENVIRONMENT: {
+      PRODUCTION: `production`,
+      STAGING: `staging`,
+      DEVELOPMENT: `development`,
+      TEST: `test`,
+    },
     CONSUMER_APP_ORIGIN: `https://consumer.example.com`,
     CONSUMER_MOBILE_APP_ORIGIN: `https://mobile.example.com`,
     ADMIN_APP_ORIGIN: `https://admin.example.com`,
@@ -62,6 +69,16 @@ describe(`OriginResolverService`, () => {
   });
 
   describe(`validateReturnOrigin`, () => {
+    let originalEnvs: typeof envs;
+
+    beforeEach(() => {
+      originalEnvs = { ...envs };
+    });
+
+    afterEach(() => {
+      Object.assign(envs, originalEnvs);
+    });
+
     it(`should return undefined for undefined input`, () => {
       expect(service.validateReturnOrigin(undefined)).toBeUndefined();
     });
@@ -83,6 +100,22 @@ describe(`OriginResolverService`, () => {
     it(`should handle trailing slashes`, () => {
       const result = service.validateReturnOrigin(`https://consumer.example.com/`);
       expect(result).toBe(`https://consumer.example.com`);
+    });
+
+    it(`should allow localhost mobile origin in development when allowlist is narrowed`, () => {
+      (envs as any).NODE_ENV = `development`;
+      (envs as any).CORS_ALLOWED_ORIGINS = [`https://allowed1.example.com`];
+
+      const result = service.validateReturnOrigin(`http://localhost:3002/path`);
+      expect(result).toBe(`http://localhost:3002`);
+    });
+
+    it(`should reject localhost mobile origin in production when not allowlisted`, () => {
+      (envs as any).NODE_ENV = `production`;
+      (envs as any).CORS_ALLOWED_ORIGINS = [`https://allowed1.example.com`];
+
+      const result = service.validateReturnOrigin(`http://localhost:3002/path`);
+      expect(result).toBeUndefined();
     });
   });
 

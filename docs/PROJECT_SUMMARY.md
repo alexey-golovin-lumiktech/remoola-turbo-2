@@ -1,6 +1,6 @@
 # Remoola — Project Summary
 
-**Remoola** is a payments and FX platform delivered as a Turborepo monorepo: one NestJS backend and two Next.js frontends (admin and consumer), with shared types, database, and UI packages.
+**Remoola** is a payments and FX platform delivered as a Turborepo monorepo: one NestJS backend and three Next.js frontends (admin, consumer, and consumer-mobile), with shared types, database, and UI packages.
 
 ---
 
@@ -59,6 +59,9 @@ Note: `yarn test` and `yarn test:e2e` are intended for local development only; t
 | `docs/PROJECT_SUMMARY.md` | High-level overview (this file; start here) |
 | `docs/PROJECT_DOCUMENTATION.md` | Full API, screens, DB schema, packages |
 | `docs/FEATURES_CURRENT.md` | Implemented features and current state |
+| `docs/CONSUMER_BROWSER_IDENTITY_TRACKING.md` | Browser identity (`deviceId`) + consumer action-log design, contracts, rollout |
 | `docs/FINANCIAL_SAFETY_AND_DB_COMPLIANCE.md` | Fintech safety, ledger invariants, idempotency |
+| `docs/MIGRATION_SAFETY_AUDIT.md` | Migration safety audit and rollout risk notes |
+| `docs/SECURITY_AUDIT_AUTH_WEBHOOKS_PII.md` | Security audit notes for auth/webhooks/PII surfaces |
 | `docs/project-design-rules.md` | Project design rules (boundaries, naming, migrations) |
 | `docs/postgresql-design-rules.md` | PostgreSQL design rules |

@@ -1,6 +1,6 @@
 # Remoola
 
-Remoola is a Turborepo monorepo for the Remoola platform: a NestJS API plus two Next.js frontends (admin and consumer). The repo also contains shared types, UI primitives, and Prisma database tooling.
+Remoola is a Turborepo monorepo for the Remoola platform: a NestJS API plus three Next.js frontends (admin, consumer, and consumer-mobile). The repo also contains shared types, UI primitives, and Prisma database tooling.
 
 ## Repo layout
 
@@ -86,6 +86,9 @@ Project root `docs/` are synced(single source of truth for features, API, safety
 - `docs/PROJECT_SUMMARY.md` — high-level project overview (start here).
 - `docs/PROJECT_DOCUMENTATION.md` — overview of API (base path `/api`), admin, consumer, and database.
 - `docs/FEATURES_CURRENT.md` — implemented features and current repo state.
+- `docs/CONSUMER_BROWSER_IDENTITY_TRACKING.md` — browser identity (`deviceId`) and consumer action-log architecture, compatibility contracts, rollout/runbook.
 - `docs/FINANCIAL_SAFETY_AND_DB_COMPLIANCE.md` — fintech safety, ledger invariants, idempotency.
+- `docs/MIGRATION_SAFETY_AUDIT.md` — migration safety notes and governance-oriented migration assessment.
+- `docs/SECURITY_AUDIT_AUTH_WEBHOOKS_PII.md` — auth/webhook/PII-focused security audit notes.
 - `docs/project-design-rules.md` — project design rules (dead code, boundaries, naming, migrations).
 - `docs/postgresql-design-rules.md` — PostgreSQL schema and migration rules.

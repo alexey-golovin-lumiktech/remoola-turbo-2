@@ -3,6 +3,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 
 import { JWT_ACCESS_SECRET, JWT_ACCESS_TTL_SECONDS } from '../envs';
+import { ConsumerActionLogPartitionMaintenanceScheduler, ConsumerActionLogRetentionScheduler } from './auth';
 import { ConsumerAuthController } from './auth/auth.controller';
 import { ConsumerAuthService } from './auth/auth.service';
 import { GoogleAuthService } from './auth/google-auth.service';
@@ -46,6 +47,8 @@ import { ConsumerSettingsModule } from './modules/settings/consumer-settings.mod
     GoogleAuthService,
     OAuthStateStoreService,
     OauthStateCleanupScheduler,
+    ConsumerActionLogPartitionMaintenanceScheduler,
+    ConsumerActionLogRetentionScheduler,
     OriginResolverService,
   ],
 })

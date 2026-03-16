@@ -1383,7 +1383,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-03-13</summary>
 
 - **2026-03-13:**
@@ -1411,6 +1411,58 @@
     and editor diagnostics in admin, consumer, and consumer-mobile.
   - Added Yarn registry pin in root `.yarnrc.yml`
     (`npmRegistryServer: "https://registry.npmjs.org"`), with lockfile refresh.
+
+</details>
+
+<details open>
+<summary>2026-03-16</summary>
+
+- **2026-03-16:**
+  ### 🚀 Feature
+  - Consumer browser identity + action tracking rollout:
+    - canonical browser identity remains backend-issued `deviceId` (no parallel identity key);
+    - selective endpoint tracking via `@TrackConsumerAction` + `ConsumerActionInterceptor`;
+    - append-only `consumer_action_log` persistence with partition maintenance/retention scheduler support.
+  - Added supporting runtime wiring and contracts for identity/logging pipeline:
+    - common export wiring for decorator/interceptor/middleware indexes and bootstrap integration in `apps/api/src/main.ts`;
+    - correlation-id normalization middleware hardening and corresponding middleware tests;
+    - shared consumer action log service + partition utility/scheduler modules integrated into consumer auth module.
+
+  ### 🔐 Security / Financial Safety
+  - OAuth callback hardening:
+    - startup now hard-fails in staging/production if `CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK=true`;
+    - runtime callback path allows missing-state-cookie fallback only in development/test; staging/production return `invalid_state`;
+    - CSRF contracts for refresh/logout/logout-all preserved and covered by tests.
+  - Stripe webhook top-level failure handling now emits a sanitized warning event (`stripe_webhook_processing_failed`) with class/shape metadata only (no raw error message/body in logs).
+  - Hardened `StripeReversalScheduler` advisory locking to be connection-safe in pooled environments:
+    - replaced session-scoped `pg_try_advisory_lock`/`pg_advisory_unlock` calls with transaction-scoped `pg_try_advisory_xact_lock` inside a single interactive Prisma transaction;
+    - removed separate unlock flow and made lock lifecycle transaction-bound by PostgreSQL;
+    - retained idempotent outcome writes (`createOutcomeIdempotent`) and status-aware external IDs.
+  - Added scheduler transaction timeout guard (`120000ms`) to keep lock scope bounded operationally.
+
+  ### 🗄 Database & Migrations
+  - `20260316150500_enforce_ledger_entry_dispute_unique` rollout safety documented and aligned:
+    - preferred path for non-empty DBs is non-transactional predeploy `CREATE UNIQUE INDEX CONCURRENTLY` followed by migration constraint attach (`UNIQUE USING INDEX`);
+    - migration keeps a CI/ephemeral-safe fallback path that creates the index in-migration when missing, with lock-risk notice for non-empty databases.
+
+  ### 🧪 Testing
+  - Updated `stripe-reversal.scheduler.spec.ts` to reflect transaction-scoped locking behavior and lock-not-acquired flow under tx client mocks.
+  - Verified scheduler unit tests pass after lock hardening.
+  - Expanded contract coverage for browser identity and action logging:
+    - deviceId middleware generation/reuse/regeneration and consumer-scope behavior;
+    - consumer action interceptor success/failure/no-op semantics;
+    - consumer action log service allowlist + write-failure safety;
+    - auth CSRF/OAuth compatibility tests and dedicated e2e coverage for action-log and retention behavior.
+
+  ### 📄 Documentation
+  - Added/updated docs for governance-sensitive behavior and rollout:
+    - `docs/CONSUMER_BROWSER_IDENTITY_TRACKING.md` now documents production OAuth fallback block, partitioned PK rationale, identifier-only dynamic SQL rationale, and rollout/runbook notes;
+    - `docs/PROJECT_DOCUMENTATION.md` now reflects `ConsumerActionLogModel` partitioned PK rationale;
+    - changelog entry aligned with the full change set for pre-PR doc-sync requirements.
+  - Captured schema/contracts/UI alignment for this rollout:
+    - `packages/database-2/prisma/schema.prisma` + migration `20260315041301_add_consumer_action_log` for append-only partitioned action log;
+    - shared cookie-policy/constants updates in `packages/api-types` + `packages/shared-constants` and API wrappers;
+    - consumer and consumer-mobile payment-detail idempotency/error-message updates with BFF route test coverage.
 
 </details>
 

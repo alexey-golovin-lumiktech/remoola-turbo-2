@@ -36,6 +36,10 @@ export class StripeWebhookService {
     this.stripe = new Stripe(envs.STRIPE_SECRET_KEY, { apiVersion: `2025-11-17.clover` });
   }
 
+  private buildEnsureCustomerIdempotencyKey(consumerId: string): string {
+    return `ensure-customer:${consumerId}`;
+  }
+
   async startVerifyMeStripeSession(consumerId: string) {
     await this.consumerPaymentsService.assertProfileCompleteForVerification(consumerId);
     const session = await this.stripe.identity.verificationSessions.create({
@@ -73,8 +77,8 @@ export class StripeWebhookService {
     try {
       const event = this.stripe.webhooks.constructEvent(req.rawBody, signature, envs.STRIPE_WEBHOOK_SECRET);
 
-      // Dedupe marker by Stripe event id. On duplicates, continue processing idempotently
-      // so retries can recover from any prior partial failure after marker insertion.
+      // Dedupe marker by Stripe event id. On P2002 (duplicate), return 200 and skip processing
+      // per GATE-007: Stripe replay → 200 + no-op.
       try {
         await this.prisma.stripeWebhookEventModel.create({
           data: { eventId: event.id },
@@ -82,13 +86,14 @@ export class StripeWebhookService {
       } catch (dedupErr) {
         if (dedupErr instanceof Prisma.PrismaClientKnownRequestError && dedupErr.code === `P2002`) {
           this.logger.debug({
-            message: `Stripe webhook duplicate event detected, reprocessing idempotently`,
+            message: `Stripe webhook duplicate event, skipping`,
             eventId: event.id,
             eventType: event.type,
           });
-        } else {
-          throw dedupErr;
+          res.json({ received: true });
+          return;
         }
+        throw dedupErr;
       }
 
       switch (event.type) {
@@ -143,7 +148,13 @@ export class StripeWebhookService {
 
       res.json({ received: true });
       return;
-    } catch {
+    } catch (error: unknown) {
+      this.logger.warn({
+        event: `stripe_webhook_processing_failed`,
+        errorClass: error instanceof Error ? error.name : `UnknownError`,
+        hasRawBody: Boolean(req.rawBody),
+        hasSignatureHeader: typeof signature === `string` && signature.length > 0,
+      });
       res.status(400).json({ received: false, error: `Webhook processing failed` });
       return;
     }
@@ -293,14 +304,26 @@ export class StripeWebhookService {
       return { consumer, customerId: consumer.stripeCustomerId };
     }
 
-    const customer = await this.stripe.customers.create({
-      email: consumer.email,
-    });
+    const customer = await this.stripe.customers.create(
+      {
+        email: consumer.email,
+      },
+      { idempotencyKey: this.buildEnsureCustomerIdempotencyKey(consumer.id) },
+    );
 
-    await this.prisma.consumerModel.update({
-      where: { id: consumer.id },
+    const claimed = await this.prisma.consumerModel.updateMany({
+      where: { id: consumer.id, stripeCustomerId: null },
       data: { stripeCustomerId: customer.id },
     });
+    if (claimed.count === 0) {
+      const existing = await this.prisma.consumerModel.findUnique({
+        where: { id: consumer.id },
+        select: { stripeCustomerId: true },
+      });
+      if (existing?.stripeCustomerId) {
+        return { consumer, customerId: existing.stripeCustomerId };
+      }
+    }
 
     return { consumer, customerId: customer.id };
   }
@@ -566,24 +589,6 @@ export class StripeWebhookService {
     const idempotencyKeyRequester =
       stripeObjectId != null ? `reversal:${kindLower}:${stripeObjectId}:requester` : undefined;
 
-    const reversalEntries = await this.prisma.ledgerEntryModel.findMany({
-      where: {
-        paymentRequestId,
-        type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
-        status: { in: [$Enums.TransactionStatus.COMPLETED, $Enums.TransactionStatus.PENDING] },
-      },
-      select: { amount: true },
-    });
-
-    const alreadyReversed = reversalEntries.reduce((sum, entry) => {
-      const entryAmount = Number(entry.amount);
-      return entryAmount > 0 ? sum + entryAmount : sum;
-    }, 0);
-
-    const remaining = requestAmount - alreadyReversed;
-    const finalAmount = Math.min(amount, remaining);
-    if (finalAmount <= 0) return;
-
     const rail = kind === `CHARGEBACK` ? $Enums.PaymentRail.STRIPE_CHARGEBACK : $Enums.PaymentRail.STRIPE_REFUND;
     const baseMetadata = {
       rail,
@@ -594,9 +599,33 @@ export class StripeWebhookService {
     } as Prisma.InputJsonValue;
 
     const ledgerId = randomUUID();
+    let appendedAmount = 0;
 
     try {
       await this.prisma.$transaction(async (tx) => {
+        await tx.$executeRaw(Prisma.sql`
+          SELECT pg_advisory_xact_lock(hashtext((${paymentRequestId} || ':stripe-reversal-pr')::text)::bigint)
+        `);
+
+        const reversalEntries = await tx.ledgerEntryModel.findMany({
+          where: {
+            paymentRequestId,
+            type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
+            status: { in: [$Enums.TransactionStatus.COMPLETED, $Enums.TransactionStatus.PENDING] },
+          },
+          select: { amount: true },
+        });
+        const alreadyReversed = reversalEntries.reduce((sum, entry) => {
+          const entryAmount = Number(entry.amount);
+          return entryAmount > 0 ? sum + entryAmount : sum;
+        }, 0);
+        const remaining = requestAmount - alreadyReversed;
+        const finalAmount = Math.min(amount, remaining);
+        if (finalAmount <= 0) {
+          return;
+        }
+        appendedAmount = finalAmount;
+
         if (requesterId) {
           await tx.$executeRaw(Prisma.sql`
             SELECT pg_advisory_xact_lock(hashtext((${requesterId} || ':stripe-reversal')::text)::bigint)
@@ -620,7 +649,7 @@ export class StripeWebhookService {
             type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
             currencyCode,
             status: $Enums.TransactionStatus.COMPLETED,
-            amount: finalAmount,
+            amount: appendedAmount,
             createdBy: `stripe`,
             updatedBy: `stripe`,
             metadata: baseMetadata,
@@ -638,7 +667,7 @@ export class StripeWebhookService {
               type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
               currencyCode,
               status: $Enums.TransactionStatus.COMPLETED,
-              amount: -finalAmount,
+              amount: -appendedAmount,
               createdBy: `stripe`,
               updatedBy: `stripe`,
               metadata: baseMetadata,
@@ -656,12 +685,16 @@ export class StripeWebhookService {
       throw err;
     }
 
+    if (appendedAmount <= 0) {
+      return;
+    }
+
     await this.sendReversalEmails({
       paymentRequestId,
       payerId,
       requesterId,
       requesterEmail: requesterEmail ?? undefined,
-      amount: finalAmount,
+      amount: appendedAmount,
       currencyCode,
       kind,
       reason: typeof metadata?.reason === `string` ? metadata.reason : null,
@@ -776,9 +809,12 @@ export class StripeWebhookService {
     const status =
       refund.status === `succeeded`
         ? $Enums.TransactionStatus.COMPLETED
-        : refund.status === `failed`
+        : refund.status === `failed` || refund.status === `canceled`
           ? $Enums.TransactionStatus.DENIED
           : $Enums.TransactionStatus.PENDING;
+    // Keep refund outcome idempotency transition-scoped so state can progress
+    // (e.g. pending -> completed) under at-least-once webhook delivery.
+    const transitionExternalId = `refund-update:${refund.id}:${status}`;
 
     await this.prisma.$transaction(async (tx) => {
       const entries = await tx.ledgerEntryModel.findMany({
@@ -792,7 +828,7 @@ export class StripeWebhookService {
             ledgerEntryId: entry.id,
             status,
             source: `stripe`,
-            externalId: refund.id,
+            externalId: transitionExternalId,
           },
           this.logger,
         );
@@ -860,6 +896,40 @@ export class StripeWebhookService {
 
   private async recordDisputeStatus(params: { paymentIntentId: string; dispute: Stripe.Dispute }) {
     const { paymentIntentId, dispute } = params;
+    const createDisputeIfMissing = async (ledgerEntryId: string) => {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.$executeRaw(Prisma.sql`
+          SELECT pg_advisory_xact_lock(hashtext((${ledgerEntryId} || ':' || ${dispute.id} || ':dispute')::text)::bigint)
+        `);
+        const existingDispute = await tx.ledgerEntryDisputeModel.findFirst({
+          where: { ledgerEntryId, stripeDisputeId: dispute.id },
+          select: { id: true },
+        });
+        if (existingDispute) {
+          return;
+        }
+        try {
+          await tx.ledgerEntryDisputeModel.create({
+            data: {
+              ledgerEntryId,
+              stripeDisputeId: dispute.id,
+              metadata: {
+                status: dispute.status,
+                amount: dispute.amount,
+                reason: dispute.reason ?? null,
+                updatedAt: new Date().toISOString(),
+              },
+            },
+          });
+        } catch (err) {
+          if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === `P2002`) {
+            return;
+          }
+          throw err;
+        }
+      });
+    };
+
     const entry = await this.prisma.ledgerEntryModel.findFirst({
       where: {
         stripeId: paymentIntentId,
@@ -875,33 +945,11 @@ export class StripeWebhookService {
         select: { ledgerEntryId: true },
       });
       if (!byOutcome) return;
-      await this.prisma.ledgerEntryDisputeModel.create({
-        data: {
-          ledgerEntryId: byOutcome.ledgerEntryId,
-          stripeDisputeId: dispute.id,
-          metadata: {
-            status: dispute.status,
-            amount: dispute.amount,
-            reason: dispute.reason ?? null,
-            updatedAt: new Date().toISOString(),
-          },
-        },
-      });
+      await createDisputeIfMissing(byOutcome.ledgerEntryId);
       return;
     }
 
     // Append-only: record dispute in ledger_entry_dispute (AGENTS 6.10)
-    await this.prisma.ledgerEntryDisputeModel.create({
-      data: {
-        ledgerEntryId: entry.id,
-        stripeDisputeId: dispute.id,
-        metadata: {
-          status: dispute.status,
-          amount: dispute.amount,
-          reason: dispute.reason ?? null,
-          updatedAt: new Date().toISOString(),
-        },
-      },
-    });
+    await createDisputeIfMissing(entry.id);
   }
 }

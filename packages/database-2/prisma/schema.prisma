@@ -90,6 +90,31 @@ model AdminActionAuditLogModel {
   @@map("admin_action_audit_log")
 }
 
+/// Append-only consumer action log (first touch, auth, payments, exchange). Backend-managed deviceId; no PII/secrets in metadata.
+model ConsumerActionLogModel {
+  id String @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  deviceId     String         @map("device_id") @db.Text
+  consumerId   String?        @map("consumer_id") @db.Uuid
+  consumer     ConsumerModel? @relation(fields: [consumerId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  action       String         @db.Text
+  resource     String?        @db.Text
+  resourceId   String?        @map("resource_id") @db.Text
+  metadata     Json?          @db.JsonB
+  ipAddress    String?        @map("ip_address") @db.Text
+  userAgent    String?        @map("user_agent") @db.Text
+  correlationId String?       @map("correlation_id") @db.Text
+  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime       @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@id([id, createdAt])
+  @@index([deviceId, createdAt])
+  @@index([consumerId, createdAt])
+  @@index([consumerId, deviceId])
+  @@index([action, createdAt])
+  @@map("consumer_action_log")
+}
+
 model AuthLoginLockoutModel {
   identityType   String    @map("identity_type") @db.Text
   email          String    @db.Text
@@ -217,6 +242,7 @@ model ConsumerModel {
   ledgerEntries          LedgerEntryModel[]
   autoConversionRules    WalletAutoConversionRuleModel[]
   scheduledFxConversions ScheduledFxConversionModel[]
+  consumerActionLogs     ConsumerActionLogModel[]
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -558,6 +584,7 @@ model LedgerEntryDisputeModel {
 
   ledgerEntry LedgerEntryModel @relation(fields: [ledgerEntryId], references: [id], onDelete: Cascade)
 
+  @@unique([ledgerEntryId, stripeDisputeId])
   @@index([ledgerEntryId])
   @@map("ledger_entry_dispute")
 }

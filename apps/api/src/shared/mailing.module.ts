@@ -25,6 +25,6 @@ import { OriginResolverService } from './origin-resolver.service';
     }),
   ],
   providers: [MailingService, OriginResolverService],
-  exports: [MailingService],
+  exports: [MailingService, OriginResolverService],
 })
 export class MailingModule {}

@@ -10,7 +10,7 @@ import { ExchangeRateBatchBody } from './dto/rate-batch.dto';
 import { ExchangeRateQuery } from './dto/rate-query.dto';
 import { ScheduleConversionBody } from './dto/schedule-conversion.dto';
 import { UpdateAutoConversionRuleBody } from './dto/update-auto-conversion-rule.dto';
-import { Identity } from '../../../common';
+import { Identity, TrackConsumerAction } from '../../../common';
 
 @ApiTags(`Consumer Exchange`)
 @ApiBearerAuth()
@@ -28,11 +28,13 @@ export class ConsumerExchangeController {
     return this.service.getRatesBatch(body.pairs);
   }
 
+  @TrackConsumerAction({ action: `consumer.exchange.quote`, resource: `exchange` })
   @Post(`quote`)
   quote(@Body() body: ConvertCurrencyBody) {
     return this.service.quote(body);
   }
 
+  @TrackConsumerAction({ action: `consumer.exchange.convert`, resource: `exchange` })
   @Post(`convert`)
   convert(@Identity() consumer: ConsumerModel, @Body() body: ConvertCurrencyBody) {
     return this.service.convert(consumer.id, body);

@@ -97,6 +97,13 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
   const [sending, setSending] = useState(false);
   const [generatingInvoice, setGeneratingInvoice] = useState(false);
 
+  function createIdempotencyKey(): string {
+    if (typeof crypto !== `undefined` && typeof crypto.randomUUID === `function`) {
+      return crypto.randomUUID();
+    }
+    return `fallback-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+  }
+
   useEffect(() => {
     async function load() {
       setLoading(true);
@@ -151,7 +158,10 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
         // Pay with saved payment method
         const res = await fetch(`/api/stripe/${paymentRequestId}/pay-with-saved-method`, {
           method: `POST`,
-          headers: { 'content-type': `application/json` },
+          headers: {
+            'content-type': `application/json`,
+            'idempotency-key': createIdempotencyKey(),
+          },
           credentials: `include`,
           body: JSON.stringify({ paymentMethodId: selectedPaymentMethodId }),
         });

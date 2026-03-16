@@ -17,6 +17,23 @@ export type CreateOutcomeIdempotentData = {
   externalId?: string | null;
 };
 
+const OUTCOME_UNIQUE_INDEX_NAME = `idx_ledger_entry_outcome_ledger_entry_external`;
+
+function isKnownOutcomeUniqueTarget(target: unknown): boolean {
+  if (typeof target === `string`) {
+    return target.includes(OUTCOME_UNIQUE_INDEX_NAME);
+  }
+  if (Array.isArray(target)) {
+    const normalized = target
+      .filter((value): value is string => typeof value === `string`)
+      .map((value) => value.toLowerCase());
+    const hasLedgerEntryId = normalized.includes(`ledgerentryid`) || normalized.includes(`ledger_entry_id`);
+    const hasExternalId = normalized.includes(`externalid`) || normalized.includes(`external_id`);
+    return hasLedgerEntryId && hasExternalId;
+  }
+  return false;
+}
+
 /**
  * Creates a ledger entry outcome. On unique constraint violation (P2002) for
  * (ledger_entry_id, external_id), treats as already-processed and returns without throwing.
@@ -36,7 +53,13 @@ export async function createOutcomeIdempotent(
   try {
     await client.ledgerEntryOutcomeModel.create({ data: createInput });
   } catch (err) {
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === `P2002`) {
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === `P2002` &&
+      typeof data.externalId === `string` &&
+      data.externalId.length > 0 &&
+      isKnownOutcomeUniqueTarget((err as { meta?: { target?: unknown } }).meta?.target)
+    ) {
       logger?.debug?.(`Ledger outcome already recorded (idempotent skip)`);
       return;
     }

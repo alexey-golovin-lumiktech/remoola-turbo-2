@@ -33,9 +33,9 @@ import { ConsumerSignup } from './dto';
 import { GoogleOAuthService } from './google-oauth.service';
 import { OAuthStateStoreService } from './oauth-state-store.service';
 import { LoginBody } from '../../auth/dto/login.dto';
-import { Identity, type IIdentityContext, PublicEndpoint } from '../../common';
+import { Identity, type IIdentityContext, PublicEndpoint, TrackConsumerAction } from '../../common';
 import { CONSUMER } from '../../dtos';
-import { JWT_ACCESS_TTL, JWT_REFRESH_TTL } from '../../envs';
+import { envs, JWT_ACCESS_TTL, JWT_REFRESH_TTL } from '../../envs';
 import { TransformResponse } from '../../interceptors';
 import { OriginResolverService } from '../../shared/origin-resolver.service';
 import {
@@ -125,6 +125,10 @@ export class ConsumerAuthController {
     return this.originResolver.validateReturnOrigin(returnOrigin);
   }
 
+  private isOAuthStateCookieFallbackAllowedInEnv(): boolean {
+    return envs.NODE_ENV === envs.ENVIRONMENT.DEVELOPMENT || envs.NODE_ENV === envs.ENVIRONMENT.TEST;
+  }
+
   private ensureCsrf(req: express.Request) {
     const originHeader = req.headers.origin;
     if (typeof originHeader === `string` && !this.originResolver.validateReturnOrigin(originHeader)) {
@@ -190,6 +194,7 @@ export class ConsumerAuthController {
   }
 
   @PublicEndpoint()
+  @TrackConsumerAction({ action: `consumer.auth.login`, resource: `auth` })
   @Post(`login`)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ operationId: `consumer_auth_login` })
@@ -206,6 +211,7 @@ export class ConsumerAuthController {
     return data;
   }
 
+  @TrackConsumerAction({ action: `consumer.auth.oauth_start`, resource: `auth` })
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   @PublicEndpoint()
   @Get(`google/start`)
@@ -227,6 +233,7 @@ export class ConsumerAuthController {
         : undefined;
 
     const validatedReturnOrigin = this.validateReturnOrigin(returnOrigin);
+
     const nextPath = this.normalizeNextPath(next);
     const nonce = oauthCrypto.generateOAuthNonce();
     const codeVerifier = GoogleOAuthService.createCodeVerifier();
@@ -253,6 +260,8 @@ export class ConsumerAuthController {
     return response.redirect(authUrl);
   }
 
+  @TrackConsumerAction({ action: `consumer.auth.oauth_callback`, resource: `auth` })
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @PublicEndpoint()
   @Get(`google/callback`)
   async googleOAuthCallback(
@@ -271,16 +280,54 @@ export class ConsumerAuthController {
       return response.redirect(url);
     };
 
+    const consumeStateReturnOrigin = async (maybeState?: string) => {
+      if (!maybeState) return undefined;
+      const record = await this.oauthStateStore.consume(maybeState);
+      return record?.returnOrigin;
+    };
+
     if (error) return failureRedirect(`access_denied`);
 
     const stateCookie = req.cookies?.[GOOGLE_OAUTH_STATE_COOKIE_KEY];
     if (!state) return failureRedirect(`invalid_state`);
-    if (stateCookie && stateCookie !== state) return failureRedirect(`invalid_state`);
-    if (!code) return failureRedirect(`missing_code`);
-
+    if (stateCookie && stateCookie !== state) {
+      if (!this.isOAuthStateCookieFallbackAllowedInEnv()) {
+        const mismatchReturnOrigin = await consumeStateReturnOrigin(state);
+        return failureRedirect(`invalid_state`, mismatchReturnOrigin);
+      }
+      this.logger.warn({
+        event: `oauth_state_cookie_mismatch_auto_fallback_dev_or_test`,
+        nodeEnv: envs.NODE_ENV,
+      });
+    }
+    if (!stateCookie && !envs.CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK) {
+      if (!this.isOAuthStateCookieFallbackAllowedInEnv()) {
+        const missingCookieReturnOrigin = await consumeStateReturnOrigin(state);
+        return failureRedirect(`invalid_state`, missingCookieReturnOrigin);
+      }
+      this.logger.warn({
+        event: `oauth_state_cookie_missing_auto_fallback_dev_or_test`,
+        nodeEnv: envs.NODE_ENV,
+      });
+    }
+    if (!stateCookie && envs.CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK) {
+      if (!this.isOAuthStateCookieFallbackAllowedInEnv()) {
+        const fallbackBlockedReturnOrigin = await consumeStateReturnOrigin(state);
+        this.logger.error({
+          event: `oauth_state_cookie_missing_fallback_blocked_non_local_env`,
+          nodeEnv: envs.NODE_ENV,
+        });
+        return failureRedirect(`invalid_state`, fallbackBlockedReturnOrigin);
+      }
+      this.logger.warn({
+        event: `oauth_state_cookie_missing_fallback`,
+        nodeEnv: envs.NODE_ENV,
+      });
+    }
     const stateRecord = await this.oauthStateStore.consume(state);
     if (!stateRecord) return failureRedirect(`expired_state`);
     if (Date.now() - stateRecord.createdAt > this.oauthStateTtlMs) return failureRedirect(`expired_state`);
+    if (!code) return failureRedirect(`missing_code`, stateRecord.returnOrigin);
 
     const stateReturnOrigin = stateRecord.returnOrigin;
 
@@ -386,6 +433,7 @@ export class ConsumerAuthController {
   }
 
   @PublicEndpoint()
+  @TrackConsumerAction({ action: `consumer.auth.oauth_exchange`, resource: `auth` })
   @Post(`oauth/exchange`)
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
@@ -487,12 +535,14 @@ export class ConsumerAuthController {
     return this.service.changePassword(removeNil(body), removeNil(param));
   }
 
+  @TrackConsumerAction({ action: `consumer.auth.me`, resource: `auth` })
   @Get(`me`)
   me(@Identity() identity: IIdentityContext) {
     return identity;
   }
 
   @PublicEndpoint()
+  @TrackConsumerAction({ action: `consumer.auth.signup`, resource: `auth` })
   @Post(`signup`)
   @Throttle({ default: { limit: 15, ttl: 60000 } })
   @HttpCode(HttpStatus.CREATED)

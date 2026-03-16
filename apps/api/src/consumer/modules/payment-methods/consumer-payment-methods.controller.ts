@@ -6,7 +6,7 @@ import { type ConsumerModel } from '@remoola/database-2';
 import { ConsumerPaymentMethodsService } from './consumer-payment-methods.service';
 import { CreateManualPaymentMethod, PaymentMethodsResponse, UpdatePaymentMethod } from './dto/payment-method.dto';
 import { JwtAuthGuard } from '../../../auth/jwt.guard';
-import { Identity } from '../../../common';
+import { Identity, TrackConsumerAction } from '../../../common';
 
 @ApiTags(`Consumer: Payment Methods`)
 @Controller(`consumer/payment-methods`)
@@ -19,6 +19,7 @@ export class ConsumerPaymentMethodsController {
     return this.paymentService.list(consumer.id);
   }
 
+  @TrackConsumerAction({ action: `consumer.payment_methods.attach`, resource: `payment_methods` })
   @Post()
   async createManual(
     @Identity() consumer: ConsumerModel, //
@@ -36,6 +37,7 @@ export class ConsumerPaymentMethodsController {
     return this.paymentService.update(consumer.id, id, body);
   }
 
+  @TrackConsumerAction({ action: `consumer.payment_methods.remove`, resource: `payment_methods` })
   @Delete(`:id`)
   async delete(
     @Identity() consumer: ConsumerModel, //

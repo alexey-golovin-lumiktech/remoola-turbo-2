@@ -40,7 +40,13 @@ export class MailingService {
 
   async sendConsumerSignupVerificationEmail(params: { email: string; token: string; referer: string }) {
     let backendBaseURL = envs.NEST_APP_EXTERNAL_ORIGIN! || `http://[::1]:3333/api`;
-    if (envs.VERCEL !== 0) backendBaseURL = `https://remoola-turbo-2-api.vercel.app/api`;
+    if (envs.VERCEL !== 0) {
+      const base =
+        envs.NEST_APP_EXTERNAL_ORIGIN && envs.NEST_APP_EXTERNAL_ORIGIN !== `NEST_APP_EXTERNAL_ORIGIN`
+          ? envs.NEST_APP_EXTERNAL_ORIGIN.replace(/\/api\/?$/, ``)
+          : `https://remoola-turbo-2-api.vercel.app`;
+      backendBaseURL = `${base}/api`;
+    }
 
     const emailConfirmationUrl = new URL(`${backendBaseURL}/consumer/auth/signup/verification`);
     emailConfirmationUrl.search = new URLSearchParams(params).toString();

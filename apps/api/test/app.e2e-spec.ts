@@ -1,3 +1,5 @@
+/** @jest-environment @remoola/test-db/environment */
+
 import { afterAll, beforeAll, describe, it } from '@jest/globals';
 import { type INestApplication } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';

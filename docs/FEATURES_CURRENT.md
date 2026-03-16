@@ -21,6 +21,7 @@ Authentication and identity:
 - Consumer auth sessions: `auth_sessions` table for database-backed consumer sessions; hashed refresh token storage; session family and refresh rotation lineage (`session_family_id`, `replaced_by_id`); revocation metadata (`revoked_at`, `invalidated_reason`). Migration `20260310123000_consumer_auth_sessions`.
 - Login audit (success/failure tracking) and account lockout (per-email after N failures).
 - Google OAuth endpoints for consumer login flows (google/start, callback, signup-session, google-new-way, google-redirect-new-way, oauth/exchange, google-oauth, google-login-gpt). OAuth `/google/start` accepts optional `returnOrigin` query parameter for multi-app consumer deployments (validated against CORS_ALLOWED_ORIGINS). Origin resolution via `OriginResolverService` (supports CONSUMER_APP_ORIGIN, CONSUMER_MOBILE_APP_ORIGIN, ADMIN_APP_ORIGIN).
+- OAuth missing-state-cookie compatibility fallback is restricted to development/test only; startup/runtime block it in staging/production.
 - OAuth crypto utilities via `@remoola/security-utils` (PKCE, nonce, state signing/hashing).
 - Database connection retry logic (30 attempts, 500ms delay) in API bootstrap.
 
@@ -38,6 +39,7 @@ Consumer domain features:
 - Stripe webhooks, including identity verification start; verify/start requires
   profile complete (legal status, tax ID, passport/ID or phone per account type)
   and returns PROFILE_INCOMPLETE_VERIFY when incomplete.
+- Stripe webhook top-level failure handling emits sanitized warning telemetry (`stripe_webhook_processing_failed`) without raw payload/error text.
 - Payments list, balance, history, start payment, withdraw, transfer, and payment view.
 - Payment request creation and send flow.
 - Profile management (personal, address, organization) and password change.
@@ -184,6 +186,7 @@ Ledger and payments:
 - Stripe webhook event deduplication via `StripeWebhookEventModel` (unique `event_id`); insert-before-handling for at-most-once processing.
 - Payment rails, statuses, fee handling, and enums (including ExchangeRateStatus, TransactionActionType, ScheduledFxConversionStatus).
 - Soft-delete strategy (deletedAt) with uniqueness scoped to non-deleted rows.
+- Migration `20260316150500_enforce_ledger_entry_dispute_unique` rollout supports preferred predeploy `CREATE UNIQUE INDEX CONCURRENTLY` for non-empty DBs and a CI-safe in-migration fallback when the index is absent.
 - Database column naming: snake_case in schema (Prisma fields use `@map("snake_case")` where needed).
 
 Shared packages present in repo:

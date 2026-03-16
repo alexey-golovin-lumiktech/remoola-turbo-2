@@ -110,6 +110,13 @@ export function PaymentDetailView({ paymentRequestId, data }: PaymentDetailViewP
   const isDraft = status === `DRAFT`;
   const isRequester = role === `REQUESTER`;
 
+  function createIdempotencyKey(): string {
+    if (typeof crypto !== `undefined` && typeof crypto.randomUUID === `function`) {
+      return crypto.randomUUID();
+    }
+    return `fallback-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+  }
+
   useEffect(() => {
     if (isPending && isPayer) {
       setLoadingMethods(true);
@@ -147,7 +154,10 @@ export function PaymentDetailView({ paymentRequestId, data }: PaymentDetailViewP
         const res = await fetch(`/api/stripe/${paymentRequestId}/pay-with-saved-method`, {
           method: `POST`,
           credentials: `include`,
-          headers: { 'content-type': `application/json` },
+          headers: {
+            'content-type': `application/json`,
+            'idempotency-key': createIdempotencyKey(),
+          },
           body: JSON.stringify({ paymentMethodId: selectedMethodId }),
         });
 
