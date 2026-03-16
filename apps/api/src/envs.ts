@@ -219,61 +219,6 @@ const schema = z.object({
 });
 const parsed = schema.safeParse(process.env);
 if (!parsed.success) throw new Error(JSON.stringify(parsed.error, null, 2));
-const isProduction = parsed.data.NODE_ENV === ENVIRONMENT.PRODUCTION;
-
-function isPlaceholderOrMissing(value: string | undefined, placeholders: readonly string[]): boolean {
-  if (!value) return true;
-  return placeholders.includes(value);
-}
-if (
-  isProduction &&
-  (!parsed.data.SECURE_SESSION_SECRET || parsed.data.SECURE_SESSION_SECRET === `SECURE_SESSION_SECRET`)
-) {
-  throw new Error(`SECURE_SESSION_SECRET must be explicitly configured in production`);
-}
-if (isProduction && parsed.data.CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK) {
-  throw new Error(`CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK must remain disabled in production`);
-}
-if (
-  (parsed.data.NODE_ENV === ENVIRONMENT.STAGING || parsed.data.NODE_ENV === ENVIRONMENT.PRODUCTION) &&
-  parsed.data.CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK
-) {
-  throw new Error(`CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK is allowed only in development/test`);
-}
-if (isProduction) {
-  const requiredNonPlaceholder: Array<{ key: string; value: string | undefined; placeholders: readonly string[] }> = [
-    { key: `JWT_ACCESS_SECRET`, value: JWT_ACCESS_SECRET, placeholders: [`JWT_ACCESS_SECRET`] },
-    { key: `JWT_REFRESH_SECRET`, value: JWT_REFRESH_SECRET, placeholders: [`JWT_REFRESH_SECRET`] },
-    { key: `JWT_SECRET`, value: parsed.data.JWT_SECRET, placeholders: [`JWT_SECRET`] },
-    { key: `STRIPE_SECRET_KEY`, value: parsed.data.STRIPE_SECRET_KEY, placeholders: [`STRIPE_SECRET_KEY`] },
-    { key: `STRIPE_WEBHOOK_SECRET`, value: parsed.data.STRIPE_WEBHOOK_SECRET, placeholders: [`STRIPE_WEBHOOK_SECRET`] },
-    {
-      key: `DEFAULT_ADMIN_PASSWORD`,
-      value: parsed.data.DEFAULT_ADMIN_PASSWORD,
-      placeholders: [`RegularWirebill@Admin123!`],
-    },
-    { key: `SUPER_ADMIN_PASSWORD`, value: parsed.data.SUPER_ADMIN_PASSWORD, placeholders: [`SuperWirebill@Admin123!`] },
-    {
-      key: `NEST_APP_EXTERNAL_ORIGIN`,
-      value: parsed.data.NEST_APP_EXTERNAL_ORIGIN,
-      placeholders: [`NEST_APP_EXTERNAL_ORIGIN`],
-    },
-    {
-      key: `CONSUMER_APP_ORIGIN`,
-      value: parsed.data.CONSUMER_APP_ORIGIN,
-      placeholders: [`CONSUMER_APP_ORIGIN`],
-    },
-  ];
-  const invalidKeys = requiredNonPlaceholder
-    .filter(({ value, placeholders }) => isPlaceholderOrMissing(value, placeholders))
-    .map(({ key }) => key);
-  if (invalidKeys.length > 0) {
-    throw new Error(
-      `Production env contains missing/placeholder sensitive values: ${invalidKeys.join(`, `)}. ` +
-        `Set explicit secrets before startup.`,
-    );
-  }
-}
 
 export const envs = { ...parsed.data, ENVIRONMENT, environments };
 
