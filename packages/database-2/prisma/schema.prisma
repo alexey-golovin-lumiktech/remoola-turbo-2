@@ -642,7 +642,7 @@ model PersonalDetailsModel {
 model ResetPasswordModel {
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
-  token     String   @db.Text
+  tokenHash String   @map("token_hash") @db.Text
   expiredAt DateTime @map("expired_at") @db.Timestamptz(6)
 
   consumerId String        @map("consumer_id") @db.Uuid
@@ -653,7 +653,7 @@ model ResetPasswordModel {
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
   @@index([consumerId])
-  @@index([token])
+  @@index([tokenHash])
   @@map("reset_password")
 }
 

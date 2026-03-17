@@ -1,2 +1,2 @@
-export * from './update-consumer-password.dto';
+export * from './change-password.dto';
 export * from './update-consumer-profile.dto';

@@ -122,6 +122,11 @@ export default function LoginForm() {
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
         />
+        <p className="mt-1 text-right text-sm">
+          <Link href="/forgot-password" className={linkPrimary} data-testid="consumer-login-link-forgot-password">
+            Forgot password?
+          </Link>
+        </p>
         {errorMessage && (
           <p className={loginErrorText} data-testid="consumer-login-error" role="alert">
             {errorMessage}

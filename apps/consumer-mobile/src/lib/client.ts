@@ -19,14 +19,13 @@ export const swrConfig: SWRConfiguration = {
   },
   onError: (error: unknown) => {
     const err = error as { status?: number; message?: string };
-    // If session expired error reaches here (shouldn't normally happen due to fetcher handling),
-    // ensure we redirect to login
-    if (err.status === 401 || err.message?.toLowerCase().includes(`session expired`)) {
-      if (typeof window !== `undefined`) {
-        const currentPath = window.location.pathname;
-        window.location.href = `/login?session_expired=true&next=${encodeURIComponent(currentPath)}`;
-      }
-    }
+    if (err.status !== 401 && !err.message?.toLowerCase().includes(`session expired`)) return;
+    if (typeof window === `undefined`) return;
+    const pathname = window.location.pathname ?? ``;
+    if (pathname.startsWith(`/login`) || pathname.startsWith(`/signup`) || pathname.startsWith(`/forgot-password`))
+      return;
+    const currentPath = window.location.pathname;
+    window.location.href = `/login?session_expired=true&next=${encodeURIComponent(currentPath)}`;
   },
 };
 
@@ -105,18 +104,30 @@ export async function fetchWithAuth<T = unknown>(
           headers: retryHeaders,
         });
       } else {
-        // Refresh failed, redirect to login with session expired message
         if (typeof window !== `undefined`) {
-          const currentPath = window.location.pathname;
-          window.location.href = `/login?session_expired=true&next=${encodeURIComponent(currentPath)}`;
+          const pathname = window.location.pathname ?? ``;
+          if (
+            !pathname.startsWith(`/login`) &&
+            !pathname.startsWith(`/signup`) &&
+            !pathname.startsWith(`/forgot-password`)
+          ) {
+            const currentPath = window.location.pathname;
+            window.location.href = `/login?session_expired=true&next=${encodeURIComponent(currentPath)}`;
+          }
         }
         return { ok: false, error: `Session expired`, status: 401 };
       }
     } catch {
-      // Refresh request failed, redirect to login
       if (typeof window !== `undefined`) {
-        const currentPath = window.location.pathname;
-        window.location.href = `/login?session_expired=true&next=${encodeURIComponent(currentPath)}`;
+        const pathname = window.location.pathname ?? ``;
+        if (
+          !pathname.startsWith(`/login`) &&
+          !pathname.startsWith(`/signup`) &&
+          !pathname.startsWith(`/forgot-password`)
+        ) {
+          const currentPath = window.location.pathname;
+          window.location.href = `/login?session_expired=true&next=${encodeURIComponent(currentPath)}`;
+        }
       }
       return { ok: false, error: `Session expired`, status: 401 };
     }
@@ -164,18 +175,30 @@ export async function swrFetcher<T>(key: unknown): Promise<T> {
           headers: getCsrfHeader(),
         });
       } else {
-        // Refresh failed, redirect to login with session expired message
         if (typeof window !== `undefined`) {
-          const currentPath = window.location.pathname;
-          window.location.href = `/login?session_expired=true&next=${encodeURIComponent(currentPath)}`;
+          const pathname = window.location.pathname ?? ``;
+          if (
+            !pathname.startsWith(`/login`) &&
+            !pathname.startsWith(`/signup`) &&
+            !pathname.startsWith(`/forgot-password`)
+          ) {
+            const currentPath = window.location.pathname;
+            window.location.href = `/login?session_expired=true&next=${encodeURIComponent(currentPath)}`;
+          }
         }
         throw new Error(`Session expired`);
       }
     } catch {
-      // Refresh request failed, redirect to login
       if (typeof window !== `undefined`) {
-        const currentPath = window.location.pathname;
-        window.location.href = `/login?session_expired=true&next=${encodeURIComponent(currentPath)}`;
+        const pathname = window.location.pathname ?? ``;
+        if (
+          !pathname.startsWith(`/login`) &&
+          !pathname.startsWith(`/signup`) &&
+          !pathname.startsWith(`/forgot-password`)
+        ) {
+          const currentPath = window.location.pathname;
+          window.location.href = `/login?session_expired=true&next=${encodeURIComponent(currentPath)}`;
+        }
       }
       throw new Error(`Session expired`);
     }

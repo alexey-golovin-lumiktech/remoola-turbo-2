@@ -4,7 +4,6 @@ import { ISendMailOptions, MailerService } from '@nestjs-modules/mailer';
 import { generatePdf } from '../shared-common';
 import {
   forgotPassword,
-  googleOAuthTmpPassword,
   invitation,
   invoiceToHtml,
   outgoingInvoiceToHtml,
@@ -32,9 +31,9 @@ export class MailingService {
     const subject = `WB Logs`;
     try {
       await this.mailerService.sendMail({ to: envs.ADMIN_EMAIL!, subject, html });
-      this.logger.log(`Email sent successfully`);
+      this.logger.verbose(`Email sent successfully`);
     } catch {
-      this.logger.error(`Email send failed`);
+      this.logger.error(`[sendLogsEmail] Email send failed`);
     }
   }
 
@@ -55,9 +54,9 @@ export class MailingService {
     const subject = `Welcome to Wirebill! Confirm your Email`;
     try {
       await this.mailerService.sendMail({ to: params.email, subject, html });
-      this.logger.log(`Email sent successfully`);
+      this.logger.verbose(`Email sent successfully`);
     } catch {
-      this.logger.error(`Email send failed`);
+      this.logger.error(`[sendConsumerSignupVerificationEmail] Email send failed`);
     }
   }
 
@@ -68,31 +67,9 @@ export class MailingService {
     const attachments: ISendMailOptions[`attachments`] = [{ content, filename: `invoice-${invoice.id}.pdf` }];
     try {
       await this.mailerService.sendMail({ to: invoice.referer, subject, html, attachments });
-      this.logger.log(`Email sent successfully`);
+      this.logger.verbose(`Email sent successfully`);
     } catch {
-      this.logger.error(`Email send failed`);
-    }
-  }
-
-  async sendConsumerTemporaryPasswordForGoogleOAuth(params: { email: string }) {
-    const html = googleOAuthTmpPassword.processor();
-    const subject = `Welcome to Wirebill! You successfully registered through Google OAuth`;
-    try {
-      await this.mailerService.sendMail({ to: params.email, subject, html });
-      this.logger.log(`Email sent successfully`);
-    } catch {
-      this.logger.error(`Email send failed`);
-    }
-  }
-
-  async sendForgotPasswordEmail(params: { forgotPasswordLink: string; email: string }) {
-    const html = forgotPassword.processor(params.forgotPasswordLink);
-    const subject = `Wirebill. Password recovery`;
-    try {
-      await this.mailerService.sendMail({ to: params.email, subject, html });
-      this.logger.log(`Email sent successfully`);
-    } catch {
-      this.logger.error(`Email send failed`);
+      this.logger.error(`[sendOutgoingInvoiceEmail] Email send failed`);
     }
   }
 
@@ -105,9 +82,9 @@ export class MailingService {
     const subject = `Wirebill. Payment`;
     try {
       await this.mailerService.sendMail({ to: params.contactEmail, subject, html });
-      this.logger.log(`Email sent successfully`);
+      this.logger.verbose(`Email sent successfully`);
     } catch {
-      this.logger.error(`Email send failed`);
+      this.logger.error(`[sendPayToContactPaymentInfoEmail] Email send failed`);
     }
   }
 
@@ -145,9 +122,9 @@ export class MailingService {
 
     try {
       await this.mailerService.sendMail({ to: params.payerEmail, subject, html });
-      this.logger.log(`Email sent successfully`);
+      this.logger.verbose(`Email sent successfully`);
     } catch {
-      this.logger.error(`Email send failed`);
+      this.logger.error(`[sendPaymentRequestEmail] Email send failed`);
     }
   }
 
@@ -187,9 +164,9 @@ export class MailingService {
 
     try {
       await this.mailerService.sendMail({ to: params.recipientEmail, subject, html });
-      this.logger.log(`Email sent successfully`);
+      this.logger.verbose(`Email sent successfully`);
     } catch {
-      this.logger.error(`Email send failed`);
+      this.logger.error(`[sendPaymentRefundEmail] Email send failed`);
     }
   }
 
@@ -229,9 +206,9 @@ export class MailingService {
 
     try {
       await this.mailerService.sendMail({ to: params.recipientEmail, subject, html });
-      this.logger.log(`Email sent successfully`);
+      this.logger.verbose(`Email sent successfully`);
     } catch {
-      this.logger.error(`Email send failed`);
+      this.logger.error(`[sendPaymentChargebackEmail] Email send failed`);
     }
   }
 
@@ -240,9 +217,22 @@ export class MailingService {
     const subject = `Wirebill. Invitation`;
     try {
       await this.mailerService.sendMail({ to: params.email, subject, html });
-      this.logger.log(`Email sent successfully`);
+      this.logger.verbose(`Email sent successfully`);
     } catch {
-      this.logger.error(`Email send failed`);
+      this.logger.error(`[sendInvitationEmail] Email send failed`);
+    }
+  }
+
+  async sendConsumerForgotPasswordEmail(params: { email: string; forgotPasswordLink: string }) {
+    this.logger.verbose(`sendConsumerForgotPasswordEmail START`);
+    const html = forgotPassword.processor(params.forgotPasswordLink);
+    const subject = `Wirebill – Reset your password`;
+    try {
+      this.logger.verbose(`sendConsumerForgotPasswordEmail BEFORE`);
+      await this.mailerService.sendMail({ to: params.email, subject, html });
+      this.logger.verbose(`Email sent successfully`);
+    } catch {
+      this.logger.error(`[sendConsumerForgotPasswordEmail] Email send failed`);
     }
   }
 }

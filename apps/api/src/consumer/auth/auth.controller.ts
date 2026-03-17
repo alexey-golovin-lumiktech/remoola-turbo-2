@@ -1,5 +1,3 @@
-import { type IncomingHttpHeaders } from 'http';
-
 import {
   Body,
   GoneException,
@@ -11,7 +9,6 @@ import {
   InternalServerErrorException,
   Logger,
   Param,
-  Patch,
   Post,
   Query,
   Res,
@@ -519,22 +516,6 @@ export class ConsumerAuthController {
     return { ok: true };
   }
 
-  @PublicEndpoint()
-  @Post(`change-password`)
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
-  checkEmailAndSendRecoveryLink(@Headers() headers: IncomingHttpHeaders, @Body() body: { email: string }) {
-    const referer = headers.origin || headers.referer;
-    if (!referer) throw new InternalServerErrorException(`Request origin required`);
-    return this.service.checkEmailAndSendRecoveryLink(removeNil(body), referer);
-  }
-
-  @PublicEndpoint()
-  @Patch(`change-password/:token`)
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
-  changePassword(@Param() param: CONSUMER.ChangePasswordParam, @Body() body: CONSUMER.ChangePasswordBody) {
-    return this.service.changePassword(removeNil(body), removeNil(param));
-  }
-
   @TrackConsumerAction({ action: `consumer.auth.me`, resource: `auth` })
   @Get(`me`)
   me(@Identity() identity: IIdentityContext) {
@@ -561,6 +542,37 @@ export class ConsumerAuthController {
     if (!referer) throw new InternalServerErrorException(`Request origin required`);
     this.service.completeProfileCreationAndSendVerificationEmail(consumerId, referer);
     return `success`;
+  }
+
+  @PublicEndpoint()
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
+  @Get(`forgot-password/verify`)
+  async forgotPasswordVerify(
+    @Query(`token`) token: string,
+    @Query(`referer`) referer: string,
+    @Res() res: express.Response,
+  ) {
+    if (!referer) throw new InternalServerErrorException(`Request referer required`);
+    await this.service.validateForgotPasswordTokenAndRedirect(token ?? ``, referer, res);
+  }
+
+  @PublicEndpoint()
+  @TrackConsumerAction({ action: `consumer.auth.forgot_password_request`, resource: `auth` })
+  @Post(`forgot-password`)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @HttpCode(HttpStatus.OK)
+  async forgotPassword(@Body() body: CONSUMER.ForgotPasswordBody, @Headers(`origin`) requestOrigin?: string) {
+    await this.service.requestPasswordReset(body.email, requestOrigin);
+    return { message: `If an account exists, we sent instructions.` };
+  }
+
+  @PublicEndpoint()
+  @Post(`password/reset`)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @HttpCode(HttpStatus.OK)
+  async resetPassword(@Body() body: CONSUMER.ResetPasswordDto) {
+    await this.service.resetPasswordWithToken(body.token, body.password);
+    return { success: true };
   }
 
   @PublicEndpoint()

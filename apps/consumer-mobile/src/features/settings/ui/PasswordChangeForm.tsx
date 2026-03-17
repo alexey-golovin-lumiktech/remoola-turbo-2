@@ -51,6 +51,19 @@ export function PasswordChangeForm() {
           className={styles.hiddenInput}
         />
 
+        <FormField label="Current Password" htmlFor="currentPassword" error={fieldErrors.currentPassword} required>
+          <FormInput
+            id="currentPassword"
+            name="currentPassword"
+            type="password"
+            autoComplete="current-password"
+            error={!!fieldErrors.currentPassword}
+            placeholder="Enter your current password"
+            required
+            className={styles.inputMinHeight}
+          />
+        </FormField>
+
         <FormField label="New Password" htmlFor="password" error={fieldErrors.password} required>
           <FormInput
             id="password"

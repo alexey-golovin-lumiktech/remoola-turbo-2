@@ -2,11 +2,11 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsString, MinLength } from 'class-validator';
 
-export class ResetPasswordDto {
+export class ChangePasswordBody {
   @Expose()
-  @ApiProperty({ description: `Reset token from the forgot-password email link` })
+  @ApiProperty({ description: `Current password for verification` })
   @IsString()
-  token: string;
+  currentPassword: string;
 
   @Expose()
   @ApiProperty({ example: `newSecurePassword123`, minLength: 8 })

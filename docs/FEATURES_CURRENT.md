@@ -16,7 +16,7 @@ Authentication and identity:
 
 - Admin auth with login, refresh, logout, and `/me` identity.
 - Consumer auth with login, refresh, logout, `/me`, and multi-step signup.
-- Password recovery and reset flow for consumers.
+- Password recovery and reset: forgot-password (request email; `POST /consumer/auth/forgot-password` requires valid `Origin` header from allowed consumer origin), reset with token (`POST /consumer/auth/password/reset`), and authenticated change-password (`PATCH /consumer/profile/password`). Reset tokens stored as SHA-256 hash only in DB (migrations `20260317120000_reset_password_token_hash`, `20260317120001_drop_reset_password_token`).
 - Cookie-based JWT auth with access/refresh tokens. Shared auth cookie policy: cookie names and options from `@remoola/api-types` (http/auth-cookie-policy); API and Next.js apps (admin, consumer, consumer-mobile) use the same policy; production uses __Host- prefixed names (RFC 6265).
 - Consumer auth sessions: `auth_sessions` table for database-backed consumer sessions; hashed refresh token storage; session family and refresh rotation lineage (`session_family_id`, `replaced_by_id`); revocation metadata (`revoked_at`, `invalidated_reason`). Migration `20260310123000_consumer_auth_sessions`.
 - Login audit (success/failure tracking) and account lockout (per-email after N failures).

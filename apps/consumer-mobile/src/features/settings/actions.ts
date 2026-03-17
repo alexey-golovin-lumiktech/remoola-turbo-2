@@ -39,6 +39,7 @@ const organizationDetailsSchema = z.object({
 
 const passwordSchema = z
   .object({
+    currentPassword: z.string().min(1, `Current password is required`),
     password: z.string().min(8, `Password must be at least 8 characters`),
     confirmPassword: z.string(),
   })
@@ -251,6 +252,7 @@ export async function updateOrganizationDetailsAction(formData: FormData): Promi
 
 export async function updatePasswordAction(formData: FormData): Promise<ActionResult<{ success: boolean }>> {
   const rawData = {
+    currentPassword: formData.get(`currentPassword`)?.toString() ?? ``,
     password: formData.get(`password`)?.toString() ?? ``,
     confirmPassword: formData.get(`confirmPassword`)?.toString() ?? ``,
   };
@@ -276,17 +278,21 @@ export async function updatePasswordAction(formData: FormData): Promise<ActionRe
         cookie: cookie ?? ``,
         ...getBypassHeaders(),
       },
-      body: JSON.stringify({ password: parsed.data.password }),
+      body: JSON.stringify({
+        currentPassword: parsed.data.currentPassword,
+        password: parsed.data.password,
+      }),
       cache: `no-store`,
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      const code = (errorData.message ?? errorData.error ?? `UPDATE_FAILED`) as string;
       return {
         ok: false,
         error: {
-          code: `UPDATE_FAILED`,
-          message: errorData.message ?? errorData.error ?? `Failed to change password`,
+          code,
+          message: typeof errorData.message === `string` ? errorData.message : `Failed to change password`,
         },
       };
     }

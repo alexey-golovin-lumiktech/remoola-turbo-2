@@ -56,7 +56,10 @@ export async function middleware(req: NextRequest) {
   const refreshToken = req.cookies.get(refreshCookieKey)?.value;
   const csrfToken = req.cookies.get(COOKIE_KEYS.CSRF_TOKEN)?.value;
 
-  const isAuthPage = req.nextUrl.pathname.startsWith(`/login`) || req.nextUrl.pathname.startsWith(`/signup`);
+  const isAuthPage =
+    req.nextUrl.pathname.startsWith(`/login`) ||
+    req.nextUrl.pathname.startsWith(`/signup`) ||
+    req.nextUrl.pathname.startsWith(`/forgot-password`);
   const isCallback = req.nextUrl.pathname.startsWith(`/auth/callback`);
   const isProtected = !isAuthPage;
 

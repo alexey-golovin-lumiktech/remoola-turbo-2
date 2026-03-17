@@ -86,8 +86,8 @@ Auth (`/consumer/auth`):
 - `POST /signup`: create consumer account.
 - `GET /signup/:consumerId/complete-profile-creation`: finalize profile and send verification email.
 - `GET /signup/verification`: verify account by token.
-- `POST /change-password`: request password recovery email.
-- `PATCH /change-password/:token`: reset password by token.
+- Forgot-password and reset (no auth required): `POST /forgot-password` (email; requires valid `Origin` header — must be an allowed consumer origin, else 400 `ORIGIN_REQUIRED`); `GET /forgot-password/verify?token=…&referer=…` — validate token and redirect to app; `POST /password/reset` (body: token, password) — set new password with token from email.
+- Authenticated change-password: `PATCH /consumer/profile/password` (see Profile below).
 - Google OAuth flows:
   - `GET /google/start`: start new OAuth flow. Accepts optional `returnOrigin` query parameter to specify the consumer app origin (validated against CORS_ALLOWED_ORIGINS via `OriginResolverService`) for redirect after authentication. Useful for multi-app deployments (e.g., desktop consumer on port 3001, mobile consumer on port 3002). Supports CONSUMER_APP_ORIGIN, CONSUMER_MOBILE_APP_ORIGIN, and ADMIN_APP_ORIGIN.
   - `GET /google/callback`: OAuth redirect handling; uses stored `returnOrigin` from state.
@@ -347,7 +347,7 @@ Migration rollout note (ledger dispute uniqueness):
 - `ConsumerModel`: consumer accounts, account type, verification status, Stripe customer id, and relations to profile info and transactions.
 - `AccessRefreshTokenModel`: access/refresh token storage for identities.
 - `OauthStateModel`: OAuth state key and payload for flow continuity.
-- `ResetPasswordModel`: password reset token and expiration.
+- `ResetPasswordModel`: password reset stored as SHA-256 hash only (`token_hash`), expiration, consumer FK. Migrations: `20260317120000_reset_password_token_hash` (additive: add and backfill `token_hash`); `20260317120001_drop_reset_password_token` (cleanup: drop legacy `token` column).
 - `StripeWebhookEventModel`: deduplication of Stripe webhook events by unique `event_id` (at-most-once processing).
 - `AuthAuditLogModel`, `AuthLoginLockoutModel`: login audit and per-email lockout.
 - `ConsumerActionLogModel`: append-only consumer action telemetry. Uses monthly partitioning by `created_at`; the primary key is intentionally `(id, created_at)` so uniqueness remains valid under partitioning rules.
@@ -409,7 +409,7 @@ Shared packages used across apps:
 - `packages/database-2`: Prisma schema, migrations, and generated client.
 - `packages/db-fixtures`: DB fixture helpers for tests.
 - `packages/env`: runtime env schema and validation (Zod). Includes CONSUMER_APP_ORIGIN, CONSUMER_MOBILE_APP_ORIGIN, and ADMIN_APP_ORIGIN.
-- `packages/security-utils`: crypto, token, hashing helpers, and OAuth crypto utilities (PKCE verifier/challenge, state signing/hashing, nonce generation).
+- `packages/security-utils`: crypto, token hashing (`hashTokenToHex` for reset-password), password hashing, and OAuth crypto utilities (PKCE verifier/challenge, state signing/hashing, nonce generation).
 - `packages/shared-constants`: shared constants.
 - `packages/test-db`: test database utilities.
 - `packages/ui`: shared UI components and `cn()` class merging via `tailwind-merge`.

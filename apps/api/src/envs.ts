@@ -119,7 +119,7 @@ const jwt = {
 const authLockout = {
   AUTH_MAX_FAILED_ATTEMPTS: z.coerce.number().min(1).max(20).default(5),
   AUTH_LOCKOUT_DURATION_MINUTES: z.coerce.number().min(1).max(120).default(15),
-  AUTH_PER_EMAIL_RATE_LIMIT: z.coerce.number().min(5).max(50).default(10),
+  AUTH_PER_EMAIL_RATE_LIMIT: z.coerce.number().min(5).max(50).default(1000),
   AUTH_PER_EMAIL_RATE_WINDOW_MINUTES: z.coerce.number().min(1).max(60).default(15),
 };
 
@@ -129,6 +129,7 @@ const nodemailer = {
   NODEMAILER_SMTP_USER: z.string().default(`NODEMAILER_SMTP_USER`),
   NODEMAILER_SMTP_USER_PASS: z.string().default(`NODEMAILER_SMTP_USER_PASS`),
   NODEMAILER_SMTP_DEFAULT_FROM: z.string().default(`noreply@wirebill.com`),
+  SMTP_VERIFY_ON_BOOT: zBoolean(true).optional().default(false),
 };
 
 const stripe = {

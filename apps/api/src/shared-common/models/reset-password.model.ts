@@ -2,6 +2,6 @@ import { type IBaseModel } from './base.model';
 
 export type IResetPasswordModel = {
   consumerId: string;
-  token: string;
+  tokenHash: string;
   expiredAt: Date;
 } & IBaseModel;

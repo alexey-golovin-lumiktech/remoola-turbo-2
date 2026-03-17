@@ -7,7 +7,6 @@ export * from './payment-request.dto';
 export * from './personal-details.dto';
 export * from './admin.dto';
 export * from './basic-auth-credentials.dto';
-export * from './reset-password.dto';
 export * from './contact.dto';
 export * from './resource.dto';
 export * from './consumer-resource.dto';

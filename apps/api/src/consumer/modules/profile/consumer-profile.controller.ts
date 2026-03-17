@@ -4,7 +4,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { type ConsumerModel } from '@remoola/database-2';
 
 import { ConsumerProfileService } from './consumer-profile.service';
-import { UpdateConsumerPasswordBody, UpdateConsumerProfileBody } from './dtos';
+import { ChangePasswordBody, UpdateConsumerProfileBody } from './dtos';
 import { JwtAuthGuard } from '../../../auth/jwt.guard';
 import { Identity } from '../../../common';
 
@@ -25,7 +25,8 @@ export class ConsumerProfileController {
   }
 
   @Patch(`password`)
-  async changePassword(@Identity() consumer: ConsumerModel, @Body() body: UpdateConsumerPasswordBody) {
-    return this.service.changePassword(consumer.id, body);
+  async changePassword(@Identity() consumer: ConsumerModel, @Body() body: ChangePasswordBody) {
+    await this.service.changePassword(consumer.id, body);
+    return { success: true };
   }
 }

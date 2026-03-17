@@ -10,7 +10,7 @@
 import { randomUUID } from 'crypto';
 
 import { $Enums, Prisma, type PrismaClient } from '@remoola/database-2';
-import { hashPassword } from '@remoola/security-utils';
+import { hashPassword, hashTokenToHex } from '@remoola/security-utils';
 
 import { type FixtureOptions } from './options';
 
@@ -216,12 +216,7 @@ export async function cleanupFixtures(prisma: PrismaClient): Promise<void> {
   });
 
   await prisma.resetPasswordModel.deleteMany({
-    where: {
-      OR: [
-        { token: { startsWith: `${FIXTURE_PREFIX}-reset-token-` } },
-        ...(consumerIds.length > 0 ? [{ consumerId: { in: consumerIds } }] : []),
-      ],
-    },
+    where: { consumerId: { in: consumerIds } },
   });
 
   if (consumerIds.length > 0) {
@@ -614,10 +609,11 @@ export async function seedAllTables(prisma: PrismaClient, options: FixtureOption
   for (let i = 0; i < options.perTable; i += 1) {
     const consumerId = consumers[i]?.id;
     if (!consumerId) continue;
+    const fixtureToken = `${FIXTURE_PREFIX}-reset-token-${i}`;
     await prisma.resetPasswordModel.create({
       data: {
         consumerId,
-        token: `${FIXTURE_PREFIX}-reset-token-${i}`,
+        tokenHash: hashTokenToHex(fixtureToken),
         expiredAt: dateOffsetDays(5 + i),
       },
     });

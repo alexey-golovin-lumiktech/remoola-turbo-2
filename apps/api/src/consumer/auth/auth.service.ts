@@ -4,15 +4,14 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
-  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import express from 'express';
 import { OAuth2Client } from 'google-auth-library';
 
-import { $Enums, Prisma, type ConsumerModel, type ResetPasswordModel } from '@remoola/database-2';
-import { oauthCrypto } from '@remoola/security-utils';
+import { $Enums, Prisma, type ConsumerModel } from '@remoola/database-2';
+import { oauthCrypto, hashTokenToHex } from '@remoola/security-utils';
 import { errorCodes } from '@remoola/shared-constants';
 
 type GoogleSignupPayload = {
@@ -36,12 +35,12 @@ import { ConsumerSignup } from './dto';
 import { LoginBody } from '../../auth/dto/login.dto';
 import { CONSUMER } from '../../dtos';
 import { IJwtTokenPayload } from '../../dtos/consumer';
-import { envs, HOURS_24MS, JWT_ACCESS_TTL_SECONDS, JWT_REFRESH_TTL_SECONDS } from '../../envs';
+import { envs, JWT_ACCESS_TTL_SECONDS, JWT_REFRESH_TTL_SECONDS } from '../../envs';
 import { AuthAuditService, AUTH_AUDIT_EVENTS, AUTH_IDENTITY_TYPES } from '../../shared/auth-audit.service';
 import { MailingService } from '../../shared/mailing.service';
 import { OriginResolverService } from '../../shared/origin-resolver.service';
 import { PrismaService } from '../../shared/prisma.service';
-import { type IChangePasswordBody, type IChangePasswordParam, passwordUtils, secureCompare } from '../../shared-common';
+import { passwordUtils, secureCompare } from '../../shared-common';
 
 export type LoginContext = { ipAddress?: string | null; userAgent?: string | null };
 
@@ -107,11 +106,7 @@ export class ConsumerAuthService {
           data: { consumerId: consumer.id, ...googleProfileDetailsInstance },
         });
         if (googleProfileDetails.deletedAt != null) throw new BadRequestException(errorCodes.PROFILE_SUSPENDED);
-
-        // await this.mailingService.sendConsumerTemporaryPasswordForGoogleOAuth({ email: consumer.email });
       }
-
-      // const access = await this.getAccessAndRefreshToken(consumer.id)
 
       return consumer;
     } catch (error) {
@@ -424,61 +419,6 @@ export class ConsumerAuthService {
     res.redirect(redirectUrl.toString());
   }
 
-  async checkEmailAndSendRecoveryLink(body: Pick<IChangePasswordBody, `email`>, referer: string) {
-    if (body.email == null) throw new BadRequestException(errorCodes.EMAIL_REQUIRED);
-
-    const validatedOrigin = this.originResolver.validateReturnOrigin(referer);
-    if (!validatedOrigin) {
-      throw new BadRequestException(`Invalid referer origin`);
-    }
-
-    const consumer = await this.prisma.consumerModel.findFirst({ where: { email: body.email } });
-    if (!consumer) throw new BadRequestException(errorCodes.CONSUMER_NOT_FOUND_FOR_EMAIL);
-
-    const found = await this.prisma.resetPasswordModel.findFirst({ where: { consumerId: consumer.id } });
-    const oneTimeAccessToken = await this.getAccessToken(consumer.id);
-    const expiredAt = new Date(Date.now() + HOURS_24MS);
-    const resetPasswordData = { consumerId: consumer.id, token: oneTimeAccessToken, expiredAt };
-    let record: ResetPasswordModel;
-    if (!found) record = await this.prisma.resetPasswordModel.create({ data: resetPasswordData });
-    else record = await this.prisma.resetPasswordModel.update({ where: { id: found.id }, data: resetPasswordData });
-
-    const forgotPasswordLink = new URL(`change-password`, validatedOrigin);
-    forgotPasswordLink.searchParams.append(`token`, record.token);
-    this.mailingService.sendForgotPasswordEmail({
-      forgotPasswordLink: forgotPasswordLink.toString(),
-      email: consumer.email,
-    });
-  }
-
-  async changePassword(body: Pick<IChangePasswordBody, `password`>, param: IChangePasswordParam) {
-    if (param.token == null) throw new BadRequestException(errorCodes.TOKEN_REQUIRED);
-    if (body.password == null) throw new BadRequestException(errorCodes.PASSWORD_REQUIRED);
-
-    const verified = await this.verifyChangePasswordFlowToken(param.token);
-    const { salt, hash } = await passwordUtils.hashPassword(body.password);
-    await this.prisma.consumerModel.update({
-      where: { id: verified.identityId },
-      data: { salt, password: hash },
-    });
-    await this.prisma.resetPasswordModel.deleteMany({ where: { consumerId: verified.identityId } });
-
-    const consumer = await this.prisma.consumerModel.findFirst({
-      where: { id: verified.identityId },
-      select: { id: true, email: true },
-    });
-    if (consumer) {
-      await this.authAudit.recordAudit({
-        identityType: AUTH_IDENTITY_TYPES.consumer,
-        identityId: consumer.id,
-        email: consumer.email,
-        event: AUTH_AUDIT_EVENTS.password_change,
-      });
-    }
-
-    return true;
-  }
-
   private async createSessionAndIssueTokens(
     identityId: ConsumerModel[`id`],
     sessionFamilyId?: string,
@@ -515,16 +455,16 @@ export class ConsumerAuthService {
   }
 
   private getAccessToken(identityId: string, sessionId?: string) {
-    const payload = sessionId
-      ? {
-          sub: identityId,
-          identityId,
-          sid: sessionId,
-          typ: `access` as const,
-          role: ConsumerAuthService.accessRole,
-          permissions: ConsumerAuthService.accessPermissions,
-        }
-      : { sub: identityId, identityId, typ: `access` as const };
+    const sessionPayload = {
+      sub: identityId,
+      identityId,
+      sid: sessionId,
+      typ: `access` as const,
+      role: ConsumerAuthService.accessRole,
+      permissions: ConsumerAuthService.accessPermissions,
+    };
+    const outOfSessionPayload = { sub: identityId, identityId, typ: `access` as const };
+    const payload = sessionId ? sessionPayload : outOfSessionPayload;
     return this.jwtService.signAsync(payload, { expiresIn: JWT_ACCESS_TTL_SECONDS });
   }
 
@@ -552,29 +492,6 @@ export class ConsumerAuthService {
       where: { sessionFamilyId, revokedAt: null },
       data: { revokedAt: new Date(), invalidatedReason: reason, lastUsedAt: new Date() },
     });
-  }
-
-  private async verifyChangePasswordFlowToken(token: string) {
-    let verified: IJwtTokenPayload;
-    try {
-      verified = this.jwtService.verify<IJwtTokenPayload>(token);
-    } catch {
-      this.logger.warn(`ConsumerAuth: change-password token verification failed`);
-      throw new UnauthorizedException(errorCodes.INVALID_CHANGE_PASSWORD_TOKEN);
-    }
-    if (!verified?.identityId) throw new UnauthorizedException(errorCodes.INVALID_CHANGE_PASSWORD_TOKEN);
-
-    const consumer = await this.prisma.consumerModel.findFirst({
-      where: { email: verified.email, id: verified.identityId },
-    });
-    if (consumer == null) throw new UnauthorizedException(errorCodes.CONSUMER_NOT_FOUND_CHANGE_PASSWORD);
-
-    const record = await this.prisma.resetPasswordModel.findFirst({
-      where: { consumerId: consumer.id, token, expiredAt: { gte: new Date() } },
-    });
-    if (record == null) throw new NotFoundException(errorCodes.CHANGE_PASSWORD_FLOW_EXPIRED);
-
-    return verified;
   }
 
   async completeProfileCreationAndSendVerificationEmail(consumerId: string, referer: string) {
@@ -697,6 +614,111 @@ export class ConsumerAuthService {
    * Enforce combinations of accountType / contractorKind
    * and required nested blocks.
    */
+  async requestPasswordReset(email: CONSUMER.ForgotPasswordBody[`email`], requestOrigin?: string): Promise<void> {
+    const origin = this.originResolver.validateReturnOrigin(requestOrigin ?? ``);
+    if (!origin) {
+      throw new BadRequestException(errorCodes.ORIGIN_REQUIRED);
+    }
+
+    const normalizedEmail = email?.trim()?.toLowerCase() ?? ``;
+    const consumer = await this.prisma.consumerModel.findFirst({
+      where: { email: normalizedEmail, deletedAt: null },
+    });
+    if (!consumer) return;
+    if (consumer.password == null || consumer.salt == null) return;
+
+    const token = oauthCrypto.generateOAuthState();
+    const expiredAt = new Date(Date.now() + 60 * 60 * 1000);
+
+    await this.prisma.resetPasswordModel.updateMany({
+      where: { consumerId: consumer.id, deletedAt: null },
+      data: { deletedAt: new Date() },
+    });
+    await this.prisma.resetPasswordModel.create({
+      data: { consumerId: consumer.id, tokenHash: hashTokenToHex(token), expiredAt },
+    });
+
+    let backendBaseURL = envs.NEST_APP_EXTERNAL_ORIGIN ?? `http://[::1]:3333/api`;
+    if (envs.VERCEL !== 0) {
+      const base =
+        envs.NEST_APP_EXTERNAL_ORIGIN && envs.NEST_APP_EXTERNAL_ORIGIN !== `NEST_APP_EXTERNAL_ORIGIN`
+          ? envs.NEST_APP_EXTERNAL_ORIGIN.replace(/\/api\/?$/, ``)
+          : `https://remoola-turbo-2-api.vercel.app`;
+      backendBaseURL = `${base}/api`;
+    }
+
+    const verifyUrl = new URL(`${backendBaseURL}/consumer/auth/forgot-password/verify`);
+    verifyUrl.searchParams.set(`token`, token);
+    verifyUrl.searchParams.set(`referer`, origin);
+    this.mailingService.sendConsumerForgotPasswordEmail({
+      email: consumer.email,
+      forgotPasswordLink: verifyUrl.toString(),
+    });
+  }
+
+  async validateForgotPasswordTokenAndRedirect(token: string, referer: string, res: express.Response): Promise<void> {
+    const validatedOrigin = this.originResolver.validateReturnOrigin(referer);
+    if (!validatedOrigin) {
+      throw new BadRequestException(`Invalid referer origin`);
+    }
+    const confirmUrl = new URL(`/forgot-password/confirm`, validatedOrigin);
+    try {
+      const tokenHash = hashTokenToHex(token);
+      const row = await this.prisma.resetPasswordModel.findFirst({
+        where: { tokenHash, deletedAt: null, expiredAt: { gt: new Date() } },
+      });
+      if (row) confirmUrl.searchParams.set(`token`, token);
+    } catch {
+      // redirect without token so app shows invalid link
+    }
+    res.redirect(confirmUrl.toString());
+  }
+
+  /**
+   * Resets password using a single-use token (1h expiry).
+   * Token is stored as a SHA-256 hash at rest; lookup is by hash.
+   */
+  async resetPasswordWithToken(token: string, newPassword: string): Promise<void> {
+    const tokenHash = hashTokenToHex(token);
+    const row = await this.prisma.resetPasswordModel.findFirst({
+      where: { tokenHash, deletedAt: null },
+    });
+    if (!row) {
+      throw new BadRequestException(errorCodes.INVALID_CHANGE_PASSWORD_TOKEN);
+    }
+    if (row.expiredAt <= new Date()) {
+      throw new BadRequestException(errorCodes.CHANGE_PASSWORD_FLOW_EXPIRED);
+    }
+    if (!secureCompare(row.tokenHash, tokenHash)) {
+      throw new BadRequestException(errorCodes.INVALID_CHANGE_PASSWORD_TOKEN);
+    }
+
+    const consumer = await this.prisma.consumerModel.findFirst({
+      where: { id: row.consumerId, deletedAt: null },
+    });
+    if (!consumer) {
+      throw new BadRequestException(errorCodes.CONSUMER_NOT_FOUND_CHANGE_PASSWORD);
+    }
+
+    const { hash, salt } = await passwordUtils.hashPassword(newPassword);
+    await this.prisma.$transaction([
+      this.prisma.consumerModel.update({
+        where: { id: consumer.id },
+        data: { password: hash, salt },
+      }),
+      this.prisma.resetPasswordModel.update({
+        where: { id: row.id },
+        data: { deletedAt: new Date() },
+      }),
+    ]);
+    await this.authAudit.recordAudit({
+      identityType: AUTH_IDENTITY_TYPES.consumer,
+      identityId: consumer.id,
+      email: consumer.email,
+      event: AUTH_AUDIT_EVENTS.password_change,
+    });
+  }
+
   private ensureBusinessRules(dto: ConsumerSignup) {
     if (dto.accountType === $Enums.AccountType.CONTRACTOR && !dto.contractorKind) {
       throw new BadRequestException(errorCodes.CONTRACTOR_KIND_REQUIRED);

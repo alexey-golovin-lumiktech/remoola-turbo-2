@@ -30,7 +30,12 @@ export function handleSessionExpired(): void {
   if (typeof window === `undefined`) return;
 
   const pathname = window.location.pathname ?? ``;
-  if (pathname.startsWith(`/login`) || pathname.startsWith(`/signup`) || pathname.startsWith(`/auth/`)) {
+  if (
+    pathname.startsWith(`/login`) ||
+    pathname.startsWith(`/signup`) ||
+    pathname.startsWith(`/auth/`) ||
+    pathname.startsWith(`/forgot-password`)
+  ) {
     return;
   }
 

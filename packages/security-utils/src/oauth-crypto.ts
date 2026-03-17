@@ -39,6 +39,16 @@ export function hashOAuthState(stateToken: string): string {
 }
 
 /**
+ * Hash a token (e.g. reset-password token) with SHA-256 and return hex.
+ * Use for storing or comparing tokens without storing the raw value.
+ *
+ * @param token - The token string to hash
+ */
+export function hashTokenToHex(token: string): string {
+  return crypto.createHash(`sha256`).update(token).digest(`hex`);
+}
+
+/**
  * Generate a cryptographically secure nonce for OAuth/OIDC.
  * Used for replay protection in ID tokens.
  */
@@ -71,6 +81,7 @@ export const oauthCrypto = {
   generateOAuthState,
   signOAuthState,
   hashOAuthState,
+  hashTokenToHex,
   generateOAuthNonce,
   generatePKCEVerifier,
   generatePKCEChallenge,

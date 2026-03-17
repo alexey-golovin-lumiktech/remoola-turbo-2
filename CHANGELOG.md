@@ -1414,7 +1414,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-03-16</summary>
 
 - **2026-03-16:**
@@ -1463,6 +1463,22 @@
     - `packages/database-2/prisma/schema.prisma` + migration `20260315041301_add_consumer_action_log` for append-only partitioned action log;
     - shared cookie-policy/constants updates in `packages/api-types` + `packages/shared-constants` and API wrappers;
     - consumer and consumer-mobile payment-detail idempotency/error-message updates with BFF route test coverage.
+
+</details>
+
+<details open>
+<summary>2026-03-17</summary>
+
+- **2026-03-17:**
+  ### 🚀 Feature
+  - Consumer forgot-password and password-reset flow:
+    - **Forgot-password:** `POST /consumer/auth/forgot-password` (email) requests a password-reset email; `GET /consumer/auth/forgot-password/verify?token=…&referer=…` validates the token and redirects to the app confirm page.
+    - **Reset with token:** `POST /consumer/auth/password/reset` (token + new password) sets the new password; used from the link in the forgot-password email.
+    - **Change-password (authenticated):** `PATCH /consumer/profile/password` (current password + new password) for logged-in consumers; unchanged contract, audit-aligned.
+  - Mailing: forgot-password email template and transport; BFF routes for consumer and consumer-mobile for forgot-password and password/reset. DTOs: forgot-password-request, reset-password, change-password (profile). Env and shared-constants updates for consumer app origins used in reset links.
+
+  ### 📄 Documentation
+  - Changelog and canonical docs updated for forgot-password, reset-password, and change-password (consumer auth and profile).
 
 </details>
 

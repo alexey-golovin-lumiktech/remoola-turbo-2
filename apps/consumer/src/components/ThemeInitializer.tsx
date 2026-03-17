@@ -5,11 +5,27 @@ import { useEffect } from 'react';
 import { Theme, useTheme } from './ThemeProvider';
 import { handleSessionExpired } from '../lib/session-expired';
 
+/** Paths where we never fetch user theme (no session expected); avoids 401 and session-expired on auth/reset flows. */
+function isAuthOrPublicPath(pathname: string): boolean {
+  return (
+    pathname.startsWith(`/login`) ||
+    pathname.startsWith(`/signup`) ||
+    pathname.startsWith(`/auth/`) ||
+    pathname.startsWith(`/forgot-password`)
+  );
+}
+
 export function ThemeInitializer() {
   const { setTheme } = useTheme();
 
   useEffect(() => {
     if (typeof window === `undefined`) return;
+
+    const pathname = window.location.pathname ?? ``;
+    if (isAuthOrPublicPath(pathname)) {
+      setTheme(Theme.SYSTEM);
+      return;
+    }
 
     const loadUserTheme = async () => {
       try {

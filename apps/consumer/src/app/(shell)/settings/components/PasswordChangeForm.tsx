@@ -9,12 +9,17 @@ const { formGrid, formSection, formSectionTitle, inputClass, inputLabel, primary
 type PasswordChangeFormProps = { reload: () => void | Promise<void> };
 
 export function PasswordChangeForm({ reload }: PasswordChangeFormProps) {
+  const [currentPassword, setCurrentPassword] = useState(``);
   const [password, setPassword] = useState(``);
   const [confirm, setConfirm] = useState(``);
   const [saving, setSaving] = useState(false);
   async function save(e?: React.FormEvent) {
     e?.preventDefault();
 
+    if (!currentPassword.trim()) {
+      toast.error(`Please enter your current password.`);
+      return;
+    }
     if (!password.trim() || !confirm.trim()) {
       toast.error(`Please enter and confirm your new password.`);
       return;
@@ -34,12 +39,15 @@ export function PasswordChangeForm({ reload }: PasswordChangeFormProps) {
       method: `PATCH`,
       headers: { 'content-type': `application/json` },
       credentials: `include`,
-      body: JSON.stringify({ password }),
+      body: JSON.stringify({ currentPassword: currentPassword.trim(), password }),
     });
 
     if (!response.ok) {
-      toast.error(`Failed to change password`);
+      const data = await response.json().catch(() => ({}));
+      const code = data?.code ?? data?.message;
+      toast.error(code === `CURRENT_PASSWORD_INVALID` ? `Current password is incorrect.` : `Failed to change password`);
     } else {
+      setCurrentPassword(``);
       setPassword(``);
       setConfirm(``);
     }
@@ -63,6 +71,19 @@ export function PasswordChangeForm({ reload }: PasswordChangeFormProps) {
           style={{ position: `absolute`, left: `-9999px`, width: `1px`, height: `1px`, opacity: 0 }}
         />
         <div className={formGrid}>
+          <div>
+            <label className={inputLabel}>Current Password</label>
+            <input
+              type="password"
+              autoComplete="current-password"
+              required
+              className={inputClass}
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              placeholder="Your current password"
+            />
+          </div>
+
           <div>
             <label className={inputLabel}>New Password</label>
             <input
