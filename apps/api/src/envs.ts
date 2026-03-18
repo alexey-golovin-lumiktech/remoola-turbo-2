@@ -133,7 +133,7 @@ const smtp = {
   BREVO_SMTP_USER: z.string().default(`BREVO_SMTP_USER`),
   BREVO_SMTP_USER_PASS: z.string().default(`BREVO_SMTP_USER_PASS`),
   NODEMAILER_SMTP_DEFAULT_FROM: z.string().default(`noreply@wirebill.com`),
-  SMTP_VERIFY_ON_BOOT: zBoolean(true).optional().default(true),
+  SMTP_VERIFY_ON_BOOT: zBoolean(true).optional().default(false),
 };
 
 const stripe = {
