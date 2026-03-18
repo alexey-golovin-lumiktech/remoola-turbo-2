@@ -62,7 +62,7 @@ Infrastructure and platform:
 
 - Transactional email via Brevo API (no SMTP); env: `BREVO_API_KEY`, `BREVO_API_BASE_URL`; boot-time verification optional (`BREVO_VERIFY_ON_BOOT`).
 - Root auth module at `/auth` (login, register, logout, me) in addition to admin/consumer namespaced auth.
-- Health endpoints (`/health`, `/health/detailed`) for service and DB checks.
+- Health endpoints (`/health`, `/health/detailed`, `/health/mail-transport`, `POST /health/test-email`) for service, DB, mail transport, and optional test-email.
 - CORS configuration and security headers (Helmet).
 - Rate limiting and response compression.
 - Structured request logging with correlation IDs.

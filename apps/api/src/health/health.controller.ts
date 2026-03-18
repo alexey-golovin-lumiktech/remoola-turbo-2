@@ -1,7 +1,8 @@
-import { Controller, Get } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
 import { PublicEndpoint } from '../common';
+import { SendTestEmailDto } from './dto/send-test-email.dto';
 import { HealthService } from './health.service';
 
 @ApiTags(`Health`)
@@ -19,5 +20,17 @@ export class HealthController {
   @Get(`detailed`)
   async getDetailedHealth() {
     return this.healthService.getDetailedHealthStatus();
+  }
+
+  @PublicEndpoint()
+  @Get(`mail-transport`)
+  async getMailTransportHealth() {
+    return this.healthService.getMailTransportStatus();
+  }
+
+  @PublicEndpoint()
+  @Post(`test-email`)
+  async sendTestEmail(@Body() body?: SendTestEmailDto) {
+    return this.healthService.sendTestEmail(body?.to);
   }
 }

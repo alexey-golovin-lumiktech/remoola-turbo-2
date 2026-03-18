@@ -29,10 +29,38 @@ type BrevoSendEmailRequest = {
 
 type BrevoHttpErrorContext = { status: number };
 
+/**
+ * Request timeout for Brevo API calls.
+ * Keeps requests bounded on serverless (Vercel, Lambda). Ensure platform function
+ * timeout allows at least this + retry delay (~25s) for routes that send email.
+ */
+const BREVO_REQUEST_TIMEOUT_MS = 20_000;
+
+/** Delay before retry on transient socket/network errors. */
+const BREVO_RETRY_DELAY_MS = 1_000;
+
+function isTransientSocketError(error: unknown): boolean {
+  if (error instanceof Error && error.cause != null && typeof error.cause === `object`) {
+    const code = (error.cause as Record<string, unknown>).code;
+    if (typeof code === `string`) {
+      return (
+        code === `UND_ERR_SOCKET` ||
+        code === `ECONNRESET` ||
+        code === `ETIMEDOUT` ||
+        code === `ECONNREFUSED` ||
+        code === `ENOTFOUND` ||
+        code === `EAI_AGAIN`
+      );
+    }
+  }
+  return false;
+}
+
 @Injectable()
 export class BrevoMailService {
   private readonly logger = new Logger(BrevoMailService.name);
   private readonly baseUrl = envs.BREVO_API_BASE_URL.replace(/\/+$/, ``);
+  private readonly legacyBaseUrl = `https://api.sendinblue.com/v3`;
 
   private toRecipientList(to: string | string[]): Array<{ email: string }> {
     const recipients = Array.isArray(to) ? to : [to];
@@ -85,11 +113,11 @@ export class BrevoMailService {
     return new Error(`${prefix} (${context.status})`);
   }
 
-  async sendMail(options: BrevoSendMailOptions): Promise<void> {
+  private async sendMailOnce(options: BrevoSendMailOptions, attempt: number, baseUrl: string): Promise<void> {
     const payload = this.buildPayload(options);
-    const host = new URL(this.baseUrl).host;
-    this.logger.verbose(`Brevo send attempt host=${host}`);
-    const response = await fetch(`${this.baseUrl}/smtp/email`, {
+    const host = new URL(baseUrl).host;
+    this.logger.verbose(`Brevo send attempt host=${host} attempt=${attempt}`);
+    const response = await fetch(`${baseUrl}/smtp/email`, {
       method: `POST`,
       headers: {
         accept: `application/json`,
@@ -97,10 +125,42 @@ export class BrevoMailService {
         'api-key': envs.BREVO_API_KEY,
       },
       body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(BREVO_REQUEST_TIMEOUT_MS),
     });
 
     if (!response.ok) {
       throw this.buildHttpErrorMessage(`Brevo send failed`, { status: response.status });
+    }
+  }
+
+  async sendMail(options: BrevoSendMailOptions): Promise<void> {
+    try {
+      await this.sendMailOnce(options, 1, this.baseUrl);
+    } catch (error) {
+      if (isTransientSocketError(error) && error instanceof Error) {
+        this.logger.warn(
+          `Brevo send failed with transient socket/network error, retrying once after ${BREVO_RETRY_DELAY_MS}ms`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, BREVO_RETRY_DELAY_MS));
+        try {
+          await this.sendMailOnce(options, 2, this.baseUrl);
+          return;
+        } catch (retryError) {
+          if (isTransientSocketError(retryError) && retryError instanceof Error) {
+            const configuredHost = new URL(this.baseUrl).host;
+            const legacyHost = new URL(this.legacyBaseUrl).host;
+            if (configuredHost !== legacyHost) {
+              this.logger.warn(
+                `Brevo send failed again with transient socket/network error; attempting legacy Brevo host fallback`,
+              );
+              await this.sendMailOnce(options, 3, this.legacyBaseUrl);
+              return;
+            }
+          }
+          throw retryError;
+        }
+      }
+      throw error;
     }
   }
 
@@ -109,18 +169,40 @@ export class BrevoMailService {
       throw new Error(`Brevo mail transport is not configured`);
     }
 
-    const host = new URL(this.baseUrl).host;
-    this.logger.verbose(`Brevo verify attempt host=${host}`);
-    const response = await fetch(`${this.baseUrl}/account`, {
-      method: `GET`,
-      headers: {
-        accept: `application/json`,
-        'api-key': envs.BREVO_API_KEY,
-      },
-    });
+    try {
+      const host = new URL(this.baseUrl).host;
+      this.logger.verbose(`Brevo verify attempt host=${host}`);
+      const response = await fetch(`${this.baseUrl}/account`, {
+        method: `GET`,
+        headers: {
+          accept: `application/json`,
+          'api-key': envs.BREVO_API_KEY,
+        },
+        signal: AbortSignal.timeout(BREVO_REQUEST_TIMEOUT_MS),
+      });
 
-    if (!response.ok) {
-      throw this.buildHttpErrorMessage(`Brevo verification failed`, { status: response.status });
+      if (!response.ok) {
+        throw this.buildHttpErrorMessage(`Brevo verification failed`, { status: response.status });
+      }
+    } catch (error) {
+      const configuredHost = new URL(this.baseUrl).host;
+      const legacyHost = new URL(this.legacyBaseUrl).host;
+      if (!(error instanceof Error) || !isTransientSocketError(error) || configuredHost === legacyHost) {
+        throw error;
+      }
+
+      this.logger.warn(`Brevo verify transient socket/network error; trying legacy Brevo host fallback`);
+      const response = await fetch(`${this.legacyBaseUrl}/account`, {
+        method: `GET`,
+        headers: {
+          accept: `application/json`,
+          'api-key': envs.BREVO_API_KEY,
+        },
+        signal: AbortSignal.timeout(BREVO_REQUEST_TIMEOUT_MS),
+      });
+      if (!response.ok) {
+        throw this.buildHttpErrorMessage(`Brevo verification failed`, { status: response.status });
+      }
     }
   }
 }

@@ -1491,6 +1491,7 @@
   - E2E: forgot-password and reset-password flow covered by `apps/api/test/forgot-reset-password.e2e-spec.ts`.
   - Email: migrate to Brevo API (transactional email via Brevo; optional boot-time verification `BREVO_VERIFY_ON_BOOT`; env: `BREVO_API_KEY`, `BREVO_API_BASE_URL`).
   - Email validation consolidation: single source in `@remoola/api-types` (validation/email); API shared-common validators and DTOs (auth, consumer, admin, payment, contact) and consumer/consumer-mobile signup and contact schemas aligned to shared email validation.
+  - API health: `POST /health/test-email` (optional body `to`) for sending a test email via Brevo; health and Brevo mail service tests added/updated.
 
   ### 📄 Documentation
   - Canonical docs and changelog updated for this release (consumer auth: forgot/reset, auth-notice, logout, cookie policy, e2e; email validation consolidation; Brevo mailing).

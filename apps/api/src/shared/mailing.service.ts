@@ -53,10 +53,13 @@ export class MailingService {
     if (error instanceof Error) {
       const causeSummary = this.safeCauseSummary(error.cause);
       const causeSuffix = causeSummary != null ? ` cause: ${JSON.stringify(causeSummary)}` : ``;
-      this.logger.error(
-        `[${context}] Email operation failed: ${error.message}${causeSuffix}`,
-        error.stack,
-      );
+      this.logger.error(`[${context}] Email operation failed: ${error.message}${causeSuffix}`, error.stack);
+      if (causeSummary?.code === `UND_ERR_SOCKET` || causeSummary?.code === `ECONNRESET`) {
+        this.logger.warn(
+          `[${context}] Socket/network error: check outbound connectivity
+          (e.g. Lambda VPC NAT, Vercel) and Brevo API reachability.`,
+        );
+      }
       return;
     }
 

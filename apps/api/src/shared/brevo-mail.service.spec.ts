@@ -3,6 +3,10 @@ import { BrevoMailService } from './brevo-mail.service';
 describe(`BrevoMailService`, () => {
   let service: BrevoMailService;
   let fetchMock: jest.SpyInstance;
+  const transientSocketError = () =>
+    Object.assign(new TypeError(`fetch failed`), {
+      cause: { code: `UND_ERR_SOCKET` },
+    });
 
   beforeEach(() => {
     service = new BrevoMailService();
@@ -50,6 +54,26 @@ describe(`BrevoMailService`, () => {
 
       const body = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string) as { to: Array<{ email: string }> };
       expect(body.to).toEqual([{ email: `user@example.org` }]);
+    });
+  });
+
+  describe(`sendMail transient fallback`, () => {
+    it(`retries once and falls back to legacy Brevo host`, async () => {
+      fetchMock
+        .mockRejectedValueOnce(transientSocketError())
+        .mockRejectedValueOnce(transientSocketError())
+        .mockResolvedValueOnce({ ok: true } as Response);
+
+      await service.sendMail({
+        to: `user@example.org`,
+        subject: `Test`,
+        html: `<p>Test</p>`,
+      });
+
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+      expect(fetchMock.mock.calls[0]?.[0]).toBe(`https://api.brevo.com/v3/smtp/email`);
+      expect(fetchMock.mock.calls[1]?.[0]).toBe(`https://api.brevo.com/v3/smtp/email`);
+      expect(fetchMock.mock.calls[2]?.[0]).toBe(`https://api.sendinblue.com/v3/smtp/email`);
     });
   });
 });
