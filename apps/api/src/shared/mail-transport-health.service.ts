@@ -28,8 +28,13 @@ export class MailTransportHealthService implements OnApplicationBootstrap {
     }
 
     try {
-      await transporter.verify();
-      this.logger.debug(`SMTP transporter verified successfully`);
+      const verified = await transporter.verify();
+      const smtp = transporter?.[`options`]?.[`host`];
+      let prefix = `SMTP`;
+      if (smtp) prefix += `[${smtp}]`;
+      let message = `${prefix} verified successfully`;
+      if (verified === false) message = `${prefix} verification fail`;
+      this.logger.debug(message);
     } catch {
       this.logger.error(`SMTP verification failed`);
       if (envs.NODE_ENV === `production`) throw new Error(`SMTP verification failed`);
