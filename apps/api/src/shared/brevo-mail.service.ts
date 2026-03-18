@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 import { isValidEmail } from '@remoola/api-types';
 
@@ -31,6 +31,7 @@ type BrevoHttpErrorContext = { status: number };
 
 @Injectable()
 export class BrevoMailService {
+  private readonly logger = new Logger(BrevoMailService.name);
   private readonly baseUrl = envs.BREVO_API_BASE_URL.replace(/\/+$/, ``);
 
   private toRecipientList(to: string | string[]): Array<{ email: string }> {
@@ -86,6 +87,8 @@ export class BrevoMailService {
 
   async sendMail(options: BrevoSendMailOptions): Promise<void> {
     const payload = this.buildPayload(options);
+    const host = new URL(this.baseUrl).host;
+    this.logger.verbose(`Brevo send attempt host=${host}`);
     const response = await fetch(`${this.baseUrl}/smtp/email`, {
       method: `POST`,
       headers: {
@@ -106,6 +109,8 @@ export class BrevoMailService {
       throw new Error(`Brevo mail transport is not configured`);
     }
 
+    const host = new URL(this.baseUrl).host;
+    this.logger.verbose(`Brevo verify attempt host=${host}`);
     const response = await fetch(`${this.baseUrl}/account`, {
       method: `GET`,
       headers: {

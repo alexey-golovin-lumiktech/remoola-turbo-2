@@ -38,9 +38,25 @@ export class MailingService {
     }
   }
 
+  /** Safe summary of error.cause for logging (code, errno, syscall only; no message/stack/URLs). */
+  private safeCauseSummary(cause: unknown): Record<string, unknown> | undefined {
+    if (cause == null || typeof cause !== `object`) return undefined;
+    const obj = cause as Record<string, unknown>;
+    const out: Record<string, unknown> = {};
+    if (typeof obj.code === `string`) out.code = obj.code;
+    if (typeof obj.errno === `number`) out.errno = obj.errno;
+    if (typeof obj.syscall === `string`) out.syscall = obj.syscall;
+    return Object.keys(out).length > 0 ? out : undefined;
+  }
+
   private logEmailFailure(context: string, error: unknown): void {
     if (error instanceof Error) {
-      this.logger.error(`[${context}] Email operation failed: ${error.message}`, error.stack);
+      const causeSummary = this.safeCauseSummary(error.cause);
+      const causeSuffix = causeSummary != null ? ` cause: ${JSON.stringify(causeSummary)}` : ``;
+      this.logger.error(
+        `[${context}] Email operation failed: ${error.message}${causeSuffix}`,
+        error.stack,
+      );
       return;
     }
 
