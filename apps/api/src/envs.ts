@@ -123,24 +123,17 @@ const authLockout = {
   AUTH_PER_EMAIL_RATE_WINDOW_MINUTES: z.coerce.number().min(1).max(60).default(15),
 };
 
-const nodemailer = {
-  NODEMAILER_SMTP_HOST: z.string().default(`NODEMAILER_SMTP_HOST`),
-  NODEMAILER_SMTP_PORT: z.coerce.number().default(587),
-  NODEMAILER_SMTP_USER: z.string().default(`NODEMAILER_SMTP_USER`),
-  NODEMAILER_SMTP_USER_PASS: z.string().default(`NODEMAILER_SMTP_USER_PASS`),
-  NODEMAILER_SMTP_DEFAULT_FROM: z.string().default(`noreply@wirebill.com`),
-  SMTP_VERIFY_ON_BOOT: zBoolean(true).optional().default(false),
-};
-
-const brevo = {
-  BREVO_SMTP_HOST: z.string().optional().default(`smtp-relay.brevo.com`),
-  BREVO_SMTP_PORT: z.coerce.number().optional().default(587),
-  BREVO_SMTP_USER: z.string().optional().default(`alexey.golovin@lumiktech.com`),
-  BREVO_SMTP_USER_PASS: z
-    .string()
-    .default(`xsmtpsib-f8fe102f809ae6063e0b8ecdcef7965f5bd6741e902e7ec1e365fd1bf897a9c8-wfshuxlCGSbnwL5W`),
-  BREVO_SMTP_DEFAULT_FROM: nodemailer.NODEMAILER_SMTP_DEFAULT_FROM,
-  SMTP_VERIFY_ON_BOOT: nodemailer.SMTP_VERIFY_ON_BOOT,
+const smtp = {
+  SMTP_NODEMAILER_HOST: z.string().default(`NODEMAILER_SMTP_HOST`),
+  SMTP_NODEMAILER_PORT: z.coerce.number().default(587),
+  SMTP_NODEMAILER_USER: z.string().default(`NODEMAILER_SMTP_USER`),
+  SMTP_NODEMAILER_USER_PASS: z.string().default(`NODEMAILER_SMTP_USER_PASS`),
+  SMTP_BREVO_HOST: z.string().default(`BREVO_SMTP_HOST`),
+  SMTP_BREVO_PORT: z.coerce.number().default(587),
+  SMTP_BREVO_USER: z.string().default(`BREVO_SMTP_USER`),
+  SMTP_BREVO_USER_PASS: z.string().default(`BREVO_SMTP_USER_PASS`),
+  SMTP_DEFAULT_FROM: z.string().default(`noreply@wirebill.com`),
+  SMTP_VERIFY_ON_BOOT: zBoolean(true).default(true),
 };
 
 const stripe = {
@@ -218,8 +211,7 @@ const schema = z.object({
   ...google,
   ...jwt,
   ...authLockout,
-  ...nodemailer,
-  ...brevo,
+  ...smtp,
   ...stripe,
   ...aws,
   ...logs,
