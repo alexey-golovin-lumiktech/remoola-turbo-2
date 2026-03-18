@@ -133,7 +133,7 @@ const smtp = {
   SMTP_BREVO_USER: z.string().default(`BREVO_SMTP_USER`),
   SMTP_BREVO_USER_PASS: z.string().default(`BREVO_SMTP_USER_PASS`),
   SMTP_DEFAULT_FROM: z.string().default(`noreply@wirebill.com`),
-  SMTP_VERIFY_ON_BOOT: zBoolean(true).default(true),
+  SMTP_VERIFY_ON_BOOT: zBoolean(true).default(false),
 };
 
 const stripe = {
