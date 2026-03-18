@@ -674,7 +674,7 @@ export class ConsumerAuthService {
     const verifyUrl = new URL(`${backendBaseURL}/consumer/auth/forgot-password/verify`);
     verifyUrl.searchParams.set(`token`, token);
     verifyUrl.searchParams.set(`referer`, origin);
-    this.mailingService.sendConsumerForgotPasswordEmail({
+    await this.mailingService.sendConsumerForgotPasswordEmail({
       email: consumer.email,
       forgotPasswordLink: verifyUrl.toString(),
     });
