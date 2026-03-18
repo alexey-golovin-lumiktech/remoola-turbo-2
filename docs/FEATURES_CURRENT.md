@@ -16,7 +16,7 @@ Authentication and identity:
 
 - Admin auth with login, refresh, logout, and `/me` identity.
 - Consumer auth with login, refresh, logout, `/me`, and multi-step signup.
-- Password recovery and reset: forgot-password (request email; `POST /consumer/auth/forgot-password` requires valid `Origin` header from allowed consumer origin), reset with token (`POST /consumer/auth/password/reset`), and authenticated change-password (`PATCH /consumer/profile/password`). Reset tokens stored as SHA-256 hash only in DB (migrations `20260317120000_reset_password_token_hash`, `20260317120001_drop_reset_password_token`).
+- Password recovery and reset: forgot-password (request email; `POST /consumer/auth/forgot-password` requires valid `Origin` header from allowed consumer origin), reset with token (`POST /consumer/auth/password/reset`), and authenticated change-password (`PATCH /consumer/profile/password`). Reset tokens stored as SHA-256 hash only in DB (migrations `20260317120000_reset_password_token_hash`, `20260317120001_drop_reset_password_token`); expired tokens cleaned by scheduler. Auth-notice type in `@remoola/api-types` for post-login/post-reset messaging. E2E coverage: `apps/api/test/forgot-reset-password.e2e-spec.ts`.
 - Cookie-based JWT auth with access/refresh tokens. Shared auth cookie policy: cookie names and options from `@remoola/api-types` (http/auth-cookie-policy); API and Next.js apps (admin, consumer, consumer-mobile) use the same policy; production uses __Host- prefixed names (RFC 6265).
 - Consumer auth sessions: `auth_sessions` table for database-backed consumer sessions; hashed refresh token storage; session family and refresh rotation lineage (`session_family_id`, `replaced_by_id`); revocation metadata (`revoked_at`, `invalidated_reason`). Migration `20260310123000_consumer_auth_sessions`.
 - Login audit (success/failure tracking) and account lockout (per-email after N failures).
@@ -60,6 +60,7 @@ Admin domain features:
 
 Infrastructure and platform:
 
+- Transactional email via Brevo API (no SMTP); env: `BREVO_API_KEY`, `BREVO_API_BASE_URL`; boot-time verification optional (`BREVO_VERIFY_ON_BOOT`).
 - Root auth module at `/auth` (login, register, logout, me) in addition to admin/consumer namespaced auth.
 - Health endpoints (`/health`, `/health/detailed`) for service and DB checks.
 - CORS configuration and security headers (Helmet).
@@ -191,7 +192,7 @@ Ledger and payments:
 
 Shared packages present in repo:
 
-- `api-types`: shared DTOs, PaginatedResponsePage, currency (CURRENCY_CODES, TCurrencyCode, getCurrencySymbol), consumer settings (theme THEME, preferred currency allowlist), admin payment reversal (PAYMENT_REVERSAL_KIND), query params (BOOLEAN_QUERY_VALUE).
+- `api-types`: shared DTOs, PaginatedResponsePage, currency (CURRENCY_CODES, TCurrencyCode, getCurrencySymbol), consumer settings (theme THEME, preferred currency allowlist), admin payment reversal (PAYMENT_REVERSAL_KIND), query params (BOOLEAN_QUERY_VALUE), email validation (validation/email) used by API shared-common validators and DTOs and consumer/admin/mobile schemas.
 - `database-2`, `db-fixtures`, `env`, `eslint-config`, `jest-config`, `security-utils` (crypto, hashing, OAuth utilities), `shared-constants`, `test-db`, `typescript-config`, `ui`.
 - `ui`: `cn()` now uses `tailwind-merge` to safely collapse conflicting Tailwind utility classes.
 

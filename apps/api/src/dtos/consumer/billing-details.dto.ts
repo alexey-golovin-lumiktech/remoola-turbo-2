@@ -1,19 +1,20 @@
 import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { IsEmail, IsPhoneNumber, ValidateIf } from 'class-validator';
+import { IsPhoneNumber, ValidateIf } from 'class-validator';
 
 import {
   type IBillingDetailsCreate,
   type IBillingDetailsModel,
   type IBillingDetailsResponse,
   type IBillingDetailsUpdate,
+  IsValidEmail,
 } from '../../shared-common';
 import { BaseModel } from '../common';
 
 class BillingDetails extends BaseModel implements IBillingDetailsModel {
   @Expose()
   @ApiProperty({ description: `Billing email address for invoices and payment notifications`, required: false })
-  @IsEmail()
+  @IsValidEmail()
   @ValidateIf(({ value }) => value != null)
   email?: string;
 

@@ -18,7 +18,7 @@ describe(`loginSchema`, () => {
     const result = loginSchema.safeParse({ email: `not-an-email`, password: `secret123` });
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.flatten().fieldErrors.email?.[0]).toContain(`Invalid email`);
+      expect(result.error.flatten().fieldErrors.email?.[0]).toContain(`Enter a valid email address`);
     }
   });
 

@@ -4,7 +4,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { CURRENCY_CODE, isCurrencyCode, type TCurrencyCode } from '@remoola/api-types';
+import { CURRENCY_CODE, emailSchema, isCurrencyCode, type TCurrencyCode } from '@remoola/api-types';
 
 import { createContactRequest } from '../../lib/create-contact';
 import { getErrorMessageForUser } from '../../lib/error-messages';
@@ -146,11 +146,12 @@ export function CreatePaymentRequestForm() {
   }
 
   async function submit() {
-    const normalizedEmail = normalizeEmail(email);
-    if (!normalizedEmail || !normalizedEmail.includes(`@`)) {
-      toast.error(`Please enter a valid recipient email.`);
+    const emailParsed = emailSchema.safeParse(email.trim());
+    if (!emailParsed.success) {
+      toast.error(emailParsed.error.issues[0]?.message ?? `Please enter a valid recipient email.`);
       return;
     }
+    const normalizedEmail = normalizeEmail(emailParsed.data);
     const numericAmount = Number(amount);
     if (!amount || Number.isNaN(numericAmount) || numericAmount <= 0) {
       toast.error(`Please enter a valid amount.`);

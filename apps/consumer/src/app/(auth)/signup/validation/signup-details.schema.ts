@@ -1,15 +1,10 @@
 import { z } from 'zod';
 
-import { ACCOUNT_TYPE, CONTRACTOR_KIND } from '@remoola/api-types';
+import { ACCOUNT_TYPE, CONTRACTOR_KIND, emailSchema } from '@remoola/api-types';
 
 /** Schema for email/password signup (password required) */
 const signupDetailsBaseSchema = z.object({
-  email: z
-    .string()
-    .min(1, `Email is required`)
-    .refine((value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value), {
-      message: `Enter a valid email address`,
-    }),
+  email: emailSchema,
   password: z.string(),
   confirmPassword: z.string(),
   accountType: z.enum(ACCOUNT_TYPE),

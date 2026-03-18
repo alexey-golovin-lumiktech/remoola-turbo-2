@@ -5,6 +5,8 @@ import { loadStripe } from '@stripe/stripe-js';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
+import { emailOptionalSchema } from '@remoola/api-types';
+
 import { type StripeSetupIntentPayload, type PaymentMethodType, type CreatePaymentMethodDto } from '../../../types';
 import { useTheme } from '../../ThemeProvider';
 import styles from '../../ui/classNames.module.css';
@@ -206,6 +208,14 @@ function AddPaymentMethodModalInner({
   }
 
   async function submit() {
+    const trimmedBillingEmail = billingEmail.trim();
+    if (trimmedBillingEmail) {
+      const parsed = emailOptionalSchema.safeParse(trimmedBillingEmail);
+      if (!parsed.success) {
+        toast.error(parsed.error.issues[0]?.message ?? `Enter a valid billing email`);
+        return;
+      }
+    }
     if (methodType === `CREDIT_CARD`) {
       await createCardMethod();
     } else {

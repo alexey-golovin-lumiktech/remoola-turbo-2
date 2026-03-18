@@ -46,11 +46,13 @@ Use the first element if `signature` is an array (Express can give `string | str
 
 ### W2. Email subject in mailing error logs
 
-**Area:** `apps/api/src/shared/mailing.service.ts`
+**Area:** `apps/api/src/shared/mailing.service.ts`, `apps/api/src/shared/brevo-mail.service.ts`
 
-**Finding:** `this.logger.error(\`Email send failed: ${subject}\`, ...)` logs the email subject. Subjects can contain user-specific or sensitive information (e.g. “Payment for John”, “Reset password for user@example.com”).
+**Finding (historical):** Previously, mailing error logs could include the email subject. Subjects can contain user-specific or sensitive information (e.g. “Payment for John”, “Reset password for user@example.com”).
 
-**Recommendation:** Either do not log the subject, or log a stable identifier (e.g. template name or a hash) instead of the full subject. If the subject is needed for support, restrict access to logs and treat it as PII.
+**Status:** As of the Brevo migration, `MailingService` and `BrevoMailService` do not log the subject on failure: only context (e.g. method name) and `error.message` / stack are logged. Brevo API errors are wrapped with status-only messages (no subject or body in logs).
+
+**Recommendation:** If adding new mailing code, continue to avoid logging subject or recipient in error paths.
 
 ---
 

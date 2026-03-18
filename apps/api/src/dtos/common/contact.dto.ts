@@ -1,6 +1,6 @@
 import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
-import { IsEmail, IsNotEmpty } from 'class-validator';
+import { IsNotEmpty } from 'class-validator';
 
 import { AddressDetailsCreate } from './address-details.dto';
 import { BaseModel } from './base-model.dto';
@@ -9,6 +9,7 @@ import {
   type IContactModel,
   type IContactResponse,
   type IContactUpdate,
+  IsValidEmail,
 } from '../../shared-common';
 
 class Contact extends BaseModel implements IContactModel {
@@ -18,7 +19,7 @@ class Contact extends BaseModel implements IContactModel {
 
   @Expose()
   @ApiProperty({ description: `Contact email address`, required: true })
-  @IsEmail()
+  @IsValidEmail()
   @IsNotEmpty()
   email: string;
 

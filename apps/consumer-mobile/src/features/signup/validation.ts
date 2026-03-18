@@ -1,7 +1,7 @@
 import { isValidPhoneNumber } from 'libphonenumber-js';
 import { z } from 'zod';
 
-import { ACCOUNT_TYPE, CONTRACTOR_KIND } from '@remoola/api-types';
+import { ACCOUNT_TYPE, CONTRACTOR_KIND, emailSchema } from '@remoola/api-types';
 
 /** Flatten zod errors to field -> message map. */
 export function getFieldErrors(error: z.ZodError): Record<string, string> {
@@ -90,7 +90,7 @@ export const organizationSchema = z.object({
 });
 
 const signupDetailsBaseSchema = z.object({
-  email: z.string().min(1, `Email is required`).email(`Enter a valid email address`),
+  email: emailSchema,
   password: z.string(),
   confirmPassword: z.string(),
   accountType: z.enum([ACCOUNT_TYPE.BUSINESS, ACCOUNT_TYPE.CONTRACTOR]),

@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 
+import { emailSchema } from '@remoola/api-types';
+
 import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../lib/error-messages';
 import { clientLogger } from '../../lib/logger';
 import { showErrorToast, showWarningToast } from '../../lib/toast.client';
@@ -50,8 +52,9 @@ export function CreatePaymentRequestForm({ defaultCurrency = `USD` }: CreatePaym
   function validate(): boolean {
     const newErrors: Record<string, string> = {};
 
-    if (!email || !email.includes(`@`)) {
-      newErrors.email = `Please enter a valid email address`;
+    const emailParsed = emailSchema.safeParse(email.trim());
+    if (!emailParsed.success) {
+      newErrors.email = emailParsed.error.issues[0]?.message ?? `Please enter a valid email address`;
     }
 
     const numAmount = Number(amount);

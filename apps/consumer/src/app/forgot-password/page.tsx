@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useState } from 'react';
 
+import { emailSchema } from '@remoola/api-types';
+
 import styles from '../../components/ui/classNames.module.css';
 
 const {
@@ -25,8 +27,9 @@ export default function ForgotPasswordPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErr(undefined);
-    if (!email.trim()) {
-      setErr(`Email is required.`);
+    const emailParsed = emailSchema.safeParse(email.trim());
+    if (!emailParsed.success) {
+      setErr(emailParsed.error.issues[0]?.message ?? `Enter a valid email address`);
       return;
     }
 
@@ -35,7 +38,7 @@ export default function ForgotPasswordPage() {
       const res = await fetch(`/api/consumer/auth/forgot-password`, {
         method: `POST`,
         headers: { 'content-type': `application/json` },
-        body: JSON.stringify({ email: email.trim() }),
+        body: JSON.stringify({ email: emailParsed.data }),
         cache: `no-store`,
       });
       if (!res.ok) {

@@ -1,17 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
-import {
-  IsEmail,
-  IsEnum,
-  IsOptional,
-  IsString,
-  MinLength,
-  ValidateIf,
-  ValidateNested,
-  IsISO8601,
-} from 'class-validator';
+import { IsEnum, IsOptional, IsString, MinLength, ValidateIf, ValidateNested, IsISO8601 } from 'class-validator';
 
 import { $Enums } from '@remoola/database-2';
+
+import { IsValidEmail } from '../../../shared-common';
 
 export class AddressDetails {
   @Expose()
@@ -117,7 +110,7 @@ export class OrganizationDetails {
 export class ConsumerSignup {
   @Expose()
   @ApiProperty({ example: `email@email.com` })
-  @IsEmail()
+  @IsValidEmail()
   email: string;
 
   @Expose()

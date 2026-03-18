@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { emailOptionalSchema, emailSchema } from '@remoola/api-types';
+
 export const contactAddressSchema = z.object({
   street: z.string().nullable().optional(),
   city: z.string().nullable().optional(),
@@ -54,13 +56,13 @@ export const contactParamsSchema = z.object({
 });
 
 export const createContactSchema = z.object({
-  email: z.string().email(`Please enter a valid email address`).min(1, `Email is required`),
+  email: emailSchema,
   name: z.string().min(1, `Name is required`).optional().nullable(),
   address: contactAddressSchema.optional().nullable(),
 });
 
 export const updateContactSchema = z.object({
-  email: z.string().email(`Please enter a valid email address`).optional(),
+  email: emailOptionalSchema.optional(),
   name: z.string().optional().nullable(),
   address: contactAddressSchema.optional().nullable(),
 });

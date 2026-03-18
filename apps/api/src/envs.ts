@@ -123,17 +123,12 @@ const authLockout = {
   AUTH_PER_EMAIL_RATE_WINDOW_MINUTES: z.coerce.number().min(1).max(60).default(15),
 };
 
-const smtp = {
-  NODEMAILER_SMTP_HOST: z.string().default(`NODEMAILER_SMTP_HOST`),
-  NODEMAILER_SMTP_PORT: z.coerce.number().default(587),
-  SMTP_NODEMAILER_USER: z.string().default(`NODEMAILER_SMTP_USER`),
-  NODEMAILER_SMTP_USER_PASS: z.string().default(`NODEMAILER_SMTP_USER_PASS`),
-  BREVO_SMTP_HOST: z.string().default(`BREVO_SMTP_HOST`),
-  BREVO_SMTP_PORT: z.coerce.number().default(587),
-  BREVO_SMTP_USER: z.string().default(`BREVO_SMTP_USER`),
-  BREVO_SMTP_USER_PASS: z.string().default(`BREVO_SMTP_USER_PASS`),
-  NODEMAILER_SMTP_DEFAULT_FROM: z.string().default(`noreply@wirebill.com`),
-  SMTP_VERIFY_ON_BOOT: zBoolean(true).optional().default(false),
+const mail = {
+  BREVO_API_KEY: z.string().default(`BREVO_API_KEY`),
+  BREVO_API_BASE_URL: z.string().default(`https://api.brevo.com/v3`),
+  BREVO_DEFAULT_FROM_EMAIL: z.string().default(`BREVO_DEFAULT_FROM_EMAIL`),
+  BREVO_DEFAULT_FROM_NAME: z.string().default(`Wirebill`),
+  BREVO_VERIFY_ON_BOOT: zBoolean(true).optional().default(false),
 };
 
 const stripe = {
@@ -211,7 +206,7 @@ const schema = z.object({
   ...google,
   ...jwt,
   ...authLockout,
-  ...smtp,
+  ...mail,
   ...stripe,
   ...aws,
   ...logs,

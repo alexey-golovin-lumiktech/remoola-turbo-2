@@ -1,10 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { IsEmail } from 'class-validator';
+
+import { IsValidEmail } from '../../shared-common';
 
 export class ForgotPasswordBody {
   @Expose()
   @ApiProperty({ example: `email@email.com` })
-  @IsEmail()
+  @IsValidEmail()
   email: string;
 }

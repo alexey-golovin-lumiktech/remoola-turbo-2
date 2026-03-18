@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-import { CURRENCY_CODE, isCurrencyCode, type TCurrencyCode } from '@remoola/api-types';
+import { CURRENCY_CODE, emailSchema, isCurrencyCode, type TCurrencyCode } from '@remoola/api-types';
 
 import { SuccessModal } from './SuccessModal';
 import { getErrorMessageForUser } from '../../lib/error-messages';
@@ -43,6 +43,11 @@ export function TransferForm() {
       toast.error(`Please enter recipient email.`);
       return;
     }
+    const recipientParsed = emailSchema.safeParse(recipient.trim());
+    if (!recipientParsed.success) {
+      toast.error(recipientParsed.error.issues[0]?.message ?? `Enter a valid email address`);
+      return;
+    }
 
     setLoading(true);
     try {
@@ -57,7 +62,7 @@ export function TransferForm() {
         body: JSON.stringify({
           amount: numericAmount,
           currencyCode,
-          recipient: recipient.trim(),
+          recipient: recipientParsed.data,
           note: note || null,
         }),
       });

@@ -22,6 +22,7 @@ jest.mock(`../../shared-common`, () => ({
   },
   secureCompare: jest.fn((a: string, b: string) => a === b),
   constants: { INVALID_EMAIL: `Invalid email` },
+  IsValidEmail: () => () => {},
 }));
 
 import { secureCompare } from '../../shared-common';

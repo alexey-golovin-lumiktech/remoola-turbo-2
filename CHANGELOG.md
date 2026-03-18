@@ -1466,7 +1466,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-03-17</summary>
 
 - **2026-03-17:**
@@ -1479,6 +1479,21 @@
 
   ### 📄 Documentation
   - Changelog and canonical docs updated for forgot-password, reset-password, and change-password (consumer auth and profile).
+
+</details>
+
+<details open>
+<summary>2026-03-18</summary>
+
+- **2026-03-18:**
+  ### 🚀 Feature
+  - Consumer forgot-password / reset-password completion: auth-notice type in `@remoola/api-types` for post-login/post-reset messaging; logout redirect and cookie clear behavior aligned across consumer and consumer-mobile; profile password change (consumer web + mobile) and error-message alignment; mail transport health used by forgot-password flow; reset-password token cleanup scheduler (expired token removal).
+  - E2E: forgot-password and reset-password flow covered by `apps/api/test/forgot-reset-password.e2e-spec.ts`.
+  - Email: migrate to Brevo API (transactional email via Brevo; optional boot-time verification `BREVO_VERIFY_ON_BOOT`; env: `BREVO_API_KEY`, `BREVO_API_BASE_URL`).
+  - Email validation consolidation: single source in `@remoola/api-types` (validation/email); API shared-common validators and DTOs (auth, consumer, admin, payment, contact) and consumer/consumer-mobile signup and contact schemas aligned to shared email validation.
+
+  ### 📄 Documentation
+  - Canonical docs and changelog updated for this release (consumer auth: forgot/reset, auth-notice, logout, cookie policy, e2e; email validation consolidation; Brevo mailing).
 
 </details>
 

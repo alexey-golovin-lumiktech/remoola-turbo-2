@@ -1,11 +1,13 @@
 import { z } from 'zod';
 
+import { emailSchema } from '@remoola/api-types';
+
 export const paymentRequestParamsSchema = z.object({
   paymentRequestId: z.string().min(1),
 });
 
 export const createPaymentRequestPayloadSchema = z.object({
-  email: z.string().email(),
+  email: emailSchema,
   amount: z.string().min(1),
   currencyCode: z.string().optional(),
   description: z.string().optional(),

@@ -1,14 +1,14 @@
 import { z } from 'zod';
 
-import { AUTH_NOTICE_QUERY, parseAuthNotice } from '@remoola/api-types';
+import { AUTH_NOTICE_QUERY, emailSchema, parseAuthNotice } from '@remoola/api-types';
 
 export const loginSchema = z.object({
-  email: z.string().min(1, `Email is required`).email(`Invalid email`),
+  email: emailSchema,
   password: z.string().min(1, `Password is required`),
 });
 
 export const forgotPasswordSchema = z.object({
-  email: z.string().min(1, `Email is required`).email(`Invalid email`),
+  email: emailSchema,
 });
 
 export const resetPasswordSchema = z

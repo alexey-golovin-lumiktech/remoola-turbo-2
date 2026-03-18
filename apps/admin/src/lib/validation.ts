@@ -3,12 +3,10 @@
 import { useState, useCallback } from 'react';
 import { z } from 'zod';
 
-// Common validation schemas
-export const emailSchema = z
-  .string()
-  .min(1, `Email is required`)
-  .email(`Please enter a valid email address`)
-  .max(254, `Email is too long`);
+import { emailSchema } from '@remoola/api-types';
+
+// Re-export for consumers that import from this file
+export { emailSchema };
 
 export const passwordSchema = z
   .string()

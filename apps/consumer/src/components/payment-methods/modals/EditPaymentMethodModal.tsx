@@ -1,6 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+
+import { emailOptionalSchema } from '@remoola/api-types';
 
 import { type PaymentMethodItem } from '../../../types';
 import styles from '../../ui/classNames.module.css';
@@ -63,6 +66,16 @@ export function EditPaymentMethodModal({
   if (!open || !paymentMethod) return null;
 
   async function handleSave() {
+    const trimmedBillingEmail = billingEmail.trim();
+    let billingEmailToSend = ``;
+    if (trimmedBillingEmail) {
+      const parsed = emailOptionalSchema.safeParse(trimmedBillingEmail);
+      if (!parsed.success) {
+        toast.error(parsed.error.issues[0]?.message ?? `Enter a valid billing email`);
+        return;
+      }
+      billingEmailToSend = parsed.data;
+    }
     setSaving(true);
 
     const res = await fetch(`/api/payment-methods/${paymentMethod!.id}`, {
@@ -70,7 +83,7 @@ export function EditPaymentMethodModal({
       headers: { 'content-type': `application/json` },
       body: JSON.stringify({
         billingName,
-        billingEmail,
+        billingEmail: billingEmailToSend,
         billingPhone,
         defaultSelected,
       }),

@@ -1,7 +1,9 @@
 import { Expose } from 'class-transformer';
-import { IsEmail, IsNumber, IsString } from 'class-validator';
+import { IsNumber, IsString } from 'class-validator';
 
 import { type ConsumerModel } from '@remoola/database-2';
+
+import { IsValidEmail } from '../../shared-common';
 
 export type IJwtTokenPayload = {
   sub?: ConsumerModel[`id`];
@@ -25,7 +27,7 @@ export class JwtTokenPayloadDTO implements IJwtTokenPayload {
   sid?: string;
 
   @Expose()
-  @IsEmail()
+  @IsValidEmail()
   email: string;
 
   @Expose()

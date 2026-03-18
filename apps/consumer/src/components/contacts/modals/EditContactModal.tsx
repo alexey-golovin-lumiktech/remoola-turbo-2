@@ -1,6 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+
+import { emailSchema } from '@remoola/api-types';
 
 import { type ConsumerContactAddress, type ConsumerContact } from '../../../types';
 import styles from '../../ui/classNames.module.css';
@@ -52,10 +55,15 @@ export function EditContactModal({ open, onCloseAction, onUpdatedAction, contact
   if (!open || !contact) return null;
 
   async function update() {
+    const emailParsed = emailSchema.safeParse(email.trim());
+    if (!emailParsed.success) {
+      toast.error(emailParsed.error.issues[0]?.message ?? `Enter a valid email address`);
+      return;
+    }
     const res = await fetch(`/api/contacts/${contact!.id}`, {
       method: `PATCH`,
       headers: { 'content-type': `application/json` },
-      body: JSON.stringify({ name, email, address }),
+      body: JSON.stringify({ name, email: emailParsed.data, address }),
       credentials: `include`,
     });
 

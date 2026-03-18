@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { z } from 'zod';
 
+import { emailOptionalSchema } from '@remoola/api-types';
+
 import { getEnv } from '../../lib/env.server';
 import { generateCorrelationId, serverLogger } from '../../lib/logger.server';
 
@@ -190,7 +192,7 @@ const addPaymentMethodSchema = z.object({
   stripePaymentMethodId: z.string().min(1),
   defaultSelected: z.boolean().optional(),
   billingName: z.string().min(1),
-  billingEmail: z.union([z.string().email(), z.literal(``)]).optional(),
+  billingEmail: emailOptionalSchema.optional(),
   billingPhone: z.string().optional(),
   brand: z.string().min(1),
   last4: z.string().length(4),
@@ -305,7 +307,7 @@ export async function addPaymentMethodAction(input: AddPaymentMethodInput): Prom
 const addBankAccountSchema = z.object({
   defaultSelected: z.boolean().optional(),
   billingName: z.string().min(1),
-  billingEmail: z.union([z.string().email(), z.literal(``)]).optional(),
+  billingEmail: emailOptionalSchema.optional(),
   billingPhone: z.string().optional(),
   bankName: z.string().min(1),
   last4: z.string().length(4),

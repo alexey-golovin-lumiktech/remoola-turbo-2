@@ -1,8 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { IsEmail, IsIn, IsNotEmpty, IsString } from 'class-validator';
+import { IsIn, IsNotEmpty, IsString } from 'class-validator';
 
 import { $Enums } from '@remoola/database-2';
+
+import { IsValidEmail } from '../../shared-common';
 
 export class Access {
   @Expose()
@@ -30,6 +32,6 @@ export class Access {
 
   @Expose()
   @ApiProperty({ description: `Admin email address`, example: `email-string` })
-  @IsEmail()
+  @IsValidEmail()
   email: string;
 }

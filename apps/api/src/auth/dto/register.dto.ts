@@ -1,13 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { IsEmail, IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
 
 import { $Enums } from '@remoola/database-2';
+
+import { IsValidEmail } from '../../shared-common';
 
 export class RegisterBody {
   @Expose()
   @ApiProperty({ example: `email@email.com` })
-  @IsEmail()
+  @IsValidEmail()
   email: string;
 
   @Expose()

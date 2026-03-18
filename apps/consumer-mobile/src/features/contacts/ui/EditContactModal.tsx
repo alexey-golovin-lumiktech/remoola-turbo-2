@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 
+import { isValidEmail } from '@remoola/api-types';
+
 import { getLocalToastMessage, localToastKeys } from '../../../lib/error-messages';
 import { showErrorToast } from '../../../lib/toast.client';
 import { Button } from '../../../shared/ui/Button';
@@ -73,7 +75,7 @@ export function EditContactModal({ isOpen, onClose, contact, onSubmit }: EditCon
 
     const newErrors: Record<string, string> = {};
 
-    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (email.trim() && !isValidEmail(email)) {
       newErrors.email = `Please enter a valid email`;
     }
 

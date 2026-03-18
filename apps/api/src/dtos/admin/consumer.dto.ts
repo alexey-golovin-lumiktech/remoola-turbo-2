@@ -1,6 +1,6 @@
 import { ApiProperty, OmitType, PartialType, PickType } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
-import { IsBoolean, IsEmail, IsIn, IsOptional, IsString, ValidateIf } from 'class-validator';
+import { IsBoolean, IsIn, IsOptional, IsString, ValidateIf } from 'class-validator';
 
 import { $Enums } from '@remoola/database-2';
 
@@ -10,13 +10,14 @@ import {
   type IConsumerCreate,
   type IConsumerUpdate,
   constants,
+  IsValidEmail,
 } from '../../shared-common';
 import { BaseModel } from '../common';
 
 class Consumer extends BaseModel implements IConsumerModel {
   @Expose()
   @ApiProperty({ description: `Consumer email address (used for authentication)`, required: true })
-  @IsEmail({}, { message: constants.INVALID_EMAIL })
+  @IsValidEmail({ message: constants.INVALID_EMAIL })
   email: string;
 
   @Expose()

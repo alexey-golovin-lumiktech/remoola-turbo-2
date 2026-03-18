@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ISendMailOptions, MailerService } from '@nestjs-modules/mailer';
 
 import { generatePdf } from '../shared-common';
+import { BrevoMailService, type BrevoAttachment, type BrevoSendMailOptions } from './brevo-mail.service';
 import {
   forgotPassword,
   invitation,
@@ -22,7 +22,7 @@ export class MailingService {
   private readonly logger = new Logger(MailingService.name);
 
   constructor(
-    private mailerService: MailerService,
+    private brevoMailService: BrevoMailService,
     private originResolver: OriginResolverService,
   ) {}
 
@@ -47,9 +47,9 @@ export class MailingService {
     this.logger.error(`[${context}] Email operation failed with non-Error value: ${this.formatUnknownError(error)}`);
   }
 
-  private async sendEmailWithErrorHandling(context: string, options: ISendMailOptions): Promise<void> {
+  private async sendEmailWithErrorHandling(context: string, options: BrevoSendMailOptions): Promise<void> {
     try {
-      await this.mailerService.sendMail(options);
+      await this.brevoMailService.sendMail(options);
       this.logger.verbose(`[${context}] Email sent successfully`);
     } catch (error) {
       this.logEmailFailure(context, error);
@@ -91,7 +91,7 @@ export class MailingService {
   async sendOutgoingInvoiceEmail(invoice: InvoiceForTemplate) {
     const html = outgoingInvoiceToHtml.processor(invoice);
     const subject = `NEW INVOICE #${invoice.id}`;
-    let attachments: ISendMailOptions[`attachments`];
+    let attachments: BrevoAttachment[];
 
     try {
       const content = await generatePdf({ rawHtml: invoiceToHtml.processor(invoice) });

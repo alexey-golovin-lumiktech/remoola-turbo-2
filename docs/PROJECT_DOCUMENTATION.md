@@ -195,7 +195,7 @@ Settings (`/consumer/settings`):
 Common infrastructure in `apps/api/src/shared` and `apps/api/src/shared-common`:
 
 - Prisma DB module and service.
-- Email templates and mailing service.
+- Email templates and mailing service (transactional email via Brevo API; see FEATURES_CURRENT.md).
 - JWT auth guard and interceptors.
 - Shared auth cookie policy (cookie names and options from `@remoola/api-types`; __Host- prefix in production); consumer auth backed by `auth_sessions` table (hashed refresh, rotation lineage, revocation).
 - Auth audit (login success/failure tracking) and account lockout (per-email after N failures).

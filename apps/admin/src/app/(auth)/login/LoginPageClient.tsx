@@ -4,6 +4,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
+import { emailSchema } from '@remoola/api-types';
+
 import styles from '../../../components/ui/classNames.module.css';
 import { apiFetch, resetSessionExpiredHandled } from '../../../lib';
 import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../../lib/error-messages';
@@ -29,11 +31,17 @@ export function LoginPageClient() {
       toast.error(getLocalToastMessage(localToastKeys.LOGIN_EMAIL_PASSWORD_REQUIRED));
       return;
     }
+    const emailParsed = emailSchema.safeParse(email.trim());
+    if (!emailParsed.success) {
+      const msg = emailParsed.error.issues[0]?.message ?? `Enter a valid email address`;
+      toast.error(msg);
+      return;
+    }
     setLoading(true);
 
     const response = await apiFetch<{ ok: true }>(`/api/auth/login`, {
       method: `POST`,
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email: emailParsed.data, password }),
     });
 
     setLoading(false);

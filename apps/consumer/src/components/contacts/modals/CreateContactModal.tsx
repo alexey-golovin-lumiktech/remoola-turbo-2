@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
+import { emailSchema } from '@remoola/api-types';
+
 import { createContactRequest } from '../../../lib/create-contact';
 import { type IAddressDetails } from '../../../types';
 import styles from '../../ui/classNames.module.css';
@@ -46,8 +48,13 @@ export function CreateContactModal({ open, initialEmail, onCloseAction, onCreate
   if (!open) return null;
 
   async function create() {
+    const emailParsed = emailSchema.safeParse(email?.trim() ?? ``);
+    if (!emailParsed.success) {
+      toast.error(emailParsed.error.issues[0]?.message ?? `Enter a valid email address`);
+      return;
+    }
     const res = await createContactRequest({
-      email,
+      email: emailParsed.data,
       name,
       address,
     });

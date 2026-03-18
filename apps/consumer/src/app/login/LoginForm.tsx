@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
-import { AUTH_NOTICE_QUERY, getAuthNoticeMessage, parseAuthNotice } from '@remoola/api-types';
+import { AUTH_NOTICE_QUERY, emailSchema, getAuthNoticeMessage, parseAuthNotice } from '@remoola/api-types';
 
 import { GoogleIcon } from '../../components/ui';
 import styles from '../../components/ui/classNames.module.css';
@@ -102,6 +102,11 @@ export default function LoginForm() {
       setErr(`Email and password are required.`);
       return;
     }
+    const emailParsed = emailSchema.safeParse(email.trim());
+    if (!emailParsed.success) {
+      setErr(emailParsed.error.issues[0]?.message ?? `Enter a valid email address`);
+      return;
+    }
 
     setLoading(true);
     try {
@@ -109,7 +114,7 @@ export default function LoginForm() {
         method: `POST`,
         headers: { 'content-type': `application/json` },
         credentials: `include`,
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: emailParsed.data, password }),
       });
 
       if (!loginRequest.ok) {

@@ -6,3 +6,4 @@ export * from './models';
 export * from './pdf-generator-package';
 export * from './types';
 export * from './utils';
+export * from './validators';

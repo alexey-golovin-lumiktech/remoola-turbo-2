@@ -1,6 +1,6 @@
 import { ApiProperty, OmitType, PickType } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
-import { IsDate, IsEmail, IsIn, IsNumber, IsString, IsUUID, ValidateIf } from 'class-validator';
+import { IsDate, IsIn, IsNumber, IsString, IsUUID, ValidateIf } from 'class-validator';
 
 import { $Enums } from '@remoola/database-2';
 
@@ -13,6 +13,7 @@ import {
   type ReqQueryFilter,
   type SortDirectionValue,
   constants,
+  IsValidEmail,
 } from '../../shared-common';
 
 class PaymentRequestDTO extends BaseModel implements IPaymentRequestModel {
@@ -153,6 +154,6 @@ export class PaymentRequestPayToContact extends PickType(PaymentRequestDTO, [
 ] as const) {
   @Expose()
   @ApiProperty({ description: `Email address of the contact to pay` })
-  @IsEmail({}, { message: constants.INVALID_EMAIL })
+  @IsValidEmail({ message: constants.INVALID_EMAIL })
   contactEmail: string;
 }
