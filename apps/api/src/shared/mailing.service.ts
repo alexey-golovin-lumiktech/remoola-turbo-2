@@ -26,11 +26,11 @@ export class MailingService {
     private originResolver: OriginResolverService,
   ) {}
 
-  async sendLogsEmail(data: unknown = null) {
+  async sendLogsEmail(data: unknown = null, email?: string) {
     const html = `<pre><code>${JSON.stringify(data ?? {}, null, 2)}</code></pre>`;
     const subject = `WB Logs`;
     try {
-      await this.mailerService.sendMail({ to: envs.ADMIN_EMAIL!, subject, html });
+      await this.mailerService.sendMail({ to: email ?? envs.ADMIN_EMAIL!, subject, html });
       this.logger.verbose(`Email sent successfully`);
     } catch {
       this.logger.error(`[sendLogsEmail] Email send failed`);

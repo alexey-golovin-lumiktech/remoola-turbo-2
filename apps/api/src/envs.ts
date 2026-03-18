@@ -132,6 +132,17 @@ const nodemailer = {
   SMTP_VERIFY_ON_BOOT: zBoolean(true).optional().default(false),
 };
 
+const brevo = {
+  BREVO_SMTP_HOST: z.string().optional().default(`smtp-relay.brevo.com`),
+  BREVO_SMTP_PORT: z.coerce.number().optional().default(587),
+  BREVO_SMTP_USER: z.string().optional().default(`alexey.golovin@lumiktech.com`),
+  BREVO_SMTP_USER_PASS: z
+    .string()
+    .default(`xsmtpsib-f8fe102f809ae6063e0b8ecdcef7965f5bd6741e902e7ec1e365fd1bf897a9c8-wfshuxlCGSbnwL5W`),
+  BREVO_SMTP_DEFAULT_FROM: nodemailer.NODEMAILER_SMTP_DEFAULT_FROM,
+  SMTP_VERIFY_ON_BOOT: nodemailer.SMTP_VERIFY_ON_BOOT,
+};
+
 const stripe = {
   STRIPE_PUBLISHABLE_KEY: z.string().default(`STRIPE_PUBLISHABLE_KEY`),
   STRIPE_SECRET_KEY: z.string().default(`STRIPE_SECRET_KEY`),
@@ -208,6 +219,7 @@ const schema = z.object({
   ...jwt,
   ...authLockout,
   ...nodemailer,
+  ...brevo,
   ...stripe,
   ...aws,
   ...logs,
