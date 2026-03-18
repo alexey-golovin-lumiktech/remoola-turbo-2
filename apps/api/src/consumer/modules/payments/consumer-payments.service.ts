@@ -553,7 +553,7 @@ export class ConsumerPaymentsService {
     });
 
     if (result.email.payerEmail) {
-      void this.mailingService.sendPaymentRequestEmail(result.email);
+      await this.mailingService.sendPaymentRequestEmail(result.email);
     }
 
     return { paymentRequestId: result.paymentRequestId };
