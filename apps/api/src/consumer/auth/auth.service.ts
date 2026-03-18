@@ -511,7 +511,11 @@ export class ConsumerAuthService {
     const consumer = await this.prisma.consumerModel.findFirst({ where: { id: consumerId } });
     if (!consumer) throw new BadRequestException(errorCodes.CONSUMER_NOT_FOUND_COMPLETE_PROFILE);
     const token = await this.getAccessToken(consumer.id);
-    await this.mailingService.sendConsumerSignupVerificationEmail({ email: consumer.email, token, referer: validatedOrigin });
+    await this.mailingService.sendConsumerSignupVerificationEmail({
+      email: consumer.email,
+      token,
+      referer: validatedOrigin,
+    });
   }
 
   async signup(dto: ConsumerSignup, googleSignupPayload?: GoogleSignupPayload) {
