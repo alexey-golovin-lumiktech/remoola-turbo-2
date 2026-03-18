@@ -2,6 +2,7 @@ import chromium from '@sparticuz/chromium';
 import puppeteer from 'puppeteer-core';
 
 import { type InvoiceInfoDetails, type InvoiceInfoDetailsKey } from './types';
+import { envs } from '../../envs';
 
 export const outputHtmlPath = `out.html` as const;
 export const outputPdfPath = `out.pdf` as const;
@@ -10,11 +11,12 @@ const detailsSample: InvoiceInfoDetails = { name: ``, address: ``, line1: ``, li
 export const detailsSampleKeys = Object.keys(detailsSample) as InvoiceInfoDetailsKey[];
 
 export const pdfOptions = {
-  path: outputPdfPath,
+  // No `path` — Vercel's filesystem is read-only outside /tmp. Callers receive the buffer directly.
   margin: { top: `1cm`, left: `2cm`, right: `1cm`, bottom: `1cm` },
   printBackground: true,
   format: `A4`,
 } as const;
+if (envs.VERCEL !== 1) Object.assign(pdfOptions, { path: outputPdfPath });
 export const pdfPageWidthPx = 1240;
 export const pdfPageHeightPx = 1754;
 export const pdfPageDpi = 96;

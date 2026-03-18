@@ -31,15 +31,21 @@ type BrevoHttpErrorContext = { status: number };
 
 /**
  * Request timeout for Brevo API calls.
- * Keeps requests bounded on serverless (Vercel, Lambda). Ensure platform function
- * timeout allows at least this + retry delay (~25s) for routes that send email.
+ * Keeps requests bounded on serverless (Vercel, Lambda).
+ * Worst-case total with 3 attempts + delays: (TIMEOUT * 3) + (RETRY_DELAY * 2).
+ * At 18s: 18 + 1 + 18 + 1 + 18 = 56s — fits inside a 60s Vercel Pro function limit.
+ * Ensure the Vercel function maxDuration for email-sending routes is set to 60s.
  */
-const BREVO_REQUEST_TIMEOUT_MS = 20_000;
+const BREVO_REQUEST_TIMEOUT_MS = 18_000;
 
 /** Delay before retry on transient socket/network errors. */
 const BREVO_RETRY_DELAY_MS = 1_000;
 
 function isTransientSocketError(error: unknown): boolean {
+  // AbortSignal.timeout() throws a DOMException with name "TimeoutError"
+  if (error instanceof DOMException && error.name === `TimeoutError`) return true;
+  if (error instanceof Error && error.name === `TimeoutError`) return true;
+
   if (error instanceof Error && error.cause != null && typeof error.cause === `object`) {
     const code = (error.cause as Record<string, unknown>).code;
     if (typeof code === `string`) {
@@ -115,6 +121,9 @@ export class BrevoMailService {
 
   private async sendMailOnce(options: BrevoSendMailOptions, attempt: number, baseUrl: string): Promise<void> {
     const payload = this.buildPayload(options);
+    if (payload.to.length === 0) {
+      throw new Error(`Brevo send aborted: no valid recipients after filtering (to=${JSON.stringify(options.to)})`);
+    }
     const host = new URL(baseUrl).host;
     this.logger.verbose(`Brevo send attempt host=${host} attempt=${attempt}`);
     const response = await fetch(`${baseUrl}/smtp/email`, {
