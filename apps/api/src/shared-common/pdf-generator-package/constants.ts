@@ -10,13 +10,21 @@ export const outputPdfPath = `out.pdf` as const;
 const detailsSample: InvoiceInfoDetails = { name: ``, address: ``, line1: ``, line2: `` };
 export const detailsSampleKeys = Object.keys(detailsSample) as InvoiceInfoDetailsKey[];
 
-export const pdfOptions = {
-  // No `path` — Vercel's filesystem is read-only outside /tmp. Callers receive the buffer directly.
+// On Vercel the filesystem is read-only outside /tmp — omit `path` so callers receive the buffer directly.
+// Locally we still write the file so existing dev/CLI tooling continues to work.
+const common = {
   margin: { top: `1cm`, left: `2cm`, right: `1cm`, bottom: `1cm` },
   printBackground: true,
   format: `A4`,
-} as const;
-if (envs.VERCEL !== 1) Object.assign(pdfOptions, { path: outputPdfPath });
+};
+
+const isVercel = envs.VERCEL === 1;
+const isProduction = envs.NODE_ENV === `production`;
+const isStaging = envs.NODE_ENV === `staging`;
+const mustExcludePath = isVercel || isProduction || isStaging;
+
+export const pdfOptions = mustExcludePath ? common : { ...common, path: outputPdfPath };
+
 export const pdfPageWidthPx = 1240;
 export const pdfPageHeightPx = 1754;
 export const pdfPageDpi = 96;

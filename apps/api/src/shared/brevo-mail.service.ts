@@ -143,6 +143,10 @@ export class BrevoMailService {
   }
 
   async sendMail(options: BrevoSendMailOptions): Promise<void> {
+    if (!this.isConfigured()) {
+      this.logger.warn(`Brevo is not configured — skipping email send (to=${JSON.stringify(options.to)})`);
+      return;
+    }
     try {
       await this.sendMailOnce(options, 1, this.baseUrl);
     } catch (error) {
