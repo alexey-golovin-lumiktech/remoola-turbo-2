@@ -26,15 +26,44 @@ export class MailingService {
     private originResolver: OriginResolverService,
   ) {}
 
+  private formatUnknownError(error: unknown): string {
+    if (error instanceof Error) {
+      return `${error.name}: ${error.message}`;
+    }
+
+    try {
+      return JSON.stringify(error);
+    } catch {
+      return String(error);
+    }
+  }
+
+  private logEmailFailure(context: string, error: unknown): void {
+    if (error instanceof Error) {
+      this.logger.error(`[${context}] Email operation failed: ${error.message}`, error.stack);
+      return;
+    }
+
+    this.logger.error(`[${context}] Email operation failed with non-Error value: ${this.formatUnknownError(error)}`);
+  }
+
+  private async sendEmailWithErrorHandling(context: string, options: ISendMailOptions): Promise<void> {
+    try {
+      await this.mailerService.sendMail(options);
+      this.logger.verbose(`[${context}] Email sent successfully`);
+    } catch (error) {
+      this.logEmailFailure(context, error);
+    }
+  }
+
   async sendLogsEmail(data: unknown = null, email?: string) {
     const html = `<pre><code>${JSON.stringify(data ?? {}, null, 2)}</code></pre>`;
     const subject = `WB Logs`;
-    try {
-      await this.mailerService.sendMail({ to: email ?? envs.ADMIN_EMAIL!, subject, html });
-      this.logger.verbose(`Email sent successfully`);
-    } catch {
-      this.logger.error(`[sendLogsEmail] Email send failed`);
-    }
+    await this.sendEmailWithErrorHandling(`sendLogsEmail`, {
+      to: email ?? envs.ADMIN_EMAIL!,
+      subject,
+      html,
+    });
   }
 
   async sendConsumerSignupVerificationEmail(params: { email: string; token: string; referer: string }) {
@@ -52,25 +81,32 @@ export class MailingService {
 
     const html = signupCompletionToHtml.processor(emailConfirmationUrl.toString());
     const subject = `Welcome to Wirebill! Confirm your Email`;
-    try {
-      await this.mailerService.sendMail({ to: params.email, subject, html });
-      this.logger.verbose(`Email sent successfully`);
-    } catch {
-      this.logger.error(`[sendConsumerSignupVerificationEmail] Email send failed`);
-    }
+    await this.sendEmailWithErrorHandling(`sendConsumerSignupVerificationEmail`, {
+      to: params.email,
+      subject,
+      html,
+    });
   }
 
   async sendOutgoingInvoiceEmail(invoice: InvoiceForTemplate) {
     const html = outgoingInvoiceToHtml.processor(invoice);
-    const content = await generatePdf({ rawHtml: invoiceToHtml.processor(invoice) });
     const subject = `NEW INVOICE #${invoice.id}`;
-    const attachments: ISendMailOptions[`attachments`] = [{ content, filename: `invoice-${invoice.id}.pdf` }];
+    let attachments: ISendMailOptions[`attachments`];
+
     try {
-      await this.mailerService.sendMail({ to: invoice.referer, subject, html, attachments });
-      this.logger.verbose(`Email sent successfully`);
-    } catch {
-      this.logger.error(`[sendOutgoingInvoiceEmail] Email send failed`);
+      const content = await generatePdf({ rawHtml: invoiceToHtml.processor(invoice) });
+      attachments = [{ content, filename: `invoice-${invoice.id}.pdf` }];
+    } catch (error) {
+      this.logEmailFailure(`sendOutgoingInvoiceEmail.generatePdf`, error);
+      return;
     }
+
+    await this.sendEmailWithErrorHandling(`sendOutgoingInvoiceEmail`, {
+      to: invoice.referer,
+      subject,
+      html,
+      attachments,
+    });
   }
 
   async sendPayToContactPaymentInfoEmail(params: {
@@ -80,12 +116,11 @@ export class MailingService {
   }) {
     const html = payToContactPaymentInfo.processor(params);
     const subject = `Wirebill. Payment`;
-    try {
-      await this.mailerService.sendMail({ to: params.contactEmail, subject, html });
-      this.logger.verbose(`Email sent successfully`);
-    } catch {
-      this.logger.error(`[sendPayToContactPaymentInfoEmail] Email send failed`);
-    }
+    await this.sendEmailWithErrorHandling(`sendPayToContactPaymentInfoEmail`, {
+      to: params.contactEmail,
+      subject,
+      html,
+    });
   }
 
   async sendPaymentRequestEmail(params: {
@@ -119,13 +154,11 @@ export class MailingService {
     });
 
     const subject = `Wirebill. Payment request from ${params.requesterEmail}`;
-
-    try {
-      await this.mailerService.sendMail({ to: params.payerEmail, subject, html });
-      this.logger.verbose(`Email sent successfully`);
-    } catch {
-      this.logger.error(`[sendPaymentRequestEmail] Email send failed`);
-    }
+    await this.sendEmailWithErrorHandling(`sendPaymentRequestEmail`, {
+      to: params.payerEmail,
+      subject,
+      html,
+    });
   }
 
   async sendPaymentRefundEmail(params: {
@@ -161,13 +194,11 @@ export class MailingService {
     });
 
     const subject = `Wirebill. Payment refund`;
-
-    try {
-      await this.mailerService.sendMail({ to: params.recipientEmail, subject, html });
-      this.logger.verbose(`Email sent successfully`);
-    } catch {
-      this.logger.error(`[sendPaymentRefundEmail] Email send failed`);
-    }
+    await this.sendEmailWithErrorHandling(`sendPaymentRefundEmail`, {
+      to: params.recipientEmail,
+      subject,
+      html,
+    });
   }
 
   async sendPaymentChargebackEmail(params: {
@@ -203,36 +234,26 @@ export class MailingService {
     });
 
     const subject = `Wirebill. Chargeback update`;
-
-    try {
-      await this.mailerService.sendMail({ to: params.recipientEmail, subject, html });
-      this.logger.verbose(`Email sent successfully`);
-    } catch {
-      this.logger.error(`[sendPaymentChargebackEmail] Email send failed`);
-    }
+    await this.sendEmailWithErrorHandling(`sendPaymentChargebackEmail`, {
+      to: params.recipientEmail,
+      subject,
+      html,
+    });
   }
 
   async sendInvitationEmail(params: { email: string; signupLink: string }) {
     const html = invitation.processor(params);
     const subject = `Wirebill. Invitation`;
-    try {
-      await this.mailerService.sendMail({ to: params.email, subject, html });
-      this.logger.verbose(`Email sent successfully`);
-    } catch {
-      this.logger.error(`[sendInvitationEmail] Email send failed`);
-    }
+    await this.sendEmailWithErrorHandling(`sendInvitationEmail`, { to: params.email, subject, html });
   }
 
   async sendConsumerForgotPasswordEmail(params: { email: string; forgotPasswordLink: string }) {
-    this.logger.verbose(`sendConsumerForgotPasswordEmail START`);
     const html = forgotPassword.processor(params.forgotPasswordLink);
     const subject = `Wirebill – Reset your password`;
-    try {
-      this.logger.verbose(`sendConsumerForgotPasswordEmail BEFORE`);
-      await this.mailerService.sendMail({ to: params.email, subject, html });
-      this.logger.verbose(`Email sent successfully`);
-    } catch {
-      this.logger.error(`[sendConsumerForgotPasswordEmail] Email send failed`);
-    }
+    await this.sendEmailWithErrorHandling(`sendConsumerForgotPasswordEmail`, {
+      to: params.email,
+      subject,
+      html,
+    });
   }
 }
