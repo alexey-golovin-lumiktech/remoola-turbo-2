@@ -1,5 +1,5 @@
 import chromium from '@sparticuz/chromium';
-import puppeteer from 'puppeteer-core';
+import puppeteer, { type PDFOptions } from 'puppeteer-core';
 
 import { type InvoiceInfoDetails, type InvoiceInfoDetailsKey } from './types';
 import { envs } from '../../envs';
@@ -12,18 +12,18 @@ export const detailsSampleKeys = Object.keys(detailsSample) as InvoiceInfoDetail
 
 // On Vercel the filesystem is read-only outside /tmp — omit `path` so callers receive the buffer directly.
 // Locally we still write the file so existing dev/CLI tooling continues to work.
-const common = {
+const commonPDFOptions = {
   margin: { top: `1cm`, left: `2cm`, right: `1cm`, bottom: `1cm` },
   printBackground: true,
   format: `A4`,
-};
+} as PDFOptions;
 
 const isVercel = envs.VERCEL === 1;
 const isProduction = envs.NODE_ENV === `production`;
 const isStaging = envs.NODE_ENV === `staging`;
 const mustExcludePath = isVercel || isProduction || isStaging;
 
-export const pdfOptions = mustExcludePath ? common : { ...common, path: outputPdfPath };
+export const pdfOptions = mustExcludePath ? commonPDFOptions : { ...commonPDFOptions, path: outputPdfPath };
 
 export const pdfPageWidthPx = 1240;
 export const pdfPageHeightPx = 1754;
