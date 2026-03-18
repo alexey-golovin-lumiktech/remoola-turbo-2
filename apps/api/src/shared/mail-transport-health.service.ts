@@ -27,9 +27,9 @@ export class MailTransportHealthService implements OnApplicationBootstrap {
   private async verify(): Promise<void> {
     const transporter = this.mailerService[`transporter`] as
       | {
-        verify?: () => Promise<unknown>;
-        options?: { host?: unknown };
-      }
+          verify?: () => Promise<unknown>;
+          options?: { host?: unknown };
+        }
       | undefined;
 
     if (!transporter?.verify) {

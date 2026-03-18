@@ -1,4 +1,4 @@
-import { UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 
 import { ConsumerAuthController } from './auth.controller';
 import { type ConsumerAuthService } from './auth.service';
@@ -68,6 +68,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       findConsumerByEmail: jest.fn(),
       issueTokensForConsumer: jest.fn(),
       createOAuthExchangeToken: jest.fn(),
+      resetPasswordWithToken: jest.fn().mockResolvedValue(undefined),
     };
 
     controller = new ConsumerAuthController(
@@ -186,5 +187,22 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
 
     expect(oauthStateStore.consume).toHaveBeenCalledWith(`state-token`);
     expect(res.redirect).toHaveBeenCalledWith(expect.stringContaining(`error=invalid_state`));
+  });
+
+  it(`resetPassword delegates to service and returns success`, async () => {
+    const body = { token: `reset-token`, password: `newPassword8` };
+    const result = await controller.resetPassword(body);
+
+    expect(service.resetPasswordWithToken).toHaveBeenCalledWith(`reset-token`, `newPassword8`);
+    expect(result).toEqual({ success: true });
+  });
+
+  it(`resetPassword propagates BadRequestException from service`, async () => {
+    (service.resetPasswordWithToken as jest.Mock).mockRejectedValueOnce(
+      new BadRequestException(`INVALID_CHANGE_PASSWORD_TOKEN`),
+    );
+    const body = { token: `bad-token`, password: `newPassword8` };
+
+    await expect(controller.resetPassword(body)).rejects.toThrow(BadRequestException);
   });
 });

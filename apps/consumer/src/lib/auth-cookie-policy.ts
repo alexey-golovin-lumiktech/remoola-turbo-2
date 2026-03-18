@@ -2,11 +2,12 @@ import { type NextResponse } from 'next/server';
 
 import {
   COOKIE_KEYS,
-  getConsumerAccessTokenCookieKey,
   getConsumerAuthCookieOptions,
-  getConsumerRefreshTokenCookieKey,
   getCookieClearOptions,
   getCsrfCookieOptions,
+  getConsumerAccessTokenCookieKeysForRead,
+  getConsumerRefreshTokenCookieKeysForRead,
+  getConsumerDeviceCookieKeysForRead,
   getOAuthStateCookieOptions,
   type OAuthCookieRuntime,
 } from '@remoola/api-types';
@@ -30,8 +31,15 @@ export function clearConsumerAuthCookies(response: NextResponse, request: Reques
   const authClearOpts = getCookieClearOptions(getConsumerAuthCookieOptions(runtime));
   const oauthClearOpts = getCookieClearOptions(getOAuthStateCookieOptions(runtime));
   const csrfClearOpts = getCookieClearOptions(getCsrfCookieOptions(runtime));
-  response.cookies.set(getConsumerAccessTokenCookieKey(runtime), ``, { ...authClearOpts, maxAge: 0 });
-  response.cookies.set(getConsumerRefreshTokenCookieKey(runtime), ``, { ...authClearOpts, maxAge: 0 });
+  for (const key of getConsumerAccessTokenCookieKeysForRead()) {
+    response.cookies.set(key, ``, { ...authClearOpts, maxAge: 0 });
+  }
+  for (const key of getConsumerRefreshTokenCookieKeysForRead()) {
+    response.cookies.set(key, ``, { ...authClearOpts, maxAge: 0 });
+  }
+  for (const key of getConsumerDeviceCookieKeysForRead()) {
+    response.cookies.set(key, ``, { ...authClearOpts, maxAge: 0 });
+  }
   response.cookies.set(COOKIE_KEYS.GOOGLE_OAUTH_STATE, ``, { ...oauthClearOpts, maxAge: 0 });
   response.cookies.set(COOKIE_KEYS.CSRF_TOKEN, ``, { ...csrfClearOpts, maxAge: 0 });
 }

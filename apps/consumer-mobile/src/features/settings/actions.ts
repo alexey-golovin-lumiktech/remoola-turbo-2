@@ -297,7 +297,6 @@ export async function updatePasswordAction(formData: FormData): Promise<ActionRe
       };
     }
 
-    revalidatePath(`/settings`);
     return { ok: true, data: { success: true } };
   } catch (error) {
     return {

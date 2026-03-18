@@ -1,14 +1,22 @@
 import { NextResponse } from 'next/server';
 
+import { AUTH_NOTICE_QUERY, parseAuthNotice } from '@remoola/api-types';
+
 import { appendSetCookies } from '../../lib/api-utils';
 import { clearConsumerAuthCookies, getCsrfTokenFromRequest } from '../../lib/auth-cookie-policy';
 import { getEnv } from '../../lib/env.server';
 
 export async function GET(request: Request) {
-  const { origin } = new URL(request.url);
+  const requestUrl = new URL(request.url);
+  const { origin } = requestUrl;
+  const authNotice = parseAuthNotice(requestUrl.searchParams.get(AUTH_NOTICE_QUERY) ?? undefined);
+  const loginUrl = new URL(`/login`, origin);
+  if (authNotice) {
+    loginUrl.searchParams.set(AUTH_NOTICE_QUERY, authNotice);
+  }
   const env = getEnv();
   const apiBase = env.NEXT_PUBLIC_API_BASE_URL;
-  const response = NextResponse.redirect(`${origin}/login`);
+  const response = NextResponse.redirect(loginUrl);
 
   if (apiBase) {
     try {
@@ -23,7 +31,9 @@ export async function GET(request: Request) {
         cache: `no-store`,
       });
       appendSetCookies(response.headers, backendResponse.headers);
-      return response;
+      if (backendResponse.ok) {
+        return response;
+      }
     } catch {
       // continue with client-side cookie cleanup
     }

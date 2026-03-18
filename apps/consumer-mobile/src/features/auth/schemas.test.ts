@@ -76,4 +76,24 @@ describe(`parseSearchParams`, () => {
     const { nextPath } = parseSearchParams({ next: `/dashboard%0d%0aSet-Cookie%3Aevil%3D1` });
     expect(nextPath).toBe(`/dashboard`);
   });
+
+  it(`returns default nextPath when next points to logout`, () => {
+    const { nextPath } = parseSearchParams({ next: `/logout` });
+    expect(nextPath).toBe(`/dashboard`);
+  });
+
+  it(`parses reset_success auth notice`, () => {
+    const { authNotice } = parseSearchParams({ auth_notice: `reset_success` });
+    expect(authNotice).toBe(`reset_success`);
+  });
+
+  it(`parses password_changed auth notice`, () => {
+    const { authNotice } = parseSearchParams({ auth_notice: `password_changed` });
+    expect(authNotice).toBe(`password_changed`);
+  });
+
+  it(`ignores unknown auth notice values`, () => {
+    const { authNotice } = parseSearchParams({ auth_notice: `something_else` });
+    expect(authNotice).toBeUndefined();
+  });
 });

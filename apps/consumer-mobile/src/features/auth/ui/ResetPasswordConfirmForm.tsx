@@ -2,14 +2,17 @@
 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
+import { AUTH_NOTICE_QUERY } from '@remoola/api-types';
+
+import styles from './LoginForm.module.css';
+import { shouldFinalizeResetConfirmLoading } from './reset-confirm-loading';
 import { getErrorMessageForUser } from '../../../lib/error-messages';
 import { EyeIcon } from '../../../shared/ui/icons/EyeIcon';
 import { EyeOffIcon } from '../../../shared/ui/icons/EyeOffIcon';
 import { SpinnerIcon } from '../../../shared/ui/icons/SpinnerIcon';
 import { resetPasswordSchema } from '../schemas';
-import styles from './LoginForm.module.css';
 
 const FALLBACK_ERROR = `Something went wrong. Please try again or request a new reset link.`;
 
@@ -24,6 +27,7 @@ export function ResetPasswordConfirmForm() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const didNavigateRef = useRef(false);
 
   if (!token || token.trim() === ``) {
     return (
@@ -78,11 +82,14 @@ export function ResetPasswordConfirmForm() {
         setErr(getErrorMessageForUser(code, FALLBACK_ERROR));
         return;
       }
-      router.replace(`/login?reset=success`);
+      didNavigateRef.current = true;
+      router.replace(`/login?${AUTH_NOTICE_QUERY}=reset_success`);
     } catch {
       setErr(FALLBACK_ERROR);
     } finally {
-      setLoading(false);
+      if (shouldFinalizeResetConfirmLoading(didNavigateRef.current)) {
+        setLoading(false);
+      }
     }
   };
 

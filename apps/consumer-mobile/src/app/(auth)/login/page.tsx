@@ -18,10 +18,10 @@ function LoginPageSuspenseFallback() {
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = await searchParams;
-  const { nextPath, sessionExpired } = parseSearchParams(params);
+  const { nextPath, sessionExpired, authNotice } = parseSearchParams(params);
   return (
     <Suspense fallback={<LoginPageSuspenseFallback />}>
-      <LoginForm nextPath={nextPath} sessionExpired={sessionExpired} />
+      <LoginForm nextPath={nextPath} sessionExpired={sessionExpired} authNotice={authNotice} />
     </Suspense>
   );
 }

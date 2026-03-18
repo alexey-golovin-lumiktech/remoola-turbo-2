@@ -27,6 +27,6 @@ export class ConsumerProfileController {
   @Patch(`password`)
   async changePassword(@Identity() consumer: ConsumerModel, @Body() body: ChangePasswordBody) {
     await this.service.changePassword(consumer.id, body);
-    return { success: true };
+    return { success: true, requiresReauth: true };
   }
 }

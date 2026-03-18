@@ -2,8 +2,10 @@
 
 import { useActionState, useState } from 'react';
 
+import { AUTH_NOTICE_QUERY } from '@remoola/api-types';
+
 import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../../lib/error-messages';
-import { showErrorToast, showSuccessToast } from '../../../lib/toast.client';
+import { showErrorToast } from '../../../lib/toast.client';
 import { Button } from '../../../shared/ui/Button';
 import { FormCard } from '../../../shared/ui/FormCard';
 import { FormField } from '../../../shared/ui/FormField';
@@ -29,9 +31,9 @@ export function PasswordChangeForm() {
       return result;
     }
 
-    showSuccessToast(`Password changed successfully`);
     const form = document.getElementById(`password-form`) as HTMLFormElement;
     form?.reset();
+    window.location.assign(`/logout?${AUTH_NOTICE_QUERY}=password_changed`);
     return result;
   }, null);
 

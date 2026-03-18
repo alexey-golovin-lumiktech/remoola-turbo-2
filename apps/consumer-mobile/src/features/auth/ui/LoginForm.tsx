@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { AUTH_NOTICE_QUERY, type AuthNotice, getAuthNoticeMessage } from '@remoola/api-types';
 import { GoogleIcon } from '@remoola/ui';
 
 import { getApiBaseUrlOptional } from '../../../lib/config.client';
@@ -18,7 +19,15 @@ import { XIcon } from '../../../shared/ui/icons/XIcon';
 import { loginSchema } from '../schemas';
 import styles from './LoginForm.module.css';
 
-export function LoginForm({ nextPath, sessionExpired }: { nextPath: string; sessionExpired?: boolean }) {
+export function LoginForm({
+  nextPath,
+  sessionExpired,
+  authNotice,
+}: {
+  nextPath: string;
+  sessionExpired?: boolean;
+  authNotice?: AuthNotice;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const oauthError = searchParams.get(`error`);
@@ -32,6 +41,7 @@ export function LoginForm({ nextPath, sessionExpired }: { nextPath: string; sess
   const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
   const [showSessionExpiredMessage, setShowSessionExpiredMessage] = useState(sessionExpired ?? false);
+  const [authNoticeMessage] = useState<string | undefined>(authNotice ? getAuthNoticeMessage(authNotice) : undefined);
 
   const errorMessage = err ?? (oauthError ? `Sign-in failed. Please try again.` : undefined);
 
@@ -54,6 +64,23 @@ export function LoginForm({ nextPath, sessionExpired }: { nextPath: string; sess
   useEffect(() => {
     emailInputRef.current?.focus();
   }, []);
+
+  const cleanedLoginQueryRef = useRef(false);
+  useEffect(() => {
+    if (cleanedLoginQueryRef.current) return;
+
+    const hasSessionExpiredFlag =
+      searchParams.get(`session_expired`) === `true` || searchParams.get(`session_expired`) === `1`;
+    const hasAuthNotice = searchParams.get(AUTH_NOTICE_QUERY) != null;
+    if (!hasSessionExpiredFlag && !hasAuthNotice) return;
+
+    cleanedLoginQueryRef.current = true;
+    const url = new URL(window.location.href);
+    url.searchParams.delete(`session_expired`);
+    url.searchParams.delete(AUTH_NOTICE_QUERY);
+    if (!url.searchParams.toString()) url.search = ``;
+    window.history.replaceState(null, ``, url.pathname + url.search);
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -143,6 +170,16 @@ export function LoginForm({ nextPath, sessionExpired }: { nextPath: string; sess
                 <XIcon className={styles.dismissIcon} />
               </button>
             </div>
+          </div>
+        ) : null}
+        {authNoticeMessage ? (
+          <div
+            className={styles.noticeAlert}
+            role="status"
+            aria-live="polite"
+            data-testid="consumer-mobile-login-auth-notice"
+          >
+            <p className={styles.noticeText}>{authNoticeMessage}</p>
           </div>
         ) : null}
 

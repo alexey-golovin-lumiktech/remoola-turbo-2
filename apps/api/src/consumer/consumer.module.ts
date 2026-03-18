@@ -10,6 +10,7 @@ import { GoogleAuthService } from './auth/google-auth.service';
 import { GoogleOAuthService } from './auth/google-oauth.service';
 import { OauthStateCleanupScheduler } from './auth/oauth-state-cleanup.scheduler';
 import { OAuthStateStoreService } from './auth/oauth-state-store.service';
+import { ResetPasswordCleanupScheduler } from './auth/reset-password-cleanup.scheduler';
 import { MailingModule } from '../shared/mailing.module';
 import { OriginResolverService } from '../shared/origin-resolver.service';
 import { ConsumerDashboardModule } from './modules/consumer-dashboard/consumer-dashboard.module';
@@ -47,6 +48,7 @@ import { ConsumerSettingsModule } from './modules/settings/consumer-settings.mod
     GoogleAuthService,
     OAuthStateStoreService,
     OauthStateCleanupScheduler,
+    ResetPasswordCleanupScheduler,
     ConsumerActionLogPartitionMaintenanceScheduler,
     ConsumerActionLogRetentionScheduler,
     OriginResolverService,

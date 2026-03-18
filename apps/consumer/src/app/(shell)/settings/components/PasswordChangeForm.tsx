@@ -2,6 +2,8 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 
+import { AUTH_NOTICE_QUERY } from '@remoola/api-types';
+
 import styles from '../../../../components/ui/classNames.module.css';
 
 const { formGrid, formSection, formSectionTitle, inputClass, inputLabel, primaryActionButton, spaceY6 } = styles;
@@ -50,6 +52,8 @@ export function PasswordChangeForm({ reload }: PasswordChangeFormProps) {
       setCurrentPassword(``);
       setPassword(``);
       setConfirm(``);
+      window.location.assign(`/logout?${AUTH_NOTICE_QUERY}=password_changed`);
+      return;
     }
 
     setSaving(false);

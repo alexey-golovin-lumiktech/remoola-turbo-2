@@ -134,7 +134,8 @@ export async function middleware(req: NextRequest) {
     req.nextUrl.pathname.startsWith(`/signup`) ||
     req.nextUrl.pathname.startsWith(`/forgot-password`);
   const isCallback = req.nextUrl.pathname.startsWith(`/auth/callback`);
-  const isProtected = !isAuthPage && !isCallback;
+  const isLogoutRoute = req.nextUrl.pathname.startsWith(`/logout`);
+  const isProtected = !isAuthPage && !isCallback && !isLogoutRoute;
   const hasValidAccessTokenShape = !isObviouslyInvalidCookieToken(accessToken);
   const hasValidRefreshTokenShape = !isObviouslyInvalidCookieToken(refreshToken);
 

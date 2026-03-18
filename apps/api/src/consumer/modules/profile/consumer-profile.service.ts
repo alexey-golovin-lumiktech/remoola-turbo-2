@@ -34,15 +34,27 @@ export class ConsumerProfileService {
       throw new BadRequestException(errorCodes.CURRENT_PASSWORD_INVALID);
     }
     const { hash, salt } = await passwordUtils.hashPassword(body.password);
-    await this.prisma.consumerModel.update({
-      where: { id: consumerId },
-      data: { password: hash, salt },
-    });
+    await this.prisma.$transaction([
+      this.prisma.consumerModel.update({
+        where: { id: consumerId },
+        data: { password: hash, salt },
+      }),
+      this.prisma.authSessionModel.updateMany({
+        where: { consumerId: consumer.id, revokedAt: null },
+        data: { revokedAt: new Date(), invalidatedReason: `logout_all`, lastUsedAt: new Date() },
+      }),
+    ]);
     await this.authAudit.recordAudit({
       identityType: AUTH_IDENTITY_TYPES.consumer,
       identityId: consumer.id,
       email: consumer.email,
       event: AUTH_AUDIT_EVENTS.password_change,
+    });
+    await this.authAudit.recordAudit({
+      identityType: AUTH_IDENTITY_TYPES.consumer,
+      identityId: consumer.id,
+      email: consumer.email,
+      event: AUTH_AUDIT_EVENTS.logout_all,
     });
   }
 

@@ -2,8 +2,11 @@
 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useState } from 'react';
+import { Suspense, useRef, useState } from 'react';
 
+import { AUTH_NOTICE_QUERY } from '@remoola/api-types';
+
+import { shouldFinalizeResetConfirmLoading } from './reset-confirm-loading';
 import styles from '../../../components/ui/classNames.module.css';
 import { getErrorMessageForUser } from '../../../lib/error-messages';
 
@@ -29,6 +32,7 @@ function ForgotPasswordConfirmContent() {
   const [confirmPassword, setConfirmPassword] = useState(``);
   const [err, setErr] = useState<string | undefined>();
   const [loading, setLoading] = useState(false);
+  const didNavigateRef = useRef(false);
 
   if (!token || token.trim() === ``) {
     return (
@@ -77,11 +81,14 @@ function ForgotPasswordConfirmContent() {
         setErr(getErrorMessageForUser(code, FALLBACK_ERROR));
         return;
       }
-      router.replace(`/login?reset=success`);
+      didNavigateRef.current = true;
+      router.replace(`/login?${AUTH_NOTICE_QUERY}=reset_success`);
     } catch {
       setErr(FALLBACK_ERROR);
     } finally {
-      setLoading(false);
+      if (shouldFinalizeResetConfirmLoading(didNavigateRef.current)) {
+        setLoading(false);
+      }
     }
   };
 

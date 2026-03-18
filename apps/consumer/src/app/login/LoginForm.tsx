@@ -4,11 +4,33 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
+import { AUTH_NOTICE_QUERY, getAuthNoticeMessage, parseAuthNotice } from '@remoola/api-types';
+
 import { GoogleIcon } from '../../components/ui';
 import styles from '../../components/ui/classNames.module.css';
 import { resetSessionExpiredHandled, SESSION_EXPIRED_QUERY } from '../../lib/session-expired';
 
 const CLEAR_COOKIES_URL = `/api/consumer/auth/clear-cookies`;
+const DEFAULT_NEXT_PATH = `/dashboard`;
+
+function sanitizeNextPath(rawNext: string | null): string {
+  if (!rawNext || rawNext.length === 0) return DEFAULT_NEXT_PATH;
+
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(rawNext);
+  } catch {
+    return DEFAULT_NEXT_PATH;
+  }
+
+  if (!decoded.startsWith(`/`)) return DEFAULT_NEXT_PATH;
+  if (decoded.startsWith(`//`)) return DEFAULT_NEXT_PATH;
+  if (/^https?:\/\//i.test(decoded)) return DEFAULT_NEXT_PATH;
+  if (/[\r\n]/.test(decoded)) return DEFAULT_NEXT_PATH;
+  if (decoded === `/logout` || decoded.startsWith(`/logout?`)) return DEFAULT_NEXT_PATH;
+
+  return decoded;
+}
 
 const {
   formInputFullWidth,
@@ -30,22 +52,37 @@ export default function LoginForm() {
     resetSessionExpiredHandled();
   }, []);
 
-  const clearedSessionExpiredRef = useRef(false);
+  const cleanedLoginQueryRef = useRef(false);
   useEffect(() => {
-    if (searchParams.get(SESSION_EXPIRED_QUERY) !== `1` || clearedSessionExpiredRef.current) return;
-    clearedSessionExpiredRef.current = true;
-    fetch(CLEAR_COOKIES_URL, { method: `POST`, credentials: `include` }).finally(() => {
+    if (cleanedLoginQueryRef.current) return;
+
+    const hasSessionExpiredFlag = searchParams.get(SESSION_EXPIRED_QUERY) === `1`;
+    const authNotice = parseAuthNotice(searchParams.get(AUTH_NOTICE_QUERY));
+    if (!hasSessionExpiredFlag && !authNotice) return;
+
+    cleanedLoginQueryRef.current = true;
+    const cleanupQueryParams = () => {
       const url = new URL(window.location.href);
       url.searchParams.delete(SESSION_EXPIRED_QUERY);
+      url.searchParams.delete(AUTH_NOTICE_QUERY);
       if (!url.searchParams.toString()) url.search = ``;
       window.history.replaceState(null, ``, url.pathname + url.search);
-    });
+    };
+
+    if (hasSessionExpiredFlag) {
+      fetch(CLEAR_COOKIES_URL, { method: `POST`, credentials: `include` }).finally(cleanupQueryParams);
+      return;
+    }
+
+    cleanupQueryParams();
   }, [searchParams]);
 
   // read ?next=... from URL, fallback to /dashboard
   const rawNext = searchParams.get(`next`);
-  const nextPath = rawNext && rawNext.length > 0 ? decodeURIComponent(rawNext) : `/dashboard`;
+  const nextPath = sanitizeNextPath(rawNext);
   const oauthError = searchParams.get(`error`);
+  const authNotice = parseAuthNotice(searchParams.get(AUTH_NOTICE_QUERY));
+  const authNoticeMessage = authNotice ? getAuthNoticeMessage(authNotice) : undefined;
 
   const [email, setEmail] = useState(`user@example.com`);
   const [password, setPassword] = useState(`password`);
@@ -101,6 +138,29 @@ export default function LoginForm() {
   return (
     <div className={loginContainer} data-testid="consumer-login-page">
       <h1 className={loginTitle}>Sign in</h1>
+      {authNoticeMessage ? (
+        <div
+          className={`
+          mt-4
+          rounded-md
+          border
+          border-emerald-200
+          bg-emerald-50
+          px-3
+          py-2
+          text-sm
+          text-emerald-800
+          dark:border-emerald-900/50
+          dark:bg-emerald-900/20
+          dark:text-emerald-200
+          `}
+          role="status"
+          aria-live="polite"
+          data-testid="consumer-login-auth-notice"
+        >
+          {authNoticeMessage}
+        </div>
+      ) : null}
       <form className={loginForm} onSubmit={submitLogin} data-testid="consumer-login-form">
         <input
           className={formInputFullWidth}

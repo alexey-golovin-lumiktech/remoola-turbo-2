@@ -61,7 +61,8 @@ export async function middleware(req: NextRequest) {
     req.nextUrl.pathname.startsWith(`/signup`) ||
     req.nextUrl.pathname.startsWith(`/forgot-password`);
   const isCallback = req.nextUrl.pathname.startsWith(`/auth/callback`);
-  const isProtected = !isAuthPage;
+  const isLogoutRoute = req.nextUrl.pathname.startsWith(`/logout`);
+  const isProtected = !isAuthPage && !isLogoutRoute;
 
   if (isCallback) return NextResponse.next();
 

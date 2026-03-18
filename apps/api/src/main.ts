@@ -292,7 +292,11 @@ async function bootstrap(): Promise<INestApplication> {
 
   if (envs.CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK) {
     logger.warn(
-      `CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK is enabled; restrict to controlled non-production debugging only`,
+      `
+        CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK
+        is enabled;
+        restrict to controlled non-production debugging only
+      `,
     );
   }
 

@@ -50,6 +50,7 @@ export class ConsumerAuthService {
   private readonly oAuth2Client: OAuth2Client;
   private static readonly accessRole = `USER` as const;
   private static readonly accessPermissions = [`contacts.read`] as const;
+  private static readonly forgotPasswordCooldownMs = 60_000;
 
   constructor(
     private readonly jwtService: JwtService,
@@ -487,6 +488,13 @@ export class ConsumerAuthService {
     return oauthCrypto.hashOAuthState(token);
   }
 
+  private bucketSessionCount(count: number): string {
+    if (count <= 0) return `0`;
+    if (count === 1) return `1`;
+    if (count <= 5) return `2-5`;
+    return `6+`;
+  }
+
   private async revokeSessionFamily(sessionFamilyId: string, reason: string): Promise<void> {
     await this.prisma.authSessionModel.updateMany({
       where: { sessionFamilyId, revokedAt: null },
@@ -626,6 +634,22 @@ export class ConsumerAuthService {
     });
     if (!consumer) return;
     if (consumer.password == null || consumer.salt == null) return;
+    const cooldownWindowStart = new Date(Date.now() - ConsumerAuthService.forgotPasswordCooldownMs);
+    const cooldownHit = await this.prisma.resetPasswordModel.findFirst({
+      where: {
+        consumerId: consumer.id,
+        createdAt: { gte: cooldownWindowStart },
+      },
+      select: { id: true },
+    });
+    if (cooldownHit) {
+      this.logger.warn({
+        event: `consumer_auth_forgot_password_cooldown_hit`,
+        consumerId: consumer.id,
+        cooldownSeconds: Math.round(ConsumerAuthService.forgotPasswordCooldownMs / 1000),
+      });
+      return;
+    }
 
     const token = oauthCrypto.generateOAuthState();
     const expiredAt = new Date(Date.now() + 60 * 60 * 1000);
@@ -654,6 +678,11 @@ export class ConsumerAuthService {
       email: consumer.email,
       forgotPasswordLink: verifyUrl.toString(),
     });
+    this.logger.log({
+      event: `consumer_auth_forgot_password_token_issued`,
+      consumerId: consumer.id,
+      tokenTtlSeconds: 3600,
+    });
   }
 
   async validateForgotPasswordTokenAndRedirect(token: string, referer: string, res: express.Response): Promise<void> {
@@ -677,44 +706,65 @@ export class ConsumerAuthService {
   /**
    * Resets password using a single-use token (1h expiry).
    * Token is stored as a SHA-256 hash at rest; lookup is by hash.
+   * Only one concurrent request can consume a token; after success all consumer sessions are revoked.
    */
   async resetPasswordWithToken(token: string, newPassword: string): Promise<void> {
     const tokenHash = hashTokenToHex(token);
     const row = await this.prisma.resetPasswordModel.findFirst({
-      where: { tokenHash, deletedAt: null },
+      where: { tokenHash, deletedAt: null, expiredAt: { gt: new Date() } },
     });
     if (!row) {
+      this.logger.warn({ event: `consumer_auth_password_reset_failed`, reason: `token_not_found_or_expired` });
       throw new BadRequestException(errorCodes.INVALID_CHANGE_PASSWORD_TOKEN);
     }
-    if (row.expiredAt <= new Date()) {
-      throw new BadRequestException(errorCodes.CHANGE_PASSWORD_FLOW_EXPIRED);
-    }
     if (!secureCompare(row.tokenHash, tokenHash)) {
+      this.logger.warn({ event: `consumer_auth_password_reset_failed`, reason: `token_hash_mismatch` });
       throw new BadRequestException(errorCodes.INVALID_CHANGE_PASSWORD_TOKEN);
     }
 
     const consumer = await this.prisma.consumerModel.findFirst({
       where: { id: row.consumerId, deletedAt: null },
+      select: { id: true, email: true },
     });
     if (!consumer) {
-      throw new BadRequestException(errorCodes.CONSUMER_NOT_FOUND_CHANGE_PASSWORD);
+      this.logger.warn({ event: `consumer_auth_password_reset_failed`, reason: `consumer_not_found` });
+      throw new BadRequestException(errorCodes.INVALID_CHANGE_PASSWORD_TOKEN);
     }
+    const activeSessionsBeforeReset = await this.prisma.authSessionModel.count({
+      where: { consumerId: consumer.id, revokedAt: null },
+    });
 
     const { hash, salt } = await passwordUtils.hashPassword(newPassword);
-    await this.prisma.$transaction([
-      this.prisma.consumerModel.update({
+    const consumed = await this.prisma.$transaction(async (tx) => {
+      const updateResult = await tx.resetPasswordModel.updateMany({
+        where: { id: row.id, deletedAt: null },
+        data: { deletedAt: new Date() },
+      });
+      if (updateResult.count !== 1) {
+        return null;
+      }
+      await tx.consumerModel.update({
         where: { id: consumer.id },
         data: { password: hash, salt },
-      }),
-      this.prisma.resetPasswordModel.update({
-        where: { id: row.id },
-        data: { deletedAt: new Date() },
-      }),
-    ]);
+      });
+      return consumer;
+    });
+
+    if (!consumed) {
+      this.logger.warn({ event: `consumer_auth_password_reset_failed`, reason: `token_already_consumed` });
+      throw new BadRequestException(errorCodes.INVALID_CHANGE_PASSWORD_TOKEN);
+    }
+
+    await this.revokeAllSessionsByConsumerIdAndAudit(consumed.id);
+    this.logger.log({
+      event: `consumer_auth_password_reset_succeeded`,
+      consumerId: consumed.id,
+      revokedSessionCountBucket: this.bucketSessionCount(activeSessionsBeforeReset),
+    });
     await this.authAudit.recordAudit({
       identityType: AUTH_IDENTITY_TYPES.consumer,
-      identityId: consumer.id,
-      email: consumer.email,
+      identityId: consumed.id,
+      email: consumed.email,
       event: AUTH_AUDIT_EVENTS.password_change,
     });
   }
