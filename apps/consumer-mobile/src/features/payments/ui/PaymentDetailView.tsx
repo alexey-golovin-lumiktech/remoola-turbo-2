@@ -25,8 +25,8 @@ interface PaymentMethod {
   type: string;
   brand: string;
   last4: string;
-  expMonth: number | null;
-  expYear: number | null;
+  expMonth: string | null;
+  expYear: string | null;
   defaultSelected: boolean;
   billingDetails?: {
     id: string;
@@ -60,7 +60,7 @@ function formatCurrency(amount: number, currencyCode: string): string {
   return new Intl.NumberFormat(undefined, {
     style: `currency`,
     currency: currencyCode,
-  }).format(amount / 100);
+  }).format(amount);
 }
 
 function formatDateTime(dateStr: string): string {
@@ -163,9 +163,12 @@ export function PaymentDetailView({ paymentRequestId, data }: PaymentDetailViewP
 
         if (!res.ok) {
           const errorData = (await res.json().catch(() => ({}))) as { code?: string; message?: string };
-          showErrorToast(getErrorMessageForUser(errorData.code, errorData.message ?? `Payment failed`), {
-            code: errorData.code,
-          });
+          showErrorToast(
+            getErrorMessageForUser(errorData.code, getLocalToastMessage(localToastKeys.UNEXPECTED_ERROR)),
+            {
+              code: errorData.code,
+            },
+          );
           setPaying(false);
           return;
         }
@@ -179,7 +182,7 @@ export function PaymentDetailView({ paymentRequestId, data }: PaymentDetailViewP
           showErrorToast(getLocalToastMessage(localToastKeys.PAYMENT_REQUIRES_ACTION));
         } else {
           const errData = json as { code?: string; message?: string };
-          showErrorToast(getErrorMessageForUser(errData.code, errData.message ?? `Payment failed`), {
+          showErrorToast(getErrorMessageForUser(errData.code, getLocalToastMessage(localToastKeys.UNEXPECTED_ERROR)), {
             code: errData.code,
           });
         }
@@ -249,7 +252,7 @@ export function PaymentDetailView({ paymentRequestId, data }: PaymentDetailViewP
         <CardHeader>
           <div className={styles.cardHeaderRow}>
             <div className={styles.cardHeaderLeft}>
-              <div className={styles.amount}>{formatCurrency(amount, currencyCode)}</div>
+              <div className={styles.amount}>{formatCurrency(amount / 100, currencyCode)}</div>
               {description ? <p className={styles.description}>{description}</p> : null}
               {createdAt ? <p className={styles.meta}>Created: {formatDateTime(createdAt)}</p> : null}
             </div>
@@ -353,7 +356,7 @@ export function PaymentDetailView({ paymentRequestId, data }: PaymentDetailViewP
                           </div>
                           {method.expMonth && method.expYear ? (
                             <div className={styles.methodExp}>
-                              Expires {String(method.expMonth).padStart(2, `0`)}/{method.expYear}
+                              Expires {method.expMonth}/{method.expYear}
                             </div>
                           ) : null}
                           {method.billingDetails?.name ? (

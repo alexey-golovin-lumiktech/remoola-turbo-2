@@ -8,7 +8,7 @@ import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Identity, type IIdentityContext, PublicEndpoint } from '../../common';
 import { ADMIN } from '../../dtos';
 import { Credentials } from '../../dtos/admin';
-import { JWT_ACCESS_TTL, JWT_REFRESH_TTL } from '../../envs';
+import { envs } from '../../envs';
 import {
   ADMIN_ACCESS_TOKEN_COOKIE_KEY,
   ADMIN_REFRESH_TOKEN_COOKIE_KEY,
@@ -25,8 +25,8 @@ export class AdminAuthController {
 
   private setAuthCookies(res: express.Response, accessToken: string, refreshToken: string) {
     const common = getApiAdminAuthCookieOptions();
-    res.cookie(ADMIN_ACCESS_TOKEN_COOKIE_KEY, accessToken, { ...common, maxAge: JWT_ACCESS_TTL });
-    res.cookie(ADMIN_REFRESH_TOKEN_COOKIE_KEY, refreshToken, { ...common, maxAge: JWT_REFRESH_TTL });
+    res.cookie(ADMIN_ACCESS_TOKEN_COOKIE_KEY, accessToken, { ...common, maxAge: envs.JWT_ACCESS_TOKEN_EXPIRES_IN });
+    res.cookie(ADMIN_REFRESH_TOKEN_COOKIE_KEY, refreshToken, { ...common, maxAge: envs.JWT_REFRESH_TOKEN_EXPIRES_IN });
   }
 
   @PublicEndpoint()
@@ -56,6 +56,7 @@ export class AdminAuthController {
   }
 
   @Post(`logout`)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   async logout(@Req() req: express.Request, @Res({ passthrough: true }) res: express.Response) {
     const ipAddress = req.ip ?? req.headers[`x-forwarded-for`];
     const userAgent = req.headers[`user-agent`] ?? null;

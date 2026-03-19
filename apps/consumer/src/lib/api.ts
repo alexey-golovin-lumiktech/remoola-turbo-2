@@ -143,7 +143,8 @@ export class ApiClient {
             ok: false,
             status: 401,
             error: { message: UNAUTHORIZED_MESSAGE, code: `UNAUTHORIZED` },
-          };
+            redirecting: true,
+          } as ApiResponse<T>;
         }
         return {
           ok: false,

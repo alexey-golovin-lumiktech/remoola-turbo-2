@@ -10,10 +10,19 @@ import { toBase64 } from '../../shared-common';
 @Injectable()
 export class GoogleAuthService {
   private googleapisOauth2Client: Auth.OAuth2Client;
-  private origin = `http://${envs.NEST_APP_HOST}:${envs.PORT}`;
+  private origin =
+    envs.NEST_APP_EXTERNAL_ORIGIN && envs.NEST_APP_EXTERNAL_ORIGIN !== `NEST_APP_EXTERNAL_ORIGIN`
+      ? envs.NEST_APP_EXTERNAL_ORIGIN.replace(/\/api\/?$/, ``)
+      : `http://localhost:${envs.PORT}`;
 
   constructor() {
-    if (envs.GOOGLE_CALENDAR_SCOPES?.length) {
+    const credentialsOK =
+      envs.GOOGLE_CLIENT_ID &&
+      envs.GOOGLE_CLIENT_ID !== `GOOGLE_CLIENT_ID` &&
+      envs.GOOGLE_CLIENT_SECRET &&
+      envs.GOOGLE_CLIENT_SECRET !== `GOOGLE_CLIENT_SECRET`;
+
+    if (credentialsOK) {
       const opts = {
         clientId: envs.GOOGLE_CLIENT_ID,
         clientSecret: envs.GOOGLE_CLIENT_SECRET,
@@ -29,7 +38,7 @@ export class GoogleAuthService {
     const options = {
       state: toBase64(state),
       access_type: `offline`,
-      scope: envs.GOOGLE_CALENDAR_SCOPES,
+      scope: [`openid`, `email`, `profile`],
       include_granted_scopes: true,
       redirect_uri: `${this.origin}/consumer/auth/google-redirect-new-way`,
     } satisfies Auth.GenerateAuthUrlOpts;

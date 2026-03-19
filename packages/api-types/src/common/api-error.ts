@@ -13,4 +13,6 @@ export const ApiErrorSchema = z.object({
   details: z.unknown().optional(),
 });
 
-export type ApiResponseShape<T> = { ok: true; data: T } | { ok: false; status: number; error: ApiErrorShape };
+export type ApiResponseShape<T> =
+  | { ok: true; data: T }
+  | { ok: false; status: number; error: ApiErrorShape; redirecting?: boolean };

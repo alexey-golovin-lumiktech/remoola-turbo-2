@@ -1,5 +1,14 @@
 import { BrevoMailService } from './brevo-mail.service';
 
+jest.mock(`../envs`, () => ({
+  envs: {
+    BREVO_API_KEY: `test-api-key`,
+    BREVO_API_BASE_URL: `https://api.brevo.com/v3`,
+    BREVO_DEFAULT_FROM_EMAIL: `noreply@example.com`,
+    BREVO_DEFAULT_FROM_NAME: `Wirebill`,
+  },
+}));
+
 describe(`BrevoMailService`, () => {
   let service: BrevoMailService;
   let fetchMock: jest.SpyInstance;

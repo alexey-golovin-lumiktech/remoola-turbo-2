@@ -6,7 +6,6 @@ import {
   type TConsumerBillingDetails,
   type TConsumerPaymentMethodItem,
   type TPaymentMethod,
-  type TStripeSetupIntentPayload,
   type UpdatePaymentMethodPayload,
 } from '@remoola/api-types';
 
@@ -15,4 +14,3 @@ export type BillingDetails = TConsumerBillingDetails;
 export type PaymentMethodItem = TConsumerPaymentMethodItem;
 export type CreatePaymentMethodDto = CreatePaymentMethodPayload;
 export type UpdatePaymentMethodDto = UpdatePaymentMethodPayload;
-export type StripeSetupIntentPayload = TStripeSetupIntentPayload;

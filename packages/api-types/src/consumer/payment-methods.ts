@@ -38,7 +38,6 @@ export type CreatePaymentMethodPayload = {
   billingName?: string;
   billingEmail?: string;
   billingPhone?: string;
-  setupIntentId?: string;
   stripePaymentMethodId?: string;
 };
 
@@ -51,5 +50,4 @@ export type UpdatePaymentMethodPayload = {
 
 export type TStripeSetupIntentPayload = {
   clientSecret: string;
-  setupIntentId: string;
 };

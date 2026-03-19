@@ -11,6 +11,7 @@ import styles from '../../../components/ui/classNames.module.css';
 import { apiClient, useFormValidation, createAdminSchema, resetPasswordSchema, type AdminType } from '../../../lib';
 import { useDebouncedValue, useAuth, useAdmins, useCreateAdmin, useResetAdminPassword } from '../../../lib/client';
 import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../../lib/error-messages';
+import { isUnauthorizedError, type LoadState } from '../../../lib/load-state';
 
 function rowPill(text: string) {
   const cls = text === ADMIN_TYPE.SUPER ? styles.adminRowPillSuper : styles.adminRowPillDefault;
@@ -74,9 +75,13 @@ export function AdminsPageClient() {
   };
 
   useEffect(() => {
-    if (adminsError)
+    if (adminsError && !isUnauthorizedError(adminsError)) {
       toast.error(getErrorMessageForUser(adminsError.message, getLocalToastMessage(localToastKeys.LOAD_ADMINS)));
+    }
   }, [adminsError]);
+  const isUnauthorized = !!adminsError && isUnauthorizedError(adminsError);
+  const loadState: LoadState =
+    authLoading || adminsLoading ? `loading` : isUnauthorized ? `unauthorized` : adminsError ? `error` : `ready`;
 
   // Local state for forms
   const [createOpen, setCreateOpen] = useState(false);
@@ -190,7 +195,7 @@ export function AdminsPageClient() {
   }
 
   // Loading state
-  if (authLoading || adminsLoading) {
+  if (loadState === `loading`) {
     return <PageSkeleton />;
   }
 
@@ -291,7 +296,15 @@ export function AdminsPageClient() {
           </div>
         </div>
 
-        {adminsError && (
+        {loadState === `unauthorized` && (
+          <div className={styles.adminCard} data-testid="admins-unauthorized">
+            <div className={styles.adminCardContent}>
+              <p className={styles.adminTextGray600}>Session expired. Redirecting…</p>
+            </div>
+          </div>
+        )}
+
+        {loadState === `error` && (
           <div className={styles.adminCard}>
             <div className={styles.adminCardContent}>
               <button type="button" className={styles.adminPrimaryButton} onClick={() => void mutateAdmins()}>
@@ -301,7 +314,7 @@ export function AdminsPageClient() {
           </div>
         )}
 
-        {total > 0 && (
+        {loadState === `ready` && total > 0 && (
           <>
             <div className={styles.adminPaginationBar}>
               <span className={styles.adminPaginationInfo}>
@@ -455,7 +468,7 @@ export function AdminsPageClient() {
           </>
         )}
 
-        {!adminsLoading && total === 0 && (
+        {loadState === `ready` && total === 0 && (
           <div className={styles.adminCard}>
             <div className={styles.adminCardContent}>
               <div className={styles.adminTextGray500}>No admins</div>

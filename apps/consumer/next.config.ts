@@ -2,13 +2,7 @@ import path from 'path';
 
 import { type NextConfig } from 'next';
 
-const packages = [
-  `sonner`,
-  `framer-motion`,
-  `@remoola/api-types`,
-  `@remoola/shared-constants`,
-  `@remoola/ui`,
-];
+const packages = [`sonner`, `framer-motion`, `@remoola/api-types`, `@remoola/shared-constants`, `@remoola/ui`];
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,

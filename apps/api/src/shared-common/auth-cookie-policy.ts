@@ -19,7 +19,7 @@ import {
   type TCookieKey,
 } from '@remoola/api-types';
 
-import { envs, JWT_REFRESH_TTL } from '../envs';
+import { envs } from '../envs';
 
 function getApiAuthCookieRuntime(): AuthCookieRuntime {
   return {
@@ -75,7 +75,7 @@ export function getApiConsumerAuthCookieClearOptions(
 export function getApiConsumerCsrfCookieOptions(
   req?: express.Request,
 ): SharedReadableCookieOptions & { maxAge: number } {
-  return { ...getCsrfCookieOptions(getApiConsumerCookieRuntime(req)), maxAge: JWT_REFRESH_TTL };
+  return { ...getCsrfCookieOptions(getApiConsumerCookieRuntime(req)), maxAge: envs.JWT_REFRESH_TOKEN_EXPIRES_IN };
 }
 
 export function getApiConsumerCsrfCookieClearOptions(

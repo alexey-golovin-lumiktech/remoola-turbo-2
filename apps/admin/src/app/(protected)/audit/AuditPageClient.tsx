@@ -10,6 +10,7 @@ import { DataTable, PageSkeleton, SearchWithClear } from '../../../components';
 import styles from '../../../components/ui/classNames.module.css';
 import { useAuth, useAuditAuth, useAuditActions } from '../../../lib/client';
 import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../../lib/error-messages';
+import { isUnauthorizedError, type LoadState } from '../../../lib/load-state';
 
 const {
   adminPageStack,
@@ -121,15 +122,17 @@ export function AuditPageClient() {
   } = useAuditActions(activeTab === TAB_ACTIONS ? actionsFilters : undefined);
 
   useEffect(() => {
-    if (authErrorData)
+    if (authErrorData && !isUnauthorizedError(authErrorData)) {
       toast.error(getErrorMessageForUser(authErrorData.message, getLocalToastMessage(localToastKeys.LOAD_AUDIT_AUTH)));
+    }
   }, [authErrorData]);
 
   useEffect(() => {
-    if (actionsErrorData)
+    if (actionsErrorData && !isUnauthorizedError(actionsErrorData)) {
       toast.error(
         getErrorMessageForUser(actionsErrorData.message, getLocalToastMessage(localToastKeys.LOAD_AUDIT_ACTIONS)),
       );
+    }
   }, [actionsErrorData]);
 
   const authTotal = authData?.total ?? 0;
@@ -143,7 +146,17 @@ export function AuditPageClient() {
   const actionsTo = Math.min(actionsPage * actionsPageSize, actionsTotal);
 
   const isValidating = activeTab === TAB_AUTH ? authValidating : actionsValidating;
-  const hasError = activeTab === TAB_AUTH ? !!authErrorData : !!actionsErrorData;
+  const activeTabLoading = activeTab === TAB_AUTH ? authLoadingData : actionsLoadingData;
+  const activeError = activeTab === TAB_AUTH ? authErrorData : actionsErrorData;
+  const isUnauthorized = !!activeError && isUnauthorizedError(activeError);
+  const hasRetryableError = !!activeError && !isUnauthorized;
+  const activeLoadState: LoadState = activeTabLoading
+    ? `loading`
+    : isUnauthorized
+      ? `unauthorized`
+      : hasRetryableError
+        ? `error`
+        : `ready`;
 
   const handleRefresh = useCallback(() => {
     if (activeTab === TAB_AUTH) void mutateAuth();
@@ -345,7 +358,19 @@ export function AuditPageClient() {
             </div>
           </div>
 
-          {hasError && (
+          {activeLoadState === `loading` && (
+            <div className={adminCardContent} data-testid="audit-loading">
+              <p className={adminTextGray500}>Loading…</p>
+            </div>
+          )}
+
+          {activeLoadState === `unauthorized` && (
+            <div className={adminCardContent} data-testid="audit-unauthorized">
+              <p className={adminTextGray500}>Session expired. Redirecting…</p>
+            </div>
+          )}
+
+          {activeLoadState === `error` && (
             <div className={adminCardContent}>
               <button
                 type="button"
@@ -359,7 +384,7 @@ export function AuditPageClient() {
         </div>
       </div>
 
-      {activeTab === TAB_AUTH && authTotal > 0 && (
+      {activeLoadState === `ready` && activeTab === TAB_AUTH && authTotal > 0 && (
         <div className={adminPaginationBar}>
           <span className={adminPaginationInfo}>
             Showing {authFrom}–{authTo} of {authTotal}
@@ -391,7 +416,7 @@ export function AuditPageClient() {
         </div>
       )}
 
-      {activeTab === TAB_ACTIONS && actionsTotal > 0 && (
+      {activeLoadState === `ready` && activeTab === TAB_ACTIONS && actionsTotal > 0 && (
         <div className={adminPaginationBar}>
           <span className={adminPaginationInfo}>
             Showing {actionsFrom}–{actionsTo} of {actionsTotal}
@@ -423,7 +448,7 @@ export function AuditPageClient() {
         </div>
       )}
 
-      {activeTab === TAB_AUTH && !authLoadingData && authTotal === 0 && !authErrorData && (
+      {activeLoadState === `ready` && activeTab === TAB_AUTH && authTotal === 0 && (
         <div className={adminCard}>
           <div className={adminCardContent}>
             <div className={adminTextGray500}>No auth log entries</div>
@@ -431,7 +456,7 @@ export function AuditPageClient() {
         </div>
       )}
 
-      {activeTab === TAB_ACTIONS && !actionsLoadingData && actionsTotal === 0 && !actionsErrorData && (
+      {activeLoadState === `ready` && activeTab === TAB_ACTIONS && actionsTotal === 0 && (
         <div className={adminCard}>
           <div className={adminCardContent}>
             <div className={adminTextGray500}>No action audit entries</div>
@@ -439,7 +464,7 @@ export function AuditPageClient() {
         </div>
       )}
 
-      {activeTab === TAB_AUTH && authTotal > 0 && (
+      {activeLoadState === `ready` && activeTab === TAB_AUTH && authTotal > 0 && (
         <div style={{ position: `relative` }}>
           {authValidating && (authData?.items?.length ?? 0) > 0 && (
             <div
@@ -472,7 +497,7 @@ export function AuditPageClient() {
         </div>
       )}
 
-      {activeTab === TAB_ACTIONS && actionsTotal > 0 && (
+      {activeLoadState === `ready` && activeTab === TAB_ACTIONS && actionsTotal > 0 && (
         <div style={{ position: `relative` }}>
           {actionsValidating && (actionsData?.items?.length ?? 0) > 0 && (
             <div

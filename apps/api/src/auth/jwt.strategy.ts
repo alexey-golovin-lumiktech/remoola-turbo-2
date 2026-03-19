@@ -5,7 +5,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 
 import { resolveAccessTokenCookieKeysForPath } from '@remoola/api-types';
 
-import { JWT_ACCESS_SECRET } from '../envs';
+import { envs } from '../envs';
 
 function cookieExtractorByPath(req: express.Request): string | null {
   const path = req?.path ?? req?.url?.split(`?`)[0] ?? ``;
@@ -22,7 +22,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, `jwt`) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([cookieExtractorByPath, ExtractJwt.fromAuthHeaderAsBearerToken()]),
       ignoreExpiration: false,
-      secretOrKey: JWT_ACCESS_SECRET,
+      secretOrKey: envs.JWT_ACCESS_SECRET,
     });
   }
 

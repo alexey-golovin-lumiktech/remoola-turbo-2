@@ -25,11 +25,6 @@ interface PaymentMethodsViewProps {
   items: PaymentMethodItem[];
 }
 
-function getField(item: PaymentMethodItem, key: string): unknown {
-  if (item == null || typeof item !== `object`) return undefined;
-  return key in item ? item[key] : undefined;
-}
-
 export function PaymentMethodsView({ items }: PaymentMethodsViewProps) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -151,56 +146,46 @@ export function PaymentMethodsView({ items }: PaymentMethodsViewProps) {
 
         <div className={styles.grid}>
           {items.map((item) => {
-            const id = getField(item, `id`) as string | undefined;
-            const brand = getField(item, `brand`) as string | undefined;
-            const last4 = getField(item, `last4`) as string | undefined;
-            const type = getField(item, `type`) as string | undefined;
-            const expMonth = getField(item, `expMonth`) as number | undefined;
-            const expYear = getField(item, `expYear`) as number | undefined;
-            const defaultSelected = getField(item, `defaultSelected`) as boolean | undefined;
-            const billingDetails = getField(item, `billingDetails`) as { name?: string } | undefined;
-
-            const key = id ?? String(Math.random());
-            const isLoadingThis = isSettingDefault === id;
+            const isLoadingThis = isSettingDefault === item.id;
 
             return (
-              <div key={key} className={styles.card}>
-                {defaultSelected ? <div className={styles.defaultBadge}>Default</div> : null}
+              <div key={item.id} className={styles.card}>
+                {item.defaultSelected ? <div className={styles.defaultBadge}>Default</div> : null}
 
                 <div className={styles.cardTop}>
                   <div className={styles.cardIconWrap}>
-                    {type === `BANK_ACCOUNT` ? (
+                    {item.type === `BANK_ACCOUNT` ? (
                       <BankIcon className={styles.cardIcon} strokeWidth={2} />
                     ) : (
                       <CreditCardIcon className={styles.cardIcon} />
                     )}
                   </div>
                   <div className={styles.cardMain}>
-                    <div className={styles.cardType}>{type === `BANK_ACCOUNT` ? `Bank account` : brand}</div>
-                    <div className={styles.cardNumber}>•••• {last4 ?? `****`}</div>
-                    {expMonth && expYear ? (
+                    <div className={styles.cardType}>{item.type === `BANK_ACCOUNT` ? `Bank account` : item.brand}</div>
+                    <div className={styles.cardNumber}>•••• {item.last4}</div>
+                    {item.expMonth && item.expYear ? (
                       <div className={styles.cardExp}>
                         <CalendarIcon className={styles.cardExpIcon} />
                         <span>
-                          Expires {String(expMonth).padStart(2, `0`)}/{expYear}
+                          Expires {item.expMonth}/{item.expYear}
                         </span>
                       </div>
                     ) : null}
-                    {billingDetails?.name ? (
-                      <div className={styles.cardBilling} title={billingDetails.name}>
+                    {item.billingDetails?.name ? (
+                      <div className={styles.cardBilling} title={item.billingDetails.name}>
                         <UserIcon className={styles.cardBillingIcon} />
-                        <span className={styles.cardBillingName}>{billingDetails.name}</span>
+                        <span className={styles.cardBillingName}>{item.billingDetails.name}</span>
                       </div>
                     ) : null}
                   </div>
                 </div>
 
                 <div className={styles.cardActions}>
-                  {!defaultSelected && id ? (
+                  {!item.defaultSelected ? (
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleSetDefault(id)}
+                      onClick={() => handleSetDefault(item.id)}
                       isLoading={isLoadingThis}
                       disabled={isLoadingThis}
                       className={styles.setDefaultBtn}
@@ -209,20 +194,18 @@ export function PaymentMethodsView({ items }: PaymentMethodsViewProps) {
                       Set default
                     </Button>
                   ) : null}
-                  {id ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedMethod(item);
-                        setDeleteModalOpen(true);
-                      }}
-                      className={styles.deleteBtn}
-                    >
-                      <TrashIcon className={styles.deleteIcon} strokeWidth={2.5} />
-                      Delete
-                    </Button>
-                  ) : null}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedMethod(item);
+                      setDeleteModalOpen(true);
+                    }}
+                    className={styles.deleteBtn}
+                  >
+                    <TrashIcon className={styles.deleteIcon} strokeWidth={2.5} />
+                    Delete
+                  </Button>
                 </div>
               </div>
             );
@@ -238,15 +221,12 @@ export function PaymentMethodsView({ items }: PaymentMethodsViewProps) {
           }
         }}
         onConfirm={() => {
-          if (selectedMethod) {
-            const id = getField(selectedMethod, `id`) as string | undefined;
-            if (id) handleDelete(id);
-          }
+          if (selectedMethod) handleDelete(selectedMethod.id);
         }}
         title="Delete payment method"
         message={
           selectedMethod
-            ? `Are you sure you want to delete this payment method (${getField(selectedMethod, `brand`) as string} •••• ${getField(selectedMethod, `last4`) as string})? This action cannot be undone.`
+            ? `Are you sure you want to delete this payment method (${selectedMethod.brand} •••• ${selectedMethod.last4})? This action cannot be undone.`
             : `Are you sure you want to delete this payment method? This action cannot be undone.`
         }
         confirmText="Delete"

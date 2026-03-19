@@ -11,7 +11,7 @@
     "test": "node ../../scripts/ensure-local-development.js api:test && node ../../scripts/run-jest-with-memory-cap.js",
     "test:watch": "node ../../scripts/ensure-local-development.js api:test:watch && node ../../scripts/run-jest-with-memory-cap.js --watch",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "pretest:e2e": "node ../../scripts/ensure-local-development.js api:pretest:e2e && yarn workspace @remoola/test-db build",
+    "pretest:e2e": "yarn dev:envs node ../../scripts/ensure-local-development.js api:pretest:e2e && yarn workspace @remoola/test-db build",
     "test:e2e": "node ../../scripts/ensure-local-development.js api:test:e2e && node ../../scripts/run-jest-with-memory-cap.js --config ../../packages/api-e2e/jest-e2e.json",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "typecheck": "tsc --noEmit",

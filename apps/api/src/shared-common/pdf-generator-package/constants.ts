@@ -4,9 +4,6 @@ import puppeteer, { type PDFOptions } from 'puppeteer-core';
 import { type InvoiceInfoDetails, type InvoiceInfoDetailsKey } from './types';
 import { envs } from '../../envs';
 
-export const outputHtmlPath = `out.html` as const;
-export const outputPdfPath = `out.pdf` as const;
-
 const detailsSample: InvoiceInfoDetails = { name: ``, address: ``, line1: ``, line2: `` };
 export const detailsSampleKeys = Object.keys(detailsSample) as InvoiceInfoDetailsKey[];
 
@@ -23,7 +20,7 @@ const isProduction = envs.NODE_ENV === `production`;
 const isStaging = envs.NODE_ENV === `staging`;
 const mustExcludePath = isVercel || isProduction || isStaging;
 
-export const pdfOptions = mustExcludePath ? commonPDFOptions : { ...commonPDFOptions, path: outputPdfPath };
+export const pdfOptions = mustExcludePath ? commonPDFOptions : { ...commonPDFOptions };
 
 export const pdfPageWidthPx = 1240;
 export const pdfPageHeightPx = 1754;

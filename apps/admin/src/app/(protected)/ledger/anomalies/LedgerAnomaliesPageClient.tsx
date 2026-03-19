@@ -8,6 +8,7 @@ import { PageSkeleton } from '../../../../components';
 import styles from '../../../../components/ui/classNames.module.css';
 import { useLedgerAnomalies } from '../../../../lib/client';
 import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../../../lib/error-messages';
+import { isUnauthorizedError, type LoadState } from '../../../../lib/load-state';
 
 const typeLabelMap: Record<string, string> = {
   duplicate: `Duplicate Entry`,
@@ -33,11 +34,15 @@ export function LedgerAnomaliesPageClient() {
   const { data: anomalies, error, isLoading, isValidating, mutate } = useLedgerAnomalies();
 
   useEffect(() => {
-    if (error)
+    if (error && !isUnauthorizedError(error)) {
       toast.error(getErrorMessageForUser(error.message, getLocalToastMessage(localToastKeys.LOAD_LEDGER_ANOMALIES)));
+    }
   }, [error]);
 
-  if (isLoading) {
+  const isUnauthorized = error && isUnauthorizedError(error);
+  const loadState: LoadState = isLoading ? `loading` : isUnauthorized ? `unauthorized` : error ? `error` : `ready`;
+
+  if (loadState === `loading`) {
     return (
       <div className={styles.adminPageStack}>
         <div>
@@ -71,7 +76,14 @@ export function LedgerAnomaliesPageClient() {
         </div>
       </div>
 
-      {error && (
+      {loadState === `unauthorized` && (
+        <div className={styles.adminCard} data-testid="ledger-anomalies-unauthorized">
+          <div className={styles.adminCardContent}>
+            <p className={styles.adminTextGray600}>Session expired. Redirecting…</p>
+          </div>
+        </div>
+      )}
+      {loadState === `error` && (
         <div className={styles.adminCard}>
           <div className={styles.adminCardContent}>
             <button type="button" className={styles.adminPrimaryButton} onClick={() => void mutate()}>
@@ -81,7 +93,7 @@ export function LedgerAnomaliesPageClient() {
         </div>
       )}
 
-      {!error && (!anomalies || anomalies.length === 0) && (
+      {loadState === `ready` && (!anomalies || anomalies.length === 0) && (
         <div className={styles.adminCard}>
           <div className={styles.adminCardContent}>
             <div className={`${styles.adminTextGray500} flex items-center gap-2`}>
@@ -92,7 +104,7 @@ export function LedgerAnomaliesPageClient() {
         </div>
       )}
 
-      {anomalies && anomalies.length > 0 && (
+      {loadState === `ready` && anomalies && anomalies.length > 0 && (
         <div className="space-y-3">
           {anomalies.map((anomaly) => (
             <div key={anomaly.id} className={styles.adminCard}>

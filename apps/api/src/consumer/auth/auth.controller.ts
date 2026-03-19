@@ -32,7 +32,7 @@ import { OAuthStateStoreService } from './oauth-state-store.service';
 import { LoginBody } from '../../auth/dto/login.dto';
 import { Identity, type IIdentityContext, PublicEndpoint, TrackConsumerAction } from '../../common';
 import { CONSUMER } from '../../dtos';
-import { envs, JWT_ACCESS_TTL, JWT_REFRESH_TTL } from '../../envs';
+import { envs } from '../../envs';
 import { TransformResponse } from '../../interceptors';
 import { OriginResolverService } from '../../shared/origin-resolver.service';
 import {
@@ -72,8 +72,14 @@ export class ConsumerAuthController {
 
   private setAuthCookies(req: express.Request, res: express.Response, accessToken: string, refreshToken: string) {
     const common = getApiConsumerAuthCookieOptions(req);
-    res.cookie(getApiConsumerAccessTokenCookieKey(req), accessToken, { ...common, maxAge: JWT_ACCESS_TTL });
-    res.cookie(getApiConsumerRefreshTokenCookieKey(req), refreshToken, { ...common, maxAge: JWT_REFRESH_TTL });
+    res.cookie(getApiConsumerAccessTokenCookieKey(req), accessToken, {
+      ...common,
+      maxAge: envs.JWT_ACCESS_TOKEN_EXPIRES_IN,
+    });
+    res.cookie(getApiConsumerRefreshTokenCookieKey(req), refreshToken, {
+      ...common,
+      maxAge: envs.JWT_REFRESH_TOKEN_EXPIRES_IN,
+    });
     res.cookie(CSRF_TOKEN_COOKIE_KEY, oauthCrypto.generateOAuthState(), getApiConsumerCsrfCookieOptions(req));
   }
 

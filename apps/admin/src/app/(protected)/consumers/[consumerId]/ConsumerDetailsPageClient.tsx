@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { type TVerificationStatus } from '@remoola/api-types';
@@ -10,31 +10,51 @@ import { CardSkeleton, JsonView } from '../../../../components';
 import styles from '../../../../components/ui/classNames.module.css';
 import { type Consumer } from '../../../../lib';
 import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../../../lib/error-messages';
+import { type LoadState } from '../../../../lib/load-state';
+import { handleSessionExpired } from '../../../../lib/session-expired';
 
 export function ConsumerDetailsPageClient({ consumerId }: { consumerId: string }) {
+  const [loadState, setLoadState] = useState<LoadState>(`loading`);
   const [consumerDetails, setConsumerDetails] = useState<Consumer | null>(null);
-  const [loading, setLoading] = useState(true);
   const [verificationReason, setVerificationReason] = useState<string>(``);
   const [verificationLoading, setVerificationLoading] = useState(false);
 
-  useEffect(() => {
-    async function loadConsumerDetails(consumerId: string): Promise<Consumer | null> {
-      const response = await fetch(`/api/consumers/${consumerId}`, { cache: `no-store`, credentials: `include` });
-      if (!response.ok) return null;
-      return (await response.json()) as Consumer;
-    }
-
-    setLoading(true);
-    loadConsumerDetails(consumerId).then((consumer) => {
+  const loadConsumer = useCallback(async () => {
+    setLoadState(`loading`);
+    try {
+      const response = await fetch(`/api/consumers/${consumerId}`, {
+        cache: `no-store`,
+        credentials: `include`,
+      });
+      if (response.status === 401) {
+        handleSessionExpired();
+        setLoadState(`unauthorized`);
+        return;
+      }
+      if (response.status === 403) {
+        setLoadState(`unauthorized`);
+        return;
+      }
+      if (!response.ok) {
+        setLoadState(`error`);
+        return;
+      }
+      const consumer = (await response.json()) as Consumer;
       setConsumerDetails(consumer);
       if (consumer?.verificationReason) {
         setVerificationReason(consumer.verificationReason);
       }
-      setLoading(false);
-    });
+      setLoadState(`ready`);
+    } catch {
+      setLoadState(`error`);
+    }
   }, [consumerId]);
 
-  if (loading) {
+  useEffect(() => {
+    void loadConsumer();
+  }, [loadConsumer]);
+
+  if (loadState === `loading`) {
     return (
       <div className={styles.adminPageStack}>
         <div className={styles.adminCard}>
@@ -46,11 +66,44 @@ export function ConsumerDetailsPageClient({ consumerId }: { consumerId: string }
     );
   }
 
-  if (!consumerDetails) {
+  if (loadState === `unauthorized`) {
+    return (
+      <div className={styles.adminPageStack} data-testid="consumer-details-unauthorized">
+        <div className={styles.adminCard}>
+          <div className={styles.adminCardContent}>
+            <p className={styles.adminTextGray600}>Session expired. Redirecting…</p>
+          </div>
+        </div>
+        <Link href={`/consumers`} className={styles.adminPrimaryButton}>
+          Back to Consumers
+        </Link>
+      </div>
+    );
+  }
+
+  if (loadState === `error`) {
+    return (
+      <div className={styles.adminPageStack} data-testid="consumer-details-error">
+        <div className={styles.adminCard}>
+          <div className={styles.adminCardContent}>
+            <p className={styles.adminTextGray600}>Unable to load consumer. Please try again.</p>
+            <button type="button" className={styles.adminPrimaryButton} onClick={() => void loadConsumer()}>
+              Retry
+            </button>
+          </div>
+        </div>
+        <Link href={`/consumers`} className={styles.adminPrimaryButton}>
+          Back to Consumers
+        </Link>
+      </div>
+    );
+  }
+
+  if (loadState !== `ready` || !consumerDetails) {
     return (
       <div className={styles.adminPageStack}>
         <div className={styles.adminTextGray600}>Consumer not found</div>
-        <Link href="/consumers" className={styles.adminPrimaryButton}>
+        <Link href={`/consumers`} className={styles.adminPrimaryButton}>
           Back to Consumers
         </Link>
       </div>
@@ -118,7 +171,7 @@ export function ConsumerDetailsPageClient({ consumerId }: { consumerId: string }
   return (
     <div className={styles.adminPageStack}>
       <div className={styles.adminTextGray600} style={{ marginBottom: `0.5rem` }}>
-        <Link href="/consumers">← Back to Consumers</Link>
+        <Link href={`/consumers`}>← Back to Consumers</Link>
       </div>
       <div>
         <div className={styles.adminTextGray500}>Consumer</div>

@@ -57,14 +57,14 @@ describe(`HealthService`, () => {
   });
 
   describe(`sendTestEmail`, () => {
-    it(`throws when no recipient (no ADMIN_EMAIL and no body.to)`, async () => {
-      const initialAdminEmail = envs.ADMIN_EMAIL;
+    it(`throws when no recipient (no DEFAULT_ADMIN_EMAIL and no body.to)`, async () => {
+      const initialAdminEmail = envs.DEFAULT_ADMIN_EMAIL;
       try {
-        (envs as { ADMIN_EMAIL: string }).ADMIN_EMAIL = ``;
+        (envs as { DEFAULT_ADMIN_EMAIL: string }).DEFAULT_ADMIN_EMAIL = ``;
         await expect(service.sendTestEmail()).rejects.toThrow(ForbiddenException);
-        await expect(service.sendTestEmail()).rejects.toThrow(/ADMIN_EMAIL|pass to in body/);
+        await expect(service.sendTestEmail()).rejects.toThrow(/DEFAULT_ADMIN_EMAIL|pass to in body/);
       } finally {
-        (envs as { ADMIN_EMAIL: string }).ADMIN_EMAIL = initialAdminEmail;
+        (envs as { DEFAULT_ADMIN_EMAIL: string }).DEFAULT_ADMIN_EMAIL = initialAdminEmail;
       }
     });
 

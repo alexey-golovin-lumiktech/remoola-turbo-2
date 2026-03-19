@@ -4,15 +4,15 @@ import { Throttle } from '@nestjs/throttler';
 import express from 'express';
 
 import { AuthService } from './auth.service';
-import { JWT_ACCESS_TTL } from '../envs';
-import { LoginBody } from './dto/login.dto';
-import { RegisterBody } from './dto/register.dto';
-import { JwtAuthGuard } from './jwt.guard';
+import { envs } from '../envs';
 import {
   getApiConsumerAccessTokenCookieKey,
   getApiConsumerAuthCookieClearOptions,
   getApiConsumerAuthCookieOptions,
 } from '../shared-common';
+import { LoginBody } from './dto/login.dto';
+import { RegisterBody } from './dto/register.dto';
+import { JwtAuthGuard } from './jwt.guard';
 
 @ApiTags(`Auth`)
 @Controller(`auth`)
@@ -58,7 +58,7 @@ export class AuthController {
   private setCookie(req: express.Request, res: express.Response, accessToken: string) {
     res.cookie(getApiConsumerAccessTokenCookieKey(req), accessToken, {
       ...getApiConsumerAuthCookieOptions(req),
-      maxAge: JWT_ACCESS_TTL,
+      maxAge: envs.JWT_ACCESS_TOKEN_EXPIRES_IN,
     });
   }
 }

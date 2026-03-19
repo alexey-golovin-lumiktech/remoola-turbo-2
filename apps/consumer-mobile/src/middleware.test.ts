@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { NextRequest } from 'next/server';
 
-import { COOKIE_KEYS } from '@remoola/api-types';
+import { COOKIE_KEYS, sanitizeNextForRedirect } from '@remoola/api-types';
 
 import { middleware } from './middleware';
 
@@ -172,5 +172,28 @@ describe(`middleware`, () => {
     expect(response.headers.get(`x-remoola-auth-refresh-status`)).toBe(`401`);
     expect(response.headers.get(`x-remoola-auth-refresh-latency-ms`)).toMatch(/^\d+$/);
     expect(response.headers.get(`server-timing`)).toContain(`auth_refresh;dur=`);
+  });
+
+  it(`redirect to login includes sanitized next (path-only, no external or protocol-relative)`, async () => {
+    const response = await middleware(createRequest(`/settings`));
+    expect(response.status).toBe(307);
+    const location = response.headers.get(`location`);
+    expect(location).toContain(`/login?next=`);
+    expect(location).toContain(`%2Fsettings`);
+    expect(location).not.toMatch(/next=[^&]*%2F%2F/);
+    expect(location).not.toMatch(/next=[^&]*https%3A%2F%2F/);
+  });
+});
+
+describe(`sanitizeNextForRedirect`, () => {
+  const fallback = `/dashboard`;
+
+  it(`returns fallback for external origin and protocol-relative`, () => {
+    expect(sanitizeNextForRedirect(`//evil.com/path`, fallback)).toBe(fallback);
+    expect(sanitizeNextForRedirect(`https://evil.com/path`, fallback)).toBe(fallback);
+  });
+
+  it(`returns safe internal path`, () => {
+    expect(sanitizeNextForRedirect(`/settings`, fallback)).toBe(`/settings`);
   });
 });

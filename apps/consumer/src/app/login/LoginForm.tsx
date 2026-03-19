@@ -4,33 +4,23 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
-import { AUTH_NOTICE_QUERY, emailSchema, getAuthNoticeMessage, parseAuthNotice } from '@remoola/api-types';
+import {
+  AUTH_NOTICE_QUERY,
+  emailSchema,
+  getAuthNoticeMessage,
+  parseAuthNotice,
+  removeStaleLoginParams,
+  sanitizeNextForRedirect,
+  SESSION_EXPIRED_QUERY,
+} from '@remoola/api-types';
 
+import { shouldFinalizeLoginLoading } from './login-loading-guard';
 import { GoogleIcon } from '../../components/ui';
 import styles from '../../components/ui/classNames.module.css';
-import { resetSessionExpiredHandled, SESSION_EXPIRED_QUERY } from '../../lib/session-expired';
+import { resetSessionExpiredHandled } from '../../lib/session-expired';
 
 const CLEAR_COOKIES_URL = `/api/consumer/auth/clear-cookies`;
 const DEFAULT_NEXT_PATH = `/dashboard`;
-
-function sanitizeNextPath(rawNext: string | null): string {
-  if (!rawNext || rawNext.length === 0) return DEFAULT_NEXT_PATH;
-
-  let decoded: string;
-  try {
-    decoded = decodeURIComponent(rawNext);
-  } catch {
-    return DEFAULT_NEXT_PATH;
-  }
-
-  if (!decoded.startsWith(`/`)) return DEFAULT_NEXT_PATH;
-  if (decoded.startsWith(`//`)) return DEFAULT_NEXT_PATH;
-  if (/^https?:\/\//i.test(decoded)) return DEFAULT_NEXT_PATH;
-  if (/[\r\n]/.test(decoded)) return DEFAULT_NEXT_PATH;
-  if (decoded === `/logout` || decoded.startsWith(`/logout?`)) return DEFAULT_NEXT_PATH;
-
-  return decoded;
-}
 
 const {
   formInputFullWidth,
@@ -63,10 +53,8 @@ export default function LoginForm() {
     cleanedLoginQueryRef.current = true;
     const cleanupQueryParams = () => {
       const url = new URL(window.location.href);
-      url.searchParams.delete(SESSION_EXPIRED_QUERY);
-      url.searchParams.delete(AUTH_NOTICE_QUERY);
-      if (!url.searchParams.toString()) url.search = ``;
-      window.history.replaceState(null, ``, url.pathname + url.search);
+      removeStaleLoginParams(url, [SESSION_EXPIRED_QUERY, AUTH_NOTICE_QUERY]);
+      window.history.replaceState(null, ``, url.pathname + (url.search || ``));
     };
 
     if (hasSessionExpiredFlag) {
@@ -79,7 +67,7 @@ export default function LoginForm() {
 
   // read ?next=... from URL, fallback to /dashboard
   const rawNext = searchParams.get(`next`);
-  const nextPath = sanitizeNextPath(rawNext);
+  const nextPath = sanitizeNextForRedirect(rawNext, DEFAULT_NEXT_PATH);
   const oauthError = searchParams.get(`error`);
   const authNotice = parseAuthNotice(searchParams.get(AUTH_NOTICE_QUERY));
   const authNoticeMessage = authNotice ? getAuthNoticeMessage(authNotice) : undefined;
@@ -88,6 +76,7 @@ export default function LoginForm() {
   const [password, setPassword] = useState(`password`);
   const [err, setErr] = useState<string>();
   const [loading, setLoading] = useState(false);
+  const didNavigateRef = useRef(false);
   const errorMessage = err || (oauthError ? `Google sign-in failed. Please try again.` : undefined);
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
   const googleStartUrl =
@@ -134,9 +123,12 @@ export default function LoginForm() {
         return;
       }
 
+      didNavigateRef.current = true;
       router.replace(nextPath || `/dashboard`);
     } finally {
-      setLoading(false);
+      if (shouldFinalizeLoginLoading(didNavigateRef.current)) {
+        setLoading(false);
+      }
     }
   };
 

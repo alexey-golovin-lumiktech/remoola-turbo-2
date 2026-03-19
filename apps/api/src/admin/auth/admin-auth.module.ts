@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 
 import { AdminAuthService } from './admin-auth.service';
-import { JWT_ACCESS_SECRET, JWT_ACCESS_TTL_SECONDS } from '../../envs';
+import { envs } from '../../envs';
 import { AuthAuditModule } from '../../shared/auth-audit.module';
 import { DatabaseModule } from '../../shared/database.module';
 
@@ -11,8 +11,8 @@ import { DatabaseModule } from '../../shared/database.module';
     DatabaseModule,
     AuthAuditModule,
     JwtModule.register({
-      secret: JWT_ACCESS_SECRET!,
-      signOptions: { expiresIn: JWT_ACCESS_TTL_SECONDS },
+      secret: envs.JWT_ACCESS_SECRET!,
+      signOptions: { expiresIn: envs.JWT_ACCESS_TTL_SECONDS },
     }),
   ],
   providers: [AdminAuthService],

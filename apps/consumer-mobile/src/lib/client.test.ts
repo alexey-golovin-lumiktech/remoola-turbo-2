@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 import { fetchWithAuth, swrConfig, swrFetcher } from './client';
+import { resetSessionExpiredHandled } from './session-expired';
 
 type MockFetch = jest.MockedFunction<typeof fetch>;
 
@@ -11,8 +12,17 @@ function makeJsonResponse(body: unknown, status = 200): Response {
   });
 }
 
+let lastReplaceUrl = ``;
+
 function mockLocation(pathname: string): void {
-  const fakeLocation = { pathname, href: `` } as unknown as Location;
+  lastReplaceUrl = ``;
+  const fakeLocation = {
+    pathname,
+    href: ``,
+    replace: (url: string) => {
+      lastReplaceUrl = url;
+    },
+  } as unknown as Location;
   (globalThis as { window?: { location: Location } }).window = {
     location: fakeLocation,
   };
@@ -26,6 +36,7 @@ describe(`client auth helpers`, () => {
     mockFetch = jest.fn() as MockFetch;
     global.fetch = mockFetch;
     mockLocation(`/dashboard`);
+    resetSessionExpiredHandled();
   });
 
   afterEach(() => {
@@ -51,22 +62,27 @@ describe(`client auth helpers`, () => {
   it(`swrFetcher redirects when refresh fails`, async () => {
     mockFetch.mockResolvedValueOnce(new Response(`Unauthorized`, { status: 401 }));
     mockFetch.mockResolvedValueOnce(new Response(`Unauthorized`, { status: 401 }));
+    // handleSessionExpired fetches /api/consumer/auth/clear-cookies before redirecting
+    mockFetch.mockResolvedValueOnce(new Response(`{}`, { status: 200 }));
 
     await expect(swrFetcher(`/api/profile`)).rejects.toThrow(`Session expired`);
-    const win = (globalThis as { window?: { location: Location } }).window;
-    expect(win?.location.href).toContain(`/login?session_expired=true`);
+    // Wait for the async cookie-clear fetch + replace() call to settle
+    await new Promise((r) => setTimeout(r, 10));
+    expect(lastReplaceUrl).toContain(`/login?session_expired=1`);
   });
 
   it(`fetchWithAuth returns error object when refresh fails`, async () => {
     mockLocation(`/settings`);
     mockFetch.mockResolvedValueOnce(new Response(`Unauthorized`, { status: 401 }));
     mockFetch.mockResolvedValueOnce(new Response(`Unauthorized`, { status: 401 }));
+    // handleSessionExpired fetches /api/consumer/auth/clear-cookies before redirecting
+    mockFetch.mockResolvedValueOnce(new Response(`{}`, { status: 200 }));
 
     const result = await fetchWithAuth(`/api/settings`, { method: `POST` });
 
     expect(result).toEqual({ ok: false, error: `Session expired`, status: 401 });
-    const win = (globalThis as { window?: { location: Location } }).window;
-    expect(win?.location.href).toContain(`next=%2Fsettings`);
+    await new Promise((r) => setTimeout(r, 10));
+    expect(lastReplaceUrl).toContain(`next=%2Fsettings`);
   });
 
   it(`fetchWithAuth returns error when response is not JSON`, async () => {

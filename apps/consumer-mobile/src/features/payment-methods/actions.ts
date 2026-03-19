@@ -77,17 +77,17 @@ export async function setDefaultPaymentMethodAction(paymentMethodId: string): Pr
     });
 
     if (!res.ok) {
-      const errorText = await res.text().catch(() => `Unknown error`);
+      const errorData = (await res.json().catch(() => ({}))) as { code?: string; message?: string };
       serverLogger.error(`Failed to set default payment method`, {
         correlationId,
         status: res.status,
-        error: errorText,
+        errorCode: errorData.code,
       });
       return {
         ok: false,
         error: {
-          code: `API_ERROR`,
-          message: `Unable to set default payment method. Please try again.`,
+          code: errorData.code ?? `API_ERROR`,
+          message: errorData.message ?? `Unable to set default payment method. Please try again.`,
         },
       };
     }
@@ -157,17 +157,17 @@ export async function deletePaymentMethodAction(paymentMethodId: string): Promis
     });
 
     if (!res.ok) {
-      const errorText = await res.text().catch(() => `Unknown error`);
+      const errorData = (await res.json().catch(() => ({}))) as { code?: string; message?: string };
       serverLogger.error(`Failed to delete payment method`, {
         correlationId,
         status: res.status,
-        error: errorText,
+        errorCode: errorData.code,
       });
       return {
         ok: false,
         error: {
-          code: `API_ERROR`,
-          message: `Unable to delete payment method. Please try again.`,
+          code: errorData.code ?? `API_ERROR`,
+          message: errorData.message ?? `Unable to delete payment method. Please try again.`,
         },
       };
     }
@@ -274,17 +274,17 @@ export async function addPaymentMethodAction(input: AddPaymentMethodInput): Prom
     });
 
     if (!res.ok) {
-      const errorText = await res.text().catch(() => `Unknown error`);
+      const errorData = (await res.json().catch(() => ({}))) as { code?: string; message?: string };
       serverLogger.error(`Failed to add payment method`, {
         correlationId,
         status: res.status,
-        error: errorText,
+        errorCode: errorData.code,
       });
       return {
         ok: false,
         error: {
-          code: `API_ERROR`,
-          message: `Unable to add payment method. Please try again.`,
+          code: errorData.code ?? `API_ERROR`,
+          message: errorData.message ?? `Unable to add payment method. Please try again.`,
         },
       };
     }
@@ -384,17 +384,17 @@ export async function addBankAccountAction(input: AddBankAccountInput): Promise<
     });
 
     if (!res.ok) {
-      const errorText = await res.text().catch(() => `Unknown error`);
+      const errorData = (await res.json().catch(() => ({}))) as { code?: string; message?: string };
       serverLogger.error(`Failed to add bank account`, {
         correlationId,
         status: res.status,
-        error: errorText,
+        errorCode: errorData.code,
       });
       return {
         ok: false,
         error: {
-          code: `API_ERROR`,
-          message: `Unable to add bank account. Please try again.`,
+          code: errorData.code ?? `API_ERROR`,
+          message: errorData.message ?? `Unable to add bank account. Please try again.`,
         },
       };
     }

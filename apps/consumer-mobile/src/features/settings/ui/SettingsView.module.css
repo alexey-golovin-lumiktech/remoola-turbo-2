@@ -106,3 +106,28 @@
 .docIcon {
   @apply h-6 w-6 text-secondary-600 dark:text-secondary-400;
 }
+
+/* Loading skeleton (load-state normalization) */
+.titleBar {
+  @apply h-8 w-32 animate-pulse rounded bg-slate-200 dark:bg-slate-700;
+}
+
+.subtitleBar {
+  @apply mt-2 h-4 w-48 animate-pulse rounded bg-slate-200 dark:bg-slate-700;
+}
+
+.blockLg {
+  @apply h-64 animate-pulse rounded-xl bg-slate-200 dark:bg-slate-700;
+}
+
+.blockMd {
+  @apply h-48 animate-pulse rounded-xl bg-slate-200 dark:bg-slate-700;
+}
+
+.blockSm {
+  @apply h-32 animate-pulse rounded-xl bg-slate-200 dark:bg-slate-700;
+}
+
+.retryButton {
+  @apply mt-6 min-h-11 rounded-xl bg-primary-600 px-6 py-3 text-base font-semibold text-white shadow-md transition hover:bg-primary-700 focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:bg-primary-500 dark:hover:bg-primary-600;
+}

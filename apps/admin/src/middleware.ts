@@ -1,13 +1,18 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-import { COOKIE_KEYS, getAdminAuthCookieOptions } from '@remoola/api-types';
+import { COOKIE_KEYS, getAdminAuthCookieOptions, sanitizeNextForRedirect } from '@remoola/api-types';
 
 const PUBLIC_PATHS = [`/login`, `/api/auth/login`];
 const NEXT_PUBLIC_API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
+// Cookie TTLs in seconds; keep aligned with API defaults.
+const JWT_ACCESS_EXPIRES_SECONDS = 900;
+const JWT_REFRESH_EXPIRES_SECONDS = 604800;
+
 // Token validation cache to avoid repeated backend calls
 const tokenCache = new Map<string, { valid: boolean; expires: number }>();
 const TOKEN_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const TOKEN_CACHE_MAX_SIZE = 1000;
 
 function getAdminCookieOptions() {
   return getAdminAuthCookieOptions({
@@ -35,12 +40,28 @@ async function validateToken(token: string): Promise<boolean> {
         Cookie: cookieHeader,
       },
       credentials: `include`,
-      // Short timeout for middleware
+      cache: `no-store`,
       signal: AbortSignal.timeout(5000),
     });
 
     const isValid = response.ok;
     tokenCache.set(token, { valid: isValid, expires: Date.now() + TOKEN_CACHE_TTL });
+
+    // Evict expired or oldest entry when cache is over the size cap
+    if (tokenCache.size > TOKEN_CACHE_MAX_SIZE) {
+      const now = Date.now();
+      let evicted = false;
+      for (const [k, v] of tokenCache) {
+        if (now >= v.expires) {
+          tokenCache.delete(k);
+          evicted = true;
+          break;
+        }
+      }
+      if (!evicted) {
+        tokenCache.delete(tokenCache.keys().next().value!);
+      }
+    }
 
     return isValid;
   } catch {
@@ -109,12 +130,12 @@ export async function middleware(req: NextRequest) {
           const cookieOptions = getAdminCookieOptions();
           response.cookies.set(COOKIE_KEYS.ADMIN_ACCESS_TOKEN, refreshResult.accessToken, {
             ...cookieOptions,
-            maxAge: 15 * 60, // 15 minutes
+            maxAge: JWT_ACCESS_EXPIRES_SECONDS,
           });
           if (refreshResult.refreshToken) {
             response.cookies.set(COOKIE_KEYS.ADMIN_REFRESH_TOKEN, refreshResult.refreshToken, {
               ...cookieOptions,
-              maxAge: 7 * 24 * 60 * 60, // 7 days
+              maxAge: JWT_REFRESH_EXPIRES_SECONDS,
             });
           }
           return response;
@@ -145,7 +166,7 @@ function redirectToLogin(req: NextRequest): NextResponse {
   const url = req.nextUrl.clone();
   url.pathname = `/login`;
   const intended = req.nextUrl.pathname === `/` ? `/dashboard` : req.nextUrl.pathname;
-  url.searchParams.set(`next`, intended);
+  url.searchParams.set(`next`, sanitizeNextForRedirect(intended, `/dashboard`));
   return NextResponse.redirect(url);
 }
 

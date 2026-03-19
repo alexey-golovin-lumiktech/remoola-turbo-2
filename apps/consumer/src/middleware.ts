@@ -1,6 +1,11 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
-import { COOKIE_KEYS, getConsumerAccessTokenCookieKey, getConsumerRefreshTokenCookieKey } from '@remoola/api-types';
+import {
+  COOKIE_KEYS,
+  getConsumerAccessTokenCookieKey,
+  getConsumerRefreshTokenCookieKey,
+  sanitizeNextForRedirect,
+} from '@remoola/api-types';
 
 import { appendSetCookies } from './lib/api-utils';
 import { getConsumerCookieRuntime } from './lib/auth-cookie-policy';
@@ -8,9 +13,10 @@ import { getConsumerCookieRuntime } from './lib/auth-cookie-policy';
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 const ME_URL = API_BASE ? `${API_BASE}/consumer/auth/me` : null;
 const REFRESH_URL = API_BASE ? `${API_BASE}/consumer/auth/refresh` : null;
+type AccessTokenValidationResult = `valid` | `invalid` | `unavailable`;
 
-async function validateAccessToken(accessToken: string, accessCookieKey: string): Promise<boolean> {
-  if (!ME_URL) return false;
+async function validateAccessToken(accessToken: string, accessCookieKey: string): Promise<AccessTokenValidationResult> {
+  if (!ME_URL) return `unavailable`;
   try {
     const res = await fetch(ME_URL, {
       method: `GET`,
@@ -18,9 +24,9 @@ async function validateAccessToken(accessToken: string, accessCookieKey: string)
       signal: AbortSignal.timeout(5000),
       cache: `no-store`,
     });
-    return res.ok;
+    return res.ok ? `valid` : `invalid`;
   } catch {
-    return false;
+    return `unavailable`;
   }
 }
 
@@ -48,6 +54,12 @@ async function refreshAccess(
   }
 }
 
+function isObviouslyInvalidCookieToken(token: string | undefined): boolean {
+  if (!token) return true;
+  if (token.length > 4096) return true;
+  return /[\r\n;]/.test(token);
+}
+
 export async function middleware(req: NextRequest) {
   const runtime = getConsumerCookieRuntime(req);
   const accessCookieKey = getConsumerAccessTokenCookieKey(runtime);
@@ -63,21 +75,36 @@ export async function middleware(req: NextRequest) {
   const isCallback = req.nextUrl.pathname.startsWith(`/auth/callback`);
   const isLogoutRoute = req.nextUrl.pathname.startsWith(`/logout`);
   const isProtected = !isAuthPage && !isLogoutRoute;
+  const hasValidAccessTokenShape = !isObviouslyInvalidCookieToken(accessToken);
+  const hasValidRefreshTokenShape = !isObviouslyInvalidCookieToken(refreshToken);
+
+  const safeNext = (path: string) => encodeURIComponent(sanitizeNextForRedirect(path, `/dashboard`));
 
   if (isCallback) return NextResponse.next();
 
-  if (isProtected && !accessToken) {
-    return NextResponse.redirect(new URL(`/login?next=${encodeURIComponent(req.nextUrl.pathname)}`, req.url));
+  if (isProtected && !hasValidAccessTokenShape) {
+    return NextResponse.redirect(new URL(`/login?next=${safeNext(req.nextUrl.pathname)}`, req.url));
   }
 
-  if (isAuthPage && accessToken) {
-    return NextResponse.redirect(new URL(`/dashboard`, req.url));
+  if (isAuthPage && hasValidAccessTokenShape && accessToken) {
+    const validation = await validateAccessToken(accessToken, accessCookieKey);
+    if (validation === `valid`) return NextResponse.redirect(new URL(`/dashboard`, req.url));
+    if (validation === `invalid` && hasValidRefreshTokenShape && refreshToken) {
+      const refreshResponse = await refreshAccess(refreshToken, refreshCookieKey, { csrfToken });
+      if (refreshResponse) {
+        const res = NextResponse.redirect(new URL(`/dashboard`, req.url));
+        appendSetCookies(res.headers, refreshResponse.headers);
+        return res;
+      }
+    }
+    // Validation unavailable or invalid+refresh failed: keep user on auth page.
+    return NextResponse.next();
   }
 
-  if (isProtected && accessToken) {
-    const valid = await validateAccessToken(accessToken, accessCookieKey);
-    if (valid) return NextResponse.next();
-    if (refreshToken) {
+  if (isProtected && hasValidAccessTokenShape && accessToken) {
+    const validation = await validateAccessToken(accessToken, accessCookieKey);
+    if (validation === `valid`) return NextResponse.next();
+    if (hasValidRefreshTokenShape && refreshToken) {
       const refreshResponse = await refreshAccess(refreshToken, refreshCookieKey, { csrfToken });
       if (refreshResponse) {
         const res = NextResponse.next();
@@ -85,7 +112,7 @@ export async function middleware(req: NextRequest) {
         return res;
       }
     }
-    return NextResponse.redirect(new URL(`/login?next=${encodeURIComponent(req.nextUrl.pathname)}`, req.url));
+    return NextResponse.redirect(new URL(`/login?next=${safeNext(req.nextUrl.pathname)}`, req.url));
   }
 
   return NextResponse.next();

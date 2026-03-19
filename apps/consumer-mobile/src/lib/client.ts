@@ -2,6 +2,8 @@ import { type SWRConfiguration } from 'swr';
 
 import { COOKIE_KEYS } from '@remoola/api-types';
 
+import { handleSessionExpired } from './session-expired';
+
 export const swrConfig: SWRConfiguration = {
   revalidateOnFocus: false,
   revalidateOnReconnect: true,
@@ -20,12 +22,7 @@ export const swrConfig: SWRConfiguration = {
   onError: (error: unknown) => {
     const err = error as { status?: number; message?: string };
     if (err.status !== 401 && !err.message?.toLowerCase().includes(`session expired`)) return;
-    if (typeof window === `undefined`) return;
-    const pathname = window.location.pathname ?? ``;
-    if (pathname.startsWith(`/login`) || pathname.startsWith(`/signup`) || pathname.startsWith(`/forgot-password`))
-      return;
-    const currentPath = window.location.pathname;
-    window.location.href = `/login?session_expired=true&next=${encodeURIComponent(currentPath)}`;
+    handleSessionExpired();
   },
 };
 
@@ -104,31 +101,11 @@ export async function fetchWithAuth<T = unknown>(
           headers: retryHeaders,
         });
       } else {
-        if (typeof window !== `undefined`) {
-          const pathname = window.location.pathname ?? ``;
-          if (
-            !pathname.startsWith(`/login`) &&
-            !pathname.startsWith(`/signup`) &&
-            !pathname.startsWith(`/forgot-password`)
-          ) {
-            const currentPath = window.location.pathname;
-            window.location.href = `/login?session_expired=true&next=${encodeURIComponent(currentPath)}`;
-          }
-        }
+        handleSessionExpired();
         return { ok: false, error: `Session expired`, status: 401 };
       }
     } catch {
-      if (typeof window !== `undefined`) {
-        const pathname = window.location.pathname ?? ``;
-        if (
-          !pathname.startsWith(`/login`) &&
-          !pathname.startsWith(`/signup`) &&
-          !pathname.startsWith(`/forgot-password`)
-        ) {
-          const currentPath = window.location.pathname;
-          window.location.href = `/login?session_expired=true&next=${encodeURIComponent(currentPath)}`;
-        }
-      }
+      handleSessionExpired();
       return { ok: false, error: `Session expired`, status: 401 };
     }
   }
@@ -175,31 +152,11 @@ export async function swrFetcher<T>(key: unknown): Promise<T> {
           headers: getCsrfHeader(),
         });
       } else {
-        if (typeof window !== `undefined`) {
-          const pathname = window.location.pathname ?? ``;
-          if (
-            !pathname.startsWith(`/login`) &&
-            !pathname.startsWith(`/signup`) &&
-            !pathname.startsWith(`/forgot-password`)
-          ) {
-            const currentPath = window.location.pathname;
-            window.location.href = `/login?session_expired=true&next=${encodeURIComponent(currentPath)}`;
-          }
-        }
+        handleSessionExpired();
         throw new Error(`Session expired`);
       }
     } catch {
-      if (typeof window !== `undefined`) {
-        const pathname = window.location.pathname ?? ``;
-        if (
-          !pathname.startsWith(`/login`) &&
-          !pathname.startsWith(`/signup`) &&
-          !pathname.startsWith(`/forgot-password`)
-        ) {
-          const currentPath = window.location.pathname;
-          window.location.href = `/login?session_expired=true&next=${encodeURIComponent(currentPath)}`;
-        }
-      }
+      handleSessionExpired();
       throw new Error(`Session expired`);
     }
   }

@@ -84,13 +84,25 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
     }
 
+    const path = request.path ?? request.url?.split(`?`)[0] ?? ``;
+
+    // Defense-in-depth scope check: reject cross-domain tokens early before DB lookups.
+    // Only applied when scope claim is present; legacy tokens without scope fall through to DB-level checks.
+    if (verified.scope === `admin` && path.startsWith(CONSUMER_API_PATH_PREFIX)) {
+      this.logger.warn(`AuthGuard: admin token used on consumer path`);
+      throw new ForbiddenException(GuardMessage.ONLY_FOR_CONSUMERS);
+    }
+    if (verified.scope === `consumer` && path.startsWith(ADMIN_API_PATH_PREFIX)) {
+      this.logger.warn(`AuthGuard: consumer token used on admin path`);
+      throw new ForbiddenException(GuardMessage.ONLY_FOR_ADMINS);
+    }
+
     const identityId = verified.identityId ?? verified.sub;
     if (!identityId) {
       this.logger.warn(`AuthGuard: token missing identityId`);
       throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
     }
 
-    const path = request.path ?? request.url?.split(`?`)[0] ?? ``;
     const isConsumerPath = path.startsWith(CONSUMER_API_PATH_PREFIX);
     if (isConsumerPath) {
       if (!verified.sid) {

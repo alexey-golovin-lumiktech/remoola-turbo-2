@@ -5,15 +5,15 @@ import { PassportModule } from '@nestjs/passport';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
-import { JWT_ACCESS_SECRET, JWT_ACCESS_TTL_SECONDS } from '../envs';
+import { envs } from '../envs';
 import { PrismaService } from '../shared/prisma.service';
 
 @Module({
   imports: [
     PassportModule,
     JwtModule.register({
-      secret: JWT_ACCESS_SECRET!,
-      signOptions: { expiresIn: JWT_ACCESS_TTL_SECONDS },
+      secret: envs.JWT_ACCESS_SECRET!,
+      signOptions: { expiresIn: envs.JWT_ACCESS_TTL_SECONDS },
     }),
   ],
   providers: [AuthService, JwtStrategy, PrismaService],

@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 
-import { getBrowser, outputHtmlPath, pdfOptions, pfdPageViewport } from './constants';
+import { getBrowser, pdfOptions, pfdPageViewport } from './constants';
 import { getInvoiceHtml } from './templates';
 import { type GeneratePdfParams, type Invoice } from './types';
 
@@ -24,6 +24,7 @@ export const generatePdf = async (params: GeneratePdfParams) => {
 };
 
 export const invoiceToPdf = async (invoice: Invoice) => {
+  const outputHtmlPath = `out.html` as const;
   const html = getInvoiceHtml(invoice);
   fs.writeFileSync(outputHtmlPath, html);
   const buffer = await generatePdf({ rawHtml: html });

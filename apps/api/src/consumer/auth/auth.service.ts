@@ -35,7 +35,7 @@ import { ConsumerSignup } from './dto';
 import { LoginBody } from '../../auth/dto/login.dto';
 import { CONSUMER } from '../../dtos';
 import { IJwtTokenPayload } from '../../dtos/consumer';
-import { envs, JWT_ACCESS_TTL_SECONDS, JWT_REFRESH_TTL_SECONDS } from '../../envs';
+import { envs } from '../../envs';
 import { AuthAuditService, AUTH_AUDIT_EVENTS, AUTH_IDENTITY_TYPES } from '../../shared/auth-audit.service';
 import { MailingService } from '../../shared/mailing.service';
 import { OriginResolverService } from '../../shared/origin-resolver.service';
@@ -427,7 +427,7 @@ export class ConsumerAuthService {
   ) {
     const db = tx ?? this.prisma;
     const temporaryHash = `pending:${oauthCrypto.generateOAuthState()}`;
-    const expiresAt = new Date(Date.now() + JWT_REFRESH_TTL_SECONDS * 1000);
+    const expiresAt = new Date(Date.now() + envs.JWT_REFRESH_TTL_SECONDS * 1000);
 
     const created = await db.authSessionModel.create({
       data: {
@@ -461,18 +461,19 @@ export class ConsumerAuthService {
       identityId,
       sid: sessionId,
       typ: `access` as const,
+      scope: `consumer` as const,
       role: ConsumerAuthService.accessRole,
       permissions: ConsumerAuthService.accessPermissions,
     };
-    const outOfSessionPayload = { sub: identityId, identityId, typ: `access` as const };
+    const outOfSessionPayload = { sub: identityId, identityId, typ: `access` as const, scope: `consumer` as const };
     const payload = sessionId ? sessionPayload : outOfSessionPayload;
-    return this.jwtService.signAsync(payload, { expiresIn: JWT_ACCESS_TTL_SECONDS });
+    return this.jwtService.signAsync(payload, { expiresIn: envs.JWT_ACCESS_TTL_SECONDS });
   }
 
   private getRefreshToken(identityId: string, sessionId: string, sessionFamilyId: string) {
     return this.jwtService.signAsync(
       { sub: identityId, identityId, sid: sessionId, fid: sessionFamilyId, typ: `refresh` },
-      { expiresIn: JWT_REFRESH_TTL_SECONDS },
+      { expiresIn: envs.JWT_REFRESH_TTL_SECONDS },
     );
   }
 
@@ -666,7 +667,7 @@ export class ConsumerAuthService {
       data: { consumerId: consumer.id, tokenHash: hashTokenToHex(token), expiredAt },
     });
 
-    let backendBaseURL = envs.NEST_APP_EXTERNAL_ORIGIN ?? `http://[::1]:3333/api`;
+    let backendBaseURL = envs.NEST_APP_EXTERNAL_ORIGIN ?? `http://localhost:3333/api`;
     if (envs.VERCEL !== 0) {
       const base =
         envs.NEST_APP_EXTERNAL_ORIGIN && envs.NEST_APP_EXTERNAL_ORIGIN !== `NEST_APP_EXTERNAL_ORIGIN`

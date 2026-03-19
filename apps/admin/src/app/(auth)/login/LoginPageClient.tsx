@@ -1,10 +1,15 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { emailSchema } from '@remoola/api-types';
+import {
+  emailSchema,
+  removeStaleLoginParams,
+  sanitizeNextForRedirect,
+  SESSION_EXPIRED_QUERY,
+} from '@remoola/api-types';
 
 import styles from '../../../components/ui/classNames.module.css';
 import { apiFetch, resetSessionExpiredHandled } from '../../../lib';
@@ -14,12 +19,23 @@ export function LoginPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const rawNext = searchParams.get(`next`) || `/dashboard`;
+  const cleanedQueryRef = useRef(false);
 
   useEffect(() => {
     resetSessionExpiredHandled();
   }, []);
 
-  const next = rawNext === `/` || rawNext === `/login` ? `/dashboard` : rawNext;
+  useEffect(() => {
+    if (cleanedQueryRef.current) return;
+    if (searchParams.get(SESSION_EXPIRED_QUERY) == null) return;
+    cleanedQueryRef.current = true;
+    const url = new URL(window.location.href);
+    removeStaleLoginParams(url, [SESSION_EXPIRED_QUERY]);
+    window.history.replaceState(null, ``, url.pathname + (url.search || ``));
+  }, [searchParams]);
+
+  const next = sanitizeNextForRedirect(rawNext, `/dashboard`);
+  const nextResolved = next === `/` || next === `/login` ? `/dashboard` : next;
 
   const [email, setEmail] = useState(`super.admin@wirebill.com`);
   const [password, setPassword] = useState(`SuperWirebill@Admin123!`);
@@ -51,7 +67,7 @@ export function LoginPageClient() {
       return;
     }
 
-    router.push(next);
+    router.push(nextResolved);
     router.refresh();
   }
 

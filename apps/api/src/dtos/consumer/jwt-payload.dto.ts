@@ -10,6 +10,8 @@ export type IJwtTokenPayload = {
   identityId?: ConsumerModel[`id`];
   sid?: string;
   typ?: `access` | `refresh`;
+  /** Defense-in-depth scope claim — present on newly-issued tokens. Missing on legacy tokens (tolerated). */
+  scope?: `consumer` | `admin`;
   role?: `USER`;
   permissions?: string[];
   email?: ConsumerModel[`email`];

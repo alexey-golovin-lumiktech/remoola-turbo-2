@@ -4,11 +4,18 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { AUTH_NOTICE_QUERY, type AuthNotice, getAuthNoticeMessage } from '@remoola/api-types';
+import {
+  AUTH_NOTICE_QUERY,
+  type AuthNotice,
+  getAuthNoticeMessage,
+  removeStaleLoginParams,
+  SESSION_EXPIRED_QUERY,
+} from '@remoola/api-types';
 import { GoogleIcon } from '@remoola/ui';
 
 import { getApiBaseUrlOptional } from '../../../lib/config.client';
 import { getDevCredentials } from '../../../lib/dev-credentials';
+import { resetSessionExpiredHandled } from '../../../lib/session-expired';
 import { AlertTriangleIcon } from '../../../shared/ui/icons/AlertTriangleIcon';
 import { EyeIcon } from '../../../shared/ui/icons/EyeIcon';
 import { EyeOffIcon } from '../../../shared/ui/icons/EyeOffIcon';
@@ -17,6 +24,7 @@ import { SpinnerIcon } from '../../../shared/ui/icons/SpinnerIcon';
 import { XCircleIcon } from '../../../shared/ui/icons/XCircleIcon';
 import { XIcon } from '../../../shared/ui/icons/XIcon';
 import { loginSchema } from '../schemas';
+import { shouldFinalizeLoginLoading } from './login-loading-guard';
 import styles from './LoginForm.module.css';
 
 export function LoginForm({
@@ -42,6 +50,7 @@ export function LoginForm({
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
   const [showSessionExpiredMessage, setShowSessionExpiredMessage] = useState(sessionExpired ?? false);
   const [authNoticeMessage] = useState<string | undefined>(authNotice ? getAuthNoticeMessage(authNotice) : undefined);
+  const didNavigateRef = useRef(false);
 
   const errorMessage = err ?? (oauthError ? `Sign-in failed. Please try again.` : undefined);
 
@@ -62,6 +71,10 @@ export function LoginForm({
   }, [googleStartUrl]);
 
   useEffect(() => {
+    resetSessionExpiredHandled();
+  }, []);
+
+  useEffect(() => {
     emailInputRef.current?.focus();
   }, []);
 
@@ -70,16 +83,14 @@ export function LoginForm({
     if (cleanedLoginQueryRef.current) return;
 
     const hasSessionExpiredFlag =
-      searchParams.get(`session_expired`) === `true` || searchParams.get(`session_expired`) === `1`;
+      searchParams.get(SESSION_EXPIRED_QUERY) === `true` || searchParams.get(SESSION_EXPIRED_QUERY) === `1`;
     const hasAuthNotice = searchParams.get(AUTH_NOTICE_QUERY) != null;
     if (!hasSessionExpiredFlag && !hasAuthNotice) return;
 
     cleanedLoginQueryRef.current = true;
     const url = new URL(window.location.href);
-    url.searchParams.delete(`session_expired`);
-    url.searchParams.delete(AUTH_NOTICE_QUERY);
-    if (!url.searchParams.toString()) url.search = ``;
-    window.history.replaceState(null, ``, url.pathname + url.search);
+    removeStaleLoginParams(url, [SESSION_EXPIRED_QUERY, AUTH_NOTICE_QUERY]);
+    window.history.replaceState(null, ``, url.pathname + (url.search || ``));
   }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -129,11 +140,14 @@ export function LoginForm({
         setErr(`Session could not be established. Please try again.`);
         return;
       }
+      didNavigateRef.current = true;
       router.replace(nextPath);
     } catch {
       setErr(`Network error. Please check your connection and try again.`);
     } finally {
-      setLoading(false);
+      if (shouldFinalizeLoginLoading(didNavigateRef.current)) {
+        setLoading(false);
+      }
     }
   };
 

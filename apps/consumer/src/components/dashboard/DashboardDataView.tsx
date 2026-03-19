@@ -1,5 +1,7 @@
 'use client';
 
+import { isUnauthorizedError } from '@remoola/api-types';
+
 import { isProfileCompleteFromTasks } from './profileCompleteFromTasks';
 import { useDashboard } from '../../lib/hooks';
 import { VerifyMeButton } from '../stripe';
@@ -21,11 +23,6 @@ function getErrorMessage(error: unknown): string {
   if (typeof error === `string`) return error;
   if (error instanceof Error) return error.message;
   return `Failed to load dashboard`;
-}
-
-function isUnauthorizedError(error: unknown): boolean {
-  const e = error as { status?: number };
-  return e?.status === 401;
 }
 
 export function DashboardDataView() {

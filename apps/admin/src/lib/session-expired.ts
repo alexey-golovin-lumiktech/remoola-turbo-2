@@ -6,20 +6,28 @@
 
 import { toast } from 'sonner';
 
+import { SESSION_EXPIRED_QUERY } from '@remoola/api-types';
+
 const SESSION_EXPIRED_MESSAGE = `Your session has expired. Please sign in again.`;
 
 /** Admin logout clears cookies server-side; we call it to ensure clean state before redirect. */
 const LOGOUT_URL = `/api/auth/logout`;
 
-/** Query param so login page can clear cookies on load if redirect cleared them too late. */
-export const SESSION_EXPIRED_QUERY = `session_expired`;
+export { SESSION_EXPIRED_QUERY };
 
 let handled = false;
+let redirectInProgress = false;
+
+/** True after we have decided to redirect (handled). Callers can skip state updates to avoid stale frames. */
+export function isRedirectInProgress(): boolean {
+  return redirectInProgress;
+}
 
 /** Reset so next 401 is handled (e.g. after SPA navigate to
  * login or after fresh load). Call from login page on mount. */
 export function resetSessionExpiredHandled(): void {
   handled = false;
+  redirectInProgress = false;
 }
 
 /**
@@ -37,6 +45,7 @@ export function handleSessionExpired(): void {
 
   if (handled) return;
   handled = true;
+  redirectInProgress = true;
 
   toast.error(SESSION_EXPIRED_MESSAGE);
   const next = encodeURIComponent(pathname + (window.location.search ?? ``));

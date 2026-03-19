@@ -87,9 +87,6 @@ Project root `docs/` are synced(single source of truth for features, API, safety
 - `docs/PROJECT_DOCUMENTATION.md` — overview of API (base path `/api`), admin, consumer, and database.
 - `docs/FEATURES_CURRENT.md` — implemented features and current repo state.
 - `docs/CONSUMER_BROWSER_IDENTITY_TRACKING.md` — browser identity (`deviceId`) and consumer action-log architecture, compatibility contracts, rollout/runbook.
-- `docs/AUTH_RULES_CODE_TEST_MATRIX.md` — auth rules 06–11 → code paths → test suites → CI jobs mapping.
-- `docs/AUTH_OBSERVABILITY_SPEC.md` — auth/settings telemetry fields, alert thresholds, triage query patterns.
-- `docs/AUTH_INCIDENT_TRIAGE_RUNBOOK.md` — incident playbooks for auth transition failures.
 - `docs/FINANCIAL_SAFETY_AND_DB_COMPLIANCE.md` — fintech safety, ledger invariants, idempotency.
 - `docs/MIGRATION_SAFETY_AUDIT.md` — migration safety notes and governance-oriented migration assessment.
 - `docs/SECURITY_AUDIT_AUTH_WEBHOOKS_PII.md` — auth/webhook/PII-focused security audit notes.

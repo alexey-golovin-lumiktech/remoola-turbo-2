@@ -5,6 +5,7 @@ import { Test, type TestingModule } from '@nestjs/testing';
 import { adminErrorCodes } from '@remoola/shared-constants';
 
 import { AdminAuthService } from './admin-auth.service';
+import { envs } from '../../envs';
 import { AuthAuditService } from '../../shared/auth-audit.service';
 import { PrismaService } from '../../shared/prisma.service';
 import { passwordUtils } from '../../shared-common';
@@ -122,6 +123,16 @@ describe(`AdminAuthService`, () => {
         storedHash: identity.password,
         storedSalt: identity.salt,
       });
+      expect(jwtService.signAsync).toHaveBeenNthCalledWith(
+        1,
+        { identityId: identity.id, type: `access`, scope: `admin` },
+        { expiresIn: envs.JWT_ACCESS_TTL_SECONDS },
+      );
+      expect(jwtService.signAsync).toHaveBeenNthCalledWith(
+        2,
+        { identityId: identity.id, type: `refresh` },
+        { expiresIn: envs.JWT_REFRESH_TTL_SECONDS },
+      );
     });
   });
 
@@ -199,6 +210,16 @@ describe(`AdminAuthService`, () => {
         email: admin.email,
         id: admin.id,
       });
+      expect(jwtService.signAsync).toHaveBeenNthCalledWith(
+        1,
+        { identityId: admin.id, type: `access`, scope: `admin` },
+        { expiresIn: envs.JWT_ACCESS_TTL_SECONDS },
+      );
+      expect(jwtService.signAsync).toHaveBeenNthCalledWith(
+        2,
+        { identityId: admin.id, type: `refresh` },
+        { expiresIn: envs.JWT_REFRESH_TTL_SECONDS },
+      );
     });
   });
 

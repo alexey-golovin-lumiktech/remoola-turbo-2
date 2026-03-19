@@ -5,19 +5,173 @@ import { useState, useMemo } from 'react';
 
 import { cn } from '@remoola/ui';
 
+import styles from './PaymentMethodForm.module.css';
 import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../../lib/error-messages';
 import { clientLogger } from '../../../lib/logger';
 import { showErrorToast } from '../../../lib/toast.client';
 import { Button } from '../../../shared/ui/Button';
 import { useTheme } from '../../../shared/ui/ThemeProvider';
-import { addPaymentMethodAction, addBankAccountAction } from '../actions';
-import styles from './PaymentMethodForm.module.css';
+import { addBankAccountAction } from '../actions';
 
 type PaymentMethodType = `CREDIT_CARD` | `BANK_ACCOUNT`;
 
 interface PaymentMethodFormProps {
   onSuccess: () => void;
   onCancel: () => void;
+}
+
+type ConfirmPersistResponse = Pick<Response, `ok` | `json`>;
+
+export async function resolveMobileConfirmErrorData(
+  response: ConfirmPersistResponse,
+): Promise<{ code?: string; message: string } | null> {
+  if (response.ok) return null;
+  const errorData = (await response.json().catch(() => ({}))) as { code?: string; message?: string };
+  return {
+    code: errorData.code,
+    message: errorData.message ?? getLocalToastMessage(localToastKeys.PAYMENT_METHOD_ADD_FAILED),
+  };
+}
+
+type RunMobileCardSubmitFlowDeps = {
+  fetchFn: typeof fetch;
+  stripe: {
+    createPaymentMethod: (params: {
+      type: `card`;
+      card: unknown;
+      billing_details: { name: string; email?: string; phone?: string };
+    }) => Promise<{
+      error: { type?: string; message?: string | null } | null;
+      paymentMethod: { id: string; card: { brand?: string; last4?: string } | null };
+    }>;
+    confirmCardSetup: (
+      clientSecret: string,
+      params: { payment_method: string },
+    ) => Promise<{
+      error: { type?: string; message?: string | null } | null;
+      setupIntent: { id: string };
+    }>;
+  } | null;
+  elements: {
+    getElement: (element: typeof CardElement) => unknown | null;
+  } | null;
+  billingName: string;
+  billingEmail: string;
+  billingPhone: string;
+  onError: (message: string, code?: string) => void;
+  onLogInfo: (message: string, meta?: Record<string, unknown>) => void;
+  onLogError: (message: string, meta?: Record<string, unknown>) => void;
+};
+
+export async function runMobileCardSubmitFlow({
+  fetchFn,
+  stripe,
+  elements,
+  billingName,
+  billingEmail,
+  billingPhone,
+  onError,
+  onLogInfo,
+  onLogError,
+}: RunMobileCardSubmitFlowDeps): Promise<boolean> {
+  if (!stripe || !elements) {
+    onError(`Stripe is not initialized. Please refresh and try again.`);
+    return false;
+  }
+
+  if (!billingName.trim()) {
+    onError(`Cardholder name is required.`);
+    return false;
+  }
+
+  try {
+    const setupIntentRes = await fetchFn(`/api/stripe/setup-intent`, {
+      method: `POST`,
+      credentials: `include`,
+    });
+
+    if (!setupIntentRes.ok) {
+      throw new Error(`Failed to create setup intent`);
+    }
+
+    const setupIntentData = await setupIntentRes.json();
+    const clientSecret = setupIntentData.clientSecret || setupIntentData.client_secret;
+
+    if (!clientSecret) {
+      throw new Error(`No client secret received from setup intent`);
+    }
+
+    const cardElement = elements.getElement(CardElement);
+    if (!cardElement) {
+      throw new Error(`Card element not found`);
+    }
+
+    const { error: pmError, paymentMethod: pm } = await stripe.createPaymentMethod({
+      type: `card`,
+      card: cardElement,
+      billing_details: {
+        name: billingName,
+        email: billingEmail || undefined,
+        phone: billingPhone || undefined,
+      },
+    });
+
+    if (pmError) {
+      const msg =
+        pmError.type === `card_error`
+          ? (pmError.message ?? `Your card was declined. Please try another card.`)
+          : pmError.type === `validation_error`
+            ? (pmError.message ?? `Please check your card details and try again.`)
+            : (pmError.message ?? `An unexpected error occurred. Please try again.`);
+      onError(msg);
+      return false;
+    }
+
+    const card = pm.card;
+    if (!card) {
+      throw new Error(`Card details missing from Stripe response`);
+    }
+
+    const { error: confirmError, setupIntent } = await stripe.confirmCardSetup(clientSecret, {
+      payment_method: pm.id,
+    });
+
+    if (confirmError) {
+      const msg =
+        confirmError.type === `card_error`
+          ? (confirmError.message ?? `Your card was declined. Please try another card.`)
+          : confirmError.type === `validation_error`
+            ? (confirmError.message ?? `Please check your card details and try again.`)
+            : (confirmError.message ?? `An unexpected error occurred. Please try again.`);
+      onError(msg);
+      return false;
+    }
+
+    const finalSetupIntentId = setupIntent.id;
+
+    onLogInfo(`Confirming setup intent`, { brand: card.brand, last4: card.last4 });
+
+    const confirmRes = await fetchFn(`/api/stripe/confirm`, {
+      method: `POST`,
+      credentials: `include`,
+      headers: { 'content-type': `application/json` },
+      body: JSON.stringify({ setupIntentId: finalSetupIntentId }),
+    });
+
+    const confirmErrorData = await resolveMobileConfirmErrorData(confirmRes);
+    if (confirmErrorData) {
+      onError(getErrorMessageForUser(confirmErrorData.code, confirmErrorData.message), confirmErrorData.code);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    onLogError(`Add card failed`, {
+      message: err instanceof Error ? err.message : String(err),
+    });
+    onError(getLocalToastMessage(localToastKeys.PAYMENT_METHOD_ADD_FAILED));
+    return false;
+  }
 }
 
 export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProps) {
@@ -59,118 +213,17 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
   }, [resolvedTheme]);
 
   const handleCardSubmit = async () => {
-    if (!stripe || !elements) {
-      showErrorToast(`Stripe is not initialized. Please refresh and try again.`);
-      return false;
-    }
-
-    if (!billingName.trim()) {
-      showErrorToast(`Cardholder name is required.`);
-      return false;
-    }
-
-    try {
-      const setupIntentRes = await fetch(`/api/stripe/setup-intent`, {
-        method: `POST`,
-        credentials: `include`,
-      });
-
-      if (!setupIntentRes.ok) {
-        throw new Error(`Failed to create setup intent`);
-      }
-
-      const setupIntentData = await setupIntentRes.json();
-
-      clientLogger.info(`Setup Intent response received`, {
-        setupIntentId: setupIntentData.setupIntentId || setupIntentData.id,
-      });
-
-      const clientSecret = setupIntentData.clientSecret || setupIntentData.client_secret;
-      const setupIntentId = setupIntentData.setupIntentId || setupIntentData.id;
-
-      if (!clientSecret) {
-        throw new Error(`No client secret received from setup intent`);
-      }
-
-      const cardElement = elements.getElement(CardElement);
-      if (!cardElement) {
-        throw new Error(`Card element not found`);
-      }
-
-      const { error: confirmError, setupIntent } = await stripe.confirmCardSetup(clientSecret, {
-        payment_method: {
-          card: cardElement,
-          billing_details: {
-            name: billingName,
-            email: billingEmail || undefined,
-            phone: billingPhone || undefined,
-          },
-        },
-      });
-
-      if (confirmError) {
-        const msg =
-          confirmError.type === `card_error`
-            ? (confirmError.message ?? `Your card was declined. Please try another card.`)
-            : confirmError.type === `validation_error`
-              ? (confirmError.message ?? `Please check your card details and try again.`)
-              : (confirmError.message ?? `An unexpected error occurred. Please try again.`);
-        showErrorToast(msg);
-        return false;
-      }
-
-      const stripePaymentMethodId = setupIntent.payment_method as string;
-      // Use setupIntent.id as fallback if backend didn't provide setupIntentId
-      const finalSetupIntentId = setupIntentId || setupIntent.id;
-
-      const metaRes = await fetch(`/api/stripe/payment-method/metadata`, {
-        method: `POST`,
-        headers: { 'content-type': `application/json` },
-        body: JSON.stringify({ stripePaymentMethodId }),
-        credentials: `include`,
-      });
-
-      if (!metaRes.ok) {
-        throw new Error(`Failed to fetch payment method metadata`);
-      }
-
-      const cardMeta = await metaRes.json();
-
-      const paymentMethodData = {
-        setupIntentId: finalSetupIntentId,
-        defaultSelected,
-
-        billingName,
-        billingEmail: billingEmail || undefined,
-        billingPhone: billingPhone || undefined,
-
-        brand: cardMeta.brand,
-        last4: cardMeta.last4,
-        expMonth: cardMeta.expMonth.toString().padStart(2, `0`),
-        expYear: cardMeta.expYear,
-        stripePaymentMethodId,
-      };
-
-      clientLogger.info(`Submitting payment method`, {
-        brand: paymentMethodData.brand,
-        last4: paymentMethodData.last4,
-      });
-
-      const result = await addPaymentMethodAction(paymentMethodData);
-
-      if (!result.ok) {
-        showErrorToast(
-          getErrorMessageForUser(result.error.code, getLocalToastMessage(localToastKeys.PAYMENT_METHOD_ADD_FAILED)),
-          { code: result.error.code },
-        );
-        return false;
-      }
-
-      return true;
-    } catch {
-      showErrorToast(getLocalToastMessage(localToastKeys.PAYMENT_METHOD_ADD_FAILED));
-      return false;
-    }
+    return await runMobileCardSubmitFlow({
+      fetchFn: fetch,
+      stripe: stripe as RunMobileCardSubmitFlowDeps[`stripe`],
+      elements: elements as RunMobileCardSubmitFlowDeps[`elements`],
+      billingName,
+      billingEmail,
+      billingPhone,
+      onError: (message, code) => showErrorToast(message, code ? { code } : undefined),
+      onLogInfo: (message, meta) => clientLogger.info(message, meta),
+      onLogError: (message, meta) => clientLogger.error(message, meta),
+    });
   };
 
   const handleBankSubmit = async () => {
@@ -225,7 +278,10 @@ export function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethodFormProp
       }
 
       return true;
-    } catch {
+    } catch (err) {
+      clientLogger.error(`Add bank account failed`, {
+        message: err instanceof Error ? err.message : String(err),
+      });
       showErrorToast(getLocalToastMessage(localToastKeys.PAYMENT_METHOD_ADD_FAILED));
       return false;
     }

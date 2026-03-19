@@ -85,9 +85,9 @@ export class HealthService {
   }
 
   async sendTestEmail(to?: string) {
-    const recipient = to?.trim() || envs.ADMIN_EMAIL;
+    const recipient = to?.trim() || envs.DEFAULT_ADMIN_EMAIL;
     if (!recipient) {
-      throw new ForbiddenException(`No recipient configured. Set ADMIN_EMAIL or pass to in body.`);
+      throw new ForbiddenException(`No recipient configured. Set DEFAULT_ADMIN_EMAIL or pass to in body.`);
     }
 
     try {

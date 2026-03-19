@@ -31,8 +31,10 @@ export function DocumentUploadButton({ onUploadComplete }: DocumentUploadButtonP
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
+    const selectedFiles = Array.from(files);
+    const fileCount = selectedFiles.length;
 
-    if (files.length > 10) {
+    if (fileCount > 10) {
       showWarningToast(`Maximum 10 files allowed`);
       return;
     }
@@ -42,7 +44,7 @@ export function DocumentUploadButton({ onUploadComplete }: DocumentUploadButtonP
 
     try {
       const formData = new FormData();
-      Array.from(files).forEach((file) => {
+      selectedFiles.forEach((file) => {
         formData.append(`files`, file);
       });
 
@@ -51,25 +53,27 @@ export function DocumentUploadButton({ onUploadComplete }: DocumentUploadButtonP
       xhr.upload.addEventListener(`progress`, (e) => {
         if (e.lengthComputable) {
           const progress = (e.loaded / e.total) * 100;
-          setUploadProgress(Math.round(progress));
+          // Keep UI below 100 until server response returns; upload transfer can finish before processing does.
+          setUploadProgress(Math.min(99, Math.round(progress)));
         }
       });
 
       xhr.addEventListener(`load`, () => {
+        setUploadProgress(100);
         if (xhr.status >= 200 && xhr.status < 300) {
           setIsUploading(false);
           setUploadProgress(0);
           if (fileInputRef.current) {
             fileInputRef.current.value = ``;
           }
-          showSuccessToast(`${files.length} file${files.length > 1 ? `s` : ``} uploaded successfully`);
+          showSuccessToast(`${fileCount} file${fileCount > 1 ? `s` : ``} uploaded successfully`);
           onUploadComplete?.();
         } else {
           setIsUploading(false);
           setUploadProgress(0);
           clientLogger.error(`Document upload failed`, {
             status: xhr.status,
-            fileCount: files.length,
+            fileCount,
           });
           showErrorToast(getLocalToastMessage(localToastKeys.DOCUMENTS_UPLOAD_FAILED));
         }
@@ -79,7 +83,7 @@ export function DocumentUploadButton({ onUploadComplete }: DocumentUploadButtonP
         setIsUploading(false);
         setUploadProgress(0);
         clientLogger.error(`Document upload network error`, {
-          fileCount: files.length,
+          fileCount,
         });
         showErrorToast(getLocalToastMessage(localToastKeys.UNEXPECTED_ERROR));
       });
@@ -91,7 +95,7 @@ export function DocumentUploadButton({ onUploadComplete }: DocumentUploadButtonP
       setUploadProgress(0);
       clientLogger.error(`Document upload exception`, {
         error: err,
-        fileCount: files.length,
+        fileCount,
       });
       showErrorToast(getLocalToastMessage(localToastKeys.DOCUMENTS_UPLOAD_FAILED));
     }
@@ -108,14 +112,7 @@ export function DocumentUploadButton({ onUploadComplete }: DocumentUploadButtonP
         className={styles.input}
         aria-label="Upload documents"
       />
-      <Button
-        onClick={handleClick}
-        disabled={isUploading}
-        isLoading={isUploading}
-        variant="primary"
-        size="md"
-        className={styles.btn}
-      >
+      <Button onClick={handleClick} disabled={isUploading} variant="primary" size="md" className={styles.btn}>
         {isUploading ? (
           <div className={styles.loadingRow}>
             <SpinnerIcon className={`${styles.icon} animate-spin`} />

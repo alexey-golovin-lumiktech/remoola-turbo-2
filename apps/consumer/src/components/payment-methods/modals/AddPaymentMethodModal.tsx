@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 
 import { emailOptionalSchema } from '@remoola/api-types';
 
-import { type StripeSetupIntentPayload, type PaymentMethodType, type CreatePaymentMethodDto } from '../../../types';
+import { type PaymentMethodType, type CreatePaymentMethodDto } from '../../../types';
 import { useTheme } from '../../ThemeProvider';
 import styles from '../../ui/classNames.module.css';
 
@@ -41,6 +41,139 @@ type AddPaymentMethodModalProps = {
   onCloseAction: () => void;
   onCreatedAction: () => void;
 };
+
+type ConfirmPersistResponse = Pick<Response, `ok` | `json`>;
+
+export async function resolveConfirmPersistErrorMessage(response: ConfirmPersistResponse): Promise<string | null> {
+  if (response.ok) return null;
+  const errorData = (await response.json().catch(() => ({}))) as { message?: string };
+  return errorData.message ?? `Failed to add payment method`;
+}
+
+type CreateCardMethodFlowDeps = {
+  fetchFn: typeof fetch;
+  stripe: {
+    createPaymentMethod: (params: {
+      type: `card`;
+      card: unknown;
+      billing_details: { name: string; email?: string; phone?: string };
+    }) => Promise<{
+      error: { message?: string | null } | null;
+      paymentMethod: { id: string; card: Record<string, unknown> | null };
+    }>;
+    confirmCardSetup: (
+      clientSecret: string,
+      params: { payment_method: string },
+    ) => Promise<{ error: { message?: string | null } | null; setupIntent?: { id?: string } | null }>;
+  } | null;
+  elements: {
+    getElement: (element: typeof CardElement) => unknown | null;
+  } | null;
+  billingName: string;
+  billingEmail: string;
+  billingPhone: string;
+  onCreated: () => void;
+  onClose: () => void;
+  onError: (message: string) => void;
+};
+
+export async function runCreateCardMethodFlow({
+  fetchFn,
+  stripe,
+  elements,
+  billingName,
+  billingEmail,
+  billingPhone,
+  onCreated,
+  onClose,
+  onError,
+}: CreateCardMethodFlowDeps): Promise<boolean> {
+  try {
+    const siRes = await fetchFn(`/api/stripe/setup-intent`, {
+      method: `POST`,
+      headers: { 'content-type': `application/json` },
+      credentials: `include`,
+    });
+
+    if (!siRes.ok) {
+      onError(`Failed to create SetupIntent`);
+      return false;
+    }
+
+    const { clientSecret } = (await siRes.json()) as { clientSecret: string };
+    if (!clientSecret) {
+      onError(`No client secret received from setup intent`);
+      return false;
+    }
+
+    const cardElement = elements?.getElement(CardElement);
+    if (!cardElement) {
+      onError(`Card element not found`);
+      return false;
+    }
+
+    if (!stripe) {
+      onError(`Stripe is not initialized. Please refresh and try again.`);
+      return false;
+    }
+
+    const { error: pmError, paymentMethod: pm } = await stripe.createPaymentMethod({
+      type: `card`,
+      card: cardElement,
+      billing_details: {
+        name: billingName,
+        email: billingEmail || undefined,
+        phone: billingPhone || undefined,
+      },
+    });
+
+    if (pmError) {
+      onError(pmError.message ?? `Card validation failed`);
+      return false;
+    }
+
+    const card = pm.card;
+    if (!card) {
+      onError(`Card details missing from Stripe response`);
+      return false;
+    }
+
+    const confirmRes = await stripe.confirmCardSetup(clientSecret, {
+      payment_method: pm.id,
+    });
+
+    if (confirmRes.error) {
+      onError(confirmRes.error.message ?? `Failed to add payment method`);
+      return false;
+    }
+
+    const setupIntent = confirmRes.setupIntent;
+    if (!setupIntent?.id) {
+      onError(`Setup intent not confirmed`);
+      return false;
+    }
+
+    const confirmRes2 = await fetchFn(`/api/stripe/confirm`, {
+      method: `POST`,
+      headers: { 'content-type': `application/json` },
+      credentials: `include`,
+      body: JSON.stringify({ setupIntentId: setupIntent.id }),
+    });
+
+    const persistError = await resolveConfirmPersistErrorMessage(confirmRes2);
+    if (persistError) {
+      onError(persistError);
+      return false;
+    }
+
+    onCreated();
+    onClose();
+    return true;
+  } catch {
+    onError(`Failed to add payment method`);
+    return false;
+  }
+}
 
 export function AddPaymentMethodModal({ open, onCloseAction, onCreatedAction }: AddPaymentMethodModalProps) {
   if (!open) return null;
@@ -95,83 +228,22 @@ function AddPaymentMethodModalInner({
 
   async function createCardMethod() {
     setLoading(true);
-
-    // 1) Create setup intent on backend
-    const siRes = await fetch(`/api/stripe/setup-intent`, {
-      method: `POST`,
-      headers: { 'content-type': `application/json` },
-      credentials: `include`,
-    });
-
-    if (!siRes.ok) {
-      setLoading(false);
-      toast.error(`Failed to create SetupIntent`);
-      return;
-    }
-
-    const { clientSecret, setupIntentId } = (await siRes.json()) as StripeSetupIntentPayload;
-
-    // 2) Confirm using Stripe Elements
-    const cardElement = elements?.getElement(CardElement);
-
-    const confirmRes = await stripe?.confirmCardSetup(clientSecret, {
-      payment_method: {
-        card: cardElement!,
-        billing_details: {
-          name: billingName,
-          email: billingEmail,
-          phone: billingPhone,
-        },
-      },
-    });
-
-    if (confirmRes?.error) {
-      toast.error(confirmRes.error.message);
-      setLoading(false);
-      return;
-    }
-
-    const stripePaymentMethodId = confirmRes!.setupIntent.payment_method as string;
-
-    const metaRes = await fetch(`/api/stripe/payment-method/metadata`, {
-      method: `POST`,
-      headers: { 'content-type': `application/json` },
-      body: JSON.stringify({ stripePaymentMethodId }),
-      credentials: `include`,
-    });
-
-    const cardMeta = await metaRes.json();
-
-    // 3) Save method in Nest backend
-    const payload: CreatePaymentMethodDto = {
-      type: `CREDIT_CARD`,
-      setupIntentId,
-      defaultSelected,
-
-      billingName,
-      billingEmail,
-      billingPhone,
-
-      brand: cardMeta.brand,
-      last4: cardMeta.last4,
-      expMonth: cardMeta.expMonth.toString().padStart(2, `0`),
-      expYear: cardMeta.expYear,
-      stripePaymentMethodId: stripePaymentMethodId,
-    };
-    const saveRes = await fetch(`/api/payment-methods`, {
-      method: `POST`,
-      headers: { 'content-type': `application/json` },
-      body: JSON.stringify(payload),
-      credentials: `include`,
-    });
-
-    setLoading(false);
-
-    if (saveRes.ok) {
-      onCreated();
-      onClose();
-    } else {
+    try {
+      await runCreateCardMethodFlow({
+        fetchFn: fetch,
+        stripe: stripe as CreateCardMethodFlowDeps[`stripe`],
+        elements: elements as CreateCardMethodFlowDeps[`elements`],
+        billingName,
+        billingEmail,
+        billingPhone,
+        onCreated,
+        onClose,
+        onError: (message) => toast.error(message),
+      });
+    } catch {
       toast.error(`Failed to add payment method`);
+    } finally {
+      setLoading(false);
     }
   }
 

@@ -1,3 +1,7 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+
 import { ACCOUNT_TYPE } from '@remoola/api-types';
 
 import { AddressDetailsForm } from './AddressDetailsForm';
@@ -16,20 +20,61 @@ import { NavCard } from '../../../shared/ui/NavCard';
 import { PageHeader } from '../../../shared/ui/PageHeader';
 import { type Profile, type Settings } from '../schemas';
 import styles from './SettingsView.module.css';
+import { type LoadState } from '../queries';
 
 interface SettingsViewProps {
+  loadState: LoadState;
   profile: Profile | null;
   settings: Settings | null;
 }
 
-export function SettingsView({ profile, settings }: SettingsViewProps) {
-  if (!profile) {
+export function SettingsView({ loadState, profile, settings }: SettingsViewProps) {
+  const router = useRouter();
+
+  if (loadState === `loading`) {
     return (
       <div className={styles.root} data-testid="consumer-mobile-settings-view">
+        <div className={styles.headerBar}>
+          <div className={styles.headerInner}>
+            <div className={styles.headerRow}>
+              <div className={styles.headerIconWrap}>
+                <SettingsIcon className={styles.headerIcon} />
+              </div>
+              <div>
+                <div className={styles.titleBar} />
+                <div className={styles.subtitleBar} />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className={styles.main}>
+          <div className={styles.blockLg} />
+          <div className={styles.blockMd} />
+          <div className={styles.blockSm} />
+        </div>
+      </div>
+    );
+  }
+
+  if (loadState === `unauthorized`) {
+    return (
+      <div className={styles.root} data-testid="consumer-mobile-settings-view" data-state={`unauthorized`}>
         <PageHeader
           icon={<IconBadge icon={<SettingsIcon className={styles.headerIcon} />} hasRing />}
-          title="Settings"
-          subtitle="Unable to load profile"
+          title={`Settings`}
+          subtitle={`Session expired. Redirecting…`}
+        />
+      </div>
+    );
+  }
+
+  if (loadState === `error`) {
+    return (
+      <div className={styles.root} data-testid="consumer-mobile-settings-view" data-state={`error`}>
+        <PageHeader
+          icon={<IconBadge icon={<SettingsIcon className={styles.headerIcon} />} hasRing />}
+          title={`Settings`}
+          subtitle={`Something went wrong`}
         />
         <div className={styles.errorMain}>
           <div className={styles.errorCard}>
@@ -37,8 +82,40 @@ export function SettingsView({ profile, settings }: SettingsViewProps) {
               <AlertTriangleIcon className={styles.errorIcon} strokeWidth={1.5} />
             </div>
             <h3 className={styles.errorTitle}>Unable to load profile</h3>
-            <p className={styles.errorText}>Please try again later or contact support if the problem persists.</p>
+            <p className={styles.errorText}>Please try again. If the problem persists, contact support.</p>
+            <button
+              type="button"
+              className={styles.retryButton}
+              onClick={() => router.refresh()}
+              data-testid="settings-error-retry"
+            >
+              Try again
+            </button>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadState !== `ready` || !profile) {
+    return (
+      <div className={styles.root} data-testid="consumer-mobile-settings-view">
+        <div className={styles.headerBar}>
+          <div className={styles.headerInner}>
+            <div className={styles.headerRow}>
+              <div className={styles.headerIconWrap}>
+                <SettingsIcon className={styles.headerIcon} />
+              </div>
+              <div>
+                <div className={styles.titleBar} />
+                <div className={styles.subtitleBar} />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className={styles.main}>
+          <div className={styles.blockLg} />
+          <div className={styles.blockMd} />
         </div>
       </div>
     );
@@ -47,7 +124,7 @@ export function SettingsView({ profile, settings }: SettingsViewProps) {
   const isBusiness = profile.accountType === ACCOUNT_TYPE.BUSINESS;
 
   return (
-    <div className={styles.root} data-testid="consumer-mobile-settings-view">
+    <div className={styles.root} data-testid="consumer-mobile-settings-view" data-state={`ready`}>
       <div className={styles.headerBar}>
         <div className={styles.headerInner}>
           <div className={styles.headerRow}>

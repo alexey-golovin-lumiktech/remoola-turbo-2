@@ -6,7 +6,7 @@ import { adminErrorCodes } from '@remoola/shared-constants';
 
 import { Credentials } from '../../dtos/admin';
 import { IJwtTokenPayload } from '../../dtos/consumer';
-import { JWT_ACCESS_TTL_SECONDS, JWT_REFRESH_TTL_SECONDS } from '../../envs';
+import { envs } from '../../envs';
 import { AuthAuditService, AUTH_AUDIT_EVENTS, AUTH_IDENTITY_TYPES } from '../../shared/auth-audit.service';
 import { PrismaService } from '../../shared/prisma.service';
 import { passwordUtils, secureCompare } from '../../shared-common';
@@ -113,11 +113,14 @@ export class AdminAuthService {
   }
 
   private getAccessToken(identityId: string) {
-    return this.jwtService.signAsync({ identityId, type: `access` }, { expiresIn: JWT_ACCESS_TTL_SECONDS });
+    return this.jwtService.signAsync(
+      { identityId, type: `access`, scope: `admin` },
+      { expiresIn: envs.JWT_ACCESS_TTL_SECONDS },
+    );
   }
 
   private getRefreshToken(identityId: string) {
-    return this.jwtService.signAsync({ identityId, type: `refresh` }, { expiresIn: JWT_REFRESH_TTL_SECONDS });
+    return this.jwtService.signAsync({ identityId, type: `refresh` }, { expiresIn: envs.JWT_REFRESH_TTL_SECONDS });
   }
 
   /**

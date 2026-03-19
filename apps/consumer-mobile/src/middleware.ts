@@ -1,6 +1,11 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
-import { COOKIE_KEYS, getConsumerAccessTokenCookieKey, getConsumerRefreshTokenCookieKey } from '@remoola/api-types';
+import {
+  COOKIE_KEYS,
+  getConsumerAccessTokenCookieKey,
+  getConsumerRefreshTokenCookieKey,
+  sanitizeNextForRedirect,
+} from '@remoola/api-types';
 
 import { appendSetCookies } from './lib/api-utils';
 import { getConsumerMobileCookieRuntime } from './lib/auth-cookie-policy';
@@ -141,8 +146,10 @@ export async function middleware(req: NextRequest) {
 
   if (isCallback) return NextResponse.next();
 
+  const safeNext = (path: string) => encodeURIComponent(sanitizeNextForRedirect(path, `/dashboard`));
+
   if (isProtected && !hasValidAccessTokenShape) {
-    return NextResponse.redirect(new URL(`/login?next=${encodeURIComponent(req.nextUrl.pathname)}`, req.url));
+    return NextResponse.redirect(new URL(`/login?next=${safeNext(req.nextUrl.pathname)}`, req.url));
   }
 
   // Only redirect auth pages to dashboard when token is valid (avoids TOO_MANY_REDIRECTS
@@ -175,11 +182,11 @@ export async function middleware(req: NextRequest) {
         return applyRefreshTelemetry(res, refreshResult.telemetry);
       }
       return applyRefreshTelemetry(
-        NextResponse.redirect(new URL(`/login?next=${encodeURIComponent(req.nextUrl.pathname)}`, req.url)),
+        NextResponse.redirect(new URL(`/login?next=${safeNext(req.nextUrl.pathname)}`, req.url)),
         refreshResult.telemetry,
       );
     }
-    return NextResponse.redirect(new URL(`/login?next=${encodeURIComponent(req.nextUrl.pathname)}`, req.url));
+    return NextResponse.redirect(new URL(`/login?next=${safeNext(req.nextUrl.pathname)}`, req.url));
   }
 
   return NextResponse.next();

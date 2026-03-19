@@ -37,6 +37,7 @@ export class GoogleOAuthService {
 
     this.clientId = clientId;
     this.redirectUri = redirectUri;
+
     this.client = new OAuth2Client({
       clientId,
       clientSecret,

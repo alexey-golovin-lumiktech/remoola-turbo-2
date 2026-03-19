@@ -6,7 +6,7 @@ import * as bcrypt from 'bcryptjs';
 
 import { $Enums } from '@remoola/database-2';
 
-import { JWT_ACCESS_SECRET, JWT_ACCESS_TTL_SECONDS, JWT_REFRESH_SECRET, JWT_REFRESH_TTL } from '../envs';
+import { envs } from '../envs';
 import { PrismaService } from '../shared/prisma.service';
 import { LoginBody } from './dto/login.dto';
 import { RegisterBody } from './dto/register.dto';
@@ -61,10 +61,10 @@ export class AuthService {
 
   private signAccess(user: { id: string; email: string }) {
     return this.jwt.sign(
-      { sub: user.id, email: user.email },
+      { sub: user.id, email: user.email, scope: `admin` },
       {
-        secret: JWT_ACCESS_SECRET,
-        expiresIn: JWT_ACCESS_TTL_SECONDS,
+        secret: envs.JWT_ACCESS_SECRET,
+        expiresIn: envs.JWT_ACCESS_TTL_SECONDS,
       },
     );
   }
@@ -72,7 +72,7 @@ export class AuthService {
   private async generateRefreshToken(identityId: string) {
     const raw = crypto.randomBytes(64).toString(`hex`);
     const hash = await bcrypt.hash(raw, 10);
-    const expiresAt = new Date(Date.now() + JWT_REFRESH_TTL);
+    const expiresAt = new Date(Date.now() + envs.JWT_REFRESH_TOKEN_EXPIRES_IN);
     await this.prisma.accessRefreshTokenModel.create({
       data: {
         refreshToken: hash,
@@ -86,7 +86,7 @@ export class AuthService {
   async refresh(refreshToken: string) {
     let payload: { sub: string };
     try {
-      payload = this.jwt.verify(refreshToken, { secret: JWT_REFRESH_SECRET }) as { sub: string };
+      payload = this.jwt.verify(refreshToken, { secret: envs.JWT_REFRESH_SECRET }) as { sub: string };
     } catch {
       this.logger.warn(`Auth: refresh token verification failed`);
       throw new UnauthorizedException(`Invalid or expired refresh token`);

@@ -79,14 +79,14 @@ export class MailingService {
     const html = `<pre><code>${JSON.stringify(data ?? {}, null, 2)}</code></pre>`;
     const subject = `WB Logs`;
     await this.sendEmailWithErrorHandling(`sendLogsEmail`, {
-      to: email ?? envs.ADMIN_EMAIL!,
+      to: email ?? envs.DEFAULT_ADMIN_EMAIL!,
       subject,
       html,
     });
   }
 
   async sendConsumerSignupVerificationEmail(params: { email: string; token: string; referer: string }) {
-    let backendBaseURL = envs.NEST_APP_EXTERNAL_ORIGIN! || `http://[::1]:3333/api`;
+    let backendBaseURL = envs.NEST_APP_EXTERNAL_ORIGIN! || `http://localhost:3333/api`;
     if (envs.VERCEL !== 0) {
       const base =
         envs.NEST_APP_EXTERNAL_ORIGIN && envs.NEST_APP_EXTERNAL_ORIGIN !== `NEST_APP_EXTERNAL_ORIGIN`
