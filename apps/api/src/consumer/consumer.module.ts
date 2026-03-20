@@ -1,12 +1,10 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
-import { PassportModule } from '@nestjs/passport';
 
 import { envs } from '../envs';
 import { ConsumerActionLogPartitionMaintenanceScheduler, ConsumerActionLogRetentionScheduler } from './auth';
 import { ConsumerAuthController } from './auth/auth.controller';
 import { ConsumerAuthService } from './auth/auth.service';
-import { GoogleAuthService } from './auth/google-auth.service';
 import { GoogleOAuthService } from './auth/google-oauth.service';
 import { OauthStateCleanupScheduler } from './auth/oauth-state-cleanup.scheduler';
 import { OAuthStateStoreService } from './auth/oauth-state-store.service';
@@ -25,7 +23,6 @@ import { ConsumerSettingsModule } from './modules/settings/consumer-settings.mod
 
 @Module({
   imports: [
-    PassportModule,
     JwtModule.register({
       secret: envs.JWT_ACCESS_SECRET!,
       signOptions: { expiresIn: envs.JWT_ACCESS_TTL_SECONDS },
@@ -45,7 +42,6 @@ import { ConsumerSettingsModule } from './modules/settings/consumer-settings.mod
   providers: [
     GoogleOAuthService,
     ConsumerAuthService,
-    GoogleAuthService,
     OAuthStateStoreService,
     OauthStateCleanupScheduler,
     ResetPasswordCleanupScheduler,

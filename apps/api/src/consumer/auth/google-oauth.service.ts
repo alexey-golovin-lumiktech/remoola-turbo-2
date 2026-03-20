@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { OAuth2Client, type TokenPayload } from 'google-auth-library';
 import { type CodeChallengeMethod } from 'google-auth-library/build/src/auth/oauth2client';
 
@@ -6,7 +6,6 @@ import { $Enums, Prisma } from '@remoola/database-2';
 import { oauthCrypto } from '@remoola/security-utils';
 import { errorCodes } from '@remoola/shared-constants';
 
-import { GoogleOAuthBody } from './dto/google-oauth.dto';
 import { envs } from '../../envs';
 import { PrismaService } from '../../shared/prisma.service';
 
@@ -50,40 +49,6 @@ export class GoogleOAuthService {
    * If consumer doesn't exist → create with password=null.
    * Always upsert GoogleProfileDetails.
    */
-  async googleLoginGPT(body: GoogleOAuthBody) {
-    const payload = await this.verifyIdToken(body.idToken);
-
-    const email = payload.email?.toLowerCase();
-    const emailVerified = !!payload.email_verified;
-
-    if (!email) {
-      throw new BadRequestException(errorCodes.GOOGLE_ACCOUNT_NO_EMAIL_LOGIN);
-    }
-    if (!emailVerified) {
-      throw new UnauthorizedException(errorCodes.GOOGLE_EMAIL_NOT_VERIFIED_LOGIN);
-    }
-
-    const consumer = await this.loginWithPayload(email, payload);
-
-    // 3. Optionally issue tokens via your existing auth service
-    // const tokens = await this.authService.issueTokensForConsumer(consumer);
-
-    return {
-      consumer: {
-        id: consumer.id,
-        email: consumer.email,
-        accountType: consumer.accountType,
-        contractorKind: consumer.contractorKind,
-        firstName: consumer.personalDetails?.firstName,
-        lastName: consumer.personalDetails?.lastName,
-        verified: consumer.verified,
-        legalVerified: consumer.legalVerified,
-        stripeCustomerId: consumer.stripeCustomerId,
-        createdAt: consumer.createdAt,
-      },
-      // tokens,
-    };
-  }
 
   async loginWithPayload(email: string, payload: TokenPayload) {
     // 1. Get or create consumer

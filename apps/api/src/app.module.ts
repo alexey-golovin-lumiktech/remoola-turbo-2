@@ -4,7 +4,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 import { AdminModule } from './admin/admin.module';
-import { AuthModule } from './auth/auth.module';
+import { JwtPassportModule } from './auth/jwt-passport.module';
 import { ConsumerModule } from './consumer/consumer.module';
 import { HealthModule } from './health/health.module';
 import { InfrastructureModule } from './infrastructure/infrastructure.module';
@@ -17,7 +17,7 @@ const botPatterns = [/googlebot/i, /bingbot/i, /slurp/i];
   imports: [
     DatabaseModule,
     AuthAuditModule,
-    AuthModule,
+    JwtPassportModule,
     HealthModule,
     AdminModule,
     ConsumerModule,

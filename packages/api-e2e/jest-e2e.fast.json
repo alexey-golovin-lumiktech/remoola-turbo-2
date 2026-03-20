@@ -1,0 +1,17 @@
+{
+  "rootDir": "../../apps/api",
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "testEnvironment": "@remoola/test-db/environment",
+  "setupFiles": ["<rootDir>/test/setup-e2e-env.ts"],
+  "testRegex": ".e2e-spec.ts$",
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "maxWorkers": 2,
+  "forceExit": false,
+  "detectOpenHandles": false,
+  "errorOnDeprecated": true,
+  "verbose": true,
+  "collectCoverage": false,
+  "cache": true
+}

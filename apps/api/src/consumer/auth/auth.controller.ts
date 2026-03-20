@@ -16,7 +16,15 @@ import {
   UnauthorizedException,
   BadRequestException,
 } from '@nestjs/common';
-import { ApiOperation, ApiOkResponse, ApiBody, ApiTags, ApiBasicAuth, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiOperation,
+  ApiOkResponse,
+  ApiBody,
+  ApiTags,
+  ApiBasicAuth,
+  ApiBearerAuth,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import express from 'express';
 
@@ -59,7 +67,7 @@ export class ConsumerAuthController {
 
   constructor(
     private readonly service: ConsumerAuthService,
-    private readonly googleOAuthServiceGPT: GoogleOAuthService,
+    private readonly googleOAuthService: GoogleOAuthService,
     private readonly oauthStateStore: OAuthStateStoreService,
     private readonly originResolver: OriginResolverService,
   ) {}
@@ -259,7 +267,7 @@ export class ConsumerAuthController {
     );
 
     response.cookie(GOOGLE_OAUTH_STATE_COOKIE_KEY, stateToken, this.getOAuthCookieOptions(req));
-    const authUrl = this.googleOAuthServiceGPT.buildAuthorizationUrl(stateToken, codeChallenge, nonce);
+    const authUrl = this.googleOAuthService.buildAuthorizationUrl(stateToken, codeChallenge, nonce);
     return response.redirect(authUrl);
   }
 
@@ -291,7 +299,8 @@ export class ConsumerAuthController {
 
     if (error) return failureRedirect(`access_denied`);
 
-    const stateCookie = req.cookies?.[GOOGLE_OAUTH_STATE_COOKIE_KEY];
+    const stateCookie =
+      req.cookies?.[GOOGLE_OAUTH_STATE_COOKIE_KEY] ?? req.signedCookies?.[GOOGLE_OAUTH_STATE_COOKIE_KEY];
     if (!state) return failureRedirect(`invalid_state`);
     if (stateCookie && stateCookie !== state) {
       if (!this.isOAuthStateCookieFallbackAllowedInEnv()) {
@@ -335,7 +344,7 @@ export class ConsumerAuthController {
     const stateReturnOrigin = stateRecord.returnOrigin;
 
     try {
-      const payload = await this.googleOAuthServiceGPT.exchangeCodeForPayload(
+      const payload = await this.googleOAuthService.exchangeCodeForPayload(
         code,
         stateRecord.codeVerifier,
         stateRecord.nonce,
@@ -369,7 +378,7 @@ export class ConsumerAuthController {
         return response.redirect(redirectUrl);
       }
 
-      const consumer = await this.googleOAuthServiceGPT.loginWithPayload(email, payload);
+      const consumer = await this.googleOAuthService.loginWithPayload(email, payload);
       const { accessToken, refreshToken } = await this.service.issueTokensForConsumer(consumer.id);
       const exchangeToken = await this.service.createOAuthExchangeToken(consumer.id);
 
@@ -406,31 +415,34 @@ export class ConsumerAuthController {
 
   @PublicEndpoint()
   @Get(`google-new-way`)
-  @ApiOkResponse({ type: CONSUMER.GoogleOAuthNewWayResponse })
-  @TransformResponse(CONSUMER.GoogleOAuthNewWayResponse)
+  @ApiResponse({ status: 410, description: `Deprecated endpoint. Use /consumer/auth/google/start` })
   googleOAuthNewWay() {
     throw new GoneException(`Deprecated endpoint. Use /consumer/auth/google/start`);
   }
 
   @PublicEndpoint()
   @Get(`google-redirect-new-way`)
-  @ApiOkResponse({ type: CONSUMER.LoginResponse })
-  @TransformResponse(CONSUMER.LoginResponse)
+  @ApiResponse({ status: 410, description: `Deprecated endpoint. Use /consumer/auth/google/start` })
   googleOAuthNewWayRedirect() {
     throw new GoneException(`Deprecated endpoint. Use /consumer/auth/google/start`);
   }
 
   @PublicEndpoint()
   @Post(`google-oauth`)
-  @ApiOkResponse({ type: CONSUMER.LoginResponse })
-  @TransformResponse(CONSUMER.LoginResponse)
+  @ApiResponse({
+    status: 410,
+    description: `Deprecated endpoint. Use Authorization Code flow via /consumer/auth/google/start`,
+  })
   googleOAuth() {
     throw new GoneException(`Deprecated endpoint. Use Authorization Code flow via /consumer/auth/google/start`);
   }
 
   @PublicEndpoint()
   @Post(`google-login-gpt`)
-  @HttpCode(HttpStatus.OK)
+  @ApiResponse({
+    status: 410,
+    description: `Deprecated endpoint. Use Authorization Code flow via /consumer/auth/google/start`,
+  })
   googleLoginGPT() {
     throw new GoneException(`Deprecated endpoint. Use Authorization Code flow via /consumer/auth/google/start`);
   }
@@ -542,11 +554,18 @@ export class ConsumerAuthController {
   }
 
   @PublicEndpoint()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Get(`signup/:consumerId/complete-profile-creation`)
   completeProfileCreation(@Req() req: express.Request, @Param(`consumerId`) consumerId: string) {
     const referer = req.headers.origin || req.headers.referer;
     if (!referer) throw new InternalServerErrorException(`Request origin required`);
-    this.service.completeProfileCreationAndSendVerificationEmail(consumerId, referer);
+    void this.service.completeProfileCreationAndSendVerificationEmail(consumerId, referer).catch((error) =>
+      this.logger.warn({
+        event: `signup_complete_profile_creation_email_failed`,
+        consumerId,
+        errorClass: error instanceof Error ? error.constructor.name : `UnknownError`,
+      }),
+    );
     return `success`;
   }
 

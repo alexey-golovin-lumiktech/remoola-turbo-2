@@ -1,7 +1,7 @@
 /**
  * E2E tests for critical updates (fintech-safe changes).
  * Uses an isolated temporary DB per run via @remoola/test-db/environment.
- * Covers: health with real DB, stripe_webhook_event dedup, ledger_entry_outcome append-only.
+ * Covers: stripe_webhook_event dedup, ledger_entry_outcome append-only.
  */
 /** @jest-environment @remoola/test-db/environment */
 
@@ -12,6 +12,7 @@ import request from 'supertest';
 
 import { $Enums, PrismaClient } from '@remoola/database-2';
 
+import { assertIsolatedTestDatabaseUrl } from './test-db-safety';
 import { AppModule } from '../src/app.module';
 
 describe(`Critical updates (e2e, isolated DB)`, () => {
@@ -19,8 +20,7 @@ describe(`Critical updates (e2e, isolated DB)`, () => {
   let prisma: PrismaClient;
 
   beforeAll(async () => {
-    expect(process.env.DATABASE_URL).toBeDefined();
-    expect(process.env.TEST_DATABASE_URL).toBe(process.env.DATABASE_URL);
+    assertIsolatedTestDatabaseUrl();
 
     prisma = new PrismaClient();
     await prisma.$connect();
@@ -39,7 +39,7 @@ describe(`Critical updates (e2e, isolated DB)`, () => {
   });
 
   describe(`Health`, () => {
-    it(`GET /health returns 200 with status ok and database ok`, () => {
+    it(`/health (GET) responds with status ok`, () => {
       return request(app.getHttpServer())
         .get(`/health`)
         .expect(200)

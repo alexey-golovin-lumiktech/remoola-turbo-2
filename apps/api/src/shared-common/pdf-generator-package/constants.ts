@@ -20,7 +20,7 @@ const isProduction = envs.NODE_ENV === `production`;
 const isStaging = envs.NODE_ENV === `staging`;
 const mustExcludePath = isVercel || isProduction || isStaging;
 
-export const pdfOptions = mustExcludePath ? commonPDFOptions : { ...commonPDFOptions };
+export const pdfOptions = mustExcludePath ? commonPDFOptions : { ...commonPDFOptions, path: `out.pdf` };
 
 export const pdfPageWidthPx = 1240;
 export const pdfPageHeightPx = 1754;

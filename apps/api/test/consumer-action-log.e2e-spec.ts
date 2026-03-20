@@ -1,3 +1,7 @@
+/**
+ * E2E integration coverage for consumer action logging interceptor behavior.
+ * Uses an isolated temporary DB per run via @remoola/test-db/environment.
+ */
 /** @jest-environment @remoola/test-db/environment */
 
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
@@ -15,7 +19,7 @@ import { ConsumerActionInterceptor, deviceIdMiddleware } from '../src/common';
 import { envs } from '../src/envs';
 import { ConsumerActionLogService } from '../src/shared/consumer-action-log.service';
 
-describe(`Consumer action log integration (e2e)`, () => {
+describe(`Consumer action log integration (e2e, isolated DB)`, () => {
   let app: INestApplication;
   let prisma: PrismaClient;
 

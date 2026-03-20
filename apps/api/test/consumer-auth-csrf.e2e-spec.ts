@@ -1,9 +1,16 @@
+/**
+ * E2E CSRF contract tests for consumer refresh/logout/logout-all endpoints.
+ * Uses an isolated temporary DB per run via @remoola/test-db/environment.
+ */
 /** @jest-environment @remoola/test-db/environment */
 
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
-import { type INestApplication } from '@nestjs/common';
+import { type INestApplication, ValidationPipe } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { JwtService } from '@nestjs/jwt';
 import { Test, type TestingModule } from '@nestjs/testing';
 import cookieParser from 'cookie-parser';
+import express from 'express';
 import request from 'supertest';
 
 import { $Enums, PrismaClient } from '@remoola/database-2';
@@ -12,9 +19,11 @@ import { hashPassword } from '@remoola/security-utils';
 import { assertIsolatedTestDatabaseUrl } from './test-db-safety';
 import { AppModule } from '../src/app.module';
 import { envs } from '../src/envs';
+import { AuthGuard } from '../src/guards/auth.guard';
+import { PrismaService } from '../src/shared/prisma.service';
 import { CSRF_TOKEN_COOKIE_KEY } from '../src/shared-common';
 
-describe(`Consumer auth CSRF contracts (e2e)`, () => {
+describe(`Consumer auth CSRF contracts (e2e, isolated DB)`, () => {
   let app: INestApplication;
   let prisma: PrismaClient;
   const consumerEmail = `csrf-e2e-consumer@local.test`;
@@ -54,7 +63,28 @@ describe(`Consumer auth CSRF contracts (e2e)`, () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.use(cookieParser());
+    app.setGlobalPrefix(`api`);
+    app.use(express.json({ limit: `10mb` }));
+    app.use(cookieParser(envs.SECURE_SESSION_SECRET));
+    app.useGlobalPipes(
+      new ValidationPipe({
+        skipMissingProperties: true,
+        skipNullProperties: true,
+        skipUndefinedProperties: true,
+        stopAtFirstError: true,
+        transform: true,
+        transformOptions: {
+          excludeExtraneousValues: true,
+          exposeUnsetFields: false,
+          enableImplicitConversion: true,
+          exposeDefaultValues: false,
+        },
+      }),
+    );
+    const reflector = moduleFixture.get(Reflector);
+    const jwtService = moduleFixture.get(JwtService);
+    const prismaService = moduleFixture.get(PrismaService);
+    app.useGlobalGuards(new AuthGuard(reflector, jwtService, prismaService));
     await app.init();
   });
 
@@ -64,21 +94,21 @@ describe(`Consumer auth CSRF contracts (e2e)`, () => {
   });
 
   it(`POST /consumer/auth/refresh rejects without CSRF`, () => {
-    return request(app.getHttpServer()).post(`/consumer/auth/refresh`).expect(401);
+    return request(app.getHttpServer()).post(`/api/consumer/auth/refresh`).expect(401);
   });
 
   it(`POST /consumer/auth/logout rejects without CSRF`, () => {
-    return request(app.getHttpServer()).post(`/consumer/auth/logout`).expect(401);
+    return request(app.getHttpServer()).post(`/api/consumer/auth/logout`).expect(401);
   });
 
   it(`POST /consumer/auth/logout-all rejects without CSRF`, () => {
-    return request(app.getHttpServer()).post(`/consumer/auth/logout-all`).expect(401);
+    return request(app.getHttpServer()).post(`/api/consumer/auth/logout-all`).expect(401);
   });
 
   it(`POST /consumer/auth/refresh accepts matching CSRF pair and fails later on missing refresh token`, async () => {
     const csrf = `csrf-e2e-token`;
     const response = await request(app.getHttpServer())
-      .post(`/consumer/auth/refresh`)
+      .post(`/api/consumer/auth/refresh`)
       .set(`x-csrf-token`, csrf)
       .set(`Cookie`, `${CSRF_TOKEN_COOKIE_KEY}=${csrf}`)
       .expect(401);
@@ -89,13 +119,13 @@ describe(`Consumer auth CSRF contracts (e2e)`, () => {
   it(`POST /consumer/auth/refresh succeeds with login cookies and matching CSRF header`, async () => {
     const agent = request.agent(app.getHttpServer());
     const loginRes = await agent
-      .post(`/consumer/auth/login`)
+      .post(`/api/consumer/auth/login`)
       .send({ email: consumerEmail, password: consumerPassword })
       .expect(201);
     const csrf = parseCookieValue(asCookieArray(loginRes.headers[`set-cookie`]), CSRF_TOKEN_COOKIE_KEY);
     expect(csrf).toBeTruthy();
     await agent
-      .post(`/consumer/auth/refresh`)
+      .post(`/api/consumer/auth/refresh`)
       .set(`x-csrf-token`, csrf ?? ``)
       .expect(201);
   });
@@ -103,34 +133,68 @@ describe(`Consumer auth CSRF contracts (e2e)`, () => {
   it(`POST /consumer/auth/logout succeeds with login cookies and matching CSRF header`, async () => {
     const agent = request.agent(app.getHttpServer());
     const loginRes = await agent
-      .post(`/consumer/auth/login`)
+      .post(`/api/consumer/auth/login`)
       .send({ email: consumerEmail, password: consumerPassword })
       .expect(201);
     const csrf = parseCookieValue(asCookieArray(loginRes.headers[`set-cookie`]), CSRF_TOKEN_COOKIE_KEY);
     expect(csrf).toBeTruthy();
     await agent
-      .post(`/consumer/auth/logout`)
+      .post(`/api/consumer/auth/logout`)
       .set(`x-csrf-token`, csrf ?? ``)
       .expect(200);
   });
 
-  it(`GET /consumer/auth/google/callback returns expired_state for missing state record`, async () => {
-    const initialFlag = envs.CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK;
+  it(`POST /consumer/auth/logout-all revokes all active sessions and invalidates auth`, async () => {
+    const agentA = request.agent(app.getHttpServer());
+    const loginA = await agentA
+      .post(`/api/consumer/auth/login`)
+      .send({ email: consumerEmail, password: consumerPassword })
+      .expect(201);
+    const csrfA = parseCookieValue(asCookieArray(loginA.headers[`set-cookie`]), CSRF_TOKEN_COOKIE_KEY);
+    expect(csrfA).toBeTruthy();
 
-    envs.CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK = false;
-    const strictRes = await request(app.getHttpServer())
-      .get(`/consumer/auth/google/callback`)
-      .query({ code: `oauth-code`, state: `missing-state-record` })
-      .expect(302);
-    expect(strictRes.headers.location).toContain(`error=expired_state`);
+    const agentB = request.agent(app.getHttpServer());
+    const loginB = await agentB
+      .post(`/api/consumer/auth/login`)
+      .send({ email: consumerEmail, password: consumerPassword })
+      .expect(201);
+    const csrfB = parseCookieValue(asCookieArray(loginB.headers[`set-cookie`]), CSRF_TOKEN_COOKIE_KEY);
+    expect(csrfB).toBeTruthy();
 
-    envs.CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK = true;
-    const compatRes = await request(app.getHttpServer())
-      .get(`/consumer/auth/google/callback`)
-      .query({ code: `oauth-code`, state: `missing-state-record` })
-      .expect(302);
-    expect(compatRes.headers.location).toContain(`error=expired_state`);
+    await agentA
+      .post(`/api/consumer/auth/logout-all`)
+      .set(`x-csrf-token`, csrfA ?? ``)
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body).toEqual({ ok: true });
+      });
 
-    envs.CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK = initialFlag;
+    const consumer = await prisma.consumerModel.findFirst({
+      where: { email: consumerEmail },
+      select: { id: true },
+    });
+    expect(consumer?.id).toBeTruthy();
+
+    const activeSessions = await prisma.authSessionModel.count({
+      where: {
+        consumerId: consumer?.id,
+        revokedAt: null,
+      },
+    });
+    expect(activeSessions).toBe(0);
+
+    const logoutAllRevoked = await prisma.authSessionModel.count({
+      where: {
+        consumerId: consumer?.id,
+        invalidatedReason: `logout_all`,
+      },
+    });
+    expect(logoutAllRevoked).toBeGreaterThanOrEqual(2);
+
+    await agentA.get(`/api/consumer/auth/me`).expect(401);
+    await agentB
+      .post(`/api/consumer/auth/refresh`)
+      .set(`x-csrf-token`, csrfB ?? ``)
+      .expect(401);
   });
 });

@@ -1,14 +1,6 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  InternalServerErrorException,
-  Logger,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import express from 'express';
-import { OAuth2Client } from 'google-auth-library';
 
 import { $Enums, Prisma, type ConsumerModel } from '@remoola/database-2';
 import { oauthCrypto, hashTokenToHex } from '@remoola/security-utils';
@@ -40,6 +32,7 @@ import { AuthAuditService, AUTH_AUDIT_EVENTS, AUTH_IDENTITY_TYPES } from '../../
 import { MailingService } from '../../shared/mailing.service';
 import { OriginResolverService } from '../../shared/origin-resolver.service';
 import { PrismaService } from '../../shared/prisma.service';
+import { resolveEmailApiBaseUrl } from '../../shared/resolve-email-api-base-url';
 import { passwordUtils, secureCompare } from '../../shared-common';
 
 export type LoginContext = { ipAddress?: string | null; userAgent?: string | null };
@@ -47,7 +40,6 @@ export type LoginContext = { ipAddress?: string | null; userAgent?: string | nul
 @Injectable()
 export class ConsumerAuthService {
   private readonly logger = new Logger(ConsumerAuthService.name);
-  private readonly oAuth2Client: OAuth2Client;
   private static readonly accessRole = `USER` as const;
   private static readonly accessPermissions = [`contacts.read`] as const;
   private static readonly forgotPasswordCooldownMs = 60_000;
@@ -58,9 +50,7 @@ export class ConsumerAuthService {
     private readonly mailingService: MailingService,
     private readonly authAudit: AuthAuditService,
     private readonly originResolver: OriginResolverService,
-  ) {
-    this.oAuth2Client = new OAuth2Client(envs.GOOGLE_CLIENT_ID!, envs.GOOGLE_CLIENT_SECRET!);
-  }
+  ) {}
 
   private static readonly googleSignupTokenType = `google_signup` as const;
   private static readonly oauthExchangeTokenType = `oauth_exchange` as const;
@@ -86,36 +76,6 @@ export class ConsumerAuthService {
       organization: payload.organization ?? null,
       sub: payload.sub ?? null,
     };
-  }
-
-  async googleOAuth(body: CONSUMER.GoogleSignin) {
-    if (!this.oAuth2Client) throw new InternalServerErrorException(`oAuth2Client is not defined`);
-
-    try {
-      const { credential, contractorKind = null, accountType = null } = body;
-      const verified = await this.oAuth2Client.verifyIdToken({ idToken: credential });
-      const googleProfileDetailsInstance = new CONSUMER.CreateGoogleProfileDetails(verified.getPayload());
-
-      const consumerData = this.extractConsumerFromGoogleProfile(googleProfileDetailsInstance);
-      let consumer = await this.prisma.consumerModel.findFirst({ where: { email: consumerData.email } });
-
-      if (!consumer) {
-        consumer = await this.prisma.consumerModel.create({ data: { ...consumerData, accountType, contractorKind } });
-        if (consumer.deletedAt != null) throw new BadRequestException(errorCodes.ACCOUNT_SUSPENDED);
-
-        const googleProfileDetails = await this.prisma.googleProfileDetailsModel.create({
-          data: { consumerId: consumer.id, ...googleProfileDetailsInstance },
-        });
-        if (googleProfileDetails.deletedAt != null) throw new BadRequestException(errorCodes.PROFILE_SUSPENDED);
-      }
-
-      return consumer;
-    } catch (error) {
-      this.logger.warn(`ConsumerAuth: Google OAuth failed`, {
-        message: error instanceof Error ? error.message : `Unknown`,
-      });
-      throw new InternalServerErrorException();
-    }
   }
 
   async findConsumerByEmail(email: string) {
@@ -401,23 +361,51 @@ export class ConsumerAuthService {
       throw new BadRequestException(`Invalid referer origin`);
     }
 
-    const decoded = this.jwtService.decode(token) as { identityId?: string } | null;
     const redirectUrl = new URL(`signup/verification`, validatedOrigin);
-    const identity = await this.prisma.consumerModel.findFirst({
-      where: { id: decoded?.identityId ?? ``, deletedAt: null },
-    });
 
-    if (identity?.email) {
-      redirectUrl.searchParams.append(`email`, identity.email);
+    const redirectWith = (verifiedFlag: `yes` | `no`, emailForQuery?: string) => {
+      redirectUrl.searchParams.set(`verified`, verifiedFlag);
+      if (emailForQuery) redirectUrl.searchParams.set(`email`, emailForQuery);
+      res.redirect(redirectUrl.toString());
+    };
 
-      const updated = await this.prisma.consumerModel.update({
-        where: { id: identity.id },
-        data: { verified: true },
-      });
-      redirectUrl.searchParams.append(`verified`, !updated || updated.verified == false ? `no` : `yes`);
+    let verified: IJwtTokenPayload;
+    try {
+      verified = this.jwtService.verify<IJwtTokenPayload>(token);
+    } catch {
+      redirectWith(`no`);
+      return;
     }
 
-    res.redirect(redirectUrl.toString());
+    // Email verification links use the same secret as access tokens but are issued without `sid`
+    // (see `getAccessToken(identityId)`). Reject session-bound access tokens so a stolen browser
+    // session cannot drive this flow, and require consumer scope (not admin).
+    if (verified.typ !== `access` || verified.scope !== `consumer` || verified.sid) {
+      redirectWith(`no`);
+      return;
+    }
+
+    const identityId = this.resolveIdentityId(verified);
+    if (!identityId) {
+      redirectWith(`no`);
+      return;
+    }
+
+    const identity = await this.prisma.consumerModel.findFirst({
+      where: { id: identityId, deletedAt: null },
+    });
+
+    if (!identity?.email) {
+      redirectWith(`no`);
+      return;
+    }
+
+    const updated = await this.prisma.consumerModel.update({
+      where: { id: identity.id },
+      data: { verified: true },
+    });
+    const verifiedFlag: `yes` | `no` = !updated || updated.verified === false ? `no` : `yes`;
+    redirectWith(verifiedFlag, identity.email);
   }
 
   private async createSessionAndIssueTokens(
@@ -667,15 +655,7 @@ export class ConsumerAuthService {
       data: { consumerId: consumer.id, tokenHash: hashTokenToHex(token), expiredAt },
     });
 
-    let backendBaseURL = envs.NEST_APP_EXTERNAL_ORIGIN ?? `http://localhost:3333/api`;
-    if (envs.VERCEL !== 0) {
-      const base =
-        envs.NEST_APP_EXTERNAL_ORIGIN && envs.NEST_APP_EXTERNAL_ORIGIN !== `NEST_APP_EXTERNAL_ORIGIN`
-          ? envs.NEST_APP_EXTERNAL_ORIGIN.replace(/\/api\/?$/, ``)
-          : `https://remoola-turbo-2-api.vercel.app`;
-      backendBaseURL = `${base}/api`;
-    }
-
+    const backendBaseURL = resolveEmailApiBaseUrl();
     const verifyUrl = new URL(`${backendBaseURL}/consumer/auth/forgot-password/verify`);
     verifyUrl.searchParams.set(`token`, token);
     verifyUrl.searchParams.set(`referer`, origin);

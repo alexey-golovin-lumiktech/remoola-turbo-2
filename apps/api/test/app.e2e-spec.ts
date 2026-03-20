@@ -1,3 +1,7 @@
+/**
+ * E2E health smoke test for the API bootstrap path.
+ * Uses an isolated temporary DB per run via @remoola/test-db/environment.
+ */
 /** @jest-environment @remoola/test-db/environment */
 
 import { afterAll, beforeAll, describe, it } from '@jest/globals';
@@ -5,12 +9,15 @@ import { type INestApplication } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 
+import { assertIsolatedTestDatabaseUrl } from './test-db-safety';
 import { AppModule } from '../src/app.module';
 
-describe(`AppController (e2e)`, () => {
+describe(`API health smoke (e2e, isolated DB)`, () => {
   let app: INestApplication;
 
   beforeAll(async () => {
+    assertIsolatedTestDatabaseUrl();
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();

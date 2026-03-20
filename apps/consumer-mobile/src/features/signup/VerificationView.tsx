@@ -18,11 +18,11 @@ export function VerificationView() {
     else setStatus(`unknown`);
   }, [verified]);
 
-  if (!email) {
+  if (!verified && !email) {
     return (
       <div className={styles.container}>
         <h1 className={styles.title}>Invalid verification link</h1>
-        <p className={styles.textMuted}>Missing email parameter.</p>
+        <p className={styles.textMuted}>This link is invalid or has expired.</p>
         <Link href="/signup" prefetch={false} className={styles.linkBtn}>
           Go back to signup
         </Link>
@@ -30,7 +30,7 @@ export function VerificationView() {
     );
   }
 
-  const decodedEmail = decodeURIComponent(email);
+  const decodedEmail = email ? decodeURIComponent(email) : ``;
 
   return (
     <div className={styles.container}>
@@ -38,7 +38,13 @@ export function VerificationView() {
         <>
           <h1 className={styles.titleSuccess}>Email Verified</h1>
           <p className={styles.textMuted}>
-            Your email <span className={styles.emailHighlight}>{decodedEmail}</span> has been successfully verified.
+            {email ? (
+              <>
+                Your email <span className={styles.emailHighlight}>{decodedEmail}</span> has been successfully verified.
+              </>
+            ) : (
+              <>Your email has been successfully verified.</>
+            )}
           </p>
           <Link href="/login" prefetch={false} className={styles.linkBtn}>
             Continue to Login
@@ -49,8 +55,14 @@ export function VerificationView() {
         <>
           <h1 className={styles.titleFailed}>Verification Failed</h1>
           <p className={styles.textMuted}>
-            The verification link for <span className={styles.emailHighlight}>{decodedEmail}</span> is invalid or
-            expired.
+            {email ? (
+              <>
+                The verification link for <span className={styles.emailHighlight}>{decodedEmail}</span> is invalid or
+                expired.
+              </>
+            ) : (
+              <>This verification link is invalid or expired.</>
+            )}
           </p>
           <Link href="/signup" prefetch={false} className={styles.linkBtn}>
             Try signing up again

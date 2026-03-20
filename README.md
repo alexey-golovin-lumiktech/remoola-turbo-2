@@ -69,6 +69,8 @@ yarn format
 # tests (run only in local dev; blocked in CI/Vercel by scripts/ensure-local-development.js)
 yarn test
 yarn test:e2e
+# faster API e2e (apps/api): reuses temp DB when TEST_DB_FAST_REUSE=1; see CHANGELOG 2026-03-20
+yarn workspace @remoola/api test:e2e:fast
 
 # database (Prisma)
 yarn db:generate

@@ -4,7 +4,34 @@ import moment from 'moment';
 import { CURRENCY_CODE } from '@remoola/api-types';
 
 import * as invoiceItemToHtml from './invoiceItem';
+import { envs } from '../../../../envs';
 import { formatCurrency } from '../../../../shared-common';
+
+const CONSUMER_ORIGIN_PLACEHOLDER = `CONSUMER_APP_ORIGIN`;
+
+function resolvePayOnlineLink(inv: InvoiceForTemplate): string {
+  const explicit = inv.payOnlineUrl?.trim();
+  if (explicit) {
+    try {
+      const parsed = new URL(explicit);
+      if (parsed.protocol === `http:` || parsed.protocol === `https:`) return parsed.toString();
+    } catch {
+      // Fall through to env-derived link when explicit URL is invalid.
+    }
+  }
+  const origin = envs.CONSUMER_APP_ORIGIN;
+  if (origin && origin !== CONSUMER_ORIGIN_PLACEHOLDER) {
+    try {
+      return new URL(`/dashboard`, origin).toString();
+    } catch {
+      return `#`;
+    }
+  }
+  if (envs.NODE_ENV === envs.ENVIRONMENT.DEVELOPMENT || envs.NODE_ENV === envs.ENVIRONMENT.TEST) {
+    return `http://localhost:3001/dashboard`;
+  }
+  return `#`;
+}
 
 const html = `
   <table id="InvoiceDetails" style="white-space:nowrap;">
@@ -103,12 +130,17 @@ export type InvoiceForTemplate = {
   subtotal: number;
   tax?: number;
   items: { description: string; amount: number }[];
+  /**
+   * Optional caller-provided override for the PDF/email "Pay online" href.
+   * Only absolute http(s) URLs are accepted; invalid values fall back to env-derived/default link.
+   */
+  payOnlineUrl?: string;
 };
 
 export const processor = (rawInvoice: InvoiceForTemplate) => {
   const invoice = rawInvoice;
   const itemsHtml = invoice.items.map((item) => invoiceItemToHtml.processor(item, invoice.tax)).join(`\n`);
-  const payOnlineBeLink = `http://some-link`;
+  const payOnlineBeLink = resolvePayOnlineLink(invoice);
 
   return html
     .replace(ReplacementsRegExpMapping.InvoiceId, invoice.id)

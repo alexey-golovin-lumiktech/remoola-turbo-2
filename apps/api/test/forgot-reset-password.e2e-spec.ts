@@ -12,8 +12,9 @@ import { hashPassword, hashTokenToHex } from '@remoola/security-utils';
 import { assertIsolatedTestDatabaseUrl } from './test-db-safety';
 import { AppModule } from '../src/app.module';
 import { ConsumerAuthService } from '../src/consumer/auth/auth.service';
+import { CSRF_TOKEN_COOKIE_KEY } from '../src/shared-common';
 
-describe(`Forgot/Reset password hardening (e2e)`, () => {
+describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
   let app: INestApplication;
   let prisma: PrismaClient;
   let authService: ConsumerAuthService;
@@ -113,7 +114,7 @@ describe(`Forgot/Reset password hardening (e2e)`, () => {
       .set(`x-forwarded-for`, `198.51.100.18`)
       .send({ email: settingsConsumerEmail, password: settingsInitialPassword })
       .expect(201);
-    const csrf = parseCookieValue(asCookieArray(loginRes.headers[`set-cookie`]), `csrf_token`);
+    const csrf = parseCookieValue(asCookieArray(loginRes.headers[`set-cookie`]), CSRF_TOKEN_COOKIE_KEY);
     expect(csrf).toBeTruthy();
 
     const changeRes = await agent
@@ -256,7 +257,7 @@ describe(`Forgot/Reset password hardening (e2e)`, () => {
       .set(`x-forwarded-for`, `198.51.100.16`)
       .send({ email: consumerEmail, password: initialPassword })
       .expect(201);
-    const csrf = parseCookieValue(asCookieArray(loginRes.headers[`set-cookie`]), `csrf_token`);
+    const csrf = parseCookieValue(asCookieArray(loginRes.headers[`set-cookie`]), CSRF_TOKEN_COOKIE_KEY);
     expect(csrf).toBeTruthy();
 
     const resetRes = await request(app.getHttpServer())

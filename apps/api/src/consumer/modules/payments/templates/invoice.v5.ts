@@ -1,5 +1,6 @@
 /* eslint-disable max-len */
 import { type InvoicePayment } from './types';
+import { envs } from '../../../../envs';
 
 type CompanyInfo = {
   name: string;
@@ -20,6 +21,23 @@ type BuildInvoiceV5Params = {
   qrCodeUrl?: string; // Optional QR image (data URL or CDN URL)
 };
 
+function toFiniteMoneyValue(value: unknown, fallback = 0): number {
+  if (typeof value === `number` && Number.isFinite(value)) return value;
+  if (typeof value === `string`) {
+    const parsed = parseFloat(value.trim());
+    if (Number.isFinite(parsed)) return parsed;
+    return fallback;
+  }
+  if (value && typeof value === `object`) {
+    const maybeToString = (value as { toString?: () => string }).toString;
+    if (typeof maybeToString === `function`) {
+      const parsed = parseFloat(maybeToString.call(value).trim());
+      if (Number.isFinite(parsed)) return parsed;
+    }
+  }
+  return fallback;
+}
+
 export function buildInvoiceHtmlV5(params: BuildInvoiceV5Params): string {
   const { invoiceNumber, payment, qrCodeUrl } = params;
 
@@ -30,7 +48,7 @@ export function buildInvoiceHtmlV5(params: BuildInvoiceV5Params): string {
     addressLine2: `Toronto, Canada`,
     registrationId: `Reg #RM-2025-001`,
     taxId: `TAX ID 123 456 789`,
-    website: `https://remoola.app`,
+    website: envs.PUBLIC_BRAND_WEBSITE_URL,
     email: `support@remoola.com`,
     ...params.company,
   };
@@ -39,10 +57,10 @@ export function buildInvoiceHtmlV5(params: BuildInvoiceV5Params): string {
   const requester = payment.requester ?? null;
   const tx = payment.ledgerEntries?.[0] ?? null;
 
-  const amount = Number(payment.amount ?? 0);
+  const amount = toFiniteMoneyValue(payment.amount, 0);
   const currency = payment.currencyCode;
-  const fees = Number(tx?.feesAmount ?? 0);
-  const txAmount = Number(tx?.amount ?? amount);
+  const fees = toFiniteMoneyValue(tx?.feesAmount, 0);
+  const txAmount = toFiniteMoneyValue(tx?.amount, amount);
   const total = txAmount + fees;
 
   const isPaid = payment.status === `COMPLETED`;

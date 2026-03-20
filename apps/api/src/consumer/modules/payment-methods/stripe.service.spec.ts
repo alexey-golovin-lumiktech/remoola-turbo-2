@@ -190,14 +190,6 @@ describe(`ConsumerStripeService`, () => {
     );
   });
 
-  it(`rejects payment method metadata lookup for non-owned payment method`, async () => {
-    prisma.paymentMethodModel.findFirst.mockResolvedValueOnce(null);
-
-    await expect(service.getPaymentMethodMetadata(`consumer-1`, `pm_missing`)).rejects.toBeInstanceOf(
-      BadRequestException,
-    );
-  });
-
   it(`creates Stripe customer with deterministic idempotency key and claim update`, async () => {
     const prismaForCustomer = {
       consumerModel: {

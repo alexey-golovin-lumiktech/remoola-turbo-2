@@ -80,9 +80,12 @@ const database = {
 const nest = {
   PORT: z.coerce.number().optional().default(3000),
   NEST_APP_EXTERNAL_ORIGIN: z.string().default(`NEST_APP_EXTERNAL_ORIGIN`),
+  /** Public marketing / invoice branding website; override per deployment. */
+  PUBLIC_BRAND_WEBSITE_URL: z.string().url().default(`https://remoola.app`),
   CONSUMER_APP_ORIGIN: z.string().default(`CONSUMER_APP_ORIGIN`),
   CONSUMER_MOBILE_APP_ORIGIN: z.string().default(`CONSUMER_MOBILE_APP_ORIGIN`),
   ADMIN_APP_ORIGIN: z.string().default(`ADMIN_APP_ORIGIN`),
+  // Local + demo Vercel defaults when `CORS_ALLOWED_ORIGINS` is unset; set explicitly in production.
   CORS_ALLOWED_ORIGINS: zArray(z.string().min(1), [
     // for consumer-mobile app (port 3002)
     `http://127.0.0.1:3002`,

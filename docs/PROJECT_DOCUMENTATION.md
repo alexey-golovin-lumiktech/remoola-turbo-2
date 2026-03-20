@@ -15,7 +15,7 @@ Remoola is a Turborepo monorepo with:
 
 ## API (NestJS) - Implemented Features
 
-Base backend lives in `apps/api`. All API routes use the global prefix `/api` (e.g. `/api/admin/auth`, `/api/consumer/auth`, `/api/auth`). The implemented features are organized under `admin` and `consumer` namespaces. A root `auth` module also exists (login, register, logout, me) at `/api/auth`.
+Base backend lives in `apps/api`. All API routes use the global prefix `/api` (e.g. `/api/admin/auth`, `/api/consumer/auth`). Auth on the Nest API is namespaced under `admin` and `consumer` only; shared JWT wiring lives under `apps/api/src/auth` (`JwtPassportModule`, `JwtStrategy`) but does not expose a root `/api/auth` route. The Admin Next.js app may still use BFF paths like `/api/auth/login` that proxy to `/api/admin/auth` on the backend.
 
 ### Admin APIs
 
@@ -81,21 +81,23 @@ Exchange (`/admin/exchange`):
 Auth (`/consumer/auth`):
 
 - `POST /login`: login and set auth cookies.
-- `POST /refresh-access`: refresh access token.
+- `POST /refresh`: refresh access token (cookie-based refresh; CSRF required).
+- `POST /refresh-access`: legacy body `refreshToken` refresh (prefer `POST /refresh` for browser clients).
+- `POST /logout`: revoke current session; clears cookies (CSRF required).
+- `POST /logout-all`: revoke all sessions for the consumer (authenticated; CSRF required).
 - `GET /me`: current consumer identity.
 - `POST /signup`: create consumer account.
 - `GET /signup/:consumerId/complete-profile-creation`: finalize profile and send verification email.
-- `GET /signup/verification`: verify account by token.
+- `GET /signup/verification`: verify account by token. Verification email links omit
+  `email` query params; successful redirects to the consumer verification page may
+  still include `email` for compatibility/UX.
 - Forgot-password and reset (no auth required): `POST /forgot-password` (email; requires valid `Origin` header — must be an allowed consumer origin, else 400 `ORIGIN_REQUIRED`); `GET /forgot-password/verify?token=…&referer=…` — validate token and redirect to app; `POST /password/reset` (body: token, password) — set new password with token from email.
 - Authenticated change-password: `PATCH /consumer/profile/password` (see Profile below).
 - Google OAuth flows:
-  - `GET /google/start`: start new OAuth flow. Accepts optional `returnOrigin` query parameter to specify the consumer app origin (validated against CORS_ALLOWED_ORIGINS via `OriginResolverService`) for redirect after authentication. Useful for multi-app deployments (e.g., desktop consumer on port 3001, mobile consumer on port 3002). Supports CONSUMER_APP_ORIGIN, CONSUMER_MOBILE_APP_ORIGIN, and ADMIN_APP_ORIGIN.
+  - `GET /google/start`: start OAuth flow. Accepts optional `returnOrigin` query parameter to specify the consumer app origin (validated against CORS_ALLOWED_ORIGINS via `OriginResolverService`) for redirect after authentication. Useful for multi-app deployments (e.g., desktop consumer on port 3001, mobile consumer on port 3002). Supports CONSUMER_APP_ORIGIN, CONSUMER_MOBILE_APP_ORIGIN, and ADMIN_APP_ORIGIN.
   - `GET /google/callback`: OAuth redirect handling; uses stored `returnOrigin` from state.
   - `GET /google/signup-session`: fetch OAuth signup session data.
-  - `GET /google-new-way`, `GET /google-redirect-new-way`: alternate OAuth entry/redirect.
-  - `POST /oauth/exchange`: exchange OAuth code for access/refresh tokens.
-  - `POST /google-oauth`: legacy Google OAuth login.
-  - `POST /google-login-gpt`: alternate OAuth flow.
+  - `POST /oauth/exchange`: exchange short-lived OAuth exchange token for access/refresh cookies (BFF/mobile compatible).
 
 Dashboard (`/consumer/dashboard`):
 
@@ -150,7 +152,6 @@ Stripe (`/consumer/stripe`):
 - `POST /:paymentRequestId/stripe-session`: create checkout session for a payment request.
 - `POST /intents`: create setup intent.
 - `POST /confirm`: confirm setup intent.
-- `POST /payment-method/metadata`: fetch card or bank metadata.
 - `POST /:paymentRequestId/pay-with-saved-method`: charge using saved method.
 
 Webhooks (`/consumer/webhooks`):
@@ -196,6 +197,9 @@ Common infrastructure in `apps/api/src/shared` and `apps/api/src/shared-common`:
 
 - Prisma DB module and service.
 - Email templates and mailing service (transactional email via Brevo API; see FEATURES_CURRENT.md).
+  `InvoiceForTemplate.payOnlineUrl` accepts only absolute `http(s)` URLs when
+  explicitly provided; invalid values are ignored and the template falls back to
+  env-derived/default links.
 - JWT auth guard and interceptors.
 - Shared auth cookie policy (cookie names and options from `@remoola/api-types`; __Host- prefix in production); consumer auth backed by `auth_sessions` table (hashed refresh, rotation lineage, revocation).
 - Auth audit (login success/failure tracking) and account lockout (per-email after N failures).

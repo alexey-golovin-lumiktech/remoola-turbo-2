@@ -2,7 +2,7 @@
 
 **Canonical:** [governance/04_FINANCIAL_SAFETY_COMPLIANCE.md](../governance/04_FINANCIAL_SAFETY_COMPLIANCE.md) — edit there.
 
-**Last updated:** 2026-03-16  
+**Last updated:** 2026-03-20  
 **Scope:** Remoola monorepo — ledger, payments, Stripe webhooks, raw SQL, PostgreSQL design rules  
 **Status:** Audit complete; critical fixes applied (append-only ledger, idempotency, raw SQL, health/archive).
 
@@ -28,7 +28,7 @@ This document consolidates fintech safety and DB compliance work: design-rule co
 - **Idempotency:** DB-enforced where required: `ledger_entry.idempotency_key` unique; `stripe_webhook_event.event_id` unique; insert-before-handling for webhooks.
 - **Concurrency:** Operation-specific advisory locks (`:withdraw`, `:transfer`, `:exchange`, `:reversal`, `:stripe-reversal`). Balance is read inside the same transaction; serialization is by advisory lock per (consumer, operation). Row-level lock (`SELECT ... FOR UPDATE`) is not required for correctness with this design—double-spend is prevented by the advisory lock.
 - **Raw SQL / webhook failure telemetry:** Parameterized (`Prisma.sql`); DB column names used (`consumer_id`, `deleted_at`, etc.); health does not expose raw `error.message`; Stripe webhook top-level failures emit sanitized warning telemetry only (`stripe_webhook_processing_failed`, no raw payload/error text); archive search `query` capped.
-- **Tests:** Concurrency specs and unit specs updated; TypeScript and tests pass in `apps/api`.
+- **Tests:** Concurrency specs and unit specs updated; API e2e adds coverage for Stripe webhook dedup replay, consumer payment idempotency, and admin payment reversals (see `apps/api/test/*e2e-spec.ts`). TypeScript and tests pass in `apps/api`.
 - **BFF proxy boundaries (admin/consumer/consumer-mobile):** Proxy routes forward an explicit header allowlist (instead of raw header passthrough), preserve all `Set-Cookie` headers, enforce JSON mutation boundaries (`application/json` + valid JSON), and reject oversized JSON payloads with `413 PAYLOAD_TOO_LARGE`.
 
 ---

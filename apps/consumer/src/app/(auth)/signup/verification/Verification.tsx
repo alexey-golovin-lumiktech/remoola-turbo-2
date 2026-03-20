@@ -32,11 +32,11 @@ export default function Verification() {
     else setStatus(`unknown`);
   }, [verified]);
 
-  if (!email) {
+  if (!verified && !email) {
     return (
       <div className={verificationContainer}>
         <h1 className={verificationTitle}>Invalid verification link</h1>
-        <p className={verificationText}>Missing email parameter.</p>
+        <p className={verificationText}>This link is invalid or has expired.</p>
         <Link href="/signup" className={verificationLink}>
           Go back to signup
         </Link>
@@ -50,8 +50,14 @@ export default function Verification() {
         <>
           <h1 className={verificationSuccessTitle}>Email Verified 🎉</h1>
           <p className={verificationText}>
-            Your email <span className={verificationEmail}>{decodeURIComponent(email)}</span> has been successfully
-            verified.
+            {email ? (
+              <>
+                Your email <span className={verificationEmail}>{decodeURIComponent(email)}</span> has been successfully
+                verified.
+              </>
+            ) : (
+              <>Your email has been successfully verified.</>
+            )}
           </p>
           <Link href="/login" className={verificationLink}>
             Continue to Login
@@ -63,8 +69,14 @@ export default function Verification() {
         <>
           <h1 className={verificationFailedTitle}>Verification Failed</h1>
           <p className={verificationText}>
-            The verification link for <span className={verificationEmail}>{decodeURIComponent(email)}</span> is invalid
-            or expired.
+            {email ? (
+              <>
+                The verification link for <span className={verificationEmail}>{decodeURIComponent(email)}</span> is
+                invalid or expired.
+              </>
+            ) : (
+              <>This verification link is invalid or expired.</>
+            )}
           </p>
           <Link href="/signup" className={verificationLink}>
             Try signing up again

@@ -63,14 +63,6 @@ export class ConsumerStripeController {
     return this.service.confirmStripeSetupIntent(consumer.id, body);
   }
 
-  @Post(`payment-method/metadata`)
-  async getPaymentMethodMetadata(
-    @Identity() consumer: ConsumerModel,
-    @Body(`stripePaymentMethodId`) stripePaymentMethodId: string,
-  ) {
-    return this.service.getPaymentMethodMetadata(consumer.id, stripePaymentMethodId);
-  }
-
   @TrackConsumerAction({ action: `consumer.payments.pay_with_saved_method`, resource: `payments` })
   @Post(`:paymentRequestId/pay-with-saved-method`)
   async payWithSavedPaymentMethod(

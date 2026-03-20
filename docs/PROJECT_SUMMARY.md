@@ -47,7 +47,7 @@ yarn db:generate
 yarn dev
 ```
 
-Note: `yarn test` and `yarn test:e2e` are intended for local development only; they are blocked in CI and on Vercel by `scripts/ensure-local-development.js`.
+Note: `yarn test` and `yarn test:e2e` are intended for local development only; they are blocked in CI and on Vercel by `scripts/ensure-local-development.js`. For quicker API e2e iterations locally, use `yarn workspace @remoola/api test:e2e:fast` (optional `TEST_DB_VERBOSE=1`; see `packages/test-db` and CHANGELOG 2026-03-20).
 
 ---
 

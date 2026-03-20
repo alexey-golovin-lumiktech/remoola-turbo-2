@@ -1,3 +1,7 @@
+/**
+ * E2E smoke test for consumer action log retention boundary deletion behavior.
+ * Uses an isolated temporary DB per run via @remoola/test-db/environment.
+ */
 /** @jest-environment @remoola/test-db/environment */
 
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
@@ -9,7 +13,7 @@ import { ConsumerActionLogRetentionScheduler } from '../src/consumer/auth/consum
 import { envs } from '../src/envs';
 import { type PrismaService } from '../src/shared/prisma.service';
 
-describe(`Consumer action log retention smoke (e2e)`, () => {
+describe(`Consumer action log retention smoke (e2e, isolated DB)`, () => {
   let prisma: PrismaClient;
 
   beforeAll(async () => {

@@ -2,7 +2,25 @@ import NodeEnvironment from 'jest-environment-node';
 
 import { PrismaClient } from '@remoola/database-2';
 
-import { createTemporaryDatabase, type TemporaryDatabaseHandle } from './runtime';
+import { createTemporaryDatabase, resetTemporaryDatabase, type TemporaryDatabaseHandle } from './runtime';
+
+type SharedHandleState = {
+  handle: TemporaryDatabaseHandle | null;
+  refs: number;
+  creating: Promise<TemporaryDatabaseHandle> | null;
+  isolationChecked: boolean;
+};
+
+const sharedHandleState: SharedHandleState = {
+  handle: null,
+  refs: 0,
+  creating: null,
+  isolationChecked: false,
+};
+
+function useFastDbReuseMode(): boolean {
+  return process.env.TEST_DB_FAST_REUSE === `1`;
+}
 
 export default class TemporaryDatabaseEnvironment extends NodeEnvironment {
   private temporaryDatabaseHandle: TemporaryDatabaseHandle | null = null;
@@ -10,6 +28,7 @@ export default class TemporaryDatabaseEnvironment extends NodeEnvironment {
   private previousTestDatabaseUrl: string | undefined;
   private currentDatabaseUrl: string | null = null;
   private readonly testFilePath: string | undefined;
+  private usingSharedHandle = false;
 
   constructor(
     config: ConstructorParameters<typeof NodeEnvironment>[0],
@@ -117,14 +136,18 @@ export default class TemporaryDatabaseEnvironment extends NodeEnvironment {
       /* eslint-enable */
     }
     await super.setup();
-    const handle = await createTemporaryDatabase();
+    const handle = await this.acquireTemporaryHandle();
+    this.usingSharedHandle = useFastDbReuseMode();
     this.previousDatabaseUrl = this.global.process?.env.DATABASE_URL;
     this.previousTestDatabaseUrl = this.global.process?.env.TEST_DATABASE_URL;
-    await this.assertTemporaryDatabaseIsolation(
-      handle.databaseUrl,
-      this.previousDatabaseUrl,
-      this.previousTestDatabaseUrl,
-    );
+    if (!this.usingSharedHandle || !sharedHandleState.isolationChecked) {
+      await this.assertTemporaryDatabaseIsolation(
+        handle.databaseUrl,
+        this.previousDatabaseUrl,
+        this.previousTestDatabaseUrl,
+      );
+      if (this.usingSharedHandle) sharedHandleState.isolationChecked = true;
+    }
     if (this.global.process) this.global.process.env.DATABASE_URL = handle.databaseUrl;
     if (this.global.process) this.global.process.env.TEST_DATABASE_URL = handle.databaseUrl;
     process.env.DATABASE_URL = handle.databaseUrl;
@@ -137,12 +160,55 @@ export default class TemporaryDatabaseEnvironment extends NodeEnvironment {
     }
   }
 
+  private async acquireTemporaryHandle(): Promise<TemporaryDatabaseHandle> {
+    if (!useFastDbReuseMode()) {
+      return createTemporaryDatabase();
+    }
+
+    if (sharedHandleState.handle) {
+      await resetTemporaryDatabase(sharedHandleState.handle.databaseUrl);
+      sharedHandleState.refs += 1;
+      return sharedHandleState.handle;
+    }
+
+    if (!sharedHandleState.creating) {
+      sharedHandleState.creating = createTemporaryDatabase();
+    }
+    let created: TemporaryDatabaseHandle;
+    try {
+      created = await sharedHandleState.creating;
+    } finally {
+      sharedHandleState.creating = null;
+    }
+    sharedHandleState.handle = created;
+    await resetTemporaryDatabase(created.databaseUrl);
+    sharedHandleState.refs += 1;
+    return created;
+  }
+
+  private async releaseTemporaryHandle(): Promise<void> {
+    if (!this.temporaryDatabaseHandle) return;
+    if (!this.usingSharedHandle) {
+      await this.temporaryDatabaseHandle.shutdown();
+      return;
+    }
+
+    sharedHandleState.refs = Math.max(0, sharedHandleState.refs - 1);
+    if (sharedHandleState.refs > 0) return;
+    if (!sharedHandleState.handle) return;
+    await sharedHandleState.handle.shutdown();
+    sharedHandleState.handle = null;
+    sharedHandleState.creating = null;
+    sharedHandleState.isolationChecked = false;
+  }
+
   async teardown(): Promise<void> {
     try {
-      if (this.temporaryDatabaseHandle) await this.temporaryDatabaseHandle.shutdown();
+      await this.releaseTemporaryHandle();
     } finally {
       this.currentDatabaseUrl = null;
       this.temporaryDatabaseHandle = null;
+      this.usingSharedHandle = false;
       if (this.previousDatabaseUrl === undefined) {
         if (this.global.process) delete this.global.process.env.DATABASE_URL;
         delete process.env.DATABASE_URL;

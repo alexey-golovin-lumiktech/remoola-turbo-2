@@ -257,28 +257,6 @@ export class ConsumerStripeService {
     return { url: session.url };
   }
 
-  async getPaymentMethodMetadata(consumerId: string, stripePaymentMethodId: string) {
-    const owned = await this.prisma.paymentMethodModel.findFirst({
-      where: {
-        consumerId,
-        stripePaymentMethodId,
-        deletedAt: null,
-      },
-      select: { id: true },
-    });
-    if (!owned) {
-      throw new BadRequestException(errorCodes.PAYMENT_METHOD_NOT_FOUND);
-    }
-    const pm = await this.stripe.paymentMethods.retrieve(stripePaymentMethodId);
-
-    return {
-      brand: pm.card?.brand,
-      last4: pm.card?.last4,
-      expMonth: pm.card?.exp_month?.toString(),
-      expYear: pm.card?.exp_year?.toString(),
-    };
-  }
-
   private async ensureStripeCustomer(consumerId: string) {
     const consumer = await this.prisma.consumerModel.findUnique({
       where: { id: consumerId },

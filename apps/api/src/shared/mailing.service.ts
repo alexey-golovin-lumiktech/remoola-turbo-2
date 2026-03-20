@@ -16,6 +16,7 @@ import {
 } from './mailing-utils';
 import { envs } from '../envs';
 import { OriginResolverService } from './origin-resolver.service';
+import { resolveEmailApiBaseUrl } from './resolve-email-api-base-url';
 
 @Injectable()
 export class MailingService {
@@ -86,17 +87,13 @@ export class MailingService {
   }
 
   async sendConsumerSignupVerificationEmail(params: { email: string; token: string; referer: string }) {
-    let backendBaseURL = envs.NEST_APP_EXTERNAL_ORIGIN! || `http://localhost:3333/api`;
-    if (envs.VERCEL !== 0) {
-      const base =
-        envs.NEST_APP_EXTERNAL_ORIGIN && envs.NEST_APP_EXTERNAL_ORIGIN !== `NEST_APP_EXTERNAL_ORIGIN`
-          ? envs.NEST_APP_EXTERNAL_ORIGIN.replace(/\/api\/?$/, ``)
-          : `https://remoola-turbo-2-api.vercel.app`;
-      backendBaseURL = `${base}/api`;
-    }
-
+    const backendBaseURL = resolveEmailApiBaseUrl();
     const emailConfirmationUrl = new URL(`${backendBaseURL}/consumer/auth/signup/verification`);
-    emailConfirmationUrl.search = new URLSearchParams(params).toString();
+    // Do not put `email` in the URL (Referer/history/proxy logs); the JWT identifies the consumer.
+    emailConfirmationUrl.search = new URLSearchParams({
+      token: params.token,
+      referer: params.referer,
+    }).toString();
 
     const html = signupCompletionToHtml.processor(emailConfirmationUrl.toString());
     const subject = `Welcome to Wirebill! Confirm your Email`;

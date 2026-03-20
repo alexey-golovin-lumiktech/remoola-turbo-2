@@ -1,8 +1,14 @@
+/**
+ * E2E guard test proving per-file temporary DB isolation (suite B).
+ * Uses an isolated temporary DB per run via @remoola/test-db/environment.
+ */
 /** @jest-environment @remoola/test-db/environment */
 
 import { PrismaClient } from '@remoola/database-2';
 
-describe(`temporary database isolation B`, () => {
+import { assertIsolatedTestDatabaseUrl } from './test-db-safety';
+
+describe(`Temporary DB isolation B (e2e, isolated DB)`, () => {
   const prisma = new PrismaClient();
   const markerTableName = `__temp_db_isolation_marker`;
 
@@ -25,14 +31,7 @@ describe(`temporary database isolation B`, () => {
   });
 
   it(`uses the temporary database URL provided by test-db environment`, () => {
-    const databaseUrl = process.env.DATABASE_URL;
-    const testDatabaseUrl = process.env.TEST_DATABASE_URL;
-
-    expect(databaseUrl).toBeDefined();
-    expect(testDatabaseUrl).toBe(databaseUrl);
-
-    const parsed = new URL(databaseUrl!);
-    expect([`127.0.0.1`, `localhost`]).toContain(parsed.hostname);
+    expect(assertIsolatedTestDatabaseUrl()).toBeDefined();
   });
 
   it(`starts clean for this file and persists writes within the same file`, async () => {

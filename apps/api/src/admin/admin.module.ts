@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { PassportModule } from '@nestjs/passport';
 
 import { AdminAuthController } from './auth/admin-auth.controller';
 import { AdminAuthModule } from './auth/admin-auth.module';
@@ -14,7 +13,6 @@ import { ConsumerPaymentMethodsModule } from '../consumer/modules/payment-method
 
 @Module({
   imports: [
-    PassportModule,
     AdminAuthModule,
     AdminAdminsModule,
     AdminAuditModule,

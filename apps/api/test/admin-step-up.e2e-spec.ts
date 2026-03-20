@@ -18,6 +18,7 @@ import { $Enums, PrismaClient } from '@remoola/database-2';
 import { hashPassword } from '@remoola/security-utils';
 import { adminErrorCodes } from '@remoola/shared-constants';
 
+import { assertIsolatedTestDatabaseUrl } from './test-db-safety';
 import { AppModule } from '../src/app.module';
 import { AuthGuard } from '../src/guards/auth.guard';
 import { PrismaService } from '../src/shared/prisma.service';
@@ -33,8 +34,7 @@ describe(`Admin step-up (e2e, isolated DB)`, () => {
   let targetAdminId: string;
 
   beforeAll(async () => {
-    expect(process.env.DATABASE_URL).toBeDefined();
-    expect(process.env.TEST_DATABASE_URL).toBe(process.env.DATABASE_URL);
+    assertIsolatedTestDatabaseUrl();
 
     prisma = new PrismaClient();
     await prisma.$connect();

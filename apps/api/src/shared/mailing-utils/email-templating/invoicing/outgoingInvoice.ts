@@ -3,8 +3,8 @@
 import { CURRENCY_CODE } from '@remoola/api-types';
 
 import { type InvoiceForTemplate } from './invoice';
-import { envs } from '../../../../envs';
 import { formatCurrency } from '../../../../shared-common';
+import { resolveEmailApiBaseUrl } from '../../../resolve-email-api-base-url';
 
 const html = `
   <table style="padding: 20px;font-style: italic;background: #3f3f3f;color: cyan;border-radius: 20px;">
@@ -33,7 +33,7 @@ const ReplacementsRegExpMapping = {
 };
 
 export const processor = (invoice: InvoiceForTemplate) => {
-  const backendBaseURL = envs.NEST_APP_EXTERNAL_ORIGIN; //@IMPORTANT_NOTE: should be changed in future
+  const backendBaseURL = resolveEmailApiBaseUrl();
   const invoiceLink = new URL(`consumer/payment-choices`, backendBaseURL);
   invoiceLink.searchParams.append(`invoiceId`, invoice.id);
   invoiceLink.searchParams.append(`refererEmail`, invoice.referer);

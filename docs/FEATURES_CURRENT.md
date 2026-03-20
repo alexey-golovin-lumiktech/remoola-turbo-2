@@ -20,7 +20,10 @@ Authentication and identity:
 - Cookie-based JWT auth with access/refresh tokens. Shared auth cookie policy: cookie names and options from `@remoola/api-types` (http/auth-cookie-policy); API and Next.js apps (admin, consumer, consumer-mobile) use the same policy; production uses __Host- prefixed names (RFC 6265).
 - Consumer auth sessions: `auth_sessions` table for database-backed consumer sessions; hashed refresh token storage; session family and refresh rotation lineage (`session_family_id`, `replaced_by_id`); revocation metadata (`revoked_at`, `invalidated_reason`). Migration `20260310123000_consumer_auth_sessions`.
 - Login audit (success/failure tracking) and account lockout (per-email after N failures).
-- Google OAuth endpoints for consumer login flows (google/start, callback, signup-session, google-new-way, google-redirect-new-way, oauth/exchange, google-oauth, google-login-gpt). OAuth `/google/start` accepts optional `returnOrigin` query parameter for multi-app consumer deployments (validated against CORS_ALLOWED_ORIGINS). Origin resolution via `OriginResolverService` (supports CONSUMER_APP_ORIGIN, CONSUMER_MOBILE_APP_ORIGIN, ADMIN_APP_ORIGIN).
+- Google OAuth endpoints for consumer login flows: `GET /google/start`, `GET /google/callback`, `GET /google/signup-session`, `POST /oauth/exchange`. OAuth `/google/start` accepts optional `returnOrigin` query parameter for multi-app consumer deployments (validated against CORS_ALLOWED_ORIGINS). Origin resolution via `OriginResolverService` (supports CONSUMER_APP_ORIGIN, CONSUMER_MOBILE_APP_ORIGIN, ADMIN_APP_ORIGIN).
+- Signup verification hardening: verification email links no longer include `email`
+  query params; successful post-verification redirects may still include `email`
+  (current compatibility behavior expected by tests).
 - OAuth missing-state-cookie compatibility fallback is restricted to development/test only; startup/runtime block it in staging/production.
 - OAuth crypto utilities via `@remoola/security-utils` (PKCE, nonce, state signing/hashing).
 - Database connection retry logic (30 attempts, 500ms delay) in API bootstrap.
@@ -34,7 +37,7 @@ Consumer domain features:
 - Contracts listing (paginated).
 - Document upload, tagging, and attachment to payments (documents list paginated).
 - Exchange rates, currency conversion, auto-conversion rules, scheduled FX conversions (rules and scheduled lists paginated), and admin review/override.
-- Payment methods CRUD (manual) and Stripe payment method metadata lookup.
+- Payment methods CRUD (manual).
 - Stripe checkout sessions, setup intents, confirmations, saved-method payments.
 - Stripe webhooks, including identity verification start; verify/start requires
   profile complete (legal status, tax ID, passport/ID or phone per account type)
@@ -61,7 +64,13 @@ Admin domain features:
 Infrastructure and platform:
 
 - Transactional email via Brevo API (no SMTP); env: `BREVO_API_KEY`, `BREVO_API_BASE_URL`; boot-time verification optional (`BREVO_VERIFY_ON_BOOT`).
-- Root auth module at `/auth` (login, register, logout, me) in addition to admin/consumer namespaced auth.
+- Production outbound email and invoice links use explicit origin/branding envs:
+  `NEST_APP_EXTERNAL_ORIGIN` (required outside dev/test by `resolveEmailApiBaseUrl`)
+  and `PUBLIC_BRAND_WEBSITE_URL` (invoice v5 branding/site link).
+- Invoice email/PDF template behavior: explicit `InvoiceForTemplate.payOnlineUrl`
+  accepts only absolute `http(s)` URLs; invalid values fall back to the
+  env-derived/default link (`CONSUMER_APP_ORIGIN` or local development default).
+- Nest API auth is namespaced under `/api/admin/auth` and `/api/consumer/auth` only (`JwtPassportModule` registers the shared JWT strategy; there is no root `/api/auth` controller on the API). The Admin Next.js app may expose BFF routes under `/api/auth/*` that proxy to backend admin auth.
 - Health endpoints (`/health`, `/health/detailed`, `/health/mail-transport`, `POST /health/test-email`) for service, DB, mail transport, and optional test-email.
 - CORS configuration and security headers (Helmet).
 - Rate limiting and response compression.
@@ -85,7 +94,7 @@ Admin UI with:
 
 Internal API proxy routes:
 
-- Admin auth proxy: login/logout/me.
+- Admin auth proxy: login/logout/me via Next.js `/api/auth/*` BFF routes (forward to backend `/api/admin/auth`).
 - Admin management proxy.
 - Consumer management and verification proxy.
 - Dashboard proxy endpoints.
@@ -101,7 +110,7 @@ Internal API proxy routes:
 Consumer UI with:
 
 - Login, logout, OAuth callback, and signup flow (multi-step); auth refresh and session-expired handling.
-- Signup start and completion confirmation pages.
+- Signup start and completion confirmation pages; email verification page handles `verified` without `email` in the query (optional `email` still shown when the redirect includes it).
 - Dashboard with summaries, tasks, and activity; “Verify Me” vs “Complete your
   profile” (link to settings) based on profile-complete task from API.
 - Contacts list (paginated, layout aligned with Documents), create/edit/delete, and detail pages.
@@ -149,6 +158,7 @@ Mobile-first consumer app running on port 3002:
   - Tag display with overflow handling (show first 3 + count badge)
   - Preview and selection improvements with better touch targets
   - Null-safety for document preview modal
+- Signup email verification view matches consumer web: `verified` without `email` is valid; copy adapts when `email` is absent.
 - Supports Google OAuth with `returnOrigin` parameter for proper redirect after authentication.
 - CORS configured for localhost:3002 and Vercel deployment.
 - Shared UI library:

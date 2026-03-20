@@ -11,6 +11,7 @@ import { PrismaClient } from '@remoola/database-2';
 const DEFAULT_SCHEMA_RELATIVE_PATH = `packages/database-2/prisma/schema.prisma` as const;
 const DEFAULT_DOCKER_COMPOSE_RELATIVE_PATH = `packages/test-db/docker-compose.test.yml` as const;
 const DEFAULT_PROVIDER = `docker-compose` as const;
+const PG_IDENTIFIER_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
 type TestDatabaseProvider = `docker-compose` | `testcontainers`;
 
@@ -96,6 +97,26 @@ async function prefillDatabase(databaseUrl: string): Promise<void> {
   if (result.status === 0) return;
   const output = [result.stdout?.trim(), result.stderr?.trim()].filter(Boolean).join(`\n`);
   throw new Error(`Failed to prefill temporary database using @remoola/db-fixtures.${output ? `\n${output}` : ``}`);
+}
+
+async function truncatePublicTables(databaseUrl: string): Promise<void> {
+  const prisma = new PrismaClient({ datasourceUrl: databaseUrl });
+  try {
+    const rows = await prisma.$queryRaw<{ tablename: string }[]>`
+      SELECT tablename
+      FROM pg_tables
+      WHERE schemaname = 'public'
+        AND tablename <> '_prisma_migrations'
+    `;
+    const tableNames = rows
+      .map((row) => row.tablename)
+      .filter((name) => typeof name === `string` && PG_IDENTIFIER_PATTERN.test(name))
+      .map((name) => `"public"."${name.replace(/"/g, `""`)}"`);
+    if (tableNames.length === 0) return;
+    await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${tableNames.join(`, `)} RESTART IDENTITY CASCADE`);
+  } finally {
+    await prisma.$disconnect();
+  }
 }
 
 function getProvider(): TestDatabaseProvider {
@@ -223,4 +244,9 @@ export async function createTemporaryDatabase(): Promise<TemporaryDatabaseHandle
     }
   }
   return createTemporaryDatabaseWithTestcontainers(repoRoot);
+}
+
+export async function resetTemporaryDatabase(databaseUrl: string): Promise<void> {
+  await truncatePublicTables(databaseUrl);
+  await prefillDatabase(databaseUrl);
 }
