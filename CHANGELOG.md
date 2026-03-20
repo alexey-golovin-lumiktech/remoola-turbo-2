@@ -1106,24 +1106,6 @@
 
 # Changelog (March 2026)
 
-- **2026-03-20:** API audit hardening: register Passport `JwtStrategy` via root
-  `JwtPassportModule`; remove Nest root `/api/auth` module (use `/api/admin/auth`
-  and `/api/consumer/auth` only); centralize outbound email API base URL resolution
-  (`resolveEmailApiBaseUrl` — production requires `NEST_APP_EXTERNAL_ORIGIN`);
-  remove legacy Stripe payment-method metadata endpoint (`POST /consumer/stripe/payment-method/metadata`)
-  and `getPaymentMethodMetadata` handler from API surface;
-  invoice email/PDF “Pay online” link uses optional `payOnlineUrl` only when it is an absolute `http(s)` URL, otherwise falls back to `CONSUMER_APP_ORIGIN` (or local dev default); `PUBLIC_BRAND_WEBSITE_URL` for invoice v5 branding;
-  docs and `.env.example` updated. Signup email verification: verify JWT (not `decode`),
-  out-of-session access tokens only; confirmation links omit `email` query param
-  (successful post-verify redirects may still include `email` for UX compatibility);
-  failure redirects use `verified=no`; consumer + consumer-mobile verification
-  pages accept `verified` without `email`; throttle on
-  `GET …/complete-profile-creation`.
-- **2026-03-20:** DevEx: add fast API e2e profile (`packages/api-e2e/jest-e2e.fast.json`)
-  with `test:e2e:fast` / `pretest:e2e:fast`; support `TEST_DB_FAST_REUSE` and
-  `TEST_DB_VERBOSE`; reuse temporary test DB runtime handles for faster local
-  e2e iterations.
-
 <details>
 <summary>2026-03-03</summary>
 
@@ -1500,7 +1482,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-03-18</summary>
 
 - **2026-03-18:**
@@ -1513,6 +1495,46 @@
 
   ### 📄 Documentation
   - Canonical docs and changelog updated for this release (consumer auth: forgot/reset, auth-notice, logout, cookie policy, e2e; email validation consolidation; Brevo mailing).
+
+</details>
+
+<details open>
+<summary>2026-03-20</summary>
+
+- **2026-03-20:**
+  ### 🚀 Feature
+  - API auth surface consolidation and hardening:
+    - Register Passport `JwtStrategy` via root `JwtPassportModule`.
+    - Remove Nest root `/api/auth` module; keep namespaced auth under
+      `/api/admin/auth` and `/api/consumer/auth`.
+    - Remove legacy Stripe payment-method metadata endpoint
+      (`POST /consumer/stripe/payment-method/metadata`) and
+      `getPaymentMethodMetadata` API handler.
+  - Signup verification flow hardening:
+    - Verify JWT tokens (`verify`) instead of decode-only handling.
+    - Enforce out-of-session verification token usage.
+    - Omit `email` from confirmation links; keep compatibility where successful
+      redirects may still include `email` for UX.
+    - Failure redirects use `verified=no`; consumer and consumer-mobile
+      verification pages accept `verified` without `email`.
+
+  ### 🔐 Security
+  - Centralize outbound email API base URL resolution with
+    `resolveEmailApiBaseUrl`; production now requires
+    `NEST_APP_EXTERNAL_ORIGIN`.
+  - Invoice email/PDF pay-online link behavior:
+    optional `payOnlineUrl` is used only for absolute `http(s)` URLs;
+    otherwise fallback uses `CONSUMER_APP_ORIGIN` (or local dev default).
+
+  ### 🧪 Testing
+  - Add fast API e2e profile (`packages/api-e2e/jest-e2e.fast.json`) with
+    `test:e2e:fast` / `pretest:e2e:fast`.
+  - Add fast test-db controls:
+    `TEST_DB_FAST_REUSE` and `TEST_DB_VERBOSE` for faster local e2e loops.
+
+  ### 📄 Documentation
+  - Update docs and `.env.example` to reflect the auth surface, email base URL,
+    invoice link behavior, and verification-flow changes.
 
 </details>
 
