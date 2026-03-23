@@ -1,21 +1,21 @@
-# #!/usr/bin/env sh
-# . "$(dirname -- "$0")/_/husky.sh"
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
 
-# # Skip lint and tests when commit has no code changes (e.g. docs, CHANGELOG only)
-# if ! sh "$(dirname -- "$0")/../scripts/pre-commit-needs-lint-and-tests.sh"; then
-#   echo "No apps/ or packages/ code changes; skipping lint and tests."
-#   exit 0
-# fi
+# Skip lint and tests when commit has no code changes (e.g. docs, CHANGELOG only)
+if ! sh "$(dirname -- "$0")/../scripts/pre-commit-needs-lint-and-tests.sh"; then
+  echo "No apps/ or packages/ code changes; skipping lint and tests."
+  exit 0
+fi
 
-# yarn lint
-# # Build once to avoid repeated pretest noise in each app test run.
-# yarn --silent workspace @remoola/test-db run build >/dev/null 2>&1
-# (
-#   cd apps/consumer &&
-#     QUIET_MEMORY_GUARD=1 node ../../scripts/run-jest-with-memory-cap.js --passWithNoTests --verbose --coverage=false
-# )
-# (
-#   cd apps/api &&
-#     QUIET_MEMORY_GUARD=1 node ../../scripts/run-jest-with-memory-cap.js --passWithNoTests --verbose --coverage=false
-# )
-# (cd apps/api && QUIET_MEMORY_GUARD=1 yarn test:e2e:fast)
+yarn lint
+# Build once to avoid repeated pretest noise in each app test run.
+yarn --silent workspace @remoola/test-db run build >/dev/null 2>&1
+(
+  cd apps/consumer &&
+    QUIET_MEMORY_GUARD=1 node ../../scripts/run-jest-with-memory-cap.js --passWithNoTests --verbose --coverage=false
+)
+(
+  cd apps/api &&
+    QUIET_MEMORY_GUARD=1 node ../../scripts/run-jest-with-memory-cap.js --passWithNoTests --verbose --coverage=false
+)
+(cd apps/api && QUIET_MEMORY_GUARD=1 yarn test:e2e:fast)
