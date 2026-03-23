@@ -80,6 +80,15 @@ yarn db:push
 yarn db:seed
 ```
 
+## Deployment notes
+
+- Apply database migrations before deploying API / frontend runtime when a
+  change introduces new Prisma-backed runtime fields.
+- Verify Me / Stripe Identity rollout specifically requires migration
+  `20260323120000_stripe_identity_consumer_state` before runtime deployment,
+  because auth and consumer reads load `ConsumerModel` and expect the
+  `stripe_identity_*` columns to exist.
+
 ## Documentation
 
 Project root `docs/` are synced(single source of truth for features, API, safety, and design rules).
@@ -90,7 +99,5 @@ Project root `docs/` are synced(single source of truth for features, API, safety
 - `docs/FEATURES_CURRENT.md` — implemented features and current repo state.
 - `docs/CONSUMER_BROWSER_IDENTITY_TRACKING.md` — browser identity (`deviceId`) and consumer action-log architecture, compatibility contracts, rollout/runbook.
 - `docs/FINANCIAL_SAFETY_AND_DB_COMPLIANCE.md` — fintech safety, ledger invariants, idempotency.
-- `docs/MIGRATION_SAFETY_AUDIT.md` — migration safety notes and governance-oriented migration assessment.
-- `docs/SECURITY_AUDIT_AUTH_WEBHOOKS_PII.md` — auth/webhook/PII-focused security audit notes.
 - `docs/project-design-rules.md` — project design rules (dead code, boundaries, naming, migrations).
 - `docs/postgresql-design-rules.md` — PostgreSQL schema and migration rules.

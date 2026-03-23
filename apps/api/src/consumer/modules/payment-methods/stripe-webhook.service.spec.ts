@@ -4,6 +4,7 @@ import { $Enums, Prisma } from '@remoola/database-2';
 
 import { createOutcomeIdempotent } from './ledger-outcome-idempotent';
 import { StripeWebhookService } from './stripe-webhook.service';
+import { STRIPE_IDENTITY_STATUS } from '../../../shared-common';
 
 jest.mock(`../../../envs`, () => ({
   envs: {
@@ -289,5 +290,297 @@ describe(`StripeWebhookService.handleRefundUpdated`, () => {
       }),
       expect.any(Object),
     );
+  });
+});
+
+describe(`StripeWebhookService verification lifecycle`, () => {
+  it(`persists pending submission when starting verification`, async () => {
+    const consumerPaymentsService = {
+      assertProfileCompleteForVerification: jest.fn().mockResolvedValue(undefined),
+    } as any;
+    const prisma = {
+      consumerModel: {
+        findUnique: jest.fn().mockResolvedValue(null),
+        update: jest.fn().mockResolvedValue({ id: `consumer-1` }),
+      },
+    } as any;
+    const service = new StripeWebhookService(prisma, {} as any, {} as any, consumerPaymentsService);
+    (
+      service as unknown as {
+        stripe: { identity: { verificationSessions: { create: (...args: unknown[]) => Promise<unknown> } } };
+      }
+    ).stripe = {
+      identity: {
+        verificationSessions: {
+          create: jest.fn().mockResolvedValue({
+            id: `vs_123`,
+            client_secret: `vs_secret_123`,
+          }),
+        },
+      },
+    };
+
+    await expect(service.startVerifyMeStripeSession(`consumer-1`)).resolves.toEqual({
+      clientSecret: `vs_secret_123`,
+      sessionId: `vs_123`,
+    });
+
+    expect(consumerPaymentsService.assertProfileCompleteForVerification).toHaveBeenCalledWith(`consumer-1`);
+    expect(prisma.consumerModel.update).toHaveBeenCalledWith({
+      where: { id: `consumer-1` },
+      data: expect.objectContaining({
+        stripeIdentityStatus: STRIPE_IDENTITY_STATUS.PENDING_SUBMISSION,
+        stripeIdentitySessionId: `vs_123`,
+        stripeIdentityLastErrorCode: null,
+        stripeIdentityLastErrorReason: null,
+        stripeIdentityStartedAt: expect.any(Date),
+        stripeIdentityUpdatedAt: expect.any(Date),
+        stripeIdentityVerifiedAt: null,
+      }),
+    });
+  });
+
+  it(`reuses the active verification session instead of creating a duplicate`, async () => {
+    const consumerPaymentsService = {
+      assertProfileCompleteForVerification: jest.fn().mockResolvedValue(undefined),
+    } as any;
+    const prisma = {
+      consumerModel: {
+        findUnique: jest.fn().mockResolvedValue({
+          stripeIdentityStatus: STRIPE_IDENTITY_STATUS.PENDING_SUBMISSION,
+          stripeIdentitySessionId: `vs_existing`,
+        }),
+        update: jest.fn(),
+      },
+    } as any;
+    const service = new StripeWebhookService(prisma, {} as any, {} as any, consumerPaymentsService);
+    const retrieve = jest.fn().mockResolvedValue({
+      id: `vs_existing`,
+      client_secret: `vs_secret_existing`,
+    });
+    const create = jest.fn();
+    (
+      service as unknown as {
+        stripe: {
+          identity: { verificationSessions: { retrieve: (...args: unknown[]) => Promise<unknown>; create: jest.Mock } };
+        };
+      }
+    ).stripe = {
+      identity: {
+        verificationSessions: {
+          retrieve,
+          create,
+        },
+      },
+    };
+
+    await expect(service.startVerifyMeStripeSession(`consumer-1`)).resolves.toEqual({
+      clientSecret: `vs_secret_existing`,
+      sessionId: `vs_existing`,
+    });
+
+    expect(retrieve).toHaveBeenCalledWith(`vs_existing`);
+    expect(create).not.toHaveBeenCalled();
+    expect(prisma.consumerModel.update).not.toHaveBeenCalled();
+  });
+
+  it(`stores requires_input state and last error details`, async () => {
+    const prisma = {
+      consumerModel: {
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
+    } as any;
+    const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
+
+    await expect(
+      (service as any).handleRequiresInput({
+        id: `vs_456`,
+        metadata: { consumerId: `consumer-1` },
+        last_error: {
+          code: `document_expired`,
+          reason: `The provided document has expired.`,
+        },
+      }),
+    ).resolves.toBeUndefined();
+
+    expect(prisma.consumerModel.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: `consumer-1`,
+        OR: [{ stripeIdentitySessionId: `vs_456` }, { stripeIdentitySessionId: null }],
+      },
+      data: expect.objectContaining({
+        legalVerified: false,
+        stripeIdentityStatus: STRIPE_IDENTITY_STATUS.REQUIRES_INPUT,
+        stripeIdentitySessionId: `vs_456`,
+        stripeIdentityLastErrorCode: `document_expired`,
+        stripeIdentityLastErrorReason: `The provided document has expired.`,
+        stripeIdentityUpdatedAt: expect.any(Date),
+        stripeIdentityVerifiedAt: null,
+      }),
+    });
+  });
+
+  it(`ignores stale requires_input events from an older verification session`, async () => {
+    const loggerWarn = jest.fn();
+    const prisma = {
+      consumerModel: {
+        updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+        findUnique: jest.fn().mockResolvedValue({
+          id: `consumer-1`,
+          stripeIdentitySessionId: `vs_current`,
+        }),
+      },
+    } as any;
+    const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
+    (service as any).logger.warn = loggerWarn;
+
+    await expect(
+      (service as any).handleRequiresInput({
+        id: `vs_stale`,
+        metadata: { consumerId: `consumer-1` },
+        last_error: {
+          code: `document_expired`,
+          reason: `The provided document has expired.`,
+        },
+      }),
+    ).resolves.toBeUndefined();
+
+    expect(prisma.consumerModel.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: `consumer-1`,
+        OR: [{ stripeIdentitySessionId: `vs_stale` }, { stripeIdentitySessionId: null }],
+      },
+      data: expect.objectContaining({
+        stripeIdentityStatus: STRIPE_IDENTITY_STATUS.REQUIRES_INPUT,
+      }),
+    });
+    expect(loggerWarn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: `Ignoring stale verification session update`,
+        incomingSessionId: `vs_stale`,
+        currentSessionId: `vs_current`,
+      }),
+    );
+  });
+
+  it(`stores verified status, clears previous Stripe identity errors, and preserves passport/id data`, async () => {
+    const prisma = {
+      consumerModel: {
+        findFirst: jest.fn().mockResolvedValue({
+          id: `consumer-1`,
+          stripeIdentitySessionId: `vs_789`,
+          personalDetails: {
+            firstName: `Existing`,
+            lastName: `Person`,
+            dateOfBirth: new Date(`1990-01-01T00:00:00.000Z`),
+            citizenOf: `US`,
+            passportOrIdNumber: `A1234567`,
+          },
+        }),
+        update: jest.fn().mockResolvedValue({ id: `consumer-1` }),
+      },
+    } as any;
+    const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
+
+    await expect(
+      (service as any).handleVerified({
+        id: `vs_789`,
+        metadata: { consumerId: `consumer-1` },
+        verified_outputs: {
+          first_name: `Verified`,
+          last_name: `User`,
+          dob: { year: 1994, month: 6, day: 18 },
+          address: { country: `CA` },
+        },
+      }),
+    ).resolves.toEqual({ id: `consumer-1` });
+
+    expect(prisma.consumerModel.update).toHaveBeenCalledWith({
+      where: { id: `consumer-1` },
+      data: expect.objectContaining({
+        legalVerified: true,
+        stripeIdentityStatus: STRIPE_IDENTITY_STATUS.VERIFIED,
+        stripeIdentitySessionId: `vs_789`,
+        stripeIdentityLastErrorCode: null,
+        stripeIdentityLastErrorReason: null,
+        stripeIdentityUpdatedAt: expect.any(Date),
+        stripeIdentityVerifiedAt: expect.any(Date),
+        personalDetails: {
+          upsert: {
+            create: expect.objectContaining({
+              passportOrIdNumber: `A1234567`,
+            }),
+            update: expect.objectContaining({
+              passportOrIdNumber: `A1234567`,
+            }),
+          },
+        },
+      }),
+      include: { personalDetails: true },
+    });
+  });
+
+  it(`retries verification webhook handling after a transient failure`, async () => {
+    const tx = {
+      stripeWebhookEventModel: {
+        create: jest.fn().mockResolvedValue(undefined),
+      },
+      consumerModel: {
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
+    } as any;
+    const prisma = {
+      $transaction: jest.fn().mockImplementation(async (callback: (arg: unknown) => Promise<unknown>) => callback(tx)),
+    } as any;
+    const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
+    const envModule = jest.requireMock(`../../../envs`) as { envs: { STRIPE_WEBHOOK_SECRET: string } };
+    envModule.envs.STRIPE_WEBHOOK_SECRET = `whsec_test`;
+
+    const mockEvent = {
+      id: `evt_verify_retry`,
+      type: `identity.verification_session.requires_input`,
+      data: {
+        object: {
+          id: `vs_retry`,
+          metadata: { consumerId: `consumer-1` },
+          last_error: { code: `document_expired`, reason: `The provided document has expired.` },
+        },
+      },
+    };
+    (
+      service as unknown as {
+        stripe: { webhooks: { constructEvent: (...args: unknown[]) => unknown } };
+      }
+    ).stripe = {
+      webhooks: {
+        constructEvent: jest.fn().mockReturnValue(mockEvent),
+      },
+    };
+
+    const handleRequiresInput = jest
+      .spyOn(service as any, `handleRequiresInput`)
+      .mockRejectedValueOnce(new Error(`transient db failure`))
+      .mockResolvedValueOnce(undefined);
+
+    const req = {
+      rawBody: Buffer.from(JSON.stringify(mockEvent)),
+      headers: { 'stripe-signature': `sig_test` },
+    } as any;
+    const failedRes = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn().mockReturnThis(),
+    } as unknown as express.Response;
+    const successRes = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn().mockReturnThis(),
+    } as unknown as express.Response;
+
+    await service.processStripeEvent(req, failedRes);
+    await service.processStripeEvent(req, successRes);
+
+    expect(handleRequiresInput).toHaveBeenCalledTimes(2);
+    expect(prisma.$transaction).toHaveBeenCalledTimes(2);
+    expect(failedRes.status).toHaveBeenCalledWith(400);
+    expect(successRes.json).toHaveBeenCalledWith({ received: true });
   });
 });

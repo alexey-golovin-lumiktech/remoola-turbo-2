@@ -33,10 +33,27 @@ export class QuickDoc {
   createdAt: string;
 }
 
+export class DashboardVerification {
+  status: string;
+  canStart: boolean;
+  profileComplete: boolean;
+  legalVerified: boolean;
+  effectiveVerified: boolean;
+  reviewStatus: string;
+  stripeStatus: string;
+  sessionId: string | null;
+  lastErrorCode: string | null;
+  lastErrorReason: string | null;
+  startedAt: string | null;
+  updatedAt: string | null;
+  verifiedAt: string | null;
+}
+
 export class DashboardData {
   summary: DashboardSummary;
   pendingRequests: PendingRequest[];
   activity: ActivityItem[];
   tasks: ComplianceTask[];
   quickDocs: QuickDoc[];
+  verification: DashboardVerification;
 }

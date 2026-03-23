@@ -80,6 +80,34 @@ export class ConsumerDTO extends BaseModel implements ConsumerModel {
   @Expose()
   @ApiProperty({ description: `Admin user ID who performed the last verification update`, required: false })
   verificationUpdatedBy: string;
+
+  @Expose()
+  @ApiProperty({ description: `Current Stripe Identity lifecycle status`, required: false, default: null })
+  stripeIdentityStatus: string;
+
+  @Expose()
+  @ApiProperty({ description: `Current Stripe Identity session id`, required: false, default: null })
+  stripeIdentitySessionId: string;
+
+  @Expose()
+  @ApiProperty({ description: `Last Stripe Identity error code`, required: false, default: null })
+  stripeIdentityLastErrorCode: string;
+
+  @Expose()
+  @ApiProperty({ description: `Last Stripe Identity error reason`, required: false, default: null })
+  stripeIdentityLastErrorReason: string;
+
+  @Expose()
+  @ApiProperty({ description: `Timestamp when the current Stripe Identity flow started`, required: false })
+  stripeIdentityStartedAt: Date;
+
+  @Expose()
+  @ApiProperty({ description: `Timestamp when Stripe Identity state last changed`, required: false })
+  stripeIdentityUpdatedAt: Date;
+
+  @Expose()
+  @ApiProperty({ description: `Timestamp when Stripe Identity was verified`, required: false })
+  stripeIdentityVerifiedAt: Date;
 }
 
 export class ConsumerCreate

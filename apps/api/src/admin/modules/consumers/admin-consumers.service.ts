@@ -117,6 +117,7 @@ export class AdminConsumersService {
             verificationStatus: VERIFICATION_STATUS.APPROVED,
             verificationReason: payload.reason ?? null,
             verificationUpdatedAt: now,
+            verificationUpdatedBy: adminId,
           },
           include: includeRelation,
         });
@@ -130,6 +131,7 @@ export class AdminConsumersService {
             verificationStatus: VERIFICATION_STATUS.REJECTED,
             verificationReason: payload.reason ?? null,
             verificationUpdatedAt: now,
+            verificationUpdatedBy: adminId,
           },
           include: includeRelation,
         });
@@ -143,6 +145,7 @@ export class AdminConsumersService {
             verificationStatus: VERIFICATION_STATUS.MORE_INFO,
             verificationReason: payload.reason ?? null,
             verificationUpdatedAt: now,
+            verificationUpdatedBy: adminId,
           },
           include: includeRelation,
         });
@@ -154,6 +157,7 @@ export class AdminConsumersService {
             verificationStatus: VERIFICATION_STATUS.FLAGGED,
             verificationReason: payload.reason ?? null,
             verificationUpdatedAt: now,
+            verificationUpdatedBy: adminId,
           },
           include: includeRelation,
         });

@@ -5,7 +5,7 @@ import { errorCodes } from '@remoola/shared-constants';
 import { ChangePasswordBody, UpdateConsumerProfileBody } from './dtos';
 import { AuthAuditService, AUTH_AUDIT_EVENTS, AUTH_IDENTITY_TYPES } from '../../../shared/auth-audit.service';
 import { PrismaService } from '../../../shared/prisma.service';
-import { passwordUtils } from '../../../shared-common';
+import { buildConsumerVerificationState, passwordUtils } from '../../../shared-common';
 
 @Injectable()
 export class ConsumerProfileService {
@@ -59,7 +59,7 @@ export class ConsumerProfileService {
   }
 
   async getProfile(consumerId: string) {
-    return this.prisma.consumerModel.findUnique({
+    const consumer = await this.prisma.consumerModel.findUnique({
       where: { id: consumerId },
       include: {
         personalDetails: true,
@@ -67,6 +67,11 @@ export class ConsumerProfileService {
         organizationDetails: true,
       },
     });
+
+    return {
+      ...consumer,
+      verification: buildConsumerVerificationState(consumer),
+    };
   }
 
   async updateProfile(consumerId: string, body: UpdateConsumerProfileBody) {

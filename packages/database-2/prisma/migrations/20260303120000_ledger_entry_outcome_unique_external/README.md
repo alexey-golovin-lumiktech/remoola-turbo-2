@@ -2,7 +2,7 @@
 
 Adds a **partial unique index** so at most one outcome row exists per `(ledger_entry_id, external_id)` when `external_id` is set. Enables idempotent outcome creation for Stripe webhooks and the reversal scheduler (at-least-once delivery).
 
-**Reference:** docs/LEDGER_PAYMENT_AUDIT.md (WARN 1 & 2).
+**Reference:** `docs/FINANCIAL_SAFETY_AND_DB_COMPLIANCE.md` (ledger idempotency / append-only invariants).
 
 ## Preflight (FIN-001): check for existing duplicates
 

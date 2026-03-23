@@ -4,6 +4,7 @@ import { $Enums, Prisma } from '@remoola/database-2';
 
 import { DashboardData, ActivityItem, ComplianceTask, PendingRequest, QuickDoc } from './dtos/dashboard-data.dto';
 import { PrismaService } from '../../../shared/prisma.service';
+import { buildConsumerVerificationState } from '../../../shared-common';
 
 @Injectable()
 export class ConsumerDashboardService {
@@ -20,6 +21,7 @@ export class ConsumerDashboardService {
         this.buildTasks(consumerId),
         this.buildQuickDocs(consumerId),
       ]);
+      const verification = await this.buildVerification(consumerId);
 
       const response = {
         summary,
@@ -27,6 +29,7 @@ export class ConsumerDashboardService {
         activity,
         tasks,
         quickDocs,
+        verification,
       };
 
       return response;
@@ -121,21 +124,35 @@ export class ConsumerDashboardService {
         },
       },
     });
+    const verification = buildConsumerVerificationState(consumer);
 
     const items: ActivityItem[] = [];
 
-    // KYC
-    if (consumer.personalDetails) {
+    if (verification.effectiveVerified) {
       items.push({
         id: `kyc`,
-        label: `KYC Completed`,
-        createdAt: consumer.personalDetails.createdAt?.toISOString() ?? new Date().toISOString(),
+        label: `Identity verified`,
+        createdAt: verification.verifiedAt ?? verification.updatedAt ?? new Date().toISOString(),
         kind: `kyc_completed`,
+      });
+    } else if (verification.status === `requires_input` || verification.status === `more_info`) {
+      items.push({
+        id: `kyc_attention`,
+        label: `Verification needs attention`,
+        createdAt: verification.updatedAt ?? new Date().toISOString(),
+        kind: `kyc_requires_input`,
+      });
+    } else if (verification.status === `pending_submission`) {
+      items.push({
+        id: `kyc_started`,
+        label: `Verification started`,
+        createdAt: verification.startedAt ?? new Date().toISOString(),
+        kind: `kyc_started`,
       });
     } else {
       items.push({
         id: `kyc_pending`,
-        label: `KYC in review`,
+        label: `Identity verification pending`,
         createdAt: new Date().toISOString(),
         kind: `kyc_in_review`,
       });
@@ -189,31 +206,22 @@ export class ConsumerDashboardService {
         },
       },
     });
+    const verification = buildConsumerVerificationState(consumer);
 
     const hasW9 = consumer.consumerResources.some((consumerResource) =>
       consumerResource.resource.originalName.toLowerCase().includes(`w9`),
     );
 
-    const isIndividualContractor =
-      consumer.accountType === $Enums.AccountType.CONTRACTOR &&
-      consumer.contractorKind === $Enums.ContractorKind.INDIVIDUAL;
-    const pd = consumer.personalDetails;
-    const profileComplete =
-      !!pd &&
-      (isIndividualContractor
-        ? !!pd.legalStatus && !!pd.taxId?.trim() && !!pd.passportOrIdNumber?.trim()
-        : !!pd.taxId?.trim() && !!pd.phoneNumber?.trim());
-
     return [
       {
         id: `kyc`,
         label: `Complete KYC`,
-        completed: !!consumer.personalDetails,
+        completed: verification.effectiveVerified,
       },
       {
         id: `profile`,
         label: `Complete your profile`,
-        completed: profileComplete,
+        completed: verification.profileComplete,
       },
       {
         id: `w9`,
@@ -226,6 +234,15 @@ export class ConsumerDashboardService {
         completed: consumer.paymentMethods.filter((x) => x.type === `BANK_ACCOUNT`).length > 0,
       },
     ];
+  }
+
+  private async buildVerification(consumerId: string) {
+    const consumer = await this.prisma.consumerModel.findUnique({
+      where: { id: consumerId },
+      include: { personalDetails: true },
+    });
+
+    return buildConsumerVerificationState(consumer);
   }
 
   private async buildQuickDocs(consumerId: string): Promise<QuickDoc[]> {

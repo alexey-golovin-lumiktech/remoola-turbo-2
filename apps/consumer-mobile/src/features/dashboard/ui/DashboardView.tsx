@@ -10,6 +10,7 @@ import { DocumentIcon } from '../../../shared/ui/icons/DocumentIcon';
 import { HomeIcon } from '../../../shared/ui/icons/HomeIcon';
 import { InformationCircleIcon } from '../../../shared/ui/icons/InformationCircleIcon';
 import { PageHeader } from '../../../shared/ui/PageHeader';
+import { VerificationCard } from '../../verification/ui/VerificationCard';
 import { type DashboardData } from '../schemas';
 import styles from './DashboardView.module.css';
 
@@ -77,6 +78,8 @@ export function DashboardView({ data }: DashboardViewProps) {
             <div className={styles.requestsCardLabel}>Active payment requests</div>
           </div>
         </div>
+
+        <VerificationCard verification={data.verification} context="dashboard" />
 
         <div className={styles.grid2Lg}>
           {pendingRequests.length > 0 ? (

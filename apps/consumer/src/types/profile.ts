@@ -29,10 +29,29 @@ export type ConsumerProfileOrganizationDetails = {
   size?: string | null;
 };
 
+export type ConsumerVerification = {
+  status: string;
+  canStart: boolean;
+  profileComplete: boolean;
+  legalVerified: boolean;
+  effectiveVerified: boolean;
+  reviewStatus: string;
+  stripeStatus: string;
+  sessionId: string | null;
+  lastErrorCode: string | null;
+  lastErrorReason: string | null;
+  startedAt: string | null;
+  updatedAt: string | null;
+  verifiedAt: string | null;
+};
+
 export type ConsumerProfile = {
   id: string;
   accountType: string;
+  legalVerified?: boolean | null;
+  verificationStatus?: string | null;
   personalDetails?: ConsumerProfilePersonalDetails | null;
   addressDetails?: ConsumerProfileAddressDetails | null;
   organizationDetails?: ConsumerProfileOrganizationDetails | null;
+  verification?: ConsumerVerification;
 };

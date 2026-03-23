@@ -1,3 +1,7 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+
 import styles from './ComplianceTasksCard.module.css';
 import { CheckIcon } from '../../../shared/ui/icons/CheckIcon';
 
@@ -15,6 +19,7 @@ interface ComplianceTasksCardProps {
  * ComplianceTasksCard - Display compliance tasks that need attention
  */
 export function ComplianceTasksCard({ tasks }: ComplianceTasksCardProps) {
+  const router = useRouter();
   if (tasks.length === 0) {
     return null;
   }
@@ -22,6 +27,20 @@ export function ComplianceTasksCard({ tasks }: ComplianceTasksCardProps) {
   const incompleteTasks = tasks.filter((task) => !task.completed);
   const completedCount = tasks.length - incompleteTasks.length;
   const progressPercent = (completedCount / tasks.length) * 100;
+
+  const getTaskHref = (taskId: string) => {
+    switch (taskId) {
+      case `profile`:
+      case `kyc`:
+        return `/settings`;
+      case `bank`:
+        return `/payment-methods`;
+      case `w9`:
+        return `/documents`;
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className={styles.card}>
@@ -46,9 +65,16 @@ export function ComplianceTasksCard({ tasks }: ComplianceTasksCardProps) {
                 <CheckIcon className={styles.checkboxIcon} />
               </div>
               <p className={styles.taskLabel}>{task.label}</p>
-              <button className={styles.completeBtn} type="button" aria-label="Complete task">
-                Complete
-              </button>
+              {getTaskHref(task.id) ? (
+                <button
+                  className={styles.completeBtn}
+                  type="button"
+                  aria-label="Complete task"
+                  onClick={() => router.push(getTaskHref(task.id)!)}
+                >
+                  Complete
+                </button>
+              ) : null}
             </div>
           </div>
         ))}

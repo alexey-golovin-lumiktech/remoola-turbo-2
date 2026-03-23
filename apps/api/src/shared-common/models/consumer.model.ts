@@ -10,6 +10,13 @@ export type IConsumerModel = {
   verificationReason?: string | null;
   verificationUpdatedAt?: Date | null;
   verificationUpdatedBy?: string | null;
+  stripeIdentityStatus?: string | null;
+  stripeIdentitySessionId?: string | null;
+  stripeIdentityLastErrorCode?: string | null;
+  stripeIdentityLastErrorReason?: string | null;
+  stripeIdentityStartedAt?: Date | null;
+  stripeIdentityUpdatedAt?: Date | null;
+  stripeIdentityVerifiedAt?: Date | null;
 
   password?: string;
   salt?: string;

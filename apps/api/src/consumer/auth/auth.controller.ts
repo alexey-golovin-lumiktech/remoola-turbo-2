@@ -390,10 +390,12 @@ export class ConsumerAuthController {
         stateRecord.returnOrigin,
       );
       return response.redirect(redirectUrl);
-    } catch {
+    } catch (error: unknown) {
       this.logger.error(`OAuth callback failed`, {
         hasStateRecord: !!stateRecord,
         hasReturnOrigin: !!stateReturnOrigin,
+        errorName: error instanceof Error ? error.name : `UnknownError`,
+        errorMessage: error instanceof Error ? error.message : String(error),
       });
       return failureRedirect(`login_failed`, stateReturnOrigin);
     }

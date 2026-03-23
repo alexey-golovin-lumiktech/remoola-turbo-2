@@ -41,6 +41,7 @@ export const STRIPE_EVENT = {
   IDENTITY_VERIFICATION_SESSION_CANCELED: `identity.verification_session.canceled`,
   IDENTITY_VERIFICATION_SESSION_CREATED: `identity.verification_session.created`,
   IDENTITY_VERIFICATION_SESSION_REDACTED: `identity.verification_session.redacted`,
+  IDENTITY_VERIFICATION_SESSION_REQUIRES_INPUT: `identity.verification_session.requires_input`,
   IDENTITY_VERIFICATION_SESSION_VERIFIED: `identity.verification_session.verified`,
   INVOICE_CREATED: `invoice.created`,
   INVOICE_DELETED: `invoice.deleted`,

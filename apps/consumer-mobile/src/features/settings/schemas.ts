@@ -3,6 +3,8 @@ import { z } from 'zod';
 export const profileSchema = z.object({
   id: z.string(),
   accountType: z.string(),
+  legalVerified: z.boolean().nullable().optional(),
+  verificationStatus: z.string().nullable().optional(),
   personalDetails: z
     .object({
       firstName: z.string().nullable().optional(),
@@ -35,6 +37,23 @@ export const profileSchema = z.object({
       size: z.string().nullable().optional(),
     })
     .nullable()
+    .optional(),
+  verification: z
+    .object({
+      status: z.string(),
+      canStart: z.boolean(),
+      profileComplete: z.boolean(),
+      legalVerified: z.boolean(),
+      effectiveVerified: z.boolean(),
+      reviewStatus: z.string(),
+      stripeStatus: z.string(),
+      sessionId: z.string().nullable(),
+      lastErrorCode: z.string().nullable(),
+      lastErrorReason: z.string().nullable(),
+      startedAt: z.string().nullable(),
+      updatedAt: z.string().nullable(),
+      verifiedAt: z.string().nullable(),
+    })
     .optional(),
 });
 

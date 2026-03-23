@@ -1122,7 +1122,7 @@
   - No ledger or idempotency changes in this feature; no new migrations.
 
   ### 🔐 Security / Financial Safety
-  - Ledger & payment idempotency (docs/LEDGER_PAYMENT_AUDIT.md): outcome
+  - Ledger & payment idempotency (`docs/FINANCIAL_SAFETY_AND_DB_COMPLIANCE.md`): outcome
     creation with `externalId` now uses `createOutcomeIdempotent()`; P2002
     is caught and treated as already-processed (Stripe webhook, stripe.service,
     stripe-reversal.scheduler).
@@ -1158,7 +1158,7 @@
 
 - **2026-03-04:**
   ### 📄 Documentation
-  - `docs/LEDGER_PAYMENT_AUDIT.md`: ledger append-only note updated; production
+  - `docs/FINANCIAL_SAFETY_AND_DB_COMPLIANCE.md`: ledger append-only note updated; production
     consumers with financial history must use soft-delete. Dev/staging may
     hard-delete consumer via Prisma Studio (cascade removes related rows).
 
@@ -1535,6 +1535,46 @@
   ### 📄 Documentation
   - Update docs and `.env.example` to reflect the auth surface, email base URL,
     invoice link behavior, and verification-flow changes.
+
+</details>
+
+<details open>
+<summary>2026-03-23</summary>
+
+- **2026-03-23:**
+  ### 🚀 Feature
+  - Consumer Stripe Identity Verify Me lifecycle:
+    - Add canonical `POST /consumer/verification/sessions` start route while keeping the legacy-compatible verify-start path delegating to the same flow.
+    - Reuse an active Stripe Identity session when possible instead of always creating a new one.
+    - Surface verification state across consumer dashboard and settings flows in web and consumer-mobile, including compliance-task / retry / continue-verification UX.
+    - Align consumer DTOs, models, and shared verification-state helpers so API responses expose a consistent lifecycle view (`not_started`, `pending_submission`, `requires_input`, `verified`, review-negative states).
+
+  ### 🔐 Security / Compliance
+  - Stripe Identity webhook hardening:
+    - managed verification lifecycle updates (`requires_input`, `verified`, `canceled`, `redacted`) now ignore stale sessions and only mutate the active consumer verification session.
+    - verification success preserves existing passport / ID data instead of destructively clearing compliance-critical profile fields.
+    - managed verification webhook processing is retry-safe alongside existing webhook dedupe behavior.
+
+  ### 🗄 Database & Migrations
+  - Migration `20260323120000_stripe_identity_consumer_state` adds additive consumer Stripe Identity state columns:
+    - `stripe_identity_status`
+    - `stripe_identity_session_id`
+    - `stripe_identity_last_error_code`
+    - `stripe_identity_last_error_reason`
+    - `stripe_identity_started_at`
+    - `stripe_identity_updated_at`
+    - `stripe_identity_verified_at`
+  - Add DB check constraint for allowed Stripe Identity states.
+  - Rollout contract: apply the migration before API/runtime deployment because auth and consumer reads load `ConsumerModel`.
+
+  ### 🧪 Testing
+  - Add targeted unit coverage for Stripe Identity session reuse, stale-event rejection, retry-after-failure behavior, and profile-field preservation in `stripe-webhook.service.spec.ts`.
+  - Add end-to-end coverage for consumer verification lifecycle in `apps/api/test/consumer-verification.e2e-spec.ts`.
+  - Revalidated repo and API verification for the touched scope (lint, typecheck, targeted tests).
+
+  ### 📄 Documentation
+  - Update `docs/PROJECT_DOCUMENTATION.md` and `docs/FEATURES_CURRENT.md` for the canonical verification route, compatibility path, persisted verification state, and stale-session behavior.
+  - Add rollout notes and release-gate evidence requirements for migration `20260323120000_stripe_identity_consumer_state`, including the required `migrate before runtime deploy` contract for auth and consumer reads.
 
 </details>
 

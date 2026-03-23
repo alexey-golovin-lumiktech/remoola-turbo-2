@@ -18,6 +18,7 @@ import { StartPayment } from './dto/start-payment.dto';
 import { BalanceCalculationService, BalanceCalculationMode } from '../../../shared/balance-calculation.service';
 import { MailingService } from '../../../shared/mailing.service';
 import { PrismaService } from '../../../shared/prisma.service';
+import { isConsumerProfileCompleteForVerification, isConsumerVerificationEffective } from '../../../shared-common';
 
 @Injectable()
 export class ConsumerPaymentsService {
@@ -40,16 +41,7 @@ export class ConsumerPaymentsService {
       include: { personalDetails: true },
     });
     if (!consumer) return;
-    const pd = consumer.personalDetails;
-    const isIndividual =
-      consumer.accountType === $Enums.AccountType.CONTRACTOR &&
-      consumer.contractorKind === $Enums.ContractorKind.INDIVIDUAL;
-    const complete =
-      pd &&
-      (isIndividual
-        ? pd.legalStatus && pd.taxId?.trim() && pd.passportOrIdNumber?.trim()
-        : pd.taxId?.trim() && pd.phoneNumber?.trim());
-    if (!complete) {
+    if (!isConsumerProfileCompleteForVerification(consumer)) {
       throw new BadRequestException(
         /* eslint-disable-next-line */
         `Please complete your profile (Legal Status, Tax ID, Passport/ID number) before creating requests or sending payments.`,
@@ -67,16 +59,7 @@ export class ConsumerPaymentsService {
       include: { personalDetails: true },
     });
     if (!consumer) return;
-    const pd = consumer.personalDetails;
-    const isIndividual =
-      consumer.accountType === $Enums.AccountType.CONTRACTOR &&
-      consumer.contractorKind === $Enums.ContractorKind.INDIVIDUAL;
-    const complete =
-      pd &&
-      (isIndividual
-        ? pd.legalStatus && pd.taxId?.trim() && pd.passportOrIdNumber?.trim()
-        : pd.taxId?.trim() && pd.phoneNumber?.trim());
-    if (!complete) {
+    if (!isConsumerProfileCompleteForVerification(consumer)) {
       throw new BadRequestException(errorCodes.PROFILE_INCOMPLETE_VERIFY);
     }
   }
@@ -666,10 +649,13 @@ export class ConsumerPaymentsService {
   private async getKycLimits(consumerId: string) {
     const consumer = await this.prisma.consumerModel.findUnique({
       where: { id: consumerId },
-      select: { legalVerified: true },
+      select: {
+        legalVerified: true,
+        verificationStatus: true,
+      },
     });
 
-    const isVerified = !!consumer?.legalVerified;
+    const isVerified = consumer ? isConsumerVerificationEffective(consumer) : false;
 
     // You can tune these
     return {

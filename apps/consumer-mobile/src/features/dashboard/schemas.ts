@@ -41,6 +41,21 @@ export const dashboardDataSchema = z.object({
       createdAt: z.string(),
     }),
   ),
+  verification: z.object({
+    status: z.string(),
+    canStart: z.boolean(),
+    profileComplete: z.boolean(),
+    legalVerified: z.boolean(),
+    effectiveVerified: z.boolean(),
+    reviewStatus: z.string(),
+    stripeStatus: z.string(),
+    sessionId: z.string().nullable(),
+    lastErrorCode: z.string().nullable(),
+    lastErrorReason: z.string().nullable(),
+    startedAt: z.string().nullable(),
+    updatedAt: z.string().nullable(),
+    verifiedAt: z.string().nullable(),
+  }),
 });
 
 export type DashboardData = z.infer<typeof dashboardDataSchema>;

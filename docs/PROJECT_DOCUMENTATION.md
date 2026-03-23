@@ -154,13 +154,33 @@ Stripe (`/consumer/stripe`):
 - `POST /confirm`: confirm setup intent.
 - `POST /:paymentRequestId/pay-with-saved-method`: charge using saved method.
 
+Verification (`/consumer/verification`):
+
+- `POST /sessions`: canonical Verify Me start endpoint. Starts a new Stripe
+  Identity session or reuses the active one when the current lifecycle state is
+  still in progress.
+- Profile completeness gate: requires legal status + tax ID + passport/ID for
+  individual contractors, or tax ID + phone for non-individual verification
+  flows. Returns 400 `PROFILE_INCOMPLETE_VERIFY` when incomplete.
+- Persisted consumer verification state:
+  - Stripe Identity lifecycle status
+  - active session id
+  - last error code / reason
+  - started / updated / verified timestamps
+- Shared verification-state helpers combine Stripe lifecycle state with admin
+  review status so dashboard/settings surfaces can render `Verify Me`,
+  `Continue verification`, `Retry verification`, and verified / needs-attention
+  states consistently.
+- Managed Stripe Identity webhook lifecycle updates (`requires_input`,
+  `verified`, `canceled`, `redacted`) ignore stale sessions and only mutate the
+  currently active verification session state.
+
 Webhooks (`/consumer/webhooks`):
 
 - `POST /`: Stripe webhook handler.
-- `POST /stripe/verify/start`: start Stripe identity verification; requires
-  profile complete (personal details: legal status, tax ID, passport/ID for
-  individuals; tax ID and phone for entities). Returns 400
-  PROFILE_INCOMPLETE_VERIFY when incomplete.
+- `POST /stripe/verify/start`: legacy-compatible Stripe identity verification
+  start route. Uses the same profile-completeness checks and delegates to the
+  same verification session flow as `POST /consumer/verification/sessions`.
 
 Payments (`/consumer/payments`):
 
@@ -348,7 +368,10 @@ Migration rollout note (ledger dispute uniqueness):
 ### Core Models
 
 - `AdminModel`: admin users with type (`AdminType`: `SUPER`, `ADMIN`), email, password, salt.
-- `ConsumerModel`: consumer accounts, account type, verification status, Stripe customer id, and relations to profile info and transactions.
+- `ConsumerModel`: consumer accounts, account type, admin review verification
+  status, Stripe customer id, Stripe Identity lifecycle state
+  (`stripe_identity_status`, active session id, last error details, lifecycle
+  timestamps), and relations to profile info and transactions.
 - `AccessRefreshTokenModel`: access/refresh token storage for identities.
 - `OauthStateModel`: OAuth state key and payload for flow continuity.
 - `ResetPasswordModel`: password reset stored as SHA-256 hash only (`token_hash`), expiration, consumer FK. Migrations: `20260317120000_reset_password_token_hash` (additive: add and backfill `token_hash`); `20260317120001_drop_reset_password_token` (cleanup: drop legacy `token` column).

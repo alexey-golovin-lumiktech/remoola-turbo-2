@@ -223,6 +223,13 @@ model ConsumerModel {
   howDidHearAboutUs      HowDidHearAboutUs? @map("how_did_hear_about_us")
   howDidHearAboutUsOther String?            @map("how_did_hear_about_us_other") @db.Text
   stripeCustomerId       String?            @map("stripe_customer_id") @db.Text
+  stripeIdentityStatus   String?            @map("stripe_identity_status") @db.Text
+  stripeIdentitySessionId String?           @map("stripe_identity_session_id") @db.Text
+  stripeIdentityLastErrorCode String?       @map("stripe_identity_last_error_code") @db.Text
+  stripeIdentityLastErrorReason String?     @map("stripe_identity_last_error_reason") @db.Text
+  stripeIdentityStartedAt DateTime?         @map("stripe_identity_started_at") @db.Timestamptz(6)
+  stripeIdentityUpdatedAt DateTime?         @map("stripe_identity_updated_at") @db.Timestamptz(6)
+  stripeIdentityVerifiedAt DateTime?        @map("stripe_identity_verified_at") @db.Timestamptz(6)
 
   addressDetails       AddressDetailsModel?
   personalDetails      PersonalDetailsModel?

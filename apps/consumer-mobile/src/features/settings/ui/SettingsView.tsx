@@ -18,9 +18,10 @@ import { LinkIcon } from '../../../shared/ui/icons/LinkIcon';
 import { SettingsIcon } from '../../../shared/ui/icons/SettingsIcon';
 import { NavCard } from '../../../shared/ui/NavCard';
 import { PageHeader } from '../../../shared/ui/PageHeader';
+import { VerificationCard } from '../../verification/ui/VerificationCard';
+import { type LoadState } from '../queries';
 import { type Profile, type Settings } from '../schemas';
 import styles from './SettingsView.module.css';
-import { type LoadState } from '../queries';
 
 interface SettingsViewProps {
   loadState: LoadState;
@@ -168,6 +169,8 @@ export function SettingsView({ loadState, profile, settings }: SettingsViewProps
             />
           </div>
         </div>
+
+        <VerificationCard verification={profile.verification} context="settings" />
 
         <ThemeSettingsForm initialTheme={settings?.theme ?? undefined} />
 

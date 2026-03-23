@@ -2,7 +2,6 @@
 
 import { isUnauthorizedError } from '@remoola/api-types';
 
-import { isProfileCompleteFromTasks } from './profileCompleteFromTasks';
 import { useDashboard } from '../../lib/hooks';
 import { VerifyMeButton } from '../stripe';
 import { DashboardSkeleton, ErrorState } from '../ui';
@@ -58,6 +57,8 @@ export function DashboardDataView() {
     Array.isArray(dashboardData.activity) &&
     Array.isArray(dashboardData.tasks) &&
     Array.isArray(dashboardData.quickDocs) &&
+    typeof dashboardData.verification === `object` &&
+    dashboardData.verification != null &&
     summary != null &&
     typeof summary.balanceCents === `number` &&
     typeof summary.activeRequests === `number`;
@@ -72,15 +73,13 @@ export function DashboardDataView() {
     );
   }
 
-  const profileComplete = isProfileCompleteFromTasks(dashboardData.tasks);
-
   return (
     <div className={dashboardContainer} data-testid="consumer-dashboard">
       <DashboardHeader />
 
       <SummaryCards summary={dashboardData.summary} />
 
-      <VerifyMeButton profileComplete={profileComplete} />
+      <VerifyMeButton verification={dashboardData.verification} />
 
       <ActionRow />
 

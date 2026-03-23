@@ -2,8 +2,8 @@
 
 **Canonical:** [governance/04_FINANCIAL_SAFETY_COMPLIANCE.md](../governance/04_FINANCIAL_SAFETY_COMPLIANCE.md) — edit there.
 
-**Last updated:** 2026-03-20  
-**Scope:** Remoola monorepo — ledger, payments, Stripe webhooks, raw SQL, PostgreSQL design rules  
+**Last updated:** 2026-03-23  
+**Scope:** Remoola monorepo — ledger, payments, Stripe webhooks, Stripe Identity verification state, raw SQL, PostgreSQL design rules  
 **Status:** Audit complete; critical fixes applied (append-only ledger, idempotency, raw SQL, health/archive).
 
 ---
@@ -18,6 +18,7 @@ This document consolidates fintech safety and DB compliance work: design-rule co
 |------|--------------------|
 | **Consumers** | Exchange, withdraw, and transfer without double-spend or race conditions; balance checks under lock and consistent. |
 | **Stripe webhooks** | Each event processed at most once per `event.id`; duplicate deliveries return 200 without reprocessing. |
+| **Identity verification** | Consumer verification state is persisted on `consumer`; only the active Stripe Identity session can advance lifecycle state; stale webhooks must not overwrite newer verification state. |
 | **Admins** | Reversal of payment requests with correct balance checks under lock. |
 | **Profile** | Consumer can update organization details (name, role, size); API and UI stay in sync. |
 | **Operators** | Structured logs (no raw `console`); health and bootstrap use Nest Logger. |
@@ -26,8 +27,10 @@ This document consolidates fintech safety and DB compliance work: design-rule co
 
 - **Ledger / financial history:** Append-only. No application-level UPDATE/DELETE on `ledger_entry`; status transitions and dispute data go to `ledger_entry_outcome` and `ledger_entry_dispute`; DB trigger syncs `ledger_entry.status` for existing balance queries. Balance for "completed only" uses status `= COMPLETED`; balance including pending uses `IN ('COMPLETED','PENDING')` (not a single string equality).
 - **Idempotency:** DB-enforced where required: `ledger_entry.idempotency_key` unique; `stripe_webhook_event.event_id` unique; insert-before-handling for webhooks.
+- **Consumer verification:** Stripe Identity session lifecycle is persisted on `consumer` (`stripe_identity_status`, session id, last error, started/updated/verified timestamps). The canonical start route is `POST /api/consumer/verification/sessions`; legacy `POST /api/consumer/webhooks/stripe/verify/start` delegates to the same flow. Managed webhook updates ignore stale sessions.
 - **Concurrency:** Operation-specific advisory locks (`:withdraw`, `:transfer`, `:exchange`, `:reversal`, `:stripe-reversal`). Balance is read inside the same transaction; serialization is by advisory lock per (consumer, operation). Row-level lock (`SELECT ... FOR UPDATE`) is not required for correctness with this design—double-spend is prevented by the advisory lock.
 - **Raw SQL / webhook failure telemetry:** Parameterized (`Prisma.sql`); DB column names used (`consumer_id`, `deleted_at`, etc.); health does not expose raw `error.message`; Stripe webhook top-level failures emit sanitized warning telemetry only (`stripe_webhook_processing_failed`, no raw payload/error text); archive search `query` capped.
+- **KYC gates / limits:** Payment limits now use effective verification (`legal_verified` plus non-negative admin review state), so rejected / flagged / more-info consumers do not receive verified-tier withdraw / transfer limits.
 - **Tests:** Concurrency specs and unit specs updated; API e2e adds coverage for Stripe webhook dedup replay, consumer payment idempotency, and admin payment reversals (see `apps/api/test/*e2e-spec.ts`). TypeScript and tests pass in `apps/api`.
 - **BFF proxy boundaries (admin/consumer/consumer-mobile):** Proxy routes forward an explicit header allowlist (instead of raw header passthrough), preserve all `Set-Cookie` headers, enforce JSON mutation boundaries (`application/json` + valid JSON), and reject oversized JSON payloads with `413 PAYLOAD_TOO_LARGE`.
 
@@ -48,8 +51,9 @@ This document consolidates fintech safety and DB compliance work: design-rule co
 | Area | Change |
 |------|--------|
 | **Schema** | `LedgerEntryOutcomeModel`, `LedgerEntryDisputeModel`; relations `LedgerEntryModel.outcomes`, `LedgerEntryModel.disputes`. |
-| **Migrations** | `20260225045952_stripe_webhook_event_dedup` (additive); `20260225120000_standardize_columns_snake_case` (RENAME only); `20260225140000_ledger_entry_outcome_append_only` (additive); `20260303120000_ledger_entry_outcome_unique_external` (additive); `20260304120000_ledger_entry_outcome_dispute_cascade` (FK RESTRICT→CASCADE); `20260310123000_consumer_auth_sessions` (additive, auth_sessions table for consumer sessions); `20260316150500_enforce_ledger_entry_dispute_unique` (constraint attach with predeploy-concurrent preferred path and CI-safe in-migration fallback); `20260317120000_reset_password_token_hash` (additive, reset_password token_hash backfill); `20260317120001_drop_reset_password_token` (cleanup, drop legacy token column). |
+| **Migrations** | `20260225045952_stripe_webhook_event_dedup` (additive); `20260225120000_standardize_columns_snake_case` (RENAME only); `20260225140000_ledger_entry_outcome_append_only` (additive); `20260303120000_ledger_entry_outcome_unique_external` (additive); `20260304120000_ledger_entry_outcome_dispute_cascade` (FK RESTRICT→CASCADE); `20260310123000_consumer_auth_sessions` (additive, auth_sessions table for consumer sessions); `20260316150500_enforce_ledger_entry_dispute_unique` (constraint attach with predeploy-concurrent preferred path and CI-safe in-migration fallback); `20260317120000_reset_password_token_hash` (additive, reset_password token_hash backfill); `20260317120001_drop_reset_password_token` (cleanup, drop legacy token column); `20260323120000_stripe_identity_consumer_state` (additive Stripe Identity verification state on `consumer`). |
 | **Stripe webhook** | Insert into `stripe_webhook_event` first; on P2002 return 200. Ledger status/dispute via `ledgerEntryOutcomeModel.create` / `ledgerEntryDisputeModel.create` (no `ledgerEntryModel.update`/`updateMany`). |
+| **Stripe Identity** | Canonical verification start route persists / reuses Stripe Identity sessions, and webhook lifecycle updates only mutate the currently active session state. Shared helper logic computes effective verification and UI-facing verification state from Stripe lifecycle plus admin review. |
 | **Stripe service / reversal scheduler** | Replaced `ledgerEntryModel.updateMany` with find + `ledgerEntryOutcomeModel.create` per entry. |
 
 ### 2.3 Other design-rule points (audit only)
@@ -65,9 +69,11 @@ This document consolidates fintech safety and DB compliance work: design-rule co
 ## 3. Invariants (non-negotiable rules)
 
 - **Stripe:** A Stripe event id MUST be processed at most once (enforced by unique `stripe_webhook_event.event_id` + insert-before-handling).
+- **Stripe Identity:** Only the active Stripe Identity session may mutate persisted verification lifecycle state on `consumer`; stale webhook deliveries must be ignored.
 - **Ledger:** Balance used for debits and internal reversals MUST be read inside a DB transaction with advisory lock to avoid concurrent use of same balance. Serialization is by advisory lock per (consumer, operation). Optionally, row-level lock (`SELECT ... FOR UPDATE`) may be used for stricter isolation; current implementation relies on advisory locks only. **Exception:** Stripe `REFUND` flows (admin + webhook) follow external-source-of-truth policy (Stripe outcome first, then internal append-only reversal).
 - **Ledger writes:** No application-level UPDATE/DELETE on financial history; corrections via reversal or compensating records; status/dispute via append-only outcome/dispute tables.
 - **Amounts:** No float; amounts as Prisma `Decimal` / DB `NUMERIC`; currency matches where required.
+- **KYC limits:** Verified-tier withdraw / transfer limits require effective verification, not `legal_verified` alone; negative admin review states override Stripe verified lifecycle for limit purposes.
 - **Retries:** Stripe replay → 200 + no reprocess. Same idempotency key → return existing result or no-op.
 - **Transfer lock order:** Locks for the two consumers are taken in deterministic sorted order to prevent deadlock.
 - **Consumer deletion:** Hard-deleting a consumer (or cascade from consumer delete) permanently removes ledger entries and audit trail. For production consumers with financial history, use soft-delete (`consumer.deleted_at`). In dev/staging, delete consumer via Prisma Studio or direct SQL; cascade will remove related rows.
@@ -108,6 +114,7 @@ This document consolidates fintech safety and DB compliance work: design-rule co
 | Stripe reversal | `StripeWebhookService` (e.g. charge refunded) | Advisory lock `:stripe-reversal`; `CHARGEBACK` validates requester balance in tx. `REFUND` follows Stripe external source of truth and appends reversal idempotently. |
 | Stripe webhook entry | `processStripeEvent` | Insert into `stripe_webhook_event` first; on P2002 return 200. |
 | Ledger status / dispute | Stripe webhook handlers, reversal scheduler | Append-only: `ledgerEntryOutcomeModel.create`, `ledgerEntryDisputeModel.create`; no `ledgerEntryModel.update`/`updateMany`. |
+| Stripe Identity verification | `ConsumerVerificationController`, `StripeWebhookService` | Canonical start route, persisted lifecycle state on `consumer`, stale-session guard on webhook updates, and shared effective-verification helper used by UI and payment limits. |
 | BFF request boundary | `apps/admin/src/lib/proxy.ts`, `apps/consumer/src/lib/api-utils.ts`, `apps/consumer-mobile/src/lib/api-utils.ts` | Header allowlist forwarding, multi-cookie passthrough, mutation JSON validation, payload-size limits, `cache: no-store` on authenticated proxy fetches. |
 
 ---
@@ -158,6 +165,7 @@ Production raw queries use **parameterized** APIs; DB column names are **snake_c
 | `20260303120000_ledger_entry_outcome_unique_external` | Partial unique index on `(ledger_entry_id, external_id)` where `external_id IS NOT NULL`; outcome idempotency. Additive. |
 | `20260304120000_ledger_entry_outcome_dispute_cascade` | `ledger_entry_outcome` and `ledger_entry_dispute` FKs: ON DELETE RESTRICT → CASCADE; consumer delete cascades. Prefer soft-delete for production. |
 | `20260316150500_enforce_ledger_entry_dispute_unique` | Enforces `UNIQUE(ledger_entry_id, stripe_dispute_id)` by attaching a named unique index; preferred rollout is predeploy `CREATE UNIQUE INDEX CONCURRENTLY`, with CI-safe in-migration fallback index creation if missing. |
+| `20260323120000_stripe_identity_consumer_state` | Adds `consumer.stripe_identity_*` columns plus a state-value check constraint for Stripe Identity lifecycle tracking. Additive. |
 
 **Deploy order:** Run `prisma migrate deploy` (or `migrate dev`) for these migrations before deploying the app.
 
@@ -177,6 +185,7 @@ Production raw queries use **parameterized** APIs; DB column names are **snake_c
 - **consumer-payments.service.spec.ts** — Withdraw/transfer; mocks `$queryRaw` with lock + balance.
 - **consumer-payments.concurrency.spec.ts** — Idempotency (duplicate key returns existing), advisory lock `:withdraw`/`:transfer`, SELECT FOR UPDATE.
 - **critical-updates.e2e-spec.ts** — E2E (isolated DB): health 200 + database ok, `stripe_webhook_event` dedup (P2002 on duplicate `event_id`), `ledger_entry_outcome` append-only insert.
+- **consumer-verification.e2e-spec.ts** — E2E coverage for verification session start / reuse and managed Stripe Identity lifecycle updates.
 
 Run unit + concurrency specs from `apps/api`:
 
@@ -198,8 +207,11 @@ cd apps/api && yarn test:e2e
 - [ ] **No ledger mutation in app:** No remaining `ledgerEntryModel.update` / `updateMany` / `delete` in `apps/api`.
 - [ ] **Balance queries:** Still use `ledger_entry` with `status = COMPLETED`; trigger keeps status in sync.
 - [ ] **Idempotency:** Unique constraints on `idempotency_key` and `event_id` unchanged.
+- [ ] **Stripe Identity state:** `POST /api/consumer/verification/sessions` creates or reuses the active verification session and persists lifecycle state on `consumer`.
+- [ ] **Stale-session guard:** Managed Stripe Identity webhook events update only the active session and ignore stale session ids.
+- [ ] **KYC limits:** Withdraw / transfer limits continue to use effective verification, not `legal_verified` alone.
 - [ ] **TypeScript:** `npx tsc --noEmit` in `apps/api` (or workspace build).
-- [ ] **Tests:** Run payment/webhook/ledger unit and concurrency specs; run E2E (`yarn test:e2e` in `apps/api`) so `critical-updates.e2e-spec.ts` passes.
+- [ ] **Tests:** Run payment/webhook/ledger unit and concurrency specs; run E2E (`yarn test:e2e` in `apps/api`) so `critical-updates.e2e-spec.ts` and `consumer-verification.e2e-spec.ts` pass.
 - [ ] **Deploy:** Apply migrations above before deploying app.
 - [ ] **Monorepo:** No cross-app imports; DB layer in `packages/database-2`, API in `apps/api`.
 

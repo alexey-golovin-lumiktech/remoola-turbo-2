@@ -39,9 +39,18 @@ Consumer domain features:
 - Exchange rates, currency conversion, auto-conversion rules, scheduled FX conversions (rules and scheduled lists paginated), and admin review/override.
 - Payment methods CRUD (manual).
 - Stripe checkout sessions, setup intents, confirmations, saved-method payments.
-- Stripe webhooks, including identity verification start; verify/start requires
-  profile complete (legal status, tax ID, passport/ID or phone per account type)
-  and returns PROFILE_INCOMPLETE_VERIFY when incomplete.
+- Consumer Verify Me lifecycle via canonical
+  `POST /consumer/verification/sessions` (legacy-compatible
+  `POST /consumer/webhooks/stripe/verify/start` still delegates to the same
+  flow); start reuses the active Stripe Identity session when possible and
+  requires profile complete (legal status, tax ID, passport/ID or phone per
+  account type), returning `PROFILE_INCOMPLETE_VERIFY` when incomplete.
+- Consumer Stripe Identity state is persisted on `consumer` (lifecycle status,
+  active session id, last error, started/updated/verified timestamps); shared
+  verification-state helpers drive consistent dashboard/settings retry /
+  continue / verified / needs-attention UX in web and consumer-mobile.
+- Managed Stripe Identity webhook lifecycle updates ignore stale sessions and
+  preserve compliance-critical identity fields on verification success.
 - Stripe webhook top-level failure handling emits sanitized warning telemetry (`stripe_webhook_processing_failed`) without raw payload/error text.
 - Payments list, balance, history, start payment, withdraw, transfer, and payment view.
 - Payment request creation and send flow.
