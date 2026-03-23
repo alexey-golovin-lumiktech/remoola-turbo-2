@@ -148,4 +148,40 @@ describe(`Stripe webhook HTTP contract (e2e, isolated DB)`, () => {
       envs.STRIPE_WEBHOOK_SECRET = original;
     }
   });
+
+  it(`accepts the legacy singular webhook path`, async () => {
+    const original = envs.STRIPE_WEBHOOK_SECRET;
+    try {
+      const secret = `whsec_e2e_contract_singular`;
+      envs.STRIPE_WEBHOOK_SECRET = secret;
+      const payload = JSON.stringify({
+        id: `evt_singular_contract`,
+        object: `event`,
+        type: `identity.verification_session.verified`,
+        data: {
+          object: {
+            id: `vs_singular_contract`,
+            object: `identity.verification_session`,
+            metadata: { consumerId: `00000000-0000-4000-8000-000000000001` },
+          },
+        },
+      });
+      const signature = Stripe.webhooks.generateTestHeaderString({
+        payload,
+        secret,
+      });
+
+      await request(app.getHttpServer())
+        .post(`/api/consumer/webhook`)
+        .set(`content-type`, `application/json`)
+        .set(`stripe-signature`, signature)
+        .send(payload)
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body).toEqual({ received: true });
+        });
+    } finally {
+      envs.STRIPE_WEBHOOK_SECRET = original;
+    }
+  });
 });

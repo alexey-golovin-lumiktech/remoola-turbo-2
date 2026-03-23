@@ -29,6 +29,8 @@ root before running API-only commands.
 - `POST /api/consumer/verification/sessions` for canonical Stripe Identity
   Verify Me session start / reuse
 - `POST /api/consumer/webhooks` for Stripe webhook processing
+- `POST /api/consumer/webhook` as a legacy-compatible alias for Stripe webhook
+  processing
 - `POST /api/consumer/webhooks/stripe/verify/start` as the legacy-compatible
   verification start route that delegates to the canonical verification flow
 - `POST /api/consumer/payments/withdraw` and

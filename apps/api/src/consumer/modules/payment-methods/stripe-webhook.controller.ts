@@ -8,7 +8,7 @@ import { StripeWebhookService } from './stripe-webhook.service';
 import { Identity, PublicEndpoint } from '../../../common';
 
 @ApiTags(`Consumer: webhooks`)
-@Controller(`consumer/webhooks`)
+@Controller([`consumer/webhooks`, `consumer/webhook`])
 export class StripeWebhookController {
   constructor(private service: StripeWebhookService) {}
 

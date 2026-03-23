@@ -342,7 +342,7 @@ async function bootstrap(): Promise<INestApplication> {
   app.use(new CorrelationIdMiddleware().use);
 
   app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
-    if (req.path.startsWith(`/api/consumer/webhooks`)) {
+    if (req.path.startsWith(`/api/consumer/webhooks`) || req.path.startsWith(`/api/consumer/webhook`)) {
       return next();
     }
 
