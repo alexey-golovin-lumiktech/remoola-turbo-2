@@ -341,6 +341,9 @@ async function bootstrap(): Promise<INestApplication> {
   app.use(compression());
   app.use(new CorrelationIdMiddleware().use);
 
+  app.use(`/api/consumer/webhooks`, express.raw({ type: `application/json`, limit: `10mb` }));
+  app.use(`/api/consumer/webhook`, express.raw({ type: `application/json`, limit: `10mb` }));
+
   app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (req.path.startsWith(`/api/consumer/webhooks`) || req.path.startsWith(`/api/consumer/webhook`)) {
       return next();

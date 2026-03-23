@@ -78,7 +78,9 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
     expect(loggerWarn).toHaveBeenCalledWith(
       expect.objectContaining({
         event: `stripe_webhook_processing_failed`,
+        stage: `signature_verification_failed`,
         errorClass: `Error`,
+        errorMessage: `invalid signature`,
         hasRawBody: true,
         hasSignatureHeader: true,
       }),
@@ -88,6 +90,111 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
       received: false,
       error: `Webhook processing failed`,
     });
+  });
+
+  it(`logs managed verification processing failures with event context`, async () => {
+    const stripeWebhookEventCreate = jest.fn().mockResolvedValue(undefined);
+    const prisma = {
+      stripeWebhookEventModel: { create: stripeWebhookEventCreate },
+      $transaction: jest.fn().mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) =>
+        callback({
+          stripeWebhookEventModel: { create: stripeWebhookEventCreate },
+          consumerModel: {},
+        }),
+      ),
+    } as any;
+    const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
+    const loggerWarn = jest
+      .spyOn((service as unknown as { logger: { warn: (...args: unknown[]) => void } }).logger, `warn`)
+      .mockImplementation(() => undefined);
+    const mockEvent = {
+      id: `evt_verify_failure`,
+      type: `identity.verification_session.verified`,
+      data: { object: { id: `vs_failure`, metadata: { consumerId: `00000000-0000-4000-8000-000000000001` } } },
+    };
+    (
+      service as unknown as {
+        stripe: { webhooks: { constructEvent: (...args: unknown[]) => unknown } };
+      }
+    ).stripe = {
+      webhooks: {
+        constructEvent: jest.fn().mockReturnValue(mockEvent),
+      },
+    };
+    jest.spyOn(service as any, `handleVerified`).mockRejectedValue(new Error(`column "stripe_identity_status" does not exist`));
+
+    const envModule = jest.requireMock(`../../../envs`) as {
+      envs: { STRIPE_WEBHOOK_SECRET: string };
+    };
+    envModule.envs.STRIPE_WEBHOOK_SECRET = `whsec_test`;
+
+    const req = {
+      rawBody: Buffer.from(JSON.stringify(mockEvent)),
+      headers: { 'stripe-signature': `sig_test` },
+    } as any;
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn().mockReturnThis(),
+    } as unknown as express.Response;
+
+    await service.processStripeEvent(req, res);
+
+    expect(loggerWarn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: `stripe_webhook_processing_failed`,
+        stage: `managed_verification_processing_failed`,
+        eventId: `evt_verify_failure`,
+        eventType: `identity.verification_session.verified`,
+        errorClass: `Error`,
+        errorMessage: `column "stripe_identity_status" does not exist`,
+        hasRawBody: true,
+        hasSignatureHeader: true,
+      }),
+    );
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      received: false,
+      error: `Webhook processing failed`,
+    });
+  });
+
+  it(`uses raw request body from req.body when req.rawBody is unavailable`, async () => {
+    const service = makeService();
+    const mockEvent = {
+      id: `evt_body_buffer`,
+      type: `identity.verification_session.verified`,
+      data: { object: { id: `vs_body_buffer`, metadata: { consumerId: `00000000-0000-4000-8000-000000000001` } } },
+    };
+    const constructEvent = jest.fn().mockReturnValue(mockEvent);
+    (
+      service as unknown as {
+        stripe: { webhooks: { constructEvent: (...args: unknown[]) => unknown } };
+      }
+    ).stripe = {
+      webhooks: {
+        constructEvent,
+      },
+    };
+    (service as any).processManagedVerificationEvent = jest.fn().mockResolvedValue(undefined);
+
+    const envModule = jest.requireMock(`../../../envs`) as {
+      envs: { STRIPE_WEBHOOK_SECRET: string };
+    };
+    envModule.envs.STRIPE_WEBHOOK_SECRET = `whsec_test`;
+
+    const req = {
+      body: Buffer.from(JSON.stringify(mockEvent)),
+      headers: { 'stripe-signature': `sig_test` },
+    } as any;
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn().mockReturnThis(),
+    } as unknown as express.Response;
+
+    await service.processStripeEvent(req, res);
+
+    expect(constructEvent).toHaveBeenCalledWith(req.body, `sig_test`, `whsec_test`);
+    expect(res.json).toHaveBeenCalledWith({ received: true });
   });
 
   it(`on duplicate event (P2002) returns 200 and skips processing without calling handlers`, async () => {

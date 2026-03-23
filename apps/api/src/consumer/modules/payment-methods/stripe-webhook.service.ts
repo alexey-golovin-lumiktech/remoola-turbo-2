@@ -39,6 +39,31 @@ export class StripeWebhookService {
     this.stripe = new Stripe(envs.STRIPE_SECRET_KEY, { apiVersion: `2025-11-17.clover` });
   }
 
+  private logWebhookFailure(params: {
+    stage: `signature_verification_failed` | `managed_verification_processing_failed` | `webhook_processing_failed`;
+    error: unknown;
+    hasRawBody: boolean;
+    hasSignatureHeader: boolean;
+    eventId?: string;
+    eventType?: string;
+  }) {
+    const { stage, error, hasRawBody, hasSignatureHeader, eventId, eventType } = params;
+    const err = error instanceof Error ? error : null;
+    const prismaCode = error instanceof Prisma.PrismaClientKnownRequestError ? error.code : undefined;
+
+    this.logger.warn({
+      event: `stripe_webhook_processing_failed`,
+      stage,
+      eventId,
+      eventType,
+      errorClass: err?.name ?? `UnknownError`,
+      errorMessage: err?.message,
+      prismaCode,
+      hasRawBody,
+      hasSignatureHeader,
+    });
+  }
+
   private buildEnsureCustomerIdempotencyKey(consumerId: string): string {
     return `ensure-customer:${consumerId}`;
   }
@@ -84,7 +109,12 @@ export class StripeWebhookService {
       res.status(401).json({ received: false, error: `Webhook secret not configured` });
       return;
     }
-    if (!req.rawBody) {
+    const rawBody = Buffer.isBuffer(req.rawBody)
+      ? req.rawBody
+      : Buffer.isBuffer(req.body)
+        ? req.body
+        : undefined;
+    if (!rawBody) {
       res.status(400).json({ received: false, error: `Missing raw body` });
       return;
     }
@@ -96,9 +126,22 @@ export class StripeWebhookService {
       return;
     }
 
+    let event: Stripe.Event;
     try {
-      const event = this.stripe.webhooks.constructEvent(req.rawBody, signature, envs.STRIPE_WEBHOOK_SECRET);
+      event = this.stripe.webhooks.constructEvent(rawBody, signature, envs.STRIPE_WEBHOOK_SECRET);
+    } catch (error: unknown) {
+      this.logWebhookFailure({
+        stage: `signature_verification_failed`,
+        error,
+        hasRawBody: Boolean(rawBody),
+        hasSignatureHeader: typeof signature === `string` && signature.length > 0,
+      });
+      res.status(400).json({ received: false, error: `Webhook processing failed` });
+      return;
+    }
 
+    let failureStage: `managed_verification_processing_failed` | `webhook_processing_failed` = `webhook_processing_failed`;
+    try {
       if (this.isManagedVerificationEvent(event.type)) {
         try {
           await this.processManagedVerificationEvent(event);
@@ -112,6 +155,7 @@ export class StripeWebhookService {
             res.json({ received: true });
             return;
           }
+          failureStage = `managed_verification_processing_failed`;
           throw dedupErr;
         }
 
@@ -184,12 +228,15 @@ export class StripeWebhookService {
       res.json({ received: true });
       return;
     } catch (error: unknown) {
-      this.logger.warn({
-        event: `stripe_webhook_processing_failed`,
-        errorClass: error instanceof Error ? error.name : `UnknownError`,
-        hasRawBody: Boolean(req.rawBody),
+      this.logWebhookFailure({
+        stage: failureStage,
+        error,
+        hasRawBody: Boolean(rawBody),
         hasSignatureHeader: typeof signature === `string` && signature.length > 0,
+        eventId: event.id,
+        eventType: event.type,
       });
+
       res.status(400).json({ received: false, error: `Webhook processing failed` });
       return;
     }
