@@ -24,6 +24,11 @@ import { ConsumerPaymentsService } from '../payments/consumer-payments.service';
 
 type VerificationConsumerDb = Pick<PrismaService, `consumerModel`>;
 type VerificationEventTx = Pick<Prisma.TransactionClient, `consumerModel` | `stripeWebhookEventModel`>;
+type VerificationSessionState = {
+  stripeIdentityStatus: string | null;
+  stripeIdentitySessionId: string | null;
+  legalVerified?: boolean | null;
+};
 
 @Injectable()
 export class StripeWebhookService {
@@ -68,28 +73,56 @@ export class StripeWebhookService {
     return `ensure-customer:${consumerId}`;
   }
 
+  private buildVerificationSessionIdempotencyKey(consumerId: string, priorSessionId: string | null): string {
+    return `verify-session:${consumerId}:${priorSessionId ?? `none`}`;
+  }
+
+  private buildVerificationSessionResponse(session: Stripe.Identity.VerificationSession) {
+    return { clientSecret: session.client_secret, sessionId: session.id };
+  }
+
+  private async getVerificationSessionState(consumerId: string): Promise<VerificationSessionState | null> {
+    return this.prisma.consumerModel.findUnique({
+      where: { id: consumerId },
+      select: {
+        legalVerified: true,
+        stripeIdentityStatus: true,
+        stripeIdentitySessionId: true,
+      },
+    });
+  }
+
   async startVerifyMeStripeSession(consumerId: string) {
     await this.consumerPaymentsService.assertProfileCompleteForVerification(consumerId);
-    const reusableSession = await this.getReusableVerificationSession(consumerId);
+    const verificationState = await this.getVerificationSessionState(consumerId);
+    const reusableSession = await this.getReusableVerificationSession(consumerId, verificationState);
     if (reusableSession) {
       return reusableSession;
     }
 
-    const session = await this.stripe.identity.verificationSessions.create({
-      type: `document`,
-      metadata: { consumerId }, // important
-      options: {
-        document: {
-          allowed_types: [`passport`, `driving_license`, `id_card`],
-          require_id_number: true,
-          require_live_capture: true,
+    const session = await this.stripe.identity.verificationSessions.create(
+      {
+        type: `document`,
+        metadata: { consumerId }, // important
+        options: {
+          document: {
+            allowed_types: [`passport`, `driving_license`, `id_card`],
+            require_id_number: true,
+            require_live_capture: true,
+          },
         },
       },
-    });
+      {
+        idempotencyKey: this.buildVerificationSessionIdempotencyKey(
+          consumerId,
+          verificationState?.stripeIdentitySessionId ?? null,
+        ),
+      },
+    );
 
     const now = new Date();
-    await this.prisma.consumerModel.update({
-      where: { id: consumerId },
+    const claimed = await this.prisma.consumerModel.updateMany({
+      where: { id: consumerId, stripeIdentitySessionId: verificationState?.stripeIdentitySessionId ?? null },
       data: {
         stripeIdentityStatus: STRIPE_IDENTITY_STATUS.PENDING_SUBMISSION,
         stripeIdentitySessionId: session.id,
@@ -100,20 +133,28 @@ export class StripeWebhookService {
         stripeIdentityVerifiedAt: null,
       },
     });
+    if (claimed.count === 0) {
+      const concurrentSession = await this.getReusableVerificationSession(consumerId);
+      if (concurrentSession) {
+        return concurrentSession;
+      }
 
-    return { clientSecret: session.client_secret, sessionId: session.id };
+      const latestState = await this.getVerificationSessionState(consumerId);
+      if (latestState?.stripeIdentitySessionId === session.id) {
+        return this.buildVerificationSessionResponse(session);
+      }
+    }
+
+    return this.buildVerificationSessionResponse(session);
   }
 
   async processStripeEvent(req: RawBodyRequest<express.Request>, res: express.Response) {
     if (!envs.STRIPE_WEBHOOK_SECRET || envs.STRIPE_WEBHOOK_SECRET === `STRIPE_WEBHOOK_SECRET`) {
+      this.logger.debug(`Invalid STRIPE_WEBHOOK_SECRET value`);
       res.status(401).json({ received: false, error: `Webhook secret not configured` });
       return;
     }
-    const rawBody = Buffer.isBuffer(req.rawBody)
-      ? req.rawBody
-      : Buffer.isBuffer(req.body)
-        ? req.body
-        : undefined;
+    const rawBody = Buffer.isBuffer(req.rawBody) ? req.rawBody : Buffer.isBuffer(req.body) ? req.body : undefined;
     if (!rawBody) {
       res.status(400).json({ received: false, error: `Missing raw body` });
       return;
@@ -140,7 +181,8 @@ export class StripeWebhookService {
       return;
     }
 
-    let failureStage: `managed_verification_processing_failed` | `webhook_processing_failed` = `webhook_processing_failed`;
+    let failureStage: `managed_verification_processing_failed` | `webhook_processing_failed` =
+      `webhook_processing_failed`;
     try {
       if (this.isManagedVerificationEvent(event.type)) {
         try {
@@ -337,6 +379,29 @@ export class StripeWebhookService {
       return;
     }
 
+    const current = await db.consumerModel.findUnique({
+      where: { id: consumerId },
+      select: {
+        legalVerified: true,
+        stripeIdentityStatus: true,
+        stripeIdentitySessionId: true,
+      },
+    });
+    if (
+      current?.stripeIdentitySessionId === session.id &&
+      current.legalVerified &&
+      current.stripeIdentityStatus === STRIPE_IDENTITY_STATUS.VERIFIED
+    ) {
+      this.logger.warn({
+        message: `Ignoring verification session regression`,
+        consumerId,
+        sessionId: session.id,
+        incomingStatus: STRIPE_IDENTITY_STATUS.REQUIRES_INPUT,
+        currentStatus: current.stripeIdentityStatus,
+      });
+      return;
+    }
+
     const result = await db.consumerModel.updateMany({
       where: {
         id: consumerId,
@@ -381,9 +446,13 @@ export class StripeWebhookService {
         OR: [{ stripeIdentitySessionId: session.id }, { stripeIdentitySessionId: null }],
       },
       data: {
+        legalVerified: false,
         stripeIdentityStatus: status,
         stripeIdentitySessionId: session.id,
+        stripeIdentityLastErrorCode: null,
+        stripeIdentityLastErrorReason: null,
         stripeIdentityUpdatedAt: new Date(),
+        stripeIdentityVerifiedAt: null,
       },
     });
     if (result.count > 0) {
@@ -393,29 +462,23 @@ export class StripeWebhookService {
     await this.logUnexpectedVerificationSessionState(consumerId, session.id, db);
   }
 
-  private async getReusableVerificationSession(consumerId: string) {
-    const consumer = await this.prisma.consumerModel.findUnique({
-      where: { id: consumerId },
-      select: {
-        stripeIdentityStatus: true,
-        stripeIdentitySessionId: true,
-      },
-    });
+  private async getReusableVerificationSession(consumerId: string, consumer?: VerificationSessionState | null) {
+    const state = consumer ?? (await this.getVerificationSessionState(consumerId));
 
-    if (!consumer?.stripeIdentitySessionId || !this.canReuseVerificationSession(consumer.stripeIdentityStatus)) {
+    if (!state?.stripeIdentitySessionId || !this.canReuseVerificationSession(state.stripeIdentityStatus)) {
       return null;
     }
 
     try {
-      const session = await this.stripe.identity.verificationSessions.retrieve(consumer.stripeIdentitySessionId);
+      const session = await this.stripe.identity.verificationSessions.retrieve(state.stripeIdentitySessionId);
       if (typeof session.client_secret === `string` && session.client_secret.length > 0) {
-        return { clientSecret: session.client_secret, sessionId: session.id };
+        return this.buildVerificationSessionResponse(session);
       }
     } catch (error: unknown) {
       this.logger.warn({
         message: `Failed to reuse verification session`,
         consumerId,
-        sessionId: consumer.stripeIdentitySessionId,
+        sessionId: state.stripeIdentitySessionId,
         errorClass: error instanceof Error ? error.name : `UnknownError`,
       });
     }

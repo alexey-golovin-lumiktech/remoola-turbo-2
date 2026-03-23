@@ -121,7 +121,9 @@ describe(`StripeWebhookService.processStripeEvent`, () => {
         constructEvent: jest.fn().mockReturnValue(mockEvent),
       },
     };
-    jest.spyOn(service as any, `handleVerified`).mockRejectedValue(new Error(`column "stripe_identity_status" does not exist`));
+    jest
+      .spyOn(service as any, `handleVerified`)
+      .mockRejectedValue(new Error(`column "stripe_identity_status" does not exist`));
 
     const envModule = jest.requireMock(`../../../envs`) as {
       envs: { STRIPE_WEBHOOK_SECRET: string };
@@ -405,10 +407,14 @@ describe(`StripeWebhookService verification lifecycle`, () => {
     const consumerPaymentsService = {
       assertProfileCompleteForVerification: jest.fn().mockResolvedValue(undefined),
     } as any;
+    const create = jest.fn().mockResolvedValue({
+      id: `vs_123`,
+      client_secret: `vs_secret_123`,
+    });
     const prisma = {
       consumerModel: {
         findUnique: jest.fn().mockResolvedValue(null),
-        update: jest.fn().mockResolvedValue({ id: `consumer-1` }),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
     } as any;
     const service = new StripeWebhookService(prisma, {} as any, {} as any, consumerPaymentsService);
@@ -419,10 +425,7 @@ describe(`StripeWebhookService verification lifecycle`, () => {
     ).stripe = {
       identity: {
         verificationSessions: {
-          create: jest.fn().mockResolvedValue({
-            id: `vs_123`,
-            client_secret: `vs_secret_123`,
-          }),
+          create,
         },
       },
     };
@@ -433,8 +436,15 @@ describe(`StripeWebhookService verification lifecycle`, () => {
     });
 
     expect(consumerPaymentsService.assertProfileCompleteForVerification).toHaveBeenCalledWith(`consumer-1`);
-    expect(prisma.consumerModel.update).toHaveBeenCalledWith({
-      where: { id: `consumer-1` },
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: `document`,
+        metadata: { consumerId: `consumer-1` },
+      }),
+      { idempotencyKey: `verify-session:consumer-1:none` },
+    );
+    expect(prisma.consumerModel.updateMany).toHaveBeenCalledWith({
+      where: { id: `consumer-1`, stripeIdentitySessionId: null },
       data: expect.objectContaining({
         stripeIdentityStatus: STRIPE_IDENTITY_STATUS.PENDING_SUBMISSION,
         stripeIdentitySessionId: `vs_123`,
@@ -457,7 +467,7 @@ describe(`StripeWebhookService verification lifecycle`, () => {
           stripeIdentityStatus: STRIPE_IDENTITY_STATUS.PENDING_SUBMISSION,
           stripeIdentitySessionId: `vs_existing`,
         }),
-        update: jest.fn(),
+        updateMany: jest.fn(),
       },
     } as any;
     const service = new StripeWebhookService(prisma, {} as any, {} as any, consumerPaymentsService);
@@ -488,12 +498,127 @@ describe(`StripeWebhookService verification lifecycle`, () => {
 
     expect(retrieve).toHaveBeenCalledWith(`vs_existing`);
     expect(create).not.toHaveBeenCalled();
-    expect(prisma.consumerModel.update).not.toHaveBeenCalled();
+    expect(prisma.consumerModel.updateMany).not.toHaveBeenCalled();
+  });
+
+  it(`reuses the Stripe Identity idempotency key across retries after the db write fails`, async () => {
+    const consumerPaymentsService = {
+      assertProfileCompleteForVerification: jest.fn().mockResolvedValue(undefined),
+    } as any;
+    const create = jest.fn().mockResolvedValue({
+      id: `vs_retry`,
+      client_secret: `vs_secret_retry`,
+    });
+    const prisma = {
+      consumerModel: {
+        findUnique: jest.fn().mockResolvedValue(null),
+        updateMany: jest.fn().mockRejectedValueOnce(new Error(`db write failed`)).mockResolvedValueOnce({ count: 1 }),
+      },
+    } as any;
+    const service = new StripeWebhookService(prisma, {} as any, {} as any, consumerPaymentsService);
+    (
+      service as unknown as {
+        stripe: { identity: { verificationSessions: { create: (...args: unknown[]) => Promise<unknown> } } };
+      }
+    ).stripe = {
+      identity: {
+        verificationSessions: {
+          create,
+        },
+      },
+    };
+
+    await expect(service.startVerifyMeStripeSession(`consumer-1`)).rejects.toThrow(`db write failed`);
+    await expect(service.startVerifyMeStripeSession(`consumer-1`)).resolves.toEqual({
+      clientSecret: `vs_secret_retry`,
+      sessionId: `vs_retry`,
+    });
+
+    expect(create).toHaveBeenNthCalledWith(1, expect.objectContaining({ metadata: { consumerId: `consumer-1` } }), {
+      idempotencyKey: `verify-session:consumer-1:none`,
+    });
+    expect(create).toHaveBeenNthCalledWith(2, expect.objectContaining({ metadata: { consumerId: `consumer-1` } }), {
+      idempotencyKey: `verify-session:consumer-1:none`,
+    });
+  });
+
+  it(`returns one logical session when two first-time starts overlap`, async () => {
+    const consumerPaymentsService = {
+      assertProfileCompleteForVerification: jest.fn().mockResolvedValue(undefined),
+    } as any;
+    let releaseCreate: (() => void) | undefined;
+    const createGate = new Promise<void>((resolve) => {
+      releaseCreate = resolve;
+    });
+    let createCallCount = 0;
+    const create = jest.fn().mockImplementation(async () => {
+      createCallCount += 1;
+      if (createCallCount === 1) {
+        await createGate;
+      }
+      return {
+        id: `vs_race`,
+        client_secret: `vs_secret_race`,
+      };
+    });
+    const retrieve = jest.fn().mockResolvedValue({
+      id: `vs_race`,
+      client_secret: `vs_secret_race`,
+    });
+    const findUnique = jest.fn().mockResolvedValueOnce(null).mockResolvedValueOnce(null).mockResolvedValueOnce({
+      stripeIdentityStatus: STRIPE_IDENTITY_STATUS.PENDING_SUBMISSION,
+      stripeIdentitySessionId: `vs_race`,
+    });
+    const prisma = {
+      consumerModel: {
+        findUnique,
+        updateMany: jest.fn().mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 }),
+      },
+    } as any;
+    const service = new StripeWebhookService(prisma, {} as any, {} as any, consumerPaymentsService);
+    (
+      service as unknown as {
+        stripe: {
+          identity: {
+            verificationSessions: {
+              create: (...args: unknown[]) => Promise<unknown>;
+              retrieve: (...args: unknown[]) => Promise<unknown>;
+            };
+          };
+        };
+      }
+    ).stripe = {
+      identity: {
+        verificationSessions: {
+          create,
+          retrieve,
+        },
+      },
+    };
+
+    const firstPromise = service.startVerifyMeStripeSession(`consumer-1`);
+    await Promise.resolve();
+    const secondPromise = service.startVerifyMeStripeSession(`consumer-1`);
+    releaseCreate?.();
+
+    const [first, second] = await Promise.all([firstPromise, secondPromise]);
+
+    expect(first).toEqual({ clientSecret: `vs_secret_race`, sessionId: `vs_race` });
+    expect(second).toEqual({ clientSecret: `vs_secret_race`, sessionId: `vs_race` });
+    expect(create).toHaveBeenCalled();
+    expect(
+      create.mock.calls.every(
+        ([params, options]) =>
+          (params as { metadata?: Record<string, unknown> }).metadata?.consumerId === `consumer-1` &&
+          (options as { idempotencyKey?: string }).idempotencyKey === `verify-session:consumer-1:none`,
+      ),
+    ).toBe(true);
   });
 
   it(`stores requires_input state and last error details`, async () => {
     const prisma = {
       consumerModel: {
+        findUnique: jest.fn().mockResolvedValue(null),
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
     } as any;
@@ -570,6 +695,43 @@ describe(`StripeWebhookService verification lifecycle`, () => {
     );
   });
 
+  it(`ignores requires_input replays that would downgrade a verified session`, async () => {
+    const loggerWarn = jest.fn();
+    const prisma = {
+      consumerModel: {
+        findUnique: jest.fn().mockResolvedValue({
+          stripeIdentitySessionId: `vs_verified`,
+          stripeIdentityStatus: STRIPE_IDENTITY_STATUS.VERIFIED,
+          legalVerified: true,
+        }),
+        updateMany: jest.fn(),
+      },
+    } as any;
+    const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
+    (service as any).logger.warn = loggerWarn;
+
+    await expect(
+      (service as any).handleRequiresInput({
+        id: `vs_verified`,
+        metadata: { consumerId: `consumer-1` },
+        last_error: {
+          code: `document_expired`,
+          reason: `The provided document has expired.`,
+        },
+      }),
+    ).resolves.toBeUndefined();
+
+    expect(prisma.consumerModel.updateMany).not.toHaveBeenCalled();
+    expect(loggerWarn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: `Ignoring verification session regression`,
+        sessionId: `vs_verified`,
+        incomingStatus: STRIPE_IDENTITY_STATUS.REQUIRES_INPUT,
+        currentStatus: STRIPE_IDENTITY_STATUS.VERIFIED,
+      }),
+    );
+  });
+
   it(`stores verified status, clears previous Stripe identity errors, and preserves passport/id data`, async () => {
     const prisma = {
       consumerModel: {
@@ -626,6 +788,46 @@ describe(`StripeWebhookService verification lifecycle`, () => {
       include: { personalDetails: true },
     });
   });
+
+  for (const [eventType, expectedStatus] of [
+    [STRIPE_IDENTITY_STATUS.CANCELED, `identity.verification_session.canceled`],
+    [STRIPE_IDENTITY_STATUS.REDACTED, `identity.verification_session.redacted`],
+  ] as const) {
+    it(`aligns verification flags when session is ${eventType}`, async () => {
+      const prisma = {
+        consumerModel: {
+          updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        },
+      } as any;
+      const service = new StripeWebhookService(prisma, {} as any, {} as any, {} as any);
+
+      await expect(
+        (service as any).handleLifecycleUpdate(
+          {
+            id: `vs_lifecycle`,
+            metadata: { consumerId: `consumer-1` },
+          },
+          expectedStatus,
+        ),
+      ).resolves.toBeUndefined();
+
+      expect(prisma.consumerModel.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: `consumer-1`,
+          OR: [{ stripeIdentitySessionId: `vs_lifecycle` }, { stripeIdentitySessionId: null }],
+        },
+        data: expect.objectContaining({
+          legalVerified: false,
+          stripeIdentityStatus: eventType,
+          stripeIdentitySessionId: `vs_lifecycle`,
+          stripeIdentityLastErrorCode: null,
+          stripeIdentityLastErrorReason: null,
+          stripeIdentityUpdatedAt: expect.any(Date),
+          stripeIdentityVerifiedAt: null,
+        }),
+      });
+    });
+  }
 
   it(`retries verification webhook handling after a transient failure`, async () => {
     const tx = {

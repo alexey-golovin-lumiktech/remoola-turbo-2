@@ -130,6 +130,13 @@ describe(`Consumer verification lifecycle (e2e, isolated DB)`, () => {
       clientSecret: `vs_secret_live_e2e`,
       sessionId: `vs_live_e2e`,
     });
+    expect(stripeClient.identity.verificationSessions.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: `document`,
+        metadata: { consumerId },
+      }),
+      { idempotencyKey: `verify-session:${consumerId}:none` },
+    );
 
     const pendingConsumer = await prisma.consumerModel.findUniqueOrThrow({
       where: { id: consumerId },
@@ -293,6 +300,51 @@ describe(`Consumer verification lifecycle (e2e, isolated DB)`, () => {
         citizenOf: `US`,
         passportOrIdNumber: `A1234567`,
       });
+
+      const replayedRequiresInput = signedWebhookEvent(envs.STRIPE_WEBHOOK_SECRET, {
+        id: `evt_verification_requires_input_replay`,
+        object: `event`,
+        type: `identity.verification_session.requires_input`,
+        data: {
+          object: {
+            id: `vs_live_e2e`,
+            object: `identity.verification_session`,
+            metadata: { consumerId },
+            last_error: {
+              code: `document_expired`,
+              reason: `The provided document has expired.`,
+            },
+          },
+        },
+      });
+
+      await request(app.getHttpServer())
+        .post(`/api/consumer/webhooks`)
+        .set(`content-type`, `application/json`)
+        .set(`stripe-signature`, replayedRequiresInput.signature)
+        .send(replayedRequiresInput.payload)
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body).toEqual({ received: true });
+        });
+
+      const afterReplay = await prisma.consumerModel.findUniqueOrThrow({
+        where: { id: consumerId },
+        select: {
+          legalVerified: true,
+          stripeIdentityStatus: true,
+          stripeIdentitySessionId: true,
+          stripeIdentityLastErrorCode: true,
+          stripeIdentityLastErrorReason: true,
+          stripeIdentityVerifiedAt: true,
+        },
+      });
+      expect(afterReplay.legalVerified).toBe(true);
+      expect(afterReplay.stripeIdentityStatus).toBe(STRIPE_IDENTITY_STATUS.VERIFIED);
+      expect(afterReplay.stripeIdentitySessionId).toBe(`vs_live_e2e`);
+      expect(afterReplay.stripeIdentityLastErrorCode).toBeNull();
+      expect(afterReplay.stripeIdentityLastErrorReason).toBeNull();
+      expect(afterReplay.stripeIdentityVerifiedAt).toBeTruthy();
     } finally {
       envs.STRIPE_WEBHOOK_SECRET = originalSecret;
     }
