@@ -92,6 +92,11 @@ describe(`parseSearchParams`, () => {
     expect(authNotice).toBe(`password_changed`);
   });
 
+  it(`parses password_set auth notice`, () => {
+    const { authNotice } = parseSearchParams({ auth_notice: `password_set` });
+    expect(authNotice).toBe(`password_set`);
+  });
+
   it(`ignores unknown auth notice values`, () => {
     const { authNotice } = parseSearchParams({ auth_notice: `something_else` });
     expect(authNotice).toBeUndefined();

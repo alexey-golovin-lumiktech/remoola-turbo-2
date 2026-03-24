@@ -25,7 +25,9 @@ export function AddressDetailsStep() {
   useEffect(() => {
     if (!isEntity || !addressDetails.street?.trim()) return;
 
-    const parsed = parseAddressFromString(addressDetails.street);
+    const parsed = parseAddressFromString(addressDetails.street, {
+      countryHint: personalDetails.countryOfTaxResidence,
+    });
     const updates: Partial<typeof addressDetails> = {};
     const needsPrefill =
       !addressDetails.postalCode?.trim() &&
@@ -49,7 +51,7 @@ export function AddressDetailsStep() {
       updateAddress({ country: personalDetails.countryOfTaxResidence });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- deps omitted to avoid loop on update
-  }, [isEntity, addressDetails.street]);
+  }, [isEntity, addressDetails.street, personalDetails.countryOfTaxResidence]);
 
   const clearError = useCallback((field: string) => {
     setFieldErrors((prev) => {

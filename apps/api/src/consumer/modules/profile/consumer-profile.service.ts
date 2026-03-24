@@ -22,28 +22,29 @@ export class ConsumerProfileService {
       select: { id: true, email: true, password: true, salt: true },
     });
     if (!consumer) throw new BadRequestException(errorCodes.CONSUMER_NOT_FOUND_COMPLETE_PROFILE);
-    if (consumer.password == null || consumer.salt == null) {
-      throw new BadRequestException(errorCodes.CONSUMER_NO_PASSWORD_SET);
-    }
-    const valid = await passwordUtils.verifyPassword({
-      password: body.currentPassword,
-      storedHash: consumer.password,
-      storedSalt: consumer.salt,
-    });
-    if (!valid) {
+    const hasStoredPassword = consumer.password != null && consumer.salt != null;
+    const hasNoStoredPassword = consumer.password == null && consumer.salt == null;
+
+    if (!hasStoredPassword && !hasNoStoredPassword) {
       throw new BadRequestException(errorCodes.CURRENT_PASSWORD_INVALID);
     }
-    const { hash, salt } = await passwordUtils.hashPassword(body.password);
-    await this.prisma.$transaction([
-      this.prisma.consumerModel.update({
-        where: { id: consumerId },
-        data: { password: hash, salt },
-      }),
-      this.prisma.authSessionModel.updateMany({
-        where: { consumerId: consumer.id, revokedAt: null },
-        data: { revokedAt: new Date(), invalidatedReason: `logout_all`, lastUsedAt: new Date() },
-      }),
-    ]);
+
+    if (hasStoredPassword) {
+      const storedHash = consumer.password!;
+      const storedSalt = consumer.salt!;
+      if (!body.currentPassword?.trim()) {
+        throw new BadRequestException(errorCodes.CURRENT_PASSWORD_INVALID);
+      }
+      const valid = await passwordUtils.verifyPassword({
+        password: body.currentPassword,
+        storedHash,
+        storedSalt,
+      });
+      if (!valid) {
+        throw new BadRequestException(errorCodes.CURRENT_PASSWORD_INVALID);
+      }
+    }
+    await this.persistPasswordAndRevokeSessions(consumer.id, body.password);
     await this.authAudit.recordAudit({
       identityType: AUTH_IDENTITY_TYPES.consumer,
       identityId: consumer.id,
@@ -69,7 +70,7 @@ export class ConsumerProfileService {
     });
 
     return {
-      ...consumer,
+      ...this.buildSafeConsumerPayload(consumer),
       verification: buildConsumerVerificationState(consumer),
     };
   }
@@ -143,7 +144,7 @@ export class ConsumerProfileService {
     }
 
     try {
-      return await this.prisma.consumerModel.update({
+      const consumer = await this.prisma.consumerModel.update({
         where: { id: consumerId },
         data: updates,
         include: {
@@ -152,6 +153,7 @@ export class ConsumerProfileService {
           organizationDetails: true,
         },
       });
+      return this.buildSafeConsumerPayload(consumer);
     } catch (error) {
       this.logger.error(`updateProfile failed`, {
         consumerId,
@@ -159,5 +161,39 @@ export class ConsumerProfileService {
       });
       throw error;
     }
+  }
+
+  private async persistPasswordAndRevokeSessions(consumerId: string, password: string) {
+    const { hash, salt } = await passwordUtils.hashPassword(password);
+    await this.prisma.$transaction([
+      this.prisma.consumerModel.update({
+        where: { id: consumerId },
+        data: { password: hash, salt },
+      }),
+      this.prisma.authSessionModel.updateMany({
+        where: { consumerId, revokedAt: null },
+        data: { revokedAt: new Date(), invalidatedReason: `logout_all`, lastUsedAt: new Date() },
+      }),
+    ]);
+  }
+
+  private buildSafeConsumerPayload<
+    T extends {
+      password?: string | null;
+      salt?: string | null;
+    } | null,
+  >(consumer: T) {
+    if (!consumer) {
+      return {
+        hasPassword: false,
+      };
+    }
+
+    const { password, salt, ...safeConsumer } = consumer;
+
+    return {
+      ...safeConsumer,
+      hasPassword: password != null && salt != null,
+    };
   }
 }

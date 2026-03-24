@@ -16,7 +16,7 @@ Authentication and identity:
 
 - Admin auth with login, refresh, logout, and `/me` identity.
 - Consumer auth with login, refresh, logout, `/me`, and multi-step signup.
-- Password recovery and reset: forgot-password (request email; `POST /consumer/auth/forgot-password` requires valid `Origin` header from allowed consumer origin), reset with token (`POST /consumer/auth/password/reset`), and authenticated change-password (`PATCH /consumer/profile/password`). Reset tokens stored as SHA-256 hash only in DB (migrations `20260317120000_reset_password_token_hash`, `20260317120001_drop_reset_password_token`); expired tokens cleaned by scheduler. Auth-notice type in `@remoola/api-types` for post-login/post-reset messaging. E2E coverage: `apps/api/test/forgot-reset-password.e2e-spec.ts`.
+- Password recovery and reset: forgot-password (request email; `POST /consumer/auth/forgot-password` requires valid `Origin` header from allowed consumer origin), reset with token (`POST /consumer/auth/password/reset`), and authenticated password update (`PATCH /consumer/profile/password`). The authenticated route supports both password change and first-time password creation for Google-only / no-password accounts: `currentPassword` is required only when a stored password already exists, and successful password set/change revokes active consumer sessions. Reset tokens stored as SHA-256 hash only in DB (migrations `20260317120000_reset_password_token_hash`, `20260317120001_drop_reset_password_token`); expired tokens cleaned by scheduler. Auth notices in `@remoola/api-types` now include `password_changed`, `password_set`, and `reset_success` for post-login/post-reset messaging. E2E coverage: `apps/api/test/forgot-reset-password.e2e-spec.ts`.
 - Cookie-based JWT auth with access/refresh tokens. Shared auth cookie policy: cookie names and options from `@remoola/api-types` (http/auth-cookie-policy); API and Next.js apps (admin, consumer, consumer-mobile) use the same policy; production uses __Host- prefixed names (RFC 6265).
 - Consumer auth sessions: `auth_sessions` table for database-backed consumer sessions; hashed refresh token storage; session family and refresh rotation lineage (`session_family_id`, `replaced_by_id`); revocation metadata (`revoked_at`, `invalidated_reason`). Migration `20260310123000_consumer_auth_sessions`.
 - Login audit (success/failure tracking) and account lockout (per-email after N failures).
@@ -54,7 +54,7 @@ Consumer domain features:
 - Stripe webhook top-level failure handling emits sanitized warning telemetry (`stripe_webhook_processing_failed`) without raw payload/error text.
 - Payments list, balance, history, start payment, withdraw, transfer, and payment view.
 - Payment request creation and send flow.
-- Profile management (personal, address, organization) and password change.
+- Profile management (personal, address, organization) and password updates. Profile reads/updates return a safe consumer payload without password hash/salt and include `hasPassword` so web/mobile settings can render `Change Password` versus `Set Password`.
 - User settings for theme preference and preferred display currency (api-types allowlist).
 - Invoice generation for payment requests.
 
@@ -131,13 +131,13 @@ Consumer UI with:
 - Payment methods management, including Stripe setup flows.
 - Payment requests creation and send flow.
 - Payments list (paginated, filters), details, start payment, transfer, withdraw, and invoice generation.
-- Profile settings (personal, address, organization, password).
+- Profile settings (personal, address, organization, password), including a `Set Password` flow for Google-first accounts that do not yet have a stored password.
 - Theme and preferred currency settings (light/dark/system; currency from api-types allowlist), with resolved theme applied before paint to reduce flash and hydration mismatch on initial load.
 - Shared UI: PaginationBar (Showing X–Y of Z, Previous/Next), AmountCurrencyInput,
   RecipientEmailField (with recipient email autocomplete: debounced contact search,
   dropdown "Name — email", clear, keyboard accessible); form controls 42px/rounded-lg;
   Contacts and Documents pages share same layout pattern.
-- Signup/profile validation refinements include stricter calendar-based date parsing for date of birth, country-aware passport/ID examples and validation, Canadian postal-code parsing support in address prefill, and clearer Tax ID guidance in validation copy.
+- Signup/profile validation refinements include stricter calendar-based date parsing for date of birth, country-aware passport/ID examples and validation, richer address prefill parsing across US/Canada/UK/Russia/Germany formats (with `countryHint` support for ambiguous inputs), and clearer Tax ID guidance in validation copy.
 
 Internal API proxy routes:
 
@@ -172,6 +172,7 @@ Mobile-first consumer app running on port 3002:
   - Null-safety for document preview modal
 - Signup email verification view matches consumer web: `verified` without `email` is valid; copy adapts when `email` is absent.
 - Supports Google OAuth with `returnOrigin` parameter for proper redirect after authentication.
+- Settings password UX mirrors consumer web: when `profile.hasPassword` is false, Settings renders `Set Password`, omits the current-password field, and redirects through `auth_notice=password_set` after success.
 - CORS configured for localhost:3002 and Vercel deployment.
 - Shared UI library:
   - **Icon library**: 54 SVG icon components (Alert, Arrow, ArrowsPointingOut, Bank, Bell, Calendar, Check, Chevron, Clipboard, Clock, CreditCard, Currency, Document, Dots, Download, Exchange, Exclamation, Eye, Filter, Home, Information, Lightning, Link, Lock, Logout, Mail, MapPin, Paperclip, PauseCircle, Pencil, Phone, Play, Plus, Refresh, Search, Settings, Spinner, Switch, Tag, Trash, Trending, Upload, User, Users, X icons) with unified `IconProps` interface

@@ -182,7 +182,7 @@ export function SettingsView({ loadState, profile, settings }: SettingsViewProps
 
         {isBusiness ? <OrganizationDetailsForm profile={profile} /> : null}
 
-        <PasswordChangeForm />
+        <PasswordChangeForm hasPassword={profile.hasPassword !== false} />
       </div>
     </div>
   );

@@ -6,20 +6,32 @@ import { AUTH_NOTICE_QUERY } from '@remoola/api-types';
 
 import localStyles from './PasswordChangeForm.module.css';
 import styles from '../../../../components/ui/classNames.module.css';
+import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../../../lib/error-messages';
 
 const { formGrid, formSection, formSectionTitle, inputClass, inputLabel, primaryActionButton } = styles;
 
-type PasswordChangeFormProps = { reload: () => void | Promise<void> };
+type PasswordChangeFormProps = {
+  reload: () => void | Promise<void>;
+  hasPassword: boolean;
+};
 
-export function PasswordChangeForm({ reload }: PasswordChangeFormProps) {
+export function PasswordChangeForm({ reload, hasPassword }: PasswordChangeFormProps) {
   const [currentPassword, setCurrentPassword] = useState(``);
   const [password, setPassword] = useState(``);
   const [confirm, setConfirm] = useState(``);
   const [saving, setSaving] = useState(false);
+
+  const title = hasPassword ? `Change Password` : `Set Password`;
+  const submitLabel = hasPassword ? `Change Password` : `Create Password`;
+  const successNotice = hasPassword ? `password_changed` : `password_set`;
+  const helperText = hasPassword
+    ? null
+    : `You sign in with Google today. Add a password here if you also want to sign in with email and password.`;
+
   async function save(e?: React.FormEvent) {
     e?.preventDefault();
 
-    if (!currentPassword.trim()) {
+    if (hasPassword && !currentPassword.trim()) {
       toast.error(`Please enter your current password.`);
       return;
     }
@@ -42,18 +54,21 @@ export function PasswordChangeForm({ reload }: PasswordChangeFormProps) {
       method: `PATCH`,
       headers: { 'content-type': `application/json` },
       credentials: `include`,
-      body: JSON.stringify({ currentPassword: currentPassword.trim(), password }),
+      body: JSON.stringify({
+        ...(hasPassword ? { currentPassword: currentPassword.trim() } : {}),
+        password,
+      }),
     });
 
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
       const code = data?.code ?? data?.message;
-      toast.error(code === `CURRENT_PASSWORD_INVALID` ? `Current password is incorrect.` : `Failed to change password`);
+      toast.error(getErrorMessageForUser(code, getLocalToastMessage(localToastKeys.PASSWORD_CHANGE_FAILED)));
     } else {
       setCurrentPassword(``);
       setPassword(``);
       setConfirm(``);
-      window.location.assign(`/logout?${AUTH_NOTICE_QUERY}=password_changed`);
+      window.location.assign(`/logout?${AUTH_NOTICE_QUERY}=${successNotice}`);
       return;
     }
 
@@ -63,7 +78,8 @@ export function PasswordChangeForm({ reload }: PasswordChangeFormProps) {
 
   return (
     <section className={formSection}>
-      <h2 className={formSectionTitle}>Change Password</h2>
+      <h2 className={formSectionTitle}>{title}</h2>
+      {helperText ? <p className={localStyles.helperText}>{helperText}</p> : null}
 
       <form onSubmit={save} className={localStyles.formStack}>
         <input
@@ -76,21 +92,23 @@ export function PasswordChangeForm({ reload }: PasswordChangeFormProps) {
           style={{ position: `absolute`, left: `-9999px`, width: `1px`, height: `1px`, opacity: 0 }}
         />
         <div className={formGrid}>
-          <div>
-            <label className={inputLabel}>Current Password</label>
-            <input
-              type="password"
-              autoComplete="current-password"
-              required
-              className={inputClass}
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              placeholder="Your current password"
-            />
-          </div>
+          {hasPassword ? (
+            <div>
+              <label className={inputLabel}>Current Password</label>
+              <input
+                type="password"
+                autoComplete="current-password"
+                required
+                className={inputClass}
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="Your current password"
+              />
+            </div>
+          ) : null}
 
           <div>
-            <label className={inputLabel}>New Password</label>
+            <label className={inputLabel}>{hasPassword ? `New Password` : `Password`}</label>
             <input
               type="password"
               autoComplete="new-password"
@@ -119,7 +137,7 @@ export function PasswordChangeForm({ reload }: PasswordChangeFormProps) {
         </div>
 
         <button type="submit" disabled={saving} className={primaryActionButton}>
-          {saving ? `Saving...` : `Change Password`}
+          {saving ? `Saving...` : submitLabel}
         </button>
       </form>
     </section>

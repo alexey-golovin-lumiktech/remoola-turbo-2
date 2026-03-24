@@ -53,7 +53,7 @@ const MESSAGE_MAP: Record<string, string> = {
   [errorCodes.CONSUMER_NOT_FOUND_CHANGE_PASSWORD]: `This password reset link has expired or is invalid. Request a new link from the forgot-password page.`,
   [errorCodes.CHANGE_PASSWORD_FLOW_EXPIRED]: `This password reset link has expired or is invalid. Request a new link from the forgot-password page.`,
   [errorCodes.CURRENT_PASSWORD_INVALID]: `The current password you entered is incorrect. Please try again.`,
-  [errorCodes.CONSUMER_NO_PASSWORD_SET]: `This account uses Google sign-in and has no password. Use "Forgot password" only for email/password accounts.`,
+  [errorCodes.CONSUMER_NO_PASSWORD_SET]: `This account uses Google sign-in and does not have a password yet. Open Settings to create one.`,
   [errorCodes.CONSUMER_NOT_FOUND_COMPLETE_PROFILE]: `We couldn't find your account to send the verification email. Please sign in again or contact support.`,
   [errorCodes.PROFILE_INCOMPLETE_VERIFY]: `Complete your profile (Legal Status, Tax ID, and ID number for individuals; Tax ID and phone for businesses) before starting identity verification.`,
   [errorCodes.EMAIL_MISMATCH_GOOGLE]: `The email you entered doesn't match your Google account. Please use the same email or sign in with Google.`,
@@ -248,7 +248,7 @@ const LOCAL_TOAST_MESSAGE_MAP: Record<string, string> = {
   [localToastKeys.PROFILE_LOAD_FAILED]: `We couldn't load your profile. Refresh the page to try again.`,
   [localToastKeys.PROFILE_UPDATE_FAILED]: `We couldn't save your profile changes. Please try again; if it keeps failing, refresh and re-enter your details.`,
   [localToastKeys.THEME_UPDATE_FAILED]: `We couldn't save your theme preference. Please try again.`,
-  [localToastKeys.PASSWORD_CHANGE_FAILED]: `We couldn't change your password. Check your current password and try again, or request a password reset.`,
+  [localToastKeys.PASSWORD_CHANGE_FAILED]: `We couldn't save your password. Check the form and try again.`,
 
   // Exchange – rate fetch, conversion, rules, scheduled conversions
   [localToastKeys.RATE_FETCH_FAILED]: `We couldn't load the exchange rate. Please try again in a moment.`,

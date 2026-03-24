@@ -1593,12 +1593,17 @@
     - keep theme state aligned across `html` and `body` with reduced hydration mismatch / flash risk.
   - Consumer signup and profile UX refinement:
     - tighten calendar-based date-of-birth validation;
-    - broaden address parsing to recognize Canadian postal codes in prefill flows;
+    - broaden address parsing to recognize US/Canada/UK/Russia/Germany formats in prefill flows, with `countryHint` support for ambiguous inputs;
     - add country-aware passport/ID placeholders and validation support;
     - refresh signup completion and verification copy for clearer success/failure states.
+  - Consumer password settings and auth notice refinement:
+    - support first-time password creation for Google-only / no-password accounts from Settings without requiring a current password;
+    - expose `hasPassword` in the safe consumer profile payload so web/mobile can render `Set Password` versus `Change Password`;
+    - add `auth_notice=password_set` alongside the existing password-changed/reset-success notices;
+    - refresh password-related error copy for the new settings flow and forced re-login behavior.
 
   ### 📄 Documentation
-  - Update `docs/FEATURES_CURRENT.md`, `docs/PROJECT_DOCUMENTATION.md`, and `docs/PROJECT_SUMMARY.md` to reflect the command palette, mobile `More` navigation, earlier theme application, and user-visible signup/profile validation changes.
+  - Update `docs/FEATURES_CURRENT.md` and `docs/PROJECT_DOCUMENTATION.md` to reflect the password set/change split, `hasPassword` profile contract, `password_set` auth notice, and the broader address parsing support.
 
 </details>
 

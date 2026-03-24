@@ -19,6 +19,14 @@ describe(`GET /logout`, () => {
     expect(res.headers.get(`location`)).toBe(`http://localhost:3001/login?auth_notice=password_changed`);
   });
 
+  it(`preserves password_set auth_notice when redirecting to login`, async () => {
+    const req = new Request(`http://localhost:3001/logout?auth_notice=password_set`, { method: `GET` });
+    const res = await GET(req);
+
+    expect(res.status).toBe(307);
+    expect(res.headers.get(`location`)).toBe(`http://localhost:3001/login?auth_notice=password_set`);
+  });
+
   it(`drops invalid auth_notice values`, async () => {
     const req = new Request(`http://localhost:3001/logout?auth_notice=unknown_value`, { method: `GET` });
     const res = await GET(req);

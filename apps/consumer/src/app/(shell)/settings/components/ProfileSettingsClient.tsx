@@ -160,7 +160,7 @@ export default function ProfileSettingsClient() {
         <OrganizationDetailsForm profile={profile} reload={loadProfile} />
       )}
 
-      <PasswordChangeForm reload={loadProfile} />
+      <PasswordChangeForm reload={loadProfile} hasPassword={profile.hasPassword !== false} />
     </div>
   );
 }

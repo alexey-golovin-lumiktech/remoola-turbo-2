@@ -1,12 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { IsString, MinLength } from 'class-validator';
+import { IsOptional, IsString, MinLength } from 'class-validator';
 
 export class ChangePasswordBody {
   @Expose()
-  @ApiProperty({ description: `Current password for verification` })
+  @ApiProperty({ description: `Current password for verification`, required: false })
+  @IsOptional()
   @IsString()
-  currentPassword: string;
+  currentPassword?: string;
 
   @Expose()
   @ApiProperty({ example: `newSecurePassword123`, minLength: 8 })

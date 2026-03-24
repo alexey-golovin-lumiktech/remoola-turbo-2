@@ -1,9 +1,10 @@
 export const AUTH_NOTICE_QUERY = `auth_notice`;
 
-export type AuthNotice = `password_changed` | `reset_success`;
+export type AuthNotice = `password_changed` | `password_set` | `reset_success`;
 
 const AUTH_NOTICE_MESSAGES: Record<AuthNotice, string> = {
   password_changed: `Password updated successfully. Please sign in again.`,
+  password_set: `Password created successfully. You can now sign in with Google or your email and password.`,
   reset_success: `Password reset successful. You can now sign in with your new password.`,
 };
 
@@ -12,7 +13,7 @@ const AUTH_NOTICE_MESSAGES: Record<AuthNotice, string> = {
  * for compatibility with URLSearchParams.get() and optional params.
  */
 export function parseAuthNotice(value: string | null | undefined): AuthNotice | undefined {
-  if (value === `password_changed` || value === `reset_success`) {
+  if (value === `password_changed` || value === `password_set` || value === `reset_success`) {
     return value;
   }
   return undefined;

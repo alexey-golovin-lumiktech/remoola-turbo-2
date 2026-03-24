@@ -13,6 +13,7 @@ jest.mock(`../../lib/env.server`, () => ({
 const validProfile = {
   id: `user-1`,
   accountType: `CONTRACTOR`,
+  hasPassword: true,
   personalDetails: null,
   addressDetails: null,
   organizationDetails: null,

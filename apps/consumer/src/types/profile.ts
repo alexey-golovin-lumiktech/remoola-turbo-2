@@ -48,6 +48,7 @@ export type ConsumerVerification = {
 export type ConsumerProfile = {
   id: string;
   accountType: string;
+  hasPassword?: boolean;
   legalVerified?: boolean | null;
   verificationStatus?: string | null;
   personalDetails?: ConsumerProfilePersonalDetails | null;

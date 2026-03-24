@@ -35,7 +35,9 @@ export function PersonalDetailsStep() {
     (value: string) => {
       updateAddress({ street: value });
       if (!value.trim()) return;
-      const parsed = parseAddressFromString(value);
+      const parsed = parseAddressFromString(value, {
+        countryHint: personalDetails.countryOfTaxResidence,
+      });
       const updates: Parameters<typeof updateAddress>[0] = {};
       if (parsed.postalCode) updates.postalCode = parsed.postalCode;
       if (parsed.country) updates.country = parsed.country;
@@ -48,7 +50,7 @@ export function PersonalDetailsStep() {
         updatePersonal({ countryOfTaxResidence: parsed.country });
       }
     },
-    [updateAddress, updatePersonal],
+    [updateAddress, updatePersonal, personalDetails.countryOfTaxResidence],
   );
 
   const clearError = useCallback((field: string) => {

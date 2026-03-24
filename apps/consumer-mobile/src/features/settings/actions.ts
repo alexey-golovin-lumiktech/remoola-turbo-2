@@ -37,16 +37,18 @@ const organizationDetailsSchema = z.object({
   size: z.string().optional(),
 });
 
-const passwordSchema = z
-  .object({
-    currentPassword: z.string().min(1, `Current password is required`),
-    password: z.string().min(8, `Password must be at least 8 characters`),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: `Passwords do not match`,
-    path: [`confirmPassword`],
-  });
+function getPasswordSchema(hasPassword: boolean) {
+  return z
+    .object({
+      currentPassword: hasPassword ? z.string().min(1, `Current password is required`) : z.string().optional(),
+      password: z.string().min(8, `Password must be at least 8 characters`),
+      confirmPassword: z.string(),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: `Passwords do not match`,
+      path: [`confirmPassword`],
+    });
+}
 
 const preferredCurrencySchema = z.object({
   preferredCurrency: z.string(),
@@ -250,14 +252,17 @@ export async function updateOrganizationDetailsAction(formData: FormData): Promi
   }
 }
 
-export async function updatePasswordAction(formData: FormData): Promise<ActionResult<{ success: boolean }>> {
+export async function updatePasswordAction(
+  formData: FormData,
+  hasPassword = true,
+): Promise<ActionResult<{ success: boolean }>> {
   const rawData = {
     currentPassword: formData.get(`currentPassword`)?.toString() ?? ``,
     password: formData.get(`password`)?.toString() ?? ``,
     confirmPassword: formData.get(`confirmPassword`)?.toString() ?? ``,
   };
 
-  const parsed = passwordSchema.safeParse(rawData);
+  const parsed = getPasswordSchema(hasPassword).safeParse(rawData);
   if (!parsed.success) {
     const fields: Record<string, string> = {};
     parsed.error.issues.forEach((issue) => {
@@ -279,7 +284,7 @@ export async function updatePasswordAction(formData: FormData): Promise<ActionRe
         ...getBypassHeaders(),
       },
       body: JSON.stringify({
-        currentPassword: parsed.data.currentPassword,
+        ...(hasPassword ? { currentPassword: parsed.data.currentPassword } : {}),
         password: parsed.data.password,
       }),
       cache: `no-store`,

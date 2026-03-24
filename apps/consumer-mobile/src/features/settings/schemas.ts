@@ -3,6 +3,7 @@ import { z } from 'zod';
 export const profileSchema = z.object({
   id: z.string(),
   accountType: z.string(),
+  hasPassword: z.boolean().optional(),
   legalVerified: z.boolean().nullable().optional(),
   verificationStatus: z.string().nullable().optional(),
   personalDetails: z

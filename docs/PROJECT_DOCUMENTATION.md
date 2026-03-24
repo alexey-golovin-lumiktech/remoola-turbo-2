@@ -92,7 +92,7 @@ Auth (`/consumer/auth`):
   `email` query params; successful redirects to the consumer verification page may
   still include `email` for compatibility/UX.
 - Forgot-password and reset (no auth required): `POST /forgot-password` (email; requires valid `Origin` header — must be an allowed consumer origin, else 400 `ORIGIN_REQUIRED`); `GET /forgot-password/verify?token=…&referer=…` — validate token and redirect to app; `POST /password/reset` (body: token, password) — set new password with token from email.
-- Authenticated change-password: `PATCH /consumer/profile/password` (see Profile below).
+- Authenticated password update: `PATCH /consumer/profile/password` (see Profile below). This route supports both password change and first-time password creation for Google-only / no-password accounts.
 - Google OAuth flows:
   - `GET /google/start`: start OAuth flow. Accepts optional `returnOrigin` query parameter to specify the consumer app origin (validated against CORS_ALLOWED_ORIGINS via `OriginResolverService`) for redirect after authentication. Useful for multi-app deployments (e.g., desktop consumer on port 3001, mobile consumer on port 3002). Supports CONSUMER_APP_ORIGIN, CONSUMER_MOBILE_APP_ORIGIN, and ADMIN_APP_ORIGIN.
   - `GET /google/callback`: OAuth redirect handling; uses stored `returnOrigin` from state.
@@ -200,9 +200,9 @@ Payment Requests (`/consumer/payment-requests`):
 
 Profile (`/consumer/profile`):
 
-- `GET /me`: get profile details.
-- `PATCH /update`: update profile details.
-- `PATCH /password`: change password.
+- `GET /me`: get profile details. Safe profile payload omits password hash/salt and includes `hasPassword` so clients can tailor settings UX.
+- `PATCH /update`: update profile details. Returns the same safe profile payload shape as `GET /me`.
+- `PATCH /password`: change password when a stored password already exists, or create the first password for a Google-only / no-password account. `currentPassword` is required only when `hasPassword` is true; successful password set/change revokes active sessions so the user signs in again.
 
 Settings (`/consumer/settings`):
 
@@ -284,7 +284,8 @@ Recent consumer UX updates:
 - Mobile navigation keeps a compact bottom bar for Home, Payments, Contacts, and Contracts, while secondary destinations move into a `More` drawer.
 - Desktop navigation labels were polished to better match product language, including `Bank & Cards`, `Withdraw`, and `Exchange`.
 - Theme resolution is applied before paint in the root layout so light/dark preference is visible earlier and hydration mismatch risk is reduced.
-- Signup and profile entry points now use stricter date parsing, clearer verification/completion copy, country-aware passport/ID hints, and broader address parsing support including Canadian postal codes.
+- Signup and profile entry points now use stricter date parsing, clearer verification/completion copy, country-aware passport/ID hints, broader address parsing across US/Canada/UK/Russia/Germany formats, and `countryHint` support for ambiguous address prefill inputs.
+- Settings now distinguish `Set Password` from `Change Password`: accounts with `hasPassword === false` can create a first password without entering a current password, then are redirected through `auth_notice=password_set` to sign in again.
 
 ## Consumer Mobile App (Next.js)
 
@@ -295,6 +296,7 @@ Recent hardening and architecture updates:
 - Styling migrated to CSS Modules across routes/features/shared UI (`*.module.css`) to keep presentation separated from TSX logic.
 - Login `next` query handling is sanitized (unsafe absolute/protocol-relative/malformed/CRLF values are rejected and fallback to `/dashboard`).
 - Middleware refresh flow emits `x-remoola-auth-refresh-*` headers and `server-timing` metrics for refresh observability and avoids auth-page redirect loops with expired cookies.
+- Settings mirrors consumer web password behavior: `hasPassword` controls whether the form is `Set Password` or `Change Password`, current-password validation is conditional, and success can redirect via `auth_notice=password_set`.
 
 ### Enhanced UI Features
 
@@ -331,7 +333,7 @@ Auth and onboarding:
 - `/login`: login form.
 - `/logout`: logout route.
 - `/auth/callback`: OAuth callback handling.
-- `/signup`: multi-step signup flow with address, personal, organization details, stricter date-of-birth validation, country-aware passport/ID hints, and clearer Tax ID guidance.
+- `/signup`: multi-step signup flow with address, personal, organization details, stricter date-of-birth validation, country-aware passport/ID hints, richer address parsing across US/Canada/UK/Russia/Germany formats, `countryHint` support where needed, and clearer Tax ID guidance.
 - `/signup/start`: account type selection step.
 - `/signup/start/contractor-kind`: contractor kind selection.
 - `/signup/verification` and `/signup/completed`: verification and completion states with clearer success, failure, and invalid-link messaging.
@@ -351,7 +353,7 @@ Main shell routes:
 - `/payments/[paymentRequestId]`: payment details view.
 - `/payments/start`: start a payment flow.
 - `/withdraw-transfer`: withdraw and transfer forms.
-- `/settings`: profile, address, organization, password, theme, and preferred currency settings.
+- `/settings`: profile, address, organization, password, theme, and preferred currency settings, including first-time password creation for Google-only / no-password accounts.
 
 Consumer shell and shared patterns:
 

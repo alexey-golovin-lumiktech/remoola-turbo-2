@@ -53,4 +53,17 @@ describe(`updatePasswordAction`, () => {
     expect(global.fetch).toHaveBeenCalledTimes(1);
     expect(revalidatePath).not.toHaveBeenCalled();
   });
+
+  it(`allows first password set without current password`, async () => {
+    const formData = new FormData();
+    formData.set(`password`, `NewPass123!`);
+    formData.set(`confirmPassword`, `NewPass123!`);
+
+    const result = await updatePasswordAction(formData, false);
+
+    expect(result).toEqual({ ok: true, data: { success: true } });
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    const [, request] = (global.fetch as jest.Mock).mock.calls[0] as [string, RequestInit];
+    expect(request.body).toBe(JSON.stringify({ password: `NewPass123!` }));
+  });
 });
