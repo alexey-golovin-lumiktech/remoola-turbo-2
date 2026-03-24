@@ -1,6 +1,5 @@
 'use client';
 
-import 'react-phone-number-input/style.css';
 import dynamic from 'next/dynamic';
 import { type Country } from 'react-phone-number-input';
 

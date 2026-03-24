@@ -1,4 +1,6 @@
 import '@remoola/ui/styles.css';
+import 'react-day-picker/dist/style.css';
+import 'react-phone-number-input/style.css';
 import './globals.css';
 import { type Metadata, type Viewport } from 'next';
 

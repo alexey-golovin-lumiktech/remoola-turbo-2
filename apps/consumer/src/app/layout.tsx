@@ -1,4 +1,6 @@
 import '@remoola/ui/styles.css';
+import 'react-datepicker/dist/react-datepicker.css';
+import 'react-phone-number-input/style.css';
 import './globals.css';
 import { type Metadata } from 'next';
 import { Toaster } from 'sonner';
