@@ -35,7 +35,7 @@ export default function Verification() {
   if (!verified && !email) {
     return (
       <div className={verificationContainer}>
-        <h1 className={verificationTitle}>Invalid verification link</h1>
+        <h1 className={verificationTitle}>Invalid or expired verification link</h1>
         <p className={verificationText}>This link is invalid or has expired.</p>
         <Link href="/signup" className={verificationLink}>
           Go back to signup
@@ -48,7 +48,7 @@ export default function Verification() {
     <div className={verificationContainer}>
       {status === `success` && (
         <>
-          <h1 className={verificationSuccessTitle}>Email Verified 🎉</h1>
+          <h1 className={verificationSuccessTitle}>Email verified</h1>
           <p className={verificationText}>
             {email ? (
               <>
@@ -60,14 +60,14 @@ export default function Verification() {
             )}
           </p>
           <Link href="/login" className={verificationLink}>
-            Continue to Login
+            Continue to Sign In
           </Link>
         </>
       )}
 
       {status === `failed` && (
         <>
-          <h1 className={verificationFailedTitle}>Verification Failed</h1>
+          <h1 className={verificationFailedTitle}>Verification failed</h1>
           <p className={verificationText}>
             {email ? (
               <>
@@ -86,7 +86,7 @@ export default function Verification() {
 
       {status === `unknown` && (
         <>
-          <h1 className={verificationUnknownTitle}>Checking Verification...</h1>
+          <h1 className={verificationUnknownTitle}>Checking verification...</h1>
           <p className={verificationMutedText}>Please wait a moment.</p>
         </>
       )}

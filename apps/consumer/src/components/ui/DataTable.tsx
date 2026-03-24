@@ -2,10 +2,12 @@
 
 import { type ReactNode } from 'react';
 
-import styles from './classNames.module.css';
+import { cn } from '@remoola/ui';
 
-const { tableBodyRow, tableCellBodyLg, tableCellHeaderLg, tableContainer, tableEmptyCell, tableHeaderRow, textSm } =
-  styles;
+import shared from './classNames.module.css';
+import layout from './DataTable.module.css';
+
+const { tableBodyRow, tableCellBodyLg, tableCellHeaderLg, tableContainer, tableEmptyCell, tableHeaderRow } = shared;
 
 export interface Column<T> {
   key: string;
@@ -36,13 +38,7 @@ export function DataTable<T>({
 }: DataTableProps<T>) {
   return (
     <div className={tableContainer}>
-      <table
-        className={`
-          w-full
-          ${textSm}
-          ${containerClassName}
-        `}
-      >
+      <table className={cn(layout.table, containerClassName)}>
         <thead>
           <tr className={headerRowClassName}>
             {columns.map((column) => (

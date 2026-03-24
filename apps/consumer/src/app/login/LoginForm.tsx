@@ -13,9 +13,10 @@ import {
   sanitizeNextForRedirect,
   SESSION_EXPIRED_QUERY,
 } from '@remoola/api-types';
+import { GoogleIcon } from '@remoola/ui';
 
 import { shouldFinalizeLoginLoading } from './login-loading-guard';
-import { GoogleIcon } from '../../components/ui';
+import localStyles from './LoginForm.module.css';
 import styles from '../../components/ui/classNames.module.css';
 import { resetSessionExpiredHandled } from '../../lib/session-expired';
 
@@ -24,7 +25,6 @@ const DEFAULT_NEXT_PATH = `/dashboard`;
 
 const {
   formInputFullWidth,
-  inlineFlexItemsCenterGap2,
   linkPrimary,
   loginButton,
   loginContainer,
@@ -137,20 +137,7 @@ export default function LoginForm() {
       <h1 className={loginTitle}>Sign in</h1>
       {authNoticeMessage ? (
         <div
-          className={`
-          mt-4
-          rounded-md
-          border
-          border-emerald-200
-          bg-emerald-50
-          px-3
-          py-2
-          text-sm
-          text-emerald-800
-          dark:border-emerald-900/50
-          dark:bg-emerald-900/20
-          dark:text-emerald-200
-          `}
+          className={localStyles.authNotice}
           role="status"
           aria-live="polite"
           data-testid="consumer-login-auth-notice"
@@ -179,7 +166,7 @@ export default function LoginForm() {
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
         />
-        <p className="mt-1 text-right text-sm">
+        <p className={localStyles.forgotPasswordRow}>
           <Link href="/forgot-password" className={linkPrimary} data-testid="consumer-login-link-forgot-password">
             Forgot password?
           </Link>
@@ -203,7 +190,7 @@ export default function LoginForm() {
               window.location.href = googleStartUrl;
             }}
           >
-            <span className={inlineFlexItemsCenterGap2}>
+            <span className={localStyles.authProviderButtonContent}>
               <GoogleIcon size={20} />
               Continue with Google
             </span>

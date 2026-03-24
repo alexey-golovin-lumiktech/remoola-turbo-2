@@ -4,9 +4,10 @@ import { toast } from 'sonner';
 
 import { AUTH_NOTICE_QUERY } from '@remoola/api-types';
 
+import localStyles from './PasswordChangeForm.module.css';
 import styles from '../../../../components/ui/classNames.module.css';
 
-const { formGrid, formSection, formSectionTitle, inputClass, inputLabel, primaryActionButton, spaceY6 } = styles;
+const { formGrid, formSection, formSectionTitle, inputClass, inputLabel, primaryActionButton } = styles;
 
 type PasswordChangeFormProps = { reload: () => void | Promise<void> };
 
@@ -64,7 +65,7 @@ export function PasswordChangeForm({ reload }: PasswordChangeFormProps) {
     <section className={formSection}>
       <h2 className={formSectionTitle}>Change Password</h2>
 
-      <form onSubmit={save} className={spaceY6}>
+      <form onSubmit={save} className={localStyles.formStack}>
         <input
           type="text"
           autoComplete="username"

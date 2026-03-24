@@ -1,7 +1,9 @@
 'use client';
 
 import { CURRENCY_CODE } from '@remoola/api-types';
+import { ClockIcon, DocumentTextIcon, WalletIcon } from '@remoola/ui';
 
+import localStyles from './SummaryCards.module.css';
 import { formatCentsToDisplay } from '../../lib/currency';
 import { type IDashboardSummary } from '../../types';
 import styles from '../ui/classNames.module.css';
@@ -29,12 +31,22 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
   return (
     <section className={summaryGrid} data-testid="consumer-dashboard-summary-cards">
       <div className={cardBaseSoft} data-testid="consumer-dashboard-summary-balance">
-        <p className={summaryCardLabel}>Balance</p>
+        <div className={localStyles.cardHeaderRow}>
+          <p className={summaryCardLabel}>Balance</p>
+          <span className={localStyles.iconBlue}>
+            <WalletIcon size={18} strokeWidth={1.75} aria-hidden="true" />
+          </span>
+        </div>
         <p className={summaryValueLg}>{formatCentsToDisplay(summary.balanceCents, CURRENCY_CODE.USD)}</p>
       </div>
 
-      <div className={cardBaseSoft} data-testid="consumer-dashboard-summary-contracts">
-        <p className={summaryCardLabel}>Contracts</p>
+      <div className={cardBaseSoft} data-testid="consumer-dashboard-summary-open-requests">
+        <div className={localStyles.cardHeaderRow}>
+          <p className={summaryCardLabel}>Open requests</p>
+          <span className={localStyles.iconViolet}>
+            <DocumentTextIcon size={18} strokeWidth={1.75} aria-hidden="true" />
+          </span>
+        </div>
         <p className={summaryValueMd}>
           {summary.activeRequests}
           {` `}
@@ -43,7 +55,12 @@ export function SummaryCards({ summary }: SummaryCardsProps) {
       </div>
 
       <div className={cardBaseSoft} data-testid="consumer-dashboard-summary-last-payment">
-        <p className={summaryCardLabel}>Last payment</p>
+        <div className={localStyles.cardHeaderRow}>
+          <p className={summaryCardLabel}>Last payment</p>
+          <span className={localStyles.iconEmerald}>
+            <ClockIcon size={18} strokeWidth={1.75} aria-hidden="true" />
+          </span>
+        </div>
         <p className={summaryValueSm}>{lastPaymentLabel}</p>
       </div>
     </section>

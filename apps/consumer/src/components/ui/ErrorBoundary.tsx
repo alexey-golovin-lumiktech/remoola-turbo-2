@@ -2,7 +2,10 @@
 
 import React, { Component, type ReactNode } from 'react';
 
-import styles from './classNames.module.css';
+import { AlertIcon } from '@remoola/ui';
+
+import shared from './classNames.module.css';
+import localStyles from './ErrorBoundary.module.css';
 import { clientLogger } from '../../lib/logger';
 
 const {
@@ -20,8 +23,7 @@ const {
   sectionErrorFallback,
   sectionErrorIcon,
   sectionErrorText,
-  textCenter,
-} = styles;
+} = shared;
 
 interface Props {
   children: ReactNode;
@@ -59,15 +61,7 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <div className={errorBoundaryContainer}>
           <div className={emptyStateIcon}>
-            <svg className={emptyStateIconSvg} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667
-                1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-              />
-            </svg>
+            <AlertIcon className={emptyStateIconSvg} aria-hidden="true" />
           </div>
           <h2 className={errorBoundaryTitle}>Something went wrong</h2>
           <p className={errorBoundaryText}>
@@ -121,16 +115,8 @@ export function SectionErrorBoundary({ children }: { children: ReactNode }) {
     <ErrorBoundary
       fallback={
         <div className={sectionErrorFallback}>
-          <div className={textCenter}>
-            <svg className={sectionErrorIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667
-                1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-              />
-            </svg>
+          <div className={localStyles.sectionInner}>
+            <AlertIcon className={sectionErrorIcon} aria-hidden="true" />
             <p className={sectionErrorText}>This section encountered an error</p>
           </div>
         </div>

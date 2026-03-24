@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 
+import { cn } from '@remoola/ui';
+
 interface PasswordInputProps {
   value: string;
   onChange: (value: string) => void;
@@ -10,8 +12,6 @@ interface PasswordInputProps {
   inputClassName?: string;
   wrapperClassName?: string;
 }
-
-const joinClasses = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(` `);
 
 export function PasswordInput({
   value,
@@ -31,7 +31,7 @@ export function PasswordInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className={joinClasses(`w-full`, `pr-12`, inputClassName)}
+        className={cn(`w-full`, `pr-12`, inputClassName)}
       />
       <button
         type="button"

@@ -1,0 +1,14 @@
+@reference "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.filtersRow {
+  @apply flex flex-col sm:flex-row sm:items-end gap-3;
+}
+
+.searchWidth {
+  @apply w-full sm:w-64;
+}
+
+.searchInputStretch {
+  @apply h-full w-full;
+}

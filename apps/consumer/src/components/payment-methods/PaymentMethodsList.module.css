@@ -1,0 +1,23 @@
+@reference "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.listRoot {
+  @apply space-y-4;
+}
+
+.rowLeft {
+  @apply flex items-center gap-4;
+}
+
+.rowText {
+  @apply flex flex-col;
+}
+
+.defaultBadge {
+  composes: badgeDefaultInline from '../ui/classNames.module.css';
+  @apply mt-1;
+}
+
+.rowActions {
+  @apply flex gap-3 text-sm;
+}

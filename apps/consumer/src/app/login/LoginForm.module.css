@@ -1,0 +1,14 @@
+@reference "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.authNotice {
+  @apply mt-4 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-900/20 dark:text-emerald-200;
+}
+
+.forgotPasswordRow {
+  @apply mt-1 text-right text-sm;
+}
+
+.authProviderButtonContent {
+  @apply inline-flex items-center gap-2;
+}

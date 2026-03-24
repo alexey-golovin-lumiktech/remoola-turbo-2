@@ -6,32 +6,23 @@ import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import { emailOptionalSchema } from '@remoola/api-types';
+import { cn } from '@remoola/ui';
 
+import localStyles from './AddPaymentMethodModal.module.css';
 import { type PaymentMethodType, type CreatePaymentMethodDto } from '../../../types';
 import { useTheme } from '../../ThemeProvider';
 import styles from '../../ui/classNames.module.css';
 
 const {
   checkboxPrimary,
-  flexRowGap3,
-  flexRowItemsCenter,
-  gap2,
   methodToggleButtonActive,
   methodToggleButtonBase,
   methodToggleButtonInactive,
   modalButtonPrimary,
   modalButtonSecondary,
-  modalContentLg,
   modalFieldVariant,
   modalFooterActions,
-  modalInfoCard,
   modalOverlayClass,
-  modalTitleClass,
-  p2,
-  p4,
-  spaceY3,
-  textMutedGrayStrong,
-  textSm,
 } = styles;
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
@@ -185,6 +176,15 @@ export function AddPaymentMethodModal({ open, onCloseAction, onCreatedAction }: 
   );
 }
 
+function joinMethodToggleClass(
+  base: string | undefined,
+  activeClass: string | undefined,
+  inactiveClass: string | undefined,
+  isActive: boolean,
+) {
+  return cn(base, isActive ? activeClass : inactiveClass);
+}
+
 function AddPaymentMethodModalInner({
   onCloseAction: onClose,
   onCreatedAction: onCreated,
@@ -300,47 +300,38 @@ function AddPaymentMethodModalInner({
       className={modalOverlayClass}
       onClick={(e) => (e.stopPropagation(), e.preventDefault(), !loading && onClose())}
     >
-      <div
-        className={`
-          ${modalContentLg}
-          space-y-5
-        `}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2
-          className={`
-            ${modalTitleClass}
-            mb-2
-          `}
-        >
-          Add payment method
-        </h2>
+      <div className={localStyles.modalBody} onClick={(e) => e.stopPropagation()}>
+        <h2 className={localStyles.modalTitle}>Add Payment Method</h2>
 
         {/* Method selector */}
-        <div className={flexRowGap3}>
+        <div className={localStyles.methodToggleRow}>
           <button
             onClick={(e) => (e.stopPropagation(), e.preventDefault(), setMethodType(`CREDIT_CARD`))}
-            className={`
-              ${methodToggleButtonBase}
-              ${methodType === `CREDIT_CARD` ? methodToggleButtonActive : methodToggleButtonInactive}
-            `}
+            className={joinMethodToggleClass(
+              methodToggleButtonBase,
+              methodToggleButtonActive,
+              methodToggleButtonInactive,
+              methodType === `CREDIT_CARD`,
+            )}
           >
             Credit Card
           </button>
 
           <button
             onClick={(e) => (e.stopPropagation(), e.preventDefault(), setMethodType(`BANK_ACCOUNT`))}
-            className={`
-              ${methodToggleButtonBase}
-              ${methodType === `BANK_ACCOUNT` ? methodToggleButtonActive : methodToggleButtonInactive}
-            `}
+            className={joinMethodToggleClass(
+              methodToggleButtonBase,
+              methodToggleButtonActive,
+              methodToggleButtonInactive,
+              methodType === `BANK_ACCOUNT`,
+            )}
           >
             Bank Account
           </button>
         </div>
 
         {/* Billing details */}
-        <div className={spaceY3}>
+        <div className={localStyles.billingFields}>
           <input
             placeholder="Billing name"
             value={billingName}
@@ -365,25 +356,14 @@ function AddPaymentMethodModalInner({
 
         {/* Card form */}
         {methodType === `CREDIT_CARD` && (
-          <div
-            className={`
-              ${modalInfoCard}
-              ${p4}
-            `}
-          >
-            <CardElement className={p2} options={cardElementOptions} />
+          <div className={localStyles.cardElementWrap}>
+            <CardElement className={localStyles.cardElementInner} options={cardElementOptions} />
           </div>
         )}
 
         {/* Bank form */}
         {methodType === `BANK_ACCOUNT` && (
-          <div
-            className={`
-              ${modalInfoCard}
-              ${spaceY3}
-              ${p4}
-            `}
-          >
+          <div className={localStyles.bankFields}>
             <input
               placeholder="Bank name"
               value={bankName}
@@ -407,14 +387,7 @@ function AddPaymentMethodModalInner({
           </div>
         )}
 
-        <label
-          className={`
-            ${flexRowItemsCenter}
-            ${gap2}
-            ${textSm}
-            ${textMutedGrayStrong}
-          `}
-        >
+        <label className={localStyles.defaultCheckboxLabel}>
           <input
             type="checkbox"
             checked={defaultSelected}
@@ -434,7 +407,7 @@ function AddPaymentMethodModalInner({
           </button>
 
           <button onClick={submit} disabled={loading} className={modalButtonPrimary}>
-            {loading ? `Saving...` : `Add method`}
+            {loading ? `Saving...` : `Add Payment Method`}
           </button>
         </div>
       </div>

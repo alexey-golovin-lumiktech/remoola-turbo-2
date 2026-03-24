@@ -14,13 +14,14 @@ import { OrganizationDetailsForm } from './OrganizationDetailsForm';
 import { PasswordChangeForm } from './PasswordChangeForm';
 import { PersonalDetailsForm } from './PersonalDetailsForm';
 import { PreferredCurrencySettingsForm } from './PreferredCurrencySettingsForm';
+import localStyles from './ProfileSettingsClient.module.css';
 import { ThemeSettingsForm } from './ThemeSettingsForm';
 import styles from '../../../../components/ui/classNames.module.css';
 import { apiClient } from '../../../../lib/api';
 import { handleSessionExpired, isRedirectInProgress } from '../../../../lib/session-expired';
 import { type ConsumerProfile } from '../../../../types';
 
-const { spaceY10, textSecondary, primaryButtonClass } = styles;
+const { textSecondary, primaryButtonClass } = styles;
 
 export type LoadState = `loading` | `ready` | `unauthorized` | `error`;
 
@@ -147,7 +148,7 @@ export default function ProfileSettingsClient() {
   }
 
   return (
-    <div className={spaceY10} data-testid="settings-ready">
+    <div className={localStyles.settingsReady} data-testid="settings-ready">
       <ThemeSettingsForm initialTheme={settings?.theme ?? undefined} />
       <PreferredCurrencySettingsForm
         preferredCurrency={settings?.preferredCurrency ?? null}

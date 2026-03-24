@@ -1,0 +1,10 @@
+@reference "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.pageRoot {
+  @apply space-y-6;
+}
+
+.toolbar {
+  @apply flex flex-wrap items-end gap-4;
+}

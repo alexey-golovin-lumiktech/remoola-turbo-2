@@ -11,6 +11,7 @@ import {
   type TCurrencyCode,
   toCurrency,
 } from '@remoola/api-types';
+import { cn } from '@remoola/ui';
 
 import styles from './classNames.module.css';
 import { FormField } from './FormField';
@@ -126,10 +127,10 @@ export function AmountCurrencyInput({
             }
             classNames={{
               control: () =>
-                [
+                cn(
                   `!min-h-[42px] !h-[42px] !rounded-none !border-0 !border-l`,
                   `!border-gray-300 dark:!border-slate-600 !bg-transparent !shadow-none`,
-                ].join(` `),
+                ),
               valueContainer: () => `!py-0 !px-3`,
             }}
             styles={{

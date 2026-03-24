@@ -1,9 +1,12 @@
 'use client';
 
-import { FormSelect, type FormSelectOption } from '../ui';
-import styles from '../ui/classNames.module.css';
+import { cn } from '@remoola/ui';
 
-const { filterRowControlHeight, filterRowGap3AlignEnd, filterRowSearchInput, width64 } = styles;
+import { FormSelect, type FormSelectOption } from '../ui';
+import localStyles from './PaymentsFilters.module.css';
+import shared from '../ui/classNames.module.css';
+
+const { filterRowControlHeight, filterRowSearchInput } = shared;
 
 const STATUS_OPTIONS: FormSelectOption[] = [
   { value: ``, label: `All statuses` },
@@ -37,22 +40,13 @@ export function PaymentsFilters({
   onSearchChangeAction,
 }: PaymentsFiltersProps) {
   return (
-    <div className={filterRowGap3AlignEnd}>
+    <div className={localStyles.filtersRow}>
       {/* Search — fixed 42px height so it aligns with selects */}
-      <div
-        className={`
-          ${filterRowControlHeight}
-          ${width64}
-        `}
-      >
+      <div className={cn(filterRowControlHeight, localStyles.searchWidth)}>
         <input
           type="text"
           placeholder="Search…"
-          className={`
-            ${filterRowSearchInput}
-            h-full
-            w-full
-          `}
+          className={cn(filterRowSearchInput, localStyles.searchInputStretch)}
           value={search}
           onChange={(e) => onSearchChangeAction(e.target.value)}
         />

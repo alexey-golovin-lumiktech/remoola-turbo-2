@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { formatDateTimeForDisplay } from '../../lib/date-utils';
 import { type ConsumerContactDetails } from '../../types';
 import { ErrorState } from '../ui';
+import localStyles from './ContactDetailsView.module.css';
 import styles from '../ui/classNames.module.css';
 
 const {
@@ -23,8 +24,6 @@ const {
   contactDetailsSubtitle,
   contactDetailsTitle,
   linkPrimaryUnderlineSm,
-  textPrimary,
-  fontMedium,
 } = styles;
 
 type ContactDetailsViewProps = { id: ConsumerContactDetails[`id`] };
@@ -78,7 +77,7 @@ export function ContactDetailsView({ id }: ContactDetailsViewProps) {
         <div className={contactDetailsPaymentList}>
           {details.paymentRequests.map((pr) => (
             <Link key={pr.id} href={`/payments/${pr.id}`} className={contactDetailsPaymentLink}>
-              <div className={fontMedium}>
+              <div className={localStyles.paymentAmount}>
                 ${pr.amount} — {pr.status}
               </div>
               <div className={contactDetailsPaymentMeta}>{formatDateTimeForDisplay(pr.createdAt)}</div>
@@ -96,14 +95,7 @@ export function ContactDetailsView({ id }: ContactDetailsViewProps) {
         <div className={contactDetailsDocsGrid}>
           {details.documents.map((doc) => (
             <div key={doc.id} className={contactDetailsDocCard}>
-              <div
-                className={`
-                  ${fontMedium}
-                  ${textPrimary}
-                `}
-              >
-                {doc.name}
-              </div>
+              <div className={localStyles.docName}>{doc.name}</div>
               <a href={doc.url} target="_blank" className={linkPrimaryUnderlineSm} rel="noreferrer">
                 Download
               </a>

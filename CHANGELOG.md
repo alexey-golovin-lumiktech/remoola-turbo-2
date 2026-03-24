@@ -1578,4 +1578,28 @@
 
 </details>
 
+<details open>
+<summary>2026-03-24</summary>
+
+- **2026-03-24:**
+  ### 🚀 Feature
+  - Consumer web UX refresh:
+    - add a command palette for page/action navigation from the shell search control;
+    - use `Cmd+K` on Apple platforms and `Ctrl+/` on Linux/Windows for the global shortcut;
+    - simplify mobile navigation to Home, Payments, Contacts, and Contracts, with Documents, Bank & Cards, Withdraw, Exchange, and Settings moved into a `More` drawer;
+    - polish desktop sidebar labels and icon-backed navigation.
+  - Consumer theme and hydration polish:
+    - apply the resolved light/dark theme before paint in the root layout;
+    - keep theme state aligned across `html` and `body` with reduced hydration mismatch / flash risk.
+  - Consumer signup and profile UX refinement:
+    - tighten calendar-based date-of-birth validation;
+    - broaden address parsing to recognize Canadian postal codes in prefill flows;
+    - add country-aware passport/ID placeholders and validation support;
+    - refresh signup completion and verification copy for clearer success/failure states.
+
+  ### 📄 Documentation
+  - Update `docs/FEATURES_CURRENT.md`, `docs/PROJECT_DOCUMENTATION.md`, and `docs/PROJECT_SUMMARY.md` to reflect the command palette, mobile `More` navigation, earlier theme application, and user-visible signup/profile validation changes.
+
+</details>
+
 </details>

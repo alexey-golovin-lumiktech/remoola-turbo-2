@@ -119,9 +119,11 @@ Internal API proxy routes:
 Consumer UI with:
 
 - Login, logout, OAuth callback, and signup flow (multi-step); auth refresh and session-expired handling.
-- Signup start and completion confirmation pages; email verification page handles `verified` without `email` in the query (optional `email` still shown when the redirect includes it).
+- Signup start and completion confirmation pages; email verification page handles `verified` without `email` in the query (optional `email` still shown when the redirect includes it), with refreshed verification/completion copy and clearer invalid/expired-link messaging.
 - Dashboard with summaries, tasks, and activity; “Verify Me” vs “Complete your
   profile” (link to settings) based on profile-complete task from API.
+- Shell navigation with icon-based desktop sidebar labels, plus a command palette that can open from the header search control or keyboard shortcut (`Cmd+K` on Apple platforms, `Ctrl+/` on Linux/Windows).
+- Mobile shell navigation keeps the primary bottom bar focused on Home, Payments, Contacts, and Contracts; secondary destinations such as Documents, Bank & Cards, Withdraw, Exchange, and Settings move into a `More` drawer.
 - Contacts list (paginated, layout aligned with Documents), create/edit/delete, and detail pages.
 - Contracts list (paginated).
 - Documents upload, list (paginated), tagging, and attach-to-payment flow.
@@ -130,11 +132,12 @@ Consumer UI with:
 - Payment requests creation and send flow.
 - Payments list (paginated, filters), details, start payment, transfer, withdraw, and invoice generation.
 - Profile settings (personal, address, organization, password).
-- Theme and preferred currency settings (light/dark/system; currency from api-types allowlist).
+- Theme and preferred currency settings (light/dark/system; currency from api-types allowlist), with resolved theme applied before paint to reduce flash and hydration mismatch on initial load.
 - Shared UI: PaginationBar (Showing X–Y of Z, Previous/Next), AmountCurrencyInput,
   RecipientEmailField (with recipient email autocomplete: debounced contact search,
   dropdown "Name — email", clear, keyboard accessible); form controls 42px/rounded-lg;
   Contacts and Documents pages share same layout pattern.
+- Signup/profile validation refinements include stricter calendar-based date parsing for date of birth, country-aware passport/ID examples and validation, Canadian postal-code parsing support in address prefill, and clearer Tax ID guidance in validation copy.
 
 Internal API proxy routes:
 

@@ -2,7 +2,7 @@
 
 import styles from './classNames.module.css';
 
-const { paginationBar, paginationInfo, paginationButton } = styles;
+const { paginationActions, paginationBar, paginationButton, paginationInfo, paginationPageInfo } = styles;
 
 type PaginationBarProps = {
   total: number;
@@ -10,9 +10,17 @@ type PaginationBarProps = {
   pageSize: number;
   onPageChange: (page: number) => void;
   loading?: boolean;
+  showPageInfo?: boolean;
 };
 
-export function PaginationBar({ total, page, pageSize, onPageChange, loading = false }: PaginationBarProps) {
+export function PaginationBar({
+  total,
+  page,
+  pageSize,
+  onPageChange,
+  loading = false,
+  showPageInfo = true,
+}: PaginationBarProps) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const to = Math.min(page * pageSize, total);
@@ -24,33 +32,39 @@ export function PaginationBar({ total, page, pageSize, onPageChange, loading = f
       <span className={paginationInfo}>
         Showing {from}–{to} of {total}
       </span>
-      <button
-        type="button"
-        className={paginationButton}
-        disabled={page <= 1 || loading}
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          onPageChange(Math.max(1, page - 1));
-        }}
-      >
-        Previous
-      </button>
-      <span className={paginationInfo}>
-        Page {page} of {totalPages}
-      </span>
-      <button
-        type="button"
-        className={paginationButton}
-        disabled={page >= totalPages || loading}
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          onPageChange(Math.min(totalPages, page + 1));
-        }}
-      >
-        Next
-      </button>
+
+      <div className={paginationActions}>
+        <button
+          type="button"
+          className={paginationButton}
+          disabled={page <= 1 || loading}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onPageChange(Math.max(1, page - 1));
+          }}
+        >
+          Previous
+        </button>
+        <button
+          type="button"
+          className={paginationButton}
+          disabled={page >= totalPages || loading}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onPageChange(Math.min(totalPages, page + 1));
+          }}
+        >
+          Next
+        </button>
+      </div>
+
+      {showPageInfo && (
+        <span className={paginationPageInfo}>
+          Page {page} of {totalPages}
+        </span>
+      )}
     </div>
   );
 }

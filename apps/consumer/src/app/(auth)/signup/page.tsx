@@ -14,10 +14,11 @@ import {
   AddressDetailsStep,
 } from './components';
 import { useSignupForm, SignupStepsProvider, useSignupSteps } from './hooks';
+import localStyles from './page.module.css';
 import styles from '../../../components/ui/classNames.module.css';
 import { STEP_NAME } from '../../../types';
 
-const { refreshButtonClass, signupFlowContainer, spaceY4, textSecondary } = styles;
+const { refreshButtonClass, signupFlowContainer, textSecondary } = styles;
 
 function SignupPageInner() {
   const router = useRouter();
@@ -150,16 +151,7 @@ function SignupFlow({ hydrateError, onRetryHydrate }: { hydrateError: string | n
   return (
     <div className={signupFlowContainer} data-testid="consumer-signup-flow">
       {hydrateError && (
-        <div
-          role="alert"
-          className={`
-            ${spaceY4}
-            w-full
-            max-w-md
-            mb-4
-          `}
-          data-testid="consumer-signup-hydrate-error"
-        >
+        <div role="alert" className={localStyles.hydrateErrorBox} data-testid="consumer-signup-hydrate-error">
           <p className={textSecondary}>{hydrateError}</p>
           <button
             type="button"

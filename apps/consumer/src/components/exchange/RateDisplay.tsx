@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 
+import { cn } from '@remoola/ui';
+
 import { getErrorMessageForUser } from '../../lib/error-messages';
 import { handleSessionExpired } from '../../lib/session-expired';
 import styles from '../ui/classNames.module.css';
@@ -85,12 +87,7 @@ export function RateDisplay({ from, to }: RateDisplayProps) {
 
             <span className={rateEquals}>=</span>
 
-            <span
-              className={`
-                ${rateValue}
-                ${changed ? rateValueChanged : ``}
-              `}
-            >
+            <span className={cn(rateValue, changed && rateValueChanged)}>
               {rate.toFixed(8)} {to}
             </span>
           </div>

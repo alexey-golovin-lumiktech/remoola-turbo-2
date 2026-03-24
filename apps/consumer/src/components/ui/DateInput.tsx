@@ -3,12 +3,12 @@
 import { useState } from 'react';
 import DatePicker from 'react-datepicker';
 
+import { cn } from '@remoola/ui';
+
 import styles from './classNames.module.css';
 import { getUserLocale } from '../../lib/date-utils';
 
 const { formInputFullWidth, formInputError } = styles;
-
-const joinClasses = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(` `);
 
 export interface DateInputProps {
   label: string;
@@ -58,11 +58,7 @@ export const DateInput = ({
   return (
     <div>
       <label className={styles.signupStepLabel}>{label}</label>
-      <div
-        className={`
-          relative
-        `}
-      >
+      <div className="relative">
         <DatePicker
           selected={selectedDate}
           onChange={handleDateChange}
@@ -70,7 +66,7 @@ export const DateInput = ({
           placeholderText={placeholder || `Select date`}
           disabled={disabled}
           required={required}
-          className={joinClasses(formInputFullWidth, error && formInputError, className)}
+          className={cn(formInputFullWidth, error && formInputError, className)}
           wrapperClassName={`
             w-full
           `}

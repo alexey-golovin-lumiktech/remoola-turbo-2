@@ -2,20 +2,11 @@
 
 import { toast } from 'sonner';
 
+import localStyles from './DeleteContactModal.module.css';
 import { type ConsumerContact } from '../../../types';
 import styles from '../../ui/classNames.module.css';
 
-const {
-  modalButtonDanger,
-  modalButtonSecondary,
-  modalContentMd,
-  modalFooterActions,
-  modalOverlayClass,
-  modalParagraphClass,
-  modalTitleClass,
-  mt4,
-  py2,
-} = styles;
+const { modalButtonDanger, modalButtonSecondary, modalContentMd, modalOverlayClass, modalTitleClass } = styles;
 
 type DeleteContactModalProps = {
   open: boolean;
@@ -46,21 +37,11 @@ export function DeleteContactModal({ open, onCloseAction, contact, onDeletedActi
     <div className={modalOverlayClass}>
       <div className={modalContentMd}>
         <h2 className={modalTitleClass}>Delete Contact</h2>
-        <p
-          className={`
-            ${modalParagraphClass}
-            ${py2}
-          `}
-        >
+        <p className={localStyles.confirmParagraph}>
           Are you sure you want to delete &quot;{contact.name ?? contact.email}&quot;?
         </p>
 
-        <div
-          className={`
-            ${modalFooterActions}
-            ${mt4}
-          `}
-        >
+        <div className={localStyles.footer}>
           <button onClick={onCloseAction} className={modalButtonSecondary}>
             Cancel
           </button>

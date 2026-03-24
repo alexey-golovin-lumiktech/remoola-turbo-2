@@ -1,0 +1,6 @@
+@reference "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.sectionInner {
+  @apply text-center;
+}

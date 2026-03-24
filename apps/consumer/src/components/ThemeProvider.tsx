@@ -36,57 +36,67 @@ interface ThemeProviderProps {
   storageKey?: string;
 }
 
+function isTheme(value: string | null): value is ITheme {
+  return value === Theme.LIGHT || value === Theme.DARK || value === Theme.SYSTEM;
+}
+
+function resolveTheme(theme: ITheme, mediaQuery: MediaQueryList | null = null): typeof Theme.LIGHT | typeof Theme.DARK {
+  if (theme === Theme.SYSTEM) {
+    const prefersDark = mediaQuery?.matches ?? window.matchMedia(`(prefers-color-scheme: dark)`).matches;
+    return prefersDark ? Theme.DARK : Theme.LIGHT;
+  }
+
+  return theme;
+}
+
+function applyResolvedTheme(nextTheme: typeof Theme.LIGHT | typeof Theme.DARK) {
+  const root = window.document.documentElement;
+  const body = window.document.body;
+
+  root.classList.remove(Theme.LIGHT, Theme.DARK);
+  root.classList.add(nextTheme);
+  root.dataset.theme = nextTheme;
+  root.style.colorScheme = nextTheme;
+
+  body.classList.remove(Theme.LIGHT, Theme.DARK);
+  body.classList.add(nextTheme);
+  body.dataset.theme = nextTheme;
+  body.style.colorScheme = nextTheme;
+}
+
 export function ThemeProvider({
   children,
   defaultTheme = Theme.SYSTEM,
   storageKey = `remoola-theme`,
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<ITheme>(defaultTheme);
+  const [theme, setThemeState] = useState<ITheme>(defaultTheme);
   const [resolvedTheme, setResolvedTheme] = useState<ITheme>(Theme.LIGHT);
-  const [mounted, setMounted] = useState(false);
+  const [hasLoadedStoredTheme, setHasLoadedStoredTheme] = useState(false);
 
   // Load theme from localStorage on mount
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(storageKey) as ITheme;
-      if (stored && [Theme.LIGHT, Theme.DARK, Theme.SYSTEM].includes(stored)) {
-        setTheme(stored);
+      const stored = localStorage.getItem(storageKey);
+      if (isTheme(stored)) {
+        setThemeState(stored);
       }
     } catch (error) {
       clientLogger.warn(`Failed to load theme from localStorage`, {
         reason: error instanceof Error ? error.message : String(error),
       });
+    } finally {
+      setHasLoadedStoredTheme(true);
     }
-    setMounted(true);
   }, [storageKey]);
 
   // Resolve theme based on user preference and system preference
   useEffect(() => {
-    const root = window.document.documentElement;
-    const body = window.document.body;
+    if (!hasLoadedStoredTheme) return;
 
-    if (theme === Theme.SYSTEM) {
-      const systemTheme = window.matchMedia(`(prefers-color-scheme: dark)`).matches ? Theme.DARK : Theme.LIGHT;
-      const nextTheme = systemTheme;
+    const nextTheme = resolveTheme(theme);
 
-      setResolvedTheme(nextTheme);
-      root.classList.remove(`light`, `dark`);
-      body.classList.remove(`light`, `dark`);
-      root.classList.add(nextTheme);
-      body.classList.add(nextTheme);
-      root.dataset.theme = nextTheme;
-      body.dataset.theme = nextTheme;
-    } else {
-      const nextTheme = theme;
-
-      setResolvedTheme(nextTheme);
-      root.classList.remove(`light`, `dark`);
-      body.classList.remove(`light`, `dark`);
-      root.classList.add(nextTheme);
-      body.classList.add(nextTheme);
-      root.dataset.theme = nextTheme;
-      body.dataset.theme = nextTheme;
-    }
+    setResolvedTheme(nextTheme);
+    applyResolvedTheme(nextTheme);
 
     // Save to localStorage
     try {
@@ -96,44 +106,35 @@ export function ThemeProvider({
         reason: error instanceof Error ? error.message : String(error),
       });
     }
-  }, [theme, storageKey]);
+  }, [hasLoadedStoredTheme, theme, storageKey]);
 
   // Listen for system theme changes when theme is 'SYSTEM'
   useEffect(() => {
-    if (theme !== Theme.SYSTEM) return;
+    if (!hasLoadedStoredTheme || theme !== Theme.SYSTEM) return;
 
     const mediaQuery = window.matchMedia(`(prefers-color-scheme: dark)`);
 
     const handleChange = () => {
-      const root = window.document.documentElement;
-      const body = window.document.body;
-      const systemTheme = mediaQuery.matches ? Theme.DARK : Theme.LIGHT;
-      const nextTheme = systemTheme;
+      const nextTheme = resolveTheme(Theme.SYSTEM, mediaQuery);
 
       setResolvedTheme(nextTheme);
-      root.classList.remove(`light`, `dark`);
-      body.classList.remove(`light`, `dark`);
-      root.classList.add(nextTheme);
-      body.classList.add(nextTheme);
-      root.dataset.theme = nextTheme;
-      body.dataset.theme = nextTheme;
+      applyResolvedTheme(nextTheme);
     };
 
     mediaQuery.addEventListener(`change`, handleChange);
     return () => mediaQuery.removeEventListener(`change`, handleChange);
-  }, [theme]);
+  }, [hasLoadedStoredTheme, theme]);
+
+  const setTheme = (nextTheme: ITheme) => {
+    setThemeState((currentTheme) => (currentTheme === nextTheme ? currentTheme : nextTheme));
+  };
 
   const value = {
     theme,
     resolvedTheme,
     setTheme,
-    toggleTheme: () => setTheme((prev) => (prev === Theme.LIGHT ? Theme.DARK : Theme.LIGHT)),
+    toggleTheme: () => setTheme(theme === Theme.LIGHT ? Theme.DARK : Theme.LIGHT),
   };
-
-  // Prevent hydration mismatch by not rendering until mounted
-  if (!mounted) {
-    return <>{children}</>;
-  }
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }

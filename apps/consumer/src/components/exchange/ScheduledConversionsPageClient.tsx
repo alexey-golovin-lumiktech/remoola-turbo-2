@@ -10,26 +10,18 @@ import {
   CURRENCY_CODES,
   toCurrencyOrDefault,
 } from '@remoola/api-types';
+import { cn } from '@remoola/ui';
 
+import { ScheduledConversionModal } from './ScheduledConversionModal';
+import localStyles from './ScheduledConversionsPageClient.module.css';
 import { formatDateTimeForDisplay } from '../../lib/date-utils';
 import { usePreferredCurrency } from '../../lib/hooks';
-import { AmountCurrencyInput, FormSelect, type FormSelectOption, PaginationBar } from '../ui';
+import { PaginationBar } from '../ui';
 import styles from '../ui/classNames.module.css';
 
 const DEFAULT_PAGE_SIZE = 10;
 
-const {
-  exchangePageContainer,
-  exchangePageTitle,
-  exchangeCard,
-  exchangeForm,
-  exchangeLabel,
-  exchangeField,
-  exchangeButton,
-  gridGap4,
-  flexRowBetween,
-  actionButtonDanger,
-} = styles;
+const { contactsAddButton, filterRowControlHeight } = styles;
 
 type ScheduledConversion = {
   id: string;
@@ -58,6 +50,7 @@ const defaultForm: ScheduleForm = {
 
 export function ScheduledConversionsPageClient() {
   const { preferredCurrency, loaded: settingsLoaded } = usePreferredCurrency();
+  const [modalOpen, setModalOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(DEFAULT_PAGE_SIZE);
   const [total, setTotal] = useState(0);
@@ -118,6 +111,18 @@ export function ScheduledConversionsPageClient() {
     }));
   }, [settingsLoaded, currencies, preferredCurrency]);
 
+  function resetForm() {
+    preferredAppliedRef.current = false;
+    setForm(defaultForm);
+    setModalOpen(false);
+  }
+
+  function openCreateModal() {
+    preferredAppliedRef.current = false;
+    setForm(defaultForm);
+    setModalOpen(true);
+  }
+
   async function submit() {
     const numericAmount = Number(form.amount?.replace(/,/g, ``) ?? 0);
     if (!form.amount || Number.isNaN(numericAmount) || numericAmount <= 0) {
@@ -156,7 +161,7 @@ export function ScheduledConversionsPageClient() {
         return;
       }
 
-      setForm(defaultForm);
+      resetForm();
       setPage(1);
       await loadScheduled();
     } finally {
@@ -178,82 +183,103 @@ export function ScheduledConversionsPageClient() {
   }
 
   return (
-    <div className={exchangePageContainer}>
-      <h1 className={exchangePageTitle}>Scheduled Conversions</h1>
-
-      <div
-        className={`
-          ${exchangeCard}
-          ${gridGap4}
-        `}
-      >
-        <strong>Schedule a conversion</strong>
-        <div className={exchangeForm}>
-          <AmountCurrencyInput
-            label={`Amount (${form.fromCurrency})`}
-            amount={form.amount}
-            onAmountChange={(v) => setForm((prev) => ({ ...prev, amount: v }))}
-            currencyCode={form.fromCurrency}
-            onCurrencyChange={(v) => setForm((prev) => ({ ...prev, fromCurrency: v }))}
-            currencyOptions={currencies.map((c) => ({ value: c, label: c }))}
-            placeholder="0.00"
-          />
-
-          <FormSelect
-            label="To currency"
-            value={form.toCurrency}
-            onChange={(v) => setForm((prev) => ({ ...prev, toCurrency: v as TCurrencyCode }))}
-            options={currencies.map((c) => ({ value: c, label: c })) as FormSelectOption[]}
-            placeholder="Select currency..."
-            isClearable={false}
-          />
-
-          <div>
-            <label className={exchangeLabel}>Execute at</label>
-            <input
-              className={exchangeField}
-              type="datetime-local"
-              value={form.executeAt}
-              onChange={(e) => setForm((prev) => ({ ...prev, executeAt: e.target.value }))}
-            />
-          </div>
-
-          <button onClick={submit} disabled={loading} className={exchangeButton}>
-            Schedule conversion
-          </button>
-        </div>
+    <div className={localStyles.pageRoot}>
+      <div className={localStyles.toolbar}>
+        <button
+          type="button"
+          onClick={openCreateModal}
+          className={cn(contactsAddButton, filterRowControlHeight, localStyles.createButton)}
+        >
+          Schedule conversion
+        </button>
       </div>
 
-      <div
-        className={`
-          ${exchangeCard}
-          ${gridGap4}
-        `}
-      >
-        <strong>Upcoming and past</strong>
-        {total > 0 && (
-          <PaginationBar total={total} page={page} pageSize={pageSize} onPageChange={setPage} loading={loadingList} />
-        )}
-        {scheduled.length === 0 && !loadingList && <div>No scheduled conversions.</div>}
+      {total > 0 && (
+        <PaginationBar
+          total={total}
+          page={page}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          loading={loadingList}
+          showPageInfo={false}
+        />
+      )}
+
+      {scheduled.length === 0 && !loadingList && (
+        <div className={localStyles.emptyState}>No scheduled conversions.</div>
+      )}
+
+      <div className={localStyles.conversionsList}>
         {scheduled.map((item) => (
-          <div key={item.id} className={flexRowBetween}>
-            <div>
-              <div>
-                {item.fromCurrency} → {item.toCurrency} | {item.amount}
+          <article key={item.id} className={localStyles.conversionRow}>
+            <div className={localStyles.conversionHeader}>
+              <div className={localStyles.conversionIdentity}>
+                <div className={localStyles.conversionPrimary}>
+                  {item.fromCurrency} → {item.toCurrency}
+                </div>
+                <div className={localStyles.statusWrap}>
+                  <span className={localStyles.statusLabel}>Status</span>
+                  <span
+                    className={
+                      item.status === SCHEDULED_FX_CONVERSION_STATUS.PENDING
+                        ? localStyles.statusPending
+                        : item.status === SCHEDULED_FX_CONVERSION_STATUS.EXECUTED
+                          ? localStyles.statusCompleted
+                          : localStyles.statusInactive
+                    }
+                  >
+                    {item.status}
+                  </span>
+                </div>
               </div>
-              <div>
-                execute {formatDateTimeForDisplay(item.executeAt)} | status {item.status} | attempts {item.attempts}
-              </div>
-              {item.lastError && <div>last error: {item.lastError}</div>}
             </div>
+
+            <div className={localStyles.metaGrid}>
+              <div className={localStyles.metaRow}>
+                <span className={localStyles.metaLabel}>Amount</span>
+                <span className={localStyles.metaValue}>{item.amount}</span>
+              </div>
+              <div className={localStyles.metaRow}>
+                <span className={localStyles.metaLabel}>Execute at</span>
+                <span className={localStyles.metaValue}>{formatDateTimeForDisplay(item.executeAt)}</span>
+              </div>
+              <div className={localStyles.metaRow}>
+                <span className={localStyles.metaLabel}>Attempts</span>
+                <span className={localStyles.metaValue}>{item.attempts}</span>
+              </div>
+              {item.lastError && (
+                <div className={localStyles.metaRow}>
+                  <span className={localStyles.metaLabel}>Last error</span>
+                  <span className={localStyles.metaValue}>{item.lastError}</span>
+                </div>
+              )}
+            </div>
+
             {item.status === SCHEDULED_FX_CONVERSION_STATUS.PENDING && (
-              <button className={actionButtonDanger} onClick={() => cancelConversion(item)} type="button">
-                Cancel
-              </button>
+              <div className={localStyles.actions}>
+                <button className={localStyles.cancelAction} onClick={() => cancelConversion(item)} type="button">
+                  Cancel
+                </button>
+              </div>
             )}
-          </div>
+          </article>
         ))}
       </div>
+
+      <ScheduledConversionModal
+        open={modalOpen}
+        heading="Schedule a conversion"
+        submitLabel="Schedule conversion"
+        loading={loading}
+        currencies={currencies}
+        form={form}
+        onCloseAction={resetForm}
+        onSubmitAction={submit}
+        onAmountChange={(value) => setForm((prev) => ({ ...prev, amount: value }))}
+        onFromCurrencyChange={(value) => setForm((prev) => ({ ...prev, fromCurrency: value }))}
+        onToCurrencyChange={(value) => setForm((prev) => ({ ...prev, toCurrency: value }))}
+        onExecuteAtChange={(value) => setForm((prev) => ({ ...prev, executeAt: value }))}
+      />
     </div>
   );
 }

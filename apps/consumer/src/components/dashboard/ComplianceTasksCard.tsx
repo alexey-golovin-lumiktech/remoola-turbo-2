@@ -33,8 +33,8 @@ export function ComplianceTasksCard({ tasks }: ComplianceTasksCardProps) {
           <p className={complianceSubtitle}>
             {completedCount} of {tasks.length} completed
           </p>
+          <p className={complianceProgressText}>{progress}% ready</p>
         </div>
-        <span className={complianceProgressText}>{progress}% ready</span>
       </header>
 
       <div className={complianceBar}>

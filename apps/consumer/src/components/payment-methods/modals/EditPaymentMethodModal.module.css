@@ -1,0 +1,31 @@
+@reference "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.modalBody {
+  composes: modalContentLg from '../../ui/classNames.module.css';
+  @apply space-y-5;
+}
+
+.metaCard {
+  composes: modalInfoCard from '../../ui/classNames.module.css';
+  @apply p-4;
+}
+
+.typeValue {
+  composes: modalMetaValue from '../../ui/classNames.module.css';
+  @apply mb-2;
+}
+
+.expiresNote {
+  composes: modalInfoSubtext from '../../ui/classNames.module.css';
+  @apply mt-1;
+}
+
+.editableFields {
+  @apply space-y-3;
+}
+
+.defaultCheckboxLabel {
+  composes: textMutedGrayStrong from '../../ui/classNames.module.css';
+  @apply mt-3 flex items-center gap-2 text-sm;
+}

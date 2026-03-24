@@ -2,18 +2,10 @@
 
 import { type ConsumerContactAddress, type ConsumerContact } from '../../types';
 import { DataTable, type Column } from '../ui';
+import localStyles from './ContactsTable.module.css';
 import styles from '../ui/classNames.module.css';
 
-const {
-  linkDanger,
-  linkPrimary,
-  tableCellBodyMd,
-  tableCellHeaderMd,
-  textMutedGrayStrong,
-  textMutedMixed,
-  textPrimary,
-  textRight,
-} = styles;
+const { tableCellBodyMd, tableCellHeaderMd, textMutedGrayStrong, textMutedMixed } = styles;
 
 type ContactsTableProps = {
   items: ConsumerContact[];
@@ -29,16 +21,7 @@ export function ContactsTable({ items, onDetailsAction, onEditAction, onDeleteAc
       header: `Name`,
       headerClassName: tableCellHeaderMd,
       className: tableCellBodyMd,
-      render: (contact) => (
-        <span
-          className={`
-            font-medium
-            ${textPrimary}
-          `}
-        >
-          {contact.name ?? `—`}
-        </span>
-      ),
+      render: (contact) => <span className={localStyles.nameCell}>{contact.name ?? `—`}</span>,
     },
     {
       key: `email`,
@@ -58,30 +41,26 @@ export function ContactsTable({ items, onDetailsAction, onEditAction, onDeleteAc
       key: `actions`,
       header: `Actions`,
       headerClassName: tableCellHeaderMd,
-      className: `${tableCellBodyMd} ${textRight}`,
+      className: localStyles.actionsCell,
       render: (contact) => (
-        <div
-          className={`
-            space-x-3
-          `}
-        >
+        <div className={localStyles.actionsRow}>
           <button
             onClick={(e) => (e.preventDefault(), e.stopPropagation(), onDetailsAction(contact))}
-            className={linkPrimary}
+            className={localStyles.actionLinkPrimary}
           >
             Details
           </button>
 
           <button
             onClick={(e) => (e.preventDefault(), e.stopPropagation(), onEditAction(contact))}
-            className={linkPrimary}
+            className={localStyles.actionLinkPrimary}
           >
             Edit
           </button>
 
           <button
             onClick={(e) => (e.preventDefault(), e.stopPropagation(), onDeleteAction(contact))}
-            className={linkDanger}
+            className={localStyles.actionLinkDanger}
           >
             Delete
           </button>
@@ -91,12 +70,70 @@ export function ContactsTable({ items, onDetailsAction, onEditAction, onDeleteAc
   ];
 
   return (
-    <DataTable
-      data={items}
-      columns={columns}
-      emptyMessage="No contacts found."
-      keyExtractor={(contact) => contact.id}
-    />
+    <>
+      <div className={localStyles.mobileList} data-testid="consumer-contacts-mobile-list">
+        {items.length === 0 ? (
+          <div className={localStyles.mobileEmptyState}>No contacts found.</div>
+        ) : (
+          items.map((contact) => {
+            const displayName = contact.name?.trim() || `No name provided`;
+            const address = shortAddress(contact.address);
+
+            return (
+              <article key={contact.id} className={localStyles.mobileCard}>
+                <div className={localStyles.mobileHeader}>
+                  <div className={localStyles.mobileIdentity}>
+                    <div className={localStyles.mobileName}>{displayName}</div>
+                    <div className={localStyles.mobileEmail}>{contact.email}</div>
+                  </div>
+                </div>
+
+                <div className={localStyles.mobileMetaGrid}>
+                  <div>
+                    <div className={localStyles.mobileMetaLabel}>Name</div>
+                    <div className={localStyles.mobileMetaValue}>{displayName}</div>
+                  </div>
+                  <div>
+                    <div className={localStyles.mobileMetaLabel}>Address</div>
+                    <div className={localStyles.mobileMetaValue}>{address}</div>
+                  </div>
+                </div>
+
+                <div className={localStyles.mobileActions}>
+                  <button
+                    onClick={(e) => (e.preventDefault(), e.stopPropagation(), onDetailsAction(contact))}
+                    className={localStyles.mobileActionLinkPrimary}
+                  >
+                    Details
+                  </button>
+                  <button
+                    onClick={(e) => (e.preventDefault(), e.stopPropagation(), onEditAction(contact))}
+                    className={localStyles.mobileActionLinkPrimary}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={(e) => (e.preventDefault(), e.stopPropagation(), onDeleteAction(contact))}
+                    className={localStyles.mobileActionLinkDanger}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </article>
+            );
+          })
+        )}
+      </div>
+
+      <div className={localStyles.desktopTableWrapper} data-testid="consumer-contacts-table">
+        <DataTable
+          data={items}
+          columns={columns}
+          emptyMessage="No contacts found."
+          keyExtractor={(contact) => contact.id}
+        />
+      </div>
+    </>
   );
 }
 

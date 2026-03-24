@@ -278,6 +278,14 @@ Internal Admin API routes (server-side):
 
 Consumer UI is in `apps/consumer`, with internal API handlers in `apps/consumer/src/app/api` to call the backend.
 
+Recent consumer UX updates:
+
+- The authenticated shell now includes a command palette for pages and primary actions. Users can open it from the header search affordance or via `Cmd+K` on Apple platforms and `Ctrl+/` on Linux/Windows.
+- Mobile navigation keeps a compact bottom bar for Home, Payments, Contacts, and Contracts, while secondary destinations move into a `More` drawer.
+- Desktop navigation labels were polished to better match product language, including `Bank & Cards`, `Withdraw`, and `Exchange`.
+- Theme resolution is applied before paint in the root layout so light/dark preference is visible earlier and hydration mismatch risk is reduced.
+- Signup and profile entry points now use stricter date parsing, clearer verification/completion copy, country-aware passport/ID hints, and broader address parsing support including Canadian postal codes.
+
 ## Consumer Mobile App (Next.js)
 
 Mobile-first consumer UI is in `apps/consumer-mobile`, running on port 3002. Follows the same architecture as the desktop consumer app with mobile-optimized layouts and enhanced touch interactions. Uses Google OAuth with `returnOrigin` parameter for proper redirect handling in multi-app deployments.
@@ -323,10 +331,10 @@ Auth and onboarding:
 - `/login`: login form.
 - `/logout`: logout route.
 - `/auth/callback`: OAuth callback handling.
-- `/signup`: multi-step signup flow with address, personal, organization details.
+- `/signup`: multi-step signup flow with address, personal, organization details, stricter date-of-birth validation, country-aware passport/ID hints, and clearer Tax ID guidance.
 - `/signup/start`: account type selection step.
 - `/signup/start/contractor-kind`: contractor kind selection.
-- `/signup/verification` and `/signup/completed`: verification and completion states.
+- `/signup/verification` and `/signup/completed`: verification and completion states with clearer success, failure, and invalid-link messaging.
 
 Main shell routes:
 
@@ -345,7 +353,12 @@ Main shell routes:
 - `/withdraw-transfer`: withdraw and transfer forms.
 - `/settings`: profile, address, organization, password, theme, and preferred currency settings.
 
-Consumer UI shared patterns: pagination bar (Showing X–Y of Z, Previous/Next) on list tables; amount+currency input and recipient email field components; form controls 42px height and rounded-lg; Contacts and Documents share same page layout (pageContainer, filter row, table container).
+Consumer shell and shared patterns:
+
+- Header search opens a command palette for quick page/action navigation.
+- Desktop sidebar uses icon-backed links and the current product-facing labels.
+- Mobile bottom navigation prioritizes Home, Payments, Contacts, and Contracts, with Documents, Bank & Cards, Withdraw, Exchange, and Settings available from `More`.
+- Pagination bar (Showing X–Y of Z, Previous/Next) on list tables; amount+currency input and recipient email field components; form controls 42px height and rounded-lg; Contacts and Documents share same page layout (pageContainer, filter row, table container).
 
 Internal Consumer API routes:
 

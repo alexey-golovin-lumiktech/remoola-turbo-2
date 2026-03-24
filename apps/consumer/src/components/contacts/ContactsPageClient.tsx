@@ -7,11 +7,12 @@ import { ContactsTable } from './ContactsTable';
 import { CreateContactModal, DeleteContactModal, EditContactModal } from './modals';
 import { type ConsumerContact } from '../../types';
 import { ErrorState, PaginationBar } from '../ui';
+import localStyles from './ContactsPageClient.module.css';
 import styles from '../ui/classNames.module.css';
 
 const DEFAULT_PAGE_SIZE = 10;
 
-const { contactsAddButton, filterRowControlHeight, filterRowWrapAlignEnd, spaceY6 } = styles;
+const { contactsAddButton, filterRowControlHeight } = styles;
 
 export function ContactsPageClient() {
   const router = useRouter();
@@ -74,8 +75,8 @@ export function ContactsPageClient() {
   }
 
   return (
-    <div className={spaceY6} data-testid="consumer-contacts-page-client">
-      <div className={filterRowWrapAlignEnd}>
+    <div className={localStyles.pageRoot} data-testid="consumer-contacts-page-client">
+      <div className={localStyles.toolbar}>
         <div className={filterRowControlHeight}>
           <button
             data-testid="consumer-contacts-btn-add"
@@ -94,7 +95,14 @@ export function ContactsPageClient() {
       </div>
 
       {total > 0 && (
-        <PaginationBar total={total} page={page} pageSize={pageSize} onPageChange={setPage} loading={loading} />
+        <PaginationBar
+          total={total}
+          page={page}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          loading={loading}
+          showPageInfo={false}
+        />
       )}
 
       <ContactsTable

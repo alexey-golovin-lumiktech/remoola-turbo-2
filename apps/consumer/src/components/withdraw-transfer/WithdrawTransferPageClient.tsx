@@ -4,11 +4,9 @@ import { useEffect, useState } from 'react';
 
 import { TransferForm } from './TransferForm';
 import { WithdrawForm } from './WithdrawForm';
+import localStyles from './WithdrawTransferPageClient.module.css';
 import { handleSessionExpired } from '../../lib/session-expired';
 import { BalancesPanel } from '../exchange';
-import styles from '../ui/classNames.module.css';
-
-const { spaceY8, withdrawTransferContainer, withdrawTransferTitle } = styles;
 
 type BalanceMap = Record<string, number>;
 
@@ -34,10 +32,9 @@ export function WithdrawTransferPageClient() {
   }, []);
 
   return (
-    <div className={withdrawTransferContainer} data-testid="consumer-withdraw-transfer-page">
-      <h1 className={withdrawTransferTitle}>Withdraw And Transfer</h1>
+    <div className="space-y-6" data-testid="consumer-withdraw-transfer-page">
       <BalancesPanel balances={balances} />
-      <div className={spaceY8}>
+      <div className={localStyles.formsStack}>
         <WithdrawForm />
         <TransferForm />
       </div>

@@ -22,6 +22,27 @@ describe(`parseAddressFromString`, () => {
     });
   });
 
+  it(`parses US format when state and ZIP have no separating space`, () => {
+    const result = parseAddressFromString(`123 Main St, New York, NY10001`);
+    expect(result).toEqual({
+      street: `123 Main St`,
+      city: `New York`,
+      state: `NY`,
+      postalCode: `10001`,
+    });
+  });
+
+  it(`parses Canadian format with postal code`, () => {
+    const result = parseAddressFromString(`111 Wellington St, Ottawa, ON K1A 0B1, Canada`);
+    expect(result).toEqual({
+      street: `111 Wellington St`,
+      city: `Ottawa`,
+      state: `ON`,
+      postalCode: `K1A 0B1`,
+      country: `Canada`,
+    });
+  });
+
   it(`returns street only for single part`, () => {
     const result = parseAddressFromString(`123 Main Street`);
     expect(result).toEqual({ street: `123 Main Street` });

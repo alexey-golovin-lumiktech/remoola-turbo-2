@@ -5,6 +5,7 @@ import { type NextConfig } from 'next';
 const packages = [`sonner`, `framer-motion`, `@remoola/api-types`, `@remoola/shared-constants`, `@remoola/ui`];
 
 const nextConfig: NextConfig = {
+  devIndicators: false,
   reactStrictMode: true,
   transpilePackages: packages,
   outputFileTracingRoot: path.join(__dirname, `../../`),

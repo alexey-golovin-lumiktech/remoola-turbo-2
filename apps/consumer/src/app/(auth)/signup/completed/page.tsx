@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 
+import { CheckCircleIcon } from '@remoola/ui';
+
 import styles from '../../../../components/ui/classNames.module.css';
 
 const {
@@ -21,25 +23,23 @@ export default function SignupCompletedPage() {
     <div className={signupCompletedContainer} data-testid="consumer-signup-completed-page">
       <div className={signupCompletedCard}>
         <div className={signupCompletedIconWrap}>
-          <svg className={signupCompletedIcon} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+          <CheckCircleIcon className={signupCompletedIcon} aria-hidden="true" />
         </div>
 
-        <h1 className={signupCompletedTitle}>Congratulations. Sign up success.</h1>
+        <h1 className={signupCompletedTitle}>Sign-up complete</h1>
 
-        <h2 className={signupCompletedSubtitle}>
+        <p className={signupCompletedSubtitle}>
           Welcome to <span className={signupCompletedBrand}>Remoola</span>
-        </h2>
+        </p>
 
         <p className={signupCompletedText}>
-          We have sent you an email so that you can confirm your email and activate your account.
+          We have sent you an email so you can confirm your address and activate your account.
           <br />
           Check your email and come back soon.
         </p>
 
         <Link href="/login" className={signupCompletedButton} data-testid="consumer-signup-completed-link-login">
-          Click to Sign In
+          Continue to Sign In
         </Link>
       </div>
     </div>

@@ -6,6 +6,8 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { useSWRConfig } from 'swr';
 
+import { cn } from '@remoola/ui';
+
 import { getErrorMessageForUser } from '../../../../lib/error-messages';
 import { queryKeys } from '../../../../lib/hooks';
 import { type IVerificationState } from '../../../../types';
@@ -44,22 +46,22 @@ export interface VerifyMeCardProps {
   verification?: IVerificationState | null;
 }
 
-type CardVariant = 'default' | 'verified' | 'pending' | 'rejected' | 'profile_incomplete';
+type CardVariant = `default` | `verified` | `pending` | `rejected` | `profile_incomplete`;
 
 function getVariant(verification?: IVerificationState | null): CardVariant {
-  if (!verification) return 'default';
-  if (verification.effectiveVerified) return 'verified';
-  if (verification.profileComplete === false) return 'profile_incomplete';
+  if (!verification) return `default`;
+  if (verification.effectiveVerified) return `verified`;
+  if (verification.profileComplete === false) return `profile_incomplete`;
   switch (verification.status) {
-    case 'requires_input':
-    case 'more_info':
-    case 'rejected':
-      return 'rejected';
-    case 'pending_submission':
-    case 'pending':
-      return 'pending';
+    case `requires_input`:
+    case `more_info`:
+    case `rejected`:
+      return `rejected`;
+    case `pending_submission`:
+    case `pending`:
+      return `pending`;
     default:
-      return 'default';
+      return `default`;
   }
 }
 
@@ -72,69 +74,71 @@ interface VariantContent {
 
 function getContent(variant: CardVariant, verification?: IVerificationState | null): VariantContent {
   switch (variant) {
-    case 'verified':
+    case `verified`:
       return {
-        icon: '✓',
-        title: 'Identity Verified',
-        description: 'Your identity has been confirmed. You have full access to all platform features.',
-        badge: 'Verified',
+        icon: `✓`,
+        title: `Identity Verified`,
+        description: `Your identity has been confirmed. You have full access to all platform features.`,
+        badge: `Verified`,
       };
-    case 'pending':
+    case `pending`:
       return {
-        icon: '⏳',
-        title: 'Verification In Progress',
-        description: "We're reviewing your submitted documents. This usually takes a few minutes.",
-        badge: 'Under Review',
+        icon: `⏳`,
+        title: `Verification In Progress`,
+        description: `We're reviewing your submitted documents. This usually takes a few minutes.`,
+        badge: `Under Review`,
       };
-    case 'rejected': {
+    case `rejected`: {
       const reason = verification?.lastErrorReason;
       return {
-        icon: '!',
-        title: 'Verification Needs Attention',
+        icon: `!`,
+        title: `Verification Needs Attention`,
         description: reason
           ? `Your verification was not accepted: ${reason}. Please retry with valid documents.`
-          : 'Your previous verification attempt was unsuccessful. Please retry with valid documents.',
-        badge: 'Action Required',
+          : `Your previous verification attempt was unsuccessful. Please retry with valid documents.`,
+        badge: `Action Required`,
       };
     }
-    case 'profile_incomplete':
+    case `profile_incomplete`:
       return {
-        icon: '○',
-        title: 'Complete Your Profile First',
-        description: 'Before verifying your identity, please fill in your personal details in Settings.',
-        badge: 'Profile Incomplete',
+        icon: `○`,
+        title: `Complete Your Profile First`,
+        description: `Before verifying your identity, please fill in your personal details in Settings.`,
+        badge: `Profile Incomplete`,
       };
     default:
       return {
-        icon: '◇',
-        title: 'Verify Your Identity',
-        description:
-          'Confirm your identity with a government-issued ID to unlock full access — including payments and withdrawals.',
-        badge: 'Not Started',
+        icon: `◇`,
+        title: `Verify Your Identity`,
+        description: `Confirm your identity with a government-issued ID
+        to unlock full access — including payments and withdrawals.`
+          .replace(/\s+/, ` `)
+          .trim(),
+        badge: `Not Started`,
       };
   }
 }
 
 function getButtonLabel(variant: CardVariant, loading: boolean): string {
-  if (loading) return 'Starting…';
+  if (loading) return `Starting…`;
   switch (variant) {
-    case 'verified':
-      return 'Verified';
-    case 'pending':
-      return 'Check Status';
-    case 'rejected':
-      return 'Retry Verification';
-    case 'profile_incomplete':
-      return 'Go to Settings';
+    case `verified`:
+      return `Verified`;
+    case `pending`:
+      return `Check Status`;
+    case `rejected`:
+      return `Retry Verification`;
+    case `profile_incomplete`:
+      return `Go to Settings`;
     default:
-      return 'Verify Me';
+      return `Verify Me`;
   }
 }
 
 function formatDate(iso: string | null | undefined): string | null {
   if (!iso) return null;
   try {
-    return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(iso));
+    return new Intl.DateTimeFormat(undefined, { dateStyle: `medium`, timeStyle: `short` }).format(new Date(iso));
   } catch {
     return null;
   }
@@ -149,33 +153,33 @@ export function VerifyMeCard({ verification }: VerifyMeCardProps) {
 
   const cardClass = [
     verifyCard,
-    variant === 'verified' ? verifyCardVerified : '',
-    variant === 'pending' ? verifyCardPending : '',
-    variant === 'rejected' ? verifyCardRejected : '',
-    variant === 'profile_incomplete' ? verifyCardProfileIncomplete : '',
+    variant === `verified` ? verifyCardVerified : ``,
+    variant === `pending` ? verifyCardPending : ``,
+    variant === `rejected` ? verifyCardRejected : ``,
+    variant === `profile_incomplete` ? verifyCardProfileIncomplete : ``,
   ]
     .filter(Boolean)
-    .join(' ');
+    .join(` `);
 
   const iconClass = [
     verifyCardIcon,
-    variant === 'verified' ? verifyCardIconVerified : '',
-    variant === 'pending' ? verifyCardIconPending : '',
-    variant === 'rejected' ? verifyCardIconRejected : '',
-    variant === 'default' || variant === 'profile_incomplete' ? verifyCardIconDefault : '',
+    variant === `verified` ? verifyCardIconVerified : ``,
+    variant === `pending` ? verifyCardIconPending : ``,
+    variant === `rejected` ? verifyCardIconRejected : ``,
+    variant === `default` || variant === `profile_incomplete` ? verifyCardIconDefault : ``,
   ]
     .filter(Boolean)
-    .join(' ');
+    .join(` `);
 
   const badgeClass = [
     verifyCardBadge,
-    variant === 'verified' ? verifyCardBadgeVerified : '',
-    variant === 'pending' ? verifyCardBadgePending : '',
-    variant === 'rejected' ? verifyCardBadgeRejected : '',
-    variant === 'default' || variant === 'profile_incomplete' ? verifyCardBadgeDefault : '',
+    variant === `verified` ? verifyCardBadgeVerified : ``,
+    variant === `pending` ? verifyCardBadgePending : ``,
+    variant === `rejected` ? verifyCardBadgeRejected : ``,
+    variant === `default` || variant === `profile_incomplete` ? verifyCardBadgeDefault : ``,
   ]
     .filter(Boolean)
-    .join(' ');
+    .join(` `);
 
   async function startVerification() {
     setLoading(true);
@@ -213,16 +217,17 @@ export function VerifyMeCard({ verification }: VerifyMeCardProps) {
   const verifiedAt = formatDate(verification?.verifiedAt);
   const updatedAt = formatDate(verification?.updatedAt);
 
-  const isDisabled = loading || (variant !== 'profile_incomplete' && verification?.canStart === false && variant !== 'verified' && variant !== 'pending');
+  const isDisabled =
+    loading ||
+    (variant !== `profile_incomplete` &&
+      verification?.canStart === false &&
+      variant !== `verified` &&
+      variant !== `pending`);
 
   return (
     <div className={cardClass} data-testid="verify-me-card" data-variant={variant}>
       <div className={iconClass} aria-hidden="true">
-        {variant === 'pending' ? (
-          <span className={verifyCardSpinner} />
-        ) : (
-          content.icon
-        )}
+        {variant === `pending` ? <span className={verifyCardSpinner} /> : content.icon}
       </div>
 
       <div className={verifyCardBody}>
@@ -257,30 +262,34 @@ export function VerifyMeCard({ verification }: VerifyMeCardProps) {
         )}
 
         <div className={verifyCardActions}>
-          {variant === 'profile_incomplete' ? (
-            <Link
-              href="/settings"
-              className={verifyCardPrimaryBtn}
-              data-testid="verify-me-card-cta"
-            >
+          {variant === `profile_incomplete` ? (
+            <Link href="/settings" className={verifyCardPrimaryBtn} data-testid="verify-me-card-cta">
               Go to Settings
             </Link>
-          ) : variant === 'verified' ? (
-            <button disabled className={[verifyCardPrimaryBtn, verifyCardPrimaryBtnDisabled].join(' ')} data-testid="verify-me-card-cta">
+          ) : variant === `verified` ? (
+            <button
+              disabled
+              className={cn(verifyCardPrimaryBtn, verifyCardPrimaryBtnDisabled)}
+              data-testid="verify-me-card-cta"
+            >
               Verified
             </button>
           ) : (
             <button
               onClick={startVerification}
               disabled={isDisabled}
-              className={[verifyCardPrimaryBtn, loading ? verifyCardPrimaryBtnLoading : '', isDisabled && !loading ? verifyCardPrimaryBtnDisabled : ''].filter(Boolean).join(' ')}
+              className={cn(
+                verifyCardPrimaryBtn,
+                loading && verifyCardPrimaryBtnLoading,
+                isDisabled && !loading && verifyCardPrimaryBtnDisabled,
+              )}
               data-testid="verify-me-card-cta"
             >
               {getButtonLabel(variant, loading)}
             </button>
           )}
 
-          {variant === 'rejected' && (
+          {variant === `rejected` && (
             <Link href="/settings" className={verifyCardSecondaryBtn}>
               Update Profile
             </Link>

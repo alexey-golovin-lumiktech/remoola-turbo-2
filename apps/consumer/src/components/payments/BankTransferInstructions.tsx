@@ -3,7 +3,7 @@
 import { useState } from 'react';
 
 import { type TCurrencyCode } from '@remoola/api-types';
-import { CheckIcon, ClipboardIcon, FileDownIcon } from '@remoola/ui';
+import { CheckIcon, ClipboardIcon, FileDownIcon, cn } from '@remoola/ui';
 
 import styles from '../ui/classNames.module.css';
 
@@ -164,12 +164,7 @@ export function BankTransferInstructions({ details }: BankTransferInstructionsPr
 function Step({ active, label }: { active?: boolean; label: string }) {
   return (
     <div className={stepContainer}>
-      <div
-        className={`
-          ${stepIconBase}
-          ${active ? stepIconActive : stepIconInactive}
-        `}
-      >
+      <div className={cn(stepIconBase, active ? stepIconActive : stepIconInactive)}>
         <CheckIcon size={14} />
       </div>
       <span className={active ? stepLabelActive : stepLabelInactive}>{label}</span>

@@ -1,0 +1,13 @@
+@reference "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.modalOverlay {
+  @apply items-start overflow-y-auto px-4 py-4 sm:items-center sm:px-6 sm:py-6;
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+}
+
+.modalBody {
+  composes: modalContentMd from '../../ui/classNames.module.css';
+  @apply my-auto w-full space-y-4 overflow-y-auto;
+  max-height: min(90dvh, calc(100svh - 2rem));
+}

@@ -2,11 +2,11 @@
 
 import { type InputHTMLAttributes, forwardRef } from 'react';
 
+import { cn } from '@remoola/ui';
+
 import styles from './classNames.module.css';
 
 const { formInputFullWidth, formInputError } = styles;
-
-const joinClasses = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(` `);
 
 export interface FormInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, `onChange`> {
   label: string;
@@ -32,7 +32,7 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
           ref={ref}
           {...props}
           onChange={handleChange}
-          className={joinClasses(formInputFullWidth, error && formInputError, className)}
+          className={cn(formInputFullWidth, error && formInputError, className)}
         />
       </div>
     );

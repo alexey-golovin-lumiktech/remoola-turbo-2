@@ -7,20 +7,44 @@ export function toDateOnly(value: string | undefined | null): string {
   return value.includes(`T`) ? value.slice(0, 10) : value;
 }
 
+const DATE_INPUT_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+export function parseDateInput(dateString: string): Date | null {
+  const trimmed = dateString.trim();
+  const match = DATE_INPUT_PATTERN.exec(trimmed);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const monthIndex = Number(match[2]) - 1;
+  const day = Number(match[3]);
+  const parsed = new Date(year, monthIndex, day);
+  parsed.setHours(0, 0, 0, 0);
+
+  if (parsed.getFullYear() !== year || parsed.getMonth() !== monthIndex || parsed.getDate() !== day) {
+    return null;
+  }
+
+  return parsed;
+}
+
 /**
  * Formats a date string for HTML date inputs (YYYY-MM-DD format)
  * Handles both ISO strings and YYYY-MM-DD strings
  */
 export function formatDateForInput(dateString: string): string {
-  if (!dateString || dateString.trim() === ``) return ``;
+  const trimmed = dateString.trim();
+  if (!trimmed) return ``;
 
   // If it's already in YYYY-MM-DD format, return as-is
-  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
-    return dateString;
+  if (parseDateInput(trimmed)) {
+    return trimmed;
+  }
+  if (DATE_INPUT_PATTERN.test(trimmed)) {
+    return ``;
   }
 
   // Try to parse as ISO string or other date format
-  const date = new Date(dateString);
+  const date = new Date(trimmed);
   if (isNaN(date.getTime())) {
     return ``;
   }
@@ -34,7 +58,7 @@ export function formatDateForInput(dateString: string): string {
  * Validates if a date string is in the correct format for date inputs
  */
 export function isValidDateInputFormat(dateString: string): boolean {
-  return /^\d{4}-\d{2}-\d{2}$/.test(dateString);
+  return parseDateInput(dateString) !== null;
 }
 
 /**

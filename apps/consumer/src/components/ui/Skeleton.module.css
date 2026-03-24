@@ -1,0 +1,18 @@
+@reference "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.lineHeight {
+  @apply h-4;
+}
+
+.lineWidthFull {
+  @apply w-full;
+}
+
+.lineWidthThreeQuarter {
+  @apply w-3/4;
+}
+
+.dashboardSubhead {
+  @apply h-4 w-full max-w-md;
+}

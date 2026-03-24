@@ -4,11 +4,9 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 import { BalancesPanel } from './BalancesPanel';
+import localStyles from './ExchangePageClient.module.css';
 import { ExchangeWidget } from './ExchangeWidget';
 import { handleSessionExpired } from '../../lib/session-expired';
-import styles from '../ui/classNames.module.css';
-
-const { exchangePageContainer, exchangePageTitle, flexRowBetween, buttonSecondary } = styles;
 
 type BalanceMap = Record<string, number>;
 
@@ -37,18 +35,14 @@ export function ExchangePageClient() {
   }, []);
 
   return (
-    <div className={exchangePageContainer}>
-      <div className={flexRowBetween}>
-        <h1 className={exchangePageTitle}>Currency Exchange</h1>
-        <div>
-          <Link className={buttonSecondary} href="/exchange/rules">
-            Auto rules
-          </Link>
-          {` `}
-          <Link className={buttonSecondary} href="/exchange/scheduled">
-            Scheduled
-          </Link>
-        </div>
+    <div className="space-y-5">
+      <div className={localStyles.navLinks}>
+        <Link className={localStyles.navLink} href="/exchange/rules">
+          Auto-Conversion Rules
+        </Link>
+        <Link className={localStyles.navLink} href="/exchange/scheduled">
+          Scheduled Conversions
+        </Link>
       </div>
       <BalancesPanel balances={balances} />
       <ExchangeWidget balances={balances} />

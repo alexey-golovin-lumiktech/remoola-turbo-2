@@ -229,6 +229,14 @@ describe(`personalDetailsSchema`, () => {
       }
     });
 
+    it(`fails when dateOfBirth is an impossible calendar date`, () => {
+      const result = personalDetailsSchema.safeParse({ ...validBase, dateOfBirth: `2024-02-31` });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(getFieldErrors(result.error).dateOfBirth).toBe(`Please enter a valid date`);
+      }
+    });
+
     it(`fails when dateOfBirth is in the future`, () => {
       const futureDate = new Date();
       futureDate.setFullYear(futureDate.getFullYear() + 1);
@@ -356,6 +364,16 @@ describe(`personalDetailsSchema`, () => {
         citizenOf: `Canada`,
         countryOfTaxResidence: `Canada`,
         passportOrIdNumber: `AB123456`,
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it(`passes for Netherlands with a digit in the final position`, () => {
+      const result = personalDetailsSchema.safeParse({
+        ...validBase,
+        citizenOf: `Netherlands`,
+        countryOfTaxResidence: `Netherlands`,
+        passportOrIdNumber: `AB1234567`,
       });
       expect(result.success).toBe(true);
     });

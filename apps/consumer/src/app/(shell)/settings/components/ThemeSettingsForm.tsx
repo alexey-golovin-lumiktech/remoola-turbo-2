@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
+import { cn } from '@remoola/ui';
+
 import { Theme, useTheme, type ITheme } from '../../../../components/ThemeProvider';
 import styles from '../../../../components/ui/classNames.module.css';
 import { clientLogger } from '../../../../lib/logger';
@@ -135,9 +137,11 @@ export function ThemeSettingsForm({ initialTheme }: ThemeSettingsFormProps = {})
         {themeConfigOptions.map((option) => (
           <label
             key={option.value}
-            className={`${themeOptionBase} ${
-              theme === option.value ? themeOptionActive : themeOptionInactive
-            } ${loading ? themeOptionDisabled : ``}`}
+            className={cn(
+              themeOptionBase,
+              theme === option.value ? themeOptionActive : themeOptionInactive,
+              loading && themeOptionDisabled,
+            )}
           >
             <input
               type="radio"

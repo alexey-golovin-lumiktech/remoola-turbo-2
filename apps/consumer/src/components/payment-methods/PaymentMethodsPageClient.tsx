@@ -7,7 +7,7 @@ import { PaymentMethodsList } from './PaymentMethodsList';
 import { type PaymentMethodItem } from '../../types';
 import styles from '../ui/classNames.module.css';
 
-const { pageHeaderRow, pageStackContainer, pageSubtitleGray, pageTitleGray, primaryActionButton } = styles;
+const { pageHeaderRow, primaryActionButton } = styles;
 
 export function PaymentMethodsPageClient() {
   const [payments, setPayments] = useState<PaymentMethodItem[]>([]);
@@ -31,13 +31,8 @@ export function PaymentMethodsPageClient() {
   }, [refresh]);
 
   return (
-    <div className={pageStackContainer}>
+    <div className="space-y-5">
       <div className={pageHeaderRow}>
-        <div>
-          <h1 className={pageTitleGray}>Bank Accounts & Cards</h1>
-          <p className={pageSubtitleGray}>Manage your saved cards and bank accounts.</p>
-        </div>
-
         <button
           onClick={(e) => (e.stopPropagation(), e.preventDefault(), setCreateOpen(true))}
           className={primaryActionButton}

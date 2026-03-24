@@ -4,33 +4,18 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { CURRENCY_CODE, CURRENCY_CODES, toCurrencyOrDefault, type TCurrencyCode } from '@remoola/api-types';
+import { cn } from '@remoola/ui';
 
 import { formatDateTimeForDisplay } from '../../lib/date-utils';
 import { usePreferredCurrency } from '../../lib/hooks';
-import { FormSelect, type FormSelectOption, PaginationBar } from '../ui';
+import { PaginationBar } from '../ui';
+import { ExchangeRuleModal } from './ExchangeRuleModal';
+import localStyles from './ExchangeRulesPageClient.module.css';
 import styles from '../ui/classNames.module.css';
 
 const DEFAULT_PAGE_SIZE = 10;
 
-const {
-  exchangePageContainer,
-  exchangePageTitle,
-  exchangeCard,
-  exchangeForm,
-  exchangeLabel,
-  exchangeField,
-  exchangeButton,
-  gridGap4,
-  flexRowBetween,
-  actionButtonPrimary,
-  actionButtonDanger,
-  buttonSecondary,
-} = styles;
-
-const ENABLED_OPTIONS: FormSelectOption[] = [
-  { value: `yes`, label: `Yes` },
-  { value: `no`, label: `No` },
-];
+const { contactsAddButton, filterRowControlHeight } = styles;
 
 type Rule = {
   id: string;
@@ -64,6 +49,7 @@ const defaultForm: RuleForm = {
 
 export function ExchangeRulesPageClient() {
   const { preferredCurrency, loaded: settingsLoaded } = usePreferredCurrency();
+  const [modalOpen, setModalOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(DEFAULT_PAGE_SIZE);
   const [total, setTotal] = useState(0);
@@ -129,6 +115,14 @@ export function ExchangeRulesPageClient() {
     preferredAppliedRef.current = false;
     setForm(defaultForm);
     setEditingId(null);
+    setModalOpen(false);
+  }
+
+  function openCreateModal() {
+    preferredAppliedRef.current = false;
+    setForm(defaultForm);
+    setEditingId(null);
+    setModalOpen(true);
   }
 
   function startEdit(rule: Rule) {
@@ -141,6 +135,7 @@ export function ExchangeRulesPageClient() {
       minIntervalMinutes: String(rule.minIntervalMinutes),
       enabled: rule.enabled,
     });
+    setModalOpen(true);
   }
 
   async function submit() {
@@ -206,134 +201,105 @@ export function ExchangeRulesPageClient() {
   }
 
   return (
-    <div className={exchangePageContainer}>
-      <h1 className={exchangePageTitle}>Auto-Conversion Rules</h1>
-
-      <div
-        className={`
-          ${exchangeCard}
-          ${gridGap4}
-        `}
-      >
-        <div className={flexRowBetween}>
-          <div>
-            <strong>{heading}</strong>
-          </div>
-          {editingId && (
-            <button className={buttonSecondary} onClick={resetForm} type="button">
-              Cancel edit
-            </button>
-          )}
-        </div>
-
-        <div className={exchangeForm}>
-          <FormSelect
-            label="From currency"
-            value={form.fromCurrency}
-            onChange={(v) => setForm((prev) => ({ ...prev, fromCurrency: v as TCurrencyCode }))}
-            options={currencies.map((c) => ({ value: c, label: c })) as FormSelectOption[]}
-            placeholder="Select currency..."
-            isClearable={false}
-          />
-          <FormSelect
-            label="To currency"
-            value={form.toCurrency}
-            onChange={(v) => setForm((prev) => ({ ...prev, toCurrency: v as TCurrencyCode }))}
-            options={currencies.map((c) => ({ value: c, label: c })) as FormSelectOption[]}
-            placeholder="Select currency..."
-            isClearable={false}
-          />
-
-          <div>
-            <label className={exchangeLabel}>Target balance</label>
-            <input
-              className={exchangeField}
-              type="number"
-              min="0"
-              step="0.01"
-              value={form.targetBalance}
-              onChange={(e) => setForm((prev) => ({ ...prev, targetBalance: e.target.value }))}
-            />
-          </div>
-
-          <div>
-            <label className={exchangeLabel}>Max convert amount (optional)</label>
-            <input
-              className={exchangeField}
-              type="number"
-              min="0.01"
-              step="0.01"
-              value={form.maxConvertAmount}
-              onChange={(e) => setForm((prev) => ({ ...prev, maxConvertAmount: e.target.value }))}
-            />
-          </div>
-
-          <div>
-            <label className={exchangeLabel}>Min interval (minutes)</label>
-            <input
-              className={exchangeField}
-              type="number"
-              min="1"
-              step="1"
-              value={form.minIntervalMinutes}
-              onChange={(e) => setForm((prev) => ({ ...prev, minIntervalMinutes: e.target.value }))}
-            />
-          </div>
-
-          <FormSelect
-            label="Enabled"
-            value={form.enabled ? `yes` : `no`}
-            onChange={(v) => setForm((prev) => ({ ...prev, enabled: v === `yes` }))}
-            options={ENABLED_OPTIONS}
-            placeholder="Enabled"
-            isClearable={false}
-          />
-
-          <button onClick={submit} disabled={loading} className={exchangeButton}>
-            {editingId ? `Update rule` : `Create rule`}
-          </button>
-        </div>
+    <div className={localStyles.pageRoot}>
+      <div className={localStyles.toolbar}>
+        <button
+          type="button"
+          onClick={openCreateModal}
+          className={cn(contactsAddButton, filterRowControlHeight, localStyles.createButton)}
+        >
+          Create rule
+        </button>
       </div>
 
-      <div
-        className={`
-          ${exchangeCard}
-          ${gridGap4}
-        `}
-      >
-        <strong>Existing rules</strong>
-        {total > 0 && (
-          <PaginationBar total={total} page={page} pageSize={pageSize} onPageChange={setPage} loading={loadingList} />
-        )}
-        {rules.length === 0 && !loadingList && <div>No rules yet.</div>}
+      {total > 0 && (
+        <PaginationBar
+          total={total}
+          page={page}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          loading={loadingList}
+          showPageInfo={false}
+        />
+      )}
+
+      {rules.length === 0 && !loadingList && <div className={localStyles.emptyState}>No rules yet.</div>}
+
+      <div className={localStyles.rulesList}>
         {rules.map((rule) => (
-          <div key={rule.id} className={flexRowBetween}>
-            <div>
-              <div>
-                {rule.fromCurrency} → {rule.toCurrency} | target {rule.targetBalance}
-              </div>
-              <div>
-                max {rule.maxConvertAmount ?? `—`} | every {rule.minIntervalMinutes} min
-              </div>
-              <div>
-                next: {rule.nextRunAt ? formatDateTimeForDisplay(rule.nextRunAt) : `—`} | last:{` `}
-                {rule.lastRunAt ? formatDateTimeForDisplay(rule.lastRunAt) : `—`}
+          <article key={rule.id} className={localStyles.ruleRow}>
+            <div className={localStyles.ruleHeader}>
+              <div className={localStyles.ruleIdentity}>
+                <div className={localStyles.rulePrimary}>
+                  {rule.fromCurrency} → {rule.toCurrency}
+                </div>
+                <div className={localStyles.ruleStatusWrap}>
+                  <span className={localStyles.ruleStatusLabel}>Status</span>
+                  <span className={rule.enabled ? localStyles.ruleStatusActive : localStyles.ruleStatusPaused}>
+                    {rule.enabled ? `Enabled` : `Disabled`}
+                  </span>
+                </div>
               </div>
             </div>
-            <div className={gridGap4}>
-              <button className={actionButtonPrimary} onClick={() => startEdit(rule)} type="button">
+
+            <div className={localStyles.ruleMetaGrid}>
+              <div className={localStyles.ruleMetaRow}>
+                <span className={localStyles.ruleMetaLabel}>Target</span>
+                <span className={localStyles.ruleMetaValue}>{rule.targetBalance}</span>
+              </div>
+              <div className={localStyles.ruleMetaRow}>
+                <span className={localStyles.ruleMetaLabel}>Max convert</span>
+                <span className={localStyles.ruleMetaValue}>{rule.maxConvertAmount ?? `—`}</span>
+              </div>
+              <div className={localStyles.ruleMetaRow}>
+                <span className={localStyles.ruleMetaLabel}>Interval</span>
+                <span className={localStyles.ruleMetaValue}>Every {rule.minIntervalMinutes} min</span>
+              </div>
+              <div className={localStyles.ruleMetaRow}>
+                <span className={localStyles.ruleMetaLabel}>Next run</span>
+                <span className={localStyles.ruleMetaValue}>
+                  {rule.nextRunAt ? formatDateTimeForDisplay(rule.nextRunAt) : `—`}
+                </span>
+              </div>
+              <div className={localStyles.ruleMetaRow}>
+                <span className={localStyles.ruleMetaLabel}>Last run</span>
+                <span className={localStyles.ruleMetaValue}>
+                  {rule.lastRunAt ? formatDateTimeForDisplay(rule.lastRunAt) : `—`}
+                </span>
+              </div>
+            </div>
+
+            <div className={localStyles.ruleActions}>
+              <button className={localStyles.ruleActionPrimary} onClick={() => startEdit(rule)} type="button">
                 Edit
               </button>
-              <button className={actionButtonPrimary} onClick={() => toggleRule(rule)} type="button">
+              <button className={localStyles.ruleActionPrimary} onClick={() => toggleRule(rule)} type="button">
                 {rule.enabled ? `Disable` : `Enable`}
               </button>
-              <button className={actionButtonDanger} onClick={() => deleteRule(rule)} type="button">
+              <button className={localStyles.ruleActionDanger} onClick={() => deleteRule(rule)} type="button">
                 Delete
               </button>
             </div>
-          </div>
+          </article>
         ))}
       </div>
+
+      <ExchangeRuleModal
+        open={modalOpen}
+        heading={heading}
+        submitLabel={editingId ? `Update rule` : `Create rule`}
+        loading={loading}
+        currencies={currencies}
+        form={form}
+        onCloseAction={resetForm}
+        onSubmitAction={submit}
+        onFromCurrencyChange={(value) => setForm((prev) => ({ ...prev, fromCurrency: value }))}
+        onToCurrencyChange={(value) => setForm((prev) => ({ ...prev, toCurrency: value }))}
+        onTargetBalanceChange={(value) => setForm((prev) => ({ ...prev, targetBalance: value }))}
+        onMaxConvertAmountChange={(value) => setForm((prev) => ({ ...prev, maxConvertAmount: value }))}
+        onMinIntervalMinutesChange={(value) => setForm((prev) => ({ ...prev, minIntervalMinutes: value }))}
+        onEnabledChange={(value) => setForm((prev) => ({ ...prev, enabled: value }))}
+      />
     </div>
   );
 }

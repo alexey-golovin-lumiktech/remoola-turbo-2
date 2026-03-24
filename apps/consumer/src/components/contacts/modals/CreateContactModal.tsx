@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { emailSchema } from '@remoola/api-types';
+import { cn } from '@remoola/ui';
 
+import localStyles from './CreateContactModal.module.css';
 import { createContactRequest } from '../../../lib/create-contact';
 import { type IAddressDetails } from '../../../types';
 import styles from '../../ui/classNames.module.css';
@@ -13,11 +15,9 @@ const {
   contactModalInput,
   modalButtonPrimary,
   modalButtonSecondary,
-  modalContentMd,
   modalFooterActions,
   modalOverlayClass,
   modalTitleClass,
-  spaceY4,
 } = styles;
 
 type CreateContactModalProps = {
@@ -77,13 +77,8 @@ export function CreateContactModal({ open, initialEmail, onCloseAction, onCreate
   }
 
   return (
-    <div className={modalOverlayClass}>
-      <div
-        className={`
-          ${modalContentMd}
-          ${spaceY4}
-        `}
-      >
+    <div className={cn(modalOverlayClass, localStyles.modalOverlay)}>
+      <div className={localStyles.modalBody}>
         <h2 className={modalTitleClass}>Create Contact</h2>
 
         <input

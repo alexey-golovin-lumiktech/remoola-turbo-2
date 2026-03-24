@@ -1,0 +1,84 @@
+@reference "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.pageRoot {
+  @apply space-y-6 pb-10 md:pb-0;
+  padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
+}
+
+.toolbar {
+  @apply flex flex-wrap items-end gap-4;
+}
+
+.createButton {
+  @apply inline-flex w-full items-center justify-center sm:w-auto;
+}
+
+.conversionsList {
+  @apply space-y-3;
+}
+
+.conversionRow {
+  @apply space-y-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs dark:border-slate-600 dark:bg-slate-800;
+}
+
+.emptyState {
+  @apply rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-6 text-center text-sm text-slate-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-400;
+}
+
+.conversionHeader {
+  @apply flex items-start justify-between gap-3;
+}
+
+.conversionIdentity {
+  @apply min-w-0 flex-1 space-y-2;
+}
+
+.conversionPrimary {
+  @apply break-words text-base font-semibold text-slate-900 dark:text-white;
+}
+
+.statusWrap {
+  @apply flex items-center gap-2;
+}
+
+.statusLabel {
+  @apply text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400;
+}
+
+.statusPending {
+  @apply inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300;
+}
+
+.statusCompleted {
+  @apply inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300;
+}
+
+.statusInactive {
+  @apply inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300;
+}
+
+.metaGrid {
+  @apply grid gap-3 sm:grid-cols-2;
+}
+
+.metaRow {
+  @apply grid gap-1;
+}
+
+.metaLabel {
+  @apply text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400;
+}
+
+.metaValue {
+  @apply break-words text-sm text-slate-700 dark:text-slate-300;
+}
+
+.actions {
+  @apply flex flex-col gap-2 sm:flex-row sm:flex-wrap;
+}
+
+.cancelAction {
+  composes: linkDanger from '../ui/classNames.module.css';
+  @apply inline-flex min-h-10 w-full items-center justify-center rounded-lg px-3 py-2 text-sm sm:w-auto;
+}

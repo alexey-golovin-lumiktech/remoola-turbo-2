@@ -3,7 +3,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
+import { cn } from '@remoola/ui';
+
 import { DocumentPreviewModal } from './DocumentPreviewModal';
+import localStyles from './DocumentsList.module.css';
 import { formatDateForDisplay } from '../../lib/date-utils';
 import { FormSelect, type FormSelectOption, PaginationBar } from '../ui';
 import styles from '../ui/classNames.module.css';
@@ -24,26 +27,15 @@ const {
   checkboxBase,
   dangerButtonSm,
   filterRowControlHeight,
-  filterRowWrapAlignEnd,
   formInputFilterRow,
-  formInputSmall,
   hiddenInput,
-  inlineFlexItemsCenterGap2,
   linkPrimaryXs,
-  spaceX2,
-  spaceY6,
   tableBodyRow,
   tableCellBodyMd,
   tableCellHeaderMd,
   tableContainer,
   tableEmptyCell,
   tableHeaderRow,
-  textMuted,
-  textPrimary,
-  textRight,
-  textSm,
-  uploadButtonPrimary,
-  width40,
 } = styles;
 
 type Doc = {
@@ -211,54 +203,47 @@ export function DocumentsList() {
   const hasSelected = selected.size > 0;
 
   return (
-    <div className={spaceY6}>
+    <div className={localStyles.pageRoot}>
       {/* Top actions: upload, filters, bulk actions — align button and select by bottom */}
-      <div className={filterRowWrapAlignEnd}>
+      <div className={localStyles.toolbar}>
         {/* Upload — fixed 42px height so it aligns with Document type select */}
-        <div className={filterRowControlHeight}>
-          <label
-            className={`
-              ${inlineFlexItemsCenterGap2}
-              ${uploadButtonPrimary}
-              h-full
-              w-full
-              cursor-pointer
-            `}
-            style={{ margin: 0 }}
-          >
+        <div className={cn(filterRowControlHeight, localStyles.uploadControl)}>
+          <label className={localStyles.uploadLabel} style={{ margin: 0 }}>
             {uploading ? `Uploading...` : `Upload documents`}
             <input type="file" multiple className={hiddenInput} onChange={handleUpload} />
           </label>
         </div>
 
-        <FormSelect
-          label=""
-          value={kind}
-          onChange={(v) => {
-            setKind(v);
-            setPage(1);
-          }}
-          options={DOC_KIND_OPTIONS}
-          placeholder="All documents"
-          isClearable={false}
-        />
+        <div className={localStyles.filterControl}>
+          <FormSelect
+            label=""
+            value={kind}
+            onChange={(v) => {
+              setKind(v);
+              setPage(1);
+            }}
+            options={DOC_KIND_OPTIONS}
+            placeholder="All documents"
+            isClearable={false}
+          />
+        </div>
 
         {/* Bulk actions */}
         {hasSelected && (
-          <div className={bulkActionsRow}>
-            <button onClick={handleBulkDelete} className={dangerButtonSm}>
+          <div className={cn(bulkActionsRow, localStyles.bulkActions)}>
+            <button onClick={handleBulkDelete} className={cn(dangerButtonSm, localStyles.bulkDeleteButton)}>
               Delete selected
             </button>
 
-            <div className={bulkActionsRow}>
+            <div className={cn(bulkActionsRow, localStyles.attachActions)}>
               <input
                 type="text"
                 placeholder="Payment request ID"
-                className={formInputFilterRow}
+                className={cn(formInputFilterRow, localStyles.attachInput)}
                 value={attachPaymentId}
                 onChange={(e) => setAttachPaymentId(e.target.value)}
               />
-              <button onClick={handleAttachToPayment} className={attachButton}>
+              <button onClick={handleAttachToPayment} className={cn(attachButton, localStyles.attachSubmitButton)}>
                 Attach to payment
               </button>
             </div>
@@ -267,108 +252,155 @@ export function DocumentsList() {
       </div>
 
       {total > 0 && (
-        <PaginationBar total={total} page={page} pageSize={pageSize} onPageChange={setPage} loading={loading} />
+        <PaginationBar
+          total={total}
+          page={page}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          loading={loading}
+          showPageInfo={false}
+        />
       )}
 
       {/* Table */}
-      <div className={tableContainer}>
-        <table
-          className={`
-            w-full
-            ${textSm}
-          `}
-        >
-          <thead>
-            <tr className={tableHeaderRow}>
-              <th className={tableCellHeaderMd}>
-                <input
-                  type="checkbox"
-                  checked={selected.size === docsList.length && docsList.length > 0}
-                  onChange={toggleSelectAll}
-                  className={checkboxBase}
-                />
-              </th>
-              <th className={tableCellHeaderMd}>Name</th>
-              <th className={tableCellHeaderMd}>Type</th>
-              <th className={tableCellHeaderMd}>Tags</th>
-              <th className={tableCellHeaderMd}>Size</th>
-              <th className={tableCellHeaderMd}>Uploaded</th>
-              <th className={tableCellHeaderMd}></th>
-            </tr>
-          </thead>
+      <div className={localStyles.mobileList}>
+        {docsList.length === 0 ? (
+          <div className={localStyles.mobileEmptyState}>No documents found</div>
+        ) : (
+          docsList.map((d) => {
+            const checked = selected.has(d.id);
+            return (
+              <article key={d.id} className={localStyles.mobileCard}>
+                <div className={localStyles.mobileCardHeader}>
+                  <div className={localStyles.mobileTitleBlock}>
+                    <div className={localStyles.mobileTitle}>{d.name}</div>
+                    <div className={localStyles.mobileMetaText}>{d.kind}</div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    className={checkboxBase}
+                    onChange={(e) => (e.preventDefault(), e.stopPropagation(), toggleSelect(d.id))}
+                  />
+                </div>
 
-          <tbody>
-            {docsList.length === 0 && (
-              <tr>
-                <td colSpan={7} className={tableEmptyCell}>
-                  No documents found
-                </td>
+                <div className={localStyles.mobileMetaGrid}>
+                  <div>
+                    <div className={localStyles.mobileMetaLabel}>Size</div>
+                    <div className={localStyles.mutedBodyCell}>{(d.size / 1024).toFixed(1)} KB</div>
+                  </div>
+                  <div>
+                    <div className={localStyles.mobileMetaLabel}>Uploaded</div>
+                    <div className={localStyles.mutedBodyCell}>{formatDateForDisplay(d.createdAt)}</div>
+                  </div>
+                </div>
+
+                <div className={localStyles.mobileTagsField}>
+                  <div className={localStyles.mobileMetaLabel}>Tags</div>
+                  <input
+                    className={localStyles.mobileTagsInput}
+                    defaultValue={d.tags.join(`, `)}
+                    onBlur={(e) => handleTagsChange(d.id, e.target.value)}
+                    placeholder="comma,separated,tags"
+                  />
+                </div>
+
+                <div className={localStyles.mobileActions}>
+                  <button
+                    type="button"
+                    className={linkPrimaryXs}
+                    onClick={(e) => (e.preventDefault(), e.stopPropagation(), setPreview(d))}
+                  >
+                    Preview
+                  </button>
+                  <a href={d.downloadUrl} className={linkPrimaryXs} target="_blank" rel="noreferrer">
+                    Download
+                  </a>
+                </div>
+              </article>
+            );
+          })
+        )}
+      </div>
+
+      <div className={localStyles.desktopTableWrapper}>
+        <div className={tableContainer}>
+          <table className={localStyles.table}>
+            <thead>
+              <tr className={tableHeaderRow}>
+                <th className={tableCellHeaderMd}>
+                  <input
+                    type="checkbox"
+                    checked={selected.size === docsList.length && docsList.length > 0}
+                    onChange={toggleSelectAll}
+                    className={checkboxBase}
+                  />
+                </th>
+                <th className={tableCellHeaderMd}>Name</th>
+                <th className={tableCellHeaderMd}>Type</th>
+                <th className={tableCellHeaderMd}>Tags</th>
+                <th className={tableCellHeaderMd}>Size</th>
+                <th className={tableCellHeaderMd}>Uploaded</th>
+                <th className={tableCellHeaderMd}></th>
               </tr>
-            )}
+            </thead>
 
-            {docsList.map((d) => {
-              const checked = selected.has(d.id);
-              return (
-                <tr key={d.id} className={tableBodyRow}>
-                  <td className={tableCellBodyMd}>
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={(e) => (e.preventDefault(), e.stopPropagation(), toggleSelect(d.id))}
-                    />
-                  </td>
-
-                  <td
-                    className={`
-                      ${tableCellBodyMd}
-                      font-medium
-                      ${textPrimary}
-                    `}
-                  >
-                    {d.name}
-                  </td>
-
-                  <td className={`${tableCellBodyMd} ${textMuted}`}>{d.kind}</td>
-
-                  <td className={tableCellBodyMd}>
-                    <input
-                      className={`
-                        ${formInputSmall}
-                        ${width40}
-                      `}
-                      defaultValue={d.tags.join(`, `)}
-                      onBlur={(e) => handleTagsChange(d.id, e.target.value)}
-                      placeholder="comma,separated,tags"
-                    />
-                  </td>
-
-                  <td className={`${tableCellBodyMd} ${textMuted}`}>{(d.size / 1024).toFixed(1)} KB</td>
-
-                  <td className={`${tableCellBodyMd} ${textMuted}`}>{formatDateForDisplay(d.createdAt)}</td>
-
-                  <td
-                    className={`
-                      ${tableCellBodyMd}
-                      ${textRight}
-                      ${spaceX2}
-                    `}
-                  >
-                    <button
-                      type="button"
-                      className={linkPrimaryXs}
-                      onClick={(e) => (e.preventDefault(), e.stopPropagation(), setPreview(d))}
-                    >
-                      Preview
-                    </button>
-                    <a href={d.downloadUrl} className={linkPrimaryXs} target="_blank" rel="noreferrer">
-                      Download
-                    </a>
+            <tbody>
+              {docsList.length === 0 && (
+                <tr>
+                  <td colSpan={7} className={tableEmptyCell}>
+                    No documents found
                   </td>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
+              )}
+
+              {docsList.map((d) => {
+                const checked = selected.has(d.id);
+                return (
+                  <tr key={d.id} className={tableBodyRow}>
+                    <td className={tableCellBodyMd}>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) => (e.preventDefault(), e.stopPropagation(), toggleSelect(d.id))}
+                      />
+                    </td>
+
+                    <td className={localStyles.nameCell}>{d.name}</td>
+
+                    <td className={localStyles.mutedBodyCell}>{d.kind}</td>
+
+                    <td className={tableCellBodyMd}>
+                      <input
+                        className={localStyles.tagsInput}
+                        defaultValue={d.tags.join(`, `)}
+                        onBlur={(e) => handleTagsChange(d.id, e.target.value)}
+                        placeholder="comma,separated,tags"
+                      />
+                    </td>
+
+                    <td className={localStyles.mutedBodyCell}>{(d.size / 1024).toFixed(1)} KB</td>
+
+                    <td className={localStyles.mutedBodyCell}>{formatDateForDisplay(d.createdAt)}</td>
+
+                    <td className={localStyles.rowActionsCell}>
+                      <button
+                        type="button"
+                        className={linkPrimaryXs}
+                        onClick={(e) => (e.preventDefault(), e.stopPropagation(), setPreview(d))}
+                      >
+                        Preview
+                      </button>
+                      <a href={d.downloadUrl} className={linkPrimaryXs} target="_blank" rel="noreferrer">
+                        Download
+                      </a>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {preview && <DocumentPreviewModal open={preview !== null} doc={preview} onClose={() => setPreview(null)} />}

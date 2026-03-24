@@ -66,8 +66,80 @@ const PASSPORT_REGEX_BY_COUNTRY: Record<string, RegExp> = {
   ZA: /^[TAMD]\d{8}$/,
 };
 
-/** Fallback for countries without specific patterns: alphanumeric, 6–24 chars. */
-const FALLBACK_REGEX = /^[A-Za-z0-9\s-]{6,24}$/;
+/** Fallback for countries without specific patterns: alphanumeric with optional hyphens, 6–24 chars. */
+const FALLBACK_REGEX = /^[A-Za-z0-9-]{6,24}$/;
+
+/** Example passport/ID values shown as input placeholder per country. */
+const PASSPORT_EXAMPLE_BY_COUNTRY: Record<string, string> = {
+  AM: `AB1234567`,
+  AR: `ABC123456`,
+  AT: `A1234567`,
+  AU: `A1234567`,
+  AZ: `A12345678`,
+  BE: `AB123456`,
+  BG: `123456789`,
+  BR: `AB123456`,
+  BY: `AB1234567`,
+  CA: `AB123456`,
+  CH: `A1234567`,
+  CN: `G12345678`,
+  CY: `A123456`,
+  CZ: `12345678`,
+  DE: `C12345678`,
+  DK: `123456789`,
+  DZ: `123456789`,
+  EE: `A1234567`,
+  ES: `AB123456`,
+  FI: `AB1234567`,
+  FR: `12AB12345`,
+  GB: `123456789`,
+  GR: `AB1234567`,
+  HR: `123456789`,
+  HU: `AB123456`,
+  IE: `AB1234567`,
+  IN: `A1234567`,
+  ID: `A1234567`,
+  IR: `A12345678`,
+  IS: `A1234567`,
+  IT: `AB1234567`,
+  JM: `A1234567`,
+  JP: `AB1234567`,
+  KR: `M12345678`,
+  KZ: `A1234567`,
+  LI: `A12345`,
+  LT: `AB123456`,
+  LU: `AB123456`,
+  LV: `AB1234567`,
+  LY: `AB123456`,
+  MT: `1234567`,
+  MX: `1234567890`,
+  MZ: `AB1234567`,
+  MY: `A12345678`,
+  NL: `AB1234567`,
+  NZ: `LA123456`,
+  PH: `A123456`,
+  PK: `AB1234567`,
+  PL: `AB1234567`,
+  PT: `A123456`,
+  RO: `12345678`,
+  RU: `123456789`,
+  SE: `12345678`,
+  SI: `PA1234567`,
+  SK: `A1234567`,
+  TH: `A123456`,
+  TR: `A12345678`,
+  UA: `AB123456`,
+  US: `123456789`,
+  ZA: `T12345678`,
+};
+
+/**
+ * Returns a placeholder example for the passport/ID input based on country code.
+ */
+export function getPassportPlaceholder(countryCode: string | undefined): string {
+  const code = countryCode?.toUpperCase();
+  return (code && PASSPORT_EXAMPLE_BY_COUNTRY[code]) ?? `e.g. AB1234567`;
+}
 
 /**
  * Validates passport/ID number for a given country.

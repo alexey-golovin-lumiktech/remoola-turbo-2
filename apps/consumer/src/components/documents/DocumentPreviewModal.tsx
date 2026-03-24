@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from 'react';
 
+import { cn } from '@remoola/ui';
+
+import localStyles from './DocumentPreviewModal.module.css';
 import { useFullscreen } from './useFullscreen';
 import { useResizable } from './useResizable';
 import styles from '../ui/classNames.module.css';
@@ -26,7 +29,6 @@ const {
   docPreviewTitle,
   docPreviewTopbar,
   docPreviewZoomLabel,
-  flexRowItemsCenter,
 } = styles;
 
 interface DocumentPreviewModalProps {
@@ -47,15 +49,24 @@ interface DocumentPreviewModalProps {
 export function DocumentPreviewModal({ open, onClose, doc }: DocumentPreviewModalProps) {
   const { isFullscreen, toggleFullscreen, fullscreenRef } = useFullscreen();
 
-  const { size, startDragging } = useResizable({ minWidth: 400, minHeight: 300, maxWidth: 1600, maxHeight: 1200 });
+  const { size, startDragging } = useResizable({
+    minWidth: 280,
+    minHeight: 320,
+    maxWidth: 1600,
+    maxHeight: 1200,
+    initialWidth: 900,
+    initialHeight: 600,
+  });
 
   const [zoom, setZoom] = useState(1.0);
   const [showThumbnails, setShowThumbnails] = useState(true);
+  const [canShowSidebar, setCanShowSidebar] = useState(false);
 
   const ZOOM_STEP = 0.1;
-
-  const isPDF = doc.mimetype! === `application/pdf`;
-  const isImage = doc.mimetype!.startsWith(`image/`);
+  const mimeType = doc.mimetype ?? ``;
+  const isPDF = mimeType === `application/pdf`;
+  const isImage = mimeType.startsWith(`image/`);
+  const supportsInlinePreview = isPDF || isImage;
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -65,39 +76,57 @@ export function DocumentPreviewModal({ open, onClose, doc }: DocumentPreviewModa
     return () => window.removeEventListener(`keydown`, handleEsc);
   }, [onClose]);
 
+  useEffect(() => {
+    const mediaQuery = window.matchMedia(`(min-width: 768px)`);
+    const syncSidebarAvailability = () => setCanShowSidebar(mediaQuery.matches);
+
+    syncSidebarAvailability();
+    mediaQuery.addEventListener(`change`, syncSidebarAvailability);
+
+    return () => mediaQuery.removeEventListener(`change`, syncSidebarAvailability);
+  }, []);
+
   if (!open) return null;
 
   return (
-    <div className={docPreviewOverlay}>
+    <div className={cn(docPreviewOverlay, localStyles.overlay)}>
       <div
         ref={fullscreenRef}
-        className={`
-          ${docPreviewModal}
-          ${isFullscreen ? docPreviewFullscreen : ``}
-        `}
-        style={!isFullscreen ? { width: size.width, height: size.height } : {}}
+        className={cn(docPreviewModal, localStyles.modalFrame, isFullscreen && docPreviewFullscreen)}
+        style={
+          !isFullscreen
+            ? {
+                width: size.width,
+                height: size.height,
+                maxWidth: `calc(100vw - 1rem)`,
+                maxHeight: `calc(100dvh - 1rem)`,
+              }
+            : {}
+        }
       >
         {/* Top bar */}
-        <div className={docPreviewTopbar}>
-          <div>
-            <div className={docPreviewTitle}>{doc.name}</div>
-            <div className={docPreviewMeta}>
-              {doc.mimetype} — {(doc.size / 1024).toFixed(1)} KB
+        <div className={cn(docPreviewTopbar, localStyles.topbar)}>
+          <div className={localStyles.headerInfo}>
+            <div className={cn(docPreviewTitle, localStyles.title)}>{doc.name}</div>
+            <div className={cn(docPreviewMeta, localStyles.meta)}>
+              {(mimeType || `Unknown file type`) + ` — ` + `${(doc.size / 1024).toFixed(1)} KB`}
             </div>
           </div>
 
-          <div className={docPreviewActions}>
+          <div className={cn(docPreviewActions, localStyles.actions)}>
             {/* Thumbnail toggle */}
-            <button
-              onClick={(e) => (e.preventDefault(), e.stopPropagation(), setShowThumbnails((x) => !x))}
-              className={docPreviewActionButton}
-            >
-              {showThumbnails ? `Hide Thumbs` : `Show Thumbs`}
-            </button>
+            {isPDF && canShowSidebar && (
+              <button
+                onClick={(e) => (e.preventDefault(), e.stopPropagation(), setShowThumbnails((x) => !x))}
+                className={docPreviewActionButton}
+              >
+                {showThumbnails ? `Hide Thumbs` : `Show Thumbs`}
+              </button>
+            )}
 
             {/* Zoom controls */}
-            {isPDF || isImage ? (
-              <div className={flexRowItemsCenter}>
+            {supportsInlinePreview ? (
+              <div className={localStyles.zoomControls}>
                 <button
                   onClick={(e) => (
                     e.preventDefault(),
@@ -119,12 +148,14 @@ export function DocumentPreviewModal({ open, onClose, doc }: DocumentPreviewModa
             ) : null}
 
             {/* Fit to width */}
-            <button
-              onClick={(e) => (e.preventDefault(), e.stopPropagation(), setZoom(1))}
-              className={docPreviewActionButton}
-            >
-              Fit
-            </button>
+            {supportsInlinePreview && (
+              <button
+                onClick={(e) => (e.preventDefault(), e.stopPropagation(), setZoom(1))}
+                className={docPreviewActionButton}
+              >
+                Fit
+              </button>
+            )}
 
             {/* Download */}
 
@@ -133,21 +164,25 @@ export function DocumentPreviewModal({ open, onClose, doc }: DocumentPreviewModa
             </a>
 
             {/* Print */}
-            <button
-              onClick={(e) => (
-                e.preventDefault(),
-                e.stopPropagation(),
-                window.open(doc.downloadUrl, `_blank`)?.print?.()
-              )}
-              className={docPreviewActionButton}
-            >
-              Print
-            </button>
+            {supportsInlinePreview && (
+              <button
+                onClick={(e) => (
+                  e.preventDefault(),
+                  e.stopPropagation(),
+                  window.open(doc.downloadUrl, `_blank`)?.print?.()
+                )}
+                className={docPreviewActionButton}
+              >
+                Print
+              </button>
+            )}
 
             {/* Fullscreen */}
-            <button onClick={toggleFullscreen} className={docPreviewActionButton}>
-              {isFullscreen ? `Exit Fullscreen` : `Fullscreen`}
-            </button>
+            {supportsInlinePreview && (
+              <button onClick={toggleFullscreen} className={docPreviewActionButton}>
+                {isFullscreen ? `Exit Fullscreen` : `Fullscreen`}
+              </button>
+            )}
 
             {/* Close */}
             <button onClick={onClose} className={docPreviewCloseButton}>
@@ -157,9 +192,9 @@ export function DocumentPreviewModal({ open, onClose, doc }: DocumentPreviewModa
         </div>
 
         {/* Main content */}
-        <div className={docPreviewContent}>
+        <div className={cn(docPreviewContent, localStyles.content)}>
           {/* Sidebar thumbnails */}
-          {showThumbnails && isPDF && (
+          {showThumbnails && isPDF && canShowSidebar && (
             <div className={docPreviewSidebar}>
               {/* Placeholder for real thumbnails, can integrate PDF.js */}
               <div className={docPreviewSidebarLabel}>Thumbnails</div>
@@ -167,7 +202,7 @@ export function DocumentPreviewModal({ open, onClose, doc }: DocumentPreviewModa
           )}
 
           {/* Document */}
-          <div className={docPreviewDocument}>
+          <div className={cn(docPreviewDocument, localStyles.documentArea)}>
             {isPDF && (
               <iframe
                 src={doc.downloadUrl}
@@ -190,12 +225,24 @@ export function DocumentPreviewModal({ open, onClose, doc }: DocumentPreviewModa
                 }}
               />
             )}
+
+            {!supportsInlinePreview && (
+              <div className={localStyles.unsupportedState}>
+                <div className={localStyles.unsupportedTitle}>Preview unavailable</div>
+                <div className={localStyles.unsupportedText}>
+                  This file type can&apos;t be previewed inline on mobile. Download it to inspect the document.
+                </div>
+                <a href={doc.downloadUrl} download={doc.name} className={docPreviewActionButton}>
+                  Download file
+                </a>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Drag handle */}
         {!isFullscreen && (
-          <div onMouseDown={startDragging} className={docPreviewDragHandle}>
+          <div onMouseDown={startDragging} className={cn(docPreviewDragHandle, localStyles.dragHandle)}>
             <div className={docPreviewDragHandleIcon} />
           </div>
         )}

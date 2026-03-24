@@ -4,16 +4,16 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { CURRENCY_CODE, isCurrencyCode, type TCurrencyCode } from '@remoola/api-types';
+import { cn } from '@remoola/ui';
 
 import { SuccessModal } from './SuccessModal';
+import localStyles from './WithdrawForm.module.css';
 import { getErrorMessageForUser } from '../../lib/error-messages';
 import { usePreferredCurrency } from '../../lib/hooks';
 import { AmountCurrencyInput, FormCard, FormField } from '../ui';
 import styles from '../ui/classNames.module.css';
 
-const { flexRowGap3, primaryButtonClass } = styles;
-
-const joinClasses = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(` `);
+const { primaryButtonClass } = styles;
 
 const pillToggleBase: Record<`md` | `lg`, string> = {
   md: styles.pillToggleBaseMd!,
@@ -27,7 +27,7 @@ const pillToggleInactiveLg = styles.pillToggleInactiveLg;
 const getToggleButtonClasses = (isActive: boolean, variant: `md` | `lg` = `md`) => {
   const base = pillToggleBase[variant];
   const state = isActive ? pillToggleActive : variant === `lg` ? pillToggleInactiveLg : pillToggleInactiveMd;
-  return joinClasses(base, state);
+  return cn(base, state);
 };
 
 export function WithdrawForm() {
@@ -118,7 +118,7 @@ export function WithdrawForm() {
       />
 
       <FormField label="Withdraw to">
-        <div className={flexRowGap3}>
+        <div className={localStyles.methodToggleRow}>
           <button
             type="button"
             onClick={(e) => {

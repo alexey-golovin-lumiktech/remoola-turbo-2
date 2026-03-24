@@ -2,25 +2,20 @@
 
 import { CreditCardIcon, LandmarkIcon, StarIcon, PencilIcon, TrashIcon } from '@remoola/ui';
 
+import localStyles from './PaymentMethodsList.module.css';
 import { type PaymentMethodItem } from '../../types';
 import styles from '../ui/classNames.module.css';
 
 const {
   actionButtonDanger,
   actionButtonPrimary,
-  badgeDefaultInline,
   emptyStateBody,
   emptyStateCentered,
   emptyStateTitle,
-  flexCol,
-  flexRowGap3,
-  flexRowGap4,
   paymentMethodRow,
   paymentMethodRowIcon,
   paymentMethodRowMeta,
   paymentMethodRowTitle,
-  spaceY4,
-  textSm,
 } = styles;
 
 type PaymentMethodsListProps = {
@@ -43,7 +38,7 @@ export function PaymentMethodsList({ payments, onEditAction, onDeleteAction }: P
   }
 
   return (
-    <div className={spaceY4}>
+    <div className={localStyles.listRoot}>
       {payments.map((pm) => (
         <PaymentMethodRow key={pm.id} payment={pm} onEdit={onEditAction} onDelete={onDeleteAction} />
       ))}
@@ -69,10 +64,10 @@ function PaymentMethodRow({
   return (
     <div className={paymentMethodRow}>
       {/* LEFT */}
-      <div className={flexRowGap4}>
+      <div className={localStyles.rowLeft}>
         <div className={paymentMethodRowIcon}>{icon}</div>
 
-        <div className={flexCol}>
+        <div className={localStyles.rowText}>
           <div className={paymentMethodRowTitle}>
             {payment.type === `CREDIT_CARD`
               ? `${payment.brand} •••• ${payment.last4}`
@@ -82,12 +77,7 @@ function PaymentMethodRow({
           <div className={paymentMethodRowMeta}>{payment.billingDetails?.name ?? `No billing name`}</div>
 
           {payment.defaultSelected && (
-            <span
-              className={`
-                mt-1
-                ${badgeDefaultInline}
-              `}
-            >
+            <span className={localStyles.defaultBadge}>
               <StarIcon size={12} /> Default
             </span>
           )}
@@ -95,12 +85,7 @@ function PaymentMethodRow({
       </div>
 
       {/* ACTIONS */}
-      <div
-        className={`
-          ${flexRowGap3}
-          ${textSm}
-        `}
-      >
+      <div className={localStyles.rowActions}>
         <button
           className={actionButtonPrimary}
           onClick={(e) => (e.stopPropagation(), e.preventDefault(), onEdit(payment))}

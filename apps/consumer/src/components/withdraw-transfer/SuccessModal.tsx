@@ -2,17 +2,10 @@
 
 import { type ReactNode } from 'react';
 
+import localStyles from './SuccessModal.module.css';
 import styles from '../ui/classNames.module.css';
 
-const {
-  flexRowGap3,
-  mlAuto,
-  modalButtonPrimary,
-  successModalContent,
-  successModalDescription,
-  successModalOverlay,
-  successModalTitle,
-} = styles;
+const { successModalContent, successModalDescription, successModalOverlay, successModalTitle } = styles;
 
 type SuccessModalProps = {
   open: boolean;
@@ -31,16 +24,9 @@ export function SuccessModal({ open, title, description, onCloseAction, actions 
         <h3 className={successModalTitle}>{title}</h3>
         {description && <p className={successModalDescription}>{description}</p>}
 
-        <div className={flexRowGap3}>
+        <div className={localStyles.actionsRow}>
           {actions}
-          <button
-            type="button"
-            onClick={onCloseAction}
-            className={`
-              ${modalButtonPrimary}
-              ${mlAuto}
-            `}
-          >
+          <button type="button" onClick={onCloseAction} className={localStyles.okButton}>
             OK
           </button>
         </div>

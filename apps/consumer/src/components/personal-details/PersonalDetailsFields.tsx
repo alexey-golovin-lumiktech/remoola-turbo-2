@@ -1,5 +1,7 @@
 'use client';
 
+import { getCountryCode } from '../../lib/countries';
+import { getPassportPlaceholder } from '../../lib/passport-validation';
 import { LABEL_STATUS, LEGAL_STATUS_LABEL, STATUS_LABEL } from '../../types';
 import { CountrySelect, DateInput, FormInput, FormSelect, PhoneInput } from '../ui';
 import styles from '../ui/classNames.module.css';
@@ -46,6 +48,9 @@ export function PersonalDetailsFields({
 
   const legalStatusDisplayValue =
     (STATUS_LABEL as Record<string, string>)[values.legalStatus] ?? values.legalStatus ?? ``;
+
+  const passportCountryCode = getCountryCode(values.citizenOf || values.countryOfTaxResidence || ``);
+  const passportPlaceholder = getPassportPlaceholder(passportCountryCode);
 
   return (
     <div className={formGridClass}>
@@ -126,6 +131,7 @@ export function PersonalDetailsFields({
           onChange={(v) => onChange(`passportOrIdNumber`, v)}
           error={errors.passportOrIdNumber}
           onErrorClear={() => clearError(`passportOrIdNumber`)}
+          placeholder={passportPlaceholder}
         />
       </div>
 

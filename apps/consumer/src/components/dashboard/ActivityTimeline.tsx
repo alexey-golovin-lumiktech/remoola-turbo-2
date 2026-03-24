@@ -39,13 +39,13 @@ export function ActivityTimeline({ activityTimelineItems }: ActivityTimelineProp
             <div className={activityRowBody}>
               <div className={activityRowHeader}>
                 <p className={activityLabel}>{activityTimelineItem.label}</p>
-                <span className={activityDate}>
-                  {new Intl.DateTimeFormat(undefined, {
-                    dateStyle: `short`,
-                    timeStyle: `short`,
-                  }).format(new Date(activityTimelineItem.createdAt))}
-                </span>
               </div>
+              <span className={activityDate}>
+                {new Intl.DateTimeFormat(undefined, {
+                  dateStyle: `short`,
+                  timeStyle: `short`,
+                }).format(new Date(activityTimelineItem.createdAt))}
+              </span>
               {activityTimelineItem.description && (
                 <p className={activityDescription}>{activityTimelineItem.description}</p>
               )}

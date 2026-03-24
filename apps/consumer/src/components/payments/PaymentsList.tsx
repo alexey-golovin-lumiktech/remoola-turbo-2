@@ -4,13 +4,15 @@ import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
 import { TRANSACTION_STATUS } from '@remoola/api-types';
+import { AlertIcon, cn } from '@remoola/ui';
 
 import { formatCurrencyDisplay } from '../../lib/currency';
 import { formatDateForDisplay } from '../../lib/date-utils';
 import { usePayments } from '../../lib/hooks';
 import { PaginationBar, SkeletonTable } from '../ui';
 import { PaymentsFilters } from './PaymentsFilters';
-import styles from '../ui/classNames.module.css';
+import localStyles from './PaymentsList.module.css';
+import shared from '../ui/classNames.module.css';
 
 const {
   badgeBase,
@@ -18,28 +20,21 @@ const {
   badgeDefault,
   badgePending,
   badgeWaiting,
-  cursorPointer,
   emptyStateContainer,
   emptyStateIcon,
   emptyStateIconSvg,
   linkPrimaryMedium,
   refreshButtonClass,
-  spaceY6,
   tableBodyRow,
   tableCellBodyLg,
   tableCellHeaderLg,
   tableContainer,
   tableEmptyCell,
   tableHeaderRow,
-  textCenter,
-  textSm,
   textMuted,
   textMutedStrong,
-  textPrimary,
-  textRight,
-  textSecondary,
   textXsMuted,
-} = styles;
+} = shared;
 
 type PaymentItem = {
   id: string;
@@ -58,6 +53,19 @@ type PaymentItem = {
 };
 
 // Type is inferred from the hook, no need to define separately
+
+function getStatusBadgeClassName(status: string) {
+  return cn(
+    badgeBase,
+    status === TRANSACTION_STATUS.PENDING
+      ? badgePending
+      : status === TRANSACTION_STATUS.COMPLETED
+        ? badgeCompleted
+        : status === TRANSACTION_STATUS.WAITING
+          ? badgeWaiting
+          : badgeDefault,
+  );
+}
 
 export function PaymentsList() {
   const [page, setPage] = useState(1);
@@ -88,36 +96,12 @@ export function PaymentsList() {
   if (error) {
     return (
       <div className={emptyStateContainer}>
-        <div className={textCenter}>
+        <div className={localStyles.errorInner}>
           <div className={emptyStateIcon}>
-            <svg className={emptyStateIconSvg} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54
-              0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-              />
-            </svg>
+            <AlertIcon className={emptyStateIconSvg} aria-hidden="true" />
           </div>
-          <h2
-            className={`
-              text-xl
-              font-semibold
-              mb-2
-              ${textPrimary}
-            `}
-          >
-            Failed to load payments
-          </h2>
-          <p
-            className={`
-              ${textSecondary}
-              mb-6
-            `}
-          >
-            {error.message}
-          </p>
+          <h2 className={localStyles.errorTitle}>Failed to load payments</h2>
+          <p className={localStyles.errorMessage}>{error.message}</p>
           <button
             onClick={(e) => {
               e.preventDefault();
@@ -134,7 +118,7 @@ export function PaymentsList() {
   }
 
   return (
-    <div className={spaceY6} data-testid="consumer-payments-list">
+    <div className={localStyles.listRoot} data-testid="consumer-payments-list">
       <PaymentsFilters
         status={status}
         type={type}
@@ -144,101 +128,106 @@ export function PaymentsList() {
         onSearchChangeAction={setSearch}
       />
 
+      {/* Pagination */}
+      {total > 0 && (
+        <PaginationBar total={total} page={page} pageSize={pageSize} onPageChange={setPage} loading={isLoading} />
+      )}
+
       {/* List */}
       {isLoading ? (
         <SkeletonTable rows={8} cols={6} />
       ) : (
-        <div className={tableContainer} data-testid="consumer-payments-table">
-          <table
-            className={`
-              w-full
-              ${textSm}
-            `}
-          >
-            <thead>
-              <tr className={tableHeaderRow}>
-                <th className={tableCellHeaderLg}>Counterparty</th>
-                <th className={tableCellHeaderLg}>Amount</th>
-                <th className={tableCellHeaderLg}>Status</th>
-                <th className={tableCellHeaderLg}>Type</th>
-                <th className={tableCellHeaderLg}>Date</th>
-                <th className={tableCellHeaderLg}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {payments.length === 0 && (
-                <tr>
-                  <td colSpan={6} className={tableEmptyCell}>
-                    No payments found
-                  </td>
-                </tr>
-              )}
-
-              {payments.map((p: PaymentItem) => (
-                <tr
-                  key={p.id}
-                  className={`
-                    ${tableBodyRow}
-                    ${cursorPointer}
-                  `}
-                >
-                  <td className={tableCellBodyLg}>
-                    <div
-                      className={`
-                        font-medium
-                        ${textPrimary}
-                      `}
-                    >
-                      {p.counterparty.email}
+        <>
+          <div className={localStyles.mobileList} data-testid="consumer-payments-mobile-list">
+            {payments.length === 0 ? (
+              <div className={localStyles.mobileEmptyState}>No payments found</div>
+            ) : (
+              payments.map((p: PaymentItem) => (
+                <article key={p.id} className={localStyles.mobileCard}>
+                  <div className={localStyles.mobileHeader}>
+                    <div>
+                      <div className={localStyles.counterpartyPrimary}>{p.counterparty.email}</div>
+                      <div className={localStyles.mobileDescription}>{p.description || `No description`}</div>
                     </div>
-                    <div className={textXsMuted}>{p.description || `—`}</div>
-                  </td>
+                    <div className={localStyles.mobileAmount}>{formatCurrencyDisplay(p.amount, p.currencyCode)}</div>
+                  </div>
 
-                  <td
-                    className={`
-                      ${tableCellBodyLg}
-                      font-semibold
-                      ${textPrimary}
-                    `}
-                  >
-                    {formatCurrencyDisplay(p.amount, p.currencyCode)}
-                  </td>
+                  <div className={localStyles.mobileMetaGrid}>
+                    <div>
+                      <div className={localStyles.mobileMetaLabel}>Status</div>
+                      <span className={getStatusBadgeClassName(p.status)}>{p.status}</span>
+                    </div>
+                    <div>
+                      <div className={localStyles.mobileMetaLabel}>Type</div>
+                      <div className={textMutedStrong}>{p.type}</div>
+                    </div>
+                    <div>
+                      <div className={localStyles.mobileMetaLabel}>Date</div>
+                      <div className={textMuted}>{formatDateForDisplay(p.createdAt)}</div>
+                    </div>
+                  </div>
 
-                  <td className={tableCellBodyLg}>
-                    <span
-                      className={`${badgeBase} ${
-                        p.status === TRANSACTION_STATUS.PENDING
-                          ? badgePending
-                          : p.status === TRANSACTION_STATUS.COMPLETED
-                            ? badgeCompleted
-                            : p.status === TRANSACTION_STATUS.WAITING
-                              ? badgeWaiting
-                              : badgeDefault
-                      }`}
-                    >
-                      {p.status}
-                    </span>
-                  </td>
+                  <Link href={`/payments/${p.id}`} className={localStyles.mobileViewLink}>
+                    View payment
+                  </Link>
+                </article>
+              ))
+            )}
+          </div>
 
-                  <td className={`${tableCellBodyLg} ${textMutedStrong}`}>{p.type}</td>
+          <div className={localStyles.desktopTableWrapper} data-testid="consumer-payments-table">
+            <div className={tableContainer}>
+              <table className={localStyles.table}>
+                <thead>
+                  <tr className={tableHeaderRow}>
+                    <th className={tableCellHeaderLg}>Counterparty</th>
+                    <th className={tableCellHeaderLg}>Amount</th>
+                    <th className={tableCellHeaderLg}>Status</th>
+                    <th className={tableCellHeaderLg}>Type</th>
+                    <th className={tableCellHeaderLg}>Date</th>
+                    <th className={tableCellHeaderLg}></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {payments.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className={tableEmptyCell}>
+                        No payments found
+                      </td>
+                    </tr>
+                  )}
 
-                  <td className={`${tableCellBodyLg} ${textMuted}`}>{formatDateForDisplay(p.createdAt)}</td>
+                  {payments.map((p: PaymentItem) => (
+                    <tr key={p.id} className={cn(tableBodyRow, localStyles.rowClickable)}>
+                      <td className={tableCellBodyLg}>
+                        <div className={localStyles.counterpartyPrimary}>{p.counterparty.email}</div>
+                        <div className={textXsMuted}>{p.description || `—`}</div>
+                      </td>
 
-                  <td className={`${tableCellBodyLg} ${textRight}`}>
-                    <Link href={`/payments/${p.id}`} className={linkPrimaryMedium}>
-                      View →
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+                      <td className={cn(tableCellBodyLg, localStyles.amountCell)}>
+                        {formatCurrencyDisplay(p.amount, p.currencyCode)}
+                      </td>
 
-      {/* Pagination */}
-      {total > 0 && (
-        <PaginationBar total={total} page={page} pageSize={pageSize} onPageChange={setPage} loading={isLoading} />
+                      <td className={tableCellBodyLg}>
+                        <span className={getStatusBadgeClassName(p.status)}>{p.status}</span>
+                      </td>
+
+                      <td className={cn(tableCellBodyLg, textMutedStrong)}>{p.type}</td>
+
+                      <td className={cn(tableCellBodyLg, textMuted)}>{formatDateForDisplay(p.createdAt)}</td>
+
+                      <td className={cn(tableCellBodyLg, localStyles.cellRight)}>
+                        <Link href={`/payments/${p.id}`} className={linkPrimaryMedium}>
+                          View →
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

@@ -2,6 +2,8 @@
 
 import Select, { type SingleValue } from 'react-select';
 
+import { cn } from '@remoola/ui';
+
 import styles from './classNames.module.css';
 import { getCountryOptions } from '../../lib/countries';
 import { useTheme } from '../ThemeProvider';
@@ -57,7 +59,7 @@ export function CountrySelect({
           option.value.toLowerCase().includes(input.toLowerCase())
         }
         classNames={{
-          control: () => `${formInputFullWidth} ${error ? formInputError : ``}`,
+          control: () => cn(formInputFullWidth, error && formInputError),
         }}
         styles={{
           control: (base) => ({

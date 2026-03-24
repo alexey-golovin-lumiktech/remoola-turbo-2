@@ -10,7 +10,7 @@ export const entityDetailsSchema = z.object({
     .min(1, `Tax ID is required`)
     .refine(
       (v) => /^[A-Za-z0-9\s\-.]+$/.test(v.trim()) && v.replace(/\s/g, ``).replace(/[-.]/g, ``).length >= 4,
-      `Please enter a valid Tax ID (at least 4 characters, letters and digits only)`,
+      `Please enter a valid Tax ID (at least 4 characters; letters, digits, spaces, hyphens, and periods only)`,
     ),
   phoneNumber: z
     .string()

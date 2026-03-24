@@ -10,8 +10,8 @@ export type ParsedAddress = {
   country: string;
 };
 
-/** US/CA: 2-letter state + 5-digit zip, optionally 5+4 */
-const STATE_POSTAL_PATTERN = /^([A-Za-z]{2})\s+(\d{5}(?:-\d{4})?)$/;
+/** US/CA: 2-letter state/province + US ZIP or Canadian postal code. */
+const STATE_POSTAL_PATTERN = /^([A-Za-z]{2})\s*(\d{5}(?:-\d{4})?|[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d)$/;
 
 export function parseAddressFromString(fullAddress: string): Partial<ParsedAddress> {
   const trimmed = fullAddress.trim();
@@ -33,7 +33,7 @@ export function parseAddressFromString(fullAddress: string): Partial<ParsedAddre
   const lastStatePostalMatch = last?.match(STATE_POSTAL_PATTERN);
   if (lastStatePostalMatch) {
     result.state = lastStatePostalMatch[1]!.toUpperCase();
-    result.postalCode = lastStatePostalMatch[2]!;
+    result.postalCode = lastStatePostalMatch[2]!.toUpperCase();
     consumedCount += 1;
   } else if (last && !/^\d+/.test(last) && last.length > 2) {
     result.country = last;
@@ -45,7 +45,7 @@ export function parseAddressFromString(fullAddress: string): Partial<ParsedAddre
   const secondStatePostalMatch = !result.state && secondLast?.match(STATE_POSTAL_PATTERN);
   if (secondStatePostalMatch) {
     result.state = secondStatePostalMatch[1]!.toUpperCase();
-    result.postalCode = secondStatePostalMatch[2]!;
+    result.postalCode = secondStatePostalMatch[2]!.toUpperCase();
     consumedCount += 1;
   }
 

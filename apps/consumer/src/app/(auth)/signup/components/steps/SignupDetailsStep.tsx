@@ -5,8 +5,10 @@ import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import { type THowDidHearAboutUs, HOW_DID_HEAR_ABOUT_US, CONTRACTOR_KIND, ACCOUNT_TYPE } from '@remoola/api-types';
+import { GoogleIcon, cn } from '@remoola/ui';
 
-import { FormInput, FormSelect, GoogleIcon } from '../../../../../components/ui';
+import localStyles from './SignupDetailsStep.module.css';
+import { FormInput, FormSelect } from '../../../../../components/ui';
 import styles from '../../../../../components/ui/classNames.module.css';
 import { PasswordInput } from '../../../../../components/ui/PasswordInput';
 import { STEP_NAME, HOW_DID_HEAR_ABOUT_US_LABEL } from '../../../../../types';
@@ -16,12 +18,9 @@ import { createSignupDetailsSchema, getFieldErrors } from '../../validation';
 import { PrevNextButtons } from '../PrevNextButtons';
 
 const {
-  flexRowGap3,
   formInputError,
   formInputFullWidth,
-  inlineFlexItemsCenterGap2,
   loginButton,
-  mt4,
   signupGenerateButton,
   signupPasswordInput,
   signupPasswordRow,
@@ -31,11 +30,7 @@ const {
   signupStepLabelInline,
   signupStepSubtitle,
   signupStepTitleLg,
-  textCenter,
-  textMutedGray,
 } = styles;
-
-const joinClasses = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(` `);
 
 const pillToggleBase: Record<`md` | `lg`, string> = {
   md: styles.pillToggleBaseMd!,
@@ -49,7 +44,7 @@ const pillToggleInactiveLg = styles.pillToggleInactiveLg;
 const getToggleButtonClasses = (isActive: boolean, variant: `md` | `lg` = `md`) => {
   const base = pillToggleBase[variant];
   const state = isActive ? pillToggleActive : variant === `lg` ? pillToggleInactiveLg : pillToggleInactiveMd;
-  return joinClasses(base, state);
+  return cn(base, state);
 };
 
 export function SignupDetailsStep() {
@@ -130,7 +125,7 @@ export function SignupDetailsStep() {
                     clearError(`password`);
                   }}
                   placeholder="Enter password"
-                  inputClassName={joinClasses(formInputFullWidth, fieldErrors.password && formInputError)}
+                  inputClassName={cn(formInputFullWidth, fieldErrors.password && formInputError)}
                 />
               </div>
 
@@ -161,7 +156,7 @@ export function SignupDetailsStep() {
                 clearError(`confirmPassword`);
               }}
               placeholder="Confirm password"
-              inputClassName={joinClasses(formInputFullWidth, fieldErrors.confirmPassword && formInputError)}
+              inputClassName={cn(formInputFullWidth, fieldErrors.confirmPassword && formInputError)}
             />
           </div>
         </>
@@ -222,7 +217,7 @@ export function SignupDetailsStep() {
       <div className={signupStepGroup}>
         <label className={signupStepLabelInline}>Account type</label>
 
-        <div className={flexRowGap3}>
+        <div className={localStyles.accountToggleRow}>
           <button
             type="button"
             data-testid="consumer-signup-toggle-account-business"
@@ -266,7 +261,7 @@ export function SignupDetailsStep() {
         <div className={signupStepGroup}>
           <label className={signupStepLabelInline}>Contractor kind</label>
 
-          <div className={flexRowGap3}>
+          <div className={localStyles.accountToggleRow}>
             <button
               type="button"
               data-testid="consumer-signup-toggle-contractor-individual"
@@ -302,7 +297,7 @@ export function SignupDetailsStep() {
 
       {googleSignupStartUrl && !emailLocked && (
         <>
-          <p className={joinClasses(textCenter, textMutedGray, mt4)}>or</p>
+          <p className={localStyles.signupDividerText}>or</p>
           <button
             type="button"
             className={loginButton}
@@ -312,7 +307,7 @@ export function SignupDetailsStep() {
               window.location.href = googleSignupStartUrl;
             }}
           >
-            <span className={inlineFlexItemsCenterGap2}>
+            <span className={localStyles.authProviderButtonContent}>
               <GoogleIcon size={20} />
               Sign up with Google
             </span>

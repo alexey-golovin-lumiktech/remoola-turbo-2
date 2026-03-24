@@ -1,17 +1,18 @@
-import styles from './classNames.module.css';
+import { cn } from '@remoola/ui';
+
+import shared from './classNames.module.css';
+import lineStyles from './Skeleton.module.css';
 
 const {
+  actionRowGrid,
   dashboardContainer,
-  flexRowBetween,
-  gridMainContent,
-  gridSummaryCards,
+  dashboardGrid,
   skeletonBase,
   skeletonCard,
   skeletonCardPadding,
   skeletonCardTitle,
   skeletonCellShort,
   skeletonCellTiny,
-  skeletonHeaderAction,
   skeletonHeaderBlock,
   skeletonHeaderCell,
   skeletonHeaderTitle,
@@ -24,12 +25,8 @@ const {
   skeletonTablePadding,
   skeletonTextFiveSixths,
   skeletonTextFourSixths,
-} = styles;
-
-// Simple className utility since @remoola/ui/utils doesn't exist
-function cn(...classes: (string | undefined | null | boolean)[]): string {
-  return classes.filter(Boolean).join(` `);
-}
+  summaryGrid,
+} = shared;
 
 interface SkeletonProps {
   className?: string;
@@ -50,8 +47,8 @@ export function SkeletonText({ className, lines = 1 }: SkeletonProps & { lines?:
         <Skeleton
           key={i}
           className={cn(
-            `h-4`,
-            i === lines - 1 ? `w-3/4` : `w-full`, // Last line shorter
+            lineStyles.lineHeight,
+            i === lines - 1 ? lineStyles.lineWidthThreeQuarter : lineStyles.lineWidthFull,
             className,
           )}
         />
@@ -98,12 +95,12 @@ export function SkeletonTable({ rows = 5, cols = 4, className }: SkeletonProps &
                 <Skeleton
                   key={`cell-${rowIndex}-${colIndex}`}
                   className={cn(
-                    `h-4`,
+                    lineStyles.lineHeight,
                     colIndex === 0
                       ? skeletonCellShort // First column (name/id) shorter
                       : colIndex === cols - 1
                         ? skeletonCellTiny // Last column (actions) shorter
-                        : `w-full`,
+                        : lineStyles.lineWidthFull,
                   )}
                 />
               ))}
@@ -115,32 +112,56 @@ export function SkeletonTable({ rows = 5, cols = 4, className }: SkeletonProps &
   );
 }
 
+function DashboardPanelSkeleton({ rows = 4, className }: SkeletonProps & { rows?: number }) {
+  return (
+    <div className={cn(skeletonCard, className)}>
+      <div className={skeletonSpaceY4}>
+        <Skeleton className={skeletonCardTitle} />
+        <div className={skeletonSpaceY3}>
+          {Array.from({ length: rows }).map((_, index) => (
+            <Skeleton key={index} className={index === rows - 1 ? skeletonTextFourSixths : skeletonLine} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function DashboardSkeleton() {
   return (
     <div className={dashboardContainer}>
       {/* Header */}
-      <div className={flexRowBetween}>
+      <div className={skeletonSpaceY3}>
         <Skeleton className={skeletonHeaderTitle} />
-        <Skeleton className={skeletonHeaderAction} />
+        <Skeleton className={lineStyles.dashboardSubhead} />
       </div>
 
       {/* Summary Cards */}
-      <div className={gridSummaryCards}>
-        {Array.from({ length: 4 }).map((_, i) => (
+      <div className={summaryGrid}>
+        {Array.from({ length: 3 }).map((_, i) => (
           <SkeletonCard key={i} className={skeletonCardPadding} />
         ))}
       </div>
 
-      {/* Action Row */}
-      <SkeletonCard />
+      {/* Verification */}
+      <DashboardPanelSkeleton rows={3} />
 
-      {/* Main Content Grid */}
-      <div className={gridMainContent}>
-        <SkeletonTable rows={8} cols={5} />
+      {/* Action Row */}
+      <div className={actionRowGrid}>
+        <SkeletonCard className={skeletonCardPadding} />
+        <SkeletonCard className={skeletonCardPadding} />
+      </div>
+
+      {/* Pending Requests */}
+      <SkeletonTable rows={5} cols={4} />
+
+      {/* Activity + Sidebar */}
+      <div className={dashboardGrid}>
+        <DashboardPanelSkeleton rows={5} />
         <div className={skeletonSpaceY4}>
-          <SkeletonCard />
-          <SkeletonCard />
-          <SkeletonCard />
+          <DashboardPanelSkeleton rows={3} />
+          <DashboardPanelSkeleton rows={4} />
+          <DashboardPanelSkeleton rows={3} />
         </div>
       </div>
     </div>

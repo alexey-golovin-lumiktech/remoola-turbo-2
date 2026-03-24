@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { cn, XIcon } from '@remoola/ui';
+
 import styles from './classNames.module.css';
 import { FormField } from './FormField';
 
@@ -186,7 +188,7 @@ export function RecipientEmailField({
           <input
             type="email"
             required={required}
-            className={`${inputClassName} ${value ? `pr-9` : ``}`}
+            className={cn(inputClassName, value && `pr-9`)}
             value={value}
             onChange={(e) => onChange(e.target.value)}
             onFocus={() => value.trim() && setOpen(true)}
@@ -207,25 +209,23 @@ export function RecipientEmailField({
             <button
               type="button"
               onClick={handleClear}
-              className={`
-                absolute
-                right-2
-                top-1/2
-                -translate-y-1/2
-                rounded
-                p-1
-                text-gray-500
-                hover:bg-gray-200
-                hover:text-gray-700
-                dark:text-slate-400
-                dark:hover:bg-slate-600
-                dark:hover:text-slate-200
-              `}
+              className={cn(
+                `absolute`,
+                `right-2`,
+                `top-1/2`,
+                `-translate-y-1/2`,
+                `rounded`,
+                `p-1`,
+                `text-gray-500`,
+                `hover:bg-gray-200`,
+                `hover:text-gray-700`,
+                `dark:text-slate-400`,
+                `dark:hover:bg-slate-600`,
+                `dark:hover:text-slate-200`,
+              )}
               aria-label="Clear"
             >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <XIcon size={16} className="h-4 w-4" aria-hidden="true" />
             </button>
           )}
         </div>
@@ -234,22 +234,22 @@ export function RecipientEmailField({
             ref={listboxRef}
             id="recipient-email-listbox"
             role="listbox"
-            className={`
-              absolute
-              z-10
-              mt-1
-              max-h-60
-              w-full
-              overflow-auto
-              rounded-lg
-              border
-              border-gray-300
-              bg-white
-              py-1
-              shadow-lg
-              dark:border-slate-600
-              dark:bg-slate-800
-            `}
+            className={cn(
+              `absolute`,
+              `z-10`,
+              `mt-1`,
+              `max-h-60`,
+              `w-full`,
+              `overflow-auto`,
+              `rounded-lg`,
+              `border`,
+              `border-gray-300`,
+              `bg-white`,
+              `py-1`,
+              `shadow-lg`,
+              `dark:border-slate-600`,
+              `dark:bg-slate-800`,
+            )}
           >
             {loading ? (
               <li className="px-3 py-2 text-sm text-gray-500 dark:text-slate-400" role="option">
@@ -265,14 +265,14 @@ export function RecipientEmailField({
                     id={`recipient-email-option-${contact.id}`}
                     role="option"
                     aria-selected={isHighlighted}
-                    className={`
-                      cursor-pointer
-                      px-3
-                      py-2
-                      text-sm
-                      ${isHighlighted ? `bg-blue-100 dark:bg-slate-600` : ``}
-                      ${isSelected ? `font-medium` : ``}
-                    `}
+                    className={cn(
+                      `cursor-pointer`,
+                      `px-3`,
+                      `py-2`,
+                      `text-sm`,
+                      isHighlighted && `bg-blue-100 dark:bg-slate-600`,
+                      isSelected && `font-medium`,
+                    )}
                     onMouseEnter={() => setHighlightIndex(index)}
                     onClick={() => selectContact(contact)}
                   >

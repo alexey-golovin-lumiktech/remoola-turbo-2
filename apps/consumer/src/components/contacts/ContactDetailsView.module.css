@@ -1,0 +1,11 @@
+@reference "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.paymentAmount {
+  @apply font-medium;
+}
+
+.docName {
+  composes: textPrimary from '../ui/classNames.module.css';
+  @apply font-medium;
+}
