@@ -167,6 +167,11 @@ export class StripeWebhookService {
       return;
     }
 
+    console.log(`envs.STRIPE_SECRET_KEY`, envs.STRIPE_SECRET_KEY);
+    console.log(`envs.STRIPE_WEBHOOK_SECRET`, envs.STRIPE_WEBHOOK_SECRET);
+    console.log(`signature`, signature);
+    console.log(`req.rawBody`, req.rawBody);
+    console.log(`req.body`, req.body);
     let event: Stripe.Event;
     try {
       event = this.stripe.webhooks.constructEvent(rawBody, signature, envs.STRIPE_WEBHOOK_SECRET);
