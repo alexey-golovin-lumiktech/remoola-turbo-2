@@ -1861,6 +1861,119 @@
   @apply px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500 transition;
 }
 
+/* ── Verify Me Card ─────────────────────────────────────────────────────── */
+
+.verifyCard {
+  @apply flex items-start gap-4 rounded-2xl border p-5 shadow-xs transition-all;
+  @apply bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600;
+}
+
+.verifyCardVerified {
+  @apply bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-700/50;
+}
+
+.verifyCardPending {
+  @apply bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-700/50;
+}
+
+.verifyCardRejected {
+  @apply bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-700/50;
+}
+
+.verifyCardProfileIncomplete {
+  @apply bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-600;
+}
+
+.verifyCardIcon {
+  @apply flex-shrink-0 w-11 h-11 rounded-full flex items-center justify-center text-xl font-bold select-none;
+}
+
+.verifyCardIconVerified {
+  @apply bg-green-100 dark:bg-green-800/40 text-green-700 dark:text-green-300;
+}
+
+.verifyCardIconPending {
+  @apply bg-amber-100 dark:bg-amber-800/40 text-amber-700 dark:text-amber-300;
+}
+
+.verifyCardIconRejected {
+  @apply bg-red-100 dark:bg-red-800/40 text-red-700 dark:text-red-300;
+}
+
+.verifyCardIconDefault {
+  @apply bg-blue-100 dark:bg-blue-800/40 text-blue-700 dark:text-blue-300;
+}
+
+.verifyCardBody {
+  @apply flex-1 min-w-0;
+}
+
+.verifyCardTitle {
+  @apply flex flex-wrap items-center gap-2 text-base font-semibold text-gray-900 dark:text-white mb-1;
+}
+
+.verifyCardDescription {
+  @apply text-sm text-gray-600 dark:text-gray-300 leading-relaxed mb-3;
+}
+
+.verifyCardMeta {
+  @apply flex flex-wrap gap-x-5 gap-y-1 mb-3;
+}
+
+.verifyCardMetaItem {
+  @apply flex gap-1 text-xs text-gray-500 dark:text-gray-400;
+}
+
+.verifyCardMetaItem dt {
+  @apply font-medium;
+}
+
+.verifyCardActions {
+  @apply flex flex-wrap items-center gap-2;
+}
+
+.verifyCardPrimaryBtn {
+  @apply inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-medium transition;
+  @apply bg-blue-600 text-white hover:bg-blue-700 dark:hover:bg-blue-500;
+}
+
+.verifyCardPrimaryBtnLoading {
+  @apply opacity-80 cursor-wait;
+}
+
+.verifyCardPrimaryBtnDisabled {
+  @apply opacity-60 cursor-not-allowed pointer-events-none;
+}
+
+.verifyCardSecondaryBtn {
+  @apply inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-medium transition;
+  @apply border border-gray-300 dark:border-slate-500 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700;
+}
+
+.verifyCardBadge {
+  @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
+}
+
+.verifyCardBadgeVerified {
+  @apply bg-green-100 dark:bg-green-800/40 text-green-700 dark:text-green-300;
+}
+
+.verifyCardBadgePending {
+  @apply bg-amber-100 dark:bg-amber-800/40 text-amber-700 dark:text-amber-300;
+}
+
+.verifyCardBadgeRejected {
+  @apply bg-red-100 dark:bg-red-800/40 text-red-700 dark:text-red-300;
+}
+
+.verifyCardBadgeDefault {
+  @apply bg-blue-100 dark:bg-blue-800/40 text-blue-700 dark:text-blue-300;
+}
+
+.verifyCardSpinner {
+  @apply block w-5 h-5 rounded-full border-2 border-current border-t-transparent animate-spin;
+}
+
 .settingsPageContainer {
   @apply mx-auto max-w-3xl px-4 py-8;
 }

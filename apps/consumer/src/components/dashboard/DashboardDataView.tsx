@@ -3,7 +3,7 @@
 import { isUnauthorizedError } from '@remoola/api-types';
 
 import { useDashboard } from '../../lib/hooks';
-import { VerifyMeButton } from '../stripe';
+import { VerifyMeCard } from '../stripe';
 import { DashboardSkeleton, ErrorState } from '../ui';
 import { ActionRow } from './ActionRow';
 import { ActivityTimeline } from './ActivityTimeline';
@@ -79,7 +79,7 @@ export function DashboardDataView() {
 
       <SummaryCards summary={dashboardData.summary} />
 
-      <VerifyMeButton verification={dashboardData.verification} />
+      <VerifyMeCard verification={dashboardData.verification} />
 
       <ActionRow />
 
