@@ -1498,7 +1498,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-03-20</summary>
 
 - **2026-03-20:**
@@ -1538,7 +1538,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-03-23</summary>
 
 - **2026-03-23:**
