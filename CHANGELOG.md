@@ -1578,7 +1578,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-03-24</summary>
 
 - **2026-03-24:**
@@ -1604,6 +1604,39 @@
 
   ### 📄 Documentation
   - Update `docs/FEATURES_CURRENT.md` and `docs/PROJECT_DOCUMENTATION.md` to reflect the password set/change split, `hasPassword` profile contract, `password_set` auth notice, and the broader address parsing support.
+
+</details>
+
+<details open>
+<summary>2026-03-25</summary>
+
+- **2026-03-25:**
+  ### 📦 Types & Contracts
+  - Add canonical Prisma schema surface under `packages/api-types/src/schema`:
+    - `prisma-generated.ts` re-exports the generated Prisma client types from `@remoola/database-2`
+    - `models.ts` provides generated `...WithRelations` and composite-key helpers derived from `packages/database-2/prisma/schema.prisma`
+    - `scalars.ts` adds shared Prisma-linked scalar aliases and serialized schema helper types
+  - Root `@remoola/api-types` now type-re-exports the schema layer without changing existing runtime/shared contract exports.
+
+  ### 🗄 Database & Migrations
+  - No new migration or schema mutation in this change.
+  - Add `db:validate` to `packages/database-2` and pin `prisma` / `@prisma/client` to `6.19.0` to keep CLI and generated client versions deterministic.
+  - Rollout remains backward compatible; no migration-first deploy is required for this commit.
+
+  ### 🛠 DevEx & Infrastructure
+  - Add schema sync guardrails:
+    - root scripts `schema:generate:helpers` and `schema:check`
+    - `@remoola/api-types` `schema:generate`, `build`, and `typecheck` now regenerate schema helpers before compile
+    - Turbo `typecheck` now depends on upstream `^build` so stale Prisma generation fails earlier
+  - Add `packages/api-types/scripts/generate-schema-helpers.js` to derive helper aliases directly from the checked-in Prisma schema.
+
+  ### 🔐 Security / Production Safety
+  - Preserve the invariant that `packages/database-2/prisma/schema.prisma` remains the single source of truth for schema-derived shared types.
+  - Reduce silent drift risk between Prisma schema, generated client, and exported shared helpers.
+  - Keep strict `schema:check` validation as a local / PR gate and out of Vercel deploy-time install/build, so production deploys remain compile-safe and do not require DB mutation steps.
+
+  ### 📄 Documentation
+  - Document canonical/generated/hand-written boundaries and the Vercel-safe workflow in `packages/api-types/src/schema/README.md`.
 
 </details>
 
