@@ -2598,9 +2598,9 @@
   resolved "https://registry.npmjs.org/@pkgr/core/-/core-0.2.9.tgz"
   integrity sha512-QNqXyfVS2wm9hweSYD2O7F0G06uurj9kZ96TRQE5Y9hU7+tgdZwIkbAKc5Ocy1HxEY2kuDQa6cQ1WRs/O5LFKA==
 
-"@prisma/client@^6.18.0":
+"@prisma/client@6.19.0":
   version "6.19.0"
-  resolved "https://registry.npmjs.org/@prisma/client/-/client-6.19.0.tgz"
+  resolved "https://registry.npmmirror.com/@prisma/client/-/client-6.19.0.tgz#25d5387cbcf1d92f234f6b07d6a1bb787ed71391"
   integrity sha512-QXFT+N/bva/QI2qoXmjBzL7D6aliPffIwP+81AdTGq0FXDoLxLkWivGMawG8iM5B9BKfxLIXxfWWAF6wbuJU6g==
 
 "@prisma/config@6.19.0":
@@ -10169,9 +10169,9 @@ preview-email@^3.0.19:
     pug "^3.0.3"
     uuid "^9.0.1"
 
-prisma@^6.18.0:
+prisma@6.19.0:
   version "6.19.0"
-  resolved "https://registry.npmjs.org/prisma/-/prisma-6.19.0.tgz"
+  resolved "https://registry.npmmirror.com/prisma/-/prisma-6.19.0.tgz#9882425df57a7de72f73c6a41592ff9eda0b00a8"
   integrity sha512-F3eX7K+tWpkbhl3l4+VkFtrwJlLXbAM+f9jolgoUZbFcm1DgHZ4cq9AgVEgUym2au5Ad/TDLN8lg83D+M10ycw==
   dependencies:
     "@prisma/config" "6.19.0"
