@@ -5,7 +5,9 @@
   "license": "MIT",
   "scripts": {
     "dev": "yarn build --watch",
-    "build": "tsc -b",
+    "schema:generate": "node ./scripts/generate-schema-helpers.js",
+    "build": "yarn schema:generate && tsc -b",
+    "typecheck": "yarn schema:generate && tsc --noEmit",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "test": "jest",
     "clean": "rm -rf ./node_modules ./dist"
@@ -29,6 +31,7 @@
     }
   },
   "dependencies": {
+    "@remoola/database-2": "^0.0.0",
     "zod": "^4.0.17"
   },
   "devDependencies": {
