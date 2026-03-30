@@ -12,7 +12,11 @@ export function BalancesPanel({ balances }: BalancesPanelProps) {
   const entries = Object.entries(balances);
 
   if (entries.length === 0) {
-    return <p className={balancesLoading}>Loading balances...</p>;
+    return (
+      <p className={balancesLoading} role="status" aria-live="polite">
+        Loading balances...
+      </p>
+    );
   }
 
   return (

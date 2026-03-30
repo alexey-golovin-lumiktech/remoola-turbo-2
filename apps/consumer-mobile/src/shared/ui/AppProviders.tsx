@@ -4,7 +4,7 @@ import { Component, type ReactNode } from 'react';
 import { Toaster } from 'sonner';
 import { SWRConfig } from 'swr';
 
-import styles from './AppProviders.module.css';
+import { ErrorState } from './ErrorState';
 import { ThemeColorMeta } from './ThemeColorMeta';
 import { ThemeInitializer } from './ThemeInitializer';
 import { ThemeProvider } from './ThemeProvider';
@@ -31,15 +31,7 @@ class AppErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryS
 
   render() {
     if (this.state.hasError) {
-      return (
-        <div className={styles.errorRoot}>
-          <h2 className={styles.errorTitle}>Something went wrong</h2>
-          <p className={styles.errorText}>We encountered an unexpected error. Please try refreshing the page.</p>
-          <button type="button" onClick={() => window.location.reload()} className={styles.refreshButton}>
-            Refresh Page
-          </button>
-        </div>
-      );
+      return <ErrorState onRetry={() => window.location.reload()} />;
     }
     return this.props.children;
   }

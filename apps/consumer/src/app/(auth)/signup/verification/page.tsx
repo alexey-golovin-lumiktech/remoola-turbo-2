@@ -6,7 +6,13 @@ import Verification from './Verification';
 
 export default function VerificationPage() {
   return (
-    <Suspense fallback={<p>Loading verification page...</p>}>
+    <Suspense
+      fallback={
+        <p role="status" aria-live="polite">
+          Loading verification page...
+        </p>
+      }
+    >
       <Verification />
     </Suspense>
   );

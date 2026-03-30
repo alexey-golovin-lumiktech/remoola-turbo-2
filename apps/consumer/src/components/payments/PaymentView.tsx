@@ -251,7 +251,11 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
   }
 
   if (loading) {
-    return <div className={paymentViewLoading}>Loading payment…</div>;
+    return (
+      <div className={paymentViewLoading} role="status" aria-live="polite">
+        Loading payment…
+      </div>
+    );
   }
 
   if (!data) {

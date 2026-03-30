@@ -1640,10 +1640,10 @@
 
 </details>
 
-<details open>
-<summary>2026-03-30</summary>
+<details>
+<summary>2026-03-26</summary>
 
-- **2026-03-30:**
+- **2026-03-26:**
   ### ♿ Accessibility
   - **consumer — loading fallbacks (8 pages):** Replace `aria-hidden` with `role="status"` on Suspense fallback `<p>` elements in all affected shell pages (`withdraw-transfer`, `exchange`, `exchange/rules`, `exchange/scheduled`, `payment-methods`, `contacts`, `payment-requests/new`, `payments/start`); screen readers now announce loading state; visual output unchanged.
   - **consumer — shell header search control:** Add `role="button"`, `aria-label="Open command palette"`, and `aria-haspopup="dialog"` to the readOnly search input in `(shell)/layout.tsx`; `data-testid="consumer-shell-search"`, click/keyboard behavior, and palette open logic untouched.
@@ -1659,6 +1659,43 @@
   - **consumer-mobile — not-found CTA:** Change CTA target from `/` to `/dashboard` to eliminate the redundant redirect hop; auth redirect behavior unchanged.
   - **consumer-mobile — dashboard empty-state link:** Replace `<a href="/payment-requests/new">` with `<Link>` for client-side navigation consistency.
   - **consumer-mobile — header top safe-area:** Split `py-3` into `pb-3 pt-[max(0.75rem,env(safe-area-inset-top))]` in `ShellNav.module.css`; respects existing `viewportFit: cover`; non-notch devices see no visual change; tap targets preserved.
+
+</details>
+
+<details open>
+<summary>2026-03-27</summary>
+
+- **2026-03-27:**
+  ### ♿ Accessibility
+  - **consumer-mobile — auth loading fallbacks:** Add `role="status" aria-live="polite"` to the `Suspense` fallback text in `app/auth/callback/page.tsx` and `app/(auth)/signup/verification/page.tsx`; auth flow and route structure unchanged.
+  - **consumer — loading/status leftovers:** Add `role="status" aria-live="polite"` to the remaining plain loading states in `components/payments/PaymentView.tsx`, `components/exchange/BalancesPanel.tsx`, `app/auth/callback/page.tsx`, and `app/(auth)/signup/verification/page.tsx`; fetch/data flow and visual behavior preserved.
+  - **consumer-mobile — app-level error fallback:** Align `AppErrorBoundary` with shared `ErrorState`; keep retry behavior as `window.location.reload()` and remove the now-unused custom fallback styles from `AppProviders.module.css`.
+
+  ### 🐛 Fixed
+  - **consumer — mobile More drawer runtime state:** Stabilize drawer open/close handling in `(shell)/layout.tsx`:
+    - move `Escape` close handling to shell-level state management;
+    - make `aria-expanded` explicitly reflect `moreOpen`;
+    - keep `aria-haspopup="dialog"` / `aria-controls="mobile-more-drawer"` on the trigger;
+    - close the drawer on route change;
+    - make the backdrop an explicit close control with an accessible name.
+  - **consumer-mobile — signup start navigation:** Replace the internal `Sign in` raw anchor in `features/signup/SignupStartView.tsx` with `next/link`; keep the same `href`, text, and styling.
+
+  ### 🔐 Security / Production Safety
+  - Preserve auth, session, routing, and API request invariants; all changes stay inside frontend accessibility, navigation primitives, and shell UI state handling.
+  - Reduce drift between visible mobile drawer state and accessibility state in the consumer shell.
+
+  ### 🧪 Testing
+  - Revalidated the touched frontend scope:
+    - `yarn workspace @remoola/consumer lint`
+    - `yarn workspace @remoola/consumer typecheck`
+    - `yarn workspace @remoola/consumer-mobile lint`
+    - `yarn workspace @remoola/consumer-mobile typecheck`
+  - Re-ran a live browser smoke-check for the `apps/consumer` mobile `More` drawer flow after restoring local API availability:
+    - login to consumer shell;
+    - open drawer;
+    - confirm `aria-expanded=true`;
+    - close with `Escape`;
+    - confirm drawer links remain unchanged.
 
 </details>
 

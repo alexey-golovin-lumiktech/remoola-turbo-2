@@ -58,8 +58,21 @@ function MobileMoreDrawer({ open, onClose, pathname }: { open: boolean; onClose:
 
   return (
     <>
-      <div className={localStyles.moreDrawerBackdrop} onClick={onClose} aria-hidden="true" />
-      <div className={localStyles.moreDrawerPanel}>
+      <button
+        type="button"
+        className={localStyles.moreDrawerBackdrop}
+        onClick={onClose}
+        aria-label="Close more navigation"
+      >
+        <span className={localStyles.srOnly}>Close more navigation</span>
+      </button>
+      <div
+        id="mobile-more-drawer"
+        className={localStyles.moreDrawerPanel}
+        role="dialog"
+        aria-modal="true"
+        aria-label="More navigation"
+      >
         <div className={localStyles.moreDrawerGrid}>
           {extraItems.map((item) => {
             const isActive = pathname.startsWith(item.href);
@@ -93,6 +106,10 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
   const [moreOpen, setMoreOpen] = useState(false);
   const [isApplePlatform, setIsApplePlatform] = useState<boolean | null>(null);
   const currentYear = new Date().getFullYear();
+  const closeMoreDrawer = React.useCallback(() => setMoreOpen(false), []);
+  const toggleMoreDrawer = React.useCallback(() => {
+    setMoreOpen((open) => !open);
+  }, []);
 
   // Global shortcut to open command palette.
   // Chrome reserves Ctrl+K on Linux/Windows, so use Ctrl+/ there instead.
@@ -114,6 +131,24 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
   React.useEffect(() => {
     setIsApplePlatform(/(Mac|iPhone|iPad|iPod)/i.test(window.navigator.platform));
   }, []);
+
+  React.useEffect(() => {
+    if (!moreOpen) return;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== `Escape`) return;
+      event.preventDefault();
+      event.stopPropagation();
+      closeMoreDrawer();
+    }
+
+    document.addEventListener(`keydown`, handleKeyDown, true);
+    return () => document.removeEventListener(`keydown`, handleKeyDown, true);
+  }, [moreOpen, closeMoreDrawer]);
+
+  React.useEffect(() => {
+    closeMoreDrawer();
+  }, [pathname, closeMoreDrawer]);
 
   const shortcutHint = isApplePlatform ? `⌘K` : `Ctrl+/`;
 
@@ -304,9 +339,12 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
           {/* More button */}
           <button
             type="button"
-            onClick={() => setMoreOpen((v) => !v)}
+            onClick={toggleMoreDrawer}
             className={cn(localStyles.mobileNavItem, isMoreActive && localStyles.mobileNavItemActive)}
             aria-label="More navigation options"
+            aria-haspopup="dialog"
+            aria-expanded={moreOpen ? `true` : `false`}
+            aria-controls="mobile-more-drawer"
             data-testid="consumer-shell-mobile-nav-more"
           >
             <MoreVerticalIcon size={20} aria-hidden="true" />
@@ -316,7 +354,7 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
       </nav>
 
       {/* Mobile "More" drawer */}
-      <MobileMoreDrawer open={moreOpen} onClose={() => setMoreOpen(false)} pathname={pathname} />
+      <MobileMoreDrawer open={moreOpen} onClose={closeMoreDrawer} pathname={pathname} />
 
       {/* Command palette */}
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
