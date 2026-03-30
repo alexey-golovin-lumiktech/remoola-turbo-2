@@ -1,6 +1,6 @@
 'use client';
 
-import { type InputHTMLAttributes, forwardRef } from 'react';
+import { type ChangeEvent, type InputHTMLAttributes, forwardRef, useId } from 'react';
 
 import { cn } from '@remoola/ui';
 
@@ -16,8 +16,11 @@ export interface FormInputProps extends Omit<InputHTMLAttributes<HTMLInputElemen
 }
 
 export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
-  ({ label, error, onChange, onErrorClear, className, ...props }, ref) => {
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  ({ label, error, onChange, onErrorClear, className, id: providedId, ...props }, ref) => {
+    const generatedId = useId();
+    const inputId = providedId ?? generatedId;
+
+    const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
       onChange?.(e.target.value);
       // Clear error when user starts typing (only if there was an error)
       if (error && onErrorClear && e.target.value.length > 0) {
@@ -27,10 +30,13 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
 
     return (
       <div>
-        <label className={styles.signupStepLabel}>{label}</label>
+        <label htmlFor={inputId} className={styles.signupStepLabel}>
+          {label}
+        </label>
         <input
           ref={ref}
           {...props}
+          id={inputId}
           onChange={handleChange}
           className={cn(formInputFullWidth, error && formInputError, className)}
         />

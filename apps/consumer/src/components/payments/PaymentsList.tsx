@@ -4,12 +4,12 @@ import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
 import { TRANSACTION_STATUS } from '@remoola/api-types';
-import { AlertIcon, cn } from '@remoola/ui';
+import { cn } from '@remoola/ui';
 
 import { formatCurrencyDisplay } from '../../lib/currency';
 import { formatDateForDisplay } from '../../lib/date-utils';
 import { usePayments } from '../../lib/hooks';
-import { PaginationBar, SkeletonTable } from '../ui';
+import { ErrorState, PaginationBar, SkeletonTable } from '../ui';
 import { PaymentsFilters } from './PaymentsFilters';
 import localStyles from './PaymentsList.module.css';
 import shared from '../ui/classNames.module.css';
@@ -20,11 +20,7 @@ const {
   badgeDefault,
   badgePending,
   badgeWaiting,
-  emptyStateContainer,
-  emptyStateIcon,
-  emptyStateIconSvg,
   linkPrimaryMedium,
-  refreshButtonClass,
   tableBodyRow,
   tableCellBodyLg,
   tableCellHeaderLg,
@@ -92,29 +88,10 @@ export function PaymentsList() {
 
   const payments = data?.items || [];
   const total = data?.total || 0;
+  const handleRetry = () => window.location.reload();
 
   if (error) {
-    return (
-      <div className={emptyStateContainer}>
-        <div className={localStyles.errorInner}>
-          <div className={emptyStateIcon}>
-            <AlertIcon className={emptyStateIconSvg} aria-hidden="true" />
-          </div>
-          <h2 className={localStyles.errorTitle}>Failed to load payments</h2>
-          <p className={localStyles.errorMessage}>{error.message}</p>
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              window.location.reload();
-            }}
-            className={refreshButtonClass}
-          >
-            Refresh Page
-          </button>
-        </div>
-      </div>
-    );
+    return <ErrorState title="Failed to load payments" message={error.message} onRetry={handleRetry} />;
   }
 
   return (

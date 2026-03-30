@@ -1,38 +1,64 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { BalancesPanel } from './BalancesPanel';
 import localStyles from './ExchangePageClient.module.css';
 import { ExchangeWidget } from './ExchangeWidget';
+import { parseBalanceMapResponse, type BalanceMap } from '../../lib/payments-balance';
 import { handleSessionExpired } from '../../lib/session-expired';
-
-type BalanceMap = Record<string, number>;
-
-function isBalanceMap(x: unknown): x is BalanceMap {
-  if (typeof x !== `object` || x === null || Array.isArray(x)) return false;
-  return Object.values(x).every((v) => typeof v === `number`);
-}
 
 export function ExchangePageClient() {
   const [balances, setBalances] = useState<BalanceMap>({});
+  const [loadingBalances, setLoadingBalances] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const loadBalances = useCallback(async (signal?: AbortSignal) => {
+    let isUnauthorized = false;
+
+    setLoadError(null);
+    setLoadingBalances(true);
+
+    try {
+      const res = await fetch(`/api/payments/balance`, { credentials: `include`, signal });
+      if (res.status === 401) {
+        isUnauthorized = true;
+        handleSessionExpired();
+        return;
+      }
+      if (!res.ok) {
+        setLoadError(`Failed to load balances`);
+        return;
+      }
+
+      const data: unknown = await res.json();
+      const parsed = parseBalanceMapResponse(data);
+
+      if (parsed.parsed) {
+        setBalances(parsed.balances);
+      } else {
+        setBalances({});
+        setLoadError(`Failed to load balances`);
+      }
+    } catch (error) {
+      if (signal?.aborted || (error instanceof DOMException && error.name === `AbortError`)) {
+        return;
+      }
+      setBalances({});
+      setLoadError(`Failed to load balances`);
+    } finally {
+      if (!signal?.aborted && !isUnauthorized) {
+        setLoadingBalances(false);
+      }
+    }
+  }, []);
 
   useEffect(() => {
-    fetch(`/api/payments/balance`, { credentials: `include` })
-      .then((res) => {
-        if (res.status === 401) {
-          handleSessionExpired();
-          return null;
-        }
-        return res.ok ? res.json() : null;
-      })
-      .then((data: unknown) => {
-        if (isBalanceMap(data)) {
-          setBalances(data);
-        }
-      });
-  }, []);
+    const controller = new AbortController();
+    void loadBalances(controller.signal);
+    return () => controller.abort();
+  }, [loadBalances]);
 
   return (
     <div className="space-y-5">
@@ -44,7 +70,12 @@ export function ExchangePageClient() {
           Scheduled Conversions
         </Link>
       </div>
-      <BalancesPanel balances={balances} />
+      <BalancesPanel
+        balances={balances}
+        loading={loadingBalances}
+        error={loadError}
+        onRetry={() => void loadBalances()}
+      />
       <ExchangeWidget balances={balances} />
     </div>
   );

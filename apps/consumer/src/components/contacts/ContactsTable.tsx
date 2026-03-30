@@ -1,7 +1,7 @@
 'use client';
 
 import { type ConsumerContactAddress, type ConsumerContact } from '../../types';
-import { DataTable, type Column } from '../ui';
+import { DataTable, SkeletonTable, type Column } from '../ui';
 import localStyles from './ContactsTable.module.css';
 import styles from '../ui/classNames.module.css';
 
@@ -9,12 +9,13 @@ const { tableCellBodyMd, tableCellHeaderMd, textMutedGrayStrong, textMutedMixed 
 
 type ContactsTableProps = {
   items: ConsumerContact[];
+  loading: boolean;
   onDetailsAction: (contact: ConsumerContact) => void;
   onEditAction: (contact: ConsumerContact) => void;
   onDeleteAction: (contact: ConsumerContact) => void;
 };
 
-export function ContactsTable({ items, onDetailsAction, onEditAction, onDeleteAction }: ContactsTableProps) {
+export function ContactsTable({ items, loading, onDetailsAction, onEditAction, onDeleteAction }: ContactsTableProps) {
   const columns: Column<ConsumerContact>[] = [
     {
       key: `name`,
@@ -68,6 +69,10 @@ export function ContactsTable({ items, onDetailsAction, onEditAction, onDeleteAc
       ),
     },
   ];
+
+  if (loading) {
+    return <SkeletonTable rows={8} cols={4} />;
+  }
 
   return (
     <>

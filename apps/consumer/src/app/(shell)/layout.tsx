@@ -105,6 +105,7 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [isApplePlatform, setIsApplePlatform] = useState<boolean | null>(null);
+  const mainContentId = `consumer-shell-main-content`;
   const currentYear = new Date().getFullYear();
   const closeMoreDrawer = React.useCallback(() => setMoreOpen(false), []);
   const toggleMoreDrawer = React.useCallback(() => {
@@ -188,6 +189,17 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className={shellContainer} data-testid="consumer-shell">
+      <a
+        href={`#${mainContentId}`}
+        className={localStyles.skipToMainLink}
+        onClick={() => {
+          window.requestAnimationFrame(() => {
+            document.getElementById(mainContentId)?.focus();
+          });
+        }}
+      >
+        Skip to main content
+      </a>
       {/* Desktop sidebar */}
       <aside className={shellAside} data-testid="consumer-shell-sidebar">
         <div className={shellBrandRow}>
@@ -265,7 +277,7 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Main content */}
-      <main className={shellMain} data-testid="consumer-shell-main">
+      <main id={mainContentId} className={shellMain} data-testid="consumer-shell-main" tabIndex={-1}>
         {/* Mobile top bar */}
         <div className={shellMobileHeader} data-testid="consumer-shell-mobile-header">
           <div className={shellMobileBrand}>

@@ -232,7 +232,7 @@ export function LoginForm({
                 <label className={styles.label} htmlFor="login-password">
                   Password
                 </label>
-                <Link href="/forgot-password" prefetch={false} className={styles.forgotLink} tabIndex={-1}>
+                <Link href="/forgot-password" prefetch={false} className={styles.forgotLink}>
                   Forgot password?
                 </Link>
               </div>
@@ -256,7 +256,6 @@ export function LoginForm({
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className={styles.toggleBtn}
-                  tabIndex={-1}
                   aria-label={showPassword ? `Hide password` : `Show password`}
                 >
                   {showPassword ? (

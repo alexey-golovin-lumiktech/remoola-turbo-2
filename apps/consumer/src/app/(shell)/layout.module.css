@@ -41,6 +41,10 @@
   @apply sr-only;
 }
 
+.skipToMainLink {
+  @apply sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-blue-700 focus:shadow-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500 dark:focus:bg-slate-900 dark:focus:text-blue-300;
+}
+
 .searchIcon {
   @apply pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500;
 }

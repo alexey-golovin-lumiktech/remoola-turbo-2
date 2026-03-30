@@ -8,7 +8,7 @@ import { cn } from '@remoola/ui';
 import { DocumentPreviewModal } from './DocumentPreviewModal';
 import localStyles from './DocumentsList.module.css';
 import { formatDateForDisplay } from '../../lib/date-utils';
-import { FormSelect, type FormSelectOption, PaginationBar } from '../ui';
+import { ErrorState, FormSelect, type FormSelectOption, PaginationBar } from '../ui';
 import styles from '../ui/classNames.module.css';
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -58,6 +58,7 @@ export function DocumentsList() {
   const [docs, setDocs] = useState<Doc[]>([]);
   const docsList = Array.isArray(docs) ? docs : [];
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [kind, setKind] = useState(``);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [uploading, setUploading] = useState(false);
@@ -65,27 +66,37 @@ export function DocumentsList() {
   const [attachPaymentId, setAttachPaymentId] = useState(``);
 
   const load = useCallback(async () => {
+    setLoadError(null);
     setLoading(true);
-    const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
-    if (kind) params.append(`kind`, kind);
 
-    const res = await fetch(`/api/documents?${params}`, {
-      method: `GET`,
-      headers: { 'content-type': `application/json` },
-      credentials: `include`,
-      cache: `no-store`,
-    });
+    try {
+      const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+      if (kind) params.append(`kind`, kind);
 
-    setLoading(false);
-    if (!res.ok) return;
+      const res = await fetch(`/api/documents?${params}`, {
+        method: `GET`,
+        headers: { 'content-type': `application/json` },
+        credentials: `include`,
+        cache: `no-store`,
+      });
 
-    const json = await res.json();
-    // Support both paginated { items, total, page, pageSize } and legacy array response
-    const items = Array.isArray(json) ? json : (json?.items ?? []);
-    const totalCount = Array.isArray(json) ? json.length : Number(json?.total ?? 0);
-    setDocs(Array.isArray(items) ? items : []);
-    setTotal(totalCount);
-    setSelected(new Set());
+      if (!res.ok) {
+        setLoadError(`Failed to load documents`);
+        return;
+      }
+
+      const json = await res.json();
+      // Support both paginated { items, total, page, pageSize } and legacy array response
+      const items = Array.isArray(json) ? json : (json?.items ?? []);
+      const totalCount = Array.isArray(json) ? json.length : Number(json?.total ?? 0);
+      setDocs(Array.isArray(items) ? items : []);
+      setTotal(totalCount);
+      setSelected(new Set());
+    } catch {
+      setLoadError(`Failed to load documents`);
+    } finally {
+      setLoading(false);
+    }
   }, [kind, page, pageSize]);
 
   useEffect(() => {
@@ -200,7 +211,8 @@ export function DocumentsList() {
     await load();
   }
 
-  const hasSelected = selected.size > 0;
+  const isInitialLoading = loading && docsList.length === 0;
+  const hasSelected = !loadError && selected.size > 0;
 
   return (
     <div className={localStyles.pageRoot}>
@@ -251,7 +263,7 @@ export function DocumentsList() {
         )}
       </div>
 
-      {total > 0 && (
+      {total > 0 && !loadError && (
         <PaginationBar
           total={total}
           page={page}
@@ -262,128 +274,56 @@ export function DocumentsList() {
         />
       )}
 
-      {/* Table */}
-      <div className={localStyles.mobileList}>
-        {docsList.length === 0 ? (
-          <div className={localStyles.mobileEmptyState}>No documents found</div>
-        ) : (
-          docsList.map((d) => {
-            const checked = selected.has(d.id);
-            return (
-              <article key={d.id} className={localStyles.mobileCard}>
-                <div className={localStyles.mobileCardHeader}>
-                  <div className={localStyles.mobileTitleBlock}>
-                    <div className={localStyles.mobileTitle}>{d.name}</div>
-                    <div className={localStyles.mobileMetaText}>{d.kind}</div>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    className={checkboxBase}
-                    onChange={(e) => (e.preventDefault(), e.stopPropagation(), toggleSelect(d.id))}
-                  />
-                </div>
-
-                <div className={localStyles.mobileMetaGrid}>
-                  <div>
-                    <div className={localStyles.mobileMetaLabel}>Size</div>
-                    <div className={localStyles.mutedBodyCell}>{(d.size / 1024).toFixed(1)} KB</div>
-                  </div>
-                  <div>
-                    <div className={localStyles.mobileMetaLabel}>Uploaded</div>
-                    <div className={localStyles.mutedBodyCell}>{formatDateForDisplay(d.createdAt)}</div>
-                  </div>
-                </div>
-
-                <div className={localStyles.mobileTagsField}>
-                  <div className={localStyles.mobileMetaLabel}>Tags</div>
-                  <input
-                    className={localStyles.mobileTagsInput}
-                    defaultValue={d.tags.join(`, `)}
-                    onBlur={(e) => handleTagsChange(d.id, e.target.value)}
-                    placeholder="comma,separated,tags"
-                  />
-                </div>
-
-                <div className={localStyles.mobileActions}>
-                  <button
-                    type="button"
-                    className={linkPrimaryXs}
-                    onClick={(e) => (e.preventDefault(), e.stopPropagation(), setPreview(d))}
-                  >
-                    Preview
-                  </button>
-                  <a href={d.downloadUrl} className={linkPrimaryXs} target="_blank" rel="noreferrer">
-                    Download
-                  </a>
-                </div>
-              </article>
-            );
-          })
-        )}
-      </div>
-
-      <div className={localStyles.desktopTableWrapper}>
-        <div className={tableContainer}>
-          <table className={localStyles.table}>
-            <thead>
-              <tr className={tableHeaderRow}>
-                <th className={tableCellHeaderMd}>
-                  <input
-                    type="checkbox"
-                    checked={selected.size === docsList.length && docsList.length > 0}
-                    onChange={toggleSelectAll}
-                    className={checkboxBase}
-                  />
-                </th>
-                <th className={tableCellHeaderMd}>Name</th>
-                <th className={tableCellHeaderMd}>Type</th>
-                <th className={tableCellHeaderMd}>Tags</th>
-                <th className={tableCellHeaderMd}>Size</th>
-                <th className={tableCellHeaderMd}>Uploaded</th>
-                <th className={tableCellHeaderMd}></th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {docsList.length === 0 && (
-                <tr>
-                  <td colSpan={7} className={tableEmptyCell}>
-                    No documents found
-                  </td>
-                </tr>
-              )}
-
-              {docsList.map((d) => {
+      {loadError ? (
+        <ErrorState title="Failed to load documents" message={loadError} onRetry={() => void load()} />
+      ) : (
+        <>
+          {/* Table */}
+          <div className={localStyles.mobileList}>
+            {isInitialLoading ? (
+              <div className={localStyles.mobileEmptyState}>Loading documents...</div>
+            ) : docsList.length === 0 ? (
+              <div className={localStyles.mobileEmptyState}>No documents found</div>
+            ) : (
+              docsList.map((d) => {
                 const checked = selected.has(d.id);
                 return (
-                  <tr key={d.id} className={tableBodyRow}>
-                    <td className={tableCellBodyMd}>
+                  <article key={d.id} className={localStyles.mobileCard}>
+                    <div className={localStyles.mobileCardHeader}>
+                      <div className={localStyles.mobileTitleBlock}>
+                        <div className={localStyles.mobileTitle}>{d.name}</div>
+                        <div className={localStyles.mobileMetaText}>{d.kind}</div>
+                      </div>
                       <input
                         type="checkbox"
                         checked={checked}
+                        className={checkboxBase}
                         onChange={(e) => (e.preventDefault(), e.stopPropagation(), toggleSelect(d.id))}
                       />
-                    </td>
+                    </div>
 
-                    <td className={localStyles.nameCell}>{d.name}</td>
+                    <div className={localStyles.mobileMetaGrid}>
+                      <div>
+                        <div className={localStyles.mobileMetaLabel}>Size</div>
+                        <div className={localStyles.mutedBodyCell}>{(d.size / 1024).toFixed(1)} KB</div>
+                      </div>
+                      <div>
+                        <div className={localStyles.mobileMetaLabel}>Uploaded</div>
+                        <div className={localStyles.mutedBodyCell}>{formatDateForDisplay(d.createdAt)}</div>
+                      </div>
+                    </div>
 
-                    <td className={localStyles.mutedBodyCell}>{d.kind}</td>
-
-                    <td className={tableCellBodyMd}>
+                    <div className={localStyles.mobileTagsField}>
+                      <div className={localStyles.mobileMetaLabel}>Tags</div>
                       <input
-                        className={localStyles.tagsInput}
+                        className={localStyles.mobileTagsInput}
                         defaultValue={d.tags.join(`, `)}
                         onBlur={(e) => handleTagsChange(d.id, e.target.value)}
                         placeholder="comma,separated,tags"
                       />
-                    </td>
+                    </div>
 
-                    <td className={localStyles.mutedBodyCell}>{(d.size / 1024).toFixed(1)} KB</td>
-
-                    <td className={localStyles.mutedBodyCell}>{formatDateForDisplay(d.createdAt)}</td>
-
-                    <td className={localStyles.rowActionsCell}>
+                    <div className={localStyles.mobileActions}>
                       <button
                         type="button"
                         className={linkPrimaryXs}
@@ -394,14 +334,102 @@ export function DocumentsList() {
                       <a href={d.downloadUrl} className={linkPrimaryXs} target="_blank" rel="noreferrer">
                         Download
                       </a>
-                    </td>
-                  </tr>
+                    </div>
+                  </article>
                 );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+              })
+            )}
+          </div>
+
+          <div className={localStyles.desktopTableWrapper}>
+            <div className={tableContainer}>
+              <table className={localStyles.table}>
+                <thead>
+                  <tr className={tableHeaderRow}>
+                    <th className={tableCellHeaderMd}>
+                      <input
+                        type="checkbox"
+                        checked={selected.size === docsList.length && docsList.length > 0}
+                        onChange={toggleSelectAll}
+                        className={checkboxBase}
+                      />
+                    </th>
+                    <th className={tableCellHeaderMd}>Name</th>
+                    <th className={tableCellHeaderMd}>Type</th>
+                    <th className={tableCellHeaderMd}>Tags</th>
+                    <th className={tableCellHeaderMd}>Size</th>
+                    <th className={tableCellHeaderMd}>Uploaded</th>
+                    <th className={tableCellHeaderMd}></th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {isInitialLoading && (
+                    <tr>
+                      <td colSpan={7} className={tableEmptyCell}>
+                        Loading documents...
+                      </td>
+                    </tr>
+                  )}
+
+                  {!isInitialLoading && docsList.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className={tableEmptyCell}>
+                        No documents found
+                      </td>
+                    </tr>
+                  )}
+
+                  {docsList.map((d) => {
+                    const checked = selected.has(d.id);
+                    return (
+                      <tr key={d.id} className={tableBodyRow}>
+                        <td className={tableCellBodyMd}>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) => (e.preventDefault(), e.stopPropagation(), toggleSelect(d.id))}
+                          />
+                        </td>
+
+                        <td className={localStyles.nameCell}>{d.name}</td>
+
+                        <td className={localStyles.mutedBodyCell}>{d.kind}</td>
+
+                        <td className={tableCellBodyMd}>
+                          <input
+                            className={localStyles.tagsInput}
+                            defaultValue={d.tags.join(`, `)}
+                            onBlur={(e) => handleTagsChange(d.id, e.target.value)}
+                            placeholder="comma,separated,tags"
+                          />
+                        </td>
+
+                        <td className={localStyles.mutedBodyCell}>{(d.size / 1024).toFixed(1)} KB</td>
+
+                        <td className={localStyles.mutedBodyCell}>{formatDateForDisplay(d.createdAt)}</td>
+
+                        <td className={localStyles.rowActionsCell}>
+                          <button
+                            type="button"
+                            className={linkPrimaryXs}
+                            onClick={(e) => (e.preventDefault(), e.stopPropagation(), setPreview(d))}
+                          >
+                            Preview
+                          </button>
+                          <a href={d.downloadUrl} className={linkPrimaryXs} target="_blank" rel="noreferrer">
+                            Download
+                          </a>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
 
       {preview && <DocumentPreviewModal open={preview !== null} doc={preview} onClose={() => setPreview(null)} />}
     </div>

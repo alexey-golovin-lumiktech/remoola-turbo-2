@@ -1662,7 +1662,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-03-27</summary>
 
 - **2026-03-27:**
@@ -1684,18 +1684,29 @@
   - Preserve auth, session, routing, and API request invariants; all changes stay inside frontend accessibility, navigation primitives, and shell UI state handling.
   - Reduce drift between visible mobile drawer state and accessibility state in the consumer shell.
 
-  ### 🧪 Testing
-  - Revalidated the touched frontend scope:
-    - `yarn workspace @remoola/consumer lint`
-    - `yarn workspace @remoola/consumer typecheck`
-    - `yarn workspace @remoola/consumer-mobile lint`
-    - `yarn workspace @remoola/consumer-mobile typecheck`
-  - Re-ran a live browser smoke-check for the `apps/consumer` mobile `More` drawer flow after restoring local API availability:
-    - login to consumer shell;
-    - open drawer;
-    - confirm `aria-expanded=true`;
-    - close with `Escape`;
-    - confirm drawer links remain unchanged.
+</details>
+
+<details open>
+<summary>2026-03-30</summary>
+
+- **2026-03-30:**
+  ### ♿ Accessibility
+  - **consumer-web shell and forms:** Add a skip link to `(shell)/layout.tsx` and restore explicit `label`/`input` association in `components/ui/FormInput.tsx`; keyboard navigation and screen-reader flow now reach main content and form controls more reliably without changing route structure or submit behavior.
+  - **consumer-mobile auth and error boundaries:** Keep login auxiliary controls in the natural tab order, add `role="status" aria-live="polite"` to signup Suspense fallbacks, and align `app/error.tsx` plus `app/(auth)/error.tsx` to the shared `ErrorState` component with the same retry semantics.
+
+  ### 🐛 Fixed
+  - **consumer-web first-load state handling:** Align contacts, contracts, documents, exchange balances, payment methods, and payments with explicit loading/error/empty branches:
+    - contacts and contracts render skeleton/loading UI instead of premature empty states;
+    - documents distinguish initial load, retryable load failure, and true empty results;
+    - exchange balances no longer treat an empty balance map as an infinite loading state, preserve the same retry path in both exchange and withdraw/transfer views, and normalize compatible balance payloads without misreading `amountCents` as whole currency units;
+    - payment methods use `SkeletonTable` for first load and shared `ErrorState` for initial fetch failures;
+    - payments reuse shared `ErrorState` while preserving existing reload-based retry behavior.
+  - **consumer-mobile shared navigation and documents UI:** Route internal `EmptyState` CTAs through `next/link` for client-side navigation consistency and remove the duplicated all-documents empty branch in `EnhancedDocumentsView` while preserving existing copy and upload flow.
+
+  ### 🔐 Security / Production Safety
+  - Preserve auth, session, cookie, CSRF, payment, ledger, and API contract invariants; the change set stays inside frontend presentation, accessibility semantics, and client-side state handling.
+  - Reduce production UX risk by separating first-load, empty, and retry states without changing backend endpoints, mutation payloads, or payment-side behavior.
+  - Keep balance compatibility handling in the frontend adapter layer rather than broadening backend contract changes, and avoid false empty-state flashes while session-expired redirects are in progress.
 
 </details>
 
