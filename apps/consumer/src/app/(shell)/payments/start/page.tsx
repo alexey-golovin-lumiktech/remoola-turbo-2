@@ -17,7 +17,7 @@ export default function StartPaymentPage() {
       <p className={pageSubtitlePlain}>Send a quick one-off payment to a contractor or client.</p>
 
       <div className={startPaymentCard}>
-        <Suspense fallback={<p aria-hidden>Loading…</p>}>
+        <Suspense fallback={<p role="status">Loading…</p>}>
           <StartPaymentForm />
         </Suspense>
       </div>

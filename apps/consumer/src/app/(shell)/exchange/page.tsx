@@ -16,7 +16,7 @@ export default function ExchangePage() {
       <h1 className={pageTitle}>Currency Exchange</h1>
       <p className={pageSubtitle}>Convert balances and manage your automated exchange workflows.</p>
 
-      <Suspense fallback={<p aria-hidden>Loading exchange…</p>}>
+      <Suspense fallback={<p role="status">Loading exchange…</p>}>
         <ExchangePageClient />
       </Suspense>
     </div>

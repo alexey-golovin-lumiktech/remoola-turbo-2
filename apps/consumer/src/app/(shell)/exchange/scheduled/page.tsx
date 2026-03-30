@@ -16,7 +16,7 @@ export default function ScheduledConversionsPage() {
       <h1 className={pageTitle}>Scheduled Conversions</h1>
       <p className={pageSubtitle}>Plan currency conversions ahead of time and track their status.</p>
 
-      <Suspense fallback={<p aria-hidden>Loading scheduled conversions…</p>}>
+      <Suspense fallback={<p role="status">Loading scheduled conversions…</p>}>
         <ScheduledConversionsPageClient />
       </Suspense>
     </div>

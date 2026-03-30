@@ -16,7 +16,7 @@ export default async function PaymentMethodsPage() {
       <h1 className={pageTitle}>Bank Accounts & Cards</h1>
       <p className={pageSubtitle}>Manage your saved cards and bank accounts.</p>
 
-      <Suspense fallback={<p aria-hidden>Loading payment methods…</p>}>
+      <Suspense fallback={<p role="status">Loading payment methods…</p>}>
         <PaymentMethodsPageClient />
       </Suspense>
     </div>

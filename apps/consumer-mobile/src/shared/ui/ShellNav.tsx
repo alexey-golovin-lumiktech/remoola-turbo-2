@@ -57,6 +57,7 @@ export function ShellNav() {
             href={item.href}
             className={cn(styles.navLink, active ? styles.navLinkActive : styles.navLinkInactive)}
             data-testid={`consumer-mobile-shell-nav-${item.href.replace(/^\//, ``) || `dashboard`}`}
+            aria-current={active ? `page` : undefined}
           >
             {active ? <div className={styles.navLinkActiveBg} aria-hidden /> : null}
             <div className={styles.navLinkContent}>{item.icon}</div>

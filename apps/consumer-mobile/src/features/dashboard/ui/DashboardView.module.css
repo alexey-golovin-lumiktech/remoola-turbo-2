@@ -106,3 +106,7 @@
 .createRequestLink {
   @apply mt-6 inline-flex items-center rounded-xl bg-linear-to-r from-primary-600 to-primary-700 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary-500/30 transition-all hover:from-primary-700 hover:to-primary-800 hover:shadow-xl active:scale-95;
 }
+
+.retryLink {
+  @apply mt-6 inline-flex items-center rounded-xl bg-linear-to-r from-primary-600 to-primary-700 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary-500/30 transition-all hover:from-primary-700 hover:to-primary-800 hover:shadow-xl active:scale-95;
+}

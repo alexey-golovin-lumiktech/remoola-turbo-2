@@ -16,7 +16,7 @@ export default function ExchangeRulesPage() {
       <h1 className={pageTitle}>Auto-Conversion Rules</h1>
       <p className={pageSubtitle}>Manage automated balance conversion rules.</p>
 
-      <Suspense fallback={<p aria-hidden>Loading exchange rules…</p>}>
+      <Suspense fallback={<p role="status">Loading exchange rules…</p>}>
         <ExchangeRulesPageClient />
       </Suspense>
     </div>

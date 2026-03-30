@@ -16,7 +16,7 @@ export default async function ContactsPage() {
       <h1 className={pageTitle}>Contacts</h1>
       <p className={pageSubtitle}>Saved contractors and business contacts.</p>
 
-      <Suspense fallback={<p aria-hidden>Loading contacts…</p>}>
+      <Suspense fallback={<p role="status">Loading contacts…</p>}>
         <ContactsPageClient />
       </Suspense>
     </div>

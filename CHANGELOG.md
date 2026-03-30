@@ -1607,7 +1607,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-03-25</summary>
 
 - **2026-03-25:**
@@ -1637,6 +1637,28 @@
 
   ### 📄 Documentation
   - Document canonical/generated/hand-written boundaries and the Vercel-safe workflow in `packages/api-types/src/schema/README.md`.
+
+</details>
+
+<details open>
+<summary>2026-03-30</summary>
+
+- **2026-03-30:**
+  ### ♿ Accessibility
+  - **consumer — loading fallbacks (8 pages):** Replace `aria-hidden` with `role="status"` on Suspense fallback `<p>` elements in all affected shell pages (`withdraw-transfer`, `exchange`, `exchange/rules`, `exchange/scheduled`, `payment-methods`, `contacts`, `payment-requests/new`, `payments/start`); screen readers now announce loading state; visual output unchanged.
+  - **consumer — shell header search control:** Add `role="button"`, `aria-label="Open command palette"`, and `aria-haspopup="dialog"` to the readOnly search input in `(shell)/layout.tsx`; `data-testid="consumer-shell-search"`, click/keyboard behavior, and palette open logic untouched.
+  - **consumer — More Actions dropdown state:** Add `aria-expanded={actionsOpen}`, `aria-haspopup="true"`, and `aria-controls` + matching `id` to the More Actions button in `CreatePaymentRequestForm` and `StartPaymentForm`; toggle behavior, outside-click close, submit flow, and API payload shape unchanged.
+  - **consumer — settings loading branch:** Wrap loading `<p>` in `ProfileSettingsClient` with `role="status" aria-live="polite"`; add `role="alert"` to the error branch and `role="status" aria-live="polite"` to the unauthorized branch; `data-testid` values `settings-ready`, `settings-error`, `settings-unauthorized` preserved; fetch sequence and session-expired redirect untouched.
+  - **consumer-mobile — bottom nav:** Add `aria-current="page"` to the active `Link` in `ShellNav.tsx`; active visual styling, `data-testid`, and `href` values unchanged.
+
+  ### 🚀 Feature
+  - **consumer-mobile — route-level loading for `payment-requests/new`:** Add `loading.tsx` + `loading.module.css` with animated pulse skeleton consistent with neighboring shell routes; `page.tsx` and `data-testid="consumer-mobile-payment-request-new"` untouched.
+  - **consumer-mobile — dashboard error branch retry:** Add "Try again" link in `DashboardView` when `data === null`; hard-navigates to `/dashboard` to force a server component re-fetch; `getDashboardData()` contract and the success branch unchanged; new `.retryLink` style added to `DashboardView.module.css`.
+
+  ### 🐛 Fixed
+  - **consumer-mobile — not-found CTA:** Change CTA target from `/` to `/dashboard` to eliminate the redundant redirect hop; auth redirect behavior unchanged.
+  - **consumer-mobile — dashboard empty-state link:** Replace `<a href="/payment-requests/new">` with `<Link>` for client-side navigation consistency.
+  - **consumer-mobile — header top safe-area:** Split `py-3` into `pb-3 pt-[max(0.75rem,env(safe-area-inset-top))]` in `ShellNav.module.css`; respects existing `viewportFit: cover`; non-notch devices see no visual change; tap targets preserved.
 
 </details>
 

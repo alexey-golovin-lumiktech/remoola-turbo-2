@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 import { ActivityTimeline } from './ActivityTimeline';
 import { ComplianceTasksCard } from './ComplianceTasksCard';
 import { PendingRequestsTable } from './PendingRequestsTable';
@@ -29,6 +31,9 @@ export function DashboardView({ data }: DashboardViewProps) {
             </div>
             <p className={styles.errorTitle}>Unable to load dashboard</p>
             <p className={styles.errorMessage}>Please try again later.</p>
+            <a href="/dashboard" className={styles.retryLink}>
+              Try again
+            </a>
           </div>
         </div>
       </div>
@@ -93,9 +98,9 @@ export function DashboardView({ data }: DashboardViewProps) {
               <p className={styles.emptyPendingMessage}>
                 You&apos;re all caught up! Create a new payment request to get started.
               </p>
-              <a href="/payment-requests/new" className={styles.createRequestLink}>
+              <Link href="/payment-requests/new" className={styles.createRequestLink}>
                 Create request
-              </a>
+              </Link>
             </div>
           )}
 

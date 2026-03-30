@@ -258,6 +258,9 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
               placeholder="Search anything..."
               className={cn(shellSearchInput, localStyles.searchInputWithIcon)}
               data-testid="consumer-shell-search"
+              role="button"
+              aria-label="Open command palette"
+              aria-haspopup="dialog"
               readOnly
               onClick={() => setPaletteOpen(true)}
               onKeyDown={(e) => {
