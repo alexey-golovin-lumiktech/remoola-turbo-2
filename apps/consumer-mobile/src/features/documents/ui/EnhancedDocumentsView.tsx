@@ -138,16 +138,11 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
 
       {filteredItems.length === 0 ? (
         filterKind === `All` ? (
-          <div className={styles.emptyBlock}>
-            <div className={styles.emptyIcon}>
-              <DocumentIcon className={styles.emptyIconSvg} strokeWidth={1.5} />
-            </div>
-            <EmptyState
-              icon={null}
-              title="No documents yet"
-              description="Upload documents to keep track of invoices, receipts, and contracts."
-            />
-          </div>
+          <EmptyState
+            icon={<DocumentIcon className={styles.emptyIconSvg} strokeWidth={1.5} />}
+            title="No documents yet"
+            description="Upload documents to keep track of invoices, receipts, and contracts."
+          />
         ) : (
           <div className={styles.emptyBlockFiltered}>
             <div className={styles.emptyIconFiltered}>

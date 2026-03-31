@@ -5,7 +5,9 @@ import './globals.css';
 import { type Metadata } from 'next';
 import { Toaster } from 'sonner';
 
-import { PageErrorBoundary, SWRProvider, ThemeProvider, ThemeInitializer } from '../components';
+import { ThemeProvider } from '../components/ThemeProvider';
+import { PageErrorBoundary } from '../components/ui/ErrorBoundary';
+import { SWRProvider } from '../components/ui/SWRProvider';
 
 const themeInitScript = [
   `(function(){try{`,
@@ -39,7 +41,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body suppressHydrationWarning>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <ThemeProvider>
-          <ThemeInitializer />
           <Toaster richColors position="top-right" />
           <SWRProvider>
             <PageErrorBoundary>{children}</PageErrorBoundary>

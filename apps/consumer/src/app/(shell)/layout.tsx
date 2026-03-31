@@ -21,6 +21,7 @@ import {
 import { SidebarLink } from '@remoola/ui/SidebarLink';
 
 import localStyles from './layout.module.css';
+import { ThemeInitializer } from '../../components/ThemeInitializer';
 import styles from '../../components/ui/classNames.module.css';
 import { CommandPalette } from '../../components/ui/CommandPalette';
 
@@ -189,6 +190,7 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className={shellContainer} data-testid="consumer-shell">
+      <ThemeInitializer />
       <a
         href={`#${mainContentId}`}
         className={localStyles.skipToMainLink}
@@ -302,7 +304,7 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
               <SearchIcon size={16} aria-hidden="true" />
             </span>
             <input
-              placeholder="Search anything..."
+              placeholder="Open command palette..."
               className={cn(shellSearchInput, localStyles.searchInputWithIcon)}
               data-testid="consumer-shell-search"
               role="button"

@@ -4,7 +4,13 @@ import { ResetPasswordConfirmForm } from '../../../../features/auth/ui/ResetPass
 
 export default function ForgotPasswordConfirmPage() {
   return (
-    <Suspense fallback={<p className="p-4 text-slate-600 dark:text-slate-400">Loading…</p>}>
+    <Suspense
+      fallback={
+        <p className="p-4 text-slate-600 dark:text-slate-400" role="status" aria-live="polite">
+          Loading…
+        </p>
+      }
+    >
       <ResetPasswordConfirmForm />
     </Suspense>
   );

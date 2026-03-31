@@ -10,8 +10,8 @@ interface LoginPageProps {
 
 function LoginPageSuspenseFallback() {
   return (
-    <div className={styles.fallback} aria-busy="true">
-      <div className={styles.spinner} />
+    <div className={styles.fallback} role="status" aria-live="polite" aria-busy="true" aria-label="Loading">
+      <div className={styles.spinner} aria-hidden="true" />
     </div>
   );
 }

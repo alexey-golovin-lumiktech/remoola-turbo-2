@@ -1686,7 +1686,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-03-30</summary>
 
 - **2026-03-30:**
@@ -1707,6 +1707,30 @@
   - Preserve auth, session, cookie, CSRF, payment, ledger, and API contract invariants; the change set stays inside frontend presentation, accessibility semantics, and client-side state handling.
   - Reduce production UX risk by separating first-load, empty, and retry states without changing backend endpoints, mutation payloads, or payment-side behavior.
   - Keep balance compatibility handling in the frontend adapter layer rather than broadening backend contract changes, and avoid false empty-state flashes while session-expired redirects are in progress.
+
+</details>
+
+<details open>
+<summary>2026-03-31</summary>
+
+- **2026-03-31:**
+  ### ♿ Accessibility
+  - **consumer-mobile auth and contacts loading fallbacks:** Add `role="status" aria-live="polite"` to the remaining auth and contacts route fallbacks in `app/(auth)/forgot-password/confirm/page.tsx`, `app/(auth)/login/page.tsx`, `app/(auth)/login/loading.tsx`, and `app/(shell)/contacts/page.tsx`; spinner-only states now hide decorative spinners from assistive tech while preserving the same visual loading pattern.
+
+  ### 🐛 Fixed
+  - **consumer-web login and shell search UX:** Remove seeded `user@example.com` / `password` defaults from `app/login/LoginForm.tsx` and update the shell search trigger copy in `app/(shell)/layout.tsx` to `Open command palette...` without changing login submit flow, command-palette behavior, keyboard shortcuts, or `data-testid` contracts.
+  - **consumer-mobile documents empty state:** Remove the redundant all-documents empty wrapper in `features/documents/ui/EnhancedDocumentsView.tsx` and keep `EmptyState` as the single source of empty-state markup; copy, upload flow, filtered-empty behavior, and document actions remain unchanged.
+
+  ### ♻️ Refactor
+  - **consumer-web root error blast-radius reduction:** Narrow the root layout import graph by replacing the `../components` barrel import with direct imports for `ThemeProvider`, `SWRProvider`, and `PageErrorBoundary`.
+  - **consumer-web theme initialization scope:** Move `ThemeInitializer` from `app/layout.tsx` into `app/(shell)/layout.tsx` so protected-route theme fetching no longer widens the root render path.
+  - **consumer-web App Router error boundaries:** Add `app/error.tsx` and `app/(shell)/error.tsx` with local retry UI and logging so non-root failures are caught before escalating to `global-error`.
+  - **consumer-web section-level shell containment:** Wrap `DocumentsList` and `PaymentMethodsPageClient` in `SectionErrorBoundary` and switch those routes to direct component imports to localize shell rendering failures.
+  - **consumer-web global error fallback:** Keep `app/global-error.tsx` self-contained with inline markup/styles and `reset()` retry semantics so the root fallback no longer depends on shared UI modules.
+
+  ### 🔐 Security / Production Safety
+  - Preserve auth, session, cookie, CSRF, redirect, middleware, and API contract invariants; no DTO, header, route, or backend behavior changes are introduced.
+  - Reduce root failure coupling in `apps/consumer` by keeping the last-resort `global-error` path dependency-free and by catching more frontend failures at app, shell, and section boundaries before they escalate to the root boundary.
 
 </details>
 
