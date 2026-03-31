@@ -1,5 +1,4 @@
 'use client';
-
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 
@@ -139,7 +138,7 @@ export function PaymentDetailView({ paymentRequestId, data }: PaymentDetailViewP
           }
         })
         .catch(() => {
-          showErrorToast(getLocalToastMessage(localToastKeys.PAYMENT_NOT_FOUND));
+          showErrorToast(getLocalToastMessage(localToastKeys.PAYMENT_METHODS_LOAD_FAILED));
         })
         .finally(() => {
           setLoadingMethods(false);

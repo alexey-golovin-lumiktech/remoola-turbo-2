@@ -174,6 +174,7 @@ export const localToastKeys = {
 
   // Payment methods
   PAYMENT_METHOD_DELETE_FAILED: `PAYMENT_METHOD_DELETE_FAILED`,
+  PAYMENT_METHODS_LOAD_FAILED: `PAYMENT_METHODS_LOAD_FAILED`,
   PAYMENT_METHOD_SETUP_INTENT_FAILED: `PAYMENT_METHOD_SETUP_INTENT_FAILED`,
   PAYMENT_METHOD_ADD_FAILED: `PAYMENT_METHOD_ADD_FAILED`,
 
@@ -235,6 +236,7 @@ const LOCAL_TOAST_MESSAGE_MAP: Record<string, string> = {
 
   // Payment methods – delete, setup intent, add card (client or API failed)
   [localToastKeys.PAYMENT_METHOD_DELETE_FAILED]: `We couldn't remove this saved card. Please try again; if it keeps failing, refresh the app.`,
+  [localToastKeys.PAYMENT_METHODS_LOAD_FAILED]: `We couldn't load your saved payment methods. Please try again in a moment.`,
   [localToastKeys.PAYMENT_METHOD_SETUP_INTENT_FAILED]: `We couldn't start the "add card" step. Check your connection and try again, or contact support.`,
   [localToastKeys.PAYMENT_METHOD_ADD_FAILED]: `We couldn't save your card. Complete the verification step (e.g. 3D Secure) and try again, or add a different card.`,
 

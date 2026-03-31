@@ -26,10 +26,10 @@ export type ConsumerActionLogModelWithRelations = Prisma.ConsumerActionLogModelG
     consumer: true;
   };
 }>;
-export type ConsumerActionLogModelKey = Pick<Prisma.ConsumerActionLogModelGetPayload<{}>, 'id' | 'createdAt'>;
+export type ConsumerActionLogModelKey = Pick<Prisma.ConsumerActionLogModelGetPayload<{}>, `id` | `createdAt`>;
 
 export type AuthLoginLockoutModelWithRelations = Prisma.AuthLoginLockoutModelGetPayload<{}>;
-export type AuthLoginLockoutModelKey = Pick<Prisma.AuthLoginLockoutModelGetPayload<{}>, 'identityType' | 'email'>;
+export type AuthLoginLockoutModelKey = Pick<Prisma.AuthLoginLockoutModelGetPayload<{}>, `identityType` | `email`>;
 
 export type OauthStateModelWithRelations = Prisma.OauthStateModelGetPayload<{}>;
 

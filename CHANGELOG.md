@@ -1732,6 +1732,14 @@
   - Preserve auth, session, cookie, CSRF, redirect, middleware, and API contract invariants; no DTO, header, route, or backend behavior changes are introduced.
   - Reduce root failure coupling in `apps/consumer` by keeping the last-resort `global-error` path dependency-free and by catching more frontend failures at app, shell, and section boundaries before they escalate to the root boundary.
 
+  ### 🐛 Fixed
+  - **consumer-web route metadata and error-state alignment:** Add static page titles for `contracts`, `settings`, `payments/[paymentRequestId]`, and `contacts/[id]/details`; add contextual `aria-label` values to `components/ui/PaginationBar.tsx`; align `app/error.tsx`, `app/(shell)/error.tsx`, and `app/global-error.tsx` on the shared `ErrorState` pattern while preserving retry semantics and existing test ids.
+  - **consumer-mobile state feedback and empty-state consistency:** Replace the incorrect `PAYMENT_NOT_FOUND` toast on payment-method load failure with a payment-method-specific message, distinguish unavailable vs zero vs non-zero balance display in `features/payments/ui/WithdrawTransferView.tsx`, and switch the contacts zero-state in `features/contacts/ui/ContactsListView.tsx` to the shared `EmptyState` component while keeping the same modal-open CTA.
+
+  ### 🔐 Security / Production Safety
+  - Preserve auth, session, cookie, CSRF, redirect, payment submit, Stripe, and idempotency invariants; the mobile payment update is limited to load-error messaging and does not change payment execution paths.
+  - Keep all changes inside frontend metadata, accessibility, error presentation, and client-side state feedback without changing backend contracts or route behavior.
+
 </details>
 
 </details>
