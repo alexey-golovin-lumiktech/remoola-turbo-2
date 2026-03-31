@@ -6,6 +6,8 @@ import { useEffect } from 'react';
 import styles from '../../../components/ui/classNames.module.css';
 
 const { authCallbackContainer } = styles;
+const AUTH_CHECK_INTERVAL_MS = 500;
+const AUTH_CHECK_TIMEOUT_MS = 10000;
 
 export default function AuthCallback() {
   const router = useRouter();
@@ -17,6 +19,7 @@ export default function AuthCallback() {
     let tries = 0;
     let inFlight = false;
     let exchangeComplete = oauthToken == null;
+    const maxTries = Math.ceil(AUTH_CHECK_TIMEOUT_MS / AUTH_CHECK_INTERVAL_MS);
 
     const interval = setInterval(() => {
       tries++;
@@ -57,12 +60,12 @@ export default function AuthCallback() {
           inFlight = false;
         });
 
-      // Safety exit: if token didn't appear after 5 seconds
-      if (tries > 50) {
+      // Safety exit: if auth verification does not complete in time.
+      if (tries > maxTries) {
         clearInterval(interval);
         router.replace(`/login`);
       }
-    }, 100);
+    }, AUTH_CHECK_INTERVAL_MS);
 
     return () => clearInterval(interval);
   }, [router, next, oauthToken]);

@@ -8,7 +8,7 @@ import { clientLogger } from '../../../lib/logger';
 import { showErrorToast, showSuccessToast } from '../../../lib/toast.client';
 import { FormCard } from '../../../shared/ui/FormCard';
 import { CheckIcon } from '../../../shared/ui/icons/CheckIcon';
-import { SpinnerIcon } from '../../../shared/ui/icons/SpinnerIcon';
+import { primeUserThemeCache } from '../../../shared/ui/ThemeInitializer';
 import { Theme, useTheme, type ITheme } from '../../../shared/ui/ThemeProvider';
 
 interface ThemeOption {
@@ -32,6 +32,7 @@ export function ThemeSettingsForm({ initialTheme }: ThemeSettingsFormProps) {
   const { theme, setTheme } = useTheme();
   const [loading, setLoading] = useState(false);
   const hasSyncedInitialTheme = useRef(false);
+  const latestRequestId = useRef(0);
 
   // Sync server theme into context only once on mount so we don't overwrite user's
   // selection when parent re-renders with stale settings before refetch.
@@ -42,12 +43,16 @@ export function ThemeSettingsForm({ initialTheme }: ThemeSettingsFormProps) {
     if (![Theme.LIGHT, Theme.DARK, Theme.SYSTEM].includes(normalized)) return;
     hasSyncedInitialTheme.current = true;
     setTheme(normalized);
+    primeUserThemeCache(normalized);
   }, [initialTheme, setTheme]);
 
   async function updateTheme(newTheme: ITheme) {
     if (newTheme === theme) return;
     const previousTheme = theme;
+    const requestId = latestRequestId.current + 1;
+    latestRequestId.current = requestId;
     setTheme(newTheme);
+    primeUserThemeCache(newTheme);
     setLoading(true);
     try {
       const response = await fetch(`/api/settings/theme`, {
@@ -63,7 +68,10 @@ export function ThemeSettingsForm({ initialTheme }: ThemeSettingsFormProps) {
 
       showSuccessToast(`Theme updated`);
     } catch (error) {
-      setTheme(previousTheme);
+      if (latestRequestId.current === requestId) {
+        setTheme(previousTheme);
+        primeUserThemeCache(previousTheme);
+      }
       showErrorToast(getLocalToastMessage(localToastKeys.THEME_UPDATE_FAILED));
       clientLogger.error(`Theme update error`, {
         reason: error instanceof Error ? error.message : String(error),
@@ -112,13 +120,6 @@ export function ThemeSettingsForm({ initialTheme }: ThemeSettingsFormProps) {
           );
         })}
       </fieldset>
-
-      {loading ? (
-        <div className={styles.loadingBanner} role="status">
-          <SpinnerIcon className={styles.spinnerIcon} />
-          <p className={styles.loadingText}>Saving...</p>
-        </div>
-      ) : null}
     </FormCard>
   );
 }

@@ -102,17 +102,9 @@ export async function middleware(req: NextRequest) {
   }
 
   if (isProtected && hasValidAccessTokenShape && accessToken) {
-    const validation = await validateAccessToken(accessToken, accessCookieKey);
-    if (validation === `valid`) return NextResponse.next();
-    if (hasValidRefreshTokenShape && refreshToken) {
-      const refreshResponse = await refreshAccess(refreshToken, refreshCookieKey, { csrfToken });
-      if (refreshResponse) {
-        const res = NextResponse.next();
-        appendSetCookies(res.headers, refreshResponse.headers);
-        return res;
-      }
-    }
-    return NextResponse.redirect(new URL(`/login?next=${safeNext(req.nextUrl.pathname)}`, req.url));
+    // For protected pages, trust a well-shaped access cookie and let the app's
+    // existing 401/refresh path handle expired sessions without an eager /auth/me call.
+    return NextResponse.next();
   }
 
   return NextResponse.next();

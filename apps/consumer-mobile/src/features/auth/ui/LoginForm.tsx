@@ -13,6 +13,8 @@ import {
 } from '@remoola/api-types';
 import { GoogleIcon } from '@remoola/ui';
 
+import { shouldFinalizeLoginLoading } from './login-loading-guard';
+import styles from './LoginForm.module.css';
 import { getApiBaseUrlOptional } from '../../../lib/config.client';
 import { getDevCredentials } from '../../../lib/dev-credentials';
 import { resetSessionExpiredHandled } from '../../../lib/session-expired';
@@ -23,9 +25,8 @@ import { LightningIcon } from '../../../shared/ui/icons/LightningIcon';
 import { SpinnerIcon } from '../../../shared/ui/icons/SpinnerIcon';
 import { XCircleIcon } from '../../../shared/ui/icons/XCircleIcon';
 import { XIcon } from '../../../shared/ui/icons/XIcon';
+import { resetUserThemeCache } from '../../../shared/ui/ThemeInitializer';
 import { loginSchema } from '../schemas';
-import { shouldFinalizeLoginLoading } from './login-loading-guard';
-import styles from './LoginForm.module.css';
 
 export function LoginForm({
   nextPath,
@@ -72,6 +73,7 @@ export function LoginForm({
 
   useEffect(() => {
     resetSessionExpiredHandled();
+    resetUserThemeCache();
   }, []);
 
   useEffect(() => {
@@ -129,15 +131,6 @@ export function LoginForm({
         } else {
           setErr(`Unable to sign in. Please check your connection and try again.`);
         }
-        return;
-      }
-      const meRes = await fetch(`/api/me`, {
-        method: `GET`,
-        credentials: `include`,
-        cache: `no-store`,
-      });
-      if (!meRes.ok) {
-        setErr(`Session could not be established. Please try again.`);
         return;
       }
       didNavigateRef.current = true;

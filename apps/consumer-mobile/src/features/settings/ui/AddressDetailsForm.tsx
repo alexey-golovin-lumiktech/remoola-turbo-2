@@ -118,7 +118,7 @@ export function AddressDetailsForm({ profile }: AddressDetailsFormProps) {
             disabled={isPending}
             className={styles.submitBtn}
           >
-            {isPending ? `Saving...` : `Save Changes`}
+            {`Save Changes`}
           </Button>
         </div>
       </form>

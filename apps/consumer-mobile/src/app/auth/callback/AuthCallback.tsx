@@ -7,6 +7,9 @@ import styles from './AuthCallback.module.css';
 import { parseSearchParams } from '../../../features/auth/schemas';
 import { clientLogger } from '../../../lib/logger';
 
+const AUTH_CHECK_INTERVAL_MS = 500;
+const AUTH_CHECK_TIMEOUT_MS = 10000;
+
 export default function AuthCallback() {
   const router = useRouter();
   const params = useSearchParams();
@@ -14,54 +17,64 @@ export default function AuthCallback() {
   const oauthToken = params.get(`oauthToken`);
 
   useEffect(() => {
-    let tries = 0;
-    let inFlight = false;
-    let exchangeComplete = oauthToken == null;
+    let cancelled = false;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    const deadline = Date.now() + AUTH_CHECK_TIMEOUT_MS;
 
-    const interval = setInterval(() => {
-      tries++;
-      if (inFlight) return;
-      inFlight = true;
+    const finish = (target: string) => {
+      if (cancelled) return;
+      cancelled = true;
+      if (timeoutId) clearTimeout(timeoutId);
+      router.replace(target);
+    };
 
-      const run = async () => {
-        if (!exchangeComplete && oauthToken) {
+    const scheduleRetry = () => {
+      if (cancelled) return;
+      if (Date.now() >= deadline) {
+        finish(`/login`);
+        return;
+      }
+      timeoutId = setTimeout(() => {
+        void run();
+      }, AUTH_CHECK_INTERVAL_MS);
+    };
+
+    const run = async () => {
+      try {
+        if (oauthToken) {
           const exchangeRes = await fetch(`/api/oauth/exchange`, {
             method: `POST`,
             headers: { 'content-type': `application/json` },
             credentials: `include`,
             body: JSON.stringify({ exchangeToken: oauthToken }),
           });
+
           if (exchangeRes.ok) {
-            exchangeComplete = true;
             const url = new URL(window.location.href);
             url.searchParams.delete(`oauthToken`);
             window.history.replaceState({}, ``, `${url.pathname}${url.search}${url.hash}`);
+            finish(next);
+            return;
           }
-        }
-        if (exchangeComplete) {
+        } else {
           const res = await fetch(`/api/me`, { credentials: `include`, cache: `no-store` });
           if (res.ok) {
-            clearInterval(interval);
-            router.replace(next);
+            finish(next);
+            return;
           }
         }
-      };
-
-      run()
-        .catch((err) => {
-          clientLogger.warn(`Auth callback run failed`, { err });
-        })
-        .finally(() => {
-          inFlight = false;
-        });
-
-      if (tries > 50) {
-        clearInterval(interval);
-        router.replace(`/login`);
+      } catch (err) {
+        clientLogger.warn(`Auth callback run failed`, { err });
       }
-    }, 100);
 
-    return () => clearInterval(interval);
+      scheduleRetry();
+    };
+
+    void run();
+    return () => {
+      cancelled = true;
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, [router, next, oauthToken]);
 
   return (

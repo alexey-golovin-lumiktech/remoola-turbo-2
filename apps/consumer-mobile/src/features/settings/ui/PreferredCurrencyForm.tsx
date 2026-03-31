@@ -9,7 +9,6 @@ import { showErrorToast, showSuccessToast } from '../../../lib/toast.client';
 import { FormCard } from '../../../shared/ui/FormCard';
 import { FormField } from '../../../shared/ui/FormField';
 import { FormSelect } from '../../../shared/ui/FormSelect';
-import { SpinnerIcon } from '../../../shared/ui/icons/SpinnerIcon';
 import { updatePreferredCurrencyAction } from '../actions';
 import styles from './PreferredCurrencyForm.module.css';
 
@@ -70,13 +69,6 @@ export function PreferredCurrencyForm({ initialCurrency }: PreferredCurrencyForm
             }}
           />
         </FormField>
-
-        {isPending ? (
-          <div className={styles.loadingBanner} role="status">
-            <SpinnerIcon className={styles.spinnerIcon} />
-            <p className={styles.loadingText}>Saving...</p>
-          </div>
-        ) : null}
       </form>
     </FormCard>
   );

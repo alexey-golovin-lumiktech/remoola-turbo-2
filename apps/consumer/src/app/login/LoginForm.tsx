@@ -111,18 +111,6 @@ export default function LoginForm() {
         return;
       }
 
-      const meRequest = await fetch(`/api/me`, {
-        method: `GET`,
-        headers: { 'content-type': `application/json` },
-        credentials: `include`,
-        cache: `no-store`,
-      });
-
-      if (!meRequest.ok) {
-        setErr(`Logged in, but cookies not available. Check CORS/cookie attrs.`);
-        return;
-      }
-
       didNavigateRef.current = true;
       router.replace(nextPath || `/dashboard`);
     } finally {

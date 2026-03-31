@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
 import { cn } from '@remoola/ui';
 
+import { primeUserThemeCache } from '../../../../components/ThemeInitializer';
 import { Theme, useTheme, type ITheme } from '../../../../components/ThemeProvider';
 import styles from '../../../../components/ui/classNames.module.css';
 import { clientLogger } from '../../../../lib/logger';
@@ -12,13 +13,11 @@ import { clientLogger } from '../../../../lib/logger';
 const {
   themeCard,
   themeDescription,
-  themeDeviceHint,
   themeOptionActive,
   themeOptionBase,
   themeOptionBody,
   themeOptionCheck,
   themeOptionCheckInner,
-  themeOptionDisabled,
   themeOptionIcon,
   themeOptionInactive,
   themeOptionInput,
@@ -26,7 +25,6 @@ const {
   themeOptionText,
   themeOptions,
   themeTitle,
-  themeUpdating,
 } = styles;
 
 interface ThemeConfigOptions {
@@ -58,49 +56,37 @@ const themeConfigOptions: ThemeConfigOptions[] = [
 ];
 
 interface ThemeSettingsFormProps {
-  /** When provided, used as initial theme and theme is not fetched on mount (avoids duplicate GET). */
+  /** When provided, synced into context once without triggering a duplicate theme fetch. */
   initialTheme?: string | null;
 }
 
 export function ThemeSettingsForm({ initialTheme }: ThemeSettingsFormProps = {}) {
   const { theme, setTheme } = useTheme();
-  const [loading, setLoading] = useState(false);
+  const hasSyncedInitialTheme = useRef(false);
+  const latestRequestId = useRef(0);
 
-  // Load user theme on mount when parent did not provide initial settings
+  // Sync server theme into context only once so later parent re-renders do not
+  // overwrite the user's in-session choice with stale settings.
   useEffect(() => {
-    if (initialTheme !== undefined) {
-      const normalized = initialTheme ? initialTheme.toLowerCase() : Theme.SYSTEM;
-      setTheme(normalized as ITheme);
-      return;
-    }
-    async function loadSettings() {
-      try {
-        const response = await fetch(`/api/settings/theme`, {
-          method: `GET`,
-          headers: { 'content-type': `application/json` },
-          credentials: `include`,
-        });
+    if (initialTheme === undefined || initialTheme === null) return;
+    if (hasSyncedInitialTheme.current) return;
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.theme) {
-            setTheme(data.theme.toLowerCase());
-          } else {
-            setTheme(Theme.SYSTEM);
-          }
-        }
-      } catch (error) {
-        clientLogger.warn(`Failed to load theme settings`, {
-          reason: error instanceof Error ? error.message : String(error),
-        });
-      }
-    }
+    const normalized = initialTheme.toLowerCase();
+    if (normalized !== Theme.LIGHT && normalized !== Theme.DARK && normalized !== Theme.SYSTEM) return;
 
-    loadSettings();
+    hasSyncedInitialTheme.current = true;
+    setTheme(normalized);
+    primeUserThemeCache(normalized);
   }, [initialTheme, setTheme]);
 
   async function updateTheme(newTheme: ITheme) {
-    setLoading(true);
+    if (newTheme === theme) return;
+
+    const previousTheme = theme;
+    const requestId = latestRequestId.current + 1;
+    latestRequestId.current = requestId;
+    setTheme(newTheme);
+    primeUserThemeCache(newTheme);
     try {
       const response = await fetch(`/api/settings/theme`, {
         method: `PUT`,
@@ -113,15 +99,16 @@ export function ThemeSettingsForm({ initialTheme }: ThemeSettingsFormProps = {})
         throw new Error(`Failed to update theme`);
       }
 
-      setTheme(newTheme);
       toast.success(`Theme updated successfully`);
     } catch (error) {
+      if (latestRequestId.current === requestId) {
+        setTheme(previousTheme);
+        primeUserThemeCache(previousTheme);
+      }
       toast.error(`We couldn't update your theme. Please try again.`);
       clientLogger.error(`Theme update error`, {
         reason: error instanceof Error ? error.message : String(error),
       });
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -131,17 +118,12 @@ export function ThemeSettingsForm({ initialTheme }: ThemeSettingsFormProps = {})
       <p className={themeDescription}>
         Choose how Remoola looks to you. Select a theme or follow your system preference.
       </p>
-      {theme === Theme.SYSTEM && <p className={themeDeviceHint}>Using device theme</p>}
 
       <div className={themeOptions}>
         {themeConfigOptions.map((option) => (
           <label
             key={option.value}
-            className={cn(
-              themeOptionBase,
-              theme === option.value ? themeOptionActive : themeOptionInactive,
-              loading && themeOptionDisabled,
-            )}
+            className={cn(themeOptionBase, theme === option.value ? themeOptionActive : themeOptionInactive)}
           >
             <input
               type="radio"
@@ -150,7 +132,6 @@ export function ThemeSettingsForm({ initialTheme }: ThemeSettingsFormProps = {})
               checked={theme === option.value}
               onChange={(e) => updateTheme(e.target.value as ITheme)}
               className={themeOptionInput}
-              disabled={loading}
             />
             <div className={themeOptionBody}>
               <span className={themeOptionIcon}>{option.icon}</span>
@@ -167,8 +148,6 @@ export function ThemeSettingsForm({ initialTheme }: ThemeSettingsFormProps = {})
           </label>
         ))}
       </div>
-
-      {loading && <div className={themeUpdating}>Updating theme...</div>}
     </div>
   );
 }

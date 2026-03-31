@@ -193,7 +193,7 @@ export function ResetPasswordConfirmForm() {
               {loading ? (
                 <span className={styles.submitLoading}>
                   <SpinnerIcon className={styles.spinnerIcon} />
-                  Saving…
+                  Reset password
                 </span>
               ) : (
                 `Reset password`

@@ -18,6 +18,10 @@ body {
   min-height: 100vh;
 }
 
+html {
+  color-scheme: light;
+}
+
 body {
   background: linear-gradient(135deg,#f8fafc,#eef2ff);
   font-family: ui-sans-serif,system-ui;

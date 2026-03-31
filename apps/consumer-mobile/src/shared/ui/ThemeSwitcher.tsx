@@ -7,8 +7,12 @@ import { cn } from '@remoola/ui';
 
 import { CheckIcon } from './icons/CheckIcon';
 import { ChevronDownIcon } from './icons/ChevronDownIcon';
+import { primeUserThemeCache } from './ThemeInitializer';
 import { Theme, useTheme, type ITheme } from './ThemeProvider';
 import styles from './ThemeSwitcher.module.css';
+import { getLocalToastMessage, localToastKeys } from '../../lib/error-messages';
+import { clientLogger } from '../../lib/logger';
+import { showErrorToast } from '../../lib/toast.client';
 
 const themeLabels: Record<ITheme, string> = {
   [Theme.LIGHT]: `Light`,
@@ -99,22 +103,41 @@ export function ThemeSwitcher() {
 
   const persistTheme = useCallback(
     async (newTheme: ITheme) => {
+      if (newTheme === theme) {
+        setOpen(false);
+        setDropdownPosition(null);
+        return;
+      }
+
+      const previousTheme = theme;
       setTheme(newTheme);
+      primeUserThemeCache(newTheme);
       setOpen(false);
       setDropdownPosition(null);
       setPersisting(true);
       try {
-        await fetch(`/api/settings/theme`, {
+        const response = await fetch(`/api/settings/theme`, {
           method: `PUT`,
           headers: { 'content-type': `application/json` },
           credentials: `include`,
           body: JSON.stringify({ theme: newTheme.toUpperCase() }),
         });
+
+        if (!response.ok) {
+          throw new Error(`Failed to update theme`);
+        }
+      } catch (error) {
+        setTheme(previousTheme);
+        primeUserThemeCache(previousTheme);
+        showErrorToast(getLocalToastMessage(localToastKeys.THEME_UPDATE_FAILED));
+        clientLogger.error(`Theme switcher update error`, {
+          reason: error instanceof Error ? error.message : String(error),
+        });
       } finally {
         setPersisting(false);
       }
     },
-    [setTheme],
+    [setTheme, theme],
   );
 
   useLayoutEffect(() => {
@@ -174,7 +197,7 @@ export function ThemeSwitcher() {
               type="button"
               role="option"
               aria-selected={isActive}
-              onClick={() => persistTheme(option)}
+              onClick={() => void persistTheme(option)}
               className={styles.option}
             >
               <span className={styles.optionLeft}>

@@ -20,12 +20,10 @@ const themeInitScript = [
   `root.classList.remove('light','dark');`,
   `root.classList.add(resolved);`,
   `root.dataset.theme=resolved;`,
-  `root.style.colorScheme=resolved;`,
   `if(body){`,
   `body.classList.remove('light','dark');`,
   `body.classList.add(resolved);`,
   `body.dataset.theme=resolved;`,
-  `body.style.colorScheme=resolved;`,
   `}`,
   `}catch(e){}})();`,
 ].join(``);
@@ -38,8 +36,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body suppressHydrationWarning>
+      <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
+      <body suppressHydrationWarning>
         <ThemeProvider>
           <Toaster richColors position="top-right" />
           <SWRProvider>

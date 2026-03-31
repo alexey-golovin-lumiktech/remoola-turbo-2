@@ -149,7 +149,7 @@ export default function ProfileSettingsClient() {
 
   return (
     <div className={localStyles.settingsReady} data-testid="settings-ready">
-      <ThemeSettingsForm initialTheme={settings?.theme ?? undefined} />
+      {settings && <ThemeSettingsForm initialTheme={settings.theme} />}
       <PreferredCurrencySettingsForm
         preferredCurrency={settings?.preferredCurrency ?? null}
         onUpdated={handlePreferredCurrencyUpdated}

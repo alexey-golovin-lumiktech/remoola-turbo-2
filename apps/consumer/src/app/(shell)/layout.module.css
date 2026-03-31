@@ -29,6 +29,10 @@
   @apply shrink-0;
 }
 
+.drawerItemContent {
+  @apply flex items-center gap-3;
+}
+
 .mobileLogoBadge {
   @apply flex items-center justify-center text-xs font-bold text-white;
 }
@@ -67,4 +71,8 @@
 
 .mobileNavItemActive {
   @apply bg-blue-50/70 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400;
+}
+
+.mobileNavItemContent {
+  @apply flex flex-col items-center gap-0.5;
 }

@@ -5,6 +5,12 @@ import { useEffect } from 'react';
 import { Theme, type ITheme, useTheme } from './ThemeProvider';
 import { handleSessionExpired } from '../lib/session-expired';
 
+type ThemeCacheWindow = Window &
+  typeof globalThis & {
+    __remoolaConsumerCachedTheme?: ITheme | null;
+    __remoolaConsumerThemeRequest?: Promise<ITheme | null> | null;
+  };
+
 /** Paths where we never fetch user theme (no session expected); avoids 401 and session-expired on auth/reset flows. */
 function isAuthOrPublicPath(pathname: string): boolean {
   return (
@@ -24,6 +30,73 @@ function normalizeTheme(value: unknown): ITheme {
   return nextTheme === Theme.LIGHT || nextTheme === Theme.DARK || nextTheme === Theme.SYSTEM ? nextTheme : Theme.SYSTEM;
 }
 
+function getThemeCacheHost(): ThemeCacheWindow {
+  return window as ThemeCacheWindow;
+}
+
+function getStoredThemeSnapshot(): ITheme | null {
+  try {
+    const stored = localStorage.getItem(`remoola-theme`);
+    return stored ? normalizeTheme(stored) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function primeUserThemeCache(theme: ITheme | null) {
+  if (typeof window === `undefined`) return;
+  const host = getThemeCacheHost();
+  host.__remoolaConsumerCachedTheme = theme;
+}
+
+async function loadUserThemeOnce(): Promise<ITheme | null> {
+  const host = getThemeCacheHost();
+
+  if (host.__remoolaConsumerCachedTheme) {
+    return host.__remoolaConsumerCachedTheme;
+  }
+
+  const storedTheme = getStoredThemeSnapshot();
+  if (storedTheme) {
+    host.__remoolaConsumerCachedTheme = storedTheme;
+    return storedTheme;
+  }
+
+  if (host.__remoolaConsumerThemeRequest) {
+    return host.__remoolaConsumerThemeRequest;
+  }
+
+  host.__remoolaConsumerThemeRequest = (async () => {
+    try {
+      const response = await fetch(`/api/settings/theme`, {
+        method: `GET`,
+        headers: { 'content-type': `application/json` },
+        credentials: `include`,
+      });
+
+      if (response.status === 401) {
+        handleSessionExpired();
+        return null;
+      }
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const data = await response.json();
+      const theme = normalizeTheme(data.theme);
+      host.__remoolaConsumerCachedTheme = theme;
+      return theme;
+    } catch {
+      return null;
+    } finally {
+      host.__remoolaConsumerThemeRequest = null;
+    }
+  })();
+
+  return host.__remoolaConsumerThemeRequest;
+}
+
 export function ThemeInitializer() {
   const { setTheme } = useTheme();
 
@@ -32,32 +105,15 @@ export function ThemeInitializer() {
 
     const pathname = window.location.pathname ?? ``;
     if (isAuthOrPublicPath(pathname)) {
-      setTheme(Theme.SYSTEM);
       return;
     }
 
     let cancelled = false;
 
     const loadUserTheme = async () => {
-      try {
-        const response = await fetch(`/api/settings/theme`, {
-          method: `GET`,
-          headers: { 'content-type': `application/json` },
-          credentials: `include`,
-        });
-
-        if (response.status === 401) {
-          handleSessionExpired();
-          return;
-        }
-        if (response.ok) {
-          const data = await response.json();
-          if (!cancelled) {
-            setTheme(normalizeTheme(data.theme));
-          }
-        }
-      } catch {
-        // Fall back to system preference; do not log or surface
+      const theme = await loadUserThemeOnce();
+      if (!cancelled && theme) {
+        setTheme(theme);
       }
     };
 

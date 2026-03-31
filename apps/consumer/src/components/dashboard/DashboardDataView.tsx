@@ -54,6 +54,10 @@ export function DashboardDataView() {
     dashboardData &&
     typeof dashboardData === `object` &&
     Array.isArray(dashboardData.pendingRequests) &&
+    typeof dashboardData.pendingWithdrawals === `object` &&
+    dashboardData.pendingWithdrawals != null &&
+    Array.isArray(dashboardData.pendingWithdrawals.items) &&
+    typeof dashboardData.pendingWithdrawals.total === `number` &&
     Array.isArray(dashboardData.activity) &&
     Array.isArray(dashboardData.tasks) &&
     Array.isArray(dashboardData.quickDocs) &&
@@ -94,7 +98,7 @@ export function DashboardDataView() {
 
         <div className={dashboardSidebar}>
           <div className={cardBaseSoftCompact} data-testid="consumer-dashboard-pending-withdrawals">
-            <PendingWithdrawalsCard />
+            <PendingWithdrawalsCard data={dashboardData.pendingWithdrawals} />
           </div>
           <div className={cardBaseSoftCompact} data-testid="consumer-dashboard-compliance-tasks">
             <ComplianceTasksCard tasks={dashboardData.tasks} />

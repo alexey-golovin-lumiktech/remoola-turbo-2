@@ -5,6 +5,7 @@ import useSWRMutation from 'swr/mutation';
 import { isCurrencyCode, type TCurrencyCode } from '@remoola/api-types';
 
 import { mutationFetcher } from './swr-config';
+import { type IDashboardData } from '../types/dashboard';
 
 /** Preferred currency from consumer settings (display default only). Fetches once per mount. */
 export function usePreferredCurrency(): { preferredCurrency: TCurrencyCode | null; loaded: boolean } {
@@ -39,6 +40,14 @@ export const queryKeys = {
     detail: (id: string) => [`api/payments/${id}`],
     balance: () => [`api/payments/balance`],
     history: () => [`api/payments/history`],
+    pendingWithdrawals: () => [
+      `api/payments/history`,
+      {
+        direction: `OUTCOME`,
+        status: `PENDING`,
+        limit: `5`,
+      },
+    ],
   },
   contacts: {
     list: () => [`api/contacts`],
@@ -51,7 +60,7 @@ export const queryKeys = {
 
 // Dashboard hooks
 export function useDashboard() {
-  return useSWR(queryKeys.dashboard.main());
+  return useSWR<IDashboardData>(queryKeys.dashboard.main());
 }
 
 // Payments hooks

@@ -30,7 +30,6 @@ export function RatesPanel({ rates }: RatesPanelProps) {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await fetch(`/api/exchange/rates`, { cache: `no-store` });
       router.refresh();
     } catch {
       // Silently handle error - user will see current rates

@@ -6,7 +6,6 @@ import { SWRConfig } from 'swr';
 
 import { ErrorState } from './ErrorState';
 import { ThemeColorMeta } from './ThemeColorMeta';
-import { ThemeInitializer } from './ThemeInitializer';
 import { ThemeProvider } from './ThemeProvider';
 import { swrConfig, swrFetcher } from '../../lib/client';
 
@@ -40,7 +39,6 @@ class AppErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryS
 export function AppProviders({ children }: AppProvidersProps) {
   return (
     <ThemeProvider>
-      <ThemeInitializer />
       <ThemeColorMeta />
       <AppErrorBoundary>
         <SWRConfig value={{ ...swrConfig, fetcher: swrFetcher }}>

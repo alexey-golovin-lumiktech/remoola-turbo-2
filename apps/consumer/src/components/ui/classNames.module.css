@@ -1885,10 +1885,6 @@
   @apply text-sm text-gray-600 dark:text-gray-300 mb-6;
 }
 
-.themeDeviceHint {
-  @apply text-xs text-gray-500 dark:text-gray-400 mb-6;
-}
-
 .themeOptions {
   @apply space-y-3;
 }

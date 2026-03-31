@@ -63,3 +63,7 @@
 .navLinkContent {
   @apply relative z-10;
 }
+
+.navLinkColumn {
+  @apply relative z-10 flex flex-col items-center gap-1;
+}
