@@ -162,6 +162,7 @@ export function ContractsListView({ contracts, total }: ContractsListViewProps) 
 
                 <div className={styles.paginationControls}>
                   <button
+                    type="button"
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
                     className={styles.paginationBtn}
@@ -172,6 +173,7 @@ export function ContractsListView({ contracts, total }: ContractsListViewProps) 
                     {currentPage} / {totalPages}
                   </span>
                   <button
+                    type="button"
                     onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                     disabled={currentPage === totalPages}
                     className={styles.paginationBtn}

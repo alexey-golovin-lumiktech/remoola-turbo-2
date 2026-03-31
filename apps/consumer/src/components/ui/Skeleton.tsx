@@ -129,7 +129,14 @@ function DashboardPanelSkeleton({ rows = 4, className }: SkeletonProps & { rows?
 
 export function DashboardSkeleton() {
   return (
-    <div className={dashboardContainer}>
+    <div
+      className={dashboardContainer}
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      aria-label="Loading dashboard"
+      aria-busy="true"
+    >
       {/* Header */}
       <div className={skeletonSpaceY3}>
         <Skeleton className={skeletonHeaderTitle} />

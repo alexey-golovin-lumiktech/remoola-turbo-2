@@ -10,11 +10,19 @@ interface SearchInputProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  ariaLabel?: string;
   onClear?: () => void;
   className?: string;
 }
 
-export function SearchInput({ value, onChange, placeholder = `Search...`, onClear, className = `` }: SearchInputProps) {
+export function SearchInput({
+  value,
+  onChange,
+  placeholder = `Search...`,
+  ariaLabel,
+  onClear,
+  className = ``,
+}: SearchInputProps) {
   const handleClear = () => {
     onChange(``);
     if (onClear) {
@@ -30,6 +38,7 @@ export function SearchInput({ value, onChange, placeholder = `Search...`, onClea
       <input
         type="search"
         placeholder={placeholder}
+        aria-label={ariaLabel ?? placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={styles.input}

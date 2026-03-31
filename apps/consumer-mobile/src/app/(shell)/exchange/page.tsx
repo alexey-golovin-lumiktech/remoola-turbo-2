@@ -28,6 +28,21 @@ interface ExchangeData {
   rates?: ExchangeRate[];
 }
 
+type RawExchangeRate = {
+  from?: unknown;
+  to?: unknown;
+  rate?: unknown;
+  timestamp?: unknown;
+  trend?: unknown;
+};
+
+const DEFAULT_RATE_PAIRS = [
+  { from: `USD`, to: `EUR` },
+  { from: `EUR`, to: `USD` },
+  { from: `USD`, to: `GBP` },
+  { from: `USD`, to: `JPY` },
+] as const;
+
 function isBalanceRecord(x: unknown): x is Record<string, number> {
   if (typeof x !== `object` || x === null || Array.isArray(x)) return false;
   return Object.entries(x).every(([k, v]) => typeof k === `string` && typeof v === `number`);
@@ -68,15 +83,32 @@ async function fetchExchangeData(): Promise<ExchangeData> {
         headers: { Cookie: cookie },
         cache: `no-store`,
       }),
-      fetch(`${baseUrl}/consumer/exchange/rates`, {
-        headers: { Cookie: cookie },
+      fetch(`${baseUrl}/consumer/exchange/rates/batch`, {
+        method: `POST`,
+        headers: { Cookie: cookie, 'content-type': `application/json` },
         cache: `no-store`,
+        body: JSON.stringify({ pairs: DEFAULT_RATE_PAIRS }),
       }),
     ]);
 
     const currencies = currenciesRes.ok ? await currenciesRes.json() : [];
     const balancesRaw = balancesRes.ok ? await balancesRes.json() : [];
-    const rates = ratesRes.ok ? await ratesRes.json() : [];
+    const ratesRaw = ratesRes.ok ? await ratesRes.json() : [];
+    const nowIso = new Date().toISOString();
+    const ratesSource = Array.isArray(ratesRaw)
+      ? ratesRaw
+      : Array.isArray(ratesRaw?.items)
+        ? ratesRaw.items
+        : Array.isArray(ratesRaw?.data)
+          ? ratesRaw.data
+          : [];
+    const rates = ratesSource.map((rate: RawExchangeRate) => ({
+      from: String(rate.from),
+      to: String(rate.to),
+      rate: Number(rate.rate),
+      timestamp: typeof rate.timestamp === `string` ? rate.timestamp : nowIso,
+      trend: rate.trend === `up` || rate.trend === `down` || rate.trend === `stable` ? rate.trend : undefined,
+    }));
 
     return {
       currencies: normalizeCurrencies(Array.isArray(currencies) ? currencies : (currencies?.items ?? [])),

@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import styles from './RatesPanel.module.css';
@@ -24,12 +25,13 @@ interface RatesPanelProps {
 
 export function RatesPanel({ rates }: RatesPanelProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const router = useRouter();
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
       await fetch(`/api/exchange/rates`, { cache: `no-store` });
-      window.location.reload();
+      router.refresh();
     } catch {
       // Silently handle error - user will see current rates
     } finally {

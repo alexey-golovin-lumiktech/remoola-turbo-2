@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 
@@ -245,6 +246,9 @@ export function PaymentDetailView({ paymentRequestId, data }: PaymentDetailViewP
     <div className={styles.wrap} data-testid="consumer-mobile-payment-detail">
       <div className={styles.headerRow}>
         <h1 className={styles.title}>Payment #{paymentRequestId.slice(0, 6).toUpperCase()}</h1>
+        <Link href="/payments" className={styles.downloadLink} aria-label="Back to payments list">
+          Back to payments
+        </Link>
       </div>
 
       <Card noPadding>

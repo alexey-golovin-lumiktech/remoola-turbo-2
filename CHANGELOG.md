@@ -1716,41 +1716,31 @@
 - **2026-03-31:**
   ### ♿ Accessibility
   - **consumer-mobile auth and contacts loading fallbacks:** Add `role="status" aria-live="polite"` to the remaining auth and contacts route fallbacks in `app/(auth)/forgot-password/confirm/page.tsx`, `app/(auth)/login/page.tsx`, `app/(auth)/login/loading.tsx`, and `app/(shell)/contacts/page.tsx`; spinner-only states now hide decorative spinners from assistive tech while preserving the same visual loading pattern.
+  - **consumer-web route metadata and error-state alignment:** Add static page titles for `contracts`, `settings`, `payments/[paymentRequestId]`, and `contacts/[id]/details`; add contextual `aria-label` values to `components/ui/PaginationBar.tsx`; align `app/error.tsx`, `app/(shell)/error.tsx`, and `app/global-error.tsx` on the shared `ErrorState` pattern while preserving retry semantics and existing test ids.
+  - **consumer-mobile state feedback and empty-state consistency:** Replace the incorrect `PAYMENT_NOT_FOUND` toast on payment-method load failure with a payment-method-specific message, distinguish unavailable vs zero vs non-zero balance display in `features/payments/ui/WithdrawTransferView.tsx`, and switch the contacts zero-state in `features/contacts/ui/ContactsListView.tsx` to the shared `EmptyState` component while keeping the same modal-open CTA.
+  - **consumer-web auth loading and callback status:** Add `aria-atomic="true"` and normalize loading/status copy in `app/auth/callback/page.tsx`, `app/auth/callback/AuthCallback.tsx`, and `app/(auth)/signup/verification/page.tsx`; OAuth polling, timeout, and redirect targets remain unchanged while callback status is announced more reliably.
+  - **consumer-mobile auth callback status:** Add `role="status" aria-live="polite" aria-atomic="true"` to `app/auth/callback/AuthCallback.tsx`; the visible redirect flow stays the same.
+  - **consumer-web shell state feedback:** Normalize inline loading copy in `app/(shell)/contacts/page.tsx` and `app/(shell)/payment-methods/page.tsx`, deduplicate the identical loading branch in `app/(shell)/settings/components/ProfileSettingsClient.tsx`, and add client-side logging parity to `app/global-error.tsx` without changing `LoadState`, retry semantics, or standalone global-error structure.
+  - **consumer-mobile empty-state and settings feedback:** Replace the custom search-empty branches in `features/payments/ui/PaymentsListView.tsx` and `features/contracts/ui/ContractsListView.tsx` with shared `EmptyState`, and align pending settings banners in `ThemeSettingsForm.tsx` and `PreferredCurrencyForm.tsx` to `Saving...` without changing filters, pagination, settings actions, or toast behavior.
+  - **consumer-web auth and loading announcements:** Add live-region semantics to `app/login/page.tsx`, `components/ui/Skeleton.tsx`, and `components/payments/PaymentView.tsx`, and clarify the command-palette search label in `components/ui/CommandPalette.tsx`; loading and not-found states are now announced more reliably without changing auth, dashboard, or payment behavior.
+  - **consumer-mobile loading and search semantics:** Add status semantics to `app/loading.tsx`, add `aria-label` support to `shared/ui/SearchInput.tsx`, and keep pagination controls in `features/contracts/ui/ContractsListView.tsx` explicitly non-submit buttons so search and paging remain accessible without altering data flow.
 
   ### 🐛 Fixed
   - **consumer-web login and shell search UX:** Remove seeded `user@example.com` / `password` defaults from `app/login/LoginForm.tsx` and update the shell search trigger copy in `app/(shell)/layout.tsx` to `Open command palette...` without changing login submit flow, command-palette behavior, keyboard shortcuts, or `data-testid` contracts.
   - **consumer-mobile documents empty state:** Remove the redundant all-documents empty wrapper in `features/documents/ui/EnhancedDocumentsView.tsx` and keep `EmptyState` as the single source of empty-state markup; copy, upload flow, filtered-empty behavior, and document actions remain unchanged.
-
-  ### ♻️ Refactor
-  - **consumer-web root error blast-radius reduction:** Narrow the root layout import graph by replacing the `../components` barrel import with direct imports for `ThemeProvider`, `SWRProvider`, and `PageErrorBoundary`.
-  - **consumer-web theme initialization scope:** Move `ThemeInitializer` from `app/layout.tsx` into `app/(shell)/layout.tsx` so protected-route theme fetching no longer widens the root render path.
-  - **consumer-web App Router error boundaries:** Add `app/error.tsx` and `app/(shell)/error.tsx` with local retry UI and logging so non-root failures are caught before escalating to `global-error`.
-  - **consumer-web section-level shell containment:** Wrap `DocumentsList` and `PaymentMethodsPageClient` in `SectionErrorBoundary` and switch those routes to direct component imports to localize shell rendering failures.
-  - **consumer-web global error fallback:** Keep `app/global-error.tsx` self-contained with inline markup/styles and `reset()` retry semantics so the root fallback no longer depends on shared UI modules.
+  - **consumer-web auth metadata and root error theme bootstrap:** Add route-specific metadata titles for `login`, `forgot-password`, `forgot-password/confirm`, and `auth/callback`, and harden `app/global-error.tsx` so stored light/dark theme is applied on first render while preserving root retry semantics and error logging.
+  - **consumer-mobile exchange and dashboard recovery paths:** Align `(shell)/exchange/page.tsx` with the backend batch-rates response so the standalone rates panel renders again, keep `features/exchange/ui/RatesPanel.tsx` on soft `router.refresh()`, add a back-link in `features/payments/ui/PaymentDetailView.tsx`, and preserve the soft retry path through `features/dashboard/ui/DashboardRetryButton.tsx`.
+  - **consumer-web root error blast-radius reduction:** Narrow the root layout import graph by replacing the `../components` barrel import with direct imports for `ThemeProvider`, `SWRProvider`, and `PageErrorBoundary`; move `ThemeInitializer` from `app/layout.tsx` into `app/(shell)/layout.tsx`; add `app/error.tsx` and `app/(shell)/error.tsx`; wrap `DocumentsList` and `PaymentMethodsPageClient` in `SectionErrorBoundary`; and keep `app/global-error.tsx` self-contained so non-root failures are caught before they escalate to the root boundary.
 
   ### 🔐 Security / Production Safety
   - Preserve auth, session, cookie, CSRF, redirect, middleware, and API contract invariants; no DTO, header, route, or backend behavior changes are introduced.
-  - Reduce root failure coupling in `apps/consumer` by keeping the last-resort `global-error` path dependency-free and by catching more frontend failures at app, shell, and section boundaries before they escalate to the root boundary.
-
-  ### 🐛 Fixed
-  - **consumer-web route metadata and error-state alignment:** Add static page titles for `contracts`, `settings`, `payments/[paymentRequestId]`, and `contacts/[id]/details`; add contextual `aria-label` values to `components/ui/PaginationBar.tsx`; align `app/error.tsx`, `app/(shell)/error.tsx`, and `app/global-error.tsx` on the shared `ErrorState` pattern while preserving retry semantics and existing test ids.
-  - **consumer-mobile state feedback and empty-state consistency:** Replace the incorrect `PAYMENT_NOT_FOUND` toast on payment-method load failure with a payment-method-specific message, distinguish unavailable vs zero vs non-zero balance display in `features/payments/ui/WithdrawTransferView.tsx`, and switch the contacts zero-state in `features/contacts/ui/ContactsListView.tsx` to the shared `EmptyState` component while keeping the same modal-open CTA.
-
-  ### 🔐 Security / Production Safety
+  - Reduce root failure coupling in `apps/consumer` by keeping the last-resort `global-error` path dependency-light and by catching more frontend failures at app, shell, and section boundaries before they escalate to the root boundary.
   - Preserve auth, session, cookie, CSRF, redirect, payment submit, Stripe, and idempotency invariants; the mobile payment update is limited to load-error messaging and does not change payment execution paths.
   - Keep all changes inside frontend metadata, accessibility, error presentation, and client-side state feedback without changing backend contracts or route behavior.
-
-  ### ♿ Accessibility
-  - **consumer-web auth loading and callback status:** Add `aria-atomic="true"` and normalize loading/status copy in `app/auth/callback/page.tsx`, `app/auth/callback/AuthCallback.tsx`, and `app/(auth)/signup/verification/page.tsx`; OAuth polling, timeout, and redirect targets remain unchanged while callback status is announced more reliably.
-  - **consumer-mobile auth callback status:** Add `role="status" aria-live="polite" aria-atomic="true"` to `app/auth/callback/AuthCallback.tsx`; the visible redirect flow stays the same.
-
-  ### 🐛 Fixed
-  - **consumer-web shell state feedback:** Normalize inline loading copy in `app/(shell)/contacts/page.tsx` and `app/(shell)/payment-methods/page.tsx`, deduplicate the identical loading branch in `app/(shell)/settings/components/ProfileSettingsClient.tsx`, and add client-side logging parity to `app/global-error.tsx` without changing `LoadState`, retry semantics, or standalone global-error structure.
-  - **consumer-mobile empty-state and settings feedback:** Replace the custom search-empty branches in `features/payments/ui/PaymentsListView.tsx` and `features/contracts/ui/ContractsListView.tsx` with shared `EmptyState`, and align pending settings banners in `ThemeSettingsForm.tsx` and `PreferredCurrencyForm.tsx` to `Saving...` without changing filters, pagination, settings actions, or toast behavior.
-
-  ### 🔐 Security / Production Safety
   - Preserve auth/session/login/logout behavior across both frontend apps; the full `logout -> login -> dashboard` cycle remains valid after the UI-only changes.
-  - Keep all touched paths frontend-only: no API, Stripe, cookie, idempotency, or route-contract changes are introduced by the auth copy, empty-state, logging, or settings feedback updates.
+  - Keep all touched paths frontend-only: no API, Stripe, cookie, idempotency, or route-contract changes are introduced by the auth copy, empty-state, logging, settings feedback, or exchange/dashboard recovery updates.
+  - Preserve auth, session, cookie, CSRF, redirect, and OAuth callback invariants; the consumer-web auth updates are limited to metadata, loading announcements, and root error presentation without changing route guards or token flow.
+  - Preserve payment, exchange, and backend contract safety; the mobile exchange fix only aligns the frontend to the existing batch-rates payload and keeps recovery on client-side refresh paths without changing API routes, mutation payloads, or idempotency behavior.
 
 </details>
 

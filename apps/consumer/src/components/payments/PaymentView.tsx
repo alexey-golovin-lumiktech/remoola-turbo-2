@@ -260,7 +260,7 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
 
   if (!data) {
     return (
-      <div className={paymentViewNotFound}>
+      <div className={paymentViewNotFound} role="status" aria-live="polite" aria-atomic="true">
         <div className={textSecondary}>Payment not found</div>
       </div>
     );
