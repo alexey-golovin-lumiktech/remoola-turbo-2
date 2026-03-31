@@ -1740,6 +1740,18 @@
   - Preserve auth, session, cookie, CSRF, redirect, payment submit, Stripe, and idempotency invariants; the mobile payment update is limited to load-error messaging and does not change payment execution paths.
   - Keep all changes inside frontend metadata, accessibility, error presentation, and client-side state feedback without changing backend contracts or route behavior.
 
+  ### ♿ Accessibility
+  - **consumer-web auth loading and callback status:** Add `aria-atomic="true"` and normalize loading/status copy in `app/auth/callback/page.tsx`, `app/auth/callback/AuthCallback.tsx`, and `app/(auth)/signup/verification/page.tsx`; OAuth polling, timeout, and redirect targets remain unchanged while callback status is announced more reliably.
+  - **consumer-mobile auth callback status:** Add `role="status" aria-live="polite" aria-atomic="true"` to `app/auth/callback/AuthCallback.tsx`; the visible redirect flow stays the same.
+
+  ### 🐛 Fixed
+  - **consumer-web shell state feedback:** Normalize inline loading copy in `app/(shell)/contacts/page.tsx` and `app/(shell)/payment-methods/page.tsx`, deduplicate the identical loading branch in `app/(shell)/settings/components/ProfileSettingsClient.tsx`, and add client-side logging parity to `app/global-error.tsx` without changing `LoadState`, retry semantics, or standalone global-error structure.
+  - **consumer-mobile empty-state and settings feedback:** Replace the custom search-empty branches in `features/payments/ui/PaymentsListView.tsx` and `features/contracts/ui/ContractsListView.tsx` with shared `EmptyState`, and align pending settings banners in `ThemeSettingsForm.tsx` and `PreferredCurrencyForm.tsx` to `Saving...` without changing filters, pagination, settings actions, or toast behavior.
+
+  ### 🔐 Security / Production Safety
+  - Preserve auth/session/login/logout behavior across both frontend apps; the full `logout -> login -> dashboard` cycle remains valid after the UI-only changes.
+  - Keep all touched paths frontend-only: no API, Stripe, cookie, idempotency, or route-contract changes are introduced by the auth copy, empty-state, logging, or settings feedback updates.
+
 </details>
 
 </details>

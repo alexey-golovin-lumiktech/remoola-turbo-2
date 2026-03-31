@@ -67,5 +67,9 @@ export default function AuthCallback() {
     return () => clearInterval(interval);
   }, [router, next, oauthToken]);
 
-  return <div className={authCallbackContainer}>Redirecting…</div>;
+  return (
+    <div className={authCallbackContainer} role="status" aria-live="polite" aria-atomic="true">
+      Completing sign-in...
+    </div>
+  );
 }

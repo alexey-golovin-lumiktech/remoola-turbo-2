@@ -8,8 +8,8 @@ export default function VerificationPage() {
   return (
     <Suspense
       fallback={
-        <p role="status" aria-live="polite">
-          Loading verification page...
+        <p role="status" aria-live="polite" aria-atomic="true">
+          Loading verification status...
         </p>
       }
     >

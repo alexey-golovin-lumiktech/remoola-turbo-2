@@ -120,14 +120,6 @@ export default function ProfileSettingsClient() {
     setSettings((prev) => (prev ? { ...prev, preferredCurrency } : { theme: null, preferredCurrency }));
   }, []);
 
-  if (loadState === `loading`) {
-    return (
-      <p className={textSecondary} role="status" aria-live="polite">
-        Loading profile...
-      </p>
-    );
-  }
-
   if (loadState === `unauthorized`) {
     return (
       <p className={textSecondary} data-testid="settings-unauthorized" role="status" aria-live="polite">
@@ -147,7 +139,7 @@ export default function ProfileSettingsClient() {
     );
   }
 
-  if (loadState !== `ready` || !profile) {
+  if (loadState === `loading` || loadState !== `ready` || !profile) {
     return (
       <p className={textSecondary} role="status" aria-live="polite">
         Loading profile...

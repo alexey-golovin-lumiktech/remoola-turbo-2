@@ -74,7 +74,7 @@ export function PreferredCurrencyForm({ initialCurrency }: PreferredCurrencyForm
         {isPending ? (
           <div className={styles.loadingBanner} role="status">
             <SpinnerIcon className={styles.spinnerIcon} />
-            <p className={styles.loadingText}>Updating currency...</p>
+            <p className={styles.loadingText}>Saving...</p>
           </div>
         ) : null}
       </form>

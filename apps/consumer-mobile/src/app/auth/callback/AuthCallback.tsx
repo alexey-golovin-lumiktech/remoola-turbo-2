@@ -65,7 +65,7 @@ export default function AuthCallback() {
   }, [router, next, oauthToken]);
 
   return (
-    <div className={styles.wrapper} data-testid="auth-callback">
+    <div className={styles.wrapper} data-testid="auth-callback" role="status" aria-live="polite" aria-atomic="true">
       Redirecting…
     </div>
   );

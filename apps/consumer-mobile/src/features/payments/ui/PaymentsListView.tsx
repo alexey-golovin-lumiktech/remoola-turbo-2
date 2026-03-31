@@ -164,15 +164,11 @@ export function PaymentsListView({ balance, payments, total, currentPage = 1, pa
             </div>
 
             {filteredPayments.length === 0 && hasUrlFilters ? (
-              <div className={styles.emptySearch}>
-                <div className={styles.emptySearchIcon}>
-                  <SearchIcon className={styles.emptySearchIconSvg} />
-                </div>
-                <p className={styles.emptySearchTitle}>No payments found</p>
-                <p className={styles.emptySearchMessage}>
-                  No payments match your search criteria. Try adjusting your filters.
-                </p>
-              </div>
+              <EmptyState
+                icon={<SearchIcon className={styles.emptySearchIconSvg} />}
+                title="No payments found"
+                description="No payments match your search criteria. Try adjusting your filters."
+              />
             ) : (
               <>
                 <div className={styles.list}>

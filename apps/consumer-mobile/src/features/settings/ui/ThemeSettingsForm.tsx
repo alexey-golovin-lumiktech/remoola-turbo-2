@@ -116,7 +116,7 @@ export function ThemeSettingsForm({ initialTheme }: ThemeSettingsFormProps) {
       {loading ? (
         <div className={styles.loadingBanner} role="status">
           <SpinnerIcon className={styles.spinnerIcon} />
-          <p className={styles.loadingText}>Updating theme…</p>
+          <p className={styles.loadingText}>Saving...</p>
         </div>
       ) : null}
     </FormCard>
