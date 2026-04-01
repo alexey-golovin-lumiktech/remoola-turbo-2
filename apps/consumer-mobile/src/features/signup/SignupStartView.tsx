@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
@@ -234,9 +235,9 @@ export function SignupStartView() {
 
       <p className={styles.footer}>
         Already have an account?{` `}
-        <a href="/login" className={styles.signinLink}>
+        <Link href="/login" className={styles.signinLink}>
           Sign in
-        </a>
+        </Link>
       </p>
     </div>
   );

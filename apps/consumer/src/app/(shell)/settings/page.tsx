@@ -1,7 +1,13 @@
+import { type Metadata } from 'next';
+
 import ProfileSettingsClient from './components/ProfileSettingsClient';
 import styles from '../../../components/ui/classNames.module.css';
 
 const { pageSubtitle, settingsPageContainer, settingsPageTitle } = styles;
+
+export const metadata: Metadata = {
+  title: `Settings - Remoola`,
+};
 
 export default async function SettingsPage() {
   return (

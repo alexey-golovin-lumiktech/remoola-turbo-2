@@ -154,7 +154,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
             onKeyDown={handleKeyDown}
             placeholder="Search pages and actions..."
             className={styles.searchInput}
-            aria-label="Search"
+            aria-label="Search pages and actions"
             aria-activedescendant={flat[activeIndex] ? `cmd-item-${activeIndex}` : undefined}
             autoComplete="off"
             spellCheck={false}
@@ -164,7 +164,11 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
 
         {/* Results */}
         <ul ref={listRef} className={styles.resultsList} role="listbox" aria-label="Search results">
-          {flat.length === 0 && <li className={styles.emptyState}>No results for &ldquo;{query}&rdquo;</li>}
+          {flat.length === 0 && (
+            <li key="cmd-palette-empty" className={styles.emptyState}>
+              No results for &ldquo;{query}&rdquo;
+            </li>
+          )}
 
           {Array.from(grouped.entries()).map(([group, routes]) => (
             <li key={group} role="presentation">

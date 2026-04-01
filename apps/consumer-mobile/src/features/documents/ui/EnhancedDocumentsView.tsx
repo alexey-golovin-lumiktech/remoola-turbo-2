@@ -110,29 +110,6 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
     });
   };
 
-  if (filteredItems.length === 0 && filterKind === `All`) {
-    return (
-      <div className={styles.main}>
-        <div className={styles.topBar}>
-          <DocumentFilterBar activeFilter={filterKind} onFilterChange={setFilterKind} filterCounts={filterCounts} />
-          <div className={styles.uploadWrap}>
-            <DocumentUploadButton onUploadComplete={handleUploadComplete} />
-          </div>
-        </div>
-        <div className={styles.emptyBlock}>
-          <div className={styles.emptyIcon}>
-            <DocumentIcon className={styles.emptyIconSvg} strokeWidth={1.5} />
-          </div>
-          <EmptyState
-            icon={null}
-            title="No documents yet"
-            description="Upload documents to keep track of invoices, receipts, and contracts."
-          />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className={styles.main} data-testid="enhanced-documents-view">
       <div className={styles.topBar}>
@@ -160,13 +137,21 @@ export function EnhancedDocumentsView({ items }: EnhancedDocumentsViewProps) {
       ) : null}
 
       {filteredItems.length === 0 ? (
-        <div className={styles.emptyBlockFiltered}>
-          <div className={styles.emptyIconFiltered}>
-            <SearchIcon className={styles.emptyIconSvg} strokeWidth={1.5} />
+        filterKind === `All` ? (
+          <EmptyState
+            icon={<DocumentIcon className={styles.emptyIconSvg} strokeWidth={1.5} />}
+            title="No documents yet"
+            description="Upload documents to keep track of invoices, receipts, and contracts."
+          />
+        ) : (
+          <div className={styles.emptyBlockFiltered}>
+            <div className={styles.emptyIconFiltered}>
+              <SearchIcon className={styles.emptyIconSvg} strokeWidth={1.5} />
+            </div>
+            <h3 className={styles.emptyTitle}>No documents found</h3>
+            <p className={styles.emptyMessage}>Try adjusting your filter or upload new documents to get started.</p>
           </div>
-          <h3 className={styles.emptyTitle}>No documents found</h3>
-          <p className={styles.emptyMessage}>Try adjusting your filter or upload new documents to get started.</p>
-        </div>
+        )
       ) : (
         <>
           <div className={styles.toolbar}>

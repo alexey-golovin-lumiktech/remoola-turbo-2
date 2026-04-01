@@ -349,13 +349,16 @@ export function StartPaymentForm() {
                     onClick={() => setActionsOpen((open) => !open)}
                     className={localStyles.moreActionsButton}
                     disabled={confirmLoading}
+                    aria-expanded={actionsOpen}
+                    aria-haspopup="true"
+                    aria-controls="start-payment-actions-menu"
                   >
                     More Actions
                     <span aria-hidden>{actionsOpen ? `▴` : `▾`}</span>
                   </button>
                 </div>
                 {actionsOpen && (
-                  <div className={localStyles.actionsDropdown}>
+                  <div id="start-payment-actions-menu" className={localStyles.actionsDropdown}>
                     <button
                       type="button"
                       onClick={() => {

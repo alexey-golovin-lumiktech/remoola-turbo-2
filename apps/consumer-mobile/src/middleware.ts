@@ -37,6 +37,10 @@ function isObviouslyInvalidCookieToken(token: string | undefined): boolean {
   return /[\r\n;]/.test(token);
 }
 
+function isPrefetchRequest(req: NextRequest): boolean {
+  return req.headers.get(`purpose`) === `prefetch` || req.headers.has(`next-router-prefetch`);
+}
+
 async function validateAccessToken(accessToken: string, accessCookieKey: string): Promise<AccessTokenValidationResult> {
   if (!ME_URL) return `unavailable`;
   try {
@@ -145,6 +149,12 @@ export async function middleware(req: NextRequest) {
   const hasValidRefreshTokenShape = !isObviouslyInvalidCookieToken(refreshToken);
 
   if (isCallback) return NextResponse.next();
+
+  // Let speculative prefetches avoid upstream auth validation; the real navigation
+  // will still run middleware and enforce auth.
+  if (isPrefetchRequest(req)) {
+    return NextResponse.next();
+  }
 
   const safeNext = (path: string) => encodeURIComponent(sanitizeNextForRedirect(path, `/dashboard`));
 

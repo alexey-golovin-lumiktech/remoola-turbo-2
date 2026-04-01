@@ -19,11 +19,16 @@ type SchemaPrimitive = string | number | boolean | bigint | symbol | null | unde
  * Utility for API-safe serialized shapes when a caller needs JSON/wire representations
  * of Prisma-backed records.
  */
-export type SerializedSchemaValue<T> =
-  T extends Prisma.Decimal ? string
-  : T extends Date ? string
-  : T extends SchemaPrimitive ? T
-  : T extends Array<infer TItem> ? SerializedSchemaValue<TItem>[]
-  : T extends ReadonlyArray<infer TItem> ? readonly SerializedSchemaValue<TItem>[]
-  : T extends object ? { [K in keyof T]: SerializedSchemaValue<T[K]> }
-  : T;
+export type SerializedSchemaValue<T> = T extends Prisma.Decimal
+  ? string
+  : T extends Date
+    ? string
+    : T extends SchemaPrimitive
+      ? T
+      : T extends Array<infer TItem>
+        ? SerializedSchemaValue<TItem>[]
+        : T extends ReadonlyArray<infer TItem>
+          ? readonly SerializedSchemaValue<TItem>[]
+          : T extends object
+            ? { [K in keyof T]: SerializedSchemaValue<T[K]> }
+            : T;

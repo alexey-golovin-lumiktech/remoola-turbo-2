@@ -120,13 +120,9 @@ export default function ProfileSettingsClient() {
     setSettings((prev) => (prev ? { ...prev, preferredCurrency } : { theme: null, preferredCurrency }));
   }, []);
 
-  if (loadState === `loading`) {
-    return <p className={textSecondary}>Loading profile...</p>;
-  }
-
   if (loadState === `unauthorized`) {
     return (
-      <p className={textSecondary} data-testid="settings-unauthorized">
+      <p className={textSecondary} data-testid="settings-unauthorized" role="status" aria-live="polite">
         Session expired. Redirecting…
       </p>
     );
@@ -134,7 +130,7 @@ export default function ProfileSettingsClient() {
 
   if (loadState === `error`) {
     return (
-      <div className={textSecondary} data-testid="settings-error">
+      <div className={textSecondary} data-testid="settings-error" role="alert">
         <p>{errorMessage ?? `Failed to load profile`}</p>
         <button type="button" onClick={() => void loadProfile()} className={primaryButtonClass}>
           Retry
@@ -143,13 +139,17 @@ export default function ProfileSettingsClient() {
     );
   }
 
-  if (loadState !== `ready` || !profile) {
-    return <p className={textSecondary}>Loading profile...</p>;
+  if (loadState === `loading` || loadState !== `ready` || !profile) {
+    return (
+      <p className={textSecondary} role="status" aria-live="polite">
+        Loading profile...
+      </p>
+    );
   }
 
   return (
     <div className={localStyles.settingsReady} data-testid="settings-ready">
-      <ThemeSettingsForm initialTheme={settings?.theme ?? undefined} />
+      {settings && <ThemeSettingsForm initialTheme={settings.theme} />}
       <PreferredCurrencySettingsForm
         preferredCurrency={settings?.preferredCurrency ?? null}
         onUpdated={handlePreferredCurrencyUpdated}

@@ -251,12 +251,16 @@ export function PaymentView({ paymentRequestId }: PaymentViewProps) {
   }
 
   if (loading) {
-    return <div className={paymentViewLoading}>Loading payment…</div>;
+    return (
+      <div className={paymentViewLoading} role="status" aria-live="polite">
+        Loading payment…
+      </div>
+    );
   }
 
   if (!data) {
     return (
-      <div className={paymentViewNotFound}>
+      <div className={paymentViewNotFound} role="status" aria-live="polite" aria-atomic="true">
         <div className={textSecondary}>Payment not found</div>
       </div>
     );

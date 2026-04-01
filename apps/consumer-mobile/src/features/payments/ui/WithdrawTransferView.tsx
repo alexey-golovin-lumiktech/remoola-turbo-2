@@ -88,12 +88,16 @@ export function WithdrawTransferView({ balance }: WithdrawTransferViewProps) {
     });
   };
 
-  const balanceDisplay = balance
-    ? Object.entries(balance.available ?? {})
-        .filter(([, amount]) => amount > 0)
-        .map(([code, amount]) => `${code} ${(amount / 100).toFixed(2)}`)
-        .join(`, `)
-    : `Loading...`;
+  const positiveAvailableBalances = balance
+    ? Object.entries(balance.available ?? {}).filter(([, amount]) => amount > 0)
+    : [];
+
+  const balanceDisplay =
+    balance === null
+      ? `Unavailable`
+      : positiveAvailableBalances.length === 0
+        ? `0.00 (no funds available)`
+        : positiveAvailableBalances.map(([code, amount]) => `${code} ${(amount / 100).toFixed(2)}`).join(`, `);
 
   return (
     <div className={styles.main}>

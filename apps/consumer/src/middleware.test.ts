@@ -53,10 +53,7 @@ describe(`middleware`, () => {
     expect(location == null || !location.includes(`/dashboard`)).toBe(true);
   });
 
-  it(`protected route + invalid token + refresh fail -> login redirect`, async () => {
-    mockFetch.mockResolvedValueOnce(new Response(undefined, { status: 401 }));
-    mockFetch.mockResolvedValueOnce(new Response(undefined, { status: 401 }));
-
+  it(`protected route + stale-looking token -> continue without eager validation`, async () => {
     const response = await middleware(
       createRequest(`/settings`, {
         [COOKIE_KEYS.CONSUMER_ACCESS_TOKEN]: `expired-a`,
@@ -65,22 +62,12 @@ describe(`middleware`, () => {
       }),
     );
 
-    expect(response.status).toBe(307);
-    expect(response.headers.get(`location`)).toContain(`/login?next=`);
-    expect(response.headers.get(`location`)).toContain(`%2Fsettings`);
+    expect(response.status).not.toBe(307);
+    expect(response.headers.get(`location`)).toBeNull();
+    expect(mockFetch).toHaveBeenCalledTimes(0);
   });
 
-  it(`protected route + refresh success -> continue with Set-Cookie`, async () => {
-    mockFetch.mockResolvedValueOnce(new Response(undefined, { status: 401 }));
-    mockFetch.mockResolvedValueOnce(
-      new Response(null, {
-        status: 200,
-        headers: {
-          [`set-cookie`]: `${COOKIE_KEYS.CONSUMER_ACCESS_TOKEN}=new-a; Path=/; HttpOnly; SameSite=Lax`,
-        },
-      }),
-    );
-
+  it(`protected route + refresh cookie present -> continue without eager refresh`, async () => {
     const response = await middleware(
       createRequest(`/dashboard`, {
         [COOKIE_KEYS.CONSUMER_ACCESS_TOKEN]: `expired-a`,
@@ -90,7 +77,8 @@ describe(`middleware`, () => {
     );
 
     expect(response.status).not.toBe(307);
-    expect(response.headers.get(`set-cookie`)).toContain(`${COOKIE_KEYS.CONSUMER_ACCESS_TOKEN}=new-a`);
+    expect(response.headers.get(`set-cookie`)).toBeNull();
+    expect(mockFetch).toHaveBeenCalledTimes(0);
   });
 
   it(`short-circuits protected route when access token cookie is obviously invalid`, async () => {

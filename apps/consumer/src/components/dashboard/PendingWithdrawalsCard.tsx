@@ -1,9 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-
-import { PAYMENT_DIRECTION, TRANSACTION_STATUS } from '@remoola/api-types';
-
+import { type IPendingWithdrawal } from '../../types/dashboard';
 import styles from '../ui/classNames.module.css';
 
 const {
@@ -19,39 +16,15 @@ const {
   pendingWithdrawalsTitle,
 } = styles;
 
-type Transaction = {
-  id: string;
-  code: string;
-  amount: string;
-  status: string;
-  createdAt: string | null;
+type PendingWithdrawalsCardProps = {
+  data: {
+    items: IPendingWithdrawal[];
+    total: number;
+  };
 };
 
-type HistoryResponse = { items: Transaction[]; total: number };
-
-export function PendingWithdrawalsCard() {
-  const [data, setData] = useState<HistoryResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const search = new URLSearchParams({
-          direction: PAYMENT_DIRECTION.OUTCOME,
-          status: TRANSACTION_STATUS.PENDING,
-          limit: `5`,
-        });
-        const res = await fetch(`/api/payments/history?${search.toString()}`, { credentials: `include` });
-        if (!res.ok) return;
-        const json = (await res.json()) as HistoryResponse;
-        setData(json);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    load();
-  }, []);
+export function PendingWithdrawalsCard({ data }: PendingWithdrawalsCardProps) {
+  const loading = false;
 
   return (
     <div className={pendingWithdrawalsCard}>

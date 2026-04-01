@@ -17,7 +17,7 @@ export default function CreatePaymentRequestPage() {
       <p className={pageSubtitlePlain}>Draft an invoice-style request and send it when you’re ready.</p>
 
       <div className={startPaymentCard}>
-        <Suspense fallback={<p aria-hidden>Loading…</p>}>
+        <Suspense fallback={<p role="status">Loading…</p>}>
           <CreatePaymentRequestForm />
         </Suspense>
       </div>

@@ -82,15 +82,11 @@ export function ContractsListView({ contracts, total }: ContractsListViewProps) 
         ) : null}
 
         {contracts.length > 0 && filteredContracts.length === 0 ? (
-          <div className={styles.emptySearch}>
-            <div className={styles.emptySearchIcon}>
-              <SearchIcon className={styles.searchIcon} strokeWidth={1.5} />
-            </div>
-            <h3 className={styles.emptySearchTitle}>No contractors found</h3>
-            <p className={styles.emptySearchMessage}>
-              No results matching &quot;{searchQuery}&quot;. Try adjusting your search.
-            </p>
-          </div>
+          <EmptyState
+            icon={<SearchIcon className={styles.searchIcon} strokeWidth={1.5} />}
+            title="No contractors found"
+            description={`No results matching "${searchQuery}". Try adjusting your search.`}
+          />
         ) : (
           <>
             <div className={styles.list}>
@@ -166,6 +162,7 @@ export function ContractsListView({ contracts, total }: ContractsListViewProps) 
 
                 <div className={styles.paginationControls}>
                   <button
+                    type="button"
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
                     className={styles.paginationBtn}
@@ -176,6 +173,7 @@ export function ContractsListView({ contracts, total }: ContractsListViewProps) 
                     {currentPage} / {totalPages}
                   </span>
                   <button
+                    type="button"
                     onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                     disabled={currentPage === totalPages}
                     className={styles.paginationBtn}

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import React from 'react';
 
 import { cn } from '@remoola/ui';
 
@@ -15,13 +16,15 @@ import { UsersIcon } from './icons/UsersIcon';
 import styles from './ShellNav.module.css';
 import { ThemeSwitcher } from './ThemeSwitcher';
 
-const navItems = [
-  { href: `/dashboard`, label: `Home`, icon: <HomeIcon className={styles.navIcon} /> },
-  { href: `/payments`, label: `Payments`, icon: <CreditCardIcon className={styles.navIcon} /> },
-  { href: `/exchange`, label: `Exchange`, icon: <ExchangeIcon className={styles.navIcon} /> },
-  { href: `/contracts`, label: `Contracts`, icon: <DocumentIcon className={styles.navIcon} /> },
-  { href: `/contacts`, label: `Contacts`, icon: <UsersIcon className={styles.navIcon} /> },
-  { href: `/settings`, label: `Settings`, icon: <SettingsIcon className={styles.navIcon} /> },
+type NavIconProps = { className?: string };
+
+const navItems: Array<{ href: string; label: string; Icon: React.ComponentType<NavIconProps> }> = [
+  { href: `/dashboard`, label: `Home`, Icon: HomeIcon },
+  { href: `/payments`, label: `Payments`, Icon: CreditCardIcon },
+  { href: `/exchange`, label: `Exchange`, Icon: ExchangeIcon },
+  { href: `/contracts`, label: `Contracts`, Icon: DocumentIcon },
+  { href: `/contacts`, label: `Contacts`, Icon: UsersIcon },
+  { href: `/settings`, label: `Settings`, Icon: SettingsIcon },
 ];
 
 export function ShellHeader() {
@@ -49,18 +52,23 @@ export function ShellNav() {
 
   return (
     <nav className={styles.nav} aria-label="Primary" data-testid="consumer-mobile-shell-nav">
-      {navItems.map((item) => {
-        const active = pathname === item.href || (item.href !== `/dashboard` && pathname.startsWith(item.href));
+      {navItems.map(({ href, label, Icon }) => {
+        const active = pathname === href || (href !== `/dashboard` && pathname.startsWith(href));
         return (
           <Link
-            key={item.href}
-            href={item.href}
+            key={href}
+            href={href}
             className={cn(styles.navLink, active ? styles.navLinkActive : styles.navLinkInactive)}
-            data-testid={`consumer-mobile-shell-nav-${item.href.replace(/^\//, ``) || `dashboard`}`}
+            data-testid={`consumer-mobile-shell-nav-${href.replace(/^\//, ``) || `dashboard`}`}
+            aria-current={active ? `page` : undefined}
           >
             {active ? <div className={styles.navLinkActiveBg} aria-hidden /> : null}
-            <div className={styles.navLinkContent}>{item.icon}</div>
-            <span className={styles.navLinkContent}>{item.label}</span>
+            <span className={styles.navLinkColumn}>
+              <span className={styles.navLinkContent}>
+                <Icon className={styles.navIcon} />
+              </span>
+              <span className={styles.navLinkContent}>{label}</span>
+            </span>
           </Link>
         );
       })}

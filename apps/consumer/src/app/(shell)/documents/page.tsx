@@ -1,7 +1,8 @@
 import { type Metadata } from 'next';
 
-import { DocumentsList } from '../../../components';
+import { DocumentsList } from '../../../components/documents/DocumentsList';
 import styles from '../../../components/ui/classNames.module.css';
+import { SectionErrorBoundary } from '../../../components/ui/ErrorBoundary';
 
 const { pageContainer, pageSubtitle, pageTitle } = styles;
 
@@ -15,7 +16,9 @@ export default function DocumentsPage() {
       <h1 className={pageTitle}>Documents</h1>
       <p className={pageSubtitle}>Access all your uploaded and payment-related files.</p>
 
-      <DocumentsList />
+      <SectionErrorBoundary>
+        <DocumentsList />
+      </SectionErrorBoundary>
     </div>
   );
 }

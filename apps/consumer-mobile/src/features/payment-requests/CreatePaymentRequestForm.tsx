@@ -2,12 +2,11 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 import { emailSchema } from '@remoola/api-types';
 
 import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../lib/error-messages';
-import { clientLogger } from '../../lib/logger';
 import { showErrorToast, showWarningToast } from '../../lib/toast.client';
 import { AmountCurrencyInput } from '../../shared/ui/AmountCurrencyInput';
 import { Button } from '../../shared/ui/Button';
@@ -35,19 +34,6 @@ export function CreatePaymentRequestForm({ defaultCurrency = `USD` }: CreatePaym
   const [pendingEmail, setPendingEmail] = useState(``);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    fetch(`/api/settings`, { credentials: `include`, cache: `no-store` })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: { preferredCurrency?: string | null } | null) => {
-        if (data?.preferredCurrency) {
-          setCurrency(data.preferredCurrency);
-        }
-      })
-      .catch((err) => {
-        clientLogger.warn(`Failed to load preferred currency for form`, { err });
-      });
-  }, []);
 
   function validate(): boolean {
     const newErrors: Record<string, string> = {};
@@ -77,15 +63,18 @@ export function CreatePaymentRequestForm({ defaultCurrency = `USD` }: CreatePaym
 
   async function checkContactExists(emailToCheck: string): Promise<boolean> {
     try {
-      const res = await fetch(`/api/contacts`, {
+      const url = new URL(`/api/contacts`, window.location.origin);
+      url.searchParams.set(`query`, emailToCheck);
+      url.searchParams.set(`limit`, `10`);
+      const res = await fetch(url.toString(), {
         method: `GET`,
         credentials: `include`,
         cache: `no-store`,
       });
       if (!res.ok) return false;
-      const data = await res.json();
-      const contacts = data.items ?? [];
-      return contacts.some((c: { email: string }) => c.email.toLowerCase() === emailToCheck.toLowerCase());
+      const data = (await res.json()) as { items?: Array<{ email?: string }> } | Array<{ email?: string }>;
+      const contacts = Array.isArray(data) ? data : (data.items ?? []);
+      return contacts.some((c) => typeof c.email === `string` && c.email.toLowerCase() === emailToCheck.toLowerCase());
     } catch {
       return false;
     }

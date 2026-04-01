@@ -34,6 +34,14 @@ export type IQuickDoc = {
   createdAt: string;
 };
 
+export type IPendingWithdrawal = {
+  id: string;
+  code: string;
+  amount: string;
+  status: string;
+  createdAt: string | null;
+};
+
 export type IVerificationState = {
   status: string;
   canStart: boolean;
@@ -53,6 +61,7 @@ export type IVerificationState = {
 export type IDashboardData = {
   summary: IDashboardSummary;
   pendingRequests: IPendingRequest[];
+  pendingWithdrawals: { items: IPendingWithdrawal[]; total: number };
   activity: IActivityItem[];
   tasks: IComplianceTask[];
   quickDocs: IQuickDoc[];

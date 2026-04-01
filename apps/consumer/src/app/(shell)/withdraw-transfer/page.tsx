@@ -16,7 +16,7 @@ export default function WithdrawTransferPage() {
       <h1 className={pageTitle}>Withdraw and Transfer</h1>
       <p className={pageSubtitle}>Move funds between balances or withdraw them to a saved destination.</p>
 
-      <Suspense fallback={<p aria-hidden>Loading withdraw and transfer…</p>}>
+      <Suspense fallback={<p role="status">Loading withdraw and transfer…</p>}>
         <WithdrawTransferPageClient />
       </Suspense>
     </div>

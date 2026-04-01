@@ -21,8 +21,10 @@ import {
 import { SidebarLink } from '@remoola/ui/SidebarLink';
 
 import localStyles from './layout.module.css';
+import { ThemeInitializer } from '../../components/ThemeInitializer';
 import styles from '../../components/ui/classNames.module.css';
 import { CommandPalette } from '../../components/ui/CommandPalette';
+import { DesktopThemeSwitcher } from '../../components/ui/DesktopThemeSwitcher';
 
 const {
   shellAside,
@@ -45,28 +47,47 @@ const {
 
 // ── Mobile "More" drawer ──────────────────────────────────────────────────────
 
+type DrawerItem = {
+  href: string;
+  label: string;
+  Icon: React.ComponentType<{ size: number; [`aria-hidden`]?: boolean | `true` }>;
+};
+
+const DRAWER_ITEMS: DrawerItem[] = [
+  { href: `/documents`, label: `Documents`, Icon: FolderIcon },
+  { href: `/payment-methods`, label: `Bank & Cards`, Icon: BankBuildingIcon },
+  { href: `/withdraw-transfer`, label: `Withdraw`, Icon: TransferIcon },
+  { href: `/exchange`, label: `Exchange`, Icon: ExchangeIcon },
+  { href: `/settings`, label: `Settings`, Icon: SettingsGearIcon },
+];
+
 function MobileMoreDrawer({ open, onClose, pathname }: { open: boolean; onClose: () => void; pathname: string }) {
   if (!open) return null;
 
-  const extraItems = [
-    { href: `/documents`, label: `Documents`, icon: <FolderIcon size={16} aria-hidden="true" /> },
-    { href: `/payment-methods`, label: `Bank & Cards`, icon: <BankBuildingIcon size={16} aria-hidden="true" /> },
-    { href: `/withdraw-transfer`, label: `Withdraw`, icon: <TransferIcon size={16} aria-hidden="true" /> },
-    { href: `/exchange`, label: `Exchange`, icon: <ExchangeIcon size={16} aria-hidden="true" /> },
-    { href: `/settings`, label: `Settings`, icon: <SettingsGearIcon size={16} aria-hidden="true" /> },
-  ];
-
   return (
     <>
-      <div className={localStyles.moreDrawerBackdrop} onClick={onClose} aria-hidden="true" />
-      <div className={localStyles.moreDrawerPanel}>
+      <button
+        type="button"
+        className={localStyles.moreDrawerBackdrop}
+        onClick={onClose}
+        aria-label="Close more navigation"
+      >
+        <span className={localStyles.srOnly}>Close more navigation</span>
+      </button>
+      <div
+        id="mobile-more-drawer"
+        className={localStyles.moreDrawerPanel}
+        role="dialog"
+        aria-modal="true"
+        aria-label="More navigation"
+      >
         <div className={localStyles.moreDrawerGrid}>
-          {extraItems.map((item) => {
-            const isActive = pathname.startsWith(item.href);
+          {DRAWER_ITEMS.map(({ href, label, Icon }) => {
+            const isActive = pathname.startsWith(href);
             return (
               <Link
-                key={item.href}
-                href={item.href}
+                key={href}
+                href={href}
                 onClick={() => onClose()}
                 className={cn(
                   localStyles.moreDrawerLink,
@@ -74,8 +95,12 @@ function MobileMoreDrawer({ open, onClose, pathname }: { open: boolean; onClose:
                 )}
                 aria-current={isActive ? `page` : undefined}
               >
-                <span className={localStyles.drawerItemIcon}>{item.icon}</span>
-                {item.label}
+                <span className={localStyles.drawerItemContent}>
+                  <span className={localStyles.drawerItemIcon}>
+                    <Icon size={16} aria-hidden="true" />
+                  </span>
+                  {label}
+                </span>
               </Link>
             );
           })}
@@ -92,7 +117,13 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [isApplePlatform, setIsApplePlatform] = useState<boolean | null>(null);
+  const mainContentId = `consumer-shell-main-content`;
   const currentYear = new Date().getFullYear();
+  const normalizedChildren = React.Children.toArray(children);
+  const closeMoreDrawer = React.useCallback(() => setMoreOpen(false), []);
+  const toggleMoreDrawer = React.useCallback(() => {
+    setMoreOpen((open) => !open);
+  }, []);
 
   // Global shortcut to open command palette.
   // Chrome reserves Ctrl+K on Linux/Windows, so use Ctrl+/ there instead.
@@ -115,44 +146,104 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
     setIsApplePlatform(/(Mac|iPhone|iPad|iPod)/i.test(window.navigator.platform));
   }, []);
 
+  React.useEffect(() => {
+    if (!moreOpen) return;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== `Escape`) return;
+      event.preventDefault();
+      event.stopPropagation();
+      closeMoreDrawer();
+    }
+
+    document.addEventListener(`keydown`, handleKeyDown, true);
+    return () => document.removeEventListener(`keydown`, handleKeyDown, true);
+  }, [moreOpen, closeMoreDrawer]);
+
+  React.useEffect(() => {
+    closeMoreDrawer();
+  }, [pathname, closeMoreDrawer]);
+
   const shortcutHint = isApplePlatform ? `⌘K` : `Ctrl+/`;
 
-  const mobileNavItems = [
+  type MobileNavLinkItem = {
+    kind: `link`;
+    id: string;
+    href: string;
+    label: string;
+    Icon: React.ComponentType<{ size: number; [`aria-hidden`]?: boolean | `true` }>;
+    active: boolean;
+  };
+
+  type MobileNavButtonItem = {
+    kind: `button`;
+    id: string;
+    label: string;
+    Icon: React.ComponentType<{ size: number; [`aria-hidden`]?: boolean | `true` }>;
+    active: boolean;
+  };
+
+  const mobileNavItems: Array<MobileNavLinkItem | MobileNavButtonItem> = [
     {
+      kind: `link`,
+      id: `dashboard`,
       href: `/dashboard`,
       label: `Home`,
-      icon: <HomeIcon size={16} aria-hidden="true" />,
+      Icon: HomeIcon,
       active: pathname === `/` || pathname.startsWith(`/dashboard`),
     },
     {
+      kind: `link`,
+      id: `payments`,
       href: `/payments`,
       label: `Payments`,
-      icon: <PaymentCardIcon size={16} aria-hidden="true" />,
+      Icon: PaymentCardIcon,
       active: pathname.startsWith(`/payments`),
     },
     {
+      kind: `link`,
+      id: `contacts`,
       href: `/contacts`,
       label: `Contacts`,
-      icon: <UsersIcon size={16} aria-hidden="true" />,
+      Icon: UsersIcon,
       active: pathname.startsWith(`/contacts`),
     },
     {
+      kind: `link`,
+      id: `contracts`,
       href: `/contracts`,
       label: `Contracts`,
-      icon: <DocumentListIcon size={16} aria-hidden="true" />,
+      Icon: DocumentListIcon,
       active: pathname.startsWith(`/contracts`),
+    },
+    {
+      kind: `button`,
+      id: `more`,
+      label: `More`,
+      Icon: MoreVerticalIcon,
+      active:
+        pathname.startsWith(`/documents`) ||
+        pathname.startsWith(`/payment-methods`) ||
+        pathname.startsWith(`/withdraw-transfer`) ||
+        pathname.startsWith(`/exchange`) ||
+        pathname.startsWith(`/settings`),
     },
   ];
 
-  const isMoreActive =
-    pathname.startsWith(`/documents`) ||
-    pathname.startsWith(`/payment-methods`) ||
-    pathname.startsWith(`/withdraw-transfer`) ||
-    pathname.startsWith(`/exchange`) ||
-    pathname.startsWith(`/settings`);
-
   return (
     <div className={shellContainer} data-testid="consumer-shell">
+      <ThemeInitializer />
+      <a
+        href={`#${mainContentId}`}
+        className={localStyles.skipToMainLink}
+        onClick={() => {
+          window.requestAnimationFrame(() => {
+            document.getElementById(mainContentId)?.focus();
+          });
+        }}
+      >
+        Skip to main content
+      </a>
       {/* Desktop sidebar */}
       <aside className={shellAside} data-testid="consumer-shell-sidebar">
         <div className={shellBrandRow}>
@@ -230,7 +321,7 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Main content */}
-      <main className={shellMain} data-testid="consumer-shell-main">
+      <main id={mainContentId} className={shellMain} data-testid="consumer-shell-main" tabIndex={-1}>
         {/* Mobile top bar */}
         <div className={shellMobileHeader} data-testid="consumer-shell-mobile-header">
           <div className={shellMobileBrand}>
@@ -255,9 +346,12 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
               <SearchIcon size={16} aria-hidden="true" />
             </span>
             <input
-              placeholder="Search anything..."
+              placeholder="Open command palette..."
               className={cn(shellSearchInput, localStyles.searchInputWithIcon)}
               data-testid="consumer-shell-search"
+              role="button"
+              aria-label="Open command palette"
+              aria-haspopup="dialog"
               readOnly
               onClick={() => setPaletteOpen(true)}
               onKeyDown={(e) => {
@@ -269,6 +363,7 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
               {shortcutHint}
             </span>
           </div>
+          <DesktopThemeSwitcher />
           <a
             href="/logout"
             className={localStyles.desktopLogoutLink}
@@ -280,40 +375,50 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
           </a>
         </header>
 
-        {children}
+        {normalizedChildren}
       </main>
 
       {/* Mobile bottom nav */}
       <nav className={shellMobileNav} aria-label="Primary" data-testid="consumer-shell-mobile-nav">
         <div className={localStyles.mobileNavInner}>
-          {mobileNavItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(localStyles.mobileNavItem, item.active && localStyles.mobileNavItemActive)}
-              aria-current={item.active ? `page` : undefined}
-              data-testid={`consumer-shell-mobile-nav-${item.href.replace(/^\//, ``) || `dashboard`}`}
-            >
-              {item.icon}
-              <span>{item.label}</span>
-            </Link>
-          ))}
-          {/* More button */}
-          <button
-            type="button"
-            onClick={() => setMoreOpen((v) => !v)}
-            className={cn(localStyles.mobileNavItem, isMoreActive && localStyles.mobileNavItemActive)}
-            aria-label="More navigation options"
-            data-testid="consumer-shell-mobile-nav-more"
-          >
-            <MoreVerticalIcon size={20} aria-hidden="true" />
-            <span>More</span>
-          </button>
+          {mobileNavItems.map((item) =>
+            item.kind === `link` ? (
+              <Link
+                key={item.id}
+                href={item.href}
+                className={cn(localStyles.mobileNavItem, item.active && localStyles.mobileNavItemActive)}
+                aria-current={item.active ? `page` : undefined}
+                data-testid={`consumer-shell-mobile-nav-${item.href.replace(/^\//, ``) || `dashboard`}`}
+              >
+                <span className={localStyles.mobileNavItemContent}>
+                  <item.Icon size={16} aria-hidden="true" />
+                  <span>{item.label}</span>
+                </span>
+              </Link>
+            ) : (
+              <button
+                key={item.id}
+                type="button"
+                onClick={toggleMoreDrawer}
+                className={cn(localStyles.mobileNavItem, item.active && localStyles.mobileNavItemActive)}
+                aria-label="More navigation options"
+                aria-haspopup="dialog"
+                aria-expanded={moreOpen ? `true` : `false`}
+                aria-controls="mobile-more-drawer"
+                data-testid="consumer-shell-mobile-nav-more"
+              >
+                <span className={localStyles.mobileNavItemContent}>
+                  <item.Icon size={20} aria-hidden="true" />
+                  <span>{item.label}</span>
+                </span>
+              </button>
+            ),
+          )}
         </div>
       </nav>
 
       {/* Mobile "More" drawer */}
-      <MobileMoreDrawer open={moreOpen} onClose={() => setMoreOpen(false)} pathname={pathname} />
+      <MobileMoreDrawer open={moreOpen} onClose={closeMoreDrawer} pathname={pathname} />
 
       {/* Command palette */}
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />

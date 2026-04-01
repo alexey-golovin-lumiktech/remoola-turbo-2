@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { type ReactNode } from 'react';
 
 import styles from './EmptyState.module.css';
@@ -15,6 +16,8 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({ icon, title, description, action }: EmptyStateProps) {
+  const isInternalHref = (href: string) => href.startsWith(`/`) && !href.startsWith(`//`);
+
   return (
     <div className={styles.root}>
       {icon ? <div className={styles.iconWrap}>{icon}</div> : null}
@@ -23,10 +26,17 @@ export function EmptyState({ icon, title, description, action }: EmptyStateProps
       {action ? (
         <div className={styles.actionWrap}>
           {action.href ? (
-            <a href={action.href} className={styles.actionButton}>
-              {action.label}
-              <ArrowRightIcon className={styles.actionIcon} strokeWidth={2} />
-            </a>
+            isInternalHref(action.href) ? (
+              <Link href={action.href} className={styles.actionButton}>
+                {action.label}
+                <ArrowRightIcon className={styles.actionIcon} strokeWidth={2} />
+              </Link>
+            ) : (
+              <a href={action.href} className={styles.actionButton}>
+                {action.label}
+                <ArrowRightIcon className={styles.actionIcon} strokeWidth={2} />
+              </a>
+            )
           ) : (
             <button type="button" onClick={action.onClick} className={styles.actionButton}>
               {action.label}

@@ -146,27 +146,18 @@ export function ContactsListView({ contacts }: ContactsListViewProps) {
         ) : null}
 
         {contacts.length === 0 ? (
-          <div className={styles.emptyState}>
-            <div className={styles.emptyStateIcon}>
-              <UsersIcon className={styles.emptyStateIconSvg} strokeWidth={1.5} />
-            </div>
-            <h3 className={styles.emptyStateTitle}>No contacts yet</h3>
-            <p className={styles.emptyStateMessage}>Add contacts to easily send payments and manage your network.</p>
-            <div className={styles.emptyStateBtnWrap}>
-              <Button
-                variant="primary"
-                size="md"
-                onClick={() => {
-                  setInitialEmail(null);
-                  setCreateModalOpen(true);
-                }}
-                className={styles.addBtn}
-              >
-                <PlusIcon className={styles.addBtnIcon} />
-                <span className={styles.addBtnText}>Add your first contact</span>
-              </Button>
-            </div>
-          </div>
+          <EmptyState
+            icon={<UsersIcon className={`h-8 w-8 text-slate-400 dark:text-slate-500`} strokeWidth={1.5} />}
+            title="No contacts yet"
+            description="Add contacts to easily send payments and manage your network."
+            action={{
+              label: `Add your first contact`,
+              onClick: () => {
+                setInitialEmail(null);
+                setCreateModalOpen(true);
+              },
+            }}
+          />
         ) : filteredContacts.length === 0 ? (
           <EmptyState
             icon={<SearchIcon className={`h-8 w-8 text-slate-400 dark:text-slate-500`} />}

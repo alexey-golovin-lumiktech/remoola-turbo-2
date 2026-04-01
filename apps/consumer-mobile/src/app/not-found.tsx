@@ -8,7 +8,7 @@ export default function NotFound() {
         The page you are looking for does not exist.
       </p>
       <Link
-        href="/"
+        href="/dashboard"
         className="flex min-h-11 min-w-11 items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
       >
         Go home

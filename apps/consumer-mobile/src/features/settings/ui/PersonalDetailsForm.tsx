@@ -180,7 +180,7 @@ export function PersonalDetailsForm({ profile }: PersonalDetailsFormProps) {
             disabled={isPending}
             className={styles.submitBtn}
           >
-            {isPending ? `Saving...` : `Save Changes`}
+            {`Save Changes`}
           </Button>
         </div>
       </form>

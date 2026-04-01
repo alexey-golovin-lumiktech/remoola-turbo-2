@@ -19,6 +19,8 @@ export interface ErrorStateProps {
   message?: string;
   onRetry?: () => void;
   showRefreshButton?: boolean;
+  containerTestId?: string;
+  retryTestId?: string;
 }
 
 export function ErrorState({
@@ -26,6 +28,8 @@ export function ErrorState({
   message,
   onRetry,
   showRefreshButton = true,
+  containerTestId = `consumer-error-state`,
+  retryTestId = `consumer-error-state-retry`,
 }: ErrorStateProps) {
   const handleRefresh = () => {
     if (onRetry) {
@@ -36,7 +40,7 @@ export function ErrorState({
   };
 
   return (
-    <div className={emptyStateContainer} data-testid="consumer-error-state">
+    <div className={emptyStateContainer} data-testid={containerTestId}>
       <div className={localStyles.inner}>
         <div className={emptyStateIcon}>
           <AlertIcon className={emptyStateIconSvg} aria-hidden="true" />
@@ -46,7 +50,7 @@ export function ErrorState({
         {showRefreshButton && (
           <button
             type="button"
-            data-testid="consumer-error-state-retry"
+            data-testid={retryTestId}
             onClick={(e) => (e.preventDefault(), e.stopPropagation(), handleRefresh())}
             className={refreshButtonClass}
           >

@@ -112,7 +112,7 @@ export function PasswordChangeForm({ hasPassword }: { hasPassword: boolean }) {
             disabled={isPending}
             className={styles.submitBtn}
           >
-            {isPending ? `Saving...` : submitLabel}
+            {submitLabel}
           </Button>
         </div>
       </form>

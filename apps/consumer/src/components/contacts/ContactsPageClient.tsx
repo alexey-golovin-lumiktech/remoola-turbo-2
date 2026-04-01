@@ -107,6 +107,7 @@ export function ContactsPageClient() {
 
       <ContactsTable
         items={items}
+        loading={loading}
         onEditAction={(contact) => setEditContact(contact)}
         onDeleteAction={(contact) => setDeleteContact(contact)}
         onDetailsAction={(contact) => router.push(`contacts/${contact.id}/details`)}

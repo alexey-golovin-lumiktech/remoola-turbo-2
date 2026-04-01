@@ -1,8 +1,9 @@
 import { type Metadata } from 'next';
 import { Suspense } from 'react';
 
-import { PaymentMethodsPageClient } from '../../../components';
+import { PaymentMethodsPageClient } from '../../../components/payment-methods/PaymentMethodsPageClient';
 import styles from '../../../components/ui/classNames.module.css';
+import { SectionErrorBoundary } from '../../../components/ui/ErrorBoundary';
 
 const { pageContainer, pageSubtitle, pageTitle } = styles;
 
@@ -16,8 +17,10 @@ export default async function PaymentMethodsPage() {
       <h1 className={pageTitle}>Bank Accounts & Cards</h1>
       <p className={pageSubtitle}>Manage your saved cards and bank accounts.</p>
 
-      <Suspense fallback={<p aria-hidden>Loading payment methods…</p>}>
-        <PaymentMethodsPageClient />
+      <Suspense fallback={<p role="status">Loading payment methods...</p>}>
+        <SectionErrorBoundary>
+          <PaymentMethodsPageClient />
+        </SectionErrorBoundary>
       </Suspense>
     </div>
   );

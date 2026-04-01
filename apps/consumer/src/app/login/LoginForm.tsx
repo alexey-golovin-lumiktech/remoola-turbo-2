@@ -72,8 +72,8 @@ export default function LoginForm() {
   const authNotice = parseAuthNotice(searchParams.get(AUTH_NOTICE_QUERY));
   const authNoticeMessage = authNotice ? getAuthNoticeMessage(authNotice) : undefined;
 
-  const [email, setEmail] = useState(`user@example.com`);
-  const [password, setPassword] = useState(`password`);
+  const [email, setEmail] = useState(``);
+  const [password, setPassword] = useState(``);
   const [err, setErr] = useState<string>();
   const [loading, setLoading] = useState(false);
   const didNavigateRef = useRef(false);
@@ -108,18 +108,6 @@ export default function LoginForm() {
 
       if (!loginRequest.ok) {
         setErr(`Login failed (${loginRequest.status})`);
-        return;
-      }
-
-      const meRequest = await fetch(`/api/me`, {
-        method: `GET`,
-        headers: { 'content-type': `application/json` },
-        credentials: `include`,
-        cache: `no-store`,
-      });
-
-      if (!meRequest.ok) {
-        setErr(`Logged in, but cookies not available. Check CORS/cookie attrs.`);
         return;
       }
 

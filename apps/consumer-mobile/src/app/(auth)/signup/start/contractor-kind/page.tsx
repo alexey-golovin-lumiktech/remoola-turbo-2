@@ -5,7 +5,13 @@ import { ContractorKindView } from '../../../../../features/signup/ContractorKin
 
 export default function SignupContractorKindPage() {
   return (
-    <Suspense fallback={<p className={styles.fallback}>Loading...</p>}>
+    <Suspense
+      fallback={
+        <p className={styles.fallback} role="status" aria-live="polite">
+          Loading...
+        </p>
+      }
+    >
       <ContractorKindView />
     </Suspense>
   );
