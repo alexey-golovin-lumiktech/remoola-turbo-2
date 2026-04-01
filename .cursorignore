@@ -1,0 +1,43 @@
+# Secrets and env
+**/secrets/**
+**/certs/**
+**/*.pem
+**/*.key
+**/*.p12
+**/*.crt
+
+# Infra / local state
+**/.terraform/**
+**/.serverless/**
+**/.vercel/**
+**/.next/cache/**
+**/dist/**
+**/build/**
+**/coverage/**
+**/.turbo/**
+**/tmp/**
+**/logs/**
+**/*.log
+
+# Dependency / generated
+**/node_modules/**
+**/generated/**
+**/prisma/generated/**
+**/*.snap
+
+# Data dumps / exports
+**/*.sql
+**/*dump*
+**/backups/**
+**/exports/**
+**/fixtures/prod/**
+
+# Binary and media noise
+**/*.pdf
+**/*.zip
+**/*.tar
+**/*.gz
+**/*.png
+**/*.jpg
+**/*.jpeg
+**/*.mp4
