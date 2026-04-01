@@ -34,7 +34,9 @@ export class NgrokIngressService implements OnApplicationShutdown {
           force_new_session: false,
         });
 
-        this.logger.log(`Ingress ngrok established at: ${this.listener.url()}`);
+        if (this.listener) {
+          this.logger.log(`Ingress ngrok established at: ${this.listener.url()}`);
+        }
 
         return this.listener;
       } catch (error: unknown) {
