@@ -1,31 +1,17 @@
 :root {
-  /* Light theme (default) */
-  --bg-0: #f6f8ff;
-  --bg-1: #eef2ff;
-  --ink: #0f172a;
-  --muted: #64748b;
-  --line: #e5e7eb;
-  --card: #ffffff;
-  --blue-900: #18357a;
-  --blue-600: #2563eb;
-  --ring: rgba(37, 99, 235, .15);
-  --shadow: 0 8px 30px rgba(17, 24, 39, .05);
+  /* Shared UI aliases follow the app-level semantic tokens. */
+  --bg-0: var(--app-bg, #f6f8ff);
+  --bg-1: var(--app-surface-muted, #eef2ff);
+  --ink: var(--app-text, #0f172a);
+  --muted: var(--app-text-muted, #64748b);
+  --line: var(--app-border, #e5e7eb);
+  --card: var(--app-surface-strong, #ffffff);
+  --blue-900: var(--app-primary-strong, #18357a);
+  --blue-600: var(--app-primary, #2563eb);
+  --ring: var(--app-focus, rgba(37, 99, 235, 0.15));
+  --shadow: var(--app-shadow, 0 8px 30px rgba(17, 24, 39, 0.05));
   --radius-lg: 16px;
   --radius-xl: 22px;
-}
-
-:where(.dark, [data-theme="dark"]) {
-  /* Dark theme */
-  --bg-0: #0f172a;
-  --bg-1: #1e293b;
-  --ink: #f1f5f9;
-  --muted: #94a3b8;
-  --line: #334155;
-  --card: #1e293b;
-  --blue-900: #1e40af;
-  --blue-600: #3b82f6;
-  --ring: rgba(59, 130, 246, .15);
-  --shadow: 0 8px 30px rgba(15, 23, 42, .3);
 }
 
 /* Cards */

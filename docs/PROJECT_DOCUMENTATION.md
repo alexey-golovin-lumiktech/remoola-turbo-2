@@ -206,9 +206,10 @@ Profile (`/consumer/profile`):
 
 Settings (`/consumer/settings`):
 
-- `GET /theme`: get theme settings.
-- `PUT /theme`: update theme settings.
-- `GET /preferred-currency`: get preferred display currency.
+- `GET /`: get combined consumer settings (`theme`, `preferredCurrency`).
+- `PATCH /`: partially update combined consumer settings (`theme` and/or `preferredCurrency`).
+- `GET /theme`: get theme settings only.
+- `PUT /theme`: update theme settings only.
 - `PUT /preferred-currency`: update preferred display currency (allowlist in api-types).
 
 ### Shared Backend Capabilities
@@ -233,7 +234,7 @@ Recent runtime hardening (API pipeline and scheduler safety):
   - `CorrelationIdMiddleware` (normalizes/sets `x-correlation-id`),
   - `deviceIdMiddleware` (consumer-path browser identity resolution),
   - `ConsumerActionInterceptor` (decorator-gated append-only action logging).
-- `StripeReversalScheduler` (`apps/api/src/consumer/modules/payment-methods/stripe-reversal.scheduler.ts`) uses transaction-scoped advisory lock selection and bounded per-run reconciliation to reduce pooled-connection lock hazards while preserving idempotent outcome writes.
+- `StripeReversalScheduler` in both `apps/api/src/consumer/modules/payment-methods/stripe-reversal.scheduler.ts` and `apps/api-v2/src/consumer/modules/payment-methods/stripe-reversal.scheduler.ts` uses transaction-scoped advisory lock selection and bounded per-run reconciliation to reduce pooled-connection lock hazards while preserving idempotent outcome writes.
 - `StripeWebhookService.processStripeEvent` top-level failure path logs sanitized warning telemetry (`stripe_webhook_processing_failed`) without exposing raw webhook payload/error text in logs.
 - Consumer and consumer-mobile BFF mutation routes preserve idempotency/correlation header forwarding and backend `Set-Cookie` passthrough behavior for auth/payment compatibility.
 
