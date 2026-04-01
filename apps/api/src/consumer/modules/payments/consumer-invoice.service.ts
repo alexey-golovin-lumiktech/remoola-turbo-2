@@ -6,10 +6,29 @@ import { errorCodes } from '@remoola/shared-constants';
 import { buildInvoiceHtmlV5 } from './templates';
 import { PrismaService } from '../../../shared/prisma.service';
 import { getBrowser, pfdPageViewport } from '../../../shared-common/pdf-generator-package/constants';
+import { normalizeConsumerFacingTransactionStatus } from '../../status-compat';
 import { FileStorageService } from '../files/file-storage.service';
 
 /** Return existing invoice if same consumer generated one for this payment in last 60s (double-click / retry). */
 const RECENT_INVOICE_WINDOW_MS = 60_000;
+
+export function buildConsumerInvoiceMetadata({
+  paymentId,
+  status,
+  timestamp = Date.now(),
+}: {
+  paymentId: string;
+  status: $Enums.TransactionStatus;
+  timestamp?: number;
+}) {
+  const consumerFacingStatus = normalizeConsumerFacingTransactionStatus(status);
+
+  return {
+    consumerFacingStatus,
+    invoiceNumber: `INV-${consumerFacingStatus}-${paymentId.slice(0, 8)}-${timestamp}`,
+    resourceTagName: `INVOICE-${consumerFacingStatus}`,
+  };
+}
 
 @Injectable()
 export class ConsumerInvoiceService {
@@ -77,13 +96,20 @@ export class ConsumerInvoiceService {
       };
     }
 
-    const invoiceNumber = `INV-${payment.status}-${payment.id.slice(0, 8)}-${Date.now()}`;
+    const invoiceMetadata = buildConsumerInvoiceMetadata({
+      paymentId: payment.id,
+      status: payment.status,
+    });
+    const invoicePayment = {
+      ...payment,
+      status: invoiceMetadata.consumerFacingStatus,
+    };
 
     try {
-      const html = buildInvoiceHtmlV5({ invoiceNumber, payment });
+      const html = buildInvoiceHtmlV5({ invoiceNumber: invoiceMetadata.invoiceNumber, payment: invoicePayment });
       const buffer = await this.renderPdfFromHtml(html);
 
-      const originalName = `${invoiceNumber}.pdf`;
+      const originalName = `${invoiceMetadata.invoiceNumber}.pdf`;
       const mimetype = `application/pdf`;
       const { bucket, key, downloadUrl } = await this.storage.upload(
         { buffer, originalName, mimetype, folder: `invoices` },
@@ -103,8 +129,8 @@ export class ConsumerInvoiceService {
             create: {
               tag: {
                 connectOrCreate: {
-                  where: { name: `INVOICE-${payment.status}` },
-                  create: { name: `INVOICE-${payment.status}` },
+                  where: { name: invoiceMetadata.resourceTagName },
+                  create: { name: invoiceMetadata.resourceTagName },
                 },
               },
             },
@@ -128,7 +154,7 @@ export class ConsumerInvoiceService {
       });
 
       return {
-        invoiceNumber,
+        invoiceNumber: invoiceMetadata.invoiceNumber,
         resourceId: resource.id,
         downloadUrl: resource.downloadUrl,
       };

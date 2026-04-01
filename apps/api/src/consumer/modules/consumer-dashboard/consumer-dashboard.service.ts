@@ -5,6 +5,7 @@ import { $Enums, Prisma } from '@remoola/database-2';
 import { DashboardData, ActivityItem, ComplianceTask, PendingRequest, QuickDoc } from './dtos/dashboard-data.dto';
 import { PrismaService } from '../../../shared/prisma.service';
 import { buildConsumerVerificationState } from '../../../shared-common';
+import { normalizeConsumerFacingTransactionStatus } from '../../status-compat';
 
 @Injectable()
 export class ConsumerDashboardService {
@@ -106,7 +107,7 @@ export class ConsumerDashboardService {
       counterpartyName: paymentRequest.requester?.email ?? paymentRequest.requesterEmail ?? ``,
       amount: Number(paymentRequest.amount),
       currencyCode: paymentRequest.currencyCode,
-      status: paymentRequest.status,
+      status: normalizeConsumerFacingTransactionStatus(paymentRequest.status),
       lastActivityAt: paymentRequest.updatedAt,
     }));
   }

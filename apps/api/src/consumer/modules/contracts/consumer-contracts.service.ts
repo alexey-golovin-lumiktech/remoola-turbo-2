@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { ConsumerContractItem } from './dto';
 import { PrismaService } from '../../../shared/prisma.service';
+import { normalizeConsumerFacingTransactionStatus } from '../../status-compat';
 
 @Injectable()
 export class ConsumerContractsService {
@@ -60,7 +61,7 @@ export class ConsumerContractsService {
         name: contact.name ?? contact.email,
         email: contact.email,
         lastRequestId: lastReq?.id ?? null,
-        lastStatus: lastReq?.status ?? null,
+        lastStatus: lastReq ? normalizeConsumerFacingTransactionStatus(lastReq.status) : null,
         lastActivity: lastReq?.updatedAt ?? null,
         docs: filteredPaymentRequests.reduce((sum, paymentRequest) => sum + paymentRequest.attachments.length, 0),
       };

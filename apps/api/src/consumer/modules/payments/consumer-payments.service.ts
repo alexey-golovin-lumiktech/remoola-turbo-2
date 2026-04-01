@@ -19,6 +19,7 @@ import { BalanceCalculationService, BalanceCalculationMode } from '../../../shar
 import { MailingService } from '../../../shared/mailing.service';
 import { PrismaService } from '../../../shared/prisma.service';
 import { isConsumerProfileCompleteForVerification, isConsumerVerificationEffective } from '../../../shared-common';
+import { buildLegacyConsumerStatusFilter, normalizeConsumerFacingTransactionStatus } from '../../status-compat';
 
 @Injectable()
 export class ConsumerPaymentsService {
@@ -74,6 +75,7 @@ export class ConsumerPaymentsService {
   }) {
     const { consumerId, page, pageSize, status, type, search } = params;
     const consumerEmail = await this.getConsumerEmail(consumerId);
+    const statusFilter = buildLegacyConsumerStatusFilter(status);
 
     const where: Prisma.PaymentRequestModelWhereInput = search
       ? {
@@ -96,7 +98,7 @@ export class ConsumerPaymentsService {
               ],
             },
           ],
-          ...(status && { status: status as $Enums.TransactionStatus }),
+          ...(statusFilter && { status: statusFilter }),
           ...(type && { type: type as $Enums.TransactionType }),
         }
       : {
@@ -107,7 +109,7 @@ export class ConsumerPaymentsService {
               ? [{ payerId: null, payerEmail: { equals: consumerEmail, mode: `insensitive` as const } }]
               : []),
           ],
-          ...(status && { status: status as $Enums.TransactionStatus }),
+          ...(statusFilter && { status: statusFilter }),
           ...(type && { type: type as $Enums.TransactionType }),
         };
 
@@ -145,7 +147,7 @@ export class ConsumerPaymentsService {
       if (latestTx) {
         latestTransaction = {
           id: latestTx.id,
-          status: latestTx.status,
+          status: normalizeConsumerFacingTransactionStatus(latestTx.status),
           createdAt: latestTx.createdAt.toISOString(),
         };
       }
@@ -154,7 +156,7 @@ export class ConsumerPaymentsService {
         id: paymentRequest.id,
         amount: Number(paymentRequest.amount),
         currencyCode: paymentRequest.currencyCode,
-        status: paymentRequest.status,
+        status: normalizeConsumerFacingTransactionStatus(paymentRequest.status),
         type: paymentRequest.type,
         description: paymentRequest.description,
         createdAt: paymentRequest.createdAt.toISOString(),
@@ -215,7 +217,7 @@ export class ConsumerPaymentsService {
       id: paymentRequest.id,
       amount: Number(paymentRequest.amount),
       currencyCode: paymentRequest.currencyCode,
-      status: paymentRequest.status,
+      status: normalizeConsumerFacingTransactionStatus(paymentRequest.status),
       description: paymentRequest.description,
       dueDate: paymentRequest.dueDate,
       sentDate: paymentRequest.sentDate,
@@ -237,7 +239,7 @@ export class ConsumerPaymentsService {
             currencyCode: entry.currencyCode,
             amount,
             direction: amount > 0 ? PAYMENT_DIRECTION.INCOME : PAYMENT_DIRECTION.OUTCOME,
-            status: entry.status,
+            status: normalizeConsumerFacingTransactionStatus(entry.status),
             type: entry.type,
             createdAt: entry.createdAt,
             rail: metadata.rail ?? null,
@@ -583,9 +585,10 @@ export class ConsumerPaymentsService {
     const { direction, status, limit = 20, offset = 0 } = query;
 
     const where: Prisma.LedgerEntryModelWhereInput = { consumerId, deletedAt: null };
+    const statusFilter = buildLegacyConsumerStatusFilter(status);
 
-    if (status) {
-      where.status = status;
+    if (statusFilter) {
+      where.status = statusFilter;
     }
 
     // direction filter via signed amount
@@ -626,7 +629,7 @@ export class ConsumerPaymentsService {
           id: entry.id,
           ledgerId: entry.ledgerId,
           type: entry.type,
-          status: entry.status,
+          status: normalizeConsumerFacingTransactionStatus(entry.status),
           currencyCode: entry.currencyCode,
           amount: amount,
           direction: amount > 0 ? PAYMENT_DIRECTION.INCOME : PAYMENT_DIRECTION.OUTCOME,
