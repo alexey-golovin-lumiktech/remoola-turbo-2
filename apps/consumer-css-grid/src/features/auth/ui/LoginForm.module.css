@@ -1,0 +1,171 @@
+@reference "tailwindcss";
+@reference "../../../app/globals.css";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.root {
+  @apply flex min-h-screen flex-col items-center px-4 py-8 sm:justify-center sm:px-6;
+}
+
+.container {
+  @apply w-full max-w-sm;
+}
+
+.header {
+  @apply mb-8 text-center;
+}
+
+.title {
+  @apply text-2xl font-bold text-slate-900 dark:text-white;
+}
+
+.subtitle {
+  @apply mt-2 text-sm text-slate-600 dark:text-slate-400;
+}
+
+.devBadge {
+  @apply mt-4 inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-300;
+}
+
+.devIcon {
+  @apply h-3.5 w-3.5;
+}
+
+.sessionAlert {
+  @apply mb-6 animate-fadeIn rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/50 dark:bg-amber-900/20;
+}
+
+.sessionInner {
+  @apply flex items-start gap-3;
+}
+
+.sessionIcon {
+  @apply mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400;
+}
+
+.sessionTitle {
+  @apply text-sm font-semibold text-amber-900 dark:text-amber-200;
+}
+
+.sessionText {
+  @apply mt-1 text-sm text-amber-700 dark:text-amber-300;
+}
+
+.noticeAlert {
+  @apply mb-6 animate-fadeIn rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900/50 dark:bg-emerald-900/20;
+}
+
+.noticeText {
+  @apply text-sm font-medium text-emerald-800 dark:text-emerald-200;
+}
+
+.dismissBtn {
+  @apply ml-auto shrink-0 text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-200;
+}
+
+.dismissIcon {
+  @apply h-5 w-5;
+}
+
+.card {
+  @apply rounded-2xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-700 dark:bg-slate-900;
+}
+
+.form {
+  @apply space-y-5;
+}
+
+.label {
+  @apply mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300;
+}
+
+.inputError {
+  @apply border-red-500 ring-2 ring-red-500/20;
+}
+
+.errorText {
+  @apply mt-1.5 text-xs text-red-600 dark:text-red-400;
+}
+
+.passwordRow {
+  @apply mb-2 flex items-center justify-between;
+}
+
+.forgotLink {
+  @apply text-xs font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400;
+}
+
+.passwordWrap {
+  @apply relative;
+}
+
+.toggleBtn {
+  @apply absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300;
+}
+
+.toggleIcon {
+  @apply h-5 w-5;
+}
+
+.errorBanner {
+  @apply animate-fadeIn rounded-lg bg-red-50 p-3 dark:bg-red-900/20;
+}
+
+.errorInner {
+  @apply flex;
+}
+
+.errorIcon {
+  @apply h-5 w-5 shrink-0 text-red-400;
+}
+
+.errorMessage {
+  @apply ml-3 text-sm text-red-700 dark:text-red-300;
+}
+
+.submitBtn {
+  @apply min-h-12 w-full overflow-hidden rounded-xl bg-primary-600 px-4 py-3 text-sm font-semibold text-white shadow-xs transition-all hover:bg-primary-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-primary-600 disabled:hover:shadow-xs;
+}
+
+.submitLoading {
+  @apply flex items-center justify-center gap-2;
+}
+
+.spinnerIcon {
+  @apply h-4 w-4 animate-spin;
+}
+
+.dividerWrap {
+  @apply relative my-5;
+}
+
+.dividerLine {
+  @apply absolute inset-0 flex items-center;
+}
+
+.dividerLineInner {
+  @apply w-full border-t border-slate-200 dark:border-slate-700;
+}
+
+.dividerTextWrap {
+  @apply relative flex justify-center text-xs;
+}
+
+.dividerText {
+  @apply bg-white px-3 text-slate-500 dark:bg-slate-900 dark:text-slate-400;
+}
+
+.googleBtn {
+  @apply min-h-12 w-full overflow-hidden rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-xs transition-all hover:border-slate-300 hover:bg-slate-50 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-slate-200 disabled:hover:bg-white disabled:hover:shadow-xs dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-700;
+}
+
+.googleInner {
+  @apply flex items-center justify-center gap-3;
+}
+
+.footer {
+  @apply mt-6 text-center text-sm text-slate-600 dark:text-slate-400;
+}
+
+.signupLink {
+  @apply font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400;
+}

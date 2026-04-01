@@ -1,0 +1,21 @@
+export const SIGNUP_INPUT_CLASS = `
+  input
+  min-h-12
+  w-full
+  rounded-xl
+  border
+  border-slate-300
+  bg-white
+  px-3
+  py-3
+  text-base
+  text-slate-900
+  shadow-xs
+  transition
+  focus:outline-hidden
+  focus:ring-2
+  focus:ring-primary-500
+  dark:border-slate-600
+  dark:bg-slate-800
+  dark:text-white
+`.trim();

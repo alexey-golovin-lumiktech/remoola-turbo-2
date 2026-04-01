@@ -1,0 +1,31 @@
+@reference "tailwindcss";
+@reference "../../../app/globals.css";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.wrapper {
+  @apply border-t border-slate-100 bg-white/95 px-6 pb-6 pt-4 backdrop-blur-xs dark:border-slate-800 dark:bg-slate-900/95;
+}
+
+.inner {
+  @apply space-y-3;
+}
+
+.nextBtn {
+  @apply min-h-12 w-full rounded-xl bg-primary-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary-700 focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-primary-500 dark:hover:bg-primary-600;
+}
+
+.footer {
+  @apply flex flex-wrap items-center justify-between gap-2;
+}
+
+.prevBtn {
+  @apply inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800;
+}
+
+.footerText {
+  @apply text-sm text-slate-500 dark:text-slate-400;
+}
+
+.loginLink {
+  @apply font-medium text-primary-600 underline dark:text-primary-400;
+}
