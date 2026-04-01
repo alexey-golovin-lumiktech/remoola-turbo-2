@@ -41,12 +41,18 @@
     "dev:consumer-mobile": "yarn workspace @remoola/consumer-mobile run dev",
     "lint:consumer-mobile": "yarn workspace @remoola/consumer-mobile run lint",
     "lint:fix:consumer-mobile": "yarn workspace @remoola/consumer-mobile run lint --fix",
+    "dev:consumer-css-grid": "yarn workspace @remoola/consumer-css-grid run dev",
+    "lint:consumer-css-grid": "yarn workspace @remoola/consumer-css-grid run lint",
+    "lint:fix:consumer-css-grid": "yarn workspace @remoola/consumer-css-grid run lint --fix",
+    "dev:api-v2": "yarn workspace @remoola/api-v2 run dev",
+    "lint:api-v2": "yarn workspace @remoola/api-v2 run lint",
+    "lint:fix:api-v2": "yarn workspace @remoola/api-v2 run lint --fix",
     "turbo:dev:api": "turbo run dev --filter=@remoola/api",
     "turbo:dev:consumer": "turbo run dev --filter=@remoola/consumer",
     "turbo:dev:admin": "turbo run dev --filter=@remoola/admin",
     "turbo:dev:consumer-mobile": "turbo run dev --filter=@remoola/consumer-mobile",
     "deps:sync": "bash scripts/sync-dependency-versions.sh",
-    "lint:fix:apps": "yarn lint:fix:api && yarn lint:fix:consumer && yarn lint:fix:admin && yarn lint:fix:consumer-mobile"
+    "lint:fix:apps": "yarn lint:fix:api && yarn lint:fix:api-v2 && yarn lint:fix:consumer && yarn lint:fix:admin && yarn lint:fix:consumer-mobile && yarn lint:fix:consumer-css-grid"
   },
   "dependencies": {},
   "devDependencies": {

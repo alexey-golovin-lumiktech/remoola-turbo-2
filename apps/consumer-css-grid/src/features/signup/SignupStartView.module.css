@@ -1,0 +1,91 @@
+@reference "tailwindcss";
+@reference "../../app/globals.css";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.root {
+  @apply flex min-h-screen items-start justify-center px-4 py-6 sm:px-6 sm:py-8;
+}
+
+.shell {
+  @apply w-full max-w-2xl lg:max-w-3xl;
+}
+
+.hero {
+  @apply mb-5 max-w-md text-left sm:mx-auto sm:text-center;
+}
+
+.eyebrow {
+  @apply text-xs font-semibold uppercase tracking-[0.2em] text-primary-600 dark:text-primary-400;
+}
+
+.title {
+  @apply mt-2 text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-[2.1rem];
+}
+
+.subtitle {
+  @apply mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400;
+}
+
+.grid {
+  @apply grid;
+}
+
+.panel {
+  @apply rounded-[24px] border border-slate-200 bg-white p-4 shadow-lg shadow-slate-200/40 dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/20 sm:p-5 lg:p-6;
+}
+
+.cards {
+  @apply grid grid-cols-1 gap-2.5 lg:grid-cols-2;
+}
+
+.card {
+  @apply relative rounded-[20px] border p-3.5 text-left transition-all duration-200 sm:p-4;
+}
+
+.cardIdle {
+  @apply border-slate-200 bg-white hover:border-slate-300 hover:shadow-md dark:border-slate-700 dark:bg-slate-950 dark:hover:border-slate-600;
+}
+
+.cardActive {
+  @apply border-primary-500 bg-primary-50 shadow-md ring-2 ring-primary-500/10 dark:border-primary-400 dark:bg-primary-950/40;
+}
+
+.cardIconWrap {
+  @apply mb-2.5 flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200;
+}
+
+.cardTitle {
+  @apply text-base font-semibold text-slate-900 dark:text-white;
+}
+
+.cardText {
+  @apply mt-1 text-sm leading-5 text-slate-600 dark:text-slate-400;
+}
+
+.check {
+  @apply absolute right-4 top-4 text-primary-600 dark:text-primary-300;
+}
+
+.googleCard {
+  @apply rounded-2xl border border-slate-200 bg-slate-50 p-3.5 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300;
+}
+
+.errorCard {
+  @apply rounded-2xl border border-red-200 bg-red-50 p-3.5 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200;
+}
+
+.actions {
+  @apply mt-4 sm:mt-5;
+}
+
+.primaryBtn {
+  @apply min-h-12 w-full rounded-xl bg-primary-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary-700 focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-primary-500 dark:hover:bg-primary-600;
+}
+
+.footer {
+  @apply mt-5 text-center text-sm text-slate-600 dark:text-slate-400 sm:mt-6;
+}
+
+.link {
+  @apply font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400;
+}

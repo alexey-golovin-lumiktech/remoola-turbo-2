@@ -1,0 +1,51 @@
+@reference "tailwindcss";
+@reference "../../app/globals.css";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.root {
+  @apply min-h-screen px-4 py-5 sm:px-6 sm:py-6 lg:px-8;
+}
+
+.container {
+  @apply mx-auto max-w-5xl;
+}
+
+.hero {
+  @apply mb-4 max-w-xl text-left sm:mx-auto sm:text-center lg:mb-6;
+}
+
+.eyebrow {
+  @apply text-xs font-semibold uppercase tracking-[0.2em] text-primary-600 dark:text-primary-400;
+}
+
+.title {
+  @apply mt-2 text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-[2.2rem];
+}
+
+.subtitle {
+  @apply mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400;
+}
+
+.layout {
+  @apply grid gap-4 lg:grid-cols-[minmax(220px,0.6fr)_minmax(0,1.6fr)] lg:gap-5;
+}
+
+.rail {
+  @apply space-y-3;
+}
+
+.stickyRail {
+  @apply lg:sticky lg:top-6;
+}
+
+.main {
+  @apply rounded-[24px] border border-slate-200 bg-white shadow-lg shadow-slate-200/40 dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/20;
+}
+
+.errorCard {
+  @apply rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200;
+}
+
+.retryBtn {
+  @apply mt-3 text-sm font-semibold text-red-700 underline hover:text-red-800 dark:text-red-300 dark:hover:text-red-200;
+}

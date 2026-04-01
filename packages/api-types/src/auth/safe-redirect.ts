@@ -16,7 +16,7 @@ export function sanitizeNextForRedirect(raw: string | null | undefined, fallback
   if (decoded.startsWith(`//`)) return fallback;
   if (/^https?:\/\//i.test(decoded)) return fallback;
   if (/[\r\n]/.test(decoded)) return fallback;
-  if (decoded === `/logout` || decoded.startsWith(`/logout?`)) return fallback;
+  if (decoded === `/logout` || decoded.startsWith(`/logout`)) return fallback;
 
   return decoded;
 }

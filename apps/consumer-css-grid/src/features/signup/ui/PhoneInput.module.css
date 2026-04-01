@@ -1,0 +1,31 @@
+@reference "tailwindcss";
+@reference "../../../app/globals.css";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.wrapper {
+  @apply min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3 py-3 text-base text-slate-900 shadow-xs transition focus-within:border-primary-500 focus-within:outline-hidden focus-within:ring-2 focus-within:ring-primary-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white dark:focus-within:border-primary-400 dark:focus-within:ring-primary-400;
+}
+
+.wrapperError {
+  @apply border-red-500 ring-2 ring-red-500/20 dark:border-red-500;
+}
+
+.wrapper :global(.PhoneInputInput) {
+  @apply min-w-0 border-0 bg-transparent px-2 py-0 text-base text-slate-900 shadow-none outline-hidden ring-0 dark:text-white;
+}
+
+.wrapper :global(.PhoneInputInput::placeholder) {
+  @apply text-slate-400 dark:text-slate-500;
+}
+
+.wrapper :global(.PhoneInputCountry) {
+  @apply mr-2 shrink-0;
+}
+
+.wrapper :global(.PhoneInputCountryIcon) {
+  @apply h-5 w-5 rounded-sm;
+}
+
+.wrapper :global(.PhoneInputCountrySelectArrow) {
+  @apply text-slate-400;
+}

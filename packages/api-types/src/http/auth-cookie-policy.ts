@@ -45,16 +45,20 @@ function shouldUseLocalConsumerCookieFallback(runtime: ConsumerCookieRuntime): b
   return !(runtime.isVercel || runtime.isProduction || runtime.cookieSecure || runtime.isSecureRequest);
 }
 
+function selectConsumerCookieKey(
+  runtime: ConsumerCookieRuntime,
+  secureKey: TCookieKey,
+  localKey: TCookieKey,
+): TCookieKey {
+  return shouldUseLocalConsumerCookieFallback(runtime) ? localKey : secureKey;
+}
+
 export function getConsumerAccessTokenCookieKey(runtime: ConsumerCookieRuntime): TCookieKey {
-  return shouldUseLocalConsumerCookieFallback(runtime)
-    ? COOKIE_KEYS.LOCAL_CONSUMER_ACCESS_TOKEN
-    : COOKIE_KEYS.CONSUMER_ACCESS_TOKEN;
+  return selectConsumerCookieKey(runtime, COOKIE_KEYS.CONSUMER_ACCESS_TOKEN, COOKIE_KEYS.LOCAL_CONSUMER_ACCESS_TOKEN);
 }
 
 export function getConsumerDeviceCookieKey(runtime: ConsumerCookieRuntime): TCookieKey {
-  return shouldUseLocalConsumerCookieFallback(runtime)
-    ? COOKIE_KEYS.LOCAL_CONSUMER_DEVICE_ID
-    : COOKIE_KEYS.CONSUMER_DEVICE_ID;
+  return selectConsumerCookieKey(runtime, COOKIE_KEYS.CONSUMER_DEVICE_ID, COOKIE_KEYS.LOCAL_CONSUMER_DEVICE_ID);
 }
 
 export function getConsumerDeviceCookieKeysForRead(): readonly TCookieKey[] {
@@ -71,9 +75,7 @@ export function getConsumerDeviceCookieOptions(runtime: ConsumerCookieRuntime): 
 }
 
 export function getConsumerRefreshTokenCookieKey(runtime: ConsumerCookieRuntime): TCookieKey {
-  return shouldUseLocalConsumerCookieFallback(runtime)
-    ? COOKIE_KEYS.LOCAL_CONSUMER_REFRESH_TOKEN
-    : COOKIE_KEYS.CONSUMER_REFRESH_TOKEN;
+  return selectConsumerCookieKey(runtime, COOKIE_KEYS.CONSUMER_REFRESH_TOKEN, COOKIE_KEYS.LOCAL_CONSUMER_REFRESH_TOKEN);
 }
 
 export function getConsumerAccessTokenCookieKeysForRead(): readonly TCookieKey[] {
@@ -82,6 +84,50 @@ export function getConsumerAccessTokenCookieKeysForRead(): readonly TCookieKey[]
 
 export function getConsumerRefreshTokenCookieKeysForRead(): readonly TCookieKey[] {
   return [COOKIE_KEYS.CONSUMER_REFRESH_TOKEN, COOKIE_KEYS.LOCAL_CONSUMER_REFRESH_TOKEN];
+}
+
+export function getApiV2ConsumerAccessTokenCookieKey(runtime: ConsumerCookieRuntime): TCookieKey {
+  return selectConsumerCookieKey(
+    runtime,
+    COOKIE_KEYS.API_V2_CONSUMER_ACCESS_TOKEN,
+    COOKIE_KEYS.LOCAL_API_V2_CONSUMER_ACCESS_TOKEN,
+  );
+}
+
+export function getApiV2ConsumerRefreshTokenCookieKey(runtime: ConsumerCookieRuntime): TCookieKey {
+  return selectConsumerCookieKey(
+    runtime,
+    COOKIE_KEYS.API_V2_CONSUMER_REFRESH_TOKEN,
+    COOKIE_KEYS.LOCAL_API_V2_CONSUMER_REFRESH_TOKEN,
+  );
+}
+
+export function getApiV2ConsumerDeviceCookieKey(runtime: ConsumerCookieRuntime): TCookieKey {
+  return selectConsumerCookieKey(
+    runtime,
+    COOKIE_KEYS.API_V2_CONSUMER_DEVICE_ID,
+    COOKIE_KEYS.LOCAL_API_V2_CONSUMER_DEVICE_ID,
+  );
+}
+
+export function getApiV2ConsumerAccessTokenCookieKeysForRead(): readonly TCookieKey[] {
+  return [COOKIE_KEYS.API_V2_CONSUMER_ACCESS_TOKEN, COOKIE_KEYS.LOCAL_API_V2_CONSUMER_ACCESS_TOKEN];
+}
+
+export function getApiV2ConsumerRefreshTokenCookieKeysForRead(): readonly TCookieKey[] {
+  return [COOKIE_KEYS.API_V2_CONSUMER_REFRESH_TOKEN, COOKIE_KEYS.LOCAL_API_V2_CONSUMER_REFRESH_TOKEN];
+}
+
+export function getApiV2ConsumerDeviceCookieKeysForRead(): readonly TCookieKey[] {
+  return [COOKIE_KEYS.API_V2_CONSUMER_DEVICE_ID, COOKIE_KEYS.LOCAL_API_V2_CONSUMER_DEVICE_ID];
+}
+
+export function getApiV2ConsumerCsrfTokenCookieKey(): TCookieKey {
+  return COOKIE_KEYS.API_V2_CSRF_TOKEN;
+}
+
+export function getApiV2GoogleOAuthStateCookieKey(): TCookieKey {
+  return COOKIE_KEYS.API_V2_GOOGLE_OAUTH_STATE;
 }
 
 function resolveConsumerSecure(runtime: ConsumerCookieRuntime): boolean {

@@ -4,14 +4,15 @@
  */
 
 import { type TCurrencyCode } from '../currency';
+import { type TTheme } from './theme';
 
 export interface ConsumerSettingsResponse {
-  theme: string | null;
+  theme: TTheme | null;
   preferredCurrency: TCurrencyCode | null;
 }
 
 /** Partial update; only provided fields are applied. */
 export interface UpdateConsumerSettingsPayload {
-  theme?: string;
+  theme?: TTheme;
   preferredCurrency?: TCurrencyCode;
 }

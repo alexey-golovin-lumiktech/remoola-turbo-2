@@ -10,6 +10,7 @@ import {
   ConsumerUpdateContact,
 } from './dto/consumer-contact.dto';
 import { PrismaService } from '../../../shared/prisma.service';
+import { normalizeConsumerFacingTransactionStatus } from '../../status-compat';
 
 @Injectable()
 export class ConsumerContactsService {
@@ -73,7 +74,7 @@ export class ConsumerContactsService {
       paymentRequests: paymentRequests.map((paymentRequest) => ({
         id: paymentRequest.id,
         amount: paymentRequest.amount.toString(),
-        status: paymentRequest.status,
+        status: normalizeConsumerFacingTransactionStatus(paymentRequest.status),
         createdAt: paymentRequest.createdAt,
       })),
       documents,

@@ -1,0 +1,12 @@
+**/node_modules/**
+**/.next/**
+**/dist/**
+**/build/**
+**/coverage/**
+**/.turbo/**
+**/generated/**
+**/prisma/generated/**
+**/*.snap
+**/*.sql
+**/docs/archive/**
+**/playwright-report/**

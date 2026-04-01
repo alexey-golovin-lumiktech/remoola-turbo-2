@@ -1,0 +1,75 @@
+@reference "tailwindcss";
+@reference "../../../app/globals.css";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.control {
+  @apply mt-1 flex min-h-12 w-full items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-3 text-base text-slate-900 shadow-xs transition dark:border-slate-600 dark:bg-slate-800 dark:text-white;
+}
+
+.controlFocused {
+  @apply border-primary-500 ring-2 ring-primary-500 dark:border-primary-400 dark:ring-primary-400;
+}
+
+.controlError {
+  @apply border-red-500 ring-2 ring-red-500/20 dark:border-red-500;
+}
+
+.valueContainer {
+  @apply flex min-w-0 flex-1 flex-wrap items-center gap-1 p-0;
+}
+
+.placeholder {
+  @apply text-slate-400 dark:text-slate-500;
+}
+
+.input {
+  @apply m-0 p-0 text-base text-slate-900 dark:text-white;
+}
+
+.singleValue {
+  @apply text-base text-slate-900 dark:text-white;
+}
+
+.indicatorsContainer {
+  @apply flex shrink-0 items-center gap-1 pl-2;
+}
+
+.indicatorButton {
+  @apply flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:text-slate-500 dark:hover:bg-slate-700 dark:hover:text-slate-200;
+}
+
+.indicatorButton :global(svg) {
+  @apply h-4 w-4;
+}
+
+.menu {
+  @apply z-20 mt-2 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900;
+}
+
+.menuList {
+  @apply max-h-60 overflow-y-auto p-1.5;
+}
+
+.option {
+  @apply cursor-pointer rounded-lg px-3 py-2.5 text-sm transition;
+}
+
+.optionIdle {
+  @apply text-slate-700 dark:text-slate-200;
+}
+
+.optionFocused {
+  @apply bg-slate-100 dark:bg-slate-800;
+}
+
+.optionSelected {
+  @apply bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-200;
+}
+
+.optionDisabled {
+  @apply cursor-not-allowed opacity-50;
+}
+
+.message {
+  @apply px-3 py-2 text-sm text-slate-500 dark:text-slate-400;
+}

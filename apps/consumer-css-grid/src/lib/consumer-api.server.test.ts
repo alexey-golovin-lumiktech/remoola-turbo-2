@@ -1,0 +1,332 @@
+import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
+type MockFetch = jest.MockedFunction<typeof fetch>;
+
+describe(`consumer-api exchange batch parsing`, () => {
+  const originalFetch = global.fetch;
+  let mockFetch: MockFetch;
+
+  beforeEach(() => {
+    mockFetch = jest.fn() as MockFetch;
+    global.fetch = mockFetch;
+    jest.resetModules();
+    process.env.NEXT_PUBLIC_API_BASE_URL = `https://api.example.com`;
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    delete process.env.NEXT_PUBLIC_API_BASE_URL;
+    jest.clearAllMocks();
+  });
+
+  async function loadSubject() {
+    const mockCookies = jest.fn(async () => ({
+      toString: (): string => `consumer_session=test-cookie`,
+    }));
+
+    jest.doMock(`next/headers`, () => ({
+      cookies: mockCookies,
+    }));
+
+    return import(`./consumer-api.server`);
+  }
+
+  it(`keeps successful rows and drops partial-success error rows from the batch response`, async () => {
+    const { getExchangeRatesBatch } = await loadSubject();
+    mockFetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          data: [
+            { from: `USD`, to: `EUR`, rate: 0.95 },
+            { from: `EUR`, to: `USD`, rate: 1.0576 },
+            { from: `USD`, to: `GBP`, code: `RATE_STALE` },
+          ],
+        }),
+        { status: 200 },
+      ),
+    );
+
+    const result = await getExchangeRatesBatch([
+      { from: `USD`, to: `EUR` },
+      { from: `EUR`, to: `USD` },
+      { from: `USD`, to: `GBP` },
+    ]);
+
+    expect(result).toEqual({
+      items: [
+        { from: `USD`, to: `EUR`, rate: 0.95, status: `available` },
+        { from: `EUR`, to: `USD`, rate: 1.0576, status: `available` },
+        { from: `USD`, to: `GBP`, rate: null, status: `stale` },
+      ],
+      unavailable: false,
+    });
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`https://api.example.com/consumer/exchange/rates/batch`);
+    expect(mockFetch.mock.calls[0]?.[1]).toMatchObject({
+      method: `POST`,
+      headers: expect.objectContaining({
+        Cookie: `consumer_session=test-cookie`,
+        'content-type': `application/json`,
+      }),
+    });
+  });
+
+  it(`returns an empty array without retrying singles when the batch response contains only error rows`, async () => {
+    const { getExchangeRatesBatch } = await loadSubject();
+    mockFetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          data: [
+            { from: `USD`, to: `EUR`, code: `RATE_NOT_AVAILABLE` },
+            { from: `EUR`, to: `USD`, code: `RATE_STALE` },
+          ],
+        }),
+        { status: 200 },
+      ),
+    );
+
+    const result = await getExchangeRatesBatch([
+      { from: `USD`, to: `EUR` },
+      { from: `EUR`, to: `USD` },
+    ]);
+
+    expect(result).toEqual({
+      items: [
+        { from: `USD`, to: `EUR`, rate: null, status: `unavailable` },
+        { from: `EUR`, to: `USD`, rate: null, status: `stale` },
+      ],
+      unavailable: false,
+    });
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it(`marks the whole batch unavailable without retrying singles when the request fails at the transport level`, async () => {
+    const { getExchangeRatesBatch } = await loadSubject();
+    mockFetch.mockResolvedValueOnce(new Response(`batch failed`, { status: 500 }));
+
+    const result = await getExchangeRatesBatch([
+      { from: `USD`, to: `EUR` },
+      { from: `EUR`, to: `USD` },
+    ]);
+
+    expect(result).toEqual({
+      items: [],
+      unavailable: true,
+    });
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it(`keeps requested pairs stable when the batch response omits one row`, async () => {
+    const { getExchangeRatesBatch } = await loadSubject();
+    mockFetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          data: [{ from: `USD`, to: `EUR`, rate: 0.95 }],
+        }),
+        { status: 200 },
+      ),
+    );
+
+    const result = await getExchangeRatesBatch([
+      { from: `USD`, to: `EUR` },
+      { from: `EUR`, to: `USD` },
+    ]);
+
+    expect(result).toEqual({
+      items: [
+        { from: `USD`, to: `EUR`, rate: 0.95, status: `available` },
+        { from: `EUR`, to: `USD`, rate: null, status: `unavailable` },
+      ],
+      unavailable: false,
+    });
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe(`consumer-api exact contact lookup`, () => {
+  const originalFetch = global.fetch;
+  let mockFetch: MockFetch;
+
+  beforeEach(() => {
+    mockFetch = jest.fn() as MockFetch;
+    global.fetch = mockFetch;
+    jest.resetModules();
+    process.env.NEXT_PUBLIC_API_BASE_URL = `https://api.example.com`;
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    delete process.env.NEXT_PUBLIC_API_BASE_URL;
+    jest.clearAllMocks();
+  });
+
+  async function loadSubject() {
+    const mockCookies = jest.fn(async () => ({
+      toString: (): string => `consumer_session=test-cookie`,
+    }));
+
+    jest.doMock(`next/headers`, () => ({
+      cookies: mockCookies,
+    }));
+
+    return import(`./consumer-api.server`);
+  }
+
+  it(`uses the dedicated exact-email lookup route`, async () => {
+    const { findContactByExactEmail } = await loadSubject();
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ id: `contact-1`, email: `known@example.com`, name: `Known Contact` }), {
+        status: 200,
+      }),
+    );
+
+    const result = await findContactByExactEmail(` Known@Example.com `);
+
+    expect(result).toEqual({
+      id: `contact-1`,
+      email: `known@example.com`,
+      name: `Known Contact`,
+    });
+    expect(String(mockFetch.mock.calls[0]?.[0])).toBe(
+      `https://api.example.com/consumer/contacts/lookup/by-email?email=known%40example.com`,
+    );
+  });
+});
+
+describe(`consumer-api balance normalization`, () => {
+  const originalFetch = global.fetch;
+  let mockFetch: MockFetch;
+
+  beforeEach(() => {
+    mockFetch = jest.fn() as MockFetch;
+    global.fetch = mockFetch;
+    jest.resetModules();
+    process.env.NEXT_PUBLIC_API_BASE_URL = `https://api.example.com`;
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    delete process.env.NEXT_PUBLIC_API_BASE_URL;
+    jest.clearAllMocks();
+  });
+
+  async function loadSubject() {
+    const mockCookies = jest.fn(async () => ({
+      toString: (): string => `consumer_session=test-cookie`,
+    }));
+
+    jest.doMock(`next/headers`, () => ({
+      cookies: mockCookies,
+    }));
+
+    return import(`./consumer-api.server`);
+  }
+
+  it(`converts major-unit balances to minor units for the UI`, async () => {
+    const { getBalances } = await loadSubject();
+    mockFetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          USD: 12.34,
+          EUR: 0.01,
+        }),
+        { status: 200 },
+      ),
+    );
+
+    const result = await getBalances();
+
+    expect(result).toEqual({
+      USD: 1234,
+      EUR: 1,
+    });
+  });
+
+  it(`converts available balances from major units to minor units for the UI`, async () => {
+    const { getAvailableBalances } = await loadSubject();
+    mockFetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          USD: 16.77,
+          GBP: 2,
+        }),
+        { status: 200 },
+      ),
+    );
+
+    const result = await getAvailableBalances();
+
+    expect(result).toEqual({
+      USD: 1677,
+      GBP: 200,
+    });
+  });
+});
+
+describe(`consumer-api SSR unauthorized redirects`, () => {
+  const originalFetch = global.fetch;
+  let mockFetch: MockFetch;
+
+  beforeEach(() => {
+    mockFetch = jest.fn() as MockFetch;
+    global.fetch = mockFetch;
+    jest.resetModules();
+    process.env.NEXT_PUBLIC_API_BASE_URL = `https://api.example.com`;
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    delete process.env.NEXT_PUBLIC_API_BASE_URL;
+    jest.clearAllMocks();
+  });
+
+  async function loadSubject() {
+    const redirect = jest.fn((url: string) => {
+      const error = new Error(`NEXT_REDIRECT:${url}`) as Error & { digest?: string };
+      error.digest = `NEXT_REDIRECT;${url}`;
+      throw error;
+    });
+    const mockCookies = jest.fn(async () => ({
+      toString: (): string => `consumer_session=test-cookie`,
+    }));
+
+    jest.doMock(`next/headers`, () => ({
+      cookies: mockCookies,
+    }));
+    jest.doMock(`next/navigation`, () => ({
+      redirect,
+    }));
+
+    const subject = await import(`./consumer-api.server`);
+    return { ...subject, redirect };
+  }
+
+  it(`redirects dashboard SSR readers to login when the backend returns 401`, async () => {
+    const { getDashboardData, redirect } = await loadSubject();
+    mockFetch.mockResolvedValueOnce(new Response(`unauthorized`, { status: 401 }));
+
+    await expect(getDashboardData({ redirectTo: `/dashboard` })).rejects.toThrow(
+      `NEXT_REDIRECT:/login?session_expired=1&next=%2Fdashboard`,
+    );
+    expect(redirect).toHaveBeenCalledWith(`/login?session_expired=1&next=%2Fdashboard`);
+  });
+
+  it(`redirects payment detail SSR readers to login on unauthorized fetches`, async () => {
+    const { getPaymentView, redirect } = await loadSubject();
+    mockFetch.mockResolvedValueOnce(new Response(`unauthorized`, { status: 401 }));
+
+    await expect(getPaymentView(`payment-request-1`, { redirectTo: `/payments/payment-request-1` })).rejects.toThrow(
+      `NEXT_REDIRECT:/login?session_expired=1&next=%2Fpayments%2Fpayment-request-1`,
+    );
+    expect(redirect).toHaveBeenCalledWith(`/login?session_expired=1&next=%2Fpayments%2Fpayment-request-1`);
+  });
+
+  it(`redirects exchange SSR batch reads to login when a cookie-only session expires`, async () => {
+    const { getExchangeRatesBatch, redirect } = await loadSubject();
+    mockFetch.mockResolvedValueOnce(new Response(`unauthorized`, { status: 401 }));
+
+    await expect(getExchangeRatesBatch([{ from: `USD`, to: `EUR` }], { redirectTo: `/exchange` })).rejects.toThrow(
+      `NEXT_REDIRECT:/login?session_expired=1&next=%2Fexchange`,
+    );
+    expect(redirect).toHaveBeenCalledWith(`/login?session_expired=1&next=%2Fexchange`);
+  });
+});

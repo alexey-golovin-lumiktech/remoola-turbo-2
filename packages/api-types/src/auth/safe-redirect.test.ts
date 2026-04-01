@@ -41,9 +41,10 @@ describe(`safe-redirect (api-types)`, () => {
       expect(sanitizeNextForRedirect(encodeURIComponent(`/settings`), fallback)).toBe(`/settings`);
     });
 
-    it(`returns fallback for /logout`, () => {
+    it(`returns fallback for logout routes`, () => {
       expect(sanitizeNextForRedirect(`/logout`, fallback)).toBe(fallback);
       expect(sanitizeNextForRedirect(`/logout?x=1`, fallback)).toBe(fallback);
+      expect(sanitizeNextForRedirect(`/logout-all`, fallback)).toBe(fallback);
     });
 
     it(`returns fallback for newline/cr in path`, () => {

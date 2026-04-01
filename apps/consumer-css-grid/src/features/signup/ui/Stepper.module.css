@@ -1,0 +1,83 @@
+@reference "tailwindcss";
+@reference "../../../app/globals.css";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+.root {
+  @apply rounded-xl border border-slate-200 bg-white/95 p-2.5 shadow-xs backdrop-blur-xs dark:border-slate-700 dark:bg-slate-900/95 sm:p-3;
+}
+
+.header {
+  @apply mb-1.5 flex items-center justify-between gap-3 sm:mb-2;
+}
+
+.stepLabel {
+  @apply text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400;
+}
+
+.percentLabel {
+  @apply text-[11px] font-medium text-slate-500 dark:text-slate-400;
+}
+
+.track {
+  @apply mb-2 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800 sm:mb-3;
+}
+
+.bar {
+  @apply h-full rounded-full bg-primary-600 transition-all dark:bg-primary-500;
+}
+
+.steps {
+  @apply flex flex-wrap gap-2 lg:flex-col;
+}
+
+.step {
+  @apply relative flex min-w-0 flex-1 items-center gap-2 rounded-xl border px-2.5 py-2 lg:flex-none;
+}
+
+.stepActive {
+  @apply border-primary-200 bg-primary-50/80 dark:border-primary-900/60 dark:bg-primary-950/25;
+}
+
+.stepCompleted {
+  @apply border-emerald-200 bg-emerald-50/80 dark:border-emerald-900/60 dark:bg-emerald-950/20;
+}
+
+.stepDefault {
+  @apply border-slate-200 bg-slate-50/70 dark:border-slate-700 dark:bg-slate-800/70;
+}
+
+.circle {
+  @apply flex h-7 w-7 shrink-0 items-center justify-center rounded-full border;
+}
+
+.circleActive {
+  @apply border-primary-500 bg-primary-50 text-primary-700 ring-2 ring-primary-500/15 dark:border-primary-400 dark:bg-primary-950/40 dark:text-primary-200;
+}
+
+.circleCompleted {
+  @apply border-emerald-500 bg-emerald-50 text-emerald-700 dark:border-emerald-400 dark:bg-emerald-950/40 dark:text-emerald-200;
+}
+
+.circleDefault {
+  @apply border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400;
+}
+
+.label {
+  @apply truncate text-[11px] font-medium leading-4 sm:text-xs;
+}
+
+.labelActive {
+  @apply text-slate-900 dark:text-white;
+}
+
+.labelCompleted {
+  @apply text-emerald-700 dark:text-emerald-200;
+}
+
+.labelDefault {
+  @apply text-slate-500 dark:text-slate-400;
+}
+
+.icon {
+  @apply h-3.5 w-3.5;
+}
