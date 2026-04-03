@@ -1763,7 +1763,7 @@
   - **Per-app cookie namespace isolation:** Admin, consumer-web, and consumer-mobile now resolve cookie scope from the owning app/runtime so browser sessions do not read, refresh, or clear another app's auth cookies as a fallback.
   - **Trust-boundary reduction at BFF/auth edges:** Browser-facing auth stays cookie-first end-to-end; BFF auth routes forward only trusted auth headers, preserve multi-cookie `Set-Cookie` propagation, and do not widen browser auth through client-supplied `Authorization` forwarding.
   - **OAuth invariants preserved while hardening callback flow:** Consumer browser auth replaces the old exchange-token callback step with single-use OAuth handoff completion and signup-session establishment, preserving one-time state/handoff consumption while reducing cross-origin cookie fragility.
-  - **Consumer OAuth callback, origin, and app-scope enforcement:** Follow-up work aligns `apps/api`, `apps/api-v2`, `apps/consumer`, `apps/consumer-mobile` on the same consumer OAuth contract:
+  - **Consumer OAuth callback, origin, and app-scope enforcement:** Follow-up work aligns `apps/api`, `apps/consumer`, `apps/consumer-mobile` on the same consumer OAuth contract:
     - callback completion now validates trusted consumer origins and CORS behavior more consistently;
     - frontend Google-start routes now send explicit consumer `appScope` values;
     - backend auth controllers and OAuth state stores resolve, persist, and enforce the owning consumer app scope consistently during OAuth start/completion;
