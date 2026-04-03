@@ -40,7 +40,9 @@ export function ensureAuthenticatedMutationCsrf(req: ExpressRequest, originResol
   }
 
   const consumerScope =
-    originResolver.resolveConsumerRequestAppScope?.(req.headers?.origin, req.headers?.referer) ?? `consumer`;
+    originResolver.resolveConsumerRequestScope?.(req.headers?.origin, req.headers?.referer) ??
+    originResolver.resolveConsumerRequestAppScope?.(req.headers?.origin, req.headers?.referer) ??
+    `consumer`;
   const csrfHeaderValue = readHeaderValue(req.headers[`x-csrf-token`]);
   const csrfCookieValue = (
     path.startsWith(ADMIN_API_PATH_PREFIX)

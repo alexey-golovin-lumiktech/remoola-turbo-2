@@ -10,6 +10,7 @@ import {
 import express from 'express';
 import Stripe from 'stripe';
 
+import { type ConsumerAppScope } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
@@ -18,6 +19,7 @@ import { createOutcomeIdempotent } from './ledger-outcome-idempotent';
 import { envs } from '../../../envs';
 import { BalanceCalculationService } from '../../../shared/balance-calculation.service';
 import { MailingService } from '../../../shared/mailing.service';
+import { extractConsumerAppScopeFromMetadata } from '../../../shared/payment-link-metadata';
 import { PrismaService } from '../../../shared/prisma.service';
 import { getCurrencyFractionDigits, STRIPE_IDENTITY_STATUS } from '../../../shared-common';
 import { ConsumerPaymentsService } from '../payments/consumer-payments.service';
@@ -1051,6 +1053,7 @@ export class StripeWebhookService {
     reason?: string | null;
   }) {
     const { paymentRequestId, payerId, requesterId, requesterEmail, amount, currencyCode, kind, reason } = params;
+    const consumerAppScope = await this.resolvePaymentLinkConsumerAppScope(paymentRequestId);
     const consumerIds = [payerId, ...(requesterId ? [requesterId] : [])];
     const consumers = await this.prisma.consumerModel.findMany({
       where: { id: { in: consumerIds } },
@@ -1072,6 +1075,7 @@ export class StripeWebhookService {
         reason,
         paymentRequestId,
         role: `payer`,
+        consumerAppScope,
       });
       if (requesterEmailResolved) {
         await this.mailingService.sendPaymentRefundEmail({
@@ -1082,6 +1086,7 @@ export class StripeWebhookService {
           reason,
           paymentRequestId,
           role: `requester`,
+          consumerAppScope,
         });
       }
       return;
@@ -1095,6 +1100,7 @@ export class StripeWebhookService {
       reason,
       paymentRequestId,
       role: `payer`,
+      consumerAppScope,
     });
     if (requesterEmailResolved) {
       await this.mailingService.sendPaymentChargebackEmail({
@@ -1105,8 +1111,30 @@ export class StripeWebhookService {
         reason,
         paymentRequestId,
         role: `requester`,
+        consumerAppScope,
       });
     }
+  }
+
+  private async resolvePaymentLinkConsumerAppScope(paymentRequestId: string): Promise<ConsumerAppScope | undefined> {
+    const entries = await this.prisma.ledgerEntryModel.findMany({
+      where: {
+        paymentRequestId,
+        deletedAt: null,
+      },
+      orderBy: [{ createdAt: `desc` }, { id: `desc` }],
+      take: 6,
+      select: { metadata: true },
+    });
+
+    for (const entry of entries) {
+      const consumerAppScope = extractConsumerAppScopeFromMetadata(entry.metadata);
+      if (consumerAppScope) {
+        return consumerAppScope;
+      }
+    }
+
+    return undefined;
   }
 
   private async handleChargeRefunded(charge: Stripe.Charge) {

@@ -3,6 +3,7 @@ import { createHash, randomUUID } from 'crypto';
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import Stripe from 'stripe';
 
+import { type ConsumerAppScope } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
 import { adminErrorCodes, errorCodes } from '@remoola/shared-constants';
 
@@ -11,6 +12,7 @@ import { envs } from '../../../envs';
 import { AdminActionAuditService, ADMIN_ACTION_AUDIT_ACTIONS } from '../../../shared/admin-action-audit.service';
 import { BalanceCalculationService } from '../../../shared/balance-calculation.service';
 import { MailingService } from '../../../shared/mailing.service';
+import { extractConsumerAppScopeFromMetadata } from '../../../shared/payment-link-metadata';
 import { PrismaService } from '../../../shared/prisma.service';
 import { getCurrencyFractionDigits } from '../../../shared-common';
 
@@ -193,6 +195,27 @@ export class AdminPaymentRequestsService {
     return createHash(`sha256`).update(normalized).digest(`hex`);
   }
 
+  private async resolvePaymentLinkConsumerAppScope(paymentRequestId: string): Promise<ConsumerAppScope | undefined> {
+    const entries = await this.prisma.ledgerEntryModel.findMany({
+      where: {
+        paymentRequestId,
+        deletedAt: null,
+      },
+      orderBy: [{ createdAt: `desc` }, { id: `desc` }],
+      take: 6,
+      select: { metadata: true },
+    });
+
+    for (const entry of entries) {
+      const consumerAppScope = extractConsumerAppScopeFromMetadata(entry.metadata);
+      if (consumerAppScope) {
+        return consumerAppScope;
+      }
+    }
+
+    return undefined;
+  }
+
   private async sendReversalEmails(params: {
     paymentRequestId: string;
     payerId: string;
@@ -204,6 +227,7 @@ export class AdminPaymentRequestsService {
     reason?: string | null;
   }) {
     const { paymentRequestId, payerId, requesterId, requesterEmail, amount, currencyCode, kind, reason } = params;
+    const consumerAppScope = await this.resolvePaymentLinkConsumerAppScope(paymentRequestId);
     const consumerIds = [payerId, ...(requesterId ? [requesterId] : [])];
     const consumers = await this.prisma.consumerModel.findMany({
       where: { id: { in: consumerIds } },
@@ -225,6 +249,7 @@ export class AdminPaymentRequestsService {
         reason,
         paymentRequestId,
         role: `payer`,
+        consumerAppScope,
       });
       if (requesterEmailResolved) {
         await this.mailingService.sendPaymentRefundEmail({
@@ -235,6 +260,7 @@ export class AdminPaymentRequestsService {
           reason,
           paymentRequestId,
           role: `requester`,
+          consumerAppScope,
         });
       }
       return;
@@ -248,6 +274,7 @@ export class AdminPaymentRequestsService {
       reason,
       paymentRequestId,
       role: `payer`,
+      consumerAppScope,
     });
     if (requesterEmailResolved) {
       await this.mailingService.sendPaymentChargebackEmail({
@@ -258,6 +285,7 @@ export class AdminPaymentRequestsService {
         reason,
         paymentRequestId,
         role: `requester`,
+        consumerAppScope,
       });
     }
   }

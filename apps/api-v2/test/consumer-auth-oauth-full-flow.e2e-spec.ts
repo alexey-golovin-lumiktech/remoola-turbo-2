@@ -31,6 +31,7 @@ describe(`Consumer auth OAuth full flow (e2e, isolated DB)`, () => {
   const consumerPassword = `OauthConsumer1!`;
   const consumerOrigin = `http://127.0.0.1:3003`;
   let consumerId = ``;
+  let initialConsumerCssGridOrigin: string;
 
   function parseCookieValue(cookies: string[] | undefined, key: string): string | null {
     if (!Array.isArray(cookies)) return null;
@@ -56,6 +57,8 @@ describe(`Consumer auth OAuth full flow (e2e, isolated DB)`, () => {
 
   beforeAll(async () => {
     assertIsolatedTestDatabaseUrl();
+    initialConsumerCssGridOrigin = envs.CONSUMER_CSS_GRID_APP_ORIGIN;
+    envs.CONSUMER_CSS_GRID_APP_ORIGIN = consumerOrigin;
     prisma = new PrismaClient();
     await prisma.$connect();
 
@@ -126,6 +129,7 @@ describe(`Consumer auth OAuth full flow (e2e, isolated DB)`, () => {
   });
 
   afterAll(async () => {
+    envs.CONSUMER_CSS_GRID_APP_ORIGIN = initialConsumerCssGridOrigin;
     await prisma.$disconnect();
     await app.close();
   });

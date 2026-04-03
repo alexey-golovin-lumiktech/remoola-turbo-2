@@ -23,40 +23,30 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
 
   const originResolver: Pick<
     OriginResolverService,
-    | `validateRedirectOrigin`
-    | `resolveConsumerRedirectOrigin`
+    | `validateConsumerRedirectOrigin`
+    | `resolveConsumerOriginByScope`
+    | `resolveDefaultConsumerOrigin`
     | `getAllowedOrigins`
-    | `resolveRequestOrigin`
     | `resolveConsumerAppScope`
-    | `resolveConsumerRequestAppScope`
+    | `resolveConsumerRequestScope`
   > = {
-    validateRedirectOrigin: jest.fn((value?: string) =>
+    validateConsumerRedirectOrigin: jest.fn((value?: string) =>
       typeof value === `string` &&
       (value.includes(`app.example.com`) || value.includes(`mobile.example.com`) || value.includes(`grid.example.com`))
         ? new URL(value).origin
         : undefined,
     ),
-    resolveConsumerRedirectOrigin: jest.fn().mockReturnValue(`https://app.example.com`),
+    resolveConsumerOriginByScope: jest.fn((scope: string) => {
+      if (scope === `consumer-mobile`) return `https://mobile.example.com`;
+      if (scope === `consumer-css-grid`) return `https://grid.example.com`;
+      if (scope === `consumer`) return `https://app.example.com`;
+      return null;
+    }),
+    resolveDefaultConsumerOrigin: jest.fn().mockReturnValue(`https://app.example.com`),
     getAllowedOrigins: jest
       .fn()
       .mockReturnValue(new Set([`https://app.example.com`, `https://mobile.example.com`, `https://grid.example.com`])),
-    resolveRequestOrigin: jest.fn((origin?: string | string[], referer?: string | string[]) => {
-      const values = [origin, referer].flatMap((entry) => (Array.isArray(entry) ? entry : [entry]));
-      for (const entry of values) {
-        if (typeof entry !== `string`) continue;
-        if (entry.includes(`mobile.example.com`)) return `https://mobile.example.com`;
-        if (entry.includes(`grid.example.com`)) return `https://grid.example.com`;
-        if (entry.includes(`app.example.com`)) return `https://app.example.com`;
-      }
-      return undefined;
-    }),
-    resolveConsumerAppScope: jest.fn((origin?: string) => {
-      if (origin?.includes(`mobile.example.com`)) return `consumer-mobile`;
-      if (origin?.includes(`grid.example.com`)) return `consumer-css-grid`;
-      if (origin?.includes(`app.example.com`)) return `consumer`;
-      return undefined;
-    }),
-    resolveConsumerRequestAppScope: jest.fn((origin?: string | string[], referer?: string | string[]) => {
+    resolveConsumerRequestScope: jest.fn((origin?: string | string[], referer?: string | string[]) => {
       const values = [origin, referer].flatMap((entry) => (Array.isArray(entry) ? entry : [entry]));
       for (const entry of values) {
         if (typeof entry !== `string`) continue;
@@ -64,6 +54,12 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
         if (entry.includes(`grid.example.com`)) return `consumer-css-grid`;
         if (entry.includes(`app.example.com`)) return `consumer`;
       }
+      return undefined;
+    }),
+    resolveConsumerAppScope: jest.fn((origin?: string) => {
+      if (origin?.includes(`mobile.example.com`)) return `consumer-mobile`;
+      if (origin?.includes(`grid.example.com`)) return `consumer-css-grid`;
+      if (origin?.includes(`app.example.com`)) return `consumer`;
       return undefined;
     }),
   };
@@ -213,7 +209,10 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
 
     await controller.logout(req, makeRes());
 
-    expect(originResolver.resolveRequestOrigin).toHaveBeenCalledWith(undefined, `https://app.example.com/dashboard`);
+    expect(originResolver.resolveConsumerRequestScope).toHaveBeenCalledWith(
+      undefined,
+      `https://app.example.com/dashboard`,
+    );
     expect(service.revokeSessionByRefreshTokenAndAudit).toHaveBeenCalled();
   });
 
@@ -239,7 +238,27 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
 
     await controller.googleOAuthCallback(req, res, undefined, `state-token`, `access_denied`);
 
+    expect(originResolver.resolveConsumerOriginByScope).toHaveBeenCalledWith(`consumer`);
     expect(res.redirect).toHaveBeenCalledWith(`https://app.example.com/login?oauth=google&error=access_denied`);
+  });
+
+  it(`google callback routes legacy redirect origins through consumer scope`, async () => {
+    const req = makeReq({ cookies: { [GOOGLE_OAUTH_STATE_COOKIE_KEY]: `state-token` } });
+    const res = makeRes();
+    (oauthStateStore.consume as jest.Mock).mockResolvedValueOnce({
+      createdAt: Date.now(),
+      codeVerifier: `verifier`,
+      nonce: `nonce`,
+      nextPath: `/dashboard`,
+      redirectOrigin: `https://mobile.example.com/login`,
+    });
+
+    await controller.googleOAuthCallback(req, res, undefined, `state-token`, `access_denied`);
+
+    expect(originResolver.validateConsumerRedirectOrigin).toHaveBeenCalledWith(`https://mobile.example.com/login`);
+    expect(originResolver.resolveConsumerAppScope).toHaveBeenCalledWith(`https://mobile.example.com`);
+    expect(originResolver.resolveConsumerOriginByScope).toHaveBeenCalledWith(`consumer-mobile`);
+    expect(res.redirect).toHaveBeenCalledWith(`https://mobile.example.com/login?oauth=google&error=access_denied`);
   });
 
   it(`google callback rejects when state cookie does not match state`, async () => {
@@ -442,10 +461,11 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
 
     await controller.googleOAuthStart(req, res, undefined, undefined, undefined, undefined);
 
-    expect(originResolver.resolveRequestOrigin).toHaveBeenCalledWith(
+    expect(originResolver.resolveConsumerRequestScope).toHaveBeenCalledWith(
       undefined,
       `https://app.example.com/settings/profile`,
     );
+    expect(originResolver.resolveConsumerOriginByScope).toHaveBeenCalledWith(`consumer`);
     expect(oauthStateStore.save).toHaveBeenCalledWith(
       `state-token`,
       expect.objectContaining({ redirectOrigin: `https://app.example.com` }),
@@ -468,7 +488,8 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
 
     await controller.googleOAuthStart(req, res, `/dashboard`, undefined, undefined, undefined);
 
-    expect(originResolver.resolveRequestOrigin).toHaveBeenCalledWith(`https://grid.example.com`, undefined);
+    expect(originResolver.resolveConsumerRequestScope).toHaveBeenCalledWith(`https://grid.example.com`, undefined);
+    expect(originResolver.resolveConsumerOriginByScope).toHaveBeenCalledWith(`consumer-css-grid`);
     expect(oauthStateStore.save).toHaveBeenCalledWith(
       `state-token`,
       expect.objectContaining({ redirectOrigin: `https://grid.example.com` }),
@@ -558,7 +579,8 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
 
     const result = await controller.forgotPassword(req, { email: `user@example.com` } as any);
 
-    expect(originResolver.resolveRequestOrigin).toHaveBeenCalledWith(undefined, `https://app.example.com/login`);
+    expect(originResolver.resolveConsumerRequestScope).toHaveBeenCalledWith(undefined, `https://app.example.com/login`);
+    expect(originResolver.resolveConsumerOriginByScope).toHaveBeenCalledWith(`consumer`);
     expect(service.requestPasswordReset).toHaveBeenCalledWith(`user@example.com`, `https://app.example.com`);
     expect(result).toEqual({
       message: `If an account exists, we sent recovery instructions.`,

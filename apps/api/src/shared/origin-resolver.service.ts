@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 
-import { type ConsumerAppScope } from '@remoola/api-types';
+import {
+  CONSUMER_APP_SCOPES,
+  isConsumerAppScope as isKnownConsumerAppScope,
+  type ConsumerAppScope,
+} from '@remoola/api-types';
 
 import { envs } from '../envs';
 
@@ -52,17 +56,25 @@ export class OriginResolverService {
     return allowedPorts.has(origin.port);
   }
 
-  private getConfiguredConsumerOriginScopes(): Map<string, ConsumerAppScope> {
-    const scopes = new Map<string, ConsumerAppScope>();
+  private getConfiguredConsumerOriginsByScope(): Map<ConsumerAppScope, string> {
+    const origins = new Map<ConsumerAppScope, string>();
 
     if (this.isValidOrigin(envs.CONSUMER_APP_ORIGIN, this.defaultOriginPlaceholder)) {
-      scopes.set(this.normalizeOrigin(envs.CONSUMER_APP_ORIGIN), `consumer`);
+      origins.set(`consumer`, this.normalizeOrigin(envs.CONSUMER_APP_ORIGIN));
     }
 
     if (this.isValidOrigin(envs.CONSUMER_MOBILE_APP_ORIGIN, this.mobileOriginPlaceholder)) {
-      scopes.set(this.normalizeOrigin(envs.CONSUMER_MOBILE_APP_ORIGIN), `consumer-mobile`);
+      origins.set(`consumer-mobile`, this.normalizeOrigin(envs.CONSUMER_MOBILE_APP_ORIGIN));
     }
 
+    return origins;
+  }
+
+  private getConfiguredConsumerOriginScopes(): Map<string, ConsumerAppScope> {
+    const scopes = new Map<string, ConsumerAppScope>();
+    for (const [scope, origin] of this.getConfiguredConsumerOriginsByScope()) {
+      scopes.set(origin, scope);
+    }
     return scopes;
   }
 
@@ -135,6 +147,25 @@ export class OriginResolverService {
     return this.validateOrigin(redirectOrigin, `consumer`);
   }
 
+  validateConsumerAppScope(appScope?: string | null): ConsumerAppScope | undefined {
+    return isKnownConsumerAppScope(appScope) ? appScope : undefined;
+  }
+
+  resolveConsumerOriginByScope(appScope: ConsumerAppScope): string | null {
+    return this.getConfiguredConsumerOriginsByScope().get(appScope) ?? null;
+  }
+
+  resolveDefaultConsumerOrigin(): string | null {
+    for (const scope of CONSUMER_APP_SCOPES) {
+      const origin = this.resolveConsumerOriginByScope(scope);
+      if (origin) {
+        return origin;
+      }
+    }
+
+    return null;
+  }
+
   resolveConsumerAppScope(originCandidate?: string): ConsumerAppScope | undefined {
     if (!originCandidate) return undefined;
 
@@ -160,6 +191,37 @@ export class OriginResolverService {
     return this.validateConsumerRedirectOrigin(redirectOrigin);
   }
 
+  private resolveConsumerScopeFromRequestHeaderValue(originCandidate?: string): ConsumerAppScope | undefined {
+    const validatedOrigin = this.validateConsumerRedirectOrigin(originCandidate);
+    if (!validatedOrigin) return undefined;
+    return this.resolveConsumerAppScope(validatedOrigin);
+  }
+
+  resolveConsumerRequestScope(requestOrigin?: HeaderValue, requestReferer?: HeaderValue): ConsumerAppScope | undefined {
+    const originScope = this.resolveConsumerScopeFromRequestHeaderValue(this.getFirstHeaderValue(requestOrigin));
+    if (originScope) {
+      return originScope;
+    }
+
+    return this.resolveConsumerScopeFromRequestHeaderValue(this.getFirstHeaderValue(requestReferer));
+  }
+
+  resolveConsumerOriginFromRequestScope(requestOrigin?: HeaderValue, requestReferer?: HeaderValue): string | null {
+    const requestScope = this.resolveConsumerRequestScope(requestOrigin, requestReferer);
+    if (!requestScope) return null;
+    return this.resolveConsumerOriginByScope(requestScope);
+  }
+
+  requestMatchesConsumerScope(
+    claimedAppScope: string | null | undefined,
+    requestOrigin?: HeaderValue,
+    requestReferer?: HeaderValue,
+  ): boolean {
+    const validatedAppScope = this.validateConsumerAppScope(claimedAppScope);
+    if (!validatedAppScope) return false;
+    return this.resolveConsumerRequestScope(requestOrigin, requestReferer) === validatedAppScope;
+  }
+
   resolveConsumerRequestOrigin(requestOrigin?: HeaderValue, requestReferer?: HeaderValue): string | undefined {
     const originHeader = this.getFirstHeaderValue(requestOrigin);
     if (originHeader) {
@@ -179,23 +241,7 @@ export class OriginResolverService {
     requestOrigin?: HeaderValue,
     requestReferer?: HeaderValue,
   ): ConsumerAppScope | undefined {
-    const originHeader = this.getFirstHeaderValue(requestOrigin);
-    if (originHeader) {
-      const validatedOrigin = this.validateConsumerRedirectOrigin(originHeader);
-      if (validatedOrigin) {
-        return this.resolveConsumerAppScope(validatedOrigin);
-      }
-    }
-
-    const refererHeader = this.getFirstHeaderValue(requestReferer);
-    if (refererHeader) {
-      const validatedOrigin = this.validateConsumerRedirectOrigin(refererHeader);
-      if (validatedOrigin) {
-        return this.resolveConsumerAppScope(validatedOrigin);
-      }
-    }
-
-    return undefined;
+    return this.resolveConsumerRequestScope(requestOrigin, requestReferer);
   }
 
   resolveAdminRequestOrigin(requestOrigin?: HeaderValue, requestReferer?: HeaderValue): string | undefined {
@@ -233,10 +279,18 @@ export class OriginResolverService {
       return validatedRedirectOrigin;
     }
 
-    for (const origin of this.getConfiguredConsumerOriginScopes().keys()) {
-      return origin;
-    }
+    return this.resolveDefaultConsumerOrigin();
+  }
 
-    return null;
+  resolveConsumerOriginFromRequest(
+    redirectOrigin?: string,
+    requestOrigin?: HeaderValue,
+    requestReferer?: HeaderValue,
+  ): string | null {
+    return (
+      this.validateConsumerRedirectOrigin(redirectOrigin) ??
+      this.resolveConsumerRequestOrigin(requestOrigin, requestReferer) ??
+      this.resolveConsumerRedirectOrigin()
+    );
   }
 }

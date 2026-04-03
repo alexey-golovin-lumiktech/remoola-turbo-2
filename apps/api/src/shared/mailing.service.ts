@@ -1,5 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 
+import { type ConsumerAppScope } from '@remoola/api-types';
+
 import { generatePdf } from '../shared-common';
 import { BrevoMailService, type BrevoAttachment, type BrevoSendMailOptions } from './brevo-mail.service';
 import {
@@ -76,6 +78,17 @@ export class MailingService {
     }
   }
 
+  private resolveConsumerPaymentLinkOrigin(consumerAppScope?: ConsumerAppScope): string | null {
+    if (consumerAppScope) {
+      return (
+        this.originResolver.resolveConsumerOriginByScope(consumerAppScope) ??
+        this.originResolver.resolveDefaultConsumerOrigin()
+      );
+    }
+
+    return this.originResolver.resolveDefaultConsumerOrigin();
+  }
+
   async sendLogsEmail(data: unknown = null, email?: string) {
     const html = `<pre><code>${JSON.stringify(data ?? {}, null, 2)}</code></pre>`;
     const subject = `WB Logs`;
@@ -147,8 +160,9 @@ export class MailingService {
     description?: string | null;
     dueDate?: Date | null;
     paymentRequestId: string;
+    consumerAppScope?: ConsumerAppScope;
   }) {
-    const origin = this.originResolver.resolveConsumerRedirectOrigin();
+    const origin = this.resolveConsumerPaymentLinkOrigin(params.consumerAppScope);
 
     if (!origin) {
       this.logger.error(`CONSUMER_APP_ORIGIN is not configured`);
@@ -185,8 +199,9 @@ export class MailingService {
     reason?: string | null;
     paymentRequestId: string;
     role: `payer` | `requester`;
+    consumerAppScope?: ConsumerAppScope;
   }) {
-    const origin = this.originResolver.resolveConsumerRedirectOrigin();
+    const origin = this.resolveConsumerPaymentLinkOrigin(params.consumerAppScope);
 
     if (!origin) {
       this.logger.error(`CONSUMER_APP_ORIGIN is not configured`);
@@ -225,8 +240,9 @@ export class MailingService {
     reason?: string | null;
     paymentRequestId: string;
     role: `payer` | `requester`;
+    consumerAppScope?: ConsumerAppScope;
   }) {
-    const origin = this.originResolver.resolveConsumerRedirectOrigin();
+    const origin = this.resolveConsumerPaymentLinkOrigin(params.consumerAppScope);
 
     if (!origin) {
       this.logger.error(`CONSUMER_APP_ORIGIN is not configured`);

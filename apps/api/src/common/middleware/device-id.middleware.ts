@@ -96,7 +96,9 @@ export function deviceIdMiddleware(req: RequestWithDeviceId, res: Response, next
   }
 
   const consumerScope =
-    originResolver.resolveConsumerRequestAppScope?.(req.headers?.origin, req.headers?.referer) ?? `consumer`;
+    originResolver.resolveConsumerRequestScope?.(req.headers?.origin, req.headers?.referer) ??
+    originResolver.resolveConsumerRequestAppScope?.(req.headers?.origin, req.headers?.referer) ??
+    `consumer`;
   const keys = getApiConsumerDeviceCookieKeysForRead(consumerScope);
   const existing = readFirstValidDeviceId(req, keys);
   const isLocalCookieKey = typeof existing.key === `string` && !existing.key.startsWith(`__Host-`);

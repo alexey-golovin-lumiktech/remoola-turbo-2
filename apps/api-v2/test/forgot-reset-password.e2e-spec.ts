@@ -12,6 +12,7 @@ import { hashPassword, hashTokenToHex } from '@remoola/security-utils';
 import { assertIsolatedTestDatabaseUrl } from './test-db-safety';
 import { AppModule } from '../src/app.module';
 import { ConsumerAuthService } from '../src/consumer/auth/auth.service';
+import { envs } from '../src/envs';
 import { MailingService } from '../src/shared/mailing.service';
 import {
   getApiConsumerAccessTokenCookieKey,
@@ -42,6 +43,7 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
   let googleOnlyConsumerEmail: string;
   let googleOnlyConsumerId: string;
   let mailingService: MailingService;
+  let initialConsumerCssGridOrigin: string;
   const initialPassword = `ForgotReset1!`;
   const updatedPassword = `ForgotReset2!`;
   const settingsInitialPassword = `SettingsReset1!`;
@@ -73,6 +75,8 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
 
   beforeAll(async () => {
     assertIsolatedTestDatabaseUrl();
+    initialConsumerCssGridOrigin = envs.CONSUMER_CSS_GRID_APP_ORIGIN;
+    envs.CONSUMER_CSS_GRID_APP_ORIGIN = origin;
     prisma = new PrismaClient();
     await prisma.$connect();
 
@@ -132,6 +136,7 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
   });
 
   afterAll(async () => {
+    envs.CONSUMER_CSS_GRID_APP_ORIGIN = initialConsumerCssGridOrigin;
     await prisma.$disconnect();
     await app.close();
   });

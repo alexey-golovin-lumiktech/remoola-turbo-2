@@ -43,9 +43,10 @@ export class ConsumerStripeController {
     @Param(`paymentRequestId`) paymentRequestId: string,
     @Req() req: express.Request,
   ) {
-    const frontendBaseUrl =
-      this.originResolver.validateConsumerRedirectOrigin(req.get(`origin`)) ??
-      this.originResolver.resolveConsumerRedirectOrigin();
+    const frontendBaseUrl = this.originResolver.resolveConsumerOriginFromRequestScope(
+      req.headers.origin,
+      req.headers.referer,
+    );
     if (!frontendBaseUrl) throw new BadRequestException(errorCodes.ORIGIN_REQUIRED);
     return this.service.createStripeSession(consumer.id, paymentRequestId, frontendBaseUrl);
   }

@@ -43,8 +43,7 @@ export class ConsumerStripeController {
     @Param(`paymentRequestId`) paymentRequestId: string,
     @Req() req: express.Request,
   ) {
-    const frontendBaseUrl = this.originResolver.resolveConsumerOriginFromRequest(
-      undefined,
+    const frontendBaseUrl = this.originResolver.resolveConsumerOriginFromRequestScope(
       req.headers.origin,
       req.headers.referer,
     );

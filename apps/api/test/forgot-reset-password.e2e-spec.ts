@@ -1,6 +1,6 @@
 /** @jest-environment @remoola/test-db/environment */
 
-import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { type INestApplication } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import cookieParser from 'cookie-parser';
@@ -12,16 +12,20 @@ import { hashPassword, hashTokenToHex } from '@remoola/security-utils';
 import { assertIsolatedTestDatabaseUrl } from './test-db-safety';
 import { AppModule } from '../src/app.module';
 import { ConsumerAuthService } from '../src/consumer/auth/auth.service';
+import { envs } from '../src/envs';
+import { MailingService } from '../src/shared/mailing.service';
 import { getApiConsumerCsrfTokenCookieKeysForRead } from '../src/shared-common';
 
 describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
   let app: INestApplication;
   let prisma: PrismaClient;
   let authService: ConsumerAuthService;
+  let mailingService: MailingService;
   let consumerId: string;
   let consumerEmail: string;
   let settingsConsumerId: string;
   let settingsConsumerEmail: string;
+  let initialConsumerOrigin: string;
   const initialPassword = `ForgotReset1!`;
   const updatedPassword = `ForgotReset2!`;
   const settingsInitialPassword = `SettingsReset1!`;
@@ -52,6 +56,8 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
 
   beforeAll(async () => {
     assertIsolatedTestDatabaseUrl();
+    initialConsumerOrigin = envs.CONSUMER_APP_ORIGIN;
+    envs.CONSUMER_APP_ORIGIN = origin;
     prisma = new PrismaClient();
     await prisma.$connect();
 
@@ -89,9 +95,16 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
     app.use(cookieParser());
     await app.init();
     authService = app.get(ConsumerAuthService);
+    mailingService = app.get(MailingService);
+    jest.spyOn(mailingService, `sendConsumerForgotPasswordEmail`).mockResolvedValue(undefined);
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
   afterAll(async () => {
+    envs.CONSUMER_APP_ORIGIN = initialConsumerOrigin;
     await prisma.$disconnect();
     await app.close();
   });

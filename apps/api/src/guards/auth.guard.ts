@@ -44,10 +44,9 @@ export class AuthGuard implements CanActivate {
     if (isPublic) return true;
 
     const path = request.path ?? request.url?.split(`?`)[0] ?? ``;
-    const consumerScope = this.originResolver.resolveConsumerRequestAppScope?.(
-      request.headers?.origin,
-      request.headers?.referer,
-    );
+    const consumerScope =
+      this.originResolver.resolveConsumerRequestScope?.(request.headers?.origin, request.headers?.referer) ??
+      this.originResolver.resolveConsumerRequestAppScope?.(request.headers?.origin, request.headers?.referer);
     const cookieAccessToken = resolveAccessTokenCookieKeysForPath(path, consumerScope ?? `consumer`)
       .map((key) => request.cookies[key])
       .find((value): value is string => typeof value === `string` && value.length > 0);

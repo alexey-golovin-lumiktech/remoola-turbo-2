@@ -11,7 +11,7 @@ describe(`ConsumerStripeController`, () => {
     payWithSavedPaymentMethod: jest.fn(),
   };
   const originResolver = {
-    resolveConsumerOriginFromRequest: jest.fn(),
+    resolveConsumerOriginFromRequestScope: jest.fn(),
   };
 
   const consumer = { id: `consumer-1` } as unknown as ConsumerModel;
@@ -21,14 +21,14 @@ describe(`ConsumerStripeController`, () => {
   beforeEach(() => {
     service.createStripeSession.mockResolvedValue({ url: `https://checkout.stripe.test/session` });
     service.payWithSavedPaymentMethod.mockResolvedValue({ ok: true });
-    originResolver.resolveConsumerOriginFromRequest.mockReturnValue(`https://consumer.example.com`);
+    originResolver.resolveConsumerOriginFromRequestScope.mockReturnValue(`https://consumer.example.com`);
   });
 
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  it(`uses request-derived origin for checkout session redirects`, async () => {
+  it(`routes checkout session redirects through request scope`, async () => {
     const controller = new ConsumerStripeController(service as never, originResolver as never);
     const req = {
       headers: { referer: `https://consumer.example.com/payments/payment-request-1` },
@@ -36,8 +36,7 @@ describe(`ConsumerStripeController`, () => {
 
     await controller.createStripeSession(consumer, paymentRequestId, req);
 
-    expect(originResolver.resolveConsumerOriginFromRequest).toHaveBeenCalledWith(
-      undefined,
+    expect(originResolver.resolveConsumerOriginFromRequestScope).toHaveBeenCalledWith(
       undefined,
       `https://consumer.example.com/payments/payment-request-1`,
     );

@@ -9,7 +9,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import { PAYMENT_DIRECTION, PAYMENT_METHOD, toCurrencyOrDefault } from '@remoola/api-types';
+import { type ConsumerAppScope, PAYMENT_DIRECTION, PAYMENT_METHOD, toCurrencyOrDefault } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
@@ -17,6 +17,7 @@ import { CreatePaymentRequest, PaymentsHistoryQuery, TransferBody, WithdrawBody 
 import { StartPayment } from './dto/start-payment.dto';
 import { BalanceCalculationService, BalanceCalculationMode } from '../../../shared/balance-calculation.service';
 import { MailingService } from '../../../shared/mailing.service';
+import { appendConsumerAppScopeToMetadata } from '../../../shared/payment-link-metadata';
 import { PrismaService } from '../../../shared/prisma.service';
 import { isConsumerProfileCompleteForVerification, isConsumerVerificationEffective } from '../../../shared-common';
 import { buildLegacyConsumerStatusFilter, normalizeConsumerFacingTransactionStatus } from '../../status-compat';
@@ -261,7 +262,7 @@ export class ConsumerPaymentsService {
     };
   }
 
-  async startPayment(consumerId: string, body: StartPayment) {
+  async startPayment(consumerId: string, body: StartPayment, consumerAppScope?: ConsumerAppScope) {
     await this.ensureProfileComplete(consumerId);
 
     const normalizedEmail = body.email.trim().toLowerCase();
@@ -318,10 +319,13 @@ export class ConsumerPaymentsService {
           createdBy: consumerId,
           updatedBy: consumerId,
           idempotencyKey: `pr:${paymentRequest.id}:payer`,
-          metadata: {
-            rail: paymentRail,
-            ...(recipient ? { counterpartyId: recipient.id } : {}),
-          },
+          metadata: appendConsumerAppScopeToMetadata(
+            {
+              rail: paymentRail,
+              ...(recipient ? { counterpartyId: recipient.id } : {}),
+            },
+            consumerAppScope,
+          ),
         },
       });
 
@@ -338,10 +342,13 @@ export class ConsumerPaymentsService {
             createdBy: consumerId,
             updatedBy: consumerId,
             idempotencyKey: `pr:${paymentRequest.id}:requester`,
-            metadata: {
-              rail: paymentRail,
-              counterpartyId: consumerId,
-            },
+            metadata: appendConsumerAppScopeToMetadata(
+              {
+                rail: paymentRail,
+                counterpartyId: consumerId,
+              },
+              consumerAppScope,
+            ),
           },
         });
       } else {
@@ -422,7 +429,7 @@ export class ConsumerPaymentsService {
     return { paymentRequestId: paymentRequest.id };
   }
 
-  async sendPaymentRequest(consumerId: string, paymentRequestId: string) {
+  async sendPaymentRequest(consumerId: string, paymentRequestId: string, consumerAppScope?: ConsumerAppScope) {
     await this.ensureProfileComplete(consumerId);
 
     const result = await this.prisma.$transaction(async (tx) => {
@@ -496,10 +503,13 @@ export class ConsumerPaymentsService {
             createdBy: consumerId,
             updatedBy: consumerId,
             idempotencyKey: payerKey,
-            metadata: {
-              rail: $Enums.PaymentRail.CARD,
-              counterpartyId: paymentRequest.requesterId,
-            },
+            metadata: appendConsumerAppScopeToMetadata(
+              {
+                rail: $Enums.PaymentRail.CARD,
+                counterpartyId: paymentRequest.requesterId,
+              },
+              consumerAppScope,
+            ),
           },
         });
 
@@ -515,10 +525,13 @@ export class ConsumerPaymentsService {
             createdBy: consumerId,
             updatedBy: consumerId,
             idempotencyKey: requesterKey,
-            metadata: {
-              rail: $Enums.PaymentRail.CARD,
-              counterpartyId: paymentRequest.payerId,
-            },
+            metadata: appendConsumerAppScopeToMetadata(
+              {
+                rail: $Enums.PaymentRail.CARD,
+                counterpartyId: paymentRequest.payerId,
+              },
+              consumerAppScope,
+            ),
           },
         });
       }
@@ -538,7 +551,10 @@ export class ConsumerPaymentsService {
     });
 
     if (result.email.payerEmail) {
-      await this.mailingService.sendPaymentRequestEmail(result.email);
+      await this.mailingService.sendPaymentRequestEmail({
+        ...result.email,
+        consumerAppScope,
+      });
     }
 
     return { paymentRequestId: result.paymentRequestId };

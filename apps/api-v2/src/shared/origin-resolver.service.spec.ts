@@ -22,13 +22,19 @@ jest.mock(`../envs`, () => ({
 
 describe(`OriginResolverService`, () => {
   let service: OriginResolverService;
+  let originalEnvs: typeof envs;
 
   beforeEach(async () => {
+    originalEnvs = { ...envs };
     const module: TestingModule = await Test.createTestingModule({
       providers: [OriginResolverService],
     }).compile();
 
     service = module.get<OriginResolverService>(OriginResolverService);
+  });
+
+  afterEach(() => {
+    Object.assign(envs, originalEnvs);
   });
 
   it(`should be defined`, () => {
@@ -68,17 +74,22 @@ describe(`OriginResolverService`, () => {
     });
   });
 
+  describe(`validateConsumerAppScope`, () => {
+    it(`accepts every supported consumer app scope`, () => {
+      expect(service.validateConsumerAppScope(`consumer`)).toBe(`consumer`);
+      expect(service.validateConsumerAppScope(`consumer-mobile`)).toBe(`consumer-mobile`);
+      expect(service.validateConsumerAppScope(`consumer-css-grid`)).toBe(`consumer-css-grid`);
+    });
+
+    it(`rejects unknown or empty app scopes`, () => {
+      expect(service.validateConsumerAppScope(undefined)).toBeUndefined();
+      expect(service.validateConsumerAppScope(null)).toBeUndefined();
+      expect(service.validateConsumerAppScope(`admin`)).toBeUndefined();
+      expect(service.validateConsumerAppScope(``)).toBeUndefined();
+    });
+  });
+
   describe(`validateRedirectOrigin`, () => {
-    let originalEnvs: typeof envs;
-
-    beforeEach(() => {
-      originalEnvs = { ...envs };
-    });
-
-    afterEach(() => {
-      Object.assign(envs, originalEnvs);
-    });
-
     it(`should return undefined for undefined input`, () => {
       expect(service.validateRedirectOrigin(undefined)).toBeUndefined();
     });
@@ -116,6 +127,34 @@ describe(`OriginResolverService`, () => {
 
       const result = service.validateRedirectOrigin(`http://127.0.0.1:3001/path`);
       expect(result).toBeUndefined();
+    });
+  });
+
+  describe(`resolveConsumerOriginByScope`, () => {
+    it(`returns the configured origin for each consumer scope`, () => {
+      expect(service.resolveConsumerOriginByScope(`consumer`)).toBe(`https://consumer.example.com`);
+      expect(service.resolveConsumerOriginByScope(`consumer-mobile`)).toBe(`https://mobile.example.com`);
+      expect(service.resolveConsumerOriginByScope(`consumer-css-grid`)).toBe(`https://grid.example.com`);
+    });
+
+    it(`returns null when a scope has no configured canonical origin`, () => {
+      (envs as any).CONSUMER_MOBILE_APP_ORIGIN = `CONSUMER_MOBILE_APP_ORIGIN`;
+
+      expect(service.resolveConsumerOriginByScope(`consumer-mobile`)).toBeNull();
+    });
+  });
+
+  describe(`resolveDefaultConsumerOrigin`, () => {
+    it(`returns the first configured consumer origin by scope priority`, () => {
+      expect(service.resolveDefaultConsumerOrigin()).toBe(`https://consumer.example.com`);
+    });
+
+    it(`returns null when no canonical consumer origin is configured`, () => {
+      (envs as any).CONSUMER_APP_ORIGIN = `CONSUMER_APP_ORIGIN`;
+      (envs as any).CONSUMER_MOBILE_APP_ORIGIN = `CONSUMER_MOBILE_APP_ORIGIN`;
+      (envs as any).CONSUMER_CSS_GRID_APP_ORIGIN = `CONSUMER_CSS_GRID_APP_ORIGIN`;
+
+      expect(service.resolveDefaultConsumerOrigin()).toBeNull();
     });
   });
 
@@ -185,6 +224,17 @@ describe(`OriginResolverService`, () => {
   });
 
   describe(`resolveConsumerRequestAppScope`, () => {
+    it(`mirrors the new scope-first request resolver`, () => {
+      const result = service.resolveConsumerRequestAppScope(
+        `https://mobile.example.com/profile`,
+        `https://consumer.example.com/login`,
+      );
+
+      expect(result).toBe(
+        service.resolveConsumerRequestScope(`https://mobile.example.com/profile`, `https://consumer.example.com/login`),
+      );
+    });
+
     it(`prefers the origin header when it maps to a consumer scope`, () => {
       const result = service.resolveConsumerRequestAppScope(
         `https://mobile.example.com/profile`,
@@ -201,6 +251,84 @@ describe(`OriginResolverService`, () => {
       );
 
       expect(result).toBe(`consumer-css-grid`);
+    });
+  });
+
+  describe(`resolveConsumerRequestScope`, () => {
+    it(`prefers the origin header when it maps to a consumer scope`, () => {
+      const result = service.resolveConsumerRequestScope(
+        `https://mobile.example.com/profile`,
+        `https://consumer.example.com/login`,
+      );
+
+      expect(result).toBe(`consumer-mobile`);
+    });
+
+    it(`falls back to referer when origin is invalid`, () => {
+      const result = service.resolveConsumerRequestScope(
+        `https://evil.example.com/`,
+        `https://grid.example.com/exchange`,
+      );
+
+      expect(result).toBe(`consumer-css-grid`);
+    });
+
+    it(`supports multi-value headers and trims entries`, () => {
+      const result = service.resolveConsumerRequestScope([``, ` https://consumer.example.com/settings `], undefined);
+
+      expect(result).toBe(`consumer`);
+    });
+
+    it(`maps allowed localhost origins to a local dev scope in development`, () => {
+      (envs as any).NODE_ENV = `development`;
+
+      const result = service.resolveConsumerRequestScope(`http://127.0.0.1:3002/path`, undefined);
+
+      expect(result).toBe(`consumer-mobile`);
+    });
+  });
+
+  describe(`resolveConsumerOriginFromRequestScope`, () => {
+    it(`routes through request scope to the canonical configured origin`, () => {
+      const result = service.resolveConsumerOriginFromRequestScope(
+        `https://mobile.example.com/profile`,
+        `https://consumer.example.com/login`,
+      );
+
+      expect(result).toBe(`https://mobile.example.com`);
+    });
+
+    it(`falls back to referer-derived scope when origin is invalid`, () => {
+      const result = service.resolveConsumerOriginFromRequestScope(
+        `https://evil.example.com/`,
+        `https://grid.example.com/exchange`,
+      );
+
+      expect(result).toBe(`https://grid.example.com`);
+    });
+
+    it(`returns null when the request does not map to a known consumer scope`, () => {
+      expect(service.resolveConsumerOriginFromRequestScope(`https://evil.example.com/`, undefined)).toBeNull();
+    });
+  });
+
+  describe(`requestMatchesConsumerScope`, () => {
+    it(`returns true when the trusted request scope matches the claimed scope`, () => {
+      expect(
+        service.requestMatchesConsumerScope(`consumer-mobile`, `https://mobile.example.com/profile`, undefined),
+      ).toBe(true);
+    });
+
+    it(`returns false when the trusted request scope mismatches the claimed scope`, () => {
+      expect(service.requestMatchesConsumerScope(`consumer`, `https://mobile.example.com/profile`, undefined)).toBe(
+        false,
+      );
+    });
+
+    it(`returns false when the claimed scope is invalid`, () => {
+      expect(service.requestMatchesConsumerScope(`admin`, `https://consumer.example.com/profile`, undefined)).toBe(
+        false,
+      );
     });
   });
 
@@ -227,16 +355,6 @@ describe(`OriginResolverService`, () => {
   });
 
   describe(`resolveConsumerRedirectOrigin - with placeholder values`, () => {
-    let originalEnvs: typeof envs;
-
-    beforeEach(() => {
-      originalEnvs = { ...envs };
-    });
-
-    afterEach(() => {
-      Object.assign(envs, originalEnvs);
-    });
-
     it(`should fallback to CONSUMER_MOBILE_APP_ORIGIN when CONSUMER_APP_ORIGIN is placeholder`, () => {
       (envs as any).CONSUMER_APP_ORIGIN = `CONSUMER_APP_ORIGIN`;
       (envs as any).CONSUMER_MOBILE_APP_ORIGIN = `https://mobile.example.com`;

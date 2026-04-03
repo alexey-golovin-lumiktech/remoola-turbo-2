@@ -12,7 +12,9 @@ const originResolver = new OriginResolverService();
 
 function cookieExtractorByPath(req: express.Request): string | null {
   const path = req?.path ?? req?.url?.split(`?`)[0] ?? ``;
-  const consumerScope = originResolver.resolveConsumerRequestAppScope?.(req?.headers?.origin, req?.headers?.referer);
+  const consumerScope =
+    originResolver.resolveConsumerRequestScope?.(req?.headers?.origin, req?.headers?.referer) ??
+    originResolver.resolveConsumerRequestAppScope?.(req?.headers?.origin, req?.headers?.referer);
   for (const key of resolveAccessTokenCookieKeysForPath(path, consumerScope ?? `consumer`)) {
     const value = req?.cookies?.[key];
     if (value) return value;

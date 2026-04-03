@@ -7,11 +7,11 @@ import { ConsumerStripeController } from './stripe.controller';
 
 describe(`ConsumerStripeController`, () => {
   const service = {
+    createStripeSession: jest.fn(),
     payWithSavedPaymentMethod: jest.fn(),
   };
   const originResolver = {
-    validateRedirectOrigin: jest.fn(),
-    resolveConsumerRedirectOrigin: jest.fn(),
+    resolveConsumerOriginFromRequestScope: jest.fn(),
   };
 
   const consumer = { id: `consumer-1` } as unknown as ConsumerModel;
@@ -19,9 +19,9 @@ describe(`ConsumerStripeController`, () => {
   const body = { paymentMethodId: `pm_123` };
 
   beforeEach(() => {
+    service.createStripeSession.mockResolvedValue({ url: `https://stripe.example.com/session` });
     service.payWithSavedPaymentMethod.mockResolvedValue({ ok: true });
-    originResolver.validateRedirectOrigin.mockReturnValue(`https://consumer.example.com`);
-    originResolver.resolveConsumerRedirectOrigin.mockReturnValue(`https://consumer.example.com`);
+    originResolver.resolveConsumerOriginFromRequestScope.mockReturnValue(`https://consumer.example.com`);
   });
 
   afterEach(() => {
@@ -35,6 +35,28 @@ describe(`ConsumerStripeController`, () => {
     await controller.payWithSavedPaymentMethod(consumer, paymentRequestId, body as never, req);
 
     expect(service.payWithSavedPaymentMethod).toHaveBeenCalledWith(consumer.id, paymentRequestId, body, `key-123`);
+  });
+
+  it(`builds stripe sessions from trusted request scope resolution`, async () => {
+    const controller = new ConsumerStripeController(service as never, originResolver as never);
+    const req = {
+      headers: {
+        origin: `https://consumer.example.com`,
+        referer: `https://consumer.example.com/payments/123`,
+      },
+    } as never;
+
+    await controller.createStripeSession(consumer, paymentRequestId, req);
+
+    expect(originResolver.resolveConsumerOriginFromRequestScope).toHaveBeenCalledWith(
+      `https://consumer.example.com`,
+      `https://consumer.example.com/payments/123`,
+    );
+    expect(service.createStripeSession).toHaveBeenCalledWith(
+      consumer.id,
+      paymentRequestId,
+      `https://consumer.example.com`,
+    );
   });
 
   it(`rejects when idempotency-key header is missing`, async () => {

@@ -11,6 +11,7 @@ import { PaymentsHistoryQuery, TransferBody, WithdrawBody } from './dto';
 import { StartPayment } from './dto/start-payment.dto';
 import { JwtAuthGuard } from '../../../auth/jwt.guard';
 import { Identity, TrackConsumerAction } from '../../../common';
+import { OriginResolverService } from '../../../shared/origin-resolver.service';
 
 @ApiTags(`Consumer: Payments`)
 @Controller(`consumer/payments`)
@@ -19,7 +20,12 @@ export class ConsumerPaymentsController {
   constructor(
     private readonly service: ConsumerPaymentsService,
     private readonly invoiceService: ConsumerInvoiceService,
+    private readonly originResolver: OriginResolverService,
   ) {}
+
+  private resolveConsumerAppScope(req: express.Request) {
+    return this.originResolver.resolveConsumerRequestScope(req.headers.origin, req.headers.referer);
+  }
 
   @Get()
   async list(
@@ -42,8 +48,8 @@ export class ConsumerPaymentsController {
 
   @TrackConsumerAction({ action: `consumer.payments.start`, resource: `payments` })
   @Post(`start`)
-  startPayment(@Identity() consumer: ConsumerModel, @Body() body: StartPayment) {
-    return this.service.startPayment(consumer.id, body);
+  startPayment(@Identity() consumer: ConsumerModel, @Body() body: StartPayment, @Req() req: express.Request) {
+    return this.service.startPayment(consumer.id, body, this.resolveConsumerAppScope(req));
   }
 
   @Get(`balance`)

@@ -7,7 +7,7 @@ describe(`ConsumerPaymentRequestsController`, () => {
   };
 
   const originResolver = {
-    resolveConsumerOriginFromRequestScope: jest.fn(),
+    resolveConsumerRequestScope: jest.fn(),
   };
 
   const consumer = { id: `consumer-1` } as any;
@@ -15,24 +15,24 @@ describe(`ConsumerPaymentRequestsController`, () => {
   beforeEach(() => {
     jest.clearAllMocks();
     service.sendPaymentRequest.mockResolvedValue({ paymentRequestId: `pr-1` });
-    originResolver.resolveConsumerOriginFromRequestScope.mockReturnValue(`https://consumer.example.com`);
+    originResolver.resolveConsumerRequestScope.mockReturnValue(`consumer-mobile`);
   });
 
-  it(`passes scope-routed canonical origin when sending a payment request`, async () => {
+  it(`passes scope-routed consumer app scope when sending a payment request`, async () => {
     const controller = new ConsumerPaymentRequestsController(service as any, originResolver as any);
     const req = {
       headers: {
-        referer: `https://consumer.example.com/payments/pr-1`,
+        referer: `https://mobile.example.com/payments/pr-1`,
       },
     } as any;
 
     const result = await controller.send(consumer, `pr-1`, req);
 
-    expect(originResolver.resolveConsumerOriginFromRequestScope).toHaveBeenCalledWith(
+    expect(originResolver.resolveConsumerRequestScope).toHaveBeenCalledWith(
       undefined,
-      `https://consumer.example.com/payments/pr-1`,
+      `https://mobile.example.com/payments/pr-1`,
     );
-    expect(service.sendPaymentRequest).toHaveBeenCalledWith(`consumer-1`, `pr-1`, `https://consumer.example.com`);
+    expect(service.sendPaymentRequest).toHaveBeenCalledWith(`consumer-1`, `pr-1`, `consumer-mobile`);
     expect(result).toEqual({ paymentRequestId: `pr-1` });
   });
 });

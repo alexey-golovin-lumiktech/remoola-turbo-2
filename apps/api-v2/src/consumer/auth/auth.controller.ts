@@ -70,12 +70,43 @@ export class ConsumerAuthController {
     private readonly originResolver: OriginResolverService,
   ) {}
 
+  private resolveTrustedConsumerRequestScope(req: express.Request): ConsumerAppScope | undefined {
+    return this.originResolver.resolveConsumerRequestScope(req.headers?.origin, req.headers?.referer);
+  }
+
+  private resolveConsumerScopeFromLegacyOrigin(redirectOrigin?: string | null): ConsumerAppScope | undefined {
+    const validatedRedirectOrigin = this.originResolver.validateConsumerRedirectOrigin(redirectOrigin ?? undefined);
+    if (!validatedRedirectOrigin) return undefined;
+    return this.originResolver.resolveConsumerAppScope(validatedRedirectOrigin);
+  }
+
   private resolveConsumerAppScope(req: express.Request, redirectOrigin?: string): ConsumerAppScope {
     return (
-      this.originResolver.resolveConsumerRequestAppScope?.(req.headers?.origin, req.headers?.referer) ??
-      this.originResolver.resolveConsumerAppScope?.(this.validateRedirectOrigin(redirectOrigin)) ??
+      this.resolveTrustedConsumerRequestScope(req) ??
+      this.resolveConsumerScopeFromLegacyOrigin(redirectOrigin) ??
       DEFAULT_API_V2_CONSUMER_SCOPE
     );
+  }
+
+  private resolveDefaultConsumerOrigin(): string {
+    const origin = this.originResolver.resolveDefaultConsumerOrigin();
+    if (!origin) {
+      throw new InternalServerErrorException(`CONSUMER_APP_ORIGIN is not configured`);
+    }
+    return origin;
+  }
+
+  private resolveConfiguredConsumerOrigin(scope: ConsumerAppScope): string {
+    return this.originResolver.resolveConsumerOriginByScope(scope) ?? this.resolveDefaultConsumerOrigin();
+  }
+
+  private resolveConsumerOriginForRedirect(redirectOrigin?: string | null): string {
+    const redirectScope = this.resolveConsumerScopeFromLegacyOrigin(redirectOrigin);
+    if (redirectScope) {
+      return this.resolveConfiguredConsumerOrigin(redirectScope);
+    }
+
+    return this.resolveDefaultConsumerOrigin();
   }
 
   private getRefreshTokenFromRequest(req: express.Request): string | undefined {
@@ -168,13 +199,6 @@ export class ConsumerAuthController {
     return `/dashboard`;
   }
 
-  private validateRedirectOrigin(redirectOrigin?: string): string | undefined {
-    return (
-      this.originResolver.validateConsumerRedirectOrigin?.(redirectOrigin) ??
-      this.originResolver.validateRedirectOrigin?.(redirectOrigin)
-    );
-  }
-
   private getSignupEntryPathFromNext(next?: string) {
     const normalized = this.normalizeNextPath(next);
     const pathname = normalized.startsWith(`/`) ? normalized.split(/[?#]/, 1)[0] : `/dashboard`;
@@ -186,15 +210,8 @@ export class ConsumerAuthController {
     return normalized === `/signup` || normalized.startsWith(`/signup?`) ? `/dashboard` : normalized;
   }
 
-  private resolveRequestOrigin(req: express.Request): string | undefined {
-    return (
-      this.originResolver.resolveConsumerRequestOrigin?.(req.headers?.origin, req.headers?.referer) ??
-      this.originResolver.resolveRequestOrigin?.(req.headers?.origin, req.headers?.referer)
-    );
-  }
-
-  private ensureTrustedRequestOrigin(req: express.Request) {
-    if (!this.resolveRequestOrigin(req)) {
+  private ensureTrustedConsumerRequestScope(req: express.Request) {
+    if (!this.resolveTrustedConsumerRequestScope(req)) {
       throw new UnauthorizedException(`Invalid request origin`);
     }
   }
@@ -213,7 +230,7 @@ export class ConsumerAuthController {
 
   private ensureCsrf(req: express.Request) {
     const consumerScope = this.resolveConsumerAppScope(req);
-    this.ensureTrustedRequestOrigin(req);
+    this.ensureTrustedConsumerRequestScope(req);
     const csrfHeader = req.headers[`x-csrf-token`];
     const csrfCookie = getApiConsumerCsrfTokenCookieKeysForRead(consumerScope)
       .map((key) => req.cookies?.[key])
@@ -226,12 +243,7 @@ export class ConsumerAuthController {
   }
 
   private buildConsumerRedirect(nextPath: string, extraParams?: Record<string, string>, redirectOrigin?: string) {
-    const origin = this.originResolver.resolveConsumerRedirectOrigin(redirectOrigin);
-
-    if (!origin) {
-      throw new InternalServerErrorException(`CONSUMER_APP_ORIGIN is not configured`);
-    }
-
+    const origin = this.resolveConsumerOriginForRedirect(redirectOrigin);
     const url = new URL(`/auth/callback`, origin);
     url.searchParams.set(`next`, nextPath);
     if (extraParams) {
@@ -243,12 +255,7 @@ export class ConsumerAuthController {
   }
 
   private buildConsumerLoginRedirect(errorCode: string, redirectOrigin?: string) {
-    const origin = this.originResolver.resolveConsumerRedirectOrigin(redirectOrigin);
-
-    if (!origin) {
-      throw new InternalServerErrorException(`CONSUMER_APP_ORIGIN is not configured`);
-    }
-
+    const origin = this.resolveConsumerOriginForRedirect(redirectOrigin);
     const url = new URL(`/login`, origin);
     url.searchParams.set(`oauth`, `google`);
     url.searchParams.set(`error`, errorCode);
@@ -262,12 +269,7 @@ export class ConsumerAuthController {
     contractorKind?: string,
     redirectOrigin?: string,
   ) {
-    const origin = this.originResolver.resolveConsumerRedirectOrigin(redirectOrigin);
-
-    if (!origin) {
-      throw new InternalServerErrorException(`CONSUMER_APP_ORIGIN is not configured`);
-    }
-
+    const origin = this.resolveConsumerOriginForRedirect(redirectOrigin);
     const signupRedirectPath = signupEntryPath === `/signup` ? `/signup` : `/signup/start`;
     const url = new URL(signupRedirectPath, origin);
     url.searchParams.set(`googleSignupHandoff`, googleSignupHandoff);
@@ -285,7 +287,7 @@ export class ConsumerAuthController {
   @ApiOkResponse({ type: CONSUMER.LoginResponse })
   @TransformResponse(CONSUMER.LoginResponse)
   async login(@Req() req: express.Request, @Res({ passthrough: true }) res, @Body() body: LoginBody) {
-    this.ensureTrustedRequestOrigin(req);
+    this.ensureTrustedConsumerRequestScope(req);
     const ipAddress = req.ip ?? req.headers[`x-forwarded-for`] ?? null;
     const userAgent = req.headers[`user-agent`] ?? null;
     const data = await this.service.login(body, {
@@ -317,7 +319,8 @@ export class ConsumerAuthController {
         ? contractorKind
         : undefined;
 
-    const redirectOrigin = this.resolveRequestOrigin(req);
+    const consumerScope = this.resolveConsumerAppScope(req);
+    const redirectOrigin = this.resolveConfiguredConsumerOrigin(consumerScope);
 
     const nextPath = this.normalizeNextPath(next);
     const signupEntryPath = signupPath === `/signup` ? `/signup` : this.getSignupEntryPathFromNext(next);
@@ -342,11 +345,7 @@ export class ConsumerAuthController {
       this.oauthStateTtlMs,
     );
 
-    response.cookie(
-      getApiOAuthStateCookieKey(req, this.resolveConsumerAppScope(req, redirectOrigin)),
-      stateToken,
-      this.getOAuthCookieOptions(req),
-    );
+    response.cookie(getApiOAuthStateCookieKey(req, consumerScope), stateToken, this.getOAuthCookieOptions(req));
     const authUrl = this.googleOAuthService.buildAuthorizationUrl(stateToken, codeChallenge, nonce);
     return response.redirect(authUrl);
   }
@@ -537,7 +536,7 @@ export class ConsumerAuthController {
     @Res({ passthrough: true }) res,
     @Body(`handoffToken`) handoffToken: string,
   ) {
-    this.ensureTrustedRequestOrigin(req);
+    this.ensureTrustedConsumerRequestScope(req);
     if (!handoffToken) throw new BadRequestException(errorCodes.MISSING_SIGNUP_TOKEN);
     const payload = await this.oauthStateStore.consumeSignupHandoff(handoffToken);
     if (!payload) throw new BadRequestException(errorCodes.INVALID_GOOGLE_SIGNUP_TOKEN);
@@ -571,7 +570,7 @@ export class ConsumerAuthController {
     @Res({ passthrough: true }) res,
     @Body(`handoffToken`) handoffToken: string,
   ) {
-    this.ensureTrustedRequestOrigin(req);
+    this.ensureTrustedConsumerRequestScope(req);
     if (!handoffToken) throw new BadRequestException(errorCodes.MISSING_EXCHANGE_TOKEN);
     const decoded = await this.oauthStateStore.consumeLoginHandoff(handoffToken);
     if (!decoded) throw new UnauthorizedException(errorCodes.INVALID_OAUTH_EXCHANGE_TOKEN);
@@ -661,7 +660,7 @@ export class ConsumerAuthController {
   @ApiCreatedResponse({ type: CONSUMER.SignupResponse })
   @TransformResponse(CONSUMER.SignupResponse)
   async signup(@Req() req: express.Request, @Res({ passthrough: true }) res, @Body() body: ConsumerSignup) {
-    this.ensureTrustedRequestOrigin(req);
+    this.ensureTrustedConsumerRequestScope(req);
     const payload = removeNil(body);
     const googleSignupPayload = await this.getGoogleSignupPayloadFromSession(req);
     const consumer = await this.service.signup(payload, googleSignupPayload);
@@ -682,7 +681,8 @@ export class ConsumerAuthController {
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Get(`signup/:consumerId/complete-profile-creation`)
   completeProfileCreation(@Req() req: express.Request, @Param(`consumerId`) consumerId: string) {
-    const referer = this.resolveRequestOrigin(req);
+    const consumerScope = this.resolveTrustedConsumerRequestScope(req);
+    const referer = consumerScope ? this.resolveConfiguredConsumerOrigin(consumerScope) : undefined;
     if (!referer) throw new InternalServerErrorException(`Request origin required`);
     void this.service.completeProfileCreationAndSendVerificationEmail(consumerId, referer).catch((error) =>
       this.logger.warn({
@@ -712,7 +712,8 @@ export class ConsumerAuthController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   async forgotPassword(@Req() req: express.Request, @Body() body: CONSUMER.ForgotPasswordBody) {
-    const requestOrigin = this.resolveRequestOrigin(req);
+    const consumerScope = this.resolveTrustedConsumerRequestScope(req);
+    const requestOrigin = consumerScope ? this.resolveConfiguredConsumerOrigin(consumerScope) : undefined;
     await this.service.requestPasswordReset(body.email, requestOrigin);
     return {
       message: `If an account exists, we sent recovery instructions.`,
