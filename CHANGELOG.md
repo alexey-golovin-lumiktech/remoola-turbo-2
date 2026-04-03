@@ -1763,22 +1763,34 @@
   - **Per-app cookie namespace isolation:** Admin, consumer-web, and consumer-mobile now resolve cookie scope from the owning app/runtime so browser sessions do not read, refresh, or clear another app's auth cookies as a fallback.
   - **Trust-boundary reduction at BFF/auth edges:** Browser-facing auth stays cookie-first end-to-end; BFF auth routes forward only trusted auth headers, preserve multi-cookie `Set-Cookie` propagation, and do not widen browser auth through client-supplied `Authorization` forwarding.
   - **OAuth invariants preserved while hardening callback flow:** Consumer browser auth replaces the old exchange-token callback step with single-use OAuth handoff completion and signup-session establishment, preserving one-time state/handoff consumption while reducing cross-origin cookie fragility.
+  - **Consumer OAuth callback, origin, and app-scope enforcement:** Follow-up work aligns `apps/api`, `apps/api-v2`, `apps/consumer`, `apps/consumer-mobile` on the same consumer OAuth contract:
+    - callback completion now validates trusted consumer origins and CORS behavior more consistently;
+    - frontend Google-start routes now send explicit consumer `appScope` values;
+    - backend auth controllers and OAuth state stores resolve, persist, and enforce the owning consumer app scope consistently during OAuth start/completion;
+    - shared origin resolution now preserves the correct consumer app boundary across browser auth, refresh, payment, and mail-linked flows.
+  - **Cross-app auth/payment boundary preservation:** Consumer app scope is now preserved through payment-request, Stripe, forgot-password, and mail-driven links so auth/session continuation does not drift between consumer surfaces.
 
   ### ♻️ Refactor
   - **Middleware + route alignment across admin and consumer frontends:** Next.js middleware now reads scoped cookie keys, probes or refreshes cookie sessions before redirecting, clears stale auth cookies on session-expired paths, and avoids auth-page redirect loops caused by expired or malformed browser cookies.
   - **Frontend auth UX alignment:** Auth callback clients now use bounded session polling after OAuth completion; consumer and consumer-mobile signup flows can resume from app-owned Google signup session state; logout-all and auth-notice flows now route users through explicit re-auth states after password changes or full-session revocation.
   - **Shared auth contracts in `@remoola/api-types`:** Expanded cookie-policy helpers, auth notices, OAuth helpers, and scoped cookie-key resolution so API and frontend apps consume the same browser-auth contract from a single source of truth.
+  - **OAuth redirect-origin naming alignment:** Consumer OAuth redirect-origin naming is now normalized across auth controllers, services, state stores, mailers, and shared origin resolvers in both API stacks without changing the intended browser-auth flow.
+
+  ### 🧪 Testing
+  - Expanded unit, controller, and end-to-end coverage for consumer OAuth full-flow callback validation, origin-resolution and `appScope` propagation, consumer-web and consumer-mobile OAuth start routes, `oauth/complete` proxy behavior, and related consumer-web `/api/me` plus consumer-mobile theme-route auth expectations.
 
   ### 🛠 DevEx
   - **Swagger cookie-auth workflow:** `apps/api` admin and consumer docs are now cookie-first for same-origin testing, including automatic CSRF header mirroring for protected mutation routes from the docs UI.
   - **Lint/tooling alignment:** App lint scripts now run ESLint directly, shared ESLint config correctly includes `eslint.config.mjs`, and Turbo env passthrough includes the additional consumer frontend origin needed by the hardened auth/origin flow.
+  - **Shared auth test/helpers alignment:** Test fixtures and supporting helpers around origin resolution, OAuth state handling, and payment-link metadata now exercise the consumer app-scope contract consistently across both API implementations and frontend BFF routes.
 
   ### 📄 Documentation
   - Updated auth/runbook documentation to match the rollout:
     - `docs/CONSUMER_AUTH_COOKIE_POLICY.md` for per-app cookie namespaces and cookie-first BFF rules;
     - `docs/SWAGGER_COOKIE_AUTH_USAGE.md` for same-origin cookie-auth testing;
     - `docs/API_V2_PRODUCTION_RELEASE_GATE.md`, `docs/FEATURES_CURRENT.md`, `docs/PROJECT_DOCUMENTATION.md`, and `docs/FINANCIAL_SAFETY_AND_DB_COMPLIANCE.md` for distinct JWT secrets, origin + CSRF requirements, and browser-auth boundary expectations.
-  - No database migration introduced in this change; rollout remains config- and contract-sensitive because cookie names, OAuth callback parameters, trusted origins, and JWT secret separation must be deployed consistently across the touched admin and consumer apps.
+  - Follow-up docs refresh `docs/FEATURES_CURRENT.md`, `docs/PROJECT_DOCUMENTATION.md`, and `docs/PROJECT_SUMMARY.md` to reflect `oauth/complete` proxy behavior, the consumer `appScope` contract, and the final April 3 OAuth/auth alignment.
+  - No database migration introduced in this change; rollout remains config- and contract-sensitive because cookie names, OAuth callback parameters, trusted origins, JWT secret separation, and per-app consumer scope handling must be deployed consistently across the touched admin and consumer apps.
 
 </details>
 
