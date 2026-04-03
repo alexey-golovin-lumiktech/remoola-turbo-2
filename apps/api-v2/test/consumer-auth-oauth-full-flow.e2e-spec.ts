@@ -136,7 +136,7 @@ describe(`Consumer auth OAuth full flow (e2e, isolated DB)`, () => {
     const startRes = await oauthAgent
       .get(`/api/consumer/auth/google/start`)
       .set(`origin`, consumerOrigin)
-      .query({ next: `/dashboard`, returnOrigin: consumerOrigin })
+      .query({ next: `/dashboard` })
       .expect(302);
     expect(startRes.headers.location).toContain(`accounts.google.test`);
     const startUrl = new URL(startRes.headers.location as string);

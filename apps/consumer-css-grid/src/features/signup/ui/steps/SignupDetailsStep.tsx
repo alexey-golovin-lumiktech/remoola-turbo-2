@@ -3,7 +3,12 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { ACCOUNT_TYPE, HOW_DID_HEAR_ABOUT_US, HOW_DID_HEAR_ABOUT_US_VALUES } from '@remoola/api-types';
+import {
+  ACCOUNT_TYPE,
+  buildConsumerGoogleOAuthStartUrl,
+  HOW_DID_HEAR_ABOUT_US,
+  HOW_DID_HEAR_ABOUT_US_VALUES,
+} from '@remoola/api-types';
 import { GoogleIcon, PasswordInput } from '@remoola/ui';
 
 import { buildSignupFlowPath } from '../../routing';
@@ -68,23 +73,19 @@ export function SignupDetailsStep() {
   }, [isGoogleSignup]);
 
   const googleSignupStartUrl = useMemo(() => {
-    if (typeof window === `undefined`) return null;
-    const url = new URL(`/api/consumer/auth/google/start`, window.location.origin);
-    url.searchParams.set(
-      `next`,
+    return buildConsumerGoogleOAuthStartUrl(
       buildSignupFlowPath(`/signup`, {
         accountType: signupDetails.accountType,
         contractorKind: signupDetails.contractorKind,
         googleSignupToken: null,
       }),
+      {
+        signupPath:
+          typeof window !== `undefined` && window.location.pathname === `/signup` ? `/signup` : `/signup/start`,
+        accountType: signupDetails.accountType,
+        contractorKind: signupDetails.accountType === ACCOUNT_TYPE.CONTRACTOR ? signupDetails.contractorKind : null,
+      },
     );
-    url.searchParams.set(`signupPath`, window.location.pathname === `/signup` ? `/signup` : `/signup/start`);
-    url.searchParams.set(`returnOrigin`, window.location.origin);
-    if (signupDetails.accountType) url.searchParams.set(`accountType`, signupDetails.accountType);
-    if (signupDetails.accountType === ACCOUNT_TYPE.CONTRACTOR && signupDetails.contractorKind) {
-      url.searchParams.set(`contractorKind`, signupDetails.contractorKind);
-    }
-    return `${url.pathname}${url.search}`;
   }, [signupDetails.accountType, signupDetails.contractorKind]);
 
   const validateField = useCallback(

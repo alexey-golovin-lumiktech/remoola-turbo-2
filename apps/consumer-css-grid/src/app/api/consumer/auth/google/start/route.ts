@@ -16,7 +16,6 @@ export async function GET(req: NextRequest) {
     const value = req.nextUrl.searchParams.get(key);
     if (value) url.searchParams.set(key, value);
   }
-  url.searchParams.set(`returnOrigin`, req.nextUrl.origin);
 
   return NextResponse.redirect(url);
 }

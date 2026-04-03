@@ -454,6 +454,33 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     expect(res.redirect).toHaveBeenCalledWith(`https://accounts.google.com/o/oauth2/v2/auth`);
   });
 
+  it(`google start derives css-grid return origin and cookie scope from request headers`, async () => {
+    const cssGridOauthCookieKey = getScopedConsumerGoogleOAuthStateCookieKey(`consumer-css-grid`, {
+      isProduction: false,
+      isVercel: false,
+      cookieSecure: false,
+      isSecureRequest: false,
+    });
+    const req = makeReq({
+      headers: { origin: `https://grid.example.com` },
+    });
+    const res = makeRes();
+
+    await controller.googleOAuthStart(req, res, `/dashboard`, undefined, undefined, undefined);
+
+    expect(originResolver.resolveRequestOrigin).toHaveBeenCalledWith(`https://grid.example.com`, undefined);
+    expect(oauthStateStore.save).toHaveBeenCalledWith(
+      `state-token`,
+      expect.objectContaining({ returnOrigin: `https://grid.example.com` }),
+      expect.any(Number),
+    );
+    expect(res.cookie).toHaveBeenCalledWith(
+      cssGridOauthCookieKey,
+      `state-token`,
+      expect.objectContaining({ httpOnly: true }),
+    );
+  });
+
   it(`google start sets the mobile-scoped oauth state cookie for a mobile return origin`, async () => {
     const mobileOauthCookieKey = getScopedConsumerGoogleOAuthStateCookieKey(`consumer-mobile`, {
       isProduction: false,
