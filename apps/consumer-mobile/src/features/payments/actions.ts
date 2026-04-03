@@ -1,11 +1,11 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { cookies } from 'next/headers';
 import { z } from 'zod';
 
 import { getEnv } from '../../lib/env.server';
 import { generateCorrelationId, serverLogger } from '../../lib/logger.server';
+import { getServerActionMutationAuthHeaders } from '../../lib/server-action-auth';
 
 type ActionResult<T = void> =
   | { ok: true; data?: T }
@@ -58,12 +58,12 @@ export async function startPaymentAction(input: unknown) {
       correlationId,
     });
 
-    const cookieStore = await cookies();
+    const authHeaders = await getServerActionMutationAuthHeaders();
     const res = await fetch(`${env.NEXT_PUBLIC_API_BASE_URL}/consumer/payments/start`, {
       method: `POST`,
       headers: {
         'content-type': `application/json`,
-        Cookie: cookieStore.toString(),
+        ...authHeaders,
         'X-Correlation-ID': correlationId,
       },
       body: JSON.stringify(parsed.data),
@@ -139,12 +139,12 @@ export async function withdrawFundsAction(input: unknown): Promise<ActionResult>
       correlationId,
     });
 
-    const cookieStore = await cookies();
+    const authHeaders = await getServerActionMutationAuthHeaders();
     const res = await fetch(`${env.NEXT_PUBLIC_API_BASE_URL}/consumer/payments/withdraw`, {
       method: `POST`,
       headers: {
         'content-type': `application/json`,
-        Cookie: cookieStore.toString(),
+        ...authHeaders,
         'X-Correlation-ID': correlationId,
       },
       body: JSON.stringify(parsed.data),
@@ -222,12 +222,12 @@ export async function transferFundsAction(input: unknown): Promise<ActionResult>
       correlationId,
     });
 
-    const cookieStore = await cookies();
+    const authHeaders = await getServerActionMutationAuthHeaders();
     const res = await fetch(`${env.NEXT_PUBLIC_API_BASE_URL}/consumer/payments/transfer`, {
       method: `POST`,
       headers: {
         'content-type': `application/json`,
-        Cookie: cookieStore.toString(),
+        ...authHeaders,
         'X-Correlation-ID': correlationId,
       },
       body: JSON.stringify(parsed.data),

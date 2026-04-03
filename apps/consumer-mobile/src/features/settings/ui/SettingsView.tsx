@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 import { ACCOUNT_TYPE } from '@remoola/api-types';
 
@@ -27,10 +28,22 @@ interface SettingsViewProps {
   loadState: LoadState;
   profile: Profile | null;
   settings: Settings | null;
+  logoutAllFailed?: boolean;
 }
 
-export function SettingsView({ loadState, profile, settings }: SettingsViewProps) {
+export function SettingsView({ loadState, profile, settings, logoutAllFailed = false }: SettingsViewProps) {
   const router = useRouter();
+  const [logoutAllErrorVisible, setLogoutAllErrorVisible] = useState(logoutAllFailed);
+
+  useEffect(() => {
+    setLogoutAllErrorVisible(logoutAllFailed);
+    if (!logoutAllFailed || typeof window === `undefined`) return;
+
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has(`logout_all_failed`)) return;
+    url.searchParams.delete(`logout_all_failed`);
+    window.history.replaceState(null, ``, url.pathname + (url.search || ``));
+  }, [logoutAllFailed]);
 
   if (loadState === `loading`) {
     return (
@@ -141,6 +154,17 @@ export function SettingsView({ loadState, profile, settings }: SettingsViewProps
       </div>
 
       <div className={styles.main}>
+        {logoutAllErrorVisible ? (
+          <div className={styles.errorNotice} role="alert" data-testid="consumer-mobile-settings-logout-all-error">
+            <div>
+              <strong>Couldn&apos;t sign out all devices.</strong>
+              <p className={styles.errorNoticeText}>Your current session is still active. Please try again.</p>
+            </div>
+            <button type="button" className={styles.errorNoticeDismiss} onClick={() => setLogoutAllErrorVisible(false)}>
+              Dismiss
+            </button>
+          </div>
+        ) : null}
         <div className={styles.card}>
           <div className={styles.cardHeader}>
             <div className={styles.cardHeaderRow}>
@@ -183,6 +207,40 @@ export function SettingsView({ loadState, profile, settings }: SettingsViewProps
         {isBusiness ? <OrganizationDetailsForm profile={profile} /> : null}
 
         <PasswordChangeForm hasPassword={profile.hasPassword !== false} />
+
+        <div className={styles.card}>
+          <div className={styles.cardHeader}>
+            <div className={styles.cardHeaderRow}>
+              <div className={styles.cardHeaderIconWrap}>
+                <SettingsIcon className={styles.cardHeaderIcon} />
+              </div>
+              <div>
+                <h2 className={styles.cardHeaderTitle}>Session Management</h2>
+                <p className={styles.cardHeaderSub}>Sign out this device or revoke every active session.</p>
+              </div>
+            </div>
+          </div>
+          <div className={styles.sessionActions}>
+            <form method="post" action="/logout">
+              <button type="submit" className={styles.sessionButton}>
+                Sign out this device
+              </button>
+            </form>
+            <form method="post" action="/logout-all">
+              <button
+                type="submit"
+                className={styles.sessionDangerButton}
+                onClick={(event) => {
+                  if (!window.confirm(`Sign out all devices? You will need to sign in again everywhere.`)) {
+                    event.preventDefault();
+                  }
+                }}
+              >
+                Sign out all devices
+              </button>
+            </form>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -9,7 +9,7 @@ import {
   getApiV2GoogleOAuthStateCookieKey,
 } from '@remoola/api-types';
 
-import { GET } from './route';
+import * as routeModule from './route';
 import { getSetCookieValues } from '../../lib/api-utils';
 
 type MockFetch = jest.MockedFunction<typeof fetch>;
@@ -17,6 +17,8 @@ type MockFetch = jest.MockedFunction<typeof fetch>;
 describe(`logout-all route`, () => {
   const originalFetch = global.fetch;
   let mockFetch: MockFetch;
+  const routeExports = routeModule as Record<string, unknown>;
+  const { POST } = routeModule;
 
   beforeEach(() => {
     process.env.NEXT_PUBLIC_API_BASE_URL = `https://api.example.com`;
@@ -29,7 +31,11 @@ describe(`logout-all route`, () => {
     delete process.env.NEXT_PUBLIC_API_BASE_URL;
   });
 
-  it(`clears local cookies and redirects to login after successful backend logout-all`, async () => {
+  it(`does not expose a GET handler`, () => {
+    expect(routeExports.GET).toBeUndefined();
+  });
+
+  it(`clears local cookies and redirects to login after successful backend logout-all POST`, async () => {
     mockFetch.mockResolvedValueOnce(
       new Response(`ok`, {
         status: 200,
@@ -42,17 +48,16 @@ describe(`logout-all route`, () => {
     const csrfCookieKey = getApiV2ConsumerCsrfTokenCookieKey();
     const request = new Request(`https://app.example.com/logout-all`, {
       headers: {
-        authorization: `Bearer should-not-forward`,
         cookie: `${csrfCookieKey}=csrf-token`,
         host: `app.example.com`,
       },
     });
 
-    const response = await GET(request);
+    const response = await POST(request);
     const setCookies = getSetCookieValues(response.headers);
     const location = new URL(response.headers.get(`location`) ?? ``);
 
-    expect(response.status).toBe(307);
+    expect(response.status).toBe(303);
     expect(location.pathname).toBe(`/login`);
     expect(location.searchParams.get(AUTH_NOTICE_QUERY)).toBe(`signed_out_all_sessions`);
     expect(mockFetch).toHaveBeenCalledTimes(1);
@@ -60,7 +65,6 @@ describe(`logout-all route`, () => {
     expect(mockFetch.mock.calls[0]?.[1]?.method).toBe(`POST`);
     const forwardedHeaders = mockFetch.mock.calls[0]?.[1]?.headers as Headers;
     expect(forwardedHeaders.get(`x-csrf-token`)).toBe(`csrf-token`);
-    expect(forwardedHeaders.get(`authorization`)).toBeNull();
     expect(forwardedHeaders.get(`host`)).toBeNull();
 
     for (const key of getApiV2ConsumerAccessTokenCookieKeysForRead()) {
@@ -76,15 +80,15 @@ describe(`logout-all route`, () => {
     expect(setCookies.some((cookie) => cookie.startsWith(`${getApiV2GoogleOAuthStateCookieKey()}=`))).toBe(true);
   });
 
-  it(`returns to settings when backend logout-all fails`, async () => {
+  it(`returns to settings when backend logout-all POST fails`, async () => {
     mockFetch.mockResolvedValueOnce(new Response(`nope`, { status: 500 }));
 
     const request = new Request(`https://app.example.com/logout-all`);
-    const response = await GET(request);
+    const response = await POST(request);
     const setCookies = getSetCookieValues(response.headers);
     const location = new URL(response.headers.get(`location`) ?? ``);
 
-    expect(response.status).toBe(307);
+    expect(response.status).toBe(303);
     expect(location.pathname).toBe(`/settings`);
     expect(location.searchParams.get(`logout_all_failed`)).toBe(`1`);
     expect(setCookies).toHaveLength(0);

@@ -23,11 +23,35 @@ import { ConsumerExchangeService } from '../src/consumer/modules/exchange/consum
 import { envs } from '../src/envs';
 import { AuthGuard } from '../src/guards/auth.guard';
 import { PrismaService } from '../src/shared/prisma.service';
+import { getApiConsumerCsrfTokenCookieKeysForRead } from '../src/shared-common';
 
 describe(`Consumer exchange convert and scheduled execution (e2e, isolated DB)`, () => {
   let app: INestApplication;
   let prisma: PrismaClient;
   let exchangeService: ConsumerExchangeService;
+  const consumerOrigin = `http://127.0.0.1:3003`;
+
+  function parseCookieValue(cookies: string[] | undefined, key: string): string | null {
+    if (!Array.isArray(cookies)) return null;
+    const row = cookies.find((line) => line.startsWith(`${key}=`));
+    if (!row) return null;
+    const [raw] = row.split(`;`);
+    return raw.slice(`${key}=`.length);
+  }
+
+  function parseCookieValueForKeys(cookies: string[] | undefined, keys: readonly string[]): string | null {
+    for (const key of keys) {
+      const value = parseCookieValue(cookies, key);
+      if (value) return value;
+    }
+    return null;
+  }
+
+  function asCookieArray(header: string | string[] | undefined): string[] | undefined {
+    if (Array.isArray(header)) return header;
+    if (typeof header === `string`) return [header];
+    return undefined;
+  }
 
   async function createConsumerWithUsdBalance(params: { email: string; password: string; balance: number }) {
     const { hash, salt } = await hashPassword(params.password);
@@ -121,13 +145,21 @@ describe(`Consumer exchange convert and scheduled execution (e2e, isolated DB)`,
     });
 
     const agent = request.agent(app.getHttpServer());
-    await agent
+    const loginRes = await agent
       .post(`/api/consumer/auth/login`)
+      .set(`origin`, consumerOrigin)
       .send({ email: consumer.email, password: `ExchangeConvert1!` })
-      .expect(201);
+      .expect(200);
+    const csrf = parseCookieValueForKeys(
+      asCookieArray(loginRes.headers[`set-cookie`]),
+      getApiConsumerCsrfTokenCookieKeysForRead(`consumer-css-grid`),
+    );
+    expect(csrf).toBeTruthy();
 
     const response = await agent
       .post(`/api/consumer/exchange/convert`)
+      .set(`origin`, consumerOrigin)
+      .set(`x-csrf-token`, csrf ?? ``)
       .send({
         from: $Enums.CurrencyCode.USD,
         to: $Enums.CurrencyCode.EUR,

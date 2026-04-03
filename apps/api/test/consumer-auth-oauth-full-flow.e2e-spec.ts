@@ -1,5 +1,5 @@
 /**
- * E2E OAuth full-flow tests for start -> callback -> exchange -> me contracts.
+ * E2E OAuth full-flow tests for start -> callback -> complete -> me contracts.
  * Uses an isolated temporary DB per run via @remoola/test-db/environment.
  */
 /** @jest-environment @remoola/test-db/environment */
@@ -22,13 +22,14 @@ import { GoogleOAuthService } from '../src/consumer/auth/google-oauth.service';
 import { envs } from '../src/envs';
 import { AuthGuard } from '../src/guards/auth.guard';
 import { PrismaService } from '../src/shared/prisma.service';
-import { GOOGLE_OAUTH_STATE_COOKIE_KEY } from '../src/shared-common';
+import { getApiOAuthStateCookieKeysForRead } from '../src/shared-common';
 
 describe(`Consumer auth OAuth full flow (e2e, isolated DB)`, () => {
   let app: INestApplication;
   let prisma: PrismaClient;
   const consumerEmail = `oauth-existing-consumer@local.test`;
   const consumerPassword = `OauthConsumer1!`;
+  const consumerOrigin = `http://127.0.0.1:3001`;
   let consumerId = ``;
 
   function parseCookieValue(cookies: string[] | undefined, key: string): string | null {
@@ -37,6 +38,14 @@ describe(`Consumer auth OAuth full flow (e2e, isolated DB)`, () => {
     if (!row) return null;
     const [raw] = row.split(`;`);
     return raw.slice(`${key}=`.length);
+  }
+
+  function parseCookieValueForKeys(cookies: string[] | undefined, keys: readonly string[]): string | null {
+    for (const key of keys) {
+      const value = parseCookieValue(cookies, key);
+      if (value) return value;
+    }
+    return null;
   }
 
   function asCookieArray(header: string | string[] | undefined): string[] | undefined {
@@ -121,28 +130,36 @@ describe(`Consumer auth OAuth full flow (e2e, isolated DB)`, () => {
     await app.close();
   });
 
-  it(`completes OAuth start -> callback -> exchange -> me for existing consumer`, async () => {
+  it(`completes OAuth start -> callback -> complete -> me for existing consumer`, async () => {
     const oauthAgent = request.agent(app.getHttpServer());
 
-    const startRes = await oauthAgent.get(`/api/consumer/auth/google/start`).query({ next: `/dashboard` }).expect(302);
+    const startRes = await oauthAgent
+      .get(`/api/consumer/auth/google/start`)
+      .set(`origin`, consumerOrigin)
+      .query({ next: `/dashboard`, returnOrigin: consumerOrigin })
+      .expect(302);
     expect(startRes.headers.location).toContain(`accounts.google.test`);
     const startUrl = new URL(startRes.headers.location as string);
     const state = startUrl.searchParams.get(`state`);
     expect(state).toBeTruthy();
 
-    const stateCookie = parseCookieValue(asCookieArray(startRes.headers[`set-cookie`]), GOOGLE_OAUTH_STATE_COOKIE_KEY);
+    const stateCookie = parseCookieValueForKeys(
+      asCookieArray(startRes.headers[`set-cookie`]),
+      getApiOAuthStateCookieKeysForRead(),
+    );
     expect(stateCookie).toBeTruthy();
     expect(stateCookie).toBe(state);
 
     const callbackRes = await oauthAgent
       .get(`/api/consumer/auth/google/callback`)
+      .set(`origin`, consumerOrigin)
       .query({ code: `oauth-code`, state })
       .expect(302);
-    expect(callbackRes.headers.location).toContain(`oauthToken=`);
+    expect(callbackRes.headers.location).toContain(`oauthHandoff=`);
 
     const callbackUrl = new URL(callbackRes.headers.location as string);
-    const oauthToken = callbackUrl.searchParams.get(`oauthToken`);
-    expect(oauthToken).toBeTruthy();
+    const handoffToken = callbackUrl.searchParams.get(`oauthHandoff`);
+    expect(handoffToken).toBeTruthy();
 
     const stateKey = oauthCrypto.hashOAuthState(state ?? ``);
     const stateRows = await prisma.oauthStateModel.count({
@@ -150,9 +167,13 @@ describe(`Consumer auth OAuth full flow (e2e, isolated DB)`, () => {
     });
     expect(stateRows).toBe(0);
 
-    await oauthAgent.post(`/api/consumer/auth/oauth/exchange`).send({ exchangeToken: oauthToken }).expect(200);
+    await oauthAgent
+      .post(`/api/consumer/auth/oauth/complete`)
+      .set(`origin`, consumerOrigin)
+      .send({ handoffToken })
+      .expect(200);
 
-    const meRes = await oauthAgent.get(`/api/consumer/auth/me`).expect(200);
+    const meRes = await oauthAgent.get(`/api/consumer/auth/me`).set(`origin`, consumerOrigin).expect(200);
     expect(meRes.body?.id).toBe(consumerId);
     expect(meRes.body?.email).toBe(consumerEmail);
   });

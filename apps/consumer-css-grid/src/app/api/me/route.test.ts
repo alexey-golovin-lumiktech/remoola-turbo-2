@@ -21,7 +21,7 @@ describe(`me route`, () => {
     delete process.env.NEXT_PUBLIC_API_BASE_URL;
   });
 
-  it(`forwards cookie auth context while stripping authorization and host`, async () => {
+  it(`forwards cookie auth context while dropping incoming authorization headers and host`, async () => {
     mockFetch.mockResolvedValueOnce(
       new Response(JSON.stringify({ id: `consumer-1` }), {
         status: 200,
@@ -34,7 +34,7 @@ describe(`me route`, () => {
     const request = new Request(`https://app.example.com/api/me`, {
       method: `GET`,
       headers: {
-        authorization: `Bearer can-forward`,
+        authorization: `legacy-token`,
         cookie: `consumer_session=session-cookie`,
         host: `app.example.com`,
         'x-correlation-id': `corr-1`,

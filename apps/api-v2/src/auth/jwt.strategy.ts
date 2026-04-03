@@ -3,27 +3,35 @@ import { PassportStrategy } from '@nestjs/passport';
 import express from 'express';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
-import { COOKIE_KEYS } from '@remoola/api-types';
-
 import { envs } from '../envs';
-import { getApiConsumerAccessTokenCookieKeysForRead } from '../shared-common';
+import { OriginResolverService } from '../shared/origin-resolver.service';
+import {
+  DEFAULT_API_V2_CONSUMER_SCOPE,
+  getApiAdminAccessTokenCookieKeysForRead,
+  getApiConsumerAccessTokenCookieKeysForRead,
+} from '../shared-common';
 
 const CONSUMER_API_PATH_PREFIX = `/api/consumer/`;
 const ADMIN_API_PATH_PREFIX = `/api/admin/`;
+const originResolver = new OriginResolverService();
 
-function getAccessTokenCookieKeysForPath(path: string): readonly string[] {
+function getAccessTokenCookieKeysForPath(
+  path: string,
+  consumerScope: Parameters<typeof getApiConsumerAccessTokenCookieKeysForRead>[0] = DEFAULT_API_V2_CONSUMER_SCOPE,
+): readonly string[] {
   if (path.startsWith(CONSUMER_API_PATH_PREFIX)) {
-    return getApiConsumerAccessTokenCookieKeysForRead();
+    return getApiConsumerAccessTokenCookieKeysForRead(consumerScope);
   }
   if (path.startsWith(ADMIN_API_PATH_PREFIX)) {
-    return [COOKIE_KEYS.ADMIN_ACCESS_TOKEN];
+    return getApiAdminAccessTokenCookieKeysForRead();
   }
-  return getApiConsumerAccessTokenCookieKeysForRead();
+  return getApiConsumerAccessTokenCookieKeysForRead(consumerScope);
 }
 
 function cookieExtractorByPath(req: express.Request): string | null {
   const path = req?.path ?? req?.url?.split(`?`)[0] ?? ``;
-  for (const key of getAccessTokenCookieKeysForPath(path)) {
+  const consumerScope = originResolver.resolveConsumerRequestAppScope?.(req?.headers?.origin, req?.headers?.referer);
+  for (const key of getAccessTokenCookieKeysForPath(path, consumerScope ?? DEFAULT_API_V2_CONSUMER_SCOPE)) {
     const value = req?.cookies?.[key];
     if (value) return value;
   }

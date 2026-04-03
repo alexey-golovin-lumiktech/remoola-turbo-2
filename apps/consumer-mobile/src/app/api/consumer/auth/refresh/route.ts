@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { appendSetCookies, buildForwardHeaders } from '../../../../../lib/api-utils';
+import { appendSetCookies, buildAuthMutationForwardHeaders } from '../../../../../lib/api-utils';
 import { getCsrfTokenFromRequest } from '../../../../../lib/auth-cookie-policy';
 import { getEnv } from '../../../../../lib/env.server';
 import { serverLogger } from '../../../../../lib/logger.server';
@@ -19,8 +19,7 @@ export async function POST(req: Request) {
 
   try {
     const csrfToken = getCsrfTokenFromRequest(req);
-    const forwardHeaders = buildForwardHeaders(req.headers);
-    forwardHeaders.delete(`host`);
+    const forwardHeaders = buildAuthMutationForwardHeaders(req.headers);
     if (csrfToken) forwardHeaders.set(`x-csrf-token`, csrfToken);
 
     const url = new URL(`${baseUrl}/consumer/auth/refresh`);

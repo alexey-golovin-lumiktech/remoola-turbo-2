@@ -1,10 +1,10 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { cookies } from 'next/headers';
 
 import { createContactSchema, updateContactSchema } from './schemas';
 import { getEnv } from '../../lib/env.server';
+import { getServerActionMutationAuthHeaders } from '../../lib/server-action-auth';
 
 export async function createContactAction(input: unknown) {
   const parsed = createContactSchema.safeParse(input);
@@ -24,12 +24,12 @@ export async function createContactAction(input: unknown) {
     return { ok: false as const, error: { code: `CONFIG_ERROR`, message: `API base URL not configured` } };
   }
 
-  const cookieStore = await cookies();
+  const authHeaders = await getServerActionMutationAuthHeaders();
   const res = await fetch(`${env.NEXT_PUBLIC_API_BASE_URL}/consumer/contacts`, {
     method: `POST`,
     headers: {
       'content-type': `application/json`,
-      Cookie: cookieStore.toString(),
+      ...authHeaders,
     },
     body: JSON.stringify(parsed.data),
     cache: `no-store`,
@@ -69,12 +69,12 @@ export async function updateContactAction(contactId: string, input: unknown) {
     return { ok: false as const, error: { code: `CONFIG_ERROR`, message: `API base URL not configured` } };
   }
 
-  const cookieStore = await cookies();
+  const authHeaders = await getServerActionMutationAuthHeaders();
   const res = await fetch(`${env.NEXT_PUBLIC_API_BASE_URL}/consumer/contacts/${contactId}`, {
     method: `PATCH`,
     headers: {
       'content-type': `application/json`,
-      Cookie: cookieStore.toString(),
+      ...authHeaders,
     },
     body: JSON.stringify(parsed.data),
     cache: `no-store`,
@@ -103,12 +103,12 @@ export async function deleteContactAction(contactId: string) {
     return { ok: false as const, error: { code: `CONFIG_ERROR`, message: `API base URL not configured` } };
   }
 
-  const cookieStore = await cookies();
+  const authHeaders = await getServerActionMutationAuthHeaders();
   const res = await fetch(`${env.NEXT_PUBLIC_API_BASE_URL}/consumer/contacts/${contactId}`, {
     method: `DELETE`,
     headers: {
       'content-type': `application/json`,
-      Cookie: cookieStore.toString(),
+      ...authHeaders,
     },
     cache: `no-store`,
   });

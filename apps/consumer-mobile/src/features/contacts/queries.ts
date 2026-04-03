@@ -1,5 +1,6 @@
 import { contactListSchema, contactSchema, contactDetailsSchema, type Contact, type ContactDetails } from './schemas';
 import { getEnv } from '../../lib/env.server';
+import { buildServerReadAuthHeaders } from '../../lib/server-action-auth';
 
 export async function getContactsList(cookie: string | null): Promise<Contact[]> {
   const env = getEnv();
@@ -7,7 +8,7 @@ export async function getContactsList(cookie: string | null): Promise<Contact[]>
   if (!baseUrl) return [];
   const res = await fetch(`${baseUrl}/consumer/contacts`, {
     method: `GET`,
-    headers: { Cookie: cookie ?? `` },
+    headers: buildServerReadAuthHeaders(cookie),
     cache: `no-store`,
     signal: AbortSignal.timeout(10000),
   });
@@ -23,7 +24,7 @@ export async function getContactDetail(contactId: string, cookie: string | null)
   if (!baseUrl) return null;
   const res = await fetch(`${baseUrl}/consumer/contacts/${contactId}`, {
     method: `GET`,
-    headers: { Cookie: cookie ?? `` },
+    headers: buildServerReadAuthHeaders(cookie),
     cache: `no-store`,
     signal: AbortSignal.timeout(10000),
   });
@@ -39,7 +40,7 @@ export async function getContactDetailsFull(contactId: string, cookie: string | 
   if (!baseUrl) return null;
   const res = await fetch(`${baseUrl}/consumer/contacts/${contactId}/details`, {
     method: `GET`,
-    headers: { Cookie: cookie ?? `` },
+    headers: buildServerReadAuthHeaders(cookie),
     cache: `no-store`,
     signal: AbortSignal.timeout(10000),
   });

@@ -1,13 +1,13 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 
 import { ACCOUNT_TYPE, CONTRACTOR_KIND, type TContractorKind } from '@remoola/api-types';
 import { cn } from '@remoola/ui';
 
 import styles from '../../../../../components/ui/classNames.module.css';
 import { useSignupForm } from '../../hooks';
+import { buildSignupFlowPath } from '../../routing';
 
 const {
   signupStartBackButton,
@@ -40,7 +40,11 @@ export default function ChooseContractorKindStep() {
 
   const onNext = () => {
     if (!signup.contractorKind) return;
-    const path = googleSignupToken ? `/signup?googleSignupToken=${encodeURIComponent(googleSignupToken)}` : `/signup`;
+    const path = buildSignupFlowPath(`/signup`, {
+      accountType: signup.accountType,
+      contractorKind: signup.contractorKind,
+      googleSignupToken,
+    });
     router.push(path);
   };
 
@@ -50,16 +54,11 @@ export default function ChooseContractorKindStep() {
   const getOptionLabelClassName = (selected: boolean) =>
     cn(signupStartOptionLabelBase, selected ? signupStartOptionLabelActive : signupStartOptionLabelInactive);
 
-  useEffect(() => {
-    // Guard: user must have chosen ACCOUNT_TYPE.CONTRACTOR
-    if (signup.accountType !== ACCOUNT_TYPE.CONTRACTOR) {
-      router.replace(`/signup/start`);
-    }
+  if (signup.accountType !== ACCOUNT_TYPE.CONTRACTOR) {
+    router.replace(`/signup/start`);
+    return null;
+  }
 
-    if (signup.contractorKind === null && signup.accountType === ACCOUNT_TYPE.CONTRACTOR) {
-      updateSignup({ contractorKind: CONTRACTOR_KIND.INDIVIDUAL });
-    }
-  }, [signup.accountType, signup.contractorKind, updateSignup, router]);
   if (!signup.accountType) return null;
 
   return (
@@ -128,7 +127,17 @@ export default function ChooseContractorKindStep() {
 
         <button
           data-testid="consumer-signup-contractor-kind-btn-back"
-          onClick={(e) => (e.preventDefault(), e.stopPropagation(), router.push(`/signup/start`))}
+          onClick={(e) => (
+            e.preventDefault(),
+            e.stopPropagation(),
+            router.push(
+              buildSignupFlowPath(`/signup/start`, {
+                accountType: signup.accountType,
+                contractorKind: null,
+                googleSignupToken,
+              }),
+            )
+          )}
           className={signupStartBackButton}
           type="button"
         >

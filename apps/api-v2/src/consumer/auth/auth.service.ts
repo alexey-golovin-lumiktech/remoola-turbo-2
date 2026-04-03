@@ -7,7 +7,7 @@ import { $Enums, Prisma, type ConsumerModel } from '@remoola/database-2';
 import { oauthCrypto, hashTokenToHex } from '@remoola/security-utils';
 import { errorCodes } from '@remoola/shared-constants';
 
-type GoogleSignupPayload = {
+export type GoogleSignupPayload = {
   type: `google_signup`;
   email: string;
   emailVerified: boolean;
@@ -17,11 +17,11 @@ type GoogleSignupPayload = {
   picture: string | null;
   organization: string | null;
   sub: string | null;
-};
-type OAuthExchangePayload = {
-  type: `oauth_exchange`;
-  identityId: string;
-  createdAt: number;
+  signupEntryPath: string | null;
+  nextPath: string | null;
+  accountType: string | null;
+  contractorKind: string | null;
+  returnOrigin: string | null;
 };
 
 import { ConsumerSignup } from './dto';
@@ -59,7 +59,6 @@ export class ConsumerAuthService {
   ) {}
 
   private static readonly googleSignupTokenType = `google_signup` as const;
-  private static readonly oauthExchangeTokenType = `oauth_exchange` as const;
 
   private toGoogleSignupPayload(payload: {
     email?: string | null;
@@ -70,6 +69,11 @@ export class ConsumerAuthService {
     picture?: string | null;
     organization?: string | null;
     sub?: string | null;
+    signupEntryPath?: string | null;
+    nextPath?: string | null;
+    accountType?: string | null;
+    contractorKind?: string | null;
+    returnOrigin?: string | null;
   }): GoogleSignupPayload {
     return {
       type: ConsumerAuthService.googleSignupTokenType,
@@ -81,7 +85,30 @@ export class ConsumerAuthService {
       picture: payload.picture ?? null,
       organization: payload.organization ?? null,
       sub: payload.sub ?? null,
+      signupEntryPath: payload.signupEntryPath ?? null,
+      nextPath: payload.nextPath ?? null,
+      accountType: payload.accountType ?? null,
+      contractorKind: payload.contractorKind ?? null,
+      returnOrigin: payload.returnOrigin ?? null,
     };
+  }
+
+  createGoogleSignupPayload(payload: {
+    email?: string | null;
+    emailVerified?: boolean;
+    name?: string | null;
+    givenName?: string | null;
+    familyName?: string | null;
+    picture?: string | null;
+    organization?: string | null;
+    sub?: string | null;
+    signupEntryPath?: string | null;
+    nextPath?: string | null;
+    accountType?: string | null;
+    contractorKind?: string | null;
+    returnOrigin?: string | null;
+  }): GoogleSignupPayload {
+    return this.toGoogleSignupPayload(payload);
   }
 
   async findConsumerByEmail(email: string) {
@@ -129,13 +156,19 @@ export class ConsumerAuthService {
     await this.authAudit.clearLockout(AUTH_IDENTITY_TYPES.consumer, identity.email);
 
     const access = await this.createSessionAndIssueTokens(identity.id);
-    return { identity, ...access };
+    return {
+      identity,
+      accessToken: access.accessToken,
+      refreshToken: access.refreshToken,
+      sessionId: access.sessionId,
+      sessionFamilyId: access.sessionFamilyId,
+    };
   }
 
   async refreshAccess(refreshToken: string, ctx?: LoginContext) {
     let verified: IJwtTokenPayload;
     try {
-      verified = this.jwtService.verify<IJwtTokenPayload>(refreshToken);
+      verified = this.jwtService.verify<IJwtTokenPayload>(refreshToken, { secret: envs.JWT_REFRESH_SECRET });
     } catch {
       this.logger.warn(`ConsumerAuth: refresh token verification failed`);
       await this.authAudit.recordAudit({
@@ -230,7 +263,7 @@ export class ConsumerAuthService {
   async revokeSessionByRefreshToken(refreshToken?: string | null) {
     if (!refreshToken) return;
     try {
-      const verified = this.jwtService.verify<IJwtTokenPayload>(refreshToken);
+      const verified = this.jwtService.verify<IJwtTokenPayload>(refreshToken, { secret: envs.JWT_REFRESH_SECRET });
       const identityId = this.resolveIdentityId(verified);
       if (!identityId || !verified.sid) return;
       await this.prisma.authSessionModel.updateMany({
@@ -250,7 +283,7 @@ export class ConsumerAuthService {
   async revokeSessionByRefreshTokenAndAudit(refreshToken?: string | null, ctx?: LoginContext): Promise<void> {
     if (!refreshToken) return;
     try {
-      const verified = this.jwtService.verify<IJwtTokenPayload>(refreshToken);
+      const verified = this.jwtService.verify<IJwtTokenPayload>(refreshToken, { secret: envs.JWT_REFRESH_SECRET });
       const consumer = await this.prisma.consumerModel.findFirst({
         where: { id: verified.identityId, deletedAt: null },
       });
@@ -294,51 +327,7 @@ export class ConsumerAuthService {
     });
   }
 
-  async createOAuthExchangeToken(identityId: ConsumerModel[`id`]) {
-    const payload: OAuthExchangePayload = {
-      type: ConsumerAuthService.oauthExchangeTokenType,
-      identityId,
-      createdAt: Date.now(),
-    };
-    return this.jwtService.signAsync(payload, { expiresIn: `2m` });
-  }
-
-  async verifyOAuthExchangeToken(token: string) {
-    let decoded: OAuthExchangePayload;
-    try {
-      decoded = this.jwtService.verify(token) as OAuthExchangePayload;
-    } catch {
-      this.logger.warn(`ConsumerAuth: OAuth exchange token verification failed`);
-      throw new UnauthorizedException(errorCodes.INVALID_OAUTH_EXCHANGE_TOKEN);
-    }
-    if (!decoded || decoded.type !== ConsumerAuthService.oauthExchangeTokenType || !decoded.identityId) {
-      throw new UnauthorizedException(errorCodes.INVALID_OAUTH_EXCHANGE_TOKEN);
-    }
-    return decoded;
-  }
-
-  async createGoogleSignupToken(payload: {
-    email?: string | null;
-    emailVerified?: boolean;
-    name?: string | null;
-    givenName?: string | null;
-    familyName?: string | null;
-    picture?: string | null;
-    organization?: string | null;
-    sub?: string | null;
-  }) {
-    const tokenPayload = this.toGoogleSignupPayload(payload);
-    return this.jwtService.signAsync(tokenPayload, { expiresIn: `10m` });
-  }
-
-  async verifyGoogleSignupToken(token: string) {
-    let decoded: GoogleSignupPayload;
-    try {
-      decoded = this.jwtService.verify(token) as GoogleSignupPayload;
-    } catch {
-      this.logger.warn(`ConsumerAuth: Google signup token verification failed`);
-      throw new BadRequestException(errorCodes.INVALID_GOOGLE_SIGNUP_TOKEN);
-    }
+  validateGoogleSignupPayload(decoded: GoogleSignupPayload) {
     if (decoded?.type !== ConsumerAuthService.googleSignupTokenType) {
       throw new BadRequestException(errorCodes.INVALID_GOOGLE_SIGNUP_TOKEN);
     }
@@ -362,7 +351,7 @@ export class ConsumerAuthService {
   }
 
   async signupVerification(token: string, res: express.Response, referer: string) {
-    const validatedOrigin = this.originResolver.validateReturnOrigin(referer);
+    const validatedOrigin = this.originResolver.validateConsumerReturnOrigin(referer);
     if (!validatedOrigin) {
       throw new BadRequestException(`Invalid referer origin`);
     }
@@ -469,7 +458,7 @@ export class ConsumerAuthService {
   private getRefreshToken(identityId: string, sessionId: string, sessionFamilyId: string) {
     return this.jwtService.signAsync(
       { sub: identityId, identityId, sid: sessionId, fid: sessionFamilyId, typ: `refresh` },
-      { expiresIn: envs.JWT_REFRESH_TTL_SECONDS },
+      { expiresIn: envs.JWT_REFRESH_TTL_SECONDS, secret: envs.JWT_REFRESH_SECRET },
     );
   }
 
@@ -500,7 +489,7 @@ export class ConsumerAuthService {
   }
 
   async completeProfileCreationAndSendVerificationEmail(consumerId: string, referer: string) {
-    const validatedOrigin = this.originResolver.validateReturnOrigin(referer);
+    const validatedOrigin = this.originResolver.validateConsumerReturnOrigin(referer);
     if (!validatedOrigin) {
       throw new BadRequestException(`Invalid referer origin`);
     }
@@ -627,7 +616,7 @@ export class ConsumerAuthService {
     email: CONSUMER.ForgotPasswordBody[`email`],
     requestOrigin?: string,
   ): Promise<ForgotPasswordOutcome> {
-    const origin = this.originResolver.validateReturnOrigin(requestOrigin ?? ``);
+    const origin = this.originResolver.validateConsumerReturnOrigin(requestOrigin ?? ``);
     if (!origin) {
       throw new BadRequestException(errorCodes.ORIGIN_REQUIRED);
     }
@@ -695,7 +684,7 @@ export class ConsumerAuthService {
   }
 
   async validateForgotPasswordTokenAndRedirect(token: string, referer: string, res: express.Response): Promise<void> {
-    const validatedOrigin = this.originResolver.validateReturnOrigin(referer);
+    const validatedOrigin = this.originResolver.validateConsumerReturnOrigin(referer);
     if (!validatedOrigin) {
       throw new BadRequestException(`Invalid referer origin`);
     }

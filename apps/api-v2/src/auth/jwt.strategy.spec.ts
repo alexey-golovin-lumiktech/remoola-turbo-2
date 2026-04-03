@@ -1,5 +1,23 @@
 import { COOKIE_KEYS } from '@remoola/api-types';
 
+jest.mock(`../shared/origin-resolver.service`, () => ({
+  OriginResolverService: class {
+    resolveConsumerRequestAppScope(
+      origin?: string | string[],
+      referer?: string | string[],
+    ): `consumer` | `consumer-mobile` | `consumer-css-grid` | undefined {
+      const values = [origin, referer].flatMap((entry) => (Array.isArray(entry) ? entry : [entry]));
+      for (const entry of values) {
+        if (typeof entry !== `string`) continue;
+        if (entry.includes(`mobile.example.com`)) return `consumer-mobile`;
+        if (entry.includes(`grid.example.com`)) return `consumer-css-grid`;
+        if (entry.includes(`app.example.com`) || entry.includes(`consumer.example.com`)) return `consumer`;
+      }
+      return undefined;
+    }
+  },
+}));
+
 import { JwtStrategy } from './jwt.strategy';
 import { getApiConsumerAccessTokenCookieKeysForRead } from '../shared-common';
 
@@ -23,11 +41,41 @@ describe(`JwtStrategy`, () => {
         [consumerKey]: `consumer-token`,
       },
       headers: {
-        authorization: `Bearer header-token`,
+        authorization: `legacy-token`,
       },
     });
 
     expect(token).toBe(`consumer-token`);
+  });
+
+  it(`extracts the mobile consumer cookie token when trusted origin maps to mobile scope`, () => {
+    const mobileKey = getApiConsumerAccessTokenCookieKeysForRead(`consumer-mobile`)[0];
+    const token = extractToken({
+      path: `/api/consumer/dashboard`,
+      cookies: {
+        [mobileKey]: `mobile-token`,
+      },
+      headers: {
+        origin: `https://mobile.example.com`,
+      },
+    });
+
+    expect(token).toBe(`mobile-token`);
+  });
+
+  it(`extracts the css-grid consumer cookie token when trusted origin maps to css-grid scope`, () => {
+    const gridKey = getApiConsumerAccessTokenCookieKeysForRead(`consumer-css-grid`)[0];
+    const token = extractToken({
+      path: `/api/consumer/dashboard`,
+      cookies: {
+        [gridKey]: `grid-token`,
+      },
+      headers: {
+        origin: `https://grid.example.com`,
+      },
+    });
+
+    expect(token).toBe(`grid-token`);
   });
 
   it(`extracts the admin cookie token for admin API paths`, () => {
@@ -41,12 +89,12 @@ describe(`JwtStrategy`, () => {
     expect(token).toBe(`admin-token`);
   });
 
-  it(`does not widen auth to bearer headers without cookies`, () => {
+  it(`does not widen auth to authorization headers without cookies`, () => {
     const token = extractToken({
       path: `/api/consumer/dashboard`,
       cookies: {},
       headers: {
-        authorization: `Bearer header-token`,
+        authorization: `legacy-token`,
       },
     });
 

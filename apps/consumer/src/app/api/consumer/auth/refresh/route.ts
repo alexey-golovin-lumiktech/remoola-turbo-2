@@ -1,26 +1,24 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
-import { appendSetCookies, buildForwardHeaders } from '../../../../../lib/api-utils';
+import { appendSetCookies, buildAuthMutationForwardHeaders } from '../../../../../lib/api-utils';
 import { getCsrfTokenFromRequest } from '../../../../../lib/auth-cookie-policy';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 /**
  * BFF: forwards cookies to backend and forwards backend Set-Cookie unchanged
  * (access, refresh, csrf) so token rotation works. See auth-cookie-policy rule.
  */
 export async function POST(req: NextRequest) {
-  if (!API_BASE) {
-    return NextResponse.json({ message: `Server configuration error` }, { status: 500 });
+  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL;
+  if (!apiBase) {
+    return NextResponse.json({ message: `API base URL not configured`, code: `CONFIG_ERROR` }, { status: 503 });
   }
 
   try {
     const csrfToken = getCsrfTokenFromRequest(req);
-    const forwardHeaders = buildForwardHeaders(req.headers);
-    forwardHeaders.delete(`host`);
+    const forwardHeaders = buildAuthMutationForwardHeaders(req.headers);
     if (csrfToken) forwardHeaders.set(`x-csrf-token`, csrfToken);
 
-    const url = new URL(`${API_BASE}/consumer/auth/refresh`);
+    const url = new URL(`${apiBase}/consumer/auth/refresh`);
     const res = await fetch(url, {
       method: `POST`,
       headers: forwardHeaders,

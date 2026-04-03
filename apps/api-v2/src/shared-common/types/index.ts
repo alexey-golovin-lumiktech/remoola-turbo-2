@@ -2,7 +2,6 @@ import { type $Enums } from '@remoola/database-2';
 
 import {
   type AuditTimelineField,
-  type AuthHeader,
   type CardBrand,
   type CredentialsSeparator,
   type InvoiceType,
@@ -23,7 +22,6 @@ export type SortDirectionValue = OneOfObjectValues<typeof SortDirection>;
 export type SortNullsValue = OneOfObjectValues<typeof SortNulls>;
 export type StripeInvoiceStatusValue = OneOfObjectValues<typeof StripeInvoiceStatus>;
 export type InvoiceTypeValue = OneOfObjectValues<typeof InvoiceType>;
-export type AuthHeaderValue = OneOfObjectValues<typeof AuthHeader>;
 export type CredentialsSeparatorValue = OneOfObjectValues<typeof CredentialsSeparator>;
 export type TimelineValue = OneOfObjectValues<typeof Timeline>;
 export type CardBrandValue = OneOfObjectValues<typeof CardBrand>;

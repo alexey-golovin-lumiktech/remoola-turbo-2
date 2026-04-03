@@ -56,8 +56,6 @@ describe(`OriginResolverService`, () => {
       expect(origins.has(`https://consumer.example.com`)).toBe(true);
       expect(origins.has(`https://mobile.example.com`)).toBe(true);
       expect(origins.has(`https://admin.example.com`)).toBe(true);
-      expect(origins.has(`https://allowed1.example.com`)).toBe(true);
-      expect(origins.has(`https://allowed2.example.com`)).toBe(true);
     });
 
     it(`should normalize origins in the set`, () => {
@@ -155,13 +153,13 @@ describe(`OriginResolverService`, () => {
       expect(result).toBe(`https://mobile.example.com`);
     });
 
-    it(`should fallback to CORS_ALLOWED_ORIGINS when both APP origins are placeholders`, () => {
+    it(`should return null when both APP origins are placeholders`, () => {
       (envs as any).CONSUMER_APP_ORIGIN = `CONSUMER_APP_ORIGIN`;
       (envs as any).CONSUMER_MOBILE_APP_ORIGIN = `CONSUMER_MOBILE_APP_ORIGIN`;
       (envs as any).CORS_ALLOWED_ORIGINS = [`https://cors.example.com`];
 
       const result = service.resolveConsumerOrigin();
-      expect(result).toBe(`https://cors.example.com`);
+      expect(result).toBeNull();
     });
 
     it(`should return null when no valid origins are available`, () => {

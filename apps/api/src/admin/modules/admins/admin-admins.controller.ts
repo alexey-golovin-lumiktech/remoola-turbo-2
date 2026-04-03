@@ -1,5 +1,5 @@
 import { BadRequestException, Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiBasicAuth } from '@nestjs/swagger';
+import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import express from 'express';
 
 import { type AdminModel } from '@remoola/database-2';
@@ -41,9 +41,8 @@ function getIpAndUserAgent(req: express.Request): { ipAddress: string | null; us
 }
 
 @UseGuards(JwtAuthGuard)
+@ApiCookieAuth()
 @ApiTags(`Admin: Admins`)
-@ApiBearerAuth(`bearer`) // 👈 tells Swagger to attach Bearer token
-@ApiBasicAuth(`basic`) // 👈 optional, if this route also accepts Basic Auth
 @Controller(`admin/admins`)
 export class AdminAdminsController {
   constructor(

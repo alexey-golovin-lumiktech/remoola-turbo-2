@@ -27,6 +27,7 @@ export function useSignupSubmit() {
         code?: string;
         message?: string;
         consumer?: { id?: string };
+        next?: string;
       };
 
       if (!response.ok) {
@@ -37,6 +38,11 @@ export function useSignupSubmit() {
             `We could not create your account. Please try again.`,
           ),
         };
+      }
+
+      if (state.googleSignupToken) {
+        router.push(typeof data.next === `string` && data.next.length > 0 ? data.next : `/dashboard`);
+        return { ok: true as const };
       }
 
       const nextParams = new URLSearchParams();

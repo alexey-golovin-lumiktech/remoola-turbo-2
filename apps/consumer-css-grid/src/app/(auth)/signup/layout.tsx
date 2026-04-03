@@ -9,7 +9,8 @@ function getQuerySeed(search: string) {
     return {
       accountTypeParam: null,
       contractorKindParam: null,
-      googleSignupToken: null,
+      googleSignup: null,
+      googleSignupHandoff: null,
     };
   }
 
@@ -17,7 +18,8 @@ function getQuerySeed(search: string) {
   return {
     accountTypeParam: searchParams.get(`accountType`),
     contractorKindParam: searchParams.get(`contractorKind`),
-    googleSignupToken: searchParams.get(`googleSignupToken`),
+    googleSignup: searchParams.get(`googleSignup`),
+    googleSignupHandoff: searchParams.get(`googleSignupHandoff`),
   };
 }
 

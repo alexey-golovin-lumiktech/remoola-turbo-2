@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 import { POST } from './route';
-import { getSetCookieValues } from '../../../../lib/api-utils';
+import { getSetCookieValues } from '../../../../../lib/api-utils';
 
 type MockFetch = jest.MockedFunction<typeof fetch>;
 
-describe(`oauth exchange route`, () => {
+describe(`refresh route`, () => {
   const originalFetch = global.fetch;
   let mockFetch: MockFetch;
 
@@ -20,35 +20,35 @@ describe(`oauth exchange route`, () => {
     delete process.env.NEXT_PUBLIC_API_BASE_URL;
   });
 
-  it(`forwards oauth exchange payload while stripping authorization and host headers`, async () => {
+  it(`forwards refresh cookies and csrf while dropping incoming authorization headers and host`, async () => {
     mockFetch.mockResolvedValueOnce(
       new Response(JSON.stringify({ ok: true }), {
         status: 200,
         headers: {
-          [`set-cookie`]: `oauth_cookie=ok; Path=/; HttpOnly`,
+          [`set-cookie`]: `refresh_cookie=ok; Path=/; HttpOnly`,
         },
       }),
     );
 
-    const request = new Request(`https://app.example.com/api/oauth/exchange`, {
+    const request = new Request(`https://app.example.com/api/consumer/auth/refresh`, {
       method: `POST`,
       headers: {
-        authorization: `Bearer should-not-forward`,
-        'content-type': `application/json`,
-        cookie: `consumer_session=session-cookie`,
+        authorization: `legacy-token`,
+        cookie: `refresh_cookie=token; csrf_token=csrf`,
         host: `app.example.com`,
+        'x-csrf-token': `csrf`,
       },
-      body: JSON.stringify({ oauthToken: `token-1` }),
     });
 
-    const response = await POST(request);
+    const response = await POST(request as never);
     const forwardedHeaders = mockFetch.mock.calls[0]?.[1]?.headers as Headers | undefined;
 
     expect(response.status).toBe(200);
-    expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`https://api.example.com/consumer/auth/oauth/exchange`);
+    expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`https://api.example.com/consumer/auth/refresh`);
     expect(forwardedHeaders?.get(`authorization`)).toBeNull();
     expect(forwardedHeaders?.get(`host`)).toBeNull();
-    expect(forwardedHeaders?.get(`cookie`)).toBe(`consumer_session=session-cookie`);
-    expect(getSetCookieValues(response.headers).some((cookie) => cookie.startsWith(`oauth_cookie=`))).toBe(true);
+    expect(forwardedHeaders?.get(`cookie`)).toBe(`refresh_cookie=token; csrf_token=csrf`);
+    expect(forwardedHeaders?.get(`x-csrf-token`)).toBe(`csrf`);
+    expect(getSetCookieValues(response.headers).some((cookie) => cookie.startsWith(`refresh_cookie=`))).toBe(true);
   });
 });

@@ -7,6 +7,7 @@ import { AUTH_NOTICE_QUERY } from '@remoola/api-types';
 import localStyles from './PasswordChangeForm.module.css';
 import styles from '../../../../components/ui/classNames.module.css';
 import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../../../lib/error-messages';
+import { submitPostNavigation } from '../../../../lib/post-navigation';
 
 const { formGrid, formSection, formSectionTitle, inputClass, inputLabel, primaryActionButton } = styles;
 
@@ -68,7 +69,7 @@ export function PasswordChangeForm({ reload, hasPassword }: PasswordChangeFormPr
       setCurrentPassword(``);
       setPassword(``);
       setConfirm(``);
-      window.location.assign(`/logout?${AUTH_NOTICE_QUERY}=${successNotice}`);
+      submitPostNavigation(`/logout?${AUTH_NOTICE_QUERY}=${successNotice}`);
       return;
     }
 

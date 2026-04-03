@@ -19,7 +19,7 @@ function buildQuery(accountType: TAccountType | null, contractorKind: string | n
     params.set(`contractorKind`, contractorKind);
   }
   if (googleSignupToken) {
-    params.set(`googleSignupToken`, googleSignupToken);
+    params.set(`googleSignup`, `1`);
   }
   const query = params.toString();
   return query ? `?${query}` : ``;

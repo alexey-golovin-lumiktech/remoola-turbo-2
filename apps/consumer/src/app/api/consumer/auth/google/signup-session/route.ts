@@ -3,18 +3,12 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { appendSetCookies, buildForwardHeaders } from '../../../../../../lib/api-utils';
 
 export async function GET(req: NextRequest) {
-  const token = req.nextUrl.searchParams.get(`token`);
-  if (!token) {
-    return NextResponse.json({ message: `Missing signup token` }, { status: 400 });
-  }
-
   const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL;
   if (!apiBase || apiBase.length === 0) {
     return NextResponse.json({ message: `API not configured` }, { status: 503 });
   }
 
   const url = new URL(`${apiBase}/consumer/auth/google/signup-session`);
-  url.searchParams.set(`token`, token);
 
   const res = await fetch(url, {
     method: `GET`,

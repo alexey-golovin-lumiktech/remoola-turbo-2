@@ -28,9 +28,17 @@ const ENVIRONMENT = {
 } as const;
 const environments = Object.values(ENVIRONMENT);
 const DEFAULT_DEV_CORS_ALLOWED_ORIGINS = [
+  `http://127.0.0.1:3001`,
+  `http://localhost:3001`,
+  `https://remoola-turbo-2-consumer.vercel.app`,
+  `http://127.0.0.1:3002`,
+  `http://localhost:3002`,
+  `https://remoola-turbo-2-consumer-mobile.vercel.app`,
   `http://127.0.0.1:3003`,
+  `http://localhost:3003`,
   `https://remoola-turbo-2-consumer-css-grid.vercel.app`,
   `http://127.0.0.1:3010`,
+  `http://localhost:3010`,
   `https://remoola-turbo-2-admin.vercel.app`,
 ] as const;
 
@@ -105,6 +113,8 @@ const nest = {
   /** Public marketing / invoice branding website; override per deployment. */
   PUBLIC_BRAND_WEBSITE_URL: z.string().url().default(`https://remoola.app`),
   CONSUMER_APP_ORIGIN: z.string().default(`CONSUMER_APP_ORIGIN`),
+  CONSUMER_MOBILE_APP_ORIGIN: z.string().default(`CONSUMER_MOBILE_APP_ORIGIN`),
+  CONSUMER_CSS_GRID_APP_ORIGIN: z.string().default(`CONSUMER_CSS_GRID_APP_ORIGIN`),
   ADMIN_APP_ORIGIN: z.string().default(`ADMIN_APP_ORIGIN`),
   // Production-like environments should set this explicitly; dev/test fall back to DEFAULT_DEV_CORS_ALLOWED_ORIGINS.
   CORS_ALLOWED_ORIGINS: zArray(z.string().min(1), []),
@@ -265,6 +275,12 @@ function assertProductionLikePolicy(
         `${key} must be configured with a non-placeholder, non-empty value when NODE_ENV=${data.NODE_ENV}`,
       );
     }
+  }
+
+  const accessSecret = normalizeConfiguredValue(data.JWT_ACCESS_SECRET);
+  const refreshSecret = normalizeConfiguredValue(data.JWT_REFRESH_SECRET);
+  if (accessSecret === refreshSecret) {
+    throw new Error(`JWT_ACCESS_SECRET and JWT_REFRESH_SECRET must be distinct when NODE_ENV=${data.NODE_ENV}`);
   }
 
   if (!data.COOKIE_SECURE) {

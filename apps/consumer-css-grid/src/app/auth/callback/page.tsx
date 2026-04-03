@@ -8,12 +8,12 @@ export default async function AuthCallbackPage({ searchParams }: AuthCallbackPag
   const params = await searchParams;
   const nextParam =
     typeof params.next === `string` ? params.next : Array.isArray(params.next) ? params.next[0] : undefined;
-  const oauthToken =
-    typeof params.oauthToken === `string`
-      ? params.oauthToken
-      : Array.isArray(params.oauthToken)
-        ? (params.oauthToken[0] ?? null)
+  const oauthHandoff =
+    typeof params.oauthHandoff === `string`
+      ? params.oauthHandoff
+      : Array.isArray(params.oauthHandoff)
+        ? (params.oauthHandoff[0] ?? null)
         : null;
 
-  return <AuthCallbackPageClient nextParam={nextParam} oauthToken={oauthToken} />;
+  return <AuthCallbackPageClient nextParam={nextParam} oauthHandoff={oauthHandoff} />;
 }

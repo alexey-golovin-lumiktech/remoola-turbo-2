@@ -66,7 +66,7 @@ describe(`ConsumerAuthService.requestPasswordReset`, () => {
         {
           provide: OriginResolverService,
           useValue: {
-            validateReturnOrigin: jest.fn((origin?: string) => (origin ? `http://127.0.0.1:3003` : undefined)),
+            validateConsumerReturnOrigin: jest.fn((origin?: string) => (origin ? `http://127.0.0.1:3003` : undefined)),
             resolveConsumerOrigin: jest.fn(),
             getAllowedOrigins: jest.fn(),
           },

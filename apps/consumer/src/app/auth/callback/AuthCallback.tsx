@@ -3,72 +3,110 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 
+import { sanitizeNextForRedirect } from '@remoola/api-types';
+
+import { pollForAuthCallbackSession } from './auth-callback-polling';
 import styles from '../../../components/ui/classNames.module.css';
+import { getAuthErrorMessage } from '../../../lib/auth-error-messages';
 
 const { authCallbackContainer } = styles;
-const AUTH_CHECK_INTERVAL_MS = 500;
-const AUTH_CHECK_TIMEOUT_MS = 10000;
+const DEFAULT_NEXT_PATH = `/dashboard`;
 
 export default function AuthCallback() {
   const router = useRouter();
   const params = useSearchParams();
-  const next = params.get(`next`) || `/dashboard`;
-  const oauthToken = params.get(`oauthToken`);
+  const next = sanitizeNextForRedirect(params.get(`next`), DEFAULT_NEXT_PATH);
+  const oauthHandoff = params.get(`oauthHandoff`);
 
   useEffect(() => {
-    let tries = 0;
-    let inFlight = false;
-    let exchangeComplete = oauthToken == null;
-    const maxTries = Math.ceil(AUTH_CHECK_TIMEOUT_MS / AUTH_CHECK_INTERVAL_MS);
+    let cancelled = false;
+    let timeoutId: number | null = null;
+    let resolvePendingSleep: (() => void) | null = null;
 
-    const interval = setInterval(() => {
-      tries++;
-      if (inFlight) return;
-      inFlight = true;
+    const redirectToLogin = (error?: string) => {
+      if (cancelled) return;
+      const loginUrl = error ? `/login?error=${encodeURIComponent(error)}` : `/login`;
+      router.replace(loginUrl);
+    };
 
-      const run = async () => {
-        if (!exchangeComplete && oauthToken) {
-          const exchangeRes = await fetch(`/api/oauth/exchange`, {
-            method: `POST`,
-            headers: { 'content-type': `application/json` },
-            credentials: `include`,
-            body: JSON.stringify({ exchangeToken: oauthToken }),
-          });
-
-          if (exchangeRes.ok) {
-            exchangeComplete = true;
-            const url = new URL(window.location.href);
-            url.searchParams.delete(`oauthToken`);
-            window.history.replaceState({}, ``, `${url.pathname}${url.search}${url.hash}`);
-          }
-        }
-
-        if (exchangeComplete) {
-          const res = await fetch(`/api/me`, { credentials: `include`, cache: `no-store` });
-          if (res.ok) {
-            clearInterval(interval);
-            router.replace(next);
-          }
-        }
-      };
-
-      run()
-        .catch(() => {
-          // ignore transient network errors
-        })
-        .finally(() => {
-          inFlight = false;
+    const completeAuthCallback = async () => {
+      if (oauthHandoff) {
+        const exchangeResponse = await fetch(`/api/oauth/complete`, {
+          method: `POST`,
+          headers: { 'content-type': `application/json` },
+          credentials: `include`,
+          body: JSON.stringify({ handoffToken: oauthHandoff }),
+          cache: `no-store`,
         });
 
-      // Safety exit: if auth verification does not complete in time.
-      if (tries > maxTries) {
-        clearInterval(interval);
-        router.replace(`/login`);
-      }
-    }, AUTH_CHECK_INTERVAL_MS);
+        if (!exchangeResponse.ok) {
+          const payload = (await exchangeResponse.json().catch(() => ({}))) as { code?: string; message?: string };
+          redirectToLogin(getAuthErrorMessage(payload.code ?? payload.message, `login_failed`));
+          return;
+        }
 
-    return () => clearInterval(interval);
-  }, [router, next, oauthToken]);
+        const url = new URL(window.location.href);
+        url.searchParams.delete(`oauthHandoff`);
+        window.history.replaceState({}, ``, `${url.pathname}${url.search}${url.hash}`);
+      }
+
+      const sessionEstablished = await pollForAuthCallbackSession({
+        poll: async () => {
+          if (cancelled) return false;
+
+          try {
+            const meResponse = await fetch(`/api/me`, {
+              credentials: `include`,
+              cache: `no-store`,
+            });
+
+            if (meResponse.ok) {
+              router.replace(next);
+              return true;
+            }
+          } catch {
+            // Keep the retry path bounded; transient network errors should behave like a miss.
+          }
+
+          return false;
+        },
+        sleep: (delayMs) =>
+          new Promise((resolve) => {
+            if (cancelled) {
+              resolve();
+              return;
+            }
+
+            resolvePendingSleep = () => {
+              resolvePendingSleep = null;
+              timeoutId = null;
+              resolve();
+            };
+
+            timeoutId = window.setTimeout(() => {
+              resolvePendingSleep?.();
+            }, delayMs);
+          }),
+        isCancelled: () => cancelled,
+      });
+
+      if (!sessionEstablished) {
+        redirectToLogin();
+      }
+    };
+
+    void completeAuthCallback().catch(() => {
+      redirectToLogin();
+    });
+
+    return () => {
+      cancelled = true;
+      if (timeoutId != null) {
+        window.clearTimeout(timeoutId);
+        resolvePendingSleep?.();
+      }
+    };
+  }, [router, next, oauthHandoff]);
 
   return (
     <div className={authCallbackContainer} role="status" aria-live="polite" aria-atomic="true">

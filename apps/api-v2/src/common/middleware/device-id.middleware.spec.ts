@@ -1,5 +1,23 @@
 import { type Response } from 'express';
 
+jest.mock(`../../shared/origin-resolver.service`, () => ({
+  OriginResolverService: class {
+    resolveConsumerRequestAppScope(
+      origin?: string | string[],
+      referer?: string | string[],
+    ): `consumer` | `consumer-mobile` | `consumer-css-grid` | undefined {
+      const values = [origin, referer].flatMap((entry) => (Array.isArray(entry) ? entry : [entry]));
+      for (const entry of values) {
+        if (typeof entry !== `string`) continue;
+        if (entry.includes(`mobile.example.com`)) return `consumer-mobile`;
+        if (entry.includes(`grid.example.com`)) return `consumer-css-grid`;
+        if (entry.includes(`app.example.com`) || entry.includes(`consumer.example.com`)) return `consumer`;
+      }
+      return undefined;
+    }
+  },
+}));
+
 import { deviceIdMiddleware, type RequestWithDeviceId } from './device-id.middleware';
 import { envs } from '../../envs';
 import { getApiConsumerDeviceCookieKeysForRead } from '../../shared-common/auth-cookie-policy';
@@ -9,6 +27,7 @@ describe(`deviceIdMiddleware`, () => {
   const validNonV4Uuid = `a1b2c3d4-e5f6-1178-89ab-cdef01234567`;
   const initialUnsignedFallback = envs.CONSUMER_DEVICE_ID_ALLOW_UNSIGNED_FALLBACK;
   const [secureDeviceCookieKey, localDeviceCookieKey] = getApiConsumerDeviceCookieKeysForRead();
+  const [, mobileLocalDeviceCookieKey] = getApiConsumerDeviceCookieKeysForRead(`consumer-mobile`);
 
   afterEach(() => {
     envs.CONSUMER_DEVICE_ID_ALLOW_UNSIGNED_FALLBACK = initialUnsignedFallback;
@@ -19,6 +38,7 @@ describe(`deviceIdMiddleware`, () => {
       path: `/api/consumer/auth/login`,
       cookies: {},
       signedCookies: {},
+      headers: {},
       ...overrides,
     } as RequestWithDeviceId;
   }
@@ -197,5 +217,40 @@ describe(`deviceIdMiddleware`, () => {
     expect(revisitReq.deviceId).not.toBe(firstDeviceId);
     expect(revisitRes.cookie).toHaveBeenCalled();
     expect(revisitNext).toHaveBeenCalled();
+  });
+
+  it(`uses the mobile device namespace selected by trusted origin`, (done) => {
+    const req = mockReq({
+      headers: { origin: `https://mobile.example.com` } as any,
+      signedCookies: { [mobileLocalDeviceCookieKey]: validUuid },
+    });
+    const res = mockRes();
+    const next = jest.fn(() => {
+      expect(req.deviceId).toBe(validUuid);
+      expect(res.cookie).not.toHaveBeenCalled();
+      done();
+    });
+    deviceIdMiddleware(req, res, next);
+    expect(next).toHaveBeenCalled();
+  });
+
+  it(`rotates a mobile unsigned fallback cookie into the mobile signed cookie`, (done) => {
+    envs.CONSUMER_DEVICE_ID_ALLOW_UNSIGNED_FALLBACK = true;
+    const req = mockReq({
+      headers: { origin: `https://mobile.example.com` } as any,
+      cookies: { [mobileLocalDeviceCookieKey]: validUuid },
+    });
+    const res = mockRes();
+    const next = jest.fn(() => {
+      expect(req.deviceId).toBe(validUuid);
+      expect(res.cookie).toHaveBeenCalledWith(
+        mobileLocalDeviceCookieKey,
+        validUuid,
+        expect.objectContaining({ signed: true }),
+      );
+      done();
+    });
+    deviceIdMiddleware(req, res, next);
+    expect(next).toHaveBeenCalled();
   });
 });

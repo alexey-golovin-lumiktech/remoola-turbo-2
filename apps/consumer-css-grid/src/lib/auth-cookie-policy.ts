@@ -2,10 +2,12 @@ import { type NextResponse } from 'next/server';
 
 import {
   getApiV2ConsumerAccessTokenCookieKeysForRead,
-  getApiV2ConsumerCsrfTokenCookieKey,
+  getApiV2ConsumerCsrfTokenCookieKeyForRuntime,
+  getApiV2ConsumerCsrfTokenCookieKeysForRead,
   getApiV2ConsumerDeviceCookieKeysForRead,
+  getApiV2ConsumerGoogleSignupSessionCookieKeysForRead,
   getApiV2ConsumerRefreshTokenCookieKeysForRead,
-  getApiV2GoogleOAuthStateCookieKey,
+  getApiV2GoogleOAuthStateCookieKeysForRead,
   getConsumerAuthCookieOptions,
   getCookieClearOptions,
   getCsrfCookieOptions,
@@ -32,8 +34,6 @@ export function clearConsumerAuthCookies(response: NextResponse, request: Reques
   const authClearOpts = getCookieClearOptions(getConsumerAuthCookieOptions(runtime));
   const oauthClearOpts = getCookieClearOptions(getOAuthStateCookieOptions(runtime));
   const csrfClearOpts = getCookieClearOptions(getCsrfCookieOptions(runtime));
-  const csrfCookieKey = getApiV2ConsumerCsrfTokenCookieKey();
-  const oauthStateCookieKey = getApiV2GoogleOAuthStateCookieKey();
 
   for (const key of getApiV2ConsumerAccessTokenCookieKeysForRead()) {
     response.cookies.set(key, ``, { ...authClearOpts, maxAge: 0 });
@@ -44,9 +44,16 @@ export function clearConsumerAuthCookies(response: NextResponse, request: Reques
   for (const key of getApiV2ConsumerDeviceCookieKeysForRead()) {
     response.cookies.set(key, ``, { ...authClearOpts, maxAge: 0 });
   }
+  for (const key of getApiV2ConsumerGoogleSignupSessionCookieKeysForRead()) {
+    response.cookies.set(key, ``, { ...authClearOpts, maxAge: 0 });
+  }
 
-  response.cookies.set(oauthStateCookieKey, ``, { ...oauthClearOpts, maxAge: 0 });
-  response.cookies.set(csrfCookieKey, ``, { ...csrfClearOpts, maxAge: 0 });
+  for (const key of getApiV2GoogleOAuthStateCookieKeysForRead()) {
+    response.cookies.set(key, ``, { ...oauthClearOpts, maxAge: 0 });
+  }
+  for (const key of getApiV2ConsumerCsrfTokenCookieKeysForRead()) {
+    response.cookies.set(key, ``, { ...csrfClearOpts, maxAge: 0 });
+  }
 }
 
 export function getCsrfTokenFromRequest(request: Request): string | null {
@@ -54,14 +61,20 @@ export function getCsrfTokenFromRequest(request: Request): string | null {
   if (csrfFromHeader) return csrfFromHeader;
 
   const cookie = request.headers.get(`cookie`) ?? ``;
-  const csrfCookieKey = getApiV2ConsumerCsrfTokenCookieKey();
-  return (
-    cookie
+  const runtime = getConsumerCssGridCookieRuntime(request);
+  const preferredCsrfKey = getApiV2ConsumerCsrfTokenCookieKeyForRuntime(runtime);
+  const orderedCsrfKeys = [
+    preferredCsrfKey,
+    ...getApiV2ConsumerCsrfTokenCookieKeysForRead().filter((key) => key !== preferredCsrfKey),
+  ];
+  for (const key of orderedCsrfKeys) {
+    const match = cookie
       .split(`;`)
       .map((part) => part.trim())
-      .find((part) => part.startsWith(`${csrfCookieKey}=`))
-      ?.split(`=`)
-      ?.slice(1)
-      .join(`=`) ?? null
-  );
+      .find((part) => part.startsWith(`${key}=`));
+    if (match) {
+      return match.split(`=`).slice(1).join(`=`);
+    }
+  }
+  return null;
 }

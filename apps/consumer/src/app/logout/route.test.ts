@@ -1,37 +1,74 @@
-import { GET } from './route';
+import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 
-describe(`GET /logout`, () => {
+import {
+  COOKIE_KEYS,
+  getConsumerAccessTokenCookieKeysForRead,
+  getConsumerDeviceCookieKeysForRead,
+  getConsumerRefreshTokenCookieKeysForRead,
+} from '@remoola/api-types';
+
+import * as routeModule from './route';
+import { getSetCookieValues } from '../../lib/api-utils';
+
+type MockFetch = jest.MockedFunction<typeof fetch>;
+
+describe(`/logout route`, () => {
   const originalApiBase = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const originalFetch = global.fetch;
+  let mockFetch: MockFetch;
+  const routeExports = routeModule as Record<string, unknown>;
+  const { POST } = routeModule;
 
   beforeEach(() => {
     delete process.env.NEXT_PUBLIC_API_BASE_URL;
+    mockFetch = jest.fn() as MockFetch;
+    global.fetch = mockFetch;
   });
 
-  afterAll(() => {
+  afterEach(() => {
     process.env.NEXT_PUBLIC_API_BASE_URL = originalApiBase;
+    global.fetch = originalFetch;
   });
 
-  it(`preserves valid auth_notice when redirecting to login`, async () => {
-    const req = new Request(`http://localhost:3001/logout?auth_notice=password_changed`, { method: `GET` });
-    const res = await GET(req);
-
-    expect(res.status).toBe(307);
-    expect(res.headers.get(`location`)).toBe(`http://localhost:3001/login?auth_notice=password_changed`);
+  it(`does not expose a GET handler`, () => {
+    expect(routeExports.GET).toBeUndefined();
   });
 
-  it(`preserves password_set auth_notice when redirecting to login`, async () => {
-    const req = new Request(`http://localhost:3001/logout?auth_notice=password_set`, { method: `GET` });
-    const res = await GET(req);
+  it(`clears local auth cookies after successful backend logout POST`, async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = `https://api.example.com`;
+    mockFetch.mockResolvedValueOnce(
+      new Response(`ok`, {
+        status: 200,
+        headers: { [`set-cookie`]: `backend_cookie=gone; Path=/; Max-Age=0` },
+      }),
+    );
 
-    expect(res.status).toBe(307);
-    expect(res.headers.get(`location`)).toBe(`http://localhost:3001/login?auth_notice=password_set`);
-  });
+    const request = new Request(`https://app.example.com/logout`, {
+      headers: {
+        cookie: `${COOKIE_KEYS.CSRF_TOKEN}=csrf-token`,
+        host: `app.example.com`,
+      },
+    });
 
-  it(`drops invalid auth_notice values`, async () => {
-    const req = new Request(`http://localhost:3001/logout?auth_notice=unknown_value`, { method: `GET` });
-    const res = await GET(req);
+    const response = await POST(request);
+    const setCookies = getSetCookieValues(response.headers);
+    const forwardedHeaders = mockFetch.mock.calls[0]?.[1]?.headers as Headers;
 
-    expect(res.status).toBe(307);
-    expect(res.headers.get(`location`)).toBe(`http://localhost:3001/login`);
+    expect(response.status).toBe(303);
+    expect(new URL(response.headers.get(`location`) ?? ``).pathname).toBe(`/login`);
+    expect(forwardedHeaders.get(`x-csrf-token`)).toBe(`csrf-token`);
+    expect(forwardedHeaders.get(`host`)).toBeNull();
+
+    for (const key of getConsumerAccessTokenCookieKeysForRead()) {
+      expect(setCookies.some((cookie) => cookie.startsWith(`${key}=`))).toBe(true);
+    }
+    for (const key of getConsumerRefreshTokenCookieKeysForRead()) {
+      expect(setCookies.some((cookie) => cookie.startsWith(`${key}=`))).toBe(true);
+    }
+    for (const key of getConsumerDeviceCookieKeysForRead()) {
+      expect(setCookies.some((cookie) => cookie.startsWith(`${key}=`))).toBe(true);
+    }
+    expect(setCookies.some((cookie) => cookie.startsWith(`${COOKIE_KEYS.CSRF_TOKEN}=`))).toBe(true);
+    expect(setCookies.some((cookie) => cookie.startsWith(`${COOKIE_KEYS.GOOGLE_OAUTH_STATE}=`))).toBe(true);
   });
 });

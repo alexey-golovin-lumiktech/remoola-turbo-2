@@ -1,6 +1,7 @@
 import { balanceSchema, paymentsResponseSchema, type Balance, type PaymentsResponse } from './schemas';
 import { getEnv } from '../../lib/env.server';
 import { serverLogger } from '../../lib/logger.server';
+import { buildServerReadAuthHeaders } from '../../lib/server-action-auth';
 
 export async function getBalance(cookie: string | null): Promise<Balance | null> {
   const env = getEnv();
@@ -13,7 +14,7 @@ export async function getBalance(cookie: string | null): Promise<Balance | null>
     serverLogger.debug(`Fetching balance`, { url });
     const res = await fetch(url, {
       method: `GET`,
-      headers: { Cookie: cookie ?? `` },
+      headers: buildServerReadAuthHeaders(cookie),
       cache: `no-store`,
       signal: AbortSignal.timeout(10000),
     });
@@ -79,7 +80,7 @@ export async function getPayments({
 
     const res = await fetch(url, {
       method: `GET`,
-      headers: { Cookie: cookie ?? `` },
+      headers: buildServerReadAuthHeaders(cookie),
       cache: `no-store`,
       signal: AbortSignal.timeout(15000),
     });
@@ -121,7 +122,7 @@ export async function getPaymentDetail(paymentRequestId: string, cookie: string 
   if (!baseUrl) return null;
   const res = await fetch(`${baseUrl}/consumer/payments/${paymentRequestId}`, {
     method: `GET`,
-    headers: { Cookie: cookie ?? `` },
+    headers: buildServerReadAuthHeaders(cookie),
     cache: `no-store`,
     signal: AbortSignal.timeout(10000),
   });

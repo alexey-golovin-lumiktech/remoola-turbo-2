@@ -2,9 +2,12 @@
 
 import { useCallback, useState } from 'react';
 
+import { LEGAL_STATUS, type TLegalStatus } from '@remoola/api-types';
+
 import { toDateOnly } from '../../../../lib/date-utils';
 import { CountrySelect } from '../../../../shared/ui/CountrySelect';
 import { FORM_ERROR_CLASS, FORM_LABEL_CLASS } from '../../../../shared/ui/form-classes';
+import { FormSelect } from '../../../../shared/ui/FormSelect';
 import { PhoneInput } from '../../../../shared/ui/PhoneInput';
 import { useSignupForm } from '../../SignupFormContext';
 import { useSignupSteps } from '../../SignupStepsContext';
@@ -14,6 +17,12 @@ import { entityDetailsSchema, getFieldErrors, personalDetailsSchema } from '../.
 import { SIGNUP_INPUT_CLASS } from '../inputClass';
 import { PrevNextButtons } from '../PrevNextButtons';
 import styles from './PersonalDetailsStep.module.css';
+
+const LEGAL_STATUS_OPTIONS: Array<{ value: TLegalStatus; label: string }> = [
+  { value: LEGAL_STATUS.INDIVIDUAL, label: `Individual` },
+  { value: LEGAL_STATUS.INDIVIDUAL_ENTREPRENEUR, label: `Individual Entrepreneur` },
+  { value: LEGAL_STATUS.SOLE_TRADER, label: `Sole Trader` },
+];
 
 export function PersonalDetailsStep() {
   const {
@@ -263,6 +272,34 @@ export function PersonalDetailsStep() {
                   error={fieldErrors.countryOfTaxResidence}
                   onErrorClear={() => clearError(`countryOfTaxResidence`)}
                 />
+              );
+            }
+            if (key === `legalStatus`) {
+              const errId = `pi-${key}-err`;
+              const hasError = !!fieldErrors[key];
+              return (
+                <div key={key}>
+                  <label htmlFor={`pi-${key}`} className={FORM_LABEL_CLASS}>
+                    {label}
+                  </label>
+                  <FormSelect
+                    id={`pi-${key}`}
+                    value={personalDetails.legalStatus ?? LEGAL_STATUS.INDIVIDUAL}
+                    onChange={(e) => {
+                      updatePersonal({ legalStatus: e.target.value as TLegalStatus });
+                      clearError(key);
+                    }}
+                    error={hasError}
+                    options={LEGAL_STATUS_OPTIONS}
+                    aria-invalid={hasError || undefined}
+                    aria-describedby={hasError ? errId : undefined}
+                  />
+                  {hasError ? (
+                    <p id={errId} className={FORM_ERROR_CLASS} role="alert">
+                      {fieldErrors[key]}
+                    </p>
+                  ) : null}
+                </div>
               );
             }
             const errId = `pi-${key}-err`;

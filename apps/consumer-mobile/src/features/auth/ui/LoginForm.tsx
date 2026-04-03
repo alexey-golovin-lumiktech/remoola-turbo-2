@@ -2,20 +2,20 @@
 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
   AUTH_NOTICE_QUERY,
+  buildConsumerGoogleOAuthStartUrl,
   type AuthNotice,
   getAuthNoticeMessage,
   removeStaleLoginParams,
   SESSION_EXPIRED_QUERY,
 } from '@remoola/api-types';
-import { GoogleIcon } from '@remoola/ui';
+import { GoogleIcon, RemoolaCompactLogo, RemoolaLogo } from '@remoola/ui';
 
 import { shouldFinalizeLoginLoading } from './login-loading-guard';
 import styles from './LoginForm.module.css';
-import { getApiBaseUrlOptional } from '../../../lib/config.client';
 import { getDevCredentials } from '../../../lib/dev-credentials';
 import { resetSessionExpiredHandled } from '../../../lib/session-expired';
 import { AlertTriangleIcon } from '../../../shared/ui/icons/AlertTriangleIcon';
@@ -27,6 +27,8 @@ import { XCircleIcon } from '../../../shared/ui/icons/XCircleIcon';
 import { XIcon } from '../../../shared/ui/icons/XIcon';
 import { resetUserThemeCache } from '../../../shared/ui/ThemeInitializer';
 import { loginSchema } from '../schemas';
+
+const CLEAR_COOKIES_URL = `/api/consumer/auth/clear-cookies`;
 
 export function LoginForm({
   nextPath,
@@ -55,21 +57,11 @@ export function LoginForm({
 
   const errorMessage = err ?? (oauthError ? `Sign-in failed. Please try again.` : undefined);
 
-  const googleStartUrl = useMemo(() => {
-    const base = getApiBaseUrlOptional();
-    if (!base) return null;
-    const url = new URL(`${base}/consumer/auth/google/start`);
-    url.searchParams.set(`next`, encodeURIComponent(nextPath));
-    return url.toString();
-  }, [nextPath]);
-
   const handleGoogleSignIn = useCallback(async () => {
-    if (!googleStartUrl) return;
-    const url = new URL(googleStartUrl);
-    url.searchParams.set(`returnOrigin`, window.location.origin);
+    const url = new URL(buildConsumerGoogleOAuthStartUrl(nextPath), window.location.origin);
     await fetch(`/api/consumer/auth/clear-cookies`, { method: `POST`, credentials: `include` });
-    window.location.href = url.toString();
-  }, [googleStartUrl]);
+    window.location.href = `${url.pathname}${url.search}`;
+  }, [nextPath]);
 
   useEffect(() => {
     resetSessionExpiredHandled();
@@ -90,9 +82,18 @@ export function LoginForm({
     if (!hasSessionExpiredFlag && !hasAuthNotice) return;
 
     cleanedLoginQueryRef.current = true;
-    const url = new URL(window.location.href);
-    removeStaleLoginParams(url, [SESSION_EXPIRED_QUERY, AUTH_NOTICE_QUERY]);
-    window.history.replaceState(null, ``, url.pathname + (url.search || ``));
+    const cleanupQueryParams = () => {
+      const url = new URL(window.location.href);
+      removeStaleLoginParams(url, [SESSION_EXPIRED_QUERY, AUTH_NOTICE_QUERY]);
+      window.history.replaceState(null, ``, url.pathname + (url.search || ``));
+    };
+
+    if (hasSessionExpiredFlag) {
+      fetch(CLEAR_COOKIES_URL, { method: `POST`, credentials: `include` }).finally(cleanupQueryParams);
+      return;
+    }
+
+    cleanupQueryParams();
   }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -150,8 +151,18 @@ export function LoginForm({
     <div className={styles.root} data-testid="consumer-mobile-login-page">
       <div className={styles.container}>
         <div className={styles.header}>
-          <h1 className={styles.title}>Welcome back</h1>
-          <p className={styles.subtitle}>Sign in to continue to your account</p>
+          <div className={`flex md:hidden ${styles.headerTopMobile}`}>
+            <RemoolaCompactLogo className={styles.logoImageCompact} />
+            <div className={styles.headerCopy}>
+              <h1 className={styles.title}>Welcome back</h1>
+              <p className={styles.subtitle}>Sign in to continue to your account</p>
+            </div>
+          </div>
+          <div className={`hidden md:block ${styles.headerTopDesktop}`}>
+            <RemoolaLogo className={styles.logoImageDesktop} />
+            <h1 className={styles.title}>Welcome back</h1>
+            <p className={styles.subtitle}>Sign in to continue to your account</p>
+          </div>
           {devCredentials ? (
             <div className={styles.devBadge}>
               <LightningIcon className={styles.devIcon} strokeWidth={2} />
@@ -290,31 +301,29 @@ export function LoginForm({
               )}
             </button>
 
-            {googleStartUrl ? (
-              <>
-                <div className={styles.dividerWrap}>
-                  <div className={styles.dividerLine}>
-                    <div className={styles.dividerLineInner} />
-                  </div>
-                  <div className={styles.dividerTextWrap}>
-                    <span className={styles.dividerText}>Or continue with</span>
-                  </div>
+            <>
+              <div className={styles.dividerWrap}>
+                <div className={styles.dividerLine}>
+                  <div className={styles.dividerLineInner} />
                 </div>
+                <div className={styles.dividerTextWrap}>
+                  <span className={styles.dividerText}>Or continue with</span>
+                </div>
+              </div>
 
-                <button
-                  type="button"
-                  onClick={handleGoogleSignIn}
-                  disabled={loading}
-                  className={styles.googleBtn}
-                  data-testid="consumer-mobile-login-google"
-                >
-                  <span className={styles.googleInner}>
-                    <GoogleIcon size={20} />
-                    Continue with Google
-                  </span>
-                </button>
-              </>
-            ) : null}
+              <button
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={loading}
+                className={styles.googleBtn}
+                data-testid="consumer-mobile-login-google"
+              >
+                <span className={styles.googleInner}>
+                  <GoogleIcon size={20} />
+                  Continue with Google
+                </span>
+              </button>
+            </>
           </form>
         </div>
 

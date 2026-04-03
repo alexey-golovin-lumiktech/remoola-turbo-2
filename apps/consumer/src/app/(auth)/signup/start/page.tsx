@@ -1,8 +1,7 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useEffect, useRef, useState } from 'react';
-import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
+import { Suspense, useEffect } from 'react';
 
 import { type TAccountType, ACCOUNT_TYPE } from '@remoola/api-types';
 import { cn } from '@remoola/ui';
@@ -10,6 +9,7 @@ import { cn } from '@remoola/ui';
 import { ErrorBoundary, ErrorState } from '../../../../components';
 import styles from '../../../../components/ui/classNames.module.css';
 import { useSignupForm } from '../hooks/useSignupForm';
+import { buildSignupFlowPath } from '../routing';
 
 const {
   signupStartCard,
@@ -33,33 +33,20 @@ const {
 
 function ChooseAccountTypeStepInner() {
   const router = useRouter();
-  const params = useSearchParams();
   const {
     signupDetails: signup,
     updateSignup,
-    updatePersonal,
-    setGoogleSignupToken,
     googleSignupToken,
+    googleHydrationError,
+    retryGoogleHydration,
   } = useSignupForm();
-  const googleSignupTokenFromUrl = params.get(`googleSignupToken`);
-  const hydratedRef = useRef(false);
-  const isMountedRef = useRef(true);
-  const [emailHydrated, setEmailHydrated] = useState(false);
-  const [hydrateError, setHydrateError] = useState<string | null>(null);
-  const [retryTrigger, setRetryTrigger] = useState(0);
+  const activeGoogleSignupToken = googleSignupToken;
 
   useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!googleSignupTokenFromUrl) {
+    if (!googleSignupToken) {
       void fetch(`/api/consumer/auth/clear-cookies`, { method: `POST`, credentials: `include` });
     }
-  }, [googleSignupTokenFromUrl]);
+  }, [googleSignupToken]);
 
   const selectType = (type: TAccountType) => {
     updateSignup({ accountType: type });
@@ -69,12 +56,18 @@ function ChooseAccountTypeStepInner() {
     if (!signup.accountType) return;
 
     if (signup.accountType === ACCOUNT_TYPE.BUSINESS) {
-      const path = googleSignupToken ? `/signup?googleSignupToken=${encodeURIComponent(googleSignupToken)}` : `/signup`;
+      const path = buildSignupFlowPath(`/signup`, {
+        accountType: signup.accountType,
+        contractorKind: signup.contractorKind,
+        googleSignupToken: activeGoogleSignupToken,
+      });
       router.push(path);
     } else {
-      const path = googleSignupToken
-        ? `/signup/start/contractor-kind?googleSignupToken=${encodeURIComponent(googleSignupToken)}`
-        : `/signup/start/contractor-kind`;
+      const path = buildSignupFlowPath(`/signup/start/contractor-kind`, {
+        accountType: signup.accountType,
+        contractorKind: null,
+        googleSignupToken: activeGoogleSignupToken,
+      });
       router.push(path);
     }
   };
@@ -85,87 +78,16 @@ function ChooseAccountTypeStepInner() {
   const getOptionLabelClassName = (selected: boolean) =>
     cn(signupStartOptionLabelBase, selected ? signupStartOptionLabelActive : signupStartOptionLabelInactive);
 
-  useEffect(() => {
-    if (signup.accountType === null) {
-      updateSignup({ accountType: ACCOUNT_TYPE.CONTRACTOR });
-    }
-  }, [signup.accountType, updateSignup]);
+  const isWaitingForGoogleSignup = Boolean(googleSignupToken) && !signup.email;
 
-  const handleRetryHydrate = () => {
-    setHydrateError(null);
-    hydratedRef.current = false;
-    setRetryTrigger((t) => t + 1);
-  };
-
-  useEffect(() => {
-    if (!googleSignupTokenFromUrl || hydratedRef.current) return;
-
-    hydratedRef.current = true;
-    setGoogleSignupToken(googleSignupTokenFromUrl);
-    setHydrateError(null);
-
-    const hydrateFromGoogle = async () => {
-      let fetchedEmail: string | undefined;
-      let fetchedGivenName: string | undefined;
-      let fetchedFamilyName: string | undefined;
-      let failed = false;
-      try {
-        const res = await fetch(
-          `/api/consumer/auth/google/signup-session?token=${encodeURIComponent(googleSignupTokenFromUrl)}`,
-          { credentials: `include` },
-        );
-        if (res.ok && isMountedRef.current) {
-          const data = (await res.json().catch(() => ({}))) as {
-            email?: string;
-            givenName?: string;
-            familyName?: string;
-          };
-          fetchedEmail = data?.email;
-          fetchedGivenName = data?.givenName;
-          fetchedFamilyName = data?.familyName;
-        } else if (isMountedRef.current) {
-          failed = true;
-          const msg = `Could not load your Google signup session. Please try again.`;
-          setHydrateError(msg);
-          toast.error(msg);
-        }
-      } catch {
-        if (isMountedRef.current) {
-          failed = true;
-          const msg = `Could not load your Google signup session. Please check your connection and try again.`;
-          setHydrateError(msg);
-          toast.error(msg);
-        }
-      } finally {
-        if (isMountedRef.current && !failed) {
-          updateSignup({
-            accountType: ACCOUNT_TYPE.CONTRACTOR,
-            contractorKind: null,
-            ...(fetchedEmail ? { email: fetchedEmail } : {}),
-          });
-          if (fetchedGivenName || fetchedFamilyName) {
-            updatePersonal({
-              ...(fetchedGivenName ? { firstName: fetchedGivenName } : {}),
-              ...(fetchedFamilyName ? { lastName: fetchedFamilyName } : {}),
-            });
-          }
-          setEmailHydrated(true);
-        }
-      }
-    };
-    hydrateFromGoogle();
-  }, [googleSignupTokenFromUrl, retryTrigger, setGoogleSignupToken, updatePersonal, updateSignup]);
-
-  const isHydratingFromGoogle = Boolean(googleSignupTokenFromUrl) && !emailHydrated && !signup.email;
-
-  if (!signup.accountType || isHydratingFromGoogle) {
-    if (hydrateError) {
+  if (isWaitingForGoogleSignup) {
+    if (googleHydrationError) {
       return (
         <div className={signupStartPageContainer}>
           <ErrorState
             title="Signup session error"
-            message={hydrateError}
-            onRetry={handleRetryHydrate}
+            message={googleHydrationError}
+            onRetry={retryGoogleHydration}
             showRefreshButton={true}
           />
         </div>

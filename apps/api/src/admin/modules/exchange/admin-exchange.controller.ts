@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
-import { ApiBasicAuth, ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 
 import { type AdminModel } from '@remoola/database-2';
 
@@ -43,9 +43,8 @@ function parseExchangeScheduledListQuery(dto: AdminExchangeScheduledListQuery) {
 }
 
 @UseGuards(JwtAuthGuard)
+@ApiCookieAuth()
 @ApiTags(`Admin: Exchange`)
-@ApiBearerAuth(`bearer`)
-@ApiBasicAuth(`basic`)
 @Controller(`admin/exchange`)
 export class AdminExchangeController {
   constructor(private readonly service: AdminExchangeService) {}

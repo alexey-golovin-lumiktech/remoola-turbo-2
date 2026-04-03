@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server';
 
-import { appendSetCookies, buildForwardHeaders } from '../../../lib/api-utils';
+import { appendSetCookies, buildAuthMutationForwardHeaders } from '../../../lib/api-utils';
 
 export async function POST(req: Request) {
-  const url = new URL(`${process.env.NEXT_PUBLIC_API_BASE_URL}/consumer/auth/login`);
-  const forwardHeaders = buildForwardHeaders(req.headers);
-  forwardHeaders.delete(`host`);
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  if (!baseUrl) {
+    return NextResponse.json({ message: `API base URL not configured`, code: `CONFIG_ERROR` }, { status: 503 });
+  }
+
+  const url = new URL(`${baseUrl}/consumer/auth/login`);
+  const forwardHeaders = buildAuthMutationForwardHeaders(req.headers);
 
   const res = await fetch(url, {
     method: `POST`,

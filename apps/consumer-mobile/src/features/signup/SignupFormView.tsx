@@ -7,7 +7,6 @@ import { ACCOUNT_TYPE } from '@remoola/api-types';
 
 import { useSignupForm } from './SignupFormContext';
 import styles from './SignupFormView.module.css';
-import { getApiBaseUrlOptional } from '../../lib/config.client';
 import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../lib/error-messages';
 import { clientLogger } from '../../lib/logger';
 import { showErrorToast } from '../../lib/toast.client';
@@ -15,7 +14,7 @@ import { showErrorToast } from '../../lib/toast.client';
 export function SignupFormView() {
   const router = useRouter();
   const params = useSearchParams();
-  const googleSignupTokenFromUrl = params.get(`googleSignupToken`);
+  const googleSignupTokenFromUrl = params.get(`googleSignup`) ?? params.get(`googleSignupHandoff`);
   const {
     signupDetails,
     personalDetails,
@@ -77,7 +76,6 @@ export function SignupFormView() {
       personalDetails: personalPayload,
       organizationDetails: isBusiness || isContractorEntity ? organizationDetails : null,
       addressDetails,
-      ...(token ? { googleSignupToken: token } : {}),
     };
   };
 
@@ -102,13 +100,7 @@ export function SignupFormView() {
         setLoading(false);
         return;
       }
-      const json = (await res.json()) as { consumer?: { id?: string } };
-      const baseUrl = getApiBaseUrlOptional();
-      if (baseUrl && json.consumer?.id) {
-        await fetch(`${baseUrl}/consumer/auth/signup/${json.consumer.id}/complete-profile-creation`, {
-          credentials: `include`,
-        });
-      }
+      await res.json().catch(() => null);
       router.push(`/signup/completed`);
     } catch (err) {
       clientLogger.error(`Signup failed`, {

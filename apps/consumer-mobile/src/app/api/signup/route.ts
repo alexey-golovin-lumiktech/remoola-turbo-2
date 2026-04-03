@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
-import { appendSetCookies, requireJsonBody, buildForwardHeaders } from '../../../lib/api-utils';
+import { appendSetCookies, buildAuthMutationForwardHeaders, requireJsonBody } from '../../../lib/api-utils';
 import { getEnv } from '../../../lib/env.server';
 
 export async function POST(req: NextRequest) {
@@ -12,15 +12,38 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: `API base URL not configured`, code: `CONFIG_ERROR` }, { status: 503 });
   }
   const url = new URL(`${baseUrl}/consumer/auth/signup`);
+  const forwardHeaders = buildAuthMutationForwardHeaders(req.headers);
+  forwardHeaders.set(`content-type`, `application/json`);
+
   const res = await fetch(url, {
     method: `POST`,
-    headers: buildForwardHeaders(req.headers),
+    headers: forwardHeaders,
     body: bodyResult.body,
-    credentials: `include`,
     cache: `no-store`,
   });
   const data = await res.text();
   const responseHeaders = new Headers();
   appendSetCookies(responseHeaders, res.headers);
+
+  if (res.ok) {
+    try {
+      const parsed = JSON.parse(data) as { consumer?: { id?: string } };
+      const consumerId = parsed.consumer?.id?.trim();
+      if (consumerId) {
+        const completionRes = await fetch(`${baseUrl}/consumer/auth/signup/${consumerId}/complete-profile-creation`, {
+          method: `GET`,
+          headers: forwardHeaders,
+          cache: `no-store`,
+        }).catch(() => null);
+
+        if (completionRes) {
+          appendSetCookies(responseHeaders, completionRes.headers);
+        }
+      }
+    } catch {
+      // Best-effort follow-up: signup already succeeded.
+    }
+  }
+
   return new NextResponse(data, { status: res.status, headers: responseHeaders });
 }

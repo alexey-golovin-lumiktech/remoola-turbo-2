@@ -1,26 +1,22 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 
 import { ACCOUNT_TYPE, CONTRACTOR_KIND, type TContractorKind } from '@remoola/api-types';
 import { LandmarkIcon, UserIcon } from '@remoola/ui';
 
 import styles from './ContractorKindView.module.css';
+import { buildSignupFlowPath } from './routing';
 import { useSignupForm } from './SignupFormContext';
 
 export function ContractorKindView() {
   const router = useRouter();
   const { signupDetails, updateSignup, googleSignupToken } = useSignupForm();
 
-  useEffect(() => {
-    if (signupDetails.accountType !== ACCOUNT_TYPE.CONTRACTOR) {
-      router.replace(`/signup/start`);
-    }
-    if (signupDetails.contractorKind === null && signupDetails.accountType === ACCOUNT_TYPE.CONTRACTOR) {
-      updateSignup({ contractorKind: CONTRACTOR_KIND.INDIVIDUAL });
-    }
-  }, [signupDetails.accountType, signupDetails.contractorKind, updateSignup, router]);
+  if (signupDetails.accountType !== ACCOUNT_TYPE.CONTRACTOR) {
+    router.replace(`/signup/start`);
+    return null;
+  }
 
   const selectKind = (kind: TContractorKind) => {
     updateSignup({ contractorKind: kind });
@@ -28,12 +24,23 @@ export function ContractorKindView() {
 
   const onNext = () => {
     if (!signupDetails.contractorKind) return;
-    const q = googleSignupToken ? `?googleSignupToken=${encodeURIComponent(googleSignupToken)}` : ``;
-    router.push(`/signup${q}`);
+    router.push(
+      buildSignupFlowPath(`/signup`, {
+        accountType: signupDetails.accountType,
+        contractorKind: signupDetails.contractorKind,
+        googleSignupToken,
+      }),
+    );
   };
 
   const onBack = () => {
-    router.push(`/signup/start`);
+    router.push(
+      buildSignupFlowPath(`/signup/start`, {
+        accountType: signupDetails.accountType,
+        contractorKind: null,
+        googleSignupToken,
+      }),
+    );
   };
 
   const isSelected = (kind: TContractorKind) => signupDetails.contractorKind === kind;

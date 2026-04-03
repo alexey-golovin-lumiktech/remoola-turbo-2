@@ -12,7 +12,7 @@ import { hashPassword, hashTokenToHex } from '@remoola/security-utils';
 import { assertIsolatedTestDatabaseUrl } from './test-db-safety';
 import { AppModule } from '../src/app.module';
 import { ConsumerAuthService } from '../src/consumer/auth/auth.service';
-import { CSRF_TOKEN_COOKIE_KEY } from '../src/shared-common';
+import { getApiConsumerCsrfTokenCookieKeysForRead } from '../src/shared-common';
 
 describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
   let app: INestApplication;
@@ -34,6 +34,14 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
     if (!row) return null;
     const [raw] = row.split(`;`);
     return raw.slice(`${key}=`.length);
+  }
+
+  function parseCookieValueForKeys(cookies: string[] | undefined, keys: readonly string[]): string | null {
+    for (const key of keys) {
+      const value = parseCookieValue(cookies, key);
+      if (value) return value;
+    }
+    return null;
   }
 
   function asCookieArray(header: string | string[] | undefined): string[] | undefined {
@@ -111,34 +119,43 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
     const agent = request.agent(app.getHttpServer());
     const loginRes = await agent
       .post(`/consumer/auth/login`)
+      .set(`origin`, origin)
       .set(`x-forwarded-for`, `198.51.100.18`)
       .send({ email: settingsConsumerEmail, password: settingsInitialPassword })
-      .expect(201);
-    const csrf = parseCookieValue(asCookieArray(loginRes.headers[`set-cookie`]), CSRF_TOKEN_COOKIE_KEY);
+      .expect(200);
+    const csrf = parseCookieValueForKeys(
+      asCookieArray(loginRes.headers[`set-cookie`]),
+      getApiConsumerCsrfTokenCookieKeysForRead(),
+    );
     expect(csrf).toBeTruthy();
 
     const changeRes = await agent
       .patch(`/consumer/profile/password`)
+      .set(`origin`, origin)
+      .set(`x-csrf-token`, csrf ?? ``)
       .send({ currentPassword: settingsInitialPassword, password: settingsUpdatedPassword })
       .expect(200);
     expect(changeRes.body).toEqual({ success: true, requiresReauth: true });
 
     await agent
       .post(`/consumer/auth/refresh`)
+      .set(`origin`, origin)
       .set(`x-csrf-token`, csrf ?? ``)
       .expect(401);
 
     await request(app.getHttpServer())
       .post(`/consumer/auth/login`)
+      .set(`origin`, origin)
       .set(`x-forwarded-for`, `198.51.100.18`)
       .send({ email: settingsConsumerEmail, password: settingsInitialPassword })
       .expect(401);
 
     await request(app.getHttpServer())
       .post(`/consumer/auth/login`)
+      .set(`origin`, origin)
       .set(`x-forwarded-for`, `198.51.100.18`)
       .send({ email: settingsConsumerEmail, password: settingsUpdatedPassword })
-      .expect(201);
+      .expect(200);
 
     const activeSessions = await prisma.authSessionModel.count({
       where: { consumerId: settingsConsumerId, revokedAt: null },
@@ -254,10 +271,14 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
     const agent = request.agent(app.getHttpServer());
     const loginRes = await agent
       .post(`/consumer/auth/login`)
+      .set(`origin`, origin)
       .set(`x-forwarded-for`, `198.51.100.16`)
       .send({ email: consumerEmail, password: initialPassword })
-      .expect(201);
-    const csrf = parseCookieValue(asCookieArray(loginRes.headers[`set-cookie`]), CSRF_TOKEN_COOKIE_KEY);
+      .expect(200);
+    const csrf = parseCookieValueForKeys(
+      asCookieArray(loginRes.headers[`set-cookie`]),
+      getApiConsumerCsrfTokenCookieKeysForRead(),
+    );
     expect(csrf).toBeTruthy();
 
     const resetRes = await request(app.getHttpServer())
@@ -270,10 +291,12 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
 
     await agent
       .post(`/consumer/auth/refresh`)
+      .set(`origin`, origin)
       .set(`x-csrf-token`, csrf ?? ``)
       .expect(401);
     await request(app.getHttpServer())
       .post(`/consumer/auth/login`)
+      .set(`origin`, origin)
       .set(`x-forwarded-for`, `198.51.100.19`)
       .send({ email: consumerEmail, password: initialPassword })
       .expect(401);

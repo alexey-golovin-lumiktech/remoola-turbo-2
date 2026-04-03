@@ -12,6 +12,8 @@ import {
   LogoutLineIcon,
   MoreVerticalIcon,
   PaymentCardIcon,
+  RemoolaCompactLogo,
+  RemoolaLogo,
   SearchIcon,
   SettingsGearIcon,
   TransferIcon,
@@ -28,7 +30,6 @@ import { DesktopThemeSwitcher } from '../../components/ui/DesktopThemeSwitcher';
 
 const {
   shellAside,
-  shellBrandIcon,
   shellBrandRow,
   shellBrandText,
   shellContainer,
@@ -247,7 +248,9 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
       {/* Desktop sidebar */}
       <aside className={shellAside} data-testid="consumer-shell-sidebar">
         <div className={shellBrandRow}>
-          <div className={shellBrandIcon} />
+          <div className={localStyles.desktopLogoWrap}>
+            <RemoolaLogo className={localStyles.desktopLogoFull} />
+          </div>
           <span className={shellBrandText}>Remoola</span>
         </div>
         <nav className={shellNav} data-testid="consumer-shell-nav">
@@ -325,18 +328,22 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
         {/* Mobile top bar */}
         <div className={shellMobileHeader} data-testid="consumer-shell-mobile-header">
           <div className={shellMobileBrand}>
-            <span className={cn(shellMobileLogo, localStyles.mobileLogoBadge)}>R</span>
+            <span className={cn(shellMobileLogo, localStyles.mobileLogoBadge)}>
+              <RemoolaCompactLogo className={localStyles.mobileLogoCompact} />
+            </span>
             Remoola
           </div>
-          <a
-            href="/logout"
-            className={localStyles.mobileLogoutLink}
-            aria-label="Log out"
-            data-testid="consumer-shell-logout-mobile"
-          >
-            <LogoutLineIcon size={16} aria-hidden="true" />
-            <span className={localStyles.srOnly}>Log out</span>
-          </a>
+          <form method="post" action="/logout" style={{ display: `contents` }}>
+            <button
+              type="submit"
+              className={localStyles.mobileLogoutLink}
+              aria-label="Log out"
+              data-testid="consumer-shell-logout-mobile"
+            >
+              <LogoutLineIcon size={16} aria-hidden="true" />
+              <span className={localStyles.srOnly}>Log out</span>
+            </button>
+          </form>
         </div>
 
         {/* Desktop header with search */}
@@ -364,15 +371,17 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
             </span>
           </div>
           <DesktopThemeSwitcher />
-          <a
-            href="/logout"
-            className={localStyles.desktopLogoutLink}
-            aria-label="Log out"
-            data-testid="consumer-shell-logout"
-          >
-            <LogoutLineIcon size={16} aria-hidden="true" />
-            Log out
-          </a>
+          <form method="post" action="/logout" style={{ display: `contents` }}>
+            <button
+              type="submit"
+              className={localStyles.desktopLogoutLink}
+              aria-label="Log out"
+              data-testid="consumer-shell-logout"
+            >
+              <LogoutLineIcon size={16} aria-hidden="true" />
+              Log out
+            </button>
+          </form>
         </header>
 
         {normalizedChildren}

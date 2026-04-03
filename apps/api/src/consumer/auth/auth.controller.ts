@@ -1,6 +1,5 @@
 import {
   Body,
-  GoneException,
   Controller,
   Get,
   Headers,
@@ -16,19 +15,11 @@ import {
   UnauthorizedException,
   BadRequestException,
 } from '@nestjs/common';
-import {
-  ApiOperation,
-  ApiOkResponse,
-  ApiBody,
-  ApiTags,
-  ApiBasicAuth,
-  ApiBearerAuth,
-  ApiResponse,
-} from '@nestjs/swagger';
+import { ApiBody, ApiCookieAuth, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import express from 'express';
 
-import { getConsumerRefreshTokenCookieKeysForRead, getCookieClearOptions } from '@remoola/api-types';
+import { type ConsumerAppScope, getCookieClearOptions } from '@remoola/api-types';
 import { $Enums } from '@remoola/database-2';
 import { oauthCrypto } from '@remoola/security-utils';
 import { errorCodes } from '@remoola/shared-constants';
@@ -44,25 +35,32 @@ import { envs } from '../../envs';
 import { TransformResponse } from '../../interceptors';
 import { OriginResolverService } from '../../shared/origin-resolver.service';
 import {
-  CSRF_TOKEN_COOKIE_KEY,
-  GOOGLE_OAUTH_STATE_COOKIE_KEY,
   getApiConsumerAccessTokenCookieKey,
   getApiConsumerAuthCookieClearOptions,
   getApiConsumerAuthCookieOptions,
   getApiConsumerCsrfCookieClearOptions,
   getApiConsumerCsrfCookieOptions,
+  getApiConsumerCsrfTokenCookieKey,
+  getApiConsumerCsrfTokenCookieKeysForRead,
+  getApiConsumerGoogleSignupSessionCookieClearOptions,
+  getApiConsumerGoogleSignupSessionCookieKey,
+  getApiConsumerGoogleSignupSessionCookieKeysForRead,
+  getApiConsumerGoogleSignupSessionCookieOptions,
+  getApiConsumerRefreshTokenCookieKeysForRead,
   getApiConsumerRefreshTokenCookieKey,
+  getApiOAuthStateCookieKey,
+  getApiOAuthStateCookieKeysForRead,
   getApiOAuthStateCookieOptions,
   removeNil,
 } from '../../shared-common';
 
 @ApiTags(`Consumer: Auth`)
-@ApiBearerAuth(`bearer`) // 👈 tells Swagger to attach Bearer token
-@ApiBasicAuth(`basic`) // 👈 optional, if this route also accepts Basic Auth
 @Controller(`consumer/auth`)
 export class ConsumerAuthController {
   private readonly logger = new Logger(ConsumerAuthController.name);
   private readonly oauthStateTtlMs = 5 * 60 * 1000;
+  private readonly oauthLoginHandoffTtlMs = 2 * 60 * 1000;
+  private readonly googleSignupSessionTtlMs = 10 * 60 * 1000;
   private readonly maxOAuthNextPathLength = 512;
 
   constructor(
@@ -72,31 +70,69 @@ export class ConsumerAuthController {
     private readonly originResolver: OriginResolverService,
   ) {}
 
+  private resolveConsumerAppScope(req: express.Request, returnOrigin?: string): ConsumerAppScope {
+    return (
+      this.originResolver.resolveConsumerRequestAppScope?.(req.headers?.origin, req.headers?.referer) ??
+      this.originResolver.resolveConsumerAppScope?.(this.validateReturnOrigin(returnOrigin)) ??
+      `consumer`
+    );
+  }
+
   private getRefreshTokenFromRequest(req: express.Request): string | undefined {
-    return getConsumerRefreshTokenCookieKeysForRead()
+    const consumerScope = this.resolveConsumerAppScope(req);
+    return getApiConsumerRefreshTokenCookieKeysForRead(consumerScope)
+      .map((key) => req.cookies?.[key])
+      .find((value): value is string => typeof value === `string` && value.length > 0);
+  }
+
+  private getGoogleSignupSessionTokenFromRequest(req: express.Request): string | undefined {
+    const consumerScope = this.resolveConsumerAppScope(req);
+    return getApiConsumerGoogleSignupSessionCookieKeysForRead(consumerScope)
       .map((key) => req.cookies?.[key])
       .find((value): value is string => typeof value === `string` && value.length > 0);
   }
 
   private setAuthCookies(req: express.Request, res: express.Response, accessToken: string, refreshToken: string) {
+    const consumerScope = this.resolveConsumerAppScope(req);
     const common = getApiConsumerAuthCookieOptions(req);
-    res.cookie(getApiConsumerAccessTokenCookieKey(req), accessToken, {
+    res.cookie(getApiConsumerAccessTokenCookieKey(req, consumerScope), accessToken, {
       ...common,
       maxAge: envs.JWT_ACCESS_TOKEN_EXPIRES_IN,
     });
-    res.cookie(getApiConsumerRefreshTokenCookieKey(req), refreshToken, {
+    res.cookie(getApiConsumerRefreshTokenCookieKey(req, consumerScope), refreshToken, {
       ...common,
       maxAge: envs.JWT_REFRESH_TOKEN_EXPIRES_IN,
     });
-    res.cookie(CSRF_TOKEN_COOKIE_KEY, oauthCrypto.generateOAuthState(), getApiConsumerCsrfCookieOptions(req));
+    res.cookie(
+      getApiConsumerCsrfTokenCookieKey(req, consumerScope),
+      oauthCrypto.generateOAuthState(),
+      getApiConsumerCsrfCookieOptions(req),
+    );
   }
 
   private clearAuthCookies(req: express.Request, res: express.Response) {
+    const consumerScope = this.resolveConsumerAppScope(req);
     const authCookieOptions = getApiConsumerAuthCookieClearOptions(req);
     const csrfCookieOptions = getApiConsumerCsrfCookieClearOptions(req);
-    res.clearCookie(getApiConsumerAccessTokenCookieKey(req), authCookieOptions);
-    res.clearCookie(getApiConsumerRefreshTokenCookieKey(req), authCookieOptions);
-    res.clearCookie(CSRF_TOKEN_COOKIE_KEY, csrfCookieOptions);
+    res.clearCookie(getApiConsumerAccessTokenCookieKey(req, consumerScope), authCookieOptions);
+    res.clearCookie(getApiConsumerRefreshTokenCookieKey(req, consumerScope), authCookieOptions);
+    res.clearCookie(getApiConsumerCsrfTokenCookieKey(req, consumerScope), csrfCookieOptions);
+  }
+
+  private setGoogleSignupSessionCookie(req: express.Request, res: express.Response, token: string) {
+    const consumerScope = this.resolveConsumerAppScope(req);
+    res.cookie(getApiConsumerGoogleSignupSessionCookieKey(req, consumerScope), token, {
+      ...getApiConsumerGoogleSignupSessionCookieOptions(req),
+      maxAge: this.googleSignupSessionTtlMs,
+    });
+  }
+
+  private clearGoogleSignupSessionCookie(req: express.Request, res: express.Response) {
+    const consumerScope = this.resolveConsumerAppScope(req);
+    res.clearCookie(
+      getApiConsumerGoogleSignupSessionCookieKey(req, consumerScope),
+      getApiConsumerGoogleSignupSessionCookieClearOptions(req),
+    );
   }
 
   private getOAuthCookieOptions(req?: express.Request) {
@@ -120,7 +156,7 @@ export class ConsumerAuthController {
 
     try {
       const url = new URL(next);
-      if (this.originResolver.getAllowedOrigins().has(this.originResolver.normalizeOrigin(url.origin))) {
+      if (this.originResolver.getConsumerAllowedOrigins().has(this.originResolver.normalizeOrigin(url.origin))) {
         const normalized = `${url.pathname}${url.search}${url.hash}`;
         if (normalized.length > this.maxOAuthNextPathLength) return `/dashboard`;
         return normalized;
@@ -133,22 +169,58 @@ export class ConsumerAuthController {
   }
 
   private validateReturnOrigin(returnOrigin?: string): string | undefined {
-    return this.originResolver.validateReturnOrigin(returnOrigin);
+    return (
+      this.originResolver.validateConsumerReturnOrigin?.(returnOrigin) ??
+      this.originResolver.validateReturnOrigin?.(returnOrigin)
+    );
+  }
+
+  private getSignupEntryPathFromNext(next?: string) {
+    const normalized = this.normalizeNextPath(next);
+    const pathname = normalized.startsWith(`/`) ? normalized.split(/[?#]/, 1)[0] : `/dashboard`;
+    return pathname === `/signup` ? `/signup` : `/signup/start`;
+  }
+
+  private normalizeSignupCompletionPath(next?: string) {
+    const normalized = this.normalizeNextPath(next);
+    return normalized === `/signup` || normalized.startsWith(`/signup?`) ? `/dashboard` : normalized;
+  }
+
+  private resolveRequestOrigin(req: express.Request): string | undefined {
+    return (
+      this.originResolver.resolveConsumerRequestOrigin?.(req.headers?.origin, req.headers?.referer) ??
+      this.originResolver.resolveRequestOrigin?.(req.headers?.origin, req.headers?.referer)
+    );
+  }
+
+  private ensureTrustedRequestOrigin(req: express.Request) {
+    if (!this.resolveRequestOrigin(req)) {
+      throw new UnauthorizedException(`Invalid request origin`);
+    }
   }
 
   private isOAuthStateCookieFallbackAllowedInEnv(): boolean {
     return envs.NODE_ENV === envs.ENVIRONMENT.DEVELOPMENT || envs.NODE_ENV === envs.ENVIRONMENT.TEST;
   }
 
+  private async getGoogleSignupPayloadFromSession(req: express.Request) {
+    const token = this.getGoogleSignupSessionTokenFromRequest(req);
+    if (!token) return undefined;
+    const record = await this.oauthStateStore.readSignupSession(token);
+    if (!record) return undefined;
+    return this.service.validateGoogleSignupPayload(this.service.createGoogleSignupPayload(record));
+  }
+
   private ensureCsrf(req: express.Request) {
-    const originHeader = req.headers.origin;
-    if (typeof originHeader === `string` && !this.originResolver.validateReturnOrigin(originHeader)) {
-      throw new UnauthorizedException(`Invalid request origin`);
-    }
+    const consumerScope = this.resolveConsumerAppScope(req);
+    this.ensureTrustedRequestOrigin(req);
     const csrfHeader = req.headers[`x-csrf-token`];
-    const csrfCookie = req.cookies?.[CSRF_TOKEN_COOKIE_KEY];
-    const value = typeof csrfHeader === `string` ? csrfHeader : Array.isArray(csrfHeader) ? csrfHeader[0] : undefined;
-    if (!value || !csrfCookie || csrfCookie !== value) {
+    const csrfCookie = getApiConsumerCsrfTokenCookieKeysForRead(consumerScope)
+      .map((key) => req.cookies?.[key])
+      .find((value): value is string => typeof value === `string` && value.length > 0);
+    const csrfHeaderValue =
+      typeof csrfHeader === `string` ? csrfHeader : Array.isArray(csrfHeader) ? csrfHeader[0] : undefined;
+    if (!csrfHeaderValue || !csrfCookie || csrfCookie !== csrfHeaderValue) {
       throw new UnauthorizedException(`Invalid CSRF token`);
     }
   }
@@ -184,8 +256,8 @@ export class ConsumerAuthController {
   }
 
   private buildConsumerSignupRedirect(
-    googleSignupToken: string,
-    nextPath?: string,
+    googleSignupHandoff: string,
+    signupEntryPath?: string,
     accountType?: string,
     contractorKind?: string,
     returnOrigin?: string,
@@ -196,9 +268,9 @@ export class ConsumerAuthController {
       throw new InternalServerErrorException(`CONSUMER_APP_ORIGIN is not configured`);
     }
 
-    const path = nextPath === `/signup` ? `/signup` : `/signup/start`;
-    const url = new URL(path, origin);
-    url.searchParams.set(`googleSignupToken`, googleSignupToken);
+    const signupRedirectPath = signupEntryPath === `/signup` ? `/signup` : `/signup/start`;
+    const url = new URL(signupRedirectPath, origin);
+    url.searchParams.set(`googleSignupHandoff`, googleSignupHandoff);
     if (accountType) url.searchParams.set(`accountType`, accountType);
     if (contractorKind) url.searchParams.set(`contractorKind`, contractorKind);
     return url.toString();
@@ -207,11 +279,13 @@ export class ConsumerAuthController {
   @PublicEndpoint()
   @TrackConsumerAction({ action: `consumer.auth.login`, resource: `auth` })
   @Post(`login`)
+  @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ operationId: `consumer_auth_login` })
   @ApiOkResponse({ type: CONSUMER.LoginResponse })
   @TransformResponse(CONSUMER.LoginResponse)
   async login(@Req() req: express.Request, @Res({ passthrough: true }) res, @Body() body: LoginBody) {
+    this.ensureTrustedRequestOrigin(req);
     const ipAddress = req.ip ?? req.headers[`x-forwarded-for`] ?? null;
     const userAgent = req.headers[`user-agent`] ?? null;
     const data = await this.service.login(body, {
@@ -219,7 +293,7 @@ export class ConsumerAuthController {
       userAgent: typeof userAgent === `string` ? userAgent : null,
     });
     this.setAuthCookies(req, res, data.accessToken, data.refreshToken);
-    return data;
+    return { ok: true as const };
   }
 
   @TrackConsumerAction({ action: `consumer.auth.oauth_start`, resource: `auth` })
@@ -230,6 +304,7 @@ export class ConsumerAuthController {
     @Req() req: express.Request,
     @Res() response: express.Response,
     @Query(`next`) next?: string,
+    @Query(`signupPath`) signupPath?: string,
     @Query(`accountType`) accountType?: string,
     @Query(`contractorKind`) contractorKind?: string,
     @Query(`returnOrigin`) returnOrigin?: string,
@@ -246,6 +321,7 @@ export class ConsumerAuthController {
     const validatedReturnOrigin = this.validateReturnOrigin(returnOrigin);
 
     const nextPath = this.normalizeNextPath(next);
+    const signupEntryPath = signupPath === `/signup` ? `/signup` : this.getSignupEntryPathFromNext(next);
     const nonce = oauthCrypto.generateOAuthNonce();
     const codeVerifier = GoogleOAuthService.createCodeVerifier();
     const codeChallenge = GoogleOAuthService.createCodeChallenge(codeVerifier);
@@ -259,6 +335,7 @@ export class ConsumerAuthController {
         codeVerifier,
         nextPath,
         createdAt,
+        signupEntryPath,
         accountType: validatedAccountType,
         contractorKind: validatedContractorKind,
         returnOrigin: validatedReturnOrigin,
@@ -266,7 +343,11 @@ export class ConsumerAuthController {
       this.oauthStateTtlMs,
     );
 
-    response.cookie(GOOGLE_OAUTH_STATE_COOKIE_KEY, stateToken, this.getOAuthCookieOptions(req));
+    response.cookie(
+      getApiOAuthStateCookieKey(req, this.resolveConsumerAppScope(req, validatedReturnOrigin)),
+      stateToken,
+      this.getOAuthCookieOptions(req),
+    );
     const authUrl = this.googleOAuthService.buildAuthorizationUrl(stateToken, codeChallenge, nonce);
     return response.redirect(authUrl);
   }
@@ -283,7 +364,10 @@ export class ConsumerAuthController {
     @Query(`error`) error?: string,
   ) {
     const clearStateCookie = () =>
-      response.clearCookie(GOOGLE_OAUTH_STATE_COOKIE_KEY, this.getOAuthClearCookieOptions(req));
+      response.clearCookie(
+        getApiOAuthStateCookieKey(req, this.resolveConsumerAppScope(req)),
+        this.getOAuthClearCookieOptions(req),
+      );
 
     const failureRedirect = (reason: string, returnOrigin?: string) => {
       clearStateCookie();
@@ -297,10 +381,15 @@ export class ConsumerAuthController {
       return record?.returnOrigin;
     };
 
-    if (error) return failureRedirect(`access_denied`);
+    if (error) {
+      const errorReturnOrigin = await consumeStateReturnOrigin(state);
+      return failureRedirect(`access_denied`, errorReturnOrigin);
+    }
 
     const stateCookie =
-      req.cookies?.[GOOGLE_OAUTH_STATE_COOKIE_KEY] ?? req.signedCookies?.[GOOGLE_OAUTH_STATE_COOKIE_KEY];
+      getApiOAuthStateCookieKeysForRead(this.resolveConsumerAppScope(req))
+        .map((key) => req.cookies?.[key] ?? req.signedCookies?.[key])
+        .find((value): value is string => typeof value === `string` && value.length > 0) ?? undefined;
     if (!state) return failureRedirect(`invalid_state`);
     if (stateCookie && stateCookie !== state) {
       if (!this.isOAuthStateCookieFallbackAllowedInEnv()) {
@@ -356,21 +445,31 @@ export class ConsumerAuthController {
 
       const existing = await this.service.findConsumerByEmail(email);
       if (!existing) {
-        const googleSignupToken = await this.service.createGoogleSignupToken({
-          email,
-          emailVerified: !!payload.email_verified,
-          name: (payload.name as string) ?? null,
-          givenName: (payload.given_name as string) ?? null,
-          familyName: (payload.family_name as string) ?? null,
-          picture: (payload.picture as string) ?? null,
-          organization: typeof payload.hd === `string` ? payload.hd : null,
-          sub: (payload.sub as string) ?? null,
-        });
+        const googleSignupHandoff = this.oauthStateStore.createEphemeralToken();
+        await this.oauthStateStore.saveSignupHandoff(
+          googleSignupHandoff,
+          {
+            email,
+            emailVerified: !!payload.email_verified,
+            name: (payload.name as string) ?? null,
+            givenName: (payload.given_name as string) ?? null,
+            familyName: (payload.family_name as string) ?? null,
+            picture: (payload.picture as string) ?? null,
+            organization: typeof payload.hd === `string` ? payload.hd : null,
+            sub: (payload.sub as string) ?? null,
+            signupEntryPath: stateRecord.signupEntryPath ?? null,
+            nextPath: stateRecord.nextPath,
+            accountType: stateRecord.accountType ?? null,
+            contractorKind: stateRecord.contractorKind ?? null,
+            returnOrigin: stateRecord.returnOrigin ?? null,
+          },
+          this.googleSignupSessionTtlMs,
+        );
 
         clearStateCookie();
         const redirectUrl = this.buildConsumerSignupRedirect(
-          googleSignupToken,
-          stateRecord.nextPath,
+          googleSignupHandoff,
+          stateRecord.signupEntryPath ?? this.getSignupEntryPathFromNext(stateRecord.nextPath),
           stateRecord.accountType,
           stateRecord.contractorKind,
           stateRecord.returnOrigin,
@@ -379,14 +478,21 @@ export class ConsumerAuthController {
       }
 
       const consumer = await this.googleOAuthService.loginWithPayload(email, payload);
-      const { accessToken, refreshToken } = await this.service.issueTokensForConsumer(consumer.id);
-      const exchangeToken = await this.service.createOAuthExchangeToken(consumer.id);
+      const oauthHandoff = this.oauthStateStore.createEphemeralToken();
+      await this.oauthStateStore.saveLoginHandoff(
+        oauthHandoff,
+        {
+          identityId: consumer.id,
+          nextPath: this.normalizeSignupCompletionPath(stateRecord.nextPath),
+          returnOrigin: stateRecord.returnOrigin,
+        },
+        this.oauthLoginHandoffTtlMs,
+      );
 
-      this.setAuthCookies(req, response, accessToken, refreshToken);
       clearStateCookie();
       const redirectUrl = this.buildConsumerRedirect(
-        stateRecord.nextPath,
-        { oauthToken: exchangeToken },
+        this.normalizeSignupCompletionPath(stateRecord.nextPath),
+        { oauthHandoff },
         stateRecord.returnOrigin,
       );
       return response.redirect(redirectUrl);
@@ -403,72 +509,82 @@ export class ConsumerAuthController {
 
   @PublicEndpoint()
   @Get(`google/signup-session`)
-  async googleSignupSession(@Query(`token`) token: string) {
-    if (!token) throw new BadRequestException(errorCodes.MISSING_SIGNUP_TOKEN);
-    const payload = await this.service.verifyGoogleSignupToken(token);
+  @ApiOkResponse({ type: CONSUMER.GoogleSignupSessionResponse })
+  async googleSignupSession(@Req() req: express.Request) {
+    const payload = await this.getGoogleSignupPayloadFromSession(req);
+    if (!payload) throw new BadRequestException(errorCodes.MISSING_SIGNUP_TOKEN);
 
     return {
       email: payload.email,
       givenName: payload.givenName,
       familyName: payload.familyName,
       picture: payload.picture,
+      accountType: payload.accountType,
+      contractorKind: payload.contractorKind,
+      nextPath: payload.nextPath,
+      signupEntryPath: payload.signupEntryPath,
     };
   }
 
   @PublicEndpoint()
-  @Get(`google-new-way`)
-  @ApiResponse({ status: 410, description: `Deprecated endpoint. Use /consumer/auth/google/start` })
-  googleOAuthNewWay() {
-    throw new GoneException(`Deprecated endpoint. Use /consumer/auth/google/start`);
-  }
-
-  @PublicEndpoint()
-  @Get(`google-redirect-new-way`)
-  @ApiResponse({ status: 410, description: `Deprecated endpoint. Use /consumer/auth/google/start` })
-  googleOAuthNewWayRedirect() {
-    throw new GoneException(`Deprecated endpoint. Use /consumer/auth/google/start`);
-  }
-
-  @PublicEndpoint()
-  @Post(`google-oauth`)
-  @ApiResponse({
-    status: 410,
-    description: `Deprecated endpoint. Use Authorization Code flow via /consumer/auth/google/start`,
-  })
-  googleOAuth() {
-    throw new GoneException(`Deprecated endpoint. Use Authorization Code flow via /consumer/auth/google/start`);
-  }
-
-  @PublicEndpoint()
-  @Post(`google-login-gpt`)
-  @ApiResponse({
-    status: 410,
-    description: `Deprecated endpoint. Use Authorization Code flow via /consumer/auth/google/start`,
-  })
-  googleLoginGPT() {
-    throw new GoneException(`Deprecated endpoint. Use Authorization Code flow via /consumer/auth/google/start`);
-  }
-
-  @PublicEndpoint()
-  @TrackConsumerAction({ action: `consumer.auth.oauth_exchange`, resource: `auth` })
-  @Post(`oauth/exchange`)
+  @TrackConsumerAction({ action: `consumer.auth.google_signup_session_establish`, resource: `auth` })
+  @Post(`google/signup-session/establish`)
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
-  async oauthExchange(
+  @ApiBody({ type: CONSUMER.HandoffTokenRequest })
+  @ApiOkResponse({ type: CONSUMER.GoogleSignupSessionResponse })
+  async establishGoogleSignupSession(
     @Req() req: express.Request,
     @Res({ passthrough: true }) res,
-    @Body(`exchangeToken`) exchangeToken: string,
+    @Body(`handoffToken`) handoffToken: string,
   ) {
-    if (!exchangeToken) throw new BadRequestException(errorCodes.MISSING_EXCHANGE_TOKEN);
-    const decoded = await this.service.verifyOAuthExchangeToken(exchangeToken);
+    this.ensureTrustedRequestOrigin(req);
+    if (!handoffToken) throw new BadRequestException(errorCodes.MISSING_SIGNUP_TOKEN);
+    const payload = await this.oauthStateStore.consumeSignupHandoff(handoffToken);
+    if (!payload) throw new BadRequestException(errorCodes.INVALID_GOOGLE_SIGNUP_TOKEN);
+
+    const validatedPayload = this.service.validateGoogleSignupPayload(this.service.createGoogleSignupPayload(payload));
+    const signupSessionToken = this.oauthStateStore.createEphemeralToken();
+    await this.oauthStateStore.saveSignupSession(signupSessionToken, payload, this.googleSignupSessionTtlMs);
+    this.setGoogleSignupSessionCookie(req, res, signupSessionToken);
+
+    return {
+      email: validatedPayload.email,
+      givenName: validatedPayload.givenName,
+      familyName: validatedPayload.familyName,
+      picture: validatedPayload.picture,
+      accountType: validatedPayload.accountType,
+      contractorKind: validatedPayload.contractorKind,
+      nextPath: validatedPayload.nextPath,
+      signupEntryPath: validatedPayload.signupEntryPath,
+    };
+  }
+
+  @PublicEndpoint()
+  @TrackConsumerAction({ action: `consumer.auth.oauth_complete`, resource: `auth` })
+  @Post(`oauth/complete`)
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
+  @HttpCode(HttpStatus.OK)
+  @ApiBody({ type: CONSUMER.HandoffTokenRequest })
+  @ApiOkResponse({ type: CONSUMER.OAuthCompleteResponse })
+  async oauthComplete(
+    @Req() req: express.Request,
+    @Res({ passthrough: true }) res,
+    @Body(`handoffToken`) handoffToken: string,
+  ) {
+    this.ensureTrustedRequestOrigin(req);
+    if (!handoffToken) throw new BadRequestException(errorCodes.MISSING_EXCHANGE_TOKEN);
+    const decoded = await this.oauthStateStore.consumeLoginHandoff(handoffToken);
+    if (!decoded) throw new UnauthorizedException(errorCodes.INVALID_OAUTH_EXCHANGE_TOKEN);
     const { accessToken, refreshToken } = await this.service.issueTokensForConsumer(decoded.identityId);
     this.setAuthCookies(req, res, accessToken, refreshToken);
-    return { ok: true };
+    return { ok: true, next: decoded.nextPath };
   }
 
   @PublicEndpoint()
   @Post(`logout`)
   @HttpCode(HttpStatus.OK)
+  @ApiCookieAuth()
   async logout(@Req() req: express.Request, @Res({ passthrough: true }) res) {
     this.ensureCsrf(req);
     const ipAddress = req.ip ?? req.headers[`x-forwarded-for`] ?? null;
@@ -478,13 +594,19 @@ export class ConsumerAuthController {
       userAgent: typeof userAgent === `string` ? userAgent : null,
     });
     this.clearAuthCookies(req, res);
-    res.clearCookie(GOOGLE_OAUTH_STATE_COOKIE_KEY, this.getOAuthClearCookieOptions(req));
+    this.clearGoogleSignupSessionCookie(req, res);
+    res.clearCookie(
+      getApiOAuthStateCookieKey(req, this.resolveConsumerAppScope(req)),
+      this.getOAuthClearCookieOptions(req),
+    );
     return { ok: true };
   }
 
   @PublicEndpoint()
   @Post(`refresh`)
+  @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 20, ttl: 60000 } })
+  @ApiCookieAuth()
   @ApiOperation({ operationId: `refresh_access` })
   @ApiOkResponse({ type: CONSUMER.LoginResponse })
   async refreshAccess(@Req() req: express.Request, @Res({ passthrough: true }) res) {
@@ -498,27 +620,12 @@ export class ConsumerAuthController {
       userAgent: typeof userAgent === `string` ? userAgent : null,
     });
     this.setAuthCookies(req, res, data.accessToken, data.refreshToken);
-    return data;
-  }
-
-  @PublicEndpoint()
-  @Post(`refresh-access`)
-  @Throttle({ default: { limit: 20, ttl: 60000 } })
-  @ApiOperation({ operationId: `refresh_access_legacy` })
-  @ApiBody({ schema: { type: `object`, properties: { refreshToken: { type: `string` } } } })
-  @ApiOkResponse({ type: CONSUMER.LoginResponse })
-  async refreshAccessLegacy(
-    @Req() req: express.Request,
-    @Res({ passthrough: true }) res,
-    @Body(`refreshToken`) refreshToken: string,
-  ) {
-    const data = await this.service.refreshAccess(refreshToken);
-    this.setAuthCookies(req, res, data.accessToken, data.refreshToken);
-    return data;
+    return { ok: true as const };
   }
 
   @Post(`logout-all`)
   @HttpCode(HttpStatus.OK)
+  @ApiCookieAuth()
   async logoutAll(
     @Req() req: express.Request,
     @Identity() identity: IIdentityContext,
@@ -532,12 +639,17 @@ export class ConsumerAuthController {
       userAgent: typeof userAgent === `string` ? userAgent : null,
     });
     this.clearAuthCookies(req, res);
-    res.clearCookie(GOOGLE_OAUTH_STATE_COOKIE_KEY, this.getOAuthClearCookieOptions(req));
+    this.clearGoogleSignupSessionCookie(req, res);
+    res.clearCookie(
+      getApiOAuthStateCookieKey(req, this.resolveConsumerAppScope(req)),
+      this.getOAuthClearCookieOptions(req),
+    );
     return { ok: true };
   }
 
   @TrackConsumerAction({ action: `consumer.auth.me`, resource: `auth` })
   @Get(`me`)
+  @ApiCookieAuth()
   me(@Identity() identity: IIdentityContext) {
     return identity;
   }
@@ -547,12 +659,24 @@ export class ConsumerAuthController {
   @Post(`signup`)
   @Throttle({ default: { limit: 15, ttl: 60000 } })
   @HttpCode(HttpStatus.CREATED)
-  async signup(@Body() body: ConsumerSignup) {
+  @ApiCreatedResponse({ type: CONSUMER.SignupResponse })
+  @TransformResponse(CONSUMER.SignupResponse)
+  async signup(@Req() req: express.Request, @Res({ passthrough: true }) res, @Body() body: ConsumerSignup) {
+    this.ensureTrustedRequestOrigin(req);
     const payload = removeNil(body);
-    const token = payload.googleSignupToken;
-    const googleSignupPayload = token ? await this.service.verifyGoogleSignupToken(token) : undefined;
+    const googleSignupPayload = await this.getGoogleSignupPayloadFromSession(req);
     const consumer = await this.service.signup(payload, googleSignupPayload);
-    return { consumer };
+    if (!googleSignupPayload) {
+      return { consumer };
+    }
+
+    const { accessToken, refreshToken } = await this.service.issueTokensForConsumer(consumer.id);
+    this.setAuthCookies(req, res, accessToken, refreshToken);
+    this.clearGoogleSignupSessionCookie(req, res);
+    return {
+      consumer,
+      next: this.normalizeSignupCompletionPath(googleSignupPayload.nextPath ?? undefined),
+    };
   }
 
   @PublicEndpoint()

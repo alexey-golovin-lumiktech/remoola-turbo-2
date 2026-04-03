@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { RulesView } from '../../../../features/exchange/ui/RulesView';
 import { normalizeCurrencies, type Currency } from '../../../../lib/currency-utils';
 import { getEnv } from '../../../../lib/env.server';
+import { buildServerReadAuthHeaders } from '../../../../lib/server-action-auth';
 
 interface ExchangeRule {
   id: string;
@@ -27,11 +28,11 @@ async function fetchRulesData(): Promise<{ rules: ExchangeRule[]; currencies: Cu
   try {
     const [rulesRes, currenciesRes] = await Promise.all([
       fetch(`${baseUrl}/consumer/exchange/rules`, {
-        headers: { Cookie: cookie },
+        headers: buildServerReadAuthHeaders(cookie),
         cache: `no-store`,
       }),
       fetch(`${baseUrl}/consumer/exchange/currencies`, {
-        headers: { Cookie: cookie },
+        headers: buildServerReadAuthHeaders(cookie),
         cache: `no-store`,
       }),
     ]);

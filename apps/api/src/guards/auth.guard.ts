@@ -13,8 +13,9 @@ import { resolveAccessTokenCookieKeysForPath } from '@remoola/api-types';
 
 import { IDENTITY, type IIdentity, type IIdentityContext, IS_PUBLIC } from '../common';
 import { type IJwtTokenPayload } from '../dtos/consumer';
+import { OriginResolverService } from '../shared/origin-resolver.service';
 import { type PrismaService } from '../shared/prisma.service';
-import { secureCompare } from '../shared-common';
+import { ensureAuthenticatedMutationCsrf, secureCompare } from '../shared-common';
 
 const CONSUMER_API_PATH_PREFIX = `/api/consumer/`;
 const ADMIN_API_PATH_PREFIX = `/api/admin/`;
@@ -34,6 +35,7 @@ export class AuthGuard implements CanActivate {
     private readonly reflector: Reflector,
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
+    private readonly originResolver: OriginResolverService = new OriginResolverService(),
   ) {}
 
   async canActivate(context: ExecutionContext) {
@@ -42,13 +44,19 @@ export class AuthGuard implements CanActivate {
     if (isPublic) return true;
 
     const path = request.path ?? request.url?.split(`?`)[0] ?? ``;
-    const cookieAccessToken = resolveAccessTokenCookieKeysForPath(path)
+    const consumerScope = this.originResolver.resolveConsumerRequestAppScope?.(
+      request.headers?.origin,
+      request.headers?.referer,
+    );
+    const cookieAccessToken = resolveAccessTokenCookieKeysForPath(path, consumerScope ?? `consumer`)
       .map((key) => request.cookies[key])
       .find((value): value is string => typeof value === `string` && value.length > 0);
     if (!cookieAccessToken) {
       throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
     }
-    return await this.bearerProcessor(cookieAccessToken, request);
+    await this.processAccessToken(cookieAccessToken, request);
+    ensureAuthenticatedMutationCsrf(request, this.originResolver);
+    return true;
   }
 
   private getAdminByIdentityId(identityId: string) {
@@ -69,7 +77,7 @@ export class AuthGuard implements CanActivate {
     });
   }
 
-  private async bearerProcessor(accessToken: string, request: TExpressRequest) {
+  private async processAccessToken(accessToken: string, request: TExpressRequest) {
     let verified: IJwtTokenPayload;
     try {
       verified = this.jwtService.verify<IJwtTokenPayload>(accessToken);

@@ -1,13 +1,13 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { cookies } from 'next/headers';
 import { z } from 'zod';
 
 import { emailOptionalSchema } from '@remoola/api-types';
 
 import { getEnv } from '../../lib/env.server';
 import { generateCorrelationId, serverLogger } from '../../lib/logger.server';
+import { getServerActionMutationAuthHeaders } from '../../lib/server-action-auth';
 
 const setDefaultPaymentMethodSchema = z.object({
   paymentMethodId: z.string().min(1),
@@ -60,15 +60,14 @@ export async function setDefaultPaymentMethodAction(paymentMethodId: string): Pr
       correlationId,
     });
 
-    const cookieStore = await cookies();
-    const cookie = cookieStore.toString();
+    const authHeaders = await getServerActionMutationAuthHeaders();
 
     const url = `${baseUrl}/consumer/payment-methods/${paymentMethodId}`;
     const res = await fetch(url, {
       method: `PATCH`,
       headers: {
         'Content-Type': `application/json`,
-        Cookie: cookie,
+        ...authHeaders,
         'X-Correlation-ID': correlationId,
       },
       body: JSON.stringify({ defaultSelected: true }),
@@ -142,14 +141,13 @@ export async function deletePaymentMethodAction(paymentMethodId: string): Promis
       correlationId,
     });
 
-    const cookieStore = await cookies();
-    const cookie = cookieStore.toString();
+    const authHeaders = await getServerActionMutationAuthHeaders();
 
     const url = `${baseUrl}/consumer/payment-methods/${paymentMethodId}`;
     const res = await fetch(url, {
       method: `DELETE`,
       headers: {
-        Cookie: cookie,
+        ...authHeaders,
         'X-Correlation-ID': correlationId,
       },
       cache: `no-store`,
@@ -243,8 +241,7 @@ export async function addPaymentMethodAction(input: AddPaymentMethodInput): Prom
       correlationId,
     });
 
-    const cookieStore = await cookies();
-    const cookie = cookieStore.toString();
+    const authHeaders = await getServerActionMutationAuthHeaders();
 
     const payload = {
       type: `CREDIT_CARD`,
@@ -265,7 +262,7 @@ export async function addPaymentMethodAction(input: AddPaymentMethodInput): Prom
       method: `POST`,
       headers: {
         'Content-Type': `application/json`,
-        Cookie: cookie,
+        ...authHeaders,
         'X-Correlation-ID': correlationId,
       },
       body: JSON.stringify(payload),
@@ -355,8 +352,7 @@ export async function addBankAccountAction(input: AddBankAccountInput): Promise<
       correlationId,
     });
 
-    const cookieStore = await cookies();
-    const cookie = cookieStore.toString();
+    const authHeaders = await getServerActionMutationAuthHeaders();
 
     const payload = {
       type: `BANK_ACCOUNT`,
@@ -375,7 +371,7 @@ export async function addBankAccountAction(input: AddBankAccountInput): Promise<
       method: `POST`,
       headers: {
         'Content-Type': `application/json`,
-        Cookie: cookie,
+        ...authHeaders,
         'X-Correlation-ID': correlationId,
       },
       body: JSON.stringify(payload),

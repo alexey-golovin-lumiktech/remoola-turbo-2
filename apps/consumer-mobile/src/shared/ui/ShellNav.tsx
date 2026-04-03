@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import React from 'react';
 
-import { cn } from '@remoola/ui';
+import { cn, RemoolaCompactLogo, RemoolaLogo } from '@remoola/ui';
 
 import { CreditCardIcon } from './icons/CreditCardIcon';
 import { DocumentIcon } from './icons/DocumentIcon';
@@ -31,17 +31,24 @@ export function ShellHeader() {
   return (
     <header className={styles.header}>
       <div className={styles.headerLeft}>
-        <div className={styles.logoBox}>
-          <span className={styles.logoText}>R</span>
+        <div className={styles.logoBox} aria-hidden="true">
+          <RemoolaCompactLogo className={styles.logoImageCompact} />
+          <RemoolaLogo className={styles.logoImageDesktop} />
         </div>
-        <span className={styles.brandName}>Remoola</span>
       </div>
       <div className={styles.headerRight}>
         <ThemeSwitcher />
-        <a href="/logout" className={styles.logoutLink} aria-label="Log out" data-testid="consumer-mobile-shell-logout">
-          <LogoutIcon className={styles.navIcon} />
-          <span className={styles.logoutText}>Log out</span>
-        </a>
+        <form method="post" action="/logout" style={{ display: `contents` }}>
+          <button
+            type="submit"
+            className={styles.logoutLink}
+            aria-label="Log out"
+            data-testid="consumer-mobile-shell-logout"
+          >
+            <LogoutIcon className={styles.navIcon} />
+            <span className={styles.logoutText}>Log out</span>
+          </button>
+        </form>
       </div>
     </header>
   );

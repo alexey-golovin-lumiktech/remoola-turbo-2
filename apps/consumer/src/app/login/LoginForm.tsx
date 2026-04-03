@@ -13,7 +13,7 @@ import {
   sanitizeNextForRedirect,
   SESSION_EXPIRED_QUERY,
 } from '@remoola/api-types';
-import { GoogleIcon } from '@remoola/ui';
+import { GoogleIcon, RemoolaCompactLogo, RemoolaLogo } from '@remoola/ui';
 
 import { shouldFinalizeLoginLoading } from './login-loading-guard';
 import localStyles from './LoginForm.module.css';
@@ -78,11 +78,6 @@ export default function LoginForm() {
   const [loading, setLoading] = useState(false);
   const didNavigateRef = useRef(false);
   const errorMessage = err || (oauthError ? `Google sign-in failed. Please try again.` : undefined);
-  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-  const googleStartUrl =
-    apiBaseUrl != null && apiBaseUrl.length > 0
-      ? `${apiBaseUrl}/consumer/auth/google/start?next=${encodeURIComponent(nextPath)}`
-      : null;
 
   const submitLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,7 +117,20 @@ export default function LoginForm() {
 
   return (
     <div className={loginContainer} data-testid="consumer-login-page">
-      <h1 className={loginTitle}>Sign in</h1>
+      <div className={localStyles.header}>
+        <div className={localStyles.headerTopMobile}>
+          <RemoolaCompactLogo className={localStyles.logoImageCompact} />
+          <div className={localStyles.headerCopy}>
+            <h1 className={loginTitle}>Sign in</h1>
+            <p className={localStyles.subtitle}>Welcome back to your account</p>
+          </div>
+        </div>
+        <div className={localStyles.headerTopDesktop}>
+          <RemoolaLogo className={localStyles.logoImageDesktop} />
+          <h1 className={loginTitle}>Sign in</h1>
+          <p className={localStyles.subtitle}>Welcome back to your account</p>
+        </div>
+      </div>
       {authNoticeMessage ? (
         <div
           className={localStyles.authNotice}
@@ -167,23 +175,24 @@ export default function LoginForm() {
         <button className={loginButton} type="submit" data-testid="consumer-login-btn-submit" disabled={loading}>
           {loading ? `Signing in...` : `Login`}
         </button>
-        {googleStartUrl && (
-          <button
-            type="button"
-            className={loginButton}
-            data-testid="consumer-login-btn-google"
-            disabled={loading}
-            onClick={async () => {
-              await fetch(`/api/consumer/auth/clear-cookies`, { method: `POST`, credentials: `include` });
-              window.location.href = googleStartUrl;
-            }}
-          >
-            <span className={localStyles.authProviderButtonContent}>
-              <GoogleIcon size={20} />
-              Continue with Google
-            </span>
-          </button>
-        )}
+        <button
+          type="button"
+          className={loginButton}
+          data-testid="consumer-login-btn-google"
+          disabled={loading}
+          onClick={async () => {
+            const url = new URL(`/api/consumer/auth/google/start`, window.location.origin);
+            url.searchParams.set(`next`, nextPath);
+            url.searchParams.set(`returnOrigin`, window.location.origin);
+            await fetch(`/api/consumer/auth/clear-cookies`, { method: `POST`, credentials: `include` });
+            window.location.href = `${url.pathname}${url.search}`;
+          }}
+        >
+          <span className={localStyles.authProviderButtonContent}>
+            <GoogleIcon size={20} />
+            Continue with Google
+          </span>
+        </button>
       </form>
 
       <p className={loginFooter}>

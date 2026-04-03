@@ -15,12 +15,32 @@
   @apply mb-8 text-center;
 }
 
+.headerTopMobile {
+  @apply items-center justify-center gap-4 text-left;
+}
+
+.headerTopDesktop {
+  /* layout and visibility controlled by Tailwind classes in JSX */
+}
+
+.headerCopy {
+  @apply min-w-0;
+}
+
+.logoImageCompact {
+  @apply h-auto w-[60px] shrink-0;
+}
+
+.logoImageDesktop {
+  @apply h-auto w-full max-w-[172px] md:mx-auto md:mb-5;
+}
+
 .title {
   @apply text-2xl font-bold text-slate-900 dark:text-white;
 }
 
 .subtitle {
-  @apply mt-2 text-sm text-slate-600 dark:text-slate-400;
+  @apply mt-1 text-sm text-slate-600 dark:text-slate-400;
 }
 
 .devBadge {

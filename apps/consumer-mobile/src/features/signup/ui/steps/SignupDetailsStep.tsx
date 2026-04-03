@@ -12,19 +12,19 @@ import {
 } from '@remoola/api-types';
 import { GoogleIcon, PasswordInput } from '@remoola/ui';
 
-import { getApiBaseUrlOptional } from '../../../../lib/config.client';
+import styles from './SignupDetailsStep.module.css';
 import { getLocalToastMessage, localToastKeys } from '../../../../lib/error-messages';
 import { showErrorToast } from '../../../../lib/toast.client';
 import { CheckCircleIcon } from '../../../../shared/ui/icons/CheckCircleIcon';
 import { ExclamationCircleIcon } from '../../../../shared/ui/icons/ExclamationCircleIcon';
 import { InformationCircleIcon } from '../../../../shared/ui/icons/InformationCircleIcon';
+import { buildSignupFlowPath } from '../../routing';
 import { useSignupForm } from '../../SignupFormContext';
 import { useSignupSteps } from '../../SignupStepsContext';
 import { STEP_NAME } from '../../stepNames';
 import { createSignupDetailsSchema, getFieldErrors } from '../../validation';
 import { SIGNUP_INPUT_CLASS } from '../inputClass';
 import { PrevNextButtons } from '../PrevNextButtons';
-import styles from './SignupDetailsStep.module.css';
 
 const HOW_LABEL: Record<string, string> = {
   [HOW_DID_HEAR_ABOUT_US.GOOGLE]: `Google`,
@@ -65,7 +65,7 @@ const STRENGTH_STYLE_KEYS: Record<StrengthKey, `strengthWeak` | `strengthFair` |
 
 export function SignupDetailsStep() {
   const params = useSearchParams();
-  const googleToken = params.get(`googleSignupToken`);
+  const googleToken = params.get(`googleSignup`) ?? params.get(`googleSignupHandoff`);
   const { signupDetails, updateSignup, googleSignupToken } = useSignupForm();
   const token = googleSignupToken ?? googleToken;
   const isGoogleSignup = Boolean(token);
@@ -83,17 +83,23 @@ export function SignupDetailsStep() {
   }, [isGoogleSignup]);
 
   const googleSignupStartUrl = useMemo(() => {
-    const base = getApiBaseUrlOptional();
-    if (!base) return null;
     if (typeof window === `undefined`) return null;
-    const url = new URL(`${base}/consumer/auth/google/start`);
-    url.searchParams.set(`next`, `/signup`);
+    const url = new URL(`/api/consumer/auth/google/start`, window.location.origin);
+    url.searchParams.set(
+      `next`,
+      buildSignupFlowPath(`/signup`, {
+        accountType: signupDetails.accountType,
+        contractorKind: signupDetails.contractorKind,
+        googleSignupToken: null,
+      }),
+    );
+    url.searchParams.set(`signupPath`, window.location.pathname === `/signup` ? `/signup` : `/signup/start`);
     url.searchParams.set(`returnOrigin`, window.location.origin);
     if (signupDetails.accountType) url.searchParams.set(`accountType`, signupDetails.accountType);
     if (signupDetails.accountType === ACCOUNT_TYPE.CONTRACTOR && signupDetails.contractorKind) {
       url.searchParams.set(`contractorKind`, signupDetails.contractorKind);
     }
-    return url.toString();
+    return `${url.pathname}${url.search}`;
   }, [signupDetails.accountType, signupDetails.contractorKind]);
 
   const validateField = useCallback(

@@ -116,18 +116,12 @@ export class ConsumerSignup {
   @Expose()
   @ApiPropertyOptional({
     example: `password@email.com`,
-    description: `Required for email signup; omit when using googleSignupToken`,
+    description: `Required for email signup; omit when using an established Google signup session`,
   })
-  @ValidateIf((o) => !o.googleSignupToken)
+  @IsOptional()
   @MinLength(8)
   @IsString()
   password?: string;
-
-  @Expose()
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  googleSignupToken?: string;
 
   @Expose()
   @ApiProperty({ example: $Enums.AccountType.CONTRACTOR, enum: $Enums.AccountType })

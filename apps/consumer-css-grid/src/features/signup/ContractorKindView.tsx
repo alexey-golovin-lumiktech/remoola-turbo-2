@@ -16,7 +16,7 @@ function buildQuery(contractorKind: string | null, googleSignupToken: string | n
     params.set(`contractorKind`, contractorKind);
   }
   if (googleSignupToken) {
-    params.set(`googleSignupToken`, googleSignupToken);
+    params.set(`googleSignup`, `1`);
   }
   return `?${params.toString()}`;
 }

@@ -1,10 +1,7 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useEffect, useRef, useState } from 'react';
-import { toast } from 'sonner';
-
-import { ACCOUNT_TYPE, CONTRACTOR_KIND } from '@remoola/api-types';
+import { useRouter } from 'next/navigation';
+import { Suspense, useEffect } from 'react';
 
 import {
   Stepper,
@@ -15,6 +12,7 @@ import {
 } from './components';
 import { useSignupForm, SignupStepsProvider, useSignupSteps } from './hooks';
 import localStyles from './page.module.css';
+import { getSignupFlowRedirect } from './routing';
 import styles from '../../../components/ui/classNames.module.css';
 import { STEP_NAME } from '../../../types';
 
@@ -22,125 +20,25 @@ const { refreshButtonClass, signupFlowContainer, textSecondary } = styles;
 
 function SignupPageInner() {
   const router = useRouter();
-  const params = useSearchParams();
-  const { accountType, contractorKind, updateSignup, updatePersonal, setGoogleSignupToken } = useSignupForm();
-  const googleSignupToken = params.get(`googleSignupToken`);
-  const hydratedRef = useRef(false);
-  const isMountedRef = useRef(true);
-  const [hydrateError, setHydrateError] = useState<string | null>(null);
-  const [retryTrigger, setRetryTrigger] = useState(0);
+  const { accountType, contractorKind, googleSignupToken, googleHydrationError, retryGoogleHydration } =
+    useSignupForm();
 
   useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
-
-  const urlAccountType = params.get(`accountType`);
-  const urlContractorKind = params.get(`contractorKind`);
-  const hasAccountTypeInUrl = urlAccountType === ACCOUNT_TYPE.BUSINESS || urlAccountType === ACCOUNT_TYPE.CONTRACTOR;
-
-  useEffect(() => {
-    if (!accountType && !googleSignupToken) router.replace(`/signup/start`);
-    else if (accountType === ACCOUNT_TYPE.CONTRACTOR && !contractorKind && !googleSignupToken) {
-      router.replace(`/signup/start/contractor-kind`);
-    } else if (googleSignupToken && !accountType && !hasAccountTypeInUrl) {
-      // Token in URL but no accountType in URL or form (e.g. direct link)—redirect to pick account type
-      router.replace(`/signup/start?googleSignupToken=${encodeURIComponent(googleSignupToken)}`);
+    const redirectTarget = getSignupFlowRedirect({
+      accountType,
+      contractorKind,
+      googleSignupToken,
+    });
+    if (redirectTarget) {
+      router.replace(redirectTarget);
     }
-  }, [accountType, contractorKind, googleSignupToken, hasAccountTypeInUrl, router]);
+  }, [accountType, contractorKind, googleSignupToken, router]);
 
-  const handleRetryHydrate = () => {
-    setHydrateError(null);
-    hydratedRef.current = false;
-    setRetryTrigger((t) => t + 1);
-  };
-
-  useEffect(() => {
-    if (!googleSignupToken || hydratedRef.current) return;
-
-    hydratedRef.current = true;
-    setGoogleSignupToken(googleSignupToken);
-    setHydrateError(null);
-    // Only update accountType/contractorKind from URL when present (API redirect). When coming from
-    // signup/start, the URL only has googleSignupToken—preserve form state to avoid breaking the stepper.
-    if (hasAccountTypeInUrl) {
-      const parsedAccountType = urlAccountType;
-      const parsedContractorKind =
-        parsedAccountType === ACCOUNT_TYPE.CONTRACTOR &&
-        (urlContractorKind === CONTRACTOR_KIND.INDIVIDUAL || urlContractorKind === CONTRACTOR_KIND.ENTITY)
-          ? urlContractorKind
-          : null;
-      updateSignup({ accountType: parsedAccountType, contractorKind: parsedContractorKind });
-    }
-
-    const hydrateFromGoogle = async () => {
-      let fetchedEmail: string | undefined;
-      let fetchedGivenName: string | undefined;
-      let fetchedFamilyName: string | undefined;
-      let failed = false;
-      try {
-        const res = await fetch(
-          `/api/consumer/auth/google/signup-session?token=${encodeURIComponent(googleSignupToken)}`,
-          { credentials: `include` },
-        );
-        if (res.ok && isMountedRef.current) {
-          const data = (await res.json().catch(() => ({}))) as {
-            email?: string;
-            givenName?: string;
-            familyName?: string;
-          };
-          fetchedEmail = data?.email;
-          fetchedGivenName = data?.givenName;
-          fetchedFamilyName = data?.familyName;
-        } else if (isMountedRef.current) {
-          failed = true;
-          const msg = `Could not load your Google signup session. Please try again.`;
-          setHydrateError(msg);
-          toast.error(msg);
-        }
-      } catch {
-        if (isMountedRef.current) {
-          failed = true;
-          const msg = `Could not load your Google signup session. Please check your connection and try again.`;
-          setHydrateError(msg);
-          toast.error(msg);
-        }
-      } finally {
-        if (isMountedRef.current && !failed) {
-          updateSignup({
-            ...(fetchedEmail ? { email: fetchedEmail } : {}),
-          });
-          if (fetchedGivenName || fetchedFamilyName) {
-            updatePersonal({
-              ...(fetchedGivenName ? { firstName: fetchedGivenName } : {}),
-              ...(fetchedFamilyName ? { lastName: fetchedFamilyName } : {}),
-            });
-          }
-          router.replace(`/signup`);
-        }
-      }
-    };
-    hydrateFromGoogle();
-  }, [
-    googleSignupToken,
-    urlAccountType,
-    urlContractorKind,
-    hasAccountTypeInUrl,
-    retryTrigger,
-    router,
-    setGoogleSignupToken,
-    updatePersonal,
-    updateSignup,
-  ]);
-
-  if (!accountType && !googleSignupToken) return null;
-  if (googleSignupToken && !accountType) return null;
+  if (!accountType) return null;
 
   return (
     <SignupStepsProvider accountType={accountType} contractorKind={contractorKind}>
-      <SignupFlow hydrateError={hydrateError} onRetryHydrate={handleRetryHydrate} />
+      <SignupFlow hydrateError={googleHydrationError} onRetryHydrate={retryGoogleHydration} />
     </SignupStepsProvider>
   );
 }

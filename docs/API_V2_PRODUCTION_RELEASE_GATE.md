@@ -18,6 +18,7 @@ Capture the effective production values for these controls without exposing secr
 
 - `JWT_ACCESS_SECRET` is set to a real non-empty secret and is not the placeholder default.
 - `JWT_REFRESH_SECRET` is set to a real non-empty secret and is not the placeholder default.
+- `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET` are distinct values.
 - `SECURE_SESSION_SECRET` is set to a real non-empty secret and is not the placeholder default.
 - `STRIPE_SECRET_KEY` is set to a real non-empty secret and is not the placeholder default.
 - `STRIPE_WEBHOOK_SECRET` is set to a real non-empty secret and is not the placeholder default.
@@ -42,9 +43,9 @@ Source of truth:
 
 Collect proof from the target environment:
 
-1. Fresh consumer login succeeds and sets auth cookies correctly.
-2. Consumer refresh succeeds with CSRF enforcement intact.
-3. Consumer logout and logout-all clear auth cookies correctly.
+1. Fresh consumer login succeeds only through frontend BFF routes and sets auth cookies correctly.
+2. Consumer refresh succeeds with valid `Origin`/`Referer` plus CSRF enforcement intact.
+3. Consumer logout and logout-all clear auth cookies correctly through the frontend BFF.
 4. OAuth callback rejects invalid or missing state outside local debug environments.
 5. A fresh consumer session row contains `access_token_hash` after login or refresh.
 6. Consumer API requests succeed with a fresh access token and fail after session revocation.
@@ -94,7 +95,7 @@ Do not release if any of the following are true:
 - OAuth state fallback is enabled outside dev/test
 - Swagger or sensitive health endpoints are publicly exposed contrary to the release intent
 - ngrok public ingress is enabled in production-like environments
-- requests without `Origin` are accepted unexpectedly in production-like environments
+- state-changing auth requests without valid `Origin` or `Referer` are accepted unexpectedly in production-like environments
 - `access_token_hash` migration is not applied
 - Stripe webhook replay after a transient failure can still poison retries and silently skip handler work
 - consumer auth works only for legacy sessions and fails for fresh sessions

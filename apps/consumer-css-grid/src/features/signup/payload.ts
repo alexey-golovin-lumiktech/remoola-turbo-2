@@ -5,7 +5,6 @@ import { type SignupFormState } from './types';
 type SignupPayload = {
   email: string;
   password?: string;
-  googleSignupToken?: string;
   accountType: string;
   contractorKind?: string;
   howDidHearAboutUs: string | null;
@@ -68,7 +67,6 @@ export function buildSignupPayload(state: SignupFormState): SignupPayload {
   const payload: SignupPayload = {
     email: signupDetails.email.trim().toLowerCase(),
     ...(isGoogleSignup ? {} : { password: signupDetails.password }),
-    ...(googleSignupToken ? { googleSignupToken } : {}),
     accountType: signupDetails.accountType!,
     ...(signupDetails.accountType === ACCOUNT_TYPE.CONTRACTOR && signupDetails.contractorKind
       ? { contractorKind: signupDetails.contractorKind }

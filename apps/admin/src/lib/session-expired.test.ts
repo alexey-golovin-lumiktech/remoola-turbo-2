@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 
+import { getAdminCsrfCookieKey } from './auth-cookie-policy';
 import {
   handleSessionExpired,
   isRedirectInProgress,
@@ -11,6 +12,7 @@ jest.mock(`sonner`, () => ({ toast: { error: jest.fn() } }));
 
 describe(`session-expired (admin)`, () => {
   const originalFetch = global.fetch;
+  const originalDocument = global.document;
   let mockReplace: ReturnType<typeof jest.fn>;
 
   beforeEach(() => {
@@ -23,11 +25,17 @@ describe(`session-expired (admin)`, () => {
     ).window = {
       location: { replace: mockReplace, pathname: `/dashboard`, search: `` },
     };
+    Object.defineProperty(global, `document`, {
+      value: { cookie: `${getAdminCsrfCookieKey()}=csrf-123; other=value` },
+      configurable: true,
+      writable: true,
+    });
     resetSessionExpiredHandled();
   });
 
   afterEach(() => {
     global.fetch = originalFetch;
+    global.document = originalDocument;
     delete (globalThis as { window?: unknown }).window;
   });
 
@@ -40,6 +48,25 @@ describe(`session-expired (admin)`, () => {
     const redirectUrl = mockReplace.mock.calls[0]?.[0] as string;
     expect(redirectUrl).toContain(`/login?next=`);
     expect(redirectUrl).toContain(`${SESSION_EXPIRED_QUERY}=1`);
+  });
+
+  it(`sends x-csrf-token when clearing cookies via logout API`, async () => {
+    handleSessionExpired();
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      `/api/auth/logout`,
+      expect.objectContaining({
+        method: `POST`,
+        credentials: `include`,
+        headers: expect.any(Headers),
+      }),
+    );
+    const requestInit = (((global.fetch as unknown as jest.Mock).mock.calls[0] ?? [])[1] ?? {}) as RequestInit & {
+      headers?: Headers;
+    };
+    const headers = requestInit.headers as Headers;
+    expect(headers.get(`x-csrf-token`)).toBe(`csrf-123`);
   });
 
   it(`exposes SESSION_EXPIRED_QUERY`, () => {

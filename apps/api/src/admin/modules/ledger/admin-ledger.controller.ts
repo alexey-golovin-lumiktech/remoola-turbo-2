@@ -1,5 +1,5 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiBasicAuth } from '@nestjs/swagger';
+import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 
 import { AdminLedgersService } from './admin-ledger.service';
 import { AdminLedgerListQuery } from './dto';
@@ -23,9 +23,8 @@ function parseLedgerListQuery(dto: AdminLedgerListQuery) {
   };
 }
 
+@ApiCookieAuth()
 @ApiTags(`Admin: Ledger`)
-@ApiBearerAuth(`bearer`) // 👈 tells Swagger to attach Bearer token
-@ApiBasicAuth(`basic`) // 👈 optional, if this route also accepts Basic Auth
 @Controller(`admin/ledger`)
 export class AdminLedgersController {
   constructor(private readonly service: AdminLedgersService) {}

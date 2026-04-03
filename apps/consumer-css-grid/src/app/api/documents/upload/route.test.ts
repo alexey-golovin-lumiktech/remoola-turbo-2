@@ -21,7 +21,7 @@ describe(`documents upload route`, () => {
     delete process.env.NEXT_PUBLIC_API_BASE_URL;
   });
 
-  it(`forwards upload headers while stripping authorization and host`, async () => {
+  it(`forwards upload headers and strips host`, async () => {
     mockFetch.mockResolvedValueOnce(
       new Response(`uploaded`, {
         status: 201,
@@ -34,7 +34,6 @@ describe(`documents upload route`, () => {
     const request = new Request(`https://app.example.com/api/documents/upload`, {
       method: `POST`,
       headers: {
-        authorization: `Bearer can-forward`,
         cookie: `consumer_session=session-cookie`,
         'content-type': `multipart/form-data; boundary=test-boundary`,
         host: `app.example.com`,
@@ -51,7 +50,6 @@ describe(`documents upload route`, () => {
     expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`https://api.example.com/consumer/documents/upload`);
     expect(fetchOptions?.credentials).toBe(`include`);
     expect(fetchOptions?.duplex).toBe(`half`);
-    expect(forwardedHeaders?.get(`authorization`)).toBeNull();
     expect(forwardedHeaders?.get(`cookie`)).toBe(`consumer_session=session-cookie`);
     expect(forwardedHeaders?.get(`content-type`)).toContain(`multipart/form-data`);
     expect(forwardedHeaders?.get(`host`)).toBeNull();

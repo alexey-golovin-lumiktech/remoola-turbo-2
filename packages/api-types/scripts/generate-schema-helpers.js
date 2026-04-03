@@ -95,7 +95,7 @@ function formatWithRelations(model) {
 
 function formatCompositeKey(model) {
   if (model.compositeIdFields.length === 0) return null;
-  const pickFields = model.compositeIdFields.map((field) => `'${field}'`).join(' | ');
+  const pickFields = model.compositeIdFields.map((field) => `\`${field}\``).join(' | ');
   return `export type ${model.name}Key = Pick<Prisma.${model.name}GetPayload<{}>, ${pickFields}>;`;
 }
 
@@ -105,6 +105,7 @@ function generateContent(models) {
     ``,
     `// This file is auto-generated from packages/database-2/prisma/schema.prisma.`,
     `// Run \`yarn schema:generate:helpers\` from the repo root to regenerate it.`,
+    `/* eslint-disable @typescript-eslint/no-empty-object-type */`,
     ``,
   ];
 

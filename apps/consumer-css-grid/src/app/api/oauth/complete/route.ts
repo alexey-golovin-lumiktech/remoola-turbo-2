@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: `API base URL not configured`, code: `CONFIG_ERROR` }, { status: 503 });
   }
 
-  const url = new URL(`${baseUrl}/consumer/auth/oauth/exchange`);
+  const url = new URL(`${baseUrl}/consumer/auth/oauth/complete`);
   const forwardHeaders = buildAuthMutationForwardHeaders(req.headers);
   forwardHeaders.set(`content-type`, `application/json`);
 

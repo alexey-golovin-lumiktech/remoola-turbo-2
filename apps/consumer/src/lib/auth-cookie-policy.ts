@@ -1,13 +1,16 @@
 import { type NextResponse } from 'next/server';
 
 import {
-  COOKIE_KEYS,
   getConsumerAuthCookieOptions,
+  getConsumerCsrfTokenCookieKey,
+  getConsumerCsrfTokenCookieKeysForRead,
   getCookieClearOptions,
   getCsrfCookieOptions,
   getConsumerAccessTokenCookieKeysForRead,
+  getConsumerGoogleSignupSessionCookieKeysForRead,
   getConsumerRefreshTokenCookieKeysForRead,
   getConsumerDeviceCookieKeysForRead,
+  getGoogleOAuthStateCookieKeysForRead,
   getOAuthStateCookieOptions,
   type OAuthCookieRuntime,
 } from '@remoola/api-types';
@@ -40,8 +43,15 @@ export function clearConsumerAuthCookies(response: NextResponse, request: Reques
   for (const key of getConsumerDeviceCookieKeysForRead()) {
     response.cookies.set(key, ``, { ...authClearOpts, maxAge: 0 });
   }
-  response.cookies.set(COOKIE_KEYS.GOOGLE_OAUTH_STATE, ``, { ...oauthClearOpts, maxAge: 0 });
-  response.cookies.set(COOKIE_KEYS.CSRF_TOKEN, ``, { ...csrfClearOpts, maxAge: 0 });
+  for (const key of getConsumerGoogleSignupSessionCookieKeysForRead()) {
+    response.cookies.set(key, ``, { ...authClearOpts, maxAge: 0 });
+  }
+  for (const key of getGoogleOAuthStateCookieKeysForRead()) {
+    response.cookies.set(key, ``, { ...oauthClearOpts, maxAge: 0 });
+  }
+  for (const key of getConsumerCsrfTokenCookieKeysForRead()) {
+    response.cookies.set(key, ``, { ...csrfClearOpts, maxAge: 0 });
+  }
 }
 
 export function getCsrfTokenFromRequest(request: Request): string | null {
@@ -49,13 +59,20 @@ export function getCsrfTokenFromRequest(request: Request): string | null {
   if (csrfFromHeader) return csrfFromHeader;
 
   const cookie = request.headers.get(`cookie`) ?? ``;
-  return (
-    cookie
+  const runtime = getConsumerCookieRuntime(request);
+  const preferredCsrfKey = getConsumerCsrfTokenCookieKey(runtime);
+  const orderedCsrfKeys = [
+    preferredCsrfKey,
+    ...getConsumerCsrfTokenCookieKeysForRead().filter((key) => key !== preferredCsrfKey),
+  ];
+  for (const key of orderedCsrfKeys) {
+    const match = cookie
       .split(`;`)
       .map((part) => part.trim())
-      .find((part) => part.startsWith(`${COOKIE_KEYS.CSRF_TOKEN}=`))
-      ?.split(`=`)
-      ?.slice(1)
-      .join(`=`) ?? null
-  );
+      .find((part) => part.startsWith(`${key}=`));
+    if (match) {
+      return match.split(`=`).slice(1).join(`=`);
+    }
+  }
+  return null;
 }

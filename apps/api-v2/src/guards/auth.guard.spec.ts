@@ -8,11 +8,14 @@ import { oauthCrypto } from '@remoola/security-utils';
 
 import { IDENTITY } from '../common';
 import { AuthGuard } from './auth.guard';
+import { getApiConsumerAccessTokenCookieKeysForRead, getApiConsumerCsrfTokenCookieKeysForRead } from '../shared-common';
 
 type MockRequest = {
   path: string;
   url: string;
+  method?: string;
   cookies: Record<string, string>;
+  headers?: Record<string, string>;
   [IDENTITY]?: { id: string; email: string; type: string };
 };
 
@@ -37,6 +40,10 @@ describe(`AuthGuard`, () => {
       findFirst: jest.fn(),
     },
   };
+  const originResolver = {
+    resolveRequestOriginForPath: jest.fn(),
+    resolveConsumerRequestAppScope: jest.fn(),
+  };
 
   let guard: AuthGuard;
 
@@ -51,15 +58,23 @@ describe(`AuthGuard`, () => {
   beforeEach(() => {
     jest.clearAllMocks();
     reflector.get.mockReturnValue(false);
-    guard = new AuthGuard(reflector as unknown as Reflector, jwtService as unknown as JwtService, prisma as never);
+    originResolver.resolveRequestOriginForPath.mockReturnValue(`https://consumer.example.com`);
+    originResolver.resolveConsumerRequestAppScope.mockReturnValue(`consumer`);
+    guard = new AuthGuard(
+      reflector as unknown as Reflector,
+      jwtService as unknown as JwtService,
+      prisma as never,
+      originResolver as never,
+    );
   });
 
   it(`rejects an admin-scoped token on consumer routes`, async () => {
+    const [consumerAccessCookieKey] = getApiConsumerAccessTokenCookieKeysForRead(`consumer`);
     const request: MockRequest = {
       path: `/api/consumer/auth/me`,
       url: `/api/consumer/auth/me`,
       cookies: {
-        [COOKIE_KEYS.API_V2_CONSUMER_ACCESS_TOKEN]: `token`,
+        [consumerAccessCookieKey]: `token`,
       },
     };
     jwtService.verify.mockReturnValue({
@@ -95,11 +110,12 @@ describe(`AuthGuard`, () => {
   });
 
   it(`allows legacy no-scope consumer token to continue with existing checks`, async () => {
+    const [consumerAccessCookieKey] = getApiConsumerAccessTokenCookieKeysForRead(`consumer`);
     const request: MockRequest = {
       path: `/api/consumer/profile`,
       url: `/api/consumer/profile`,
       cookies: {
-        [COOKIE_KEYS.API_V2_CONSUMER_ACCESS_TOKEN]: `token`,
+        [consumerAccessCookieKey]: `token`,
       },
     };
     jwtService.verify.mockReturnValue({
@@ -131,11 +147,12 @@ describe(`AuthGuard`, () => {
 
   it(`allows consumer token when stored access hash matches`, async () => {
     const token = `token`;
+    const [consumerAccessCookieKey] = getApiConsumerAccessTokenCookieKeysForRead(`consumer`);
     const request: MockRequest = {
       path: `/api/consumer/profile`,
       url: `/api/consumer/profile`,
       cookies: {
-        [COOKIE_KEYS.API_V2_CONSUMER_ACCESS_TOKEN]: token,
+        [consumerAccessCookieKey]: token,
       },
     };
     jwtService.verify.mockReturnValue({
@@ -161,11 +178,12 @@ describe(`AuthGuard`, () => {
   });
 
   it(`rejects consumer token when stored access hash does not match`, async () => {
+    const [consumerAccessCookieKey] = getApiConsumerAccessTokenCookieKeysForRead(`consumer`);
     const request: MockRequest = {
       path: `/api/consumer/profile`,
       url: `/api/consumer/profile`,
       cookies: {
-        [COOKIE_KEYS.API_V2_CONSUMER_ACCESS_TOKEN]: `token`,
+        [consumerAccessCookieKey]: `token`,
       },
     };
     jwtService.verify.mockReturnValue({
@@ -195,5 +213,129 @@ describe(`AuthGuard`, () => {
 
     await expect(guard.canActivate(buildContext(request))).rejects.toThrow(UnauthorizedException);
     await expect(guard.canActivate(buildContext(request))).rejects.toThrow(`Invalid or expired token`);
+  });
+
+  it(`rejects a refresh token presented as an access cookie`, async () => {
+    const [consumerAccessCookieKey] = getApiConsumerAccessTokenCookieKeysForRead(`consumer`);
+    const request: MockRequest = {
+      path: `/api/consumer/profile`,
+      url: `/api/consumer/profile`,
+      cookies: {
+        [consumerAccessCookieKey]: `token`,
+      },
+    };
+    jwtService.verify.mockReturnValue({
+      identityId: `consumer-1`,
+      sid: `session-1`,
+      typ: `refresh`,
+      scope: `consumer`,
+    });
+
+    await expect(guard.canActivate(buildContext(request))).rejects.toThrow(UnauthorizedException);
+    await expect(guard.canActivate(buildContext(request))).rejects.toThrow(`Invalid or expired token`);
+  });
+
+  it(`rejects authenticated consumer mutations without a valid csrf token`, async () => {
+    const [consumerAccessCookieKey] = getApiConsumerAccessTokenCookieKeysForRead(`consumer`);
+    const request: MockRequest = {
+      method: `POST`,
+      path: `/api/consumer/profile`,
+      url: `/api/consumer/profile`,
+      headers: { origin: `https://consumer.example.com` },
+      cookies: {
+        [consumerAccessCookieKey]: `token`,
+      },
+    };
+    jwtService.verify.mockReturnValue({
+      identityId: `consumer-1`,
+      sid: `session-1`,
+      typ: `access`,
+      scope: `consumer`,
+    });
+    prisma.authSessionModel.findFirst.mockResolvedValue({
+      id: `session-1`,
+      consumerId: `consumer-1`,
+      revokedAt: null,
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+    prisma.adminModel.findFirst.mockResolvedValue(null);
+    prisma.consumerModel.findFirst.mockResolvedValue({
+      id: `consumer-1`,
+      email: `consumer@example.com`,
+    });
+
+    await expect(guard.canActivate(buildContext(request))).rejects.toThrow(UnauthorizedException);
+    await expect(guard.canActivate(buildContext(request))).rejects.toThrow(`Invalid CSRF token`);
+  });
+
+  it(`does not require csrf for authenticated consumer reads`, async () => {
+    const [consumerAccessCookieKey] = getApiConsumerAccessTokenCookieKeysForRead(`consumer`);
+    const request: MockRequest = {
+      method: `GET`,
+      path: `/api/consumer/profile`,
+      url: `/api/consumer/profile`,
+      headers: { origin: `https://consumer.example.com` },
+      cookies: {
+        [consumerAccessCookieKey]: `token`,
+      },
+    };
+    jwtService.verify.mockReturnValue({
+      identityId: `consumer-1`,
+      sid: `session-1`,
+      typ: `access`,
+      scope: `consumer`,
+    });
+    prisma.authSessionModel.findFirst.mockResolvedValue({
+      id: `session-1`,
+      consumerId: `consumer-1`,
+      revokedAt: null,
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+    prisma.adminModel.findFirst.mockResolvedValue(null);
+    prisma.consumerModel.findFirst.mockResolvedValue({
+      id: `consumer-1`,
+      email: `consumer@example.com`,
+    });
+
+    await expect(guard.canActivate(buildContext(request))).resolves.toBe(true);
+  });
+
+  it(`uses the mobile consumer namespace selected by trusted origin`, async () => {
+    const [mobileAccessCookieKey] = getApiConsumerAccessTokenCookieKeysForRead(`consumer-mobile`);
+    const [mobileCsrfCookieKey] = getApiConsumerCsrfTokenCookieKeysForRead(`consumer-mobile`);
+    originResolver.resolveRequestOriginForPath.mockReturnValue(`https://mobile.example.com`);
+    originResolver.resolveConsumerRequestAppScope.mockReturnValue(`consumer-mobile`);
+    const request: MockRequest = {
+      method: `POST`,
+      path: `/api/consumer/profile`,
+      url: `/api/consumer/profile`,
+      headers: {
+        origin: `https://mobile.example.com`,
+        'x-csrf-token': `csrf-token`,
+      },
+      cookies: {
+        [mobileAccessCookieKey]: `token`,
+        [mobileCsrfCookieKey]: `csrf-token`,
+      },
+    };
+    jwtService.verify.mockReturnValue({
+      identityId: `consumer-1`,
+      sid: `session-1`,
+      typ: `access`,
+      scope: `consumer`,
+    });
+    prisma.authSessionModel.findFirst.mockResolvedValue({
+      id: `session-1`,
+      consumerId: `consumer-1`,
+      revokedAt: null,
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+    prisma.adminModel.findFirst.mockResolvedValue(null);
+    prisma.consumerModel.findFirst.mockResolvedValue({
+      id: `consumer-1`,
+      email: `consumer@example.com`,
+    });
+
+    await expect(guard.canActivate(buildContext(request))).resolves.toBe(true);
   });
 });

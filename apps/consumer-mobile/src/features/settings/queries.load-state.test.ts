@@ -72,6 +72,10 @@ describe(`settings queries load-state`, () => {
       ) as unknown as typeof fetch;
       const result = await getProfile(`cookie=abc`);
       expect(result).toEqual({ kind: `ok`, data: validProfile });
+      const [, init] = (global.fetch as jest.Mock).mock.calls[0] as [string, RequestInit];
+      const headers = init.headers as Record<string, string>;
+      expect(headers.Cookie).toBe(`cookie=abc`);
+      expect(headers.origin).toBe(`http://localhost:3002`);
     });
 
     it(`401 -> unauthorized`, async () => {
@@ -134,6 +138,10 @@ describe(`settings queries load-state`, () => {
       ) as unknown as typeof fetch;
       const result = await getSettings(`cookie=abc`);
       expect(result).toEqual({ kind: `ok`, data: validSettings });
+      const [, init] = (global.fetch as jest.Mock).mock.calls[0] as [string, RequestInit];
+      const headers = init.headers as Record<string, string>;
+      expect(headers.Cookie).toBe(`cookie=abc`);
+      expect(headers.origin).toBe(`http://localhost:3002`);
     });
 
     it(`401 -> unauthorized`, async () => {

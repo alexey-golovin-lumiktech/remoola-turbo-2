@@ -8,6 +8,7 @@ import { ExchangeWidget } from '../../../features/exchange/ui/ExchangeWidget';
 import { RatesPanel } from '../../../features/exchange/ui/RatesPanel';
 import { getCurrencySymbol, normalizeCurrencies, type Currency } from '../../../lib/currency-utils';
 import { getEnv } from '../../../lib/env.server';
+import { buildServerReadAuthHeaders } from '../../../lib/server-action-auth';
 import { CalendarIcon } from '../../../shared/ui/icons/CalendarIcon';
 import { ClipboardListIcon } from '../../../shared/ui/icons/ClipboardListIcon';
 import { ExchangeIcon } from '../../../shared/ui/icons/ExchangeIcon';
@@ -76,16 +77,19 @@ async function fetchExchangeData(): Promise<ExchangeData> {
   try {
     const [currenciesRes, balancesRes, ratesRes] = await Promise.all([
       fetch(`${baseUrl}/consumer/exchange/currencies`, {
-        headers: { Cookie: cookie },
+        headers: buildServerReadAuthHeaders(cookie),
         cache: `no-store`,
       }),
       fetch(`${baseUrl}/consumer/payments/balance`, {
-        headers: { Cookie: cookie },
+        headers: buildServerReadAuthHeaders(cookie),
         cache: `no-store`,
       }),
       fetch(`${baseUrl}/consumer/exchange/rates/batch`, {
         method: `POST`,
-        headers: { Cookie: cookie, 'content-type': `application/json` },
+        headers: {
+          ...buildServerReadAuthHeaders(cookie),
+          'content-type': `application/json`,
+        },
         cache: `no-store`,
         body: JSON.stringify({ pairs: DEFAULT_RATE_PAIRS }),
       }),

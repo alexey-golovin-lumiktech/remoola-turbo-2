@@ -23,6 +23,7 @@ import { AppModule } from '../src/app.module';
 import { envs } from '../src/envs';
 import { AuthGuard } from '../src/guards/auth.guard';
 import { PrismaService } from '../src/shared/prisma.service';
+import { getApiConsumerCsrfTokenCookieKeysForRead } from '../src/shared-common';
 
 describe(`Consumer payments idempotency and concurrency (e2e, isolated DB)`, () => {
   let app: INestApplication;
@@ -30,8 +31,31 @@ describe(`Consumer payments idempotency and concurrency (e2e, isolated DB)`, () 
   const senderEmail = `payments-sender@local.test`;
   const recipientEmail = `payments-recipient@local.test`;
   const senderPassword = `SenderPassword1!`;
+  const consumerOrigin = `http://127.0.0.1:3003`;
   let senderId = ``;
   let recipientId = ``;
+
+  function parseCookieValue(cookies: string[] | undefined, key: string): string | null {
+    if (!Array.isArray(cookies)) return null;
+    const row = cookies.find((line) => line.startsWith(`${key}=`));
+    if (!row) return null;
+    const [raw] = row.split(`;`);
+    return raw.slice(`${key}=`.length);
+  }
+
+  function parseCookieValueForKeys(cookies: string[] | undefined, keys: readonly string[]): string | null {
+    for (const key of keys) {
+      const value = parseCookieValue(cookies, key);
+      if (value) return value;
+    }
+    return null;
+  }
+
+  function asCookieArray(header: string | string[] | undefined): string[] | undefined {
+    if (Array.isArray(header)) return header;
+    if (typeof header === `string`) return [header];
+    return undefined;
+  }
 
   beforeAll(async () => {
     assertIsolatedTestDatabaseUrl();
@@ -108,32 +132,58 @@ describe(`Consumer payments idempotency and concurrency (e2e, isolated DB)`, () 
 
   it(`enforces idempotency-key header for withdraw and transfer`, async () => {
     const agent = request.agent(app.getHttpServer());
-    await agent.post(`/api/consumer/auth/login`).send({ email: senderEmail, password: senderPassword }).expect(201);
+    const loginRes = await agent
+      .post(`/api/consumer/auth/login`)
+      .set(`origin`, consumerOrigin)
+      .send({ email: senderEmail, password: senderPassword })
+      .expect(200);
+    const csrf = parseCookieValueForKeys(
+      asCookieArray(loginRes.headers[`set-cookie`]),
+      getApiConsumerCsrfTokenCookieKeysForRead(`consumer-css-grid`),
+    );
+    expect(csrf).toBeTruthy();
 
     await agent
       .post(`/api/consumer/payments/withdraw`)
+      .set(`origin`, consumerOrigin)
+      .set(`x-csrf-token`, csrf ?? ``)
       .send({ amount: 10, method: `BANK_ACCOUNT`, currencyCode: `USD` })
       .expect(400);
 
     await agent
       .post(`/api/consumer/payments/transfer`)
+      .set(`origin`, consumerOrigin)
+      .set(`x-csrf-token`, csrf ?? ``)
       .send({ amount: 10, recipient: recipientEmail, currencyCode: `USD` })
       .expect(400);
   });
 
   it(`withdraw replay with same key returns existing entry without duplicates`, async () => {
     const agent = request.agent(app.getHttpServer());
-    await agent.post(`/api/consumer/auth/login`).send({ email: senderEmail, password: senderPassword }).expect(201);
+    const loginRes = await agent
+      .post(`/api/consumer/auth/login`)
+      .set(`origin`, consumerOrigin)
+      .send({ email: senderEmail, password: senderPassword })
+      .expect(200);
+    const csrf = parseCookieValueForKeys(
+      asCookieArray(loginRes.headers[`set-cookie`]),
+      getApiConsumerCsrfTokenCookieKeysForRead(`consumer-css-grid`),
+    );
+    expect(csrf).toBeTruthy();
 
     const idempotencyKey = `withdraw-${Date.now()}`;
     const first = await agent
       .post(`/api/consumer/payments/withdraw`)
+      .set(`origin`, consumerOrigin)
+      .set(`x-csrf-token`, csrf ?? ``)
       .set(`idempotency-key`, idempotencyKey)
       .send({ amount: 11, method: `BANK_ACCOUNT`, currencyCode: `USD` })
       .expect(201);
 
     const replay = await agent
       .post(`/api/consumer/payments/withdraw`)
+      .set(`origin`, consumerOrigin)
+      .set(`x-csrf-token`, csrf ?? ``)
       .set(`idempotency-key`, idempotencyKey)
       .send({ amount: 11, method: `BANK_ACCOUNT`, currencyCode: `USD` })
       .expect(201);
@@ -152,16 +202,29 @@ describe(`Consumer payments idempotency and concurrency (e2e, isolated DB)`, () 
 
   it(`parallel transfer requests with same key converge to one logical transfer`, async () => {
     const agent = request.agent(app.getHttpServer());
-    await agent.post(`/api/consumer/auth/login`).send({ email: senderEmail, password: senderPassword }).expect(201);
+    const loginRes = await agent
+      .post(`/api/consumer/auth/login`)
+      .set(`origin`, consumerOrigin)
+      .send({ email: senderEmail, password: senderPassword })
+      .expect(200);
+    const csrf = parseCookieValueForKeys(
+      asCookieArray(loginRes.headers[`set-cookie`]),
+      getApiConsumerCsrfTokenCookieKeysForRead(`consumer-css-grid`),
+    );
+    expect(csrf).toBeTruthy();
 
     const idempotencyKey = `transfer-${Date.now()}`;
     const [a, b] = await Promise.all([
       agent
         .post(`/api/consumer/payments/transfer`)
+        .set(`origin`, consumerOrigin)
+        .set(`x-csrf-token`, csrf ?? ``)
         .set(`idempotency-key`, idempotencyKey)
         .send({ amount: 13, recipient: recipientEmail, currencyCode: `USD` }),
       agent
         .post(`/api/consumer/payments/transfer`)
+        .set(`origin`, consumerOrigin)
+        .set(`x-csrf-token`, csrf ?? ``)
         .set(`idempotency-key`, idempotencyKey)
         .send({ amount: 13, recipient: recipientEmail, currencyCode: `USD` }),
     ]);
@@ -228,7 +291,16 @@ describe(`Consumer payments idempotency and concurrency (e2e, isolated DB)`, () 
     });
 
     const agent = request.agent(app.getHttpServer());
-    await agent.post(`/api/consumer/auth/login`).send({ email: senderEmail, password: senderPassword }).expect(201);
+    const loginRes = await agent
+      .post(`/api/consumer/auth/login`)
+      .set(`origin`, consumerOrigin)
+      .send({ email: senderEmail, password: senderPassword })
+      .expect(200);
+    const csrf = parseCookieValueForKeys(
+      asCookieArray(loginRes.headers[`set-cookie`]),
+      getApiConsumerCsrfTokenCookieKeysForRead(`consumer-css-grid`),
+    );
+    expect(csrf).toBeTruthy();
 
     const withdrawKey = `withdraw-daily-${Date.now()}`;
     const transferKey = `transfer-daily-${Date.now()}`;
@@ -236,10 +308,14 @@ describe(`Consumer payments idempotency and concurrency (e2e, isolated DB)`, () 
     const [withdrawRes, transferRes] = await Promise.all([
       agent
         .post(`/api/consumer/payments/withdraw`)
+        .set(`origin`, consumerOrigin)
+        .set(`x-csrf-token`, csrf ?? ``)
         .set(`idempotency-key`, withdrawKey)
         .send({ amount: 6000, method: `BANK_ACCOUNT`, currencyCode: `USD` }),
       agent
         .post(`/api/consumer/payments/transfer`)
+        .set(`origin`, consumerOrigin)
+        .set(`x-csrf-token`, csrf ?? ``)
         .set(`idempotency-key`, transferKey)
         .send({ amount: 6000, recipient: recipientEmail, currencyCode: `USD` }),
     ]);

@@ -45,6 +45,7 @@ const SignupFormContext = createContext<SignupFormContextValue | null>(null);
 export function SignupFormProvider({ children, querySeed }: { children: ReactNode; querySeed?: SignupQuerySeed }) {
   const [state, setState] = useState<SignupFormState>(() => createInitialSignupFormState(querySeed));
   const [googleHydrationNonce, setGoogleHydrationNonce] = useState(0);
+  const googleSignupHandoff = querySeed?.googleSignupHandoff ?? null;
 
   useEffect(() => {
     setState((current) => {
@@ -92,14 +93,11 @@ export function SignupFormProvider({ children, querySeed }: { children: ReactNod
 
     void (async () => {
       try {
-        const response = await fetch(
-          `/api/consumer/auth/google/signup-session?token=${encodeURIComponent(activeToken)}`,
-          {
-            credentials: `include`,
-            cache: `no-store`,
-            signal: controller.signal,
-          },
-        );
+        const response = await fetch(`/api/consumer/auth/google/signup-session`, {
+          credentials: `include`,
+          cache: `no-store`,
+          signal: controller.signal,
+        });
         const data = (await response.json().catch(() => ({}))) as {
           email?: string;
           givenName?: string;
@@ -140,6 +138,72 @@ export function SignupFormProvider({ children, querySeed }: { children: ReactNod
       controller.abort();
     };
   }, [state.googleSignupToken, state.hydratedGoogleToken, googleHydrationNonce]);
+
+  useEffect(() => {
+    if (!googleSignupHandoff) {
+      return;
+    }
+
+    const controller = new AbortController();
+    setState((current) => ({
+      ...current,
+      googleSignupToken: current.googleSignupToken ?? `cookie-session`,
+      googleHydrationLoading: true,
+      googleHydrationError: null,
+      hydratedGoogleToken: null,
+    }));
+
+    void (async () => {
+      try {
+        const response = await fetch(`/api/consumer/auth/google/signup-session/establish`, {
+          method: `POST`,
+          headers: { 'content-type': `application/json` },
+          credentials: `include`,
+          cache: `no-store`,
+          signal: controller.signal,
+          body: JSON.stringify({ handoffToken: googleSignupHandoff }),
+        });
+        const data = (await response.json().catch(() => ({}))) as {
+          email?: string;
+          givenName?: string;
+          familyName?: string;
+        };
+
+        if (!response.ok || !hasUsableGoogleSignupSession(data)) {
+          throw new Error(`Could not load your Google sign-up session. Please try again.`);
+        }
+
+        setState((current) =>
+          applyGoogleSignupSession({ ...current, googleSignupToken: `cookie-session` }, data, `cookie-session`),
+        );
+
+        const url = new URL(window.location.href);
+        url.searchParams.delete(`googleSignupHandoff`);
+        url.searchParams.set(`googleSignup`, `1`);
+        window.history.replaceState({}, ``, `${url.pathname}${url.search}${url.hash}`);
+      } catch (error: unknown) {
+        if (controller.signal.aborted) {
+          return;
+        }
+
+        const message =
+          error instanceof Error && error.message
+            ? error.message
+            : `Could not load your Google sign-up session. Please check your connection and try again.`;
+
+        setState((current) => ({
+          ...current,
+          googleHydrationLoading: false,
+          googleHydrationError: message,
+          hydratedGoogleToken: null,
+        }));
+      }
+    })();
+
+    return () => {
+      controller.abort();
+    };
+  }, [googleSignupHandoff]);
 
   const updateSignup = useCallback((patch: Partial<SignupDetails>) => {
     setState((current) => {

@@ -1,6 +1,6 @@
 import { type SWRConfiguration } from 'swr';
 
-import { COOKIE_KEYS } from '@remoola/api-types';
+import { getConsumerMobileCsrfTokenCookieKey } from '@remoola/api-types';
 
 import { handleSessionExpired } from './session-expired';
 
@@ -28,7 +28,14 @@ export const swrConfig: SWRConfiguration = {
 
 function getCsrfTokenFromCookie(): string | null {
   if (typeof document === `undefined`) return null;
-  const key = `${COOKIE_KEYS.CSRF_TOKEN}=`;
+  const isSecureRequest =
+    typeof window !== `undefined` ? window.location.protocol === `https:` : globalThis.location?.protocol === `https:`;
+  const key = `${getConsumerMobileCsrfTokenCookieKey({
+    isProduction: process.env.NODE_ENV === `production`,
+    isVercel: process.env.VERCEL === `1`,
+    cookieSecure: process.env.COOKIE_SECURE === `true`,
+    isSecureRequest,
+  })}=`;
   const parts = document.cookie.split(`;`);
   for (const part of parts) {
     const trimmed = part.trim();
@@ -42,6 +49,20 @@ function getCsrfTokenFromCookie(): string | null {
 function getCsrfHeader(): HeadersInit | undefined {
   const csrf = getCsrfTokenFromCookie();
   return csrf ? { 'x-csrf-token': csrf } : undefined;
+}
+
+function withMutationCsrfHeaders(init?: RequestInit): Headers | HeadersInit | undefined {
+  const method = init?.method;
+  if (method == null || method === `GET` || method === `HEAD`) {
+    return init?.headers;
+  }
+
+  const headers = new Headers(init?.headers);
+  const csrf = getCsrfHeader();
+  if (csrf) {
+    Object.entries(csrf).forEach(([key, value]) => headers.set(key, value));
+  }
+  return headers;
 }
 
 function queryKeyToUrl(key: unknown): string {
@@ -75,6 +96,7 @@ export async function fetchWithAuth<T = unknown>(
 ): Promise<{ ok: true; data: T; status: number } | { ok: false; error: string; status: number }> {
   let res = await fetch(url, {
     ...init,
+    headers: withMutationCsrfHeaders(init),
     credentials: `include`,
     cache: `no-store`,
   });

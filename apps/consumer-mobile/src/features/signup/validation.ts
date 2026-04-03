@@ -1,7 +1,7 @@
 import { isValidPhoneNumber } from 'libphonenumber-js';
 import { z } from 'zod';
 
-import { ACCOUNT_TYPE, CONTRACTOR_KIND, emailSchema } from '@remoola/api-types';
+import { ACCOUNT_TYPE, CONTRACTOR_KIND, LEGAL_STATUS, emailSchema } from '@remoola/api-types';
 
 /** Flatten zod errors to field -> message map. */
 export function getFieldErrors(error: z.ZodError): Record<string, string> {
@@ -77,7 +77,7 @@ export const personalDetailsSchema = z.object({
     .refine(isAtLeast18YearsOld, `You must be at least 18 years old`),
   citizenOf: z.string().min(1, `Citizenship is required`),
   countryOfTaxResidence: z.string().min(1, `Country of tax residence is required`),
-  legalStatus: z.string().min(1, `Legal status is required`),
+  legalStatus: z.nativeEnum(LEGAL_STATUS, { error: () => ({ message: `Legal status is required` }) }),
   taxId: z.string().min(1, `Tax ID is required`).refine(taxIdRefine, `Please enter a valid Tax ID`),
   passportOrIdNumber: z.string().min(1, `Passport/ID number is required`),
   phoneNumber: z.string().min(1, `Phone number is required`).refine(validPhone, `Please enter a valid phone number`),

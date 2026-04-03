@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
+import { type ConsumerAppScope } from '@remoola/api-types';
+
 import { envs } from '../envs';
 
 type HeaderValue = string | string[] | undefined;
@@ -7,8 +9,15 @@ type HeaderValue = string | string[] | undefined;
 @Injectable()
 export class OriginResolverService {
   private readonly defaultOriginPlaceholder = `CONSUMER_APP_ORIGIN`;
+  private readonly mobileOriginPlaceholder = `CONSUMER_MOBILE_APP_ORIGIN`;
+  private readonly cssGridOriginPlaceholder = `CONSUMER_CSS_GRID_APP_ORIGIN`;
   private readonly adminOriginPlaceholder = `ADMIN_APP_ORIGIN`;
-  private readonly localDevAllowedPorts = new Set([`3003`, `3010`]);
+  private readonly consumerLocalDevOriginScopes = new Map<string, ConsumerAppScope>([
+    [`3001`, `consumer`],
+    [`3002`, `consumer-mobile`],
+    [`3003`, `consumer-css-grid`],
+  ]);
+  private readonly adminLocalDevAllowedPorts = new Set([`3010`]);
 
   normalizeOrigin(origin: string): string {
     return origin.replace(/\/$/, ``);
@@ -26,54 +35,86 @@ export class OriginResolverService {
     return hostname === `localhost` || hostname === `127.0.0.1` || hostname === `[::1]` || hostname === `::1`;
   }
 
-  private isAllowedLocalDevOrigin(origin: URL): boolean {
+  private resolveLocalDevConsumerScope(origin: URL): ConsumerAppScope | undefined {
+    if (!this.isDevOrTestEnv()) return undefined;
+    if (!this.isLoopbackHost(origin.hostname)) return undefined;
+    return this.consumerLocalDevOriginScopes.get(origin.port);
+  }
+
+  private isAllowedLocalDevOrigin(origin: URL, scope: `consumer` | `admin` | `all`): boolean {
     if (!this.isDevOrTestEnv()) return false;
     if (!this.isLoopbackHost(origin.hostname)) return false;
-    return this.localDevAllowedPorts.has(origin.port);
+    const allowedPorts =
+      scope === `admin`
+        ? this.adminLocalDevAllowedPorts
+        : scope === `consumer`
+          ? new Set(this.consumerLocalDevOriginScopes.keys())
+          : new Set([...this.consumerLocalDevOriginScopes.keys(), ...this.adminLocalDevAllowedPorts]);
+    return allowedPorts.has(origin.port);
   }
 
-  private getFirstHeaderValue(value: HeaderValue): string | undefined {
-    if (Array.isArray(value)) {
-      return value.find((entry): entry is string => typeof entry === `string` && entry.trim().length > 0)?.trim();
-    }
-
-    return typeof value === `string` && value.trim().length > 0 ? value.trim() : undefined;
-  }
-
-  getAllowedOrigins(): Set<string> {
-    const origins = new Set<string>();
+  private getConfiguredConsumerOriginScopes(): Map<string, ConsumerAppScope> {
+    const scopes = new Map<string, ConsumerAppScope>();
 
     if (this.isValidOrigin(envs.CONSUMER_APP_ORIGIN, this.defaultOriginPlaceholder)) {
-      origins.add(this.normalizeOrigin(envs.CONSUMER_APP_ORIGIN));
+      scopes.set(this.normalizeOrigin(envs.CONSUMER_APP_ORIGIN), `consumer`);
     }
+
+    if (this.isValidOrigin(envs.CONSUMER_MOBILE_APP_ORIGIN, this.mobileOriginPlaceholder)) {
+      scopes.set(this.normalizeOrigin(envs.CONSUMER_MOBILE_APP_ORIGIN), `consumer-mobile`);
+    }
+
+    if (this.isValidOrigin(envs.CONSUMER_CSS_GRID_APP_ORIGIN, this.cssGridOriginPlaceholder)) {
+      scopes.set(this.normalizeOrigin(envs.CONSUMER_CSS_GRID_APP_ORIGIN), `consumer-css-grid`);
+    }
+
+    return scopes;
+  }
+
+  private getFirstHeaderValue(headerValue: HeaderValue): string | undefined {
+    if (Array.isArray(headerValue)) {
+      return headerValue.find((entry): entry is string => typeof entry === `string` && entry.trim().length > 0)?.trim();
+    }
+
+    return typeof headerValue === `string` && headerValue.trim().length > 0 ? headerValue.trim() : undefined;
+  }
+
+  getConsumerAllowedOrigins(): Set<string> {
+    return new Set(this.getConfiguredConsumerOriginScopes().keys());
+  }
+
+  getAdminAllowedOrigins(): Set<string> {
+    const origins = new Set<string>();
 
     if (this.isValidOrigin(envs.ADMIN_APP_ORIGIN, this.adminOriginPlaceholder)) {
       origins.add(this.normalizeOrigin(envs.ADMIN_APP_ORIGIN));
     }
 
-    if (Array.isArray(envs.CORS_ALLOWED_ORIGINS)) {
-      for (const origin of envs.CORS_ALLOWED_ORIGINS) {
-        if (origin) origins.add(this.normalizeOrigin(origin));
-      }
-    }
-
     return origins;
   }
 
-  validateReturnOrigin(returnOrigin?: string): string | undefined {
-    if (!returnOrigin) return undefined;
+  getAllowedOrigins(): Set<string> {
+    return new Set([...this.getConsumerAllowedOrigins(), ...this.getAdminAllowedOrigins()]);
+  }
+
+  private validateOrigin(originCandidate: string | undefined, scope: `consumer` | `admin` | `all`): string | undefined {
+    if (!originCandidate) return undefined;
 
     try {
-      const url = new URL(returnOrigin);
+      const url = new URL(originCandidate);
       const normalized = this.normalizeOrigin(url.origin);
+      const allowedOrigins =
+        scope === `admin`
+          ? this.getAdminAllowedOrigins()
+          : scope === `consumer`
+            ? this.getConsumerAllowedOrigins()
+            : this.getAllowedOrigins();
 
-      if (this.getAllowedOrigins().has(normalized)) {
+      if (allowedOrigins.has(normalized)) {
         return normalized;
       }
 
-      // Keep local OAuth redirects stable during development/test even when
-      // CORS_ALLOWED_ORIGINS is narrowed by env overrides.
-      if (this.isAllowedLocalDevOrigin(url)) {
+      if (this.isAllowedLocalDevOrigin(url, scope)) {
         return normalized;
       }
     } catch {
@@ -83,32 +124,113 @@ export class OriginResolverService {
     return undefined;
   }
 
-  resolveRequestOrigin(requestOrigin?: HeaderValue, requestReferer?: HeaderValue): string | undefined {
+  validateConsumerReturnOrigin(returnOrigin?: string): string | undefined {
+    return this.validateOrigin(returnOrigin, `consumer`);
+  }
+
+  resolveConsumerAppScope(originCandidate?: string): ConsumerAppScope | undefined {
+    if (!originCandidate) return undefined;
+
+    try {
+      const url = new URL(originCandidate);
+      const normalized = this.normalizeOrigin(url.origin);
+      const configuredScope = this.getConfiguredConsumerOriginScopes().get(normalized);
+      if (configuredScope) {
+        return configuredScope;
+      }
+
+      return this.resolveLocalDevConsumerScope(url);
+    } catch {
+      return undefined;
+    }
+  }
+
+  validateAdminOrigin(originCandidate?: string): string | undefined {
+    return this.validateOrigin(originCandidate, `admin`);
+  }
+
+  validateReturnOrigin(returnOrigin?: string): string | undefined {
+    return this.validateConsumerReturnOrigin(returnOrigin);
+  }
+
+  resolveConsumerRequestOrigin(requestOrigin?: HeaderValue, requestReferer?: HeaderValue): string | undefined {
     const originHeader = this.getFirstHeaderValue(requestOrigin);
     if (originHeader) {
-      const validatedOrigin = this.validateReturnOrigin(originHeader);
+      const validatedOrigin = this.validateConsumerReturnOrigin(originHeader);
       if (validatedOrigin) return validatedOrigin;
     }
 
     const refererHeader = this.getFirstHeaderValue(requestReferer);
     if (refererHeader) {
-      return this.validateReturnOrigin(refererHeader);
+      return this.validateConsumerReturnOrigin(refererHeader);
     }
 
     return undefined;
   }
 
+  resolveConsumerRequestAppScope(
+    requestOrigin?: HeaderValue,
+    requestReferer?: HeaderValue,
+  ): ConsumerAppScope | undefined {
+    const originHeader = this.getFirstHeaderValue(requestOrigin);
+    if (originHeader) {
+      const validatedOrigin = this.validateConsumerReturnOrigin(originHeader);
+      if (validatedOrigin) {
+        return this.resolveConsumerAppScope(validatedOrigin);
+      }
+    }
+
+    const refererHeader = this.getFirstHeaderValue(requestReferer);
+    if (refererHeader) {
+      const validatedOrigin = this.validateConsumerReturnOrigin(refererHeader);
+      if (validatedOrigin) {
+        return this.resolveConsumerAppScope(validatedOrigin);
+      }
+    }
+
+    return undefined;
+  }
+
+  resolveAdminRequestOrigin(requestOrigin?: HeaderValue, requestReferer?: HeaderValue): string | undefined {
+    const originHeader = this.getFirstHeaderValue(requestOrigin);
+    if (originHeader) {
+      const validatedOrigin = this.validateAdminOrigin(originHeader);
+      if (validatedOrigin) return validatedOrigin;
+    }
+
+    const refererHeader = this.getFirstHeaderValue(requestReferer);
+    if (refererHeader) {
+      return this.validateAdminOrigin(refererHeader);
+    }
+
+    return undefined;
+  }
+
+  resolveRequestOrigin(requestOrigin?: HeaderValue, requestReferer?: HeaderValue): string | undefined {
+    return this.resolveConsumerRequestOrigin(requestOrigin, requestReferer);
+  }
+
+  resolveRequestOriginForPath(
+    path: string,
+    requestOrigin?: HeaderValue,
+    requestReferer?: HeaderValue,
+  ): string | undefined {
+    return path.startsWith(`/api/admin/`)
+      ? this.resolveAdminRequestOrigin(requestOrigin, requestReferer)
+      : this.resolveConsumerRequestOrigin(requestOrigin, requestReferer);
+  }
+
   resolveConsumerOrigin(returnOrigin?: string): string | null {
-    const validatedReturnOrigin = this.validateReturnOrigin(returnOrigin);
+    const validatedReturnOrigin = this.validateConsumerReturnOrigin(returnOrigin);
     if (validatedReturnOrigin) {
       return validatedReturnOrigin;
     }
 
-    if (this.isValidOrigin(envs.CONSUMER_APP_ORIGIN, this.defaultOriginPlaceholder)) {
-      return envs.CONSUMER_APP_ORIGIN;
+    for (const origin of this.getConfiguredConsumerOriginScopes().keys()) {
+      return origin;
     }
 
-    return envs.CORS_ALLOWED_ORIGINS?.[0] ?? null;
+    return null;
   }
 
   resolveConsumerOriginFromRequest(
@@ -117,8 +239,8 @@ export class OriginResolverService {
     requestReferer?: HeaderValue,
   ): string | null {
     return (
-      this.validateReturnOrigin(returnOrigin) ??
-      this.resolveRequestOrigin(requestOrigin, requestReferer) ??
+      this.validateConsumerReturnOrigin(returnOrigin) ??
+      this.resolveConsumerRequestOrigin(requestOrigin, requestReferer) ??
       this.resolveConsumerOrigin()
     );
   }

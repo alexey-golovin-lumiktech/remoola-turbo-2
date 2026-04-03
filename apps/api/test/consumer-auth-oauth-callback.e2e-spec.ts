@@ -15,10 +15,12 @@ import request from 'supertest';
 import { assertIsolatedTestDatabaseUrl } from './test-db-safety';
 import { AppModule } from '../src/app.module';
 import { envs } from '../src/envs';
-import { GOOGLE_OAUTH_STATE_COOKIE_KEY } from '../src/shared-common';
+import { getApiOAuthStateCookieKeysForRead } from '../src/shared-common';
 
 describe(`Consumer auth OAuth callback contracts (e2e, isolated DB)`, () => {
   let app: INestApplication;
+  const consumerOrigin = `http://127.0.0.1:3001`;
+  let initialConsumerOrigin: string;
 
   function signCookieValue(value: string, secret: string): string {
     const digest = createHmac(`sha256`, secret).update(value).digest(`base64`).replace(/=+$/, ``);
@@ -27,11 +29,13 @@ describe(`Consumer auth OAuth callback contracts (e2e, isolated DB)`, () => {
 
   function buildSignedStateCookie(state: string): string {
     const secret = envs.SECURE_SESSION_SECRET;
-    return `${GOOGLE_OAUTH_STATE_COOKIE_KEY}=${encodeURIComponent(signCookieValue(state, secret))}`;
+    return `${getApiOAuthStateCookieKeysForRead()[0]}=${encodeURIComponent(signCookieValue(state, secret))}`;
   }
 
   beforeAll(async () => {
     assertIsolatedTestDatabaseUrl();
+    initialConsumerOrigin = envs.CONSUMER_APP_ORIGIN;
+    envs.CONSUMER_APP_ORIGIN = consumerOrigin;
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -43,6 +47,7 @@ describe(`Consumer auth OAuth callback contracts (e2e, isolated DB)`, () => {
   });
 
   afterAll(async () => {
+    envs.CONSUMER_APP_ORIGIN = initialConsumerOrigin;
     await app.close();
   });
 
@@ -53,6 +58,7 @@ describe(`Consumer auth OAuth callback contracts (e2e, isolated DB)`, () => {
       envs.CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK = false;
       const strictRes = await request(app.getHttpServer())
         .get(`/api/consumer/auth/google/callback`)
+        .set(`origin`, consumerOrigin)
         .query({ code: `oauth-code`, state: `missing-state-record` })
         .expect(302);
       expect(strictRes.headers.location).toContain(`error=expired_state`);
@@ -60,6 +66,7 @@ describe(`Consumer auth OAuth callback contracts (e2e, isolated DB)`, () => {
       envs.CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK = true;
       const compatRes = await request(app.getHttpServer())
         .get(`/api/consumer/auth/google/callback`)
+        .set(`origin`, consumerOrigin)
         .query({ code: `oauth-code`, state: `missing-state-record` })
         .expect(302);
       expect(compatRes.headers.location).toContain(`error=expired_state`);
@@ -76,6 +83,7 @@ describe(`Consumer auth OAuth callback contracts (e2e, isolated DB)`, () => {
       envs.CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK = false;
       const res = await request(app.getHttpServer())
         .get(`/api/consumer/auth/google/callback`)
+        .set(`origin`, consumerOrigin)
         .set(`Cookie`, [buildSignedStateCookie(signedState)])
         .query({ code: `oauth-code`, state: signedState })
         .expect(302);
@@ -98,6 +106,7 @@ describe(`Consumer auth OAuth callback contracts (e2e, isolated DB)`, () => {
       envs.NODE_ENV = envs.ENVIRONMENT.PRODUCTION;
       const res = await request(app.getHttpServer())
         .get(`/api/consumer/auth/google/callback`)
+        .set(`origin`, consumerOrigin)
         .set(`Cookie`, [buildSignedStateCookie(tamperedCookieState)])
         .query({ code: `oauth-code`, state: requestState })
         .expect(302);

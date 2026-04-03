@@ -1,4 +1,5 @@
 import { getEnv } from '../../lib/env.server';
+import { buildServerReadAuthHeaders } from '../../lib/server-action-auth';
 
 export interface PaymentMethodItem {
   id: string;
@@ -25,7 +26,7 @@ export async function getPaymentMethods(cookie: string | null): Promise<GetPayme
   const url = `${baseUrl}/consumer/payment-methods`;
   const res = await fetch(url, {
     method: `GET`,
-    headers: { Cookie: cookie ?? `` },
+    headers: buildServerReadAuthHeaders(cookie),
     cache: `no-store`,
     signal: AbortSignal.timeout(10000),
   });

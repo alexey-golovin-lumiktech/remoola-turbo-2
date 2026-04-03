@@ -4,7 +4,6 @@ const DEFAULT_MAX_JSON_BODY_BYTES = 1024 * 1024; // 1 MB
 const FORWARDED_HEADER_ALLOWLIST = new Set([
   `accept`,
   `accept-language`,
-  `authorization`,
   `content-type`,
   `cookie`,
   `idempotency-key`,

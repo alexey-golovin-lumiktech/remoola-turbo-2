@@ -207,6 +207,20 @@ const schema = z.object({
 const parsed = schema.safeParse(process.env);
 if (!parsed.success) throw new Error(JSON.stringify(parsed.error, null, 2));
 
+if ([ENVIRONMENT.PRODUCTION, ENVIRONMENT.STAGING].map(String).includes(parsed.data.NODE_ENV)) {
+  if (
+    !parsed.data.JWT_ACCESS_SECRET ||
+    !parsed.data.JWT_REFRESH_SECRET ||
+    parsed.data.JWT_ACCESS_SECRET === `JWT_ACCESS_SECRET` ||
+    parsed.data.JWT_REFRESH_SECRET === `JWT_REFRESH_SECRET`
+  ) {
+    throw new Error(`JWT access and refresh secrets must be configured with non-placeholder values`);
+  }
+  if (parsed.data.JWT_ACCESS_SECRET === parsed.data.JWT_REFRESH_SECRET) {
+    throw new Error(`JWT_ACCESS_SECRET and JWT_REFRESH_SECRET must be distinct`);
+  }
+}
+
 /** Cookie maxAge in ms. Derived from JWT_ACCESS_TOKEN_EXPIRES_IN (fintech-safe default: 15m). */
 const JWT_ACCESS_TOKEN_EXPIRES_IN = parseExpiresToMs(parsed.data.JWT_ACCESS_TOKEN_EXPIRES_IN);
 /** Cookie maxAge in ms. Derived from JWT_REFRESH_TOKEN_EXPIRES_IN (default: 168h = 7d). */

@@ -7,7 +7,7 @@
     "dev": "next dev --turbopack --port 3010",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint --max-warnings 0",
+    "lint": "eslint \"src/**/*.{js,jsx,ts,tsx}\" --max-warnings 0",
     "typecheck": "tsc --noEmit",
     "test": "node ../../scripts/run-jest-with-memory-cap.js",
     "clean": "rm -rf ./node_modules ./.next"

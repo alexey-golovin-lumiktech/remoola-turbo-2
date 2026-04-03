@@ -16,7 +16,7 @@ export const config = [
   {
     ignores: [
       "**/*.mjs",
-      "eslint.config.mjs"
+      "!**/eslint.config.mjs",
     ],
   },
   {

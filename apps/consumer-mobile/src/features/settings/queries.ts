@@ -1,5 +1,6 @@
 import { profileSchema, settingsSchema, type Profile, type Settings } from './schemas';
 import { getEnv } from '../../lib/env.server';
+import { buildServerReadAuthHeaders } from '../../lib/server-action-auth';
 
 export type ProfileResult = { kind: `ok`; data: Profile } | { kind: `unauthorized` } | { kind: `error` };
 
@@ -14,7 +15,7 @@ export async function getProfile(cookie: string | null): Promise<ProfileResult> 
   try {
     const res = await fetch(`${baseUrl}/consumer/profile/me`, {
       method: `GET`,
-      headers: { Cookie: cookie ?? `` },
+      headers: buildServerReadAuthHeaders(cookie),
       cache: `no-store`,
       signal: AbortSignal.timeout(10000),
     });
@@ -35,7 +36,7 @@ export async function getSettings(cookie: string | null): Promise<SettingsResult
   try {
     const res = await fetch(`${baseUrl}/consumer/settings`, {
       method: `GET`,
-      headers: { Cookie: cookie ?? `` },
+      headers: buildServerReadAuthHeaders(cookie),
       cache: `no-store`,
       signal: AbortSignal.timeout(10000),
     });

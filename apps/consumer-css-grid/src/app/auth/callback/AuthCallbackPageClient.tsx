@@ -3,17 +3,24 @@
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
-import { AUTH_CALLBACK_MAX_SESSION_POLLS, getAuthCallbackSessionPollDelayMs } from './auth-callback-polling';
+import { pollForAuthCallbackSession } from './auth-callback-polling';
 import { parseSearchParams } from '../../../features/auth/schemas';
 import { getAuthErrorMessage } from '../../../lib/auth-error-messages';
 
-export function AuthCallbackPageClient({ nextParam, oauthToken }: { nextParam?: string; oauthToken: string | null }) {
+export function AuthCallbackPageClient({
+  nextParam,
+  oauthHandoff,
+}: {
+  nextParam?: string;
+  oauthHandoff: string | null;
+}) {
   const router = useRouter();
   const { nextPath } = parseSearchParams({ next: nextParam });
 
   useEffect(() => {
     let cancelled = false;
     let timeoutId: number | null = null;
+    let resolvePendingSleep: (() => void) | null = null;
 
     const redirectToLogin = () => {
       if (!cancelled) {
@@ -21,40 +28,13 @@ export function AuthCallbackPageClient({ nextParam, oauthToken }: { nextParam?: 
       }
     };
 
-    const pollSession = async (attempt: number): Promise<void> => {
-      if (cancelled) return;
-
-      try {
-        const meResponse = await fetch(`/api/me`, {
-          credentials: `include`,
-          cache: `no-store`,
-        });
-
-        if (meResponse.ok) {
-          router.replace(nextPath);
-          return;
-        }
-      } catch {
-        // Keep the retry path bounded; transient network errors should behave like a miss.
-      }
-
-      if (attempt >= AUTH_CALLBACK_MAX_SESSION_POLLS - 1) {
-        redirectToLogin();
-        return;
-      }
-
-      timeoutId = window.setTimeout(() => {
-        void pollSession(attempt + 1);
-      }, getAuthCallbackSessionPollDelayMs(attempt));
-    };
-
-    const run = async () => {
-      if (oauthToken) {
-        const exchangeResponse = await fetch(`/api/oauth/exchange`, {
+    const completeAuthCallback = async () => {
+      if (oauthHandoff) {
+        const exchangeResponse = await fetch(`/api/oauth/complete`, {
           method: `POST`,
           headers: { 'content-type': `application/json` },
           credentials: `include`,
-          body: JSON.stringify({ exchangeToken: oauthToken }),
+          body: JSON.stringify({ handoffToken: oauthHandoff }),
           cache: `no-store`,
         });
 
@@ -67,14 +47,56 @@ export function AuthCallbackPageClient({ nextParam, oauthToken }: { nextParam?: 
         }
 
         const url = new URL(window.location.href);
-        url.searchParams.delete(`oauthToken`);
+        url.searchParams.delete(`oauthHandoff`);
         window.history.replaceState({}, ``, `${url.pathname}${url.search}${url.hash}`);
       }
 
-      await pollSession(0);
+      const sessionEstablished = await pollForAuthCallbackSession({
+        poll: async () => {
+          if (cancelled) return false;
+
+          try {
+            const meResponse = await fetch(`/api/me`, {
+              credentials: `include`,
+              cache: `no-store`,
+            });
+
+            if (meResponse.ok) {
+              router.replace(nextPath);
+              return true;
+            }
+          } catch {
+            // Keep the retry path bounded; transient network errors should behave like a miss.
+          }
+
+          return false;
+        },
+        sleep: (delayMs) =>
+          new Promise((resolve) => {
+            if (cancelled) {
+              resolve();
+              return;
+            }
+
+            resolvePendingSleep = () => {
+              resolvePendingSleep = null;
+              timeoutId = null;
+              resolve();
+            };
+
+            timeoutId = window.setTimeout(() => {
+              resolvePendingSleep?.();
+            }, delayMs);
+          }),
+        isCancelled: () => cancelled,
+      });
+
+      if (!sessionEstablished) {
+        redirectToLogin();
+      }
     };
 
-    void run().catch(() => {
+    void completeAuthCallback().catch(() => {
       redirectToLogin();
     });
 
@@ -82,9 +104,10 @@ export function AuthCallbackPageClient({ nextParam, oauthToken }: { nextParam?: 
       cancelled = true;
       if (timeoutId != null) {
         window.clearTimeout(timeoutId);
+        resolvePendingSleep?.();
       }
     };
-  }, [nextPath, oauthToken, router]);
+  }, [nextPath, oauthHandoff, router]);
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4 text-sm text-slate-500 dark:text-slate-400">

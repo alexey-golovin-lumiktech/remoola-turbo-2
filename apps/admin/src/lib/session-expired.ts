@@ -8,12 +8,40 @@ import { toast } from 'sonner';
 
 import { SESSION_EXPIRED_QUERY } from '@remoola/api-types';
 
+import { getAdminCsrfCookieKey } from './auth-cookie-policy';
+
 const SESSION_EXPIRED_MESSAGE = `Your session has expired. Please sign in again.`;
 
 /** Admin logout clears cookies server-side; we call it to ensure clean state before redirect. */
 const LOGOUT_URL = `/api/auth/logout`;
 
 export { SESSION_EXPIRED_QUERY };
+
+function getCsrfTokenFromCookie(): string | null {
+  if (typeof document === `undefined`) return null;
+  const key = `${getAdminCsrfCookieKey()}=`;
+  const parts = document.cookie.split(`;`);
+  for (const part of parts) {
+    const trimmed = part.trim();
+    if (trimmed.startsWith(key)) {
+      return decodeURIComponent(trimmed.slice(key.length));
+    }
+  }
+  return null;
+}
+
+function buildLogoutRequestInit(): RequestInit {
+  const headers = new Headers();
+  const csrfToken = getCsrfTokenFromCookie();
+  if (csrfToken) {
+    headers.set(`x-csrf-token`, csrfToken);
+  }
+  return {
+    method: `POST`,
+    credentials: `include`,
+    headers,
+  };
+}
 
 let handled = false;
 let redirectInProgress = false;
@@ -55,13 +83,13 @@ export function handleSessionExpired(): void {
     window.location.replace(loginUrl);
   };
 
-  fetch(LOGOUT_URL, { method: `POST`, credentials: `include` })
+  fetch(LOGOUT_URL, buildLogoutRequestInit())
     .then((res) => {
       if (!res.ok) {
         // Don't throw: redirect anyway; retry only on network failure
       }
     })
-    .catch(() => fetch(LOGOUT_URL, { method: `POST`, credentials: `include` }))
+    .catch(() => fetch(LOGOUT_URL, buildLogoutRequestInit()))
     .finally(clearThenRedirect);
 }
 

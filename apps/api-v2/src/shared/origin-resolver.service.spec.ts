@@ -13,6 +13,8 @@ jest.mock(`../envs`, () => ({
       TEST: `test`,
     },
     CONSUMER_APP_ORIGIN: `https://consumer.example.com`,
+    CONSUMER_MOBILE_APP_ORIGIN: `https://mobile.example.com`,
+    CONSUMER_CSS_GRID_APP_ORIGIN: `https://grid.example.com`,
     ADMIN_APP_ORIGIN: `https://admin.example.com`,
     CORS_ALLOWED_ORIGINS: [`https://allowed1.example.com`, `https://allowed2.example.com`],
   },
@@ -53,9 +55,9 @@ describe(`OriginResolverService`, () => {
 
       expect(origins.size).toBeGreaterThan(0);
       expect(origins.has(`https://consumer.example.com`)).toBe(true);
+      expect(origins.has(`https://mobile.example.com`)).toBe(true);
+      expect(origins.has(`https://grid.example.com`)).toBe(true);
       expect(origins.has(`https://admin.example.com`)).toBe(true);
-      expect(origins.has(`https://allowed1.example.com`)).toBe(true);
-      expect(origins.has(`https://allowed2.example.com`)).toBe(true);
     });
 
     it(`should normalize origins in the set`, () => {
@@ -100,19 +102,19 @@ describe(`OriginResolverService`, () => {
       expect(result).toBe(`https://consumer.example.com`);
     });
 
-    it(`should allow localhost consumer-css-grid origin in development when allowlist is narrowed`, () => {
+    it(`should allow localhost consumer origin in development when allowlist is narrowed`, () => {
       (envs as any).NODE_ENV = `development`;
       (envs as any).CORS_ALLOWED_ORIGINS = [`https://allowed1.example.com`];
 
-      const result = service.validateReturnOrigin(`http://127.0.0.1:3003/path`);
-      expect(result).toBe(`http://127.0.0.1:3003`);
+      const result = service.validateReturnOrigin(`http://127.0.0.1:3001/path`);
+      expect(result).toBe(`http://127.0.0.1:3001`);
     });
 
-    it(`should reject localhost consumer-css-grid origin in production when not allowlisted`, () => {
+    it(`should reject localhost consumer origin in production when not allowlisted`, () => {
       (envs as any).NODE_ENV = `production`;
       (envs as any).CORS_ALLOWED_ORIGINS = [`https://allowed1.example.com`];
 
-      const result = service.validateReturnOrigin(`http://127.0.0.1:3003/path`);
+      const result = service.validateReturnOrigin(`http://127.0.0.1:3001/path`);
       expect(result).toBeUndefined();
     });
   });
@@ -134,6 +136,28 @@ describe(`OriginResolverService`, () => {
     });
   });
 
+  describe(`resolveConsumerAppScope`, () => {
+    it(`maps configured consumer web origin`, () => {
+      expect(service.resolveConsumerAppScope(`https://consumer.example.com/dashboard`)).toBe(`consumer`);
+    });
+
+    it(`maps configured consumer mobile origin`, () => {
+      expect(service.resolveConsumerAppScope(`https://mobile.example.com/settings`)).toBe(`consumer-mobile`);
+    });
+
+    it(`maps configured consumer css-grid origin`, () => {
+      expect(service.resolveConsumerAppScope(`https://grid.example.com/payments`)).toBe(`consumer-css-grid`);
+    });
+
+    it(`maps local dev ports to the matching scope`, () => {
+      (envs as any).NODE_ENV = `development`;
+
+      expect(service.resolveConsumerAppScope(`http://localhost:3001/foo`)).toBe(`consumer`);
+      expect(service.resolveConsumerAppScope(`http://localhost:3002/foo`)).toBe(`consumer-mobile`);
+      expect(service.resolveConsumerAppScope(`http://localhost:3003/foo`)).toBe(`consumer-css-grid`);
+    });
+  });
+
   describe(`resolveRequestOrigin`, () => {
     it(`should prefer a valid origin header`, () => {
       const result = service.resolveRequestOrigin(
@@ -147,10 +171,10 @@ describe(`OriginResolverService`, () => {
     it(`should fallback to referer when origin header is invalid`, () => {
       const result = service.resolveRequestOrigin(
         `https://evil.example.com/path`,
-        `https://allowed1.example.com/reset`,
+        `https://consumer.example.com/reset`,
       );
 
-      expect(result).toBe(`https://allowed1.example.com`);
+      expect(result).toBe(`https://consumer.example.com`);
     });
 
     it(`should support multi-value headers`, () => {
@@ -160,25 +184,45 @@ describe(`OriginResolverService`, () => {
     });
   });
 
+  describe(`resolveConsumerRequestAppScope`, () => {
+    it(`prefers the origin header when it maps to a consumer scope`, () => {
+      const result = service.resolveConsumerRequestAppScope(
+        `https://mobile.example.com/profile`,
+        `https://consumer.example.com/login`,
+      );
+
+      expect(result).toBe(`consumer-mobile`);
+    });
+
+    it(`falls back to referer when origin is invalid`, () => {
+      const result = service.resolveConsumerRequestAppScope(
+        `https://evil.example.com/`,
+        `https://grid.example.com/exchange`,
+      );
+
+      expect(result).toBe(`consumer-css-grid`);
+    });
+  });
+
   describe(`resolveConsumerOriginFromRequest`, () => {
     it(`should prefer explicit returnOrigin over request headers`, () => {
       const result = service.resolveConsumerOriginFromRequest(
-        `https://allowed1.example.com/path`,
+        `https://consumer.example.com/path`,
         `https://consumer.example.com/payments/123`,
         `https://admin.example.com/dashboard`,
       );
 
-      expect(result).toBe(`https://allowed1.example.com`);
+      expect(result).toBe(`https://consumer.example.com`);
     });
 
     it(`should fallback to request headers before env defaults`, () => {
       const result = service.resolveConsumerOriginFromRequest(
         undefined,
         undefined,
-        `https://allowed2.example.com/forgot`,
+        `https://consumer.example.com/forgot`,
       );
 
-      expect(result).toBe(`https://allowed2.example.com`);
+      expect(result).toBe(`https://consumer.example.com`);
     });
   });
 
@@ -193,16 +237,27 @@ describe(`OriginResolverService`, () => {
       Object.assign(envs, originalEnvs);
     });
 
-    it(`should fallback to CORS_ALLOWED_ORIGINS when CONSUMER_APP_ORIGIN is placeholder`, () => {
+    it(`should fallback to CONSUMER_MOBILE_APP_ORIGIN when CONSUMER_APP_ORIGIN is placeholder`, () => {
       (envs as any).CONSUMER_APP_ORIGIN = `CONSUMER_APP_ORIGIN`;
-      (envs as any).CORS_ALLOWED_ORIGINS = [`https://cors.example.com`];
+      (envs as any).CONSUMER_MOBILE_APP_ORIGIN = `https://mobile.example.com`;
 
       const result = service.resolveConsumerOrigin();
-      expect(result).toBe(`https://cors.example.com`);
+      expect(result).toBe(`https://mobile.example.com`);
     });
 
-    it(`should return null when no valid origins are available`, () => {
+    it(`should fallback to CONSUMER_CSS_GRID_APP_ORIGIN when web and mobile origins are placeholders`, () => {
       (envs as any).CONSUMER_APP_ORIGIN = `CONSUMER_APP_ORIGIN`;
+      (envs as any).CONSUMER_MOBILE_APP_ORIGIN = `CONSUMER_MOBILE_APP_ORIGIN`;
+      (envs as any).CONSUMER_CSS_GRID_APP_ORIGIN = `https://grid.example.com`;
+
+      const result = service.resolveConsumerOrigin();
+      expect(result).toBe(`https://grid.example.com`);
+    });
+
+    it(`should return null when no valid consumer origins are available`, () => {
+      (envs as any).CONSUMER_APP_ORIGIN = `CONSUMER_APP_ORIGIN`;
+      (envs as any).CONSUMER_MOBILE_APP_ORIGIN = `CONSUMER_MOBILE_APP_ORIGIN`;
+      (envs as any).CONSUMER_CSS_GRID_APP_ORIGIN = `CONSUMER_CSS_GRID_APP_ORIGIN`;
       (envs as any).CORS_ALLOWED_ORIGINS = [];
 
       const result = service.resolveConsumerOrigin();

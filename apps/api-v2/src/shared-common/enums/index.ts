@@ -23,8 +23,6 @@ export const SortNulls = { NullsFirst: `NULLS FIRST`, NullsLast: `NULLS LAST` } 
 
 export const InvoiceType = { Incoming: `incoming-only`, Outgoing: `outgoing-only` } as const;
 
-export const AuthHeader = { Bearer: `Bearer`, Basic: `Basic` } as const;
-
 export const CredentialsSeparator = { Token: ` `, Credentials: `:` } as const;
 
 export const Timeline = {

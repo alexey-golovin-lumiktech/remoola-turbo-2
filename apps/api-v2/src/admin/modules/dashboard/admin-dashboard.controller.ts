@@ -1,11 +1,10 @@
 import { Controller, Get } from '@nestjs/common';
-import { ApiBasicAuth, ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 
 import { AdminDashboardService } from './admin-dashboard.service';
 
+@ApiCookieAuth()
 @ApiTags(`Admin: Dashboard`)
-@ApiBearerAuth(`bearer`)
-@ApiBasicAuth(`basic`)
 @Controller(`admin/dashboard`)
 export class AdminDashboardController {
   constructor(private readonly service: AdminDashboardService) {}

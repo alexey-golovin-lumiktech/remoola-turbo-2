@@ -6,9 +6,8 @@ import { useState, useTransition } from 'react';
 
 import { CreatePaymentRequestPanel } from './CreatePaymentRequestPanel';
 import { buildPaymentsListQuery, formatPaymentTypeLabel, PAYMENT_TYPE_OPTIONS } from './payments-list-query';
+import { type PaymentsResponse } from '../../../lib/consumer-api.server';
 import { MetricCard, Panel } from '../../../shared/ui/shell-primitives';
-
-import type { PaymentsResponse } from '../../../lib/consumer-api.server';
 
 type Props = {
   payments: PaymentsResponse[`items`];

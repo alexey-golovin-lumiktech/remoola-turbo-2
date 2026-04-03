@@ -20,7 +20,7 @@ describe(`login route`, () => {
     delete process.env.NEXT_PUBLIC_API_BASE_URL;
   });
 
-  it(`forwards login payload while stripping authorization and host headers`, async () => {
+  it(`forwards login payload and strips host`, async () => {
     mockFetch.mockResolvedValueOnce(
       new Response(JSON.stringify({ ok: true }), {
         status: 200,
@@ -33,7 +33,6 @@ describe(`login route`, () => {
     const request = new Request(`https://app.example.com/api/login`, {
       method: `POST`,
       headers: {
-        authorization: `Bearer should-not-forward`,
         'content-type': `application/json`,
         cookie: `consumer_session=session-cookie`,
         host: `app.example.com`,
@@ -47,7 +46,6 @@ describe(`login route`, () => {
 
     expect(response.status).toBe(200);
     expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`https://api.example.com/consumer/auth/login`);
-    expect(forwardedHeaders?.get(`authorization`)).toBeNull();
     expect(forwardedHeaders?.get(`host`)).toBeNull();
     expect(forwardedHeaders?.get(`cookie`)).toBe(`consumer_session=session-cookie`);
     expect(forwardedHeaders?.get(`x-correlation-id`)).toBe(`corr-1`);

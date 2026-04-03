@@ -2,7 +2,7 @@ import { Logger, ValidationPipe, type INestApplication } from '@nestjs/common';
 import { NestFactory, Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { type NestExpressApplication } from '@nestjs/platform-express';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { SwaggerModule } from '@nestjs/swagger';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import * as express from 'express';
@@ -25,13 +25,31 @@ import { AuthGuard } from './guards';
 import { NgrokIngressService } from './infrastructure/ngrok/ngrok-ingress.service';
 import { TransformResponseInterceptor } from './interceptors';
 import { ConsumerActionLogService } from './shared/consumer-action-log.service';
+import { OriginResolverService } from './shared/origin-resolver.service';
 import { PrismaService } from './shared/prisma.service';
 import { passwordUtils } from './shared-common';
+import {
+  buildSwaggerCookieAuthDocumentConfig,
+  buildSwaggerCookieAuthScript,
+  swaggerCookieAuthCustomCss,
+} from './swagger-cookie-auth';
 
 const logger = new Logger(`Bootstrap`);
 
 const DB_CONNECT_MAX_ATTEMPTS = 30;
 const DB_CONNECT_DELAY_MS = 500;
+const CORS_ALLOWED_METHODS = `GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS`;
+const CORS_ALLOWED_HEADERS = [
+  `Origin`,
+  `Content-Type`,
+  `Accept`,
+  `Cookie`,
+  `X-CSRF-Token`,
+  `X-Correlation-Id`,
+  `X-Request-Id`,
+  `Idempotency-Key`,
+].join(`,`);
+const CORS_EXPOSED_HEADERS = `set-cookie,content-range,content-type`;
 
 let isShuttingDown = false;
 
@@ -166,28 +184,21 @@ function linkTo(kind: `Consumer` | `Admin`): string {
   return `<a rel="noopener noreferrer" target="_self" href="${lookup[kind]}" style="color:#93c5fd">(${kind} api)</a>`;
 }
 
-const swaggerUiOptions = {
+const swaggerUiBaseOptions = {
   customfavIcon: `https://avatars.githubusercontent.com/u/6936373?s=200&v=4`,
   customJs: [
     `https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.1.3/swagger-ui-bundle.js`,
-    `https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.1.3/swagger-ui-bundle.min.js`,
     `https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.1.3/swagger-ui-standalone-preset.js`,
-    `https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.1.3/swagger-ui-standalone-preset.min.js`,
   ],
-  customCssUrl: [
-    `https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.1.3/swagger-ui.css`,
-    `https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.1.3/swagger-ui.min.css`,
-  ],
+  customCssUrl: [`https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.1.3/swagger-ui.css`],
+  customCss: swaggerCookieAuthCustomCss,
+  swaggerOptions: {
+    withCredentials: true,
+  },
 };
 
 function setupSwagger(app: INestApplication): void {
-  const adminConfig = new DocumentBuilder()
-    .addBasicAuth({ type: `http`, scheme: `basic` }, `basic`)
-    .addBearerAuth({ type: `http`, scheme: `bearer` }, `bearer`)
-    .setTitle(`Remoola Admin API`)
-    .setDescription(`Admin API ${linkTo(`Consumer`)}`)
-    .setVersion(`1.0`)
-    .build();
+  const adminConfig = buildSwaggerCookieAuthDocumentConfig(`admin`, linkTo(`Consumer`));
 
   const adminDocument = SwaggerModule.createDocument(app, adminConfig, {
     include: [AdminModule],
@@ -195,17 +206,12 @@ function setupSwagger(app: INestApplication): void {
   });
 
   SwaggerModule.setup(`docs/admin`, app, adminDocument, {
-    ...swaggerUiOptions,
+    ...swaggerUiBaseOptions,
+    customJsStr: buildSwaggerCookieAuthScript(`admin`),
     jsonDocumentUrl: `docs/admin-api-json`,
   });
 
-  const consumerConfig = new DocumentBuilder()
-    .addBasicAuth({ type: `http`, scheme: `basic` }, `basic`)
-    .addBearerAuth({ type: `http`, scheme: `bearer` }, `bearer`)
-    .setTitle(`Remoola Consumer API`)
-    .setDescription(`Consumer API ${linkTo(`Admin`)}`)
-    .setVersion(`1.0`)
-    .build();
+  const consumerConfig = buildSwaggerCookieAuthDocumentConfig(`consumer`, linkTo(`Admin`));
 
   const consumerDocument = SwaggerModule.createDocument(app, consumerConfig, {
     include: [ConsumerModule],
@@ -213,25 +219,72 @@ function setupSwagger(app: INestApplication): void {
   });
 
   SwaggerModule.setup(`docs/consumer`, app, consumerDocument, {
-    ...swaggerUiOptions,
+    ...swaggerUiBaseOptions,
+    customJsStr: buildSwaggerCookieAuthScript(`consumer`),
     jsonDocumentUrl: `docs/consumer-api-json`,
   });
 }
 
-function buildAllowedOrigins(): Set<string> {
-  const extraOrigins = envs.isProductionLike
-    ? envs.CORS_ALLOWED_ORIGINS
-    : [...envs.DEFAULT_DEV_CORS_ALLOWED_ORIGINS, ...envs.CORS_ALLOWED_ORIGINS];
-  const configuredOrigins = [
-    [envs.CONSUMER_APP_ORIGIN, `CONSUMER_APP_ORIGIN`],
-    [envs.ADMIN_APP_ORIGIN, `ADMIN_APP_ORIGIN`],
-  ]
-    .filter(([value, placeholder]) => value && value !== placeholder)
-    .map(([value]) => value);
+function appendVaryOrigin(res: express.Response): void {
+  const current = res.getHeader(`Vary`);
+  if (typeof current !== `string` || current.length === 0) {
+    res.setHeader(`Vary`, `Origin`);
+    return;
+  }
+  if (
+    !current
+      .split(`,`)
+      .map((value) => value.trim())
+      .includes(`Origin`)
+  ) {
+    res.setHeader(`Vary`, `${current}, Origin`);
+  }
+}
 
-  return new Set(
-    [...configuredOrigins, ...extraOrigins].filter(Boolean).map((value) => String(value).replace(/\/$/, ``)),
-  );
+function resolveAllowedOriginForPath(
+  originResolver: OriginResolverService,
+  path: string,
+  originHeader: string,
+): string | undefined {
+  if (path.startsWith(`/api/admin/`) || path.startsWith(`/docs/admin`)) {
+    return originResolver.validateAdminOrigin(originHeader);
+  }
+  if (path.startsWith(`/api/consumer/`) || path.startsWith(`/docs/consumer`)) {
+    return originResolver.validateConsumerReturnOrigin(originHeader);
+  }
+  return originResolver.validateAdminOrigin(originHeader) ?? originResolver.validateConsumerReturnOrigin(originHeader);
+}
+
+function registerScopedCors(app: NestExpressApplication, originResolver: OriginResolverService): void {
+  app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const originHeader = typeof req.headers.origin === `string` ? req.headers.origin.trim() : undefined;
+    if (!originHeader) {
+      if (req.method === `OPTIONS`) {
+        res.setHeader(`Access-Control-Allow-Methods`, CORS_ALLOWED_METHODS);
+        res.setHeader(`Access-Control-Allow-Headers`, CORS_ALLOWED_HEADERS);
+        res.setHeader(`Access-Control-Allow-Credentials`, `true`);
+        res.setHeader(`Access-Control-Expose-Headers`, CORS_EXPOSED_HEADERS);
+        return res.status(204).end();
+      }
+      return next();
+    }
+
+    const allowedOrigin = resolveAllowedOriginForPath(originResolver, req.path, originHeader);
+    if (!allowedOrigin) {
+      return res.status(403).send(`CORS origin denied`);
+    }
+
+    appendVaryOrigin(res);
+    res.setHeader(`Access-Control-Allow-Origin`, allowedOrigin);
+    res.setHeader(`Access-Control-Allow-Credentials`, `true`);
+    res.setHeader(`Access-Control-Allow-Methods`, CORS_ALLOWED_METHODS);
+    res.setHeader(`Access-Control-Allow-Headers`, CORS_ALLOWED_HEADERS);
+    res.setHeader(`Access-Control-Expose-Headers`, CORS_EXPOSED_HEADERS);
+    if (req.method === `OPTIONS`) {
+      return res.status(204).end();
+    }
+    return next();
+  });
 }
 
 function registerProcessHandlers(app: INestApplication): void {
@@ -292,7 +345,7 @@ async function bootstrap(): Promise<INestApplication> {
   logger.log(`BOOT TIME=${new Date().toISOString()}`);
 
   const isOnVercel = envs.VERCEL === 1;
-  const allowedOrigins = buildAllowedOrigins();
+  const originResolver = new OriginResolverService();
 
   if (isOnVercel) {
     process.env.NO_COLOR = `true`;
@@ -311,35 +364,13 @@ async function bootstrap(): Promise<INestApplication> {
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     rawBody: true,
-    cors: {
-      origin: (origin, callback) => {
-        if (!origin) {
-          if (envs.ALLOW_REQUESTS_WITHOUT_ORIGIN) {
-            callback(null, true);
-            return;
-          }
-          callback(new Error(`CORS origin required`), false);
-          return;
-        }
-
-        const normalized = origin.replace(/\/$/, ``);
-
-        if (allowedOrigins.has(normalized)) {
-          callback(null, true);
-          return;
-        }
-
-        callback(new Error(`CORS origin denied`), false);
-      },
-      credentials: true,
-      exposedHeaders: [`set-cookie`, `content-range`, `content-type`],
-    },
   });
 
   app.enableShutdownHooks();
   app.setGlobalPrefix(`api`);
   app.set(`trust proxy`, 1);
   app.set(`query parser`, `extended`);
+  registerScopedCors(app, originResolver);
 
   app.use((req, res, next) => {
     const isSwaggerRoute = envs.SWAGGER_ENABLED && req.path.startsWith(`/docs`);

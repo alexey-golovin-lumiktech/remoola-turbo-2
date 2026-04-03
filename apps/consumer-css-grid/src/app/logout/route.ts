@@ -6,7 +6,9 @@ import { appendSetCookies, buildAuthMutationForwardHeaders } from '../../lib/api
 import { clearConsumerAuthCookies, getCsrfTokenFromRequest } from '../../lib/auth-cookie-policy';
 import { getEnv } from '../../lib/env.server';
 
-export async function GET(request: Request) {
+const REDIRECT_STATUS_SEE_OTHER = 303;
+
+function buildLogoutUrls(request: Request) {
   const requestUrl = new URL(request.url);
   const { origin } = requestUrl;
   const authNotice = parseAuthNotice(requestUrl.searchParams.get(AUTH_NOTICE_QUERY) ?? undefined);
@@ -14,10 +16,15 @@ export async function GET(request: Request) {
   if (authNotice) {
     loginUrl.searchParams.set(AUTH_NOTICE_QUERY, authNotice);
   }
+  return { loginUrl };
+}
+
+export async function POST(request: Request) {
+  const { loginUrl } = buildLogoutUrls(request);
 
   const env = getEnv();
   const apiBase = env.NEXT_PUBLIC_API_BASE_URL;
-  const response = NextResponse.redirect(loginUrl);
+  const response = NextResponse.redirect(loginUrl, REDIRECT_STATUS_SEE_OTHER);
 
   if (apiBase) {
     try {

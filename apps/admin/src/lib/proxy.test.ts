@@ -53,13 +53,13 @@ describe(`proxyToBackend`, () => {
     await expect(res.json()).resolves.toMatchObject({ code: `PAYLOAD_TOO_LARGE` });
   });
 
-  it(`forwards only allowlisted headers to backend`, async () => {
+  it(`forwards only cookie-based auth context to backend`, async () => {
     (global.fetch as jest.Mock).mockResolvedValue(new Response(`ok`, { status: 200 }));
 
     const req = new Request(`${TEST_ORIGIN}/api/admin/test?x=1`, {
       method: `GET`,
       headers: {
-        authorization: `Bearer token`,
+        authorization: `legacy-token`,
         origin: TEST_ORIGIN,
         cookie: `csrf_token=abc`,
         'x-request-id': `rid-1`,
@@ -73,7 +73,7 @@ describe(`proxyToBackend`, () => {
     const [, fetchInit] = (global.fetch as jest.Mock).mock.calls[0] as [string, RequestInit];
     const headers = fetchInit.headers as Headers;
 
-    expect(headers.get(`authorization`)).toBe(`Bearer token`);
+    expect(headers.get(`authorization`)).toBeNull();
     expect(headers.get(`origin`)).toBe(TEST_ORIGIN);
     expect(headers.get(`x-remoola-test`)).toBe(`safe`);
     expect(headers.get(`x-forwarded-for`)).toBeNull();

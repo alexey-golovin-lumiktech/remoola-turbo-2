@@ -1,11 +1,18 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-import { COOKIE_KEYS, getAdminAuthCookieOptions, sanitizeNextForRedirect } from '@remoola/api-types';
+import { getAdminAuthCookieOptions, getCsrfCookieOptions, sanitizeNextForRedirect } from '@remoola/api-types';
+
+import {
+  getAdminAccessCookieKey,
+  getAdminAccessCookieKeysForRead,
+  getAdminCsrfCookieKey,
+  getAdminCsrfCookieKeysForRead,
+  getAdminRefreshCookieKey,
+  getAdminRefreshCookieKeysForRead,
+} from './lib/auth-cookie-policy';
 
 const PUBLIC_PATHS = [`/login`, `/api/auth/login`];
 const NEXT_PUBLIC_API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-// Cookie TTLs in seconds; keep aligned with API defaults.
 const JWT_ACCESS_EXPIRES_SECONDS = 900;
 const JWT_REFRESH_EXPIRES_SECONDS = 604800;
 
@@ -22,6 +29,15 @@ function getAdminCookieOptions() {
   });
 }
 
+function getCsrfCookieOptionsForRequest(req: NextRequest) {
+  return getCsrfCookieOptions({
+    isProduction: process.env.NODE_ENV === `production`,
+    isVercel: process.env.VERCEL === `1`,
+    cookieSecure: process.env.COOKIE_SECURE === `true`,
+    isSecureRequest: req.nextUrl.protocol === `https:`,
+  });
+}
+
 async function validateToken(token: string): Promise<boolean> {
   // Check cache first
   const cached = tokenCache.get(token);
@@ -31,7 +47,7 @@ async function validateToken(token: string): Promise<boolean> {
 
   try {
     // Create cookie header to send to backend
-    const cookieHeader = `${COOKIE_KEYS.ADMIN_ACCESS_TOKEN}=${token}`;
+    const cookieHeader = `${getAdminAccessCookieKey()}=${token}`;
 
     const response = await fetch(`${NEXT_PUBLIC_API_BASE_URL}/admin/auth/me`, {
       method: `GET`,
@@ -70,35 +86,65 @@ async function validateToken(token: string): Promise<boolean> {
   }
 }
 
-async function refreshToken(refreshToken: string): Promise<{
-  accessToken?: string;
-  refreshToken?: string;
-  success: boolean;
-}> {
+function getSetCookieValues(headers: Headers): string[] {
+  const extendedHeaders = headers as Headers & { getSetCookie?: () => string[] };
+  if (typeof extendedHeaders.getSetCookie === `function`) {
+    return extendedHeaders.getSetCookie();
+  }
+  const value = headers.get(`set-cookie`);
+  return value ? [value] : [];
+}
+
+function readCookieValueFromSetCookie(setCookies: readonly string[], cookieName: string): string | undefined {
+  const escapedName = cookieName.replace(/[.*+?^${}()|[\]\\]/g, `\\$&`);
+  const pattern = new RegExp(`(?:^|,\\s*)${escapedName}=([^;]+)`);
+  for (const line of setCookies) {
+    const match = pattern.exec(line);
+    if (match?.[1]) {
+      return decodeURIComponent(match[1]);
+    }
+  }
+  return undefined;
+}
+
+async function refreshToken(
+  refreshToken: string,
+  csrfToken: string,
+  requestOrigin: string,
+): Promise<{ setCookies: string[]; success: boolean }> {
   try {
+    const refreshCookieKey = getAdminRefreshCookieKey();
+    const csrfCookieKey = getAdminCsrfCookieKey();
     const response = await fetch(`${NEXT_PUBLIC_API_BASE_URL}/admin/auth/refresh-access`, {
       method: `POST`,
       headers: {
-        'Content-Type': `application/json`,
+        Cookie: `${refreshCookieKey}=${refreshToken}; ${csrfCookieKey}=${csrfToken}`,
+        'x-csrf-token': csrfToken,
+        origin: requestOrigin,
       },
-      body: JSON.stringify({ refreshToken }),
+      credentials: `include`,
       signal: AbortSignal.timeout(5000),
     });
 
     if (!response.ok) {
-      return { success: false };
+      return { setCookies: [], success: false };
     }
 
-    const data = await response.json();
     return {
-      accessToken: data.accessToken,
-      refreshToken: data.refreshToken,
+      setCookies: getSetCookieValues(response.headers),
       success: true,
     };
   } catch {
-    // Do not log error object (may contain tokens or sensitive data)
-    return { success: false };
+    return { setCookies: [], success: false };
   }
+}
+
+function readCookieValue(req: NextRequest, keys: readonly string[]): string | undefined {
+  for (const key of keys) {
+    const value = req.cookies.get(key)?.value;
+    if (value) return value;
+  }
+  return undefined;
 }
 
 export async function middleware(req: NextRequest) {
@@ -110,8 +156,9 @@ export async function middleware(req: NextRequest) {
   }
 
   // Get tokens from cookies
-  const accessToken = req.cookies.get(COOKIE_KEYS.ADMIN_ACCESS_TOKEN)?.value;
-  const refreshTokenValue = req.cookies.get(COOKIE_KEYS.ADMIN_REFRESH_TOKEN)?.value;
+  const accessToken = readCookieValue(req, getAdminAccessCookieKeysForRead());
+  const refreshTokenValue = readCookieValue(req, getAdminRefreshCookieKeysForRead());
+  const csrfToken = readCookieValue(req, getAdminCsrfCookieKeysForRead());
 
   // For protected routes, require authentication
   if (!pathname.startsWith(`/api/`)) {
@@ -123,18 +170,35 @@ export async function middleware(req: NextRequest) {
     const isValidToken = await validateToken(accessToken);
     if (!isValidToken) {
       // Try to refresh token
-      if (refreshTokenValue) {
-        const refreshResult = await refreshToken(refreshTokenValue);
-        if (refreshResult.success && refreshResult.accessToken) {
+      if (refreshTokenValue && csrfToken) {
+        const refreshResult = await refreshToken(refreshTokenValue, csrfToken, req.nextUrl.origin);
+        if (refreshResult.success) {
+          const accessCookieKey = getAdminAccessCookieKey();
+          const accessTokenFromRefresh = readCookieValueFromSetCookie(refreshResult.setCookies, accessCookieKey);
+
+          if (!accessTokenFromRefresh) {
+            return redirectToLogin(req);
+          }
+
           const response = NextResponse.next();
           const cookieOptions = getAdminCookieOptions();
-          response.cookies.set(COOKIE_KEYS.ADMIN_ACCESS_TOKEN, refreshResult.accessToken, {
+          const refreshCookieKey = getAdminRefreshCookieKey();
+          const csrfCookieKey = getAdminCsrfCookieKey();
+          const refreshTokenFromRefresh = readCookieValueFromSetCookie(refreshResult.setCookies, refreshCookieKey);
+          const csrfTokenFromRefresh = readCookieValueFromSetCookie(refreshResult.setCookies, csrfCookieKey);
+          response.cookies.set(accessCookieKey, accessTokenFromRefresh, {
             ...cookieOptions,
             maxAge: JWT_ACCESS_EXPIRES_SECONDS,
           });
-          if (refreshResult.refreshToken) {
-            response.cookies.set(COOKIE_KEYS.ADMIN_REFRESH_TOKEN, refreshResult.refreshToken, {
+          if (refreshTokenFromRefresh) {
+            response.cookies.set(refreshCookieKey, refreshTokenFromRefresh, {
               ...cookieOptions,
+              maxAge: JWT_REFRESH_EXPIRES_SECONDS,
+            });
+          }
+          if (csrfTokenFromRefresh) {
+            response.cookies.set(csrfCookieKey, csrfTokenFromRefresh, {
+              ...getCsrfCookieOptionsForRequest(req),
               maxAge: JWT_REFRESH_EXPIRES_SECONDS,
             });
           }

@@ -9,13 +9,19 @@ import { type Reflector } from '@nestjs/core';
 import { type JwtService } from '@nestjs/jwt';
 import { type Request as TExpressRequest } from 'express';
 
-import { COOKIE_KEYS } from '@remoola/api-types';
 import { oauthCrypto } from '@remoola/security-utils';
 
 import { IDENTITY, type IIdentity, type IIdentityContext, IS_PUBLIC } from '../common';
 import { type IJwtTokenPayload } from '../dtos/consumer';
+import { OriginResolverService } from '../shared/origin-resolver.service';
 import { type PrismaService } from '../shared/prisma.service';
-import { getApiConsumerAccessTokenCookieKeysForRead, secureCompare } from '../shared-common';
+import {
+  DEFAULT_API_V2_CONSUMER_SCOPE,
+  getApiAdminAccessTokenCookieKeysForRead,
+  getApiConsumerAccessTokenCookieKeysForRead,
+  secureCompare,
+} from '../shared-common';
+import { ensureAuthenticatedMutationCsrf } from '../shared-common/csrf-protection';
 
 const CONSUMER_API_PATH_PREFIX = `/api/consumer/`;
 const ADMIN_API_PATH_PREFIX = `/api/admin/`;
@@ -28,14 +34,17 @@ const GuardMessage = {
   ONLY_FOR_CONSUMERS: `Access restricted to consumers`,
 } as const;
 
-function getAccessTokenCookieKeysForPath(path: string): readonly string[] {
+function getAccessTokenCookieKeysForPath(
+  path: string,
+  consumerScope: Parameters<typeof getApiConsumerAccessTokenCookieKeysForRead>[0] = DEFAULT_API_V2_CONSUMER_SCOPE,
+): readonly string[] {
   if (path.startsWith(CONSUMER_API_PATH_PREFIX)) {
-    return getApiConsumerAccessTokenCookieKeysForRead();
+    return getApiConsumerAccessTokenCookieKeysForRead(consumerScope);
   }
   if (path.startsWith(ADMIN_API_PATH_PREFIX)) {
-    return [COOKIE_KEYS.ADMIN_ACCESS_TOKEN];
+    return getApiAdminAccessTokenCookieKeysForRead();
   }
-  return getApiConsumerAccessTokenCookieKeysForRead();
+  return getApiConsumerAccessTokenCookieKeysForRead(consumerScope);
 }
 
 export class AuthGuard implements CanActivate {
@@ -45,6 +54,7 @@ export class AuthGuard implements CanActivate {
     private readonly reflector: Reflector,
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
+    private readonly originResolver: OriginResolverService = new OriginResolverService(),
   ) {}
 
   async canActivate(context: ExecutionContext) {
@@ -53,13 +63,18 @@ export class AuthGuard implements CanActivate {
     if (isPublic) return true;
 
     const path = request.path ?? request.url?.split(`?`)[0] ?? ``;
-    const cookieAccessToken = getAccessTokenCookieKeysForPath(path)
+    const consumerScope =
+      this.originResolver.resolveConsumerRequestAppScope?.(request.headers?.origin, request.headers?.referer) ??
+      DEFAULT_API_V2_CONSUMER_SCOPE;
+    const cookieAccessToken = getAccessTokenCookieKeysForPath(path, consumerScope)
       .map((key) => request.cookies[key])
       .find((value): value is string => typeof value === `string` && value.length > 0);
     if (!cookieAccessToken) {
       throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
     }
-    return await this.bearerProcessor(cookieAccessToken, request);
+    await this.processAccessToken(cookieAccessToken, request);
+    ensureAuthenticatedMutationCsrf(request, this.originResolver);
+    return true;
   }
 
   private getAdminByIdentityId(identityId: string) {
@@ -80,7 +95,7 @@ export class AuthGuard implements CanActivate {
     });
   }
 
-  private async bearerProcessor(accessToken: string, request: TExpressRequest) {
+  private async processAccessToken(accessToken: string, request: TExpressRequest) {
     let verified: IJwtTokenPayload;
     try {
       verified = this.jwtService.verify<IJwtTokenPayload>(accessToken);

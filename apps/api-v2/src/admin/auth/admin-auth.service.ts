@@ -62,13 +62,20 @@ export class AdminAuthService {
     await this.authAudit.clearLockout(AUTH_IDENTITY_TYPES.admin, identity.email);
 
     const access = await this.getAccessAndRefreshToken(identity.id);
-    return { identity, ...access };
+    return {
+      identity,
+      accessToken: access.accessToken,
+      refreshToken: access.refreshToken,
+    };
   }
 
-  async refreshAccess(refreshToken: string) {
+  async refreshAccess(refreshToken?: string | null) {
+    if (!refreshToken) {
+      throw new BadRequestException(adminErrorCodes.ADMIN_REFRESH_TOKEN_INVALID);
+    }
     let verified: IJwtTokenPayload;
     try {
-      verified = this.jwtService.verify<IJwtTokenPayload>(refreshToken);
+      verified = this.jwtService.verify<IJwtTokenPayload>(refreshToken, { secret: envs.JWT_REFRESH_SECRET });
     } catch {
       this.logger.warn(`AdminAuth: refresh token verification failed`);
       throw new BadRequestException(adminErrorCodes.ADMIN_REFRESH_TOKEN_INVALID);
@@ -90,7 +97,13 @@ export class AdminAuthService {
       throw new BadRequestException(adminErrorCodes.ADMIN_NO_IDENTITY_RECORD);
     }
     const access = await this.getAccessAndRefreshToken(admin.id);
-    return Object.assign({ ...access, type: admin.type, email: admin.email, id: admin.id });
+    return {
+      accessToken: access.accessToken,
+      refreshToken: access.refreshToken,
+      type: admin.type,
+      email: admin.email,
+      id: admin.id,
+    };
   }
 
   private async getAccessAndRefreshToken(identityId: AdminModel[`id`]) {
@@ -120,7 +133,10 @@ export class AdminAuthService {
   }
 
   private getRefreshToken(identityId: string) {
-    return this.jwtService.signAsync({ identityId, type: `refresh` }, { expiresIn: envs.JWT_REFRESH_TTL_SECONDS });
+    return this.jwtService.signAsync(
+      { identityId, type: `refresh` },
+      { expiresIn: envs.JWT_REFRESH_TTL_SECONDS, secret: envs.JWT_REFRESH_SECRET },
+    );
   }
 
   /**
@@ -153,7 +169,7 @@ export class AdminAuthService {
   async revokeSessionByRefreshTokenAndAudit(refreshToken?: string | null, ctx?: AdminLoginContext): Promise<void> {
     if (!refreshToken) return;
     try {
-      const verified = this.jwtService.verify<IJwtTokenPayload>(refreshToken);
+      const verified = this.jwtService.verify<IJwtTokenPayload>(refreshToken, { secret: envs.JWT_REFRESH_SECRET });
       const admin = await this.prisma.adminModel.findFirst({
         where: { id: verified.identityId, deletedAt: null },
       });

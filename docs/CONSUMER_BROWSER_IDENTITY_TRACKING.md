@@ -15,6 +15,7 @@ This document describes how consumer tracking currently works in the API, and ho
 - Track consumer actions on selected endpoints only.
 - Keep tracking append-only and non-blocking.
 - Preserve auth, CSRF, OAuth, mobile, and BFF compatibility.
+- Keep browser identity app-scoped so `consumer`, `consumer-mobile`, and `consumer-css-grid` do not overwrite each other's device cookies on the same host.
 
 ## Core Components
 
@@ -25,7 +26,8 @@ Path: `apps/api/src/common/middleware/device-id.middleware.ts`
 Responsibilities:
 
 - Runs only for consumer API paths (`/api/consumer*`).
-- Reads compatible device cookie keys (host key and local fallback).
+- Resolves the consumer app scope from a trusted origin mapping before reading cookies.
+- Reads only the compatible device cookie keys for that app scope (host key and local fallback).
 - Validates UUID v4 format.
 - Generates UUID v4 if missing/invalid.
 - Attaches `req.deviceId` for downstream handlers.
@@ -149,7 +151,6 @@ Governance exception note:
 - `POST /consumer/auth/refresh`
 - `POST /consumer/auth/logout`
 - `POST /consumer/auth/logout-all`
-- `POST /consumer/auth/refresh-access` (legacy endpoint)
 
 ## Auth/CSRF and OAuth Compatibility
 
@@ -177,6 +178,7 @@ BFF behavior:
 - Forwards allowlisted headers.
 - Strips `host`.
 - Forwards cookies to backend.
+- For auth-protected reads and mutations, forwards the trusted app `Origin` so the backend can resolve the correct cookie scope.
 - For refresh, forwards `x-csrf-token` when available.
 - Appends backend `Set-Cookie` headers unchanged to response.
 

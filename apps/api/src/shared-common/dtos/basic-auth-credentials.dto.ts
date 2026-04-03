@@ -1,1 +1,1 @@
-export type BasicAuthCredentials = { email: string; password: string };
+export type EmailPasswordCredentials = { email: string; password: string };

@@ -13,6 +13,7 @@ jest.mock(`@remoola/security-utils`, () => ({
 import { oauthCrypto } from '@remoola/security-utils';
 
 import { ConsumerAuthService } from './auth.service';
+import { envs } from '../../envs';
 import { AuthAuditService } from '../../shared/auth-audit.service';
 import { MailingService } from '../../shared/mailing.service';
 import { OriginResolverService } from '../../shared/origin-resolver.service';
@@ -40,8 +41,10 @@ describe(`ConsumerAuthService.issueTokensForConsumer`, () => {
     jwtService = {
       signAsync: jest
         .fn()
-        .mockImplementation(async (payload: { typ?: string }) =>
-          payload.typ === `access` ? `access-token` : `refresh-token`,
+        .mockImplementation(async (payload: { typ?: string }, options?: { secret?: string }) =>
+          payload.typ === `access`
+            ? `access-token`
+            : `${options?.secret === envs.JWT_REFRESH_SECRET ? `refresh` : `legacy`}-token`,
         ),
     };
 
@@ -99,5 +102,10 @@ describe(`ConsumerAuthService.issueTokensForConsumer`, () => {
         lastUsedAt: expect.any(Date),
       },
     });
+    expect(jwtService.signAsync).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ typ: `refresh` }),
+      expect.objectContaining({ secret: envs.JWT_REFRESH_SECRET }),
+    );
   });
 });

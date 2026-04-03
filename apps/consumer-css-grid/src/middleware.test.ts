@@ -3,7 +3,7 @@ import { NextRequest } from 'next/server';
 
 import {
   getApiV2ConsumerAccessTokenCookieKey,
-  getApiV2ConsumerCsrfTokenCookieKey,
+  getApiV2ConsumerCsrfTokenCookieKeyForRuntime,
   getApiV2ConsumerRefreshTokenCookieKey,
 } from '@remoola/api-types';
 
@@ -34,7 +34,18 @@ const secureRefreshCookieKey = getApiV2ConsumerRefreshTokenCookieKey({
   cookieSecure: false,
   isSecureRequest: true,
 });
-const csrfCookieKey = getApiV2ConsumerCsrfTokenCookieKey();
+const secureCsrfCookieKey = getApiV2ConsumerCsrfTokenCookieKeyForRuntime({
+  isProduction: false,
+  isVercel: false,
+  cookieSecure: false,
+  isSecureRequest: true,
+});
+const localCsrfCookieKey = getApiV2ConsumerCsrfTokenCookieKeyForRuntime({
+  isProduction: false,
+  isVercel: false,
+  cookieSecure: false,
+  isSecureRequest: false,
+});
 
 function createRequest(
   pathname: string,
@@ -90,7 +101,7 @@ describe(`consumer-css-grid middleware auth-session behavior`, () => {
 
   it(`refreshes protected pages when the access cookie is missing but refresh is still valid`, async () => {
     mockFetch.mockResolvedValueOnce(
-      new Response(JSON.stringify({ accessToken: `new-a` }), {
+      new Response(undefined, {
         status: 200,
         headers: {
           [`set-cookie`]: `${secureAccessCookieKey}=new-a; Path=/; HttpOnly; SameSite=Lax`,
@@ -101,7 +112,7 @@ describe(`consumer-css-grid middleware auth-session behavior`, () => {
     const response = await middleware(
       createRequest(`/settings`, {
         [secureRefreshCookieKey]: `valid-r`,
-        [csrfCookieKey]: `csrf`,
+        [secureCsrfCookieKey]: `csrf`,
       }),
     );
 
@@ -112,12 +123,12 @@ describe(`consumer-css-grid middleware auth-session behavior`, () => {
   });
 
   it(`refreshes secure requests when only the local v2 refresh cookie is present`, async () => {
-    mockFetch.mockResolvedValueOnce(new Response(JSON.stringify({ accessToken: `new-a` }), { status: 200 }));
+    mockFetch.mockResolvedValueOnce(new Response(undefined, { status: 200 }));
 
     const response = await middleware(
       createRequest(`/settings`, {
         [localRefreshCookieKey]: `local-r`,
-        [csrfCookieKey]: `csrf`,
+        [secureCsrfCookieKey]: `csrf`,
       }),
     );
 
@@ -125,7 +136,7 @@ describe(`consumer-css-grid middleware auth-session behavior`, () => {
     expect(mockFetch).toHaveBeenCalledTimes(1);
     expect(mockFetch.mock.calls[0]?.[1]).toMatchObject({
       headers: expect.objectContaining({
-        Cookie: `${secureRefreshCookieKey}=local-r; ${csrfCookieKey}=csrf`,
+        Cookie: `${secureRefreshCookieKey}=local-r; ${secureCsrfCookieKey}=csrf`,
       }),
     });
   });
@@ -136,28 +147,43 @@ describe(`consumer-css-grid middleware auth-session behavior`, () => {
     const response = await middleware(
       createRequest(`/settings`, {
         [secureRefreshCookieKey]: `expired-r`,
-        [csrfCookieKey]: `csrf`,
+        [secureCsrfCookieKey]: `csrf`,
       }),
     );
 
     expect(response.status).toBe(307);
     expect(response.headers.get(`location`)).toContain(`/login?next=%2Fsettings`);
     expect(response.headers.get(`location`)).toContain(`session_expired=1`);
+    expect(response.headers.get(`set-cookie`)).toContain(`${secureRefreshCookieKey}=;`);
+    expect(response.headers.get(`set-cookie`)).toContain(`${secureCsrfCookieKey}=;`);
+    expect(response.headers.get(`set-cookie`)).toContain(`Max-Age=0`);
     expect(mockFetch).toHaveBeenCalledTimes(1);
     expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`https://example.com/api/consumer/auth/refresh`);
   });
 
-  it(`renders auth pages without blocking on refresh when only a refresh cookie is present`, async () => {
-    const response = await middleware(
-      createRequest(`/login`, {
-        [secureRefreshCookieKey]: `valid-r`,
-        [csrfCookieKey]: `csrf`,
+  it(`redirects auth pages to dashboard when a refresh cookie can restore the session`, async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(undefined, {
+        status: 200,
+        headers: {
+          [`set-cookie`]: `${secureAccessCookieKey}=new-a; Path=/; HttpOnly; SameSite=Lax`,
+        },
       }),
     );
 
-    expect(response.status).toBe(200);
-    expect(response.headers.get(`location`)).toBeNull();
-    expect(mockFetch).toHaveBeenCalledTimes(0);
+    const response = await middleware(
+      createRequest(`/login`, {
+        [secureRefreshCookieKey]: `valid-r`,
+        [secureCsrfCookieKey]: `csrf`,
+      }),
+    );
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get(`location`)).toContain(`/dashboard`);
+    expect(response.headers.get(`set-cookie`)).toContain(`${secureAccessCookieKey}=new-a`);
+    expect(response.headers.get(`server-timing`)).toContain(`auth_refresh;dur=`);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`https://example.com/api/consumer/auth/refresh`);
   });
 
   it(`redirects auth pages with a live access session after probing /api/me`, async () => {
@@ -174,9 +200,54 @@ describe(`consumer-css-grid middleware auth-session behavior`, () => {
     expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`https://example.com/api/me`);
   });
 
+  it(`refreshes auth pages after a stale access probe fails`, async () => {
+    mockFetch.mockResolvedValueOnce(new Response(`unauthorized`, { status: 401 })).mockResolvedValueOnce(
+      new Response(undefined, {
+        status: 200,
+        headers: {
+          [`set-cookie`]: `${secureAccessCookieKey}=new-a; Path=/; HttpOnly; SameSite=Lax`,
+        },
+      }),
+    );
+
+    const response = await middleware(
+      createRequest(`/login`, {
+        [secureAccessCookieKey]: createAccessToken(3600),
+        [secureRefreshCookieKey]: `valid-r`,
+        [secureCsrfCookieKey]: `csrf`,
+      }),
+    );
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get(`location`)).toContain(`/dashboard`);
+    expect(response.headers.get(`set-cookie`)).toContain(`${secureAccessCookieKey}=new-a`);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`https://example.com/api/me`);
+    expect(String(mockFetch.mock.calls[1]?.[0])).toBe(`https://example.com/api/consumer/auth/refresh`);
+  });
+
+  it(`clears stale auth cookies on login when auth-page refresh fails`, async () => {
+    mockFetch.mockResolvedValueOnce(new Response(`unauthorized`, { status: 401 }));
+
+    const response = await middleware(
+      createRequest(`/login?session_expired=1`, {
+        [secureRefreshCookieKey]: `expired-r`,
+        [secureCsrfCookieKey]: `csrf`,
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get(`location`)).toBeNull();
+    expect(response.headers.get(`set-cookie`)).toContain(`${secureRefreshCookieKey}=;`);
+    expect(response.headers.get(`set-cookie`)).toContain(`${secureCsrfCookieKey}=;`);
+    expect(response.headers.get(`set-cookie`)).toContain(`Max-Age=0`);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`https://example.com/api/consumer/auth/refresh`);
+  });
+
   it(`refreshes protected requests when the access token is still signed but the backend session is gone`, async () => {
     mockFetch.mockResolvedValueOnce(new Response(`unauthorized`, { status: 401 })).mockResolvedValueOnce(
-      new Response(JSON.stringify({ accessToken: `new-a` }), {
+      new Response(undefined, {
         status: 200,
         headers: {
           [`set-cookie`]: [
@@ -193,7 +264,7 @@ describe(`consumer-css-grid middleware auth-session behavior`, () => {
         {
           [localAccessCookieKey]: createAccessToken(3600),
           [localRefreshCookieKey]: `valid-r`,
-          [csrfCookieKey]: `csrf`,
+          [localCsrfCookieKey]: `csrf`,
         },
         { origin: `http://localhost:3003` },
       ),
@@ -224,19 +295,6 @@ describe(`consumer-css-grid middleware auth-session behavior`, () => {
     expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`https://example.com/api/me`);
   });
 
-  it(`renders auth pages immediately when only a refresh cookie is present`, async () => {
-    const response = await middleware(
-      createRequest(`/login`, {
-        [secureRefreshCookieKey]: `valid-r`,
-        [csrfCookieKey]: `csrf`,
-      }),
-    );
-
-    expect(response.status).toBe(200);
-    expect(response.headers.get(`location`)).toBeNull();
-    expect(mockFetch).toHaveBeenCalledTimes(0);
-  });
-
   it(`accepts unexpired access cookies on protected pages after probing /api/me`, async () => {
     mockFetch.mockResolvedValueOnce(new Response(`ok`, { status: 200 }));
     const response = await middleware(
@@ -264,7 +322,7 @@ describe(`consumer-css-grid middleware auth-session behavior`, () => {
       createRequest(`/settings`, {
         [secureAccessCookieKey]: createAccessToken(-60),
         [secureRefreshCookieKey]: `expired-r`,
-        [csrfCookieKey]: `csrf`,
+        [secureCsrfCookieKey]: `csrf`,
       }),
     );
 
@@ -283,7 +341,7 @@ describe(`consumer-css-grid middleware auth-session behavior`, () => {
         {
           [secureAccessCookieKey]: createAccessToken(-60),
           [secureRefreshCookieKey]: `expired-r`,
-          [csrfCookieKey]: `csrf`,
+          [secureCsrfCookieKey]: `csrf`,
         },
         {
           method: `POST`,
@@ -315,7 +373,7 @@ describe(`consumer-css-grid middleware auth-session behavior`, () => {
       `/settings`,
       {
         [localRefreshCookieKey]: `valid-r`,
-        [csrfCookieKey]: `csrf`,
+        [localCsrfCookieKey]: `csrf`,
       },
       { origin: `http://localhost:3003` },
     );
@@ -333,7 +391,7 @@ describe(`consumer-css-grid middleware auth-session behavior`, () => {
       {
         [localRefreshCookieKey]: `local-r`,
         [secureRefreshCookieKey]: `secure-r`,
-        [csrfCookieKey]: `csrf`,
+        [localCsrfCookieKey]: `csrf`,
       },
       { origin: `http://localhost:3003` },
     );
@@ -342,7 +400,7 @@ describe(`consumer-css-grid middleware auth-session behavior`, () => {
 
     expect(mockFetch.mock.calls[0]?.[1]).toMatchObject({
       headers: expect.objectContaining({
-        Cookie: `${localRefreshCookieKey}=local-r; ${csrfCookieKey}=csrf`,
+        Cookie: `${localRefreshCookieKey}=local-r; ${localCsrfCookieKey}=csrf`,
       }),
     });
   });
@@ -354,7 +412,7 @@ describe(`consumer-css-grid middleware auth-session behavior`, () => {
       `/settings`,
       {
         [localRefreshCookieKey]: `valid-r`,
-        [csrfCookieKey]: `csrf`,
+        [localCsrfCookieKey]: `csrf`,
       },
       { origin: `http://127.0.0.1:3003` },
     );

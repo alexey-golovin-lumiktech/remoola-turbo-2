@@ -21,12 +21,12 @@ describe(`createInitialSignupFormState`, () => {
     const state = createInitialSignupFormState({
       accountTypeParam: ACCOUNT_TYPE.CONTRACTOR,
       contractorKindParam: CONTRACTOR_KIND.ENTITY,
-      googleSignupToken: `google-token`,
+      googleSignup: `1`,
     });
 
     expect(state.signupDetails.accountType).toBe(ACCOUNT_TYPE.CONTRACTOR);
     expect(state.signupDetails.contractorKind).toBe(CONTRACTOR_KIND.ENTITY);
-    expect(state.googleSignupToken).toBe(`google-token`);
+    expect(state.googleSignupToken).toBe(`cookie-session`);
   });
 
   it(`ignores contractor kind when the seeded account type is not contractor`, () => {

@@ -1,15 +1,14 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
-import { type ApiErrorShape } from '@remoola/api-types';
+import { getConsumerCsrfTokenCookieKeysForRead, type ApiErrorShape } from '@remoola/api-types';
 
 import { clientLogger } from './logger';
-import { getBypassHeaders } from './request-origin';
+import { getBypassHeaders, getRequestOrigin } from './request-origin';
 
 const DEFAULT_MAX_JSON_BODY_BYTES = 1024 * 1024; // 1 MB
 const FORWARDED_HEADER_ALLOWLIST = new Set([
   `accept`,
   `accept-language`,
-  `authorization`,
   `content-type`,
   `cookie`,
   `idempotency-key`,
@@ -19,6 +18,20 @@ const FORWARDED_HEADER_ALLOWLIST = new Set([
   `x-csrf-token`,
   `x-request-id`,
 ]);
+
+function getCsrfTokenFromCookieHeader(cookieHeader: string | null): string | null {
+  if (!cookieHeader) return null;
+  for (const key of getConsumerCsrfTokenCookieKeysForRead()) {
+    const match = cookieHeader
+      .split(`;`)
+      .map((part) => part.trim())
+      .find((part) => part.startsWith(`${key}=`));
+    if (match) {
+      return match.split(`=`).slice(1).join(`=`);
+    }
+  }
+  return null;
+}
 
 /**
  * Returns all Set-Cookie header values from a Response.
@@ -48,7 +61,22 @@ export function buildForwardHeaders(sourceHeaders: Headers): Headers {
       headers.append(name, value);
     }
   }
+  if (!headers.has(`x-csrf-token`)) {
+    const csrfToken = getCsrfTokenFromCookieHeader(headers.get(`cookie`));
+    if (csrfToken) {
+      headers.set(`x-csrf-token`, csrfToken);
+    }
+  }
+  if (!headers.has(`origin`)) {
+    headers.set(`origin`, getRequestOrigin());
+  }
   for (const [k, v] of Object.entries(getBypassHeaders())) headers.set(k, v);
+  return headers;
+}
+
+export function buildAuthMutationForwardHeaders(sourceHeaders: Headers): Headers {
+  const headers = buildForwardHeaders(sourceHeaders);
+  headers.delete(`host`);
   return headers;
 }
 

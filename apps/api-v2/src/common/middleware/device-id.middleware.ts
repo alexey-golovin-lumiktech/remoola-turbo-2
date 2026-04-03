@@ -4,7 +4,9 @@ import { Logger } from '@nestjs/common';
 import { type Request, type Response, type NextFunction } from 'express';
 
 import { envs } from '../../envs';
+import { OriginResolverService } from '../../shared/origin-resolver.service';
 import {
+  DEFAULT_API_V2_CONSUMER_SCOPE,
   getApiConsumerDeviceCookieKey,
   getApiConsumerDeviceCookieKeysForRead,
   getApiConsumerDeviceCookieOptions,
@@ -16,6 +18,7 @@ const unsignedFallbackLogger = new Logger(`DeviceIdMiddleware`);
 let unsignedFallbackWindowStartedAtMs = Date.now();
 let unsignedFallbackSeenInWindow = 0;
 let productionUnsignedFallbackWarningEmitted = false;
+const originResolver = new OriginResolverService();
 
 export interface RequestWithDeviceId extends Request {
   deviceId?: string;
@@ -93,7 +96,10 @@ export function deviceIdMiddleware(req: RequestWithDeviceId, res: Response, next
     return next();
   }
 
-  const keys = getApiConsumerDeviceCookieKeysForRead();
+  const consumerScope =
+    originResolver.resolveConsumerRequestAppScope?.(req.headers?.origin, req.headers?.referer) ??
+    DEFAULT_API_V2_CONSUMER_SCOPE;
+  const keys = getApiConsumerDeviceCookieKeysForRead(consumerScope);
   const existing = readFirstValidDeviceId(req, keys);
   const isLocalCookieKey = typeof existing.key === `string` && !existing.key.startsWith(`__Host-`);
   let deviceId: string;
@@ -107,7 +113,7 @@ export function deviceIdMiddleware(req: RequestWithDeviceId, res: Response, next
     deviceId = existing.value;
     try {
       const options = getApiConsumerDeviceCookieOptions(req);
-      res.cookie(getApiConsumerDeviceCookieKey(req), deviceId, { ...options, signed: true });
+      res.cookie(getApiConsumerDeviceCookieKey(req, consumerScope), deviceId, { ...options, signed: true });
     } catch {
       // Cookie set failed (e.g. headers sent); continue without throwing
     }
@@ -115,7 +121,7 @@ export function deviceIdMiddleware(req: RequestWithDeviceId, res: Response, next
     deviceId = randomUUID();
     try {
       const options = getApiConsumerDeviceCookieOptions(req);
-      res.cookie(getApiConsumerDeviceCookieKey(req), deviceId, { ...options, signed: true });
+      res.cookie(getApiConsumerDeviceCookieKey(req, consumerScope), deviceId, { ...options, signed: true });
     } catch {
       // Cookie set failed (e.g. headers sent); continue without throwing
     }

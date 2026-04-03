@@ -1,4 +1,9 @@
-import { ApiErrorSchema, COOKIE_KEYS, type ApiErrorShape, type ApiResponseShape } from '@remoola/api-types';
+import {
+  ApiErrorSchema,
+  getConsumerCsrfTokenCookieKey,
+  type ApiErrorShape,
+  type ApiResponseShape,
+} from '@remoola/api-types';
 
 import { handleSessionExpired, UNAUTHORIZED_MESSAGE } from './session-expired';
 
@@ -13,7 +18,14 @@ let refreshPromise: Promise<boolean> | null = null;
 
 function getCsrfTokenFromCookie(): string | null {
   if (typeof document === `undefined`) return null;
-  const key = `${COOKIE_KEYS.CSRF_TOKEN}=`;
+  const isSecureRequest =
+    typeof window !== `undefined` ? window.location.protocol === `https:` : globalThis.location?.protocol === `https:`;
+  const key = `${getConsumerCsrfTokenCookieKey({
+    isProduction: process.env.NODE_ENV === `production`,
+    isVercel: process.env.VERCEL === `1`,
+    cookieSecure: process.env.COOKIE_SECURE === `true`,
+    isSecureRequest,
+  })}=`;
   const parts = document.cookie.split(`;`);
   for (const part of parts) {
     const trimmed = part.trim();
@@ -102,14 +114,22 @@ export class ApiClient {
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
     try {
+      const isMutation = options.method != null && options.method !== `GET` && options.method !== `HEAD`;
+      const requestHeaders = isMutation
+        ? {
+            'Content-Type': `application/json`,
+            ...getCsrfHeader(),
+            ...options.headers,
+          }
+        : {
+            'Content-Type': `application/json`,
+            ...options.headers,
+          };
       const response = await fetch(url, {
         ...options,
         signal: controller.signal,
         credentials: `include`,
-        headers: {
-          'Content-Type': `application/json`,
-          ...options.headers,
-        },
+        headers: requestHeaders,
       });
 
       clearTimeout(timeoutId);

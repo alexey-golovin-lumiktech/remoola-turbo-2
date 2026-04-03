@@ -1,4 +1,5 @@
 import { getEnv } from '../../lib/env.server';
+import { buildServerReadAuthHeaders } from '../../lib/server-action-auth';
 
 export interface DocumentItem {
   id?: string;
@@ -14,7 +15,7 @@ export async function getDocumentsList(cookie: string | null): Promise<DocumentI
   const url = `${baseUrl}/consumer/documents`;
   const res = await fetch(url, {
     method: `GET`,
-    headers: { Cookie: cookie ?? `` },
+    headers: buildServerReadAuthHeaders(cookie),
     cache: `no-store`,
     signal: AbortSignal.timeout(10000),
   });

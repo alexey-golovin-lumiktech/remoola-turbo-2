@@ -3,8 +3,8 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import { buildSignupPayload } from './payload';
 import { useSignupForm } from './SignupFormContext';
-import { getApiBaseUrlOptional } from '../../lib/config.client';
 import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../lib/error-messages';
 import { showErrorToast } from '../../lib/toast.client';
 
@@ -25,39 +25,15 @@ export function useSignupSubmit() {
     setLoading(true);
     try {
       const token = googleSignupToken;
-      const isGoogleSignup = Boolean(token);
-      const signupForPayload = isGoogleSignup
-        ? {
-            email: signupDetails.email,
-            accountType: signupDetails.accountType,
-            contractorKind: signupDetails.contractorKind,
-            howDidHearAboutUs: signupDetails.howDidHearAboutUs,
-            howDidHearAboutUsOther: signupDetails.howDidHearAboutUsOther,
-          }
-        : signupDetails;
-
-      const personalPayload =
-        isBusiness || isContractorEntity
-          ? {
-              citizenOf: personalDetails.countryOfTaxResidence,
-              dateOfBirth: personalDetails.dateOfBirth || `1970-01-01`,
-              passportOrIdNumber: personalDetails.taxId || `N/A`,
-              countryOfTaxResidence: personalDetails.countryOfTaxResidence,
-              taxId: personalDetails.taxId,
-              phoneNumber: personalDetails.phoneNumber,
-              firstName: null,
-              lastName: null,
-              legalStatus: personalDetails.legalStatus,
-            }
-          : personalDetails;
-
-      const payload = {
-        ...signupForPayload,
-        personalDetails: personalPayload,
-        organizationDetails: isBusiness || isContractorEntity ? organizationDetails : null,
+      const payload = buildSignupPayload({
+        signupDetails,
+        personalDetails,
+        organizationDetails,
         addressDetails,
-        ...(token ? { googleSignupToken: token } : {}),
-      };
+        googleSignupToken,
+        isBusiness,
+        isContractorEntity,
+      });
 
       const res = await fetch(`/api/signup`, {
         method: `POST`,
@@ -75,13 +51,16 @@ export function useSignupSubmit() {
         setLoading(false);
         return;
       }
-      const json = (await res.json()) as { consumer?: { id?: string } };
-      const baseUrl = getApiBaseUrlOptional();
-      if (baseUrl && json.consumer?.id) {
-        await fetch(`${baseUrl}/consumer/auth/signup/${json.consumer.id}/complete-profile-creation`, {
-          credentials: `include`,
-        });
+      const json = (await res.json()) as {
+        consumer?: { id?: string };
+        next?: string;
+      };
+
+      if (token) {
+        router.push(typeof json.next === `string` && json.next.length > 0 ? json.next : `/dashboard`);
+        return;
       }
+
       router.push(`/signup/completed`);
     } catch {
       showErrorToast(getLocalToastMessage(localToastKeys.UNEXPECTED_ERROR));

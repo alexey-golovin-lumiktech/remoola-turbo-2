@@ -7,7 +7,7 @@
     "dev": "next dev --turbopack --port 3003",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint --max-warnings 0",
+    "lint": "eslint \"src/**/*.{js,jsx,ts,tsx}\" --max-warnings 0",
     "typecheck": "tsc --noEmit",
     "test": "node ../../scripts/ensure-local-development.js consumer-css-grid:test && node ../../scripts/run-jest-with-memory-cap.js",
     "test:watch": "node ../../scripts/ensure-local-development.js consumer-css-grid:test:watch && node ../../scripts/run-jest-with-memory-cap.js --watch",

@@ -131,7 +131,7 @@ describe(`AdminAuthService`, () => {
       expect(jwtService.signAsync).toHaveBeenNthCalledWith(
         2,
         { identityId: identity.id, type: `refresh` },
-        { expiresIn: envs.JWT_REFRESH_TTL_SECONDS },
+        { expiresIn: envs.JWT_REFRESH_TTL_SECONDS, secret: envs.JWT_REFRESH_SECRET },
       );
     });
   });
@@ -218,8 +218,9 @@ describe(`AdminAuthService`, () => {
       expect(jwtService.signAsync).toHaveBeenNthCalledWith(
         2,
         { identityId: admin.id, type: `refresh` },
-        { expiresIn: envs.JWT_REFRESH_TTL_SECONDS },
+        { expiresIn: envs.JWT_REFRESH_TTL_SECONDS, secret: envs.JWT_REFRESH_SECRET },
       );
+      expect(jwtService.verify).toHaveBeenCalledWith(refreshToken, { secret: envs.JWT_REFRESH_SECRET });
     });
   });
 

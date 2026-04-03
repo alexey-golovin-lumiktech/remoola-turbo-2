@@ -1,7 +1,6 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { cookies } from 'next/headers';
 
 import {
   attachToPaymentSchema,
@@ -13,6 +12,7 @@ import {
 } from './schemas';
 import { getEnv } from '../../lib/env.server';
 import { generateCorrelationId, serverLogger } from '../../lib/logger.server';
+import { getServerActionMutationAuthHeaders } from '../../lib/server-action-auth';
 
 type ActionResult<T = void> =
   | { ok: true; data: T }
@@ -61,14 +61,13 @@ export async function bulkDeleteDocuments(input: BulkDeleteInput): Promise<Actio
       correlationId,
     });
 
-    const cookieStore = await cookies();
-    const cookie = cookieStore.toString();
+    const authHeaders = await getServerActionMutationAuthHeaders();
 
     const res = await fetch(`${baseUrl}/consumer/documents/bulk-delete`, {
       method: `POST`,
       headers: {
         'Content-Type': `application/json`,
-        Cookie: cookie,
+        ...authHeaders,
         'X-Correlation-ID': correlationId,
       },
       body: JSON.stringify({ documentIds: parsed.data.documentIds }),
@@ -144,14 +143,13 @@ export async function attachDocumentToPayment(input: AttachToPaymentInput): Prom
   }
 
   try {
-    const cookieStore = await cookies();
-    const cookie = cookieStore.toString();
+    const authHeaders = await getServerActionMutationAuthHeaders();
 
     const res = await fetch(`${baseUrl}/consumer/documents/attach-to-payment`, {
       method: `POST`,
       headers: {
         'Content-Type': `application/json`,
-        Cookie: cookie,
+        ...authHeaders,
       },
       body: JSON.stringify({
         paymentRequestId: parsed.data.paymentRequestId,
@@ -230,14 +228,13 @@ export async function updateDocumentTags(docId: string, input: UpdateTagsInput):
   }
 
   try {
-    const cookieStore = await cookies();
-    const cookie = cookieStore.toString();
+    const authHeaders = await getServerActionMutationAuthHeaders();
 
     const res = await fetch(`${baseUrl}/consumer/documents/${docId}/tags`, {
       method: `POST`,
       headers: {
         'Content-Type': `application/json`,
-        Cookie: cookie,
+        ...authHeaders,
       },
       body: JSON.stringify({ tags: parsed.data.tags }),
       credentials: `include`,
@@ -299,13 +296,12 @@ export async function deleteDocument(docId: string): Promise<ActionResult> {
   }
 
   try {
-    const cookieStore = await cookies();
-    const cookie = cookieStore.toString();
+    const authHeaders = await getServerActionMutationAuthHeaders();
 
     const res = await fetch(`${baseUrl}/consumer/documents/${docId}`, {
       method: `DELETE`,
       headers: {
-        Cookie: cookie,
+        ...authHeaders,
       },
       credentials: `include`,
       cache: `no-store`,

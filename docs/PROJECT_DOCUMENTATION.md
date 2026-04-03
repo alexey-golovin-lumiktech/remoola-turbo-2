@@ -97,7 +97,7 @@ Auth (`/consumer/auth`):
   - `GET /google/start`: start OAuth flow. Accepts optional `returnOrigin` query parameter to specify the consumer app origin (validated against CORS_ALLOWED_ORIGINS via `OriginResolverService`) for redirect after authentication. Useful for multi-app deployments (e.g., desktop consumer on port 3001, mobile consumer on port 3002). Supports CONSUMER_APP_ORIGIN, CONSUMER_MOBILE_APP_ORIGIN, and ADMIN_APP_ORIGIN.
   - `GET /google/callback`: OAuth redirect handling; uses stored `returnOrigin` from state.
   - `GET /google/signup-session`: fetch OAuth signup session data.
-  - `POST /oauth/exchange`: exchange short-lived OAuth exchange token for access/refresh cookies (BFF/mobile compatible).
+  - `POST /oauth/complete`: exchange short-lived OAuth handoff token for access/refresh cookies. Browser-facing callers must go through frontend same-origin BFF routes rather than calling the API origin directly.
 
 Dashboard (`/consumer/dashboard`):
 

@@ -77,7 +77,6 @@ export function useSignupSubmit() {
             : personalDetails,
         organizationDetails: isBusiness || isContractorEntity ? organizationDetails : null,
         addressDetails,
-        ...(googleSignupToken ? { googleSignupToken } : {}),
       };
 
       const response = await fetch(`/api/signup`, {
@@ -91,12 +90,16 @@ export function useSignupSubmit() {
         const data = await response.json().catch(() => ({}));
         throw new Error(data?.message || `Failed to sign up`);
       }
-      const json = await response.json();
+      const json = (await response.json()) as {
+        consumer?: { id?: string };
+        next?: string;
+      };
 
-      const complete = new URL(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/consumer/auth/signup/${json.consumer.id}/complete-profile-creation`,
-      );
-      await fetch(complete);
+      if (googleSignupToken) {
+        router.push(typeof json.next === `string` && json.next.length > 0 ? json.next : `/dashboard`);
+        return { success: true };
+      }
+
       router.push(`/signup/completed`);
     } catch (e: unknown) {
       const raw = e instanceof Error ? e.message : `Unknown error`;

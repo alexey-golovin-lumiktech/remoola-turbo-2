@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 
+import { getConsumerMobileCsrfTokenCookieKey } from '@remoola/api-types';
+
 import { fetchWithAuth, swrConfig, swrFetcher } from './client';
 import { resetSessionExpiredHandled } from './session-expired';
 
@@ -30,17 +32,34 @@ function mockLocation(pathname: string): void {
 
 describe(`client auth helpers`, () => {
   const originalFetch = global.fetch;
+  const originalDocument = global.document;
   let mockFetch: MockFetch;
+  const csrfCookieKey = getConsumerMobileCsrfTokenCookieKey({
+    isProduction: false,
+    isVercel: false,
+    cookieSecure: false,
+    isSecureRequest: false,
+  });
 
   beforeEach(() => {
     mockFetch = jest.fn() as MockFetch;
     global.fetch = mockFetch;
+    Object.defineProperty(globalThis, `document`, {
+      value: { cookie: `${csrfCookieKey}=csrf-cookie-value` },
+      configurable: true,
+      writable: true,
+    });
     mockLocation(`/dashboard`);
     resetSessionExpiredHandled();
   });
 
   afterEach(() => {
     global.fetch = originalFetch;
+    Object.defineProperty(globalThis, `document`, {
+      value: originalDocument,
+      configurable: true,
+      writable: true,
+    });
   });
 
   it(`swrFetcher refreshes once on 401`, async () => {
@@ -83,6 +102,19 @@ describe(`client auth helpers`, () => {
     expect(result).toEqual({ ok: false, error: `Session expired`, status: 401 });
     await new Promise((r) => setTimeout(r, 10));
     expect(lastReplaceUrl).toContain(`next=%2Fsettings`);
+  });
+
+  it(`fetchWithAuth attaches csrf on the first mutation request`, async () => {
+    mockFetch.mockResolvedValueOnce(makeJsonResponse({ ok: true }, 200));
+
+    await fetchWithAuth(`/api/settings`, {
+      method: `POST`,
+      headers: { 'content-type': `application/json` },
+      body: JSON.stringify({ theme: `dark` }),
+    });
+
+    const headers = mockFetch.mock.calls[0]?.[1]?.headers as Headers | undefined;
+    expect(headers?.get(`x-csrf-token`)).toBe(`csrf-cookie-value`);
   });
 
   it(`fetchWithAuth returns error when response is not JSON`, async () => {

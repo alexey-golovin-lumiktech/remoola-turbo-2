@@ -1,5 +1,6 @@
 import { dashboardDataSchema, type DashboardData } from './schemas';
 import { getEnv } from '../../lib/env.server';
+import { buildServerReadAuthHeaders } from '../../lib/server-action-auth';
 
 export async function getDashboardData(cookie: string | null): Promise<DashboardData | null> {
   const env = getEnv();
@@ -8,7 +9,7 @@ export async function getDashboardData(cookie: string | null): Promise<Dashboard
   const url = `${baseUrl}/consumer/dashboard`;
   const res = await fetch(url, {
     method: `GET`,
-    headers: { Cookie: cookie ?? `` },
+    headers: buildServerReadAuthHeaders(cookie),
     cache: `no-store`,
     signal: AbortSignal.timeout(15000),
   });

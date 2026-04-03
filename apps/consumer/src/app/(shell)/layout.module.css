@@ -34,7 +34,19 @@
 }
 
 .mobileLogoBadge {
-  @apply flex items-center justify-center text-xs font-bold text-white;
+  @apply flex items-center justify-center overflow-hidden text-xs font-bold text-white;
+}
+
+.mobileLogoCompact {
+  @apply h-full w-full object-contain;
+}
+
+.desktopLogoWrap {
+  @apply flex h-8 w-8 shrink-0 items-center;
+}
+
+.desktopLogoFull {
+  @apply h-8 w-8 object-contain;
 }
 
 .mobileLogoutLink {

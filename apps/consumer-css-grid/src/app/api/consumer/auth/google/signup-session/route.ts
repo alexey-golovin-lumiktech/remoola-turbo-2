@@ -4,11 +4,6 @@ import { appendSetCookies, buildAuthMutationForwardHeaders } from '../../../../.
 import { getEnv } from '../../../../../../lib/env.server';
 
 export async function GET(req: NextRequest) {
-  const token = req.nextUrl.searchParams.get(`token`);
-  if (!token) {
-    return NextResponse.json({ message: `Missing signup token`, code: `MISSING_SIGNUP_TOKEN` }, { status: 400 });
-  }
-
   const env = getEnv();
   const baseUrl = env.NEXT_PUBLIC_API_BASE_URL;
   if (!baseUrl) {
@@ -16,7 +11,6 @@ export async function GET(req: NextRequest) {
   }
 
   const url = new URL(`${baseUrl}/consumer/auth/google/signup-session`);
-  url.searchParams.set(`token`, token);
 
   const forwardHeaders = buildAuthMutationForwardHeaders(req.headers);
 

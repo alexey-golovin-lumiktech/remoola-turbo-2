@@ -7,7 +7,7 @@ describe(`ConsumerPaymentRequestsController`, () => {
   };
 
   const originResolver = {
-    resolveRequestOrigin: jest.fn(),
+    resolveConsumerRequestOrigin: jest.fn(),
   };
 
   const consumer = { id: `consumer-1` } as any;
@@ -15,7 +15,7 @@ describe(`ConsumerPaymentRequestsController`, () => {
   beforeEach(() => {
     jest.clearAllMocks();
     service.sendPaymentRequest.mockResolvedValue({ paymentRequestId: `pr-1` });
-    originResolver.resolveRequestOrigin.mockReturnValue(`https://consumer.example.com`);
+    originResolver.resolveConsumerRequestOrigin.mockReturnValue(`https://consumer.example.com`);
   });
 
   it(`passes request-derived origin when sending a payment request`, async () => {
@@ -28,7 +28,7 @@ describe(`ConsumerPaymentRequestsController`, () => {
 
     const result = await controller.send(consumer, `pr-1`, req);
 
-    expect(originResolver.resolveRequestOrigin).toHaveBeenCalledWith(
+    expect(originResolver.resolveConsumerRequestOrigin).toHaveBeenCalledWith(
       undefined,
       `https://consumer.example.com/payments/pr-1`,
     );

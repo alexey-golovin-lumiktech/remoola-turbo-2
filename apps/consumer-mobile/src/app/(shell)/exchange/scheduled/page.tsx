@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 
 import { ScheduledConversionsView } from '../../../../features/exchange/ui/ScheduledConversionsView';
 import { getEnv } from '../../../../lib/env.server';
+import { buildServerReadAuthHeaders } from '../../../../lib/server-action-auth';
 
 interface ScheduledConversion {
   id: string;
@@ -25,7 +26,7 @@ async function fetchScheduledConversions(): Promise<ScheduledConversion[]> {
 
   try {
     const res = await fetch(`${baseUrl}/consumer/exchange/scheduled`, {
-      headers: { Cookie: cookie },
+      headers: buildServerReadAuthHeaders(cookie),
       cache: `no-store`,
     });
 

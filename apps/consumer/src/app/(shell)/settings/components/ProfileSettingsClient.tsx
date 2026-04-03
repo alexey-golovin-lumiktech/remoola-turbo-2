@@ -21,7 +21,7 @@ import { apiClient } from '../../../../lib/api';
 import { handleSessionExpired, isRedirectInProgress } from '../../../../lib/session-expired';
 import { type ConsumerProfile } from '../../../../types';
 
-const { textSecondary, primaryButtonClass } = styles;
+const { textSecondary, primaryButtonClass, themeCard, themeDescription, themeTitle } = styles;
 
 export type LoadState = `loading` | `ready` | `unauthorized` | `error`;
 
@@ -60,11 +60,12 @@ export function isTerminalSettingsState(state: LoadState): boolean {
   return state === `unauthorized` || state === `error`;
 }
 
-export default function ProfileSettingsClient() {
+export default function ProfileSettingsClient({ logoutAllFailed = false }: { logoutAllFailed?: boolean }) {
   const [loadState, setLoadState] = useState<LoadState>(`loading`);
   const [profile, setProfile] = useState<ConsumerProfile | null>(null);
   const [settings, setSettings] = useState<ConsumerSettingsResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [logoutAllErrorVisible, setLogoutAllErrorVisible] = useState(logoutAllFailed);
 
   const loadProfile = useCallback(async () => {
     setLoadState(`loading`);
@@ -116,6 +117,16 @@ export default function ProfileSettingsClient() {
     if (loadState === `ready` && profile) void loadSettings();
   }, [loadState, profile, loadSettings]);
 
+  useEffect(() => {
+    setLogoutAllErrorVisible(logoutAllFailed);
+    if (!logoutAllFailed || typeof window === `undefined`) return;
+
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has(`logout_all_failed`)) return;
+    url.searchParams.delete(`logout_all_failed`);
+    window.history.replaceState(null, ``, url.pathname + (url.search || ``));
+  }, [logoutAllFailed]);
+
   const handlePreferredCurrencyUpdated = useCallback((preferredCurrency: TCurrencyCode | null) => {
     setSettings((prev) => (prev ? { ...prev, preferredCurrency } : { theme: null, preferredCurrency }));
   }, []);
@@ -149,6 +160,27 @@ export default function ProfileSettingsClient() {
 
   return (
     <div className={localStyles.settingsReady} data-testid="settings-ready">
+      {logoutAllErrorVisible ? (
+        <div
+          className={
+            `rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 ` +
+            `dark:border-red-800 dark:bg-red-900/20 dark:text-red-300`
+          }
+          role="alert"
+          data-testid="consumer-settings-logout-all-error"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <span>We couldn&apos;t sign out all devices right now. Your current session is still active.</span>
+            <button
+              type="button"
+              className="shrink-0 text-xs font-medium underline dark:text-red-200"
+              onClick={() => setLogoutAllErrorVisible(false)}
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      ) : null}
       {settings && <ThemeSettingsForm initialTheme={settings.theme} />}
       <PreferredCurrencySettingsForm
         preferredCurrency={settings?.preferredCurrency ?? null}
@@ -161,6 +193,33 @@ export default function ProfileSettingsClient() {
       )}
 
       <PasswordChangeForm reload={loadProfile} hasPassword={profile.hasPassword !== false} />
+
+      <section className={`${themeCard} space-y-3`}>
+        <h2 className={themeTitle}>Session Management</h2>
+        <p className={themeDescription}>
+          Sign out this browser only, or revoke every active consumer session across devices.
+        </p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <form method="post" action="/logout">
+            <button type="submit" className={primaryButtonClass}>
+              Sign Out This Device
+            </button>
+          </form>
+          <form method="post" action="/logout-all">
+            <button
+              type="submit"
+              className={primaryButtonClass}
+              onClick={(event) => {
+                if (!window.confirm(`Sign out all devices? You will need to sign in again everywhere.`)) {
+                  event.preventDefault();
+                }
+              }}
+            >
+              Sign Out All Devices
+            </button>
+          </form>
+        </div>
+      </section>
     </div>
   );
 }

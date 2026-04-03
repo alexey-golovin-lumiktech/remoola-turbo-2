@@ -6,17 +6,17 @@ import { useEffect, useMemo, useState, useTransition } from 'react';
 import { AUTH_NOTICE_QUERY, CURRENCY_CODES, THEME, THEMES, type TTheme } from '@remoola/api-types';
 
 import { getPasswordPanelCopy } from '../../../features/auth/recovery';
+import { type ProfileResponse, type SettingsResponse } from '../../../lib/consumer-api.server';
 import {
   changePasswordMutation,
   updateProfileMutation,
   updateSettingsMutation,
 } from '../../../lib/consumer-mutations.server';
+import { submitPostNavigation } from '../../../lib/post-navigation';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
 import { useTheme } from '../../../shared/theme/ThemeProvider';
 import { THEME_OPTION_LABELS } from '../../../shared/theme/ThemeQuickSwitch';
 import { Panel } from '../../../shared/ui/shell-primitives';
-
-import type { ProfileResponse, SettingsResponse } from '../../../lib/consumer-api.server';
 
 type Props = {
   profile: ProfileResponse | null;
@@ -608,7 +608,7 @@ export function SettingsClient({ profile, settings, logoutAllFailed = false }: P
                     setMessage({ type: `error`, text: result.error.message });
                     return;
                   }
-                  window.location.assign(`/logout?${AUTH_NOTICE_QUERY}=password_changed`);
+                  submitPostNavigation(`/logout?${AUTH_NOTICE_QUERY}=password_changed`);
                 });
               }}
               className={primaryButtonClass}
@@ -635,9 +635,11 @@ export function SettingsClient({ profile, settings, logoutAllFailed = false }: P
               with a notice.
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <a href="/logout" className={secondaryButtonClass}>
-                Sign out this device
-              </a>
+              <form method="post" action="/logout">
+                <button type="submit" className={secondaryButtonClass}>
+                  Sign out this device
+                </button>
+              </form>
               <button
                 type="button"
                 disabled={isSigningOutAll}
@@ -705,17 +707,17 @@ export function SettingsClient({ profile, settings, logoutAllFailed = false }: P
               >
                 Keep me signed in
               </button>
-              <button
-                type="button"
-                disabled={isSigningOutAll}
-                onClick={() => {
+              <form
+                method="post"
+                action="/logout-all"
+                onSubmit={() => {
                   setIsSigningOutAll(true);
-                  window.location.assign(`/logout-all`);
                 }}
-                className={dangerButtonClass}
               >
-                {isSigningOutAll ? `Signing out all devices...` : `Yes, sign out all devices`}
-              </button>
+                <button type="submit" disabled={isSigningOutAll} className={dangerButtonClass}>
+                  {isSigningOutAll ? `Signing out all devices...` : `Yes, sign out all devices`}
+                </button>
+              </form>
             </div>
           </div>
         </div>

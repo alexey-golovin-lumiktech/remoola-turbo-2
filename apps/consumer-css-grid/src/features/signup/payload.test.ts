@@ -108,7 +108,6 @@ describe(`buildSignupPayload`, () => {
 
     const payload = buildSignupPayload(state);
 
-    expect(payload.googleSignupToken).toBe(`google-token`);
     expect(payload.password).toBeUndefined();
   });
 });

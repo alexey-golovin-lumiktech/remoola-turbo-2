@@ -1,0 +1,34 @@
+import { afterEach, describe, expect, it, jest } from '@jest/globals';
+
+const mockGetEnv = jest.fn();
+
+jest.mock(`../../../../../../lib/env.server`, () => ({
+  getEnv: (...args: unknown[]) => mockGetEnv(...args),
+}));
+
+import { GET } from './route';
+
+describe(`consumer-mobile google start route`, () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it(`redirects to backend oauth start with return origin from the app`, async () => {
+    mockGetEnv.mockReturnValue({ NEXT_PUBLIC_API_BASE_URL: `https://api.example.com` });
+
+    const request = {
+      nextUrl: new URL(
+        `https://mobile.example.com/api/consumer/auth/google/start?next=%2Fsignup&contractorKind=ENTITY`,
+      ),
+    } as never;
+
+    const response = await GET(request);
+    const location = response.headers.get(`location`);
+
+    expect(response.status).toBe(307);
+    expect(location).toContain(`/consumer/auth/google/start`);
+    expect(location).toContain(`next=%2Fsignup`);
+    expect(location).toContain(`contractorKind=ENTITY`);
+    expect(location).toContain(`returnOrigin=https%3A%2F%2Fmobile.example.com`);
+  });
+});

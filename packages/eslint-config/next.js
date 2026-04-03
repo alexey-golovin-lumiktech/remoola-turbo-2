@@ -30,6 +30,7 @@ export const nextJsConfig = [
     },
   },
   {
+    files: ["**/*.{js,mjs,cjs,ts,jsx,tsx}"],
     plugins: {
       "@next/next": pluginNext,
       import: importPlugin,

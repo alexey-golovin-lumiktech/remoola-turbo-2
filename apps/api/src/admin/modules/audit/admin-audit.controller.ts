@@ -1,5 +1,5 @@
 import { BadRequestException, Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiBasicAuth, ApiTags } from '@nestjs/swagger';
+import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 
 import { type AdminModel } from '@remoola/database-2';
 import { adminErrorCodes } from '@remoola/shared-constants';
@@ -51,9 +51,8 @@ function parseActionsQuery(q: AdminAuditActionsQueryDto) {
 }
 
 @UseGuards(JwtAuthGuard)
+@ApiCookieAuth()
 @ApiTags(`Admin: Audit`)
-@ApiBearerAuth(`bearer`)
-@ApiBasicAuth(`basic`)
 @Controller(`admin/audit`)
 export class AdminAuditController {
   constructor(private readonly service: AdminAuditService) {}

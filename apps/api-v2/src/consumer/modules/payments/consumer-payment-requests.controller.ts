@@ -20,7 +20,7 @@ export class ConsumerPaymentRequestsController {
   ) {}
 
   private resolveRequestOrigin(req: express.Request): string | undefined {
-    return this.originResolver.resolveRequestOrigin(req.headers.origin, req.headers.referer);
+    return this.originResolver.resolveConsumerRequestOrigin(req.headers.origin, req.headers.referer);
   }
 
   @Post()

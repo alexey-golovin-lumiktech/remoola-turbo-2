@@ -20,13 +20,18 @@ import { assertIsolatedTestDatabaseUrl } from './test-db-safety';
 import { AppModule } from '../src/app.module';
 import { AuthGuard } from '../src/guards/auth.guard';
 import { PrismaService } from '../src/shared/prisma.service';
-import { ADMIN_ACCESS_TOKEN_COOKIE_KEY, ADMIN_REFRESH_TOKEN_COOKIE_KEY } from '../src/shared-common';
+import {
+  getApiAdminAccessTokenCookieKey,
+  getApiAdminCsrfTokenCookieKey,
+  getApiAdminRefreshTokenCookieKey,
+} from '../src/shared-common';
 
 describe(`Admin auth lifecycle (e2e, isolated DB)`, () => {
   let app: INestApplication;
   let prisma: PrismaClient;
   const adminEmail = `admin-auth-lifecycle@local.test`;
   const adminPassword = `AdminLifecycle1!@#`;
+  const adminOrigin = `http://127.0.0.1:3010`;
 
   function asCookieArray(header: string | string[] | undefined): string[] {
     if (Array.isArray(header)) return header;
@@ -93,35 +98,46 @@ describe(`Admin auth lifecycle (e2e, isolated DB)`, () => {
 
     const loginRes = await agent
       .post(`/api/admin/auth/login`)
+      .set(`origin`, adminOrigin)
       .send({ email: adminEmail, password: adminPassword })
       .expect(201);
 
     const setCookie = asCookieArray(loginRes.headers[`set-cookie`]);
     expect(setCookie.length).toBeGreaterThan(0);
-    expect(setCookie.some((line) => line.startsWith(`${ADMIN_ACCESS_TOKEN_COOKIE_KEY}=`))).toBe(true);
-    expect(setCookie.some((line) => line.startsWith(`${ADMIN_REFRESH_TOKEN_COOKIE_KEY}=`))).toBe(true);
-    expect(typeof loginRes.body?.refreshToken).toBe(`string`);
+    expect(setCookie.some((line) => line.startsWith(`${getApiAdminAccessTokenCookieKey()}=`))).toBe(true);
+    expect(setCookie.some((line) => line.startsWith(`${getApiAdminRefreshTokenCookieKey()}=`))).toBe(true);
+    const csrfCookie = setCookie.find((line) => line.startsWith(`${getApiAdminCsrfTokenCookieKey()}=`));
+    const csrfToken = csrfCookie?.split(`;`)[0]?.slice(`${getApiAdminCsrfTokenCookieKey()}=`.length);
+    expect(loginRes.body).toEqual({ ok: true });
+    expect(csrfToken).toBeTruthy();
 
     const meAfterLogin = await agent.get(`/api/admin/auth/me`).expect(200);
     expect(meAfterLogin.body?.email).toBe(adminEmail);
     expect(meAfterLogin.body?.type).toBe(`ADMIN`);
 
-    const refreshRes = await request(app.getHttpServer())
+    const refreshRes = await agent
       .post(`/api/admin/auth/refresh-access`)
-      .send({ refreshToken: loginRes.body?.refreshToken });
+      .set(`origin`, adminOrigin)
+      .set(`x-csrf-token`, csrfToken ?? ``);
     expect(refreshRes.status).toBeLessThan(400);
-    expect(typeof refreshRes.body?.accessToken).toBe(`string`);
-    expect(typeof refreshRes.body?.refreshToken).toBe(`string`);
+    expect(refreshRes.body).toEqual({ ok: true });
+    const refreshCookies = asCookieArray(refreshRes.headers[`set-cookie`]);
+    expect(refreshCookies.some((line) => line.startsWith(`${getApiAdminAccessTokenCookieKey()}=`))).toBe(true);
+    expect(refreshCookies.some((line) => line.startsWith(`${getApiAdminRefreshTokenCookieKey()}=`))).toBe(true);
+    const refreshedCsrfCookie = refreshCookies.find((line) => line.startsWith(`${getApiAdminCsrfTokenCookieKey()}=`));
+    const refreshedCsrfToken =
+      refreshedCsrfCookie?.split(`;`)[0]?.slice(`${getApiAdminCsrfTokenCookieKey()}=`.length) ?? csrfToken;
 
-    await request(app.getHttpServer())
-      .post(`/api/admin/auth/refresh-access`)
-      .send({ refreshToken: `definitely-invalid-refresh-token` })
-      .expect(400);
+    await agent.post(`/api/admin/auth/refresh-access`).expect(401);
 
-    const logoutRes = await agent.post(`/api/admin/auth/logout`).expect(201);
+    const logoutRes = await agent
+      .post(`/api/admin/auth/logout`)
+      .set(`origin`, adminOrigin)
+      .set(`x-csrf-token`, refreshedCsrfToken ?? ``)
+      .expect(201);
     const logoutCookies = asCookieArray(logoutRes.headers[`set-cookie`]);
-    expect(logoutCookies.some((line) => line.startsWith(`${ADMIN_ACCESS_TOKEN_COOKIE_KEY}=`))).toBe(true);
-    expect(logoutCookies.some((line) => line.startsWith(`${ADMIN_REFRESH_TOKEN_COOKIE_KEY}=`))).toBe(true);
+    expect(logoutCookies.some((line) => line.startsWith(`${getApiAdminAccessTokenCookieKey()}=`))).toBe(true);
+    expect(logoutCookies.some((line) => line.startsWith(`${getApiAdminRefreshTokenCookieKey()}=`))).toBe(true);
 
     await agent.get(`/api/admin/auth/me`).expect(401);
   });

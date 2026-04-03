@@ -1,9 +1,32 @@
 import { ApiErrorSchema, type ApiErrorShape, type ApiResponseShape } from '@remoola/api-types';
 
+import { getAdminCsrfCookieKey } from './auth-cookie-policy';
 import { clientLogger } from './logger';
 import { handleSessionExpired, UNAUTHORIZED_MESSAGE } from './session-expired';
 
 export { ApiErrorSchema };
+
+function getCsrfTokenFromCookie(): string | null {
+  if (typeof document === `undefined`) return null;
+  const key = `${getAdminCsrfCookieKey()}=`;
+  const parts = document.cookie.split(`;`);
+  for (const part of parts) {
+    const trimmed = part.trim();
+    if (trimmed.startsWith(key)) {
+      return decodeURIComponent(trimmed.slice(key.length));
+    }
+  }
+  return null;
+}
+
+function buildMutationHeaders(source?: HeadersInit): Headers {
+  const headers = new Headers(source);
+  const csrfToken = getCsrfTokenFromCookie();
+  if (csrfToken && !headers.has(`x-csrf-token`)) {
+    headers.set(`x-csrf-token`, csrfToken);
+  }
+  return headers;
+}
 
 // Enhanced API client with caching and deduplication
 export class ApiClient {
@@ -58,14 +81,21 @@ export class ApiClient {
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
     try {
+      const isMutation = options.method != null && options.method !== `GET` && options.method !== `HEAD`;
+      const requestHeaders = isMutation
+        ? buildMutationHeaders({
+            'Content-Type': `application/json`,
+            ...options.headers,
+          })
+        : {
+            'Content-Type': `application/json`,
+            ...options.headers,
+          };
       const response = await fetch(url, {
         ...options,
         signal: controller.signal,
         credentials: `include`,
-        headers: {
-          'Content-Type': `application/json`,
-          ...options.headers,
-        },
+        headers: requestHeaders,
       });
 
       clearTimeout(timeoutId);

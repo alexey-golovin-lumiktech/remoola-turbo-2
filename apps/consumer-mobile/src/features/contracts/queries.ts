@@ -1,5 +1,6 @@
 import { contractsResponseSchema, type ContractsResponse } from './schemas';
 import { getEnv } from '../../lib/env.server';
+import { buildServerReadAuthHeaders } from '../../lib/server-action-auth';
 
 interface GetContractsListParams {
   cookie: string | null;
@@ -23,7 +24,7 @@ export async function getContractsList({
 
   const res = await fetch(`${baseUrl}/consumer/contracts?${params}`, {
     method: `GET`,
-    headers: { Cookie: cookie ?? `` },
+    headers: buildServerReadAuthHeaders(cookie),
     cache: `no-store`,
     signal: AbortSignal.timeout(10000),
   });

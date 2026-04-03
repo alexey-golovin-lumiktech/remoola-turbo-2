@@ -23,14 +23,30 @@ import { AdminPaymentRequestsService } from '../src/admin/modules/payment-reques
 import { AppModule } from '../src/app.module';
 import { AuthGuard } from '../src/guards/auth.guard';
 import { PrismaService } from '../src/shared/prisma.service';
+import { getApiAdminCsrfTokenCookieKey } from '../src/shared-common';
 
 describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
   let app: INestApplication;
   let prisma: PrismaClient;
   const adminEmail = `admin-reversal@local.test`;
   const adminPassword = `AdminReversal1!@#`;
+  const adminOrigin = `http://127.0.0.1:3010`;
   let refundPaymentRequestId = ``;
   let chargebackPaymentRequestId = ``;
+
+  function parseCookieValue(cookies: string[] | undefined, key: string): string | null {
+    if (!Array.isArray(cookies)) return null;
+    const row = cookies.find((line) => line.startsWith(`${key}=`));
+    if (!row) return null;
+    const [raw] = row.split(`;`);
+    return raw.slice(`${key}=`.length);
+  }
+
+  function asCookieArray(header: string | string[] | undefined): string[] | undefined {
+    if (Array.isArray(header)) return header;
+    if (typeof header === `string`) return [header];
+    return undefined;
+  }
 
   async function seedCompletedPaymentRequest(amount: number, stripeId: string | null): Promise<string> {
     const suffix = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -152,10 +168,18 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
 
   it(`refund creates reversal pair, records audit, and remains idempotent on replay`, async () => {
     const agent = request.agent(app.getHttpServer());
-    await agent.post(`/api/admin/auth/login`).send({ email: adminEmail, password: adminPassword }).expect(201);
+    const loginRes = await agent
+      .post(`/api/admin/auth/login`)
+      .set(`origin`, adminOrigin)
+      .send({ email: adminEmail, password: adminPassword })
+      .expect(201);
+    const csrf = parseCookieValue(asCookieArray(loginRes.headers[`set-cookie`]), getApiAdminCsrfTokenCookieKey());
+    expect(csrf).toBeTruthy();
 
     const first = await agent
       .post(`/api/admin/payment-requests/${refundPaymentRequestId}/refund`)
+      .set(`origin`, adminOrigin)
+      .set(`x-csrf-token`, csrf ?? ``)
       .send({ amount: 7, reason: `e2e-refund`, passwordConfirmation: adminPassword })
       .expect(201);
     expect(first.body?.ledgerId).toBeTruthy();
@@ -163,6 +187,8 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
 
     const second = await agent
       .post(`/api/admin/payment-requests/${refundPaymentRequestId}/refund`)
+      .set(`origin`, adminOrigin)
+      .set(`x-csrf-token`, csrf ?? ``)
       .send({ amount: 7, reason: `e2e-refund`, passwordConfirmation: adminPassword })
       .expect(201);
     expect(second.body?.ledgerId).toBe(first.body?.ledgerId);
@@ -187,10 +213,18 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
 
   it(`chargeback creates reversal pair and records admin audit`, async () => {
     const agent = request.agent(app.getHttpServer());
-    await agent.post(`/api/admin/auth/login`).send({ email: adminEmail, password: adminPassword }).expect(201);
+    const loginRes = await agent
+      .post(`/api/admin/auth/login`)
+      .set(`origin`, adminOrigin)
+      .send({ email: adminEmail, password: adminPassword })
+      .expect(201);
+    const csrf = parseCookieValue(asCookieArray(loginRes.headers[`set-cookie`]), getApiAdminCsrfTokenCookieKey());
+    expect(csrf).toBeTruthy();
 
     const response = await agent
       .post(`/api/admin/payment-requests/${chargebackPaymentRequestId}/chargeback`)
+      .set(`origin`, adminOrigin)
+      .set(`x-csrf-token`, csrf ?? ``)
       .send({ amount: 5, reason: `e2e-chargeback`, passwordConfirmation: adminPassword })
       .expect(201);
 

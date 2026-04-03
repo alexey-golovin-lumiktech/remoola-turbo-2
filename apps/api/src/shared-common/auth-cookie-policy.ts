@@ -1,18 +1,33 @@
 import { type default as express } from 'express';
 
 import {
-  getConsumerAccessTokenCookieKey,
+  getAdminAccessTokenCookieKey,
+  getAdminAccessTokenCookieKeysForRead,
+  getAdminCsrfTokenCookieKey,
+  getAdminCsrfTokenCookieKeysForRead,
+  getAdminRefreshTokenCookieKey,
+  getAdminRefreshTokenCookieKeysForRead,
   getAdminAuthCookieOptions,
   getConsumerAuthCookieOptions,
-  getConsumerDeviceCookieKey,
   getConsumerDeviceCookieOptions,
-  getConsumerDeviceCookieKeysForRead,
-  getConsumerRefreshTokenCookieKey,
   getCookieClearOptions,
   getCsrfCookieOptions,
   getOAuthStateCookieOptions,
+  getScopedConsumerAccessTokenCookieKey,
+  getScopedConsumerAccessTokenCookieKeysForRead,
+  getScopedConsumerCsrfTokenCookieKey,
+  getScopedConsumerCsrfTokenCookieKeysForRead,
+  getScopedConsumerDeviceCookieKey,
+  getScopedConsumerDeviceCookieKeysForRead,
+  getScopedConsumerGoogleOAuthStateCookieKey,
+  getScopedConsumerGoogleOAuthStateCookieKeysForRead,
+  getScopedConsumerGoogleSignupSessionCookieKey,
+  getScopedConsumerGoogleSignupSessionCookieKeysForRead,
+  getScopedConsumerRefreshTokenCookieKey,
+  getScopedConsumerRefreshTokenCookieKeysForRead,
   DEVICE_COOKIE_MAX_AGE_SECONDS,
   type AuthCookieRuntime,
+  type ConsumerAppScope,
   type ConsumerCookieRuntime,
   type SharedHttpOnlyCookieOptions,
   type SharedReadableCookieOptions,
@@ -47,6 +62,22 @@ export function getApiAdminAuthCookieOptions(): SharedHttpOnlyCookieOptions {
   return getAdminAuthCookieOptions(getApiAuthCookieRuntime());
 }
 
+export function getApiAdminAccessTokenCookieKey(): TCookieKey {
+  return getAdminAccessTokenCookieKey(getApiAuthCookieRuntime());
+}
+
+export function getApiAdminRefreshTokenCookieKey(): TCookieKey {
+  return getAdminRefreshTokenCookieKey(getApiAuthCookieRuntime());
+}
+
+export function getApiAdminAccessTokenCookieKeysForRead(): readonly TCookieKey[] {
+  return getAdminAccessTokenCookieKeysForRead();
+}
+
+export function getApiAdminRefreshTokenCookieKeysForRead(): readonly TCookieKey[] {
+  return getAdminRefreshTokenCookieKeysForRead();
+}
+
 export function getApiAdminAuthCookieClearOptions(): Pick<
   SharedHttpOnlyCookieOptions,
   `httpOnly` | `path` | `sameSite` | `secure`
@@ -54,12 +85,49 @@ export function getApiAdminAuthCookieClearOptions(): Pick<
   return getCookieClearOptions(getApiAdminAuthCookieOptions());
 }
 
-export function getApiConsumerAccessTokenCookieKey(req?: express.Request): TCookieKey {
-  return getConsumerAccessTokenCookieKey(getApiConsumerCookieRuntime(req));
+export function getApiAdminCsrfCookieOptions(): SharedReadableCookieOptions & { maxAge: number } {
+  return { ...getCsrfCookieOptions(getApiAuthCookieRuntime()), maxAge: envs.JWT_REFRESH_TOKEN_EXPIRES_IN };
 }
 
-export function getApiConsumerRefreshTokenCookieKey(req?: express.Request): TCookieKey {
-  return getConsumerRefreshTokenCookieKey(getApiConsumerCookieRuntime(req));
+export function getApiAdminCsrfTokenCookieKey(): TCookieKey {
+  return getAdminCsrfTokenCookieKey(getApiAuthCookieRuntime());
+}
+
+export function getApiAdminCsrfTokenCookieKeysForRead(): readonly TCookieKey[] {
+  return getAdminCsrfTokenCookieKeysForRead();
+}
+
+export function getApiAdminCsrfCookieClearOptions(): Pick<
+  SharedReadableCookieOptions,
+  `httpOnly` | `path` | `sameSite` | `secure`
+> {
+  return getCookieClearOptions(getApiAdminCsrfCookieOptions());
+}
+
+export function getApiConsumerAccessTokenCookieKey(
+  req?: express.Request,
+  scope: ConsumerAppScope = `consumer`,
+): TCookieKey {
+  return getScopedConsumerAccessTokenCookieKey(scope, getApiConsumerCookieRuntime(req));
+}
+
+export function getApiConsumerRefreshTokenCookieKey(
+  req?: express.Request,
+  scope: ConsumerAppScope = `consumer`,
+): TCookieKey {
+  return getScopedConsumerRefreshTokenCookieKey(scope, getApiConsumerCookieRuntime(req));
+}
+
+export function getApiConsumerAccessTokenCookieKeysForRead(
+  scope: ConsumerAppScope = `consumer`,
+): readonly TCookieKey[] {
+  return getScopedConsumerAccessTokenCookieKeysForRead(scope);
+}
+
+export function getApiConsumerRefreshTokenCookieKeysForRead(
+  scope: ConsumerAppScope = `consumer`,
+): readonly TCookieKey[] {
+  return getScopedConsumerRefreshTokenCookieKeysForRead(scope);
 }
 
 export function getApiConsumerAuthCookieOptions(req?: express.Request): SharedHttpOnlyCookieOptions {
@@ -84,6 +152,25 @@ export function getApiConsumerCsrfCookieClearOptions(
   return getCookieClearOptions(getApiConsumerCsrfCookieOptions(req));
 }
 
+export function getApiConsumerCsrfTokenCookieKey(
+  req?: express.Request,
+  scope: ConsumerAppScope = `consumer`,
+): TCookieKey {
+  return getScopedConsumerCsrfTokenCookieKey(scope, getApiConsumerCookieRuntime(req));
+}
+
+export function getApiConsumerCsrfTokenCookieKeysForRead(scope: ConsumerAppScope = `consumer`): readonly TCookieKey[] {
+  return getScopedConsumerCsrfTokenCookieKeysForRead(scope);
+}
+
+export function getApiOAuthStateCookieKey(req?: express.Request, scope: ConsumerAppScope = `consumer`): TCookieKey {
+  return getScopedConsumerGoogleOAuthStateCookieKey(scope, getApiConsumerCookieRuntime(req));
+}
+
+export function getApiOAuthStateCookieKeysForRead(scope: ConsumerAppScope = `consumer`): readonly TCookieKey[] {
+  return getScopedConsumerGoogleOAuthStateCookieKeysForRead(scope);
+}
+
 export function getApiOAuthStateCookieOptions(req?: express.Request): SharedHttpOnlyCookieOptions {
   return getOAuthStateCookieOptions({
     ...getApiAuthCookieRuntime(),
@@ -91,12 +178,35 @@ export function getApiOAuthStateCookieOptions(req?: express.Request): SharedHttp
   });
 }
 
-export function getApiConsumerDeviceCookieKey(req?: express.Request): TCookieKey {
-  return getConsumerDeviceCookieKey(getApiConsumerCookieRuntime(req));
+export function getApiConsumerDeviceCookieKey(req?: express.Request, scope: ConsumerAppScope = `consumer`): TCookieKey {
+  return getScopedConsumerDeviceCookieKey(scope, getApiConsumerCookieRuntime(req));
 }
 
-export function getApiConsumerDeviceCookieKeysForRead(): readonly TCookieKey[] {
-  return getConsumerDeviceCookieKeysForRead();
+export function getApiConsumerDeviceCookieKeysForRead(scope: ConsumerAppScope = `consumer`): readonly TCookieKey[] {
+  return getScopedConsumerDeviceCookieKeysForRead(scope);
+}
+
+export function getApiConsumerGoogleSignupSessionCookieKey(
+  req?: express.Request,
+  scope: ConsumerAppScope = `consumer`,
+): TCookieKey {
+  return getScopedConsumerGoogleSignupSessionCookieKey(scope, getApiConsumerCookieRuntime(req));
+}
+
+export function getApiConsumerGoogleSignupSessionCookieKeysForRead(
+  scope: ConsumerAppScope = `consumer`,
+): readonly TCookieKey[] {
+  return getScopedConsumerGoogleSignupSessionCookieKeysForRead(scope);
+}
+
+export function getApiConsumerGoogleSignupSessionCookieOptions(req?: express.Request): SharedHttpOnlyCookieOptions {
+  return getConsumerAuthCookieOptions(getApiConsumerCookieRuntime(req));
+}
+
+export function getApiConsumerGoogleSignupSessionCookieClearOptions(
+  req?: express.Request,
+): Pick<SharedHttpOnlyCookieOptions, `httpOnly` | `path` | `sameSite` | `secure`> {
+  return getCookieClearOptions(getApiConsumerGoogleSignupSessionCookieOptions(req));
 }
 
 export function getApiConsumerDeviceCookieOptions(

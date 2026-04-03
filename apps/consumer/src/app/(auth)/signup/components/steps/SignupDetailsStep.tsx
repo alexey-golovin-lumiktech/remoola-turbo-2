@@ -13,6 +13,7 @@ import styles from '../../../../../components/ui/classNames.module.css';
 import { PasswordInput } from '../../../../../components/ui/PasswordInput';
 import { STEP_NAME, HOW_DID_HEAR_ABOUT_US_LABEL } from '../../../../../types';
 import { useSignupForm, useSignupSteps } from '../../hooks';
+import { buildSignupFlowPath } from '../../routing';
 import { generatePassword } from '../../utils';
 import { createSignupDetailsSchema, getFieldErrors } from '../../validation';
 import { PrevNextButtons } from '../PrevNextButtons';
@@ -50,18 +51,26 @@ const getToggleButtonClasses = (isActive: boolean, variant: `md` | `lg` = `md`) 
 export function SignupDetailsStep() {
   const params = useSearchParams();
   const { signupDetails: signup, updateSignup, googleSignupToken } = useSignupForm();
-  const googleTokenFromUrl = params.get(`googleSignupToken`);
+  const googleTokenFromUrl = params.get(`googleSignup`) ?? params.get(`googleSignupHandoff`);
   const isSigningUpViaGoogle = Boolean(googleSignupToken) || Boolean(googleTokenFromUrl);
   const googleSignupStartUrl = useMemo(() => {
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-    if (!apiBaseUrl || apiBaseUrl.length === 0) return null;
-    const url = new URL(`${apiBaseUrl}/consumer/auth/google/start`);
-    url.searchParams.set(`next`, `/signup`);
+    if (typeof window === `undefined`) return null;
+    const url = new URL(`/api/consumer/auth/google/start`, window.location.origin);
+    url.searchParams.set(
+      `next`,
+      buildSignupFlowPath(`/signup`, {
+        accountType: signup.accountType,
+        contractorKind: signup.contractorKind,
+        googleSignupToken: null,
+      }),
+    );
+    url.searchParams.set(`signupPath`, window.location.pathname === `/signup` ? `/signup` : `/signup/start`);
+    url.searchParams.set(`returnOrigin`, window.location.origin);
     if (signup.accountType) url.searchParams.set(`accountType`, signup.accountType);
     if (signup.accountType === ACCOUNT_TYPE.CONTRACTOR && signup.contractorKind) {
       url.searchParams.set(`contractorKind`, signup.contractorKind);
     }
-    return url.toString();
+    return `${url.pathname}${url.search}`;
   }, [signup.accountType, signup.contractorKind]);
   const { markSubmitted, goNext } = useSignupSteps();
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});

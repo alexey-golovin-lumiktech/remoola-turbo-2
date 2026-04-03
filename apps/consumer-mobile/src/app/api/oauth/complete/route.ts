@@ -1,27 +1,26 @@
 import { NextResponse } from 'next/server';
 
-import { appendSetCookies, buildForwardHeaders } from '../../../../lib/api-utils';
+import { appendSetCookies, buildAuthMutationForwardHeaders, requireJsonBody } from '../../../../lib/api-utils';
 import { getEnv } from '../../../../lib/env.server';
 
 export async function POST(req: Request) {
+  const bodyResult = await requireJsonBody(req as never);
+  if (!bodyResult.ok) return bodyResult.response;
+
   const env = getEnv();
   const baseUrl = env.NEXT_PUBLIC_API_BASE_URL;
   if (!baseUrl) {
     return NextResponse.json({ message: `API base URL not configured`, code: `CONFIG_ERROR` }, { status: 503 });
   }
 
-  const url = new URL(`${baseUrl}/consumer/auth/oauth/exchange`);
-
-  // Forward client headers but strip hop-by-hop headers that must not be proxied.
-  // In particular, 'host' must not be forwarded — it should reflect the target server,
-  // not the consumer-mobile origin, otherwise some reverse-proxies reject the request.
-  const forwardHeaders = buildForwardHeaders(req.headers);
-  forwardHeaders.delete(`host`);
+  const url = new URL(`${baseUrl}/consumer/auth/oauth/complete`);
+  const forwardHeaders = buildAuthMutationForwardHeaders(req.headers);
+  forwardHeaders.set(`content-type`, `application/json`);
 
   const res = await fetch(url, {
     method: `POST`,
     headers: forwardHeaders,
-    body: await req.clone().text(),
+    body: bodyResult.body,
     cache: `no-store`,
   });
 

@@ -22,6 +22,7 @@ import { assertIsolatedTestDatabaseUrl } from './test-db-safety';
 import { AppModule } from '../src/app.module';
 import { AuthGuard } from '../src/guards/auth.guard';
 import { PrismaService } from '../src/shared/prisma.service';
+import { getApiAdminCsrfTokenCookieKey } from '../src/shared-common';
 
 const STEP_UP_SUPER_EMAIL = `stepup-super@e2e.local`;
 const STEP_UP_SUPER_PASSWORD = `StepUpSuper1!@#`;
@@ -31,7 +32,22 @@ const STEP_UP_TARGET_PASSWORD = `StepUpTarget1!@#`;
 describe(`Admin step-up (e2e, isolated DB)`, () => {
   let app: INestApplication;
   let prisma: PrismaClient;
+  const adminOrigin = `http://127.0.0.1:3010`;
   let targetAdminId: string;
+
+  function parseCookieValue(cookies: string[] | undefined, key: string): string | null {
+    if (!Array.isArray(cookies)) return null;
+    const row = cookies.find((line) => line.startsWith(`${key}=`));
+    if (!row) return null;
+    const [raw] = row.split(`;`);
+    return raw.slice(`${key}=`.length);
+  }
+
+  function asCookieArray(header: string | string[] | undefined): string[] | undefined {
+    if (Array.isArray(header)) return header;
+    if (typeof header === `string`) return [header];
+    return undefined;
+  }
 
   beforeAll(async () => {
     assertIsolatedTestDatabaseUrl();
@@ -98,13 +114,18 @@ describe(`Admin step-up (e2e, isolated DB)`, () => {
   describe(`PATCH /api/admin/admins/:adminId/password (step-up required)`, () => {
     it(`returns 400 when passwordConfirmation is missing`, async () => {
       const agent = request.agent(app.getHttpServer());
-      await agent
+      const loginRes = await agent
         .post(`/api/admin/auth/login`)
+        .set(`origin`, adminOrigin)
         .send({ email: STEP_UP_SUPER_EMAIL, password: STEP_UP_SUPER_PASSWORD })
         .expect(201);
+      const csrf = parseCookieValue(asCookieArray(loginRes.headers[`set-cookie`]), getApiAdminCsrfTokenCookieKey());
+      expect(csrf).toBeTruthy();
 
       const res = await agent
         .patch(`/api/admin/admins/${targetAdminId}/password`)
+        .set(`origin`, adminOrigin)
+        .set(`x-csrf-token`, csrf ?? ``)
         .send({ password: `NewValid1!@#abc` })
         .expect(400);
 
@@ -115,13 +136,18 @@ describe(`Admin step-up (e2e, isolated DB)`, () => {
 
     it(`returns 400 when passwordConfirmation is empty`, async () => {
       const agent = request.agent(app.getHttpServer());
-      await agent
+      const loginRes = await agent
         .post(`/api/admin/auth/login`)
+        .set(`origin`, adminOrigin)
         .send({ email: STEP_UP_SUPER_EMAIL, password: STEP_UP_SUPER_PASSWORD })
         .expect(201);
+      const csrf = parseCookieValue(asCookieArray(loginRes.headers[`set-cookie`]), getApiAdminCsrfTokenCookieKey());
+      expect(csrf).toBeTruthy();
 
       const res = await agent
         .patch(`/api/admin/admins/${targetAdminId}/password`)
+        .set(`origin`, adminOrigin)
+        .set(`x-csrf-token`, csrf ?? ``)
         .send({ password: `NewValid1!@#abc`, passwordConfirmation: `` })
         .expect(400);
 
@@ -131,13 +157,18 @@ describe(`Admin step-up (e2e, isolated DB)`, () => {
 
     it(`returns 401 when passwordConfirmation is wrong`, async () => {
       const agent = request.agent(app.getHttpServer());
-      await agent
+      const loginRes = await agent
         .post(`/api/admin/auth/login`)
+        .set(`origin`, adminOrigin)
         .send({ email: STEP_UP_SUPER_EMAIL, password: STEP_UP_SUPER_PASSWORD })
         .expect(201);
+      const csrf = parseCookieValue(asCookieArray(loginRes.headers[`set-cookie`]), getApiAdminCsrfTokenCookieKey());
+      expect(csrf).toBeTruthy();
 
       const res = await agent
         .patch(`/api/admin/admins/${targetAdminId}/password`)
+        .set(`origin`, adminOrigin)
+        .set(`x-csrf-token`, csrf ?? ``)
         .send({ password: `NewValid1!@#abc`, passwordConfirmation: `WrongPassword1!@#` })
         .expect(401);
 
@@ -149,12 +180,20 @@ describe(`Admin step-up (e2e, isolated DB)`, () => {
   describe(`PATCH /api/admin/admins/:adminId (delete, step-up required)`, () => {
     it(`returns 400 when passwordConfirmation is missing for delete`, async () => {
       const agent = request.agent(app.getHttpServer());
-      await agent
+      const loginRes = await agent
         .post(`/api/admin/auth/login`)
+        .set(`origin`, adminOrigin)
         .send({ email: STEP_UP_SUPER_EMAIL, password: STEP_UP_SUPER_PASSWORD })
         .expect(201);
+      const csrf = parseCookieValue(asCookieArray(loginRes.headers[`set-cookie`]), getApiAdminCsrfTokenCookieKey());
+      expect(csrf).toBeTruthy();
 
-      const res = await agent.patch(`/api/admin/admins/${targetAdminId}`).send({ action: `delete` }).expect(400);
+      const res = await agent
+        .patch(`/api/admin/admins/${targetAdminId}`)
+        .set(`origin`, adminOrigin)
+        .set(`x-csrf-token`, csrf ?? ``)
+        .send({ action: `delete` })
+        .expect(400);
 
       const body = res.body as { message?: string };
       expect(body.message).toBe(adminErrorCodes.ADMIN_PASSWORD_CONFIRMATION_REQUIRED);
@@ -162,13 +201,18 @@ describe(`Admin step-up (e2e, isolated DB)`, () => {
 
     it(`returns 401 when passwordConfirmation is wrong for delete`, async () => {
       const agent = request.agent(app.getHttpServer());
-      await agent
+      const loginRes = await agent
         .post(`/api/admin/auth/login`)
+        .set(`origin`, adminOrigin)
         .send({ email: STEP_UP_SUPER_EMAIL, password: STEP_UP_SUPER_PASSWORD })
         .expect(201);
+      const csrf = parseCookieValue(asCookieArray(loginRes.headers[`set-cookie`]), getApiAdminCsrfTokenCookieKey());
+      expect(csrf).toBeTruthy();
 
       const res = await agent
         .patch(`/api/admin/admins/${targetAdminId}`)
+        .set(`origin`, adminOrigin)
+        .set(`x-csrf-token`, csrf ?? ``)
         .send({ action: `delete`, passwordConfirmation: `WrongPassword1!@#` })
         .expect(401);
 

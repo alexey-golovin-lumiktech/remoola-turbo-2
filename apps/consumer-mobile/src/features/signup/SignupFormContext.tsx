@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { type ReactNode, createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import {
   ACCOUNT_TYPE,
@@ -11,7 +11,10 @@ import {
   type TAccountType,
   type TContractorKind,
   type THowDidHearAboutUs,
+  type TLegalStatus,
 } from '@remoola/api-types';
+
+import { parseSignupAccountType, parseSignupContractorKind, type SignupQuerySeed } from './routing';
 
 export interface SignupDetails {
   email: string;
@@ -28,7 +31,7 @@ export interface PersonalDetails {
   lastName: string;
   citizenOf: string;
   countryOfTaxResidence: string;
-  legalStatus: string | null;
+  legalStatus: TLegalStatus | null;
   taxId: string;
   dateOfBirth: string;
   passportOrIdNumber: string;
@@ -106,6 +109,7 @@ interface SignupFormContextValue {
   updateOrganization: (patch: Partial<OrganizationDetails>) => void;
   updateAddress: (patch: Partial<AddressDetails>) => void;
   setGoogleSignupToken: (token: string | null) => void;
+  retryGoogleHydration: () => void;
   accountType: TAccountType | null;
   contractorKind: TContractorKind | null;
   isContractor: boolean;
@@ -113,6 +117,8 @@ interface SignupFormContextValue {
   isContractorEntity: boolean;
   isContractorIndividual: boolean;
   googleSignupToken: string | null;
+  googleHydrationLoading: boolean;
+  googleHydrationError: string | null;
 }
 
 const SignupFormContext = createContext<SignupFormContextValue | null>(null);
@@ -125,13 +131,205 @@ const initialState: SignupFormState = {
   googleSignupToken: null,
 };
 
-export function SignupFormProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<SignupFormState>(initialState);
+interface GoogleSignupSessionPayload {
+  email?: string;
+  givenName?: string;
+  familyName?: string;
+}
+
+function hasUsableGoogleSignupSession(payload: GoogleSignupSessionPayload): payload is GoogleSignupSessionPayload & {
+  email: string;
+} {
+  return typeof payload.email === `string` && payload.email.trim().length > 0;
+}
+
+export function mergeSignupDetails(current: SignupDetails, patch: Partial<SignupDetails>): SignupDetails {
+  const nextSignupDetails = { ...current, ...patch };
+  if (patch.accountType === ACCOUNT_TYPE.BUSINESS) {
+    nextSignupDetails.contractorKind = null;
+  }
+  return nextSignupDetails;
+}
+
+function createInitialState(querySeed?: SignupQuerySeed): SignupFormState {
+  const seededAccountType = parseSignupAccountType(querySeed?.accountTypeParam ?? null);
+  const seededContractorKind =
+    seededAccountType === ACCOUNT_TYPE.CONTRACTOR
+      ? parseSignupContractorKind(querySeed?.contractorKindParam ?? null)
+      : null;
+  return {
+    ...initialState,
+    signupDetails: {
+      ...initialState.signupDetails,
+      accountType: seededAccountType,
+      contractorKind: seededContractorKind,
+    },
+    googleSignupToken: querySeed?.googleSignupToken ?? (querySeed?.googleSignupHandoff ? `cookie-session` : null),
+  };
+}
+
+export function SignupFormProvider({ children, querySeed }: { children: ReactNode; querySeed?: SignupQuerySeed }) {
+  const [state, setState] = useState<SignupFormState>(() => createInitialState(querySeed));
+  const [googleHydrationLoading, setGoogleHydrationLoading] = useState(false);
+  const [googleHydrationError, setGoogleHydrationError] = useState<string | null>(null);
+  const [hydratedGoogleToken, setHydratedGoogleToken] = useState<string | null>(null);
+  const [googleHydrationNonce, setGoogleHydrationNonce] = useState(0);
+  const googleSignupHandoff = querySeed?.googleSignupHandoff ?? null;
+
+  useEffect(() => {
+    if (!querySeed) return;
+
+    const seededAccountType = parseSignupAccountType(querySeed.accountTypeParam);
+    const seededContractorKind =
+      seededAccountType === ACCOUNT_TYPE.CONTRACTOR ? parseSignupContractorKind(querySeed.contractorKindParam) : null;
+    const seededGoogleSignupToken = querySeed.googleSignupToken;
+
+    setState((prev) => {
+      const effectiveAccountType = prev.signupDetails.accountType ?? seededAccountType;
+      const nextState: SignupFormState = {
+        ...prev,
+        signupDetails: {
+          ...prev.signupDetails,
+          accountType: effectiveAccountType,
+          contractorKind:
+            effectiveAccountType === ACCOUNT_TYPE.CONTRACTOR
+              ? (prev.signupDetails.contractorKind ?? seededContractorKind)
+              : null,
+        },
+        googleSignupToken: prev.googleSignupToken ?? seededGoogleSignupToken,
+      };
+
+      return JSON.stringify(nextState) === JSON.stringify(prev) ? prev : nextState;
+    });
+  }, [querySeed]);
+
+  useEffect(() => {
+    if (state.googleSignupToken) return;
+    setGoogleHydrationLoading(false);
+    setGoogleHydrationError(null);
+    setHydratedGoogleToken(null);
+  }, [state.googleSignupToken]);
+
+  useEffect(() => {
+    if (!state.googleSignupToken || hydratedGoogleToken === state.googleSignupToken || googleSignupHandoff) {
+      return;
+    }
+
+    const controller = new AbortController();
+    const activeToken = state.googleSignupToken;
+    setGoogleHydrationLoading(true);
+    setGoogleHydrationError(null);
+
+    void (async () => {
+      try {
+        const response = await fetch(`/api/consumer/auth/google/signup-session`, {
+          credentials: `include`,
+          cache: `no-store`,
+          signal: controller.signal,
+        });
+        const data = (await response.json().catch(() => ({}))) as GoogleSignupSessionPayload;
+        if (!response.ok || !hasUsableGoogleSignupSession(data)) {
+          throw new Error(`Could not load your Google signup session. Please try again.`);
+        }
+        setState((prev) =>
+          prev.googleSignupToken === activeToken
+            ? {
+                ...prev,
+                signupDetails: {
+                  ...prev.signupDetails,
+                  email: prev.signupDetails.email || data.email || prev.signupDetails.email,
+                },
+                personalDetails: {
+                  ...prev.personalDetails,
+                  firstName: prev.personalDetails.firstName || data.givenName || prev.personalDetails.firstName,
+                  lastName: prev.personalDetails.lastName || data.familyName || prev.personalDetails.lastName,
+                },
+              }
+            : prev,
+        );
+        setHydratedGoogleToken(activeToken);
+        setGoogleHydrationLoading(false);
+      } catch (error: unknown) {
+        if (controller.signal.aborted) return;
+        setGoogleHydrationLoading(false);
+        setHydratedGoogleToken(null);
+        setGoogleHydrationError(
+          error instanceof Error && error.message
+            ? error.message
+            : `Could not load your Google signup session. Please check your connection and try again.`,
+        );
+      }
+    })();
+
+    return () => {
+      controller.abort();
+    };
+  }, [googleSignupHandoff, googleHydrationNonce, hydratedGoogleToken, state.googleSignupToken]);
+
+  useEffect(() => {
+    if (!googleSignupHandoff) return;
+
+    const controller = new AbortController();
+    setGoogleHydrationLoading(true);
+    setGoogleHydrationError(null);
+    setHydratedGoogleToken(null);
+    setState((prev) => ({ ...prev, googleSignupToken: prev.googleSignupToken ?? `cookie-session` }));
+
+    void (async () => {
+      try {
+        const response = await fetch(`/api/consumer/auth/google/signup-session/establish`, {
+          method: `POST`,
+          headers: { 'content-type': `application/json` },
+          credentials: `include`,
+          cache: `no-store`,
+          signal: controller.signal,
+          body: JSON.stringify({ handoffToken: googleSignupHandoff }),
+        });
+        const data = (await response.json().catch(() => ({}))) as GoogleSignupSessionPayload;
+        if (!response.ok || !hasUsableGoogleSignupSession(data)) {
+          throw new Error(`Could not load your Google signup session. Please try again.`);
+        }
+        setState((prev) => ({
+          ...prev,
+          googleSignupToken: `cookie-session`,
+          signupDetails: {
+            ...prev.signupDetails,
+            email: prev.signupDetails.email || data.email || prev.signupDetails.email,
+          },
+          personalDetails: {
+            ...prev.personalDetails,
+            firstName: prev.personalDetails.firstName || data.givenName || prev.personalDetails.firstName,
+            lastName: prev.personalDetails.lastName || data.familyName || prev.personalDetails.lastName,
+          },
+        }));
+        setHydratedGoogleToken(`cookie-session`);
+        setGoogleHydrationLoading(false);
+
+        const url = new URL(window.location.href);
+        url.searchParams.delete(`googleSignupHandoff`);
+        url.searchParams.set(`googleSignup`, `1`);
+        window.history.replaceState({}, ``, `${url.pathname}${url.search}${url.hash}`);
+      } catch (error: unknown) {
+        if (controller.signal.aborted) return;
+        setGoogleHydrationLoading(false);
+        setHydratedGoogleToken(null);
+        setGoogleHydrationError(
+          error instanceof Error && error.message
+            ? error.message
+            : `Could not load your Google signup session. Please check your connection and try again.`,
+        );
+      }
+    })();
+
+    return () => {
+      controller.abort();
+    };
+  }, [googleSignupHandoff, googleHydrationNonce]);
 
   const updateSignup = useCallback((patch: Partial<SignupDetails>) => {
     setState((prev) => ({
       ...prev,
-      signupDetails: { ...prev.signupDetails, ...patch },
+      signupDetails: mergeSignupDetails(prev.signupDetails, patch),
     }));
   }, []);
 
@@ -156,8 +354,19 @@ export function SignupFormProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  const setGoogleSignupToken = useCallback((token: string | null) => {
-    setState((prev) => ({ ...prev, googleSignupToken: token }));
+  const setGoogleSignupToken = useCallback(
+    (token: string | null) => {
+      setState((prev) => ({ ...prev, googleSignupToken: token }));
+      setHydratedGoogleToken((prev) => (token === state.googleSignupToken ? prev : null));
+      setGoogleHydrationError(null);
+    },
+    [state.googleSignupToken],
+  );
+
+  const retryGoogleHydration = useCallback(() => {
+    setGoogleHydrationError(null);
+    setHydratedGoogleToken(null);
+    setGoogleHydrationNonce((prev) => prev + 1);
   }, []);
 
   const value = useMemo<SignupFormContextValue>(
@@ -172,6 +381,7 @@ export function SignupFormProvider({ children }: { children: ReactNode }) {
       updateOrganization,
       updateAddress,
       setGoogleSignupToken,
+      retryGoogleHydration,
       accountType: state.signupDetails.accountType,
       contractorKind: state.signupDetails.contractorKind,
       isContractor: state.signupDetails.accountType === ACCOUNT_TYPE.CONTRACTOR,
@@ -179,8 +389,20 @@ export function SignupFormProvider({ children }: { children: ReactNode }) {
       isContractorEntity: state.signupDetails.contractorKind === CONTRACTOR_KIND.ENTITY,
       isContractorIndividual: state.signupDetails.contractorKind === CONTRACTOR_KIND.INDIVIDUAL,
       googleSignupToken: state.googleSignupToken,
+      googleHydrationLoading,
+      googleHydrationError,
     }),
-    [state, updateSignup, updatePersonal, updateOrganization, updateAddress, setGoogleSignupToken],
+    [
+      googleHydrationError,
+      googleHydrationLoading,
+      retryGoogleHydration,
+      setGoogleSignupToken,
+      state,
+      updateAddress,
+      updateOrganization,
+      updatePersonal,
+      updateSignup,
+    ],
   );
 
   return <SignupFormContext.Provider value={value}>{children}</SignupFormContext.Provider>;

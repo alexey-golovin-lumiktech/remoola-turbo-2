@@ -15,7 +15,7 @@ describe(`ConsumerAuthService.signupVerification`, () => {
   let prisma: {
     consumerModel: { findFirst: jest.Mock; update: jest.Mock };
   };
-  let originResolver: { validateReturnOrigin: jest.Mock };
+  let originResolver: { validateConsumerReturnOrigin: jest.Mock };
 
   const allowedOrigin = `https://consumer.example`;
   const consumerId = `11111111-1111-1111-1111-111111111111`;
@@ -29,7 +29,7 @@ describe(`ConsumerAuthService.signupVerification`, () => {
       },
     };
     originResolver = {
-      validateReturnOrigin: jest.fn().mockReturnValue(allowedOrigin),
+      validateConsumerReturnOrigin: jest.fn().mockReturnValue(allowedOrigin),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -47,7 +47,7 @@ describe(`ConsumerAuthService.signupVerification`, () => {
   });
 
   it(`throws when referer origin is invalid`, async () => {
-    originResolver.validateReturnOrigin.mockReturnValue(null);
+    originResolver.validateConsumerReturnOrigin.mockReturnValue(null);
     const res = { redirect: jest.fn() } as unknown as Response;
 
     await expect(service.signupVerification(`tok`, res, `bad`)).rejects.toThrow(BadRequestException);

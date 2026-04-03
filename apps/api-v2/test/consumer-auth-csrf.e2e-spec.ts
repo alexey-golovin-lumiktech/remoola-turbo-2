@@ -21,13 +21,14 @@ import { AppModule } from '../src/app.module';
 import { envs } from '../src/envs';
 import { AuthGuard } from '../src/guards/auth.guard';
 import { PrismaService } from '../src/shared/prisma.service';
-import { CSRF_TOKEN_COOKIE_KEY } from '../src/shared-common';
+import { getApiConsumerCsrfTokenCookieKeysForRead } from '../src/shared-common';
 
 describe(`Consumer auth CSRF contracts (e2e, isolated DB)`, () => {
   let app: INestApplication;
   let prisma: PrismaClient;
   const consumerEmail = `csrf-e2e-consumer@local.test`;
   const consumerPassword = `CsrfContract1!`;
+  const consumerOrigin = `http://127.0.0.1:3003`;
 
   function parseCookieValue(cookies: string[] | undefined, key: string): string | null {
     if (!Array.isArray(cookies)) return null;
@@ -35,6 +36,14 @@ describe(`Consumer auth CSRF contracts (e2e, isolated DB)`, () => {
     if (!row) return null;
     const [raw] = row.split(`;`);
     return raw.slice(`${key}=`.length);
+  }
+
+  function parseCookieValueForKeys(cookies: string[] | undefined, keys: readonly string[]): string | null {
+    for (const key of keys) {
+      const value = parseCookieValue(cookies, key);
+      if (value) return value;
+    }
+    return null;
   }
 
   function asCookieArray(header: string | string[] | undefined): string[] | undefined {
@@ -97,13 +106,6 @@ describe(`Consumer auth CSRF contracts (e2e, isolated DB)`, () => {
     return request(app.getHttpServer()).post(`/api/consumer/auth/refresh`).expect(401);
   });
 
-  it(`POST /consumer/auth/refresh-access rejects without CSRF`, () => {
-    return request(app.getHttpServer())
-      .post(`/api/consumer/auth/refresh-access`)
-      .send({ refreshToken: `legacy-refresh-token` })
-      .expect(401);
-  });
-
   it(`POST /consumer/auth/logout rejects without CSRF`, () => {
     return request(app.getHttpServer()).post(`/api/consumer/auth/logout`).expect(401);
   });
@@ -116,8 +118,9 @@ describe(`Consumer auth CSRF contracts (e2e, isolated DB)`, () => {
     const csrf = `csrf-e2e-token`;
     const response = await request(app.getHttpServer())
       .post(`/api/consumer/auth/refresh`)
+      .set(`origin`, consumerOrigin)
       .set(`x-csrf-token`, csrf)
-      .set(`Cookie`, `${CSRF_TOKEN_COOKIE_KEY}=${csrf}`)
+      .set(`Cookie`, `${getApiConsumerCsrfTokenCookieKeysForRead(`consumer-css-grid`)[0]}=${csrf}`)
       .expect(401);
 
     expect(response.body?.message).not.toBe(`Invalid CSRF token`);
@@ -127,47 +130,39 @@ describe(`Consumer auth CSRF contracts (e2e, isolated DB)`, () => {
     const agent = request.agent(app.getHttpServer());
     const loginRes = await agent
       .post(`/api/consumer/auth/login`)
+      .set(`origin`, consumerOrigin)
       .send({ email: consumerEmail, password: consumerPassword })
-      .expect(201);
-    const csrf = parseCookieValue(asCookieArray(loginRes.headers[`set-cookie`]), CSRF_TOKEN_COOKIE_KEY);
+      .expect(200);
+    const csrf = parseCookieValueForKeys(
+      asCookieArray(loginRes.headers[`set-cookie`]),
+      getApiConsumerCsrfTokenCookieKeysForRead(`consumer-css-grid`),
+    );
     expect(csrf).toBeTruthy();
     await agent
       .post(`/api/consumer/auth/refresh`)
+      .set(`origin`, consumerOrigin)
       .set(`x-csrf-token`, csrf ?? ``)
-      .expect(201);
-  });
-
-  it(`POST /consumer/auth/refresh-access succeeds with login cookies and matching CSRF header`, async () => {
-    const agent = request.agent(app.getHttpServer());
-    const loginRes = await agent
-      .post(`/api/consumer/auth/login`)
-      .send({ email: consumerEmail, password: consumerPassword })
-      .expect(201);
-    const cookies = asCookieArray(loginRes.headers[`set-cookie`]);
-    const csrf = parseCookieValue(cookies, CSRF_TOKEN_COOKIE_KEY);
-    const refreshCookie = cookies?.find((cookie) => /refresh/i.test(cookie.split(`=`)[0] ?? ``));
-    const refreshToken = refreshCookie ? refreshCookie.split(`=`)[1]?.split(`;`)[0] : null;
-
-    expect(csrf).toBeTruthy();
-    expect(refreshToken).toBeTruthy();
-
-    await agent
-      .post(`/api/consumer/auth/refresh-access`)
-      .set(`x-csrf-token`, csrf ?? ``)
-      .send({ refreshToken })
-      .expect(201);
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body).toEqual({ ok: true });
+      });
   });
 
   it(`POST /consumer/auth/logout succeeds with login cookies and matching CSRF header`, async () => {
     const agent = request.agent(app.getHttpServer());
     const loginRes = await agent
       .post(`/api/consumer/auth/login`)
+      .set(`origin`, consumerOrigin)
       .send({ email: consumerEmail, password: consumerPassword })
-      .expect(201);
-    const csrf = parseCookieValue(asCookieArray(loginRes.headers[`set-cookie`]), CSRF_TOKEN_COOKIE_KEY);
+      .expect(200);
+    const csrf = parseCookieValueForKeys(
+      asCookieArray(loginRes.headers[`set-cookie`]),
+      getApiConsumerCsrfTokenCookieKeysForRead(`consumer-css-grid`),
+    );
     expect(csrf).toBeTruthy();
     await agent
       .post(`/api/consumer/auth/logout`)
+      .set(`origin`, consumerOrigin)
       .set(`x-csrf-token`, csrf ?? ``)
       .expect(200);
   });
@@ -176,21 +171,30 @@ describe(`Consumer auth CSRF contracts (e2e, isolated DB)`, () => {
     const agentA = request.agent(app.getHttpServer());
     const loginA = await agentA
       .post(`/api/consumer/auth/login`)
+      .set(`origin`, consumerOrigin)
       .send({ email: consumerEmail, password: consumerPassword })
-      .expect(201);
-    const csrfA = parseCookieValue(asCookieArray(loginA.headers[`set-cookie`]), CSRF_TOKEN_COOKIE_KEY);
+      .expect(200);
+    const csrfA = parseCookieValueForKeys(
+      asCookieArray(loginA.headers[`set-cookie`]),
+      getApiConsumerCsrfTokenCookieKeysForRead(`consumer-css-grid`),
+    );
     expect(csrfA).toBeTruthy();
 
     const agentB = request.agent(app.getHttpServer());
     const loginB = await agentB
       .post(`/api/consumer/auth/login`)
+      .set(`origin`, consumerOrigin)
       .send({ email: consumerEmail, password: consumerPassword })
-      .expect(201);
-    const csrfB = parseCookieValue(asCookieArray(loginB.headers[`set-cookie`]), CSRF_TOKEN_COOKIE_KEY);
+      .expect(200);
+    const csrfB = parseCookieValueForKeys(
+      asCookieArray(loginB.headers[`set-cookie`]),
+      getApiConsumerCsrfTokenCookieKeysForRead(`consumer-css-grid`),
+    );
     expect(csrfB).toBeTruthy();
 
     await agentA
       .post(`/api/consumer/auth/logout-all`)
+      .set(`origin`, consumerOrigin)
       .set(`x-csrf-token`, csrfA ?? ``)
       .expect(200)
       .expect(({ body }) => {
@@ -222,6 +226,7 @@ describe(`Consumer auth CSRF contracts (e2e, isolated DB)`, () => {
     await agentA.get(`/api/consumer/auth/me`).expect(401);
     await agentB
       .post(`/api/consumer/auth/refresh`)
+      .set(`origin`, consumerOrigin)
       .set(`x-csrf-token`, csrfB ?? ``)
       .expect(401);
   });

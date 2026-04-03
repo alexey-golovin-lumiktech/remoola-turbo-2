@@ -2,9 +2,9 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { Matches } from 'class-validator';
 
-import { type BasicAuthCredentials, constants, IsValidEmail } from '../../shared-common';
+import { type EmailPasswordCredentials, constants, IsValidEmail } from '../../shared-common';
 
-export class Credentials implements BasicAuthCredentials {
+export class Credentials implements EmailPasswordCredentials {
   @Expose()
   @IsValidEmail({ message: constants.INVALID_EMAIL })
   @ApiProperty({ example: `regular.admin@wirebill.com` })

@@ -10,6 +10,7 @@ import { AdminExchangeModule } from './modules/exchange/admin-exchange.module';
 import { AdminLedgersModule } from './modules/ledger/admin-ledger.module';
 import { AdminPaymentRequestsModule } from './modules/payment-requests/admin-payment-requests.module';
 import { ConsumerPaymentMethodsModule } from '../consumer/modules/payment-methods/consumer-payment-methods.module';
+import { MailingModule } from '../shared/mailing.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { ConsumerPaymentMethodsModule } from '../consumer/modules/payment-method
     AdminExchangeModule,
     AdminDashboardModule,
     ConsumerPaymentMethodsModule,
+    MailingModule,
   ],
   controllers: [AdminAuthController],
 })

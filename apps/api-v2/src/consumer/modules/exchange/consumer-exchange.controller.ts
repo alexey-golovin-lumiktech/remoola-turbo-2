@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Query, Body, Param, Patch, Delete } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 
 import { type ConsumerModel } from '@remoola/database-2';
 
@@ -13,7 +13,7 @@ import { UpdateAutoConversionRuleBody } from './dto/update-auto-conversion-rule.
 import { Identity, TrackConsumerAction } from '../../../common';
 
 @ApiTags(`Consumer Exchange`)
-@ApiBearerAuth()
+@ApiCookieAuth()
 @Controller(`consumer/exchange`)
 export class ConsumerExchangeController {
   constructor(private readonly service: ConsumerExchangeService) {}

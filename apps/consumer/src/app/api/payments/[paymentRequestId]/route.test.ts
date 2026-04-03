@@ -27,7 +27,7 @@ describe(`consumer payments/[paymentRequestId] route`, () => {
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
-  it(`proxies response, forwards allowlisted headers, and preserves cookies`, async () => {
+  it(`proxies response and preserves cookies`, async () => {
     const upstream = new Response(`{"ok":true}`, { status: 200, headers: { 'content-type': `application/json` } });
     (upstream.headers as Headers & { getSetCookie?: () => string[] }).getSetCookie = () => [
       `a=1; Path=/; HttpOnly`,
@@ -38,7 +38,6 @@ describe(`consumer payments/[paymentRequestId] route`, () => {
     const req = new Request(`${TEST_ORIGIN}/api/payments/pr_1`, {
       method: `GET`,
       headers: {
-        authorization: `Bearer token`,
         origin: TEST_ORIGIN,
         cookie: `csrf_token=abc`,
         'x-remoola-test': `on`,
@@ -53,7 +52,6 @@ describe(`consumer payments/[paymentRequestId] route`, () => {
 
     const [, init] = (global.fetch as jest.Mock).mock.calls[0] as [string, RequestInit];
     const headers = init.headers as Headers;
-    expect(headers.get(`authorization`)).toBe(`Bearer token`);
     expect(headers.get(`origin`)).toBe(TEST_ORIGIN);
     expect(headers.get(`x-remoola-test`)).toBe(`on`);
     expect(headers.get(`x-forwarded-for`)).toBeNull();

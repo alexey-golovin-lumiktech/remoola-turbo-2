@@ -4,14 +4,15 @@ import {
   SESSION_EXPIRED_QUERY,
   getApiV2ConsumerAccessTokenCookieKey,
   getApiV2ConsumerAccessTokenCookieKeysForRead,
-  getApiV2ConsumerCsrfTokenCookieKey,
+  getApiV2ConsumerCsrfTokenCookieKeyForRuntime,
+  getApiV2ConsumerCsrfTokenCookieKeysForRead,
   getApiV2ConsumerRefreshTokenCookieKey,
   getApiV2ConsumerRefreshTokenCookieKeysForRead,
   sanitizeNextForRedirect,
 } from '@remoola/api-types';
 
 import { appendSetCookies, getSetCookieValues } from './lib/api-utils';
-import { getConsumerCssGridCookieRuntime } from './lib/auth-cookie-policy';
+import { clearConsumerAuthCookies, getConsumerCssGridCookieRuntime } from './lib/auth-cookie-policy';
 
 const AUTH_TELEMETRY_HEADERS_FLAG = `NEXT_PUBLIC_AUTH_TELEMETRY_HEADERS`;
 const REFRESH_PATH = `/api/consumer/auth/refresh`;
@@ -122,8 +123,9 @@ async function refreshAccess(
 ): Promise<RefreshResult> {
   const startedAt = Date.now();
   try {
+    const runtime = getConsumerCssGridCookieRuntime(req);
     const csrfToken = reqCookies.csrfToken;
-    const csrfCookieKey = getApiV2ConsumerCsrfTokenCookieKey();
+    const csrfCookieKey = getApiV2ConsumerCsrfTokenCookieKeyForRuntime(runtime);
     const cookieHeader = buildCookieHeader([
       `${refreshCookieKey}=${refreshToken}`,
       csrfToken ? `${csrfCookieKey}=${csrfToken}` : ``,
@@ -132,6 +134,7 @@ async function refreshAccess(
       method: `POST`,
       headers: {
         Cookie: cookieHeader,
+        origin: req.nextUrl.origin,
         ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
       },
       signal: AbortSignal.timeout(10000),
@@ -205,10 +208,10 @@ export async function middleware(req: NextRequest) {
   const runtime = getConsumerCssGridCookieRuntime(req);
   const accessCookieKey = getApiV2ConsumerAccessTokenCookieKey(runtime);
   const refreshCookieKey = getApiV2ConsumerRefreshTokenCookieKey(runtime);
-  const csrfCookieKey = getApiV2ConsumerCsrfTokenCookieKey();
+  const csrfCookieKey = getApiV2ConsumerCsrfTokenCookieKeyForRuntime(runtime);
   const accessToken = getPreferredCookieValue(req, accessCookieKey, getApiV2ConsumerAccessTokenCookieKeysForRead());
   const refreshToken = getPreferredCookieValue(req, refreshCookieKey, getApiV2ConsumerRefreshTokenCookieKeysForRead());
-  const csrfToken = req.cookies.get(csrfCookieKey)?.value;
+  const csrfToken = getPreferredCookieValue(req, csrfCookieKey, getApiV2ConsumerCsrfTokenCookieKeysForRead());
 
   const isAuthPage =
     req.nextUrl.pathname.startsWith(`/login`) ||
@@ -224,13 +227,22 @@ export async function middleware(req: NextRequest) {
   if (isCallback) return NextResponse.next();
 
   const safeNext = (path: string) => encodeURIComponent(sanitizeNextForRedirect(path, `/dashboard`));
+  const clearAuthCookies = (response: NextResponse) => {
+    clearConsumerAuthCookies(response, req);
+    return response;
+  };
   const loginRedirect = (sessionExpired = false) => {
     const loginUrl = new URL(`/login?next=${safeNext(req.nextUrl.pathname)}`, req.url);
     if (sessionExpired) {
       loginUrl.searchParams.set(SESSION_EXPIRED_QUERY, `1`);
     }
-    return NextResponse.redirect(loginUrl);
+    const response = NextResponse.redirect(loginUrl);
+    if (sessionExpired) {
+      clearAuthCookies(response);
+    }
+    return response;
   };
+  const redirectToDashboard = () => NextResponse.redirect(new URL(`/dashboard`, req.url));
   // Server actions cannot rely on middleware redirects alone; the action itself must surface
   // SESSION_EXPIRED from the backend and let the client handle re-auth deterministically.
   const protectedActionFailure = (sessionExpired = false) =>
@@ -255,13 +267,30 @@ export async function middleware(req: NextRequest) {
   }
 
   if (isAuthPage && !hasValidAccessTokenShape && hasValidRefreshTokenShape && refreshToken) {
-    return NextResponse.next();
+    const refreshResult = await refreshAccess(req, refreshToken, refreshCookieKey, { csrfToken }, `auth_page`);
+    const refreshResponse = refreshResult.response;
+    if (refreshResponse) {
+      const res = redirectToDashboard();
+      appendSetCookies(res.headers, refreshResponse.headers);
+      return applyRefreshTelemetry(res, refreshResult.telemetry);
+    }
+    return applyRefreshTelemetry(clearAuthCookies(NextResponse.next()), refreshResult.telemetry);
   }
 
   if (isAuthPage && hasValidAccessTokenShape && accessToken) {
     if (hasPotentialAccessToken(accessToken)) {
       const probeResponse = await probeAccessSession(req, accessToken, accessCookieKey);
       if (probeResponse?.ok) return NextResponse.redirect(new URL(`/dashboard`, req.url));
+    }
+    if (hasValidRefreshTokenShape && refreshToken) {
+      const refreshResult = await refreshAccess(req, refreshToken, refreshCookieKey, { csrfToken }, `auth_page`);
+      const refreshResponse = refreshResult.response;
+      if (refreshResponse) {
+        const res = redirectToDashboard();
+        appendSetCookies(res.headers, refreshResponse.headers);
+        return applyRefreshTelemetry(res, refreshResult.telemetry);
+      }
+      return applyRefreshTelemetry(clearAuthCookies(NextResponse.next()), refreshResult.telemetry);
     }
     return NextResponse.next();
   }

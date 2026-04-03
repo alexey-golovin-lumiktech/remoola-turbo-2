@@ -3,79 +3,106 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 
+import { pollForAuthCallbackSession } from './auth-callback-polling';
 import styles from './AuthCallback.module.css';
 import { parseSearchParams } from '../../../features/auth/schemas';
+import { getAuthErrorMessage } from '../../../lib/auth-error-messages';
 import { clientLogger } from '../../../lib/logger';
-
-const AUTH_CHECK_INTERVAL_MS = 500;
-const AUTH_CHECK_TIMEOUT_MS = 10000;
 
 export default function AuthCallback() {
   const router = useRouter();
   const params = useSearchParams();
   const { nextPath: next } = parseSearchParams({ next: params.get(`next`) ?? undefined });
-  const oauthToken = params.get(`oauthToken`);
+  const oauthHandoff = params.get(`oauthHandoff`);
 
   useEffect(() => {
     let cancelled = false;
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
-    const deadline = Date.now() + AUTH_CHECK_TIMEOUT_MS;
+    let timeoutId: number | null = null;
+    let resolvePendingSleep: (() => void) | null = null;
 
-    const finish = (target: string) => {
+    const redirectToLogin = (error?: string) => {
       if (cancelled) return;
-      cancelled = true;
-      if (timeoutId) clearTimeout(timeoutId);
-      router.replace(target);
+      const loginUrl = error ? `/login?error=${encodeURIComponent(error)}` : `/login`;
+      router.replace(loginUrl);
     };
 
-    const scheduleRetry = () => {
-      if (cancelled) return;
-      if (Date.now() >= deadline) {
-        finish(`/login`);
-        return;
-      }
-      timeoutId = setTimeout(() => {
-        void run();
-      }, AUTH_CHECK_INTERVAL_MS);
-    };
-
-    const run = async () => {
+    const completeAuthCallback = async () => {
       try {
-        if (oauthToken) {
-          const exchangeRes = await fetch(`/api/oauth/exchange`, {
+        if (oauthHandoff) {
+          const exchangeRes = await fetch(`/api/oauth/complete`, {
             method: `POST`,
             headers: { 'content-type': `application/json` },
             credentials: `include`,
-            body: JSON.stringify({ exchangeToken: oauthToken }),
+            body: JSON.stringify({ handoffToken: oauthHandoff }),
+            cache: `no-store`,
           });
 
-          if (exchangeRes.ok) {
-            const url = new URL(window.location.href);
-            url.searchParams.delete(`oauthToken`);
-            window.history.replaceState({}, ``, `${url.pathname}${url.search}${url.hash}`);
-            finish(next);
+          if (!exchangeRes.ok) {
+            const payload = (await exchangeRes.json().catch(() => ({}))) as { code?: string; message?: string };
+            redirectToLogin(getAuthErrorMessage(payload.code ?? payload.message, `login_failed`));
             return;
           }
-        } else {
-          const res = await fetch(`/api/me`, { credentials: `include`, cache: `no-store` });
-          if (res.ok) {
-            finish(next);
-            return;
-          }
+
+          const url = new URL(window.location.href);
+          url.searchParams.delete(`oauthHandoff`);
+          window.history.replaceState({}, ``, `${url.pathname}${url.search}${url.hash}`);
         }
       } catch (err) {
-        clientLogger.warn(`Auth callback run failed`, { err });
+        clientLogger.warn(`Auth callback exchange failed`, { err });
+        redirectToLogin();
+        return;
       }
 
-      scheduleRetry();
+      const sessionEstablished = await pollForAuthCallbackSession({
+        poll: async () => {
+          if (cancelled) return false;
+
+          try {
+            const res = await fetch(`/api/me`, { credentials: `include`, cache: `no-store` });
+            if (res.ok) {
+              router.replace(next);
+              return true;
+            }
+          } catch (err) {
+            clientLogger.warn(`Auth callback session poll failed`, { err });
+          }
+
+          return false;
+        },
+        sleep: (delayMs) =>
+          new Promise((resolve) => {
+            if (cancelled) {
+              resolve();
+              return;
+            }
+
+            resolvePendingSleep = () => {
+              resolvePendingSleep = null;
+              timeoutId = null;
+              resolve();
+            };
+
+            timeoutId = window.setTimeout(() => {
+              resolvePendingSleep?.();
+            }, delayMs);
+          }),
+        isCancelled: () => cancelled,
+      });
+
+      if (!sessionEstablished) {
+        redirectToLogin();
+      }
     };
 
-    void run();
+    void completeAuthCallback();
     return () => {
       cancelled = true;
-      if (timeoutId) clearTimeout(timeoutId);
+      if (timeoutId != null) {
+        window.clearTimeout(timeoutId);
+        resolvePendingSleep?.();
+      }
     };
-  }, [router, next, oauthToken]);
+  }, [router, next, oauthHandoff]);
 
   return (
     <div className={styles.wrapper} data-testid="auth-callback" role="status" aria-live="polite" aria-atomic="true">

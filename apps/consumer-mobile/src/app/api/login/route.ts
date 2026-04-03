@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { loginSchema } from '../../../features/auth/schemas';
-import { appendSetCookies, buildForwardHeaders } from '../../../lib/api-utils';
+import { appendSetCookies, buildAuthMutationForwardHeaders } from '../../../lib/api-utils';
 import { getEnv } from '../../../lib/env.server';
 
 export async function POST(req: Request) {
@@ -23,8 +23,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const forwardHeaders = buildForwardHeaders(req.headers);
-  forwardHeaders.delete(`host`);
+  const forwardHeaders = buildAuthMutationForwardHeaders(req.headers);
   forwardHeaders.set(`content-type`, `application/json`);
 
   const url = new URL(`${baseUrl}/consumer/auth/login`);

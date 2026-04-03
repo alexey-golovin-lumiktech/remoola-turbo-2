@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiBasicAuth } from '@nestjs/swagger';
+import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 
 import { PAYMENT_REVERSAL_KIND } from '@remoola/api-types';
@@ -40,9 +40,8 @@ function parseExpectationDateArchiveQuery(dto: AdminExpectationDateArchiveQuery)
   };
 }
 
+@ApiCookieAuth()
 @ApiTags(`Admin: Payment Requests`)
-@ApiBearerAuth(`bearer`) // 👈 tells Swagger to attach Bearer token
-@ApiBasicAuth(`basic`) // 👈 optional, if this route also accepts Basic Auth
 @Controller(`admin/payment-requests`)
 export class AdminPaymentRequestsController {
   constructor(

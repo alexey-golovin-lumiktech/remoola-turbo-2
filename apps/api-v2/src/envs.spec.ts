@@ -62,6 +62,21 @@ describe(`envs`, () => {
     ).rejects.toThrow(/non-placeholder, non-empty value/);
   });
 
+  it(`fails closed in production-like environments when access and refresh secrets match`, async () => {
+    await expect(
+      loadEnvModule({
+        NODE_ENV: `production`,
+        COOKIE_SECURE: `true`,
+        JWT_ACCESS_SECRET: `same-secret`,
+        JWT_REFRESH_SECRET: `same-secret`,
+        SECURE_SESSION_SECRET: `session-secret`,
+        STRIPE_SECRET_KEY: `sk_live_test`,
+        STRIPE_WEBHOOK_SECRET: `whsec_live_test`,
+        NEST_APP_EXTERNAL_ORIGIN: `https://api.example.com`,
+      }),
+    ).rejects.toThrow(/must be distinct/);
+  });
+
   it(`disables public swagger and sensitive health endpoints by default in production-like environments`, async () => {
     const { envs } = await loadEnvModule({
       NODE_ENV: `staging`,

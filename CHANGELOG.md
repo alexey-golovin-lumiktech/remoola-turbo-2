@@ -1,6 +1,6 @@
 # Changelog
 
-- [September 2025](#changelog-september-2025) · [October 2025](#changelog-october-2025) · [November 2025](#changelog-november-2025) · [December 2025](#changelog-december-2025) · [January 2026](#changelog-january-2026) · [February 2026](#changelog-february-2026) · [March 2026](#changelog-march-2026)
+- [September 2025](#changelog-september-2025) · [October 2025](#changelog-october-2025) · [November 2025](#changelog-november-2025) · [December 2025](#changelog-december-2025) · [January 2026](#changelog-january-2026) · [February 2026](#changelog-february-2026) · [March 2026](#changelog-march-2026) · [April 2026](#changelog-april-2026)
 
 ---
 
@@ -1710,7 +1710,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-03-31</summary>
 
 - **2026-03-31:**
@@ -1738,6 +1738,47 @@
   - Reduce production risk in `apps/consumer` by narrowing root-error blast radius, keeping more failures inside app, shell, and section boundaries, and preserving existing retry and redirect behavior.
   - Keep payment, Stripe, idempotency, and exchange safety unchanged; touched mobile fixes stay on frontend rendering and recovery paths without changing API routes, mutation payloads, or execution flow.
   - Reduce dashboard-load request bursts in `consumer-web` without changing backend contracts: healthy protected pages still require valid-looking auth cookies, expired sessions still use the existing `401 -> refresh -> redirect` path, and dashboard upstream diagnostics remain local debugging metadata only.
+
+</details>
+
+</details>
+
+---
+
+<details open>
+<summary><strong>Changelog (April 2026)</strong></summary>
+
+# Changelog (April 2026)
+
+<details open>
+<summary>2026-04-03</summary>
+
+- **2026-04-03:**
+  ### 🔐 Security
+  - **Cookie-first browser auth hardening (admin + consumer apps):**
+    - align `apps/api`, `apps/admin`, `apps/consumer`, and `apps/consumer-mobile` on cookie-backed login, refresh, logout, and `/me` flows;
+    - browser-facing auth responses now establish server-side access, refresh, and CSRF cookies and return `ok`-style payloads instead of exposing browser auth tokens in JSON;
+    - authenticated auth mutations now require trusted `Origin`/`Referer` resolution plus matching `x-csrf-token` and CSRF cookie parity;
+    - refresh tokens are signed and verified only with `JWT_REFRESH_SECRET`, and runtime validation now rejects deployments where access and refresh secrets are the same.
+  - **Per-app cookie namespace isolation:** Admin, consumer-web, and consumer-mobile now resolve cookie scope from the owning app/runtime so browser sessions do not read, refresh, or clear another app's auth cookies as a fallback.
+  - **Trust-boundary reduction at BFF/auth edges:** Browser-facing auth stays cookie-first end-to-end; BFF auth routes forward only trusted auth headers, preserve multi-cookie `Set-Cookie` propagation, and do not widen browser auth through client-supplied `Authorization` forwarding.
+  - **OAuth invariants preserved while hardening callback flow:** Consumer browser auth replaces the old exchange-token callback step with single-use OAuth handoff completion and signup-session establishment, preserving one-time state/handoff consumption while reducing cross-origin cookie fragility.
+
+  ### ♻️ Refactor
+  - **Middleware + route alignment across admin and consumer frontends:** Next.js middleware now reads scoped cookie keys, probes or refreshes cookie sessions before redirecting, clears stale auth cookies on session-expired paths, and avoids auth-page redirect loops caused by expired or malformed browser cookies.
+  - **Frontend auth UX alignment:** Auth callback clients now use bounded session polling after OAuth completion; consumer and consumer-mobile signup flows can resume from app-owned Google signup session state; logout-all and auth-notice flows now route users through explicit re-auth states after password changes or full-session revocation.
+  - **Shared auth contracts in `@remoola/api-types`:** Expanded cookie-policy helpers, auth notices, OAuth helpers, and scoped cookie-key resolution so API and frontend apps consume the same browser-auth contract from a single source of truth.
+
+  ### 🛠 DevEx
+  - **Swagger cookie-auth workflow:** `apps/api` admin and consumer docs are now cookie-first for same-origin testing, including automatic CSRF header mirroring for protected mutation routes from the docs UI.
+  - **Lint/tooling alignment:** App lint scripts now run ESLint directly, shared ESLint config correctly includes `eslint.config.mjs`, and Turbo env passthrough includes the additional consumer frontend origin needed by the hardened auth/origin flow.
+
+  ### 📄 Documentation
+  - Updated auth/runbook documentation to match the rollout:
+    - `docs/CONSUMER_AUTH_COOKIE_POLICY.md` for per-app cookie namespaces and cookie-first BFF rules;
+    - `docs/SWAGGER_COOKIE_AUTH_USAGE.md` for same-origin cookie-auth testing;
+    - `docs/API_V2_PRODUCTION_RELEASE_GATE.md`, `docs/FEATURES_CURRENT.md`, `docs/PROJECT_DOCUMENTATION.md`, and `docs/FINANCIAL_SAFETY_AND_DB_COMPLIANCE.md` for distinct JWT secrets, origin + CSRF requirements, and browser-auth boundary expectations.
+  - No database migration introduced in this change; rollout remains config- and contract-sensitive because cookie names, OAuth callback parameters, trusted origins, and JWT secret separation must be deployed consistently across the touched admin and consumer apps.
 
 </details>
 

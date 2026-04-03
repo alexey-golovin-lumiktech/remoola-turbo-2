@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { NextRequest } from 'next/server';
 
-import { COOKIE_KEYS, sanitizeNextForRedirect } from '@remoola/api-types';
+import { sanitizeNextForRedirect } from '@remoola/api-types';
 
+import { getAdminAccessCookieKey, getAdminCsrfCookieKey, getAdminRefreshCookieKey } from './lib/auth-cookie-policy';
 import { middleware } from './middleware';
 
 type MockFetch = jest.MockedFunction<typeof fetch>;
@@ -18,6 +19,9 @@ function createRequest(pathname: string, cookies: Record<string, string> = {}): 
 describe(`middleware`, () => {
   const originalFetch = global.fetch;
   let mockFetch: MockFetch;
+  const accessCookieKey = getAdminAccessCookieKey();
+  const refreshCookieKey = getAdminRefreshCookieKey();
+  const csrfCookieKey = getAdminCsrfCookieKey();
 
   beforeEach(() => {
     process.env.NEXT_PUBLIC_API_BASE_URL = `https://api.example.com`;
@@ -43,8 +47,8 @@ describe(`middleware`, () => {
 
     const response = await middleware(
       createRequest(`/dashboard`, {
-        [COOKIE_KEYS.ADMIN_ACCESS_TOKEN]: `expired-a`,
-        [COOKIE_KEYS.ADMIN_REFRESH_TOKEN]: `expired-r`,
+        [accessCookieKey]: `expired-a`,
+        [refreshCookieKey]: `expired-r`,
       }),
     );
 
@@ -56,22 +60,57 @@ describe(`middleware`, () => {
 
   it(`refresh success -> continue with cookies set`, async () => {
     mockFetch.mockResolvedValueOnce(new Response(undefined, { status: 401 })).mockResolvedValueOnce(
-      new Response(JSON.stringify({ accessToken: `new-a`, refreshToken: `new-r` }), {
+      new Response(undefined, {
         status: 200,
-        headers: { 'Content-Type': `application/json` },
+        headers: {
+          [`set-cookie`]: [
+            `${accessCookieKey}=new-a; Path=/; HttpOnly; SameSite=Lax`,
+            `${refreshCookieKey}=new-r; Path=/; HttpOnly; SameSite=Lax`,
+            `${csrfCookieKey}=new-csrf; Path=/; SameSite=Lax`,
+          ].join(`, `),
+        },
       }),
     );
 
     const response = await middleware(
       createRequest(`/dashboard`, {
-        [COOKIE_KEYS.ADMIN_ACCESS_TOKEN]: `expired-b`,
-        [COOKIE_KEYS.ADMIN_REFRESH_TOKEN]: `valid-r`,
+        [accessCookieKey]: `expired-b`,
+        [refreshCookieKey]: `valid-r`,
+        [csrfCookieKey]: `csrf`,
       }),
     );
 
     expect(response.status).not.toBe(307);
-    expect(response.cookies.get(COOKIE_KEYS.ADMIN_ACCESS_TOKEN)?.value).toBe(`new-a`);
-    expect(response.cookies.get(COOKIE_KEYS.ADMIN_REFRESH_TOKEN)?.value).toBe(`new-r`);
+    expect(response.cookies.get(accessCookieKey)?.value).toBe(`new-a`);
+    expect(response.cookies.get(refreshCookieKey)?.value).toBe(`new-r`);
+    expect(response.cookies.get(csrfCookieKey)?.value).toBe(`new-csrf`);
+  });
+
+  it(`refresh without replacement access cookie -> login redirect`, async () => {
+    mockFetch.mockResolvedValueOnce(new Response(undefined, { status: 401 })).mockResolvedValueOnce(
+      new Response(undefined, {
+        status: 200,
+        headers: {
+          [`set-cookie`]: [
+            `${refreshCookieKey}=new-r; Path=/; HttpOnly; SameSite=Lax`,
+            `${csrfCookieKey}=new-csrf; Path=/; SameSite=Lax`,
+          ].join(`, `),
+        },
+      }),
+    );
+
+    const response = await middleware(
+      createRequest(`/dashboard`, {
+        [accessCookieKey]: `expired-c`,
+        [refreshCookieKey]: `valid-r`,
+        [csrfCookieKey]: `csrf`,
+      }),
+    );
+
+    expect(response.status).toBe(307);
+    const location = response.headers.get(`location`);
+    expect(location).toContain(`/login`);
+    expect(location).toContain(`next=%2Fdashboard`);
   });
 
   it(`allows public path /login`, async () => {

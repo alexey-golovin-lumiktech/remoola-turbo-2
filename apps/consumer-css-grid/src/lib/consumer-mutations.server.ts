@@ -9,9 +9,9 @@ import { type TTheme } from '@remoola/api-types';
 
 import { SESSION_EXPIRED_ERROR_CODE } from './auth-failure';
 import { findContactByExactEmail, getExchangeRatesBatch, type ExchangeRatesBatchResult } from './consumer-api.server';
+import { buildConsumerMutationHeaders } from './consumer-auth-headers.server';
 import { isDateInputTodayOrLater, normalizeDateInput } from './date-input';
 import { getEnv } from './env.server';
-import { getRequestOrigin } from './request-origin';
 
 type MutationResult =
   | { ok: true; message?: string }
@@ -200,7 +200,7 @@ export async function createPaymentRequestMutation(input: {
     method: `POST`,
     headers: {
       'content-type': `application/json`,
-      Cookie: cookieStore.toString(),
+      ...buildConsumerMutationHeaders(cookieStore.toString()),
     },
     body: JSON.stringify({
       email,
@@ -283,7 +283,7 @@ export async function startPaymentMutation(input: {
     method: `POST`,
     headers: {
       'content-type': `application/json`,
-      Cookie: cookieStore.toString(),
+      ...buildConsumerMutationHeaders(cookieStore.toString()),
     },
     body: JSON.stringify({
       email,
@@ -330,7 +330,7 @@ export async function sendPaymentRequestMutation(paymentRequestId: string): Prom
   const response = await fetch(`${baseUrl}/consumer/payment-requests/${id}/send`, {
     method: `POST`,
     headers: {
-      Cookie: cookieStore.toString(),
+      ...buildConsumerMutationHeaders(cookieStore.toString()),
     },
     cache: `no-store`,
   });
@@ -371,7 +371,7 @@ export async function attachDocumentsToPaymentRequestMutation(
     method: `POST`,
     headers: {
       'content-type': `application/json`,
-      Cookie: cookieStore.toString(),
+      ...buildConsumerMutationHeaders(cookieStore.toString()),
     },
     body: JSON.stringify({
       paymentRequestId: id,
@@ -416,7 +416,7 @@ export async function detachDocumentFromPaymentRequestMutation(
   const response = await fetch(`${baseUrl}/consumer/documents/payment-attachments/${id}/${normalizedResourceId}`, {
     method: `DELETE`,
     headers: {
-      Cookie: cookieStore.toString(),
+      ...buildConsumerMutationHeaders(cookieStore.toString()),
     },
     cache: `no-store`,
   });
@@ -468,9 +468,8 @@ export async function payWithSavedMethodMutation(
     method: `POST`,
     headers: {
       'content-type': `application/json`,
-      Cookie: cookieStore.toString(),
+      ...buildConsumerMutationHeaders(cookieStore.toString()),
       'idempotency-key': randomUUID(),
-      origin: getRequestOrigin(),
     },
     body: JSON.stringify({ paymentMethodId: methodId }),
     cache: `no-store`,
@@ -526,8 +525,7 @@ export async function createPaymentCheckoutSessionMutation(paymentRequestId: str
   const response = await fetch(`${baseUrl}/consumer/stripe/${id}/stripe-session`, {
     method: `POST`,
     headers: {
-      Cookie: cookieStore.toString(),
-      origin: getRequestOrigin(),
+      ...buildConsumerMutationHeaders(cookieStore.toString()),
     },
     cache: `no-store`,
   });
@@ -567,7 +565,7 @@ export async function generateInvoiceMutation(paymentRequestId: string): Promise
   const response = await fetch(`${baseUrl}/consumer/payments/${id}/generate-invoice`, {
     method: `POST`,
     headers: {
-      Cookie: cookieStore.toString(),
+      ...buildConsumerMutationHeaders(cookieStore.toString()),
     },
     cache: `no-store`,
   });
@@ -611,7 +609,7 @@ export async function startVerificationSessionMutation(): Promise<VerificationSe
   const response = await fetch(`${baseUrl}/consumer/verification/sessions`, {
     method: `POST`,
     headers: {
-      Cookie: cookieStore.toString(),
+      ...buildConsumerMutationHeaders(cookieStore.toString()),
     },
     cache: `no-store`,
   });
@@ -675,7 +673,7 @@ export async function submitWithdrawAction(input: {
     method: `POST`,
     headers: {
       'content-type': `application/json`,
-      Cookie: cookieStore.toString(),
+      ...buildConsumerMutationHeaders(cookieStore.toString()),
       'x-correlation-id': randomUUID(),
       'idempotency-key': idempotencyKey,
     },
@@ -756,7 +754,7 @@ export async function submitTransferAction(input: {
       method: `POST`,
       headers: {
         'content-type': `application/json`,
-        Cookie: cookieStore.toString(),
+        ...buildConsumerMutationHeaders(cookieStore.toString()),
         'x-correlation-id': randomUUID(),
         'idempotency-key': idempotencyKey,
       },
@@ -832,7 +830,7 @@ export async function createContactMutation(input: {
     method: `POST`,
     headers: {
       'content-type': `application/json`,
-      Cookie: cookieStore.toString(),
+      ...buildConsumerMutationHeaders(cookieStore.toString()),
     },
     body: JSON.stringify({
       email,
@@ -901,7 +899,7 @@ export async function deleteContactMutation(contactId: string): Promise<Mutation
   const response = await fetch(`${baseUrl}/consumer/contacts/${contactId}`, {
     method: `DELETE`,
     headers: {
-      Cookie: cookieStore.toString(),
+      ...buildConsumerMutationHeaders(cookieStore.toString()),
     },
     cache: `no-store`,
   });
@@ -960,7 +958,7 @@ export async function updateContactMutation(
     method: `PATCH`,
     headers: {
       'content-type': `application/json`,
-      Cookie: cookieStore.toString(),
+      ...buildConsumerMutationHeaders(cookieStore.toString()),
     },
     body: JSON.stringify({
       email,
@@ -1054,7 +1052,7 @@ export async function updateProfileMutation(input: {
     method: `PATCH`,
     headers: {
       'content-type': `application/json`,
-      Cookie: cookieStore.toString(),
+      ...buildConsumerMutationHeaders(cookieStore.toString()),
     },
     body: JSON.stringify(body),
     cache: `no-store`,
@@ -1093,7 +1091,7 @@ export async function updateSettingsMutation(input: {
     method: `PATCH`,
     headers: {
       'content-type': `application/json`,
-      Cookie: cookieStore.toString(),
+      ...buildConsumerMutationHeaders(cookieStore.toString()),
     },
     body: JSON.stringify({
       ...(theme ? { theme } : {}),
@@ -1149,7 +1147,7 @@ export async function changePasswordMutation(input: {
     method: `PATCH`,
     headers: {
       'content-type': `application/json`,
-      Cookie: cookieStore.toString(),
+      ...buildConsumerMutationHeaders(cookieStore.toString()),
     },
     body: JSON.stringify({
       ...(currentPassword ? { currentPassword } : {}),
@@ -1184,7 +1182,7 @@ export async function deleteDocumentMutation(documentId: string): Promise<Mutati
   const response = await fetch(`${baseUrl}/consumer/documents/${documentId}`, {
     method: `DELETE`,
     headers: {
-      Cookie: cookieStore.toString(),
+      ...buildConsumerMutationHeaders(cookieStore.toString()),
     },
     cache: `no-store`,
   });
@@ -1220,7 +1218,7 @@ export async function bulkDeleteDocumentsMutation(documentIds: string[]): Promis
     method: `POST`,
     headers: {
       'content-type': `application/json`,
-      Cookie: cookieStore.toString(),
+      ...buildConsumerMutationHeaders(cookieStore.toString()),
       'x-correlation-id': randomUUID(),
     },
     body: JSON.stringify({ ids }),
@@ -1268,7 +1266,7 @@ export async function updateDocumentTagsMutation(documentId: string, rawTags: st
     method: `POST`,
     headers: {
       'content-type': `application/json`,
-      Cookie: cookieStore.toString(),
+      ...buildConsumerMutationHeaders(cookieStore.toString()),
     },
     body: JSON.stringify({ tags }),
     cache: `no-store`,
@@ -1317,7 +1315,7 @@ export async function addBankAccountMutation(input: {
     method: `POST`,
     headers: {
       'content-type': `application/json`,
-      Cookie: cookieStore.toString(),
+      ...buildConsumerMutationHeaders(cookieStore.toString()),
       'x-correlation-id': randomUUID(),
     },
     body: JSON.stringify({
@@ -1352,7 +1350,7 @@ export async function createReusableCardSetupIntentMutation(): Promise<StripeSet
   const response = await fetch(`${baseUrl}/consumer/stripe/intents`, {
     method: `POST`,
     headers: {
-      Cookie: cookieStore.toString(),
+      ...buildConsumerMutationHeaders(cookieStore.toString()),
     },
     cache: `no-store`,
   });
@@ -1398,7 +1396,7 @@ export async function confirmReusableCardSetupIntentMutation(setupIntentId: stri
     method: `POST`,
     headers: {
       'content-type': `application/json`,
-      Cookie: cookieStore.toString(),
+      ...buildConsumerMutationHeaders(cookieStore.toString()),
     },
     body: JSON.stringify({ setupIntentId: normalizedSetupIntentId }),
     cache: `no-store`,
@@ -1456,7 +1454,7 @@ export async function addCardMutation(input: {
     method: `POST`,
     headers: {
       'content-type': `application/json`,
-      Cookie: cookieStore.toString(),
+      ...buildConsumerMutationHeaders(cookieStore.toString()),
       'x-correlation-id': randomUUID(),
     },
     body: JSON.stringify({
@@ -1495,7 +1493,7 @@ export async function setDefaultPaymentMethodMutation(paymentMethodId: string): 
     method: `PATCH`,
     headers: {
       'content-type': `application/json`,
-      Cookie: cookieStore.toString(),
+      ...buildConsumerMutationHeaders(cookieStore.toString()),
       'x-correlation-id': randomUUID(),
     },
     body: JSON.stringify({ defaultSelected: true }),
@@ -1524,7 +1522,7 @@ export async function deletePaymentMethodMutation(paymentMethodId: string): Prom
   const response = await fetch(`${baseUrl}/consumer/payment-methods/${paymentMethodId}`, {
     method: `DELETE`,
     headers: {
-      Cookie: cookieStore.toString(),
+      ...buildConsumerMutationHeaders(cookieStore.toString()),
       'x-correlation-id': randomUUID(),
     },
     cache: `no-store`,
@@ -1569,7 +1567,7 @@ export async function getExchangeQuoteMutation(input: {
     method: `POST`,
     headers: {
       'content-type': `application/json`,
-      Cookie: cookieStore.toString(),
+      ...buildConsumerMutationHeaders(cookieStore.toString()),
     },
     body: JSON.stringify({ from, to, amount }),
     cache: `no-store`,
@@ -1656,7 +1654,7 @@ export async function convertExchangeMutation(input: {
     method: `POST`,
     headers: {
       'content-type': `application/json`,
-      Cookie: cookieStore.toString(),
+      ...buildConsumerMutationHeaders(cookieStore.toString()),
     },
     body: JSON.stringify({ from, to, amount }),
     cache: `no-store`,
@@ -1711,7 +1709,7 @@ export async function createExchangeRuleMutation(input: {
     method: `POST`,
     headers: {
       'content-type': `application/json`,
-      Cookie: cookieStore.toString(),
+      ...buildConsumerMutationHeaders(cookieStore.toString()),
     },
     body: JSON.stringify({
       from,
@@ -1789,7 +1787,7 @@ export async function updateExchangeRuleMutation(
     method: `PATCH`,
     headers: {
       'content-type': `application/json`,
-      Cookie: cookieStore.toString(),
+      ...buildConsumerMutationHeaders(cookieStore.toString()),
     },
     body: JSON.stringify(payload),
     cache: `no-store`,
@@ -1816,7 +1814,7 @@ export async function deleteExchangeRuleMutation(ruleId: string): Promise<Mutati
   const response = await fetch(`${baseUrl}/consumer/exchange/rules/${ruleId}`, {
     method: `DELETE`,
     headers: {
-      Cookie: cookieStore.toString(),
+      ...buildConsumerMutationHeaders(cookieStore.toString()),
     },
     cache: `no-store`,
   });
@@ -1864,7 +1862,7 @@ export async function scheduleExchangeMutation(input: {
     method: `POST`,
     headers: {
       'content-type': `application/json`,
-      Cookie: cookieStore.toString(),
+      ...buildConsumerMutationHeaders(cookieStore.toString()),
     },
     body: JSON.stringify({
       from,
@@ -1896,7 +1894,7 @@ export async function cancelScheduledExchangeMutation(conversionId: string): Pro
   const response = await fetch(`${baseUrl}/consumer/exchange/scheduled/${conversionId}/cancel`, {
     method: `POST`,
     headers: {
-      Cookie: cookieStore.toString(),
+      ...buildConsumerMutationHeaders(cookieStore.toString()),
     },
     cache: `no-store`,
   });

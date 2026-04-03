@@ -1,6 +1,14 @@
-import { appendSetCookies, buildForwardHeaders, requireJsonBody } from './api-utils';
+import { getConsumerCsrfTokenCookieKey } from '@remoola/api-types';
+
+import { appendSetCookies, buildAuthMutationForwardHeaders, buildForwardHeaders, requireJsonBody } from './api-utils';
 
 const TEST_ORIGIN = `http://localhost:3001`;
+const TEST_CSRF_COOKIE_KEY = getConsumerCsrfTokenCookieKey({
+  isProduction: false,
+  isVercel: false,
+  cookieSecure: false,
+  isSecureRequest: false,
+});
 
 describe(`consumer api-utils`, () => {
   it(`requireJsonBody accepts valid json`, async () => {
@@ -73,24 +81,42 @@ describe(`consumer api-utils`, () => {
     expect(result).toEqual({ ok: true, body: `` });
   });
 
-  it(`buildForwardHeaders keeps allowlisted headers and drops untrusted ones`, () => {
+  it(`buildForwardHeaders keeps cookie auth context and drops incoming authorization headers`, () => {
     const headers = buildForwardHeaders(
       new Headers({
-        authorization: `Bearer token`,
+        authorization: `legacy-token`,
         origin: TEST_ORIGIN,
-        cookie: `csrf_token=abc`,
+        cookie: `${TEST_CSRF_COOKIE_KEY}=abc`,
         'x-correlation-id': `corr-1`,
         'x-remoola-feature': `on`,
         'x-forwarded-for': `10.0.0.1`,
       }),
     );
 
-    expect(headers.get(`authorization`)).toBe(`Bearer token`);
+    expect(headers.get(`authorization`)).toBeNull();
     expect(headers.get(`origin`)).toBe(TEST_ORIGIN);
-    expect(headers.get(`cookie`)).toBe(`csrf_token=abc`);
+    expect(headers.get(`cookie`)).toBe(`${TEST_CSRF_COOKIE_KEY}=abc`);
+    expect(headers.get(`x-csrf-token`)).toBe(`abc`);
     expect(headers.get(`x-correlation-id`)).toBe(`corr-1`);
     expect(headers.get(`x-remoola-feature`)).toBe(`on`);
     expect(headers.get(`x-forwarded-for`)).toBeNull();
+  });
+
+  it(`buildAuthMutationForwardHeaders strips host while leaving unsupported auth headers dropped`, () => {
+    const headers = buildAuthMutationForwardHeaders(
+      new Headers({
+        authorization: `legacy-token`,
+        host: `app.example.com`,
+        origin: TEST_ORIGIN,
+        cookie: `${TEST_CSRF_COOKIE_KEY}=abc`,
+      }),
+    );
+
+    expect(headers.get(`authorization`)).toBeNull();
+    expect(headers.get(`host`)).toBeNull();
+    expect(headers.get(`origin`)).toBe(TEST_ORIGIN);
+    expect(headers.get(`cookie`)).toBe(`${TEST_CSRF_COOKIE_KEY}=abc`);
+    expect(headers.get(`x-csrf-token`)).toBe(`abc`);
   });
 
   it(`appendSetCookies appends all source cookie values`, () => {

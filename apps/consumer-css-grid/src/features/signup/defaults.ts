@@ -5,7 +5,8 @@ import { type SignupFormState } from './types';
 export interface SignupQuerySeed {
   accountTypeParam?: string | null;
   contractorKindParam?: string | null;
-  googleSignupToken?: string | null;
+  googleSignup?: string | null;
+  googleSignupHandoff?: string | null;
 }
 
 function parseAccountType(raw: string | null | undefined): TAccountType | null {
@@ -61,7 +62,7 @@ export function createInitialSignupFormState(querySeed?: SignupQuerySeed): Signu
       city: ``,
       street: ``,
     },
-    googleSignupToken: querySeed?.googleSignupToken ?? null,
+    googleSignupToken: querySeed?.googleSignup ? `cookie-session` : null,
     googleHydrationLoading: false,
     googleHydrationError: null,
     hydratedGoogleToken: null,

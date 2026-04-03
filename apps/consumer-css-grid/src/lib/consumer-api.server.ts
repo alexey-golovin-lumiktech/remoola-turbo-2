@@ -3,7 +3,9 @@ import { redirect } from 'next/navigation';
 
 import { SESSION_EXPIRED_QUERY, sanitizeNextForRedirect, type TTheme } from '@remoola/api-types';
 
+import { buildConsumerMutationHeaders } from './consumer-auth-headers.server';
 import { getEnv } from './env.server';
+import { getRequestOrigin } from './request-origin';
 
 export interface DashboardData {
   summary: {
@@ -396,6 +398,7 @@ async function fetchConsumerApi<T>(path: string, options?: ConsumerApiRequestOpt
       method: `GET`,
       headers: {
         Cookie: cookieStore.toString(),
+        origin: getRequestOrigin(),
       },
       cache: `no-store`,
       signal: AbortSignal.timeout(15000),
@@ -420,12 +423,12 @@ async function postConsumerApi<T>(path: string, body: unknown, options?: Consume
 
   try {
     const cookieStore = await cookies();
+    const cookieHeader = cookieStore.toString();
     const response = await fetch(`${baseUrl}${path}`, {
       method: `POST`,
-      headers: {
+      headers: buildConsumerMutationHeaders(cookieHeader, {
         'content-type': `application/json`,
-        Cookie: cookieStore.toString(),
-      },
+      }),
       body: JSON.stringify(body),
       cache: `no-store`,
       signal: AbortSignal.timeout(15000),
@@ -459,6 +462,7 @@ async function fetchConsumerApiResult<T>(
       method: `GET`,
       headers: {
         Cookie: cookieStore.toString(),
+        origin: getRequestOrigin(),
       },
       cache: `no-store`,
       signal: AbortSignal.timeout(15000),

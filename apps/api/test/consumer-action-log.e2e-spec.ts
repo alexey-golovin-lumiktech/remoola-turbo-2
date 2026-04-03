@@ -22,6 +22,7 @@ import { ConsumerActionLogService } from '../src/shared/consumer-action-log.serv
 describe(`Consumer action log integration (e2e, isolated DB)`, () => {
   let app: INestApplication;
   let prisma: PrismaClient;
+  const consumerOrigin = `http://127.0.0.1:3001`;
 
   beforeAll(async () => {
     assertIsolatedTestDatabaseUrl();
@@ -47,18 +48,22 @@ describe(`Consumer action log integration (e2e, isolated DB)`, () => {
     await app.close();
   });
 
-  it(`records oauth exchange failure in consumer_action_log`, async () => {
+  it(`records oauth complete failure in consumer_action_log`, async () => {
     const beforeCount = await prisma.consumerActionLogModel.count({
-      where: { action: `consumer.auth.oauth_exchange_failure` },
+      where: { action: `consumer.auth.oauth_complete_failure` },
     });
 
-    const response = await request(app.getHttpServer()).post(`/api/consumer/auth/oauth/exchange`).send({}).expect(400);
+    const response = await request(app.getHttpServer())
+      .post(`/api/consumer/auth/oauth/complete`)
+      .set(`origin`, consumerOrigin)
+      .send({})
+      .expect(400);
     expect(response.body?.message).toBeDefined();
 
     let afterCount = beforeCount;
     for (let i = 0; i < 20; i += 1) {
       afterCount = await prisma.consumerActionLogModel.count({
-        where: { action: `consumer.auth.oauth_exchange_failure` },
+        where: { action: `consumer.auth.oauth_complete_failure` },
       });
       if (afterCount > beforeCount) break;
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -66,7 +71,7 @@ describe(`Consumer action log integration (e2e, isolated DB)`, () => {
 
     expect(afterCount).toBeGreaterThan(beforeCount);
     const latest = await prisma.consumerActionLogModel.findFirst({
-      where: { action: `consumer.auth.oauth_exchange_failure` },
+      where: { action: `consumer.auth.oauth_complete_failure` },
       orderBy: [{ createdAt: `desc` }, { id: `desc` }],
     });
     expect(latest?.deviceId).toBeTruthy();
@@ -74,7 +79,7 @@ describe(`Consumer action log integration (e2e, isolated DB)`, () => {
     expect(latest?.metadata).toEqual(
       expect.objectContaining({
         method: `POST`,
-        path: expect.stringContaining(`/api/consumer/auth/oauth/exchange`),
+        path: expect.stringContaining(`/api/consumer/auth/oauth/complete`),
       }),
     );
   });

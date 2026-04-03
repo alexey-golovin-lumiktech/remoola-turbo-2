@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
-import { getBypassHeaders } from './request-origin';
+import { getConsumerCsrfTokenFromCookieHeader } from './consumer-auth-headers.server';
+import { getBypassHeaders, getRequestOrigin } from './request-origin';
 
 const FORWARDED_HEADER_ALLOWLIST = new Set([
   `accept`,
@@ -38,13 +39,21 @@ export function buildForwardHeaders(sourceHeaders: Headers): Headers {
       headers.append(name, value);
     }
   }
+  if (!headers.has(`x-csrf-token`)) {
+    const csrfToken = getConsumerCsrfTokenFromCookieHeader(headers.get(`cookie`) ?? ``);
+    if (csrfToken) {
+      headers.set(`x-csrf-token`, csrfToken);
+    }
+  }
+  if (!headers.has(`origin`)) {
+    headers.set(`origin`, getRequestOrigin());
+  }
   for (const [k, v] of Object.entries(getBypassHeaders())) headers.set(k, v);
   return headers;
 }
 
 export function buildAuthMutationForwardHeaders(sourceHeaders: Headers): Headers {
   const headers = buildForwardHeaders(sourceHeaders);
-  headers.delete(`authorization`);
   headers.delete(`host`);
   return headers;
 }

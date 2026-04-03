@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ACCOUNT_TYPE, HOW_DID_HEAR_ABOUT_US, HOW_DID_HEAR_ABOUT_US_VALUES } from '@remoola/api-types';
 import { GoogleIcon, PasswordInput } from '@remoola/ui';
 
-import { getApiBaseUrlOptional } from '../../../../lib/config.client';
+import { buildSignupFlowPath } from '../../routing';
 import { useSignupForm } from '../../SignupFormContext';
 import { useSignupSteps } from '../../SignupStepsContext';
 import { createSignupDetailsSchema, getFieldErrors } from '../../validation';
@@ -68,17 +68,23 @@ export function SignupDetailsStep() {
   }, [isGoogleSignup]);
 
   const googleSignupStartUrl = useMemo(() => {
-    const base = getApiBaseUrlOptional();
-    if (!base) return null;
     if (typeof window === `undefined`) return null;
-    const url = new URL(`${base}/consumer/auth/google/start`);
-    url.searchParams.set(`next`, `/signup`);
+    const url = new URL(`/api/consumer/auth/google/start`, window.location.origin);
+    url.searchParams.set(
+      `next`,
+      buildSignupFlowPath(`/signup`, {
+        accountType: signupDetails.accountType,
+        contractorKind: signupDetails.contractorKind,
+        googleSignupToken: null,
+      }),
+    );
+    url.searchParams.set(`signupPath`, window.location.pathname === `/signup` ? `/signup` : `/signup/start`);
     url.searchParams.set(`returnOrigin`, window.location.origin);
     if (signupDetails.accountType) url.searchParams.set(`accountType`, signupDetails.accountType);
     if (signupDetails.accountType === ACCOUNT_TYPE.CONTRACTOR && signupDetails.contractorKind) {
       url.searchParams.set(`contractorKind`, signupDetails.contractorKind);
     }
-    return url.toString();
+    return `${url.pathname}${url.search}`;
   }, [signupDetails.accountType, signupDetails.contractorKind]);
 
   const validateField = useCallback(

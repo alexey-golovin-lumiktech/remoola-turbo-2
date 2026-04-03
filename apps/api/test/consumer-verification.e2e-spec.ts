@@ -24,7 +24,7 @@ import { ConsumerPaymentsService } from '../src/consumer/modules/payments/consum
 import { envs } from '../src/envs';
 import { AuthGuard } from '../src/guards/auth.guard';
 import { PrismaService } from '../src/shared/prisma.service';
-import { STRIPE_IDENTITY_STATUS } from '../src/shared-common';
+import { STRIPE_IDENTITY_STATUS, getApiConsumerCsrfTokenCookieKeysForRead } from '../src/shared-common';
 
 describe(`Consumer verification lifecycle (e2e, isolated DB)`, () => {
   let app: INestApplication;
@@ -32,9 +32,32 @@ describe(`Consumer verification lifecycle (e2e, isolated DB)`, () => {
   let stripeWebhookService: StripeWebhookService;
   let consumerPaymentsService: ConsumerPaymentsService;
   let consumerId = ``;
+  const consumerOrigin = `http://127.0.0.1:3001`;
 
   const consumerEmail = `verification-e2e-consumer@local.test`;
   const consumerPassword = `VerificationE2E1!`;
+
+  function parseCookieValue(cookies: string[] | undefined, key: string): string | null {
+    if (!Array.isArray(cookies)) return null;
+    const row = cookies.find((line) => line.startsWith(`${key}=`));
+    if (!row) return null;
+    const [raw] = row.split(`;`);
+    return raw.slice(`${key}=`.length);
+  }
+
+  function parseCookieValueForKeys(cookies: string[] | undefined, keys: readonly string[]): string | null {
+    for (const key of keys) {
+      const value = parseCookieValue(cookies, key);
+      if (value) return value;
+    }
+    return null;
+  }
+
+  function asCookieArray(header: string | string[] | undefined): string[] | undefined {
+    if (Array.isArray(header)) return header;
+    if (typeof header === `string`) return [header];
+    return undefined;
+  }
 
   function signedWebhookEvent(secret: string, event: Record<string, unknown>) {
     const payload = JSON.stringify(event);
@@ -123,9 +146,22 @@ describe(`Consumer verification lifecycle (e2e, isolated DB)`, () => {
     } as unknown as Stripe.Response<Stripe.Identity.VerificationSession>);
 
     const agent = request.agent(app.getHttpServer());
-    await agent.post(`/api/consumer/auth/login`).send({ email: consumerEmail, password: consumerPassword }).expect(201);
+    const loginRes = await agent
+      .post(`/api/consumer/auth/login`)
+      .set(`origin`, consumerOrigin)
+      .send({ email: consumerEmail, password: consumerPassword })
+      .expect(200);
+    const csrf = parseCookieValueForKeys(
+      asCookieArray(loginRes.headers[`set-cookie`]),
+      getApiConsumerCsrfTokenCookieKeysForRead(),
+    );
+    expect(csrf).toBeTruthy();
 
-    const startRes = await agent.post(`/api/consumer/verification/sessions`).expect(201);
+    const startRes = await agent
+      .post(`/api/consumer/verification/sessions`)
+      .set(`origin`, consumerOrigin)
+      .set(`x-csrf-token`, csrf ?? ``)
+      .expect(201);
     expect(startRes.body).toEqual({
       clientSecret: `vs_secret_live_e2e`,
       sessionId: `vs_live_e2e`,

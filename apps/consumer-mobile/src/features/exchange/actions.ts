@@ -1,7 +1,6 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { cookies } from 'next/headers';
 
 import { type IConsumerExchangeConversion, type IConsumerExchangeQuote } from '@remoola/api-types';
 
@@ -12,6 +11,7 @@ import {
   updateExchangeRuleSchema,
 } from './schemas';
 import { getEnv } from '../../lib/env.server';
+import { getServerActionMutationAuthHeaders } from '../../lib/server-action-auth';
 
 interface AppError {
   code: string;
@@ -59,8 +59,7 @@ export async function getExchangeQuote(
   }
 
   try {
-    const cookieStore = await cookies();
-    const cookie = cookieStore.toString();
+    const authHeaders = await getServerActionMutationAuthHeaders();
 
     const body = {
       from: parsed.data.fromCurrency,
@@ -72,7 +71,7 @@ export async function getExchangeQuote(
       method: `POST`,
       headers: {
         'Content-Type': `application/json`,
-        Cookie: cookie,
+        ...authHeaders,
       },
       body: JSON.stringify(body),
       cache: `no-store`,
@@ -141,12 +140,11 @@ export async function executeExchange(
       };
     }
 
-    const cookieStore = await cookies();
-    const cookie = cookieStore.toString();
+    const authHeaders = await getServerActionMutationAuthHeaders();
 
     const headers: HeadersInit = {
       'Content-Type': `application/json`,
-      Cookie: cookie,
+      ...authHeaders,
     };
 
     if (idempotencyKey) {
@@ -235,14 +233,13 @@ export async function createExchangeRule(
   }
 
   try {
-    const cookieStore = await cookies();
-    const cookie = cookieStore.toString();
+    const authHeaders = await getServerActionMutationAuthHeaders();
 
     const res = await fetch(`${baseUrl}/consumer/exchange/rules`, {
       method: `POST`,
       headers: {
         'Content-Type': `application/json`,
-        Cookie: cookie,
+        ...authHeaders,
       },
       body: JSON.stringify(parsed.data),
       cache: `no-store`,
@@ -303,14 +300,13 @@ export async function updateExchangeRule(
   }
 
   try {
-    const cookieStore = await cookies();
-    const cookie = cookieStore.toString();
+    const authHeaders = await getServerActionMutationAuthHeaders();
 
     const res = await fetch(`${baseUrl}/consumer/exchange/rules/${ruleId}`, {
       method: `PATCH`,
       headers: {
         'Content-Type': `application/json`,
-        Cookie: cookie,
+        ...authHeaders,
       },
       body: JSON.stringify(updates),
       cache: `no-store`,
@@ -365,13 +361,12 @@ export async function deleteExchangeRule(ruleId: string): Promise<AppResult<void
   }
 
   try {
-    const cookieStore = await cookies();
-    const cookie = cookieStore.toString();
+    const authHeaders = await getServerActionMutationAuthHeaders();
 
     const res = await fetch(`${baseUrl}/consumer/exchange/rules/${ruleId}`, {
       method: `DELETE`,
       headers: {
-        Cookie: cookie,
+        ...authHeaders,
       },
       cache: `no-store`,
     });
@@ -423,13 +418,12 @@ export async function cancelScheduledConversion(conversionId: string): Promise<A
   }
 
   try {
-    const cookieStore = await cookies();
-    const cookie = cookieStore.toString();
+    const authHeaders = await getServerActionMutationAuthHeaders();
 
     const res = await fetch(`${baseUrl}/consumer/exchange/scheduled/${conversionId}/cancel`, {
       method: `POST`,
       headers: {
-        Cookie: cookie,
+        ...authHeaders,
       },
       cache: `no-store`,
     });

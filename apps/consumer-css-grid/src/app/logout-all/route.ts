@@ -7,20 +7,26 @@ import { clearConsumerAuthCookies, getCsrfTokenFromRequest } from '../../lib/aut
 import { getEnv } from '../../lib/env.server';
 
 const LOGOUT_ALL_FAILED_QUERY = `logout_all_failed`;
+const REDIRECT_STATUS_SEE_OTHER = 303;
 
-export async function GET(request: Request) {
+function buildLogoutAllUrls(request: Request) {
   const requestUrl = new URL(request.url);
   const { origin } = requestUrl;
   const loginUrl = new URL(`/login`, origin);
   loginUrl.searchParams.set(AUTH_NOTICE_QUERY, `signed_out_all_sessions`);
   const settingsUrl = new URL(`/settings`, origin);
   settingsUrl.searchParams.set(LOGOUT_ALL_FAILED_QUERY, `1`);
+  return { loginUrl, settingsUrl };
+}
+
+export async function POST(request: Request) {
+  const { loginUrl, settingsUrl } = buildLogoutAllUrls(request);
 
   const env = getEnv();
   const apiBase = env.NEXT_PUBLIC_API_BASE_URL;
 
   if (!apiBase) {
-    return NextResponse.redirect(settingsUrl);
+    return NextResponse.redirect(settingsUrl, REDIRECT_STATUS_SEE_OTHER);
   }
 
   try {
@@ -37,14 +43,14 @@ export async function GET(request: Request) {
     });
 
     if (!backendResponse.ok) {
-      return NextResponse.redirect(settingsUrl);
+      return NextResponse.redirect(settingsUrl, REDIRECT_STATUS_SEE_OTHER);
     }
 
-    const response = NextResponse.redirect(loginUrl);
+    const response = NextResponse.redirect(loginUrl, REDIRECT_STATUS_SEE_OTHER);
     appendSetCookies(response.headers, backendResponse.headers);
     clearConsumerAuthCookies(response, request);
     return response;
   } catch {
-    return NextResponse.redirect(settingsUrl);
+    return NextResponse.redirect(settingsUrl, REDIRECT_STATUS_SEE_OTHER);
   }
 }

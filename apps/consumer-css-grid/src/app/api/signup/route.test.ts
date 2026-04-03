@@ -42,7 +42,6 @@ describe(`signup route`, () => {
     const request = new Request(`https://app.example.com/api/signup`, {
       method: `POST`,
       headers: {
-        authorization: `Bearer should-not-forward`,
         'content-type': `application/json`,
         cookie: `consumer_session=session-cookie`,
         host: `app.example.com`,
@@ -61,10 +60,8 @@ describe(`signup route`, () => {
     );
     expect(mockFetch.mock.calls[1]?.[1]?.method).toBe(`GET`);
     const firstRequestHeaders = mockFetch.mock.calls[0]?.[1]?.headers as Headers | undefined;
-    expect(firstRequestHeaders?.get(`authorization`)).toBeNull();
     expect(firstRequestHeaders?.get(`host`)).toBeNull();
     const secondRequestHeaders = mockFetch.mock.calls[1]?.[1]?.headers as Headers | undefined;
-    expect(secondRequestHeaders?.get(`authorization`)).toBeNull();
     expect(secondRequestHeaders?.get(`host`)).toBeNull();
     expect(secondRequestHeaders?.get(`cookie`)).toBe(`consumer_session=session-cookie`);
     expect(setCookies.some((cookie) => cookie.startsWith(`signup_cookie=`))).toBe(true);

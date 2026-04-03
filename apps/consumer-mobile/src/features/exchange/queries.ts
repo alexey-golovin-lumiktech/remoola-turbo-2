@@ -1,7 +1,6 @@
-import { cookies } from 'next/headers';
-
 import { normalizeCurrencies, type Currency } from '../../lib/currency-utils';
 import { getEnv } from '../../lib/env.server';
+import { getServerActionQueryAuthHeaders } from '../../lib/server-action-read-auth';
 
 interface Balance {
   currency: string;
@@ -46,11 +45,8 @@ export async function fetchCurrencies(): Promise<Currency[]> {
   }
 
   try {
-    const cookieStore = await cookies();
-    const cookie = cookieStore.toString();
-
     const res = await fetch(`${baseUrl}/consumer/exchange/currencies`, {
-      headers: { Cookie: cookie },
+      headers: await getServerActionQueryAuthHeaders(),
       cache: `no-store`,
     });
 
@@ -74,11 +70,8 @@ export async function fetchBalances(): Promise<Balance[]> {
   }
 
   try {
-    const cookieStore = await cookies();
-    const cookie = cookieStore.toString();
-
     const res = await fetch(`${baseUrl}/consumer/payments/balance`, {
-      headers: { Cookie: cookie },
+      headers: await getServerActionQueryAuthHeaders(),
       cache: `no-store`,
     });
 
@@ -102,11 +95,8 @@ export async function fetchExchangeRates(): Promise<ExchangeRate[]> {
   }
 
   try {
-    const cookieStore = await cookies();
-    const cookie = cookieStore.toString();
-
     const res = await fetch(`${baseUrl}/consumer/exchange/rates`, {
-      headers: { Cookie: cookie },
+      headers: await getServerActionQueryAuthHeaders(),
       cache: `no-store`,
     });
 
@@ -130,11 +120,8 @@ export async function fetchExchangeRules(): Promise<ExchangeRule[]> {
   }
 
   try {
-    const cookieStore = await cookies();
-    const cookie = cookieStore.toString();
-
     const res = await fetch(`${baseUrl}/consumer/exchange/rules`, {
-      headers: { Cookie: cookie },
+      headers: await getServerActionQueryAuthHeaders(),
       cache: `no-store`,
     });
 
@@ -158,11 +145,8 @@ export async function fetchScheduledConversions(): Promise<ScheduledConversion[]
   }
 
   try {
-    const cookieStore = await cookies();
-    const cookie = cookieStore.toString();
-
     const res = await fetch(`${baseUrl}/consumer/exchange/scheduled`, {
-      headers: { Cookie: cookie },
+      headers: await getServerActionQueryAuthHeaders(),
       cache: `no-store`,
     });
 
