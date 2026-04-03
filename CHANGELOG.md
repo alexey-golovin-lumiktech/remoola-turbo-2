@@ -1788,7 +1788,7 @@
   - Updated auth/runbook documentation to match the rollout:
     - `docs/CONSUMER_AUTH_COOKIE_POLICY.md` for per-app cookie namespaces and cookie-first BFF rules;
     - `docs/SWAGGER_COOKIE_AUTH_USAGE.md` for same-origin cookie-auth testing;
-    - `docs/API_V2_PRODUCTION_RELEASE_GATE.md`, `docs/FEATURES_CURRENT.md`, `docs/PROJECT_DOCUMENTATION.md`, and `docs/FINANCIAL_SAFETY_AND_DB_COMPLIANCE.md` for distinct JWT secrets, origin + CSRF requirements, and browser-auth boundary expectations.
+    - `docs/FEATURES_CURRENT.md`, `docs/PROJECT_DOCUMENTATION.md`, and `docs/FINANCIAL_SAFETY_AND_DB_COMPLIANCE.md` for distinct JWT secrets, origin + CSRF requirements, and browser-auth boundary expectations.
   - Follow-up docs refresh `docs/FEATURES_CURRENT.md`, `docs/PROJECT_DOCUMENTATION.md`, and `docs/PROJECT_SUMMARY.md` to reflect `oauth/complete` proxy behavior, the consumer `appScope` contract, and the final April 3 OAuth/auth alignment.
   - No database migration introduced in this change; rollout remains config- and contract-sensitive because cookie names, OAuth callback parameters, trusted origins, JWT secret separation, and per-app consumer scope handling must be deployed consistently across the touched admin and consumer apps.
 
