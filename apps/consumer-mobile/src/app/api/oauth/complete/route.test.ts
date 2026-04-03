@@ -42,4 +42,22 @@ describe(`POST /api/oauth/complete`, () => {
     expect(forwardedHeaders?.get(`x-csrf-token`)).toBe(`csrf-cookie`);
     expect(getSetCookieValues(res.headers).some((cookie) => cookie.startsWith(`oauth_cookie=`))).toBe(true);
   });
+
+  it(`rejects invalid json before proxying oauth completion`, async () => {
+    mockGetEnv.mockReturnValue({ NEXT_PUBLIC_API_BASE_URL: `https://api.example.com` });
+    const fetchSpy = jest.spyOn(global, `fetch`);
+
+    const req = new Request(`${TEST_APP_ORIGIN}/api/oauth/complete`, {
+      method: `POST`,
+      headers: {
+        'content-type': `application/json`,
+      },
+      body: `{invalid-json`,
+    });
+
+    const res = await POST(req);
+
+    expect(res.status).toBe(400);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
 });

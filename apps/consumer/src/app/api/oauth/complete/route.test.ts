@@ -51,4 +51,19 @@ describe(`consumer oauth complete route`, () => {
     expect(forwardedHeaders?.get(`x-csrf-token`)).toBe(`csrf-cookie`);
     expect(getSetCookieValues(response.headers).some((cookie) => cookie.startsWith(`oauth_cookie=`))).toBe(true);
   });
+
+  it(`rejects invalid json before touching the backend`, async () => {
+    const request = new Request(`https://app.example.com/api/oauth/complete`, {
+      method: `POST`,
+      headers: {
+        'content-type': `application/json`,
+      },
+      body: `{invalid-json`,
+    });
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(400);
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
 });

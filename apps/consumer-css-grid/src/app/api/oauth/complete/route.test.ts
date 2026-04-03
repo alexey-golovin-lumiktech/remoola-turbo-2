@@ -6,12 +6,19 @@ jest.mock(`../../../../lib/env.server`, () => ({
   getEnv: (...args: unknown[]) => mockGetEnv(...args),
 }));
 
-import { getApiV2ConsumerCsrfTokenCookieKey } from '@remoola/api-types';
+import { getApiV2ConsumerCsrfTokenCookieKeyForRuntime } from '@remoola/api-types';
 
 import { POST } from './route';
 import { getSetCookieValues } from '../../../../lib/api-utils';
 
 describe(`consumer-css-grid oauth complete route`, () => {
+  const cssGridCsrfCookieKey = getApiV2ConsumerCsrfTokenCookieKeyForRuntime({
+    isProduction: false,
+    isVercel: false,
+    cookieSecure: false,
+    isSecureRequest: false,
+  });
+
   afterEach(() => {
     jest.restoreAllMocks();
   });
@@ -29,7 +36,7 @@ describe(`consumer-css-grid oauth complete route`, () => {
       method: `POST`,
       headers: {
         'content-type': `application/json`,
-        cookie: `consumer_session=session-cookie; ${getApiV2ConsumerCsrfTokenCookieKey()}=csrf-cookie`,
+        cookie: `consumer_session=session-cookie; ${cssGridCsrfCookieKey}=csrf-cookie`,
         origin: `https://grid.example.com`,
       },
       body: JSON.stringify({ handoffToken: `handoff-123` }),
@@ -42,5 +49,23 @@ describe(`consumer-css-grid oauth complete route`, () => {
     expect(forwardedHeaders?.get(`origin`)).toBe(`https://grid.example.com`);
     expect(forwardedHeaders?.get(`x-csrf-token`)).toBe(`csrf-cookie`);
     expect(getSetCookieValues(res.headers).some((cookie) => cookie.startsWith(`oauth_cookie=`))).toBe(true);
+  });
+
+  it(`rejects invalid json before proxying oauth completion`, async () => {
+    mockGetEnv.mockReturnValue({ NEXT_PUBLIC_API_BASE_URL: `https://api.example.com` });
+    const fetchSpy = jest.spyOn(global, `fetch`);
+
+    const req = new Request(`https://grid.example.com/api/oauth/complete`, {
+      method: `POST`,
+      headers: {
+        'content-type': `application/json`,
+      },
+      body: `{invalid-json`,
+    });
+
+    const res = await POST(req);
+
+    expect(res.status).toBe(400);
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 });

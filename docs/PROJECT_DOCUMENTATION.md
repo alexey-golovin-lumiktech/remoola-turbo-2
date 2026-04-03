@@ -94,8 +94,8 @@ Auth (`/consumer/auth`):
 - Forgot-password and reset (no auth required): `POST /forgot-password` (email; requires valid `Origin` header — must be an allowed consumer origin, else 400 `ORIGIN_REQUIRED`); `GET /forgot-password/verify?token=…&referer=…` — validate token and redirect to app; `POST /password/reset` (body: token, password) — set new password with token from email.
 - Authenticated password update: `PATCH /consumer/profile/password` (see Profile below). This route supports both password change and first-time password creation for Google-only / no-password accounts.
 - Google OAuth flows:
-  - `GET /google/start`: start OAuth flow. Resolves the consumer app origin from allowed request `Origin`/`Referer` headers via `OriginResolverService`, then stores that resolved origin in OAuth state for redirect after authentication. Useful for multi-app deployments (e.g., desktop consumer on port 3001, mobile consumer on port 3002). Supports `CONSUMER_APP_ORIGIN`, `CONSUMER_MOBILE_APP_ORIGIN`, and `ADMIN_APP_ORIGIN`.
-  - `GET /google/callback`: OAuth redirect handling; uses the resolved origin stored in OAuth state.
+  - `GET /google/start`: start OAuth flow with explicit `appScope` as the only public redirect identity. Supported contract is `GET /google/start?appScope=consumer|consumer-mobile|consumer-css-grid&next=...`; browser-facing callers are expected to use same-origin BFF routes under `/api/consumer/auth/google/start`, and the backend validates that trusted request scope matches the claimed `appScope`.
+  - `GET /google/callback`: OAuth redirect handling; reads `appScope` from OAuth state and builds login/signup/callback redirects through configured `appScope -> origin` mapping rather than request-derived origin.
   - `GET /google/signup-session`: fetch OAuth signup session data.
   - `POST /oauth/complete`: exchange short-lived OAuth handoff token for access/refresh cookies. Browser-facing callers must go through frontend same-origin BFF routes rather than calling the API origin directly.
 
@@ -226,7 +226,7 @@ Common infrastructure in `apps/api/src/shared` and `apps/api/src/shared-common`:
 - Auth audit (login success/failure tracking) and account lockout (per-email after N failures).
 - Error filtering and logging.
 - Common DTOs used across admin and consumer APIs.
-- `OriginResolverService`: centralized origin validation for OAuth flows (CONSUMER_APP_ORIGIN, CONSUMER_MOBILE_APP_ORIGIN, ADMIN_APP_ORIGIN).
+- `OriginResolverService`: centralized request trust and scope/origin resolution for OAuth and other browser-facing consumer flows. For OAuth routing, `appScope` is primary and `Origin`/`Referer` remain part of trust validation, not redirect identity.
 
 Recent runtime hardening (API pipeline and scheduler safety):
 
@@ -290,7 +290,7 @@ Recent consumer UX updates:
 
 ## Consumer Mobile App (Next.js)
 
-Mobile-first consumer UI is in `apps/consumer-mobile`, running on port 3002. Follows the same architecture as the desktop consumer app with mobile-optimized layouts and enhanced touch interactions. Uses Google OAuth with request-header-based origin resolution for proper redirect handling in multi-app deployments.
+Mobile-first consumer UI is in `apps/consumer-mobile`, running on port 3002. Follows the same architecture as the desktop consumer app with mobile-optimized layouts and enhanced touch interactions. Uses the shared consumer OAuth model where same-origin BFF routes forward `appScope=consumer-mobile`, and backend callback/handoff routing resolves target origin from stored `appScope`.
 
 Recent hardening and architecture updates:
 

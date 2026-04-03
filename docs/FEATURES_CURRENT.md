@@ -20,7 +20,7 @@ Authentication and identity:
 - Cookie-based JWT auth with access/refresh tokens. Shared auth cookie policy: cookie names and options from `@remoola/api-types` (http/auth-cookie-policy); API and Next.js apps (admin, consumer, consumer-mobile) use the same policy; production uses __Host- prefixed names (RFC 6265). Refresh tokens are signed and verified with `JWT_REFRESH_SECRET`, distinct from `JWT_ACCESS_SECRET`.
 - Consumer auth sessions: `auth_sessions` table for database-backed consumer sessions; hashed refresh token storage; session family and refresh rotation lineage (`session_family_id`, `replaced_by_id`); revocation metadata (`revoked_at`, `invalidated_reason`). Migration `20260310123000_consumer_auth_sessions`.
 - Login audit (success/failure tracking) and account lockout (per-email after N failures).
-- Google OAuth endpoints for consumer login flows: `GET /google/start`, `GET /google/callback`, `GET /google/signup-session`, `POST /oauth/complete`. Browser-facing consumers use frontend BFF routes such as `/api/consumer/auth/google/start`, `/api/login`, `/api/consumer/auth/refresh`, and `/api/oauth/complete`; state-changing auth now requires a valid allowed `Origin`/`Referer` plus matching CSRF header/cookie. OAuth `/google/start` derives the consumer app origin from allowed request `Origin`/`Referer` headers for multi-app consumer deployments and stores that resolved origin in OAuth state for callback redirects. Origin resolution via `OriginResolverService` (supports `CONSUMER_APP_ORIGIN`, `CONSUMER_MOBILE_APP_ORIGIN`, `ADMIN_APP_ORIGIN`).
+- Google OAuth endpoints for consumer login flows: `GET /google/start`, `GET /google/callback`, `GET /google/signup-session`, `POST /oauth/complete`. Browser-facing consumers use frontend BFF routes such as `/api/consumer/auth/google/start`, `/api/login`, `/api/consumer/auth/refresh`, and `/api/oauth/complete`; state-changing auth now requires a valid allowed `Origin`/`Referer` plus matching CSRF header/cookie. OAuth `/google/start` now requires explicit `appScope=consumer|consumer-mobile|consumer-css-grid`; backend routing stores `appScope` in OAuth state and callback/handoff redirects are built through `appScope -> configured origin`, not through stored raw origin. `OriginResolverService` remains the trust layer for validating request scope and matching it against the claimed `appScope`.
 - Signup verification hardening: verification email links no longer include `email`
   query params; successful post-verification redirects may still include `email`
   (current compatibility behavior expected by tests).
@@ -171,7 +171,7 @@ Mobile-first consumer app running on port 3002:
   - Preview and selection improvements with better touch targets
   - Null-safety for document preview modal
 - Signup email verification view matches consumer web: `verified` without `email` is valid; copy adapts when `email` is absent.
-- Supports Google OAuth with request-header-based origin resolution for proper redirect after authentication in multi-app deployments.
+- Supports the shared consumer OAuth cutover model where same-origin BFF routes forward `appScope=consumer-mobile`, and backend callback/handoff redirects resolve target origin from stored `appScope`.
 - Settings password UX mirrors consumer web: when `profile.hasPassword` is false, Settings renders `Set Password`, omits the current-password field, and redirects through `auth_notice=password_set` after success.
 - CORS configured for localhost:3002 and Vercel deployment.
 - Shared UI library:
