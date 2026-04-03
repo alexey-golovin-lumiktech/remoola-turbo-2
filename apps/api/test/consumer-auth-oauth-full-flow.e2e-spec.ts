@@ -30,7 +30,9 @@ describe(`Consumer auth OAuth full flow (e2e, isolated DB)`, () => {
   const consumerEmail = `oauth-existing-consumer@local.test`;
   const consumerPassword = `OauthConsumer1!`;
   const consumerOrigin = `http://127.0.0.1:3001`;
+  const consumerMobileOrigin = `http://127.0.0.1:3002`;
   let consumerId = ``;
+  let initialConsumerMobileOrigin: string;
 
   function parseCookieValue(cookies: string[] | undefined, key: string): string | null {
     if (!Array.isArray(cookies)) return null;
@@ -56,6 +58,8 @@ describe(`Consumer auth OAuth full flow (e2e, isolated DB)`, () => {
 
   beforeAll(async () => {
     assertIsolatedTestDatabaseUrl();
+    initialConsumerMobileOrigin = envs.CONSUMER_MOBILE_APP_ORIGIN;
+    envs.CONSUMER_MOBILE_APP_ORIGIN = consumerMobileOrigin;
     prisma = new PrismaClient();
     await prisma.$connect();
 
@@ -126,6 +130,7 @@ describe(`Consumer auth OAuth full flow (e2e, isolated DB)`, () => {
   });
 
   afterAll(async () => {
+    envs.CONSUMER_MOBILE_APP_ORIGIN = initialConsumerMobileOrigin;
     await prisma.$disconnect();
     await app.close();
   });
@@ -176,5 +181,32 @@ describe(`Consumer auth OAuth full flow (e2e, isolated DB)`, () => {
     const meRes = await oauthAgent.get(`/api/consumer/auth/me`).set(`origin`, consumerOrigin).expect(200);
     expect(meRes.body?.id).toBe(consumerId);
     expect(meRes.body?.email).toBe(consumerEmail);
+  });
+
+  it(`completes mobile OAuth callback when Google returns without the original app origin header`, async () => {
+    const oauthAgent = request.agent(app.getHttpServer());
+
+    const startRes = await oauthAgent
+      .get(`/api/consumer/auth/google/start`)
+      .query({ next: `/dashboard`, returnOrigin: consumerMobileOrigin })
+      .expect(302);
+    expect(startRes.headers.location).toContain(`accounts.google.test`);
+    const startUrl = new URL(startRes.headers.location as string);
+    const state = startUrl.searchParams.get(`state`);
+    expect(state).toBeTruthy();
+
+    const stateCookie = parseCookieValueForKeys(
+      asCookieArray(startRes.headers[`set-cookie`]),
+      getApiOAuthStateCookieKeysForRead(`consumer-mobile`),
+    );
+    expect(stateCookie).toBeTruthy();
+    expect(stateCookie).toBe(state);
+
+    const callbackRes = await oauthAgent
+      .get(`/api/consumer/auth/google/callback`)
+      .query({ code: `oauth-code`, state })
+      .expect(302);
+    expect(callbackRes.headers.location).toContain(`${consumerMobileOrigin}/auth/callback`);
+    expect(callbackRes.headers.location).toContain(`oauthHandoff=`);
   });
 });

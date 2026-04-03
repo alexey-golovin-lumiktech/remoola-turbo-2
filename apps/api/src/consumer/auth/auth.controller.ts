@@ -58,6 +58,11 @@ import {
 @Controller(`consumer/auth`)
 export class ConsumerAuthController {
   private readonly logger = new Logger(ConsumerAuthController.name);
+  private readonly consumerAppScopes: readonly ConsumerAppScope[] = [
+    `consumer`,
+    `consumer-mobile`,
+    `consumer-css-grid`,
+  ];
   private readonly oauthStateTtlMs = 5 * 60 * 1000;
   private readonly oauthLoginHandoffTtlMs = 2 * 60 * 1000;
   private readonly googleSignupSessionTtlMs = 10 * 60 * 1000;
@@ -144,6 +149,23 @@ export class ConsumerAuthController {
 
   private getOAuthClearCookieOptions(req?: express.Request) {
     return getCookieClearOptions(this.getOAuthCookieOptions(req));
+  }
+
+  private getOAuthStateCookieKeysForReadAcrossScopes(): string[] {
+    return Array.from(new Set(this.consumerAppScopes.flatMap((scope) => getApiOAuthStateCookieKeysForRead(scope))));
+  }
+
+  private getOAuthStateCookieFromRequest(req: express.Request): string | undefined {
+    return this.getOAuthStateCookieKeysForReadAcrossScopes()
+      .map((key) => req.cookies?.[key] ?? req.signedCookies?.[key])
+      .find((value): value is string => typeof value === `string` && value.length > 0);
+  }
+
+  private clearOAuthStateCookies(req: express.Request, response: express.Response): void {
+    const clearOptions = this.getOAuthClearCookieOptions(req);
+    for (const key of this.getOAuthStateCookieKeysForReadAcrossScopes()) {
+      response.clearCookie(key, clearOptions);
+    }
   }
 
   private normalizeNextPath(next?: string) {
@@ -363,11 +385,7 @@ export class ConsumerAuthController {
     @Query(`state`) state?: string,
     @Query(`error`) error?: string,
   ) {
-    const clearStateCookie = () =>
-      response.clearCookie(
-        getApiOAuthStateCookieKey(req, this.resolveConsumerAppScope(req)),
-        this.getOAuthClearCookieOptions(req),
-      );
+    const clearStateCookie = () => this.clearOAuthStateCookies(req, response);
 
     const failureRedirect = (reason: string, returnOrigin?: string) => {
       clearStateCookie();
@@ -386,10 +404,7 @@ export class ConsumerAuthController {
       return failureRedirect(`access_denied`, errorReturnOrigin);
     }
 
-    const stateCookie =
-      getApiOAuthStateCookieKeysForRead(this.resolveConsumerAppScope(req))
-        .map((key) => req.cookies?.[key] ?? req.signedCookies?.[key])
-        .find((value): value is string => typeof value === `string` && value.length > 0) ?? undefined;
+    const stateCookie = this.getOAuthStateCookieFromRequest(req);
     if (!state) return failureRedirect(`invalid_state`);
     if (stateCookie && stateCookie !== state) {
       if (!this.isOAuthStateCookieFallbackAllowedInEnv()) {

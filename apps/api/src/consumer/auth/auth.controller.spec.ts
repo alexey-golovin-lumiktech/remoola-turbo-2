@@ -6,6 +6,7 @@ import { type GoogleOAuthService } from './google-oauth.service';
 import { type OAuthStateStoreService } from './oauth-state-store.service';
 import { envs } from '../../envs';
 import { type OriginResolverService } from '../../shared/origin-resolver.service';
+import { getApiOAuthStateCookieKeysForRead } from '../../shared-common';
 
 describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
   let controller: ConsumerAuthController;
@@ -270,6 +271,41 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
 
     expect(oauthStateStore.consume).toHaveBeenCalledWith(`state-token`);
     expect(res.redirect).toHaveBeenCalledWith(expect.stringContaining(`error=invalid_state`));
+  });
+
+  it(`google callback accepts the consumer-mobile state cookie when callback origin headers are absent`, async () => {
+    (oauthStateStore.consume as jest.Mock).mockResolvedValue({
+      createdAt: Date.now(),
+      codeVerifier: `verifier`,
+      nonce: `nonce`,
+      nextPath: `/dashboard`,
+      accountType: null,
+      contractorKind: null,
+      returnOrigin: `https://app.example.com`,
+    });
+    (googleOAuthService.exchangeCodeForPayload as jest.Mock | undefined)?.mockResolvedValue({
+      email: `test@example.com`,
+      email_verified: true,
+      sub: `sub`,
+    });
+    (service.findConsumerByEmail as jest.Mock | undefined)?.mockResolvedValue({
+      id: `consumer-id`,
+      email: `test@example.com`,
+    });
+    (googleOAuthService.loginWithPayload as jest.Mock | undefined)?.mockResolvedValue({
+      id: `consumer-id`,
+    });
+
+    const mobileStateCookieKey = getApiOAuthStateCookieKeysForRead(`consumer-mobile`)[0];
+    const req = makeReq({
+      cookies: { [mobileStateCookieKey]: `state-token` },
+    });
+    const res = makeRes();
+
+    await controller.googleOAuthCallback(req, res, `oauth-code`, `state-token`, undefined);
+
+    expect(oauthStateStore.consume).toHaveBeenCalledWith(`state-token`);
+    expect(res.redirect).toHaveBeenCalledWith(expect.stringContaining(`oauthHandoff=handoff-token`));
   });
 
   it(`resetPassword delegates to service and returns success`, async () => {

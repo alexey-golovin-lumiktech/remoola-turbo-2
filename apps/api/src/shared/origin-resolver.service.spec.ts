@@ -56,6 +56,7 @@ describe(`OriginResolverService`, () => {
       expect(origins.has(`https://consumer.example.com`)).toBe(true);
       expect(origins.has(`https://mobile.example.com`)).toBe(true);
       expect(origins.has(`https://admin.example.com`)).toBe(true);
+      expect(origins.has(`https://allowed1.example.com`)).toBe(true);
     });
 
     it(`should normalize origins in the set`, () => {
@@ -98,6 +99,11 @@ describe(`OriginResolverService`, () => {
     it(`should handle trailing slashes`, () => {
       const result = service.validateReturnOrigin(`https://consumer.example.com/`);
       expect(result).toBe(`https://consumer.example.com`);
+    });
+
+    it(`should allow origins listed in CORS_ALLOWED_ORIGINS`, () => {
+      const result = service.validateReturnOrigin(`https://allowed1.example.com/path`);
+      expect(result).toBe(`https://allowed1.example.com`);
     });
 
     it(`should allow localhost mobile origin in development when allowlist is narrowed`, () => {

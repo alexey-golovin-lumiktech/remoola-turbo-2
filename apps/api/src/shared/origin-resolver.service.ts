@@ -66,6 +66,18 @@ export class OriginResolverService {
     return scopes;
   }
 
+  private getConfiguredCorsAllowedOrigins(): Set<string> {
+    const origins = new Set<string>();
+    for (const candidate of envs.CORS_ALLOWED_ORIGINS ?? []) {
+      try {
+        origins.add(this.normalizeOrigin(new URL(candidate).origin));
+      } catch {
+        // ignore invalid configured origin values
+      }
+    }
+    return origins;
+  }
+
   private getFirstHeaderValue(headerValue: HeaderValue): string | undefined {
     if (Array.isArray(headerValue)) {
       return headerValue.find((entry): entry is string => typeof entry === `string` && entry.trim().length > 0)?.trim();
@@ -75,7 +87,7 @@ export class OriginResolverService {
   }
 
   getConsumerAllowedOrigins(): Set<string> {
-    return new Set(this.getConfiguredConsumerOriginScopes().keys());
+    return new Set([...this.getConfiguredConsumerOriginScopes().keys(), ...this.getConfiguredCorsAllowedOrigins()]);
   }
 
   getAdminAllowedOrigins(): Set<string> {
