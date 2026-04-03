@@ -43,7 +43,11 @@ export type ConsumerCookieRuntime = AuthCookieRuntime & {
 
 export type ConsumerAppScope = `consumer` | `consumer-mobile` | `consumer-css-grid`;
 
-export const CONSUMER_APP_SCOPES = [`consumer`, `consumer-mobile`, `consumer-css-grid`] as const satisfies readonly ConsumerAppScope[];
+export const CONSUMER_APP_SCOPES = [
+  `consumer`,
+  `consumer-mobile`,
+  `consumer-css-grid`,
+] as const satisfies readonly ConsumerAppScope[];
 
 export function isConsumerAppScope(value: string | null | undefined): value is ConsumerAppScope {
   return typeof value === `string` && CONSUMER_APP_SCOPES.some((scope) => scope === value);

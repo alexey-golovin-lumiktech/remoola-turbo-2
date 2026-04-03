@@ -36,6 +36,8 @@ import {
 
 import { envs } from '../envs';
 
+export const DEFAULT_API_CONSUMER_SCOPE: ConsumerAppScope = `consumer`;
+
 function getApiAuthCookieRuntime(): AuthCookieRuntime {
   return {
     isProduction: envs.NODE_ENV === `production`,
@@ -106,26 +108,26 @@ export function getApiAdminCsrfCookieClearOptions(): Pick<
 
 export function getApiConsumerAccessTokenCookieKey(
   req?: express.Request,
-  scope: ConsumerAppScope = `consumer`,
+  scope: ConsumerAppScope = DEFAULT_API_CONSUMER_SCOPE,
 ): TCookieKey {
   return getScopedConsumerAccessTokenCookieKey(scope, getApiConsumerCookieRuntime(req));
 }
 
 export function getApiConsumerRefreshTokenCookieKey(
   req?: express.Request,
-  scope: ConsumerAppScope = `consumer`,
+  scope: ConsumerAppScope = DEFAULT_API_CONSUMER_SCOPE,
 ): TCookieKey {
   return getScopedConsumerRefreshTokenCookieKey(scope, getApiConsumerCookieRuntime(req));
 }
 
 export function getApiConsumerAccessTokenCookieKeysForRead(
-  scope: ConsumerAppScope = `consumer`,
+  scope: ConsumerAppScope = DEFAULT_API_CONSUMER_SCOPE,
 ): readonly TCookieKey[] {
   return getScopedConsumerAccessTokenCookieKeysForRead(scope);
 }
 
 export function getApiConsumerRefreshTokenCookieKeysForRead(
-  scope: ConsumerAppScope = `consumer`,
+  scope: ConsumerAppScope = DEFAULT_API_CONSUMER_SCOPE,
 ): readonly TCookieKey[] {
   return getScopedConsumerRefreshTokenCookieKeysForRead(scope);
 }
@@ -154,20 +156,27 @@ export function getApiConsumerCsrfCookieClearOptions(
 
 export function getApiConsumerCsrfTokenCookieKey(
   req?: express.Request,
-  scope: ConsumerAppScope = `consumer`,
+  scope: ConsumerAppScope = DEFAULT_API_CONSUMER_SCOPE,
 ): TCookieKey {
   return getScopedConsumerCsrfTokenCookieKey(scope, getApiConsumerCookieRuntime(req));
 }
 
-export function getApiConsumerCsrfTokenCookieKeysForRead(scope: ConsumerAppScope = `consumer`): readonly TCookieKey[] {
+export function getApiConsumerCsrfTokenCookieKeysForRead(
+  scope: ConsumerAppScope = DEFAULT_API_CONSUMER_SCOPE,
+): readonly TCookieKey[] {
   return getScopedConsumerCsrfTokenCookieKeysForRead(scope);
 }
 
-export function getApiOAuthStateCookieKey(req?: express.Request, scope: ConsumerAppScope = `consumer`): TCookieKey {
+export function getApiOAuthStateCookieKey(
+  req?: express.Request,
+  scope: ConsumerAppScope = DEFAULT_API_CONSUMER_SCOPE,
+): TCookieKey {
   return getScopedConsumerGoogleOAuthStateCookieKey(scope, getApiConsumerCookieRuntime(req));
 }
 
-export function getApiOAuthStateCookieKeysForRead(scope: ConsumerAppScope = `consumer`): readonly TCookieKey[] {
+export function getApiOAuthStateCookieKeysForRead(
+  scope: ConsumerAppScope = DEFAULT_API_CONSUMER_SCOPE,
+): readonly TCookieKey[] {
   return getScopedConsumerGoogleOAuthStateCookieKeysForRead(scope);
 }
 
@@ -178,23 +187,28 @@ export function getApiOAuthStateCookieOptions(req?: express.Request): SharedHttp
   });
 }
 
-export function getApiConsumerDeviceCookieKey(req?: express.Request, scope: ConsumerAppScope = `consumer`): TCookieKey {
+export function getApiConsumerDeviceCookieKey(
+  req?: express.Request,
+  scope: ConsumerAppScope = DEFAULT_API_CONSUMER_SCOPE,
+): TCookieKey {
   return getScopedConsumerDeviceCookieKey(scope, getApiConsumerCookieRuntime(req));
 }
 
-export function getApiConsumerDeviceCookieKeysForRead(scope: ConsumerAppScope = `consumer`): readonly TCookieKey[] {
+export function getApiConsumerDeviceCookieKeysForRead(
+  scope: ConsumerAppScope = DEFAULT_API_CONSUMER_SCOPE,
+): readonly TCookieKey[] {
   return getScopedConsumerDeviceCookieKeysForRead(scope);
 }
 
 export function getApiConsumerGoogleSignupSessionCookieKey(
   req?: express.Request,
-  scope: ConsumerAppScope = `consumer`,
+  scope: ConsumerAppScope = DEFAULT_API_CONSUMER_SCOPE,
 ): TCookieKey {
   return getScopedConsumerGoogleSignupSessionCookieKey(scope, getApiConsumerCookieRuntime(req));
 }
 
 export function getApiConsumerGoogleSignupSessionCookieKeysForRead(
-  scope: ConsumerAppScope = `consumer`,
+  scope: ConsumerAppScope = DEFAULT_API_CONSUMER_SCOPE,
 ): readonly TCookieKey[] {
   return getScopedConsumerGoogleSignupSessionCookieKeysForRead(scope);
 }

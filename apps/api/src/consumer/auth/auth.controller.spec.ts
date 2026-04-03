@@ -1,62 +1,84 @@
 import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 
+import {
+  getScopedConsumerCsrfTokenCookieKey,
+  getScopedConsumerCsrfTokenCookieKeysForRead,
+  getScopedConsumerGoogleOAuthStateCookieKey,
+  getScopedConsumerRefreshTokenCookieKeysForRead,
+} from '@remoola/api-types';
+
 import { ConsumerAuthController } from './auth.controller';
 import { type ConsumerAuthService } from './auth.service';
 import { type GoogleOAuthService } from './google-oauth.service';
 import { type OAuthStateStoreService } from './oauth-state-store.service';
 import { envs } from '../../envs';
 import { type OriginResolverService } from '../../shared/origin-resolver.service';
-import { getApiOAuthStateCookieKeysForRead } from '../../shared-common';
+import { CSRF_TOKEN_COOKIE_KEY, GOOGLE_OAUTH_STATE_COOKIE_KEY } from '../../shared-common';
 
 describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
   let controller: ConsumerAuthController;
   let service: Partial<ConsumerAuthService>;
   let initialOauthStateCookieFallback: boolean;
   let initialNodeEnv: typeof envs.NODE_ENV;
-  const consumerOrigin = `https://app.example.com`;
-  const consumerMobileOrigin = `https://mobile.example.com`;
-
-  const resolveMockOrigin = (origin?: string | string[], referer?: string | string[]) => {
-    const values = [origin, referer].flatMap((entry) => (Array.isArray(entry) ? entry : [entry]));
-    if (values.some((entry) => typeof entry === `string` && entry.includes(`mobile.example.com`))) {
-      return consumerMobileOrigin;
-    }
-    if (values.some((entry) => typeof entry === `string` && entry.includes(`app.example.com`))) {
-      return consumerOrigin;
-    }
-    return undefined;
-  };
 
   const originResolver: Pick<
     OriginResolverService,
+    | `validateConsumerAppScope`
     | `validateConsumerRedirectOrigin`
     | `resolveConsumerOriginByScope`
     | `resolveDefaultConsumerOrigin`
+    | `getAllowedOrigins`
     | `resolveConsumerAppScope`
     | `resolveConsumerRequestScope`
+    | `requestMatchesConsumerScope`
   > = {
+    validateConsumerAppScope: jest.fn((value?: string | null) =>
+      value === `consumer` || value === `consumer-mobile` || value === `consumer-css-grid` ? value : undefined,
+    ),
     validateConsumerRedirectOrigin: jest.fn((value?: string) =>
-      typeof value === `string` && (value.includes(`app.example.com`) || value.includes(`mobile.example.com`))
+      typeof value === `string` &&
+      (value.includes(`app.example.com`) || value.includes(`mobile.example.com`) || value.includes(`grid.example.com`))
         ? new URL(value).origin
         : undefined,
     ),
     resolveConsumerOriginByScope: jest.fn((scope: string) => {
-      if (scope === `consumer-mobile`) return consumerMobileOrigin;
-      if (scope === `consumer`) return consumerOrigin;
+      if (scope === `consumer-mobile`) return `https://mobile.example.com`;
+      if (scope === `consumer-css-grid`) return `https://grid.example.com`;
+      if (scope === `consumer`) return `https://app.example.com`;
       return null;
     }),
-    resolveDefaultConsumerOrigin: jest.fn().mockReturnValue(consumerOrigin),
+    resolveDefaultConsumerOrigin: jest.fn().mockReturnValue(`https://app.example.com`),
+    getAllowedOrigins: jest
+      .fn()
+      .mockReturnValue(new Set([`https://app.example.com`, `https://mobile.example.com`, `https://grid.example.com`])),
+    resolveConsumerRequestScope: jest.fn((origin?: string | string[], referer?: string | string[]) => {
+      const values = [origin, referer].flatMap((entry) => (Array.isArray(entry) ? entry : [entry]));
+      for (const entry of values) {
+        if (typeof entry !== `string`) continue;
+        if (entry.includes(`mobile.example.com`)) return `consumer-mobile`;
+        if (entry.includes(`grid.example.com`)) return `consumer-css-grid`;
+        if (entry.includes(`app.example.com`)) return `consumer`;
+      }
+      return undefined;
+    }),
     resolveConsumerAppScope: jest.fn((origin?: string) => {
       if (origin?.includes(`mobile.example.com`)) return `consumer-mobile`;
+      if (origin?.includes(`grid.example.com`)) return `consumer-css-grid`;
       if (origin?.includes(`app.example.com`)) return `consumer`;
       return undefined;
     }),
-    resolveConsumerRequestScope: jest.fn((origin?: string | string[], referer?: string | string[]) => {
-      const resolvedOrigin = resolveMockOrigin(origin, referer);
-      if (resolvedOrigin === consumerMobileOrigin) return `consumer-mobile`;
-      if (resolvedOrigin === consumerOrigin) return `consumer`;
-      return undefined;
-    }),
+    requestMatchesConsumerScope: jest.fn(
+      (claimedScope?: string | null, origin?: string | string[], referer?: string | string[]) => {
+        const values = [origin, referer].flatMap((entry) => (Array.isArray(entry) ? entry : [entry]));
+        for (const entry of values) {
+          if (typeof entry !== `string`) continue;
+          if (entry.includes(`mobile.example.com`)) return claimedScope === `consumer-mobile`;
+          if (entry.includes(`grid.example.com`)) return claimedScope === `consumer-css-grid`;
+          if (entry.includes(`app.example.com`)) return claimedScope === `consumer`;
+        }
+        return false;
+      },
+    ),
   };
 
   const oauthStateStore: Pick<
@@ -121,6 +143,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       revokeAllSessionsByConsumerIdAndAudit: jest.fn().mockResolvedValue(undefined),
       refreshAccess: jest.fn().mockResolvedValue({ accessToken: `a`, refreshToken: `r` }),
       findConsumerByEmail: jest.fn(),
+      issueTokensForConsumer: jest.fn(),
       createGoogleSignupPayload: jest.fn(((payload) => ({
         type: `google_signup`,
         email: payload.email ?? ``,
@@ -135,14 +158,13 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
         nextPath: payload.nextPath ?? null,
         accountType: payload.accountType ?? null,
         contractorKind: payload.contractorKind ?? null,
-        redirectOrigin: payload.redirectOrigin ?? null,
+        appScope: payload.appScope ?? `consumer`,
       })) as any),
       validateGoogleSignupPayload: jest.fn((payload) => payload),
-      issueTokensForConsumer: jest.fn(),
-      completeProfileCreationAndSendVerificationEmail: jest.fn().mockResolvedValue(undefined),
       requestPasswordReset: jest.fn().mockResolvedValue(undefined),
-      signup: jest.fn(),
       resetPasswordWithToken: jest.fn().mockResolvedValue(undefined),
+      completeProfileCreationAndSendVerificationEmail: jest.fn().mockResolvedValue(undefined),
+      signup: jest.fn(),
     };
 
     controller = new ConsumerAuthController(
@@ -166,7 +188,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
   it(`rejects logout when CSRF header/cookie mismatch`, async () => {
     const req = makeReq({
       headers: { 'x-csrf-token': `header-token` },
-      cookies: { csrf_token: `cookie-token` },
+      cookies: { [CSRF_TOKEN_COOKIE_KEY]: `cookie-token` },
     });
     await expect(controller.logout(req, makeRes())).rejects.toBeInstanceOf(UnauthorizedException);
     expect(service.revokeSessionByRefreshTokenAndAudit).not.toHaveBeenCalled();
@@ -182,64 +204,35 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
   it(`rejects logout when csrf matches but request origin is missing`, async () => {
     const req = makeReq({
       headers: { 'x-csrf-token': `csrf-token` },
-      cookies: { csrf_token: `csrf-token` },
+      cookies: { [CSRF_TOKEN_COOKIE_KEY]: `csrf-token` },
     });
 
     await expect(controller.logout(req, makeRes())).rejects.toBeInstanceOf(UnauthorizedException);
     expect(service.revokeSessionByRefreshTokenAndAudit).not.toHaveBeenCalled();
   });
 
-  it(`google start stores the canonical request origin from the origin header`, async () => {
-    const req = makeReq({ headers: { origin: consumerOrigin } });
-    const res = makeRes();
-
-    await controller.googleOAuthStart(req, res, `/dashboard`, undefined, undefined, undefined);
-
-    expect(originResolver.resolveConsumerOriginByScope).toHaveBeenCalledWith(`consumer`);
-    expect(oauthStateStore.save).toHaveBeenCalledWith(
-      `state-token`,
-      expect.objectContaining({
-        nextPath: `/dashboard`,
-        redirectOrigin: consumerOrigin,
-      }),
-      expect.any(Number),
-    );
-    expect(getApiOAuthStateCookieKeysForRead(`consumer`)).toContain((res.cookie as jest.Mock).mock.calls[0]?.[0]);
-    expect(res.cookie).toHaveBeenCalledWith(expect.any(String), `state-token`, expect.any(Object));
-  });
-
-  it(`google start derives the mobile scope from the request referer`, async () => {
+  it(`accepts referer as CSRF origin fallback`, async () => {
+    const consumerCsrfCookieKey = getScopedConsumerCsrfTokenCookieKey(`consumer`, {
+      isProduction: false,
+      isVercel: false,
+      cookieSecure: false,
+      isSecureRequest: false,
+    });
     const req = makeReq({
       headers: {
-        referer: `${consumerMobileOrigin}/api/consumer/auth/google/start?next=%2Fdashboard`,
+        referer: `https://app.example.com/dashboard`,
+        'x-csrf-token': `csrf-token`,
       },
+      cookies: { [consumerCsrfCookieKey]: `csrf-token` },
     });
-    const res = makeRes();
 
-    await controller.googleOAuthStart(req, res, `/dashboard`, undefined, undefined, undefined);
+    await controller.logout(req, makeRes());
 
-    expect(originResolver.resolveConsumerOriginByScope).toHaveBeenCalledWith(`consumer-mobile`);
-    expect(oauthStateStore.save).toHaveBeenCalledWith(
-      `state-token`,
-      expect.objectContaining({
-        redirectOrigin: consumerMobileOrigin,
-      }),
-      expect.any(Number),
+    expect(originResolver.resolveConsumerRequestScope).toHaveBeenCalledWith(
+      undefined,
+      `https://app.example.com/dashboard`,
     );
-    expect(getApiOAuthStateCookieKeysForRead(`consumer-mobile`)).toContain(
-      (res.cookie as jest.Mock).mock.calls[0]?.[0],
-    );
-    expect(res.cookie).toHaveBeenCalledWith(expect.any(String), `state-token`, expect.any(Object));
-  });
-
-  it(`google start rejects when the request origin cannot be trusted`, async () => {
-    const req = makeReq({ headers: {} });
-    const res = makeRes();
-
-    await expect(
-      controller.googleOAuthStart(req, res, `/dashboard`, undefined, undefined, undefined),
-    ).rejects.toBeInstanceOf(UnauthorizedException);
-    expect(oauthStateStore.save).not.toHaveBeenCalled();
+    expect(service.revokeSessionByRefreshTokenAndAudit).toHaveBeenCalled();
   });
 
   it(`google callback rejects when state cookie is missing`, async () => {
@@ -251,15 +244,15 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     expect(res.redirect).toHaveBeenCalledWith(expect.stringContaining(`error=expired_state`));
   });
 
-  it(`google callback preserves return origin for access_denied`, async () => {
-    const req = makeReq({ cookies: { google_oauth_state: `state-token` } });
+  it(`google callback preserves app scope for access_denied`, async () => {
+    const req = makeReq({ cookies: { [GOOGLE_OAUTH_STATE_COOKIE_KEY]: `state-token` } });
     const res = makeRes();
     (oauthStateStore.consume as jest.Mock).mockResolvedValueOnce({
       createdAt: Date.now(),
       codeVerifier: `verifier`,
       nonce: `nonce`,
       nextPath: `/dashboard`,
-      redirectOrigin: `https://app.example.com`,
+      appScope: `consumer`,
     });
 
     await controller.googleOAuthCallback(req, res, undefined, `state-token`, `access_denied`);
@@ -268,27 +261,32 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     expect(res.redirect).toHaveBeenCalledWith(`https://app.example.com/login?oauth=google&error=access_denied`);
   });
 
-  it(`google callback routes legacy mobile redirect origins through consumer scope`, async () => {
-    const req = makeReq({ cookies: { google_oauth_state: `state-token` } });
+  it(`google callback routes mobile callbacks by stored app scope`, async () => {
+    const mobileOauthCookieKey = getScopedConsumerGoogleOAuthStateCookieKey(`consumer-mobile`, {
+      isProduction: false,
+      isVercel: false,
+      cookieSecure: false,
+      isSecureRequest: false,
+    });
+    const req = makeReq({ cookies: { [GOOGLE_OAUTH_STATE_COOKIE_KEY]: `state-token` } });
     const res = makeRes();
     (oauthStateStore.consume as jest.Mock).mockResolvedValueOnce({
       createdAt: Date.now(),
       codeVerifier: `verifier`,
       nonce: `nonce`,
       nextPath: `/dashboard`,
-      redirectOrigin: `https://mobile.example.com/login`,
+      appScope: `consumer-mobile`,
     });
 
     await controller.googleOAuthCallback(req, res, undefined, `state-token`, `access_denied`);
 
-    expect(originResolver.validateConsumerRedirectOrigin).toHaveBeenCalledWith(`https://mobile.example.com/login`);
-    expect(originResolver.resolveConsumerAppScope).toHaveBeenCalledWith(`https://mobile.example.com`);
     expect(originResolver.resolveConsumerOriginByScope).toHaveBeenCalledWith(`consumer-mobile`);
+    expect(res.clearCookie).toHaveBeenCalledWith(mobileOauthCookieKey, expect.any(Object));
     expect(res.redirect).toHaveBeenCalledWith(`https://mobile.example.com/login?oauth=google&error=access_denied`);
   });
 
   it(`google callback rejects when state cookie does not match state`, async () => {
-    const req = makeReq({ cookies: { google_oauth_state: `different-state` } });
+    const req = makeReq({ cookies: { [GOOGLE_OAUTH_STATE_COOKIE_KEY]: `different-state` } });
     const res = makeRes();
     (oauthStateStore.consume as jest.Mock).mockResolvedValue(undefined);
     await controller.googleOAuthCallback(req, res, `oauth-code`, `state-token`, undefined);
@@ -305,7 +303,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       nextPath: `/dashboard`,
       accountType: null,
       contractorKind: null,
-      redirectOrigin: `https://app.example.com`,
+      appScope: `consumer`,
     });
     (googleOAuthService.exchangeCodeForPayload as jest.Mock | undefined)?.mockResolvedValue({
       email: `test@example.com`,
@@ -327,31 +325,175 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     expect(res.redirect).toHaveBeenCalledWith(expect.stringContaining(`oauthHandoff=handoff-token`));
   });
 
-  it(`google callback returns unregistered users to the recorded signup step`, async () => {
-    envs.CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK = true;
+  it(`google callback redirects back to frontend callback without setting api auth cookies`, async () => {
+    (oauthStateStore.consume as jest.Mock).mockResolvedValue({
+      createdAt: Date.now(),
+      codeVerifier: `verifier`,
+      nonce: `nonce`,
+      nextPath: `/dashboard`,
+      accountType: null,
+      contractorKind: null,
+      appScope: `consumer`,
+    });
+    (googleOAuthService.exchangeCodeForPayload as jest.Mock | undefined)?.mockResolvedValue({
+      email: `test@example.com`,
+      email_verified: true,
+      sub: `sub`,
+    });
+    (service.findConsumerByEmail as jest.Mock | undefined)?.mockResolvedValue({
+      id: `consumer-id`,
+      email: `test@example.com`,
+    });
+    (googleOAuthService.loginWithPayload as jest.Mock | undefined)?.mockResolvedValue({
+      id: `consumer-id`,
+    });
+    const req = makeReq({ cookies: { [GOOGLE_OAUTH_STATE_COOKIE_KEY]: `state-token` } });
+    const res = makeRes();
+
+    await controller.googleOAuthCallback(req, res, `oauth-code`, `state-token`, undefined);
+
+    expect(service.issueTokensForConsumer).not.toHaveBeenCalled();
+    expect(res.cookie).not.toHaveBeenCalled();
+    expect(oauthStateStore.saveLoginHandoff).toHaveBeenCalledWith(
+      `handoff-token`,
+      expect.objectContaining({ identityId: `consumer-id`, nextPath: `/dashboard`, appScope: `consumer` }),
+      expect.any(Number),
+    );
+    expect(res.redirect).toHaveBeenCalledWith(
+      `https://app.example.com/auth/callback?next=%2Fdashboard&oauthHandoff=handoff-token`,
+    );
+  });
+
+  it(`google callback normalizes signup next paths to dashboard for existing consumers`, async () => {
     (oauthStateStore.consume as jest.Mock).mockResolvedValue({
       createdAt: Date.now(),
       codeVerifier: `verifier`,
       nonce: `nonce`,
       nextPath: `/signup?accountType=BUSINESS`,
-      signupEntryPath: `/signup`,
       accountType: `BUSINESS`,
       contractorKind: null,
-      redirectOrigin: `https://app.example.com`,
+      appScope: `consumer`,
     });
     (googleOAuthService.exchangeCodeForPayload as jest.Mock | undefined)?.mockResolvedValue({
-      email: `new@example.com`,
+      email: `test@example.com`,
+      email_verified: true,
+      sub: `sub`,
+    });
+    (service.findConsumerByEmail as jest.Mock | undefined)?.mockResolvedValue({
+      id: `consumer-id`,
+      email: `test@example.com`,
+    });
+    (googleOAuthService.loginWithPayload as jest.Mock | undefined)?.mockResolvedValue({
+      id: `consumer-id`,
+    });
+    const req = makeReq({ cookies: { [GOOGLE_OAUTH_STATE_COOKIE_KEY]: `state-token` } });
+    const res = makeRes();
+
+    await controller.googleOAuthCallback(req, res, `oauth-code`, `state-token`, undefined);
+
+    expect(res.redirect).toHaveBeenCalledWith(
+      `https://app.example.com/auth/callback?next=%2Fdashboard&oauthHandoff=handoff-token`,
+    );
+  });
+
+  it(`google callback returns unregistered consumers to signup when next pathname is signup`, async () => {
+    (oauthStateStore.consume as jest.Mock).mockResolvedValue({
+      createdAt: Date.now(),
+      codeVerifier: `verifier`,
+      nonce: `nonce`,
+      nextPath: `/signup?accountType=CONTRACTOR&contractorKind=ENTITY`,
+      accountType: `CONTRACTOR`,
+      contractorKind: `ENTITY`,
+      appScope: `consumer`,
+    });
+    (googleOAuthService.exchangeCodeForPayload as jest.Mock | undefined)?.mockResolvedValue({
+      email: `new-user@example.com`,
       email_verified: true,
       sub: `sub`,
     });
     (service.findConsumerByEmail as jest.Mock | undefined)?.mockResolvedValue(null);
-    const req = makeReq({ cookies: {} });
+    const req = makeReq({ cookies: { [GOOGLE_OAUTH_STATE_COOKIE_KEY]: `state-token` } });
     const res = makeRes();
+
+    await controller.googleOAuthCallback(req, res, `oauth-code`, `state-token`, undefined);
+
+    expect(oauthStateStore.saveSignupHandoff).toHaveBeenCalledWith(
+      `handoff-token`,
+      expect.objectContaining({
+        email: `new-user@example.com`,
+        accountType: `CONTRACTOR`,
+        contractorKind: `ENTITY`,
+        appScope: `consumer`,
+      }),
+      expect.any(Number),
+    );
+    expect(res.redirect).toHaveBeenCalledWith(
+      `https://app.example.com/signup?googleSignupHandoff=handoff-token&accountType=CONTRACTOR&contractorKind=ENTITY`,
+    );
+  });
+
+  it(`google callback returns unregistered consumers to signup start for non-signup next paths`, async () => {
+    (oauthStateStore.consume as jest.Mock).mockResolvedValue({
+      createdAt: Date.now(),
+      codeVerifier: `verifier`,
+      nonce: `nonce`,
+      nextPath: `/dashboard`,
+      accountType: `BUSINESS`,
+      contractorKind: null,
+      appScope: `consumer`,
+    });
+    (googleOAuthService.exchangeCodeForPayload as jest.Mock | undefined)?.mockResolvedValue({
+      email: `new-user@example.com`,
+      email_verified: true,
+      sub: `sub`,
+    });
+    (service.findConsumerByEmail as jest.Mock | undefined)?.mockResolvedValue(null);
+    const req = makeReq({ cookies: { [GOOGLE_OAUTH_STATE_COOKIE_KEY]: `state-token` } });
+    const res = makeRes();
+
     await controller.googleOAuthCallback(req, res, `oauth-code`, `state-token`, undefined);
 
     expect(res.redirect).toHaveBeenCalledWith(
-      `https://app.example.com/signup?googleSignupHandoff=handoff-token&accountType=BUSINESS`,
+      `https://app.example.com/signup/start?googleSignupHandoff=handoff-token&accountType=BUSINESS`,
     );
+  });
+
+  it.each([
+    [
+      `consumer-mobile`,
+      `https://mobile.example.com/signup/start?googleSignupHandoff=handoff-token&accountType=BUSINESS`,
+    ],
+    [
+      `consumer-css-grid`,
+      `https://grid.example.com/signup/start?googleSignupHandoff=handoff-token&accountType=BUSINESS`,
+    ],
+  ] as const)(`google callback preserves %s signup handoff routing`, async (appScope, expectedRedirect) => {
+    (oauthStateStore.consume as jest.Mock).mockResolvedValue({
+      createdAt: Date.now(),
+      codeVerifier: `verifier`,
+      nonce: `nonce`,
+      nextPath: `/dashboard`,
+      accountType: `BUSINESS`,
+      contractorKind: null,
+      appScope,
+    });
+    (googleOAuthService.exchangeCodeForPayload as jest.Mock | undefined)?.mockResolvedValue({
+      email: `new-user@example.com`,
+      email_verified: true,
+      sub: `sub`,
+    });
+    (service.findConsumerByEmail as jest.Mock | undefined)?.mockResolvedValue(null);
+    const req = makeReq({ cookies: { [GOOGLE_OAUTH_STATE_COOKIE_KEY]: `state-token` } });
+    const res = makeRes();
+
+    await controller.googleOAuthCallback(req, res, `oauth-code`, `state-token`, undefined);
+
+    expect(oauthStateStore.saveSignupHandoff).toHaveBeenCalledWith(
+      `handoff-token`,
+      expect.objectContaining({ email: `new-user@example.com`, appScope }),
+      expect.any(Number),
+    );
+    expect(res.redirect).toHaveBeenCalledWith(expectedRedirect);
   });
 
   it(`google callback blocks missing-state-cookie fallback in production`, async () => {
@@ -378,39 +520,182 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     expect(res.redirect).toHaveBeenCalledWith(expect.stringContaining(`error=invalid_state`));
   });
 
-  it(`google callback accepts the consumer-mobile state cookie when callback origin headers are absent`, async () => {
-    (oauthStateStore.consume as jest.Mock).mockResolvedValue({
-      createdAt: Date.now(),
-      codeVerifier: `verifier`,
-      nonce: `nonce`,
-      nextPath: `/dashboard`,
-      accountType: null,
-      contractorKind: null,
-      redirectOrigin: `https://app.example.com`,
-    });
-    (googleOAuthService.exchangeCodeForPayload as jest.Mock | undefined)?.mockResolvedValue({
-      email: `test@example.com`,
-      email_verified: true,
-      sub: `sub`,
-    });
-    (service.findConsumerByEmail as jest.Mock | undefined)?.mockResolvedValue({
-      id: `consumer-id`,
-      email: `test@example.com`,
-    });
-    (googleOAuthService.loginWithPayload as jest.Mock | undefined)?.mockResolvedValue({
-      id: `consumer-id`,
-    });
-
-    const mobileStateCookieKey = getApiOAuthStateCookieKeysForRead(`consumer-mobile`)[0];
+  it(`google start requires app scope and stores it in state`, async () => {
     const req = makeReq({
-      cookies: { [mobileStateCookieKey]: `state-token` },
+      headers: { referer: `https://app.example.com/settings/profile` },
     });
     const res = makeRes();
 
-    await controller.googleOAuthCallback(req, res, `oauth-code`, `state-token`, undefined);
+    await controller.googleOAuthStart(req, res, `consumer`, undefined, undefined, undefined, undefined);
 
-    expect(oauthStateStore.consume).toHaveBeenCalledWith(`state-token`);
-    expect(res.redirect).toHaveBeenCalledWith(expect.stringContaining(`oauthHandoff=handoff-token`));
+    expect(originResolver.requestMatchesConsumerScope).toHaveBeenCalledWith(
+      `consumer`,
+      undefined,
+      `https://app.example.com/settings/profile`,
+    );
+    expect(oauthStateStore.save).toHaveBeenCalledWith(
+      `state-token`,
+      expect.objectContaining({ appScope: `consumer` }),
+      expect.any(Number),
+    );
+    expect(res.redirect).toHaveBeenCalledWith(`https://accounts.google.com/o/oauth2/v2/auth`);
+  });
+
+  it(`google start uses css-grid app scope for cookie and state`, async () => {
+    const cssGridOauthCookieKey = getScopedConsumerGoogleOAuthStateCookieKey(`consumer-css-grid`, {
+      isProduction: false,
+      isVercel: false,
+      cookieSecure: false,
+      isSecureRequest: false,
+    });
+    const req = makeReq({
+      headers: { origin: `https://grid.example.com` },
+    });
+    const res = makeRes();
+
+    await controller.googleOAuthStart(req, res, `consumer-css-grid`, `/dashboard`, undefined, undefined, undefined);
+
+    expect(originResolver.requestMatchesConsumerScope).toHaveBeenCalledWith(
+      `consumer-css-grid`,
+      `https://grid.example.com`,
+      undefined,
+    );
+    expect(oauthStateStore.save).toHaveBeenCalledWith(
+      `state-token`,
+      expect.objectContaining({ appScope: `consumer-css-grid` }),
+      expect.any(Number),
+    );
+    expect(res.cookie).toHaveBeenCalledWith(
+      cssGridOauthCookieKey,
+      `state-token`,
+      expect.objectContaining({ httpOnly: true }),
+    );
+  });
+
+  it(`google start sets the mobile-scoped oauth state cookie for a mobile app scope`, async () => {
+    const mobileOauthCookieKey = getScopedConsumerGoogleOAuthStateCookieKey(`consumer-mobile`, {
+      isProduction: false,
+      isVercel: false,
+      cookieSecure: false,
+      isSecureRequest: false,
+    });
+    const req = makeReq({
+      headers: { referer: `https://mobile.example.com/login` },
+    });
+    const res = makeRes();
+
+    await controller.googleOAuthStart(req, res, `consumer-mobile`, undefined, undefined, undefined, undefined);
+
+    expect(res.cookie).toHaveBeenCalledWith(
+      mobileOauthCookieKey,
+      `state-token`,
+      expect.objectContaining({ httpOnly: true }),
+    );
+  });
+
+  it(`refresh reads mobile refresh/csrf cookies and rotates mobile auth cookies`, async () => {
+    const [mobileRefreshCookieKey] = getScopedConsumerRefreshTokenCookieKeysForRead(`consumer-mobile`);
+    const [mobileCsrfCookieKey] = getScopedConsumerCsrfTokenCookieKeysForRead(`consumer-mobile`);
+    const req = makeReq({
+      headers: {
+        origin: `https://mobile.example.com`,
+        'x-csrf-token': `csrf-token`,
+      },
+      cookies: {
+        [mobileRefreshCookieKey]: `mobile-refresh-token`,
+        [mobileCsrfCookieKey]: `csrf-token`,
+      },
+    });
+    const res = makeRes();
+
+    await controller.refreshAccess(req, res);
+
+    expect(service.refreshAccess).toHaveBeenCalledWith(`mobile-refresh-token`, expect.any(Object));
+    expect(res.cookie).toHaveBeenCalledWith(
+      expect.stringMatching(/consumer_mobile_access_token/),
+      `a`,
+      expect.objectContaining({ httpOnly: true }),
+    );
+    expect(res.cookie).toHaveBeenCalledWith(
+      expect.stringMatching(/consumer_mobile_refresh_token/),
+      `r`,
+      expect.objectContaining({ httpOnly: true }),
+    );
+    expect(res.cookie).toHaveBeenCalledWith(
+      expect.stringMatching(/consumer_mobile_csrf_token/),
+      expect.any(String),
+      expect.objectContaining({ httpOnly: false }),
+    );
+  });
+
+  it(`google start preserves normalized signup next paths without a separate signup entry field`, async () => {
+    const req = makeReq();
+    const res = makeRes();
+
+    (originResolver.requestMatchesConsumerScope as jest.Mock).mockReturnValueOnce(true);
+    await controller.googleOAuthStart(
+      req,
+      res,
+      `consumer`,
+      `/signup?accountType=BUSINESS`,
+      undefined,
+      `BUSINESS`,
+      undefined,
+    );
+
+    const savedRecord = (oauthStateStore.save as jest.Mock).mock.calls[0]?.[1] as Record<string, unknown>;
+    expect(savedRecord).toMatchObject({
+      nextPath: `/signup?accountType=BUSINESS`,
+      appScope: `consumer`,
+      signupEntryPath: `/signup`,
+      accountType: `BUSINESS`,
+    });
+  });
+
+  it(`google start rejects request scope mismatch for claimed app scope`, async () => {
+    const req = makeReq({
+      headers: { referer: `https://app.example.com/login` },
+    });
+    const res = makeRes();
+
+    await expect(
+      controller.googleOAuthStart(req, res, `consumer-mobile`, undefined, undefined, undefined, undefined),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(oauthStateStore.save).not.toHaveBeenCalled();
+  });
+
+  it(`completeProfileCreation sends verification using canonical mobile origin`, async () => {
+    const req = makeReq({
+      headers: {
+        referer: `https://mobile.example.com/signup/start`,
+      },
+    });
+
+    const result = controller.completeProfileCreation(req, `consumer-id`);
+
+    expect(originResolver.resolveConsumerRequestScope).toHaveBeenCalledWith(
+      undefined,
+      `https://mobile.example.com/signup/start`,
+    );
+    expect(originResolver.resolveConsumerOriginByScope).toHaveBeenCalledWith(`consumer-mobile`);
+    expect(service.completeProfileCreationAndSendVerificationEmail).toHaveBeenCalledWith(
+      `consumer-id`,
+      `https://mobile.example.com`,
+    );
+    expect(result).toBe(`success`);
+  });
+
+  it(`forgot password falls back to referer when origin header is absent`, async () => {
+    const req = makeReq({
+      headers: { referer: `https://app.example.com/login` },
+    });
+
+    const result = await controller.forgotPassword(req, { email: `user@example.com` } as any);
+
+    expect(originResolver.resolveConsumerRequestScope).toHaveBeenCalledWith(undefined, `https://app.example.com/login`);
+    expect(originResolver.resolveConsumerOriginByScope).toHaveBeenCalledWith(`consumer`);
+    expect(service.requestPasswordReset).toHaveBeenCalledWith(`user@example.com`, `https://app.example.com`);
+    expect(result).toEqual({ message: `If an account exists, we sent instructions.` });
   });
 
   it(`resetPassword delegates to service and returns success`, async () => {
@@ -427,6 +712,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       email: `new@example.com`,
       emailVerified: true,
       type: `google_signup`,
+      appScope: `consumer`,
     });
     (service.signup as jest.Mock | undefined)?.mockResolvedValue({ id: `consumer-id` });
     (service.issueTokensForConsumer as jest.Mock | undefined)?.mockResolvedValue({
@@ -451,42 +737,6 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     });
     expect(service.issueTokensForConsumer).toHaveBeenCalledWith(`consumer-id`);
     expect(res.cookie).toHaveBeenCalled();
-  });
-
-  it(`completeProfileCreation sends verification using canonical mobile origin`, async () => {
-    const req = makeReq({
-      headers: {
-        referer: `${consumerMobileOrigin}/signup/start`,
-      },
-    });
-
-    const result = controller.completeProfileCreation(req, `consumer-id`);
-
-    expect(originResolver.resolveConsumerRequestScope).toHaveBeenCalledWith(
-      undefined,
-      `${consumerMobileOrigin}/signup/start`,
-    );
-    expect(originResolver.resolveConsumerOriginByScope).toHaveBeenCalledWith(`consumer-mobile`);
-    expect(service.completeProfileCreationAndSendVerificationEmail).toHaveBeenCalledWith(
-      `consumer-id`,
-      consumerMobileOrigin,
-    );
-    expect(result).toBe(`success`);
-  });
-
-  it(`forgotPassword passes canonical mobile origin to the service`, async () => {
-    const req = makeReq({
-      headers: {
-        origin: `${consumerMobileOrigin}`,
-      },
-    });
-
-    const result = await controller.forgotPassword(req, { email: `user@example.com` } as any);
-
-    expect(originResolver.resolveConsumerRequestScope).toHaveBeenCalledWith(consumerMobileOrigin, undefined);
-    expect(originResolver.resolveConsumerOriginByScope).toHaveBeenCalledWith(`consumer-mobile`);
-    expect(service.requestPasswordReset).toHaveBeenCalledWith(`user@example.com`, consumerMobileOrigin);
-    expect(result).toEqual({ message: `If an account exists, we sent instructions.` });
   });
 
   it(`resetPassword propagates BadRequestException from service`, async () => {

@@ -1,5 +1,6 @@
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
 
+import { type ConsumerAppScope } from '@remoola/api-types';
 import { Prisma } from '@remoola/database-2';
 import { oauthCrypto } from '@remoola/security-utils';
 
@@ -11,16 +12,16 @@ export type OAuthStateRecord = {
   codeVerifier: string;
   nextPath: string;
   createdAt: number;
+  appScope: ConsumerAppScope;
   signupEntryPath?: string;
   accountType?: string;
   contractorKind?: string;
-  redirectOrigin?: string;
 };
 
 export type OAuthLoginHandoffRecord = {
   identityId: string;
   nextPath: string;
-  redirectOrigin?: string;
+  appScope: ConsumerAppScope;
 };
 
 export type OAuthSignupContextRecord = {
@@ -36,7 +37,7 @@ export type OAuthSignupContextRecord = {
   nextPath: string | null;
   accountType: string | null;
   contractorKind: string | null;
-  redirectOrigin: string | null;
+  appScope: ConsumerAppScope;
 };
 
 type StoredLoginHandoffRecord = OAuthLoginHandoffRecord & { type: `oauth_login_handoff` };
@@ -131,7 +132,7 @@ export class OAuthStateStoreService implements OnModuleDestroy {
       type: `oauth_login_handoff`,
       identityId: record.identityId,
       nextPath: record.nextPath,
-      redirectOrigin: record.redirectOrigin,
+      appScope: record.appScope,
     };
   }
 
@@ -139,7 +140,7 @@ export class OAuthStateStoreService implements OnModuleDestroy {
     return {
       identityId: record.identityId,
       nextPath: record.nextPath,
-      redirectOrigin: record.redirectOrigin,
+      appScope: record.appScope,
     };
   }
 
@@ -158,7 +159,7 @@ export class OAuthStateStoreService implements OnModuleDestroy {
       nextPath: record.nextPath,
       accountType: record.accountType,
       contractorKind: record.contractorKind,
-      redirectOrigin: record.redirectOrigin,
+      appScope: record.appScope,
     };
   }
 
@@ -177,7 +178,7 @@ export class OAuthStateStoreService implements OnModuleDestroy {
       nextPath: record.nextPath,
       accountType: record.accountType,
       contractorKind: record.contractorKind,
-      redirectOrigin: record.redirectOrigin,
+      appScope: record.appScope,
     };
   }
 
@@ -197,7 +198,7 @@ export class OAuthStateStoreService implements OnModuleDestroy {
       nextPath: record.nextPath,
       accountType: record.accountType,
       contractorKind: record.contractorKind,
-      redirectOrigin: record.redirectOrigin,
+      appScope: record.appScope,
     };
   }
 
@@ -226,38 +227,28 @@ export class OAuthStateStoreService implements OnModuleDestroy {
 
   private deserialize(raw: string) {
     try {
-      const parsed = JSON.parse(raw) as Array<string | number | null>;
-      if (!Array.isArray(parsed) || parsed.length < 4) return null;
-      const nonce = parsed[0];
-      const codeVerifier = parsed[1];
-      const nextPath = parsed[2];
-      const createdAt = parsed[3];
+      const parsed = JSON.parse(raw) as Partial<OAuthStateRecord>;
+      const { nonce, codeVerifier, nextPath, createdAt, signupEntryPath, accountType, contractorKind, appScope } =
+        parsed;
       if (
         typeof nonce !== `string` ||
         typeof codeVerifier !== `string` ||
         typeof nextPath !== `string` ||
-        typeof createdAt !== `number`
+        typeof createdAt !== `number` ||
+        (appScope !== `consumer` && appScope !== `consumer-mobile` && appScope !== `consumer-css-grid`)
       ) {
         return null;
       }
-
-      const usesExtendedShape = parsed.length >= 8;
-      const signupEntryPath = usesExtendedShape ? parsed[4] : null;
-      const accountType = parsed[usesExtendedShape ? 5 : 4];
-      const contractorKind = parsed[usesExtendedShape ? 6 : 5];
-      const redirectOrigin = parsed[usesExtendedShape ? 7 : 6];
-      const asOptionalString = (value: string | number | null | undefined) =>
-        typeof value === `string` ? value : undefined;
 
       return {
         nonce,
         codeVerifier,
         nextPath,
         createdAt,
-        signupEntryPath: asOptionalString(signupEntryPath),
-        accountType: asOptionalString(accountType),
-        contractorKind: asOptionalString(contractorKind),
-        redirectOrigin: asOptionalString(redirectOrigin),
+        signupEntryPath: typeof signupEntryPath === `string` ? signupEntryPath : undefined,
+        accountType: typeof accountType === `string` ? accountType : undefined,
+        contractorKind: typeof contractorKind === `string` ? contractorKind : undefined,
+        appScope,
       };
     } catch {
       return null;
@@ -265,16 +256,7 @@ export class OAuthStateStoreService implements OnModuleDestroy {
   }
 
   private serialize(record: OAuthStateRecord) {
-    return JSON.stringify([
-      record.nonce,
-      record.codeVerifier,
-      record.nextPath,
-      record.createdAt,
-      record.signupEntryPath ?? null,
-      record.accountType ?? null,
-      record.contractorKind ?? null,
-      record.redirectOrigin ?? null,
-    ]);
+    return JSON.stringify(record);
   }
 
   private deserializeTyped<TType extends StoredTypedRecord[`type`]>(

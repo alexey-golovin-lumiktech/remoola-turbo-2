@@ -14,10 +14,12 @@ type HeaderValue = string | string[] | undefined;
 export class OriginResolverService {
   private readonly defaultOriginPlaceholder = `CONSUMER_APP_ORIGIN`;
   private readonly mobileOriginPlaceholder = `CONSUMER_MOBILE_APP_ORIGIN`;
+  private readonly cssGridOriginPlaceholder = `CONSUMER_CSS_GRID_APP_ORIGIN`;
   private readonly adminOriginPlaceholder = `ADMIN_APP_ORIGIN`;
   private readonly consumerLocalDevOriginScopes = new Map<string, ConsumerAppScope>([
     [`3001`, `consumer`],
     [`3002`, `consumer-mobile`],
+    [`3003`, `consumer-css-grid`],
     [`3333`, `consumer`],
   ]);
   private readonly adminLocalDevAllowedPorts = new Set([`3010`]);
@@ -65,6 +67,10 @@ export class OriginResolverService {
 
     if (this.isValidOrigin(envs.CONSUMER_MOBILE_APP_ORIGIN, this.mobileOriginPlaceholder)) {
       origins.set(`consumer-mobile`, this.normalizeOrigin(envs.CONSUMER_MOBILE_APP_ORIGIN));
+    }
+
+    if (this.isValidOrigin(envs.CONSUMER_CSS_GRID_APP_ORIGIN, this.cssGridOriginPlaceholder)) {
+      origins.set(`consumer-css-grid`, this.normalizeOrigin(envs.CONSUMER_CSS_GRID_APP_ORIGIN));
     }
 
     return origins;

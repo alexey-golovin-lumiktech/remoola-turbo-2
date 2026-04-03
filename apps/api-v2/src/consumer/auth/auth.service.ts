@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, Injectable, Logger, Unauthorize
 import { JwtService } from '@nestjs/jwt';
 import express from 'express';
 
-import { AUTH_NOTICE_QUERY } from '@remoola/api-types';
+import { AUTH_NOTICE_QUERY, type ConsumerAppScope } from '@remoola/api-types';
 import { $Enums, Prisma, type ConsumerModel } from '@remoola/database-2';
 import { oauthCrypto, hashTokenToHex } from '@remoola/security-utils';
 import { errorCodes } from '@remoola/shared-constants';
@@ -21,7 +21,7 @@ export type GoogleSignupPayload = {
   nextPath: string | null;
   accountType: string | null;
   contractorKind: string | null;
-  redirectOrigin: string | null;
+  appScope: ConsumerAppScope;
 };
 
 import { ConsumerSignup } from './dto';
@@ -73,7 +73,7 @@ export class ConsumerAuthService {
     nextPath?: string | null;
     accountType?: string | null;
     contractorKind?: string | null;
-    redirectOrigin?: string | null;
+    appScope: ConsumerAppScope;
   }): GoogleSignupPayload {
     return {
       type: ConsumerAuthService.googleSignupTokenType,
@@ -89,7 +89,7 @@ export class ConsumerAuthService {
       nextPath: payload.nextPath ?? null,
       accountType: payload.accountType ?? null,
       contractorKind: payload.contractorKind ?? null,
-      redirectOrigin: payload.redirectOrigin ?? null,
+      appScope: payload.appScope,
     };
   }
 
@@ -106,7 +106,7 @@ export class ConsumerAuthService {
     nextPath?: string | null;
     accountType?: string | null;
     contractorKind?: string | null;
-    redirectOrigin?: string | null;
+    appScope: ConsumerAppScope;
   }): GoogleSignupPayload {
     return this.toGoogleSignupPayload(payload);
   }

@@ -13,6 +13,7 @@ import cookieParser from 'cookie-parser';
 import express from 'express';
 import request from 'supertest';
 
+import { type ConsumerAppScope } from '@remoola/api-types';
 import { $Enums, PrismaClient } from '@remoola/database-2';
 import { hashPassword, oauthCrypto } from '@remoola/security-utils';
 
@@ -29,8 +30,14 @@ describe(`Consumer auth OAuth full flow (e2e, isolated DB)`, () => {
   let prisma: PrismaClient;
   const consumerEmail = `oauth-existing-consumer@local.test`;
   const consumerPassword = `OauthConsumer1!`;
-  const consumerOrigin = `http://127.0.0.1:3003`;
+  const appOrigins: Record<ConsumerAppScope, string> = {
+    consumer: `http://127.0.0.1:3001`,
+    'consumer-mobile': `http://127.0.0.1:3002`,
+    'consumer-css-grid': `http://127.0.0.1:3003`,
+  };
   let consumerId = ``;
+  let initialConsumerOrigin: string;
+  let initialConsumerMobileOrigin: string;
   let initialConsumerCssGridOrigin: string;
 
   function parseCookieValue(cookies: string[] | undefined, key: string): string | null {
@@ -57,8 +64,12 @@ describe(`Consumer auth OAuth full flow (e2e, isolated DB)`, () => {
 
   beforeAll(async () => {
     assertIsolatedTestDatabaseUrl();
+    initialConsumerOrigin = envs.CONSUMER_APP_ORIGIN;
+    initialConsumerMobileOrigin = envs.CONSUMER_MOBILE_APP_ORIGIN;
     initialConsumerCssGridOrigin = envs.CONSUMER_CSS_GRID_APP_ORIGIN;
-    envs.CONSUMER_CSS_GRID_APP_ORIGIN = consumerOrigin;
+    envs.CONSUMER_APP_ORIGIN = appOrigins.consumer;
+    envs.CONSUMER_MOBILE_APP_ORIGIN = appOrigins[`consumer-mobile`];
+    envs.CONSUMER_CSS_GRID_APP_ORIGIN = appOrigins[`consumer-css-grid`];
     prisma = new PrismaClient();
     await prisma.$connect();
 
@@ -129,18 +140,24 @@ describe(`Consumer auth OAuth full flow (e2e, isolated DB)`, () => {
   });
 
   afterAll(async () => {
+    envs.CONSUMER_APP_ORIGIN = initialConsumerOrigin;
+    envs.CONSUMER_MOBILE_APP_ORIGIN = initialConsumerMobileOrigin;
     envs.CONSUMER_CSS_GRID_APP_ORIGIN = initialConsumerCssGridOrigin;
     await prisma.$disconnect();
     await app.close();
   });
 
-  it(`completes OAuth start -> callback -> complete -> me for existing consumer`, async () => {
+  it.each([
+    [`consumer`, appOrigins.consumer],
+    [`consumer-mobile`, appOrigins[`consumer-mobile`]],
+    [`consumer-css-grid`, appOrigins[`consumer-css-grid`]],
+  ] as const)(`completes OAuth full flow for %s`, async (appScope, consumerOrigin) => {
     const oauthAgent = request.agent(app.getHttpServer());
 
     const startRes = await oauthAgent
       .get(`/api/consumer/auth/google/start`)
       .set(`origin`, consumerOrigin)
-      .query({ next: `/dashboard` })
+      .query({ appScope, next: `/dashboard` })
       .expect(302);
     expect(startRes.headers.location).toContain(`accounts.google.test`);
     const startUrl = new URL(startRes.headers.location as string);
@@ -149,7 +166,7 @@ describe(`Consumer auth OAuth full flow (e2e, isolated DB)`, () => {
 
     const stateCookie = parseCookieValueForKeys(
       asCookieArray(startRes.headers[`set-cookie`]),
-      getApiOAuthStateCookieKeysForRead(`consumer-css-grid`),
+      getApiOAuthStateCookieKeysForRead(appScope),
     );
     expect(stateCookie).toBeTruthy();
     expect(stateCookie).toBe(state);
@@ -160,6 +177,7 @@ describe(`Consumer auth OAuth full flow (e2e, isolated DB)`, () => {
       .query({ code: `oauth-code`, state })
       .expect(302);
     expect(callbackRes.headers.location).toContain(`oauthHandoff=`);
+    expect(callbackRes.headers.location).toContain(`${consumerOrigin}/auth/callback`);
 
     const callbackUrl = new URL(callbackRes.headers.location as string);
     const handoffToken = callbackUrl.searchParams.get(`oauthHandoff`);

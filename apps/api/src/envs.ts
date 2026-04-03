@@ -84,6 +84,7 @@ const nest = {
   PUBLIC_BRAND_WEBSITE_URL: z.string().url().default(`https://remoola.app`),
   CONSUMER_APP_ORIGIN: z.string().default(`CONSUMER_APP_ORIGIN`),
   CONSUMER_MOBILE_APP_ORIGIN: z.string().default(`CONSUMER_MOBILE_APP_ORIGIN`),
+  CONSUMER_CSS_GRID_APP_ORIGIN: z.string().default(`CONSUMER_CSS_GRID_APP_ORIGIN`),
   ADMIN_APP_ORIGIN: z.string().default(`ADMIN_APP_ORIGIN`),
   // Local + demo Vercel defaults when `CORS_ALLOWED_ORIGINS` is unset; set explicitly in production.
   CORS_ALLOWED_ORIGINS: zArray(z.string().min(1), [
@@ -99,6 +100,10 @@ const nest = {
     `http://127.0.0.1:3001`,
     `http://localhost:3001`,
     `https://remoola-turbo-2-consumer.vercel.app`,
+    // for consumer-css-grid app (port 3003)
+    `http://127.0.0.1:3003`,
+    `http://localhost:3003`,
+    `https://remoola-turbo-2-consumer-css-grid.vercel.app`,
     // for api (port 3333)
     `http://127.0.0.1:3333`,
     `http://localhost:3333`,

@@ -14,6 +14,7 @@ jest.mock(`../envs`, () => ({
     },
     CONSUMER_APP_ORIGIN: `https://consumer.example.com`,
     CONSUMER_MOBILE_APP_ORIGIN: `https://mobile.example.com`,
+    CONSUMER_CSS_GRID_APP_ORIGIN: `https://grid.example.com`,
     ADMIN_APP_ORIGIN: `https://admin.example.com`,
     CORS_ALLOWED_ORIGINS: [`https://allowed1.example.com`, `https://allowed2.example.com`],
   },
@@ -138,10 +139,7 @@ describe(`OriginResolverService`, () => {
     it(`returns the configured origin for each configured consumer scope`, () => {
       expect(service.resolveConsumerOriginByScope(`consumer`)).toBe(`https://consumer.example.com`);
       expect(service.resolveConsumerOriginByScope(`consumer-mobile`)).toBe(`https://mobile.example.com`);
-    });
-
-    it(`returns null for supported scopes without a configured canonical origin`, () => {
-      expect(service.resolveConsumerOriginByScope(`consumer-css-grid`)).toBeNull();
+      expect(service.resolveConsumerOriginByScope(`consumer-css-grid`)).toBe(`https://grid.example.com`);
     });
   });
 
@@ -153,6 +151,7 @@ describe(`OriginResolverService`, () => {
     it(`returns null when no canonical consumer origin is configured`, () => {
       (envs as any).CONSUMER_APP_ORIGIN = `CONSUMER_APP_ORIGIN`;
       (envs as any).CONSUMER_MOBILE_APP_ORIGIN = `CONSUMER_MOBILE_APP_ORIGIN`;
+      (envs as any).CONSUMER_CSS_GRID_APP_ORIGIN = `CONSUMER_CSS_GRID_APP_ORIGIN`;
 
       expect(service.resolveDefaultConsumerOrigin()).toBeNull();
     });
@@ -171,11 +170,16 @@ describe(`OriginResolverService`, () => {
       expect(service.resolveConsumerAppScope(`https://allowed1.example.com/settings`)).toBeUndefined();
     });
 
+    it(`maps configured consumer css-grid origin`, () => {
+      expect(service.resolveConsumerAppScope(`https://grid.example.com/payments`)).toBe(`consumer-css-grid`);
+    });
+
     it(`maps local dev ports to the matching scope`, () => {
       (envs as any).NODE_ENV = `development`;
 
       expect(service.resolveConsumerAppScope(`http://localhost:3001/foo`)).toBe(`consumer`);
       expect(service.resolveConsumerAppScope(`http://localhost:3002/foo`)).toBe(`consumer-mobile`);
+      expect(service.resolveConsumerAppScope(`http://localhost:3003/foo`)).toBe(`consumer-css-grid`);
       expect(service.resolveConsumerAppScope(`http://localhost:3333/foo`)).toBe(`consumer`);
     });
   });
@@ -200,6 +204,15 @@ describe(`OriginResolverService`, () => {
   describe(`resolveConsumerRequestAppScope`, () => {
     it(`mirrors the new scope-first request resolver`, () => {
       const result = service.resolveConsumerRequestAppScope(
+        `https://grid.example.com/profile`,
+        `https://consumer.example.com/login`,
+      );
+
+      expect(result).toBe(`consumer-css-grid`);
+    });
+
+    it(`falls back to referer when origin is invalid`, () => {
+      const result = service.resolveConsumerRequestAppScope(
         `https://mobile.example.com/profile`,
         `https://consumer.example.com/login`,
       );
@@ -223,7 +236,6 @@ describe(`OriginResolverService`, () => {
         `https://evil.example.com/`,
         `https://consumer.example.com/exchange`,
       );
-
       expect(result).toBe(`consumer`);
     });
   });
@@ -245,6 +257,11 @@ describe(`OriginResolverService`, () => {
       );
 
       expect(result).toBe(`consumer`);
+    });
+
+    it(`resolves css-grid scope from request origin`, () => {
+      const result = service.resolveConsumerRequestScope(`https://grid.example.com/profile`, undefined);
+      expect(result).toBe(`consumer-css-grid`);
     });
 
     it(`does not derive a scope from generic allowlisted CORS origins`, () => {
@@ -273,6 +290,11 @@ describe(`OriginResolverService`, () => {
       expect(result).toBe(`https://consumer.example.com`);
     });
 
+    it(`routes css-grid requests to the canonical css-grid origin`, () => {
+      const result = service.resolveConsumerOriginFromRequestScope(`https://grid.example.com/payments`, undefined);
+      expect(result).toBe(`https://grid.example.com`);
+    });
+
     it(`returns null when the request does not map to a known consumer scope`, () => {
       expect(service.resolveConsumerOriginFromRequestScope(`https://evil.example.com/`, undefined)).toBeNull();
     });
@@ -282,6 +304,12 @@ describe(`OriginResolverService`, () => {
     it(`returns true when the trusted request scope matches the claimed scope`, () => {
       expect(
         service.requestMatchesConsumerScope(`consumer-mobile`, `https://mobile.example.com/profile`, undefined),
+      ).toBe(true);
+    });
+
+    it(`returns true for css-grid scope matches`, () => {
+      expect(
+        service.requestMatchesConsumerScope(`consumer-css-grid`, `https://grid.example.com/profile`, undefined),
       ).toBe(true);
     });
 
@@ -332,6 +360,7 @@ describe(`OriginResolverService`, () => {
     it(`should return null when both APP origins are placeholders`, () => {
       (envs as any).CONSUMER_APP_ORIGIN = `CONSUMER_APP_ORIGIN`;
       (envs as any).CONSUMER_MOBILE_APP_ORIGIN = `CONSUMER_MOBILE_APP_ORIGIN`;
+      (envs as any).CONSUMER_CSS_GRID_APP_ORIGIN = `CONSUMER_CSS_GRID_APP_ORIGIN`;
       (envs as any).CORS_ALLOWED_ORIGINS = [`https://cors.example.com`];
 
       const result = service.resolveConsumerRedirectOrigin();
@@ -341,6 +370,7 @@ describe(`OriginResolverService`, () => {
     it(`should return null when no valid origins are available`, () => {
       (envs as any).CONSUMER_APP_ORIGIN = `CONSUMER_APP_ORIGIN`;
       (envs as any).CONSUMER_MOBILE_APP_ORIGIN = `CONSUMER_MOBILE_APP_ORIGIN`;
+      (envs as any).CONSUMER_CSS_GRID_APP_ORIGIN = `CONSUMER_CSS_GRID_APP_ORIGIN`;
       (envs as any).CORS_ALLOWED_ORIGINS = [];
 
       const result = service.resolveConsumerRedirectOrigin();
