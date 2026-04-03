@@ -14,13 +14,13 @@ export type OAuthStateRecord = {
   signupEntryPath?: string;
   accountType?: string;
   contractorKind?: string;
-  returnOrigin?: string;
+  redirectOrigin?: string;
 };
 
 export type OAuthLoginHandoffRecord = {
   identityId: string;
   nextPath: string;
-  returnOrigin?: string;
+  redirectOrigin?: string;
 };
 
 export type OAuthSignupContextRecord = {
@@ -36,7 +36,7 @@ export type OAuthSignupContextRecord = {
   nextPath: string | null;
   accountType: string | null;
   contractorKind: string | null;
-  returnOrigin: string | null;
+  redirectOrigin: string | null;
 };
 
 type StoredLoginHandoffRecord = OAuthLoginHandoffRecord & { type: `oauth_login_handoff` };
@@ -131,7 +131,7 @@ export class OAuthStateStoreService implements OnModuleDestroy {
       type: `oauth_login_handoff`,
       identityId: record.identityId,
       nextPath: record.nextPath,
-      returnOrigin: record.returnOrigin,
+      redirectOrigin: record.redirectOrigin,
     };
   }
 
@@ -139,7 +139,7 @@ export class OAuthStateStoreService implements OnModuleDestroy {
     return {
       identityId: record.identityId,
       nextPath: record.nextPath,
-      returnOrigin: record.returnOrigin,
+      redirectOrigin: record.redirectOrigin,
     };
   }
 
@@ -158,7 +158,7 @@ export class OAuthStateStoreService implements OnModuleDestroy {
       nextPath: record.nextPath,
       accountType: record.accountType,
       contractorKind: record.contractorKind,
-      returnOrigin: record.returnOrigin,
+      redirectOrigin: record.redirectOrigin,
     };
   }
 
@@ -177,7 +177,7 @@ export class OAuthStateStoreService implements OnModuleDestroy {
       nextPath: record.nextPath,
       accountType: record.accountType,
       contractorKind: record.contractorKind,
-      returnOrigin: record.returnOrigin,
+      redirectOrigin: record.redirectOrigin,
     };
   }
 
@@ -197,7 +197,7 @@ export class OAuthStateStoreService implements OnModuleDestroy {
       nextPath: record.nextPath,
       accountType: record.accountType,
       contractorKind: record.contractorKind,
-      returnOrigin: record.returnOrigin,
+      redirectOrigin: record.redirectOrigin,
     };
   }
 
@@ -246,7 +246,7 @@ export class OAuthStateStoreService implements OnModuleDestroy {
       const signupEntryPath = usesExtendedShape ? parsed[4] : null;
       const accountType = parsed[usesExtendedShape ? 5 : 4];
       const contractorKind = parsed[usesExtendedShape ? 6 : 5];
-      const returnOrigin = parsed[usesExtendedShape ? 7 : 6];
+      const redirectOrigin = parsed[usesExtendedShape ? 7 : 6];
       const asOptionalString = (value: string | number | null | undefined) =>
         typeof value === `string` ? value : undefined;
 
@@ -258,7 +258,7 @@ export class OAuthStateStoreService implements OnModuleDestroy {
         signupEntryPath: asOptionalString(signupEntryPath),
         accountType: asOptionalString(accountType),
         contractorKind: asOptionalString(contractorKind),
-        returnOrigin: asOptionalString(returnOrigin),
+        redirectOrigin: asOptionalString(redirectOrigin),
       };
     } catch {
       return null;
@@ -274,7 +274,7 @@ export class OAuthStateStoreService implements OnModuleDestroy {
       record.signupEntryPath ?? null,
       record.accountType ?? null,
       record.contractorKind ?? null,
-      record.returnOrigin ?? null,
+      record.redirectOrigin ?? null,
     ]);
   }
 

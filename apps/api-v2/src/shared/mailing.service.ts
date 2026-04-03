@@ -78,7 +78,7 @@ export class MailingService {
   }
 
   private resolveConsumerPaymentLinkOrigin(requestOrigin?: string): string | null {
-    return this.originResolver.resolveConsumerOrigin(requestOrigin);
+    return this.originResolver.resolveConsumerRedirectOrigin(requestOrigin);
   }
 
   async sendLogsEmail(data: unknown = null, email?: string) {
@@ -192,7 +192,7 @@ export class MailingService {
     paymentRequestId: string;
     role: `payer` | `requester`;
   }) {
-    const origin = this.originResolver.resolveConsumerOrigin();
+    const origin = this.originResolver.resolveConsumerRedirectOrigin();
 
     if (!origin) {
       this.logger.error(`CONSUMER_APP_ORIGIN is not configured`);
@@ -232,7 +232,7 @@ export class MailingService {
     paymentRequestId: string;
     role: `payer` | `requester`;
   }) {
-    const origin = this.originResolver.resolveConsumerOrigin();
+    const origin = this.originResolver.resolveConsumerRedirectOrigin();
 
     if (!origin) {
       this.logger.error(`CONSUMER_APP_ORIGIN is not configured`);

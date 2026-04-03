@@ -94,7 +94,11 @@ describe(`ConsumerAuthService.resetPasswordWithToken`, () => {
         { provide: AuthAuditService, useValue: authAudit },
         {
           provide: OriginResolverService,
-          useValue: { validateReturnOrigin: jest.fn(), resolveConsumerOrigin: jest.fn(), getAllowedOrigins: jest.fn() },
+          useValue: {
+            validateRedirectOrigin: jest.fn(),
+            resolveConsumerRedirectOrigin: jest.fn(),
+            getAllowedOrigins: jest.fn(),
+          },
         },
       ],
     }).compile();

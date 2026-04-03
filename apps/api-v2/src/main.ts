@@ -250,9 +250,11 @@ function resolveAllowedOriginForPath(
     return originResolver.validateAdminOrigin(originHeader);
   }
   if (path.startsWith(`/api/consumer/`) || path.startsWith(`/docs/consumer`)) {
-    return originResolver.validateConsumerReturnOrigin(originHeader);
+    return originResolver.validateConsumerRedirectOrigin(originHeader);
   }
-  return originResolver.validateAdminOrigin(originHeader) ?? originResolver.validateConsumerReturnOrigin(originHeader);
+  return (
+    originResolver.validateAdminOrigin(originHeader) ?? originResolver.validateConsumerRedirectOrigin(originHeader)
+  );
 }
 
 function registerScopedCors(app: NestExpressApplication, originResolver: OriginResolverService): void {

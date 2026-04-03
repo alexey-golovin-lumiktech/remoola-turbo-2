@@ -124,8 +124,8 @@ export class OriginResolverService {
     return undefined;
   }
 
-  validateConsumerReturnOrigin(returnOrigin?: string): string | undefined {
-    return this.validateOrigin(returnOrigin, `consumer`);
+  validateConsumerRedirectOrigin(redirectOrigin?: string): string | undefined {
+    return this.validateOrigin(redirectOrigin, `consumer`);
   }
 
   resolveConsumerAppScope(originCandidate?: string): ConsumerAppScope | undefined {
@@ -149,20 +149,20 @@ export class OriginResolverService {
     return this.validateOrigin(originCandidate, `admin`);
   }
 
-  validateReturnOrigin(returnOrigin?: string): string | undefined {
-    return this.validateConsumerReturnOrigin(returnOrigin);
+  validateRedirectOrigin(redirectOrigin?: string): string | undefined {
+    return this.validateConsumerRedirectOrigin(redirectOrigin);
   }
 
   resolveConsumerRequestOrigin(requestOrigin?: HeaderValue, requestReferer?: HeaderValue): string | undefined {
     const originHeader = this.getFirstHeaderValue(requestOrigin);
     if (originHeader) {
-      const validatedOrigin = this.validateConsumerReturnOrigin(originHeader);
+      const validatedOrigin = this.validateConsumerRedirectOrigin(originHeader);
       if (validatedOrigin) return validatedOrigin;
     }
 
     const refererHeader = this.getFirstHeaderValue(requestReferer);
     if (refererHeader) {
-      return this.validateConsumerReturnOrigin(refererHeader);
+      return this.validateConsumerRedirectOrigin(refererHeader);
     }
 
     return undefined;
@@ -174,7 +174,7 @@ export class OriginResolverService {
   ): ConsumerAppScope | undefined {
     const originHeader = this.getFirstHeaderValue(requestOrigin);
     if (originHeader) {
-      const validatedOrigin = this.validateConsumerReturnOrigin(originHeader);
+      const validatedOrigin = this.validateConsumerRedirectOrigin(originHeader);
       if (validatedOrigin) {
         return this.resolveConsumerAppScope(validatedOrigin);
       }
@@ -182,7 +182,7 @@ export class OriginResolverService {
 
     const refererHeader = this.getFirstHeaderValue(requestReferer);
     if (refererHeader) {
-      const validatedOrigin = this.validateConsumerReturnOrigin(refererHeader);
+      const validatedOrigin = this.validateConsumerRedirectOrigin(refererHeader);
       if (validatedOrigin) {
         return this.resolveConsumerAppScope(validatedOrigin);
       }
@@ -220,10 +220,10 @@ export class OriginResolverService {
       : this.resolveConsumerRequestOrigin(requestOrigin, requestReferer);
   }
 
-  resolveConsumerOrigin(returnOrigin?: string): string | null {
-    const validatedReturnOrigin = this.validateConsumerReturnOrigin(returnOrigin);
-    if (validatedReturnOrigin) {
-      return validatedReturnOrigin;
+  resolveConsumerRedirectOrigin(redirectOrigin?: string): string | null {
+    const validatedRedirectOrigin = this.validateConsumerRedirectOrigin(redirectOrigin);
+    if (validatedRedirectOrigin) {
+      return validatedRedirectOrigin;
     }
 
     for (const origin of this.getConfiguredConsumerOriginScopes().keys()) {
@@ -234,14 +234,14 @@ export class OriginResolverService {
   }
 
   resolveConsumerOriginFromRequest(
-    returnOrigin?: string,
+    redirectOrigin?: string,
     requestOrigin?: HeaderValue,
     requestReferer?: HeaderValue,
   ): string | null {
     return (
-      this.validateConsumerReturnOrigin(returnOrigin) ??
+      this.validateConsumerRedirectOrigin(redirectOrigin) ??
       this.resolveConsumerRequestOrigin(requestOrigin, requestReferer) ??
-      this.resolveConsumerOrigin()
+      this.resolveConsumerRedirectOrigin()
     );
   }
 }

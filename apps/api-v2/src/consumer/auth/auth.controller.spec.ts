@@ -23,20 +23,20 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
 
   const originResolver: Pick<
     OriginResolverService,
-    | `validateReturnOrigin`
-    | `resolveConsumerOrigin`
+    | `validateRedirectOrigin`
+    | `resolveConsumerRedirectOrigin`
     | `getAllowedOrigins`
     | `resolveRequestOrigin`
     | `resolveConsumerAppScope`
     | `resolveConsumerRequestAppScope`
   > = {
-    validateReturnOrigin: jest.fn((value?: string) =>
+    validateRedirectOrigin: jest.fn((value?: string) =>
       typeof value === `string` &&
       (value.includes(`app.example.com`) || value.includes(`mobile.example.com`) || value.includes(`grid.example.com`))
         ? new URL(value).origin
         : undefined,
     ),
-    resolveConsumerOrigin: jest.fn().mockReturnValue(`https://app.example.com`),
+    resolveConsumerRedirectOrigin: jest.fn().mockReturnValue(`https://app.example.com`),
     getAllowedOrigins: jest
       .fn()
       .mockReturnValue(new Set([`https://app.example.com`, `https://mobile.example.com`, `https://grid.example.com`])),
@@ -145,7 +145,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
         nextPath: payload.nextPath ?? null,
         accountType: payload.accountType ?? null,
         contractorKind: payload.contractorKind ?? null,
-        returnOrigin: payload.returnOrigin ?? null,
+        redirectOrigin: payload.redirectOrigin ?? null,
       })) as any),
       validateGoogleSignupPayload: jest.fn((payload) => payload),
       requestPasswordReset: jest.fn().mockResolvedValue(undefined),
@@ -234,7 +234,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       codeVerifier: `verifier`,
       nonce: `nonce`,
       nextPath: `/dashboard`,
-      returnOrigin: `https://app.example.com`,
+      redirectOrigin: `https://app.example.com`,
     });
 
     await controller.googleOAuthCallback(req, res, undefined, `state-token`, `access_denied`);
@@ -260,7 +260,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       nextPath: `/dashboard`,
       accountType: null,
       contractorKind: null,
-      returnOrigin: `https://app.example.com`,
+      redirectOrigin: `https://app.example.com`,
     });
     (googleOAuthService.exchangeCodeForPayload as jest.Mock | undefined)?.mockResolvedValue({
       email: `test@example.com`,
@@ -290,7 +290,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       nextPath: `/dashboard`,
       accountType: null,
       contractorKind: null,
-      returnOrigin: `https://app.example.com`,
+      redirectOrigin: `https://app.example.com`,
     });
     (googleOAuthService.exchangeCodeForPayload as jest.Mock | undefined)?.mockResolvedValue({
       email: `test@example.com`,
@@ -329,7 +329,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       nextPath: `/signup?accountType=BUSINESS`,
       accountType: `BUSINESS`,
       contractorKind: null,
-      returnOrigin: `https://app.example.com`,
+      redirectOrigin: `https://app.example.com`,
     });
     (googleOAuthService.exchangeCodeForPayload as jest.Mock | undefined)?.mockResolvedValue({
       email: `test@example.com`,
@@ -361,7 +361,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       nextPath: `/signup?accountType=CONTRACTOR&contractorKind=ENTITY`,
       accountType: `CONTRACTOR`,
       contractorKind: `ENTITY`,
-      returnOrigin: `https://app.example.com`,
+      redirectOrigin: `https://app.example.com`,
     });
     (googleOAuthService.exchangeCodeForPayload as jest.Mock | undefined)?.mockResolvedValue({
       email: `new-user@example.com`,
@@ -392,7 +392,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       nextPath: `/dashboard`,
       accountType: `BUSINESS`,
       contractorKind: null,
-      returnOrigin: `https://app.example.com`,
+      redirectOrigin: `https://app.example.com`,
     });
     (googleOAuthService.exchangeCodeForPayload as jest.Mock | undefined)?.mockResolvedValue({
       email: `new-user@example.com`,
@@ -434,7 +434,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     expect(res.redirect).toHaveBeenCalledWith(expect.stringContaining(`error=invalid_state`));
   });
 
-  it(`google start stores request-derived return origin when query param is missing`, async () => {
+  it(`google start stores request-derived return origin`, async () => {
     const req = makeReq({
       headers: { referer: `https://app.example.com/settings/profile` },
     });
@@ -448,7 +448,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     );
     expect(oauthStateStore.save).toHaveBeenCalledWith(
       `state-token`,
-      expect.objectContaining({ returnOrigin: `https://app.example.com` }),
+      expect.objectContaining({ redirectOrigin: `https://app.example.com` }),
       expect.any(Number),
     );
     expect(res.redirect).toHaveBeenCalledWith(`https://accounts.google.com/o/oauth2/v2/auth`);
@@ -471,7 +471,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     expect(originResolver.resolveRequestOrigin).toHaveBeenCalledWith(`https://grid.example.com`, undefined);
     expect(oauthStateStore.save).toHaveBeenCalledWith(
       `state-token`,
-      expect.objectContaining({ returnOrigin: `https://grid.example.com` }),
+      expect.objectContaining({ redirectOrigin: `https://grid.example.com` }),
       expect.any(Number),
     );
     expect(res.cookie).toHaveBeenCalledWith(
@@ -493,15 +493,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     });
     const res = makeRes();
 
-    await controller.googleOAuthStart(
-      req,
-      res,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      `https://mobile.example.com`,
-    );
+    await controller.googleOAuthStart(req, res, undefined, undefined, undefined, undefined);
 
     expect(res.cookie).toHaveBeenCalledWith(
       mobileOauthCookieKey,
@@ -549,22 +541,13 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     const req = makeReq();
     const res = makeRes();
 
-    await controller.googleOAuthStart(
-      req,
-      res,
-      `/signup?accountType=BUSINESS`,
-      undefined,
-      `BUSINESS`,
-      undefined,
-      `https://app.example.com`,
-    );
+    await controller.googleOAuthStart(req, res, `/signup?accountType=BUSINESS`, undefined, `BUSINESS`, undefined);
 
     const savedRecord = (oauthStateStore.save as jest.Mock).mock.calls[0]?.[1] as Record<string, unknown>;
     expect(savedRecord).toMatchObject({
       nextPath: `/signup?accountType=BUSINESS`,
       signupEntryPath: `/signup`,
       accountType: `BUSINESS`,
-      returnOrigin: `https://app.example.com`,
     });
   });
 

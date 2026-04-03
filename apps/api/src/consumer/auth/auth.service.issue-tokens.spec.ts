@@ -65,8 +65,8 @@ describe(`ConsumerAuthService.issueTokensForConsumer`, () => {
         {
           provide: OriginResolverService,
           useValue: {
-            validateReturnOrigin: jest.fn(),
-            resolveConsumerOrigin: jest.fn(),
+            validateRedirectOrigin: jest.fn(),
+            resolveConsumerRedirectOrigin: jest.fn(),
             getAllowedOrigins: jest.fn(),
           },
         },

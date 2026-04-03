@@ -94,8 +94,8 @@ Auth (`/consumer/auth`):
 - Forgot-password and reset (no auth required): `POST /forgot-password` (email; requires valid `Origin` header — must be an allowed consumer origin, else 400 `ORIGIN_REQUIRED`); `GET /forgot-password/verify?token=…&referer=…` — validate token and redirect to app; `POST /password/reset` (body: token, password) — set new password with token from email.
 - Authenticated password update: `PATCH /consumer/profile/password` (see Profile below). This route supports both password change and first-time password creation for Google-only / no-password accounts.
 - Google OAuth flows:
-  - `GET /google/start`: start OAuth flow. Accepts optional `returnOrigin` query parameter to specify the consumer app origin (validated against CORS_ALLOWED_ORIGINS via `OriginResolverService`) for redirect after authentication. Useful for multi-app deployments (e.g., desktop consumer on port 3001, mobile consumer on port 3002). Supports CONSUMER_APP_ORIGIN, CONSUMER_MOBILE_APP_ORIGIN, and ADMIN_APP_ORIGIN.
-  - `GET /google/callback`: OAuth redirect handling; uses stored `returnOrigin` from state.
+  - `GET /google/start`: start OAuth flow. Resolves the consumer app origin from allowed request `Origin`/`Referer` headers via `OriginResolverService`, then stores that resolved origin in OAuth state for redirect after authentication. Useful for multi-app deployments (e.g., desktop consumer on port 3001, mobile consumer on port 3002). Supports `CONSUMER_APP_ORIGIN`, `CONSUMER_MOBILE_APP_ORIGIN`, and `ADMIN_APP_ORIGIN`.
+  - `GET /google/callback`: OAuth redirect handling; uses the resolved origin stored in OAuth state.
   - `GET /google/signup-session`: fetch OAuth signup session data.
   - `POST /oauth/complete`: exchange short-lived OAuth handoff token for access/refresh cookies. Browser-facing callers must go through frontend same-origin BFF routes rather than calling the API origin directly.
 
@@ -290,7 +290,7 @@ Recent consumer UX updates:
 
 ## Consumer Mobile App (Next.js)
 
-Mobile-first consumer UI is in `apps/consumer-mobile`, running on port 3002. Follows the same architecture as the desktop consumer app with mobile-optimized layouts and enhanced touch interactions. Uses Google OAuth with `returnOrigin` parameter for proper redirect handling in multi-app deployments.
+Mobile-first consumer UI is in `apps/consumer-mobile`, running on port 3002. Follows the same architecture as the desktop consumer app with mobile-optimized layouts and enhanced touch interactions. Uses Google OAuth with request-header-based origin resolution for proper redirect handling in multi-app deployments.
 
 Recent hardening and architecture updates:
 

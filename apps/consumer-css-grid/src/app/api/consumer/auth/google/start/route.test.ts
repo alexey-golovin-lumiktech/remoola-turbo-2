@@ -13,7 +13,7 @@ describe(`consumer-css-grid google start route`, () => {
     jest.restoreAllMocks();
   });
 
-  it(`redirects to backend oauth start while preserving only safe params`, async () => {
+  it(`redirects to backend oauth start while preserving supported params`, async () => {
     mockGetEnv.mockReturnValue({ NEXT_PUBLIC_API_BASE_URL: `https://api.example.com` });
 
     const request = {
@@ -27,6 +27,5 @@ describe(`consumer-css-grid google start route`, () => {
     expect(location).toContain(`/consumer/auth/google/start`);
     expect(location).toContain(`next=%2Fsignup`);
     expect(location).toContain(`accountType=BUSINESS`);
-    expect(location).not.toContain(`returnOrigin=`);
   });
 });

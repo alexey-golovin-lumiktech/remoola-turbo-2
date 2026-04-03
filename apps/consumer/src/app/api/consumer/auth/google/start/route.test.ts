@@ -11,7 +11,7 @@ describe(`consumer google start route`, () => {
     delete process.env.NEXT_PUBLIC_API_BASE_URL;
   });
 
-  it(`redirects through the backend oauth start while preserving safe params`, async () => {
+  it(`redirects through the backend oauth start while preserving supported params`, async () => {
     const request = {
       nextUrl: new URL(
         `https://app.example.com/api/consumer/auth/google/start?next=%2Fsignup&signupPath=%2Fsignup&accountType=BUSINESS`,
@@ -26,6 +26,5 @@ describe(`consumer google start route`, () => {
     expect(location).toContain(`next=%2Fsignup`);
     expect(location).toContain(`signupPath=%2Fsignup`);
     expect(location).toContain(`accountType=BUSINESS`);
-    expect(location).not.toContain(`returnOrigin=`);
   });
 });

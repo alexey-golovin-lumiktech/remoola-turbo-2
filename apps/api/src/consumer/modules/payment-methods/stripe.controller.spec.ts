@@ -10,8 +10,8 @@ describe(`ConsumerStripeController`, () => {
     payWithSavedPaymentMethod: jest.fn(),
   };
   const originResolver = {
-    validateReturnOrigin: jest.fn(),
-    resolveConsumerOrigin: jest.fn(),
+    validateRedirectOrigin: jest.fn(),
+    resolveConsumerRedirectOrigin: jest.fn(),
   };
 
   const consumer = { id: `consumer-1` } as unknown as ConsumerModel;
@@ -20,8 +20,8 @@ describe(`ConsumerStripeController`, () => {
 
   beforeEach(() => {
     service.payWithSavedPaymentMethod.mockResolvedValue({ ok: true });
-    originResolver.validateReturnOrigin.mockReturnValue(`https://consumer.example.com`);
-    originResolver.resolveConsumerOrigin.mockReturnValue(`https://consumer.example.com`);
+    originResolver.validateRedirectOrigin.mockReturnValue(`https://consumer.example.com`);
+    originResolver.resolveConsumerRedirectOrigin.mockReturnValue(`https://consumer.example.com`);
   });
 
   afterEach(() => {

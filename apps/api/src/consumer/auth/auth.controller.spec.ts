@@ -29,9 +29,12 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
 
   const originResolver: Pick<
     OriginResolverService,
-    `resolveConsumerOrigin` | `resolveConsumerRequestAppScope` | `resolveConsumerRequestOrigin` | `resolveRequestOrigin`
+    | `resolveConsumerRedirectOrigin`
+    | `resolveConsumerRequestAppScope`
+    | `resolveConsumerRequestOrigin`
+    | `resolveRequestOrigin`
   > = {
-    resolveConsumerOrigin: jest.fn((returnOrigin?: string) => returnOrigin ?? consumerOrigin),
+    resolveConsumerRedirectOrigin: jest.fn((redirectOrigin?: string) => redirectOrigin ?? consumerOrigin),
     resolveConsumerRequestAppScope: jest.fn((origin?: string | string[], referer?: string | string[]) => {
       const resolvedOrigin = resolveMockOrigin(origin, referer);
       if (resolvedOrigin === consumerMobileOrigin) return `consumer-mobile`;
@@ -118,7 +121,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
         nextPath: payload.nextPath ?? null,
         accountType: payload.accountType ?? null,
         contractorKind: payload.contractorKind ?? null,
-        returnOrigin: payload.returnOrigin ?? null,
+        redirectOrigin: payload.redirectOrigin ?? null,
       })) as any),
       validateGoogleSignupPayload: jest.fn((payload) => payload),
       issueTokensForConsumer: jest.fn(),
@@ -180,7 +183,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       `state-token`,
       expect.objectContaining({
         nextPath: `/dashboard`,
-        returnOrigin: consumerOrigin,
+        redirectOrigin: consumerOrigin,
       }),
       expect.any(Number),
     );
@@ -201,7 +204,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     expect(oauthStateStore.save).toHaveBeenCalledWith(
       `state-token`,
       expect.objectContaining({
-        returnOrigin: consumerMobileOrigin,
+        redirectOrigin: consumerMobileOrigin,
       }),
       expect.any(Number),
     );
@@ -238,7 +241,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       codeVerifier: `verifier`,
       nonce: `nonce`,
       nextPath: `/dashboard`,
-      returnOrigin: `https://app.example.com`,
+      redirectOrigin: `https://app.example.com`,
     });
 
     await controller.googleOAuthCallback(req, res, undefined, `state-token`, `access_denied`);
@@ -264,7 +267,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       nextPath: `/dashboard`,
       accountType: null,
       contractorKind: null,
-      returnOrigin: `https://app.example.com`,
+      redirectOrigin: `https://app.example.com`,
     });
     (googleOAuthService.exchangeCodeForPayload as jest.Mock | undefined)?.mockResolvedValue({
       email: `test@example.com`,
@@ -296,7 +299,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       signupEntryPath: `/signup`,
       accountType: `BUSINESS`,
       contractorKind: null,
-      returnOrigin: `https://app.example.com`,
+      redirectOrigin: `https://app.example.com`,
     });
     (googleOAuthService.exchangeCodeForPayload as jest.Mock | undefined)?.mockResolvedValue({
       email: `new@example.com`,
@@ -345,7 +348,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       nextPath: `/dashboard`,
       accountType: null,
       contractorKind: null,
-      returnOrigin: `https://app.example.com`,
+      redirectOrigin: `https://app.example.com`,
     });
     (googleOAuthService.exchangeCodeForPayload as jest.Mock | undefined)?.mockResolvedValue({
       email: `test@example.com`,

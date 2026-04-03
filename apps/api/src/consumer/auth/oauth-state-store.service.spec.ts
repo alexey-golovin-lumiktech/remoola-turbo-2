@@ -85,7 +85,7 @@ describe(`OAuthStateStoreService`, () => {
       signupEntryPath: undefined,
       accountType: `BUSINESS`,
       contractorKind: undefined,
-      returnOrigin: `http://localhost:3000`,
+      redirectOrigin: `http://localhost:3000`,
     });
   });
 
@@ -118,7 +118,7 @@ describe(`OAuthStateStoreService`, () => {
         createdAt,
         signupEntryPath: `/signup`,
         accountType: `BUSINESS`,
-        returnOrigin: `http://localhost:3000`,
+        redirectOrigin: `http://localhost:3000`,
       },
       10_000,
     );
@@ -133,7 +133,7 @@ describe(`OAuthStateStoreService`, () => {
       signupEntryPath: `/signup`,
       accountType: `BUSINESS`,
       contractorKind: undefined,
-      returnOrigin: `http://localhost:3000`,
+      redirectOrigin: `http://localhost:3000`,
     });
   });
 

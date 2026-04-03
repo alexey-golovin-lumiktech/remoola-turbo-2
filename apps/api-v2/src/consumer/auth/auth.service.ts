@@ -21,7 +21,7 @@ export type GoogleSignupPayload = {
   nextPath: string | null;
   accountType: string | null;
   contractorKind: string | null;
-  returnOrigin: string | null;
+  redirectOrigin: string | null;
 };
 
 import { ConsumerSignup } from './dto';
@@ -73,7 +73,7 @@ export class ConsumerAuthService {
     nextPath?: string | null;
     accountType?: string | null;
     contractorKind?: string | null;
-    returnOrigin?: string | null;
+    redirectOrigin?: string | null;
   }): GoogleSignupPayload {
     return {
       type: ConsumerAuthService.googleSignupTokenType,
@@ -89,7 +89,7 @@ export class ConsumerAuthService {
       nextPath: payload.nextPath ?? null,
       accountType: payload.accountType ?? null,
       contractorKind: payload.contractorKind ?? null,
-      returnOrigin: payload.returnOrigin ?? null,
+      redirectOrigin: payload.redirectOrigin ?? null,
     };
   }
 
@@ -106,7 +106,7 @@ export class ConsumerAuthService {
     nextPath?: string | null;
     accountType?: string | null;
     contractorKind?: string | null;
-    returnOrigin?: string | null;
+    redirectOrigin?: string | null;
   }): GoogleSignupPayload {
     return this.toGoogleSignupPayload(payload);
   }
@@ -351,7 +351,7 @@ export class ConsumerAuthService {
   }
 
   async signupVerification(token: string, res: express.Response, referer: string) {
-    const validatedOrigin = this.originResolver.validateConsumerReturnOrigin(referer);
+    const validatedOrigin = this.originResolver.validateConsumerRedirectOrigin(referer);
     if (!validatedOrigin) {
       throw new BadRequestException(`Invalid referer origin`);
     }
@@ -489,7 +489,7 @@ export class ConsumerAuthService {
   }
 
   async completeProfileCreationAndSendVerificationEmail(consumerId: string, referer: string) {
-    const validatedOrigin = this.originResolver.validateConsumerReturnOrigin(referer);
+    const validatedOrigin = this.originResolver.validateConsumerRedirectOrigin(referer);
     if (!validatedOrigin) {
       throw new BadRequestException(`Invalid referer origin`);
     }
@@ -616,7 +616,7 @@ export class ConsumerAuthService {
     email: CONSUMER.ForgotPasswordBody[`email`],
     requestOrigin?: string,
   ): Promise<ForgotPasswordOutcome> {
-    const origin = this.originResolver.validateConsumerReturnOrigin(requestOrigin ?? ``);
+    const origin = this.originResolver.validateConsumerRedirectOrigin(requestOrigin ?? ``);
     if (!origin) {
       throw new BadRequestException(errorCodes.ORIGIN_REQUIRED);
     }
@@ -684,7 +684,7 @@ export class ConsumerAuthService {
   }
 
   async validateForgotPasswordTokenAndRedirect(token: string, referer: string, res: express.Response): Promise<void> {
-    const validatedOrigin = this.originResolver.validateConsumerReturnOrigin(referer);
+    const validatedOrigin = this.originResolver.validateConsumerRedirectOrigin(referer);
     if (!validatedOrigin) {
       throw new BadRequestException(`Invalid referer origin`);
     }

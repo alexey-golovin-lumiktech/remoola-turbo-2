@@ -70,10 +70,10 @@ export class ConsumerAuthController {
     private readonly originResolver: OriginResolverService,
   ) {}
 
-  private resolveConsumerAppScope(req: express.Request, returnOrigin?: string): ConsumerAppScope {
+  private resolveConsumerAppScope(req: express.Request, redirectOrigin?: string): ConsumerAppScope {
     return (
       this.originResolver.resolveConsumerRequestAppScope?.(req.headers?.origin, req.headers?.referer) ??
-      this.originResolver.resolveConsumerAppScope?.(this.validateReturnOrigin(returnOrigin)) ??
+      this.originResolver.resolveConsumerAppScope?.(this.validateRedirectOrigin(redirectOrigin)) ??
       DEFAULT_API_V2_CONSUMER_SCOPE
     );
   }
@@ -168,10 +168,10 @@ export class ConsumerAuthController {
     return `/dashboard`;
   }
 
-  private validateReturnOrigin(returnOrigin?: string): string | undefined {
+  private validateRedirectOrigin(redirectOrigin?: string): string | undefined {
     return (
-      this.originResolver.validateConsumerReturnOrigin?.(returnOrigin) ??
-      this.originResolver.validateReturnOrigin?.(returnOrigin)
+      this.originResolver.validateConsumerRedirectOrigin?.(redirectOrigin) ??
+      this.originResolver.validateRedirectOrigin?.(redirectOrigin)
     );
   }
 
@@ -225,8 +225,8 @@ export class ConsumerAuthController {
     }
   }
 
-  private buildConsumerRedirect(nextPath: string, extraParams?: Record<string, string>, returnOrigin?: string) {
-    const origin = this.originResolver.resolveConsumerOrigin(returnOrigin);
+  private buildConsumerRedirect(nextPath: string, extraParams?: Record<string, string>, redirectOrigin?: string) {
+    const origin = this.originResolver.resolveConsumerRedirectOrigin(redirectOrigin);
 
     if (!origin) {
       throw new InternalServerErrorException(`CONSUMER_APP_ORIGIN is not configured`);
@@ -242,8 +242,8 @@ export class ConsumerAuthController {
     return url.toString();
   }
 
-  private buildConsumerLoginRedirect(errorCode: string, returnOrigin?: string) {
-    const origin = this.originResolver.resolveConsumerOrigin(returnOrigin);
+  private buildConsumerLoginRedirect(errorCode: string, redirectOrigin?: string) {
+    const origin = this.originResolver.resolveConsumerRedirectOrigin(redirectOrigin);
 
     if (!origin) {
       throw new InternalServerErrorException(`CONSUMER_APP_ORIGIN is not configured`);
@@ -260,9 +260,9 @@ export class ConsumerAuthController {
     signupEntryPath?: string,
     accountType?: string,
     contractorKind?: string,
-    returnOrigin?: string,
+    redirectOrigin?: string,
   ) {
-    const origin = this.originResolver.resolveConsumerOrigin(returnOrigin);
+    const origin = this.originResolver.resolveConsumerRedirectOrigin(redirectOrigin);
 
     if (!origin) {
       throw new InternalServerErrorException(`CONSUMER_APP_ORIGIN is not configured`);
@@ -307,7 +307,6 @@ export class ConsumerAuthController {
     @Query(`signupPath`) signupPath?: string,
     @Query(`accountType`) accountType?: string,
     @Query(`contractorKind`) contractorKind?: string,
-    @Query(`returnOrigin`) returnOrigin?: string,
   ) {
     const validatedAccountType =
       accountType === $Enums.AccountType.BUSINESS || accountType === $Enums.AccountType.CONTRACTOR
@@ -318,7 +317,7 @@ export class ConsumerAuthController {
         ? contractorKind
         : undefined;
 
-    const validatedReturnOrigin = this.validateReturnOrigin(returnOrigin) ?? this.resolveRequestOrigin(req);
+    const redirectOrigin = this.resolveRequestOrigin(req);
 
     const nextPath = this.normalizeNextPath(next);
     const signupEntryPath = signupPath === `/signup` ? `/signup` : this.getSignupEntryPathFromNext(next);
@@ -338,13 +337,13 @@ export class ConsumerAuthController {
         signupEntryPath,
         accountType: validatedAccountType,
         contractorKind: validatedContractorKind,
-        returnOrigin: validatedReturnOrigin,
+        redirectOrigin,
       },
       this.oauthStateTtlMs,
     );
 
     response.cookie(
-      getApiOAuthStateCookieKey(req, this.resolveConsumerAppScope(req, validatedReturnOrigin)),
+      getApiOAuthStateCookieKey(req, this.resolveConsumerAppScope(req, redirectOrigin)),
       stateToken,
       this.getOAuthCookieOptions(req),
     );
@@ -369,21 +368,21 @@ export class ConsumerAuthController {
         this.getOAuthClearCookieOptions(req),
       );
 
-    const failureRedirect = (reason: string, returnOrigin?: string) => {
+    const failureRedirect = (reason: string, redirectOrigin?: string) => {
       clearStateCookie();
-      const url = this.buildConsumerLoginRedirect(reason, returnOrigin);
+      const url = this.buildConsumerLoginRedirect(reason, redirectOrigin);
       return response.redirect(url);
     };
 
-    const consumeStateReturnOrigin = async (maybeState?: string) => {
+    const consumeStateRedirectOrigin = async (maybeState?: string) => {
       if (!maybeState) return undefined;
       const record = await this.oauthStateStore.consume(maybeState);
-      return record?.returnOrigin;
+      return record?.redirectOrigin;
     };
 
     if (error) {
-      const errorReturnOrigin = await consumeStateReturnOrigin(state);
-      return failureRedirect(`access_denied`, errorReturnOrigin);
+      const errorRedirectOrigin = await consumeStateRedirectOrigin(state);
+      return failureRedirect(`access_denied`, errorRedirectOrigin);
     }
 
     const stateCookie =
@@ -393,8 +392,8 @@ export class ConsumerAuthController {
     if (!state) return failureRedirect(`invalid_state`);
     if (stateCookie && stateCookie !== state) {
       if (!this.isOAuthStateCookieFallbackAllowedInEnv()) {
-        const mismatchReturnOrigin = await consumeStateReturnOrigin(state);
-        return failureRedirect(`invalid_state`, mismatchReturnOrigin);
+        const mismatchRedirectOrigin = await consumeStateRedirectOrigin(state);
+        return failureRedirect(`invalid_state`, mismatchRedirectOrigin);
       }
       this.logger.warn({
         event: `oauth_state_cookie_mismatch_auto_fallback_dev_or_test`,
@@ -403,8 +402,8 @@ export class ConsumerAuthController {
     }
     if (!stateCookie && !envs.CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK) {
       if (!this.isOAuthStateCookieFallbackAllowedInEnv()) {
-        const missingCookieReturnOrigin = await consumeStateReturnOrigin(state);
-        return failureRedirect(`invalid_state`, missingCookieReturnOrigin);
+        const missingCookieRedirectOrigin = await consumeStateRedirectOrigin(state);
+        return failureRedirect(`invalid_state`, missingCookieRedirectOrigin);
       }
       this.logger.warn({
         event: `oauth_state_cookie_missing_auto_fallback_dev_or_test`,
@@ -413,12 +412,12 @@ export class ConsumerAuthController {
     }
     if (!stateCookie && envs.CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK) {
       if (!this.isOAuthStateCookieFallbackAllowedInEnv()) {
-        const fallbackBlockedReturnOrigin = await consumeStateReturnOrigin(state);
+        const fallbackBlockedRedirectOrigin = await consumeStateRedirectOrigin(state);
         this.logger.error({
           event: `oauth_state_cookie_missing_fallback_blocked_non_local_env`,
           nodeEnv: envs.NODE_ENV,
         });
-        return failureRedirect(`invalid_state`, fallbackBlockedReturnOrigin);
+        return failureRedirect(`invalid_state`, fallbackBlockedRedirectOrigin);
       }
       this.logger.warn({
         event: `oauth_state_cookie_missing_fallback`,
@@ -428,9 +427,9 @@ export class ConsumerAuthController {
     const stateRecord = await this.oauthStateStore.consume(state);
     if (!stateRecord) return failureRedirect(`expired_state`);
     if (Date.now() - stateRecord.createdAt > this.oauthStateTtlMs) return failureRedirect(`expired_state`);
-    if (!code) return failureRedirect(`missing_code`, stateRecord.returnOrigin);
+    if (!code) return failureRedirect(`missing_code`, stateRecord.redirectOrigin);
 
-    const stateReturnOrigin = stateRecord.returnOrigin;
+    const stateRedirectOrigin = stateRecord.redirectOrigin;
 
     try {
       const payload = await this.googleOAuthService.exchangeCodeForPayload(
@@ -461,7 +460,7 @@ export class ConsumerAuthController {
             nextPath: stateRecord.nextPath,
             accountType: stateRecord.accountType ?? null,
             contractorKind: stateRecord.contractorKind ?? null,
-            returnOrigin: stateRecord.returnOrigin ?? null,
+            redirectOrigin: stateRecord.redirectOrigin ?? null,
           },
           this.googleSignupSessionTtlMs,
         );
@@ -472,7 +471,7 @@ export class ConsumerAuthController {
           stateRecord.signupEntryPath ?? this.getSignupEntryPathFromNext(stateRecord.nextPath),
           stateRecord.accountType,
           stateRecord.contractorKind,
-          stateRecord.returnOrigin,
+          stateRecord.redirectOrigin,
         );
         return response.redirect(redirectUrl);
       }
@@ -484,7 +483,7 @@ export class ConsumerAuthController {
         {
           identityId: consumer.id,
           nextPath: this.normalizeSignupCompletionPath(stateRecord.nextPath),
-          returnOrigin: stateRecord.returnOrigin,
+          redirectOrigin: stateRecord.redirectOrigin,
         },
         this.oauthLoginHandoffTtlMs,
       );
@@ -493,17 +492,17 @@ export class ConsumerAuthController {
       const redirectUrl = this.buildConsumerRedirect(
         this.normalizeSignupCompletionPath(stateRecord.nextPath),
         { oauthHandoff },
-        stateRecord.returnOrigin,
+        stateRecord.redirectOrigin,
       );
       return response.redirect(redirectUrl);
     } catch (error: unknown) {
       this.logger.error(`OAuth callback failed`, {
         hasStateRecord: !!stateRecord,
-        hasReturnOrigin: !!stateReturnOrigin,
+        hasRedirectOrigin: !!stateRedirectOrigin,
         errorName: error instanceof Error ? error.name : `UnknownError`,
         errorMessage: error instanceof Error ? error.message : String(error),
       });
-      return failureRedirect(`login_failed`, stateReturnOrigin);
+      return failureRedirect(`login_failed`, stateRedirectOrigin);
     }
   }
 

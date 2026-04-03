@@ -67,7 +67,7 @@ describe(`OriginResolverService`, () => {
     });
   });
 
-  describe(`validateReturnOrigin`, () => {
+  describe(`validateRedirectOrigin`, () => {
     let originalEnvs: typeof envs;
 
     beforeEach(() => {
@@ -79,30 +79,30 @@ describe(`OriginResolverService`, () => {
     });
 
     it(`should return undefined for undefined input`, () => {
-      expect(service.validateReturnOrigin(undefined)).toBeUndefined();
+      expect(service.validateRedirectOrigin(undefined)).toBeUndefined();
     });
 
     it(`should return undefined for invalid URL`, () => {
-      expect(service.validateReturnOrigin(`not-a-url`)).toBeUndefined();
+      expect(service.validateRedirectOrigin(`not-a-url`)).toBeUndefined();
     });
 
     it(`should return normalized origin for allowed origin`, () => {
-      const result = service.validateReturnOrigin(`https://consumer.example.com/path`);
+      const result = service.validateRedirectOrigin(`https://consumer.example.com/path`);
       expect(result).toBe(`https://consumer.example.com`);
     });
 
     it(`should return undefined for disallowed origin`, () => {
-      const result = service.validateReturnOrigin(`https://evil.example.com/path`);
+      const result = service.validateRedirectOrigin(`https://evil.example.com/path`);
       expect(result).toBeUndefined();
     });
 
     it(`should handle trailing slashes`, () => {
-      const result = service.validateReturnOrigin(`https://consumer.example.com/`);
+      const result = service.validateRedirectOrigin(`https://consumer.example.com/`);
       expect(result).toBe(`https://consumer.example.com`);
     });
 
     it(`should allow origins listed in CORS_ALLOWED_ORIGINS`, () => {
-      const result = service.validateReturnOrigin(`https://allowed1.example.com/path`);
+      const result = service.validateRedirectOrigin(`https://allowed1.example.com/path`);
       expect(result).toBe(`https://allowed1.example.com`);
     });
 
@@ -110,7 +110,7 @@ describe(`OriginResolverService`, () => {
       (envs as any).NODE_ENV = `development`;
       (envs as any).CORS_ALLOWED_ORIGINS = [`https://allowed1.example.com`];
 
-      const result = service.validateReturnOrigin(`http://localhost:3002/path`);
+      const result = service.validateRedirectOrigin(`http://localhost:3002/path`);
       expect(result).toBe(`http://localhost:3002`);
     });
 
@@ -118,29 +118,29 @@ describe(`OriginResolverService`, () => {
       (envs as any).NODE_ENV = `production`;
       (envs as any).CORS_ALLOWED_ORIGINS = [`https://allowed1.example.com`];
 
-      const result = service.validateReturnOrigin(`http://localhost:3002/path`);
+      const result = service.validateRedirectOrigin(`http://localhost:3002/path`);
       expect(result).toBeUndefined();
     });
   });
 
-  describe(`resolveConsumerOrigin`, () => {
-    it(`should return validated returnOrigin if provided`, () => {
-      const result = service.resolveConsumerOrigin(`https://consumer.example.com/some/path`);
+  describe(`resolveConsumerRedirectOrigin`, () => {
+    it(`should return validated redirectOrigin if provided`, () => {
+      const result = service.resolveConsumerRedirectOrigin(`https://consumer.example.com/some/path`);
       expect(result).toBe(`https://consumer.example.com`);
     });
 
     it(`should fallback to CONSUMER_APP_ORIGIN`, () => {
-      const result = service.resolveConsumerOrigin();
+      const result = service.resolveConsumerRedirectOrigin();
       expect(result).toBe(`https://consumer.example.com`);
     });
 
-    it(`should ignore invalid returnOrigin and use fallback`, () => {
-      const result = service.resolveConsumerOrigin(`https://evil.example.com`);
+    it(`should ignore invalid redirectOrigin and use fallback`, () => {
+      const result = service.resolveConsumerRedirectOrigin(`https://evil.example.com`);
       expect(result).toBe(`https://consumer.example.com`);
     });
   });
 
-  describe(`resolveConsumerOrigin - with placeholder values`, () => {
+  describe(`resolveConsumerRedirectOrigin - with placeholder values`, () => {
     let originalEnvs: typeof envs;
 
     beforeEach(() => {
@@ -155,7 +155,7 @@ describe(`OriginResolverService`, () => {
       (envs as any).CONSUMER_APP_ORIGIN = `CONSUMER_APP_ORIGIN`;
       (envs as any).CONSUMER_MOBILE_APP_ORIGIN = `https://mobile.example.com`;
 
-      const result = service.resolveConsumerOrigin();
+      const result = service.resolveConsumerRedirectOrigin();
       expect(result).toBe(`https://mobile.example.com`);
     });
 
@@ -164,7 +164,7 @@ describe(`OriginResolverService`, () => {
       (envs as any).CONSUMER_MOBILE_APP_ORIGIN = `CONSUMER_MOBILE_APP_ORIGIN`;
       (envs as any).CORS_ALLOWED_ORIGINS = [`https://cors.example.com`];
 
-      const result = service.resolveConsumerOrigin();
+      const result = service.resolveConsumerRedirectOrigin();
       expect(result).toBeNull();
     });
 
@@ -173,7 +173,7 @@ describe(`OriginResolverService`, () => {
       (envs as any).CONSUMER_MOBILE_APP_ORIGIN = `CONSUMER_MOBILE_APP_ORIGIN`;
       (envs as any).CORS_ALLOWED_ORIGINS = [];
 
-      const result = service.resolveConsumerOrigin();
+      const result = service.resolveConsumerRedirectOrigin();
       expect(result).toBeNull();
     });
   });
