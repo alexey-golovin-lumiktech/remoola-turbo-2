@@ -4,7 +4,13 @@ import { useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
-import { type THowDidHearAboutUs, HOW_DID_HEAR_ABOUT_US, CONTRACTOR_KIND, ACCOUNT_TYPE } from '@remoola/api-types';
+import {
+  type THowDidHearAboutUs,
+  buildConsumerGoogleOAuthStartUrl,
+  HOW_DID_HEAR_ABOUT_US,
+  CONTRACTOR_KIND,
+  ACCOUNT_TYPE,
+} from '@remoola/api-types';
 import { GoogleIcon, cn } from '@remoola/ui';
 
 import localStyles from './SignupDetailsStep.module.css';
@@ -54,23 +60,19 @@ export function SignupDetailsStep() {
   const googleTokenFromUrl = params.get(`googleSignup`) ?? params.get(`googleSignupHandoff`);
   const isSigningUpViaGoogle = Boolean(googleSignupToken) || Boolean(googleTokenFromUrl);
   const googleSignupStartUrl = useMemo(() => {
-    if (typeof window === `undefined`) return null;
-    const url = new URL(`/api/consumer/auth/google/start`, window.location.origin);
-    url.searchParams.set(
-      `next`,
+    return buildConsumerGoogleOAuthStartUrl(
       buildSignupFlowPath(`/signup`, {
         accountType: signup.accountType,
         contractorKind: signup.contractorKind,
         googleSignupToken: null,
       }),
+      {
+        signupPath:
+          typeof window !== `undefined` && window.location.pathname === `/signup` ? `/signup` : `/signup/start`,
+        accountType: signup.accountType,
+        contractorKind: signup.accountType === ACCOUNT_TYPE.CONTRACTOR ? signup.contractorKind : null,
+      },
     );
-    url.searchParams.set(`signupPath`, window.location.pathname === `/signup` ? `/signup` : `/signup/start`);
-    url.searchParams.set(`returnOrigin`, window.location.origin);
-    if (signup.accountType) url.searchParams.set(`accountType`, signup.accountType);
-    if (signup.accountType === ACCOUNT_TYPE.CONTRACTOR && signup.contractorKind) {
-      url.searchParams.set(`contractorKind`, signup.contractorKind);
-    }
-    return `${url.pathname}${url.search}`;
   }, [signup.accountType, signup.contractorKind]);
   const { markSubmitted, goNext } = useSignupSteps();
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});

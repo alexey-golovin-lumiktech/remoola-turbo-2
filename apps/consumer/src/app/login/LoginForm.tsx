@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import {
   AUTH_NOTICE_QUERY,
+  buildConsumerGoogleOAuthStartUrl,
   emailSchema,
   getAuthNoticeMessage,
   parseAuthNotice,
@@ -181,9 +182,7 @@ export default function LoginForm() {
           data-testid="consumer-login-btn-google"
           disabled={loading}
           onClick={async () => {
-            const url = new URL(`/api/consumer/auth/google/start`, window.location.origin);
-            url.searchParams.set(`next`, nextPath);
-            url.searchParams.set(`returnOrigin`, window.location.origin);
+            const url = new URL(buildConsumerGoogleOAuthStartUrl(nextPath), window.location.origin);
             await fetch(`/api/consumer/auth/clear-cookies`, { method: `POST`, credentials: `include` });
             window.location.href = `${url.pathname}${url.search}`;
           }}

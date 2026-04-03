@@ -13,20 +13,33 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
   let service: Partial<ConsumerAuthService>;
   let initialOauthStateCookieFallback: boolean;
   let initialNodeEnv: typeof envs.NODE_ENV;
+  const consumerOrigin = `https://app.example.com`;
+  const consumerMobileOrigin = `https://mobile.example.com`;
+
+  const resolveMockOrigin = (origin?: string | string[], referer?: string | string[]) => {
+    const values = [origin, referer].flatMap((entry) => (Array.isArray(entry) ? entry : [entry]));
+    if (values.some((entry) => typeof entry === `string` && entry.includes(`mobile.example.com`))) {
+      return consumerMobileOrigin;
+    }
+    if (values.some((entry) => typeof entry === `string` && entry.includes(`app.example.com`))) {
+      return consumerOrigin;
+    }
+    return undefined;
+  };
 
   const originResolver: Pick<
     OriginResolverService,
-    `validateReturnOrigin` | `resolveConsumerOrigin` | `getAllowedOrigins` | `resolveRequestOrigin`
+    `resolveConsumerOrigin` | `resolveConsumerRequestAppScope` | `resolveConsumerRequestOrigin` | `resolveRequestOrigin`
   > = {
-    validateReturnOrigin: jest.fn().mockReturnValue(`https://app.example.com`),
-    resolveConsumerOrigin: jest.fn().mockReturnValue(`https://app.example.com`),
-    getAllowedOrigins: jest.fn().mockReturnValue(new Set([`https://app.example.com`])),
-    resolveRequestOrigin: jest.fn((origin?: string | string[], referer?: string | string[]) => {
-      const values = [origin, referer].flatMap((entry) => (Array.isArray(entry) ? entry : [entry]));
-      return values.some((entry) => typeof entry === `string` && entry.includes(`app.example.com`))
-        ? `https://app.example.com`
-        : undefined;
+    resolveConsumerOrigin: jest.fn((returnOrigin?: string) => returnOrigin ?? consumerOrigin),
+    resolveConsumerRequestAppScope: jest.fn((origin?: string | string[], referer?: string | string[]) => {
+      const resolvedOrigin = resolveMockOrigin(origin, referer);
+      if (resolvedOrigin === consumerMobileOrigin) return `consumer-mobile`;
+      if (resolvedOrigin === consumerOrigin) return `consumer`;
+      return undefined;
     }),
+    resolveConsumerRequestOrigin: jest.fn(resolveMockOrigin),
+    resolveRequestOrigin: jest.fn(resolveMockOrigin),
   };
 
   const oauthStateStore: Pick<
@@ -155,6 +168,57 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
 
     await expect(controller.logout(req, makeRes())).rejects.toBeInstanceOf(UnauthorizedException);
     expect(service.revokeSessionByRefreshTokenAndAudit).not.toHaveBeenCalled();
+  });
+
+  it(`google start stores the trusted request origin from the origin header`, async () => {
+    const req = makeReq({ headers: { origin: consumerOrigin } });
+    const res = makeRes();
+
+    await controller.googleOAuthStart(req, res, `/dashboard`, undefined, undefined, undefined);
+
+    expect(oauthStateStore.save).toHaveBeenCalledWith(
+      `state-token`,
+      expect.objectContaining({
+        nextPath: `/dashboard`,
+        returnOrigin: consumerOrigin,
+      }),
+      expect.any(Number),
+    );
+    expect(getApiOAuthStateCookieKeysForRead(`consumer`)).toContain((res.cookie as jest.Mock).mock.calls[0]?.[0]);
+    expect(res.cookie).toHaveBeenCalledWith(expect.any(String), `state-token`, expect.any(Object));
+  });
+
+  it(`google start derives the mobile scope from the request referer`, async () => {
+    const req = makeReq({
+      headers: {
+        referer: `${consumerMobileOrigin}/api/consumer/auth/google/start?next=%2Fdashboard`,
+      },
+    });
+    const res = makeRes();
+
+    await controller.googleOAuthStart(req, res, `/dashboard`, undefined, undefined, undefined);
+
+    expect(oauthStateStore.save).toHaveBeenCalledWith(
+      `state-token`,
+      expect.objectContaining({
+        returnOrigin: consumerMobileOrigin,
+      }),
+      expect.any(Number),
+    );
+    expect(getApiOAuthStateCookieKeysForRead(`consumer-mobile`)).toContain(
+      (res.cookie as jest.Mock).mock.calls[0]?.[0],
+    );
+    expect(res.cookie).toHaveBeenCalledWith(expect.any(String), `state-token`, expect.any(Object));
+  });
+
+  it(`google start rejects when the request origin cannot be trusted`, async () => {
+    const req = makeReq({ headers: {} });
+    const res = makeRes();
+
+    await expect(
+      controller.googleOAuthStart(req, res, `/dashboard`, undefined, undefined, undefined),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(oauthStateStore.save).not.toHaveBeenCalled();
   });
 
   it(`google callback rejects when state cookie is missing`, async () => {

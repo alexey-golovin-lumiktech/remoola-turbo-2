@@ -13,7 +13,7 @@ describe(`consumer-mobile google start route`, () => {
     jest.restoreAllMocks();
   });
 
-  it(`redirects to backend oauth start with return origin from the app`, async () => {
+  it(`redirects to backend oauth start while preserving safe params`, async () => {
     mockGetEnv.mockReturnValue({ NEXT_PUBLIC_API_BASE_URL: `https://api.example.com` });
 
     const request = {
@@ -29,6 +29,6 @@ describe(`consumer-mobile google start route`, () => {
     expect(location).toContain(`/consumer/auth/google/start`);
     expect(location).toContain(`next=%2Fsignup`);
     expect(location).toContain(`contractorKind=ENTITY`);
-    expect(location).toContain(`returnOrigin=https%3A%2F%2Fmobile.example.com`);
+    expect(location).not.toContain(`returnOrigin=`);
   });
 });

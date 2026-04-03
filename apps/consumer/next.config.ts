@@ -85,29 +85,9 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  // Webpack optimizations (production build only; ignored when using Turbopack in dev)
-  webpack: (config, { dev, isServer }) => {
-    // Optimize bundle splitting
-    if (!dev && !isServer) {
-      config.optimization.splitChunks.cacheGroups = {
-        ...config.optimization.splitChunks.cacheGroups,
-        vendor: {
-          test: /[\\/]node_modules[\\/]/,
-          name: `vendors`,
-          chunks: `all`,
-          priority: 10,
-        },
-        ui: {
-          test: /[\\/]node_modules[\\/]@remoola[\\/]ui[\\/]/,
-          name: `ui-components`,
-          chunks: `all`,
-          priority: 20,
-        },
-      };
-    }
-
-    return config;
-  },
+  // Note: avoid custom webpack chunk overrides here.
+  // Next.js already handles app-router CSS/JS chunking, and overriding splitChunks
+  // can cause CSS assets to leak into the script manifest in production builds.
 };
 
 export default nextConfig;

@@ -75,11 +75,9 @@ export class ConsumerAuthController {
     private readonly originResolver: OriginResolverService,
   ) {}
 
-  private resolveConsumerAppScope(req: express.Request, returnOrigin?: string): ConsumerAppScope {
+  private resolveConsumerAppScope(req: express.Request): ConsumerAppScope {
     return (
-      this.originResolver.resolveConsumerRequestAppScope?.(req.headers?.origin, req.headers?.referer) ??
-      this.originResolver.resolveConsumerAppScope?.(this.validateReturnOrigin(returnOrigin)) ??
-      `consumer`
+      this.originResolver.resolveConsumerRequestAppScope?.(req.headers?.origin, req.headers?.referer) ?? `consumer`
     );
   }
 
@@ -190,13 +188,6 @@ export class ConsumerAuthController {
     return `/dashboard`;
   }
 
-  private validateReturnOrigin(returnOrigin?: string): string | undefined {
-    return (
-      this.originResolver.validateConsumerReturnOrigin?.(returnOrigin) ??
-      this.originResolver.validateReturnOrigin?.(returnOrigin)
-    );
-  }
-
   private getSignupEntryPathFromNext(next?: string) {
     const normalized = this.normalizeNextPath(next);
     const pathname = normalized.startsWith(`/`) ? normalized.split(/[?#]/, 1)[0] : `/dashboard`;
@@ -219,6 +210,14 @@ export class ConsumerAuthController {
     if (!this.resolveRequestOrigin(req)) {
       throw new UnauthorizedException(`Invalid request origin`);
     }
+  }
+
+  private getTrustedRequestOrigin(req: express.Request): string {
+    const origin = this.resolveRequestOrigin(req);
+    if (!origin) {
+      throw new UnauthorizedException(`Invalid request origin`);
+    }
+    return origin;
   }
 
   private isOAuthStateCookieFallbackAllowedInEnv(): boolean {
@@ -329,7 +328,6 @@ export class ConsumerAuthController {
     @Query(`signupPath`) signupPath?: string,
     @Query(`accountType`) accountType?: string,
     @Query(`contractorKind`) contractorKind?: string,
-    @Query(`returnOrigin`) returnOrigin?: string,
   ) {
     const validatedAccountType =
       accountType === $Enums.AccountType.BUSINESS || accountType === $Enums.AccountType.CONTRACTOR
@@ -340,7 +338,7 @@ export class ConsumerAuthController {
         ? contractorKind
         : undefined;
 
-    const validatedReturnOrigin = this.validateReturnOrigin(returnOrigin);
+    const trustedRequestOrigin = this.getTrustedRequestOrigin(req);
 
     const nextPath = this.normalizeNextPath(next);
     const signupEntryPath = signupPath === `/signup` ? `/signup` : this.getSignupEntryPathFromNext(next);
@@ -360,13 +358,13 @@ export class ConsumerAuthController {
         signupEntryPath,
         accountType: validatedAccountType,
         contractorKind: validatedContractorKind,
-        returnOrigin: validatedReturnOrigin,
+        returnOrigin: trustedRequestOrigin,
       },
       this.oauthStateTtlMs,
     );
 
     response.cookie(
-      getApiOAuthStateCookieKey(req, this.resolveConsumerAppScope(req, validatedReturnOrigin)),
+      getApiOAuthStateCookieKey(req, this.resolveConsumerAppScope(req)),
       stateToken,
       this.getOAuthCookieOptions(req),
     );

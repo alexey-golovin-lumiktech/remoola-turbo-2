@@ -18,4 +18,32 @@ describe(`oauth-start-url`, () => {
     expect(url.searchParams.get(`next`)).toBe(`/payments?id=pay_123#details`);
     expect(url.toString()).toContain(`next=%2Fpayments%3Fid%3Dpay_123%23details`);
   });
+
+  it(`adds signup-related params when provided`, () => {
+    const built = buildConsumerGoogleOAuthStartUrl(`/signup?accountType=BUSINESS`, {
+      signupPath: `/signup`,
+      accountType: `BUSINESS`,
+      contractorKind: `ENTITY`,
+    });
+    const url = new URL(built, `https://app.example.com`);
+
+    expect(url.pathname).toBe(`/api/consumer/auth/google/start`);
+    expect(url.searchParams.get(`next`)).toBe(`/signup?accountType=BUSINESS`);
+    expect(url.searchParams.get(`signupPath`)).toBe(`/signup`);
+    expect(url.searchParams.get(`accountType`)).toBe(`BUSINESS`);
+    expect(url.searchParams.get(`contractorKind`)).toBe(`ENTITY`);
+  });
+
+  it(`omits nullable optional signup params`, () => {
+    const built = buildConsumerGoogleOAuthStartUrl(`/signup/start`, {
+      signupPath: `/signup/start`,
+      accountType: `CONTRACTOR`,
+      contractorKind: null,
+    });
+    const url = new URL(built, `https://app.example.com`);
+
+    expect(url.searchParams.get(`signupPath`)).toBe(`/signup/start`);
+    expect(url.searchParams.get(`accountType`)).toBe(`CONTRACTOR`);
+    expect(url.searchParams.has(`contractorKind`)).toBe(false);
+  });
 });

@@ -1,18 +1,41 @@
+const VERCEL_PROJECT_PRODUCTION_URL_ENV = `VERCEL_PROJECT_PRODUCTION_URL`;
+
+function normalizeOriginCandidate(candidate: string | undefined): string | null {
+  if (!candidate) return null;
+
+  const normalizedCandidate = candidate.includes(`://`) ? candidate : `https://${candidate}`;
+  try {
+    return new URL(normalizedCandidate).origin;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Server-only: returns the request origin (base URL) for same-origin fetches.
  * Use from server actions or route handlers when forwarding requests to this app's API.
  * Uses only trusted config (never the Host header) to avoid SSRF/cookie leakage.
  *
  * Resolution order:
- * 1. VERCEL_URL (https) when set
- * 2. Fallback http://localhost:3002 (consumer-mobile dev port; keep in sync with test-constants.ts and package.json "dev" script)
+ * 1. Explicit app envs
+ * 2. Vercel project production domain
+ * 3. Local dev fallback
  */
 export function getRequestOrigin(): string {
-  const vercelUrl = process.env.VERCEL_URL;
-  if (vercelUrl) {
-    return `https://${vercelUrl}`;
+  const configuredOrigin =
+    normalizeOriginCandidate(process.env.CONSUMER_APP_ORIGIN) ??
+    normalizeOriginCandidate(process.env.NEXT_PUBLIC_APP_ORIGIN) ??
+    normalizeOriginCandidate(process.env[VERCEL_PROJECT_PRODUCTION_URL_ENV]);
+
+  if (configuredOrigin) {
+    return configuredOrigin;
   }
-  return `http://localhost:3002`;
+
+  if (process.env.NODE_ENV !== `production`) {
+    return `http://localhost:3002`;
+  }
+
+  throw new Error(`Consumer mobile app origin is not configured`);
 }
 
 /**

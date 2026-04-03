@@ -26,6 +26,6 @@ describe(`consumer google start route`, () => {
     expect(location).toContain(`next=%2Fsignup`);
     expect(location).toContain(`signupPath=%2Fsignup`);
     expect(location).toContain(`accountType=BUSINESS`);
-    expect(location).toContain(`returnOrigin=https%3A%2F%2Fapp.example.com`);
+    expect(location).not.toContain(`returnOrigin=`);
   });
 });

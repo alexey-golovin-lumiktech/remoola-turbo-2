@@ -1,13 +1,37 @@
+const VERCEL_PROJECT_PRODUCTION_URL_ENV = `VERCEL_PROJECT_PRODUCTION_URL`;
+
+function normalizeOriginCandidate(candidate: string | undefined): string | null {
+  if (!candidate) return null;
+
+  const normalizedCandidate = candidate.includes(`://`) ? candidate : `https://${candidate}`;
+  try {
+    return new URL(normalizedCandidate).origin;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Server-only: returns the request origin (base URL) for same-origin fetches.
  * Uses only trusted config (never the Host header) to avoid SSRF/cookie leakage.
+ * In production on Vercel, prefer the project production domain over deployment URLs
+ * so backend CORS and scope resolution stay aligned with the stable FE hostname.
  */
-export function getRequestOrigin(): string {
-  const vercelUrl = process.env.VERCEL_URL;
-  if (vercelUrl) {
-    return `https://${vercelUrl}`;
+export function getRequestOrigin(): string | null {
+  const configuredOrigin =
+    normalizeOriginCandidate(process.env.CONSUMER_APP_ORIGIN) ??
+    normalizeOriginCandidate(process.env.NEXT_PUBLIC_APP_ORIGIN) ??
+    normalizeOriginCandidate(process.env[VERCEL_PROJECT_PRODUCTION_URL_ENV]);
+
+  if (configuredOrigin) {
+    return configuredOrigin;
   }
-  return `http://localhost:3001`;
+
+  if (process.env.NODE_ENV !== `production`) {
+    return `http://localhost:3001`;
+  }
+
+  return null;
 }
 
 /**

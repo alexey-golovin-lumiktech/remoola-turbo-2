@@ -68,7 +68,10 @@ export function buildForwardHeaders(sourceHeaders: Headers): Headers {
     }
   }
   if (!headers.has(`origin`)) {
-    headers.set(`origin`, getRequestOrigin());
+    const requestOrigin = getRequestOrigin();
+    if (requestOrigin) {
+      headers.set(`origin`, requestOrigin);
+    }
   }
   for (const [k, v] of Object.entries(getBypassHeaders())) headers.set(k, v);
   return headers;

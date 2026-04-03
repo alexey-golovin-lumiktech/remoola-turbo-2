@@ -3,6 +3,7 @@ import { getConsumerMobileCsrfTokenCookieKey } from '@remoola/api-types';
 import { appendSetCookies, buildAuthMutationForwardHeaders, buildForwardHeaders, requireJsonBody } from './api-utils';
 
 const TEST_ORIGIN = `http://localhost:3002`;
+const VERCEL_PROJECT_PRODUCTION_URL_ENV = `VERCEL_PROJECT_PRODUCTION_URL`;
 const TEST_CSRF_COOKIE_KEY = getConsumerMobileCsrfTokenCookieKey({
   isProduction: false,
   isVercel: false,
@@ -11,6 +12,19 @@ const TEST_CSRF_COOKIE_KEY = getConsumerMobileCsrfTokenCookieKey({
 });
 
 describe(`consumer-mobile api-utils`, () => {
+  const envRef = process.env as Record<string, string | undefined>;
+  const originalNodeEnv = process.env.NODE_ENV;
+  const originalConsumerAppOrigin = process.env.CONSUMER_APP_ORIGIN;
+  const originalNextPublicAppOrigin = process.env.NEXT_PUBLIC_APP_ORIGIN;
+  const originalVercelProjectProductionUrl = process.env[VERCEL_PROJECT_PRODUCTION_URL_ENV];
+
+  afterEach(() => {
+    envRef.NODE_ENV = originalNodeEnv;
+    envRef.CONSUMER_APP_ORIGIN = originalConsumerAppOrigin;
+    envRef.NEXT_PUBLIC_APP_ORIGIN = originalNextPublicAppOrigin;
+    envRef[VERCEL_PROJECT_PRODUCTION_URL_ENV] = originalVercelProjectProductionUrl;
+  });
+
   it(`requireJsonBody accepts valid json`, async () => {
     const req = new Request(`${TEST_ORIGIN}/api/test`, {
       method: `POST`,
@@ -117,6 +131,36 @@ describe(`consumer-mobile api-utils`, () => {
     expect(headers.get(`origin`)).toBe(TEST_ORIGIN);
     expect(headers.get(`cookie`)).toBe(`${TEST_CSRF_COOKIE_KEY}=abc`);
     expect(headers.get(`x-csrf-token`)).toBe(`abc`);
+  });
+
+  it(`buildForwardHeaders falls back to the configured canonical origin in production`, () => {
+    envRef.NODE_ENV = `production`;
+    envRef.CONSUMER_APP_ORIGIN = `https://remoola-turbo-2-consumer-mobile.vercel.app`;
+    delete process.env.NEXT_PUBLIC_APP_ORIGIN;
+    delete process.env[VERCEL_PROJECT_PRODUCTION_URL_ENV];
+
+    const headers = buildForwardHeaders(
+      new Headers({
+        cookie: `${TEST_CSRF_COOKIE_KEY}=abc`,
+      }),
+    );
+
+    expect(headers.get(`origin`)).toBe(`https://remoola-turbo-2-consumer-mobile.vercel.app`);
+  });
+
+  it(`buildForwardHeaders uses the Vercel production domain instead of the deployment URL fallback`, () => {
+    envRef.NODE_ENV = `production`;
+    delete process.env.CONSUMER_APP_ORIGIN;
+    delete process.env.NEXT_PUBLIC_APP_ORIGIN;
+    envRef[VERCEL_PROJECT_PRODUCTION_URL_ENV] = `remoola-turbo-2-consumer-mobile.vercel.app`;
+
+    const headers = buildForwardHeaders(
+      new Headers({
+        cookie: `${TEST_CSRF_COOKIE_KEY}=abc`,
+      }),
+    );
+
+    expect(headers.get(`origin`)).toBe(`https://remoola-turbo-2-consumer-mobile.vercel.app`);
   });
 
   it(`appendSetCookies appends all source cookie values`, () => {
