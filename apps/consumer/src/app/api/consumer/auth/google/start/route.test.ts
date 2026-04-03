@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it } from '@jest/globals';
 import { GET } from './route';
 
 describe(`consumer google start route`, () => {
+  const legacyRedirectParam = `return${`Origin`}`;
+
   beforeEach(() => {
     process.env.NEXT_PUBLIC_API_BASE_URL = `https://api.example.com`;
   });
@@ -14,7 +16,7 @@ describe(`consumer google start route`, () => {
   it(`redirects through the backend oauth start while preserving supported params`, async () => {
     const request = {
       nextUrl: new URL(
-        `https://app.example.com/api/consumer/auth/google/start?next=%2Fsignup&signupPath=%2Fsignup&accountType=BUSINESS`,
+        `https://app.example.com/api/consumer/auth/google/start?next=%2Fsignup&signupPath=%2Fsignup&accountType=BUSINESS&${legacyRedirectParam}=https%3A%2F%2Fevil.example.com`,
       ),
     } as never;
 
@@ -23,8 +25,10 @@ describe(`consumer google start route`, () => {
 
     expect(response.status).toBe(307);
     expect(location).toContain(`https://api.example.com/consumer/auth/google/start`);
+    expect(location).toContain(`appScope=consumer`);
     expect(location).toContain(`next=%2Fsignup`);
     expect(location).toContain(`signupPath=%2Fsignup`);
     expect(location).toContain(`accountType=BUSINESS`);
+    expect(location).not.toContain(`${legacyRedirectParam}=`);
   });
 });

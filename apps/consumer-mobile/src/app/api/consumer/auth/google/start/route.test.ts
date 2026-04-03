@@ -9,6 +9,8 @@ jest.mock(`../../../../../../lib/env.server`, () => ({
 import { GET } from './route';
 
 describe(`consumer-mobile google start route`, () => {
+  const legacyRedirectParam = `return${`Origin`}`;
+
   afterEach(() => {
     jest.restoreAllMocks();
   });
@@ -18,7 +20,7 @@ describe(`consumer-mobile google start route`, () => {
 
     const request = {
       nextUrl: new URL(
-        `https://mobile.example.com/api/consumer/auth/google/start?next=%2Fsignup&contractorKind=ENTITY`,
+        `https://mobile.example.com/api/consumer/auth/google/start?next=%2Fsignup&contractorKind=ENTITY&${legacyRedirectParam}=https%3A%2F%2Fevil.example.com`,
       ),
     } as never;
 
@@ -27,7 +29,9 @@ describe(`consumer-mobile google start route`, () => {
 
     expect(response.status).toBe(307);
     expect(location).toContain(`/consumer/auth/google/start`);
+    expect(location).toContain(`appScope=consumer-mobile`);
     expect(location).toContain(`next=%2Fsignup`);
     expect(location).toContain(`contractorKind=ENTITY`);
+    expect(location).not.toContain(`${legacyRedirectParam}=`);
   });
 });
