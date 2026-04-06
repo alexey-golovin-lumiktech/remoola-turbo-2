@@ -43,6 +43,7 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
   let googleOnlyConsumerEmail: string;
   let googleOnlyConsumerId: string;
   let mailingService: MailingService;
+  let initialConsumerOrigin: string;
   let initialConsumerCssGridOrigin: string;
   const initialPassword = `ForgotReset1!`;
   const updatedPassword = `ForgotReset2!`;
@@ -50,6 +51,7 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
   const settingsUpdatedPassword = `SettingsReset2!`;
   const googleOnlyCreatedPassword = `GoogleCreated1!`;
   const origin = `http://127.0.0.1:3003`;
+  const appScope = `consumer-css-grid` as const;
 
   function parseCookieValue(cookies: string[] | undefined, key: string): string | null {
     if (!Array.isArray(cookies)) return null;
@@ -75,7 +77,9 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
 
   beforeAll(async () => {
     assertIsolatedTestDatabaseUrl();
+    initialConsumerOrigin = envs.CONSUMER_APP_ORIGIN;
     initialConsumerCssGridOrigin = envs.CONSUMER_CSS_GRID_APP_ORIGIN;
+    envs.CONSUMER_APP_ORIGIN = origin;
     envs.CONSUMER_CSS_GRID_APP_ORIGIN = origin;
     prisma = new PrismaClient();
     await prisma.$connect();
@@ -136,6 +140,7 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
   });
 
   afterAll(async () => {
+    envs.CONSUMER_APP_ORIGIN = initialConsumerOrigin;
     envs.CONSUMER_CSS_GRID_APP_ORIGIN = initialConsumerCssGridOrigin;
     await prisma.$disconnect();
     await app.close();
@@ -192,6 +197,60 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
       where: { consumerId: googleOnlyConsumerId },
     });
     expect(googleOnlyResetRows).toBe(0);
+  });
+
+  it(`forgot-password email link omits referer and verify redirects by stored app scope`, async () => {
+    await prisma.resetPasswordModel.deleteMany({ where: { consumerId } });
+
+    await request(app.getHttpServer())
+      .post(`/consumer/auth/forgot-password`)
+      .set(`origin`, origin)
+      .set(`x-forwarded-for`, `198.51.100.17`)
+      .send({ email: consumerEmail })
+      .expect(200);
+
+    const mailPayload = (mailingService.sendConsumerForgotPasswordEmail as jest.Mock).mock.calls[0]?.[0] as
+      | { forgotPasswordLink: string }
+      | undefined;
+    expect(mailPayload?.forgotPasswordLink).toBeTruthy();
+
+    const verifyUrl = new URL(mailPayload!.forgotPasswordLink);
+    const token = verifyUrl.searchParams.get(`token`);
+    expect(token).toBeTruthy();
+    expect(verifyUrl.searchParams.has(`referer`)).toBe(false);
+    const localVerifyPath = `${verifyUrl.pathname.replace(/^\/api\b/, ``)}?${verifyUrl.searchParams.toString()}`;
+
+    const verifyRes = await request(app.getHttpServer()).get(localVerifyPath).expect(302);
+
+    expect(verifyRes.headers.location).toBe(`${origin}/forgot-password/confirm?token=${token}`);
+  });
+
+  it(`forgot-password verify redirects expired tokens without token or referer query dependence`, async () => {
+    await prisma.resetPasswordModel.deleteMany({ where: { consumerId } });
+    await prisma.resetPasswordModel.create({
+      data: {
+        consumerId,
+        appScope,
+        tokenHash: hashTokenToHex(`expired-verify-token`),
+        expiredAt: new Date(Date.now() - 60 * 1000),
+      },
+    });
+
+    const verifyRes = await request(app.getHttpServer())
+      .get(`/consumer/auth/forgot-password/verify`)
+      .query({ token: `expired-verify-token` })
+      .expect(302);
+
+    expect(verifyRes.headers.location).toBe(`${origin}/forgot-password/confirm`);
+  });
+
+  it(`forgot-password verify falls back to the default app for invalid tokens without requiring referer`, async () => {
+    const verifyRes = await request(app.getHttpServer())
+      .get(`/consumer/auth/forgot-password/verify`)
+      .query({ token: `invalid-verify-token` })
+      .expect(302);
+
+    expect(verifyRes.headers.location).toBe(`${origin}/forgot-password/confirm`);
   });
 
   it(`settings password change revokes sessions and requires re-login`, async () => {
@@ -285,7 +344,7 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
   });
 
   it(`forgot-password cooldown blocks repeated token creation while preserving generic response`, async () => {
-    await authService.requestPasswordReset(consumerEmail, origin);
+    await authService.requestPasswordReset(consumerEmail, appScope);
 
     const rowsAfterFirst = await prisma.resetPasswordModel.findMany({
       where: { consumerId },
@@ -293,7 +352,7 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
     });
     const firstCount = rowsAfterFirst.length;
 
-    await authService.requestPasswordReset(consumerEmail, origin);
+    await authService.requestPasswordReset(consumerEmail, appScope);
 
     const rowsAfterSecond = await prisma.resetPasswordModel.findMany({
       where: { consumerId },
@@ -307,12 +366,13 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
     await prisma.resetPasswordModel.create({
       data: {
         consumerId,
+        appScope,
         tokenHash: hashTokenToHex(`first-manual-token`),
         expiredAt: new Date(Date.now() + 60 * 60 * 1000),
       },
     });
 
-    await authService.requestPasswordReset(consumerEmail, origin);
+    await authService.requestPasswordReset(consumerEmail, appScope);
 
     // Backdate newest row so cooldown won't block the second issuing call (test setup only).
     const newest = await prisma.resetPasswordModel.findFirst({
@@ -326,7 +386,7 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
       data: { createdAt: new Date(Date.now() - 2 * 60 * 1000) },
     });
 
-    await authService.requestPasswordReset(consumerEmail, origin);
+    await authService.requestPasswordReset(consumerEmail, appScope);
 
     const oldRow = await prisma.resetPasswordModel.findFirst({
       where: { consumerId, tokenHash: hashTokenToHex(`first-manual-token`) },
@@ -344,6 +404,7 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
     await prisma.resetPasswordModel.create({
       data: {
         consumerId,
+        appScope,
         tokenHash: hashTokenToHex(`expired-token`),
         expiredAt: new Date(Date.now() - 60 * 1000),
       },
@@ -351,6 +412,7 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
     await prisma.resetPasswordModel.create({
       data: {
         consumerId,
+        appScope,
         tokenHash: hashTokenToHex(`used-token`),
         expiredAt: new Date(Date.now() + 60 * 60 * 1000),
         deletedAt: new Date(),
@@ -384,6 +446,7 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
     await prisma.resetPasswordModel.create({
       data: {
         consumerId,
+        appScope,
         tokenHash: hashTokenToHex(token),
         expiredAt: new Date(Date.now() + 60 * 60 * 1000),
       },
@@ -431,6 +494,7 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
     await prisma.resetPasswordModel.create({
       data: {
         consumerId,
+        appScope,
         tokenHash: hashTokenToHex(token),
         expiredAt: new Date(Date.now() + 60 * 60 * 1000),
       },

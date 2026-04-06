@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
 
 import styles from '../../../../components/ui/classNames.module.css';
 
@@ -23,14 +22,8 @@ export default function Verification() {
 
   const email = searchParams.get(`email`);
   const verified = searchParams.get(`verified`);
-
-  const [status, setStatus] = useState<`success` | `failed` | `unknown`>(`unknown`);
-
-  useEffect(() => {
-    if (verified === `yes`) setStatus(`success`);
-    else if (verified === `no`) setStatus(`failed`);
-    else setStatus(`unknown`);
-  }, [verified]);
+  const status: `success` | `failed` | `unknown` =
+    verified === `yes` ? `success` : verified === `no` ? `failed` : `unknown`;
 
   if (!verified && !email) {
     return (

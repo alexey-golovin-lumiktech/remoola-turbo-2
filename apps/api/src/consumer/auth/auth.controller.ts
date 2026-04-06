@@ -687,9 +687,8 @@ export class ConsumerAuthController {
   @Get(`signup/:consumerId/complete-profile-creation`)
   completeProfileCreation(@Req() req: express.Request, @Param(`consumerId`) consumerId: string) {
     const consumerScope = this.resolveTrustedConsumerRequestScope(req);
-    const referer = consumerScope ? this.resolveConfiguredConsumerOrigin(consumerScope) : undefined;
-    if (!referer) throw new InternalServerErrorException(`Request origin required`);
-    void this.service.completeProfileCreationAndSendVerificationEmail(consumerId, referer).catch((error) =>
+    if (!consumerScope) throw new InternalServerErrorException(`Request origin required`);
+    void this.service.completeProfileCreationAndSendVerificationEmail(consumerId, consumerScope).catch((error) =>
       this.logger.warn({
         event: `signup_complete_profile_creation_email_failed`,
         consumerId,
@@ -702,13 +701,8 @@ export class ConsumerAuthController {
   @PublicEndpoint()
   @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Get(`forgot-password/verify`)
-  async forgotPasswordVerify(
-    @Query(`token`) token: string,
-    @Query(`referer`) referer: string,
-    @Res() res: express.Response,
-  ) {
-    if (!referer) throw new InternalServerErrorException(`Request referer required`);
-    await this.service.validateForgotPasswordTokenAndRedirect(token ?? ``, referer, res);
+  async forgotPasswordVerify(@Query(`token`) token: string, @Res() res: express.Response) {
+    await this.service.validateForgotPasswordTokenAndRedirect(token ?? ``, res);
   }
 
   @PublicEndpoint()
@@ -717,10 +711,13 @@ export class ConsumerAuthController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   async forgotPassword(@Req() req: express.Request, @Body() body: CONSUMER.ForgotPasswordBody) {
-    const consumerScope = this.resolveTrustedConsumerRequestScope(req);
-    const requestOrigin = consumerScope ? this.resolveConfiguredConsumerOrigin(consumerScope) : undefined;
-    await this.service.requestPasswordReset(body.email, requestOrigin);
-    return { message: `If an account exists, we sent instructions.` };
+    this.ensureTrustedConsumerRequestScope(req);
+    const consumerScope = this.resolveTrustedConsumerRequestScope(req)!;
+    await this.service.requestPasswordReset(body.email, consumerScope);
+    return {
+      message: `If an account exists, we sent recovery instructions.`,
+      recoveryMode: `provider_aware`,
+    };
   }
 
   @PublicEndpoint()
@@ -734,8 +731,7 @@ export class ConsumerAuthController {
 
   @PublicEndpoint()
   @Get(`signup/verification`)
-  signupVerification(@Query(`referer`) referer: string, @Query(`token`) token: string, @Res() res: express.Response) {
-    if (!referer) throw new InternalServerErrorException(`Request origin required`);
-    return this.service.signupVerification(token, res, referer);
+  signupVerification(@Query(`token`) token: string, @Res() res: express.Response) {
+    return this.service.signupVerification(token, res);
   }
 }

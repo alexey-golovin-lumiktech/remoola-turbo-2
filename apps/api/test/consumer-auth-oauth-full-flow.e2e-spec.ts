@@ -151,7 +151,7 @@ describe(`Consumer auth OAuth full flow (e2e, isolated DB)`, () => {
     [`consumer`, appOrigins.consumer],
     [`consumer-mobile`, appOrigins[`consumer-mobile`]],
     [`consumer-css-grid`, appOrigins[`consumer-css-grid`]],
-  ] as const)(`completes OAuth full flow for %s`, async (appScope, consumerOrigin) => {
+  ] as const)(`completes OAuth full flow for %s`, async (...[appScope, consumerOrigin]) => {
     const oauthAgent = request.agent(app.getHttpServer());
 
     const startRes = await oauthAgent

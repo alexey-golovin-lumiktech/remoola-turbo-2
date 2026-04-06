@@ -37,7 +37,7 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
   let refundPaymentRequestId = ``;
   let chargebackPaymentRequestId = ``;
   let initialConsumerMobileOrigin: string;
-  let sendMailMock: jest.Mock;
+  let sendMailMock: ReturnType<typeof jest.spyOn>;
 
   function parseCookieValue(cookies: string[] | undefined, key: string): string | null {
     if (!Array.isArray(cookies)) return null;
@@ -146,7 +146,7 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
     };
     const refundCreateMock = jest.fn(async () => ({ id: `re_e2e_success`, status: `succeeded` }));
     adminPaymentRequestsService.stripe.refunds.create = refundCreateMock;
-    sendMailMock = jest.spyOn(brevoMailService, `sendMail`).mockResolvedValue(undefined);
+    sendMailMock = jest.spyOn(brevoMailService, `sendMail`).mockImplementation(async () => {});
 
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix(`api`);

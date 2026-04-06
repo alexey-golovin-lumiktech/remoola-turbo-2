@@ -94,13 +94,12 @@ export class MailingService {
     });
   }
 
-  async sendConsumerSignupVerificationEmail(params: { email: string; token: string; referer: string }) {
+  async sendConsumerSignupVerificationEmail(params: { email: string; token: string }) {
     const backendBaseURL = resolveEmailApiBaseUrl();
     const emailConfirmationUrl = new URL(`${backendBaseURL}/consumer/auth/signup/verification`);
     // Do not put `email` in the URL (Referer/history/proxy logs); the JWT identifies the consumer.
     emailConfirmationUrl.search = new URLSearchParams({
       token: params.token,
-      referer: params.referer,
     }).toString();
 
     const html = signupCompletionToHtml.processor(emailConfirmationUrl.toString());

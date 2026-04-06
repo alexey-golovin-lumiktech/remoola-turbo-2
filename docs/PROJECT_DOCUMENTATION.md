@@ -88,10 +88,11 @@ Auth (`/consumer/auth`):
 - `GET /me`: current consumer identity.
 - `POST /signup`: create consumer account.
 - `GET /signup/:consumerId/complete-profile-creation`: finalize profile and send verification email.
-- `GET /signup/verification`: verify account by token. Verification email links omit
-  `email` query params; successful redirects to the consumer verification page may
+- `GET /signup/verification?token=…`: verify account by token only. Verification email
+  links omit both `email` and routing-layer `referer`; the signed token now carries
+  canonical `appScope`, and successful redirects to the consumer verification page may
   still include `email` for compatibility/UX.
-- Forgot-password and reset (no auth required): `POST /forgot-password` (email; requires valid `Origin` header — must be an allowed consumer origin, else 400 `ORIGIN_REQUIRED`); `GET /forgot-password/verify?token=…&referer=…` — validate token and redirect to app; `POST /password/reset` (body: token, password) — set new password with token from email.
+- Forgot-password and reset (no auth required): `POST /forgot-password` (email; requires a trusted consumer browser request scope so the backend can derive `appScope` server-side); `GET /forgot-password/verify?token=…` — token-only verify contract; validate token and redirect to the app resolved from stored `appScope`; `POST /password/reset` (body: token, password) — set new password with token from email.
 - Authenticated password update: `PATCH /consumer/profile/password` (see Profile below). This route supports both password change and first-time password creation for Google-only / no-password accounts.
 - Google OAuth flows:
   - `GET /google/start`: start OAuth flow with explicit `appScope` as the only public redirect identity. Supported contract is `GET /google/start?appScope=consumer|consumer-mobile|consumer-css-grid&next=...`; browser-facing callers are expected to use same-origin BFF routes under `/api/consumer/auth/google/start`, and the backend validates that trusted request scope matches the claimed `appScope`.
@@ -390,7 +391,7 @@ Migration rollout note (ledger dispute uniqueness):
   timestamps), and relations to profile info and transactions.
 - `AccessRefreshTokenModel`: access/refresh token storage for identities.
 - `OauthStateModel`: OAuth state key and payload for flow continuity.
-- `ResetPasswordModel`: password reset stored as SHA-256 hash only (`token_hash`), expiration, consumer FK. Migrations: `20260317120000_reset_password_token_hash` (additive: add and backfill `token_hash`); `20260317120001_drop_reset_password_token` (cleanup: drop legacy `token` column).
+- `ResetPasswordModel`: password reset stored as SHA-256 hash only (`token_hash`), expiration, consumer FK, and canonical `app_scope` for deterministic forgot-password verify redirects. Migrations: `20260317120000_reset_password_token_hash` (additive: add and backfill `token_hash`); `20260317120001_drop_reset_password_token` (cleanup: drop legacy `token` column); `20260406120000_reset_password_store_app_scope` (additive `app_scope` for canonical server-side routing).
 - `StripeWebhookEventModel`: deduplication of Stripe webhook events by unique `event_id` (at-most-once processing).
 - `AuthAuditLogModel`, `AuthLoginLockoutModel`: login audit and per-email lockout.
 - `ConsumerActionLogModel`: append-only consumer action telemetry. Uses monthly partitioning by `created_at`; the primary key is intentionally `(id, created_at)` so uniqueness remains valid under partitioning rules.

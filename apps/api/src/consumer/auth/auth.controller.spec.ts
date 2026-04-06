@@ -162,8 +162,10 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       })) as any),
       validateGoogleSignupPayload: jest.fn((payload) => payload),
       requestPasswordReset: jest.fn().mockResolvedValue(undefined),
+      validateForgotPasswordTokenAndRedirect: jest.fn().mockResolvedValue(undefined),
       resetPasswordWithToken: jest.fn().mockResolvedValue(undefined),
       completeProfileCreationAndSendVerificationEmail: jest.fn().mockResolvedValue(undefined),
+      signupVerification: jest.fn().mockResolvedValue(undefined),
       signup: jest.fn(),
     };
 
@@ -664,7 +666,7 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     expect(oauthStateStore.save).not.toHaveBeenCalled();
   });
 
-  it(`completeProfileCreation sends verification using canonical mobile origin`, async () => {
+  it(`completeProfileCreation sends verification using canonical mobile app scope`, async () => {
     const req = makeReq({
       headers: {
         referer: `https://mobile.example.com/signup/start`,
@@ -677,15 +679,14 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
       undefined,
       `https://mobile.example.com/signup/start`,
     );
-    expect(originResolver.resolveConsumerOriginByScope).toHaveBeenCalledWith(`consumer-mobile`);
     expect(service.completeProfileCreationAndSendVerificationEmail).toHaveBeenCalledWith(
       `consumer-id`,
-      `https://mobile.example.com`,
+      `consumer-mobile`,
     );
     expect(result).toBe(`success`);
   });
 
-  it(`forgot password falls back to referer when origin header is absent`, async () => {
+  it(`forgot password derives trusted app scope from referer when origin header is absent`, async () => {
     const req = makeReq({
       headers: { referer: `https://app.example.com/login` },
     });
@@ -693,9 +694,27 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     const result = await controller.forgotPassword(req, { email: `user@example.com` } as any);
 
     expect(originResolver.resolveConsumerRequestScope).toHaveBeenCalledWith(undefined, `https://app.example.com/login`);
-    expect(originResolver.resolveConsumerOriginByScope).toHaveBeenCalledWith(`consumer`);
-    expect(service.requestPasswordReset).toHaveBeenCalledWith(`user@example.com`, `https://app.example.com`);
-    expect(result).toEqual({ message: `If an account exists, we sent instructions.` });
+    expect(service.requestPasswordReset).toHaveBeenCalledWith(`user@example.com`, `consumer`);
+    expect(result).toEqual({
+      message: `If an account exists, we sent recovery instructions.`,
+      recoveryMode: `provider_aware`,
+    });
+  });
+
+  it(`forgot password verify delegates token-only contract to service`, async () => {
+    const res = makeRes();
+
+    await controller.forgotPasswordVerify(`reset-token`, res);
+
+    expect(service.validateForgotPasswordTokenAndRedirect).toHaveBeenCalledWith(`reset-token`, res);
+  });
+
+  it(`signup verification delegates token-only contract to service`, async () => {
+    const res = makeRes();
+
+    await controller.signupVerification(`signup-token`, res);
+
+    expect(service.signupVerification).toHaveBeenCalledWith(`signup-token`, res);
   });
 
   it(`resetPassword delegates to service and returns success`, async () => {

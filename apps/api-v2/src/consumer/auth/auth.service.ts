@@ -350,15 +350,9 @@ export class ConsumerAuthService {
     return { email, firstName, lastName };
   }
 
-  async signupVerification(token: string, res: express.Response, referer: string) {
-    const validatedOrigin = this.originResolver.validateConsumerRedirectOrigin(referer);
-    if (!validatedOrigin) {
-      throw new BadRequestException(`Invalid referer origin`);
-    }
-
-    const redirectUrl = new URL(`signup/verification`, validatedOrigin);
-
-    const redirectWith = (verifiedFlag: `yes` | `no`, emailForQuery?: string) => {
+  async signupVerification(token: string, res: express.Response) {
+    const redirectWith = (verifiedFlag: `yes` | `no`, appScope?: string | null, emailForQuery?: string) => {
+      const redirectUrl = new URL(`signup/verification`, this.resolveSignupVerificationOrigin(appScope));
       redirectUrl.searchParams.set(`verified`, verifiedFlag);
       if (emailForQuery) redirectUrl.searchParams.set(`email`, emailForQuery);
       res.redirect(redirectUrl.toString());
@@ -368,21 +362,24 @@ export class ConsumerAuthService {
     try {
       verified = this.jwtService.verify<IJwtTokenPayload>(token);
     } catch {
-      redirectWith(`no`);
+      const decoded = this.decodeJwtPayload(token);
+      redirectWith(`no`, decoded?.appScope);
       return;
     }
+
+    const appScope = this.originResolver.validateConsumerAppScope(verified.appScope);
 
     // Email verification links use the same secret as access tokens but are issued without `sid`
     // (see `getAccessToken(identityId)`). Reject session-bound access tokens so a stolen browser
     // session cannot drive this flow, and require consumer scope (not admin).
-    if (verified.typ !== `access` || verified.scope !== `consumer` || verified.sid) {
-      redirectWith(`no`);
+    if (!appScope || verified.typ !== `access` || verified.scope !== `consumer` || verified.sid) {
+      redirectWith(`no`, verified.appScope);
       return;
     }
 
     const identityId = this.resolveIdentityId(verified);
     if (!identityId) {
-      redirectWith(`no`);
+      redirectWith(`no`, appScope);
       return;
     }
 
@@ -391,7 +388,7 @@ export class ConsumerAuthService {
     });
 
     if (!identity?.email) {
-      redirectWith(`no`);
+      redirectWith(`no`, appScope);
       return;
     }
 
@@ -400,7 +397,52 @@ export class ConsumerAuthService {
       data: { verified: true },
     });
     const verifiedFlag: `yes` | `no` = !updated || updated.verified === false ? `no` : `yes`;
-    redirectWith(verifiedFlag, identity.email);
+    redirectWith(verifiedFlag, appScope, identity.email);
+  }
+
+  private resolveForgotPasswordAppScopeOrigin(appScope?: string | null): string {
+    const resolvedAppScope = this.originResolver.validateConsumerAppScope(appScope);
+    const origin = resolvedAppScope
+      ? this.originResolver.resolveConsumerOriginByScope(resolvedAppScope)
+      : this.originResolver.resolveDefaultConsumerOrigin();
+    if (!origin) {
+      throw new BadRequestException(errorCodes.ORIGIN_REQUIRED);
+    }
+    return origin;
+  }
+
+  private buildForgotPasswordConfirmUrl(appScope?: string | null, token?: string): URL {
+    const confirmUrl = new URL(`/forgot-password/confirm`, this.resolveForgotPasswordAppScopeOrigin(appScope));
+    if (token) {
+      confirmUrl.searchParams.set(`token`, token);
+    }
+    return confirmUrl;
+  }
+
+  private resolveSignupVerificationOrigin(appScope?: string | null): string {
+    const resolvedAppScope = this.originResolver.validateConsumerAppScope(appScope);
+    const origin = resolvedAppScope
+      ? this.originResolver.resolveConsumerOriginByScope(resolvedAppScope)
+      : this.originResolver.resolveDefaultConsumerOrigin();
+    if (!origin) {
+      throw new BadRequestException(errorCodes.ORIGIN_REQUIRED);
+    }
+    return origin;
+  }
+
+  private decodeJwtPayload(token: string): IJwtTokenPayload | null {
+    const decoded = this.jwtService.decode(token);
+    if (!decoded || typeof decoded !== `object`) {
+      return null;
+    }
+    return decoded as IJwtTokenPayload;
+  }
+
+  private getSignupVerificationToken(identityId: string, appScope: ConsumerAppScope) {
+    return this.jwtService.signAsync(
+      { sub: identityId, identityId, typ: `access` as const, scope: `consumer` as const, appScope },
+      { expiresIn: envs.JWT_ACCESS_TTL_SECONDS },
+    );
   }
 
   private async createSessionAndIssueTokens(
@@ -488,19 +530,18 @@ export class ConsumerAuthService {
     });
   }
 
-  async completeProfileCreationAndSendVerificationEmail(consumerId: string, referer: string) {
-    const validatedOrigin = this.originResolver.validateConsumerRedirectOrigin(referer);
-    if (!validatedOrigin) {
-      throw new BadRequestException(`Invalid referer origin`);
+  async completeProfileCreationAndSendVerificationEmail(consumerId: string, appScope: ConsumerAppScope) {
+    const validatedAppScope = this.originResolver.validateConsumerAppScope(appScope);
+    if (!validatedAppScope) {
+      throw new BadRequestException(`Invalid app scope`);
     }
 
     const consumer = await this.prisma.consumerModel.findFirst({ where: { id: consumerId } });
     if (!consumer) throw new BadRequestException(errorCodes.CONSUMER_NOT_FOUND_COMPLETE_PROFILE);
-    const token = await this.getAccessToken(consumer.id);
+    const token = await this.getSignupVerificationToken(consumer.id, validatedAppScope);
     await this.mailingService.sendConsumerSignupVerificationEmail({
       email: consumer.email,
       token,
-      referer: validatedOrigin,
     });
   }
 
@@ -614,12 +655,9 @@ export class ConsumerAuthService {
    */
   async requestPasswordReset(
     email: CONSUMER.ForgotPasswordBody[`email`],
-    requestOrigin?: string,
+    appScope: ConsumerAppScope,
   ): Promise<ForgotPasswordOutcome> {
-    const origin = this.originResolver.validateConsumerRedirectOrigin(requestOrigin ?? ``);
-    if (!origin) {
-      throw new BadRequestException(errorCodes.ORIGIN_REQUIRED);
-    }
+    const origin = this.resolveForgotPasswordAppScopeOrigin(appScope);
 
     const normalizedEmail = email?.trim()?.toLowerCase() ?? ``;
     const consumer = await this.prisma.consumerModel.findFirst({
@@ -664,13 +702,12 @@ export class ConsumerAuthService {
       data: { deletedAt: new Date() },
     });
     await this.prisma.resetPasswordModel.create({
-      data: { consumerId: consumer.id, tokenHash: hashTokenToHex(token), expiredAt },
+      data: { consumerId: consumer.id, tokenHash: hashTokenToHex(token), expiredAt, appScope },
     });
 
     const backendBaseURL = resolveEmailApiBaseUrl();
     const verifyUrl = new URL(`${backendBaseURL}/consumer/auth/forgot-password/verify`);
     verifyUrl.searchParams.set(`token`, token);
-    verifyUrl.searchParams.set(`referer`, origin);
     await this.mailingService.sendConsumerForgotPasswordEmail({
       email: consumer.email,
       forgotPasswordLink: verifyUrl.toString(),
@@ -683,21 +720,19 @@ export class ConsumerAuthService {
     return `password_reset_email_sent`;
   }
 
-  async validateForgotPasswordTokenAndRedirect(token: string, referer: string, res: express.Response): Promise<void> {
-    const validatedOrigin = this.originResolver.validateConsumerRedirectOrigin(referer);
-    if (!validatedOrigin) {
-      throw new BadRequestException(`Invalid referer origin`);
-    }
-    const confirmUrl = new URL(`/forgot-password/confirm`, validatedOrigin);
-    try {
-      const tokenHash = hashTokenToHex(token);
-      const row = await this.prisma.resetPasswordModel.findFirst({
-        where: { tokenHash, deletedAt: null, expiredAt: { gt: new Date() } },
-      });
-      if (row) confirmUrl.searchParams.set(`token`, token);
-    } catch {
-      // redirect without token so app shows invalid link
-    }
+  async validateForgotPasswordTokenAndRedirect(token: string, res: express.Response): Promise<void> {
+    const tokenHash = hashTokenToHex(token);
+    const row = await this.prisma.resetPasswordModel.findFirst({
+      where: { tokenHash },
+      orderBy: { createdAt: `desc` },
+      select: {
+        appScope: true,
+        deletedAt: true,
+        expiredAt: true,
+      },
+    });
+    const activeToken = !!row && row.deletedAt == null && row.expiredAt > new Date();
+    const confirmUrl = this.buildForgotPasswordConfirmUrl(row?.appScope, activeToken ? token : undefined);
     res.redirect(confirmUrl.toString());
   }
 

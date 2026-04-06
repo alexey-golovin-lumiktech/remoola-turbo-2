@@ -613,6 +613,7 @@ export async function seedAllTables(prisma: PrismaClient, options: FixtureOption
     await prisma.resetPasswordModel.create({
       data: {
         consumerId,
+        appScope: `consumer`,
         tokenHash: hashTokenToHex(fixtureToken),
         expiredAt: dateOffsetDays(5 + i),
       },

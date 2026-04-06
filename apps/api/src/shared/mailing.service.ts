@@ -6,6 +6,7 @@ import { generatePdf } from '../shared-common';
 import { BrevoMailService, type BrevoAttachment, type BrevoSendMailOptions } from './brevo-mail.service';
 import {
   forgotPassword,
+  googleSignInRecovery,
   invitation,
   invoiceToHtml,
   outgoingInvoiceToHtml,
@@ -99,18 +100,27 @@ export class MailingService {
     });
   }
 
-  async sendConsumerSignupVerificationEmail(params: { email: string; token: string; referer: string }) {
+  async sendConsumerSignupVerificationEmail(params: { email: string; token: string }) {
     const backendBaseURL = resolveEmailApiBaseUrl();
     const emailConfirmationUrl = new URL(`${backendBaseURL}/consumer/auth/signup/verification`);
     // Do not put `email` in the URL (Referer/history/proxy logs); the JWT identifies the consumer.
     emailConfirmationUrl.search = new URLSearchParams({
       token: params.token,
-      referer: params.referer,
     }).toString();
 
     const html = signupCompletionToHtml.processor(emailConfirmationUrl.toString());
     const subject = `Welcome to Wirebill! Confirm your Email`;
     await this.sendEmailWithErrorHandling(`sendConsumerSignupVerificationEmail`, {
+      to: params.email,
+      subject,
+      html,
+    });
+  }
+
+  async sendConsumerPasswordlessRecoveryEmail(params: { email: string; loginUrl: string }) {
+    const html = googleSignInRecovery.processor(params.loginUrl);
+    const subject = `Wirebill - Sign in with Google`;
+    await this.sendEmailWithErrorHandling(`sendConsumerPasswordlessRecoveryEmail`, {
       to: params.email,
       subject,
       html,

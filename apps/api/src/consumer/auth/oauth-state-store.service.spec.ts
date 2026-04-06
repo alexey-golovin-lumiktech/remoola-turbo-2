@@ -56,6 +56,7 @@ describe(`OAuthStateStoreService`, () => {
         codeVerifier: `verifier`,
         nextPath: `/dashboard`,
         createdAt: Date.now(),
+        appScope: `consumer`,
       },
       1,
     );

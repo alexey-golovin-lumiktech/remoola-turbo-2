@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
 
 import styles from './VerificationView.module.css';
 
@@ -10,13 +9,8 @@ export function VerificationView() {
   const searchParams = useSearchParams();
   const email = searchParams.get(`email`);
   const verified = searchParams.get(`verified`);
-  const [status, setStatus] = useState<`success` | `failed` | `unknown`>(`unknown`);
-
-  useEffect(() => {
-    if (verified === `yes`) setStatus(`success`);
-    else if (verified === `no`) setStatus(`failed`);
-    else setStatus(`unknown`);
-  }, [verified]);
+  const status: `success` | `failed` | `unknown` =
+    verified === `yes` ? `success` : verified === `no` ? `failed` : `unknown`;
 
   if (!verified && !email) {
     return (

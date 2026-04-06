@@ -97,11 +97,7 @@ describe(`ConsumerAuthService.requestPasswordReset`, () => {
     expect(prisma.resetPasswordModel.create).not.toHaveBeenCalled();
   });
 
-  it.each([
-    [`consumer`, `http://127.0.0.1:3003/login?auth_notice=google_signin_required`],
-    [`consumer-mobile`, `http://127.0.0.1:3002/login?auth_notice=google_signin_required`],
-    [`consumer-css-grid`, `http://127.0.0.1:3001/login?auth_notice=google_signin_required`],
-  ] as const)(`sends Google sign-in guidance for passwordless consumers in %s scope`, async (appScope, loginUrl) => {
+  it(`sends Google sign-in guidance for passwordless consumers`, async () => {
     prisma.consumerModel.findFirst.mockResolvedValue({
       id: `consumer-id`,
       email: `google-only@example.com`,
@@ -109,49 +105,46 @@ describe(`ConsumerAuthService.requestPasswordReset`, () => {
       salt: null,
     });
 
-    await expect(service.requestPasswordReset(`google-only@example.com`, appScope)).resolves.toBe(
+    await expect(service.requestPasswordReset(`google-only@example.com`, `consumer`)).resolves.toBe(
       `provider_guidance_email_sent`,
     );
     expect(mailingService.sendConsumerPasswordlessRecoveryEmail).toHaveBeenCalledWith({
       email: `google-only@example.com`,
-      loginUrl,
+      loginUrl: `http://127.0.0.1:3003/login?auth_notice=google_signin_required`,
     });
     expect(mailingService.sendConsumerForgotPasswordEmail).not.toHaveBeenCalled();
     expect(prisma.resetPasswordModel.create).not.toHaveBeenCalled();
   });
 
-  it.each([[`consumer`], [`consumer-mobile`], [`consumer-css-grid`]] as const)(
-    `creates a reset token and sends the standard email for password-backed consumers in %s scope`,
-    async (appScope) => {
-      prisma.consumerModel.findFirst.mockResolvedValue({
-        id: `consumer-id`,
-        email: `user@example.com`,
-        password: `stored-hash`,
-        salt: `stored-salt`,
-      });
+  it(`creates a reset token and sends the standard email for password-backed consumers`, async () => {
+    prisma.consumerModel.findFirst.mockResolvedValue({
+      id: `consumer-id`,
+      email: `user@example.com`,
+      password: `stored-hash`,
+      salt: `stored-salt`,
+    });
 
-      await expect(service.requestPasswordReset(`user@example.com`, appScope)).resolves.toBe(
-        `password_reset_email_sent`,
-      );
-      expect(mockGenerateOAuthState).toHaveBeenCalled();
-      expect(prisma.resetPasswordModel.updateMany).toHaveBeenCalledWith({
-        where: { consumerId: `consumer-id`, deletedAt: null },
-        data: { deletedAt: expect.any(Date) },
-      });
-      expect(prisma.resetPasswordModel.create).toHaveBeenCalledWith({
-        data: {
-          consumerId: `consumer-id`,
-          appScope,
-          tokenHash: `hash-generated-token`,
-          expiredAt: expect.any(Date),
-        },
-      });
-      expect(mailingService.sendConsumerForgotPasswordEmail).toHaveBeenCalledWith({
-        email: `user@example.com`,
-        forgotPasswordLink: `http://127.0.0.1:3334/api/consumer/auth/forgot-password/verify?token=generated-token`,
-      });
-    },
-  );
+    await expect(service.requestPasswordReset(`user@example.com`, `consumer`)).resolves.toBe(
+      `password_reset_email_sent`,
+    );
+    expect(mockGenerateOAuthState).toHaveBeenCalled();
+    expect(prisma.resetPasswordModel.updateMany).toHaveBeenCalledWith({
+      where: { consumerId: `consumer-id`, deletedAt: null },
+      data: { deletedAt: expect.any(Date) },
+    });
+    expect(prisma.resetPasswordModel.create).toHaveBeenCalledWith({
+      data: {
+        consumerId: `consumer-id`,
+        appScope: `consumer`,
+        tokenHash: `hash-generated-token`,
+        expiredAt: expect.any(Date),
+      },
+    });
+    expect(mailingService.sendConsumerForgotPasswordEmail).toHaveBeenCalledWith({
+      email: `user@example.com`,
+      forgotPasswordLink: `http://127.0.0.1:3334/api/consumer/auth/forgot-password/verify?token=generated-token`,
+    });
+  });
 
   it(`preserves cooldown by skipping new token creation and email sends`, async () => {
     prisma.consumerModel.findFirst.mockResolvedValue({

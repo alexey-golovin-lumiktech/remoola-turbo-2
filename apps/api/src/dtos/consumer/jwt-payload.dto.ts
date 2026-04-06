@@ -1,6 +1,7 @@
 import { Expose } from 'class-transformer';
 import { IsNumber, IsString } from 'class-validator';
 
+import { type ConsumerAppScope } from '@remoola/api-types';
 import { type ConsumerModel } from '@remoola/database-2';
 
 import { IsValidEmail } from '../../shared-common';
@@ -12,6 +13,7 @@ export type IJwtTokenPayload = {
   typ?: `access` | `refresh`;
   /** Defense-in-depth scope claim — present on newly-issued tokens. Missing on legacy tokens (tolerated). */
   scope?: `consumer` | `admin`;
+  appScope?: ConsumerAppScope;
   role?: `USER`;
   permissions?: string[];
   email?: ConsumerModel[`email`];
