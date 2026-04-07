@@ -1,7 +1,6 @@
 /** @jest-environment @remoola/test-db/environment */
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { type INestApplication } from '@nestjs/common';
 import { type NestExpressApplication } from '@nestjs/platform-express';
 import { Test, type TestingModule } from '@nestjs/testing';
 import request from 'supertest';
@@ -12,14 +11,14 @@ import { hashPassword, hashTokenToHex } from '@remoola/security-utils';
 
 import { assertIsolatedTestDatabaseUrl } from './test-db-safety';
 import { AppModule } from '../src/app.module';
+import { configureApp } from '../src/configure-app';
 import { ConsumerAuthService } from '../src/consumer/auth/auth.service';
 import { envs } from '../src/envs';
-import { configureApp } from '../src/main';
 import { MailingService } from '../src/shared/mailing.service';
 import { getApiConsumerCsrfTokenCookieKeysForRead } from '../src/shared-common';
 
 describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
-  let app: INestApplication;
+  let app: NestExpressApplication;
   let prisma: PrismaClient;
   let authService: ConsumerAuthService;
   let mailingService: MailingService;

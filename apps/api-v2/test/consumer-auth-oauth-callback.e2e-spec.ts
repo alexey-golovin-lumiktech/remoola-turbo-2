@@ -7,19 +7,18 @@
 import { createHmac } from 'crypto';
 
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
-import { type INestApplication } from '@nestjs/common';
 import { type NestExpressApplication } from '@nestjs/platform-express';
 import { Test, type TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 
 import { assertIsolatedTestDatabaseUrl } from './test-db-safety';
 import { AppModule } from '../src/app.module';
+import { configureApp } from '../src/configure-app';
 import { envs } from '../src/envs';
-import { configureApp } from '../src/main';
 import { getApiOAuthStateCookieKeysForRead } from '../src/shared-common';
 
 describe(`Consumer auth OAuth callback contracts (e2e, isolated DB)`, () => {
-  let app: INestApplication;
+  let app: NestExpressApplication;
   const consumerOrigin = `http://127.0.0.1:3003`;
   let initialConsumerCssGridOrigin: string;
 

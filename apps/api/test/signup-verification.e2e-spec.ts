@@ -1,7 +1,6 @@
 /** @jest-environment @remoola/test-db/environment */
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { type INestApplication } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { type NestExpressApplication } from '@nestjs/platform-express';
 import { Test, type TestingModule } from '@nestjs/testing';
@@ -13,12 +12,12 @@ import { hashPassword } from '@remoola/security-utils';
 
 import { assertIsolatedTestDatabaseUrl } from './test-db-safety';
 import { AppModule } from '../src/app.module';
+import { configureApp } from '../src/configure-app';
 import { envs } from '../src/envs';
-import { configureApp } from '../src/main';
 import { MailingService } from '../src/shared/mailing.service';
 
 describe(`Signup verification cutover (e2e, isolated DB)`, () => {
-  let app: INestApplication;
+  let app: NestExpressApplication;
   let prisma: PrismaClient;
   let mailingService: MailingService;
   let jwtService: JwtService;
