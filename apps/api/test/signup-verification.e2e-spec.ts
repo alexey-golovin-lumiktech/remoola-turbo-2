@@ -82,6 +82,14 @@ describe(`Signup verification cutover (e2e, isolated DB)`, () => {
     await app.close();
   });
 
+  it(`complete-profile-creation rejects requests without app scope header`, async () => {
+    const res = await request(app.getHttpServer())
+      .get(`/api/consumer/auth/signup/${consumerId}/complete-profile-creation?appScope=${consumerMobileAppScope}`)
+      .expect(401);
+
+    expect(res.body?.message).toBe(`Invalid app scope`);
+  });
+
   it(`issues token-only signup verification mail and redirects by token app scope`, async () => {
     const completeRes = await request(app.getHttpServer())
       .get(`/api/consumer/auth/signup/${consumerId}/complete-profile-creation?appScope=${consumerMobileAppScope}`)

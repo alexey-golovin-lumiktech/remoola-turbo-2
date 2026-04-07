@@ -151,6 +151,16 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
     await app.close();
   });
 
+  it(`password/reset rejects requests without app scope header`, async () => {
+    const res = await request(app.getHttpServer())
+      .post(`/api/consumer/auth/password/reset`)
+      .set(`origin`, origin)
+      .send({ token: `missing-header-token`, password: `MissingHeader1!` })
+      .expect(401);
+
+    expect(res.body?.message).toBe(`Invalid app scope`);
+  });
+
   it(`forgot-password returns the same provider-aware response across account states`, async () => {
     const existingRes = await withConsumerAppScope(
       request(app.getHttpServer()).post(`/api/consumer/auth/forgot-password?appScope=${appScope}`),

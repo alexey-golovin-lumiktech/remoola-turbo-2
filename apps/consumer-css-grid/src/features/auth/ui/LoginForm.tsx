@@ -15,7 +15,7 @@ import {
 } from '@remoola/api-types';
 import { GoogleIcon, RemoolaCompactLogo, RemoolaLogo } from '@remoola/ui';
 
-import { resolveAuthErrorMessage } from '../../../lib/auth-error-messages';
+import { getAuthErrorMessage } from '../../../lib/auth-error-messages';
 import { getDevCredentials } from '../../../lib/dev-credentials';
 import { resetSessionExpiredHandled } from '../../../lib/session-expired';
 import { AlertTriangleIcon } from '../../../shared/ui/icons/AlertTriangleIcon';
@@ -57,7 +57,7 @@ export function LoginForm({
   const didNavigateRef = useRef(false);
 
   const errorMessage =
-    err ?? (oauthError ? resolveAuthErrorMessage(oauthError, `Sign-in failed. Please try again.`) : undefined);
+    err ?? (oauthError ? getAuthErrorMessage(oauthError, `Sign-in failed. Please try again.`) : undefined);
 
   const handleGoogleSignIn = useCallback(async () => {
     const url = new URL(buildConsumerGoogleOAuthStartUrl(nextPath), window.location.origin);

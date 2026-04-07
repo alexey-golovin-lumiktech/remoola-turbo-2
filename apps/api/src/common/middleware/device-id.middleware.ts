@@ -5,6 +5,7 @@ import { type Request, type Response, type NextFunction } from 'express';
 
 import { CONSUMER_APP_SCOPE_HEADER } from '@remoola/api-types';
 
+import { isExternalPublicConsumerRoute } from './consumer-public-route-policy';
 import { OriginResolverService } from '../../shared/origin-resolver.service';
 import {
   getApiConsumerDeviceCookieKey,
@@ -14,16 +15,6 @@ import {
 
 const CONSUMER_API_PATH_PREFIX = `/api/consumer`;
 const originResolver = new OriginResolverService();
-const PUBLIC_CONSUMER_ROUTES_WITHOUT_SCOPE_HEADER = new Set([
-  `/api/consumer/auth/google/start`,
-  `/api/consumer/auth/google/callback`,
-  `/api/consumer/auth/forgot-password/verify`,
-  `/api/consumer/auth/signup/verification`,
-]);
-const PUBLIC_CONSUMER_WEBHOOK_ROUTES_WITHOUT_SCOPE_HEADER = new Set([
-  `/api/consumer/webhooks`,
-  `/api/consumer/webhook`,
-]);
 
 export interface RequestWithDeviceId extends Request {
   deviceId?: string;
@@ -56,18 +47,7 @@ function isConsumerApiPath(path: string | undefined): boolean {
 
 function shouldSkipScopedDeviceId(req: RequestWithDeviceId): boolean {
   const path = req.path ?? req.url?.split(`?`)[0];
-  if (typeof path !== `string`) return false;
-
-  const method = req.method?.toUpperCase();
-  if (method === `GET`) {
-    return PUBLIC_CONSUMER_ROUTES_WITHOUT_SCOPE_HEADER.has(path);
-  }
-
-  if (method === `POST`) {
-    return PUBLIC_CONSUMER_WEBHOOK_ROUTES_WITHOUT_SCOPE_HEADER.has(path);
-  }
-
-  return false;
+  return isExternalPublicConsumerRoute(req.method, path);
 }
 
 /**

@@ -137,8 +137,32 @@ describe(`deviceIdMiddleware`, () => {
     expect(next).toHaveBeenCalledWith();
   });
 
+  it(`skips browser oauth callback without requiring app scope header`, (done) => {
+    const req = mockReq({ method: `GET`, path: `/api/consumer/auth/google/callback`, headers: {} as any });
+    const res = mockRes();
+    const next = jest.fn(() => {
+      expect(req.deviceId).toBeUndefined();
+      expect(res.cookie).not.toHaveBeenCalled();
+      done();
+    });
+    deviceIdMiddleware(req, res, next);
+    expect(next).toHaveBeenCalledWith();
+  });
+
   it(`skips token-only verification routes without requiring app scope header`, (done) => {
     const req = mockReq({ method: `GET`, path: `/api/consumer/auth/forgot-password/verify`, headers: {} as any });
+    const res = mockRes();
+    const next = jest.fn(() => {
+      expect(req.deviceId).toBeUndefined();
+      expect(res.cookie).not.toHaveBeenCalled();
+      done();
+    });
+    deviceIdMiddleware(req, res, next);
+    expect(next).toHaveBeenCalledWith();
+  });
+
+  it(`skips signup verification without requiring app scope header`, (done) => {
+    const req = mockReq({ method: `GET`, path: `/api/consumer/auth/signup/verification`, headers: {} as any });
     const res = mockRes();
     const next = jest.fn(() => {
       expect(req.deviceId).toBeUndefined();
@@ -171,6 +195,38 @@ describe(`deviceIdMiddleware`, () => {
     });
     deviceIdMiddleware(req, res, next);
     expect(next).toHaveBeenCalledWith();
+  });
+
+  it(`rejects password reset without app scope header because it is BFF-only public`, (done) => {
+    const req = mockReq({ method: `POST`, path: `/api/consumer/auth/password/reset`, headers: {} as any });
+    const res = mockRes();
+    const next = jest.fn((error?: unknown) => {
+      expect(error).toBeInstanceOf(Error);
+      expect((error as Error).message).toBe(`Invalid app scope`);
+      expect(req.deviceId).toBeUndefined();
+      expect(res.cookie).not.toHaveBeenCalled();
+      done();
+    });
+    deviceIdMiddleware(req, res, next);
+    expect(next).toHaveBeenCalled();
+  });
+
+  it(`rejects complete-profile-creation without app scope header because it is BFF-only public`, (done) => {
+    const req = mockReq({
+      method: `GET`,
+      path: `/api/consumer/auth/signup/consumer-123/complete-profile-creation`,
+      headers: {} as any,
+    });
+    const res = mockRes();
+    const next = jest.fn((error?: unknown) => {
+      expect(error).toBeInstanceOf(Error);
+      expect((error as Error).message).toBe(`Invalid app scope`);
+      expect(req.deviceId).toBeUndefined();
+      expect(res.cookie).not.toHaveBeenCalled();
+      done();
+    });
+    deviceIdMiddleware(req, res, next);
+    expect(next).toHaveBeenCalled();
   });
 
   it(`generates new deviceId when cookie value is invalid (not a UUID)`, (done) => {

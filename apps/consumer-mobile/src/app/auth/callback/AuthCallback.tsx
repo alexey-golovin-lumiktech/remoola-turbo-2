@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import { pollForAuthCallbackSession } from './auth-callback-polling';
 import styles from './AuthCallback.module.css';
 import { parseSearchParams } from '../../../features/auth/schemas';
+import { getAuthErrorMessage } from '../../../lib/auth-error-messages';
 import { clientLogger } from '../../../lib/logger';
 
 const TOO_MANY_LOGIN_ATTEMPTS_CODE = `TOO_MANY_LOGIN_ATTEMPTS`;
@@ -45,7 +46,7 @@ export default function AuthCallback() {
               return;
             }
             const payload = (await exchangeRes.json().catch(() => ({}))) as { code?: string; message?: string };
-            redirectToLogin(payload.code ?? payload.message ?? AUTH_CALLBACK_FALLBACK_ERROR);
+            redirectToLogin(getAuthErrorMessage(payload.code ?? payload.message, AUTH_CALLBACK_FALLBACK_ERROR));
             return;
           }
 

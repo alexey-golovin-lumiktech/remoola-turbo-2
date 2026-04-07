@@ -27,14 +27,3 @@ export function getAuthErrorMessage(codeOrMessage: string | undefined, fallback:
   if (!codeOrMessage) return fallback;
   return MESSAGE_MAP[codeOrMessage] ?? fallback;
 }
-
-export function resolveAuthErrorMessage(codeOrMessage: string | undefined, fallback: string): string {
-  if (!codeOrMessage) return fallback;
-
-  const mappedMessage = MESSAGE_MAP[codeOrMessage];
-  if (mappedMessage) {
-    return mappedMessage;
-  }
-
-  return codeOrMessage.includes(` `) ? codeOrMessage : fallback;
-}

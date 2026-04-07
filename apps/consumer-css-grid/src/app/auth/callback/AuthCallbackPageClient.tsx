@@ -5,6 +5,8 @@ import { useEffect } from 'react';
 
 import { pollForAuthCallbackSession } from './auth-callback-polling';
 import { parseSearchParams } from '../../../features/auth/schemas';
+import { getAuthErrorMessage } from '../../../lib/auth-error-messages';
+
 const TOO_MANY_LOGIN_ATTEMPTS_CODE = `TOO_MANY_LOGIN_ATTEMPTS`;
 const AUTH_CALLBACK_FALLBACK_ERROR = `Sign-in failed. Please try again.`;
 
@@ -46,7 +48,7 @@ export function AuthCallbackPageClient({
             return;
           }
           const payload = (await exchangeResponse.json().catch(() => ({}))) as { code?: string; message?: string };
-          redirectToLogin(payload.code ?? payload.message ?? AUTH_CALLBACK_FALLBACK_ERROR);
+          redirectToLogin(getAuthErrorMessage(payload.code ?? payload.message, AUTH_CALLBACK_FALLBACK_ERROR));
           return;
         }
 

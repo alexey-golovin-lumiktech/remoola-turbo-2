@@ -20,7 +20,7 @@ import { GoogleIcon, RemoolaCompactLogo, RemoolaLogo } from '@remoola/ui';
 import { shouldFinalizeLoginLoading } from './login-loading-guard';
 import localStyles from './LoginForm.module.css';
 import styles from '../../components/ui/classNames.module.css';
-import { resolveAuthErrorMessage } from '../../lib/auth-error-messages';
+import { getAuthErrorMessage } from '../../lib/auth-error-messages';
 import { resetSessionExpiredHandled } from '../../lib/session-expired';
 
 const CLEAR_COOKIES_URL = `/api/consumer/auth/clear-cookies`;
@@ -81,7 +81,7 @@ export default function LoginForm() {
   const [loading, setLoading] = useState(false);
   const didNavigateRef = useRef(false);
   const errorMessage =
-    err || (oauthError ? resolveAuthErrorMessage(oauthError, `Google sign-in failed. Please try again.`) : undefined);
+    err || (oauthError ? getAuthErrorMessage(oauthError, `Google sign-in failed. Please try again.`) : undefined);
 
   const submitLogin = async (e: React.FormEvent) => {
     e.preventDefault();

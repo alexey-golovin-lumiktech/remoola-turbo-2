@@ -7,6 +7,8 @@ import { sanitizeNextForRedirect } from '@remoola/api-types';
 
 import { pollForAuthCallbackSession } from './auth-callback-polling';
 import styles from '../../../components/ui/classNames.module.css';
+import { getAuthErrorMessage } from '../../../lib/auth-error-messages';
+
 const { authCallbackContainer } = styles;
 const DEFAULT_NEXT_PATH = `/dashboard`;
 const TOO_MANY_LOGIN_ATTEMPTS_CODE = `TOO_MANY_LOGIN_ATTEMPTS`;
@@ -45,7 +47,7 @@ export default function AuthCallback() {
             return;
           }
           const payload = (await exchangeResponse.json().catch(() => ({}))) as { code?: string; message?: string };
-          redirectToLogin(payload.code ?? payload.message ?? AUTH_CALLBACK_FALLBACK_ERROR);
+          redirectToLogin(getAuthErrorMessage(payload.code ?? payload.message, AUTH_CALLBACK_FALLBACK_ERROR));
           return;
         }
 
