@@ -33,9 +33,12 @@ export async function POST(req: NextRequest) {
 
   if (res.ok) {
     try {
-      const parsed = JSON.parse(data) as { consumer?: { id?: string } };
+      const parsed = JSON.parse(data) as { consumer?: { id?: string }; next?: string };
       const consumerId = parsed.consumer?.id?.trim();
-      if (consumerId) {
+      // Google signup establishes a session in api-v2 and returns `next`; only classic signup needs
+      // complete-profile-creation (verification email). Calling it for Google would duplicate follow-up email.
+      const needsEmailVerificationFollowUp = consumerId && typeof parsed.next !== `string`;
+      if (needsEmailVerificationFollowUp) {
         const completionRes = await fetch(
           `${baseUrl}/consumer/auth/signup/${consumerId}/complete-profile-creation?appScope=${encodeURIComponent(APP_SCOPE)}`,
           {

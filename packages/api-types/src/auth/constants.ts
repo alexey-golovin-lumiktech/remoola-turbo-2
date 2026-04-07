@@ -88,6 +88,8 @@ export const HOW_DID_HEAR_ABOUT_US_VALUES = [
   HOW_DID_HEAR_ABOUT_US.OTHER,
 ] as const;
 
+export const AUTH_RATE_LIMIT_MESSAGE = `Too many attempts. Please wait a few minutes and try again.`;
+
 export const VERIFICATION_STATUS = {
   PENDING: `PENDING`,
   APPROVED: `APPROVED`,

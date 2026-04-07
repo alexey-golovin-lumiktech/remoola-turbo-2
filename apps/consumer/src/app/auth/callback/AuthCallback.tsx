@@ -7,10 +7,10 @@ import { sanitizeNextForRedirect } from '@remoola/api-types';
 
 import { pollForAuthCallbackSession } from './auth-callback-polling';
 import styles from '../../../components/ui/classNames.module.css';
-import { getAuthErrorMessage } from '../../../lib/auth-error-messages';
-
 const { authCallbackContainer } = styles;
 const DEFAULT_NEXT_PATH = `/dashboard`;
+const TOO_MANY_LOGIN_ATTEMPTS_CODE = `TOO_MANY_LOGIN_ATTEMPTS`;
+const AUTH_CALLBACK_FALLBACK_ERROR = `Sign-in failed. Please try again.`;
 
 export default function AuthCallback() {
   const router = useRouter();
@@ -40,8 +40,12 @@ export default function AuthCallback() {
         });
 
         if (!exchangeResponse.ok) {
+          if (exchangeResponse.status === 429) {
+            redirectToLogin(TOO_MANY_LOGIN_ATTEMPTS_CODE);
+            return;
+          }
           const payload = (await exchangeResponse.json().catch(() => ({}))) as { code?: string; message?: string };
-          redirectToLogin(getAuthErrorMessage(payload.code ?? payload.message, `login_failed`));
+          redirectToLogin(payload.code ?? payload.message ?? AUTH_CALLBACK_FALLBACK_ERROR);
           return;
         }
 
@@ -50,45 +54,61 @@ export default function AuthCallback() {
         window.history.replaceState({}, ``, `${url.pathname}${url.search}${url.hash}`);
       }
 
-      const sessionEstablished = await pollForAuthCallbackSession({
-        poll: async () => {
-          if (cancelled) return false;
+      let sessionEstablished = false;
+      try {
+        sessionEstablished = await pollForAuthCallbackSession({
+          poll: async () => {
+            if (cancelled) return false;
 
-          try {
-            const meResponse = await fetch(`/api/me`, {
-              credentials: `include`,
-              cache: `no-store`,
-            });
+            try {
+              const meResponse = await fetch(`/api/me`, {
+                credentials: `include`,
+                cache: `no-store`,
+              });
 
-            if (meResponse.ok) {
-              router.replace(next);
-              return true;
+              if (meResponse.ok) {
+                router.replace(next);
+                return true;
+              }
+
+              if (meResponse.status === 429) {
+                throw new Error(TOO_MANY_LOGIN_ATTEMPTS_CODE);
+              }
+            } catch (error) {
+              if (error instanceof Error && error.message === TOO_MANY_LOGIN_ATTEMPTS_CODE) {
+                throw error;
+              }
+              // Keep the retry path bounded; transient network errors should behave like a miss.
             }
-          } catch {
-            // Keep the retry path bounded; transient network errors should behave like a miss.
-          }
 
-          return false;
-        },
-        sleep: (delayMs) =>
-          new Promise((resolve) => {
-            if (cancelled) {
-              resolve();
-              return;
-            }
+            return false;
+          },
+          sleep: (delayMs) =>
+            new Promise((resolve) => {
+              if (cancelled) {
+                resolve();
+                return;
+              }
 
-            resolvePendingSleep = () => {
-              resolvePendingSleep = null;
-              timeoutId = null;
-              resolve();
-            };
+              resolvePendingSleep = () => {
+                resolvePendingSleep = null;
+                timeoutId = null;
+                resolve();
+              };
 
-            timeoutId = window.setTimeout(() => {
-              resolvePendingSleep?.();
-            }, delayMs);
-          }),
-        isCancelled: () => cancelled,
-      });
+              timeoutId = window.setTimeout(() => {
+                resolvePendingSleep?.();
+              }, delayMs);
+            }),
+          isCancelled: () => cancelled,
+        });
+      } catch (error) {
+        if (error instanceof Error && error.message === TOO_MANY_LOGIN_ATTEMPTS_CODE) {
+          redirectToLogin(TOO_MANY_LOGIN_ATTEMPTS_CODE);
+          return;
+        }
+        throw error;
+      }
 
       if (!sessionEstablished) {
         redirectToLogin();

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
 
-import { AUTH_NOTICE_QUERY } from '@remoola/api-types';
+import { AUTH_NOTICE_QUERY, AUTH_RATE_LIMIT_MESSAGE } from '@remoola/api-types';
 
 import { resetPasswordSchema } from '../../../../features/auth/schemas';
 import { getAuthErrorMessage } from '../../../../lib/auth-error-messages';
@@ -52,6 +52,10 @@ export function ResetPasswordConfirmPageClient({ token }: { token: string }) {
 
       const data = (await response.json().catch(() => ({}))) as { code?: string; message?: string };
       if (!response.ok) {
+        if (response.status === 429) {
+          setError(AUTH_RATE_LIMIT_MESSAGE);
+          return;
+        }
         setError(getAuthErrorMessage(data.code ?? data.message, FALLBACK_ERROR));
         return;
       }

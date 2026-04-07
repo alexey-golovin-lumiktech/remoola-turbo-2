@@ -1,8 +1,10 @@
+import { AUTH_RATE_LIMIT_MESSAGE } from '@remoola/api-types';
+
 const MESSAGE_MAP: Record<string, string> = {
   ACCOUNT_SUSPENDED: `Your account has been suspended. Please contact support.`,
   PROFILE_SUSPENDED: `Your profile has been suspended. Please contact support.`,
   INVALID_CREDENTIALS: `The email or password you entered is incorrect.`,
-  TOO_MANY_LOGIN_ATTEMPTS: `Too many sign-in attempts. Please wait a few minutes and try again.`,
+  TOO_MANY_LOGIN_ATTEMPTS: AUTH_RATE_LIMIT_MESSAGE,
   ACCOUNT_TEMPORARILY_LOCKED: `Too many failed sign-in attempts. Please wait a few minutes and try again.`,
   EMAIL_ALREADY_REGISTERED_SIGNUP: `This email is already registered. Sign in instead or use another email.`,
   EMAIL_ALREADY_REGISTERED_PRISMA: `This email is already registered. Sign in instead or use another email.`,
@@ -24,4 +26,15 @@ const MESSAGE_MAP: Record<string, string> = {
 export function getAuthErrorMessage(codeOrMessage: string | undefined, fallback: string): string {
   if (!codeOrMessage) return fallback;
   return MESSAGE_MAP[codeOrMessage] ?? fallback;
+}
+
+export function resolveAuthErrorMessage(codeOrMessage: string | undefined, fallback: string): string {
+  if (!codeOrMessage) return fallback;
+
+  const mappedMessage = MESSAGE_MAP[codeOrMessage];
+  if (mappedMessage) {
+    return mappedMessage;
+  }
+
+  return codeOrMessage.includes(` `) ? codeOrMessage : fallback;
 }

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
+  AUTH_RATE_LIMIT_MESSAGE,
   AUTH_NOTICE_QUERY,
   buildConsumerGoogleOAuthStartUrl,
   type AuthNotice,
@@ -16,6 +17,7 @@ import { GoogleIcon, RemoolaCompactLogo, RemoolaLogo } from '@remoola/ui';
 
 import { shouldFinalizeLoginLoading } from './login-loading-guard';
 import styles from './LoginForm.module.css';
+import { resolveAuthErrorMessage } from '../../../lib/auth-error-messages';
 import { getDevCredentials } from '../../../lib/dev-credentials';
 import { resetSessionExpiredHandled } from '../../../lib/session-expired';
 import { AlertTriangleIcon } from '../../../shared/ui/icons/AlertTriangleIcon';
@@ -55,7 +57,8 @@ export function LoginForm({
   const [authNoticeMessage] = useState<string | undefined>(authNotice ? getAuthNoticeMessage(authNotice) : undefined);
   const didNavigateRef = useRef(false);
 
-  const errorMessage = err ?? (oauthError ? `Sign-in failed. Please try again.` : undefined);
+  const errorMessage =
+    err ?? (oauthError ? resolveAuthErrorMessage(oauthError, `Sign-in failed. Please try again.`) : undefined);
 
   const handleGoogleSignIn = useCallback(async () => {
     const url = new URL(buildConsumerGoogleOAuthStartUrl(nextPath), window.location.origin);
@@ -128,7 +131,7 @@ export function LoginForm({
           setErr(`Invalid email or password. Please try again.`);
           setFieldErrors({ email: ` `, password: ` ` });
         } else if (status === 429) {
-          setErr(`Too many attempts. Please wait a few minutes and try again.`);
+          setErr(AUTH_RATE_LIMIT_MESSAGE);
         } else {
           setErr(`Unable to sign in. Please check your connection and try again.`);
         }

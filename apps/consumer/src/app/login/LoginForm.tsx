@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 import {
+  AUTH_RATE_LIMIT_MESSAGE,
   AUTH_NOTICE_QUERY,
   buildConsumerGoogleOAuthStartUrl,
   emailSchema,
@@ -19,6 +20,7 @@ import { GoogleIcon, RemoolaCompactLogo, RemoolaLogo } from '@remoola/ui';
 import { shouldFinalizeLoginLoading } from './login-loading-guard';
 import localStyles from './LoginForm.module.css';
 import styles from '../../components/ui/classNames.module.css';
+import { resolveAuthErrorMessage } from '../../lib/auth-error-messages';
 import { resetSessionExpiredHandled } from '../../lib/session-expired';
 
 const CLEAR_COOKIES_URL = `/api/consumer/auth/clear-cookies`;
@@ -78,7 +80,8 @@ export default function LoginForm() {
   const [err, setErr] = useState<string>();
   const [loading, setLoading] = useState(false);
   const didNavigateRef = useRef(false);
-  const errorMessage = err || (oauthError ? `Google sign-in failed. Please try again.` : undefined);
+  const errorMessage =
+    err || (oauthError ? resolveAuthErrorMessage(oauthError, `Google sign-in failed. Please try again.`) : undefined);
 
   const submitLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,7 +106,13 @@ export default function LoginForm() {
       });
 
       if (!loginRequest.ok) {
-        setErr(`Login failed (${loginRequest.status})`);
+        if (loginRequest.status === 401) {
+          setErr(`Invalid email or password. Please try again.`);
+        } else if (loginRequest.status === 429) {
+          setErr(AUTH_RATE_LIMIT_MESSAGE);
+        } else {
+          setErr(`Unable to sign in. Please check your connection and try again.`);
+        }
         return;
       }
 

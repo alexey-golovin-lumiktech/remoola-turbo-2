@@ -6,8 +6,10 @@ import { useEffect } from 'react';
 import { pollForAuthCallbackSession } from './auth-callback-polling';
 import styles from './AuthCallback.module.css';
 import { parseSearchParams } from '../../../features/auth/schemas';
-import { getAuthErrorMessage } from '../../../lib/auth-error-messages';
 import { clientLogger } from '../../../lib/logger';
+
+const TOO_MANY_LOGIN_ATTEMPTS_CODE = `TOO_MANY_LOGIN_ATTEMPTS`;
+const AUTH_CALLBACK_FALLBACK_ERROR = `Sign-in failed. Please try again.`;
 
 export default function AuthCallback() {
   const router = useRouter();
@@ -38,8 +40,12 @@ export default function AuthCallback() {
           });
 
           if (!exchangeRes.ok) {
+            if (exchangeRes.status === 429) {
+              redirectToLogin(TOO_MANY_LOGIN_ATTEMPTS_CODE);
+              return;
+            }
             const payload = (await exchangeRes.json().catch(() => ({}))) as { code?: string; message?: string };
-            redirectToLogin(getAuthErrorMessage(payload.code ?? payload.message, `login_failed`));
+            redirectToLogin(payload.code ?? payload.message ?? AUTH_CALLBACK_FALLBACK_ERROR);
             return;
           }
 
@@ -53,41 +59,56 @@ export default function AuthCallback() {
         return;
       }
 
-      const sessionEstablished = await pollForAuthCallbackSession({
-        poll: async () => {
-          if (cancelled) return false;
+      let sessionEstablished = false;
+      try {
+        sessionEstablished = await pollForAuthCallbackSession({
+          poll: async () => {
+            if (cancelled) return false;
 
-          try {
-            const res = await fetch(`/api/me`, { credentials: `include`, cache: `no-store` });
-            if (res.ok) {
-              router.replace(next);
-              return true;
+            try {
+              const res = await fetch(`/api/me`, { credentials: `include`, cache: `no-store` });
+              if (res.ok) {
+                router.replace(next);
+                return true;
+              }
+              if (res.status === 429) {
+                throw new Error(TOO_MANY_LOGIN_ATTEMPTS_CODE);
+              }
+            } catch (err) {
+              if (err instanceof Error && err.message === TOO_MANY_LOGIN_ATTEMPTS_CODE) {
+                throw err;
+              }
+              clientLogger.warn(`Auth callback session poll failed`, { err });
             }
-          } catch (err) {
-            clientLogger.warn(`Auth callback session poll failed`, { err });
-          }
 
-          return false;
-        },
-        sleep: (delayMs) =>
-          new Promise((resolve) => {
-            if (cancelled) {
-              resolve();
-              return;
-            }
+            return false;
+          },
+          sleep: (delayMs) =>
+            new Promise((resolve) => {
+              if (cancelled) {
+                resolve();
+                return;
+              }
 
-            resolvePendingSleep = () => {
-              resolvePendingSleep = null;
-              timeoutId = null;
-              resolve();
-            };
+              resolvePendingSleep = () => {
+                resolvePendingSleep = null;
+                timeoutId = null;
+                resolve();
+              };
 
-            timeoutId = window.setTimeout(() => {
-              resolvePendingSleep?.();
-            }, delayMs);
-          }),
-        isCancelled: () => cancelled,
-      });
+              timeoutId = window.setTimeout(() => {
+                resolvePendingSleep?.();
+              }, delayMs);
+            }),
+          isCancelled: () => cancelled,
+        });
+      } catch (err) {
+        if (err instanceof Error && err.message === TOO_MANY_LOGIN_ATTEMPTS_CODE) {
+          redirectToLogin(TOO_MANY_LOGIN_ATTEMPTS_CODE);
+          return;
+        }
+        throw err;
+      }
 
       if (!sessionEstablished) {
         redirectToLogin();

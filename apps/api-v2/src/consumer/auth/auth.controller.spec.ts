@@ -9,12 +9,17 @@ import {
 } from '@remoola/api-types';
 
 import { ConsumerAuthController } from './auth.controller';
-import { type ConsumerAuthService } from './auth.service';
-import { type GoogleOAuthService } from './google-oauth.service';
-import { type OAuthStateStoreService } from './oauth-state-store.service';
 import { envs } from '../../envs';
-import { type OriginResolverService } from '../../shared/origin-resolver.service';
-import { CSRF_TOKEN_COOKIE_KEY, GOOGLE_OAUTH_STATE_COOKIE_KEY } from '../../shared-common';
+import {
+  CSRF_TOKEN_COOKIE_KEY,
+  getApiConsumerGoogleSignupSessionCookieKey,
+  GOOGLE_OAUTH_STATE_COOKIE_KEY,
+} from '../../shared-common';
+
+import type { ConsumerAuthService } from './auth.service';
+import type { GoogleOAuthService } from './google-oauth.service';
+import type { OAuthStateStoreService } from './oauth-state-store.service';
+import type { OriginResolverService } from '../../shared/origin-resolver.service';
 
 describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
   let controller: ConsumerAuthController;
@@ -561,6 +566,49 @@ describe(`ConsumerAuthController CSRF and decorator contracts`, () => {
     await expect(
       controller.establishGoogleSignupSession(req, makeRes(), `handoff-token`, `consumer`),
     ).rejects.toBeInstanceOf(UnauthorizedException);
+  });
+
+  it(`establishGoogleSignupSession consumes handoff, persists signup session, and sets httpOnly cookie`, async () => {
+    (oauthStateStore.consumeSignupHandoff as jest.Mock).mockResolvedValueOnce({
+      email: `new@example.com`,
+      emailVerified: true,
+      nextPath: `/dashboard`,
+      signupEntryPath: `/signup/start`,
+      name: null,
+      givenName: `Ada`,
+      familyName: `Lovelace`,
+      picture: null,
+      organization: null,
+      sub: `sub`,
+      accountType: `BUSINESS`,
+      contractorKind: null,
+      appScope: `consumer`,
+    });
+    (oauthStateStore.createEphemeralToken as jest.Mock).mockReturnValueOnce(`signup-session-token`);
+    const req = makeReq({ headers: { [CONSUMER_APP_SCOPE_HEADER]: `consumer` } });
+    const res = makeRes();
+
+    const result = await controller.establishGoogleSignupSession(req, res, `handoff-token`, `consumer`);
+
+    expect(oauthStateStore.consumeSignupHandoff).toHaveBeenCalledWith(`handoff-token`);
+    expect(oauthStateStore.saveSignupSession).toHaveBeenCalledWith(
+      `signup-session-token`,
+      expect.objectContaining({ email: `new@example.com`, appScope: `consumer` }),
+      expect.any(Number),
+    );
+    expect(res.cookie).toHaveBeenCalledWith(
+      getApiConsumerGoogleSignupSessionCookieKey(req, `consumer`),
+      `signup-session-token`,
+      expect.objectContaining({ httpOnly: true, maxAge: expect.any(Number) }),
+    );
+    expect(result).toMatchObject({
+      email: `new@example.com`,
+      givenName: `Ada`,
+      familyName: `Lovelace`,
+      nextPath: `/dashboard`,
+      signupEntryPath: `/signup/start`,
+      accountType: `BUSINESS`,
+    });
   });
 
   it(`oauth complete rejects when stored app scope mismatches claimed scope`, async () => {

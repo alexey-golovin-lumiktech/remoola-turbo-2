@@ -2,7 +2,13 @@
 
 import { type ReactNode, createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
-import { ACCOUNT_TYPE, CONTRACTOR_KIND, type TAccountType, type TContractorKind } from '@remoola/api-types';
+import {
+  AUTH_RATE_LIMIT_MESSAGE,
+  ACCOUNT_TYPE,
+  CONTRACTOR_KIND,
+  type TAccountType,
+  type TContractorKind,
+} from '@remoola/api-types';
 
 import { createInitialSignupFormState, type SignupQuerySeed } from './defaults';
 import { applyGoogleSignupSession, hasUsableGoogleSignupSession } from './google-session';
@@ -104,6 +110,9 @@ export function SignupFormProvider({ children, querySeed }: { children: ReactNod
           familyName?: string;
         };
 
+        if (response.status === 429) {
+          throw new Error(AUTH_RATE_LIMIT_MESSAGE);
+        }
         if (!response.ok || !hasUsableGoogleSignupSession(data)) {
           throw new Error(`Could not load your Google sign-up session. Please try again.`);
         }
@@ -169,6 +178,9 @@ export function SignupFormProvider({ children, querySeed }: { children: ReactNod
           familyName?: string;
         };
 
+        if (response.status === 429) {
+          throw new Error(AUTH_RATE_LIMIT_MESSAGE);
+        }
         if (!response.ok || !hasUsableGoogleSignupSession(data)) {
           throw new Error(`Could not load your Google sign-up session. Please try again.`);
         }

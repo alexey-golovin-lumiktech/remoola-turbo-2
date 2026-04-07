@@ -563,6 +563,13 @@ export class ConsumerAuthService {
 
     const consumer = await this.prisma.consumerModel.findFirst({ where: { id: consumerId } });
     if (!consumer) throw new BadRequestException(errorCodes.CONSUMER_NOT_FOUND_COMPLETE_PROFILE);
+    if (consumer.verified) {
+      this.logger.log({
+        event: `consumer_complete_profile_creation_skipped_already_verified`,
+        consumerId,
+      });
+      return;
+    }
     const token = await this.getSignupVerificationToken(consumer.id, validatedAppScope);
     await this.mailingService.sendConsumerSignupVerificationEmail({
       email: consumer.email,

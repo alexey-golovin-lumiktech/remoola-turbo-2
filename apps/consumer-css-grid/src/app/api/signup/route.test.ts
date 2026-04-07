@@ -69,4 +69,41 @@ describe(`signup route`, () => {
     expect(setCookies.some((cookie) => cookie.startsWith(`signup_cookie=`))).toBe(true);
     expect(setCookies.some((cookie) => cookie.startsWith(`completion_cookie=`))).toBe(true);
   });
+
+  it(`does not call complete-profile-creation when api returns Google signup next path`, async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          consumer: { id: `consumer-google`, email: `g@example.com` },
+          next: `/dashboard`,
+        }),
+        {
+          status: 201,
+          headers: {
+            [`set-cookie`]: `auth=session; Path=/; HttpOnly`,
+          },
+        },
+      ),
+    );
+
+    const request = new Request(`https://app.example.com/api/signup`, {
+      method: `POST`,
+      headers: {
+        'content-type': `application/json`,
+        cookie: `consumer_session=session-cookie`,
+        host: `app.example.com`,
+      },
+      body: JSON.stringify({ email: `g@example.com`, accountType: `INDIVIDUAL` }),
+    });
+
+    const response = await POST(request as any);
+    const setCookies = getSetCookieValues(response.headers);
+
+    expect(response.status).toBe(201);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(String(mockFetch.mock.calls[0]?.[0])).toBe(
+      `https://api.example.com/consumer/auth/signup?appScope=consumer-css-grid`,
+    );
+    expect(setCookies.some((cookie) => cookie.startsWith(`auth=`))).toBe(true);
+  });
 });

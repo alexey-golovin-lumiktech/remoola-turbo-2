@@ -5,7 +5,8 @@ import { useEffect } from 'react';
 
 import { pollForAuthCallbackSession } from './auth-callback-polling';
 import { parseSearchParams } from '../../../features/auth/schemas';
-import { getAuthErrorMessage } from '../../../lib/auth-error-messages';
+const TOO_MANY_LOGIN_ATTEMPTS_CODE = `TOO_MANY_LOGIN_ATTEMPTS`;
+const AUTH_CALLBACK_FALLBACK_ERROR = `Sign-in failed. Please try again.`;
 
 export function AuthCallbackPageClient({
   nextParam,
@@ -22,9 +23,10 @@ export function AuthCallbackPageClient({
     let timeoutId: number | null = null;
     let resolvePendingSleep: (() => void) | null = null;
 
-    const redirectToLogin = () => {
+    const redirectToLogin = (error?: string) => {
       if (!cancelled) {
-        router.replace(`/login`);
+        const loginUrl = error ? `/login?error=${encodeURIComponent(error)}` : `/login`;
+        router.replace(loginUrl);
       }
     };
 
@@ -39,10 +41,12 @@ export function AuthCallbackPageClient({
         });
 
         if (!exchangeResponse.ok) {
+          if (exchangeResponse.status === 429) {
+            redirectToLogin(TOO_MANY_LOGIN_ATTEMPTS_CODE);
+            return;
+          }
           const payload = (await exchangeResponse.json().catch(() => ({}))) as { code?: string; message?: string };
-          router.replace(
-            `/login?error=${encodeURIComponent(getAuthErrorMessage(payload.code ?? payload.message, `login_failed`))}`,
-          );
+          redirectToLogin(payload.code ?? payload.message ?? AUTH_CALLBACK_FALLBACK_ERROR);
           return;
         }
 
@@ -51,45 +55,61 @@ export function AuthCallbackPageClient({
         window.history.replaceState({}, ``, `${url.pathname}${url.search}${url.hash}`);
       }
 
-      const sessionEstablished = await pollForAuthCallbackSession({
-        poll: async () => {
-          if (cancelled) return false;
+      let sessionEstablished = false;
+      try {
+        sessionEstablished = await pollForAuthCallbackSession({
+          poll: async () => {
+            if (cancelled) return false;
 
-          try {
-            const meResponse = await fetch(`/api/me`, {
-              credentials: `include`,
-              cache: `no-store`,
-            });
+            try {
+              const meResponse = await fetch(`/api/me`, {
+                credentials: `include`,
+                cache: `no-store`,
+              });
 
-            if (meResponse.ok) {
-              router.replace(nextPath);
-              return true;
+              if (meResponse.ok) {
+                router.replace(nextPath);
+                return true;
+              }
+
+              if (meResponse.status === 429) {
+                throw new Error(TOO_MANY_LOGIN_ATTEMPTS_CODE);
+              }
+            } catch (error) {
+              if (error instanceof Error && error.message === TOO_MANY_LOGIN_ATTEMPTS_CODE) {
+                throw error;
+              }
+              // Keep the retry path bounded; transient network errors should behave like a miss.
             }
-          } catch {
-            // Keep the retry path bounded; transient network errors should behave like a miss.
-          }
 
-          return false;
-        },
-        sleep: (delayMs) =>
-          new Promise((resolve) => {
-            if (cancelled) {
-              resolve();
-              return;
-            }
+            return false;
+          },
+          sleep: (delayMs) =>
+            new Promise((resolve) => {
+              if (cancelled) {
+                resolve();
+                return;
+              }
 
-            resolvePendingSleep = () => {
-              resolvePendingSleep = null;
-              timeoutId = null;
-              resolve();
-            };
+              resolvePendingSleep = () => {
+                resolvePendingSleep = null;
+                timeoutId = null;
+                resolve();
+              };
 
-            timeoutId = window.setTimeout(() => {
-              resolvePendingSleep?.();
-            }, delayMs);
-          }),
-        isCancelled: () => cancelled,
-      });
+              timeoutId = window.setTimeout(() => {
+                resolvePendingSleep?.();
+              }, delayMs);
+            }),
+          isCancelled: () => cancelled,
+        });
+      } catch (error) {
+        if (error instanceof Error && error.message === TOO_MANY_LOGIN_ATTEMPTS_CODE) {
+          redirectToLogin(TOO_MANY_LOGIN_ATTEMPTS_CODE);
+          return;
+        }
+        throw error;
+      }
 
       if (!sessionEstablished) {
         redirectToLogin();

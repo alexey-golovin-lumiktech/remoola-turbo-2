@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import { AUTH_RATE_LIMIT_MESSAGE } from '@remoola/api-types';
+
 import { buildSignupPayload } from './payload';
 import { useSignupForm } from './SignupFormContext';
 import { getAuthErrorMessage } from '../../lib/auth-error-messages';
@@ -33,10 +35,10 @@ export function useSignupSubmit() {
       if (!response.ok) {
         return {
           ok: false as const,
-          message: getAuthErrorMessage(
-            data.code ?? data.message,
-            `We could not create your account. Please try again.`,
-          ),
+          message:
+            response.status === 429
+              ? AUTH_RATE_LIMIT_MESSAGE
+              : getAuthErrorMessage(data.code ?? data.message, `We could not create your account. Please try again.`),
         };
       }
 

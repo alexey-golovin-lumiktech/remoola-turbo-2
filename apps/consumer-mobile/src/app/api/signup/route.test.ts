@@ -64,4 +64,48 @@ describe(`POST /api/signup`, () => {
 
     fetchSpy.mockRestore();
   });
+
+  it(`does not call complete-profile-creation when api returns Google signup next path`, async () => {
+    (getEnv as jest.Mock).mockReturnValue({ NEXT_PUBLIC_API_BASE_URL: `https://api.example.com` });
+    const fetchSpy = jest.spyOn(global, `fetch`).mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          consumer: { id: `consumer-google`, email: `g@example.com` },
+          next: `/dashboard`,
+        }),
+        {
+          status: 201,
+          headers: {
+            [`set-cookie`]: `auth_cookie=ok; Path=/; HttpOnly`,
+          },
+        },
+      ),
+    );
+
+    const req = new Request(`${TEST_BROWSER_ORIGIN}/api/signup`, {
+      method: `POST`,
+      headers: {
+        'content-type': `application/json`,
+        cookie: `consumer_session=session-cookie`,
+        origin: TEST_BROWSER_ORIGIN,
+        host: `localhost:3002`,
+      },
+      body: JSON.stringify({ email: `g@example.com`, accountType: `BUSINESS` }),
+    });
+
+    const res = await POST(req as never);
+    const setCookies = getSetCookieValues(res.headers);
+    const firstRequestHeaders = fetchSpy.mock.calls[0]?.[1]?.headers as Headers | undefined;
+
+    expect(res.status).toBe(201);
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(String(fetchSpy.mock.calls[0]?.[0])).toBe(
+      `https://api.example.com/consumer/auth/signup?appScope=consumer-mobile`,
+    );
+    expect(firstRequestHeaders?.get(`origin`)).toBe(TEST_BROWSER_ORIGIN);
+    expect(firstRequestHeaders?.get(`host`)).toBeNull();
+    expect(setCookies.some((cookie) => cookie.startsWith(`auth_cookie=`))).toBe(true);
+
+    fetchSpy.mockRestore();
+  });
 });

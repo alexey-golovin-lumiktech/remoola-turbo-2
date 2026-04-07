@@ -70,4 +70,43 @@ describe(`consumer signup route`, () => {
     expect(setCookies.some((cookie) => cookie.startsWith(`signup_cookie=`))).toBe(true);
     expect(setCookies.some((cookie) => cookie.startsWith(`completion_cookie=`))).toBe(true);
   });
+
+  it(`does not call complete-profile-creation when api returns Google signup next path`, async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          consumer: { id: `consumer-google`, email: `g@example.com` },
+          next: `/dashboard`,
+        }),
+        {
+          status: 201,
+          headers: {
+            [`set-cookie`]: `auth_cookie=ok; Path=/; HttpOnly`,
+          },
+        },
+      ),
+    );
+
+    const request = new Request(`https://app.example.com/api/signup`, {
+      method: `POST`,
+      headers: {
+        'content-type': `application/json`,
+        cookie: `consumer_session=session-cookie`,
+        origin: `https://app.example.com`,
+        host: `app.example.com`,
+      },
+      body: JSON.stringify({ email: `g@example.com`, accountType: `BUSINESS` }),
+    });
+
+    const response = await POST(request as never);
+    const setCookies = getSetCookieValues(response.headers);
+    const firstRequestHeaders = mockFetch.mock.calls[0]?.[1]?.headers as Headers | undefined;
+
+    expect(response.status).toBe(201);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`https://api.example.com/consumer/auth/signup?appScope=consumer`);
+    expect(firstRequestHeaders?.get(`origin`)).toBe(`https://app.example.com`);
+    expect(firstRequestHeaders?.get(`host`)).toBeNull();
+    expect(setCookies.some((cookie) => cookie.startsWith(`auth_cookie=`))).toBe(true);
+  });
 });

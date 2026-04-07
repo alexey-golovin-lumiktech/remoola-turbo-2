@@ -7,19 +7,8 @@ import { ACCOUNT_TYPE, CONTRACTOR_KIND, type TContractorKind } from '@remoola/ap
 import { LandmarkIcon, UserIcon } from '@remoola/ui';
 
 import styles from './ContractorKindView.module.css';
+import { buildSignupFlowPath } from './routing';
 import { useSignupForm } from './SignupFormContext';
-
-function buildQuery(contractorKind: string | null, googleSignupToken: string | null) {
-  const params = new URLSearchParams();
-  params.set(`accountType`, ACCOUNT_TYPE.CONTRACTOR);
-  if (contractorKind) {
-    params.set(`contractorKind`, contractorKind);
-  }
-  if (googleSignupToken) {
-    params.set(`googleSignup`, `1`);
-  }
-  return `?${params.toString()}`;
-}
 
 export function ContractorKindView() {
   const router = useRouter();
@@ -27,9 +16,15 @@ export function ContractorKindView() {
 
   useEffect(() => {
     if (signupDetails.accountType !== ACCOUNT_TYPE.CONTRACTOR) {
-      router.replace(`/signup/start`);
+      router.replace(
+        buildSignupFlowPath(`/signup/start`, {
+          accountType: signupDetails.accountType,
+          contractorKind: signupDetails.contractorKind,
+          googleSignupToken,
+        }),
+      );
     }
-  }, [signupDetails.accountType, router]);
+  }, [signupDetails.accountType, signupDetails.contractorKind, googleSignupToken, router]);
 
   const selectKind = (kind: TContractorKind) => {
     updateSignup({ contractorKind: kind });
@@ -37,7 +32,13 @@ export function ContractorKindView() {
 
   const onNext = () => {
     if (!signupDetails.contractorKind) return;
-    router.push(`/signup${buildQuery(signupDetails.contractorKind, googleSignupToken)}`);
+    router.push(
+      buildSignupFlowPath(`/signup`, {
+        accountType: ACCOUNT_TYPE.CONTRACTOR,
+        contractorKind: signupDetails.contractorKind,
+        googleSignupToken,
+      }),
+    );
   };
 
   const isSelected = (kind: TContractorKind) => signupDetails.contractorKind === kind;
@@ -103,7 +104,19 @@ export function ContractorKindView() {
             >
               Continue
             </button>
-            <button type="button" onClick={() => router.push(`/signup/start`)} className={styles.secondaryBtn}>
+            <button
+              type="button"
+              onClick={() =>
+                router.push(
+                  buildSignupFlowPath(`/signup/start`, {
+                    accountType: ACCOUNT_TYPE.CONTRACTOR,
+                    contractorKind: signupDetails.contractorKind,
+                    googleSignupToken,
+                  }),
+                )
+              }
+              className={styles.secondaryBtn}
+            >
               Back
             </button>
           </div>

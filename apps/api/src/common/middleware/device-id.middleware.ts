@@ -20,6 +20,10 @@ const PUBLIC_CONSUMER_ROUTES_WITHOUT_SCOPE_HEADER = new Set([
   `/api/consumer/auth/forgot-password/verify`,
   `/api/consumer/auth/signup/verification`,
 ]);
+const PUBLIC_CONSUMER_WEBHOOK_ROUTES_WITHOUT_SCOPE_HEADER = new Set([
+  `/api/consumer/webhooks`,
+  `/api/consumer/webhook`,
+]);
 
 export interface RequestWithDeviceId extends Request {
   deviceId?: string;
@@ -51,9 +55,19 @@ function isConsumerApiPath(path: string | undefined): boolean {
 }
 
 function shouldSkipScopedDeviceId(req: RequestWithDeviceId): boolean {
-  if (req.method?.toUpperCase() !== `GET`) return false;
   const path = req.path ?? req.url?.split(`?`)[0];
-  return typeof path === `string` && PUBLIC_CONSUMER_ROUTES_WITHOUT_SCOPE_HEADER.has(path);
+  if (typeof path !== `string`) return false;
+
+  const method = req.method?.toUpperCase();
+  if (method === `GET`) {
+    return PUBLIC_CONSUMER_ROUTES_WITHOUT_SCOPE_HEADER.has(path);
+  }
+
+  if (method === `POST`) {
+    return PUBLIC_CONSUMER_WEBHOOK_ROUTES_WITHOUT_SCOPE_HEADER.has(path);
+  }
+
+  return false;
 }
 
 /**

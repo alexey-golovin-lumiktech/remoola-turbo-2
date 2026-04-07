@@ -3,6 +3,7 @@
 import { type ReactNode, createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import {
+  AUTH_RATE_LIMIT_MESSAGE,
   ACCOUNT_TYPE,
   CONTRACTOR_KIND,
   CONSUMER_ROLE,
@@ -228,6 +229,9 @@ export function SignupFormProvider({ children, querySeed }: { children: ReactNod
           signal: controller.signal,
         });
         const data = (await response.json().catch(() => ({}))) as GoogleSignupSessionPayload;
+        if (response.status === 429) {
+          throw new Error(AUTH_RATE_LIMIT_MESSAGE);
+        }
         if (!response.ok || !hasUsableGoogleSignupSession(data)) {
           throw new Error(`Could not load your Google signup session. Please try again.`);
         }
@@ -286,6 +290,9 @@ export function SignupFormProvider({ children, querySeed }: { children: ReactNod
           body: JSON.stringify({ handoffToken: googleSignupHandoff }),
         });
         const data = (await response.json().catch(() => ({}))) as GoogleSignupSessionPayload;
+        if (response.status === 429) {
+          throw new Error(AUTH_RATE_LIMIT_MESSAGE);
+        }
         if (!response.ok || !hasUsableGoogleSignupSession(data)) {
           throw new Error(`Could not load your Google signup session. Please try again.`);
         }

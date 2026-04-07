@@ -149,6 +149,30 @@ describe(`deviceIdMiddleware`, () => {
     expect(next).toHaveBeenCalledWith();
   });
 
+  it(`skips stripe webhooks without requiring app scope header`, (done) => {
+    const req = mockReq({ method: `POST`, path: `/api/consumer/webhooks`, headers: {} as any });
+    const res = mockRes();
+    const next = jest.fn(() => {
+      expect(req.deviceId).toBeUndefined();
+      expect(res.cookie).not.toHaveBeenCalled();
+      done();
+    });
+    deviceIdMiddleware(req, res, next);
+    expect(next).toHaveBeenCalledWith();
+  });
+
+  it(`skips singular stripe webhook path without requiring app scope header`, (done) => {
+    const req = mockReq({ method: `POST`, path: `/api/consumer/webhook`, headers: {} as any });
+    const res = mockRes();
+    const next = jest.fn(() => {
+      expect(req.deviceId).toBeUndefined();
+      expect(res.cookie).not.toHaveBeenCalled();
+      done();
+    });
+    deviceIdMiddleware(req, res, next);
+    expect(next).toHaveBeenCalledWith();
+  });
+
   it(`generates new deviceId when cookie value is invalid (not a UUID)`, (done) => {
     const req = mockReq({ cookies: { [localDeviceCookieKey]: `not-a-uuid` } });
     const res = mockRes();

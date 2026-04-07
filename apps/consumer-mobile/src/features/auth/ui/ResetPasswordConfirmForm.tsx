@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useRef, useState } from 'react';
 
-import { AUTH_NOTICE_QUERY } from '@remoola/api-types';
+import { AUTH_NOTICE_QUERY, AUTH_RATE_LIMIT_MESSAGE } from '@remoola/api-types';
 
 import styles from './LoginForm.module.css';
 import { shouldFinalizeResetConfirmLoading } from './reset-confirm-loading';
@@ -78,6 +78,10 @@ export function ResetPasswordConfirmForm() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
+        if (res.status === 429) {
+          setErr(AUTH_RATE_LIMIT_MESSAGE);
+          return;
+        }
         const code = data?.code ?? data?.message;
         setErr(getErrorMessageForUser(code, FALLBACK_ERROR));
         return;

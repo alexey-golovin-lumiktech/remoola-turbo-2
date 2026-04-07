@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import { AUTH_RATE_LIMIT_MESSAGE } from '@remoola/api-types';
+
 import { buildSignupPayload } from './payload';
 import { useSignupForm } from './SignupFormContext';
 import { getErrorMessageForUser, getLocalToastMessage, localToastKeys } from '../../lib/error-messages';
@@ -42,6 +44,10 @@ export function useSignupSubmit() {
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
+        if (res.status === 429) {
+          showErrorToast(AUTH_RATE_LIMIT_MESSAGE);
+          return;
+        }
         const data = (await res.json().catch(() => ({}))) as { code?: string; message?: string };
         const msg = getErrorMessageForUser(
           data.code,

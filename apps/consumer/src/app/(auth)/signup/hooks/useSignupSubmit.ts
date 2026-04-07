@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
+import { AUTH_RATE_LIMIT_MESSAGE } from '@remoola/api-types';
+
 import { getErrorMessageForUser } from '../../../../lib/error-messages';
 import { omit } from '../utils';
 import {
@@ -87,6 +89,9 @@ export function useSignupSubmit() {
       });
 
       if (!response.ok) {
+        if (response.status === 429) {
+          throw new Error(AUTH_RATE_LIMIT_MESSAGE);
+        }
         const data = await response.json().catch(() => ({}));
         throw new Error(data?.message || `Failed to sign up`);
       }
