@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 export const THEME_STORAGE_KEY = `remoola-theme`;
 export const THEME_COOKIE_KEY = `remoola-theme`;
 export const THEME_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;

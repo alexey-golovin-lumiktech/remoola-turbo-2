@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { getSystemResolvedTheme, readPersistedThemePreference } from './theme';
 
+import { getSystemResolvedTheme, readPersistedThemePreference } from './theme';
 
 function createDocument({
   themePreference,
@@ -21,7 +21,7 @@ function createDocument({
 test(`prefers bootstrap theme preference from the document dataset`, () => {
   const storage = {
     getItem: () => `light`,
-    setItem: () => { },
+    setItem: () => {},
   };
 
   assert.equal(
@@ -36,7 +36,7 @@ test(`prefers bootstrap theme preference from the document dataset`, () => {
 test(`falls back to the theme cookie when no dataset preference exists`, () => {
   const storage = {
     getItem: () => `light`,
-    setItem: () => { },
+    setItem: () => {},
   };
 
   assert.equal(
@@ -51,7 +51,7 @@ test(`falls back to the theme cookie when no dataset preference exists`, () => {
 test(`falls back to storage when dataset and cookie are missing`, () => {
   const storage = {
     getItem: () => `light`,
-    setItem: () => { },
+    setItem: () => {},
   };
 
   assert.equal(
@@ -68,7 +68,7 @@ test(`returns the fallback theme when storage is unavailable`, () => {
     getItem: () => {
       throw new Error(`Storage unavailable`);
     },
-    setItem: () => { },
+    setItem: () => {},
   };
 
   assert.equal(
