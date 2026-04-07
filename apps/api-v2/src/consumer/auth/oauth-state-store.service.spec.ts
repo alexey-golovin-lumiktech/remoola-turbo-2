@@ -3,7 +3,7 @@ import { OAuthStateStoreService } from './oauth-state-store.service';
 describe(`OAuthStateStoreService`, () => {
   function makeService() {
     const prisma = {
-      oauthStateModel: { create: jest.fn() },
+      oauthStateModel: { create: jest.fn(), findUnique: jest.fn() },
       $queryRaw: jest.fn(),
     } as any;
     const store = new OAuthStateStoreService(prisma);
@@ -112,6 +112,36 @@ describe(`OAuthStateStoreService`, () => {
       contractorKind: undefined,
       appScope: `consumer-mobile`,
     });
+  });
+
+  it(`reads state records without consuming them`, async () => {
+    const { store, prisma } = makeService();
+    const token = store.createStateToken();
+    const createdAt = Date.now();
+    prisma.oauthStateModel.findUnique.mockResolvedValue({
+      payload: JSON.stringify({
+        nonce: `nonce`,
+        codeVerifier: `verifier`,
+        nextPath: `/dashboard`,
+        createdAt,
+        appScope: `consumer-css-grid`,
+      }),
+      expiresAt: new Date(Date.now() + 10_000),
+    });
+
+    const record = await store.read(token);
+
+    expect(record).toEqual({
+      nonce: `nonce`,
+      codeVerifier: `verifier`,
+      nextPath: `/dashboard`,
+      createdAt,
+      signupEntryPath: undefined,
+      accountType: undefined,
+      contractorKind: undefined,
+      appScope: `consumer-css-grid`,
+    });
+    expect(prisma.$queryRaw).not.toHaveBeenCalled();
   });
 
   it(`consumes login handoffs only once`, async () => {

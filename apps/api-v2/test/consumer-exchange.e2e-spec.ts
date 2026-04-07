@@ -14,6 +14,7 @@ import cookieParser from 'cookie-parser';
 import express from 'express';
 import request from 'supertest';
 
+import { CONSUMER_APP_SCOPE_HEADER } from '@remoola/api-types';
 import { $Enums, PrismaClient } from '@remoola/database-2';
 import { hashPassword } from '@remoola/security-utils';
 
@@ -30,6 +31,7 @@ describe(`Consumer exchange convert and scheduled execution (e2e, isolated DB)`,
   let prisma: PrismaClient;
   let exchangeService: ConsumerExchangeService;
   const consumerOrigin = `http://127.0.0.1:3003`;
+  const appScope = `consumer-css-grid` as const;
 
   function parseCookieValue(cookies: string[] | undefined, key: string): string | null {
     if (!Array.isArray(cookies)) return null;
@@ -51,6 +53,10 @@ describe(`Consumer exchange convert and scheduled execution (e2e, isolated DB)`,
     if (Array.isArray(header)) return header;
     if (typeof header === `string`) return [header];
     return undefined;
+  }
+
+  function withConsumerAppScope<T extends request.Test>(req: T): T {
+    return req.set(`origin`, consumerOrigin).set(CONSUMER_APP_SCOPE_HEADER, appScope);
   }
 
   async function createConsumerWithUsdBalance(params: { email: string; password: string; balance: number }) {
@@ -145,20 +151,16 @@ describe(`Consumer exchange convert and scheduled execution (e2e, isolated DB)`,
     });
 
     const agent = request.agent(app.getHttpServer());
-    const loginRes = await agent
-      .post(`/api/consumer/auth/login`)
-      .set(`origin`, consumerOrigin)
+    const loginRes = await withConsumerAppScope(agent.post(`/api/consumer/auth/login?appScope=${appScope}`))
       .send({ email: consumer.email, password: `ExchangeConvert1!` })
       .expect(200);
     const csrf = parseCookieValueForKeys(
       asCookieArray(loginRes.headers[`set-cookie`]),
-      getApiConsumerCsrfTokenCookieKeysForRead(`consumer-css-grid`),
+      getApiConsumerCsrfTokenCookieKeysForRead(appScope),
     );
     expect(csrf).toBeTruthy();
 
-    const response = await agent
-      .post(`/api/consumer/exchange/convert`)
-      .set(`origin`, consumerOrigin)
+    const response = await withConsumerAppScope(agent.post(`/api/consumer/exchange/convert`))
       .set(`x-csrf-token`, csrf ?? ``)
       .send({
         from: $Enums.CurrencyCode.USD,

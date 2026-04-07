@@ -8,6 +8,7 @@ import {
   sanitizeNextForRedirect,
 } from '@remoola/api-types';
 
+import { getConsumerCookieRuntime } from './lib/auth-cookie-policy';
 import { middleware } from './middleware';
 
 type MockFetch = jest.MockedFunction<typeof fetch>;
@@ -240,25 +241,25 @@ describe(`consumer middleware auth-session behavior`, () => {
       }),
     );
     const accessToken = createAccessToken(3600);
-
-    const response = await middleware(
-      createRequest(
-        `/exchange`,
-        {
-          [localAccessCookieKey]: accessToken,
-          [localRefreshCookieKey]: `valid-r`,
-          [csrfCookieKey]: `csrf`,
-        },
-        { origin: `http://localhost:3001` },
-      ),
+    const request = createRequest(
+      `/exchange`,
+      {
+        [localAccessCookieKey]: accessToken,
+        [localRefreshCookieKey]: `valid-r`,
+        [csrfCookieKey]: `csrf`,
+      },
+      { origin: `http://localhost:3001` },
     );
+    const expectedProbeAccessCookieKey = getConsumerAccessTokenCookieKey(getConsumerCookieRuntime(request));
+
+    const response = await middleware(request);
 
     expect(response.status).toBe(200);
     expect(mockFetch).toHaveBeenCalledTimes(2);
     expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`http://localhost:3001/api/me`);
     expect(mockFetch.mock.calls[0]?.[1]).toMatchObject({
       headers: expect.objectContaining({
-        Cookie: `${localAccessCookieKey}=${accessToken}`,
+        Cookie: `${expectedProbeAccessCookieKey}=${accessToken}`,
         origin: `http://localhost:3001`,
       }),
     });

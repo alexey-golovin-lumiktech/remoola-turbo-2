@@ -7,15 +7,17 @@ Single-file documentation covering API, Admin, Consumer, and Database.
 Remoola is a Turborepo monorepo with:
 
 - `apps/api`: NestJS backend (REST APIs).
+- `apps/api-v2`: NestJS backend authority for `consumer-css-grid` and current auth-sensitive cutovers.
 - `apps/admin`: Next.js admin dashboard.
 - `apps/consumer`: Next.js consumer portal.
 - `apps/consumer-mobile`: Next.js mobile-first consumer app (port 3002).
+- `apps/consumer-css-grid`: Next.js consumer app with css-grid shell (port 3003).
 - `packages/database-2`: Prisma schema, migrations, and generated client.
 - Shared packages for types, UI, linting, and TS config.
 
 ## API (NestJS) - Implemented Features
 
-Base backend lives in `apps/api`. All API routes use the global prefix `/api` (e.g. `/api/admin/auth`, `/api/consumer/auth`). Auth on the Nest API is namespaced under `admin` and `consumer` only; shared JWT wiring lives under `apps/api/src/auth` (`JwtPassportModule`, `JwtStrategy`) but does not expose a root `/api/auth` route. The Admin Next.js app may still use BFF paths like `/api/auth/login` that proxy to `/api/admin/auth` on the backend.
+Base backend lives in `apps/api`, which remains the backend authority for `consumer` and `consumer-mobile`. `apps/api-v2` is the backend authority for `consumer-css-grid` and the synchronized auth-sensitive cutover surface documented in `docs/API_V2_PRODUCTION_RELEASE_GATE.md`. All API routes use the global prefix `/api` (e.g. `/api/admin/auth`, `/api/consumer/auth`). Auth on the Nest API is namespaced under `admin` and `consumer` only; shared JWT wiring lives under `apps/api/src/auth` (`JwtPassportModule`, `JwtStrategy`) but does not expose a root `/api/auth` route. The Admin Next.js app may still use BFF paths like `/api/auth/login` that proxy to `/api/admin/auth` on the backend.
 
 ### Admin APIs
 
@@ -92,10 +94,10 @@ Auth (`/consumer/auth`):
   links omit both `email` and routing-layer `referer`; the signed token now carries
   canonical `appScope`, and successful redirects to the consumer verification page may
   still include `email` for compatibility/UX.
-- Forgot-password and reset (no auth required): `POST /forgot-password` (email; requires a trusted consumer browser request scope so the backend can derive `appScope` server-side); `GET /forgot-password/verify?token=…` — token-only verify contract; validate token and redirect to the app resolved from stored `appScope`; `POST /password/reset` (body: token, password) — set new password with token from email.
+- Forgot-password and reset (no auth required): `POST /forgot-password` (email; requires explicit `appScope=consumer|consumer-mobile|consumer-css-grid`, and the backend requires exact match between claimed `appScope` and `x-remoola-app-scope`); `GET /forgot-password/verify?token=…` — token-only verify contract; validate token and redirect only when stored `appScope` is present and valid, otherwise fail with `ORIGIN_REQUIRED`; `POST /password/reset` (body: token, password) — set new password with token from email.
 - Authenticated password update: `PATCH /consumer/profile/password` (see Profile below). This route supports both password change and first-time password creation for Google-only / no-password accounts.
 - Google OAuth flows:
-  - `GET /google/start`: start OAuth flow with explicit `appScope` as the only public redirect identity. Supported contract is `GET /google/start?appScope=consumer|consumer-mobile|consumer-css-grid&next=...`; browser-facing callers are expected to use same-origin BFF routes under `/api/consumer/auth/google/start`, and the backend validates that trusted request scope matches the claimed `appScope`.
+  - `GET /google/start`: start OAuth flow with explicit `appScope` as the only public redirect identity. Supported contract is `GET /google/start?appScope=consumer|consumer-mobile|consumer-css-grid&next=...`; browser-facing callers are expected to use same-origin BFF routes under `/api/consumer/auth/google/start`, and the backend requires exact match between query `appScope` and `x-remoola-app-scope`.
   - `GET /google/callback`: OAuth redirect handling; reads `appScope` from OAuth state and builds login/signup/callback redirects through configured `appScope -> origin` mapping rather than request-derived origin.
   - `GET /google/signup-session`: fetch OAuth signup session data.
   - `POST /oauth/complete`: exchange short-lived OAuth handoff token for access/refresh cookies. Browser-facing callers must go through frontend same-origin BFF routes rather than calling the API origin directly.
@@ -151,6 +153,14 @@ Payment Methods (`/consumer/payment-methods`):
 Stripe (`/consumer/stripe`):
 
 - `POST /:paymentRequestId/stripe-session`: create checkout session for a payment request.
+  Redirect-capable checkout flows now require explicit consumer `appScope`; backend
+  validates the explicit `x-remoola-app-scope` header against that claim and resolves the success/cancel
+  target through canonical `appScope -> origin` mapping.
+  Production now requires an explicit app origin env instead of falling back to
+  Vercel deployment metadata. This rollout is documented as a synchronized
+  backend + consumer-app cutover only; canonical production domains are
+  supported release evidence, while preview / branch deployment auth or CSRF
+  smoke is explicitly unsupported.
 - `POST /intents`: create setup intent.
 - `POST /confirm`: confirm setup intent.
 - `POST /:paymentRequestId/pay-with-saved-method`: charge using saved method.
@@ -197,7 +207,11 @@ Payments (`/consumer/payments`):
 Payment Requests (`/consumer/payment-requests`):
 
 - `POST /`: create payment request.
-- `POST /:paymentRequestId/send`: send payment request.
+- `POST /:paymentRequestId/send`: send payment request. Ancillary email-link routing now
+  also requires explicit consumer `appScope`, so the backend resolves the payer-facing
+  payment link through canonical `appScope -> origin` mapping instead of request-derived
+  routing. This ancillary `appScope` contract is a synchronized cutover and is
+  not described as a backward-compatible rolling migration.
 
 Profile (`/consumer/profile`):
 
@@ -227,7 +241,7 @@ Common infrastructure in `apps/api/src/shared` and `apps/api/src/shared-common`:
 - Auth audit (login success/failure tracking) and account lockout (per-email after N failures).
 - Error filtering and logging.
 - Common DTOs used across admin and consumer APIs.
-- `OriginResolverService`: centralized request trust and scope/origin resolution for OAuth and other browser-facing consumer flows. For OAuth routing, `appScope` is primary and `Origin`/`Referer` remain part of trust validation, not redirect identity.
+- `OriginResolverService`: centralized consumer `appScope` validation and canonical scope/origin resolution for OAuth and other browser-facing consumer flows. For consumer routing, `appScope` is the only request identity; `Origin` remains only in the browser CORS layer. Trusted production origins are the configured canonical app origins; preview / branch deployment hostnames are not part of the supported auth/CSRF release contract.
 
 Recent runtime hardening (API pipeline and scheduler safety):
 
@@ -237,12 +251,11 @@ Recent runtime hardening (API pipeline and scheduler safety):
   - `ConsumerActionInterceptor` (decorator-gated append-only action logging).
 - `StripeReversalScheduler` in both `apps/api/src/consumer/modules/payment-methods/stripe-reversal.scheduler.ts` and `apps/api-v2/src/consumer/modules/payment-methods/stripe-reversal.scheduler.ts` uses transaction-scoped advisory lock selection and bounded per-run reconciliation to reduce pooled-connection lock hazards while preserving idempotent outcome writes.
 - `StripeWebhookService.processStripeEvent` top-level failure path logs sanitized warning telemetry (`stripe_webhook_processing_failed`) without exposing raw webhook payload/error text in logs.
-- Consumer and consumer-mobile BFF mutation routes preserve idempotency/correlation header forwarding and backend `Set-Cookie` passthrough behavior for auth/payment compatibility.
+- Consumer, consumer-mobile, and consumer-css-grid BFF mutation routes preserve idempotency/correlation header forwarding and backend `Set-Cookie` passthrough behavior for auth/payment compatibility within their supported backend surfaces.
 
 Consumer/browser tracking reference:
 
 - `docs/CONSUMER_BROWSER_IDENTITY_TRACKING.md`: browser identity (`deviceId`), action tracking (`@TrackConsumerAction` + interceptor), append-only `consumer_action_log`, compatibility contracts, and verification checklist.
-- OAuth state-cookie compatibility fallback (`CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK`) is restricted to development/test only; startup/runtime block it in staging/production.
 
 ## Admin App (Next.js)
 
@@ -373,6 +386,16 @@ Internal Consumer API routes:
 - Payment request creation and send.
 - Profile, theme, and preferred-currency settings.
 
+## Consumer CSS Grid App (Next.js)
+
+CSS-grid consumer UI is in `apps/consumer-css-grid`, running on port 3003. `apps/api-v2` is its backend authority; legacy `apps/api` is not part of the supported css-grid release surface.
+
+Auth and routing contract:
+
+- Same-origin BFF routes claim `appScope=consumer-css-grid` and forward the matching trusted scope/origin contract upstream.
+- `CONSUMER_CSS_GRID_APP_ORIGIN` is the canonical production source of truth for BFF/auth routing.
+- `NEXT_PUBLIC_APP_ORIGIN` is retained only as legacy compatibility fallback and is not the primary release contract.
+
 ## Database (Prisma)
 
 Database schema is defined in `packages/database-2/prisma/schema.prisma`. The system uses soft-delete (`deletedAt`) on most models. Column names in the database are **snake_case** (Prisma fields use `@map("snake_case")` where needed). Financial history (ledger entries) is append-only; see `docs/FINANCIAL_SAFETY_AND_DB_COMPLIANCE.md` and `docs/postgresql-design-rules.md` for design rules.
@@ -452,7 +475,7 @@ Shared packages used across apps:
 - `packages/api-types`: shared DTOs and type exports; pagination (`PaginatedResponsePage<T>`); currency (`CURRENCY_CODES`, `CURRENCY_CODE`, `TCurrencyCode`, `getCurrencySymbol`, `isCurrencyCode`); consumer settings (theme `THEME`, preferred currency allowlist); admin payment reversal (`PAYMENT_REVERSAL_KIND`); query params (`BOOLEAN_QUERY_VALUE`).
 - `packages/database-2`: Prisma schema, migrations, and generated client.
 - `packages/db-fixtures`: DB fixture helpers for tests.
-- `packages/env`: runtime env schema and validation (Zod). Includes CONSUMER_APP_ORIGIN, CONSUMER_MOBILE_APP_ORIGIN, and ADMIN_APP_ORIGIN.
+- `packages/env`: runtime env schema and validation (Zod). Includes `CONSUMER_APP_ORIGIN`, `CONSUMER_MOBILE_APP_ORIGIN`, `CONSUMER_CSS_GRID_APP_ORIGIN`, and `ADMIN_APP_ORIGIN`. The `CONSUMER_*_APP_ORIGIN` vars are the canonical production source of truth for same-origin BFF/auth flows; `NEXT_PUBLIC_APP_ORIGIN` remains legacy compatibility fallback only.
 - `packages/security-utils`: crypto, token hashing (`hashTokenToHex` for reset-password), password hashing, and OAuth crypto utilities (PKCE verifier/challenge, state signing/hashing, nonce generation).
 - `packages/shared-constants`: shared constants.
 - `packages/test-db`: test database utilities.

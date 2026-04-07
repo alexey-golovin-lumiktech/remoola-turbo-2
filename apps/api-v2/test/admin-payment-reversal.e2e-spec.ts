@@ -21,7 +21,9 @@ import { hashPassword } from '@remoola/security-utils';
 import { assertIsolatedTestDatabaseUrl } from './test-db-safety';
 import { AdminPaymentRequestsService } from '../src/admin/modules/payment-requests/admin-payment-requests.service';
 import { AppModule } from '../src/app.module';
+import { envs } from '../src/envs';
 import { AuthGuard } from '../src/guards/auth.guard';
+import { BrevoMailService } from '../src/shared/brevo-mail.service';
 import { PrismaService } from '../src/shared/prisma.service';
 import { getApiAdminCsrfTokenCookieKey } from '../src/shared-common';
 
@@ -31,8 +33,11 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
   const adminEmail = `admin-reversal@local.test`;
   const adminPassword = `AdminReversal1!@#`;
   const adminOrigin = `http://127.0.0.1:3010`;
+  const consumerMobileOrigin = `http://127.0.0.1:3002`;
   let refundPaymentRequestId = ``;
   let chargebackPaymentRequestId = ``;
+  let initialConsumerMobileOrigin: string;
+  let sendMailMock: ReturnType<typeof jest.spyOn>;
 
   function parseCookieValue(cookies: string[] | undefined, key: string): string | null {
     if (!Array.isArray(cookies)) return null;
@@ -48,7 +53,11 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
     return undefined;
   }
 
-  async function seedCompletedPaymentRequest(amount: number, stripeId: string | null): Promise<string> {
+  async function seedCompletedPaymentRequest(
+    amount: number,
+    stripeId: string | null,
+    newerScopeLessEntries = 0,
+  ): Promise<string> {
     const suffix = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
     const payer = await prisma.consumerModel.create({
       data: {
@@ -89,6 +98,7 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
         stripeId: stripeId ?? undefined,
         createdBy: payer.id,
         updatedBy: payer.id,
+        metadata: { consumerAppScope: `consumer-mobile` },
       },
     });
     await prisma.ledgerEntryModel.create({
@@ -102,13 +112,32 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
         amount: amount,
         createdBy: payer.id,
         updatedBy: payer.id,
+        metadata: { consumerAppScope: `consumer-mobile` },
       },
     });
+    for (let index = 0; index < newerScopeLessEntries; index += 1) {
+      await prisma.ledgerEntryModel.create({
+        data: {
+          ledgerId: randomUUID(),
+          consumerId: payer.id,
+          paymentRequestId: paymentRequest.id,
+          type: $Enums.LedgerEntryType.PLATFORM_FEE,
+          currencyCode: $Enums.CurrencyCode.USD,
+          status: $Enums.TransactionStatus.PENDING,
+          amount: -0.01,
+          createdBy: payer.id,
+          updatedBy: payer.id,
+          metadata: {},
+        },
+      });
+    }
     return paymentRequest.id;
   }
 
   beforeAll(async () => {
     assertIsolatedTestDatabaseUrl();
+    initialConsumerMobileOrigin = envs.CONSUMER_MOBILE_APP_ORIGIN;
+    envs.CONSUMER_MOBILE_APP_ORIGIN = consumerMobileOrigin;
     prisma = new PrismaClient();
     await prisma.$connect();
 
@@ -122,8 +151,8 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
       },
     });
 
-    refundPaymentRequestId = await seedCompletedPaymentRequest(20, `pi_refund_e2e`);
-    chargebackPaymentRequestId = await seedCompletedPaymentRequest(20, null);
+    refundPaymentRequestId = await seedCompletedPaymentRequest(20, `pi_refund_e2e`, 7);
+    chargebackPaymentRequestId = await seedCompletedPaymentRequest(20, null, 7);
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -132,8 +161,12 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
     const adminPaymentRequestsService = moduleFixture.get(AdminPaymentRequestsService) as unknown as {
       stripe: { refunds: { create: (...args: unknown[]) => Promise<{ id: string; status: string }> } };
     };
+    const brevoMailService = moduleFixture.get(BrevoMailService) as unknown as {
+      sendMail: jest.Mock;
+    };
     const refundCreateMock = jest.fn(async () => ({ id: `re_e2e_success`, status: `succeeded` }));
     adminPaymentRequestsService.stripe.refunds.create = refundCreateMock;
+    sendMailMock = jest.spyOn(brevoMailService, `sendMail`).mockImplementation(async () => {});
 
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix(`api`);
@@ -161,7 +194,12 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
     await app.init();
   });
 
+  beforeEach(() => {
+    sendMailMock.mockClear();
+  });
+
   afterAll(async () => {
+    envs.CONSUMER_MOBILE_APP_ORIGIN = initialConsumerMobileOrigin;
     await prisma.$disconnect();
     await app.close();
   });
@@ -204,6 +242,11 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
     expect(Number(reversalRows[0].amount)).toBe(-7);
     expect(Number(reversalRows[1].amount)).toBe(7);
     expect(reversalRows[0].ledgerId).toBe(reversalRows[1].ledgerId);
+    expect(sendMailMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        html: expect.stringContaining(`${consumerMobileOrigin}/payments/${refundPaymentRequestId}`),
+      }),
+    );
 
     const auditCount = await prisma.adminActionAuditLogModel.count({
       where: { action: `payment_refund`, resourceId: refundPaymentRequestId },
@@ -242,6 +285,11 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
     expect(Number(reversalRows[0].amount)).toBe(-5);
     expect(Number(reversalRows[1].amount)).toBe(5);
     expect(reversalRows[0].ledgerId).toBe(reversalRows[1].ledgerId);
+    expect(sendMailMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        html: expect.stringContaining(`${consumerMobileOrigin}/payments/${chargebackPaymentRequestId}`),
+      }),
+    );
 
     const auditCount = await prisma.adminActionAuditLogModel.count({
       where: { action: `payment_chargeback`, resourceId: chargebackPaymentRequestId },

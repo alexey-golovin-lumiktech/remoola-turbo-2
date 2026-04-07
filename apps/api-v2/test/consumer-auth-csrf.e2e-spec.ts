@@ -13,6 +13,7 @@ import cookieParser from 'cookie-parser';
 import express from 'express';
 import request from 'supertest';
 
+import { CONSUMER_APP_SCOPE_HEADER } from '@remoola/api-types';
 import { $Enums, PrismaClient } from '@remoola/database-2';
 import { hashPassword } from '@remoola/security-utils';
 
@@ -29,6 +30,7 @@ describe(`Consumer auth CSRF contracts (e2e, isolated DB)`, () => {
   const consumerEmail = `csrf-e2e-consumer@local.test`;
   const consumerPassword = `CsrfContract1!`;
   const consumerOrigin = `http://127.0.0.1:3003`;
+  const appScope = `consumer-css-grid` as const;
 
   function parseCookieValue(cookies: string[] | undefined, key: string): string | null {
     if (!Array.isArray(cookies)) return null;
@@ -50,6 +52,10 @@ describe(`Consumer auth CSRF contracts (e2e, isolated DB)`, () => {
     if (Array.isArray(header)) return header;
     if (typeof header === `string`) return [header];
     return undefined;
+  }
+
+  function withConsumerAppScope<T extends request.Test>(req: T): T {
+    return req.set(`origin`, consumerOrigin).set(CONSUMER_APP_SCOPE_HEADER, appScope);
   }
 
   beforeAll(async () => {
@@ -116,11 +122,9 @@ describe(`Consumer auth CSRF contracts (e2e, isolated DB)`, () => {
 
   it(`POST /consumer/auth/refresh accepts matching CSRF pair and fails later on missing refresh token`, async () => {
     const csrf = `csrf-e2e-token`;
-    const response = await request(app.getHttpServer())
-      .post(`/api/consumer/auth/refresh`)
-      .set(`origin`, consumerOrigin)
+    const response = await withConsumerAppScope(request(app.getHttpServer()).post(`/api/consumer/auth/refresh`))
       .set(`x-csrf-token`, csrf)
-      .set(`Cookie`, `${getApiConsumerCsrfTokenCookieKeysForRead(`consumer-css-grid`)[0]}=${csrf}`)
+      .set(`Cookie`, `${getApiConsumerCsrfTokenCookieKeysForRead(appScope)[0]}=${csrf}`)
       .expect(401);
 
     expect(response.body?.message).not.toBe(`Invalid CSRF token`);
@@ -128,19 +132,15 @@ describe(`Consumer auth CSRF contracts (e2e, isolated DB)`, () => {
 
   it(`POST /consumer/auth/refresh succeeds with login cookies and matching CSRF header`, async () => {
     const agent = request.agent(app.getHttpServer());
-    const loginRes = await agent
-      .post(`/api/consumer/auth/login`)
-      .set(`origin`, consumerOrigin)
+    const loginRes = await withConsumerAppScope(agent.post(`/api/consumer/auth/login?appScope=${appScope}`))
       .send({ email: consumerEmail, password: consumerPassword })
       .expect(200);
     const csrf = parseCookieValueForKeys(
       asCookieArray(loginRes.headers[`set-cookie`]),
-      getApiConsumerCsrfTokenCookieKeysForRead(`consumer-css-grid`),
+      getApiConsumerCsrfTokenCookieKeysForRead(appScope),
     );
     expect(csrf).toBeTruthy();
-    await agent
-      .post(`/api/consumer/auth/refresh`)
-      .set(`origin`, consumerOrigin)
+    await withConsumerAppScope(agent.post(`/api/consumer/auth/refresh`))
       .set(`x-csrf-token`, csrf ?? ``)
       .expect(200)
       .expect(({ body }) => {
@@ -150,51 +150,41 @@ describe(`Consumer auth CSRF contracts (e2e, isolated DB)`, () => {
 
   it(`POST /consumer/auth/logout succeeds with login cookies and matching CSRF header`, async () => {
     const agent = request.agent(app.getHttpServer());
-    const loginRes = await agent
-      .post(`/api/consumer/auth/login`)
-      .set(`origin`, consumerOrigin)
+    const loginRes = await withConsumerAppScope(agent.post(`/api/consumer/auth/login?appScope=${appScope}`))
       .send({ email: consumerEmail, password: consumerPassword })
       .expect(200);
     const csrf = parseCookieValueForKeys(
       asCookieArray(loginRes.headers[`set-cookie`]),
-      getApiConsumerCsrfTokenCookieKeysForRead(`consumer-css-grid`),
+      getApiConsumerCsrfTokenCookieKeysForRead(appScope),
     );
     expect(csrf).toBeTruthy();
-    await agent
-      .post(`/api/consumer/auth/logout`)
-      .set(`origin`, consumerOrigin)
+    await withConsumerAppScope(agent.post(`/api/consumer/auth/logout`))
       .set(`x-csrf-token`, csrf ?? ``)
       .expect(200);
   });
 
   it(`POST /consumer/auth/logout-all revokes all active sessions and invalidates auth`, async () => {
     const agentA = request.agent(app.getHttpServer());
-    const loginA = await agentA
-      .post(`/api/consumer/auth/login`)
-      .set(`origin`, consumerOrigin)
+    const loginA = await withConsumerAppScope(agentA.post(`/api/consumer/auth/login?appScope=${appScope}`))
       .send({ email: consumerEmail, password: consumerPassword })
       .expect(200);
     const csrfA = parseCookieValueForKeys(
       asCookieArray(loginA.headers[`set-cookie`]),
-      getApiConsumerCsrfTokenCookieKeysForRead(`consumer-css-grid`),
+      getApiConsumerCsrfTokenCookieKeysForRead(appScope),
     );
     expect(csrfA).toBeTruthy();
 
     const agentB = request.agent(app.getHttpServer());
-    const loginB = await agentB
-      .post(`/api/consumer/auth/login`)
-      .set(`origin`, consumerOrigin)
+    const loginB = await withConsumerAppScope(agentB.post(`/api/consumer/auth/login?appScope=${appScope}`))
       .send({ email: consumerEmail, password: consumerPassword })
       .expect(200);
     const csrfB = parseCookieValueForKeys(
       asCookieArray(loginB.headers[`set-cookie`]),
-      getApiConsumerCsrfTokenCookieKeysForRead(`consumer-css-grid`),
+      getApiConsumerCsrfTokenCookieKeysForRead(appScope),
     );
     expect(csrfB).toBeTruthy();
 
-    await agentA
-      .post(`/api/consumer/auth/logout-all`)
-      .set(`origin`, consumerOrigin)
+    await withConsumerAppScope(agentA.post(`/api/consumer/auth/logout-all`))
       .set(`x-csrf-token`, csrfA ?? ``)
       .expect(200)
       .expect(({ body }) => {
@@ -224,9 +214,7 @@ describe(`Consumer auth CSRF contracts (e2e, isolated DB)`, () => {
     expect(logoutAllRevoked).toBeGreaterThanOrEqual(2);
 
     await agentA.get(`/api/consumer/auth/me`).expect(401);
-    await agentB
-      .post(`/api/consumer/auth/refresh`)
-      .set(`origin`, consumerOrigin)
+    await withConsumerAppScope(agentB.post(`/api/consumer/auth/refresh`))
       .set(`x-csrf-token`, csrfB ?? ``)
       .expect(401);
   });

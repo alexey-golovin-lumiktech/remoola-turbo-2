@@ -145,18 +145,32 @@ describe(`hasSavedContactByEmailQuery`, () => {
   });
 });
 
-describe(`consumer Stripe mutation origin forwarding`, () => {
+describe(`consumer css-grid ancillary routing`, () => {
+  const envRef = process.env as Record<string, string | undefined>;
   const originalFetch = global.fetch;
+  const originalNodeEnv = process.env.NODE_ENV;
+  const originalCssGridOrigin = process.env.CONSUMER_CSS_GRID_APP_ORIGIN;
+  const originalNextPublicAppOrigin = process.env.NEXT_PUBLIC_APP_ORIGIN;
 
   beforeEach(() => {
     jest.resetModules();
-    process.env.NEXT_PUBLIC_API_BASE_URL = `https://api.example.com`;
+    envRef.NEXT_PUBLIC_API_BASE_URL = `https://api.example.com`;
   });
 
   afterEach(() => {
     global.fetch = originalFetch;
+    envRef.NODE_ENV = originalNodeEnv;
     delete process.env.NEXT_PUBLIC_API_BASE_URL;
-    delete process.env.VERCEL_URL;
+    if (originalCssGridOrigin === undefined) {
+      delete process.env.CONSUMER_CSS_GRID_APP_ORIGIN;
+    } else {
+      process.env.CONSUMER_CSS_GRID_APP_ORIGIN = originalCssGridOrigin;
+    }
+    if (originalNextPublicAppOrigin === undefined) {
+      delete process.env.NEXT_PUBLIC_APP_ORIGIN;
+    } else {
+      process.env.NEXT_PUBLIC_APP_ORIGIN = originalNextPublicAppOrigin;
+    }
     jest.clearAllMocks();
   });
 
@@ -178,8 +192,8 @@ describe(`consumer Stripe mutation origin forwarding`, () => {
     return subject;
   }
 
-  it(`uses the Vercel preview host as origin for checkout session creation`, async () => {
-    process.env.VERCEL_URL = `preview.example.vercel.app`;
+  it(`adds explicit css-grid appScope when creating a checkout session`, async () => {
+    process.env.CONSUMER_CSS_GRID_APP_ORIGIN = `https://grid.example.com/path-ignored`;
     const fetchMock = jest.fn() as jest.MockedFunction<typeof fetch>;
     fetchMock.mockResolvedValue(
       new Response(JSON.stringify({ url: `https://checkout.example/session` }), { status: 200 }),
@@ -195,12 +209,48 @@ describe(`consumer Stripe mutation origin forwarding`, () => {
     });
 
     const init = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined;
+    const [url] = fetchMock.mock.calls[0] as [URL | string, RequestInit | undefined];
     const headers = (init?.headers ?? {}) as Record<string, string>;
+    expect(String(url)).toBe(
+      `https://api.example.com/consumer/stripe/payment-request-1/stripe-session?appScope=consumer-css-grid`,
+    );
     expect(headers.Cookie).toBe(`consumer_session=test-cookie`);
-    expect(headers.origin).toBe(`https://preview.example.vercel.app`);
+    expect(headers.origin).toBe(`https://grid.example.com`);
   });
 
-  it(`falls back to localhost origin for saved-method payments outside Vercel and still sends an idempotency key`, async () => {
+  it(`prefers an explicit canonical css-grid app origin over NEXT_PUBLIC_APP_ORIGIN`, async () => {
+    process.env.CONSUMER_CSS_GRID_APP_ORIGIN = `https://grid.example.com/path-ignored`;
+    process.env.NEXT_PUBLIC_APP_ORIGIN = `https://public-grid.example.com/path-ignored`;
+    const fetchMock = jest.fn() as jest.MockedFunction<typeof fetch>;
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ url: `https://checkout.example/session` }), { status: 200 }),
+    );
+    global.fetch = fetchMock;
+
+    const { createPaymentCheckoutSessionMutation } = await loadSubject();
+    await createPaymentCheckoutSessionMutation(`payment-request-1`);
+
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined;
+    const headers = (init?.headers ?? {}) as Record<string, string>;
+    expect(headers.origin).toBe(`https://grid.example.com`);
+  });
+
+  it(`fails fast in production when no canonical css-grid origin is configured`, async () => {
+    envRef.NODE_ENV = `production`;
+    delete process.env.CONSUMER_CSS_GRID_APP_ORIGIN;
+    delete process.env.NEXT_PUBLIC_APP_ORIGIN;
+    const fetchMock = jest.fn() as jest.MockedFunction<typeof fetch>;
+    global.fetch = fetchMock;
+
+    const { createPaymentCheckoutSessionMutation } = await loadSubject();
+
+    await expect(createPaymentCheckoutSessionMutation(`payment-request-1`)).rejects.toThrow(
+      `Consumer css-grid app origin is not configured`,
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it(`keeps trust-layer origin forwarding for saved-method payments outside Vercel and still sends an idempotency key`, async () => {
     const fetchMock = jest.fn() as jest.MockedFunction<typeof fetch>;
     fetchMock.mockResolvedValue(
       new Response(JSON.stringify({ success: true, paymentIntentId: `pi_123`, status: `succeeded` }), { status: 200 }),
@@ -220,13 +270,62 @@ describe(`consumer Stripe mutation origin forwarding`, () => {
       },
     });
 
-    const init = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined;
+    const [url, init] = fetchMock.mock.calls[0] as [URL | string, RequestInit | undefined];
     const headers = (init?.headers ?? {}) as Record<string, string>;
     const idempotencyKey = headers[`idempotency-key`];
+    expect(String(url)).toBe(
+      `https://api.example.com/consumer/stripe/payment-request-2/pay-with-saved-method?appScope=consumer-css-grid`,
+    );
     expect(headers.Cookie).toBe(`consumer_session=test-cookie`);
     expect(headers.origin).toBe(`http://localhost:3003`);
     expect(typeof idempotencyKey).toBe(`string`);
     expect((idempotencyKey ?? ``).length).toBeGreaterThan(0);
+  });
+
+  it(`adds explicit css-grid appScope when starting a payment`, async () => {
+    const fetchMock = jest.fn() as jest.MockedFunction<typeof fetch>;
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ paymentRequestId: `payment-request-1`, ledgerId: `ledger-1` }), { status: 200 }),
+    );
+    global.fetch = fetchMock;
+
+    const { startPaymentMutation } = await loadSubject();
+    const result = await startPaymentMutation({
+      email: `payer@example.com`,
+      amount: `10`,
+      currencyCode: `USD`,
+      method: `CREDIT_CARD`,
+    });
+
+    expect(result).toEqual({
+      ok: true,
+      paymentRequestId: `payment-request-1`,
+      ledgerId: `ledger-1`,
+      message: `Payment created`,
+    });
+    const [url, init] = fetchMock.mock.calls[0] as [URL | string, RequestInit | undefined];
+    const headers = (init?.headers ?? {}) as Record<string, string>;
+    expect(String(url)).toBe(`https://api.example.com/consumer/payments/start?appScope=consumer-css-grid`);
+    expect(headers.Cookie).toBe(`consumer_session=test-cookie`);
+    expect(headers.origin).toBe(`http://localhost:3003`);
+  });
+
+  it(`adds explicit css-grid appScope when sending a payment request`, async () => {
+    const fetchMock = jest.fn() as jest.MockedFunction<typeof fetch>;
+    fetchMock.mockResolvedValue(new Response(null, { status: 200 }));
+    global.fetch = fetchMock;
+
+    const { sendPaymentRequestMutation } = await loadSubject();
+    const result = await sendPaymentRequestMutation(`payment-request-3`);
+
+    expect(result).toEqual({ ok: true, message: `Payment request sent` });
+    const [url, init] = fetchMock.mock.calls[0] as [URL | string, RequestInit | undefined];
+    const headers = (init?.headers ?? {}) as Record<string, string>;
+    expect(String(url)).toBe(
+      `https://api.example.com/consumer/payment-requests/payment-request-3/send?appScope=consumer-css-grid`,
+    );
+    expect(headers.Cookie).toBe(`consumer_session=test-cookie`);
+    expect(headers.origin).toBe(`http://localhost:3003`);
   });
 });
 

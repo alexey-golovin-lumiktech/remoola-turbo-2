@@ -11,7 +11,7 @@ export type IJwtTokenPayload = {
   identityId?: ConsumerModel[`id`];
   sid?: string;
   typ?: `access` | `refresh`;
-  /** Defense-in-depth scope claim — present on newly-issued tokens. Missing on legacy tokens (tolerated). */
+  /** Access tokens must carry the audience scope (`consumer` or `admin`). */
   scope?: `consumer` | `admin`;
   appScope?: ConsumerAppScope;
   role?: `USER`;

@@ -3,6 +3,8 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { buildAuthMutationForwardHeaders, requireJsonBody } from '../../../../../lib/api-utils';
 import { getEnv } from '../../../../../lib/env.server';
 
+const APP_SCOPE = `consumer-css-grid`;
+
 export async function POST(req: NextRequest) {
   const bodyResult = await requireJsonBody(req);
   if (!bodyResult.ok) return bodyResult.response;
@@ -14,6 +16,7 @@ export async function POST(req: NextRequest) {
   }
 
   const url = new URL(`${baseUrl}/consumer/auth/forgot-password`);
+  url.searchParams.set(`appScope`, APP_SCOPE);
   const forwardHeaders = buildAuthMutationForwardHeaders(req.headers);
   forwardHeaders.set(`content-type`, `application/json`);
 

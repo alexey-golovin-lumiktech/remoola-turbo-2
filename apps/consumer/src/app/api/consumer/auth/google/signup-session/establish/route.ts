@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 
 import { appendSetCookies, buildAuthMutationForwardHeaders, requireJsonBody } from '../../../../../../../lib/api-utils';
 
+const APP_SCOPE = `consumer`;
+
 export async function POST(req: Request) {
   const bodyResult = await requireJsonBody(req as never);
   if (!bodyResult.ok) return bodyResult.response;
@@ -12,6 +14,7 @@ export async function POST(req: Request) {
   }
 
   const url = new URL(`${apiBase}/consumer/auth/google/signup-session/establish`);
+  url.searchParams.set(`appScope`, APP_SCOPE);
   const forwardHeaders = buildAuthMutationForwardHeaders(req.headers);
   forwardHeaders.set(`content-type`, `application/json`);
 

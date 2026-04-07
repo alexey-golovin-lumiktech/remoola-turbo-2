@@ -3,7 +3,6 @@ import { getConsumerCsrfTokenCookieKey } from '@remoola/api-types';
 import { appendSetCookies, buildAuthMutationForwardHeaders, buildForwardHeaders, requireJsonBody } from './api-utils';
 
 const TEST_ORIGIN = `http://localhost:3001`;
-const VERCEL_PROJECT_PRODUCTION_URL_ENV = `VERCEL_PROJECT_PRODUCTION_URL`;
 const TEST_CSRF_COOKIE_KEY = getConsumerCsrfTokenCookieKey({
   isProduction: false,
   isVercel: false,
@@ -16,13 +15,11 @@ describe(`consumer api-utils`, () => {
   const originalNodeEnv = process.env.NODE_ENV;
   const originalConsumerAppOrigin = process.env.CONSUMER_APP_ORIGIN;
   const originalNextPublicAppOrigin = process.env.NEXT_PUBLIC_APP_ORIGIN;
-  const originalVercelProjectProductionUrl = process.env[VERCEL_PROJECT_PRODUCTION_URL_ENV];
 
   afterEach(() => {
     envRef.NODE_ENV = originalNodeEnv;
     envRef.CONSUMER_APP_ORIGIN = originalConsumerAppOrigin;
     envRef.NEXT_PUBLIC_APP_ORIGIN = originalNextPublicAppOrigin;
-    envRef[VERCEL_PROJECT_PRODUCTION_URL_ENV] = originalVercelProjectProductionUrl;
   });
 
   it(`requireJsonBody accepts valid json`, async () => {
@@ -95,11 +92,12 @@ describe(`consumer api-utils`, () => {
     expect(result).toEqual({ ok: true, body: `` });
   });
 
-  it(`buildForwardHeaders keeps cookie auth context and drops incoming authorization headers`, () => {
+  it(`buildForwardHeaders preserves a valid incoming browser origin`, () => {
+    envRef.CONSUMER_APP_ORIGIN = `https://consumer.example.com`;
     const headers = buildForwardHeaders(
       new Headers({
         authorization: `legacy-token`,
-        origin: TEST_ORIGIN,
+        origin: `https://preview.example.vercel.app`,
         cookie: `${TEST_CSRF_COOKIE_KEY}=abc`,
         'x-correlation-id': `corr-1`,
         'x-remoola-feature': `on`,
@@ -108,7 +106,7 @@ describe(`consumer api-utils`, () => {
     );
 
     expect(headers.get(`authorization`)).toBeNull();
-    expect(headers.get(`origin`)).toBe(TEST_ORIGIN);
+    expect(headers.get(`origin`)).toBe(`https://preview.example.vercel.app`);
     expect(headers.get(`cookie`)).toBe(`${TEST_CSRF_COOKIE_KEY}=abc`);
     expect(headers.get(`x-csrf-token`)).toBe(`abc`);
     expect(headers.get(`x-correlation-id`)).toBe(`corr-1`);
@@ -116,38 +114,35 @@ describe(`consumer api-utils`, () => {
     expect(headers.get(`x-forwarded-for`)).toBeNull();
   });
 
-  it(`buildAuthMutationForwardHeaders strips host while leaving unsupported auth headers dropped`, () => {
+  it(`buildAuthMutationForwardHeaders preserves incoming origin and strips host`, () => {
+    envRef.CONSUMER_APP_ORIGIN = `https://consumer.example.com`;
     const headers = buildAuthMutationForwardHeaders(
       new Headers({
         authorization: `legacy-token`,
         host: `app.example.com`,
-        origin: TEST_ORIGIN,
+        origin: `https://preview.example.vercel.app`,
         cookie: `${TEST_CSRF_COOKIE_KEY}=abc`,
       }),
     );
 
     expect(headers.get(`authorization`)).toBeNull();
     expect(headers.get(`host`)).toBeNull();
-    expect(headers.get(`origin`)).toBe(TEST_ORIGIN);
+    expect(headers.get(`origin`)).toBe(`https://preview.example.vercel.app`);
     expect(headers.get(`cookie`)).toBe(`${TEST_CSRF_COOKIE_KEY}=abc`);
     expect(headers.get(`x-csrf-token`)).toBe(`abc`);
   });
 
-  it(`buildForwardHeaders omits a synthetic origin in production when no canonical origin is configured`, () => {
+  it(`buildForwardHeaders fails fast in production when no canonical origin is configured`, () => {
     envRef.NODE_ENV = `production`;
     delete process.env.CONSUMER_APP_ORIGIN;
     delete process.env.NEXT_PUBLIC_APP_ORIGIN;
-    delete process.env[VERCEL_PROJECT_PRODUCTION_URL_ENV];
-
-    const headers = buildForwardHeaders(
-      new Headers({
-        cookie: `${TEST_CSRF_COOKIE_KEY}=abc`,
-      }),
-    );
-
-    expect(headers.get(`origin`)).toBeNull();
-    expect(headers.get(`cookie`)).toBe(`${TEST_CSRF_COOKIE_KEY}=abc`);
-    expect(headers.get(`x-csrf-token`)).toBe(`abc`);
+    expect(() =>
+      buildForwardHeaders(
+        new Headers({
+          cookie: `${TEST_CSRF_COOKIE_KEY}=abc`,
+        }),
+      ),
+    ).toThrow(`Consumer app origin is not configured`);
   });
 
   it(`buildForwardHeaders uses a configured canonical origin when one is available`, () => {
@@ -163,11 +158,10 @@ describe(`consumer api-utils`, () => {
     expect(headers.get(`origin`)).toBe(`https://consumer.example.com`);
   });
 
-  it(`buildForwardHeaders falls back to Vercel production domain when explicit app origin envs are absent`, () => {
+  it(`buildForwardHeaders accepts NEXT_PUBLIC_APP_ORIGIN as an explicit canonical env`, () => {
     envRef.NODE_ENV = `production`;
     delete process.env.CONSUMER_APP_ORIGIN;
-    delete process.env.NEXT_PUBLIC_APP_ORIGIN;
-    envRef[VERCEL_PROJECT_PRODUCTION_URL_ENV] = `remoola-turbo-2-consumer.vercel.app`;
+    envRef.NEXT_PUBLIC_APP_ORIGIN = `consumer.example.com/path-ignored`;
 
     const headers = buildForwardHeaders(
       new Headers({
@@ -175,7 +169,7 @@ describe(`consumer api-utils`, () => {
       }),
     );
 
-    expect(headers.get(`origin`)).toBe(`https://remoola-turbo-2-consumer.vercel.app`);
+    expect(headers.get(`origin`)).toBe(`https://consumer.example.com`);
   });
 
   it(`appendSetCookies appends all source cookie values`, () => {

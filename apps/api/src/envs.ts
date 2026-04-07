@@ -1,4 +1,4 @@
-import z, { type ZodArray, type ZodDefault, type ZodType } from 'zod';
+import z, { type ZodType } from 'zod';
 
 /**
  * Parse expiry string (e.g. '15m', '168h', '1d', '60s') to milliseconds.
@@ -50,23 +50,6 @@ function zBoolean(fallback = false): ZodType<boolean> {
   }, z.boolean());
 }
 
-function zArray<T extends ZodType>(itemSchema: T, fallback: z.infer<T>[] = []): ZodDefault<ZodArray<T>> {
-  const arrWithDefault = z.array(itemSchema).default(fallback);
-  return z.preprocess((raw) => {
-    if (typeof raw === `string`) {
-      try {
-        return JSON.parse(raw);
-      } catch {
-        return raw
-          .split(`,`)
-          .map((s) => s.trim())
-          .filter(Boolean);
-      }
-    }
-    return raw;
-  }, arrWithDefault) as unknown as ZodDefault<ZodArray<T>>;
-}
-
 const database = {
   DATABASE_URL: z.string().optional(),
   POSTGRES_HOST: z.string().default(`127.0.0.1`),
@@ -86,29 +69,6 @@ const nest = {
   CONSUMER_MOBILE_APP_ORIGIN: z.string().default(`CONSUMER_MOBILE_APP_ORIGIN`),
   CONSUMER_CSS_GRID_APP_ORIGIN: z.string().default(`CONSUMER_CSS_GRID_APP_ORIGIN`),
   ADMIN_APP_ORIGIN: z.string().default(`ADMIN_APP_ORIGIN`),
-  // Local + demo Vercel defaults when `CORS_ALLOWED_ORIGINS` is unset; set explicitly in production.
-  CORS_ALLOWED_ORIGINS: zArray(z.string().min(1), [
-    // for consumer-mobile app (port 3002)
-    `http://127.0.0.1:3002`,
-    `http://localhost:3002`,
-    `https://remoola-turbo-2-consumer-mobile.vercel.app`,
-    // for admin app (port 3010)
-    `http://127.0.0.1:3010`,
-    `http://localhost:3010`,
-    `https://remoola-turbo-2-admin.vercel.app`,
-    // for consumer app (port 3001)
-    `http://127.0.0.1:3001`,
-    `http://localhost:3001`,
-    `https://remoola-turbo-2-consumer.vercel.app`,
-    // for consumer-css-grid app (port 3003)
-    `http://127.0.0.1:3003`,
-    `http://localhost:3003`,
-    `https://remoola-turbo-2-consumer-css-grid.vercel.app`,
-    // for api (port 3333)
-    `http://127.0.0.1:3333`,
-    `http://localhost:3333`,
-    `https://remoola-turbo-2-api.vercel.app`,
-  ]),
 };
 
 const google = {
@@ -175,7 +135,6 @@ const security = {
 const common = {
   // probably should be in consumer-exchange.service.ts but put here to avoid importing envs in service file
   EXCHANGE_RATE_MAX_AGE_HOURS: z.coerce.number().optional().default(24),
-  CONSUMER_DEVICE_ID_ALLOW_UNSIGNED_FALLBACK: zBoolean(false).optional().default(false),
   CONSUMER_ACTION_LOG_RETENTION_DAYS: z.coerce.number().min(7).max(3650).default(30),
   CONSUMER_ACTION_LOG_PARTITION_PRECREATE_MONTHS: z.coerce.number().min(1).max(12).default(2),
   CONSUMER_ACTION_LOG_MAINTENANCE_CRON: z.string().default(`17 */6 * * *`),
@@ -190,7 +149,6 @@ const common = {
   CONSUMER_ACTION_LOG_CALLBACK_FAILURE_WINDOW_SECONDS: z.coerce.number().min(1).max(3600).default(60),
   CONSUMER_ACTION_LOG_STORE_IP_ADDRESS: zBoolean(false).optional().default(false),
   CONSUMER_ACTION_LOG_STORE_USER_AGENT: zBoolean(false).optional().default(false),
-  CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK: zBoolean(false).optional().default(false),
 };
 
 const schema = z.object({

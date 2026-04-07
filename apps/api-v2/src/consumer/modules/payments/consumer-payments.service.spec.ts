@@ -188,7 +188,7 @@ describe(`ConsumerPaymentsService.startPayment`, () => {
       method: $Enums.PaymentMethodType.CREDIT_CARD,
     };
 
-    const result = await service.startPayment(consumerId, body);
+    const result = await service.startPayment(consumerId, body, `consumer-mobile`);
 
     expect(result).toEqual({ paymentRequestId: `pr-1`, ledgerId: expect.any(String) });
     expect(prisma.consumerModel.findFirst).toHaveBeenCalledWith({
@@ -217,6 +217,11 @@ describe(`ConsumerPaymentsService.startPayment`, () => {
           type: $Enums.LedgerEntryType.USER_PAYMENT,
           currencyCode: $Enums.CurrencyCode.EUR,
           amount: -50,
+          metadata: expect.objectContaining({
+            rail: $Enums.PaymentRail.CARD,
+            counterpartyId: `recipient-1`,
+            consumerAppScope: `consumer-mobile`,
+          }),
         }),
       }),
     );
@@ -228,6 +233,11 @@ describe(`ConsumerPaymentsService.startPayment`, () => {
           type: $Enums.LedgerEntryType.USER_DEPOSIT,
           currencyCode: $Enums.CurrencyCode.EUR,
           amount: 50,
+          metadata: expect.objectContaining({
+            rail: $Enums.PaymentRail.CARD,
+            counterpartyId: consumerId,
+            consumerAppScope: `consumer-mobile`,
+          }),
         }),
       }),
     );
@@ -431,7 +441,7 @@ describe(`ConsumerPaymentsService.sendPaymentRequest`, () => {
     tx.paymentRequestModel.update.mockResolvedValue({ id: `pr-1` });
     tx.ledgerEntryModel.create.mockResolvedValue({});
 
-    const result = await service.sendPaymentRequest(consumerId, `pr-1`);
+    const result = await service.sendPaymentRequest(consumerId, `pr-1`, `consumer-css-grid`);
 
     expect(result).toEqual({ paymentRequestId: `pr-1` });
     expect(tx.ledgerEntryModel.create).toHaveBeenCalledTimes(2);
@@ -442,8 +452,9 @@ describe(`ConsumerPaymentsService.sendPaymentRequest`, () => {
           paymentRequestId: `pr-1`,
           consumerId: `payer-1`,
           amount: -55.25,
-          metadata: expect.not.objectContaining({
-            rail: expect.anything(),
+          metadata: expect.objectContaining({
+            counterpartyId: consumerId,
+            consumerAppScope: `consumer-css-grid`,
           }),
         }),
       }),
@@ -455,10 +466,21 @@ describe(`ConsumerPaymentsService.sendPaymentRequest`, () => {
           paymentRequestId: `pr-1`,
           consumerId,
           amount: 55.25,
-          metadata: expect.not.objectContaining({
-            rail: expect.anything(),
+          metadata: expect.objectContaining({
+            counterpartyId: `payer-1`,
+            consumerAppScope: `consumer-css-grid`,
           }),
         }),
+      }),
+    );
+    expect((tx.ledgerEntryModel.create as jest.Mock).mock.calls[0]?.[0]?.data?.metadata).toEqual(
+      expect.not.objectContaining({
+        rail: expect.anything(),
+      }),
+    );
+    expect((tx.ledgerEntryModel.create as jest.Mock).mock.calls[1]?.[0]?.data?.metadata).toEqual(
+      expect.not.objectContaining({
+        rail: expect.anything(),
       }),
     );
   });
@@ -482,7 +504,7 @@ describe(`ConsumerPaymentsService.sendPaymentRequest`, () => {
     });
     tx.paymentRequestModel.update.mockResolvedValue({ id: `pr-2` });
 
-    const result = await service.sendPaymentRequest(consumerId, `pr-2`, `https://consumer.example.com`);
+    const result = await service.sendPaymentRequest(consumerId, `pr-2`, `consumer`);
 
     expect(result).toEqual({ paymentRequestId: `pr-2` });
     expect(tx.ledgerEntryModel.create).not.toHaveBeenCalled();
@@ -490,7 +512,7 @@ describe(`ConsumerPaymentsService.sendPaymentRequest`, () => {
       expect.objectContaining({
         payerEmail: `outside@example.com`,
         requesterEmail,
-        consumerOrigin: `https://consumer.example.com`,
+        consumerAppScope: `consumer`,
       }),
     );
   });

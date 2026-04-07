@@ -1,6 +1,7 @@
 /* eslint-disable import/order */
 import { Test, type TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
+import { errorCodes } from '@remoola/shared-constants';
 
 jest.mock(`@remoola/security-utils`, () => ({
   hashTokenToHex: jest.fn((token: string) => `hash-${token}`),
@@ -75,8 +76,6 @@ describe(`ConsumerAuthService.requestPasswordReset`, () => {
               if (scope === `consumer-css-grid`) return `http://127.0.0.1:3001`;
               return undefined;
             }),
-            resolveDefaultConsumerOrigin: jest.fn(() => `http://127.0.0.1:3003`),
-            resolveConsumerRedirectOrigin: jest.fn(),
             getAllowedOrigins: jest.fn(),
           },
         },
@@ -166,5 +165,20 @@ describe(`ConsumerAuthService.requestPasswordReset`, () => {
     expect(prisma.resetPasswordModel.create).not.toHaveBeenCalled();
     expect(mailingService.sendConsumerForgotPasswordEmail).not.toHaveBeenCalled();
     expect(mailingService.sendConsumerPasswordlessRecoveryEmail).not.toHaveBeenCalled();
+  });
+
+  it(`rejects password reset requests without a valid app scope`, async () => {
+    prisma.consumerModel.findFirst.mockResolvedValue({
+      id: `consumer-id`,
+      email: `user@example.com`,
+      password: `stored-hash`,
+      salt: `stored-salt`,
+    });
+
+    await expect(service.requestPasswordReset(`user@example.com`, undefined as never)).rejects.toMatchObject({
+      response: { message: errorCodes.ORIGIN_REQUIRED },
+    });
+    expect(prisma.resetPasswordModel.create).not.toHaveBeenCalled();
+    expect(mailingService.sendConsumerForgotPasswordEmail).not.toHaveBeenCalled();
   });
 });

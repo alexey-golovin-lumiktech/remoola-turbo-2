@@ -1,6 +1,8 @@
 import { UnauthorizedException } from '@nestjs/common';
 import { type Request as ExpressRequest } from 'express';
 
+import { CONSUMER_APP_SCOPE_HEADER } from '@remoola/api-types';
+
 import { getApiAdminCsrfTokenCookieKeysForRead, getApiConsumerCsrfTokenCookieKeysForRead } from './auth-cookie-policy';
 import { type OriginResolverService } from '../shared/origin-resolver.service';
 
@@ -35,19 +37,17 @@ export function ensureAuthenticatedMutationCsrf(req: ExpressRequest, originResol
   }
 
   const path = req.path ?? req.url?.split(`?`)[0] ?? ``;
-  if (!originResolver.resolveRequestOriginForPath(path, req.headers.origin, req.headers.referer)) {
-    throw new UnauthorizedException(`Invalid request origin`);
+  const consumerScope = path.startsWith(CONSUMER_API_PATH_PREFIX)
+    ? originResolver.validateConsumerAppScopeHeader(req.headers?.[CONSUMER_APP_SCOPE_HEADER])
+    : undefined;
+  if (path.startsWith(CONSUMER_API_PATH_PREFIX) && !consumerScope) {
+    throw new UnauthorizedException(`Invalid app scope`);
   }
-
-  const consumerScope =
-    originResolver.resolveConsumerRequestScope?.(req.headers?.origin, req.headers?.referer) ??
-    originResolver.resolveConsumerRequestAppScope?.(req.headers?.origin, req.headers?.referer) ??
-    `consumer`;
   const csrfHeaderValue = readHeaderValue(req.headers[`x-csrf-token`]);
   const csrfCookieValue = (
     path.startsWith(ADMIN_API_PATH_PREFIX)
       ? getApiAdminCsrfTokenCookieKeysForRead()
-      : getApiConsumerCsrfTokenCookieKeysForRead(consumerScope)
+      : getApiConsumerCsrfTokenCookieKeysForRead(consumerScope!)
   )
     .map((key) => readHeaderValue(req.cookies?.[key]))
     .find((value): value is string => typeof value === `string` && value.length > 0);

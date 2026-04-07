@@ -1,6 +1,9 @@
+import { type BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { type Response } from 'express';
+
+import { errorCodes } from '@remoola/shared-constants';
 
 import { ConsumerAuthService } from './auth.service';
 import { AuthAuditService } from '../../shared/auth-audit.service';
@@ -39,7 +42,6 @@ describe(`ConsumerAuthService.validateForgotPasswordTokenAndRedirect`, () => {
               if (scope === `consumer-css-grid`) return `https://grid.example.com`;
               return `https://app.example.com`;
             }),
-            resolveDefaultConsumerOrigin: jest.fn(() => `https://app.example.com`),
           },
         },
       ],
@@ -74,12 +76,13 @@ describe(`ConsumerAuthService.validateForgotPasswordTokenAndRedirect`, () => {
     expect(res.redirect).toHaveBeenCalledWith(`https://grid.example.com/forgot-password/confirm`);
   });
 
-  it(`redirects invalid tokens to the default consumer app without query referer dependency`, async () => {
+  it(`rejects invalid tokens when no stored app scope is available`, async () => {
     prisma.resetPasswordModel.findFirst.mockResolvedValue(null);
     const res = { redirect: jest.fn() } as unknown as Response;
 
-    await service.validateForgotPasswordTokenAndRedirect(`invalid-token`, res);
-
-    expect(res.redirect).toHaveBeenCalledWith(`https://app.example.com/forgot-password/confirm`);
+    await expect(service.validateForgotPasswordTokenAndRedirect(`invalid-token`, res)).rejects.toMatchObject({
+      response: { message: errorCodes.ORIGIN_REQUIRED },
+    });
+    expect(res.redirect).not.toHaveBeenCalled();
   });
 });

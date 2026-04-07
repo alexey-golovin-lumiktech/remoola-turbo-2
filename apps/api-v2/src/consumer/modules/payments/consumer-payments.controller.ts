@@ -1,7 +1,19 @@
-import { BadRequestException, Controller, Post, Body, UseGuards, Param, Get, Query, Req } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  Req,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import express from 'express';
 
+import { CONSUMER_APP_SCOPE_HEADER, type ConsumerAppScope } from '@remoola/api-types';
 import { type ConsumerModel } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
@@ -11,6 +23,7 @@ import { PaymentsHistoryQuery, TransferBody, WithdrawBody } from './dto';
 import { StartPayment } from './dto/start-payment.dto';
 import { JwtAuthGuard } from '../../../auth/jwt.guard';
 import { Identity, TrackConsumerAction } from '../../../common';
+import { OriginResolverService } from '../../../shared/origin-resolver.service';
 import { resolveRequestBaseUrl } from '../../../shared/request-base-url';
 
 @ApiTags(`Consumer: Payments`)
@@ -20,7 +33,22 @@ export class ConsumerPaymentsController {
   constructor(
     private readonly service: ConsumerPaymentsService,
     private readonly invoiceService: ConsumerInvoiceService,
+    private readonly originResolver: OriginResolverService,
   ) {}
+
+  private requireClaimedConsumerAppScope(req: express.Request, appScope?: string | null): ConsumerAppScope {
+    const validatedAppScope = this.originResolver.validateConsumerAppScope(appScope);
+    if (!validatedAppScope) {
+      throw new BadRequestException(`Invalid app scope`);
+    }
+    const requestAppScope = this.originResolver.validateConsumerAppScopeHeader(
+      req.headers?.[CONSUMER_APP_SCOPE_HEADER],
+    );
+    if (!requestAppScope || requestAppScope !== validatedAppScope) {
+      throw new UnauthorizedException(`Invalid app scope`);
+    }
+    return validatedAppScope;
+  }
 
   private resolveIdempotencyKey(req: express.Request): string | undefined {
     return req.get(`idempotency-key`)?.trim() || undefined;
@@ -49,8 +77,13 @@ export class ConsumerPaymentsController {
 
   @TrackConsumerAction({ action: `consumer.payments.start`, resource: `payments` })
   @Post(`start`)
-  startPayment(@Identity() consumer: ConsumerModel, @Body() body: StartPayment) {
-    return this.service.startPayment(consumer.id, body);
+  startPayment(
+    @Identity() consumer: ConsumerModel,
+    @Body() body: StartPayment,
+    @Req() req: express.Request,
+    @Query(`appScope`) appScope?: string,
+  ) {
+    return this.service.startPayment(consumer.id, body, this.requireClaimedConsumerAppScope(req, appScope));
   }
 
   @Get(`balance`)

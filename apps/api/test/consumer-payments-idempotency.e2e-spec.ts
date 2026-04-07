@@ -15,6 +15,7 @@ import cookieParser from 'cookie-parser';
 import express from 'express';
 import request from 'supertest';
 
+import { CONSUMER_APP_SCOPE_HEADER } from '@remoola/api-types';
 import { $Enums, PrismaClient } from '@remoola/database-2';
 import { hashPassword } from '@remoola/security-utils';
 
@@ -32,6 +33,7 @@ describe(`Consumer payments idempotency and concurrency (e2e, isolated DB)`, () 
   const recipientEmail = `payments-recipient@local.test`;
   const senderPassword = `SenderPassword1!`;
   const consumerOrigin = `http://127.0.0.1:3001`;
+  const appScope = `consumer` as const;
   let senderId = ``;
   let recipientId = ``;
 
@@ -55,6 +57,10 @@ describe(`Consumer payments idempotency and concurrency (e2e, isolated DB)`, () 
     if (Array.isArray(header)) return header;
     if (typeof header === `string`) return [header];
     return undefined;
+  }
+
+  function withConsumerAppScope<T extends request.Test>(req: T): T {
+    return req.set(`origin`, consumerOrigin).set(CONSUMER_APP_SCOPE_HEADER, appScope);
   }
 
   beforeAll(async () => {
@@ -132,27 +138,21 @@ describe(`Consumer payments idempotency and concurrency (e2e, isolated DB)`, () 
 
   it(`enforces idempotency-key header for withdraw and transfer`, async () => {
     const agent = request.agent(app.getHttpServer());
-    const loginRes = await agent
-      .post(`/api/consumer/auth/login`)
-      .set(`origin`, consumerOrigin)
+    const loginRes = await withConsumerAppScope(agent.post(`/api/consumer/auth/login?appScope=${appScope}`))
       .send({ email: senderEmail, password: senderPassword })
       .expect(200);
     const csrf = parseCookieValueForKeys(
       asCookieArray(loginRes.headers[`set-cookie`]),
-      getApiConsumerCsrfTokenCookieKeysForRead(),
+      getApiConsumerCsrfTokenCookieKeysForRead(appScope),
     );
     expect(csrf).toBeTruthy();
 
-    await agent
-      .post(`/api/consumer/payments/withdraw`)
-      .set(`origin`, consumerOrigin)
+    await withConsumerAppScope(agent.post(`/api/consumer/payments/withdraw`))
       .set(`x-csrf-token`, csrf ?? ``)
       .send({ amount: 10, method: `BANK_ACCOUNT`, currencyCode: `USD` })
       .expect(400);
 
-    await agent
-      .post(`/api/consumer/payments/transfer`)
-      .set(`origin`, consumerOrigin)
+    await withConsumerAppScope(agent.post(`/api/consumer/payments/transfer`))
       .set(`x-csrf-token`, csrf ?? ``)
       .send({ amount: 10, recipient: recipientEmail, currencyCode: `USD` })
       .expect(400);
@@ -160,29 +160,23 @@ describe(`Consumer payments idempotency and concurrency (e2e, isolated DB)`, () 
 
   it(`withdraw replay with same key returns existing entry without duplicates`, async () => {
     const agent = request.agent(app.getHttpServer());
-    const loginRes = await agent
-      .post(`/api/consumer/auth/login`)
-      .set(`origin`, consumerOrigin)
+    const loginRes = await withConsumerAppScope(agent.post(`/api/consumer/auth/login?appScope=${appScope}`))
       .send({ email: senderEmail, password: senderPassword })
       .expect(200);
     const csrf = parseCookieValueForKeys(
       asCookieArray(loginRes.headers[`set-cookie`]),
-      getApiConsumerCsrfTokenCookieKeysForRead(),
+      getApiConsumerCsrfTokenCookieKeysForRead(appScope),
     );
     expect(csrf).toBeTruthy();
 
     const idempotencyKey = `withdraw-${Date.now()}`;
-    const first = await agent
-      .post(`/api/consumer/payments/withdraw`)
-      .set(`origin`, consumerOrigin)
+    const first = await withConsumerAppScope(agent.post(`/api/consumer/payments/withdraw`))
       .set(`x-csrf-token`, csrf ?? ``)
       .set(`idempotency-key`, idempotencyKey)
       .send({ amount: 11, method: `BANK_ACCOUNT`, currencyCode: `USD` })
       .expect(201);
 
-    const replay = await agent
-      .post(`/api/consumer/payments/withdraw`)
-      .set(`origin`, consumerOrigin)
+    const replay = await withConsumerAppScope(agent.post(`/api/consumer/payments/withdraw`))
       .set(`x-csrf-token`, csrf ?? ``)
       .set(`idempotency-key`, idempotencyKey)
       .send({ amount: 11, method: `BANK_ACCOUNT`, currencyCode: `USD` })
@@ -202,14 +196,12 @@ describe(`Consumer payments idempotency and concurrency (e2e, isolated DB)`, () 
 
   it(`parallel transfer requests with same key converge to one logical transfer`, async () => {
     const agent = request.agent(app.getHttpServer());
-    const loginRes = await agent
-      .post(`/api/consumer/auth/login`)
-      .set(`origin`, consumerOrigin)
+    const loginRes = await withConsumerAppScope(agent.post(`/api/consumer/auth/login?appScope=${appScope}`))
       .send({ email: senderEmail, password: senderPassword })
       .expect(200);
     const csrf = parseCookieValueForKeys(
       asCookieArray(loginRes.headers[`set-cookie`]),
-      getApiConsumerCsrfTokenCookieKeysForRead(),
+      getApiConsumerCsrfTokenCookieKeysForRead(appScope),
     );
     expect(csrf).toBeTruthy();
 
@@ -218,12 +210,14 @@ describe(`Consumer payments idempotency and concurrency (e2e, isolated DB)`, () 
       agent
         .post(`/api/consumer/payments/transfer`)
         .set(`origin`, consumerOrigin)
+        .set(CONSUMER_APP_SCOPE_HEADER, appScope)
         .set(`x-csrf-token`, csrf ?? ``)
         .set(`idempotency-key`, idempotencyKey)
         .send({ amount: 13, recipient: recipientEmail, currencyCode: `USD` }),
       agent
         .post(`/api/consumer/payments/transfer`)
         .set(`origin`, consumerOrigin)
+        .set(CONSUMER_APP_SCOPE_HEADER, appScope)
         .set(`x-csrf-token`, csrf ?? ``)
         .set(`idempotency-key`, idempotencyKey)
         .send({ amount: 13, recipient: recipientEmail, currencyCode: `USD` }),

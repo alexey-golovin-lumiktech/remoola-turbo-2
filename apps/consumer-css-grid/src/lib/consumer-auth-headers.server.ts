@@ -1,6 +1,6 @@
-import { getApiV2ConsumerCsrfTokenCookieKeysForRead } from '@remoola/api-types';
+import { CONSUMER_APP_SCOPE_HEADER, getApiV2ConsumerCsrfTokenCookieKeysForRead } from '@remoola/api-types';
 
-import { getRequestOrigin } from './request-origin';
+import { APP_SCOPE, getRequestOrigin } from './request-origin';
 
 function getCookieValue(cookieHeader: string, key: string): string | null {
   const match = cookieHeader
@@ -29,6 +29,7 @@ export function buildConsumerMutationHeaders(
     ...extraHeaders,
     Cookie: cookieHeader,
     origin: getRequestOrigin(),
+    [CONSUMER_APP_SCOPE_HEADER]: APP_SCOPE,
     ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
   };
 }

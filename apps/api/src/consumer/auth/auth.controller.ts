@@ -4,7 +4,6 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  InternalServerErrorException,
   Logger,
   Param,
   Post,
@@ -18,7 +17,7 @@ import { ApiBody, ApiCookieAuth, ApiCreatedResponse, ApiOkResponse, ApiOperation
 import { Throttle } from '@nestjs/throttler';
 import express from 'express';
 
-import { CONSUMER_APP_SCOPES, type ConsumerAppScope, getCookieClearOptions } from '@remoola/api-types';
+import { CONSUMER_APP_SCOPE_HEADER, type ConsumerAppScope, getCookieClearOptions } from '@remoola/api-types';
 import { $Enums } from '@remoola/database-2';
 import { oauthCrypto } from '@remoola/security-utils';
 import { errorCodes } from '@remoola/shared-constants';
@@ -34,7 +33,6 @@ import { envs } from '../../envs';
 import { TransformResponse } from '../../interceptors';
 import { OriginResolverService } from '../../shared/origin-resolver.service';
 import {
-  DEFAULT_API_CONSUMER_SCOPE,
   getApiConsumerAccessTokenCookieKey,
   getApiConsumerAuthCookieClearOptions,
   getApiConsumerAuthCookieOptions,
@@ -70,57 +68,61 @@ export class ConsumerAuthController {
     private readonly originResolver: OriginResolverService,
   ) {}
 
-  private resolveConsumerAppScope(req: express.Request): ConsumerAppScope {
-    return this.resolveTrustedConsumerRequestScope(req) ?? `consumer`;
-  }
-
-  private resolveTrustedConsumerRequestScope(req: express.Request): ConsumerAppScope | undefined {
-    return this.originResolver.resolveConsumerRequestScope?.(req.headers?.origin, req.headers?.referer);
-  }
-
   private requireConsumerAppScope(appScope?: string | null): ConsumerAppScope {
-    const validatedAppScope = this.originResolver.validateConsumerAppScope?.(appScope);
+    const validatedAppScope = this.originResolver.validateConsumerAppScope(appScope);
     if (!validatedAppScope) {
       throw new BadRequestException(`Invalid app scope`);
     }
     return validatedAppScope;
   }
 
-  private ensureClaimedConsumerScopeMatchesRequest(req: express.Request, appScope: ConsumerAppScope) {
-    if (!this.originResolver.requestMatchesConsumerScope?.(appScope, req.headers?.origin, req.headers?.referer)) {
-      throw new UnauthorizedException(`Invalid request origin`);
+  private requireRequestConsumerAppScope(req: express.Request): ConsumerAppScope {
+    const requestAppScope = this.originResolver.validateConsumerAppScopeHeader(req.headers[CONSUMER_APP_SCOPE_HEADER]);
+    if (!requestAppScope) {
+      throw new UnauthorizedException(`Invalid app scope`);
     }
+    return requestAppScope;
   }
 
-  private resolveDefaultConsumerOrigin(): string {
-    const origin =
-      this.originResolver.resolveDefaultConsumerOrigin?.() ?? this.originResolver.resolveConsumerRedirectOrigin();
+  private requireClaimedConsumerAppScope(req: express.Request, appScope?: string | null): ConsumerAppScope {
+    const validatedAppScope = this.requireConsumerAppScope(appScope);
+    const requestAppScope = this.requireRequestConsumerAppScope(req);
+    if (requestAppScope !== validatedAppScope) {
+      throw new UnauthorizedException(`Invalid app scope`);
+    }
+    return validatedAppScope;
+  }
+
+  private resolveConfiguredConsumerOrigin(scope: ConsumerAppScope): string {
+    const origin = this.originResolver.resolveConsumerOriginByScope(scope);
     if (!origin) {
-      throw new InternalServerErrorException(`CONSUMER_APP_ORIGIN is not configured`);
+      throw new BadRequestException(`Invalid app scope`);
     }
     return origin;
   }
 
-  private resolveConfiguredConsumerOrigin(scope: ConsumerAppScope): string {
-    return this.originResolver.resolveConsumerOriginByScope?.(scope) ?? this.resolveDefaultConsumerOrigin();
-  }
-
-  private getRefreshTokenFromRequest(req: express.Request): string | undefined {
-    const consumerScope = this.resolveConsumerAppScope(req);
+  private getRefreshTokenFromRequest(req: express.Request, consumerScope: ConsumerAppScope): string | undefined {
     return getApiConsumerRefreshTokenCookieKeysForRead(consumerScope)
       .map((key) => req.cookies?.[key])
       .find((value): value is string => typeof value === `string` && value.length > 0);
   }
 
-  private getGoogleSignupSessionTokenFromRequest(req: express.Request): string | undefined {
-    const consumerScope = this.resolveConsumerAppScope(req);
+  private getGoogleSignupSessionTokenFromRequest(
+    req: express.Request,
+    consumerScope: ConsumerAppScope,
+  ): string | undefined {
     return getApiConsumerGoogleSignupSessionCookieKeysForRead(consumerScope)
       .map((key) => req.cookies?.[key])
       .find((value): value is string => typeof value === `string` && value.length > 0);
   }
 
-  private setAuthCookies(req: express.Request, res: express.Response, accessToken: string, refreshToken: string) {
-    const consumerScope = this.resolveConsumerAppScope(req);
+  private setAuthCookies(
+    req: express.Request,
+    res: express.Response,
+    accessToken: string,
+    refreshToken: string,
+    consumerScope: ConsumerAppScope,
+  ) {
     const common = getApiConsumerAuthCookieOptions(req);
     res.cookie(getApiConsumerAccessTokenCookieKey(req, consumerScope), accessToken, {
       ...common,
@@ -137,8 +139,7 @@ export class ConsumerAuthController {
     );
   }
 
-  private clearAuthCookies(req: express.Request, res: express.Response) {
-    const consumerScope = this.resolveConsumerAppScope(req);
+  private clearAuthCookies(req: express.Request, res: express.Response, consumerScope: ConsumerAppScope) {
     const authCookieOptions = getApiConsumerAuthCookieClearOptions(req);
     const csrfCookieOptions = getApiConsumerCsrfCookieClearOptions(req);
     res.clearCookie(getApiConsumerAccessTokenCookieKey(req, consumerScope), authCookieOptions);
@@ -146,16 +147,19 @@ export class ConsumerAuthController {
     res.clearCookie(getApiConsumerCsrfTokenCookieKey(req, consumerScope), csrfCookieOptions);
   }
 
-  private setGoogleSignupSessionCookie(req: express.Request, res: express.Response, token: string) {
-    const consumerScope = this.resolveConsumerAppScope(req);
+  private setGoogleSignupSessionCookie(
+    req: express.Request,
+    res: express.Response,
+    token: string,
+    consumerScope: ConsumerAppScope,
+  ) {
     res.cookie(getApiConsumerGoogleSignupSessionCookieKey(req, consumerScope), token, {
       ...getApiConsumerGoogleSignupSessionCookieOptions(req),
       maxAge: this.googleSignupSessionTtlMs,
     });
   }
 
-  private clearGoogleSignupSessionCookie(req: express.Request, res: express.Response) {
-    const consumerScope = this.resolveConsumerAppScope(req);
+  private clearGoogleSignupSessionCookie(req: express.Request, res: express.Response, consumerScope: ConsumerAppScope) {
     res.clearCookie(
       getApiConsumerGoogleSignupSessionCookieKey(req, consumerScope),
       getApiConsumerGoogleSignupSessionCookieClearOptions(req),
@@ -173,17 +177,10 @@ export class ConsumerAuthController {
     return getCookieClearOptions(this.getOAuthCookieOptions(req));
   }
 
-  private getOAuthStateCookieFromRequest(req: express.Request): string | undefined {
-    for (const scope of CONSUMER_APP_SCOPES) {
-      const stateCookie = getApiOAuthStateCookieKeysForRead(scope)
-        .map((key) => req.cookies?.[key] ?? req.signedCookies?.[key])
-        .find((value): value is string => typeof value === `string` && value.length > 0);
-      if (stateCookie) {
-        return stateCookie;
-      }
-    }
-
-    return undefined;
+  private getOAuthStateCookieFromRequest(req: express.Request, appScope: ConsumerAppScope): string | undefined {
+    return getApiOAuthStateCookieKeysForRead(appScope)
+      .map((key) => req.cookies?.[key] ?? req.signedCookies?.[key])
+      .find((value): value is string => typeof value === `string` && value.length > 0);
   }
 
   private normalizeNextPath(next?: string) {
@@ -219,27 +216,37 @@ export class ConsumerAuthController {
     return normalized === `/signup` || normalized.startsWith(`/signup?`) ? `/dashboard` : normalized;
   }
 
-  private ensureTrustedConsumerRequestScope(req: express.Request) {
-    if (!this.resolveTrustedConsumerRequestScope(req)) {
-      throw new UnauthorizedException(`Invalid request origin`);
+  private requireStoredConsumerAppScopeMatchesRequest(
+    req: express.Request,
+    storedAppScope?: string | null,
+  ): ConsumerAppScope {
+    const requestAppScope = this.requireRequestConsumerAppScope(req);
+    const validatedStoredScope = this.requireConsumerAppScope(storedAppScope);
+    if (requestAppScope !== validatedStoredScope) {
+      throw new UnauthorizedException(`Invalid app scope`);
     }
+    return validatedStoredScope;
   }
 
   private isOAuthStateCookieFallbackAllowedInEnv(): boolean {
     return envs.NODE_ENV === envs.ENVIRONMENT.DEVELOPMENT || envs.NODE_ENV === envs.ENVIRONMENT.TEST;
   }
 
-  private async getGoogleSignupPayloadFromSession(req: express.Request) {
-    const token = this.getGoogleSignupSessionTokenFromRequest(req);
+  private async getGoogleSignupPayloadFromSession(req: express.Request, appScope?: string | null) {
+    const claimedAppScope = this.requireClaimedConsumerAppScope(req, appScope);
+    const token = this.getGoogleSignupSessionTokenFromRequest(req, claimedAppScope);
     if (!token) return undefined;
     const record = await this.oauthStateStore.readSignupSession(token);
     if (!record) return undefined;
+    const storedAppScope = this.requireStoredConsumerAppScopeMatchesRequest(req, record.appScope);
+    if (storedAppScope !== claimedAppScope) {
+      throw new UnauthorizedException(`Invalid app scope`);
+    }
     return this.service.validateGoogleSignupPayload(this.service.createGoogleSignupPayload(record));
   }
 
   private ensureCsrf(req: express.Request) {
-    const consumerScope = this.resolveConsumerAppScope(req);
-    this.ensureTrustedConsumerRequestScope(req);
+    const consumerScope = this.requireRequestConsumerAppScope(req);
     const csrfHeader = req.headers[`x-csrf-token`];
     const csrfCookie = getApiConsumerCsrfTokenCookieKeysForRead(consumerScope)
       .map((key) => req.cookies?.[key])
@@ -295,15 +302,20 @@ export class ConsumerAuthController {
   @ApiOperation({ operationId: `consumer_auth_login` })
   @ApiOkResponse({ type: CONSUMER.LoginResponse })
   @TransformResponse(CONSUMER.LoginResponse)
-  async login(@Req() req: express.Request, @Res({ passthrough: true }) res, @Body() body: LoginBody) {
-    this.ensureTrustedConsumerRequestScope(req);
+  async login(
+    @Req() req: express.Request,
+    @Res({ passthrough: true }) res,
+    @Body() body: LoginBody,
+    @Query(`appScope`) appScope?: string,
+  ) {
+    const consumerScope = this.requireClaimedConsumerAppScope(req, appScope);
     const ipAddress = req.ip ?? req.headers[`x-forwarded-for`] ?? null;
     const userAgent = req.headers[`user-agent`] ?? null;
-    const data = await this.service.login(body, {
+    const data = await this.service.login(body, consumerScope, {
       ipAddress: typeof ipAddress === `string` ? ipAddress : (ipAddress?.[0] ?? null),
       userAgent: typeof userAgent === `string` ? userAgent : null,
     });
-    this.setAuthCookies(req, res, data.accessToken, data.refreshToken);
+    this.setAuthCookies(req, res, data.accessToken, data.refreshToken, consumerScope);
     return { ok: true as const };
   }
 
@@ -330,7 +342,6 @@ export class ConsumerAuthController {
         : undefined;
 
     const consumerScope = this.requireConsumerAppScope(appScope);
-    this.ensureClaimedConsumerScopeMatchesRequest(req, consumerScope);
 
     const nextPath = this.normalizeNextPath(next);
     const signupEntryPath = signupPath === `/signup` ? `/signup` : this.getSignupEntryPathFromNext(next);
@@ -371,18 +382,33 @@ export class ConsumerAuthController {
     @Query(`state`) state?: string,
     @Query(`error`) error?: string,
   ) {
-    const clearStateCookie = (consumerScope: ConsumerAppScope = DEFAULT_API_CONSUMER_SCOPE) =>
-      response.clearCookie(getApiOAuthStateCookieKey(req, consumerScope), this.getOAuthClearCookieOptions(req));
+    const stateRecordPreview = state ? await this.oauthStateStore.read(state) : null;
+    const stateCookie = stateRecordPreview?.appScope
+      ? this.getOAuthStateCookieFromRequest(req, stateRecordPreview.appScope)
+      : undefined;
 
-    const failureRedirect = (reason: string, appScope: ConsumerAppScope = DEFAULT_API_CONSUMER_SCOPE) => {
-      clearStateCookie(appScope);
-      const url = this.buildConsumerLoginRedirect(reason, appScope);
+    const clearStateCookie = (consumerScope?: string | null) => {
+      const validatedAppScope =
+        this.originResolver.validateConsumerAppScope(consumerScope) ?? stateRecordPreview?.appScope;
+      if (!validatedAppScope) {
+        return;
+      }
+      response.clearCookie(getApiOAuthStateCookieKey(req, validatedAppScope), this.getOAuthClearCookieOptions(req));
+    };
+
+    const failureRedirect = (reason: string, appScope?: string | null) => {
+      const validatedAppScope = this.originResolver.validateConsumerAppScope(appScope) ?? stateRecordPreview?.appScope;
+      if (!validatedAppScope) {
+        throw new BadRequestException(`Invalid OAuth state`);
+      }
+      clearStateCookie(validatedAppScope);
+      const url = this.buildConsumerLoginRedirect(reason, validatedAppScope);
       return response.redirect(url);
     };
 
     const consumeStateAppScope = async (maybeState?: string) => {
       if (!maybeState) return undefined;
-      const record = await this.oauthStateStore.consume(maybeState);
+      const record = maybeState === state ? stateRecordPreview : await this.oauthStateStore.read(maybeState);
       return record?.appScope;
     };
 
@@ -391,7 +417,6 @@ export class ConsumerAuthController {
       return failureRedirect(`access_denied`, errorAppScope);
     }
 
-    const stateCookie = this.getOAuthStateCookieFromRequest(req);
     if (!state) return failureRedirect(`invalid_state`);
     if (stateCookie && stateCookie !== state) {
       if (!this.isOAuthStateCookieFallbackAllowedInEnv()) {
@@ -403,27 +428,13 @@ export class ConsumerAuthController {
         nodeEnv: envs.NODE_ENV,
       });
     }
-    if (!stateCookie && !envs.CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK) {
-      if (!this.isOAuthStateCookieFallbackAllowedInEnv()) {
-        const missingCookieAppScope = await consumeStateAppScope(state);
-        return failureRedirect(`invalid_state`, missingCookieAppScope);
-      }
-      this.logger.warn({
-        event: `oauth_state_cookie_missing_auto_fallback_dev_or_test`,
-        nodeEnv: envs.NODE_ENV,
-      });
-    }
-    if (!stateCookie && envs.CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK) {
+    if (!stateCookie) {
       if (!this.isOAuthStateCookieFallbackAllowedInEnv()) {
         const fallbackBlockedAppScope = await consumeStateAppScope(state);
-        this.logger.error({
-          event: `oauth_state_cookie_missing_fallback_blocked_non_local_env`,
-          nodeEnv: envs.NODE_ENV,
-        });
         return failureRedirect(`invalid_state`, fallbackBlockedAppScope);
       }
       this.logger.warn({
-        event: `oauth_state_cookie_missing_fallback`,
+        event: `oauth_state_cookie_missing_auto_fallback_dev_or_test`,
         nodeEnv: envs.NODE_ENV,
       });
     }
@@ -513,8 +524,8 @@ export class ConsumerAuthController {
   @PublicEndpoint()
   @Get(`google/signup-session`)
   @ApiOkResponse({ type: CONSUMER.GoogleSignupSessionResponse })
-  async googleSignupSession(@Req() req: express.Request) {
-    const payload = await this.getGoogleSignupPayloadFromSession(req);
+  async googleSignupSession(@Req() req: express.Request, @Query(`appScope`) appScope?: string) {
+    const payload = await this.getGoogleSignupPayloadFromSession(req, appScope);
     if (!payload) throw new BadRequestException(errorCodes.MISSING_SIGNUP_TOKEN);
 
     return {
@@ -540,16 +551,21 @@ export class ConsumerAuthController {
     @Req() req: express.Request,
     @Res({ passthrough: true }) res,
     @Body(`handoffToken`) handoffToken: string,
+    @Query(`appScope`) appScope?: string,
   ) {
-    this.ensureTrustedConsumerRequestScope(req);
+    const claimedAppScope = this.requireClaimedConsumerAppScope(req, appScope);
     if (!handoffToken) throw new BadRequestException(errorCodes.MISSING_SIGNUP_TOKEN);
     const payload = await this.oauthStateStore.consumeSignupHandoff(handoffToken);
     if (!payload) throw new BadRequestException(errorCodes.INVALID_GOOGLE_SIGNUP_TOKEN);
+    const storedAppScope = this.requireStoredConsumerAppScopeMatchesRequest(req, payload.appScope);
+    if (storedAppScope !== claimedAppScope) {
+      throw new UnauthorizedException(`Invalid app scope`);
+    }
 
     const validatedPayload = this.service.validateGoogleSignupPayload(this.service.createGoogleSignupPayload(payload));
     const signupSessionToken = this.oauthStateStore.createEphemeralToken();
     await this.oauthStateStore.saveSignupSession(signupSessionToken, payload, this.googleSignupSessionTtlMs);
-    this.setGoogleSignupSessionCookie(req, res, signupSessionToken);
+    this.setGoogleSignupSessionCookie(req, res, signupSessionToken, claimedAppScope);
 
     return {
       email: validatedPayload.email,
@@ -574,13 +590,21 @@ export class ConsumerAuthController {
     @Req() req: express.Request,
     @Res({ passthrough: true }) res,
     @Body(`handoffToken`) handoffToken: string,
+    @Query(`appScope`) appScope?: string,
   ) {
-    this.ensureTrustedConsumerRequestScope(req);
+    const claimedAppScope = this.requireClaimedConsumerAppScope(req, appScope);
     if (!handoffToken) throw new BadRequestException(errorCodes.MISSING_EXCHANGE_TOKEN);
     const decoded = await this.oauthStateStore.consumeLoginHandoff(handoffToken);
     if (!decoded) throw new UnauthorizedException(errorCodes.INVALID_OAUTH_EXCHANGE_TOKEN);
-    const { accessToken, refreshToken } = await this.service.issueTokensForConsumer(decoded.identityId);
-    this.setAuthCookies(req, res, accessToken, refreshToken);
+    const storedAppScope = this.requireStoredConsumerAppScopeMatchesRequest(req, decoded.appScope);
+    if (storedAppScope !== claimedAppScope) {
+      throw new UnauthorizedException(`Invalid app scope`);
+    }
+    const { accessToken, refreshToken } = await this.service.issueTokensForConsumer(
+      decoded.identityId,
+      claimedAppScope,
+    );
+    this.setAuthCookies(req, res, accessToken, refreshToken, claimedAppScope);
     return { ok: true, next: decoded.nextPath };
   }
 
@@ -590,18 +614,20 @@ export class ConsumerAuthController {
   @ApiCookieAuth()
   async logout(@Req() req: express.Request, @Res({ passthrough: true }) res) {
     this.ensureCsrf(req);
+    const consumerScope = this.requireRequestConsumerAppScope(req);
     const ipAddress = req.ip ?? req.headers[`x-forwarded-for`] ?? null;
     const userAgent = req.headers[`user-agent`] ?? null;
-    await this.service.revokeSessionByRefreshTokenAndAudit(this.getRefreshTokenFromRequest(req), {
-      ipAddress: typeof ipAddress === `string` ? ipAddress : Array.isArray(ipAddress) ? ipAddress[0] : null,
-      userAgent: typeof userAgent === `string` ? userAgent : null,
-    });
-    this.clearAuthCookies(req, res);
-    this.clearGoogleSignupSessionCookie(req, res);
-    res.clearCookie(
-      getApiOAuthStateCookieKey(req, this.resolveConsumerAppScope(req)),
-      this.getOAuthClearCookieOptions(req),
+    await this.service.revokeSessionByRefreshTokenAndAudit(
+      this.getRefreshTokenFromRequest(req, consumerScope),
+      consumerScope,
+      {
+        ipAddress: typeof ipAddress === `string` ? ipAddress : Array.isArray(ipAddress) ? ipAddress[0] : null,
+        userAgent: typeof userAgent === `string` ? userAgent : null,
+      },
     );
+    this.clearAuthCookies(req, res, consumerScope);
+    this.clearGoogleSignupSessionCookie(req, res, consumerScope);
+    res.clearCookie(getApiOAuthStateCookieKey(req, consumerScope), this.getOAuthClearCookieOptions(req));
     return { ok: true };
   }
 
@@ -614,15 +640,16 @@ export class ConsumerAuthController {
   @ApiOkResponse({ type: CONSUMER.LoginResponse })
   async refreshAccess(@Req() req: express.Request, @Res({ passthrough: true }) res) {
     this.ensureCsrf(req);
+    const consumerScope = this.requireRequestConsumerAppScope(req);
     const ipAddress = req.ip ?? req.headers[`x-forwarded-for`] ?? null;
     const userAgent = req.headers[`user-agent`] ?? null;
-    const refreshToken = this.getRefreshTokenFromRequest(req);
+    const refreshToken = this.getRefreshTokenFromRequest(req, consumerScope);
     if (!refreshToken) throw new UnauthorizedException(errorCodes.INVALID_REFRESH_TOKEN);
-    const data = await this.service.refreshAccess(refreshToken, {
+    const data = await this.service.refreshAccess(refreshToken, consumerScope, {
       ipAddress: typeof ipAddress === `string` ? ipAddress : (ipAddress?.[0] ?? null),
       userAgent: typeof userAgent === `string` ? userAgent : null,
     });
-    this.setAuthCookies(req, res, data.accessToken, data.refreshToken);
+    this.setAuthCookies(req, res, data.accessToken, data.refreshToken, consumerScope);
     return { ok: true as const };
   }
 
@@ -635,18 +662,16 @@ export class ConsumerAuthController {
     @Res({ passthrough: true }) res,
   ) {
     this.ensureCsrf(req);
+    const consumerScope = this.requireRequestConsumerAppScope(req);
     const ipAddress = req.ip ?? req.headers[`x-forwarded-for`] ?? null;
     const userAgent = req.headers[`user-agent`] ?? null;
     await this.service.revokeAllSessionsByConsumerIdAndAudit(identity.id, {
       ipAddress: typeof ipAddress === `string` ? ipAddress : Array.isArray(ipAddress) ? ipAddress[0] : null,
       userAgent: typeof userAgent === `string` ? userAgent : null,
     });
-    this.clearAuthCookies(req, res);
-    this.clearGoogleSignupSessionCookie(req, res);
-    res.clearCookie(
-      getApiOAuthStateCookieKey(req, this.resolveConsumerAppScope(req)),
-      this.getOAuthClearCookieOptions(req),
-    );
+    this.clearAuthCookies(req, res, consumerScope);
+    this.clearGoogleSignupSessionCookie(req, res, consumerScope);
+    res.clearCookie(getApiOAuthStateCookieKey(req, consumerScope), this.getOAuthClearCookieOptions(req));
     return { ok: true };
   }
 
@@ -664,18 +689,23 @@ export class ConsumerAuthController {
   @HttpCode(HttpStatus.CREATED)
   @ApiCreatedResponse({ type: CONSUMER.SignupResponse })
   @TransformResponse(CONSUMER.SignupResponse)
-  async signup(@Req() req: express.Request, @Res({ passthrough: true }) res, @Body() body: ConsumerSignup) {
-    this.ensureTrustedConsumerRequestScope(req);
+  async signup(
+    @Req() req: express.Request,
+    @Res({ passthrough: true }) res,
+    @Body() body: ConsumerSignup,
+    @Query(`appScope`) appScope?: string,
+  ) {
     const payload = removeNil(body);
-    const googleSignupPayload = await this.getGoogleSignupPayloadFromSession(req);
+    const consumerScope = this.requireClaimedConsumerAppScope(req, appScope);
+    const googleSignupPayload = await this.getGoogleSignupPayloadFromSession(req, appScope);
     const consumer = await this.service.signup(payload, googleSignupPayload);
     if (!googleSignupPayload) {
       return { consumer };
     }
 
-    const { accessToken, refreshToken } = await this.service.issueTokensForConsumer(consumer.id);
-    this.setAuthCookies(req, res, accessToken, refreshToken);
-    this.clearGoogleSignupSessionCookie(req, res);
+    const { accessToken, refreshToken } = await this.service.issueTokensForConsumer(consumer.id, consumerScope);
+    this.setAuthCookies(req, res, accessToken, refreshToken, consumerScope);
+    this.clearGoogleSignupSessionCookie(req, res, consumerScope);
     return {
       consumer,
       next: this.normalizeSignupCompletionPath(googleSignupPayload.nextPath ?? undefined),
@@ -685,9 +715,12 @@ export class ConsumerAuthController {
   @PublicEndpoint()
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Get(`signup/:consumerId/complete-profile-creation`)
-  completeProfileCreation(@Req() req: express.Request, @Param(`consumerId`) consumerId: string) {
-    const consumerScope = this.resolveTrustedConsumerRequestScope(req);
-    if (!consumerScope) throw new InternalServerErrorException(`Request origin required`);
+  completeProfileCreation(
+    @Req() req: express.Request,
+    @Param(`consumerId`) consumerId: string,
+    @Query(`appScope`) appScope?: string,
+  ) {
+    const consumerScope = this.requireClaimedConsumerAppScope(req, appScope);
     void this.service.completeProfileCreationAndSendVerificationEmail(consumerId, consumerScope).catch((error) =>
       this.logger.warn({
         event: `signup_complete_profile_creation_email_failed`,
@@ -710,9 +743,12 @@ export class ConsumerAuthController {
   @Post(`forgot-password`)
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
-  async forgotPassword(@Req() req: express.Request, @Body() body: CONSUMER.ForgotPasswordBody) {
-    this.ensureTrustedConsumerRequestScope(req);
-    const consumerScope = this.resolveTrustedConsumerRequestScope(req)!;
+  async forgotPassword(
+    @Req() req: express.Request,
+    @Body() body: CONSUMER.ForgotPasswordBody,
+    @Query(`appScope`) appScope?: string,
+  ) {
+    const consumerScope = this.requireClaimedConsumerAppScope(req, appScope);
     await this.service.requestPasswordReset(body.email, consumerScope);
     return {
       message: `If an account exists, we sent recovery instructions.`,

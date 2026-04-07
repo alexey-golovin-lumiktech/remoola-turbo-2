@@ -2,10 +2,11 @@
 
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { type INestApplication } from '@nestjs/common';
+import { type NestExpressApplication } from '@nestjs/platform-express';
 import { Test, type TestingModule } from '@nestjs/testing';
-import cookieParser from 'cookie-parser';
 import request from 'supertest';
 
+import { CONSUMER_APP_SCOPE_HEADER } from '@remoola/api-types';
 import { $Enums, PrismaClient } from '@remoola/database-2';
 import { hashPassword, hashTokenToHex } from '@remoola/security-utils';
 
@@ -13,6 +14,7 @@ import { assertIsolatedTestDatabaseUrl } from './test-db-safety';
 import { AppModule } from '../src/app.module';
 import { ConsumerAuthService } from '../src/consumer/auth/auth.service';
 import { envs } from '../src/envs';
+import { configureApp } from '../src/main';
 import { MailingService } from '../src/shared/mailing.service';
 import {
   getApiConsumerAccessTokenCookieKey,
@@ -23,6 +25,7 @@ import {
 type SessionIssuerForTest = {
   createSessionAndIssueTokens(
     identityId: string,
+    appScope: string,
     sessionFamilyId?: string,
   ): Promise<{
     accessToken: string;
@@ -75,6 +78,10 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
     return undefined;
   }
 
+  function withConsumerAppScope<T extends request.Test>(req: T): T {
+    return req.set(`origin`, origin).set(CONSUMER_APP_SCOPE_HEADER, appScope);
+  }
+
   beforeAll(async () => {
     assertIsolatedTestDatabaseUrl();
     initialConsumerOrigin = envs.CONSUMER_APP_ORIGIN;
@@ -125,9 +132,8 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
       imports: [AppModule],
     }).compile();
 
-    app = moduleFixture.createNestApplication();
-    app.use(cookieParser());
-    app.getHttpAdapter().getInstance().set(`trust proxy`, 1);
+    app = moduleFixture.createNestApplication<NestExpressApplication>();
+    configureApp(app);
     await app.init();
     authService = app.get(ConsumerAuthService);
     mailingService = app.get(MailingService);
@@ -147,23 +153,23 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
   });
 
   it(`forgot-password returns the same provider-aware response across account states`, async () => {
-    const existingRes = await request(app.getHttpServer())
-      .post(`/consumer/auth/forgot-password`)
-      .set(`origin`, origin)
+    const existingRes = await withConsumerAppScope(
+      request(app.getHttpServer()).post(`/api/consumer/auth/forgot-password?appScope=${appScope}`),
+    )
       .set(`x-forwarded-for`, `198.51.100.11`)
       .send({ email: consumerEmail })
       .expect(200);
 
-    const passwordlessRes = await request(app.getHttpServer())
-      .post(`/consumer/auth/forgot-password`)
-      .set(`origin`, origin)
+    const passwordlessRes = await withConsumerAppScope(
+      request(app.getHttpServer()).post(`/api/consumer/auth/forgot-password?appScope=${appScope}`),
+    )
       .set(`x-forwarded-for`, `198.51.100.13`)
       .send({ email: googleOnlyConsumerEmail })
       .expect(200);
 
-    const unknownRes = await request(app.getHttpServer())
-      .post(`/consumer/auth/forgot-password`)
-      .set(`origin`, origin)
+    const unknownRes = await withConsumerAppScope(
+      request(app.getHttpServer()).post(`/api/consumer/auth/forgot-password?appScope=${appScope}`),
+    )
       .set(`x-forwarded-for`, `198.51.100.12`)
       .send({ email: `unknown-${Date.now()}@local.test` })
       .expect(200);
@@ -179,9 +185,9 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
   it(`forgot-password sends Google guidance for passwordless consumers without creating reset rows`, async () => {
     await prisma.resetPasswordModel.deleteMany({ where: { consumerId: googleOnlyConsumerId } });
 
-    await request(app.getHttpServer())
-      .post(`/consumer/auth/forgot-password`)
-      .set(`origin`, origin)
+    await withConsumerAppScope(
+      request(app.getHttpServer()).post(`/api/consumer/auth/forgot-password?appScope=${appScope}`),
+    )
       .set(`x-forwarded-for`, `198.51.100.14`)
       .send({ email: googleOnlyConsumerEmail })
       .expect(200);
@@ -202,9 +208,9 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
   it(`forgot-password email link omits referer and verify redirects by stored app scope`, async () => {
     await prisma.resetPasswordModel.deleteMany({ where: { consumerId } });
 
-    await request(app.getHttpServer())
-      .post(`/consumer/auth/forgot-password`)
-      .set(`origin`, origin)
+    await withConsumerAppScope(
+      request(app.getHttpServer()).post(`/api/consumer/auth/forgot-password?appScope=${appScope}`),
+    )
       .set(`x-forwarded-for`, `198.51.100.17`)
       .send({ email: consumerEmail })
       .expect(200);
@@ -218,7 +224,7 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
     const token = verifyUrl.searchParams.get(`token`);
     expect(token).toBeTruthy();
     expect(verifyUrl.searchParams.has(`referer`)).toBe(false);
-    const localVerifyPath = `${verifyUrl.pathname.replace(/^\/api\b/, ``)}?${verifyUrl.searchParams.toString()}`;
+    const localVerifyPath = `${verifyUrl.pathname}?${verifyUrl.searchParams.toString()}`;
 
     const verifyRes = await request(app.getHttpServer()).get(localVerifyPath).expect(302);
 
@@ -237,7 +243,7 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
     });
 
     const verifyRes = await request(app.getHttpServer())
-      .get(`/consumer/auth/forgot-password/verify`)
+      .get(`/api/consumer/auth/forgot-password/verify`)
       .query({ token: `expired-verify-token` })
       .expect(302);
 
@@ -246,18 +252,16 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
 
   it(`forgot-password verify falls back to the default app for invalid tokens without requiring referer`, async () => {
     const verifyRes = await request(app.getHttpServer())
-      .get(`/consumer/auth/forgot-password/verify`)
+      .get(`/api/consumer/auth/forgot-password/verify`)
       .query({ token: `invalid-verify-token` })
-      .expect(302);
+      .expect(400);
 
-    expect(verifyRes.headers.location).toBe(`${origin}/forgot-password/confirm`);
+    expect(verifyRes.body?.message).toBe(`ORIGIN_REQUIRED`);
   });
 
   it(`settings password change revokes sessions and requires re-login`, async () => {
     const agent = request.agent(app.getHttpServer());
-    const loginRes = await agent
-      .post(`/consumer/auth/login`)
-      .set(`origin`, origin)
+    const loginRes = await withConsumerAppScope(agent.post(`/api/consumer/auth/login?appScope=${appScope}`))
       .set(`x-forwarded-for`, `198.51.100.18`)
       .send({ email: settingsConsumerEmail, password: settingsInitialPassword })
       .expect(200);
@@ -267,30 +271,22 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
     );
     expect(csrf).toBeTruthy();
 
-    const changeRes = await agent
-      .patch(`/consumer/profile/password`)
-      .set(`origin`, origin)
+    const changeRes = await withConsumerAppScope(agent.patch(`/api/consumer/profile/password`))
       .set(`x-csrf-token`, csrf ?? ``)
       .send({ currentPassword: settingsInitialPassword, password: settingsUpdatedPassword })
       .expect(200);
     expect(changeRes.body).toEqual({ success: true, requiresReauth: true });
 
-    await agent
-      .post(`/consumer/auth/refresh`)
-      .set(`origin`, origin)
+    await withConsumerAppScope(agent.post(`/api/consumer/auth/refresh`))
       .set(`x-csrf-token`, csrf ?? ``)
       .expect(401);
 
-    await request(app.getHttpServer())
-      .post(`/consumer/auth/login`)
-      .set(`origin`, origin)
+    await withConsumerAppScope(request(app.getHttpServer()).post(`/api/consumer/auth/login?appScope=${appScope}`))
       .set(`x-forwarded-for`, `198.51.100.18`)
       .send({ email: settingsConsumerEmail, password: settingsInitialPassword })
       .expect(401);
 
-    await request(app.getHttpServer())
-      .post(`/consumer/auth/login`)
-      .set(`origin`, origin)
+    await withConsumerAppScope(request(app.getHttpServer()).post(`/api/consumer/auth/login?appScope=${appScope}`))
       .set(`x-forwarded-for`, `198.51.100.18`)
       .send({ email: settingsConsumerEmail, password: settingsUpdatedPassword })
       .expect(200);
@@ -304,6 +300,7 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
   it(`settings password endpoint lets passwordless consumers create a first password`, async () => {
     const issued = await (authService as unknown as SessionIssuerForTest).createSessionAndIssueTokens(
       googleOnlyConsumerId,
+      appScope,
     );
     const csrf = `csrf-passwordless-google`;
     const authCookies = [
@@ -312,18 +309,14 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
       `${getApiConsumerCsrfTokenCookieKeysForRead(`consumer-css-grid`)[0]}=${csrf}`,
     ];
 
-    const changeRes = await request(app.getHttpServer())
-      .patch(`/consumer/profile/password`)
-      .set(`origin`, origin)
+    const changeRes = await withConsumerAppScope(request(app.getHttpServer()).patch(`/api/consumer/profile/password`))
       .set(`Cookie`, authCookies)
       .set(`x-csrf-token`, csrf)
       .send({ password: googleOnlyCreatedPassword })
       .expect(200);
     expect(changeRes.body).toEqual({ success: true, requiresReauth: true });
 
-    await request(app.getHttpServer())
-      .post(`/consumer/auth/refresh`)
-      .set(`origin`, origin)
+    await withConsumerAppScope(request(app.getHttpServer()).post(`/api/consumer/auth/refresh`))
       .set(`Cookie`, authCookies)
       .set(`x-csrf-token`, csrf)
       .expect(401);
@@ -335,9 +328,7 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
     expect(updatedConsumer?.password).toBeTruthy();
     expect(updatedConsumer?.salt).toBeTruthy();
 
-    await request(app.getHttpServer())
-      .post(`/consumer/auth/login`)
-      .set(`origin`, origin)
+    await withConsumerAppScope(request(app.getHttpServer()).post(`/api/consumer/auth/login?appScope=${appScope}`))
       .set(`x-forwarded-for`, `198.51.100.21`)
       .send({ email: googleOnlyConsumerEmail, password: googleOnlyCreatedPassword })
       .expect(200);
@@ -419,18 +410,19 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
       },
     });
 
-    const invalidRes = await request(app.getHttpServer())
-      .post(`/consumer/auth/password/reset`)
+    const invalidRes = await withConsumerAppScope(
+      request(app.getHttpServer()).post(`/api/consumer/auth/password/reset`),
+    )
       .set(`x-forwarded-for`, `198.51.100.15`)
       .send({ token: `definitely-invalid`, password: `SomePass1!` })
       .expect(400);
-    const expiredRes = await request(app.getHttpServer())
-      .post(`/consumer/auth/password/reset`)
+    const expiredRes = await withConsumerAppScope(
+      request(app.getHttpServer()).post(`/api/consumer/auth/password/reset`),
+    )
       .set(`x-forwarded-for`, `198.51.100.15`)
       .send({ token: `expired-token`, password: `SomePass1!` })
       .expect(400);
-    const usedRes = await request(app.getHttpServer())
-      .post(`/consumer/auth/password/reset`)
+    const usedRes = await withConsumerAppScope(request(app.getHttpServer()).post(`/api/consumer/auth/password/reset`))
       .set(`x-forwarded-for`, `198.51.100.15`)
       .send({ token: `used-token`, password: `SomePass1!` })
       .expect(400);
@@ -453,9 +445,7 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
     });
 
     const agent = request.agent(app.getHttpServer());
-    const loginRes = await agent
-      .post(`/consumer/auth/login`)
-      .set(`origin`, origin)
+    const loginRes = await withConsumerAppScope(agent.post(`/api/consumer/auth/login?appScope=${appScope}`))
       .set(`x-forwarded-for`, `198.51.100.16`)
       .send({ email: consumerEmail, password: initialPassword })
       .expect(200);
@@ -465,26 +455,27 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
     );
     expect(csrf).toBeTruthy();
 
-    const resetRes = await request(app.getHttpServer())
-      .post(`/consumer/auth/password/reset`)
+    const resetRes = await withConsumerAppScope(request(app.getHttpServer()).post(`/api/consumer/auth/password/reset`))
       .set(`x-forwarded-for`, `198.51.100.16`)
       .send({ token, password: updatedPassword })
       .expect(200);
     expect(resetRes.body).toEqual({ success: true });
-    expect(resetRes.headers[`set-cookie`]).toBeUndefined();
+    expect(asCookieArray(resetRes.headers[`set-cookie`]) ?? []).toEqual(
+      expect.not.arrayContaining([
+        expect.stringContaining(`access_token`),
+        expect.stringContaining(`refresh_token`),
+        expect.stringContaining(`csrf_token`),
+      ]),
+    );
 
-    await agent
-      .post(`/consumer/auth/refresh`)
-      .set(`origin`, origin)
+    await withConsumerAppScope(agent.post(`/api/consumer/auth/refresh`))
       .set(`x-csrf-token`, csrf ?? ``)
       .expect(401);
-    await request(app.getHttpServer())
-      .post(`/consumer/auth/login`)
-      .set(`origin`, origin)
+    await withConsumerAppScope(request(app.getHttpServer()).post(`/api/consumer/auth/login?appScope=${appScope}`))
       .set(`x-forwarded-for`, `198.51.100.19`)
       .send({ email: consumerEmail, password: initialPassword })
       .expect(401);
-    const loginWithNewPassword = await authService.login({ email: consumerEmail, password: updatedPassword });
+    const loginWithNewPassword = await authService.login({ email: consumerEmail, password: updatedPassword }, appScope);
     expect(loginWithNewPassword.identity?.email).toBe(consumerEmail);
   });
 
@@ -517,9 +508,9 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
     const ipForgot = `198.51.100.101`;
     let throttledForgot = false;
     for (let i = 0; i < 6; i += 1) {
-      const res = await request(app.getHttpServer())
-        .post(`/consumer/auth/forgot-password`)
-        .set(`origin`, origin)
+      const res = await withConsumerAppScope(
+        request(app.getHttpServer()).post(`/api/consumer/auth/forgot-password?appScope=${appScope}`),
+      )
         .set(`x-forwarded-for`, ipForgot)
         .send({ email: `rate-limit-forgot-${Date.now()}-${i}@local.test` });
       if (res.status === 429) throttledForgot = true;
@@ -529,8 +520,7 @@ describe(`Forgot/Reset password hardening (e2e, isolated DB)`, () => {
     const ipReset = `198.51.100.102`;
     let throttledReset = false;
     for (let i = 0; i < 11; i += 1) {
-      const res = await request(app.getHttpServer())
-        .post(`/consumer/auth/password/reset`)
+      const res = await withConsumerAppScope(request(app.getHttpServer()).post(`/api/consumer/auth/password/reset`))
         .set(`x-forwarded-for`, ipReset)
         .send({ token: `invalid-${i}`, password: `RateLimit1!` });
       if (res.status === 429) throttledReset = true;

@@ -3,16 +3,18 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { type INestApplication } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { type NestExpressApplication } from '@nestjs/platform-express';
 import { Test, type TestingModule } from '@nestjs/testing';
-import cookieParser from 'cookie-parser';
 import request from 'supertest';
 
+import { CONSUMER_APP_SCOPE_HEADER } from '@remoola/api-types';
 import { $Enums, PrismaClient } from '@remoola/database-2';
 import { hashPassword } from '@remoola/security-utils';
 
 import { assertIsolatedTestDatabaseUrl } from './test-db-safety';
 import { AppModule } from '../src/app.module';
 import { envs } from '../src/envs';
+import { configureApp } from '../src/main';
 import { MailingService } from '../src/shared/mailing.service';
 
 describe(`Signup verification cutover (e2e, isolated DB)`, () => {
@@ -27,6 +29,7 @@ describe(`Signup verification cutover (e2e, isolated DB)`, () => {
 
   const consumerOrigin = `http://127.0.0.1:3001`;
   const consumerMobileOrigin = `http://127.0.0.1:3002`;
+  const consumerMobileAppScope = `consumer-mobile` as const;
 
   beforeAll(async () => {
     assertIsolatedTestDatabaseUrl();
@@ -56,8 +59,8 @@ describe(`Signup verification cutover (e2e, isolated DB)`, () => {
       imports: [AppModule],
     }).compile();
 
-    app = moduleFixture.createNestApplication();
-    app.use(cookieParser());
+    app = moduleFixture.createNestApplication<NestExpressApplication>();
+    configureApp(app);
     await app.init();
 
     mailingService = app.get(MailingService);
@@ -82,8 +85,8 @@ describe(`Signup verification cutover (e2e, isolated DB)`, () => {
 
   it(`issues token-only signup verification mail and redirects by token app scope`, async () => {
     const completeRes = await request(app.getHttpServer())
-      .get(`/consumer/auth/signup/${consumerId}/complete-profile-creation`)
-      .set(`referer`, `${consumerMobileOrigin}/signup/start`)
+      .get(`/api/consumer/auth/signup/${consumerId}/complete-profile-creation?appScope=${consumerMobileAppScope}`)
+      .set(CONSUMER_APP_SCOPE_HEADER, consumerMobileAppScope)
       .expect(200);
     expect(completeRes.text).toBe(`success`);
 
@@ -104,7 +107,7 @@ describe(`Signup verification cutover (e2e, isolated DB)`, () => {
     expect(`referer` in (mailCall ?? {})).toBe(false);
 
     const verifyRes = await request(app.getHttpServer())
-      .get(`/consumer/auth/signup/verification`)
+      .get(`/api/consumer/auth/signup/verification`)
       .query({ token: mailCall!.token })
       .expect(302);
     expect(verifyRes.headers.location).toContain(`${consumerMobileOrigin}/signup/verification`);
@@ -131,7 +134,7 @@ describe(`Signup verification cutover (e2e, isolated DB)`, () => {
     );
 
     const verifyRes = await request(app.getHttpServer())
-      .get(`/consumer/auth/signup/verification`)
+      .get(`/api/consumer/auth/signup/verification`)
       .query({ token: expiredToken })
       .expect(302);
 

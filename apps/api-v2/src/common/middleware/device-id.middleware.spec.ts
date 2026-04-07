@@ -1,17 +1,15 @@
 import { type Response } from 'express';
 
+import { CONSUMER_APP_SCOPE_HEADER } from '@remoola/api-types';
+
 jest.mock(`../../shared/origin-resolver.service`, () => ({
   OriginResolverService: class {
-    resolveConsumerRequestAppScope(
-      origin?: string | string[],
-      referer?: string | string[],
+    validateConsumerAppScopeHeader(
+      value?: string | string[],
     ): `consumer` | `consumer-mobile` | `consumer-css-grid` | undefined {
-      const values = [origin, referer].flatMap((entry) => (Array.isArray(entry) ? entry : [entry]));
-      for (const entry of values) {
-        if (typeof entry !== `string`) continue;
-        if (entry.includes(`mobile.example.com`)) return `consumer-mobile`;
-        if (entry.includes(`grid.example.com`)) return `consumer-css-grid`;
-        if (entry.includes(`app.example.com`) || entry.includes(`consumer.example.com`)) return `consumer`;
+      const headerValue = Array.isArray(value) ? value[0] : value;
+      if (headerValue === `consumer` || headerValue === `consumer-mobile` || headerValue === `consumer-css-grid`) {
+        return headerValue;
       }
       return undefined;
     }
@@ -19,26 +17,23 @@ jest.mock(`../../shared/origin-resolver.service`, () => ({
 }));
 
 import { deviceIdMiddleware, type RequestWithDeviceId } from './device-id.middleware';
-import { envs } from '../../envs';
 import { getApiConsumerDeviceCookieKeysForRead } from '../../shared-common/auth-cookie-policy';
 
 describe(`deviceIdMiddleware`, () => {
   const validUuid = `a1b2c3d4-e5f6-4178-89ab-cdef01234567`;
   const validNonV4Uuid = `a1b2c3d4-e5f6-1178-89ab-cdef01234567`;
-  const initialUnsignedFallback = envs.CONSUMER_DEVICE_ID_ALLOW_UNSIGNED_FALLBACK;
   const [secureDeviceCookieKey, localDeviceCookieKey] = getApiConsumerDeviceCookieKeysForRead();
   const [, mobileLocalDeviceCookieKey] = getApiConsumerDeviceCookieKeysForRead(`consumer-mobile`);
-
-  afterEach(() => {
-    envs.CONSUMER_DEVICE_ID_ALLOW_UNSIGNED_FALLBACK = initialUnsignedFallback;
-  });
 
   function mockReq(overrides: Partial<RequestWithDeviceId> = {}): RequestWithDeviceId {
     return {
       path: `/api/consumer/auth/login`,
       cookies: {},
       signedCookies: {},
-      headers: {},
+      headers: {
+        origin: `https://app.example.com`,
+        [CONSUMER_APP_SCOPE_HEADER]: `consumer`,
+      } as any,
       ...overrides,
     } as RequestWithDeviceId;
   }
@@ -116,6 +111,44 @@ describe(`deviceIdMiddleware`, () => {
     expect(next).toHaveBeenCalled();
   });
 
+  it(`rejects when app scope header is missing`, (done) => {
+    const req = mockReq({ headers: {} as any });
+    const res = mockRes();
+    const next = jest.fn((error?: unknown) => {
+      expect(error).toBeInstanceOf(Error);
+      expect((error as Error).message).toBe(`Invalid app scope`);
+      expect(req.deviceId).toBeUndefined();
+      expect(res.cookie).not.toHaveBeenCalled();
+      done();
+    });
+    deviceIdMiddleware(req, res, next);
+    expect(next).toHaveBeenCalled();
+  });
+
+  it(`skips browser oauth start without requiring app scope header`, (done) => {
+    const req = mockReq({ method: `GET`, path: `/api/consumer/auth/google/start`, headers: {} as any });
+    const res = mockRes();
+    const next = jest.fn(() => {
+      expect(req.deviceId).toBeUndefined();
+      expect(res.cookie).not.toHaveBeenCalled();
+      done();
+    });
+    deviceIdMiddleware(req, res, next);
+    expect(next).toHaveBeenCalledWith();
+  });
+
+  it(`skips token-only verification routes without requiring app scope header`, (done) => {
+    const req = mockReq({ method: `GET`, path: `/api/consumer/auth/forgot-password/verify`, headers: {} as any });
+    const res = mockRes();
+    const next = jest.fn(() => {
+      expect(req.deviceId).toBeUndefined();
+      expect(res.cookie).not.toHaveBeenCalled();
+      done();
+    });
+    deviceIdMiddleware(req, res, next);
+    expect(next).toHaveBeenCalledWith();
+  });
+
   it(`generates new deviceId when cookie value is invalid (not a UUID)`, (done) => {
     const req = mockReq({ cookies: { [localDeviceCookieKey]: `not-a-uuid` } });
     const res = mockRes();
@@ -164,21 +197,7 @@ describe(`deviceIdMiddleware`, () => {
     expect(next).toHaveBeenCalled();
   });
 
-  it(`accepts legacy unsigned cookie and rotates to signed cookie`, (done) => {
-    envs.CONSUMER_DEVICE_ID_ALLOW_UNSIGNED_FALLBACK = true;
-    const req = mockReq({ cookies: { [localDeviceCookieKey]: validUuid } });
-    const res = mockRes();
-    const next = jest.fn(() => {
-      expect(req.deviceId).toBe(validUuid);
-      expect(res.cookie).toHaveBeenCalledWith(expect.any(String), validUuid, expect.objectContaining({ signed: true }));
-      done();
-    });
-    deviceIdMiddleware(req, res, next);
-    expect(next).toHaveBeenCalled();
-  });
-
-  it(`ignores unsigned legacy cookie when unsigned fallback is disabled`, (done) => {
-    envs.CONSUMER_DEVICE_ID_ALLOW_UNSIGNED_FALLBACK = false;
+  it(`ignores unsigned legacy cookie values and rotates to a new signed cookie`, (done) => {
     const req = mockReq({ cookies: { [localDeviceCookieKey]: validUuid } });
     const res = mockRes();
     const next = jest.fn(() => {
@@ -219,9 +238,11 @@ describe(`deviceIdMiddleware`, () => {
     expect(revisitNext).toHaveBeenCalled();
   });
 
-  it(`uses the mobile device namespace selected by trusted origin`, (done) => {
+  it(`uses the mobile device namespace selected by explicit app scope`, (done) => {
     const req = mockReq({
-      headers: { origin: `https://mobile.example.com` } as any,
+      headers: {
+        [CONSUMER_APP_SCOPE_HEADER]: `consumer-mobile`,
+      } as any,
       signedCookies: { [mobileLocalDeviceCookieKey]: validUuid },
     });
     const res = mockRes();
@@ -234,18 +255,21 @@ describe(`deviceIdMiddleware`, () => {
     expect(next).toHaveBeenCalled();
   });
 
-  it(`rotates a mobile unsigned fallback cookie into the mobile signed cookie`, (done) => {
-    envs.CONSUMER_DEVICE_ID_ALLOW_UNSIGNED_FALLBACK = true;
+  it(`rotates a mobile unsigned cookie into a new mobile signed cookie`, (done) => {
     const req = mockReq({
-      headers: { origin: `https://mobile.example.com` } as any,
+      headers: {
+        origin: `https://mobile.example.com`,
+        [CONSUMER_APP_SCOPE_HEADER]: `consumer-mobile`,
+      } as any,
       cookies: { [mobileLocalDeviceCookieKey]: validUuid },
     });
     const res = mockRes();
     const next = jest.fn(() => {
-      expect(req.deviceId).toBe(validUuid);
+      expect(req.deviceId).toBeDefined();
+      expect(req.deviceId).not.toBe(validUuid);
       expect(res.cookie).toHaveBeenCalledWith(
         mobileLocalDeviceCookieKey,
-        validUuid,
+        expect.any(String),
         expect.objectContaining({ signed: true }),
       );
       done();

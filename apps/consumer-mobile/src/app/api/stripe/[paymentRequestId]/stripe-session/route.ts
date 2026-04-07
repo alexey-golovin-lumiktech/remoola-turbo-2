@@ -4,6 +4,8 @@ import { paymentParamsSchema } from '../../../../../features/payments/schemas';
 import { appendSetCookies, buildForwardHeaders } from '../../../../../lib/api-utils';
 import { getEnv } from '../../../../../lib/env.server';
 
+const APP_SCOPE = `consumer-mobile`;
+
 export async function POST(req: NextRequest, context: { params: Promise<{ paymentRequestId: string }> }) {
   const raw = await context.params;
   const parsed = paymentParamsSchema.safeParse(raw);
@@ -16,6 +18,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ paymen
     return NextResponse.json({ message: `API base URL not configured`, code: `CONFIG_ERROR` }, { status: 503 });
   }
   const url = new URL(`${baseUrl}/consumer/stripe/${parsed.data.paymentRequestId}/stripe-session`);
+  url.searchParams.set(`appScope`, APP_SCOPE);
   const res = await fetch(url, {
     method: `POST`,
     headers: buildForwardHeaders(req.headers),

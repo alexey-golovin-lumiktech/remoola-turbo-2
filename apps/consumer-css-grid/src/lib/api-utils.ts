@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 
+import { CONSUMER_APP_SCOPE_HEADER } from '@remoola/api-types';
+
 import { getConsumerCsrfTokenFromCookieHeader } from './consumer-auth-headers.server';
-import { getBypassHeaders, getRequestOrigin } from './request-origin';
+import { APP_SCOPE, getBypassHeaders, getRequestOrigin } from './request-origin';
 
 const FORWARDED_HEADER_ALLOWLIST = new Set([
   `accept`,
@@ -31,6 +33,18 @@ export function appendSetCookies(responseHeaders: Headers, sourceHeaders: Header
   }
 }
 
+function getForwardedOrigin(sourceHeaders: Headers): string {
+  const requestOrigin = sourceHeaders.get(`origin`);
+  if (requestOrigin) {
+    try {
+      return new URL(requestOrigin).origin;
+    } catch {
+      // Ignore malformed browser Origin headers and fall back to the app origin.
+    }
+  }
+  return getRequestOrigin();
+}
+
 export function buildForwardHeaders(sourceHeaders: Headers): Headers {
   const headers = new Headers();
   for (const [name, value] of sourceHeaders.entries()) {
@@ -39,15 +53,15 @@ export function buildForwardHeaders(sourceHeaders: Headers): Headers {
       headers.append(name, value);
     }
   }
+  headers.delete(`origin`);
   if (!headers.has(`x-csrf-token`)) {
     const csrfToken = getConsumerCsrfTokenFromCookieHeader(headers.get(`cookie`) ?? ``);
     if (csrfToken) {
       headers.set(`x-csrf-token`, csrfToken);
     }
   }
-  if (!headers.has(`origin`)) {
-    headers.set(`origin`, getRequestOrigin());
-  }
+  headers.set(`origin`, getForwardedOrigin(sourceHeaders));
+  headers.set(CONSUMER_APP_SCOPE_HEADER, APP_SCOPE);
   for (const [k, v] of Object.entries(getBypassHeaders())) headers.set(k, v);
   return headers;
 }

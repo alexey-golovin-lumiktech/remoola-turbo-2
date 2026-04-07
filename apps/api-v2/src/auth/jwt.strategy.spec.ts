@@ -1,17 +1,13 @@
-import { COOKIE_KEYS } from '@remoola/api-types';
+import { CONSUMER_APP_SCOPE_HEADER, COOKIE_KEYS } from '@remoola/api-types';
 
 jest.mock(`../shared/origin-resolver.service`, () => ({
   OriginResolverService: class {
-    resolveConsumerRequestAppScope(
-      origin?: string | string[],
-      referer?: string | string[],
+    validateConsumerAppScopeHeader(
+      value?: string | string[],
     ): `consumer` | `consumer-mobile` | `consumer-css-grid` | undefined {
-      const values = [origin, referer].flatMap((entry) => (Array.isArray(entry) ? entry : [entry]));
-      for (const entry of values) {
-        if (typeof entry !== `string`) continue;
-        if (entry.includes(`mobile.example.com`)) return `consumer-mobile`;
-        if (entry.includes(`grid.example.com`)) return `consumer-css-grid`;
-        if (entry.includes(`app.example.com`) || entry.includes(`consumer.example.com`)) return `consumer`;
+      const headerValue = Array.isArray(value) ? value[0] : value;
+      if (headerValue === `consumer` || headerValue === `consumer-mobile` || headerValue === `consumer-css-grid`) {
+        return headerValue;
       }
       return undefined;
     }
@@ -41,6 +37,7 @@ describe(`JwtStrategy`, () => {
         [consumerKey]: `consumer-token`,
       },
       headers: {
+        [CONSUMER_APP_SCOPE_HEADER]: `consumer`,
         authorization: `legacy-token`,
       },
     });
@@ -48,7 +45,20 @@ describe(`JwtStrategy`, () => {
     expect(token).toBe(`consumer-token`);
   });
 
-  it(`extracts the mobile consumer cookie token when trusted origin maps to mobile scope`, () => {
+  it(`does not extract a consumer cookie token without an explicit consumer app scope`, () => {
+    const consumerKey = getApiConsumerAccessTokenCookieKeysForRead()[0];
+    const token = extractToken({
+      path: `/api/consumer/dashboard`,
+      cookies: {
+        [consumerKey]: `consumer-token`,
+      },
+      headers: {},
+    });
+
+    expect(token).toBeNull();
+  });
+
+  it(`extracts the mobile consumer cookie token when app scope header selects mobile scope`, () => {
     const mobileKey = getApiConsumerAccessTokenCookieKeysForRead(`consumer-mobile`)[0];
     const token = extractToken({
       path: `/api/consumer/dashboard`,
@@ -56,14 +66,14 @@ describe(`JwtStrategy`, () => {
         [mobileKey]: `mobile-token`,
       },
       headers: {
-        origin: `https://mobile.example.com`,
+        [CONSUMER_APP_SCOPE_HEADER]: `consumer-mobile`,
       },
     });
 
     expect(token).toBe(`mobile-token`);
   });
 
-  it(`extracts the css-grid consumer cookie token when trusted origin maps to css-grid scope`, () => {
+  it(`extracts the css-grid consumer cookie token when app scope header selects css-grid scope`, () => {
     const gridKey = getApiConsumerAccessTokenCookieKeysForRead(`consumer-css-grid`)[0];
     const token = extractToken({
       path: `/api/consumer/dashboard`,
@@ -71,7 +81,7 @@ describe(`JwtStrategy`, () => {
         [gridKey]: `grid-token`,
       },
       headers: {
-        origin: `https://grid.example.com`,
+        [CONSUMER_APP_SCOPE_HEADER]: `consumer-css-grid`,
       },
     });
 
@@ -94,6 +104,7 @@ describe(`JwtStrategy`, () => {
       path: `/api/consumer/dashboard`,
       cookies: {},
       headers: {
+        [CONSUMER_APP_SCOPE_HEADER]: `consumer`,
         authorization: `legacy-token`,
       },
     });

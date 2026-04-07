@@ -42,7 +42,9 @@ describe(`google signup-session route`, () => {
     const forwardedHeaders = mockFetch.mock.calls[0]?.[1]?.headers as Headers | undefined;
 
     expect(response.status).toBe(200);
-    expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`https://api.example.com/consumer/auth/google/signup-session`);
+    expect(String(mockFetch.mock.calls[0]?.[0])).toBe(
+      `https://api.example.com/consumer/auth/google/signup-session?appScope=consumer-mobile`,
+    );
     expect(forwardedHeaders?.get(`cookie`)).toBe(`csrf_token=csrf`);
     expect(getSetCookieValues(response.headers)).toContain(`google_signup=token; Path=/; HttpOnly`);
     await expect(response.text()).resolves.toBe(`{"email":"new-user@example.com"}`);

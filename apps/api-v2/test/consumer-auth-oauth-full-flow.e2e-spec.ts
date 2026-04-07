@@ -13,7 +13,7 @@ import cookieParser from 'cookie-parser';
 import express from 'express';
 import request from 'supertest';
 
-import { type ConsumerAppScope } from '@remoola/api-types';
+import { CONSUMER_APP_SCOPE_HEADER, type ConsumerAppScope } from '@remoola/api-types';
 import { $Enums, PrismaClient } from '@remoola/database-2';
 import { hashPassword, oauthCrypto } from '@remoola/security-utils';
 
@@ -60,6 +60,10 @@ describe(`Consumer auth OAuth full flow (e2e, isolated DB)`, () => {
     if (Array.isArray(header)) return header;
     if (typeof header === `string`) return [header];
     return undefined;
+  }
+
+  function withConsumerAppScope<T extends request.Test>(req: T, appScope: ConsumerAppScope, consumerOrigin: string): T {
+    return req.set(`origin`, consumerOrigin).set(CONSUMER_APP_SCOPE_HEADER, appScope);
   }
 
   beforeAll(async () => {
@@ -157,6 +161,7 @@ describe(`Consumer auth OAuth full flow (e2e, isolated DB)`, () => {
     const startRes = await oauthAgent
       .get(`/api/consumer/auth/google/start`)
       .set(`origin`, consumerOrigin)
+      .set(CONSUMER_APP_SCOPE_HEADER, appScope)
       .query({ appScope, next: `/dashboard` })
       .expect(302);
     expect(startRes.headers.location).toContain(`accounts.google.test`);
@@ -190,12 +195,15 @@ describe(`Consumer auth OAuth full flow (e2e, isolated DB)`, () => {
     expect(stateRows).toBe(0);
 
     await oauthAgent
-      .post(`/api/consumer/auth/oauth/complete`)
+      .post(`/api/consumer/auth/oauth/complete?appScope=${appScope}`)
       .set(`origin`, consumerOrigin)
+      .set(CONSUMER_APP_SCOPE_HEADER, appScope)
       .send({ handoffToken })
       .expect(200);
 
-    const meRes = await oauthAgent.get(`/api/consumer/auth/me`).set(`origin`, consumerOrigin).expect(200);
+    const meRes = await withConsumerAppScope(oauthAgent.get(`/api/consumer/auth/me`), appScope, consumerOrigin).expect(
+      200,
+    );
     expect(meRes.body?.id).toBe(consumerId);
     expect(meRes.body?.email).toBe(consumerEmail);
   });

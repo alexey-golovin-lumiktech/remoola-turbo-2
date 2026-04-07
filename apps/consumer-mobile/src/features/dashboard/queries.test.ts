@@ -47,7 +47,7 @@ describe(`dashboard queries`, () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = originalApiBase;
   });
 
-  it(`forwards cookie auth context with trusted origin`, async () => {
+  it(`forwards cookie auth context with canonical app origin`, async () => {
     mockFetch.mockResolvedValueOnce(
       new Response(JSON.stringify(validDashboard), {
         status: 200,

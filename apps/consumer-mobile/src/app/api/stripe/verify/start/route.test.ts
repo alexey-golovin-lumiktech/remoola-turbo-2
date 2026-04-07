@@ -1,6 +1,6 @@
 import { POST } from './route';
 import { getEnv } from '../../../../../lib/env.server';
-import { TEST_APP_ORIGIN } from '../../../../../test-constants';
+import { TEST_APP_ORIGIN, TEST_BROWSER_ORIGIN } from '../../../../../test-constants';
 
 jest.mock(`../../../../../lib/env.server`, () => ({
   getEnv: jest.fn(),
@@ -40,11 +40,11 @@ describe(`consumer-mobile stripe verify start route`, () => {
     ];
     (global.fetch as jest.Mock).mockResolvedValue(upstream);
 
-    const req = new Request(`${TEST_APP_ORIGIN}/api/stripe/verify/start`, {
+    const req = new Request(`${TEST_BROWSER_ORIGIN}/api/stripe/verify/start`, {
       method: `POST`,
       headers: {
         cookie: `csrf_token=abc`,
-        origin: TEST_APP_ORIGIN,
+        origin: TEST_BROWSER_ORIGIN,
       },
     });
 
@@ -57,7 +57,7 @@ describe(`consumer-mobile stripe verify start route`, () => {
     expect(url.toString()).toBe(`https://api.example.com/consumer/verification/sessions`);
     const headers = init.headers as Headers;
     expect(headers.get(`cookie`)).toBe(`csrf_token=abc`);
-    expect(headers.get(`origin`)).toBe(TEST_APP_ORIGIN);
+    expect(headers.get(`origin`)).toBe(TEST_BROWSER_ORIGIN);
 
     const getSetCookie = (res.headers as Headers & { getSetCookie?: () => string[] }).getSetCookie;
     if (typeof getSetCookie === `function`) {

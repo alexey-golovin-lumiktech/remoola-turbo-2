@@ -1,7 +1,8 @@
-import { BadRequestException, Body, Controller, Param, Post, Req } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Param, Post, Query, Req, UnauthorizedException } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import express from 'express';
 
+import { CONSUMER_APP_SCOPE_HEADER, type ConsumerAppScope } from '@remoola/api-types';
 import { type ConsumerModel } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
@@ -37,17 +38,36 @@ export class ConsumerStripeController {
     return trimmed;
   }
 
+  private requireClaimedConsumerAppScope(req: express.Request, appScope?: string | null): ConsumerAppScope {
+    const validatedAppScope = this.originResolver.validateConsumerAppScope(appScope);
+    if (!validatedAppScope) {
+      throw new BadRequestException(`Invalid app scope`);
+    }
+    const requestAppScope = this.originResolver.validateConsumerAppScopeHeader(
+      req.headers?.[CONSUMER_APP_SCOPE_HEADER],
+    );
+    if (!requestAppScope || requestAppScope !== validatedAppScope) {
+      throw new UnauthorizedException(`Invalid app scope`);
+    }
+    return validatedAppScope;
+  }
+
+  private resolveFrontendBaseUrl(appScope: ConsumerAppScope): string {
+    const frontendBaseUrl = this.originResolver.resolveConsumerOriginByScope(appScope);
+    if (!frontendBaseUrl) {
+      throw new BadRequestException(errorCodes.ORIGIN_REQUIRED);
+    }
+    return frontendBaseUrl;
+  }
+
   @Post(`:paymentRequestId/stripe-session`)
   async createStripeSession(
     @Identity() consumer: ConsumerModel, //
     @Param(`paymentRequestId`) paymentRequestId: string,
+    @Query(`appScope`) appScope: string | undefined,
     @Req() req: express.Request,
   ) {
-    const frontendBaseUrl = this.originResolver.resolveConsumerOriginFromRequestScope(
-      req.headers.origin,
-      req.headers.referer,
-    );
-    if (!frontendBaseUrl) throw new BadRequestException(errorCodes.ORIGIN_REQUIRED);
+    const frontendBaseUrl = this.resolveFrontendBaseUrl(this.requireClaimedConsumerAppScope(req, appScope));
     return this.service.createStripeSession(consumer.id, paymentRequestId, frontendBaseUrl);
   }
 
@@ -71,8 +91,10 @@ export class ConsumerStripeController {
     @Identity() consumer: ConsumerModel,
     @Param(`paymentRequestId`) paymentRequestId: string,
     @Body() body: PayWithSavedPaymentMethod,
+    @Query(`appScope`) appScope: string | undefined,
     @Req() req: express.Request,
   ) {
+    this.requireClaimedConsumerAppScope(req, appScope);
     const idempotencyKey = this.resolveIdempotencyKey(req.get(`idempotency-key`));
     return this.service.payWithSavedPaymentMethod(consumer.id, paymentRequestId, body, idempotencyKey);
   }

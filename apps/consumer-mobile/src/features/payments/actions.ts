@@ -7,6 +7,8 @@ import { getEnv } from '../../lib/env.server';
 import { generateCorrelationId, serverLogger } from '../../lib/logger.server';
 import { getServerActionMutationAuthHeaders } from '../../lib/server-action-auth';
 
+const APP_SCOPE = `consumer-mobile`;
+
 type ActionResult<T = void> =
   | { ok: true; data?: T }
   | { ok: false; error: { code: string; message: string; fields?: Record<string, string> } };
@@ -59,7 +61,9 @@ export async function startPaymentAction(input: unknown) {
     });
 
     const authHeaders = await getServerActionMutationAuthHeaders();
-    const res = await fetch(`${env.NEXT_PUBLIC_API_BASE_URL}/consumer/payments/start`, {
+    const url = new URL(`${env.NEXT_PUBLIC_API_BASE_URL}/consumer/payments/start`);
+    url.searchParams.set(`appScope`, APP_SCOPE);
+    const res = await fetch(url, {
       method: `POST`,
       headers: {
         'content-type': `application/json`,

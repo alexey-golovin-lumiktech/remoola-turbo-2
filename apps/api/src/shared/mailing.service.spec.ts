@@ -11,7 +11,6 @@ describe(`MailingService payment links`, () => {
         if (scope === `consumer`) return `https://consumer.example.com`;
         return null;
       }),
-      resolveDefaultConsumerOrigin: jest.fn(() => `https://consumer.example.com`),
     };
 
     const service = new MailingService(brevoMailService as any, originResolver as any);
@@ -83,7 +82,7 @@ describe(`MailingService payment links`, () => {
     );
   });
 
-  it(`falls back to the default consumer origin when no scope is available`, async () => {
+  it(`skips payment-link emails when no scope is available`, async () => {
     const { service, brevoMailService, originResolver } = makeService();
 
     await service.sendPaymentRefundEmail({
@@ -96,11 +95,6 @@ describe(`MailingService payment links`, () => {
     });
 
     expect(originResolver.resolveConsumerOriginByScope).not.toHaveBeenCalled();
-    expect(originResolver.resolveDefaultConsumerOrigin).toHaveBeenCalled();
-    expect(brevoMailService.sendMail).toHaveBeenCalledWith(
-      expect.objectContaining({
-        html: expect.stringContaining(`https://consumer.example.com/payments/pr_4`),
-      }),
-    );
+    expect(brevoMailService.sendMail).not.toHaveBeenCalled();
   });
 });

@@ -14,17 +14,10 @@ function resolveConsumerDashboardOrigin(): string | null {
   if (configuredOrigin && configuredOrigin !== CONSUMER_ORIGIN_PLACEHOLDER) {
     return configuredOrigin;
   }
-
-  const fallbackOrigin = envs.CORS_ALLOWED_ORIGINS?.find((candidate) => {
-    try {
-      const parsed = new URL(candidate);
-      return parsed.protocol === `http:` || parsed.protocol === `https:`;
-    } catch {
-      return false;
-    }
-  });
-
-  return fallbackOrigin ?? null;
+  if (envs.NODE_ENV === envs.ENVIRONMENT.DEVELOPMENT || envs.NODE_ENV === envs.ENVIRONMENT.TEST) {
+    return `http://localhost:3001`;
+  }
+  return null;
 }
 
 function resolvePayOnlineLink(inv: InvoiceForTemplate): string {

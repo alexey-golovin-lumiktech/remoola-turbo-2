@@ -93,7 +93,6 @@ describe(`envs`, () => {
     expect(envs.PUBLIC_DETAILED_HEALTH_ENABLED).toBe(false);
     expect(envs.PUBLIC_MAIL_TRANSPORT_HEALTH_ENABLED).toBe(false);
     expect(envs.HEALTH_TEST_EMAIL_ENABLED).toBe(false);
-    expect(envs.ALLOW_REQUESTS_WITHOUT_ORIGIN).toBe(false);
     expect(envs.NGROK_ENABLED).toBe(false);
   });
 

@@ -1,11 +1,16 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-import { SESSION_EXPIRED_QUERY, sanitizeNextForRedirect, type TTheme } from '@remoola/api-types';
+import {
+  CONSUMER_APP_SCOPE_HEADER,
+  SESSION_EXPIRED_QUERY,
+  sanitizeNextForRedirect,
+  type TTheme,
+} from '@remoola/api-types';
 
 import { buildConsumerMutationHeaders } from './consumer-auth-headers.server';
 import { getEnv } from './env.server';
-import { getRequestOrigin } from './request-origin';
+import { APP_SCOPE, getRequestOrigin } from './request-origin';
 
 export interface DashboardData {
   summary: {
@@ -399,6 +404,7 @@ async function fetchConsumerApi<T>(path: string, options?: ConsumerApiRequestOpt
       headers: {
         Cookie: cookieStore.toString(),
         origin: getRequestOrigin(),
+        [CONSUMER_APP_SCOPE_HEADER]: APP_SCOPE,
       },
       cache: `no-store`,
       signal: AbortSignal.timeout(15000),
@@ -463,6 +469,7 @@ async function fetchConsumerApiResult<T>(
       headers: {
         Cookie: cookieStore.toString(),
         origin: getRequestOrigin(),
+        [CONSUMER_APP_SCOPE_HEADER]: APP_SCOPE,
       },
       cache: `no-store`,
       signal: AbortSignal.timeout(15000),

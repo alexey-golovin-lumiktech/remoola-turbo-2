@@ -1,8 +1,8 @@
 import { cookies } from 'next/headers';
 
-import { getConsumerMobileCsrfTokenCookieKeysForRead } from '@remoola/api-types';
+import { CONSUMER_APP_SCOPE_HEADER, getConsumerMobileCsrfTokenCookieKeysForRead } from '@remoola/api-types';
 
-import { getRequestOrigin } from './request-origin';
+import { APP_SCOPE, getRequestOrigin } from './request-origin';
 
 export function getCsrfTokenFromCookieHeader(cookieHeader: string): string {
   for (const key of getConsumerMobileCsrfTokenCookieKeysForRead()) {
@@ -25,6 +25,7 @@ export function buildServerReadAuthHeaders(cookieHeader: string | null): Record<
   return {
     Cookie: cookieHeader ?? ``,
     origin: getRequestOrigin(),
+    [CONSUMER_APP_SCOPE_HEADER]: APP_SCOPE,
   };
 }
 
@@ -38,6 +39,7 @@ export async function getServerActionMutationAuthHeaders(): Promise<Record<strin
   return {
     Cookie: cookieHeader,
     origin: getRequestOrigin(),
+    [CONSUMER_APP_SCOPE_HEADER]: APP_SCOPE,
     ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
   };
 }

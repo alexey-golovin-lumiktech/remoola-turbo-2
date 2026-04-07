@@ -4,6 +4,8 @@ import { appendSetCookies, requireJsonBody, buildForwardHeaders } from '../../..
 import { getEnv } from '../../../../lib/env.server';
 import { serverLogger } from '../../../../lib/logger.server';
 
+const APP_SCOPE = `consumer-mobile`;
+
 export async function POST(req: NextRequest) {
   try {
     const bodyResult = await requireJsonBody(req);
@@ -20,6 +22,7 @@ export async function POST(req: NextRequest) {
     serverLogger.info(`Payments start request`, { bodyLength: body.length });
 
     const url = new URL(`${baseUrl}/consumer/payments/start`);
+    url.searchParams.set(`appScope`, APP_SCOPE);
     serverLogger.debug(`Proxying to backend`, { url: url.toString() });
 
     const res = await fetch(url, {

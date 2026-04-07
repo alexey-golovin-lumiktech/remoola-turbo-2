@@ -80,14 +80,7 @@ export class MailingService {
   }
 
   private resolveConsumerPaymentLinkOrigin(consumerAppScope?: ConsumerAppScope): string | null {
-    if (consumerAppScope) {
-      return (
-        this.originResolver.resolveConsumerOriginByScope(consumerAppScope) ??
-        this.originResolver.resolveDefaultConsumerOrigin()
-      );
-    }
-
-    return this.originResolver.resolveDefaultConsumerOrigin();
+    return consumerAppScope ? (this.originResolver.resolveConsumerOriginByScope(consumerAppScope) ?? null) : null;
   }
 
   async sendLogsEmail(data: unknown = null, email?: string) {

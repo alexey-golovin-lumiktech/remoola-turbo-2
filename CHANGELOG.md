@@ -1750,7 +1750,7 @@
 
 # Changelog (April 2026)
 
-<details open>
+<details>
 <summary>2026-04-03</summary>
 
 - **2026-04-03:**
@@ -1791,6 +1791,42 @@
     - `docs/FEATURES_CURRENT.md`, `docs/PROJECT_DOCUMENTATION.md`, and `docs/FINANCIAL_SAFETY_AND_DB_COMPLIANCE.md` for distinct JWT secrets, origin + CSRF requirements, and browser-auth boundary expectations.
   - Follow-up docs refresh `docs/FEATURES_CURRENT.md`, `docs/PROJECT_DOCUMENTATION.md`, and `docs/PROJECT_SUMMARY.md` to reflect `oauth/complete` proxy behavior, the consumer `appScope` contract, and the final April 3 OAuth/auth alignment.
   - No database migration introduced in this change; rollout remains config- and contract-sensitive because cookie names, OAuth callback parameters, trusted origins, JWT secret separation, and per-app consumer scope handling must be deployed consistently across the touched admin and consumer apps.
+
+</details>
+
+<details open>
+<summary>2026-04-07</summary>
+
+- **2026-04-07:**
+  ### 🔐 Security / Production Safety
+  - **Canonical consumer app-scope enforcement:** Consumer auth, refresh, logout, payment start, payment-request send, and Stripe checkout entrypoints now require explicit claimed `appScope` plus matching `x-remoola-app-scope`; consumer access and refresh tokens are scope-bound, and session validation rejects cross-scope cookie/token reuse.
+  - **Legacy trust-path removal:** Removed fallback paths that depended on request-derived consumer identity, unsigned device cookies, or missing OAuth state cookies outside dev/test.
+  - **Mail-link redirect hardening:** Forgot-password and signup-verification redirects now resolve only through stored canonical app scope instead of default consumer-origin fallback.
+  - **Invariant preserved:** app-owned cookie, CSRF, and session boundaries remain intact, reducing risk of cross-surface token misuse and stale cross-app OAuth/device-cookie bleed-through during the cutover.
+
+  ### 🚀 Feature
+  - **Canonical origin contract for consumer runtimes:** Production browser/BFF flows now resolve frontend identity from explicit canonical envs instead of Vercel deployment metadata fallback.
+  - **Payment-link provenance routing:** Payment-link email, checkout, and reversal-related routing now uses stored ledger-history consumer scope instead of request-time origin inference.
+
+  ### 🗄 Database & Migrations
+  - Migration `20260406130000_auth_sessions_app_scope` adds `auth_sessions.app_scope`.
+  - Consumer sessions now persist `appScope` and token hashes so the backend can validate both scope ownership and stored token/session binding.
+  - Rollout remains migration-first and coordinated with the new scoped backend/frontend contract.
+
+  ### ♻️ Refactor
+  - Shared auth contracts now expose `CONSUMER_APP_SCOPE_HEADER` from `@remoola/api-types`.
+  - Trust-layer/origin-resolution helpers were aligned around canonical scope validation instead of ambiguous redirect-origin helper paths.
+
+  ### 🧪 Testing
+  - Expanded regression coverage for scoped auth cookies, CSRF validation, OAuth callback state handling, payment-request send, Stripe checkout/session routing, canonical origin resolution, and session scope enforcement.
+  - Targeted verification remained green across the scoped backend contract plus consumer and consumer-mobile BFF routes.
+
+  ### 🛠 DevEx
+  - Consumer runtime env examples and Turbo env passthrough now reflect canonical consumer origin requirements for production builds and deploys.
+
+  ### 📄 Documentation
+  - Updated release-gate, auth-cookie-policy, browser-identity, project-summary, and cutover handoff docs to describe the canonical scoped rollout and its production-only evidence rules.
+  - The release remains a coordinated cutover: no backend-first, frontend-first, or mixed-version rollout is considered safe for production.
 
 </details>
 

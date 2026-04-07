@@ -26,7 +26,6 @@
 **/*.snap
 
 # Data dumps / exports
-**/*.sql
 **/*dump*
 **/backups/**
 **/exports/**

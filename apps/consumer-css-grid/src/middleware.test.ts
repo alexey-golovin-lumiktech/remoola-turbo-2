@@ -383,7 +383,7 @@ describe(`consumer-css-grid middleware auth-session behavior`, () => {
     expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`${request.nextUrl.origin}/api/consumer/auth/refresh`);
   });
 
-  it(`prefers the local v2 refresh cookie on localhost when both variants are present`, async () => {
+  it(`prefers the local v2 refresh cookie when both localhost variants are present`, async () => {
     mockFetch.mockResolvedValueOnce(new Response(`unauthorized`, { status: 401 }));
 
     const request = createRequest(

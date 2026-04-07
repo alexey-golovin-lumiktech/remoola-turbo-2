@@ -3,19 +3,29 @@ import { PassportStrategy } from '@nestjs/passport';
 import express from 'express';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
-import { resolveAccessTokenCookieKeysForPath } from '@remoola/api-types';
+import { CONSUMER_APP_SCOPE_HEADER, resolveAccessTokenCookieKeysForPath } from '@remoola/api-types';
 
 import { envs } from '../envs';
 import { OriginResolverService } from '../shared/origin-resolver.service';
 
 const originResolver = new OriginResolverService();
 
+function getAccessTokenCookieKeysForPath(
+  path: string,
+  consumerScope?: Parameters<typeof resolveAccessTokenCookieKeysForPath>[1],
+): readonly string[] {
+  if (path.startsWith(`/api/consumer/`) && !consumerScope) {
+    return [];
+  }
+  return resolveAccessTokenCookieKeysForPath(path, consumerScope);
+}
+
 function cookieExtractorByPath(req: express.Request): string | null {
   const path = req?.path ?? req?.url?.split(`?`)[0] ?? ``;
-  const consumerScope =
-    originResolver.resolveConsumerRequestScope?.(req?.headers?.origin, req?.headers?.referer) ??
-    originResolver.resolveConsumerRequestAppScope?.(req?.headers?.origin, req?.headers?.referer);
-  for (const key of resolveAccessTokenCookieKeysForPath(path, consumerScope ?? `consumer`)) {
+  const consumerScope = path.startsWith(`/api/consumer/`)
+    ? originResolver.validateConsumerAppScopeHeader(req?.headers?.[CONSUMER_APP_SCOPE_HEADER])
+    : undefined;
+  for (const key of getAccessTokenCookieKeysForPath(path, consumerScope)) {
     const value = req?.cookies?.[key];
     if (value) return value;
   }

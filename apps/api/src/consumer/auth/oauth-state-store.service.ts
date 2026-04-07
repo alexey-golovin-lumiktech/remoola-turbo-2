@@ -118,6 +118,15 @@ export class OAuthStateStoreService implements OnModuleDestroy {
     return this.deserialize(raw);
   }
 
+  async read(stateToken: string): Promise<OAuthStateRecord | null> {
+    const row = await this.prisma.oauthStateModel.findUnique({
+      where: { stateKey: this.stateKey(stateToken) },
+      select: { payload: true, expiresAt: true },
+    });
+    if (!row || row.expiresAt <= new Date()) return null;
+    return this.deserialize(row.payload);
+  }
+
   private async saveTypedRecord(stateToken: string, record: StoredTypedRecord, ttlMs: number) {
     const key = this.stateKey(stateToken);
     const expiresAt = new Date(Date.now() + ttlMs);

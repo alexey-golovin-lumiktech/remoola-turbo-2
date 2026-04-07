@@ -122,7 +122,7 @@ export default class TemporaryDatabaseEnvironment extends NodeEnvironment {
   private static isVercel(): boolean {
     const v = process.env.VERCEL;
     if (v !== undefined && v !== `` && v !== `0` && String(v).toLowerCase() !== `false`) return true;
-    if (process.env.VERCEL_ENV ?? process.env.VERCEL_URL) return true;
+    if (process.env.VERCEL_ENV) return true;
     return false;
   }
 
@@ -130,7 +130,7 @@ export default class TemporaryDatabaseEnvironment extends NodeEnvironment {
     if (TemporaryDatabaseEnvironment.isVercel()) {
       /* eslint-disable */
       throw new Error(
-        `@remoola/test-db must not run on Vercel (VERCEL/VERCEL_ENV/VERCEL_URL detected). ` +
+        `@remoola/test-db must not run on Vercel (VERCEL/VERCEL_ENV detected). ` +
         `E2E tests with temporary databases are for local or CI only.`,
       );
       /* eslint-enable */

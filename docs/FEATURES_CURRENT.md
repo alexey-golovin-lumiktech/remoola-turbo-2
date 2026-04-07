@@ -16,11 +16,11 @@ Authentication and identity:
 
 - Admin auth with login, refresh, logout, and `/me` identity.
 - Consumer auth with login, refresh, logout, `/me`, and multi-step signup.
-- Password recovery and reset: forgot-password (request email; `POST /consumer/auth/forgot-password` requires trusted consumer request scope so backend derives `appScope` server-side), token-only verify (`GET /consumer/auth/forgot-password/verify?token=...` redirects via stored `appScope`), reset with token (`POST /consumer/auth/password/reset`), and authenticated password update (`PATCH /consumer/profile/password`). The authenticated route supports both password change and first-time password creation for Google-only / no-password accounts: `currentPassword` is required only when a stored password already exists, and successful password set/change revokes active consumer sessions. Reset tokens stored as SHA-256 hash only in DB together with canonical `app_scope` (migrations `20260317120000_reset_password_token_hash`, `20260317120001_drop_reset_password_token`, `20260406120000_reset_password_store_app_scope`); expired tokens cleaned by scheduler. Auth notices in `@remoola/api-types` now include `password_changed`, `password_set`, and `reset_success` for post-login/post-reset messaging. E2E coverage: `apps/api-v2/test/forgot-reset-password.e2e-spec.ts`, `apps/api/test/forgot-reset-password.e2e-spec.ts`.
+- Password recovery and reset: forgot-password (request email; `POST /consumer/auth/forgot-password` requires explicit `appScope`, and backend requires exact match between the claim and `x-remoola-app-scope`), token-only verify (`GET /consumer/auth/forgot-password/verify?token=...` redirects only via stored valid `appScope` and otherwise fails with `ORIGIN_REQUIRED`), reset with token (`POST /consumer/auth/password/reset`), and authenticated password update (`PATCH /consumer/profile/password`). The authenticated route supports both password change and first-time password creation for Google-only / no-password accounts: `currentPassword` is required only when a stored password already exists, and successful password set/change revokes active consumer sessions. Reset tokens stored as SHA-256 hash only in DB together with canonical `app_scope` (migrations `20260317120000_reset_password_token_hash`, `20260317120001_drop_reset_password_token`, `20260406120000_reset_password_store_app_scope`); expired tokens cleaned by scheduler. Auth notices in `@remoola/api-types` now include `password_changed`, `password_set`, and `reset_success` for post-login/post-reset messaging. E2E coverage: `apps/api-v2/test/forgot-reset-password.e2e-spec.ts`, `apps/api/test/forgot-reset-password.e2e-spec.ts`.
 - Cookie-based JWT auth with access/refresh tokens. Shared auth cookie policy: cookie names and options from `@remoola/api-types` (http/auth-cookie-policy); API and Next.js apps (admin, consumer, consumer-mobile) use the same policy; production uses __Host- prefixed names (RFC 6265). Refresh tokens are signed and verified with `JWT_REFRESH_SECRET`, distinct from `JWT_ACCESS_SECRET`.
 - Consumer auth sessions: `auth_sessions` table for database-backed consumer sessions; hashed refresh token storage; session family and refresh rotation lineage (`session_family_id`, `replaced_by_id`); revocation metadata (`revoked_at`, `invalidated_reason`). Migration `20260310123000_consumer_auth_sessions`.
 - Login audit (success/failure tracking) and account lockout (per-email after N failures).
-- Google OAuth endpoints for consumer login flows: `GET /google/start`, `GET /google/callback`, `GET /google/signup-session`, `POST /oauth/complete`. Browser-facing consumers use frontend BFF routes such as `/api/consumer/auth/google/start`, `/api/login`, `/api/consumer/auth/refresh`, and `/api/oauth/complete`; state-changing auth now requires a valid allowed `Origin`/`Referer` plus matching CSRF header/cookie. OAuth `/google/start` now requires explicit `appScope=consumer|consumer-mobile|consumer-css-grid`; backend routing stores `appScope` in OAuth state and callback/handoff redirects are built through `appScope -> configured origin`, not through stored raw origin. `OriginResolverService` remains the trust layer for validating request scope and matching it against the claimed `appScope`.
+- Google OAuth endpoints for consumer login flows: `GET /google/start`, `GET /google/callback`, `GET /google/signup-session`, `POST /oauth/complete`. Browser-facing consumers use frontend BFF routes such as `/api/consumer/auth/google/start`, `/api/login`, `/api/consumer/auth/refresh`, and `/api/oauth/complete`; state-changing auth requires explicit `x-remoola-app-scope` plus matching scoped CSRF header/cookie where applicable. OAuth `/google/start` now requires explicit `appScope=consumer|consumer-mobile|consumer-css-grid`; backend routing stores `appScope` in OAuth state and callback/handoff redirects are built through `appScope -> configured origin`, not through stored raw origin. `OriginResolverService` now validates `appScope` and canonical scope/origin mapping rather than request-derived consumer trust.
 - Signup verification hardening: verification email links are now token-only and no
   longer include `email` or routing-layer `referer` query params; signed verification
   tokens carry canonical `appScope`, and successful post-verification redirects may
@@ -39,7 +39,16 @@ Consumer domain features:
 - Document upload, tagging, and attachment to payments (documents list paginated).
 - Exchange rates, currency conversion, auto-conversion rules, scheduled FX conversions (rules and scheduled lists paginated), and admin review/override.
 - Payment methods CRUD (manual).
-- Stripe checkout sessions, setup intents, confirmations, saved-method payments.
+- Stripe checkout sessions, setup intents, confirmations, saved-method payments. Redirect-capable
+  ancillary Stripe checkout session flows now require explicit consumer `appScope`;
+  backend validates the explicit `x-remoola-app-scope` header against that claim and resolves the
+  success/cancel origin through canonical `appScope -> origin` mapping rather than
+  request-derived routing.
+- Consumer web/mobile/css-grid BFF and server-side mutation helpers depend on
+  explicit configured app origins in production rather than Vercel deployment
+  metadata fallback. For this release, canonical production domains are the only
+  supported auth/CSRF smoke surface; preview / branch deployment hostnames are
+  explicitly unsupported as release evidence.
 - Consumer Verify Me lifecycle via canonical
   `POST /consumer/verification/sessions` (legacy-compatible
   `POST /consumer/webhooks/stripe/verify/start` still delegates to the same
@@ -54,7 +63,11 @@ Consumer domain features:
   preserve compliance-critical identity fields on verification success.
 - Stripe webhook top-level failure handling emits sanitized warning telemetry (`stripe_webhook_processing_failed`) without raw payload/error text.
 - Payments list, balance, history, start payment, withdraw, transfer, and payment view.
-- Payment request creation and send flow.
+- Payment request creation and send flow. Send-email ancillary routing now also carries
+  explicit consumer `appScope`, so payment-request email links resolve through the
+  canonical configured origin for the calling app instead of request-derived routing.
+  This ancillary `appScope` contract is documented as a synchronized no-skew
+  cutover, not as a rolling backward-compatible migration.
 - Profile management (personal, address, organization) and password updates. Profile reads/updates return a safe consumer payload without password hash/salt and include `hasPassword` so web/mobile settings can render `Change Password` versus `Set Password`.
 - User settings for theme preference and preferred display currency (api-types allowlist).
 - Invoice generation for payment requests.

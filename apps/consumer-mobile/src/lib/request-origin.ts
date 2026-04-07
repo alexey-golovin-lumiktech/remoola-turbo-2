@@ -1,9 +1,11 @@
-const VERCEL_PROJECT_PRODUCTION_URL_ENV = `VERCEL_PROJECT_PRODUCTION_URL`;
+export const APP_SCOPE = `consumer-mobile` as const;
 
 function normalizeOriginCandidate(candidate: string | undefined): string | null {
   if (!candidate) return null;
+  const trimmed = candidate.trim();
+  if (!trimmed || trimmed === `undefined` || trimmed === `null`) return null;
 
-  const normalizedCandidate = candidate.includes(`://`) ? candidate : `https://${candidate}`;
+  const normalizedCandidate = trimmed.includes(`://`) ? trimmed : `https://${trimmed}`;
   try {
     return new URL(normalizedCandidate).origin;
   } catch {
@@ -15,17 +17,12 @@ function normalizeOriginCandidate(candidate: string | undefined): string | null 
  * Server-only: returns the request origin (base URL) for same-origin fetches.
  * Use from server actions or route handlers when forwarding requests to this app's API.
  * Uses only trusted config (never the Host header) to avoid SSRF/cookie leakage.
- *
- * Resolution order:
- * 1. Explicit app envs
- * 2. Vercel project production domain
- * 3. Local dev fallback
+ * In production, fail fast unless a canonical mobile app origin is configured explicitly.
  */
 export function getRequestOrigin(): string {
   const configuredOrigin =
-    normalizeOriginCandidate(process.env.CONSUMER_APP_ORIGIN) ??
-    normalizeOriginCandidate(process.env.NEXT_PUBLIC_APP_ORIGIN) ??
-    normalizeOriginCandidate(process.env[VERCEL_PROJECT_PRODUCTION_URL_ENV]);
+    normalizeOriginCandidate(process.env.CONSUMER_MOBILE_APP_ORIGIN) ??
+    normalizeOriginCandidate(process.env.NEXT_PUBLIC_APP_ORIGIN);
 
   if (configuredOrigin) {
     return configuredOrigin;

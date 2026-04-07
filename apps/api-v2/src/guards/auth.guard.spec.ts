@@ -3,10 +3,10 @@ import { type ExecutionContext } from '@nestjs/common/interfaces/features/execut
 import { type Reflector } from '@nestjs/core';
 import { type JwtService } from '@nestjs/jwt';
 
-import { COOKIE_KEYS } from '@remoola/api-types';
+import { CONSUMER_APP_SCOPE_HEADER, COOKIE_KEYS } from '@remoola/api-types';
 import { oauthCrypto } from '@remoola/security-utils';
 
-import { IDENTITY } from '../common';
+import { type IDENTITY } from '../common';
 import { AuthGuard } from './auth.guard';
 import { getApiConsumerAccessTokenCookieKeysForRead, getApiConsumerCsrfTokenCookieKeysForRead } from '../shared-common';
 
@@ -41,8 +41,8 @@ describe(`AuthGuard`, () => {
     },
   };
   const originResolver = {
-    resolveRequestOriginForPath: jest.fn(),
-    resolveConsumerRequestAppScope: jest.fn(),
+    validateConsumerAppScope: jest.fn(),
+    validateConsumerAppScopeHeader: jest.fn(),
   };
 
   let guard: AuthGuard;
@@ -58,8 +58,15 @@ describe(`AuthGuard`, () => {
   beforeEach(() => {
     jest.clearAllMocks();
     reflector.get.mockReturnValue(false);
-    originResolver.resolveRequestOriginForPath.mockReturnValue(`https://consumer.example.com`);
-    originResolver.resolveConsumerRequestAppScope.mockReturnValue(`consumer`);
+    originResolver.validateConsumerAppScope.mockImplementation((value?: string | null) =>
+      value === `consumer` || value === `consumer-mobile` || value === `consumer-css-grid` ? value : undefined,
+    );
+    originResolver.validateConsumerAppScopeHeader.mockImplementation((value?: string | string[]) => {
+      const headerValue = Array.isArray(value) ? value[0] : value;
+      return headerValue === `consumer` || headerValue === `consumer-mobile` || headerValue === `consumer-css-grid`
+        ? headerValue
+        : undefined;
+    });
     guard = new AuthGuard(
       reflector as unknown as Reflector,
       jwtService as unknown as JwtService,
@@ -73,6 +80,7 @@ describe(`AuthGuard`, () => {
     const request: MockRequest = {
       path: `/api/consumer/auth/me`,
       url: `/api/consumer/auth/me`,
+      headers: { [CONSUMER_APP_SCOPE_HEADER]: `consumer` },
       cookies: {
         [consumerAccessCookieKey]: `token`,
       },
@@ -109,7 +117,7 @@ describe(`AuthGuard`, () => {
     expect(prisma.accessRefreshTokenModel.findFirst).not.toHaveBeenCalled();
   });
 
-  it(`allows legacy no-scope consumer token to continue with existing checks`, async () => {
+  it(`rejects consumer requests without an explicit app scope`, async () => {
     const [consumerAccessCookieKey] = getApiConsumerAccessTokenCookieKeysForRead(`consumer`);
     const request: MockRequest = {
       path: `/api/consumer/profile`,
@@ -118,31 +126,10 @@ describe(`AuthGuard`, () => {
         [consumerAccessCookieKey]: `token`,
       },
     };
-    jwtService.verify.mockReturnValue({
-      identityId: `consumer-1`,
-      sid: `session-1`,
-      typ: `access`,
-    });
-    prisma.authSessionModel.findFirst.mockResolvedValue({
-      id: `session-1`,
-      consumerId: `consumer-1`,
-      revokedAt: null,
-      expiresAt: new Date(Date.now() + 60_000),
-    });
-    prisma.adminModel.findFirst.mockResolvedValue(null);
-    prisma.consumerModel.findFirst.mockResolvedValue({
-      id: `consumer-1`,
-      email: `consumer@example.com`,
-    });
 
-    await expect(guard.canActivate(buildContext(request))).resolves.toBe(true);
-    expect(prisma.authSessionModel.findFirst).toHaveBeenCalledTimes(1);
-    expect(prisma.accessRefreshTokenModel.findFirst).not.toHaveBeenCalled();
-    expect(request[IDENTITY]).toEqual({
-      id: `consumer-1`,
-      email: `consumer@example.com`,
-      type: `consumer`,
-    });
+    await expect(guard.canActivate(buildContext(request))).rejects.toThrow(UnauthorizedException);
+    await expect(guard.canActivate(buildContext(request))).rejects.toThrow(`Invalid app scope`);
+    expect(jwtService.verify).not.toHaveBeenCalled();
   });
 
   it(`allows consumer token when stored access hash matches`, async () => {
@@ -151,6 +138,7 @@ describe(`AuthGuard`, () => {
     const request: MockRequest = {
       path: `/api/consumer/profile`,
       url: `/api/consumer/profile`,
+      headers: { [CONSUMER_APP_SCOPE_HEADER]: `consumer` },
       cookies: {
         [consumerAccessCookieKey]: token,
       },
@@ -160,10 +148,12 @@ describe(`AuthGuard`, () => {
       sid: `session-1`,
       typ: `access`,
       scope: `consumer`,
+      appScope: `consumer`,
     });
     prisma.authSessionModel.findFirst.mockResolvedValue({
       id: `session-1`,
       consumerId: `consumer-1`,
+      appScope: `consumer`,
       revokedAt: null,
       expiresAt: new Date(Date.now() + 60_000),
       accessTokenHash: oauthCrypto.hashOAuthState(token),
@@ -182,6 +172,7 @@ describe(`AuthGuard`, () => {
     const request: MockRequest = {
       path: `/api/consumer/profile`,
       url: `/api/consumer/profile`,
+      headers: { [CONSUMER_APP_SCOPE_HEADER]: `consumer` },
       cookies: {
         [consumerAccessCookieKey]: `token`,
       },
@@ -191,10 +182,12 @@ describe(`AuthGuard`, () => {
       sid: `session-1`,
       typ: `access`,
       scope: `consumer`,
+      appScope: `consumer`,
     });
     prisma.authSessionModel.findFirst.mockResolvedValue({
       id: `session-1`,
       consumerId: `consumer-1`,
+      appScope: `consumer`,
       revokedAt: null,
       expiresAt: new Date(Date.now() + 60_000),
       accessTokenHash: oauthCrypto.hashOAuthState(`different-token`),
@@ -208,6 +201,10 @@ describe(`AuthGuard`, () => {
     const request: MockRequest = {
       path: `/api/consumer/auth/me`,
       url: `/api/consumer/auth/me`,
+      headers: {
+        origin: `https://consumer.example.com`,
+        [CONSUMER_APP_SCOPE_HEADER]: `consumer`,
+      },
       cookies: {},
     };
 
@@ -220,6 +217,7 @@ describe(`AuthGuard`, () => {
     const request: MockRequest = {
       path: `/api/consumer/profile`,
       url: `/api/consumer/profile`,
+      headers: { [CONSUMER_APP_SCOPE_HEADER]: `consumer` },
       cookies: {
         [consumerAccessCookieKey]: `token`,
       },
@@ -235,13 +233,37 @@ describe(`AuthGuard`, () => {
     await expect(guard.canActivate(buildContext(request))).rejects.toThrow(`Invalid or expired token`);
   });
 
+  it(`rejects an access token without an explicit scope claim`, async () => {
+    const [consumerAccessCookieKey] = getApiConsumerAccessTokenCookieKeysForRead(`consumer`);
+    const request: MockRequest = {
+      path: `/api/consumer/profile`,
+      url: `/api/consumer/profile`,
+      headers: { [CONSUMER_APP_SCOPE_HEADER]: `consumer` },
+      cookies: {
+        [consumerAccessCookieKey]: `token`,
+      },
+    };
+    jwtService.verify.mockReturnValue({
+      identityId: `consumer-1`,
+      sid: `session-1`,
+      typ: `access`,
+    });
+
+    await expect(guard.canActivate(buildContext(request))).rejects.toThrow(UnauthorizedException);
+    await expect(guard.canActivate(buildContext(request))).rejects.toThrow(`Invalid or expired token`);
+    expect(prisma.authSessionModel.findFirst).not.toHaveBeenCalled();
+  });
+
   it(`rejects authenticated consumer mutations without a valid csrf token`, async () => {
     const [consumerAccessCookieKey] = getApiConsumerAccessTokenCookieKeysForRead(`consumer`);
     const request: MockRequest = {
       method: `POST`,
       path: `/api/consumer/profile`,
       url: `/api/consumer/profile`,
-      headers: { origin: `https://consumer.example.com` },
+      headers: {
+        origin: `https://consumer.example.com`,
+        [CONSUMER_APP_SCOPE_HEADER]: `consumer`,
+      },
       cookies: {
         [consumerAccessCookieKey]: `token`,
       },
@@ -251,10 +273,12 @@ describe(`AuthGuard`, () => {
       sid: `session-1`,
       typ: `access`,
       scope: `consumer`,
+      appScope: `consumer`,
     });
     prisma.authSessionModel.findFirst.mockResolvedValue({
       id: `session-1`,
       consumerId: `consumer-1`,
+      appScope: `consumer`,
       revokedAt: null,
       expiresAt: new Date(Date.now() + 60_000),
     });
@@ -274,7 +298,10 @@ describe(`AuthGuard`, () => {
       method: `GET`,
       path: `/api/consumer/profile`,
       url: `/api/consumer/profile`,
-      headers: { origin: `https://consumer.example.com` },
+      headers: {
+        origin: `https://consumer.example.com`,
+        [CONSUMER_APP_SCOPE_HEADER]: `consumer`,
+      },
       cookies: {
         [consumerAccessCookieKey]: `token`,
       },
@@ -284,10 +311,12 @@ describe(`AuthGuard`, () => {
       sid: `session-1`,
       typ: `access`,
       scope: `consumer`,
+      appScope: `consumer`,
     });
     prisma.authSessionModel.findFirst.mockResolvedValue({
       id: `session-1`,
       consumerId: `consumer-1`,
+      appScope: `consumer`,
       revokedAt: null,
       expiresAt: new Date(Date.now() + 60_000),
     });
@@ -300,17 +329,16 @@ describe(`AuthGuard`, () => {
     await expect(guard.canActivate(buildContext(request))).resolves.toBe(true);
   });
 
-  it(`uses the mobile consumer namespace selected by trusted origin`, async () => {
+  it(`uses the mobile consumer namespace selected by explicit app scope`, async () => {
     const [mobileAccessCookieKey] = getApiConsumerAccessTokenCookieKeysForRead(`consumer-mobile`);
     const [mobileCsrfCookieKey] = getApiConsumerCsrfTokenCookieKeysForRead(`consumer-mobile`);
-    originResolver.resolveRequestOriginForPath.mockReturnValue(`https://mobile.example.com`);
-    originResolver.resolveConsumerRequestAppScope.mockReturnValue(`consumer-mobile`);
     const request: MockRequest = {
       method: `POST`,
       path: `/api/consumer/profile`,
       url: `/api/consumer/profile`,
       headers: {
         origin: `https://mobile.example.com`,
+        [CONSUMER_APP_SCOPE_HEADER]: `consumer-mobile`,
         'x-csrf-token': `csrf-token`,
       },
       cookies: {
@@ -323,10 +351,12 @@ describe(`AuthGuard`, () => {
       sid: `session-1`,
       typ: `access`,
       scope: `consumer`,
+      appScope: `consumer-mobile`,
     });
     prisma.authSessionModel.findFirst.mockResolvedValue({
       id: `session-1`,
       consumerId: `consumer-1`,
+      appScope: `consumer-mobile`,
       revokedAt: null,
       expiresAt: new Date(Date.now() + 60_000),
     });

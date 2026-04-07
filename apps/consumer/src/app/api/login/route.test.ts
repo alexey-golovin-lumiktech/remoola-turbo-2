@@ -47,7 +47,7 @@ describe(`consumer login route`, () => {
     const forwardedHeaders = mockFetch.mock.calls[0]?.[1]?.headers as Headers | undefined;
 
     expect(response.status).toBe(200);
-    expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`https://api.example.com/consumer/auth/login`);
+    expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`https://api.example.com/consumer/auth/login?appScope=consumer`);
     expect(forwardedHeaders?.get(`host`)).toBeNull();
     expect(forwardedHeaders?.get(`origin`)).toBe(`https://app.example.com`);
     expect(forwardedHeaders?.get(`x-csrf-token`)).toBe(`csrf-cookie`);

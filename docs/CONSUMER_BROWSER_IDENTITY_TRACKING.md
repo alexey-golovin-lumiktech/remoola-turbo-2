@@ -26,8 +26,9 @@ Path: `apps/api/src/common/middleware/device-id.middleware.ts`
 Responsibilities:
 
 - Runs only for consumer API paths (`/api/consumer*`).
-- Resolves the consumer app scope from a trusted origin mapping before reading cookies.
+- Requires an explicit consumer `x-remoola-app-scope` header before reading scoped cookies.
 - Reads only the compatible device cookie keys for that app scope (host key and local fallback).
+- Accepts only signed scoped device cookies; unsigned legacy cookie values are ignored and rotated to a new signed cookie.
 - Validates UUID v4 format.
 - Generates UUID v4 if missing/invalid.
 - Attaches `req.deviceId` for downstream handlers.
@@ -238,7 +239,6 @@ Rollback policy:
 
 Config knobs (`apps/api/src/envs.ts`):
 
-- `CONSUMER_DEVICE_ID_ALLOW_UNSIGNED_FALLBACK` (default `false`, ignored in production)
 - `CONSUMER_ACTION_LOG_RETENTION_DAYS` (default `30`)
 - `CONSUMER_ACTION_LOG_PARTITION_PRECREATE_MONTHS` (default `2`)
 - `CONSUMER_ACTION_LOG_MAINTENANCE_CRON` (default `17 */6 * * *`)
@@ -250,7 +250,6 @@ Config knobs (`apps/api/src/envs.ts`):
 - `CONSUMER_ACTION_LOG_BACKPRESSURE_SUMMARY_MIN_DROPPED` (default `10`)
 - `CONSUMER_ACTION_LOG_STORE_IP_ADDRESS` (default `false`; when enabled, only masked prefixes are stored)
 - `CONSUMER_ACTION_LOG_STORE_USER_AGENT` (default `false`; when enabled, only normalized browser family/version is stored)
-- `CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK` (default `false`; temporary compatibility flag for non-production canaries only; startup validation blocks enabling it in production)
 
 Recommended alert thresholds (starting point):
 

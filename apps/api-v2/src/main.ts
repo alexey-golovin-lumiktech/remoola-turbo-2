@@ -8,6 +8,7 @@ import cookieParser from 'cookie-parser';
 import * as express from 'express';
 import helmet from 'helmet';
 
+import { CONSUMER_APP_SCOPE_HEADER } from '@remoola/api-types';
 import { $Enums, type PrismaClient } from '@remoola/database-2';
 
 import { AdminModule } from './admin/admin.module';
@@ -48,6 +49,7 @@ const CORS_ALLOWED_HEADERS = [
   `X-Correlation-Id`,
   `X-Request-Id`,
   `Idempotency-Key`,
+  CONSUMER_APP_SCOPE_HEADER,
 ].join(`,`);
 const CORS_EXPOSED_HEADERS = `set-cookie,content-range,content-type`;
 
@@ -250,11 +252,9 @@ function resolveAllowedOriginForPath(
     return originResolver.validateAdminOrigin(originHeader);
   }
   if (path.startsWith(`/api/consumer/`) || path.startsWith(`/docs/consumer`)) {
-    return originResolver.validateConsumerRedirectOrigin(originHeader);
+    return originResolver.validateConsumerCorsOrigin(originHeader);
   }
-  return (
-    originResolver.validateAdminOrigin(originHeader) ?? originResolver.validateConsumerRedirectOrigin(originHeader)
-  );
+  return originResolver.validateAdminOrigin(originHeader) ?? originResolver.validateConsumerCorsOrigin(originHeader);
 }
 
 function registerScopedCors(app: NestExpressApplication, originResolver: OriginResolverService): void {
@@ -342,32 +342,7 @@ function registerProcessHandlers(app: INestApplication): void {
   });
 }
 
-async function bootstrap(): Promise<INestApplication> {
-  logger.log(`BOOT PID=${process.pid}`);
-  logger.log(`BOOT TIME=${new Date().toISOString()}`);
-
-  const isOnVercel = envs.VERCEL === 1;
-  const originResolver = new OriginResolverService();
-
-  if (isOnVercel) {
-    process.env.NO_COLOR = `true`;
-    logger.warn(`VERCEL=1 detected. This bootstrap is designed for a persistent Node server.`);
-  }
-
-  if (envs.CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK) {
-    logger.warn(
-      `
-        CONSUMER_OAUTH_ALLOW_MISSING_STATE_COOKIE_FALLBACK
-        is enabled;
-        restrict to controlled non-production debugging only
-      `,
-    );
-  }
-
-  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-    rawBody: true,
-  });
-
+export function configureApp(app: NestExpressApplication, originResolver = new OriginResolverService()): void {
   app.enableShutdownHooks();
   app.setGlobalPrefix(`api`);
   app.set(`trust proxy`, 1);
@@ -435,16 +410,6 @@ async function bootstrap(): Promise<INestApplication> {
   const prisma = app.get(PrismaService);
   const consumerActionLog = app.get(ConsumerActionLogService);
 
-  await waitForDatabase(prisma);
-
-  const shouldRunBootstrapSeed = !envs.isProductionLike || envs.ALLOW_PRODUCTION_BOOTSTRAP_SEED;
-
-  if (shouldRunBootstrapSeed) {
-    await seed(prisma);
-  } else {
-    logger.log(`Skipping bootstrap seed in production-like runtime (ALLOW_PRODUCTION_BOOTSTRAP_SEED=false)`);
-  }
-
   app.useGlobalGuards(new AuthGuard(reflector, jwtService, prisma));
 
   app.useGlobalInterceptors(
@@ -454,6 +419,35 @@ async function bootstrap(): Promise<INestApplication> {
   );
 
   app.useGlobalFilters(new PrismaExceptionFilter());
+}
+
+async function bootstrap(): Promise<INestApplication> {
+  logger.log(`BOOT PID=${process.pid}`);
+  logger.log(`BOOT TIME=${new Date().toISOString()}`);
+
+  const isOnVercel = envs.VERCEL === 1;
+  const originResolver = new OriginResolverService();
+
+  if (isOnVercel) {
+    process.env.NO_COLOR = `true`;
+    logger.warn(`VERCEL=1 detected. This bootstrap is designed for a persistent Node server.`);
+  }
+
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    rawBody: true,
+  });
+  configureApp(app, originResolver);
+  const prisma = app.get(PrismaService);
+
+  await waitForDatabase(prisma);
+
+  const shouldRunBootstrapSeed = !envs.isProductionLike || envs.ALLOW_PRODUCTION_BOOTSTRAP_SEED;
+
+  if (shouldRunBootstrapSeed) {
+    await seed(prisma);
+  } else {
+    logger.log(`Skipping bootstrap seed in production-like runtime (ALLOW_PRODUCTION_BOOTSTRAP_SEED=false)`);
+  }
 
   const port = envs.PORT || 3000;
   await app.listen(port);
@@ -481,7 +475,9 @@ async function bootstrap(): Promise<INestApplication> {
   return app;
 }
 
-void bootstrap().catch((error: unknown) => {
-  logger.error(`Bootstrap error: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`);
-  process.exit(1);
-});
+if (require.main === module) {
+  void bootstrap().catch((error: unknown) => {
+    logger.error(`Bootstrap error: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`);
+    process.exit(1);
+  });
+}

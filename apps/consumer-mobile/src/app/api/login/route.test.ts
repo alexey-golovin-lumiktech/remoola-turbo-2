@@ -1,7 +1,7 @@
 import { POST } from './route';
 import { getSetCookieValues } from '../../../lib/api-utils';
 import { getEnv } from '../../../lib/env.server';
-import { TEST_APP_ORIGIN, TEST_CSRF_COOKIE_KEY } from '../../../test-constants';
+import { TEST_APP_ORIGIN, TEST_BROWSER_ORIGIN, TEST_CSRF_COOKIE_KEY } from '../../../test-constants';
 
 jest.mock(`../../../lib/env.server`, () => ({
   getEnv: jest.fn(),
@@ -30,12 +30,12 @@ describe(`POST /api/login`, () => {
       }),
     );
 
-    const req = new Request(`${TEST_APP_ORIGIN}/api/login`, {
+    const req = new Request(`${TEST_BROWSER_ORIGIN}/api/login`, {
       method: `POST`,
       headers: {
         'content-type': `application/json`,
         cookie: `consumer_session=session-cookie; ${TEST_CSRF_COOKIE_KEY}=csrf-cookie`,
-        origin: TEST_APP_ORIGIN,
+        origin: TEST_BROWSER_ORIGIN,
       },
       body: JSON.stringify({ email: `u@e.com`, password: `p` }),
     });
@@ -43,8 +43,10 @@ describe(`POST /api/login`, () => {
     const res = await POST(req);
     const forwardedHeaders = fetchSpy.mock.calls[0]?.[1]?.headers as Headers | undefined;
 
-    expect(String(fetchSpy.mock.calls[0]?.[0])).toBe(`https://api.example.com/consumer/auth/login`);
-    expect(forwardedHeaders?.get(`origin`)).toBe(TEST_APP_ORIGIN);
+    expect(String(fetchSpy.mock.calls[0]?.[0])).toBe(
+      `https://api.example.com/consumer/auth/login?appScope=consumer-mobile`,
+    );
+    expect(forwardedHeaders?.get(`origin`)).toBe(TEST_BROWSER_ORIGIN);
     expect(forwardedHeaders?.get(`x-csrf-token`)).toBe(`csrf-cookie`);
     expect(getSetCookieValues(res.headers).some((cookie) => cookie.startsWith(`login_cookie=`))).toBe(true);
 

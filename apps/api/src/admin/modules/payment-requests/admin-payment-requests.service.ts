@@ -12,7 +12,7 @@ import { envs } from '../../../envs';
 import { AdminActionAuditService, ADMIN_ACTION_AUDIT_ACTIONS } from '../../../shared/admin-action-audit.service';
 import { BalanceCalculationService } from '../../../shared/balance-calculation.service';
 import { MailingService } from '../../../shared/mailing.service';
-import { extractConsumerAppScopeFromMetadata } from '../../../shared/payment-link-metadata';
+import { resolvePaymentLinkConsumerAppScopeFromLedgerHistory } from '../../../shared/payment-link-scope-resolver';
 import { PrismaService } from '../../../shared/prisma.service';
 import { getCurrencyFractionDigits } from '../../../shared-common';
 
@@ -196,24 +196,7 @@ export class AdminPaymentRequestsService {
   }
 
   private async resolvePaymentLinkConsumerAppScope(paymentRequestId: string): Promise<ConsumerAppScope | undefined> {
-    const entries = await this.prisma.ledgerEntryModel.findMany({
-      where: {
-        paymentRequestId,
-        deletedAt: null,
-      },
-      orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-      take: 6,
-      select: { metadata: true },
-    });
-
-    for (const entry of entries) {
-      const consumerAppScope = extractConsumerAppScopeFromMetadata(entry.metadata);
-      if (consumerAppScope) {
-        return consumerAppScope;
-      }
-    }
-
-    return undefined;
+    return resolvePaymentLinkConsumerAppScopeFromLedgerHistory(this.prisma, paymentRequestId);
   }
 
   private async sendReversalEmails(params: {

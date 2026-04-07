@@ -7,6 +7,5 @@
 **/generated/**
 **/prisma/generated/**
 **/*.snap
-**/*.sql
 **/docs/archive/**
 **/playwright-report/**

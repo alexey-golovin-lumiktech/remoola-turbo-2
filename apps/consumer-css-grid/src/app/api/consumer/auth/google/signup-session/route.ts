@@ -3,6 +3,8 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { appendSetCookies, buildAuthMutationForwardHeaders } from '../../../../../../lib/api-utils';
 import { getEnv } from '../../../../../../lib/env.server';
 
+const APP_SCOPE = `consumer-css-grid`;
+
 export async function GET(req: NextRequest) {
   const env = getEnv();
   const baseUrl = env.NEXT_PUBLIC_API_BASE_URL;
@@ -11,6 +13,7 @@ export async function GET(req: NextRequest) {
   }
 
   const url = new URL(`${baseUrl}/consumer/auth/google/signup-session`);
+  url.searchParams.set(`appScope`, APP_SCOPE);
 
   const forwardHeaders = buildAuthMutationForwardHeaders(req.headers);
 

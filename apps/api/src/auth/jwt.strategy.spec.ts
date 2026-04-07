@@ -1,4 +1,18 @@
-import { COOKIE_KEYS, resolveAccessTokenCookieKeysForPath } from '@remoola/api-types';
+import { CONSUMER_APP_SCOPE_HEADER, COOKIE_KEYS, resolveAccessTokenCookieKeysForPath } from '@remoola/api-types';
+
+jest.mock(`../shared/origin-resolver.service`, () => ({
+  OriginResolverService: class {
+    validateConsumerAppScopeHeader(
+      value?: string | string[],
+    ): `consumer` | `consumer-mobile` | `consumer-css-grid` | undefined {
+      const headerValue = Array.isArray(value) ? value[0] : value;
+      if (headerValue === `consumer` || headerValue === `consumer-mobile` || headerValue === `consumer-css-grid`) {
+        return headerValue;
+      }
+      return undefined;
+    }
+  },
+}));
 
 import { JwtStrategy } from './jwt.strategy';
 
@@ -22,11 +36,25 @@ describe(`JwtStrategy`, () => {
         [consumerKey]: `consumer-token`,
       },
       headers: {
+        [CONSUMER_APP_SCOPE_HEADER]: `consumer`,
         authorization: `legacy-token`,
       },
     });
 
     expect(token).toBe(`consumer-token`);
+  });
+
+  it(`does not extract a consumer cookie token without an explicit consumer app scope`, () => {
+    const consumerKey = resolveAccessTokenCookieKeysForPath(`/api/consumer/dashboard`, `consumer`)[0];
+    const token = extractToken({
+      path: `/api/consumer/dashboard`,
+      cookies: {
+        [consumerKey]: `consumer-token`,
+      },
+      headers: {},
+    });
+
+    expect(token).toBeNull();
   });
 
   it(`extracts the admin cookie token for admin API paths`, () => {
@@ -45,6 +73,7 @@ describe(`JwtStrategy`, () => {
       path: `/api/consumer/dashboard`,
       cookies: {},
       headers: {
+        [CONSUMER_APP_SCOPE_HEADER]: `consumer`,
         authorization: `legacy-token`,
       },
     });

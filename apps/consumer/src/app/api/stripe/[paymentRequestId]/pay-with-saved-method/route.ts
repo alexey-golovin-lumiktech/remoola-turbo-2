@@ -2,6 +2,8 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 import { appendSetCookies, buildForwardHeaders, requireJsonBody } from '../../../../../lib/api-utils';
 
+const APP_SCOPE = `consumer`;
+
 function getValidPaymentRequestId(params: { paymentRequestId: string }): string | null {
   const paymentRequestId = params.paymentRequestId?.trim();
   return paymentRequestId.length > 0 ? paymentRequestId : null;
@@ -18,6 +20,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ paymen
   const url = new URL(
     `${process.env.NEXT_PUBLIC_API_BASE_URL}/consumer/stripe/${paymentRequestId}/pay-with-saved-method`,
   );
+  url.searchParams.set(`appScope`, APP_SCOPE);
 
   const res = await fetch(url, {
     method: `POST`,

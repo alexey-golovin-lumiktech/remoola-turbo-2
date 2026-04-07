@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 import { appendSetCookies, buildAuthMutationForwardHeaders, requireJsonBody } from '../../../../../../../lib/api-utils';
 import { getEnv } from '../../../../../../../lib/env.server';
 
+const APP_SCOPE = `consumer-css-grid`;
+
 export async function POST(req: Request) {
   const bodyResult = await requireJsonBody(req);
   if (!bodyResult.ok) return bodyResult.response;
@@ -14,6 +16,7 @@ export async function POST(req: Request) {
   }
 
   const url = new URL(`${baseUrl}/consumer/auth/google/signup-session/establish`);
+  url.searchParams.set(`appScope`, APP_SCOPE);
   const forwardHeaders = buildAuthMutationForwardHeaders(req.headers);
   forwardHeaders.set(`content-type`, `application/json`);
 

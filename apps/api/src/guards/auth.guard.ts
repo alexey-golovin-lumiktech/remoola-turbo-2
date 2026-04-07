@@ -9,7 +9,12 @@ import { type Reflector } from '@nestjs/core';
 import { type JwtService } from '@nestjs/jwt';
 import { type Request as TExpressRequest } from 'express';
 
-import { resolveAccessTokenCookieKeysForPath } from '@remoola/api-types';
+import {
+  CONSUMER_APP_SCOPE_HEADER,
+  type ConsumerAppScope,
+  resolveAccessTokenCookieKeysForPath,
+} from '@remoola/api-types';
+import { oauthCrypto } from '@remoola/security-utils';
 
 import { IDENTITY, type IIdentity, type IIdentityContext, IS_PUBLIC } from '../common';
 import { type IJwtTokenPayload } from '../dtos/consumer';
@@ -28,6 +33,16 @@ const GuardMessage = {
   ONLY_FOR_CONSUMERS: `Access restricted to consumers`,
 } as const;
 
+function getAccessTokenCookieKeysForPath(
+  path: string,
+  consumerScope?: Parameters<typeof resolveAccessTokenCookieKeysForPath>[1],
+): readonly string[] {
+  if (path.startsWith(CONSUMER_API_PATH_PREFIX) && !consumerScope) {
+    return [];
+  }
+  return resolveAccessTokenCookieKeysForPath(path, consumerScope);
+}
+
 export class AuthGuard implements CanActivate {
   private readonly logger = new Logger(AuthGuard.name);
 
@@ -44,16 +59,20 @@ export class AuthGuard implements CanActivate {
     if (isPublic) return true;
 
     const path = request.path ?? request.url?.split(`?`)[0] ?? ``;
-    const consumerScope =
-      this.originResolver.resolveConsumerRequestScope?.(request.headers?.origin, request.headers?.referer) ??
-      this.originResolver.resolveConsumerRequestAppScope?.(request.headers?.origin, request.headers?.referer);
-    const cookieAccessToken = resolveAccessTokenCookieKeysForPath(path, consumerScope ?? `consumer`)
+    const isConsumerPath = path.startsWith(CONSUMER_API_PATH_PREFIX);
+    const consumerScope = isConsumerPath
+      ? this.originResolver.validateConsumerAppScopeHeader(request.headers?.[CONSUMER_APP_SCOPE_HEADER])
+      : undefined;
+    if (isConsumerPath && !consumerScope) {
+      throw new UnauthorizedException(`Invalid app scope`);
+    }
+    const cookieAccessToken = getAccessTokenCookieKeysForPath(path, consumerScope)
       .map((key) => request.cookies[key])
       .find((value): value is string => typeof value === `string` && value.length > 0);
     if (!cookieAccessToken) {
       throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
     }
-    await this.processAccessToken(cookieAccessToken, request);
+    await this.processAccessToken(cookieAccessToken, request, consumerScope);
     ensureAuthenticatedMutationCsrf(request, this.originResolver);
     return true;
   }
@@ -76,7 +95,7 @@ export class AuthGuard implements CanActivate {
     });
   }
 
-  private async processAccessToken(accessToken: string, request: TExpressRequest) {
+  private async processAccessToken(accessToken: string, request: TExpressRequest, requestAppScope?: ConsumerAppScope) {
     let verified: IJwtTokenPayload;
     try {
       verified = this.jwtService.verify<IJwtTokenPayload>(accessToken);
@@ -93,8 +112,12 @@ export class AuthGuard implements CanActivate {
 
     const path = request.path ?? request.url?.split(`?`)[0] ?? ``;
 
+    if (verified.scope !== `consumer` && verified.scope !== `admin`) {
+      this.logger.warn(`AuthGuard: token missing or has invalid scope`);
+      throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
+    }
+
     // Defense-in-depth scope check: reject cross-domain tokens early before DB lookups.
-    // Only applied when scope claim is present; legacy tokens without scope fall through to DB-level checks.
     if (verified.scope === `admin` && path.startsWith(CONSUMER_API_PATH_PREFIX)) {
       this.logger.warn(`AuthGuard: admin token used on consumer path`);
       throw new ForbiddenException(GuardMessage.ONLY_FOR_CONSUMERS);
@@ -112,16 +135,29 @@ export class AuthGuard implements CanActivate {
 
     const isConsumerPath = path.startsWith(CONSUMER_API_PATH_PREFIX);
     if (isConsumerPath) {
+      const tokenAppScope = this.originResolver.validateConsumerAppScope(verified.appScope);
+      if (!requestAppScope || !tokenAppScope || tokenAppScope !== requestAppScope) {
+        this.logger.warn(`AuthGuard: consumer access token app scope mismatch`);
+        throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
+      }
       if (!verified.sid) {
         this.logger.warn(`AuthGuard: consumer access token missing sid`);
         throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
       }
       const session = await this.prisma.authSessionModel.findFirst({
-        where: { id: verified.sid, consumerId: identityId, revokedAt: null },
+        where: { id: verified.sid, consumerId: identityId, appScope: requestAppScope, revokedAt: null },
       });
       if (session == null || session.expiresAt < new Date()) {
         this.logger.warn(`AuthGuard: consumer session not found or expired`);
         throw new UnauthorizedException(GuardMessage.NO_IDENTITY_RECORD);
+      }
+      if (session.appScope !== requestAppScope) {
+        this.logger.warn(`AuthGuard: consumer session app scope mismatch`);
+        throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
+      }
+      if (session.accessTokenHash && !secureCompare(session.accessTokenHash, oauthCrypto.hashOAuthState(accessToken))) {
+        this.logger.warn(`AuthGuard: consumer access token mismatch with stored value`);
+        throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
       }
     } else {
       const identityAccess = await this.findIdentityAccess({ identityId, accessToken });

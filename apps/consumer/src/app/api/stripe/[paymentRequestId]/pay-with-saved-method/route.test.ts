@@ -55,7 +55,7 @@ describe(`consumer stripe pay-with-saved-method route`, () => {
     await expect(res.text()).resolves.toBe(`{"ok":true}`);
 
     const [url, init] = (global.fetch as jest.Mock).mock.calls[0] as [URL, RequestInit];
-    expect(url.toString()).toBe(`https://api.example.com/consumer/stripe/pr_1/pay-with-saved-method`);
+    expect(url.toString()).toBe(`https://api.example.com/consumer/stripe/pr_1/pay-with-saved-method?appScope=consumer`);
     const headers = init.headers as Headers;
     expect(headers.get(`idempotency-key`)).toBe(`idem-key-123`);
     expect(headers.get(`cookie`)).toBe(`csrf_token=aaa`);

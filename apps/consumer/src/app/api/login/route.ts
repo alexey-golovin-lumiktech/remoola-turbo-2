@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 
 import { appendSetCookies, buildAuthMutationForwardHeaders } from '../../../lib/api-utils';
 
+const APP_SCOPE = `consumer`;
+
 export async function POST(req: Request) {
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
   if (!baseUrl) {
@@ -9,6 +11,7 @@ export async function POST(req: Request) {
   }
 
   const url = new URL(`${baseUrl}/consumer/auth/login`);
+  url.searchParams.set(`appScope`, APP_SCOPE);
   const forwardHeaders = buildAuthMutationForwardHeaders(req.headers);
 
   const res = await fetch(url, {

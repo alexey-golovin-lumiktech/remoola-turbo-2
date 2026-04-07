@@ -65,8 +65,6 @@ describe(`ConsumerAuthService.issueTokensForConsumer`, () => {
         {
           provide: OriginResolverService,
           useValue: {
-            validateRedirectOrigin: jest.fn(),
-            resolveConsumerRedirectOrigin: jest.fn(),
             getAllowedOrigins: jest.fn(),
           },
         },
@@ -77,7 +75,7 @@ describe(`ConsumerAuthService.issueTokensForConsumer`, () => {
   });
 
   it(`stores both access and refresh token hashes on the created auth session`, async () => {
-    const result = await service.issueTokensForConsumer(`consumer-1`);
+    const result = await service.issueTokensForConsumer(`consumer-1`, `consumer`);
 
     expect(result).toEqual({
       accessToken: `access-token`,
@@ -88,6 +86,7 @@ describe(`ConsumerAuthService.issueTokensForConsumer`, () => {
     expect(prisma.authSessionModel.create).toHaveBeenCalledWith({
       data: {
         consumerId: `consumer-1`,
+        appScope: `consumer`,
         sessionFamilyId: `consumer-1`,
         refreshTokenHash: expect.stringMatching(/^pending:/),
         expiresAt: expect.any(Date),

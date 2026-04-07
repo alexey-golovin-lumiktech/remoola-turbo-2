@@ -8,7 +8,7 @@ jest.mock(`../../../../lib/env.server`, () => ({
 
 import { POST } from './route';
 import { getSetCookieValues } from '../../../../lib/api-utils';
-import { TEST_APP_ORIGIN, TEST_CSRF_COOKIE_KEY } from '../../../../test-constants';
+import { TEST_APP_ORIGIN, TEST_BROWSER_ORIGIN, TEST_CSRF_COOKIE_KEY } from '../../../../test-constants';
 
 describe(`POST /api/oauth/complete`, () => {
   afterEach(() => {
@@ -24,12 +24,12 @@ describe(`POST /api/oauth/complete`, () => {
       }),
     );
 
-    const req = new Request(`${TEST_APP_ORIGIN}/api/oauth/complete`, {
+    const req = new Request(`${TEST_BROWSER_ORIGIN}/api/oauth/complete`, {
       method: `POST`,
       headers: {
         'content-type': `application/json`,
         cookie: `consumer_session=session-cookie; ${TEST_CSRF_COOKIE_KEY}=csrf-cookie`,
-        origin: TEST_APP_ORIGIN,
+        origin: TEST_BROWSER_ORIGIN,
       },
       body: JSON.stringify({ handoffToken: `handoff-123` }),
     });
@@ -37,8 +37,8 @@ describe(`POST /api/oauth/complete`, () => {
     const res = await POST(req);
     const forwardedHeaders = fetchSpy.mock.calls[0]?.[1]?.headers as Headers | undefined;
 
-    expect(String(fetchSpy.mock.calls[0]?.[0])).toContain(`/consumer/auth/oauth/complete`);
-    expect(forwardedHeaders?.get(`origin`)).toBe(TEST_APP_ORIGIN);
+    expect(String(fetchSpy.mock.calls[0]?.[0])).toContain(`/consumer/auth/oauth/complete?appScope=consumer-mobile`);
+    expect(forwardedHeaders?.get(`origin`)).toBe(TEST_BROWSER_ORIGIN);
     expect(forwardedHeaders?.get(`x-csrf-token`)).toBe(`csrf-cookie`);
     expect(getSetCookieValues(res.headers).some((cookie) => cookie.startsWith(`oauth_cookie=`))).toBe(true);
   });

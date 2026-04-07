@@ -1,9 +1,11 @@
-const VERCEL_PROJECT_PRODUCTION_URL_ENV = `VERCEL_PROJECT_PRODUCTION_URL`;
+export const APP_SCOPE = `consumer` as const;
 
 function normalizeOriginCandidate(candidate: string | undefined): string | null {
   if (!candidate) return null;
+  const trimmed = candidate.trim();
+  if (!trimmed || trimmed === `undefined` || trimmed === `null`) return null;
 
-  const normalizedCandidate = candidate.includes(`://`) ? candidate : `https://${candidate}`;
+  const normalizedCandidate = trimmed.includes(`://`) ? trimmed : `https://${trimmed}`;
   try {
     return new URL(normalizedCandidate).origin;
   } catch {
@@ -14,14 +16,12 @@ function normalizeOriginCandidate(candidate: string | undefined): string | null 
 /**
  * Server-only: returns the request origin (base URL) for same-origin fetches.
  * Uses only trusted config (never the Host header) to avoid SSRF/cookie leakage.
- * In production on Vercel, prefer the project production domain over deployment URLs
- * so backend CORS and scope resolution stay aligned with the stable FE hostname.
+ * In production, fail fast unless a canonical app origin is configured explicitly.
  */
-export function getRequestOrigin(): string | null {
+export function getRequestOrigin(): string {
   const configuredOrigin =
     normalizeOriginCandidate(process.env.CONSUMER_APP_ORIGIN) ??
-    normalizeOriginCandidate(process.env.NEXT_PUBLIC_APP_ORIGIN) ??
-    normalizeOriginCandidate(process.env[VERCEL_PROJECT_PRODUCTION_URL_ENV]);
+    normalizeOriginCandidate(process.env.NEXT_PUBLIC_APP_ORIGIN);
 
   if (configuredOrigin) {
     return configuredOrigin;
@@ -31,7 +31,7 @@ export function getRequestOrigin(): string | null {
     return `http://localhost:3001`;
   }
 
-  return null;
+  throw new Error(`Consumer app origin is not configured`);
 }
 
 /**

@@ -14,6 +14,7 @@ import express from 'express';
 import Stripe from 'stripe';
 import request from 'supertest';
 
+import { CONSUMER_APP_SCOPE_HEADER } from '@remoola/api-types';
 import { $Enums, PrismaClient } from '@remoola/database-2';
 import { hashPassword } from '@remoola/security-utils';
 
@@ -33,6 +34,11 @@ describe(`Consumer verification lifecycle (e2e, isolated DB)`, () => {
   let consumerPaymentsService: ConsumerPaymentsService;
   let consumerId = ``;
   const consumerOrigin = `http://127.0.0.1:3003`;
+  const appScope = `consumer-css-grid` as const;
+
+  function withConsumerAppScope<T extends request.Test>(req: T): T {
+    return req.set(`origin`, consumerOrigin).set(CONSUMER_APP_SCOPE_HEADER, appScope);
+  }
 
   const consumerEmail = `verification-e2e-consumer@local.test`;
   const consumerPassword = `VerificationE2E1!`;
@@ -146,20 +152,16 @@ describe(`Consumer verification lifecycle (e2e, isolated DB)`, () => {
     } as unknown as Stripe.Response<Stripe.Identity.VerificationSession>);
 
     const agent = request.agent(app.getHttpServer());
-    const loginRes = await agent
-      .post(`/api/consumer/auth/login`)
-      .set(`origin`, consumerOrigin)
+    const loginRes = await withConsumerAppScope(agent.post(`/api/consumer/auth/login?appScope=${appScope}`))
       .send({ email: consumerEmail, password: consumerPassword })
       .expect(200);
     const csrf = parseCookieValueForKeys(
       asCookieArray(loginRes.headers[`set-cookie`]),
-      getApiConsumerCsrfTokenCookieKeysForRead(`consumer-css-grid`),
+      getApiConsumerCsrfTokenCookieKeysForRead(appScope),
     );
     expect(csrf).toBeTruthy();
 
-    const startRes = await agent
-      .post(`/api/consumer/verification/sessions`)
-      .set(`origin`, consumerOrigin)
+    const startRes = await withConsumerAppScope(agent.post(`/api/consumer/verification/sessions`))
       .set(`x-csrf-token`, csrf ?? ``)
       .expect(201);
     expect(startRes.body).toEqual({

@@ -102,6 +102,8 @@ type VerificationSessionResult =
     }
   | { ok: false; error: { code: string; message: string; fields?: Record<string, string> } };
 
+const APP_SCOPE = `consumer-css-grid`;
+
 function invalid(message: string, fields?: Record<string, string>): MutationResult {
   return {
     ok: false,
@@ -279,7 +281,9 @@ export async function startPaymentMutation(input: {
   }
 
   const cookieStore = await cookies();
-  const response = await fetch(`${baseUrl}/consumer/payments/start`, {
+  const startUrl = new URL(`${baseUrl}/consumer/payments/start`);
+  startUrl.searchParams.set(`appScope`, APP_SCOPE);
+  const response = await fetch(startUrl, {
     method: `POST`,
     headers: {
       'content-type': `application/json`,
@@ -327,7 +331,9 @@ export async function sendPaymentRequestMutation(paymentRequestId: string): Prom
   }
 
   const cookieStore = await cookies();
-  const response = await fetch(`${baseUrl}/consumer/payment-requests/${id}/send`, {
+  const sendUrl = new URL(`${baseUrl}/consumer/payment-requests/${id}/send`);
+  sendUrl.searchParams.set(`appScope`, APP_SCOPE);
+  const response = await fetch(sendUrl, {
     method: `POST`,
     headers: {
       ...buildConsumerMutationHeaders(cookieStore.toString()),
@@ -464,7 +470,9 @@ export async function payWithSavedMethodMutation(
   }
 
   const cookieStore = await cookies();
-  const response = await fetch(`${baseUrl}/consumer/stripe/${id}/pay-with-saved-method`, {
+  const savedMethodUrl = new URL(`${baseUrl}/consumer/stripe/${id}/pay-with-saved-method`);
+  savedMethodUrl.searchParams.set(`appScope`, APP_SCOPE);
+  const response = await fetch(savedMethodUrl, {
     method: `POST`,
     headers: {
       'content-type': `application/json`,
@@ -522,7 +530,9 @@ export async function createPaymentCheckoutSessionMutation(paymentRequestId: str
   }
 
   const cookieStore = await cookies();
-  const response = await fetch(`${baseUrl}/consumer/stripe/${id}/stripe-session`, {
+  const checkoutUrl = new URL(`${baseUrl}/consumer/stripe/${id}/stripe-session`);
+  checkoutUrl.searchParams.set(`appScope`, APP_SCOPE);
+  const response = await fetch(checkoutUrl, {
     method: `POST`,
     headers: {
       ...buildConsumerMutationHeaders(cookieStore.toString()),

@@ -117,7 +117,16 @@ export class ConsumerAuthService {
     });
   }
 
-  async login(body: LoginBody, ctx?: LoginContext) {
+  private hasStoredPasswordCredentials(identity: Pick<ConsumerModel, `password` | `salt`>): boolean {
+    return (
+      typeof identity.password === `string` &&
+      identity.password.trim().length > 0 &&
+      typeof identity.salt === `string` &&
+      identity.salt.trim().length > 0
+    );
+  }
+
+  async login(body: LoginBody, appScope: ConsumerAppScope, ctx?: LoginContext) {
     const email = body.email?.trim()?.toLowerCase() ?? ``;
     await this.authAudit.checkLockoutAndRateLimit(AUTH_IDENTITY_TYPES.consumer, email);
 
@@ -126,11 +135,13 @@ export class ConsumerAuthService {
     });
     if (!identity) throw new UnauthorizedException(errorCodes.INVALID_CREDENTIALS);
 
-    const valid = await passwordUtils.verifyPassword({
-      password: body.password,
-      storedHash: identity.password,
-      storedSalt: identity.salt,
-    });
+    const valid = this.hasStoredPasswordCredentials(identity)
+      ? await passwordUtils.verifyPassword({
+          password: body.password,
+          storedHash: identity.password,
+          storedSalt: identity.salt,
+        })
+      : false;
 
     if (!valid) {
       await this.authAudit.recordAudit({
@@ -155,7 +166,7 @@ export class ConsumerAuthService {
     });
     await this.authAudit.clearLockout(AUTH_IDENTITY_TYPES.consumer, identity.email);
 
-    const access = await this.createSessionAndIssueTokens(identity.id);
+    const access = await this.createSessionAndIssueTokens(identity.id, appScope);
     return {
       identity,
       accessToken: access.accessToken,
@@ -165,7 +176,7 @@ export class ConsumerAuthService {
     };
   }
 
-  async refreshAccess(refreshToken: string, ctx?: LoginContext) {
+  async refreshAccess(refreshToken: string, appScope: ConsumerAppScope, ctx?: LoginContext) {
     let verified: IJwtTokenPayload;
     try {
       verified = this.jwtService.verify<IJwtTokenPayload>(refreshToken, { secret: envs.JWT_REFRESH_SECRET });
@@ -183,13 +194,14 @@ export class ConsumerAuthService {
 
     const identityId = this.resolveIdentityId(verified);
     const sessionId = verified.sid;
-    if (!identityId || !sessionId || !this.isRefreshPayload(verified)) {
+    const tokenAppScope = this.originResolver.validateConsumerAppScope(verified.appScope);
+    if (!identityId || !sessionId || !this.isRefreshPayload(verified) || !tokenAppScope || tokenAppScope !== appScope) {
       this.logger.warn(`ConsumerAuth: invalid refresh payload`);
       throw new UnauthorizedException(errorCodes.INVALID_REFRESH_TOKEN);
     }
 
     const session = await this.prisma.authSessionModel.findFirst({
-      where: { id: sessionId, consumerId: identityId },
+      where: { id: sessionId, consumerId: identityId, appScope },
     });
     if (session == null) {
       this.logger.warn(`ConsumerAuth: no auth session for refresh`);
@@ -236,7 +248,7 @@ export class ConsumerAuthService {
     }
 
     const access = await this.prisma.$transaction(async (tx) => {
-      const next = await this.createSessionAndIssueTokens(consumer.id, session.sessionFamilyId, tx);
+      const next = await this.createSessionAndIssueTokens(consumer.id, appScope, session.sessionFamilyId, tx);
       await tx.authSessionModel.update({
         where: { id: session.id },
         data: {
@@ -260,16 +272,18 @@ export class ConsumerAuthService {
     return Object.assign(consumer, access);
   }
 
-  async revokeSessionByRefreshToken(refreshToken?: string | null) {
+  async revokeSessionByRefreshToken(refreshToken?: string | null, appScope?: ConsumerAppScope) {
     if (!refreshToken) return;
     try {
       const verified = this.jwtService.verify<IJwtTokenPayload>(refreshToken, { secret: envs.JWT_REFRESH_SECRET });
       const identityId = this.resolveIdentityId(verified);
-      if (!identityId || !verified.sid) return;
+      const tokenAppScope = this.originResolver.validateConsumerAppScope(verified.appScope);
+      if (!identityId || !verified.sid || !tokenAppScope || (appScope && tokenAppScope !== appScope)) return;
       await this.prisma.authSessionModel.updateMany({
         where: {
           id: verified.sid,
           consumerId: identityId,
+          appScope: tokenAppScope,
           refreshTokenHash: this.hashToken(refreshToken),
           revokedAt: null,
         },
@@ -280,14 +294,18 @@ export class ConsumerAuthService {
     }
   }
 
-  async revokeSessionByRefreshTokenAndAudit(refreshToken?: string | null, ctx?: LoginContext): Promise<void> {
+  async revokeSessionByRefreshTokenAndAudit(
+    refreshToken?: string | null,
+    appScope?: ConsumerAppScope,
+    ctx?: LoginContext,
+  ): Promise<void> {
     if (!refreshToken) return;
     try {
       const verified = this.jwtService.verify<IJwtTokenPayload>(refreshToken, { secret: envs.JWT_REFRESH_SECRET });
       const consumer = await this.prisma.consumerModel.findFirst({
         where: { id: verified.identityId, deletedAt: null },
       });
-      await this.revokeSessionByRefreshToken(refreshToken);
+      await this.revokeSessionByRefreshToken(refreshToken, appScope);
       if (consumer) {
         await this.authAudit.recordAudit({
           identityType: AUTH_IDENTITY_TYPES.consumer,
@@ -299,12 +317,12 @@ export class ConsumerAuthService {
         });
       }
     } catch {
-      await this.revokeSessionByRefreshToken(refreshToken);
+      await this.revokeSessionByRefreshToken(refreshToken, appScope);
     }
   }
 
-  async issueTokensForConsumer(identityId: ConsumerModel[`id`]) {
-    return this.createSessionAndIssueTokens(identityId);
+  async issueTokensForConsumer(identityId: ConsumerModel[`id`], appScope: ConsumerAppScope) {
+    return this.createSessionAndIssueTokens(identityId, appScope);
   }
 
   async revokeAllSessionsByConsumerIdAndAudit(identityId: ConsumerModel[`id`], ctx?: LoginContext): Promise<void> {
@@ -402,9 +420,7 @@ export class ConsumerAuthService {
 
   private resolveForgotPasswordAppScopeOrigin(appScope?: string | null): string {
     const resolvedAppScope = this.originResolver.validateConsumerAppScope(appScope);
-    const origin = resolvedAppScope
-      ? this.originResolver.resolveConsumerOriginByScope(resolvedAppScope)
-      : this.originResolver.resolveDefaultConsumerOrigin();
+    const origin = resolvedAppScope ? this.originResolver.resolveConsumerOriginByScope(resolvedAppScope) : null;
     if (!origin) {
       throw new BadRequestException(errorCodes.ORIGIN_REQUIRED);
     }
@@ -421,9 +437,7 @@ export class ConsumerAuthService {
 
   private resolveSignupVerificationOrigin(appScope?: string | null): string {
     const resolvedAppScope = this.originResolver.validateConsumerAppScope(appScope);
-    const origin = resolvedAppScope
-      ? this.originResolver.resolveConsumerOriginByScope(resolvedAppScope)
-      : this.originResolver.resolveDefaultConsumerOrigin();
+    const origin = resolvedAppScope ? this.originResolver.resolveConsumerOriginByScope(resolvedAppScope) : null;
     if (!origin) {
       throw new BadRequestException(errorCodes.ORIGIN_REQUIRED);
     }
@@ -447,6 +461,7 @@ export class ConsumerAuthService {
 
   private async createSessionAndIssueTokens(
     identityId: ConsumerModel[`id`],
+    appScope: ConsumerAppScope,
     sessionFamilyId?: string,
     tx?: Prisma.TransactionClient,
   ) {
@@ -457,6 +472,7 @@ export class ConsumerAuthService {
     const created = await db.authSessionModel.create({
       data: {
         consumerId: identityId,
+        appScope,
         sessionFamilyId: sessionFamilyId ?? identityId,
         refreshTokenHash: temporaryHash,
         expiresAt,
@@ -464,8 +480,8 @@ export class ConsumerAuthService {
     });
 
     const effectiveSessionFamilyId = sessionFamilyId ?? created.id;
-    const accessToken = await this.getAccessToken(identityId, created.id);
-    const refreshToken = await this.getRefreshToken(identityId, created.id, effectiveSessionFamilyId);
+    const accessToken = await this.getAccessToken(identityId, appScope, created.id);
+    const refreshToken = await this.getRefreshToken(identityId, appScope, created.id, effectiveSessionFamilyId);
     const accessTokenHash = this.hashToken(accessToken);
     const refreshTokenHash = this.hashToken(refreshToken);
 
@@ -482,24 +498,33 @@ export class ConsumerAuthService {
     return { accessToken, refreshToken, sessionId: created.id, sessionFamilyId: effectiveSessionFamilyId };
   }
 
-  private getAccessToken(identityId: string, sessionId?: string) {
-    const sessionPayload = {
-      sub: identityId,
-      identityId,
-      sid: sessionId,
-      typ: `access` as const,
-      scope: `consumer` as const,
-      role: ConsumerAuthService.accessRole,
-      permissions: ConsumerAuthService.accessPermissions,
-    };
-    const outOfSessionPayload = { sub: identityId, identityId, typ: `access` as const, scope: `consumer` as const };
-    const payload = sessionId ? sessionPayload : outOfSessionPayload;
-    return this.jwtService.signAsync(payload, { expiresIn: envs.JWT_ACCESS_TTL_SECONDS });
+  private getAccessToken(identityId: string, appScope: ConsumerAppScope, sessionId: string) {
+    return this.jwtService.signAsync(
+      {
+        sub: identityId,
+        identityId,
+        sid: sessionId,
+        typ: `access` as const,
+        scope: `consumer` as const,
+        appScope,
+        role: ConsumerAuthService.accessRole,
+        permissions: ConsumerAuthService.accessPermissions,
+      },
+      { expiresIn: envs.JWT_ACCESS_TTL_SECONDS },
+    );
   }
 
-  private getRefreshToken(identityId: string, sessionId: string, sessionFamilyId: string) {
+  private getRefreshToken(identityId: string, appScope: ConsumerAppScope, sessionId: string, sessionFamilyId: string) {
     return this.jwtService.signAsync(
-      { sub: identityId, identityId, sid: sessionId, fid: sessionFamilyId, typ: `refresh` },
+      {
+        sub: identityId,
+        identityId,
+        sid: sessionId,
+        fid: sessionFamilyId,
+        typ: `refresh`,
+        scope: `consumer`,
+        appScope,
+      },
       { expiresIn: envs.JWT_REFRESH_TTL_SECONDS, secret: envs.JWT_REFRESH_SECRET },
     );
   }

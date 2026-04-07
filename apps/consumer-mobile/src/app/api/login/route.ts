@@ -4,6 +4,8 @@ import { loginSchema } from '../../../features/auth/schemas';
 import { appendSetCookies, buildAuthMutationForwardHeaders } from '../../../lib/api-utils';
 import { getEnv } from '../../../lib/env.server';
 
+const APP_SCOPE = `consumer-mobile`;
+
 export async function POST(req: Request) {
   const env = getEnv();
   const baseUrl = env.NEXT_PUBLIC_API_BASE_URL;
@@ -27,6 +29,7 @@ export async function POST(req: Request) {
   forwardHeaders.set(`content-type`, `application/json`);
 
   const url = new URL(`${baseUrl}/consumer/auth/login`);
+  url.searchParams.set(`appScope`, APP_SCOPE);
   const res = await fetch(url, {
     method: `POST`,
     headers: forwardHeaders,

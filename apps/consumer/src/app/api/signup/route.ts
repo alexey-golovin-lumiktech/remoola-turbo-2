@@ -2,6 +2,8 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 import { appendSetCookies, buildAuthMutationForwardHeaders, requireJsonBody } from '../../../lib/api-utils';
 
+const APP_SCOPE = `consumer`;
+
 export async function POST(req: NextRequest) {
   const bodyResult = await requireJsonBody(req);
   if (!bodyResult.ok) return bodyResult.response;
@@ -11,6 +13,7 @@ export async function POST(req: NextRequest) {
   }
 
   const url = new URL(`${apiBase}/consumer/auth/signup`);
+  url.searchParams.set(`appScope`, APP_SCOPE);
   const forwardHeaders = buildAuthMutationForwardHeaders(req.headers);
   forwardHeaders.set(`content-type`, `application/json`);
 
@@ -30,7 +33,10 @@ export async function POST(req: NextRequest) {
       const parsed = JSON.parse(data) as { consumer?: { id?: string } };
       const consumerId = parsed.consumer?.id?.trim();
       if (consumerId) {
-        const completionRes = await fetch(`${apiBase}/consumer/auth/signup/${consumerId}/complete-profile-creation`, {
+        const completionUrl =
+          `${apiBase}/consumer/auth/signup/${consumerId}/complete-profile-creation` +
+          `?appScope=${encodeURIComponent(APP_SCOPE)}`;
+        const completionRes = await fetch(completionUrl, {
           method: `GET`,
           headers: forwardHeaders,
           cache: `no-store`,

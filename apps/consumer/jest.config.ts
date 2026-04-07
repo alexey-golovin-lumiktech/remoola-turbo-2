@@ -7,6 +7,7 @@ export default async () => {
   const config = await createNextConfig();
   return {
     ...config,
+    setupFiles: [`<rootDir>/src/test/jest.setup.ts`],
     verbose: true,
     collectCoverage: false,
     cache: false,

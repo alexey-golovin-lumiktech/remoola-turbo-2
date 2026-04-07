@@ -53,7 +53,11 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
     return undefined;
   }
 
-  async function seedCompletedPaymentRequest(amount: number, stripeId: string | null): Promise<string> {
+  async function seedCompletedPaymentRequest(
+    amount: number,
+    stripeId: string | null,
+    newerScopeLessEntries = 0,
+  ): Promise<string> {
     const suffix = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
     const payer = await prisma.consumerModel.create({
       data: {
@@ -111,6 +115,22 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
         metadata: { consumerAppScope: `consumer-mobile` },
       },
     });
+    for (let index = 0; index < newerScopeLessEntries; index += 1) {
+      await prisma.ledgerEntryModel.create({
+        data: {
+          ledgerId: randomUUID(),
+          consumerId: payer.id,
+          paymentRequestId: paymentRequest.id,
+          type: $Enums.LedgerEntryType.PLATFORM_FEE,
+          currencyCode: $Enums.CurrencyCode.USD,
+          status: $Enums.TransactionStatus.PENDING,
+          amount: -0.01,
+          createdBy: payer.id,
+          updatedBy: payer.id,
+          metadata: {},
+        },
+      });
+    }
     return paymentRequest.id;
   }
 
@@ -131,8 +151,8 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
       },
     });
 
-    refundPaymentRequestId = await seedCompletedPaymentRequest(20, `pi_refund_e2e`);
-    chargebackPaymentRequestId = await seedCompletedPaymentRequest(20, null);
+    refundPaymentRequestId = await seedCompletedPaymentRequest(20, `pi_refund_e2e`, 7);
+    chargebackPaymentRequestId = await seedCompletedPaymentRequest(20, null, 7);
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],

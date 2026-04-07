@@ -1,7 +1,7 @@
 import { POST } from './route';
 import { getSetCookieValues } from '../../../lib/api-utils';
 import { getEnv } from '../../../lib/env.server';
-import { TEST_APP_ORIGIN } from '../../../test-constants';
+import { TEST_APP_ORIGIN, TEST_BROWSER_ORIGIN } from '../../../test-constants';
 
 jest.mock(`../../../lib/env.server`, () => ({
   getEnv: jest.fn(),
@@ -29,12 +29,12 @@ describe(`POST /api/signup`, () => {
         }),
       );
 
-    const req = new Request(`${TEST_APP_ORIGIN}/api/signup`, {
+    const req = new Request(`${TEST_BROWSER_ORIGIN}/api/signup`, {
       method: `POST`,
       headers: {
         'content-type': `application/json`,
         cookie: `consumer_session=session-cookie`,
-        origin: TEST_APP_ORIGIN,
+        origin: TEST_BROWSER_ORIGIN,
         host: `localhost:3002`,
       },
       body: JSON.stringify({ email: `new@example.com`, password: `Password1!` }),
@@ -47,14 +47,16 @@ describe(`POST /api/signup`, () => {
 
     expect(res.status).toBe(201);
     expect(fetchSpy).toHaveBeenCalledTimes(2);
-    expect(String(fetchSpy.mock.calls[0]?.[0])).toBe(`https://api.example.com/consumer/auth/signup`);
+    expect(String(fetchSpy.mock.calls[0]?.[0])).toBe(
+      `https://api.example.com/consumer/auth/signup?appScope=consumer-mobile`,
+    );
     expect(String(fetchSpy.mock.calls[1]?.[0])).toBe(
-      `https://api.example.com/consumer/auth/signup/consumer-123/complete-profile-creation`,
+      `https://api.example.com/consumer/auth/signup/consumer-123/complete-profile-creation?appScope=consumer-mobile`,
     );
     expect(fetchSpy.mock.calls[1]?.[1]?.method).toBe(`GET`);
-    expect(firstRequestHeaders?.get(`origin`)).toBe(TEST_APP_ORIGIN);
+    expect(firstRequestHeaders?.get(`origin`)).toBe(TEST_BROWSER_ORIGIN);
     expect(firstRequestHeaders?.get(`host`)).toBeNull();
-    expect(secondRequestHeaders?.get(`origin`)).toBe(TEST_APP_ORIGIN);
+    expect(secondRequestHeaders?.get(`origin`)).toBe(TEST_BROWSER_ORIGIN);
     expect(secondRequestHeaders?.get(`host`)).toBeNull();
     expect(secondRequestHeaders?.get(`cookie`)).toBe(`consumer_session=session-cookie`);
     expect(setCookies.some((cookie) => cookie.startsWith(`signup_cookie=`))).toBe(true);

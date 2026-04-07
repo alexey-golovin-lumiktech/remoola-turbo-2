@@ -4,6 +4,8 @@ import { parsePaymentRequestParams } from '../../../../../features/payment-reque
 import { handleApiError, proxyApiRequest } from '../../../../../lib/api-utils';
 import { getEnv } from '../../../../../lib/env.server';
 
+const APP_SCOPE = `consumer-mobile`;
+
 export async function POST(req: NextRequest, context: { params: Promise<{ paymentRequestId: string }> }) {
   const rawParams = await context.params;
   const parsed = parsePaymentRequestParams(rawParams);
@@ -17,6 +19,7 @@ export async function POST(req: NextRequest, context: { params: Promise<{ paymen
   }
   try {
     const url = new URL(`${baseUrl}/consumer/payment-requests/${parsed.paymentRequestId}/send`);
+    url.searchParams.set(`appScope`, APP_SCOPE);
     return await proxyApiRequest(url.href, req, { timeout: 20000, retries: 2 });
   } catch (error) {
     return handleApiError(error);

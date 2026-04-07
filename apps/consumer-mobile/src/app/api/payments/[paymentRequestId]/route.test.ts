@@ -1,6 +1,6 @@
 import { GET } from './route';
 import { getEnv } from '../../../../lib/env.server';
-import { TEST_APP_ORIGIN } from '../../../../test-constants';
+import { TEST_APP_ORIGIN, TEST_BROWSER_ORIGIN } from '../../../../test-constants';
 
 jest.mock(`../../../../lib/env.server`, () => ({
   getEnv: jest.fn(),
@@ -37,10 +37,10 @@ describe(`consumer-mobile payments/[paymentRequestId] route`, () => {
     ];
     (global.fetch as jest.Mock).mockResolvedValue(upstream);
 
-    const req = new Request(`${TEST_APP_ORIGIN}/api/payments/pr_1`, {
+    const req = new Request(`${TEST_BROWSER_ORIGIN}/api/payments/pr_1`, {
       method: `GET`,
       headers: {
-        origin: TEST_APP_ORIGIN,
+        origin: TEST_BROWSER_ORIGIN,
         cookie: `csrf_token=abc`,
         'x-remoola-test': `on`,
         'x-forwarded-for': `10.0.0.1`,
@@ -54,7 +54,7 @@ describe(`consumer-mobile payments/[paymentRequestId] route`, () => {
 
     const [, init] = (global.fetch as jest.Mock).mock.calls[0] as [string, RequestInit];
     const headers = init.headers as Headers;
-    expect(headers.get(`origin`)).toBe(TEST_APP_ORIGIN);
+    expect(headers.get(`origin`)).toBe(TEST_BROWSER_ORIGIN);
     expect(headers.get(`x-remoola-test`)).toBe(`on`);
     expect(headers.get(`x-forwarded-for`)).toBeNull();
 

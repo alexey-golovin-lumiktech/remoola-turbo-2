@@ -1,3 +1,7 @@
+import { BadRequestException, UnauthorizedException } from '@nestjs/common';
+
+import { CONSUMER_APP_SCOPE_HEADER } from '@remoola/api-types';
+
 import { ConsumerPaymentRequestsController } from './consumer-payment-requests.controller';
 
 describe(`ConsumerPaymentRequestsController`, () => {
@@ -7,7 +11,8 @@ describe(`ConsumerPaymentRequestsController`, () => {
   };
 
   const originResolver = {
-    resolveConsumerOriginFromRequestScope: jest.fn(),
+    validateConsumerAppScope: jest.fn(),
+    validateConsumerAppScopeHeader: jest.fn(),
   };
 
   const consumer = { id: `consumer-1` } as any;
@@ -15,24 +20,47 @@ describe(`ConsumerPaymentRequestsController`, () => {
   beforeEach(() => {
     jest.clearAllMocks();
     service.sendPaymentRequest.mockResolvedValue({ paymentRequestId: `pr-1` });
-    originResolver.resolveConsumerOriginFromRequestScope.mockReturnValue(`https://consumer.example.com`);
+    originResolver.validateConsumerAppScope.mockReturnValue(`consumer`);
+    originResolver.validateConsumerAppScopeHeader.mockReturnValue(`consumer`);
   });
 
-  it(`passes scope-routed canonical origin when sending a payment request`, async () => {
+  it(`passes canonical app scope when sending a payment request`, async () => {
     const controller = new ConsumerPaymentRequestsController(service as any, originResolver as any);
     const req = {
+      path: `/api/consumer/payment-requests/pr-1/send`,
       headers: {
-        referer: `https://consumer.example.com/payments/pr-1`,
+        [CONSUMER_APP_SCOPE_HEADER]: `consumer`,
       },
     } as any;
 
-    const result = await controller.send(consumer, `pr-1`, req);
+    const result = await controller.send(consumer, `pr-1`, `consumer`, req);
 
-    expect(originResolver.resolveConsumerOriginFromRequestScope).toHaveBeenCalledWith(
-      undefined,
-      `https://consumer.example.com/payments/pr-1`,
-    );
-    expect(service.sendPaymentRequest).toHaveBeenCalledWith(`consumer-1`, `pr-1`, `https://consumer.example.com`);
+    expect(originResolver.validateConsumerAppScope).toHaveBeenCalledWith(`consumer`);
+    expect(originResolver.validateConsumerAppScopeHeader).toHaveBeenCalledWith(`consumer`);
+    expect(service.sendPaymentRequest).toHaveBeenCalledWith(`consumer-1`, `pr-1`, `consumer`);
     expect(result).toEqual({ paymentRequestId: `pr-1` });
+  });
+
+  it(`rejects send when app scope is invalid`, async () => {
+    originResolver.validateConsumerAppScope.mockReturnValue(undefined);
+    const controller = new ConsumerPaymentRequestsController(service as any, originResolver as any);
+
+    expect(() => controller.send(consumer, `pr-1`, `legacy-scope`, { headers: {} } as any)).toThrow(
+      new BadRequestException(`Invalid app scope`),
+    );
+    expect(service.sendPaymentRequest).not.toHaveBeenCalled();
+  });
+
+  it(`rejects send when request app scope mismatches claimed app scope`, async () => {
+    originResolver.validateConsumerAppScopeHeader.mockReturnValue(`consumer-mobile`);
+    const controller = new ConsumerPaymentRequestsController(service as any, originResolver as any);
+
+    expect(() =>
+      controller.send(consumer, `pr-1`, `consumer`, {
+        path: `/api/consumer/payment-requests/pr-1/send`,
+        headers: {},
+      } as any),
+    ).toThrow(new UnauthorizedException(`Invalid app scope`));
+    expect(service.sendPaymentRequest).not.toHaveBeenCalled();
   });
 });

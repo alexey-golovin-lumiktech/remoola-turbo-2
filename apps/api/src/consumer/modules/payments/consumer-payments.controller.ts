@@ -1,7 +1,19 @@
-import { BadRequestException, Controller, Post, Body, UseGuards, Param, Get, Query, Req } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  Req,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import express from 'express';
 
+import { CONSUMER_APP_SCOPE_HEADER, type ConsumerAppScope } from '@remoola/api-types';
 import { type ConsumerModel } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
@@ -23,8 +35,18 @@ export class ConsumerPaymentsController {
     private readonly originResolver: OriginResolverService,
   ) {}
 
-  private resolveConsumerAppScope(req: express.Request) {
-    return this.originResolver.resolveConsumerRequestScope(req.headers.origin, req.headers.referer);
+  private requireClaimedConsumerAppScope(req: express.Request, appScope?: string | null): ConsumerAppScope {
+    const validatedAppScope = this.originResolver.validateConsumerAppScope(appScope);
+    if (!validatedAppScope) {
+      throw new BadRequestException(`Invalid app scope`);
+    }
+    const requestAppScope = this.originResolver.validateConsumerAppScopeHeader(
+      req.headers?.[CONSUMER_APP_SCOPE_HEADER],
+    );
+    if (!requestAppScope || requestAppScope !== validatedAppScope) {
+      throw new UnauthorizedException(`Invalid app scope`);
+    }
+    return validatedAppScope;
   }
 
   @Get()
@@ -48,8 +70,13 @@ export class ConsumerPaymentsController {
 
   @TrackConsumerAction({ action: `consumer.payments.start`, resource: `payments` })
   @Post(`start`)
-  startPayment(@Identity() consumer: ConsumerModel, @Body() body: StartPayment, @Req() req: express.Request) {
-    return this.service.startPayment(consumer.id, body, this.resolveConsumerAppScope(req));
+  startPayment(
+    @Identity() consumer: ConsumerModel,
+    @Body() body: StartPayment,
+    @Req() req: express.Request,
+    @Query(`appScope`) appScope?: string,
+  ) {
+    return this.service.startPayment(consumer.id, body, this.requireClaimedConsumerAppScope(req, appScope));
   }
 
   @Get(`balance`)

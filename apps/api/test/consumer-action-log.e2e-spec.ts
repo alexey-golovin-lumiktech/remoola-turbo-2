@@ -11,6 +11,7 @@ import { Test, type TestingModule } from '@nestjs/testing';
 import cookieParser from 'cookie-parser';
 import request from 'supertest';
 
+import { CONSUMER_APP_SCOPE_HEADER } from '@remoola/api-types';
 import { PrismaClient } from '@remoola/database-2';
 
 import { assertIsolatedTestDatabaseUrl } from './test-db-safety';
@@ -23,6 +24,7 @@ describe(`Consumer action log integration (e2e, isolated DB)`, () => {
   let app: INestApplication;
   let prisma: PrismaClient;
   const consumerOrigin = `http://127.0.0.1:3001`;
+  const appScope = `consumer` as const;
 
   beforeAll(async () => {
     assertIsolatedTestDatabaseUrl();
@@ -54,8 +56,9 @@ describe(`Consumer action log integration (e2e, isolated DB)`, () => {
     });
 
     const response = await request(app.getHttpServer())
-      .post(`/api/consumer/auth/oauth/complete`)
+      .post(`/api/consumer/auth/oauth/complete?appScope=${appScope}`)
       .set(`origin`, consumerOrigin)
+      .set(CONSUMER_APP_SCOPE_HEADER, appScope)
       .send({})
       .expect(400);
     expect(response.body?.message).toBeDefined();

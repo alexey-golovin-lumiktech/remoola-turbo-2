@@ -1,6 +1,9 @@
+import { type BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { type Response } from 'express';
+
+import { errorCodes } from '@remoola/shared-constants';
 
 import { ConsumerAuthService } from './auth.service';
 import { AuthAuditService } from '../../shared/auth-audit.service';
@@ -17,7 +20,6 @@ describe(`ConsumerAuthService.signupVerification`, () => {
   let originResolver: {
     validateConsumerAppScope: jest.Mock;
     resolveConsumerOriginByScope: jest.Mock;
-    resolveDefaultConsumerOrigin: jest.Mock;
   };
 
   const consumerId = `11111111-1111-1111-1111-111111111111`;
@@ -39,7 +41,6 @@ describe(`ConsumerAuthService.signupVerification`, () => {
         if (scope === `consumer-css-grid`) return `https://grid.example`;
         return `https://consumer.example`;
       }),
-      resolveDefaultConsumerOrigin: jest.fn(() => `https://consumer.example`),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -56,16 +57,17 @@ describe(`ConsumerAuthService.signupVerification`, () => {
     service = module.get(ConsumerAuthService);
   });
 
-  it(`redirects invalid tokens to the default consumer app`, async () => {
+  it(`rejects invalid tokens when no app scope can be resolved`, async () => {
     jwtService.verify.mockImplementation(() => {
       throw new Error(`invalid`);
     });
     jwtService.decode.mockReturnValue(null);
     const res = { redirect: jest.fn() } as unknown as Response;
 
-    await service.signupVerification(`bad.jwt`, res);
-
-    expect(res.redirect).toHaveBeenCalledWith(`https://consumer.example/signup/verification?verified=no`);
+    await expect(service.signupVerification(`bad.jwt`, res)).rejects.toMatchObject({
+      response: { message: errorCodes.ORIGIN_REQUIRED },
+    });
+    expect(res.redirect).not.toHaveBeenCalled();
     expect(prisma.consumerModel.findFirst).not.toHaveBeenCalled();
   });
 
@@ -124,9 +126,10 @@ describe(`ConsumerAuthService.signupVerification`, () => {
     });
     const res = { redirect: jest.fn() } as unknown as Response;
 
-    await service.signupVerification(`tok`, res);
-
-    expect(res.redirect).toHaveBeenCalledWith(`https://consumer.example/signup/verification?verified=no`);
+    await expect(service.signupVerification(`tok`, res)).rejects.toMatchObject({
+      response: { message: errorCodes.ORIGIN_REQUIRED },
+    });
+    expect(res.redirect).not.toHaveBeenCalled();
     expect(prisma.consumerModel.findFirst).not.toHaveBeenCalled();
   });
 

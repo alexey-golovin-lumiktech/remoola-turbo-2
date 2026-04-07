@@ -9,10 +9,17 @@ describe(`MailingService signup verification links`, () => {
     const brevoMailService = {
       sendMail: jest.fn().mockResolvedValue(undefined),
     };
-    const originResolver = {};
+    const originResolver = {
+      resolveConsumerOriginByScope: jest.fn((scope?: string) => {
+        if (scope === `consumer`) return `https://consumer.example.com`;
+        if (scope === `consumer-mobile`) return `https://mobile.example.com`;
+        if (scope === `consumer-css-grid`) return `https://grid.example.com`;
+        return null;
+      }),
+    };
 
     const service = new MailingService(brevoMailService as any, originResolver as any);
-    return { service, brevoMailService };
+    return { service, brevoMailService, originResolver };
   }
 
   it(`builds token-only signup verification links without email or referer query params`, async () => {
@@ -33,5 +40,86 @@ describe(`MailingService signup verification links`, () => {
     const html = (brevoMailService.sendMail as jest.Mock).mock.calls[0]?.[0]?.html as string;
     expect(html).not.toContain(`email=`);
     expect(html).not.toContain(`referer=`);
+  });
+
+  it(`builds payment-request links from canonical consumer app scope instead of a raw origin`, async () => {
+    const { service, brevoMailService, originResolver } = makeService();
+
+    await service.sendPaymentRequestEmail({
+      payerEmail: `payer@example.com`,
+      requesterEmail: `requester@example.com`,
+      amount: 10,
+      currencyCode: `USD`,
+      paymentRequestId: `pr-123`,
+      consumerAppScope: `consumer-mobile`,
+    });
+
+    expect(originResolver.resolveConsumerOriginByScope).toHaveBeenCalledWith(`consumer-mobile`);
+    expect(brevoMailService.sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: `payer@example.com`,
+        html: expect.stringContaining(`https://mobile.example.com/payments/pr-123`),
+      }),
+    );
+  });
+
+  it(`routes refund email links through the stored consumer scope`, async () => {
+    const { service, brevoMailService, originResolver } = makeService();
+
+    await service.sendPaymentRefundEmail({
+      recipientEmail: `payer@example.com`,
+      counterpartyEmail: `requester@example.com`,
+      amount: 7,
+      currencyCode: `USD`,
+      paymentRequestId: `pr-234`,
+      role: `payer`,
+      consumerAppScope: `consumer-css-grid`,
+    });
+
+    expect(originResolver.resolveConsumerOriginByScope).toHaveBeenCalledWith(`consumer-css-grid`);
+    expect(brevoMailService.sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: `payer@example.com`,
+        html: expect.stringContaining(`https://grid.example.com/payments/pr-234`),
+      }),
+    );
+  });
+
+  it(`routes chargeback email links through the stored consumer scope`, async () => {
+    const { service, brevoMailService, originResolver } = makeService();
+
+    await service.sendPaymentChargebackEmail({
+      recipientEmail: `payer@example.com`,
+      counterpartyEmail: `requester@example.com`,
+      amount: 9,
+      currencyCode: `USD`,
+      paymentRequestId: `pr-345`,
+      role: `requester`,
+      consumerAppScope: `consumer-mobile`,
+    });
+
+    expect(originResolver.resolveConsumerOriginByScope).toHaveBeenCalledWith(`consumer-mobile`);
+    expect(brevoMailService.sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: `payer@example.com`,
+        html: expect.stringContaining(`https://mobile.example.com/payments/pr-345`),
+      }),
+    );
+  });
+
+  it(`skips refund payment-link emails when consumer scope is unavailable`, async () => {
+    const { service, brevoMailService, originResolver } = makeService();
+
+    await service.sendPaymentRefundEmail({
+      recipientEmail: `payer@example.com`,
+      counterpartyEmail: `requester@example.com`,
+      amount: 5,
+      currencyCode: `USD`,
+      paymentRequestId: `pr-456`,
+      role: `payer`,
+    });
+
+    expect(originResolver.resolveConsumerOriginByScope).not.toHaveBeenCalled();
+    expect(brevoMailService.sendMail).not.toHaveBeenCalled();
   });
 });

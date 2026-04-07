@@ -29,6 +29,7 @@
     "start": "turbo run start --parallel",
     "test": "node ./scripts/ensure-local-development.js root:test && turbo run test",
     "test:e2e": "node ./scripts/ensure-local-development.js root:test:e2e && turbo run test:e2e",
+    "test:e2e:fast": "node ./scripts/ensure-local-development.js root:test:e2e:fast && turbo run test:e2e:fast",
     "dev:api": "yarn workspace @remoola/api run dev",
     "lint:api": "yarn workspace @remoola/api run lint",
     "lint:fix:api": "yarn workspace @remoola/api run lint --fix",

@@ -19,7 +19,7 @@ import { createOutcomeIdempotent } from './ledger-outcome-idempotent';
 import { envs } from '../../../envs';
 import { BalanceCalculationService } from '../../../shared/balance-calculation.service';
 import { MailingService } from '../../../shared/mailing.service';
-import { extractConsumerAppScopeFromMetadata } from '../../../shared/payment-link-metadata';
+import { resolvePaymentLinkConsumerAppScopeFromLedgerHistory } from '../../../shared/payment-link-scope-resolver';
 import { PrismaService } from '../../../shared/prisma.service';
 import { getCurrencyFractionDigits, STRIPE_IDENTITY_STATUS } from '../../../shared-common';
 import { ConsumerPaymentsService } from '../payments/consumer-payments.service';
@@ -1117,24 +1117,7 @@ export class StripeWebhookService {
   }
 
   private async resolvePaymentLinkConsumerAppScope(paymentRequestId: string): Promise<ConsumerAppScope | undefined> {
-    const entries = await this.prisma.ledgerEntryModel.findMany({
-      where: {
-        paymentRequestId,
-        deletedAt: null,
-      },
-      orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-      take: 6,
-      select: { metadata: true },
-    });
-
-    for (const entry of entries) {
-      const consumerAppScope = extractConsumerAppScopeFromMetadata(entry.metadata);
-      if (consumerAppScope) {
-        return consumerAppScope;
-      }
-    }
-
-    return undefined;
+    return resolvePaymentLinkConsumerAppScopeFromLedgerHistory(this.prisma, paymentRequestId);
   }
 
   private async handleChargeRefunded(charge: Stripe.Charge) {

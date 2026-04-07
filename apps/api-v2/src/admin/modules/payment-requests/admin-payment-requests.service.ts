@@ -3,6 +3,7 @@ import { createHash, randomUUID } from 'crypto';
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import Stripe from 'stripe';
 
+import { type ConsumerAppScope } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
 import { adminErrorCodes, errorCodes } from '@remoola/shared-constants';
 
@@ -11,6 +12,7 @@ import { envs } from '../../../envs';
 import { AdminActionAuditService, ADMIN_ACTION_AUDIT_ACTIONS } from '../../../shared/admin-action-audit.service';
 import { BalanceCalculationService } from '../../../shared/balance-calculation.service';
 import { MailingService } from '../../../shared/mailing.service';
+import { resolvePaymentLinkConsumerAppScopeFromLedgerHistory } from '../../../shared/payment-link-scope-resolver';
 import { PrismaService } from '../../../shared/prisma.service';
 import { getCurrencyFractionDigits } from '../../../shared-common';
 
@@ -467,6 +469,7 @@ export class AdminPaymentRequestsService {
     reason?: string | null;
   }) {
     const { paymentRequestId, payerId, requesterId, requesterEmail, amount, currencyCode, kind, reason } = params;
+    const consumerAppScope = await this.resolvePaymentLinkConsumerAppScope(paymentRequestId);
     const consumerIds = [payerId, ...(requesterId ? [requesterId] : [])];
     const consumers = await this.prisma.consumerModel.findMany({
       where: { id: { in: consumerIds } },
@@ -488,6 +491,7 @@ export class AdminPaymentRequestsService {
         reason,
         paymentRequestId,
         role: `payer`,
+        consumerAppScope,
       });
       if (requesterEmailResolved) {
         await this.mailingService.sendPaymentRefundEmail({
@@ -498,6 +502,7 @@ export class AdminPaymentRequestsService {
           reason,
           paymentRequestId,
           role: `requester`,
+          consumerAppScope,
         });
       }
       return;
@@ -511,6 +516,7 @@ export class AdminPaymentRequestsService {
       reason,
       paymentRequestId,
       role: `payer`,
+      consumerAppScope,
     });
     if (requesterEmailResolved) {
       await this.mailingService.sendPaymentChargebackEmail({
@@ -521,8 +527,13 @@ export class AdminPaymentRequestsService {
         reason,
         paymentRequestId,
         role: `requester`,
+        consumerAppScope,
       });
     }
+  }
+
+  private async resolvePaymentLinkConsumerAppScope(paymentRequestId: string): Promise<ConsumerAppScope | undefined> {
+    return resolvePaymentLinkConsumerAppScopeFromLedgerHistory(this.prisma, paymentRequestId);
   }
 
   async createReversal(paymentRequestId: string, body: PaymentReversalCreate, adminId: string) {

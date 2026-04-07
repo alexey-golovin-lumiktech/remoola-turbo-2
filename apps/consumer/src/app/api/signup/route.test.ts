@@ -57,9 +57,9 @@ describe(`consumer signup route`, () => {
 
     expect(response.status).toBe(201);
     expect(mockFetch).toHaveBeenCalledTimes(2);
-    expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`https://api.example.com/consumer/auth/signup`);
+    expect(String(mockFetch.mock.calls[0]?.[0])).toBe(`https://api.example.com/consumer/auth/signup?appScope=consumer`);
     expect(String(mockFetch.mock.calls[1]?.[0])).toBe(
-      `https://api.example.com/consumer/auth/signup/consumer-123/complete-profile-creation`,
+      `https://api.example.com/consumer/auth/signup/consumer-123/complete-profile-creation?appScope=consumer`,
     );
     expect(mockFetch.mock.calls[1]?.[1]?.method).toBe(`GET`);
     expect(firstRequestHeaders?.get(`origin`)).toBe(`https://app.example.com`);

@@ -1,7 +1,18 @@
-import { Body, Controller, Param, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Param,
+  Post,
+  Query,
+  Req,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import express from 'express';
 
+import { CONSUMER_APP_SCOPE_HEADER } from '@remoola/api-types';
 import { type ConsumerModel } from '@remoola/database-2';
 
 import { ConsumerPaymentsService } from './consumer-payments.service';
@@ -19,8 +30,18 @@ export class ConsumerPaymentRequestsController {
     private readonly originResolver: OriginResolverService,
   ) {}
 
-  private resolveConsumerAppScope(req: express.Request) {
-    return this.originResolver.resolveConsumerRequestScope(req.headers.origin, req.headers.referer);
+  private resolveConsumerAppScope(req: express.Request, appScope?: string | null) {
+    const validatedAppScope = this.originResolver.validateConsumerAppScope(appScope);
+    if (!validatedAppScope) {
+      throw new BadRequestException(`Invalid app scope`);
+    }
+    const requestAppScope = this.originResolver.validateConsumerAppScopeHeader(
+      req.headers?.[CONSUMER_APP_SCOPE_HEADER],
+    );
+    if (!requestAppScope || requestAppScope !== validatedAppScope) {
+      throw new UnauthorizedException(`Invalid app scope`);
+    }
+    return validatedAppScope;
   }
 
   @Post()
@@ -32,8 +53,9 @@ export class ConsumerPaymentRequestsController {
   send(
     @Identity() consumer: ConsumerModel,
     @Param(`paymentRequestId`) paymentRequestId: string,
+    @Query(`appScope`) appScope: string | undefined,
     @Req() req: express.Request,
   ) {
-    return this.service.sendPaymentRequest(consumer.id, paymentRequestId, this.resolveConsumerAppScope(req));
+    return this.service.sendPaymentRequest(consumer.id, paymentRequestId, this.resolveConsumerAppScope(req, appScope));
   }
 }
