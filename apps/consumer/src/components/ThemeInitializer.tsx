@@ -34,19 +34,17 @@ function getThemeCacheHost(): ThemeCacheWindow {
   return window as ThemeCacheWindow;
 }
 
-function getStoredThemeSnapshot(): ITheme | null {
-  try {
-    const stored = localStorage.getItem(`remoola-theme`);
-    return stored ? normalizeTheme(stored) : null;
-  } catch {
-    return null;
-  }
-}
-
 export function primeUserThemeCache(theme: ITheme | null) {
   if (typeof window === `undefined`) return;
   const host = getThemeCacheHost();
   host.__remoolaConsumerCachedTheme = theme;
+}
+
+export function resetUserThemeCache() {
+  if (typeof window === `undefined`) return;
+  const host = getThemeCacheHost();
+  host.__remoolaConsumerCachedTheme = null;
+  host.__remoolaConsumerThemeRequest = null;
 }
 
 async function loadUserThemeOnce(): Promise<ITheme | null> {
@@ -54,12 +52,6 @@ async function loadUserThemeOnce(): Promise<ITheme | null> {
 
   if (host.__remoolaConsumerCachedTheme) {
     return host.__remoolaConsumerCachedTheme;
-  }
-
-  const storedTheme = getStoredThemeSnapshot();
-  if (storedTheme) {
-    host.__remoolaConsumerCachedTheme = storedTheme;
-    return storedTheme;
   }
 
   if (host.__remoolaConsumerThemeRequest) {

@@ -2,7 +2,13 @@ import { describe, expect, it } from '@jest/globals';
 
 import { THEME } from '@remoola/api-types';
 
-import { buildThemeScript, parseThemePreference, readThemeCookie, resolveThemePreference } from './theme';
+import {
+  buildThemeCookieValue,
+  buildThemeScript,
+  parseThemePreference,
+  readThemeCookie,
+  resolveThemePreference,
+} from './theme';
 
 describe(`theme helpers`, () => {
   it(`accepts uppercase and legacy lowercase persisted values`, () => {
@@ -30,13 +36,19 @@ describe(`theme helpers`, () => {
     expect(readThemeCookie(`foo=bar`)).toBeNull();
   });
 
+  it(`writes the persisted theme cookie in canonical lowercase format`, () => {
+    expect(buildThemeCookieValue(THEME.DARK)).toContain(`remoola-theme=dark`);
+    expect(buildThemeCookieValue(THEME.SYSTEM)).toContain(`remoola-theme=system`);
+  });
+
   it(`embeds the initial theme in the no-flash bootstrap script`, () => {
     const script = buildThemeScript(THEME.DARK);
 
-    expect(script).toContain(`var DEFAULT_THEME = 'DARK';`);
-    expect(script).toContain(`var cookieTheme = parseTheme(readCookie(COOKIE_KEY));`);
-    expect(script).toContain(`document.cookie = COOKIE_KEY + '=' + storedTheme`);
-    expect(script).toContain(`window.localStorage.setItem(STORAGE_KEY, theme);`);
-    expect(script).toContain(`root.dataset.themePreference = theme.toLowerCase();`);
+    expect(script).toContain(`var DEFAULT_THEME="dark";`);
+    expect(script).toContain(`var cookieTheme=parseTheme(readCookie(COOKIE_KEY));`);
+    expect(script).toContain(`writeCookie(theme);`);
+    expect(script).toContain(`window.localStorage.setItem(STORAGE_KEY,theme);`);
+    expect(script).toContain(`root.dataset.themePreference=theme;`);
+    expect(script).toContain(`meta.name='theme-color';`);
   });
 });

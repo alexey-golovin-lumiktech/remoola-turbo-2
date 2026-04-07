@@ -1,6 +1,15 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+
+import {
+  applyThemeToDocument,
+  getSystemResolvedTheme,
+  persistThemePreference,
+  readPersistedThemePreference,
+  resolveThemePreference as resolveSharedThemePreference,
+  setThemeColorMeta,
+} from '@remoola/ui';
 
 import { clientLogger } from '../lib/logger';
 
@@ -36,104 +45,93 @@ interface ThemeProviderProps {
   storageKey?: string;
 }
 
+function resolveTheme(theme: ITheme, mediaQuery: MediaQueryList | null = null): typeof Theme.LIGHT | typeof Theme.DARK {
+  return resolveSharedThemePreference(theme, mediaQuery?.matches ?? getSystemResolvedTheme() === Theme.DARK);
+}
+
+function getInitialThemePreference(defaultTheme: ITheme, storageKey: string): ITheme {
+  return (
+    readPersistedThemePreference({
+      storageKey,
+      cookieKey: storageKey,
+      fallbackTheme: defaultTheme,
+    }) ?? defaultTheme
+  );
+}
+
 export function ThemeProvider({
   children,
   defaultTheme = Theme.SYSTEM,
   storageKey = `remoola-theme`,
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<ITheme>(defaultTheme);
+  const [theme, setThemeState] = useState<ITheme>(defaultTheme);
   const [resolvedTheme, setResolvedTheme] = useState<ITheme>(Theme.LIGHT);
-  const [mounted, setMounted] = useState(false);
+  const [hasLoadedStoredTheme, setHasLoadedStoredTheme] = useState(false);
 
-  // Load theme from localStorage on mount
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(storageKey) as ITheme;
-      if (stored && [Theme.LIGHT, Theme.DARK, Theme.SYSTEM].includes(stored)) {
-        setTheme(stored);
-      }
+      setThemeState(getInitialThemePreference(defaultTheme, storageKey));
     } catch (error) {
-      clientLogger.warn(`Failed to load theme from localStorage`, {
+      clientLogger.warn(`Failed to load theme from persisted storage`, {
         reason: error instanceof Error ? error.message : String(error),
       });
+    } finally {
+      setHasLoadedStoredTheme(true);
     }
-    setMounted(true);
-  }, [storageKey]);
+  }, [defaultTheme, storageKey]);
 
   // Resolve theme based on user preference and system preference
   useEffect(() => {
-    const root = window.document.documentElement;
-    const body = window.document.body;
+    if (!hasLoadedStoredTheme) return;
 
-    if (theme === Theme.SYSTEM) {
-      const systemTheme = window.matchMedia(`(prefers-color-scheme: dark)`).matches ? Theme.DARK : Theme.LIGHT;
-      const nextTheme = systemTheme;
+    const nextTheme = resolveTheme(theme);
+    setResolvedTheme(nextTheme);
+    applyThemeToDocument(nextTheme, { includeBody: true, preference: theme });
+    setThemeColorMeta(nextTheme);
 
-      setResolvedTheme(nextTheme);
-      root.classList.remove(`light`, `dark`);
-      body.classList.remove(`light`, `dark`);
-      root.classList.add(nextTheme);
-      body.classList.add(nextTheme);
-      root.dataset.theme = nextTheme;
-      body.dataset.theme = nextTheme;
-    } else {
-      const nextTheme = theme;
-
-      setResolvedTheme(nextTheme);
-      root.classList.remove(`light`, `dark`);
-      body.classList.remove(`light`, `dark`);
-      root.classList.add(nextTheme);
-      body.classList.add(nextTheme);
-      root.dataset.theme = nextTheme;
-      body.dataset.theme = nextTheme;
-    }
-
-    // Save to localStorage
     try {
-      localStorage.setItem(storageKey, theme);
+      persistThemePreference(theme, { storageKey, cookieKey: storageKey });
     } catch (error) {
       clientLogger.warn(`Failed to save theme to localStorage`, {
         reason: error instanceof Error ? error.message : String(error),
       });
     }
-  }, [theme, storageKey]);
+  }, [hasLoadedStoredTheme, theme, storageKey]);
 
   // Listen for system theme changes when theme is 'SYSTEM'
   useEffect(() => {
-    if (theme !== Theme.SYSTEM) return;
+    if (!hasLoadedStoredTheme || theme !== Theme.SYSTEM) return;
 
     const mediaQuery = window.matchMedia(`(prefers-color-scheme: dark)`);
 
     const handleChange = () => {
-      const root = window.document.documentElement;
-      const body = window.document.body;
-      const systemTheme = mediaQuery.matches ? Theme.DARK : Theme.LIGHT;
-      const nextTheme = systemTheme;
-
+      const nextTheme = resolveTheme(Theme.SYSTEM, mediaQuery);
       setResolvedTheme(nextTheme);
-      root.classList.remove(`light`, `dark`);
-      body.classList.remove(`light`, `dark`);
-      root.classList.add(nextTheme);
-      body.classList.add(nextTheme);
-      root.dataset.theme = nextTheme;
-      body.dataset.theme = nextTheme;
+      applyThemeToDocument(nextTheme, { includeBody: true, preference: Theme.SYSTEM });
+      setThemeColorMeta(nextTheme);
     };
 
     mediaQuery.addEventListener(`change`, handleChange);
     return () => mediaQuery.removeEventListener(`change`, handleChange);
-  }, [theme]);
+  }, [hasLoadedStoredTheme, theme]);
 
-  const value = {
-    theme,
-    resolvedTheme,
-    setTheme,
-    toggleTheme: () => setTheme(resolvedTheme === Theme.LIGHT ? Theme.DARK : Theme.LIGHT),
-  };
+  const setTheme = useCallback((nextTheme: ITheme) => {
+    setThemeState((currentTheme) => (currentTheme === nextTheme ? currentTheme : nextTheme));
+  }, []);
 
-  // Prevent hydration mismatch by not rendering until mounted
-  if (!mounted) {
-    return <>{children}</>;
-  }
+  const toggleTheme = useCallback(() => {
+    setTheme(resolvedTheme === Theme.LIGHT ? Theme.DARK : Theme.LIGHT);
+  }, [resolvedTheme, setTheme]);
+
+  const value = useMemo(
+    () => ({
+      theme,
+      resolvedTheme,
+      setTheme,
+      toggleTheme,
+    }),
+    [resolvedTheme, setTheme, theme, toggleTheme],
+  );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }

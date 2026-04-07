@@ -2,6 +2,15 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
+import {
+  applyThemeToDocument,
+  parseThemePreference as parseStoredThemePreference,
+  persistThemePreference,
+  readThemePreferenceFromStorage,
+  resolveThemePreference as resolveSharedThemePreference,
+  setThemeColorMeta,
+} from '@remoola/ui';
+
 import { clientLogger } from '../lib/logger';
 
 export const Theme = { LIGHT: `light`, DARK: `dark`, SYSTEM: `system` } as const;
@@ -36,30 +45,11 @@ interface ThemeProviderProps {
   storageKey?: string;
 }
 
-function isTheme(value: string | null): value is ITheme {
-  return value === Theme.LIGHT || value === Theme.DARK || value === Theme.SYSTEM;
-}
-
 function resolveTheme(theme: ITheme, mediaQuery: MediaQueryList | null = null): typeof Theme.LIGHT | typeof Theme.DARK {
-  if (theme === Theme.SYSTEM) {
-    const prefersDark = mediaQuery?.matches ?? window.matchMedia(`(prefers-color-scheme: dark)`).matches;
-    return prefersDark ? Theme.DARK : Theme.LIGHT;
-  }
-
-  return theme;
-}
-
-function applyResolvedTheme(nextTheme: typeof Theme.LIGHT | typeof Theme.DARK) {
-  const root = window.document.documentElement;
-  const body = window.document.body;
-
-  root.classList.remove(Theme.LIGHT, Theme.DARK);
-  root.classList.add(nextTheme);
-  root.dataset.theme = nextTheme;
-
-  body.classList.remove(Theme.LIGHT, Theme.DARK);
-  body.classList.add(nextTheme);
-  body.dataset.theme = nextTheme;
+  return resolveSharedThemePreference(
+    theme,
+    mediaQuery?.matches ?? window.matchMedia(`(prefers-color-scheme: dark)`).matches,
+  );
 }
 
 export function ThemeProvider({
@@ -76,9 +66,14 @@ export function ThemeProvider({
   // Load theme from localStorage on mount.
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(storageKey);
-      if (isTheme(stored)) {
-        setThemeState(stored);
+      const bootstrapTheme = parseStoredThemePreference(window.document.documentElement.dataset.themePreference);
+      if (bootstrapTheme) {
+        setThemeState(bootstrapTheme);
+      } else {
+        const stored = readThemePreferenceFromStorage({ storageKey });
+        if (stored) {
+          setThemeState(stored);
+        }
       }
     } catch (error) {
       clientLogger.warn(`Failed to load theme from localStorage`, {
@@ -96,11 +91,11 @@ export function ThemeProvider({
     const nextTheme = resolveTheme(theme);
 
     setResolvedTheme(nextTheme);
-    applyResolvedTheme(nextTheme);
+    applyThemeToDocument(nextTheme, { includeBody: true, preference: theme });
+    setThemeColorMeta(nextTheme);
 
-    // Save to localStorage
     try {
-      localStorage.setItem(storageKey, theme);
+      persistThemePreference(theme, { storageKey, cookieKey: storageKey });
     } catch (error) {
       clientLogger.warn(`Failed to save theme to localStorage`, {
         reason: error instanceof Error ? error.message : String(error),
@@ -118,7 +113,8 @@ export function ThemeProvider({
       const nextTheme = resolveTheme(Theme.SYSTEM, mediaQuery);
 
       setResolvedTheme(nextTheme);
-      applyResolvedTheme(nextTheme);
+      applyThemeToDocument(nextTheme, { includeBody: true, preference: Theme.SYSTEM });
+      setThemeColorMeta(nextTheme);
     };
 
     mediaQuery.addEventListener(`change`, handleChange);

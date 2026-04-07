@@ -2,6 +2,15 @@
 
 import React, { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
+import {
+  applyThemeToDocument,
+  parseThemePreference as parseStoredThemePreference,
+  persistThemePreference,
+  readThemePreferenceFromStorage,
+  resolveThemePreference as resolveSharedThemePreference,
+  setThemeColorMeta,
+} from '@remoola/ui';
+
 import { clientLogger } from '../../lib/logger';
 
 export const Theme = { LIGHT: `light`, DARK: `dark`, SYSTEM: `system` } as const;
@@ -36,17 +45,6 @@ const STORAGE_KEY = `remoola-theme`;
  * ThemeInitializer then fetches the server theme and overwrites context (and we persist
  * that to localStorage), so server wins for the next load.
  */
-function applyThemeToDocument(nextTheme: `light` | `dark`) {
-  const root = window.document.documentElement;
-  const body = window.document.body;
-  root.classList.remove(`light`, `dark`);
-  body.classList.remove(`light`, `dark`);
-  root.classList.add(nextTheme);
-  body.classList.add(nextTheme);
-  root.dataset.theme = nextTheme;
-  body.dataset.theme = nextTheme;
-}
-
 export function ThemeProvider({
   children,
   defaultTheme = Theme.SYSTEM,
@@ -62,9 +60,14 @@ export function ThemeProvider({
   // we know the user's stored preference — avoids a brief dark flash when OS is dark.
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY) as ITheme | null;
-      if (stored && [Theme.LIGHT, Theme.DARK, Theme.SYSTEM].includes(stored as ITheme)) {
-        setTheme(stored as ITheme);
+      const bootstrapTheme = parseStoredThemePreference(window.document.documentElement.dataset.themePreference);
+      if (bootstrapTheme) {
+        setTheme(bootstrapTheme);
+      } else {
+        const stored = readThemePreferenceFromStorage({ storageKey: STORAGE_KEY });
+        if (stored) {
+          setTheme(stored);
+        }
       }
       setStorageRead(true);
     } catch (error) {
@@ -79,14 +82,13 @@ export function ThemeProvider({
   useEffect(() => {
     if (!storageRead) return;
 
-    const resolveSystem = () => (window.matchMedia(`(prefers-color-scheme: dark)`).matches ? Theme.DARK : Theme.LIGHT);
-
-    const nextTheme = theme === Theme.SYSTEM ? resolveSystem() : theme;
+    const nextTheme = resolveSharedThemePreference(theme, window.matchMedia(`(prefers-color-scheme: dark)`).matches);
     setResolvedTheme(nextTheme);
-    applyThemeToDocument(nextTheme);
+    applyThemeToDocument(nextTheme, { includeBody: true, preference: theme });
+    setThemeColorMeta(nextTheme);
 
     try {
-      localStorage.setItem(STORAGE_KEY, theme);
+      persistThemePreference(theme, { storageKey: STORAGE_KEY, cookieKey: STORAGE_KEY });
     } catch (error) {
       clientLogger.warn(`Failed to save theme to localStorage`, {
         reason: error instanceof Error ? error.message : String(error),
@@ -101,7 +103,8 @@ export function ThemeProvider({
     const handleChange = () => {
       const nextTheme = mediaQuery.matches ? Theme.DARK : Theme.LIGHT;
       setResolvedTheme(nextTheme);
-      applyThemeToDocument(nextTheme);
+      applyThemeToDocument(nextTheme, { includeBody: true, preference: Theme.SYSTEM });
+      setThemeColorMeta(nextTheme);
     };
 
     mediaQuery.addEventListener(`change`, handleChange);

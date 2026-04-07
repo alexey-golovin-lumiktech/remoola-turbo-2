@@ -14,8 +14,16 @@
   @apply flex items-center gap-2;
 }
 
+.adminTopbarThemeWrap {
+  @apply flex items-center gap-2;
+}
+
+.adminTopbarThemeLabel {
+  @apply text-sm text-[var(--muted)];
+}
+
 .adminTopbarTheme {
-  @apply rounded-lg border border-[var(--line)] px-3 py-1.5 text-sm text-[var(--ink)] hover:bg-[var(--bg-0)];
+  @apply rounded-lg border border-[var(--line)] px-3 py-1.5 text-sm text-[var(--ink)] hover:bg-[var(--bg-0)] bg-transparent;
 }
 
 .adminTopbarLogout {

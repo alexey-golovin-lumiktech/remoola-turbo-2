@@ -1,11 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { useCallback, useId, useState } from 'react';
 
-import { cn } from '@remoola/ui';
-
-import { CheckIcon } from './icons/CheckIcon';
 import { ChevronDownIcon } from './icons/ChevronDownIcon';
 import { primeUserThemeCache } from './ThemeInitializer';
 import { Theme, useTheme, type ITheme } from './ThemeProvider';
@@ -87,33 +83,20 @@ function ThemeTriggerIcon({ theme }: { theme: ITheme }) {
   return theme === Theme.DARK ? <MoonIcon /> : <SunIcon />;
 }
 
-function OptionIcon({ option }: { option: ITheme }) {
-  if (option === Theme.LIGHT) return <SunIcon size={18} className={styles.iconSun} />;
-  if (option === Theme.DARK) return <MoonIcon size={18} className={styles.iconMoon} />;
-  return <SystemIcon size={18} className={styles.iconSystem} />;
-}
-
 export function ThemeSwitcher() {
   const { theme, setTheme } = useTheme();
-  const [open, setOpen] = useState(false);
   const [persisting, setPersisting] = useState(false);
-  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; right: number } | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const selectId = useId();
 
   const persistTheme = useCallback(
     async (newTheme: ITheme) => {
       if (newTheme === theme) {
-        setOpen(false);
-        setDropdownPosition(null);
         return;
       }
 
       const previousTheme = theme;
       setTheme(newTheme);
       primeUserThemeCache(newTheme);
-      setOpen(false);
-      setDropdownPosition(null);
       setPersisting(true);
       try {
         const response = await fetch(`/api/settings/theme`, {
@@ -140,100 +123,37 @@ export function ThemeSwitcher() {
     [setTheme, theme],
   );
 
-  useLayoutEffect(() => {
-    if (open && containerRef.current && typeof document !== `undefined`) {
-      const rect = containerRef.current.getBoundingClientRect();
-      setDropdownPosition({
-        top: rect.bottom + 4,
-        right: document.documentElement.clientWidth - rect.right,
-      });
-    } else if (!open) {
-      setDropdownPosition(null);
-    }
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    const handleClick = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (containerRef.current?.contains(target) || dropdownRef.current?.contains(target)) {
-        return;
-      }
-      setOpen(false);
-      setDropdownPosition(null);
-    };
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === `Escape`) {
-        setOpen(false);
-        setDropdownPosition(null);
-        containerRef.current?.querySelector(`button`)?.focus();
-      }
-    };
-    document.addEventListener(`click`, handleClick);
-    document.addEventListener(`keydown`, handleKeyDown);
-    return () => {
-      document.removeEventListener(`click`, handleClick);
-      document.removeEventListener(`keydown`, handleKeyDown);
-    };
-  }, [open]);
-
-  const dropdownContent =
-    open && dropdownPosition && typeof document !== `undefined` ? (
-      <div
-        ref={dropdownRef}
-        role="listbox"
-        aria-label="Theme options"
-        className={styles.dropdown}
-        style={{
-          top: dropdownPosition.top,
-          right: dropdownPosition.right,
-        }}
-      >
-        {([Theme.LIGHT, Theme.DARK, Theme.SYSTEM] as const).map((option) => {
-          const isActive = theme === option;
-          return (
-            <button
-              key={option}
-              type="button"
-              role="option"
-              aria-selected={isActive}
-              onClick={() => void persistTheme(option)}
-              className={styles.option}
-            >
-              <span className={styles.optionLeft}>
-                <OptionIcon option={option} />
-                <span className={styles.optionLabels}>
-                  <span>{themeLabels[option]}</span>
-                  <span className={styles.optionDescription}>{themeDescriptions[option]}</span>
-                </span>
-              </span>
-              {isActive ? <CheckIcon className={styles.checkIcon} /> : null}
-            </button>
-          );
-        })}
-      </div>
-    ) : null;
-
   const triggerLabel = `Theme: ${themeLabels[theme]}`;
-  const triggerTitle = open ? `Close theme menu` : `Change theme (${themeLabels[theme]})`;
+  const triggerTitle = `Change theme (${themeLabels[theme]})`;
 
   return (
-    <div className={styles.container} ref={containerRef}>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        disabled={persisting}
-        aria-label={triggerLabel}
-        aria-expanded={open}
-        aria-haspopup="listbox"
-        title={triggerTitle}
-        data-testid="consumer-mobile-theme-switcher"
-        className={styles.trigger}
-      >
+    <div className={styles.container}>
+      <label htmlFor={selectId} className={styles.srOnly}>
+        Theme
+      </label>
+      <div className={styles.selectWrap}>
         <ThemeTriggerIcon theme={theme} />
-        <ChevronDownIcon className={cn(styles.chevron, open && styles.chevronOpen)} strokeWidth={2} />
-      </button>
-      {dropdownContent ? createPortal(dropdownContent, document.body) : null}
+        <select
+          id={selectId}
+          className={styles.select}
+          value={theme}
+          onChange={(event) => void persistTheme(event.target.value as ITheme)}
+          disabled={persisting}
+          aria-label={triggerLabel}
+          title={triggerTitle}
+          data-testid="consumer-mobile-theme-switcher"
+        >
+          {([Theme.LIGHT, Theme.DARK, Theme.SYSTEM] as const).map((option) => (
+            <option key={option} value={option}>
+              {themeLabels[option]}
+            </option>
+          ))}
+        </select>
+        <ChevronDownIcon className={styles.chevron} strokeWidth={2} />
+      </div>
+      <span className={styles.description} aria-hidden="true">
+        {themeDescriptions[theme]}
+      </span>
     </div>
   );
 }

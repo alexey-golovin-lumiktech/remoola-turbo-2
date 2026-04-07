@@ -2,51 +2,29 @@
 
 import { useEffect, useLayoutEffect } from 'react';
 
+import {
+  applyThemeToDocument,
+  buildThemeBootstrapScript,
+  readPersistedThemePreference,
+  resolveThemePreference,
+  setThemeColorMeta,
+} from '@remoola/ui';
+
 import { ErrorState } from '../components/ui/ErrorState';
 import { clientLogger } from '../lib/logger';
 
-const themeInitScript = [
-  `(function(){try{`,
-  `var storageKey='remoola-theme';`,
-  `var stored=localStorage.getItem(storageKey);`,
-  `var theme=stored==='light'||stored==='dark'||stored==='system'?stored:'system';`,
-  `var resolved=theme==='system'?(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):theme;`,
-  `var root=document.documentElement;`,
-  `var body=document.body;`,
-  `root.classList.remove('light','dark');`,
-  `root.classList.add(resolved);`,
-  `root.dataset.theme=resolved;`,
-  `root.style.colorScheme=resolved;`,
-  `if(body){`,
-  `body.classList.remove('light','dark');`,
-  `body.classList.add(resolved);`,
-  `body.dataset.theme=resolved;`,
-  `body.style.colorScheme=resolved;`,
-  `}`,
-  `}catch(e){}})();`,
-].join(``);
+const themeInitScript = buildThemeBootstrapScript({
+  defaultTheme: `system`,
+  includeBody: true,
+  includeThemeColor: true,
+});
 
 function applyStoredTheme() {
   try {
-    const storageKey = `remoola-theme`;
-    const stored = localStorage.getItem(storageKey);
-    const theme = stored === `light` || stored === `dark` || stored === `system` ? stored : `system`;
-    const resolved =
-      theme === `system` ? (window.matchMedia(`(prefers-color-scheme: dark)`).matches ? `dark` : `light`) : theme;
-    const root = document.documentElement;
-    const body = document.body;
-
-    root.classList.remove(`light`, `dark`);
-    root.classList.add(resolved);
-    root.dataset.theme = resolved;
-    root.style.colorScheme = resolved;
-
-    if (body) {
-      body.classList.remove(`light`, `dark`);
-      body.classList.add(resolved);
-      body.dataset.theme = resolved;
-      body.style.colorScheme = resolved;
-    }
+    const theme = readPersistedThemePreference({ fallbackTheme: `system` }) ?? `system`;
+    const resolved = resolveThemePreference(theme, window.matchMedia(`(prefers-color-scheme: dark)`).matches);
+    applyThemeToDocument(resolved, { includeBody: true, preference: theme });
+    setThemeColorMeta(resolved);
   } catch {
     // Ignore theme bootstrap failures and keep default rendering.
   }

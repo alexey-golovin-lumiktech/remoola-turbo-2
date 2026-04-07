@@ -1,9 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useId, useState } from 'react';
 import { toast } from 'sonner';
 
-import { CheckIcon, ChevronDownIcon, cn } from '@remoola/ui';
+import { ChevronDownIcon } from '@remoola/ui';
 
 import styles from './DesktopThemeSwitcher.module.css';
 import { clientLogger } from '../../lib/logger';
@@ -91,21 +91,18 @@ function ThemeOptionIcon({ theme }: { theme: ITheme }) {
 
 export function DesktopThemeSwitcher() {
   const { theme, setTheme } = useTheme();
-  const [open, setOpen] = useState(false);
   const [persisting, setPersisting] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const selectId = useId();
 
   const persistTheme = useCallback(
     async (nextTheme: ITheme) => {
       if (nextTheme === theme) {
-        setOpen(false);
         return;
       }
 
       const previousTheme = theme;
       setTheme(nextTheme);
       primeUserThemeCache(nextTheme);
-      setOpen(false);
       setPersisting(true);
 
       try {
@@ -133,76 +130,36 @@ export function DesktopThemeSwitcher() {
     [setTheme, theme],
   );
 
-  useEffect(() => {
-    if (!open) return;
-
-    const handlePointerDown = (event: MouseEvent) => {
-      const target = event.target as Node;
-      if (containerRef.current?.contains(target)) return;
-      setOpen(false);
-    };
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== `Escape`) return;
-      setOpen(false);
-    };
-
-    document.addEventListener(`mousedown`, handlePointerDown);
-    document.addEventListener(`keydown`, handleKeyDown);
-    return () => {
-      document.removeEventListener(`mousedown`, handlePointerDown);
-      document.removeEventListener(`keydown`, handleKeyDown);
-    };
-  }, [open]);
-
-  const triggerTitle = useMemo(() => `Theme: ${themeLabels[theme]}`, [theme]);
+  const triggerTitle = `Theme: ${themeLabels[theme]}`;
 
   return (
-    <div ref={containerRef} className={styles.container}>
-      <button
-        type="button"
-        className={styles.trigger}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        aria-label={triggerTitle}
-        title={triggerTitle}
-        onClick={() => setOpen((current) => !current)}
-        disabled={persisting}
-        data-testid="consumer-desktop-theme-switcher"
-      >
+    <div className={styles.container}>
+      <label htmlFor={selectId} className={styles.srOnly}>
+        Theme
+      </label>
+      <div className={styles.selectWrap}>
         <ThemeOptionIcon theme={theme} />
-        <span className={styles.triggerLabel}>{themeLabels[theme]}</span>
-        <ChevronDownIcon className={cn(styles.chevron, open && styles.chevronOpen)} size={16} aria-hidden="true" />
-      </button>
-
-      {open ? (
-        <div className={styles.dropdown} role="menu" aria-label="Theme options">
-          {themeOptions.map((option) => {
-            const isActive = option === theme;
-            return (
-              <button
-                key={option}
-                type="button"
-                role="menuitemradio"
-                aria-checked={isActive}
-                className={cn(styles.option, isActive ? styles.optionActive : styles.optionInactive)}
-                onClick={() => void persistTheme(option)}
-              >
-                <span className={styles.optionLeft}>
-                  <span className={styles.optionIcon}>
-                    <ThemeOptionIcon theme={option} />
-                  </span>
-                  <span className={styles.optionLabels}>
-                    <span className={styles.optionLabel}>{themeLabels[option]}</span>
-                    <span className={styles.optionDescription}>{themeDescriptions[option]}</span>
-                  </span>
-                </span>
-                {isActive ? <CheckIcon className={styles.optionCheck} size={16} aria-hidden="true" /> : null}
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
+        <select
+          id={selectId}
+          className={styles.select}
+          aria-label={triggerTitle}
+          title={triggerTitle}
+          value={theme}
+          onChange={(event) => void persistTheme(event.target.value as ITheme)}
+          disabled={persisting}
+          data-testid="consumer-desktop-theme-switcher"
+        >
+          {themeOptions.map((option) => (
+            <option key={option} value={option}>
+              {themeLabels[option]}
+            </option>
+          ))}
+        </select>
+        <ChevronDownIcon className={styles.chevron} size={16} aria-hidden="true" />
+      </div>
+      <span className={styles.description} aria-hidden="true">
+        {themeDescriptions[theme]}
+      </span>
     </div>
   );
 }

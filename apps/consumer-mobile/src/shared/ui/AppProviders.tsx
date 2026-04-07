@@ -5,7 +5,6 @@ import { Toaster } from 'sonner';
 import { SWRConfig } from 'swr';
 
 import { ErrorState } from './ErrorState';
-import { ThemeColorMeta } from './ThemeColorMeta';
 import { ThemeProvider } from './ThemeProvider';
 import { swrConfig, swrFetcher } from '../../lib/client';
 
@@ -39,7 +38,6 @@ class AppErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryS
 export function AppProviders({ children }: AppProvidersProps) {
   return (
     <ThemeProvider>
-      <ThemeColorMeta />
       <AppErrorBoundary>
         <SWRConfig value={{ ...swrConfig, fetcher: swrFetcher }}>
           <Toaster

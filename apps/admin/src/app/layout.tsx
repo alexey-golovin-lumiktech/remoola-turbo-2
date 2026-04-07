@@ -3,6 +3,8 @@ import './globals.css';
 import { type Metadata } from 'next';
 import { Toaster } from 'sonner';
 
+import { buildThemeBootstrapScript } from '@remoola/ui';
+
 import { PerformanceProvider } from '../components/PerformanceProvider';
 import { SWRProvider } from '../components/SWRProvider';
 import { ThemeProvider } from '../components/ThemeProvider';
@@ -16,10 +18,19 @@ export const metadata: Metadata = {
   description: `Remoola Admin Panel`,
 };
 
+const themeInitScript = buildThemeBootstrapScript({
+  defaultTheme: `system`,
+  includeBody: true,
+  includeThemeColor: true,
+});
+
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body>
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
+      <body suppressHydrationWarning>
         <ThemeProvider>
           <Toaster richColors position="top-right" />
           <PerformanceProvider>

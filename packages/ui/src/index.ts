@@ -12,3 +12,4 @@ export * from './Pill';
 export * from './Progress';
 export * from './SelectWithClear';
 export * from './SidebarLink';
+export * from './theme';

@@ -3,9 +3,10 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import { THEME, type TTheme } from '@remoola/api-types';
+import { applyThemeToDocument, persistThemePreference, setThemeColorMeta } from '@remoola/ui';
 
 import {
-  buildThemeCookieValue,
+  getCssGridThemeColors,
   parseThemePreference,
   readThemeCookie,
   resolveThemePreference,
@@ -28,19 +29,16 @@ function getSystemPreference(): ResolvedTheme {
 
 function applyThemePreference(theme: TTheme) {
   const resolvedTheme = resolveThemePreference(theme, getSystemPreference() === `dark`);
-  const root = document.documentElement;
-  root.classList.remove(`light`, `dark`);
-  root.classList.add(resolvedTheme);
-  root.dataset.theme = resolvedTheme;
-  root.dataset.themePreference = theme.toLowerCase();
-
-  try {
-    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
-  } catch {
-    // Ignore storage failures in restricted browser contexts.
-  }
-
-  document.cookie = buildThemeCookieValue(theme);
+  applyThemeToDocument(resolvedTheme, {
+    includeBody: false,
+    preference: theme.toLowerCase() as `light` | `dark` | `system`,
+  });
+  persistThemePreference(theme.toLowerCase() as `light` | `dark` | `system`, {
+    storageKey: THEME_STORAGE_KEY,
+  });
+  setThemeColorMeta(resolvedTheme, {
+    themeColors: getCssGridThemeColors(),
+  });
 
   return resolvedTheme;
 }
@@ -65,12 +63,20 @@ function getInitialTheme(initialTheme: TTheme): TTheme {
 }
 
 export function ThemeProvider({ children, initialTheme }: { children: ReactNode; initialTheme: TTheme }) {
-  const [theme, setThemeState] = useState<TTheme>(() => getInitialTheme(initialTheme));
-  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() =>
-    resolveThemePreference(getInitialTheme(initialTheme), false),
-  );
+  const [theme, setThemeState] = useState<TTheme>(initialTheme);
+  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => resolveThemePreference(initialTheme, false));
+  const [hasLoadedStoredTheme, setHasLoadedStoredTheme] = useState(false);
 
   useEffect(() => {
+    setThemeState(getInitialTheme(initialTheme));
+    setHasLoadedStoredTheme(true);
+  }, [initialTheme]);
+
+  useEffect(() => {
+    if (!hasLoadedStoredTheme) {
+      return undefined;
+    }
+
     setResolvedTheme(applyThemePreference(theme));
 
     if (theme !== THEME.SYSTEM) {
@@ -84,7 +90,7 @@ export function ThemeProvider({ children, initialTheme }: { children: ReactNode;
 
     mediaQuery.addEventListener(`change`, handleChange);
     return () => mediaQuery.removeEventListener(`change`, handleChange);
-  }, [theme]);
+  }, [hasLoadedStoredTheme, theme]);
 
   const setTheme = useCallback((nextTheme: TTheme) => {
     setThemeState(nextTheme);

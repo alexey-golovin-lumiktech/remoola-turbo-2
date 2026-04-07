@@ -6,8 +6,16 @@ const config: Config = {
   ...baseConfig,
   roots: [`<rootDir>/src`],
   testRegex: `.*\\.test\\.ts$`,
+  moduleFileExtensions: [`js`, `jsx`, `ts`, `tsx`, `json`],
   transform: {
-    '^.+\\.(t|j)s$': `ts-jest`,
+    '^.+\\.(t|j)sx?$': [
+      `ts-jest`,
+      {
+        tsconfig: {
+          jsx: `react-jsx`,
+        },
+      },
+    ],
   },
   verbose: true,
   collectCoverage: false,

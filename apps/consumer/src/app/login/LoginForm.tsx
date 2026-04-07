@@ -19,6 +19,7 @@ import { GoogleIcon, RemoolaCompactLogo, RemoolaLogo } from '@remoola/ui';
 
 import { shouldFinalizeLoginLoading } from './login-loading-guard';
 import localStyles from './LoginForm.module.css';
+import { resetUserThemeCache } from '../../components/ThemeInitializer';
 import styles from '../../components/ui/classNames.module.css';
 import { getAuthErrorMessage } from '../../lib/auth-error-messages';
 import { resetSessionExpiredHandled } from '../../lib/session-expired';
@@ -43,6 +44,7 @@ export default function LoginForm() {
 
   useEffect(() => {
     resetSessionExpiredHandled();
+    resetUserThemeCache();
   }, []);
 
   const cleanedLoginQueryRef = useRef(false);

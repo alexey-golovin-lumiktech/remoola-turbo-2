@@ -5,28 +5,17 @@ import './globals.css';
 import { type Metadata } from 'next';
 import { Toaster } from 'sonner';
 
+import { buildThemeBootstrapScript } from '@remoola/ui';
+
 import { ThemeProvider } from '../components/ThemeProvider';
 import { PageErrorBoundary } from '../components/ui/ErrorBoundary';
 import { SWRProvider } from '../components/ui/SWRProvider';
 
-const themeInitScript = [
-  `(function(){try{`,
-  `var storageKey='remoola-theme';`,
-  `var stored=localStorage.getItem(storageKey);`,
-  `var theme=stored==='light'||stored==='dark'||stored==='system'?stored:'system';`,
-  `var resolved=theme==='system'?(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):theme;`,
-  `var root=document.documentElement;`,
-  `var body=document.body;`,
-  `root.classList.remove('light','dark');`,
-  `root.classList.add(resolved);`,
-  `root.dataset.theme=resolved;`,
-  `if(body){`,
-  `body.classList.remove('light','dark');`,
-  `body.classList.add(resolved);`,
-  `body.dataset.theme=resolved;`,
-  `}`,
-  `}catch(e){}})();`,
-].join(``);
+const themeInitScript = buildThemeBootstrapScript({
+  defaultTheme: `system`,
+  includeBody: true,
+  includeThemeColor: true,
+});
 
 export const metadata: Metadata = {
   title: `Remoola`,
