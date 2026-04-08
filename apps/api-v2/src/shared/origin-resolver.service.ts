@@ -35,12 +35,6 @@ export class OriginResolverService {
     return hostname === `localhost` || hostname === `127.0.0.1` || hostname === `[::1]` || hostname === `::1`;
   }
 
-  private resolveLocalDevConsumerScope(origin: URL): ConsumerAppScope | undefined {
-    if (!this.isDevOrTestEnv()) return undefined;
-    if (!this.isLoopbackHost(origin.hostname)) return undefined;
-    return this.consumerLocalDevOriginScopes.get(origin.port);
-  }
-
   private isAllowedLocalDevOrigin(origin: URL, scope: `consumer` | `admin` | `all`): boolean {
     if (!this.isDevOrTestEnv()) return false;
     if (!this.isLoopbackHost(origin.hostname)) return false;

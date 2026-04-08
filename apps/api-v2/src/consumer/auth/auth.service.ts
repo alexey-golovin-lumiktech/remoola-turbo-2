@@ -358,16 +358,6 @@ export class ConsumerAuthService {
     return decoded;
   }
 
-  private extractConsumerFromGoogleProfile(dto: CONSUMER.CreateGoogleProfileDetails) {
-    const { name, email, givenName, familyName } = dto;
-
-    const [fullNameFirstName, fullNameLastName] = name.split(` `);
-    const firstName = givenName || fullNameFirstName;
-    const lastName = familyName || fullNameLastName;
-
-    return { email, firstName, lastName };
-  }
-
   async signupVerification(token: string, res: express.Response) {
     const redirectWith = (verifiedFlag: `yes` | `no`, appScope?: string | null, emailForQuery?: string) => {
       const redirectUrl = new URL(`signup/verification`, this.resolveSignupVerificationOrigin(appScope));

@@ -11,6 +11,7 @@ import {
   ConsumerUpdateContact,
 } from './dto/consumer-contact.dto';
 import { PrismaService } from '../../../shared/prisma.service';
+import { normalizeConsumerFacingTransactionStatus } from '../../consumer-status-compat';
 import { buildConsumerDocumentDownloadUrl } from '../documents/document-download-url';
 
 @Injectable()
@@ -138,7 +139,9 @@ export class ConsumerContactsService {
       paymentRequests: paymentRequests.map((paymentRequest) => ({
         id: paymentRequest.id,
         amount: paymentRequest.amount.toString(),
-        status: this.getEffectiveLedgerStatus(paymentRequest.ledgerEntries[0]) ?? paymentRequest.status,
+        status: normalizeConsumerFacingTransactionStatus(
+          this.getEffectiveLedgerStatus(paymentRequest.ledgerEntries[0]) ?? paymentRequest.status,
+        ),
         createdAt: paymentRequest.createdAt,
       })),
       documents,

@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
 import { Prisma, $Enums } from '@remoola/database-2';
 
@@ -125,8 +125,6 @@ export function buildWalletEligibilityCondition(): Prisma.Sql {
  */
 @Injectable()
 export class BalanceCalculationService {
-  private readonly logger = new Logger(BalanceCalculationService.name);
-
   constructor(private readonly prisma: PrismaService) {}
 
   /**

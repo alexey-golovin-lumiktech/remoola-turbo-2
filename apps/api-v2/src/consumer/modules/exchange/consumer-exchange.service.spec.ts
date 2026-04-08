@@ -4,7 +4,7 @@ import { $Enums } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
 import { ConsumerExchangeService } from './consumer-exchange.service';
-import { BalanceCalculationMode, BalanceCalculationService } from '../../../shared/balance-calculation.service';
+import { BalanceCalculationMode } from '../../../shared/balance-calculation.service';
 
 function createExchangeRateRecord(overrides?: Partial<Record<string, unknown>>) {
   return {
