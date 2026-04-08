@@ -6,7 +6,7 @@ export default {
   setupFilesAfterEnv: [`<rootDir>/test/jest.setup.ts`],
   collectCoverage: false,
   maxWorkers: 1,
-  forceExit: true,
+  forceExit: false,
   detectOpenHandles: true,
   errorOnDeprecated: true,
   verbose: true,

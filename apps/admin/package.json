@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "eslint \"src/**/*.{js,jsx,ts,tsx}\" --max-warnings 0",
     "typecheck": "tsc --noEmit",
-    "test": "node ../../scripts/run-jest-with-memory-cap.js",
+    "test": "TERM=dumb NO_COLOR=1 node ../../scripts/run-jest-with-memory-cap.js",
     "clean": "rm -rf ./node_modules ./.next"
   },
   "dependencies": {

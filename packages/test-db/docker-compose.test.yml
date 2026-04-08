@@ -1,9 +1,25 @@
 services:
   postgres:
     image: postgres:16-alpine
+    labels:
+      remoola.test-db: "true"
+      remoola.test-db.project: "${TEST_DB_PROJECT}"
+      remoola.test-db.provider: "${TEST_DB_PROVIDER}"
+      remoola.test-db.owner-pid: "${TEST_DB_OWNER_PID}"
+      remoola.test-db.created-at: "${TEST_DB_CREATED_AT}"
+      remoola.test-db.expires-at: "${TEST_DB_EXPIRES_AT}"
     environment:
       POSTGRES_DB: ${TEST_DB_NAME}
       POSTGRES_USER: ${TEST_DB_USER}
       POSTGRES_PASSWORD: ${TEST_DB_PASSWORD}
     ports:
       - "${TEST_DB_HOST_PORT}:5432"
+networks:
+  default:
+    labels:
+      remoola.test-db: "true"
+      remoola.test-db.project: "${TEST_DB_PROJECT}"
+      remoola.test-db.provider: "${TEST_DB_PROVIDER}"
+      remoola.test-db.owner-pid: "${TEST_DB_OWNER_PID}"
+      remoola.test-db.created-at: "${TEST_DB_CREATED_AT}"
+      remoola.test-db.expires-at: "${TEST_DB_EXPIRES_AT}"

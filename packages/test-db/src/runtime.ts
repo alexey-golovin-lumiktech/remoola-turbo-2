@@ -1,4 +1,4 @@
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { randomInt } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { createServer } from 'node:net';
@@ -12,6 +12,33 @@ const DEFAULT_SCHEMA_RELATIVE_PATH = `packages/database-2/prisma/schema.prisma` 
 const DEFAULT_DOCKER_COMPOSE_RELATIVE_PATH = `packages/test-db/docker-compose.test.yml` as const;
 const DEFAULT_PROVIDER = `docker-compose` as const;
 const PG_IDENTIFIER_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
+const TEST_DB_LABEL_KEY = `remoola.test-db` as const;
+const TEST_DB_PROJECT_LABEL_KEY = `remoola.test-db.project` as const;
+const TEST_DB_PROVIDER_LABEL_KEY = `remoola.test-db.provider` as const;
+const TEST_DB_OWNER_PID_LABEL_KEY = `remoola.test-db.owner-pid` as const;
+const TEST_DB_CREATED_AT_LABEL_KEY = `remoola.test-db.created-at` as const;
+const TEST_DB_EXPIRES_AT_LABEL_KEY = `remoola.test-db.expires-at` as const;
+const DEFAULT_TEST_DB_TTL_MINUTES = 60;
+
+type TemporaryDatabaseShutdownHandle = {
+  databaseUrl: string;
+  shutdown: () => Promise<void>;
+  shutdownSync?: () => void;
+};
+
+type TemporaryDatabaseLifecycleMetadata = {
+  repoRoot: string;
+  provider: TestDatabaseProvider;
+  projectName: string;
+  ownerPid: number;
+  createdAt: string;
+  expiresAt: string;
+};
+
+const trackedTemporaryDatabaseHandles = new Set<TemporaryDatabaseShutdownHandle>();
+let processCleanupHooksInstalled = false;
+let cleanupPromise: Promise<void> | null = null;
+let signalCleanupInProgress = false;
 
 type TestDatabaseProvider = `docker-compose` | `testcontainers`;
 
@@ -19,6 +46,165 @@ type DockerComposeMetadata = {
   projectName: string;
   composePath: string;
 };
+
+function getTestDbTtlMs(): number {
+  const raw = process.env.TEST_DB_TTL_MINUTES;
+  const parsed = Number.parseFloat(raw ?? ``);
+  if (!Number.isFinite(parsed) || parsed < 0) return DEFAULT_TEST_DB_TTL_MINUTES * 60 * 1000;
+  return Math.floor(parsed * 60 * 1000);
+}
+
+function createLifecycleMetadata(
+  repoRoot: string,
+  provider: TestDatabaseProvider,
+  projectName: string,
+): TemporaryDatabaseLifecycleMetadata {
+  const createdAt = new Date();
+  return {
+    repoRoot,
+    provider,
+    projectName,
+    ownerPid: process.pid,
+    createdAt: createdAt.toISOString(),
+    expiresAt: new Date(createdAt.getTime() + getTestDbTtlMs()).toISOString(),
+  };
+}
+
+function buildTestDbLabels(metadata: TemporaryDatabaseLifecycleMetadata): Record<string, string> {
+  return {
+    [TEST_DB_LABEL_KEY]: `true`,
+    [TEST_DB_PROJECT_LABEL_KEY]: metadata.projectName,
+    [TEST_DB_PROVIDER_LABEL_KEY]: metadata.provider,
+    [TEST_DB_OWNER_PID_LABEL_KEY]: String(metadata.ownerPid),
+    [TEST_DB_CREATED_AT_LABEL_KEY]: metadata.createdAt,
+    [TEST_DB_EXPIRES_AT_LABEL_KEY]: metadata.expiresAt,
+  };
+}
+
+function spawnDetachedCleanupWatcher(metadata: TemporaryDatabaseLifecycleMetadata): void {
+  const cleanupScriptPath = join(metadata.repoRoot, `scripts`, `cleanup-stale-test-dbs.js`);
+  const child = spawn(
+    process.execPath,
+    [
+      cleanupScriptPath,
+      `--watch-project`,
+      metadata.projectName,
+      `--owner-pid`,
+      String(metadata.ownerPid),
+      `--expires-at`,
+      metadata.expiresAt,
+    ],
+    {
+      cwd: metadata.repoRoot,
+      detached: true,
+      stdio: `ignore`,
+      env: process.env,
+    },
+  );
+  child.unref();
+}
+
+function signalToExitCode(signal: NodeJS.Signals): number {
+  if (signal === `SIGHUP`) return 129;
+  if (signal === `SIGINT`) return 130;
+  if (signal === `SIGTERM`) return 143;
+  return 1;
+}
+
+async function cleanupTrackedTemporaryDatabases(): Promise<void> {
+  if (trackedTemporaryDatabaseHandles.size === 0) return;
+  if (cleanupPromise) {
+    await cleanupPromise;
+    return;
+  }
+
+  const handles = [...trackedTemporaryDatabaseHandles];
+  cleanupPromise = (async () => {
+    for (const handle of handles) {
+      try {
+        await handle.shutdown();
+      } catch {
+        // best-effort cleanup during process shutdown
+      }
+    }
+  })().finally(() => {
+    cleanupPromise = null;
+  });
+
+  await cleanupPromise;
+}
+
+function cleanupTrackedTemporaryDatabasesSync(): void {
+  for (const handle of [...trackedTemporaryDatabaseHandles]) {
+    try {
+      handle.shutdownSync?.();
+    } catch {
+      // best-effort cleanup during process shutdown
+    }
+    trackedTemporaryDatabaseHandles.delete(handle);
+  }
+}
+
+function installProcessCleanupHooks(): void {
+  if (processCleanupHooksInstalled) return;
+  processCleanupHooksInstalled = true;
+
+  process.on(`beforeExit`, () => {
+    if (trackedTemporaryDatabaseHandles.size === 0) return;
+    void cleanupTrackedTemporaryDatabases();
+  });
+
+  process.on(`exit`, () => {
+    cleanupTrackedTemporaryDatabasesSync();
+  });
+
+  const handleSignal = (signal: NodeJS.Signals) => {
+    if (signalCleanupInProgress) return;
+    signalCleanupInProgress = true;
+
+    void (async () => {
+      try {
+        await cleanupTrackedTemporaryDatabases();
+      } finally {
+        try {
+          process.kill(process.pid, signal);
+        } catch {
+          process.exit(signalToExitCode(signal));
+        }
+      }
+    })();
+  };
+
+  process.once(`SIGINT`, () => handleSignal(`SIGINT`));
+  process.once(`SIGTERM`, () => handleSignal(`SIGTERM`));
+  process.once(`SIGHUP`, () => handleSignal(`SIGHUP`));
+}
+
+function registerTemporaryDatabaseHandle(
+  handle: TemporaryDatabaseShutdownHandle,
+): TemporaryDatabaseHandle {
+  installProcessCleanupHooks();
+
+  let closed = false;
+  const trackedHandle: TemporaryDatabaseShutdownHandle = {
+    databaseUrl: handle.databaseUrl,
+    shutdown: async () => {
+      if (closed) return;
+      closed = true;
+      trackedTemporaryDatabaseHandles.delete(trackedHandle);
+      await handle.shutdown();
+    },
+    shutdownSync: () => {
+      if (closed) return;
+      closed = true;
+      trackedTemporaryDatabaseHandles.delete(trackedHandle);
+      handle.shutdownSync?.();
+    },
+  };
+
+  trackedTemporaryDatabaseHandles.add(trackedHandle);
+  return { databaseUrl: trackedHandle.databaseUrl, shutdown: trackedHandle.shutdown };
+}
 
 function hasMonorepoWorkspaces(packageJsonPath: string): boolean {
   try {
@@ -157,6 +343,7 @@ async function createTemporaryDatabaseWithDockerCompose(repoRoot: string): Promi
   const databasePassword = `postgres`;
   const hostPort = await getAvailablePort();
   const projectName = `remoola_test_${suffix.replace(/[^a-zA-Z0-9_]/g, `_`)}`;
+  const lifecycleMetadata = createLifecycleMetadata(repoRoot, `docker-compose`, projectName);
   const composePath = join(repoRoot, DEFAULT_DOCKER_COMPOSE_RELATIVE_PATH);
   const databaseUrl = `postgresql://${databaseUser}:${databasePassword}@127.0.0.1:${hostPort}/${databaseName}`;
 
@@ -166,6 +353,11 @@ async function createTemporaryDatabaseWithDockerCompose(repoRoot: string): Promi
     TEST_DB_USER: databaseUser,
     TEST_DB_PASSWORD: databasePassword,
     TEST_DB_HOST_PORT: String(hostPort),
+    TEST_DB_PROJECT: lifecycleMetadata.projectName,
+    TEST_DB_PROVIDER: lifecycleMetadata.provider,
+    TEST_DB_OWNER_PID: String(lifecycleMetadata.ownerPid),
+    TEST_DB_CREATED_AT: lifecycleMetadata.createdAt,
+    TEST_DB_EXPIRES_AT: lifecycleMetadata.expiresAt,
   };
 
   runDockerCompose(
@@ -194,7 +386,8 @@ async function createTemporaryDatabaseWithDockerCompose(repoRoot: string): Promi
   }
 
   const metadata: DockerComposeMetadata = { projectName, composePath };
-  return {
+  spawnDetachedCleanupWatcher(lifecycleMetadata);
+  return registerTemporaryDatabaseHandle({
     databaseUrl,
     shutdown: async () => {
       runDockerCompose(
@@ -204,27 +397,48 @@ async function createTemporaryDatabaseWithDockerCompose(repoRoot: string): Promi
         `Failed to stop temporary docker-compose database.`,
       );
     },
-  };
+    shutdownSync: () => {
+      runDockerCompose(
+        [`-f`, metadata.composePath, `-p`, metadata.projectName, `down`, `--volumes`, `--remove-orphans`],
+        repoRoot,
+        composeEnv,
+        `Failed to stop temporary docker-compose database.`,
+      );
+    },
+  });
 }
 
 async function createTemporaryDatabaseWithTestcontainers(repoRoot: string): Promise<TemporaryDatabaseHandle> {
+  const projectName = `remoola_test_${createUniqueSuffix().replace(/[^a-zA-Z0-9_]/g, `_`)}`;
+  const lifecycleMetadata = createLifecycleMetadata(repoRoot, `testcontainers`, projectName);
   const container: StartedPostgreSqlContainer = await new PostgreSqlContainer(`postgres:16-alpine`)
     .withDatabase(`test`)
     .withUsername(`postgres`)
     .withPassword(`postgres`)
+    .withLabels(buildTestDbLabels(lifecycleMetadata))
     .start();
 
   const databaseUrl = container.getConnectionUri();
-  await waitForDatabaseReady(databaseUrl);
-  runPrismaMigrations(repoRoot, databaseUrl);
-  await prefillDatabase(databaseUrl);
+  try {
+    await waitForDatabaseReady(databaseUrl);
+    runPrismaMigrations(repoRoot, databaseUrl);
+    await prefillDatabase(databaseUrl);
+  } catch (error) {
+    try {
+      await container.stop();
+    } catch {
+      // swallow cleanup failure in error path
+    }
+    throw error;
+  }
 
-  return {
+  spawnDetachedCleanupWatcher(lifecycleMetadata);
+  return registerTemporaryDatabaseHandle({
     databaseUrl,
     shutdown: async () => {
       await container.stop();
     },
-  };
+  });
 }
 
 export type TemporaryDatabaseHandle = {
