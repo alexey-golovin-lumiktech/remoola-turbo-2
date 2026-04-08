@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, useTransition } from 'react';
 
@@ -16,7 +17,10 @@ import { submitPostNavigation } from '../../../lib/post-navigation';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
 import { useTheme } from '../../../shared/theme/ThemeProvider';
 import { THEME_OPTION_LABELS } from '../../../shared/theme/ThemeQuickSwitch';
+import { BankIcon } from '../../../shared/ui/icons/BankIcon';
+import { DocumentIcon } from '../../../shared/ui/icons/DocumentIcon';
 import { Panel } from '../../../shared/ui/shell-primitives';
+import { DashboardVerificationAction } from '../dashboard/DashboardVerificationAction';
 
 type Props = {
   profile: ProfileResponse | null;
@@ -54,6 +58,119 @@ function themeDescription(theme: TTheme) {
     default:
       return `Match the device appearance automatically and react to OS changes.`;
   }
+}
+
+function humanizeStatus(value: string | null | undefined, fallback = `Unknown`) {
+  if (!value) {
+    return fallback;
+  }
+
+  const normalized = value.replaceAll(`_`, ` `).toLowerCase();
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+}
+
+type SettingsVerificationCardState = {
+  badge: string;
+  title: string;
+  description: string;
+  toneClassName: string;
+  showAction: boolean;
+};
+
+function getSettingsVerificationCardState(
+  verification: ProfileResponse[`verification`] | null | undefined,
+): SettingsVerificationCardState {
+  if (!verification) {
+    return {
+      badge: `Unavailable`,
+      title: `Verification status unavailable`,
+      description: `We couldn't load your verification state right now. Refresh the page to try again.`,
+      toneClassName: `border-[color:var(--app-border)] bg-[var(--app-surface-muted)]`,
+      showAction: false,
+    };
+  }
+
+  const reviewStatus = verification.reviewStatus?.toLowerCase();
+
+  if (verification.effectiveVerified) {
+    return {
+      badge: `Verified`,
+      title: `Account verified`,
+      description: `Your identity check is complete and full account functionality is available.`,
+      toneClassName: `border-transparent bg-[var(--app-success-soft)]`,
+      showAction: false,
+    };
+  }
+
+  if (reviewStatus === `pending`) {
+    return {
+      badge: `In review`,
+      title: `Verification in review`,
+      description: `Your submitted details are being reviewed. We'll update your status as soon as processing finishes.`,
+      toneClassName: `border-transparent bg-[var(--app-warning-soft)]`,
+      showAction: false,
+    };
+  }
+
+  if (!verification.profileComplete && verification.canStart === false) {
+    return {
+      badge: `Profile incomplete`,
+      title: `Complete your profile first`,
+      description: `Add the missing profile details below before starting identity verification.`,
+      toneClassName: `border-transparent bg-[var(--app-warning-soft)]`,
+      showAction: false,
+    };
+  }
+
+  if (verification.canStart) {
+    switch (verification.status) {
+      case `requires_input`:
+      case `more_info`:
+        return {
+          badge: `Action required`,
+          title: `Verification needs attention`,
+          description:
+            verification.lastErrorReason ??
+            `Additional verification details are required before higher account access can be enabled.`,
+          toneClassName: `border-transparent bg-[var(--app-danger-soft)]`,
+          showAction: true,
+        };
+      case `pending_submission`:
+        return {
+          badge: `In progress`,
+          title: `Continue your verification`,
+          description: `Your profile is ready. Resume the verification flow and submit the remaining details.`,
+          toneClassName: `border-transparent bg-[var(--app-warning-soft)]`,
+          showAction: true,
+        };
+      case `rejected`:
+      case `flagged`:
+        return {
+          badge: `Needs retry`,
+          title: `Verification needs to be retried`,
+          description:
+            verification.lastErrorReason ?? `Review the requested details and retry verification to continue.`,
+          toneClassName: `border-transparent bg-[var(--app-danger-soft)]`,
+          showAction: true,
+        };
+      default:
+        return {
+          badge: humanizeStatus(verification.status, `Not started`),
+          title: `Start account verification`,
+          description: `Verify your identity to unlock the full set of payment and account capabilities.`,
+          toneClassName: `border-transparent bg-[var(--app-warning-soft)]`,
+          showAction: true,
+        };
+    }
+  }
+
+  return {
+    badge: humanizeStatus(verification.status, `Unknown`),
+    title: `Verification status: ${humanizeStatus(verification.status, `Unknown`)}`,
+    description: `We'll show your next verification step here as soon as it becomes available.`,
+    toneClassName: `border-[color:var(--app-border)] bg-[var(--app-surface-muted)]`,
+    showAction: false,
+  };
 }
 
 function getChangedTextField(current: string, initial: string) {
@@ -201,6 +318,7 @@ export function SettingsClient({ profile, settings, logoutAllFailed = false }: P
   const primaryButtonClass = `w-full rounded-2xl bg-[var(--app-primary)] px-4 py-3 font-medium text-[var(--app-primary-contrast)] disabled:cursor-not-allowed disabled:opacity-50`;
   const secondaryButtonClass = `flex w-full items-center justify-center rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface)] px-4 py-3 text-sm font-medium text-[var(--app-text)] shadow-[var(--app-shadow)] transition hover:bg-[var(--app-surface-strong)]`;
   const dangerButtonClass = `flex w-full items-center justify-center rounded-2xl border border-transparent bg-[var(--app-danger-soft)] px-4 py-3 text-sm font-medium text-[var(--app-danger-text)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60`;
+  const verificationCardState = getSettingsVerificationCardState(profile?.verification);
 
   return (
     <div className="space-y-5">
@@ -215,6 +333,68 @@ export function SettingsClient({ profile, settings, logoutAllFailed = false }: P
           {message.text}
         </div>
       ) : null}
+
+      <section className="grid grid-cols-1 gap-5 xl:grid-cols-[0.9fr_1.1fr]" data-testid={`settings-action-hub`}>
+        <Panel title="Quick links" aside="Action hub">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Link
+              href="/banking"
+              aria-label={`Payment methods — manage cards and bank accounts`}
+              className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-4 transition hover:border-[color:var(--app-border-strong)] hover:bg-[var(--app-surface)]"
+            >
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--app-primary-soft)] text-[var(--app-primary)]">
+                  <BankIcon className="h-5 w-5" />
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-[var(--app-text)]">Payment methods</div>
+                  <div className="mt-1 text-sm leading-6 text-[var(--app-text-muted)]">
+                    Manage cards and bank accounts used across payouts and payment flows.
+                  </div>
+                </div>
+              </div>
+            </Link>
+
+            <Link
+              href="/documents"
+              aria-label={`Documents — view and manage uploaded files`}
+              className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-4 transition hover:border-[color:var(--app-border-strong)] hover:bg-[var(--app-surface)]"
+            >
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--app-primary-soft)] text-[var(--app-primary)]">
+                  <DocumentIcon className="h-5 w-5" />
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-[var(--app-text)]">Documents</div>
+                  <div className="mt-1 text-sm leading-6 text-[var(--app-text-muted)]">
+                    Open uploaded files, review generated docs, and keep compliance items moving.
+                  </div>
+                </div>
+              </div>
+            </Link>
+          </div>
+        </Panel>
+
+        <div data-testid={`settings-verification-card`}>
+          <Panel title="Account verification" aside={verificationCardState.badge}>
+            <div className="space-y-4">
+              <div className={`rounded-2xl border px-4 py-4 ${verificationCardState.toneClassName}`}>
+                <div className="text-sm font-semibold text-[var(--app-text)]">{verificationCardState.title}</div>
+                <p className="mt-2 text-sm leading-6 text-[var(--app-text-muted)]">
+                  {verificationCardState.description}
+                </p>
+                <div className="mt-3 text-xs text-[var(--app-text-faint)]">
+                  Current status: {humanizeStatus(profile?.verification?.status, `Unknown`)}
+                </div>
+              </div>
+
+              {verificationCardState.showAction ? (
+                <DashboardVerificationAction verification={profile?.verification} dashboardUnavailable={false} />
+              ) : null}
+            </div>
+          </Panel>
+        </div>
+      </section>
 
       <section className="grid grid-cols-1 gap-5 xl:grid-cols-3">
         <Panel title="Profile">

@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useMemo, useRef, useState, useTransition } from 'react';
 
 import { getPaymentAttachmentsLibraryState } from './payment-attachments-library-state';
+import { SESSION_EXPIRED_ERROR_CODE } from '../../../lib/auth-failure';
 import {
   attachDocumentsToPaymentRequestMutation,
   detachDocumentFromPaymentRequestMutation,
@@ -56,25 +57,38 @@ function formatFileSize(size: number) {
 }
 
 async function uploadDocuments(formData: FormData) {
-  const response = await fetch(`/api/documents/upload`, {
-    method: `POST`,
-    body: formData,
-    cache: `no-store`,
-    credentials: `include`,
-  });
-  const payload = (await response.json().catch(() => null)) as { code?: string; message?: string } | null;
+  try {
+    const response = await fetch(`/api/documents/upload`, {
+      method: `POST`,
+      body: formData,
+      cache: `no-store`,
+      credentials: `include`,
+    });
+    const payload = (await response.json().catch(() => null)) as { code?: string; message?: string } | null;
 
-  if (!response.ok) {
+    if (!response.ok) {
+      return {
+        ok: false as const,
+        error: {
+          code: response.status === 401 ? SESSION_EXPIRED_ERROR_CODE : (payload?.code ?? `API_ERROR`),
+          message:
+            response.status === 401
+              ? `Your session has expired. Please sign in again.`
+              : (payload?.message ?? `Failed to upload document`),
+        },
+      };
+    }
+
+    return { ok: true as const };
+  } catch {
     return {
       ok: false as const,
       error: {
-        code: payload?.code ?? `API_ERROR`,
-        message: payload?.message ?? `Failed to upload document`,
+        code: `NETWORK_ERROR`,
+        message: `Attachment upload could not be completed because the network request failed. Please try again.`,
       },
     };
   }
-
-  return { ok: true as const };
 }
 
 export function PaymentAttachmentsClient({

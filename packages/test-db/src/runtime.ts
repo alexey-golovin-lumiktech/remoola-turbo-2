@@ -180,9 +180,7 @@ function installProcessCleanupHooks(): void {
   process.once(`SIGHUP`, () => handleSignal(`SIGHUP`));
 }
 
-function registerTemporaryDatabaseHandle(
-  handle: TemporaryDatabaseShutdownHandle,
-): TemporaryDatabaseHandle {
+function registerTemporaryDatabaseHandle(handle: TemporaryDatabaseShutdownHandle): TemporaryDatabaseHandle {
   installProcessCleanupHooks();
 
   let closed = false;

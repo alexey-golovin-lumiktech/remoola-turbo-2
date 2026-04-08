@@ -4,7 +4,14 @@ import { DashboardVerificationAction } from './DashboardVerificationAction';
 import { getVerificationBannerState } from './verification-banner';
 import { getAvailableBalances, getBalances, getDashboardData } from '../../../lib/consumer-api.server';
 import { HomeIcon } from '../../../shared/ui/icons/HomeIcon';
-import { ActionCard, ChecklistItem, MetricCard, PageHeader, Panel } from '../../../shared/ui/shell-primitives';
+import {
+  ActionCard,
+  ChecklistItem,
+  MetricCard,
+  PageHeader,
+  Panel,
+  StatusPill,
+} from '../../../shared/ui/shell-primitives';
 
 function formatCurrencyFromMinor(amount: number, currencyCode = `USD`) {
   return new Intl.NumberFormat(`en-US`, {
@@ -49,6 +56,7 @@ export default async function DashboardPage() {
   const settledCurrencyCode = summary?.balanceCurrencyCode ?? `USD`;
   const availableCurrencyCode = summary?.availableBalanceCurrencyCode ?? settledCurrencyCode;
   const pendingRequests = dashboard?.pendingRequests ?? [];
+  const pendingWithdrawals = dashboard?.pendingWithdrawals?.items ?? [];
   const quickDocs = dashboard?.quickDocs ?? [];
   const activity = dashboard?.activity ?? [];
   const tasks = dashboard?.tasks ?? [];
@@ -267,7 +275,7 @@ export default async function DashboardPage() {
           title="Create Payment Request"
           text="Send an invoice-like request in minutes."
           cta="Create"
-          href="/payments"
+          href="/payments/new-request"
         />
         <ActionCard
           title="Start Payment"
@@ -321,6 +329,56 @@ export default async function DashboardPage() {
               </div>
             )}
           </Panel>
+
+          {pendingWithdrawals.length > 0 ? (
+            <Panel
+              title="Pending Withdrawals"
+              aside={`${dashboard?.pendingWithdrawals?.total ?? pendingWithdrawals.length} total`}
+            >
+              <div className="space-y-3">
+                {pendingWithdrawals.map((withdrawal) => {
+                  const withdrawalContent = (
+                    <>
+                      <div className="min-w-0">
+                        <div className="font-medium text-[var(--app-text)]">
+                          {formatCurrencyFromMajor(withdrawal.amount, withdrawal.currencyCode)}
+                        </div>
+                        <div className="truncate text-xs text-[var(--app-text-muted)]">
+                          {withdrawal.paymentMethodLabel
+                            ? `To ${withdrawal.paymentMethodLabel}`
+                            : `Reference ${withdrawal.ledgerId}`}
+                        </div>
+                        <div className="text-xs text-[var(--app-text-faint)]">
+                          {formatDateTime(withdrawal.createdAt)}
+                        </div>
+                      </div>
+                      <StatusPill status={withdrawal.status} />
+                    </>
+                  );
+                  const withdrawalHref = withdrawal.paymentRequestId
+                    ? `/payments/${withdrawal.paymentRequestId}`
+                    : null;
+
+                  return withdrawalHref ? (
+                    <Link
+                      key={withdrawal.id}
+                      href={withdrawalHref}
+                      className="flex items-center justify-between gap-4 rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3 transition hover:border-[color:var(--app-border-strong)] hover:bg-[var(--app-surface)]"
+                    >
+                      {withdrawalContent}
+                    </Link>
+                  ) : (
+                    <div
+                      key={withdrawal.id}
+                      className="flex items-center justify-between gap-4 rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3"
+                    >
+                      {withdrawalContent}
+                    </div>
+                  );
+                })}
+              </div>
+            </Panel>
+          ) : null}
 
           <Panel title="Activity Timeline">
             {activity.length === 0 ? (

@@ -22,9 +22,9 @@ jest.mock(`../lib/logger`, () => ({
 
 describe(`ThemeProvider (admin SSR)`, () => {
   it(`renders without browser globals`, async () => {
-    const globals = globalThis as typeof globalThis & {
-      window?: unknown;
-      document?: unknown;
+    const globals = globalThis as unknown as {
+      window?: Window & typeof globalThis;
+      document?: Document;
     };
     const originalWindow = globals.window;
     const originalDocument = globals.document;

@@ -158,10 +158,10 @@ function ReusableCardSetupForm({ onMessage }: Props) {
         text: `Reusable card added. It can now be used for one-click payer payments.`,
       });
       router.refresh();
-    } catch (error) {
+    } catch {
       onMessage({
         type: `error`,
-        text: error instanceof Error ? error.message : `Reusable card setup could not be completed.`,
+        text: `Reusable card setup could not be completed.`,
       });
     } finally {
       setIsSubmitting(false);

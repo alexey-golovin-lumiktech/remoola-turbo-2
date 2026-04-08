@@ -8,7 +8,12 @@ import { cookies } from 'next/headers';
 import { type TTheme } from '@remoola/api-types';
 
 import { SESSION_EXPIRED_ERROR_CODE } from './auth-failure';
-import { findContactByExactEmail, getExchangeRatesBatch, type ExchangeRatesBatchResult } from './consumer-api.server';
+import {
+  findContactByExactEmail,
+  getExchangeRatesBatch,
+  type ExchangeRatesBatchResult,
+  type PaymentsResponse,
+} from './consumer-api.server';
 import { buildConsumerMutationHeaders } from './consumer-auth-headers.server';
 import { isDateInputTodayOrLater, normalizeDateInput } from './date-input';
 import { getEnv } from './env.server';
@@ -102,7 +107,36 @@ type VerificationSessionResult =
     }
   | { ok: false; error: { code: string; message: string; fields?: Record<string, string> } };
 
+export type DraftPaymentRequestOption = {
+  id: string;
+  amount: number;
+  currencyCode: string;
+  createdAt: string;
+  description: string | null;
+  counterpartyEmail: string | null;
+};
+
+export type DraftPaymentRequestsResult =
+  | {
+      ok: true;
+      items: DraftPaymentRequestOption[];
+      total: number;
+    }
+  | { ok: false; error: { code: string; message: string } };
+
 const APP_SCOPE = `consumer-css-grid`;
+const NETWORK_ERROR_MESSAGE = `The request could not be completed because the network request failed. Please try again.`;
+
+async function fetch(input: string | URL, init?: RequestInit): Promise<Response> {
+  try {
+    return await globalThis.fetch(input, init);
+  } catch {
+    return new Response(JSON.stringify({ code: `NETWORK_ERROR`, message: NETWORK_ERROR_MESSAGE }), {
+      status: 503,
+      headers: { 'content-type': `application/json` },
+    });
+  }
+}
 
 function invalid(message: string, fields?: Record<string, string>): MutationResult {
   return {
@@ -397,6 +431,52 @@ export async function attachDocumentsToPaymentRequestMutation(
   return {
     ok: true,
     message: resourceIds.length === 1 ? `Document attached` : `Documents attached`,
+  };
+}
+
+export async function getDraftPaymentRequestsAction(): Promise<DraftPaymentRequestsResult> {
+  const baseUrl = configuredBaseUrl();
+  if (!baseUrl) {
+    return {
+      ok: false,
+      error: { code: `CONFIG_ERROR`, message: `API base URL is not configured` },
+    };
+  }
+
+  const cookieStore = await cookies();
+  const searchParams = new URLSearchParams({
+    page: `1`,
+    pageSize: `50`,
+    status: `DRAFT`,
+    role: `REQUESTER`,
+  });
+  const response = await fetch(`${baseUrl}/consumer/payments?${searchParams.toString()}`, {
+    method: `GET`,
+    headers: buildConsumerMutationHeaders(cookieStore.toString()),
+    cache: `no-store`,
+  });
+
+  if (!response.ok) {
+    return {
+      ok: false,
+      error: await parseError(response, `Failed to load draft payment requests`),
+    };
+  }
+
+  const payload = (await response.json().catch(() => null)) as PaymentsResponse | null;
+  const items = Array.isArray(payload?.items) ? payload.items : [];
+
+  return {
+    ok: true,
+    items: items.map((payment) => ({
+      id: payment.id,
+      amount: payment.amount,
+      currencyCode: payment.currencyCode,
+      createdAt: payment.createdAt,
+      description: payment.description ?? null,
+      counterpartyEmail: payment.counterparty?.email ?? null,
+    })),
+    total: typeof payload?.total === `number` ? payload.total : items.length,
   };
 }
 

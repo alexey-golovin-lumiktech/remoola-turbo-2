@@ -33,12 +33,25 @@ export function PageHeader({ title, subtitle, icon }: { title: string; subtitle?
 
 /* ── Panel ───────────────────────────────────────────────── */
 
-export function Panel({ title, aside, children }: { title: string; aside?: string; children: ReactNode }) {
+export function Panel({
+  title,
+  aside,
+  children,
+  [`data-testid`]: dataTestId,
+}: {
+  title: string;
+  aside?: ReactNode;
+  children: ReactNode;
+  [`data-testid`]?: string;
+}) {
   return (
-    <section className="rounded-[28px] border border-[color:var(--app-border)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow)]">
+    <section
+      data-testid={dataTestId}
+      className="rounded-[28px] border border-[color:var(--app-border)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow)]"
+    >
       <div className="mb-4 flex items-center justify-between gap-3">
         <h3 className="text-lg font-semibold text-[var(--app-text)]">{title}</h3>
-        {aside ? <span className="text-xs text-[var(--app-text-faint)]">{aside}</span> : null}
+        {aside ? <div className="text-xs text-[var(--app-text-faint)]">{aside}</div> : null}
       </div>
       {children}
     </section>

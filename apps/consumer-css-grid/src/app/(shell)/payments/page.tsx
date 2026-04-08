@@ -1,5 +1,9 @@
 import { PaymentsClient } from './PaymentsClient';
-import { getPayments, getSettings } from '../../../lib/consumer-api.server';
+import { getContacts, getExchangeCurrencies, getPayments, getSettings } from '../../../lib/consumer-api.server';
+import {
+  normalizePaymentRequestContacts,
+  normalizePaymentRequestCurrencies,
+} from '../../../lib/payment-request-normalizers';
 import { CreditCardIcon } from '../../../shared/ui/icons/CreditCardIcon';
 import { PageHeader } from '../../../shared/ui/shell-primitives';
 
@@ -35,7 +39,7 @@ export default async function PaymentsPage({ searchParams }: { searchParams?: Pr
   const role = getSingleValue(resolvedSearchParams?.role);
   const search = getSingleValue(resolvedSearchParams?.search);
   const currentPath = buildCurrentPaymentsPath(resolvedSearchParams);
-  const [paymentsResponse, settings] = await Promise.all([
+  const [paymentsResponse, settings, contactsResponse, exchangeCurrencies] = await Promise.all([
     getPayments(
       {
         page,
@@ -48,7 +52,11 @@ export default async function PaymentsPage({ searchParams }: { searchParams?: Pr
       { redirectTo: currentPath },
     ),
     getSettings({ redirectTo: currentPath }),
+    getContacts(1, 100),
+    getExchangeCurrencies({ redirectTo: currentPath }),
   ]);
+  const paymentRequestContacts = normalizePaymentRequestContacts(contactsResponse);
+  const paymentRequestCurrencies = normalizePaymentRequestCurrencies(exchangeCurrencies);
 
   return (
     <div>
@@ -63,6 +71,8 @@ export default async function PaymentsPage({ searchParams }: { searchParams?: Pr
         initialType={type}
         initialRole={role}
         preferredCurrency={settings?.preferredCurrency ?? `USD`}
+        paymentRequestContacts={paymentRequestContacts}
+        paymentRequestCurrencies={paymentRequestCurrencies}
       />
     </div>
   );

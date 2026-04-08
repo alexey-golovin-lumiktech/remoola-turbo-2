@@ -5,7 +5,7 @@ export function getPaymentDetailActionState(input: { status: string; role: strin
 
   const canSend = normalizedStatus === `DRAFT` && normalizedRole === `REQUESTER`;
   const canPay = normalizedStatus === `PENDING` && normalizedRole === `PAYER`;
-  const canGenerateInvoice = normalizedRole === `REQUESTER`;
+  const canGenerateInvoice = normalizedRole === `REQUESTER` && normalizedStatus !== `DRAFT`;
   const canPayWithCard = canPay && normalizedRail !== `BANK_TRANSFER`;
   const isBankTransferPending = canPay && normalizedRail === `BANK_TRANSFER`;
   const invoiceSourceLabel = normalizedStatus === `DRAFT` ? `current draft details` : `current payment details`;

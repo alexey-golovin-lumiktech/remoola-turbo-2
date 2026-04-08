@@ -18,16 +18,7 @@ jest.mock(`@remoola/ui`, () => ({
 
 describe(`ThemeProvider (consumer-css-grid SSR)`, () => {
   it(`does not read browser theme sources during server render`, async () => {
-    const globals = globalThis as typeof globalThis & {
-      window?: {
-        localStorage?: { getItem: () => string };
-        matchMedia?: () => { matches: boolean };
-      };
-      document?: {
-        cookie?: string;
-        documentElement?: { dataset?: Record<string, string> };
-      };
-    };
+    const globals = globalThis as any;
     const originalWindow = globals.window;
     const originalDocument = globals.document;
 
@@ -49,6 +40,7 @@ describe(`ThemeProvider (consumer-css-grid SSR)`, () => {
       }
 
       const html = renderToString(
+        // @ts-expect-error -- positional children not matched by strict props type
         React.createElement(ThemeProvider, { initialTheme: THEME.SYSTEM }, React.createElement(ThemeProbe)),
       );
 

@@ -1,4 +1,5 @@
 import { type ExchangeSearchParams, parseExchangePaginationParams } from './exchange-search-params';
+import { buildInitialRatePairs, pickTopCurrencies } from './exchange-shared';
 import { ExchangeClient } from './ExchangeClient';
 import {
   getAvailableBalances,
@@ -9,26 +10,6 @@ import {
 } from '../../../lib/consumer-api.server';
 import { ExchangeIcon } from '../../../shared/ui/icons/ExchangeIcon';
 import { PageHeader } from '../../../shared/ui/shell-primitives';
-
-function pickTopCurrencies(codes: string[]) {
-  const preferred = [`USD`, `EUR`, `GBP`];
-  const available = preferred.filter((code) => codes.includes(code));
-  if (available.length >= 2) return available;
-  return codes.slice(0, 3);
-}
-
-function buildInitialRatePairs(fromCurrency: string, toCurrency: string, thirdCurrency?: string) {
-  const pairs = [
-    { from: fromCurrency, to: toCurrency },
-    { from: toCurrency, to: fromCurrency },
-  ];
-
-  if (thirdCurrency && thirdCurrency !== fromCurrency && thirdCurrency !== toCurrency) {
-    pairs.push({ from: fromCurrency, to: thirdCurrency });
-  }
-
-  return pairs;
-}
 
 export default async function ExchangePage({ searchParams }: { searchParams?: Promise<ExchangeSearchParams> }) {
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
@@ -47,7 +28,7 @@ export default async function ExchangePage({ searchParams }: { searchParams?: Pr
 
   return (
     <div>
-      <PageHeader title="Exchange" icon={<ExchangeIcon className="h-10 w-10 text-white" />} />
+      <PageHeader title="Exchange" icon={<ExchangeIcon className="h-10 w-10 text-[var(--app-primary-contrast)]" />} />
       <ExchangeClient
         currencies={currencies ?? []}
         balances={balances}

@@ -101,10 +101,10 @@ export function DashboardVerificationAction({ verification, dashboardUnavailable
         text: `Verification submitted. Refreshing your dashboard status...`,
       });
       router.refresh();
-    } catch (error) {
+    } catch {
       setMessage({
         type: `error`,
-        text: error instanceof Error ? error.message : getFallbackErrorMessage(buttonAction.label),
+        text: getFallbackErrorMessage(buttonAction.label),
       });
     } finally {
       setIsLoading(false);

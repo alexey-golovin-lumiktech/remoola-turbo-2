@@ -3,7 +3,7 @@ import { describe, expect, it } from '@jest/globals';
 import { getPaymentDetailActionState } from './payment-detail-action-state';
 
 describe(`payment detail action state`, () => {
-  it(`keeps draft requester send flow primary while allowing invoice generation from the same detail`, () => {
+  it(`keeps draft requester send flow primary while hiding invoice generation until the request leaves draft`, () => {
     expect(
       getPaymentDetailActionState({
         status: `DRAFT`,
@@ -12,7 +12,7 @@ describe(`payment detail action state`, () => {
       }),
     ).toMatchObject({
       canSend: true,
-      canGenerateInvoice: true,
+      canGenerateInvoice: false,
       canPayWithCard: false,
       isBankTransferPending: false,
       invoiceSourceLabel: `current draft details`,

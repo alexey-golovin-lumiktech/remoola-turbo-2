@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
+import { type CreatePaymentRequestFormProps } from './CreatePaymentRequestForm';
 import { CreatePaymentRequestPanel } from './CreatePaymentRequestPanel';
 import { buildPaymentsListQuery, formatPaymentTypeLabel, PAYMENT_TYPE_OPTIONS } from './payments-list-query';
 import { type PaymentsResponse } from '../../../lib/consumer-api.server';
@@ -19,6 +20,8 @@ type Props = {
   initialType: string;
   initialRole: string;
   preferredCurrency: string;
+  paymentRequestContacts: CreatePaymentRequestFormProps[`contacts`];
+  paymentRequestCurrencies: CreatePaymentRequestFormProps[`currencies`];
 };
 
 const STATUS_OPTIONS = [``, `DRAFT`, `PENDING`, `WAITING`, `COMPLETED`, `DENIED`, `UNCOLLECTIBLE`];
@@ -61,6 +64,8 @@ export function PaymentsClient({
   initialType,
   initialRole,
   preferredCurrency,
+  paymentRequestContacts,
+  paymentRequestCurrencies,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -69,6 +74,7 @@ export function PaymentsClient({
   const [status, setStatus] = useState(initialStatus);
   const [type, setType] = useState(initialType);
   const [role, setRole] = useState(initialRole);
+  const hasActiveFilters = search !== `` || status !== `` || type !== `` || role !== ``;
 
   const distinctCurrencies = Array.from(new Set(payments.map((payment) => payment.currencyCode)));
   const hasSingleCurrency = distinctCurrencies.length === 1;
@@ -97,9 +103,33 @@ export function PaymentsClient({
     });
   };
 
+  const clearFilters = () => {
+    setSearch(``);
+    setStatus(``);
+    setType(``);
+    setRole(``);
+
+    const params = buildPaymentsListQuery({
+      search: ``,
+      status: ``,
+      type: ``,
+      role: ``,
+      page: 1,
+      pageSize,
+    });
+
+    startFilterTransition(() => {
+      router.push(`${pathname}?${params}`);
+    });
+  };
+
   return (
     <div className="space-y-5">
-      <CreatePaymentRequestPanel preferredCurrency={preferredCurrency} />
+      <CreatePaymentRequestPanel
+        contacts={paymentRequestContacts}
+        currencies={paymentRequestCurrencies}
+        preferredCurrency={preferredCurrency}
+      />
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <MetricCard
@@ -131,17 +161,23 @@ export function PaymentsClient({
         />
       </section>
 
-      <Panel title="Payments filters" aside={`${total} total`}>
+      <Panel
+        title="Payments filters"
+        aside={hasActiveFilters ? `${total} total · filters active` : `${total} total`}
+        data-testid="payments-filters"
+      >
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,0.8fr)_minmax(0,0.9fr)_minmax(0,0.8fr)_auto]">
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search by description or counterparty"
+            aria-label="Search payments by description or counterparty"
             className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none placeholder:text-white/25"
           />
           <select
             value={status}
             onChange={(event) => setStatus(event.target.value)}
+            aria-label="Filter by payment status"
             className="w-full rounded-2xl border border-white/10 bg-[#0a1833] px-4 py-3 text-white outline-none"
           >
             {STATUS_OPTIONS.map((option) => (
@@ -153,6 +189,7 @@ export function PaymentsClient({
           <select
             value={type}
             onChange={(event) => setType(event.target.value)}
+            aria-label="Filter by payment type"
             className="w-full rounded-2xl border border-white/10 bg-[#0a1833] px-4 py-3 text-white outline-none"
           >
             {PAYMENT_TYPE_OPTIONS.map((option) => (
@@ -164,6 +201,7 @@ export function PaymentsClient({
           <select
             value={role}
             onChange={(event) => setRole(event.target.value)}
+            aria-label="Filter by role"
             className="w-full rounded-2xl border border-white/10 bg-[#0a1833] px-4 py-3 text-white outline-none"
           >
             {ROLE_OPTIONS.map((option) => (
@@ -172,20 +210,33 @@ export function PaymentsClient({
               </option>
             ))}
           </select>
-          <button
-            type="button"
-            disabled={isFilterPending}
-            onClick={() => applyFilters(1)}
-            className="rounded-2xl bg-blue-500 px-4 py-3 font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isFilterPending ? `Applying...` : `Apply`}
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              disabled={isFilterPending}
+              onClick={() => applyFilters(1)}
+              className="rounded-2xl bg-blue-500 px-4 py-3 font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isFilterPending ? `Applying...` : `Apply`}
+            </button>
+            {hasActiveFilters ? (
+              <button
+                type="button"
+                disabled={isFilterPending}
+                onClick={clearFilters}
+                className="rounded-2xl border border-white/10 px-4 py-3 font-medium text-white/70 transition hover:border-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Clear filters
+              </button>
+            ) : null}
+          </div>
         </div>
       </Panel>
 
       <Panel
         title="Recent payments"
         aside={`Page ${page} of ${totalPages} · ${payments.length} shown · ${total} total`}
+        data-testid="payments-list"
       >
         {payments.length === 0 ? (
           <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 px-4 py-10 text-center text-sm text-white/45">

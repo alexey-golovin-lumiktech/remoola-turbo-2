@@ -38,6 +38,21 @@ type Props = {
   paymentMethods?: PaymentMethod[];
 };
 
+function friendlyPaymentError(message: string, code?: string): string {
+  switch (code) {
+    case `card_declined`:
+      return `Your card was declined. Please try another payment method.`;
+    case `insufficient_funds`:
+      return `Insufficient funds. Please try another card.`;
+    case `expired_card`:
+      return `This card has expired. Please update your payment method in Banking.`;
+    case `processing_error`:
+      return `A processing error occurred. Please try again in a moment.`;
+    default:
+      return message || `Payment failed. Please try again or use a different method.`;
+  }
+}
+
 export function PaymentDetailActionsClient({
   paymentRequestId,
   status,
@@ -189,7 +204,10 @@ export function PaymentDetailActionsClient({
                     const result = await payWithSavedMethodMutation(paymentRequestId, selectedMethodId);
                     if (!result.ok) {
                       if (handleSessionExpiredError(result.error)) return;
-                      setMessage({ type: `error`, text: result.error.message });
+                      setMessage({
+                        type: `error`,
+                        text: friendlyPaymentError(result.error.message, result.error.code),
+                      });
                       return;
                     }
                     if (result.data.success) {
@@ -199,7 +217,7 @@ export function PaymentDetailActionsClient({
                     }
                     setMessage({
                       type: `error`,
-                      text: `This saved method needs additional authentication. Try the checkout flow instead.`,
+                      text: `This card requires additional verification (3D Secure). Please use "Pay with new card" below - Stripe Checkout will handle the verification step.`,
                     });
                   });
                 }}
