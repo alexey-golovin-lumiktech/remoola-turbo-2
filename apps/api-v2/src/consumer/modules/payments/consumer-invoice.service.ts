@@ -6,6 +6,7 @@ import { errorCodes } from '@remoola/shared-constants';
 import { buildInvoiceHtmlV5 } from './templates';
 import { PrismaService } from '../../../shared/prisma.service';
 import { getBrowser, pfdPageViewport } from '../../../shared-common/pdf-generator-package/constants';
+import { normalizeConsumerFacingTransactionStatus } from '../../consumer-status-compat';
 import { buildConsumerDocumentDownloadUrl } from '../documents/document-download-url';
 import { FileStorageService } from '../files/file-storage.service';
 
@@ -88,10 +89,11 @@ export class ConsumerInvoiceService {
       };
     }
 
-    const invoiceNumber = `INV-${payment.status}-${payment.id.slice(0, 8)}-${Date.now()}`;
+    const consumerFacingStatus = normalizeConsumerFacingTransactionStatus(payment.status);
+    const invoiceNumber = `INV-${consumerFacingStatus}-${payment.id.slice(0, 8)}-${Date.now()}`;
 
     try {
-      const html = buildInvoiceHtmlV5({ invoiceNumber, payment });
+      const html = buildInvoiceHtmlV5({ invoiceNumber, payment: { ...payment, status: consumerFacingStatus } });
       const buffer = await this.renderPdfFromHtml(html);
 
       const originalName = `${invoiceNumber}.pdf`;
@@ -114,8 +116,8 @@ export class ConsumerInvoiceService {
             create: {
               tag: {
                 connectOrCreate: {
-                  where: { name: `INVOICE-${payment.status}` },
-                  create: { name: `INVOICE-${payment.status}` },
+                  where: { name: `INVOICE-${consumerFacingStatus}` },
+                  create: { name: `INVOICE-${consumerFacingStatus}` },
                 },
               },
             },

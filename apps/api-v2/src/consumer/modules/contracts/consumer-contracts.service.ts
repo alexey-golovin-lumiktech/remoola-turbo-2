@@ -4,6 +4,7 @@ import { $Enums } from '@remoola/database-2';
 
 import { ConsumerContractItem } from './dto';
 import { PrismaService } from '../../../shared/prisma.service';
+import { normalizeConsumerFacingTransactionStatus } from '../../consumer-status-compat';
 
 @Injectable()
 export class ConsumerContractsService {
@@ -107,7 +108,9 @@ export class ConsumerContractsService {
         email: contact.email,
         lastRequestId: lastReq?.id ?? null,
         lastStatus: lastReq
-          ? this.getEffectivePaymentRequestStatus(lastReq.status, latestConsumerLedgerEntry).toLowerCase()
+          ? normalizeConsumerFacingTransactionStatus(
+              this.getEffectivePaymentRequestStatus(lastReq.status, latestConsumerLedgerEntry),
+            ).toLowerCase()
           : null,
         lastActivity: lastReq?.updatedAt ?? null,
         docs: filteredPaymentRequests.reduce((sum, paymentRequest) => sum + paymentRequest.attachments.length, 0),

@@ -154,67 +154,72 @@ describe(`ConsumerPaymentsService regression coverage`, () => {
     ]);
   });
 
-  it(`uses exact DB-backed ids and totals for effective-status pagination`, async () => {
-    const paymentRow = {
-      id: `pr-2501`,
-      amount: 42,
-      currencyCode: $Enums.CurrencyCode.USD,
-      status: $Enums.TransactionStatus.PENDING,
-      type: $Enums.TransactionType.BANK_TRANSFER,
-      description: `late-page waiting payment`,
-      createdAt: new Date(`2026-03-31T11:00:00.000Z`),
-      payerId: consumerId,
-      payerEmail: consumerEmail,
-      payer: { id: consumerId, email: consumerEmail },
-      requesterId: `requester-1`,
-      requesterEmail: `requester-1@example.com`,
-      requester: { id: `requester-1`, email: `requester-1@example.com` },
-      ledgerEntries: [
-        {
-          id: `entry-2501`,
-          consumerId,
-          createdAt: new Date(`2026-03-31T11:00:00.000Z`),
-          status: $Enums.TransactionStatus.PENDING,
-          outcomes: [{ status: $Enums.TransactionStatus.WAITING }],
+  it(
+    `uses exact DB-backed ids and totals for raw waiting-recipient-approval ` +
+      `pagination without leaking the raw status`,
+    async () => {
+      const paymentRow = {
+        id: `pr-2501`,
+        amount: 42,
+        currencyCode: $Enums.CurrencyCode.USD,
+        status: $Enums.TransactionStatus.PENDING,
+        type: $Enums.TransactionType.BANK_TRANSFER,
+        description: `late-page waiting payment`,
+        createdAt: new Date(`2026-03-31T11:00:00.000Z`),
+        payerId: consumerId,
+        payerEmail: consumerEmail,
+        payer: { id: consumerId, email: consumerEmail },
+        requesterId: `requester-1`,
+        requesterEmail: `requester-1@example.com`,
+        requester: { id: `requester-1`, email: `requester-1@example.com` },
+        ledgerEntries: [
+          {
+            id: `entry-2501`,
+            consumerId,
+            createdAt: new Date(`2026-03-31T11:00:00.000Z`),
+            status: $Enums.TransactionStatus.PENDING,
+            outcomes: [{ status: $Enums.TransactionStatus.WAITING_RECIPIENT_APPROVAL }],
+          },
+        ],
+      };
+      const prisma = {
+        consumerModel: {
+          findUnique: jest.fn().mockResolvedValue({ email: consumerEmail }),
         },
-      ],
-    };
-    const prisma = {
-      consumerModel: {
-        findUnique: jest.fn().mockResolvedValue({ email: consumerEmail }),
-      },
-      $queryRaw: jest.fn().mockImplementation((query: { strings?: string[] }) => {
-        const sql = query?.strings?.join(` `) ?? ``;
-        if (sql.includes(`COUNT(*)::int AS total`)) {
-          return Promise.resolve([{ total: 2501 }]);
-        }
-        if (sql.includes(`SELECT id`)) {
-          return Promise.resolve([{ id: `pr-2501` }]);
-        }
-        return Promise.resolve([]);
-      }),
-      paymentRequestModel: {
-        findMany: jest.fn().mockResolvedValue([paymentRow]),
-      },
-    } as any;
+        $queryRaw: jest.fn().mockImplementation((query: { strings?: string[] }) => {
+          const sql = query?.strings?.join(` `) ?? ``;
+          if (sql.includes(`COUNT(*)::int AS total`)) {
+            return Promise.resolve([{ total: 2501 }]);
+          }
+          if (sql.includes(`SELECT id`)) {
+            return Promise.resolve([{ id: `pr-2501` }]);
+          }
+          return Promise.resolve([]);
+        }),
+        paymentRequestModel: {
+          findMany: jest.fn().mockResolvedValue([paymentRow]),
+        },
+      } as any;
 
-    const service = new ConsumerPaymentsService(prisma, {} as any, createBalanceService());
-    const result = await service.listPayments({
-      consumerId,
-      page: 126,
-      pageSize: 20,
-      status: $Enums.TransactionStatus.WAITING,
-    });
+      const service = new ConsumerPaymentsService(prisma, {} as any, createBalanceService());
+      const result = await service.listPayments({
+        consumerId,
+        page: 126,
+        pageSize: 20,
+        status: $Enums.TransactionStatus.WAITING,
+      });
 
-    expect(result.total).toBe(2501);
-    expect(result.items).toHaveLength(1);
-    expect(result.items[0]?.id).toBe(`pr-2501`);
-    expect(result.items[0]?.status).toBe($Enums.TransactionStatus.WAITING);
-    expect(prisma.paymentRequestModel.findMany).toHaveBeenCalledWith({
-      where: { id: { in: [`pr-2501`] } },
-      include: expect.any(Object),
-    });
-  });
+      expect(result.total).toBe(2501);
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0]?.id).toBe(`pr-2501`);
+      expect(result.items[0]?.status).toBe($Enums.TransactionStatus.WAITING);
+      expect(result.items[0]?.latestTransaction?.status).toBe($Enums.TransactionStatus.WAITING);
+      expect(prisma.paymentRequestModel.findMany).toHaveBeenCalledWith({
+        where: { id: { in: [`pr-2501`] } },
+        include: expect.any(Object),
+      });
+    },
+  );
 
   it(`collapses payment history to latest DB rows before paginating`, async () => {
     const prisma = {
@@ -251,6 +256,44 @@ describe(`ConsumerPaymentsService regression coverage`, () => {
         ledgerId: `ledger-history-1`,
         status: $Enums.TransactionStatus.COMPLETED,
         paymentMethodLabel: `History Bank •••• 1234`,
+      }),
+    );
+  });
+
+  it(`normalizes raw waiting-recipient-approval history rows for consumers`, async () => {
+    const prisma = {
+      $queryRaw: jest.fn().mockResolvedValue([
+        {
+          id: `entry-history-waiting`,
+          ledgerId: `ledger-history-waiting`,
+          type: $Enums.LedgerEntryType.USER_PAYMENT,
+          effectiveStatus: $Enums.TransactionStatus.WAITING_RECIPIENT_APPROVAL,
+          amount: -25,
+          currencyCode: $Enums.CurrencyCode.USD,
+          createdAt: new Date(`2026-03-31T12:00:00.000Z`),
+          metadata: null,
+          paymentRequestId: `pr-waiting`,
+          paymentRail: $Enums.PaymentRail.BANK_TRANSFER,
+          totalRows: 1,
+        },
+      ]),
+      paymentMethodModel: {
+        findMany: jest.fn().mockResolvedValue([]),
+      },
+    } as any;
+
+    const service = new ConsumerPaymentsService(prisma, {} as any, createBalanceService());
+    const result = await service.getHistory(consumerId, {
+      limit: 20,
+      offset: 0,
+      status: $Enums.TransactionStatus.WAITING,
+    });
+
+    expect(result.total).toBe(1);
+    expect(result.items[0]).toEqual(
+      expect.objectContaining({
+        ledgerId: `ledger-history-waiting`,
+        status: $Enums.TransactionStatus.WAITING,
       }),
     );
   });

@@ -6,7 +6,7 @@ import { errorCodes } from '@remoola/shared-constants';
 import { ConsumerPaymentsService } from './consumer-payments.service';
 import { type TransferBody, type WithdrawBody } from './dto';
 import { type StartPayment } from './dto/start-payment.dto';
-import { BalanceCalculationMode, BalanceCalculationService } from '../../../shared/balance-calculation.service';
+import { BalanceCalculationMode } from '../../../shared/balance-calculation.service';
 
 describe(`ConsumerPaymentsService.createPaymentRequest`, () => {
   const consumerId = `consumer-1`;
@@ -807,45 +807,48 @@ describe(`ConsumerPaymentsService.getPaymentView`, () => {
     );
   });
 
-  it(`prefers effective status for payment view when latest consumer ledger outcome diverges`, async () => {
-    const { service, prisma } = makeService();
-    prisma.paymentRequestModel.findUnique.mockResolvedValue({
-      id: `pr-waiting`,
-      payerId: consumerId,
-      payerEmail: consumerEmail,
-      requesterId: `requester-1`,
-      amount: 8.76,
-      currencyCode: $Enums.CurrencyCode.EUR,
-      status: $Enums.TransactionStatus.PENDING,
-      description: `Live second consumer payer E2E`,
-      dueDate: null,
-      sentDate: new Date(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      payer: { id: consumerId, email: consumerEmail },
-      requester: { id: `requester-1`, email: `requester@example.com` },
-      attachments: [],
-      ledgerEntries: [
-        {
-          id: `entry-waiting`,
-          ledgerId: `ledger-waiting`,
-          consumerId,
-          currencyCode: $Enums.CurrencyCode.EUR,
-          amount: -8.76,
-          status: $Enums.TransactionStatus.PENDING,
-          type: $Enums.LedgerEntryType.USER_PAYMENT,
-          createdAt: new Date(`2026-03-25T17:27:00.000Z`),
-          metadata: {},
-          outcomes: [{ status: $Enums.TransactionStatus.WAITING }],
-        },
-      ],
-    });
+  it(
+    `normalizes waiting-recipient-approval for payment view ` + `when latest consumer ledger outcome diverges`,
+    async () => {
+      const { service, prisma } = makeService();
+      prisma.paymentRequestModel.findUnique.mockResolvedValue({
+        id: `pr-waiting`,
+        payerId: consumerId,
+        payerEmail: consumerEmail,
+        requesterId: `requester-1`,
+        amount: 8.76,
+        currencyCode: $Enums.CurrencyCode.EUR,
+        status: $Enums.TransactionStatus.PENDING,
+        description: `Live second consumer payer E2E`,
+        dueDate: null,
+        sentDate: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        payer: { id: consumerId, email: consumerEmail },
+        requester: { id: `requester-1`, email: `requester@example.com` },
+        attachments: [],
+        ledgerEntries: [
+          {
+            id: `entry-waiting`,
+            ledgerId: `ledger-waiting`,
+            consumerId,
+            currencyCode: $Enums.CurrencyCode.EUR,
+            amount: -8.76,
+            status: $Enums.TransactionStatus.PENDING,
+            type: $Enums.LedgerEntryType.USER_PAYMENT,
+            createdAt: new Date(`2026-03-25T17:27:00.000Z`),
+            metadata: {},
+            outcomes: [{ status: $Enums.TransactionStatus.WAITING_RECIPIENT_APPROVAL }],
+          },
+        ],
+      });
 
-    const result = await service.getPaymentView(consumerId, `pr-waiting`);
+      const result = await service.getPaymentView(consumerId, `pr-waiting`);
 
-    expect(result.status).toBe($Enums.TransactionStatus.WAITING);
-    expect(result.ledgerEntries[0]?.status).toBe($Enums.TransactionStatus.WAITING);
-  });
+      expect(result.status).toBe($Enums.TransactionStatus.WAITING);
+      expect(result.ledgerEntries[0]?.status).toBe($Enums.TransactionStatus.WAITING);
+    },
+  );
 });
 
 describe(`ConsumerPaymentsService.listPayments`, () => {

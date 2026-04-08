@@ -81,7 +81,7 @@ describe(`ConsumerContractsService`, () => {
     });
   });
 
-  it(`prefers latest consumer ledger outcome status for linked-consumer contracts`, async () => {
+  it(`normalizes waiting-recipient-approval for linked-consumer contracts`, async () => {
     const linkedUpdatedAt = new Date(`2026-03-27T11:45:00.000Z`);
     const prisma = {
       contactModel: {
@@ -111,7 +111,7 @@ describe(`ConsumerContractsService`, () => {
                 id: `ledger-entry-1`,
                 consumerId: `consumer-1`,
                 status: `PENDING`,
-                outcomes: [{ status: `WAITING` }],
+                outcomes: [{ status: `WAITING_RECIPIENT_APPROVAL` }],
               },
             ],
             attachments: [{ id: `att-1` }],

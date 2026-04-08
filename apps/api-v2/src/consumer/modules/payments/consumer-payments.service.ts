@@ -24,6 +24,7 @@ import { MailingService } from '../../../shared/mailing.service';
 import { appendConsumerAppScopeToMetadata } from '../../../shared/payment-link-metadata';
 import { PrismaService } from '../../../shared/prisma.service';
 import { isConsumerProfileCompleteForVerification, isConsumerVerificationEffective } from '../../../shared-common';
+import { normalizeConsumerFacingTransactionStatus, buildConsumerStatusFilter } from '../../consumer-status-compat';
 import { buildConsumerDocumentDownloadUrl } from '../documents/document-download-url';
 
 @Injectable()
@@ -167,7 +168,7 @@ export class ConsumerPaymentsService {
     const { consumerId, page, pageSize, status, type, role, search } = params;
     const consumerEmail = await this.getConsumerEmail(consumerId);
     const normalizedConsumerEmail = consumerEmail?.trim().toLowerCase() ?? null;
-    const effectiveStatusFilter = status as $Enums.TransactionStatus | undefined;
+    const effectiveStatusFilter = buildConsumerStatusFilter(status);
     const roleConditions = this.buildPaymentRoleConditions(consumerId, consumerEmail, role);
 
     const whereBase: Prisma.PaymentRequestModelWhereInput = search
@@ -231,6 +232,15 @@ export class ConsumerPaymentsService {
             )
           `
         : Prisma.empty;
+      const statusCoalesce = Prisma.sql`COALESCE(
+        latest_outcome.status::text,
+        latest_le.status::text,
+        pr.status::text
+      )`;
+      const listPaymentsStatusSql =
+        typeof effectiveStatusFilter === `object` && `in` in effectiveStatusFilter
+          ? Prisma.sql`AND ${statusCoalesce} IN (${Prisma.join(effectiveStatusFilter.in)})`
+          : Prisma.sql`AND ${statusCoalesce} = ${effectiveStatusFilter}`;
       const filteredPaymentIdsSql = Prisma.sql`
         SELECT pr.id, pr.created_at
         FROM payment_request pr
@@ -255,7 +265,7 @@ export class ConsumerPaymentsService {
         WHERE ${roleSql}
           ${typeSql}
           ${searchSql}
-          AND COALESCE(latest_outcome.status::text, latest_le.status::text, pr.status::text) = ${effectiveStatusFilter}
+          ${listPaymentsStatusSql}
       `;
       const [totalRows, pageIdRows] = await Promise.all([
         this.prisma.$queryRaw<Array<{ total: number }>>(Prisma.sql`
@@ -330,7 +340,7 @@ export class ConsumerPaymentsService {
       if (latestTx && latestTxStatus) {
         latestTransaction = {
           id: latestTx.id,
-          status: latestTxStatus,
+          status: normalizeConsumerFacingTransactionStatus(latestTxStatus),
           createdAt: latestTx.createdAt.toISOString(),
         };
       }
@@ -339,7 +349,7 @@ export class ConsumerPaymentsService {
         id: paymentRequest.id,
         amount: Number(paymentRequest.amount),
         currencyCode: paymentRequest.currencyCode,
-        status: effectivePaymentStatus,
+        status: normalizeConsumerFacingTransactionStatus(effectivePaymentStatus),
         role: paymentRole,
         type: paymentRequest.type,
         description: paymentRequest.description,
@@ -355,7 +365,11 @@ export class ConsumerPaymentsService {
     });
 
     if (effectiveStatusFilter && typeof this.prisma.$queryRaw !== `function`) {
-      const filteredItems = mappedItems.filter((item) => item.status === effectiveStatusFilter);
+      const filterSet =
+        typeof effectiveStatusFilter === `object` && `in` in effectiveStatusFilter
+          ? new Set(effectiveStatusFilter.in)
+          : new Set([effectiveStatusFilter as $Enums.TransactionStatus]);
+      const filteredItems = mappedItems.filter((item) => filterSet.has(item.status));
       return {
         items: filteredItems.slice((page - 1) * pageSize, page * pageSize),
         total: filteredItems.length,
@@ -438,7 +452,9 @@ export class ConsumerPaymentsService {
       id: paymentRequest.id,
       amount: Number(paymentRequest.amount),
       currencyCode: paymentRequest.currencyCode,
-      status: this.getEffectivePaymentRequestStatus(paymentRequest.status, consumerLedgerEntry),
+      status: normalizeConsumerFacingTransactionStatus(
+        this.getEffectivePaymentRequestStatus(paymentRequest.status, consumerLedgerEntry),
+      ),
       description: paymentRequest.description,
       dueDate: paymentRequest.dueDate,
       sentDate: paymentRequest.sentDate,
@@ -461,7 +477,7 @@ export class ConsumerPaymentsService {
             currencyCode: entry.currencyCode,
             amount,
             direction: amount > 0 ? PAYMENT_DIRECTION.INCOME : PAYMENT_DIRECTION.OUTCOME,
-            status: this.getEffectiveLedgerStatus(entry),
+            status: normalizeConsumerFacingTransactionStatus(this.getEffectiveLedgerStatus(entry)!),
             type: this.normalizeProductLedgerType(entry.type, entry.paymentRequestId),
             createdAt: entry.createdAt,
             rail: metadata.rail ?? paymentRequest.paymentRail ?? null,
@@ -892,7 +908,7 @@ export class ConsumerPaymentsService {
       id: row.id,
       ledgerId: row.ledgerId,
       type: this.normalizeProductLedgerType(row.type, row.paymentRequestId),
-      status: this.getEffectiveLedgerStatus(row),
+      status: normalizeConsumerFacingTransactionStatus(this.getEffectiveLedgerStatus(row)!),
       currencyCode: row.currencyCode,
       amount,
       direction: amount > 0 ? PAYMENT_DIRECTION.INCOME : PAYMENT_DIRECTION.OUTCOME,
@@ -909,13 +925,18 @@ export class ConsumerPaymentsService {
     let total: number;
 
     if (typeof this.prisma.$queryRaw === `function`) {
+      const effectiveStatusFilter = buildConsumerStatusFilter(status);
       const directionSql =
         direction === PAYMENT_DIRECTION.INCOME
           ? Prisma.sql`AND latest.amount > 0`
           : direction === PAYMENT_DIRECTION.OUTCOME
             ? Prisma.sql`AND latest.amount < 0`
             : Prisma.empty;
-      const statusSql = status ? Prisma.sql`AND latest."effectiveStatus" = ${status}` : Prisma.empty;
+      const statusSql = !effectiveStatusFilter
+        ? Prisma.empty
+        : typeof effectiveStatusFilter === `object` && `in` in effectiveStatusFilter
+          ? Prisma.sql`AND latest."effectiveStatus" IN (${Prisma.join(effectiveStatusFilter.in)})`
+          : Prisma.sql`AND latest."effectiveStatus" = ${effectiveStatusFilter}`;
       const typeSql = type ? Prisma.sql`AND latest."normalizedType" = ${type}` : Prisma.empty;
       const rows = await this.prisma.$queryRaw<
         Array<{
@@ -994,7 +1015,7 @@ export class ConsumerPaymentsService {
           id: row.id,
           ledgerId: row.ledgerId,
           type: row.type,
-          status: row.effectiveStatus,
+          status: normalizeConsumerFacingTransactionStatus(row.effectiveStatus),
           amount: row.amount,
           currencyCode: row.currencyCode,
           createdAt: new Date(row.createdAt),

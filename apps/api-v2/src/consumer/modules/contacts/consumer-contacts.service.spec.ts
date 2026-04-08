@@ -40,7 +40,7 @@ describe(`ConsumerContactsService`, () => {
     });
   });
 
-  it(`prefers effective status for contact payment request summaries`, async () => {
+  it(`normalizes waiting-recipient-approval for contact payment request summaries`, async () => {
     const prisma = {
       contactModel: {
         findFirst: mockResolved({
@@ -61,7 +61,7 @@ describe(`ConsumerContactsService`, () => {
             ledgerEntries: [
               {
                 status: $Enums.TransactionStatus.PENDING,
-                outcomes: [{ status: $Enums.TransactionStatus.WAITING }],
+                outcomes: [{ status: $Enums.TransactionStatus.WAITING_RECIPIENT_APPROVAL }],
               },
             ],
           },

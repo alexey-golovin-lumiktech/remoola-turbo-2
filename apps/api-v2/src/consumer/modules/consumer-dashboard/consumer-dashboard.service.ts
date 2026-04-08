@@ -6,6 +6,7 @@ import { DashboardData, ActivityItem, ComplianceTask, PendingRequest, QuickDoc }
 import { BalanceCalculationService, BalanceCalculationMode } from '../../../shared/balance-calculation.service';
 import { PrismaService } from '../../../shared/prisma.service';
 import { buildConsumerVerificationState } from '../../../shared-common';
+import { normalizeConsumerFacingTransactionStatus } from '../../consumer-status-compat';
 
 type DashboardActivityLedgerRow = {
   id: string;
@@ -146,13 +147,13 @@ export class ConsumerDashboardService {
   }
 
   private formatDashboardStatus(status: $Enums.TransactionStatus | null | undefined): string {
-    switch (status) {
+    const normalizedStatus = status ? normalizeConsumerFacingTransactionStatus(status) : status;
+    switch (normalizedStatus) {
       case $Enums.TransactionStatus.COMPLETED:
         return `Completed`;
       case $Enums.TransactionStatus.PENDING:
         return `Pending`;
       case $Enums.TransactionStatus.WAITING:
-      case $Enums.TransactionStatus.WAITING_RECIPIENT_APPROVAL:
         return `Waiting for confirmation`;
       case $Enums.TransactionStatus.DENIED:
         return `Denied`;
