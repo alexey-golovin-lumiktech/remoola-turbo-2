@@ -5,17 +5,16 @@ import { getEnv } from '../../../../../lib/env.server';
 
 const RESPONSE_HEADER_ALLOWLIST = new Set([`cache-control`, `content-disposition`, `content-length`, `content-type`]);
 
-async function readDocumentId(context: {
-  params: Promise<{ documentId: string }> | { documentId: string };
-}): Promise<string> {
+type RouteContext = {
+  params: Promise<{ documentId: string }>;
+};
+
+async function readDocumentId(context: RouteContext): Promise<string> {
   const params = await context.params;
   return params.documentId?.trim() ?? ``;
 }
 
-export async function GET(
-  req: NextRequest,
-  context: { params: Promise<{ documentId: string }> | { documentId: string } },
-) {
+export async function GET(req: NextRequest, context: RouteContext) {
   const env = getEnv();
   const baseUrl = env.NEXT_PUBLIC_API_BASE_URL;
   if (!baseUrl) {
