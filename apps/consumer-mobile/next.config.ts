@@ -4,6 +4,74 @@ import { type NextConfig } from 'next';
 
 const packages = [`sonner`, `@remoola/api-types`, `@remoola/shared-constants`, `@remoola/ui`];
 
+function normalizeOriginCandidate(candidate: string | undefined): string | null {
+  if (!candidate) return null;
+  const trimmed = candidate.trim();
+  if (!trimmed || trimmed === `undefined` || trimmed === `null`) return null;
+
+  const normalizedCandidate = trimmed.includes(`://`) ? trimmed : `https://${trimmed}`;
+  try {
+    return new URL(normalizedCandidate).origin;
+  } catch {
+    return null;
+  }
+}
+
+function getConsumerCssGridCutoverOrigin(): string | null {
+  if (process.env.NODE_ENV !== `production`) return null;
+  if (process.env.VERCEL !== `1`) return null;
+  if (process.env.VERCEL_ENV && process.env.VERCEL_ENV !== `production`) return null;
+  return normalizeOriginCandidate(process.env.CONSUMER_CSS_GRID_APP_ORIGIN);
+}
+
+function getConsumerCssGridCutoverRedirects() {
+  const origin = getConsumerCssGridCutoverOrigin();
+  if (!origin) return [];
+
+  return [
+    {
+      source: `/`,
+      destination: `${origin}/dashboard`,
+      permanent: true,
+    },
+    {
+      source: `/withdraw-transfer`,
+      destination: `${origin}/withdraw`,
+      permanent: true,
+    },
+    {
+      source: `/withdraw-transfer/:path*`,
+      destination: `${origin}/withdraw`,
+      permanent: true,
+    },
+    {
+      source: `/payment-methods`,
+      destination: `${origin}/banking`,
+      permanent: true,
+    },
+    {
+      source: `/payment-methods/:path*`,
+      destination: `${origin}/banking`,
+      permanent: true,
+    },
+    {
+      source: `/payment-requests/new`,
+      destination: `${origin}/payments/new-request`,
+      permanent: true,
+    },
+    {
+      source: `/payment-requests/new/:path*`,
+      destination: `${origin}/payments/new-request`,
+      permanent: true,
+    },
+    {
+      source: `/:path((?!api|_next|assets|favicon\\.ico|.*\\..*).*)`,
+      destination: `${origin}/:path*`,
+      permanent: true,
+    },
+  ];
+}
+
 const nextConfig: NextConfig = {
   devIndicators: false,
   reactStrictMode: true,
@@ -43,6 +111,10 @@ const nextConfig: NextConfig = {
         ],
       },
     ];
+  },
+
+  async redirects() {
+    return getConsumerCssGridCutoverRedirects();
   },
 
   turbopack: {
