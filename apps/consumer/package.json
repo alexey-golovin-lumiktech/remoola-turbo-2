@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "eslint \"src/**/*.{js,jsx,ts,tsx}\" --max-warnings 0",
     "typecheck": "tsc --noEmit",
+    "typecheck:watch": "tsc --noEmit --watch --preserveWatchOutput",
     "pretest": "TERM=dumb NO_COLOR=1 node ../../scripts/ensure-local-development.js consumer:pretest && yarn workspace @remoola/test-db build",
     "test": "TERM=dumb NO_COLOR=1 node ../../scripts/ensure-local-development.js consumer:test && node ../../scripts/run-jest-with-memory-cap.js",
     "clean": "rm -rf ./node_modules ./.next"

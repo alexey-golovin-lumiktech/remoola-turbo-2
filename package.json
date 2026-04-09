@@ -26,6 +26,7 @@
     "postinstall": "turbo run build --filter=\"./packages/*\" --filter=\"!@remoola/db-fixtures\" --filter=\"!@remoola/test-db\" --filter=\"!@remoola/api-e2e\"",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
+    "typecheck:watch": "turbo run typecheck:watch --parallel",
     "start": "turbo run start --parallel",
     "test": "TERM=dumb NO_COLOR=1 node ./scripts/ensure-local-development.js root:test && turbo run test",
     "test-db:cleanup": "TERM=dumb NO_COLOR=1 node ./scripts/cleanup-stale-test-dbs.js",

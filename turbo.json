@@ -131,6 +131,13 @@
         "^build"
       ]
     },
+    "typecheck:watch": {
+      "dependsOn": [
+        "^build"
+      ],
+      "cache": false,
+      "persistent": true
+    },
     "test": {},
     "clean": {
       "cache": false

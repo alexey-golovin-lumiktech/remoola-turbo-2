@@ -8,6 +8,7 @@
     "schema:generate": "node ./scripts/generate-schema-helpers.js",
     "build": "yarn schema:generate && tsc -b",
     "typecheck": "yarn schema:generate && tsc --noEmit",
+    "typecheck:watch": "yarn schema:generate && tsc --noEmit --watch --preserveWatchOutput",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "test": "jest",
     "clean": "rm -rf ./node_modules ./dist"
