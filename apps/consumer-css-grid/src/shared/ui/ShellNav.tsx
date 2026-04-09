@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { cn, RemoolaCompactLogo, RemoolaLogo } from '@remoola/ui';
+import { cn, RemoolaCompactLogo, RemoolaLogo, SearchIcon } from '@remoola/ui';
 
 import { ThemeQuickSwitch } from '../theme/ThemeQuickSwitch';
 import { ArrowDownIcon } from './icons/ArrowDownIcon';
@@ -46,9 +46,56 @@ function isActive(pathname: string, href: string): boolean {
   return pathname.startsWith(href);
 }
 
+interface CommandPaletteTriggerProps {
+  compact?: boolean;
+  commandShortcutLabel: string;
+  onOpenCommandPalette: () => void;
+  testId: string;
+}
+
+function CommandPaletteTrigger({
+  compact = false,
+  commandShortcutLabel,
+  onOpenCommandPalette,
+  testId,
+}: CommandPaletteTriggerProps) {
+  const triggerLabel = compact ? `Search` : `Quick search`;
+  const shortcutHint = `Shortcut: ${commandShortcutLabel}`;
+
+  return (
+    <button
+      type="button"
+      onClick={onOpenCommandPalette}
+      className={cn(
+        `border border-[color:var(--app-border)] bg-[var(--app-surface)] shadow-[var(--app-shadow)] transition hover:bg-[var(--app-surface-strong)] hover:text-[var(--app-text)]`,
+        compact
+          ? `rounded-xl px-3 py-2 text-sm text-[var(--app-text-soft)]`
+          : `flex items-center gap-3 rounded-2xl px-4 py-2.5 text-sm text-[var(--app-text-soft)]`,
+      )}
+      aria-label={`Open quick search. ${shortcutHint}`}
+      title={`${triggerLabel} (${commandShortcutLabel})`}
+      data-testid={testId}
+    >
+      <SearchIcon size={16} className="shrink-0" aria-hidden="true" />
+      {compact ? null : <span className="whitespace-nowrap">Quick search</span>}
+      {compact ? null : (
+        <kbd className="rounded-md border border-[color:var(--app-border)] bg-[var(--app-surface-strong)] px-2 py-1 text-[10px] font-medium text-[var(--app-text-faint)]">
+          {commandShortcutLabel}
+        </kbd>
+      )}
+    </button>
+  );
+}
+
 /* ── Sidebar ─────────────────────────────────────────────── */
 
-export function ShellSidebar() {
+export function ShellSidebar({
+  commandShortcutLabel,
+  onOpenCommandPalette,
+}: {
+  commandShortcutLabel: string;
+  onOpenCommandPalette: () => void;
+}) {
   const pathname = usePathname();
 
   return (
@@ -67,6 +114,12 @@ export function ShellSidebar() {
 
         {/* Mobile quick actions (visible on mobile only) */}
         <div className="flex items-center gap-3 md:hidden">
+          <CommandPaletteTrigger
+            compact
+            commandShortcutLabel={commandShortcutLabel}
+            onOpenCommandPalette={onOpenCommandPalette}
+            testId="consumer-css-grid-command-palette-trigger-mobile"
+          />
           <ThemeQuickSwitch compact />
           <form method="post" action="/logout" className="contents">
             <button
@@ -112,7 +165,7 @@ export function ShellSidebar() {
 
         {/* Logout at bottom of sidebar */}
         <div className="mt-4 space-y-4 border-t border-[color:var(--app-border)] pt-4">
-          <ThemeQuickSwitch />
+          <ThemeQuickSwitch showLabel />
           <form method="post" action="/logout" className="contents">
             <button
               type="submit"
@@ -131,16 +184,35 @@ export function ShellSidebar() {
 
 /* ── Desktop top bar (hidden on mobile) ─────────────────── */
 
-export function ShellTopBar() {
+export function ShellTopBar({
+  commandShortcutLabel,
+  onOpenCommandPalette,
+}: {
+  commandShortcutLabel: string;
+  onOpenCommandPalette: () => void;
+}) {
   return (
     <header
       className="hidden items-center justify-between border-b border-[color:var(--app-border)] px-6 py-4 md:flex"
       data-testid="consumer-css-grid-shell-topbar"
     >
       <div className="w-full max-w-xl rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface)] px-4 py-3 text-sm text-[var(--app-text-faint)]">
-        Use the left navigation to jump between dashboard, payments, exchange, and settings.
+        <div className="flex flex-wrap items-center gap-2">
+          <span>Use quick search to jump between pages and actions.</span>
+          <span className="inline-flex items-center gap-2 text-[var(--app-text-muted)]">
+            <span>You can also press</span>
+            <kbd className="rounded-md border border-[color:var(--app-border)] bg-[var(--app-surface-strong)] px-2 py-1 text-[10px] font-medium text-[var(--app-text-faint)]">
+              {commandShortcutLabel}
+            </kbd>
+          </span>
+        </div>
       </div>
-      <div className="ml-4 grid grid-cols-[minmax(0,180px)_auto] items-center gap-3">
+      <div className="ml-4 flex items-center gap-3">
+        <CommandPaletteTrigger
+          commandShortcutLabel={commandShortcutLabel}
+          onOpenCommandPalette={onOpenCommandPalette}
+          testId="consumer-css-grid-command-palette-trigger"
+        />
         <ThemeQuickSwitch />
         <form method="post" action="/logout" className="contents">
           <button

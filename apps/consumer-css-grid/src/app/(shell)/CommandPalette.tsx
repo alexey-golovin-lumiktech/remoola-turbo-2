@@ -1,11 +1,20 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { type KeyboardEvent as ReactKeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import { SearchIcon, cn } from '@remoola/ui';
 
-type CommandGroup = `Pages` | `Actions`;
+type CommandSectionTitle = `Pages` | `Actions` | `Recent` | `Suggested`;
+type CommandGroup = Extract<CommandSectionTitle, `Pages` | `Actions`>;
 
 interface CommandRoute {
   label: string;
@@ -16,6 +25,11 @@ interface CommandRoute {
 
 interface IndexedCommandRoute extends CommandRoute {
   index: number;
+}
+
+interface CommandSection {
+  title: CommandSectionTitle;
+  routes: IndexedCommandRoute[];
 }
 
 const ROUTES: CommandRoute[] = [
@@ -55,6 +69,100 @@ const ROUTES: CommandRoute[] = [
 ];
 
 const INDEXED_ROUTES: IndexedCommandRoute[] = ROUTES.map((route, index) => ({ ...route, index }));
+const INDEXED_ROUTE_BY_HREF = new Map(INDEXED_ROUTES.map((route) => [route.href, route]));
+const EMPTY_STATE_SUGGESTIONS = [`Dashboard`, `Payments`, `Exchange`, `Settings`] as const;
+const SUGGESTED_ROUTE_HREFS = [`/dashboard`, `/payments/start`, `/exchange`, `/settings`] as const;
+const RECENT_ROUTES_STORAGE_KEY = `consumer-css-grid-command-palette-recent`;
+const RECENT_ROUTES_LIMIT = 4;
+
+function normalizeSearchValue(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function getQueryTokens(query: string): string[] {
+  return normalizeSearchValue(query).split(/\s+/).filter(Boolean);
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, `\\$&`);
+}
+
+function highlightMatches(text: string, tokens: string[]): ReactNode {
+  if (tokens.length === 0) {
+    return text;
+  }
+
+  const uniqueTokens = Array.from(new Set(tokens)).sort((left, right) => right.length - left.length);
+  if (uniqueTokens.length === 0) {
+    return text;
+  }
+
+  const matcher = new RegExp(`(${uniqueTokens.map(escapeRegExp).join(`|`)})`, `gi`);
+  const parts = text.split(matcher);
+
+  return parts.map((part, index) => {
+    if (uniqueTokens.some((token) => token.toLowerCase() === part.toLowerCase())) {
+      return (
+        <mark
+          key={`${part}-${index}`}
+          className="rounded-md bg-[var(--app-primary-soft)] px-1 py-0.5 text-[var(--app-primary)]"
+        >
+          {part}
+        </mark>
+      );
+    }
+
+    return part;
+  });
+}
+
+function readRecentRouteHrefs(): string[] {
+  if (typeof window === `undefined`) {
+    return [];
+  }
+
+  try {
+    const raw = window.localStorage.getItem(RECENT_ROUTES_STORAGE_KEY);
+    if (!raw) {
+      return [];
+    }
+
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed
+      .filter((href): href is string => typeof href === `string` && INDEXED_ROUTE_BY_HREF.has(href))
+      .slice(0, RECENT_ROUTES_LIMIT);
+  } catch {
+    return [];
+  }
+}
+
+function isExactRouteMatch(query: string, route: IndexedCommandRoute): boolean {
+  const normalizedQuery = normalizeSearchValue(query);
+  if (!normalizedQuery) {
+    return false;
+  }
+
+  return [route.label, route.href].some((candidate) => normalizeSearchValue(candidate) === normalizedQuery);
+}
+
+function groupRoutesByGroup(routes: IndexedCommandRoute[]): CommandSection[] {
+  const groups = new Map<CommandGroup, IndexedCommandRoute[]>();
+
+  for (const route of routes) {
+    const existing = groups.get(route.group);
+    if (existing) {
+      existing.push(route);
+    } else {
+      groups.set(route.group, [route]);
+    }
+  }
+
+  return Array.from(groups.entries()).map(([title, groupedRoutes]) => ({ title, routes: groupedRoutes }));
+}
 
 function matchRoutes(query: string): IndexedCommandRoute[] {
   const normalized = query.toLowerCase().trim();
@@ -62,7 +170,7 @@ function matchRoutes(query: string): IndexedCommandRoute[] {
     return INDEXED_ROUTES;
   }
 
-  const tokens = normalized.split(/\s+/).filter(Boolean);
+  const tokens = getQueryTokens(normalized);
 
   return INDEXED_ROUTES.map((route) => {
     const label = route.label.toLowerCase();
@@ -105,16 +213,71 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   const router = useRouter();
   const [query, setQuery] = useState(``);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [recentRouteHrefs, setRecentRouteHrefs] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
 
+  const queryTokens = useMemo(() => getQueryTokens(query), [query]);
+  const normalizedQuery = useMemo(() => normalizeSearchValue(query), [query]);
   const filteredRoutes = useMemo(() => matchRoutes(query), [query]);
+  const recentRoutes = useMemo(
+    () =>
+      recentRouteHrefs
+        .map((href) => INDEXED_ROUTE_BY_HREF.get(href))
+        .filter((route): route is IndexedCommandRoute => route != null),
+    [recentRouteHrefs],
+  );
+  const suggestedRoutes = useMemo(
+    () =>
+      SUGGESTED_ROUTE_HREFS.map((href) => INDEXED_ROUTE_BY_HREF.get(href)).filter(
+        (route): route is IndexedCommandRoute => route != null && !recentRouteHrefs.includes(route.href),
+      ),
+    [recentRouteHrefs],
+  );
+  const displaySections = useMemo(() => {
+    if (queryTokens.length > 0) {
+      return groupRoutesByGroup(filteredRoutes);
+    }
+
+    const pinnedRouteHrefs = new Set<string>();
+    const sections: CommandSection[] = [];
+
+    if (recentRoutes.length > 0) {
+      sections.push({ title: `Recent`, routes: recentRoutes });
+      for (const route of recentRoutes) {
+        pinnedRouteHrefs.add(route.href);
+      }
+    }
+
+    if (suggestedRoutes.length > 0) {
+      sections.push({ title: `Suggested`, routes: suggestedRoutes });
+      for (const route of suggestedRoutes) {
+        pinnedRouteHrefs.add(route.href);
+      }
+    }
+
+    const remainingRoutes = filteredRoutes.filter((route) => !pinnedRouteHrefs.has(route.href));
+    return [...sections, ...groupRoutesByGroup(remainingRoutes)];
+  }, [filteredRoutes, queryTokens.length, recentRoutes, suggestedRoutes]);
+  const displayedRoutes = useMemo(() => displaySections.flatMap((section) => section.routes), [displaySections]);
+  const routePositions = useMemo(
+    () => new Map(displayedRoutes.map((route, index) => [route.href, index])),
+    [displayedRoutes],
+  );
   const activeIndexRef = useRef(activeIndex);
   activeIndexRef.current = activeIndex;
 
   useEffect(() => {
+    setRecentRouteHrefs(readRecentRouteHrefs());
+  }, []);
+
+  useEffect(() => {
     setActiveIndex(0);
   }, [query]);
+
+  useEffect(() => {
+    setActiveIndex((current) => Math.min(current, Math.max(displayedRoutes.length - 1, 0)));
+  }, [displayedRoutes.length]);
 
   useEffect(() => {
     if (!open) {
@@ -158,12 +321,37 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
     activeItem?.scrollIntoView({ block: `nearest` });
   }, [activeIndex, open]);
 
+  const rememberRecentRoute = useCallback((href: string) => {
+    setRecentRouteHrefs((current) => {
+      const next = [href, ...current.filter((existingHref) => existingHref !== href)].slice(0, RECENT_ROUTES_LIMIT);
+
+      try {
+        window.localStorage.setItem(RECENT_ROUTES_STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        // Ignore restricted browser storage environments.
+      }
+
+      return next;
+    });
+  }, []);
+
+  const clearRecentRoutes = useCallback(() => {
+    setRecentRouteHrefs([]);
+
+    try {
+      window.localStorage.removeItem(RECENT_ROUTES_STORAGE_KEY);
+    } catch {
+      // Ignore restricted browser storage environments.
+    }
+  }, []);
+
   const navigate = useCallback(
     (href: string) => {
+      rememberRecentRoute(href);
       router.push(href);
       onClose();
     },
-    [onClose, router],
+    [onClose, rememberRecentRoute, router],
   );
 
   const handleInputKeyDown = useCallback(
@@ -171,11 +359,11 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
       if (event.key === `ArrowDown`) {
         event.preventDefault();
         setActiveIndex((current) => {
-          if (filteredRoutes.length === 0) {
+          if (displayedRoutes.length === 0) {
             return 0;
           }
 
-          return Math.min(current + 1, filteredRoutes.length - 1);
+          return Math.min(current + 1, displayedRoutes.length - 1);
         });
         return;
       }
@@ -188,35 +376,21 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
 
       if (event.key === `Enter`) {
         event.preventDefault();
-        const selectedRoute = filteredRoutes[activeIndexRef.current];
+        const selectedRoute = displayedRoutes[activeIndexRef.current];
         if (selectedRoute) {
           navigate(selectedRoute.href);
         }
       }
     },
-    [filteredRoutes, navigate],
+    [displayedRoutes, navigate],
   );
-
-  const groupedRoutes = useMemo(() => {
-    const groups = new Map<CommandGroup, IndexedCommandRoute[]>();
-
-    for (const route of filteredRoutes) {
-      const existing = groups.get(route.group);
-      if (existing) {
-        existing.push(route);
-      } else {
-        groups.set(route.group, [route]);
-      }
-    }
-
-    return groups;
-  }, [filteredRoutes]);
+  const resultsLabel = displayedRoutes.length === 1 ? `1 result` : `${displayedRoutes.length} results`;
 
   return (
     <div
       aria-hidden={!open}
       className={cn(
-        `fixed inset-0 z-50 flex items-start justify-center p-4 pt-[12vh] transition-opacity duration-200 md:p-6 md:pt-[14vh]`,
+        `fixed inset-0 z-50 flex items-start justify-center p-3 pt-16 transition-opacity duration-200 sm:p-4 sm:pt-[12vh] md:p-6 md:pt-[14vh]`,
         open ? `pointer-events-auto opacity-100` : `pointer-events-none opacity-0`,
       )}
       data-testid="consumer-css-grid-command-palette"
@@ -226,7 +400,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
     >
       <button
         type="button"
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
         tabIndex={open ? 0 : -1}
         aria-label="Close command palette"
@@ -234,49 +408,101 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
 
       <div
         className={cn(
-          `relative z-10 flex max-h-[min(72vh,720px)] w-full max-w-2xl flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[#1a1a2e] text-white/90 shadow-[0_32px_120px_rgba(0,0,0,0.45)] transition-all duration-200`,
+          `relative z-10 flex max-h-[min(82vh,720px)] w-full max-w-2xl flex-col overflow-hidden rounded-[24px] border border-[color:var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text)] shadow-[var(--app-shadow)] transition-all duration-200 sm:rounded-[28px]`,
           open ? `translate-y-0 scale-100 opacity-100` : `translate-y-2 scale-[0.98] opacity-0`,
         )}
       >
-        <div className="flex items-center gap-3 border-b border-white/10 px-4 py-3 md:px-5">
-          <SearchIcon size={16} className="shrink-0 text-white/50" aria-hidden="true" />
-          <input
-            ref={inputRef}
-            type="text"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            onKeyDown={handleInputKeyDown}
-            placeholder="Search pages and actions..."
-            className="flex-1 bg-transparent text-sm text-white/90 outline-none placeholder:text-white/35"
-            aria-label="Search pages and actions"
-            aria-activedescendant={filteredRoutes[activeIndex] ? `command-palette-item-${activeIndex}` : undefined}
-            autoComplete="off"
-            spellCheck={false}
-            tabIndex={open ? 0 : -1}
-          />
-          <kbd className="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-medium uppercase tracking-[0.12em] text-white/45">
-            Esc
-          </kbd>
+        <div className="border-b border-[color:var(--app-border)] px-3 py-3 sm:px-4 md:px-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--app-primary-soft)] text-[var(--app-primary)]">
+              <SearchIcon size={18} aria-hidden="true" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <input
+                ref={inputRef}
+                type="text"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                onKeyDown={handleInputKeyDown}
+                placeholder="Search pages and actions..."
+                className="w-full bg-transparent text-sm font-medium text-[var(--app-text)] outline-none placeholder:text-[var(--app-text-faint)]"
+                aria-label="Search pages and actions"
+                aria-activedescendant={displayedRoutes[activeIndex] ? `command-palette-item-${activeIndex}` : undefined}
+                autoComplete="off"
+                spellCheck={false}
+                tabIndex={open ? 0 : -1}
+              />
+              <div className="mt-1 text-xs text-[var(--app-text-faint)]">
+                Jump to pages and quick actions without leaving the keyboard.
+              </div>
+            </div>
+            <kbd className="rounded-md border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-2 py-1 text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--app-text-faint)]">
+              Esc
+            </kbd>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[color:var(--app-border)] px-3 py-2 text-xs sm:px-4 md:px-5">
+          <span className="text-[var(--app-text-faint)]">
+            {query ? `Results for “${query}”` : `Popular destinations and actions`}
+          </span>
+          <span className="rounded-full border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-2.5 py-1 font-medium text-[var(--app-text-soft)]">
+            {resultsLabel}
+          </span>
         </div>
 
         <ul
           ref={listRef}
-          className="max-h-[52vh] space-y-4 overflow-y-auto px-3 py-3 md:px-4"
+          className="max-h-[min(58vh,480px)] space-y-4 overflow-y-auto px-2 py-3 sm:max-h-[52vh] sm:px-3 md:px-4"
           role="listbox"
           aria-label="Search results"
         >
-          {filteredRoutes.length === 0 ? (
-            <li className="rounded-2xl border border-dashed border-white/10 bg-white/5 px-4 py-6 text-sm text-white/55">
-              No results for &ldquo;{query}&rdquo;.
+          {displayedRoutes.length === 0 ? (
+            <li className="rounded-[24px] border border-dashed border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-6 text-center sm:px-5">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--app-primary-soft)] text-[var(--app-primary)]">
+                <SearchIcon size={18} aria-hidden="true" />
+              </div>
+              <div className="mt-4 text-sm font-medium text-[var(--app-text)]">
+                Nothing found for &ldquo;{query}&rdquo;.
+              </div>
+              <div className="mt-2 text-sm text-[var(--app-text-muted)]">
+                Try a page or action like Dashboard, Payments, Exchange, or Settings.
+              </div>
+              <div className="mt-4 flex flex-wrap justify-center gap-2">
+                {EMPTY_STATE_SUGGESTIONS.map((suggestion) => (
+                  <span
+                    key={suggestion}
+                    className="rounded-full border border-[color:var(--app-border)] bg-[var(--app-surface)] px-3 py-1.5 text-xs text-[var(--app-text-soft)]"
+                  >
+                    {suggestion}
+                  </span>
+                ))}
+              </div>
             </li>
           ) : (
-            Array.from(groupedRoutes.entries()).map(([group, routes]) => (
-              <li key={group} role="presentation">
-                <p className="px-2 pb-2 text-[11px] font-medium uppercase tracking-[0.18em] text-white/35">{group}</p>
-                <ul role="group" aria-label={group} className="space-y-1">
+            displaySections.map(({ title, routes }) => (
+              <li key={title} role="presentation">
+                <div className="flex items-center justify-between gap-3 px-2 pb-2">
+                  <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--app-text-faint)]">
+                    {title}
+                  </p>
+                  {title === `Recent` && routes.length > 0 ? (
+                    <button
+                      type="button"
+                      onClick={clearRecentRoutes}
+                      className="rounded-full border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--app-text-soft)] transition hover:bg-[var(--app-surface)] hover:text-[var(--app-text)]"
+                    >
+                      Clear
+                    </button>
+                  ) : null}
+                </div>
+                <ul role="group" aria-label={title} className="space-y-1">
                   {routes.map((route) => {
-                    const routeIndex = filteredRoutes.indexOf(route);
+                    const routeIndex = routePositions.get(route.href) ?? 0;
                     const isActive = activeIndex === routeIndex;
+                    const exactMatch = isExactRouteMatch(normalizedQuery, route);
+                    const showKeywords = queryTokens.length > 0 || title === `Recent` || title === `Suggested`;
+                    const keywordsText = route.keywords.join(` · `);
 
                     return (
                       <li
@@ -289,17 +515,61 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                           type="button"
                           data-active={isActive ? `true` : `false`}
                           className={cn(
-                            `flex w-full items-center justify-between gap-3 rounded-2xl border px-3 py-3 text-left transition`,
+                            `flex w-full items-center justify-between gap-4 rounded-[22px] border px-3 py-3.5 text-left transition-[transform,background-color,border-color,color,box-shadow] duration-200 ease-out will-change-transform sm:px-4`,
                             isActive
-                              ? `border-white/20 bg-white/12 text-white`
-                              : `border-transparent bg-white/5 text-white/80 hover:border-white/10 hover:bg-white/8`,
+                              ? `-translate-y-0.5 scale-[1.01] border-[color:var(--app-primary)] bg-[var(--app-primary-soft)] text-[var(--app-text)] shadow-[var(--app-shadow)]`
+                              : `border-transparent bg-[var(--app-surface-muted)] text-[var(--app-text-soft)] hover:-translate-y-0.5 hover:scale-[1.01] hover:border-[color:var(--app-border)] hover:bg-[var(--app-surface)]`,
                           )}
                           onMouseEnter={() => setActiveIndex(routeIndex)}
                           onClick={() => navigate(route.href)}
                           tabIndex={-1}
                         >
-                          <span className="text-sm font-medium">{route.label}</span>
-                          <span className="truncate text-xs text-white/45">{route.href}</span>
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium">{highlightMatches(route.label, queryTokens)}</div>
+                            <div
+                              className={cn(
+                                `mt-1 truncate text-xs`,
+                                isActive ? `text-[var(--app-primary)]` : `text-[var(--app-text-faint)]`,
+                              )}
+                            >
+                              {highlightMatches(route.href, queryTokens)}
+                            </div>
+                            {showKeywords && keywordsText ? (
+                              <div
+                                className={cn(
+                                  `mt-1 line-clamp-1 text-[11px]`,
+                                  isActive ? `text-[var(--app-text-soft)]` : `text-[var(--app-text-muted)]`,
+                                )}
+                              >
+                                {highlightMatches(keywordsText, queryTokens)}
+                              </div>
+                            ) : null}
+                          </div>
+                          <div className="flex shrink-0 items-center gap-2">
+                            {exactMatch ? (
+                              <span className="rounded-full border border-transparent bg-[var(--app-primary)] px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--app-primary-contrast)]">
+                                Exact match
+                              </span>
+                            ) : null}
+                            <span
+                              className={cn(
+                                `hidden rounded-full border px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.12em] sm:inline-flex`,
+                                isActive
+                                  ? `border-transparent bg-[var(--app-surface)] text-[var(--app-primary)]`
+                                  : `border-[color:var(--app-border)] bg-[var(--app-bg)] text-[var(--app-text-faint)]`,
+                              )}
+                            >
+                              {route.group}
+                            </span>
+                            <span
+                              className={cn(
+                                `text-[11px] font-medium`,
+                                isActive ? `text-[var(--app-primary)]` : `text-[var(--app-text-faint)]`,
+                              )}
+                            >
+                              Enter
+                            </span>
+                          </div>
                         </button>
                       </li>
                     );
@@ -310,19 +580,30 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
           )}
         </ul>
 
-        <div className="flex items-center gap-3 border-t border-white/10 px-4 py-3 text-xs text-white/45 md:px-5">
-          <span className="inline-flex items-center gap-2">
-            <kbd className="rounded-md border border-white/10 bg-white/5 px-1.5 py-0.5 text-[10px] font-medium text-white/60">
-              ↑↓
-            </kbd>
-            Navigate
-          </span>
-          <span className="inline-flex items-center gap-2">
-            <kbd className="rounded-md border border-white/10 bg-white/5 px-1.5 py-0.5 text-[10px] font-medium text-white/60">
-              ↵
-            </kbd>
-            Open
-          </span>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--app-border)] px-3 py-3 text-xs sm:px-4 md:px-5">
+          <div className="flex flex-wrap items-center gap-3 text-[var(--app-text-faint)]">
+            <span className="inline-flex items-center gap-2">
+              <kbd className="rounded-md border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--app-text-soft)]">
+                ↑↓
+              </kbd>
+              Navigate
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <kbd className="rounded-md border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--app-text-soft)]">
+                ↵
+              </kbd>
+              Open
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <kbd className="rounded-md border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--app-text-soft)]">
+                Esc
+              </kbd>
+              Close
+            </span>
+          </div>
+          <div className="text-[var(--app-text-muted)]">
+            {query ? `Press Enter to open the selected result.` : `Start typing to narrow down pages and actions.`}
+          </div>
         </div>
       </div>
     </div>

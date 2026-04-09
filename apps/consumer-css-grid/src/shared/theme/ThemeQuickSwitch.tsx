@@ -19,7 +19,7 @@ function normalizeTheme(value: string): TTheme {
   return THEMES.includes(value as TTheme) ? (value as TTheme) : THEME.SYSTEM;
 }
 
-export function ThemeQuickSwitch({ compact = false }: { compact?: boolean }) {
+export function ThemeQuickSwitch({ compact = false, showLabel = false }: { compact?: boolean; showLabel?: boolean }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
@@ -27,14 +27,16 @@ export function ThemeQuickSwitch({ compact = false }: { compact?: boolean }) {
 
   return (
     <div className={compact ? `min-w-0` : `min-w-[170px]`}>
-      <label
-        className={`mb-1 block text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--app-text-faint)] ${
-          compact ? `sr-only` : ``
-        }`}
-        htmlFor={compact ? `theme-switch-mobile` : `theme-switch-desktop`}
-      >
-        Theme
-      </label>
+      {showLabel && (
+        <label
+          className={`mb-1 block text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--app-text-faint)] ${
+            compact ? `sr-only` : ``
+          }`}
+          htmlFor={compact ? `theme-switch-mobile` : `theme-switch-desktop`}
+        >
+          Theme
+        </label>
+      )}
       <select
         id={compact ? `theme-switch-mobile` : `theme-switch-desktop`}
         value={theme}
