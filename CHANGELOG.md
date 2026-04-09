@@ -1794,7 +1794,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-04-07</summary>
 
 - **2026-04-07:**
@@ -1827,6 +1827,38 @@
   ### 📄 Documentation
   - Updated release-gate, auth-cookie-policy, browser-identity, project-summary, and cutover handoff docs to describe the canonical scoped rollout and its production-only evidence rules.
   - The release remains a coordinated cutover: no backend-first, frontend-first, or mixed-version rollout is considered safe for production.
+
+</details>
+
+<details open>
+<summary>2026-04-09</summary>
+
+- **2026-04-09:**
+  ### 🚀 Feature
+  - **Legacy consumer Vercel production cutover:** Add production-only `next.config.ts` redirects in `apps/consumer` and `apps/consumer-mobile` that route all Vercel production browser traffic to `consumer-css-grid`; map legacy route differences explicitly (`/withdraw-transfer` → `/withdraw`, `/payment-methods` → `/banking`, `/payment-requests/new` → `/payments/new-request`); redirect `/` → `/dashboard`; exclude `/api`, `/_next`, static assets, and file-like paths; cutover is gated behind `NODE_ENV=production`, `VERCEL=1`, and `VERCEL_ENV=production` so local dev and preview deploys remain unaffected.
+  - **Command palette discovery and search UX:** Rework `CommandPalette.tsx` with themed visuals, recent and suggested sections, exact-match badges, richer keyword highlighting, and shell-level shortcut hints; add `ShellClientWrapper.tsx` triggers and `ShellNav.tsx` search affordances so the palette is discoverable from the sidebar, topbar, and bottom nav.
+
+  ### 🔐 Security / Production Safety
+  - **Scoped document download proxy:** Add a same-origin `/api/documents/:documentId/download` BFF proxy route in `consumer-css-grid` that forwards cookies and streams the backend file response with an allowlisted set of response headers (`content-type`, `content-disposition`, `content-length`, `cache-control`); normalize document library, payment attachment, contact detail, and generated invoice download links to use the app-owned proxy instead of direct `api-v2` URLs, eliminating `401 Invalid app scope` failures on browser-initiated file opens without weakening backend document access checks.
+  - **Invariant preserved:** Auth, session, cookie, CSRF, and API contracts remain unchanged; the cutover redirects are production-only and do not alter BFF, OAuth, or refresh flows; the download proxy preserves the existing backend authorization path.
+
+  ### 🛠 DevEx
+  - **Workspace typecheck watch scripts:** Add root `typecheck:watch` Turbo task (persistent, cache-disabled) and per-app/package `typecheck:watch` scripts across `apps/api-v2`, `apps/admin`, `apps/api`, `apps/consumer`, `apps/consumer-mobile`, `apps/consumer-css-grid`, `packages/api-types`, and `packages/ui`; route `apps/api-v2` through a dedicated `tsconfig.typecheck.json` with incremental build info under `node_modules`.
+  - **Root scripts and Turbo cleanup:** Consolidate root `package.json` dev/build/lint scripts; update `packages/database-2` scripts; remove stale Turbo tasks from `turbo.json`.
+
+  ### 🧪 Testing
+  - Add route-level tests for scoped document download forwarding and response header passthrough (`route.test.ts`).
+  - Add normalization tests for document, payment attachment, contact detail, and invoice download URLs in `consumer-api.server.test.ts` and `consumer-mutations.server.test.ts`.
+
+  ### 📄 Documentation
+  - Refresh `README.md`, `docs/FEATURES_CURRENT.md`, `docs/PROJECT_DOCUMENTATION.md`, `docs/PROJECT_SUMMARY.md`, `docs/API_V2_PRODUCTION_RELEASE_GATE.md`, `docs/CONSUMER_AUTH_CUTOVER_RELEASE_HANDOFF.md`, and `docs/project-design-rules.md` to reflect the cutover redirect strategy, scoped download proxy, and updated workspace scripts.
+  - Add `docs/remoola_mobile_first_dashboard_layout.jsx` as a reference layout specification.
+  - Minor CSS fixes in `dashboard/page.module.css` and `ShellNav.module.css`.
+
+  ### ⚠️ Notes
+  - No database migration introduced.
+  - No backend (api-v2) runtime changes beyond a test-deploy log line.
+  - Legacy app cutover redirects require `CONSUMER_CSS_GRID_APP_ORIGIN` in the legacy app env; added to `.env.example` for both `apps/consumer` and `apps/consumer-mobile`.
 
 </details>
 
