@@ -330,3 +330,128 @@ describe(`consumer-api SSR unauthorized redirects`, () => {
     expect(redirect).toHaveBeenCalledWith(`/login?session_expired=1&next=%2Fexchange`);
   });
 });
+
+describe(`consumer-api document download proxy normalization`, () => {
+  const originalFetch = global.fetch;
+  let mockFetch: MockFetch;
+
+  beforeEach(() => {
+    mockFetch = jest.fn() as MockFetch;
+    global.fetch = mockFetch;
+    jest.resetModules();
+    process.env.NEXT_PUBLIC_API_BASE_URL = `https://api.example.com`;
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    delete process.env.NEXT_PUBLIC_API_BASE_URL;
+    jest.clearAllMocks();
+  });
+
+  async function loadSubject() {
+    const mockCookies = jest.fn(async () => ({
+      toString: (): string => `consumer_session=test-cookie`,
+    }));
+
+    jest.doMock(`next/headers`, () => ({
+      cookies: mockCookies,
+    }));
+
+    return import(`./consumer-api.server`);
+  }
+
+  it(`rewrites document library download links to the app proxy route`, async () => {
+    const { getDocuments } = await loadSubject();
+    mockFetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          items: [
+            {
+              id: `resource-1`,
+              name: `contract.pdf`,
+              size: 1024,
+              createdAt: `2026-01-01T00:00:00.000Z`,
+              downloadUrl: `https://api.example.com/api/consumer/documents/resource-1/download`,
+              mimetype: `application/pdf`,
+              kind: `CONTRACT`,
+              tags: [],
+              isAttachedToDraftPaymentRequest: false,
+              attachedDraftPaymentRequestIds: [],
+              isAttachedToNonDraftPaymentRequest: false,
+              attachedNonDraftPaymentRequestIds: [],
+            },
+          ],
+          total: 1,
+          page: 1,
+          pageSize: 20,
+        }),
+        { status: 200 },
+      ),
+    );
+
+    const result = await getDocuments(1, 20);
+
+    expect(result?.items[0]?.downloadUrl).toBe(`/api/documents/resource-1/download`);
+  });
+
+  it(`rewrites payment attachment download links to the app proxy route`, async () => {
+    const { getPaymentView } = await loadSubject();
+    mockFetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          id: `payment-1`,
+          amount: 10,
+          currencyCode: `USD`,
+          status: `DRAFT`,
+          createdAt: `2026-01-01T00:00:00.000Z`,
+          updatedAt: `2026-01-01T00:00:00.000Z`,
+          role: `REQUESTER`,
+          payer: null,
+          requester: null,
+          ledgerEntries: [],
+          attachments: [
+            {
+              id: `resource-2`,
+              name: `invoice.pdf`,
+              downloadUrl: `https://api.example.com/api/consumer/documents/resource-2/download`,
+              size: 2048,
+              createdAt: `2026-01-01T00:00:00.000Z`,
+            },
+          ],
+        }),
+        { status: 200 },
+      ),
+    );
+
+    const result = await getPaymentView(`payment-1`);
+
+    expect(result?.attachments[0]?.downloadUrl).toBe(`/api/documents/resource-2/download`);
+  });
+
+  it(`rewrites contact detail document links to the app proxy route`, async () => {
+    const { getContactDetails } = await loadSubject();
+    mockFetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          id: `contact-1`,
+          name: `Known Contact`,
+          email: `known@example.com`,
+          paymentRequests: [],
+          documents: [
+            {
+              id: `resource-3`,
+              name: `w9.pdf`,
+              url: `https://api.example.com/api/consumer/documents/resource-3/download`,
+              createdAt: `2026-01-01T00:00:00.000Z`,
+            },
+          ],
+        }),
+        { status: 200 },
+      ),
+    );
+
+    const result = await getContactDetails(`contact-1`);
+
+    expect(result?.documents[0]?.url).toBe(`/api/documents/resource-3/download`);
+  });
+});

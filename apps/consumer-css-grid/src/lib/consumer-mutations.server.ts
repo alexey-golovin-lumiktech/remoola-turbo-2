@@ -16,6 +16,7 @@ import {
 } from './consumer-api.server';
 import { buildConsumerMutationHeaders } from './consumer-auth-headers.server';
 import { isDateInputTodayOrLater, normalizeDateInput } from './date-input';
+import { normalizeDocumentDownloadUrl } from './document-download-url';
 import { getEnv } from './env.server';
 
 type MutationResult =
@@ -680,7 +681,7 @@ export async function generateInvoiceMutation(paymentRequestId: string): Promise
     data: {
       invoiceNumber: payload?.invoiceNumber,
       resourceId: payload?.resourceId,
-      downloadUrl: payload?.downloadUrl,
+      downloadUrl: normalizeDocumentDownloadUrl(payload?.downloadUrl, payload?.resourceId),
     },
     message: payload?.invoiceNumber ? `Invoice ${payload.invoiceNumber} is ready` : `Invoice is ready`,
   };

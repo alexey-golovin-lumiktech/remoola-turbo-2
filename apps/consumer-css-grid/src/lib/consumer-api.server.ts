@@ -9,6 +9,7 @@ import {
 } from '@remoola/api-types';
 
 import { buildConsumerMutationHeaders } from './consumer-auth-headers.server';
+import { normalizeDocumentDownloadUrl } from './document-download-url';
 import { getEnv } from './env.server';
 import { APP_SCOPE, getRequestOrigin } from './request-origin';
 
@@ -586,7 +587,16 @@ export async function getPaymentView(
   options?: ConsumerApiRequestOptions,
 ): Promise<PaymentViewResponse | null> {
   if (!paymentRequestId.trim()) return null;
-  return fetchConsumerApi<PaymentViewResponse>(`/consumer/payments/${paymentRequestId}`, options);
+  const payment = await fetchConsumerApi<PaymentViewResponse>(`/consumer/payments/${paymentRequestId}`, options);
+  if (!payment) return null;
+
+  return {
+    ...payment,
+    attachments: payment.attachments.map((attachment) => ({
+      ...attachment,
+      downloadUrl: normalizeDocumentDownloadUrl(attachment.downloadUrl, attachment.id),
+    })),
+  };
 }
 
 export async function getContracts(page = 1, pageSize = 10): Promise<ContractsResponse | null> {
@@ -606,7 +616,19 @@ export async function getDocuments(
   pageSize = 20,
   options?: ConsumerApiRequestOptions,
 ): Promise<DocumentsResponse | null> {
-  return fetchConsumerApi<DocumentsResponse>(`/consumer/documents?page=${page}&pageSize=${pageSize}`, options);
+  const documents = await fetchConsumerApi<DocumentsResponse>(
+    `/consumer/documents?page=${page}&pageSize=${pageSize}`,
+    options,
+  );
+  if (!documents) return null;
+
+  return {
+    ...documents,
+    items: documents.items.map((document) => ({
+      ...document,
+      downloadUrl: normalizeDocumentDownloadUrl(document.downloadUrl, document.id),
+    })),
+  };
 }
 
 export async function getContacts(page = 1, pageSize = 20): Promise<ContactsResponse | null> {
@@ -639,7 +661,16 @@ export async function getContact(contactId: string): Promise<ContactResponse | n
 export async function getContactDetails(contactId: string): Promise<ContactDetailsResponse | null> {
   const id = contactId.trim();
   if (!id) return null;
-  return fetchConsumerApi<ContactDetailsResponse>(`/consumer/contacts/${id}/details`);
+  const contact = await fetchConsumerApi<ContactDetailsResponse>(`/consumer/contacts/${id}/details`);
+  if (!contact) return null;
+
+  return {
+    ...contact,
+    documents: contact.documents.map((document) => ({
+      ...document,
+      url: normalizeDocumentDownloadUrl(document.url, document.id),
+    })),
+  };
 }
 
 export async function getPaymentMethods(options?: ConsumerApiRequestOptions): Promise<PaymentMethodsResponse | null> {

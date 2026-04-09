@@ -506,3 +506,66 @@ describe(`consumer money unit contract`, () => {
     );
   });
 });
+
+describe(`generateInvoiceMutation`, () => {
+  const originalFetch = global.fetch;
+
+  beforeEach(() => {
+    jest.resetModules();
+    process.env.NEXT_PUBLIC_API_BASE_URL = `https://api.example.com`;
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    delete process.env.NEXT_PUBLIC_API_BASE_URL;
+    jest.clearAllMocks();
+  });
+
+  async function loadSubject() {
+    const revalidatePath = jest.fn();
+    jest.doMock(`next/cache`, () => ({
+      revalidatePath,
+    }));
+    jest.doMock(`next/headers`, () => ({
+      cookies: jest.fn(async () => ({
+        toString: (): string => `consumer_session=test-cookie`,
+      })),
+    }));
+    jest.doMock(`./consumer-api.server`, () => ({
+      getExchangeRatesBatch: jest.fn(),
+      findContactByExactEmail: jest.fn(),
+    }));
+
+    const subject = await import(`./consumer-mutations.server`);
+    return { ...subject, revalidatePath };
+  }
+
+  it(`rewrites generated invoice downloads to the app proxy route`, async () => {
+    const fetchMock = jest.fn() as jest.MockedFunction<typeof fetch>;
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          invoiceNumber: `INV-1001`,
+          resourceId: `resource-9`,
+          downloadUrl: `https://api.example.com/api/consumer/documents/resource-9/download`,
+        }),
+        { status: 200 },
+      ),
+    );
+    global.fetch = fetchMock;
+
+    const { generateInvoiceMutation, revalidatePath } = await loadSubject();
+    const result = await generateInvoiceMutation(`payment-request-1`);
+
+    expect(result).toEqual({
+      ok: true,
+      data: {
+        invoiceNumber: `INV-1001`,
+        resourceId: `resource-9`,
+        downloadUrl: `/api/documents/resource-9/download`,
+      },
+      message: `Invoice INV-1001 is ready`,
+    });
+    expect(revalidatePath).toHaveBeenCalledWith(`/payments/payment-request-1`);
+  });
+});
