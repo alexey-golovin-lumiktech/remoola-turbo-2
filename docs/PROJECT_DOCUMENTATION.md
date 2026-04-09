@@ -6,14 +6,25 @@ Single-file documentation covering API, Admin, Consumer, and Database.
 
 Remoola is a Turborepo monorepo with:
 
-- `apps/api`: NestJS backend (REST APIs).
+- `apps/api`: NestJS backend authority for `consumer` and `consumer-mobile`.
 - `apps/api-v2`: NestJS backend authority for `consumer-css-grid` and current auth-sensitive cutovers.
-- `apps/admin`: Next.js admin dashboard.
-- `apps/consumer`: Next.js consumer portal.
-- `apps/consumer-mobile`: Next.js mobile-first consumer app (port 3002).
-- `apps/consumer-css-grid`: Next.js consumer app with css-grid shell (port 3003).
+- `apps/admin`: Next.js admin dashboard on port `3010`.
+- `apps/consumer`: Next.js consumer portal on port `3001`.
+- `apps/consumer-mobile`: Next.js mobile-first consumer app on port `3002`.
+- `apps/consumer-css-grid`: Next.js consumer app with css-grid shell on port `3003`.
 - `packages/database-2`: Prisma schema, migrations, and generated client.
-- Shared packages for types, UI, linting, and TS config.
+- Shared packages for API contracts, security utilities, testing, UI, linting, and TS config.
+
+Root workflow highlights:
+
+- Workspaces are defined at the root for `apps/*` and `packages/*`.
+- Root `yarn dev` runs workspace dev tasks in parallel and depends on `db:generate`.
+- Root `yarn build` generates Prisma first, then runs the Turborepo build pipeline.
+- Root DB commands are `yarn db:generate`, `yarn db:validate`, `yarn db:migrate`, `yarn db:deploy`, and `yarn db:studio`.
+- There is no root `.env.example`; setup is driven by `packages/database-2/.env.example` plus the per-app `apps/*/.env.example` files you actually need.
+- Root `yarn test`, `yarn test:e2e`, and `yarn test:e2e:fast` are local-only entrypoints guarded by `scripts/ensure-local-development.js`.
+- Local test/e2e flows rely on `@remoola/test-db` and Testcontainers, so Docker is an expected prerequisite.
+- `.husky/pre-commit` skips docs-only changes and otherwise runs lint, builds `@remoola/test-db`, then runs consumer unit tests, api unit tests, and `apps/api` fast e2e.
 
 ## API (NestJS) - Implemented Features
 
@@ -475,15 +486,28 @@ Shared packages used across apps:
 - `packages/api-types`: shared DTOs and type exports; pagination (`PaginatedResponsePage<T>`); currency (`CURRENCY_CODES`, `CURRENCY_CODE`, `TCurrencyCode`, `getCurrencySymbol`, `isCurrencyCode`); consumer settings (theme `THEME`, preferred currency allowlist); admin payment reversal (`PAYMENT_REVERSAL_KIND`); query params (`BOOLEAN_QUERY_VALUE`).
 - `packages/database-2`: Prisma schema, migrations, and generated client.
 - `packages/db-fixtures`: DB fixture helpers for tests.
-- `packages/env`: runtime env schema and validation (Zod). Includes `CONSUMER_APP_ORIGIN`, `CONSUMER_MOBILE_APP_ORIGIN`, `CONSUMER_CSS_GRID_APP_ORIGIN`, and `ADMIN_APP_ORIGIN`. The `CONSUMER_*_APP_ORIGIN` vars are the canonical production source of truth for same-origin BFF/auth flows; `NEXT_PUBLIC_APP_ORIGIN` remains legacy compatibility fallback only.
 - `packages/security-utils`: crypto, token hashing (`hashTokenToHex` for reset-password), password hashing, and OAuth crypto utilities (PKCE verifier/challenge, state signing/hashing, nonce generation).
 - `packages/shared-constants`: shared constants.
 - `packages/test-db`: test database utilities.
+- `packages/api-e2e`: shared Jest e2e configuration for backend test suites.
 - `packages/ui`: shared UI components and `cn()` class merging via `tailwind-merge`.
 - `packages/eslint-config`, `packages/jest-config`, `packages/typescript-config`: tooling.
 
+Current env/runtime contract notes:
+
+- Canonical frontend origin envs now live in the app-level env files and runtime consumers of those envs, not in a standalone `packages/env` workspace.
+- `CONSUMER_APP_ORIGIN`, `CONSUMER_MOBILE_APP_ORIGIN`, `CONSUMER_CSS_GRID_APP_ORIGIN`, and `ADMIN_APP_ORIGIN` are part of the current runtime contract.
+- `NEXT_PUBLIC_APP_ORIGIN` remains legacy compatibility fallback only and is not the primary production release contract.
+
 ## Additional documentation
 
+- `README.md`: root repo layout, setup, and command reference.
+- `docs/PROJECT_SUMMARY.md`: concise current-state overview and doc index.
+- `docs/CONSUMER_AUTH_COOKIE_POLICY.md`: canonical browser/BFF cookie contract.
+- `docs/API_V2_PRODUCTION_RELEASE_GATE.md`: auth-sensitive `api-v2` release gate and required evidence.
+- `docs/SWAGGER_COOKIE_AUTH_USAGE.md`: same-origin Swagger cookie-auth workflow.
+- `docs/CONSUMER_AUTH_CUTOVER_RELEASE_HANDOFF.md`: release-specific handoff notes for the consumer auth cutover.
+- `docs/CONSUMER_BROWSER_IDENTITY_TRACKING.md`: browser identity, `deviceId`, and consumer action-log tracking contracts.
 - `docs/FINANCIAL_SAFETY_AND_DB_COMPLIANCE.md`: fintech safety, ledger invariants, idempotency, concurrency, risk audit.
 - `docs/project-design-rules.md`: project design rules (dead code, boundaries, naming, migrations).
 - `docs/postgresql-design-rules.md`: PostgreSQL design rules (schema, migrations, naming).

@@ -5,17 +5,15 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "db:generate": "npx prisma generate --no-hints",
     "build": "yarn db:generate && tsc -p tsconfig.build.json",
     "clean": "rm -rf ./node_modules ./dist ./generated/**",
     "postinstall": "npx prisma generate --no-hints",
+    "db:generate": "npx prisma generate --no-hints",
     "db:validate": "npx prisma validate --schema prisma/schema.prisma",
     "db:deploy": "npx prisma migrate deploy",
     "db:studio": "npx prisma studio",
     "db:migrate": "npx prisma migrate dev",
-    "db:migrate:skip:generate": "npx prisma migrate dev --skip-generate",
-    "db:push": "npx prisma db push",
-    "db:reset": "npx prisma migrate reset"
+    "db:migrate:skip:generate": "npx prisma migrate dev --skip-generate"
   },
   "dependencies": {
     "@prisma/client": "6.19.0",

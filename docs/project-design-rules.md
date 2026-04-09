@@ -73,7 +73,7 @@ Allowed shared locations:
 - `packages/api-types`
 - `packages/database-2`
 - `packages/ui`
-- other explicit shared packages (e.g. `packages/env`, `packages/security-utils`)
+- other explicit shared packages (e.g. `packages/security-utils`, `packages/shared-constants`, `packages/test-db`)
 
 Rules:
 

@@ -1,16 +1,32 @@
 # Current Implemented Features
 
-List of features that are implemented and present in the repo now.
+List of features and repository workflows that are implemented and present in the repo now.
 
 ## Sources Used
 
-- Current backend modules, controllers, and routes under `apps/api`.
-- Current admin and consumer apps under `apps/admin` and `apps/consumer`.
+- Current backend modules, controllers, routes, and tests under `apps/api` and `apps/api-v2`.
+- Current frontend apps under `apps/admin`, `apps/consumer`, `apps/consumer-mobile`, and `apps/consumer-css-grid`.
+- Current root workflows in `package.json`, `turbo.json`, and `.husky/pre-commit`.
 - Current database schema at `packages/database-2/prisma/schema.prisma`.
+- Current operational docs in `docs/CONSUMER_AUTH_COOKIE_POLICY.md` and `docs/API_V2_PRODUCTION_RELEASE_GATE.md`.
+
+## Monorepo State Now
+
+- The active workspace layout is two backend apps (`apps/api`, `apps/api-v2`) plus four frontend apps (`apps/admin`, `apps/consumer`, `apps/consumer-mobile`, `apps/consumer-css-grid`).
+- Root development commands exist for all six apps: `yarn dev:api`, `yarn dev:api-v2`, `yarn dev:admin`, `yarn dev:consumer`, `yarn dev:consumer-mobile`, and `yarn dev:consumer-css-grid`.
+- Root database workflow is driven through `packages/database-2` with `yarn db:generate`, `yarn db:validate`, `yarn db:migrate`, `yarn db:deploy`, and `yarn db:studio`.
+- `turbo.json` wires `db:generate` into the monorepo lifecycle, so root `dev` and `build` depend on Prisma generation.
+- Root tests are intentionally local-only via `scripts/ensure-local-development.js`. Local e2e/test DB flows rely on `@remoola/test-db` and Testcontainers, so Docker is part of the expected development setup.
+- `.husky/pre-commit` skips lint/tests for docs-only changes; for code changes it runs lint, builds `@remoola/test-db`, then runs consumer unit tests, api unit tests, and `apps/api` fast e2e.
 
 ## Implemented and Working Now
 
-### Backend (API)
+### Backend (APIs)
+
+Current backend authority split:
+
+- `apps/api` remains the backend authority for `apps/consumer` and `apps/consumer-mobile`.
+- `apps/api-v2` is the backend authority for `apps/consumer-css-grid` and the synchronized auth-sensitive cutover surface.
 
 Authentication and identity:
 
@@ -229,13 +245,18 @@ Ledger and payments:
 
 Shared packages present in repo:
 
-- `api-types`: shared DTOs, PaginatedResponsePage, currency (CURRENCY_CODES, TCurrencyCode, getCurrencySymbol), consumer settings (theme THEME, preferred currency allowlist), admin payment reversal (PAYMENT_REVERSAL_KIND), query params (BOOLEAN_QUERY_VALUE), email validation (validation/email) used by API shared-common validators and DTOs and consumer/admin/mobile schemas.
-- `database-2`, `db-fixtures`, `env`, `eslint-config`, `jest-config`, `security-utils` (crypto, hashing, OAuth utilities), `shared-constants`, `test-db`, `typescript-config`, `ui`.
+- `api-types`: shared DTOs, PaginatedResponsePage, currency (`CURRENCY_CODES`, `TCurrencyCode`, `getCurrencySymbol`), consumer settings (`THEME`, preferred currency allowlist), admin payment reversal (`PAYMENT_REVERSAL_KIND`), query params (`BOOLEAN_QUERY_VALUE`), and validators reused by API and frontend schemas.
+- `database-2`: Prisma schema, migrations, generated client, and the root DB command surface.
+- `security-utils`: crypto, token hashing (`hashTokenToHex`), password helpers, and OAuth crypto utilities.
+- `test-db`, `db-fixtures`, and `api-e2e`: local test DB helpers, fixtures, and shared e2e Jest configs.
+- `shared-constants`, `eslint-config`, `jest-config`, `typescript-config`, and `ui`: shared constants, tooling, and UI components.
 - `ui`: `cn()` now uses `tailwind-merge` to safely collapse conflicting Tailwind utility classes.
 
 Infrastructure and testing:
 
-- Root `yarn test` and `yarn test:e2e` are gated by `scripts/ensure-local-development.js`: they run only in local development and are blocked in CI and on Vercel to avoid accidental production/CI DB usage.
+- Root `yarn test`, `yarn test:e2e`, and `yarn test:e2e:fast` are gated by `scripts/ensure-local-development.js`: they run only in local development and are blocked in CI and on Vercel to avoid accidental production/CI DB usage.
+- Root pre-commit checks build `@remoola/test-db`, run consumer unit tests, api unit tests, and `apps/api` fast e2e after linting.
+- Local e2e/test DB flows rely on Testcontainers through `@remoola/test-db`, so Docker availability is an expected prerequisite.
 - Fintech safety and DB compliance are documented in `docs/FINANCIAL_SAFETY_AND_DB_COMPLIANCE.md`; schema design rules in `docs/postgresql-design-rules.md`.
 
 ## Comparison Notes (History vs Current State)

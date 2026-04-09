@@ -20,7 +20,6 @@
   "scripts": {
     "build": "tsc",
     "lint": "eslint . --max-warnings 0",
-    "generate:component": "turbo gen react-component",
     "typecheck": "tsc --noEmit",
     "typecheck:watch": "tsc --noEmit --watch --preserveWatchOutput",
     "clean": "rm -rf ./node_modules ./dist"

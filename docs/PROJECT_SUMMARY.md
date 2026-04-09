@@ -1,68 +1,159 @@
-# Remoola — Project Summary
+# Remoola - Project Summary
 
-**Remoola** is a payments and FX platform delivered as a Turborepo monorepo: two NestJS backends and four Next.js frontends (admin, consumer, consumer-mobile, and consumer-css-grid), with shared types, database, and UI packages.
+Remoola is a payments and FX platform delivered as a Turborepo monorepo. The current repository state is two NestJS backends, four Next.js frontends, and a shared package layer for API contracts, database access, security utilities, testing, and UI.
 
 ---
 
 ## Repo at a glance
 
-| Layer        | Path           | Role                                      |
-|-------------|----------------|-------------------------------------------|
-| **Backend** | `apps/api`     | Legacy NestJS REST API authority for `consumer` + `consumer-mobile` |
-| **Backend** | `apps/api-v2`  | NestJS REST API authority for `consumer-css-grid` and current auth-sensitive cutovers |
-| **Admin UI**| `apps/admin`   | Next.js dashboard for operators            |
-| **Consumer UI** | `apps/consumer` | Next.js consumer portal (desktop)       |
-| **Consumer Mobile** | `apps/consumer-mobile` | Next.js mobile-first consumer app (port 3002) |
-| **Consumer CSS Grid** | `apps/consumer-css-grid` | Next.js consumer app with css-grid shell (port 3003) |
-| **Database**| `packages/database-2` | Prisma schema, migrations, client  |
-| **Shared**  | `packages/api-types`, `env`, `ui`, etc. | Types, env, UI, tooling |
+| Layer | Path | Role |
+|------|------|------|
+| Backend | `apps/api` | Legacy NestJS REST API authority for `consumer` and `consumer-mobile` |
+| Backend | `apps/api-v2` | NestJS REST API authority for `consumer-css-grid` and current auth-sensitive cutovers |
+| Admin UI | `apps/admin` | Next.js dashboard for operators on port `3010` |
+| Consumer UI | `apps/consumer` | Next.js desktop consumer portal on port `3001` |
+| Consumer Mobile | `apps/consumer-mobile` | Next.js mobile-first consumer app on port `3002` |
+| Consumer CSS Grid | `apps/consumer-css-grid` | Next.js css-grid consumer shell on port `3003` |
+| Database | `packages/database-2` | Prisma schema, migrations, generated client |
+| Shared packages | `packages/api-types`, `packages/security-utils`, `packages/test-db`, `packages/ui`, `packages/shared-constants`, `packages/api-e2e` | Contracts, auth helpers, testing, UI, tooling |
+
+---
+
+## Current architecture split
+
+- `apps/api` remains the backend authority for `apps/consumer` and `apps/consumer-mobile`.
+- `apps/api-v2` is the backend authority for `apps/consumer-css-grid` and the coordinated auth/cutover surface documented in the release docs.
+- Consumer browser auth is cookie-first and same-origin BFF-driven. Per-app canonical frontend origins are now part of the runtime contract:
+  - `CONSUMER_APP_ORIGIN`
+  - `CONSUMER_MOBILE_APP_ORIGIN`
+  - `CONSUMER_CSS_GRID_APP_ORIGIN`
+- `NEXT_PUBLIC_APP_ORIGIN` still exists only as a legacy compatibility fallback and is not the primary production contract.
 
 ---
 
 ## What each app does
 
-- **API** — Auth (admin + consumer) with shared cookie policy (`@remoola/api-types`; __Host- in production) and consumer auth sessions (DB-backed `auth_sessions`, refresh rotation, revocation). Consumer forgot-password, reset, and signup verification now follow the canonical cutover pattern: explicit `x-remoola-app-scope` identifies the consumer app, reset token state stores hashed token plus `appScope`, forgot-password verify uses the token-only contract, and signup verification links are token-only with signed `appScope` so redirects resolve target origin without query `referer`. Dashboard stats, consumers & admins management, payment requests (list, archive, refund, chargeback), ledger (append-only financial history; status via outcome/dispute tables), exchange rates and rules, scheduled FX, Stripe integration (webhook event dedup), Stripe Identity Verify Me lifecycle (canonical verification-session start route, persisted consumer verification state, stale-session-safe managed webhook updates), documents, contacts, contracts, profile and settings. Consumer list endpoints (contacts, contracts, documents, payments, exchange rules, scheduled) support pagination (`page`, `pageSize`). Google OAuth now uses explicit `appScope` as the only public redirect identity for multi-app consumer deployments; `OriginResolverService` validates `appScope`, OAuth state stores `appScope`, and callback/handoff redirects resolve target origins through `appScope -> configured origin`. OAuth crypto utilities and token hashing in `@remoola/security-utils` (PKCE, state signing, nonce, hashTokenToHex).
-- **Admin** — Login, dashboard (stats, verification queue, recent requests, ledger anomalies), admins CRUD, consumers list/details and verification, payment requests (list, details, expectation-date archive), ledger and anomalies, exchange (rules, scheduled, rates). Exchange uses api-types currency codes.
-- **Consumer** — Login, signup (multi-step), OAuth, dashboard, contacts, contracts, documents (all list tables paginated), payment methods (incl. Stripe), payment requests and payments (list, start, withdraw, transfer), Verify Me identity verification with continue / retry states, exchange and rules, profile, theme and preferred-currency settings. The shell now includes a command palette (`Cmd+K` on Apple platforms, `Ctrl+/` on Linux/Windows), a compact mobile nav with `More` for secondary destinations, earlier theme application before paint, and tighter signup/profile validation. Currency options and shared UI (PaginationBar, AmountCurrencyInput) use api-types. Production auth/BFF behavior depends on explicit canonical app origin envs; `CONSUMER_APP_ORIGIN` is the source of truth and preview / branch deployment auth and CSRF smoke is not the supported release-verification surface for this cutover.
-- **Consumer Mobile** — Mobile-first Next.js app running on port 3002. Shares backend API with desktop consumer app. Enhanced UI library with 54 icon components, IconBadge, PageHeader, SearchInput. CSS Modules-first styling across routes/features/shared UI. Comprehensive test coverage for auth flows. Uses the shared consumer OAuth model where same-origin BFF routes forward `appScope=consumer-mobile`, and the backend routes callback/handoff flows by stored `appScope` rather than raw origin. Login redirect parameters and middleware refresh behavior are hardened for safer auth navigation. Includes Verify Me state across mobile dashboard and settings flows. `CONSUMER_MOBILE_APP_ORIGIN` is the production origin source of truth; preview / branch deployment auth validation is intentionally outside the supported release contract.
-- **Consumer CSS Grid** — CSS-grid consumer shell running on port 3003. `apps/api-v2` is its backend authority; `apps/api` is not part of this release surface. Uses the same canonical consumer auth contract as web/mobile: OAuth start routes send explicit `appScope=consumer-css-grid`, redirect-capable ancillary payment flows route through canonical `appScope -> origin` mapping, and production depends on `CONSUMER_CSS_GRID_APP_ORIGIN` rather than deployment metadata. This ancillary `appScope` behavior is shipped as a synchronized no-skew cutover, not as a rolling migration.
+- **`apps/api`** - admin and consumer auth, dashboard data, contacts, contracts, documents, exchange, payment methods, payment requests, payments, profile/settings, Stripe, Verify Me lifecycle, and ledger-backed financial flows for the legacy consumer surfaces.
+- **`apps/api-v2`** - mirrored/active backend surface for current auth-sensitive cutovers and the canonical backend for `consumer-css-grid`, including auth/cookie/app-scope runtime enforcement.
+- **`apps/admin`** - operator dashboard with auth, verification workflows, consumer/admin management, payment request tooling, ledger views, exchange views, and audit access.
+- **`apps/consumer`** - desktop consumer portal with auth, signup, OAuth, dashboard, contacts, contracts, documents, payment methods, payments, exchange, Verify Me, and settings.
+- **`apps/consumer-mobile`** - mobile-first consumer experience sharing the legacy API authority, with CSS Modules-first UI, hardened auth navigation, and shared consumer app-scope routing.
+- **`apps/consumer-css-grid`** - css-grid consumer shell backed by `apps/api-v2`, with the same app-scope-driven auth/cookie model and stricter production-origin contract.
 
 ---
 
 ## Tech stack
 
-- **Runtime:** Node.js ≥ 18
-- **Package manager:** Yarn 1.22
-- **Backend:** NestJS, Prisma, PostgreSQL
-- **Frontends:** Next.js (App Router)
-- **Payments:** Stripe (checkout, setup intents, webhooks)
-- **Monorepo:** Turborepo
+- Runtime: Node.js `>= 18`
+- Package manager: Yarn `1.22.22`
+- Backend: NestJS, Prisma, PostgreSQL
+- Frontend: Next.js `15`, React `19`
+- Payments: Stripe
+- Monorepo: Turborepo
 
 ---
 
 ## Quick start
 
+1. Install dependencies:
+
 ```bash
 yarn
-cp .env.example .env
-cp apps/api/.env.example apps/api/.env
-yarn db:generate
-yarn dev
 ```
 
-Note: `yarn test` and `yarn test:e2e` are intended for local development only; they are blocked in CI and on Vercel by `scripts/ensure-local-development.js`. For quicker API e2e iterations locally, use `yarn workspace @remoola/api test:e2e:fast` (optional `TEST_DB_VERBOSE=1`; see `packages/test-db` and CHANGELOG 2026-03-20).
+2. Copy the env files for the packages and apps you plan to run:
+
+```bash
+cp packages/database-2/.env.example packages/database-2/.env
+
+cp apps/api/.env.example apps/api/.env
+cp apps/admin/.env.example apps/admin/.env
+cp apps/consumer/.env.example apps/consumer/.env
+cp apps/consumer-mobile/.env.example apps/consumer-mobile/.env
+
+# optional api-v2 / css-grid surface
+cp apps/api-v2/.env.example apps/api-v2/.env
+cp apps/consumer-css-grid/.env.example apps/consumer-css-grid/.env
+```
+
+3. Generate Prisma artifacts:
+
+```bash
+yarn db:generate
+```
+
+4. Run the monorepo or individual surfaces:
+
+```bash
+yarn dev
+
+yarn dev:api
+yarn dev:api-v2
+yarn dev:admin
+yarn dev:consumer
+yarn dev:consumer-mobile
+yarn dev:consumer-css-grid
+```
+
+Local defaults from the current app scripts and env examples:
+
+- API: `http://localhost:3333/api`
+- API v2: `http://localhost:3334/api`
+- Admin: `http://localhost:3010`
+- Consumer: `http://localhost:3001`
+- Consumer Mobile: `http://localhost:3002`
+- Consumer CSS Grid: `http://localhost:3003`
+
+Use the same hostname family (`localhost` or `127.0.0.1`) across backend, frontend, and OAuth config. Mixed-host local auth flows are intentionally unsupported because cookies are scoped per host.
+
+---
+
+## Daily workflow
+
+- Root `yarn dev` runs workspace dev tasks in parallel and depends on `db:generate`.
+- Root `yarn build` runs `yarn workspace @remoola/database-2 run db:generate` first, then `turbo run build`.
+- Current DB commands are:
+  - `yarn db:generate`
+  - `yarn db:validate`
+  - `yarn db:migrate`
+  - `yarn db:deploy`
+  - `yarn db:studio`
+- `yarn test`, `yarn test:e2e`, and `yarn test:e2e:fast` are local-development-only entrypoints and are blocked in CI/Vercel by `scripts/ensure-local-development.js`.
+- Local test/e2e flows rely on `@remoola/test-db` and Testcontainers, so Docker availability is part of the expected developer environment.
+- `.husky/pre-commit` skips lint/tests for docs-only changes; for code changes it runs `yarn lint`, builds `@remoola/test-db`, then runs consumer unit tests, api unit tests, and `apps/api` fast e2e.
 
 ---
 
 ## Documentation
 
+### Start here
+
 | File | Purpose |
 |------|---------|
-| `README.md` | Setup, commands, repo layout |
-| `docs/PROJECT_SUMMARY.md` | High-level overview (this file; start here) |
-| `docs/PROJECT_DOCUMENTATION.md` | Full API, screens, DB schema, packages |
-| `docs/FEATURES_CURRENT.md` | Implemented features and current state |
-| `docs/CONSUMER_BROWSER_IDENTITY_TRACKING.md` | Browser identity (`deviceId`) + consumer action-log design, contracts, rollout |
-| `docs/FINANCIAL_SAFETY_AND_DB_COMPLIANCE.md` | Fintech safety, ledger invariants, idempotency |
-| `docs/project-design-rules.md` | Project design rules (boundaries, naming, migrations) |
-| `docs/postgresql-design-rules.md` | PostgreSQL design rules |
+| `README.md` | Setup, commands, repo layout, documentation map |
+| `docs/PROJECT_SUMMARY.md` | Current-state summary and navigation map |
+
+### Current-state references
+
+| File | Purpose |
+|------|---------|
+| `docs/PROJECT_DOCUMENTATION.md` | Consolidated API, app, package, and database overview |
+| `docs/FEATURES_CURRENT.md` | Implemented features and current repository state |
+
+### Operational and release docs
+
+| File | Purpose |
+|------|---------|
+| `docs/CONSUMER_AUTH_COOKIE_POLICY.md` | Canonical browser/BFF cookie contract |
+| `docs/API_V2_PRODUCTION_RELEASE_GATE.md` | Required evidence for auth-sensitive `api-v2` releases |
+| `docs/SWAGGER_COOKIE_AUTH_USAGE.md` | Swagger cookie-auth workflow on API-origin docs pages |
+| `docs/CONSUMER_AUTH_CUTOVER_RELEASE_HANDOFF.md` | Release-specific handoff and closure notes for the consumer auth cutover |
+| `docs/CONSUMER_BROWSER_IDENTITY_TRACKING.md` | Browser identity (`deviceId`) and consumer action-log contracts |
+| `docs/FINANCIAL_SAFETY_AND_DB_COMPLIANCE.md` | Fintech safety, ledger invariants, idempotency, and DB rollout constraints |
+
+### Governance docs
+
+| File | Purpose |
+|------|---------|
+| `docs/project-design-rules.md` | Project design rules and repo boundaries |
+| `docs/postgresql-design-rules.md` | PostgreSQL schema and migration rules |

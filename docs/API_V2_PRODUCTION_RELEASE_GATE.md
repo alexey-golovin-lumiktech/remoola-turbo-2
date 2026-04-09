@@ -2,6 +2,8 @@
 
 This checklist is required evidence for auth-sensitive `api-v2` releases.
 
+Use this file as a release-go/no-go runbook, not as general onboarding documentation. For the broader current-state picture, start with `README.md`, `docs/PROJECT_SUMMARY.md`, and `docs/CONSUMER_AUTH_COOKIE_POLICY.md`.
+
 ## Scope
 
 Use this gate when the release touches:

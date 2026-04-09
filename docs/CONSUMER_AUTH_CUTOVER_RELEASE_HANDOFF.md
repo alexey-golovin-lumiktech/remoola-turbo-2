@@ -2,6 +2,8 @@
 
 Updated: 2026-04-06
 
+This document is a release-specific handoff and closure artifact for the consumer auth cutover. Treat it as historical operational evidence plus rollout notes, not as the primary evergreen description of the current contract. For the maintained contract view, use `docs/CONSUMER_AUTH_COOKIE_POLICY.md`, `docs/API_V2_PRODUCTION_RELEASE_GATE.md`, `docs/PROJECT_SUMMARY.md`, and `docs/PROJECT_DOCUMENTATION.md`.
+
 ## Scope
 
 This handoff covers the final Step 5 closure for the canonical consumer auth cutover in:
