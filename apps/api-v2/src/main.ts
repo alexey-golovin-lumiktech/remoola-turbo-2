@@ -233,6 +233,7 @@ async function bootstrap(): Promise<INestApplication> {
     logger.log(`📗 Consumer Docs → ${appUrl}/docs/consumer`);
   }
 
+  // TESTING
   if (!isOnVercel && envs.NGROK_ENABLED) {
     const ngrokService = app.get(NgrokIngressService);
 

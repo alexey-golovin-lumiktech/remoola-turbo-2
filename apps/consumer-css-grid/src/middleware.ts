@@ -27,6 +27,7 @@ interface RefreshAttemptTelemetry {
   statusCode?: number;
 }
 
+// TESTING
 interface RefreshResult {
   response: Response | null;
   telemetry: RefreshAttemptTelemetry;
