@@ -1830,7 +1830,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-04-09</summary>
 
 - **2026-04-09:**
@@ -1859,6 +1859,41 @@
   - No database migration introduced.
   - No backend (api-v2) runtime changes beyond a test-deploy log line.
   - Legacy app cutover redirects require `CONSUMER_CSS_GRID_APP_ORIGIN` in the legacy app env; added to `.env.example` for both `apps/consumer` and `apps/consumer-mobile`.
+
+</details>
+
+<details open>
+<summary>2026-04-10</summary>
+
+- **2026-04-10:**
+  ### 🚀 Feature
+  - **Contract workspace expansion in `consumer-css-grid`:** Add a dedicated contract-details route and relationship workspace with timeline, payment history, file visibility, active workflow actions, and contract-scoped navigation instead of relying on the older contact-centric flow.
+  - **Backend contract-details support in `api-v2`:** Add a dedicated consumer contract-details DTO/model and relationship-level aggregation so contract views can load payment summaries, latest workflow state, and scoped document metadata from the backend contract surface.
+  - **Contract-scoped documents workflow:** Extend consumer documents so the documents workspace can load files for a single contract relationship, surface draft vs non-draft attachment state, and keep file actions anchored to the owning contract workflow.
+  - **Contract-aware payment entry flow:** Carry `contractId` plus sanitized `returnTo` context through new-request, start-payment, payment-detail, and related inline workflow actions so users can move through payment flows without losing contract context.
+
+  ### 🔐 Security / Production Safety
+  - **Stripe/payment redirect context hardening:** Stripe checkout/session creation and related payer flows now preserve contract-scoped redirect context without widening redirect trust boundaries; `returnTo` values remain sanitized before they are propagated back into the app.
+  - **Invariant preserved:** Existing auth, session, cookie, CSRF, and backend authorization contracts remain unchanged while contract-scoped payment and document flows are added on top.
+  - **Document safety guardrails remain visible at the contract layer:** Draft-attached versus non-draft-attached file state is now surfaced consistently so destructive document actions do not silently break payment-record integrity.
+
+  ### ♻️ Refactor
+  - **Relationship-first consumer flow alignment:** Contracts, documents, contacts, and payment helper paths now share a common contract-context model (`contractId` + `returnTo`) so route construction, back-links, and revalidation behavior stay aligned across the consumer web surface.
+  - **Contracts workspace query normalization:** Add dedicated contract search/filter helpers and backend-driven search-param handling for contract status, file presence, payment presence, and sorting.
+
+  ### 🧪 Testing
+  - Add targeted `api-v2` coverage for contract-details aggregation, contracts filtering/search behavior, scoped documents behavior, and Stripe contract-context handling.
+  - Add `consumer-css-grid` coverage for contract detail rendering, inline contract workflow actions, contract search-param helpers, payment flow context helpers, documents page contract context, and payment-entry prefill helpers.
+
+  ### 🛠 DevEx
+  - Align root workspace scripts in `package.json` with the expanded `api-v2` + `consumer-css-grid` verification path for this release surface.
+
+  ### 📄 Documentation
+  - Update `README.md` and `docs/API_V2_PRODUCTION_RELEASE_GATE.md` to reflect the current `consumer-css-grid` plus `api-v2` release and verification expectations for the contract and payment workflow surface.
+
+  ### ⚠️ Notes
+  - No database migration introduced in this change set.
+  - Rollout is still contract-sensitive because frontend and backend must agree on the new contract-details payload, contract-scoped documents behavior, and payment/Stripe return-context handling.
 
 </details>
 
