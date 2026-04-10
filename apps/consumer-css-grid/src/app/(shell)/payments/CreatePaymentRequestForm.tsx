@@ -5,6 +5,7 @@ import { useId, useMemo, useState, useTransition } from 'react';
 
 import { CURRENCY_CODES } from '@remoola/api-types';
 
+import { buildPaymentDetailHref, type PaymentFlowContext } from './payment-flow-context';
 import { createPaymentRequestMutation } from '../../../lib/consumer-mutations.server';
 import { getTodayDateInputValue, isDateInputTodayOrLater } from '../../../lib/date-input';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
@@ -13,6 +14,8 @@ export type CreatePaymentRequestFormProps = {
   contacts: Array<{ id: string; email: string; name?: string }>;
   currencies: string[];
   preferredCurrency?: string;
+  initialEmail?: string;
+  paymentFlowContext?: PaymentFlowContext | null;
   onSuccess?: (paymentRequestId: string) => void;
   className?: string;
 };
@@ -44,6 +47,8 @@ export function CreatePaymentRequestForm({
   contacts,
   currencies,
   preferredCurrency,
+  initialEmail = ``,
+  paymentFlowContext,
   onSuccess,
   className,
 }: CreatePaymentRequestFormProps) {
@@ -84,7 +89,7 @@ export function CreatePaymentRequestForm({
   const emailSuggestionsId = useId().replace(/:/g, `-`);
   const fieldIdPrefix = useId().replace(/:/g, `-`);
 
-  const [email, setEmail] = useState(``);
+  const [email, setEmail] = useState(initialEmail);
   const [amount, setAmount] = useState(``);
   const [currencyCode, setCurrencyCode] = useState(defaultCurrency);
   const [description, setDescription] = useState(``);
@@ -106,7 +111,7 @@ export function CreatePaymentRequestForm({
   const formValid = hasValidEmail && hasValidAmount && currencyCode.length === 3 && hasValidDueDate;
 
   const clearForm = () => {
-    setEmail(``);
+    setEmail(initialEmail);
     setAmount(``);
     setCurrencyCode(defaultCurrency);
     setDescription(``);
@@ -123,6 +128,8 @@ export function CreatePaymentRequestForm({
         currencyCode,
         description,
         dueDate,
+        contractId: paymentFlowContext?.contractId,
+        returnTo: paymentFlowContext?.returnTo,
       });
       if (!result.ok) {
         if (handleSessionExpiredError(result.error)) return;
@@ -142,7 +149,7 @@ export function CreatePaymentRequestForm({
         return;
       }
 
-      router.push(`/payments/${paymentRequestId}`);
+      router.push(buildPaymentDetailHref(paymentRequestId, paymentFlowContext));
     });
   };
 

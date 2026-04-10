@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useMemo, useRef, useState, useTransition } from 'react';
 
 import { getPaymentAttachmentsLibraryState } from './payment-attachments-library-state';
+import { buildPaymentDocumentsHref } from './payment-flow-context';
 import { SESSION_EXPIRED_ERROR_CODE } from '../../../lib/auth-failure';
 import {
   attachDocumentsToPaymentRequestMutation,
@@ -38,6 +39,8 @@ type Props = {
   availableDocumentsTotal: number;
   availableDocumentsPage: number;
   availableDocumentsPageSize: number;
+  contractId?: string | null;
+  returnTo?: string | null;
 };
 
 function formatDateTime(value: string) {
@@ -100,6 +103,8 @@ export function PaymentAttachmentsClient({
   availableDocumentsTotal,
   availableDocumentsPage,
   availableDocumentsPageSize,
+  contractId,
+  returnTo,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -126,6 +131,10 @@ export function PaymentAttachmentsClient({
     availableDocumentsPageSize,
   });
   const availableDocumentPages = attachmentLibraryState.totalPages;
+  const documentsHref = useMemo(
+    () => buildPaymentDocumentsHref({ contractId: contractId ?? undefined, returnTo: returnTo ?? undefined }),
+    [contractId, returnTo],
+  );
 
   const applyDocumentPage = (nextPage: number) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -192,10 +201,10 @@ export function PaymentAttachmentsClient({
                   {isPending ? `Uploading...` : selectedFiles.length === 0 ? `Select files` : `Upload to draft`}
                 </button>
                 <Link
-                  href="/documents"
+                  href={documentsHref}
                   className="rounded-2xl border border-white/10 px-4 py-3 text-sm text-white/75 transition hover:border-white/20 hover:text-white"
                 >
-                  Open document library
+                  {contractId ? `Open contract files` : `Open document library`}
                 </Link>
               </div>
             </div>

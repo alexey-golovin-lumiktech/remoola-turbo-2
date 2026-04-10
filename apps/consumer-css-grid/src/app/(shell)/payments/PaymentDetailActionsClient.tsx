@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useMemo, useState, useTransition } from 'react';
 
 import { getPaymentDetailActionState } from './payment-detail-action-state';
+import { type PaymentFlowContext } from './payment-flow-context';
 import {
   createPaymentCheckoutSessionMutation,
   generateInvoiceMutation,
@@ -36,6 +37,7 @@ type Props = {
   role: string;
   paymentRail?: string | null;
   paymentMethods?: PaymentMethod[];
+  paymentFlowContext?: PaymentFlowContext | null;
 };
 
 function friendlyPaymentError(message: string, code?: string): string {
@@ -59,6 +61,7 @@ export function PaymentDetailActionsClient({
   role,
   paymentRail,
   paymentMethods = [],
+  paymentFlowContext,
 }: Props) {
   const router = useRouter();
   const [isSending, startSendTransition] = useTransition();
@@ -136,7 +139,7 @@ export function PaymentDetailActionsClient({
             onClick={() => {
               setMessage(null);
               startSendTransition(async () => {
-                const result = await sendPaymentRequestMutation(paymentRequestId);
+                const result = await sendPaymentRequestMutation(paymentRequestId, paymentFlowContext);
                 if (!result.ok) {
                   if (handleSessionExpiredError(result.error)) return;
                   setMessage({ type: `error`, text: result.error.message });
@@ -201,7 +204,11 @@ export function PaymentDetailActionsClient({
                 onClick={() => {
                   setMessage(null);
                   startSavedPaymentTransition(async () => {
-                    const result = await payWithSavedMethodMutation(paymentRequestId, selectedMethodId);
+                    const result = await payWithSavedMethodMutation(
+                      paymentRequestId,
+                      selectedMethodId,
+                      paymentFlowContext,
+                    );
                     if (!result.ok) {
                       if (handleSessionExpiredError(result.error)) return;
                       setMessage({
@@ -240,7 +247,7 @@ export function PaymentDetailActionsClient({
             onClick={() => {
               setMessage(null);
               startCheckoutTransition(async () => {
-                const result = await createPaymentCheckoutSessionMutation(paymentRequestId);
+                const result = await createPaymentCheckoutSessionMutation(paymentRequestId, paymentFlowContext);
                 if (!result.ok) {
                   if (handleSessionExpiredError(result.error)) return;
                   setMessage({ type: `error`, text: result.error.message });
@@ -276,7 +283,7 @@ export function PaymentDetailActionsClient({
             onClick={() => {
               setMessage(null);
               startInvoiceTransition(async () => {
-                const result = await generateInvoiceMutation(paymentRequestId);
+                const result = await generateInvoiceMutation(paymentRequestId, paymentFlowContext);
                 if (!result.ok) {
                   if (handleSessionExpiredError(result.error)) return;
                   setMessage({ type: `error`, text: result.error.message });

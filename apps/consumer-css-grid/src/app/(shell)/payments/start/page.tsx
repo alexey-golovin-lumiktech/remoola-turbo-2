@@ -1,14 +1,28 @@
+import Link from 'next/link';
+
 import { parseResumeStartPaymentFlag } from './start-payment-draft-flow';
 import { StartPaymentClient } from './StartPaymentClient';
 import { getSettings } from '../../../../lib/consumer-api.server';
 import { CreditCardIcon } from '../../../../shared/ui/icons/CreditCardIcon';
 import { PageHeader } from '../../../../shared/ui/shell-primitives';
+import { parsePaymentEntryPrefillEmail } from '../payment-entry-prefill';
+import { buildPaymentEntryHref, getPaymentFlowBackHref, parsePaymentFlowContext } from '../payment-flow-context';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
 export default async function StartPaymentPage({ searchParams }: { searchParams?: Promise<SearchParams> }) {
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
-  const settings = await getSettings();
+  const paymentFlowContext = parsePaymentFlowContext({
+    contractId: resolvedSearchParams?.contractId,
+    returnTo: resolvedSearchParams?.returnTo,
+  });
+  const initialEmail = parsePaymentEntryPrefillEmail(resolvedSearchParams?.email);
+  const settings = await getSettings({
+    redirectTo: buildPaymentEntryHref(`/payments/start`, {
+      email: initialEmail,
+      ...paymentFlowContext,
+    }),
+  });
   const preferredCurrency = settings?.preferredCurrency ?? `USD`;
   const resumeFromDraft = parseResumeStartPaymentFlag(resolvedSearchParams?.resumeStartPayment);
 
@@ -18,8 +32,21 @@ export default async function StartPaymentPage({ searchParams }: { searchParams?
         title="Start Payment"
         subtitle="Create a one-off payer-side payment and continue into the normal payment detail flow."
         icon={<CreditCardIcon className="h-10 w-10 text-white" />}
+        action={
+          <Link
+            href={getPaymentFlowBackHref(paymentFlowContext)}
+            className="text-sm text-[var(--app-primary)] hover:opacity-80"
+          >
+            {paymentFlowContext?.contractId ? `Back to contract` : `Back to payments`}
+          </Link>
+        }
       />
-      <StartPaymentClient preferredCurrency={preferredCurrency} resumeFromDraft={resumeFromDraft} />
+      <StartPaymentClient
+        preferredCurrency={preferredCurrency}
+        resumeFromDraft={resumeFromDraft}
+        initialEmail={initialEmail}
+        paymentFlowContext={paymentFlowContext}
+      />
     </div>
   );
 }

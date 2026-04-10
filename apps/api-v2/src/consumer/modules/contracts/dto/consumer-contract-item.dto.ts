@@ -29,4 +29,12 @@ export class ConsumerContractItem {
   @Expose()
   @ApiProperty({ example: 4 })
   docs: number;
+
+  @Expose()
+  @ApiProperty({ example: 7 })
+  paymentsCount: number;
+
+  @Expose()
+  @ApiProperty({ example: 3 })
+  completedPaymentsCount: number;
 }

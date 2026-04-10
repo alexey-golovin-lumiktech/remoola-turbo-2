@@ -35,6 +35,7 @@ export class ConsumerDocumentsController {
   list(
     @Identity() consumer: ConsumerModel,
     @Query(`kind`) kind?: string,
+    @Query(`contactId`) contactId?: string,
     @Query(`page`) page?: string,
     @Query(`pageSize`) pageSize?: string,
     @Req() req?: express.Request,
@@ -45,6 +46,7 @@ export class ConsumerDocumentsController {
       page ? Number(page) : undefined,
       pageSize ? Number(pageSize) : undefined,
       req ? resolveRequestBaseUrl(req) : undefined,
+      contactId,
     );
   }
 

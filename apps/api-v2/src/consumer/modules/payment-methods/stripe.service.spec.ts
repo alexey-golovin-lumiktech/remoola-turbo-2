@@ -208,6 +208,23 @@ describe(`ConsumerStripeService`, () => {
     );
   });
 
+  it(`preserves contract context in checkout success and cancel redirects`, async () => {
+    checkoutSessionsCreate.mockResolvedValue({ id: `cs_ctx`, url: `https://checkout.stripe.test/session-ctx` });
+
+    await service.createStripeSession(`consumer-1`, `payment-request-1`, `https://app.example.com`, {
+      contractId: `contract-1`,
+      returnTo: `/contracts/contract-1`,
+    });
+
+    expect(checkoutSessionsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success_url: `https://app.example.com/payments/payment-request-1?contractId=contract-1&returnTo=%2Fcontracts%2Fcontract-1&success=1`,
+        cancel_url: `https://app.example.com/payments/payment-request-1?contractId=contract-1&returnTo=%2Fcontracts%2Fcontract-1&canceled=1`,
+      }),
+      expect.any(Object),
+    );
+  });
+
   it(`stamps late-selected card payments with CARD rail when opening checkout`, async () => {
     checkoutSessionsCreate.mockResolvedValue({ id: `cs_2`, url: `https://checkout.stripe.test/session-2` });
 

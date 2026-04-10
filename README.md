@@ -118,13 +118,15 @@ yarn db:studio
 - Root `yarn dev` runs all workspace `dev` tasks in parallel and depends on `db:generate` through `turbo.json`.
 - Root `yarn build` generates the Prisma client first, then runs the Turborepo build pipeline.
 - `.husky/pre-commit` skips lint/tests for docs-only commits. For code changes it runs `yarn lint`, builds `@remoola/test-db`, then runs consumer unit tests, api unit tests, and `apps/api` fast e2e.
-- `build:vercel-guard` currently builds `@remoola/api`, `@remoola/consumer`, `@remoola/admin`, and `@remoola/consumer-mobile`. Treat `api-v2` / `consumer-css-grid` release validation as a separate operational concern and cross-check the dedicated docs before relying on that guard.
+- `build:vercel-guard` now covers both legacy and v2 consumer release surfaces, including `@remoola/api-v2` and `@remoola/consumer-css-grid`.
+- Use `yarn verify:v2-apps` as the dedicated pre-PR / pre-production gate for the `api-v2` + `consumer-css-grid` release surface.
 
 ## Deployment notes
 
 - Apply database migrations before deploying runtime changes that depend on new Prisma fields.
 - Verify Me / Stripe Identity rollout requires migration `20260323120000_stripe_identity_consumer_state` before runtime deployment because auth and consumer reads expect the `stripe_identity_*` columns to exist.
 - Auth/cookie/cutover changes for the consumer surfaces are documented as coordinated releases, not as independent rolling deployments.
+- The repo currently has no `vercel.json` or `vercel.ts`; production deployment for `apps/api-v2` and `apps/consumer-css-grid` therefore depends on Vercel dashboard/project configuration plus the canonical origin env contract documented in `docs/API_V2_PRODUCTION_RELEASE_GATE.md`.
 
 ## Documentation map
 

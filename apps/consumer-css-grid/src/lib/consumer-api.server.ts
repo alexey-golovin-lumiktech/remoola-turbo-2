@@ -156,6 +156,8 @@ export interface ContractsResponse {
     lastStatus: string | null;
     lastActivity: string | null;
     docs: number;
+    paymentsCount: number;
+    completedPaymentsCount: number;
   }>;
   total: number;
   page?: number;
@@ -275,6 +277,41 @@ export interface ContactDetailsResponse extends ContactResponse {
     name: string;
     url: string;
     createdAt: string;
+  }>;
+}
+
+export interface ContractDetailsResponse extends ContactResponse {
+  updatedAt: string;
+  summary: {
+    lastStatus: string | null;
+    lastActivity: string | null;
+    lastRequestId: string | null;
+    documentsCount: number;
+    paymentsCount: number;
+    completedPaymentsCount: number;
+    draftPaymentsCount: number;
+    pendingPaymentsCount: number;
+    waitingPaymentsCount: number;
+  };
+  payments: Array<{
+    id: string;
+    amount: string;
+    status: string;
+    createdAt: string;
+    updatedAt: string;
+    role: string;
+    paymentRail: string | null;
+  }>;
+  documents: Array<{
+    id: string;
+    name: string;
+    downloadUrl: string;
+    createdAt: string;
+    tags: string[];
+    isAttachedToDraftPaymentRequest: boolean;
+    attachedDraftPaymentRequestIds: string[];
+    isAttachedToNonDraftPaymentRequest: boolean;
+    attachedNonDraftPaymentRequestIds: string[];
   }>;
 }
 
@@ -599,8 +636,28 @@ export async function getPaymentView(
   };
 }
 
-export async function getContracts(page = 1, pageSize = 10): Promise<ContractsResponse | null> {
-  return fetchConsumerApi<ContractsResponse>(`/consumer/contracts?page=${page}&pageSize=${pageSize}`);
+export async function getContracts(
+  params?: {
+    page?: number;
+    pageSize?: number;
+    query?: string;
+    status?: string;
+    hasDocuments?: string;
+    hasPayments?: string;
+    sort?: string;
+  },
+  options?: ConsumerApiRequestOptions,
+): Promise<ContractsResponse | null> {
+  const searchParams = new URLSearchParams({
+    page: String(params?.page ?? 1),
+    pageSize: String(params?.pageSize ?? 10),
+  });
+  if (params?.query) searchParams.set(`query`, params.query);
+  if (params?.status && params.status !== `all`) searchParams.set(`status`, params.status);
+  if (params?.hasDocuments && params.hasDocuments !== `all`) searchParams.set(`hasDocuments`, params.hasDocuments);
+  if (params?.hasPayments && params.hasPayments !== `all`) searchParams.set(`hasPayments`, params.hasPayments);
+  if (params?.sort && params.sort !== `recent_activity`) searchParams.set(`sort`, params.sort);
+  return fetchConsumerApi<ContractsResponse>(`/consumer/contracts?${searchParams.toString()}`, options);
 }
 
 export async function getProfile(options?: ConsumerApiRequestOptions): Promise<ProfileResponse | null> {
@@ -615,9 +672,19 @@ export async function getDocuments(
   page = 1,
   pageSize = 20,
   options?: ConsumerApiRequestOptions,
+  filters?: {
+    contactId?: string;
+  },
 ): Promise<DocumentsResponse | null> {
+  const searchParams = new URLSearchParams({
+    page: String(page),
+    pageSize: String(pageSize),
+  });
+  if (filters?.contactId?.trim()) {
+    searchParams.set(`contactId`, filters.contactId.trim());
+  }
   const documents = await fetchConsumerApi<DocumentsResponse>(
-    `/consumer/documents?page=${page}&pageSize=${pageSize}`,
+    `/consumer/documents?${searchParams.toString()}`,
     options,
   );
   if (!documents) return null;
@@ -669,6 +736,21 @@ export async function getContactDetails(contactId: string): Promise<ContactDetai
     documents: contact.documents.map((document) => ({
       ...document,
       url: normalizeDocumentDownloadUrl(document.url, document.id),
+    })),
+  };
+}
+
+export async function getContractDetails(contractId: string): Promise<ContractDetailsResponse | null> {
+  const id = contractId.trim();
+  if (!id) return null;
+  const contract = await fetchConsumerApi<ContractDetailsResponse>(`/consumer/contracts/${id}/details`);
+  if (!contract) return null;
+
+  return {
+    ...contract,
+    documents: contract.documents.map((document) => ({
+      ...document,
+      downloadUrl: normalizeDocumentDownloadUrl(document.downloadUrl, document.id),
     })),
   };
 }

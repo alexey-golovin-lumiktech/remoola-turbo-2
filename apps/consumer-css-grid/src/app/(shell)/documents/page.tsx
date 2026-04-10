@@ -1,7 +1,8 @@
 import { DocumentsClient } from './DocumentsClient';
-import { getDocuments } from '../../../lib/consumer-api.server';
+import { getContractDetails, getDocuments } from '../../../lib/consumer-api.server';
 import { DocumentIcon } from '../../../shared/ui/icons/DocumentIcon';
 import { PageHeader } from '../../../shared/ui/shell-primitives';
+import { sanitizeContactsReturnTo } from '../contacts/contacts-return-to';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -9,11 +10,23 @@ function getSingleValue(value: string | string[] | undefined) {
   return typeof value === `string` ? value : Array.isArray(value) ? (value[0] ?? ``) : ``;
 }
 
+function getSafeContractsReturnTo(value: string | null | undefined) {
+  if (!value) return null;
+  if (!value.startsWith(`/contracts`)) return null;
+  if (value.startsWith(`//`)) return null;
+  return value;
+}
+
 export default async function DocumentsPage({ searchParams }: { searchParams?: Promise<SearchParams> }) {
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const page = Math.max(1, Number(getSingleValue(resolvedSearchParams?.page)) || 1);
   const pageSize = Math.max(1, Number(getSingleValue(resolvedSearchParams?.pageSize)) || 20);
-  const documentsResponse = await getDocuments(page, pageSize);
+  const contactId = getSingleValue(resolvedSearchParams?.contactId).trim();
+  const returnTo = getSafeContractsReturnTo(sanitizeContactsReturnTo(getSingleValue(resolvedSearchParams?.returnTo)));
+  const [documentsResponse, contract] = await Promise.all([
+    getDocuments(page, pageSize, undefined, contactId ? { contactId } : undefined),
+    contactId ? getContractDetails(contactId) : Promise.resolve(null),
+  ]);
   const documents = documentsResponse?.items ?? [];
 
   return (
@@ -24,6 +37,19 @@ export default async function DocumentsPage({ searchParams }: { searchParams?: P
         total={documentsResponse?.total ?? documents.length}
         page={documentsResponse?.page ?? page}
         pageSize={documentsResponse?.pageSize ?? pageSize}
+        contractContext={
+          contract
+            ? {
+                id: contract.id,
+                name: contract.name?.trim() || contract.email || `Unknown contractor`,
+                email: contract.email || ``,
+                returnTo: returnTo || `/contracts/${contract.id}`,
+                draftPaymentRequestIds: contract.payments
+                  .filter((payment) => payment.status.toUpperCase() === `DRAFT`)
+                  .map((payment) => payment.id),
+              }
+            : null
+        }
       />
     </div>
   );

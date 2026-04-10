@@ -394,6 +394,28 @@ describe(`consumer-api document download proxy normalization`, () => {
     expect(result?.items[0]?.downloadUrl).toBe(`/api/documents/resource-1/download`);
   });
 
+  it(`passes contact filters to the documents endpoint`, async () => {
+    const { getDocuments } = await loadSubject();
+    mockFetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          items: [],
+          total: 0,
+          page: 1,
+          pageSize: 20,
+        }),
+        { status: 200 },
+      ),
+    );
+
+    await getDocuments(1, 20, undefined, { contactId: `contact-1` });
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining(`/consumer/documents?page=1&pageSize=20&contactId=contact-1`),
+      expect.anything(),
+    );
+  });
+
   it(`rewrites payment attachment download links to the app proxy route`, async () => {
     const { getPaymentView } = await loadSubject();
     mockFetch.mockResolvedValueOnce(
@@ -453,5 +475,55 @@ describe(`consumer-api document download proxy normalization`, () => {
     const result = await getContactDetails(`contact-1`);
 
     expect(result?.documents[0]?.url).toBe(`/api/documents/resource-3/download`);
+  });
+
+  it(`rewrites contract detail document links to the app proxy route`, async () => {
+    const { getContractDetails } = await loadSubject();
+    mockFetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          id: `contact-1`,
+          name: `Known Contact`,
+          email: `known@example.com`,
+          updatedAt: `2026-01-02T00:00:00.000Z`,
+          address: null,
+          summary: {
+            lastStatus: `completed`,
+            lastActivity: `2026-01-02T00:00:00.000Z`,
+            lastRequestId: `payment-1`,
+            documentsCount: 1,
+            paymentsCount: 1,
+            completedPaymentsCount: 1,
+          },
+          payments: [
+            {
+              id: `payment-1`,
+              amount: `100`,
+              status: `completed`,
+              createdAt: `2026-01-01T00:00:00.000Z`,
+              updatedAt: `2026-01-02T00:00:00.000Z`,
+            },
+          ],
+          documents: [
+            {
+              id: `resource-4`,
+              name: `contract.pdf`,
+              downloadUrl: `https://api.example.com/api/consumer/documents/resource-4/download`,
+              createdAt: `2026-01-01T00:00:00.000Z`,
+              tags: [`contract`],
+              isAttachedToDraftPaymentRequest: false,
+              attachedDraftPaymentRequestIds: [],
+              isAttachedToNonDraftPaymentRequest: true,
+              attachedNonDraftPaymentRequestIds: [`payment-1`],
+            },
+          ],
+        }),
+        { status: 200 },
+      ),
+    );
+
+    const result = await getContractDetails(`contact-1`);
+
+    expect(result?.documents[0]?.downloadUrl).toBe(`/api/documents/resource-4/download`);
   });
 });

@@ -42,7 +42,7 @@ describe(`ConsumerStripeController`, () => {
       },
     } as never;
 
-    await controller.createStripeSession(consumer, paymentRequestId, `consumer`, req);
+    await controller.createStripeSession(consumer, paymentRequestId, `consumer`, undefined, undefined, req);
 
     expect(originResolver.validateConsumerAppScope).toHaveBeenCalledWith(`consumer`);
     expect(originResolver.validateConsumerAppScopeHeader).toHaveBeenCalledWith(`consumer`);
@@ -51,6 +51,36 @@ describe(`ConsumerStripeController`, () => {
       consumer.id,
       paymentRequestId,
       `https://consumer.example.com`,
+      undefined,
+    );
+  });
+
+  it(`forwards contract redirect context into checkout session creation`, async () => {
+    const controller = new ConsumerStripeController(service as never, originResolver as never);
+    const req = {
+      path: `/api/consumer/stripe/${paymentRequestId}/stripe-session`,
+      headers: {
+        [CONSUMER_APP_SCOPE_HEADER]: `consumer`,
+      },
+    } as never;
+
+    await controller.createStripeSession(
+      consumer,
+      paymentRequestId,
+      `consumer`,
+      `contract-1`,
+      `/contracts/contract-1`,
+      req,
+    );
+
+    expect(service.createStripeSession).toHaveBeenCalledWith(
+      consumer.id,
+      paymentRequestId,
+      `https://consumer.example.com`,
+      {
+        contractId: `contract-1`,
+        returnTo: `/contracts/contract-1`,
+      },
     );
   });
 
@@ -59,7 +89,9 @@ describe(`ConsumerStripeController`, () => {
     const controller = new ConsumerStripeController(service as never, originResolver as never);
 
     await expect(
-      controller.createStripeSession(consumer, paymentRequestId, `legacy-consumer`, { headers: {} } as never),
+      controller.createStripeSession(consumer, paymentRequestId, `legacy-consumer`, undefined, undefined, {
+        headers: {},
+      } as never),
     ).rejects.toThrow(new BadRequestException(`Invalid app scope`));
     expect(service.createStripeSession).not.toHaveBeenCalled();
   });
@@ -69,7 +101,7 @@ describe(`ConsumerStripeController`, () => {
     const controller = new ConsumerStripeController(service as never, originResolver as never);
 
     await expect(
-      controller.createStripeSession(consumer, paymentRequestId, `consumer`, {
+      controller.createStripeSession(consumer, paymentRequestId, `consumer`, undefined, undefined, {
         path: `/api/consumer/stripe/${paymentRequestId}/stripe-session`,
         headers: {},
       } as never),

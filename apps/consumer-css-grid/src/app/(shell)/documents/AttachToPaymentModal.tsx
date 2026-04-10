@@ -4,11 +4,14 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
 
 import {
-  attachDocumentsToPaymentRequestMutation,
+  attachDocumentToDraftPaymentRequestsMutation,
   getDraftPaymentRequestsAction,
   type DraftPaymentRequestOption,
 } from '../../../lib/consumer-mutations.server';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
+
+const DEFAULT_PAGE_SIZE = 20;
+const MAX_SCOPE_PAGE_SIZE = 100;
 
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString(`en-US`, {
@@ -29,11 +32,15 @@ export function AttachToPaymentModal({
   documentId,
   documentName,
   attachedDraftPaymentRequestIds,
+  allowedPaymentRequestIds,
+  scopeLabel,
   onClose,
 }: {
   documentId: string;
   documentName: string;
   attachedDraftPaymentRequestIds: string[];
+  allowedPaymentRequestIds?: string[];
+  scopeLabel?: string;
   onClose: () => void;
 }) {
   const router = useRouter();
@@ -41,14 +48,62 @@ export function AttachToPaymentModal({
   const [isLoading, setIsLoading] = useState(true);
   const [draftPayments, setDraftPayments] = useState<DraftPaymentRequestOption[]>([]);
   const [draftPaymentsTotal, setDraftPaymentsTotal] = useState(0);
+  const [draftPaymentsPage, setDraftPaymentsPage] = useState(1);
+  const [draftPaymentsPageSize, setDraftPaymentsPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [selectedPaymentRequestIds, setSelectedPaymentRequestIds] = useState<string[]>([]);
   const [message, setMessage] = useState<{ type: `error` | `success`; text: string } | null>(null);
+  const scopedPageSize = allowedPaymentRequestIds ? MAX_SCOPE_PAGE_SIZE : DEFAULT_PAGE_SIZE;
 
   useEffect(() => {
     let isActive = true;
 
     void (async () => {
-      const result = await getDraftPaymentRequestsAction();
+      setIsLoading(true);
+      if (allowedPaymentRequestIds) {
+        const allowedIds = new Set(allowedPaymentRequestIds);
+        const collectedDraftPayments = new Map<string, DraftPaymentRequestOption>();
+        let nextPage = 1;
+        let totalPages = 1;
+
+        while (isActive && nextPage <= totalPages) {
+          const result = await getDraftPaymentRequestsAction({
+            page: nextPage,
+            pageSize: scopedPageSize,
+          });
+          if (!isActive) return;
+
+          if (!result.ok) {
+            if (handleSessionExpiredError(result.error)) return;
+            setMessage({ type: `error`, text: result.error.message });
+            setIsLoading(false);
+            return;
+          }
+
+          for (const payment of result.items) {
+            if (allowedIds.has(payment.id)) {
+              collectedDraftPayments.set(payment.id, payment);
+            }
+          }
+
+          totalPages = Math.max(1, Math.ceil(result.total / Math.max(1, result.pageSize)));
+          if (collectedDraftPayments.size >= allowedIds.size || result.items.length === 0) {
+            break;
+          }
+          nextPage += 1;
+        }
+
+        setDraftPayments(Array.from(collectedDraftPayments.values()));
+        setDraftPaymentsTotal(collectedDraftPayments.size);
+        setDraftPaymentsPage(1);
+        setDraftPaymentsPageSize(Math.max(DEFAULT_PAGE_SIZE, collectedDraftPayments.size || DEFAULT_PAGE_SIZE));
+        setIsLoading(false);
+        return;
+      }
+
+      const result = await getDraftPaymentRequestsAction({
+        page: draftPaymentsPage,
+        pageSize: scopedPageSize,
+      });
       if (!isActive) return;
 
       if (!result.ok) {
@@ -60,15 +115,27 @@ export function AttachToPaymentModal({
 
       setDraftPayments(result.items);
       setDraftPaymentsTotal(result.total);
+      setDraftPaymentsPage(result.page);
+      setDraftPaymentsPageSize(result.pageSize);
       setIsLoading(false);
     })();
 
     return () => {
       isActive = false;
     };
-  }, []);
+  }, [allowedPaymentRequestIds, draftPaymentsPage, scopedPageSize]);
 
-  const availableDrafts = draftPayments.filter((payment) => !attachedDraftPaymentRequestIds.includes(payment.id));
+  useEffect(() => {
+    setSelectedPaymentRequestIds([]);
+  }, [draftPaymentsPage, allowedPaymentRequestIds]);
+
+  const scopedDraftPayments = allowedPaymentRequestIds
+    ? draftPayments.filter((payment) => allowedPaymentRequestIds.includes(payment.id))
+    : draftPayments;
+  const availableDrafts = scopedDraftPayments.filter((payment) => !attachedDraftPaymentRequestIds.includes(payment.id));
+  const totalPages = allowedPaymentRequestIds
+    ? 1
+    : Math.max(1, Math.ceil(draftPaymentsTotal / Math.max(1, draftPaymentsPageSize)));
 
   return (
     <div
@@ -83,7 +150,9 @@ export function AttachToPaymentModal({
           <div className="min-w-0">
             <h3 className="truncate text-lg font-semibold text-white/90">Attach to payment</h3>
             <div className="mt-1 text-sm text-white/50">
-              Choose one or more draft payment requests for `{documentName}`.
+              {scopeLabel
+                ? `Choose one or more draft payment requests in ${scopeLabel} for \`${documentName}\`.`
+                : `Choose one or more draft payment requests for \`${documentName}\`.`}
             </div>
           </div>
           <button
@@ -112,18 +181,22 @@ export function AttachToPaymentModal({
             <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-8 text-center text-sm text-white/55">
               Loading draft payment requests...
             </div>
-          ) : draftPayments.length === 0 ? (
+          ) : scopedDraftPayments.length === 0 ? (
             <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-8 text-center text-sm text-white/55">
-              No draft payment requests are available yet.
+              {scopeLabel
+                ? `No draft payment requests are available for this contract yet.`
+                : `No draft payment requests are available yet.`}
             </div>
           ) : (
             <div className="space-y-3">
               <div className="text-sm text-white/50">
-                {draftPaymentsTotal > draftPayments.length
-                  ? `Showing ${draftPayments.length} of ${draftPaymentsTotal} draft payment requests.`
-                  : `${draftPayments.length} draft payment request${draftPayments.length === 1 ? `` : `s`} available.`}
+                {allowedPaymentRequestIds
+                  ? `${scopedDraftPayments.length} draft payment request${scopedDraftPayments.length === 1 ? `` : `s`} in this contract scope.`
+                  : draftPaymentsTotal > draftPayments.length
+                    ? `Page ${draftPaymentsPage} of ${totalPages} shows ${draftPayments.length} of ${draftPaymentsTotal} draft payment requests.`
+                    : `${draftPayments.length} draft payment request${draftPayments.length === 1 ? `` : `s`} available.`}
               </div>
-              {draftPayments.map((payment) => {
+              {scopedDraftPayments.map((payment) => {
                 const alreadyAttached = attachedDraftPaymentRequestIds.includes(payment.id);
                 const checked = selectedPaymentRequestIds.includes(payment.id);
                 const title = payment.description || payment.counterpartyEmail || `Draft payment`;
@@ -173,9 +246,31 @@ export function AttachToPaymentModal({
             </div>
           )}
 
-          {!isLoading && draftPayments.length > 0 && availableDrafts.length === 0 ? (
+          {!isLoading && scopedDraftPayments.length > 0 && availableDrafts.length === 0 ? (
             <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/55">
-              This document is already attached to every draft payment request currently available.
+              {scopeLabel
+                ? `This document is already attached to every draft payment request in this contract scope.`
+                : `This document is already attached to every draft payment request currently available.`}
+            </div>
+          ) : null}
+          {!allowedPaymentRequestIds && totalPages > 1 ? (
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={isPending || isLoading || draftPaymentsPage <= 1}
+                onClick={() => setDraftPaymentsPage((current) => Math.max(1, current - 1))}
+                className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/75 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Previous page
+              </button>
+              <button
+                type="button"
+                disabled={isPending || isLoading || draftPaymentsPage >= totalPages}
+                onClick={() => setDraftPaymentsPage((current) => Math.min(totalPages, current + 1))}
+                className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/75 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Next page
+              </button>
             </div>
           ) : null}
         </div>
@@ -200,23 +295,22 @@ export function AttachToPaymentModal({
               onClick={() => {
                 setMessage(null);
                 startTransition(async () => {
-                  for (const paymentRequestId of selectedPaymentRequestIds) {
-                    const result = await attachDocumentsToPaymentRequestMutation(paymentRequestId, [documentId]);
-                    if (!result.ok) {
-                      if (handleSessionExpiredError(result.error)) return;
-                      setMessage({ type: `error`, text: result.error.message });
-                      return;
+                  const result = await attachDocumentToDraftPaymentRequestsMutation(
+                    selectedPaymentRequestIds,
+                    documentId,
+                  );
+                  if (!result.ok) {
+                    if (handleSessionExpiredError(result.error)) return;
+                    setMessage({ type: `error`, text: result.error.message });
+                    if (result.attachedCount > 0) {
+                      setSelectedPaymentRequestIds([]);
+                      router.refresh();
                     }
+                    return;
                   }
 
                   setSelectedPaymentRequestIds([]);
-                  setMessage({
-                    type: `success`,
-                    text:
-                      selectedPaymentRequestIds.length === 1
-                        ? `Document attached to draft payment request.`
-                        : `Document attached to ${selectedPaymentRequestIds.length} draft payment requests.`,
-                  });
+                  setMessage({ type: `success`, text: result.message });
                   router.refresh();
                 });
               }}

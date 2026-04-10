@@ -1,6 +1,7 @@
 import { describe, expect, it } from '@jest/globals';
 
 import {
+  buildStartPaymentResumePath,
   buildUnknownRecipientContactsUrl,
   parseResumeStartPaymentFlag,
   parseStoredStartPaymentDraft,
@@ -41,6 +42,63 @@ describe(`start payment draft flow helpers`, () => {
     expect(url.searchParams.get(`email`)).toBe(`new.user+alias@example.com`);
     expect(url.searchParams.get(`returnTo`)).toBe(START_PAYMENT_RESUME_PATH);
     expect(sanitizeContactsReturnTo(url.searchParams.get(`returnTo`) ?? ``)).toBe(START_PAYMENT_RESUME_PATH);
+  });
+
+  it(`keeps contract context inside the resume path`, () => {
+    const url = new URL(
+      buildUnknownRecipientContactsUrl(`new.user+alias@example.com`, {
+        contractId: `contract-1`,
+        returnTo: `/contracts/contract-1`,
+      }),
+      `https://remoola.test`,
+    );
+
+    expect(url.searchParams.get(`returnTo`)).toBe(
+      buildStartPaymentResumePath({
+        contractId: `contract-1`,
+        returnTo: `/contracts/contract-1`,
+      }),
+    );
+    expect(sanitizeContactsReturnTo(url.searchParams.get(`returnTo`) ?? ``)).toBe(
+      `/payments/start?contractId=contract-1&returnTo=/contracts/contract-1&resumeStartPayment=1`,
+    );
+  });
+
+  it(`falls back to the contract detail route when contract context has no explicit returnTo`, () => {
+    const url = new URL(
+      buildUnknownRecipientContactsUrl(`new.user+alias@example.com`, {
+        contractId: `contract-1`,
+      }),
+      `https://remoola.test`,
+    );
+
+    expect(url.searchParams.get(`returnTo`)).toBe(
+      buildStartPaymentResumePath({
+        contractId: `contract-1`,
+      }),
+    );
+    expect(sanitizeContactsReturnTo(url.searchParams.get(`returnTo`) ?? ``)).toBe(
+      `/payments/start?contractId=contract-1&returnTo=/contracts/contract-1&resumeStartPayment=1`,
+    );
+  });
+
+  it(`drops unsafe returnTo values while preserving contract context`, () => {
+    const url = new URL(
+      buildUnknownRecipientContactsUrl(`new.user+alias@example.com`, {
+        contractId: `contract-1`,
+        returnTo: `https://evil.example/steal`,
+      }),
+      `https://remoola.test`,
+    );
+
+    expect(url.searchParams.get(`returnTo`)).toBe(
+      buildStartPaymentResumePath({
+        contractId: `contract-1`,
+      }),
+    );
+    expect(sanitizeContactsReturnTo(url.searchParams.get(`returnTo`) ?? ``)).toBe(
+      `/payments/start?contractId=contract-1&returnTo=/contracts/contract-1&resumeStartPayment=1`,
+    );
   });
 
   it(`parses the resume flag from search params`, () => {

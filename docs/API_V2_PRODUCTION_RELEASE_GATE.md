@@ -34,6 +34,26 @@ Capture the effective production values for these controls without exposing secr
 - Frontend example envs and deploy-time config for the cutover set explicitly declare `CONSUMER_APP_ORIGIN`, `CONSUMER_MOBILE_APP_ORIGIN`, and `CONSUMER_CSS_GRID_APP_ORIGIN` as the canonical production app origins.
 - `NEXT_PUBLIC_APP_ORIGIN` is treated only as legacy compatibility fallback, not as release evidence or the primary production contract.
 
+### consumer-css-grid + api-v2 minimum production contract
+
+For the `consumer-css-grid` plus `api-v2` release surface, treat the following as
+mandatory go/no-go evidence:
+
+- `apps/consumer-css-grid`
+  - `NEXT_PUBLIC_API_BASE_URL` points to the canonical `api-v2` production origin.
+  - `CONSUMER_CSS_GRID_APP_ORIGIN` matches the canonical production browser origin for the css-grid app.
+- `apps/api-v2`
+  - `NEST_APP_EXTERNAL_ORIGIN` matches the canonical production backend origin used by browser/BFF callbacks and absolute URLs.
+  - `CONSUMER_CSS_GRID_APP_ORIGIN` matches the exact frontend production origin trusted by auth, CSRF, and ancillary app-scope checks.
+  - `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, and `STRIPE_WEBHOOK_SECRET` are real non-placeholder production values.
+  - `COOKIE_SECURE=true`.
+
+Operational assumption for this release:
+
+- the repo currently ships no `vercel.json` or `vercel.ts`
+- production routing, domains, build settings, and environment variables for `consumer-css-grid` and `api-v2` therefore live in the Vercel project/dashboard configuration
+- preview or branch URLs are not substitute evidence for the canonical origins above
+
 Source of truth:
 
 - `apps/api-v2/src/envs.ts`

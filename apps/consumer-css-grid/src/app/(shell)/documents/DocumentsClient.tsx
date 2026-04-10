@@ -14,6 +14,7 @@ import {
 } from '../../../lib/consumer-mutations.server';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
 import { MetricLine } from '../../../shared/ui/shell-primitives';
+import { buildPaymentDetailHref } from '../payments/payment-flow-context';
 
 type DocumentItem = {
   id: string;
@@ -34,6 +35,13 @@ type Props = {
   total: number;
   page: number;
   pageSize: number;
+  contractContext?: {
+    id: string;
+    name: string;
+    email: string;
+    returnTo: string;
+    draftPaymentRequestIds: string[];
+  } | null;
 };
 
 function formatDate(value: string) {
@@ -72,6 +80,22 @@ function getDeleteBlockedMessage(documentIds: string[], documents: DocumentItem[
     : `Some selected documents are still attached to draft payment requests. Open each draft and remove them there before deleting them from Documents.`;
 }
 
+function buildDocumentPaymentHref(
+  paymentRequestId: string,
+  contractContext?: {
+    id: string;
+    returnTo: string;
+  } | null,
+) {
+  if (!contractContext) {
+    return `/payments/${paymentRequestId}`;
+  }
+  return buildPaymentDetailHref(paymentRequestId, {
+    contractId: contractContext.id,
+    returnTo: contractContext.returnTo,
+  });
+}
+
 async function uploadDocuments(formData: FormData) {
   try {
     const response = await fetch(`/api/documents/upload`, {
@@ -107,7 +131,7 @@ async function uploadDocuments(formData: FormData) {
   }
 }
 
-export function DocumentsClient({ documents, total, page, pageSize }: Props) {
+export function DocumentsClient({ documents, total, page, pageSize, contractContext = null }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -131,23 +155,24 @@ export function DocumentsClient({ documents, total, page, pageSize }: Props) {
   const complianceCount = documents.filter((doc) => doc.kind === `COMPLIANCE`).length;
   const paymentCount = documents.filter((doc) => doc.kind === `PAYMENT`).length;
   const generalCount = documents.filter((doc) => doc.kind === `GENERAL`).length;
-  const deletableDocumentIds = useMemo(
-    () => documents.filter((doc) => !isDeleteBlocked(doc)).map((doc) => doc.id),
-    [documents],
-  );
-  const deletableDocumentIdSet = useMemo(() => new Set(deletableDocumentIds), [deletableDocumentIds]);
-  const blockedDraftDeleteCount = documents.filter(
-    (doc) => doc.isAttachedToDraftPaymentRequest && !doc.isAttachedToNonDraftPaymentRequest,
-  ).length;
-  const blockedNonDraftDeleteCount = documents.filter((doc) => doc.isAttachedToNonDraftPaymentRequest).length;
-  const allDeletableSelected =
-    deletableDocumentIds.length > 0 &&
-    deletableDocumentIds.every((documentId) => selectedDocumentIds.includes(documentId));
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const isContractMode = Boolean(contractContext);
   const filteredDocuments = useMemo(() => {
     if (filterKind === `all`) return documents;
     return documents.filter((document) => document.kind === filterKind);
   }, [documents, filterKind]);
+  const deletableDocumentIds = useMemo(
+    () => filteredDocuments.filter((doc) => !isDeleteBlocked(doc)).map((doc) => doc.id),
+    [filteredDocuments],
+  );
+  const deletableDocumentIdSet = useMemo(() => new Set(deletableDocumentIds), [deletableDocumentIds]);
+  const blockedDraftDeleteCount = filteredDocuments.filter(
+    (doc) => doc.isAttachedToDraftPaymentRequest && !doc.isAttachedToNonDraftPaymentRequest,
+  ).length;
+  const blockedNonDraftDeleteCount = filteredDocuments.filter((doc) => doc.isAttachedToNonDraftPaymentRequest).length;
+  const allDeletableSelected =
+    deletableDocumentIds.length > 0 &&
+    deletableDocumentIds.every((documentId) => selectedDocumentIds.includes(documentId));
 
   const applyPage = (nextPage: number) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -159,31 +184,61 @@ export function DocumentsClient({ documents, total, page, pageSize }: Props) {
   return (
     <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.3fr_0.7fr]">
       <div className="rounded-[28px] border border-white/10 bg-white/6 p-5 backdrop-blur">
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <div>
-            <div className="text-lg font-semibold text-white/90">Document library</div>
-            <div className="mt-1 text-sm text-white/45">
-              Upload new files or remove outdated ones. Page {page} of {totalPages} shows {documents.length} of {total}
-              documents.
+        {contractContext ? (
+          <div className="mb-4 rounded-2xl border border-blue-400/20 bg-blue-500/10 px-4 py-4 text-sm text-blue-100">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="font-medium text-blue-50">Contract files mode</div>
+                <div className="mt-1 text-blue-100/80">
+                  Showing relationship files for {contractContext.name} ({contractContext.email}).
+                </div>
+              </div>
+              <Link
+                href={contractContext.returnTo}
+                className="rounded-xl border border-blue-300/20 px-3 py-2 text-sm text-blue-100 transition hover:bg-blue-500/10"
+              >
+                Back to contract
+              </Link>
             </div>
           </div>
-          <input
-            ref={inputRef}
-            type="file"
-            name="files"
-            multiple
-            className="max-w-full text-sm text-white/70 file:mr-4 file:rounded-xl file:border-0 file:bg-blue-500 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white"
-            onChange={(event) => {
-              setSelectedFiles(Array.from(event.target.files ?? []).map((file) => file.name));
-              setMessage(null);
-            }}
-          />
+        ) : null}
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <div>
+            <div className="text-lg font-semibold text-white/90">
+              {contractContext ? `Relationship files` : `Document library`}
+            </div>
+            <div className="mt-1 text-sm text-white/45">
+              {contractContext
+                ? `Preview, tag, and attach files already connected to this contract. Page ${page} of ${totalPages} shows ${documents.length} of ${total} files.`
+                : `Upload new files or remove outdated ones. Page ${page} of ${totalPages} shows ${documents.length} of ${total} documents.`}
+            </div>
+          </div>
+          {isContractMode ? null : (
+            <input
+              ref={inputRef}
+              type="file"
+              name="files"
+              multiple
+              className="max-w-full text-sm text-white/70 file:mr-4 file:rounded-xl file:border-0 file:bg-blue-500 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white"
+              onChange={(event) => {
+                setSelectedFiles(Array.from(event.target.files ?? []).map((file) => file.name));
+                setMessage(null);
+              }}
+            />
+          )}
         </div>
-        <div className="mb-4 text-sm text-white/45">
-          {selectedFiles.length === 0
-            ? `Choose one or more files before uploading.`
-            : `${selectedFiles.length} file${selectedFiles.length === 1 ? `` : `s`} selected: ${selectedFiles.join(`, `)}`}
-        </div>
+        {isContractMode ? (
+          <div className="mb-4 text-sm text-white/45">
+            Upload remains in the full document library. This mode stays focused on files already tied to the current
+            contractor relationship.
+          </div>
+        ) : (
+          <div className="mb-4 text-sm text-white/45">
+            {selectedFiles.length === 0
+              ? `Choose one or more files before uploading.`
+              : `${selectedFiles.length} file${selectedFiles.length === 1 ? `` : `s`} selected: ${selectedFiles.join(`, `)}`}
+          </div>
+        )}
         {message ? (
           <div
             className={
@@ -195,40 +250,42 @@ export function DocumentsClient({ documents, total, page, pageSize }: Props) {
             {message.text}
           </div>
         ) : null}
-        <button
-          type="button"
-          disabled={isPending || selectedFiles.length === 0}
-          onClick={() => {
-            const files = inputRef.current?.files;
-            const formData = new FormData();
-            if (files) {
-              for (const file of Array.from(files)) {
-                formData.append(`files`, file);
+        {isContractMode ? null : (
+          <button
+            type="button"
+            disabled={isPending || selectedFiles.length === 0}
+            onClick={() => {
+              const files = inputRef.current?.files;
+              const formData = new FormData();
+              if (files) {
+                for (const file of Array.from(files)) {
+                  formData.append(`files`, file);
+                }
               }
-            }
-            setMessage(null);
-            startTransition(async () => {
-              const result = await uploadDocuments(formData);
-              if (!result.ok) {
-                if (handleSessionExpiredError(result.error)) return;
-                setMessage({ type: `error`, text: result.error.message });
-                return;
-              }
-              if (inputRef.current) {
-                inputRef.current.value = ``;
-              }
-              setSelectedFiles([]);
-              setMessage({ type: `success`, text: `Documents uploaded` });
-              router.refresh();
-            });
-          }}
-          className="mb-5 rounded-2xl bg-blue-500 px-4 py-3 font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {isPending ? `Uploading...` : selectedFiles.length === 0 ? `Select files to upload` : `Upload documents`}
-        </button>
+              setMessage(null);
+              startTransition(async () => {
+                const result = await uploadDocuments(formData);
+                if (!result.ok) {
+                  if (handleSessionExpiredError(result.error)) return;
+                  setMessage({ type: `error`, text: result.error.message });
+                  return;
+                }
+                if (inputRef.current) {
+                  inputRef.current.value = ``;
+                }
+                setSelectedFiles([]);
+                setMessage({ type: `success`, text: `Documents uploaded` });
+                router.refresh();
+              });
+            }}
+            className="mb-5 rounded-2xl bg-blue-500 px-4 py-3 font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isPending ? `Uploading...` : selectedFiles.length === 0 ? `Select files to upload` : `Upload documents`}
+          </button>
+        )}
         {documents.length === 0 ? (
           <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-10 text-center text-sm text-white/45">
-            No documents uploaded yet.
+            {contractContext ? `No files are linked to this contract yet.` : `No documents uploaded yet.`}
           </div>
         ) : (
           <div>
@@ -258,7 +315,7 @@ export function DocumentsClient({ documents, total, page, pageSize }: Props) {
               ))}
             </div>
             <div className="space-y-3">
-              {documents.length > 1 ? (
+              {filteredDocuments.length > 1 ? (
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
                   <div className="space-y-1 text-sm text-white/55">
                     {selectedDocumentIds.length === 0
@@ -298,7 +355,7 @@ export function DocumentsClient({ documents, total, page, pageSize }: Props) {
                         if (blockedSelected.length > 0) {
                           setMessage({
                             type: `error`,
-                            text: getDeleteBlockedMessage(blockedSelected, documents),
+                            text: getDeleteBlockedMessage(blockedSelected, filteredDocuments),
                           });
                           return;
                         }
@@ -364,7 +421,7 @@ export function DocumentsClient({ documents, total, page, pageSize }: Props) {
                               {document.attachedDraftPaymentRequestIds.map((paymentRequestId, index) => (
                                 <Link
                                   key={`${document.id}-${paymentRequestId}`}
-                                  href={`/payments/${paymentRequestId}`}
+                                  href={buildDocumentPaymentHref(paymentRequestId, contractContext)}
                                   className="rounded-full border border-white/10 px-2 py-1 text-xs text-white/70 transition hover:border-white/20 hover:text-white"
                                 >
                                   {document.attachedDraftPaymentRequestIds.length === 1
@@ -382,7 +439,7 @@ export function DocumentsClient({ documents, total, page, pageSize }: Props) {
                               {document.attachedNonDraftPaymentRequestIds.map((paymentRequestId, index) => (
                                 <Link
                                   key={`${document.id}-historical-${paymentRequestId}`}
-                                  href={`/payments/${paymentRequestId}`}
+                                  href={buildDocumentPaymentHref(paymentRequestId, contractContext)}
                                   className="rounded-full border border-white/10 px-2 py-1 text-xs text-white/70 transition hover:border-white/20 hover:text-white"
                                 >
                                   {document.attachedNonDraftPaymentRequestIds.length === 1
@@ -582,13 +639,18 @@ export function DocumentsClient({ documents, total, page, pageSize }: Props) {
       </div>
 
       <div className="rounded-[28px] border border-white/10 bg-white/6 p-5 backdrop-blur">
-        <div className="mb-4 text-lg font-semibold text-white/90">Storage summary</div>
+        <div className="mb-4 text-lg font-semibold text-white/90">
+          {contractContext ? `Contract files summary` : `Storage summary`}
+        </div>
         <div className="space-y-4">
           <MetricLine label="Visible on page" value={String(documents.length)} />
-          <MetricLine label="Total files" value={String(total)} />
+          <MetricLine label={contractContext ? `Total contract files` : `Total files`} value={String(total)} />
           <MetricLine label="Compliance docs" value={String(complianceCount)} />
           <MetricLine label="Payment docs" value={String(paymentCount)} />
           <MetricLine label="Contracts" value={String(contractsCount)} />
+          {contractContext ? (
+            <MetricLine label="Draft payments in scope" value={String(contractContext.draftPaymentRequestIds.length)} />
+          ) : null}
         </div>
       </div>
       {previewDoc ? <DocumentPreviewPanel document={previewDoc} onClose={() => setPreviewDoc(null)} /> : null}
@@ -597,6 +659,8 @@ export function DocumentsClient({ documents, total, page, pageSize }: Props) {
           documentId={attachDocument.id}
           documentName={attachDocument.name}
           attachedDraftPaymentRequestIds={attachDocument.attachedDraftPaymentRequestIds}
+          allowedPaymentRequestIds={contractContext?.draftPaymentRequestIds}
+          scopeLabel={contractContext ? `${contractContext.name} contract` : undefined}
           onClose={() => setAttachDocument(null)}
         />
       ) : null}

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 
 import { sanitizeContactsReturnTo } from './contacts-return-to';
 import {
@@ -30,6 +30,7 @@ type Props = {
   contacts: Contact[];
   createMode?: boolean;
   initialEmail?: string;
+  initialEditingContact?: Contact | null;
   returnTo?: string;
   initialQuery?: string;
   searchMode?: boolean;
@@ -49,10 +50,23 @@ function displayAddress(contact: Contact) {
   return parts.length > 0 ? parts.join(`, `) : `No address details`;
 }
 
+function toEditableForm(contact: Contact) {
+  return {
+    email: contact.email ?? ``,
+    name: contact.name ?? ``,
+    street: contact.address?.street ?? ``,
+    city: contact.address?.city ?? ``,
+    state: contact.address?.state ?? ``,
+    postalCode: contact.address?.postalCode ?? ``,
+    country: contact.address?.country ?? ``,
+  };
+}
+
 export function ContactsClient({
   contacts,
   createMode = false,
   initialEmail = ``,
+  initialEditingContact = null,
   returnTo = ``,
   initialQuery = ``,
   searchMode = false,
@@ -95,6 +109,13 @@ export function ContactsClient({
       postalCode: ``,
       country: ``,
     });
+
+  useEffect(() => {
+    if (!initialEditingContact) return;
+    setEditingContactId(initialEditingContact.id);
+    setForm(toEditableForm(initialEditingContact));
+    setMessage(null);
+  }, [initialEditingContact]);
 
   const applyQuery = (nextQuery: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -164,6 +185,11 @@ export function ContactsClient({
         {createMode ? (
           <div className="mb-5 rounded-2xl border border-blue-400/20 bg-blue-500/10 px-4 py-3 text-sm text-blue-100">
             Finish this contact to return to your saved start-payment draft.
+          </div>
+        ) : null}
+        {initialEditingContact && returnTo ? (
+          <div className="mb-5 rounded-2xl border border-blue-400/20 bg-blue-500/10 px-4 py-3 text-sm text-blue-100">
+            Edit this contact and you will be returned to the contract workspace after saving.
           </div>
         ) : null}
         {searchMode ? (
@@ -297,8 +323,10 @@ export function ContactsClient({
           onClick={() => {
             setMessage(null);
             startTransition(async () => {
-              const result = editingContactId
-                ? await updateContactMutation(editingContactId, form)
+              const editingId = editingContactId;
+              const isEditing = Boolean(editingId);
+              const result = editingId
+                ? await updateContactMutation(editingId, form)
                 : await createContactMutation(form);
               if (!result.ok) {
                 if (handleSessionExpiredError(result.error)) return;
@@ -308,13 +336,13 @@ export function ContactsClient({
               resetForm();
               setEditingContactId(null);
               const safeReturnTo = sanitizeContactsReturnTo(returnTo);
-              if (!editingContactId && createMode && safeReturnTo) {
+              if (safeReturnTo && (createMode || isEditing)) {
                 router.push(safeReturnTo);
                 return;
               }
               setMessage({
                 type: `success`,
-                text: result.message ?? (editingContactId ? `Contact updated` : `Contact created`),
+                text: result.message ?? (isEditing ? `Contact updated` : `Contact created`),
               });
               router.refresh();
             });
@@ -371,15 +399,7 @@ export function ContactsClient({
                           disabled={isPending}
                           onClick={() => {
                             setEditingContactId(contact.id);
-                            setForm({
-                              email: contact.email ?? ``,
-                              name: contact.name ?? ``,
-                              street: contact.address?.street ?? ``,
-                              city: contact.address?.city ?? ``,
-                              state: contact.address?.state ?? ``,
-                              postalCode: contact.address?.postalCode ?? ``,
-                              country: contact.address?.country ?? ``,
-                            });
+                            setForm(toEditableForm(contact));
                             setMessage(null);
                           }}
                           className="rounded-xl border border-blue-400/20 px-3 py-2 text-sm text-blue-200 disabled:cursor-not-allowed disabled:opacity-50"

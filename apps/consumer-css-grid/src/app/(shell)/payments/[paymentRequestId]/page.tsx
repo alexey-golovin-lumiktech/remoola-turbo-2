@@ -1,8 +1,14 @@
 import Link from 'next/link';
 
-import { getDocuments, getPaymentMethods, getPaymentView } from '../../../../lib/consumer-api.server';
+import {
+  getContractDetails,
+  getDocuments,
+  getPaymentMethods,
+  getPaymentView,
+} from '../../../../lib/consumer-api.server';
 import { CreditCardIcon } from '../../../../shared/ui/icons/CreditCardIcon';
 import { PageHeader, Panel } from '../../../../shared/ui/shell-primitives';
+import { buildPaymentDetailHref, getPaymentFlowBackHref, parsePaymentFlowContext } from '../payment-flow-context';
 import { PaymentAttachmentsClient } from '../PaymentAttachmentsClient';
 import { PaymentDetailActionsClient } from '../PaymentDetailActionsClient';
 
@@ -53,17 +59,25 @@ export default async function PaymentDetailPage({
 }) {
   const { paymentRequestId } = await params;
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
-  const payment = await getPaymentView(paymentRequestId, { redirectTo: `/payments/${paymentRequestId}` });
+  const paymentFlowContext = parsePaymentFlowContext({
+    contractId: resolvedSearchParams?.contractId,
+    returnTo: resolvedSearchParams?.returnTo,
+  });
+  const detailPath = buildPaymentDetailHref(paymentRequestId, paymentFlowContext);
+  const [payment, contract] = await Promise.all([
+    getPaymentView(paymentRequestId, { redirectTo: detailPath }),
+    paymentFlowContext?.contractId ? getContractDetails(paymentFlowContext.contractId) : Promise.resolve(null),
+  ]);
   const checkoutSuccess = getSingleValue(resolvedSearchParams?.success) === `1`;
   const checkoutCanceled = getSingleValue(resolvedSearchParams?.canceled) === `1`;
   const attachmentPage = Math.max(1, Number(getSingleValue(resolvedSearchParams?.attachmentPage)) || 1);
   const paymentMethods =
     payment && payment.role === `PAYER` && payment.status === `PENDING`
-      ? await getPaymentMethods({ redirectTo: `/payments/${paymentRequestId}` })
+      ? await getPaymentMethods({ redirectTo: detailPath })
       : null;
   const availableDocuments =
     payment && payment.role === `REQUESTER` && payment.status === `DRAFT`
-      ? await getDocuments(attachmentPage, 20, { redirectTo: `/payments/${paymentRequestId}` })
+      ? await getDocuments(attachmentPage, 20, { redirectTo: detailPath })
       : null;
 
   return (
@@ -82,10 +96,20 @@ export default async function PaymentDetailPage({
       ) : null}
 
       <div className="mb-5">
-        <Link href="/payments" className="text-sm text-[var(--app-primary)] hover:text-[var(--app-primary-strong)]">
-          Back to payments
+        <Link
+          href={getPaymentFlowBackHref(paymentFlowContext)}
+          className="text-sm text-[var(--app-primary)] hover:text-[var(--app-primary-strong)]"
+        >
+          {paymentFlowContext?.contractId ? `Back to contract` : `Back to payments`}
         </Link>
       </div>
+
+      {contract ? (
+        <div className="mb-5 rounded-2xl border border-blue-400/20 bg-blue-500/10 px-4 py-3 text-sm text-blue-100">
+          Opened from contract: {contract.name?.trim() || contract.email || `Unknown contractor`}. Return to the
+          relationship workspace when this payment step is complete.
+        </div>
+      ) : null}
 
       {!payment ? (
         <Panel title="Payment details">
@@ -149,6 +173,7 @@ export default async function PaymentDetailPage({
               role={payment.role}
               paymentRail={payment.ledgerEntries[0]?.rail ?? null}
               paymentMethods={paymentMethods?.items ?? []}
+              paymentFlowContext={paymentFlowContext}
             />
 
             <Panel title="Ledger entries">
@@ -198,6 +223,8 @@ export default async function PaymentDetailPage({
                 availableDocumentsTotal={availableDocuments?.total ?? 0}
                 availableDocumentsPage={availableDocuments?.page ?? attachmentPage}
                 availableDocumentsPageSize={availableDocuments?.pageSize ?? 20}
+                contractId={paymentFlowContext?.contractId}
+                returnTo={paymentFlowContext?.returnTo}
               />
             </Panel>
           </div>

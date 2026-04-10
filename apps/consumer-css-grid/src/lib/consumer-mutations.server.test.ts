@@ -175,8 +175,9 @@ describe(`consumer css-grid ancillary routing`, () => {
   });
 
   async function loadSubject() {
+    const revalidatePath = jest.fn();
     jest.doMock(`next/cache`, () => ({
-      revalidatePath: jest.fn(),
+      revalidatePath,
     }));
     jest.doMock(`next/headers`, () => ({
       cookies: jest.fn(async () => ({
@@ -189,7 +190,7 @@ describe(`consumer css-grid ancillary routing`, () => {
     }));
 
     const subject = await import(`./consumer-mutations.server`);
-    return subject;
+    return { ...subject, revalidatePath };
   }
 
   it(`adds explicit css-grid appScope when creating a checkout session`, async () => {
@@ -216,6 +217,26 @@ describe(`consumer css-grid ancillary routing`, () => {
     );
     expect(headers.Cookie).toBe(`consumer_session=test-cookie`);
     expect(headers.origin).toBe(`https://grid.example.com`);
+  });
+
+  it(`preserves contract context when creating a checkout session`, async () => {
+    process.env.CONSUMER_CSS_GRID_APP_ORIGIN = `https://grid.example.com/path-ignored`;
+    const fetchMock = jest.fn() as jest.MockedFunction<typeof fetch>;
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ url: `https://checkout.example/session` }), { status: 200 }),
+    );
+    global.fetch = fetchMock;
+
+    const { createPaymentCheckoutSessionMutation } = await loadSubject();
+    await createPaymentCheckoutSessionMutation(`payment-request-1`, {
+      contractId: `contract-1`,
+      returnTo: `/contracts/contract-1`,
+    });
+
+    const [url] = fetchMock.mock.calls[0] as [URL | string, RequestInit | undefined];
+    expect(String(url)).toBe(
+      `https://api.example.com/consumer/stripe/payment-request-1/stripe-session?appScope=consumer-css-grid&contractId=contract-1&returnTo=%2Fcontracts%2Fcontract-1`,
+    );
   });
 
   it(`prefers an explicit canonical css-grid app origin over NEXT_PUBLIC_APP_ORIGIN`, async () => {
@@ -326,6 +347,25 @@ describe(`consumer css-grid ancillary routing`, () => {
     );
     expect(headers.Cookie).toBe(`consumer_session=test-cookie`);
     expect(headers.origin).toBe(`http://localhost:3003`);
+  });
+
+  it(`revalidates contract pages when sending a payment request from contract detail`, async () => {
+    const fetchMock = jest.fn() as jest.MockedFunction<typeof fetch>;
+    fetchMock.mockResolvedValue(new Response(null, { status: 200 }));
+    global.fetch = fetchMock;
+
+    const { sendPaymentRequestMutation, revalidatePath } = await loadSubject();
+    const result = await sendPaymentRequestMutation(`payment-request-4`, {
+      contractId: `contract-1`,
+      returnTo: `/contracts/contract-1`,
+    });
+
+    expect(result).toEqual({ ok: true, message: `Payment request sent` });
+    expect(revalidatePath).toHaveBeenCalledWith(`/payments`);
+    expect(revalidatePath).toHaveBeenCalledWith(`/payments/payment-request-4`);
+    expect(revalidatePath).toHaveBeenCalledWith(`/dashboard`);
+    expect(revalidatePath).toHaveBeenCalledWith(`/contracts`);
+    expect(revalidatePath).toHaveBeenCalledWith(`/contracts/contract-1`);
   });
 });
 
@@ -555,7 +595,10 @@ describe(`generateInvoiceMutation`, () => {
     global.fetch = fetchMock;
 
     const { generateInvoiceMutation, revalidatePath } = await loadSubject();
-    const result = await generateInvoiceMutation(`payment-request-1`);
+    const result = await generateInvoiceMutation(`payment-request-1`, {
+      contractId: `contract-1`,
+      returnTo: `/contracts/contract-1`,
+    });
 
     expect(result).toEqual({
       ok: true,
@@ -567,5 +610,84 @@ describe(`generateInvoiceMutation`, () => {
       message: `Invoice INV-1001 is ready`,
     });
     expect(revalidatePath).toHaveBeenCalledWith(`/payments/payment-request-1`);
+    expect(revalidatePath).toHaveBeenCalledWith(`/contracts`);
+    expect(revalidatePath).toHaveBeenCalledWith(`/contracts/contract-1`);
+  });
+});
+
+describe(`attachDocumentToDraftPaymentRequestsMutation`, () => {
+  const originalFetch = global.fetch;
+
+  beforeEach(() => {
+    jest.resetModules();
+    process.env.NEXT_PUBLIC_API_BASE_URL = `https://api.example.com`;
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    delete process.env.NEXT_PUBLIC_API_BASE_URL;
+    jest.clearAllMocks();
+  });
+
+  async function loadSubject() {
+    const revalidatePath = jest.fn();
+    jest.doMock(`next/cache`, () => ({
+      revalidatePath,
+    }));
+    jest.doMock(`next/headers`, () => ({
+      cookies: jest.fn(async () => ({
+        toString: (): string => `consumer_session=test-cookie`,
+      })),
+    }));
+    jest.doMock(`./consumer-api.server`, () => ({
+      getExchangeRatesBatch: jest.fn(),
+      findContactByExactEmail: jest.fn(),
+    }));
+
+    const subject = await import(`./consumer-mutations.server`);
+    return { ...subject, revalidatePath };
+  }
+
+  it(`attaches one document across multiple draft payments`, async () => {
+    const fetchMock = jest.fn() as jest.MockedFunction<typeof fetch>;
+    fetchMock
+      .mockResolvedValueOnce(new Response(null, { status: 200 }))
+      .mockResolvedValueOnce(new Response(null, { status: 200 }));
+    global.fetch = fetchMock;
+
+    const { attachDocumentToDraftPaymentRequestsMutation, revalidatePath } = await loadSubject();
+    const result = await attachDocumentToDraftPaymentRequestsMutation([`payment-1`, `payment-2`], `resource-1`);
+
+    expect(result).toEqual({
+      ok: true,
+      attachedCount: 2,
+      message: `Document attached to 2 draft payment requests.`,
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(revalidatePath).toHaveBeenCalledWith(`/payments/payment-1`);
+    expect(revalidatePath).toHaveBeenCalledWith(`/payments/payment-2`);
+  });
+
+  it(`surfaces partial success when one attach fails after earlier successes`, async () => {
+    const fetchMock = jest.fn() as jest.MockedFunction<typeof fetch>;
+    fetchMock
+      .mockResolvedValueOnce(new Response(null, { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ code: `API_ERROR`, message: `Draft became unavailable` }), { status: 409 }),
+      );
+    global.fetch = fetchMock;
+
+    const { attachDocumentToDraftPaymentRequestsMutation } = await loadSubject();
+    const result = await attachDocumentToDraftPaymentRequestsMutation([`payment-1`, `payment-2`], `resource-1`);
+
+    expect(result).toEqual({
+      ok: false,
+      attachedCount: 1,
+      error: {
+        code: `API_ERROR`,
+        message: `Document attached to 1 draft payment request before the operation stopped. Draft became unavailable`,
+      },
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });

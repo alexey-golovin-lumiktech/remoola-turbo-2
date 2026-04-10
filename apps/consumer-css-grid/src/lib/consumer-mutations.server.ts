@@ -5,7 +5,7 @@ import { randomUUID } from 'crypto';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 
-import { type TTheme } from '@remoola/api-types';
+import { sanitizeNextForRedirect, type TTheme } from '@remoola/api-types';
 
 import { SESSION_EXPIRED_ERROR_CODE } from './auth-failure';
 import {
@@ -122,8 +122,22 @@ export type DraftPaymentRequestsResult =
       ok: true;
       items: DraftPaymentRequestOption[];
       total: number;
+      page: number;
+      pageSize: number;
     }
   | { ok: false; error: { code: string; message: string } };
+
+type AttachDocumentToDraftPaymentsResult =
+  | {
+      ok: true;
+      attachedCount: number;
+      message: string;
+    }
+  | {
+      ok: false;
+      attachedCount: number;
+      error: { code: string; message: string; fields?: Record<string, string> };
+    };
 
 const APP_SCOPE = `consumer-css-grid`;
 const NETWORK_ERROR_MESSAGE = `The request could not be completed because the network request failed. Please try again.`;
@@ -192,12 +206,40 @@ function parseMajorAmountInput(value: string): number {
   return Number.isFinite(parsed) ? parsed : Number.NaN;
 }
 
+type PaymentFlowMutationContext = {
+  contractId?: string | null;
+  returnTo?: string | null;
+};
+
+function normalizePaymentFlowMutationContext(input?: PaymentFlowMutationContext | null) {
+  const contractId = input?.contractId?.trim() ?? ``;
+  const returnTo = sanitizeNextForRedirect(input?.returnTo, ``);
+
+  if (!contractId && !returnTo) {
+    return null;
+  }
+
+  return {
+    ...(contractId ? { contractId } : {}),
+    ...(returnTo ? { returnTo } : contractId ? { returnTo: `/contracts/${contractId}` } : {}),
+  };
+}
+
+function revalidateContractPaths(context?: PaymentFlowMutationContext | null) {
+  const normalized = normalizePaymentFlowMutationContext(context);
+  if (!normalized?.contractId) return;
+  revalidatePath(`/contracts`);
+  revalidatePath(`/contracts/${normalized.contractId}`);
+}
+
 export async function createPaymentRequestMutation(input: {
   email: string;
   amount: string;
   currencyCode: string;
   description?: string;
   dueDate?: string;
+  contractId?: string;
+  returnTo?: string;
 }): Promise<PaymentRequestCreateResult> {
   const email = input.email.trim().toLowerCase();
   const amount = parseMajorAmountInput(input.amount);
@@ -257,6 +299,7 @@ export async function createPaymentRequestMutation(input: {
   const payload = (await response.json().catch(() => null)) as { paymentRequestId?: string } | null;
   revalidatePath(`/payments`);
   revalidatePath(`/dashboard`);
+  revalidateContractPaths(input);
   return {
     ok: true,
     paymentRequestId: payload?.paymentRequestId,
@@ -270,6 +313,8 @@ export async function startPaymentMutation(input: {
   currencyCode: string;
   description?: string;
   method: `CREDIT_CARD` | `BANK_ACCOUNT`;
+  contractId?: string;
+  returnTo?: string;
 }): Promise<StartPaymentResult> {
   const email = input.email.trim().toLowerCase();
   const amount = parseMajorAmountInput(input.amount);
@@ -345,6 +390,7 @@ export async function startPaymentMutation(input: {
   } | null;
   revalidatePath(`/payments`);
   revalidatePath(`/dashboard`);
+  revalidateContractPaths(input);
   return {
     ok: true,
     paymentRequestId: payload?.paymentRequestId,
@@ -353,7 +399,10 @@ export async function startPaymentMutation(input: {
   };
 }
 
-export async function sendPaymentRequestMutation(paymentRequestId: string): Promise<MutationResult> {
+export async function sendPaymentRequestMutation(
+  paymentRequestId: string,
+  context?: PaymentFlowMutationContext | null,
+): Promise<MutationResult> {
   const id = paymentRequestId.trim();
   if (!id) return invalid(`Invalid payment request id`);
 
@@ -384,6 +433,7 @@ export async function sendPaymentRequestMutation(paymentRequestId: string): Prom
   revalidatePath(`/payments`);
   revalidatePath(`/payments/${id}`);
   revalidatePath(`/dashboard`);
+  revalidateContractPaths(context);
   return { ok: true, message: `Payment request sent` };
 }
 
@@ -435,7 +485,10 @@ export async function attachDocumentsToPaymentRequestMutation(
   };
 }
 
-export async function getDraftPaymentRequestsAction(): Promise<DraftPaymentRequestsResult> {
+export async function getDraftPaymentRequestsAction(input?: {
+  page?: number;
+  pageSize?: number;
+}): Promise<DraftPaymentRequestsResult> {
   const baseUrl = configuredBaseUrl();
   if (!baseUrl) {
     return {
@@ -445,9 +498,11 @@ export async function getDraftPaymentRequestsAction(): Promise<DraftPaymentReque
   }
 
   const cookieStore = await cookies();
+  const safePage = Math.max(1, Math.floor(Number(input?.page)) || 1);
+  const safePageSize = Math.min(100, Math.max(1, Math.floor(Number(input?.pageSize)) || 20));
   const searchParams = new URLSearchParams({
-    page: `1`,
-    pageSize: `50`,
+    page: String(safePage),
+    pageSize: String(safePageSize),
     status: `DRAFT`,
     role: `REQUESTER`,
   });
@@ -478,6 +533,71 @@ export async function getDraftPaymentRequestsAction(): Promise<DraftPaymentReque
       counterpartyEmail: payment.counterparty?.email ?? null,
     })),
     total: typeof payload?.total === `number` ? payload.total : items.length,
+    page: typeof payload?.page === `number` ? payload.page : safePage,
+    pageSize: typeof payload?.pageSize === `number` ? payload.pageSize : safePageSize,
+  };
+}
+
+export async function attachDocumentToDraftPaymentRequestsMutation(
+  paymentRequestIds: string[],
+  documentId: string,
+): Promise<AttachDocumentToDraftPaymentsResult> {
+  const normalizedDocumentId = documentId.trim();
+  const normalizedPaymentRequestIds = Array.from(
+    new Set(paymentRequestIds.map((paymentRequestId) => paymentRequestId.trim()).filter(Boolean)),
+  );
+
+  if (!normalizedDocumentId) {
+    return {
+      ok: false,
+      attachedCount: 0,
+      error: { code: `VALIDATION_ERROR`, message: `Invalid document id` },
+    };
+  }
+  if (normalizedPaymentRequestIds.length === 0) {
+    return {
+      ok: false,
+      attachedCount: 0,
+      error: {
+        code: `VALIDATION_ERROR`,
+        message: `Please choose at least one draft payment request`,
+        fields: { paymentRequestIds: `Select one or more draft payment requests` },
+      },
+    };
+  }
+
+  let attachedCount = 0;
+  for (const paymentRequestId of normalizedPaymentRequestIds) {
+    const result = await attachDocumentsToPaymentRequestMutation(paymentRequestId, [normalizedDocumentId]);
+    if (!result.ok) {
+      if (attachedCount > 0) {
+        return {
+          ok: false,
+          attachedCount,
+          error: {
+            ...result.error,
+            message:
+              `Document attached to ${attachedCount} draft payment request${attachedCount === 1 ? `` : `s`} ` +
+              `before the operation stopped. ${result.error.message}`,
+          },
+        };
+      }
+      return {
+        ok: false,
+        attachedCount: 0,
+        error: result.error,
+      };
+    }
+    attachedCount += 1;
+  }
+
+  return {
+    ok: true,
+    attachedCount,
+    message:
+      attachedCount === 1
+        ? `Document attached to draft payment request.`
+        : `Document attached to ${attachedCount} draft payment requests.`,
   };
 }
 
@@ -522,6 +642,7 @@ export async function detachDocumentFromPaymentRequestMutation(
 export async function payWithSavedMethodMutation(
   paymentRequestId: string,
   paymentMethodId: string,
+  context?: PaymentFlowMutationContext | null,
 ): Promise<SavedMethodPaymentResult> {
   const id = paymentRequestId.trim();
   const methodId = paymentMethodId.trim();
@@ -580,6 +701,7 @@ export async function payWithSavedMethodMutation(
     revalidatePath(`/payments`);
     revalidatePath(`/payments/${id}`);
     revalidatePath(`/dashboard`);
+    revalidateContractPaths(context);
   }
 
   return {
@@ -593,7 +715,10 @@ export async function payWithSavedMethodMutation(
   };
 }
 
-export async function createPaymentCheckoutSessionMutation(paymentRequestId: string): Promise<CheckoutSessionResult> {
+export async function createPaymentCheckoutSessionMutation(
+  paymentRequestId: string,
+  context?: PaymentFlowMutationContext | null,
+): Promise<CheckoutSessionResult> {
   const id = paymentRequestId.trim();
   if (!id) {
     return {
@@ -613,6 +738,13 @@ export async function createPaymentCheckoutSessionMutation(paymentRequestId: str
   const cookieStore = await cookies();
   const checkoutUrl = new URL(`${baseUrl}/consumer/stripe/${id}/stripe-session`);
   checkoutUrl.searchParams.set(`appScope`, APP_SCOPE);
+  const paymentFlowContext = normalizePaymentFlowMutationContext(context);
+  if (paymentFlowContext?.contractId) {
+    checkoutUrl.searchParams.set(`contractId`, paymentFlowContext.contractId);
+  }
+  if (paymentFlowContext?.returnTo) {
+    checkoutUrl.searchParams.set(`returnTo`, paymentFlowContext.returnTo);
+  }
   const response = await fetch(checkoutUrl, {
     method: `POST`,
     headers: {
@@ -635,7 +767,10 @@ export async function createPaymentCheckoutSessionMutation(paymentRequestId: str
   };
 }
 
-export async function generateInvoiceMutation(paymentRequestId: string): Promise<InvoiceGenerationResult> {
+export async function generateInvoiceMutation(
+  paymentRequestId: string,
+  context?: PaymentFlowMutationContext | null,
+): Promise<InvoiceGenerationResult> {
   const id = paymentRequestId.trim();
   if (!id) {
     return {
@@ -675,6 +810,7 @@ export async function generateInvoiceMutation(paymentRequestId: string): Promise
   revalidatePath(`/payments/${id}`);
   revalidatePath(`/payments`);
   revalidatePath(`/documents`);
+  revalidateContractPaths(context);
 
   return {
     ok: true,

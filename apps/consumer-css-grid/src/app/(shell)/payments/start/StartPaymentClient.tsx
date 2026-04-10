@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 
 import { CURRENCY_CODES } from '@remoola/api-types';
 
+import { getStartPaymentResultHref, type PaymentFlowContext } from '../payment-flow-context';
 import {
   buildUnknownRecipientContactsUrl,
   normalizeEmail,
@@ -23,11 +24,18 @@ import { Panel } from '../../../../shared/ui/shell-primitives';
 type Props = {
   preferredCurrency: string;
   resumeFromDraft: boolean;
+  initialEmail?: string;
+  paymentFlowContext?: PaymentFlowContext | null;
 };
 
-export function StartPaymentClient({ preferredCurrency, resumeFromDraft }: Props) {
+export function StartPaymentClient({
+  preferredCurrency,
+  resumeFromDraft,
+  initialEmail = ``,
+  paymentFlowContext,
+}: Props) {
   const router = useRouter();
-  const [email, setEmail] = useState(``);
+  const [email, setEmail] = useState(initialEmail);
   const [amount, setAmount] = useState(``);
   const [currencyCode, setCurrencyCode] = useState(preferredCurrency || `USD`);
   const [description, setDescription] = useState(``);
@@ -57,18 +65,18 @@ export function StartPaymentClient({ preferredCurrency, resumeFromDraft }: Props
   }, [preferredCurrency, resumeFromDraft]);
 
   async function submitStartPayment(draft: StartPaymentDraft) {
-    const result = await startPaymentMutation(draft);
+    const result = await startPaymentMutation({
+      ...draft,
+      contractId: paymentFlowContext?.contractId,
+      returnTo: paymentFlowContext?.returnTo,
+    });
     if (!result.ok) {
       if (handleSessionExpiredError(result.error)) return false;
       setMessage({ type: `error`, text: result.error.message });
       return false;
     }
     setMessage({ type: `success`, text: result.message ?? `Payment created` });
-    if (result.paymentRequestId) {
-      router.push(`/payments/${result.paymentRequestId}`);
-      return true;
-    }
-    router.push(`/payments?role=PAYER&status=PENDING`);
+    router.push(getStartPaymentResultHref(result.paymentRequestId, paymentFlowContext));
     return true;
   }
 
@@ -159,7 +167,7 @@ export function StartPaymentClient({ preferredCurrency, resumeFromDraft }: Props
     if (!pendingDraft) return;
     sessionStorage.setItem(START_PAYMENT_DRAFT_STORAGE_KEY, JSON.stringify(pendingDraft));
     setConfirmOpen(false);
-    router.push(buildUnknownRecipientContactsUrl(pendingDraft.email));
+    router.push(buildUnknownRecipientContactsUrl(pendingDraft.email, paymentFlowContext));
   }
 
   return (
@@ -292,7 +300,7 @@ export function StartPaymentClient({ preferredCurrency, resumeFromDraft }: Props
               type="button"
               disabled={isSubmitting || isConfirmLoading}
               onClick={() => {
-                setEmail(``);
+                setEmail(initialEmail);
                 setAmount(``);
                 setCurrencyCode(preferredCurrency || `USD`);
                 setDescription(``);

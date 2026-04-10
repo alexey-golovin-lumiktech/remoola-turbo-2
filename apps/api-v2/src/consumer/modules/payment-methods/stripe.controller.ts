@@ -65,10 +65,17 @@ export class ConsumerStripeController {
     @Identity() consumer: ConsumerModel, //
     @Param(`paymentRequestId`) paymentRequestId: string,
     @Query(`appScope`) appScope: string | undefined,
+    @Query(`contractId`) contractId: string | undefined,
+    @Query(`returnTo`) returnTo: string | undefined,
     @Req() req: express.Request,
   ) {
     const frontendBaseUrl = this.resolveFrontendBaseUrl(this.requireClaimedConsumerAppScope(req, appScope));
-    return this.service.createStripeSession(consumer.id, paymentRequestId, frontendBaseUrl);
+    return this.service.createStripeSession(
+      consumer.id,
+      paymentRequestId,
+      frontendBaseUrl,
+      contractId || returnTo ? { contractId, returnTo } : undefined,
+    );
   }
 
   @Post(`intents`)

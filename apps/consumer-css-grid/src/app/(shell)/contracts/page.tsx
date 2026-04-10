@@ -1,19 +1,14 @@
+import { parseContractsSearchParams, type ContractsSearchParams } from './contracts-search-params';
 import { ContractsClient } from './ContractsClient';
 import { getContracts } from '../../../lib/consumer-api.server';
 import { DocumentIcon } from '../../../shared/ui/icons/DocumentIcon';
 import { PageHeader } from '../../../shared/ui/shell-primitives';
 
-type SearchParams = Record<string, string | string[] | undefined>;
-
-function getSingleValue(value: string | string[] | undefined) {
-  return typeof value === `string` ? value : Array.isArray(value) ? (value[0] ?? ``) : ``;
-}
-
-export default async function ContractsPage({ searchParams }: { searchParams?: Promise<SearchParams> }) {
+export default async function ContractsPage({ searchParams }: { searchParams?: Promise<ContractsSearchParams> }) {
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
-  const page = Math.max(1, Number(getSingleValue(resolvedSearchParams?.page)) || 1);
-  const pageSize = Math.max(1, Number(getSingleValue(resolvedSearchParams?.pageSize)) || 10);
-  const contractsResponse = await getContracts(page, pageSize);
+  const { page, pageSize, query, status, hasDocuments, hasPayments, sort } =
+    parseContractsSearchParams(resolvedSearchParams);
+  const contractsResponse = await getContracts({ page, pageSize, query, status, hasDocuments, hasPayments, sort });
   const contracts = contractsResponse?.items ?? [];
 
   return (
@@ -24,6 +19,11 @@ export default async function ContractsPage({ searchParams }: { searchParams?: P
         total={contractsResponse?.total ?? contracts.length}
         page={contractsResponse?.page ?? page}
         pageSize={contractsResponse?.pageSize ?? pageSize}
+        initialQuery={query}
+        initialStatus={status}
+        initialHasDocuments={hasDocuments}
+        initialHasPayments={hasPayments}
+        initialSort={sort}
       />
     </div>
   );

@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import Stripe from 'stripe';
 
+import { sanitizeNextForRedirect } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
 import { errorCodes } from '@remoola/shared-constants';
 
@@ -21,6 +22,10 @@ import { PrismaService } from '../../../shared/prisma.service';
 import { getCurrencyFractionDigits } from '../../../shared-common';
 
 type PaymentRequestSettlementTransitionClient = Pick<Prisma.TransactionClient, `paymentRequestModel`>;
+type StripeSessionRedirectContext = {
+  contractId?: string | null;
+  returnTo?: string | null;
+};
 
 @Injectable()
 export class ConsumerStripeService {
@@ -74,6 +79,29 @@ export class ConsumerStripeService {
       return (error as { type?: unknown }).type === `StripeCardError`;
     }
     return false;
+  }
+
+  private buildStripeSessionReturnUrl(
+    frontendBaseUrl: string,
+    paymentRequestId: string,
+    outcome: `success` | `canceled`,
+    context?: StripeSessionRedirectContext,
+  ) {
+    const url = new URL(`${frontendBaseUrl}/payments/${paymentRequestId}`);
+    const contractId = context?.contractId?.trim() ?? ``;
+    const returnTo = sanitizeNextForRedirect(context?.returnTo, ``);
+
+    if (contractId) {
+      url.searchParams.set(`contractId`, contractId);
+    }
+    if (returnTo) {
+      url.searchParams.set(`returnTo`, returnTo);
+    } else if (contractId) {
+      url.searchParams.set(`returnTo`, `/contracts/${contractId}`);
+    }
+    url.searchParams.set(outcome, `1`);
+
+    return url.toString();
   }
 
   private isNonReusableSavedMethodError(error: unknown): boolean {
@@ -265,7 +293,12 @@ export class ConsumerStripeService {
     return paymentRequest;
   }
 
-  async createStripeSession(consumerId: string, paymentRequestId: string, frontendBaseUrl: string) {
+  async createStripeSession(
+    consumerId: string,
+    paymentRequestId: string,
+    frontendBaseUrl: string,
+    context?: StripeSessionRedirectContext,
+  ) {
     const pr = await this.getPaymentRequestForPayer(consumerId, paymentRequestId);
     const { customerId } = await this.ensureStripeCustomer(consumerId);
 
@@ -293,8 +326,8 @@ export class ConsumerStripeService {
         payment_intent_data: {
           setup_future_usage: `off_session`,
         },
-        success_url: `${frontendBaseUrl}/payments/${pr.id}?success=1`,
-        cancel_url: `${frontendBaseUrl}/payments/${pr.id}?canceled=1`,
+        success_url: this.buildStripeSessionReturnUrl(frontendBaseUrl, pr.id, `success`, context),
+        cancel_url: this.buildStripeSessionReturnUrl(frontendBaseUrl, pr.id, `canceled`, context),
         metadata: { paymentRequestId: pr.id, consumerId },
       },
       { idempotencyKey: this.buildCheckoutSessionIdempotencyKey(pr.id) },

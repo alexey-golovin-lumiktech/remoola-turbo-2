@@ -1,6 +1,6 @@
 import { sanitizeContactsReturnTo } from './contacts-return-to';
 import { ContactsClient } from './ContactsClient';
-import { getContacts, searchContacts } from '../../../lib/consumer-api.server';
+import { getContact, getContacts, searchContacts } from '../../../lib/consumer-api.server';
 import { UsersIcon } from '../../../shared/ui/icons/UsersIcon';
 import { PageHeader } from '../../../shared/ui/shell-primitives';
 
@@ -20,8 +20,10 @@ export default async function ContactsPage({ searchParams }: { searchParams?: Pr
   const searchResults = searchMode ? await searchContacts(query) : null;
   const contacts = searchMode ? (searchResults ?? []) : (contactsResponse?.items ?? []);
   const createMode = getSingleValue(resolvedSearchParams?.create) === `1`;
+  const editContactId = getSingleValue(resolvedSearchParams?.edit).trim();
   const initialEmail = getSingleValue(resolvedSearchParams?.email);
   const returnTo = sanitizeContactsReturnTo(getSingleValue(resolvedSearchParams?.returnTo));
+  const initialEditingContact = editContactId ? await getContact(editContactId) : null;
 
   return (
     <div>
@@ -30,6 +32,7 @@ export default async function ContactsPage({ searchParams }: { searchParams?: Pr
         contacts={contacts}
         createMode={createMode}
         initialEmail={initialEmail}
+        initialEditingContact={initialEditingContact}
         returnTo={returnTo}
         initialQuery={query}
         searchMode={searchMode}

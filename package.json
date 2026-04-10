@@ -11,7 +11,7 @@
   ],
   "scripts": {
     "build": "yarn workspace @remoola/database-2 run db:generate && turbo run build",
-    "build:vercel-guard": "turbo run build --filter=@remoola/api --filter=@remoola/consumer --filter=@remoola/admin --filter=@remoola/consumer-mobile",
+    "build:vercel-guard": "turbo run build --filter=@remoola/api --filter=@remoola/api-v2 --filter=@remoola/consumer --filter=@remoola/consumer-css-grid --filter=@remoola/admin --filter=@remoola/consumer-mobile",
     "clean": "turbo run clean && rm -rf node_modules",
     "db:generate": "yarn workspace @remoola/database-2 run db:generate",
     "db:validate": "yarn workspace @remoola/database-2 run db:validate",
@@ -26,11 +26,14 @@
     "postinstall": "turbo run build --filter=\"./packages/*\" --filter=\"!@remoola/db-fixtures\" --filter=\"!@remoola/test-db\" --filter=\"!@remoola/api-e2e\"",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
+    "typecheck:v2-apps": "yarn workspace @remoola/consumer-css-grid run typecheck && yarn workspace @remoola/api-v2 run typecheck",
     "typecheck:watch": "turbo run typecheck:watch --parallel",
     "test": "TERM=dumb NO_COLOR=1 node ./scripts/ensure-local-development.js root:test && turbo run test",
     "test-db:cleanup": "TERM=dumb NO_COLOR=1 node ./scripts/cleanup-stale-test-dbs.js",
     "test:e2e": "TERM=dumb NO_COLOR=1 node ./scripts/ensure-local-development.js root:test:e2e && node ./scripts/cleanup-stale-test-dbs.js && turbo run test:e2e",
     "test:e2e:fast": "TERM=dumb NO_COLOR=1 node ./scripts/ensure-local-development.js root:test:e2e:fast && node ./scripts/cleanup-stale-test-dbs.js && turbo run test:e2e:fast",
+    "test:v2-apps": "yarn workspace @remoola/consumer-css-grid run test && yarn workspace @remoola/api-v2 run test && yarn workspace @remoola/api-v2 run test:e2e",
+    "verify:v2-apps": "yarn build:vercel-guard && yarn typecheck:v2-apps && yarn test:v2-apps",
     "dev:api": "yarn workspace @remoola/api run dev",
     "lint:api": "yarn workspace @remoola/api run lint",
     "lint:fix:api": "yarn workspace @remoola/api run lint --fix",
@@ -53,7 +56,8 @@
     "turbo:dev:consumer": "turbo run dev --filter=@remoola/consumer",
     "turbo:dev:admin": "turbo run dev --filter=@remoola/admin",
     "turbo:dev:consumer-mobile": "turbo run dev --filter=@remoola/consumer-mobile",
-    "lint:fix:apps": "yarn lint:fix:api && yarn lint:fix:api-v2 && yarn lint:fix:consumer && yarn lint:fix:admin && yarn lint:fix:consumer-mobile && yarn lint:fix:consumer-css-grid"
+    "lint:fix:apps": "yarn lint:fix:api && yarn lint:fix:api-v2 && yarn lint:fix:consumer && yarn lint:fix:admin && yarn lint:fix:consumer-mobile && yarn lint:fix:consumer-css-grid",
+    "lint:fix:v2-apps": "yarn lint:fix:api-v2 && yarn lint:fix:consumer-css-grid"
   },
   "dependencies": {},
   "devDependencies": {

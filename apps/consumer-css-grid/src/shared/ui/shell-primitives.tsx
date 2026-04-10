@@ -3,7 +3,17 @@ import { type ReactNode } from 'react';
 
 /* ── PageHeader ──────────────────────────────────────────── */
 
-export function PageHeader({ title, subtitle, icon }: { title: string; subtitle?: string; icon: ReactNode }) {
+export function PageHeader({
+  title,
+  subtitle,
+  icon,
+  action,
+}: {
+  title: string;
+  subtitle?: string;
+  icon: ReactNode;
+  action?: ReactNode;
+}) {
   const sub = subtitle ?? `Mobile first workspace for finance operations`;
   return (
     <>
@@ -16,16 +26,20 @@ export function PageHeader({ title, subtitle, icon }: { title: string; subtitle?
           <div>
             <h1 className="text-5xl font-semibold tracking-tight text-[var(--app-text)]">{title}</h1>
             <p className="mt-2 text-lg text-[var(--app-text-muted)]">{sub}</p>
+            {action ? <div className="mt-3">{action}</div> : null}
           </div>
         </div>
       </section>
 
       {/* Desktop: plain h1 */}
-      <section className="mb-6 hidden md:block">
-        <h1 className="text-4xl font-semibold tracking-tight text-[var(--app-text)]">{title}</h1>
-        <p className="mt-1 text-[var(--app-text-muted)]">
-          Manage balances, payments, documents, compliance, and account settings.
-        </p>
+      <section className="mb-6 hidden md:flex items-end justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-semibold tracking-tight text-[var(--app-text)]">{title}</h1>
+          <p className="mt-1 text-[var(--app-text-muted)]">
+            Manage balances, payments, documents, compliance, and account settings.
+          </p>
+        </div>
+        {action ? <div>{action}</div> : null}
       </section>
     </>
   );
