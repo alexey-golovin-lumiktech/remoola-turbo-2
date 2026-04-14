@@ -1,4 +1,7 @@
 import { PaymentsClient } from './PaymentsClient';
+import { getContextualHelpGuides, HELP_CONTEXT_ROUTE } from '../../../features/help/get-contextual-help-guides';
+import { HELP_GUIDE_SLUG } from '../../../features/help/guide-registry';
+import { HelpContextualGuides } from '../../../features/help/ui';
 import { getContacts, getExchangeCurrencies, getPayments, getSettings } from '../../../lib/consumer-api.server';
 import {
   normalizePaymentRequestContacts,
@@ -57,10 +60,26 @@ export default async function PaymentsPage({ searchParams }: { searchParams?: Pr
   ]);
   const paymentRequestContacts = normalizePaymentRequestContacts(contactsResponse);
   const paymentRequestCurrencies = normalizePaymentRequestCurrencies(exchangeCurrencies);
+  const paymentsHelpGuides = getContextualHelpGuides({
+    route: HELP_CONTEXT_ROUTE.PAYMENTS,
+    preferredSlugs: [
+      HELP_GUIDE_SLUG.PAYMENTS_OVERVIEW,
+      HELP_GUIDE_SLUG.PAYMENTS_CREATE_REQUEST,
+      HELP_GUIDE_SLUG.PAYMENTS_START_PAYMENT,
+      HELP_GUIDE_SLUG.PAYMENTS_STATUSES,
+    ],
+    limit: 4,
+  });
 
   return (
     <div>
       <PageHeader title="Payments" icon={<CreditCardIcon className="h-10 w-10 text-white" />} />
+      <HelpContextualGuides
+        guides={paymentsHelpGuides}
+        title="Find the right payment flow faster"
+        description="These guides help you choose between request, payer-side start, and status-review workflows before you dig into a specific payment."
+        className="mb-5"
+      />
       <PaymentsClient
         payments={paymentsResponse?.items ?? []}
         total={paymentsResponse?.total ?? 0}

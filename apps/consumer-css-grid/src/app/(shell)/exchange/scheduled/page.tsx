@@ -1,5 +1,8 @@
 import Link from 'next/link';
 
+import { getContextualHelpGuides, HELP_CONTEXT_ROUTE } from '../../../../features/help/get-contextual-help-guides';
+import { HELP_GUIDE_SLUG } from '../../../../features/help/guide-registry';
+import { HelpContextualGuides } from '../../../../features/help/ui';
 import {
   getAvailableBalances,
   getExchangeCurrencies,
@@ -26,6 +29,15 @@ export default async function ExchangeScheduledPage({
   ]);
   const currencyCodes = (currencies ?? []).map((currency) => currency.code);
   const [fromCurrency = `USD`, toCurrency = `EUR`] = pickTopCurrencies(currencyCodes);
+  const exchangeScheduledHelpGuides = getContextualHelpGuides({
+    route: HELP_CONTEXT_ROUTE.EXCHANGE_SCHEDULED,
+    preferredSlugs: [
+      HELP_GUIDE_SLUG.EXCHANGE_OVERVIEW,
+      HELP_GUIDE_SLUG.EXCHANGE_CONVERT_AND_AUTOMATE,
+      HELP_GUIDE_SLUG.EXCHANGE_COMMON_ISSUES,
+    ],
+    limit: 3,
+  });
 
   return (
     <div>
@@ -38,6 +50,13 @@ export default async function ExchangeScheduledPage({
           ← Back to Exchange
         </Link>
       </div>
+      <HelpContextualGuides
+        guides={exchangeScheduledHelpGuides}
+        compact
+        title="Plan future conversions without losing exchange context"
+        description="These guides stay focused on scheduled conversions: when to use future execution, how automation differs from immediate exchange, and where to look when a pending conversion does not behave as expected."
+        className="mb-5"
+      />
       <ExchangeScheduledSection
         scheduled={scheduledResponse?.items ?? []}
         currencies={currencies ?? []}

@@ -7,6 +7,9 @@ import { useEffect, useMemo, useState, useTransition } from 'react';
 import { AUTH_NOTICE_QUERY, CURRENCY_CODES, THEME, THEMES, type TTheme } from '@remoola/api-types';
 
 import { getPasswordPanelCopy } from '../../../features/auth/recovery';
+import { getContextualHelpGuides, HELP_CONTEXT_ROUTE } from '../../../features/help/get-contextual-help-guides';
+import { HELP_GUIDE_SLUG } from '../../../features/help/guide-registry';
+import { HelpContextualGuides, HelpInlineGuides } from '../../../features/help/ui';
 import { type ProfileResponse, type SettingsResponse } from '../../../lib/consumer-api.server';
 import {
   changePasswordMutation,
@@ -319,6 +322,21 @@ export function SettingsClient({ profile, settings, logoutAllFailed = false }: P
   const secondaryButtonClass = `flex w-full items-center justify-center rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface)] px-4 py-3 text-sm font-medium text-[var(--app-text)] shadow-[var(--app-shadow)] transition hover:bg-[var(--app-surface-strong)]`;
   const dangerButtonClass = `flex w-full items-center justify-center rounded-2xl border border-transparent bg-[var(--app-danger-soft)] px-4 py-3 text-sm font-medium text-[var(--app-danger-text)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60`;
   const verificationCardState = getSettingsVerificationCardState(profile?.verification);
+  const settingsHelpGuides = getContextualHelpGuides({
+    route: HELP_CONTEXT_ROUTE.SETTINGS,
+    preferredSlugs: [HELP_GUIDE_SLUG.SETTINGS_PROFILE_AND_SECURITY, HELP_GUIDE_SLUG.VERIFICATION_HOW_IT_WORKS],
+    limit: 3,
+  });
+  const settingsVerificationHelpGuides = getContextualHelpGuides({
+    route: HELP_CONTEXT_ROUTE.SETTINGS,
+    preferredSlugs: [HELP_GUIDE_SLUG.VERIFICATION_HOW_IT_WORKS, HELP_GUIDE_SLUG.SETTINGS_PROFILE_AND_SECURITY],
+    limit: 2,
+  });
+  const settingsPasswordHelpGuides = getContextualHelpGuides({
+    route: HELP_CONTEXT_ROUTE.SETTINGS,
+    preferredSlugs: [HELP_GUIDE_SLUG.SETTINGS_PROFILE_AND_SECURITY, HELP_GUIDE_SLUG.VERIFICATION_HOW_IT_WORKS],
+    limit: 2,
+  });
 
   return (
     <div className="space-y-5">
@@ -333,6 +351,13 @@ export function SettingsClient({ profile, settings, logoutAllFailed = false }: P
           {message.text}
         </div>
       ) : null}
+
+      <HelpContextualGuides
+        guides={settingsHelpGuides}
+        compact
+        title="Need help with profile, preferences, or security?"
+        description="These guides explain how settings sections save independently, how verification status affects next steps, and why password changes return you to sign-in."
+      />
 
       <section className="grid grid-cols-1 gap-5 xl:grid-cols-[0.9fr_1.1fr]" data-testid={`settings-action-hub`}>
         <Panel title="Quick links" aside="Action hub">
@@ -391,6 +416,10 @@ export function SettingsClient({ profile, settings, logoutAllFailed = false }: P
               {verificationCardState.showAction ? (
                 <DashboardVerificationAction verification={profile?.verification} dashboardUnavailable={false} />
               ) : null}
+              <HelpInlineGuides
+                guides={settingsVerificationHelpGuides}
+                title="Need help interpreting this verification state?"
+              />
             </div>
           </Panel>
         </div>
@@ -801,6 +830,10 @@ export function SettingsClient({ profile, settings, logoutAllFailed = false }: P
                     ? passwordPanelCopy.buttonReady
                     : `Complete password requirements`}
             </button>
+            <HelpInlineGuides
+              guides={settingsPasswordHelpGuides}
+              title="Need help with password rules or what happens after save?"
+            />
           </div>
         </Panel>
 

@@ -16,7 +16,6 @@ export default async function ResetPasswordConfirmPage({ searchParams }: ResetPa
       : Array.isArray(tokenParam) && tokenParam[0]
         ? tokenParam[0]
         : ``;
-
   if (!token) {
     return (
       <div className={styles.root}>
@@ -33,7 +32,6 @@ export default async function ResetPasswordConfirmPage({ searchParams }: ResetPa
               </Link>
             </div>
           </div>
-
           <p className={styles.footer}>
             <Link href="/login" prefetch={false} className={styles.link}>
               Back to sign in

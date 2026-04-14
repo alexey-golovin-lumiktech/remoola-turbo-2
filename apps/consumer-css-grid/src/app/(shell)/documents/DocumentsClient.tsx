@@ -6,6 +6,9 @@ import { useMemo, useRef, useState, useTransition } from 'react';
 
 import { AttachToPaymentModal } from './AttachToPaymentModal';
 import { DocumentPreviewPanel } from './DocumentPreviewPanel';
+import { getContextualHelpGuides, HELP_CONTEXT_ROUTE } from '../../../features/help/get-contextual-help-guides';
+import { HELP_GUIDE_SLUG } from '../../../features/help/guide-registry';
+import { HelpContextualGuides, HelpInlineGuides } from '../../../features/help/ui';
 import { SESSION_EXPIRED_ERROR_CODE } from '../../../lib/auth-failure';
 import {
   bulkDeleteDocumentsMutation,
@@ -173,6 +176,30 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
   const allDeletableSelected =
     deletableDocumentIds.length > 0 &&
     deletableDocumentIds.every((documentId) => selectedDocumentIds.includes(documentId));
+  const documentsHelpGuides = getContextualHelpGuides({
+    route: HELP_CONTEXT_ROUTE.DOCUMENTS,
+    preferredSlugs: [
+      HELP_GUIDE_SLUG.DOCUMENTS_OVERVIEW,
+      HELP_GUIDE_SLUG.DOCUMENTS_UPLOAD_AND_ATTACH,
+      HELP_GUIDE_SLUG.DOCUMENTS_COMMON_ISSUES,
+    ],
+    limit: 3,
+  });
+  const emptyStateHelpGuides = getContextualHelpGuides({
+    route: HELP_CONTEXT_ROUTE.DOCUMENTS,
+    preferredSlugs: [HELP_GUIDE_SLUG.DOCUMENTS_UPLOAD_AND_ATTACH, HELP_GUIDE_SLUG.DOCUMENTS_OVERVIEW],
+    limit: 2,
+  });
+  const blockedStateHelpGuides = getContextualHelpGuides({
+    route: HELP_CONTEXT_ROUTE.DOCUMENTS,
+    preferredSlugs: [HELP_GUIDE_SLUG.DOCUMENTS_COMMON_ISSUES, HELP_GUIDE_SLUG.DOCUMENTS_UPLOAD_AND_ATTACH],
+    limit: 2,
+  });
+  const deleteBlockedHelpGuides = getContextualHelpGuides({
+    route: HELP_CONTEXT_ROUTE.DOCUMENTS,
+    preferredSlugs: [HELP_GUIDE_SLUG.DOCUMENTS_COMMON_ISSUES],
+    limit: 1,
+  });
 
   const applyPage = (nextPage: number) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -227,6 +254,17 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
             />
           )}
         </div>
+        <HelpContextualGuides
+          guides={documentsHelpGuides}
+          compact
+          className="mb-4"
+          title={contractContext ? `Need help using contract-linked files?` : `Need help managing documents?`}
+          description={
+            contractContext
+              ? `These guides explain how contract-linked files, document uploads, and payment attachments fit together without leaving this route family.`
+              : `These guides explain uploads, attachments, and the delete restrictions that appear once a file becomes part of a payment flow.`
+          }
+        />
         {isContractMode ? (
           <div className="mb-4 text-sm text-white/45">
             Upload remains in the full document library. This mode stays focused on files already tied to the current
@@ -285,7 +323,16 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
         )}
         {documents.length === 0 ? (
           <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-10 text-center text-sm text-white/45">
-            {contractContext ? `No files are linked to this contract yet.` : `No documents uploaded yet.`}
+            <div>{contractContext ? `No files are linked to this contract yet.` : `No documents uploaded yet.`}</div>
+            <HelpInlineGuides
+              guides={emptyStateHelpGuides}
+              title={
+                contractContext
+                  ? `Need help understanding how files reach this contract view?`
+                  : `Need help uploading the first document or attaching it later?`
+              }
+              className="mx-auto mt-4 max-w-3xl text-left"
+            />
           </div>
         ) : (
           <div>
@@ -334,6 +381,13 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
                           ? `1 document is attached to a payment that is no longer a draft, so it stays locked here as part of that payment record.`
                           : `${blockedNonDraftDeleteCount} documents are attached to payments that are no longer drafts, so they stay locked here as part of those payment records.`}
                       </div>
+                    ) : null}
+                    {blockedDraftDeleteCount > 0 || blockedNonDraftDeleteCount > 0 ? (
+                      <HelpInlineGuides
+                        guides={blockedStateHelpGuides}
+                        title="Need help understanding why delete is blocked?"
+                        className="mt-3"
+                      />
                     ) : null}
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -551,6 +605,13 @@ export function DocumentsClient({ documents, total, page, pageSize, contractCont
                       <div className="mt-3 text-xs text-amber-200/80">
                         Delete is disabled here while this file is still attached to a draft payment request.
                       </div>
+                    ) : null}
+                    {isDeleteBlocked(document) ? (
+                      <HelpInlineGuides
+                        guides={deleteBlockedHelpGuides}
+                        title="Need help with this locked document?"
+                        className="mt-3"
+                      />
                     ) : null}
 
                     {editingTagsId === document.id ? (

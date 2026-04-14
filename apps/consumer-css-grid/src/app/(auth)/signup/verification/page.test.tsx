@@ -14,6 +14,10 @@ describe(`consumer-css-grid signup verification page`, () => {
 
     expect(markup).toContain(`Invalid verification link`);
     expect(markup).toContain(`Start sign-up again`);
+    expect(markup).not.toContain(`Need help`);
+    expect(markup).not.toContain(`Contextual help`);
+    expect(markup).not.toContain(`Open help hub`);
+    expect(markup).not.toContain(`Help Center`);
   });
 
   it(`renders success from verified=yes without requiring email`, async () => {
@@ -28,6 +32,10 @@ describe(`consumer-css-grid signup verification page`, () => {
     expect(markup).toContain(`Email verified`);
     expect(markup).toContain(`Your email has been verified successfully.`);
     expect(markup).toContain(`Continue to sign in`);
+    expect(markup).not.toContain(`Need help`);
+    expect(markup).not.toContain(`Contextual help`);
+    expect(markup).not.toContain(`Open help hub`);
+    expect(markup).not.toContain(`Help Center`);
   });
 
   it(`renders failure from verified=no without requiring email`, async () => {
@@ -42,5 +50,9 @@ describe(`consumer-css-grid signup verification page`, () => {
     expect(markup).toContain(`Verification failed`);
     expect(markup).toContain(`This verification link is invalid or expired.`);
     expect(markup).toContain(`Try sign-up again`);
+    expect(markup).not.toContain(`Need help`);
+    expect(markup).not.toContain(`Contextual help`);
+    expect(markup).not.toContain(`Open help hub`);
+    expect(markup).not.toContain(`Help Center`);
   });
 });

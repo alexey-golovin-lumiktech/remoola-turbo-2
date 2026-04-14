@@ -7,6 +7,9 @@ import { useState, useTransition } from 'react';
 import { type CreatePaymentRequestFormProps } from './CreatePaymentRequestForm';
 import { CreatePaymentRequestPanel } from './CreatePaymentRequestPanel';
 import { buildPaymentsListQuery, formatPaymentTypeLabel, PAYMENT_TYPE_OPTIONS } from './payments-list-query';
+import { getContextualHelpGuides, HELP_CONTEXT_ROUTE } from '../../../features/help/get-contextual-help-guides';
+import { HELP_GUIDE_SLUG } from '../../../features/help/guide-registry';
+import { HelpContextualGuides } from '../../../features/help/ui';
 import { type PaymentsResponse } from '../../../lib/consumer-api.server';
 import { MetricCard, Panel } from '../../../shared/ui/shell-primitives';
 
@@ -88,6 +91,14 @@ export function PaymentsClient({
   const outgoingCount = payments.filter((payment) => payment.role === `PAYER`).length;
   const processingCount = payments.filter((payment) => payment.status.toLowerCase() !== `completed`).length;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const emptyStateHelpGuides = getContextualHelpGuides({
+    route: HELP_CONTEXT_ROUTE.PAYMENTS,
+    preferredSlugs: [
+      HELP_GUIDE_SLUG.PAYMENTS_OVERVIEW,
+      HELP_GUIDE_SLUG.PAYMENTS_CREATE_REQUEST,
+      HELP_GUIDE_SLUG.PAYMENTS_START_PAYMENT,
+    ],
+  });
 
   const applyFilters = (nextPage = 1) => {
     const params = buildPaymentsListQuery({
@@ -239,8 +250,16 @@ export function PaymentsClient({
         data-testid="payments-list"
       >
         {payments.length === 0 ? (
-          <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 px-4 py-10 text-center text-sm text-white/45">
-            No payments match the current filters.
+          <div className="mt-5 space-y-4">
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-10 text-center text-sm text-white/45">
+              No payments match the current filters.
+            </div>
+            <HelpContextualGuides
+              guides={emptyStateHelpGuides}
+              compact
+              title="Need help finding the next payment step?"
+              description="Use these guides to reset the flow, choose the right payment path, or understand what should appear in the list."
+            />
           </div>
         ) : (
           <div className="mt-5 space-y-3">

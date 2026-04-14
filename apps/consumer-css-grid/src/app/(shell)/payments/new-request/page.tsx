@@ -1,5 +1,8 @@
 import Link from 'next/link';
 
+import { getContextualHelpGuides, HELP_CONTEXT_ROUTE } from '../../../../features/help/get-contextual-help-guides';
+import { HELP_GUIDE_SLUG } from '../../../../features/help/guide-registry';
+import { HelpContextualGuides } from '../../../../features/help/ui';
 import { getContacts, getExchangeCurrencies, getSettings } from '../../../../lib/consumer-api.server';
 import {
   normalizePaymentRequestContacts,
@@ -36,6 +39,14 @@ export default async function NewPaymentRequestPage({ searchParams }: { searchPa
   const currencies = normalizePaymentRequestCurrencies(exchangeCurrencies);
   const preferredCurrency = settings?.preferredCurrency ?? `USD`;
   const initialEmail = parsePaymentEntryPrefillEmail(resolvedSearchParams?.email);
+  const paymentRequestHelpGuides = getContextualHelpGuides({
+    route: HELP_CONTEXT_ROUTE.PAYMENTS_NEW_REQUEST,
+    preferredSlugs: [
+      HELP_GUIDE_SLUG.PAYMENTS_CREATE_REQUEST,
+      HELP_GUIDE_SLUG.PAYMENTS_OVERVIEW,
+      HELP_GUIDE_SLUG.DOCUMENTS_UPLOAD_AND_ATTACH,
+    ],
+  });
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -52,6 +63,14 @@ export default async function NewPaymentRequestPage({ searchParams }: { searchPa
           {paymentFlowContext?.contractId ? `Back to contract` : `Back to payments`}
         </Link>
       </div>
+
+      <HelpContextualGuides
+        guides={paymentRequestHelpGuides}
+        compact
+        title="Guides for payment-request setup"
+        description="Use these guides if you want a quick reminder on the request flow, when attachments happen, or what changes after the draft is created."
+        className="mb-6"
+      />
 
       <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
         <CreatePaymentRequestForm

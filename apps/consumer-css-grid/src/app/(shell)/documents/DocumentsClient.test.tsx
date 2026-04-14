@@ -144,6 +144,7 @@ describe(`DocumentsClient`, () => {
     );
 
     expect(normalizeText(view.container.textContent)).toContain(`Contract files mode`);
+    expect(normalizeText(view.container.textContent)).toContain(`Need help using contract-linked files?`);
     expect(normalizeText(view.container.textContent)).toContain(`Attached to draft payment request`);
     expect(normalizeText(view.container.textContent)).toContain(`Attached to payment record`);
     expect(getLink(view.container, `Back to contract`).getAttribute(`href`)).toBe(

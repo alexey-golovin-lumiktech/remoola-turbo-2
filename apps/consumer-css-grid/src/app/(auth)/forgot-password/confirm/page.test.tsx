@@ -15,6 +15,10 @@ describe(`consumer-css-grid forgot-password confirm page`, () => {
 
     expect(markup).toContain(`Invalid or missing link`);
     expect(markup).toContain(`Request a new reset link`);
+    expect(markup).not.toContain(`Need help`);
+    expect(markup).not.toContain(`Contextual help`);
+    expect(markup).not.toContain(`Open help hub`);
+    expect(markup).not.toContain(`Help Center`);
   });
 
   it(`renders the reset form when token is present without requiring referer`, async () => {

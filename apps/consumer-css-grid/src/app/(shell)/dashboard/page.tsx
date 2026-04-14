@@ -2,6 +2,9 @@ import Link from 'next/link';
 
 import { DashboardVerificationAction } from './DashboardVerificationAction';
 import { getVerificationBannerState } from './verification-banner';
+import { getContextualHelpGuides, HELP_CONTEXT_ROUTE } from '../../../features/help/get-contextual-help-guides';
+import { HELP_GUIDE_SLUG } from '../../../features/help/guide-registry';
+import { HelpContextualGuides } from '../../../features/help/ui';
 import { getAvailableBalances, getBalances, getDashboardData } from '../../../lib/consumer-api.server';
 import { HomeIcon } from '../../../shared/ui/icons/HomeIcon';
 import {
@@ -95,6 +98,29 @@ export default async function DashboardPage() {
       isPrimary: currencyCode === settledCurrencyCode,
     }));
   const showCurrencyBreakdown = !dashboardUnavailable && balanceBreakdown.length > 1;
+  const dashboardHelpGuides = getContextualHelpGuides({
+    route: HELP_CONTEXT_ROUTE.DASHBOARD,
+    preferredSlugs: [
+      HELP_GUIDE_SLUG.DASHBOARD_OVERVIEW,
+      HELP_GUIDE_SLUG.VERIFICATION_HOW_IT_WORKS,
+      HELP_GUIDE_SLUG.GETTING_STARTED_OVERVIEW,
+    ],
+  });
+  const dashboardPaymentsHelpGuides = getContextualHelpGuides({
+    route: HELP_CONTEXT_ROUTE.PAYMENTS,
+    preferredSlugs: [HELP_GUIDE_SLUG.PAYMENTS_OVERVIEW, HELP_GUIDE_SLUG.PAYMENTS_CREATE_REQUEST],
+    limit: 2,
+  });
+  const dashboardQuickDocsHelpGuides = getContextualHelpGuides({
+    route: HELP_CONTEXT_ROUTE.PAYMENTS_NEW_REQUEST,
+    preferredSlugs: [HELP_GUIDE_SLUG.DOCUMENTS_UPLOAD_AND_ATTACH, HELP_GUIDE_SLUG.PAYMENTS_CREATE_REQUEST],
+    limit: 2,
+  });
+  const dashboardActivityHelpGuides = getContextualHelpGuides({
+    route: HELP_CONTEXT_ROUTE.DASHBOARD,
+    preferredSlugs: [HELP_GUIDE_SLUG.DASHBOARD_OVERVIEW],
+    limit: 1,
+  });
 
   return (
     <div>
@@ -112,6 +138,12 @@ export default async function DashboardPage() {
                 Navigation and payment flows are still available, but this page could not load live dashboard data from
                 the backend right now.
               </p>
+              <Link
+                href={`/help/${HELP_GUIDE_SLUG.DASHBOARD_OVERVIEW}`}
+                className="mt-3 inline-flex text-sm text-[var(--app-primary)] hover:opacity-80"
+              >
+                Learn how to read the dashboard and where to continue
+              </Link>
             </div>
             <Link
               href="/payments"
@@ -122,6 +154,13 @@ export default async function DashboardPage() {
           </div>
         </section>
       ) : null}
+
+      <HelpContextualGuides
+        guides={dashboardHelpGuides}
+        title="Use the dashboard as a launch point"
+        description="These guides explain the dashboard summary, verification state, and the next route to open when a balance, task, or banner needs attention."
+        className="mb-5"
+      />
 
       {/* Metric cards */}
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -298,8 +337,16 @@ export default async function DashboardPage() {
         <div className="space-y-5">
           <Panel title="Open Payment Requests" aside={`${pendingRequests.length} total`}>
             {pendingRequests.length === 0 ? (
-              <div className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-10 text-center text-sm text-[var(--app-text-faint)]">
-                No open payment requests yet.
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-10 text-center text-sm text-[var(--app-text-faint)]">
+                  No open payment requests yet.
+                </div>
+                <HelpContextualGuides
+                  guides={dashboardPaymentsHelpGuides}
+                  compact
+                  title="Need help starting the first payment flow?"
+                  description="Open the main payments guides to decide whether to create a request or start a payment directly."
+                />
               </div>
             ) : (
               <div className="space-y-3">
@@ -382,8 +429,16 @@ export default async function DashboardPage() {
 
           <Panel title="Activity Timeline">
             {activity.length === 0 ? (
-              <div className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-10 text-center text-sm text-[var(--app-text-faint)]">
-                No activity yet.
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-10 text-center text-sm text-[var(--app-text-faint)]">
+                  No activity yet.
+                </div>
+                <HelpContextualGuides
+                  guides={dashboardActivityHelpGuides}
+                  compact
+                  title="Need help interpreting an empty dashboard?"
+                  description="This overview explains what the dashboard summarizes and why an empty timeline can still be normal."
+                />
               </div>
             ) : (
               <div className="space-y-4">
@@ -439,8 +494,16 @@ export default async function DashboardPage() {
 
           <Panel title="Quick Docs" aside="View all">
             {quickDocs.length === 0 ? (
-              <div className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-10 text-center text-sm text-[var(--app-text-faint)]">
-                No documents yet.
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-10 text-center text-sm text-[var(--app-text-faint)]">
+                  No documents yet.
+                </div>
+                <HelpContextualGuides
+                  guides={dashboardQuickDocsHelpGuides}
+                  compact
+                  title="Need help preparing documents?"
+                  description="These guides cover uploading files and when documents usually become part of a payment workflow."
+                />
               </div>
             ) : (
               <div className="space-y-2">

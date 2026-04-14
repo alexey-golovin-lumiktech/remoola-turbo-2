@@ -1,5 +1,8 @@
 import { sanitizeContactsReturnTo } from './contacts-return-to';
 import { ContactsClient } from './ContactsClient';
+import { getContextualHelpGuides, HELP_CONTEXT_ROUTE } from '../../../features/help/get-contextual-help-guides';
+import { HELP_GUIDE_SLUG } from '../../../features/help/guide-registry';
+import { HelpContextualGuides } from '../../../features/help/ui';
 import { getContact, getContacts, searchContacts } from '../../../lib/consumer-api.server';
 import { UsersIcon } from '../../../shared/ui/icons/UsersIcon';
 import { PageHeader } from '../../../shared/ui/shell-primitives';
@@ -24,10 +27,25 @@ export default async function ContactsPage({ searchParams }: { searchParams?: Pr
   const initialEmail = getSingleValue(resolvedSearchParams?.email);
   const returnTo = sanitizeContactsReturnTo(getSingleValue(resolvedSearchParams?.returnTo));
   const initialEditingContact = editContactId ? await getContact(editContactId) : null;
+  const contactsHelpGuides = getContextualHelpGuides({
+    route: HELP_CONTEXT_ROUTE.CONTACTS,
+    preferredSlugs: [
+      HELP_GUIDE_SLUG.CONTACTS_ADD_AND_USE,
+      HELP_GUIDE_SLUG.CONTACTS_OVERVIEW,
+      HELP_GUIDE_SLUG.CONTACTS_COMMON_ISSUES,
+    ],
+    limit: 3,
+  });
 
   return (
     <div>
       <PageHeader title="Contacts" icon={<UsersIcon className="h-10 w-10 text-white" />} />
+      <HelpContextualGuides
+        guides={contactsHelpGuides}
+        title="Use contacts without losing the next step"
+        description="These guides explain how to add and reuse saved contacts, when to search versus edit, and what to check before a contact-driven workflow moves into contracts or payments."
+        className="mb-5"
+      />
       <ContactsClient
         contacts={contacts}
         createMode={createMode}

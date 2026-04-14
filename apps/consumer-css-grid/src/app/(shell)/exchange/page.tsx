@@ -1,6 +1,9 @@
 import { type ExchangeSearchParams, parseExchangePaginationParams } from './exchange-search-params';
 import { buildInitialRatePairs, pickTopCurrencies } from './exchange-shared';
 import { ExchangeClient } from './ExchangeClient';
+import { getContextualHelpGuides, HELP_CONTEXT_ROUTE } from '../../../features/help/get-contextual-help-guides';
+import { HELP_GUIDE_SLUG } from '../../../features/help/guide-registry';
+import { HelpContextualGuides } from '../../../features/help/ui';
 import {
   getAvailableBalances,
   getExchangeCurrencies,
@@ -25,10 +28,26 @@ export default async function ExchangePage({ searchParams }: { searchParams?: Pr
   const [fromCurrency = `USD`, toCurrency = `EUR`, thirdCurrency] = pickTopCurrencies(currencyCodes);
   const initialRatePairs = buildInitialRatePairs(fromCurrency, toCurrency, thirdCurrency);
   const exchangeRates = await getExchangeRatesBatch(initialRatePairs, { redirectTo: `/exchange` });
+  const exchangeHelpGuides = getContextualHelpGuides({
+    route: HELP_CONTEXT_ROUTE.EXCHANGE,
+    preferredSlugs: [
+      HELP_GUIDE_SLUG.EXCHANGE_OVERVIEW,
+      HELP_GUIDE_SLUG.EXCHANGE_CONVERT_AND_AUTOMATE,
+      HELP_GUIDE_SLUG.EXCHANGE_COMMON_ISSUES,
+    ],
+    limit: 3,
+  });
 
   return (
     <div>
       <PageHeader title="Exchange" icon={<ExchangeIcon className="h-10 w-10 text-[var(--app-primary-contrast)]" />} />
+      <HelpContextualGuides
+        guides={exchangeHelpGuides}
+        compact
+        title="Choose between quote, convert now, and automation"
+        description="These guides explain how the main Exchange page combines live-rate checks, immediate conversion, rules, and scheduled follow-up without leaving the broader currency workflow."
+        className="mb-5"
+      />
       <ExchangeClient
         currencies={currencies ?? []}
         balances={balances}

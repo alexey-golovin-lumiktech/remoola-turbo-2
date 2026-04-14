@@ -169,7 +169,6 @@ export function ResetPasswordConfirmPageClient({ token }: { token: string }) {
             </button>
           </form>
         </div>
-
         <p className={styles.footer}>
           <Link href="/login" prefetch={false} className={styles.link}>
             Back to sign in

@@ -156,7 +156,6 @@ export function LoginForm({
   };
 
   const isFormValid = email.trim() && password.length >= 1;
-
   return (
     <div className={styles.root} data-testid="consumer-css-grid-login-page">
       <div className={styles.container}>

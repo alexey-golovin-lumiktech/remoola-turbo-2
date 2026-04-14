@@ -42,7 +42,6 @@ export function ContractorKindView() {
   };
 
   const isSelected = (kind: TContractorKind) => signupDetails.contractorKind === kind;
-
   if (signupDetails.accountType !== ACCOUNT_TYPE.CONTRACTOR) {
     return null;
   }

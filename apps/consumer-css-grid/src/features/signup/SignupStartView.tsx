@@ -53,7 +53,6 @@ export function SignupStartView() {
   };
 
   const isSelected = (type: TAccountType) => signupDetails.accountType === type;
-
   return (
     <div className={styles.root}>
       <div className={styles.shell}>

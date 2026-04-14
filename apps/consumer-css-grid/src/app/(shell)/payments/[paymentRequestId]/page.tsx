@@ -1,5 +1,8 @@
 import Link from 'next/link';
 
+import { getContextualHelpGuides, HELP_CONTEXT_ROUTE } from '../../../../features/help/get-contextual-help-guides';
+import { HELP_GUIDE_SLUG } from '../../../../features/help/guide-registry';
+import { HelpContextualGuides } from '../../../../features/help/ui';
 import {
   getContractDetails,
   getDocuments,
@@ -71,6 +74,19 @@ export default async function PaymentDetailPage({
   const checkoutSuccess = getSingleValue(resolvedSearchParams?.success) === `1`;
   const checkoutCanceled = getSingleValue(resolvedSearchParams?.canceled) === `1`;
   const attachmentPage = Math.max(1, Number(getSingleValue(resolvedSearchParams?.attachmentPage)) || 1);
+  const paymentDetailHelpGuides = getContextualHelpGuides({
+    route: HELP_CONTEXT_ROUTE.PAYMENTS_DETAIL,
+    preferredSlugs: [
+      HELP_GUIDE_SLUG.PAYMENTS_STATUSES,
+      HELP_GUIDE_SLUG.PAYMENTS_COMMON_ISSUES,
+      HELP_GUIDE_SLUG.PAYMENTS_OVERVIEW,
+    ],
+  });
+  const paymentUnavailableHelpGuides = getContextualHelpGuides({
+    route: HELP_CONTEXT_ROUTE.PAYMENTS_DETAIL,
+    preferredSlugs: [HELP_GUIDE_SLUG.PAYMENTS_OVERVIEW, HELP_GUIDE_SLUG.PAYMENTS_COMMON_ISSUES],
+    limit: 2,
+  });
   const paymentMethods =
     payment && payment.role === `PAYER` && payment.status === `PENDING`
       ? await getPaymentMethods({ redirectTo: detailPath })
@@ -86,12 +102,27 @@ export default async function PaymentDetailPage({
 
       {checkoutSuccess ? (
         <div className="mb-5 rounded-2xl border border-transparent bg-[var(--app-success-soft)] px-4 py-3 text-sm text-[var(--app-success-text)]">
-          Checkout returned successfully. Refreshing payment status may take a moment while Stripe confirms the charge.
+          <div>
+            Checkout returned successfully. Refreshing payment status may take a moment while Stripe confirms the
+            charge.
+          </div>
+          <Link
+            href={`/help/${HELP_GUIDE_SLUG.PAYMENTS_STATUSES}`}
+            className="mt-3 inline-flex text-sm underline underline-offset-4"
+          >
+            Review payment statuses and what should happen next
+          </Link>
         </div>
       ) : null}
       {checkoutCanceled ? (
         <div className="mb-5 rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-3 text-sm text-[var(--app-text-soft)]">
-          Checkout was canceled before the payment completed.
+          <div>Checkout was canceled before the payment completed.</div>
+          <Link
+            href={`/help/${HELP_GUIDE_SLUG.PAYMENTS_COMMON_ISSUES}`}
+            className="mt-3 inline-flex text-sm text-[var(--app-primary)] hover:text-[var(--app-primary-strong)]"
+          >
+            Open the payment troubleshooting guide
+          </Link>
         </div>
       ) : null}
 
@@ -113,8 +144,16 @@ export default async function PaymentDetailPage({
 
       {!payment ? (
         <Panel title="Payment details">
-          <div className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-10 text-center text-sm text-[var(--app-text-muted)]">
-            Payment details are unavailable for this request.
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-[color:var(--app-border)] bg-[var(--app-surface-muted)] px-4 py-10 text-center text-sm text-[var(--app-text-muted)]">
+              Payment details are unavailable for this request.
+            </div>
+            <HelpContextualGuides
+              guides={paymentUnavailableHelpGuides}
+              compact
+              title="Need help with a missing payment detail?"
+              description="These guides explain how the payments area is structured and where to look next if a detail page is not usable right now."
+            />
           </div>
         </Panel>
       ) : (
@@ -174,6 +213,13 @@ export default async function PaymentDetailPage({
               paymentRail={payment.ledgerEntries[0]?.rail ?? null}
               paymentMethods={paymentMethods?.items ?? []}
               paymentFlowContext={paymentFlowContext}
+            />
+
+            <HelpContextualGuides
+              guides={paymentDetailHelpGuides}
+              compact
+              title="Need help with this payment state?"
+              description="Use these guides to interpret the current status, choose the right next action, or troubleshoot a blocked flow from the detail page."
             />
 
             <Panel title="Ledger entries">
