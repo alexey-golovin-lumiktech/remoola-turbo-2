@@ -1862,7 +1862,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-04-10</summary>
 
 - **2026-04-10:**
@@ -1894,6 +1894,35 @@
   ### ⚠️ Notes
   - No database migration introduced in this change set.
   - Rollout is still contract-sensitive because frontend and backend must agree on the new contract-details payload, contract-scoped documents behavior, and payment/Stripe return-context handling.
+
+</details>
+
+<details open>
+<summary>2026-04-14</summary>
+
+- **2026-04-14:**
+  ### 🚀 Feature
+  - **Consumer Help Center rollout in `consumer-css-grid`:** Add a dedicated signed-in `/help` hub plus `/help/[slug]` guide-detail routes so the consumer workspace now has a first-class help surface instead of relying on page-local hints only.
+  - **Route-aware contextual help coverage:** Dashboard, payments, documents, settings, contacts, contracts, banking, withdrawal, and exchange surfaces now expose contextual guide entry points that stay aligned to the route where the user is already working.
+  - **Structured help-content system for the consumer workspace:** Introduce guide content, registry, source-map, discovery/search helpers, category and feature metadata, and shared help UI primitives to support overview, task, and troubleshooting guidance from a single help domain.
+
+  ### 🔐 Security / Production Safety
+  - **Public/private help metadata boundary preserved:** Internal implementation-facing `sourceRefs` remain attached only to the internal help registry while route-facing discovery and rendered help pages consume the public-safe registry surface.
+  - **Explicit invalid-slug recovery path:** Unknown guide slugs now resolve through a dedicated `/help` recovery experience instead of rendering a broken or partially resolved guide-detail page.
+  - **Invariant preserved:** Existing auth, session, cookie, CSRF, and guest verification/forgot-password behavior remain unchanged; help coverage stays scoped to the intended signed-in consumer workspace routes.
+
+  ### ♻️ Refactor
+  - **Route-affinity based guide resolution:** Help selection is now normalized around route affinity, preferred guide ordering, and shared category/feature labels so the same contract can drive the Help Center hub, guide-detail pages, and inline contextual-help placements.
+  - **Empty-state and orientation flow alignment:** Dashboard and adjacent workspace/payment surfaces now reuse shared contextual-help components to explain next steps when data is empty, a flow has not started, or the user needs route-specific guidance.
+
+  ### 🧪 Testing
+  - Add route and component coverage for the new Help Center hub, guide-detail, and invalid-slug recovery routes in `consumer-css-grid`.
+  - Add focused coverage for contextual guide ordering, discovery/search behavior, source-map parity, and the public-safe registry/help metadata boundary.
+  - Extend signed-in workspace route tests so contextual-help rendering remains pinned to the intended dashboard, payments, settings, contacts, contracts, banking, withdrawal, exchange, and documents surfaces.
+
+  ### ⚠️ Notes
+  - No database migration introduced in this change set.
+  - No backend contract or rollout sequencing change is introduced; this release is consumer workspace UI/content/test scoped within `apps/consumer-css-grid`.
 
 </details>
 
