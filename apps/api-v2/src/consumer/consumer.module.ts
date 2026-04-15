@@ -51,5 +51,6 @@ import { ConsumerSettingsModule } from './modules/settings/consumer-settings.mod
     ConsumerActionLogRetentionScheduler,
     OriginResolverService,
   ],
+  exports: [ConsumerAuthService],
 })
 export class ConsumerModule {}

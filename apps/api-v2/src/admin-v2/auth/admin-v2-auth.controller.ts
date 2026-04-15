@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Post, Req, Res, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { ApiCookieAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
+import { IsOptional, IsUUID } from 'class-validator';
 import express from 'express';
 
 import { oauthCrypto } from '@remoola/security-utils';
@@ -23,6 +24,12 @@ import {
   getApiAdminRefreshTokenCookieKey,
   getApiAdminRefreshTokenCookieKeysForRead,
 } from '../../shared-common';
+
+class RevokeAdminSessionBodyDTO {
+  @IsOptional()
+  @IsUUID()
+  sessionId?: string;
+}
 
 @ApiTags(`Admin v2: Auth`)
 @Controller(`admin-v2/auth`)
@@ -117,6 +124,33 @@ export class AdminV2AuthController {
     });
     this.clearAuthCookies(res);
     return { ok: true };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(`revoke-session`)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiCookieAuth()
+  async revokeSession(
+    @Req() req: express.Request,
+    @Identity() identity: IIdentityContext,
+    @Res({ passthrough: true }) res: express.Response,
+    @Body() body: RevokeAdminSessionBodyDTO,
+  ) {
+    this.ensureCsrf(req);
+    const targetSessionId = body.sessionId ?? identity.sessionId;
+    if (!targetSessionId) {
+      throw new UnauthorizedException(`Missing session identifier`);
+    }
+    const ipAddress = req.ip ?? req.headers[`x-forwarded-for`];
+    const userAgent = req.headers[`user-agent`] ?? null;
+    const result = await this.service.revokeSessionByIdAndAudit(identity.id, targetSessionId, {
+      ipAddress: typeof ipAddress === `string` ? ipAddress : Array.isArray(ipAddress) ? ipAddress[0] : null,
+      userAgent: typeof userAgent === `string` ? userAgent : null,
+    });
+    if (targetSessionId === identity.sessionId) {
+      this.clearAuthCookies(res);
+    }
+    return { ok: true as const, ...result };
   }
 
   @UseGuards(JwtAuthGuard)

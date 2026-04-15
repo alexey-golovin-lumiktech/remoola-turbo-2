@@ -21,6 +21,15 @@ import { envs } from '../envs';
 import { OriginResolverService } from './origin-resolver.service';
 import { resolveEmailApiBaseUrl } from './resolve-email-api-base-url';
 
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll(`&`, `&amp;`)
+    .replaceAll(`<`, `&lt;`)
+    .replaceAll(`>`, `&gt;`)
+    .replaceAll(`"`, `&quot;`)
+    .replaceAll(`'`, `&#39;`);
+}
+
 @Injectable()
 export class MailingService {
   private readonly logger = new Logger(MailingService.name);
@@ -70,13 +79,33 @@ export class MailingService {
     this.logger.error(`[${context}] Email operation failed with non-Error value: ${this.formatUnknownError(error)}`);
   }
 
-  private async sendEmailWithErrorHandling(context: string, options: BrevoSendMailOptions): Promise<void> {
+  private isEmailTransportConfigured(): boolean {
+    return (
+      envs.BREVO_API_KEY.trim().length > 0 &&
+      envs.BREVO_API_KEY !== `BREVO_API_KEY` &&
+      envs.BREVO_DEFAULT_FROM_EMAIL.trim().length > 0 &&
+      envs.BREVO_DEFAULT_FROM_EMAIL !== `BREVO_DEFAULT_FROM_EMAIL`
+    );
+  }
+
+  private async trySendEmail(context: string, options: BrevoSendMailOptions): Promise<boolean> {
+    if (!this.isEmailTransportConfigured()) {
+      this.logger.warn(`[${context}] Email transport is not configured - skipping email send`);
+      return false;
+    }
+
     try {
       await this.brevoMailService.sendMail(options);
       this.logger.verbose(`[${context}] Email sent successfully`);
+      return true;
     } catch (error) {
       this.logEmailFailure(context, error);
+      return false;
     }
+  }
+
+  private async sendEmailWithErrorHandling(context: string, options: BrevoSendMailOptions): Promise<void> {
+    await this.trySendEmail(context, options);
   }
 
   private resolveConsumerPaymentLinkOrigin(consumerAppScope?: ConsumerAppScope): string | null {
@@ -286,6 +315,51 @@ export class MailingService {
     const html = googleSignInRecovery.processor(params.loginUrl);
     const subject = `Wirebill – Sign in with Google`;
     await this.sendEmailWithErrorHandling(`sendConsumerPasswordlessRecoveryEmail`, {
+      to: params.email,
+      subject,
+      html,
+    });
+  }
+
+  async sendAdminV2VerificationDecisionEmail(params: {
+    email: string;
+    decision: `approve` | `reject` | `request-info`;
+    reason?: string | null;
+  }): Promise<boolean> {
+    const escapedEmail = escapeHtml(params.email);
+    const escapedReason = params.reason?.trim() ? escapeHtml(params.reason.trim()) : null;
+
+    let subject: string;
+    let html: string;
+
+    switch (params.decision) {
+      case `approve`:
+        subject = `Wirebill. Verification approved`;
+        html = `
+          <p>Hello ${escapedEmail},</p>
+          <p>Your verification has been approved.</p>
+          <p>You can continue using the consumer app with the updated verification status.</p>
+        `;
+        break;
+      case `reject`:
+        subject = `Wirebill. Verification update`;
+        html = `
+          <p>Hello ${escapedEmail},</p>
+          <p>Your verification was rejected.</p>
+          <p>${escapedReason ? `Reason: ${escapedReason}` : `Please contact support if you need clarification.`}</p>
+        `;
+        break;
+      case `request-info`:
+        subject = `Wirebill. Additional verification information required`;
+        html = `
+          <p>Hello ${escapedEmail},</p>
+          <p>We need additional information to complete your verification review.</p>
+          <p>${escapedReason ? `Reviewer note: ${escapedReason}` : `Please review your submitted information and provide the missing details.`}</p>
+        `;
+        break;
+    }
+
+    return this.trySendEmail(`sendAdminV2VerificationDecisionEmail:${params.decision}`, {
       to: params.email,
       subject,
       html,

@@ -143,6 +143,59 @@ export type AuditListResponse = {
   pageSize: number;
 };
 
+export type OverviewSummaryResponse = {
+  computedAt: string;
+  signals: Record<string, Record<string, unknown>>;
+};
+
+export type VerificationQueueResponse = {
+  items: Array<{
+    id: string;
+    email: string;
+    accountType: string;
+    contractorKind: string | null;
+    verificationStatus: string;
+    stripeIdentityStatus: string | null;
+    country: string | null;
+    createdAt: string;
+    updatedAt: string;
+    verificationUpdatedAt: string | null;
+    missingProfileData: boolean;
+    missingDocuments: boolean;
+    documentsCount: number;
+    slaBreached: boolean;
+  }>;
+  total: number;
+  page: number;
+  pageSize: number;
+  activeStatuses: string[];
+  sla: {
+    breachedCount: number;
+    thresholdHours: number;
+    lastComputedAt: string | null;
+  };
+};
+
+export type VerificationCaseResponse = ConsumerCaseResponse & {
+  version: number;
+  decisionControls: {
+    canForceLogout: boolean;
+    canDecide: boolean;
+    allowedActions: string[];
+  };
+  decisionHistory: Array<Record<string, unknown>>;
+  authRisk: {
+    loginFailures24h: number;
+    refreshReuse30d: number;
+    recentEvents: Array<Record<string, unknown>>;
+  };
+  verificationSla: {
+    breached: boolean;
+    thresholdHours: number;
+    lastComputedAt: string | null;
+  };
+};
+
 export type ConsumerContractsResponse = {
   items: Array<{
     id: string;
@@ -216,6 +269,10 @@ export async function getAdminIdentity(): Promise<AdminIdentity | null> {
   return fetchAdminApi<AdminIdentity>(`/admin-v2/me`);
 }
 
+export async function getOverviewSummary(): Promise<OverviewSummaryResponse | null> {
+  return fetchAdminApi<OverviewSummaryResponse>(`/admin-v2/overview/summary`);
+}
+
 export async function getConsumers(params?: {
   page?: number;
   pageSize?: number;
@@ -240,6 +297,35 @@ export async function getConsumers(params?: {
 export async function getConsumerCase(consumerId: string): Promise<ConsumerCaseResponse | null> {
   if (!consumerId.trim()) return null;
   return fetchAdminApi<ConsumerCaseResponse>(`/admin-v2/consumers/${consumerId}`);
+}
+
+export async function getVerificationQueue(params?: {
+  page?: number;
+  pageSize?: number;
+  status?: string;
+  stripeIdentityStatus?: string;
+  country?: string;
+  contractorKind?: string;
+  missingProfileData?: boolean;
+  missingDocuments?: boolean;
+}): Promise<VerificationQueueResponse | null> {
+  const searchParams = new URLSearchParams({
+    page: String(params?.page ?? 1),
+    pageSize: String(params?.pageSize ?? 20),
+  });
+  if (params?.status?.trim()) searchParams.set(`status`, params.status.trim());
+  if (params?.stripeIdentityStatus?.trim())
+    searchParams.set(`stripeIdentityStatus`, params.stripeIdentityStatus.trim());
+  if (params?.country?.trim()) searchParams.set(`country`, params.country.trim());
+  if (params?.contractorKind?.trim()) searchParams.set(`contractorKind`, params.contractorKind.trim());
+  if (params?.missingProfileData) searchParams.set(`missingProfileData`, `true`);
+  if (params?.missingDocuments) searchParams.set(`missingDocuments`, `true`);
+  return fetchAdminApi<VerificationQueueResponse>(`/admin-v2/verification/queue?${searchParams.toString()}`);
+}
+
+export async function getVerificationCase(consumerId: string): Promise<VerificationCaseResponse | null> {
+  if (!consumerId.trim()) return null;
+  return fetchAdminApi<VerificationCaseResponse>(`/admin-v2/verification/${consumerId}`);
 }
 
 export async function getConsumerContracts(params: {

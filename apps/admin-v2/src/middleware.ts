@@ -146,7 +146,7 @@ export async function middleware(req: NextRequest) {
   if (isAuthPage && hasValidAccessTokenShape && accessToken && hasPotentialAccessToken(accessToken)) {
     const probeResponse = await probeAccessSession(req, accessToken);
     if (probeResponse?.ok) {
-      return NextResponse.redirect(new URL(`/consumers`, req.url));
+      return NextResponse.redirect(new URL(`/overview`, req.url));
     }
   }
 

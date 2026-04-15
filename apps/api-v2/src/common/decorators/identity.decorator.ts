@@ -10,7 +10,7 @@ export const IDENTITY = Symbol(`IDENTITY`);
  * Use this type for @Identity() parameters in controllers instead of
  * the raw Prisma model types to avoid silent undefined field access.
  */
-export type IIdentityContext = { id: string; email: string; type: string };
+export type IIdentityContext = { id: string; email: string; type: string; sessionId?: string };
 
 export const Identity = createParamDecorator((_, context: ExecutionContext): IIdentityContext => {
   const request = context.switchToHttp().getRequest();

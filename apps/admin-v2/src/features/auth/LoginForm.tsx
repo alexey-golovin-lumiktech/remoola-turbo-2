@@ -26,7 +26,7 @@ export function LoginForm() {
         setError(payload?.message ?? `Login failed`);
         return;
       }
-      router.replace(`/consumers`);
+      router.replace(`/overview`);
       router.refresh();
     } catch {
       setError(`Login failed because the network request did not complete`);

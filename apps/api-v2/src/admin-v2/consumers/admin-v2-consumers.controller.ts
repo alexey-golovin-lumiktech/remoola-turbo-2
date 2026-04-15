@@ -1,5 +1,7 @@
 import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
+import { Expose } from 'class-transformer';
+import { IsBoolean } from 'class-validator';
 import express from 'express';
 
 import { type AdminModel } from '@remoola/database-2';
@@ -22,10 +24,19 @@ function parseDate(value: string | undefined): Date | undefined {
 function requestMeta(req: express.Request) {
   const ipAddress = req.ip ?? req.headers[`x-forwarded-for`];
   const userAgent = req.headers[`user-agent`];
+  const idempotencyKey = req.headers[`idempotency-key`];
   return {
     ipAddress: typeof ipAddress === `string` ? ipAddress : Array.isArray(ipAddress) ? ipAddress[0] : null,
     userAgent: typeof userAgent === `string` ? userAgent : null,
+    idempotencyKey:
+      typeof idempotencyKey === `string` ? idempotencyKey : Array.isArray(idempotencyKey) ? idempotencyKey[0] : null,
   };
+}
+
+class ForceLogoutBodyDTO {
+  @Expose()
+  @IsBoolean()
+  confirmed!: boolean;
 }
 
 @UseGuards(JwtAuthGuard)
@@ -147,5 +158,16 @@ export class AdminV2ConsumersController {
     assertAdminV2Capability(admin, `consumers.flags`);
     const version = typeof body.version === `string` ? Number(body.version) : Number(body.version);
     return this.service.removeFlag(id, flagId, admin.id, version, requestMeta(req));
+  }
+
+  @Post(`:id/force-logout`)
+  forceLogout(
+    @Identity() admin: AdminModel,
+    @Param(`id`) id: string,
+    @Body() body: ForceLogoutBodyDTO,
+    @Req() req: express.Request,
+  ) {
+    assertAdminV2Capability(admin, `consumers.force_logout`);
+    return this.service.forceLogout(id, admin.id, body, requestMeta(req));
   }
 }

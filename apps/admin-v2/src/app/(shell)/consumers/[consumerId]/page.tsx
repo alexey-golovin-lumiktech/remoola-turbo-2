@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import {
+  getAdminIdentity,
   getConsumerActionLog,
   getConsumerAuthHistory,
   getConsumerCase,
@@ -11,6 +12,7 @@ import {
 import {
   addConsumerFlagAction,
   createConsumerNoteAction,
+  forceLogoutConsumerAction,
   removeConsumerFlagAction,
 } from '../../../../lib/admin-mutations.server';
 
@@ -26,7 +28,8 @@ function renderObject(value: Record<string, unknown> | null) {
 
 export default async function ConsumerCasePage({ params }: { params: Promise<{ consumerId: string }> }) {
   const { consumerId } = await params;
-  const [consumer, contracts, ledgerSummary, authHistory, actionLog] = await Promise.all([
+  const [identity, consumer, contracts, ledgerSummary, authHistory, actionLog] = await Promise.all([
+    getAdminIdentity(),
     getConsumerCase(consumerId),
     getConsumerContracts({ consumerId, pageSize: 5 }),
     getConsumerLedgerSummary(consumerId),
@@ -53,12 +56,27 @@ export default async function ConsumerCasePage({ params }: { params: Promise<{ c
           </div>
         </div>
         <div className="actionsRow">
+          <Link className="secondaryButton" href={`/verification/${consumer.id}`}>
+            Verification case
+          </Link>
           <Link className="secondaryButton" href={`/audit/consumer-actions?consumerId=${consumer.id}`}>
             Consumer actions
           </Link>
           <Link className="secondaryButton" href={`/audit/admin-actions?resourceId=${consumer.id}`}>
             Related admin actions
           </Link>
+          {identity?.capabilities.includes(`consumers.force_logout`) ? (
+            <form action={forceLogoutConsumerAction.bind(null, consumer.id)} className="actionsRow">
+              <input type="hidden" name="confirmed" value="false" />
+              <label className="field">
+                <span>Confirm</span>
+                <input type="checkbox" name="confirmed" value="true" required />
+              </label>
+              <button className="dangerButton" type="submit" name="confirmedSubmit" value="true">
+                Force logout
+              </button>
+            </form>
+          ) : null}
         </div>
       </section>
 

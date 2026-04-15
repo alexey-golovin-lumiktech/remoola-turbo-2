@@ -1,7 +1,10 @@
+import { randomUUID } from 'crypto';
+
 import { BadRequestException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
-import { type AccessRefreshTokenModel, type AdminModel } from '@remoola/database-2';
+import { Prisma, type AccessRefreshTokenModel, type AdminModel } from '@remoola/database-2';
+import { oauthCrypto } from '@remoola/security-utils';
 import { adminErrorCodes } from '@remoola/shared-constants';
 
 import { Credentials } from '../../dtos/admin';
@@ -12,6 +15,12 @@ import { PrismaService } from '../../shared/prisma.service';
 import { passwordUtils, secureCompare } from '../../shared-common';
 
 export type AdminLoginContext = { ipAddress?: string | null; userAgent?: string | null };
+type AdminTokenPair = {
+  accessToken: string;
+  refreshToken: string;
+  sessionId: string;
+  sessionFamilyId: string;
+};
 
 @Injectable()
 export class AdminAuthService {
@@ -61,11 +70,13 @@ export class AdminAuthService {
     });
     await this.authAudit.clearLockout(AUTH_IDENTITY_TYPES.admin, identity.email);
 
-    const access = await this.getAccessAndRefreshToken(identity.id);
+    const access = await this.createSessionAndIssueTokens(identity.id);
     return {
       identity,
       accessToken: access.accessToken,
       refreshToken: access.refreshToken,
+      sessionId: access.sessionId,
+      sessionFamilyId: access.sessionFamilyId,
     };
   }
 
@@ -79,6 +90,12 @@ export class AdminAuthService {
     } catch {
       this.logger.warn(`AdminAuth: refresh token verification failed`);
       throw new BadRequestException(adminErrorCodes.ADMIN_REFRESH_TOKEN_INVALID);
+    }
+
+    const identityId = this.resolveIdentityId(verified);
+    const sessionId = verified.sid;
+    if (identityId && sessionId && this.isRefreshPayload(verified)) {
+      return this.refreshSessionBasedAccess(refreshToken, identityId, sessionId);
     }
 
     const exist = await this.prisma.accessRefreshTokenModel.findFirst({ where: { identityId: verified.identityId } });
@@ -96,7 +113,7 @@ export class AdminAuthService {
       this.logger.warn(`AdminAuth: admin not found for identity`);
       throw new BadRequestException(adminErrorCodes.ADMIN_NO_IDENTITY_RECORD);
     }
-    const access = await this.getAccessAndRefreshToken(admin.id);
+    const access = await this.getLegacyAccessAndRefreshToken(admin.id);
     return {
       accessToken: access.accessToken,
       refreshToken: access.refreshToken,
@@ -106,7 +123,81 @@ export class AdminAuthService {
     };
   }
 
-  private async getAccessAndRefreshToken(identityId: AdminModel[`id`]) {
+  private async refreshSessionBasedAccess(refreshToken: string, identityId: string, sessionId: string) {
+    const session = await this.prisma.adminAuthSessionModel.findFirst({
+      where: { id: sessionId, adminId: identityId },
+    });
+    if (session == null) {
+      this.logger.warn(`AdminAuth: no admin auth session for refresh`);
+      throw new BadRequestException(adminErrorCodes.ADMIN_NO_IDENTITY_RECORD);
+    }
+
+    const refreshTokenHash = this.hashToken(refreshToken);
+    const matchesStoredHash = secureCompare(session.refreshTokenHash, refreshTokenHash);
+    if (!matchesStoredHash) {
+      if (session.replacedById || session.revokedAt) {
+        await this.revokeSessionFamily(session.sessionFamilyId, `refresh_reuse_detected`);
+        await this.authAudit.recordAudit({
+          identityType: AUTH_IDENTITY_TYPES.admin,
+          identityId,
+          email: (await this.prisma.adminModel.findFirst({ where: { id: identityId } }))?.email ?? `unknown`,
+          event: AUTH_AUDIT_EVENTS.refresh_reuse,
+        });
+      } else {
+        await this.authAudit.recordAudit({
+          identityType: AUTH_IDENTITY_TYPES.admin,
+          identityId,
+          email: (await this.prisma.adminModel.findFirst({ where: { id: identityId } }))?.email ?? `unknown`,
+          event: AUTH_AUDIT_EVENTS.refresh_failure,
+        });
+      }
+      this.logger.warn(`AdminAuth: refresh token mismatch`);
+      throw new UnauthorizedException(adminErrorCodes.ADMIN_REFRESH_TOKEN_INVALID);
+    }
+    if (session.revokedAt || session.expiresAt < new Date()) {
+      this.logger.warn(`AdminAuth: refresh token is revoked or expired`);
+      throw new UnauthorizedException(adminErrorCodes.ADMIN_REFRESH_TOKEN_INVALID);
+    }
+
+    const admin = await this.prisma.adminModel.findFirst({ where: { id: identityId, deletedAt: null } });
+    if (!admin) {
+      this.logger.warn(`AdminAuth: admin not found for identity`);
+      throw new BadRequestException(adminErrorCodes.ADMIN_NO_IDENTITY_RECORD);
+    }
+
+    const access = await this.prisma.$transaction(async (tx) => {
+      const next = await this.createSessionAndIssueTokens(admin.id, session.sessionFamilyId, tx);
+      await tx.adminAuthSessionModel.update({
+        where: { id: session.id },
+        data: {
+          revokedAt: new Date(),
+          replacedById: next.sessionId,
+          invalidatedReason: `rotated`,
+          lastUsedAt: new Date(),
+        },
+      });
+      return next;
+    });
+
+    await this.authAudit.recordAudit({
+      identityType: AUTH_IDENTITY_TYPES.admin,
+      identityId: admin.id,
+      email: admin.email,
+      event: AUTH_AUDIT_EVENTS.refresh_success,
+    });
+
+    return {
+      accessToken: access.accessToken,
+      refreshToken: access.refreshToken,
+      type: admin.type,
+      email: admin.email,
+      id: admin.id,
+      sessionId: access.sessionId,
+      sessionFamilyId: access.sessionFamilyId,
+    };
+  }
+
+  private async getLegacyAccessAndRefreshToken(identityId: AdminModel[`id`]) {
     const accessToken = await this.getAccessToken(identityId);
     const refreshToken = await this.getRefreshToken(identityId);
 
@@ -125,16 +216,42 @@ export class AdminAuthService {
     return { accessToken: saved.accessToken, refreshToken: saved.refreshToken };
   }
 
-  private getAccessToken(identityId: string) {
+  private async createSessionAndIssueTokens(
+    identityId: AdminModel[`id`],
+    sessionFamilyId?: string,
+    tx?: Prisma.TransactionClient,
+  ): Promise<AdminTokenPair> {
+    const db = tx ?? this.prisma;
+    const sessionId = randomUUID();
+    const effectiveSessionFamilyId = sessionFamilyId ?? sessionId;
+    const accessToken = await this.getAccessToken(identityId, sessionId);
+    const refreshToken = await this.getRefreshToken(identityId, sessionId, effectiveSessionFamilyId);
+
+    await db.adminAuthSessionModel.create({
+      data: {
+        id: sessionId,
+        adminId: identityId,
+        sessionFamilyId: effectiveSessionFamilyId,
+        refreshTokenHash: this.hashToken(refreshToken),
+        accessTokenHash: this.hashToken(accessToken),
+        expiresAt: new Date(Date.now() + envs.JWT_REFRESH_TTL_SECONDS * 1000),
+        lastUsedAt: new Date(),
+      },
+    });
+
+    return { accessToken, refreshToken, sessionId, sessionFamilyId: effectiveSessionFamilyId };
+  }
+
+  private getAccessToken(identityId: string, sessionId?: string) {
     return this.jwtService.signAsync(
-      { identityId, type: `access`, scope: `admin` },
+      { sub: identityId, identityId, sid: sessionId, typ: `access`, scope: `admin` },
       { expiresIn: envs.JWT_ACCESS_TTL_SECONDS },
     );
   }
 
-  private getRefreshToken(identityId: string) {
+  private getRefreshToken(identityId: string, sessionId?: string, sessionFamilyId?: string) {
     return this.jwtService.signAsync(
-      { identityId, type: `refresh` },
+      { sub: identityId, identityId, sid: sessionId, fid: sessionFamilyId, typ: `refresh`, scope: `admin` },
       { expiresIn: envs.JWT_REFRESH_TTL_SECONDS, secret: envs.JWT_REFRESH_SECRET },
     );
   }
@@ -170,12 +287,11 @@ export class AdminAuthService {
     if (!refreshToken) return;
     try {
       const verified = this.jwtService.verify<IJwtTokenPayload>(refreshToken, { secret: envs.JWT_REFRESH_SECRET });
+      const identityId = this.resolveIdentityId(verified);
       const admin = await this.prisma.adminModel.findFirst({
-        where: { id: verified.identityId, deletedAt: null },
+        where: { id: identityId ?? verified.identityId, deletedAt: null },
       });
-      await this.prisma.accessRefreshTokenModel.deleteMany({
-        where: { identityId: verified.identityId, refreshToken },
-      });
+      await this.revokeSessionByRefreshToken(refreshToken);
       if (admin) {
         await this.authAudit.recordAudit({
           identityType: AUTH_IDENTITY_TYPES.admin,
@@ -187,6 +303,56 @@ export class AdminAuthService {
         });
       }
     } catch {
+      await this.revokeSessionByRefreshToken(refreshToken);
+    }
+  }
+
+  async revokeSessionByIdAndAudit(adminId: string, sessionId: string, ctx?: AdminLoginContext) {
+    const session = await this.prisma.adminAuthSessionModel.findFirst({
+      where: { id: sessionId, adminId },
+      select: { id: true, revokedAt: true, admin: { select: { email: true } } },
+    });
+    if (!session) {
+      throw new BadRequestException(adminErrorCodes.ADMIN_NO_IDENTITY_RECORD);
+    }
+    if (!session.revokedAt) {
+      await this.prisma.adminAuthSessionModel.update({
+        where: { id: sessionId },
+        data: { revokedAt: new Date(), invalidatedReason: `manual_revoke`, lastUsedAt: new Date() },
+      });
+      await this.authAudit.recordAudit({
+        identityType: AUTH_IDENTITY_TYPES.admin,
+        identityId: adminId,
+        email: session.admin.email,
+        event: AUTH_AUDIT_EVENTS.logout,
+        ipAddress: ctx?.ipAddress,
+        userAgent: ctx?.userAgent,
+      });
+    }
+    return { revokedSessionId: sessionId, alreadyRevoked: session.revokedAt != null };
+  }
+
+  private async revokeSessionByRefreshToken(refreshToken?: string | null) {
+    if (!refreshToken) return;
+    try {
+      const verified = this.jwtService.verify<IJwtTokenPayload>(refreshToken, { secret: envs.JWT_REFRESH_SECRET });
+      const identityId = this.resolveIdentityId(verified);
+      if (identityId && verified.sid && this.isRefreshPayload(verified)) {
+        await this.prisma.adminAuthSessionModel.updateMany({
+          where: {
+            id: verified.sid,
+            adminId: identityId,
+            refreshTokenHash: this.hashToken(refreshToken),
+            revokedAt: null,
+          },
+          data: { revokedAt: new Date(), invalidatedReason: `logout`, lastUsedAt: new Date() },
+        });
+        return;
+      }
+      await this.prisma.accessRefreshTokenModel.deleteMany({
+        where: { identityId: identityId ?? verified.identityId, refreshToken },
+      });
+    } catch {
       try {
         await this.prisma.accessRefreshTokenModel.deleteMany({
           where: { refreshToken },
@@ -195,5 +361,24 @@ export class AdminAuthService {
         // ignore
       }
     }
+  }
+
+  private async revokeSessionFamily(sessionFamilyId: string, reason: string): Promise<void> {
+    await this.prisma.adminAuthSessionModel.updateMany({
+      where: { sessionFamilyId, revokedAt: null },
+      data: { revokedAt: new Date(), invalidatedReason: reason, lastUsedAt: new Date() },
+    });
+  }
+
+  private resolveIdentityId(payload: IJwtTokenPayload): string | null {
+    return payload.identityId ?? payload.sub ?? null;
+  }
+
+  private isRefreshPayload(payload: IJwtTokenPayload): boolean {
+    return payload.typ === `refresh` || (payload as { type?: string }).type === `refresh`;
+  }
+
+  private hashToken(token: string): string {
+    return oauthCrypto.hashOAuthState(token);
   }
 }

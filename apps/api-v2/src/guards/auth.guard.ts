@@ -166,14 +166,28 @@ export class AuthGuard implements CanActivate {
         throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
       }
     } else {
-      const identityAccess = await this.findIdentityAccess({ identityId, accessToken });
-      if (identityAccess == null) {
-        this.logger.warn(`AuthGuard: no identity access record`);
-        throw new UnauthorizedException(GuardMessage.NO_IDENTITY_RECORD);
-      }
-      if (!secureCompare(identityAccess.accessToken, accessToken)) {
-        this.logger.warn(`AuthGuard: token mismatch with stored value`);
-        throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
+      if (verified.sid) {
+        const session = await this.prisma.adminAuthSessionModel.findFirst({
+          where: { id: verified.sid, adminId: identityId, revokedAt: null },
+        });
+        if (session == null || session.expiresAt < new Date()) {
+          this.logger.warn(`AuthGuard: admin session not found or expired`);
+          throw new UnauthorizedException(GuardMessage.NO_IDENTITY_RECORD);
+        }
+        if (!secureCompare(session.accessTokenHash, oauthCrypto.hashOAuthState(accessToken))) {
+          this.logger.warn(`AuthGuard: admin access token mismatch with stored value`);
+          throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
+        }
+      } else {
+        const identityAccess = await this.findIdentityAccess({ identityId, accessToken });
+        if (identityAccess == null) {
+          this.logger.warn(`AuthGuard: no identity access record`);
+          throw new UnauthorizedException(GuardMessage.NO_IDENTITY_RECORD);
+        }
+        if (!secureCompare(identityAccess.accessToken, accessToken)) {
+          this.logger.warn(`AuthGuard: token mismatch with stored value`);
+          throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
+        }
       }
     }
 
@@ -196,12 +210,12 @@ export class AuthGuard implements CanActivate {
       throw new ForbiddenException(GuardMessage.ONLY_FOR_CONSUMERS);
     }
 
-    this.assignRequestIdentity(request, identity, admin?.type ?? `consumer`);
+    this.assignRequestIdentity(request, identity, admin?.type ?? `consumer`, verified.sid);
     return true;
   }
 
-  assignRequestIdentity(request: TExpressRequest, incoming: IIdentity, type: string): void {
-    const ctx: IIdentityContext = { id: incoming.id, email: incoming.email, type };
+  assignRequestIdentity(request: TExpressRequest, incoming: IIdentity, type: string, sessionId?: string): void {
+    const ctx: IIdentityContext = { id: incoming.id, email: incoming.email, type, ...(sessionId ? { sessionId } : {}) };
     Object.assign(request, { [IDENTITY]: ctx });
   }
 }

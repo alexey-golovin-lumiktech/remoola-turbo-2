@@ -2,11 +2,13 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 
 import { $Enums, Prisma } from '@remoola/database-2';
 
+import { ConsumerAuthService } from '../../consumer/auth/auth.service';
 import { normalizeConsumerFacingTransactionStatus } from '../../consumer/consumer-status-compat';
 import { ConsumerContractsService } from '../../consumer/modules/contracts/consumer-contracts.service';
 import { AdminActionAuditService, ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
 import { AUTH_IDENTITY_TYPES } from '../../shared/auth-audit.service';
 import { PrismaService } from '../../shared/prisma.service';
+import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
 
 const SEARCH_MAX_LEN = 200;
 const NOTE_MAX_LEN = 4000;
@@ -22,6 +24,7 @@ const CONTRACTOR_KINDS = Object.values($Enums.ContractorKind) as string[];
 type RequestMeta = {
   ipAddress?: string | null;
   userAgent?: string | null;
+  idempotencyKey?: string | null;
 };
 
 function normalizeFlag(raw: string): string {
@@ -62,6 +65,8 @@ export class AdminV2ConsumersService {
     private readonly prisma: PrismaService,
     private readonly consumerContractsService: ConsumerContractsService,
     private readonly adminActionAudit: AdminActionAuditService,
+    private readonly consumerAuthService: ConsumerAuthService,
+    private readonly idempotency: AdminV2IdempotencyService,
   ) {}
 
   private async requireConsumer(consumerId: string) {
@@ -698,5 +703,41 @@ export class AdminV2ConsumersService {
     });
 
     return updated;
+  }
+
+  async forceLogout(consumerId: string, adminId: string, body: { confirmed?: boolean }, meta?: RequestMeta) {
+    if (body.confirmed !== true) {
+      throw new BadRequestException(`Confirmation is required for force logout`);
+    }
+    const consumer = await this.requireConsumer(consumerId);
+    return this.idempotency.execute({
+      adminId,
+      scope: `consumer-force-logout:${consumerId}`,
+      key: meta?.idempotencyKey,
+      payload: { consumerId, confirmed: true },
+      execute: async () => {
+        const activeSessionsBefore = await this.prisma.authSessionModel.count({
+          where: { consumerId, revokedAt: null },
+        });
+        await this.consumerAuthService.revokeAllSessionsByConsumerIdAndAudit(consumerId, {
+          ipAddress: meta?.ipAddress,
+          userAgent: meta?.userAgent,
+        });
+        await this.adminActionAudit.record({
+          adminId,
+          action: ADMIN_ACTION_AUDIT_ACTIONS.consumer_force_logout,
+          resource: `consumer`,
+          resourceId: consumerId,
+          metadata: { activeSessionsBefore, consumerEmail: consumer.email },
+          ipAddress: meta?.ipAddress,
+          userAgent: meta?.userAgent,
+        });
+        return {
+          consumerId,
+          revokedSessionsCount: activeSessionsBefore,
+          alreadyRevoked: activeSessionsBefore === 0,
+        };
+      },
+    });
   }
 }

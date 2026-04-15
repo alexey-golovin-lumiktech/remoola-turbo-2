@@ -6,7 +6,7 @@ export default function LoginPage({ searchParams }: { searchParams?: Promise<{ s
       <div className="loginCard">
         <div>
           <h1>Admin v2</h1>
-          <p className="muted">MVP-1a surface: Consumers and Audit.</p>
+          <p className="muted">MVP-1b surface: Overview, Verification, Consumers and Audit.</p>
         </div>
         <LoginForm />
         <LoginNotice searchParams={searchParams} />

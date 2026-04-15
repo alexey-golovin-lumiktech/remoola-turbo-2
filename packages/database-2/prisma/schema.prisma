@@ -54,6 +54,35 @@ model AuthSessionModel {
   @@map("auth_sessions")
 }
 
+model AdminAuthSessionModel {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  adminId String     @map("admin_id") @db.Uuid
+  admin   AdminModel @relation(fields: [adminId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  sessionFamilyId  String @map("session_family_id") @db.Uuid
+  refreshTokenHash String @unique @map("refresh_token_hash") @db.Text
+  accessTokenHash  String @map("access_token_hash") @db.Text
+
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(6)
+  lastUsedAt DateTime  @default(now()) @map("last_used_at") @db.Timestamptz(6)
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamptz(6)
+
+  replacedById      String?               @map("replaced_by_id") @db.Uuid
+  replacedBySession AdminAuthSessionModel? @relation("AdminSessionReplacement", fields: [replacedById], references: [id], onDelete: SetNull)
+  replacedSessions  AdminAuthSessionModel[] @relation("AdminSessionReplacement")
+
+  invalidatedReason String? @map("invalidated_reason") @db.Text
+
+  @@index([adminId, revokedAt])
+  @@index([sessionFamilyId, revokedAt])
+  @@index([expiresAt])
+  @@index([replacedById])
+  @@map("admin_auth_sessions")
+}
+
 /// Fintech-safe: audit of login/logout and per-email lockout after N failed attempts.
 model AuthAuditLogModel {
   id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -69,6 +98,7 @@ model AuthAuditLogModel {
 
   @@index([email, createdAt])
   @@index([identityId, createdAt])
+  @@index([event, createdAt])
   @@map("auth_audit_log")
 }
 
@@ -90,7 +120,28 @@ model AdminActionAuditLogModel {
   @@index([adminId, createdAt])
   @@index([action, createdAt])
   @@index([resource, createdAt])
+  @@index([resourceId, createdAt])
   @@map("admin_action_audit_log")
+}
+
+model AdminActionIdempotencyModel {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  adminId String     @map("admin_id") @db.Uuid
+  admin   AdminModel @relation(fields: [adminId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  scope           String @db.Text
+  idempotencyKey  String @map("idempotency_key") @db.Text
+  requestHash     String @map("request_hash") @db.Text
+  responseStatus  Int    @map("response_status")
+  responseSnapshot Json? @map("response_snapshot") @db.JsonB
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+
+  @@unique([adminId, scope, idempotencyKey])
+  @@index([expiresAt])
+  @@map("admin_action_idempotency")
 }
 
 /// Append-only consumer action log (first touch, auth, payments, exchange). Backend-managed deviceId; no PII/secrets in metadata.
@@ -182,6 +233,8 @@ model AdminModel {
 
   adminSettings        AdminSettingsModel?
   adminActionAuditLogs AdminActionAuditLogModel[]
+  adminActionIdempotencyRecords AdminActionIdempotencyModel[]
+  adminAuthSessions    AdminAuthSessionModel[]
   consumerNotes        ConsumerAdminNoteModel[]
   consumerFlags        ConsumerFlagModel[]      @relation("ConsumerFlagCreatedBy")
   removedConsumerFlags ConsumerFlagModel[]      @relation("ConsumerFlagRemovedBy")
@@ -264,6 +317,8 @@ model ConsumerModel {
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
   @@unique([email, deletedAt])
+  @@index([verificationStatus, deletedAt])
+  @@index([createdAt])
   @@map("consumer")
 }
 
