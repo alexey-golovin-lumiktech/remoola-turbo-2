@@ -182,6 +182,9 @@ model AdminModel {
 
   adminSettings        AdminSettingsModel?
   adminActionAuditLogs AdminActionAuditLogModel[]
+  consumerNotes        ConsumerAdminNoteModel[]
+  consumerFlags        ConsumerFlagModel[]      @relation("ConsumerFlagCreatedBy")
+  removedConsumerFlags ConsumerFlagModel[]      @relation("ConsumerFlagRemovedBy")
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -249,6 +252,8 @@ model ConsumerModel {
   attachments            PaymentRequestAttachmentModel[]
   passwordResets         ResetPasswordModel[]
   authSessions           AuthSessionModel[]
+  adminNotes             ConsumerAdminNoteModel[]
+  adminFlags             ConsumerFlagModel[]
   ledgerEntries          LedgerEntryModel[]
   autoConversionRules    WalletAutoConversionRuleModel[]
   scheduledFxConversions ScheduledFxConversionModel[]
@@ -260,6 +265,49 @@ model ConsumerModel {
 
   @@unique([email, deletedAt])
   @@map("consumer")
+}
+
+model ConsumerAdminNoteModel {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  consumerId String        @map("consumer_id") @db.Uuid
+  consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  adminId String     @map("admin_id") @db.Uuid
+  admin   AdminModel @relation(fields: [adminId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  content String @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([consumerId, createdAt(sort: Desc)])
+  @@map("consumer_admin_note")
+}
+
+model ConsumerFlagModel {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  consumerId String        @map("consumer_id") @db.Uuid
+  consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  adminId String     @map("admin_id") @db.Uuid
+  admin   AdminModel @relation("ConsumerFlagCreatedBy", fields: [adminId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  flag   String  @db.Text
+  reason String? @db.Text
+
+  version Int @default(1)
+
+  removedBy      String?     @map("removed_by") @db.Uuid
+  removedByAdmin AdminModel? @relation("ConsumerFlagRemovedBy", fields: [removedBy], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  removedAt DateTime? @map("removed_at") @db.Timestamptz(6)
+
+  @@index([consumerId, removedAt])
+  @@index([flag, removedAt])
+  @@map("consumer_flag")
 }
 
 model ConsumerResourceModel {

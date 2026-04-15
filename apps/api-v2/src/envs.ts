@@ -84,6 +84,7 @@ const nest = {
   CONSUMER_MOBILE_APP_ORIGIN: z.string().default(`CONSUMER_MOBILE_APP_ORIGIN`),
   CONSUMER_CSS_GRID_APP_ORIGIN: z.string().default(`CONSUMER_CSS_GRID_APP_ORIGIN`),
   ADMIN_APP_ORIGIN: z.string().default(`ADMIN_APP_ORIGIN`),
+  ADMIN_V2_APP_ORIGIN: z.string().default(`ADMIN_V2_APP_ORIGIN`),
 };
 
 const google = {

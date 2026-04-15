@@ -1,12 +1,11 @@
 import { UnauthorizedException } from '@nestjs/common';
 import { type Request as ExpressRequest } from 'express';
 
-import { CONSUMER_APP_SCOPE_HEADER } from '@remoola/api-types';
+import { CONSUMER_APP_SCOPE_HEADER, isAdminApiPath } from '@remoola/api-types';
 
 import { getApiAdminCsrfTokenCookieKeysForRead, getApiConsumerCsrfTokenCookieKeysForRead } from './auth-cookie-policy';
 import { type OriginResolverService } from '../shared/origin-resolver.service';
 
-const ADMIN_API_PATH_PREFIX = `/api/admin/`;
 const CONSUMER_API_PATH_PREFIX = `/api/consumer/`;
 const MUTATION_METHODS = new Set([`POST`, `PUT`, `PATCH`, `DELETE`]);
 
@@ -22,7 +21,7 @@ function readHeaderValue(value: string | string[] | undefined): string | undefin
 }
 
 function isProtectedApiPath(path: string): boolean {
-  return path.startsWith(ADMIN_API_PATH_PREFIX) || path.startsWith(CONSUMER_API_PATH_PREFIX);
+  return isAdminApiPath(path) || path.startsWith(CONSUMER_API_PATH_PREFIX);
 }
 
 export function requiresAuthenticatedMutationCsrf(req: ExpressRequest): boolean {
@@ -45,7 +44,7 @@ export function ensureAuthenticatedMutationCsrf(req: ExpressRequest, originResol
   }
   const csrfHeaderValue = readHeaderValue(req.headers[`x-csrf-token`]);
   const csrfCookieValue = (
-    path.startsWith(ADMIN_API_PATH_PREFIX)
+    isAdminApiPath(path)
       ? getApiAdminCsrfTokenCookieKeysForRead()
       : getApiConsumerCsrfTokenCookieKeysForRead(consumerScope!)
   )

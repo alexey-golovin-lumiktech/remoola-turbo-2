@@ -12,12 +12,13 @@ export class OriginResolverService {
   private readonly mobileOriginPlaceholder = `CONSUMER_MOBILE_APP_ORIGIN`;
   private readonly cssGridOriginPlaceholder = `CONSUMER_CSS_GRID_APP_ORIGIN`;
   private readonly adminOriginPlaceholder = `ADMIN_APP_ORIGIN`;
+  private readonly adminV2OriginPlaceholder = `ADMIN_V2_APP_ORIGIN`;
   private readonly consumerLocalDevOriginScopes = new Map<string, ConsumerAppScope>([
     [`3001`, `consumer`],
     [`3002`, `consumer-mobile`],
     [`3003`, `consumer-css-grid`],
   ]);
-  private readonly adminLocalDevAllowedPorts = new Set([`3010`]);
+  private readonly adminLocalDevAllowedPorts = new Set([`3010`, `3011`]);
 
   normalizeOrigin(origin: string): string {
     return origin.replace(/\/$/, ``);
@@ -90,6 +91,9 @@ export class OriginResolverService {
 
     if (this.isValidOrigin(envs.ADMIN_APP_ORIGIN, this.adminOriginPlaceholder)) {
       origins.add(this.normalizeOrigin(envs.ADMIN_APP_ORIGIN));
+    }
+    if (this.isValidOrigin(envs.ADMIN_V2_APP_ORIGIN, this.adminV2OriginPlaceholder)) {
+      origins.add(this.normalizeOrigin(envs.ADMIN_V2_APP_ORIGIN));
     }
 
     return origins;

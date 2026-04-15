@@ -1,10 +1,11 @@
 import { ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 
+import { isAdminApiPath } from '@remoola/api-types';
+
 import { IDENTITY, type IIdentityContext } from '../common';
 
 const UNAUTHORIZED_MESSAGE = `Invalid or expired token`;
-const ADMIN_PATH_PREFIX = `/api/admin/`;
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard(`jwt`) {
@@ -18,7 +19,7 @@ export class JwtAuthGuard extends AuthGuard(`jwt`) {
     if (!request[IDENTITY] && request[`user`]) {
       const user = request[`user`] as { id?: string; email?: string };
       const path = (request[`path`] as string | undefined) ?? ``;
-      const type = path.startsWith(ADMIN_PATH_PREFIX) ? `admin` : `consumer`;
+      const type = isAdminApiPath(path) ? `admin` : `consumer`;
       const ctx: IIdentityContext = { id: user.id ?? ``, email: user.email ?? ``, type };
       request[IDENTITY] = ctx;
     }

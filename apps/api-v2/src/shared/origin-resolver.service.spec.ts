@@ -16,6 +16,7 @@ jest.mock(`../envs`, () => ({
     CONSUMER_MOBILE_APP_ORIGIN: `https://mobile.example.com`,
     CONSUMER_CSS_GRID_APP_ORIGIN: `https://grid.example.com`,
     ADMIN_APP_ORIGIN: `https://admin.example.com`,
+    ADMIN_V2_APP_ORIGIN: `https://admin-v2.example.com`,
   },
 }));
 
@@ -63,6 +64,7 @@ describe(`OriginResolverService`, () => {
       expect(origins.has(`https://mobile.example.com`)).toBe(true);
       expect(origins.has(`https://grid.example.com`)).toBe(true);
       expect(origins.has(`https://admin.example.com`)).toBe(true);
+      expect(origins.has(`https://admin-v2.example.com`)).toBe(true);
       expect(origins.has(`https://allowed1.example.com`)).toBe(false);
     });
 
@@ -147,6 +149,19 @@ describe(`OriginResolverService`, () => {
       const result = service.resolveAdminRequestOrigin(`https://admin.example.com/dashboard`, undefined);
 
       expect(result).toBe(`https://admin.example.com`);
+    });
+
+    it(`accepts the dedicated admin-v2 origin`, () => {
+      const result = service.resolveAdminRequestOrigin(`https://admin-v2.example.com/consumers`, undefined);
+
+      expect(result).toBe(`https://admin-v2.example.com`);
+    });
+
+    it(`allows the admin-v2 local dev port in development`, () => {
+      (envs as any).NODE_ENV = `development`;
+
+      const result = service.resolveAdminRequestOrigin(`http://127.0.0.1:3011/consumers`, undefined);
+      expect(result).toBe(`http://127.0.0.1:3011`);
     });
   });
 });

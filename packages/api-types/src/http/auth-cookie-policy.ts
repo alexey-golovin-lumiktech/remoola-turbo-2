@@ -1,10 +1,10 @@
+import { isAdminApiPath } from './admin-path';
 import { COOKIE_KEYS, type TCookieKey } from './constants';
 
 /** Max age for device cookie in seconds (e.g. 365 days). */
 export const DEVICE_COOKIE_MAX_AGE_SECONDS = 365 * 24 * 60 * 60;
 
 const ROOT_COOKIE_PATH = `/` as const;
-const ADMIN_API_PATH_PREFIX = `/api/admin/`;
 const CONSUMER_API_PATH_PREFIX = `/api/consumer/`;
 
 export type AuthCookieSameSite = `lax` | `none` | `strict`;
@@ -465,7 +465,7 @@ export function resolveAccessTokenCookieKeysForPath(
   path: string,
   consumerScope: ConsumerAppScope = `consumer`,
 ): readonly TCookieKey[] {
-  if (path.startsWith(ADMIN_API_PATH_PREFIX)) return getAdminAccessTokenCookieKeysForRead();
+  if (isAdminApiPath(path)) return getAdminAccessTokenCookieKeysForRead();
   if (path.startsWith(CONSUMER_API_PATH_PREFIX)) return getScopedConsumerAccessTokenCookieKeysForRead(consumerScope);
   return getScopedConsumerAccessTokenCookieKeysForRead(consumerScope);
 }

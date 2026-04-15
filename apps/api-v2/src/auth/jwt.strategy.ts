@@ -3,14 +3,13 @@ import { PassportStrategy } from '@nestjs/passport';
 import express from 'express';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
-import { CONSUMER_APP_SCOPE_HEADER } from '@remoola/api-types';
+import { CONSUMER_APP_SCOPE_HEADER, isAdminApiPath } from '@remoola/api-types';
 
 import { envs } from '../envs';
 import { OriginResolverService } from '../shared/origin-resolver.service';
 import { getApiAdminAccessTokenCookieKeysForRead, getApiConsumerAccessTokenCookieKeysForRead } from '../shared-common';
 
 const CONSUMER_API_PATH_PREFIX = `/api/consumer/`;
-const ADMIN_API_PATH_PREFIX = `/api/admin/`;
 const originResolver = new OriginResolverService();
 
 function getAccessTokenCookieKeysForPath(
@@ -23,7 +22,7 @@ function getAccessTokenCookieKeysForPath(
     }
     return getApiConsumerAccessTokenCookieKeysForRead(consumerScope);
   }
-  if (path.startsWith(ADMIN_API_PATH_PREFIX)) {
+  if (isAdminApiPath(path)) {
     return getApiAdminAccessTokenCookieKeysForRead();
   }
   return getApiConsumerAccessTokenCookieKeysForRead(consumerScope);

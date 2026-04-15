@@ -16,6 +16,9 @@ export type AdminActionAuditParams = {
 
 /** Action names for admin action audit (fintech compliance). */
 export const ADMIN_ACTION_AUDIT_ACTIONS = {
+  consumer_note_create: `consumer_note_create`,
+  consumer_flag_add: `consumer_flag_add`,
+  consumer_flag_remove: `consumer_flag_remove`,
   payment_refund: `payment_refund`,
   payment_chargeback: `payment_chargeback`,
   admin_password_change: `admin_password_change`,

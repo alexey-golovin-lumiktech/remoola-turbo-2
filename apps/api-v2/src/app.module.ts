@@ -4,6 +4,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 import { AdminModule } from './admin/admin.module';
+import { AdminV2Module } from './admin-v2/admin-v2.module';
 import { JwtPassportModule } from './auth/jwt-passport.module';
 import { ConsumerModule } from './consumer/consumer.module';
 import { HealthModule } from './health/health.module';
@@ -20,6 +21,7 @@ const botPatterns = [/googlebot/i, /bingbot/i, /slurp/i];
     JwtPassportModule,
     HealthModule,
     AdminModule,
+    AdminV2Module,
     ConsumerModule,
     ScheduleModule.forRoot(),
     InfrastructureModule,

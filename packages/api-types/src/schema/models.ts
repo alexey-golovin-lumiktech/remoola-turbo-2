@@ -46,6 +46,9 @@ export type AdminModelWithRelations = Prisma.AdminModelGetPayload<{
   include: {
     adminSettings: true;
     adminActionAuditLogs: true;
+    consumerNotes: true;
+    consumerFlags: true;
+    removedConsumerFlags: true;
   };
 }>;
 
@@ -70,10 +73,27 @@ export type ConsumerModelWithRelations = Prisma.ConsumerModelGetPayload<{
     attachments: true;
     passwordResets: true;
     authSessions: true;
+    adminNotes: true;
+    adminFlags: true;
     ledgerEntries: true;
     autoConversionRules: true;
     scheduledFxConversions: true;
     consumerActionLogs: true;
+  };
+}>;
+
+export type ConsumerAdminNoteModelWithRelations = Prisma.ConsumerAdminNoteModelGetPayload<{
+  include: {
+    consumer: true;
+    admin: true;
+  };
+}>;
+
+export type ConsumerFlagModelWithRelations = Prisma.ConsumerFlagModelGetPayload<{
+  include: {
+    consumer: true;
+    admin: true;
+    removedByAdmin: true;
   };
 }>;
 

@@ -9,7 +9,7 @@ import { type Reflector } from '@nestjs/core';
 import { type JwtService } from '@nestjs/jwt';
 import { type Request as TExpressRequest } from 'express';
 
-import { CONSUMER_APP_SCOPE_HEADER, type ConsumerAppScope } from '@remoola/api-types';
+import { CONSUMER_APP_SCOPE_HEADER, isAdminApiPath, type ConsumerAppScope } from '@remoola/api-types';
 import { oauthCrypto } from '@remoola/security-utils';
 
 import { IDENTITY, type IIdentity, type IIdentityContext, IS_PUBLIC } from '../common';
@@ -24,7 +24,6 @@ import {
 import { ensureAuthenticatedMutationCsrf } from '../shared-common/csrf-protection';
 
 const CONSUMER_API_PATH_PREFIX = `/api/consumer/`;
-const ADMIN_API_PATH_PREFIX = `/api/admin/`;
 
 /** User-facing and log-safe messages (no tokens or PII). */
 const GuardMessage = {
@@ -44,7 +43,7 @@ function getAccessTokenCookieKeysForPath(
     }
     return getApiConsumerAccessTokenCookieKeysForRead(consumerScope);
   }
-  if (path.startsWith(ADMIN_API_PATH_PREFIX)) {
+  if (isAdminApiPath(path)) {
     return getApiAdminAccessTokenCookieKeysForRead();
   }
   return getApiConsumerAccessTokenCookieKeysForRead(consumerScope);
@@ -129,7 +128,7 @@ export class AuthGuard implements CanActivate {
       this.logger.warn(`AuthGuard: admin token used on consumer path`);
       throw new ForbiddenException(GuardMessage.ONLY_FOR_CONSUMERS);
     }
-    if (verified.scope === `consumer` && path.startsWith(ADMIN_API_PATH_PREFIX)) {
+    if (verified.scope === `consumer` && isAdminApiPath(path)) {
       this.logger.warn(`AuthGuard: consumer token used on admin path`);
       throw new ForbiddenException(GuardMessage.ONLY_FOR_ADMINS);
     }
@@ -187,7 +186,7 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException(GuardMessage.NO_IDENTITY_RECORD);
     }
 
-    if (path.startsWith(ADMIN_API_PATH_PREFIX) && !admin) {
+    if (isAdminApiPath(path) && !admin) {
       this.logger.warn(`AuthGuard: consumer attempted admin path`);
       throw new ForbiddenException(GuardMessage.ONLY_FOR_ADMINS);
     }

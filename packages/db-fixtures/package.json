@@ -15,7 +15,7 @@
     "fill": "node ./dist/cli.js fill",
     "refresh": "node ./dist/cli.js refresh --confirm",
     "lint": "eslint \"src/**/*.ts\"",
-    "test": "TERM=dumb NO_COLOR=1 yarn build && node --test dist/options.test.js"
+    "test": "TERM=dumb NO_COLOR=1 yarn build && node --test dist/*.test.js"
   },
   "dependencies": {
     "@remoola/database-2": "^0.0.0",

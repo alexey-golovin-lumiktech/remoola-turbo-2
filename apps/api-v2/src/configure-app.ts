@@ -8,9 +8,10 @@ import cookieParser from 'cookie-parser';
 import * as express from 'express';
 import helmet from 'helmet';
 
-import { CONSUMER_APP_SCOPE_HEADER } from '@remoola/api-types';
+import { isAdminApiPath, CONSUMER_APP_SCOPE_HEADER } from '@remoola/api-types';
 
 import { AdminModule } from './admin/admin.module';
+import { AdminV2Module } from './admin-v2/admin-v2.module';
 import {
   ConsumerActionInterceptor,
   CorrelationIdMiddleware,
@@ -71,7 +72,7 @@ function setupSwagger(app: INestApplication): void {
   const adminConfig = buildSwaggerCookieAuthDocumentConfig(`admin`, linkTo(`Consumer`));
 
   const adminDocument = SwaggerModule.createDocument(app, adminConfig, {
-    include: [AdminModule],
+    include: [AdminModule, AdminV2Module],
     deepScanRoutes: true,
   });
 
@@ -116,7 +117,7 @@ function resolveAllowedOriginForPath(
   path: string,
   originHeader: string,
 ): string | undefined {
-  if (path.startsWith(`/api/admin/`) || path.startsWith(`/docs/admin`)) {
+  if (isAdminApiPath(path) || path.startsWith(`/docs/admin`)) {
     return originResolver.validateAdminOrigin(originHeader);
   }
   if (path.startsWith(`/api/consumer/`) || path.startsWith(`/docs/consumer`)) {
