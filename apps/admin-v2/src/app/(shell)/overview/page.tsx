@@ -26,7 +26,7 @@ export default async function OverviewPage() {
       <section className="panel pageHeader">
         <div>
           <h1>Overview</h1>
-          <p className="muted">MVP-1b operator landing page with phase-aware signal availability.</p>
+          <p className="muted">MVP-1c operator landing page with finance-aware signal linkage.</p>
         </div>
         <p className="muted">Computed: {summary?.computedAt ? new Date(summary.computedAt).toLocaleString() : `-`}</p>
       </section>

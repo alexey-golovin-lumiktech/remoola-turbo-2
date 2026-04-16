@@ -3,7 +3,7 @@ import { type Metadata, type Viewport } from 'next';
 
 export const metadata: Metadata = {
   title: `Remoola Admin v2`,
-  description: `Operational admin console MVP-1b`,
+  description: `Operational admin console MVP-1c`,
 };
 
 export const viewport: Viewport = {

@@ -354,7 +354,11 @@ export class MailingService {
         html = `
           <p>Hello ${escapedEmail},</p>
           <p>We need additional information to complete your verification review.</p>
-          <p>${escapedReason ? `Reviewer note: ${escapedReason}` : `Please review your submitted information and provide the missing details.`}</p>
+          <p>${
+            escapedReason
+              ? `Reviewer note: ${escapedReason}`
+              : `Please review your submitted information and provide the missing details.`
+          }</p>
         `;
         break;
     }

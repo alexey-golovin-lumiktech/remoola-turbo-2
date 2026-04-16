@@ -2,6 +2,13 @@ jest.mock(`./resolve-email-api-base-url`, () => ({
   resolveEmailApiBaseUrl: jest.fn(() => `http://127.0.0.1:3334/api`),
 }));
 
+jest.mock(`../envs`, () => ({
+  envs: {
+    BREVO_API_KEY: `test-api-key`,
+    BREVO_DEFAULT_FROM_EMAIL: `noreply@example.com`,
+  },
+}));
+
 import { MailingService } from './mailing.service';
 
 describe(`MailingService signup verification links`, () => {

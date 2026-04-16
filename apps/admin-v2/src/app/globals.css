@@ -121,6 +121,42 @@ button {
   overflow: auto;
 }
 
+.readSurface {
+  display: none;
+}
+
+.queueCards,
+.condensedList {
+  display: grid;
+  gap: 12px;
+}
+
+.queueCard,
+.condensedRow {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  background: rgba(17, 24, 39, 0.6);
+}
+
+.queueCardBody,
+.condensedRowMeta,
+.condensedRowPrimary {
+  display: grid;
+  gap: 6px;
+}
+
+.condensedRow {
+  grid-template-columns: minmax(0, 1.3fr) repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.tableDense th,
+.tableDense td {
+  padding: 8px 6px;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -235,5 +271,27 @@ td {
   .sidebar {
     border-right: 0;
     border-bottom: 1px solid var(--border);
+  }
+}
+
+@media (max-width: 767px) {
+  .readSurface[data-view='mobile'] {
+    display: block;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1199px) {
+  .readSurface[data-view='tablet'] {
+    display: block;
+  }
+
+  .content {
+    padding: 20px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .readSurface[data-view='desktop'] {
+    display: block;
   }
 }

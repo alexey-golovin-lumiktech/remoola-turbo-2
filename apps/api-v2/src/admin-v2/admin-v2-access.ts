@@ -8,6 +8,8 @@ export type AdminV2Capability =
   | `overview.read`
   | `verification.read`
   | `consumers.read`
+  | `payments.read`
+  | `ledger.read`
   | `consumers.notes`
   | `consumers.flags`
   | `consumers.force_logout`
@@ -19,6 +21,8 @@ const READ_CAPABILITIES: AdminV2Capability[] = [
   `overview.read`,
   `verification.read`,
   `consumers.read`,
+  `payments.read`,
+  `ledger.read`,
   `consumers.notes`,
   `consumers.flags`,
   `audit.read`,
@@ -44,6 +48,8 @@ export function getAdminV2AccessProfile(admin: Pick<AdminModel, `type`>) {
     ...(capabilities.includes(`overview.read`) ? [`overview`] : []),
     ...(capabilities.includes(`verification.read`) ? [`verification`] : []),
     ...(capabilities.includes(`consumers.read`) ? [`consumers`] : []),
+    ...(capabilities.includes(`payments.read`) ? [`payments`] : []),
+    ...(capabilities.includes(`ledger.read`) ? [`ledger`] : []),
     ...(capabilities.includes(`audit.read`) ? [`audit`] : []),
   ];
   return {

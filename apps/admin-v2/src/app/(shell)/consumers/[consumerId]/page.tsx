@@ -259,7 +259,9 @@ export default async function ConsumerCasePage({ params }: { params: Promise<{ c
             {consumer.recentPaymentRequests.map((paymentRequest) => (
               <div key={paymentRequest.id} className="panel">
                 <strong>
-                  {paymentRequest.amount} {paymentRequest.currencyCode}
+                  <Link href={`/payments/${paymentRequest.id}`}>
+                    {paymentRequest.amount} {paymentRequest.currencyCode}
+                  </Link>
                 </strong>
                 <p className="muted">{paymentRequest.status}</p>
                 <p className="muted">Rail: {paymentRequest.paymentRail ?? `-`}</p>

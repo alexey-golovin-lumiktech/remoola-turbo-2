@@ -1,10 +1,18 @@
 import { Injectable } from '@nestjs/common';
 
-import { $Enums } from '@remoola/database-2';
+import { $Enums, Prisma } from '@remoola/database-2';
 
 import { AUTH_AUDIT_EVENTS, AUTH_IDENTITY_TYPES } from '../../shared/auth-audit.service';
 import { PrismaService } from '../../shared/prisma.service';
 import { AdminV2VerificationSlaService } from '../verification/admin-v2-verification-sla.service';
+
+const OPEN_DISPUTE_STATUSES = [
+  `open`,
+  `needs_response`,
+  `under_review`,
+  `warning_needs_response`,
+  `warning_under_review`,
+] as const;
 
 @Injectable()
 export class AdminV2OverviewService {
@@ -13,6 +21,64 @@ export class AdminV2OverviewService {
     private readonly verificationSla: AdminV2VerificationSlaService,
   ) {}
 
+  private async getPaymentRequestSignal(params: {
+    label: string;
+    href: string;
+    where: Prisma.PaymentRequestModelWhereInput;
+  }) {
+    try {
+      const count = await this.prisma.paymentRequestModel.count({
+        where: params.where,
+      });
+
+      return {
+        label: params.label,
+        count,
+        phaseStatus: `live-actionable`,
+        availability: `available`,
+        href: params.href,
+      };
+    } catch {
+      return {
+        label: params.label,
+        count: null,
+        phaseStatus: `live-actionable`,
+        availability: `temporarily-unavailable`,
+        href: params.href,
+      };
+    }
+  }
+
+  private async getOpenDisputesSignal() {
+    try {
+      const [result] = await this.prisma.$queryRaw<Array<{ count: number }>>(Prisma.sql`
+        SELECT COUNT(*)::int AS count
+        FROM ledger_entry_dispute led
+        INNER JOIN ledger_entry le ON le.id = led.ledger_entry_id
+        WHERE le.deleted_at IS NULL
+          AND COALESCE(led.metadata->>'status', led.metadata->>'disputeStatus', '') IN (${Prisma.join(
+            OPEN_DISPUTE_STATUSES.map((status) => Prisma.sql`${status}`),
+          )})
+      `);
+
+      return {
+        label: `Open disputes`,
+        count: result?.count ?? 0,
+        phaseStatus: `live-actionable`,
+        availability: `available`,
+        href: `/ledger?view=disputes`,
+      };
+    } catch {
+      return {
+        label: `Open disputes`,
+        count: null,
+        phaseStatus: `live-actionable`,
+        availability: `temporarily-unavailable`,
+        href: `/ledger?view=disputes`,
+      };
+    }
+  }
+
   async getSummary() {
     const now = new Date();
     const authWindowStart = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -20,9 +86,10 @@ export class AdminV2OverviewService {
       pendingVerifications,
       suspiciousAuthEvents,
       recentAdminActions,
-      overduePaymentRequests,
-      uncollectiblePaymentRequests,
+      overduePaymentRequestsSignal,
+      uncollectiblePaymentRequestsSignal,
       slaSnapshot,
+      openDisputes,
     ] = await Promise.all([
       this.prisma.consumerModel.count({
         where: {
@@ -59,7 +126,9 @@ export class AdminV2OverviewService {
           },
         },
       }),
-      this.prisma.paymentRequestModel.count({
+      this.getPaymentRequestSignal({
+        label: `Overdue payment requests`,
+        href: `/payments?overdue=true`,
         where: {
           deletedAt: null,
           dueDate: { lt: now },
@@ -72,13 +141,16 @@ export class AdminV2OverviewService {
           },
         },
       }),
-      this.prisma.paymentRequestModel.count({
+      this.getPaymentRequestSignal({
+        label: `Uncollectible payment requests`,
+        href: `/payments?status=${$Enums.TransactionStatus.UNCOLLECTIBLE}`,
         where: {
           deletedAt: null,
           status: $Enums.TransactionStatus.UNCOLLECTIBLE,
         },
       }),
       this.verificationSla.getSnapshot(),
+      this.getOpenDisputesSignal(),
     ]);
 
     return {
@@ -113,24 +185,9 @@ export class AdminV2OverviewService {
           availability: `available`,
           href: `/audit/auth?event=${AUTH_AUDIT_EVENTS.login_failure}&dateFrom=${authWindowStart.toISOString()}`,
         },
-        overduePaymentRequests: {
-          label: `Overdue payment requests`,
-          count: overduePaymentRequests,
-          phaseStatus: `count-only`,
-          availability: `available`,
-        },
-        uncollectiblePaymentRequests: {
-          label: `Uncollectible payment requests`,
-          count: uncollectiblePaymentRequests,
-          phaseStatus: `count-only`,
-          availability: `available`,
-        },
-        openDisputes: {
-          label: `Open disputes`,
-          count: null,
-          phaseStatus: `count-only`,
-          availability: `temporarily-unavailable`,
-        },
+        overduePaymentRequests: overduePaymentRequestsSignal,
+        uncollectiblePaymentRequests: uncollectiblePaymentRequestsSignal,
+        openDisputes,
       },
     };
   }

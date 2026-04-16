@@ -24,6 +24,7 @@ describe(`AdminAuthService`, () => {
   let prisma: {
     adminModel: { findFirst: jest.Mock };
     accessRefreshTokenModel: { findFirst: jest.Mock; create: jest.Mock; upsert: jest.Mock };
+    adminAuthSessionModel: { create: jest.Mock };
   };
   let jwtService: { signAsync: jest.Mock; verify: jest.Mock };
 
@@ -35,6 +36,9 @@ describe(`AdminAuthService`, () => {
         findFirst: jest.fn(),
         create: jest.fn(),
         upsert: jest.fn(),
+      },
+      adminAuthSessionModel: {
+        create: jest.fn().mockResolvedValue({ id: `session-id` }),
       },
     };
     jwtService = {
@@ -102,13 +106,6 @@ describe(`AdminAuthService`, () => {
     it(`returns identity and tokens when credentials are valid`, async () => {
       prisma.adminModel.findFirst.mockResolvedValue(identity);
       mockVerifyPassword.mockResolvedValue(true);
-      prisma.accessRefreshTokenModel.findFirst.mockResolvedValue(null);
-      prisma.accessRefreshTokenModel.create.mockImplementation((args: { data: unknown }) =>
-        Promise.resolve({
-          accessToken: (args as { data: { accessToken: string } }).data.accessToken,
-          refreshToken: (args as { data: { refreshToken: string } }).data.refreshToken,
-        }),
-      );
       jwtService.signAsync.mockResolvedValueOnce(`access-token`).mockResolvedValueOnce(`refresh-token`);
 
       const result = await service.login(body);
@@ -117,7 +114,10 @@ describe(`AdminAuthService`, () => {
         identity: { id: identity.id, email: identity.email },
         accessToken: `access-token`,
         refreshToken: `refresh-token`,
+        sessionId: expect.any(String),
+        sessionFamilyId: expect.any(String),
       });
+      expect(result.sessionFamilyId).toBe(result.sessionId);
       expect(mockVerifyPassword).toHaveBeenCalledWith({
         password: body.password,
         storedHash: identity.password,
@@ -125,14 +125,32 @@ describe(`AdminAuthService`, () => {
       });
       expect(jwtService.signAsync).toHaveBeenNthCalledWith(
         1,
-        { identityId: identity.id, type: `access`, scope: `admin` },
+        expect.objectContaining({ sub: identity.id, identityId: identity.id, typ: `access`, scope: `admin` }),
         { expiresIn: envs.JWT_ACCESS_TTL_SECONDS },
       );
       expect(jwtService.signAsync).toHaveBeenNthCalledWith(
         2,
-        { identityId: identity.id, type: `refresh` },
+        expect.objectContaining({
+          sub: identity.id,
+          identityId: identity.id,
+          sid: result.sessionId,
+          fid: result.sessionFamilyId,
+          typ: `refresh`,
+          scope: `admin`,
+        }),
         { expiresIn: envs.JWT_REFRESH_TTL_SECONDS, secret: envs.JWT_REFRESH_SECRET },
       );
+      expect(prisma.adminAuthSessionModel.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          id: result.sessionId,
+          adminId: identity.id,
+          sessionFamilyId: result.sessionFamilyId,
+          refreshTokenHash: expect.any(String),
+          accessTokenHash: expect.any(String),
+          expiresAt: expect.any(Date),
+          lastUsedAt: expect.any(Date),
+        }),
+      });
     });
   });
 
@@ -212,12 +230,12 @@ describe(`AdminAuthService`, () => {
       });
       expect(jwtService.signAsync).toHaveBeenNthCalledWith(
         1,
-        { identityId: admin.id, type: `access`, scope: `admin` },
+        expect.objectContaining({ sub: admin.id, identityId: admin.id, typ: `access`, scope: `admin` }),
         { expiresIn: envs.JWT_ACCESS_TTL_SECONDS },
       );
       expect(jwtService.signAsync).toHaveBeenNthCalledWith(
         2,
-        { identityId: admin.id, type: `refresh` },
+        expect.objectContaining({ sub: admin.id, identityId: admin.id, typ: `refresh`, scope: `admin` }),
         { expiresIn: envs.JWT_REFRESH_TTL_SECONDS, secret: envs.JWT_REFRESH_SECRET },
       );
       expect(jwtService.verify).toHaveBeenCalledWith(refreshToken, { secret: envs.JWT_REFRESH_SECRET });

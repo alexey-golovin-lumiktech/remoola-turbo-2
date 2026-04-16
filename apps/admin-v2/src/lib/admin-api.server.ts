@@ -148,6 +148,215 @@ export type OverviewSummaryResponse = {
   signals: Record<string, Record<string, unknown>>;
 };
 
+export type CursorPageInfo = {
+  nextCursor: string | null;
+  limit: number;
+};
+
+export type PaymentsListResponse = {
+  items: Array<{
+    id: string;
+    amount: string;
+    currencyCode: string;
+    persistedStatus: string;
+    effectiveStatus: string;
+    staleWarning: boolean;
+    paymentRail: string | null;
+    payer: {
+      id: string | null;
+      email: string | null;
+    };
+    requester: {
+      id: string | null;
+      email: string | null;
+    };
+    dueDate: string | null;
+    createdAt: string;
+    updatedAt: string;
+    attachmentsCount: number;
+    dataFreshnessClass: string;
+  }>;
+  pageInfo: CursorPageInfo;
+};
+
+export type PaymentCaseResponse = {
+  id: string;
+  core: {
+    id: string;
+    amount: string;
+    currencyCode: string;
+    persistedStatus: string;
+    effectiveStatus: string;
+    paymentRail: string | null;
+    description: string | null;
+    dueDate: string | null;
+    sentDate: string | null;
+    createdAt: string;
+    deletedAt: string | null;
+  };
+  payer: {
+    id: string | null;
+    email: string | null;
+  };
+  requester: {
+    id: string | null;
+    email: string | null;
+  };
+  attachments: Array<{
+    id: string;
+    resourceId: string;
+    name: string;
+    size: number;
+    mimetype: string;
+    downloadUrl: string;
+    createdAt: string;
+    deletedAt: string | null;
+    resourceDeletedAt: string | null;
+  }>;
+  ledgerEntries: Array<{
+    id: string;
+    ledgerId: string;
+    type: string;
+    amount: string;
+    currencyCode: string;
+    effectiveStatus: string;
+    createdAt: string;
+    deletedAt: string | null;
+  }>;
+  timeline: Array<{
+    event: string;
+    timestamp: string;
+    metadata: Record<string, unknown> | null;
+  }>;
+  auditContext: Array<{
+    id: string;
+    action: string;
+    resource: string;
+    resourceId: string | null;
+    adminEmail: string | null;
+    createdAt: string;
+  }>;
+  version: number;
+  updatedAt: string;
+  staleWarning: boolean;
+  dataFreshnessClass: string;
+};
+
+export type LedgerEntriesListResponse = {
+  items: Array<{
+    id: string;
+    ledgerId: string;
+    type: string;
+    amount: string;
+    currencyCode: string;
+    persistedStatus: string;
+    effectiveStatus: string;
+    paymentRail: string | null;
+    consumerId: string;
+    consumerEmail: string | null;
+    paymentRequestId: string | null;
+    paymentRequestStatus: string | null;
+    createdAt: string;
+    updatedAt: string;
+    disputeCount: number;
+    staleWarning: boolean;
+    dataFreshnessClass: string;
+  }>;
+  pageInfo: CursorPageInfo;
+};
+
+export type LedgerEntryCaseResponse = {
+  id: string;
+  core: {
+    id: string;
+    ledgerId: string;
+    type: string;
+    amount: string;
+    currencyCode: string;
+    persistedStatus: string;
+    effectiveStatus: string;
+    paymentRail: string | null;
+    feesType: string | null;
+    feesAmount: string | null;
+    stripeId: string | null;
+    idempotencyKey: string | null;
+    createdAt: string;
+    updatedAt: string;
+  };
+  consumer: {
+    id: string;
+    email: string | null;
+  };
+  paymentRequest: {
+    id: string;
+    amount: string;
+    currencyCode: string;
+    status: string;
+    paymentRail: string | null;
+    payerId: string;
+    payerEmail: string | null;
+    requesterId: string;
+    requesterEmail: string | null;
+  } | null;
+  metadata: Record<string, unknown>;
+  outcomes: Array<{
+    id: string;
+    status: string;
+    source: string | null;
+    externalId: string | null;
+    createdAt: string;
+  }>;
+  disputes: Array<{
+    id: string;
+    stripeDisputeId: string;
+    metadata: Record<string, unknown>;
+    createdAt: string;
+  }>;
+  relatedEntries: Array<{
+    id: string;
+    type: string;
+    amount: string;
+    currencyCode: string;
+    effectiveStatus: string;
+    createdAt: string;
+  }>;
+  auditContext: Array<{
+    id: string;
+    action: string;
+    resource: string;
+    resourceId: string | null;
+    adminEmail: string | null;
+    createdAt: string;
+  }>;
+  staleWarning: boolean;
+  dataFreshnessClass: string;
+};
+
+export type LedgerDisputesResponse = {
+  items: Array<{
+    id: string;
+    stripeDisputeId: string;
+    disputeStatus: string | null;
+    reason: string | null;
+    amountMinor: number | null;
+    updatedAt: string | null;
+    createdAt: string;
+    metadata: Record<string, unknown>;
+    ledgerEntry: {
+      id: string;
+      ledgerId: string;
+      paymentRequestId: string | null;
+      consumerId: string;
+      type: string;
+      amount: string;
+      currencyCode: string;
+      paymentRail: string | null;
+    };
+    dataFreshnessClass: string;
+  }>;
+  pageInfo: CursorPageInfo;
+};
+
 export type VerificationQueueResponse = {
   items: Array<{
     id: string;
@@ -273,6 +482,44 @@ export async function getOverviewSummary(): Promise<OverviewSummaryResponse | nu
   return fetchAdminApi<OverviewSummaryResponse>(`/admin-v2/overview/summary`);
 }
 
+export async function getPayments(params?: {
+  cursor?: string;
+  limit?: number;
+  q?: string;
+  status?: string;
+  paymentRail?: string;
+  currencyCode?: string;
+  amountMin?: number;
+  amountMax?: number;
+  dueDateFrom?: string;
+  dueDateTo?: string;
+  createdFrom?: string;
+  createdTo?: string;
+  overdue?: boolean;
+}): Promise<PaymentsListResponse | null> {
+  const searchParams = new URLSearchParams({
+    limit: String(params?.limit ?? 25),
+  });
+  if (params?.cursor?.trim()) searchParams.set(`cursor`, params.cursor.trim());
+  if (params?.q?.trim()) searchParams.set(`q`, params.q.trim());
+  if (params?.status?.trim()) searchParams.set(`status`, params.status.trim());
+  if (params?.paymentRail?.trim()) searchParams.set(`paymentRail`, params.paymentRail.trim());
+  if (params?.currencyCode?.trim()) searchParams.set(`currencyCode`, params.currencyCode.trim());
+  if (Number.isFinite(params?.amountMin)) searchParams.set(`amountMin`, String(params?.amountMin));
+  if (Number.isFinite(params?.amountMax)) searchParams.set(`amountMax`, String(params?.amountMax));
+  if (params?.dueDateFrom?.trim()) searchParams.set(`dueDateFrom`, params.dueDateFrom.trim());
+  if (params?.dueDateTo?.trim()) searchParams.set(`dueDateTo`, params.dueDateTo.trim());
+  if (params?.createdFrom?.trim()) searchParams.set(`createdFrom`, params.createdFrom.trim());
+  if (params?.createdTo?.trim()) searchParams.set(`createdTo`, params.createdTo.trim());
+  if (params?.overdue) searchParams.set(`overdue`, `true`);
+  return fetchAdminApi<PaymentsListResponse>(`/admin-v2/payments?${searchParams.toString()}`);
+}
+
+export async function getPaymentCase(paymentRequestId: string): Promise<PaymentCaseResponse | null> {
+  if (!paymentRequestId.trim()) return null;
+  return fetchAdminApi<PaymentCaseResponse>(`/admin-v2/payments/${paymentRequestId}`);
+}
+
 export async function getConsumers(params?: {
   page?: number;
   pageSize?: number;
@@ -348,6 +595,61 @@ export async function getConsumerContracts(params: {
 export async function getConsumerLedgerSummary(consumerId: string): Promise<ConsumerLedgerSummaryResponse | null> {
   if (!consumerId.trim()) return null;
   return fetchAdminApi<ConsumerLedgerSummaryResponse>(`/admin-v2/consumers/${consumerId}/ledger-summary`);
+}
+
+export async function getLedgerEntries(params?: {
+  cursor?: string;
+  limit?: number;
+  q?: string;
+  type?: string;
+  status?: string;
+  currencyCode?: string;
+  paymentRequestId?: string;
+  consumerId?: string;
+  amountSign?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}): Promise<LedgerEntriesListResponse | null> {
+  const searchParams = new URLSearchParams({
+    limit: String(params?.limit ?? 25),
+  });
+  if (params?.cursor?.trim()) searchParams.set(`cursor`, params.cursor.trim());
+  if (params?.q?.trim()) searchParams.set(`q`, params.q.trim());
+  if (params?.type?.trim()) searchParams.set(`type`, params.type.trim());
+  if (params?.status?.trim()) searchParams.set(`status`, params.status.trim());
+  if (params?.currencyCode?.trim()) searchParams.set(`currencyCode`, params.currencyCode.trim());
+  if (params?.paymentRequestId?.trim()) searchParams.set(`paymentRequestId`, params.paymentRequestId.trim());
+  if (params?.consumerId?.trim()) searchParams.set(`consumerId`, params.consumerId.trim());
+  if (params?.amountSign?.trim()) searchParams.set(`amountSign`, params.amountSign.trim());
+  if (params?.dateFrom?.trim()) searchParams.set(`dateFrom`, params.dateFrom.trim());
+  if (params?.dateTo?.trim()) searchParams.set(`dateTo`, params.dateTo.trim());
+  return fetchAdminApi<LedgerEntriesListResponse>(`/admin-v2/ledger?${searchParams.toString()}`);
+}
+
+export async function getLedgerEntryCase(ledgerEntryId: string): Promise<LedgerEntryCaseResponse | null> {
+  if (!ledgerEntryId.trim()) return null;
+  return fetchAdminApi<LedgerEntryCaseResponse>(`/admin-v2/ledger/${ledgerEntryId}`);
+}
+
+export async function getLedgerDisputes(params?: {
+  cursor?: string;
+  limit?: number;
+  paymentRequestId?: string;
+  consumerId?: string;
+  q?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}): Promise<LedgerDisputesResponse | null> {
+  const searchParams = new URLSearchParams({
+    limit: String(params?.limit ?? 25),
+  });
+  if (params?.cursor?.trim()) searchParams.set(`cursor`, params.cursor.trim());
+  if (params?.paymentRequestId?.trim()) searchParams.set(`paymentRequestId`, params.paymentRequestId.trim());
+  if (params?.consumerId?.trim()) searchParams.set(`consumerId`, params.consumerId.trim());
+  if (params?.q?.trim()) searchParams.set(`q`, params.q.trim());
+  if (params?.dateFrom?.trim()) searchParams.set(`dateFrom`, params.dateFrom.trim());
+  if (params?.dateTo?.trim()) searchParams.set(`dateTo`, params.dateTo.trim());
+  return fetchAdminApi<LedgerDisputesResponse>(`/admin-v2/ledger/disputes?${searchParams.toString()}`);
 }
 
 export async function getConsumerAuthHistory(params: {

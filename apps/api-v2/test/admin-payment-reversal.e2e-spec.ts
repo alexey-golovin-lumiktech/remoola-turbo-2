@@ -37,6 +37,8 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
   let refundPaymentRequestId = ``;
   let chargebackPaymentRequestId = ``;
   let initialConsumerMobileOrigin: string;
+  let initialBrevoApiKey: string;
+  let initialBrevoDefaultFromEmail: string;
   let sendMailMock: ReturnType<typeof jest.spyOn>;
 
   function parseCookieValue(cookies: string[] | undefined, key: string): string | null {
@@ -137,7 +139,11 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
   beforeAll(async () => {
     assertIsolatedTestDatabaseUrl();
     initialConsumerMobileOrigin = envs.CONSUMER_MOBILE_APP_ORIGIN;
+    initialBrevoApiKey = envs.BREVO_API_KEY;
+    initialBrevoDefaultFromEmail = envs.BREVO_DEFAULT_FROM_EMAIL;
     envs.CONSUMER_MOBILE_APP_ORIGIN = consumerMobileOrigin;
+    envs.BREVO_API_KEY = `test-api-key`;
+    envs.BREVO_DEFAULT_FROM_EMAIL = `noreply@local.test`;
     prisma = new PrismaClient();
     await prisma.$connect();
 
@@ -200,6 +206,8 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
 
   afterAll(async () => {
     envs.CONSUMER_MOBILE_APP_ORIGIN = initialConsumerMobileOrigin;
+    envs.BREVO_API_KEY = initialBrevoApiKey;
+    envs.BREVO_DEFAULT_FROM_EMAIL = initialBrevoDefaultFromEmail;
     await prisma.$disconnect();
     await app.close();
   });

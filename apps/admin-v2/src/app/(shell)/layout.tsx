@@ -6,6 +6,8 @@ const navItems = [
   { href: `/overview`, label: `Overview`, workspace: `overview` },
   { href: `/verification`, label: `Verification`, workspace: `verification` },
   { href: `/consumers`, label: `Consumers`, workspace: `consumers` },
+  { href: `/payments`, label: `Payments`, workspace: `payments` },
+  { href: `/ledger`, label: `Ledger and Disputes`, workspace: `ledger` },
   { href: `/audit/auth`, label: `Audit · Auth`, workspace: `audit` },
   { href: `/audit/admin-actions`, label: `Audit · Admin Actions`, workspace: `audit` },
   { href: `/audit/consumer-actions`, label: `Audit · Consumer Actions`, workspace: `audit` },
@@ -30,7 +32,7 @@ export default async function ShellLayout({ children }: { children: React.ReactN
         <div className="panel">
           <p className="muted">{identity?.email ?? `Access denied`}</p>
           <p className="muted">Role: {identity?.role ?? `UNAUTHORIZED`}</p>
-          <p className="muted">Phase: {identity?.phase ?? `MVP-1b`}</p>
+          <p className="muted">Phase: {identity?.phase ?? `MVP-1c`}</p>
           {identity ? null : <p className="muted">This admin type is outside the allowed Admin v2 surfaces.</p>}
           <form action="/logout" method="post">
             <button type="submit" className="secondaryButton">
@@ -45,7 +47,7 @@ export default async function ShellLayout({ children }: { children: React.ReactN
         ) : (
           <section className="panel">
             <h1>Access denied</h1>
-            <p className="muted">Only OPS_ADMIN and SUPER_ADMIN can use MVP-1b workspaces.</p>
+            <p className="muted">Only OPS_ADMIN and SUPER_ADMIN can use MVP-1c workspaces.</p>
           </section>
         )}
       </main>

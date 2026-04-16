@@ -1,9 +1,10 @@
 import { AdminV2OverviewService } from './admin-v2-overview.service';
 
 describe(`AdminV2OverviewService`, () => {
-  it(`returns canonical MVP-1b phase semantics for overview signals`, async () => {
+  it(`returns canonical MVP-1c phase semantics for finance signals`, async () => {
     const service = new AdminV2OverviewService(
       {
+        $queryRaw: jest.fn(async () => [{ count: 4 }]),
         consumerModel: { count: jest.fn(async () => 28) },
         authAuditLogModel: { count: jest.fn(async () => 5) },
         adminActionAuditLogModel: {
@@ -46,17 +47,99 @@ describe(`AdminV2OverviewService`, () => {
     expect(summary.signals.pendingVerifications.phaseStatus).toBe(`live-actionable`);
     expect(summary.signals.recentAdminActions.phaseStatus).toBe(`live-actionable`);
     expect(summary.signals.suspiciousAuthEvents.phaseStatus).toBe(`live-actionable`);
-    expect(summary.signals.overduePaymentRequests.phaseStatus).toBe(`count-only`);
-    expect(summary.signals.uncollectiblePaymentRequests.phaseStatus).toBe(`count-only`);
+    expect(summary.signals.overduePaymentRequests.phaseStatus).toBe(`live-actionable`);
+    expect(summary.signals.overduePaymentRequests.href).toBe(`/payments?overdue=true`);
+    expect(summary.signals.uncollectiblePaymentRequests.phaseStatus).toBe(`live-actionable`);
+    expect(summary.signals.uncollectiblePaymentRequests.href).toBe(`/payments?status=UNCOLLECTIBLE`);
     expect(summary.signals.openDisputes).toEqual({
       label: `Open disputes`,
-      count: null,
-      phaseStatus: `count-only`,
-      availability: `temporarily-unavailable`,
+      count: 4,
+      phaseStatus: `live-actionable`,
+      availability: `available`,
+      href: `/ledger?view=disputes`,
     });
     expect(summary.signals).not.toHaveProperty(`failedOrStuckPayouts`);
     expect(summary.signals).not.toHaveProperty(`failedScheduledConversions`);
     expect(summary.signals).not.toHaveProperty(`staleExchangeRates`);
     expect(summary.signals).not.toHaveProperty(`ledgerAnomalies`);
+  });
+
+  it(`keeps temporarily-unavailable as fallback when dispute summary query fails`, async () => {
+    const service = new AdminV2OverviewService(
+      {
+        $queryRaw: jest.fn(async () => {
+          throw new Error(`query failed`);
+        }),
+        consumerModel: { count: jest.fn(async () => 1) },
+        authAuditLogModel: { count: jest.fn(async () => 2) },
+        adminActionAuditLogModel: {
+          findMany: jest.fn(async () => []),
+        },
+        paymentRequestModel: {
+          count: jest.fn(async () => 0),
+        },
+      } as never,
+      {
+        getSnapshot: jest.fn(async () => ({
+          breachedConsumerIds: new Set<string>(),
+          thresholdHours: 24,
+          lastComputedAt: `2026-04-15T10:05:00.000Z`,
+        })),
+      } as never,
+    );
+
+    const summary = await service.getSummary();
+
+    expect(summary.signals.openDisputes).toEqual({
+      label: `Open disputes`,
+      count: null,
+      phaseStatus: `live-actionable`,
+      availability: `temporarily-unavailable`,
+      href: `/ledger?view=disputes`,
+    });
+  });
+
+  it(`keeps payment signals temporarily-unavailable when payment counters fail`, async () => {
+    const paymentCount = jest
+      .fn()
+      .mockRejectedValueOnce(new Error(`overdue failed`))
+      .mockRejectedValueOnce(new Error(`uncollectible failed`));
+    const service = new AdminV2OverviewService(
+      {
+        $queryRaw: jest.fn(async () => [{ count: 4 }]),
+        consumerModel: { count: jest.fn(async () => 1) },
+        authAuditLogModel: { count: jest.fn(async () => 2) },
+        adminActionAuditLogModel: {
+          findMany: jest.fn(async () => []),
+        },
+        paymentRequestModel: {
+          count: paymentCount,
+        },
+      } as never,
+      {
+        getSnapshot: jest.fn(async () => ({
+          breachedConsumerIds: new Set<string>(),
+          thresholdHours: 24,
+          lastComputedAt: `2026-04-15T10:05:00.000Z`,
+        })),
+      } as never,
+    );
+
+    const summary = await service.getSummary();
+
+    expect(summary.signals.overduePaymentRequests).toEqual({
+      label: `Overdue payment requests`,
+      count: null,
+      phaseStatus: `live-actionable`,
+      availability: `temporarily-unavailable`,
+      href: `/payments?overdue=true`,
+    });
+    expect(summary.signals.uncollectiblePaymentRequests).toEqual({
+      label: `Uncollectible payment requests`,
+      count: null,
+      phaseStatus: `live-actionable`,
+      availability: `temporarily-unavailable`,
+      href: `/payments?status=UNCOLLECTIBLE`,
+    });
   });
 });

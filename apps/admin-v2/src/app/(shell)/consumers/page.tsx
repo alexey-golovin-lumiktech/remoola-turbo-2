@@ -45,7 +45,7 @@ export default async function ConsumersPage({
       <section className="panel pageHeader">
         <div>
           <h1>Consumers</h1>
-          <p className="muted">MVP-1a consumer investigation surface with notes, flags and audit drilldowns.</p>
+          <p className="muted">Consumer investigation surface with notes, flags and audit drilldowns.</p>
         </div>
         <form method="get" className="actionsRow">
           <input name="q" defaultValue={q} placeholder="Search by email, name or id" />

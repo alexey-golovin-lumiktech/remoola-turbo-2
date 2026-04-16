@@ -20,7 +20,7 @@ export class AdminV2Controller {
       email: admin.email,
       type: admin.type,
       role: profile.role,
-      phase: `MVP-1b`,
+      phase: `MVP-1c`,
       capabilities: profile.capabilities,
       workspaces: profile.workspaces,
     };

@@ -14,9 +14,23 @@ export type AuthSessionModelWithRelations = Prisma.AuthSessionModelGetPayload<{
   };
 }>;
 
+export type AdminAuthSessionModelWithRelations = Prisma.AdminAuthSessionModelGetPayload<{
+  include: {
+    admin: true;
+    replacedBySession: true;
+    replacedSessions: true;
+  };
+}>;
+
 export type AuthAuditLogModelWithRelations = Prisma.AuthAuditLogModelGetPayload<{}>;
 
 export type AdminActionAuditLogModelWithRelations = Prisma.AdminActionAuditLogModelGetPayload<{
+  include: {
+    admin: true;
+  };
+}>;
+
+export type AdminActionIdempotencyModelWithRelations = Prisma.AdminActionIdempotencyModelGetPayload<{
   include: {
     admin: true;
   };
@@ -46,6 +60,8 @@ export type AdminModelWithRelations = Prisma.AdminModelGetPayload<{
   include: {
     adminSettings: true;
     adminActionAuditLogs: true;
+    adminActionIdempotencyRecords: true;
+    adminAuthSessions: true;
     consumerNotes: true;
     consumerFlags: true;
     removedConsumerFlags: true;

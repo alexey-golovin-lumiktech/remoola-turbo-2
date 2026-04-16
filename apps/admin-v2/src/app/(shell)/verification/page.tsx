@@ -45,7 +45,7 @@ export default async function VerificationQueuePage({
       <section className="panel pageHeader">
         <div>
           <h1>Verification Queue</h1>
-          <p className="muted">Canonical MVP-1b queue: `PENDING`, `MORE_INFO`, `FLAGGED` only.</p>
+          <p className="muted">Verification queue for canonical review states: PENDING, MORE_INFO and FLAGGED.</p>
         </div>
         <p className="muted">
           SLA breached: {queue?.sla.breachedCount ?? 0} · threshold {queue?.sla.thresholdHours ?? 24}h
