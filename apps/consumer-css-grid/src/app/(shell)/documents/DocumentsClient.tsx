@@ -5,6 +5,15 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useMemo, useRef, useState, useTransition } from 'react';
 
 import { AttachToPaymentModal } from './AttachToPaymentModal';
+import {
+  buildDocumentPaymentHref,
+  formatDate,
+  formatFileSize,
+  getDeleteBlockedMessage,
+  getHistoricalRecordLabel,
+  isDeleteBlocked,
+  type DocumentItem,
+} from './document-helpers';
 import { DocumentPreviewPanel } from './DocumentPreviewPanel';
 import { getContextualHelpGuides, HELP_CONTEXT_ROUTE } from '../../../features/help/get-contextual-help-guides';
 import { HELP_GUIDE_SLUG } from '../../../features/help/guide-registry';
@@ -17,21 +26,6 @@ import {
 } from '../../../lib/consumer-mutations.server';
 import { handleSessionExpiredError } from '../../../lib/session-expired';
 import { MetricLine } from '../../../shared/ui/shell-primitives';
-import { buildPaymentDetailHref } from '../payments/payment-flow-context';
-
-type DocumentItem = {
-  id: string;
-  name: string;
-  kind: string;
-  createdAt: string;
-  size: number;
-  downloadUrl: string;
-  tags: string[];
-  isAttachedToDraftPaymentRequest: boolean;
-  attachedDraftPaymentRequestIds: string[];
-  isAttachedToNonDraftPaymentRequest: boolean;
-  attachedNonDraftPaymentRequestIds: string[];
-};
 
 type Props = {
   documents: DocumentItem[];
@@ -46,58 +40,6 @@ type Props = {
     draftPaymentRequestIds: string[];
   } | null;
 };
-
-function formatDate(value: string) {
-  return new Date(value).toLocaleDateString(`en-US`, {
-    year: `numeric`,
-    month: `short`,
-    day: `2-digit`,
-  });
-}
-
-function formatFileSize(size: number) {
-  if (size < 1024) return `${size} B`;
-  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
-  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function isDeleteBlocked(document: DocumentItem) {
-  return document.isAttachedToDraftPaymentRequest || document.isAttachedToNonDraftPaymentRequest;
-}
-
-function getHistoricalRecordLabel(count: number) {
-  return count === 1 ? `Attached to payment record` : `Attached to payment records`;
-}
-
-function getDeleteBlockedMessage(documentIds: string[], documents: DocumentItem[]) {
-  const selectedDocuments = documents.filter((document) => documentIds.includes(document.id));
-  const hasNonDraftAttachment = selectedDocuments.some((document) => document.isAttachedToNonDraftPaymentRequest);
-  if (hasNonDraftAttachment) {
-    return selectedDocuments.length === 1
-      ? `This document is attached to a payment that is no longer a draft. It now remains part of that payment record, so it cannot be deleted from Documents.`
-      : `Some selected documents are attached to payments that are no longer drafts. They now remain part of those payment records, so they cannot be deleted from Documents.`;
-  }
-
-  return selectedDocuments.length === 1
-    ? `This document is still attached to a draft payment request. Open the draft and remove it there before deleting it from Documents.`
-    : `Some selected documents are still attached to draft payment requests. Open each draft and remove them there before deleting them from Documents.`;
-}
-
-function buildDocumentPaymentHref(
-  paymentRequestId: string,
-  contractContext?: {
-    id: string;
-    returnTo: string;
-  } | null,
-) {
-  if (!contractContext) {
-    return `/payments/${paymentRequestId}`;
-  }
-  return buildPaymentDetailHref(paymentRequestId, {
-    contractId: contractContext.id,
-    returnTo: contractContext.returnTo,
-  });
-}
 
 async function uploadDocuments(formData: FormData) {
   try {

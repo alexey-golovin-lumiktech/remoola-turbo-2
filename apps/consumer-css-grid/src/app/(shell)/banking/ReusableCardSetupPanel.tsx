@@ -5,6 +5,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
+import { isValidEmail, normalizeEmail, normalizePhone, phoneDigitsCount } from './banking-helpers';
 import {
   confirmReusableCardSetupIntentMutation,
   createReusableCardSetupIntentMutation,
@@ -23,25 +24,6 @@ type Props = {
 
 const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.trim() ?? ``;
 const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
-
-function normalizeEmail(value: string) {
-  return value.trimStart().toLowerCase();
-}
-
-function normalizePhone(value: string) {
-  const trimmed = value.trimStart();
-  const digits = trimmed.replace(/\D/g, ``).slice(0, 15);
-  if (!digits) return ``;
-  return trimmed.startsWith(`+`) ? `+${digits}` : digits;
-}
-
-function isValidEmail(value: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-}
-
-function phoneDigitsCount(value: string) {
-  return value.replace(/\D/g, ``).length;
-}
 
 function ReusableCardSetupForm({ onMessage }: Props) {
   const router = useRouter();

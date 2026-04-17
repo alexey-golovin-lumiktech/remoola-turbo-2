@@ -1,8 +1,7 @@
 import { HELP_GUIDE_SLUG, type HelpGuideSlug } from './guide-registry';
-
-import type { HelpCalloutVariant } from './ui/HelpCallout';
-import type { HelpFaqItem } from './ui/HelpFaq';
-import type { HelpStepItem } from './ui/HelpSteps';
+import { type HelpCalloutVariant } from './ui/HelpCallout';
+import { type HelpFaqItem } from './ui/HelpFaq';
+import { type HelpStepItem } from './ui/HelpSteps';
 
 export interface HelpGuideCallout {
   variant: HelpCalloutVariant;

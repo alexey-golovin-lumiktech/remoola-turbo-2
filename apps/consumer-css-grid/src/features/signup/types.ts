@@ -1,10 +1,10 @@
-import type {
-  TAccountType,
-  TConsumerRole,
-  TContractorKind,
-  THowDidHearAboutUs,
-  TLegalStatus,
-  TOrganizationSize,
+import {
+  type TAccountType,
+  type TConsumerRole,
+  type TContractorKind,
+  type THowDidHearAboutUs,
+  type TLegalStatus,
+  type TOrganizationSize,
 } from '@remoola/api-types';
 
 export interface SignupDetails {

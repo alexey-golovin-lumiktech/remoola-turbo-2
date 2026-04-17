@@ -1,7 +1,6 @@
 import { publicHelpGuideRegistry, type HelpGuideSlug } from './guide-registry';
 import { getGuideSourceRefs } from './guide-source-map';
-
-import type { InternalHelpGuideMeta } from './guide-types';
+import { type InternalHelpGuideMeta } from './guide-types';
 
 export type HelpGuideRegistryEntry = InternalHelpGuideMeta<HelpGuideSlug>;
 
