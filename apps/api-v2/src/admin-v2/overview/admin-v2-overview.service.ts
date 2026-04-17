@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { $Enums, Prisma } from '@remoola/database-2';
 
+import { envs } from '../../envs';
 import { AUTH_AUDIT_EVENTS, AUTH_IDENTITY_TYPES } from '../../shared/auth-audit.service';
 import { PrismaService } from '../../shared/prisma.service';
 import { AdminV2VerificationSlaService } from '../verification/admin-v2-verification-sla.service';
@@ -79,6 +80,70 @@ export class AdminV2OverviewService {
     }
   }
 
+  private getRateStaleCutoff(now: Date) {
+    const hours = envs.EXCHANGE_RATE_MAX_AGE_HOURS;
+    const ageMs = Number.isFinite(hours) && hours > 0 ? hours * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+    return new Date(now.getTime() - ageMs);
+  }
+
+  private async getFailedScheduledConversionsSignal() {
+    try {
+      const count = await this.prisma.scheduledFxConversionModel.count({
+        where: {
+          deletedAt: null,
+          status: $Enums.ScheduledFxConversionStatus.FAILED,
+        },
+      });
+
+      return {
+        label: `Failed scheduled FX`,
+        count,
+        phaseStatus: `breadth-follow-up`,
+        availability: `available`,
+        href: `/exchange/scheduled?status=FAILED`,
+      };
+    } catch {
+      return {
+        label: `Failed scheduled FX`,
+        count: null,
+        phaseStatus: `breadth-follow-up`,
+        availability: `temporarily-unavailable`,
+        href: `/exchange/scheduled?status=FAILED`,
+      };
+    }
+  }
+
+  private async getStaleExchangeRatesSignal(now: Date) {
+    const staleCutoff = this.getRateStaleCutoff(now);
+    try {
+      const [result] = await this.prisma.$queryRaw<Array<{ count: number }>>(Prisma.sql`
+        SELECT COUNT(*)::int AS count
+        FROM exchange_rate rate
+        WHERE rate.deleted_at IS NULL
+          AND rate.status = ${$Enums.ExchangeRateStatus.APPROVED}::exchange_rate_status_enum
+          AND rate.effective_at <= ${now}
+          AND (rate.expires_at IS NULL OR rate.expires_at > ${now})
+          AND COALESCE(rate.fetched_at, rate.effective_at, rate.created_at) < ${staleCutoff}
+      `);
+
+      return {
+        label: `Stale exchange rates`,
+        count: result?.count ?? 0,
+        phaseStatus: `breadth-follow-up`,
+        availability: `available`,
+        href: `/exchange/rates?stale=true`,
+      };
+    } catch {
+      return {
+        label: `Stale exchange rates`,
+        count: null,
+        phaseStatus: `breadth-follow-up`,
+        availability: `temporarily-unavailable`,
+        href: `/exchange/rates?stale=true`,
+      };
+    }
+  }
+
   async getSummary() {
     const now = new Date();
     const authWindowStart = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -90,6 +155,8 @@ export class AdminV2OverviewService {
       uncollectiblePaymentRequestsSignal,
       slaSnapshot,
       openDisputes,
+      failedScheduledConversions,
+      staleExchangeRates,
     ] = await Promise.all([
       this.prisma.consumerModel.count({
         where: {
@@ -151,6 +218,8 @@ export class AdminV2OverviewService {
       }),
       this.verificationSla.getSnapshot(),
       this.getOpenDisputesSignal(),
+      this.getFailedScheduledConversionsSignal(),
+      this.getStaleExchangeRatesSignal(now),
     ]);
 
     return {
@@ -188,6 +257,8 @@ export class AdminV2OverviewService {
         overduePaymentRequests: overduePaymentRequestsSignal,
         uncollectiblePaymentRequests: uncollectiblePaymentRequestsSignal,
         openDisputes,
+        failedScheduledConversions,
+        staleExchangeRates,
       },
     };
   }

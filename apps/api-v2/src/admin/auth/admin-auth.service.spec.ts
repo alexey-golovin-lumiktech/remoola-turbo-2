@@ -25,9 +25,10 @@ describe(`AdminAuthService`, () => {
     adminModel: { findFirst: jest.Mock };
     accessRefreshTokenModel: { findFirst: jest.Mock; create: jest.Mock; upsert: jest.Mock };
     adminAuthSessionModel: { create: jest.Mock };
+    resetPasswordModel: { updateMany: jest.Mock; create: jest.Mock };
+    $transaction: jest.Mock;
   };
   let jwtService: { signAsync: jest.Mock; verify: jest.Mock };
-
   beforeEach(async () => {
     jest.clearAllMocks();
     prisma = {
@@ -40,6 +41,11 @@ describe(`AdminAuthService`, () => {
       adminAuthSessionModel: {
         create: jest.fn().mockResolvedValue({ id: `session-id` }),
       },
+      resetPasswordModel: {
+        updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+        create: jest.fn().mockResolvedValue({ id: `reset-id` }),
+      },
+      $transaction: jest.fn(async (callback: (tx: typeof prisma) => Promise<unknown>) => callback(prisma as never)),
     };
     jwtService = {
       signAsync: jest.fn().mockResolvedValue(`mock-token`),
@@ -138,7 +144,10 @@ describe(`AdminAuthService`, () => {
           typ: `refresh`,
           scope: `admin`,
         }),
-        { expiresIn: envs.JWT_REFRESH_TTL_SECONDS, secret: envs.JWT_REFRESH_SECRET },
+        {
+          expiresIn: envs.JWT_REFRESH_TTL_SECONDS,
+          secret: envs.JWT_REFRESH_SECRET,
+        },
       );
       expect(prisma.adminAuthSessionModel.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
@@ -304,6 +313,42 @@ describe(`AdminAuthService`, () => {
         storedHash: admin.password,
         storedSalt: admin.salt,
       });
+    });
+  });
+
+  describe(`issueAdminPasswordReset`, () => {
+    it(`creates an admin-scoped reset artifact`, async () => {
+      prisma.adminModel.findFirst.mockResolvedValue({
+        id: `admin-id`,
+        email: `admin@example.com`,
+      });
+
+      const result = await service.issueAdminPasswordReset(`admin-id`);
+
+      expect(result).toMatchObject({
+        adminId: `admin-id`,
+        emailDispatched: false,
+        deliveryStatus: `verify_contract_missing`,
+      });
+      expect(prisma.resetPasswordModel.updateMany).toHaveBeenCalledWith({
+        where: { adminId: `admin-id`, deletedAt: null },
+        data: { deletedAt: expect.any(Date) },
+      });
+      expect(prisma.resetPasswordModel.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          adminId: `admin-id`,
+          tokenHash: expect.any(String),
+          expiredAt: expect.any(Date),
+          appScope: `admin-v2`,
+        }),
+      });
+    });
+
+    it(`rejects unknown admins`, async () => {
+      prisma.adminModel.findFirst.mockResolvedValue(null);
+
+      await expect(service.issueAdminPasswordReset(`missing-admin`)).rejects.toThrow(BadRequestException);
+      expect(prisma.resetPasswordModel.create).not.toHaveBeenCalled();
     });
   });
 });

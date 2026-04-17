@@ -3,7 +3,7 @@ import { type Metadata, type Viewport } from 'next';
 
 export const metadata: Metadata = {
   title: `Remoola Admin v2`,
-  description: `Operational admin console MVP-1c`,
+  description: `Operational admin console with canonical MVP-2 shell framing across core ops, top-level breadth, later admin breadth, and nested finance investigation routes`,
 };
 
 export const viewport: Viewport = {

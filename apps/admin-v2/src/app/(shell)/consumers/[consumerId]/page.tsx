@@ -13,7 +13,9 @@ import {
   addConsumerFlagAction,
   createConsumerNoteAction,
   forceLogoutConsumerAction,
+  resendConsumerEmailAction,
   removeConsumerFlagAction,
+  suspendConsumerAction,
 } from '../../../../lib/admin-mutations.server';
 
 function formatDate(value: string | null | undefined): string {
@@ -101,6 +103,8 @@ export default async function ConsumerCasePage({ params }: { params: Promise<{ c
           <p className="muted">Stripe status: {consumer.stripeIdentityStatus ?? `-`}</p>
           <p className="muted">Stripe error code: {consumer.stripeIdentityLastErrorCode ?? `-`}</p>
           <p className="muted">Stripe error: {consumer.stripeIdentityLastErrorReason ?? `-`}</p>
+          <p className="muted">Suspended: {consumer.suspendedAt ? `Yes` : `No`}</p>
+          <p className="muted">Suspension reason: {consumer.suspensionReason ?? `-`}</p>
         </article>
         <article className="panel">
           <h3>Dates</h3>
@@ -108,6 +112,7 @@ export default async function ConsumerCasePage({ params }: { params: Promise<{ c
           <p className="muted">Updated: {formatDate(consumer.updatedAt)}</p>
           <p className="muted">Verification updated: {formatDate(consumer.verificationUpdatedAt)}</p>
           <p className="muted">Stripe verified: {formatDate(consumer.stripeIdentityVerifiedAt)}</p>
+          <p className="muted">Suspended at: {formatDate(consumer.suspendedAt)}</p>
         </article>
       </section>
 
@@ -164,6 +169,53 @@ export default async function ConsumerCasePage({ params }: { params: Promise<{ c
       </section>
 
       <section className="detailGrid">
+        <article className="panel">
+          <h2>Consumer support actions</h2>
+          <div className="formStack">
+            <p className="muted">
+              Narrow support surface only: regulated suspension and explicit email resend. No generic consumer edits.
+            </p>
+            {identity?.capabilities.includes(`consumers.suspend`) ? (
+              <form action={suspendConsumerAction.bind(null, consumer.id)} className="formStack">
+                <label className="field">
+                  <span>Suspension reason</span>
+                  <textarea
+                    name="reason"
+                    required
+                    maxLength={500}
+                    placeholder="Regulatory or risk reason visible in audit history and suspension email."
+                  />
+                </label>
+                <label className="field">
+                  <span>Confirm</span>
+                  <input type="checkbox" name="confirmed" value="true" required />
+                </label>
+                <button className="dangerButton" type="submit" name="confirmedSubmit" value="true">
+                  Suspend consumer
+                </button>
+              </form>
+            ) : null}
+
+            {identity?.capabilities.includes(`consumers.email_resend`) ? (
+              <>
+                <form action={resendConsumerEmailAction.bind(null, consumer.id)} className="formStack">
+                  <input type="hidden" name="emailKind" value="signup_verification" />
+                  <input type="hidden" name="appScope" value="consumer" />
+                  <button className="secondaryButton" type="submit">
+                    Resend signup verification email
+                  </button>
+                </form>
+                <form action={resendConsumerEmailAction.bind(null, consumer.id)} className="formStack">
+                  <input type="hidden" name="emailKind" value="password_recovery" />
+                  <input type="hidden" name="appScope" value="consumer" />
+                  <button className="secondaryButton" type="submit">
+                    Resend password recovery email
+                  </button>
+                </form>
+              </>
+            ) : null}
+          </div>
+        </article>
         <article className="panel">
           <h2>Add internal note</h2>
           <form action={createConsumerNoteAction.bind(null, consumer.id)} className="formStack">
@@ -266,6 +318,38 @@ export default async function ConsumerCasePage({ params }: { params: Promise<{ c
                 <p className="muted">{paymentRequest.status}</p>
                 <p className="muted">Rail: {paymentRequest.paymentRail ?? `-`}</p>
                 <p className="muted">Created: {formatDate(paymentRequest.createdAt)}</p>
+              </div>
+            ))}
+          </div>
+        </article>
+        <article className="panel">
+          <div className="pageHeader">
+            <div>
+              <h2>Payment methods</h2>
+              <p className="muted">Read-only bridge into the payment-method investigation surface.</p>
+            </div>
+            <Link className="secondaryButton" href={`/payment-methods?consumerId=${consumer.id}&includeDeleted=true`}>
+              Open payment methods
+            </Link>
+          </div>
+          <div className="formStack">
+            {consumer.paymentMethods.length === 0 ? <p className="muted">No payment methods.</p> : null}
+            {consumer.paymentMethods.map((paymentMethod) => (
+              <div key={String(paymentMethod.id)} className="panel">
+                <strong>
+                  <Link href={`/payment-methods/${paymentMethod.id}`}>
+                    {String(paymentMethod.type) === `CREDIT_CARD`
+                      ? `${String(paymentMethod.brand ?? `Card`)} •••• ${String(paymentMethod.last4 ?? `----`)}`
+                      : `${String(paymentMethod.type)} •••• ${String(paymentMethod.last4 ?? `----`)}`}
+                  </Link>
+                </strong>
+                <p className="muted">Default: {paymentMethod.defaultSelected ? `Yes` : `No`}</p>
+                <p className="muted">Status: {paymentMethod.status}</p>
+                {paymentMethod.disabledAt ? (
+                  <p className="muted">Disabled: {formatDate(paymentMethod.disabledAt)}</p>
+                ) : null}
+                <p className="muted">Created: {formatDate(String(paymentMethod.createdAt ?? ``))}</p>
+                <p className="muted">Updated: {formatDate(String(paymentMethod.updatedAt ?? ``))}</p>
               </div>
             ))}
           </div>

@@ -6,7 +6,11 @@ export default function LoginPage({ searchParams }: { searchParams?: Promise<{ s
       <div className="loginCard">
         <div>
           <h1>Admin v2</h1>
-          <p className="muted">MVP-1c surface: Overview, Verification, Consumers, Payments, Ledger and Audit.</p>
+          <p className="muted">
+            Canonical MVP-2 shell keeps Overview, Consumers, Verification, Payments, Ledger and Audit primary. Exchange
+            and Documents remain top-level breadth, Admins stays later breadth for eligible super-admin identities, and
+            Payouts plus Payment Methods stay nested finance investigation routes. System remains outside MVP-2.
+          </p>
         </div>
         <LoginForm />
         <LoginNotice searchParams={searchParams} />

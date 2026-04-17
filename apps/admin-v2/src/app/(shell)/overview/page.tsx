@@ -9,7 +9,7 @@ function asRecord(value: unknown): Record<string, unknown> {
 export default async function OverviewPage() {
   const summary = await getOverviewSummary();
   const signals = asRecord(summary?.signals);
-  const signalOrder = [
+  const activeSignalOrder = [
     `pendingVerifications`,
     `recentAdminActions`,
     `suspiciousAuthEvents`,
@@ -17,7 +17,8 @@ export default async function OverviewPage() {
     `uncollectiblePaymentRequests`,
     `openDisputes`,
   ];
-  const statKeys = signalOrder.filter((key) => key !== `recentAdminActions`);
+  const breadthSignalOrder = [`failedScheduledConversions`, `staleExchangeRates`];
+  const activeStatKeys = activeSignalOrder.filter((key) => key !== `recentAdminActions`);
   const recentAdminActions = asRecord(signals.recentAdminActions);
   const recentItems = Array.isArray(recentAdminActions.items) ? recentAdminActions.items : [];
 
@@ -26,13 +27,16 @@ export default async function OverviewPage() {
       <section className="panel pageHeader">
         <div>
           <h1>Overview</h1>
-          <p className="muted">MVP-1c operator landing page with finance-aware signal linkage.</p>
+          <p className="muted">
+            Operator landing page for the canonical MVP-2 shell, with active core pressure separated from breadth
+            follow-up signals.
+          </p>
         </div>
         <p className="muted">Computed: {summary?.computedAt ? new Date(summary.computedAt).toLocaleString() : `-`}</p>
       </section>
 
       <section className="statsGrid">
-        {statKeys.map((key) => {
+        {activeStatKeys.map((key) => {
           const signal = asRecord(signals[key]);
           const href = typeof signal.href === `string` ? signal.href : null;
           return (
@@ -52,6 +56,37 @@ export default async function OverviewPage() {
             </article>
           );
         })}
+      </section>
+
+      <section className="panel">
+        <div className="pageHeader">
+          <div>
+            <h2>Exchange breadth follow-up</h2>
+            <p className="muted">
+              Exchange remains visible in overview, but as breadth follow-up rather than an active core-shell pressure
+              peer.
+            </p>
+          </div>
+        </div>
+        <div className="statsGrid">
+          {breadthSignalOrder.map((key) => {
+            const signal = asRecord(signals[key]);
+            const href = typeof signal.href === `string` ? signal.href : null;
+            return (
+              <article key={key} className="panel">
+                <h3>{String(signal.label ?? key)}</h3>
+                <p className="muted">Count: {signal.count == null ? `-` : String(signal.count)}</p>
+                <p className="muted">Phase status: {String(signal.phaseStatus ?? `-`)}</p>
+                <p className="muted">Availability: {String(signal.availability ?? `-`)}</p>
+                {href ? (
+                  <Link className="secondaryButton" href={href}>
+                    Open exchange surface
+                  </Link>
+                ) : null}
+              </article>
+            );
+          })}
+        </div>
       </section>
 
       <section className="panel tableWrap">

@@ -283,6 +283,52 @@ export class AdminAuthService {
     }
   }
 
+  async issueAdminPasswordReset(adminId: string) {
+    const admin = await this.prisma.adminModel.findFirst({
+      where: { id: adminId, deletedAt: null },
+      select: { id: true, email: true },
+    });
+    if (!admin) {
+      throw new BadRequestException(adminErrorCodes.ADMIN_NO_IDENTITY_RECORD);
+    }
+
+    const token = oauthCrypto.generateOAuthState();
+    const tokenHash = this.hashToken(token);
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.resetPasswordModel.updateMany({
+        where: { adminId: admin.id, deletedAt: null },
+        data: { deletedAt: new Date() },
+      });
+      await tx.resetPasswordModel.create({
+        data: {
+          adminId: admin.id,
+          tokenHash,
+          expiredAt: expiresAt,
+          appScope: `admin-v2`,
+        },
+      });
+    });
+
+    // The prerequisite slice only lands the reset artifact foundation.
+    // The verify/reset contract for admin-v2 is not implemented yet, so we must
+    // not dispatch an email that points to a non-existent route.
+    this.logger.warn({
+      event: `admin_auth_password_reset_email_deferred`,
+      adminId: admin.id,
+      appScope: `admin-v2`,
+      reason: `verify_contract_missing`,
+    });
+
+    return {
+      adminId: admin.id,
+      expiresAt: expiresAt.toISOString(),
+      emailDispatched: false as const,
+      deliveryStatus: `verify_contract_missing` as const,
+    };
+  }
+
   async revokeSessionByRefreshTokenAndAudit(refreshToken?: string | null, ctx?: AdminLoginContext): Promise<void> {
     if (!refreshToken) return;
     try {

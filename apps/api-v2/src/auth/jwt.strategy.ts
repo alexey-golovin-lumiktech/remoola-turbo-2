@@ -33,7 +33,8 @@ function cookieExtractorByPath(req: express.Request): string | null {
   const consumerScope = path.startsWith(CONSUMER_API_PATH_PREFIX)
     ? originResolver.validateConsumerAppScopeHeader(req?.headers?.[CONSUMER_APP_SCOPE_HEADER])
     : undefined;
-  for (const key of getAccessTokenCookieKeysForPath(path, consumerScope)) {
+  const keys = getAccessTokenCookieKeysForPath(path, consumerScope);
+  for (const key of keys) {
     const value = req?.cookies?.[key];
     if (value) return value;
   }

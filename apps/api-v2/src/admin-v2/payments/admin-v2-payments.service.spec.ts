@@ -237,4 +237,239 @@ describe(`AdminV2PaymentsService`, () => {
       ]),
     );
   });
+
+  it(`builds payment operations queue buckets without mutating payment semantics`, async () => {
+    const findMany = jest
+      .fn()
+      .mockResolvedValueOnce([
+        {
+          id: `payment-overdue`,
+          amount: new Prisma.Decimal(`10.00`),
+          currencyCode: $Enums.CurrencyCode.USD,
+          status: $Enums.TransactionStatus.WAITING,
+          paymentRail: $Enums.PaymentRail.CARD,
+          dueDate: new Date(`2026-04-01T00:00:00.000Z`),
+          createdAt: new Date(`2026-03-20T00:00:00.000Z`),
+          updatedAt: new Date(`2026-04-10T00:00:00.000Z`),
+          payer: null,
+          requester: null,
+          payerEmail: `payer@example.com`,
+          requesterEmail: `requester@example.com`,
+          attachments: [
+            {
+              id: `attachment-1`,
+              resource: { id: `resource-1`, resourceTags: [{ tag: { name: `INVOICE-WAITING` } }] },
+            },
+          ],
+          ledgerEntries: [],
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: `payment-uncollectible`,
+          amount: new Prisma.Decimal(`20.00`),
+          currencyCode: $Enums.CurrencyCode.USD,
+          status: $Enums.TransactionStatus.UNCOLLECTIBLE,
+          paymentRail: $Enums.PaymentRail.BANK_TRANSFER,
+          dueDate: null,
+          createdAt: new Date(`2026-03-21T00:00:00.000Z`),
+          updatedAt: new Date(`2026-04-11T00:00:00.000Z`),
+          payer: null,
+          requester: null,
+          payerEmail: `payer@example.com`,
+          requesterEmail: `requester@example.com`,
+          attachments: [
+            {
+              id: `attachment-2`,
+              resource: { id: `resource-2`, resourceTags: [{ tag: { name: `INVOICE-UNCOLLECTIBLE` } }] },
+            },
+          ],
+          ledgerEntries: [],
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: `payment-stale-approval`,
+          amount: new Prisma.Decimal(`25.00`),
+          currencyCode: $Enums.CurrencyCode.USD,
+          status: $Enums.TransactionStatus.WAITING_RECIPIENT_APPROVAL,
+          paymentRail: $Enums.PaymentRail.CARD,
+          dueDate: null,
+          createdAt: new Date(`2000-01-01T00:00:00.000Z`),
+          updatedAt: new Date(`2000-01-02T00:00:00.000Z`),
+          payer: null,
+          requester: null,
+          payerEmail: `payer@example.com`,
+          requesterEmail: `requester@example.com`,
+          attachments: [
+            {
+              id: `attachment-stale-approval`,
+              resource: { id: `resource-stale-approval`, resourceTags: [{ tag: { name: `INVOICE-PENDING` } }] },
+            },
+          ],
+          ledgerEntries: [],
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: `payment-stale`,
+          amount: new Prisma.Decimal(`30.00`),
+          currencyCode: $Enums.CurrencyCode.USD,
+          status: $Enums.TransactionStatus.PENDING,
+          paymentRail: $Enums.PaymentRail.CARD,
+          dueDate: null,
+          createdAt: new Date(`2026-03-22T00:00:00.000Z`),
+          updatedAt: new Date(`2026-04-12T00:00:00.000Z`),
+          payer: null,
+          requester: null,
+          payerEmail: `payer@example.com`,
+          requesterEmail: `requester@example.com`,
+          attachments: [
+            {
+              id: `attachment-3`,
+              resource: { id: `resource-3`, resourceTags: [{ tag: { name: `INVOICE-PENDING` } }] },
+            },
+          ],
+          ledgerEntries: [
+            {
+              id: `ledger-3`,
+              type: $Enums.LedgerEntryType.USER_PAYMENT,
+              status: $Enums.TransactionStatus.PENDING,
+              createdAt: new Date(`2026-04-12T00:00:00.000Z`),
+              outcomes: [{ status: $Enums.TransactionStatus.COMPLETED }],
+            },
+          ],
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: `payment-missing-attachment`,
+          amount: new Prisma.Decimal(`40.00`),
+          currencyCode: $Enums.CurrencyCode.USD,
+          status: $Enums.TransactionStatus.WAITING,
+          paymentRail: $Enums.PaymentRail.CARD,
+          dueDate: null,
+          createdAt: new Date(`2026-03-23T00:00:00.000Z`),
+          updatedAt: new Date(`2026-04-13T00:00:00.000Z`),
+          payer: null,
+          requester: null,
+          payerEmail: `payer@example.com`,
+          requesterEmail: `requester@example.com`,
+          attachments: [],
+          ledgerEntries: [],
+        },
+        {
+          id: `payment-missing-invoice-link`,
+          amount: new Prisma.Decimal(`50.00`),
+          currencyCode: $Enums.CurrencyCode.USD,
+          status: $Enums.TransactionStatus.WAITING,
+          paymentRail: $Enums.PaymentRail.CARD,
+          dueDate: null,
+          createdAt: new Date(`2026-03-24T00:00:00.000Z`),
+          updatedAt: new Date(`2026-04-14T00:00:00.000Z`),
+          payer: null,
+          requester: null,
+          payerEmail: `payer@example.com`,
+          requesterEmail: `requester@example.com`,
+          attachments: [{ id: `attachment-5`, resource: { id: `resource-5`, resourceTags: [] } }],
+          ledgerEntries: [],
+        },
+      ]);
+
+    const service = new AdminV2PaymentsService({
+      paymentRequestModel: {
+        findMany,
+      },
+    } as never);
+
+    const queue = await service.getPaymentOperationsQueue();
+
+    expect(queue.posture.kind).toBe(`non_sla_follow_up_queue`);
+    expect(queue.buckets).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          key: `overdue_requests`,
+          items: [expect.objectContaining({ id: `payment-overdue` })],
+        }),
+        expect.objectContaining({
+          key: `uncollectible_requests`,
+          items: [expect.objectContaining({ id: `payment-uncollectible` })],
+        }),
+        expect.objectContaining({
+          key: `stale_waiting_recipient_approval`,
+          items: [
+            expect.objectContaining({
+              id: `payment-stale-approval`,
+              persistedStatus: `WAITING_RECIPIENT_APPROVAL`,
+            }),
+          ],
+        }),
+        expect.objectContaining({
+          key: `inconsistent_status`,
+          items: [expect.objectContaining({ id: `payment-stale`, staleWarning: true })],
+        }),
+        expect.objectContaining({
+          key: `missing_attachment_or_invoice_linkage`,
+          items: expect.arrayContaining([
+            expect.objectContaining({ id: `payment-missing-attachment`, attachmentsCount: 0 }),
+            expect.objectContaining({ id: `payment-missing-invoice-link`, invoiceTaggedAttachmentsCount: 0 }),
+          ]),
+        }),
+      ]),
+    );
+    expect(findMany).toHaveBeenCalledTimes(5);
+  });
+
+  it(`keeps stale WAITING_RECIPIENT_APPROVAL separate from plain overdue semantics`, async () => {
+    const now = Date.now();
+    const findMany = jest
+      .fn()
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        {
+          id: `payment-truly-stale-approval`,
+          amount: new Prisma.Decimal(`25.00`),
+          currencyCode: $Enums.CurrencyCode.USD,
+          status: $Enums.TransactionStatus.WAITING_RECIPIENT_APPROVAL,
+          paymentRail: $Enums.PaymentRail.CARD,
+          dueDate: new Date(now - 48 * 60 * 60 * 1000),
+          createdAt: new Date(now - 72 * 60 * 60 * 1000),
+          updatedAt: new Date(now - 48 * 60 * 60 * 1000),
+          payer: null,
+          requester: null,
+          payerEmail: `payer@example.com`,
+          requesterEmail: `requester@example.com`,
+          attachments: [
+            {
+              id: `attachment-stale-approval`,
+              resource: { id: `resource-stale-approval`, resourceTags: [{ tag: { name: `INVOICE-PENDING` } }] },
+            },
+          ],
+          ledgerEntries: [],
+        },
+      ])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
+
+    const service = new AdminV2PaymentsService({
+      paymentRequestModel: {
+        findMany,
+      },
+    } as never);
+
+    await service.getPaymentOperationsQueue();
+
+    expect(findMany).toHaveBeenNthCalledWith(
+      3,
+      expect.objectContaining({
+        where: expect.objectContaining({
+          deletedAt: null,
+          status: `WAITING_RECIPIENT_APPROVAL`,
+          updatedAt: expect.objectContaining({ lte: expect.any(Date) }),
+        }),
+      }),
+    );
+    expect(findMany.mock.calls[2]?.[0]?.where).not.toHaveProperty(`OR`);
+  });
 });

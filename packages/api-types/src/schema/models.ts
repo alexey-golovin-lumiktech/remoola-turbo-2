@@ -58,13 +58,56 @@ export type AddressDetailsModelWithRelations = Prisma.AddressDetailsModelGetPayl
 
 export type AdminModelWithRelations = Prisma.AdminModelGetPayload<{
   include: {
+    role: true;
     adminSettings: true;
     adminActionAuditLogs: true;
     adminActionIdempotencyRecords: true;
     adminAuthSessions: true;
+    adminInvitationsCreated: true;
+    permissionOverrides: true;
+    passwordResets: true;
     consumerNotes: true;
     consumerFlags: true;
     removedConsumerFlags: true;
+    disabledPaymentMethods: true;
+    paymentMethodDuplicateEscalations: true;
+    payoutEscalations: true;
+  };
+}>;
+
+export type AdminRoleModelWithRelations = Prisma.AdminRoleModelGetPayload<{
+  include: {
+    admins: true;
+    rolePermissions: true;
+    invitations: true;
+  };
+}>;
+
+export type AdminPermissionModelWithRelations = Prisma.AdminPermissionModelGetPayload<{
+  include: {
+    adminOverrides: true;
+    rolePermissions: true;
+  };
+}>;
+
+export type AdminPermissionOverrideModelWithRelations = Prisma.AdminPermissionOverrideModelGetPayload<{
+  include: {
+    admin: true;
+    permission: true;
+  };
+}>;
+
+export type AdminRolePermissionModelWithRelations = Prisma.AdminRolePermissionModelGetPayload<{
+  include: {
+    role: true;
+    permission: true;
+  };
+}>;
+
+export type AdminInvitationModelWithRelations = Prisma.AdminInvitationModelGetPayload<{
+  include: {
+    role: true;
+    invitedByAdmin: true;
   };
 }>;
 
@@ -156,6 +199,15 @@ export type PaymentMethodModelWithRelations = Prisma.PaymentMethodModelGetPayloa
   include: {
     billingDetails: true;
     consumer: true;
+    disabledByAdmin: true;
+    duplicateEscalations: true;
+  };
+}>;
+
+export type PaymentMethodDuplicateEscalationModelWithRelations = Prisma.PaymentMethodDuplicateEscalationModelGetPayload<{
+  include: {
+    paymentMethod: true;
+    escalatedByAdmin: true;
   };
 }>;
 
@@ -174,6 +226,7 @@ export type LedgerEntryModelWithRelations = Prisma.LedgerEntryModelGetPayload<{
     paymentRequest: true;
     outcomes: true;
     disputes: true;
+    payoutEscalation: true;
   };
 }>;
 
@@ -186,6 +239,13 @@ export type LedgerEntryOutcomeModelWithRelations = Prisma.LedgerEntryOutcomeMode
 export type LedgerEntryDisputeModelWithRelations = Prisma.LedgerEntryDisputeModelGetPayload<{
   include: {
     ledgerEntry: true;
+  };
+}>;
+
+export type PayoutEscalationModelWithRelations = Prisma.PayoutEscalationModelGetPayload<{
+  include: {
+    ledgerEntry: true;
+    escalatedByAdmin: true;
   };
 }>;
 
@@ -206,6 +266,7 @@ export type PersonalDetailsModelWithRelations = Prisma.PersonalDetailsModelGetPa
 export type ResetPasswordModelWithRelations = Prisma.ResetPasswordModelGetPayload<{
   include: {
     consumer: true;
+    admin: true;
   };
 }>;
 

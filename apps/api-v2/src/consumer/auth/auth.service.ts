@@ -134,6 +134,7 @@ export class ConsumerAuthService {
       where: { email, deletedAt: null },
     });
     if (!identity) throw new UnauthorizedException(errorCodes.INVALID_CREDENTIALS);
+    this.ensureConsumerNotSuspended(identity);
 
     const valid = this.hasStoredPasswordCredentials(identity)
       ? await passwordUtils.verifyPassword({
@@ -246,6 +247,7 @@ export class ConsumerAuthService {
       this.logger.warn(`ConsumerAuth: consumer not found for identity`);
       throw new BadRequestException(errorCodes.NO_IDENTITY_RECORD);
     }
+    this.ensureConsumerNotSuspended(consumer);
 
     const access = await this.prisma.$transaction(async (tx) => {
       const next = await this.createSessionAndIssueTokens(consumer.id, appScope, session.sessionFamilyId, tx);
@@ -542,6 +544,123 @@ export class ConsumerAuthService {
     await this.prisma.authSessionModel.updateMany({
       where: { sessionFamilyId, revokedAt: null },
       data: { revokedAt: new Date(), invalidatedReason: reason, lastUsedAt: new Date() },
+    });
+  }
+
+  private ensureConsumerNotSuspended(consumer: Pick<ConsumerModel, `suspendedAt`>) {
+    if (consumer.suspendedAt != null) {
+      throw new UnauthorizedException(errorCodes.ACCOUNT_SUSPENDED);
+    }
+  }
+
+  async resendSignupVerificationEmail(consumerId: string, appScope: ConsumerAppScope): Promise<boolean> {
+    const validatedAppScope = this.originResolver.validateConsumerAppScope(appScope);
+    if (!validatedAppScope) {
+      throw new BadRequestException(`Invalid app scope`);
+    }
+
+    const consumer = await this.prisma.consumerModel.findFirst({
+      where: { id: consumerId, deletedAt: null },
+      select: {
+        id: true,
+        email: true,
+        verified: true,
+      },
+    });
+    if (!consumer) {
+      throw new BadRequestException(errorCodes.CONSUMER_NOT_FOUND_COMPLETE_PROFILE);
+    }
+    if (consumer.verified) {
+      throw new ConflictException(`Signup verification email is not applicable for an already verified consumer`);
+    }
+
+    const token = await this.getSignupVerificationToken(consumer.id, validatedAppScope);
+    return this.mailingService.sendConsumerSignupVerificationEmailSafe({
+      email: consumer.email,
+      token,
+    });
+  }
+
+  async resendPasswordRecoveryEmail(
+    consumerId: string,
+    appScope: ConsumerAppScope,
+  ): Promise<{ requestedKind: `password_recovery`; dispatchedKind: `password_reset` | `google_signin_recovery` }> {
+    const validatedAppScope = this.originResolver.validateConsumerAppScope(appScope);
+    if (!validatedAppScope) {
+      throw new BadRequestException(`Invalid app scope`);
+    }
+
+    const consumer = await this.prisma.consumerModel.findFirst({
+      where: { id: consumerId, deletedAt: null },
+      select: {
+        id: true,
+        email: true,
+        password: true,
+        salt: true,
+      },
+    });
+    if (!consumer) {
+      throw new BadRequestException(errorCodes.CONSUMER_NOT_FOUND_COMPLETE_PROFILE);
+    }
+
+    const origin = this.resolveForgotPasswordAppScopeOrigin(validatedAppScope);
+    if (consumer.password == null || consumer.salt == null) {
+      const loginUrl = new URL(`/login`, origin);
+      loginUrl.searchParams.set(AUTH_NOTICE_QUERY, `google_signin_required`);
+      const sent = await this.mailingService.sendConsumerPasswordlessRecoveryEmailSafe({
+        email: consumer.email,
+        loginUrl: loginUrl.toString(),
+      });
+      if (!sent) {
+        throw new ConflictException(`Failed to dispatch recovery email`);
+      }
+      return {
+        requestedKind: `password_recovery`,
+        dispatchedKind: `google_signin_recovery`,
+      };
+    }
+
+    const token = oauthCrypto.generateOAuthState();
+    const expiredAt = new Date(Date.now() + 60 * 60 * 1000);
+
+    await this.prisma.resetPasswordModel.updateMany({
+      where: { consumerId: consumer.id, deletedAt: null },
+      data: { deletedAt: new Date() },
+    });
+    await this.prisma.resetPasswordModel.create({
+      data: { consumerId: consumer.id, tokenHash: hashTokenToHex(token), expiredAt, appScope: validatedAppScope },
+    });
+
+    const backendBaseURL = resolveEmailApiBaseUrl();
+    const verifyUrl = new URL(`${backendBaseURL}/consumer/auth/forgot-password/verify`);
+    verifyUrl.searchParams.set(`token`, token);
+    const sent = await this.mailingService.sendConsumerForgotPasswordEmailSafe({
+      email: consumer.email,
+      forgotPasswordLink: verifyUrl.toString(),
+    });
+    if (!sent) {
+      throw new ConflictException(`Failed to dispatch recovery email`);
+    }
+    return {
+      requestedKind: `password_recovery`,
+      dispatchedKind: `password_reset`,
+    };
+  }
+
+  async sendConsumerSuspensionEmail(consumerId: string, reason: string): Promise<boolean> {
+    const consumer = await this.prisma.consumerModel.findFirst({
+      where: { id: consumerId, deletedAt: null },
+      select: {
+        email: true,
+      },
+    });
+    if (!consumer) {
+      throw new BadRequestException(errorCodes.CONSUMER_NOT_FOUND_COMPLETE_PROFILE);
+    }
+
+    return this.mailingService.sendAdminV2ConsumerSuspensionEmail({
+      email: consumer.email,
+      reason,
     });
   }
 

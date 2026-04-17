@@ -24,6 +24,9 @@ describe(`AdminV2OverviewService`, () => {
             where.status === `UNCOLLECTIBLE` ? 3 : 14,
           ),
         },
+        scheduledFxConversionModel: {
+          count: jest.fn(async () => 2),
+        },
       } as never,
       {
         getSnapshot: jest.fn(async () => ({
@@ -43,6 +46,8 @@ describe(`AdminV2OverviewService`, () => {
       `overduePaymentRequests`,
       `uncollectiblePaymentRequests`,
       `openDisputes`,
+      `failedScheduledConversions`,
+      `staleExchangeRates`,
     ]);
     expect(summary.signals.pendingVerifications.phaseStatus).toBe(`live-actionable`);
     expect(summary.signals.recentAdminActions.phaseStatus).toBe(`live-actionable`);
@@ -58,9 +63,21 @@ describe(`AdminV2OverviewService`, () => {
       availability: `available`,
       href: `/ledger?view=disputes`,
     });
+    expect(summary.signals.failedScheduledConversions).toEqual({
+      label: `Failed scheduled FX`,
+      count: 2,
+      phaseStatus: `breadth-follow-up`,
+      availability: `available`,
+      href: `/exchange/scheduled?status=FAILED`,
+    });
+    expect(summary.signals.staleExchangeRates).toEqual({
+      label: `Stale exchange rates`,
+      count: 4,
+      phaseStatus: `breadth-follow-up`,
+      availability: `available`,
+      href: `/exchange/rates?stale=true`,
+    });
     expect(summary.signals).not.toHaveProperty(`failedOrStuckPayouts`);
-    expect(summary.signals).not.toHaveProperty(`failedScheduledConversions`);
-    expect(summary.signals).not.toHaveProperty(`staleExchangeRates`);
     expect(summary.signals).not.toHaveProperty(`ledgerAnomalies`);
   });
 
@@ -76,6 +93,9 @@ describe(`AdminV2OverviewService`, () => {
           findMany: jest.fn(async () => []),
         },
         paymentRequestModel: {
+          count: jest.fn(async () => 0),
+        },
+        scheduledFxConversionModel: {
           count: jest.fn(async () => 0),
         },
       } as never,
@@ -97,6 +117,13 @@ describe(`AdminV2OverviewService`, () => {
       availability: `temporarily-unavailable`,
       href: `/ledger?view=disputes`,
     });
+    expect(summary.signals.staleExchangeRates).toEqual({
+      label: `Stale exchange rates`,
+      count: null,
+      phaseStatus: `breadth-follow-up`,
+      availability: `temporarily-unavailable`,
+      href: `/exchange/rates?stale=true`,
+    });
   });
 
   it(`keeps payment signals temporarily-unavailable when payment counters fail`, async () => {
@@ -114,6 +141,9 @@ describe(`AdminV2OverviewService`, () => {
         },
         paymentRequestModel: {
           count: paymentCount,
+        },
+        scheduledFxConversionModel: {
+          count: jest.fn(async () => 7),
         },
       } as never,
       {
@@ -140,6 +170,13 @@ describe(`AdminV2OverviewService`, () => {
       phaseStatus: `live-actionable`,
       availability: `temporarily-unavailable`,
       href: `/payments?status=UNCOLLECTIBLE`,
+    });
+    expect(summary.signals.failedScheduledConversions).toEqual({
+      label: `Failed scheduled FX`,
+      count: 7,
+      phaseStatus: `breadth-follow-up`,
+      availability: `available`,
+      href: `/exchange/scheduled?status=FAILED`,
     });
   });
 });

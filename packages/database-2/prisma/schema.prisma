@@ -231,20 +231,125 @@ model AdminModel {
   password String @db.Text
   salt     String @db.Text
 
+  roleId String?         @map("role_id") @db.Uuid
+  role   AdminRoleModel? @relation(fields: [roleId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
   adminSettings        AdminSettingsModel?
   adminActionAuditLogs AdminActionAuditLogModel[]
   adminActionIdempotencyRecords AdminActionIdempotencyModel[]
   adminAuthSessions    AdminAuthSessionModel[]
+  adminInvitationsCreated AdminInvitationModel[] @relation("AdminInvitationCreatedBy")
+  permissionOverrides  AdminPermissionOverrideModel[]
+  passwordResets       ResetPasswordModel[]
   consumerNotes        ConsumerAdminNoteModel[]
   consumerFlags        ConsumerFlagModel[]      @relation("ConsumerFlagCreatedBy")
   removedConsumerFlags ConsumerFlagModel[]      @relation("ConsumerFlagRemovedBy")
+  disabledPaymentMethods PaymentMethodModel[] @relation("PaymentMethodDisabledBy")
+  paymentMethodDuplicateEscalations PaymentMethodDuplicateEscalationModel[] @relation("PaymentMethodDuplicateEscalatedBy")
+  payoutEscalations    PayoutEscalationModel[]  @relation("PayoutEscalatedBy")
+  assignedOperationalAssignments OperationalAssignmentModel[] @relation("OperationalAssignmentAssignedTo")
+  createdOperationalAssignments  OperationalAssignmentModel[] @relation("OperationalAssignmentAssignedBy")
+  releasedOperationalAssignments OperationalAssignmentModel[] @relation("OperationalAssignmentReleasedBy")
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
   @@unique([email, deletedAt])
+  @@index([roleId])
   @@map("admin")
+}
+
+model AdminRoleModel {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  key         String  @unique @db.Text
+  description String? @db.Text
+
+  admins          AdminModel[]
+  rolePermissions AdminRolePermissionModel[]
+  invitations     AdminInvitationModel[]
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("admin_role")
+}
+
+model AdminPermissionModel {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  capability String @unique @db.Text
+
+  adminOverrides  AdminPermissionOverrideModel[]
+  rolePermissions AdminRolePermissionModel[]
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("admin_permission")
+}
+
+model AdminPermissionOverrideModel {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  adminId String     @map("admin_id") @db.Uuid
+  admin   AdminModel @relation(fields: [adminId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  permissionId String               @map("permission_id") @db.Uuid
+  permission   AdminPermissionModel @relation(fields: [permissionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  granted Boolean @default(true)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([adminId, permissionId])
+  @@index([adminId])
+  @@index([permissionId])
+  @@map("admin_permission_override")
+}
+
+model AdminRolePermissionModel {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  roleId String         @map("role_id") @db.Uuid
+  role   AdminRoleModel @relation(fields: [roleId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  permissionId String               @map("permission_id") @db.Uuid
+  permission   AdminPermissionModel @relation(fields: [permissionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+  @@map("admin_role_permission")
+}
+
+model AdminInvitationModel {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  email String @db.Text
+
+  roleId String         @map("role_id") @db.Uuid
+  role   AdminRoleModel @relation(fields: [roleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  invitedBy      String?     @map("invited_by") @db.Uuid
+  invitedByAdmin AdminModel? @relation("AdminInvitationCreatedBy", fields: [invitedBy], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  expiresAt  DateTime? @map("expires_at") @db.Timestamptz(6)
+  acceptedAt DateTime? @map("accepted_at") @db.Timestamptz(6)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([email, acceptedAt])
+  @@index([roleId])
+  @@index([invitedBy])
+  @@index([expiresAt])
+  @@map("admin_invitation")
 }
 
 model BillingDetailsModel {
@@ -278,6 +383,9 @@ model ConsumerModel {
   verificationReason    String?            @map("verification_reason") @db.Text
   verificationUpdatedAt DateTime?          @map("verification_updated_at") @db.Timestamptz(6)
   verificationUpdatedBy String?            @map("verification_updated_by") @db.Uuid
+  suspendedAt           DateTime?          @map("suspended_at") @db.Timestamptz(6)
+  suspendedBy           String?            @map("suspended_by") @db.Uuid
+  suspensionReason      String?            @map("suspension_reason") @db.Text
 
   howDidHearAboutUs      HowDidHearAboutUs? @map("how_did_hear_about_us")
   howDidHearAboutUsOther String?            @map("how_did_hear_about_us_other") @db.Text
@@ -435,6 +543,7 @@ model ExchangeRateModel {
 
   @@unique([fromCurrency, toCurrency, effectiveAt, deletedAt])
   @@index([fromCurrency, toCurrency, status, deletedAt])
+  @@index([status, effectiveAt])
   @@index([effectiveAt, expiresAt])
   @@map("exchange_rate")
 }
@@ -575,6 +684,12 @@ model PaymentMethodModel {
   consumerId String        @map("consumer_id") @db.Uuid
   consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
+  disabledBy      String?     @map("disabled_by") @db.Uuid
+  disabledByAdmin AdminModel? @relation("PaymentMethodDisabledBy", fields: [disabledBy], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  disabledAt      DateTime?   @map("disabled_at") @db.Timestamptz(6)
+
+  duplicateEscalations PaymentMethodDuplicateEscalationModel[]
+
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
@@ -583,7 +698,29 @@ model PaymentMethodModel {
   @@unique([consumerId, stripeFingerprint, deletedAt])
   @@index([billingDetailsId])
   @@index([consumerId])
+  @@index([disabledAt])
   @@map("payment_method")
+}
+
+model PaymentMethodDuplicateEscalationModel {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  paymentMethodId String             @map("payment_method_id") @db.Uuid
+  paymentMethod   PaymentMethodModel @relation(fields: [paymentMethodId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  fingerprint String   @db.Text
+  duplicateCount Int   @map("duplicate_count")
+  duplicatePaymentMethodIds Json @map("duplicate_payment_method_ids") @db.JsonB
+
+  escalatedBy      String     @map("escalated_by") @db.Uuid
+  escalatedByAdmin AdminModel @relation("PaymentMethodDuplicateEscalatedBy", fields: [escalatedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([paymentMethodId, fingerprint])
+  @@index([fingerprint, createdAt(sort: Desc)])
+  @@index([escalatedBy, createdAt(sort: Desc)])
+  @@map("payment_method_duplicate_escalation")
 }
 
 model PaymentRequestModel {
@@ -664,6 +801,7 @@ model LedgerEntryModel {
   deletedAt DateTime?                 @map("deleted_at") @db.Timestamptz(6)
   outcomes  LedgerEntryOutcomeModel[]
   disputes  LedgerEntryDisputeModel[]
+  payoutEscalation PayoutEscalationModel?
 
   @@unique([idempotencyKey])
   @@index([paymentRequestId])
@@ -700,6 +838,54 @@ model LedgerEntryDisputeModel {
   @@unique([ledgerEntryId, stripeDisputeId])
   @@index([ledgerEntryId])
   @@map("ledger_entry_dispute")
+}
+
+model PayoutEscalationModel {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  ledgerEntryId String           @unique @map("ledger_entry_id") @db.Uuid
+  ledgerEntry   LedgerEntryModel @relation(fields: [ledgerEntryId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  escalatedBy      String     @map("escalated_by") @db.Uuid
+  escalatedByAdmin AdminModel @relation("PayoutEscalatedBy", fields: [escalatedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  reason     String?  @db.Text
+  confirmed  Boolean  @default(true)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([escalatedBy, createdAt(sort: Desc)])
+  @@map("payout_escalation")
+}
+
+model OperationalAssignmentModel {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  resourceType String @map("resource_type") @db.Text
+  resourceId   String @map("resource_id") @db.Uuid
+
+  assignedTo      String     @map("assigned_to") @db.Uuid
+  assignedToAdmin AdminModel @relation("OperationalAssignmentAssignedTo", fields: [assignedTo], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  assignedBy      String?     @map("assigned_by") @db.Uuid
+  assignedByAdmin AdminModel? @relation("OperationalAssignmentAssignedBy", fields: [assignedBy], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  assignedAt DateTime @default(now()) @map("assigned_at") @db.Timestamptz(6)
+
+  releasedAt DateTime? @map("released_at") @db.Timestamptz(6)
+  releasedBy String?   @map("released_by") @db.Uuid
+
+  releasedByAdmin AdminModel? @relation("OperationalAssignmentReleasedBy", fields: [releasedBy], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  expiresAt DateTime? @map("expires_at") @db.Timestamptz(6)
+  reason    String?   @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([resourceType, resourceId, releasedAt])
+  @@index([assignedTo, releasedAt])
+  @@map("operational_assignment")
 }
 
 model PaymentRequestAttachmentModel {
@@ -758,8 +944,10 @@ model ResetPasswordModel {
   tokenHash String   @map("token_hash") @db.Text
   expiredAt DateTime @map("expired_at") @db.Timestamptz(6)
 
-  consumerId String        @map("consumer_id") @db.Uuid
-  consumer   ConsumerModel @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  consumerId String?        @map("consumer_id") @db.Uuid
+  consumer   ConsumerModel? @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  adminId    String?        @map("admin_id") @db.Uuid
+  admin      AdminModel?    @relation(fields: [adminId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   appScope   String        @map("app_scope") @db.Text
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -767,6 +955,7 @@ model ResetPasswordModel {
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
   @@index([consumerId])
+  @@index([adminId])
   @@index([tokenHash])
   @@map("reset_password")
 }
@@ -793,6 +982,11 @@ model ResourceModel {
   resourceTags      ResourceTagModel[]
 
   @@index([access])
+  @@index([createdAt(sort: Desc)])
+  @@index([deletedAt, createdAt(sort: Desc)])
+  @@index([access, deletedAt, createdAt(sort: Desc)])
+  @@index([mimetype, deletedAt, createdAt(sort: Desc)])
+  @@index([size, deletedAt, createdAt(sort: Desc)])
   @@map("resource")
 }
 

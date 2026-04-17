@@ -249,27 +249,32 @@ export default async function PaymentsPage({
           <h1>Payments</h1>
           <p className="muted">MVP-1c read-only payment request investigation with finance-safe cross-links.</p>
         </div>
-        <form className="actionsRow" method="get">
-          <input name="q" defaultValue={q} placeholder="Search by id, email or description" />
-          <input name="status" defaultValue={status} placeholder="status" />
-          <input name="paymentRail" defaultValue={paymentRail} placeholder="rail" />
-          <input name="currencyCode" defaultValue={currencyCode} placeholder="currency" />
-          <input name="amountMin" defaultValue={amountMin} placeholder="min amount" inputMode="decimal" />
-          <input name="amountMax" defaultValue={amountMax} placeholder="max amount" inputMode="decimal" />
-          <input name="dueDateFrom" type="date" defaultValue={dueDateFrom} aria-label="Due date from" />
-          <input name="dueDateTo" type="date" defaultValue={dueDateTo} aria-label="Due date to" />
-          <input name="createdFrom" type="date" defaultValue={createdFrom} aria-label="Created from" />
-          <input name="createdTo" type="date" defaultValue={createdTo} aria-label="Created to" />
-          <label className="muted">
-            <input name="overdue" type="checkbox" value="true" defaultChecked={overdue} /> Overdue only
-          </label>
-          <button className="secondaryButton" type="submit">
-            Apply
-          </button>
-          <Link className="secondaryButton" href="/payments">
-            Reset
+        <div className="actionsRow">
+          <Link className="secondaryButton" href="/payments/operations">
+            Open operations queue
           </Link>
-        </form>
+          <form className="actionsRow" method="get">
+            <input name="q" defaultValue={q} placeholder="Search by id, email or description" />
+            <input name="status" defaultValue={status} placeholder="status" />
+            <input name="paymentRail" defaultValue={paymentRail} placeholder="rail" />
+            <input name="currencyCode" defaultValue={currencyCode} placeholder="currency" />
+            <input name="amountMin" defaultValue={amountMin} placeholder="min amount" inputMode="decimal" />
+            <input name="amountMax" defaultValue={amountMax} placeholder="max amount" inputMode="decimal" />
+            <input name="dueDateFrom" type="date" defaultValue={dueDateFrom} aria-label="Due date from" />
+            <input name="dueDateTo" type="date" defaultValue={dueDateTo} aria-label="Due date to" />
+            <input name="createdFrom" type="date" defaultValue={createdFrom} aria-label="Created from" />
+            <input name="createdTo" type="date" defaultValue={createdTo} aria-label="Created to" />
+            <label className="muted">
+              <input name="overdue" type="checkbox" value="true" defaultChecked={overdue} /> Overdue only
+            </label>
+            <button className="secondaryButton" type="submit">
+              Apply
+            </button>
+            <Link className="secondaryButton" href="/payments">
+              Reset
+            </Link>
+          </form>
+        </div>
       </section>
 
       <section className="panel">

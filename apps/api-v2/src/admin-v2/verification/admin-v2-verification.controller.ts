@@ -4,11 +4,9 @@ import { Expose, Type } from 'class-transformer';
 import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
 import express from 'express';
 
-import { type AdminModel } from '@remoola/database-2';
-
 import { JwtAuthGuard } from '../../auth/jwt.guard';
-import { Identity } from '../../common';
-import { assertAdminV2Capability } from '../admin-v2-access';
+import { Identity, type IIdentityContext } from '../../common';
+import { AdminV2AccessService } from '../admin-v2-access.service';
 import { AdminV2VerificationService } from './admin-v2-verification.service';
 
 function one(value: string | string[] | undefined): string | undefined {
@@ -48,11 +46,14 @@ class VerificationDecisionBodyDTO {
 @ApiTags(`Admin v2: Verification`)
 @Controller(`admin-v2/verification`)
 export class AdminV2VerificationController {
-  constructor(private readonly service: AdminV2VerificationService) {}
+  constructor(
+    private readonly service: AdminV2VerificationService,
+    private readonly accessService: AdminV2AccessService,
+  ) {}
 
   @Get(`queue`)
-  getQueue(@Identity() admin: AdminModel, @Query() query: Record<string, string | string[] | undefined>) {
-    assertAdminV2Capability(admin, `verification.read`);
+  async getQueue(@Identity() admin: IIdentityContext, @Query() query: Record<string, string | string[] | undefined>) {
+    await this.accessService.assertCapability(admin, `verification.read`);
     const pageRaw = one(query.page);
     const pageSizeRaw = one(query.pageSize);
     return this.service.getQueue({
@@ -68,8 +69,8 @@ export class AdminV2VerificationController {
   }
 
   @Get(`:consumerId`)
-  getCase(@Identity() admin: AdminModel, @Param(`consumerId`) consumerId: string) {
-    const profile = assertAdminV2Capability(admin, `verification.read`);
+  async getCase(@Identity() admin: IIdentityContext, @Param(`consumerId`) consumerId: string) {
+    const profile = await this.accessService.assertCapability(admin, `verification.read`);
     return this.service.getCase(consumerId, {
       canForceLogout: profile.capabilities.includes(`consumers.force_logout`),
       canDecide: profile.capabilities.includes(`verification.decide`),
@@ -80,46 +81,46 @@ export class AdminV2VerificationController {
   }
 
   @Post(`:consumerId/approve`)
-  approve(
-    @Identity() admin: AdminModel,
+  async approve(
+    @Identity() admin: IIdentityContext,
     @Param(`consumerId`) consumerId: string,
     @Body() body: VerificationDecisionBodyDTO,
     @Req() req: express.Request,
   ) {
-    assertAdminV2Capability(admin, `verification.decide`);
+    await this.accessService.assertCapability(admin, `verification.decide`);
     return this.service.applyDecision(consumerId, admin.id, `approve`, body, requestMeta(req));
   }
 
   @Post(`:consumerId/reject`)
-  reject(
-    @Identity() admin: AdminModel,
+  async reject(
+    @Identity() admin: IIdentityContext,
     @Param(`consumerId`) consumerId: string,
     @Body() body: VerificationDecisionBodyDTO,
     @Req() req: express.Request,
   ) {
-    assertAdminV2Capability(admin, `verification.decide`);
+    await this.accessService.assertCapability(admin, `verification.decide`);
     return this.service.applyDecision(consumerId, admin.id, `reject`, body, requestMeta(req));
   }
 
   @Post(`:consumerId/request-info`)
-  requestInfo(
-    @Identity() admin: AdminModel,
+  async requestInfo(
+    @Identity() admin: IIdentityContext,
     @Param(`consumerId`) consumerId: string,
     @Body() body: VerificationDecisionBodyDTO,
     @Req() req: express.Request,
   ) {
-    assertAdminV2Capability(admin, `verification.decide`);
+    await this.accessService.assertCapability(admin, `verification.decide`);
     return this.service.applyDecision(consumerId, admin.id, `request-info`, body, requestMeta(req));
   }
 
   @Post(`:consumerId/flag`)
-  flag(
-    @Identity() admin: AdminModel,
+  async flag(
+    @Identity() admin: IIdentityContext,
     @Param(`consumerId`) consumerId: string,
     @Body() body: VerificationDecisionBodyDTO,
     @Req() req: express.Request,
   ) {
-    assertAdminV2Capability(admin, `verification.decide`);
+    await this.accessService.assertCapability(admin, `verification.decide`);
     return this.service.applyDecision(consumerId, admin.id, `flag`, body, requestMeta(req));
   }
 }

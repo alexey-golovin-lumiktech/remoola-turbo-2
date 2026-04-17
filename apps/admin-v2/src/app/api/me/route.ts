@@ -12,7 +12,6 @@ export async function GET(req: NextRequest) {
 
   const forwardHeaders = buildForwardHeaders(new Headers(req.headers));
   forwardHeaders.delete(`host`);
-
   const res = await fetch(new URL(`${baseUrl}/admin-v2/me`), {
     method: `GET`,
     headers: forwardHeaders,

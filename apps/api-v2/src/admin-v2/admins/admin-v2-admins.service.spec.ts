@@ -1,0 +1,206 @@
+import { BadRequestException } from '@nestjs/common';
+
+import { $Enums } from '@remoola/database-2';
+
+import { AdminV2AdminsService } from './admin-v2-admins.service';
+
+function createIdempotency() {
+  return {
+    execute: jest.fn(async ({ execute }: { execute: () => Promise<unknown> }) => execute()),
+  };
+}
+
+describe(`AdminV2AdminsService`, () => {
+  it(`keeps list and detail contracts inclusive of inactive admins and pending invitations`, async () => {
+    const accessService = {
+      getAccessProfile: jest.fn(async (identity: { id: string }) => ({
+        source: `schema`,
+        role: identity.id === `admin-1` ? `SUPER_ADMIN` : `OPS_ADMIN`,
+        capabilities: identity.id === `admin-1` ? [`admins.read`, `admins.manage`] : [`admins.read`],
+        workspaces: [`admins`],
+      })),
+    };
+    const service = new AdminV2AdminsService(
+      {
+        adminModel: {
+          findMany: jest.fn(async () => [
+            {
+              id: `admin-1`,
+              email: `super@example.com`,
+              type: $Enums.AdminType.SUPER,
+              createdAt: new Date(`2026-04-17T08:00:00.000Z`),
+              updatedAt: new Date(`2026-04-17T08:10:00.000Z`),
+              deletedAt: null,
+              role: { key: `SUPER_ADMIN` },
+            },
+            {
+              id: `admin-2`,
+              email: `ops@example.com`,
+              type: $Enums.AdminType.ADMIN,
+              createdAt: new Date(`2026-04-17T08:20:00.000Z`),
+              updatedAt: new Date(`2026-04-17T08:30:00.000Z`),
+              deletedAt: new Date(`2026-04-17T08:35:00.000Z`),
+              role: { key: `OPS_ADMIN` },
+            },
+          ]),
+          count: jest.fn(async () => 2),
+        },
+        adminInvitationModel: {
+          findMany: jest.fn(async () => [
+            {
+              id: `inv-1`,
+              email: `invitee@example.com`,
+              expiresAt: new Date(`2026-04-24T08:00:00.000Z`),
+              acceptedAt: null,
+              createdAt: new Date(`2026-04-17T08:05:00.000Z`),
+              role: { key: `OPS_ADMIN` },
+              invitedByAdmin: { id: `admin-1`, email: `super@example.com` },
+            },
+          ]),
+        },
+        authAuditLogModel: {
+          findMany: jest.fn(async () => [{ identityId: `admin-1`, createdAt: new Date(`2026-04-17T09:00:00.000Z`) }]),
+        },
+        adminActionAuditLogModel: {
+          findMany: jest.fn(async () => [{ adminId: `admin-2`, createdAt: new Date(`2026-04-17T09:10:00.000Z`) }]),
+        },
+      } as never,
+      accessService as never,
+      createIdempotency() as never,
+      {
+        signAsync: jest.fn(),
+        verify: jest.fn(),
+      } as never,
+      {} as never,
+      { normalizeOrigin: jest.fn((value: string) => value) } as never,
+    );
+
+    await expect(service.listAdmins()).resolves.toEqual({
+      items: [
+        {
+          id: `admin-1`,
+          email: `super@example.com`,
+          type: `SUPER`,
+          role: `SUPER_ADMIN`,
+          status: `ACTIVE`,
+          lastActivityAt: `2026-04-17T09:00:00.000Z`,
+          createdAt: `2026-04-17T08:00:00.000Z`,
+          updatedAt: `2026-04-17T08:10:00.000Z`,
+          deletedAt: null,
+        },
+        {
+          id: `admin-2`,
+          email: `ops@example.com`,
+          type: `ADMIN`,
+          role: `OPS_ADMIN`,
+          status: `INACTIVE`,
+          lastActivityAt: `2026-04-17T09:10:00.000Z`,
+          createdAt: `2026-04-17T08:20:00.000Z`,
+          updatedAt: `2026-04-17T08:30:00.000Z`,
+          deletedAt: `2026-04-17T08:35:00.000Z`,
+        },
+      ],
+      pendingInvitations: [
+        {
+          id: `inv-1`,
+          email: `invitee@example.com`,
+          role: `OPS_ADMIN`,
+          status: `pending`,
+          expiresAt: `2026-04-24T08:00:00.000Z`,
+          createdAt: `2026-04-17T08:05:00.000Z`,
+          invitedBy: {
+            id: `admin-1`,
+            email: `super@example.com`,
+          },
+        },
+      ],
+      total: 2,
+      page: 1,
+      pageSize: 20,
+    });
+  });
+
+  it(`rejects permissions-change requests that try to touch non-overridable capabilities`, async () => {
+    const service = new AdminV2AdminsService(
+      {} as never,
+      {} as never,
+      createIdempotency() as never,
+      {} as never,
+      {} as never,
+      {} as never,
+    );
+
+    await expect(
+      service.changeAdminPermissions(
+        `admin-2`,
+        `admin-1`,
+        {
+          version: 1,
+          capabilityOverrides: [{ capability: `me.read`, mode: `grant` }],
+        },
+        { idempotencyKey: `idem-1` },
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it(`accepts invitation tokens and creates admin rows with role-derived type`, async () => {
+    const tx = {
+      adminInvitationModel: {
+        findUnique: jest.fn(async () => ({
+          id: `inv-1`,
+          email: `invitee@example.com`,
+          roleId: `role-ops`,
+          expiresAt: new Date(Date.now() + 60_000),
+          acceptedAt: null,
+        })),
+        updateMany: jest.fn(async () => ({ count: 1 })),
+      },
+      adminModel: {
+        findFirst: jest.fn(async () => null),
+        create: jest.fn(async () => ({
+          id: `admin-2`,
+          email: `invitee@example.com`,
+        })),
+      },
+      adminRoleModel: {
+        findUnique: jest.fn(async () => ({ key: `OPS_ADMIN` })),
+      },
+    };
+    const prisma = {
+      ...tx,
+      $transaction: jest.fn(async (callback: (innerTx: typeof tx) => Promise<unknown>) => callback(tx as never)),
+    };
+    const service = new AdminV2AdminsService(
+      prisma as never,
+      {} as never,
+      createIdempotency() as never,
+      {
+        signAsync: jest.fn(),
+        verify: jest.fn(() => ({
+          sub: `inv-1`,
+          email: `invitee@example.com`,
+          roleId: `role-ops`,
+          typ: `admin_invitation`,
+          scope: `admin_v2`,
+        })),
+      } as never,
+      {} as never,
+      {} as never,
+    );
+
+    await expect(service.acceptInvitation({ token: `jwt`, password: `VerySecurePass1` })).resolves.toEqual({
+      adminId: `admin-2`,
+      email: `invitee@example.com`,
+      accepted: true,
+    });
+    expect(prisma.adminModel.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          email: `invitee@example.com`,
+          roleId: `role-ops`,
+          type: `ADMIN`,
+        }),
+      }),
+    );
+  });
+});

@@ -7,6 +7,7 @@ import { cookies } from 'next/headers';
 
 import { buildAdminMutationHeaders } from './admin-auth-headers.server';
 import { parseConfirmedFormValue } from './admin-confirmation';
+import { ADMIN_V2_PERMISSION_OVERRIDE_OPTIONS } from './admin-rbac';
 import { getEnv } from './env.server';
 
 type MutationError = {
@@ -30,11 +31,16 @@ async function requireBaseUrl(): Promise<string> {
   return env.NEXT_PUBLIC_API_BASE_URL;
 }
 
-async function postAdminMutation(path: string, body: unknown, fallbackMessage: string): Promise<void> {
+async function sendAdminMutation(
+  method: `POST` | `PATCH` | `DELETE`,
+  path: string,
+  body: unknown,
+  fallbackMessage: string,
+): Promise<void> {
   const baseUrl = await requireBaseUrl();
   const cookieStore = await cookies();
   const response = await fetch(`${baseUrl}${path}`, {
-    method: `POST`,
+    method,
     headers: buildAdminMutationHeaders(cookieStore.toString(), {
       'content-type': `application/json`,
       'x-correlation-id': randomUUID(),
@@ -48,6 +54,18 @@ async function postAdminMutation(path: string, body: unknown, fallbackMessage: s
     const error = await parseError(response, fallbackMessage);
     throw new Error(error.message);
   }
+}
+
+async function postAdminMutation(path: string, body: unknown, fallbackMessage: string): Promise<void> {
+  await sendAdminMutation(`POST`, path, body, fallbackMessage);
+}
+
+async function patchAdminMutation(path: string, body: unknown, fallbackMessage: string): Promise<void> {
+  await sendAdminMutation(`PATCH`, path, body, fallbackMessage);
+}
+
+async function deleteAdminMutation(path: string, body: unknown, fallbackMessage: string): Promise<void> {
+  await sendAdminMutation(`DELETE`, path, body, fallbackMessage);
 }
 
 export async function createConsumerNoteAction(consumerId: string, formData: FormData): Promise<void> {
@@ -100,6 +118,272 @@ export async function forceLogoutConsumerAction(consumerId: string, formData: Fo
   revalidatePath(`/verification/${consumerId}`);
 }
 
+export async function suspendConsumerAction(consumerId: string, formData: FormData): Promise<void> {
+  const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
+  const reason = String(formData.get(`reason`) ?? ``).trim();
+  await postAdminMutation(
+    `/admin-v2/consumers/${consumerId}/suspend`,
+    { confirmed, reason },
+    `Failed to suspend consumer`,
+  );
+  revalidatePath(`/consumers`);
+  revalidatePath(`/consumers/${consumerId}`);
+  revalidatePath(`/verification/${consumerId}`);
+}
+
+export async function resendConsumerEmailAction(consumerId: string, formData: FormData): Promise<void> {
+  const emailKind = String(formData.get(`emailKind`) ?? ``).trim();
+  const appScope = String(formData.get(`appScope`) ?? ``).trim();
+  await postAdminMutation(
+    `/admin-v2/consumers/${consumerId}/email-resend`,
+    { emailKind, appScope },
+    `Failed to resend consumer email`,
+  );
+  revalidatePath(`/consumers/${consumerId}`);
+}
+
+function parseRequiredVersion(formData: FormData): number {
+  const version = Number(formData.get(`version`) ?? 0);
+  if (!Number.isFinite(version) || version < 1) {
+    throw new Error(`Valid version is required`);
+  }
+  return version;
+}
+
+function parseOptionalConsumerId(formData: FormData): string | null {
+  const consumerId = String(formData.get(`consumerId`) ?? ``).trim();
+  return consumerId || null;
+}
+
+function revalidatePaymentMethodPaths(paymentMethodId: string, consumerId: string | null) {
+  revalidatePath(`/payment-methods`);
+  revalidatePath(`/payment-methods/${paymentMethodId}`);
+  if (consumerId) {
+    revalidatePath(`/consumers/${consumerId}`);
+  }
+}
+
+function revalidatePayoutPaths(payoutId: string, consumerId: string | null) {
+  revalidatePath(`/payouts`);
+  revalidatePath(`/payouts/${payoutId}`);
+  if (consumerId) {
+    revalidatePath(`/consumers/${consumerId}`);
+  }
+}
+
+function revalidateExchangeRatePaths(rateId: string) {
+  revalidatePath(`/exchange`);
+  revalidatePath(`/exchange/rates`);
+  revalidatePath(`/exchange/rates/${rateId}`);
+  revalidatePath(`/overview`);
+}
+
+function revalidateExchangeRulePaths(ruleId: string, consumerId: string | null) {
+  revalidatePath(`/exchange`);
+  revalidatePath(`/exchange/rules`);
+  revalidatePath(`/exchange/rules/${ruleId}`);
+  revalidatePath(`/overview`);
+  if (consumerId) {
+    revalidatePath(`/consumers/${consumerId}`);
+  }
+}
+
+function revalidateExchangeScheduledPaths(conversionId: string, consumerId: string | null) {
+  revalidatePath(`/exchange`);
+  revalidatePath(`/exchange/scheduled`);
+  revalidatePath(`/exchange/scheduled/${conversionId}`);
+  revalidatePath(`/overview`);
+  if (consumerId) {
+    revalidatePath(`/consumers/${consumerId}`);
+  }
+}
+
+function revalidateDocumentsPaths(documentId?: string | null) {
+  revalidatePath(`/documents`);
+  revalidatePath(`/documents/tags`);
+  if (documentId?.trim()) {
+    revalidatePath(`/documents/${documentId.trim()}`);
+  }
+}
+
+function parseStringList(formData: FormData, fieldName: string): string[] {
+  return formData
+    .getAll(fieldName)
+    .map((value) => String(value ?? ``).trim())
+    .filter(Boolean);
+}
+
+export async function disablePaymentMethodAction(paymentMethodId: string, formData: FormData): Promise<void> {
+  const version = parseRequiredVersion(formData);
+  const consumerId = parseOptionalConsumerId(formData);
+  const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
+  const reason = String(formData.get(`reason`) ?? ``).trim();
+  await postAdminMutation(
+    `/admin-v2/payment-methods/${paymentMethodId}/disable`,
+    { version, confirmed, reason },
+    `Failed to disable payment method`,
+  );
+  revalidatePaymentMethodPaths(paymentMethodId, consumerId);
+}
+
+export async function removeDefaultPaymentMethodAction(paymentMethodId: string, formData: FormData): Promise<void> {
+  const version = parseRequiredVersion(formData);
+  const consumerId = parseOptionalConsumerId(formData);
+  await postAdminMutation(
+    `/admin-v2/payment-methods/${paymentMethodId}/remove-default`,
+    { version },
+    `Failed to remove payment method default`,
+  );
+  revalidatePaymentMethodPaths(paymentMethodId, consumerId);
+}
+
+export async function escalateDuplicatePaymentMethodAction(paymentMethodId: string, formData: FormData): Promise<void> {
+  const version = parseRequiredVersion(formData);
+  const consumerId = parseOptionalConsumerId(formData);
+  await postAdminMutation(
+    `/admin-v2/payment-methods/${paymentMethodId}/duplicate-escalate`,
+    { version },
+    `Failed to escalate duplicate payment method`,
+  );
+  revalidatePaymentMethodPaths(paymentMethodId, consumerId);
+}
+
+export async function escalatePayoutAction(payoutId: string, formData: FormData): Promise<void> {
+  const version = parseRequiredVersion(formData);
+  const consumerId = parseOptionalConsumerId(formData);
+  const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
+  const reason = String(formData.get(`reason`) ?? ``).trim();
+  await postAdminMutation(
+    `/admin-v2/payouts/${payoutId}/escalate`,
+    {
+      version,
+      confirmed,
+      reason: reason || null,
+    },
+    `Failed to escalate payout`,
+  );
+  revalidatePayoutPaths(payoutId, consumerId);
+}
+
+export async function approveExchangeRateAction(rateId: string, formData: FormData): Promise<void> {
+  const version = parseRequiredVersion(formData);
+  const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
+  const reason = String(formData.get(`reason`) ?? ``).trim();
+  await postAdminMutation(
+    `/admin-v2/exchange/rates/${rateId}/approve`,
+    {
+      version,
+      confirmed,
+      reason,
+    },
+    `Failed to approve exchange rate`,
+  );
+  revalidateExchangeRatePaths(rateId);
+}
+
+export async function pauseExchangeRuleAction(ruleId: string, formData: FormData): Promise<void> {
+  const version = parseRequiredVersion(formData);
+  const consumerId = parseOptionalConsumerId(formData);
+  await postAdminMutation(`/admin-v2/exchange/rules/${ruleId}/pause`, { version }, `Failed to pause exchange rule`);
+  revalidateExchangeRulePaths(ruleId, consumerId);
+}
+
+export async function resumeExchangeRuleAction(ruleId: string, formData: FormData): Promise<void> {
+  const version = parseRequiredVersion(formData);
+  const consumerId = parseOptionalConsumerId(formData);
+  await postAdminMutation(`/admin-v2/exchange/rules/${ruleId}/resume`, { version }, `Failed to resume exchange rule`);
+  revalidateExchangeRulePaths(ruleId, consumerId);
+}
+
+export async function runExchangeRuleNowAction(ruleId: string, formData: FormData): Promise<void> {
+  const version = parseRequiredVersion(formData);
+  const consumerId = parseOptionalConsumerId(formData);
+  await postAdminMutation(`/admin-v2/exchange/rules/${ruleId}/run-now`, { version }, `Failed to run exchange rule`);
+  revalidateExchangeRulePaths(ruleId, consumerId);
+}
+
+export async function forceExecuteScheduledExchangeAction(conversionId: string, formData: FormData): Promise<void> {
+  const version = parseRequiredVersion(formData);
+  const consumerId = parseOptionalConsumerId(formData);
+  const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
+  await postAdminMutation(
+    `/admin-v2/exchange/scheduled/${conversionId}/force-execute`,
+    { version, confirmed },
+    `Failed to force execute scheduled conversion`,
+  );
+  revalidateExchangeScheduledPaths(conversionId, consumerId);
+}
+
+export async function cancelScheduledExchangeAction(conversionId: string, formData: FormData): Promise<void> {
+  const version = parseRequiredVersion(formData);
+  const consumerId = parseOptionalConsumerId(formData);
+  const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
+  await postAdminMutation(
+    `/admin-v2/exchange/scheduled/${conversionId}/cancel`,
+    { version, confirmed },
+    `Failed to cancel scheduled conversion`,
+  );
+  revalidateExchangeScheduledPaths(conversionId, consumerId);
+}
+
+export async function createDocumentTagAction(formData: FormData): Promise<void> {
+  const name = String(formData.get(`name`) ?? ``).trim();
+  if (!name) {
+    return;
+  }
+  await postAdminMutation(`/admin-v2/documents/tags`, { name }, `Failed to create document tag`);
+  revalidateDocumentsPaths();
+}
+
+export async function updateDocumentTagAction(tagId: string, formData: FormData): Promise<void> {
+  const version = parseRequiredVersion(formData);
+  const name = String(formData.get(`name`) ?? ``).trim();
+  if (!name) {
+    throw new Error(`Tag name is required`);
+  }
+  await patchAdminMutation(`/admin-v2/documents/tags/${tagId}`, { version, name }, `Failed to update document tag`);
+  revalidateDocumentsPaths();
+}
+
+export async function deleteDocumentTagAction(tagId: string, formData: FormData): Promise<void> {
+  const version = parseRequiredVersion(formData);
+  const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
+  await deleteAdminMutation(
+    `/admin-v2/documents/tags/${tagId}`,
+    { version, confirmed },
+    `Failed to delete document tag`,
+  );
+  revalidateDocumentsPaths();
+}
+
+export async function retagDocumentAction(documentId: string, formData: FormData): Promise<void> {
+  const version = parseRequiredVersion(formData);
+  const tagIds = parseStringList(formData, `tagIds`);
+  await postAdminMutation(`/admin-v2/documents/${documentId}/retag`, { version, tagIds }, `Failed to retag document`);
+  revalidateDocumentsPaths(documentId);
+}
+
+export async function bulkTagDocumentsAction(formData: FormData): Promise<void> {
+  const tagIds = parseStringList(formData, `tagIds`);
+  const resources = parseStringList(formData, `resourceVersion`).map((entry) => {
+    const [resourceId, versionRaw] = entry.split(`:`);
+    const version = Number(versionRaw ?? 0);
+    if (!resourceId?.trim() || !Number.isFinite(version) || version < 1) {
+      throw new Error(`Each selected document must include a valid version`);
+    }
+    return {
+      resourceId: resourceId.trim(),
+      version,
+    };
+  });
+  await postAdminMutation(
+    `/admin-v2/documents/bulk-tag`,
+    { tagIds, resources },
+    `Failed to bulk tag selected documents`,
+  );
+  revalidateDocumentsPaths();
+}
+
 async function applyVerificationDecision(
   consumerId: string,
   decisionPath: string,
@@ -134,4 +418,81 @@ export async function requestInfoVerificationAction(consumerId: string, formData
 
 export async function flagVerificationAction(consumerId: string, formData: FormData): Promise<void> {
   await applyVerificationDecision(consumerId, `flag`, formData, `Failed to flag verification`);
+}
+
+function revalidateAdminPaths(adminId?: string | null) {
+  revalidatePath(`/admins`);
+  if (adminId?.trim()) {
+    revalidatePath(`/admins/${adminId.trim()}`);
+  }
+}
+
+function buildAdminCapabilityOverrides(formData: FormData) {
+  return ADMIN_V2_PERMISSION_OVERRIDE_OPTIONS.map(({ capability }) => ({
+    capability,
+    mode: String(formData.get(`capability_override_${capability}`) ?? `inherit`),
+  }));
+}
+
+export async function inviteAdminAction(formData: FormData): Promise<void> {
+  const email = String(formData.get(`email`) ?? ``).trim();
+  const roleKey = String(formData.get(`roleKey`) ?? ``).trim();
+  if (!email || !roleKey) {
+    throw new Error(`Invite email and role are required`);
+  }
+  await postAdminMutation(`/admin-v2/admins/invite`, { email, roleKey }, `Failed to invite admin`);
+  revalidateAdminPaths();
+}
+
+export async function deactivateAdminAction(adminId: string, formData: FormData): Promise<void> {
+  const version = parseRequiredVersion(formData);
+  const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
+  const reason = String(formData.get(`reason`) ?? ``).trim();
+  await postAdminMutation(
+    `/admin-v2/admins/${adminId}/deactivate`,
+    { version, confirmed, reason: reason || null },
+    `Failed to deactivate admin`,
+  );
+  revalidateAdminPaths(adminId);
+}
+
+export async function restoreAdminAction(adminId: string, formData: FormData): Promise<void> {
+  const version = parseRequiredVersion(formData);
+  await postAdminMutation(`/admin-v2/admins/${adminId}/restore`, { version }, `Failed to restore admin`);
+  revalidateAdminPaths(adminId);
+}
+
+export async function changeAdminRoleAction(adminId: string, formData: FormData): Promise<void> {
+  const version = parseRequiredVersion(formData);
+  const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
+  const roleKey = String(formData.get(`roleKey`) ?? ``).trim();
+  if (!roleKey) {
+    throw new Error(`Role is required`);
+  }
+  await postAdminMutation(
+    `/admin-v2/admins/${adminId}/role-change`,
+    { version, confirmed, roleKey },
+    `Failed to change admin role`,
+  );
+  revalidateAdminPaths(adminId);
+}
+
+export async function changeAdminPermissionsAction(adminId: string, formData: FormData): Promise<void> {
+  const version = parseRequiredVersion(formData);
+  await postAdminMutation(
+    `/admin-v2/admins/${adminId}/permissions-change`,
+    { version, capabilityOverrides: buildAdminCapabilityOverrides(formData) },
+    `Failed to change admin permissions`,
+  );
+  revalidateAdminPaths(adminId);
+}
+
+export async function resetAdminPasswordAction(adminId: string, formData: FormData): Promise<void> {
+  const version = parseRequiredVersion(formData);
+  await postAdminMutation(
+    `/admin-v2/admins/${adminId}/password-reset`,
+    { version },
+    `Failed to send admin password reset`,
+  );
+  revalidateAdminPaths(adminId);
 }

@@ -5,6 +5,7 @@ import { type JwtService } from '@nestjs/jwt';
 
 import { CONSUMER_APP_SCOPE_HEADER, COOKIE_KEYS } from '@remoola/api-types';
 import { oauthCrypto } from '@remoola/security-utils';
+import { errorCodes } from '@remoola/shared-constants';
 
 import { type IDENTITY } from '../common';
 import { AuthGuard } from './auth.guard';
@@ -327,6 +328,47 @@ describe(`AuthGuard`, () => {
     });
 
     await expect(guard.canActivate(buildContext(request))).resolves.toBe(true);
+  });
+
+  it(`rejects suspended consumers on consumer routes even with a valid session`, async () => {
+    const token = `token`;
+    const [consumerAccessCookieKey] = getApiConsumerAccessTokenCookieKeysForRead(`consumer`);
+    const request: MockRequest = {
+      method: `GET`,
+      path: `/api/consumer/profile`,
+      url: `/api/consumer/profile`,
+      headers: {
+        origin: `https://consumer.example.com`,
+        [CONSUMER_APP_SCOPE_HEADER]: `consumer`,
+      },
+      cookies: {
+        [consumerAccessCookieKey]: token,
+      },
+    };
+    jwtService.verify.mockReturnValue({
+      identityId: `consumer-1`,
+      sid: `session-1`,
+      typ: `access`,
+      scope: `consumer`,
+      appScope: `consumer`,
+    });
+    prisma.authSessionModel.findFirst.mockResolvedValue({
+      id: `session-1`,
+      consumerId: `consumer-1`,
+      appScope: `consumer`,
+      revokedAt: null,
+      expiresAt: new Date(Date.now() + 60_000),
+      accessTokenHash: oauthCrypto.hashOAuthState(token),
+    });
+    prisma.adminModel.findFirst.mockResolvedValue(null);
+    prisma.consumerModel.findFirst.mockResolvedValue({
+      id: `consumer-1`,
+      email: `consumer@example.com`,
+      suspendedAt: new Date(`2026-04-16T19:00:00.000Z`),
+    });
+
+    await expect(guard.canActivate(buildContext(request))).rejects.toThrow(ForbiddenException);
+    await expect(guard.canActivate(buildContext(request))).rejects.toThrow(errorCodes.ACCOUNT_SUSPENDED);
   });
 
   it(`uses the mobile consumer namespace selected by explicit app scope`, async () => {

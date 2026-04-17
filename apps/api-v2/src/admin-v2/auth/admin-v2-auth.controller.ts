@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post, Req, Res, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { ApiCookieAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { IsOptional, IsUUID } from 'class-validator';
+import { IsOptional, IsString, IsUUID, MinLength } from 'class-validator';
 import express from 'express';
 
 import { oauthCrypto } from '@remoola/security-utils';
@@ -24,11 +24,30 @@ import {
   getApiAdminRefreshTokenCookieKey,
   getApiAdminRefreshTokenCookieKeysForRead,
 } from '../../shared-common';
+import { AdminV2AdminsService } from '../admins/admin-v2-admins.service';
 
 class RevokeAdminSessionBodyDTO {
   @IsOptional()
   @IsUUID()
   sessionId?: string;
+}
+
+class AcceptAdminInvitationBodyDTO {
+  @IsString()
+  token!: string;
+
+  @IsString()
+  @MinLength(8)
+  password!: string;
+}
+
+class ResetAdminV2PasswordBodyDTO {
+  @IsString()
+  token!: string;
+
+  @IsString()
+  @MinLength(8)
+  password!: string;
 }
 
 @ApiTags(`Admin v2: Auth`)
@@ -37,6 +56,7 @@ export class AdminV2AuthController {
   constructor(
     private readonly service: AdminAuthService,
     private readonly originResolver: OriginResolverService,
+    private readonly adminsService: AdminV2AdminsService,
   ) {}
 
   private getRefreshTokenFromRequest(req: express.Request): string | undefined {
@@ -79,12 +99,27 @@ export class AdminV2AuthController {
   }
 
   @PublicEndpoint()
+  @Post(`invitations/accept`)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  async acceptInvitation(@Body() body: AcceptAdminInvitationBodyDTO) {
+    return this.adminsService.acceptInvitation(body);
+  }
+
+  @PublicEndpoint()
+  @Post(`password/reset`)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  async resetPassword(@Body() body: ResetAdminV2PasswordBodyDTO) {
+    return this.adminsService.resetPasswordWithToken(body);
+  }
+
+  @PublicEndpoint()
   @Post(`login`)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ operationId: `admin_v2_auth_login` })
   @ApiOkResponse({ type: ADMIN.Access })
   async login(@Req() req: express.Request, @Res({ passthrough: true }) res, @Body() body: Credentials) {
-    if (!this.originResolver.resolveAdminRequestOrigin(req.headers.origin, req.headers.referer)) {
+    const resolvedOrigin = this.originResolver.resolveAdminRequestOrigin(req.headers.origin, req.headers.referer);
+    if (!resolvedOrigin) {
       throw new UnauthorizedException(`Invalid request origin`);
     }
     const ipAddress = req.ip ?? req.headers[`x-forwarded-for`];

@@ -11,9 +11,11 @@ import { type Request as TExpressRequest } from 'express';
 
 import { CONSUMER_APP_SCOPE_HEADER, isAdminApiPath, type ConsumerAppScope } from '@remoola/api-types';
 import { oauthCrypto } from '@remoola/security-utils';
+import { errorCodes } from '@remoola/shared-constants';
 
 import { IDENTITY, type IIdentity, type IIdentityContext, IS_PUBLIC } from '../common';
 import { type IJwtTokenPayload } from '../dtos/consumer';
+import { envs } from '../envs';
 import { OriginResolverService } from '../shared/origin-resolver.service';
 import { type PrismaService } from '../shared/prisma.service';
 import {
@@ -103,8 +105,9 @@ export class AuthGuard implements CanActivate {
 
   private async processAccessToken(accessToken: string, request: TExpressRequest, requestAppScope?: ConsumerAppScope) {
     let verified: IJwtTokenPayload;
+    const path = request.path ?? request.url?.split(`?`)[0] ?? ``;
     try {
-      verified = this.jwtService.verify<IJwtTokenPayload>(accessToken);
+      verified = this.jwtService.verify<IJwtTokenPayload>(accessToken, { secret: envs.JWT_ACCESS_SECRET });
     } catch {
       this.logger.warn(`AuthGuard: JWT verification failed`);
       throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
@@ -115,9 +118,6 @@ export class AuthGuard implements CanActivate {
       this.logger.warn(`AuthGuard: token typ is not access`);
       throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
     }
-
-    const path = request.path ?? request.url?.split(`?`)[0] ?? ``;
-
     if (verified.scope !== `consumer` && verified.scope !== `admin`) {
       this.logger.warn(`AuthGuard: token missing or has invalid scope`);
       throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
@@ -208,6 +208,11 @@ export class AuthGuard implements CanActivate {
     if (path.startsWith(CONSUMER_API_PATH_PREFIX) && !consumer) {
       this.logger.warn(`AuthGuard: admin attempted consumer path`);
       throw new ForbiddenException(GuardMessage.ONLY_FOR_CONSUMERS);
+    }
+
+    if (path.startsWith(CONSUMER_API_PATH_PREFIX) && consumer?.suspendedAt != null) {
+      this.logger.warn(`AuthGuard: suspended consumer attempted consumer path`);
+      throw new ForbiddenException(errorCodes.ACCOUNT_SUSPENDED);
     }
 
     this.assignRequestIdentity(request, identity, admin?.type ?? `consumer`, verified.sid);

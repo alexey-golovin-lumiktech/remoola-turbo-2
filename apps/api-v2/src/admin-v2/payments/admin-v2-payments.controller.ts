@@ -1,11 +1,9 @@
 import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 
-import { type AdminModel } from '@remoola/database-2';
-
 import { JwtAuthGuard } from '../../auth/jwt.guard';
-import { Identity } from '../../common';
-import { assertAdminV2Capability } from '../admin-v2-access';
+import { Identity, type IIdentityContext } from '../../common';
+import { AdminV2AccessService } from '../admin-v2-access.service';
 import { AdminV2PaymentsService } from './admin-v2-payments.service';
 
 function one(value: string | string[] | undefined): string | undefined {
@@ -35,11 +33,17 @@ function parseDate(value: string | undefined): Date | undefined {
 @ApiTags(`Admin v2: Payments`)
 @Controller(`admin-v2/payments`)
 export class AdminV2PaymentsController {
-  constructor(private readonly service: AdminV2PaymentsService) {}
+  constructor(
+    private readonly service: AdminV2PaymentsService,
+    private readonly accessService: AdminV2AccessService,
+  ) {}
 
   @Get()
-  listPaymentRequests(@Identity() admin: AdminModel, @Query() query: Record<string, string | string[] | undefined>) {
-    assertAdminV2Capability(admin, `payments.read`);
+  async listPaymentRequests(
+    @Identity() admin: IIdentityContext,
+    @Query() query: Record<string, string | string[] | undefined>,
+  ) {
+    await this.accessService.assertCapability(admin, `payments.read`);
     return this.service.listPaymentRequests({
       cursor: one(query.cursor),
       limit: toNumber(one(query.limit)),
@@ -57,9 +61,15 @@ export class AdminV2PaymentsController {
     });
   }
 
+  @Get(`operations-queue`)
+  async getPaymentOperationsQueue(@Identity() admin: IIdentityContext) {
+    await this.accessService.assertCapability(admin, `payments.read`);
+    return this.service.getPaymentOperationsQueue();
+  }
+
   @Get(`:id`)
-  getPaymentRequestCase(@Identity() admin: AdminModel, @Param(`id`) id: string) {
-    assertAdminV2Capability(admin, `payments.read`);
+  async getPaymentRequestCase(@Identity() admin: IIdentityContext, @Param(`id`) id: string) {
+    await this.accessService.assertCapability(admin, `payments.read`);
     return this.service.getPaymentRequestCase(id);
   }
 }

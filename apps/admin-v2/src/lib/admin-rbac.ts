@@ -1,0 +1,33 @@
+export const ADMIN_V2_ROLE_OPTIONS = [
+  { key: `SUPER_ADMIN`, label: `Super Admin` },
+  { key: `OPS_ADMIN`, label: `Ops Admin` },
+  { key: `SUPPORT_ADMIN`, label: `Support Admin` },
+  { key: `RISK_ADMIN`, label: `Risk Admin` },
+  { key: `FINANCE_ADMIN`, label: `Finance Admin` },
+  { key: `READONLY_ADMIN`, label: `Read-only Admin` },
+] as const;
+
+export const ADMIN_V2_PERMISSION_OVERRIDE_OPTIONS = [
+  { capability: `overview.read`, label: `Overview read` },
+  { capability: `verification.read`, label: `Verification read` },
+  { capability: `verification.decide`, label: `Verification decide` },
+  { capability: `consumers.read`, label: `Consumers read` },
+  { capability: `consumers.notes`, label: `Consumer notes` },
+  { capability: `consumers.flags`, label: `Consumer flags` },
+  { capability: `consumers.force_logout`, label: `Consumer force logout` },
+  { capability: `consumers.suspend`, label: `Consumer suspend` },
+  { capability: `consumers.email_resend`, label: `Consumer email resend` },
+  { capability: `payments.read`, label: `Payments read` },
+  { capability: `ledger.read`, label: `Ledger read` },
+  { capability: `exchange.read`, label: `Exchange read` },
+  { capability: `exchange.manage`, label: `Exchange manage` },
+  { capability: `documents.read`, label: `Documents read` },
+  { capability: `documents.manage`, label: `Documents manage` },
+  { capability: `payment_methods.read`, label: `Payment methods read` },
+  { capability: `payment_methods.manage`, label: `Payment methods manage` },
+  { capability: `system.read`, label: `System read` },
+  { capability: `admins.read`, label: `Admins read` },
+  { capability: `admins.manage`, label: `Admins manage` },
+  { capability: `payouts.escalate`, label: `Payouts escalate` },
+  { capability: `audit.read`, label: `Audit read` },
+] as const;

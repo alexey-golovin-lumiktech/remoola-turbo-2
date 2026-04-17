@@ -1,11 +1,9 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 
-import { type AdminModel } from '@remoola/database-2';
-
 import { JwtAuthGuard } from '../../auth/jwt.guard';
-import { Identity } from '../../common';
-import { assertAdminV2Capability } from '../admin-v2-access';
+import { Identity, type IIdentityContext } from '../../common';
+import { AdminV2AccessService } from '../admin-v2-access.service';
 import { AdminV2AuditService } from './admin-v2-audit.service';
 
 function one(value: string | string[] | undefined): string | undefined {
@@ -27,11 +25,17 @@ function parseNumber(value: string | undefined, fallback: number): number {
 @ApiTags(`Admin v2: Audit`)
 @Controller(`admin-v2/audit`)
 export class AdminV2AuditController {
-  constructor(private readonly service: AdminV2AuditService) {}
+  constructor(
+    private readonly service: AdminV2AuditService,
+    private readonly accessService: AdminV2AccessService,
+  ) {}
 
   @Get(`auth`)
-  getAuthAudit(@Identity() admin: AdminModel, @Query() query: Record<string, string | string[] | undefined>) {
-    assertAdminV2Capability(admin, `audit.read`);
+  async getAuthAudit(
+    @Identity() admin: IIdentityContext,
+    @Query() query: Record<string, string | string[] | undefined>,
+  ) {
+    await this.accessService.assertCapability(admin, `audit.read`);
     return this.service.getAuthAudit({
       email: one(query.email),
       event: one(query.event),
@@ -44,8 +48,11 @@ export class AdminV2AuditController {
   }
 
   @Get(`admin-actions`)
-  getAdminActionAudit(@Identity() admin: AdminModel, @Query() query: Record<string, string | string[] | undefined>) {
-    assertAdminV2Capability(admin, `audit.read`);
+  async getAdminActionAudit(
+    @Identity() admin: IIdentityContext,
+    @Query() query: Record<string, string | string[] | undefined>,
+  ) {
+    await this.accessService.assertCapability(admin, `audit.read`);
     return this.service.getAdminActionAudit({
       action: one(query.action),
       adminId: one(query.adminId),
@@ -59,8 +66,11 @@ export class AdminV2AuditController {
   }
 
   @Get(`consumer-actions`)
-  getConsumerActionAudit(@Identity() admin: AdminModel, @Query() query: Record<string, string | string[] | undefined>) {
-    assertAdminV2Capability(admin, `audit.read`);
+  async getConsumerActionAudit(
+    @Identity() admin: IIdentityContext,
+    @Query() query: Record<string, string | string[] | undefined>,
+  ) {
+    await this.accessService.assertCapability(admin, `audit.read`);
     return this.service.getConsumerActionAudit({
       consumerId: one(query.consumerId),
       action: one(query.action),

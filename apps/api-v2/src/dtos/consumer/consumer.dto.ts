@@ -82,6 +82,18 @@ export class ConsumerDTO extends BaseModel implements ConsumerModel {
   verificationUpdatedBy: string;
 
   @Expose()
+  @ApiProperty({ description: `Timestamp when the consumer was suspended`, required: false, default: null })
+  suspendedAt: Date;
+
+  @Expose()
+  @ApiProperty({ description: `Admin user ID who applied suspension`, required: false, default: null })
+  suspendedBy: string;
+
+  @Expose()
+  @ApiProperty({ description: `Recorded reason for consumer suspension`, required: false, default: null })
+  suspensionReason: string;
+
+  @Expose()
   @ApiProperty({ description: `Current Stripe Identity lifecycle status`, required: false, default: null })
   stripeIdentityStatus: string;
 

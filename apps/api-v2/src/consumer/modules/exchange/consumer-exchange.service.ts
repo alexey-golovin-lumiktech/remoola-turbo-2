@@ -529,8 +529,21 @@ export class ConsumerExchangeService {
           continue;
         }
 
-        await this.executeAutoConversionRule(refreshedRule, {
+        const result = await this.executeAutoConversionRule(refreshedRule, {
           source: `auto_rule`,
+        });
+
+        await this.prisma.walletAutoConversionRuleModel.update({
+          where: { id: rule.id },
+          data: {
+            metadata: this.mergeRuleExecutionMetadata(refreshedRule.metadata, {
+              status: result.converted ? `executed` : `failed`,
+              reason: result.converted ? `conversion_executed` : String(result.reason ?? `rule_run_failed`),
+              executedAt: now.toISOString(),
+              source: `auto_rule`,
+              ledgerId: result.converted ? (result.ledgerId ?? null) : null,
+            }),
+          },
         });
       } catch (error) {
         failedCount++;
@@ -542,6 +555,12 @@ export class ConsumerExchangeService {
           where: { id: rule.id },
           data: {
             nextRunAt: new Date(now.getTime() + 5 * 60 * 1000),
+            metadata: this.mergeRuleExecutionMetadata(rule.metadata, {
+              status: `failed`,
+              reason: message,
+              executedAt: now.toISOString(),
+              source: `auto_rule`,
+            }),
           },
         });
       }
@@ -584,15 +603,38 @@ export class ConsumerExchangeService {
     }
 
     try {
-      return await this.executeAutoConversionRule(refreshedRule, {
+      const result = await this.executeAutoConversionRule(refreshedRule, {
         source: initiatedBy?.source ?? `manual_rule_run`,
         actorId: initiatedBy?.actorId,
       });
+
+      await this.prisma.walletAutoConversionRuleModel.update({
+        where: { id: rule.id },
+        data: {
+          metadata: this.mergeRuleExecutionMetadata(refreshedRule.metadata, {
+            status: result.converted ? `executed` : `failed`,
+            reason: result.converted ? `conversion_executed` : String(result.reason ?? `rule_run_failed`),
+            executedAt: now.toISOString(),
+            source: initiatedBy?.source ?? `manual_rule_run`,
+            actorId: initiatedBy?.actorId ?? null,
+            ledgerId: result.converted ? (result.ledgerId ?? null) : null,
+          }),
+        },
+      });
+
+      return result;
     } catch (error) {
       await this.prisma.walletAutoConversionRuleModel.update({
         where: { id: rule.id },
         data: {
           nextRunAt: new Date(now.getTime() + 5 * 60 * 1000),
+          metadata: this.mergeRuleExecutionMetadata(refreshedRule.metadata, {
+            status: `failed`,
+            reason: error instanceof Error ? error.message : `Unknown error`,
+            executedAt: now.toISOString(),
+            source: initiatedBy?.source ?? `manual_rule_run`,
+            actorId: initiatedBy?.actorId ?? null,
+          }),
         },
       });
 
@@ -689,6 +731,13 @@ export class ConsumerExchangeService {
       ...conversion,
       amount: Number(conversion.amount),
     };
+  }
+
+  private mergeRuleExecutionMetadata(metadata: Prisma.JsonValue | null | undefined, execution: Prisma.InputJsonObject) {
+    return {
+      ...(metadata && typeof metadata === `object` && !Array.isArray(metadata) ? metadata : {}),
+      lastExecution: execution,
+    } as Prisma.InputJsonValue;
   }
 
   private async convertInternal(

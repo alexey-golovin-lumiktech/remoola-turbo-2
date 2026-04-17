@@ -139,6 +139,22 @@ export class MailingService {
     });
   }
 
+  async sendConsumerSignupVerificationEmailSafe(params: { email: string; token: string }): Promise<boolean> {
+    const backendBaseURL = resolveEmailApiBaseUrl();
+    const emailConfirmationUrl = new URL(`${backendBaseURL}/consumer/auth/signup/verification`);
+    emailConfirmationUrl.search = new URLSearchParams({
+      token: params.token,
+    }).toString();
+
+    const html = signupCompletionToHtml.processor(emailConfirmationUrl.toString());
+    const subject = `Welcome to Wirebill! Confirm your Email`;
+    return this.trySendEmail(`sendConsumerSignupVerificationEmail`, {
+      to: params.email,
+      subject,
+      html,
+    });
+  }
+
   async sendOutgoingInvoiceEmail(invoice: InvoiceForTemplate) {
     const html = outgoingInvoiceToHtml.processor(invoice);
     const subject = `NEW INVOICE #${invoice.id}`;
@@ -311,6 +327,26 @@ export class MailingService {
     });
   }
 
+  async sendConsumerForgotPasswordEmailSafe(params: { email: string; forgotPasswordLink: string }): Promise<boolean> {
+    const html = forgotPassword.processor(params.forgotPasswordLink);
+    const subject = `Wirebill – Reset your password`;
+    return this.trySendEmail(`sendConsumerForgotPasswordEmail`, {
+      to: params.email,
+      subject,
+      html,
+    });
+  }
+
+  async sendAdminV2PasswordResetEmail(params: { email: string; forgotPasswordLink: string }): Promise<boolean> {
+    const html = forgotPassword.processor(params.forgotPasswordLink);
+    const subject = `Wirebill. Admin password reset`;
+    return this.trySendEmail(`sendAdminV2PasswordResetEmail`, {
+      to: params.email,
+      subject,
+      html,
+    });
+  }
+
   async sendConsumerPasswordlessRecoveryEmail(params: { email: string; loginUrl: string }) {
     const html = googleSignInRecovery.processor(params.loginUrl);
     const subject = `Wirebill – Sign in with Google`;
@@ -318,6 +354,31 @@ export class MailingService {
       to: params.email,
       subject,
       html,
+    });
+  }
+
+  async sendConsumerPasswordlessRecoveryEmailSafe(params: { email: string; loginUrl: string }): Promise<boolean> {
+    const html = googleSignInRecovery.processor(params.loginUrl);
+    const subject = `Wirebill – Sign in with Google`;
+    return this.trySendEmail(`sendConsumerPasswordlessRecoveryEmail`, {
+      to: params.email,
+      subject,
+      html,
+    });
+  }
+
+  async sendAdminV2ConsumerSuspensionEmail(params: { email: string; reason: string }): Promise<boolean> {
+    const escapedEmail = escapeHtml(params.email);
+    const escapedReason = escapeHtml(params.reason.trim());
+    return this.trySendEmail(`sendAdminV2ConsumerSuspensionEmail`, {
+      to: params.email,
+      subject: `Wirebill. Account suspended`,
+      html: `
+        <p>Hello ${escapedEmail},</p>
+        <p>Your account has been suspended by the operations team.</p>
+        <p>Reason: ${escapedReason}</p>
+        <p>Please contact support if you need clarification.</p>
+      `,
     });
   }
 

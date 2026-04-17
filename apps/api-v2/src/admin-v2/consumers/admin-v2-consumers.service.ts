@@ -1,5 +1,6 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 
+import type { ConsumerAppScope } from '@remoola/api-types';
 import { $Enums, Prisma } from '@remoola/database-2';
 
 import { ConsumerAuthService } from '../../consumer/auth/auth.service';
@@ -25,6 +26,16 @@ type RequestMeta = {
   ipAddress?: string | null;
   userAgent?: string | null;
   idempotencyKey?: string | null;
+};
+
+type SuspendConsumerBody = {
+  confirmed?: boolean;
+  reason?: string;
+};
+
+type ResendConsumerEmailBody = {
+  emailKind: `signup_verification` | `password_recovery`;
+  appScope: ConsumerAppScope;
 };
 
 function normalizeFlag(raw: string): string {
@@ -75,6 +86,9 @@ export class AdminV2ConsumersService {
       select: {
         id: true,
         email: true,
+        suspendedAt: true,
+        suspendedBy: true,
+        suspensionReason: true,
       },
     });
     if (!consumer) {
@@ -345,6 +359,9 @@ export class AdminV2ConsumersService {
         verificationStatus: true,
         verificationReason: true,
         verificationUpdatedAt: true,
+        suspendedAt: true,
+        suspendedBy: true,
+        suspensionReason: true,
         stripeIdentityStatus: true,
         stripeIdentityLastErrorCode: true,
         stripeIdentityLastErrorReason: true,
@@ -380,6 +397,8 @@ export class AdminV2ConsumersService {
             last4: true,
             defaultSelected: true,
             createdAt: true,
+            updatedAt: true,
+            disabledAt: true,
           },
         },
         asPayerPaymentRequests: {
@@ -538,6 +557,10 @@ export class AdminV2ConsumersService {
 
     return {
       ...consumer,
+      paymentMethods: consumer.paymentMethods.map((paymentMethod) => ({
+        ...paymentMethod,
+        status: paymentMethod.disabledAt ? `DISABLED` : `ACTIVE`,
+      })),
       recentPaymentRequests,
       ledgerSummary: ledgerSummary.summary,
       recentAuthEvents,
@@ -739,5 +762,129 @@ export class AdminV2ConsumersService {
         };
       },
     });
+  }
+
+  async suspendConsumer(consumerId: string, adminId: string, body: SuspendConsumerBody, meta?: RequestMeta) {
+    if (body.confirmed !== true) {
+      throw new BadRequestException(`Confirmation is required for consumer suspension`);
+    }
+
+    const reason = body.reason?.trim();
+    if (!reason) {
+      throw new BadRequestException(`Suspension reason is required`);
+    }
+    if (reason.length > REASON_MAX_LEN) {
+      throw new BadRequestException(`Suspension reason is too long`);
+    }
+
+    const consumer = await this.requireConsumer(consumerId);
+    return this.idempotency.execute({
+      adminId,
+      scope: `consumer-suspend:${consumerId}`,
+      key: meta?.idempotencyKey,
+      payload: { consumerId, confirmed: true, reason },
+      execute: async () => {
+        if (consumer.suspendedAt != null) {
+          return {
+            consumerId,
+            suspendedAt: consumer.suspendedAt,
+            alreadySuspended: true,
+            emailDispatched: false,
+          };
+        }
+
+        const suspendedAt = new Date();
+        await this.prisma.consumerModel.update({
+          where: { id: consumerId },
+          data: {
+            suspendedAt,
+            suspendedBy: adminId,
+            suspensionReason: reason,
+          },
+        });
+
+        await this.consumerAuthService.revokeAllSessionsByConsumerIdAndAudit(consumerId, {
+          ipAddress: meta?.ipAddress,
+          userAgent: meta?.userAgent,
+        });
+
+        const emailDispatched = await this.consumerAuthService.sendConsumerSuspensionEmail(consumerId, reason);
+        if (!emailDispatched) {
+          throw new ConflictException(`Failed to dispatch suspension email`);
+        }
+
+        await this.adminActionAudit.record({
+          adminId,
+          action: ADMIN_ACTION_AUDIT_ACTIONS.consumer_suspend,
+          resource: `consumer`,
+          resourceId: consumerId,
+          metadata: {
+            consumerEmail: consumer.email,
+            reason,
+            suspendedAt,
+            emailKind: `consumer_suspension`,
+          },
+          ipAddress: meta?.ipAddress,
+          userAgent: meta?.userAgent,
+        });
+
+        return {
+          consumerId,
+          suspendedAt,
+          alreadySuspended: false,
+          emailDispatched,
+        };
+      },
+    });
+  }
+
+  async resendConsumerEmail(consumerId: string, adminId: string, body: ResendConsumerEmailBody, meta?: RequestMeta) {
+    const consumer = await this.requireConsumer(consumerId);
+
+    let result:
+      | { requestedKind: `signup_verification`; dispatchedKind: `signup_verification`; emailDispatched: boolean }
+      | {
+          requestedKind: `password_recovery`;
+          dispatchedKind: `password_reset` | `google_signin_recovery`;
+          emailDispatched: boolean;
+        };
+
+    if (body.emailKind === `signup_verification`) {
+      const emailDispatched = await this.consumerAuthService.resendSignupVerificationEmail(consumerId, body.appScope);
+      if (!emailDispatched) {
+        throw new ConflictException(`Failed to dispatch signup verification email`);
+      }
+      result = {
+        requestedKind: `signup_verification`,
+        dispatchedKind: `signup_verification`,
+        emailDispatched,
+      };
+    } else {
+      const outcome = await this.consumerAuthService.resendPasswordRecoveryEmail(consumerId, body.appScope);
+      result = {
+        ...outcome,
+        emailDispatched: true,
+      };
+    }
+
+    await this.adminActionAudit.record({
+      adminId,
+      action: ADMIN_ACTION_AUDIT_ACTIONS.consumer_email_resend,
+      resource: `consumer`,
+      resourceId: consumerId,
+      metadata: {
+        consumerEmail: consumer.email,
+        requestedEmailKind: result.requestedKind,
+        dispatchedEmailKind: result.dispatchedKind,
+        appScope: body.appScope,
+      },
+      ipAddress: meta?.ipAddress,
+      userAgent: meta?.userAgent,
+    });
+
+    return {
+      consumerId,
+      ...result,
+    };
   }
 }

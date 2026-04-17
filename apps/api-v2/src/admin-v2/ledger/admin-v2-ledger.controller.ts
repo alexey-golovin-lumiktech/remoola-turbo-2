@@ -1,11 +1,9 @@
 import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 
-import { type AdminModel } from '@remoola/database-2';
-
 import { JwtAuthGuard } from '../../auth/jwt.guard';
-import { Identity } from '../../common';
-import { assertAdminV2Capability } from '../admin-v2-access';
+import { Identity, type IIdentityContext } from '../../common';
+import { AdminV2AccessService } from '../admin-v2-access.service';
 import { AdminV2LedgerService } from './admin-v2-ledger.service';
 
 function one(value: string | string[] | undefined): string | undefined {
@@ -35,11 +33,17 @@ function parseDate(value: string | undefined): Date | undefined {
 @ApiTags(`Admin v2: Ledger`)
 @Controller(`admin-v2/ledger`)
 export class AdminV2LedgerController {
-  constructor(private readonly service: AdminV2LedgerService) {}
+  constructor(
+    private readonly service: AdminV2LedgerService,
+    private readonly accessService: AdminV2AccessService,
+  ) {}
 
   @Get()
-  listLedgerEntries(@Identity() admin: AdminModel, @Query() query: Record<string, string | string[] | undefined>) {
-    assertAdminV2Capability(admin, `ledger.read`);
+  async listLedgerEntries(
+    @Identity() admin: IIdentityContext,
+    @Query() query: Record<string, string | string[] | undefined>,
+  ) {
+    await this.accessService.assertCapability(admin, `ledger.read`);
     return this.service.listLedgerEntries({
       cursor: one(query.cursor),
       limit: toNumber(one(query.limit)),
@@ -56,8 +60,11 @@ export class AdminV2LedgerController {
   }
 
   @Get(`disputes`)
-  listDisputes(@Identity() admin: AdminModel, @Query() query: Record<string, string | string[] | undefined>) {
-    assertAdminV2Capability(admin, `ledger.read`);
+  async listDisputes(
+    @Identity() admin: IIdentityContext,
+    @Query() query: Record<string, string | string[] | undefined>,
+  ) {
+    await this.accessService.assertCapability(admin, `ledger.read`);
     return this.service.listDisputes({
       cursor: one(query.cursor),
       limit: toNumber(one(query.limit)),
@@ -70,8 +77,8 @@ export class AdminV2LedgerController {
   }
 
   @Get(`:id`)
-  getLedgerEntryCase(@Identity() admin: AdminModel, @Param(`id`) id: string) {
-    assertAdminV2Capability(admin, `ledger.read`);
+  async getLedgerEntryCase(@Identity() admin: IIdentityContext, @Param(`id`) id: string) {
+    await this.accessService.assertCapability(admin, `ledger.read`);
     return this.service.getLedgerEntryCase(id);
   }
 }

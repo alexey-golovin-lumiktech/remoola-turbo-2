@@ -13,6 +13,29 @@ const PAYMENT_REQUEST_SETTLEMENT_ENTRY_TYPES = [
   $Enums.LedgerEntryType.USER_PAYMENT,
   $Enums.LedgerEntryType.USER_DEPOSIT,
 ] as const;
+const PAYMENT_OPERATIONS_QUEUE_LIMIT_PER_BUCKET = 25;
+const STALE_WAITING_RECIPIENT_APPROVAL_THRESHOLD_HOURS = 24;
+const PAYMENT_OPERATIONS_OVERDUE_STATUSES = [
+  $Enums.TransactionStatus.WAITING,
+  $Enums.TransactionStatus.WAITING_RECIPIENT_APPROVAL,
+  $Enums.TransactionStatus.PENDING,
+] as const;
+const OVERDUE_OPERATOR_PROMPT = [
+  `Review overdue payment requests and continue case investigation`,
+  `from the payment detail view.`,
+].join(` `);
+const MISSING_ATTACHMENT_OPERATOR_PROMPT = [
+  `Review cases with missing supporting attachment coverage`,
+  `or missing invoice-tagged attachment linkage.`,
+].join(` `);
+const UNCOLLECTIBLE_OPERATOR_PROMPT = [
+  `Review UNCOLLECTIBLE payment requests as a distinct collections outcome`,
+  `before continuing case investigation from the payment detail view.`,
+].join(` `);
+const STALE_WAITING_RECIPIENT_APPROVAL_OPERATOR_PROMPT = [
+  `Review payment requests that remain in WAITING_RECIPIENT_APPROVAL`,
+  `beyond the current follow-up window.`,
+].join(` `);
 
 function normalizeLimit(limit?: number): number {
   return Math.min(MAX_LIMIT, Math.max(1, limit ?? DEFAULT_LIMIT));
@@ -71,6 +94,69 @@ function buildDateRangeFilter(dateFrom?: Date, dateTo?: Date): Prisma.DateTimeNu
 @Injectable()
 export class AdminV2PaymentsService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private isInvoiceTaggedResource(
+    resource: { resourceTags?: Array<{ tag: { name: string } }> } | null | undefined,
+  ): boolean {
+    return resource?.resourceTags?.some((resourceTag) => resourceTag.tag.name.startsWith(`INVOICE-`)) ?? false;
+  }
+
+  private mapPaymentOperationsQueueItem(row: {
+    id: string;
+    amount: Prisma.Decimal;
+    currencyCode: $Enums.CurrencyCode;
+    status: $Enums.TransactionStatus;
+    paymentRail: $Enums.PaymentRail | null;
+    dueDate: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+    payer?: { id: string; email: string } | null;
+    requester?: { id: string; email: string } | null;
+    payerEmail?: string | null;
+    requesterEmail?: string | null;
+    attachments: Array<{
+      id: string;
+      resource: {
+        id: string;
+        resourceTags?: Array<{ tag: { name: string } }>;
+      } | null;
+    }>;
+    ledgerEntries: Array<{
+      status: $Enums.TransactionStatus;
+      createdAt: Date;
+      type: $Enums.LedgerEntryType;
+      outcomes?: Array<{ status: $Enums.TransactionStatus }>;
+    }>;
+  }) {
+    const effectiveStatus = this.getEffectivePaymentStatus(row) ?? row.status;
+    const invoiceTaggedAttachmentsCount = row.attachments.filter((attachment) =>
+      this.isInvoiceTaggedResource(attachment.resource),
+    ).length;
+
+    return {
+      id: row.id,
+      amount: row.amount.toString(),
+      currencyCode: row.currencyCode,
+      persistedStatus: row.status,
+      effectiveStatus,
+      staleWarning: effectiveStatus !== row.status,
+      paymentRail: this.derivePaymentRail(row),
+      payer: {
+        id: row.payer?.id ?? null,
+        email: row.payer?.email ?? row.payerEmail ?? null,
+      },
+      requester: {
+        id: row.requester?.id ?? null,
+        email: row.requester?.email ?? row.requesterEmail ?? null,
+      },
+      dueDate: row.dueDate,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+      attachmentsCount: row.attachments.length,
+      invoiceTaggedAttachmentsCount,
+      dataFreshnessClass: `bounded-snapshot`,
+    };
+  }
 
   private getEffectiveLedgerStatus(entry: {
     status: $Enums.TransactionStatus;
@@ -212,11 +298,7 @@ export class AdminV2PaymentsService {
               lt: now,
             },
             status: {
-              in: [
-                $Enums.TransactionStatus.WAITING,
-                $Enums.TransactionStatus.WAITING_RECIPIENT_APPROVAL,
-                $Enums.TransactionStatus.PENDING,
-              ],
+              in: [...PAYMENT_OPERATIONS_OVERDUE_STATUSES],
             },
           }
         : {}),
@@ -525,6 +607,191 @@ export class AdminV2PaymentsService {
       updatedAt: paymentRequest.updatedAt,
       staleWarning: effectiveStatus !== paymentRequest.status,
       dataFreshnessClass: `exact`,
+    };
+  }
+
+  async getPaymentOperationsQueue() {
+    const now = new Date();
+    const staleWaitingRecipientApprovalThreshold = new Date(
+      now.getTime() - STALE_WAITING_RECIPIENT_APPROVAL_THRESHOLD_HOURS * 60 * 60 * 1000,
+    );
+    const baseSelect = {
+      id: true,
+      amount: true,
+      currencyCode: true,
+      status: true,
+      paymentRail: true,
+      dueDate: true,
+      createdAt: true,
+      updatedAt: true,
+      payer: { select: { id: true, email: true } },
+      requester: { select: { id: true, email: true } },
+      payerEmail: true,
+      requesterEmail: true,
+      attachments: {
+        where: { deletedAt: null, resource: { deletedAt: null } },
+        select: {
+          id: true,
+          resource: {
+            select: {
+              id: true,
+              resourceTags: {
+                select: {
+                  tag: {
+                    select: {
+                      name: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      ledgerEntries: {
+        where: {
+          deletedAt: null,
+          type: { in: [...PAYMENT_REQUEST_SETTLEMENT_ENTRY_TYPES] },
+        },
+        orderBy: [{ createdAt: `desc` }, { id: `desc` }],
+        take: 4,
+        select: {
+          id: true,
+          type: true,
+          status: true,
+          createdAt: true,
+          outcomes: {
+            orderBy: [{ createdAt: `desc` }, { id: `desc` }],
+            take: 1,
+            select: { status: true },
+          },
+        },
+      },
+    } satisfies Prisma.PaymentRequestModelSelect;
+
+    const [overdueRows, uncollectibleRows, staleApprovalRows, inconsistentRows, missingAttachmentRows] =
+      await Promise.all([
+        this.prisma.paymentRequestModel.findMany({
+          where: {
+            deletedAt: null,
+            dueDate: { lt: now },
+            status: { in: [...PAYMENT_OPERATIONS_OVERDUE_STATUSES] },
+          },
+          orderBy: [{ dueDate: `asc` }, { updatedAt: `desc` }, { id: `desc` }],
+          take: PAYMENT_OPERATIONS_QUEUE_LIMIT_PER_BUCKET,
+          select: baseSelect,
+        }),
+        this.prisma.paymentRequestModel.findMany({
+          where: {
+            deletedAt: null,
+            status: $Enums.TransactionStatus.UNCOLLECTIBLE,
+          },
+          orderBy: [{ updatedAt: `desc` }, { id: `desc` }],
+          take: PAYMENT_OPERATIONS_QUEUE_LIMIT_PER_BUCKET,
+          select: baseSelect,
+        }),
+        this.prisma.paymentRequestModel.findMany({
+          where: {
+            deletedAt: null,
+            status: $Enums.TransactionStatus.WAITING_RECIPIENT_APPROVAL,
+            updatedAt: { lte: staleWaitingRecipientApprovalThreshold },
+          },
+          orderBy: [{ dueDate: `asc` }, { updatedAt: `asc` }, { id: `desc` }],
+          take: PAYMENT_OPERATIONS_QUEUE_LIMIT_PER_BUCKET,
+          select: baseSelect,
+        }),
+        this.prisma.paymentRequestModel.findMany({
+          where: {
+            deletedAt: null,
+            ledgerEntries: {
+              some: {
+                deletedAt: null,
+                type: { in: [...PAYMENT_REQUEST_SETTLEMENT_ENTRY_TYPES] },
+              },
+            },
+          },
+          orderBy: [{ updatedAt: `desc` }, { id: `desc` }],
+          take: PAYMENT_OPERATIONS_QUEUE_LIMIT_PER_BUCKET * 3,
+          select: baseSelect,
+        }),
+        this.prisma.paymentRequestModel.findMany({
+          where: {
+            deletedAt: null,
+          },
+          orderBy: [{ updatedAt: `desc` }, { id: `desc` }],
+          take: PAYMENT_OPERATIONS_QUEUE_LIMIT_PER_BUCKET * 3,
+          select: baseSelect,
+        }),
+      ]);
+
+    const inconsistentItems = inconsistentRows
+      .map((row) => this.mapPaymentOperationsQueueItem(row))
+      .filter((row) => row.effectiveStatus !== row.persistedStatus)
+      .slice(0, PAYMENT_OPERATIONS_QUEUE_LIMIT_PER_BUCKET)
+      .map((row) => ({
+        ...row,
+        followUpReason: `Persisted payment status diverges from the latest settlement status`,
+      }));
+
+    const missingAttachmentItems = missingAttachmentRows
+      .map((row) => this.mapPaymentOperationsQueueItem(row))
+      .filter((row) => row.attachmentsCount === 0 || row.invoiceTaggedAttachmentsCount === 0)
+      .slice(0, PAYMENT_OPERATIONS_QUEUE_LIMIT_PER_BUCKET)
+      .map((row) => ({
+        ...row,
+        followUpReason:
+          row.attachmentsCount === 0
+            ? `Payment request has no supporting attachment`
+            : `Payment request has no invoice-tagged attachment linkage`,
+      }));
+
+    return {
+      generatedAt: now,
+      posture: {
+        kind: `non_sla_follow_up_queue`,
+        wording: `Operator follow-up queue`,
+      },
+      buckets: [
+        {
+          key: `overdue_requests`,
+          label: `Overdue requests`,
+          operatorPrompt: OVERDUE_OPERATOR_PROMPT,
+          items: overdueRows.map((row) => ({
+            ...this.mapPaymentOperationsQueueItem(row),
+            followUpReason: `Due date passed while payment request remains in an active follow-up status`,
+          })),
+        },
+        {
+          key: `uncollectible_requests`,
+          label: `UNCOLLECTIBLE requests`,
+          operatorPrompt: UNCOLLECTIBLE_OPERATOR_PROMPT,
+          items: uncollectibleRows.map((row) => ({
+            ...this.mapPaymentOperationsQueueItem(row),
+            followUpReason: `Payment request is marked UNCOLLECTIBLE and requires collections-focused review`,
+          })),
+        },
+        {
+          key: `stale_waiting_recipient_approval`,
+          label: `Stale WAITING_RECIPIENT_APPROVAL`,
+          operatorPrompt: STALE_WAITING_RECIPIENT_APPROVAL_OPERATOR_PROMPT,
+          items: staleApprovalRows.map((row) => ({
+            ...this.mapPaymentOperationsQueueItem(row),
+            followUpReason: `Payment request remains in WAITING_RECIPIENT_APPROVAL beyond the current follow-up window`,
+          })),
+        },
+        {
+          key: `inconsistent_status`,
+          label: `Inconsistent status cases`,
+          operatorPrompt: `Review cases where persisted request status and latest settlement status disagree.`,
+          items: inconsistentItems,
+        },
+        {
+          key: `missing_attachment_or_invoice_linkage`,
+          label: `Missing attachment or invoice linkage`,
+          operatorPrompt: MISSING_ATTACHMENT_OPERATOR_PROMPT,
+          items: missingAttachmentItems,
+        },
+      ],
     };
   }
 }

@@ -160,6 +160,7 @@ const runtimePolicy = {
 const common = {
   // probably should be in consumer-exchange.service.ts but put here to avoid importing envs in service file
   EXCHANGE_RATE_MAX_AGE_HOURS: z.coerce.number().optional().default(24),
+  ADMIN_V2_PAYOUT_HIGH_VALUE_THRESHOLDS: z.string().optional().default(``),
   CONSUMER_ACTION_LOG_RETENTION_DAYS: z.coerce.number().min(7).max(3650).default(30),
   CONSUMER_ACTION_LOG_PARTITION_PRECREATE_MONTHS: z.coerce.number().min(1).max(12).default(2),
   CONSUMER_ACTION_LOG_MAINTENANCE_CRON: z.string().default(`17 */6 * * *`),
