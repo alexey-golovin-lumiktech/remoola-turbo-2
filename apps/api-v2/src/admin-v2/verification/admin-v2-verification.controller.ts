@@ -71,12 +71,15 @@ export class AdminV2VerificationController {
   @Get(`:consumerId`)
   async getCase(@Identity() admin: IIdentityContext, @Param(`consumerId`) consumerId: string) {
     const profile = await this.accessService.assertCapability(admin, `verification.read`);
+    const canManageAssignments = profile.capabilities.includes(`assignments.manage`);
     return this.service.getCase(consumerId, {
       canForceLogout: profile.capabilities.includes(`consumers.force_logout`),
       canDecide: profile.capabilities.includes(`verification.decide`),
       allowedActions: profile.capabilities.filter(
         (capability) => capability === `verification.decide` || capability === `consumers.force_logout`,
       ),
+      canManageAssignments,
+      canReassignAssignments: canManageAssignments && profile.role === `SUPER_ADMIN`,
     });
   }
 

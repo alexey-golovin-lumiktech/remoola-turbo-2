@@ -6,6 +6,7 @@ describe(`AdminV2VerificationService`, () => {
   it(`reports SLA breaches at queue level instead of current page only`, async () => {
     const service = new AdminV2VerificationService(
       {
+        $queryRaw: jest.fn(async () => []),
         consumerModel: {
           findMany: jest.fn(async () => [
             {
@@ -147,6 +148,157 @@ describe(`AdminV2VerificationService`, () => {
         notification: { type: `email`, sent: true },
       }),
     );
+  });
+
+  it(`decorates queue rows with the active assignee when an assignment exists`, async () => {
+    const queryRaw = jest.fn(async () => [
+      { resource_id: `consumer-1`, assigned_to: `admin-7`, email: `ops7@example.com` },
+    ]);
+    const service = new AdminV2VerificationService(
+      {
+        $queryRaw: queryRaw,
+        consumerModel: {
+          findMany: jest.fn(async () => [
+            {
+              id: `consumer-1`,
+              email: `one@example.com`,
+              accountType: `PERSONAL`,
+              contractorKind: null,
+              verificationStatus: `PENDING`,
+              stripeIdentityStatus: null,
+              createdAt: new Date(`2026-04-15T08:00:00.000Z`),
+              updatedAt: new Date(`2026-04-15T08:00:00.000Z`),
+              verificationUpdatedAt: new Date(`2026-04-15T08:00:00.000Z`),
+              personalDetails: { firstName: `One`, lastName: `User` },
+              organizationDetails: null,
+              addressDetails: { country: `DE` },
+              _count: { consumerResources: 1 },
+            },
+            {
+              id: `consumer-2`,
+              email: `two@example.com`,
+              accountType: `PERSONAL`,
+              contractorKind: null,
+              verificationStatus: `PENDING`,
+              stripeIdentityStatus: null,
+              createdAt: new Date(`2026-04-15T08:00:00.000Z`),
+              updatedAt: new Date(`2026-04-15T08:00:00.000Z`),
+              verificationUpdatedAt: new Date(`2026-04-15T08:00:00.000Z`),
+              personalDetails: { firstName: `Two`, lastName: `User` },
+              organizationDetails: null,
+              addressDetails: { country: `DE` },
+              _count: { consumerResources: 1 },
+            },
+          ]),
+        },
+      } as never,
+      {} as never,
+      {
+        getSnapshot: jest.fn(async () => ({
+          breachedConsumerIds: new Set<string>(),
+          thresholdHours: 24,
+          lastComputedAt: `2026-04-15T10:00:00.000Z`,
+        })),
+      } as never,
+      {} as never,
+      {} as never,
+    );
+
+    const queue = await service.getQueue({ page: 1, pageSize: 10 });
+
+    expect(queryRaw).toHaveBeenCalled();
+    const row1 = queue.items.find((item) => item.id === `consumer-1`);
+    const row2 = queue.items.find((item) => item.id === `consumer-2`);
+    expect(row1?.assignedTo).toEqual({ id: `admin-7`, name: null, email: `ops7@example.com` });
+    expect(row2?.assignedTo).toBeNull();
+  });
+
+  it(`exposes current and historical assignment context on getCase`, async () => {
+    const assignmentRows = [
+      {
+        id: `assignment-2`,
+        resource_id: `consumer-1`,
+        assigned_to: `admin-7`,
+        assigned_by: `admin-7`,
+        released_by: null,
+        assigned_at: new Date(`2026-04-20T12:00:00.000Z`),
+        released_at: null,
+        expires_at: null,
+        reason: `Ops follow-up`,
+        assigned_to_email: `ops7@example.com`,
+        assigned_by_email: `ops7@example.com`,
+        released_by_email: null,
+      },
+      {
+        id: `assignment-1`,
+        resource_id: `consumer-1`,
+        assigned_to: `admin-3`,
+        assigned_by: `admin-3`,
+        released_by: `admin-3`,
+        assigned_at: new Date(`2026-04-20T08:00:00.000Z`),
+        released_at: new Date(`2026-04-20T11:45:00.000Z`),
+        expires_at: null,
+        reason: null,
+        assigned_to_email: `ops3@example.com`,
+        assigned_by_email: `ops3@example.com`,
+        released_by_email: `ops3@example.com`,
+      },
+    ];
+    const service = new AdminV2VerificationService(
+      {
+        $queryRaw: jest.fn(async () => assignmentRows),
+        adminActionAuditLogModel: {
+          findMany: jest.fn(async () => []),
+        },
+        consumerModel: {
+          findUnique: jest.fn(async () => ({ email: `user@example.com` })),
+        },
+        authAuditLogModel: {
+          count: jest.fn(async () => 0),
+          findMany: jest.fn(async () => []),
+        },
+      } as never,
+      {
+        getConsumerCase: jest.fn(async () => ({
+          id: `consumer-1`,
+          email: `user@example.com`,
+          updatedAt: new Date(`2026-04-20T12:00:00.000Z`),
+          verificationStatus: `PENDING`,
+          authRisk: null,
+        })),
+      } as never,
+      {
+        getSnapshot: jest.fn(async () => ({
+          breachedConsumerIds: new Set<string>(),
+          thresholdHours: 24,
+          lastComputedAt: `2026-04-20T12:00:00.000Z`,
+        })),
+      } as never,
+      {} as never,
+      {} as never,
+    );
+
+    const result = (await service.getCase(`consumer-1`, {
+      canForceLogout: false,
+      canDecide: false,
+      allowedActions: [],
+      canManageAssignments: true,
+      canReassignAssignments: false,
+    })) as unknown as {
+      assignment: {
+        current: { id: string; assignedTo: { id: string; email: string | null } } | null;
+        history: Array<{ id: string }>;
+      };
+      decisionControls: { canManageAssignments: boolean; canReassignAssignments: boolean };
+    };
+
+    expect(result.assignment.current?.id).toBe(`assignment-2`);
+    expect(result.assignment.current?.assignedTo).toEqual(
+      expect.objectContaining({ id: `admin-7`, email: `ops7@example.com` }),
+    );
+    expect(result.assignment.history).toHaveLength(2);
+    expect(result.decisionControls.canManageAssignments).toBe(true);
+    expect(result.decisionControls.canReassignAssignments).toBe(false);
   });
 
   it(`returns the canonical stale-version payload for verification decisions`, async () => {

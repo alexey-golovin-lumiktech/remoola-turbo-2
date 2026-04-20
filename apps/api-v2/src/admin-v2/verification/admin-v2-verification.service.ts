@@ -35,7 +35,31 @@ type DecisionControls = {
   canForceLogout: boolean;
   canDecide: boolean;
   allowedActions: string[];
+  canManageAssignments: boolean;
+  canReassignAssignments: boolean;
 };
+
+type AssignmentSummaryRow = {
+  id: string;
+  resource_id: string;
+  assigned_to: string;
+  assigned_by: string | null;
+  released_by: string | null;
+  assigned_at: Date;
+  released_at: Date | null;
+  expires_at: Date | null;
+  reason: string | null;
+  assigned_to_email: string | null;
+  assigned_by_email: string | null;
+  released_by_email: string | null;
+};
+
+type AdminRef = { id: string; name: string | null; email: string | null };
+
+function mapAdminRef(id: string | null, email: string | null): AdminRef | null {
+  if (!id) return null;
+  return { id, name: null, email };
+}
 
 type VerificationDecision = `approve` | `reject` | `request-info` | `flag`;
 
@@ -168,7 +192,10 @@ export class AdminV2VerificationService {
     });
     const queueBreachedCount = filtered.filter((item) => slaSnapshot.breachedConsumerIds.has(item.id)).length;
 
-    const items = filtered.slice(pagination.skip, pagination.skip + pagination.pageSize).map((item) => ({
+    const pageSlice = filtered.slice(pagination.skip, pagination.skip + pagination.pageSize);
+    const assigneesByResourceId = await this.getActiveAssignees(pageSlice.map((item) => item.id));
+
+    const items = pageSlice.map((item) => ({
       id: item.id,
       email: item.email,
       accountType: item.accountType,
@@ -183,6 +210,7 @@ export class AdminV2VerificationService {
       missingDocuments: item._count.consumerResources === 0,
       documentsCount: item._count.consumerResources,
       slaBreached: slaSnapshot.breachedConsumerIds.has(item.id),
+      assignedTo: assigneesByResourceId.get(item.id) ?? null,
     }));
 
     return {
@@ -200,11 +228,12 @@ export class AdminV2VerificationService {
   }
 
   async getCase(consumerId: string, controls: DecisionControls) {
-    const [consumerCase, decisionHistory, authRisk, slaSnapshot] = await Promise.all([
+    const [consumerCase, decisionHistory, authRisk, slaSnapshot, assignment] = await Promise.all([
       this.consumersService.getConsumerCase(consumerId),
       this.getDecisionHistory(consumerId),
       this.getAuthRiskContext(consumerId),
       this.slaService.getSnapshot(),
+      this.getAssignmentContext(consumerId),
     ]);
     const updatedAt =
       consumerCase.updatedAt instanceof Date ? consumerCase.updatedAt : new Date(consumerCase.updatedAt);
@@ -214,12 +243,88 @@ export class AdminV2VerificationService {
       decisionControls: controls,
       decisionHistory,
       authRisk,
+      assignment,
       verificationSla: {
         breached: slaSnapshot.breachedConsumerIds.has(consumerId),
         thresholdHours: slaSnapshot.thresholdHours,
         lastComputedAt: slaSnapshot.lastComputedAt,
       },
     };
+  }
+
+  private async getActiveAssignees(resourceIds: string[]): Promise<Map<string, AdminRef>> {
+    if (resourceIds.length === 0) return new Map();
+    const rows = await this.prisma.$queryRaw<Array<{ resource_id: string; assigned_to: string; email: string | null }>>(
+      Prisma.sql`
+        SELECT a."resource_id"::text AS resource_id, a."assigned_to"::text AS assigned_to, ad."email" AS email
+        FROM "operational_assignment" a
+        LEFT JOIN "admin" ad ON ad."id" = a."assigned_to"
+        WHERE a."resource_type" = 'verification'
+          AND a."released_at" IS NULL
+          AND a."resource_id" = ANY(${resourceIds}::uuid[])
+      `,
+    );
+    const result = new Map<string, AdminRef>();
+    for (const row of rows) {
+      result.set(row.resource_id, { id: row.assigned_to, name: null, email: row.email });
+    }
+    return result;
+  }
+
+  private async getAssignmentContext(consumerId: string) {
+    const rows = await this.prisma.$queryRaw<AssignmentSummaryRow[]>(Prisma.sql`
+      SELECT
+        a."id",
+        a."resource_id",
+        a."assigned_to",
+        a."assigned_by",
+        a."released_by",
+        a."assigned_at",
+        a."released_at",
+        a."expires_at",
+        a."reason",
+        at."email" AS assigned_to_email,
+        ab."email" AS assigned_by_email,
+        rb."email" AS released_by_email
+      FROM "operational_assignment" a
+      LEFT JOIN "admin" at ON at."id" = a."assigned_to"
+      LEFT JOIN "admin" ab ON ab."id" = a."assigned_by"
+      LEFT JOIN "admin" rb ON rb."id" = a."released_by"
+      WHERE a."resource_type" = 'verification'
+        AND a."resource_id" = ${Prisma.sql`${consumerId}::uuid`}
+      ORDER BY a."assigned_at" DESC
+      LIMIT 10
+    `);
+    const currentRow = rows.find((row) => row.released_at === null) ?? null;
+    const current = currentRow
+      ? {
+          id: currentRow.id,
+          assignedTo: mapAdminRef(currentRow.assigned_to, currentRow.assigned_to_email) ?? {
+            id: currentRow.assigned_to,
+            name: null,
+            email: null,
+          },
+          assignedBy: mapAdminRef(currentRow.assigned_by, currentRow.assigned_by_email),
+          assignedAt: currentRow.assigned_at.toISOString(),
+          reason: currentRow.reason,
+          expiresAt: currentRow.expires_at ? currentRow.expires_at.toISOString() : null,
+        }
+      : null;
+    const history = rows.map((row) => ({
+      id: row.id,
+      assignedTo: mapAdminRef(row.assigned_to, row.assigned_to_email) ?? {
+        id: row.assigned_to,
+        name: null,
+        email: null,
+      },
+      assignedBy: mapAdminRef(row.assigned_by, row.assigned_by_email),
+      assignedAt: row.assigned_at.toISOString(),
+      releasedAt: row.released_at ? row.released_at.toISOString() : null,
+      releasedBy: mapAdminRef(row.released_by, row.released_by_email),
+      reason: row.reason,
+      expiresAt: row.expires_at ? row.expires_at.toISOString() : null,
+    }));
+    return { current, history };
   }
 
   async applyDecision(
