@@ -21,13 +21,14 @@
 
 - Query paths use single-roundtrip summary/list reads plus cursor pagination.
 - Summary keeps `largeValueOutliers` bounded to the last 30 days.
-- Exact `EXPLAIN ANALYZE` evidence and endpoint p95 capture still need to be attached from an environment with the target database fixture set.
+- Real `EXPLAIN ANALYZE` evidence and p50/p95/p99 numbers (synthetic 50k entries / ~123k outcomes, PG 18.3) are now attached as the companion slice MVP-3.1b deliverable: see [docs/admin-v2-mvp-3.1b-perf-evidence.md](./admin-v2-mvp-3.1b-perf-evidence.md). Headline: `summaryEndpoint:promiseAll` p95 = 168 ms after the 3.1b index reshape, against the 500 ms budget — no class is shipped as `temporarily-unavailable`.
 
 ## Index strategy
 
-- `ledger_entry(type, status)` - added via migration `20260420163000_admin_v2_ledger_anomalies_indexes`.
-- `ledger_entry(status, created_at)` - added via migration `20260420163000_admin_v2_ledger_anomalies_indexes`.
-- `ledger_entry_outcome(ledger_entry_id, created_at desc)` - already in place since `20260225140000_ledger_entry_outcome_append_only`.
+- `ledger_entry(type, status)` - added via migration `20260420163000_admin_v2_ledger_anomalies_indexes` (kept additive; observed dormant against current query shapes — see migration README and 3.1b evidence doc).
+- `ledger_entry(status, created_at)` - added via migration `20260420163000_admin_v2_ledger_anomalies_indexes` (kept additive; partial usage on `largeValueOutliers` summary scan only).
+- `ledger_entry_outcome(ledger_entry_id, created_at desc)` - already in place since `20260225140000_ledger_entry_outcome_append_only` (kept as additive insurance after the 3.1b reshape).
+- `ledger_entry_outcome(ledger_entry_id, created_at desc, id desc) INCLUDE (status)` - added via migration `20260420170000_admin_v2_anomalies_outcome_indexes` as part of slice MVP-3.1b. Closes the LATERAL pattern with an `Index Only Scan` (`Heap Fetches: 0`) for every anomaly count and list query.
 
 ## Finding: outcome→entry sync trigger absence
 

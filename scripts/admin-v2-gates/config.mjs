@@ -17,6 +17,7 @@ export const CHECK_PATHS = [
   `admin-v2-pack/08-rollout-risks-and-sequencing.md`,
   `docs/admin-v2-mvp-2-rbac-prerequisite.md`,
   `docs/admin-v2-mvp-3-anomalies-first-slice.md`,
+  `docs/admin-v2-mvp-3.1b-perf-evidence.md`,
 ];
 
 export const AUDIT_ACTIONS = [
@@ -205,5 +206,15 @@ export const RECONCILIATION_NOTES = {
     `Decision: largeValueOutliers currency coverage`,
     `INCONSISTENT_CHAIN_GRACE_MINUTES`,
     `11 major/reserve currencies`,
+    `admin-v2-mvp-3.1b-perf-evidence.md`,
+  ],
+  'docs/admin-v2-mvp-3.1b-perf-evidence.md': [
+    `EXPLAIN ANALYZE`,
+    `p95`,
+    `summary endpoint budget`,
+    `index reshape rationale`,
+    `Promise.all decision`,
+    `idx_ledger_entry_outcome_lateral_covering`,
+    `20260420170000_admin_v2_anomalies_outcome_indexes`,
   ],
 };
