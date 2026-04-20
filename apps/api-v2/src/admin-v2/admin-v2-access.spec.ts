@@ -21,6 +21,7 @@ describe(`AdminV2Access`, () => {
       `consumers.notes`,
       `consumers.flags`,
       `audit.read`,
+      `assignments.manage`,
     ]);
     expect(profile.capabilities).not.toContain(`verification.decide`);
     expect(profile.capabilities).not.toContain(`consumers.force_logout`);

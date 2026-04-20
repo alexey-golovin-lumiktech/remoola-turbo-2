@@ -57,6 +57,9 @@ export const ADMIN_ACTION_AUDIT_ACTIONS = {
   document_tag_delete: `document_tag_delete`,
   document_retag: `document_retag`,
   document_bulk_tag: `document_bulk_tag`,
+  assignment_claim: `assignment_claim`,
+  assignment_release: `assignment_release`,
+  assignment_reassign: `assignment_reassign`,
 } as const;
 
 @Injectable()

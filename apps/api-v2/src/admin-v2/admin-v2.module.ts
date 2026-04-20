@@ -5,6 +5,7 @@ import { AdminV2Controller } from './admin-v2.controller';
 import { AdminV2AdminsModule } from './admins/admin-v2-admins.module';
 import { AdminAuthModule } from '../admin/auth/admin-auth.module';
 import { OriginResolverService } from '../shared/origin-resolver.service';
+import { AdminV2AssignmentsModule } from './assignments/admin-v2-assignments.module';
 import { AdminV2AuditModule } from './audit/admin-v2-audit.module';
 import { AdminV2AuthController } from './auth/admin-v2-auth.controller';
 import { AdminV2ConsumersModule } from './consumers/admin-v2-consumers.module';
@@ -24,6 +25,7 @@ import { AdminV2VerificationModule } from './verification/admin-v2-verification.
     AdminV2SharedModule,
     AdminV2ConsumersModule,
     AdminV2AdminsModule,
+    AdminV2AssignmentsModule,
     AdminV2AuditModule,
     AdminV2OverviewModule,
     AdminV2VerificationModule,

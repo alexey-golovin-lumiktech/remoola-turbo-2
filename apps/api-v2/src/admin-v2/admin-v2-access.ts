@@ -48,7 +48,8 @@ export type AdminV2Capability =
   | `consumers.suspend`
   | `consumers.email_resend`
   | `audit.read`
-  | `verification.decide`;
+  | `verification.decide`
+  | `assignments.manage`;
 
 export type AdminV2AccessSource = `bridge` | `schema` | `bridge-fallback`;
 export type AdminV2AccessProfile = {
@@ -83,6 +84,7 @@ export const KNOWN_ADMIN_V2_CAPABILITIES: readonly AdminV2Capability[] = [
   `consumers.email_resend`,
   `audit.read`,
   `verification.decide`,
+  `assignments.manage`,
 ] as const;
 
 export const ACTIVE_ADMIN_V2_CAPABILITIES: readonly AdminV2Capability[] = [
@@ -100,6 +102,7 @@ export const ACTIVE_ADMIN_V2_CAPABILITIES: readonly AdminV2Capability[] = [
   `consumers.notes`,
   `consumers.flags`,
   `audit.read`,
+  `assignments.manage`,
 ];
 
 export const OVERRIDABLE_ADMIN_V2_CAPABILITIES: readonly AdminV2Capability[] = KNOWN_ADMIN_V2_CAPABILITIES.filter(
