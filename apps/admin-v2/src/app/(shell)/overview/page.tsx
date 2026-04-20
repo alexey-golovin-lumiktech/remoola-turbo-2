@@ -16,6 +16,7 @@ export default async function OverviewPage() {
     `overduePaymentRequests`,
     `uncollectiblePaymentRequests`,
     `openDisputes`,
+    `ledgerAnomalies`,
   ];
   const breadthSignalOrder = [`failedScheduledConversions`, `staleExchangeRates`];
   const activeStatKeys = activeSignalOrder.filter((key) => key !== `recentAdminActions`);

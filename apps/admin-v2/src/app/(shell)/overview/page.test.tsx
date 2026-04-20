@@ -76,16 +76,23 @@ describe(`admin-v2 overview page`, () => {
           availability: `available`,
           href: `/ledger?view=disputes`,
         },
+        ledgerAnomalies: {
+          label: `Ledger anomalies`,
+          count: 6,
+          phaseStatus: `live-actionable`,
+          availability: `available`,
+          href: `/ledger/anomalies`,
+        },
         failedScheduledConversions: {
           label: `Failed scheduled FX`,
-          count: 6,
+          count: 7,
           phaseStatus: `live-actionable`,
           availability: `available`,
           href: `/exchange/scheduled?status=FAILED`,
         },
         staleExchangeRates: {
           label: `Stale exchange rates`,
-          count: 7,
+          count: 8,
           phaseStatus: `live-actionable`,
           availability: `available`,
           href: `/exchange/rates?stale=true`,
@@ -101,6 +108,8 @@ describe(`admin-v2 overview page`, () => {
     expect(markup).toContain(`Exchange follow-up`);
     expect(markup).toContain(`Open exchange surface`);
     expect(markup).toContain(`live-actionable`);
+    expect(markup).toContain(`Ledger anomalies`);
+    expect(markup).toContain(`href="/ledger/anomalies"`);
     expect(markup).toContain(`href="/exchange/scheduled?status=FAILED"`);
     expect(markup).toContain(`href="/exchange/rates?stale=true"`);
   });

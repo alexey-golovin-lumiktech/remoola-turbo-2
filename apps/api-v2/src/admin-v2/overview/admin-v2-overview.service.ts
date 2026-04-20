@@ -5,6 +5,7 @@ import { $Enums, Prisma } from '@remoola/database-2';
 import { envs } from '../../envs';
 import { AUTH_AUDIT_EVENTS, AUTH_IDENTITY_TYPES } from '../../shared/auth-audit.service';
 import { PrismaService } from '../../shared/prisma.service';
+import { AdminV2LedgerAnomaliesService } from '../ledger/anomalies/admin-v2-ledger-anomalies.service';
 import { AdminV2VerificationSlaService } from '../verification/admin-v2-verification-sla.service';
 
 const OPEN_DISPUTE_STATUSES = [
@@ -20,6 +21,7 @@ export class AdminV2OverviewService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly verificationSla: AdminV2VerificationSlaService,
+    private readonly ledgerAnomalies: AdminV2LedgerAnomaliesService,
   ) {}
 
   private async getPaymentRequestSignal(params: {
@@ -113,6 +115,27 @@ export class AdminV2OverviewService {
     }
   }
 
+  private async getLedgerAnomaliesSignal() {
+    try {
+      const summary = await this.ledgerAnomalies.getSummary();
+      return {
+        label: `Ledger anomalies`,
+        count: summary.totalCount,
+        phaseStatus: `live-actionable`,
+        availability: summary.totalCount == null ? `temporarily-unavailable` : `available`,
+        href: `/ledger/anomalies`,
+      };
+    } catch {
+      return {
+        label: `Ledger anomalies`,
+        count: null,
+        phaseStatus: `live-actionable`,
+        availability: `temporarily-unavailable`,
+        href: `/ledger/anomalies`,
+      };
+    }
+  }
+
   private async getStaleExchangeRatesSignal(now: Date) {
     const staleCutoff = this.getRateStaleCutoff(now);
     try {
@@ -155,6 +178,7 @@ export class AdminV2OverviewService {
       uncollectiblePaymentRequestsSignal,
       slaSnapshot,
       openDisputes,
+      ledgerAnomalies,
       failedScheduledConversions,
       staleExchangeRates,
     ] = await Promise.all([
@@ -218,6 +242,7 @@ export class AdminV2OverviewService {
       }),
       this.verificationSla.getSnapshot(),
       this.getOpenDisputesSignal(),
+      this.getLedgerAnomaliesSignal(),
       this.getFailedScheduledConversionsSignal(),
       this.getStaleExchangeRatesSignal(now),
     ]);
@@ -257,6 +282,7 @@ export class AdminV2OverviewService {
         overduePaymentRequests: overduePaymentRequestsSignal,
         uncollectiblePaymentRequests: uncollectiblePaymentRequestsSignal,
         openDisputes,
+        ledgerAnomalies,
         failedScheduledConversions,
         staleExchangeRates,
       },

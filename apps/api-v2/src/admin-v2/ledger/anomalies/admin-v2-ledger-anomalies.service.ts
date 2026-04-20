@@ -429,7 +429,9 @@ export class AdminV2LedgerAnomaliesService {
 
   private buildInconsistentChainDetail(row: AnomalyRow, now: Date) {
     const outcomeAt = row.outcomeAt ?? row.anomalyAt;
-    return `Persisted status ${row.entryStatus} but latest outcome ${row.outcomeStatus ?? `UNKNOWN`} since ${outcomeAt.toISOString()} (${formatAge(
+    return `Persisted status ${row.entryStatus} but latest outcome ${
+      row.outcomeStatus ?? `UNKNOWN`
+    } since ${outcomeAt.toISOString()} (${formatAge(
       outcomeAt,
       now,
     )} ago, beyond ${INCONSISTENT_CHAIN_GRACE_MINUTES}m sync window)`;
@@ -437,9 +439,9 @@ export class AdminV2LedgerAnomaliesService {
 
   private buildLargeValueDetail(row: AnomalyRow) {
     const threshold = row.threshold ?? 0;
-    return `Amount |${formatAbsoluteAmount(row.amount)}| ${row.currencyCode} exceeds large-value threshold ${formatNumber(
-      threshold,
-    )} (USD-equivalent baseline ~10,000)`;
+    return `Amount |${formatAbsoluteAmount(row.amount)}| ${
+      row.currencyCode
+    } exceeds large-value threshold ${formatNumber(threshold)} (USD-equivalent baseline ~10,000)`;
   }
 
   private getUnavailableSummary(className: LedgerAnomalyClass): LedgerAnomalyClassSummary {

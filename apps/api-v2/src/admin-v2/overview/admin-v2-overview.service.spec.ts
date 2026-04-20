@@ -35,6 +35,13 @@ describe(`AdminV2OverviewService`, () => {
           lastComputedAt: `2026-04-15T10:05:00.000Z`,
         })),
       } as never,
+      {
+        getSummary: jest.fn(async () => ({
+          computedAt: `2026-04-15T10:05:00.000Z`,
+          totalCount: 6,
+          classes: {},
+        })),
+      } as never,
     );
 
     const summary = await service.getSummary();
@@ -46,6 +53,7 @@ describe(`AdminV2OverviewService`, () => {
       `overduePaymentRequests`,
       `uncollectiblePaymentRequests`,
       `openDisputes`,
+      `ledgerAnomalies`,
       `failedScheduledConversions`,
       `staleExchangeRates`,
     ]);
@@ -63,6 +71,13 @@ describe(`AdminV2OverviewService`, () => {
       availability: `available`,
       href: `/ledger?view=disputes`,
     });
+    expect(summary.signals.ledgerAnomalies).toEqual({
+      label: `Ledger anomalies`,
+      count: 6,
+      phaseStatus: `live-actionable`,
+      availability: `available`,
+      href: `/ledger/anomalies`,
+    });
     expect(summary.signals.failedScheduledConversions).toEqual({
       label: `Failed scheduled FX`,
       count: 2,
@@ -78,7 +93,6 @@ describe(`AdminV2OverviewService`, () => {
       href: `/exchange/rates?stale=true`,
     });
     expect(summary.signals).not.toHaveProperty(`failedOrStuckPayouts`);
-    expect(summary.signals).not.toHaveProperty(`ledgerAnomalies`);
   });
 
   it(`keeps temporarily-unavailable as fallback when dispute summary query fails`, async () => {
@@ -106,6 +120,11 @@ describe(`AdminV2OverviewService`, () => {
           lastComputedAt: `2026-04-15T10:05:00.000Z`,
         })),
       } as never,
+      {
+        getSummary: jest.fn(async () => {
+          throw new Error(`anomalies failed`);
+        }),
+      } as never,
     );
 
     const summary = await service.getSummary();
@@ -123,6 +142,13 @@ describe(`AdminV2OverviewService`, () => {
       phaseStatus: `live-actionable`,
       availability: `temporarily-unavailable`,
       href: `/exchange/rates?stale=true`,
+    });
+    expect(summary.signals.ledgerAnomalies).toEqual({
+      label: `Ledger anomalies`,
+      count: null,
+      phaseStatus: `live-actionable`,
+      availability: `temporarily-unavailable`,
+      href: `/ledger/anomalies`,
     });
   });
 
@@ -151,6 +177,13 @@ describe(`AdminV2OverviewService`, () => {
           breachedConsumerIds: new Set<string>(),
           thresholdHours: 24,
           lastComputedAt: `2026-04-15T10:05:00.000Z`,
+        })),
+      } as never,
+      {
+        getSummary: jest.fn(async () => ({
+          computedAt: `2026-04-15T10:05:00.000Z`,
+          totalCount: 0,
+          classes: {},
         })),
       } as never,
     );
