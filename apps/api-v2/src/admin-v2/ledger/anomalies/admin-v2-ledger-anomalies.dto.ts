@@ -54,7 +54,7 @@ export type LedgerAnomalyListResponse = {
 };
 
 export type LedgerAnomaliesListParams = {
-  className: LedgerAnomalyClass;
+  className: string;
   dateFrom?: Date;
   dateTo?: Date;
   cursor?: string;

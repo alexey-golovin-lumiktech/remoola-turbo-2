@@ -2,7 +2,9 @@ import { AdminV2LedgerAnomaliesService } from './admin-v2-ledger-anomalies.servi
 
 describe(`AdminV2LedgerAnomaliesService`, () => {
   function makeService() {
-    return new AdminV2LedgerAnomaliesService({} as never);
+    return new AdminV2LedgerAnomaliesService({
+      $queryRaw: jest.fn(async () => [{ count: 0 }]),
+    } as never);
   }
 
   it(`exposes the three anomaly classes in the summary contract`, async () => {
@@ -10,17 +12,19 @@ describe(`AdminV2LedgerAnomaliesService`, () => {
 
     const summary = await service.getSummary();
 
-    expect(summary.totalCount).toBeNull();
+    expect(summary.totalCount).toBe(0);
     expect(Object.keys(summary.classes)).toEqual([
       `stalePendingEntries`,
       `inconsistentOutcomeChains`,
       `largeValueOutliers`,
     ]);
-    expect(summary.classes.stalePendingEntries.availability).toBe(`temporarily-unavailable`);
+    expect(summary.classes.stalePendingEntries.availability).toBe(`available`);
   });
 
-  it(`returns an empty list shell for a requested class before query logic lands`, async () => {
-    const service = makeService();
+  it(`returns a paginated list response for a requested anomaly class`, async () => {
+    const service = new AdminV2LedgerAnomaliesService({
+      $queryRaw: jest.fn(async () => []),
+    } as never);
 
     const result = await service.getList({
       className: `largeValueOutliers`,
