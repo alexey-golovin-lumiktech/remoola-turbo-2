@@ -36,10 +36,13 @@ const LARGE_VALUE_THRESHOLD_ENTRIES = Object.entries(LARGE_VALUE_THRESHOLDS);
 
 const STALE_PENDING_HOURS = 24;
 const INCONSISTENT_CHAIN_GRACE_MINUTES = 60;
+const ORPHANED_ENTRY_GRACE_HOURS = 1;
+const DUPLICATE_RISK_WINDOW_DAYS = 30;
 const SUMMARY_OUTLIER_WINDOW_DAYS = 30;
 const LIST_RANGE_DAYS = 30;
 const LIST_LIMIT = 50;
 const DEFAULT_RUNS = 100;
+const TERMINAL_OUTCOME_STATUSES = ['COMPLETED', 'DENIED', 'UNCOLLECTIBLE'];
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -103,6 +106,56 @@ function buildLargeValueCountSql(now) {
       AND le.created_at >= ${windowStart}
       AND le.created_at <= ${now}
       AND (${buildLargeValueThresholdSql()})
+  `;
+}
+
+function buildOrphanedCountSql(now) {
+  const cutoff = new Date(now.getTime() - ORPHANED_ENTRY_GRACE_HOURS * 60 * 60 * 1000);
+  return Prisma.sql`
+    SELECT COUNT(*)::int AS "count"
+    FROM ledger_entry le
+    WHERE le.deleted_at IS NULL
+      AND le.created_at < ${cutoff}
+      AND NOT EXISTS (
+        SELECT 1
+        FROM ledger_entry_outcome o
+        WHERE o.ledger_entry_id = le.id
+      )
+  `;
+}
+
+function buildDuplicateRiskCountSql(now) {
+  const windowStart = new Date(now.getTime() - DUPLICATE_RISK_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+  return Prisma.sql`
+    SELECT COUNT(*)::int AS "count"
+    FROM ledger_entry le
+    WHERE le.deleted_at IS NULL
+      AND le.idempotency_key IS NULL
+      AND le.stripe_id IS NOT NULL
+      AND le.created_at >= ${windowStart}
+      AND le.created_at <= ${now}
+  `;
+}
+
+function buildImpossibleTransitionsCountSql() {
+  return Prisma.sql`
+    SELECT COUNT(*)::int AS "count"
+    FROM ledger_entry le
+    JOIN LATERAL (
+      SELECT 1
+      FROM (
+        SELECT
+          o.status,
+          LAG(o.status) OVER (ORDER BY o.created_at, o.id) AS prev_status
+        FROM ledger_entry_outcome o
+        WHERE o.ledger_entry_id = le.id
+      ) chain
+      WHERE chain.prev_status::text IN (${Prisma.join(
+        TERMINAL_OUTCOME_STATUSES.map((status) => Prisma.sql`${status}`),
+      )})
+      LIMIT 1
+    ) violation ON true
+    WHERE le.deleted_at IS NULL
   `;
 }
 
@@ -217,6 +270,121 @@ function buildLargeValueListSql(now) {
   `;
 }
 
+function buildOrphanedListSql(now) {
+  const cutoff = new Date(now.getTime() - ORPHANED_ENTRY_GRACE_HOURS * 60 * 60 * 1000);
+  const dateFrom = new Date(now.getTime() - LIST_RANGE_DAYS * 24 * 60 * 60 * 1000);
+  return Prisma.sql`
+    SELECT
+      le.id AS "id",
+      le.id AS "ledgerEntryId",
+      le.consumer_id AS "consumerId",
+      le.type::text AS "type",
+      le.amount AS "amount",
+      le.currency_code::text AS "currencyCode",
+      le.status::text AS "entryStatus",
+      NULL::text AS "outcomeStatus",
+      NULL::timestamptz AS "outcomeAt",
+      le.created_at AS "createdAt",
+      le.updated_at AS "updatedAt",
+      le.created_at AS "anomalyAt",
+      NULL::int AS "threshold",
+      NULL::text AS "stripeId",
+      NULL::text AS "prevStatus",
+      NULL::text AS "nextStatus"
+    FROM ledger_entry le
+    WHERE le.deleted_at IS NULL
+      AND le.created_at < ${cutoff}
+      AND le.created_at >= ${dateFrom}
+      AND le.created_at <= ${now}
+      AND NOT EXISTS (
+        SELECT 1
+        FROM ledger_entry_outcome o
+        WHERE o.ledger_entry_id = le.id
+      )
+    ORDER BY le.created_at DESC, le.id DESC
+    LIMIT ${LIST_LIMIT + 1}
+  `;
+}
+
+function buildDuplicateRiskListSql(now) {
+  const dateFrom = new Date(now.getTime() - LIST_RANGE_DAYS * 24 * 60 * 60 * 1000);
+  return Prisma.sql`
+    SELECT
+      le.id AS "id",
+      le.id AS "ledgerEntryId",
+      le.consumer_id AS "consumerId",
+      le.type::text AS "type",
+      le.amount AS "amount",
+      le.currency_code::text AS "currencyCode",
+      le.status::text AS "entryStatus",
+      NULL::text AS "outcomeStatus",
+      NULL::timestamptz AS "outcomeAt",
+      le.created_at AS "createdAt",
+      le.updated_at AS "updatedAt",
+      le.created_at AS "anomalyAt",
+      NULL::int AS "threshold",
+      le.stripe_id AS "stripeId",
+      NULL::text AS "prevStatus",
+      NULL::text AS "nextStatus"
+    FROM ledger_entry le
+    WHERE le.deleted_at IS NULL
+      AND le.idempotency_key IS NULL
+      AND le.stripe_id IS NOT NULL
+      AND le.created_at >= ${dateFrom}
+      AND le.created_at <= ${now}
+    ORDER BY le.created_at DESC, le.id DESC
+    LIMIT ${LIST_LIMIT + 1}
+  `;
+}
+
+function buildImpossibleTransitionsListSql(now) {
+  const dateFrom = new Date(now.getTime() - LIST_RANGE_DAYS * 24 * 60 * 60 * 1000);
+  return Prisma.sql`
+    SELECT
+      le.id AS "id",
+      le.id AS "ledgerEntryId",
+      le.consumer_id AS "consumerId",
+      le.type::text AS "type",
+      le.amount AS "amount",
+      le.currency_code::text AS "currencyCode",
+      le.status::text AS "entryStatus",
+      violation.next_status::text AS "outcomeStatus",
+      violation.violation_at AS "outcomeAt",
+      le.created_at AS "createdAt",
+      le.updated_at AS "updatedAt",
+      violation.violation_at AS "anomalyAt",
+      NULL::int AS "threshold",
+      NULL::text AS "stripeId",
+      violation.prev_status::text AS "prevStatus",
+      violation.next_status::text AS "nextStatus"
+    FROM ledger_entry le
+    JOIN LATERAL (
+      SELECT
+        chain.prev_status,
+        chain.next_status,
+        chain.violation_at
+      FROM (
+        SELECT
+          o.status AS next_status,
+          o.created_at AS violation_at,
+          LAG(o.status) OVER (ORDER BY o.created_at, o.id) AS prev_status
+        FROM ledger_entry_outcome o
+        WHERE o.ledger_entry_id = le.id
+      ) chain
+      WHERE chain.prev_status::text IN (${Prisma.join(
+        TERMINAL_OUTCOME_STATUSES.map((status) => Prisma.sql`${status}`),
+      )})
+        AND chain.violation_at >= ${dateFrom}
+        AND chain.violation_at <= ${now}
+      ORDER BY chain.violation_at DESC
+      LIMIT 1
+    ) violation ON true
+    WHERE le.deleted_at IS NULL
+    ORDER BY violation.violation_at DESC, le.id DESC
+    LIMIT ${LIST_LIMIT + 1}
+  `;
+}
+
 function summarize(samples) {
   if (samples.length === 0) return null;
   const sorted = [...samples].sort((a, b) => a - b);
@@ -253,6 +421,9 @@ async function timeSummary() {
     prisma.$queryRaw(buildStalePendingCountSql(now)),
     prisma.$queryRaw(buildInconsistentChainCountSql(now)),
     prisma.$queryRaw(buildLargeValueCountSql(now)),
+    prisma.$queryRaw(buildOrphanedCountSql(now)),
+    prisma.$queryRaw(buildDuplicateRiskCountSql(now)),
+    prisma.$queryRaw(buildImpossibleTransitionsCountSql(now)),
   ]);
   const end = process.hrtime.bigint();
   return Number(end - start) / 1e6;
@@ -264,6 +435,9 @@ async function timeSummarySequential() {
   await prisma.$queryRaw(buildStalePendingCountSql(now));
   await prisma.$queryRaw(buildInconsistentChainCountSql(now));
   await prisma.$queryRaw(buildLargeValueCountSql(now));
+  await prisma.$queryRaw(buildOrphanedCountSql(now));
+  await prisma.$queryRaw(buildDuplicateRiskCountSql(now));
+  await prisma.$queryRaw(buildImpossibleTransitionsCountSql(now));
   const end = process.hrtime.bigint();
   return Number(end - start) / 1e6;
 }
@@ -321,11 +495,17 @@ async function main() {
     { label: 'countStalePendingEntries', run: () => timeQuery(buildStalePendingCountSql) },
     { label: 'countInconsistentOutcomeChains', run: () => timeQuery(buildInconsistentChainCountSql) },
     { label: 'countLargeValueOutliers', run: () => timeQuery(buildLargeValueCountSql) },
+    { label: 'countOrphanedEntries', run: () => timeQuery(buildOrphanedCountSql) },
+    { label: 'countDuplicateIdempotencyRisk', run: () => timeQuery(buildDuplicateRiskCountSql) },
+    { label: 'countImpossibleTransitions', run: () => timeQuery(buildImpossibleTransitionsCountSql) },
     { label: 'summaryEndpoint:promiseAll', run: () => timeSummary() },
     { label: 'summaryEndpoint:sequential', run: () => timeSummarySequential() },
     { label: 'listStalePendingEntries', run: () => timeQuery(buildStalePendingListSql) },
     { label: 'listInconsistentOutcomeChains', run: () => timeQuery(buildInconsistentChainListSql) },
     { label: 'listLargeValueOutliers', run: () => timeQuery(buildLargeValueListSql) },
+    { label: 'listOrphanedEntries', run: () => timeQuery(buildOrphanedListSql) },
+    { label: 'listDuplicateIdempotencyRisk', run: () => timeQuery(buildDuplicateRiskListSql) },
+    { label: 'listImpossibleTransitions', run: () => timeQuery(buildImpossibleTransitionsListSql) },
   ];
 
   const stats = {};
@@ -338,9 +518,15 @@ async function main() {
     ['countStalePendingEntries', buildStalePendingCountSql],
     ['countInconsistentOutcomeChains', buildInconsistentChainCountSql],
     ['countLargeValueOutliers', buildLargeValueCountSql],
+    ['countOrphanedEntries', buildOrphanedCountSql],
+    ['countDuplicateIdempotencyRisk', buildDuplicateRiskCountSql],
+    ['countImpossibleTransitions', buildImpossibleTransitionsCountSql],
     ['listStalePendingEntries', buildStalePendingListSql],
     ['listInconsistentOutcomeChains', buildInconsistentChainListSql],
     ['listLargeValueOutliers', buildLargeValueListSql],
+    ['listOrphanedEntries', buildOrphanedListSql],
+    ['listDuplicateIdempotencyRisk', buildDuplicateRiskListSql],
+    ['listImpossibleTransitions', buildImpossibleTransitionsListSql],
   ];
   const explains = {};
   for (const [label, builder] of explainShapes) {
