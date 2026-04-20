@@ -55,10 +55,15 @@ const LARGE_VALUE_THRESHOLDS = {
 
 const STALE_HOURS = 24;
 const INCONSISTENT_CHAIN_GRACE_MINUTES = 60;
+const ORPHANED_ENTRY_GRACE_HOURS = 1;
+const DUPLICATE_RISK_WINDOW_DAYS = 30;
 
 const STALE_PENDING_TARGET = 200;
 const INCONSISTENT_CHAIN_TARGET = 100;
 const LARGE_VALUE_TARGET = 300;
+const ORPHANED_TARGET = 100;
+const DUPLICATE_RISK_TARGET = 200;
+const IMPOSSIBLE_TRANSITIONS_TARGET = 150;
 
 function pickRandom(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -145,7 +150,18 @@ function buildEntryRow(consumerId, options = {}) {
   const status = options.status ?? pickRandom([...PENDING_STATUSES, ...TERMINAL_STATUSES]);
   const amount = options.amount ?? randomNormalAmount(currencyCode);
   const createdAt = options.createdAt ?? randomCreatedWithinDays(60);
-  return { id, ledgerId, type, currencyCode, status, amount, createdAt, consumerId };
+  return {
+    id,
+    ledgerId,
+    type,
+    currencyCode,
+    status,
+    amount,
+    createdAt,
+    consumerId,
+    stripeId: options.stripeId ?? null,
+    idempotencyKey: options.idempotencyKey ?? null,
+  };
 }
 
 function buildOutcomeChain(entry, options = {}) {
@@ -183,6 +199,8 @@ async function insertEntries(entries) {
         ${entry.status}::transaction_status_enum,
         ${entry.amount}::decimal(9,2),
         ${entry.consumerId}::uuid,
+        ${entry.stripeId}::text,
+        ${entry.idempotencyKey}::text,
         ${entry.createdAt}::timestamptz,
         ${entry.createdAt}::timestamptz,
         ${JSON.stringify({ [PERF_METADATA_FLAG]: true })}::jsonb
@@ -190,7 +208,7 @@ async function insertEntries(entries) {
     );
     await prisma.$executeRaw(Prisma.sql`
       INSERT INTO ledger_entry
-        (id, ledger_id, type, currency_code, status, amount, consumer_id, created_at, updated_at, metadata)
+        (id, ledger_id, type, currency_code, status, amount, consumer_id, stripe_id, idempotency_key, created_at, updated_at, metadata)
       VALUES ${Prisma.join(values)}
     `);
   }
@@ -293,6 +311,78 @@ function buildLargeValueEntries(consumerIds, count) {
   return { entries, outcomes };
 }
 
+function buildOrphanedEntries(consumerIds, count) {
+  const entries = [];
+  const cutoffMs = Date.now() - (ORPHANED_ENTRY_GRACE_HOURS + 2) * 60 * 60 * 1000;
+  for (let i = 0; i < count; i += 1) {
+    const consumerId = pickRandom(consumerIds);
+    entries.push(
+      buildEntryRow(consumerId, {
+        status: pickRandom([...PENDING_STATUSES, ...TERMINAL_STATUSES]),
+        createdAt: new Date(cutoffMs - i * 60 * 1000),
+      }),
+    );
+  }
+  return { entries, outcomes: [] };
+}
+
+function buildDuplicateRiskEntries(consumerIds, count) {
+  const entries = [];
+  const outcomes = [];
+  const now = Date.now();
+  for (let i = 0; i < count; i += 1) {
+    const consumerId = pickRandom(consumerIds);
+    const createdAt = new Date(now - Math.random() * DUPLICATE_RISK_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+    const entry = buildEntryRow(consumerId, {
+      type: `USER_PAYMENT`,
+      status: pickRandom([...PENDING_STATUSES, ...TERMINAL_STATUSES]),
+      createdAt,
+      stripeId: `pi_perf_${randomUUID().replace(/-/g, ``)}`,
+      idempotencyKey: null,
+    });
+    entries.push(entry);
+    outcomes.push(...buildOutcomeChain(entry, { intermediateCount: randomInt(0, 2) }));
+  }
+  return { entries, outcomes };
+}
+
+function buildImpossibleTransitions(consumerIds, count) {
+  const entries = [];
+  const outcomes = [];
+  const now = Date.now();
+  for (let i = 0; i < count; i += 1) {
+    const consumerId = pickRandom(consumerIds);
+    const createdAt = new Date(now - (90 + i) * 60 * 1000);
+    const entry = buildEntryRow(consumerId, {
+      type: pickRandom([`USER_PAYMENT`, `USER_PAYOUT`, `CURRENCY_EXCHANGE`]),
+      status: `PENDING`,
+      createdAt,
+    });
+    entries.push(entry);
+    outcomes.push(
+      {
+        id: randomUUID(),
+        ledgerEntryId: entry.id,
+        status: `PENDING`,
+        createdAt,
+      },
+      {
+        id: randomUUID(),
+        ledgerEntryId: entry.id,
+        status: pickRandom(TERMINAL_STATUSES),
+        createdAt: new Date(createdAt.getTime() + 1_000),
+      },
+      {
+        id: randomUUID(),
+        ledgerEntryId: entry.id,
+        status: pickRandom([`PENDING`, `WAITING`, `DENIED`]),
+        createdAt: new Date(createdAt.getTime() + 2_000),
+      },
+    );
+  }
+  return { entries, outcomes };
+}
+
 function buildOutcomesForBaseline(entries) {
   const outcomes = [];
   for (const entry of entries) {
@@ -320,10 +410,20 @@ async function seed(consumerTarget, entryTarget) {
   const stalePendingTarget = Math.min(STALE_PENDING_TARGET, Math.floor(remaining * 0.01));
   const inconsistentTarget = Math.min(INCONSISTENT_CHAIN_TARGET, Math.floor(remaining * 0.005));
   const largeValueTarget = Math.min(LARGE_VALUE_TARGET, Math.floor(remaining * 0.02));
-  const baselineTarget = remaining - stalePendingTarget - inconsistentTarget - largeValueTarget;
+  const orphanedTarget = Math.min(ORPHANED_TARGET, Math.floor(remaining * 0.003));
+  const duplicateRiskTarget = Math.min(DUPLICATE_RISK_TARGET, Math.floor(remaining * 0.004));
+  const impossibleTransitionsTarget = Math.min(IMPOSSIBLE_TRANSITIONS_TARGET, Math.floor(remaining * 0.003));
+  const baselineTarget =
+    remaining -
+    stalePendingTarget -
+    inconsistentTarget -
+    largeValueTarget -
+    orphanedTarget -
+    duplicateRiskTarget -
+    impossibleTransitionsTarget;
 
   console.log(
-    `[seed] insert plan: baseline=${baselineTarget} stale=${stalePendingTarget} inconsistent=${inconsistentTarget} largeValue=${largeValueTarget}`,
+    `[seed] insert plan: baseline=${baselineTarget} stale=${stalePendingTarget} inconsistent=${inconsistentTarget} largeValue=${largeValueTarget} orphaned=${orphanedTarget} duplicateRisk=${duplicateRiskTarget} impossibleTransitions=${impossibleTransitionsTarget}`,
   );
 
   const baselineEntries = buildBaselineEntries(consumerIds, baselineTarget);
@@ -347,6 +447,20 @@ async function seed(consumerTarget, entryTarget) {
   await insertEntries(largeValue.entries);
   await insertOutcomes(largeValue.outcomes);
   console.log(`[seed] large value entries injected: ${largeValue.entries.length}`);
+
+  const orphaned = buildOrphanedEntries(consumerIds, orphanedTarget);
+  await insertEntries(orphaned.entries);
+  console.log(`[seed] orphaned entries injected: ${orphaned.entries.length}`);
+
+  const duplicateRisk = buildDuplicateRiskEntries(consumerIds, duplicateRiskTarget);
+  await insertEntries(duplicateRisk.entries);
+  await insertOutcomes(duplicateRisk.outcomes);
+  console.log(`[seed] duplicate-idempotency-risk entries injected: ${duplicateRisk.entries.length}`);
+
+  const impossibleTransitions = buildImpossibleTransitions(consumerIds, impossibleTransitionsTarget);
+  await insertEntries(impossibleTransitions.entries);
+  await insertOutcomes(impossibleTransitions.outcomes);
+  console.log(`[seed] impossible transitions injected: ${impossibleTransitions.entries.length}`);
 
   console.log('[seed] running ANALYZE on touched tables...');
   await prisma.$executeRawUnsafe('ANALYZE ledger_entry');

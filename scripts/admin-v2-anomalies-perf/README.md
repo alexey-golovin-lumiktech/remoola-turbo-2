@@ -1,7 +1,7 @@
 # admin-v2 ledger anomaly perf runbook
 
-Local-only tooling that backs slice **MVP-3.1b** (perf evidence + index reshape)
-for the read-only ledger anomalies surface introduced in slice 3.1a.
+Local-only tooling that backs slices **MVP-3.1b** and **MVP-3.1c** for the
+read-only ledger anomalies surface introduced in slice 3.1a.
 
 This is **not** part of the production seed pipeline. Both scripts touch only
 synthetic rows scoped under the `perf-anomaly-` consumer email namespace and
@@ -10,14 +10,15 @@ the `ledger_entry.metadata->>'perf_anomaly' = 'true'` flag.
 ## Files
 
 - `seed.mjs` — generates ~5k consumers + ~50k `ledger_entry` rows (with 1–4
-  outcomes each) plus deliberate stale/inconsistent/large-value injections so
-  every anomaly class returns non-empty results.
+  outcomes each) plus deliberate injections for all six anomaly classes:
+  stale pending, inconsistent chain, large value, orphaned entries,
+  duplicate idempotency risk, and impossible transitions.
 - `measure.mjs` — runs the **exact** SQL shapes used by
   `AdminV2LedgerAnomaliesService` (1:1 copy, intentionally duplicated to keep
   the measurement script self-contained), reports p50/p95/p99/mean for each
   shape, and captures one `EXPLAIN (ANALYZE, BUFFERS)` per shape.
 - `output/measure-*.json` (gitignored) — full measurement dumps consumed by
-  `docs/admin-v2-mvp-3.1b-perf-evidence.md`.
+  the anomaly perf evidence docs.
 
 ## Prerequisites
 
@@ -76,13 +77,16 @@ Output:
 The shapes measured today:
 
 - `countStalePendingEntries`, `countInconsistentOutcomeChains`,
-  `countLargeValueOutliers` — backing the summary endpoint.
+  `countLargeValueOutliers`, `countOrphanedEntries`,
+  `countDuplicateIdempotencyRisk`, `countImpossibleTransitions` — backing the
+  summary endpoint.
 - `summaryEndpoint:promiseAll` vs `summaryEndpoint:sequential` — used to make a
   data-driven decision about whether `Promise.all` in `getSummary` is worth
   keeping (cosmetic backlog item from the 3.1a audit).
 - `listStalePendingEntries`, `listInconsistentOutcomeChains`,
-  `listLargeValueOutliers` — backing the queue page (with `LIMIT 51`,
-  matching `DEFAULT_ANOMALY_LIMIT`).
+  `listLargeValueOutliers`, `listOrphanedEntries`,
+  `listDuplicateIdempotencyRisk`, `listImpossibleTransitions` — backing the
+  queue page (with `LIMIT 51`, matching `DEFAULT_ANOMALY_LIMIT`).
 
 ## Sync with the service
 
