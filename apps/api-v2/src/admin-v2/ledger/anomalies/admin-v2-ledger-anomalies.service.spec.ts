@@ -45,9 +45,27 @@ describe(`AdminV2LedgerAnomaliesService`, () => {
     });
     expect(summary.classes.inconsistentOutcomeChains.count).toBe(1);
     expect(summary.classes.largeValueOutliers.count).toBe(3);
-    expect(summary.classes.orphanedEntries.availability).toBe(`temporarily-unavailable`);
-    expect(summary.classes.duplicateIdempotencyRisk.availability).toBe(`temporarily-unavailable`);
-    expect(summary.classes.impossibleTransitions.availability).toBe(`temporarily-unavailable`);
+    expect(summary.classes.orphanedEntries).toEqual({
+      label: `Orphaned entries`,
+      count: 0,
+      phaseStatus: `live-actionable`,
+      availability: `available`,
+      href: `/ledger/anomalies?class=orphanedEntries`,
+    });
+    expect(summary.classes.duplicateIdempotencyRisk).toEqual({
+      label: `Duplicate idempotency risk`,
+      count: 0,
+      phaseStatus: `live-actionable`,
+      availability: `available`,
+      href: `/ledger/anomalies?class=duplicateIdempotencyRisk`,
+    });
+    expect(summary.classes.impossibleTransitions).toEqual({
+      label: `Impossible transitions`,
+      count: 0,
+      phaseStatus: `live-actionable`,
+      availability: `available`,
+      href: `/ledger/anomalies?class=impossibleTransitions`,
+    });
   });
 
   it(`marks a class temporarily unavailable when its summary query fails`, async () => {

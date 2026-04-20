@@ -4,6 +4,7 @@ import { $Enums, Prisma } from '@remoola/database-2';
 
 import {
   DEFAULT_ANOMALY_LIMIT,
+  DUPLICATE_RISK_WINDOW_DAYS,
   INCONSISTENT_CHAIN_GRACE_MINUTES,
   LARGE_VALUE_THRESHOLDS,
   LEDGER_ANOMALY_CLASSES,
@@ -159,7 +160,7 @@ export class AdminV2LedgerAnomaliesService {
           : className === `largeValueOutliers`
             ? await this.listLargeValueOutliers({ dateFrom, dateTo, limit, cursor })
             : className === `orphanedEntries`
-              ? await this.listOrphanedEntries({ dateFrom, dateTo, limit, cursor })
+              ? await this.listOrphanedEntries({ dateFrom, dateTo, limit, cursor }, computedAt)
               : className === `duplicateIdempotencyRisk`
                 ? await this.listDuplicateIdempotencyRisk({ dateFrom, dateTo, limit, cursor })
                 : await this.listImpossibleTransitions({ dateFrom, dateTo, limit, cursor });
@@ -272,18 +273,60 @@ export class AdminV2LedgerAnomaliesService {
   }
 
   private async countOrphanedEntries(now: Date): Promise<number> {
-    void now;
-    throw new Error(`orphanedEntries not implemented yet`);
+    const cutoff = new Date(now.getTime() - ORPHANED_ENTRY_GRACE_HOURS * 60 * 60 * 1000);
+    const rows = await this.prisma.$queryRaw<CountRow[]>(Prisma.sql`
+      SELECT COUNT(*)::int AS "count"
+      FROM ledger_entry le
+      WHERE le.deleted_at IS NULL
+        AND le.created_at < ${cutoff}
+        AND NOT EXISTS (
+          SELECT 1
+          FROM ledger_entry_outcome o
+          WHERE o.ledger_entry_id = le.id
+        )
+    `);
+
+    return rows[0]?.count ?? 0;
   }
 
   private async countDuplicateIdempotencyRisk(now: Date): Promise<number> {
-    void now;
-    throw new Error(`duplicateIdempotencyRisk not implemented yet`);
+    const windowStart = new Date(now.getTime() - DUPLICATE_RISK_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+    const rows = await this.prisma.$queryRaw<CountRow[]>(Prisma.sql`
+      SELECT COUNT(*)::int AS "count"
+      FROM ledger_entry le
+      WHERE le.deleted_at IS NULL
+        AND le.idempotency_key IS NULL
+        AND le.stripe_id IS NOT NULL
+        AND le.created_at >= ${windowStart}
+        AND le.created_at <= ${now}
+    `);
+
+    return rows[0]?.count ?? 0;
   }
 
   private async countImpossibleTransitions(now: Date): Promise<number> {
     void now;
-    throw new Error(`impossibleTransitions not implemented yet`);
+    const rows = await this.prisma.$queryRaw<CountRow[]>(Prisma.sql`
+      SELECT COUNT(*)::int AS "count"
+      FROM ledger_entry le
+      JOIN LATERAL (
+        SELECT 1
+        FROM (
+          SELECT
+            o.status,
+            LAG(o.status) OVER (ORDER BY o.created_at, o.id) AS prev_status
+          FROM ledger_entry_outcome o
+          WHERE o.ledger_entry_id = le.id
+        ) chain
+        WHERE chain.prev_status::text IN (${Prisma.join(
+          TERMINAL_OUTCOME_STATUSES.map((status) => Prisma.sql`${status}`),
+        )})
+        LIMIT 1
+      ) violation ON true
+      WHERE le.deleted_at IS NULL
+    `);
+
+    return rows[0]?.count ?? 0;
   }
 
   private async listStalePendingEntries(
@@ -418,14 +461,48 @@ export class AdminV2LedgerAnomaliesService {
     `);
   }
 
-  private async listOrphanedEntries(params: {
-    dateFrom: Date;
-    dateTo: Date;
-    limit: number;
-    cursor: { createdAt: Date; id: string } | null;
-  }) {
-    void params;
-    return [] satisfies AnomalyRow[];
+  private async listOrphanedEntries(
+    params: {
+      dateFrom: Date;
+      dateTo: Date;
+      limit: number;
+      cursor: { createdAt: Date; id: string } | null;
+    },
+    now: Date,
+  ) {
+    const cutoff = new Date(now.getTime() - ORPHANED_ENTRY_GRACE_HOURS * 60 * 60 * 1000);
+    return this.prisma.$queryRaw<AnomalyRow[]>(Prisma.sql`
+      SELECT
+        le.id AS "id",
+        le.id AS "ledgerEntryId",
+        le.consumer_id AS "consumerId",
+        le.type::text AS "type",
+        le.amount AS "amount",
+        le.currency_code::text AS "currencyCode",
+        le.status::text AS "entryStatus",
+        NULL::text AS "outcomeStatus",
+        NULL::timestamptz AS "outcomeAt",
+        le.created_at AS "createdAt",
+        le.updated_at AS "updatedAt",
+        le.created_at AS "anomalyAt",
+        NULL::int AS "threshold",
+        NULL::text AS "stripeId",
+        NULL::text AS "prevStatus",
+        NULL::text AS "nextStatus"
+      FROM ledger_entry le
+      WHERE le.deleted_at IS NULL
+        AND le.created_at < ${cutoff}
+        AND le.created_at >= ${params.dateFrom}
+        AND le.created_at <= ${params.dateTo}
+        AND NOT EXISTS (
+          SELECT 1
+          FROM ledger_entry_outcome o
+          WHERE o.ledger_entry_id = le.id
+        )
+        ${this.buildCursorSql(Prisma.sql`le.created_at`, params.cursor)}
+      ORDER BY le.created_at DESC, le.id DESC
+      LIMIT ${params.limit + 1}
+    `);
   }
 
   private async listDuplicateIdempotencyRisk(params: {
@@ -434,8 +511,34 @@ export class AdminV2LedgerAnomaliesService {
     limit: number;
     cursor: { createdAt: Date; id: string } | null;
   }) {
-    void params;
-    return [] satisfies AnomalyRow[];
+    return this.prisma.$queryRaw<AnomalyRow[]>(Prisma.sql`
+      SELECT
+        le.id AS "id",
+        le.id AS "ledgerEntryId",
+        le.consumer_id AS "consumerId",
+        le.type::text AS "type",
+        le.amount AS "amount",
+        le.currency_code::text AS "currencyCode",
+        le.status::text AS "entryStatus",
+        NULL::text AS "outcomeStatus",
+        NULL::timestamptz AS "outcomeAt",
+        le.created_at AS "createdAt",
+        le.updated_at AS "updatedAt",
+        le.created_at AS "anomalyAt",
+        NULL::int AS "threshold",
+        le.stripe_id AS "stripeId",
+        NULL::text AS "prevStatus",
+        NULL::text AS "nextStatus"
+      FROM ledger_entry le
+      WHERE le.deleted_at IS NULL
+        AND le.idempotency_key IS NULL
+        AND le.stripe_id IS NOT NULL
+        AND le.created_at >= ${params.dateFrom}
+        AND le.created_at <= ${params.dateTo}
+        ${this.buildCursorSql(Prisma.sql`le.created_at`, params.cursor)}
+      ORDER BY le.created_at DESC, le.id DESC
+      LIMIT ${params.limit + 1}
+    `);
   }
 
   private async listImpossibleTransitions(params: {
@@ -444,8 +547,51 @@ export class AdminV2LedgerAnomaliesService {
     limit: number;
     cursor: { createdAt: Date; id: string } | null;
   }) {
-    void params;
-    return [] satisfies AnomalyRow[];
+    return this.prisma.$queryRaw<AnomalyRow[]>(Prisma.sql`
+      SELECT
+        le.id AS "id",
+        le.id AS "ledgerEntryId",
+        le.consumer_id AS "consumerId",
+        le.type::text AS "type",
+        le.amount AS "amount",
+        le.currency_code::text AS "currencyCode",
+        le.status::text AS "entryStatus",
+        violation.next_status::text AS "outcomeStatus",
+        violation.violation_at AS "outcomeAt",
+        le.created_at AS "createdAt",
+        le.updated_at AS "updatedAt",
+        violation.violation_at AS "anomalyAt",
+        NULL::int AS "threshold",
+        NULL::text AS "stripeId",
+        violation.prev_status::text AS "prevStatus",
+        violation.next_status::text AS "nextStatus"
+      FROM ledger_entry le
+      JOIN LATERAL (
+        SELECT
+          chain.prev_status,
+          chain.next_status,
+          chain.violation_at
+        FROM (
+          SELECT
+            o.status AS next_status,
+            o.created_at AS violation_at,
+            LAG(o.status) OVER (ORDER BY o.created_at, o.id) AS prev_status
+          FROM ledger_entry_outcome o
+          WHERE o.ledger_entry_id = le.id
+        ) chain
+        WHERE chain.prev_status::text IN (${Prisma.join(
+          TERMINAL_OUTCOME_STATUSES.map((status) => Prisma.sql`${status}`),
+        )})
+          AND chain.violation_at >= ${params.dateFrom}
+          AND chain.violation_at <= ${params.dateTo}
+        ORDER BY chain.violation_at DESC
+        LIMIT 1
+      ) violation ON true
+      WHERE le.deleted_at IS NULL
+        ${this.buildCursorSql(Prisma.sql`violation.violation_at`, params.cursor)}
+      ORDER BY violation.violation_at DESC, le.id DESC
+      LIMIT ${params.limit + 1}
+    `);
   }
 
   private buildLargeValueThresholdSql() {
@@ -530,9 +676,8 @@ export class AdminV2LedgerAnomaliesService {
   }
 
   private buildOrphanedEntryDetail(row: AnomalyRow, now: Date) {
-    const anomalyAt = row.anomalyAt;
-    return `Entry created ${anomalyAt.toISOString()} (${formatAge(
-      anomalyAt,
+    return `Entry created ${row.createdAt.toISOString()} (${formatAge(
+      row.createdAt,
       now,
     )} ago) has no outcome record (grace ${ORPHANED_ENTRY_GRACE_HOURS}h)`;
   }
@@ -550,7 +695,7 @@ export class AdminV2LedgerAnomaliesService {
     } at ${violationAt.toISOString()} (${formatAge(
       violationAt,
       now,
-    )} ago); terminal statuses (${TERMINAL_OUTCOME_STATUSES.join(`, `)}) must not be followed`;
+    )} ago); ${row.prevStatus ?? `UNKNOWN`} is terminal and must not be followed`;
   }
 
   private getUnavailableSummary(className: LedgerAnomalyClass): LedgerAnomalyClassSummary {
