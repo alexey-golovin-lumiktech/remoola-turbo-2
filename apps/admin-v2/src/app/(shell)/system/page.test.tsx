@@ -53,6 +53,14 @@ describe(`admin-v2 system page`, () => {
           primaryAction: null,
           escalationHint: `Escalate only when operators observe missed freshness without a queue explanation.`,
         },
+        ledgerAnomalies: {
+          label: `Ledger anomalies`,
+          status: `watch`,
+          explanation: `Read-only ledger anomaly detection shows active finance-review backlog.`,
+          facts: [{ label: `Total anomaly backlog`, value: 4 }],
+          primaryAction: { label: `Open ledger anomalies`, href: `/ledger/anomalies` },
+          escalationHint: `Escalate only when anomaly backlog keeps growing after ledger-domain triage identifies no safe operator action.`,
+        },
         emailDeliveryIssuePatterns: {
           label: `Email delivery issue patterns`,
           status: `temporarily-unavailable`,
@@ -73,18 +81,20 @@ describe(`admin-v2 system page`, () => {
     });
   });
 
-  it(`renders the four read-only maturity cards with drilldown links and escalation semantics`, async () => {
+  it(`renders the five read-only maturity cards with drilldown links and escalation semantics`, async () => {
     const markup = renderToStaticMarkup(await SystemPage());
 
     expect(markup).toContain(`Read-only maturity surface for cross-domain product and background health`);
     expect(markup).toContain(`Stripe webhook health`);
     expect(markup).toContain(`Scheduler health`);
+    expect(markup).toContain(`Ledger anomalies`);
     expect(markup).toContain(`Email delivery issue patterns`);
     expect(markup).toContain(`Stale exchange rate alerts`);
     expect(markup).toContain(`Status: Watch`);
     expect(markup).toContain(`Status: Healthy`);
     expect(markup).toContain(`Status: Temporarily unavailable`);
     expect(markup).toContain(`href="/payments?status=WAITING"`);
+    expect(markup).toContain(`href="/ledger/anomalies"`);
     expect(markup).toContain(`href="/exchange/rates?stale=true"`);
     expect(markup).toContain(`Escalation: Escalate after domain triage if backlog keeps growing.`);
   });

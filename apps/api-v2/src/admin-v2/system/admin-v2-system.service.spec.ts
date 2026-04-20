@@ -17,11 +17,24 @@ describe(`AdminV2SystemService`, () => {
 
     return {
       prisma,
-      service: new AdminV2SystemService(prisma as never),
+      service: new AdminV2SystemService(
+        prisma as never,
+        {
+          getSummary: jest.fn(async () => ({
+            computedAt: `2026-04-17T12:00:00.000Z`,
+            totalCount: 0,
+            classes: {
+              stalePendingEntries: { count: 0 },
+              inconsistentOutcomeChains: { count: 0 },
+              largeValueOutliers: { count: 0 },
+            },
+          })),
+        } as never,
+      ),
     };
   }
 
-  it(`composes the four admissible cards into one read-only summary`, async () => {
+  it(`composes the five admissible cards into one read-only summary`, async () => {
     const { service } = makeService();
     const serviceWithPrivates = service as any;
 
@@ -39,6 +52,14 @@ describe(`AdminV2SystemService`, () => {
       explanation: `watch`,
       facts: [],
       primaryAction: null,
+      escalationHint: `Escalate`,
+    });
+    jest.spyOn(serviceWithPrivates, `getLedgerAnomaliesCard`).mockResolvedValue({
+      label: `Ledger anomalies`,
+      status: `watch`,
+      explanation: `watch`,
+      facts: [],
+      primaryAction: { label: `Open ledger anomalies`, href: `/ledger/anomalies` },
       escalationHint: `Escalate`,
     });
     jest.spyOn(serviceWithPrivates, `getEmailDeliveryIssuePatterns`).mockResolvedValue({
@@ -64,9 +85,42 @@ describe(`AdminV2SystemService`, () => {
     expect(summary.cards).toEqual({
       stripeWebhookHealth: expect.objectContaining({ label: `Stripe webhook health` }),
       schedulerHealth: expect.objectContaining({ label: `Scheduler health` }),
+      ledgerAnomalies: expect.objectContaining({ label: `Ledger anomalies` }),
       emailDeliveryIssuePatterns: expect.objectContaining({ label: `Email delivery issue patterns` }),
       staleExchangeRateAlerts: expect.objectContaining({ label: `Stale exchange rate alerts` }),
     });
+  });
+
+  it(`marks ledger anomalies as watch when the read-only queue reports backlog`, async () => {
+    const { prisma } = makeService();
+    const service = new AdminV2SystemService(
+      prisma as never,
+      {
+        getSummary: jest.fn(async () => ({
+          computedAt: `2026-04-17T12:00:00.000Z`,
+          totalCount: 4,
+          classes: {
+            stalePendingEntries: { count: 2 },
+            inconsistentOutcomeChains: { count: 1 },
+            largeValueOutliers: { count: 1 },
+          },
+        })),
+      } as never,
+    );
+
+    const card = await (service as any).getLedgerAnomaliesCard();
+
+    expect(card.status).toBe(`watch`);
+    expect(card.primaryAction).toEqual({
+      label: `Open ledger anomalies`,
+      href: `/ledger/anomalies`,
+    });
+    expect(card.facts).toEqual([
+      { label: `Total anomaly backlog`, value: 4 },
+      { label: `Stale pending entries`, value: 2 },
+      { label: `Inconsistent outcome chains`, value: 1 },
+      { label: `Large value outliers`, value: 1 },
+    ]);
   });
 
   it(`marks stripe webhook health as watch when payment and reversal ingestion lag is present`, async () => {

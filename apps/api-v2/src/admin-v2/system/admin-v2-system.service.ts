@@ -4,6 +4,7 @@ import { Prisma } from '@remoola/database-2';
 
 import { envs } from '../../envs';
 import { PrismaService } from '../../shared/prisma.service';
+import { AdminV2LedgerAnomaliesService } from '../ledger/anomalies/admin-v2-ledger-anomalies.service';
 
 type SystemCardStatus = `healthy` | `watch` | `temporarily-unavailable`;
 
@@ -47,6 +48,7 @@ type SystemSummaryResponse = {
   cards: {
     stripeWebhookHealth: SystemSummaryCard;
     schedulerHealth: SystemSummaryCard;
+    ledgerAnomalies: SystemSummaryCard;
     emailDeliveryIssuePatterns: SystemSummaryCard;
     staleExchangeRateAlerts: SystemSummaryCard;
   };
@@ -56,14 +58,18 @@ const EMAIL_WINDOW_DAYS = 7;
 
 @Injectable()
 export class AdminV2SystemService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly ledgerAnomalies: AdminV2LedgerAnomaliesService,
+  ) {}
 
   async getSummary(): Promise<SystemSummaryResponse> {
     const now = new Date();
-    const [stripeWebhookHealth, schedulerHealth, emailDeliveryIssuePatterns, staleExchangeRateAlerts] =
+    const [stripeWebhookHealth, schedulerHealth, ledgerAnomalies, emailDeliveryIssuePatterns, staleExchangeRateAlerts] =
       await Promise.all([
         this.getStripeWebhookHealth(),
         this.getSchedulerHealth(now),
+        this.getLedgerAnomaliesCard(),
         this.getEmailDeliveryIssuePatterns(now),
         this.getStaleExchangeRateAlerts(now),
       ]);
@@ -73,6 +79,7 @@ export class AdminV2SystemService {
       cards: {
         stripeWebhookHealth,
         schedulerHealth,
+        ledgerAnomalies,
         emailDeliveryIssuePatterns,
         staleExchangeRateAlerts,
       },
@@ -245,6 +252,48 @@ export class AdminV2SystemService {
         escalationHint: [
           `Escalate mail delivery degradation if verification or admin recovery emails are visibly failing.`,
         ].join(` `),
+      });
+    }
+  }
+
+  private async getLedgerAnomaliesCard(): Promise<SystemSummaryCard> {
+    try {
+      const summary = await this.ledgerAnomalies.getSummary();
+      const stalePendingEntries = summary.classes.stalePendingEntries.count;
+      const inconsistentOutcomeChains = summary.classes.inconsistentOutcomeChains.count;
+      const largeValueOutliers = summary.classes.largeValueOutliers.count;
+      const totalCount = summary.totalCount;
+
+      return {
+        label: `Ledger anomalies`,
+        status: totalCount && totalCount > 0 ? `watch` : totalCount === 0 ? `healthy` : `temporarily-unavailable`,
+        explanation:
+          totalCount && totalCount > 0
+            ? `Read-only ledger anomaly detection shows active finance-review backlog.` +
+              ` Use the dedicated queue for case triage instead of treating System as a replacement workspace.`
+            : totalCount === 0
+              ? `No current stale pending entries, inconsistent outcome chains, or large value outliers are visible.`
+              : `Ledger anomaly health could not be derived safely from the read-only queue summary.`,
+        facts: [
+          { label: `Total anomaly backlog`, value: totalCount },
+          { label: `Stale pending entries`, value: stalePendingEntries },
+          { label: `Inconsistent outcome chains`, value: inconsistentOutcomeChains },
+          { label: `Large value outliers`, value: largeValueOutliers },
+        ],
+        primaryAction:
+          totalCount && totalCount > 0 ? { label: `Open ledger anomalies`, href: `/ledger/anomalies` } : null,
+        escalationHint:
+          totalCount && totalCount > 0
+            ? `Escalate only when anomaly backlog keeps growing after ledger-domain triage identifies no safe operator action.`
+            : totalCount === 0
+              ? `Escalate only if operators observe ledger integrity drift without an anomaly backlog signal.`
+              : `Use the Ledger workspace directly and escalate if anomaly review is blocked by missing queue visibility.`,
+      };
+    } catch {
+      return this.temporarilyUnavailableCard({
+        label: `Ledger anomalies`,
+        explanation: `Ledger anomaly health could not be derived safely from the read-only queue summary.`,
+        escalationHint: `Use the Ledger workspace directly and escalate if anomaly review is blocked by missing queue visibility.`,
       });
     }
   }

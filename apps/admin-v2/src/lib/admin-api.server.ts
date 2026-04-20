@@ -181,6 +181,7 @@ export type SystemSummaryResponse = {
   cards: {
     stripeWebhookHealth: SystemSummaryCard;
     schedulerHealth: SystemSummaryCard;
+    ledgerAnomalies: SystemSummaryCard;
     emailDeliveryIssuePatterns: SystemSummaryCard;
     staleExchangeRateAlerts: SystemSummaryCard;
   };

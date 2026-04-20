@@ -5,6 +5,7 @@ import { getSystemSummary, type SystemSummaryCard } from '../../../lib/admin-api
 const cardOrder = [
   `stripeWebhookHealth`,
   `schedulerHealth`,
+  `ledgerAnomalies`,
   `emailDeliveryIssuePatterns`,
   `staleExchangeRateAlerts`,
 ] as const;
