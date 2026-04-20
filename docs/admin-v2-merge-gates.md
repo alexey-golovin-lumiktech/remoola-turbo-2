@@ -50,6 +50,9 @@ This is a deterministic local check implemented in
 - reconciled planning docs still say that schema-backed RBAC is landed,
   payment methods are no longer read-only-only, and the next sequence is
   `MVP-3` maturity rather than another MVP-2 kickoff
+- the anomaly first maturity slice reconciliation note still contains the
+  required Sequence 6, read-only, temporarily-unavailable, and currency
+  coverage decisions used by the current gate config
 
 ### `yarn test:admin-v2`
 
@@ -95,6 +98,8 @@ The following checks are still manual and are not claimed as automation here:
 - CSRF integration coverage for every representative admin-v2 write
 - uniform `STALE_VERSION` integration coverage across all mutators
 - semantic diff between pack prose and every rendered UI string
+- ledger anomalies performance proof (`EXPLAIN ANALYZE`, endpoint p95, and
+  migration rollout timing) beyond deterministic string anchors
 
 These items still need manual review or a dedicated follow-up slice. They
 should not be treated as automated checks based on this document.

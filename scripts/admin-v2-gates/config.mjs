@@ -16,6 +16,7 @@ export const CHECK_PATHS = [
   `admin-v2-pack/07-backend-contracts-and-data-plan.md`,
   `admin-v2-pack/08-rollout-risks-and-sequencing.md`,
   `docs/admin-v2-mvp-2-rbac-prerequisite.md`,
+  `docs/admin-v2-mvp-3-anomalies-first-slice.md`,
 ];
 
 export const AUDIT_ACTIONS = [
@@ -63,6 +64,7 @@ export const CAPABILITIES = [
   `verification.decide`,
   `payments.read`,
   `ledger.read`,
+  `ledger.anomalies`,
   `audit.read`,
   `exchange.read`,
   `exchange.manage`,
@@ -148,6 +150,7 @@ export const AFFECTED_PATHS = [
   `packages/api-types/src/http/admin-path.ts`,
   `packages/api-types/src/http/auth-cookie-policy.ts`,
   `packages/database-2/prisma/schema.prisma`,
+  `packages/database-2/prisma/migrations/`,
   `admin-v2-pack/01-foundation-and-invariants.md`,
   `admin-v2-pack/03-platform-auth-rbac.md`,
   `admin-v2-pack/05-financial-workspaces.md`,
@@ -155,6 +158,7 @@ export const AFFECTED_PATHS = [
   `admin-v2-pack/08-rollout-risks-and-sequencing.md`,
   `docs/admin-v2-merge-gates.md`,
   `docs/admin-v2-mvp-2-rbac-prerequisite.md`,
+  `docs/admin-v2-mvp-3-anomalies-first-slice.md`,
   `.husky/pre-commit`,
   `package.json`,
   `scripts/admin-v2-gates/`,
@@ -190,5 +194,16 @@ export const RECONCILIATION_NOTES = {
     `Sequence 6`,
     `ledger anomalies`,
     `current runtime already includes the writes that this kickoff slice used to exclude`,
+  ],
+  'docs/admin-v2-mvp-3-anomalies-first-slice.md': [
+    `Sequence 6`,
+    `first maturity slice`,
+    `three classes`,
+    `temporarily-unavailable`,
+    `no new audit actions`,
+    `Finding: outcome→entry sync trigger absence`,
+    `Decision: largeValueOutliers currency coverage`,
+    `INCONSISTENT_CHAIN_GRACE_MINUTES`,
+    `11 major/reserve currencies`,
   ],
 };
