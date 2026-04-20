@@ -18,6 +18,9 @@ export const CHECK_PATHS = [
   `docs/admin-v2-mvp-2-rbac-prerequisite.md`,
   `docs/admin-v2-mvp-3-anomalies-first-slice.md`,
   `docs/admin-v2-mvp-3.1b-perf-evidence.md`,
+  `docs/admin-v2-mvp-3.1c-anomaly-classes-expansion.md`,
+  `docs/admin-v2-mvp-3.1c-perf-evidence.md`,
+  `packages/database-2/prisma/migrations/20260420191500_admin_v2_duplicate_idempotency_risk_index/README.md`,
 ];
 
 export const AUDIT_ACTIONS = [
@@ -160,6 +163,8 @@ export const AFFECTED_PATHS = [
   `docs/admin-v2-merge-gates.md`,
   `docs/admin-v2-mvp-2-rbac-prerequisite.md`,
   `docs/admin-v2-mvp-3-anomalies-first-slice.md`,
+  `docs/admin-v2-mvp-3.1c-anomaly-classes-expansion.md`,
+  `docs/admin-v2-mvp-3.1c-perf-evidence.md`,
   `.husky/pre-commit`,
   `package.json`,
   `scripts/admin-v2-gates/`,
@@ -207,6 +212,7 @@ export const RECONCILIATION_NOTES = {
     `INCONSISTENT_CHAIN_GRACE_MINUTES`,
     `11 major/reserve currencies`,
     `admin-v2-mvp-3.1b-perf-evidence.md`,
+    `admin-v2-mvp-3.1c-anomaly-classes-expansion.md`,
   ],
   'docs/admin-v2-mvp-3.1b-perf-evidence.md': [
     `EXPLAIN ANALYZE`,
@@ -216,5 +222,28 @@ export const RECONCILIATION_NOTES = {
     `Promise.all decision`,
     `idx_ledger_entry_outcome_lateral_covering`,
     `20260420170000_admin_v2_anomalies_outcome_indexes`,
+  ],
+  'docs/admin-v2-mvp-3.1c-anomaly-classes-expansion.md': [
+    `Sequence 6`,
+    `classes expansion`,
+    `six classes`,
+    `temporarily-unavailable`,
+    `no new audit actions`,
+    `Decision: duplicateIdempotencyRisk redefinition`,
+    `Decision: impossibleTransitions terminal-only scope`,
+    `Decision: orphanedEntries definition`,
+    `ORPHANED_ENTRY_GRACE_HOURS`,
+    `TERMINAL_OUTCOME_STATUSES`,
+    `admin-v2-mvp-3.1b-perf-evidence.md`,
+  ],
+  'docs/admin-v2-mvp-3.1c-perf-evidence.md': [
+    `EXPLAIN ANALYZE`,
+    `p95`,
+    `summary endpoint budget`,
+    `six-class summary`,
+    `orphanedEntries`,
+    `duplicateIdempotencyRisk`,
+    `impossibleTransitions`,
+    `Seq Scan justification`,
   ],
 };

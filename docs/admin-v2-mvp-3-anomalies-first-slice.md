@@ -17,6 +17,9 @@
 - OperationalAlertModel, SavedViewModel - separate slices, not touched here.
 - Background materialization / admin_overview_cache - not activated; temporarily-unavailable fallback remains the safe failure posture.
 
+That deferred class backlog is now closed by
+`docs/admin-v2-mvp-3.1c-anomaly-classes-expansion.md`.
+
 ## Performance proof
 
 - Query paths use single-roundtrip summary/list reads plus cursor pagination.

@@ -25,11 +25,12 @@ This is a deterministic local check implemented in
   checks that do not exist
 - every anchor path listed in `CHECK_PATHS` in
   `scripts/admin-v2-gates/config.mjs` exists in the working tree (currently
-  18 paths spanning the admin-v2 frontend surface, the api-v2
+  22 paths spanning the admin-v2 frontend surface, the api-v2
   admin-v2/auth/csrf surface, the api-types HTTP surface, the
   admin-v2-pack planning files used by the gate, and the live admin-v2
-  docs); the config file is the single source of truth — do not duplicate
-  the list here
+  docs plus the 3.1c perf/reconciliation artifacts and the additive migration
+  README); the config file is the single source of truth — do not duplicate the
+  list here
 - the expected capability and audit anchors are present in
   `apps/api-v2/src/shared/admin-action-audit.service.ts` and
   `apps/api-v2/src/admin-v2/admin-v2-access.ts`, including the audit actions
@@ -47,12 +48,13 @@ This is a deterministic local check implemented in
   `docs/admin-v2-mvp-2-rbac-prerequisite.md`,
   `admin-v2-pack/05-financial-workspaces.md`,
   `admin-v2-pack/08-rollout-risks-and-sequencing.md`, and
-  `docs/admin-v2-mvp-3-anomalies-first-slice.md`); see the config for the
+  `docs/admin-v2-mvp-3-anomalies-first-slice.md`,
+  `docs/admin-v2-mvp-3.1c-anomaly-classes-expansion.md`, and
+  `docs/admin-v2-mvp-3.1c-perf-evidence.md`); see the config for the
   authoritative token list, including the schema-backed RBAC, payment
   methods write controls, MVP-3 maturity sequencing, and anomaly first
-  maturity slice (Sequence 6, three classes, temporarily-unavailable,
-  currency coverage, and outcome→entry sync trigger findings) decisions
-  used by the current gate
+  maturity slice plus the 3.1c classes expansion / EXPLAIN ANALYZE evidence
+  decisions used by the current gate
 
 ### `yarn test:admin-v2`
 
