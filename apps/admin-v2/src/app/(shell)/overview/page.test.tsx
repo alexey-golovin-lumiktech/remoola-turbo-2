@@ -79,14 +79,14 @@ describe(`admin-v2 overview page`, () => {
         failedScheduledConversions: {
           label: `Failed scheduled FX`,
           count: 6,
-          phaseStatus: `breadth-follow-up`,
+          phaseStatus: `live-actionable`,
           availability: `available`,
           href: `/exchange/scheduled?status=FAILED`,
         },
         staleExchangeRates: {
           label: `Stale exchange rates`,
           count: 7,
-          phaseStatus: `breadth-follow-up`,
+          phaseStatus: `live-actionable`,
           availability: `available`,
           href: `/exchange/rates?stale=true`,
         },
@@ -94,13 +94,13 @@ describe(`admin-v2 overview page`, () => {
     });
   });
 
-  it(`keeps exchange signals out of the active pressure grid while preserving breadth visibility`, async () => {
+  it(`keeps exchange signals in a separate overview section while preserving canonical phase vocabulary`, async () => {
     const markup = renderToStaticMarkup(await OverviewPage());
 
-    expect(markup).toContain(`active core pressure separated from breadth follow-up signals`);
-    expect(markup).toContain(`Exchange breadth follow-up`);
+    expect(markup).toContain(`active core pressure separated from exchange follow-up signals`);
+    expect(markup).toContain(`Exchange follow-up`);
     expect(markup).toContain(`Open exchange surface`);
-    expect(markup).toContain(`breadth-follow-up`);
+    expect(markup).toContain(`live-actionable`);
     expect(markup).toContain(`href="/exchange/scheduled?status=FAILED"`);
     expect(markup).toContain(`href="/exchange/rates?stale=true"`);
   });

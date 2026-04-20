@@ -1,7 +1,7 @@
 import { AdminV2OverviewService } from './admin-v2-overview.service';
 
 describe(`AdminV2OverviewService`, () => {
-  it(`returns canonical MVP-1c phase semantics for finance signals`, async () => {
+  it(`returns canonical phase vocabulary for currently surfaced finance signals`, async () => {
     const service = new AdminV2OverviewService(
       {
         $queryRaw: jest.fn(async () => [{ count: 4 }]),
@@ -66,14 +66,14 @@ describe(`AdminV2OverviewService`, () => {
     expect(summary.signals.failedScheduledConversions).toEqual({
       label: `Failed scheduled FX`,
       count: 2,
-      phaseStatus: `breadth-follow-up`,
+      phaseStatus: `live-actionable`,
       availability: `available`,
       href: `/exchange/scheduled?status=FAILED`,
     });
     expect(summary.signals.staleExchangeRates).toEqual({
       label: `Stale exchange rates`,
       count: 4,
-      phaseStatus: `breadth-follow-up`,
+      phaseStatus: `live-actionable`,
       availability: `available`,
       href: `/exchange/rates?stale=true`,
     });
@@ -120,7 +120,7 @@ describe(`AdminV2OverviewService`, () => {
     expect(summary.signals.staleExchangeRates).toEqual({
       label: `Stale exchange rates`,
       count: null,
-      phaseStatus: `breadth-follow-up`,
+      phaseStatus: `live-actionable`,
       availability: `temporarily-unavailable`,
       href: `/exchange/rates?stale=true`,
     });
@@ -174,7 +174,7 @@ describe(`AdminV2OverviewService`, () => {
     expect(summary.signals.failedScheduledConversions).toEqual({
       label: `Failed scheduled FX`,
       count: 7,
-      phaseStatus: `breadth-follow-up`,
+      phaseStatus: `live-actionable`,
       availability: `available`,
       href: `/exchange/scheduled?status=FAILED`,
     });

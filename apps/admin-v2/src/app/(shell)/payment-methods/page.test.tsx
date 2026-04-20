@@ -24,7 +24,7 @@ async function loadSubject() {
 
 let PaymentMethodsPage: Awaited<ReturnType<typeof loadSubject>>;
 
-describe(`admin-v2 payment methods list kickoff surface`, () => {
+describe(`admin-v2 payment methods list surface`, () => {
   beforeAll(async () => {
     PaymentMethodsPage = await loadSubject();
   });
@@ -58,7 +58,7 @@ describe(`admin-v2 payment methods list kickoff surface`, () => {
     });
   });
 
-  it(`renders the read-only kickoff framing and schema-backed list links`, async () => {
+  it(`renders the investigation framing and schema-backed list links`, async () => {
     const markup = renderToStaticMarkup(
       await PaymentMethodsPage({
         searchParams: Promise.resolve({
@@ -81,11 +81,12 @@ describe(`admin-v2 payment methods list kickoff surface`, () => {
       includeDeleted: true,
     });
     expect(markup).toContain(`Investigation-first list surface for payment methods`);
+    expect(markup).toContain(`Authorized write controls remain detail-scoped and are capability-gated.`);
     expect(markup).toContain(`<form class="actionsRow" method="get">`);
     expect(markup).toContain(`/payment-methods/pm-soft`);
     expect(markup).toContain(`/consumers/consumer-1`);
     expect(markup).toContain(`Soft-deleted`);
-    expect(markup).toContain(`Read-only queue`);
+    expect(markup).toContain(`Investigation queue`);
     expect(markup).not.toContain(`Disable payment method`);
     expect(markup).not.toContain(`Remove default marker`);
     expect(markup).not.toContain(`Escalate duplicate fingerprint`);

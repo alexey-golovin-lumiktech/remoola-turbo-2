@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { IsBoolean, IsIn, IsString } from 'class-validator';
@@ -173,7 +173,7 @@ export class AdminV2ConsumersController {
     return this.service.addFlag(id, admin.id, body.flag ?? ``, body.reason, requestMeta(req));
   }
 
-  @Post(`:id/flags/:flagId/remove`)
+  @Patch(`:id/flags/:flagId/remove`)
   async removeFlag(
     @Identity() admin: IIdentityContext,
     @Param(`id`) id: string,

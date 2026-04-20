@@ -98,7 +98,7 @@ export class AdminV2OverviewService {
       return {
         label: `Failed scheduled FX`,
         count,
-        phaseStatus: `breadth-follow-up`,
+        phaseStatus: `live-actionable`,
         availability: `available`,
         href: `/exchange/scheduled?status=FAILED`,
       };
@@ -106,7 +106,7 @@ export class AdminV2OverviewService {
       return {
         label: `Failed scheduled FX`,
         count: null,
-        phaseStatus: `breadth-follow-up`,
+        phaseStatus: `live-actionable`,
         availability: `temporarily-unavailable`,
         href: `/exchange/scheduled?status=FAILED`,
       };
@@ -129,7 +129,7 @@ export class AdminV2OverviewService {
       return {
         label: `Stale exchange rates`,
         count: result?.count ?? 0,
-        phaseStatus: `breadth-follow-up`,
+        phaseStatus: `live-actionable`,
         availability: `available`,
         href: `/exchange/rates?stale=true`,
       };
@@ -137,7 +137,7 @@ export class AdminV2OverviewService {
       return {
         label: `Stale exchange rates`,
         count: null,
-        phaseStatus: `breadth-follow-up`,
+        phaseStatus: `live-actionable`,
         availability: `temporarily-unavailable`,
         href: `/exchange/rates?stale=true`,
       };

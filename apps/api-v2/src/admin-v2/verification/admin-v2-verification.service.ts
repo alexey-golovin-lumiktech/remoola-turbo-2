@@ -55,6 +55,16 @@ function deriveVersion(updatedAt: Date): number {
   return updatedAt.getTime();
 }
 
+function buildStaleVersionPayload(currentUpdatedAt: Date) {
+  return {
+    error: `STALE_VERSION`,
+    message: `Resource has been modified by another operator`,
+    currentVersion: deriveVersion(currentUpdatedAt),
+    currentUpdatedAt: currentUpdatedAt.toISOString(),
+    recommendedAction: `reload`,
+  };
+}
+
 function hasMissingProfileData(item: {
   accountType: $Enums.AccountType;
   personalDetails: { firstName: string | null; lastName: string | null } | null;
@@ -251,7 +261,7 @@ export class AdminV2VerificationService {
           throw new NotFoundException(`Consumer not found`);
         }
         if (deriveVersion(consumer.updatedAt) !== expectedVersion) {
-          throw new ConflictException(`Verification state is stale`);
+          throw new ConflictException(buildStaleVersionPayload(consumer.updatedAt));
         }
 
         const nextState = this.getDecisionState(decision);
@@ -280,7 +290,11 @@ export class AdminV2VerificationService {
             },
           });
           if (updated.count === 0) {
-            throw new ConflictException(`Verification state is stale`);
+            const current = await tx.consumerModel.findUnique({
+              where: { id: consumer.id },
+              select: { updatedAt: true },
+            });
+            throw new ConflictException(current ? buildStaleVersionPayload(current.updatedAt) : `Consumer has changed`);
           }
           const auditEntry = await tx.adminActionAuditLogModel.create({
             data: {

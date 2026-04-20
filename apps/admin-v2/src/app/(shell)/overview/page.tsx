@@ -28,7 +28,7 @@ export default async function OverviewPage() {
         <div>
           <h1>Overview</h1>
           <p className="muted">
-            Operator landing page for the canonical MVP-2 shell, with active core pressure separated from breadth
+            Operator landing page for the canonical MVP-2 shell, with active core pressure separated from exchange
             follow-up signals.
           </p>
         </div>
@@ -61,10 +61,10 @@ export default async function OverviewPage() {
       <section className="panel">
         <div className="pageHeader">
           <div>
-            <h2>Exchange breadth follow-up</h2>
+            <h2>Exchange follow-up</h2>
             <p className="muted">
-              Exchange remains visible in overview, but as breadth follow-up rather than an active core-shell pressure
-              peer.
+              Exchange remains visible in overview as a separate operational section without changing the canonical
+              `phaseStatus` vocabulary.
             </p>
           </div>
         </div>

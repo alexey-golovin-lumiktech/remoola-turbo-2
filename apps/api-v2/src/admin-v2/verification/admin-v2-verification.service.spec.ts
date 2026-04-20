@@ -1,3 +1,5 @@
+import { ConflictException } from '@nestjs/common';
+
 import { AdminV2VerificationService } from './admin-v2-verification.service';
 
 describe(`AdminV2VerificationService`, () => {
@@ -145,5 +147,47 @@ describe(`AdminV2VerificationService`, () => {
         notification: { type: `email`, sent: true },
       }),
     );
+  });
+
+  it(`returns the canonical stale-version payload for verification decisions`, async () => {
+    const currentUpdatedAt = new Date(`2026-04-15T10:05:00.000Z`);
+    const service = new AdminV2VerificationService(
+      {
+        consumerModel: {
+          findUnique: jest.fn(async () => ({
+            id: `consumer-1`,
+            email: `user@example.com`,
+            verificationStatus: `PENDING`,
+            updatedAt: currentUpdatedAt,
+          })),
+        },
+      } as never,
+      {} as never,
+      {} as never,
+      {
+        execute: jest.fn(async ({ execute }: { execute: () => Promise<unknown> }) => execute()),
+      } as never,
+      {} as never,
+    );
+
+    try {
+      await service.applyDecision(
+        `consumer-1`,
+        `admin-1`,
+        `approve`,
+        { confirmed: true, version: new Date(`2026-04-15T10:00:00.000Z`).getTime() },
+        { ipAddress: `127.0.0.1`, userAgent: `jest`, idempotencyKey: `idem-1` },
+      );
+      throw new Error(`Expected applyDecision to reject`);
+    } catch (error) {
+      expect(error).toBeInstanceOf(ConflictException);
+      expect((error as ConflictException).getResponse()).toEqual({
+        error: `STALE_VERSION`,
+        message: `Resource has been modified by another operator`,
+        currentVersion: currentUpdatedAt.getTime(),
+        currentUpdatedAt: currentUpdatedAt.toISOString(),
+        recommendedAction: `reload`,
+      });
+    }
   });
 });

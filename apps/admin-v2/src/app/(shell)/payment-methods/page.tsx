@@ -68,7 +68,7 @@ export default async function PaymentMethodsPage({
           <h1>Payment Methods</h1>
           <p className="muted">
             Investigation-first list surface for payment methods: consumer linkage, default state, fingerprint context
-            and soft-delete continuity. Write controls stay on the detail page only.
+            and soft-delete continuity. Authorized write controls remain detail-scoped and are capability-gated.
           </p>
         </div>
         <form method="get" className="actionsRow">
@@ -96,7 +96,7 @@ export default async function PaymentMethodsPage({
       <section className="panel">
         <div className="pageHeader">
           <div>
-            <h2>Read-only queue</h2>
+            <h2>Investigation queue</h2>
             <p className="muted">
               {data?.total ?? 0} results · page {data?.page ?? 1} / {totalPages}
             </p>

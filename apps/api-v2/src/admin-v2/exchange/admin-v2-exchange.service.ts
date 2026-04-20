@@ -1229,6 +1229,7 @@ export class AdminV2ExchangeService {
         fromCurrency: rule.from_currency,
         toCurrency: rule.to_currency,
         amount: amountToConvert,
+        now: params.now,
         createdBy: adminIdOrConsumer(rule.consumer_id, params.actorId),
         updatedBy: adminIdOrConsumer(rule.consumer_id, params.actorId),
         idempotencyKeyPrefix: params.idempotencyKey,
@@ -1279,6 +1280,7 @@ export class AdminV2ExchangeService {
         fromCurrency: conversion.from_currency,
         toCurrency: conversion.to_currency,
         amount: Number(conversion.amount),
+        now: params.now,
         createdBy: params.adminId,
         updatedBy: params.adminId,
         idempotencyKeyPrefix: params.idempotencyKey,
@@ -1350,6 +1352,7 @@ export class AdminV2ExchangeService {
       fromCurrency: $Enums.CurrencyCode;
       toCurrency: $Enums.CurrencyCode;
       amount: number;
+      now: Date;
       createdBy: string;
       updatedBy: string;
       idempotencyKeyPrefix: string;
@@ -1368,13 +1371,13 @@ export class AdminV2ExchangeService {
       SELECT pg_advisory_xact_lock(hashtext((${params.consumerId} || ':exchange')::text)::bigint)
     `);
 
-    const rateRow = await this.findApprovedRateForConversion(tx, params.fromCurrency, params.toCurrency);
+    const rateRow = await this.findApprovedRateForConversion(tx, params.fromCurrency, params.toCurrency, params.now);
     if (!rateRow) {
       throw new NotFoundException(errorCodes.RATE_NOT_AVAILABLE);
     }
 
     const referenceAt = getRateReferenceAt(rateRow);
-    if (referenceAt.getTime() < this.getRateStaleCutoff(new Date()).getTime()) {
+    if (referenceAt.getTime() < this.getRateStaleCutoff(params.now).getTime()) {
       throw new BadRequestException(errorCodes.RATE_STALE);
     }
 
@@ -1459,8 +1462,8 @@ export class AdminV2ExchangeService {
     tx: Prisma.TransactionClient,
     fromCurrency: $Enums.CurrencyCode,
     toCurrency: $Enums.CurrencyCode,
+    now: Date,
   ) {
-    const now = new Date();
     return tx.exchangeRateModel.findFirst({
       where: {
         fromCurrency,

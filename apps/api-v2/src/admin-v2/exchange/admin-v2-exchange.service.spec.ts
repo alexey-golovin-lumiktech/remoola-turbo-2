@@ -247,7 +247,9 @@ describe(`AdminV2ExchangeService`, () => {
   });
 
   it(`publishes exchange.executed after successful scheduled force-execute`, async () => {
-    const updatedAt = new Date(`2026-04-17T10:30:00.000Z`);
+    const now = Date.now();
+    const updatedAt = new Date(now - 5 * 60_000);
+    const rateObservedAt = new Date(now - 30 * 60_000);
     const tx = {
       $queryRaw: jest
         .fn()
@@ -259,7 +261,7 @@ describe(`AdminV2ExchangeService`, () => {
             to_currency: $Enums.CurrencyCode.EUR,
             amount: 25,
             status: $Enums.ScheduledFxConversionStatus.PENDING,
-            execute_at: new Date(`2026-04-17T10:00:00.000Z`),
+            execute_at: new Date(now - 35 * 60_000),
             processing_at: null,
             executed_at: null,
             failed_at: null,
@@ -278,9 +280,9 @@ describe(`AdminV2ExchangeService`, () => {
         findFirst: jest.fn(async () => ({
           id: `rate-1`,
           rate: { valueOf: () => 0.9 } as never,
-          fetchedAt: new Date(`2026-04-17T10:00:00.000Z`),
-          effectiveAt: new Date(`2026-04-17T10:00:00.000Z`),
-          createdAt: new Date(`2026-04-17T10:00:00.000Z`),
+          fetchedAt: rateObservedAt,
+          effectiveAt: rateObservedAt,
+          createdAt: rateObservedAt,
         })),
       },
       ledgerEntryModel: {

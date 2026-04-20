@@ -97,7 +97,7 @@ export async function addConsumerFlagAction(consumerId: string, formData: FormDa
 
 export async function removeConsumerFlagAction(consumerId: string, flagId: string, formData: FormData): Promise<void> {
   const version = Number(formData.get(`version`) ?? 0);
-  await postAdminMutation(
+  await patchAdminMutation(
     `/admin-v2/consumers/${consumerId}/flags/${flagId}/remove`,
     { version },
     `Failed to remove flag`,
