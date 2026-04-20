@@ -1,15 +1,25 @@
-import type { $Enums } from '@remoola/database-2';
+import { $Enums } from '@remoola/database-2';
 
 export const STALE_PENDING_HOURS = 24;
 export const INCONSISTENT_CHAIN_GRACE_MINUTES = 60;
+export const ORPHANED_ENTRY_GRACE_HOURS = 1;
+export const DUPLICATE_RISK_WINDOW_DAYS = 30;
 export const MAX_ANOMALY_RANGE_DAYS = 30;
 export const DEFAULT_ANOMALY_LIMIT = 50;
 export const MAX_ANOMALY_LIMIT = 100;
+export const TERMINAL_OUTCOME_STATUSES = [
+  $Enums.TransactionStatus.COMPLETED,
+  $Enums.TransactionStatus.DENIED,
+  $Enums.TransactionStatus.UNCOLLECTIBLE,
+] as const;
 
 export const LEDGER_ANOMALY_CLASSES = [
   `stalePendingEntries`,
   `inconsistentOutcomeChains`,
   `largeValueOutliers`,
+  `orphanedEntries`,
+  `duplicateIdempotencyRisk`,
+  `impossibleTransitions`,
 ] as const;
 
 export type LedgerAnomalyClass = (typeof LEDGER_ANOMALY_CLASSES)[number];

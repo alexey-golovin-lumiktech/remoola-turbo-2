@@ -18,7 +18,7 @@ describe(`AdminV2LedgerAnomaliesService`, () => {
     };
   }
 
-  it(`aggregates the three anomaly classes into one summary payload`, async () => {
+  it(`aggregates the anomaly classes into one summary payload`, async () => {
     const { prisma, service } = makeService();
     prisma.$queryRaw
       .mockResolvedValueOnce([{ count: 2 }])
@@ -32,6 +32,9 @@ describe(`AdminV2LedgerAnomaliesService`, () => {
       `stalePendingEntries`,
       `inconsistentOutcomeChains`,
       `largeValueOutliers`,
+      `orphanedEntries`,
+      `duplicateIdempotencyRisk`,
+      `impossibleTransitions`,
     ]);
     expect(summary.classes.stalePendingEntries).toEqual({
       label: `Stale pending entries`,
@@ -42,6 +45,9 @@ describe(`AdminV2LedgerAnomaliesService`, () => {
     });
     expect(summary.classes.inconsistentOutcomeChains.count).toBe(1);
     expect(summary.classes.largeValueOutliers.count).toBe(3);
+    expect(summary.classes.orphanedEntries.availability).toBe(`temporarily-unavailable`);
+    expect(summary.classes.duplicateIdempotencyRisk.availability).toBe(`temporarily-unavailable`);
+    expect(summary.classes.impossibleTransitions.availability).toBe(`temporarily-unavailable`);
   });
 
   it(`marks a class temporarily unavailable when its summary query fails`, async () => {

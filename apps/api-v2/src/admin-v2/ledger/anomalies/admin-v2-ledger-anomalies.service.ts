@@ -9,7 +9,9 @@ import {
   LEDGER_ANOMALY_CLASSES,
   MAX_ANOMALY_LIMIT,
   MAX_ANOMALY_RANGE_DAYS,
+  ORPHANED_ENTRY_GRACE_HOURS,
   STALE_PENDING_HOURS,
+  TERMINAL_OUTCOME_STATUSES,
   type LedgerAnomaliesListParams,
   type LedgerAnomalyClass,
   type LedgerAnomalyClassSummary,
@@ -24,12 +26,18 @@ const CLASS_LABELS: Record<LedgerAnomalyClass, string> = {
   stalePendingEntries: `Stale pending entries`,
   inconsistentOutcomeChains: `Inconsistent outcome chains`,
   largeValueOutliers: `Large value outliers`,
+  orphanedEntries: `Orphaned entries`,
+  duplicateIdempotencyRisk: `Duplicate idempotency risk`,
+  impossibleTransitions: `Impossible transitions`,
 };
 
 const CLASS_HREFS: Record<LedgerAnomalyClass, string> = {
   stalePendingEntries: `/ledger/anomalies?class=stalePendingEntries`,
   inconsistentOutcomeChains: `/ledger/anomalies?class=inconsistentOutcomeChains`,
   largeValueOutliers: `/ledger/anomalies?class=largeValueOutliers`,
+  orphanedEntries: `/ledger/anomalies?class=orphanedEntries`,
+  duplicateIdempotencyRisk: `/ledger/anomalies?class=duplicateIdempotencyRisk`,
+  impossibleTransitions: `/ledger/anomalies?class=impossibleTransitions`,
 };
 
 const PENDING_OUTCOME_STATUSES = [
@@ -58,6 +66,9 @@ type AnomalyRow = {
   updatedAt: Date;
   anomalyAt: Date;
   threshold: number | null;
+  stripeId?: string | null;
+  prevStatus?: string | null;
+  nextStatus?: string | null;
 };
 
 function isLedgerAnomalyClass(value: string): value is LedgerAnomalyClass {
@@ -100,15 +111,28 @@ export class AdminV2LedgerAnomaliesService {
 
   async getSummary(): Promise<LedgerAnomalySummaryResponse> {
     const computedAt = new Date();
-    const [stalePendingEntries, inconsistentOutcomeChains, largeValueOutliers] = await Promise.all([
+    const [
+      stalePendingEntries,
+      inconsistentOutcomeChains,
+      largeValueOutliers,
+      orphanedEntries,
+      duplicateIdempotencyRisk,
+      impossibleTransitions,
+    ] = await Promise.all([
       this.getSummaryForClass(`stalePendingEntries`, () => this.countStalePendingEntries(computedAt)),
       this.getSummaryForClass(`inconsistentOutcomeChains`, () => this.countInconsistentOutcomeChains(computedAt)),
       this.getSummaryForClass(`largeValueOutliers`, () => this.countLargeValueOutliers(computedAt)),
+      this.getSummaryForClass(`orphanedEntries`, () => this.countOrphanedEntries(computedAt)),
+      this.getSummaryForClass(`duplicateIdempotencyRisk`, () => this.countDuplicateIdempotencyRisk(computedAt)),
+      this.getSummaryForClass(`impossibleTransitions`, () => this.countImpossibleTransitions(computedAt)),
     ]);
     const classes = {
       stalePendingEntries,
       inconsistentOutcomeChains,
       largeValueOutliers,
+      orphanedEntries,
+      duplicateIdempotencyRisk,
+      impossibleTransitions,
     } satisfies Record<LedgerAnomalyClass, LedgerAnomalyClassSummary>;
     const availableCounts = Object.values(classes)
       .filter((entry) => entry.availability === `available`)
@@ -132,7 +156,13 @@ export class AdminV2LedgerAnomaliesService {
         ? await this.listStalePendingEntries({ dateFrom, dateTo, limit, cursor }, computedAt)
         : className === `inconsistentOutcomeChains`
           ? await this.listInconsistentOutcomeChains({ dateFrom, dateTo, limit, cursor }, computedAt)
-          : await this.listLargeValueOutliers({ dateFrom, dateTo, limit, cursor });
+          : className === `largeValueOutliers`
+            ? await this.listLargeValueOutliers({ dateFrom, dateTo, limit, cursor })
+            : className === `orphanedEntries`
+              ? await this.listOrphanedEntries({ dateFrom, dateTo, limit, cursor })
+              : className === `duplicateIdempotencyRisk`
+                ? await this.listDuplicateIdempotencyRisk({ dateFrom, dateTo, limit, cursor })
+                : await this.listImpossibleTransitions({ dateFrom, dateTo, limit, cursor });
     const next = rows[limit];
 
     return {
@@ -239,6 +269,21 @@ export class AdminV2LedgerAnomaliesService {
     `);
 
     return rows[0]?.count ?? 0;
+  }
+
+  private async countOrphanedEntries(now: Date): Promise<number> {
+    void now;
+    throw new Error(`orphanedEntries not implemented yet`);
+  }
+
+  private async countDuplicateIdempotencyRisk(now: Date): Promise<number> {
+    void now;
+    throw new Error(`duplicateIdempotencyRisk not implemented yet`);
+  }
+
+  private async countImpossibleTransitions(now: Date): Promise<number> {
+    void now;
+    throw new Error(`impossibleTransitions not implemented yet`);
   }
 
   private async listStalePendingEntries(
@@ -373,6 +418,36 @@ export class AdminV2LedgerAnomaliesService {
     `);
   }
 
+  private async listOrphanedEntries(params: {
+    dateFrom: Date;
+    dateTo: Date;
+    limit: number;
+    cursor: { createdAt: Date; id: string } | null;
+  }) {
+    void params;
+    return [] satisfies AnomalyRow[];
+  }
+
+  private async listDuplicateIdempotencyRisk(params: {
+    dateFrom: Date;
+    dateTo: Date;
+    limit: number;
+    cursor: { createdAt: Date; id: string } | null;
+  }) {
+    void params;
+    return [] satisfies AnomalyRow[];
+  }
+
+  private async listImpossibleTransitions(params: {
+    dateFrom: Date;
+    dateTo: Date;
+    limit: number;
+    cursor: { createdAt: Date; id: string } | null;
+  }) {
+    void params;
+    return [] satisfies AnomalyRow[];
+  }
+
   private buildLargeValueThresholdSql() {
     return Prisma.join(
       LARGE_VALUE_THRESHOLD_ENTRIES.map(
@@ -402,7 +477,13 @@ export class AdminV2LedgerAnomaliesService {
         ? this.buildStalePendingDetail(row, now)
         : className === `inconsistentOutcomeChains`
           ? this.buildInconsistentChainDetail(row, now)
-          : this.buildLargeValueDetail(row);
+          : className === `largeValueOutliers`
+            ? this.buildLargeValueDetail(row)
+            : className === `orphanedEntries`
+              ? this.buildOrphanedEntryDetail(row, now)
+              : className === `duplicateIdempotencyRisk`
+                ? this.buildDuplicateIdempotencyRiskDetail(row)
+                : this.buildImpossibleTransitionsDetail(row, now);
 
     return {
       id: row.id,
@@ -446,6 +527,30 @@ export class AdminV2LedgerAnomaliesService {
     return `Amount |${formatAbsoluteAmount(row.amount)}| ${
       row.currencyCode
     } exceeds large-value threshold ${formatNumber(threshold)} (USD-equivalent baseline ~10,000)`;
+  }
+
+  private buildOrphanedEntryDetail(row: AnomalyRow, now: Date) {
+    const anomalyAt = row.anomalyAt;
+    return `Entry created ${anomalyAt.toISOString()} (${formatAge(
+      anomalyAt,
+      now,
+    )} ago) has no outcome record (grace ${ORPHANED_ENTRY_GRACE_HOURS}h)`;
+  }
+
+  private buildDuplicateIdempotencyRiskDetail(row: AnomalyRow) {
+    return `Entry created ${row.createdAt.toISOString()} carries stripeId ${
+      row.stripeId ?? `UNKNOWN`
+    } but no idempotency key (Stripe-source writes must be idempotent)`;
+  }
+
+  private buildImpossibleTransitionsDetail(row: AnomalyRow, now: Date) {
+    const violationAt = row.anomalyAt;
+    return `Outcome chain has transition ${row.prevStatus ?? `UNKNOWN`} → ${
+      row.nextStatus ?? row.outcomeStatus ?? `UNKNOWN`
+    } at ${violationAt.toISOString()} (${formatAge(
+      violationAt,
+      now,
+    )} ago); terminal statuses (${TERMINAL_OUTCOME_STATUSES.join(`, `)}) must not be followed`;
   }
 
   private getUnavailableSummary(className: LedgerAnomalyClass): LedgerAnomalyClassSummary {
