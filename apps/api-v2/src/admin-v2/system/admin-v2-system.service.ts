@@ -284,16 +284,28 @@ export class AdminV2SystemService {
           totalCount && totalCount > 0 ? { label: `Open ledger anomalies`, href: `/ledger/anomalies` } : null,
         escalationHint:
           totalCount && totalCount > 0
-            ? `Escalate only when anomaly backlog keeps growing after ledger-domain triage identifies no safe operator action.`
+            ? [
+                `Escalate only when anomaly backlog keeps growing`,
+                `after ledger-domain triage identifies no safe operator action.`,
+              ].join(` `)
             : totalCount === 0
-              ? `Escalate only if operators observe ledger integrity drift without an anomaly backlog signal.`
-              : `Use the Ledger workspace directly and escalate if anomaly review is blocked by missing queue visibility.`,
+              ? [
+                  `Escalate only if operators observe ledger integrity drift`,
+                  `without an anomaly backlog signal.`,
+                ].join(` `)
+              : [
+                  `Use the Ledger workspace directly and escalate`,
+                  `if anomaly review is blocked by missing queue visibility.`,
+                ].join(` `),
       };
     } catch {
       return this.temporarilyUnavailableCard({
         label: `Ledger anomalies`,
         explanation: `Ledger anomaly health could not be derived safely from the read-only queue summary.`,
-        escalationHint: `Use the Ledger workspace directly and escalate if anomaly review is blocked by missing queue visibility.`,
+        escalationHint: [
+          `Use the Ledger workspace directly and escalate`,
+          `if anomaly review is blocked by missing queue visibility.`,
+        ].join(` `),
       });
     }
   }

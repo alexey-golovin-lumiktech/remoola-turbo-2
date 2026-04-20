@@ -1,4 +1,4 @@
-import { $Enums, Prisma } from '@remoola/database-2';
+import { $Enums, type Prisma } from '@remoola/database-2';
 
 export const FIXTURE_NAMESPACE = `fixture-admin-v2`;
 export const FIXTURE_SEED_VERSION = `2026-04-admin-v2-v1`;
@@ -343,7 +343,10 @@ function assertConsumerAccountShapes(consumers: ScenarioConsumer[]): void {
     if (consumer.accountType === $Enums.AccountType.BUSINESS) {
       if (consumer.contractorKind != null) {
         throw new Error(
-          `Business fixture "${consumer.key}" must not define contractorKind. Allowed shapes: BUSINESS | CONTRACTOR INDIVIDUAL | CONTRACTOR ENTITY.`,
+          [
+            `Business fixture "${consumer.key}" must not define contractorKind.`,
+            `Allowed shapes: BUSINESS | CONTRACTOR INDIVIDUAL | CONTRACTOR ENTITY.`,
+          ].join(` `),
         );
       }
       continue;
@@ -354,9 +357,7 @@ function assertConsumerAccountShapes(consumers: ScenarioConsumer[]): void {
       consumer.contractorKind !== $Enums.ContractorKind.INDIVIDUAL &&
       consumer.contractorKind !== $Enums.ContractorKind.ENTITY
     ) {
-      throw new Error(
-        `Contractor fixture "${consumer.key}" must define contractorKind INDIVIDUAL or ENTITY.`,
-      );
+      throw new Error(`Contractor fixture "${consumer.key}" must define contractorKind INDIVIDUAL or ENTITY.`);
     }
   }
 }
@@ -1077,7 +1078,10 @@ export function getAdminV2ScenarioPack(now = new Date()): AdminV2ScenarioPack {
       notes: [
         {
           adminKey: `ops`,
-          content: `[${FIXTURE_NAMESPACE}] Overdue payment request should appear in overview count-only or payments queue.`,
+          content: [
+            `[${FIXTURE_NAMESPACE}] Overdue payment request should appear`,
+            `in overview count-only or payments queue.`,
+          ].join(` `),
           createdAt: daysAgo(now, 2),
         },
       ],
@@ -1763,9 +1767,24 @@ export function getAdminV2ScenarioPack(now = new Date()): AdminV2ScenarioPack {
       createdAt: daysAgo(now, 18),
       updatedAt: daysAgo(now, 6),
       outcomes: [
-        { status: $Enums.TransactionStatus.WAITING, source: `stripe`, externalId: `${FIXTURE_NAMESPACE}-wait-1`, createdAt: daysAgo(now, 18) },
-        { status: $Enums.TransactionStatus.PENDING, source: `stripe`, externalId: `${FIXTURE_NAMESPACE}-pending-1`, createdAt: daysAgo(now, 17) },
-        { status: $Enums.TransactionStatus.COMPLETED, source: `stripe`, externalId: `${FIXTURE_NAMESPACE}-complete-1`, createdAt: daysAgo(now, 16) },
+        {
+          status: $Enums.TransactionStatus.WAITING,
+          source: `stripe`,
+          externalId: `${FIXTURE_NAMESPACE}-wait-1`,
+          createdAt: daysAgo(now, 18),
+        },
+        {
+          status: $Enums.TransactionStatus.PENDING,
+          source: `stripe`,
+          externalId: `${FIXTURE_NAMESPACE}-pending-1`,
+          createdAt: daysAgo(now, 17),
+        },
+        {
+          status: $Enums.TransactionStatus.COMPLETED,
+          source: `stripe`,
+          externalId: `${FIXTURE_NAMESPACE}-complete-1`,
+          createdAt: daysAgo(now, 16),
+        },
       ],
       disputes: [
         {
@@ -1801,9 +1820,24 @@ export function getAdminV2ScenarioPack(now = new Date()): AdminV2ScenarioPack {
       createdAt: daysAgo(now, 18),
       updatedAt: daysAgo(now, 6),
       outcomes: [
-        { status: $Enums.TransactionStatus.WAITING, source: `stripe`, externalId: `${FIXTURE_NAMESPACE}-wait-2`, createdAt: daysAgo(now, 18) },
-        { status: $Enums.TransactionStatus.PENDING, source: `stripe`, externalId: `${FIXTURE_NAMESPACE}-pending-2`, createdAt: daysAgo(now, 17) },
-        { status: $Enums.TransactionStatus.COMPLETED, source: `stripe`, externalId: `${FIXTURE_NAMESPACE}-complete-2`, createdAt: daysAgo(now, 16) },
+        {
+          status: $Enums.TransactionStatus.WAITING,
+          source: `stripe`,
+          externalId: `${FIXTURE_NAMESPACE}-wait-2`,
+          createdAt: daysAgo(now, 18),
+        },
+        {
+          status: $Enums.TransactionStatus.PENDING,
+          source: `stripe`,
+          externalId: `${FIXTURE_NAMESPACE}-pending-2`,
+          createdAt: daysAgo(now, 17),
+        },
+        {
+          status: $Enums.TransactionStatus.COMPLETED,
+          source: `stripe`,
+          externalId: `${FIXTURE_NAMESPACE}-complete-2`,
+          createdAt: daysAgo(now, 16),
+        },
       ],
       disputes: [],
     },
@@ -1828,8 +1862,18 @@ export function getAdminV2ScenarioPack(now = new Date()): AdminV2ScenarioPack {
       createdAt: daysAgo(now, 28),
       updatedAt: daysAgo(now, 21),
       outcomes: [
-        { status: $Enums.TransactionStatus.PENDING, source: `swift`, externalId: `${FIXTURE_NAMESPACE}-swift-pending`, createdAt: daysAgo(now, 27) },
-        { status: $Enums.TransactionStatus.COMPLETED, source: `swift`, externalId: `${FIXTURE_NAMESPACE}-swift-completed`, createdAt: daysAgo(now, 26) },
+        {
+          status: $Enums.TransactionStatus.PENDING,
+          source: `swift`,
+          externalId: `${FIXTURE_NAMESPACE}-swift-pending`,
+          createdAt: daysAgo(now, 27),
+        },
+        {
+          status: $Enums.TransactionStatus.COMPLETED,
+          source: `swift`,
+          externalId: `${FIXTURE_NAMESPACE}-swift-completed`,
+          createdAt: daysAgo(now, 26),
+        },
       ],
       disputes: [],
     },
@@ -1854,8 +1898,18 @@ export function getAdminV2ScenarioPack(now = new Date()): AdminV2ScenarioPack {
       createdAt: daysAgo(now, 4),
       updatedAt: daysAgo(now, 1),
       outcomes: [
-        { status: $Enums.TransactionStatus.WAITING, source: `stripe`, externalId: `${FIXTURE_NAMESPACE}-flagged-waiting`, createdAt: daysAgo(now, 4) },
-        { status: $Enums.TransactionStatus.DENIED, source: `risk-review`, externalId: `${FIXTURE_NAMESPACE}-flagged-denied`, createdAt: daysAgo(now, 1) },
+        {
+          status: $Enums.TransactionStatus.WAITING,
+          source: `stripe`,
+          externalId: `${FIXTURE_NAMESPACE}-flagged-waiting`,
+          createdAt: daysAgo(now, 4),
+        },
+        {
+          status: $Enums.TransactionStatus.DENIED,
+          source: `risk-review`,
+          externalId: `${FIXTURE_NAMESPACE}-flagged-denied`,
+          createdAt: daysAgo(now, 1),
+        },
       ],
       disputes: [],
     },
@@ -1881,8 +1935,18 @@ export function getAdminV2ScenarioPack(now = new Date()): AdminV2ScenarioPack {
       createdAt: daysAgo(now, 1),
       updatedAt: hoursAgo(now, 4),
       outcomes: [
-        { status: $Enums.TransactionStatus.PENDING, source: `stripe-payout`, externalId: `${FIXTURE_NAMESPACE}-payout-pending`, createdAt: daysAgo(now, 1) },
-        { status: $Enums.TransactionStatus.DENIED, source: `stripe-payout`, externalId: `${FIXTURE_NAMESPACE}-payout-denied`, createdAt: hoursAgo(now, 4) },
+        {
+          status: $Enums.TransactionStatus.PENDING,
+          source: `stripe-payout`,
+          externalId: `${FIXTURE_NAMESPACE}-payout-pending`,
+          createdAt: daysAgo(now, 1),
+        },
+        {
+          status: $Enums.TransactionStatus.DENIED,
+          source: `stripe-payout`,
+          externalId: `${FIXTURE_NAMESPACE}-payout-denied`,
+          createdAt: hoursAgo(now, 4),
+        },
       ],
       disputes: [],
     },
@@ -1906,7 +1970,12 @@ export function getAdminV2ScenarioPack(now = new Date()): AdminV2ScenarioPack {
       createdAt: daysAgo(now, 2),
       updatedAt: hoursAgo(now, 10),
       outcomes: [
-        { status: $Enums.TransactionStatus.PENDING, source: `stripe-payout`, externalId: `${FIXTURE_NAMESPACE}-payout-stuck-pending`, createdAt: daysAgo(now, 2) },
+        {
+          status: $Enums.TransactionStatus.PENDING,
+          source: `stripe-payout`,
+          externalId: `${FIXTURE_NAMESPACE}-payout-stuck-pending`,
+          createdAt: daysAgo(now, 2),
+        },
       ],
       disputes: [],
     },
@@ -1929,8 +1998,18 @@ export function getAdminV2ScenarioPack(now = new Date()): AdminV2ScenarioPack {
       createdAt: daysAgo(now, 3),
       updatedAt: daysAgo(now, 3),
       outcomes: [
-        { status: $Enums.TransactionStatus.PENDING, source: `fx-engine`, externalId: `${FIXTURE_NAMESPACE}-fx-pending`, createdAt: daysAgo(now, 3) },
-        { status: $Enums.TransactionStatus.COMPLETED, source: `fx-engine`, externalId: `${FIXTURE_NAMESPACE}-fx-completed`, createdAt: daysAgo(now, 3) },
+        {
+          status: $Enums.TransactionStatus.PENDING,
+          source: `fx-engine`,
+          externalId: `${FIXTURE_NAMESPACE}-fx-pending`,
+          createdAt: daysAgo(now, 3),
+        },
+        {
+          status: $Enums.TransactionStatus.COMPLETED,
+          source: `fx-engine`,
+          externalId: `${FIXTURE_NAMESPACE}-fx-completed`,
+          createdAt: daysAgo(now, 3),
+        },
       ],
       disputes: [],
     },

@@ -7,7 +7,7 @@
  *
  * DO NOT copy these patterns to production code. See raw-sql-issues.md.
  */
-import { $Enums, type PrismaClient } from '@remoola/database-2';
+import { type PrismaClient } from '@remoola/database-2';
 import { hashPassword, hashTokenToHex } from '@remoola/security-utils';
 
 import {
@@ -168,11 +168,7 @@ export async function cleanupFixtures(prisma: PrismaClient): Promise<void> {
       OR: [
         { description: { startsWith: `Fixture admin-v2` } },
         ...(consumerIds.length > 0
-          ? [
-              { createdBy: { in: consumerIds } },
-              { requesterId: { in: consumerIds } },
-              { payerId: { in: consumerIds } },
-            ]
+          ? [{ createdBy: { in: consumerIds } }, { requesterId: { in: consumerIds } }, { payerId: { in: consumerIds } }]
           : []),
       ],
     },
@@ -209,10 +205,7 @@ export async function cleanupFixtures(prisma: PrismaClient): Promise<void> {
     });
     await prisma.consumerActionLogModel.deleteMany({
       where: {
-        OR: [
-          { consumerId: { in: consumerIds } },
-          { deviceId: { startsWith: `${FIXTURE_NAMESPACE}-device-` } },
-        ],
+        OR: [{ consumerId: { in: consumerIds } }, { deviceId: { startsWith: `${FIXTURE_NAMESPACE}-device-` } }],
       },
     });
     await prisma.consumerAdminNoteModel.deleteMany({
@@ -340,10 +333,7 @@ export async function cleanupFixtures(prisma: PrismaClient): Promise<void> {
 
   await prisma.exchangeRateModel.deleteMany({
     where: {
-      OR: [
-        { providerRateId: { startsWith: `${FIXTURE_NAMESPACE}-rate-` } },
-        { provider: FIXTURE_NAMESPACE },
-      ],
+      OR: [{ providerRateId: { startsWith: `${FIXTURE_NAMESPACE}-rate-` } }, { provider: FIXTURE_NAMESPACE }],
     },
   });
 
@@ -969,11 +959,7 @@ export async function seedAllTables(prisma: PrismaClient, options: FixtureOption
     incrementCounter(inserted, `auth_login_lockout`);
   }
 
-  const resetPasswordTargets = [
-    `healthy-approved-consumer`,
-    `document-gap-consumer`,
-    `suspicious-auth-consumer`,
-  ];
+  const resetPasswordTargets = [`healthy-approved-consumer`, `document-gap-consumer`, `suspicious-auth-consumer`];
   for (const key of resetPasswordTargets) {
     const consumerId = consumerByKey.get(key);
     if (!consumerId) continue;

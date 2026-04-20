@@ -32,7 +32,11 @@ const CLASS_HREFS: Record<LedgerAnomalyClass, string> = {
   largeValueOutliers: `/ledger/anomalies?class=largeValueOutliers`,
 };
 
-const PENDING_OUTCOME_STATUSES = [$Enums.TransactionStatus.PENDING, $Enums.TransactionStatus.PROCESSING] as const;
+const PENDING_OUTCOME_STATUSES = [
+  $Enums.TransactionStatus.WAITING,
+  $Enums.TransactionStatus.WAITING_RECIPIENT_APPROVAL,
+  $Enums.TransactionStatus.PENDING,
+] as const;
 const SUMMARY_OUTLIER_WINDOW_DAYS = 30;
 const LARGE_VALUE_THRESHOLD_ENTRIES = Object.entries(LARGE_VALUE_THRESHOLDS) as Array<[$Enums.CurrencyCode, number]>;
 
@@ -354,7 +358,7 @@ export class AdminV2LedgerAnomaliesService {
             LARGE_VALUE_THRESHOLD_ENTRIES.map(
               ([currencyCode, threshold]) => Prisma.sql`(${currencyCode}, ${threshold})`,
             ),
-            Prisma.sql`, `,
+            `, `,
           )}
         ) AS threshold_map(currency_code, threshold)
         WHERE threshold_map.currency_code = le.currency_code::text
@@ -375,7 +379,7 @@ export class AdminV2LedgerAnomaliesService {
         ([currencyCode, threshold]) =>
           Prisma.sql`(le.currency_code::text = ${currencyCode} AND ABS(le.amount) >= ${threshold})`,
       ),
-      Prisma.sql` OR `,
+      ` OR `,
     );
   }
 

@@ -9,10 +9,21 @@ This migration is additive-only.
 
 ## Safety expectations
 
-- `CREATE INDEX CONCURRENTLY` is required to keep this zero-downtime and avoid long exclusive locks on `ledger_entry`
+- preferred rollout for non-empty databases is a non-transactional predeploy step that runs `CREATE INDEX CONCURRENTLY`
+- this Prisma migration keeps a transactional `CREATE INDEX IF NOT EXISTS` fallback so CI and ephemeral test databases can apply it inside `prisma migrate deploy`
 - `IF NOT EXISTS` guards partial application and makes reruns safer on lower environments
-- the indexes are intentionally not declared in `schema.prisma` via `@@index` because Prisma migrations here must preserve `CONCURRENTLY`
+- the indexes are intentionally not declared in `schema.prisma` via `@@index` because the production-safe path still relies on manual `CONCURRENTLY`
 - no backfill is required; runtime can roll forward once the indexes exist
+
+### Preferred predeploy step for non-empty databases
+
+```sql
+CREATE INDEX CONCURRENTLY IF NOT EXISTS "ledger_entry_type_status_idx"
+  ON "ledger_entry" ("type", "status");
+
+CREATE INDEX CONCURRENTLY IF NOT EXISTS "ledger_entry_status_created_at_idx"
+  ON "ledger_entry" ("status", "created_at");
+```
 
 ## Release checks
 

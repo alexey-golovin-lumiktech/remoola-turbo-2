@@ -7,8 +7,9 @@ import { decodeAdminV2Cursor } from '../../admin-v2-cursor';
 
 describe(`AdminV2LedgerAnomaliesService`, () => {
   function makeService() {
+    const queryRaw = jest.fn<Promise<unknown[]>, [Prisma.Sql]>(async () => [{ count: 0 }]);
     const prisma = {
-      $queryRaw: jest.fn(async () => [{ count: 0 }]),
+      $queryRaw: queryRaw,
     };
 
     return {

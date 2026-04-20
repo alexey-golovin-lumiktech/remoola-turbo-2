@@ -141,7 +141,8 @@ export default async function LedgerAnomaliesPage({
 }) {
   const params = await searchParams;
   const defaults = defaultDateRange();
-  const className = isLedgerAnomalyClass(params?.class?.trim()) ? params?.class.trim() : `stalePendingEntries`;
+  const requestedClass = params?.class?.trim();
+  const className: LedgerAnomalyClass = isLedgerAnomalyClass(requestedClass) ? requestedClass : `stalePendingEntries`;
   const dateFrom = params?.dateFrom?.trim() || defaults.dateFrom;
   const dateTo = params?.dateTo?.trim() || defaults.dateTo;
   const cursor = params?.cursor?.trim() || undefined;

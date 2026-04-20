@@ -125,9 +125,17 @@ describe(`ConsumerExchangeService.runAutoConversionRuleNow`, () => {
     await expect(service.runAutoConversionRuleNow(rule.id, { source: `manual` })).rejects.toBe(conversionError);
     expect(prisma.walletAutoConversionRuleModel.update).toHaveBeenCalledWith({
       where: { id: rule.id },
-      data: {
+      data: expect.objectContaining({
         nextRunAt: expect.any(Date),
-      },
+        metadata: expect.objectContaining({
+          lastExecution: expect.objectContaining({
+            status: `failed`,
+            source: `manual`,
+            actorId: null,
+            reason: errorCodes.INSUFFICIENT_CURRENCY_BALANCE,
+          }),
+        }),
+      }),
     });
   });
 });

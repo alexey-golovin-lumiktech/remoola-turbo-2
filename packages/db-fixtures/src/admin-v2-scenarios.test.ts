@@ -33,9 +33,7 @@ test(`admin-v2 scenario pack covers core workspace states`, () => {
   assert.ok(scheduledStates.has($Enums.ScheduledFxConversionStatus.EXECUTED));
 
   assert.ok(
-    pack.ledgerEntries.some(
-      (item) => item.type === $Enums.LedgerEntryType.USER_PAYOUT && item.outcomes.length > 0,
-    ),
+    pack.ledgerEntries.some((item) => item.type === $Enums.LedgerEntryType.USER_PAYOUT && item.outcomes.length > 0),
   );
   assert.ok(pack.ledgerEntries.some((item) => item.disputes.length > 0));
 
