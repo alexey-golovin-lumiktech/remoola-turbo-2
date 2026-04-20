@@ -156,6 +156,15 @@ export class AdminV2AdminsService {
     throw new InternalServerErrorException(`Admin v2 app origin is not configured`);
   }
 
+  private async trySendInvitationEmail(params: { email: string; signupLink: string }): Promise<boolean> {
+    try {
+      await this.mailingService.sendInvitationEmail(params);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   private async buildInvitationToken(params: { invitationId: string; email: string; roleId: string; expiresAt: Date }) {
     const expiresInSeconds = Math.max(60, Math.floor((params.expiresAt.getTime() - Date.now()) / 1000));
     return this.jwtService.signAsync(
@@ -614,21 +623,7 @@ export class AdminV2AdminsService {
               createdAt: true,
             },
           });
-
-          const token = await this.buildInvitationToken({
-            invitationId: invitation.id,
-            email,
-            roleId: role.id,
-            expiresAt,
-          });
-          const inviteUrl = new URL(`/accept-invite`, this.resolveAdminV2Origin());
-          inviteUrl.searchParams.set(`token`, token);
-          await this.mailingService.sendInvitationEmail({
-            email,
-            signupLink: inviteUrl.toString(),
-          });
-
-          await tx.adminActionAuditLogModel.create({
+          const audit = await tx.adminActionAuditLogModel.create({
             data: {
               adminId: actorAdminId,
               action: ADMIN_ACTION_AUDIT_ACTIONS.admin_invite,
@@ -638,15 +633,46 @@ export class AdminV2AdminsService {
                 invitedEmail: email,
                 roleKey: role.key,
                 expiresAt: expiresAt.toISOString(),
-                notificationSent: true,
+                notificationSent: false,
                 notificationType: `email`,
+                deliveryStatus: `pending`,
               },
               ipAddress: meta.ipAddress ?? null,
               userAgent: meta.userAgent ?? null,
             },
+            select: {
+              id: true,
+            },
           });
-
-          return invitation;
+          return {
+            ...invitation,
+            auditId: audit.id,
+          };
+        });
+        const token = await this.buildInvitationToken({
+          invitationId: created.id,
+          email,
+          roleId: role.id,
+          expiresAt,
+        });
+        const inviteUrl = new URL(`/accept-invite`, this.resolveAdminV2Origin());
+        inviteUrl.searchParams.set(`token`, token);
+        const notificationSent = await this.trySendInvitationEmail({
+          email,
+          signupLink: inviteUrl.toString(),
+        });
+        await this.prisma.adminActionAuditLogModel.update({
+          where: { id: created.auditId },
+          data: {
+            metadata: {
+              invitedEmail: email,
+              roleKey: role.key,
+              expiresAt: expiresAt.toISOString(),
+              notificationSent,
+              notificationType: `email`,
+              deliveryStatus: notificationSent ? `sent` : `failed`,
+            } as Prisma.InputJsonValue,
+          },
         });
 
         return {
@@ -656,6 +682,8 @@ export class AdminV2AdminsService {
           expiresAt: toNullableIso(created.expiresAt),
           createdAt: created.createdAt.toISOString(),
           alreadyPending: false,
+          notificationSent,
+          deliveryStatus: notificationSent ? `sent` : `failed`,
         };
       },
     });
@@ -744,6 +772,11 @@ export class AdminV2AdminsService {
               revokedAt: deactivatedAt,
               invalidatedReason: `admin_deactivated`,
               lastUsedAt: deactivatedAt,
+            },
+          });
+          await tx.accessRefreshTokenModel.deleteMany({
+            where: {
+              identityId: target.id,
             },
           });
           await tx.adminActionAuditLogModel.create({
@@ -1219,10 +1252,10 @@ export class AdminV2AdminsService {
           throw new ConflictException(`Inactive admins cannot receive password reset`);
         }
 
-        return this.prisma.$transaction(async (tx) => {
-          const token = oauthCrypto.generateOAuthState();
-          const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
-          const tokenHash = oauthCrypto.hashOAuthState(token);
+        const token = oauthCrypto.generateOAuthState();
+        const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+        const tokenHash = oauthCrypto.hashOAuthState(token);
+        const created = await this.prisma.$transaction(async (tx) => {
           await tx.resetPasswordModel.updateMany({
             where: {
               adminId: target.id,
@@ -1240,14 +1273,7 @@ export class AdminV2AdminsService {
               appScope: `admin-v2`,
             },
           });
-          const origin = this.resolveAdminV2Origin();
-          const resetUrl = new URL(`/reset-password`, origin);
-          resetUrl.searchParams.set(`token`, token);
-          const sent = await this.mailingService.sendAdminV2PasswordResetEmail({
-            email: target.email,
-            forgotPasswordLink: resetUrl.toString(),
-          });
-          await tx.adminActionAuditLogModel.create({
+          const audit = await tx.adminActionAuditLogModel.create({
             data: {
               adminId: actorAdminId,
               action: ADMIN_ACTION_AUDIT_ACTIONS.admin_password_reset,
@@ -1255,20 +1281,46 @@ export class AdminV2AdminsService {
               resourceId: target.id,
               metadata: {
                 targetEmail: target.email,
-                notificationSent: sent,
+                notificationSent: false,
                 notificationType: `email`,
+                deliveryStatus: `pending`,
               },
               ipAddress: meta.ipAddress ?? null,
               userAgent: meta.userAgent ?? null,
             },
+            select: {
+              id: true,
+            },
           });
           return {
-            adminId: target.id,
-            email: target.email,
-            version: deriveVersion(target.updatedAt),
-            notificationSent: sent,
+            auditId: audit.id,
           };
         });
+        const origin = this.resolveAdminV2Origin();
+        const resetUrl = new URL(`/reset-password`, origin);
+        resetUrl.searchParams.set(`token`, token);
+        const notificationSent = await this.mailingService.sendAdminV2PasswordResetEmail({
+          email: target.email,
+          forgotPasswordLink: resetUrl.toString(),
+        });
+        await this.prisma.adminActionAuditLogModel.update({
+          where: { id: created.auditId },
+          data: {
+            metadata: {
+              targetEmail: target.email,
+              notificationSent,
+              notificationType: `email`,
+              deliveryStatus: notificationSent ? `sent` : `failed`,
+            } as Prisma.InputJsonValue,
+          },
+        });
+        return {
+          adminId: target.id,
+          email: target.email,
+          version: deriveVersion(target.updatedAt),
+          notificationSent,
+          deliveryStatus: notificationSent ? `sent` : `failed`,
+        };
       },
     });
   }
@@ -1425,6 +1477,11 @@ export class AdminV2AdminsService {
           revokedAt: new Date(),
           invalidatedReason: `password_reset`,
           lastUsedAt: new Date(),
+        },
+      });
+      await tx.accessRefreshTokenModel.deleteMany({
+        where: {
+          identityId: admin.id,
         },
       });
       return admin;

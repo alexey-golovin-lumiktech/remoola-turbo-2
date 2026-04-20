@@ -2,8 +2,168 @@ import { BadRequestException } from '@nestjs/common';
 
 import { AdminV2ConsumersService } from './admin-v2-consumers.service';
 
+type NoteRow = {
+  id: string;
+  consumerId: string;
+  adminId: string;
+  content: string;
+  createdAt: Date;
+};
+
+type FlagRow = {
+  id: string;
+  consumerId: string;
+  adminId: string;
+  flag: string;
+  reason: string | null;
+  version: number;
+  createdAt: Date;
+  removedAt: Date | null;
+  removedBy: string | null;
+};
+
+type AuditRow = {
+  id: string;
+  adminId: string;
+  action: string;
+  resource: string;
+  resourceId: string | null;
+  metadata: Record<string, unknown> | null;
+  ipAddress: string | null;
+  userAgent: string | null;
+};
+
+type TestState = {
+  notes: NoteRow[];
+  flags: FlagRow[];
+  audits: AuditRow[];
+};
+
+function cloneState(state: TestState): TestState {
+  return {
+    notes: state.notes.map((note) => ({
+      ...note,
+      createdAt: new Date(note.createdAt),
+    })),
+    flags: state.flags.map((flag) => ({
+      ...flag,
+      createdAt: new Date(flag.createdAt),
+      removedAt: flag.removedAt ? new Date(flag.removedAt) : null,
+    })),
+    audits: state.audits.map((audit) => ({
+      ...audit,
+      metadata: audit.metadata ? { ...audit.metadata } : null,
+    })),
+  };
+}
+
+function projectSelection<T extends Record<string, unknown>>(row: T, select?: Record<string, boolean>) {
+  if (!select) {
+    return row;
+  }
+
+  return Object.fromEntries(Object.keys(select).map((key) => [key, row[key]]));
+}
+
+function matchesFlag(
+  flag: FlagRow,
+  where: { id?: string; consumerId?: string; flag?: string; removedAt?: null | Date | Record<string, unknown> },
+) {
+  if (where.id && flag.id !== where.id) {
+    return false;
+  }
+  if (where.consumerId && flag.consumerId !== where.consumerId) {
+    return false;
+  }
+  if (where.flag && flag.flag !== where.flag) {
+    return false;
+  }
+  if (where.removedAt === null && flag.removedAt !== null) {
+    return false;
+  }
+  return true;
+}
+
 describe(`AdminV2ConsumersService`, () => {
-  function buildService() {
+  function buildService(initialState?: Partial<TestState>) {
+    let state = cloneState({
+      notes: initialState?.notes ?? [],
+      flags: initialState?.flags ?? [],
+      audits: initialState?.audits ?? [],
+    });
+    const controls = {
+      failNextAuditCreate: false,
+    };
+
+    function createModels(getState: () => TestState) {
+      return {
+        consumerAdminNoteModel: {
+          create: jest.fn(async ({ data, select }) => {
+            const row: NoteRow = {
+              id: `note-${getState().notes.length + 1}`,
+              consumerId: data.consumerId,
+              adminId: data.adminId,
+              content: data.content,
+              createdAt: new Date(),
+            };
+            getState().notes.push(row);
+            return projectSelection(row as unknown as Record<string, unknown>, select);
+          }),
+        },
+        consumerFlagModel: {
+          findFirst: jest.fn(async ({ where, select }) => {
+            const row = getState().flags.find((flag) => matchesFlag(flag, where)) ?? null;
+            return row ? projectSelection(row as unknown as Record<string, unknown>, select) : null;
+          }),
+          create: jest.fn(async ({ data, select }) => {
+            const row: FlagRow = {
+              id: `flag-${getState().flags.length + 1}`,
+              consumerId: data.consumerId,
+              adminId: data.adminId,
+              flag: data.flag,
+              reason: data.reason ?? null,
+              version: 1,
+              createdAt: new Date(),
+              removedAt: null,
+              removedBy: null,
+            };
+            getState().flags.push(row);
+            return projectSelection(row as unknown as Record<string, unknown>, select);
+          }),
+          update: jest.fn(async ({ where, data, select }) => {
+            const row = getState().flags.find((flag) => flag.id === where.id);
+            if (!row) {
+              throw new Error(`Flag not found`);
+            }
+            row.removedAt = data.removedAt;
+            row.removedBy = data.removedBy;
+            row.version += data.version.increment;
+            return projectSelection(row as unknown as Record<string, unknown>, select);
+          }),
+        },
+        adminActionAuditLogModel: {
+          create: jest.fn(async ({ data }) => {
+            if (controls.failNextAuditCreate) {
+              controls.failNextAuditCreate = false;
+              throw new Error(`Audit insert failed`);
+            }
+            const row: AuditRow = {
+              id: `audit-${getState().audits.length + 1}`,
+              adminId: data.adminId,
+              action: data.action,
+              resource: data.resource,
+              resourceId: data.resourceId ?? null,
+              metadata: (data.metadata as Record<string, unknown> | null | undefined) ?? null,
+              ipAddress: data.ipAddress ?? null,
+              userAgent: data.userAgent ?? null,
+            };
+            getState().audits.push(row);
+            return row;
+          }),
+        },
+      };
+    }
+
     const prisma = {
       consumerModel: {
         findUnique: jest.fn(async () => ({
@@ -18,6 +178,13 @@ describe(`AdminV2ConsumersService`, () => {
       authSessionModel: {
         count: jest.fn(async () => 0),
       },
+      ...createModels(() => state),
+      $transaction: jest.fn(async (callback: (tx: ReturnType<typeof createModels>) => Promise<unknown>) => {
+        const txState = cloneState(state);
+        const result = await callback(createModels(() => txState));
+        state = txState;
+        return result;
+      }),
     };
     const consumerContractsService = {
       getContracts: jest.fn(),
@@ -50,8 +217,285 @@ describe(`AdminV2ConsumersService`, () => {
       adminActionAudit,
       consumerAuthService,
       idempotency,
+      getState: () => cloneState(state),
+      failNextAuditCreate: () => {
+        controls.failNextAuditCreate = true;
+      },
     };
   }
+
+  it(`creates note and audit atomically`, async () => {
+    const { service, getState, prisma } = buildService();
+
+    const result = await service.createNote(`consumer-1`, `admin-1`, `  review this payout trail  `, {
+      ipAddress: `127.0.0.1`,
+      userAgent: `jest`,
+    });
+
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({
+      id: `note-1`,
+      content: `review this payout trail`,
+      createdAt: expect.any(Date),
+    });
+    expect(getState()).toEqual({
+      notes: [
+        expect.objectContaining({
+          id: `note-1`,
+          consumerId: `consumer-1`,
+          adminId: `admin-1`,
+          content: `review this payout trail`,
+        }),
+      ],
+      flags: [],
+      audits: [
+        expect.objectContaining({
+          id: `audit-1`,
+          action: `consumer_note_create`,
+          resource: `consumer`,
+          resourceId: `consumer-1`,
+          metadata: { noteId: `note-1` },
+          ipAddress: `127.0.0.1`,
+          userAgent: `jest`,
+        }),
+      ],
+    });
+  });
+
+  it(`rolls back note creation if audit insert fails`, async () => {
+    const { service, getState, failNextAuditCreate } = buildService();
+    failNextAuditCreate();
+
+    await expect(service.createNote(`consumer-1`, `admin-1`, `strict audit first`)).rejects.toThrow(
+      `Audit insert failed`,
+    );
+
+    expect(getState()).toEqual({
+      notes: [],
+      flags: [],
+      audits: [],
+    });
+  });
+
+  it(`preserves note and flag validation behavior`, async () => {
+    const { service } = buildService();
+
+    await expect(service.createNote(`consumer-1`, `admin-1`, `   `)).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.addFlag(`consumer-1`, `admin-1`, `!!!`, null)).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.removeFlag(`consumer-1`, `flag-1`, `admin-1`, 0)).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it(`creates flag and audit atomically`, async () => {
+    const { service, getState, prisma } = buildService();
+
+    const result = await service.addFlag(`consumer-1`, `admin-1`, ` Needs Review `, ` operator note `, {
+      ipAddress: `127.0.0.1`,
+      userAgent: `jest`,
+    });
+
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({
+      id: `flag-1`,
+      flag: `needs_review`,
+      reason: `operator note`,
+      version: 1,
+      createdAt: expect.any(Date),
+    });
+    expect(getState()).toEqual({
+      notes: [],
+      flags: [
+        expect.objectContaining({
+          id: `flag-1`,
+          consumerId: `consumer-1`,
+          adminId: `admin-1`,
+          flag: `needs_review`,
+          reason: `operator note`,
+          version: 1,
+          removedAt: null,
+          removedBy: null,
+        }),
+      ],
+      audits: [
+        expect.objectContaining({
+          id: `audit-1`,
+          action: `consumer_flag_add`,
+          resource: `consumer`,
+          resourceId: `consumer-1`,
+          metadata: {
+            flagId: `flag-1`,
+            flag: `needs_review`,
+            reason: `operator note`,
+          },
+        }),
+      ],
+    });
+  });
+
+  it(`returns existing active flag without writing a duplicate audit`, async () => {
+    const { service, getState, prisma } = buildService({
+      flags: [
+        {
+          id: `flag-1`,
+          consumerId: `consumer-1`,
+          adminId: `admin-9`,
+          flag: `needs_review`,
+          reason: `existing reason`,
+          version: 3,
+          createdAt: new Date(`2026-04-16T09:00:00.000Z`),
+          removedAt: null,
+          removedBy: null,
+        },
+      ],
+    });
+
+    const result = await service.addFlag(`consumer-1`, `admin-1`, `Needs Review`, `new reason`);
+
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      id: `flag-1`,
+      flag: `needs_review`,
+      reason: `existing reason`,
+      version: 3,
+      createdAt: new Date(`2026-04-16T09:00:00.000Z`),
+      alreadyExisted: true,
+    });
+    expect(getState().audits).toEqual([]);
+  });
+
+  it(`rolls back flag creation if audit insert fails`, async () => {
+    const { service, getState, failNextAuditCreate } = buildService();
+    failNextAuditCreate();
+
+    await expect(service.addFlag(`consumer-1`, `admin-1`, `Needs Review`, `reason`)).rejects.toThrow(
+      `Audit insert failed`,
+    );
+
+    expect(getState()).toEqual({
+      notes: [],
+      flags: [],
+      audits: [],
+    });
+  });
+
+  it(`soft removes flag and writes audit atomically`, async () => {
+    const { service, getState, prisma } = buildService({
+      flags: [
+        {
+          id: `flag-1`,
+          consumerId: `consumer-1`,
+          adminId: `admin-9`,
+          flag: `needs_review`,
+          reason: `existing reason`,
+          version: 1,
+          createdAt: new Date(`2026-04-16T09:00:00.000Z`),
+          removedAt: null,
+          removedBy: null,
+        },
+      ],
+    });
+
+    const result = await service.removeFlag(`consumer-1`, `flag-1`, `admin-1`, 1, {
+      ipAddress: `127.0.0.1`,
+      userAgent: `jest`,
+    });
+
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({
+      id: `flag-1`,
+      flag: `needs_review`,
+      version: 2,
+      removedAt: expect.any(Date),
+    });
+    const state = getState();
+    expect(state.flags).toEqual([
+      expect.objectContaining({
+        id: `flag-1`,
+        removedBy: `admin-1`,
+        version: 2,
+      }),
+    ]);
+    expect(state.flags[0]?.removedAt).toBeInstanceOf(Date);
+    expect(state.audits).toEqual([
+      expect.objectContaining({
+        action: `consumer_flag_remove`,
+        resource: `consumer`,
+        resourceId: `consumer-1`,
+        metadata: expect.objectContaining({
+          flagId: `flag-1`,
+          flag: `needs_review`,
+        }),
+        ipAddress: `127.0.0.1`,
+        userAgent: `jest`,
+      }),
+    ]);
+  });
+
+  it(`returns already removed flag without creating a second audit row`, async () => {
+    const removedAt = new Date(`2026-04-16T10:00:00.000Z`);
+    const { service, getState, prisma } = buildService({
+      flags: [
+        {
+          id: `flag-1`,
+          consumerId: `consumer-1`,
+          adminId: `admin-9`,
+          flag: `needs_review`,
+          reason: `existing reason`,
+          version: 2,
+          createdAt: new Date(`2026-04-16T09:00:00.000Z`),
+          removedAt,
+          removedBy: `admin-7`,
+        },
+      ],
+    });
+
+    const result = await service.removeFlag(`consumer-1`, `flag-1`, `admin-1`, 2);
+
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({
+      id: `flag-1`,
+      alreadyRemoved: true,
+    });
+    expect(getState().audits).toEqual([]);
+  });
+
+  it(`rolls back flag removal if audit insert fails`, async () => {
+    const { service, getState, failNextAuditCreate } = buildService({
+      flags: [
+        {
+          id: `flag-1`,
+          consumerId: `consumer-1`,
+          adminId: `admin-9`,
+          flag: `needs_review`,
+          reason: `existing reason`,
+          version: 1,
+          createdAt: new Date(`2026-04-16T09:00:00.000Z`),
+          removedAt: null,
+          removedBy: null,
+        },
+      ],
+    });
+    failNextAuditCreate();
+
+    await expect(service.removeFlag(`consumer-1`, `flag-1`, `admin-1`, 1)).rejects.toThrow(`Audit insert failed`);
+
+    expect(getState()).toEqual({
+      notes: [],
+      flags: [
+        {
+          id: `flag-1`,
+          consumerId: `consumer-1`,
+          adminId: `admin-9`,
+          flag: `needs_review`,
+          reason: `existing reason`,
+          version: 1,
+          createdAt: new Date(`2026-04-16T09:00:00.000Z`),
+          removedAt: null,
+          removedBy: null,
+        },
+      ],
+      audits: [],
+    });
+  });
 
   it(`requires confirmation and reason for consumer suspension`, async () => {
     const { service } = buildService();

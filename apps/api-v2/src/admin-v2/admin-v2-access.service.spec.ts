@@ -257,6 +257,38 @@ describe(`AdminV2AccessService`, () => {
     expect(profile.capabilities).not.toContain(`not.real.capability` as never);
   });
 
+  it(`falls back when schema role capabilities are empty`, async () => {
+    const service = makeService({
+      roleKey: `READONLY_ADMIN`,
+      roleCapabilities: [],
+    });
+
+    const profile = await service.getAccessProfile({
+      id: `admin-readonly`,
+      email: `readonly@example.com`,
+      type: `ADMIN`,
+    });
+
+    expect(profile.source).toBe(`bridge-fallback`);
+    expect(profile.capabilities).toEqual(opsBridgeCapabilities);
+  });
+
+  it(`falls back when schema role capabilities cannot bootstrap me.read`, async () => {
+    const service = makeService({
+      roleKey: `SUPPORT_ADMIN`,
+      roleCapabilities: [`overview.read`, `consumers.read`, `audit.read`],
+    });
+
+    const profile = await service.getAccessProfile({
+      id: `admin-support`,
+      email: `support@example.com`,
+      type: `ADMIN`,
+    });
+
+    expect(profile.source).toBe(`bridge-fallback`);
+    expect(profile.capabilities).toEqual(opsBridgeCapabilities);
+  });
+
   it(`denies access for identities outside the allowed bridge types`, async () => {
     const service = makeService(null);
 

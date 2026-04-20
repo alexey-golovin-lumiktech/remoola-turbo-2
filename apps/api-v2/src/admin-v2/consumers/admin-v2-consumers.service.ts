@@ -587,30 +587,34 @@ export class AdminV2ConsumersService {
       throw new BadRequestException(`Note content is too long`);
     }
 
-    const note = await this.prisma.consumerAdminNoteModel.create({
-      data: {
-        consumerId,
-        adminId,
-        content: normalizedContent,
-      },
-      select: {
-        id: true,
-        content: true,
-        createdAt: true,
-      },
-    });
+    return this.prisma.$transaction(async (tx) => {
+      const note = await tx.consumerAdminNoteModel.create({
+        data: {
+          consumerId,
+          adminId,
+          content: normalizedContent,
+        },
+        select: {
+          id: true,
+          content: true,
+          createdAt: true,
+        },
+      });
 
-    await this.adminActionAudit.record({
-      adminId,
-      action: ADMIN_ACTION_AUDIT_ACTIONS.consumer_note_create,
-      resource: `consumer`,
-      resourceId: consumerId,
-      metadata: { noteId: note.id },
-      ipAddress: meta?.ipAddress,
-      userAgent: meta?.userAgent,
-    });
+      await tx.adminActionAuditLogModel.create({
+        data: {
+          adminId,
+          action: ADMIN_ACTION_AUDIT_ACTIONS.consumer_note_create,
+          resource: `consumer`,
+          resourceId: consumerId,
+          metadata: { noteId: note.id },
+          ipAddress: meta?.ipAddress ?? null,
+          userAgent: meta?.userAgent ?? null,
+        },
+      });
 
-    return note;
+      return note;
+    });
   }
 
   async addFlag(consumerId: string, adminId: string, flag: string, reason?: string | null, meta?: RequestMeta) {
@@ -638,94 +642,103 @@ export class AdminV2ConsumersService {
       return { ...existing, alreadyExisted: true };
     }
 
-    const created = await this.prisma.consumerFlagModel.create({
-      data: {
-        consumerId,
-        adminId,
-        flag: normalizedFlag,
-        reason: normalizedReason,
-      },
-      select: {
-        id: true,
-        flag: true,
-        reason: true,
-        version: true,
-        createdAt: true,
-      },
-    });
+    return this.prisma.$transaction(async (tx) => {
+      const created = await tx.consumerFlagModel.create({
+        data: {
+          consumerId,
+          adminId,
+          flag: normalizedFlag,
+          reason: normalizedReason,
+        },
+        select: {
+          id: true,
+          flag: true,
+          reason: true,
+          version: true,
+          createdAt: true,
+        },
+      });
 
-    await this.adminActionAudit.record({
-      adminId,
-      action: ADMIN_ACTION_AUDIT_ACTIONS.consumer_flag_add,
-      resource: `consumer`,
-      resourceId: consumerId,
-      metadata: { flagId: created.id, flag: normalizedFlag, reason: normalizedReason },
-      ipAddress: meta?.ipAddress,
-      userAgent: meta?.userAgent,
-    });
+      await tx.adminActionAuditLogModel.create({
+        data: {
+          adminId,
+          action: ADMIN_ACTION_AUDIT_ACTIONS.consumer_flag_add,
+          resource: `consumer`,
+          resourceId: consumerId,
+          metadata: { flagId: created.id, flag: normalizedFlag, reason: normalizedReason },
+          ipAddress: meta?.ipAddress ?? null,
+          userAgent: meta?.userAgent ?? null,
+        },
+      });
 
-    return created;
+      return created;
+    });
   }
 
   async removeFlag(consumerId: string, flagId: string, adminId: string, version: number, meta?: RequestMeta) {
-    const flag = await this.prisma.consumerFlagModel.findFirst({
-      where: {
-        id: flagId,
-        consumerId,
-      },
-      select: {
-        id: true,
-        flag: true,
-        version: true,
-        removedAt: true,
-      },
-    });
-
-    if (!flag) {
-      throw new NotFoundException(`Flag not found`);
-    }
-    if (flag.removedAt) {
-      return { id: flag.id, alreadyRemoved: true };
-    }
     if (!Number.isFinite(version) || version < 1) {
       throw new BadRequestException(`Valid version is required`);
     }
-    if (flag.version !== version) {
-      throw new ConflictException({
-        error: `STALE_VERSION`,
-        message: `Resource has been modified by another operator`,
-        currentVersion: flag.version,
-        recommendedAction: `reload`,
+
+    return this.prisma.$transaction(async (tx) => {
+      const flag = await tx.consumerFlagModel.findFirst({
+        where: {
+          id: flagId,
+          consumerId,
+        },
+        select: {
+          id: true,
+          flag: true,
+          version: true,
+          removedAt: true,
+        },
       });
-    }
 
-    const removedAt = new Date();
-    const updated = await this.prisma.consumerFlagModel.update({
-      where: { id: flagId },
-      data: {
-        removedAt,
-        removedBy: adminId,
-        version: { increment: 1 },
-      },
-      select: {
-        id: true,
-        flag: true,
-        version: true,
-        removedAt: true,
-      },
+      if (!flag) {
+        throw new NotFoundException(`Flag not found`);
+      }
+      if (flag.removedAt) {
+        return { id: flag.id, alreadyRemoved: true };
+      }
+      if (flag.version !== version) {
+        throw new ConflictException({
+          error: `STALE_VERSION`,
+          message: `Resource has been modified by another operator`,
+          currentVersion: flag.version,
+          recommendedAction: `reload`,
+        });
+      }
+
+      const removedAt = new Date();
+      const updated = await tx.consumerFlagModel.update({
+        where: { id: flagId },
+        data: {
+          removedAt,
+          removedBy: adminId,
+          version: { increment: 1 },
+        },
+        select: {
+          id: true,
+          flag: true,
+          version: true,
+          removedAt: true,
+        },
+      });
+
+      await tx.adminActionAuditLogModel.create({
+        data: {
+          adminId,
+          action: ADMIN_ACTION_AUDIT_ACTIONS.consumer_flag_remove,
+          resource: `consumer`,
+          resourceId: consumerId,
+          metadata: { flagId, flag: flag.flag, removedAt },
+          ipAddress: meta?.ipAddress ?? null,
+          userAgent: meta?.userAgent ?? null,
+        },
+      });
+
+      return updated;
     });
-
-    await this.adminActionAudit.record({
-      adminId,
-      action: ADMIN_ACTION_AUDIT_ACTIONS.consumer_flag_remove,
-      resource: `consumer`,
-      resourceId: consumerId,
-      metadata: { flagId, flag: flag.flag, removedAt },
-      ipAddress: meta?.ipAddress,
-      userAgent: meta?.userAgent,
-    });
-
-    return updated;
   }
 
   async forceLogout(consumerId: string, adminId: string, body: { confirmed?: boolean }, meta?: RequestMeta) {

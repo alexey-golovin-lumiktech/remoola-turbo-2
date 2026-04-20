@@ -371,6 +371,34 @@ describe(`AuthGuard`, () => {
     await expect(guard.canActivate(buildContext(request))).rejects.toThrow(errorCodes.ACCOUNT_SUSPENDED);
   });
 
+  it(`rejects deactivated admins even when a legacy access token record still exists`, async () => {
+    const token = `admin-token`;
+    const request: MockRequest = {
+      method: `GET`,
+      path: `/api/admin/consumers`,
+      url: `/api/admin/consumers`,
+      cookies: {
+        [COOKIE_KEYS.ADMIN_ACCESS_TOKEN]: token,
+      },
+    };
+    jwtService.verify.mockReturnValue({
+      identityId: `admin-1`,
+      typ: `access`,
+      scope: `admin`,
+    });
+    prisma.accessRefreshTokenModel.findFirst.mockResolvedValue({
+      identityId: `admin-1`,
+      accessToken: token,
+      refreshToken: `refresh-token`,
+    });
+    prisma.adminModel.findFirst.mockResolvedValue(null);
+    prisma.consumerModel.findFirst.mockResolvedValue(null);
+
+    await expect(guard.canActivate(buildContext(request))).rejects.toThrow(UnauthorizedException);
+    await expect(guard.canActivate(buildContext(request))).rejects.toThrow(`Authentication record not found`);
+    expect(prisma.adminModel.findFirst).toHaveBeenCalledWith({ where: { id: `admin-1`, deletedAt: null } });
+  });
+
   it(`uses the mobile consumer namespace selected by explicit app scope`, async () => {
     const [mobileAccessCookieKey] = getApiConsumerAccessTokenCookieKeysForRead(`consumer-mobile`);
     const [mobileCsrfCookieKey] = getApiConsumerCsrfTokenCookieKeysForRead(`consumer-mobile`);

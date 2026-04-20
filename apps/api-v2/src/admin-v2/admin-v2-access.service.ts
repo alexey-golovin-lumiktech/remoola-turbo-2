@@ -109,6 +109,22 @@ export class AdminV2AccessService {
       allowedOverrides.length > 0
         ? applyAdminV2PermissionOverrides(schemaRecord.roleCapabilities, allowedOverrides)
         : normalizeAdminV2Capabilities(schemaRecord.roleCapabilities);
+    if (normalizedSchemaCapabilities.length === 0 || !normalizedSchemaCapabilities.includes(`me.read`)) {
+      const mismatchDetails = JSON.stringify({
+        adminId: admin.id ?? `unknown`,
+        adminEmail: admin.email ?? `unknown`,
+        schemaRole: schemaRecord.roleKey,
+        normalizedSchemaCapabilities,
+      });
+      this.logger.warn(
+        `Schema-backed RBAC capability set cannot bootstrap admin-v2 role ${schemaRecord.roleKey}; ` +
+          `falling back to bridge posture ${mismatchDetails}`,
+      );
+      return {
+        ...bridgeProfile,
+        source: `bridge-fallback`,
+      };
+    }
     return {
       role: schemaRecord.roleKey,
       capabilities: normalizedSchemaCapabilities,

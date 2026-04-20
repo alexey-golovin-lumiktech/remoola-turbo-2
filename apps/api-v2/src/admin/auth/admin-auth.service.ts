@@ -108,7 +108,7 @@ export class AdminAuthService {
       throw new BadRequestException(adminErrorCodes.ADMIN_REFRESH_TOKEN_INVALID);
     }
 
-    const admin = await this.prisma.adminModel.findFirst({ where: { id: verified.identityId } });
+    const admin = await this.prisma.adminModel.findFirst({ where: { id: verified.identityId, deletedAt: null } });
     if (!admin) {
       this.logger.warn(`AdminAuth: admin not found for identity`);
       throw new BadRequestException(adminErrorCodes.ADMIN_NO_IDENTITY_RECORD);

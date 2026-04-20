@@ -72,6 +72,9 @@ export type AdminModelWithRelations = Prisma.AdminModelGetPayload<{
     disabledPaymentMethods: true;
     paymentMethodDuplicateEscalations: true;
     payoutEscalations: true;
+    assignedOperationalAssignments: true;
+    createdOperationalAssignments: true;
+    releasedOperationalAssignments: true;
   };
 }>;
 
@@ -246,6 +249,14 @@ export type PayoutEscalationModelWithRelations = Prisma.PayoutEscalationModelGet
   include: {
     ledgerEntry: true;
     escalatedByAdmin: true;
+  };
+}>;
+
+export type OperationalAssignmentModelWithRelations = Prisma.OperationalAssignmentModelGetPayload<{
+  include: {
+    assignedToAdmin: true;
+    assignedByAdmin: true;
+    releasedByAdmin: true;
   };
 }>;
 

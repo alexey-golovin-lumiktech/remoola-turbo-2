@@ -203,4 +203,260 @@ describe(`AdminV2AdminsService`, () => {
       }),
     );
   });
+
+  it(`deactivateAdmin revokes legacy access refresh records alongside auth sessions`, async () => {
+    const updatedAt = new Date(`2026-04-17T10:00:00.000Z`);
+    const deactivatedAt = new Date(`2026-04-17T10:05:00.000Z`);
+    const tx = {
+      adminModel: {
+        updateMany: jest.fn(async () => ({ count: 1 })),
+        findUnique: jest.fn(async () => ({ updatedAt: deactivatedAt })),
+        findUniqueOrThrow: jest.fn(async () => ({
+          id: `admin-2`,
+          updatedAt: deactivatedAt,
+          deletedAt: deactivatedAt,
+        })),
+      },
+      adminAuthSessionModel: {
+        updateMany: jest.fn(async () => ({ count: 2 })),
+      },
+      accessRefreshTokenModel: {
+        deleteMany: jest.fn(async () => ({ count: 1 })),
+      },
+      adminActionAuditLogModel: {
+        create: jest.fn(async () => ({ id: `audit-1` })),
+      },
+    };
+    const prisma = {
+      adminModel: {
+        findUnique: jest.fn(async () => ({
+          id: `admin-2`,
+          email: `ops@example.com`,
+          deletedAt: null,
+          updatedAt,
+        })),
+      },
+      $transaction: jest.fn(async (callback: (innerTx: typeof tx) => Promise<unknown>) => callback(tx as never)),
+    };
+    const service = new AdminV2AdminsService(
+      prisma as never,
+      {} as never,
+      createIdempotency() as never,
+      {} as never,
+      {} as never,
+      {} as never,
+    );
+
+    await expect(
+      service.deactivateAdmin(
+        `admin-2`,
+        `admin-1`,
+        { version: updatedAt.getTime(), confirmed: true },
+        { idempotencyKey: `idem-1` },
+      ),
+    ).resolves.toMatchObject({
+      adminId: `admin-2`,
+      status: `INACTIVE`,
+      alreadyInactive: false,
+    });
+    expect(tx.accessRefreshTokenModel.deleteMany).toHaveBeenCalledWith({
+      where: {
+        identityId: `admin-2`,
+      },
+    });
+  });
+
+  it(`inviteAdmin commits invitation state before a failed email send and records failed delivery`, async () => {
+    const events: string[] = [];
+    const tx = {
+      adminInvitationModel: {
+        create: jest.fn(async () => {
+          events.push(`createInvitation`);
+          return {
+            id: `inv-1`,
+            email: `invitee@example.com`,
+            expiresAt: new Date(`2026-04-24T08:00:00.000Z`),
+            createdAt: new Date(`2026-04-17T08:05:00.000Z`),
+          };
+        }),
+      },
+      adminActionAuditLogModel: {
+        create: jest.fn(async () => {
+          events.push(`createAudit`);
+          return { id: `audit-1` };
+        }),
+      },
+    };
+    const prisma = {
+      adminModel: {
+        findFirst: jest.fn(async () => null),
+      },
+      adminRoleModel: {
+        findFirst: jest.fn(async () => ({ id: `role-support`, key: `SUPPORT_ADMIN` })),
+      },
+      adminInvitationModel: {
+        findFirst: jest.fn(async () => null),
+      },
+      adminActionAuditLogModel: {
+        update: jest.fn(async () => {
+          events.push(`updateAudit`);
+          return { id: `audit-1` };
+        }),
+      },
+      $transaction: jest.fn(async (callback: (innerTx: typeof tx) => Promise<unknown>) => {
+        const result = await callback(tx as never);
+        events.push(`commit`);
+        return result;
+      }),
+    };
+    const mailingService = {
+      sendInvitationEmail: jest.fn(async () => {
+        events.push(`sendMail`);
+        throw new Error(`smtp down`);
+      }),
+    };
+    const service = new AdminV2AdminsService(
+      prisma as never,
+      {} as never,
+      createIdempotency() as never,
+      {
+        signAsync: jest.fn(async () => `invite-token`),
+      } as never,
+      mailingService as never,
+      { normalizeOrigin: jest.fn((value: string) => value) } as never,
+    );
+    Object.assign(service as object, {
+      resolveAdminV2Origin: () => `https://admin-v2.example.com`,
+    });
+
+    await expect(
+      service.inviteAdmin(
+        `admin-1`,
+        { email: `invitee@example.com`, roleKey: `SUPPORT_ADMIN` },
+        { idempotencyKey: `idem-2` },
+      ),
+    ).resolves.toMatchObject({
+      invitationId: `inv-1`,
+      alreadyPending: false,
+      notificationSent: false,
+      deliveryStatus: `failed`,
+    });
+    expect(events).toEqual([`createInvitation`, `createAudit`, `commit`, `sendMail`, `updateAudit`]);
+  });
+
+  it(`resetAdminPassword records failed delivery after commit instead of rolling back reset artifacts`, async () => {
+    const updatedAt = new Date(`2026-04-17T12:00:00.000Z`);
+    const events: string[] = [];
+    const tx = {
+      resetPasswordModel: {
+        updateMany: jest.fn(async () => ({ count: 1 })),
+        create: jest.fn(async () => {
+          events.push(`createReset`);
+          return { id: `reset-1` };
+        }),
+      },
+      adminActionAuditLogModel: {
+        create: jest.fn(async () => {
+          events.push(`createAudit`);
+          return { id: `audit-2` };
+        }),
+      },
+    };
+    const prisma = {
+      adminModel: {
+        findUnique: jest.fn(async () => ({
+          id: `admin-2`,
+          email: `ops@example.com`,
+          updatedAt,
+          deletedAt: null,
+        })),
+      },
+      adminActionAuditLogModel: {
+        update: jest.fn(async () => {
+          events.push(`updateAudit`);
+          return { id: `audit-2` };
+        }),
+      },
+      $transaction: jest.fn(async (callback: (innerTx: typeof tx) => Promise<unknown>) => {
+        const result = await callback(tx as never);
+        events.push(`commit`);
+        return result;
+      }),
+    };
+    const mailingService = {
+      sendAdminV2PasswordResetEmail: jest.fn(async () => {
+        events.push(`sendMail`);
+        return false;
+      }),
+    };
+    const service = new AdminV2AdminsService(
+      prisma as never,
+      {} as never,
+      createIdempotency() as never,
+      {} as never,
+      mailingService as never,
+      { normalizeOrigin: jest.fn((value: string) => value) } as never,
+    );
+    Object.assign(service as object, {
+      resolveAdminV2Origin: () => `https://admin-v2.example.com`,
+    });
+
+    await expect(
+      service.resetAdminPassword(`admin-2`, `admin-1`, { version: updatedAt.getTime() }, { idempotencyKey: `idem-3` }),
+    ).resolves.toMatchObject({
+      adminId: `admin-2`,
+      notificationSent: false,
+      deliveryStatus: `failed`,
+    });
+    expect(events).toEqual([`createReset`, `createAudit`, `commit`, `sendMail`, `updateAudit`]);
+  });
+
+  it(`resetPasswordWithToken revokes legacy access refresh records`, async () => {
+    const tx = {
+      resetPasswordModel: {
+        updateMany: jest.fn(async () => ({ count: 1 })),
+      },
+      adminModel: {
+        update: jest.fn(async () => ({ id: `admin-2` })),
+      },
+      adminAuthSessionModel: {
+        updateMany: jest.fn(async () => ({ count: 1 })),
+      },
+      accessRefreshTokenModel: {
+        deleteMany: jest.fn(async () => ({ count: 1 })),
+      },
+    };
+    const prisma = {
+      resetPasswordModel: {
+        findFirst: jest.fn(async () => ({ id: `reset-1`, adminId: `admin-2` })),
+      },
+      adminModel: {
+        findFirst: jest.fn(async () => ({
+          id: `admin-2`,
+          email: `invitee@example.com`,
+        })),
+      },
+      $transaction: jest.fn(async (callback: (innerTx: typeof tx) => Promise<unknown>) => callback(tx as never)),
+    };
+    const service = new AdminV2AdminsService(
+      prisma as never,
+      {} as never,
+      createIdempotency() as never,
+      {} as never,
+      {} as never,
+      {} as never,
+    );
+
+    await expect(
+      service.resetPasswordWithToken({ token: `reset-token`, password: `VerySecurePass1` }),
+    ).resolves.toMatchObject({
+      success: true,
+      adminId: `admin-2`,
+    });
+    expect(tx.accessRefreshTokenModel.deleteMany).toHaveBeenCalledWith({
+      where: {
+        identityId: `admin-2`,
+      },
+    });
+  });
 });

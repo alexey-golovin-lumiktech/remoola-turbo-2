@@ -86,7 +86,7 @@ export class AuthGuard implements CanActivate {
   }
 
   private getAdminByIdentityId(identityId: string) {
-    return this.prisma.adminModel.findFirst({ where: { id: identityId } });
+    return this.prisma.adminModel.findFirst({ where: { id: identityId, deletedAt: null } });
   }
 
   private getConsumerByIdentityId(identityId: string) {

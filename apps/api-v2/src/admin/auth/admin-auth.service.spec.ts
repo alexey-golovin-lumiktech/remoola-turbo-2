@@ -249,6 +249,24 @@ describe(`AdminAuthService`, () => {
       );
       expect(jwtService.verify).toHaveBeenCalledWith(refreshToken, { secret: envs.JWT_REFRESH_SECRET });
     });
+
+    it(`rejects legacy refresh when the admin has been deactivated`, async () => {
+      jwtService.verify.mockReturnValue(payload);
+      prisma.accessRefreshTokenModel.findFirst.mockResolvedValue({
+        id: `token-id`,
+        refreshToken,
+        identityId: payload.identityId,
+      });
+      prisma.adminModel.findFirst.mockResolvedValue(null);
+
+      await expect(service.refreshAccess(refreshToken)).rejects.toThrow(BadRequestException);
+      await expect(service.refreshAccess(refreshToken)).rejects.toMatchObject({
+        response: expect.objectContaining({ message: adminErrorCodes.ADMIN_NO_IDENTITY_RECORD }),
+      });
+      expect(prisma.adminModel.findFirst).toHaveBeenCalledWith({
+        where: { id: payload.identityId, deletedAt: null },
+      });
+    });
   });
 
   describe(`verifyStepUp`, () => {
