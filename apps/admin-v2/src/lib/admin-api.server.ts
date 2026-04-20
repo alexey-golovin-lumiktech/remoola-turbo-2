@@ -1011,6 +1011,7 @@ export type VerificationQueueResponse = {
     missingDocuments: boolean;
     documentsCount: number;
     slaBreached: boolean;
+    assignedTo: AdminRef | null;
   }>;
   total: number;
   page: number;
@@ -1023,12 +1024,30 @@ export type VerificationQueueResponse = {
   };
 };
 
+export type AdminRef = { id: string; name: string | null; email: string | null };
+
+export type AssignmentSummary = {
+  id: string;
+  assignedTo: AdminRef;
+  assignedBy: AdminRef | null;
+  assignedAt: string;
+  reason: string | null;
+  expiresAt: string | null;
+};
+
+export type AssignmentHistoryItem = AssignmentSummary & {
+  releasedAt: string | null;
+  releasedBy: AdminRef | null;
+};
+
 export type VerificationCaseResponse = ConsumerCaseResponse & {
   version: number;
   decisionControls: {
     canForceLogout: boolean;
     canDecide: boolean;
     allowedActions: string[];
+    canManageAssignments: boolean;
+    canReassignAssignments: boolean;
   };
   decisionHistory: Array<Record<string, unknown>>;
   authRisk: {
@@ -1040,6 +1059,10 @@ export type VerificationCaseResponse = ConsumerCaseResponse & {
     breached: boolean;
     thresholdHours: number;
     lastComputedAt: string | null;
+  };
+  assignment: {
+    current: AssignmentSummary | null;
+    history: AssignmentHistoryItem[];
   };
 };
 

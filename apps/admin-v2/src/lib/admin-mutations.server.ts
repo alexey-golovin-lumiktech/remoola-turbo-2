@@ -487,6 +487,63 @@ export async function changeAdminPermissionsAction(adminId: string, formData: Fo
   revalidateAdminPaths(adminId);
 }
 
+function revalidateVerificationAssignmentPaths(consumerId: string) {
+  revalidatePath(`/verification`);
+  revalidatePath(`/verification/${consumerId}`);
+}
+
+export async function claimVerificationAssignmentAction(consumerId: string, formData: FormData): Promise<void> {
+  if (!consumerId) {
+    throw new Error(`consumerId is required`);
+  }
+  const reason = String(formData.get(`reason`) ?? ``).trim();
+  await postAdminMutation(
+    `/admin-v2/assignments/claim`,
+    { resourceType: `verification`, resourceId: consumerId, reason: reason || null },
+    `Failed to claim verification assignment`,
+  );
+  revalidateVerificationAssignmentPaths(consumerId);
+}
+
+export async function releaseVerificationAssignmentAction(consumerId: string, formData: FormData): Promise<void> {
+  if (!consumerId) {
+    throw new Error(`consumerId is required`);
+  }
+  const assignmentId = String(formData.get(`assignmentId`) ?? ``).trim();
+  if (!assignmentId) {
+    throw new Error(`assignmentId is required`);
+  }
+  const reason = String(formData.get(`reason`) ?? ``).trim();
+  await postAdminMutation(
+    `/admin-v2/assignments/release`,
+    { assignmentId, reason: reason || null, expectedReleasedAtNull: 0 },
+    `Failed to release verification assignment`,
+  );
+  revalidateVerificationAssignmentPaths(consumerId);
+}
+
+export async function reassignVerificationAssignmentAction(consumerId: string, formData: FormData): Promise<void> {
+  if (!consumerId) {
+    throw new Error(`consumerId is required`);
+  }
+  const assignmentId = String(formData.get(`assignmentId`) ?? ``).trim();
+  const newAssigneeId = String(formData.get(`newAssigneeId`) ?? ``).trim();
+  const reason = String(formData.get(`reason`) ?? ``).trim();
+  const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
+  if (!assignmentId) {
+    throw new Error(`assignmentId is required`);
+  }
+  if (!newAssigneeId) {
+    throw new Error(`newAssigneeId is required`);
+  }
+  await postAdminMutation(
+    `/admin-v2/assignments/reassign`,
+    { assignmentId, newAssigneeId, reason, confirmed, expectedReleasedAtNull: 0 },
+    `Failed to reassign verification`,
+  );
+  revalidateVerificationAssignmentPaths(consumerId);
+}
+
 export async function resetAdminPasswordAction(adminId: string, formData: FormData): Promise<void> {
   const version = parseRequiredVersion(formData);
   await postAdminMutation(
