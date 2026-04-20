@@ -1,12 +1,15 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { getVerificationCase } from '../../../../lib/admin-api.server';
+import { getAdminIdentity, getAdmins, getVerificationCase } from '../../../../lib/admin-api.server';
 import {
   approveVerificationAction,
+  claimVerificationAssignmentAction,
   flagVerificationAction,
   forceLogoutConsumerAction,
+  reassignVerificationAssignmentAction,
   rejectVerificationAction,
+  releaseVerificationAssignmentAction,
   requestInfoVerificationAction,
 } from '../../../../lib/admin-mutations.server';
 
@@ -15,13 +18,35 @@ function formatDate(value: string | null | undefined): string {
   return new Date(value).toLocaleString();
 }
 
+function describeAdmin(ref: { id: string; name: string | null; email: string | null } | null | undefined): string {
+  if (!ref) return `-`;
+  return ref.name ?? ref.email ?? ref.id;
+}
+
 export default async function VerificationCasePage({ params }: { params: Promise<{ consumerId: string }> }) {
   const { consumerId } = await params;
-  const verificationCase = await getVerificationCase(consumerId);
+  const [verificationCase, identity] = await Promise.all([getVerificationCase(consumerId), getAdminIdentity()]);
 
   if (!verificationCase) {
     notFound();
   }
+
+  const controls = verificationCase.decisionControls;
+  const currentAssignment = verificationCase.assignment.current;
+  const history = verificationCase.assignment.history;
+  const currentAdminId = identity?.id ?? null;
+  const ownsAssignment = Boolean(
+    currentAssignment && currentAdminId && currentAssignment.assignedTo.id === currentAdminId,
+  );
+  const canClaim = controls.canManageAssignments && !currentAssignment;
+  const canRelease = Boolean(
+    currentAssignment && controls.canManageAssignments && (ownsAssignment || controls.canReassignAssignments),
+  );
+  const canReassign = Boolean(currentAssignment && controls.canReassignAssignments);
+  const reassignCandidatesResponse = canReassign ? await getAdmins({ page: 1, pageSize: 50, status: `ACTIVE` }) : null;
+  const reassignCandidates = (reassignCandidatesResponse?.items ?? []).filter(
+    (admin) => admin.id !== currentAssignment?.assignedTo.id,
+  );
 
   return (
     <>
@@ -68,6 +93,113 @@ export default async function VerificationCasePage({ params }: { params: Promise
           <p className="muted">Payment methods: {verificationCase._count.paymentMethods}</p>
           <p className="muted">Recent payment requests: {verificationCase.recentPaymentRequests.length}</p>
         </article>
+      </section>
+
+      <section className="panel" aria-label="Assignment">
+        <div className="pageHeader">
+          <div>
+            <h2>Assignment</h2>
+            {currentAssignment ? (
+              <>
+                <p>
+                  Currently assigned to: <strong>{describeAdmin(currentAssignment.assignedTo)}</strong>
+                  {currentAssignment.assignedTo.email ? (
+                    <span className="muted"> · {currentAssignment.assignedTo.email}</span>
+                  ) : null}
+                </p>
+                <p className="muted">Since: {formatDate(currentAssignment.assignedAt)}</p>
+                {currentAssignment.reason ? (
+                  <p className="muted">Reason: &ldquo;{currentAssignment.reason}&rdquo;</p>
+                ) : null}
+                {currentAssignment.expiresAt ? (
+                  <p className="muted">Expires: {formatDate(currentAssignment.expiresAt)}</p>
+                ) : null}
+              </>
+            ) : (
+              <p className="muted">Unassigned</p>
+            )}
+          </div>
+        </div>
+        <div className="actionsRow">
+          {!currentAssignment ? (
+            <form action={claimVerificationAssignmentAction.bind(null, verificationCase.id)} className="formStack">
+              <label className="field">
+                <span>Reason (optional)</span>
+                <textarea name="reason" placeholder="Why are you claiming this case?" maxLength={500} />
+              </label>
+              <button className="primaryButton" type="submit" disabled={!canClaim}>
+                Claim
+              </button>
+            </form>
+          ) : null}
+          {currentAssignment ? (
+            <form action={releaseVerificationAssignmentAction.bind(null, verificationCase.id)} className="formStack">
+              <input type="hidden" name="assignmentId" value={currentAssignment.id} />
+              <label className="field">
+                <span>Reason (optional)</span>
+                <textarea name="reason" placeholder="Why are you releasing?" maxLength={500} />
+              </label>
+              <button className="secondaryButton" type="submit" disabled={!canRelease}>
+                Release
+              </button>
+            </form>
+          ) : null}
+          {canReassign && currentAssignment ? (
+            <form action={reassignVerificationAssignmentAction.bind(null, verificationCase.id)} className="formStack">
+              <input type="hidden" name="assignmentId" value={currentAssignment.id} />
+              <input type="hidden" name="confirmed" value="false" />
+              <label className="field">
+                <span>New assignee</span>
+                <select name="newAssigneeId" required defaultValue="">
+                  <option value="" disabled>
+                    Select an admin
+                  </option>
+                  {reassignCandidates.map((admin) => (
+                    <option key={admin.id} value={admin.id}>
+                      {admin.email}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="field">
+                <span>Reason (required, min 10 chars)</span>
+                <textarea name="reason" required minLength={10} maxLength={500} placeholder="Reason for reassignment" />
+              </label>
+              <label className="field">
+                <span>Confirmation</span>
+                <input type="checkbox" name="confirmed" value="true" required />
+              </label>
+              <button className="dangerButton" type="submit" name="confirmedSubmit" value="true">
+                Reassign
+              </button>
+            </form>
+          ) : null}
+        </div>
+        <details>
+          <summary>Assignment history ({history.length})</summary>
+          {history.length === 0 ? (
+            <p className="muted">No previous assignments.</p>
+          ) : (
+            <ul className="formStack">
+              {history.map((entry) => (
+                <li className="panel" key={entry.id}>
+                  <p>
+                    <strong>{describeAdmin(entry.assignedTo)}</strong>
+                    <span className="muted"> · claimed {formatDate(entry.assignedAt)}</span>
+                  </p>
+                  {entry.releasedAt ? (
+                    <p className="muted">
+                      Released {formatDate(entry.releasedAt)} by {describeAdmin(entry.releasedBy)}
+                    </p>
+                  ) : (
+                    <p className="muted">Still active</p>
+                  )}
+                  {entry.reason ? <p className="muted">Reason: {entry.reason}</p> : null}
+                </li>
+              ))}
+            </ul>
+          )}
+        </details>
       </section>
 
       {verificationCase.decisionControls.canDecide || verificationCase.decisionControls.canForceLogout ? (

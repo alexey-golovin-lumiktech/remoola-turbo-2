@@ -112,6 +112,7 @@ export default async function VerificationQueuePage({
               <th>Profile</th>
               <th>Docs</th>
               <th>SLA</th>
+              <th>Assigned to</th>
               <th>Updated</th>
             </tr>
           </thead>
@@ -133,6 +134,16 @@ export default async function VerificationQueuePage({
                 </td>
                 <td>{item.missingDocuments ? `Missing documents` : `${item.documentsCount} attached`}</td>
                 <td>{item.slaBreached ? `Breached` : `Within SLA`}</td>
+                <td>
+                  {item.assignedTo ? (
+                    <>
+                      <div>{item.assignedTo.name ?? item.assignedTo.email ?? item.assignedTo.id}</div>
+                      {item.assignedTo.email ? <div className="muted">{item.assignedTo.email}</div> : null}
+                    </>
+                  ) : (
+                    <span className="muted">—</span>
+                  )}
+                </td>
                 <td>{new Date(item.updatedAt).toLocaleString()}</td>
               </tr>
             ))}
