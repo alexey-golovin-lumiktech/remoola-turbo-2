@@ -20,6 +20,7 @@ export const CHECK_PATHS = [
   `docs/admin-v2-mvp-3.1b-perf-evidence.md`,
   `docs/admin-v2-mvp-3.1c-anomaly-classes-expansion.md`,
   `docs/admin-v2-mvp-3.1c-perf-evidence.md`,
+  `docs/admin-v2-mvp-3.2a-operational-assignments.md`,
   `packages/database-2/prisma/migrations/20260420191500_admin_v2_duplicate_idempotency_risk_index/README.md`,
 ];
 
@@ -53,6 +54,9 @@ export const AUDIT_ACTIONS = [
   `admin_role_change`,
   `admin_permissions_change`,
   `admin_password_reset`,
+  `assignment_claim`,
+  `assignment_release`,
+  `assignment_reassign`,
 ];
 
 export const CAPABILITIES = [
@@ -80,6 +84,7 @@ export const CAPABILITIES = [
   `payment_methods.manage`,
   `payouts.escalate`,
   `system.read`,
+  `assignments.manage`,
 ];
 
 export const FRONTEND_ACTIONS = [
@@ -103,6 +108,9 @@ export const FRONTEND_ACTIONS = [
   `changeAdminRoleAction`,
   `changeAdminPermissionsAction`,
   `resetAdminPasswordAction`,
+  `claimVerificationAssignmentAction`,
+  `releaseVerificationAssignmentAction`,
+  `reassignVerificationAssignmentAction`,
 ];
 
 export const ROUTE_TOKENS = {
@@ -135,6 +143,11 @@ export const ROUTE_TOKENS = {
     '@Post(`bulk-tag`)',
   ],
   'apps/api-v2/src/admin-v2/payouts/admin-v2-payouts.controller.ts': ['@Post(`:id/escalate`)'],
+  'apps/api-v2/src/admin-v2/assignments/admin-v2-assignments.controller.ts': [
+    '@Post(`claim`)',
+    '@Post(`release`)',
+    '@Post(`reassign`)',
+  ],
 };
 
 export const ROOT_SCRIPTS = {
@@ -245,5 +258,22 @@ export const RECONCILIATION_NOTES = {
     `duplicateIdempotencyRisk`,
     `impossibleTransitions`,
     `Seq Scan justification`,
+  ],
+  'docs/admin-v2-mvp-3.2a-operational-assignments.md': [
+    `MVP-3.2a`,
+    `Sequence 6`,
+    `assignments.manage`,
+    `assignment_claim`,
+    `assignment_release`,
+    `assignment_reassign`,
+    `OperationalAssignmentModel`,
+    `verification only`,
+    `single active assignment per resource`,
+    `append-only assignment chain`,
+    `no new schema migrations`,
+    `Decision: resourceType allowlist verification only`,
+    `Decision: capability granularity single`,
+    `Decision: reassign requires SUPER_ADMIN`,
+    `Decision: version check via expectedReleasedAtNull`,
   ],
 };
