@@ -262,6 +262,9 @@ export class AdminV2SystemService {
       const stalePendingEntries = summary.classes.stalePendingEntries.count;
       const inconsistentOutcomeChains = summary.classes.inconsistentOutcomeChains.count;
       const largeValueOutliers = summary.classes.largeValueOutliers.count;
+      const orphanedEntries = summary.classes.orphanedEntries.count;
+      const duplicateIdempotencyRisk = summary.classes.duplicateIdempotencyRisk.count;
+      const impossibleTransitions = summary.classes.impossibleTransitions.count;
       const totalCount = summary.totalCount;
 
       return {
@@ -272,13 +275,16 @@ export class AdminV2SystemService {
             ? `Read-only ledger anomaly detection shows active finance-review backlog.` +
               ` Use the dedicated queue for case triage instead of treating System as a replacement workspace.`
             : totalCount === 0
-              ? `No current stale pending entries, inconsistent outcome chains, or large value outliers are visible.`
+              ? `No current stale pending entries, inconsistent outcome chains, large value outliers, orphaned entries, duplicate idempotency risk, or impossible transitions are visible.`
               : `Ledger anomaly health could not be derived safely from the read-only queue summary.`,
         facts: [
           { label: `Total anomaly backlog`, value: totalCount },
           { label: `Stale pending entries`, value: stalePendingEntries },
           { label: `Inconsistent outcome chains`, value: inconsistentOutcomeChains },
           { label: `Large value outliers`, value: largeValueOutliers },
+          { label: `Orphaned entries`, value: orphanedEntries },
+          { label: `Duplicate idempotency risk`, value: duplicateIdempotencyRisk },
+          { label: `Impossible transitions`, value: impossibleTransitions },
         ],
         primaryAction:
           totalCount && totalCount > 0 ? { label: `Open ledger anomalies`, href: `/ledger/anomalies` } : null,

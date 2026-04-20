@@ -7,7 +7,23 @@ import {
   type LedgerAnomalyListResponse,
 } from '../../../../lib/admin-api.server';
 
-const CLASS_ORDER: LedgerAnomalyClass[] = [`stalePendingEntries`, `inconsistentOutcomeChains`, `largeValueOutliers`];
+const CLASS_ORDER: LedgerAnomalyClass[] = [
+  `stalePendingEntries`,
+  `inconsistentOutcomeChains`,
+  `largeValueOutliers`,
+  `orphanedEntries`,
+  `duplicateIdempotencyRisk`,
+  `impossibleTransitions`,
+];
+
+const CLASS_LABELS: Record<LedgerAnomalyClass, string> = {
+  stalePendingEntries: `Stale pending entries`,
+  inconsistentOutcomeChains: `Inconsistent outcome chains`,
+  largeValueOutliers: `Large value outliers`,
+  orphanedEntries: `Orphaned entries`,
+  duplicateIdempotencyRisk: `Duplicate idempotency risk`,
+  impossibleTransitions: `Impossible transitions`,
+};
 
 function formatDate(value: string | null | undefined) {
   if (!value) {
@@ -31,7 +47,7 @@ function defaultDateRange() {
 }
 
 function isLedgerAnomalyClass(value: string | undefined): value is LedgerAnomalyClass {
-  return value === `stalePendingEntries` || value === `inconsistentOutcomeChains` || value === `largeValueOutliers`;
+  return CLASS_ORDER.includes(value as LedgerAnomalyClass);
 }
 
 type LedgerAnomalyItem = LedgerAnomalyListResponse[`items`][number];
@@ -184,9 +200,7 @@ export default async function LedgerAnomaliesPage({
       <section className="panel pageHeader">
         <div>
           <h1>Ledger anomalies</h1>
-          <p className="muted">
-            MVP-3.1a read-only queue for stale pending entries, inconsistent outcome chains, and large value outliers.
-          </p>
+          <p className="muted">Read-only investigation surface.</p>
         </div>
         <p className="muted">Computed: {summary?.computedAt ? new Date(summary.computedAt).toLocaleString() : `-`}</p>
       </section>
@@ -210,6 +224,21 @@ export default async function LedgerAnomaliesPage({
             </article>
           );
         })}
+      </section>
+
+      <section className="panel pageHeader">
+        <nav className="actionsRow" aria-label="Anomaly classes">
+          {CLASS_ORDER.map((key) => (
+            <Link
+              key={key}
+              className="secondaryButton"
+              href={buildHref({ className: key, cursor: null })}
+              aria-current={key === className ? `page` : undefined}
+            >
+              {CLASS_LABELS[key]}
+            </Link>
+          ))}
+        </nav>
       </section>
 
       <section className="panel pageHeader">
@@ -254,6 +283,12 @@ export default async function LedgerAnomaliesPage({
             Ledger anomaly queue is temporarily unavailable. Use the overview or system surface for fallback navigation.
           </p>
         )}
+        {activeClass?.availability === `temporarily-unavailable` && list?.items.length === 0 ? (
+          <p className="muted">
+            This anomaly class is temporarily unavailable right now. Retry later or use overview/system for fallback
+            triage.
+          </p>
+        ) : null}
       </section>
     </>
   );

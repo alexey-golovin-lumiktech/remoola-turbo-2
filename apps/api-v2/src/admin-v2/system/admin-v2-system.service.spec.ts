@@ -27,6 +27,9 @@ describe(`AdminV2SystemService`, () => {
               stalePendingEntries: { count: 0 },
               inconsistentOutcomeChains: { count: 0 },
               largeValueOutliers: { count: 0 },
+              orphanedEntries: { count: 0 },
+              duplicateIdempotencyRisk: { count: 0 },
+              impossibleTransitions: { count: 0 },
             },
           })),
         } as never,
@@ -103,6 +106,9 @@ describe(`AdminV2SystemService`, () => {
             stalePendingEntries: { count: 2 },
             inconsistentOutcomeChains: { count: 1 },
             largeValueOutliers: { count: 1 },
+            orphanedEntries: { count: 3 },
+            duplicateIdempotencyRisk: { count: 4 },
+            impossibleTransitions: { count: 5 },
           },
         })),
       } as never,
@@ -120,6 +126,9 @@ describe(`AdminV2SystemService`, () => {
       { label: `Stale pending entries`, value: 2 },
       { label: `Inconsistent outcome chains`, value: 1 },
       { label: `Large value outliers`, value: 1 },
+      { label: `Orphaned entries`, value: 3 },
+      { label: `Duplicate idempotency risk`, value: 4 },
+      { label: `Impossible transitions`, value: 5 },
     ]);
   });
 

@@ -57,7 +57,12 @@ describe(`admin-v2 system page`, () => {
           label: `Ledger anomalies`,
           status: `watch`,
           explanation: `Read-only ledger anomaly detection shows active finance-review backlog.`,
-          facts: [{ label: `Total anomaly backlog`, value: 4 }],
+          facts: [
+            { label: `Total anomaly backlog`, value: 4 },
+            { label: `Orphaned entries`, value: 1 },
+            { label: `Duplicate idempotency risk`, value: 1 },
+            { label: `Impossible transitions`, value: 1 },
+          ],
           primaryAction: { label: `Open ledger anomalies`, href: `/ledger/anomalies` },
           escalationHint: `Escalate only when anomaly backlog keeps growing after ledger-domain triage identifies no safe operator action.`,
         },

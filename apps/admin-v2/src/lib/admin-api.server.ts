@@ -187,7 +187,13 @@ export type SystemSummaryResponse = {
   };
 };
 
-export type LedgerAnomalyClass = `stalePendingEntries` | `inconsistentOutcomeChains` | `largeValueOutliers`;
+export type LedgerAnomalyClass =
+  | `stalePendingEntries`
+  | `inconsistentOutcomeChains`
+  | `largeValueOutliers`
+  | `orphanedEntries`
+  | `duplicateIdempotencyRisk`
+  | `impossibleTransitions`;
 
 export type LedgerAnomalySummaryResponse = {
   computedAt: string;
