@@ -10,6 +10,7 @@ describe(`AdminV2AccessService`, () => {
     `consumers.read`,
     `payments.read`,
     `ledger.read`,
+    `ledger.anomalies`,
     `exchange.read`,
     `documents.read`,
     `payment_methods.read`,
@@ -162,6 +163,7 @@ describe(`AdminV2AccessService`, () => {
         `consumers.read`,
         `payments.read`,
         `ledger.read`,
+        `ledger.anomalies`,
         `audit.read`,
         `consumers.notes`,
         // missing consumers.flags

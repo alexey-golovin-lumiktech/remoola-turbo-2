@@ -31,6 +31,7 @@ export type AdminV2Capability =
   | `consumers.read`
   | `payments.read`
   | `ledger.read`
+  | `ledger.anomalies`
   | `exchange.read`
   | `exchange.manage`
   | `documents.read`
@@ -64,6 +65,7 @@ export const KNOWN_ADMIN_V2_CAPABILITIES: readonly AdminV2Capability[] = [
   `consumers.read`,
   `payments.read`,
   `ledger.read`,
+  `ledger.anomalies`,
   `exchange.read`,
   `exchange.manage`,
   `documents.read`,
@@ -90,6 +92,7 @@ export const ACTIVE_ADMIN_V2_CAPABILITIES: readonly AdminV2Capability[] = [
   `consumers.read`,
   `payments.read`,
   `ledger.read`,
+  `ledger.anomalies`,
   `exchange.read`,
   `documents.read`,
   `payment_methods.read`,

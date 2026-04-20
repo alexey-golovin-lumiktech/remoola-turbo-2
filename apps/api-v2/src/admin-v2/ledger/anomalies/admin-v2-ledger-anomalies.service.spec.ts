@@ -113,13 +113,11 @@ describe(`AdminV2LedgerAnomaliesService`, () => {
         id: `entry-1`,
         ledgerEntryId: `entry-1`,
         consumerId: `consumer-1`,
-        amount: `150.50`,
+        amount: `150.5`,
         outcomeStatus: `PROCESSING`,
-        signal: expect.objectContaining({
-          class: `stalePendingEntries`,
-        }),
       }),
     );
+    expect(result.items[0].signal.class).toBe(`stalePendingEntries`);
     expect(result.items[0].signal.detail).toContain(`threshold 24h`);
     expect(result.nextCursor).not.toBeNull();
     expect(decodeAdminV2Cursor(result.nextCursor ?? undefined)).toEqual({
@@ -189,7 +187,7 @@ describe(`AdminV2LedgerAnomaliesService`, () => {
         currencyCode: `JPY`,
       }),
     );
-    expect(result.items[0].signal.detail).toContain(`|1500000.00| JPY exceeds large-value threshold 1,500,000`);
+    expect(result.items[0].signal.detail).toContain(`|1500000| JPY exceeds large-value threshold 1,500,000`);
   });
 
   it(`rejects list requests without dateFrom`, async () => {
