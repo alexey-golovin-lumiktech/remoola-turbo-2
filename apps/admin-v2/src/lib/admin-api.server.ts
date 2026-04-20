@@ -187,6 +187,46 @@ export type SystemSummaryResponse = {
   };
 };
 
+export type LedgerAnomalyClass = `stalePendingEntries` | `inconsistentOutcomeChains` | `largeValueOutliers`;
+
+export type LedgerAnomalySummaryResponse = {
+  computedAt: string;
+  classes: Record<
+    LedgerAnomalyClass,
+    {
+      label: string;
+      count: number | null;
+      phaseStatus: `live-actionable`;
+      availability: `available` | `temporarily-unavailable`;
+      href: string;
+    }
+  >;
+  totalCount: number | null;
+};
+
+export type LedgerAnomalyListResponse = {
+  class: LedgerAnomalyClass;
+  items: Array<{
+    id: string;
+    ledgerEntryId: string;
+    consumerId: string;
+    type: string;
+    amount: string;
+    currencyCode: string;
+    entryStatus: string;
+    outcomeStatus: string | null;
+    outcomeAt: string | null;
+    createdAt: string;
+    updatedAt: string;
+    signal: {
+      class: LedgerAnomalyClass;
+      detail: string;
+    };
+  }>;
+  nextCursor: string | null;
+  computedAt: string;
+};
+
 export type CursorPageInfo = {
   nextCursor: string | null;
   limit: number;
@@ -1079,6 +1119,27 @@ export async function getOverviewSummary(): Promise<OverviewSummaryResponse | nu
 
 export async function getSystemSummary(): Promise<SystemSummaryResponse | null> {
   return fetchAdminApi<SystemSummaryResponse>(`/admin-v2/system/summary`);
+}
+
+export async function getLedgerAnomaliesSummary(): Promise<LedgerAnomalySummaryResponse | null> {
+  return fetchAdminApi<LedgerAnomalySummaryResponse>(`/admin-v2/ledger/anomalies/summary`);
+}
+
+export async function getLedgerAnomalies(params: {
+  className: string;
+  dateFrom: string;
+  dateTo?: string;
+  cursor?: string;
+  limit?: number;
+}): Promise<LedgerAnomalyListResponse | null> {
+  const searchParams = new URLSearchParams({
+    class: params.className,
+    dateFrom: params.dateFrom,
+    limit: String(params.limit ?? 50),
+  });
+  if (params.dateTo?.trim()) searchParams.set(`dateTo`, params.dateTo.trim());
+  if (params.cursor?.trim()) searchParams.set(`cursor`, params.cursor.trim());
+  return fetchAdminApi<LedgerAnomalyListResponse>(`/admin-v2/ledger/anomalies?${searchParams.toString()}`);
 }
 
 export async function getPayments(params?: {
