@@ -56,6 +56,15 @@ function main() {
   expectIncludes(docs, `pre-commit`, `docs/admin-v2-merge-gates.md`, failures);
   expectIncludes(docs, `manual local runs`, `docs/admin-v2-merge-gates.md`, failures);
   expectIncludes(docs, `frontend server-action exports`, `docs/admin-v2-merge-gates.md`, failures);
+  expectIncludes(docs, `scripts/typecheck-staged.mjs`, `docs/admin-v2-merge-gates.md`, failures);
+  expectIncludes(docs, `SKIP_PRECOMMIT_TYPECHECK`, `docs/admin-v2-merge-gates.md`, failures);
+  expectIncludes(docs, `SKIP_PRECOMMIT_LINT`, `docs/admin-v2-merge-gates.md`, failures);
+  expectIncludes(docs, `SKIP_PRECOMMIT_TESTS`, `docs/admin-v2-merge-gates.md`, failures);
+  expectIncludes(docs, `SKIP_ADMIN_V2_GATES`, `docs/admin-v2-merge-gates.md`, failures);
+  expectIncludes(docs, `SKIP_PREPUSH_E2E`, `docs/admin-v2-merge-gates.md`, failures);
+  expectIncludes(docs, `@remoola/test-db`, `docs/admin-v2-merge-gates.md`, failures);
+  expectIncludes(docs, `scripts/admin-v2-gates/config.mjs`, `docs/admin-v2-merge-gates.md`, failures);
+  expectIncludes(docs, `.husky/pre-push`, `docs/admin-v2-merge-gates.md`, failures);
   for (const token of OLD_DOC_TOKENS) {
     check(!docs.includes(token), `docs/admin-v2-merge-gates.md: still mentions old token "${token}"`, failures);
   }

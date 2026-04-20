@@ -23,36 +23,36 @@ This is a deterministic local check implemented in
   staged diff touches the admin-v2 gate/tooling surface
 - `docs/admin-v2-merge-gates.md` matches the current setup and does not claim
   checks that do not exist
-- the expected anchor paths exist for the current admin-v2 surface:
-  `apps/admin-v2/src/app`, `apps/admin-v2/src/lib/admin-mutations.server.ts`,
-  `apps/api-v2/src/admin-v2`,
-  `apps/api-v2/src/shared/admin-action-audit.service.ts`,
-  `apps/api-v2/src/auth/jwt.strategy.ts`,
-  `apps/api-v2/src/auth/jwt.guard.ts`,
-  `apps/api-v2/src/guards/auth.guard.ts`,
-  `apps/api-v2/src/shared-common/csrf-protection.ts`,
-  `apps/api-v2/src/shared/origin-resolver.service.ts`,
-  `packages/api-types/src/http/admin-path.ts`,
-  `packages/api-types/src/http/auth-cookie-policy.ts`,
-  `admin-v2-pack/05-financial-workspaces.md`,
-  and `docs/admin-v2-mvp-2-rbac-prerequisite.md`
+- every anchor path listed in `CHECK_PATHS` in
+  `scripts/admin-v2-gates/config.mjs` exists in the working tree (currently
+  18 paths spanning the admin-v2 frontend surface, the api-v2
+  admin-v2/auth/csrf surface, the api-types HTTP surface, the
+  admin-v2-pack planning files used by the gate, and the live admin-v2
+  docs); the config file is the single source of truth — do not duplicate
+  the list here
 - the expected capability and audit anchors are present in
   `apps/api-v2/src/shared/admin-action-audit.service.ts` and
-  `apps/api-v2/src/admin-v2/admin-v2-access.ts`, including the required
-  breadth-write audit actions and capabilities used by the current admin-v2
-  surface
+  `apps/api-v2/src/admin-v2/admin-v2-access.ts`, including the audit actions
+  and capabilities used by the current admin-v2 surface (a mix of read and
+  write entries listed in `scripts/admin-v2-gates/config.mjs`)
 - frontend server-action exports are present in
   `apps/admin-v2/src/lib/admin-mutations.server.ts` for payment methods,
   exchange, documents and admins mutations
 - the expected backend route tokens are present in the admins, payment
   methods, exchange, documents and payouts controllers so the gate can catch
   obvious route drift
-- reconciled planning docs still say that schema-backed RBAC is landed,
-  payment methods are no longer read-only-only, and the next sequence is
-  `MVP-3` maturity rather than another MVP-2 kickoff
-- the anomaly first maturity slice reconciliation note still contains the
-  required Sequence 6, read-only, temporarily-unavailable, and currency
-  coverage decisions used by the current gate config
+- the reconciliation tokens listed in `RECONCILIATION_NOTES` in
+  `scripts/admin-v2-gates/config.mjs` are present in the corresponding
+  planning and docs files (currently spanning
+  `docs/admin-v2-mvp-2-rbac-prerequisite.md`,
+  `admin-v2-pack/05-financial-workspaces.md`,
+  `admin-v2-pack/08-rollout-risks-and-sequencing.md`, and
+  `docs/admin-v2-mvp-3-anomalies-first-slice.md`); see the config for the
+  authoritative token list, including the schema-backed RBAC, payment
+  methods write controls, MVP-3 maturity sequencing, and anomaly first
+  maturity slice (Sequence 6, three classes, temporarily-unavailable,
+  currency coverage, and outcome→entry sync trigger findings) decisions
+  used by the current gate
 
 ### `yarn test:admin-v2`
 
@@ -71,27 +71,32 @@ local runs before merge when touching the admin-v2 gate surface.
 
 - if the staged diff touches the admin-v2 gate/tooling surface, it runs the
   same checks as `yarn verify:admin-v2-gates` (invoked directly via `node
-./scripts/admin-v2-gates/verify.mjs` to skip the extra Yarn startup)
+  ./scripts/admin-v2-gates/verify.mjs` to skip the extra Yarn startup)
 
-It does not run `yarn test:admin-v2` in pre-commit. The repo-wide lint/test
-behavior in pre-commit has been narrowed for speed:
+It does not run `yarn test:admin-v2` in pre-commit. The repo-wide
+lint/typecheck/test behavior in pre-commit has been narrowed for speed:
 
 - lint runs only on staged files via `lint-staged` (per-workspace ESLint flat
   configs, with each workspace's existing `--max-warnings` strictness preserved)
-- typecheck runs only for the staged TS/TSX files via
-  `node ./scripts/typecheck-staged.mjs`. The script invokes the workspace's full
-  `tsc --noEmit` (so types resolve correctly with the whole project graph) and
-  filters compiler output: errors located in staged files block the commit,
-  while pre-existing errors in untouched files are summarized as a single info
-  line per workspace and do not block
+- typecheck runs only on staged TS/TSX files via
+  `scripts/typecheck-staged.mjs` (per-workspace `tsc`, with errors filtered
+  to the staged file set; pre-existing errors in untouched files become an
+  info line)
 - unit tests run only for affected workspaces via
-  `turbo run test --filter='...[HEAD^1]'`
+  `turbo run test --filter='...[HEAD^1]'`, preceded by a one-shot
+  `yarn workspace @remoola/test-db run build` so per-workspace `pretest`
+  hooks find the test-db artifact already built
 - `test:e2e:fast` no longer runs in pre-commit; it has moved to
   `.husky/pre-push` so coverage before the branch leaves the machine is
   preserved without slowing every commit
 - the `scripts/pre-commit-needs-lint-and-tests.sh` short-circuit is restored,
-  so docs-only and other non-`apps/`/`packages/` commits skip lint and tests
-  entirely
+  so docs-only and other non-`apps/`/`packages/` commits skip lint,
+  typecheck, and tests entirely
+
+`.husky/pre-push` runs `yarn lint` and (unless `SKIP_PREPUSH_E2E=1`) the
+`apps/api` `test:e2e:fast` smoke before the branch leaves the machine, so
+the e2e coverage that pre-commit no longer carries still runs locally before
+push.
 
 For this local gate setup, we currently rely on:
 
@@ -108,7 +113,8 @@ matrix on the branch.
 
 - `SKIP_ADMIN_V2_GATES=1 git commit ...` skips just the admin-v2 gate.
 - `SKIP_PRECOMMIT_LINT=1 git commit ...` skips `lint-staged`.
-- `SKIP_PRECOMMIT_TYPECHECK=1 git commit ...` skips the staged-file typecheck.
+- `SKIP_PRECOMMIT_TYPECHECK=1 git commit ...` skips
+  `scripts/typecheck-staged.mjs`.
 - `SKIP_PRECOMMIT_TESTS=1 git commit ...` skips the affected-workspace unit
   tests.
 - `SKIP_PREPUSH_E2E=1 git push ...` skips `test:e2e:fast` for an emergency push.
