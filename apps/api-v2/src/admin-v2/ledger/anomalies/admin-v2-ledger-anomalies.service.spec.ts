@@ -23,11 +23,14 @@ describe(`AdminV2LedgerAnomaliesService`, () => {
     prisma.$queryRaw
       .mockResolvedValueOnce([{ count: 2 }])
       .mockResolvedValueOnce([{ count: 1 }])
-      .mockResolvedValueOnce([{ count: 3 }]);
+      .mockResolvedValueOnce([{ count: 3 }])
+      .mockResolvedValueOnce([{ count: 4 }])
+      .mockResolvedValueOnce([{ count: 5 }])
+      .mockResolvedValueOnce([{ count: 6 }]);
 
     const summary = await service.getSummary();
 
-    expect(summary.totalCount).toBe(6);
+    expect(summary.totalCount).toBe(21);
     expect(Object.keys(summary.classes)).toEqual([
       `stalePendingEntries`,
       `inconsistentOutcomeChains`,
@@ -45,27 +48,9 @@ describe(`AdminV2LedgerAnomaliesService`, () => {
     });
     expect(summary.classes.inconsistentOutcomeChains.count).toBe(1);
     expect(summary.classes.largeValueOutliers.count).toBe(3);
-    expect(summary.classes.orphanedEntries).toEqual({
-      label: `Orphaned entries`,
-      count: 0,
-      phaseStatus: `live-actionable`,
-      availability: `available`,
-      href: `/ledger/anomalies?class=orphanedEntries`,
-    });
-    expect(summary.classes.duplicateIdempotencyRisk).toEqual({
-      label: `Duplicate idempotency risk`,
-      count: 0,
-      phaseStatus: `live-actionable`,
-      availability: `available`,
-      href: `/ledger/anomalies?class=duplicateIdempotencyRisk`,
-    });
-    expect(summary.classes.impossibleTransitions).toEqual({
-      label: `Impossible transitions`,
-      count: 0,
-      phaseStatus: `live-actionable`,
-      availability: `available`,
-      href: `/ledger/anomalies?class=impossibleTransitions`,
-    });
+    expect(summary.classes.orphanedEntries.count).toBe(4);
+    expect(summary.classes.duplicateIdempotencyRisk.count).toBe(5);
+    expect(summary.classes.impossibleTransitions.count).toBe(6);
   });
 
   it(`marks a class temporarily unavailable when its summary query fails`, async () => {
@@ -87,6 +72,72 @@ describe(`AdminV2LedgerAnomaliesService`, () => {
       href: `/ledger/anomalies?class=inconsistentOutcomeChains`,
     });
     expect(summary.classes.largeValueOutliers.availability).toBe(`available`);
+  });
+
+  it(`marks orphaned entries temporarily unavailable when its summary query fails`, async () => {
+    const { prisma, service } = makeService();
+    prisma.$queryRaw
+      .mockResolvedValueOnce([{ count: 1 }])
+      .mockResolvedValueOnce([{ count: 2 }])
+      .mockResolvedValueOnce([{ count: 3 }])
+      .mockRejectedValueOnce(new Error(`boom`))
+      .mockResolvedValueOnce([{ count: 5 }])
+      .mockResolvedValueOnce([{ count: 6 }]);
+
+    const summary = await service.getSummary();
+
+    expect(summary.totalCount).toBe(17);
+    expect(summary.classes.orphanedEntries).toEqual({
+      label: `Orphaned entries`,
+      count: null,
+      phaseStatus: `live-actionable`,
+      availability: `temporarily-unavailable`,
+      href: `/ledger/anomalies?class=orphanedEntries`,
+    });
+  });
+
+  it(`marks duplicate idempotency risk temporarily unavailable when its summary query fails`, async () => {
+    const { prisma, service } = makeService();
+    prisma.$queryRaw
+      .mockResolvedValueOnce([{ count: 1 }])
+      .mockResolvedValueOnce([{ count: 2 }])
+      .mockResolvedValueOnce([{ count: 3 }])
+      .mockResolvedValueOnce([{ count: 4 }])
+      .mockRejectedValueOnce(new Error(`boom`))
+      .mockResolvedValueOnce([{ count: 6 }]);
+
+    const summary = await service.getSummary();
+
+    expect(summary.totalCount).toBe(16);
+    expect(summary.classes.duplicateIdempotencyRisk).toEqual({
+      label: `Duplicate idempotency risk`,
+      count: null,
+      phaseStatus: `live-actionable`,
+      availability: `temporarily-unavailable`,
+      href: `/ledger/anomalies?class=duplicateIdempotencyRisk`,
+    });
+  });
+
+  it(`marks impossible transitions temporarily unavailable when its summary query fails`, async () => {
+    const { prisma, service } = makeService();
+    prisma.$queryRaw
+      .mockResolvedValueOnce([{ count: 1 }])
+      .mockResolvedValueOnce([{ count: 2 }])
+      .mockResolvedValueOnce([{ count: 3 }])
+      .mockResolvedValueOnce([{ count: 4 }])
+      .mockResolvedValueOnce([{ count: 5 }])
+      .mockRejectedValueOnce(new Error(`boom`));
+
+    const summary = await service.getSummary();
+
+    expect(summary.totalCount).toBe(15);
+    expect(summary.classes.impossibleTransitions).toEqual({
+      label: `Impossible transitions`,
+      count: null,
+      phaseStatus: `live-actionable`,
+      availability: `temporarily-unavailable`,
+      href: `/ledger/anomalies?class=impossibleTransitions`,
+    });
   });
 
   it(`returns paginated stale pending entries with anomaly detail`, async () => {
@@ -213,6 +264,160 @@ describe(`AdminV2LedgerAnomaliesService`, () => {
       }),
     );
     expect(result.items[0].signal.detail).toContain(`|1500000| JPY exceeds large-value threshold 1,500,000`);
+  });
+
+  it(`returns orphaned entries with no-outcome detail and cursor pagination`, async () => {
+    const { prisma, service } = makeService();
+    prisma.$queryRaw.mockResolvedValueOnce([
+      {
+        id: `entry-orphan-1`,
+        ledgerEntryId: `entry-orphan-1`,
+        consumerId: `consumer-orphan-1`,
+        type: `USER_PAYMENT`,
+        amount: new Prisma.Decimal(`42.00`),
+        currencyCode: `USD`,
+        entryStatus: `PENDING`,
+        outcomeStatus: null,
+        outcomeAt: null,
+        createdAt: new Date(`2026-04-08T10:00:00.000Z`),
+        updatedAt: new Date(`2026-04-08T10:30:00.000Z`),
+        anomalyAt: new Date(`2026-04-08T10:00:00.000Z`),
+        threshold: null,
+        stripeId: null,
+        prevStatus: null,
+        nextStatus: null,
+      },
+      {
+        id: `entry-orphan-2`,
+        ledgerEntryId: `entry-orphan-2`,
+        consumerId: `consumer-orphan-2`,
+        type: `USER_PAYOUT`,
+        amount: new Prisma.Decimal(`-10.00`),
+        currencyCode: `EUR`,
+        entryStatus: `WAITING`,
+        outcomeStatus: null,
+        outcomeAt: null,
+        createdAt: new Date(`2026-04-07T10:00:00.000Z`),
+        updatedAt: new Date(`2026-04-07T10:30:00.000Z`),
+        anomalyAt: new Date(`2026-04-07T10:00:00.000Z`),
+        threshold: null,
+        stripeId: null,
+        prevStatus: null,
+        nextStatus: null,
+      },
+    ]);
+
+    const result = await service.getList({
+      className: `orphanedEntries`,
+      dateFrom: new Date(`2026-04-01T00:00:00.000Z`),
+      dateTo: new Date(`2026-04-20T00:00:00.000Z`),
+      limit: 1,
+    });
+
+    expect(result.items[0]).toEqual(
+      expect.objectContaining({
+        id: `entry-orphan-1`,
+        outcomeStatus: null,
+        outcomeAt: null,
+      }),
+    );
+    expect(result.items[0].signal.class).toBe(`orphanedEntries`);
+    expect(result.items[0].signal.detail).toContain(`has no outcome record (grace 1h)`);
+    expect(decodeAdminV2Cursor(result.nextCursor ?? undefined)).toEqual({
+      createdAt: new Date(`2026-04-07T10:00:00.000Z`),
+      id: `entry-orphan-2`,
+    });
+  });
+
+  it(`returns duplicate idempotency risk entries with stripe detail`, async () => {
+    const { prisma, service } = makeService();
+    prisma.$queryRaw.mockResolvedValueOnce([
+      {
+        id: `entry-dup-1`,
+        ledgerEntryId: `entry-dup-1`,
+        consumerId: `consumer-dup-1`,
+        type: `USER_PAYMENT`,
+        amount: new Prisma.Decimal(`90.00`),
+        currencyCode: `USD`,
+        entryStatus: `COMPLETED`,
+        outcomeStatus: null,
+        outcomeAt: null,
+        createdAt: new Date(`2026-04-09T10:00:00.000Z`),
+        updatedAt: new Date(`2026-04-09T10:30:00.000Z`),
+        anomalyAt: new Date(`2026-04-09T10:00:00.000Z`),
+        threshold: null,
+        stripeId: `pi_123`,
+        prevStatus: null,
+        nextStatus: null,
+      },
+    ]);
+
+    const result = await service.getList({
+      className: `duplicateIdempotencyRisk`,
+      dateFrom: new Date(`2026-04-01T00:00:00.000Z`),
+      dateTo: new Date(`2026-04-20T00:00:00.000Z`),
+    });
+
+    expect(result.items[0].signal.class).toBe(`duplicateIdempotencyRisk`);
+    expect(result.items[0].signal.detail).toContain(`stripeId pi_123`);
+    expect(result.items[0].signal.detail).toContain(`must be idempotent`);
+  });
+
+  it(`returns impossible transitions ordered by violation time`, async () => {
+    const { prisma, service } = makeService();
+    prisma.$queryRaw.mockResolvedValueOnce([
+      {
+        id: `entry-transition-1`,
+        ledgerEntryId: `entry-transition-1`,
+        consumerId: `consumer-transition-1`,
+        type: `USER_PAYOUT`,
+        amount: new Prisma.Decimal(`-999.99`),
+        currencyCode: `GBP`,
+        entryStatus: `PENDING`,
+        outcomeStatus: `PENDING`,
+        outcomeAt: new Date(`2026-04-10T12:00:00.000Z`),
+        createdAt: new Date(`2026-04-10T10:00:00.000Z`),
+        updatedAt: new Date(`2026-04-10T12:05:00.000Z`),
+        anomalyAt: new Date(`2026-04-10T12:00:00.000Z`),
+        threshold: null,
+        stripeId: null,
+        prevStatus: `COMPLETED`,
+        nextStatus: `PENDING`,
+      },
+      {
+        id: `entry-transition-2`,
+        ledgerEntryId: `entry-transition-2`,
+        consumerId: `consumer-transition-2`,
+        type: `USER_PAYMENT`,
+        amount: new Prisma.Decimal(`15.00`),
+        currencyCode: `USD`,
+        entryStatus: `WAITING`,
+        outcomeStatus: `DENIED`,
+        outcomeAt: new Date(`2026-04-09T12:00:00.000Z`),
+        createdAt: new Date(`2026-04-09T10:00:00.000Z`),
+        updatedAt: new Date(`2026-04-09T12:05:00.000Z`),
+        anomalyAt: new Date(`2026-04-09T12:00:00.000Z`),
+        threshold: null,
+        stripeId: null,
+        prevStatus: `UNCOLLECTIBLE`,
+        nextStatus: `DENIED`,
+      },
+    ]);
+
+    const result = await service.getList({
+      className: `impossibleTransitions`,
+      dateFrom: new Date(`2026-04-01T00:00:00.000Z`),
+      dateTo: new Date(`2026-04-20T00:00:00.000Z`),
+      limit: 1,
+    });
+
+    expect(result.items[0].signal.class).toBe(`impossibleTransitions`);
+    expect(result.items[0].signal.detail).toContain(`COMPLETED → PENDING`);
+    expect(result.items[0].signal.detail).toContain(`COMPLETED is terminal`);
+    expect(decodeAdminV2Cursor(result.nextCursor ?? undefined)).toEqual({
+      createdAt: new Date(`2026-04-09T12:00:00.000Z`),
+      id: `entry-transition-2`,
+    });
   });
 
   it(`rejects list requests without dateFrom`, async () => {
