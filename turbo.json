@@ -93,62 +93,53 @@
     "ADMIN_V2_APP_ORIGIN"
   ],
   "ui": "stream",
-  "globalDependencies": [
-    "package.json",
-    "yarn.lock",
-    ".env",
-    ".env.*"
-  ],
+  "globalDependencies": ["package.json", "yarn.lock", ".env", ".env.*"],
   "tasks": {
     "dev": {
-      "dependsOn": [
-        "^db:generate"
-      ],
+      "dependsOn": ["^db:generate"],
       "cache": false,
       "persistent": true
     },
     "build": {
-      "dependsOn": [
-        "^build",
-        "db:generate"
-      ],
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        ".env*"
-      ],
-      "outputs": [
-        ".next/**",
-        "!.next/cache/**",
-        "dist/**"
-      ],
-      "env": [
-        "DATABASE_URL",
-        "NEXT_PUBLIC_APP_ORIGIN"
-      ]
+      "dependsOn": ["^build", "db:generate"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"],
+      "env": ["DATABASE_URL", "NEXT_PUBLIC_APP_ORIGIN"]
     },
-    "lint": {},
+    "lint": {
+      "inputs": ["src/**", "test/**", "tests/**", "eslint.config.*", ".eslintrc*", "tsconfig*.json", "package.json"]
+    },
     "typecheck": {
-      "dependsOn": [
-        "^build"
-      ]
+      "dependsOn": ["^build"]
     },
     "typecheck:watch": {
-      "dependsOn": [
-        "^build"
-      ],
+      "dependsOn": ["^build"],
       "cache": false,
       "persistent": true
     },
-    "test": {},
+    "test": {
+      "inputs": [
+        "src/**",
+        "test/**",
+        "tests/**",
+        "__tests__/**",
+        "jest.config.*",
+        "jest.setup.*",
+        "tsconfig*.json",
+        "package.json"
+      ]
+    },
     "clean": {
       "cache": false
     },
-    "test:e2e": {},
-    "test:e2e:fast": {},
+    "test:e2e": {
+      "inputs": ["src/**", "test/**", "tests/**", "jest-e2e*.json", "jest.config.*", "tsconfig*.json", "package.json"]
+    },
+    "test:e2e:fast": {
+      "inputs": ["src/**", "test/**", "tests/**", "jest-e2e*.json", "jest.config.*", "tsconfig*.json", "package.json"]
+    },
     "db:generate": {
-      "outputs": [
-        "generated/**"
-      ],
+      "outputs": ["generated/**"],
       "cache": false
     }
   }

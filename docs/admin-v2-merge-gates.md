@@ -69,16 +69,50 @@ local runs before merge when touching the admin-v2 gate surface.
 
 `.husky/pre-commit` does one admin-v2-specific thing:
 
-- if the staged diff touches the admin-v2 gate/tooling surface, it runs
-  `yarn verify:admin-v2-gates`
+- if the staged diff touches the admin-v2 gate/tooling surface, it runs the
+  same checks as `yarn verify:admin-v2-gates` (invoked directly via `node
+./scripts/admin-v2-gates/verify.mjs` to skip the extra Yarn startup)
 
-It does not run `yarn test:admin-v2` in pre-commit. The existing repo-wide
-lint/test behavior stays unchanged. For this local gate setup, we currently
-rely on:
+It does not run `yarn test:admin-v2` in pre-commit. The repo-wide lint/test
+behavior in pre-commit has been narrowed for speed:
 
-- `pre-commit` for deterministic gate wiring checks
+- lint runs only on staged files via `lint-staged` (per-workspace ESLint flat
+  configs, with each workspace's existing `--max-warnings` strictness preserved)
+- typecheck runs only for the staged TS/TSX files via
+  `node ./scripts/typecheck-staged.mjs`. The script invokes the workspace's full
+  `tsc --noEmit` (so types resolve correctly with the whole project graph) and
+  filters compiler output: errors located in staged files block the commit,
+  while pre-existing errors in untouched files are summarized as a single info
+  line per workspace and do not block
+- unit tests run only for affected workspaces via
+  `turbo run test --filter='...[HEAD^1]'`
+- `test:e2e:fast` no longer runs in pre-commit; it has moved to
+  `.husky/pre-push` so coverage before the branch leaves the machine is
+  preserved without slowing every commit
+- the `scripts/pre-commit-needs-lint-and-tests.sh` short-circuit is restored,
+  so docs-only and other non-`apps/`/`packages/` commits skip lint and tests
+  entirely
+
+For this local gate setup, we currently rely on:
+
+- `pre-commit` for deterministic gate wiring checks plus staged-file lint and
+  affected-workspace unit tests
+- `pre-push` for the `test:e2e:fast` smoke
 - manual local runs of `yarn test:admin-v2` before merge when the touched scope
   can affect admin-v2 behavior
+
+### Bypass flags
+
+Use these only when you understand the trade-off; CI still enforces the full
+matrix on the branch.
+
+- `SKIP_ADMIN_V2_GATES=1 git commit ...` skips just the admin-v2 gate.
+- `SKIP_PRECOMMIT_LINT=1 git commit ...` skips `lint-staged`.
+- `SKIP_PRECOMMIT_TYPECHECK=1 git commit ...` skips the staged-file typecheck.
+- `SKIP_PRECOMMIT_TESTS=1 git commit ...` skips the affected-workspace unit
+  tests.
+- `SKIP_PREPUSH_E2E=1 git push ...` skips `test:e2e:fast` for an emergency push.
+- `git commit --no-verify` remains the nuclear bypass.
 
 `admin-v2-pack/implementation-prompts-composer2-fast/**` is intentionally not
 part of this gate slice.

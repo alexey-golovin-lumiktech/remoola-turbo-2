@@ -1,26 +1,56 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-if node ./scripts/admin-v2-gates/is-affected.mjs --staged >/dev/null 2>&1; then
+# Make local devDep binaries (lint-staged, eslint, prettier, turbo) directly
+# callable, avoiding the per-invocation cost of `yarn`/`npx` wrappers.
+export PATH="./node_modules/.bin:$PATH"
+
+# Quiet by default; failing turbo tasks still print full stderr.
+export TURBO_LOG_ORDER=stream
+export TURBO_OUTPUT_LOGS=errors-only
+export TURBO_TELEMETRY_DISABLED=1
+
+# Admin-v2 merge gate. Only runs when the staged files touch admin-v2 scope.
+# Equivalent to `yarn verify:admin-v2-gates`, called directly to avoid the
+# extra `yarn` startup cost. Set SKIP_ADMIN_V2_GATES=1 to bypass.
+if [ "${SKIP_ADMIN_V2_GATES:-0}" != "1" ] \
+  && node ./scripts/admin-v2-gates/is-affected.mjs --staged >/dev/null 2>&1; then
   echo "admin-v2 scope changed; running merge gates."
-  yarn verify:admin-v2-gates || exit $?
+  node ./scripts/admin-v2-gates/verify.mjs || exit $?
 fi
 
-# Skip lint and tests when commit has no code changes (e.g. docs, CHANGELOG only)
-if ! sh "$(dirname -- "$0")/../scripts/pre-commit-needs-lint-and-tests.sh"; then
-  echo "No apps/ or packages/ code changes; skipping lint and tests."
+# Skip lint and tests when commit has no code changes (e.g. docs, CHANGELOG only).
+# The helper script exits 0 when there is nothing under apps/ or packages/ to
+# check, and exits 1 when there is.
+if sh "$(dirname -- "$0")/../scripts/pre-commit-needs-lint-and-tests.sh"; then
+  echo "No apps/ or packages/ code changes; skipping lint, typecheck, and tests."
   exit 0
 fi
 
-yarn lint
-# Build once to avoid repeated pretest noise in each app test run.
-yarn --silent workspace @remoola/test-db run build >/dev/null 2>&1
-(
-  cd apps/consumer &&
-    QUIET_MEMORY_GUARD=1 node ../../scripts/run-jest-with-memory-cap.js --passWithNoTests --verbose --coverage=false
-)
-(
-  cd apps/api &&
-    QUIET_MEMORY_GUARD=1 node ../../scripts/run-jest-with-memory-cap.js --passWithNoTests --verbose --coverage=false
-)
-(cd apps/api && QUIET_MEMORY_GUARD=1 yarn test:e2e:fast)
+# Lint only the staged files. Set SKIP_PRECOMMIT_LINT=1 to bypass.
+if [ "${SKIP_PRECOMMIT_LINT:-0}" != "1" ]; then
+  lint-staged --quiet || exit $?
+fi
+
+# Typecheck only staged TS/TSX files. Runs full tsc per affected workspace
+# but reports only errors located in staged files; pre-existing errors in
+# untouched files become an info line. Set SKIP_PRECOMMIT_TYPECHECK=1 to bypass.
+if [ "${SKIP_PRECOMMIT_TYPECHECK:-0}" != "1" ]; then
+  node ./scripts/typecheck-staged.mjs || exit $?
+fi
+
+# Unit tests for affected workspaces only. Set SKIP_PRECOMMIT_TESTS=1 to bypass.
+# Turbo's `...[HEAD^1]` filter runs `test` for the workspaces changed since the
+# previous commit and their dependents; unaffected workspaces are skipped, and
+# unchanged ones short-circuit via cache.
+if [ "${SKIP_PRECOMMIT_TESTS:-0}" != "1" ]; then
+  # Build once so per-workspace `pretest` hooks find test-db already built.
+  yarn --silent workspace @remoola/test-db run build >/dev/null 2>&1
+  QUIET_MEMORY_GUARD=1 turbo run test \
+    --filter='...[HEAD^1]' \
+    --concurrency=4 \
+    --output-logs=errors-only \
+    --log-order=stream || exit $?
+fi
+
+# test:e2e:fast moved to .husky/pre-push (set SKIP_PREPUSH_E2E=1 to bypass).
