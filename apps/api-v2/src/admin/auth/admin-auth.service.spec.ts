@@ -556,5 +556,47 @@ describe(`AdminAuthService`, () => {
       expect(typeof result[0].createdAt).toBe(`string`);
       jest.useRealTimers();
     });
+
+    it(`excludes sessions with revokedAt older than the 30-day cutoff`, async () => {
+      const now = new Date(`2026-04-21T12:00:00.000Z`);
+      jest.useFakeTimers().setSystemTime(now);
+      const recentRevoked = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      prisma.adminAuthSessionModel.findMany.mockResolvedValue([
+        {
+          id: `session-active`,
+          sessionFamilyId: `family-active`,
+          createdAt: recentRevoked,
+          lastUsedAt: recentRevoked,
+          expiresAt: new Date(now.getTime() + 60_000),
+          revokedAt: null,
+          invalidatedReason: null,
+          replacedById: null,
+        },
+        {
+          id: `session-recent-revoked`,
+          sessionFamilyId: `family-recent`,
+          createdAt: recentRevoked,
+          lastUsedAt: recentRevoked,
+          expiresAt: recentRevoked,
+          revokedAt: recentRevoked,
+          invalidatedReason: `rotated`,
+          replacedById: null,
+        },
+      ]);
+
+      const result = await service.listSessionsForAdmin(`admin-id`);
+
+      const callArg = prisma.adminAuthSessionModel.findMany.mock.calls[0][0];
+      expect(callArg.where.OR).toEqual([{ revokedAt: null }, { revokedAt: { gte: expect.any(Date) } }]);
+      const cutoff = (callArg.where.OR[1] as { revokedAt: { gte: Date } }).revokedAt.gte;
+      expect(now.getTime() - cutoff.getTime()).toBe(30 * 24 * 60 * 60 * 1000);
+      expect(result).toHaveLength(2);
+      expect(
+        result.every((row) => row.revokedAt === null || new Date(row.revokedAt).getTime() >= cutoff.getTime()),
+      ).toBe(true);
+      expect(result.find((row) => row.id === `session-active`)).toBeDefined();
+      expect(result.find((row) => row.id === `session-recent-revoked`)).toBeDefined();
+      jest.useRealTimers();
+    });
   });
 });
