@@ -119,9 +119,9 @@ function normalizeEvaluationInterval(raw: number | null | undefined): number {
     throw new BadRequestException(`evaluationIntervalMinutes must be an integer`);
   }
   if (raw < MIN_OPERATIONAL_ALERT_INTERVAL_MINUTES || raw > MAX_OPERATIONAL_ALERT_INTERVAL_MINUTES) {
-    throw new BadRequestException(
-      `evaluationIntervalMinutes must be between ${MIN_OPERATIONAL_ALERT_INTERVAL_MINUTES} and ${MAX_OPERATIONAL_ALERT_INTERVAL_MINUTES}`,
-    );
+    const min = MIN_OPERATIONAL_ALERT_INTERVAL_MINUTES;
+    const max = MAX_OPERATIONAL_ALERT_INTERVAL_MINUTES;
+    throw new BadRequestException(`evaluationIntervalMinutes must be between ${min} and ${max}`);
   }
   return raw;
 }
