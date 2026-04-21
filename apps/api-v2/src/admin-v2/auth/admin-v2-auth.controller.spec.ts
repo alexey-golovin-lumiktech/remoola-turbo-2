@@ -161,7 +161,7 @@ describe(`AdminV2AuthController`, () => {
       );
     });
 
-    it(`writes admin_session_revoke with isOwnSession=false when body.sessionId differs from identity.sessionId`, async () => {
+    it(`writes admin_session_revoke with isOwnSession=false on cross-session revoke`, async () => {
       const authService = buildAuthService();
       authService.revokeSessionByIdAndAudit.mockResolvedValue({
         revokedSessionId: `session-other`,
