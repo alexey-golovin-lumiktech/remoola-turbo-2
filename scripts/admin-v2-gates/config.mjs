@@ -23,9 +23,11 @@ export const CHECK_PATHS = [
   `docs/admin-v2-mvp-3.2a-operational-assignments.md`,
   `docs/admin-v2-mvp-3.3a-saved-views-skeleton.md`,
   `docs/admin-v2-mvp-3.3b-operational-alerts-skeleton.md`,
+  `docs/admin-v2-mvp-3.4a-verification-workspace-completion.md`,
   `packages/database-2/prisma/migrations/20260420191500_admin_v2_duplicate_idempotency_risk_index/README.md`,
   `packages/database-2/prisma/migrations/20260421100000_admin_v2_saved_views_foundation/README.md`,
   `packages/database-2/prisma/migrations/20260421100500_admin_v2_operational_alerts_foundation/README.md`,
+  `packages/database-2/prisma/migrations/20260421101000_admin_v2_verification_queue_workspace/README.md`,
 ];
 
 export const AUDIT_ACTIONS = [
@@ -366,5 +368,24 @@ export const RECONCILIATION_NOTES = {
     `AdminV2LedgerAnomaliesService.getCount`,
     `anomaly cluster read-only addition`,
     `workspace-evaluator-vs-domain-cluster boundary`,
+  ],
+  'docs/admin-v2-mvp-3.4a-verification-workspace-completion.md': [
+    `MVP-3.4a`,
+    `Sequence 6`,
+    `verification_queue workspace`,
+    `workspace allowlist expansion`,
+    `VerificationQueueAlertEvaluator`,
+    `getQueueCount`,
+    `§15 blessed deviation: verification cluster getQueueCount addition`,
+    `additive ALTER CHECK migration`,
+    `no new capability`,
+    `no new audit action`,
+    `no new endpoint`,
+    `frontend-only filters`,
+    `Decision: ALTER CHECK over rename strategy`,
+    `Decision: getQueueCount excludes missingProfileData / missingDocuments`,
+    `Decision: separate evaluator file per workspace`,
+    `Decision: shared single capability per domain preserved`,
+    `Decision: workspace immutable post-create preserved`,
   ],
 };

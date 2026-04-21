@@ -31,8 +31,10 @@ This is a deterministic local check implemented in
   docs plus the 3.1c perf/reconciliation artifacts, the additive migration
   READMEs, the 3.2a operational-assignments reconciliation note, the
   3.3a saved-views skeleton reconciliation note plus its
-  saved_view foundation migration README, and the 3.3b operational-alerts
+  saved_view foundation migration README, the 3.3b operational-alerts
   skeleton reconciliation note plus its operational_alert foundation
+  migration README, and the 3.4a verification-workspace-completion
+  reconciliation note plus its `verification_queue` workspace allowlist
   migration README); the config file is the single
   source of truth — do not duplicate the list here
 - the expected capability and audit anchors are present in
@@ -57,14 +59,16 @@ This is a deterministic local check implemented in
   `docs/admin-v2-mvp-3.1c-anomaly-classes-expansion.md`,
   `docs/admin-v2-mvp-3.1c-perf-evidence.md`,
   `docs/admin-v2-mvp-3.2a-operational-assignments.md`,
-  `docs/admin-v2-mvp-3.3a-saved-views-skeleton.md`, and
-  `docs/admin-v2-mvp-3.3b-operational-alerts-skeleton.md`); see the
+  `docs/admin-v2-mvp-3.3a-saved-views-skeleton.md`,
+  `docs/admin-v2-mvp-3.3b-operational-alerts-skeleton.md`, and
+  `docs/admin-v2-mvp-3.4a-verification-workspace-completion.md`); see the
   config for the authoritative token list, including the schema-backed
   RBAC, payment methods write controls, MVP-3 maturity sequencing, and
   anomaly first maturity slice plus the 3.1c classes expansion / EXPLAIN
   ANALYZE evidence, the 3.2a operational assignments decisions, the 3.3a
-  saved views skeleton decisions, and the 3.3b operational alerts
-  skeleton decisions used by the current gate
+  saved views skeleton decisions, the 3.3b operational alerts
+  skeleton decisions, and the 3.4a verification-workspace-completion
+  decisions used by the current gate
 
 After 3.3b lands, the MVP-3 maturity exit criteria from
 `admin-v2-pack/08-rollout-risks-and-sequencing.md` are fully closed.
