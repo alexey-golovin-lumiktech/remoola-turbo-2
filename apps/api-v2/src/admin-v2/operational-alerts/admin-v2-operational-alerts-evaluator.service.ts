@@ -9,6 +9,7 @@ import {
   type OperationalAlertWorkspaceEvaluator,
   type WorkspaceEvaluatorRegistry,
 } from './admin-v2-operational-alerts-workspace-evaluators';
+import { VerificationQueueAlertEvaluator } from './admin-v2-operational-alerts-workspace-evaluators-verification';
 import { OPERATIONAL_ALERT_WORKSPACES, type OperationalAlertWorkspace } from './admin-v2-operational-alerts.dto';
 import { PrismaService } from '../../shared/prisma.service';
 
@@ -66,9 +67,11 @@ export class AdminV2OperationalAlertsEvaluatorService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly ledgerAnomaliesEvaluator: LedgerAnomaliesAlertEvaluator,
+    private readonly verificationQueueEvaluator: VerificationQueueAlertEvaluator,
   ) {
     this.evaluators = Object.freeze({
       ledger_anomalies: this.ledgerAnomaliesEvaluator,
+      verification_queue: this.verificationQueueEvaluator,
     } satisfies Record<OperationalAlertWorkspace, OperationalAlertWorkspaceEvaluator>);
   }
 

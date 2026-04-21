@@ -39,6 +39,7 @@ function buildHarness(opts: {
   evaluator?: jest.Mock;
   due?: DueAlertRow[];
   ledgerAnomaliesEvaluator?: OperationalAlertWorkspaceEvaluator;
+  verificationQueueEvaluator?: OperationalAlertWorkspaceEvaluator;
 }) {
   const operationalAlertModel = {
     update: jest.fn().mockResolvedValue(undefined),
@@ -52,8 +53,15 @@ function buildHarness(opts: {
   const ledgerAnomaliesEvaluator: OperationalAlertWorkspaceEvaluator = opts.ledgerAnomaliesEvaluator ?? {
     evaluate: evaluatorMock as unknown as OperationalAlertWorkspaceEvaluator[`evaluate`],
   };
-  const service = new AdminV2OperationalAlertsEvaluatorService(prisma as never, ledgerAnomaliesEvaluator as never);
-  return { service, prisma, operationalAlertModel, queryRaw, evaluatorMock };
+  const verificationQueueEvaluator: OperationalAlertWorkspaceEvaluator = opts.verificationQueueEvaluator ?? {
+    evaluate: jest.fn() as unknown as OperationalAlertWorkspaceEvaluator[`evaluate`],
+  };
+  const service = new AdminV2OperationalAlertsEvaluatorService(
+    prisma as never,
+    ledgerAnomaliesEvaluator as never,
+    verificationQueueEvaluator as never,
+  );
+  return { service, prisma, operationalAlertModel, queryRaw, evaluatorMock, verificationQueueEvaluator };
 }
 
 describe(`AdminV2OperationalAlertsEvaluatorService`, () => {
