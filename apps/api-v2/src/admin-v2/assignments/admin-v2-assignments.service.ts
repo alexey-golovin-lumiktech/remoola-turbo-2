@@ -53,6 +53,47 @@ type AdminSummary = {
   email: string | null;
 };
 
+export type AssignmentSummaryRow = {
+  id: string;
+  resource_id: string;
+  assigned_to: string;
+  assigned_by: string | null;
+  released_by: string | null;
+  assigned_at: Date;
+  released_at: Date | null;
+  expires_at: Date | null;
+  reason: string | null;
+  assigned_to_email: string | null;
+  assigned_by_email: string | null;
+  released_by_email: string | null;
+};
+
+export type AdminRef = { id: string; name: string | null; email: string | null };
+
+export function mapAdminRef(id: string | null, email: string | null): AdminRef | null {
+  if (!id) return null;
+  return { id, name: null, email };
+}
+
+export type AssignmentContextSummary = {
+  id: string;
+  assignedTo: AdminRef;
+  assignedBy: AdminRef | null;
+  assignedAt: string;
+  reason: string | null;
+  expiresAt: string | null;
+};
+
+export type AssignmentContextHistoryItem = AssignmentContextSummary & {
+  releasedAt: string | null;
+  releasedBy: AdminRef | null;
+};
+
+export type AssignmentContext = {
+  current: AssignmentContextSummary | null;
+  history: AssignmentContextHistoryItem[];
+};
+
 function trimReason(raw: string | null | undefined): string | null {
   if (raw == null) return null;
   const trimmed = raw.trim();
@@ -440,6 +481,65 @@ export class AdminV2AssignmentsService {
 
   get supportedResourceTypes(): readonly AssignableResourceType[] {
     return ASSIGNABLE_RESOURCE_TYPES;
+  }
+
+  async getAssignmentContextForResource(
+    resourceType: AssignableResourceType,
+    resourceId: string,
+  ): Promise<AssignmentContext> {
+    const rows = await this.prisma.$queryRaw<AssignmentSummaryRow[]>(Prisma.sql`
+      SELECT
+        a."id",
+        a."resource_id",
+        a."assigned_to",
+        a."assigned_by",
+        a."released_by",
+        a."assigned_at",
+        a."released_at",
+        a."expires_at",
+        a."reason",
+        at."email" AS assigned_to_email,
+        ab."email" AS assigned_by_email,
+        rb."email" AS released_by_email
+      FROM "operational_assignment" a
+      LEFT JOIN "admin" at ON at."id" = a."assigned_to"
+      LEFT JOIN "admin" ab ON ab."id" = a."assigned_by"
+      LEFT JOIN "admin" rb ON rb."id" = a."released_by"
+      WHERE a."resource_type" = ${resourceType}
+        AND a."resource_id" = ${Prisma.sql`${resourceId}::uuid`}
+      ORDER BY a."assigned_at" DESC
+      LIMIT 10
+    `);
+    const currentRow = rows.find((row) => row.released_at === null) ?? null;
+    const current = currentRow
+      ? {
+          id: currentRow.id,
+          assignedTo: mapAdminRef(currentRow.assigned_to, currentRow.assigned_to_email) ?? {
+            id: currentRow.assigned_to,
+            name: null,
+            email: null,
+          },
+          assignedBy: mapAdminRef(currentRow.assigned_by, currentRow.assigned_by_email),
+          assignedAt: currentRow.assigned_at.toISOString(),
+          reason: currentRow.reason,
+          expiresAt: currentRow.expires_at ? currentRow.expires_at.toISOString() : null,
+        }
+      : null;
+    const history = rows.map((row) => ({
+      id: row.id,
+      assignedTo: mapAdminRef(row.assigned_to, row.assigned_to_email) ?? {
+        id: row.assigned_to,
+        name: null,
+        email: null,
+      },
+      assignedBy: mapAdminRef(row.assigned_by, row.assigned_by_email),
+      assignedAt: row.assigned_at.toISOString(),
+      releasedAt: row.released_at ? row.released_at.toISOString() : null,
+      releasedBy: mapAdminRef(row.released_by, row.released_by_email),
+      reason: row.reason,
+      expiresAt: row.expires_at ? row.expires_at.toISOString() : null,
+    }));
+    return { current, history };
   }
 
   private async loadAdminSummary(adminId: string): Promise<AdminSummary> {

@@ -321,6 +321,10 @@ export type PaymentCaseResponse = {
     adminEmail: string | null;
     createdAt: string;
   }>;
+  assignment: {
+    current: AssignmentSummary | null;
+    history: AssignmentHistoryItem[];
+  };
   version: number;
   updatedAt: string;
   staleWarning: boolean;

@@ -52,6 +52,7 @@ describe(`AdminV2VerificationService`, () => {
       } as never,
       {} as never,
       {} as never,
+      { getAssignmentContextForResource: jest.fn(async () => ({ current: null, history: [] })) } as never,
     );
 
     const queue = await service.getQueue({ page: 1, pageSize: 1 });
@@ -112,6 +113,7 @@ describe(`AdminV2VerificationService`, () => {
       {
         sendAdminV2VerificationDecisionEmail: jest.fn(async () => true),
       } as never,
+      { getAssignmentContextForResource: jest.fn(async () => ({ current: null, history: [] })) } as never,
     );
 
     const result = await service.applyDecision(
@@ -202,6 +204,7 @@ describe(`AdminV2VerificationService`, () => {
       } as never,
       {} as never,
       {} as never,
+      { getAssignmentContextForResource: jest.fn(async () => ({ current: null, history: [] })) } as never,
     );
 
     const queue = await service.getQueue({ page: 1, pageSize: 10 });
@@ -213,40 +216,42 @@ describe(`AdminV2VerificationService`, () => {
     expect(row2?.assignedTo).toBeNull();
   });
 
-  it(`exposes current and historical assignment context on getCase`, async () => {
-    const assignmentRows = [
-      {
+  it(`exposes current and historical assignment context on getCase via the shared assignments helper`, async () => {
+    const assignmentContext = {
+      current: {
         id: `assignment-2`,
-        resource_id: `consumer-1`,
-        assigned_to: `admin-7`,
-        assigned_by: `admin-7`,
-        released_by: null,
-        assigned_at: new Date(`2026-04-20T12:00:00.000Z`),
-        released_at: null,
-        expires_at: null,
+        assignedTo: { id: `admin-7`, name: null, email: `ops7@example.com` },
+        assignedBy: { id: `admin-7`, name: null, email: `ops7@example.com` },
+        assignedAt: `2026-04-20T12:00:00.000Z`,
         reason: `Ops follow-up`,
-        assigned_to_email: `ops7@example.com`,
-        assigned_by_email: `ops7@example.com`,
-        released_by_email: null,
+        expiresAt: null,
       },
-      {
-        id: `assignment-1`,
-        resource_id: `consumer-1`,
-        assigned_to: `admin-3`,
-        assigned_by: `admin-3`,
-        released_by: `admin-3`,
-        assigned_at: new Date(`2026-04-20T08:00:00.000Z`),
-        released_at: new Date(`2026-04-20T11:45:00.000Z`),
-        expires_at: null,
-        reason: null,
-        assigned_to_email: `ops3@example.com`,
-        assigned_by_email: `ops3@example.com`,
-        released_by_email: `ops3@example.com`,
-      },
-    ];
+      history: [
+        {
+          id: `assignment-2`,
+          assignedTo: { id: `admin-7`, name: null, email: `ops7@example.com` },
+          assignedBy: { id: `admin-7`, name: null, email: `ops7@example.com` },
+          assignedAt: `2026-04-20T12:00:00.000Z`,
+          releasedAt: null,
+          releasedBy: null,
+          reason: `Ops follow-up`,
+          expiresAt: null,
+        },
+        {
+          id: `assignment-1`,
+          assignedTo: { id: `admin-3`, name: null, email: `ops3@example.com` },
+          assignedBy: { id: `admin-3`, name: null, email: `ops3@example.com` },
+          assignedAt: `2026-04-20T08:00:00.000Z`,
+          releasedAt: `2026-04-20T11:45:00.000Z`,
+          releasedBy: { id: `admin-3`, name: null, email: `ops3@example.com` },
+          reason: null,
+          expiresAt: null,
+        },
+      ],
+    };
+    const getAssignmentContextForResource = jest.fn(async () => assignmentContext);
     const service = new AdminV2VerificationService(
       {
-        $queryRaw: jest.fn(async () => assignmentRows),
         adminActionAuditLogModel: {
           findMany: jest.fn(async () => []),
         },
@@ -276,6 +281,7 @@ describe(`AdminV2VerificationService`, () => {
       } as never,
       {} as never,
       {} as never,
+      { getAssignmentContextForResource } as never,
     );
 
     const result = (await service.getCase(`consumer-1`, {
@@ -292,6 +298,7 @@ describe(`AdminV2VerificationService`, () => {
       decisionControls: { canManageAssignments: boolean; canReassignAssignments: boolean };
     };
 
+    expect(getAssignmentContextForResource).toHaveBeenCalledWith(`verification`, `consumer-1`);
     expect(result.assignment.current?.id).toBe(`assignment-2`);
     expect(result.assignment.current?.assignedTo).toEqual(
       expect.objectContaining({ id: `admin-7`, email: `ops7@example.com` }),
@@ -313,6 +320,7 @@ describe(`AdminV2VerificationService`, () => {
         {
           consumerModel: { count },
         } as never,
+        {} as never,
         {} as never,
         {} as never,
         {} as never,
@@ -450,6 +458,7 @@ describe(`AdminV2VerificationService`, () => {
         {} as never,
         {} as never,
         {} as never,
+        {} as never,
       );
 
       const result = await service.getQueueCount({ status: `PENDING` });
@@ -477,6 +486,7 @@ describe(`AdminV2VerificationService`, () => {
       {
         execute: jest.fn(async ({ execute }: { execute: () => Promise<unknown> }) => execute()),
       } as never,
+      {} as never,
       {} as never,
     );
 

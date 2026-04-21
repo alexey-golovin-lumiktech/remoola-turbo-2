@@ -1,7 +1,13 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { getPaymentCase } from '../../../../lib/admin-api.server';
+import { AssignmentCard } from '../../../../components/assignment-card';
+import { getAdminIdentity, getAdmins, getPaymentCase } from '../../../../lib/admin-api.server';
+import {
+  claimPaymentRequestAssignmentAction,
+  reassignPaymentRequestAssignmentAction,
+  releasePaymentRequestAssignmentAction,
+} from '../../../../lib/admin-mutations.server';
 
 function formatDate(value: string | null | undefined): string {
   if (!value) return `-`;
@@ -18,11 +24,26 @@ function renderMetadata(value: Record<string, unknown> | null | undefined) {
 
 export default async function PaymentCasePage({ params }: { params: Promise<{ paymentRequestId: string }> }) {
   const { paymentRequestId } = await params;
-  const paymentCase = await getPaymentCase(paymentRequestId);
+  const [paymentCase, identity] = await Promise.all([getPaymentCase(paymentRequestId), getAdminIdentity()]);
 
   if (!paymentCase) {
     notFound();
   }
+
+  const currentAssignment = paymentCase.assignment.current;
+  const currentAdminId = identity?.id ?? null;
+  const ownsAssignment = Boolean(
+    currentAssignment && currentAdminId && currentAssignment.assignedTo.id === currentAdminId,
+  );
+  const canManageAssignments = Boolean(identity?.capabilities?.includes(`assignments.manage`));
+  const canReassignAssignments = identity?.role === `SUPER_ADMIN`;
+  const canClaim = canManageAssignments && !currentAssignment;
+  const canRelease = Boolean(currentAssignment && canManageAssignments && (ownsAssignment || canReassignAssignments));
+  const canReassign = Boolean(currentAssignment && canReassignAssignments);
+  const reassignCandidatesResponse = canReassign ? await getAdmins({ page: 1, pageSize: 50, status: `ACTIVE` }) : null;
+  const reassignCandidates = (reassignCandidatesResponse?.items ?? []).filter(
+    (admin) => admin.id !== currentAssignment?.assignedTo.id,
+  );
 
   return (
     <>
@@ -139,6 +160,19 @@ export default async function PaymentCasePage({ params }: { params: Promise<{ pa
           </div>
         </article>
       </section>
+
+      <AssignmentCard
+        resourceId={paymentCase.id}
+        assignment={paymentCase.assignment}
+        reassignCandidates={reassignCandidates}
+        capabilities={{ canClaim, canRelease, canReassign }}
+        actions={{
+          claim: claimPaymentRequestAssignmentAction,
+          release: releasePaymentRequestAssignmentAction,
+          reassign: reassignPaymentRequestAssignmentAction,
+        }}
+        copy={{ claimReasonPlaceholder: `Why are you claiming this payment request?` }}
+      />
 
       <section className="detailGrid">
         <article className="panel">

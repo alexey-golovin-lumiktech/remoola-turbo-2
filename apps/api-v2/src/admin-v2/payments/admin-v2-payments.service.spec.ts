@@ -4,60 +4,63 @@ import { AdminV2PaymentsService } from './admin-v2-payments.service';
 
 describe(`AdminV2PaymentsService`, () => {
   it(`uses latest outcome semantics on payment case instead of earliest outcome`, async () => {
-    const service = new AdminV2PaymentsService({
-      paymentRequestModel: {
-        findUnique: jest.fn(async () => ({
-          id: `payment-1`,
-          amount: new Prisma.Decimal(`125.50`),
-          currencyCode: $Enums.CurrencyCode.USD,
-          status: $Enums.TransactionStatus.PENDING,
-          paymentRail: $Enums.PaymentRail.CARD,
-          description: `Invoice settlement`,
-          dueDate: null,
-          sentDate: null,
-          createdAt: new Date(`2026-04-08T00:00:00.000Z`),
-          updatedAt: new Date(`2026-04-12T00:00:00.000Z`),
-          deletedAt: null,
-          payer: null,
-          requester: null,
-          payerEmail: `payer@example.com`,
-          requesterEmail: `requester@example.com`,
-          attachments: [],
-          ledgerEntries: [
-            {
-              id: `ledger-1`,
-              ledgerId: `ledger-group-1`,
-              type: $Enums.LedgerEntryType.USER_PAYMENT,
-              amount: new Prisma.Decimal(`125.50`),
-              currencyCode: $Enums.CurrencyCode.USD,
-              status: $Enums.TransactionStatus.PENDING,
-              createdAt: new Date(`2026-04-08T03:00:00.000Z`),
-              deletedAt: null,
-              metadata: null,
-              outcomes: [
-                {
-                  id: `outcome-latest`,
-                  status: $Enums.TransactionStatus.COMPLETED,
-                  source: `stripe`,
-                  externalId: `pi_123`,
-                  createdAt: new Date(`2026-04-08T05:00:00.000Z`),
-                },
-                {
-                  id: `outcome-earliest`,
-                  status: $Enums.TransactionStatus.WAITING,
-                  source: `stripe`,
-                  externalId: `pi_122`,
-                  createdAt: new Date(`2026-04-08T04:00:00.000Z`),
-                },
-              ],
-            },
-          ],
-        })),
-      },
-      adminActionAuditLogModel: {
-        findMany: jest.fn(async () => []),
-      },
-    } as never);
+    const service = new AdminV2PaymentsService(
+      {
+        paymentRequestModel: {
+          findUnique: jest.fn(async () => ({
+            id: `payment-1`,
+            amount: new Prisma.Decimal(`125.50`),
+            currencyCode: $Enums.CurrencyCode.USD,
+            status: $Enums.TransactionStatus.PENDING,
+            paymentRail: $Enums.PaymentRail.CARD,
+            description: `Invoice settlement`,
+            dueDate: null,
+            sentDate: null,
+            createdAt: new Date(`2026-04-08T00:00:00.000Z`),
+            updatedAt: new Date(`2026-04-12T00:00:00.000Z`),
+            deletedAt: null,
+            payer: null,
+            requester: null,
+            payerEmail: `payer@example.com`,
+            requesterEmail: `requester@example.com`,
+            attachments: [],
+            ledgerEntries: [
+              {
+                id: `ledger-1`,
+                ledgerId: `ledger-group-1`,
+                type: $Enums.LedgerEntryType.USER_PAYMENT,
+                amount: new Prisma.Decimal(`125.50`),
+                currencyCode: $Enums.CurrencyCode.USD,
+                status: $Enums.TransactionStatus.PENDING,
+                createdAt: new Date(`2026-04-08T03:00:00.000Z`),
+                deletedAt: null,
+                metadata: null,
+                outcomes: [
+                  {
+                    id: `outcome-latest`,
+                    status: $Enums.TransactionStatus.COMPLETED,
+                    source: `stripe`,
+                    externalId: `pi_123`,
+                    createdAt: new Date(`2026-04-08T05:00:00.000Z`),
+                  },
+                  {
+                    id: `outcome-earliest`,
+                    status: $Enums.TransactionStatus.WAITING,
+                    source: `stripe`,
+                    externalId: `pi_122`,
+                    createdAt: new Date(`2026-04-08T04:00:00.000Z`),
+                  },
+                ],
+              },
+            ],
+          })),
+        },
+        adminActionAuditLogModel: {
+          findMany: jest.fn(async () => []),
+        },
+      } as never,
+      { getAssignmentContextForResource: jest.fn(async () => ({ current: null, history: [] })) } as never,
+    );
 
     const paymentCase = await service.getPaymentRequestCase(`payment-1`);
 
@@ -70,15 +73,19 @@ describe(`AdminV2PaymentsService`, () => {
         effectiveStatus: `COMPLETED`,
       }),
     ]);
+    expect(paymentCase.assignment).toEqual({ current: null, history: [] });
   });
 
   it(`applies due-date and created-time filters on payment list`, async () => {
     const findMany = jest.fn(async () => []);
-    const service = new AdminV2PaymentsService({
-      paymentRequestModel: {
-        findMany,
-      },
-    } as never);
+    const service = new AdminV2PaymentsService(
+      {
+        paymentRequestModel: {
+          findMany,
+        },
+      } as never,
+      {} as never,
+    );
 
     const dueDateFrom = new Date(`2026-04-01T00:00:00.000Z`);
     const dueDateTo = new Date(`2026-04-30T23:59:59.999Z`);
@@ -110,94 +117,97 @@ describe(`AdminV2PaymentsService`, () => {
   });
 
   it(`keeps soft-deleted forensic edges on payment case surfaces`, async () => {
-    const service = new AdminV2PaymentsService({
-      paymentRequestModel: {
-        findUnique: jest.fn(async () => ({
-          id: `payment-1`,
-          amount: new Prisma.Decimal(`125.50`),
-          currencyCode: $Enums.CurrencyCode.USD,
-          status: $Enums.TransactionStatus.PENDING,
-          paymentRail: $Enums.PaymentRail.BANK_TRANSFER,
-          description: `Invoice settlement`,
-          dueDate: new Date(`2026-04-10T00:00:00.000Z`),
-          sentDate: new Date(`2026-04-09T00:00:00.000Z`),
-          createdAt: new Date(`2026-04-08T00:00:00.000Z`),
-          updatedAt: new Date(`2026-04-12T00:00:00.000Z`),
-          deletedAt: null,
-          payer: { id: `consumer-payer`, email: `payer@example.com` },
-          requester: { id: `consumer-requester`, email: `requester@example.com` },
-          payerEmail: `payer@example.com`,
-          requesterEmail: `requester@example.com`,
-          attachments: [
-            {
-              id: `attachment-active`,
-              createdAt: new Date(`2026-04-08T01:00:00.000Z`),
-              deletedAt: null,
-              resource: {
-                id: `resource-active`,
-                originalName: `invoice.pdf`,
-                size: 1024,
-                mimetype: `application/pdf`,
-                downloadUrl: `https://example.com/invoice.pdf`,
+    const service = new AdminV2PaymentsService(
+      {
+        paymentRequestModel: {
+          findUnique: jest.fn(async () => ({
+            id: `payment-1`,
+            amount: new Prisma.Decimal(`125.50`),
+            currencyCode: $Enums.CurrencyCode.USD,
+            status: $Enums.TransactionStatus.PENDING,
+            paymentRail: $Enums.PaymentRail.BANK_TRANSFER,
+            description: `Invoice settlement`,
+            dueDate: new Date(`2026-04-10T00:00:00.000Z`),
+            sentDate: new Date(`2026-04-09T00:00:00.000Z`),
+            createdAt: new Date(`2026-04-08T00:00:00.000Z`),
+            updatedAt: new Date(`2026-04-12T00:00:00.000Z`),
+            deletedAt: null,
+            payer: { id: `consumer-payer`, email: `payer@example.com` },
+            requester: { id: `consumer-requester`, email: `requester@example.com` },
+            payerEmail: `payer@example.com`,
+            requesterEmail: `requester@example.com`,
+            attachments: [
+              {
+                id: `attachment-active`,
                 createdAt: new Date(`2026-04-08T01:00:00.000Z`),
                 deletedAt: null,
+                resource: {
+                  id: `resource-active`,
+                  originalName: `invoice.pdf`,
+                  size: 1024,
+                  mimetype: `application/pdf`,
+                  downloadUrl: `https://example.com/invoice.pdf`,
+                  createdAt: new Date(`2026-04-08T01:00:00.000Z`),
+                  deletedAt: null,
+                },
               },
-            },
-            {
-              id: `attachment-deleted`,
-              createdAt: new Date(`2026-04-08T02:00:00.000Z`),
-              deletedAt: new Date(`2026-04-13T00:00:00.000Z`),
-              resource: {
-                id: `resource-deleted`,
-                originalName: `chargeback-note.pdf`,
-                size: 2048,
-                mimetype: `application/pdf`,
-                downloadUrl: `https://example.com/chargeback-note.pdf`,
+              {
+                id: `attachment-deleted`,
                 createdAt: new Date(`2026-04-08T02:00:00.000Z`),
                 deletedAt: new Date(`2026-04-13T00:00:00.000Z`),
-              },
-            },
-          ],
-          ledgerEntries: [
-            {
-              id: `ledger-active`,
-              ledgerId: `ledger-group-1`,
-              type: $Enums.LedgerEntryType.USER_PAYMENT,
-              amount: new Prisma.Decimal(`125.50`),
-              currencyCode: $Enums.CurrencyCode.USD,
-              status: $Enums.TransactionStatus.PENDING,
-              createdAt: new Date(`2026-04-08T03:00:00.000Z`),
-              deletedAt: null,
-              metadata: null,
-              outcomes: [
-                {
-                  id: `outcome-1`,
-                  status: $Enums.TransactionStatus.COMPLETED,
-                  source: `stripe`,
-                  externalId: `pi_123`,
-                  createdAt: new Date(`2026-04-08T04:00:00.000Z`),
+                resource: {
+                  id: `resource-deleted`,
+                  originalName: `chargeback-note.pdf`,
+                  size: 2048,
+                  mimetype: `application/pdf`,
+                  downloadUrl: `https://example.com/chargeback-note.pdf`,
+                  createdAt: new Date(`2026-04-08T02:00:00.000Z`),
+                  deletedAt: new Date(`2026-04-13T00:00:00.000Z`),
                 },
-              ],
-            },
-            {
-              id: `ledger-deleted`,
-              ledgerId: `ledger-group-1`,
-              type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
-              amount: new Prisma.Decimal(`-125.50`),
-              currencyCode: $Enums.CurrencyCode.USD,
-              status: $Enums.TransactionStatus.COMPLETED,
-              createdAt: new Date(`2026-04-09T03:00:00.000Z`),
-              deletedAt: new Date(`2026-04-14T00:00:00.000Z`),
-              metadata: null,
-              outcomes: [],
-            },
-          ],
-        })),
-      },
-      adminActionAuditLogModel: {
-        findMany: jest.fn(async () => []),
-      },
-    } as never);
+              },
+            ],
+            ledgerEntries: [
+              {
+                id: `ledger-active`,
+                ledgerId: `ledger-group-1`,
+                type: $Enums.LedgerEntryType.USER_PAYMENT,
+                amount: new Prisma.Decimal(`125.50`),
+                currencyCode: $Enums.CurrencyCode.USD,
+                status: $Enums.TransactionStatus.PENDING,
+                createdAt: new Date(`2026-04-08T03:00:00.000Z`),
+                deletedAt: null,
+                metadata: null,
+                outcomes: [
+                  {
+                    id: `outcome-1`,
+                    status: $Enums.TransactionStatus.COMPLETED,
+                    source: `stripe`,
+                    externalId: `pi_123`,
+                    createdAt: new Date(`2026-04-08T04:00:00.000Z`),
+                  },
+                ],
+              },
+              {
+                id: `ledger-deleted`,
+                ledgerId: `ledger-group-1`,
+                type: $Enums.LedgerEntryType.USER_PAYMENT_REVERSAL,
+                amount: new Prisma.Decimal(`-125.50`),
+                currencyCode: $Enums.CurrencyCode.USD,
+                status: $Enums.TransactionStatus.COMPLETED,
+                createdAt: new Date(`2026-04-09T03:00:00.000Z`),
+                deletedAt: new Date(`2026-04-14T00:00:00.000Z`),
+                metadata: null,
+                outcomes: [],
+              },
+            ],
+          })),
+        },
+        adminActionAuditLogModel: {
+          findMany: jest.fn(async () => []),
+        },
+      } as never,
+      { getAssignmentContextForResource: jest.fn(async () => ({ current: null, history: [] })) } as never,
+    );
 
     const paymentCase = await service.getPaymentRequestCase(`payment-1`);
 
@@ -376,11 +386,14 @@ describe(`AdminV2PaymentsService`, () => {
         },
       ]);
 
-    const service = new AdminV2PaymentsService({
-      paymentRequestModel: {
-        findMany,
-      },
-    } as never);
+    const service = new AdminV2PaymentsService(
+      {
+        paymentRequestModel: {
+          findMany,
+        },
+      } as never,
+      {} as never,
+    );
 
     const queue = await service.getPaymentOperationsQueue();
 
@@ -452,11 +465,14 @@ describe(`AdminV2PaymentsService`, () => {
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([]);
 
-    const service = new AdminV2PaymentsService({
-      paymentRequestModel: {
-        findMany,
-      },
-    } as never);
+    const service = new AdminV2PaymentsService(
+      {
+        paymentRequestModel: {
+          findMany,
+        },
+      } as never,
+      {} as never,
+    );
 
     await service.getPaymentOperationsQueue();
 
@@ -471,5 +487,72 @@ describe(`AdminV2PaymentsService`, () => {
       }),
     );
     expect(findMany.mock.calls[2]?.[0]?.where).not.toHaveProperty(`OR`);
+  });
+
+  it(`exposes payment_request assignment context on getPaymentRequestCase via shared assignments helper`, async () => {
+    const assignmentContext = {
+      current: {
+        id: `assignment-active`,
+        assignedTo: { id: `admin-7`, name: null, email: `ops@example.com` },
+        assignedBy: { id: `admin-7`, name: null, email: `ops@example.com` },
+        assignedAt: `2026-04-21T08:00:00.000Z`,
+        reason: `Investigating discrepancy`,
+        expiresAt: null,
+      },
+      history: [
+        {
+          id: `assignment-active`,
+          assignedTo: { id: `admin-7`, name: null, email: `ops@example.com` },
+          assignedBy: { id: `admin-7`, name: null, email: `ops@example.com` },
+          assignedAt: `2026-04-21T08:00:00.000Z`,
+          releasedAt: null,
+          releasedBy: null,
+          reason: `Investigating discrepancy`,
+          expiresAt: null,
+        },
+      ],
+    };
+    const getAssignmentContextForResource = jest.fn(async () => assignmentContext);
+    const service = new AdminV2PaymentsService(
+      {
+        paymentRequestModel: {
+          findUnique: jest.fn(async () => ({
+            id: `payment-1`,
+            amount: new Prisma.Decimal(`125.50`),
+            currencyCode: $Enums.CurrencyCode.USD,
+            status: $Enums.TransactionStatus.PENDING,
+            paymentRail: $Enums.PaymentRail.CARD,
+            description: null,
+            dueDate: null,
+            sentDate: null,
+            createdAt: new Date(`2026-04-08T00:00:00.000Z`),
+            updatedAt: new Date(`2026-04-12T00:00:00.000Z`),
+            deletedAt: null,
+            payer: null,
+            requester: null,
+            payerEmail: `payer@example.com`,
+            requesterEmail: `requester@example.com`,
+            attachments: [],
+            ledgerEntries: [],
+          })),
+        },
+        adminActionAuditLogModel: {
+          findMany: jest.fn(async () => []),
+        },
+      } as never,
+      { getAssignmentContextForResource } as never,
+    );
+
+    const paymentCase = await service.getPaymentRequestCase(`payment-1`);
+
+    expect(getAssignmentContextForResource).toHaveBeenCalledWith(`payment_request`, `payment-1`);
+    expect(paymentCase.assignment.current).toEqual(
+      expect.objectContaining({
+        id: `assignment-active`,
+        assignedTo: expect.objectContaining({ id: `admin-7`, email: `ops@example.com` }),
+        reason: `Investigating discrepancy`,
+      }),
+    );
+    expect(paymentCase.assignment.history).toHaveLength(1);
   });
 });

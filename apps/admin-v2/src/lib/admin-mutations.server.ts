@@ -602,6 +602,70 @@ export async function reassignLedgerEntryAssignmentAction(ledgerEntryId: string,
   revalidateLedgerEntryAssignmentPaths(ledgerEntryId);
 }
 
+function revalidatePaymentRequestAssignmentPaths(paymentRequestId: string) {
+  revalidatePath(`/payments`);
+  revalidatePath(`/payments/operations`);
+  revalidatePath(`/payments/${paymentRequestId}`);
+}
+
+export async function claimPaymentRequestAssignmentAction(paymentRequestId: string, formData: FormData): Promise<void> {
+  if (!paymentRequestId) {
+    throw new Error(`paymentRequestId is required`);
+  }
+  const reason = String(formData.get(`reason`) ?? ``).trim();
+  await postAdminMutation(
+    `/admin-v2/assignments/claim`,
+    { resourceType: `payment_request`, resourceId: paymentRequestId, reason: reason || null },
+    `Failed to claim payment request assignment`,
+  );
+  revalidatePaymentRequestAssignmentPaths(paymentRequestId);
+}
+
+export async function releasePaymentRequestAssignmentAction(
+  paymentRequestId: string,
+  formData: FormData,
+): Promise<void> {
+  if (!paymentRequestId) {
+    throw new Error(`paymentRequestId is required`);
+  }
+  const assignmentId = String(formData.get(`assignmentId`) ?? ``).trim();
+  if (!assignmentId) {
+    throw new Error(`assignmentId is required`);
+  }
+  const reason = String(formData.get(`reason`) ?? ``).trim();
+  await postAdminMutation(
+    `/admin-v2/assignments/release`,
+    { assignmentId, reason: reason || null, expectedReleasedAtNull: 0 },
+    `Failed to release payment request assignment`,
+  );
+  revalidatePaymentRequestAssignmentPaths(paymentRequestId);
+}
+
+export async function reassignPaymentRequestAssignmentAction(
+  paymentRequestId: string,
+  formData: FormData,
+): Promise<void> {
+  if (!paymentRequestId) {
+    throw new Error(`paymentRequestId is required`);
+  }
+  const assignmentId = String(formData.get(`assignmentId`) ?? ``).trim();
+  const newAssigneeId = String(formData.get(`newAssigneeId`) ?? ``).trim();
+  const reason = String(formData.get(`reason`) ?? ``).trim();
+  const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
+  if (!assignmentId) {
+    throw new Error(`assignmentId is required`);
+  }
+  if (!newAssigneeId) {
+    throw new Error(`newAssigneeId is required`);
+  }
+  await postAdminMutation(
+    `/admin-v2/assignments/reassign`,
+    { assignmentId, newAssigneeId, reason, confirmed, expectedReleasedAtNull: 0 },
+    `Failed to reassign payment request assignment`,
+  );
+  revalidatePaymentRequestAssignmentPaths(paymentRequestId);
+}
+
 export async function resetAdminPasswordAction(adminId: string, formData: FormData): Promise<void> {
   const version = parseRequiredVersion(formData);
   await postAdminMutation(

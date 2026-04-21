@@ -4,6 +4,7 @@ import { $Enums, Prisma } from '@remoola/database-2';
 
 import { PrismaService } from '../../shared/prisma.service';
 import { decodeAdminV2Cursor, encodeAdminV2Cursor } from '../admin-v2-cursor';
+import { AdminV2AssignmentsService } from '../assignments/admin-v2-assignments.service';
 
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 100;
@@ -93,7 +94,10 @@ function buildDateRangeFilter(dateFrom?: Date, dateTo?: Date): Prisma.DateTimeNu
 
 @Injectable()
 export class AdminV2PaymentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly assignmentsService: AdminV2AssignmentsService,
+  ) {}
 
   private isInvoiceTaggedResource(
     resource: { resourceTags?: Array<{ tag: { name: string } }> } | null | undefined,
@@ -535,20 +539,23 @@ export class AdminV2PaymentsService {
       ]),
     ].sort((left, right) => left.timestamp.getTime() - right.timestamp.getTime());
 
-    const auditContext = await this.prisma.adminActionAuditLogModel.findMany({
-      where: {
-        resourceId: paymentRequest.id,
-      },
-      include: {
-        admin: {
-          select: {
-            email: true,
+    const [auditContext, assignment] = await Promise.all([
+      this.prisma.adminActionAuditLogModel.findMany({
+        where: {
+          resourceId: paymentRequest.id,
+        },
+        include: {
+          admin: {
+            select: {
+              email: true,
+            },
           },
         },
-      },
-      orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-      take: 20,
-    });
+        orderBy: [{ createdAt: `desc` }, { id: `desc` }],
+        take: 20,
+      }),
+      this.assignmentsService.getAssignmentContextForResource(`payment_request`, paymentRequest.id),
+    ]);
 
     return {
       id: paymentRequest.id,
@@ -603,6 +610,7 @@ export class AdminV2PaymentsService {
         adminEmail: row.admin?.email ?? null,
         createdAt: row.createdAt,
       })),
+      assignment,
       version: paymentRequest.updatedAt.getTime(),
       updatedAt: paymentRequest.updatedAt,
       staleWarning: effectiveStatus !== paymentRequest.status,

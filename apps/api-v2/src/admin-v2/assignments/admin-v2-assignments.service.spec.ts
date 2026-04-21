@@ -170,7 +170,7 @@ describe(`AdminV2AssignmentsService`, () => {
       const { service } = buildService();
 
       await expect(
-        service.claim(opsActor, { resourceType: `payment_request`, resourceId: RESOURCE_ID }, meta),
+        service.claim(opsActor, { resourceType: `payout`, resourceId: RESOURCE_ID }, meta),
       ).rejects.toBeInstanceOf(BadRequestException);
     });
 
@@ -192,6 +192,31 @@ describe(`AdminV2AssignmentsService`, () => {
           meta,
         ),
       ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it(`accepts payment_request resourceType, inserts the assignment, and audits payment_request`, async () => {
+      const { service, queryRaw, adminModel, adminActionAudit } = buildService();
+      queryRaw.mockResolvedValueOnce([]);
+      queryRaw.mockResolvedValueOnce([activeRow({ resource_type: `payment_request` })]);
+      adminModel.findUnique.mockResolvedValueOnce({ id: OPS_ADMIN_ID, email: `ops@example.com` });
+
+      const result = await service.claim(opsActor, { resourceType: `payment_request`, resourceId: RESOURCE_ID }, meta);
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          assignmentId: ASSIGNMENT_ID,
+          status: `created`,
+          assignedTo: expect.objectContaining({ id: OPS_ADMIN_ID }),
+        }),
+      );
+      expect(adminActionAudit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: `assignment_claim`,
+          adminId: OPS_ADMIN_ID,
+          resource: `payment_request`,
+          resourceId: RESOURCE_ID,
+        }),
+      );
     });
 
     it(`accepts ledger_entry resourceType, inserts the assignment, and audits ledger_entry`, async () => {
@@ -471,6 +496,100 @@ describe(`AdminV2AssignmentsService`, () => {
       expect(secondCall[0].data.action).toBe(`assignment_reassign`);
       expect(secondCall[0].data.resource).toBe(`ledger_entry`);
       expect(firstCall[0].data.metadata.transferOperationId).toBe(secondCall[0].data.metadata.transferOperationId);
+    });
+  });
+
+  describe(`getAssignmentContextForResource`, () => {
+    it(`returns null current and empty history when no rows exist`, async () => {
+      const { service, queryRaw } = buildService();
+      queryRaw.mockResolvedValueOnce([]);
+
+      const result = await service.getAssignmentContextForResource(`payment_request`, RESOURCE_ID);
+
+      expect(result).toEqual({ current: null, history: [] });
+    });
+
+    it(`returns the latest active assignment as current and aggregates history`, async () => {
+      const { service, queryRaw } = buildService();
+      const releasedAssignedAt = new Date(`2026-04-19T09:00:00.000Z`);
+      const releasedReleasedAt = new Date(`2026-04-19T10:00:00.000Z`);
+      const activeAssignedAt = new Date(`2026-04-20T11:00:00.000Z`);
+      queryRaw.mockResolvedValueOnce([
+        {
+          id: ASSIGNMENT_ID,
+          resource_id: RESOURCE_ID,
+          assigned_to: OPS_ADMIN_ID,
+          assigned_by: OPS_ADMIN_ID,
+          released_by: null,
+          assigned_at: activeAssignedAt,
+          released_at: null,
+          expires_at: null,
+          reason: `Investigating`,
+          assigned_to_email: `ops@example.com`,
+          assigned_by_email: `ops@example.com`,
+          released_by_email: null,
+        },
+        {
+          id: `66666666-6666-4666-8666-666666666666`,
+          resource_id: RESOURCE_ID,
+          assigned_to: OTHER_ADMIN_ID,
+          assigned_by: SUPER_ADMIN_ID,
+          released_by: SUPER_ADMIN_ID,
+          assigned_at: releasedAssignedAt,
+          released_at: releasedReleasedAt,
+          expires_at: null,
+          reason: null,
+          assigned_to_email: `other@example.com`,
+          assigned_by_email: `super@example.com`,
+          released_by_email: `super@example.com`,
+        },
+      ]);
+
+      const result = await service.getAssignmentContextForResource(`payment_request`, RESOURCE_ID);
+
+      expect(result.current).toEqual({
+        id: ASSIGNMENT_ID,
+        assignedTo: { id: OPS_ADMIN_ID, name: null, email: `ops@example.com` },
+        assignedBy: { id: OPS_ADMIN_ID, name: null, email: `ops@example.com` },
+        assignedAt: activeAssignedAt.toISOString(),
+        reason: `Investigating`,
+        expiresAt: null,
+      });
+      expect(result.history).toHaveLength(2);
+      expect(result.history[1]).toEqual(
+        expect.objectContaining({
+          id: `66666666-6666-4666-8666-666666666666`,
+          releasedAt: releasedReleasedAt.toISOString(),
+          releasedBy: { id: SUPER_ADMIN_ID, name: null, email: `super@example.com` },
+        }),
+      );
+    });
+
+    it(`returns null current when only released rows exist`, async () => {
+      const { service, queryRaw } = buildService();
+      const assignedAt = new Date(`2026-04-19T09:00:00.000Z`);
+      const releasedAt = new Date(`2026-04-19T10:00:00.000Z`);
+      queryRaw.mockResolvedValueOnce([
+        {
+          id: ASSIGNMENT_ID,
+          resource_id: RESOURCE_ID,
+          assigned_to: OPS_ADMIN_ID,
+          assigned_by: OPS_ADMIN_ID,
+          released_by: OPS_ADMIN_ID,
+          assigned_at: assignedAt,
+          released_at: releasedAt,
+          expires_at: null,
+          reason: null,
+          assigned_to_email: `ops@example.com`,
+          assigned_by_email: `ops@example.com`,
+          released_by_email: `ops@example.com`,
+        },
+      ]);
+
+      const result = await service.getAssignmentContextForResource(`ledger_entry`, RESOURCE_ID);
+
+      expect(result.current).toBeNull();
+      expect(result.history).toHaveLength(1);
     });
   });
 });
