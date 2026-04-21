@@ -227,6 +227,31 @@ export class AdminV2VerificationService {
     };
   }
 
+  async getQueueCount(filters?: {
+    status?: string;
+    stripeIdentityStatus?: string;
+    country?: string;
+    contractorKind?: string;
+  }): Promise<number> {
+    const where: Prisma.ConsumerModelWhereInput = {
+      deletedAt: null,
+      verificationStatus: {
+        in:
+          filters?.status &&
+          ACTIVE_VERIFICATION_STATUSES.includes(filters.status as (typeof ACTIVE_VERIFICATION_STATUSES)[number])
+            ? [filters.status as (typeof ACTIVE_VERIFICATION_STATUSES)[number]]
+            : [...ACTIVE_VERIFICATION_STATUSES],
+      },
+      ...(filters?.stripeIdentityStatus?.trim() ? { stripeIdentityStatus: filters.stripeIdentityStatus.trim() } : {}),
+      ...(filters?.contractorKind?.trim()
+        ? { contractorKind: filters.contractorKind.trim() as $Enums.ContractorKind }
+        : {}),
+      ...(filters?.country?.trim() ? { addressDetails: { is: { country: filters.country.trim() } } } : {}),
+    };
+
+    return this.prisma.consumerModel.count({ where });
+  }
+
   async getCase(consumerId: string, controls: DecisionControls) {
     const [consumerCase, decisionHistory, authRisk, slaSnapshot, assignment] = await Promise.all([
       this.consumersService.getConsumerCase(consumerId),

@@ -301,6 +301,164 @@ describe(`AdminV2VerificationService`, () => {
     expect(result.decisionControls.canReassignAssignments).toBe(false);
   });
 
+  describe(`getQueueCount`, () => {
+    function buildCountService(
+      opts: {
+        countResult?: number;
+        countImpl?: jest.Mock;
+      } = {},
+    ) {
+      const count = opts.countImpl ?? jest.fn(async () => opts.countResult ?? 0);
+      const service = new AdminV2VerificationService(
+        {
+          consumerModel: { count },
+        } as never,
+        {} as never,
+        {} as never,
+        {} as never,
+        {} as never,
+      );
+      return { service, count };
+    }
+
+    it(`counts all active (PENDING/MORE_INFO/FLAGGED) non-deleted consumers when no filters provided`, async () => {
+      const { service, count } = buildCountService({ countResult: 42 });
+
+      const result = await service.getQueueCount();
+
+      expect(result).toBe(42);
+      expect(count).toHaveBeenCalledTimes(1);
+      const callArgs = count.mock.calls[0]?.[0] as { where: { deletedAt: null; verificationStatus: { in: string[] } } };
+      expect(callArgs.where.deletedAt).toBeNull();
+      expect(callArgs.where.verificationStatus.in).toEqual([`PENDING`, `MORE_INFO`, `FLAGGED`]);
+    });
+
+    it(`treats empty filters object identically to no filters`, async () => {
+      const { service, count } = buildCountService({ countResult: 17 });
+
+      const result = await service.getQueueCount({});
+
+      expect(result).toBe(17);
+      const callArgs = count.mock.calls[0]?.[0] as { where: { verificationStatus: { in: string[] } } };
+      expect(callArgs.where.verificationStatus.in).toEqual([`PENDING`, `MORE_INFO`, `FLAGGED`]);
+    });
+
+    it(`narrows verificationStatus to a single status when one of ACTIVE_VERIFICATION_STATUSES is provided`, async () => {
+      const { service, count } = buildCountService({ countResult: 5 });
+
+      await service.getQueueCount({ status: `PENDING` });
+
+      const callArgs = count.mock.calls[0]?.[0] as { where: { verificationStatus: { in: string[] } } };
+      expect(callArgs.where.verificationStatus.in).toEqual([`PENDING`]);
+    });
+
+    it(`falls back to the full ACTIVE_VERIFICATION_STATUSES set when status is not active (mirrors getQueue)`, async () => {
+      const { service, count } = buildCountService({ countResult: 9 });
+
+      await service.getQueueCount({ status: `XYZ` });
+
+      const callArgs = count.mock.calls[0]?.[0] as { where: { verificationStatus: { in: string[] } } };
+      expect(callArgs.where.verificationStatus.in).toEqual([`PENDING`, `MORE_INFO`, `FLAGGED`]);
+    });
+
+    it(`applies country via addressDetails.is.country at the DB level`, async () => {
+      const { service, count } = buildCountService({ countResult: 3 });
+
+      await service.getQueueCount({ country: `US` });
+
+      const callArgs = count.mock.calls[0]?.[0] as {
+        where: { addressDetails: { is: { country: string } } };
+      };
+      expect(callArgs.where.addressDetails).toEqual({ is: { country: `US` } });
+    });
+
+    it(`applies contractorKind as a typed enum filter`, async () => {
+      const { service, count } = buildCountService({ countResult: 1 });
+
+      await service.getQueueCount({ contractorKind: `INDIVIDUAL` });
+
+      const callArgs = count.mock.calls[0]?.[0] as { where: { contractorKind: string } };
+      expect(callArgs.where.contractorKind).toBe(`INDIVIDUAL`);
+    });
+
+    it(`applies stripeIdentityStatus verbatim`, async () => {
+      const { service, count } = buildCountService({ countResult: 11 });
+
+      await service.getQueueCount({ stripeIdentityStatus: `verified` });
+
+      const callArgs = count.mock.calls[0]?.[0] as { where: { stripeIdentityStatus: string } };
+      expect(callArgs.where.stripeIdentityStatus).toBe(`verified`);
+    });
+
+    it(`combines multiple filters with implicit AND in a single where clause`, async () => {
+      const { service, count } = buildCountService({ countResult: 2 });
+
+      await service.getQueueCount({
+        status: `MORE_INFO`,
+        country: `DE`,
+        contractorKind: `BUSINESS`,
+        stripeIdentityStatus: `requires_input`,
+      });
+
+      const callArgs = count.mock.calls[0]?.[0] as {
+        where: {
+          deletedAt: null;
+          verificationStatus: { in: string[] };
+          addressDetails: { is: { country: string } };
+          contractorKind: string;
+          stripeIdentityStatus: string;
+        };
+      };
+      expect(callArgs.where.deletedAt).toBeNull();
+      expect(callArgs.where.verificationStatus.in).toEqual([`MORE_INFO`]);
+      expect(callArgs.where.addressDetails).toEqual({ is: { country: `DE` } });
+      expect(callArgs.where.contractorKind).toBe(`BUSINESS`);
+      expect(callArgs.where.stripeIdentityStatus).toBe(`requires_input`);
+    });
+
+    it(`always filters out soft-deleted consumers via deletedAt: null`, async () => {
+      const { service, count } = buildCountService({ countResult: 0 });
+
+      await service.getQueueCount({ status: `FLAGGED` });
+
+      const callArgs = count.mock.calls[0]?.[0] as { where: { deletedAt: null } };
+      expect(callArgs.where.deletedAt).toBeNull();
+    });
+
+    it(`omits empty/whitespace optional filters from the where clause`, async () => {
+      const { service, count } = buildCountService({ countResult: 0 });
+
+      await service.getQueueCount({
+        country: `   `,
+        contractorKind: ``,
+        stripeIdentityStatus: ``,
+      });
+
+      const callArgs = count.mock.calls[0]?.[0] as {
+        where: Record<string, unknown>;
+      };
+      expect(callArgs.where).not.toHaveProperty(`addressDetails`);
+      expect(callArgs.where).not.toHaveProperty(`contractorKind`);
+      expect(callArgs.where).not.toHaveProperty(`stripeIdentityStatus`);
+    });
+
+    it(`returns the raw count number without any audit/idempotency wiring`, async () => {
+      const count = jest.fn(async () => 99);
+      const service = new AdminV2VerificationService(
+        { consumerModel: { count } } as never,
+        {} as never,
+        {} as never,
+        {} as never,
+        {} as never,
+      );
+
+      const result = await service.getQueueCount({ status: `PENDING` });
+
+      expect(result).toBe(99);
+      expect(count).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it(`returns the canonical stale-version payload for verification decisions`, async () => {
     const currentUpdatedAt = new Date(`2026-04-15T10:05:00.000Z`);
     const service = new AdminV2VerificationService(
