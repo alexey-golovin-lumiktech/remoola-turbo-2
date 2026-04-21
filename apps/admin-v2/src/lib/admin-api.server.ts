@@ -966,6 +966,10 @@ export type LedgerEntryCaseResponse = {
     adminEmail: string | null;
     createdAt: string;
   }>;
+  assignment: {
+    current: AssignmentSummary | null;
+    history: AssignmentHistoryItem[];
+  };
   staleWarning: boolean;
   dataFreshnessClass: string;
 };
