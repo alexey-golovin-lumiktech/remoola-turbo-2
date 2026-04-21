@@ -25,13 +25,15 @@ This is a deterministic local check implemented in
   checks that do not exist
 - every anchor path listed in `CHECK_PATHS` in
   `scripts/admin-v2-gates/config.mjs` exists in the working tree (currently
-  25 paths spanning the admin-v2 frontend surface, the api-v2
+  spans the admin-v2 frontend surface, the api-v2
   admin-v2/auth/csrf surface, the api-types HTTP surface, the
   admin-v2-pack planning files used by the gate, and the live admin-v2
   docs plus the 3.1c perf/reconciliation artifacts, the additive migration
-  READMEs, the 3.2a operational-assignments reconciliation note, and the
+  READMEs, the 3.2a operational-assignments reconciliation note, the
   3.3a saved-views skeleton reconciliation note plus its
-  saved_view foundation migration README); the config file is the single
+  saved_view foundation migration README, and the 3.3b operational-alerts
+  skeleton reconciliation note plus its operational_alert foundation
+  migration README); the config file is the single
   source of truth — do not duplicate the list here
 - the expected capability and audit anchors are present in
   `apps/api-v2/src/shared/admin-action-audit.service.ts` and
@@ -40,11 +42,11 @@ This is a deterministic local check implemented in
   write entries listed in `scripts/admin-v2-gates/config.mjs`)
 - frontend server-action exports are present in
   `apps/admin-v2/src/lib/admin-mutations.server.ts` for payment methods,
-  exchange, documents, admins, operational assignments, and saved views
-  mutations
+  exchange, documents, admins, operational assignments, saved views, and
+  operational alerts mutations
 - the expected backend route tokens are present in the admins, payment
-  methods, exchange, documents, payouts, assignments and saved-views
-  controllers so the gate can catch obvious route drift
+  methods, exchange, documents, payouts, assignments, saved-views, and
+  operational-alerts controllers so the gate can catch obvious route drift
 - the reconciliation tokens listed in `RECONCILIATION_NOTES` in
   `scripts/admin-v2-gates/config.mjs` are present in the corresponding
   planning and docs files (currently spanning
@@ -54,13 +56,23 @@ This is a deterministic local check implemented in
   `docs/admin-v2-mvp-3-anomalies-first-slice.md`,
   `docs/admin-v2-mvp-3.1c-anomaly-classes-expansion.md`,
   `docs/admin-v2-mvp-3.1c-perf-evidence.md`,
-  `docs/admin-v2-mvp-3.2a-operational-assignments.md`, and
-  `docs/admin-v2-mvp-3.3a-saved-views-skeleton.md`); see the config for
-  the authoritative token list, including the schema-backed RBAC, payment
-  methods write controls, MVP-3 maturity sequencing, and anomaly first
-  maturity slice plus the 3.1c classes expansion / EXPLAIN ANALYZE
-  evidence, the 3.2a operational assignments decisions, and the 3.3a
-  saved views skeleton decisions used by the current gate
+  `docs/admin-v2-mvp-3.2a-operational-assignments.md`,
+  `docs/admin-v2-mvp-3.3a-saved-views-skeleton.md`, and
+  `docs/admin-v2-mvp-3.3b-operational-alerts-skeleton.md`); see the
+  config for the authoritative token list, including the schema-backed
+  RBAC, payment methods write controls, MVP-3 maturity sequencing, and
+  anomaly first maturity slice plus the 3.1c classes expansion / EXPLAIN
+  ANALYZE evidence, the 3.2a operational assignments decisions, the 3.3a
+  saved views skeleton decisions, and the 3.3b operational alerts
+  skeleton decisions used by the current gate
+
+After 3.3b lands, the MVP-3 maturity exit criteria from
+`admin-v2-pack/08-rollout-risks-and-sequencing.md` are fully closed.
+Subsequent slices (additional workspaces, additional threshold types,
+occurrence history, additional delivery channels, ack/snooze, manual
+re-evaluate, link from `/system/page.tsx` to `/system/alerts`,
+"Create alert from this filter" shortcut on `/ledger/anomalies/page.tsx`)
+are post-MVP-3 expansion work and ship as their own slices.
 
 ### `yarn test:admin-v2`
 

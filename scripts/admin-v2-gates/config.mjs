@@ -22,8 +22,10 @@ export const CHECK_PATHS = [
   `docs/admin-v2-mvp-3.1c-perf-evidence.md`,
   `docs/admin-v2-mvp-3.2a-operational-assignments.md`,
   `docs/admin-v2-mvp-3.3a-saved-views-skeleton.md`,
+  `docs/admin-v2-mvp-3.3b-operational-alerts-skeleton.md`,
   `packages/database-2/prisma/migrations/20260420191500_admin_v2_duplicate_idempotency_risk_index/README.md`,
   `packages/database-2/prisma/migrations/20260421100000_admin_v2_saved_views_foundation/README.md`,
+  `packages/database-2/prisma/migrations/20260421100500_admin_v2_operational_alerts_foundation/README.md`,
 ];
 
 export const AUDIT_ACTIONS = [
@@ -62,6 +64,9 @@ export const AUDIT_ACTIONS = [
   `saved_view_create`,
   `saved_view_update`,
   `saved_view_delete`,
+  `alert_create`,
+  `alert_update`,
+  `alert_delete`,
 ];
 
 export const CAPABILITIES = [
@@ -91,6 +96,7 @@ export const CAPABILITIES = [
   `system.read`,
   `assignments.manage`,
   `saved_views.manage`,
+  `alerts.manage`,
 ];
 
 export const FRONTEND_ACTIONS = [
@@ -120,6 +126,9 @@ export const FRONTEND_ACTIONS = [
   `createSavedViewAction`,
   `updateSavedViewAction`,
   `deleteSavedViewAction`,
+  `createOperationalAlertAction`,
+  `updateOperationalAlertAction`,
+  `deleteOperationalAlertAction`,
 ];
 
 export const ROUTE_TOKENS = {
@@ -162,6 +171,12 @@ export const ROUTE_TOKENS = {
     '@Post()',
     '@Patch(`:savedViewId`)',
     '@Delete(`:savedViewId`)',
+  ],
+  'apps/api-v2/src/admin-v2/operational-alerts/admin-v2-operational-alerts.controller.ts': [
+    '@Get()',
+    '@Post()',
+    '@Patch(`:operationalAlertId`)',
+    '@Delete(`:operationalAlertId`)',
   ],
 };
 
@@ -311,5 +326,45 @@ export const RECONCILIATION_NOTES = {
     `Decision: name unique partial index`,
     `MAX_SAVED_VIEW_PAYLOAD_BYTES`,
     `expectedDeletedAtNull`,
+  ],
+  'docs/admin-v2-mvp-3.3b-operational-alerts-skeleton.md': [
+    `MVP-3.3b`,
+    `Sequence 7`,
+    `alerts.manage`,
+    `alert_create`,
+    `alert_update`,
+    `alert_delete`,
+    `OperationalAlertModel`,
+    `ledger_anomalies only`,
+    `count_gt only`,
+    `personal-only ownership`,
+    `soft-delete`,
+    `opaque queryPayload`,
+    `structured thresholdPayload`,
+    `single workspace allowlist`,
+    `@Cron`,
+    `EVALUATOR_TICK_MAX_ALERTS`,
+    `EVALUATOR_PER_ALERT_TIMEOUT_MS`,
+    `last_fired_at`,
+    `last_evaluation_error`,
+    `Decision: workspace allowlist ledger_anomalies only`,
+    `Decision: separate query and threshold payloads`,
+    `Decision: threshold count_gt only`,
+    `Decision: in-app delivery only`,
+    `Decision: no occurrence model in skeleton`,
+    `Decision: no audit on fire`,
+    `Decision: no confirmation on mutations`,
+    `Decision: evaluation state reset on definition change`,
+    `Decision: workspace immutable on update`,
+    `Decision: no manual re-evaluate endpoint`,
+    `Decision: workspace evaluator strategy boundary`,
+    `Decision: defer link from system page`,
+    `MVP-3 maturity track closed`,
+    `expectedDeletedAtNull`,
+    `Deviation from §1.20`,
+    `getCount`,
+    `AdminV2LedgerAnomaliesService.getCount`,
+    `anomaly cluster read-only addition`,
+    `workspace-evaluator-vs-domain-cluster boundary`,
   ],
 };
