@@ -556,6 +556,7 @@ export async function resetAdminPasswordAction(adminId: string, formData: FormDa
 
 const SAVED_VIEW_WORKSPACE_PATHS: Record<string, string> = {
   ledger_anomalies: `/ledger/anomalies`,
+  verification_queue: `/verification`,
 };
 
 function revalidateSavedViewWorkspace(workspace: string) {

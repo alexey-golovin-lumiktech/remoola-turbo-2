@@ -1154,7 +1154,7 @@ export async function getLedgerAnomaliesSummary(): Promise<LedgerAnomalySummaryR
   return fetchAdminApi<LedgerAnomalySummaryResponse>(`/admin-v2/ledger/anomalies/summary`);
 }
 
-export type SavedViewWorkspace = `ledger_anomalies`;
+export type SavedViewWorkspace = `ledger_anomalies` | `verification_queue`;
 
 export type SavedViewSummary = {
   id: string;
@@ -1175,7 +1175,7 @@ export async function getSavedViews(input: { workspace: SavedViewWorkspace }): P
   return fetchAdminApi<SavedViewsListResponse>(`/admin-v2/saved-views?${searchParams.toString()}`);
 }
 
-export type OperationalAlertWorkspace = `ledger_anomalies`;
+export type OperationalAlertWorkspace = `ledger_anomalies` | `verification_queue`;
 
 export type CountGtThreshold = { type: `count_gt`; value: number };
 export type OperationalAlertThreshold = CountGtThreshold;
