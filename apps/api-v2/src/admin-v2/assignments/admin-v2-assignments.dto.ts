@@ -2,7 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import { Expose, Type } from 'class-transformer';
 import { IsBoolean, IsNumber, IsOptional, IsString, IsUUID } from 'class-validator';
 
-export const ASSIGNABLE_RESOURCE_TYPES = [`verification`] as const;
+export const ASSIGNABLE_RESOURCE_TYPES = [`verification`, `ledger_entry`] as const;
 export type AssignableResourceType = (typeof ASSIGNABLE_RESOURCE_TYPES)[number];
 
 export const MIN_ASSIGNMENT_REASON_LENGTH = 10;
