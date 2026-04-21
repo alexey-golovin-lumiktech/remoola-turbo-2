@@ -3,9 +3,48 @@ import Link from 'next/link';
 import {
   getLedgerAnomalies,
   getLedgerAnomaliesSummary,
+  getSavedViews,
   type LedgerAnomalyClass,
   type LedgerAnomalyListResponse,
+  type SavedViewSummary,
 } from '../../../../lib/admin-api.server';
+import {
+  createSavedViewAction,
+  deleteSavedViewAction,
+  updateSavedViewAction,
+} from '../../../../lib/admin-mutations.server';
+
+const SAVED_VIEW_WORKSPACE = `ledger_anomalies` as const;
+const MAX_SAVED_VIEW_NAME_LENGTH = 100;
+const MAX_SAVED_VIEW_DESCRIPTION_LENGTH = 500;
+
+type LedgerAnomaliesSavedViewPayload = {
+  class: LedgerAnomalyClass;
+  dateFrom: string;
+  dateTo: string;
+};
+
+function isYyyyMmDd(value: unknown): value is string {
+  return typeof value === `string` && /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function parseSavedViewPayload(raw: unknown): LedgerAnomaliesSavedViewPayload | null {
+  if (raw === null || typeof raw !== `object` || Array.isArray(raw)) {
+    return null;
+  }
+  const candidate = raw as Record<string, unknown>;
+  if (!isLedgerAnomalyClass(typeof candidate.class === `string` ? candidate.class : undefined)) {
+    return null;
+  }
+  if (!isYyyyMmDd(candidate.dateFrom) || !isYyyyMmDd(candidate.dateTo)) {
+    return null;
+  }
+  return {
+    class: candidate.class as LedgerAnomalyClass,
+    dateFrom: candidate.dateFrom,
+    dateTo: candidate.dateTo,
+  };
+}
 
 const CLASS_ORDER: LedgerAnomalyClass[] = [
   `stalePendingEntries`,
@@ -145,6 +184,148 @@ function AnomalyTable({ items }: { items: LedgerAnomalyItem[] }) {
   );
 }
 
+type BuildHrefFn = (next: {
+  className?: LedgerAnomalyClass;
+  dateFrom?: string;
+  dateTo?: string;
+  cursor?: string | null;
+}) => string;
+
+function SavedViewRow({ view, buildHref }: { view: SavedViewSummary; buildHref: BuildHrefFn }) {
+  const payload = parseSavedViewPayload(view.queryPayload);
+  const payloadJson = JSON.stringify(view.queryPayload ?? null);
+
+  return (
+    <div className="panel">
+      <div className="pageHeader">
+        <div>
+          <strong>{view.name}</strong>
+          {view.description ? <p className="muted">{view.description}</p> : null}
+          {!payload ? (
+            <p className="muted">
+              Saved view payload could not be applied. The current default filters are loaded instead.
+            </p>
+          ) : null}
+        </div>
+        <div className="actionsRow">
+          {payload ? (
+            <Link
+              className="secondaryButton"
+              href={buildHref({
+                className: payload.class,
+                dateFrom: payload.dateFrom,
+                dateTo: payload.dateTo,
+                cursor: null,
+              })}
+            >
+              Apply
+            </Link>
+          ) : (
+            <Link className="secondaryButton" href={buildHref({ cursor: null })} aria-disabled="true">
+              Use defaults
+            </Link>
+          )}
+          <form action={deleteSavedViewAction.bind(null, view.id)}>
+            <input type="hidden" name="workspace" value={view.workspace} />
+            <button className="dangerButton" type="submit">
+              Delete
+            </button>
+          </form>
+        </div>
+      </div>
+      <details>
+        <summary className="muted">Rename or update</summary>
+        <form action={updateSavedViewAction.bind(null, view.id)} className="formStack">
+          <input type="hidden" name="workspace" value={view.workspace} />
+          <input type="hidden" name="queryPayload" value={payloadJson} />
+          <label className="field">
+            <span>Name</span>
+            <input
+              name="name"
+              defaultValue={view.name}
+              required
+              maxLength={MAX_SAVED_VIEW_NAME_LENGTH}
+              aria-label="Saved view name"
+            />
+          </label>
+          <label className="field">
+            <span>Description</span>
+            <input
+              name="description"
+              defaultValue={view.description ?? ``}
+              maxLength={MAX_SAVED_VIEW_DESCRIPTION_LENGTH}
+              aria-label="Saved view description"
+            />
+          </label>
+          <button className="secondaryButton" type="submit">
+            Save changes
+          </button>
+        </form>
+      </details>
+    </div>
+  );
+}
+
+function SavedViewsSection({
+  views,
+  currentPayload,
+  buildHref,
+}: {
+  views: SavedViewSummary[];
+  currentPayload: LedgerAnomaliesSavedViewPayload;
+  buildHref: BuildHrefFn;
+}) {
+  return (
+    <section className="panel" aria-label="Saved views">
+      <div className="pageHeader">
+        <div>
+          <h2>Saved views</h2>
+          <p className="muted">Personal saved filters for the ledger anomalies workspace.</p>
+        </div>
+      </div>
+      <div className="formStack">
+        {views.length === 0 ? (
+          <p className="muted">No saved views yet. Use the form below to save the current filters.</p>
+        ) : (
+          views.map((view) => <SavedViewRow key={view.id} view={view} buildHref={buildHref} />)
+        )}
+      </div>
+      <article className="panel">
+        <h3>Save current view</h3>
+        <form action={createSavedViewAction} className="formStack">
+          <input type="hidden" name="workspace" value={SAVED_VIEW_WORKSPACE} />
+          <input type="hidden" name="queryPayload" value={JSON.stringify(currentPayload)} />
+          <label className="field">
+            <span>Name</span>
+            <input
+              name="name"
+              required
+              maxLength={MAX_SAVED_VIEW_NAME_LENGTH}
+              placeholder="e.g. Stale entries last 7 days"
+              aria-label="New saved view name"
+            />
+          </label>
+          <label className="field">
+            <span>Description</span>
+            <input
+              name="description"
+              maxLength={MAX_SAVED_VIEW_DESCRIPTION_LENGTH}
+              placeholder="Optional"
+              aria-label="New saved view description"
+            />
+          </label>
+          <p className="muted mono">
+            class={currentPayload.class}, dateFrom={currentPayload.dateFrom}, dateTo={currentPayload.dateTo}
+          </p>
+          <button className="primaryButton" type="submit">
+            Save current view
+          </button>
+        </form>
+      </article>
+    </section>
+  );
+}
+
 export default async function LedgerAnomaliesPage({
   searchParams,
 }: {
@@ -163,7 +344,7 @@ export default async function LedgerAnomaliesPage({
   const dateTo = params?.dateTo?.trim() || defaults.dateTo;
   const cursor = params?.cursor?.trim() || undefined;
 
-  const [summary, list] = await Promise.all([
+  const [summary, list, savedViewsResponse] = await Promise.all([
     getLedgerAnomaliesSummary(),
     getLedgerAnomalies({
       className,
@@ -172,9 +353,12 @@ export default async function LedgerAnomaliesPage({
       cursor,
       limit: 50,
     }),
+    getSavedViews({ workspace: SAVED_VIEW_WORKSPACE }),
   ]);
 
   const activeClass = summary?.classes[className];
+  const savedViews = savedViewsResponse?.views ?? [];
+  const currentPayload: LedgerAnomaliesSavedViewPayload = { class: className, dateFrom, dateTo };
 
   function buildHref(next: {
     className?: LedgerAnomalyClass;
@@ -240,6 +424,8 @@ export default async function LedgerAnomaliesPage({
           ))}
         </nav>
       </section>
+
+      <SavedViewsSection views={savedViews} currentPayload={currentPayload} buildHref={buildHref} />
 
       <section className="panel pageHeader">
         <form className="actionsRow" method="get">
