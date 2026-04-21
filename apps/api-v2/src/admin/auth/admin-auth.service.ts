@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto';
 import { BadRequestException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
-import { Prisma, type AccessRefreshTokenModel, type AdminModel } from '@remoola/database-2';
+import { Prisma, type AdminModel } from '@remoola/database-2';
 import { oauthCrypto } from '@remoola/security-utils';
 import { adminErrorCodes } from '@remoola/shared-constants';
 
@@ -94,33 +94,11 @@ export class AdminAuthService {
 
     const identityId = this.resolveIdentityId(verified);
     const sessionId = verified.sid;
-    if (identityId && sessionId && this.isRefreshPayload(verified)) {
-      return this.refreshSessionBasedAccess(refreshToken, identityId, sessionId);
-    }
-
-    const exist = await this.prisma.accessRefreshTokenModel.findFirst({ where: { identityId: verified.identityId } });
-    if (exist == null) {
-      this.logger.warn(`AdminAuth: no identity record for refresh`);
-      throw new BadRequestException(adminErrorCodes.ADMIN_NO_IDENTITY_RECORD);
-    }
-    if (!secureCompare(exist.refreshToken, refreshToken)) {
-      this.logger.warn(`AdminAuth: refresh token mismatch`);
+    if (!identityId || !sessionId || !this.isRefreshPayload(verified)) {
+      this.logger.warn(`AdminAuth: refresh token missing sid/identityId or wrong typ`);
       throw new BadRequestException(adminErrorCodes.ADMIN_REFRESH_TOKEN_INVALID);
     }
-
-    const admin = await this.prisma.adminModel.findFirst({ where: { id: verified.identityId, deletedAt: null } });
-    if (!admin) {
-      this.logger.warn(`AdminAuth: admin not found for identity`);
-      throw new BadRequestException(adminErrorCodes.ADMIN_NO_IDENTITY_RECORD);
-    }
-    const access = await this.getLegacyAccessAndRefreshToken(admin.id);
-    return {
-      accessToken: access.accessToken,
-      refreshToken: access.refreshToken,
-      type: admin.type,
-      email: admin.email,
-      id: admin.id,
-    };
+    return this.refreshSessionBasedAccess(refreshToken, identityId, sessionId);
   }
 
   private async refreshSessionBasedAccess(refreshToken: string, identityId: string, sessionId: string) {
@@ -195,25 +173,6 @@ export class AdminAuthService {
       sessionId: access.sessionId,
       sessionFamilyId: access.sessionFamilyId,
     };
-  }
-
-  private async getLegacyAccessAndRefreshToken(identityId: AdminModel[`id`]) {
-    const accessToken = await this.getAccessToken(identityId);
-    const refreshToken = await this.getRefreshToken(identityId);
-
-    const data = { accessToken, refreshToken, identityId };
-
-    const found = await this.prisma.accessRefreshTokenModel.findFirst({ where: { identityId } });
-    let saved: AccessRefreshTokenModel;
-    if (found) {
-      saved = await this.prisma.accessRefreshTokenModel.upsert({
-        where: { id: found.id },
-        update: data,
-        create: data,
-      });
-    } else saved = await this.prisma.accessRefreshTokenModel.create({ data });
-
-    return { accessToken: saved.accessToken, refreshToken: saved.refreshToken };
   }
 
   private async createSessionAndIssueTokens(
@@ -383,29 +342,20 @@ export class AdminAuthService {
     try {
       const verified = this.jwtService.verify<IJwtTokenPayload>(refreshToken, { secret: envs.JWT_REFRESH_SECRET });
       const identityId = this.resolveIdentityId(verified);
-      if (identityId && verified.sid && this.isRefreshPayload(verified)) {
-        await this.prisma.adminAuthSessionModel.updateMany({
-          where: {
-            id: verified.sid,
-            adminId: identityId,
-            refreshTokenHash: this.hashToken(refreshToken),
-            revokedAt: null,
-          },
-          data: { revokedAt: new Date(), invalidatedReason: `logout`, lastUsedAt: new Date() },
-        });
+      if (!identityId || !verified.sid || !this.isRefreshPayload(verified)) {
         return;
       }
-      await this.prisma.accessRefreshTokenModel.deleteMany({
-        where: { identityId: identityId ?? verified.identityId, refreshToken },
+      await this.prisma.adminAuthSessionModel.updateMany({
+        where: {
+          id: verified.sid,
+          adminId: identityId,
+          refreshTokenHash: this.hashToken(refreshToken),
+          revokedAt: null,
+        },
+        data: { revokedAt: new Date(), invalidatedReason: `logout`, lastUsedAt: new Date() },
       });
     } catch {
-      try {
-        await this.prisma.accessRefreshTokenModel.deleteMany({
-          where: { refreshToken },
-        });
-      } catch {
-        // ignore
-      }
+      // verification failure or DB error — silent no-op (matches existing logout best-effort semantics)
     }
   }
 

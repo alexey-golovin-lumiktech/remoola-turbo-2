@@ -2,6 +2,7 @@ import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test, type TestingModule } from '@nestjs/testing';
 
+import { oauthCrypto } from '@remoola/security-utils';
 import { adminErrorCodes } from '@remoola/shared-constants';
 
 import { AdminAuthService } from './admin-auth.service';
@@ -23,8 +24,7 @@ describe(`AdminAuthService`, () => {
   let service: AdminAuthService;
   let prisma: {
     adminModel: { findFirst: jest.Mock };
-    accessRefreshTokenModel: { findFirst: jest.Mock; create: jest.Mock; upsert: jest.Mock };
-    adminAuthSessionModel: { create: jest.Mock };
+    adminAuthSessionModel: { create: jest.Mock; findFirst: jest.Mock; update: jest.Mock; updateMany: jest.Mock };
     resetPasswordModel: { updateMany: jest.Mock; create: jest.Mock };
     $transaction: jest.Mock;
   };
@@ -33,13 +33,11 @@ describe(`AdminAuthService`, () => {
     jest.clearAllMocks();
     prisma = {
       adminModel: { findFirst: jest.fn() },
-      accessRefreshTokenModel: {
-        findFirst: jest.fn(),
-        create: jest.fn(),
-        upsert: jest.fn(),
-      },
       adminAuthSessionModel: {
         create: jest.fn().mockResolvedValue({ id: `session-id` }),
+        findFirst: jest.fn(),
+        update: jest.fn().mockResolvedValue({}),
+        updateMany: jest.fn().mockResolvedValue({ count: 0 }),
       },
       resetPasswordModel: {
         updateMany: jest.fn().mockResolvedValue({ count: 0 }),
@@ -165,7 +163,7 @@ describe(`AdminAuthService`, () => {
 
   describe(`refreshAccess`, () => {
     const refreshToken = `valid-refresh-token`;
-    const payload = { identityId: `admin-id` };
+    const sidPayload = { identityId: `admin-id`, sub: `admin-id`, sid: `session-1`, typ: `refresh` };
     const admin = {
       id: `admin-id`,
       email: `admin@example.com`,
@@ -177,6 +175,14 @@ describe(`AdminAuthService`, () => {
       deletedAt: null,
     };
 
+    it(`throws BadRequestException when refresh token is missing`, async () => {
+      await expect(service.refreshAccess(undefined)).rejects.toThrow(BadRequestException);
+      await expect(service.refreshAccess(undefined)).rejects.toMatchObject({
+        response: expect.objectContaining({ message: adminErrorCodes.ADMIN_REFRESH_TOKEN_INVALID }),
+      });
+      expect(jwtService.verify).not.toHaveBeenCalled();
+    });
+
     it(`throws BadRequestException when refresh token is invalid (JWT verify fails)`, async () => {
       jwtService.verify.mockImplementation(() => {
         throw new Error(`invalid token`);
@@ -186,46 +192,53 @@ describe(`AdminAuthService`, () => {
       await expect(service.refreshAccess(refreshToken)).rejects.toMatchObject({
         response: expect.objectContaining({ message: adminErrorCodes.ADMIN_REFRESH_TOKEN_INVALID }),
       });
-      expect(prisma.accessRefreshTokenModel.findFirst).not.toHaveBeenCalled();
+      expect(prisma.adminAuthSessionModel.findFirst).not.toHaveBeenCalled();
     });
 
-    it(`throws BadRequestException when no token record exists`, async () => {
-      jwtService.verify.mockReturnValue(payload);
-      prisma.accessRefreshTokenModel.findFirst.mockResolvedValue(null);
-
-      await expect(service.refreshAccess(refreshToken)).rejects.toThrow(BadRequestException);
-      await expect(service.refreshAccess(refreshToken)).rejects.toMatchObject({
-        response: expect.objectContaining({ message: adminErrorCodes.ADMIN_NO_IDENTITY_RECORD }),
-      });
-    });
-
-    it(`throws BadRequestException when stored refresh token does not match`, async () => {
-      jwtService.verify.mockReturnValue(payload);
-      prisma.accessRefreshTokenModel.findFirst.mockResolvedValue({
-        id: `token-id`,
-        refreshToken: `other-token`,
-        identityId: payload.identityId,
-      });
-      prisma.adminModel.findFirst.mockResolvedValue(admin);
+    it(`throws BadRequestException when refresh token has no sid claim`, async () => {
+      jwtService.verify.mockReturnValue({ identityId: `admin-id`, sub: `admin-id`, typ: `refresh` });
 
       await expect(service.refreshAccess(refreshToken)).rejects.toThrow(BadRequestException);
       await expect(service.refreshAccess(refreshToken)).rejects.toMatchObject({
         response: expect.objectContaining({ message: adminErrorCodes.ADMIN_REFRESH_TOKEN_INVALID }),
       });
+      expect(prisma.adminAuthSessionModel.findFirst).not.toHaveBeenCalled();
     });
 
-    it(`returns access data when token is valid`, async () => {
-      jwtService.verify.mockReturnValue(payload);
-      prisma.accessRefreshTokenModel.findFirst
-        .mockResolvedValueOnce({ id: `token-id`, refreshToken, identityId: payload.identityId })
-        .mockResolvedValueOnce({ id: `token-id` });
+    it(`throws BadRequestException when refresh token has no identityId/sub`, async () => {
+      jwtService.verify.mockReturnValue({ sid: `session-1`, typ: `refresh` });
+
+      await expect(service.refreshAccess(refreshToken)).rejects.toThrow(BadRequestException);
+      await expect(service.refreshAccess(refreshToken)).rejects.toMatchObject({
+        response: expect.objectContaining({ message: adminErrorCodes.ADMIN_REFRESH_TOKEN_INVALID }),
+      });
+      expect(prisma.adminAuthSessionModel.findFirst).not.toHaveBeenCalled();
+    });
+
+    it(`throws BadRequestException when refresh token typ is not refresh`, async () => {
+      jwtService.verify.mockReturnValue({ identityId: `admin-id`, sub: `admin-id`, sid: `session-1`, typ: `access` });
+
+      await expect(service.refreshAccess(refreshToken)).rejects.toThrow(BadRequestException);
+      await expect(service.refreshAccess(refreshToken)).rejects.toMatchObject({
+        response: expect.objectContaining({ message: adminErrorCodes.ADMIN_REFRESH_TOKEN_INVALID }),
+      });
+      expect(prisma.adminAuthSessionModel.findFirst).not.toHaveBeenCalled();
+    });
+
+    it(`returns rotated session-based tokens when sid-bearing refresh is valid`, async () => {
+      const refreshHash = oauthCrypto.hashOAuthState(refreshToken);
+      jwtService.verify.mockReturnValue(sidPayload);
+      prisma.adminAuthSessionModel.findFirst.mockResolvedValue({
+        id: `session-1`,
+        adminId: `admin-id`,
+        sessionFamilyId: `family-1`,
+        refreshTokenHash: refreshHash,
+        accessTokenHash: `old-access-hash`,
+        expiresAt: new Date(Date.now() + 60_000),
+        revokedAt: null,
+        replacedById: null,
+      });
       prisma.adminModel.findFirst.mockResolvedValue(admin);
-      prisma.accessRefreshTokenModel.upsert.mockImplementation((args: { update: unknown }) =>
-        Promise.resolve({
-          accessToken: (args as { update: { accessToken: string } }).update.accessToken,
-          refreshToken: (args as { update: { refreshToken: string } }).update.refreshToken,
-        }),
-      );
       jwtService.signAsync.mockResolvedValueOnce(`new-access`).mockResolvedValueOnce(`new-refresh`);
 
       const result = await service.refreshAccess(refreshToken);
@@ -236,36 +249,85 @@ describe(`AdminAuthService`, () => {
         type: admin.type,
         email: admin.email,
         id: admin.id,
+        sessionFamilyId: `family-1`,
       });
-      expect(jwtService.signAsync).toHaveBeenNthCalledWith(
-        1,
-        expect.objectContaining({ sub: admin.id, identityId: admin.id, typ: `access`, scope: `admin` }),
-        { expiresIn: envs.JWT_ACCESS_TTL_SECONDS },
+      expect(prisma.adminAuthSessionModel.findFirst).toHaveBeenCalledWith({
+        where: { id: `session-1`, adminId: `admin-id` },
+      });
+      expect(prisma.adminAuthSessionModel.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: `session-1` },
+          data: expect.objectContaining({ invalidatedReason: `rotated` }),
+        }),
       );
-      expect(jwtService.signAsync).toHaveBeenNthCalledWith(
-        2,
-        expect.objectContaining({ sub: admin.id, identityId: admin.id, typ: `refresh`, scope: `admin` }),
-        { expiresIn: envs.JWT_REFRESH_TTL_SECONDS, secret: envs.JWT_REFRESH_SECRET },
-      );
+      expect(prisma.adminAuthSessionModel.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          adminId: admin.id,
+          sessionFamilyId: `family-1`,
+        }),
+      });
       expect(jwtService.verify).toHaveBeenCalledWith(refreshToken, { secret: envs.JWT_REFRESH_SECRET });
     });
 
-    it(`rejects legacy refresh when the admin has been deactivated`, async () => {
-      jwtService.verify.mockReturnValue(payload);
-      prisma.accessRefreshTokenModel.findFirst.mockResolvedValue({
-        id: `token-id`,
-        refreshToken,
-        identityId: payload.identityId,
-      });
-      prisma.adminModel.findFirst.mockResolvedValue(null);
+    it(`throws when sid-bearing refresh has no matching admin session`, async () => {
+      jwtService.verify.mockReturnValue(sidPayload);
+      prisma.adminAuthSessionModel.findFirst.mockResolvedValue(null);
 
       await expect(service.refreshAccess(refreshToken)).rejects.toThrow(BadRequestException);
       await expect(service.refreshAccess(refreshToken)).rejects.toMatchObject({
         response: expect.objectContaining({ message: adminErrorCodes.ADMIN_NO_IDENTITY_RECORD }),
       });
-      expect(prisma.adminModel.findFirst).toHaveBeenCalledWith({
-        where: { id: payload.identityId, deletedAt: null },
+    });
+  });
+
+  describe(`revokeSessionByRefreshTokenAndAudit`, () => {
+    const refreshToken = `valid-refresh-token`;
+
+    it(`is a silent no-op when refresh token is missing`, async () => {
+      await expect(service.revokeSessionByRefreshTokenAndAudit(undefined)).resolves.toBeUndefined();
+      expect(jwtService.verify).not.toHaveBeenCalled();
+      expect(prisma.adminAuthSessionModel.updateMany).not.toHaveBeenCalled();
+    });
+
+    it(`is a silent no-op when refresh token has no sid claim`, async () => {
+      jwtService.verify.mockReturnValue({ identityId: `admin-id`, sub: `admin-id`, typ: `refresh` });
+      prisma.adminModel.findFirst.mockResolvedValue(null);
+
+      await expect(service.revokeSessionByRefreshTokenAndAudit(refreshToken)).resolves.toBeUndefined();
+      expect(prisma.adminAuthSessionModel.updateMany).not.toHaveBeenCalled();
+    });
+
+    it(`is a silent no-op when JWT verification fails`, async () => {
+      jwtService.verify.mockImplementation(() => {
+        throw new Error(`invalid token`);
       });
+
+      await expect(service.revokeSessionByRefreshTokenAndAudit(refreshToken)).resolves.toBeUndefined();
+      expect(prisma.adminAuthSessionModel.updateMany).not.toHaveBeenCalled();
+    });
+
+    it(`revokes the matching admin session when refresh token carries a sid`, async () => {
+      jwtService.verify.mockReturnValue({
+        identityId: `admin-id`,
+        sub: `admin-id`,
+        sid: `session-1`,
+        typ: `refresh`,
+      });
+      prisma.adminModel.findFirst.mockResolvedValue({ id: `admin-id`, email: `admin@example.com` });
+
+      await service.revokeSessionByRefreshTokenAndAudit(refreshToken);
+
+      expect(prisma.adminAuthSessionModel.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            id: `session-1`,
+            adminId: `admin-id`,
+            refreshTokenHash: oauthCrypto.hashOAuthState(refreshToken),
+            revokedAt: null,
+          }),
+          data: expect.objectContaining({ invalidatedReason: `logout` }),
+        }),
+      );
     });
   });
 
