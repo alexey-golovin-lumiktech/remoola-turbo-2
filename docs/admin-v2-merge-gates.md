@@ -35,8 +35,10 @@ This is a deterministic local check implemented in
   skeleton reconciliation note plus its operational_alert foundation
   migration README, the 3.4a verification-workspace-completion
   reconciliation note plus its `verification_queue` workspace allowlist
-  migration README, and the 3.5a admin-auth-hardening plaintext
-  retirement reconciliation note (Risk 13 mitigation track step 1 of 4));
+  migration README, the 3.5a admin-auth-hardening plaintext
+  retirement reconciliation note (Risk 13 mitigation track step 1 of 4),
+  and the 3.5b frontend URL migration + BFF folder rename
+  reconciliation note (Risk 13 mitigation track step 2 of 4));
   the config file is the single
   source of truth — do not duplicate the list here
 - the expected capability and audit anchors are present in
@@ -63,8 +65,10 @@ This is a deterministic local check implemented in
   `docs/admin-v2-mvp-3.2a-operational-assignments.md`,
   `docs/admin-v2-mvp-3.3a-saved-views-skeleton.md`,
   `docs/admin-v2-mvp-3.3b-operational-alerts-skeleton.md`,
-  `docs/admin-v2-mvp-3.4a-verification-workspace-completion.md`, and
-  `docs/admin-v2-mvp-3.5a-admin-auth-hardening-plaintext-retirement.md`);
+  `docs/admin-v2-mvp-3.4a-verification-workspace-completion.md`,
+  `docs/admin-v2-mvp-3.5a-admin-auth-hardening-plaintext-retirement.md`,
+  and
+  `docs/admin-v2-mvp-3.5b-frontend-url-migration.md`);
   see the
   config for the authoritative token list, including the schema-backed
   RBAC, payment methods write controls, MVP-3 maturity sequencing, and
@@ -72,8 +76,9 @@ This is a deterministic local check implemented in
   ANALYZE evidence, the 3.2a operational assignments decisions, the 3.3a
   saved views skeleton decisions, the 3.3b operational alerts
   skeleton decisions, the 3.4a verification-workspace-completion
-  decisions, and the 3.5a admin-auth-hardening plaintext-retirement
-  decisions used by the current gate
+  decisions, the 3.5a admin-auth-hardening plaintext-retirement
+  decisions, and the 3.5b admin-v2 frontend URL migration + BFF folder
+  rename decisions used by the current gate
 
 After 3.3b lands, the MVP-3 maturity exit criteria from
 `admin-v2-pack/08-rollout-risks-and-sequencing.md` are fully closed.
@@ -97,7 +102,23 @@ is being closed in four sequential slices, all post-MVP-3 hardening:
   No schema migration. Legacy `AdminAuthController` and admin-v2 frontend
   URLs intentionally retained — see the reconciliation note for the staged
   plan.
-- **3.5b** (pending): admin-v2 frontend URL migration to `/api/admin-v2/auth/*`.
+- **3.5b** (landed): admin-v2 frontend URL migration to
+  `/api/admin-v2/auth/*` plus matching Next.js BFF folder rename
+  (`apps/admin-v2/src/app/api/admin/auth/*` →
+  `apps/admin-v2/src/app/api/admin-v2/auth/*`, with `refresh/` →
+  `refresh-access/` for namespace alignment with backend
+  `AdminV2AuthController.@Post('refresh-access')`). Four frontend
+  references migrated (`LoginForm.tsx:19`, `middleware.ts:12`,
+  `(auth)/accept-invite/page.tsx:16`,
+  `(auth)/reset-password/page.tsx:16`); four BFF route files
+  relocated via `git mv` without content edits; legacy
+  `apps/admin-v2/src/app/api/admin/` directory removed empty. No
+  shim/redirect/rewrite — old URLs intentionally return 404.
+  After this slice, legacy `AdminAuthController` is reference-free
+  from the admin-v2 frontend, which unblocks 3.5c. No backend
+  changes, no schema migration, no new capability/audit/endpoint.
+  Reconciliation:
+  `docs/admin-v2-mvp-3.5b-frontend-url-migration.md`.
 - **3.5c** (pending): legacy `AdminAuthController` retirement after frontend
   migration lands.
 - **3.5d** (pending): session-management observability — `me/sessions`
