@@ -68,6 +68,7 @@ describe(`AdminV2LedgerService`, () => {
       adminActionAuditLogModel: {
         findMany: jest.fn(async () => []),
       },
+      $queryRaw: jest.fn(async () => []),
     } as never);
 
     const ledgerCase = await service.getLedgerEntryCase(`ledger-1`);
