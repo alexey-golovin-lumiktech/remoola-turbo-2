@@ -251,6 +251,7 @@ model AdminModel {
   createdOperationalAssignments  OperationalAssignmentModel[] @relation("OperationalAssignmentAssignedBy")
   releasedOperationalAssignments OperationalAssignmentModel[] @relation("OperationalAssignmentReleasedBy")
   savedViews                     SavedViewModel[]             @relation("SavedViewOwner")
+  operationalAlerts              OperationalAlertModel[]      @relation("OperationalAlertOwner")
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -907,6 +908,35 @@ model SavedViewModel {
 
   @@index([ownerId, workspace, deletedAt])
   @@map("saved_view")
+}
+
+model OperationalAlertModel {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  ownerId    String     @map("owner_id") @db.Uuid
+  ownerAdmin AdminModel @relation("OperationalAlertOwner", fields: [ownerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  workspace   String  @map("workspace") @db.Text
+  name        String  @map("name") @db.Text
+  description String? @map("description") @db.Text
+
+  queryPayload     Json @map("query_payload") @db.JsonB
+  thresholdPayload Json @map("threshold_payload") @db.JsonB
+
+  evaluationIntervalMinutes Int @default(5) @map("evaluation_interval_minutes")
+
+  lastEvaluatedAt     DateTime? @map("last_evaluated_at") @db.Timestamptz(6)
+  lastEvaluationError String?   @map("last_evaluation_error") @db.Text
+  lastFiredAt         DateTime? @map("last_fired_at") @db.Timestamptz(6)
+  lastFireReason      String?   @map("last_fire_reason") @db.Text
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@index([ownerId, workspace, deletedAt])
+  @@index([deletedAt, lastEvaluatedAt])
+  @@map("operational_alert")
 }
 
 model PaymentRequestAttachmentModel {
