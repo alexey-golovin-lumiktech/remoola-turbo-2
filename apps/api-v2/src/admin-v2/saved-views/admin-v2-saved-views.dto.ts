@@ -2,7 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import { Expose, Type } from 'class-transformer';
 import { IsNumber, IsOptional, IsString } from 'class-validator';
 
-export const SAVED_VIEW_WORKSPACES = [`ledger_anomalies`] as const;
+export const SAVED_VIEW_WORKSPACES = [`ledger_anomalies`, `verification_queue`] as const;
 export type SavedViewWorkspace = (typeof SAVED_VIEW_WORKSPACES)[number];
 
 export const MIN_SAVED_VIEW_NAME_LENGTH = 1;

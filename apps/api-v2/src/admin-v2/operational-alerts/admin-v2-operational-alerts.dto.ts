@@ -2,7 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import { Expose, Type } from 'class-transformer';
 import { IsInt, IsNumber, IsOptional, IsString } from 'class-validator';
 
-export const OPERATIONAL_ALERT_WORKSPACES = [`ledger_anomalies`] as const;
+export const OPERATIONAL_ALERT_WORKSPACES = [`ledger_anomalies`, `verification_queue`] as const;
 export type OperationalAlertWorkspace = (typeof OPERATIONAL_ALERT_WORKSPACES)[number];
 
 export const MIN_OPERATIONAL_ALERT_NAME_LENGTH = 1;
