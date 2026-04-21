@@ -31,7 +31,7 @@ describe(`AuthGuard`, () => {
     authSessionModel: {
       findFirst: jest.fn(),
     },
-    accessRefreshTokenModel: {
+    adminAuthSessionModel: {
       findFirst: jest.fn(),
     },
     adminModel: {
@@ -95,7 +95,7 @@ describe(`AuthGuard`, () => {
     await expect(guard.canActivate(buildContext(request))).rejects.toThrow(ForbiddenException);
     await expect(guard.canActivate(buildContext(request))).rejects.toThrow(`Access restricted to consumers`);
     expect(prisma.authSessionModel.findFirst).not.toHaveBeenCalled();
-    expect(prisma.accessRefreshTokenModel.findFirst).not.toHaveBeenCalled();
+    expect(prisma.adminAuthSessionModel.findFirst).not.toHaveBeenCalled();
   });
 
   it(`rejects a consumer-scoped token on admin routes`, async () => {
@@ -115,7 +115,7 @@ describe(`AuthGuard`, () => {
     await expect(guard.canActivate(buildContext(request))).rejects.toThrow(ForbiddenException);
     await expect(guard.canActivate(buildContext(request))).rejects.toThrow(`Access restricted to administrators`);
     expect(prisma.authSessionModel.findFirst).not.toHaveBeenCalled();
-    expect(prisma.accessRefreshTokenModel.findFirst).not.toHaveBeenCalled();
+    expect(prisma.adminAuthSessionModel.findFirst).not.toHaveBeenCalled();
   });
 
   it(`rejects consumer requests without an explicit app scope`, async () => {
@@ -371,7 +371,7 @@ describe(`AuthGuard`, () => {
     await expect(guard.canActivate(buildContext(request))).rejects.toThrow(errorCodes.ACCOUNT_SUSPENDED);
   });
 
-  it(`rejects deactivated admins even when a legacy access token record still exists`, async () => {
+  it(`rejects admin access tokens that are missing a sid claim`, async () => {
     const token = `admin-token`;
     const request: MockRequest = {
       method: `GET`,
@@ -386,10 +386,117 @@ describe(`AuthGuard`, () => {
       typ: `access`,
       scope: `admin`,
     });
-    prisma.accessRefreshTokenModel.findFirst.mockResolvedValue({
+
+    await expect(guard.canActivate(buildContext(request))).rejects.toThrow(UnauthorizedException);
+    await expect(guard.canActivate(buildContext(request))).rejects.toThrow(`Invalid or expired token`);
+    expect(prisma.adminAuthSessionModel.findFirst).not.toHaveBeenCalled();
+    expect(prisma.adminModel.findFirst).not.toHaveBeenCalled();
+  });
+
+  it(`rejects admin access tokens when the admin session is missing or expired`, async () => {
+    const token = `admin-token`;
+    const request: MockRequest = {
+      method: `GET`,
+      path: `/api/admin/consumers`,
+      url: `/api/admin/consumers`,
+      cookies: {
+        [COOKIE_KEYS.ADMIN_ACCESS_TOKEN]: token,
+      },
+    };
+    jwtService.verify.mockReturnValue({
       identityId: `admin-1`,
-      accessToken: token,
-      refreshToken: `refresh-token`,
+      sid: `session-1`,
+      typ: `access`,
+      scope: `admin`,
+    });
+    prisma.adminAuthSessionModel.findFirst.mockResolvedValue(null);
+
+    await expect(guard.canActivate(buildContext(request))).rejects.toThrow(UnauthorizedException);
+    await expect(guard.canActivate(buildContext(request))).rejects.toThrow(`Authentication record not found`);
+    expect(prisma.adminAuthSessionModel.findFirst).toHaveBeenCalledWith({
+      where: { id: `session-1`, adminId: `admin-1`, revokedAt: null },
+    });
+  });
+
+  it(`rejects admin access tokens when the stored access hash does not match`, async () => {
+    const token = `admin-token`;
+    const request: MockRequest = {
+      method: `GET`,
+      path: `/api/admin/consumers`,
+      url: `/api/admin/consumers`,
+      cookies: {
+        [COOKIE_KEYS.ADMIN_ACCESS_TOKEN]: token,
+      },
+    };
+    jwtService.verify.mockReturnValue({
+      identityId: `admin-1`,
+      sid: `session-1`,
+      typ: `access`,
+      scope: `admin`,
+    });
+    prisma.adminAuthSessionModel.findFirst.mockResolvedValue({
+      id: `session-1`,
+      adminId: `admin-1`,
+      revokedAt: null,
+      expiresAt: new Date(Date.now() + 60_000),
+      accessTokenHash: oauthCrypto.hashOAuthState(`other-token`),
+    });
+
+    await expect(guard.canActivate(buildContext(request))).rejects.toThrow(UnauthorizedException);
+    await expect(guard.canActivate(buildContext(request))).rejects.toThrow(`Invalid or expired token`);
+  });
+
+  it(`accepts admin access tokens with a valid session and matching hash`, async () => {
+    const token = `admin-token`;
+    const request: MockRequest = {
+      method: `GET`,
+      path: `/api/admin/consumers`,
+      url: `/api/admin/consumers`,
+      cookies: {
+        [COOKIE_KEYS.ADMIN_ACCESS_TOKEN]: token,
+      },
+    };
+    jwtService.verify.mockReturnValue({
+      identityId: `admin-1`,
+      sid: `session-1`,
+      typ: `access`,
+      scope: `admin`,
+    });
+    prisma.adminAuthSessionModel.findFirst.mockResolvedValue({
+      id: `session-1`,
+      adminId: `admin-1`,
+      revokedAt: null,
+      expiresAt: new Date(Date.now() + 60_000),
+      accessTokenHash: oauthCrypto.hashOAuthState(token),
+    });
+    prisma.adminModel.findFirst.mockResolvedValue({ id: `admin-1`, email: `admin@example.com`, type: `ADMIN` });
+    prisma.consumerModel.findFirst.mockResolvedValue(null);
+
+    await expect(guard.canActivate(buildContext(request))).resolves.toBe(true);
+  });
+
+  it(`rejects admin access tokens when the resolved admin has been deactivated`, async () => {
+    const token = `admin-token`;
+    const request: MockRequest = {
+      method: `GET`,
+      path: `/api/admin/consumers`,
+      url: `/api/admin/consumers`,
+      cookies: {
+        [COOKIE_KEYS.ADMIN_ACCESS_TOKEN]: token,
+      },
+    };
+    jwtService.verify.mockReturnValue({
+      identityId: `admin-1`,
+      sid: `session-1`,
+      typ: `access`,
+      scope: `admin`,
+    });
+    prisma.adminAuthSessionModel.findFirst.mockResolvedValue({
+      id: `session-1`,
+      adminId: `admin-1`,
+      revokedAt: null,
+      expiresAt: new Date(Date.now() + 60_000),
+      accessTokenHash: oauthCrypto.hashOAuthState(token),
     });
     prisma.adminModel.findFirst.mockResolvedValue(null);
     prisma.consumerModel.findFirst.mockResolvedValue(null);

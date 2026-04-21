@@ -93,16 +93,6 @@ export class AuthGuard implements CanActivate {
     return this.prisma.consumerModel.findFirst({ where: { id: identityId } });
   }
 
-  private findIdentityAccess(params: { identityId: string; accessToken: string; refreshToken?: string }) {
-    return this.prisma.accessRefreshTokenModel.findFirst({
-      where: {
-        identityId: params.identityId,
-        accessToken: params.accessToken,
-        ...(params.refreshToken && { refreshToken: params.refreshToken }),
-      },
-    });
-  }
-
   private async processAccessToken(accessToken: string, request: TExpressRequest, requestAppScope?: ConsumerAppScope) {
     let verified: IJwtTokenPayload;
     const path = request.path ?? request.url?.split(`?`)[0] ?? ``;
@@ -166,28 +156,20 @@ export class AuthGuard implements CanActivate {
         throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
       }
     } else {
-      if (verified.sid) {
-        const session = await this.prisma.adminAuthSessionModel.findFirst({
-          where: { id: verified.sid, adminId: identityId, revokedAt: null },
-        });
-        if (session == null || session.expiresAt < new Date()) {
-          this.logger.warn(`AuthGuard: admin session not found or expired`);
-          throw new UnauthorizedException(GuardMessage.NO_IDENTITY_RECORD);
-        }
-        if (!secureCompare(session.accessTokenHash, oauthCrypto.hashOAuthState(accessToken))) {
-          this.logger.warn(`AuthGuard: admin access token mismatch with stored value`);
-          throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
-        }
-      } else {
-        const identityAccess = await this.findIdentityAccess({ identityId, accessToken });
-        if (identityAccess == null) {
-          this.logger.warn(`AuthGuard: no identity access record`);
-          throw new UnauthorizedException(GuardMessage.NO_IDENTITY_RECORD);
-        }
-        if (!secureCompare(identityAccess.accessToken, accessToken)) {
-          this.logger.warn(`AuthGuard: token mismatch with stored value`);
-          throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
-        }
+      if (!verified.sid) {
+        this.logger.warn(`AuthGuard: admin access token missing sid`);
+        throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
+      }
+      const session = await this.prisma.adminAuthSessionModel.findFirst({
+        where: { id: verified.sid, adminId: identityId, revokedAt: null },
+      });
+      if (session == null || session.expiresAt < new Date()) {
+        this.logger.warn(`AuthGuard: admin session not found or expired`);
+        throw new UnauthorizedException(GuardMessage.NO_IDENTITY_RECORD);
+      }
+      if (!secureCompare(session.accessTokenHash, oauthCrypto.hashOAuthState(accessToken))) {
+        this.logger.warn(`AuthGuard: admin access token mismatch with stored value`);
+        throw new UnauthorizedException(GuardMessage.INVALID_TOKEN);
       }
     }
 
