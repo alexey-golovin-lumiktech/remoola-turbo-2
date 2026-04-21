@@ -12,6 +12,7 @@ import { Identity, type IIdentityContext, PublicEndpoint } from '../../common';
 import { ADMIN } from '../../dtos';
 import { Credentials } from '../../dtos/admin';
 import { envs } from '../../envs';
+import { ADMIN_ACTION_AUDIT_ACTIONS, AdminActionAuditService } from '../../shared/admin-action-audit.service';
 import { OriginResolverService } from '../../shared/origin-resolver.service';
 import {
   getApiAdminAccessTokenCookieKey,
@@ -57,6 +58,7 @@ export class AdminV2AuthController {
     private readonly service: AdminAuthService,
     private readonly originResolver: OriginResolverService,
     private readonly adminsService: AdminV2AdminsService,
+    private readonly adminActionAudit: AdminActionAuditService,
   ) {}
 
   private getRefreshTokenFromRequest(req: express.Request): string | undefined {
@@ -178,9 +180,23 @@ export class AdminV2AuthController {
     }
     const ipAddress = req.ip ?? req.headers[`x-forwarded-for`];
     const userAgent = req.headers[`user-agent`] ?? null;
+    const normalizedIp = typeof ipAddress === `string` ? ipAddress : Array.isArray(ipAddress) ? ipAddress[0] : null;
+    const normalizedUa = typeof userAgent === `string` ? userAgent : null;
     const result = await this.service.revokeSessionByIdAndAudit(identity.id, targetSessionId, {
-      ipAddress: typeof ipAddress === `string` ? ipAddress : Array.isArray(ipAddress) ? ipAddress[0] : null,
-      userAgent: typeof userAgent === `string` ? userAgent : null,
+      ipAddress: normalizedIp,
+      userAgent: normalizedUa,
+    });
+    await this.adminActionAudit.record({
+      adminId: identity.id,
+      action: ADMIN_ACTION_AUDIT_ACTIONS.admin_session_revoke,
+      resource: `admin_auth_session`,
+      resourceId: targetSessionId,
+      metadata: {
+        isOwnSession: targetSessionId === identity.sessionId,
+        alreadyRevoked: result.alreadyRevoked,
+      },
+      ipAddress: normalizedIp,
+      userAgent: normalizedUa,
     });
     if (targetSessionId === identity.sessionId) {
       this.clearAuthCookies(res);
