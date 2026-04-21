@@ -137,7 +137,7 @@ describe(`Signup verification cutover (e2e, isolated DB)`, () => {
         scope: `consumer`,
         appScope: `consumer-mobile`,
       },
-      { expiresIn: -1 },
+      { expiresIn: -1, secret: envs.JWT_ACCESS_SECRET },
     );
 
     const verifyRes = await request(app.getHttpServer())
