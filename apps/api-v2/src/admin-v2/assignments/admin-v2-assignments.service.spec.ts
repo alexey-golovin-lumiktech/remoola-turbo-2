@@ -193,6 +193,31 @@ describe(`AdminV2AssignmentsService`, () => {
         ),
       ).rejects.toBeInstanceOf(BadRequestException);
     });
+
+    it(`accepts ledger_entry as resourceType, inserts the assignment, and records audit with resource: 'ledger_entry'`, async () => {
+      const { service, queryRaw, adminModel, adminActionAudit } = buildService();
+      queryRaw.mockResolvedValueOnce([]);
+      queryRaw.mockResolvedValueOnce([activeRow({ resource_type: `ledger_entry` })]);
+      adminModel.findUnique.mockResolvedValueOnce({ id: OPS_ADMIN_ID, email: `ops@example.com` });
+
+      const result = await service.claim(opsActor, { resourceType: `ledger_entry`, resourceId: RESOURCE_ID }, meta);
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          assignmentId: ASSIGNMENT_ID,
+          status: `created`,
+          assignedTo: expect.objectContaining({ id: OPS_ADMIN_ID }),
+        }),
+      );
+      expect(adminActionAudit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: `assignment_claim`,
+          adminId: OPS_ADMIN_ID,
+          resource: `ledger_entry`,
+          resourceId: RESOURCE_ID,
+        }),
+      );
+    });
   });
 
   describe(`release`, () => {
@@ -266,6 +291,24 @@ describe(`AdminV2AssignmentsService`, () => {
 
       await expect(service.release(opsActor, { expectedReleasedAtNull: 0 }, meta)).rejects.toBeInstanceOf(
         BadRequestException,
+      );
+    });
+
+    it(`releases a ledger_entry assignment owned by the caller and records audit with resource: 'ledger_entry'`, async () => {
+      const { service, queryRaw, adminActionAudit } = buildService();
+      queryRaw.mockResolvedValueOnce([activeRow({ resource_type: `ledger_entry` })]);
+      queryRaw.mockResolvedValueOnce([releasedRow({ resource_type: `ledger_entry` })]);
+
+      const result = await service.release(opsActor, { assignmentId: ASSIGNMENT_ID, expectedReleasedAtNull: 0 }, meta);
+
+      expect(result.assignmentId).toBe(ASSIGNMENT_ID);
+      expect(adminActionAudit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: `assignment_release`,
+          adminId: OPS_ADMIN_ID,
+          resource: `ledger_entry`,
+          resourceId: RESOURCE_ID,
+        }),
       );
     });
   });
@@ -396,6 +439,38 @@ describe(`AdminV2AssignmentsService`, () => {
       await expect(
         service.reassign(superActor, { ...validBody, expectedReleasedAtNull: 1 }, meta),
       ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it(`reassigns a ledger_entry assignment and writes correlated audit entries with resource: 'ledger_entry'`, async () => {
+      const { service, queryRaw, adminModel, adminActionAuditLogModel } = buildService();
+      adminModel.findUnique.mockResolvedValueOnce({ id: OTHER_ADMIN_ID, deletedAt: null });
+      queryRaw.mockResolvedValueOnce([activeRow({ resource_type: `ledger_entry` })]);
+      queryRaw.mockResolvedValueOnce([releasedRow({ resource_type: `ledger_entry` })]);
+      const newAssignmentId = `66666666-6666-4666-8666-666666666666`;
+      queryRaw.mockResolvedValueOnce([
+        activeRow({
+          id: newAssignmentId,
+          resource_type: `ledger_entry`,
+          assigned_to: OTHER_ADMIN_ID,
+          assigned_by: SUPER_ADMIN_ID,
+          assigned_at: new Date(`2026-04-20T12:00:00.000Z`),
+        }),
+      ]);
+      adminModel.findUnique.mockResolvedValueOnce({ id: OTHER_ADMIN_ID, email: `other@example.com` });
+
+      const result = await service.reassign(superActor, validBody, meta);
+
+      expect(result.oldAssignmentId).toBe(ASSIGNMENT_ID);
+      expect(result.newAssignmentId).toBe(newAssignmentId);
+      expect(adminActionAuditLogModel.create).toHaveBeenCalledTimes(2);
+      const [firstCall, secondCall] = adminActionAuditLogModel.create.mock.calls as Array<
+        [{ data: { action: string; resource: string; metadata: { transferOperationId?: string } } }]
+      >;
+      expect(firstCall[0].data.action).toBe(`assignment_release`);
+      expect(firstCall[0].data.resource).toBe(`ledger_entry`);
+      expect(secondCall[0].data.action).toBe(`assignment_reassign`);
+      expect(secondCall[0].data.resource).toBe(`ledger_entry`);
+      expect(firstCall[0].data.metadata.transferOperationId).toBe(secondCall[0].data.metadata.transferOperationId);
     });
   });
 });
