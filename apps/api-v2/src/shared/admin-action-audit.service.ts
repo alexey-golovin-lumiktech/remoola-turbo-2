@@ -60,6 +60,9 @@ export const ADMIN_ACTION_AUDIT_ACTIONS = {
   assignment_claim: `assignment_claim`,
   assignment_release: `assignment_release`,
   assignment_reassign: `assignment_reassign`,
+  saved_view_create: `saved_view_create`,
+  saved_view_update: `saved_view_update`,
+  saved_view_delete: `saved_view_delete`,
 } as const;
 
 @Injectable()

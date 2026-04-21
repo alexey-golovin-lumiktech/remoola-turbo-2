@@ -16,6 +16,7 @@ import { AdminV2OverviewModule } from './overview/admin-v2-overview.module';
 import { AdminV2PaymentMethodsModule } from './payment-methods/admin-v2-payment-methods.module';
 import { AdminV2PaymentsModule } from './payments/admin-v2-payments.module';
 import { AdminV2PayoutsModule } from './payouts/admin-v2-payouts.module';
+import { AdminV2SavedViewsModule } from './saved-views/admin-v2-saved-views.module';
 import { AdminV2SystemModule } from './system/admin-v2-system.module';
 import { AdminV2VerificationModule } from './verification/admin-v2-verification.module';
 
@@ -35,6 +36,7 @@ import { AdminV2VerificationModule } from './verification/admin-v2-verification.
     AdminV2ExchangeModule,
     AdminV2PaymentMethodsModule,
     AdminV2PayoutsModule,
+    AdminV2SavedViewsModule,
     AdminV2SystemModule,
   ],
   controllers: [AdminV2Controller, AdminV2AuthController],

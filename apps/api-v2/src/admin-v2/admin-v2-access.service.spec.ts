@@ -19,6 +19,7 @@ describe(`AdminV2AccessService`, () => {
     `consumers.flags`,
     `audit.read`,
     `assignments.manage`,
+    `saved_views.manage`,
   ];
   const superBridgeCapabilities = [
     ...opsBridgeCapabilities,
