@@ -647,3 +647,129 @@ export async function deleteSavedViewAction(savedViewId: string, formData: FormD
   const workspace = String(formData.get(`workspace`) ?? ``).trim();
   revalidateSavedViewWorkspace(workspace || `ledger_anomalies`);
 }
+
+const OPERATIONAL_ALERTS_PATH = `/system/alerts`;
+
+function revalidateOperationalAlerts() {
+  revalidatePath(OPERATIONAL_ALERTS_PATH);
+}
+
+function parseOperationalAlertJsonField(raw: string | null, label: string): unknown {
+  if (raw == null) return null;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  try {
+    return JSON.parse(trimmed) as unknown;
+  } catch {
+    throw new Error(`${label} is not valid JSON`);
+  }
+}
+
+function parsePositiveIntegerField(raw: string | null, label: string): number | undefined {
+  if (raw == null) return undefined;
+  const trimmed = String(raw).trim();
+  if (!trimmed) return undefined;
+  const value = Number(trimmed);
+  if (!Number.isFinite(value) || !Number.isInteger(value)) {
+    throw new Error(`${label} must be an integer`);
+  }
+  return value;
+}
+
+export async function createOperationalAlertAction(formData: FormData): Promise<void> {
+  const workspace = String(formData.get(`workspace`) ?? ``).trim();
+  if (!workspace) {
+    throw new Error(`workspace is required`);
+  }
+  const name = String(formData.get(`name`) ?? ``).trim();
+  if (!name) {
+    throw new Error(`name is required`);
+  }
+  const description = String(formData.get(`description`) ?? ``).trim();
+  const queryPayload = parseOperationalAlertJsonField(String(formData.get(`queryPayload`) ?? ``), `queryPayload`);
+  const thresholdPayload = parseOperationalAlertJsonField(
+    String(formData.get(`thresholdPayload`) ?? ``),
+    `thresholdPayload`,
+  );
+  const evaluationIntervalMinutes = parsePositiveIntegerField(
+    formData.get(`evaluationIntervalMinutes`) as string | null,
+    `evaluationIntervalMinutes`,
+  );
+
+  const body: Record<string, unknown> = {
+    workspace,
+    name,
+    description: description || null,
+    queryPayload,
+    thresholdPayload,
+  };
+  if (evaluationIntervalMinutes !== undefined) {
+    body.evaluationIntervalMinutes = evaluationIntervalMinutes;
+  }
+
+  await postAdminMutation(`/admin-v2/operational-alerts`, body, `Failed to create operational alert`);
+  revalidateOperationalAlerts();
+}
+
+export async function updateOperationalAlertAction(operationalAlertId: string, formData: FormData): Promise<void> {
+  if (!operationalAlertId) {
+    throw new Error(`operationalAlertId is required`);
+  }
+  const body: {
+    expectedDeletedAtNull: number;
+    name?: string;
+    description?: string | null;
+    queryPayload?: unknown;
+    thresholdPayload?: unknown;
+    evaluationIntervalMinutes?: number;
+  } = { expectedDeletedAtNull: 0 };
+
+  const rawName = formData.get(`name`);
+  if (rawName !== null) {
+    const name = String(rawName).trim();
+    if (!name) {
+      throw new Error(`name cannot be empty`);
+    }
+    body.name = name;
+  }
+  const rawDescription = formData.get(`description`);
+  if (rawDescription !== null) {
+    const description = String(rawDescription).trim();
+    body.description = description || null;
+  }
+  const rawQuery = formData.get(`queryPayload`);
+  if (rawQuery !== null) {
+    body.queryPayload = parseOperationalAlertJsonField(String(rawQuery), `queryPayload`);
+  }
+  const rawThreshold = formData.get(`thresholdPayload`);
+  if (rawThreshold !== null) {
+    body.thresholdPayload = parseOperationalAlertJsonField(String(rawThreshold), `thresholdPayload`);
+  }
+  const interval = parsePositiveIntegerField(
+    formData.get(`evaluationIntervalMinutes`) as string | null,
+    `evaluationIntervalMinutes`,
+  );
+  if (interval !== undefined) {
+    body.evaluationIntervalMinutes = interval;
+  }
+
+  await patchAdminMutation(
+    `/admin-v2/operational-alerts/${operationalAlertId}`,
+    body,
+    `Failed to update operational alert`,
+  );
+  revalidateOperationalAlerts();
+}
+
+export async function deleteOperationalAlertAction(operationalAlertId: string, formData: FormData): Promise<void> {
+  if (!operationalAlertId) {
+    throw new Error(`operationalAlertId is required`);
+  }
+  void formData;
+  await deleteAdminMutation(
+    `/admin-v2/operational-alerts/${operationalAlertId}`,
+    { expectedDeletedAtNull: 0 },
+    `Failed to delete operational alert`,
+  );
+  revalidateOperationalAlerts();
+}

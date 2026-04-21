@@ -1175,6 +1175,38 @@ export async function getSavedViews(input: { workspace: SavedViewWorkspace }): P
   return fetchAdminApi<SavedViewsListResponse>(`/admin-v2/saved-views?${searchParams.toString()}`);
 }
 
+export type OperationalAlertWorkspace = `ledger_anomalies`;
+
+export type CountGtThreshold = { type: `count_gt`; value: number };
+export type OperationalAlertThreshold = CountGtThreshold;
+
+export type OperationalAlertSummary = {
+  id: string;
+  workspace: OperationalAlertWorkspace;
+  name: string;
+  description: string | null;
+  queryPayload: unknown;
+  thresholdPayload: OperationalAlertThreshold;
+  evaluationIntervalMinutes: number;
+  lastEvaluatedAt: string | null;
+  lastEvaluationError: string | null;
+  lastFiredAt: string | null;
+  lastFireReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type OperationalAlertsListResponse = {
+  alerts: OperationalAlertSummary[];
+};
+
+export async function getOperationalAlerts(input: {
+  workspace: OperationalAlertWorkspace;
+}): Promise<OperationalAlertsListResponse | null> {
+  const searchParams = new URLSearchParams({ workspace: input.workspace });
+  return fetchAdminApi<OperationalAlertsListResponse>(`/admin-v2/operational-alerts?${searchParams.toString()}`);
+}
+
 export async function getLedgerAnomalies(params: {
   className: string;
   dateFrom: string;
