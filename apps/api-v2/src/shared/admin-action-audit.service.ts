@@ -63,6 +63,9 @@ export const ADMIN_ACTION_AUDIT_ACTIONS = {
   saved_view_create: `saved_view_create`,
   saved_view_update: `saved_view_update`,
   saved_view_delete: `saved_view_delete`,
+  alert_create: `alert_create`,
+  alert_update: `alert_update`,
+  alert_delete: `alert_delete`,
 } as const;
 
 @Injectable()
