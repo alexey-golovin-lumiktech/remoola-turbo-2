@@ -37,8 +37,10 @@ This is a deterministic local check implemented in
   reconciliation note plus its `verification_queue` workspace allowlist
   migration README, the 3.5a admin-auth-hardening plaintext
   retirement reconciliation note (Risk 13 mitigation track step 1 of 4),
-  and the 3.5b frontend URL migration + BFF folder rename
-  reconciliation note (Risk 13 mitigation track step 2 of 4));
+  the 3.5b frontend URL migration + BFF folder rename
+  reconciliation note (Risk 13 mitigation track step 2 of 4),
+  and the 3.5c legacy AdminAuthController retirement reconciliation
+  note (Risk 13 mitigation track step 3 of 4));
   the config file is the single
   source of truth — do not duplicate the list here
 - the expected capability and audit anchors are present in
@@ -67,8 +69,9 @@ This is a deterministic local check implemented in
   `docs/admin-v2-mvp-3.3b-operational-alerts-skeleton.md`,
   `docs/admin-v2-mvp-3.4a-verification-workspace-completion.md`,
   `docs/admin-v2-mvp-3.5a-admin-auth-hardening-plaintext-retirement.md`,
+  `docs/admin-v2-mvp-3.5b-frontend-url-migration.md`,
   and
-  `docs/admin-v2-mvp-3.5b-frontend-url-migration.md`);
+  `docs/admin-v2-mvp-3.5c-legacy-controller-retirement.md`);
   see the
   config for the authoritative token list, including the schema-backed
   RBAC, payment methods write controls, MVP-3 maturity sequencing, and
@@ -77,8 +80,9 @@ This is a deterministic local check implemented in
   saved views skeleton decisions, the 3.3b operational alerts
   skeleton decisions, the 3.4a verification-workspace-completion
   decisions, the 3.5a admin-auth-hardening plaintext-retirement
-  decisions, and the 3.5b admin-v2 frontend URL migration + BFF folder
-  rename decisions used by the current gate
+  decisions, the 3.5b admin-v2 frontend URL migration + BFF folder
+  rename decisions, and the 3.5c legacy controller retirement
+  decisions used by the current gate
 
 After 3.3b lands, the MVP-3 maturity exit criteria from
 `admin-v2-pack/08-rollout-risks-and-sequencing.md` are fully closed.
@@ -119,8 +123,26 @@ is being closed in four sequential slices, all post-MVP-3 hardening:
   changes, no schema migration, no new capability/audit/endpoint.
   Reconciliation:
   `docs/admin-v2-mvp-3.5b-frontend-url-migration.md`.
-- **3.5c** (pending): legacy `AdminAuthController` retirement after frontend
-  migration lands.
+- **3.5c** (landed): legacy `AdminAuthController` retirement in `apps/api-v2/`.
+  Controller file (`apps/api-v2/src/admin/auth/admin-auth.controller.ts`) and its
+  spec (`apps/api-v2/src/admin/auth/admin-auth.controller.spec.ts`) deleted;
+  `AdminAuthController` unregistered from
+  `apps/api-v2/src/admin/admin.module.ts` (controllers field removed entirely).
+  Three e2e specs (`admin-auth-lifecycle`, `admin-step-up`,
+  `admin-payment-reversal`), two unit spec fixtures (`jwt.strategy.spec`,
+  `consumer-action.interceptor.spec`), Swagger description literals
+  (`swagger-cookie-auth.ts:56,61,64`) and assertions
+  (`swagger-cookie-auth.spec.ts:31,32`), and `apps/api-v2/README.md:27`
+  migrated from `/api/admin/auth/*` to `/api/admin-v2/auth/*`. Backend
+  production logic unchanged: `AdminAuthService`, `AdminAuthModule`,
+  `AdminV2AuthController`, `JwtStrategy`, `ConsumerActionInterceptor`,
+  `SWAGGER_PROTECTED_PATH_PREFIXES_BY_AUDIENCE.admin` prefix array,
+  cookie helpers, CSRF flow, request bodies, response shapes — all frozen.
+  `apps/api/` (legacy v1 backend stack) and `apps/admin/` (legacy v1
+  frontend) intentionally out of scope: those constitute a separate
+  retirement track. After this slice, api-v2 backend serves admin auth
+  exclusively through `/api/admin-v2/auth/*`. Reconciliation:
+  `docs/admin-v2-mvp-3.5c-legacy-controller-retirement.md`.
 - **3.5d** (pending): session-management observability — `me/sessions`
   listing, cross-admin revoke endpoint with `admins.manage` capability,
   `revoke_reason` enum, and `refresh_reuse` alert wiring.
