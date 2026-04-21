@@ -250,6 +250,7 @@ model AdminModel {
   assignedOperationalAssignments OperationalAssignmentModel[] @relation("OperationalAssignmentAssignedTo")
   createdOperationalAssignments  OperationalAssignmentModel[] @relation("OperationalAssignmentAssignedBy")
   releasedOperationalAssignments OperationalAssignmentModel[] @relation("OperationalAssignmentReleasedBy")
+  savedViews                     SavedViewModel[]             @relation("SavedViewOwner")
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -886,6 +887,26 @@ model OperationalAssignmentModel {
   @@index([resourceType, resourceId, releasedAt])
   @@index([assignedTo, releasedAt])
   @@map("operational_assignment")
+}
+
+model SavedViewModel {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  ownerId    String     @map("owner_id") @db.Uuid
+  ownerAdmin AdminModel @relation("SavedViewOwner", fields: [ownerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  workspace   String  @map("workspace") @db.Text
+  name        String  @map("name") @db.Text
+  description String? @map("description") @db.Text
+
+  queryPayload Json @map("query_payload") @db.JsonB
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@index([ownerId, workspace, deletedAt])
+  @@map("saved_view")
 }
 
 model PaymentRequestAttachmentModel {
