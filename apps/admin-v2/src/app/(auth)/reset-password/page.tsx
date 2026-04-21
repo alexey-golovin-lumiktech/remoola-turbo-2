@@ -13,7 +13,7 @@ export default async function ResetPasswordPage({ searchParams }: { searchParams
         </div>
         <TokenPasswordForm
           token={token}
-          submitPath="/api/admin/auth/password/reset"
+          submitPath="/api/admin-v2/auth/password/reset"
           submitLabel="Reset password"
           successRedirectPath="/login"
           successMessage="Password updated. Redirecting to sign in..."

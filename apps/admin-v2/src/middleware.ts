@@ -9,7 +9,7 @@ import {
 import { appendSetCookies, getSetCookieValues } from './lib/api-utils';
 import { clearAdminAuthCookies, getAdminV2CookieRuntime, getPreferredAdminCookieValue } from './lib/auth-cookie-policy';
 
-const REFRESH_PATH = `/api/admin/auth/refresh`;
+const REFRESH_PATH = `/api/admin-v2/auth/refresh-access`;
 const ACCESS_TOKEN_EXPIRY_SKEW_MS = 5_000;
 
 type RefreshScope = `auth_page` | `protected_page`;

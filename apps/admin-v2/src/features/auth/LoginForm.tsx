@@ -16,7 +16,7 @@ export function LoginForm() {
     setError(null);
 
     try {
-      const response = await fetch(`/api/admin/auth/login`, {
+      const response = await fetch(`/api/admin-v2/auth/login`, {
         method: `POST`,
         headers: { 'content-type': `application/json` },
         body: JSON.stringify({ email, password }),

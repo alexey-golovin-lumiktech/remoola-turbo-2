@@ -13,7 +13,7 @@ export default async function AcceptInvitePage({ searchParams }: { searchParams?
         </div>
         <TokenPasswordForm
           token={token}
-          submitPath="/api/admin/auth/invitations/accept"
+          submitPath="/api/admin-v2/auth/invitations/accept"
           submitLabel="Accept invitation"
           successRedirectPath="/login"
           successMessage="Invitation accepted. Redirecting to sign in..."
