@@ -1154,6 +1154,27 @@ export async function getLedgerAnomaliesSummary(): Promise<LedgerAnomalySummaryR
   return fetchAdminApi<LedgerAnomalySummaryResponse>(`/admin-v2/ledger/anomalies/summary`);
 }
 
+export type SavedViewWorkspace = `ledger_anomalies`;
+
+export type SavedViewSummary = {
+  id: string;
+  workspace: string;
+  name: string;
+  description: string | null;
+  queryPayload: unknown;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type SavedViewsListResponse = {
+  views: SavedViewSummary[];
+};
+
+export async function getSavedViews(input: { workspace: SavedViewWorkspace }): Promise<SavedViewsListResponse | null> {
+  const searchParams = new URLSearchParams({ workspace: input.workspace });
+  return fetchAdminApi<SavedViewsListResponse>(`/admin-v2/saved-views?${searchParams.toString()}`);
+}
+
 export async function getLedgerAnomalies(params: {
   className: string;
   dateFrom: string;

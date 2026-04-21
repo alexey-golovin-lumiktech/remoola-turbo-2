@@ -553,3 +553,97 @@ export async function resetAdminPasswordAction(adminId: string, formData: FormDa
   );
   revalidateAdminPaths(adminId);
 }
+
+const SAVED_VIEW_WORKSPACE_PATHS: Record<string, string> = {
+  ledger_anomalies: `/ledger/anomalies`,
+};
+
+function revalidateSavedViewWorkspace(workspace: string) {
+  const path = SAVED_VIEW_WORKSPACE_PATHS[workspace];
+  if (path) {
+    revalidatePath(path);
+  }
+}
+
+function parseSavedViewPayload(raw: string | null): unknown {
+  if (raw == null) return null;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  try {
+    return JSON.parse(trimmed) as unknown;
+  } catch {
+    throw new Error(`Saved view payload is not valid JSON`);
+  }
+}
+
+export async function createSavedViewAction(formData: FormData): Promise<void> {
+  const workspace = String(formData.get(`workspace`) ?? ``).trim();
+  if (!workspace) {
+    throw new Error(`workspace is required`);
+  }
+  const name = String(formData.get(`name`) ?? ``).trim();
+  if (!name) {
+    throw new Error(`name is required`);
+  }
+  const description = String(formData.get(`description`) ?? ``).trim();
+  const queryPayload = parseSavedViewPayload(String(formData.get(`queryPayload`) ?? ``));
+
+  await postAdminMutation(
+    `/admin-v2/saved-views`,
+    {
+      workspace,
+      name,
+      description: description || null,
+      queryPayload,
+    },
+    `Failed to create saved view`,
+  );
+  revalidateSavedViewWorkspace(workspace);
+}
+
+export async function updateSavedViewAction(savedViewId: string, formData: FormData): Promise<void> {
+  if (!savedViewId) {
+    throw new Error(`savedViewId is required`);
+  }
+  const body: {
+    expectedDeletedAtNull: number;
+    name?: string;
+    description?: string | null;
+    queryPayload?: unknown;
+  } = { expectedDeletedAtNull: 0 };
+
+  const rawName = formData.get(`name`);
+  if (rawName !== null) {
+    const name = String(rawName).trim();
+    if (!name) {
+      throw new Error(`name cannot be empty`);
+    }
+    body.name = name;
+  }
+  const rawDescription = formData.get(`description`);
+  if (rawDescription !== null) {
+    const description = String(rawDescription).trim();
+    body.description = description || null;
+  }
+  const rawPayload = formData.get(`queryPayload`);
+  if (rawPayload !== null) {
+    body.queryPayload = parseSavedViewPayload(String(rawPayload));
+  }
+
+  await patchAdminMutation(`/admin-v2/saved-views/${savedViewId}`, body, `Failed to update saved view`);
+  const workspace = String(formData.get(`workspace`) ?? ``).trim();
+  revalidateSavedViewWorkspace(workspace || `ledger_anomalies`);
+}
+
+export async function deleteSavedViewAction(savedViewId: string, formData: FormData): Promise<void> {
+  if (!savedViewId) {
+    throw new Error(`savedViewId is required`);
+  }
+  await deleteAdminMutation(
+    `/admin-v2/saved-views/${savedViewId}`,
+    { expectedDeletedAtNull: 0 },
+    `Failed to delete saved view`,
+  );
+  const workspace = String(formData.get(`workspace`) ?? ``).trim();
+  revalidateSavedViewWorkspace(workspace || `ledger_anomalies`);
+}
