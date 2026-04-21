@@ -21,7 +21,9 @@ export const CHECK_PATHS = [
   `docs/admin-v2-mvp-3.1c-anomaly-classes-expansion.md`,
   `docs/admin-v2-mvp-3.1c-perf-evidence.md`,
   `docs/admin-v2-mvp-3.2a-operational-assignments.md`,
+  `docs/admin-v2-mvp-3.3a-saved-views-skeleton.md`,
   `packages/database-2/prisma/migrations/20260420191500_admin_v2_duplicate_idempotency_risk_index/README.md`,
+  `packages/database-2/prisma/migrations/20260421100000_admin_v2_saved_views_foundation/README.md`,
 ];
 
 export const AUDIT_ACTIONS = [
@@ -57,6 +59,9 @@ export const AUDIT_ACTIONS = [
   `assignment_claim`,
   `assignment_release`,
   `assignment_reassign`,
+  `saved_view_create`,
+  `saved_view_update`,
+  `saved_view_delete`,
 ];
 
 export const CAPABILITIES = [
@@ -85,6 +90,7 @@ export const CAPABILITIES = [
   `payouts.escalate`,
   `system.read`,
   `assignments.manage`,
+  `saved_views.manage`,
 ];
 
 export const FRONTEND_ACTIONS = [
@@ -111,6 +117,9 @@ export const FRONTEND_ACTIONS = [
   `claimVerificationAssignmentAction`,
   `releaseVerificationAssignmentAction`,
   `reassignVerificationAssignmentAction`,
+  `createSavedViewAction`,
+  `updateSavedViewAction`,
+  `deleteSavedViewAction`,
 ];
 
 export const ROUTE_TOKENS = {
@@ -147,6 +156,12 @@ export const ROUTE_TOKENS = {
     '@Post(`claim`)',
     '@Post(`release`)',
     '@Post(`reassign`)',
+  ],
+  'apps/api-v2/src/admin-v2/saved-views/admin-v2-saved-views.controller.ts': [
+    '@Get()',
+    '@Post()',
+    '@Patch(`:savedViewId`)',
+    '@Delete(`:savedViewId`)',
   ],
 };
 
@@ -275,5 +290,26 @@ export const RECONCILIATION_NOTES = {
     `Decision: capability granularity single`,
     `Decision: reassign requires SUPER_ADMIN`,
     `Decision: version check via expectedReleasedAtNull`,
+  ],
+  'docs/admin-v2-mvp-3.3a-saved-views-skeleton.md': [
+    `MVP-3.3a`,
+    `Sequence 6`,
+    `saved_views.manage`,
+    `saved_view_create`,
+    `saved_view_update`,
+    `saved_view_delete`,
+    `SavedViewModel`,
+    `ledger_anomalies only`,
+    `personal-only ownership`,
+    `soft-delete`,
+    `opaque queryPayload`,
+    `single workspace allowlist`,
+    `Decision: workspace allowlist ledger_anomalies only`,
+    `Decision: opaque queryPayload contract`,
+    `Decision: personal-only ownership`,
+    `Decision: soft-delete by default`,
+    `Decision: name unique partial index`,
+    `MAX_SAVED_VIEW_PAYLOAD_BYTES`,
+    `expectedDeletedAtNull`,
   ],
 };

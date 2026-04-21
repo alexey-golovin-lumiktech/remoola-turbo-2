@@ -25,13 +25,14 @@ This is a deterministic local check implemented in
   checks that do not exist
 - every anchor path listed in `CHECK_PATHS` in
   `scripts/admin-v2-gates/config.mjs` exists in the working tree (currently
-  23 paths spanning the admin-v2 frontend surface, the api-v2
+  25 paths spanning the admin-v2 frontend surface, the api-v2
   admin-v2/auth/csrf surface, the api-types HTTP surface, the
   admin-v2-pack planning files used by the gate, and the live admin-v2
   docs plus the 3.1c perf/reconciliation artifacts, the additive migration
-  README, and the 3.2a operational-assignments reconciliation note); the
-  config file is the single source of truth — do not duplicate the list
-  here
+  READMEs, the 3.2a operational-assignments reconciliation note, and the
+  3.3a saved-views skeleton reconciliation note plus its
+  saved_view foundation migration README); the config file is the single
+  source of truth — do not duplicate the list here
 - the expected capability and audit anchors are present in
   `apps/api-v2/src/shared/admin-action-audit.service.ts` and
   `apps/api-v2/src/admin-v2/admin-v2-access.ts`, including the audit actions
@@ -39,10 +40,11 @@ This is a deterministic local check implemented in
   write entries listed in `scripts/admin-v2-gates/config.mjs`)
 - frontend server-action exports are present in
   `apps/admin-v2/src/lib/admin-mutations.server.ts` for payment methods,
-  exchange, documents, admins, and operational assignments mutations
+  exchange, documents, admins, operational assignments, and saved views
+  mutations
 - the expected backend route tokens are present in the admins, payment
-  methods, exchange, documents, payouts and assignments controllers so the
-  gate can catch obvious route drift
+  methods, exchange, documents, payouts, assignments and saved-views
+  controllers so the gate can catch obvious route drift
 - the reconciliation tokens listed in `RECONCILIATION_NOTES` in
   `scripts/admin-v2-gates/config.mjs` are present in the corresponding
   planning and docs files (currently spanning
@@ -51,13 +53,14 @@ This is a deterministic local check implemented in
   `admin-v2-pack/08-rollout-risks-and-sequencing.md`, and
   `docs/admin-v2-mvp-3-anomalies-first-slice.md`,
   `docs/admin-v2-mvp-3.1c-anomaly-classes-expansion.md`,
-  `docs/admin-v2-mvp-3.1c-perf-evidence.md`, and
-  `docs/admin-v2-mvp-3.2a-operational-assignments.md`); see the config for
+  `docs/admin-v2-mvp-3.1c-perf-evidence.md`,
+  `docs/admin-v2-mvp-3.2a-operational-assignments.md`, and
+  `docs/admin-v2-mvp-3.3a-saved-views-skeleton.md`); see the config for
   the authoritative token list, including the schema-backed RBAC, payment
   methods write controls, MVP-3 maturity sequencing, and anomaly first
   maturity slice plus the 3.1c classes expansion / EXPLAIN ANALYZE
-  evidence and the 3.2a operational assignments decisions used by the
-  current gate
+  evidence, the 3.2a operational assignments decisions, and the 3.3a
+  saved views skeleton decisions used by the current gate
 
 ### `yarn test:admin-v2`
 
