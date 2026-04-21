@@ -31,11 +31,13 @@ This is a deterministic local check implemented in
   docs plus the 3.1c perf/reconciliation artifacts, the additive migration
   READMEs, the 3.2a operational-assignments reconciliation note, the
   3.3a saved-views skeleton reconciliation note plus its
-  saved_view foundation migration README, the 3.3b operational-alerts
+  saved_view foundation migration README, the   3.3b operational-alerts
   skeleton reconciliation note plus its operational_alert foundation
-  migration README, and the 3.4a verification-workspace-completion
+  migration README, the 3.4a verification-workspace-completion
   reconciliation note plus its `verification_queue` workspace allowlist
-  migration README); the config file is the single
+  migration README, and the 3.5a admin-auth-hardening plaintext
+  retirement reconciliation note (Risk 13 mitigation track step 1 of 4));
+  the config file is the single
   source of truth — do not duplicate the list here
 - the expected capability and audit anchors are present in
   `apps/api-v2/src/shared/admin-action-audit.service.ts` and
@@ -60,14 +62,17 @@ This is a deterministic local check implemented in
   `docs/admin-v2-mvp-3.1c-perf-evidence.md`,
   `docs/admin-v2-mvp-3.2a-operational-assignments.md`,
   `docs/admin-v2-mvp-3.3a-saved-views-skeleton.md`,
-  `docs/admin-v2-mvp-3.3b-operational-alerts-skeleton.md`, and
-  `docs/admin-v2-mvp-3.4a-verification-workspace-completion.md`); see the
+  `docs/admin-v2-mvp-3.3b-operational-alerts-skeleton.md`,
+  `docs/admin-v2-mvp-3.4a-verification-workspace-completion.md`, and
+  `docs/admin-v2-mvp-3.5a-admin-auth-hardening-plaintext-retirement.md`);
+  see the
   config for the authoritative token list, including the schema-backed
   RBAC, payment methods write controls, MVP-3 maturity sequencing, and
   anomaly first maturity slice plus the 3.1c classes expansion / EXPLAIN
   ANALYZE evidence, the 3.2a operational assignments decisions, the 3.3a
   saved views skeleton decisions, the 3.3b operational alerts
-  skeleton decisions, and the 3.4a verification-workspace-completion
+  skeleton decisions, the 3.4a verification-workspace-completion
+  decisions, and the 3.5a admin-auth-hardening plaintext-retirement
   decisions used by the current gate
 
 After 3.3b lands, the MVP-3 maturity exit criteria from
@@ -77,6 +82,27 @@ occurrence history, additional delivery channels, ack/snooze, manual
 re-evaluate, link from `/system/page.tsx` to `/system/alerts`,
 "Create alert from this filter" shortcut on `/ledger/anomalies/page.tsx`)
 are post-MVP-3 expansion work and ship as their own slices.
+
+### Risk 13 mitigation track (post-MVP-3, hardening)
+
+Risk 13 (admin auth plaintext-fallback / legacy controller retirement)
+is being closed in four sequential slices, all post-MVP-3 hardening:
+
+- **3.5a** (this slice, landed): backend hardening — `verified.sid`
+  mandatory on admin path in `auth.guard.ts`, `AdminAuthService.refreshAccess`
+  is session-only, `getLegacyAccessAndRefreshToken` and `findIdentityAccess`
+  removed, `revokeSessionByRefreshToken` simplified, and
+  `AdminV2AuthController.revokeSession` now writes dual audit (existing
+  `AUTH_AUDIT_EVENTS.logout` + new `ADMIN_ACTION_AUDIT_ACTIONS.admin_session_revoke`).
+  No schema migration. Legacy `AdminAuthController` and admin-v2 frontend
+  URLs intentionally retained — see the reconciliation note for the staged
+  plan.
+- **3.5b** (pending): admin-v2 frontend URL migration to `/api/admin-v2/auth/*`.
+- **3.5c** (pending): legacy `AdminAuthController` retirement after frontend
+  migration lands.
+- **3.5d** (pending): session-management observability — `me/sessions`
+  listing, cross-admin revoke endpoint with `admins.manage` capability,
+  `revoke_reason` enum, and `refresh_reuse` alert wiring.
 
 ### `yarn test:admin-v2`
 
