@@ -544,6 +544,64 @@ export async function reassignVerificationAssignmentAction(consumerId: string, f
   revalidateVerificationAssignmentPaths(consumerId);
 }
 
+function revalidateLedgerEntryAssignmentPaths(ledgerEntryId: string) {
+  revalidatePath(`/ledger`);
+  revalidatePath(`/ledger/anomalies`);
+  revalidatePath(`/ledger/${ledgerEntryId}`);
+}
+
+export async function claimLedgerEntryAssignmentAction(ledgerEntryId: string, formData: FormData): Promise<void> {
+  if (!ledgerEntryId) {
+    throw new Error(`ledgerEntryId is required`);
+  }
+  const reason = String(formData.get(`reason`) ?? ``).trim();
+  await postAdminMutation(
+    `/admin-v2/assignments/claim`,
+    { resourceType: `ledger_entry`, resourceId: ledgerEntryId, reason: reason || null },
+    `Failed to claim ledger entry assignment`,
+  );
+  revalidateLedgerEntryAssignmentPaths(ledgerEntryId);
+}
+
+export async function releaseLedgerEntryAssignmentAction(ledgerEntryId: string, formData: FormData): Promise<void> {
+  if (!ledgerEntryId) {
+    throw new Error(`ledgerEntryId is required`);
+  }
+  const assignmentId = String(formData.get(`assignmentId`) ?? ``).trim();
+  if (!assignmentId) {
+    throw new Error(`assignmentId is required`);
+  }
+  const reason = String(formData.get(`reason`) ?? ``).trim();
+  await postAdminMutation(
+    `/admin-v2/assignments/release`,
+    { assignmentId, reason: reason || null, expectedReleasedAtNull: 0 },
+    `Failed to release ledger entry assignment`,
+  );
+  revalidateLedgerEntryAssignmentPaths(ledgerEntryId);
+}
+
+export async function reassignLedgerEntryAssignmentAction(ledgerEntryId: string, formData: FormData): Promise<void> {
+  if (!ledgerEntryId) {
+    throw new Error(`ledgerEntryId is required`);
+  }
+  const assignmentId = String(formData.get(`assignmentId`) ?? ``).trim();
+  const newAssigneeId = String(formData.get(`newAssigneeId`) ?? ``).trim();
+  const reason = String(formData.get(`reason`) ?? ``).trim();
+  const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
+  if (!assignmentId) {
+    throw new Error(`assignmentId is required`);
+  }
+  if (!newAssigneeId) {
+    throw new Error(`newAssigneeId is required`);
+  }
+  await postAdminMutation(
+    `/admin-v2/assignments/reassign`,
+    { assignmentId, newAssigneeId, reason, confirmed, expectedReleasedAtNull: 0 },
+    `Failed to reassign ledger entry assignment`,
+  );
+  revalidateLedgerEntryAssignmentPaths(ledgerEntryId);
+}
+
 export async function resetAdminPasswordAction(adminId: string, formData: FormData): Promise<void> {
   const version = parseRequiredVersion(formData);
   await postAdminMutation(
