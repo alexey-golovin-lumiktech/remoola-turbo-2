@@ -44,7 +44,10 @@ This is a deterministic local check implemented in
   and the 3.5d session-management observability + cross-admin revoke +
   invalidated_reason CHECK constraint + auth_refresh_reuse alert
   workspace reconciliation note plus its two additive migration READMEs
-  (Risk 13 mitigation track step 4 of 4 — final, Risk 13 closed));
+  (Risk 13 mitigation track step 4 of 4 — final, Risk 13 closed),
+  and the 3.6a operational-assignments `'ledger_entry'` resource-type
+  activation reconciliation note (no new migration, no new capability,
+  no new audit action, no new endpoint));
   the config file is the single
   source of truth — do not duplicate the list here
 - the expected capability and audit anchors are present in
@@ -75,8 +78,9 @@ This is a deterministic local check implemented in
   `docs/admin-v2-mvp-3.5a-admin-auth-hardening-plaintext-retirement.md`,
   `docs/admin-v2-mvp-3.5b-frontend-url-migration.md`,
   `docs/admin-v2-mvp-3.5c-legacy-controller-retirement.md`,
+  `docs/admin-v2-mvp-3.5d-session-management-observability.md`,
   and
-  `docs/admin-v2-mvp-3.5d-session-management-observability.md`);
+  `docs/admin-v2-mvp-3.6a-operational-assignments-ledger-entry-activation.md`);
   see the
   config for the authoritative token list, including the schema-backed
   RBAC, payment methods write controls, MVP-3 maturity sequencing, and
@@ -87,8 +91,13 @@ This is a deterministic local check implemented in
   decisions, the 3.5a admin-auth-hardening plaintext-retirement
   decisions, the 3.5b admin-v2 frontend URL migration + BFF folder
   rename decisions, the 3.5c legacy controller retirement decisions,
-  and the 3.5d session-management observability + cross-admin revoke +
-  invalidated_reason CHECK + auth_refresh_reuse alert workspace decisions
+  the 3.5d session-management observability + cross-admin revoke +
+  invalidated_reason CHECK + auth_refresh_reuse alert workspace decisions,
+  and the 3.6a operational-assignments `'ledger_entry'` resource-type
+  activation decisions (resource-type allowlist extension; inline-copy
+  backend assignment-context query and UI Assignments card; reuse of
+  `assignments.manage` capability and `assignment_*` audit actions; no
+  new prisma migrations / capability / audit action / endpoint)
   used by the current gate
 
 After 3.3b lands, the MVP-3 maturity exit criteria from
