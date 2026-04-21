@@ -1,0 +1,194 @@
+# Admin-v2 verification_queue workspace allowlist expansion
+
+Slice **MVP-3.4a** companion to
+[`docs/admin-v2-mvp-3.4a-verification-workspace-completion.md`](../../../../../docs/admin-v2-mvp-3.4a-verification-workspace-completion.md).
+
+## Purpose
+
+Adds the workspace value `'verification_queue'` to the existing
+`CHECK` constraints `saved_view_workspace_check` and
+`operational_alert_workspace_check`. After this migration both tables
+accept rows with `workspace IN ('ledger_anomalies', 'verification_queue')`.
+No table is created, no column is added, no index is touched, no data
+is moved.
+
+## Why now / phase
+
+This is the first post-MVP-3 expansion slice. MVP-3 maturity track
+closed after 3.3b; the saved-views and operational-alerts skeletons
+were intentionally shipped with a **single-value** workspace allowlist
+so that each subsequent workspace must arrive as an explicit, auditable
+migration plus service-constant change. The
+[saved-views foundation README](../20260421100000_admin_v2_saved_views_foundation/README.md)
+explicitly documents this evolution rule under
+"Workspace allowlist evolution" and lists the exact `ALTER ... DROP /
+ADD CONSTRAINT` shape this migration uses.
+
+The verification queue is the first workspace to take the upgrade
+because operators spend the bulk of their shift there and the
+verification surface already exposes a stable filter shape (`status`,
+`stripeIdentityStatus`, `country`, `contractorKind`) that maps cleanly
+to a saved view payload.
+
+## Why a single migration extends two tables
+
+`saved_view_workspace_check` and `operational_alert_workspace_check`
+are conceptually one allowlist split across two physical tables. If
+the migration were split in two:
+
+- Either ordering can leave a window where one table accepts the new
+  workspace value and the other rejects it. Any UI that creates an
+  alert immediately after creating a view would observe an
+  inconsistent allowlist.
+- A failure of the second migration would leave the first applied,
+  forcing a manual rollback of one constraint.
+
+Both `ALTER TABLE` statements run inside the same transaction that
+`prisma migrate deploy` opens for every migration. Either both
+constraints are upgraded or neither is.
+
+## Why no `IF EXISTS` / `IF NOT EXISTS`
+
+`DROP CONSTRAINT IF EXISTS` and `ADD CONSTRAINT IF NOT EXISTS` would
+silently no-op when the pre-migration shape is unexpected. That is
+precisely the wrong behaviour for a constraint upgrade: if the
+constraint is missing or already includes `'verification_queue'`, the
+deployment target has drifted from the assumed history (e.g. 3.3a or
+3.3b was skipped, or someone hand-edited the constraint), and we want
+the deploy to fail loudly rather than declare a phantom success.
+
+## Why no `CONCURRENTLY`
+
+`ALTER TABLE ... DROP CONSTRAINT` and `ALTER TABLE ... ADD CONSTRAINT`
+do not accept the `CONCURRENTLY` modifier. Even if they did,
+`prisma migrate deploy` always wraps each migration in a single
+transaction, and `CONCURRENTLY` cannot run inside a transaction.
+Redefining a `CHECK` constraint takes an `ACCESS EXCLUSIVE` lock for
+the duration of the validation; that validation re-checks every
+existing row against the new predicate. Both tables are essentially
+empty in production today (the skeleton landed in 3.3a/3.3b), so the
+lock window is observationally instantaneous.
+
+## Why DROP+ADD with the same name (not rename)
+
+The alternative is to add a new constraint under a versioned name
+(e.g. `saved_view_workspace_check_v2`) and then drop the old name in
+the same transaction. That works, but it leaks a constraint-name
+contract to any downstream tooling (monitoring, schema-diff, runbooks)
+that filters on `pg_constraint.conname`. Keeping the same name keeps
+the operator-facing contract stable.
+
+Inside a transactional `prisma migrate deploy`, DROP+ADD same name has
+zero observability window: outside the migration transaction nothing
+ever sees the table without the constraint, and inside the transaction
+no other session can read intermediate state. The atomic guarantee is
+identical to the rename strategy without the rename's downstream cost.
+
+## Application impact
+
+Zero downtime expected:
+
+- The lock is held for milliseconds because both tables are tiny.
+- Existing rows already satisfy the new predicate (the new allowlist
+  is a strict superset of the old one), so the constraint
+  re-validation cannot find a violation.
+- Application code (`SAVED_VIEW_WORKSPACES`,
+  `OPERATIONAL_ALERT_WORKSPACES` and frontend `SavedViewWorkspace`
+  type) is updated in lockstep in the same slice, so reads and writes
+  using the new value become valid the moment both DB and code are
+  deployed.
+
+## Rollback plan
+
+```sql
+ALTER TABLE "saved_view"
+DROP CONSTRAINT "saved_view_workspace_check";
+
+ALTER TABLE "saved_view"
+ADD CONSTRAINT "saved_view_workspace_check"
+  CHECK ("workspace" IN ('ledger_anomalies'));
+
+ALTER TABLE "operational_alert"
+DROP CONSTRAINT "operational_alert_workspace_check";
+
+ALTER TABLE "operational_alert"
+ADD CONSTRAINT "operational_alert_workspace_check"
+  CHECK ("workspace" IN ('ledger_anomalies'));
+```
+
+**Important**: the rollback fails if any row has already been written
+with `workspace = 'verification_queue'`. That is intentional: silently
+discarding production rows would be a data-loss hazard. If a true
+rollback is required after data has landed, the operator must first
+hard-delete (or workspace-rewrite) the offending rows, then run the
+rollback DDL above.
+
+## Reassessment threshold
+
+The `CHECK ("workspace" IN (...))` shape scales linearly with allowlist
+size. Once the list reaches roughly five values, or whenever a
+workspace's lifecycle stops mapping cleanly onto a free-form text value
+(e.g. needing per-workspace metadata), reconsider:
+
+- Move the allowlist into a lookup table (`workspace_catalog(id text
+PK, label text, ...)`) referenced via FK; or
+- Promote the allowlist to a Postgres `ENUM` type, accepting the
+  ENUM-evolution cost.
+
+Until then, a `CHECK` constraint extension per slice remains the
+cheapest-and-safest evolution path and is consistent with
+[`.cursor/skills/migration-safety/SKILL.md`](../../../../../.cursor/skills/migration-safety/SKILL.md)
+("avoid DB enums; use CHECK constraints").
+
+## Release checks
+
+1. Confirm the new constraint definition on both tables:
+   ```sql
+   SELECT pg_get_constraintdef(oid)
+     FROM pg_constraint
+    WHERE conname = 'saved_view_workspace_check';
+   -- expected: CHECK ((workspace IN ('ledger_anomalies'::text,
+   --                                 'verification_queue'::text)))
+
+   SELECT pg_get_constraintdef(oid)
+     FROM pg_constraint
+    WHERE conname = 'operational_alert_workspace_check';
+   -- expected: CHECK ((workspace IN ('ledger_anomalies'::text,
+   --                                 'verification_queue'::text)))
+   ```
+2. Confirm `_prisma_migrations` has exactly one row for
+   `20260421101000_admin_v2_verification_queue_workspace` with
+   `finished_at` set and no failed siblings.
+3. Manual sanity:
+   ```sql
+   -- accepted under the new allowlist
+   INSERT INTO "saved_view" ("owner_id", "workspace", "name",
+                             "query_payload")
+   VALUES ('00000000-0000-0000-0000-000000000000', 'verification_queue',
+           'sanity', '{}'::jsonb);
+   -- (then DELETE the sanity row, or rely on the FK to admin to fail)
+
+   -- still rejected
+   INSERT INTO "saved_view" ("owner_id", "workspace", "name",
+                             "query_payload")
+   VALUES ('00000000-0000-0000-0000-000000000000', 'unknown_ws',
+           'x', '{}'::jsonb);
+   -- expected: ERROR: new row violates check constraint
+   --                  "saved_view_workspace_check"
+   ```
+
+## Recovery
+
+If a target database ends up with a failed row for this migration:
+
+```bash
+DATABASE_URL=... \
+  npx prisma migrate resolve \
+    --rolled-back 20260421101000_admin_v2_verification_queue_workspace
+
+DATABASE_URL=... npx prisma migrate deploy
+```
+
+Re-running is safe because the migration is fully transactional: a
+failed run leaves the original constraints in place, so the second
+attempt sees exactly the same pre-migration state as the first.
