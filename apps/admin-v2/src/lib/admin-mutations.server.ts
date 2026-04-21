@@ -554,6 +554,25 @@ export async function resetAdminPasswordAction(adminId: string, formData: FormDa
   revalidateAdminPaths(adminId);
 }
 
+export async function revokeMyAdminSessionAction(formData: FormData): Promise<void> {
+  const sessionId = String(formData.get(`sessionId`) ?? ``).trim();
+  if (!sessionId) {
+    throw new Error(`sessionId is required`);
+  }
+  await postAdminMutation(`/admin-v2/auth/revoke-session`, { sessionId }, `Failed to revoke own session`);
+  revalidatePath(`/me/sessions`);
+}
+
+export async function revokeAdminSessionAction(adminId: string, sessionId: string, formData: FormData): Promise<void> {
+  void formData;
+  await postAdminMutation(
+    `/admin-v2/admins/${adminId}/sessions/${sessionId}/revoke`,
+    {},
+    `Failed to revoke admin session`,
+  );
+  revalidateAdminPaths(adminId);
+}
+
 const SAVED_VIEW_WORKSPACE_PATHS: Record<string, string> = {
   ledger_anomalies: `/ledger/anomalies`,
   verification_queue: `/verification`,

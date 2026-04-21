@@ -10,6 +10,7 @@ import { JwtService } from '@nestjs/jwt';
 import { $Enums, Prisma } from '@remoola/database-2';
 import { oauthCrypto } from '@remoola/security-utils';
 
+import { ADMIN_AUTH_SESSION_REVOKE_REASONS } from '../../admin/auth/admin-auth-session-reasons';
 import { envs } from '../../envs';
 import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
 import { MailingService } from '../../shared/mailing.service';
@@ -770,7 +771,7 @@ export class AdminV2AdminsService {
             },
             data: {
               revokedAt: deactivatedAt,
-              invalidatedReason: `admin_deactivated`,
+              invalidatedReason: ADMIN_AUTH_SESSION_REVOKE_REASONS.admin_deactivated,
               lastUsedAt: deactivatedAt,
             },
           });
@@ -1475,7 +1476,7 @@ export class AdminV2AdminsService {
         },
         data: {
           revokedAt: new Date(),
-          invalidatedReason: `password_reset`,
+          invalidatedReason: ADMIN_AUTH_SESSION_REVOKE_REASONS.password_reset,
           lastUsedAt: new Date(),
         },
       });

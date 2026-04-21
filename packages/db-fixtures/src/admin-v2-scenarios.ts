@@ -1574,7 +1574,7 @@ export function getAdminV2ScenarioPack(now = new Date()): AdminV2ScenarioPack {
           expiresAt: daysFromNow(now, 14),
           lastUsedAt: hoursAgo(now, 1),
           revokedAt: hoursAgo(now, 1),
-          invalidatedReason: `fixture_force_logout_after_risk_review`,
+          invalidatedReason: `admin_deactivated`,
         },
       ],
       authAudits: [

@@ -30,6 +30,7 @@ export const ADMIN_ACTION_AUDIT_ACTIONS = {
   admin_role_change: `admin_role_change`,
   admin_permissions_change: `admin_permissions_change`,
   admin_session_revoke: `admin_session_revoke`,
+  admin_session_revoke_other: `admin_session_revoke_other`,
   consumer_verification_update: `consumer_verification_update`,
   consumer_force_logout: `consumer_force_logout`,
   consumer_suspend: `consumer_suspend`,

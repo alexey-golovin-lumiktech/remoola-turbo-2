@@ -1,13 +1,14 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { getAdminCaseRecord, getAdminIdentity } from '../../../../lib/admin-api.server';
+import { getAdminCaseRecord, getAdminIdentity, getAdminSessions } from '../../../../lib/admin-api.server';
 import {
   changeAdminPermissionsAction,
   changeAdminRoleAction,
   deactivateAdminAction,
   resetAdminPasswordAction,
   restoreAdminAction,
+  revokeAdminSessionAction,
 } from '../../../../lib/admin-mutations.server';
 import { ADMIN_V2_ROLE_OPTIONS } from '../../../../lib/admin-rbac';
 
@@ -32,7 +33,10 @@ export default async function AdminCasePage({ params }: { params: Promise<{ admi
   }
 
   const canManage = identity?.capabilities.includes(`admins.manage`) ?? false;
+  const canReadSessions = identity?.capabilities.includes(`admins.read`) ?? false;
   const isSelf = identity?.id === admin.core.id;
+  const sessionResponse = canReadSessions ? await getAdminSessions(admin.core.id) : null;
+  const sessions = sessionResponse?.sessions ?? [];
   const overrideModeByCapability = new Map(
     admin.accessProfile.permissionOverrides.map((override) => [
       override.capability,
@@ -268,6 +272,37 @@ export default async function AdminCasePage({ params }: { params: Promise<{ admi
           </div>
         </article>
       </section>
+
+      {canReadSessions ? (
+        <section className="panel">
+          <h2>Active sessions</h2>
+          {sessionResponse === null ? <p className="muted">Sessions surface temporarily unavailable.</p> : null}
+          {sessionResponse !== null && sessions.length === 0 ? <p className="muted">No sessions visible.</p> : null}
+          <div className="formStack">
+            {sessions.map((s) => (
+              <article key={s.id} className="panel">
+                <p className="mono">{s.id}</p>
+                <p className="muted">
+                  Family: <span className="mono">{s.sessionFamilyId}</span>
+                </p>
+                <p className="muted">Created: {formatDate(s.createdAt)}</p>
+                <p className="muted">Last used: {formatDate(s.lastUsedAt)}</p>
+                <p className="muted">Expires: {formatDate(s.expiresAt)}</p>
+                <p className="muted">Revoked: {formatDate(s.revokedAt)}</p>
+                {s.invalidatedReason ? <p className="muted">Reason: {s.invalidatedReason}</p> : null}
+                {canManage && !s.revokedAt && !isSelf ? (
+                  <form action={revokeAdminSessionAction.bind(null, admin.core.id, s.id)} className="formStack">
+                    <button className="dangerButton" type="submit">
+                      Revoke session
+                    </button>
+                  </form>
+                ) : null}
+                {isSelf && !s.revokedAt ? <p className="errorText">Use My sessions for self-revoke.</p> : null}
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
     </>
   );
 }

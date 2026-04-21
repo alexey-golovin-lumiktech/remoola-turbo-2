@@ -24,7 +24,13 @@ describe(`AdminAuthService`, () => {
   let service: AdminAuthService;
   let prisma: {
     adminModel: { findFirst: jest.Mock };
-    adminAuthSessionModel: { create: jest.Mock; findFirst: jest.Mock; update: jest.Mock; updateMany: jest.Mock };
+    adminAuthSessionModel: {
+      create: jest.Mock;
+      findFirst: jest.Mock;
+      findMany: jest.Mock;
+      update: jest.Mock;
+      updateMany: jest.Mock;
+    };
     resetPasswordModel: { updateMany: jest.Mock; create: jest.Mock };
     $transaction: jest.Mock;
   };
@@ -36,6 +42,7 @@ describe(`AdminAuthService`, () => {
       adminAuthSessionModel: {
         create: jest.fn().mockResolvedValue({ id: `session-id` }),
         findFirst: jest.fn(),
+        findMany: jest.fn().mockResolvedValue([]),
         update: jest.fn().mockResolvedValue({}),
         updateMany: jest.fn().mockResolvedValue({ count: 0 }),
       },
@@ -429,6 +436,125 @@ describe(`AdminAuthService`, () => {
 
       await expect(service.issueAdminPasswordReset(`missing-admin`)).rejects.toThrow(BadRequestException);
       expect(prisma.resetPasswordModel.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe(`revokeSessionByIdAndAudit`, () => {
+    const adminId = `admin-id`;
+    const sessionId = `session-1`;
+
+    beforeEach(() => {
+      prisma.adminAuthSessionModel.findFirst.mockResolvedValue({
+        id: sessionId,
+        revokedAt: null,
+        admin: { email: `admin@example.com` },
+      });
+    });
+
+    it(`writes ctx.reason when supplied (cross_admin_revoked)`, async () => {
+      await service.revokeSessionByIdAndAudit(adminId, sessionId, { reason: `cross_admin_revoked` });
+      expect(prisma.adminAuthSessionModel.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: sessionId },
+          data: expect.objectContaining({ invalidatedReason: `cross_admin_revoked` }),
+        }),
+      );
+    });
+
+    it(`defaults to manual_revoke when no ctx.reason`, async () => {
+      await service.revokeSessionByIdAndAudit(adminId, sessionId);
+      expect(prisma.adminAuthSessionModel.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ invalidatedReason: `manual_revoke` }),
+        }),
+      );
+    });
+
+    it(`returns alreadyRevoked: true and skips update when session was previously revoked`, async () => {
+      prisma.adminAuthSessionModel.findFirst.mockResolvedValue({
+        id: sessionId,
+        revokedAt: new Date(),
+        admin: { email: `admin@example.com` },
+      });
+      const result = await service.revokeSessionByIdAndAudit(adminId, sessionId);
+      expect(result).toEqual({ revokedSessionId: sessionId, alreadyRevoked: true });
+      expect(prisma.adminAuthSessionModel.update).not.toHaveBeenCalled();
+    });
+
+    it(`throws when session does not belong to admin`, async () => {
+      prisma.adminAuthSessionModel.findFirst.mockResolvedValue(null);
+      await expect(service.revokeSessionByIdAndAudit(adminId, sessionId)).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe(`assertSessionBelongsToAdmin`, () => {
+    it(`returns true when session is owned by the admin`, async () => {
+      prisma.adminAuthSessionModel.findFirst.mockResolvedValue({ id: `session-1` });
+      await expect(service.assertSessionBelongsToAdmin(`admin-id`, `session-1`)).resolves.toBe(true);
+      expect(prisma.adminAuthSessionModel.findFirst).toHaveBeenCalledWith({
+        where: { id: `session-1`, adminId: `admin-id` },
+        select: { id: true },
+      });
+    });
+
+    it(`returns false when session is not found for the admin`, async () => {
+      prisma.adminAuthSessionModel.findFirst.mockResolvedValue(null);
+      await expect(service.assertSessionBelongsToAdmin(`admin-id`, `session-foreign`)).resolves.toBe(false);
+    });
+  });
+
+  describe(`listSessionsForAdmin`, () => {
+    it(`returns ISO-serialized rows in createdAt-desc order, capped to 30 days`, async () => {
+      const now = new Date(`2026-04-21T12:00:00.000Z`);
+      jest.useFakeTimers().setSystemTime(now);
+      const recent = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const oldest = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000);
+      prisma.adminAuthSessionModel.findMany.mockResolvedValue([
+        {
+          id: `session-2`,
+          sessionFamilyId: `family-2`,
+          createdAt: recent,
+          lastUsedAt: recent,
+          expiresAt: new Date(now.getTime() + 60_000),
+          revokedAt: null,
+          invalidatedReason: null,
+          replacedById: null,
+        },
+        {
+          id: `session-1`,
+          sessionFamilyId: `family-1`,
+          createdAt: oldest,
+          lastUsedAt: oldest,
+          expiresAt: oldest,
+          revokedAt: oldest,
+          invalidatedReason: `rotated`,
+          replacedById: `session-2`,
+        },
+      ]);
+
+      const result = await service.listSessionsForAdmin(`admin-id`);
+
+      expect(prisma.adminAuthSessionModel.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            adminId: `admin-id`,
+            OR: expect.arrayContaining([{ revokedAt: null }, { revokedAt: { gte: expect.any(Date) } }]),
+          }),
+          orderBy: { createdAt: `desc` },
+        }),
+      );
+      const callArg = prisma.adminAuthSessionModel.findMany.mock.calls[0][0];
+      const cutoff = (callArg.where.OR[1] as { revokedAt: { gte: Date } }).revokedAt.gte;
+      expect(now.getTime() - cutoff.getTime()).toBe(30 * 24 * 60 * 60 * 1000);
+      expect(result).toHaveLength(2);
+      expect(result[0]).toMatchObject({ id: `session-2`, invalidatedReason: null, replacedById: null });
+      expect(result[1]).toMatchObject({
+        id: `session-1`,
+        invalidatedReason: `rotated`,
+        replacedById: `session-2`,
+      });
+      expect(typeof result[0].createdAt).toBe(`string`);
+      jest.useRealTimers();
     });
   });
 });

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 import { IsArray, IsBoolean, IsEmail, IsIn, IsNumber, IsOptional, IsString } from 'class-validator';
@@ -7,6 +7,7 @@ import express from 'express';
 import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Identity, type IIdentityContext } from '../../common';
 import { AdminV2AccessService } from '../admin-v2-access.service';
+import { AdminV2AdminSessionsService } from './admin-v2-admin-sessions.service';
 import { AdminV2AdminsService } from './admin-v2-admins.service';
 
 function one(value: string | string[] | undefined): string | undefined {
@@ -97,6 +98,7 @@ export class AdminV2AdminsController {
   constructor(
     private readonly service: AdminV2AdminsService,
     private readonly accessService: AdminV2AccessService,
+    private readonly adminSessionsService: AdminV2AdminSessionsService,
   ) {}
 
   @Get()
@@ -179,5 +181,29 @@ export class AdminV2AdminsController {
   ) {
     await this.accessService.assertCapability(admin, `admins.manage`);
     return this.service.resetAdminPassword(id, admin.id, body, requestMeta(req));
+  }
+
+  @Get(`:id/sessions`)
+  async listAdminSessions(@Identity() admin: IIdentityContext, @Param(`id`) id: string) {
+    await this.accessService.assertCapability(admin, `admins.read`);
+    return this.adminSessionsService.listSessionsForAdmin(id);
+  }
+
+  @Post(`:id/sessions/:sessionId/revoke`)
+  async revokeAdminSession(
+    @Identity() actor: IIdentityContext,
+    @Param(`id`) targetAdminId: string,
+    @Param(`sessionId`) sessionId: string,
+    @Req() req: express.Request,
+  ) {
+    await this.accessService.assertCapability(actor, `admins.manage`);
+    if (actor.id === targetAdminId) {
+      throw new BadRequestException(`Use /api/admin-v2/auth/revoke-session for own sessions`);
+    }
+    const meta = requestMeta(req);
+    return this.adminSessionsService.revokeSessionAsManager(targetAdminId, sessionId, actor.id, {
+      ipAddress: meta.ipAddress,
+      userAgent: meta.userAgent,
+    });
   }
 }

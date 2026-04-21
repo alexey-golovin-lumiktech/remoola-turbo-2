@@ -9,6 +9,7 @@ import {
   type OperationalAlertWorkspaceEvaluator,
   type WorkspaceEvaluatorRegistry,
 } from './admin-v2-operational-alerts-workspace-evaluators';
+import { AuthRefreshReuseAlertEvaluator } from './admin-v2-operational-alerts-workspace-evaluators-auth-refresh-reuse';
 import { VerificationQueueAlertEvaluator } from './admin-v2-operational-alerts-workspace-evaluators-verification';
 import { OPERATIONAL_ALERT_WORKSPACES, type OperationalAlertWorkspace } from './admin-v2-operational-alerts.dto';
 import { PrismaService } from '../../shared/prisma.service';
@@ -68,10 +69,12 @@ export class AdminV2OperationalAlertsEvaluatorService {
     private readonly prisma: PrismaService,
     private readonly ledgerAnomaliesEvaluator: LedgerAnomaliesAlertEvaluator,
     private readonly verificationQueueEvaluator: VerificationQueueAlertEvaluator,
+    private readonly authRefreshReuseEvaluator: AuthRefreshReuseAlertEvaluator,
   ) {
     this.evaluators = Object.freeze({
       ledger_anomalies: this.ledgerAnomaliesEvaluator,
       verification_queue: this.verificationQueueEvaluator,
+      auth_refresh_reuse: this.authRefreshReuseEvaluator,
     } satisfies Record<OperationalAlertWorkspace, OperationalAlertWorkspaceEvaluator>);
   }
 

@@ -1175,7 +1175,7 @@ export async function getSavedViews(input: { workspace: SavedViewWorkspace }): P
   return fetchAdminApi<SavedViewsListResponse>(`/admin-v2/saved-views?${searchParams.toString()}`);
 }
 
-export type OperationalAlertWorkspace = `ledger_anomalies` | `verification_queue`;
+export type OperationalAlertWorkspace = `ledger_anomalies` | `verification_queue` | `auth_refresh_reuse`;
 
 export type CountGtThreshold = { type: `count_gt`; value: number };
 export type OperationalAlertThreshold = CountGtThreshold;
@@ -1770,4 +1770,36 @@ export async function getAdmins(params?: {
 export async function getAdminCaseRecord(adminId: string): Promise<AdminCaseRecordResponse | null> {
   if (!adminId.trim()) return null;
   return fetchAdminApi<AdminCaseRecordResponse>(`/admin-v2/admins/${adminId}`);
+}
+
+export type AdminSessionInvalidatedReason =
+  | `rotated`
+  | `manual_revoke`
+  | `cross_admin_revoked`
+  | `logout`
+  | `refresh_reuse_detected`
+  | `password_reset`
+  | `admin_deactivated`;
+
+export type AdminSessionView = {
+  id: string;
+  sessionFamilyId: string;
+  createdAt: string;
+  lastUsedAt: string;
+  expiresAt: string;
+  revokedAt: string | null;
+  invalidatedReason: AdminSessionInvalidatedReason | null;
+  replacedById: string | null;
+  current?: boolean;
+};
+
+export type ListAdminSessionsResponse = { sessions: AdminSessionView[] };
+
+export async function getMyAdminSessions(): Promise<ListAdminSessionsResponse | null> {
+  return fetchAdminApi<ListAdminSessionsResponse>(`/admin-v2/auth/me/sessions`);
+}
+
+export async function getAdminSessions(adminId: string): Promise<ListAdminSessionsResponse | null> {
+  if (!adminId.trim()) return null;
+  return fetchAdminApi<ListAdminSessionsResponse>(`/admin-v2/admins/${adminId}/sessions`);
 }

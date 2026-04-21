@@ -70,6 +70,11 @@ export default async function ShellLayout({ children }: { children: React.ReactN
           <p className="muted">Role: {identity?.role ?? `UNAUTHORIZED`}</p>
           <p className="muted">Phase: {identity?.phase ?? `MVP-2 canonical shell framing`}</p>
           {identity ? null : <p className="muted">This admin type is outside the allowed Admin v2 surfaces.</p>}
+          {identity ? (
+            <Link href="/me/sessions" className="navLink">
+              My sessions
+            </Link>
+          ) : null}
           <form action="/logout" method="post">
             <button type="submit" className="secondaryButton">
               Log out

@@ -53,15 +53,52 @@ describe(`admin-v2 operational alerts page`, () => {
     mockedGetOperationalAlerts.mockReset();
   });
 
-  it(`renders empty state when there are no alerts`, async () => {
+  it(`renders empty state for both workspaces when there are no alerts`, async () => {
     mockedGetOperationalAlerts.mockResolvedValue({ alerts: [] });
 
     const markup = renderToStaticMarkup(await OperationalAlertsPage());
 
     expect(markup).toContain(`Operational alerts`);
-    expect(markup).toContain(`No alerts yet`);
-    expect(markup).toContain(`New alert`);
-    expect(markup).toContain(`Create alert`);
+    expect(markup).toContain(`Ledger anomalies alerts`);
+    expect(markup).toContain(`Auth refresh reuse alerts`);
+    expect(markup).toContain(`No alerts yet for this workspace`);
+    expect(markup).toContain(`New ledger anomalies alert`);
+    expect(markup).toContain(`New auth refresh reuse alert`);
+    expect(markup).toContain(`value="ledger_anomalies"`);
+    expect(markup).toContain(`value="auth_refresh_reuse"`);
+  });
+
+  it(`renders auth_refresh_reuse alert with windowMinutes payload summary`, async () => {
+    mockedGetOperationalAlerts.mockImplementation(async ({ workspace }) => {
+      if (workspace === `auth_refresh_reuse`) {
+        return {
+          alerts: [
+            {
+              ...ALERT_TEMPLATE,
+              workspace: `auth_refresh_reuse`,
+              id: `alert-arr`,
+              name: `Refresh reuse spike`,
+              description: `Watch for refresh-token reuse`,
+              queryPayload: { windowMinutes: 30 },
+              thresholdPayload: { type: `count_gt`, value: 2 },
+              lastEvaluatedAt: new Date().toISOString(),
+              lastEvaluationError: null,
+              lastFiredAt: null,
+              lastFireReason: null,
+            },
+          ],
+        };
+      }
+      return { alerts: [] };
+    });
+
+    const markup = renderToStaticMarkup(await OperationalAlertsPage());
+
+    expect(markup).toContain(`Refresh reuse spike`);
+    expect(markup).toContain(`Window: 30m`);
+    expect(markup).toContain(`count &gt; 2`);
+    expect(mockedGetOperationalAlerts).toHaveBeenCalledWith({ workspace: `ledger_anomalies` });
+    expect(mockedGetOperationalAlerts).toHaveBeenCalledWith({ workspace: `auth_refresh_reuse` });
   });
 
   it(`renders backend-unavailable fallback when getOperationalAlerts returns null`, async () => {

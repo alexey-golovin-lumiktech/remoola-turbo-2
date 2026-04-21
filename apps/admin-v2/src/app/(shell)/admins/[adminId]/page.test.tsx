@@ -21,6 +21,7 @@ jest.mock(`next/navigation`, () => ({
 jest.mock(`../../../../lib/admin-api.server`, () => ({
   getAdminIdentity: jest.fn(),
   getAdminCaseRecord: jest.fn(),
+  getAdminSessions: jest.fn(),
 }));
 
 jest.mock(`../../../../lib/admin-mutations.server`, () => ({
@@ -29,17 +30,63 @@ jest.mock(`../../../../lib/admin-mutations.server`, () => ({
   deactivateAdminAction: jest.fn(),
   resetAdminPasswordAction: jest.fn(),
   restoreAdminAction: jest.fn(),
+  revokeAdminSessionAction: jest.fn(),
 }));
 
-const { getAdminIdentity: mockedGetAdminIdentity, getAdminCaseRecord: mockedGetAdminCaseRecord } = jest.requireMock(
-  `../../../../lib/admin-api.server`,
-) as jest.Mocked<typeof AdminApi>;
+const {
+  getAdminIdentity: mockedGetAdminIdentity,
+  getAdminCaseRecord: mockedGetAdminCaseRecord,
+  getAdminSessions: mockedGetAdminSessions,
+} = jest.requireMock(`../../../../lib/admin-api.server`) as jest.Mocked<typeof AdminApi>;
 
 async function loadSubject() {
   return (await import(`./page`)).default;
 }
 
 let AdminCasePage: Awaited<ReturnType<typeof loadSubject>>;
+
+function buildAdminRecord(): NonNullable<Awaited<ReturnType<typeof AdminApi.getAdminCaseRecord>>> {
+  return {
+    id: `admin-2`,
+    core: {
+      id: `admin-2`,
+      email: `ops@example.com`,
+      type: `ADMIN`,
+      role: `OPS_ADMIN`,
+      status: `ACTIVE`,
+      createdAt: `2026-04-17T08:00:00.000Z`,
+      deletedAt: null,
+    },
+    accessProfile: {
+      source: `schema`,
+      resolvedRole: `OPS_ADMIN`,
+      capabilities: [`admins.read`],
+      workspaces: [`admins`],
+      schemaRoleKey: `OPS_ADMIN`,
+      availablePermissionCapabilities: [`documents.manage`, `admins.read`, `admins.manage`],
+      permissionOverrides: [{ capability: `admins.manage`, granted: false }],
+    },
+    settings: {
+      id: `setting-1`,
+      theme: `SYSTEM`,
+      createdAt: `2026-04-17T08:00:00.000Z`,
+      updatedAt: `2026-04-17T08:10:00.000Z`,
+    },
+    authoredNotesCount: 3,
+    authoredFlagsCount: 1,
+    recentAuditActions: [],
+    recentAuthEvents: [],
+    invitations: [],
+    auditShortcuts: {
+      adminActionsHref: `/audit/admin-actions?adminId=admin-2`,
+      authHref: `/audit/auth?email=ops%40example.com`,
+    },
+    version: 1713341400000,
+    updatedAt: `2026-04-17T08:10:00.000Z`,
+    staleWarning: false,
+    dataFreshnessClass: `exact`,
+  };
+}
 
 describe(`admin-v2 admin case`, () => {
   beforeAll(async () => {
@@ -50,6 +97,31 @@ describe(`admin-v2 admin case`, () => {
     mockedNotFound.mockClear();
     mockedGetAdminIdentity.mockReset();
     mockedGetAdminCaseRecord.mockReset();
+    mockedGetAdminSessions.mockReset();
+    mockedGetAdminSessions.mockResolvedValue({
+      sessions: [
+        {
+          id: `session-active`,
+          sessionFamilyId: `family-active`,
+          createdAt: `2026-04-19T08:00:00.000Z`,
+          lastUsedAt: `2026-04-21T08:00:00.000Z`,
+          expiresAt: `2026-05-19T08:00:00.000Z`,
+          revokedAt: null,
+          invalidatedReason: null,
+          replacedById: null,
+        },
+        {
+          id: `session-revoked`,
+          sessionFamilyId: `family-revoked`,
+          createdAt: `2026-04-10T08:00:00.000Z`,
+          lastUsedAt: `2026-04-11T08:00:00.000Z`,
+          expiresAt: `2026-05-10T08:00:00.000Z`,
+          revokedAt: `2026-04-12T08:00:00.000Z`,
+          invalidatedReason: `cross_admin_revoked`,
+          replacedById: null,
+        },
+      ],
+    });
     mockedGetAdminIdentity.mockResolvedValue({
       id: `admin-1`,
       email: `super@example.com`,
@@ -148,6 +220,59 @@ describe(`admin-v2 admin case`, () => {
     expect(markup).toContain(`href="/audit/admin-actions?adminId=admin-2"`);
     expect(markup).toContain(`admin_role_change`);
     expect(markup).not.toContain(`System`);
+    expect(mockedGetAdminSessions).toHaveBeenCalledWith(`admin-2`);
+    expect(markup).toContain(`Active sessions`);
+    expect(markup).toContain(`session-active`);
+    expect(markup).toContain(`session-revoked`);
+    expect(markup).toContain(`cross_admin_revoked`);
+    const revokeButtons = markup.match(/Revoke session/g) ?? [];
+    expect(revokeButtons.length).toBe(1);
+  });
+
+  it(`hides cross-admin revoke and shows self banner when viewing own admin record`, async () => {
+    const selfRecord = buildAdminRecord();
+    selfRecord.id = `admin-1`;
+    selfRecord.core = {
+      id: `admin-1`,
+      email: `super@example.com`,
+      type: `SUPER`,
+      role: `SUPER_ADMIN`,
+      status: `ACTIVE`,
+      createdAt: `2026-04-17T08:00:00.000Z`,
+      deletedAt: null,
+    };
+    mockedGetAdminCaseRecord.mockResolvedValueOnce(selfRecord);
+
+    const markup = renderToStaticMarkup(
+      await AdminCasePage({
+        params: Promise.resolve({ adminId: `admin-1` }),
+      }),
+    );
+
+    expect(markup).toContain(`Active sessions`);
+    expect(markup).toContain(`session-active`);
+    expect(markup).not.toContain(`Revoke session`);
+    expect(markup).toContain(`Use My sessions for self-revoke`);
+  });
+
+  it(`omits the sessions section for admins without admins.read capability`, async () => {
+    mockedGetAdminIdentity.mockResolvedValueOnce({
+      id: `admin-1`,
+      email: `support@example.com`,
+      type: `ADMIN`,
+      role: `SUPPORT_ADMIN`,
+      phase: `MVP-3.5d`,
+      capabilities: [`me.read`],
+      workspaces: [`overview`],
+    });
+
+    const markup = renderToStaticMarkup(
+      await AdminCasePage({
+        params: Promise.resolve({ adminId: `admin-2` }),
+      }),
+    );
+
+    expect(markup).not.toContain(`Active sessions`);
   });
 
   it(`delegates missing admin records to notFound`, async () => {

@@ -7,6 +7,7 @@ import { Prisma, type AdminModel } from '@remoola/database-2';
 import { oauthCrypto } from '@remoola/security-utils';
 import { adminErrorCodes } from '@remoola/shared-constants';
 
+import { ADMIN_AUTH_SESSION_REVOKE_REASONS, type AdminAuthSessionRevokeReason } from './admin-auth-session-reasons';
 import { Credentials } from '../../dtos/admin';
 import { IJwtTokenPayload } from '../../dtos/consumer';
 import { envs } from '../../envs';
@@ -14,7 +15,25 @@ import { AuthAuditService, AUTH_AUDIT_EVENTS, AUTH_IDENTITY_TYPES } from '../../
 import { PrismaService } from '../../shared/prisma.service';
 import { passwordUtils, secureCompare } from '../../shared-common';
 
-export type AdminLoginContext = { ipAddress?: string | null; userAgent?: string | null };
+export type AdminLoginContext = {
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  reason?: AdminAuthSessionRevokeReason;
+};
+
+const ADMIN_AUTH_SESSION_LIST_RETENTION_DAYS = 30;
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+export type AdminAuthSessionView = {
+  id: string;
+  sessionFamilyId: string;
+  createdAt: string;
+  lastUsedAt: string;
+  expiresAt: string;
+  revokedAt: string | null;
+  invalidatedReason: AdminAuthSessionRevokeReason | null;
+  replacedById: string | null;
+};
 type AdminTokenPair = {
   accessToken: string;
   refreshToken: string;
@@ -114,7 +133,10 @@ export class AdminAuthService {
     const matchesStoredHash = secureCompare(session.refreshTokenHash, refreshTokenHash);
     if (!matchesStoredHash) {
       if (session.replacedById || session.revokedAt) {
-        await this.revokeSessionFamily(session.sessionFamilyId, `refresh_reuse_detected`);
+        await this.revokeSessionFamily(
+          session.sessionFamilyId,
+          ADMIN_AUTH_SESSION_REVOKE_REASONS.refresh_reuse_detected,
+        );
         await this.authAudit.recordAudit({
           identityType: AUTH_IDENTITY_TYPES.admin,
           identityId,
@@ -150,7 +172,7 @@ export class AdminAuthService {
         data: {
           revokedAt: new Date(),
           replacedById: next.sessionId,
-          invalidatedReason: `rotated`,
+          invalidatedReason: ADMIN_AUTH_SESSION_REVOKE_REASONS.rotated,
           lastUsedAt: new Date(),
         },
       });
@@ -323,7 +345,11 @@ export class AdminAuthService {
     if (!session.revokedAt) {
       await this.prisma.adminAuthSessionModel.update({
         where: { id: sessionId },
-        data: { revokedAt: new Date(), invalidatedReason: `manual_revoke`, lastUsedAt: new Date() },
+        data: {
+          revokedAt: new Date(),
+          invalidatedReason: ctx?.reason ?? ADMIN_AUTH_SESSION_REVOKE_REASONS.manual_revoke,
+          lastUsedAt: new Date(),
+        },
       });
       await this.authAudit.recordAudit({
         identityType: AUTH_IDENTITY_TYPES.admin,
@@ -352,18 +378,61 @@ export class AdminAuthService {
           refreshTokenHash: this.hashToken(refreshToken),
           revokedAt: null,
         },
-        data: { revokedAt: new Date(), invalidatedReason: `logout`, lastUsedAt: new Date() },
+        data: {
+          revokedAt: new Date(),
+          invalidatedReason: ADMIN_AUTH_SESSION_REVOKE_REASONS.logout,
+          lastUsedAt: new Date(),
+        },
       });
     } catch {
       // verification failure or DB error — silent no-op (matches existing logout best-effort semantics)
     }
   }
 
-  private async revokeSessionFamily(sessionFamilyId: string, reason: string): Promise<void> {
+  private async revokeSessionFamily(sessionFamilyId: string, reason: AdminAuthSessionRevokeReason): Promise<void> {
     await this.prisma.adminAuthSessionModel.updateMany({
       where: { sessionFamilyId, revokedAt: null },
       data: { revokedAt: new Date(), invalidatedReason: reason, lastUsedAt: new Date() },
     });
+  }
+
+  async assertSessionBelongsToAdmin(adminId: string, sessionId: string): Promise<boolean> {
+    const session = await this.prisma.adminAuthSessionModel.findFirst({
+      where: { id: sessionId, adminId },
+      select: { id: true },
+    });
+    return session != null;
+  }
+
+  async listSessionsForAdmin(adminId: string): Promise<AdminAuthSessionView[]> {
+    const cutoff = new Date(Date.now() - ADMIN_AUTH_SESSION_LIST_RETENTION_DAYS * MS_PER_DAY);
+    const rows = await this.prisma.adminAuthSessionModel.findMany({
+      where: {
+        adminId,
+        OR: [{ revokedAt: null }, { revokedAt: { gte: cutoff } }],
+      },
+      orderBy: { createdAt: `desc` },
+      select: {
+        id: true,
+        sessionFamilyId: true,
+        createdAt: true,
+        lastUsedAt: true,
+        expiresAt: true,
+        revokedAt: true,
+        invalidatedReason: true,
+        replacedById: true,
+      },
+    });
+    return rows.map((row) => ({
+      id: row.id,
+      sessionFamilyId: row.sessionFamilyId,
+      createdAt: row.createdAt.toISOString(),
+      lastUsedAt: row.lastUsedAt.toISOString(),
+      expiresAt: row.expiresAt.toISOString(),
+      revokedAt: row.revokedAt ? row.revokedAt.toISOString() : null,
+      invalidatedReason: (row.invalidatedReason as AdminAuthSessionRevokeReason | null) ?? null,
+      replacedById: row.replacedById ?? null,
+    }));
   }
 
   private resolveIdentityId(payload: IJwtTokenPayload): string | null {

@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Post, Req, Res, UnauthorizedException, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  ForbiddenException,
+  Get,
+  Post,
+  Req,
+  Res,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiCookieAuth, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { IsOptional, IsString, IsUUID, MinLength } from 'class-validator';
@@ -178,6 +188,12 @@ export class AdminV2AuthController {
     if (!targetSessionId) {
       throw new UnauthorizedException(`Missing session identifier`);
     }
+    if (body.sessionId && body.sessionId !== identity.sessionId) {
+      const owned = await this.service.assertSessionBelongsToAdmin(identity.id, body.sessionId);
+      if (!owned) {
+        throw new ForbiddenException(`Session does not belong to current admin`);
+      }
+    }
     const ipAddress = req.ip ?? req.headers[`x-forwarded-for`];
     const userAgent = req.headers[`user-agent`] ?? null;
     const normalizedIp = typeof ipAddress === `string` ? ipAddress : Array.isArray(ipAddress) ? ipAddress[0] : null;
@@ -209,5 +225,18 @@ export class AdminV2AuthController {
   @ApiCookieAuth()
   async me(@Identity() identity: IIdentityContext) {
     return identity;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get(`me/sessions`)
+  @ApiCookieAuth()
+  async listMySessions(@Identity() identity: IIdentityContext) {
+    const sessions = await this.service.listSessionsForAdmin(identity.id);
+    return {
+      sessions: sessions.map((s) => ({
+        ...s,
+        current: s.id === identity.sessionId,
+      })),
+    };
   }
 }

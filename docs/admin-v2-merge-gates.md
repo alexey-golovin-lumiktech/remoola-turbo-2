@@ -31,7 +31,7 @@ This is a deterministic local check implemented in
   docs plus the 3.1c perf/reconciliation artifacts, the additive migration
   READMEs, the 3.2a operational-assignments reconciliation note, the
   3.3a saved-views skeleton reconciliation note plus its
-  saved_view foundation migration README, the   3.3b operational-alerts
+  saved_view foundation migration README, the 3.3b operational-alerts
   skeleton reconciliation note plus its operational_alert foundation
   migration README, the 3.4a verification-workspace-completion
   reconciliation note plus its `verification_queue` workspace allowlist
@@ -39,8 +39,12 @@ This is a deterministic local check implemented in
   retirement reconciliation note (Risk 13 mitigation track step 1 of 4),
   the 3.5b frontend URL migration + BFF folder rename
   reconciliation note (Risk 13 mitigation track step 2 of 4),
-  and the 3.5c legacy AdminAuthController retirement reconciliation
-  note (Risk 13 mitigation track step 3 of 4));
+  the 3.5c legacy AdminAuthController retirement reconciliation
+  note (Risk 13 mitigation track step 3 of 4),
+  and the 3.5d session-management observability + cross-admin revoke +
+  invalidated_reason CHECK constraint + auth_refresh_reuse alert
+  workspace reconciliation note plus its two additive migration READMEs
+  (Risk 13 mitigation track step 4 of 4 — final, Risk 13 closed));
   the config file is the single
   source of truth — do not duplicate the list here
 - the expected capability and audit anchors are present in
@@ -70,8 +74,9 @@ This is a deterministic local check implemented in
   `docs/admin-v2-mvp-3.4a-verification-workspace-completion.md`,
   `docs/admin-v2-mvp-3.5a-admin-auth-hardening-plaintext-retirement.md`,
   `docs/admin-v2-mvp-3.5b-frontend-url-migration.md`,
+  `docs/admin-v2-mvp-3.5c-legacy-controller-retirement.md`,
   and
-  `docs/admin-v2-mvp-3.5c-legacy-controller-retirement.md`);
+  `docs/admin-v2-mvp-3.5d-session-management-observability.md`);
   see the
   config for the authoritative token list, including the schema-backed
   RBAC, payment methods write controls, MVP-3 maturity sequencing, and
@@ -81,8 +86,10 @@ This is a deterministic local check implemented in
   skeleton decisions, the 3.4a verification-workspace-completion
   decisions, the 3.5a admin-auth-hardening plaintext-retirement
   decisions, the 3.5b admin-v2 frontend URL migration + BFF folder
-  rename decisions, and the 3.5c legacy controller retirement
-  decisions used by the current gate
+  rename decisions, the 3.5c legacy controller retirement decisions,
+  and the 3.5d session-management observability + cross-admin revoke +
+  invalidated_reason CHECK + auth_refresh_reuse alert workspace decisions
+  used by the current gate
 
 After 3.3b lands, the MVP-3 maturity exit criteria from
 `admin-v2-pack/08-rollout-risks-and-sequencing.md` are fully closed.
@@ -143,9 +150,30 @@ is being closed in four sequential slices, all post-MVP-3 hardening:
   retirement track. After this slice, api-v2 backend serves admin auth
   exclusively through `/api/admin-v2/auth/*`. Reconciliation:
   `docs/admin-v2-mvp-3.5c-legacy-controller-retirement.md`.
-- **3.5d** (pending): session-management observability — `me/sessions`
-  listing, cross-admin revoke endpoint with `admins.manage` capability,
-  `revoke_reason` enum, and `refresh_reuse` alert wiring.
+- **3.5d** (landed): session-management observability — `/me/sessions`
+  listing, cross-admin revoke endpoint
+  (`POST /api/admin-v2/admins/:id/sessions/:sessionId/revoke`,
+  `admins.manage`-gated, dual audit
+  `AUTH_AUDIT_EVENTS.logout` + new
+  `ADMIN_ACTION_AUDIT_ACTIONS.admin_session_revoke_other`),
+  typed `invalidated_reason` allowlist enforced via additive
+  `admin_auth_session_invalidated_reason_check` CHECK constraint
+  (Postgres ENUM intentionally avoided — same convention as 3.3a / 3.3b /
+  3.4a workspace allowlists), shared `ADMIN_AUTH_SESSION_REVOKE_REASONS`
+  TypeScript const at all admin-path writers, new `auth_refresh_reuse`
+  operational alert workspace + dedicated `AuthRefreshReuseAlertEvaluator`
+  (`count_gt` over rolling `windowMinutes` window, exposed in
+  `/system/alerts` alongside the existing `ledger_anomalies` workspace),
+  `AdminV2AuthController.revokeSession` cross-actor branch retired with
+  403 Forbidden (DTO shape preserved), 30-day retention cap on
+  `/me/sessions` listings. `schema.prisma` untouched (no `@@check`,
+  CHECK lives only in `migration.sql`). `apps/api/`, `apps/admin/`, and
+  `apps/api-v2/src/consumer/` workspaces frozen — Risk 13 mitigation
+  applies only to the admin path in `apps/api-v2/`. After this slice,
+  Risk 13 mitigation track is closed; the hard gate from
+  `admin-v2-pack/08-rollout-risks-and-sequencing.md` lines 680-693 is
+  dismissed for the api-v2 stack. Reconciliation:
+  `docs/admin-v2-mvp-3.5d-session-management-observability.md`.
 
 ### `yarn test:admin-v2`
 
@@ -164,7 +192,7 @@ local runs before merge when touching the admin-v2 gate surface.
 
 - if the staged diff touches the admin-v2 gate/tooling surface, it runs the
   same checks as `yarn verify:admin-v2-gates` (invoked directly via `node
-  ./scripts/admin-v2-gates/verify.mjs` to skip the extra Yarn startup)
+./scripts/admin-v2-gates/verify.mjs` to skip the extra Yarn startup)
 
 It does not run `yarn test:admin-v2` in pre-commit. The repo-wide
 lint/typecheck/test behavior in pre-commit has been narrowed for speed:

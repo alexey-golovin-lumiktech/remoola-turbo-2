@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { AdminV2SharedModule } from '../admin-v2-shared.module';
 import { AdminV2OperationalAlertsEvaluatorService } from './admin-v2-operational-alerts-evaluator.service';
 import { LedgerAnomaliesAlertEvaluator } from './admin-v2-operational-alerts-workspace-evaluators';
+import { AuthRefreshReuseAlertEvaluator } from './admin-v2-operational-alerts-workspace-evaluators-auth-refresh-reuse';
 import { VerificationQueueAlertEvaluator } from './admin-v2-operational-alerts-workspace-evaluators-verification';
 import { AdminV2OperationalAlertsController } from './admin-v2-operational-alerts.controller';
 import { AdminV2OperationalAlertsService } from './admin-v2-operational-alerts.service';
@@ -17,6 +18,7 @@ import { AdminV2VerificationModule } from '../verification/admin-v2-verification
     AdminV2OperationalAlertsEvaluatorService,
     LedgerAnomaliesAlertEvaluator,
     VerificationQueueAlertEvaluator,
+    AuthRefreshReuseAlertEvaluator,
   ],
   exports: [AdminV2OperationalAlertsService],
 })

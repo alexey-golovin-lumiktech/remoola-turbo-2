@@ -40,6 +40,7 @@ function buildHarness(opts: {
   due?: DueAlertRow[];
   ledgerAnomaliesEvaluator?: OperationalAlertWorkspaceEvaluator;
   verificationQueueEvaluator?: OperationalAlertWorkspaceEvaluator;
+  authRefreshReuseEvaluator?: OperationalAlertWorkspaceEvaluator;
 }) {
   const operationalAlertModel = {
     update: jest.fn().mockResolvedValue(undefined),
@@ -56,12 +57,24 @@ function buildHarness(opts: {
   const verificationQueueEvaluator: OperationalAlertWorkspaceEvaluator = opts.verificationQueueEvaluator ?? {
     evaluate: jest.fn() as unknown as OperationalAlertWorkspaceEvaluator[`evaluate`],
   };
+  const authRefreshReuseEvaluator: OperationalAlertWorkspaceEvaluator = opts.authRefreshReuseEvaluator ?? {
+    evaluate: jest.fn() as unknown as OperationalAlertWorkspaceEvaluator[`evaluate`],
+  };
   const service = new AdminV2OperationalAlertsEvaluatorService(
     prisma as never,
     ledgerAnomaliesEvaluator as never,
     verificationQueueEvaluator as never,
+    authRefreshReuseEvaluator as never,
   );
-  return { service, prisma, operationalAlertModel, queryRaw, evaluatorMock, verificationQueueEvaluator };
+  return {
+    service,
+    prisma,
+    operationalAlertModel,
+    queryRaw,
+    evaluatorMock,
+    verificationQueueEvaluator,
+    authRefreshReuseEvaluator,
+  };
 }
 
 describe(`AdminV2OperationalAlertsEvaluatorService`, () => {
@@ -216,6 +229,30 @@ describe(`AdminV2OperationalAlertsEvaluatorService`, () => {
       const { service, queryRaw } = buildHarness({});
       queryRaw.mockRejectedValueOnce(new Error(`db gone`));
       await expect(service.evaluateDueAlerts()).resolves.toBeUndefined();
+    });
+  });
+
+  describe(`workspace evaluator registry`, () => {
+    it(`routes auth_refresh_reuse workspace to AuthRefreshReuseAlertEvaluator`, async () => {
+      const authRefreshReuseEvaluate = jest.fn().mockResolvedValue({ fired: false, reason: null });
+      const authRefreshReuseEvaluator: OperationalAlertWorkspaceEvaluator = {
+        evaluate: authRefreshReuseEvaluate as unknown as OperationalAlertWorkspaceEvaluator[`evaluate`],
+      };
+      const { service } = buildHarness({
+        due: [dueRow({ workspace: `auth_refresh_reuse` })],
+        authRefreshReuseEvaluator,
+      });
+      await service.runTick(Date.now());
+      expect(authRefreshReuseEvaluate).toHaveBeenCalledTimes(1);
+    });
+
+    it(`records error and does not throw when workspace is unknown`, async () => {
+      const { service, operationalAlertModel } = buildHarness({
+        due: [dueRow({ workspace: `unknown_workspace` })],
+      });
+      await service.runTick(Date.now());
+      const args = operationalAlertModel.update.mock.calls[0]?.[0] as { data: Record<string, unknown> };
+      expect(args.data.lastEvaluationError).toMatch(/Unknown workspace evaluator/);
     });
   });
 });

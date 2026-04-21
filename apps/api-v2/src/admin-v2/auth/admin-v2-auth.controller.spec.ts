@@ -1,4 +1,4 @@
-import { BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 
 import { AdminV2AuthController } from './admin-v2-auth.controller';
 
@@ -33,6 +33,8 @@ const buildAuthService = () => ({
   refreshAccess: jest.fn(),
   revokeSessionByRefreshTokenAndAudit: jest.fn(),
   revokeSessionByIdAndAudit: jest.fn(),
+  assertSessionBelongsToAdmin: jest.fn(async () => true),
+  listSessionsForAdmin: jest.fn(async () => []),
 });
 
 const buildAuditService = () => ({
@@ -198,6 +200,65 @@ describe(`AdminV2AuthController`, () => {
       ).rejects.toThrow(UnauthorizedException);
       expect(authService.revokeSessionByIdAndAudit).not.toHaveBeenCalled();
       expect(auditService.record).not.toHaveBeenCalled();
+    });
+
+    it(`throws ForbiddenException when body.sessionId belongs to another admin`, async () => {
+      const authService = buildAuthService();
+      authService.assertSessionBelongsToAdmin.mockResolvedValue(false);
+      const { controller, auditService } = buildController({ authService });
+
+      await expect(
+        controller.revokeSession(
+          buildRevokeRequest() as never,
+          { id: `admin-1`, email: `admin@example.com`, type: `ADMIN`, sessionId: `session-1` },
+          buildResponse() as never,
+          { sessionId: `session-foreign` },
+        ),
+      ).rejects.toThrow(ForbiddenException);
+      expect(authService.assertSessionBelongsToAdmin).toHaveBeenCalledWith(`admin-1`, `session-foreign`);
+      expect(authService.revokeSessionByIdAndAudit).not.toHaveBeenCalled();
+      expect(auditService.record).not.toHaveBeenCalled();
+    });
+  });
+
+  describe(`listMySessions`, () => {
+    it(`returns sessions with current flag set on the matching sessionId`, async () => {
+      const authService = buildAuthService();
+      authService.listSessionsForAdmin.mockResolvedValue([
+        {
+          id: `session-1`,
+          sessionFamilyId: `family-1`,
+          createdAt: `2026-04-21T11:00:00.000Z`,
+          lastUsedAt: `2026-04-21T12:00:00.000Z`,
+          expiresAt: `2026-05-21T11:00:00.000Z`,
+          revokedAt: null,
+          invalidatedReason: null,
+          replacedById: null,
+        },
+        {
+          id: `session-2`,
+          sessionFamilyId: `family-2`,
+          createdAt: `2026-04-19T11:00:00.000Z`,
+          lastUsedAt: `2026-04-19T11:00:00.000Z`,
+          expiresAt: `2026-04-20T11:00:00.000Z`,
+          revokedAt: `2026-04-20T11:00:00.000Z`,
+          invalidatedReason: `rotated`,
+          replacedById: `session-1`,
+        },
+      ]);
+      const { controller } = buildController({ authService });
+
+      const result = await controller.listMySessions({
+        id: `admin-1`,
+        email: `admin@example.com`,
+        type: `ADMIN`,
+        sessionId: `session-1`,
+      });
+
+      expect(authService.listSessionsForAdmin).toHaveBeenCalledWith(`admin-1`);
+      expect(result.sessions).toHaveLength(2);
+      expect(result.sessions[0]).toMatchObject({ id: `session-1`, current: true });
+      expect(result.sessions[1]).toMatchObject({ id: `session-2`, current: false });
     });
   });
 });
