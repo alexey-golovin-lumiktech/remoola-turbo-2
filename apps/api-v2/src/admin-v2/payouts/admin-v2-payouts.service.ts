@@ -7,6 +7,7 @@ import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.serv
 import { PrismaService } from '../../shared/prisma.service';
 import { decodeAdminV2Cursor, encodeAdminV2Cursor } from '../admin-v2-cursor';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
+import { AdminV2AssignmentsService } from '../assignments/admin-v2-assignments.service';
 
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 100;
@@ -143,6 +144,7 @@ export class AdminV2PayoutsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly idempotency: AdminV2IdempotencyService,
+    private readonly assignmentsService: AdminV2AssignmentsService,
   ) {}
 
   private parseMetadata(metadata: Prisma.JsonValue | null | undefined): Record<string, unknown> {
@@ -655,20 +657,23 @@ export class AdminV2PayoutsService {
       },
     });
 
-    const auditContext = await this.prisma.adminActionAuditLogModel.findMany({
-      where: {
-        OR: [{ resourceId: entry.id }, ...(entry.paymentRequestId ? [{ resourceId: entry.paymentRequestId }] : [])],
-      },
-      include: {
-        admin: {
-          select: {
-            email: true,
+    const [auditContext, assignment] = await Promise.all([
+      this.prisma.adminActionAuditLogModel.findMany({
+        where: {
+          OR: [{ resourceId: entry.id }, ...(entry.paymentRequestId ? [{ resourceId: entry.paymentRequestId }] : [])],
+        },
+        include: {
+          admin: {
+            select: {
+              email: true,
+            },
           },
         },
-      },
-      orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-      take: 20,
-    });
+        orderBy: [{ createdAt: `desc` }, { id: `desc` }],
+        take: 20,
+      }),
+      this.assignmentsService.getAssignmentContextForResource(`payout`, entry.id),
+    ]);
 
     const effectiveStatus = this.getEffectiveLedgerStatus(entry);
     const derivedStatus = this.derivePayoutStatus(entry);
@@ -734,6 +739,7 @@ export class AdminV2PayoutsService {
         adminEmail: row.admin?.email ?? null,
         createdAt: row.createdAt,
       })),
+      assignment,
       outcomeAgeHours: this.getOutcomeAgeHours(entry),
       slaBreachDetected: derivedStatus === `stuck`,
       stuckPolicy: {

@@ -42,7 +42,10 @@ function buildService() {
   const idempotency = {
     execute: jest.fn(async ({ execute }: { execute: () => Promise<unknown> }) => execute()),
   };
-  const service = new AdminV2PayoutsService(prisma as never, idempotency as never);
+  const assignmentsService = {
+    getAssignmentContextForResource: jest.fn(async () => ({ current: null, history: [] })),
+  };
+  const service = new AdminV2PayoutsService(prisma as never, idempotency as never, assignmentsService as never);
 
   return {
     service,
@@ -54,6 +57,7 @@ function buildService() {
     ledgerEntryOutcomeModel,
     queryRaw,
     idempotency,
+    assignmentsService,
   };
 }
 
@@ -365,6 +369,71 @@ describe(`AdminV2PayoutsService`, () => {
       allowedActions: [`payout_escalate`],
       escalateBlockedReason: null,
     });
+    expect(payoutCase.assignment).toEqual({ current: null, history: [] });
+  });
+
+  it(`fetches operational assignment context for the payout case via the shared helper`, async () => {
+    const { service, ledgerEntryModel, paymentMethodModel, adminActionAuditLogModel, assignmentsService } =
+      buildService();
+    const assignedAt = new Date(`2026-04-15T09:00:00.000Z`);
+    assignmentsService.getAssignmentContextForResource.mockResolvedValueOnce({
+      current: {
+        id: `assignment-1`,
+        assignedTo: { id: `admin-1`, name: null, email: `ops@example.com` },
+        assignedBy: { id: `admin-1`, name: null, email: `ops@example.com` },
+        assignedAt: assignedAt.toISOString(),
+        reason: `Investigating failed payout`,
+        expiresAt: null,
+      },
+      history: [
+        {
+          id: `assignment-1`,
+          assignedTo: { id: `admin-1`, name: null, email: `ops@example.com` },
+          assignedBy: { id: `admin-1`, name: null, email: `ops@example.com` },
+          assignedAt: assignedAt.toISOString(),
+          releasedAt: null,
+          releasedBy: null,
+          reason: `Investigating failed payout`,
+          expiresAt: null,
+        },
+      ],
+    });
+    ledgerEntryModel.findUnique.mockResolvedValueOnce({
+      id: `payout-case-with-assignment`,
+      ledgerId: `ledger-case`,
+      type: $Enums.LedgerEntryType.USER_PAYOUT,
+      currencyCode: $Enums.CurrencyCode.USD,
+      status: $Enums.TransactionStatus.PENDING,
+      amount: new Prisma.Decimal(`-50.00`),
+      stripeId: `po_assigned`,
+      metadata: {},
+      consumerId: `consumer-1`,
+      paymentRequestId: null,
+      createdAt: new Date(`2026-04-14T00:00:00.000Z`),
+      updatedAt: new Date(`2026-04-14T01:00:00.000Z`),
+      consumer: { email: `consumer@example.com` },
+      payoutEscalation: null,
+      paymentRequest: null,
+      outcomes: [],
+    });
+    ledgerEntryModel.findMany.mockResolvedValueOnce([]);
+    paymentMethodModel.findMany.mockResolvedValueOnce([]);
+    adminActionAuditLogModel.findMany.mockResolvedValueOnce([]);
+
+    const payoutCase = await service.getPayoutCase(`payout-case-with-assignment`);
+
+    expect(assignmentsService.getAssignmentContextForResource).toHaveBeenCalledWith(
+      `payout`,
+      `payout-case-with-assignment`,
+    );
+    expect(payoutCase.assignment.current).toEqual(
+      expect.objectContaining({
+        id: `assignment-1`,
+        assignedTo: expect.objectContaining({ id: `admin-1`, email: `ops@example.com` }),
+        reason: `Investigating failed payout`,
+      }),
+    );
+    expect(payoutCase.assignment.history).toHaveLength(1);
   });
 
   it(`requires explicit confirmation for payout escalation`, async () => {
