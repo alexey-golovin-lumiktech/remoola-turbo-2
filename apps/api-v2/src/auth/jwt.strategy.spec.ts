@@ -90,7 +90,7 @@ describe(`JwtStrategy`, () => {
 
   it(`extracts the admin cookie token for admin API paths`, () => {
     const token = extractToken({
-      path: `/api/admin/auth/me`,
+      path: `/api/admin-v2/auth/me`,
       cookies: {
         [COOKIE_KEYS.ADMIN_ACCESS_TOKEN]: `admin-token`,
       },

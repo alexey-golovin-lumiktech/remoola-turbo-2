@@ -115,7 +115,7 @@ describe(`Admin step-up (e2e, isolated DB)`, () => {
     it(`returns 400 when passwordConfirmation is missing`, async () => {
       const agent = request.agent(app.getHttpServer());
       const loginRes = await agent
-        .post(`/api/admin/auth/login`)
+        .post(`/api/admin-v2/auth/login`)
         .set(`origin`, adminOrigin)
         .send({ email: STEP_UP_SUPER_EMAIL, password: STEP_UP_SUPER_PASSWORD })
         .expect(201);
@@ -137,7 +137,7 @@ describe(`Admin step-up (e2e, isolated DB)`, () => {
     it(`returns 400 when passwordConfirmation is empty`, async () => {
       const agent = request.agent(app.getHttpServer());
       const loginRes = await agent
-        .post(`/api/admin/auth/login`)
+        .post(`/api/admin-v2/auth/login`)
         .set(`origin`, adminOrigin)
         .send({ email: STEP_UP_SUPER_EMAIL, password: STEP_UP_SUPER_PASSWORD })
         .expect(201);
@@ -158,7 +158,7 @@ describe(`Admin step-up (e2e, isolated DB)`, () => {
     it(`returns 401 when passwordConfirmation is wrong`, async () => {
       const agent = request.agent(app.getHttpServer());
       const loginRes = await agent
-        .post(`/api/admin/auth/login`)
+        .post(`/api/admin-v2/auth/login`)
         .set(`origin`, adminOrigin)
         .send({ email: STEP_UP_SUPER_EMAIL, password: STEP_UP_SUPER_PASSWORD })
         .expect(201);
@@ -181,7 +181,7 @@ describe(`Admin step-up (e2e, isolated DB)`, () => {
     it(`returns 400 when passwordConfirmation is missing for delete`, async () => {
       const agent = request.agent(app.getHttpServer());
       const loginRes = await agent
-        .post(`/api/admin/auth/login`)
+        .post(`/api/admin-v2/auth/login`)
         .set(`origin`, adminOrigin)
         .send({ email: STEP_UP_SUPER_EMAIL, password: STEP_UP_SUPER_PASSWORD })
         .expect(201);
@@ -202,7 +202,7 @@ describe(`Admin step-up (e2e, isolated DB)`, () => {
     it(`returns 401 when passwordConfirmation is wrong for delete`, async () => {
       const agent = request.agent(app.getHttpServer());
       const loginRes = await agent
-        .post(`/api/admin/auth/login`)
+        .post(`/api/admin-v2/auth/login`)
         .set(`origin`, adminOrigin)
         .send({ email: STEP_UP_SUPER_EMAIL, password: STEP_UP_SUPER_PASSWORD })
         .expect(201);

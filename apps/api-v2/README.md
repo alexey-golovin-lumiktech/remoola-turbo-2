@@ -24,7 +24,7 @@ root before running API-only commands.
 
 ## Key route areas
 
-- `POST /api/admin/auth/*` and `POST /api/consumer/auth/*` for cookie-based auth
+- `POST /api/admin-v2/auth/*` and `POST /api/consumer/auth/*` for cookie-based auth
 - `GET /api/consumer/dashboard` for dashboard aggregation
 - `GET|PATCH /api/consumer/settings` and `GET|PUT /api/consumer/settings/theme`
   for consumer theme and preferred-currency preferences

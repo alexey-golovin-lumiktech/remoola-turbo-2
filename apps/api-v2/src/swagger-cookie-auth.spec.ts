@@ -28,8 +28,8 @@ describe(`swagger cookie auth helpers`, () => {
   it(`documents the admin cookie-first login flow`, () => {
     const description = buildSwaggerCookieAuthDescription(`admin`, `<a href="/docs/consumer">consumer</a>`);
 
-    expect(description).toContain(`POST /api/admin/auth/login`);
-    expect(description).toContain(`POST /api/admin/auth/refresh-access`);
+    expect(description).toContain(`POST /api/admin-v2/auth/login`);
+    expect(description).toContain(`POST /api/admin-v2/auth/refresh-access`);
     expect(description).toContain(`authenticated admin mutations`);
     expect(description).toContain(`cookie-first`);
     expect(description).toContain(`Do not use <code>Authorization</code> headers or Basic auth.`);

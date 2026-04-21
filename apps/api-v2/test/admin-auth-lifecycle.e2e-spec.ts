@@ -89,15 +89,15 @@ describe(`Admin auth lifecycle (e2e, isolated DB)`, () => {
     await app.close();
   });
 
-  it(`GET /api/admin/auth/me rejects when unauthenticated`, async () => {
-    await request(app.getHttpServer()).get(`/api/admin/auth/me`).expect(401);
+  it(`GET /api/admin-v2/auth/me rejects when unauthenticated`, async () => {
+    await request(app.getHttpServer()).get(`/api/admin-v2/auth/me`).expect(401);
   });
 
   it(`login sets cookies, refresh-access rotates tokens, logout clears session`, async () => {
     const agent = request.agent(app.getHttpServer());
 
     const loginRes = await agent
-      .post(`/api/admin/auth/login`)
+      .post(`/api/admin-v2/auth/login`)
       .set(`origin`, adminOrigin)
       .send({ email: adminEmail, password: adminPassword })
       .expect(201);
@@ -111,12 +111,12 @@ describe(`Admin auth lifecycle (e2e, isolated DB)`, () => {
     expect(loginRes.body).toEqual({ ok: true });
     expect(csrfToken).toBeTruthy();
 
-    const meAfterLogin = await agent.get(`/api/admin/auth/me`).expect(200);
+    const meAfterLogin = await agent.get(`/api/admin-v2/auth/me`).expect(200);
     expect(meAfterLogin.body?.email).toBe(adminEmail);
     expect(meAfterLogin.body?.type).toBe(`ADMIN`);
 
     const refreshRes = await agent
-      .post(`/api/admin/auth/refresh-access`)
+      .post(`/api/admin-v2/auth/refresh-access`)
       .set(`origin`, adminOrigin)
       .set(`x-csrf-token`, csrfToken ?? ``);
     expect(refreshRes.status).toBeLessThan(400);
@@ -128,10 +128,10 @@ describe(`Admin auth lifecycle (e2e, isolated DB)`, () => {
     const refreshedCsrfToken =
       refreshedCsrfCookie?.split(`;`)[0]?.slice(`${getApiAdminCsrfTokenCookieKey()}=`.length) ?? csrfToken;
 
-    await agent.post(`/api/admin/auth/refresh-access`).expect(401);
+    await agent.post(`/api/admin-v2/auth/refresh-access`).expect(401);
 
     const logoutRes = await agent
-      .post(`/api/admin/auth/logout`)
+      .post(`/api/admin-v2/auth/logout`)
       .set(`origin`, adminOrigin)
       .set(`x-csrf-token`, refreshedCsrfToken ?? ``)
       .expect(201);
@@ -139,6 +139,6 @@ describe(`Admin auth lifecycle (e2e, isolated DB)`, () => {
     expect(logoutCookies.some((line) => line.startsWith(`${getApiAdminAccessTokenCookieKey()}=`))).toBe(true);
     expect(logoutCookies.some((line) => line.startsWith(`${getApiAdminRefreshTokenCookieKey()}=`))).toBe(true);
 
-    await agent.get(`/api/admin/auth/me`).expect(401);
+    await agent.get(`/api/admin-v2/auth/me`).expect(401);
   });
 });

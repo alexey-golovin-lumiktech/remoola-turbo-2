@@ -53,15 +53,15 @@ export function buildSwaggerCookieAuthDescription(audience: `admin` | `consumer`
       `<h3>Cookie session workflow</h3>`,
       `<p>This Swagger page is cookie-first. Do not use <code>Authorization</code> headers or Basic auth.</p>`,
       `<ol>`,
-      `<li>Run <code>POST /api/admin/auth/login</code> with JSON body credentials.</li>`,
+      `<li>Run <code>POST /api/admin-v2/auth/login</code> with JSON body credentials.</li>`,
       `<li>Your browser stores the returned auth and CSRF cookies on this API origin.</li>`,
       `<li>Use <strong>Try it out</strong> on protected endpoints from the same docs page; ` +
         `cookies are reused automatically.</li>`,
       `</ol>`,
-      `<p>Admin auth endpoints such as <code>POST /api/admin/auth/refresh-access</code> and ` +
+      `<p>Admin auth endpoints such as <code>POST /api/admin-v2/auth/refresh-access</code> and ` +
         `<code>/logout</code>, plus authenticated admin mutations, require CSRF parity. Swagger auto-mirrors ` +
         `the readable admin CSRF cookie into <code>x-csrf-token</code> for those same-origin mutation requests.</p>`,
-      `<p>For logout testing, call <code>POST /api/admin/auth/logout</code>. ` +
+      `<p>For logout testing, call <code>POST /api/admin-v2/auth/logout</code>. ` +
         `The repo runbook lives in <code>docs/SWAGGER_COOKIE_AUTH_USAGE.md</code>.</p>`,
       `</div>`,
     ].join(``);

@@ -124,7 +124,7 @@ describe(`ConsumerActionInterceptor`, () => {
   it(`does not record actions on admin paths even when metadata is present`, (done) => {
     const context = mockContext(
       { action: `consumer.auth.login`, resource: `auth` },
-      { path: `/api/admin/auth/login`, [IDENTITY]: { id: `admin-uuid`, email: `a@e.com`, type: `admin` } },
+      { path: `/api/admin-v2/auth/login`, [IDENTITY]: { id: `admin-uuid`, email: `a@e.com`, type: `admin` } },
     );
     const next: CallHandler = { handle: () => of(`ok`) };
     interceptor.intercept(context, next).subscribe({

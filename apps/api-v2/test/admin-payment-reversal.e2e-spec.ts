@@ -215,7 +215,7 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
   it(`refund creates reversal pair, records audit, and remains idempotent on replay`, async () => {
     const agent = request.agent(app.getHttpServer());
     const loginRes = await agent
-      .post(`/api/admin/auth/login`)
+      .post(`/api/admin-v2/auth/login`)
       .set(`origin`, adminOrigin)
       .send({ email: adminEmail, password: adminPassword })
       .expect(201);
@@ -265,7 +265,7 @@ describe(`Admin payment reversal success paths (e2e, isolated DB)`, () => {
   it(`chargeback creates reversal pair and records admin audit`, async () => {
     const agent = request.agent(app.getHttpServer());
     const loginRes = await agent
-      .post(`/api/admin/auth/login`)
+      .post(`/api/admin-v2/auth/login`)
       .set(`origin`, adminOrigin)
       .send({ email: adminEmail, password: adminPassword })
       .expect(201);

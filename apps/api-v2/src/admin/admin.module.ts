@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 
-import { AdminAuthController } from './auth/admin-auth.controller';
 import { AdminAuthModule } from './auth/admin-auth.module';
 import { AdminAdminsModule } from './modules/admins/admin-admins.module';
 import { AdminAuditModule } from './modules/audit/admin-audit.module';
@@ -25,6 +24,5 @@ import { MailingModule } from '../shared/mailing.module';
     ConsumerPaymentMethodsModule,
     MailingModule,
   ],
-  controllers: [AdminAuthController],
 })
 export class AdminModule {}
