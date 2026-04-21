@@ -1,8 +1,14 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { getAdminIdentity, getPayoutCase } from '../../../../lib/admin-api.server';
-import { escalatePayoutAction } from '../../../../lib/admin-mutations.server';
+import { AssignmentCard } from '../../../../components/assignment-card';
+import { getAdminIdentity, getAdmins, getPayoutCase } from '../../../../lib/admin-api.server';
+import {
+  claimPayoutAssignmentAction,
+  escalatePayoutAction,
+  reassignPayoutAssignmentAction,
+  releasePayoutAssignmentAction,
+} from '../../../../lib/admin-mutations.server';
 
 function formatDate(value: string | null | undefined): string {
   if (!value) return `-`;
@@ -40,6 +46,21 @@ export default async function PayoutCasePage({ params }: { params: Promise<{ pay
   const highValueThresholdLabel = payoutCase.highValue.thresholdAmount
     ? `${payoutCase.highValue.thresholdCurrency} >= ${payoutCase.highValue.thresholdAmount}`
     : `not configured`;
+
+  const currentAssignment = payoutCase.assignment.current;
+  const currentAdminId = identity?.id ?? null;
+  const ownsAssignment = Boolean(
+    currentAssignment && currentAdminId && currentAssignment.assignedTo.id === currentAdminId,
+  );
+  const canManageAssignments = Boolean(identity?.capabilities?.includes(`assignments.manage`));
+  const canReassignAssignments = identity?.role === `SUPER_ADMIN`;
+  const canClaim = canManageAssignments && !currentAssignment;
+  const canRelease = Boolean(currentAssignment && canManageAssignments && (ownsAssignment || canReassignAssignments));
+  const canReassign = Boolean(currentAssignment && canReassignAssignments);
+  const reassignCandidatesResponse = canReassign ? await getAdmins({ page: 1, pageSize: 50, status: `ACTIVE` }) : null;
+  const reassignCandidates = (reassignCandidatesResponse?.items ?? []).filter(
+    (admin) => admin.id !== currentAssignment?.assignedTo.id,
+  );
 
   return (
     <>
@@ -244,6 +265,19 @@ export default async function PayoutCasePage({ params }: { params: Promise<{ pay
           </div>
         </article>
       </section>
+
+      <AssignmentCard
+        resourceId={payoutCase.id}
+        assignment={payoutCase.assignment}
+        reassignCandidates={reassignCandidates}
+        capabilities={{ canClaim, canRelease, canReassign }}
+        actions={{
+          claim: claimPayoutAssignmentAction,
+          release: releasePayoutAssignmentAction,
+          reassign: reassignPayoutAssignmentAction,
+        }}
+        copy={{ claimReasonPlaceholder: `Why are you claiming this payout?` }}
+      />
 
       <section className="panel">
         <h2>Audit context</h2>

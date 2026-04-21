@@ -20,16 +20,22 @@ jest.mock(`next/navigation`, () => ({
 
 jest.mock(`../../../../lib/admin-api.server`, () => ({
   getAdminIdentity: jest.fn(),
+  getAdmins: jest.fn(),
   getPayoutCase: jest.fn(),
 }));
 
 jest.mock(`../../../../lib/admin-mutations.server`, () => ({
   escalatePayoutAction: jest.fn(),
+  claimPayoutAssignmentAction: jest.fn(),
+  releasePayoutAssignmentAction: jest.fn(),
+  reassignPayoutAssignmentAction: jest.fn(),
 }));
 
-const { getAdminIdentity: mockedGetAdminIdentity, getPayoutCase: mockedGetPayoutCase } = jest.requireMock(
-  `../../../../lib/admin-api.server`,
-) as jest.Mocked<typeof AdminApi>;
+const {
+  getAdminIdentity: mockedGetAdminIdentity,
+  getAdmins: mockedGetAdmins,
+  getPayoutCase: mockedGetPayoutCase,
+} = jest.requireMock(`../../../../lib/admin-api.server`) as jest.Mocked<typeof AdminApi>;
 
 async function loadSubject() {
   return (await import(`./page`)).default;
@@ -100,6 +106,10 @@ function buildPayoutCase() {
       },
     ],
     auditContext: [],
+    assignment: {
+      current: null,
+      history: [],
+    },
     outcomeAgeHours: 4,
     slaBreachDetected: false,
     version: 1713081600000,
@@ -150,6 +160,7 @@ describe(`admin-v2 payout case`, () => {
   beforeEach(() => {
     mockedNotFound.mockClear();
     mockedGetAdminIdentity.mockReset();
+    mockedGetAdmins.mockReset();
     mockedGetPayoutCase.mockReset();
     mockedGetAdminIdentity.mockResolvedValue({
       id: `admin-1`,
@@ -157,8 +168,15 @@ describe(`admin-v2 payout case`, () => {
       type: `SUPER`,
       role: `SUPER_ADMIN`,
       phase: `MVP-2 slice: payouts.write`,
-      capabilities: [`ledger.read`, `payouts.escalate`],
+      capabilities: [`ledger.read`, `payouts.escalate`, `assignments.manage`],
       workspaces: [`ledger`],
+    });
+    mockedGetAdmins.mockResolvedValue({
+      items: [],
+      pendingInvitations: [],
+      total: 0,
+      page: 1,
+      pageSize: 50,
     });
     mockedGetPayoutCase.mockResolvedValue(buildPayoutCase());
   });
@@ -269,5 +287,55 @@ describe(`admin-v2 payout case`, () => {
     ).rejects.toThrow(`NEXT_NOT_FOUND`);
 
     expect(mockedNotFound).toHaveBeenCalledTimes(1);
+  });
+
+  it(`renders the AssignmentCard with the payout-specific claim placeholder when no assignment exists`, async () => {
+    const markup = renderToStaticMarkup(
+      await PayoutCasePage({
+        params: Promise.resolve({ payoutId: `payout-1` }),
+      }),
+    );
+
+    expect(markup).toContain(`aria-label="Assignment"`);
+    expect(markup).toContain(`Why are you claiming this payout?`);
+    expect(mockedGetAdmins).not.toHaveBeenCalled();
+  });
+
+  it(`fetches reassign candidates only when an existing assignment can be reassigned`, async () => {
+    const assignedAt = `2026-04-15T09:00:00.000Z`;
+    mockedGetPayoutCase.mockResolvedValueOnce({
+      ...buildPayoutCase(),
+      assignment: {
+        current: {
+          id: `assignment-1`,
+          assignedTo: { id: `admin-2`, name: null, email: `ops@example.com` },
+          assignedBy: { id: `admin-2`, name: null, email: `ops@example.com` },
+          assignedAt,
+          reason: `Investigating failed payout`,
+          expiresAt: null,
+        },
+        history: [
+          {
+            id: `assignment-1`,
+            assignedTo: { id: `admin-2`, name: null, email: `ops@example.com` },
+            assignedBy: { id: `admin-2`, name: null, email: `ops@example.com` },
+            assignedAt,
+            releasedAt: null,
+            releasedBy: null,
+            reason: `Investigating failed payout`,
+            expiresAt: null,
+          },
+        ],
+      },
+    });
+
+    const markup = renderToStaticMarkup(
+      await PayoutCasePage({
+        params: Promise.resolve({ payoutId: `payout-1` }),
+      }),
+    );
+
+    expect(mockedGetAdmins).toHaveBeenCalledWith({ page: 1, pageSize: 50, status: `ACTIVE` });
+    expect(markup).toContain(`Currently assigned to`);
   });
 });
