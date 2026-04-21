@@ -146,6 +146,31 @@ export class AdminV2LedgerAnomaliesService {
     };
   }
 
+  async getCount(className: LedgerAnomalyClass, dateFrom: string, dateTo: string): Promise<number> {
+    const validClass = this.assertClassName(className);
+    const parsedFrom = new Date(dateFrom);
+    const parsedTo = new Date(dateTo);
+    const range = this.assertDateRange(parsedFrom, parsedTo);
+    const computedAt = new Date();
+
+    if (validClass === `stalePendingEntries`) {
+      return this.countStalePendingEntriesForRange(range.dateFrom, range.dateTo, computedAt);
+    }
+    if (validClass === `inconsistentOutcomeChains`) {
+      return this.countInconsistentOutcomeChainsForRange(range.dateFrom, range.dateTo, computedAt);
+    }
+    if (validClass === `largeValueOutliers`) {
+      return this.countLargeValueOutliersForRange(range.dateFrom, range.dateTo);
+    }
+    if (validClass === `orphanedEntries`) {
+      return this.countOrphanedEntriesForRange(range.dateFrom, range.dateTo, computedAt);
+    }
+    if (validClass === `duplicateIdempotencyRisk`) {
+      return this.countDuplicateIdempotencyRiskForRange(range.dateFrom, range.dateTo);
+    }
+    return this.countImpossibleTransitionsForRange(range.dateFrom, range.dateTo);
+  }
+
   async getList(params: LedgerAnomaliesListParams): Promise<LedgerAnomalyListResponse> {
     const className = this.assertClassName(params.className);
     const { dateFrom, dateTo } = this.assertDateRange(params.dateFrom, params.dateTo);
@@ -592,6 +617,135 @@ export class AdminV2LedgerAnomaliesService {
       ORDER BY violation.violation_at DESC, le.id DESC
       LIMIT ${params.limit + 1}
     `);
+  }
+
+  private async countStalePendingEntriesForRange(dateFrom: Date, dateTo: Date, now: Date): Promise<number> {
+    const cutoff = new Date(now.getTime() - STALE_PENDING_HOURS * 60 * 60 * 1000);
+    const rows = await this.prisma.$queryRaw<CountRow[]>(Prisma.sql`
+      SELECT COUNT(*)::int AS "count"
+      FROM ledger_entry le
+      JOIN LATERAL (
+        SELECT o.status, o.created_at
+        FROM ledger_entry_outcome o
+        WHERE o.ledger_entry_id = le.id
+        ORDER BY o.created_at DESC, o.id DESC
+        LIMIT 1
+      ) latest ON true
+      WHERE le.deleted_at IS NULL
+        AND latest.status::text IN (${Prisma.join(PENDING_OUTCOME_STATUSES.map((status) => Prisma.sql`${status}`))})
+        AND latest.created_at < ${cutoff}
+        AND latest.created_at >= ${dateFrom}
+        AND latest.created_at <= ${dateTo}
+    `);
+
+    return rows[0]?.count ?? 0;
+  }
+
+  private async countInconsistentOutcomeChainsForRange(dateFrom: Date, dateTo: Date, now: Date): Promise<number> {
+    const cutoff = new Date(now.getTime() - INCONSISTENT_CHAIN_GRACE_MINUTES * 60 * 1000);
+    const rows = await this.prisma.$queryRaw<CountRow[]>(Prisma.sql`
+      SELECT COUNT(*)::int AS "count"
+      FROM ledger_entry le
+      JOIN LATERAL (
+        SELECT o.status, o.created_at
+        FROM ledger_entry_outcome o
+        WHERE o.ledger_entry_id = le.id
+        ORDER BY o.created_at DESC, o.id DESC
+        LIMIT 1
+      ) latest ON true
+      WHERE le.deleted_at IS NULL
+        AND le.status <> latest.status
+        AND latest.created_at < ${cutoff}
+        AND latest.created_at >= ${dateFrom}
+        AND latest.created_at <= ${dateTo}
+    `);
+
+    return rows[0]?.count ?? 0;
+  }
+
+  private async countLargeValueOutliersForRange(dateFrom: Date, dateTo: Date): Promise<number> {
+    const rows = await this.prisma.$queryRaw<CountRow[]>(Prisma.sql`
+      SELECT COUNT(*)::int AS "count"
+      FROM ledger_entry le
+      JOIN LATERAL (
+        SELECT threshold
+        FROM (
+          VALUES ${Prisma.join(
+            LARGE_VALUE_THRESHOLD_ENTRIES.map(
+              ([currencyCode, threshold]) => Prisma.sql`(${currencyCode}, ${threshold})`,
+            ),
+            `, `,
+          )}
+        ) AS threshold_map(currency_code, threshold)
+        WHERE threshold_map.currency_code = le.currency_code::text
+      ) thresholds ON true
+      WHERE le.deleted_at IS NULL
+        AND le.created_at >= ${dateFrom}
+        AND le.created_at <= ${dateTo}
+        AND ABS(le.amount) >= thresholds.threshold
+    `);
+
+    return rows[0]?.count ?? 0;
+  }
+
+  private async countOrphanedEntriesForRange(dateFrom: Date, dateTo: Date, now: Date): Promise<number> {
+    const cutoff = new Date(now.getTime() - ORPHANED_ENTRY_GRACE_HOURS * 60 * 60 * 1000);
+    const rows = await this.prisma.$queryRaw<CountRow[]>(Prisma.sql`
+      SELECT COUNT(*)::int AS "count"
+      FROM ledger_entry le
+      WHERE le.deleted_at IS NULL
+        AND le.created_at < ${cutoff}
+        AND le.created_at >= ${dateFrom}
+        AND le.created_at <= ${dateTo}
+        AND NOT EXISTS (
+          SELECT 1
+          FROM ledger_entry_outcome o
+          WHERE o.ledger_entry_id = le.id
+        )
+    `);
+
+    return rows[0]?.count ?? 0;
+  }
+
+  private async countDuplicateIdempotencyRiskForRange(dateFrom: Date, dateTo: Date): Promise<number> {
+    const rows = await this.prisma.$queryRaw<CountRow[]>(Prisma.sql`
+      SELECT COUNT(*)::int AS "count"
+      FROM ledger_entry le
+      WHERE le.deleted_at IS NULL
+        AND le.idempotency_key IS NULL
+        AND le.stripe_id IS NOT NULL
+        AND le.created_at >= ${dateFrom}
+        AND le.created_at <= ${dateTo}
+    `);
+
+    return rows[0]?.count ?? 0;
+  }
+
+  private async countImpossibleTransitionsForRange(dateFrom: Date, dateTo: Date): Promise<number> {
+    const rows = await this.prisma.$queryRaw<CountRow[]>(Prisma.sql`
+      SELECT COUNT(*)::int AS "count"
+      FROM ledger_entry le
+      JOIN LATERAL (
+        SELECT 1
+        FROM (
+          SELECT
+            o.status AS next_status,
+            o.created_at AS violation_at,
+            LAG(o.status) OVER (ORDER BY o.created_at, o.id) AS prev_status
+          FROM ledger_entry_outcome o
+          WHERE o.ledger_entry_id = le.id
+        ) chain
+        WHERE chain.prev_status::text IN (${Prisma.join(
+          TERMINAL_OUTCOME_STATUSES.map((status) => Prisma.sql`${status}`),
+        )})
+          AND chain.violation_at >= ${dateFrom}
+          AND chain.violation_at <= ${dateTo}
+        LIMIT 1
+      ) violation ON true
+      WHERE le.deleted_at IS NULL
+    `);
+
+    return rows[0]?.count ?? 0;
   }
 
   private buildLargeValueThresholdSql() {

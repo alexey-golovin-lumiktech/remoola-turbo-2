@@ -464,4 +464,123 @@ describe(`AdminV2LedgerAnomaliesService`, () => {
       }),
     ).rejects.toEqual(new BadRequestException(`Unknown ledger anomaly class`));
   });
+
+  describe(`getCount`, () => {
+    const dateFrom = `2026-04-01T00:00:00.000Z`;
+    const dateTo = `2026-04-20T00:00:00.000Z`;
+
+    it.each([
+      [`stalePendingEntries`],
+      [`inconsistentOutcomeChains`],
+      [`largeValueOutliers`],
+      [`orphanedEntries`],
+      [`duplicateIdempotencyRisk`],
+      [`impossibleTransitions`],
+    ] as const)(`returns numeric count for %s class`, async (className) => {
+      const { prisma, service } = makeService();
+      prisma.$queryRaw.mockResolvedValueOnce([{ count: 7 }]);
+
+      const result = await service.getCount(className, dateFrom, dateTo);
+
+      expect(result).toBe(7);
+      expect(prisma.$queryRaw).toHaveBeenCalledTimes(1);
+    });
+
+    it(`returns 0 when underlying query yields an empty rowset`, async () => {
+      const { prisma, service } = makeService();
+      prisma.$queryRaw.mockResolvedValueOnce([]);
+
+      const result = await service.getCount(`stalePendingEntries`, dateFrom, dateTo);
+
+      expect(result).toBe(0);
+    });
+
+    it(`rejects when dateFrom is missing or unparseable`, async () => {
+      const { service } = makeService();
+
+      await expect(service.getCount(`stalePendingEntries`, `not-a-date`, dateTo)).rejects.toEqual(
+        new BadRequestException(`dateFrom is required`),
+      );
+    });
+
+    it(`rejects when dateFrom is after dateTo (mirrors getList semantics)`, async () => {
+      const { service } = makeService();
+
+      await expect(
+        service.getCount(`stalePendingEntries`, `2026-04-03T00:00:00.000Z`, `2026-04-02T00:00:00.000Z`),
+      ).rejects.toEqual(new BadRequestException(`dateFrom cannot be after dateTo`));
+    });
+
+    it(`rejects unknown anomaly classes (mirrors getList semantics)`, async () => {
+      const { service } = makeService();
+
+      await expect(service.getCount(`unknown-class` as never, dateFrom, dateTo)).rejects.toEqual(
+        new BadRequestException(`Unknown ledger anomaly class`),
+      );
+    });
+
+    it(`agrees with getList items length on a synthetic stalePendingEntries fixture`, async () => {
+      const { prisma, service } = makeService();
+      const synthetic = [
+        {
+          id: `entry-A`,
+          ledgerEntryId: `entry-A`,
+          consumerId: `consumer-A`,
+          type: `USER_PAYMENT`,
+          amount: new Prisma.Decimal(`10.00`),
+          currencyCode: `USD`,
+          entryStatus: `PENDING`,
+          outcomeStatus: `PENDING`,
+          outcomeAt: new Date(`2026-04-05T10:00:00.000Z`),
+          createdAt: new Date(`2026-04-01T09:00:00.000Z`),
+          updatedAt: new Date(`2026-04-05T10:05:00.000Z`),
+          anomalyAt: new Date(`2026-04-05T10:00:00.000Z`),
+          threshold: null,
+        },
+        {
+          id: `entry-B`,
+          ledgerEntryId: `entry-B`,
+          consumerId: `consumer-B`,
+          type: `USER_PAYMENT`,
+          amount: new Prisma.Decimal(`20.00`),
+          currencyCode: `USD`,
+          entryStatus: `PENDING`,
+          outcomeStatus: `PENDING`,
+          outcomeAt: new Date(`2026-04-04T10:00:00.000Z`),
+          createdAt: new Date(`2026-04-02T09:00:00.000Z`),
+          updatedAt: new Date(`2026-04-04T10:05:00.000Z`),
+          anomalyAt: new Date(`2026-04-04T10:00:00.000Z`),
+          threshold: null,
+        },
+        {
+          id: `entry-C`,
+          ledgerEntryId: `entry-C`,
+          consumerId: `consumer-C`,
+          type: `USER_PAYMENT`,
+          amount: new Prisma.Decimal(`30.00`),
+          currencyCode: `USD`,
+          entryStatus: `PENDING`,
+          outcomeStatus: `PENDING`,
+          outcomeAt: new Date(`2026-04-03T10:00:00.000Z`),
+          createdAt: new Date(`2026-04-03T09:00:00.000Z`),
+          updatedAt: new Date(`2026-04-03T10:05:00.000Z`),
+          anomalyAt: new Date(`2026-04-03T10:00:00.000Z`),
+          threshold: null,
+        },
+      ];
+      prisma.$queryRaw.mockResolvedValueOnce(synthetic).mockResolvedValueOnce([{ count: synthetic.length }]);
+
+      const list = await service.getList({
+        className: `stalePendingEntries`,
+        dateFrom: new Date(dateFrom),
+        dateTo: new Date(dateTo),
+        limit: 200,
+      });
+      const count = await service.getCount(`stalePendingEntries`, dateFrom, dateTo);
+
+      expect(list.items).toHaveLength(synthetic.length);
+      expect(count).toBe(synthetic.length);
+      expect(list.items.length).toBe(count);
+    });
+  });
 });
