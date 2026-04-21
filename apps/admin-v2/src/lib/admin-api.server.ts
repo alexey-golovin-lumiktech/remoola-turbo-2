@@ -783,6 +783,10 @@ export type PayoutCaseResponse = {
     adminEmail: string | null;
     createdAt: string;
   }>;
+  assignment: {
+    current: AssignmentSummary | null;
+    history: AssignmentHistoryItem[];
+  };
   outcomeAgeHours: number;
   slaBreachDetected: boolean;
   version: number;
