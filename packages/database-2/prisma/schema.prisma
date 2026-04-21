@@ -40,8 +40,8 @@ model AuthSessionModel {
   lastUsedAt DateTime  @default(now()) @map("last_used_at") @db.Timestamptz(6)
   revokedAt  DateTime? @map("revoked_at") @db.Timestamptz(6)
 
-  replacedById      String?           @map("replaced_by_id") @db.Uuid
-  replacedBySession AuthSessionModel? @relation("SessionReplacement", fields: [replacedById], references: [id], onDelete: SetNull)
+  replacedById      String?            @map("replaced_by_id") @db.Uuid
+  replacedBySession AuthSessionModel?  @relation("SessionReplacement", fields: [replacedById], references: [id], onDelete: SetNull)
   replacedSessions  AuthSessionModel[] @relation("SessionReplacement")
 
   invalidatedReason String? @map("invalidated_reason") @db.Text
@@ -70,8 +70,8 @@ model AdminAuthSessionModel {
   lastUsedAt DateTime  @default(now()) @map("last_used_at") @db.Timestamptz(6)
   revokedAt  DateTime? @map("revoked_at") @db.Timestamptz(6)
 
-  replacedById      String?               @map("replaced_by_id") @db.Uuid
-  replacedBySession AdminAuthSessionModel? @relation("AdminSessionReplacement", fields: [replacedById], references: [id], onDelete: SetNull)
+  replacedById      String?                 @map("replaced_by_id") @db.Uuid
+  replacedBySession AdminAuthSessionModel?  @relation("AdminSessionReplacement", fields: [replacedById], references: [id], onDelete: SetNull)
   replacedSessions  AdminAuthSessionModel[] @relation("AdminSessionReplacement")
 
   invalidatedReason String? @map("invalidated_reason") @db.Text
@@ -130,11 +130,11 @@ model AdminActionIdempotencyModel {
   adminId String     @map("admin_id") @db.Uuid
   admin   AdminModel @relation(fields: [adminId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  scope           String @db.Text
-  idempotencyKey  String @map("idempotency_key") @db.Text
-  requestHash     String @map("request_hash") @db.Text
-  responseStatus  Int    @map("response_status")
-  responseSnapshot Json? @map("response_snapshot") @db.JsonB
+  scope            String @db.Text
+  idempotencyKey   String @map("idempotency_key") @db.Text
+  requestHash      String @map("request_hash") @db.Text
+  responseStatus   Int    @map("response_status")
+  responseSnapshot Json?  @map("response_snapshot") @db.JsonB
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
@@ -148,18 +148,18 @@ model AdminActionIdempotencyModel {
 model ConsumerActionLogModel {
   id String @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
-  deviceId     String         @map("device_id") @db.Text
-  consumerId   String?        @map("consumer_id") @db.Uuid
-  consumer     ConsumerModel? @relation(fields: [consumerId], references: [id], onDelete: SetNull, onUpdate: NoAction)
-  action       String         @db.Text
-  resource     String?        @db.Text
-  resourceId   String?        @map("resource_id") @db.Text
-  metadata     Json?          @db.JsonB
-  ipAddress    String?        @map("ip_address") @db.Text
-  userAgent    String?        @map("user_agent") @db.Text
-  correlationId String?       @map("correlation_id") @db.Text
-  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime       @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deviceId      String         @map("device_id") @db.Text
+  consumerId    String?        @map("consumer_id") @db.Uuid
+  consumer      ConsumerModel? @relation(fields: [consumerId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  action        String         @db.Text
+  resource      String?        @db.Text
+  resourceId    String?        @map("resource_id") @db.Text
+  metadata      Json?          @db.JsonB
+  ipAddress     String?        @map("ip_address") @db.Text
+  userAgent     String?        @map("user_agent") @db.Text
+  correlationId String?        @map("correlation_id") @db.Text
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime       @default(now()) @map("updated_at") @db.Timestamptz(6)
 
   @@id([id, createdAt])
   @@index([deviceId, createdAt])
@@ -234,24 +234,24 @@ model AdminModel {
   roleId String?         @map("role_id") @db.Uuid
   role   AdminRoleModel? @relation(fields: [roleId], references: [id], onDelete: SetNull, onUpdate: NoAction)
 
-  adminSettings        AdminSettingsModel?
-  adminActionAuditLogs AdminActionAuditLogModel[]
-  adminActionIdempotencyRecords AdminActionIdempotencyModel[]
-  adminAuthSessions    AdminAuthSessionModel[]
-  adminInvitationsCreated AdminInvitationModel[] @relation("AdminInvitationCreatedBy")
-  permissionOverrides  AdminPermissionOverrideModel[]
-  passwordResets       ResetPasswordModel[]
-  consumerNotes        ConsumerAdminNoteModel[]
-  consumerFlags        ConsumerFlagModel[]      @relation("ConsumerFlagCreatedBy")
-  removedConsumerFlags ConsumerFlagModel[]      @relation("ConsumerFlagRemovedBy")
-  disabledPaymentMethods PaymentMethodModel[] @relation("PaymentMethodDisabledBy")
+  adminSettings                     AdminSettingsModel?
+  adminActionAuditLogs              AdminActionAuditLogModel[]
+  adminActionIdempotencyRecords     AdminActionIdempotencyModel[]
+  adminAuthSessions                 AdminAuthSessionModel[]
+  adminInvitationsCreated           AdminInvitationModel[]                  @relation("AdminInvitationCreatedBy")
+  permissionOverrides               AdminPermissionOverrideModel[]
+  passwordResets                    ResetPasswordModel[]
+  consumerNotes                     ConsumerAdminNoteModel[]
+  consumerFlags                     ConsumerFlagModel[]                     @relation("ConsumerFlagCreatedBy")
+  removedConsumerFlags              ConsumerFlagModel[]                     @relation("ConsumerFlagRemovedBy")
+  disabledPaymentMethods            PaymentMethodModel[]                    @relation("PaymentMethodDisabledBy")
   paymentMethodDuplicateEscalations PaymentMethodDuplicateEscalationModel[] @relation("PaymentMethodDuplicateEscalatedBy")
-  payoutEscalations    PayoutEscalationModel[]  @relation("PayoutEscalatedBy")
-  assignedOperationalAssignments OperationalAssignmentModel[] @relation("OperationalAssignmentAssignedTo")
-  createdOperationalAssignments  OperationalAssignmentModel[] @relation("OperationalAssignmentAssignedBy")
-  releasedOperationalAssignments OperationalAssignmentModel[] @relation("OperationalAssignmentReleasedBy")
-  savedViews                     SavedViewModel[]             @relation("SavedViewOwner")
-  operationalAlerts              OperationalAlertModel[]      @relation("OperationalAlertOwner")
+  payoutEscalations                 PayoutEscalationModel[]                 @relation("PayoutEscalatedBy")
+  assignedOperationalAssignments    OperationalAssignmentModel[]            @relation("OperationalAssignmentAssignedTo")
+  createdOperationalAssignments     OperationalAssignmentModel[]            @relation("OperationalAssignmentAssignedBy")
+  releasedOperationalAssignments    OperationalAssignmentModel[]            @relation("OperationalAssignmentReleasedBy")
+  savedViews                        SavedViewModel[]                        @relation("SavedViewOwner")
+  operationalAlerts                 OperationalAlertModel[]                 @relation("OperationalAlertOwner")
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -389,16 +389,16 @@ model ConsumerModel {
   suspendedBy           String?            @map("suspended_by") @db.Uuid
   suspensionReason      String?            @map("suspension_reason") @db.Text
 
-  howDidHearAboutUs      HowDidHearAboutUs? @map("how_did_hear_about_us")
-  howDidHearAboutUsOther String?            @map("how_did_hear_about_us_other") @db.Text
-  stripeCustomerId       String?            @map("stripe_customer_id") @db.Text
-  stripeIdentityStatus   String?            @map("stripe_identity_status") @db.Text
-  stripeIdentitySessionId String?           @map("stripe_identity_session_id") @db.Text
-  stripeIdentityLastErrorCode String?       @map("stripe_identity_last_error_code") @db.Text
-  stripeIdentityLastErrorReason String?     @map("stripe_identity_last_error_reason") @db.Text
-  stripeIdentityStartedAt DateTime?         @map("stripe_identity_started_at") @db.Timestamptz(6)
-  stripeIdentityUpdatedAt DateTime?         @map("stripe_identity_updated_at") @db.Timestamptz(6)
-  stripeIdentityVerifiedAt DateTime?        @map("stripe_identity_verified_at") @db.Timestamptz(6)
+  howDidHearAboutUs             HowDidHearAboutUs? @map("how_did_hear_about_us")
+  howDidHearAboutUsOther        String?            @map("how_did_hear_about_us_other") @db.Text
+  stripeCustomerId              String?            @map("stripe_customer_id") @db.Text
+  stripeIdentityStatus          String?            @map("stripe_identity_status") @db.Text
+  stripeIdentitySessionId       String?            @map("stripe_identity_session_id") @db.Text
+  stripeIdentityLastErrorCode   String?            @map("stripe_identity_last_error_code") @db.Text
+  stripeIdentityLastErrorReason String?            @map("stripe_identity_last_error_reason") @db.Text
+  stripeIdentityStartedAt       DateTime?          @map("stripe_identity_started_at") @db.Timestamptz(6)
+  stripeIdentityUpdatedAt       DateTime?          @map("stripe_identity_updated_at") @db.Timestamptz(6)
+  stripeIdentityVerifiedAt      DateTime?          @map("stripe_identity_verified_at") @db.Timestamptz(6)
 
   addressDetails       AddressDetailsModel?
   personalDetails      PersonalDetailsModel?
@@ -710,9 +710,9 @@ model PaymentMethodDuplicateEscalationModel {
   paymentMethodId String             @map("payment_method_id") @db.Uuid
   paymentMethod   PaymentMethodModel @relation(fields: [paymentMethodId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  fingerprint String   @db.Text
-  duplicateCount Int   @map("duplicate_count")
-  duplicatePaymentMethodIds Json @map("duplicate_payment_method_ids") @db.JsonB
+  fingerprint               String @db.Text
+  duplicateCount            Int    @map("duplicate_count")
+  duplicatePaymentMethodIds Json   @map("duplicate_payment_method_ids") @db.JsonB
 
   escalatedBy      String     @map("escalated_by") @db.Uuid
   escalatedByAdmin AdminModel @relation("PaymentMethodDuplicateEscalatedBy", fields: [escalatedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -795,14 +795,14 @@ model LedgerEntryModel {
   paymentRequestId String?              @map("payment_request_id") @db.Uuid
   paymentRequest   PaymentRequestModel? @relation(fields: [paymentRequestId], references: [id], onDelete: SetNull)
 
-  createdBy String?                   @map("created_by") @db.Text
-  createdAt DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedBy String?                   @map("updated_by") @db.Text
-  updatedAt DateTime                  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  deletedBy String?                   @map("deleted_by") @db.Text
-  deletedAt DateTime?                 @map("deleted_at") @db.Timestamptz(6)
-  outcomes  LedgerEntryOutcomeModel[]
-  disputes  LedgerEntryDisputeModel[]
+  createdBy        String?                   @map("created_by") @db.Text
+  createdAt        DateTime                  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedBy        String?                   @map("updated_by") @db.Text
+  updatedAt        DateTime                  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedBy        String?                   @map("deleted_by") @db.Text
+  deletedAt        DateTime?                 @map("deleted_at") @db.Timestamptz(6)
+  outcomes         LedgerEntryOutcomeModel[]
+  disputes         LedgerEntryDisputeModel[]
   payoutEscalation PayoutEscalationModel?
 
   @@unique([idempotencyKey])
@@ -851,10 +851,10 @@ model PayoutEscalationModel {
   escalatedBy      String     @map("escalated_by") @db.Uuid
   escalatedByAdmin AdminModel @relation("PayoutEscalatedBy", fields: [escalatedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  reason     String?  @db.Text
-  confirmed  Boolean  @default(true)
-  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  reason    String?  @db.Text
+  confirmed Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@index([escalatedBy, createdAt(sort: Desc)])
   @@map("payout_escalation")
@@ -999,7 +999,7 @@ model ResetPasswordModel {
   consumer   ConsumerModel? @relation(fields: [consumerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   adminId    String?        @map("admin_id") @db.Uuid
   admin      AdminModel?    @relation(fields: [adminId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  appScope   String        @map("app_scope") @db.Text
+  appScope   String         @map("app_scope") @db.Text
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
