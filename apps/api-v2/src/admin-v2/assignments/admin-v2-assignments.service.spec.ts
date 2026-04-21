@@ -194,7 +194,7 @@ describe(`AdminV2AssignmentsService`, () => {
       ).rejects.toBeInstanceOf(BadRequestException);
     });
 
-    it(`accepts ledger_entry as resourceType, inserts the assignment, and records audit with resource: 'ledger_entry'`, async () => {
+    it(`accepts ledger_entry resourceType, inserts the assignment, and audits ledger_entry`, async () => {
       const { service, queryRaw, adminModel, adminActionAudit } = buildService();
       queryRaw.mockResolvedValueOnce([]);
       queryRaw.mockResolvedValueOnce([activeRow({ resource_type: `ledger_entry` })]);
@@ -294,7 +294,7 @@ describe(`AdminV2AssignmentsService`, () => {
       );
     });
 
-    it(`releases a ledger_entry assignment owned by the caller and records audit with resource: 'ledger_entry'`, async () => {
+    it(`releases a ledger_entry assignment owned by the caller and audits ledger_entry`, async () => {
       const { service, queryRaw, adminActionAudit } = buildService();
       queryRaw.mockResolvedValueOnce([activeRow({ resource_type: `ledger_entry` })]);
       queryRaw.mockResolvedValueOnce([releasedRow({ resource_type: `ledger_entry` })]);
@@ -441,7 +441,7 @@ describe(`AdminV2AssignmentsService`, () => {
       ).rejects.toBeInstanceOf(BadRequestException);
     });
 
-    it(`reassigns a ledger_entry assignment and writes correlated audit entries with resource: 'ledger_entry'`, async () => {
+    it(`reassigns a ledger_entry assignment and writes correlated audits with resource ledger_entry`, async () => {
       const { service, queryRaw, adminModel, adminActionAuditLogModel } = buildService();
       adminModel.findUnique.mockResolvedValueOnce({ id: OTHER_ADMIN_ID, deletedAt: null });
       queryRaw.mockResolvedValueOnce([activeRow({ resource_type: `ledger_entry` })]);

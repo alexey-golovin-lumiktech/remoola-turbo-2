@@ -75,6 +75,8 @@ export type AdminModelWithRelations = Prisma.AdminModelGetPayload<{
     assignedOperationalAssignments: true;
     createdOperationalAssignments: true;
     releasedOperationalAssignments: true;
+    savedViews: true;
+    operationalAlerts: true;
   };
 }>;
 
@@ -257,6 +259,18 @@ export type OperationalAssignmentModelWithRelations = Prisma.OperationalAssignme
     assignedToAdmin: true;
     assignedByAdmin: true;
     releasedByAdmin: true;
+  };
+}>;
+
+export type SavedViewModelWithRelations = Prisma.SavedViewModelGetPayload<{
+  include: {
+    ownerAdmin: true;
+  };
+}>;
+
+export type OperationalAlertModelWithRelations = Prisma.OperationalAlertModelGetPayload<{
+  include: {
+    ownerAdmin: true;
   };
 }>;
 

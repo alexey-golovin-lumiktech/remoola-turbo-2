@@ -126,7 +126,7 @@ describe(`AdminV2LedgerService`, () => {
     expect(ledgerCase.assignment).toEqual({ current: null, history: [] });
   });
 
-  it(`returns assignment.current populated and history with one entry when the ledger entry has an active assignment`, async () => {
+  it(`returns assignment.current populated with one history entry when the entry is actively assigned`, async () => {
     const assignedAt = new Date(`2026-04-21T08:00:00.000Z`);
     const expiresAt = new Date(`2026-04-21T20:00:00.000Z`);
     const { service, queryRaw } = buildLedgerServiceWithAssignmentRows([
