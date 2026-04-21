@@ -143,7 +143,8 @@ export class AdminV2AssignmentsService {
           }
 
           const inserted = await tx.$queryRaw<AssignmentRow[]>(Prisma.sql`
-            INSERT INTO "operational_assignment" ("resource_type", "resource_id", "assigned_to", "assigned_by", "reason")
+            INSERT INTO "operational_assignment"
+              ("resource_type", "resource_id", "assigned_to", "assigned_by", "reason")
             SELECT ${resourceType},
                    ${Prisma.sql`${resourceId}::uuid`},
                    ${Prisma.sql`${adminId}::uuid`},
@@ -363,7 +364,8 @@ export class AdminV2AssignmentsService {
           const closedRow = closed[0]!;
 
           const inserted = await tx.$queryRaw<AssignmentRow[]>(Prisma.sql`
-            INSERT INTO "operational_assignment" ("resource_type", "resource_id", "assigned_to", "assigned_by", "reason")
+            INSERT INTO "operational_assignment"
+              ("resource_type", "resource_id", "assigned_to", "assigned_by", "reason")
             SELECT ${closedRow.resource_type},
                    ${Prisma.sql`${closedRow.resource_id}::uuid`},
                    ${Prisma.sql`${newAssigneeId}::uuid`},

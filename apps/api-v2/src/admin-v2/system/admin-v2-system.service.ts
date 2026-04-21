@@ -275,7 +275,8 @@ export class AdminV2SystemService {
             ? `Read-only ledger anomaly detection shows active finance-review backlog.` +
               ` Use the dedicated queue for case triage instead of treating System as a replacement workspace.`
             : totalCount === 0
-              ? `No current stale pending entries, inconsistent outcome chains, large value outliers, orphaned entries, duplicate idempotency risk, or impossible transitions are visible.`
+              ? `No current stale pending entries, inconsistent outcome chains, large value outliers,` +
+                ` orphaned entries, duplicate idempotency risk, or impossible transitions are visible.`
               : `Ledger anomaly health could not be derived safely from the read-only queue summary.`,
         facts: [
           { label: `Total anomaly backlog`, value: totalCount },
