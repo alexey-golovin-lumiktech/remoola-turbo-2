@@ -343,7 +343,7 @@ describe(`AdminV2VerificationService`, () => {
       expect(callArgs.where.verificationStatus.in).toEqual([`PENDING`, `MORE_INFO`, `FLAGGED`]);
     });
 
-    it(`narrows verificationStatus to a single status when one of ACTIVE_VERIFICATION_STATUSES is provided`, async () => {
+    it(`narrows verificationStatus to a single status when one of the active statuses is provided`, async () => {
       const { service, count } = buildCountService({ countResult: 5 });
 
       await service.getQueueCount({ status: `PENDING` });
@@ -352,7 +352,7 @@ describe(`AdminV2VerificationService`, () => {
       expect(callArgs.where.verificationStatus.in).toEqual([`PENDING`]);
     });
 
-    it(`falls back to the full ACTIVE_VERIFICATION_STATUSES set when status is not active (mirrors getQueue)`, async () => {
+    it(`falls back to the full active status set when status is not active (mirrors getQueue)`, async () => {
       const { service, count } = buildCountService({ countResult: 9 });
 
       await service.getQueueCount({ status: `XYZ` });
