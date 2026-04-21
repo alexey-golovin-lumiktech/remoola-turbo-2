@@ -19,6 +19,32 @@ if [ "${SKIP_ADMIN_V2_GATES:-0}" != "1" ] \
   node ./scripts/admin-v2-gates/verify.mjs || exit $?
 fi
 
+# Prisma schema format check. Only runs when the staged files touch the prisma
+# schema. Set SKIP_PRISMA_FORMAT_CHECK=1 to bypass.
+if [ "${SKIP_PRISMA_FORMAT_CHECK:-0}" != "1" ] \
+  && git diff --cached --name-only | grep -qE '^packages/database-2/prisma/(schema\.prisma|prisma\.config\.ts)$'; then
+  echo "prisma schema staged; verifying format..."
+  ( cd packages/database-2 && yarn --silent prisma format >/dev/null )
+  if ! git diff --exit-code packages/database-2/prisma/schema.prisma >/dev/null 2>&1; then
+    echo "ERROR: prisma format produced changes. Stage them and re-commit."
+    exit 1
+  fi
+fi
+
+# Prisma migration drift check. Only runs when the staged files touch the
+# prisma migrations directory and DATABASE_URL is reachable. Set
+# SKIP_PRISMA_MIGRATE_STATUS=1 to bypass.
+if [ "${SKIP_PRISMA_MIGRATE_STATUS:-0}" != "1" ] \
+  && [ -n "${DATABASE_URL:-}" ] \
+  && git diff --cached --name-only | grep -qE '^packages/database-2/prisma/migrations/'; then
+  echo "prisma migrations staged; verifying migrate status..."
+  if ! yarn --silent workspace @remoola/database-2 prisma migrate status >/dev/null 2>&1; then
+    echo "ERROR: prisma migrate status reports drift or unapplied migrations."
+    echo "Run 'yarn workspace @remoola/database-2 prisma migrate status' for details."
+    exit 1
+  fi
+fi
+
 # Skip lint and tests when commit has no code changes (e.g. docs, CHANGELOG only).
 # The helper script exits 0 when there is nothing under apps/ or packages/ to
 # check, and exits 1 when there is.

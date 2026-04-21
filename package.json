@@ -29,6 +29,8 @@
     "typecheck:v2-apps": "yarn workspace @remoola/consumer-css-grid run typecheck && yarn workspace @remoola/admin-v2 run typecheck && yarn workspace @remoola/api-v2 run typecheck",
     "typecheck:watch": "turbo run typecheck:watch --parallel",
     "verify:admin-v2-gates": "node ./scripts/admin-v2-gates/verify.mjs",
+    "verify:prisma-format": "yarn workspace @remoola/database-2 prisma format && git diff --exit-code packages/database-2/prisma/schema.prisma",
+    "verify:prisma-migrate-status": "yarn workspace @remoola/database-2 prisma migrate status",
     "test": "TERM=dumb NO_COLOR=1 node ./scripts/ensure-local-development.js root:test && turbo run test",
     "test:admin-v2": "yarn workspace @remoola/api-v2 run test --testPathPatterns='admin-v2'",
     "test-db:cleanup": "TERM=dumb NO_COLOR=1 node ./scripts/cleanup-stale-test-dbs.js",
