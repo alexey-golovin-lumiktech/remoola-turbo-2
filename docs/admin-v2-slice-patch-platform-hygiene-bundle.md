@@ -40,7 +40,7 @@ Hard rules upheld: `no new prisma migration`, `no new capability`, `no new audit
 ## Discovered while exploring
 
 - `prisma migrate diff --from-schema-datasource ./prisma/schema.prisma --to-schema-datamodel ./prisma/schema.prisma --script` (recon) reports a non-empty diff containing `RenameIndex` operations against approximately a dozen indexes (e.g. `google_profile_details_consumerId_key` → `google_profile_details_consumer_id_key`, `idx_payment_method_billing_details_id` → `payment_method_billing_details_id_idx`, etc.) plus three `DropForeignKey` / `AddForeignKey` round-trips on `ledger_entry`, `ledger_entry_outcome`, `ledger_entry_dispute`. None of these touch the two Fragment B target migrations. They appear to be pre-existing index-naming-convention drift between Prisma 6.19's snake-case mapping output and historical camelCase index names persisted in the DB. **Out of Fragment B scope** per §1.4-§1.10 / §1.12; recorded here per §13.11 instead of being silently fixed. Owner: a future dedicated `prisma migrate diff` cleanup slice.
-- `database-2` workspace has no `typecheck` npm script; only `build`, which itself runs `db:generate` first. DoD §10.14 invocation `yarn workspace @remoola/database-2 typecheck` is therefore a non-existent script. Verification deferred to `yarn workspace @remoola/database-2 build` (which exercises the same TypeScript path) and to the cross-workspace consumers' typechecks (api-v2, admin-v2 etc.) which depend on the generated client.
+- `database-2` workspace has no `typecheck` and no `lint` npm scripts; only `build` (which runs `db:generate` first). DoD §1.31 invocation `yarn workspace @remoola/database-2 build && typecheck && lint` is therefore partially impossible. Verification deferred to `yarn workspace @remoola/database-2 build` (which exercises the same TypeScript path through Prisma client generation) and to the cross-workspace consumers' typechecks / lints (api-v2, admin-v2 etc.) which depend on the generated client.
 
 ## Tests baseline shift
 
@@ -57,4 +57,4 @@ Hard rules upheld: `no new prisma migration`, `no new capability`, `no new audit
 ## Known follow-ups
 
 - Index-naming-convention drift across approximately a dozen indexes (snake-case vs camelCase) — see "Discovered while exploring". Owner: a future dedicated cleanup slice.
-- `database-2` workspace lacks a `typecheck` npm script — see "Discovered while exploring". Owner: next slice that touches `packages/database-2/package.json`.
+- `database-2` workspace lacks `typecheck` and `lint` npm scripts — see "Discovered while exploring". Owner: next slice that touches `packages/database-2/package.json`.
