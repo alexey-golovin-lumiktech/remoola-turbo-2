@@ -18,16 +18,23 @@ jest.mock(`next/navigation`, () => ({
 
 jest.mock(`../../../../../lib/admin-api.server`, () => ({
   getAdminIdentity: jest.fn(),
+  getAdmins: jest.fn(),
   getExchangeScheduledCase: jest.fn(),
 }));
 
 jest.mock(`../../../../../lib/admin-mutations.server`, () => ({
   cancelScheduledExchangeAction: jest.fn(),
+  claimFxConversionAssignmentAction: jest.fn(),
   forceExecuteScheduledExchangeAction: jest.fn(),
+  reassignFxConversionAssignmentAction: jest.fn(),
+  releaseFxConversionAssignmentAction: jest.fn(),
 }));
 
-const { getAdminIdentity: mockedGetAdminIdentity, getExchangeScheduledCase: mockedGetExchangeScheduledCase } =
-  jest.requireMock(`../../../../../lib/admin-api.server`) as jest.Mocked<typeof AdminApi>;
+const {
+  getAdminIdentity: mockedGetAdminIdentity,
+  getAdmins: mockedGetAdmins,
+  getExchangeScheduledCase: mockedGetExchangeScheduledCase,
+} = jest.requireMock(`../../../../../lib/admin-api.server`) as jest.Mocked<typeof AdminApi>;
 
 async function loadSubject() {
   return (await import(`./page`)).default;
@@ -79,6 +86,7 @@ describe(`admin-v2 scheduled fx case`, () => {
 
   beforeEach(() => {
     mockedGetAdminIdentity.mockReset();
+    mockedGetAdmins.mockReset();
     mockedGetExchangeScheduledCase.mockReset();
     mockedGetAdminIdentity.mockResolvedValue({
       id: `admin-1`,
@@ -86,9 +94,10 @@ describe(`admin-v2 scheduled fx case`, () => {
       type: `SUPER`,
       role: `SUPER_ADMIN`,
       phase: `MVP-2 slice: exchange workspace`,
-      capabilities: [`exchange.read`, `exchange.manage`],
+      capabilities: [`exchange.read`, `exchange.manage`, `assignments.manage`],
       workspaces: [`exchange`],
     });
+    mockedGetAdmins.mockResolvedValue({ items: [], total: 0, page: 1, pageSize: 50, pendingInvitations: [] });
     mockedGetExchangeScheduledCase.mockResolvedValue(buildScheduledCase());
   });
 

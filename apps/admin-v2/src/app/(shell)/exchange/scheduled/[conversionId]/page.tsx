@@ -1,10 +1,14 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { getAdminIdentity, getExchangeScheduledCase } from '../../../../../lib/admin-api.server';
+import { AssignmentCard } from '../../../../../components/assignment-card';
+import { getAdminIdentity, getAdmins, getExchangeScheduledCase } from '../../../../../lib/admin-api.server';
 import {
   cancelScheduledExchangeAction,
+  claimFxConversionAssignmentAction,
   forceExecuteScheduledExchangeAction,
+  reassignFxConversionAssignmentAction,
+  releaseFxConversionAssignmentAction,
 } from '../../../../../lib/admin-mutations.server';
 
 function formatDate(value: string | null | undefined) {
@@ -21,6 +25,21 @@ export default async function ExchangeScheduledCasePage({ params }: { params: Pr
   }
 
   const canManage = identity?.capabilities.includes(`exchange.manage`) ?? false;
+
+  const currentAssignment = conversion.assignment.current;
+  const currentAdminId = identity?.id ?? null;
+  const ownsAssignment = Boolean(
+    currentAssignment && currentAdminId && currentAssignment.assignedTo.id === currentAdminId,
+  );
+  const canManageAssignments = Boolean(identity?.capabilities?.includes(`assignments.manage`));
+  const canReassignAssignments = identity?.role === `SUPER_ADMIN`;
+  const canClaim = canManageAssignments && !currentAssignment;
+  const canRelease = Boolean(currentAssignment && canManageAssignments && (ownsAssignment || canReassignAssignments));
+  const canReassign = Boolean(currentAssignment && canReassignAssignments);
+  const reassignCandidatesResponse = canReassign ? await getAdmins({ page: 1, pageSize: 50, status: `ACTIVE` }) : null;
+  const reassignCandidates = (reassignCandidatesResponse?.items ?? []).filter(
+    (admin) => admin.id !== currentAssignment?.assignedTo.id,
+  );
 
   return (
     <>
@@ -147,6 +166,19 @@ export default async function ExchangeScheduledCasePage({ params }: { params: Pr
           </article>
         ) : null}
       </section>
+
+      <AssignmentCard
+        resourceId={conversion.id}
+        assignment={conversion.assignment}
+        reassignCandidates={reassignCandidates}
+        capabilities={{ canClaim, canRelease, canReassign }}
+        actions={{
+          claim: claimFxConversionAssignmentAction,
+          release: releaseFxConversionAssignmentAction,
+          reassign: reassignFxConversionAssignmentAction,
+        }}
+        copy={{ claimReasonPlaceholder: `Why are you claiming this scheduled FX conversion?` }}
+      />
     </>
   );
 }
