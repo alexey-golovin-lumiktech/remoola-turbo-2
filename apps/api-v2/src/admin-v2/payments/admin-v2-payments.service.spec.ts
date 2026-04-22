@@ -489,7 +489,7 @@ describe(`AdminV2PaymentsService`, () => {
     expect(findMany.mock.calls[2]?.[0]?.where).not.toHaveProperty(`OR`);
   });
 
-  it(`decorates payment operations queue items with the active assignee via getActiveAssigneesForResource`, async () => {
+  it(`decorates payment operations queue items with active assignee via getActiveAssigneesForResource`, async () => {
     const findMany = jest
       .fn()
       .mockResolvedValueOnce([
