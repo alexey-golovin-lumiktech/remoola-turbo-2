@@ -405,6 +405,7 @@ export type DocumentsListResponse = {
     version: number;
     tags: string[];
     linkedPaymentRequestIds: string[];
+    assignedTo: AdminRef | null;
   }>;
   total: number;
   page: number;

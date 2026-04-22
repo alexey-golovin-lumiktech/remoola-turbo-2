@@ -51,6 +51,7 @@ function ExplorerTable({
                 {canManage ? <th>Select</th> : null}
                 <th>Document</th>
                 <th>Owners</th>
+                <th>Assigned to</th>
                 <th>Tags</th>
                 <th>Payment linkage</th>
                 <th>Access / size</th>
@@ -89,6 +90,16 @@ function ExplorerTable({
                         </>
                       )}
                     </div>
+                  </td>
+                  <td>
+                    {document.assignedTo ? (
+                      <>
+                        <div>{document.assignedTo.name ?? document.assignedTo.email ?? document.assignedTo.id}</div>
+                        {document.assignedTo.email ? <div className="muted">{document.assignedTo.email}</div> : null}
+                      </>
+                    ) : (
+                      <span className="muted">—</span>
+                    )}
                   </td>
                   <td>
                     <div className="pillRow">

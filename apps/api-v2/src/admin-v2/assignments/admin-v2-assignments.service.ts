@@ -542,6 +542,28 @@ export class AdminV2AssignmentsService {
     return { current, history };
   }
 
+  async getActiveAssigneesForResource(
+    resourceType: AssignableResourceType,
+    resourceIds: string[],
+  ): Promise<Map<string, AdminRef>> {
+    if (resourceIds.length === 0) return new Map();
+    const rows = await this.prisma.$queryRaw<Array<{ resource_id: string; assigned_to: string; email: string | null }>>(
+      Prisma.sql`
+        SELECT a."resource_id"::text AS resource_id, a."assigned_to"::text AS assigned_to, ad."email" AS email
+        FROM "operational_assignment" a
+        LEFT JOIN "admin" ad ON ad."id" = a."assigned_to"
+        WHERE a."resource_type" = ${resourceType}
+          AND a."released_at" IS NULL
+          AND a."resource_id" = ANY(${resourceIds}::uuid[])
+      `,
+    );
+    const result = new Map<string, AdminRef>();
+    for (const row of rows) {
+      result.set(row.resource_id, { id: row.assigned_to, name: null, email: row.email });
+    }
+    return result;
+  }
+
   private async loadAdminSummary(adminId: string): Promise<AdminSummary> {
     const admin = await this.prisma.adminModel.findUnique({
       where: { id: adminId },

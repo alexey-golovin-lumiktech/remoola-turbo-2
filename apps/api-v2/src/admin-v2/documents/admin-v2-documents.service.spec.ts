@@ -13,6 +13,7 @@ function createIdempotency() {
 function createAssignmentsService() {
   return {
     getAssignmentContextForResource: jest.fn(async () => ({ current: null, history: [] })),
+    getActiveAssigneesForResource: jest.fn(async () => new Map()),
   };
 }
 
@@ -82,12 +83,64 @@ describe(`AdminV2DocumentsService`, () => {
           version: new Date(`2026-04-17T08:10:00.000Z`).getTime(),
           tags: [`evidence`, `invoice`],
           linkedPaymentRequestIds: [`payment-1`, `payment-2`],
+          assignedTo: null,
         },
       ],
       total: 1,
       page: 1,
       pageSize: 20,
     });
+  });
+
+  it(`decorates list rows with the active assignee via getActiveAssigneesForResource('document', ids)`, async () => {
+    const assignmentsService = createAssignmentsService();
+    assignmentsService.getActiveAssigneesForResource.mockResolvedValueOnce(
+      new Map([[`doc-1`, { id: `admin-9`, name: null, email: `ops9@example.com` }]]),
+    );
+    const service = new AdminV2DocumentsService(
+      {
+        resourceModel: {
+          findMany: jest.fn(async () => [
+            {
+              id: `doc-1`,
+              originalName: `proof.pdf`,
+              access: `PRIVATE`,
+              mimetype: `application/pdf`,
+              size: 2048,
+              createdAt: new Date(`2026-04-17T08:00:00.000Z`),
+              updatedAt: new Date(`2026-04-17T08:10:00.000Z`),
+              deletedAt: null,
+              consumerResources: [],
+              resourceTags: [],
+              attachments: [],
+            },
+            {
+              id: `doc-2`,
+              originalName: `receipt.pdf`,
+              access: `PRIVATE`,
+              mimetype: `application/pdf`,
+              size: 1024,
+              createdAt: new Date(`2026-04-17T08:00:00.000Z`),
+              updatedAt: new Date(`2026-04-17T08:10:00.000Z`),
+              deletedAt: null,
+              consumerResources: [],
+              resourceTags: [],
+              attachments: [],
+            },
+          ]),
+          count: jest.fn(async () => 2),
+        },
+      } as never,
+      {} as never,
+      createIdempotency() as never,
+      assignmentsService as never,
+    );
+
+    const result = await service.listDocuments();
+
+    expect(assignmentsService.getActiveAssigneesForResource).toHaveBeenCalledWith(`document`, [`doc-1`, `doc-2`]);
+    expect(result.items[0].assignedTo).toEqual({ id: `admin-9`, name: null, email: `ops9@example.com` });
+    expect(result.items[1].assignedTo).toBeNull();
   });
 
   it(`keeps the canonical singular list contract by degrading ambiguous multi-owner linkage to null`, async () => {
@@ -146,6 +199,7 @@ describe(`AdminV2DocumentsService`, () => {
           version: new Date(`2026-04-17T08:10:00.000Z`).getTime(),
           tags: [],
           linkedPaymentRequestIds: [],
+          assignedTo: null,
         },
       ],
       total: 1,

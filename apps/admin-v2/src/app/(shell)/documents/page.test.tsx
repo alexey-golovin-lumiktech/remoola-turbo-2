@@ -77,6 +77,7 @@ describe(`admin-v2 documents explorer`, () => {
           version: 1713341400000,
           tags: [`evidence`],
           linkedPaymentRequestIds: [`payment-1`],
+          assignedTo: null,
         },
       ],
       total: 1,

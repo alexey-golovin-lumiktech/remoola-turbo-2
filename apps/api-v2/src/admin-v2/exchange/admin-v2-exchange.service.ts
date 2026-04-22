@@ -768,7 +768,10 @@ export class AdminV2ExchangeService {
       .map((conversion) => conversion.ledgerId)
       .filter((value): value is string => Boolean(value));
     const ledgerEntryMap = await this.loadLedgerEntryMap(ledgerIds);
-    const assigneeMap = await this.getActiveAssignees(conversions.map((conversion) => conversion.id));
+    const assigneeMap = await this.assignmentsService.getActiveAssigneesForResource(
+      `fx_conversion`,
+      conversions.map((conversion) => conversion.id),
+    );
 
     return {
       items: conversions.map((conversion) => this.mapScheduledListItem(conversion, ledgerEntryMap, assigneeMap)),
@@ -776,25 +779,6 @@ export class AdminV2ExchangeService {
       page,
       pageSize,
     };
-  }
-
-  private async getActiveAssignees(resourceIds: string[]): Promise<Map<string, AdminRef>> {
-    if (resourceIds.length === 0) return new Map();
-    const rows = await this.prisma.$queryRaw<Array<{ resource_id: string; assigned_to: string; email: string | null }>>(
-      Prisma.sql`
-        SELECT a."resource_id"::text AS resource_id, a."assigned_to"::text AS assigned_to, ad."email" AS email
-        FROM "operational_assignment" a
-        LEFT JOIN "admin" ad ON ad."id" = a."assigned_to"
-        WHERE a."resource_type" = 'fx_conversion'
-          AND a."released_at" IS NULL
-          AND a."resource_id" = ANY(${resourceIds}::uuid[])
-      `,
-    );
-    const result = new Map<string, AdminRef>();
-    for (const row of rows) {
-      result.set(row.resource_id, { id: row.assigned_to, name: null, email: row.email });
-    }
-    return result;
   }
 
   async getScheduledConversionCase(conversionId: string) {

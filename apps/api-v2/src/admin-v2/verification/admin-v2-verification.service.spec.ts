@@ -6,7 +6,6 @@ describe(`AdminV2VerificationService`, () => {
   it(`reports SLA breaches at queue level instead of current page only`, async () => {
     const service = new AdminV2VerificationService(
       {
-        $queryRaw: jest.fn(async () => []),
         consumerModel: {
           findMany: jest.fn(async () => [
             {
@@ -52,7 +51,10 @@ describe(`AdminV2VerificationService`, () => {
       } as never,
       {} as never,
       {} as never,
-      { getAssignmentContextForResource: jest.fn(async () => ({ current: null, history: [] })) } as never,
+      {
+        getAssignmentContextForResource: jest.fn(async () => ({ current: null, history: [] })),
+        getActiveAssigneesForResource: jest.fn(async () => new Map()),
+      } as never,
     );
 
     const queue = await service.getQueue({ page: 1, pageSize: 1 });
@@ -153,12 +155,12 @@ describe(`AdminV2VerificationService`, () => {
   });
 
   it(`decorates queue rows with the active assignee when an assignment exists`, async () => {
-    const queryRaw = jest.fn(async () => [
-      { resource_id: `consumer-1`, assigned_to: `admin-7`, email: `ops7@example.com` },
-    ]);
+    const getActiveAssigneesForResource = jest.fn(
+      async () => new Map([[`consumer-1`, { id: `admin-7`, name: null, email: `ops7@example.com` }]]),
+    );
     const service = new AdminV2VerificationService(
       {
-        $queryRaw: queryRaw,
+        $queryRaw: jest.fn(async () => []),
         consumerModel: {
           findMany: jest.fn(async () => [
             {
@@ -204,12 +206,15 @@ describe(`AdminV2VerificationService`, () => {
       } as never,
       {} as never,
       {} as never,
-      { getAssignmentContextForResource: jest.fn(async () => ({ current: null, history: [] })) } as never,
+      {
+        getAssignmentContextForResource: jest.fn(async () => ({ current: null, history: [] })),
+        getActiveAssigneesForResource,
+      } as never,
     );
 
     const queue = await service.getQueue({ page: 1, pageSize: 10 });
 
-    expect(queryRaw).toHaveBeenCalled();
+    expect(getActiveAssigneesForResource).toHaveBeenCalledWith(`verification`, [`consumer-1`, `consumer-2`]);
     const row1 = queue.items.find((item) => item.id === `consumer-1`);
     const row2 = queue.items.find((item) => item.id === `consumer-2`);
     expect(row1?.assignedTo).toEqual({ id: `admin-7`, name: null, email: `ops7@example.com` });

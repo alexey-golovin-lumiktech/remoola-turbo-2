@@ -386,15 +386,17 @@ describe(`AdminV2ExchangeService`, () => {
         consumer: { id: `consumer-2`, email: `consumer-2@example.com` },
       },
     ];
-    const { service, prisma } = createService({
+    const { service, assignmentsService } = createService({
       prisma: {
         scheduledFxConversionModel: {
           count: jest.fn(async () => 2),
           findMany: jest.fn(async () => conversions),
         },
-        $queryRaw: jest.fn(async () => [
-          { resource_id: `scheduled-1`, assigned_to: `admin-1`, email: `admin-1@example.com` },
-        ]),
+      },
+      assignmentsService: {
+        getActiveAssigneesForResource: jest.fn(
+          async () => new Map([[`scheduled-1`, { id: `admin-1`, name: null, email: `admin-1@example.com` }]]),
+        ),
       },
     });
 
@@ -402,7 +404,10 @@ describe(`AdminV2ExchangeService`, () => {
 
     expect(result.items[0].assignedTo).toEqual({ id: `admin-1`, name: null, email: `admin-1@example.com` });
     expect(result.items[1].assignedTo).toBeNull();
-    expect(prisma.$queryRaw).toHaveBeenCalledTimes(1);
+    expect(assignmentsService.getActiveAssigneesForResource).toHaveBeenCalledWith(`fx_conversion`, [
+      `scheduled-1`,
+      `scheduled-2`,
+    ]);
   });
 
   describe(`getScheduledConversionCase assignment context`, () => {

@@ -261,6 +261,11 @@ export class AdminV2DocumentsService {
       this.prisma.resourceModel.count({ where }),
     ]);
 
+    const assigneeMap = await this.assignmentsService.getActiveAssigneesForResource(
+      `document`,
+      items.map((resource) => resource.id),
+    );
+
     return {
       items: items.map((resource) => {
         const consumer = resolveCanonicalConsumer(resource.consumerResources);
@@ -276,6 +281,7 @@ export class AdminV2DocumentsService {
           version: deriveVersion(resource.updatedAt),
           tags: resource.resourceTags.map((resourceTag) => resourceTag.tag.name),
           linkedPaymentRequestIds: this.mapLinkedPaymentRequestIds(resource.attachments),
+          assignedTo: assigneeMap.get(resource.id) ?? null,
         };
       }),
       total,

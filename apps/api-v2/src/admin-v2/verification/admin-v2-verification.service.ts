@@ -8,7 +8,7 @@ import { AUTH_AUDIT_EVENTS, AUTH_IDENTITY_TYPES } from '../../shared/auth-audit.
 import { MailingService } from '../../shared/mailing.service';
 import { PrismaService } from '../../shared/prisma.service';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
-import { AdminV2AssignmentsService, type AdminRef } from '../assignments/admin-v2-assignments.service';
+import { AdminV2AssignmentsService } from '../assignments/admin-v2-assignments.service';
 import { AdminV2ConsumersService } from '../consumers/admin-v2-consumers.service';
 
 const ACTIVE_VERIFICATION_STATUSES = [
@@ -173,7 +173,10 @@ export class AdminV2VerificationService {
     const queueBreachedCount = filtered.filter((item) => slaSnapshot.breachedConsumerIds.has(item.id)).length;
 
     const pageSlice = filtered.slice(pagination.skip, pagination.skip + pagination.pageSize);
-    const assigneesByResourceId = await this.getActiveAssignees(pageSlice.map((item) => item.id));
+    const assigneesByResourceId = await this.assignmentsService.getActiveAssigneesForResource(
+      `verification`,
+      pageSlice.map((item) => item.id),
+    );
 
     const items = pageSlice.map((item) => ({
       id: item.id,
@@ -255,25 +258,6 @@ export class AdminV2VerificationService {
         lastComputedAt: slaSnapshot.lastComputedAt,
       },
     };
-  }
-
-  private async getActiveAssignees(resourceIds: string[]): Promise<Map<string, AdminRef>> {
-    if (resourceIds.length === 0) return new Map();
-    const rows = await this.prisma.$queryRaw<Array<{ resource_id: string; assigned_to: string; email: string | null }>>(
-      Prisma.sql`
-        SELECT a."resource_id"::text AS resource_id, a."assigned_to"::text AS assigned_to, ad."email" AS email
-        FROM "operational_assignment" a
-        LEFT JOIN "admin" ad ON ad."id" = a."assigned_to"
-        WHERE a."resource_type" = 'verification'
-          AND a."released_at" IS NULL
-          AND a."resource_id" = ANY(${resourceIds}::uuid[])
-      `,
-    );
-    const result = new Map<string, AdminRef>();
-    for (const row of rows) {
-      result.set(row.resource_id, { id: row.assigned_to, name: null, email: row.email });
-    }
-    return result;
   }
 
   async applyDecision(
