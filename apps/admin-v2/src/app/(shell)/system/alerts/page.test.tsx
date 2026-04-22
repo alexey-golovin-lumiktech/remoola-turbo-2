@@ -53,19 +53,25 @@ describe(`admin-v2 operational alerts page`, () => {
     mockedGetOperationalAlerts.mockReset();
   });
 
-  it(`renders empty state for both workspaces when there are no alerts`, async () => {
+  it(`renders empty state for all three workspaces when there are no alerts`, async () => {
     mockedGetOperationalAlerts.mockResolvedValue({ alerts: [] });
 
     const markup = renderToStaticMarkup(await OperationalAlertsPage());
 
     expect(markup).toContain(`Operational alerts`);
     expect(markup).toContain(`Ledger anomalies alerts`);
+    expect(markup).toContain(`Verification queue alerts`);
     expect(markup).toContain(`Auth refresh reuse alerts`);
     expect(markup).toContain(`No alerts yet for this workspace`);
     expect(markup).toContain(`New ledger anomalies alert`);
+    expect(markup).toContain(`New verification queue alert`);
     expect(markup).toContain(`New auth refresh reuse alert`);
     expect(markup).toContain(`value="ledger_anomalies"`);
+    expect(markup).toContain(`value="verification_queue"`);
     expect(markup).toContain(`value="auth_refresh_reuse"`);
+    expect(mockedGetOperationalAlerts).toHaveBeenCalledWith({ workspace: `ledger_anomalies` });
+    expect(mockedGetOperationalAlerts).toHaveBeenCalledWith({ workspace: `verification_queue` });
+    expect(mockedGetOperationalAlerts).toHaveBeenCalledWith({ workspace: `auth_refresh_reuse` });
   });
 
   it(`renders auth_refresh_reuse alert with windowMinutes payload summary`, async () => {
@@ -98,6 +104,56 @@ describe(`admin-v2 operational alerts page`, () => {
     expect(markup).toContain(`Window: 30m`);
     expect(markup).toContain(`count &gt; 2`);
     expect(mockedGetOperationalAlerts).toHaveBeenCalledWith({ workspace: `ledger_anomalies` });
+    expect(mockedGetOperationalAlerts).toHaveBeenCalledWith({ workspace: `auth_refresh_reuse` });
+  });
+
+  it(`renders verification_queue alerts with filter and total-queue payload summaries`, async () => {
+    mockedGetOperationalAlerts.mockImplementation(async ({ workspace }) => {
+      if (workspace === `verification_queue`) {
+        return {
+          alerts: [
+            {
+              ...ALERT_TEMPLATE,
+              workspace: `verification_queue`,
+              id: `alert-vq-filtered`,
+              name: `Pending US backlog`,
+              description: `Watch pending verifications from US`,
+              queryPayload: { status: `pending`, country: `US` },
+              thresholdPayload: { type: `count_gt`, value: 25 },
+              lastEvaluatedAt: new Date().toISOString(),
+              lastEvaluationError: null,
+              lastFiredAt: null,
+              lastFireReason: null,
+            },
+            {
+              ...ALERT_TEMPLATE,
+              workspace: `verification_queue`,
+              id: `alert-vq-total`,
+              name: `Total queue size`,
+              description: null,
+              queryPayload: {},
+              thresholdPayload: { type: `count_gt`, value: 100 },
+              lastEvaluatedAt: new Date().toISOString(),
+              lastEvaluationError: null,
+              lastFiredAt: null,
+              lastFireReason: null,
+            },
+          ],
+        };
+      }
+      return { alerts: [] };
+    });
+
+    const markup = renderToStaticMarkup(await OperationalAlertsPage());
+
+    expect(markup).toContain(`Pending US backlog`);
+    expect(markup).toContain(`Filters: status=pending, country=US`);
+    expect(markup).toContain(`Total queue size`);
+    expect(markup).toContain(`Filters: (none — total queue)`);
+    expect(markup).toContain(`count &gt; 25`);
+    expect(markup).toContain(`count &gt; 100`);
+    expect(mockedGetOperationalAlerts).toHaveBeenCalledWith({ workspace: `ledger_anomalies` });
+    expect(mockedGetOperationalAlerts).toHaveBeenCalledWith({ workspace: `verification_queue` });
     expect(mockedGetOperationalAlerts).toHaveBeenCalledWith({ workspace: `auth_refresh_reuse` });
   });
 

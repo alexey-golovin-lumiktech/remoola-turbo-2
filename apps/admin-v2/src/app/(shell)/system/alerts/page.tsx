@@ -44,6 +44,13 @@ type LedgerAnomaliesAlertQueryPayload = {
 
 type AuthRefreshReuseQueryPayload = { windowMinutes: number };
 
+type VerificationQueueQueryPayload = {
+  status?: string;
+  stripeIdentityStatus?: string;
+  country?: string;
+  contractorKind?: string;
+};
+
 function parseLedgerAnomaliesAlertQuery(raw: unknown): LedgerAnomaliesAlertQueryPayload | null {
   if (raw === null || typeof raw !== `object` || Array.isArray(raw)) {
     return null;
@@ -69,6 +76,30 @@ function parseAuthRefreshReuseQuery(raw: unknown): AuthRefreshReuseQueryPayload 
     return null;
   }
   return { windowMinutes: w };
+}
+
+function parseVerificationQueueQuery(raw: unknown): VerificationQueueQueryPayload | null {
+  if (raw === null || raw === undefined) {
+    return {};
+  }
+  if (typeof raw !== `object` || Array.isArray(raw)) {
+    return null;
+  }
+  const candidate = raw as Record<string, unknown>;
+  const result: VerificationQueueQueryPayload = {};
+  if (typeof candidate.status === `string` && candidate.status.trim().length > 0) {
+    result.status = candidate.status.trim();
+  }
+  if (typeof candidate.stripeIdentityStatus === `string` && candidate.stripeIdentityStatus.trim().length > 0) {
+    result.stripeIdentityStatus = candidate.stripeIdentityStatus.trim();
+  }
+  if (typeof candidate.country === `string` && candidate.country.trim().length > 0) {
+    result.country = candidate.country.trim();
+  }
+  if (typeof candidate.contractorKind === `string` && candidate.contractorKind.trim().length > 0) {
+    result.contractorKind = candidate.contractorKind.trim();
+  }
+  return result;
 }
 
 function formatThreshold(threshold: OperationalAlertThreshold): string {
@@ -108,6 +139,17 @@ function describeQueryPayload(workspace: OperationalAlertWorkspace, raw: unknown
   if (workspace === `auth_refresh_reuse`) {
     const parsed = parseAuthRefreshReuseQuery(raw);
     return parsed ? `Window: ${parsed.windowMinutes}m` : `Window: unknown`;
+  }
+  if (workspace === `verification_queue`) {
+    const parsed = parseVerificationQueueQuery(raw);
+    if (!parsed) return `Filters: invalid payload`;
+    const parts = [
+      parsed.status ? `status=${parsed.status}` : null,
+      parsed.stripeIdentityStatus ? `stripeIdentityStatus=${parsed.stripeIdentityStatus}` : null,
+      parsed.country ? `country=${parsed.country}` : null,
+      parsed.contractorKind ? `contractorKind=${parsed.contractorKind}` : null,
+    ].filter(Boolean);
+    return parts.length === 0 ? `Filters: (none — total queue)` : `Filters: ${parts.join(`, `)}`;
   }
   return `Workspace not surfaced`;
 }
@@ -376,6 +418,87 @@ function CreateAuthRefreshReuseAlertForm() {
   );
 }
 
+function CreateVerificationQueueAlertForm() {
+  const defaultQueryPayload: VerificationQueueQueryPayload = {};
+  const defaultThresholdPayload = { type: `count_gt`, value: 25 };
+  return (
+    <article className="panel">
+      <h3>New verification queue alert</h3>
+      <p className="muted">
+        Fires when the verification queue size (filtered by the optional accept-list keys below) exceeds the threshold.
+        An empty payload (<code>{`{}`}</code>) monitors the total queue.
+      </p>
+      <form action={createOperationalAlertAction} className="formStack">
+        <input type="hidden" name="workspace" value="verification_queue" />
+        <label className="field">
+          <span>Name</span>
+          <input
+            name="name"
+            required
+            maxLength={MAX_OPERATIONAL_ALERT_NAME_LENGTH}
+            placeholder="e.g. Verification queue backlog"
+            aria-label="New verification queue alert name"
+          />
+        </label>
+        <label className="field">
+          <span>Description</span>
+          <input
+            name="description"
+            maxLength={MAX_OPERATIONAL_ALERT_DESCRIPTION_LENGTH}
+            placeholder="Optional"
+            aria-label="New verification queue alert description"
+          />
+        </label>
+        <label className="field">
+          <span>Query payload (optional filters)</span>
+          <input
+            name="queryPayload"
+            type="text"
+            defaultValue={JSON.stringify(defaultQueryPayload)}
+            required
+            aria-label="New verification queue alert query payload"
+          />
+          <span className="muted">
+            JSON shape:{` `}
+            {`{ "status"?: string, "stripeIdentityStatus"?: string, "country"?: string, "contractorKind"?: string }`}
+          </span>
+          <span className="muted">
+            Note: filters <code>missingProfileData</code> and <code>missingDocuments</code> are saved but cannot be used
+            by alert evaluation (frontend-only filters).
+          </span>
+        </label>
+        <label className="field">
+          <span>Threshold payload</span>
+          <input
+            name="thresholdPayload"
+            type="text"
+            defaultValue={JSON.stringify(defaultThresholdPayload)}
+            required
+            aria-label="New verification queue alert threshold payload"
+          />
+          <span className="muted">
+            JSON shape: {`{ "type": "count_gt", "value": <integer ${MIN_COUNT_GT_VALUE}-${MAX_COUNT_GT_VALUE}> }`}
+          </span>
+        </label>
+        <label className="field">
+          <span>Evaluation interval (minutes)</span>
+          <input
+            name="evaluationIntervalMinutes"
+            type="number"
+            defaultValue={DEFAULT_OPERATIONAL_ALERT_INTERVAL_MINUTES}
+            min={MIN_OPERATIONAL_ALERT_INTERVAL_MINUTES}
+            max={MAX_OPERATIONAL_ALERT_INTERVAL_MINUTES}
+            aria-label="New verification queue alert evaluation interval"
+          />
+        </label>
+        <button className="primaryButton" type="submit">
+          Create alert
+        </button>
+      </form>
+    </article>
+  );
+}
+
 function WorkspaceSection({
   workspace,
   title,
@@ -410,13 +533,15 @@ function WorkspaceSection({
       </div>
       {workspace === `ledger_anomalies` ? <CreateLedgerAnomaliesAlertForm /> : null}
       {workspace === `auth_refresh_reuse` ? <CreateAuthRefreshReuseAlertForm /> : null}
+      {workspace === `verification_queue` ? <CreateVerificationQueueAlertForm /> : null}
     </section>
   );
 }
 
 export default async function OperationalAlertsPage() {
-  const [ledgerResponse, authRefreshReuseResponse] = await Promise.all([
+  const [ledgerResponse, verificationQueueResponse, authRefreshReuseResponse] = await Promise.all([
     getOperationalAlerts({ workspace: `ledger_anomalies` }),
+    getOperationalAlerts({ workspace: `verification_queue` }),
     getOperationalAlerts({ workspace: `auth_refresh_reuse` }),
   ]);
   const now = new Date();
@@ -437,6 +562,14 @@ export default async function OperationalAlertsPage() {
         title="Ledger anomalies alerts"
         caption="Threshold-based monitoring on ledger anomaly counts."
         response={ledgerResponse}
+        now={now}
+      />
+
+      <WorkspaceSection
+        workspace="verification_queue"
+        title="Verification queue alerts"
+        caption="Threshold-based monitoring on verification queue size (filtered or total)."
+        response={verificationQueueResponse}
         now={now}
       />
 
