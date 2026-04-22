@@ -8,6 +8,7 @@ export const ASSIGNABLE_RESOURCE_TYPES = [
   `payment_request`,
   `payout`,
   `document`,
+  `fx_conversion`,
 ] as const;
 export type AssignableResourceType = (typeof ASSIGNABLE_RESOURCE_TYPES)[number];
 

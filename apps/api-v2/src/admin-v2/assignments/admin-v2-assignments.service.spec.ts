@@ -293,6 +293,31 @@ describe(`AdminV2AssignmentsService`, () => {
         }),
       );
     });
+
+    it(`accepts fx_conversion resourceType, inserts the assignment, and audits fx_conversion`, async () => {
+      const { service, queryRaw, adminModel, adminActionAudit } = buildService();
+      queryRaw.mockResolvedValueOnce([]);
+      queryRaw.mockResolvedValueOnce([activeRow({ resource_type: `fx_conversion` })]);
+      adminModel.findUnique.mockResolvedValueOnce({ id: OPS_ADMIN_ID, email: `ops@example.com` });
+
+      const result = await service.claim(opsActor, { resourceType: `fx_conversion`, resourceId: RESOURCE_ID }, meta);
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          assignmentId: ASSIGNMENT_ID,
+          status: `created`,
+          assignedTo: expect.objectContaining({ id: OPS_ADMIN_ID }),
+        }),
+      );
+      expect(adminActionAudit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: `assignment_claim`,
+          adminId: OPS_ADMIN_ID,
+          resource: `fx_conversion`,
+          resourceId: RESOURCE_ID,
+        }),
+      );
+    });
   });
 
   describe(`release`, () => {
@@ -418,6 +443,24 @@ describe(`AdminV2AssignmentsService`, () => {
           action: `assignment_release`,
           adminId: OPS_ADMIN_ID,
           resource: `document`,
+          resourceId: RESOURCE_ID,
+        }),
+      );
+    });
+
+    it(`releases an fx_conversion assignment owned by the caller and audits fx_conversion`, async () => {
+      const { service, queryRaw, adminActionAudit } = buildService();
+      queryRaw.mockResolvedValueOnce([activeRow({ resource_type: `fx_conversion` })]);
+      queryRaw.mockResolvedValueOnce([releasedRow({ resource_type: `fx_conversion` })]);
+
+      const result = await service.release(opsActor, { assignmentId: ASSIGNMENT_ID, expectedReleasedAtNull: 0 }, meta);
+
+      expect(result.assignmentId).toBe(ASSIGNMENT_ID);
+      expect(adminActionAudit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: `assignment_release`,
+          adminId: OPS_ADMIN_ID,
+          resource: `fx_conversion`,
           resourceId: RESOURCE_ID,
         }),
       );
@@ -647,6 +690,38 @@ describe(`AdminV2AssignmentsService`, () => {
       expect(secondCall[0].data.resource).toBe(`document`);
       expect(firstCall[0].data.metadata.transferOperationId).toBe(secondCall[0].data.metadata.transferOperationId);
     });
+
+    it(`reassigns an fx_conversion assignment and writes correlated audits with resource fx_conversion`, async () => {
+      const { service, queryRaw, adminModel, adminActionAuditLogModel } = buildService();
+      adminModel.findUnique.mockResolvedValueOnce({ id: OTHER_ADMIN_ID, deletedAt: null });
+      queryRaw.mockResolvedValueOnce([activeRow({ resource_type: `fx_conversion` })]);
+      queryRaw.mockResolvedValueOnce([releasedRow({ resource_type: `fx_conversion` })]);
+      const newAssignmentId = `66666666-6666-4666-8666-666666666666`;
+      queryRaw.mockResolvedValueOnce([
+        activeRow({
+          id: newAssignmentId,
+          resource_type: `fx_conversion`,
+          assigned_to: OTHER_ADMIN_ID,
+          assigned_by: SUPER_ADMIN_ID,
+          assigned_at: new Date(`2026-04-20T12:00:00.000Z`),
+        }),
+      ]);
+      adminModel.findUnique.mockResolvedValueOnce({ id: OTHER_ADMIN_ID, email: `other@example.com` });
+
+      const result = await service.reassign(superActor, validBody, meta);
+
+      expect(result.oldAssignmentId).toBe(ASSIGNMENT_ID);
+      expect(result.newAssignmentId).toBe(newAssignmentId);
+      expect(adminActionAuditLogModel.create).toHaveBeenCalledTimes(2);
+      const [firstCall, secondCall] = adminActionAuditLogModel.create.mock.calls as Array<
+        [{ data: { action: string; resource: string; metadata: { transferOperationId?: string } } }]
+      >;
+      expect(firstCall[0].data.action).toBe(`assignment_release`);
+      expect(firstCall[0].data.resource).toBe(`fx_conversion`);
+      expect(secondCall[0].data.action).toBe(`assignment_reassign`);
+      expect(secondCall[0].data.resource).toBe(`fx_conversion`);
+      expect(firstCall[0].data.metadata.transferOperationId).toBe(secondCall[0].data.metadata.transferOperationId);
+    });
   });
 
   describe(`getAssignmentContextForResource`, () => {
@@ -803,6 +878,48 @@ describe(`AdminV2AssignmentsService`, () => {
         assignedBy: { id: OPS_ADMIN_ID, name: null, email: `ops@example.com` },
         assignedAt: assignedAt.toISOString(),
         reason: `Reviewing supporting evidence`,
+        expiresAt: null,
+      });
+      expect(result.history).toHaveLength(1);
+    });
+
+    it(`returns null current and empty history when no fx_conversion rows exist`, async () => {
+      const { service, queryRaw } = buildService();
+      queryRaw.mockResolvedValueOnce([]);
+
+      const result = await service.getAssignmentContextForResource(`fx_conversion`, RESOURCE_ID);
+
+      expect(result).toEqual({ current: null, history: [] });
+    });
+
+    it(`returns the active fx_conversion assignment as current with fx_conversion resource_type`, async () => {
+      const { service, queryRaw } = buildService();
+      const assignedAt = new Date(`2026-04-20T11:00:00.000Z`);
+      queryRaw.mockResolvedValueOnce([
+        {
+          id: ASSIGNMENT_ID,
+          resource_id: RESOURCE_ID,
+          assigned_to: OPS_ADMIN_ID,
+          assigned_by: OPS_ADMIN_ID,
+          released_by: null,
+          assigned_at: assignedAt,
+          released_at: null,
+          expires_at: null,
+          reason: `Investigating scheduled FX conversion`,
+          assigned_to_email: `ops@example.com`,
+          assigned_by_email: `ops@example.com`,
+          released_by_email: null,
+        },
+      ]);
+
+      const result = await service.getAssignmentContextForResource(`fx_conversion`, RESOURCE_ID);
+
+      expect(result.current).toEqual({
+        id: ASSIGNMENT_ID,
+        assignedTo: { id: OPS_ADMIN_ID, name: null, email: `ops@example.com` },
+        assignedBy: { id: OPS_ADMIN_ID, name: null, email: `ops@example.com` },
+        assignedAt: assignedAt.toISOString(),
+        reason: `Investigating scheduled FX conversion`,
         expiresAt: null,
       });
       expect(result.history).toHaveLength(1);

@@ -12,6 +12,7 @@ import { PrismaService } from '../../shared/prisma.service';
 import { getCurrencyFractionDigits } from '../../shared-common';
 import { AdminV2DomainEventsService, type AdminV2DomainEvent } from '../admin-v2-domain-events.service';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
+import { AdminV2AssignmentsService } from '../assignments/admin-v2-assignments.service';
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 20;
@@ -141,6 +142,7 @@ export class AdminV2ExchangeService {
     private readonly idempotency: AdminV2IdempotencyService,
     private readonly balanceService: BalanceCalculationService,
     private readonly domainEvents: AdminV2DomainEventsService,
+    private readonly assignmentsService: AdminV2AssignmentsService,
   ) {}
 
   async listRates(params?: {
@@ -804,6 +806,7 @@ export class AdminV2ExchangeService {
           },
         })
       : [];
+    const assignment = await this.assignmentsService.getAssignmentContextForResource(`fx_conversion`, conversion.id);
 
     return {
       id: conversion.id,
@@ -852,6 +855,7 @@ export class AdminV2ExchangeService {
       updatedAt: conversion.updatedAt.toISOString(),
       staleWarning: false,
       dataFreshnessClass: `exact`,
+      assignment,
     };
   }
 

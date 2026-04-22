@@ -10,6 +10,7 @@ describe(`AdminV2ExchangeService`, () => {
     idempotency?: Record<string, unknown>;
     balanceService?: Record<string, unknown>;
     domainEvents?: Record<string, unknown>;
+    assignmentsService?: Record<string, unknown>;
   }) {
     const prisma = {
       exchangeRateModel: {
@@ -66,12 +67,18 @@ describe(`AdminV2ExchangeService`, () => {
       ...overrides?.domainEvents,
     } as any;
 
+    const assignmentsService = {
+      getAssignmentContextForResource: jest.fn(async () => ({ current: null, history: [] })),
+      ...overrides?.assignmentsService,
+    } as any;
+
     return {
-      service: new AdminV2ExchangeService(prisma, idempotency, balanceService, domainEvents),
+      service: new AdminV2ExchangeService(prisma, idempotency, balanceService, domainEvents, assignmentsService),
       prisma,
       idempotency,
       balanceService,
       domainEvents,
+      assignmentsService,
     };
   }
 
@@ -339,5 +346,80 @@ describe(`AdminV2ExchangeService`, () => {
         resourceId: `scheduled-1`,
       }),
     );
+  });
+
+  describe(`getScheduledConversionCase assignment context`, () => {
+    function buildConversion(overrides?: Partial<Record<string, unknown>>) {
+      const updatedAt = new Date(`2026-04-17T08:05:00.000Z`);
+      return {
+        id: `scheduled-1`,
+        ledgerId: null,
+        fromCurrency: $Enums.CurrencyCode.USD,
+        toCurrency: $Enums.CurrencyCode.EUR,
+        amount: { toString: () => `25.00` } as never,
+        status: $Enums.ScheduledFxConversionStatus.PENDING,
+        attempts: 0,
+        executeAt: new Date(`2026-04-17T08:00:00.000Z`),
+        processingAt: null,
+        executedAt: null,
+        failedAt: null,
+        createdAt: new Date(`2026-04-17T07:55:00.000Z`),
+        updatedAt,
+        lastError: null,
+        metadata: {},
+        consumer: { id: `consumer-1`, email: `consumer@example.com` },
+        ...overrides,
+      };
+    }
+
+    it(`returns assignment: { current: null, history: [] } when shared service has no rows`, async () => {
+      const { service, assignmentsService } = createService({
+        prisma: {
+          scheduledFxConversionModel: {
+            findFirst: jest.fn(async () => buildConversion()),
+          },
+        },
+      });
+
+      const result = await service.getScheduledConversionCase(`scheduled-1`);
+
+      expect(result.assignment).toEqual({ current: null, history: [] });
+      expect(assignmentsService.getAssignmentContextForResource).toHaveBeenCalledWith(`fx_conversion`, `scheduled-1`);
+    });
+
+    it(`returns populated assignment shape when shared service has active row`, async () => {
+      const populated = {
+        current: {
+          id: `assignment-1`,
+          assignedAdminId: `admin-1`,
+          assignedAt: `2026-04-17T08:10:00.000Z`,
+          expectedReleasedAtNull: true,
+        },
+        history: [
+          {
+            id: `assignment-1`,
+            assignedAdminId: `admin-1`,
+            assignedAt: `2026-04-17T08:10:00.000Z`,
+            releasedAt: null,
+            reason: null,
+          },
+        ],
+      };
+      const { service, assignmentsService } = createService({
+        prisma: {
+          scheduledFxConversionModel: {
+            findFirst: jest.fn(async () => buildConversion()),
+          },
+        },
+        assignmentsService: {
+          getAssignmentContextForResource: jest.fn(async () => populated),
+        },
+      });
+
+      const result = await service.getScheduledConversionCase(`scheduled-1`);
+
+      expect(result.assignment).toEqual(populated);
+      expect(assignmentsService.getAssignmentContextForResource).toHaveBeenCalledWith(`fx_conversion`, `scheduled-1`);
+    });
   });
 });
