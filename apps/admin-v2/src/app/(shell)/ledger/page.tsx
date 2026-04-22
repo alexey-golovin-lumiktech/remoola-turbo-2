@@ -40,6 +40,19 @@ function LedgerEntryLinks({ entry }: { entry: LedgerEntryItem }) {
   );
 }
 
+function LedgerEntryAssignedTo({ entry }: { entry: LedgerEntryItem }) {
+  if (!entry.assignedTo) {
+    return <span className="muted">—</span>;
+  }
+
+  return (
+    <>
+      <span>{entry.assignedTo.name ?? entry.assignedTo.email ?? entry.assignedTo.id}</span>
+      {entry.assignedTo.email ? <span className="muted"> {entry.assignedTo.email}</span> : null}
+    </>
+  );
+}
+
 function DisputeLinks({ dispute }: { dispute: DisputeItem }) {
   return (
     <>
@@ -98,6 +111,9 @@ function LedgerEntriesMobileCards({ items }: { items: LedgerEntryItem[] }) {
               <div className="muted">Persisted: {entry.persistedStatus}</div>
               <div className="muted">Disputes: {entry.disputeCount}</div>
               <div className="muted">Created: {formatDate(entry.createdAt)}</div>
+              <div className="muted">
+                Assigned to: <LedgerEntryAssignedTo entry={entry} />
+              </div>
             </div>
           </article>
         ))}
@@ -143,6 +159,9 @@ function LedgerEntriesTabletRows({ items }: { items: LedgerEntryItem[] }) {
               <div className="muted">Disputes: {entry.disputeCount}</div>
               <div className="muted">Created: {formatDate(entry.createdAt)}</div>
             </div>
+            <div className="condensedRowMeta">
+              <LedgerEntryAssignedTo entry={entry} />
+            </div>
           </article>
         ))}
       </div>
@@ -160,6 +179,7 @@ function LedgerEntriesDesktopTable({ items }: { items: LedgerEntryItem[] }) {
               <th>Ledger entry</th>
               <th>Links</th>
               <th>Status</th>
+              <th>Assigned to</th>
               <th>Amount</th>
               <th>Disputes</th>
               <th>Created</th>
@@ -183,6 +203,9 @@ function LedgerEntriesDesktopTable({ items }: { items: LedgerEntryItem[] }) {
                   <div className="muted">Persisted: {entry.persistedStatus}</div>
                 </td>
                 <td>
+                  <LedgerEntryAssignedTo entry={entry} />
+                </td>
+                <td>
                   {entry.amount} {entry.currencyCode}
                 </td>
                 <td>{entry.disputeCount}</td>
@@ -191,7 +214,7 @@ function LedgerEntriesDesktopTable({ items }: { items: LedgerEntryItem[] }) {
             ))}
             {items.length === 0 ? (
               <tr>
-                <td colSpan={6}>No ledger entries found for the current filters.</td>
+                <td colSpan={7}>No ledger entries found for the current filters.</td>
               </tr>
             ) : null}
           </tbody>

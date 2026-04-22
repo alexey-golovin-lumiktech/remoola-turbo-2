@@ -4,7 +4,7 @@ import { $Enums, Prisma } from '@remoola/database-2';
 
 import { PrismaService } from '../../shared/prisma.service';
 import { decodeAdminV2Cursor, encodeAdminV2Cursor } from '../admin-v2-cursor';
-import { AdminV2AssignmentsService } from '../assignments/admin-v2-assignments.service';
+import { AdminV2AssignmentsService, type AdminRef } from '../assignments/admin-v2-assignments.service';
 
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 100;
@@ -283,8 +283,20 @@ export class AdminV2LedgerService {
       rows.sort((left, right) => (positionById.get(left.id) ?? 0) - (positionById.get(right.id) ?? 0));
       const next = pageIdRows[limit];
 
+      const items = rows.map((row) => this.mapLedgerRow(row as LedgerListRow));
+
+      const assigneeMap = await this.assignmentsService.getActiveAssigneesForResource(
+        `ledger_entry`,
+        items.map((item) => item.id),
+      );
+
+      const itemsWithAssignee = items.map((item) => ({
+        ...item,
+        assignedTo: (assigneeMap.get(item.id) ?? null) as AdminRef | null,
+      }));
+
       return {
-        items: rows.map((row) => this.mapLedgerRow(row as LedgerListRow)),
+        items: itemsWithAssignee,
         pageInfo: {
           nextCursor: next ? encodeAdminV2Cursor({ createdAt: next.created_at, id: next.id }) : null,
           limit,
@@ -326,8 +338,20 @@ export class AdminV2LedgerService {
     });
 
     const next = rows[limit];
+    const items = rows.slice(0, limit).map((row) => this.mapLedgerRow(row as LedgerListRow));
+
+    const assigneeMap = await this.assignmentsService.getActiveAssigneesForResource(
+      `ledger_entry`,
+      items.map((item) => item.id),
+    );
+
+    const itemsWithAssignee = items.map((item) => ({
+      ...item,
+      assignedTo: (assigneeMap.get(item.id) ?? null) as AdminRef | null,
+    }));
+
     return {
-      items: rows.slice(0, limit).map((row) => this.mapLedgerRow(row as LedgerListRow)),
+      items: itemsWithAssignee,
       pageInfo: {
         nextCursor: next ? encodeAdminV2Cursor({ createdAt: next.createdAt, id: next.id }) : null,
         limit,

@@ -256,13 +256,14 @@ describe(`AdminV2LedgerService`, () => {
 
   it(`applies amount-sign and createdAt filters on ledger explorer`, async () => {
     const findMany = jest.fn(async () => []);
+    const getActiveAssigneesForResource = jest.fn(async () => new Map());
     const service = new AdminV2LedgerService(
       {
         ledgerEntryModel: {
           findMany,
         },
       } as never,
-      {} as never,
+      { getActiveAssigneesForResource } as never,
     );
 
     const dateFrom = new Date(`2026-04-01T00:00:00.000Z`);
@@ -288,6 +289,61 @@ describe(`AdminV2LedgerService`, () => {
         }),
       }),
     );
+  });
+
+  it(`merges active assignee onto ledger entries via post-map bulk lookup`, async () => {
+    const ledgerEntryIdAssigned = `11111111-1111-4111-8111-111111111111`;
+    const ledgerEntryIdUnassigned = `22222222-2222-4222-8222-222222222222`;
+    const assigneeId = `33333333-3333-4333-8333-333333333333`;
+
+    const buildRow = (id: string) => ({
+      id,
+      ledgerId: `ledger-group-1`,
+      type: $Enums.LedgerEntryType.USER_PAYMENT,
+      amount: new Prisma.Decimal(`12.34`),
+      currencyCode: $Enums.CurrencyCode.USD,
+      status: $Enums.TransactionStatus.PENDING,
+      consumerId: `consumer-1`,
+      paymentRequestId: null,
+      createdAt: new Date(`2026-04-13T00:00:00.000Z`),
+      updatedAt: new Date(`2026-04-13T01:00:00.000Z`),
+      consumer: { email: `consumer@example.com` },
+      paymentRequest: null,
+      outcomes: [],
+      disputes: [],
+      metadata: null,
+    });
+
+    const findMany = jest.fn(async () => [buildRow(ledgerEntryIdAssigned), buildRow(ledgerEntryIdUnassigned)]);
+    const getActiveAssigneesForResource = jest.fn(
+      async () =>
+        new Map<string, { id: string; name: string | null; email: string | null }>([
+          [ledgerEntryIdAssigned, { id: assigneeId, name: `Alice`, email: `alice@example.com` }],
+        ]),
+    );
+
+    const service = new AdminV2LedgerService(
+      {
+        ledgerEntryModel: { findMany },
+      } as never,
+      { getActiveAssigneesForResource } as never,
+    );
+
+    const result = await service.listLedgerEntries({});
+
+    expect(getActiveAssigneesForResource).toHaveBeenCalledWith(`ledger_entry`, [
+      ledgerEntryIdAssigned,
+      ledgerEntryIdUnassigned,
+    ]);
+    expect(result.items).toHaveLength(2);
+    expect(result.items[0]).toMatchObject({
+      id: ledgerEntryIdAssigned,
+      assignedTo: { id: assigneeId, name: `Alice`, email: `alice@example.com` },
+    });
+    expect(result.items[1]).toMatchObject({
+      id: ledgerEntryIdUnassigned,
+      assignedTo: null,
+    });
   });
 
   it(`maps canonical disputeStatus metadata for standalone disputes surface`, async () => {

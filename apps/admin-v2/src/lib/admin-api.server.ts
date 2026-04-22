@@ -920,6 +920,7 @@ export type LedgerEntriesListResponse = {
     disputeCount: number;
     staleWarning: boolean;
     dataFreshnessClass: string;
+    assignedTo: AdminRef | null;
   }>;
   pageInfo: CursorPageInfo;
 };
