@@ -489,6 +489,90 @@ describe(`AdminV2PaymentsService`, () => {
     expect(findMany.mock.calls[2]?.[0]?.where).not.toHaveProperty(`OR`);
   });
 
+  it(`decorates payment operations queue items with the active assignee via getActiveAssigneesForResource`, async () => {
+    const findMany = jest
+      .fn()
+      .mockResolvedValueOnce([
+        {
+          id: `payment-A`,
+          amount: new Prisma.Decimal(`10.00`),
+          currencyCode: $Enums.CurrencyCode.USD,
+          status: $Enums.TransactionStatus.WAITING,
+          paymentRail: $Enums.PaymentRail.CARD,
+          dueDate: new Date(`2026-04-01T00:00:00.000Z`),
+          createdAt: new Date(`2026-03-20T00:00:00.000Z`),
+          updatedAt: new Date(`2026-04-10T00:00:00.000Z`),
+          payer: null,
+          requester: null,
+          payerEmail: `payer@example.com`,
+          requesterEmail: `requester@example.com`,
+          attachments: [
+            {
+              id: `attachment-A`,
+              resource: { id: `resource-A`, resourceTags: [{ tag: { name: `INVOICE-WAITING` } }] },
+            },
+          ],
+          ledgerEntries: [],
+        },
+      ])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        {
+          id: `payment-B`,
+          amount: new Prisma.Decimal(`25.00`),
+          currencyCode: $Enums.CurrencyCode.USD,
+          status: $Enums.TransactionStatus.WAITING_RECIPIENT_APPROVAL,
+          paymentRail: $Enums.PaymentRail.CARD,
+          dueDate: null,
+          createdAt: new Date(`2000-01-01T00:00:00.000Z`),
+          updatedAt: new Date(`2000-01-02T00:00:00.000Z`),
+          payer: null,
+          requester: null,
+          payerEmail: `payer@example.com`,
+          requesterEmail: `requester@example.com`,
+          attachments: [
+            {
+              id: `attachment-B`,
+              resource: { id: `resource-B`, resourceTags: [{ tag: { name: `INVOICE-PENDING` } }] },
+            },
+          ],
+          ledgerEntries: [],
+        },
+      ])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
+
+    const getActiveAssigneesForResource = jest.fn(
+      async () => new Map([[`payment-A`, { id: `admin-7`, name: null, email: `ops7@example.com` }]]),
+    );
+
+    const service = new AdminV2PaymentsService(
+      {
+        paymentRequestModel: { findMany },
+      } as never,
+      { getActiveAssigneesForResource } as never,
+    );
+
+    const queue = await service.getPaymentOperationsQueue();
+
+    const overdueBucket = queue.buckets.find((bucket) => bucket.key === `overdue_requests`);
+    const staleApprovalBucket = queue.buckets.find((bucket) => bucket.key === `stale_waiting_recipient_approval`);
+
+    expect(overdueBucket?.items[0]).toEqual(
+      expect.objectContaining({
+        id: `payment-A`,
+        assignedTo: { id: `admin-7`, name: null, email: `ops7@example.com` },
+      }),
+    );
+    expect(staleApprovalBucket?.items[0]).toEqual(expect.objectContaining({ id: `payment-B`, assignedTo: null }));
+
+    expect(getActiveAssigneesForResource).toHaveBeenCalledTimes(1);
+    expect(getActiveAssigneesForResource).toHaveBeenCalledWith(
+      `payment_request`,
+      expect.arrayContaining([`payment-A`, `payment-B`]),
+    );
+  });
+
   it(`exposes payment_request assignment context on getPaymentRequestCase via shared assignments helper`, async () => {
     const assignmentContext = {
       current: {
