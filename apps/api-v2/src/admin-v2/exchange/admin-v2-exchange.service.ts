@@ -12,7 +12,7 @@ import { PrismaService } from '../../shared/prisma.service';
 import { getCurrencyFractionDigits } from '../../shared-common';
 import { AdminV2DomainEventsService, type AdminV2DomainEvent } from '../admin-v2-domain-events.service';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
-import { AdminV2AssignmentsService } from '../assignments/admin-v2-assignments.service';
+import { AdminV2AssignmentsService, type AdminRef } from '../assignments/admin-v2-assignments.service';
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 20;
@@ -768,13 +768,33 @@ export class AdminV2ExchangeService {
       .map((conversion) => conversion.ledgerId)
       .filter((value): value is string => Boolean(value));
     const ledgerEntryMap = await this.loadLedgerEntryMap(ledgerIds);
+    const assigneeMap = await this.getActiveAssignees(conversions.map((conversion) => conversion.id));
 
     return {
-      items: conversions.map((conversion) => this.mapScheduledListItem(conversion, ledgerEntryMap)),
+      items: conversions.map((conversion) => this.mapScheduledListItem(conversion, ledgerEntryMap, assigneeMap)),
       total,
       page,
       pageSize,
     };
+  }
+
+  private async getActiveAssignees(resourceIds: string[]): Promise<Map<string, AdminRef>> {
+    if (resourceIds.length === 0) return new Map();
+    const rows = await this.prisma.$queryRaw<Array<{ resource_id: string; assigned_to: string; email: string | null }>>(
+      Prisma.sql`
+        SELECT a."resource_id"::text AS resource_id, a."assigned_to"::text AS assigned_to, ad."email" AS email
+        FROM "operational_assignment" a
+        LEFT JOIN "admin" ad ON ad."id" = a."assigned_to"
+        WHERE a."resource_type" = 'fx_conversion'
+          AND a."released_at" IS NULL
+          AND a."resource_id" = ANY(${resourceIds}::uuid[])
+      `,
+    );
+    const result = new Map<string, AdminRef>();
+    for (const row of rows) {
+      result.set(row.resource_id, { id: row.assigned_to, name: null, email: row.email });
+    }
+    return result;
   }
 
   async getScheduledConversionCase(conversionId: string) {
@@ -1617,6 +1637,7 @@ export class AdminV2ExchangeService {
       string,
       { id: string; type: $Enums.LedgerEntryType; amount: string; currencyCode: $Enums.CurrencyCode }
     >,
+    assigneeMap: Map<string, AdminRef>,
   ) {
     const linkedLedger = conversion.ledgerId ? (ledgerEntryMap.get(conversion.ledgerId) ?? null) : null;
     return {
@@ -1641,6 +1662,7 @@ export class AdminV2ExchangeService {
       linkedLedgerEntry: linkedLedger,
       version: deriveVersion(conversion.updatedAt),
       updatedAt: conversion.updatedAt.toISOString(),
+      assignedTo: assigneeMap.get(conversion.id) ?? null,
     };
   }
 
