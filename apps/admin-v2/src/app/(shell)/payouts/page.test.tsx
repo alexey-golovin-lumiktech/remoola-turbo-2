@@ -88,6 +88,11 @@ describe(`admin-v2 payouts read-only queue`, () => {
             bankLast4: `5511`,
             deletedAt: null,
           },
+          assignedTo: {
+            id: `admin-7`,
+            name: `Admin Seven`,
+            email: `ops7@example.com`,
+          },
         },
         {
           id: `payout-stuck`,
@@ -119,6 +124,7 @@ describe(`admin-v2 payouts read-only queue`, () => {
           destinationAvailability: `unavailable`,
           destinationLinkageSource: null,
           destinationPaymentMethodSummary: null,
+          assignedTo: null,
         },
       ],
       pageInfo: {

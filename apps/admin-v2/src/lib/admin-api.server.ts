@@ -736,6 +736,7 @@ export type PayoutsListResponse = {
       bankLast4: string | null;
       deletedAt: string | null;
     } | null;
+    assignedTo: AdminRef | null;
   }>;
   pageInfo: CursorPageInfo;
 };
