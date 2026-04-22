@@ -184,6 +184,17 @@ export default async function PayoutsPage({
                 <Link href={`/consumers/${item.consumer.id}`}>{item.consumer.email ?? item.consumer.id}</Link>
               </p>
               <p className="muted">Destination: {renderDestination(item)}</p>
+              <p className="muted">
+                Assigned to:{` `}
+                {item.assignedTo ? (
+                  <>
+                    <span>{item.assignedTo.name ?? item.assignedTo.email ?? item.assignedTo.id}</span>
+                    {item.assignedTo.email ? <span className="muted"> {item.assignedTo.email}</span> : null}
+                  </>
+                ) : (
+                  <span className="muted">—</span>
+                )}
+              </p>
             </article>
           ))}
         </div>
@@ -252,6 +263,17 @@ export default async function PayoutsPage({
                 </p>
                 <p className="muted">
                   Updated: {formatDate(item.updatedAt)} · Freshness: {item.dataFreshnessClass}
+                </p>
+                <p className="muted">
+                  Assigned to:{` `}
+                  {item.assignedTo ? (
+                    <>
+                      <span>{item.assignedTo.name ?? item.assignedTo.email ?? item.assignedTo.id}</span>
+                      {item.assignedTo.email ? <span className="muted"> {item.assignedTo.email}</span> : null}
+                    </>
+                  ) : (
+                    <span className="muted">—</span>
+                  )}
                 </p>
               </article>
             ))}

@@ -157,6 +157,9 @@ describe(`admin-v2 payouts read-only queue`, () => {
     expect(markup).toContain(`Destination: BANK_ACCOUNT •••• 5511`);
     expect(markup).toContain(`Destination: Unavailable`);
     expect(markup).toContain(`High-value: high-value`);
+    expect(markup).toContain(`Assigned to:`);
+    expect(markup).toContain(`Admin Seven`);
+    expect(markup).toContain(`ops7@example.com`);
     expect(markup).not.toContain(`Retry payout`);
     expect(markup).not.toContain(`Force execute`);
   });
