@@ -109,6 +109,7 @@ export default async function ExchangeScheduledPage({
                 <th>Conversion</th>
                 <th>Consumer</th>
                 <th>Status</th>
+                <th>Assigned to</th>
                 <th>Timing</th>
                 <th>Failure / ledger</th>
               </tr>
@@ -136,6 +137,16 @@ export default async function ExchangeScheduledPage({
                     <div className="muted">Rule link: {item.linkedRuleId ?? `-`}</div>
                   </td>
                   <td>
+                    {item.assignedTo ? (
+                      <>
+                        <div>{item.assignedTo.name ?? item.assignedTo.email ?? item.assignedTo.id}</div>
+                        {item.assignedTo.email ? <div className="muted">{item.assignedTo.email}</div> : null}
+                      </>
+                    ) : (
+                      <span className="muted">—</span>
+                    )}
+                  </td>
+                  <td>
                     <div>Execute at: {formatDate(item.executeAt)}</div>
                     <div className="muted">Processing: {formatDate(item.processingAt)}</div>
                     <div className="muted">Executed: {formatDate(item.executedAt)}</div>
@@ -150,7 +161,7 @@ export default async function ExchangeScheduledPage({
               ))}
               {(data?.items ?? []).length === 0 ? (
                 <tr>
-                  <td colSpan={5}>No scheduled conversions found for the current filters.</td>
+                  <td colSpan={6}>No scheduled conversions found for the current filters.</td>
                 </tr>
               ) : null}
             </tbody>

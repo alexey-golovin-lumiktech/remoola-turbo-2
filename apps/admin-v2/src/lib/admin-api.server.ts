@@ -618,6 +618,7 @@ export type ExchangeScheduledListResponse = {
     } | null;
     version: number;
     updatedAt: string;
+    assignedTo: AdminRef | null;
   }>;
   total: number;
   page: number;
