@@ -948,6 +948,7 @@ export const RECONCILIATION_NOTES = {
     `Decision: binary audit outcome under one of two Decision headings`,
     `Decision: payouts list-surface assignee slice (3.7d) unblocked but not absorbed`,
     `Decision (a): Existing indexes are sufficient — no new migration`,
+    `Deviation: handoff-README LANDED-move skipped`,
   ],
   'docs/admin-v2-slice-patch-platform-hygiene-bundle.md': [
     `SLICE-PATCH`,

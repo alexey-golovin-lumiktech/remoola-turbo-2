@@ -679,6 +679,48 @@ filter, or (iii) a cross-cardinality switch that prevents a single binary
 call (e.g. partial-at-1, seq-scan-at-100). None of those occurred, so
 Decision (a) is the only correct outcome.
 
+## Deviations
+
+- `Deviation: handoff-README LANDED-move skipped` — the slice handoff body
+  (`admin-v2-handoff/SLICE-PATCH-operational-assignment-active-lookup-index-audit.md`,
+  `Reconciliation` section, "after the slice merges" task) calls for moving
+  the closed performance-index-audit follow-up into
+  `admin-v2-handoff/LANDED.md` `## Closed follow-ups` and prepending a
+  landed-slice entry into `admin-v2-handoff/LANDED.md`
+  `## Landed slices (reference only)`, plus swapping the corresponding
+  `## Known follow-ups` bullet in `admin-v2-handoff/README.md` for a
+  "no open follow-ups — closed by SLICE-PATCH … with Decision (a)" stanza.
+  This step was **intentionally skipped at commit time** for this slice
+  (per the precedent established by `98d3e2f0` for `SLICE-MVP-3.7c`).
+  The working tree contains a pending cross-cutting policy change that
+  reclassifies the entire `admin-v2-handoff/` directory (plus
+  `admin-v2-pack/` and `admin-v2-planning-input.md`) as personal scratch
+  (not for commit) — observable as a long list of `?? admin-v2-handoff/…`
+  untracked entries (`SLICE-MVP-3.1a` through `SLICE-PATCH-platform-hygiene-bundle`,
+  the entire `autonomous-handoff-kit-pack/` subtree, the new
+  `LANDED.md` itself, and the present slice's own
+  `SLICE-PATCH-operational-assignment-active-lookup-index-audit.md`
+  handoff body), with `admin-v2-handoff/README.md` as the only file from
+  that directory still tracked in `HEAD`. Performing the README + LANDED
+  bookkeeping commit now would either become invisible the moment the
+  pending `.gitignore`/policy change lands, or produce an `M+??` commit
+  state that conflates this slice with the unrelated cross-cutting
+  cleanup. The canonical in-tree landing record for this slice is
+  therefore the present reconciliation note
+  (`docs/admin-v2-mvp-3.7d-pre-perf-operational-assignment-active-lookup-index-audit.md`),
+  registered in `scripts/admin-v2-gates/config.mjs` `CHECK_PATHS` and
+  `RECONCILIATION_NOTES`, plus the slice commit
+  (`6eae8219`) whose message canonically records Decision (a) and the
+  forward trigger. The README + LANDED.md edits remain in the working
+  tree as documentation of intent; they will be picked up by whichever
+  cross-cutting cleanup ultimately resolves the `admin-v2-handoff/`
+  scratch-vs-tracked policy. This deviation is scoped to
+  `SLICE-PATCH operational_assignment active-lookup index audit` only and
+  does not set a new precedent: subsequent slices should inherit whatever
+  treatment the `admin-v2-handoff/` directory ultimately receives once
+  the pending policy change is committed (or reverted) by a separate
+  cross-cutting cleanup.
+
 ## Follow-ups
 
 - `production re-baseline due before sixth bulk consumer or one
@@ -735,3 +777,4 @@ assertions.
 - Binary outcome: `Decision (a): Existing indexes are sufficient — no new migration`.
 - Bookkeeping closed by this slice: `Closed follow-up: performance index audit on operational_assignment(resource_type, resource_id, released_at)`.
 - Forward trigger: `production re-baseline due before sixth bulk consumer or one order-of-magnitude row-count growth`.
+- Deviation recorded by this slice (per `## Deviations`, mirroring the `SLICE-MVP-3.7c` precedent in `docs/admin-v2-mvp-3.7c-list-surface-assignee-payments-operations.md`): `Deviation: handoff-README LANDED-move skipped`.
