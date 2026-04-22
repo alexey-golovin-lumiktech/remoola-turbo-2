@@ -84,7 +84,7 @@ describe(`AdminV2PaymentsService`, () => {
           findMany,
         },
       } as never,
-      {} as never,
+      { getActiveAssigneesForResource: jest.fn(async () => new Map()) } as never,
     );
 
     const dueDateFrom = new Date(`2026-04-01T00:00:00.000Z`);
@@ -114,6 +114,58 @@ describe(`AdminV2PaymentsService`, () => {
         }),
       }),
     );
+  });
+
+  it(`decorates payment request list items with the active assignee via getActiveAssigneesForResource`, async () => {
+    const baseRow = {
+      amount: new Prisma.Decimal(`50.00`),
+      currencyCode: $Enums.CurrencyCode.USD,
+      status: $Enums.TransactionStatus.PENDING,
+      paymentRail: null,
+      dueDate: null,
+      createdAt: new Date(`2026-04-15T00:00:00.000Z`),
+      updatedAt: new Date(`2026-04-15T00:00:00.000Z`),
+      deletedAt: null,
+      payer: null,
+      requester: null,
+      payerEmail: `payer@example.com`,
+      requesterEmail: `requester@example.com`,
+      attachments: [],
+      ledgerEntries: [],
+    } as const;
+
+    const findMany = jest.fn(async () => [
+      { ...baseRow, id: `pr-A` },
+      { ...baseRow, id: `pr-B` },
+    ]);
+
+    const getActiveAssigneesForResource = jest.fn(
+      async (_resourceType: string, _ids: string[]) =>
+        new Map([[`pr-A`, { id: `admin-7`, name: null, email: `ops7@example.com` }]]),
+    );
+
+    const service = new AdminV2PaymentsService(
+      { paymentRequestModel: { findMany } } as never,
+      { getActiveAssigneesForResource } as never,
+    );
+
+    const result = await service.listPaymentRequests();
+
+    expect(getActiveAssigneesForResource).toHaveBeenCalledTimes(1);
+    expect(getActiveAssigneesForResource).toHaveBeenCalledWith(
+      `payment_request`,
+      expect.arrayContaining([`pr-A`, `pr-B`]),
+    );
+    expect(result.items).toEqual([
+      expect.objectContaining({
+        id: `pr-A`,
+        assignedTo: { id: `admin-7`, name: null, email: `ops7@example.com` },
+      }),
+      expect.objectContaining({
+        id: `pr-B`,
+        assignedTo: null,
+      }),
+    ]);
   });
 
   it(`keeps soft-deleted forensic edges on payment case surfaces`, async () => {

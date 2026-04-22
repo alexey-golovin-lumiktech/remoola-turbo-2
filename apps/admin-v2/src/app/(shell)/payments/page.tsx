@@ -36,6 +36,19 @@ function PaymentStatus({ item }: { item: PaymentItem }) {
   );
 }
 
+function PaymentAssignedTo({ item }: { item: PaymentItem }) {
+  if (!item.assignedTo) {
+    return <span className="muted">—</span>;
+  }
+
+  return (
+    <>
+      <span>{item.assignedTo.name ?? item.assignedTo.email ?? item.assignedTo.id}</span>
+      {item.assignedTo.email ? <span className="muted"> {item.assignedTo.email}</span> : null}
+    </>
+  );
+}
+
 function PaymentsMobileCards({ items }: { items: PaymentItem[] }) {
   if (items.length === 0) {
     return (
@@ -67,6 +80,9 @@ function PaymentsMobileCards({ items }: { items: PaymentItem[] }) {
               <div className="muted">Attachments: {item.attachmentsCount}</div>
               <div className="muted">Due: {formatDate(item.dueDate)}</div>
               <div className="muted">Updated: {formatDate(item.updatedAt)}</div>
+              <div className="muted">
+                Assigned to: <PaymentAssignedTo item={item} />
+              </div>
             </div>
           </article>
         ))}
@@ -111,6 +127,9 @@ function PaymentsTabletRows({ items }: { items: PaymentItem[] }) {
               <div className="muted">Due: {formatDate(item.dueDate)}</div>
               <div className="muted">Updated: {formatDate(item.updatedAt)}</div>
             </div>
+            <div className="condensedRowMeta">
+              <PaymentAssignedTo item={item} />
+            </div>
           </article>
         ))}
       </div>
@@ -128,6 +147,7 @@ function PaymentsDesktopTable({ items }: { items: PaymentItem[] }) {
               <th>Payment request</th>
               <th>Participants</th>
               <th>Status</th>
+              <th>Assigned to</th>
               <th>Amount</th>
               <th>Freshness</th>
               <th>Due / Updated</th>
@@ -151,6 +171,9 @@ function PaymentsDesktopTable({ items }: { items: PaymentItem[] }) {
                   <div className="muted">Persisted: {item.persistedStatus}</div>
                 </td>
                 <td>
+                  <PaymentAssignedTo item={item} />
+                </td>
+                <td>
                   {item.amount} {item.currencyCode}
                 </td>
                 <td>
@@ -167,7 +190,7 @@ function PaymentsDesktopTable({ items }: { items: PaymentItem[] }) {
             ))}
             {items.length === 0 ? (
               <tr>
-                <td colSpan={6}>No payment requests found for the current filters.</td>
+                <td colSpan={7}>No payment requests found for the current filters.</td>
               </tr>
             ) : null}
           </tbody>

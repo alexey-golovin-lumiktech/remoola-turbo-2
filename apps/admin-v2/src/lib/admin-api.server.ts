@@ -260,6 +260,7 @@ export type PaymentsListResponse = {
     updatedAt: string;
     attachmentsCount: number;
     dataFreshnessClass: string;
+    assignedTo: AdminRef | null;
   }>;
   pageInfo: CursorPageInfo;
 };

@@ -397,9 +397,19 @@ export class AdminV2PaymentsService {
       };
     });
 
+    const assigneeMap = await this.assignmentsService.getActiveAssigneesForResource(
+      `payment_request`,
+      items.map((item) => item.id),
+    );
+
+    const itemsWithAssignee = items.map((item) => ({
+      ...item,
+      assignedTo: (assigneeMap.get(item.id) ?? null) as AdminRef | null,
+    }));
+
     const next = rows[limit];
     return {
-      items,
+      items: itemsWithAssignee,
       pageInfo: {
         nextCursor: next ? encodeAdminV2Cursor({ createdAt: next.createdAt, id: next.id }) : null,
         limit,
