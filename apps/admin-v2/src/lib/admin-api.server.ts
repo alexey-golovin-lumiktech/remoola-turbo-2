@@ -664,6 +664,10 @@ export type ExchangeScheduledCaseResponse = {
   updatedAt: string;
   staleWarning: boolean;
   dataFreshnessClass: string;
+  assignment: {
+    current: AssignmentSummary | null;
+    history: AssignmentHistoryItem[];
+  };
 };
 
 type PayoutHighValuePolicy = {

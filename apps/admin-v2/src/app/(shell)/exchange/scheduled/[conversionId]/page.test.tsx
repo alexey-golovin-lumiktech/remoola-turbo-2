@@ -68,6 +68,7 @@ function buildScheduledCase() {
     updatedAt: `2026-04-17T10:03:00.000Z`,
     staleWarning: false,
     dataFreshnessClass: `exact`,
+    assignment: { current: null, history: [] },
   };
 }
 
