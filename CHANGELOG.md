@@ -1983,7 +1983,7 @@
 
 </details>
 
-<details open>
+<details>
 <summary>2026-04-21</summary>
 
 - **2026-04-21:**
@@ -2029,6 +2029,57 @@
   - Rollout for the admin auth hardening + legacy retirement set is contract-sensitive: frontend auth URL migration and legacy `AdminAuthController` retirement must deploy together with the hardened guard/refresh paths so no client is left depending on the dropped plaintext fallback.
   - Operational-alerts foundation migration (15526244) and workspace-allowlist expansion (93b88480) are additive but should land before the alerts evaluator + `/system/alerts` page surface goes live.
   - The payment_request operational-assignment activation lands the shared assignment-card extraction so the same UI primitive now serves ledger_entry, verification, and payment_request resource types — handle as a coordinated UI/contract release.
+
+</details>
+
+<details open>
+<summary>2026-04-22</summary>
+
+- **2026-04-22:**
+
+  ### 🚀 Feature
+  - **Operational assignments — `document` activation:** Allowlist `document` as an assignable resource type; expose document assignment context on the case BFF (`DocumentCaseResponse` widened with `assignment: { current, history }`); add document assignment server actions and render the shared `<AssignmentCard>` on the document case page with `assignments.manage` / `SUPER_ADMIN` gating; wire `AdminV2AssignmentsModule` into `AdminV2DocumentsModule` (imports only, frozen surface preserved).
+  - **Operational assignments — `fx_conversion` activation:** Land `fx_conversion` as the sixth assignable resource type; `AdminV2ExchangeService` consumes the shared `getAssignmentContextForResource` helper and surfaces an `assignment` field on `getScheduledConversionCase`; ship `claim/release/reassign` server actions plus a narrow `revalidateFxConversionAssignmentPaths` helper scoped to `/exchange/scheduled` and `/exchange/scheduled/[conversionId]` only; integrate the shared `<AssignmentCard>` on the scheduled FX conversion case page. Reuses the existing `assignments.manage` capability, `assignment_claim/release/reassign` audit actions, and `POST /admin-v2/assignments/{claim,release,reassign}` endpoints — zero new migrations.
+  - **List-surface assignee column — `fx_conversion`:** First non-verification list page consumer. `ExchangeScheduledListResponse.items[]` widened with `assignedTo: AdminRef | null`; bulk-load active assignees on `/exchange/scheduled` and render an `Assigned to` column on the scheduled FX conversion list page.
+  - **List-surface assignee column — `document` with bulk helper extraction:** Second non-verification list page consumer. `DocumentsListResponse.items[]` widened with `assignedTo: AdminRef | null`; extract the inline `getActiveAssignees` SQL into a single shared public method `getActiveAssigneesForResource(resourceType, resourceIds)` on `AdminV2AssignmentsService` (parameterised on `resourceType`, parameter-bound `Prisma.sql` template — no string interpolation of `resourceIds`); refactor the prior verification + exchange consumers to delegate to the shared helper; render an `Assigned to` column on `/documents`.
+  - **List-surface assignee surfacing — `payments operations queue` (bucket-of-cards):** First bucket-of-cards consumer of the assignee-cell family. `PaymentOperationsQueueResponse.buckets[].items[]` widened with `assignedTo: AdminRef | null`; the operations queue (5 buckets, no `<table>`) renders the assignee as one extra muted `<p>Assigned to: …</p>` line inside the existing card body, fixing the cell-shape decision for the bucket-of-cards rendering family. Fourth bulk consumer of the shared `getActiveAssigneesForResource` helper; `Set<string>` deduplication is used because items are assembled from five `findMany` queries.
+  - **List-surface assignee surfacing — `payouts` (dual-render bucket-of-cards):** First dual-render consumer — the same high-value `payout` item appears in both the `highValueItems` overlay and its `derivedStatus` bucket, and both renders surface the new assignee line. `PayoutsListResponse.items[]` widened with `assignedTo: AdminRef | null`. Fifth bulk consumer of the shared helper.
+  - **List-surface assignee surfacing — `payments` list (responsive triple render):** First responsive-triple-render consumer at scale = 3 within a single page — the same `items[]` array is rendered through `PaymentsMobileCards`, `PaymentsTabletRows`, and `PaymentsDesktopTable` siblings selected by `[data-view="mobile"|"tablet"|"desktop"]`, and all three modes surface the assignee cell (mobile muted line, tablet 5th `condensedRowMeta`, desktop new column between Status and Amount with empty-state `colSpan` 6 → 7). `PaymentsListResponse.items[]` widened with `assignedTo: AdminRef | null`. Sixth bulk consumer of the shared helper.
+  - **System Alerts — `verification_queue` workspace section:** Extend `/system/alerts` from two to three `WorkspaceSection` blocks (page-level `Promise.all` parallelism preserved); add a sibling `CreateVerificationQueueAlertForm` plus `parseVerificationQueueQuery` and a `describeQueryPayload` `verification_queue` branch that matches the backend `parseVerificationQueuePayload` accept-list (`status`, `stripeIdentityStatus`, `country`, `contractorKind`) and renders `Filters: (none — total queue)` for an empty payload. Closes the explicit `verification_queue` UI gap deferred from the verification workspace completion slice — no backend change, no allowlist change, no new capability, no new audit action.
+  - **Pack §07 throttle config alignment for admin‑v2:** Apply class-level `@Throttle({ default: { limit: 500, ttl: 60000 } })` (verbatim pack §07 literal) to all 17 non-auth admin-v2 controllers, raising the per-minute admin-v2 limit from the global `100` baseline to `500`. `AdminV2AuthController` is intentionally not class-decorated — its six per-route auth decorators (10/20 req/min on `acceptInvitation`, `resetPassword`, `login`, `refreshAccess`, `logout`, `revokeSession`) remain authoritative via method-precedence. The outer `1000 req/3600s` throttler is preserved as defense-in-depth. No service code change, no DTO change, no frontend change.
+
+  ### 🔐 Security / Production Safety
+  - **`@SkipThrottle()` rejected for the admin-v2 surface** — full removal of rate-limit on authenticated admin paths is treated as unsafe (compromised admin token risk); rate-limit stays as defense-in-depth on top of the auth guard.
+  - **Frozen-surface preservation across all assignee surfacing slices:** Every list-surface assignee addition is purely additive — the `assignedTo` field is appended **last** on each list-response shape, the `getActiveAssigneesForResource` helper is consumed via its public surface (no inline copies, no signature/return-shape/SQL change), and existing case + queue endpoints remain byte-equivalent. `apps/api/`, `apps/admin/`, and `apps/api-v2/src/consumer/` workspaces remain frozen.
+  - **`fx_conversion` activation invariants upheld:** No new capability, no new audit action, no new endpoint, and no migration — the DB `CHECK` already enumerated `fx_conversion` since the operational-assignments schema landed; per-row metadata simply carries `resource: 'fx_conversion'` on the existing `assignment_claim/release/reassign` audit vocabulary.
+  - **Document assignment revalidation scoped narrowly** — `revalidateDocumentAssignmentPaths` covers exactly `/documents` and `/documents/[id]`; FX conversion's `revalidateFxConversionAssignmentPaths` covers exactly `/exchange/scheduled` and `/exchange/scheduled/[conversionId]` and deliberately does **not** revalidate `/exchange/rates`, `/exchange/rules`, or any consumer path.
+
+  ### 🗄 Database & Migrations
+  - No new Prisma migration in this set. The `document` and `fx_conversion` enum values were already enumerated by the operational-assignments DB `CHECK` constraint that landed earlier in April; assignee column surfacing is read-only response widening only.
+
+  ### 🧪 Testing
+  - Document and FX conversion assignment activation: cover `claim/release/reassign` positives, `getAssignmentContextForResource` shape, and `getDocumentCase` / `getScheduledConversionCase` assignment shape; bulk-load assertions for assignee population on `/exchange/scheduled` (populated and `null`-fallback paths).
+  - List-surface assignee surfacing: per-list service spec coverage for Map-driven decoration, bulk-helper invocation shape, and rendering across all card / row / column placements on `/documents`, `/payments/operations`, `/payouts`, and `/payments` (mobile / tablet / desktop).
+  - System Alerts: empty-state test now asserts on all three workspace titles, all three create-form headings, all three `value="<workspace>"` hidden inputs, and the three `getOperationalAlerts({ workspace })` invocations; new test covers both the filtered-payload summary and the empty-payload total-queue summary for `verification_queue`.
+
+  ### ⚡️ Performance
+  - **`operational_assignment` active-lookup index audit:** `EXPLAIN (ANALYZE, BUFFERS)` captured under transient seed (~4k active rows + ~2k historical rows, rolled back) across `resourceIds.length ∈ {1, 10, 100}` × `resource_type ∈ {'payment_request', 'document', 'fx_conversion', 'verification'}` shows the partial unique `idx_operational_assignment_active_resource` chosen by the planner for **every** bulk and single-resource active-row combination. The non-partial composite index remains correctly used by the case-page history fetch (no `released_at IS NULL` filter). Existing indexes are sufficient — **no new migration**, no `schema.prisma` edit, no service code edit. Production re-baseline is escalated as an open follow-up before the next bulk consumer or one order-of-magnitude row-count growth.
+  - **Local freshness re-check after the payments list activation:** at `payment_request × length ∈ {1, 10, 100}` the planner consistently uses `Bitmap Index Scan on idx_operational_assignment_active_resource`; `Buffers hit=7/24/156`; `Execution Time 0.087/0.231/0.552 ms`; no `Seq Scan`; no regression vs the pre-activation baseline.
+
+  ### 🛠 DevEx
+  - **Merge-gate config expansion (`scripts/admin-v2-gates/config.mjs`):** Register the new document / fx_conversion / per-list assignee surfacing paths, the system-alerts `verification_queue` page anchors, the throttle-config alignment tokens (Risk 12 promotion, three Decision tokens, follow-up token), and the operational-assignment index-audit follow-up so the same drift is caught at pre-commit next time.
+  - **Handoff README bookkeeping:** Record the LANDED moves for the document / payments-operations / payouts activation slices and close the deferred `operational_assignment` active-lookup index-audit follow-up.
+  - **Lint passes:** `style(...)` commits trim a payments spec `it()` description and re-flow the throttle-decorated controllers to keep the staged surface under the 120-col cap.
+  - **e2e signing alignment:** Supply `JWT_ACCESS_SECRET` when signing the expired signup-verification token in the api-v2 e2e suite, keeping the suite aligned with the JwtModule wiring change.
+
+  ### 📄 Documentation
+  - Performance-evidence note for the `operational_assignment` active-lookup audit (`BEFORE/AFTER` plan shapes, partial-vs-composite index decision, production re-baseline trigger).
+  - Per-slice notes for `document` and `fx_conversion` operational-assignment activation; per-slice notes for the four list-surface assignee surfacing slices (`/exchange/scheduled`, `/documents`, `/payments/operations`, `/payouts`, `/payments`); system-alerts `verification_queue` workspace section note; throttle config alignment note (pack §07 lines 236–247 mandate, mechanic, decisions, Risk 12 mitigation per pack §08 lines 668–678).
+
+  ### ⚠️ Notes
+  - The bulk `getActiveAssigneesForResource` helper is now consumed by six list surfaces (`verification`, `/exchange/scheduled`, `/documents`, `/payments/operations`, `/payouts`, `/payments`) plus the per-resource case pages. Treat any future change to its signature, return shape, or SQL as a coordinated cross-workspace contract change.
+  - The throttle realignment is config-only at the controller decorator layer — no migration, no env binding, no shared-constant extraction (deferred). The named-throttler refactor (introducing a third `{ name: 'adminV2', ... }` entry on `ThrottlerModule.forRoot([...])`) remains available as a separate future slice; today's change keeps `apps/api-v2/src/app.module.ts` frozen.
+  - The `payments` list activation is the first responsive-triple-render consumer of the assignee-cell family — handle any future cell-shape change as a synchronized edit across `PaymentsMobileCards`, `PaymentsTabletRows`, and `PaymentsDesktopTable` so the three render modes do not drift.
 
 </details>
 
