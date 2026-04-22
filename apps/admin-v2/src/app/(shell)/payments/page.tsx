@@ -1,5 +1,6 @@
 import Link from 'next/link';
 
+import { StatusPill } from '../../../components/status-pill';
 import { getPayments, type PaymentsListResponse } from '../../../lib/admin-api.server';
 
 function formatDate(value: string | null | undefined): string {
@@ -29,7 +30,9 @@ function PaymentParticipants({ item }: { item: PaymentItem }) {
 function PaymentStatus({ item }: { item: PaymentItem }) {
   return (
     <>
-      <div>{item.effectiveStatus}</div>
+      <div>
+        <StatusPill status={item.effectiveStatus} />
+      </div>
       <div className="muted">Persisted: {item.persistedStatus}</div>
       <div className="muted">{item.staleWarning ? `Persisted status is stale` : `Exact enough for list`}</div>
     </>
@@ -167,7 +170,9 @@ function PaymentsDesktopTable({ items }: { items: PaymentItem[] }) {
                   <PaymentParticipants item={item} />
                 </td>
                 <td>
-                  <div>{item.effectiveStatus}</div>
+                  <div>
+                    <StatusPill status={item.effectiveStatus} />
+                  </div>
                   <div className="muted">Persisted: {item.persistedStatus}</div>
                 </td>
                 <td>
