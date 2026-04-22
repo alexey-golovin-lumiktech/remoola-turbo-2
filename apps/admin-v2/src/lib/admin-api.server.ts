@@ -364,6 +364,7 @@ export type PaymentOperationsQueueResponse = {
       invoiceTaggedAttachmentsCount: number;
       followUpReason: string;
       dataFreshnessClass: string;
+      assignedTo: AdminRef | null;
     }>;
   }>;
 };
