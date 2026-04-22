@@ -1,5 +1,6 @@
 import { BadRequestException, Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { Expose, Type } from 'class-transformer';
 import { IsArray, IsBoolean, IsEmail, IsIn, IsNumber, IsOptional, IsString } from 'class-validator';
 import express from 'express';
@@ -93,6 +94,7 @@ class ChangeAdminPermissionsBodyDTO extends VersionedAdminMutationBodyDTO {
 @UseGuards(JwtAuthGuard)
 @ApiCookieAuth()
 @ApiTags(`Admin v2: Admins`)
+@Throttle({ default: { limit: 500, ttl: 60000 } })
 @Controller(`admin-v2/admins`)
 export class AdminV2AdminsController {
   constructor(

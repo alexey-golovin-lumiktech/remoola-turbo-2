@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { Expose } from 'class-transformer';
 import { IsBoolean, IsIn, IsString } from 'class-validator';
 import express from 'express';
@@ -62,6 +63,7 @@ class EmailResendBodyDTO {
 @UseGuards(JwtAuthGuard)
 @ApiCookieAuth()
 @ApiTags(`Admin v2: Consumers`)
+@Throttle({ default: { limit: 500, ttl: 60000 } })
 @Controller(`admin-v2/consumers`)
 export class AdminV2ConsumersController {
   constructor(

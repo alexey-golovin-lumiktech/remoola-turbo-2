@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { Expose, Type } from 'class-transformer';
 import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
 import express from 'express';
@@ -44,6 +45,7 @@ class VerificationDecisionBodyDTO {
 @UseGuards(JwtAuthGuard)
 @ApiCookieAuth()
 @ApiTags(`Admin v2: Verification`)
+@Throttle({ default: { limit: 500, ttl: 60000 } })
 @Controller(`admin-v2/verification`)
 export class AdminV2VerificationController {
   constructor(

@@ -1,5 +1,6 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 
 import { JwtAuthGuard } from '../../auth/jwt.guard';
 import { Identity, type IIdentityContext } from '../../common';
@@ -23,6 +24,7 @@ function parseNumber(value: string | undefined, fallback: number): number {
 @UseGuards(JwtAuthGuard)
 @ApiCookieAuth()
 @ApiTags(`Admin v2: Audit`)
+@Throttle({ default: { limit: 500, ttl: 60000 } })
 @Controller(`admin-v2/audit`)
 export class AdminV2AuditController {
   constructor(

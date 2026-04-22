@@ -1,5 +1,6 @@
 import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import express from 'express';
 
 import { JwtAuthGuard } from '../../auth/jwt.guard';
@@ -27,6 +28,7 @@ function requestMeta(req: express.Request) {
 @UseGuards(JwtAuthGuard)
 @ApiCookieAuth()
 @ApiTags(`Admin v2: Assignments`)
+@Throttle({ default: { limit: 500, ttl: 60000 } })
 @Controller(`admin-v2/assignments`)
 export class AdminV2AssignmentsController {
   constructor(

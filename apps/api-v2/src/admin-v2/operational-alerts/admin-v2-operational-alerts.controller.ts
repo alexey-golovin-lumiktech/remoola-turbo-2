@@ -12,6 +12,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import express from 'express';
 
 import { JwtAuthGuard } from '../../auth/jwt.guard';
@@ -39,6 +40,7 @@ function requestMeta(req: express.Request) {
 @UseGuards(JwtAuthGuard)
 @ApiCookieAuth()
 @ApiTags(`Admin v2: Operational Alerts`)
+@Throttle({ default: { limit: 500, ttl: 60000 } })
 @Controller(`admin-v2/operational-alerts`)
 export class AdminV2OperationalAlertsController {
   constructor(

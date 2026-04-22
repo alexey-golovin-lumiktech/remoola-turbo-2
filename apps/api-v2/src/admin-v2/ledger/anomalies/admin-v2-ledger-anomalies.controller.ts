@@ -1,5 +1,6 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 
 import { AdminV2LedgerAnomaliesService } from './admin-v2-ledger-anomalies.service';
 import { JwtAuthGuard } from '../../../auth/jwt.guard';
@@ -31,6 +32,7 @@ function parseDate(value: string | undefined): Date | undefined {
 @UseGuards(JwtAuthGuard)
 @ApiCookieAuth()
 @ApiTags(`Admin v2: Ledger anomalies`)
+@Throttle({ default: { limit: 500, ttl: 60000 } })
 @Controller(`admin-v2/ledger/anomalies`)
 export class AdminV2LedgerAnomaliesController {
   constructor(

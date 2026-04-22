@@ -13,6 +13,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { Expose, Transform, Type } from 'class-transformer';
 import { IsArray, IsBoolean, IsNumber, IsString, ValidateNested } from 'class-validator';
 import express from 'express';
@@ -116,6 +117,7 @@ class DocumentBulkTagBodyDTO {
 @UseGuards(JwtAuthGuard)
 @ApiCookieAuth()
 @ApiTags(`Admin v2: Documents`)
+@Throttle({ default: { limit: 500, ttl: 60000 } })
 @Controller(`admin-v2/documents`)
 export class AdminV2DocumentsController {
   constructor(

@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { Expose, Transform, Type } from 'class-transformer';
 import { IsBoolean, IsNumber, IsString } from 'class-validator';
 import express from 'express';
@@ -63,6 +64,7 @@ class ApproveRateBodyDTO extends ConfirmedVersionBodyDTO {
 @UseGuards(JwtAuthGuard)
 @ApiCookieAuth()
 @ApiTags(`Admin v2: Exchange`)
+@Throttle({ default: { limit: 500, ttl: 60000 } })
 @Controller(`admin-v2/exchange`)
 export class AdminV2ExchangeController {
   constructor(

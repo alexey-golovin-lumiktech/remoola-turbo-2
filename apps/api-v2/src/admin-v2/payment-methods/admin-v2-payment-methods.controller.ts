@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { Expose, Type } from 'class-transformer';
 import { IsBoolean, IsNumber, IsString } from 'class-validator';
 import express from 'express';
@@ -72,6 +73,7 @@ class DuplicateEscalatePaymentMethodBodyDTO {
 @UseGuards(JwtAuthGuard)
 @ApiCookieAuth()
 @ApiTags(`Admin v2: Payment Methods`)
+@Throttle({ default: { limit: 500, ttl: 60000 } })
 @Controller(`admin-v2/payment-methods`)
 export class AdminV2PaymentMethodsController {
   constructor(
