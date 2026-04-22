@@ -94,8 +94,8 @@ This slice (MVP-3.6e) is a strictly additive **operational assignments fx_conver
   parameter). `getScheduledConversionCase` now also fetches the assignment context via
   the shared helper and returns the new `assignment` field on the response shape.
   Touch radius is strictly limited to import block, constructor, and the
-  `getScheduledConversionCase` body; `git diff --stat` on this file shows a 7-line
-  delta, well within the §1.27 ≤25-line scope guard.
+  `getScheduledConversionCase` body; `git diff --stat` on this file shows a 4-line
+  delta (4 insertions, 0 deletions), well within the §1.27 ≤25-line scope guard.
 - `apps/api-v2/src/admin-v2/exchange/admin-v2-exchange.service.spec.ts` — extended the
   pre-existing `createService` factory with an `assignmentsService` override (default
   `getAssignmentContextForResource → { current: null, history: [] }`); extended the
@@ -218,9 +218,9 @@ This slice (MVP-3.6e) is a strictly additive **operational assignments fx_conver
   54.2 KB and contains many unrelated methods (rates, rules, scheduled, force-execute,
   cancel, idempotency wrappers, domain event emissions, balance calculation calls).
   Touch radius for 3.6e is **strict**: import block (top), constructor, and
-  `getScheduledConversionCase`. Maximum acceptable `git diff --stat` delta on this
-  file is ≤25 lines (per §1.27 / §13.16). Final delta: 7 lines (10 insertions, 3
-  deletions are absent — the change is purely additive). All other methods —
+  `getScheduledConversionCase`.   Maximum acceptable `git diff --stat` delta on this
+  file is ≤25 lines (per §1.27 / §13.16). Final delta: 4 lines (4 insertions, 0
+  deletions — the change is purely additive). All other methods —
   `forceExecuteScheduledConversion`, `cancelScheduledConversion`, all rate/rule
   methods, all helper functions — remain frozen.
 - **Sequential await over Promise.all** (deviation from handoff §3.3 preferred
@@ -231,7 +231,8 @@ This slice (MVP-3.6e) is a strictly additive **operational assignments fx_conver
   `admin-v2-exchange.service.ts` to 28 lines — exceeding the §1.27 / §13.16 hard
   scope guard of ≤25 lines. Per §13.16 ("narrow surgery") the conflict is resolved in
   favor of the hard scope guard: the assignment fetch is awaited sequentially
-  immediately after the existing `linkedLedgerEntries` await. The latency cost is one
+  immediately after the existing `linkedLedgerEntries` await, keeping the file
+  delta at 4 insertions. The latency cost is one
   additional sequential round-trip (to `getAssignmentContextForResource`) on the case
   page only, which is negligible against the surrounding lookups and well within the
   page-load budget. The behavioral contract is unchanged: both fetches resolve before
@@ -326,7 +327,7 @@ This slice (MVP-3.6e) is a strictly additive **operational assignments fx_conver
   conditional `linkedLedgerEntries` via a single `await`. Wrapping that fetch
   together with the assignment-context fetch in `Promise.all` (the handoff §3.3
   preferred shape) inflates the `git diff --stat` past the §1.27 ≤25-line scope
-  guard. Sequential awaits keep the diff at 7 lines while preserving correctness;
+  guard. Sequential awaits keep the diff at 4 insertions while preserving correctness;
   the only observable cost is one extra sequential round-trip to
   `getAssignmentContextForResource`. See the dedicated decision in §"Decisions"
   above.
