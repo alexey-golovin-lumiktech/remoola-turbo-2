@@ -348,6 +348,63 @@ describe(`AdminV2ExchangeService`, () => {
     );
   });
 
+  it(`exposes assignedTo: AdminRef | null on listScheduledConversions items via bulk getActiveAssignees`, async () => {
+    const updatedAt = new Date(`2026-04-17T08:05:00.000Z`);
+    const conversions = [
+      {
+        id: `scheduled-1`,
+        ledgerId: null,
+        fromCurrency: $Enums.CurrencyCode.USD,
+        toCurrency: $Enums.CurrencyCode.EUR,
+        amount: { toString: () => `25.00` } as never,
+        status: $Enums.ScheduledFxConversionStatus.PENDING,
+        attempts: 0,
+        executeAt: new Date(`2026-04-17T08:00:00.000Z`),
+        processingAt: null,
+        executedAt: null,
+        failedAt: null,
+        updatedAt,
+        lastError: null,
+        metadata: {},
+        consumer: { id: `consumer-1`, email: `consumer-1@example.com` },
+      },
+      {
+        id: `scheduled-2`,
+        ledgerId: null,
+        fromCurrency: $Enums.CurrencyCode.USD,
+        toCurrency: $Enums.CurrencyCode.GBP,
+        amount: { toString: () => `40.00` } as never,
+        status: $Enums.ScheduledFxConversionStatus.PENDING,
+        attempts: 0,
+        executeAt: new Date(`2026-04-17T08:00:00.000Z`),
+        processingAt: null,
+        executedAt: null,
+        failedAt: null,
+        updatedAt,
+        lastError: null,
+        metadata: {},
+        consumer: { id: `consumer-2`, email: `consumer-2@example.com` },
+      },
+    ];
+    const { service, prisma } = createService({
+      prisma: {
+        scheduledFxConversionModel: {
+          count: jest.fn(async () => 2),
+          findMany: jest.fn(async () => conversions),
+        },
+        $queryRaw: jest.fn(async () => [
+          { resource_id: `scheduled-1`, assigned_to: `admin-1`, email: `admin-1@example.com` },
+        ]),
+      },
+    });
+
+    const result = await service.listScheduledConversions({ page: 1, pageSize: 20 });
+
+    expect(result.items[0].assignedTo).toEqual({ id: `admin-1`, name: null, email: `admin-1@example.com` });
+    expect(result.items[1].assignedTo).toBeNull();
+    expect(prisma.$queryRaw).toHaveBeenCalledTimes(1);
+  });
+
   describe(`getScheduledConversionCase assignment context`, () => {
     function buildConversion(overrides?: Partial<Record<string, unknown>>) {
       const updatedAt = new Date(`2026-04-17T08:05:00.000Z`);
