@@ -1,13 +1,52 @@
 :root {
   color-scheme: light dark;
-  --bg: #0f172a;
-  --panel: #111827;
-  --panel-muted: #1f2937;
-  --text: #e5e7eb;
+
+  --bg: #09121f;
+  --panel: #0d1627;
+  --panel-elevated: rgba(255, 255, 255, 0.04);
+  --panel-muted: rgba(255, 255, 255, 0.03);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+
+  --text: #edf3ff;
+  --text-muted-72: rgba(255, 255, 255, 0.72);
+  --text-muted-56: rgba(255, 255, 255, 0.56);
+  --text-muted-40: rgba(255, 255, 255, 0.4);
+
+  --accent: #22d3ee;
+  --accent-soft: rgba(34, 211, 238, 0.18);
+  --accent-strong: #06b6d4;
+
+  --tone-rose-fg: #fda4af;
+  --tone-rose-bg: rgba(244, 63, 94, 0.1);
+  --tone-rose-border: rgba(251, 113, 133, 0.25);
+  --tone-amber-fg: #fcd34d;
+  --tone-amber-bg: rgba(245, 158, 11, 0.1);
+  --tone-amber-border: rgba(251, 191, 36, 0.25);
+  --tone-emerald-fg: #6ee7b7;
+  --tone-emerald-bg: rgba(16, 185, 129, 0.1);
+  --tone-emerald-border: rgba(52, 211, 153, 0.25);
+  --tone-cyan-fg: #a5f3fc;
+  --tone-cyan-bg: rgba(34, 211, 238, 0.1);
+  --tone-cyan-border: rgba(34, 211, 238, 0.25);
+  --tone-neutral-fg: var(--text-muted-72);
+  --tone-neutral-bg: rgba(255, 255, 255, 0.03);
+  --tone-neutral-border: rgba(255, 255, 255, 0.1);
+
   --muted: #94a3b8;
-  --accent: #38bdf8;
   --danger: #f87171;
-  --border: rgba(148, 163, 184, 0.2);
+
+  --radius-pill: 999px;
+  --radius-card: 16px;
+  --radius-shell: 20px;
+  --radius-input: 12px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
 }
 
 * {
@@ -185,6 +224,41 @@ td {
   border: 1px solid var(--border);
   padding: 4px 10px;
   color: var(--muted);
+}
+
+.pill[data-tone='rose'] {
+  color: var(--tone-rose-fg);
+  background: var(--tone-rose-bg);
+  border-color: var(--tone-rose-border);
+}
+
+.pill[data-tone='amber'] {
+  color: var(--tone-amber-fg);
+  background: var(--tone-amber-bg);
+  border-color: var(--tone-amber-border);
+}
+
+.pill[data-tone='emerald'] {
+  color: var(--tone-emerald-fg);
+  background: var(--tone-emerald-bg);
+  border-color: var(--tone-emerald-border);
+}
+
+.pill[data-tone='cyan'] {
+  color: var(--tone-cyan-fg);
+  background: var(--tone-cyan-bg);
+  border-color: var(--tone-cyan-border);
+}
+
+.pill[data-tone='neutral'] {
+  color: var(--tone-neutral-fg);
+  background: var(--tone-neutral-bg);
+  border-color: var(--tone-neutral-border);
+}
+
+.pill[data-density='tight'] {
+  padding: var(--space-1) var(--space-2);
+  font-size: 11px;
 }
 
 .field {
