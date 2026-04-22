@@ -7,7 +7,7 @@ import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.serv
 import { PrismaService } from '../../shared/prisma.service';
 import { decodeAdminV2Cursor, encodeAdminV2Cursor } from '../admin-v2-cursor';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
-import { AdminV2AssignmentsService } from '../assignments/admin-v2-assignments.service';
+import { AdminV2AssignmentsService, type AdminRef } from '../assignments/admin-v2-assignments.service';
 
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 100;
@@ -453,6 +453,7 @@ export class AdminV2PayoutsService {
     entry: PayoutListRow,
     paymentMethodsById: Map<string, PaymentMethodSummaryRow>,
     highValueConfig: PayoutHighValueConfig,
+    assignedTo: AdminRef | null = null,
   ) {
     const effectiveStatus = this.getEffectiveLedgerStatus(entry);
     const derivedStatus = this.derivePayoutStatus(entry);
@@ -483,6 +484,7 @@ export class AdminV2PayoutsService {
       highValue,
       hasActiveEscalation: Boolean(entry.payoutEscalation?.id),
       ...this.mapDestinationPaymentMethod(entry, paymentMethodsById),
+      assignedTo,
     };
   }
 
@@ -537,6 +539,10 @@ export class AdminV2PayoutsService {
 
     const visibleRows = rows.slice(0, limit) as PayoutListRow[];
     const paymentMethodsById = await this.fetchPaymentMethodsById(visibleRows);
+    const assigneeMap = await this.assignmentsService.getActiveAssigneesForResource(
+      `payout`,
+      visibleRows.map((row) => row.id),
+    );
     const next = rows[limit];
 
     return {
@@ -559,7 +565,9 @@ export class AdminV2PayoutsService {
         automationStatus: `machine-detected queue only; payout execution writes remain disabled`,
       },
       highValuePolicy: highValueConfig.policy,
-      items: visibleRows.map((row) => this.mapPayoutListItem(row, paymentMethodsById, highValueConfig)),
+      items: visibleRows.map((row) =>
+        this.mapPayoutListItem(row, paymentMethodsById, highValueConfig, assigneeMap.get(row.id) ?? null),
+      ),
       pageInfo: {
         nextCursor: next ? encodeAdminV2Cursor({ createdAt: next.createdAt, id: next.id }) : null,
         limit,

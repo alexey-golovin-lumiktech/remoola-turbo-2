@@ -44,6 +44,7 @@ function buildService() {
   };
   const assignmentsService = {
     getAssignmentContextForResource: jest.fn(async () => ({ current: null, history: [] })),
+    getActiveAssigneesForResource: jest.fn(async () => new Map()),
   };
   const service = new AdminV2PayoutsService(prisma as never, idempotency as never, assignmentsService as never);
 
@@ -274,6 +275,70 @@ describe(`AdminV2PayoutsService`, () => {
         destinationAvailability: `unavailable`,
         destinationPaymentMethodSummary: null,
       }),
+    );
+  });
+
+  it(`decorates payout list items with the active assignee via getActiveAssigneesForResource`, async () => {
+    const { service, ledgerEntryModel, paymentMethodModel, assignmentsService } = buildService();
+    ledgerEntryModel.findMany.mockResolvedValueOnce([
+      {
+        id: `payout-A`,
+        ledgerId: `ledger-1`,
+        type: $Enums.LedgerEntryType.USER_PAYOUT,
+        currencyCode: $Enums.CurrencyCode.USD,
+        status: $Enums.TransactionStatus.PENDING,
+        amount: new Prisma.Decimal(`-25.00`),
+        stripeId: null,
+        metadata: null,
+        consumerId: `consumer-1`,
+        paymentRequestId: null,
+        createdAt: new Date(`2026-04-14T00:00:00.000Z`),
+        updatedAt: new Date(`2026-04-14T01:00:00.000Z`),
+        consumer: { email: `a@example.com` },
+        payoutEscalation: null,
+        outcomes: [],
+      },
+      {
+        id: `payout-B`,
+        ledgerId: `ledger-2`,
+        type: $Enums.LedgerEntryType.USER_PAYOUT,
+        currencyCode: $Enums.CurrencyCode.USD,
+        status: $Enums.TransactionStatus.PENDING,
+        amount: new Prisma.Decimal(`-15.00`),
+        stripeId: null,
+        metadata: null,
+        consumerId: `consumer-2`,
+        paymentRequestId: null,
+        createdAt: new Date(`2026-04-14T02:00:00.000Z`),
+        updatedAt: new Date(`2026-04-14T03:00:00.000Z`),
+        consumer: { email: `b@example.com` },
+        payoutEscalation: null,
+        outcomes: [],
+      },
+    ]);
+    paymentMethodModel.findMany.mockResolvedValueOnce([]);
+    assignmentsService.getActiveAssigneesForResource.mockResolvedValueOnce(
+      new Map([[`payout-A`, { id: `admin-7`, name: null, email: `ops7@example.com` }]]),
+    );
+
+    const payouts = await service.listPayouts({ limit: 10 });
+
+    expect(payouts.items[0]).toEqual(
+      expect.objectContaining({
+        id: `payout-A`,
+        assignedTo: { id: `admin-7`, name: null, email: `ops7@example.com` },
+      }),
+    );
+    expect(payouts.items[1]).toEqual(
+      expect.objectContaining({
+        id: `payout-B`,
+        assignedTo: null,
+      }),
+    );
+    expect(assignmentsService.getActiveAssigneesForResource).toHaveBeenCalledTimes(1);
+    expect(assignmentsService.getActiveAssigneesForResource).toHaveBeenCalledWith(
+      `payout`,
+      expect.arrayContaining([`payout-A`, `payout-B`]),
     );
   });
 
