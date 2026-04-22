@@ -6,6 +6,7 @@ import { FileStorageService } from '../../consumer/modules/files/file-storage.se
 import { ADMIN_ACTION_AUDIT_ACTIONS } from '../../shared/admin-action-audit.service';
 import { PrismaService } from '../../shared/prisma.service';
 import { AdminV2IdempotencyService } from '../admin-v2-idempotency.service';
+import { AdminV2AssignmentsService } from '../assignments/admin-v2-assignments.service';
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 20;
@@ -97,6 +98,7 @@ export class AdminV2DocumentsService {
     private readonly prisma: PrismaService,
     private readonly storage: FileStorageService,
     private readonly idempotency: AdminV2IdempotencyService,
+    private readonly assignmentsService: AdminV2AssignmentsService,
   ) {}
 
   async listDocuments(params?: {
@@ -283,60 +285,63 @@ export class AdminV2DocumentsService {
   }
 
   async getDocumentCase(resourceId: string, backendBaseUrl?: string) {
-    const resource = await this.prisma.resourceModel.findFirst({
-      where: {
-        id: resourceId,
-        AND: [this.evidenceScopeWhere()],
-      },
-      include: {
-        consumerResources: {
-          where: { deletedAt: null },
-          orderBy: [{ createdAt: `asc` }, { id: `asc` }],
-          select: {
-            consumer: {
-              select: {
-                id: true,
-                email: true,
-                deletedAt: true,
+    const [resource, assignment] = await Promise.all([
+      this.prisma.resourceModel.findFirst({
+        where: {
+          id: resourceId,
+          AND: [this.evidenceScopeWhere()],
+        },
+        include: {
+          consumerResources: {
+            where: { deletedAt: null },
+            orderBy: [{ createdAt: `asc` }, { id: `asc` }],
+            select: {
+              consumer: {
+                select: {
+                  id: true,
+                  email: true,
+                  deletedAt: true,
+                },
+              },
+            },
+          },
+          resourceTags: {
+            orderBy: [{ tag: { name: `asc` } }, { id: `asc` }],
+            select: {
+              tag: {
+                select: {
+                  id: true,
+                  name: true,
+                  createdAt: true,
+                  updatedAt: true,
+                },
+              },
+            },
+          },
+          attachments: {
+            where: { deletedAt: null },
+            orderBy: [{ createdAt: `desc` }, { id: `desc` }],
+            select: {
+              paymentRequest: {
+                select: {
+                  id: true,
+                  amount: true,
+                  currencyCode: true,
+                  status: true,
+                  createdAt: true,
+                  deletedAt: true,
+                  payerId: true,
+                  payerEmail: true,
+                  requesterId: true,
+                  requesterEmail: true,
+                },
               },
             },
           },
         },
-        resourceTags: {
-          orderBy: [{ tag: { name: `asc` } }, { id: `asc` }],
-          select: {
-            tag: {
-              select: {
-                id: true,
-                name: true,
-                createdAt: true,
-                updatedAt: true,
-              },
-            },
-          },
-        },
-        attachments: {
-          where: { deletedAt: null },
-          orderBy: [{ createdAt: `desc` }, { id: `desc` }],
-          select: {
-            paymentRequest: {
-              select: {
-                id: true,
-                amount: true,
-                currencyCode: true,
-                status: true,
-                createdAt: true,
-                deletedAt: true,
-                payerId: true,
-                payerEmail: true,
-                requesterId: true,
-                requesterEmail: true,
-              },
-            },
-          },
-        },
-      },
-    });
+      }),
+      this.assignmentsService.getAssignmentContextForResource(`document`, resourceId),
+    ]);
 
     if (!resource) {
       throw new NotFoundException(`Document not found`);
@@ -370,6 +375,7 @@ export class AdminV2DocumentsService {
       updatedAt: resource.updatedAt.toISOString(),
       staleWarning: false,
       dataFreshnessClass: `exact`,
+      assignment,
     };
   }
 

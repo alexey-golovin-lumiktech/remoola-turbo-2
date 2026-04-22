@@ -10,6 +10,12 @@ function createIdempotency() {
   };
 }
 
+function createAssignmentsService() {
+  return {
+    getAssignmentContextForResource: jest.fn(async () => ({ current: null, history: [] })),
+  };
+}
+
 describe(`AdminV2DocumentsService`, () => {
   it(`returns the canonical list contract with singular consumer linkage and linked payment ids`, async () => {
     const service = new AdminV2DocumentsService(
@@ -59,6 +65,7 @@ describe(`AdminV2DocumentsService`, () => {
       } as never,
       {} as never,
       createIdempotency() as never,
+      createAssignmentsService() as never,
     );
 
     await expect(service.listDocuments()).resolves.toEqual({
@@ -122,6 +129,7 @@ describe(`AdminV2DocumentsService`, () => {
       } as never,
       {} as never,
       createIdempotency() as never,
+      createAssignmentsService() as never,
     );
 
     await expect(service.listDocuments()).resolves.toEqual({
@@ -193,6 +201,7 @@ describe(`AdminV2DocumentsService`, () => {
       } as never,
       {} as never,
       createIdempotency() as never,
+      createAssignmentsService() as never,
     );
 
     await expect(service.getDocumentCase(`doc-1`, `https://api.example.com`)).resolves.toEqual({
@@ -229,6 +238,7 @@ describe(`AdminV2DocumentsService`, () => {
       updatedAt: `2026-04-17T08:10:00.000Z`,
       staleWarning: false,
       dataFreshnessClass: `exact`,
+      assignment: { current: null, history: [] },
     });
   });
 
@@ -268,6 +278,7 @@ describe(`AdminV2DocumentsService`, () => {
       } as never,
       {} as never,
       createIdempotency() as never,
+      createAssignmentsService() as never,
     );
 
     await expect(service.getDocumentCase(`doc-1`, `https://api.example.com`)).resolves.toEqual({
@@ -289,7 +300,69 @@ describe(`AdminV2DocumentsService`, () => {
       updatedAt: `2026-04-17T08:10:00.000Z`,
       staleWarning: false,
       dataFreshnessClass: `exact`,
+      assignment: { current: null, history: [] },
     });
+  });
+
+  it(`fetches operational assignment context for the document case via the shared helper`, async () => {
+    const assignedAt = new Date(`2026-04-18T09:00:00.000Z`);
+    const assignmentsService = createAssignmentsService();
+    assignmentsService.getAssignmentContextForResource.mockResolvedValueOnce({
+      current: {
+        id: `assignment-doc-1`,
+        assignedTo: { id: `admin-1`, name: null, email: `ops@example.com` },
+        assignedBy: { id: `admin-1`, name: null, email: `ops@example.com` },
+        assignedAt: assignedAt.toISOString(),
+        reason: `Reviewing supporting evidence`,
+        expiresAt: null,
+      },
+      history: [
+        {
+          id: `assignment-doc-1`,
+          assignedTo: { id: `admin-1`, name: null, email: `ops@example.com` },
+          assignedBy: { id: `admin-1`, name: null, email: `ops@example.com` },
+          assignedAt: assignedAt.toISOString(),
+          releasedAt: null,
+          releasedBy: null,
+          reason: `Reviewing supporting evidence`,
+          expiresAt: null,
+        },
+      ],
+    });
+    const service = new AdminV2DocumentsService(
+      {
+        resourceModel: {
+          findFirst: jest.fn(async () => ({
+            id: `doc-with-assignment`,
+            originalName: `evidence.pdf`,
+            access: `PRIVATE`,
+            mimetype: `application/pdf`,
+            size: 1024,
+            createdAt: new Date(`2026-04-17T08:00:00.000Z`),
+            updatedAt: new Date(`2026-04-17T08:10:00.000Z`),
+            deletedAt: null,
+            consumerResources: [],
+            resourceTags: [],
+            attachments: [],
+          })),
+        },
+      } as never,
+      {} as never,
+      createIdempotency() as never,
+      assignmentsService as never,
+    );
+
+    const documentCase = await service.getDocumentCase(`doc-with-assignment`);
+
+    expect(assignmentsService.getAssignmentContextForResource).toHaveBeenCalledWith(`document`, `doc-with-assignment`);
+    expect(documentCase.assignment.current).toEqual(
+      expect.objectContaining({
+        id: `assignment-doc-1`,
+        assignedTo: expect.objectContaining({ id: `admin-1`, email: `ops@example.com` }),
+        reason: `Reviewing supporting evidence`,
+      }),
+    );
+    expect(documentCase.assignment.history).toHaveLength(1);
   });
 
   it(`returns exact tag usage stats and marks reserved invoice tags as read-only`, async () => {
@@ -316,6 +389,7 @@ describe(`AdminV2DocumentsService`, () => {
       } as never,
       {} as never,
       createIdempotency() as never,
+      createAssignmentsService() as never,
     );
 
     await expect(service.listTags()).resolves.toEqual({
@@ -359,7 +433,12 @@ describe(`AdminV2DocumentsService`, () => {
       adminActionAuditLogModel,
       $transaction: jest.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(prisma)),
     };
-    const service = new AdminV2DocumentsService(prisma as never, {} as never, createIdempotency() as never);
+    const service = new AdminV2DocumentsService(
+      prisma as never,
+      {} as never,
+      createIdempotency() as never,
+      createAssignmentsService() as never,
+    );
 
     await expect(
       service.createTag(`admin-1`, { name: `evidence` }, { idempotencyKey: `idem-1`, userAgent: `jest` }),
@@ -409,7 +488,12 @@ describe(`AdminV2DocumentsService`, () => {
       adminActionAuditLogModel,
       $transaction: jest.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(prisma)),
     };
-    const service = new AdminV2DocumentsService(prisma as never, {} as never, createIdempotency() as never);
+    const service = new AdminV2DocumentsService(
+      prisma as never,
+      {} as never,
+      createIdempotency() as never,
+      createAssignmentsService() as never,
+    );
 
     await expect(
       service.updateTag(
@@ -457,7 +541,12 @@ describe(`AdminV2DocumentsService`, () => {
       adminActionAuditLogModel,
       $transaction: jest.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(prisma)),
     };
-    const service = new AdminV2DocumentsService(prisma as never, {} as never, createIdempotency() as never);
+    const service = new AdminV2DocumentsService(
+      prisma as never,
+      {} as never,
+      createIdempotency() as never,
+      createAssignmentsService() as never,
+    );
 
     await expect(
       service.deleteTag(
@@ -518,7 +607,12 @@ describe(`AdminV2DocumentsService`, () => {
       adminActionAuditLogModel,
       $transaction: jest.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(prisma)),
     };
-    const service = new AdminV2DocumentsService(prisma as never, {} as never, createIdempotency() as never);
+    const service = new AdminV2DocumentsService(
+      prisma as never,
+      {} as never,
+      createIdempotency() as never,
+      createAssignmentsService() as never,
+    );
 
     await expect(
       service.retagDocument(
@@ -586,7 +680,12 @@ describe(`AdminV2DocumentsService`, () => {
       adminActionAuditLogModel,
       $transaction: jest.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(prisma)),
     };
-    const service = new AdminV2DocumentsService(prisma as never, {} as never, createIdempotency() as never);
+    const service = new AdminV2DocumentsService(
+      prisma as never,
+      {} as never,
+      createIdempotency() as never,
+      createAssignmentsService() as never,
+    );
 
     await expect(
       service.bulkTagDocuments(
@@ -635,6 +734,7 @@ describe(`AdminV2DocumentsService`, () => {
       } as never,
       storage as never,
       createIdempotency() as never,
+      createAssignmentsService() as never,
     );
 
     await expect(service.openDownload(`doc-1`)).resolves.toEqual({ stream: `stream`, filename: `proof.pdf` });

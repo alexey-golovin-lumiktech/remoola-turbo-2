@@ -20,16 +20,21 @@ jest.mock(`next/navigation`, () => ({
 
 jest.mock(`../../../../lib/admin-api.server`, () => ({
   getAdminIdentity: jest.fn(),
+  getAdmins: jest.fn(),
   getDocumentCase: jest.fn(),
   getDocumentTags: jest.fn(),
 }));
 
 jest.mock(`../../../../lib/admin-mutations.server`, () => ({
   retagDocumentAction: jest.fn(),
+  claimDocumentAssignmentAction: jest.fn(),
+  releaseDocumentAssignmentAction: jest.fn(),
+  reassignDocumentAssignmentAction: jest.fn(),
 }));
 
 const {
   getAdminIdentity: mockedGetAdminIdentity,
+  getAdmins: mockedGetAdmins,
   getDocumentCase: mockedGetDocumentCase,
   getDocumentTags: mockedGetDocumentTags,
 } = jest.requireMock(`../../../../lib/admin-api.server`) as jest.Mocked<typeof AdminApi>;
@@ -48,6 +53,7 @@ describe(`admin-v2 document case`, () => {
   beforeEach(() => {
     mockedNotFound.mockClear();
     mockedGetAdminIdentity.mockReset();
+    mockedGetAdmins.mockReset();
     mockedGetDocumentCase.mockReset();
     mockedGetDocumentTags.mockReset();
     mockedGetAdminIdentity.mockResolvedValue({
@@ -56,8 +62,15 @@ describe(`admin-v2 document case`, () => {
       type: `SUPER`,
       role: `SUPER_ADMIN`,
       phase: `MVP-2 slice: documents workspace`,
-      capabilities: [`documents.read`, `documents.manage`],
+      capabilities: [`documents.read`, `documents.manage`, `assignments.manage`],
       workspaces: [`documents`],
+    });
+    mockedGetAdmins.mockResolvedValue({
+      items: [],
+      pendingInvitations: [],
+      total: 0,
+      page: 1,
+      pageSize: 50,
     });
     mockedGetDocumentTags.mockResolvedValue({
       items: [
@@ -112,6 +125,10 @@ describe(`admin-v2 document case`, () => {
       updatedAt: `2026-04-17T08:10:00.000Z`,
       staleWarning: false,
       dataFreshnessClass: `exact`,
+      assignment: {
+        current: null,
+        history: [],
+      },
     });
   });
 

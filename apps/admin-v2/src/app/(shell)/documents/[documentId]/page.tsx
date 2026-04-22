@@ -1,8 +1,14 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { getAdminIdentity, getDocumentCase, getDocumentTags } from '../../../../lib/admin-api.server';
-import { retagDocumentAction } from '../../../../lib/admin-mutations.server';
+import { AssignmentCard } from '../../../../components/assignment-card';
+import { getAdminIdentity, getAdmins, getDocumentCase, getDocumentTags } from '../../../../lib/admin-api.server';
+import {
+  claimDocumentAssignmentAction,
+  reassignDocumentAssignmentAction,
+  releaseDocumentAssignmentAction,
+  retagDocumentAction,
+} from '../../../../lib/admin-mutations.server';
 
 function formatDate(value: string | null | undefined): string {
   if (!value) return `-`;
@@ -38,6 +44,21 @@ export default async function DocumentCasePage({ params }: { params: Promise<{ d
   const canManage = identity?.capabilities.includes(`documents.manage`) ?? false;
   const selectedTags = new Set(documentCase.tags.map((tag) => tag.id));
   const tagMetadata = new Map((tags?.items ?? []).map((tag) => [tag.id, tag]));
+
+  const currentAssignment = documentCase.assignment.current;
+  const currentAdminId = identity?.id ?? null;
+  const ownsAssignment = Boolean(
+    currentAssignment && currentAdminId && currentAssignment.assignedTo.id === currentAdminId,
+  );
+  const canManageAssignments = Boolean(identity?.capabilities?.includes(`assignments.manage`));
+  const canReassignAssignments = identity?.role === `SUPER_ADMIN`;
+  const canClaim = canManageAssignments && !currentAssignment;
+  const canRelease = Boolean(currentAssignment && canManageAssignments && (ownsAssignment || canReassignAssignments));
+  const canReassign = Boolean(currentAssignment && canReassignAssignments);
+  const reassignCandidatesResponse = canReassign ? await getAdmins({ page: 1, pageSize: 50, status: `ACTIVE` }) : null;
+  const reassignCandidates = (reassignCandidatesResponse?.items ?? []).filter(
+    (admin) => admin.id !== currentAssignment?.assignedTo.id,
+  );
 
   return (
     <>
@@ -136,6 +157,19 @@ export default async function DocumentCasePage({ params }: { params: Promise<{ d
           </p>
         </article>
       </section>
+
+      <AssignmentCard
+        resourceId={documentCase.id}
+        assignment={documentCase.assignment}
+        reassignCandidates={reassignCandidates}
+        capabilities={{ canClaim, canRelease, canReassign }}
+        actions={{
+          claim: claimDocumentAssignmentAction,
+          release: releaseDocumentAssignmentAction,
+          reassign: reassignDocumentAssignmentAction,
+        }}
+        copy={{ claimReasonPlaceholder: `Why are you claiming this document?` }}
+      />
 
       {canManage ? (
         <section className="panel">

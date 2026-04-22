@@ -441,6 +441,10 @@ export type DocumentCaseResponse = {
   updatedAt: string;
   staleWarning: boolean;
   dataFreshnessClass: string;
+  assignment: {
+    current: AssignmentSummary | null;
+    history: AssignmentHistoryItem[];
+  };
 };
 
 export type DocumentTagsResponse = {

@@ -723,6 +723,63 @@ export async function reassignPayoutAssignmentAction(payoutId: string, formData:
   revalidatePayoutAssignmentPaths(payoutId);
 }
 
+function revalidateDocumentAssignmentPaths(documentId: string) {
+  revalidatePath(`/documents`);
+  revalidatePath(`/documents/${documentId}`);
+}
+
+export async function claimDocumentAssignmentAction(documentId: string, formData: FormData): Promise<void> {
+  if (!documentId) {
+    throw new Error(`documentId is required`);
+  }
+  const reason = String(formData.get(`reason`) ?? ``).trim();
+  await postAdminMutation(
+    `/admin-v2/assignments/claim`,
+    { resourceType: `document`, resourceId: documentId, reason: reason || null },
+    `Failed to claim document assignment`,
+  );
+  revalidateDocumentAssignmentPaths(documentId);
+}
+
+export async function releaseDocumentAssignmentAction(documentId: string, formData: FormData): Promise<void> {
+  if (!documentId) {
+    throw new Error(`documentId is required`);
+  }
+  const assignmentId = String(formData.get(`assignmentId`) ?? ``).trim();
+  if (!assignmentId) {
+    throw new Error(`assignmentId is required`);
+  }
+  const reason = String(formData.get(`reason`) ?? ``).trim();
+  await postAdminMutation(
+    `/admin-v2/assignments/release`,
+    { assignmentId, reason: reason || null, expectedReleasedAtNull: 0 },
+    `Failed to release document assignment`,
+  );
+  revalidateDocumentAssignmentPaths(documentId);
+}
+
+export async function reassignDocumentAssignmentAction(documentId: string, formData: FormData): Promise<void> {
+  if (!documentId) {
+    throw new Error(`documentId is required`);
+  }
+  const assignmentId = String(formData.get(`assignmentId`) ?? ``).trim();
+  const newAssigneeId = String(formData.get(`newAssigneeId`) ?? ``).trim();
+  const reason = String(formData.get(`reason`) ?? ``).trim();
+  const confirmed = parseConfirmedFormValue(formData, [`confirmed`, `confirmedSubmit`]);
+  if (!assignmentId) {
+    throw new Error(`assignmentId is required`);
+  }
+  if (!newAssigneeId) {
+    throw new Error(`newAssigneeId is required`);
+  }
+  await postAdminMutation(
+    `/admin-v2/assignments/reassign`,
+    { assignmentId, newAssigneeId, reason, confirmed, expectedReleasedAtNull: 0 },
+    `Failed to reassign document assignment`,
+  );
+  revalidateDocumentAssignmentPaths(documentId);
+}
+
 export async function resetAdminPasswordAction(adminId: string, formData: FormData): Promise<void> {
   const version = parseRequiredVersion(formData);
   await postAdminMutation(

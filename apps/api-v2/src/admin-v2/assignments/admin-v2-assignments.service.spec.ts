@@ -170,7 +170,7 @@ describe(`AdminV2AssignmentsService`, () => {
       const { service } = buildService();
 
       await expect(
-        service.claim(opsActor, { resourceType: `fx_conversion`, resourceId: RESOURCE_ID }, meta),
+        service.claim(opsActor, { resourceType: `consumer`, resourceId: RESOURCE_ID }, meta),
       ).rejects.toBeInstanceOf(BadRequestException);
     });
 
@@ -264,6 +264,31 @@ describe(`AdminV2AssignmentsService`, () => {
           action: `assignment_claim`,
           adminId: OPS_ADMIN_ID,
           resource: `payout`,
+          resourceId: RESOURCE_ID,
+        }),
+      );
+    });
+
+    it(`accepts document resourceType, inserts the assignment, and audits document`, async () => {
+      const { service, queryRaw, adminModel, adminActionAudit } = buildService();
+      queryRaw.mockResolvedValueOnce([]);
+      queryRaw.mockResolvedValueOnce([activeRow({ resource_type: `document` })]);
+      adminModel.findUnique.mockResolvedValueOnce({ id: OPS_ADMIN_ID, email: `ops@example.com` });
+
+      const result = await service.claim(opsActor, { resourceType: `document`, resourceId: RESOURCE_ID }, meta);
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          assignmentId: ASSIGNMENT_ID,
+          status: `created`,
+          assignedTo: expect.objectContaining({ id: OPS_ADMIN_ID }),
+        }),
+      );
+      expect(adminActionAudit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: `assignment_claim`,
+          adminId: OPS_ADMIN_ID,
+          resource: `document`,
           resourceId: RESOURCE_ID,
         }),
       );
@@ -375,6 +400,24 @@ describe(`AdminV2AssignmentsService`, () => {
           action: `assignment_release`,
           adminId: OPS_ADMIN_ID,
           resource: `payout`,
+          resourceId: RESOURCE_ID,
+        }),
+      );
+    });
+
+    it(`releases a document assignment owned by the caller and audits document`, async () => {
+      const { service, queryRaw, adminActionAudit } = buildService();
+      queryRaw.mockResolvedValueOnce([activeRow({ resource_type: `document` })]);
+      queryRaw.mockResolvedValueOnce([releasedRow({ resource_type: `document` })]);
+
+      const result = await service.release(opsActor, { assignmentId: ASSIGNMENT_ID, expectedReleasedAtNull: 0 }, meta);
+
+      expect(result.assignmentId).toBe(ASSIGNMENT_ID);
+      expect(adminActionAudit.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: `assignment_release`,
+          adminId: OPS_ADMIN_ID,
+          resource: `document`,
           resourceId: RESOURCE_ID,
         }),
       );
@@ -572,6 +615,38 @@ describe(`AdminV2AssignmentsService`, () => {
       expect(secondCall[0].data.resource).toBe(`payout`);
       expect(firstCall[0].data.metadata.transferOperationId).toBe(secondCall[0].data.metadata.transferOperationId);
     });
+
+    it(`reassigns a document assignment and writes correlated audits with resource document`, async () => {
+      const { service, queryRaw, adminModel, adminActionAuditLogModel } = buildService();
+      adminModel.findUnique.mockResolvedValueOnce({ id: OTHER_ADMIN_ID, deletedAt: null });
+      queryRaw.mockResolvedValueOnce([activeRow({ resource_type: `document` })]);
+      queryRaw.mockResolvedValueOnce([releasedRow({ resource_type: `document` })]);
+      const newAssignmentId = `66666666-6666-4666-8666-666666666666`;
+      queryRaw.mockResolvedValueOnce([
+        activeRow({
+          id: newAssignmentId,
+          resource_type: `document`,
+          assigned_to: OTHER_ADMIN_ID,
+          assigned_by: SUPER_ADMIN_ID,
+          assigned_at: new Date(`2026-04-20T12:00:00.000Z`),
+        }),
+      ]);
+      adminModel.findUnique.mockResolvedValueOnce({ id: OTHER_ADMIN_ID, email: `other@example.com` });
+
+      const result = await service.reassign(superActor, validBody, meta);
+
+      expect(result.oldAssignmentId).toBe(ASSIGNMENT_ID);
+      expect(result.newAssignmentId).toBe(newAssignmentId);
+      expect(adminActionAuditLogModel.create).toHaveBeenCalledTimes(2);
+      const [firstCall, secondCall] = adminActionAuditLogModel.create.mock.calls as Array<
+        [{ data: { action: string; resource: string; metadata: { transferOperationId?: string } } }]
+      >;
+      expect(firstCall[0].data.action).toBe(`assignment_release`);
+      expect(firstCall[0].data.resource).toBe(`document`);
+      expect(secondCall[0].data.action).toBe(`assignment_reassign`);
+      expect(secondCall[0].data.resource).toBe(`document`);
+      expect(firstCall[0].data.metadata.transferOperationId).toBe(secondCall[0].data.metadata.transferOperationId);
+    });
   });
 
   describe(`getAssignmentContextForResource`, () => {
@@ -695,6 +770,39 @@ describe(`AdminV2AssignmentsService`, () => {
         assignedBy: { id: OPS_ADMIN_ID, name: null, email: `ops@example.com` },
         assignedAt: assignedAt.toISOString(),
         reason: `Investigating failed payout`,
+        expiresAt: null,
+      });
+      expect(result.history).toHaveLength(1);
+    });
+
+    it(`returns the active document assignment as current with document resource_type`, async () => {
+      const { service, queryRaw } = buildService();
+      const assignedAt = new Date(`2026-04-20T11:00:00.000Z`);
+      queryRaw.mockResolvedValueOnce([
+        {
+          id: ASSIGNMENT_ID,
+          resource_id: RESOURCE_ID,
+          assigned_to: OPS_ADMIN_ID,
+          assigned_by: OPS_ADMIN_ID,
+          released_by: null,
+          assigned_at: assignedAt,
+          released_at: null,
+          expires_at: null,
+          reason: `Reviewing supporting evidence`,
+          assigned_to_email: `ops@example.com`,
+          assigned_by_email: `ops@example.com`,
+          released_by_email: null,
+        },
+      ]);
+
+      const result = await service.getAssignmentContextForResource(`document`, RESOURCE_ID);
+
+      expect(result.current).toEqual({
+        id: ASSIGNMENT_ID,
+        assignedTo: { id: OPS_ADMIN_ID, name: null, email: `ops@example.com` },
+        assignedBy: { id: OPS_ADMIN_ID, name: null, email: `ops@example.com` },
+        assignedAt: assignedAt.toISOString(),
+        reason: `Reviewing supporting evidence`,
         expiresAt: null,
       });
       expect(result.history).toHaveLength(1);
