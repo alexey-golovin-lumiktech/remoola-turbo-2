@@ -345,6 +345,32 @@ high-cardinality — but the cumulative load delta is large enough that the audi
 should now be scheduled before the next adopter rather than after, and the next
 adopter `/payouts` is on the immediate horizon.
 
+## Deviations
+
+- `Deviation: handoff-README LANDED-move skipped` — the slice handoff body
+  (`admin-v2-handoff/SLICE-MVP-3.7c-list-surface-assignee-payments-operations.md`,
+  `Reconciliation` section, "after the slice merges" task) calls for moving the
+  3.7c handoff entry into `admin-v2-handoff/README.md` `## Landed` (or
+  equivalently, into `admin-v2-handoff/LANDED.md` `## Landed slices` per the
+  recent split). This step was **intentionally skipped** for this slice because
+  the working tree contains a pending policy change that reclassifies the entire
+  `admin-v2-handoff/` directory as personal scratch (not for commit) via an
+  unstaged `.gitignore` addition (`# admin-v2 handoff/pack — personal scratch,
+  не для commit` followed by `admin-v2-handoff/`, `admin-v2-pack/`,
+  `admin-v2-planning-input.md`); the previous `admin-v2-handoff/README.md` is
+  already staged for deletion in the index, consistent with that policy.
+  Performing the README LANDED-move now would either be invisible (post-ignore)
+  or produce a dirty `D+M` index state that conflates this slice with the
+  unrelated cross-cutting policy change. The canonical in-tree landing record
+  for this slice is therefore the present reconciliation note
+  (`docs/admin-v2-mvp-3.7c-list-surface-assignee-payments-operations.md`),
+  registered in `scripts/admin-v2-gates/config.mjs` `CHECK_PATHS` and
+  `RECONCILIATION_NOTES`. This deviation is scoped to 3.7c only and does not
+  set a precedent for future slices: subsequent slices should inherit whatever
+  treatment the `admin-v2-handoff/` directory ultimately receives once the
+  pending `.gitignore` policy change is committed (or reverted) by a separate
+  cross-cutting cleanup.
+
 ## Follow-ups
 
 - Re-evaluate `/payouts` list-surface assignee surfacing as a separate single-page
