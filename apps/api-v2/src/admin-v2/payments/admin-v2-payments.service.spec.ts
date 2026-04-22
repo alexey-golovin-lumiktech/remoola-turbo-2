@@ -392,7 +392,7 @@ describe(`AdminV2PaymentsService`, () => {
           findMany,
         },
       } as never,
-      {} as never,
+      { getActiveAssigneesForResource: jest.fn(async () => new Map()) } as never,
     );
 
     const queue = await service.getPaymentOperationsQueue();
@@ -471,7 +471,7 @@ describe(`AdminV2PaymentsService`, () => {
           findMany,
         },
       } as never,
-      {} as never,
+      { getActiveAssigneesForResource: jest.fn(async () => new Map()) } as never,
     );
 
     await service.getPaymentOperationsQueue();

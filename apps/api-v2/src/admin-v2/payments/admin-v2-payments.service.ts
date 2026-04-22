@@ -4,7 +4,7 @@ import { $Enums, Prisma } from '@remoola/database-2';
 
 import { PrismaService } from '../../shared/prisma.service';
 import { decodeAdminV2Cursor, encodeAdminV2Cursor } from '../admin-v2-cursor';
-import { AdminV2AssignmentsService } from '../assignments/admin-v2-assignments.service';
+import { AdminV2AssignmentsService, type AdminRef } from '../assignments/admin-v2-assignments.service';
 
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 100;
@@ -105,33 +105,36 @@ export class AdminV2PaymentsService {
     return resource?.resourceTags?.some((resourceTag) => resourceTag.tag.name.startsWith(`INVOICE-`)) ?? false;
   }
 
-  private mapPaymentOperationsQueueItem(row: {
-    id: string;
-    amount: Prisma.Decimal;
-    currencyCode: $Enums.CurrencyCode;
-    status: $Enums.TransactionStatus;
-    paymentRail: $Enums.PaymentRail | null;
-    dueDate: Date | null;
-    createdAt: Date;
-    updatedAt: Date;
-    payer?: { id: string; email: string } | null;
-    requester?: { id: string; email: string } | null;
-    payerEmail?: string | null;
-    requesterEmail?: string | null;
-    attachments: Array<{
+  private mapPaymentOperationsQueueItem(
+    row: {
       id: string;
-      resource: {
-        id: string;
-        resourceTags?: Array<{ tag: { name: string } }>;
-      } | null;
-    }>;
-    ledgerEntries: Array<{
+      amount: Prisma.Decimal;
+      currencyCode: $Enums.CurrencyCode;
       status: $Enums.TransactionStatus;
+      paymentRail: $Enums.PaymentRail | null;
+      dueDate: Date | null;
       createdAt: Date;
-      type: $Enums.LedgerEntryType;
-      outcomes?: Array<{ status: $Enums.TransactionStatus }>;
-    }>;
-  }) {
+      updatedAt: Date;
+      payer?: { id: string; email: string } | null;
+      requester?: { id: string; email: string } | null;
+      payerEmail?: string | null;
+      requesterEmail?: string | null;
+      attachments: Array<{
+        id: string;
+        resource: {
+          id: string;
+          resourceTags?: Array<{ tag: { name: string } }>;
+        } | null;
+      }>;
+      ledgerEntries: Array<{
+        status: $Enums.TransactionStatus;
+        createdAt: Date;
+        type: $Enums.LedgerEntryType;
+        outcomes?: Array<{ status: $Enums.TransactionStatus }>;
+      }>;
+    },
+    assignedTo: AdminRef | null = null,
+  ) {
     const effectiveStatus = this.getEffectivePaymentStatus(row) ?? row.status;
     const invoiceTaggedAttachmentsCount = row.attachments.filter((attachment) =>
       this.isInvoiceTaggedResource(attachment.resource),
@@ -159,6 +162,7 @@ export class AdminV2PaymentsService {
       attachmentsCount: row.attachments.length,
       invoiceTaggedAttachmentsCount,
       dataFreshnessClass: `bounded-snapshot`,
+      assignedTo,
     };
   }
 
@@ -753,6 +757,15 @@ export class AdminV2PaymentsService {
             : `Payment request has no invoice-tagged attachment linkage`,
       }));
 
+    const itemIdSet = new Set<string>();
+    for (const row of overdueRows) itemIdSet.add(row.id);
+    for (const row of uncollectibleRows) itemIdSet.add(row.id);
+    for (const row of staleApprovalRows) itemIdSet.add(row.id);
+    for (const item of inconsistentItems) itemIdSet.add(item.id);
+    for (const item of missingAttachmentItems) itemIdSet.add(item.id);
+
+    const assigneeMap = await this.assignmentsService.getActiveAssigneesForResource(`payment_request`, [...itemIdSet]);
+
     return {
       generatedAt: now,
       posture: {
@@ -765,7 +778,7 @@ export class AdminV2PaymentsService {
           label: `Overdue requests`,
           operatorPrompt: OVERDUE_OPERATOR_PROMPT,
           items: overdueRows.map((row) => ({
-            ...this.mapPaymentOperationsQueueItem(row),
+            ...this.mapPaymentOperationsQueueItem(row, assigneeMap.get(row.id) ?? null),
             followUpReason: `Due date passed while payment request remains in an active follow-up status`,
           })),
         },
@@ -774,7 +787,7 @@ export class AdminV2PaymentsService {
           label: `UNCOLLECTIBLE requests`,
           operatorPrompt: UNCOLLECTIBLE_OPERATOR_PROMPT,
           items: uncollectibleRows.map((row) => ({
-            ...this.mapPaymentOperationsQueueItem(row),
+            ...this.mapPaymentOperationsQueueItem(row, assigneeMap.get(row.id) ?? null),
             followUpReason: `Payment request is marked UNCOLLECTIBLE and requires collections-focused review`,
           })),
         },
@@ -783,7 +796,7 @@ export class AdminV2PaymentsService {
           label: `Stale WAITING_RECIPIENT_APPROVAL`,
           operatorPrompt: STALE_WAITING_RECIPIENT_APPROVAL_OPERATOR_PROMPT,
           items: staleApprovalRows.map((row) => ({
-            ...this.mapPaymentOperationsQueueItem(row),
+            ...this.mapPaymentOperationsQueueItem(row, assigneeMap.get(row.id) ?? null),
             followUpReason: `Payment request remains in WAITING_RECIPIENT_APPROVAL beyond the current follow-up window`,
           })),
         },
@@ -791,13 +804,19 @@ export class AdminV2PaymentsService {
           key: `inconsistent_status`,
           label: `Inconsistent status cases`,
           operatorPrompt: `Review cases where persisted request status and latest settlement status disagree.`,
-          items: inconsistentItems,
+          items: inconsistentItems.map((item) => ({
+            ...item,
+            assignedTo: assigneeMap.get(item.id) ?? null,
+          })),
         },
         {
           key: `missing_attachment_or_invoice_linkage`,
           label: `Missing attachment or invoice linkage`,
           operatorPrompt: MISSING_ATTACHMENT_OPERATOR_PROMPT,
-          items: missingAttachmentItems,
+          items: missingAttachmentItems.map((item) => ({
+            ...item,
+            assignedTo: assigneeMap.get(item.id) ?? null,
+          })),
         },
       ],
     };
