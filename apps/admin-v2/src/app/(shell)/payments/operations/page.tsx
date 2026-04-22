@@ -79,6 +79,17 @@ export default async function PaymentOperationsQueuePage() {
                   Due: {formatDate(item.dueDate)} · Updated: {formatDate(item.updatedAt)} · Freshness:{` `}
                   {item.dataFreshnessClass}
                 </p>
+                <p className="muted">
+                  Assigned to:{` `}
+                  {item.assignedTo ? (
+                    <>
+                      <span>{item.assignedTo.name ?? item.assignedTo.email ?? item.assignedTo.id}</span>
+                      {item.assignedTo.email ? <span className="muted"> {item.assignedTo.email}</span> : null}
+                    </>
+                  ) : (
+                    <span className="muted">—</span>
+                  )}
+                </p>
               </article>
             ))}
           </div>
