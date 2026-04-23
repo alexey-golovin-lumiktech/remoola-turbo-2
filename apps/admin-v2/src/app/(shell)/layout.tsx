@@ -1,90 +1,121 @@
-import Link from 'next/link';
+import { headers } from 'next/headers';
 
-import { getAdminIdentity } from '../../lib/admin-api.server';
+import { cn } from '@/lib/cn';
 
-const coreShellItems = [
-  { href: `/overview`, label: `Overview`, workspace: `overview` },
-  { href: `/consumers`, label: `Consumers`, workspace: `consumers` },
-  { href: `/verification`, label: `Verification`, workspace: `verification` },
-  { href: `/payments`, label: `Payments`, workspace: `payments` },
-  { href: `/ledger`, label: `Ledger and Disputes`, workspace: `ledger` },
-  { href: `/audit/auth`, label: `Audit`, workspace: `audit` },
-] as const;
+import { getActivePathFromHeaders } from './nav-state';
+import { MobileBottomNav } from '../../components/mobile-bottom-nav';
+import { MobilePageHeader } from '../../components/mobile-page-header';
+import { MobileShellDrawer } from '../../components/mobile-shell-drawer';
+import { MobileTopChips } from '../../components/mobile-top-chips';
+import { ShellHeader } from '../../components/shell-header';
+import { SidebarContents } from '../../components/sidebar-contents';
+import {
+  getAdminIdentity,
+  getOverviewSummary,
+  getQuickstarts,
+  type OverviewSummaryResponse,
+  type QuickstartCard,
+} from '../../lib/admin-api.server';
 
-const topLevelBreadthItems = [
-  { href: `/exchange`, label: `Exchange`, workspace: `exchange` },
-  { href: `/documents`, label: `Documents`, workspace: `documents` },
-] as const;
+export {
+  auditExplorerItems,
+  coreShellItems,
+  financeBreadthItems,
+  laterBreadthItems,
+  maturityItems,
+  topLevelBreadthItems,
+} from './shell-nav';
 
-const financeBreadthItems = [
-  { href: `/payouts`, label: `Payouts`, workspace: `ledger` },
-  { href: `/payment-methods`, label: `Payment Methods`, workspace: `payment_methods` },
-] as const;
+type SignalCount = { count: number; deferred: boolean };
 
-const maturityItems = [{ href: `/system`, label: `System`, workspace: `system` }] as const;
+async function safeGetOverviewSummary(): Promise<OverviewSummaryResponse | null> {
+  try {
+    if (typeof getOverviewSummary !== `function`) {
+      return null;
+    }
+    return await getOverviewSummary();
+  } catch {
+    return null;
+  }
+}
 
-const auditExplorerItems = [
-  { href: `/audit/auth`, label: `Auth`, workspace: `audit` },
-  { href: `/audit/admin-actions`, label: `Admin Actions`, workspace: `audit` },
-  { href: `/audit/consumer-actions`, label: `Consumer Actions`, workspace: `audit` },
-] as const;
+async function safeGetQuickstarts(): Promise<QuickstartCard[]> {
+  try {
+    return await getQuickstarts(`shell`);
+  } catch {
+    return [];
+  }
+}
 
-const laterBreadthItems = [{ href: `/admins`, label: `Admins`, workspace: `admins` }] as const;
+async function safeGetActivePath(): Promise<string | null> {
+  try {
+    const headerStore = await headers();
+    return getActivePathFromHeaders(headerStore);
+  } catch {
+    return null;
+  }
+}
+
+function buildSignalCounts(summary: OverviewSummaryResponse | null): Record<string, SignalCount> {
+  const out: Record<string, SignalCount> = {};
+  if (!summary || !summary.signals || typeof summary.signals !== `object`) {
+    return out;
+  }
+  for (const [key, raw] of Object.entries(summary.signals)) {
+    const sig = (raw && typeof raw === `object` ? raw : {}) as Record<string, unknown>;
+    const count = typeof sig.count === `number` && Number.isFinite(sig.count) ? sig.count : null;
+    if (count == null) continue;
+    const availability = typeof sig.availability === `string` ? sig.availability : null;
+    out[key] = { count, deferred: availability === `deferred` };
+  }
+  return out;
+}
 
 export default async function ShellLayout({ children }: { children: React.ReactNode }) {
-  const identity = await getAdminIdentity();
-  const allowedWorkspaces = new Set(identity?.workspaces ?? []);
-  const visibleCoreShellItems = coreShellItems.filter((item) => allowedWorkspaces.has(item.workspace));
-  const visibleTopLevelBreadthItems = topLevelBreadthItems.filter((item) => allowedWorkspaces.has(item.workspace));
-  const visibleFinanceBreadthItems = financeBreadthItems.filter((item) => allowedWorkspaces.has(item.workspace));
-  const visibleMaturityItems = maturityItems.filter((item) => allowedWorkspaces.has(item.workspace));
-  const visibleAuditExplorerItems = auditExplorerItems.filter((item) => allowedWorkspaces.has(item.workspace));
-  const visibleLaterBreadthItems = laterBreadthItems.filter((item) => allowedWorkspaces.has(item.workspace));
+  const [identity, summary, quickstarts, activePath] = await Promise.all([
+    getAdminIdentity(),
+    safeGetOverviewSummary(),
+    safeGetQuickstarts(),
+    safeGetActivePath(),
+  ]);
+  const signalCounts = buildSignalCounts(summary);
 
   return (
-    <div className="shell">
-      <aside className="sidebar">
-        <div className="brand">Admin v2</div>
-        <nav className="navList" aria-label="Canonical MVP-2 shell navigation">
-          <NavSection title="Core shell" items={visibleCoreShellItems} />
-          <NavSection title="Top-level breadth" items={visibleTopLevelBreadthItems} />
-          <NavSection
-            title="Finance breadth"
-            description="Payouts and Payment Methods stay nested finance breadth, not permanent first-level peers."
-            items={visibleFinanceBreadthItems}
-          />
-          <NavSection
-            title="Maturity"
-            description="System stays a read-only maturity destination for cross-domain health signals, not a promoted core shell peer."
-            items={visibleMaturityItems}
-          />
-          <NavSection
-            title="Audit explorers"
-            description="Audit stays grouped as one shell bucket over the canonical explorer family."
-            items={visibleAuditExplorerItems}
-          />
-          <NavSection title="Later breadth" items={visibleLaterBreadthItems} />
-        </nav>
-        <div className="panel">
-          <p className="muted">{identity?.email ?? `Access denied`}</p>
-          <p className="muted">Role: {identity?.role ?? `UNAUTHORIZED`}</p>
-          <p className="muted">Phase: {identity?.phase ?? `MVP-2 canonical shell framing`}</p>
-          {identity ? null : <p className="muted">This admin type is outside the allowed Admin v2 surfaces.</p>}
-          {identity ? (
-            <Link href="/me/sessions" className="navLink">
-              My sessions
-            </Link>
-          ) : null}
-          <form action="/logout" method="post">
-            <button type="submit" className="secondaryButton">
-              Log out
-            </button>
-          </form>
-        </div>
+    <div
+      className={cn(
+        `shell`,
+        `grid grid-cols-1 md:grid-cols-[280px_minmax(0,1fr)] lg:grid-cols-[320px_minmax(0,1fr)] min-h-screen`,
+      )}
+    >
+      <aside
+        className={cn(
+          `sidebar`,
+          `hidden md:flex md:h-screen md:flex-col md:overflow-y-auto md:border-r md:border-white/10 md:bg-[#0d1627]`,
+        )}
+      >
+        <SidebarContents
+          identity={identity}
+          activePath={activePath}
+          signalCounts={signalCounts}
+          quickstarts={quickstarts}
+        />
       </aside>
-      <main className="content">
+      <main className={cn(`content`, `min-w-0`)}>
         {identity ? (
-          children
+          <>
+            <ShellHeader />
+            <MobileShellDrawer>
+              <SidebarContents
+                identity={identity}
+                activePath={activePath}
+                signalCounts={signalCounts}
+                quickstarts={quickstarts}
+              />
+            </MobileShellDrawer>
+            <MobileTopChips identity={identity} activePath={activePath} />
+            <MobilePageHeader activePath={activePath} />
+            {children}
+          </>
         ) : (
           <section className="panel">
             <h1>Access denied</h1>
@@ -92,32 +123,7 @@ export default async function ShellLayout({ children }: { children: React.ReactN
           </section>
         )}
       </main>
-    </div>
-  );
-}
-
-function NavSection({
-  title,
-  items,
-  description,
-}: {
-  title: string;
-  items: ReadonlyArray<{ href: string; label: string }>;
-  description?: string;
-}) {
-  if (items.length === 0) {
-    return null;
-  }
-
-  return (
-    <div className="panel">
-      <p className="muted">{title}</p>
-      {description ? <p className="muted">{description}</p> : null}
-      {items.map((item) => (
-        <Link key={`${title}-${item.href}`} href={item.href} className="navLink">
-          {item.label}
-        </Link>
-      ))}
+      <MobileBottomNav identity={identity} activePath={activePath} />
     </div>
   );
 }
