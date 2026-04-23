@@ -130,7 +130,7 @@ export function MobileShellDrawer({ children, triggerLabel = `Workspaces` }: Mob
 
   return (
     <div className="md:hidden">
-      <div className="flex items-center gap-3 border-b border-border bg-bg/85 px-4 py-3 backdrop-blur-md">
+      <div className="mobileShellTriggerBar flex items-center gap-3 border-b border-border bg-bg/85 px-4 py-3 backdrop-blur-md">
         <button
           ref={triggerRef}
           type="button"
@@ -166,7 +166,7 @@ export function MobileShellDrawer({ children, triggerLabel = `Workspaces` }: Mob
         aria-hidden={!open}
         aria-labelledby={titleId}
         className={cn(
-          `fixed inset-y-0 left-0 z-50 w-[88vw] max-w-[360px] overflow-y-auto border-r border-border bg-bg shadow-2xl transition-transform duration-200 ease-out`,
+          `mobileShellDrawer fixed inset-y-0 left-0 z-50 w-[88vw] max-w-[360px] overflow-y-auto border-r border-border bg-bg shadow-2xl transition-transform duration-200 ease-out`,
           open ? `translate-x-0` : `-translate-x-full`,
         )}
         tabIndex={-1}
@@ -175,7 +175,7 @@ export function MobileShellDrawer({ children, triggerLabel = `Workspaces` }: Mob
           if (target.closest(`a`)) setOpen(false);
         }}
       >
-        <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-bg/95 px-4 py-3 backdrop-blur-md">
+        <div className="mobileShellDrawerHeader sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-bg/95 px-4 py-3 backdrop-blur-md">
           <div id={titleId} className="text-sm font-medium text-white/90">
             Workspace navigation
           </div>

@@ -100,6 +100,10 @@
   --space-4: 16px;
   --space-5: 24px;
   --space-6: 32px;
+
+  --mobile-shell-trigger-height: 56px;
+  --mobile-bottom-nav-base-height: 76px;
+  --mobile-bottom-nav-reserved-space: calc(var(--mobile-bottom-nav-base-height) + env(safe-area-inset-bottom, 16px));
 }
 
 * {
@@ -559,6 +563,12 @@ td {
   gap: var(--space-2);
   overflow-x: auto;
   padding: var(--space-2) var(--space-4);
+  position: sticky;
+  top: calc(env(safe-area-inset-top, 0px) + var(--mobile-shell-trigger-height));
+  z-index: 34;
+  background: rgba(9, 18, 31, 0.88);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
   scrollbar-width: none;
 }
 
@@ -587,6 +597,7 @@ td {
   display: grid;
   grid-template-columns: repeat(var(--mobile-bottom-nav-count, 6), 1fr);
   padding: var(--space-2) var(--space-2) calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
+  min-height: var(--mobile-bottom-nav-base-height);
   background: var(--panel);
   border-top: 1px solid var(--border);
   z-index: 50;
@@ -623,9 +634,65 @@ td {
   overflow: hidden;
 }
 
+.mobileShellTriggerBar {
+  position: sticky;
+  top: 0;
+  z-index: 35;
+  padding-top: calc(var(--space-3) + env(safe-area-inset-top, 0px));
+  padding-bottom: var(--space-3);
+}
+
+.mobileShellDrawer {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.mobileShellDrawerHeader {
+  padding-top: var(--space-3);
+  padding-bottom: var(--space-3);
+}
+
+.mobilePageHeader {
+  margin-top: var(--space-2);
+  padding-top: var(--space-4);
+  padding-bottom: var(--space-4);
+}
+
 @media (max-width: 767px) {
   .content {
-    padding-bottom: calc(72px + env(safe-area-inset-bottom, 16px));
+    padding-bottom: var(--mobile-bottom-nav-reserved-space);
+  }
+}
+
+@media (max-width: 767px) and (max-height: 760px) {
+  :root {
+    --mobile-shell-trigger-height: 52px;
+    --mobile-bottom-nav-base-height: 72px;
+  }
+
+  .mobileShellTriggerBar {
+    padding-top: calc(var(--space-2) + env(safe-area-inset-top, 0px));
+    padding-bottom: var(--space-2);
+  }
+
+  .mobileTopChips {
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+
+  .chip {
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+
+  .mobileShellDrawerHeader {
+    padding-top: var(--space-2);
+    padding-bottom: var(--space-2);
+  }
+
+  .mobilePageHeader {
+    margin-top: var(--space-1);
+    padding-top: var(--space-3);
+    padding-bottom: var(--space-3);
   }
 }
 
