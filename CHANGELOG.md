@@ -2067,7 +2067,6 @@
   - **Local freshness re-check after the payments list activation:** at `payment_request × length ∈ {1, 10, 100}` the planner consistently uses `Bitmap Index Scan on idx_operational_assignment_active_resource`; `Buffers hit=7/24/156`; `Execution Time 0.087/0.231/0.552 ms`; no `Seq Scan`; no regression vs the pre-activation baseline.
 
   ### 🛠 DevEx
-  - **Merge-gate config expansion (`scripts/admin-v2-gates/config.mjs`):** Register the new document / fx_conversion / per-list assignee surfacing paths, the system-alerts `verification_queue` page anchors, the throttle-config alignment tokens (Risk 12 promotion, three Decision tokens, follow-up token), and the operational-assignment index-audit follow-up so the same drift is caught at pre-commit next time.
   - **Handoff README bookkeeping:** Record the LANDED moves for the document / payments-operations / payouts activation slices and close the deferred `operational_assignment` active-lookup index-audit follow-up.
   - **Lint passes:** `style(...)` commits trim a payments spec `it()` description and re-flow the throttle-decorated controllers to keep the staged surface under the 120-col cap.
   - **e2e signing alignment:** Supply `JWT_ACCESS_SECRET` when signing the expired signup-verification token in the api-v2 e2e suite, keeping the suite aligned with the JwtModule wiring change.

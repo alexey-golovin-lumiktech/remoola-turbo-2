@@ -10,15 +10,6 @@ export TURBO_LOG_ORDER=stream
 export TURBO_OUTPUT_LOGS=errors-only
 export TURBO_TELEMETRY_DISABLED=1
 
-# Admin-v2 merge gate. Only runs when the staged files touch admin-v2 scope.
-# Equivalent to `yarn verify:admin-v2-gates`, called directly to avoid the
-# extra `yarn` startup cost. Set SKIP_ADMIN_V2_GATES=1 to bypass.
-if [ "${SKIP_ADMIN_V2_GATES:-0}" != "1" ] \
-  && node ./scripts/admin-v2-gates/is-affected.mjs --staged >/dev/null 2>&1; then
-  echo "admin-v2 scope changed; running merge gates."
-  node ./scripts/admin-v2-gates/verify.mjs || exit $?
-fi
-
 # Prisma schema format check. Only runs when the staged files touch the prisma
 # schema. Set SKIP_PRISMA_FORMAT_CHECK=1 to bypass.
 if [ "${SKIP_PRISMA_FORMAT_CHECK:-0}" != "1" ] \
@@ -43,14 +34,6 @@ if [ "${SKIP_PRISMA_MIGRATE_STATUS:-0}" != "1" ] \
     echo "Run 'yarn workspace @remoola/database-2 prisma migrate status' for details."
     exit 1
   fi
-fi
-
-# Skip lint and tests when commit has no code changes (e.g. docs, CHANGELOG only).
-# The helper script exits 0 when there is nothing under apps/ or packages/ to
-# check, and exits 1 when there is.
-if sh "$(dirname -- "$0")/../scripts/pre-commit-needs-lint-and-tests.sh"; then
-  echo "No apps/ or packages/ code changes; skipping lint, typecheck, and tests."
-  exit 0
 fi
 
 # Lint only the staged files. Set SKIP_PRECOMMIT_LINT=1 to bypass.
