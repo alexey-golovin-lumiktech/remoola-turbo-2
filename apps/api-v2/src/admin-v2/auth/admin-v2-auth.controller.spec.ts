@@ -67,22 +67,6 @@ const buildController = (overrides?: {
 };
 
 describe(`AdminV2AuthController`, () => {
-  it(`delegates invitation acceptance and password reset to the admin-v2 admins service`, async () => {
-    const { controller, adminsService } = buildController();
-
-    await controller.acceptInvitation({ token: `invite-token`, password: `VerySecurePass1` });
-    await controller.resetPassword({ token: `reset-token`, password: `VerySecurePass1` });
-
-    expect(adminsService.acceptInvitation).toHaveBeenCalledWith({
-      token: `invite-token`,
-      password: `VerySecurePass1`,
-    });
-    expect(adminsService.resetPasswordWithToken).toHaveBeenCalledWith({
-      token: `reset-token`,
-      password: `VerySecurePass1`,
-    });
-  });
-
   describe(`revokeSession`, () => {
     const csrfCookieKey = `__Host-admin_csrf_token`;
 

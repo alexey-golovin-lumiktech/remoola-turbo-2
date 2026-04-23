@@ -9,10 +9,7 @@ export TURBO_LOG_ORDER=stream
 export TURBO_OUTPUT_LOGS=errors-only
 export TURBO_TELEMETRY_DISABLED=1
 
-yarn --silent lint || exit $?
-
-# api-v2 / api e2e:fast smoke. Set SKIP_PREPUSH_E2E=1 to bypass for emergency
-# pushes; CI will still run the full e2e suite on the resulting branch.
-if [ "${SKIP_PREPUSH_E2E:-0}" != "1" ]; then
-  (cd apps/api && QUIET_MEMORY_GUARD=1 yarn --silent test:e2e:fast) || exit $?
-fi
+# Lint / e2e only the workspaces affected by the refs being pushed. For
+# repo-wide tooling or config changes, the helper falls back to the conservative
+# full-repo behavior.
+node ./scripts/prepush-affected.mjs "$@" || exit $?

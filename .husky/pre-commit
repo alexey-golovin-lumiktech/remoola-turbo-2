@@ -48,18 +48,11 @@ if [ "${SKIP_PRECOMMIT_TYPECHECK:-0}" != "1" ]; then
   node ./scripts/typecheck-staged.mjs || exit $?
 fi
 
-# Unit tests for affected workspaces only. Set SKIP_PRECOMMIT_TESTS=1 to bypass.
-# Turbo's `...[HEAD^1]` filter runs `test` for the workspaces changed since the
-# previous commit and their dependents; unaffected workspaces are skipped, and
-# unchanged ones short-circuit via cache.
+# Unit tests for staged workspaces only. The helper maps staged files to
+# workspaces, expands to local dependents, and runs `test` only for that set.
+# Set SKIP_PRECOMMIT_TESTS=1 to bypass.
 if [ "${SKIP_PRECOMMIT_TESTS:-0}" != "1" ]; then
-  # Build once so per-workspace `pretest` hooks find test-db already built.
-  yarn --silent workspace @remoola/test-db run build >/dev/null 2>&1
-  QUIET_MEMORY_GUARD=1 turbo run test \
-    --filter='...[HEAD^1]' \
-    --concurrency=4 \
-    --output-logs=errors-only \
-    --log-order=stream || exit $?
+  node ./scripts/test-staged.mjs || exit $?
 fi
 
 # test:e2e:fast moved to .husky/pre-push (set SKIP_PREPUSH_E2E=1 to bypass).
