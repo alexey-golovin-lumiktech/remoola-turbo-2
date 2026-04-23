@@ -58,7 +58,9 @@ pnpm-debug.log*
 # Misc
 .DS_Store
 *.pem
+.playwright-mcp/
+__pycache__/
+*.pyc
 z-me*
 uploads
 .cursor/workspace/
-.cursor/**
