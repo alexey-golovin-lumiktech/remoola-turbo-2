@@ -7,6 +7,8 @@ import { AssignmentCard } from '../../../../components/assignment-card';
 import { Panel } from '../../../../components/panel';
 import { TinyPill } from '../../../../components/tiny-pill';
 import {
+  actionGroupClass,
+  actionGroupLabelClass,
   checkboxFieldClass,
   checkboxInputClass,
   dangerButtonClass,
@@ -29,14 +31,22 @@ import {
   releaseVerificationAssignmentAction,
   requestInfoVerificationAction,
 } from '../../../../lib/admin-mutations.server';
+import { readReturnTo } from '../../../../lib/navigation-context';
 
 function formatDate(value: string | null | undefined): string {
   if (!value) return `-`;
   return new Date(value).toLocaleString();
 }
 
-export default async function VerificationCasePage({ params }: { params: Promise<{ consumerId: string }> }) {
+export default async function VerificationCasePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ consumerId: string }>;
+  searchParams?: Promise<{ from?: string }>;
+}) {
   const { consumerId } = await params;
+  const resolvedSearchParams = await searchParams;
   const [verificationCaseResult, identity] = await Promise.all([
     getVerificationCaseResult(consumerId),
     getAdminIdentity(),
@@ -74,6 +84,7 @@ export default async function VerificationCasePage({ params }: { params: Promise
     currentAssignment && controls.canManageAssignments && (ownsAssignment || controls.canReassignAssignments),
   );
   const canReassign = Boolean(currentAssignment && controls.canReassignAssignments);
+  const backToQueueHref = readReturnTo(resolvedSearchParams?.from, `/verification`);
   const reassignCandidatesResponse = canReassign ? await getAdmins({ page: 1, pageSize: 50, status: `ACTIVE` }) : null;
   const reassignCandidates = (reassignCandidatesResponse?.items ?? []).filter(
     (admin) => admin.id !== currentAssignment?.assignedTo.id,
@@ -85,13 +96,21 @@ export default async function VerificationCasePage({ params }: { params: Promise
         title="Verification Case"
         description={verificationCase.email}
         actions={
-          <div className="flex flex-wrap gap-2">
-            <ActionGhost href={`/consumers/${verificationCase.id}`}>Open consumer case</ActionGhost>
-            <ActionGhost href={`/audit/admin-actions?resourceId=${verificationCase.id}`}>
-              Related admin actions
-            </ActionGhost>
+          <div className="flex flex-wrap gap-4">
+            <div className={actionGroupClass}>
+              <span className={actionGroupLabelClass}>Queue</span>
+              <ActionGhost href={backToQueueHref}>Back to queue</ActionGhost>
+              <ActionGhost href={`/audit/admin-actions?resourceId=${verificationCase.id}`}>
+                Related admin actions
+              </ActionGhost>
+            </div>
+            <div className={actionGroupClass}>
+              <span className={actionGroupLabelClass}>Linked case</span>
+              <ActionGhost href={`/consumers/${verificationCase.id}`}>Open consumer case</ActionGhost>
+            </div>
           </div>
         }
+        surface="primary"
       >
         <p className={monoMutedTextClass}>{verificationCase.id}</p>
         <div className="pillRow">

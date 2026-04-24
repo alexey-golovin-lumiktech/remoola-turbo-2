@@ -51,7 +51,11 @@ export default function AuditOverviewPage(): ReactElement {
           </div>
         </section>
 
-        <Panel title="Sub-explorers" description="Pick the surface that matches the question you are asking.">
+        <Panel
+          title="Audit explorers"
+          description="Reference-first entry points into immutable logs. Use these when you already know the question you need to answer."
+          surface="meta"
+        >
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {AUDIT_ENTRIES.map((entry) => (
               <Link key={entry.href} href={entry.href} className="block h-full">
@@ -60,6 +64,7 @@ export default function AuditOverviewPage(): ReactElement {
                     `h-full rounded-card border border-border bg-panel p-5 transition`,
                     `hover:border-white/25 hover:bg-white/[0.02]`,
                   )}
+                  surface="meta"
                 >
                   <div className="flex h-full flex-col gap-3">
                     <span className="inline-flex w-fit rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-[11px] uppercase tracking-[0.18em] text-white/65">

@@ -124,8 +124,9 @@ export default async function OverviewPage(): Promise<ReactElement> {
 
       <Panel
         title="Operational pressure"
-        description="Core signals that need attention; action-ready cards link to the related workspace."
+        description="Core signals that need attention next; action-ready cards open the queue or investigation path directly."
         actions={<TinyPill tone="cyan">{activePressureCount} visible items</TinyPill>}
+        surface="primary"
       >
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {activeStatKeys.map((key) => {
@@ -146,9 +147,39 @@ export default async function OverviewPage(): Promise<ReactElement> {
       </Panel>
 
       <Panel
-        title="Additional signals"
-        description="Exchange signals shown alongside the main operational queues."
+        title="Recommended investigation starts"
+        description="Problem-first shortcuts into the most common queues and regulated audit trails."
+        surface="support"
+      >
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {visibleQuickstarts.map((item) => (
+            <Link
+              key={item.id}
+              href={buildQuickstartHref(item.targetPath, item.id)}
+              className={cn(
+                `group flex min-h-[148px] flex-col gap-3 rounded-card border border-white/10 bg-white/[0.03] p-4 shadow-xs transition hover:border-cyan-400/30 hover:bg-white/[0.02]`,
+              )}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="inline-flex rounded-full border border-cyan-400/15 bg-cyan-500/[0.08] px-2.5 py-0.5 text-[11px] uppercase tracking-[0.18em] text-cyan-100/85">
+                  {normalizeQuickstartEyebrow(item.eyebrow)}
+                </span>
+                <span aria-hidden="true" className="text-xs text-white/45 group-hover:text-cyan-200">
+                  →
+                </span>
+              </div>
+              <div className="text-sm font-medium text-white/95 group-hover:text-white">{item.label}</div>
+              <div className="text-xs leading-5 text-white/55">{item.description}</div>
+            </Link>
+          ))}
+        </div>
+      </Panel>
+
+      <Panel
+        title="Breadth signals outside the pressure grid"
+        description="Reference or secondary signals that should stay visible without competing with the main queues."
         actions={<TinyPill>{secondarySignalCount} reference items</TinyPill>}
+        surface="meta"
       >
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {breadthSignalOrder.map((key) => {
@@ -168,35 +199,11 @@ export default async function OverviewPage(): Promise<ReactElement> {
         </div>
       </Panel>
 
-      <Panel title="Shortcuts" description="One-click shortcuts into the most common investigations.">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {visibleQuickstarts.map((item) => (
-            <Link
-              key={item.id}
-              href={buildQuickstartHref(item.targetPath, item.id)}
-              className={cn(
-                `group flex min-h-[148px] flex-col gap-3 rounded-card border border-border bg-panel p-4 shadow-xs transition hover:border-cyan-400/30 hover:bg-white/[0.02]`,
-              )}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-[11px] uppercase tracking-[0.18em] text-white/65">
-                  {normalizeQuickstartEyebrow(item.eyebrow)}
-                </span>
-                <span aria-hidden="true" className="text-xs text-white/45 group-hover:text-cyan-200">
-                  →
-                </span>
-              </div>
-              <div className="text-sm font-medium text-white/95 group-hover:text-white">{item.label}</div>
-              <div className="text-xs text-white/55">{item.description}</div>
-            </Link>
-          ))}
-        </div>
-      </Panel>
-
       <Panel
         title="Recent admin actions"
         description="Latest admin actions surfaced directly from the admin action log."
-        actions={recentHref ? <ActionGhost href={recentHref}>Open audit</ActionGhost> : null}
+        actions={recentHref ? <ActionGhost href={recentHref}>Open audit trail</ActionGhost> : null}
+        surface="meta"
       >
         <DenseTable headers={[`Action`, `Resource`, `Admin`, `Created`]} emptyMessage="No recent admin actions.">
           {recentItems.map((item, index) => {

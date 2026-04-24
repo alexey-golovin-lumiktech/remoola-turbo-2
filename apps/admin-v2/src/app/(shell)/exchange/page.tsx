@@ -27,8 +27,9 @@ export default function ExchangeWorkspacePage() {
       <>
         <Panel
           title="Exchange workspace"
-          description="Exchange visibility for rates, scheduled conversions, and rule configuration with direct links into the related workflows."
+          description="Preview layer for exchange observability and configuration. Use the linked sub-workspaces when you need rate, rule, or schedule detail."
           actions={<ActionGhost href="/overview">Back to overview</ActionGhost>}
+          surface="meta"
         />
 
         <section className="statsGrid">
@@ -37,7 +38,8 @@ export default function ExchangeWorkspacePage() {
               key={section.href}
               title={section.title}
               description={section.description}
-              actions={<TinyPill>Workspace</TinyPill>}
+              actions={<TinyPill>Preview</TinyPill>}
+              surface="meta"
             >
               <div className="pt-1">
                 <ActionGhost href={section.href}>Open</ActionGhost>

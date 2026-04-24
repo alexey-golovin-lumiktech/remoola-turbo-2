@@ -16,17 +16,15 @@ export function TabletRow({ primary, cells }: TabletRowProps): ReactElement {
   }
 
   return (
-    <article
-      className={cn(
-        `grid grid-cols-[1.1fr_repeat(4,_minmax(0,_1fr))] items-center gap-3 rounded-card border border-border bg-panel px-4 py-3 transition hover:border-white/20`,
-      )}
-    >
+    <article className={cn(`rounded-card border border-border bg-panel px-4 py-3 transition hover:border-white/20`)}>
       <div className="min-w-0 text-sm font-medium text-white/95">{primary}</div>
-      {padded.map((cell, index) => (
-        <div className="min-w-0 truncate text-xs text-white/65" key={index}>
-          {cell}
-        </div>
-      ))}
+      <div className="mt-3 grid grid-cols-1 gap-3 border-t border-white/8 pt-3 sm:grid-cols-2">
+        {padded.map((cell, index) => (
+          <div className="min-w-0 text-xs leading-5 text-white/65" key={index}>
+            {cell}
+          </div>
+        ))}
+      </div>
     </article>
   );
 }

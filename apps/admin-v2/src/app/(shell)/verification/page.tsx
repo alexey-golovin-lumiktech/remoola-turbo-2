@@ -5,10 +5,12 @@ import { cn } from '@remoola/ui';
 import { ActionGhost } from '../../../components/action-ghost';
 import { ActionPrimary } from '../../../components/action-primary';
 import { DenseTable } from '../../../components/dense-table';
-import { MobileQueueCard } from '../../../components/mobile-queue-card';
+import { MobileQueueCard, MobileQueueSection } from '../../../components/mobile-queue-card';
 import { Panel } from '../../../components/panel';
+import { ResponsiveFilterPanel } from '../../../components/responsive-filter-panel';
 import { StatusPill } from '../../../components/status-pill';
 import { TabletRow } from '../../../components/tablet-row';
+import { TinyPill } from '../../../components/tiny-pill';
 import {
   buttonRowClass,
   checkboxFieldClass,
@@ -40,6 +42,7 @@ import {
   updateSavedViewAction,
 } from '../../../lib/admin-mutations.server';
 import { SHARED_DESCRIPTION_MAX_LENGTH, SHARED_NAME_MAX_LENGTH } from '../../../lib/admin-surface-meta';
+import { buildPathWithSearch, withReturnTo } from '../../../lib/navigation-context';
 import { parseQuickstartId } from '../../../lib/quickstart-investigations';
 
 const SAVED_VIEW_WORKSPACE = `verification_queue` as const;
@@ -135,7 +138,7 @@ function renderVerificationAssigneeSummary(item: VerificationItem): string {
   return item.assignedTo.name ?? item.assignedTo.email ?? item.assignedTo.id;
 }
 
-function VerificationMobileCards({ items }: { items: VerificationItem[] }) {
+function VerificationMobileCards({ items, returnTo }: { items: VerificationItem[]; returnTo: string }) {
   if (items.length === 0) {
     return (
       <div className="readSurface md:hidden" data-view="mobile">
@@ -151,22 +154,28 @@ function VerificationMobileCards({ items }: { items: VerificationItem[] }) {
           <MobileQueueCard
             key={item.id}
             id={item.id}
-            href={`/verification/${item.id}`}
+            href={withReturnTo(`/verification/${item.id}`, returnTo)}
             title={item.email}
             subtitle={item.id}
             trailing={<StatusPill status={item.verificationStatus} />}
           >
-            <div className={mutedTextClass}>Stripe: {item.stripeIdentityStatus ?? `-`}</div>
-            <div>
-              {item.accountType} · {item.country ?? `-`}
-            </div>
-            <div className={mutedTextClass}>{item.missingProfileData ? `Missing profile data` : `Profile ready`}</div>
-            <div className={mutedTextClass}>
-              {item.missingDocuments ? `Missing documents` : `${item.documentsCount} attached`}
-            </div>
-            <div className={mutedTextClass}>SLA: {item.slaBreached ? `Breached` : `Within SLA`}</div>
-            <div className={mutedTextClass}>Assigned: {renderVerificationAssigneeSummary(item)}</div>
-            <div className={mutedTextClass}>Updated: {formatDateTime(item.updatedAt)}</div>
+            <MobileQueueSection title="Identity">
+              <div className={mutedTextClass}>Stripe: {item.stripeIdentityStatus ?? `-`}</div>
+              <div>
+                {item.accountType} · {item.country ?? `-`}
+              </div>
+            </MobileQueueSection>
+            <MobileQueueSection title="Completion blockers">
+              <div className={mutedTextClass}>{item.missingProfileData ? `Missing profile data` : `Profile ready`}</div>
+              <div className={mutedTextClass}>
+                {item.missingDocuments ? `Missing documents` : `${item.documentsCount} attached`}
+              </div>
+              <div className={mutedTextClass}>SLA: {item.slaBreached ? `Breached` : `Within SLA`}</div>
+            </MobileQueueSection>
+            <MobileQueueSection title="Ownership">
+              <div className={mutedTextClass}>Assigned: {renderVerificationAssigneeSummary(item)}</div>
+              <div className={mutedTextClass}>Updated: {formatDateTime(item.updatedAt)}</div>
+            </MobileQueueSection>
           </MobileQueueCard>
         ))}
       </div>
@@ -174,7 +183,7 @@ function VerificationMobileCards({ items }: { items: VerificationItem[] }) {
   );
 }
 
-function VerificationTabletRows({ items }: { items: VerificationItem[] }) {
+function VerificationTabletRows({ items, returnTo }: { items: VerificationItem[]; returnTo: string }) {
   if (items.length === 0) {
     return (
       <div className="readSurface hidden md:block xl:hidden" data-view="tablet">
@@ -191,7 +200,7 @@ function VerificationTabletRows({ items }: { items: VerificationItem[] }) {
             key={item.id}
             primary={
               <>
-                <Link href={`/verification/${item.id}`}>
+                <Link href={withReturnTo(`/verification/${item.id}`, returnTo)}>
                   <strong>{item.email}</strong>
                 </Link>
                 <div className={monoMutedTextClass}>{item.id}</div>
@@ -227,7 +236,7 @@ function VerificationTabletRows({ items }: { items: VerificationItem[] }) {
   );
 }
 
-function VerificationDesktopTable({ items }: { items: VerificationItem[] }) {
+function VerificationDesktopTable({ items, returnTo }: { items: VerificationItem[]; returnTo: string }) {
   return (
     <div className="readSurface hidden xl:block" data-view="desktop">
       <DenseTable
@@ -239,7 +248,7 @@ function VerificationDesktopTable({ items }: { items: VerificationItem[] }) {
           : items.map((item) => (
               <tr key={item.id}>
                 <td>
-                  <Link href={`/verification/${item.id}`}>{item.email}</Link>
+                  <Link href={withReturnTo(`/verification/${item.id}`, returnTo)}>{item.email}</Link>
                   <div className={monoMutedTextClass}>{item.id}</div>
                 </td>
                 <td>
@@ -471,6 +480,16 @@ export default async function VerificationQueuePage({
   const savedViews = savedViewsResponse?.views ?? [];
   const hasInvalidPayload = savedViews.some((view) => parseSavedViewPayload(view.queryPayload) === null);
   const items = queue?.items ?? [];
+  const currentQueueHref = buildPathWithSearch(`/verification`, {
+    quickstart: requestedQuickstartId,
+    page,
+    status,
+    stripeIdentityStatus,
+    country,
+    contractorKind,
+    missingProfileData: missingProfileData ? `true` : undefined,
+    missingDocuments: missingDocuments ? `true` : undefined,
+  });
 
   const currentPayload: VerificationQueueSavedViewPayload = {
     status,
@@ -516,6 +535,7 @@ export default async function VerificationQueuePage({
               SLA breached: {queue?.sla.breachedCount ?? 0} · threshold {queue?.sla.thresholdHours ?? 24}h
             </p>
           }
+          surface="primary"
         />
 
         {appliedQuickstart ? (
@@ -523,12 +543,53 @@ export default async function VerificationQueuePage({
             title={appliedQuickstart.label}
             description={appliedQuickstart.description}
             actions={<ActionGhost href="/verification">Remove quickstart</ActionGhost>}
+            surface="support"
           />
         ) : params?.quickstart ? (
-          <Panel>
+          <Panel surface="meta">
             <p className={mutedTextClass}>The requested quickstart could not be resolved for the verification queue.</p>
           </Panel>
         ) : null}
+
+        <Panel
+          title="Queue summary"
+          description="See pressure and blockers for the current verification slice before opening filters."
+          actions={
+            <div className={buttonRowClass}>
+              <TinyPill tone="cyan">{queue?.total ?? 0} total</TinyPill>
+              <TinyPill>{queue?.sla.breachedCount ?? 0} breached</TinyPill>
+              {missingDocuments ? <TinyPill>Missing docs</TinyPill> : null}
+            </div>
+          }
+          surface="support"
+        >
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-4">
+              <div className="text-[11px] uppercase tracking-[0.18em] text-white/40">Current slice</div>
+              <div className="mt-2 text-sm text-white/90">
+                {status ?? `All active statuses`}
+                {country ? ` · ${country}` : ``}
+                {contractorKind ? ` · ${contractorKind}` : ``}
+              </div>
+            </div>
+            <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-4">
+              <div className="text-[11px] uppercase tracking-[0.18em] text-white/40">Priority blocker</div>
+              <div className="mt-2 text-sm text-white/90">
+                {missingDocuments
+                  ? `Document collection is explicitly filtered into this slice.`
+                  : missingProfileData
+                    ? `Profile completion gaps are explicitly filtered into this slice.`
+                    : `Use filters to isolate missing profile or missing document cases.`}
+              </div>
+            </div>
+            <div className="rounded-2xl border border-cyan-400/15 bg-cyan-500/[0.06] p-4">
+              <div className="text-[11px] uppercase tracking-[0.18em] text-cyan-200/70">Next step</div>
+              <div className="mt-2 text-sm text-white/92">
+                Open the case list below and continue with the next review.
+              </div>
+            </div>
+          </div>
+        </Panel>
 
         <SavedViewsSection
           views={savedViews}
@@ -538,9 +599,20 @@ export default async function VerificationQueuePage({
           canManageSavedViews={canManageSavedViews}
         />
 
-        <Panel
+        <ResponsiveFilterPanel
           title="Queue filters"
           description="Refine the active verification review list without leaving the workspace."
+          summaryLabel="Filters"
+          summaryValue={`${
+            [
+              status,
+              stripeIdentityStatus,
+              country,
+              contractorKind,
+              missingProfileData ? `missing profile` : ``,
+              missingDocuments ? `missing docs` : ``,
+            ].filter(Boolean).length
+          } active`}
         >
           <form className="grid gap-3 md:grid-cols-2 xl:grid-cols-4" method="get">
             <label className={fieldClass}>
@@ -598,7 +670,7 @@ export default async function VerificationQueuePage({
               </div>
             </div>
           </form>
-        </Panel>
+        </ResponsiveFilterPanel>
 
         <Panel
           title="Verification cases"
@@ -619,10 +691,11 @@ export default async function VerificationQueuePage({
               </a>
             </div>
           }
+          surface="support"
         >
-          <VerificationMobileCards items={items} />
-          <VerificationTabletRows items={items} />
-          <VerificationDesktopTable items={items} />
+          <VerificationMobileCards items={items} returnTo={currentQueueHref} />
+          <VerificationTabletRows items={items} returnTo={currentQueueHref} />
+          <VerificationDesktopTable items={items} returnTo={currentQueueHref} />
         </Panel>
       </>
     </WorkspaceLayout>

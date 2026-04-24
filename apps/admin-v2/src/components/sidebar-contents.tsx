@@ -72,9 +72,10 @@ export function SidebarContents({
           items={visibleCoreShellItems}
           signalCounts={signalCounts}
           activePath={activePath}
+          priority="core"
         />
         <SidebarSection
-          title="Additional workspaces"
+          title="Breadth workspaces"
           compact
           items={visibleTopLevelBreadthItems}
           signalCounts={signalCounts}
@@ -113,7 +114,7 @@ export function SidebarContents({
       <div className="border-t border-white/10 bg-white/[0.02] px-5 py-4">
         <div className="text-[11px] uppercase tracking-[0.24em] text-white/[0.32]">Shortcuts</div>
         <div className="mt-1 text-xs leading-5 text-white/40">
-          Frequent investigation starts for the current admin scope.
+          Recommended investigation starts for the current admin scope.
         </div>
         <div className="mt-3 space-y-2">
           {visibleQuickstarts.map((view) => (
@@ -140,7 +141,8 @@ export function SidebarContents({
           ))}
         </div>
 
-        <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-sm shadow-xs">
+        <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-sm shadow-xs">
+          <div className="text-[11px] uppercase tracking-[0.2em] text-white/[0.32]">Identity</div>
           <div className="font-medium text-white/85">{identity?.email ?? `Access denied`}</div>
           <div className="mt-1 text-white/45">
             {identity

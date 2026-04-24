@@ -5,13 +5,21 @@ import { AdminSurfaceAccessDenied, AdminSurfaceUnavailable } from '../../../../c
 import { AssignmentCard } from '../../../../components/assignment-card';
 import { Panel } from '../../../../components/panel';
 import { TinyPill } from '../../../../components/tiny-pill';
-import { monoMutedTextClass, mutedTextClass, panelClass, stackClass } from '../../../../components/ui-classes';
+import {
+  actionGroupClass,
+  actionGroupLabelClass,
+  monoMutedTextClass,
+  mutedTextClass,
+  panelClass,
+  stackClass,
+} from '../../../../components/ui-classes';
 import { getAdminIdentity, getAdmins, getPaymentCaseResult } from '../../../../lib/admin-api.server';
 import {
   claimPaymentRequestAssignmentAction,
   reassignPaymentRequestAssignmentAction,
   releasePaymentRequestAssignmentAction,
 } from '../../../../lib/admin-mutations.server';
+import { readReturnTo } from '../../../../lib/navigation-context';
 
 function formatDate(value: string | null | undefined): string {
   if (!value) return `-`;
@@ -26,8 +34,15 @@ function renderMetadata(value: Record<string, unknown> | null | undefined) {
   return <pre className="mono">{JSON.stringify(value, null, 2)}</pre>;
 }
 
-export default async function PaymentCasePage({ params }: { params: Promise<{ paymentRequestId: string }> }) {
+export default async function PaymentCasePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ paymentRequestId: string }>;
+  searchParams?: Promise<{ from?: string }>;
+}) {
   const { paymentRequestId } = await params;
+  const resolvedSearchParams = await searchParams;
   const [paymentCaseResult, identity] = await Promise.all([getPaymentCaseResult(paymentRequestId), getAdminIdentity()]);
 
   if (paymentCaseResult.status === `not_found`) {
@@ -61,6 +76,7 @@ export default async function PaymentCasePage({ params }: { params: Promise<{ pa
   const canClaim = canManageAssignments && !currentAssignment;
   const canRelease = Boolean(currentAssignment && canManageAssignments && (ownsAssignment || canReassignAssignments));
   const canReassign = Boolean(currentAssignment && canReassignAssignments);
+  const backToQueueHref = readReturnTo(resolvedSearchParams?.from, `/payments`);
   const reassignCandidatesResponse = canReassign ? await getAdmins({ page: 1, pageSize: 50, status: `ACTIVE` }) : null;
   const reassignCandidates = (reassignCandidatesResponse?.items ?? []).filter(
     (admin) => admin.id !== currentAssignment?.assignedTo.id,
@@ -72,16 +88,26 @@ export default async function PaymentCasePage({ params }: { params: Promise<{ pa
         title="Payment Request"
         description={paymentCase.id}
         actions={
-          <div className="flex flex-wrap gap-2">
-            {paymentCase.payer.id ? (
-              <ActionGhost href={`/consumers/${paymentCase.payer.id}`}>Payer case</ActionGhost>
-            ) : null}
-            {paymentCase.requester.id ? (
-              <ActionGhost href={`/consumers/${paymentCase.requester.id}`}>Requester case</ActionGhost>
-            ) : null}
-            <ActionGhost href={`/audit/admin-actions?resourceId=${paymentCase.id}`}>Related admin actions</ActionGhost>
+          <div className="flex flex-wrap gap-4">
+            <div className={actionGroupClass}>
+              <span className={actionGroupLabelClass}>Queue</span>
+              <ActionGhost href={backToQueueHref}>Back to queue</ActionGhost>
+              <ActionGhost href={`/audit/admin-actions?resourceId=${paymentCase.id}`}>
+                Related admin actions
+              </ActionGhost>
+            </div>
+            <div className={actionGroupClass}>
+              <span className={actionGroupLabelClass}>Linked cases</span>
+              {paymentCase.payer.id ? (
+                <ActionGhost href={`/consumers/${paymentCase.payer.id}`}>Payer case</ActionGhost>
+              ) : null}
+              {paymentCase.requester.id ? (
+                <ActionGhost href={`/consumers/${paymentCase.requester.id}`}>Requester case</ActionGhost>
+              ) : null}
+            </div>
           </div>
         }
+        surface="primary"
       >
         <p className={monoMutedTextClass}>{paymentCase.id}</p>
         <div className="pillRow">

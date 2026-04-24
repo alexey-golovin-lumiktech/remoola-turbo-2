@@ -100,14 +100,17 @@ export function MobilePageHeader({ activePath, liveCount = null }: MobilePageHea
   const { title, eyebrow, queueLabel } = classify(activePath);
   const countLabel = typeof liveCount === `number` ? String(liveCount) : `—`;
   return (
-    <div className="mx-4 mt-2 rounded-card border border-border bg-panel px-4 py-4 lg:hidden">
-      <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-white/45">{eyebrow}</div>
-      <div className="mt-1 text-xl font-semibold text-white/95">{title}</div>
-      <div className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-full border border-cyan-400/25 bg-cyan-500/10 px-3 py-1 text-xs text-cyan-100">
-        <span className="text-white/65">{queueLabel}</span>
-        <span aria-hidden="true">·</span>
-        <span className="font-semibold text-white">{countLabel}</span>
+    <div className="mx-4 mt-2 rounded-card border border-white/8 bg-white/[0.02] px-4 py-3 lg:hidden">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-[10px] font-medium uppercase tracking-[0.2em] text-white/40">{eyebrow}</div>
+          <div className="mt-1 text-lg font-semibold text-white/95">{title}</div>
+        </div>
+        <div className="rounded-pill border border-cyan-400/20 bg-cyan-500/10 px-2.5 py-1 text-[11px] text-cyan-100">
+          {countLabel}
+        </div>
       </div>
+      <div className="mt-2 text-xs text-white/52">{queueLabel}</div>
     </div>
   );
 }

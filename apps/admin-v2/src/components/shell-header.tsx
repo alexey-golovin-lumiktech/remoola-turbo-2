@@ -8,7 +8,7 @@ import { ActionGhost } from '@/components/action-ghost';
 import { ActionPrimary } from '@/components/action-primary';
 
 import { NavIcon } from './nav-icon';
-import { panelSurfaceClass } from './ui-classes';
+import { actionGroupClass, actionGroupLabelClass, panelPrimaryClass, panelSurfaceClass } from './ui-classes';
 import { getActivePathFromHeaders } from '../app/(shell)/nav-state';
 
 const ID_PREFIX_ROUTES: ReadonlyArray<{ prefix: string; path: (id: string) => string }> = [
@@ -98,6 +98,7 @@ export async function ShellHeader(): Promise<ReactElement> {
     <header
       className={cn(
         panelSurfaceClass,
+        panelPrimaryClass,
         `sticky top-0 z-30 hidden border-border bg-bg/85 px-5 py-4 backdrop-blur-md lg:block`,
       )}
     >
@@ -108,7 +109,7 @@ export async function ShellHeader(): Promise<ReactElement> {
         <span>/</span>
         <span className="text-cyan-300/80">workspace</span>
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-3">
+      <div className="mt-3 flex flex-wrap items-start gap-4">
         <form
           action={searchAction}
           role="search"
@@ -129,18 +130,26 @@ export async function ShellHeader(): Promise<ReactElement> {
             Submit
           </button>
         </form>
-        <ActionGhost href="/audit/auth">
-          <NavIcon name="eye" />
-          <span>Audit</span>
-        </ActionGhost>
-        <ActionGhost href="/payments/operations">
-          <NavIcon name="flag" />
-          <span>Review queue</span>
-        </ActionGhost>
-        <ActionPrimary href="/me/sessions" ariaDisabled title="Coming soon">
-          <NavIcon name="plus" />
-          <span>New case</span>
-        </ActionPrimary>
+        <div className="flex flex-wrap items-start gap-4">
+          <div className={actionGroupClass}>
+            <span className={actionGroupLabelClass}>Investigate</span>
+            <ActionGhost href="/audit/auth">
+              <NavIcon name="eye" />
+              <span>Audit trail</span>
+            </ActionGhost>
+            <ActionGhost href="/payments/operations">
+              <NavIcon name="flag" />
+              <span>Review queue</span>
+            </ActionGhost>
+          </div>
+          <div className={actionGroupClass}>
+            <span className={actionGroupLabelClass}>Workflow</span>
+            <ActionPrimary href="/me/sessions" ariaDisabled title="Coming soon">
+              <NavIcon name="plus" />
+              <span>Open case</span>
+            </ActionPrimary>
+          </div>
+        </div>
       </div>
     </header>
   );

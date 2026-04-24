@@ -10,6 +10,7 @@ import { TinyPill } from '../../../components/tiny-pill';
 import { buttonRowClass, emptyPanelClass, mutedTextClass, stackClass } from '../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../components/workspace-layout';
 import { getPayouts, type PayoutsListResponse } from '../../../lib/admin-api.server';
+import { buildPathWithSearch, withReturnTo } from '../../../lib/navigation-context';
 
 function formatDate(value: string | null | undefined): string {
   if (!value) return `-`;
@@ -96,10 +97,10 @@ function renderAssignedTo(item: PayoutItem): ReactNode {
   );
 }
 
-function renderPayoutPrimary(item: PayoutItem): ReactElement {
+function renderPayoutPrimary(item: PayoutItem, returnTo: string): ReactElement {
   return (
     <>
-      <Link href={`/payouts/${item.id}`}>
+      <Link href={withReturnTo(`/payouts/${item.id}`, returnTo)}>
         <strong>{item.id}</strong>
       </Link>
       <div className={mutedTextClass}>
@@ -109,15 +110,19 @@ function renderPayoutPrimary(item: PayoutItem): ReactElement {
   );
 }
 
-function renderPayoutConsumer(item: PayoutItem, includePaymentRequestLink: boolean): ReactElement {
+function renderPayoutConsumer(item: PayoutItem, includePaymentRequestLink: boolean, returnTo: string): ReactElement {
   return (
     <>
       <div>
-        Consumer: <Link href={`/consumers/${item.consumer.id}`}>{item.consumer.email ?? item.consumer.id}</Link>
+        Consumer:{` `}
+        <Link href={withReturnTo(`/consumers/${item.consumer.id}`, returnTo)}>
+          {item.consumer.email ?? item.consumer.id}
+        </Link>
       </div>
       {includePaymentRequestLink && item.paymentRequestId ? (
         <div>
-          Payment request: <Link href={`/payments/${item.paymentRequestId}`}>{item.paymentRequestId}</Link>
+          Payment request:{` `}
+          <Link href={withReturnTo(`/payments/${item.paymentRequestId}`, returnTo)}>{item.paymentRequestId}</Link>
         </div>
       ) : null}
     </>
@@ -144,7 +149,7 @@ function renderHighValueBadges(item: PayoutItem): ReactElement {
   );
 }
 
-function renderHighValueMobileCards(items: PayoutItem[]): ReactElement {
+function renderHighValueMobileCards(items: PayoutItem[], returnTo: string): ReactElement {
   if (items.length === 0) {
     return (
       <div className="readSurface md:hidden" data-view="mobile">
@@ -160,7 +165,7 @@ function renderHighValueMobileCards(items: PayoutItem[]): ReactElement {
           <MobileQueueCard
             key={item.id}
             id={item.id}
-            href={`/payouts/${item.id}`}
+            href={withReturnTo(`/payouts/${item.id}`, returnTo)}
             title={item.id}
             subtitle={`${item.amount} ${item.currencyCode} · ${item.type}`}
             trailing={
@@ -174,7 +179,7 @@ function renderHighValueMobileCards(items: PayoutItem[]): ReactElement {
               Threshold: {item.highValue.thresholdCurrency} &gt;= {item.highValue.thresholdAmount ?? `-`}
             </div>
             <div className={mutedTextClass}>Destination: {renderDestination(item)}</div>
-            <div className={mutedTextClass}>{renderPayoutConsumer(item, false)}</div>
+            <div className={mutedTextClass}>{renderPayoutConsumer(item, false, returnTo)}</div>
             <div className={mutedTextClass}>Assigned to: {renderAssignedTo(item)}</div>
           </MobileQueueCard>
         ))}
@@ -183,7 +188,7 @@ function renderHighValueMobileCards(items: PayoutItem[]): ReactElement {
   );
 }
 
-function renderHighValueTabletRows(items: PayoutItem[]): ReactElement {
+function renderHighValueTabletRows(items: PayoutItem[], returnTo: string): ReactElement {
   if (items.length === 0) {
     return (
       <div className="readSurface hidden md:block xl:hidden" data-view="tablet">
@@ -198,9 +203,9 @@ function renderHighValueTabletRows(items: PayoutItem[]): ReactElement {
         {items.map((item) => (
           <TabletRow
             key={item.id}
-            primary={renderPayoutPrimary(item)}
+            primary={renderPayoutPrimary(item, returnTo)}
             cells={[
-              <div key="consumer">{renderPayoutConsumer(item, false)}</div>,
+              <div key="consumer">{renderPayoutConsumer(item, false, returnTo)}</div>,
               <div key="destination" className={mutedTextClass}>
                 Destination: {renderDestination(item)}
               </div>,
@@ -221,7 +226,7 @@ function renderHighValueTabletRows(items: PayoutItem[]): ReactElement {
   );
 }
 
-function renderHighValueDesktopTable(items: PayoutItem[]): ReactElement {
+function renderHighValueDesktopTable(items: PayoutItem[], returnTo: string): ReactElement {
   return (
     <div className="readSurface hidden xl:block" data-view="desktop">
       <DenseTable
@@ -232,8 +237,8 @@ function renderHighValueDesktopTable(items: PayoutItem[]): ReactElement {
           ? null
           : items.map((item) => (
               <tr key={item.id}>
-                <td>{renderPayoutPrimary(item)}</td>
-                <td>{renderPayoutConsumer(item, false)}</td>
+                <td>{renderPayoutPrimary(item, returnTo)}</td>
+                <td>{renderPayoutConsumer(item, false, returnTo)}</td>
                 <td>{renderDestination(item)}</td>
                 <td>{renderHighValueBadges(item)}</td>
                 <td>
@@ -247,7 +252,7 @@ function renderHighValueDesktopTable(items: PayoutItem[]): ReactElement {
   );
 }
 
-function renderBucketMobileCards(items: PayoutItem[], emptyMessage: string): ReactElement {
+function renderBucketMobileCards(items: PayoutItem[], emptyMessage: string, returnTo: string): ReactElement {
   if (items.length === 0) {
     return (
       <div className="readSurface md:hidden" data-view="mobile">
@@ -263,7 +268,7 @@ function renderBucketMobileCards(items: PayoutItem[], emptyMessage: string): Rea
           <MobileQueueCard
             key={item.id}
             id={item.id}
-            href={`/payouts/${item.id}`}
+            href={withReturnTo(`/payouts/${item.id}`, returnTo)}
             title={item.id}
             subtitle={`${item.amount} ${item.currencyCode} · ${item.type}`}
             trailing={`${item.outcomeAgeHours.toFixed(1)}h`}
@@ -272,7 +277,7 @@ function renderBucketMobileCards(items: PayoutItem[], emptyMessage: string): Rea
             <div className={mutedTextClass}>
               Persisted: {item.persistedStatus} · Effective: {item.effectiveStatus}
             </div>
-            <div className={mutedTextClass}>{renderPayoutConsumer(item, true)}</div>
+            <div className={mutedTextClass}>{renderPayoutConsumer(item, true, returnTo)}</div>
             <div className={mutedTextClass}>
               Destination: {renderDestination(item)} · Linkage: {item.destinationLinkageSource ?? `unavailable`}
             </div>
@@ -296,7 +301,7 @@ function renderBucketMobileCards(items: PayoutItem[], emptyMessage: string): Rea
   );
 }
 
-function renderBucketTabletRows(items: PayoutItem[], emptyMessage: string): ReactElement {
+function renderBucketTabletRows(items: PayoutItem[], emptyMessage: string, returnTo: string): ReactElement {
   if (items.length === 0) {
     return (
       <div className="readSurface hidden md:block xl:hidden" data-view="tablet">
@@ -311,9 +316,9 @@ function renderBucketTabletRows(items: PayoutItem[], emptyMessage: string): Reac
         {items.map((item) => (
           <TabletRow
             key={item.id}
-            primary={renderPayoutPrimary(item)}
+            primary={renderPayoutPrimary(item, returnTo)}
             cells={[
-              <div key="consumer">{renderPayoutConsumer(item, true)}</div>,
+              <div key="consumer">{renderPayoutConsumer(item, true, returnTo)}</div>,
               <div key="destination" className={mutedTextClass}>
                 Destination: {renderDestination(item)}
                 <div>Linkage: {item.destinationLinkageSource ?? `unavailable`}</div>
@@ -337,7 +342,7 @@ function renderBucketTabletRows(items: PayoutItem[], emptyMessage: string): Reac
   );
 }
 
-function renderBucketDesktopTable(items: PayoutItem[], emptyMessage: string): ReactElement {
+function renderBucketDesktopTable(items: PayoutItem[], emptyMessage: string, returnTo: string): ReactElement {
   return (
     <div className="readSurface hidden xl:block" data-view="desktop">
       <DenseTable
@@ -348,8 +353,8 @@ function renderBucketDesktopTable(items: PayoutItem[], emptyMessage: string): Re
           ? null
           : items.map((item) => (
               <tr key={item.id}>
-                <td>{renderPayoutPrimary(item)}</td>
-                <td>{renderPayoutConsumer(item, true)}</td>
+                <td>{renderPayoutPrimary(item, returnTo)}</td>
+                <td>{renderPayoutConsumer(item, true, returnTo)}</td>
                 <td>
                   <div>{renderDestination(item)}</div>
                   <div className={mutedTextClass}>Linkage: {item.destinationLinkageSource ?? `unavailable`}</div>
@@ -393,6 +398,7 @@ export default async function PayoutsPage({
     cursor: cursor || undefined,
   });
   const items = data?.items ?? [];
+  const currentQueueHref = buildPathWithSearch(`/payouts`, { cursor });
   const buckets = bucketItems(items);
   const highValueItems = items.filter((item) => item.highValue.eligibility === `high-value`);
 
@@ -416,6 +422,7 @@ export default async function PayoutsPage({
               ) : null}
             </div>
           }
+          surface="primary"
         >
           <p className={mutedTextClass}>Generated: {formatDate(data?.generatedAt)}</p>
         </Panel>
@@ -449,12 +456,13 @@ export default async function PayoutsPage({
               <TinyPill>{data?.highValuePolicy.availability ?? `unconfigured`}</TinyPill>
             </div>
           }
+          surface="support"
         >
           <p className={mutedTextClass}>Configured thresholds: {renderHighValueThresholds(data)}</p>
           <div className={stackClass}>
-            {renderHighValueMobileCards(highValueItems)}
-            {renderHighValueTabletRows(highValueItems)}
-            {renderHighValueDesktopTable(highValueItems)}
+            {renderHighValueMobileCards(highValueItems, currentQueueHref)}
+            {renderHighValueTabletRows(highValueItems, currentQueueHref)}
+            {renderHighValueDesktopTable(highValueItems, currentQueueHref)}
           </div>
         </Panel>
 
@@ -468,11 +476,24 @@ export default async function PayoutsPage({
                 <TinyPill>{bucket.items.length} items</TinyPill>
               </div>
             }
+            surface="support"
           >
             <div className={stackClass}>
-              {renderBucketMobileCards(bucket.items, `No payouts in this bucket for the current window.`)}
-              {renderBucketTabletRows(bucket.items, `No payouts in this bucket for the current window.`)}
-              {renderBucketDesktopTable(bucket.items, `No payouts in this bucket for the current window.`)}
+              {renderBucketMobileCards(
+                bucket.items,
+                `No payouts in this bucket for the current window.`,
+                currentQueueHref,
+              )}
+              {renderBucketTabletRows(
+                bucket.items,
+                `No payouts in this bucket for the current window.`,
+                currentQueueHref,
+              )}
+              {renderBucketDesktopTable(
+                bucket.items,
+                `No payouts in this bucket for the current window.`,
+                currentQueueHref,
+              )}
             </div>
           </Panel>
         ))}

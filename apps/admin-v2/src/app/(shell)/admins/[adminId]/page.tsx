@@ -1,9 +1,10 @@
 // Admin case is intentionally a leaf surface — no row in the cross-links listing
 // requires outbound investigation links from the admin case page.
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { ActionGhost } from '../../../../components/action-ghost';
 import { AdminSurfaceAccessDenied, AdminSurfaceUnavailable } from '../../../../components/admin-surface-state';
+import { Panel } from '../../../../components/panel';
 import { getAdminCaseRecordResult, getAdminIdentity, getAdminSessionsResult } from '../../../../lib/admin-api.server';
 import {
   changeAdminPermissionsAction,
@@ -14,6 +15,7 @@ import {
   revokeAdminSessionAction,
 } from '../../../../lib/admin-mutations.server';
 import { ADMIN_V2_ROLE_OPTIONS } from '../../../../lib/admin-rbac';
+import { readReturnTo } from '../../../../lib/navigation-context';
 
 function formatDate(value: string | null | undefined): string {
   if (!value) return `-`;
@@ -27,8 +29,15 @@ function renderJson(value: Record<string, unknown> | null) {
   return <pre className="mono">{JSON.stringify(value, null, 2)}</pre>;
 }
 
-export default async function AdminCasePage({ params }: { params: Promise<{ adminId: string }> }) {
+export default async function AdminCasePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ adminId: string }>;
+  searchParams?: Promise<{ from?: string }>;
+}) {
   const { adminId } = await params;
+  const resolvedSearchParams = await searchParams;
   const [identity, adminResult] = await Promise.all([getAdminIdentity(), getAdminCaseRecordResult(adminId)]);
 
   if (adminResult.status === `not_found`) {
@@ -63,28 +72,28 @@ export default async function AdminCasePage({ params }: { params: Promise<{ admi
       override.granted ? `grant` : `deny`,
     ]),
   );
+  const backToQueueHref = readReturnTo(resolvedSearchParams?.from, `/admins`);
 
   return (
     <>
-      <section className="panel pageHeader">
-        <div>
-          <h1>{admin.core.email}</h1>
-          <p className="muted mono">{admin.core.id}</p>
-          <div className="pillRow">
-            <span className="pill">{admin.core.status}</span>
-            <span className="pill">{admin.accessProfile.resolvedRole ?? admin.core.role ?? admin.core.type}</span>
-            <span className="pill">{admin.core.type}</span>
+      <Panel
+        title={admin.core.email}
+        description={admin.core.id}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <ActionGhost href={backToQueueHref}>Back to queue</ActionGhost>
+            <ActionGhost href={admin.auditShortcuts.adminActionsHref}>Related admin actions</ActionGhost>
+            <ActionGhost href={admin.auditShortcuts.authHref}>Auth history</ActionGhost>
           </div>
+        }
+        surface="primary"
+      >
+        <div className="pillRow">
+          <span className="pill">{admin.core.status}</span>
+          <span className="pill">{admin.accessProfile.resolvedRole ?? admin.core.role ?? admin.core.type}</span>
+          <span className="pill">{admin.core.type}</span>
         </div>
-        <div className="actionsRow">
-          <Link className="secondaryButton" href={admin.auditShortcuts.adminActionsHref}>
-            Related admin actions
-          </Link>
-          <Link className="secondaryButton" href={admin.auditShortcuts.authHref}>
-            Auth history
-          </Link>
-        </div>
-      </section>
+      </Panel>
 
       <section className="statsGrid">
         <article className="panel">

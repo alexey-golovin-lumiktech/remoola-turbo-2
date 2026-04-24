@@ -2,7 +2,15 @@ import { type ReactElement, type ReactNode } from 'react';
 
 import { cn } from '@remoola/ui';
 
-import { panelClass, panelDescriptionClass, panelHeaderClass, panelHeaderCopyClass } from './ui-classes';
+import {
+  panelClass,
+  panelDescriptionClass,
+  panelHeaderClass,
+  panelHeaderCopyClass,
+  panelMetaClass,
+  panelPrimaryClass,
+  panelSupportClass,
+} from './ui-classes';
 
 export type PanelProps = {
   title?: string;
@@ -10,14 +18,28 @@ export type PanelProps = {
   actions?: ReactNode;
   children?: ReactNode;
   className?: string;
+  surface?: `primary` | `support` | `meta`;
 };
 
-export function Panel({ title, description, actions, children, className }: PanelProps): ReactElement {
+const surfaceClassByTone = {
+  primary: panelPrimaryClass,
+  support: panelSupportClass,
+  meta: panelMetaClass,
+} as const;
+
+export function Panel({
+  title,
+  description,
+  actions,
+  children,
+  className,
+  surface = `support`,
+}: PanelProps): ReactElement {
   const hasHeader = Boolean(title) || Boolean(description) || Boolean(actions);
   const hasBody = Boolean(children);
 
   return (
-    <section className={cn(panelClass, className)}>
+    <section className={cn(panelClass, surfaceClassByTone[surface], className)}>
       {hasHeader ? (
         <div className={panelHeaderClass}>
           <div className={panelHeaderCopyClass}>

@@ -24,6 +24,7 @@ export type SidebarSectionProps = {
   signalCounts?: Record<string, SignalCount>;
   activePath?: string | null;
   compact?: boolean;
+  priority?: `core` | `secondary`;
 };
 
 export function SidebarSection({
@@ -33,6 +34,7 @@ export function SidebarSection({
   signalCounts,
   activePath,
   compact = false,
+  priority = `secondary`,
 }: SidebarSectionProps): ReactElement | null {
   if (items.length === 0) {
     return null;
@@ -41,7 +43,11 @@ export function SidebarSection({
   return (
     <div className="px-2">
       <div
-        className={cn(`px-2 text-[11px] uppercase tracking-[0.24em] text-white/[0.32]`, compact && `text-white/[0.38]`)}
+        className={cn(
+          `px-2 text-[11px] uppercase tracking-[0.24em] text-white/[0.32]`,
+          compact && `text-white/[0.38]`,
+          priority === `core` && `text-cyan-200/70`,
+        )}
       >
         {title}
       </div>
@@ -62,7 +68,9 @@ export function SidebarSection({
                   compact && `rounded-xl px-3 py-2.5`,
                   active
                     ? `border border-cyan-400/25 bg-cyan-500/10 text-white shadow-xs`
-                    : `border border-transparent text-white/72 hover:border-white/10 hover:bg-white/[0.03] hover:text-white`,
+                    : priority === `core`
+                      ? `border border-white/6 bg-white/[0.02] text-white/82 hover:border-cyan-400/18 hover:bg-cyan-500/[0.04] hover:text-white`
+                      : `border border-transparent text-white/64 hover:border-white/10 hover:bg-white/[0.03] hover:text-white`,
                 )}
               >
                 <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center text-sm">

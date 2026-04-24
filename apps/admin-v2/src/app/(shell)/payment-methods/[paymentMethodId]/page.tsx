@@ -1,13 +1,16 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { ActionGhost } from '../../../../components/action-ghost';
 import { AdminSurfaceAccessDenied, AdminSurfaceUnavailable } from '../../../../components/admin-surface-state';
+import { Panel } from '../../../../components/panel';
 import { getAdminIdentity, getPaymentMethodCaseResult } from '../../../../lib/admin-api.server';
 import {
   disablePaymentMethodAction,
   escalateDuplicatePaymentMethodAction,
   removeDefaultPaymentMethodAction,
 } from '../../../../lib/admin-mutations.server';
+import { readReturnTo } from '../../../../lib/navigation-context';
 
 function formatDate(value: string | null | undefined): string {
   if (!value) return `-`;
@@ -28,8 +31,15 @@ function renderMethodLabel(paymentMethod: {
   return `${paymentMethod.type} •••• ${suffix}`;
 }
 
-export default async function PaymentMethodCasePage({ params }: { params: Promise<{ paymentMethodId: string }> }) {
+export default async function PaymentMethodCasePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ paymentMethodId: string }>;
+  searchParams?: Promise<{ from?: string }>;
+}) {
   const { paymentMethodId } = await params;
+  const resolvedSearchParams = await searchParams;
   const [identity, paymentMethodResult] = await Promise.all([
     getAdminIdentity(),
     getPaymentMethodCaseResult(paymentMethodId),
@@ -60,41 +70,36 @@ export default async function PaymentMethodCasePage({ params }: { params: Promis
   const fingerprintHref = paymentMethod.stripeFingerprint
     ? `/payment-methods?fingerprint=${encodeURIComponent(paymentMethod.stripeFingerprint)}&includeDeleted=true`
     : null;
+  const backToQueueHref = readReturnTo(resolvedSearchParams?.from, `/payment-methods`);
 
   return (
     <>
-      <section className="panel pageHeader">
-        <div>
-          <h1>Payment Method</h1>
-          <p className="muted">{renderMethodLabel(paymentMethod)}</p>
-          <p className="muted mono">{paymentMethod.id}</p>
-          <div className="pillRow">
-            <span className="pill">{paymentMethod.type}</span>
-            <span className="pill">{paymentMethod.status}</span>
-            {paymentMethod.defaultSelected ? <span className="pill">Default selected</span> : null}
-            {paymentMethod.stripeFingerprint ? <span className="pill">Fingerprint present</span> : null}
-            {paymentMethod.duplicateEscalation ? <span className="pill">Duplicate escalated</span> : null}
-            {paymentMethod.disabledAt ? <span className="pill">Disabled</span> : null}
-            {paymentMethod.deletedAt ? <span className="pill">Soft-deleted method</span> : null}
+      <Panel
+        title="Payment Method"
+        description={renderMethodLabel(paymentMethod)}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <ActionGhost href={backToQueueHref}>Back to queue</ActionGhost>
+            <ActionGhost href={`/consumers/${paymentMethod.consumer.id}`}>Consumer case</ActionGhost>
+            <ActionGhost href={`/payment-methods?consumerId=${paymentMethod.consumer.id}&includeDeleted=true`}>
+              Consumer payment methods
+            </ActionGhost>
+            {fingerprintHref ? <ActionGhost href={fingerprintHref}>Fingerprint cohort</ActionGhost> : null}
           </div>
+        }
+        surface="primary"
+      >
+        <p className="muted mono">{paymentMethod.id}</p>
+        <div className="pillRow">
+          <span className="pill">{paymentMethod.type}</span>
+          <span className="pill">{paymentMethod.status}</span>
+          {paymentMethod.defaultSelected ? <span className="pill">Default selected</span> : null}
+          {paymentMethod.stripeFingerprint ? <span className="pill">Fingerprint present</span> : null}
+          {paymentMethod.duplicateEscalation ? <span className="pill">Duplicate escalated</span> : null}
+          {paymentMethod.disabledAt ? <span className="pill">Disabled</span> : null}
+          {paymentMethod.deletedAt ? <span className="pill">Soft-deleted method</span> : null}
         </div>
-        <div className="actionsRow">
-          <Link className="secondaryButton" href={`/consumers/${paymentMethod.consumer.id}`}>
-            Consumer case
-          </Link>
-          <Link
-            className="secondaryButton"
-            href={`/payment-methods?consumerId=${paymentMethod.consumer.id}&includeDeleted=true`}
-          >
-            Consumer payment methods
-          </Link>
-          {fingerprintHref ? (
-            <Link className="secondaryButton" href={fingerprintHref}>
-              Fingerprint cohort
-            </Link>
-          ) : null}
-        </div>
-      </section>
+      </Panel>
 
       <section className="statsGrid">
         <article className="panel">

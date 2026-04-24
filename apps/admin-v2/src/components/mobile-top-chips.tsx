@@ -5,7 +5,7 @@ import { cn } from '@remoola/ui';
 
 import { NavIcon } from './nav-icon';
 import { isNavItemActive } from '../app/(shell)/nav-state';
-import { laterBreadthItems, maturityItems, topLevelBreadthItems } from '../app/(shell)/shell-nav';
+import { financeBreadthItems, laterBreadthItems, maturityItems, topLevelBreadthItems } from '../app/(shell)/shell-nav';
 import { type AdminIdentity } from '../lib/admin-api.server';
 
 type MobileTopChipsProps = {
@@ -19,8 +19,8 @@ export function MobileTopChips({ identity, activePath }: MobileTopChipsProps): R
   }
 
   const allowed = new Set(identity.workspaces ?? []);
-  const items = [...topLevelBreadthItems, ...laterBreadthItems, ...maturityItems].filter((item) =>
-    allowed.has(item.workspace),
+  const items = [...topLevelBreadthItems, ...financeBreadthItems, ...laterBreadthItems, ...maturityItems].filter(
+    (item) => allowed.has(item.workspace),
   );
 
   if (items.length === 0) {
@@ -29,8 +29,8 @@ export function MobileTopChips({ identity, activePath }: MobileTopChipsProps): R
 
   return (
     <nav
-      className="sticky top-[calc(env(safe-area-inset-top,0px)+var(--mobile-shell-trigger-height))] z-[34] flex gap-2 overflow-x-auto border-b border-border bg-bg/90 px-4 py-3 backdrop-blur-md [scrollbar-width:none] [-ms-overflow-style:none] lg:hidden"
-      aria-label="Secondary workspaces"
+      className="sticky top-[calc(env(safe-area-inset-top,0px)+var(--mobile-shell-trigger-height))] z-[34] flex gap-2 overflow-x-auto border-b border-border bg-bg/90 px-4 py-2.5 backdrop-blur-md [scrollbar-width:none] [-ms-overflow-style:none] lg:hidden"
+      aria-label="Supporting workspaces"
     >
       {items.map((item) => {
         const isActive = isNavItemActive(item.href, activePath);
@@ -42,7 +42,7 @@ export function MobileTopChips({ identity, activePath }: MobileTopChipsProps): R
             aria-current={isActive ? `page` : undefined}
             data-active={isActive ? `true` : undefined}
             className={cn(
-              `inline-flex min-h-11 shrink-0 items-center gap-2 rounded-pill border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-white/72 transition hover:bg-white/[0.06] hover:text-white/90`,
+              `inline-flex min-h-11 shrink-0 items-center gap-2 rounded-pill border border-white/8 bg-white/[0.02] px-3 py-1.5 text-xs text-white/64 transition hover:bg-white/[0.05] hover:text-white/85`,
               `data-[active=true]:border-cyan-400/40 data-[active=true]:bg-cyan-500/15 data-[active=true]:text-cyan-100`,
             )}
           >

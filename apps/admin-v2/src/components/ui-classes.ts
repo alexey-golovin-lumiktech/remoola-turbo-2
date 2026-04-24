@@ -1,4 +1,7 @@
 export const panelSurfaceClass = `rounded-card border border-border bg-panel shadow-xs`;
+export const panelPrimaryClass = `border-cyan-400/14 bg-linear-to-br from-panel via-panel to-cyan-500/[0.03] shadow-sm`;
+export const panelSupportClass = `border-white/8 bg-panel shadow-xs`;
+export const panelMetaClass = `border-white/6 bg-white/[0.02] shadow-none`;
 export const panelClass = `${panelSurfaceClass} p-4 md:p-5`;
 export const panelHeaderClass = `mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between`;
 export const panelHeaderCopyClass = `min-w-0 flex-1`;
@@ -8,6 +11,8 @@ export const subtleTextClass = `text-xs leading-5 text-muted-40`;
 export const monoMutedTextClass = `font-mono text-xs leading-5 text-muted-40`;
 export const emptyPanelClass = `${panelSurfaceClass} px-4 py-4 text-sm leading-6 text-muted-56`;
 export const buttonRowClass = `flex flex-wrap items-center gap-2`;
+export const actionGroupClass = `flex flex-wrap items-center gap-2`;
+export const actionGroupLabelClass = `text-[11px] font-medium uppercase tracking-[0.2em] text-white/35`;
 export const stackClass = `flex flex-col gap-4`;
 
 export const pillBaseClass = `inline-flex items-center rounded-pill border px-2.5 py-1 text-xs font-medium leading-none transition-colors`;

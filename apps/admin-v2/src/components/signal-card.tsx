@@ -20,6 +20,7 @@ export type SignalCardProps = {
 function availabilityCopy(availability: SignalCardAvailability): string | null {
   if (availability === `count-only`) return `Read-only count`;
   if (availability === `deferred`) return `Unavailable in current phase`;
+  if (availability === `temporarily-unavailable`) return `Temporary delivery issue`;
   return null;
 }
 
@@ -27,6 +28,7 @@ function availabilityEyebrow(availability: SignalCardAvailability): string {
   if (availability === `live-actionable`) return `ACTION READY`;
   if (availability === `count-only`) return `READ-ONLY COUNT`;
   if (availability === `deferred`) return `DEFERRED`;
+  if (availability === `temporarily-unavailable`) return `TEMPORARILY UNAVAILABLE`;
   return `OBSERVED`;
 }
 
@@ -35,6 +37,7 @@ function formatStateLabel(value: string | null | undefined): string {
   if (value === `live-actionable`) return `Action ready`;
   if (value === `count-only`) return `Read-only`;
   if (value === `deferred`) return `Deferred`;
+  if (value === `temporarily-unavailable`) return `Temporarily unavailable`;
   return value.replaceAll(`-`, ` `);
 }
 
@@ -48,15 +51,23 @@ export function SignalCard({
 }: SignalCardProps): ReactElement {
   const isLive = availability === `live-actionable`;
   const clickable = isLive && typeof href === `string` && href.length > 0;
+  const isUnavailable = availability === `temporarily-unavailable` || availability === `deferred`;
   const cardClassName = cn(
     panelSurfaceClass,
     `flex min-h-[196px] flex-col gap-4 p-5 transition`,
     clickable ? `cursor-pointer hover:border-white/20 hover:bg-white/[0.02]` : ``,
-    isLive ? `border-cyan-400/10` : `border-amber-400/20`,
+    isLive ? `border-cyan-400/10` : isUnavailable ? `border-amber-400/24` : `border-white/10`,
   );
-  const pillStatus = isLive ? `PROCESSING` : `Unavailable`;
+  const pillStatus = isLive ? `PROCESSING` : isUnavailable ? `Unavailable` : `Observed`;
   const supplemental = availabilityCopy(availability);
   const eyebrow = availabilityEyebrow(availability);
+  const countValue = availability === `temporarily-unavailable` ? `Unavailable` : count == null ? `—` : String(count);
+  const operatorCopy =
+    availability === `temporarily-unavailable`
+      ? `Signal delivery is degraded right now. Keep the queue visible and avoid interpreting this state as zero workload.`
+      : availability === `deferred`
+        ? `This signal exists, but it is intentionally hidden in the current workspace phase.`
+        : label;
 
   const body = (
     <article className={cardClassName}>
@@ -67,10 +78,9 @@ export function SignalCard({
         <span className="text-xs text-white/55">{supplemental ?? `Action ready`}</span>
       </div>
       <div className="space-y-2">
-        <div className="text-sm font-medium leading-6 text-white/78">{label}</div>
-        <div className="text-4xl font-semibold leading-none tabular-nums text-white">
-          {count == null ? `—` : String(count)}
-        </div>
+        <div className="text-sm font-medium leading-6 text-white/92">{label}</div>
+        <div className="text-xs leading-5 text-white/55">{operatorCopy}</div>
+        <div className="text-4xl font-semibold leading-none tabular-nums text-white">{countValue}</div>
       </div>
       <div className="mt-auto flex flex-wrap items-center gap-2 text-xs text-white/55">
         <span className="text-white/55">State: {formatStateLabel(phaseStatus)}</span>

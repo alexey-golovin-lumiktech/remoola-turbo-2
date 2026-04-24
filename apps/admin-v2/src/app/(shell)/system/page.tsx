@@ -30,13 +30,14 @@ export default async function SystemPage() {
       <>
         <Panel
           title="System"
-          description="Read-only summary of product and background health, with links to related workspaces."
+          description="Read-only preview of product and background health. Use related workspaces for actual queue work or deeper investigation."
           actions={<p className={mutedTextClass}>Computed: {formatDateTime(summary?.computedAt)}</p>}
+          surface="meta"
         />
 
         <section className="statsGrid">
           {cards.length === 0 ? (
-            <Panel title="Summary unavailable">
+            <Panel title="Summary unavailable" surface="meta">
               <p className={mutedTextClass}>
                 System summary is not currently available from the shared service data. Use the related workspaces for
                 detailed investigation.
@@ -54,6 +55,7 @@ export default async function SystemPage() {
                   <ActionGhost href={card.primaryAction.href}>{card.primaryAction.label}</ActionGhost>
                 ) : null
               }
+              surface="meta"
             >
               <p className={mutedTextClass}>{card.explanation}</p>
               <ul>

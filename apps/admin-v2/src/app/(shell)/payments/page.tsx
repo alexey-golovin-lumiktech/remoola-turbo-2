@@ -2,10 +2,12 @@ import Link from 'next/link';
 
 import { ActionGhost } from '../../../components/action-ghost';
 import { DenseTable } from '../../../components/dense-table';
-import { MobileQueueCard } from '../../../components/mobile-queue-card';
+import { MobileQueueCard, MobileQueueSection } from '../../../components/mobile-queue-card';
 import { Panel } from '../../../components/panel';
+import { ResponsiveFilterPanel } from '../../../components/responsive-filter-panel';
 import { StatusPill } from '../../../components/status-pill';
 import { TabletRow } from '../../../components/tablet-row';
+import { TinyPill } from '../../../components/tiny-pill';
 import {
   buttonRowClass,
   checkboxFieldClass,
@@ -18,6 +20,7 @@ import {
 } from '../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../components/workspace-layout';
 import { getPayments, getQuickstart, type PaymentsListResponse } from '../../../lib/admin-api.server';
+import { buildPathWithSearch, withReturnTo } from '../../../lib/navigation-context';
 import { parseQuickstartId } from '../../../lib/quickstart-investigations';
 
 function formatDate(value: string | null | undefined): string {
@@ -27,19 +30,19 @@ function formatDate(value: string | null | undefined): string {
 
 type PaymentItem = PaymentsListResponse[`items`][number];
 
-function renderConsumerLink(consumer: PaymentItem[`payer`] | PaymentItem[`requester`]) {
+function renderConsumerLink(consumer: PaymentItem[`payer`] | PaymentItem[`requester`], returnTo: string) {
   if (consumer.id) {
-    return <Link href={`/consumers/${consumer.id}`}>{consumer.email ?? consumer.id}</Link>;
+    return <Link href={withReturnTo(`/consumers/${consumer.id}`, returnTo)}>{consumer.email ?? consumer.id}</Link>;
   }
 
   return consumer.email ?? `-`;
 }
 
-function PaymentParticipants({ item }: { item: PaymentItem }) {
+function PaymentParticipants({ item, returnTo }: { item: PaymentItem; returnTo: string }) {
   return (
     <>
-      <div>Payer: {renderConsumerLink(item.payer)}</div>
-      <div>Requester: {renderConsumerLink(item.requester)}</div>
+      <div>Payer: {renderConsumerLink(item.payer, returnTo)}</div>
+      <div>Requester: {renderConsumerLink(item.requester, returnTo)}</div>
     </>
   );
 }
@@ -69,7 +72,7 @@ function PaymentAssignedTo({ item }: { item: PaymentItem }) {
   );
 }
 
-function PaymentsMobileCards({ items }: { items: PaymentItem[] }) {
+function PaymentsMobileCards({ items, returnTo }: { items: PaymentItem[]; returnTo: string }) {
   if (items.length === 0) {
     return (
       <div className="readSurface md:hidden" data-view="mobile">
@@ -85,7 +88,7 @@ function PaymentsMobileCards({ items }: { items: PaymentItem[] }) {
           <MobileQueueCard
             key={item.id}
             id={item.id}
-            href={`/payments/${item.id}`}
+            href={withReturnTo(`/payments/${item.id}`, returnTo)}
             title={item.id}
             subtitle={item.paymentRail ?? `No rail`}
             trailing={
@@ -94,14 +97,20 @@ function PaymentsMobileCards({ items }: { items: PaymentItem[] }) {
               </>
             }
           >
-            <PaymentParticipants item={item} />
-            <PaymentStatus item={item} />
-            <div className={mutedTextClass}>Attachments: {item.attachmentsCount}</div>
-            <div className={mutedTextClass}>Due: {formatDate(item.dueDate)}</div>
-            <div className={mutedTextClass}>Updated: {formatDate(item.updatedAt)}</div>
-            <div className={mutedTextClass}>
-              Assigned to: <PaymentAssignedTo item={item} />
-            </div>
+            <MobileQueueSection title="Participants">
+              <PaymentParticipants item={item} returnTo={returnTo} />
+            </MobileQueueSection>
+            <MobileQueueSection title="Status and freshness">
+              <PaymentStatus item={item} />
+              <div className={mutedTextClass}>Attachments: {item.attachmentsCount}</div>
+            </MobileQueueSection>
+            <MobileQueueSection title="Follow-up">
+              <div className={mutedTextClass}>Due: {formatDate(item.dueDate)}</div>
+              <div className={mutedTextClass}>Updated: {formatDate(item.updatedAt)}</div>
+              <div className={mutedTextClass}>
+                Assigned to: <PaymentAssignedTo item={item} />
+              </div>
+            </MobileQueueSection>
           </MobileQueueCard>
         ))}
       </div>
@@ -109,7 +118,7 @@ function PaymentsMobileCards({ items }: { items: PaymentItem[] }) {
   );
 }
 
-function PaymentsTabletRows({ items }: { items: PaymentItem[] }) {
+function PaymentsTabletRows({ items, returnTo }: { items: PaymentItem[]; returnTo: string }) {
   if (items.length === 0) {
     return (
       <div className="readSurface hidden md:block xl:hidden" data-view="tablet">
@@ -126,14 +135,14 @@ function PaymentsTabletRows({ items }: { items: PaymentItem[] }) {
             key={item.id}
             primary={
               <>
-                <Link href={`/payments/${item.id}`}>
+                <Link href={withReturnTo(`/payments/${item.id}`, returnTo)}>
                   <strong>{item.id}</strong>
                 </Link>
                 <div className={mutedTextClass}>{item.paymentRail ?? `No rail`}</div>
               </>
             }
             cells={[
-              <PaymentParticipants item={item} key="participants" />,
+              <PaymentParticipants item={item} key="participants" returnTo={returnTo} />,
               <PaymentStatus item={item} key="status" />,
               <div key="amount">
                 <div>
@@ -156,7 +165,7 @@ function PaymentsTabletRows({ items }: { items: PaymentItem[] }) {
   );
 }
 
-function PaymentsDesktopTable({ items }: { items: PaymentItem[] }) {
+function PaymentsDesktopTable({ items, returnTo }: { items: PaymentItem[]; returnTo: string }) {
   return (
     <div className="readSurface hidden xl:block" data-view="desktop">
       <DenseTable
@@ -168,14 +177,14 @@ function PaymentsDesktopTable({ items }: { items: PaymentItem[] }) {
           : items.map((item) => (
               <tr key={item.id}>
                 <td>
-                  <Link href={`/payments/${item.id}`}>
+                  <Link href={withReturnTo(`/payments/${item.id}`, returnTo)}>
                     <strong>{item.id}</strong>
                   </Link>
                   <div className={mutedTextClass}>{item.paymentRail ?? `No rail`}</div>
                   <div className={mutedTextClass}>Attachments: {item.attachmentsCount}</div>
                 </td>
                 <td>
-                  <PaymentParticipants item={item} />
+                  <PaymentParticipants item={item} returnTo={returnTo} />
                 </td>
                 <td>
                   <div>
@@ -276,6 +285,21 @@ export default async function PaymentsPage({
   }
 
   const items = data?.items ?? [];
+  const currentQueueHref = buildPathWithSearch(`/payments`, {
+    quickstart: requestedQuickstartId,
+    q,
+    status,
+    paymentRail,
+    currencyCode,
+    amountMin,
+    amountMax,
+    dueDateFrom,
+    dueDateTo,
+    createdFrom,
+    createdTo,
+    overdue: overdue ? `true` : undefined,
+    cursor,
+  });
 
   return (
     <WorkspaceLayout workspace="payments">
@@ -284,6 +308,68 @@ export default async function PaymentsPage({
           title="Payments"
           description="Read-only payment request investigation with finance-safe cross-links."
           actions={<ActionGhost href="/payments/operations">Open operations queue</ActionGhost>}
+          surface="primary"
+        >
+          <p className={mutedTextClass}>
+            Current queue posture: {items.length} visible cases
+            {overdue ? ` · overdue slice active` : ``}
+            {status ? ` · status ${status}` : ``}
+            {paymentRail ? ` · rail ${paymentRail}` : ``}
+          </p>
+        </Panel>
+
+        {appliedQuickstart ? (
+          <Panel
+            title={appliedQuickstart.label}
+            description={appliedQuickstart.description}
+            actions={<ActionGhost href="/payments">Remove quickstart</ActionGhost>}
+            surface="support"
+          />
+        ) : params?.quickstart ? (
+          <Panel surface="meta">
+            <p className={mutedTextClass}>The requested quickstart could not be resolved for the payments queue.</p>
+          </Panel>
+        ) : null}
+
+        <Panel
+          title="Queue summary"
+          description="See the active slice before opening filters or drilling into a payment request."
+          actions={
+            <div className={buttonRowClass}>
+              <TinyPill tone="cyan">{items.length} visible</TinyPill>
+              <TinyPill>{overdue ? `Overdue slice` : `All timing states`}</TinyPill>
+              {status ? <TinyPill>{status}</TinyPill> : null}
+            </div>
+          }
+          surface="support"
+        >
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-4">
+              <div className="text-[11px] uppercase tracking-[0.18em] text-white/40">Current slice</div>
+              <div className="mt-2 text-sm text-white/90">
+                {q ? `Search active` : `Queue window`}
+                {paymentRail ? ` · ${paymentRail}` : ``}
+                {currencyCode ? ` · ${currencyCode}` : ``}
+              </div>
+            </div>
+            <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-4">
+              <div className="text-[11px] uppercase tracking-[0.18em] text-white/40">Freshness cue</div>
+              <div className="mt-2 text-sm text-white/90">
+                Persisted and effective status are shown together so stale cases stay visible.
+              </div>
+            </div>
+            <div className="rounded-2xl border border-cyan-400/15 bg-cyan-500/[0.06] p-4">
+              <div className="text-[11px] uppercase tracking-[0.18em] text-cyan-200/70">Next step</div>
+              <div className="mt-2 text-sm text-white/92">Open the queue list below and drill into the next case.</div>
+            </div>
+          </div>
+        </Panel>
+
+        <ResponsiveFilterPanel
+          title="Queue filters"
+          description="Narrow the operational slice without leaving the queue."
+          summaryLabel="Filters"
+          summaryValue={`${[q, status, paymentRail, currencyCode, overdue ? `overdue` : ``].filter(Boolean).length} active`}
         >
           <form className="grid gap-3 md:grid-cols-2 xl:grid-cols-4" method="get">
             <label className={fieldClass}>
@@ -365,19 +451,7 @@ export default async function PaymentsPage({
               </div>
             </div>
           </form>
-        </Panel>
-
-        {appliedQuickstart ? (
-          <Panel
-            title={appliedQuickstart.label}
-            description={appliedQuickstart.description}
-            actions={<ActionGhost href="/payments">Remove quickstart</ActionGhost>}
-          />
-        ) : params?.quickstart ? (
-          <Panel>
-            <p className={mutedTextClass}>The requested quickstart could not be resolved for the payments queue.</p>
-          </Panel>
-        ) : null}
+        </ResponsiveFilterPanel>
 
         <Panel
           title="Payment request queue"
@@ -389,10 +463,11 @@ export default async function PaymentsPage({
               ) : null}
             </div>
           }
+          surface="support"
         >
-          <PaymentsMobileCards items={items} />
-          <PaymentsTabletRows items={items} />
-          <PaymentsDesktopTable items={items} />
+          <PaymentsMobileCards items={items} returnTo={currentQueueHref} />
+          <PaymentsTabletRows items={items} returnTo={currentQueueHref} />
+          <PaymentsDesktopTable items={items} returnTo={currentQueueHref} />
         </Panel>
       </>
     </WorkspaceLayout>

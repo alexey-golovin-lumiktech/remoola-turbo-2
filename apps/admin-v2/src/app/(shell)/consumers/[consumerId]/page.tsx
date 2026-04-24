@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { ActionGhost } from '../../../../components/action-ghost';
 import { AdminSurfaceAccessDenied, AdminSurfaceUnavailable } from '../../../../components/admin-surface-state';
+import { Panel } from '../../../../components/panel';
 import {
   getAdminIdentity,
   getConsumerActionLog,
@@ -18,6 +20,7 @@ import {
   removeConsumerFlagAction,
   suspendConsumerAction,
 } from '../../../../lib/admin-mutations.server';
+import { readReturnTo } from '../../../../lib/navigation-context';
 
 function formatDate(value: string | null | undefined): string {
   if (!value) return `-`;
@@ -29,8 +32,15 @@ function renderObject(value: Record<string, unknown> | null) {
   return <pre className="mono">{JSON.stringify(value, null, 2)}</pre>;
 }
 
-export default async function ConsumerCasePage({ params }: { params: Promise<{ consumerId: string }> }) {
+export default async function ConsumerCasePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ consumerId: string }>;
+  searchParams?: Promise<{ from?: string }>;
+}) {
   const { consumerId } = await params;
+  const resolvedSearchParams = await searchParams;
   const [identity, consumerResult, contracts, ledgerSummary, authHistory, actionLog] = await Promise.all([
     getAdminIdentity(),
     getConsumerCaseResult(consumerId),
@@ -64,43 +74,44 @@ export default async function ConsumerCasePage({ params }: { params: Promise<{ c
   const ledgerRows = Object.entries(ledgerSummary?.summary ?? consumer.ledgerSummary ?? {});
   const canManageNotes = identity?.capabilities.includes(`consumers.notes`) ?? false;
   const canManageFlags = identity?.capabilities.includes(`consumers.flags`) ?? false;
+  const backToQueueHref = readReturnTo(resolvedSearchParams?.from, `/consumers`);
 
   return (
     <>
-      <section className="panel pageHeader">
-        <div>
-          <h1>{consumer.email}</h1>
-          <p className="muted mono">{consumer.id}</p>
-          <div className="pillRow">
-            <span className="pill">{consumer.accountType}</span>
-            <span className="pill">{consumer.verificationStatus}</span>
-            {consumer.contractorKind ? <span className="pill">{consumer.contractorKind}</span> : null}
+      <Panel
+        title={consumer.email}
+        description={consumer.id}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <ActionGhost href={backToQueueHref}>Back to queue</ActionGhost>
+            <ActionGhost href={`/verification/${consumer.id}`}>Verification case</ActionGhost>
+            <ActionGhost href={`/audit/consumer-actions?consumerId=${consumer.id}`}>Consumer actions</ActionGhost>
+            <ActionGhost href={`/audit/admin-actions?resourceId=${consumer.id}`}>Related admin actions</ActionGhost>
           </div>
+        }
+        surface="primary"
+      >
+        <div className="pillRow">
+          <span className="pill">{consumer.accountType}</span>
+          <span className="pill">{consumer.verificationStatus}</span>
+          {consumer.contractorKind ? <span className="pill">{consumer.contractorKind}</span> : null}
         </div>
-        <div className="actionsRow">
-          <Link className="secondaryButton" href={`/verification/${consumer.id}`}>
-            Verification case
-          </Link>
-          <Link className="secondaryButton" href={`/audit/consumer-actions?consumerId=${consumer.id}`}>
-            Consumer actions
-          </Link>
-          <Link className="secondaryButton" href={`/audit/admin-actions?resourceId=${consumer.id}`}>
-            Related admin actions
-          </Link>
-          {identity?.capabilities.includes(`consumers.force_logout`) ? (
-            <form action={forceLogoutConsumerAction.bind(null, consumer.id)} className="actionsRow">
-              <input type="hidden" name="confirmed" value="false" />
-              <label className="field">
-                <span>Confirm</span>
-                <input type="checkbox" name="confirmed" value="true" required />
-              </label>
-              <button className="dangerButton" type="submit" name="confirmedSubmit" value="true">
-                Force logout
-              </button>
-            </form>
-          ) : null}
-        </div>
-      </section>
+        {identity?.capabilities.includes(`consumers.force_logout`) ? (
+          <form
+            action={forceLogoutConsumerAction.bind(null, consumer.id)}
+            className="mt-4 flex flex-wrap items-end gap-2"
+          >
+            <input type="hidden" name="confirmed" value="false" />
+            <label className="field">
+              <span>Confirm</span>
+              <input type="checkbox" name="confirmed" value="true" required />
+            </label>
+            <button className="dangerButton" type="submit" name="confirmedSubmit" value="true">
+              Force logout
+            </button>
+          </form>
+        ) : null}
+      </Panel>
 
       <section className="statsGrid">
         <article className="panel">

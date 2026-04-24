@@ -1,8 +1,10 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { ActionGhost } from '../../../../components/action-ghost';
 import { AdminSurfaceAccessDenied, AdminSurfaceUnavailable } from '../../../../components/admin-surface-state';
 import { AssignmentCard } from '../../../../components/assignment-card';
+import { Panel } from '../../../../components/panel';
 import { getAdminIdentity, getAdmins, getDocumentCaseResult, getDocumentTags } from '../../../../lib/admin-api.server';
 import { formatBytes, formatDateTime } from '../../../../lib/admin-format';
 import {
@@ -11,9 +13,17 @@ import {
   releaseDocumentAssignmentAction,
   retagDocumentAction,
 } from '../../../../lib/admin-mutations.server';
+import { readReturnTo } from '../../../../lib/navigation-context';
 
-export default async function DocumentCasePage({ params }: { params: Promise<{ documentId: string }> }) {
+export default async function DocumentCasePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ documentId: string }>;
+  searchParams?: Promise<{ from?: string }>;
+}) {
   const { documentId } = await params;
+  const resolvedSearchParams = await searchParams;
   const [identity, documentCaseResult, tags] = await Promise.all([
     getAdminIdentity(),
     getDocumentCaseResult(documentId),
@@ -55,6 +65,7 @@ export default async function DocumentCasePage({ params }: { params: Promise<{ d
   const canClaim = canManageAssignments && !currentAssignment;
   const canRelease = Boolean(currentAssignment && canManageAssignments && (ownsAssignment || canReassignAssignments));
   const canReassign = Boolean(currentAssignment && canReassignAssignments);
+  const backToQueueHref = readReturnTo(resolvedSearchParams?.from, `/documents`);
   const reassignCandidatesResponse = canReassign ? await getAdmins({ page: 1, pageSize: 50, status: `ACTIVE` }) : null;
   const reassignCandidates = (reassignCandidatesResponse?.items ?? []).filter(
     (admin) => admin.id !== currentAssignment?.assignedTo.id,
@@ -62,29 +73,32 @@ export default async function DocumentCasePage({ params }: { params: Promise<{ d
 
   return (
     <>
-      <section className="panel pageHeader">
-        <div>
-          <h1>Document detail</h1>
-          <p className="muted">{documentCase.core.originalName}</p>
-          <p className="muted mono">{documentCase.id}</p>
-          <div className="pillRow">
-            <span className="pill">{documentCase.core.access}</span>
-            <span className="pill">{documentCase.core.mimeType ?? `Unknown MIME`}</span>
-            {documentCase.core.deletedAt ? <span className="pill">Soft-deleted</span> : null}
+      <Panel
+        title="Document detail"
+        description={documentCase.core.originalName}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <ActionGhost href={backToQueueHref}>Back to queue</ActionGhost>
+            <ActionGhost href="/documents/tags">Tags</ActionGhost>
+            <a
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-input border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white/72 transition hover:border-white/20 hover:bg-white/[0.05] hover:text-white/90"
+              href={documentCase.downloadUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Secure open
+            </a>
           </div>
+        }
+        surface="primary"
+      >
+        <p className="muted mono">{documentCase.id}</p>
+        <div className="pillRow">
+          <span className="pill">{documentCase.core.access}</span>
+          <span className="pill">{documentCase.core.mimeType ?? `Unknown MIME`}</span>
+          {documentCase.core.deletedAt ? <span className="pill">Soft-deleted</span> : null}
         </div>
-        <div className="actionsRow">
-          <Link className="secondaryButton" href="/documents">
-            Documents explorer
-          </Link>
-          <Link className="secondaryButton" href="/documents/tags">
-            Tags
-          </Link>
-          <a className="secondaryButton" href={documentCase.downloadUrl} target="_blank" rel="noreferrer">
-            Secure open
-          </a>
-        </div>
-      </section>
+      </Panel>
 
       <section className="statsGrid">
         <article className="panel">

@@ -2,7 +2,6 @@ import { headers } from 'next/headers';
 
 import { getActivePathFromHeaders } from './nav-state';
 import { AdminSurfaceAccessDenied, AdminSurfaceUnavailable } from '../../components/admin-surface-state';
-import { MobileBottomNav } from '../../components/mobile-bottom-nav';
 import { MobilePageHeader } from '../../components/mobile-page-header';
 import { MobileShellDrawer } from '../../components/mobile-shell-drawer';
 import { MobileTopChips } from '../../components/mobile-top-chips';
@@ -92,7 +91,7 @@ export default async function ShellLayout({ children }: { children: React.ReactN
           quickstarts={visibleQuickstarts}
         />
       </aside>
-      <main className="min-w-0 overflow-x-hidden px-4 py-4 pb-[var(--mobile-bottom-nav-reserved-space)] lg:px-6 lg:py-6 lg:pb-6 xl:px-8">
+      <main className="min-w-0 overflow-x-hidden px-4 py-4 pb-8 lg:px-6 lg:py-6 lg:pb-6 xl:px-8">
         {identity ? (
           <div className="flex min-w-0 flex-col gap-6">
             <ShellHeader />
@@ -120,7 +119,6 @@ export default async function ShellLayout({ children }: { children: React.ReactN
           />
         )}
       </main>
-      <MobileBottomNav identity={identity} activePath={activePath} />
     </div>
   );
 }

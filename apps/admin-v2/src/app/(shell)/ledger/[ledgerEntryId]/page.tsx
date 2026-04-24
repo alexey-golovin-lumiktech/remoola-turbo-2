@@ -1,14 +1,17 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { ActionGhost } from '../../../../components/action-ghost';
 import { AdminSurfaceAccessDenied, AdminSurfaceUnavailable } from '../../../../components/admin-surface-state';
 import { AssignmentCard } from '../../../../components/assignment-card';
+import { Panel } from '../../../../components/panel';
 import { getAdminIdentity, getAdmins, getLedgerEntryCaseResult } from '../../../../lib/admin-api.server';
 import {
   claimLedgerEntryAssignmentAction,
   reassignLedgerEntryAssignmentAction,
   releaseLedgerEntryAssignmentAction,
 } from '../../../../lib/admin-mutations.server';
+import { readReturnTo } from '../../../../lib/navigation-context';
 
 function formatDate(value: string | null | undefined): string {
   if (!value) return `-`;
@@ -23,8 +26,15 @@ function renderObject(value: Record<string, unknown> | null | undefined) {
   return <pre className="mono">{JSON.stringify(value, null, 2)}</pre>;
 }
 
-export default async function LedgerEntryCasePage({ params }: { params: Promise<{ ledgerEntryId: string }> }) {
+export default async function LedgerEntryCasePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ ledgerEntryId: string }>;
+  searchParams?: Promise<{ from?: string }>;
+}) {
   const { ledgerEntryId } = await params;
+  const resolvedSearchParams = await searchParams;
   const [ledgerCaseResult, identity] = await Promise.all([getLedgerEntryCaseResult(ledgerEntryId), getAdminIdentity()]);
 
   if (ledgerCaseResult.status === `not_found`) {
@@ -58,6 +68,7 @@ export default async function LedgerEntryCasePage({ params }: { params: Promise<
   const canClaim = canManageAssignments && !currentAssignment;
   const canRelease = Boolean(currentAssignment && canManageAssignments && (ownsAssignment || canReassignAssignments));
   const canReassign = Boolean(currentAssignment && canReassignAssignments);
+  const backToQueueHref = readReturnTo(resolvedSearchParams?.from, `/ledger`);
   const reassignCandidatesResponse = canReassign ? await getAdmins({ page: 1, pageSize: 50, status: `ACTIVE` }) : null;
   const reassignCandidates = (reassignCandidatesResponse?.items ?? []).filter(
     (admin) => admin.id !== currentAssignment?.assignedTo.id,
@@ -65,32 +76,31 @@ export default async function LedgerEntryCasePage({ params }: { params: Promise<
 
   return (
     <>
-      <section className="panel pageHeader">
-        <div>
-          <h1>Ledger Entry</h1>
-          <p className="muted mono">{ledgerCase.id}</p>
-          <div className="pillRow">
-            <span className="pill">{ledgerCase.core.type}</span>
-            <span className="pill">{ledgerCase.core.effectiveStatus}</span>
-            <span className="pill">{ledgerCase.core.currencyCode}</span>
+      <Panel
+        title="Ledger Entry"
+        description={ledgerCase.id}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <ActionGhost href={backToQueueHref}>Back to queue</ActionGhost>
+            <ActionGhost href={`/consumers/${ledgerCase.consumer.id}`}>Consumer case</ActionGhost>
+            {ledgerCase.paymentRequest ? (
+              <ActionGhost href={`/payments/${ledgerCase.paymentRequest.id}`}>Payment request</ActionGhost>
+            ) : null}
+            {ledgerCase.paymentRequest ? (
+              <ActionGhost href={`/audit/admin-actions?resourceId=${ledgerCase.paymentRequest.id}`}>
+                Related admin actions
+              </ActionGhost>
+            ) : null}
           </div>
+        }
+        surface="primary"
+      >
+        <div className="pillRow">
+          <span className="pill">{ledgerCase.core.type}</span>
+          <span className="pill">{ledgerCase.core.effectiveStatus}</span>
+          <span className="pill">{ledgerCase.core.currencyCode}</span>
         </div>
-        <div className="actionsRow">
-          <Link className="secondaryButton" href={`/consumers/${ledgerCase.consumer.id}`}>
-            Consumer case
-          </Link>
-          {ledgerCase.paymentRequest ? (
-            <Link className="secondaryButton" href={`/payments/${ledgerCase.paymentRequest.id}`}>
-              Payment request
-            </Link>
-          ) : null}
-          {ledgerCase.paymentRequest ? (
-            <Link className="secondaryButton" href={`/audit/admin-actions?resourceId=${ledgerCase.paymentRequest.id}`}>
-              Related admin actions
-            </Link>
-          ) : null}
-        </div>
-      </section>
+      </Panel>
 
       <section className="statsGrid">
         <article className="panel">
