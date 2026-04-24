@@ -18,9 +18,6 @@ export function getRequestOrigin(): string {
   if (configuredOrigin) {
     return configuredOrigin;
   }
-  if (process.env.NODE_ENV !== `production`) {
-    return `http://localhost:3011`;
-  }
   throw new Error(`Admin v2 app origin is not configured`);
 }
 
