@@ -2640,24 +2640,26 @@
 - **2026-04-24:**
 
   ### 🚀 Feature
-  - **Canonical operator entry surfaces:** Land the admin-v2 shell quickstarts and operator workspace surfaces, then migrate the affected shell pages onto tailwind-first primitives so the shell presents a more consistent operator-facing entry point.
-  - **Shared admin-v2 surface alignment:** Extract shared workspace metadata and formatting helpers so saved-view paths, anomaly labels, alert workspace metadata, bytes/date formatting, and default lookback ranges stay aligned across admin-v2 surfaces.
-  - **Load-state normalization:** Harden consumer-support side effects and normalize admin read/load states so shell surfaces behave predictably while data is pending or being refreshed.
+  - **Canonical operator shell expansion:** Land the admin-v2 shell quickstarts and operator workspace surfaces, then migrate the affected shell pages onto tailwind-first primitives so verification, payments, payouts, and system flows present a more consistent operator-facing entry point.
+  - **Workspace copy and framing cleanup:** Remove obsolete framing surfaces and shorten workspace-focused copy across admin-v2 pages so shell, overview, audit, exchange, ledger, payouts, and consumer routes keep the same operator flow with less stale presentation-layer framing.
 
   ### 🔐 Security / Production Safety
   - **Origin hardening:** Remove the implicit localhost origin fallback from the admin-v2 request-origin path and require explicit origin resolution through the supported config surface.
+  - **Support-side-effect hardening:** Make consumer suspension and resend-email flows idempotent, prevent duplicate revoke and notification side effects during retries or concurrent actions, and preserve successful suspension state even when notification dispatch fails.
+  - **Explicit admin read-state semantics:** Separate `401`, `403`, `404`, and backend-unavailable paths across admin-v2 shell and case surfaces, while hiding mutation affordances when the required capability is missing so unauthorized and unavailable states do not collapse into the same UI behavior.
 
   ### 🧪 Testing
-  - **Shared-helper regression coverage:** Add targeted tests for the new admin-v2 metadata/format helper layer and keep the touched admin-v2 pages covered after the shell refactor.
+  - **Targeted regression coverage:** Add or update focused coverage for admin-v2 metadata and formatting helpers, request-origin resolution, consumer-support idempotency, and the normalized forbidden, unavailable, and capability-gated read states.
+  - **Higher-signal shell assertions:** Remove brittle static-markup and search-param tests, then rewrite retained shell coverage around observable server contracts, quickstart resolution, access-control branches, fallback states, and drawer behavior.
 
   ### 🛠 DevEx
-  - **Generated surface refresh:** Fold the generated updates and helper extraction into the same admin-v2 shell cleanup so shared primitives and generated artifacts remain in sync.
+  - **Shared-surface alignment:** Extract shared admin-v2 metadata and formatting helpers, refresh generated `@remoola/api-types` artifacts, and keep workspace config, revalidation paths, anomaly labels, alert workspace metadata, and common primitives in sync across the expanded shell surfaces.
 
   ### 📄 Documentation
-  - **Changelog normalization handoff:** Record the admin-v2 shell, hardening, and shared-helper cleanup in the daily changelog structure that now serves as the canonical format.
+  - **Changelog normalization guide:** Add the changelog guide and reconcile the daily changelog structure so future day entries follow the same sectioned, fact-preserving format.
 
   ### ⚠️ Notes
-  - **No new migration surface:** The quickstarts, shell refactor, origin hardening, and shared-helper extraction landed without introducing a new database migration.
+  - **No new migration surface:** The shell rollout, copy cleanup, origin hardening, support-flow changes, and helper extraction landed without introducing a new database migration or schema contract change.
 
 </details>
 
