@@ -21,7 +21,7 @@ jest.mock(`next/navigation`, () => ({
 jest.mock(`../../../../lib/admin-api.server`, () => ({
   getAdminIdentity: jest.fn(),
   getAdmins: jest.fn(),
-  getPayoutCase: jest.fn(),
+  getPayoutCaseResult: jest.fn(),
 }));
 
 jest.mock(`../../../../lib/admin-mutations.server`, () => ({
@@ -34,7 +34,7 @@ jest.mock(`../../../../lib/admin-mutations.server`, () => ({
 const {
   getAdminIdentity: mockedGetAdminIdentity,
   getAdmins: mockedGetAdmins,
-  getPayoutCase: mockedGetPayoutCase,
+  getPayoutCaseResult: mockedGetPayoutCaseResult,
 } = jest.requireMock(`../../../../lib/admin-api.server`) as jest.Mocked<typeof AdminApi>;
 
 async function loadSubject() {
@@ -161,7 +161,7 @@ describe(`admin-v2 payout case`, () => {
     mockedNotFound.mockClear();
     mockedGetAdminIdentity.mockReset();
     mockedGetAdmins.mockReset();
-    mockedGetPayoutCase.mockReset();
+    mockedGetPayoutCaseResult.mockReset();
     mockedGetAdminIdentity.mockResolvedValue({
       id: `admin-1`,
       email: `super@example.com`,
@@ -178,21 +178,24 @@ describe(`admin-v2 payout case`, () => {
       page: 1,
       pageSize: 50,
     });
-    mockedGetPayoutCase.mockResolvedValue(buildPayoutCase());
+    mockedGetPayoutCaseResult.mockResolvedValue({ status: `ready`, data: buildPayoutCase() });
   });
 
   it(`shows the escalation block reason instead of an actionable form when escalation is forbidden`, async () => {
-    mockedGetPayoutCase.mockResolvedValueOnce({
-      ...buildPayoutCase(),
-      core: {
-        ...buildPayoutCase().core,
-        derivedStatus: `completed`,
-        effectiveStatus: `COMPLETED`,
-      },
-      actionControls: {
-        canEscalate: false,
-        allowedActions: [],
-        escalateBlockedReason: `Only failed or stuck payouts can be escalated in MVP-2`,
+    mockedGetPayoutCaseResult.mockResolvedValueOnce({
+      status: `ready`,
+      data: {
+        ...buildPayoutCase(),
+        core: {
+          ...buildPayoutCase().core,
+          derivedStatus: `completed`,
+          effectiveStatus: `COMPLETED`,
+        },
+        actionControls: {
+          canEscalate: false,
+          allowedActions: [],
+          escalateBlockedReason: `Only failed or stuck payouts can be escalated in MVP-2`,
+        },
       },
     });
 
@@ -208,22 +211,25 @@ describe(`admin-v2 payout case`, () => {
   });
 
   it(`keeps the durable escalation marker visible once an escalation already exists`, async () => {
-    mockedGetPayoutCase.mockResolvedValueOnce({
-      ...buildPayoutCase(),
-      payoutEscalation: {
-        id: `esc-1`,
-        reason: `Ops handoff`,
-        confirmed: true,
-        createdAt: `2026-04-16T10:00:00.000Z`,
-        escalatedBy: {
-          id: `admin-1`,
-          email: `super@example.com`,
+    mockedGetPayoutCaseResult.mockResolvedValueOnce({
+      status: `ready`,
+      data: {
+        ...buildPayoutCase(),
+        payoutEscalation: {
+          id: `esc-1`,
+          reason: `Ops handoff`,
+          confirmed: true,
+          createdAt: `2026-04-16T10:00:00.000Z`,
+          escalatedBy: {
+            id: `admin-1`,
+            email: `super@example.com`,
+          },
         },
-      },
-      actionControls: {
-        canEscalate: false,
-        allowedActions: [],
-        escalateBlockedReason: `Payout already has an active escalation marker`,
+        actionControls: {
+          canEscalate: false,
+          allowedActions: [],
+          escalateBlockedReason: `Payout already has an active escalation marker`,
+        },
       },
     });
 
@@ -241,11 +247,14 @@ describe(`admin-v2 payout case`, () => {
   });
 
   it(`omits the destination link when no payout destination payment method is available`, async () => {
-    mockedGetPayoutCase.mockResolvedValueOnce({
-      ...buildPayoutCase(),
-      destinationAvailability: `unavailable`,
-      destinationLinkageSource: null,
-      destinationPaymentMethodSummary: null,
+    mockedGetPayoutCaseResult.mockResolvedValueOnce({
+      status: `ready`,
+      data: {
+        ...buildPayoutCase(),
+        destinationAvailability: `unavailable`,
+        destinationLinkageSource: null,
+        destinationPaymentMethodSummary: null,
+      },
     });
 
     const markup = renderToStaticMarkup(
@@ -260,7 +269,7 @@ describe(`admin-v2 payout case`, () => {
   });
 
   it(`delegates missing payout records to notFound`, async () => {
-    mockedGetPayoutCase.mockResolvedValueOnce(null);
+    mockedGetPayoutCaseResult.mockResolvedValueOnce({ status: `not_found` });
 
     await expect(
       PayoutCasePage({
@@ -273,29 +282,32 @@ describe(`admin-v2 payout case`, () => {
 
   it(`fetches reassign candidates only for reassignable assignments`, async () => {
     const assignedAt = `2026-04-15T09:00:00.000Z`;
-    mockedGetPayoutCase.mockResolvedValueOnce({
-      ...buildPayoutCase(),
-      assignment: {
-        current: {
-          id: `assignment-1`,
-          assignedTo: { id: `admin-2`, name: null, email: `ops@example.com` },
-          assignedBy: { id: `admin-2`, name: null, email: `ops@example.com` },
-          assignedAt,
-          reason: `Investigating failed payout`,
-          expiresAt: null,
-        },
-        history: [
-          {
+    mockedGetPayoutCaseResult.mockResolvedValueOnce({
+      status: `ready`,
+      data: {
+        ...buildPayoutCase(),
+        assignment: {
+          current: {
             id: `assignment-1`,
             assignedTo: { id: `admin-2`, name: null, email: `ops@example.com` },
             assignedBy: { id: `admin-2`, name: null, email: `ops@example.com` },
             assignedAt,
-            releasedAt: null,
-            releasedBy: null,
             reason: `Investigating failed payout`,
             expiresAt: null,
           },
-        ],
+          history: [
+            {
+              id: `assignment-1`,
+              assignedTo: { id: `admin-2`, name: null, email: `ops@example.com` },
+              assignedBy: { id: `admin-2`, name: null, email: `ops@example.com` },
+              assignedAt,
+              releasedAt: null,
+              releasedBy: null,
+              reason: `Investigating failed payout`,
+              expiresAt: null,
+            },
+          ],
+        },
       },
     });
 
@@ -308,5 +320,18 @@ describe(`admin-v2 payout case`, () => {
     expect(mockedGetAdmins).toHaveBeenCalledWith({ page: 1, pageSize: 50, status: `ACTIVE` });
     expect(markup).toContain(`ops@example.com`);
     expect(markup).toContain(`>Reassign<`);
+  });
+
+  it(`renders an access denied surface for forbidden payout reads`, async () => {
+    mockedGetPayoutCaseResult.mockResolvedValueOnce({ status: `forbidden` });
+
+    const markup = renderToStaticMarkup(
+      await PayoutCasePage({
+        params: Promise.resolve({ payoutId: `payout-1` }),
+      }),
+    );
+
+    expect(markup).toContain(`Payout case unavailable`);
+    expect(markup).toContain(`cannot access this payout surface`);
   });
 });

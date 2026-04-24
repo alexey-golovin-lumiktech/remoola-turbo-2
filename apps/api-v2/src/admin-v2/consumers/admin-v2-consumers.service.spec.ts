@@ -39,6 +39,14 @@ type TestState = {
   audits: AuditRow[];
 };
 
+type TestConsumerState = {
+  id: string;
+  email: string;
+  suspendedAt: Date | null;
+  suspendedBy: string | null;
+  suspensionReason: string | null;
+};
+
 function cloneState(state: TestState): TestState {
   return {
     notes: state.notes.map((note) => ({
@@ -85,7 +93,15 @@ function matchesFlag(
 }
 
 describe(`AdminV2ConsumersService`, () => {
-  function buildService(initialState?: Partial<TestState>) {
+  function buildService(initialState?: Partial<TestState> & { consumer?: Partial<TestConsumerState> }) {
+    const consumerState = {
+      id: `consumer-1`,
+      email: `consumer@example.com`,
+      suspendedAt: null as Date | null,
+      suspendedBy: null as string | null,
+      suspensionReason: null as string | null,
+      ...initialState?.consumer,
+    };
     let state = cloneState({
       notes: initialState?.notes ?? [],
       flags: initialState?.flags ?? [],
@@ -166,14 +182,20 @@ describe(`AdminV2ConsumersService`, () => {
 
     const prisma = {
       consumerModel: {
-        findUnique: jest.fn(async () => ({
-          id: `consumer-1`,
-          email: `consumer@example.com`,
-          suspendedAt: null,
-          suspendedBy: null,
-          suspensionReason: null,
-        })),
+        findUnique: jest.fn(async () => ({ ...consumerState })),
         update: jest.fn(async () => undefined),
+        updateMany: jest.fn(async ({ where, data }) => {
+          if (where.id !== consumerState.id) {
+            return { count: 0 };
+          }
+          if (where.suspendedAt === null && consumerState.suspendedAt !== null) {
+            return { count: 0 };
+          }
+          consumerState.suspendedAt = data.suspendedAt;
+          consumerState.suspendedBy = data.suspendedBy;
+          consumerState.suspensionReason = data.suspensionReason;
+          return { count: 1 };
+        }),
       },
       authSessionModel: {
         count: jest.fn(async () => 0),
@@ -218,6 +240,7 @@ describe(`AdminV2ConsumersService`, () => {
       consumerAuthService,
       idempotency,
       getState: () => cloneState(state),
+      getConsumerState: () => ({ ...consumerState }),
       failNextAuditCreate: () => {
         controls.failNextAuditCreate = true;
       },
@@ -536,6 +559,9 @@ describe(`AdminV2ConsumersService`, () => {
         action: `consumer_suspend`,
         resource: `consumer`,
         resourceId: `consumer-1`,
+        metadata: expect.objectContaining({
+          emailDispatched: true,
+        }),
       }),
     );
     expect(result).toEqual(
@@ -547,16 +573,91 @@ describe(`AdminV2ConsumersService`, () => {
     );
   });
 
+  it(`returns alreadySuspended without duplicate revoke or email side effects`, async () => {
+    const suspendedAt = new Date(`2026-04-24T09:00:00.000Z`);
+    const { service, consumerAuthService, adminActionAudit, getConsumerState } = buildService({
+      consumer: {
+        id: `consumer-1`,
+        email: `consumer@example.com`,
+        suspendedAt,
+        suspendedBy: `admin-9`,
+        suspensionReason: `Existing block`,
+      },
+    });
+
+    const result = await service.suspendConsumer(`consumer-1`, `admin-1`, {
+      confirmed: true,
+      reason: `Regulatory block`,
+    });
+
+    expect(result).toEqual({
+      consumerId: `consumer-1`,
+      suspendedAt,
+      alreadySuspended: true,
+      emailDispatched: false,
+    });
+    expect(getConsumerState().suspendedAt).toEqual(suspendedAt);
+    expect(consumerAuthService.revokeAllSessionsByConsumerIdAndAudit).not.toHaveBeenCalled();
+    expect(consumerAuthService.sendConsumerSuspensionEmail).not.toHaveBeenCalled();
+    expect(adminActionAudit.record).not.toHaveBeenCalled();
+  });
+
+  it(`keeps suspension successful when notification dispatch fails after state change`, async () => {
+    const { service, consumerAuthService, adminActionAudit, getConsumerState } = buildService();
+    consumerAuthService.sendConsumerSuspensionEmail = jest.fn(async () => false);
+
+    const result = await service.suspendConsumer(`consumer-1`, `admin-1`, {
+      confirmed: true,
+      reason: `Regulatory block`,
+    });
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        consumerId: `consumer-1`,
+        alreadySuspended: false,
+        emailDispatched: false,
+      }),
+    );
+    expect(getConsumerState()).toEqual(
+      expect.objectContaining({
+        suspendedBy: `admin-1`,
+        suspensionReason: `Regulatory block`,
+        suspendedAt: expect.any(Date),
+      }),
+    );
+    expect(consumerAuthService.revokeAllSessionsByConsumerIdAndAudit).toHaveBeenCalledTimes(1);
+    expect(adminActionAudit.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: `consumer_suspend`,
+        metadata: expect.objectContaining({
+          emailDispatched: false,
+        }),
+      }),
+    );
+  });
+
   it(`records explicit email resend metadata without generic mail affordances`, async () => {
-    const { service, adminActionAudit } = buildService();
+    const { service, adminActionAudit, idempotency } = buildService();
 
     const result = await service.resendConsumerEmail(
       `consumer-1`,
       `admin-1`,
       { emailKind: `password_recovery`, appScope: `consumer` },
-      { ipAddress: `127.0.0.1`, userAgent: `jest` },
+      { ipAddress: `127.0.0.1`, userAgent: `jest`, idempotencyKey: `email-idem-1` },
     );
 
+    expect(idempotency.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        adminId: `admin-1`,
+        scope: `consumer-email-resend:consumer-1:password_recovery:consumer`,
+        key: `email-idem-1`,
+        payload: {
+          consumerId: `consumer-1`,
+          requestedEmailKind: `password_recovery`,
+          appScope: `consumer`,
+        },
+      }),
+    );
     expect(adminActionAudit.record).toHaveBeenCalledWith(
       expect.objectContaining({
         action: `consumer_email_resend`,

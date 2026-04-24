@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { getAdminIdentity, getExchangeRuleCase } from '../../../../../lib/admin-api.server';
+import { AdminSurfaceAccessDenied, AdminSurfaceUnavailable } from '../../../../../components/admin-surface-state';
+import { getAdminIdentity, getExchangeRuleCaseResult } from '../../../../../lib/admin-api.server';
 import {
   pauseExchangeRuleAction,
   resumeExchangeRuleAction,
@@ -22,11 +23,28 @@ function renderLastExecution(value: Record<string, unknown> | null) {
 
 export default async function ExchangeRuleCasePage({ params }: { params: Promise<{ ruleId: string }> }) {
   const { ruleId } = await params;
-  const [identity, rule] = await Promise.all([getAdminIdentity(), getExchangeRuleCase(ruleId)]);
+  const [identity, ruleResult] = await Promise.all([getAdminIdentity(), getExchangeRuleCaseResult(ruleId)]);
 
-  if (!rule) {
+  if (ruleResult.status === `not_found`) {
     notFound();
   }
+  if (ruleResult.status === `forbidden`) {
+    return (
+      <AdminSurfaceAccessDenied
+        title="Exchange rule unavailable"
+        description="Your admin identity can sign in, but it cannot access this exchange-rule surface."
+      />
+    );
+  }
+  if (ruleResult.status === `error`) {
+    return (
+      <AdminSurfaceUnavailable
+        title="Exchange rule unavailable"
+        description="The exchange-rule case could not be loaded from the backend right now. Retry shortly."
+      />
+    );
+  }
+  const rule = ruleResult.data;
 
   const canManage = identity?.capabilities.includes(`exchange.manage`) ?? false;
 

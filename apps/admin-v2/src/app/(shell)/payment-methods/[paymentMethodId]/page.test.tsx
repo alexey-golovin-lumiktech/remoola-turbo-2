@@ -20,7 +20,7 @@ jest.mock(`next/navigation`, () => ({
 
 jest.mock(`../../../../lib/admin-api.server`, () => ({
   getAdminIdentity: jest.fn(),
-  getPaymentMethodCase: jest.fn(),
+  getPaymentMethodCaseResult: jest.fn(),
 }));
 
 jest.mock(`../../../../lib/admin-mutations.server`, () => ({
@@ -29,9 +29,8 @@ jest.mock(`../../../../lib/admin-mutations.server`, () => ({
   escalateDuplicatePaymentMethodAction: jest.fn(),
 }));
 
-const { getAdminIdentity: mockedGetAdminIdentity, getPaymentMethodCase: mockedGetPaymentMethodCase } = jest.requireMock(
-  `../../../../lib/admin-api.server`,
-) as jest.Mocked<typeof AdminApi>;
+const { getAdminIdentity: mockedGetAdminIdentity, getPaymentMethodCaseResult: mockedGetPaymentMethodCaseResult } =
+  jest.requireMock(`../../../../lib/admin-api.server`) as jest.Mocked<typeof AdminApi>;
 
 async function loadSubject() {
   return (await import(`./page`)).default;
@@ -101,7 +100,7 @@ describe(`admin-v2 payment method detail kickoff surface`, () => {
   beforeEach(() => {
     mockedNotFound.mockClear();
     mockedGetAdminIdentity.mockReset();
-    mockedGetPaymentMethodCase.mockReset();
+    mockedGetPaymentMethodCaseResult.mockReset();
     mockedGetAdminIdentity.mockResolvedValue({
       id: `admin-1`,
       email: `super@example.com`,
@@ -111,11 +110,11 @@ describe(`admin-v2 payment method detail kickoff surface`, () => {
       capabilities: [`payment_methods.read`, `payment_methods.manage`],
       workspaces: [`payment_methods`],
     });
-    mockedGetPaymentMethodCase.mockResolvedValue(buildPaymentMethodCase());
+    mockedGetPaymentMethodCaseResult.mockResolvedValue({ status: `ready`, data: buildPaymentMethodCase() });
   });
 
   it(`delegates missing records to notFound instead of inventing fallback semantics`, async () => {
-    mockedGetPaymentMethodCase.mockResolvedValueOnce(null);
+    mockedGetPaymentMethodCaseResult.mockResolvedValueOnce({ status: `not_found` });
 
     await expect(
       PaymentMethodCasePage({
@@ -127,17 +126,20 @@ describe(`admin-v2 payment method detail kickoff surface`, () => {
   });
 
   it(`keeps the durable duplicate escalation record visible and hides the duplicate action`, async () => {
-    mockedGetPaymentMethodCase.mockResolvedValueOnce({
-      ...buildPaymentMethodCase(),
-      duplicateEscalation: {
-        id: `esc-1`,
-        fingerprint: `fp-shared`,
-        duplicateCount: 2,
-        duplicatePaymentMethodIds: [`pm-2`],
-        createdAt: `2026-04-16T10:00:00.000Z`,
-        escalatedBy: {
-          id: `admin-1`,
-          email: `super@example.com`,
+    mockedGetPaymentMethodCaseResult.mockResolvedValueOnce({
+      status: `ready`,
+      data: {
+        ...buildPaymentMethodCase(),
+        duplicateEscalation: {
+          id: `esc-1`,
+          fingerprint: `fp-shared`,
+          duplicateCount: 2,
+          duplicatePaymentMethodIds: [`pm-2`],
+          createdAt: `2026-04-16T10:00:00.000Z`,
+          escalatedBy: {
+            id: `admin-1`,
+            email: `super@example.com`,
+          },
         },
       },
     });
@@ -148,9 +150,22 @@ describe(`admin-v2 payment method detail kickoff surface`, () => {
       }),
     );
 
-    expect(mockedGetPaymentMethodCase).toHaveBeenCalledWith(`pm-1`);
+    expect(mockedGetPaymentMethodCaseResult).toHaveBeenCalledWith(`pm-1`);
     expect(markup).toContain(`Duplicate escalation record`);
     expect(markup).toContain(`super@example.com`);
     expect(markup).not.toContain(`Escalate duplicate fingerprint`);
+  });
+
+  it(`renders an access denied surface for forbidden payment-method reads`, async () => {
+    mockedGetPaymentMethodCaseResult.mockResolvedValueOnce({ status: `forbidden` });
+
+    const markup = renderToStaticMarkup(
+      await PaymentMethodCasePage({
+        params: Promise.resolve({ paymentMethodId: `pm-1` }),
+      }),
+    );
+
+    expect(markup).toContain(`Payment method unavailable`);
+    expect(markup).toContain(`cannot access this payment-method surface`);
   });
 });

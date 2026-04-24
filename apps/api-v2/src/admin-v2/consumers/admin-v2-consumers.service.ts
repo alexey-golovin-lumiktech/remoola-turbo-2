@@ -797,33 +797,38 @@ export class AdminV2ConsumersService {
       key: meta?.idempotencyKey,
       payload: { consumerId, confirmed: true, reason },
       execute: async () => {
-        if (consumer.suspendedAt != null) {
-          return {
-            consumerId,
-            suspendedAt: consumer.suspendedAt,
-            alreadySuspended: true,
-            emailDispatched: false,
-          };
-        }
-
         const suspendedAt = new Date();
-        await this.prisma.consumerModel.update({
-          where: { id: consumerId },
+        const updated = await this.prisma.consumerModel.updateMany({
+          where: {
+            id: consumerId,
+            suspendedAt: null,
+          },
           data: {
             suspendedAt,
             suspendedBy: adminId,
             suspensionReason: reason,
           },
         });
+        if (updated.count === 0) {
+          const current = await this.requireConsumer(consumerId);
+          return {
+            consumerId,
+            suspendedAt: current.suspendedAt,
+            alreadySuspended: current.suspendedAt != null,
+            emailDispatched: false,
+          };
+        }
 
         await this.consumerAuthService.revokeAllSessionsByConsumerIdAndAudit(consumerId, {
           ipAddress: meta?.ipAddress,
           userAgent: meta?.userAgent,
         });
 
-        const emailDispatched = await this.consumerAuthService.sendConsumerSuspensionEmail(consumerId, reason);
-        if (!emailDispatched) {
-          throw new ConflictException(`Failed to dispatch suspension email`);
+        let emailDispatched = false;
+        try {
+          emailDispatched = await this.consumerAuthService.sendConsumerSuspensionEmail(consumerId, reason);
+        } catch {
+          emailDispatched = false;
         }
 
         await this.adminActionAudit.record({
@@ -836,6 +841,7 @@ export class AdminV2ConsumersService {
             reason,
             suspendedAt,
             emailKind: `consumer_suspension`,
+            emailDispatched,
           },
           ipAddress: meta?.ipAddress,
           userAgent: meta?.userAgent,
@@ -853,51 +859,65 @@ export class AdminV2ConsumersService {
 
   async resendConsumerEmail(consumerId: string, adminId: string, body: ResendConsumerEmailBody, meta?: RequestMeta) {
     const consumer = await this.requireConsumer(consumerId);
-
-    let result:
-      | { requestedKind: `signup_verification`; dispatchedKind: `signup_verification`; emailDispatched: boolean }
-      | {
-          requestedKind: `password_recovery`;
-          dispatchedKind: `password_reset` | `google_signin_recovery`;
-          emailDispatched: boolean;
-        };
-
-    if (body.emailKind === `signup_verification`) {
-      const emailDispatched = await this.consumerAuthService.resendSignupVerificationEmail(consumerId, body.appScope);
-      if (!emailDispatched) {
-        throw new ConflictException(`Failed to dispatch signup verification email`);
-      }
-      result = {
-        requestedKind: `signup_verification`,
-        dispatchedKind: `signup_verification`,
-        emailDispatched,
-      };
-    } else {
-      const outcome = await this.consumerAuthService.resendPasswordRecoveryEmail(consumerId, body.appScope);
-      result = {
-        ...outcome,
-        emailDispatched: true,
-      };
-    }
-
-    await this.adminActionAudit.record({
+    return this.idempotency.execute({
       adminId,
-      action: ADMIN_ACTION_AUDIT_ACTIONS.consumer_email_resend,
-      resource: `consumer`,
-      resourceId: consumerId,
-      metadata: {
-        consumerEmail: consumer.email,
-        requestedEmailKind: result.requestedKind,
-        dispatchedEmailKind: result.dispatchedKind,
+      scope: `consumer-email-resend:${consumerId}:${body.emailKind}:${body.appScope}`,
+      key: meta?.idempotencyKey,
+      payload: {
+        consumerId,
+        requestedEmailKind: body.emailKind,
         appScope: body.appScope,
       },
-      ipAddress: meta?.ipAddress,
-      userAgent: meta?.userAgent,
-    });
+      execute: async () => {
+        let result:
+          | { requestedKind: `signup_verification`; dispatchedKind: `signup_verification`; emailDispatched: boolean }
+          | {
+              requestedKind: `password_recovery`;
+              dispatchedKind: `password_reset` | `google_signin_recovery`;
+              emailDispatched: boolean;
+            };
 
-    return {
-      consumerId,
-      ...result,
-    };
+        if (body.emailKind === `signup_verification`) {
+          const emailDispatched = await this.consumerAuthService.resendSignupVerificationEmail(
+            consumerId,
+            body.appScope,
+          );
+          if (!emailDispatched) {
+            throw new ConflictException(`Failed to dispatch signup verification email`);
+          }
+          result = {
+            requestedKind: `signup_verification`,
+            dispatchedKind: `signup_verification`,
+            emailDispatched,
+          };
+        } else {
+          const outcome = await this.consumerAuthService.resendPasswordRecoveryEmail(consumerId, body.appScope);
+          result = {
+            ...outcome,
+            emailDispatched: true,
+          };
+        }
+
+        await this.adminActionAudit.record({
+          adminId,
+          action: ADMIN_ACTION_AUDIT_ACTIONS.consumer_email_resend,
+          resource: `consumer`,
+          resourceId: consumerId,
+          metadata: {
+            consumerEmail: consumer.email,
+            requestedEmailKind: result.requestedKind,
+            dispatchedEmailKind: result.dispatchedKind,
+            appScope: body.appScope,
+          },
+          ipAddress: meta?.ipAddress,
+          userAgent: meta?.userAgent,
+        });
+
+        return {
+          consumerId,
+          ...result,
+        };
+      },
+    });
   }
 }

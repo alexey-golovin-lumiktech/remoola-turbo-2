@@ -20,8 +20,8 @@ jest.mock(`next/navigation`, () => ({
 
 jest.mock(`../../../../lib/admin-api.server`, () => ({
   getAdminIdentity: jest.fn(),
-  getAdminCaseRecord: jest.fn(),
-  getAdminSessions: jest.fn(),
+  getAdminCaseRecordResult: jest.fn(),
+  getAdminSessionsResult: jest.fn(),
 }));
 
 jest.mock(`../../../../lib/admin-mutations.server`, () => ({
@@ -35,8 +35,8 @@ jest.mock(`../../../../lib/admin-mutations.server`, () => ({
 
 const {
   getAdminIdentity: mockedGetAdminIdentity,
-  getAdminCaseRecord: mockedGetAdminCaseRecord,
-  getAdminSessions: mockedGetAdminSessions,
+  getAdminCaseRecordResult: mockedGetAdminCaseRecordResult,
+  getAdminSessionsResult: mockedGetAdminSessionsResult,
 } = jest.requireMock(`../../../../lib/admin-api.server`) as jest.Mocked<typeof AdminApi>;
 
 async function loadSubject() {
@@ -96,31 +96,34 @@ describe(`admin-v2 admin case`, () => {
   beforeEach(() => {
     mockedNotFound.mockClear();
     mockedGetAdminIdentity.mockReset();
-    mockedGetAdminCaseRecord.mockReset();
-    mockedGetAdminSessions.mockReset();
-    mockedGetAdminSessions.mockResolvedValue({
-      sessions: [
-        {
-          id: `session-active`,
-          sessionFamilyId: `family-active`,
-          createdAt: `2026-04-19T08:00:00.000Z`,
-          lastUsedAt: `2026-04-21T08:00:00.000Z`,
-          expiresAt: `2026-05-19T08:00:00.000Z`,
-          revokedAt: null,
-          invalidatedReason: null,
-          replacedById: null,
-        },
-        {
-          id: `session-revoked`,
-          sessionFamilyId: `family-revoked`,
-          createdAt: `2026-04-10T08:00:00.000Z`,
-          lastUsedAt: `2026-04-11T08:00:00.000Z`,
-          expiresAt: `2026-05-10T08:00:00.000Z`,
-          revokedAt: `2026-04-12T08:00:00.000Z`,
-          invalidatedReason: `cross_admin_revoked`,
-          replacedById: null,
-        },
-      ],
+    mockedGetAdminCaseRecordResult.mockReset();
+    mockedGetAdminSessionsResult.mockReset();
+    mockedGetAdminSessionsResult.mockResolvedValue({
+      status: `ready`,
+      data: {
+        sessions: [
+          {
+            id: `session-active`,
+            sessionFamilyId: `family-active`,
+            createdAt: `2026-04-19T08:00:00.000Z`,
+            lastUsedAt: `2026-04-21T08:00:00.000Z`,
+            expiresAt: `2026-05-19T08:00:00.000Z`,
+            revokedAt: null,
+            invalidatedReason: null,
+            replacedById: null,
+          },
+          {
+            id: `session-revoked`,
+            sessionFamilyId: `family-revoked`,
+            createdAt: `2026-04-10T08:00:00.000Z`,
+            lastUsedAt: `2026-04-11T08:00:00.000Z`,
+            expiresAt: `2026-05-10T08:00:00.000Z`,
+            revokedAt: `2026-04-12T08:00:00.000Z`,
+            invalidatedReason: `cross_admin_revoked`,
+            replacedById: null,
+          },
+        ],
+      },
     });
     mockedGetAdminIdentity.mockResolvedValue({
       id: `admin-1`,
@@ -131,73 +134,76 @@ describe(`admin-v2 admin case`, () => {
       capabilities: [`admins.read`, `admins.manage`],
       workspaces: [`admins`],
     });
-    mockedGetAdminCaseRecord.mockResolvedValue({
-      id: `admin-2`,
-      core: {
+    mockedGetAdminCaseRecordResult.mockResolvedValue({
+      status: `ready`,
+      data: {
         id: `admin-2`,
-        email: `ops@example.com`,
-        type: `ADMIN`,
-        role: `OPS_ADMIN`,
-        status: `ACTIVE`,
-        createdAt: `2026-04-17T08:00:00.000Z`,
-        deletedAt: null,
-      },
-      accessProfile: {
-        source: `schema`,
-        resolvedRole: `OPS_ADMIN`,
-        capabilities: [`admins.read`],
-        workspaces: [`admins`],
-        schemaRoleKey: `OPS_ADMIN`,
-        availablePermissionCapabilities: [`documents.manage`, `admins.read`, `admins.manage`],
-        permissionOverrides: [{ capability: `admins.manage`, granted: false }],
-      },
-      settings: {
-        id: `setting-1`,
-        theme: `SYSTEM`,
-        createdAt: `2026-04-17T08:00:00.000Z`,
-        updatedAt: `2026-04-17T08:10:00.000Z`,
-      },
-      authoredNotesCount: 3,
-      authoredFlagsCount: 1,
-      recentAuditActions: [
-        {
-          id: `audit-1`,
-          action: `admin_role_change`,
-          resource: `admin`,
-          resourceId: `admin-2`,
-          metadata: { previousRoleKey: `OPS_ADMIN`, nextRoleKey: `SUPER_ADMIN` },
-          actorEmail: `super@example.com`,
-          createdAt: `2026-04-17T08:30:00.000Z`,
-        },
-      ],
-      recentAuthEvents: [
-        {
-          id: `auth-1`,
-          event: `login`,
-          ipAddress: `127.0.0.1`,
-          userAgent: `jest`,
-          createdAt: `2026-04-17T08:20:00.000Z`,
-        },
-      ],
-      invitations: [
-        {
-          id: `inv-1`,
+        core: {
+          id: `admin-2`,
           email: `ops@example.com`,
+          type: `ADMIN`,
           role: `OPS_ADMIN`,
-          status: `accepted`,
-          expiresAt: `2026-04-24T08:00:00.000Z`,
-          acceptedAt: `2026-04-18T08:00:00.000Z`,
+          status: `ACTIVE`,
           createdAt: `2026-04-17T08:00:00.000Z`,
+          deletedAt: null,
         },
-      ],
-      auditShortcuts: {
-        adminActionsHref: `/audit/admin-actions?adminId=admin-2`,
-        authHref: `/audit/auth?email=ops%40example.com`,
+        accessProfile: {
+          source: `schema`,
+          resolvedRole: `OPS_ADMIN`,
+          capabilities: [`admins.read`],
+          workspaces: [`admins`],
+          schemaRoleKey: `OPS_ADMIN`,
+          availablePermissionCapabilities: [`documents.manage`, `admins.read`, `admins.manage`],
+          permissionOverrides: [{ capability: `admins.manage`, granted: false }],
+        },
+        settings: {
+          id: `setting-1`,
+          theme: `SYSTEM`,
+          createdAt: `2026-04-17T08:00:00.000Z`,
+          updatedAt: `2026-04-17T08:10:00.000Z`,
+        },
+        authoredNotesCount: 3,
+        authoredFlagsCount: 1,
+        recentAuditActions: [
+          {
+            id: `audit-1`,
+            action: `admin_role_change`,
+            resource: `admin`,
+            resourceId: `admin-2`,
+            metadata: { previousRoleKey: `OPS_ADMIN`, nextRoleKey: `SUPER_ADMIN` },
+            actorEmail: `super@example.com`,
+            createdAt: `2026-04-17T08:30:00.000Z`,
+          },
+        ],
+        recentAuthEvents: [
+          {
+            id: `auth-1`,
+            event: `login`,
+            ipAddress: `127.0.0.1`,
+            userAgent: `jest`,
+            createdAt: `2026-04-17T08:20:00.000Z`,
+          },
+        ],
+        invitations: [
+          {
+            id: `inv-1`,
+            email: `ops@example.com`,
+            role: `OPS_ADMIN`,
+            status: `accepted`,
+            expiresAt: `2026-04-24T08:00:00.000Z`,
+            acceptedAt: `2026-04-18T08:00:00.000Z`,
+            createdAt: `2026-04-17T08:00:00.000Z`,
+          },
+        ],
+        auditShortcuts: {
+          adminActionsHref: `/audit/admin-actions?adminId=admin-2`,
+          authHref: `/audit/auth?email=ops%40example.com`,
+        },
+        version: 1713341400000,
+        updatedAt: `2026-04-17T08:10:00.000Z`,
+        staleWarning: false,
+        dataFreshnessClass: `exact`,
       },
-      version: 1713341400000,
-      updatedAt: `2026-04-17T08:10:00.000Z`,
-      staleWarning: false,
-      dataFreshnessClass: `exact`,
     });
   });
 
@@ -213,7 +219,7 @@ describe(`admin-v2 admin case`, () => {
       createdAt: `2026-04-17T08:00:00.000Z`,
       deletedAt: null,
     };
-    mockedGetAdminCaseRecord.mockResolvedValueOnce(selfRecord);
+    mockedGetAdminCaseRecordResult.mockResolvedValueOnce({ status: `ready`, data: selfRecord });
 
     const markup = renderToStaticMarkup(
       await AdminCasePage({
@@ -221,7 +227,7 @@ describe(`admin-v2 admin case`, () => {
       }),
     );
 
-    expect(mockedGetAdminSessions).toHaveBeenCalledWith(`admin-1`);
+    expect(mockedGetAdminSessionsResult).toHaveBeenCalledWith(`admin-1`);
     expect(markup).toContain(`Active sessions`);
     expect(markup).toContain(`session-active`);
     expect(markup).not.toContain(`Revoke session`);
@@ -245,12 +251,12 @@ describe(`admin-v2 admin case`, () => {
       }),
     );
 
-    expect(mockedGetAdminSessions).not.toHaveBeenCalled();
+    expect(mockedGetAdminSessionsResult).not.toHaveBeenCalled();
     expect(markup).not.toContain(`Active sessions`);
   });
 
   it(`delegates missing admin records to notFound`, async () => {
-    mockedGetAdminCaseRecord.mockResolvedValueOnce(null);
+    mockedGetAdminCaseRecordResult.mockResolvedValueOnce({ status: `not_found` });
 
     await expect(
       AdminCasePage({
@@ -259,5 +265,18 @@ describe(`admin-v2 admin case`, () => {
     ).rejects.toThrow(`NEXT_NOT_FOUND`);
 
     expect(mockedNotFound).toHaveBeenCalledTimes(1);
+  });
+
+  it(`renders an access denied surface for forbidden admin reads`, async () => {
+    mockedGetAdminCaseRecordResult.mockResolvedValueOnce({ status: `forbidden` });
+
+    const markup = renderToStaticMarkup(
+      await AdminCasePage({
+        params: Promise.resolve({ adminId: `admin-2` }),
+      }),
+    );
+
+    expect(markup).toContain(`Admin case unavailable`);
+    expect(markup).toContain(`cannot access this admin surface`);
   });
 });

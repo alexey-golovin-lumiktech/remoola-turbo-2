@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 
 import { ActionGhost } from '../../../../components/action-ghost';
+import { AdminSurfaceAccessDenied, AdminSurfaceUnavailable } from '../../../../components/admin-surface-state';
 import { AssignmentCard } from '../../../../components/assignment-card';
 import { Panel } from '../../../../components/panel';
 import { TinyPill } from '../../../../components/tiny-pill';
@@ -16,7 +17,7 @@ import {
   stackClass,
   textAreaClass,
 } from '../../../../components/ui-classes';
-import { getAdminIdentity, getAdmins, getPayoutCase } from '../../../../lib/admin-api.server';
+import { getAdminIdentity, getAdmins, getPayoutCaseResult } from '../../../../lib/admin-api.server';
 import {
   claimPayoutAssignmentAction,
   escalatePayoutAction,
@@ -49,11 +50,28 @@ function renderDestinationLabel(paymentMethod: {
 
 export default async function PayoutCasePage({ params }: { params: Promise<{ payoutId: string }> }) {
   const { payoutId } = await params;
-  const [identity, payoutCase] = await Promise.all([getAdminIdentity(), getPayoutCase(payoutId)]);
+  const [identity, payoutCaseResult] = await Promise.all([getAdminIdentity(), getPayoutCaseResult(payoutId)]);
 
-  if (!payoutCase) {
+  if (payoutCaseResult.status === `not_found`) {
     notFound();
   }
+  if (payoutCaseResult.status === `forbidden`) {
+    return (
+      <AdminSurfaceAccessDenied
+        title="Payout case unavailable"
+        description="Your admin identity can sign in, but it cannot access this payout surface."
+      />
+    );
+  }
+  if (payoutCaseResult.status === `error`) {
+    return (
+      <AdminSurfaceUnavailable
+        title="Payout case unavailable"
+        description="The payout case could not be loaded from the backend right now. Retry shortly."
+      />
+    );
+  }
+  const payoutCase = payoutCaseResult.data;
 
   const canManageEscalation = identity?.capabilities.includes(`payouts.escalate`) ?? false;
   const canSubmitEscalation = canManageEscalation && payoutCase.actionControls.canEscalate;

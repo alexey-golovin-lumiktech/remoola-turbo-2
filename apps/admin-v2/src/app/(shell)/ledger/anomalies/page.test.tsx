@@ -11,6 +11,7 @@ jest.mock(`next/link`, () => ({
 }));
 
 jest.mock(`../../../../lib/admin-api.server`, () => ({
+  getAdminIdentity: jest.fn(),
   getLedgerAnomaliesSummary: jest.fn(),
   getLedgerAnomalies: jest.fn(),
   getSavedViews: jest.fn(),
@@ -22,7 +23,7 @@ jest.mock(`../../../../lib/admin-mutations.server`, () => ({
   deleteSavedViewAction: jest.fn(async () => undefined),
 }));
 
-const { getLedgerAnomaliesSummary, getLedgerAnomalies, getSavedViews } = jest.requireMock(
+const { getAdminIdentity, getLedgerAnomaliesSummary, getLedgerAnomalies, getSavedViews } = jest.requireMock(
   `../../../../lib/admin-api.server`,
 ) as jest.Mocked<typeof AdminApi>;
 
@@ -48,9 +49,19 @@ describe(`admin-v2 ledger anomalies page`, () => {
   });
 
   beforeEach(() => {
+    getAdminIdentity.mockReset();
     getLedgerAnomaliesSummary.mockReset();
     getLedgerAnomalies.mockReset();
     getSavedViews.mockReset();
+    getAdminIdentity.mockResolvedValue({
+      id: `admin-1`,
+      email: `ops@example.com`,
+      type: `ADMIN`,
+      role: `OPS_ADMIN`,
+      phase: `MVP-3`,
+      capabilities: [`saved_views.manage`],
+      workspaces: [`ledger`],
+    } as never);
     getSavedViews.mockResolvedValue({ views: [] });
 
     getLedgerAnomaliesSummary.mockResolvedValue({
@@ -386,5 +397,31 @@ describe(`admin-v2 ledger anomalies page`, () => {
     expect(markup).toContain(
       `name="queryPayload" value="{&quot;class&quot;:&quot;stalePendingEntries&quot;,&quot;dateFrom&quot;:&quot;2026-04-10&quot;,&quot;dateTo&quot;:&quot;2026-04-20&quot;}"`,
     );
+  });
+
+  it(`hides saved-view mutation affordances when saved_views.manage is missing`, async () => {
+    getAdminIdentity.mockResolvedValueOnce({
+      id: `admin-2`,
+      email: `readonly@example.com`,
+      type: `ADMIN`,
+      role: `OPS_ADMIN`,
+      phase: `MVP-3`,
+      capabilities: [`ledger.read`],
+      workspaces: [`ledger`],
+    } as never);
+
+    const markup = renderToStaticMarkup(
+      await LedgerAnomaliesPage({
+        searchParams: Promise.resolve({
+          class: `stalePendingEntries`,
+          dateFrom: `2026-04-10`,
+          dateTo: `2026-04-20`,
+        }),
+      }),
+    );
+
+    expect(getSavedViews).not.toHaveBeenCalled();
+    expect(markup).toContain(`Saved view management is not available for this admin identity.`);
+    expect(markup).not.toContain(`name="workspace" value="ledger_anomalies"`);
   });
 });

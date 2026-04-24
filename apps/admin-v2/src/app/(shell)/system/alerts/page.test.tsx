@@ -11,6 +11,7 @@ jest.mock(`next/link`, () => ({
 }));
 
 jest.mock(`../../../../lib/admin-api.server`, () => ({
+  getAdminIdentity: jest.fn(),
   getOperationalAlerts: jest.fn(),
 }));
 
@@ -24,7 +25,7 @@ jest.mock(`../../../../lib/admin-mutations.server`, () => ({
   }),
 }));
 
-const { getOperationalAlerts: mockedGetOperationalAlerts } = jest.requireMock(
+const { getAdminIdentity: mockedGetAdminIdentity, getOperationalAlerts: mockedGetOperationalAlerts } = jest.requireMock(
   `../../../../lib/admin-api.server`,
 ) as jest.Mocked<typeof AdminApi>;
 
@@ -50,7 +51,17 @@ describe(`admin-v2 operational alerts page`, () => {
   });
 
   beforeEach(() => {
+    mockedGetAdminIdentity.mockReset();
     mockedGetOperationalAlerts.mockReset();
+    mockedGetAdminIdentity.mockResolvedValue({
+      id: `admin-1`,
+      email: `ops@example.com`,
+      role: `OPS_ADMIN`,
+      type: `ADMIN`,
+      phase: `MVP-3`,
+      capabilities: [`alerts.manage`],
+      workspaces: [`system`],
+    } as never);
   });
 
   it(`parses auth refresh reuse payloads and still loads all supported workspaces`, async () => {
@@ -208,5 +219,23 @@ describe(`admin-v2 operational alerts page`, () => {
     expect(markup).toContain(`Evaluation error`);
     expect(markup).toContain(`Anomaly query timed out`);
     expect(markup).toContain(`Never fired`);
+  });
+
+  it(`renders access denied before loading alert workspaces when alerts.manage is missing`, async () => {
+    mockedGetAdminIdentity.mockResolvedValueOnce({
+      id: `admin-2`,
+      email: `readonly@example.com`,
+      role: `OPS_ADMIN`,
+      type: `ADMIN`,
+      phase: `MVP-3`,
+      capabilities: [`overview.read`],
+      workspaces: [`overview`],
+    } as never);
+
+    const markup = renderToStaticMarkup(await OperationalAlertsPage());
+
+    expect(mockedGetOperationalAlerts).not.toHaveBeenCalled();
+    expect(markup).toContain(`Operational alerts unavailable`);
+    expect(markup).toContain(`cannot manage operational alerts`);
   });
 });

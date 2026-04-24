@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 
 import { ActionGhost } from '../../../../components/action-ghost';
 import { ActionPrimary } from '../../../../components/action-primary';
+import { AdminSurfaceAccessDenied, AdminSurfaceUnavailable } from '../../../../components/admin-surface-state';
 import { AssignmentCard } from '../../../../components/assignment-card';
 import { Panel } from '../../../../components/panel';
 import { TinyPill } from '../../../../components/tiny-pill';
@@ -17,7 +18,7 @@ import {
   stackClass,
   textAreaClass,
 } from '../../../../components/ui-classes';
-import { getAdminIdentity, getAdmins, getVerificationCase } from '../../../../lib/admin-api.server';
+import { getAdminIdentity, getAdmins, getVerificationCaseResult } from '../../../../lib/admin-api.server';
 import {
   approveVerificationAction,
   claimVerificationAssignmentAction,
@@ -36,11 +37,31 @@ function formatDate(value: string | null | undefined): string {
 
 export default async function VerificationCasePage({ params }: { params: Promise<{ consumerId: string }> }) {
   const { consumerId } = await params;
-  const [verificationCase, identity] = await Promise.all([getVerificationCase(consumerId), getAdminIdentity()]);
+  const [verificationCaseResult, identity] = await Promise.all([
+    getVerificationCaseResult(consumerId),
+    getAdminIdentity(),
+  ]);
 
-  if (!verificationCase) {
+  if (verificationCaseResult.status === `not_found`) {
     notFound();
   }
+  if (verificationCaseResult.status === `forbidden`) {
+    return (
+      <AdminSurfaceAccessDenied
+        title="Verification case unavailable"
+        description="Your admin identity can sign in, but it cannot access this verification surface."
+      />
+    );
+  }
+  if (verificationCaseResult.status === `error`) {
+    return (
+      <AdminSurfaceUnavailable
+        title="Verification case unavailable"
+        description="The verification case could not be loaded from the backend right now. Retry shortly."
+      />
+    );
+  }
+  const verificationCase = verificationCaseResult.data;
 
   const controls = verificationCase.decisionControls;
   const currentAssignment = verificationCase.assignment.current;

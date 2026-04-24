@@ -44,7 +44,6 @@ export class AdminV2AccessService {
       this.logger.warn(
         `Ignoring unknown schema-backed RBAC role for admin-v2 identity ${JSON.stringify({
           adminId: admin.id,
-          adminEmail: admin.email ?? `unknown`,
           schemaRole: schemaRecord.roleKey,
         })}`,
       );
@@ -62,7 +61,6 @@ export class AdminV2AccessService {
       this.logger.warn(
         `Ignoring out-of-scope admin-v2 permission overrides for prerequisite slice ${JSON.stringify({
           adminId: admin.id,
-          adminEmail: admin.email ?? `unknown`,
           ignoredCapabilities: ignoredOverrides.map((override) => override.capability),
         })}`,
       );
@@ -71,7 +69,6 @@ export class AdminV2AccessService {
     if (!hasValidAdminV2CapabilitySet(schemaRecord.roleCapabilities)) {
       const mismatchDetails = JSON.stringify({
         adminId: admin.id ?? `unknown`,
-        adminEmail: admin.email ?? `unknown`,
         schemaCapabilities: schemaRecord.roleCapabilities,
       });
       this.logger.warn(
@@ -91,7 +88,6 @@ export class AdminV2AccessService {
     ) {
       const mismatchDetails = JSON.stringify({
         adminId: admin.id ?? `unknown`,
-        adminEmail: admin.email ?? `unknown`,
         schemaCapabilities: schemaRecord.roleCapabilities,
         bridgeCapabilities: bridgeProfile.capabilities,
       });
@@ -112,7 +108,6 @@ export class AdminV2AccessService {
     if (normalizedSchemaCapabilities.length === 0 || !normalizedSchemaCapabilities.includes(`me.read`)) {
       const mismatchDetails = JSON.stringify({
         adminId: admin.id ?? `unknown`,
-        adminEmail: admin.email ?? `unknown`,
         schemaRole: schemaRecord.roleKey,
         normalizedSchemaCapabilities,
       });

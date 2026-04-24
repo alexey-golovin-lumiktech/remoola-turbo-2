@@ -1,6 +1,7 @@
 import { headers } from 'next/headers';
 
 import { getActivePathFromHeaders } from './nav-state';
+import { AdminSurfaceAccessDenied, AdminSurfaceUnavailable } from '../../components/admin-surface-state';
 import { MobileBottomNav } from '../../components/mobile-bottom-nav';
 import { MobilePageHeader } from '../../components/mobile-page-header';
 import { MobileShellDrawer } from '../../components/mobile-shell-drawer';
@@ -8,7 +9,7 @@ import { MobileTopChips } from '../../components/mobile-top-chips';
 import { ShellHeader } from '../../components/shell-header';
 import { SidebarContents } from '../../components/sidebar-contents';
 import {
-  getAdminIdentity,
+  getAdminIdentityResult,
   getOverviewSummary,
   getQuickstarts,
   type OverviewSummaryResponse,
@@ -71,12 +72,13 @@ function buildSignalCounts(summary: OverviewSummaryResponse | null): Record<stri
 }
 
 export default async function ShellLayout({ children }: { children: React.ReactNode }) {
-  const [identity, summary, quickstarts, activePath] = await Promise.all([
-    getAdminIdentity(),
+  const [identityResult, summary, quickstarts, activePath] = await Promise.all([
+    getAdminIdentityResult(),
     safeGetOverviewSummary(),
     safeGetQuickstarts(),
     safeGetActivePath(),
   ]);
+  const identity = identityResult.status === `ready` ? identityResult.data : null;
   const signalCounts = buildSignalCounts(summary);
   const visibleQuickstarts = filterQuickstartsForWorkspaces(quickstarts, identity?.workspaces);
 
@@ -106,13 +108,16 @@ export default async function ShellLayout({ children }: { children: React.ReactN
             <MobilePageHeader activePath={activePath} />
             {children}
           </div>
+        ) : identityResult.status === `forbidden` ? (
+          <AdminSurfaceAccessDenied
+            title="Access denied"
+            description="This admin identity is outside the schema-backed admin-v2 workspace allowlist."
+          />
         ) : (
-          <section className="rounded-card border border-border bg-panel p-5">
-            <h1 className="text-xl font-semibold text-text">Access denied</h1>
-            <p className="mt-2 text-sm leading-6 text-muted-56">
-              This admin identity is outside the schema-backed admin-v2 workspace allowlist.
-            </p>
-          </section>
+          <AdminSurfaceUnavailable
+            title="Admin workspace unavailable"
+            description="The admin-v2 workspace could not confirm backend access right now. Retry shortly."
+          />
         )}
       </main>
       <MobileBottomNav identity={identity} activePath={activePath} />

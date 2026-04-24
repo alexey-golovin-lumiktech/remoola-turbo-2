@@ -1,11 +1,12 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { AdminSurfaceAccessDenied, AdminSurfaceUnavailable } from '../../../../components/admin-surface-state';
 import {
   getAdminIdentity,
   getConsumerActionLog,
   getConsumerAuthHistory,
-  getConsumerCase,
+  getConsumerCaseResult,
   getConsumerContracts,
   getConsumerLedgerSummary,
 } from '../../../../lib/admin-api.server';
@@ -30,20 +31,39 @@ function renderObject(value: Record<string, unknown> | null) {
 
 export default async function ConsumerCasePage({ params }: { params: Promise<{ consumerId: string }> }) {
   const { consumerId } = await params;
-  const [identity, consumer, contracts, ledgerSummary, authHistory, actionLog] = await Promise.all([
+  const [identity, consumerResult, contracts, ledgerSummary, authHistory, actionLog] = await Promise.all([
     getAdminIdentity(),
-    getConsumerCase(consumerId),
+    getConsumerCaseResult(consumerId),
     getConsumerContracts({ consumerId, pageSize: 5 }),
     getConsumerLedgerSummary(consumerId),
     getConsumerAuthHistory({ consumerId, pageSize: 5 }),
     getConsumerActionLog({ consumerId, pageSize: 5 }),
   ]);
 
-  if (!consumer) {
+  if (consumerResult.status === `not_found`) {
     notFound();
   }
+  if (consumerResult.status === `forbidden`) {
+    return (
+      <AdminSurfaceAccessDenied
+        title="Consumer case unavailable"
+        description="Your admin identity can sign in, but it cannot access this consumer surface."
+      />
+    );
+  }
+  if (consumerResult.status === `error`) {
+    return (
+      <AdminSurfaceUnavailable
+        title="Consumer case unavailable"
+        description="The consumer case could not be loaded from the backend right now. Retry shortly."
+      />
+    );
+  }
+  const consumer = consumerResult.data;
 
   const ledgerRows = Object.entries(ledgerSummary?.summary ?? consumer.ledgerSummary ?? {});
+  const canManageNotes = identity?.capabilities.includes(`consumers.notes`) ?? false;
+  const canManageFlags = identity?.capabilities.includes(`consumers.flags`) ?? false;
 
   return (
     <>
@@ -218,31 +238,39 @@ export default async function ConsumerCasePage({ params }: { params: Promise<{ c
         </article>
         <article className="panel">
           <h2>Add internal note</h2>
-          <form action={createConsumerNoteAction.bind(null, consumer.id)} className="formStack">
-            <label className="field">
-              <span>Content</span>
-              <textarea name="content" required placeholder="Investigation note, escalation context, next step..." />
-            </label>
-            <button className="primaryButton" type="submit">
-              Save note
-            </button>
-          </form>
+          {canManageNotes ? (
+            <form action={createConsumerNoteAction.bind(null, consumer.id)} className="formStack">
+              <label className="field">
+                <span>Content</span>
+                <textarea name="content" required placeholder="Investigation note, escalation context, next step..." />
+              </label>
+              <button className="primaryButton" type="submit">
+                Save note
+              </button>
+            </form>
+          ) : (
+            <p className="muted">Internal note creation is not available for this admin identity.</p>
+          )}
         </article>
         <article className="panel">
           <h2>Add flag</h2>
-          <form action={addConsumerFlagAction.bind(null, consumer.id)} className="formStack">
-            <label className="field">
-              <span>Flag</span>
-              <input name="flag" required placeholder="needs_review" />
-            </label>
-            <label className="field">
-              <span>Reason</span>
-              <textarea name="reason" placeholder="Why this consumer is flagged" />
-            </label>
-            <button className="primaryButton" type="submit">
-              Add flag
-            </button>
-          </form>
+          {canManageFlags ? (
+            <form action={addConsumerFlagAction.bind(null, consumer.id)} className="formStack">
+              <label className="field">
+                <span>Flag</span>
+                <input name="flag" required placeholder="needs_review" />
+              </label>
+              <label className="field">
+                <span>Reason</span>
+                <textarea name="reason" placeholder="Why this consumer is flagged" />
+              </label>
+              <button className="primaryButton" type="submit">
+                Add flag
+              </button>
+            </form>
+          ) : (
+            <p className="muted">Consumer flag management is not available for this admin identity.</p>
+          )}
         </article>
       </section>
 
@@ -261,12 +289,14 @@ export default async function ConsumerCasePage({ params }: { params: Promise<{ c
                       Added by {flag.admin.email} at {formatDate(flag.createdAt)}
                     </p>
                   </div>
-                  <form action={removeConsumerFlagAction.bind(null, consumer.id, flag.id)}>
-                    <input type="hidden" name="version" value={String(flag.version)} />
-                    <button className="dangerButton" type="submit">
-                      Remove
-                    </button>
-                  </form>
+                  {canManageFlags ? (
+                    <form action={removeConsumerFlagAction.bind(null, consumer.id, flag.id)}>
+                      <input type="hidden" name="version" value={String(flag.version)} />
+                      <button className="dangerButton" type="submit">
+                        Remove
+                      </button>
+                    </form>
+                  ) : null}
                 </div>
               </div>
             ))}

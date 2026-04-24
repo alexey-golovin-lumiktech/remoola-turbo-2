@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { getAdminCaseRecord, getAdminIdentity, getAdminSessions } from '../../../../lib/admin-api.server';
+import { AdminSurfaceAccessDenied, AdminSurfaceUnavailable } from '../../../../components/admin-surface-state';
+import { getAdminCaseRecordResult, getAdminIdentity, getAdminSessionsResult } from '../../../../lib/admin-api.server';
 import {
   changeAdminPermissionsAction,
   changeAdminRoleAction,
@@ -28,17 +29,34 @@ function renderJson(value: Record<string, unknown> | null) {
 
 export default async function AdminCasePage({ params }: { params: Promise<{ adminId: string }> }) {
   const { adminId } = await params;
-  const [identity, admin] = await Promise.all([getAdminIdentity(), getAdminCaseRecord(adminId)]);
+  const [identity, adminResult] = await Promise.all([getAdminIdentity(), getAdminCaseRecordResult(adminId)]);
 
-  if (!admin) {
+  if (adminResult.status === `not_found`) {
     notFound();
   }
+  if (adminResult.status === `forbidden`) {
+    return (
+      <AdminSurfaceAccessDenied
+        title="Admin case unavailable"
+        description="Your admin identity can sign in, but it cannot access this admin surface."
+      />
+    );
+  }
+  if (adminResult.status === `error`) {
+    return (
+      <AdminSurfaceUnavailable
+        title="Admin case unavailable"
+        description="The admin case could not be loaded from the backend right now. Retry shortly."
+      />
+    );
+  }
+  const admin = adminResult.data;
 
   const canManage = identity?.capabilities.includes(`admins.manage`) ?? false;
   const canReadSessions = identity?.capabilities.includes(`admins.read`) ?? false;
   const isSelf = identity?.id === admin.core.id;
-  const sessionResponse = canReadSessions ? await getAdminSessions(admin.core.id) : null;
-  const sessions = sessionResponse?.sessions ?? [];
+  const sessionResult = canReadSessions ? await getAdminSessionsResult(admin.core.id) : null;
+  const sessions = sessionResult?.status === `ready` ? sessionResult.data.sessions : [];
   const overrideModeByCapability = new Map(
     admin.accessProfile.permissionOverrides.map((override) => [
       override.capability,
@@ -278,8 +296,15 @@ export default async function AdminCasePage({ params }: { params: Promise<{ admi
       {canReadSessions ? (
         <section className="panel">
           <h2>Active sessions</h2>
-          {sessionResponse === null ? <p className="muted">Sessions surface temporarily unavailable.</p> : null}
-          {sessionResponse !== null && sessions.length === 0 ? <p className="muted">No sessions visible.</p> : null}
+          {sessionResult?.status === `forbidden` ? (
+            <p className="muted">Session visibility is denied for this admin surface.</p>
+          ) : null}
+          {sessionResult?.status === `error` ? (
+            <p className="muted">Sessions surface temporarily unavailable.</p>
+          ) : null}
+          {sessionResult?.status === `ready` && sessions.length === 0 ? (
+            <p className="muted">No sessions visible.</p>
+          ) : null}
           <div className="formStack">
             {sessions.map((s) => (
               <article key={s.id} className="panel">

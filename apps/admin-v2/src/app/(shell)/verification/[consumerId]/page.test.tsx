@@ -19,7 +19,7 @@ jest.mock(`next/navigation`, () => ({
 jest.mock(`../../../../lib/admin-api.server`, () => ({
   getAdminIdentity: jest.fn(),
   getAdmins: jest.fn(),
-  getVerificationCase: jest.fn(),
+  getVerificationCaseResult: jest.fn(),
 }));
 
 jest.mock(`../../../../lib/admin-mutations.server`, () => ({
@@ -36,7 +36,7 @@ jest.mock(`../../../../lib/admin-mutations.server`, () => ({
 const {
   getAdminIdentity: mockedGetAdminIdentity,
   getAdmins: mockedGetAdmins,
-  getVerificationCase: mockedGetVerificationCase,
+  getVerificationCaseResult: mockedGetVerificationCaseResult,
 } = jest.requireMock(`../../../../lib/admin-api.server`) as jest.Mocked<typeof AdminApi>;
 
 async function loadSubject() {
@@ -146,7 +146,7 @@ describe(`admin-v2 verification case assignment card`, () => {
   beforeEach(() => {
     mockedGetAdminIdentity.mockReset();
     mockedGetAdmins.mockReset();
-    mockedGetVerificationCase.mockReset();
+    mockedGetVerificationCaseResult.mockReset();
     mockedGetAdmins.mockResolvedValue({
       items: [
         {
@@ -170,12 +170,13 @@ describe(`admin-v2 verification case assignment card`, () => {
 
   it(`enables claim for unassigned cases without loading reassign candidates`, async () => {
     mockedGetAdminIdentity.mockResolvedValue(CURRENT_ADMIN_IDENTITY);
-    mockedGetVerificationCase.mockResolvedValue(
-      buildCase({
+    mockedGetVerificationCaseResult.mockResolvedValue({
+      status: `ready`,
+      data: buildCase({
         assignment: { current: null, history: [] },
         decisionControls: baseControls({ canManageAssignments: true }),
       }),
-    );
+    });
 
     const markup = renderToStaticMarkup(
       await VerificationCasePage({ params: Promise.resolve({ consumerId: `consumer-1` }) }),
@@ -191,8 +192,9 @@ describe(`admin-v2 verification case assignment card`, () => {
 
   it(`enables release for the current assignee without loading reassign candidates`, async () => {
     mockedGetAdminIdentity.mockResolvedValue(CURRENT_ADMIN_IDENTITY);
-    mockedGetVerificationCase.mockResolvedValue(
-      buildCase({
+    mockedGetVerificationCaseResult.mockResolvedValue({
+      status: `ready`,
+      data: buildCase({
         assignment: {
           current: {
             id: `assignment-self`,
@@ -206,7 +208,7 @@ describe(`admin-v2 verification case assignment card`, () => {
         },
         decisionControls: baseControls({ canManageAssignments: true }),
       }),
-    );
+    });
 
     const markup = renderToStaticMarkup(
       await VerificationCasePage({ params: Promise.resolve({ consumerId: `consumer-1` }) }),
@@ -226,8 +228,9 @@ describe(`admin-v2 verification case assignment card`, () => {
       email: `super@example.com`,
       role: `SUPER_ADMIN`,
     });
-    mockedGetVerificationCase.mockResolvedValue(
-      buildCase({
+    mockedGetVerificationCaseResult.mockResolvedValue({
+      status: `ready`,
+      data: buildCase({
         assignment: {
           current: {
             id: `assignment-other`,
@@ -241,7 +244,7 @@ describe(`admin-v2 verification case assignment card`, () => {
         },
         decisionControls: baseControls({ canManageAssignments: true, canReassignAssignments: true }),
       }),
-    );
+    });
 
     const markup = renderToStaticMarkup(
       await VerificationCasePage({ params: Promise.resolve({ consumerId: `consumer-1` }) }),
@@ -255,12 +258,13 @@ describe(`admin-v2 verification case assignment card`, () => {
 
   it(`keeps claim disabled when assignment management is unavailable`, async () => {
     mockedGetAdminIdentity.mockResolvedValue(OTHER_ADMIN_IDENTITY);
-    mockedGetVerificationCase.mockResolvedValue(
-      buildCase({
+    mockedGetVerificationCaseResult.mockResolvedValue({
+      status: `ready`,
+      data: buildCase({
         assignment: { current: null, history: [] },
         decisionControls: baseControls({ canManageAssignments: false }),
       }),
-    );
+    });
 
     const markup = renderToStaticMarkup(
       await VerificationCasePage({ params: Promise.resolve({ consumerId: `consumer-1` }) }),
@@ -269,5 +273,17 @@ describe(`admin-v2 verification case assignment card`, () => {
     expect(mockedGetAdmins).not.toHaveBeenCalled();
     expect(markup).toMatch(/<button[^>]*disabled[^>]*>Claim<\/button>/);
     expect(markup).not.toContain(`>Reassign<`);
+  });
+
+  it(`renders an access denied surface for forbidden case reads`, async () => {
+    mockedGetAdminIdentity.mockResolvedValue(CURRENT_ADMIN_IDENTITY);
+    mockedGetVerificationCaseResult.mockResolvedValue({ status: `forbidden` });
+
+    const markup = renderToStaticMarkup(
+      await VerificationCasePage({ params: Promise.resolve({ consumerId: `consumer-1` }) }),
+    );
+
+    expect(markup).toContain(`Verification case unavailable`);
+    expect(markup).toContain(`cannot access this verification surface`);
   });
 });

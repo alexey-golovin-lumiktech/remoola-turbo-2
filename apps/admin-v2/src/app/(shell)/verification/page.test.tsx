@@ -11,6 +11,7 @@ jest.mock(`next/link`, () => ({
 }));
 
 jest.mock(`../../../lib/admin-api.server`, () => ({
+  getAdminIdentity: jest.fn(),
   getQuickstart: jest.fn(),
   getVerificationQueue: jest.fn(),
   getSavedViews: jest.fn(),
@@ -23,6 +24,7 @@ jest.mock(`../../../lib/admin-mutations.server`, () => ({
 }));
 
 const {
+  getAdminIdentity: mockedGetAdminIdentity,
   getQuickstart: mockedGetQuickstart,
   getVerificationQueue: mockedGetVerificationQueue,
   getSavedViews: mockedGetSavedViews,
@@ -81,9 +83,19 @@ describe(`admin-v2 verification queue assignment column`, () => {
   });
 
   beforeEach(() => {
+    mockedGetAdminIdentity.mockReset();
     mockedGetQuickstart.mockReset();
     mockedGetVerificationQueue.mockReset();
     mockedGetSavedViews.mockReset();
+    mockedGetAdminIdentity.mockResolvedValue({
+      id: `admin-1`,
+      email: `ops@example.com`,
+      type: `ADMIN`,
+      role: `OPS_ADMIN`,
+      phase: `MVP-3`,
+      capabilities: [`saved_views.manage`],
+      workspaces: [`verification`],
+    } as never);
     mockedGetQuickstart.mockResolvedValue(null);
     mockedGetSavedViews.mockResolvedValue({ views: [] });
   });
@@ -133,9 +145,19 @@ describe(`admin-v2 verification queue saved views section`, () => {
   });
 
   beforeEach(() => {
+    mockedGetAdminIdentity.mockReset();
     mockedGetQuickstart.mockReset();
     mockedGetVerificationQueue.mockReset();
     mockedGetSavedViews.mockReset();
+    mockedGetAdminIdentity.mockResolvedValue({
+      id: `admin-1`,
+      email: `ops@example.com`,
+      type: `ADMIN`,
+      role: `OPS_ADMIN`,
+      phase: `MVP-3`,
+      capabilities: [`saved_views.manage`],
+      workspaces: [`verification`],
+    } as never);
     mockedGetQuickstart.mockResolvedValue(null);
     mockedGetVerificationQueue.mockResolvedValue(emptyQueue());
     mockedGetSavedViews.mockResolvedValue({ views: [] });
@@ -195,6 +217,24 @@ describe(`admin-v2 verification queue saved views section`, () => {
     expect(markup).toContain(`name="queryPayload" value="{}"`);
   });
 
+  it(`hides saved-view mutation affordances when saved_views.manage is missing`, async () => {
+    mockedGetAdminIdentity.mockResolvedValueOnce({
+      id: `admin-2`,
+      email: `readonly@example.com`,
+      type: `ADMIN`,
+      role: `OPS_ADMIN`,
+      phase: `MVP-3`,
+      capabilities: [`verification.read`],
+      workspaces: [`verification`],
+    } as never);
+
+    const markup = renderToStaticMarkup(await VerificationQueuePage({ searchParams: Promise.resolve({}) }));
+
+    expect(mockedGetSavedViews).not.toHaveBeenCalled();
+    expect(markup).toContain(`Saved view management is not available for this admin identity.`);
+    expect(markup).not.toContain(`name="workspace" value="verification_queue"`);
+  });
+
   it(`maps current filters into the saved view payload contract`, async () => {
     const markup = renderToStaticMarkup(
       await VerificationQueuePage({
@@ -249,9 +289,19 @@ describe(`admin-v2 verification quickstarts`, () => {
   });
 
   beforeEach(() => {
+    mockedGetAdminIdentity.mockReset();
     mockedGetQuickstart.mockReset();
     mockedGetVerificationQueue.mockReset();
     mockedGetSavedViews.mockReset();
+    mockedGetAdminIdentity.mockResolvedValue({
+      id: `admin-1`,
+      email: `ops@example.com`,
+      type: `ADMIN`,
+      role: `OPS_ADMIN`,
+      phase: `MVP-3`,
+      capabilities: [`saved_views.manage`],
+      workspaces: [`verification`],
+    } as never);
     mockedGetSavedViews.mockResolvedValue({ views: [] });
     mockedGetVerificationQueue.mockResolvedValue(emptyQueue());
   });

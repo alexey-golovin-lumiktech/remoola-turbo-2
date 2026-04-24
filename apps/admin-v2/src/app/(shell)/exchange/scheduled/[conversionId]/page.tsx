@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { AdminSurfaceAccessDenied, AdminSurfaceUnavailable } from '../../../../../components/admin-surface-state';
 import { AssignmentCard } from '../../../../../components/assignment-card';
-import { getAdminIdentity, getAdmins, getExchangeScheduledCase } from '../../../../../lib/admin-api.server';
+import { getAdminIdentity, getAdmins, getExchangeScheduledCaseResult } from '../../../../../lib/admin-api.server';
 import {
   cancelScheduledExchangeAction,
   claimFxConversionAssignmentAction,
@@ -18,11 +19,31 @@ function formatDate(value: string | null | undefined) {
 
 export default async function ExchangeScheduledCasePage({ params }: { params: Promise<{ conversionId: string }> }) {
   const { conversionId } = await params;
-  const [identity, conversion] = await Promise.all([getAdminIdentity(), getExchangeScheduledCase(conversionId)]);
+  const [identity, conversionResult] = await Promise.all([
+    getAdminIdentity(),
+    getExchangeScheduledCaseResult(conversionId),
+  ]);
 
-  if (!conversion) {
+  if (conversionResult.status === `not_found`) {
     notFound();
   }
+  if (conversionResult.status === `forbidden`) {
+    return (
+      <AdminSurfaceAccessDenied
+        title="Scheduled conversion unavailable"
+        description="Your admin identity can sign in, but it cannot access this scheduled-conversion surface."
+      />
+    );
+  }
+  if (conversionResult.status === `error`) {
+    return (
+      <AdminSurfaceUnavailable
+        title="Scheduled conversion unavailable"
+        description="The scheduled conversion case could not be loaded from the backend right now. Retry shortly."
+      />
+    );
+  }
+  const conversion = conversionResult.data;
 
   const canManage = identity?.capabilities.includes(`exchange.manage`) ?? false;
 

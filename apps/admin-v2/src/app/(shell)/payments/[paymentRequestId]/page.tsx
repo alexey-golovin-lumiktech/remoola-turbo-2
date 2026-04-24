@@ -1,11 +1,12 @@
 import { notFound } from 'next/navigation';
 
 import { ActionGhost } from '../../../../components/action-ghost';
+import { AdminSurfaceAccessDenied, AdminSurfaceUnavailable } from '../../../../components/admin-surface-state';
 import { AssignmentCard } from '../../../../components/assignment-card';
 import { Panel } from '../../../../components/panel';
 import { TinyPill } from '../../../../components/tiny-pill';
 import { monoMutedTextClass, mutedTextClass, panelClass, stackClass } from '../../../../components/ui-classes';
-import { getAdminIdentity, getAdmins, getPaymentCase } from '../../../../lib/admin-api.server';
+import { getAdminIdentity, getAdmins, getPaymentCaseResult } from '../../../../lib/admin-api.server';
 import {
   claimPaymentRequestAssignmentAction,
   reassignPaymentRequestAssignmentAction,
@@ -27,11 +28,28 @@ function renderMetadata(value: Record<string, unknown> | null | undefined) {
 
 export default async function PaymentCasePage({ params }: { params: Promise<{ paymentRequestId: string }> }) {
   const { paymentRequestId } = await params;
-  const [paymentCase, identity] = await Promise.all([getPaymentCase(paymentRequestId), getAdminIdentity()]);
+  const [paymentCaseResult, identity] = await Promise.all([getPaymentCaseResult(paymentRequestId), getAdminIdentity()]);
 
-  if (!paymentCase) {
+  if (paymentCaseResult.status === `not_found`) {
     notFound();
   }
+  if (paymentCaseResult.status === `forbidden`) {
+    return (
+      <AdminSurfaceAccessDenied
+        title="Payment case unavailable"
+        description="Your admin identity can sign in, but it cannot access this payment surface."
+      />
+    );
+  }
+  if (paymentCaseResult.status === `error`) {
+    return (
+      <AdminSurfaceUnavailable
+        title="Payment case unavailable"
+        description="The payment case could not be loaded from the backend right now. Retry shortly."
+      />
+    );
+  }
+  const paymentCase = paymentCaseResult.data;
 
   const currentAssignment = paymentCase.assignment.current;
   const currentAdminId = identity?.id ?? null;

@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { AdminSurfaceAccessDenied, AdminSurfaceUnavailable } from '../../../../components/admin-surface-state';
 import { AssignmentCard } from '../../../../components/assignment-card';
-import { getAdminIdentity, getAdmins, getLedgerEntryCase } from '../../../../lib/admin-api.server';
+import { getAdminIdentity, getAdmins, getLedgerEntryCaseResult } from '../../../../lib/admin-api.server';
 import {
   claimLedgerEntryAssignmentAction,
   reassignLedgerEntryAssignmentAction,
@@ -24,11 +25,28 @@ function renderObject(value: Record<string, unknown> | null | undefined) {
 
 export default async function LedgerEntryCasePage({ params }: { params: Promise<{ ledgerEntryId: string }> }) {
   const { ledgerEntryId } = await params;
-  const [ledgerCase, identity] = await Promise.all([getLedgerEntryCase(ledgerEntryId), getAdminIdentity()]);
+  const [ledgerCaseResult, identity] = await Promise.all([getLedgerEntryCaseResult(ledgerEntryId), getAdminIdentity()]);
 
-  if (!ledgerCase) {
+  if (ledgerCaseResult.status === `not_found`) {
     notFound();
   }
+  if (ledgerCaseResult.status === `forbidden`) {
+    return (
+      <AdminSurfaceAccessDenied
+        title="Ledger case unavailable"
+        description="Your admin identity can sign in, but it cannot access this ledger surface."
+      />
+    );
+  }
+  if (ledgerCaseResult.status === `error`) {
+    return (
+      <AdminSurfaceUnavailable
+        title="Ledger case unavailable"
+        description="The ledger case could not be loaded from the backend right now. Retry shortly."
+      />
+    );
+  }
+  const ledgerCase = ledgerCaseResult.data;
 
   const currentAssignment = ledgerCase.assignment.current;
   const currentAdminId = identity?.id ?? null;

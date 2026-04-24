@@ -3,7 +3,7 @@ import { type ReactNode } from 'react';
 import { DenseTable } from '../../../../components/dense-table';
 import { MobileQueueCard } from '../../../../components/mobile-queue-card';
 import { TabletRow } from '../../../../components/tablet-row';
-import { type AdminSessionView, getAdminIdentity, getMyAdminSessions } from '../../../../lib/admin-api.server';
+import { type AdminSessionView, getAdminIdentity, getMyAdminSessionsResult } from '../../../../lib/admin-api.server';
 import { revokeMyAdminSessionAction } from '../../../../lib/admin-mutations.server';
 
 function formatDate(value: string | null): string {
@@ -140,8 +140,8 @@ function SessionsDesktopTable({ sessions }: { sessions: AdminSessionView[] }) {
 }
 
 export default async function MySessionsPage() {
-  const [identity, response] = await Promise.all([getAdminIdentity(), getMyAdminSessions()]);
-  const sessions = response?.sessions ?? [];
+  const [identity, response] = await Promise.all([getAdminIdentity(), getMyAdminSessionsResult()]);
+  const sessions = response.status === `ready` ? response.data.sessions : [];
 
   return (
     <>
@@ -153,7 +153,10 @@ export default async function MySessionsPage() {
       </section>
 
       <section className="panel">
-        {response === null ? <p className="muted">Sessions surface temporarily unavailable.</p> : null}
+        {response.status === `forbidden` ? (
+          <p className="muted">Session visibility is denied for this admin identity.</p>
+        ) : null}
+        {response.status === `error` ? <p className="muted">Sessions surface temporarily unavailable.</p> : null}
         <SessionsMobileCards sessions={sessions} />
         <SessionsTabletRows sessions={sessions} />
         <SessionsDesktopTable sessions={sessions} />

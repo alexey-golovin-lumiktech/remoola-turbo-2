@@ -21,7 +21,7 @@ jest.mock(`next/navigation`, () => ({
 jest.mock(`../../../../lib/admin-api.server`, () => ({
   getAdminIdentity: jest.fn(),
   getAdmins: jest.fn(),
-  getDocumentCase: jest.fn(),
+  getDocumentCaseResult: jest.fn(),
   getDocumentTags: jest.fn(),
 }));
 
@@ -35,7 +35,7 @@ jest.mock(`../../../../lib/admin-mutations.server`, () => ({
 const {
   getAdminIdentity: mockedGetAdminIdentity,
   getAdmins: mockedGetAdmins,
-  getDocumentCase: mockedGetDocumentCase,
+  getDocumentCaseResult: mockedGetDocumentCaseResult,
   getDocumentTags: mockedGetDocumentTags,
 } = jest.requireMock(`../../../../lib/admin-api.server`) as jest.Mocked<typeof AdminApi>;
 
@@ -54,7 +54,7 @@ describe(`admin-v2 document case`, () => {
     mockedNotFound.mockClear();
     mockedGetAdminIdentity.mockReset();
     mockedGetAdmins.mockReset();
-    mockedGetDocumentCase.mockReset();
+    mockedGetDocumentCaseResult.mockReset();
     mockedGetDocumentTags.mockReset();
     mockedGetAdminIdentity.mockResolvedValue({
       id: `admin-1`,
@@ -94,46 +94,49 @@ describe(`admin-v2 document case`, () => {
         },
       ],
     });
-    mockedGetDocumentCase.mockResolvedValue({
-      id: `doc-1`,
-      core: {
+    mockedGetDocumentCaseResult.mockResolvedValue({
+      status: `ready`,
+      data: {
         id: `doc-1`,
-        originalName: `proof.pdf`,
-        access: `PRIVATE`,
-        mimeType: `application/pdf`,
-        size: 2048,
-        createdAt: `2026-04-17T08:00:00.000Z`,
-        deletedAt: null,
-      },
-      consumer: { id: `consumer-1`, email: `owner@example.com` },
-      tags: [
-        {
-          id: `tag-1`,
-          name: `evidence`,
+        core: {
+          id: `doc-1`,
+          originalName: `proof.pdf`,
+          access: `PRIVATE`,
+          mimeType: `application/pdf`,
+          size: 2048,
+          createdAt: `2026-04-17T08:00:00.000Z`,
+          deletedAt: null,
         },
-      ],
-      linkedPaymentRequests: [
-        {
-          id: `payment-1`,
-          amount: `42.00`,
-          status: `WAITING`,
-          createdAt: `2026-04-17T08:05:00.000Z`,
+        consumer: { id: `consumer-1`, email: `owner@example.com` },
+        tags: [
+          {
+            id: `tag-1`,
+            name: `evidence`,
+          },
+        ],
+        linkedPaymentRequests: [
+          {
+            id: `payment-1`,
+            amount: `42.00`,
+            status: `WAITING`,
+            createdAt: `2026-04-17T08:05:00.000Z`,
+          },
+        ],
+        downloadUrl: `https://api.example.com/api/admin-v2/documents/doc-1/download`,
+        version: 1713341400000,
+        updatedAt: `2026-04-17T08:10:00.000Z`,
+        staleWarning: false,
+        dataFreshnessClass: `exact`,
+        assignment: {
+          current: null,
+          history: [],
         },
-      ],
-      downloadUrl: `https://api.example.com/api/admin-v2/documents/doc-1/download`,
-      version: 1713341400000,
-      updatedAt: `2026-04-17T08:10:00.000Z`,
-      staleWarning: false,
-      dataFreshnessClass: `exact`,
-      assignment: {
-        current: null,
-        history: [],
       },
     });
   });
 
   it(`delegates missing document records to notFound`, async () => {
-    mockedGetDocumentCase.mockResolvedValueOnce(null);
+    mockedGetDocumentCaseResult.mockResolvedValueOnce({ status: `not_found` });
 
     await expect(
       DocumentCasePage({
@@ -142,5 +145,18 @@ describe(`admin-v2 document case`, () => {
     ).rejects.toThrow(`NEXT_NOT_FOUND`);
 
     expect(mockedNotFound).toHaveBeenCalledTimes(1);
+  });
+
+  it(`renders an access denied surface for forbidden document reads`, async () => {
+    mockedGetDocumentCaseResult.mockResolvedValueOnce({ status: `forbidden` });
+
+    const markup = renderToStaticMarkup(
+      await DocumentCasePage({
+        params: Promise.resolve({ documentId: `doc-1` }),
+      }),
+    );
+
+    expect(markup).toContain(`Document case unavailable`);
+    expect(markup).toContain(`cannot access this document surface`);
   });
 });

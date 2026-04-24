@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { getAdminIdentity, getExchangeRateCase } from '../../../../../lib/admin-api.server';
+import { AdminSurfaceAccessDenied, AdminSurfaceUnavailable } from '../../../../../components/admin-surface-state';
+import { getAdminIdentity, getExchangeRateCaseResult } from '../../../../../lib/admin-api.server';
 import { approveExchangeRateAction } from '../../../../../lib/admin-mutations.server';
 
 function formatDate(value: string | null | undefined) {
@@ -11,11 +12,28 @@ function formatDate(value: string | null | undefined) {
 
 export default async function ExchangeRateCasePage({ params }: { params: Promise<{ rateId: string }> }) {
   const { rateId } = await params;
-  const [identity, rate] = await Promise.all([getAdminIdentity(), getExchangeRateCase(rateId)]);
+  const [identity, rateResult] = await Promise.all([getAdminIdentity(), getExchangeRateCaseResult(rateId)]);
 
-  if (!rate) {
+  if (rateResult.status === `not_found`) {
     notFound();
   }
+  if (rateResult.status === `forbidden`) {
+    return (
+      <AdminSurfaceAccessDenied
+        title="Exchange rate unavailable"
+        description="Your admin identity can sign in, but it cannot access this exchange-rate surface."
+      />
+    );
+  }
+  if (rateResult.status === `error`) {
+    return (
+      <AdminSurfaceUnavailable
+        title="Exchange rate unavailable"
+        description="The exchange-rate case could not be loaded from the backend right now. Retry shortly."
+      />
+    );
+  }
+  const rate = rateResult.data;
 
   const canManage = identity?.capabilities.includes(`exchange.manage`) ?? false;
 

@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { getAdminIdentity, getPaymentMethodCase } from '../../../../lib/admin-api.server';
+import { AdminSurfaceAccessDenied, AdminSurfaceUnavailable } from '../../../../components/admin-surface-state';
+import { getAdminIdentity, getPaymentMethodCaseResult } from '../../../../lib/admin-api.server';
 import {
   disablePaymentMethodAction,
   escalateDuplicatePaymentMethodAction,
@@ -29,11 +30,31 @@ function renderMethodLabel(paymentMethod: {
 
 export default async function PaymentMethodCasePage({ params }: { params: Promise<{ paymentMethodId: string }> }) {
   const { paymentMethodId } = await params;
-  const [identity, paymentMethod] = await Promise.all([getAdminIdentity(), getPaymentMethodCase(paymentMethodId)]);
+  const [identity, paymentMethodResult] = await Promise.all([
+    getAdminIdentity(),
+    getPaymentMethodCaseResult(paymentMethodId),
+  ]);
 
-  if (!paymentMethod) {
+  if (paymentMethodResult.status === `not_found`) {
     notFound();
   }
+  if (paymentMethodResult.status === `forbidden`) {
+    return (
+      <AdminSurfaceAccessDenied
+        title="Payment method unavailable"
+        description="Your admin identity can sign in, but it cannot access this payment-method surface."
+      />
+    );
+  }
+  if (paymentMethodResult.status === `error`) {
+    return (
+      <AdminSurfaceUnavailable
+        title="Payment method unavailable"
+        description="The payment-method case could not be loaded from the backend right now. Retry shortly."
+      />
+    );
+  }
+  const paymentMethod = paymentMethodResult.data;
 
   const canManage = identity?.capabilities.includes(`payment_methods.manage`) ?? false;
   const fingerprintHref = paymentMethod.stripeFingerprint

@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { AdminSurfaceAccessDenied, AdminSurfaceUnavailable } from '../../../../components/admin-surface-state';
 import { AssignmentCard } from '../../../../components/assignment-card';
-import { getAdminIdentity, getAdmins, getDocumentCase, getDocumentTags } from '../../../../lib/admin-api.server';
+import { getAdminIdentity, getAdmins, getDocumentCaseResult, getDocumentTags } from '../../../../lib/admin-api.server';
 import {
   claimDocumentAssignmentAction,
   reassignDocumentAssignmentAction,
@@ -31,15 +32,32 @@ function formatBytes(value: number | null | undefined): string {
 
 export default async function DocumentCasePage({ params }: { params: Promise<{ documentId: string }> }) {
   const { documentId } = await params;
-  const [identity, documentCase, tags] = await Promise.all([
+  const [identity, documentCaseResult, tags] = await Promise.all([
     getAdminIdentity(),
-    getDocumentCase(documentId),
+    getDocumentCaseResult(documentId),
     getDocumentTags(),
   ]);
 
-  if (!documentCase) {
+  if (documentCaseResult.status === `not_found`) {
     notFound();
   }
+  if (documentCaseResult.status === `forbidden`) {
+    return (
+      <AdminSurfaceAccessDenied
+        title="Document case unavailable"
+        description="Your admin identity can sign in, but it cannot access this document surface."
+      />
+    );
+  }
+  if (documentCaseResult.status === `error`) {
+    return (
+      <AdminSurfaceUnavailable
+        title="Document case unavailable"
+        description="The document case could not be loaded from the backend right now. Retry shortly."
+      />
+    );
+  }
+  const documentCase = documentCaseResult.data;
 
   const canManage = identity?.capabilities.includes(`documents.manage`) ?? false;
   const selectedTags = new Set(documentCase.tags.map((tag) => tag.id));

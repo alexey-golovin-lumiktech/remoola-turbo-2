@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import {
+  getAdminIdentity,
   getLedgerAnomalies,
   getLedgerAnomaliesSummary,
   getSavedViews,
@@ -191,7 +192,15 @@ type BuildHrefFn = (next: {
   cursor?: string | null;
 }) => string;
 
-function SavedViewRow({ view, buildHref }: { view: SavedViewSummary; buildHref: BuildHrefFn }) {
+function SavedViewRow({
+  view,
+  buildHref,
+  canManageSavedViews,
+}: {
+  view: SavedViewSummary;
+  buildHref: BuildHrefFn;
+  canManageSavedViews: boolean;
+}) {
   const payload = parseSavedViewPayload(view.queryPayload);
   const payloadJson = JSON.stringify(view.queryPayload ?? null);
 
@@ -225,43 +234,47 @@ function SavedViewRow({ view, buildHref }: { view: SavedViewSummary; buildHref: 
               Use defaults
             </Link>
           )}
-          <form action={deleteSavedViewAction.bind(null, view.id)}>
-            <input type="hidden" name="workspace" value={view.workspace} />
-            <button className="dangerButton" type="submit">
-              Delete
-            </button>
-          </form>
+          {canManageSavedViews ? (
+            <form action={deleteSavedViewAction.bind(null, view.id)}>
+              <input type="hidden" name="workspace" value={view.workspace} />
+              <button className="dangerButton" type="submit">
+                Delete
+              </button>
+            </form>
+          ) : null}
         </div>
       </div>
-      <details>
-        <summary className="muted">Rename or update</summary>
-        <form action={updateSavedViewAction.bind(null, view.id)} className="formStack">
-          <input type="hidden" name="workspace" value={view.workspace} />
-          <input type="hidden" name="queryPayload" value={payloadJson} />
-          <label className="field">
-            <span>Name</span>
-            <input
-              name="name"
-              defaultValue={view.name}
-              required
-              maxLength={MAX_SAVED_VIEW_NAME_LENGTH}
-              aria-label="Saved view name"
-            />
-          </label>
-          <label className="field">
-            <span>Description</span>
-            <input
-              name="description"
-              defaultValue={view.description ?? ``}
-              maxLength={MAX_SAVED_VIEW_DESCRIPTION_LENGTH}
-              aria-label="Saved view description"
-            />
-          </label>
-          <button className="secondaryButton" type="submit">
-            Save changes
-          </button>
-        </form>
-      </details>
+      {canManageSavedViews ? (
+        <details>
+          <summary className="muted">Rename or update</summary>
+          <form action={updateSavedViewAction.bind(null, view.id)} className="formStack">
+            <input type="hidden" name="workspace" value={view.workspace} />
+            <input type="hidden" name="queryPayload" value={payloadJson} />
+            <label className="field">
+              <span>Name</span>
+              <input
+                name="name"
+                defaultValue={view.name}
+                required
+                maxLength={MAX_SAVED_VIEW_NAME_LENGTH}
+                aria-label="Saved view name"
+              />
+            </label>
+            <label className="field">
+              <span>Description</span>
+              <input
+                name="description"
+                defaultValue={view.description ?? ``}
+                maxLength={MAX_SAVED_VIEW_DESCRIPTION_LENGTH}
+                aria-label="Saved view description"
+              />
+            </label>
+            <button className="secondaryButton" type="submit">
+              Save changes
+            </button>
+          </form>
+        </details>
+      ) : null}
     </div>
   );
 }
@@ -270,10 +283,12 @@ function SavedViewsSection({
   views,
   currentPayload,
   buildHref,
+  canManageSavedViews,
 }: {
   views: SavedViewSummary[];
   currentPayload: LedgerAnomaliesSavedViewPayload;
   buildHref: BuildHrefFn;
+  canManageSavedViews: boolean;
 }) {
   return (
     <section className="panel" aria-label="Saved views">
@@ -285,43 +300,51 @@ function SavedViewsSection({
       </div>
       <div className="formStack">
         {views.length === 0 ? (
-          <p className="muted">No saved views yet. Use the form below to save the current filters.</p>
+          <p className="muted">
+            {canManageSavedViews
+              ? `No saved views yet. Use the form below to save the current filters.`
+              : `Saved view management is not available for this admin identity.`}
+          </p>
         ) : (
-          views.map((view) => <SavedViewRow key={view.id} view={view} buildHref={buildHref} />)
+          views.map((view) => (
+            <SavedViewRow key={view.id} view={view} buildHref={buildHref} canManageSavedViews={canManageSavedViews} />
+          ))
         )}
       </div>
-      <article className="panel">
-        <h3>Save current view</h3>
-        <form action={createSavedViewAction} className="formStack">
-          <input type="hidden" name="workspace" value={SAVED_VIEW_WORKSPACE} />
-          <input type="hidden" name="queryPayload" value={JSON.stringify(currentPayload)} />
-          <label className="field">
-            <span>Name</span>
-            <input
-              name="name"
-              required
-              maxLength={MAX_SAVED_VIEW_NAME_LENGTH}
-              placeholder="e.g. Stale entries last 7 days"
-              aria-label="New saved view name"
-            />
-          </label>
-          <label className="field">
-            <span>Description</span>
-            <input
-              name="description"
-              maxLength={MAX_SAVED_VIEW_DESCRIPTION_LENGTH}
-              placeholder="Optional"
-              aria-label="New saved view description"
-            />
-          </label>
-          <p className="muted mono">
-            class={currentPayload.class}, dateFrom={currentPayload.dateFrom}, dateTo={currentPayload.dateTo}
-          </p>
-          <button className="primaryButton" type="submit">
-            Save current view
-          </button>
-        </form>
-      </article>
+      {canManageSavedViews ? (
+        <article className="panel">
+          <h3>Save current view</h3>
+          <form action={createSavedViewAction} className="formStack">
+            <input type="hidden" name="workspace" value={SAVED_VIEW_WORKSPACE} />
+            <input type="hidden" name="queryPayload" value={JSON.stringify(currentPayload)} />
+            <label className="field">
+              <span>Name</span>
+              <input
+                name="name"
+                required
+                maxLength={MAX_SAVED_VIEW_NAME_LENGTH}
+                placeholder="e.g. Stale entries last 7 days"
+                aria-label="New saved view name"
+              />
+            </label>
+            <label className="field">
+              <span>Description</span>
+              <input
+                name="description"
+                maxLength={MAX_SAVED_VIEW_DESCRIPTION_LENGTH}
+                placeholder="Optional"
+                aria-label="New saved view description"
+              />
+            </label>
+            <p className="muted mono">
+              class={currentPayload.class}, dateFrom={currentPayload.dateFrom}, dateTo={currentPayload.dateTo}
+            </p>
+            <button className="primaryButton" type="submit">
+              Save current view
+            </button>
+          </form>
+        </article>
+      ) : null}
     </section>
   );
 }
@@ -337,6 +360,8 @@ export default async function LedgerAnomaliesPage({
   }>;
 }) {
   const params = await searchParams;
+  const identity = await getAdminIdentity();
+  const canManageSavedViews = identity?.capabilities.includes(`saved_views.manage`) ?? false;
   const defaults = defaultDateRange();
   const requestedClass = params?.class?.trim();
   const className: LedgerAnomalyClass = isLedgerAnomalyClass(requestedClass) ? requestedClass : `stalePendingEntries`;
@@ -353,7 +378,7 @@ export default async function LedgerAnomaliesPage({
       cursor,
       limit: 50,
     }),
-    getSavedViews({ workspace: SAVED_VIEW_WORKSPACE }),
+    canManageSavedViews ? getSavedViews({ workspace: SAVED_VIEW_WORKSPACE }) : Promise.resolve(null),
   ]);
 
   const activeClass = summary?.classes[className];
@@ -425,7 +450,12 @@ export default async function LedgerAnomaliesPage({
         </nav>
       </section>
 
-      <SavedViewsSection views={savedViews} currentPayload={currentPayload} buildHref={buildHref} />
+      <SavedViewsSection
+        views={savedViews}
+        currentPayload={currentPayload}
+        buildHref={buildHref}
+        canManageSavedViews={canManageSavedViews}
+      />
 
       <section className="panel pageHeader">
         <form className="actionsRow" method="get">

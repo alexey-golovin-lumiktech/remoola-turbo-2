@@ -1135,37 +1135,67 @@ function redirectToLogin() {
   redirect(`/login?sessionExpired=1`);
 }
 
-async function fetchAdminApi<T>(path: string): Promise<T | null> {
+export type AdminApiReadResult<T> =
+  | { status: `ready`; data: T }
+  | { status: `forbidden` }
+  | { status: `not_found` }
+  | { status: `error` };
+
+async function fetchAdminApiResult<T>(path: string): Promise<AdminApiReadResult<T>> {
   const env = getEnv();
   const baseUrl = env.NEXT_PUBLIC_API_BASE_URL;
-  if (!baseUrl) return null;
+  if (!baseUrl) return { status: `error` };
 
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.toString();
   const origin = getRequestOrigin();
 
-  const response = await fetch(`${baseUrl}${path}`, {
-    method: `GET`,
-    headers: {
-      Cookie: cookieHeader,
-      origin,
-    },
-    cache: `no-store`,
-    signal: AbortSignal.timeout(15000),
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${baseUrl}${path}`, {
+      method: `GET`,
+      headers: {
+        Cookie: cookieHeader,
+        origin,
+      },
+      cache: `no-store`,
+      signal: AbortSignal.timeout(15000),
+    });
+  } catch {
+    return { status: `error` };
+  }
 
   if (response.status === 401) {
     redirectToLogin();
-    return null;
+  }
+  if (response.status === 403) {
+    return { status: `forbidden` };
+  }
+  if (response.status === 404) {
+    return { status: `not_found` };
   }
   if (!response.ok) {
-    return null;
+    return { status: `error` };
   }
-  return (await response.json()) as T;
+
+  try {
+    return { status: `ready`, data: (await response.json()) as T };
+  } catch {
+    return { status: `error` };
+  }
+}
+
+async function fetchAdminApi<T>(path: string): Promise<T | null> {
+  const result = await fetchAdminApiResult<T>(path);
+  return result.status === `ready` ? result.data : null;
 }
 
 export async function getAdminIdentity(): Promise<AdminIdentity | null> {
   return fetchAdminApi<AdminIdentity>(`/admin-v2/me`);
+}
+
+export async function getAdminIdentityResult(): Promise<AdminApiReadResult<AdminIdentity>> {
+  return fetchAdminApiResult<AdminIdentity>(`/admin-v2/me`);
 }
 
 export async function getOverviewSummary(): Promise<OverviewSummaryResponse | null> {
@@ -1355,6 +1385,11 @@ export async function getPaymentCase(paymentRequestId: string): Promise<PaymentC
   return fetchAdminApi<PaymentCaseResponse>(`/admin-v2/payments/${paymentRequestId}`);
 }
 
+export async function getPaymentCaseResult(paymentRequestId: string): Promise<AdminApiReadResult<PaymentCaseResponse>> {
+  if (!paymentRequestId.trim()) return { status: `not_found` };
+  return fetchAdminApiResult<PaymentCaseResponse>(`/admin-v2/payments/${paymentRequestId}`);
+}
+
 export async function getDocuments(params?: {
   page?: number;
   pageSize?: number;
@@ -1393,6 +1428,11 @@ export async function getDocuments(params?: {
 export async function getDocumentCase(documentId: string): Promise<DocumentCaseResponse | null> {
   if (!documentId.trim()) return null;
   return fetchAdminApi<DocumentCaseResponse>(`/admin-v2/documents/${documentId}`);
+}
+
+export async function getDocumentCaseResult(documentId: string): Promise<AdminApiReadResult<DocumentCaseResponse>> {
+  if (!documentId.trim()) return { status: `not_found` };
+  return fetchAdminApiResult<DocumentCaseResponse>(`/admin-v2/documents/${documentId}`);
 }
 
 export async function getDocumentTags(): Promise<DocumentTagsResponse | null> {
@@ -1452,6 +1492,11 @@ export async function getExchangeRateCase(rateId: string): Promise<ExchangeRateC
   return fetchAdminApi<ExchangeRateCaseResponse>(`/admin-v2/exchange/rates/${rateId}`);
 }
 
+export async function getExchangeRateCaseResult(rateId: string): Promise<AdminApiReadResult<ExchangeRateCaseResponse>> {
+  if (!rateId.trim()) return { status: `not_found` };
+  return fetchAdminApiResult<ExchangeRateCaseResponse>(`/admin-v2/exchange/rates/${rateId}`);
+}
+
 export async function getExchangeRules(params?: {
   page?: number;
   pageSize?: number;
@@ -1476,6 +1521,11 @@ export async function getExchangeRuleCase(ruleId: string): Promise<ExchangeRuleC
   return fetchAdminApi<ExchangeRuleCaseResponse>(`/admin-v2/exchange/rules/${ruleId}`);
 }
 
+export async function getExchangeRuleCaseResult(ruleId: string): Promise<AdminApiReadResult<ExchangeRuleCaseResponse>> {
+  if (!ruleId.trim()) return { status: `not_found` };
+  return fetchAdminApiResult<ExchangeRuleCaseResponse>(`/admin-v2/exchange/rules/${ruleId}`);
+}
+
 export async function getExchangeScheduledConversions(params?: {
   page?: number;
   pageSize?: number;
@@ -1496,6 +1546,13 @@ export async function getExchangeScheduledCase(conversionId: string): Promise<Ex
   return fetchAdminApi<ExchangeScheduledCaseResponse>(`/admin-v2/exchange/scheduled/${conversionId}`);
 }
 
+export async function getExchangeScheduledCaseResult(
+  conversionId: string,
+): Promise<AdminApiReadResult<ExchangeScheduledCaseResponse>> {
+  if (!conversionId.trim()) return { status: `not_found` };
+  return fetchAdminApiResult<ExchangeScheduledCaseResponse>(`/admin-v2/exchange/scheduled/${conversionId}`);
+}
+
 export async function getPayouts(params?: { cursor?: string; limit?: number }): Promise<PayoutsListResponse | null> {
   const searchParams = new URLSearchParams({
     limit: String(params?.limit ?? 25),
@@ -1509,9 +1566,21 @@ export async function getPayoutCase(payoutId: string): Promise<PayoutCaseRespons
   return fetchAdminApi<PayoutCaseResponse>(`/admin-v2/payouts/${payoutId}`);
 }
 
+export async function getPayoutCaseResult(payoutId: string): Promise<AdminApiReadResult<PayoutCaseResponse>> {
+  if (!payoutId.trim()) return { status: `not_found` };
+  return fetchAdminApiResult<PayoutCaseResponse>(`/admin-v2/payouts/${payoutId}`);
+}
+
 export async function getPaymentMethodCase(paymentMethodId: string): Promise<PaymentMethodCaseResponse | null> {
   if (!paymentMethodId.trim()) return null;
   return fetchAdminApi<PaymentMethodCaseResponse>(`/admin-v2/payment-methods/${paymentMethodId}`);
+}
+
+export async function getPaymentMethodCaseResult(
+  paymentMethodId: string,
+): Promise<AdminApiReadResult<PaymentMethodCaseResponse>> {
+  if (!paymentMethodId.trim()) return { status: `not_found` };
+  return fetchAdminApiResult<PaymentMethodCaseResponse>(`/admin-v2/payment-methods/${paymentMethodId}`);
 }
 
 export async function getConsumers(params?: {
@@ -1538,6 +1607,11 @@ export async function getConsumers(params?: {
 export async function getConsumerCase(consumerId: string): Promise<ConsumerCaseResponse | null> {
   if (!consumerId.trim()) return null;
   return fetchAdminApi<ConsumerCaseResponse>(`/admin-v2/consumers/${consumerId}`);
+}
+
+export async function getConsumerCaseResult(consumerId: string): Promise<AdminApiReadResult<ConsumerCaseResponse>> {
+  if (!consumerId.trim()) return { status: `not_found` };
+  return fetchAdminApiResult<ConsumerCaseResponse>(`/admin-v2/consumers/${consumerId}`);
 }
 
 export async function getVerificationQueue(params?: {
@@ -1567,6 +1641,13 @@ export async function getVerificationQueue(params?: {
 export async function getVerificationCase(consumerId: string): Promise<VerificationCaseResponse | null> {
   if (!consumerId.trim()) return null;
   return fetchAdminApi<VerificationCaseResponse>(`/admin-v2/verification/${consumerId}`);
+}
+
+export async function getVerificationCaseResult(
+  consumerId: string,
+): Promise<AdminApiReadResult<VerificationCaseResponse>> {
+  if (!consumerId.trim()) return { status: `not_found` };
+  return fetchAdminApiResult<VerificationCaseResponse>(`/admin-v2/verification/${consumerId}`);
 }
 
 export async function getConsumerContracts(params: {
@@ -1623,6 +1704,13 @@ export async function getLedgerEntries(params?: {
 export async function getLedgerEntryCase(ledgerEntryId: string): Promise<LedgerEntryCaseResponse | null> {
   if (!ledgerEntryId.trim()) return null;
   return fetchAdminApi<LedgerEntryCaseResponse>(`/admin-v2/ledger/${ledgerEntryId}`);
+}
+
+export async function getLedgerEntryCaseResult(
+  ledgerEntryId: string,
+): Promise<AdminApiReadResult<LedgerEntryCaseResponse>> {
+  if (!ledgerEntryId.trim()) return { status: `not_found` };
+  return fetchAdminApiResult<LedgerEntryCaseResponse>(`/admin-v2/ledger/${ledgerEntryId}`);
 }
 
 export async function getLedgerDisputes(params?: {
@@ -1865,6 +1953,11 @@ export async function getAdminCaseRecord(adminId: string): Promise<AdminCaseReco
   return fetchAdminApi<AdminCaseRecordResponse>(`/admin-v2/admins/${adminId}`);
 }
 
+export async function getAdminCaseRecordResult(adminId: string): Promise<AdminApiReadResult<AdminCaseRecordResponse>> {
+  if (!adminId.trim()) return { status: `not_found` };
+  return fetchAdminApiResult<AdminCaseRecordResponse>(`/admin-v2/admins/${adminId}`);
+}
+
 export type AdminSessionInvalidatedReason =
   | `rotated`
   | `manual_revoke`
@@ -1892,7 +1985,16 @@ export async function getMyAdminSessions(): Promise<ListAdminSessionsResponse | 
   return fetchAdminApi<ListAdminSessionsResponse>(`/admin-v2/auth/me/sessions`);
 }
 
+export async function getMyAdminSessionsResult(): Promise<AdminApiReadResult<ListAdminSessionsResponse>> {
+  return fetchAdminApiResult<ListAdminSessionsResponse>(`/admin-v2/auth/me/sessions`);
+}
+
 export async function getAdminSessions(adminId: string): Promise<ListAdminSessionsResponse | null> {
   if (!adminId.trim()) return null;
   return fetchAdminApi<ListAdminSessionsResponse>(`/admin-v2/admins/${adminId}/sessions`);
+}
+
+export async function getAdminSessionsResult(adminId: string): Promise<AdminApiReadResult<ListAdminSessionsResponse>> {
+  if (!adminId.trim()) return { status: `not_found` };
+  return fetchAdminApiResult<ListAdminSessionsResponse>(`/admin-v2/admins/${adminId}/sessions`);
 }

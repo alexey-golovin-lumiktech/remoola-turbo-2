@@ -20,16 +20,15 @@ jest.mock(`next/navigation`, () => ({
 
 jest.mock(`../../../../../lib/admin-api.server`, () => ({
   getAdminIdentity: jest.fn(),
-  getExchangeRateCase: jest.fn(),
+  getExchangeRateCaseResult: jest.fn(),
 }));
 
 jest.mock(`../../../../../lib/admin-mutations.server`, () => ({
   approveExchangeRateAction: jest.fn(),
 }));
 
-const { getAdminIdentity: mockedGetAdminIdentity, getExchangeRateCase: mockedGetExchangeRateCase } = jest.requireMock(
-  `../../../../../lib/admin-api.server`,
-) as jest.Mocked<typeof AdminApi>;
+const { getAdminIdentity: mockedGetAdminIdentity, getExchangeRateCaseResult: mockedGetExchangeRateCaseResult } =
+  jest.requireMock(`../../../../../lib/admin-api.server`) as jest.Mocked<typeof AdminApi>;
 
 async function loadSubject() {
   return (await import(`./page`)).default;
@@ -85,7 +84,7 @@ describe(`admin-v2 exchange rate case`, () => {
   beforeEach(() => {
     mockedNotFound.mockClear();
     mockedGetAdminIdentity.mockReset();
-    mockedGetExchangeRateCase.mockReset();
+    mockedGetExchangeRateCaseResult.mockReset();
     mockedGetAdminIdentity.mockResolvedValue({
       id: `admin-1`,
       email: `super@example.com`,
@@ -95,11 +94,11 @@ describe(`admin-v2 exchange rate case`, () => {
       capabilities: [`exchange.read`, `exchange.manage`],
       workspaces: [`exchange`],
     });
-    mockedGetExchangeRateCase.mockResolvedValue(buildRateCase());
+    mockedGetExchangeRateCaseResult.mockResolvedValue({ status: `ready`, data: buildRateCase() });
   });
 
   it(`delegates missing rate records to notFound`, async () => {
-    mockedGetExchangeRateCase.mockResolvedValueOnce(null);
+    mockedGetExchangeRateCaseResult.mockResolvedValueOnce({ status: `not_found` });
 
     await expect(
       ExchangeRateCasePage({
@@ -108,5 +107,18 @@ describe(`admin-v2 exchange rate case`, () => {
     ).rejects.toThrow(`NEXT_NOT_FOUND`);
 
     expect(mockedNotFound).toHaveBeenCalledTimes(1);
+  });
+
+  it(`renders an access denied surface for forbidden exchange-rate reads`, async () => {
+    mockedGetExchangeRateCaseResult.mockResolvedValueOnce({ status: `forbidden` });
+
+    const markup = renderToStaticMarkup(
+      await ExchangeRateCasePage({
+        params: Promise.resolve({ rateId: `rate-1` }),
+      }),
+    );
+
+    expect(markup).toContain(`Exchange rate unavailable`);
+    expect(markup).toContain(`cannot access this exchange-rate surface`);
   });
 });

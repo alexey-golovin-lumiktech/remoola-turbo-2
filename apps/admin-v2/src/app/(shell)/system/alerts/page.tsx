@@ -1,5 +1,6 @@
 import { ActionGhost } from '../../../../components/action-ghost';
 import { ActionPrimary } from '../../../../components/action-primary';
+import { AdminSurfaceAccessDenied } from '../../../../components/admin-surface-state';
 import { Panel } from '../../../../components/panel';
 import { TinyPill } from '../../../../components/tiny-pill';
 import {
@@ -13,6 +14,7 @@ import {
   textInputClass,
 } from '../../../../components/ui-classes';
 import {
+  getAdminIdentity,
   getOperationalAlerts,
   type OperationalAlertSummary,
   type OperationalAlertThreshold,
@@ -556,6 +558,17 @@ function WorkspaceSection({
 }
 
 export default async function OperationalAlertsPage() {
+  const identity = await getAdminIdentity();
+  const canManageAlerts = identity?.capabilities.includes(`alerts.manage`) ?? false;
+  if (!canManageAlerts) {
+    return (
+      <AdminSurfaceAccessDenied
+        title="Operational alerts unavailable"
+        description="Your admin identity can sign in, but it cannot manage operational alerts."
+      />
+    );
+  }
+
   const [ledgerResponse, verificationQueueResponse, authRefreshReuseResponse] = await Promise.all([
     getOperationalAlerts({ workspace: `ledger_anomalies` }),
     getOperationalAlerts({ workspace: `verification_queue` }),

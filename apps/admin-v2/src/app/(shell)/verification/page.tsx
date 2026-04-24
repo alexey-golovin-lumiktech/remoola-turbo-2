@@ -27,6 +27,7 @@ import {
 } from '../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../components/workspace-layout';
 import {
+  getAdminIdentity,
   getQuickstart,
   getSavedViews,
   getVerificationQueue,
@@ -270,7 +271,15 @@ function VerificationDesktopTable({ items }: { items: VerificationItem[] }) {
   );
 }
 
-function SavedViewRow({ view, buildHref }: { view: SavedViewSummary; buildHref: BuildHrefFn }) {
+function SavedViewRow({
+  view,
+  buildHref,
+  canManageSavedViews,
+}: {
+  view: SavedViewSummary;
+  buildHref: BuildHrefFn;
+  canManageSavedViews: boolean;
+}) {
   const payload = parseSavedViewPayload(view.queryPayload);
   const payloadJson = JSON.stringify(view.queryPayload ?? null);
 
@@ -286,12 +295,14 @@ function SavedViewRow({ view, buildHref }: { view: SavedViewSummary; buildHref: 
               Use defaults
             </ActionGhost>
           )}
-          <form action={deleteSavedViewAction.bind(null, view.id)}>
-            <input type="hidden" name="workspace" value={view.workspace} />
-            <button className={dangerButtonClass} type="submit">
-              Delete
-            </button>
-          </form>
+          {canManageSavedViews ? (
+            <form action={deleteSavedViewAction.bind(null, view.id)}>
+              <input type="hidden" name="workspace" value={view.workspace} />
+              <button className={dangerButtonClass} type="submit">
+                Delete
+              </button>
+            </form>
+          ) : null}
         </div>
       }
     >
@@ -304,35 +315,37 @@ function SavedViewRow({ view, buildHref }: { view: SavedViewSummary; buildHref: 
           </p>
         ) : null}
       </div>
-      <details>
-        <summary className={detailsSummaryClass}>Rename or update</summary>
-        <form action={updateSavedViewAction.bind(null, view.id)} className={stackClass}>
-          <input type="hidden" name="workspace" value={view.workspace} />
-          <input type="hidden" name="queryPayload" value={payloadJson} />
-          <label className={fieldClass}>
-            <span className={fieldLabelClass}>Name</span>
-            <input
-              className={textInputClass}
-              name="name"
-              defaultValue={view.name}
-              required
-              maxLength={MAX_SAVED_VIEW_NAME_LENGTH}
-              aria-label="Saved view name"
-            />
-          </label>
-          <label className={fieldClass}>
-            <span className={fieldLabelClass}>Description</span>
-            <input
-              className={textInputClass}
-              name="description"
-              defaultValue={view.description ?? ``}
-              maxLength={MAX_SAVED_VIEW_DESCRIPTION_LENGTH}
-              aria-label="Saved view description"
-            />
-          </label>
-          <ActionGhost type="submit">Save changes</ActionGhost>
-        </form>
-      </details>
+      {canManageSavedViews ? (
+        <details>
+          <summary className={detailsSummaryClass}>Rename or update</summary>
+          <form action={updateSavedViewAction.bind(null, view.id)} className={stackClass}>
+            <input type="hidden" name="workspace" value={view.workspace} />
+            <input type="hidden" name="queryPayload" value={payloadJson} />
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Name</span>
+              <input
+                className={textInputClass}
+                name="name"
+                defaultValue={view.name}
+                required
+                maxLength={MAX_SAVED_VIEW_NAME_LENGTH}
+                aria-label="Saved view name"
+              />
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Description</span>
+              <input
+                className={textInputClass}
+                name="description"
+                defaultValue={view.description ?? ``}
+                maxLength={MAX_SAVED_VIEW_DESCRIPTION_LENGTH}
+                aria-label="Saved view description"
+              />
+            </label>
+            <ActionGhost type="submit">Save changes</ActionGhost>
+          </form>
+        </details>
+      ) : null}
     </Panel>
   );
 }
@@ -342,11 +355,13 @@ function SavedViewsSection({
   currentPayload,
   buildHref,
   hasInvalidPayload,
+  canManageSavedViews,
 }: {
   views: SavedViewSummary[];
   currentPayload: VerificationQueueSavedViewPayload;
   buildHref: BuildHrefFn;
   hasInvalidPayload: boolean;
+  canManageSavedViews: boolean;
 }) {
   return (
     <Panel title="Saved views" description="Personal saved filters for the verification queue workspace.">
@@ -358,50 +373,58 @@ function SavedViewsSection({
       ) : null}
       <div className={stackClass}>
         {views.length === 0 ? (
-          <p className={mutedTextClass}>No saved views yet. Use the form below to save the current filters.</p>
+          <p className={mutedTextClass}>
+            {canManageSavedViews
+              ? `No saved views yet. Use the form below to save the current filters.`
+              : `Saved view management is not available for this admin identity.`}
+          </p>
         ) : (
-          views.map((view) => <SavedViewRow key={view.id} view={view} buildHref={buildHref} />)
+          views.map((view) => (
+            <SavedViewRow key={view.id} view={view} buildHref={buildHref} canManageSavedViews={canManageSavedViews} />
+          ))
         )}
       </div>
-      <article className={cn(`mt-4`, panelClass)}>
-        <h3>Save current view</h3>
-        <form action={createSavedViewAction} className={stackClass}>
-          <input type="hidden" name="workspace" value={SAVED_VIEW_WORKSPACE} />
-          <input type="hidden" name="queryPayload" value={JSON.stringify(currentPayload)} />
-          <label className={fieldClass}>
-            <span className={fieldLabelClass}>Name</span>
-            <input
-              className={textInputClass}
-              name="name"
-              required
-              maxLength={MAX_SAVED_VIEW_NAME_LENGTH}
-              placeholder="e.g. Pending DE individuals"
-              aria-label="New saved view name"
-            />
-          </label>
-          <label className={fieldClass}>
-            <span className={fieldLabelClass}>Description</span>
-            <input
-              className={textInputClass}
-              name="description"
-              maxLength={MAX_SAVED_VIEW_DESCRIPTION_LENGTH}
-              placeholder="Optional"
-              aria-label="New saved view description"
-            />
-          </label>
-          <p className={mutedTextClass}>
-            Note: filters <code>missingProfileData</code> and <code>missingDocuments</code> are saved but cannot be used
-            by alert evaluation (frontend-only filters).
-          </p>
-          <p className={monoMutedTextClass}>
-            status={currentPayload.status ?? `-`}, stripeIdentityStatus={currentPayload.stripeIdentityStatus ?? `-`},
-            country={currentPayload.country ?? `-`}, contractorKind={currentPayload.contractorKind ?? `-`},
-            missingProfileData={currentPayload.missingProfileData === true ? `true` : `false`}, missingDocuments=
-            {currentPayload.missingDocuments === true ? `true` : `false`}
-          </p>
-          <ActionPrimary type="submit">Save current view</ActionPrimary>
-        </form>
-      </article>
+      {canManageSavedViews ? (
+        <article className={cn(`mt-4`, panelClass)}>
+          <h3>Save current view</h3>
+          <form action={createSavedViewAction} className={stackClass}>
+            <input type="hidden" name="workspace" value={SAVED_VIEW_WORKSPACE} />
+            <input type="hidden" name="queryPayload" value={JSON.stringify(currentPayload)} />
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Name</span>
+              <input
+                className={textInputClass}
+                name="name"
+                required
+                maxLength={MAX_SAVED_VIEW_NAME_LENGTH}
+                placeholder="e.g. Pending DE individuals"
+                aria-label="New saved view name"
+              />
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Description</span>
+              <input
+                className={textInputClass}
+                name="description"
+                maxLength={MAX_SAVED_VIEW_DESCRIPTION_LENGTH}
+                placeholder="Optional"
+                aria-label="New saved view description"
+              />
+            </label>
+            <p className={mutedTextClass}>
+              Note: filters <code>missingProfileData</code> and <code>missingDocuments</code> are saved but cannot be
+              used by alert evaluation (frontend-only filters).
+            </p>
+            <p className={monoMutedTextClass}>
+              status={currentPayload.status ?? `-`}, stripeIdentityStatus={currentPayload.stripeIdentityStatus ?? `-`},
+              country={currentPayload.country ?? `-`}, contractorKind={currentPayload.contractorKind ?? `-`},
+              missingProfileData={currentPayload.missingProfileData === true ? `true` : `false`}, missingDocuments=
+              {currentPayload.missingDocuments === true ? `true` : `false`}
+            </p>
+            <ActionPrimary type="submit">Save current view</ActionPrimary>
+          </form>
+        </article>
+      ) : null}
     </Panel>
   );
 }
@@ -421,6 +444,8 @@ export default async function VerificationQueuePage({
   }>;
 }) {
   const params = await searchParams;
+  const identity = await getAdminIdentity();
+  const canManageSavedViews = identity?.capabilities.includes(`saved_views.manage`) ?? false;
   const page = params?.page ? Number(params.page) : 1;
   const requestedQuickstartId = parseQuickstartId(params?.quickstart);
   const resolvedQuickstart = requestedQuickstartId ? await getQuickstart(requestedQuickstartId) : null;
@@ -447,7 +472,7 @@ export default async function VerificationQueuePage({
       missingProfileData,
       missingDocuments,
     }),
-    getSavedViews({ workspace: SAVED_VIEW_WORKSPACE }),
+    canManageSavedViews ? getSavedViews({ workspace: SAVED_VIEW_WORKSPACE }) : Promise.resolve(null),
   ]);
 
   const totalPages = queue ? Math.max(1, Math.ceil(queue.total / queue.pageSize)) : 1;
@@ -518,6 +543,7 @@ export default async function VerificationQueuePage({
           currentPayload={currentPayload}
           buildHref={buildHref}
           hasInvalidPayload={hasInvalidPayload}
+          canManageSavedViews={canManageSavedViews}
         />
 
         <Panel>
