@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { type ReactElement } from 'react';
 
-import { cn } from '@/lib/cn';
+import { cn } from '@remoola/ui';
+
+import { ActionGhost } from '@/components/action-ghost';
 
 import { LayerLegendRow } from './layer-legend-row';
 import { SidebarSection } from './sidebar-section';
@@ -87,10 +89,7 @@ export function SidebarContents({
         </div>
       </div>
 
-      <nav
-        className={cn(`navList`, `min-h-0 flex-1 space-y-5 px-3 pb-5`)}
-        aria-label="Canonical MVP-2 shell navigation"
-      >
+      <nav className="min-h-0 flex-1 space-y-5 px-3 pb-5" aria-label="Canonical MVP-2 shell navigation">
         <SidebarSection
           title="Core shell"
           items={visibleCoreShellItems}
@@ -177,15 +176,9 @@ export function SidebarContents({
               </Link>
             ) : null}
             <form action="/logout" method="post">
-              <button
-                type="submit"
-                className={cn(
-                  `secondaryButton`,
-                  `inline-flex items-center rounded-input border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-white/85 hover:bg-white/[0.05]`,
-                )}
-              >
+              <ActionGhost type="submit" className="min-h-0 px-3 py-1.5 text-xs text-white/85">
                 Log out
-              </button>
+              </ActionGhost>
             </form>
           </div>
         </div>

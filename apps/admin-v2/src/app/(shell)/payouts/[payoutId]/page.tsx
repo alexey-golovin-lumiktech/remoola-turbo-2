@@ -1,7 +1,21 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { ActionGhost } from '../../../../components/action-ghost';
 import { AssignmentCard } from '../../../../components/assignment-card';
+import { Panel } from '../../../../components/panel';
+import { TinyPill } from '../../../../components/tiny-pill';
+import {
+  checkboxFieldClass,
+  checkboxInputClass,
+  dangerButtonClass,
+  fieldClass,
+  fieldLabelClass,
+  monoMutedTextClass,
+  mutedTextClass,
+  panelClass,
+  stackClass,
+  textAreaClass,
+} from '../../../../components/ui-classes';
 import { getAdminIdentity, getAdmins, getPayoutCase } from '../../../../lib/admin-api.server';
 import {
   claimPayoutAssignmentAction,
@@ -17,7 +31,7 @@ function formatDate(value: string | null | undefined): string {
 
 function renderMetadata(value: Record<string, unknown> | null | undefined) {
   if (!value || Object.keys(value).length === 0) {
-    return <p className="muted">No metadata.</p>;
+    return <p className={mutedTextClass}>No metadata.</p>;
   }
 
   return <pre className="mono">{JSON.stringify(value, null, 2)}</pre>;
@@ -64,206 +78,194 @@ export default async function PayoutCasePage({ params }: { params: Promise<{ pay
 
   return (
     <>
-      <section className="panel pageHeader">
-        <div>
-          <h1>Payout case</h1>
-          <p className="muted mono">{payoutCase.id}</p>
-          <div className="pillRow">
-            <span className="pill">{payoutCase.core.type}</span>
-            <span className="pill">{payoutCase.core.derivedStatus}</span>
-            <span className="pill">{payoutCase.core.currencyCode}</span>
-            <span className="pill">{payoutCase.highValue.eligibility}</span>
-            {payoutCase.slaBreachDetected ? <span className="pill">threshold breached</span> : null}
-            {payoutCase.payoutEscalation ? <span className="pill">escalated</span> : null}
+      <Panel
+        title="Payout case"
+        description={payoutCase.id}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <ActionGhost href="/payouts">Back to payouts</ActionGhost>
+            <ActionGhost href={`/ledger/${payoutCase.id}`}>Open ledger case</ActionGhost>
+            <ActionGhost href={`/consumers/${payoutCase.consumer.id}`}>Consumer case</ActionGhost>
+            {payoutCase.paymentRequest ? (
+              <ActionGhost href={`/payments/${payoutCase.paymentRequest.id}`}>Payment request</ActionGhost>
+            ) : null}
+            {payoutCase.destinationPaymentMethodSummary ? (
+              <ActionGhost href={`/payment-methods/${payoutCase.destinationPaymentMethodSummary.id}`}>
+                Destination method
+              </ActionGhost>
+            ) : null}
           </div>
+        }
+      >
+        <p className={monoMutedTextClass}>{payoutCase.id}</p>
+        <div className="pillRow">
+          <TinyPill>{payoutCase.core.type}</TinyPill>
+          <TinyPill>{payoutCase.core.derivedStatus}</TinyPill>
+          <TinyPill>{payoutCase.core.currencyCode}</TinyPill>
+          <TinyPill>{payoutCase.highValue.eligibility}</TinyPill>
+          {payoutCase.slaBreachDetected ? <TinyPill>threshold breached</TinyPill> : null}
+          {payoutCase.payoutEscalation ? <TinyPill>escalated</TinyPill> : null}
         </div>
-        <div className="actionsRow">
-          <Link className="secondaryButton" href="/payouts">
-            Back to payouts
-          </Link>
-          <Link className="secondaryButton" href={`/ledger/${payoutCase.id}`}>
-            Open ledger case
-          </Link>
-          <Link className="secondaryButton" href={`/consumers/${payoutCase.consumer.id}`}>
-            Consumer case
-          </Link>
-          {payoutCase.paymentRequest ? (
-            <Link className="secondaryButton" href={`/payments/${payoutCase.paymentRequest.id}`}>
-              Payment request
-            </Link>
-          ) : null}
-          {payoutCase.destinationPaymentMethodSummary ? (
-            <Link
-              className="secondaryButton"
-              href={`/payment-methods/${payoutCase.destinationPaymentMethodSummary.id}`}
-            >
-              Destination method
-            </Link>
-          ) : null}
-        </div>
-      </section>
+      </Panel>
 
       <section className="statsGrid">
-        <article className="panel">
+        <Panel>
           <h3>Payout truth</h3>
-          <p className="muted">
+          <p className={mutedTextClass}>
             Amount: {payoutCase.core.amount} {payoutCase.core.currencyCode}
           </p>
-          <p className="muted">Persisted: {payoutCase.core.persistedStatus}</p>
-          <p className="muted">Effective: {payoutCase.core.effectiveStatus}</p>
-          <p className="muted">
+          <p className={mutedTextClass}>Persisted: {payoutCase.core.persistedStatus}</p>
+          <p className={mutedTextClass}>Effective: {payoutCase.core.effectiveStatus}</p>
+          <p className={mutedTextClass}>
             Derived payout status follows the latest ledger outcome, not a standalone payout table.
           </p>
-        </article>
-        <article className="panel">
+        </Panel>
+        <Panel>
           <h3>Destination</h3>
           {payoutCase.destinationPaymentMethodSummary ? (
             <>
-              <p className="muted">{renderDestinationLabel(payoutCase.destinationPaymentMethodSummary)}</p>
-              <p className="muted">Linkage: {payoutCase.destinationLinkageSource}</p>
-              <p className="muted">Deleted: {formatDate(payoutCase.destinationPaymentMethodSummary.deletedAt)}</p>
+              <p className={mutedTextClass}>{renderDestinationLabel(payoutCase.destinationPaymentMethodSummary)}</p>
+              <p className={mutedTextClass}>Linkage: {payoutCase.destinationLinkageSource}</p>
+              <p className={mutedTextClass}>
+                Deleted: {formatDate(payoutCase.destinationPaymentMethodSummary.deletedAt)}
+              </p>
             </>
           ) : (
             <>
-              <p className="muted">Destination method unavailable.</p>
-              <p className="muted">No schema-backed payout destination linkage could be confirmed for this case.</p>
+              <p className={mutedTextClass}>Destination method unavailable.</p>
+              <p className={mutedTextClass}>
+                No schema-backed payout destination linkage could be confirmed for this case.
+              </p>
             </>
           )}
-        </article>
-        <article className="panel">
+        </Panel>
+        <Panel>
           <h3>Threshold tuple</h3>
-          <p className="muted">Threshold: {payoutCase.stuckPolicy.thresholdHours}h</p>
-          <p className="muted">Breach condition: {payoutCase.stuckPolicy.breachCondition}</p>
-          <p className="muted">Expected operator reaction: {payoutCase.stuckPolicy.expectedOperatorReaction}</p>
-        </article>
-        <article className="panel">
+          <p className={mutedTextClass}>Threshold: {payoutCase.stuckPolicy.thresholdHours}h</p>
+          <p className={mutedTextClass}>Breach condition: {payoutCase.stuckPolicy.breachCondition}</p>
+          <p className={mutedTextClass}>
+            Expected operator reaction: {payoutCase.stuckPolicy.expectedOperatorReaction}
+          </p>
+        </Panel>
+        <Panel>
           <h3>High-value policy</h3>
-          <p className="muted">Eligibility: {payoutCase.highValue.eligibility}</p>
-          <p className="muted">Threshold rule: {highValueThresholdLabel}</p>
-          <p className="muted">{payoutCase.highValuePolicy.wording}</p>
-        </article>
+          <p className={mutedTextClass}>Eligibility: {payoutCase.highValue.eligibility}</p>
+          <p className={mutedTextClass}>Threshold rule: {highValueThresholdLabel}</p>
+          <p className={mutedTextClass}>{payoutCase.highValuePolicy.wording}</p>
+        </Panel>
       </section>
 
       <section className="detailGrid">
-        <article className="panel">
-          <h2>Core links</h2>
-          <div className="formStack">
-            <p className="muted">Ledger id: {payoutCase.core.ledgerId}</p>
-            <p className="muted">External reference: {payoutCase.core.externalReference ?? `-`}</p>
-            <p className="muted">Outcome age: {payoutCase.outcomeAgeHours.toFixed(1)}h</p>
-            <p className="muted">Updated: {formatDate(payoutCase.core.updatedAt)}</p>
-            <p className="muted">Version: {payoutCase.version}</p>
+        <Panel title="Core links">
+          <div className={stackClass}>
+            <p className={mutedTextClass}>Ledger id: {payoutCase.core.ledgerId}</p>
+            <p className={mutedTextClass}>External reference: {payoutCase.core.externalReference ?? `-`}</p>
+            <p className={mutedTextClass}>Outcome age: {payoutCase.outcomeAgeHours.toFixed(1)}h</p>
+            <p className={mutedTextClass}>Updated: {formatDate(payoutCase.core.updatedAt)}</p>
+            <p className={mutedTextClass}>Version: {payoutCase.version}</p>
           </div>
           {payoutCase.paymentRequest ? (
-            <div className="formStack">
-              <p className="muted">Linked payment request: {payoutCase.paymentRequest.id}</p>
-              <p className="muted">
+            <div className={stackClass}>
+              <p className={mutedTextClass}>Linked payment request: {payoutCase.paymentRequest.id}</p>
+              <p className={mutedTextClass}>
                 {payoutCase.paymentRequest.amount} {payoutCase.paymentRequest.currencyCode} ·{` `}
                 {payoutCase.paymentRequest.status}
               </p>
             </div>
           ) : (
-            <p className="muted">No payment request is linked to this payout.</p>
+            <p className={mutedTextClass}>No payment request is linked to this payout.</p>
           )}
-        </article>
-        <article className="panel">
-          <h2>Metadata</h2>
-          {renderMetadata(payoutCase.metadata)}
-        </article>
+        </Panel>
+        <Panel title="Metadata">{renderMetadata(payoutCase.metadata)}</Panel>
       </section>
 
       {canManageEscalation || payoutCase.payoutEscalation ? (
         <section className="detailGrid">
           {canManageEscalation ? (
-            <article className="panel">
-              <h2>Payout escalation</h2>
+            <Panel title="Payout escalation">
               {canSubmitEscalation ? (
-                <form action={escalatePayoutAction.bind(null, payoutCase.id)} className="formStack">
+                <form action={escalatePayoutAction.bind(null, payoutCase.id)} className={stackClass}>
                   <input type="hidden" name="version" value={String(payoutCase.version)} />
                   <input type="hidden" name="consumerId" value={payoutCase.consumer.id} />
                   <input type="hidden" name="confirmed" value="false" />
-                  <p className="muted">
+                  <p className={mutedTextClass}>
                     Creates one durable escalation marker only. It does not mutate payout execution state, ledger
                     outcomes or destination linkage.
                   </p>
-                  <label className="field">
-                    <span>Reason</span>
+                  <label className={fieldClass}>
+                    <span className={fieldLabelClass}>Reason</span>
                     <textarea
+                      className={textAreaClass}
                       name="reason"
                       maxLength={500}
                       placeholder="Optional operational context for the audit trail."
                     />
                   </label>
-                  <label className="field">
-                    <span>Confirmation</span>
-                    <input type="checkbox" name="confirmed" value="true" required />
+                  <label className={checkboxFieldClass}>
+                    <input className={checkboxInputClass} type="checkbox" name="confirmed" value="true" required />
+                    <span className={fieldLabelClass}>Confirmation</span>
                   </label>
-                  <button className="secondaryButton" type="submit" name="confirmedSubmit" value="true">
+                  <button className={dangerButtonClass} type="submit" name="confirmedSubmit" value="true">
                     Escalate payout
                   </button>
                 </form>
               ) : (
-                <div className="formStack">
-                  <p className="muted">
+                <div className={stackClass}>
+                  <p className={mutedTextClass}>
                     {payoutCase.actionControls.escalateBlockedReason ??
                       `Payout escalation is not available for this case.`}
                   </p>
                 </div>
               )}
-            </article>
+            </Panel>
           ) : null}
 
           {payoutCase.payoutEscalation ? (
-            <article className="panel">
-              <h2>Active escalation marker</h2>
-              <div className="formStack">
-                <p className="muted">
+            <Panel title="Active escalation marker">
+              <div className={stackClass}>
+                <p className={mutedTextClass}>
                   Escalated by:{` `}
                   {payoutCase.payoutEscalation.escalatedBy.email ?? payoutCase.payoutEscalation.escalatedBy.id}
                 </p>
-                <p className="muted">Created: {formatDate(payoutCase.payoutEscalation.createdAt)}</p>
-                <p className="muted">Confirmed: {payoutCase.payoutEscalation.confirmed ? `Yes` : `No`}</p>
-                <p className="muted">Reason: {payoutCase.payoutEscalation.reason ?? `-`}</p>
+                <p className={mutedTextClass}>Created: {formatDate(payoutCase.payoutEscalation.createdAt)}</p>
+                <p className={mutedTextClass}>Confirmed: {payoutCase.payoutEscalation.confirmed ? `Yes` : `No`}</p>
+                <p className={mutedTextClass}>Reason: {payoutCase.payoutEscalation.reason ?? `-`}</p>
               </div>
-            </article>
+            </Panel>
           ) : null}
         </section>
       ) : null}
 
       <section className="detailGrid">
-        <article className="panel">
-          <h2>Outcome timeline</h2>
-          <div className="formStack">
-            {payoutCase.outcomes.length === 0 ? <p className="muted">No outcomes.</p> : null}
+        <Panel title="Outcome timeline">
+          <div className={stackClass}>
+            {payoutCase.outcomes.length === 0 ? <p className={mutedTextClass}>No outcomes.</p> : null}
             {payoutCase.outcomes.map((outcome) => (
-              <div className="panel" key={outcome.id}>
+              <div className={panelClass} key={outcome.id}>
                 <strong>{outcome.status}</strong>
-                <p className="muted">Source: {outcome.source ?? `-`}</p>
-                <p className="muted">External id: {outcome.externalId ?? `-`}</p>
-                <p className="muted">{formatDate(outcome.createdAt)}</p>
+                <p className={mutedTextClass}>Source: {outcome.source ?? `-`}</p>
+                <p className={mutedTextClass}>External id: {outcome.externalId ?? `-`}</p>
+                <p className={mutedTextClass}>{formatDate(outcome.createdAt)}</p>
               </div>
             ))}
           </div>
-        </article>
-        <article className="panel">
-          <h2>Related ledger chain</h2>
-          <div className="formStack">
+        </Panel>
+        <Panel title="Related ledger chain">
+          <div className={stackClass}>
             {payoutCase.relatedEntries.map((entry) => (
-              <div className="panel" key={entry.id}>
+              <div className={panelClass} key={entry.id}>
                 <strong>{entry.type}</strong>
-                <p className="muted">
+                <p className={mutedTextClass}>
                   {entry.amount} {entry.currencyCode}
                 </p>
-                <p className="muted">Effective status: {entry.effectiveStatus}</p>
+                <p className={mutedTextClass}>Effective status: {entry.effectiveStatus}</p>
                 <div className="actionsRow">
-                  <Link className="secondaryButton" href={`/ledger/${entry.id}`}>
-                    Open entry
-                  </Link>
+                  <ActionGhost href={`/ledger/${entry.id}`}>Open entry</ActionGhost>
                 </div>
               </div>
             ))}
           </div>
-        </article>
+        </Panel>
       </section>
 
       <AssignmentCard
@@ -279,19 +281,18 @@ export default async function PayoutCasePage({ params }: { params: Promise<{ pay
         copy={{ claimReasonPlaceholder: `Why are you claiming this payout?` }}
       />
 
-      <section className="panel">
-        <h2>Audit context</h2>
-        <div className="formStack">
-          {payoutCase.auditContext.length === 0 ? <p className="muted">No related admin actions.</p> : null}
+      <Panel title="Audit context">
+        <div className={stackClass}>
+          {payoutCase.auditContext.length === 0 ? <p className={mutedTextClass}>No related admin actions.</p> : null}
           {payoutCase.auditContext.map((item) => (
-            <div className="panel" key={item.id}>
+            <div className={panelClass} key={item.id}>
               <strong>{item.action}</strong>
-              <p className="muted">{item.adminEmail ?? `Unknown admin`}</p>
-              <p className="muted">{formatDate(item.createdAt)}</p>
+              <p className={mutedTextClass}>{item.adminEmail ?? `Unknown admin`}</p>
+              <p className={mutedTextClass}>{formatDate(item.createdAt)}</p>
             </div>
           ))}
         </div>
-      </section>
+      </Panel>
     </>
   );
 }

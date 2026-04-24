@@ -1,9 +1,19 @@
 import Link from 'next/link';
 
+import { ActionGhost } from '../../../components/action-ghost';
 import { DenseTable } from '../../../components/dense-table';
 import { MobileQueueCard } from '../../../components/mobile-queue-card';
+import { Panel } from '../../../components/panel';
 import { StatusPill } from '../../../components/status-pill';
 import { TabletRow } from '../../../components/tablet-row';
+import {
+  buttonRowClass,
+  checkboxFieldClass,
+  checkboxInputClass,
+  emptyPanelClass,
+  mutedTextClass,
+  textInputClass,
+} from '../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../components/workspace-layout';
 import { getPayments, getQuickstart, type PaymentsListResponse } from '../../../lib/admin-api.server';
 import { parseQuickstartId } from '../../../lib/quickstart-investigations';
@@ -38,21 +48,21 @@ function PaymentStatus({ item }: { item: PaymentItem }) {
       <div>
         <StatusPill status={item.effectiveStatus} />
       </div>
-      <div className="muted">Persisted: {item.persistedStatus}</div>
-      <div className="muted">{item.staleWarning ? `Persisted status is stale` : `Exact enough for list`}</div>
+      <div className={mutedTextClass}>Persisted: {item.persistedStatus}</div>
+      <div className={mutedTextClass}>{item.staleWarning ? `Persisted status is stale` : `Exact enough for list`}</div>
     </>
   );
 }
 
 function PaymentAssignedTo({ item }: { item: PaymentItem }) {
   if (!item.assignedTo) {
-    return <span className="muted">—</span>;
+    return <span className={mutedTextClass}>—</span>;
   }
 
   return (
     <>
       <span>{item.assignedTo.name ?? item.assignedTo.email ?? item.assignedTo.id}</span>
-      {item.assignedTo.email ? <span className="muted"> {item.assignedTo.email}</span> : null}
+      {item.assignedTo.email ? <span className={mutedTextClass}> {item.assignedTo.email}</span> : null}
     </>
   );
 }
@@ -61,7 +71,7 @@ function PaymentsMobileCards({ items }: { items: PaymentItem[] }) {
   if (items.length === 0) {
     return (
       <div className="readSurface md:hidden" data-view="mobile">
-        <div className="panel muted">No payment requests found for the current filters.</div>
+        <div className={emptyPanelClass}>No payment requests found for the current filters.</div>
       </div>
     );
   }
@@ -84,10 +94,10 @@ function PaymentsMobileCards({ items }: { items: PaymentItem[] }) {
           >
             <PaymentParticipants item={item} />
             <PaymentStatus item={item} />
-            <div className="muted">Attachments: {item.attachmentsCount}</div>
-            <div className="muted">Due: {formatDate(item.dueDate)}</div>
-            <div className="muted">Updated: {formatDate(item.updatedAt)}</div>
-            <div className="muted">
+            <div className={mutedTextClass}>Attachments: {item.attachmentsCount}</div>
+            <div className={mutedTextClass}>Due: {formatDate(item.dueDate)}</div>
+            <div className={mutedTextClass}>Updated: {formatDate(item.updatedAt)}</div>
+            <div className={mutedTextClass}>
               Assigned to: <PaymentAssignedTo item={item} />
             </div>
           </MobileQueueCard>
@@ -101,7 +111,7 @@ function PaymentsTabletRows({ items }: { items: PaymentItem[] }) {
   if (items.length === 0) {
     return (
       <div className="readSurface hidden md:block xl:hidden" data-view="tablet">
-        <div className="panel muted">No payment requests found for the current filters.</div>
+        <div className={emptyPanelClass}>No payment requests found for the current filters.</div>
       </div>
     );
   }
@@ -117,7 +127,7 @@ function PaymentsTabletRows({ items }: { items: PaymentItem[] }) {
                 <Link href={`/payments/${item.id}`}>
                   <strong>{item.id}</strong>
                 </Link>
-                <div className="muted">{item.paymentRail ?? `No rail`}</div>
+                <div className={mutedTextClass}>{item.paymentRail ?? `No rail`}</div>
               </>
             }
             cells={[
@@ -127,12 +137,12 @@ function PaymentsTabletRows({ items }: { items: PaymentItem[] }) {
                 <div>
                   {item.amount} {item.currencyCode}
                 </div>
-                <div className="muted">Attachments: {item.attachmentsCount}</div>
+                <div className={mutedTextClass}>Attachments: {item.attachmentsCount}</div>
               </div>,
               <div key="timing-assigned">
-                <div className="muted">Due: {formatDate(item.dueDate)}</div>
-                <div className="muted">Updated: {formatDate(item.updatedAt)}</div>
-                <div className="muted">
+                <div className={mutedTextClass}>Due: {formatDate(item.dueDate)}</div>
+                <div className={mutedTextClass}>Updated: {formatDate(item.updatedAt)}</div>
+                <div className={mutedTextClass}>
                   Assigned: <PaymentAssignedTo item={item} />
                 </div>
               </div>,
@@ -159,8 +169,8 @@ function PaymentsDesktopTable({ items }: { items: PaymentItem[] }) {
                   <Link href={`/payments/${item.id}`}>
                     <strong>{item.id}</strong>
                   </Link>
-                  <div className="muted">{item.paymentRail ?? `No rail`}</div>
-                  <div className="muted">Attachments: {item.attachmentsCount}</div>
+                  <div className={mutedTextClass}>{item.paymentRail ?? `No rail`}</div>
+                  <div className={mutedTextClass}>Attachments: {item.attachmentsCount}</div>
                 </td>
                 <td>
                   <PaymentParticipants item={item} />
@@ -169,7 +179,7 @@ function PaymentsDesktopTable({ items }: { items: PaymentItem[] }) {
                   <div>
                     <StatusPill status={item.effectiveStatus} />
                   </div>
-                  <div className="muted">Persisted: {item.persistedStatus}</div>
+                  <div className={mutedTextClass}>Persisted: {item.persistedStatus}</div>
                 </td>
                 <td>
                   <PaymentAssignedTo item={item} />
@@ -179,13 +189,13 @@ function PaymentsDesktopTable({ items }: { items: PaymentItem[] }) {
                 </td>
                 <td>
                   <div>{item.dataFreshnessClass}</div>
-                  <div className="muted">
+                  <div className={mutedTextClass}>
                     {item.staleWarning ? `Persisted status is stale` : `Exact enough for list`}
                   </div>
                 </td>
                 <td>
-                  <div className="muted">Due: {formatDate(item.dueDate)}</div>
-                  <div className="muted">Updated: {formatDate(item.updatedAt)}</div>
+                  <div className={mutedTextClass}>Due: {formatDate(item.dueDate)}</div>
+                  <div className={mutedTextClass}>Updated: {formatDate(item.updatedAt)}</div>
                 </td>
               </tr>
             ))}
@@ -268,75 +278,102 @@ export default async function PaymentsPage({
   return (
     <WorkspaceLayout workspace="payments">
       <>
-        <section className="panel pageHeader">
-          <div>
-            <h1>Payments</h1>
-            <p className="muted">MVP-1c read-only payment request investigation with finance-safe cross-links.</p>
-          </div>
-          <div className="actionsRow">
-            <Link className="secondaryButton" href="/payments/operations">
-              Open operations queue
-            </Link>
-            <form className="actionsRow" method="get">
-              <input name="q" defaultValue={q} placeholder="Search by id, email or description" />
-              <input name="status" defaultValue={status} placeholder="status" />
-              <input name="paymentRail" defaultValue={paymentRail} placeholder="rail" />
-              <input name="currencyCode" defaultValue={currencyCode} placeholder="currency" />
-              <input name="amountMin" defaultValue={amountMin} placeholder="min amount" inputMode="decimal" />
-              <input name="amountMax" defaultValue={amountMax} placeholder="max amount" inputMode="decimal" />
-              <input name="dueDateFrom" type="date" defaultValue={dueDateFrom} aria-label="Due date from" />
-              <input name="dueDateTo" type="date" defaultValue={dueDateTo} aria-label="Due date to" />
-              <input name="createdFrom" type="date" defaultValue={createdFrom} aria-label="Created from" />
-              <input name="createdTo" type="date" defaultValue={createdTo} aria-label="Created to" />
-              <label className="muted">
-                <input name="overdue" type="checkbox" value="true" defaultChecked={overdue} /> Overdue only
-              </label>
-              <button className="secondaryButton" type="submit">
-                Apply
-              </button>
-              <Link className="secondaryButton" href="/payments">
-                Reset
-              </Link>
-            </form>
-          </div>
-        </section>
+        <Panel
+          title="Payments"
+          description="MVP-1c read-only payment request investigation with finance-safe cross-links."
+          actions={<ActionGhost href="/payments/operations">Open operations queue</ActionGhost>}
+        >
+          <form className={buttonRowClass} method="get">
+            <input
+              className={textInputClass}
+              name="q"
+              defaultValue={q}
+              placeholder="Search by id, email or description"
+            />
+            <input className={textInputClass} name="status" defaultValue={status} placeholder="status" />
+            <input className={textInputClass} name="paymentRail" defaultValue={paymentRail} placeholder="rail" />
+            <input className={textInputClass} name="currencyCode" defaultValue={currencyCode} placeholder="currency" />
+            <input
+              className={textInputClass}
+              name="amountMin"
+              defaultValue={amountMin}
+              placeholder="min amount"
+              inputMode="decimal"
+            />
+            <input
+              className={textInputClass}
+              name="amountMax"
+              defaultValue={amountMax}
+              placeholder="max amount"
+              inputMode="decimal"
+            />
+            <input
+              className={textInputClass}
+              name="dueDateFrom"
+              type="date"
+              defaultValue={dueDateFrom}
+              aria-label="Due date from"
+            />
+            <input
+              className={textInputClass}
+              name="dueDateTo"
+              type="date"
+              defaultValue={dueDateTo}
+              aria-label="Due date to"
+            />
+            <input
+              className={textInputClass}
+              name="createdFrom"
+              type="date"
+              defaultValue={createdFrom}
+              aria-label="Created from"
+            />
+            <input
+              className={textInputClass}
+              name="createdTo"
+              type="date"
+              defaultValue={createdTo}
+              aria-label="Created to"
+            />
+            <label className={checkboxFieldClass}>
+              <input
+                className={checkboxInputClass}
+                name="overdue"
+                type="checkbox"
+                value="true"
+                defaultChecked={overdue}
+              />
+              {` `}
+              Overdue only
+            </label>
+            <ActionGhost type="submit">Apply</ActionGhost>
+            <ActionGhost href="/payments">Reset</ActionGhost>
+          </form>
+        </Panel>
 
         {appliedQuickstart ? (
-          <section className="panel">
-            <div className="pageHeader">
-              <div>
-                <h2>{appliedQuickstart.label}</h2>
-                <p className="muted">{appliedQuickstart.description}</p>
-              </div>
-              <Link className="secondaryButton" href="/payments">
-                Remove quickstart
-              </Link>
-            </div>
-          </section>
+          <Panel
+            title={appliedQuickstart.label}
+            description={appliedQuickstart.description}
+            actions={<ActionGhost href="/payments">Remove quickstart</ActionGhost>}
+          />
         ) : params?.quickstart ? (
-          <section className="panel">
-            <p className="muted">The requested quickstart could not be resolved for the payments queue.</p>
-          </section>
+          <Panel>
+            <p className={mutedTextClass}>The requested quickstart could not be resolved for the payments queue.</p>
+          </Panel>
         ) : null}
 
-        <section className="panel">
-          <div className="pageHeader">
-            <div>
-              <h2>Payment request queue</h2>
-              <p className="muted">
-                {items.length} rows in this window · cursor {cursor ? `active` : `start`}
-              </p>
-            </div>
-            {data?.pageInfo.nextCursor ? (
-              <Link className="secondaryButton" href={nextHref(data.pageInfo.nextCursor)}>
-                Next
-              </Link>
-            ) : null}
-          </div>
+        <Panel
+          title="Payment request queue"
+          description={`${items.length} rows in this window · cursor ${cursor ? `active` : `start`}`}
+          actions={
+            data?.pageInfo.nextCursor ? <ActionGhost href={nextHref(data.pageInfo.nextCursor)}>Next</ActionGhost> : null
+          }
+        >
           <PaymentsMobileCards items={items} />
           <PaymentsTabletRows items={items} />
           <PaymentsDesktopTable items={items} />
-        </section>
+        </Panel>
       </>
     </WorkspaceLayout>
   );

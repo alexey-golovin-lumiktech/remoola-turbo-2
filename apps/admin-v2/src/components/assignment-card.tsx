@@ -1,3 +1,19 @@
+import { ActionGhost } from './action-ghost';
+import { ActionPrimary } from './action-primary';
+import { Panel } from './panel';
+import {
+  checkboxFieldClass,
+  checkboxInputClass,
+  dangerButtonClass,
+  detailsSummaryClass,
+  fieldClass,
+  fieldLabelClass,
+  mutedTextClass,
+  panelClass,
+  stackClass,
+  textAreaClass,
+  textInputClass,
+} from './ui-classes';
 import {
   type AdminRef,
   type AdminsListResponse,
@@ -56,62 +72,57 @@ export function AssignmentCard({
   const claimPlaceholder = copy?.claimReasonPlaceholder ?? `Why are you claiming this?`;
 
   return (
-    <section className="panel" aria-label="Assignment">
-      <div className="pageHeader">
-        <div>
-          <h2>Assignment</h2>
-          {currentAssignment ? (
-            <>
-              <p>
-                Currently assigned to: <strong>{describeAdmin(currentAssignment.assignedTo)}</strong>
-                {currentAssignment.assignedTo.email ? (
-                  <span className="muted"> · {currentAssignment.assignedTo.email}</span>
-                ) : null}
-              </p>
-              <p className="muted">Since: {formatDate(currentAssignment.assignedAt)}</p>
-              {currentAssignment.reason ? (
-                <p className="muted">Reason: &ldquo;{currentAssignment.reason}&rdquo;</p>
-              ) : null}
-              {currentAssignment.expiresAt ? (
-                <p className="muted">Expires: {formatDate(currentAssignment.expiresAt)}</p>
-              ) : null}
-            </>
-          ) : (
-            <p className="muted">Unassigned</p>
-          )}
-        </div>
-      </div>
-      <div className="actionsRow">
+    <Panel title="Assignment">
+      {currentAssignment ? (
+        <>
+          <p>
+            Currently assigned to: <strong>{describeAdmin(currentAssignment.assignedTo)}</strong>
+            {currentAssignment.assignedTo.email ? (
+              <span className={mutedTextClass}> · {currentAssignment.assignedTo.email}</span>
+            ) : null}
+          </p>
+          <p className={mutedTextClass}>Since: {formatDate(currentAssignment.assignedAt)}</p>
+          {currentAssignment.reason ? (
+            <p className={mutedTextClass}>Reason: &ldquo;{currentAssignment.reason}&rdquo;</p>
+          ) : null}
+          {currentAssignment.expiresAt ? (
+            <p className={mutedTextClass}>Expires: {formatDate(currentAssignment.expiresAt)}</p>
+          ) : null}
+        </>
+      ) : (
+        <p className={mutedTextClass}>Unassigned</p>
+      )}
+      <div className="flex flex-wrap gap-4">
         {!currentAssignment ? (
-          <form action={actions.claim.bind(null, resourceId)} className="formStack">
-            <label className="field">
-              <span>Reason (optional)</span>
-              <textarea name="reason" placeholder={claimPlaceholder} maxLength={500} />
+          <form action={actions.claim.bind(null, resourceId)} className={stackClass}>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Reason (optional)</span>
+              <textarea className={textAreaClass} name="reason" placeholder={claimPlaceholder} maxLength={500} />
             </label>
-            <button className="primaryButton" type="submit" disabled={!capabilities.canClaim}>
+            <ActionPrimary type="submit" disabled={!capabilities.canClaim}>
               Claim
-            </button>
+            </ActionPrimary>
           </form>
         ) : null}
         {currentAssignment ? (
-          <form action={actions.release.bind(null, resourceId)} className="formStack">
+          <form action={actions.release.bind(null, resourceId)} className={stackClass}>
             <input type="hidden" name="assignmentId" value={currentAssignment.id} />
-            <label className="field">
-              <span>Reason (optional)</span>
-              <textarea name="reason" placeholder="Why are you releasing?" maxLength={500} />
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Reason (optional)</span>
+              <textarea className={textAreaClass} name="reason" placeholder="Why are you releasing?" maxLength={500} />
             </label>
-            <button className="secondaryButton" type="submit" disabled={!capabilities.canRelease}>
+            <ActionGhost type="submit" disabled={!capabilities.canRelease}>
               Release
-            </button>
+            </ActionGhost>
           </form>
         ) : null}
         {capabilities.canReassign && currentAssignment ? (
-          <form action={actions.reassign.bind(null, resourceId)} className="formStack">
+          <form action={actions.reassign.bind(null, resourceId)} className={stackClass}>
             <input type="hidden" name="assignmentId" value={currentAssignment.id} />
             <input type="hidden" name="confirmed" value="false" />
-            <label className="field">
-              <span>New assignee</span>
-              <select name="newAssigneeId" required defaultValue="">
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>New assignee</span>
+              <select className={textInputClass} name="newAssigneeId" required defaultValue="">
                 <option value="" disabled>
                   Select an admin
                 </option>
@@ -122,45 +133,52 @@ export function AssignmentCard({
                 ))}
               </select>
             </label>
-            <label className="field">
-              <span>Reason (required, min 10 chars)</span>
-              <textarea name="reason" required minLength={10} maxLength={500} placeholder="Reason for reassignment" />
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Reason (required, min 10 chars)</span>
+              <textarea
+                className={textAreaClass}
+                name="reason"
+                required
+                minLength={10}
+                maxLength={500}
+                placeholder="Reason for reassignment"
+              />
             </label>
-            <label className="field">
-              <span>Confirmation</span>
-              <input type="checkbox" name="confirmed" value="true" required />
+            <label className={checkboxFieldClass}>
+              <input className={checkboxInputClass} type="checkbox" name="confirmed" value="true" required />
+              <span className={fieldLabelClass}>Confirmation</span>
             </label>
-            <button className="dangerButton" type="submit" name="confirmedSubmit" value="true">
+            <button className={dangerButtonClass} type="submit" name="confirmedSubmit" value="true">
               Reassign
             </button>
           </form>
         ) : null}
       </div>
       <details>
-        <summary>Assignment history ({history.length})</summary>
+        <summary className={detailsSummaryClass}>Assignment history ({history.length})</summary>
         {history.length === 0 ? (
-          <p className="muted">No previous assignments.</p>
+          <p className={mutedTextClass}>No previous assignments.</p>
         ) : (
-          <ul className="formStack">
+          <ul className={stackClass}>
             {history.map((entry) => (
-              <li className="panel" key={entry.id}>
+              <li className={panelClass} key={entry.id}>
                 <p>
                   <strong>{describeAdmin(entry.assignedTo)}</strong>
-                  <span className="muted"> · claimed {formatDate(entry.assignedAt)}</span>
+                  <span className={mutedTextClass}> · claimed {formatDate(entry.assignedAt)}</span>
                 </p>
                 {entry.releasedAt ? (
-                  <p className="muted">
+                  <p className={mutedTextClass}>
                     Released {formatDate(entry.releasedAt)} by {describeAdmin(entry.releasedBy)}
                   </p>
                 ) : (
-                  <p className="muted">Still active</p>
+                  <p className={mutedTextClass}>Still active</p>
                 )}
-                {entry.reason ? <p className="muted">Reason: {entry.reason}</p> : null}
+                {entry.reason ? <p className={mutedTextClass}>Reason: {entry.reason}</p> : null}
               </li>
             ))}
           </ul>
         )}
       </details>
-    </section>
+    </Panel>
   );
 }

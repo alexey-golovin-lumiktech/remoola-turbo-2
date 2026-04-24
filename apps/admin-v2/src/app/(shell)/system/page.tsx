@@ -1,5 +1,6 @@
-import Link from 'next/link';
-
+import { ActionGhost } from '../../../components/action-ghost';
+import { Panel } from '../../../components/panel';
+import { mutedTextClass } from '../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../components/workspace-layout';
 import { getSystemSummary, type SystemSummaryCard } from '../../../lib/admin-api.server';
 
@@ -26,42 +27,38 @@ export default async function SystemPage() {
   return (
     <WorkspaceLayout workspace="system">
       <>
-        <section className="panel pageHeader">
-          <div>
-            <h1>System</h1>
-            <p className="muted">
-              Read-only maturity surface for cross-domain product and background health, with drilldown into existing
-              operator workspaces.
+        <Panel
+          title="System"
+          description="Read-only maturity surface for cross-domain product and background health, with drilldown into existing operator workspaces."
+          actions={
+            <p className={mutedTextClass}>
+              Computed: {summary?.computedAt ? new Date(summary.computedAt).toLocaleString() : `-`}
             </p>
-          </div>
-          <p className="muted">Computed: {summary?.computedAt ? new Date(summary.computedAt).toLocaleString() : `-`}</p>
-        </section>
+          }
+        />
 
         <section className="statsGrid">
           {cards.length === 0 ? (
-            <article className="panel">
-              <h2>Summary unavailable</h2>
-              <p className="muted">
+            <Panel title="Summary unavailable">
+              <p className={mutedTextClass}>
                 System summary is not currently available from the read-only backend contract. Use existing domain
                 workspaces for direct investigation.
               </p>
-            </article>
+            </Panel>
           ) : null}
 
           {cards.map((card) => (
-            <article key={card.label} className="panel">
-              <div className="pageHeader">
-                <div>
-                  <h2>{card.label}</h2>
-                  <p className="muted">Status: {getStatusLabel(card.status)}</p>
-                </div>
-                {card.primaryAction ? (
-                  <Link className="secondaryButton" href={card.primaryAction.href}>
-                    {card.primaryAction.label}
-                  </Link>
-                ) : null}
-              </div>
-              <p className="muted">{card.explanation}</p>
+            <Panel
+              key={card.label}
+              title={card.label}
+              description={`Status: ${getStatusLabel(card.status)}`}
+              actions={
+                card.primaryAction ? (
+                  <ActionGhost href={card.primaryAction.href}>{card.primaryAction.label}</ActionGhost>
+                ) : null
+              }
+            >
+              <p className={mutedTextClass}>{card.explanation}</p>
               <ul>
                 {card.facts.map((fact) => (
                   <li key={`${card.label}-${fact.label}`}>
@@ -70,8 +67,8 @@ export default async function SystemPage() {
                   </li>
                 ))}
               </ul>
-              {card.escalationHint ? <p className="muted">Escalation: {card.escalationHint}</p> : null}
-            </article>
+              {card.escalationHint ? <p className={mutedTextClass}>Escalation: {card.escalationHint}</p> : null}
+            </Panel>
           ))}
         </section>
       </>

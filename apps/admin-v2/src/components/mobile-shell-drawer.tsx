@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState, type ReactElement, type ReactNode } from 'react';
 
-import { cn } from '@/lib/cn';
+import { cn } from '@remoola/ui';
 
 type MobileShellDrawerProps = {
   children: ReactNode;
@@ -130,7 +130,7 @@ export function MobileShellDrawer({ children, triggerLabel = `Workspaces` }: Mob
 
   return (
     <div className="md:hidden">
-      <div className="mobileShellTriggerBar flex items-center gap-3 border-b border-border bg-bg/85 px-4 py-3 backdrop-blur-md">
+      <div className="sticky top-0 z-[35] flex items-center gap-3 border-b border-border bg-bg/85 px-4 py-3 pt-[calc(var(--space-3)+env(safe-area-inset-top,0px))] backdrop-blur-md">
         <button
           ref={triggerRef}
           type="button"
@@ -166,7 +166,7 @@ export function MobileShellDrawer({ children, triggerLabel = `Workspaces` }: Mob
         aria-hidden={!open}
         aria-labelledby={titleId}
         className={cn(
-          `mobileShellDrawer fixed inset-y-0 left-0 z-50 w-[88vw] max-w-[360px] overflow-y-auto border-r border-border bg-bg shadow-2xl transition-transform duration-200 ease-out`,
+          `fixed inset-y-0 left-0 z-50 w-[88vw] max-w-[360px] overflow-y-auto border-r border-border bg-bg pt-[env(safe-area-inset-top,0px)] shadow-2xl transition-transform duration-200 ease-out`,
           open ? `translate-x-0` : `-translate-x-full`,
         )}
         tabIndex={-1}
@@ -175,7 +175,7 @@ export function MobileShellDrawer({ children, triggerLabel = `Workspaces` }: Mob
           if (target.closest(`a`)) setOpen(false);
         }}
       >
-        <div className="mobileShellDrawerHeader sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-bg/95 px-4 py-3 backdrop-blur-md">
+        <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-bg/95 px-4 py-3 backdrop-blur-md">
           <div id={titleId} className="text-sm font-medium text-white/90">
             Workspace navigation
           </div>

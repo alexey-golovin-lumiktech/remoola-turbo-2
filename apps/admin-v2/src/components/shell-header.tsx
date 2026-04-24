@@ -2,11 +2,13 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { type ReactElement } from 'react';
 
+import { cn } from '@remoola/ui';
+
 import { ActionGhost } from '@/components/action-ghost';
 import { ActionPrimary } from '@/components/action-primary';
-import { cn } from '@/lib/cn';
 
 import { NavIcon } from './nav-icon';
+import { panelSurfaceClass } from './ui-classes';
 import { getActivePathFromHeaders } from '../app/(shell)/nav-state';
 
 const ID_PREFIX_ROUTES: ReadonlyArray<{ prefix: string; path: (id: string) => string }> = [
@@ -95,8 +97,8 @@ export async function ShellHeader(): Promise<ReactElement> {
   return (
     <header
       className={cn(
-        `shellHeader`,
-        `hidden md:block sticky top-0 z-30 border-b border-border bg-bg/85 backdrop-blur-md px-6 py-4`,
+        panelSurfaceClass,
+        `sticky top-0 z-30 hidden border-border bg-bg/85 px-5 py-4 backdrop-blur-md md:block`,
       )}
     >
       <div className="flex items-center gap-2 text-xs text-white/40">
@@ -111,7 +113,6 @@ export async function ShellHeader(): Promise<ReactElement> {
           action={searchAction}
           role="search"
           className={cn(
-            `shellHeaderSearch`,
             `flex min-w-[360px] flex-1 items-center gap-3 rounded-shell border border-border bg-white/[0.03] px-4 py-2.5 text-sm text-white/60`,
           )}
         >
@@ -122,9 +123,9 @@ export async function ShellHeader(): Promise<ReactElement> {
             placeholder="Search by id, email, payment request, ledger entry…"
             aria-label="Search"
             autoComplete="off"
-            className="min-w-0 flex-1 bg-transparent text-text placeholder:text-white/40 focus:outline-none"
+            className="min-w-0 flex-1 bg-transparent text-text placeholder:text-white/40 focus:outline-hidden"
           />
-          <button type="submit" aria-label="Submit search" className={cn(`secondaryButton`, `sr-only`)}>
+          <button type="submit" aria-label="Submit search" className="sr-only">
             Submit
           </button>
         </form>

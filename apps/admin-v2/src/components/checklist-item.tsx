@@ -1,6 +1,6 @@
 import { type ReactElement } from 'react';
 
-import { cn } from '@/lib/cn';
+import { cn } from '@remoola/ui';
 
 export type ChecklistItemProps = {
   icon?: `check` | `dot` | `x`;

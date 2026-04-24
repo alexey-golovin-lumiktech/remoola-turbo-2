@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
+import styles from './AuthForm.module.css';
+
 export function LoginForm() {
   const router = useRouter();
   const [email, setEmail] = useState(``);
@@ -36,17 +38,29 @@ export function LoginForm() {
   }
 
   return (
-    <form className="loginForm" onSubmit={onSubmit}>
-      <label className="field">
-        <span>Email</span>
-        <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" required />
+    <form className={styles.form} onSubmit={onSubmit}>
+      <label className={styles.field}>
+        <span className={styles.label}>Email</span>
+        <input
+          className={styles.input}
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          type="email"
+          required
+        />
       </label>
-      <label className="field">
-        <span>Password</span>
-        <input value={password} onChange={(event) => setPassword(event.target.value)} type="password" required />
+      <label className={styles.field}>
+        <span className={styles.label}>Password</span>
+        <input
+          className={styles.input}
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          type="password"
+          required
+        />
       </label>
-      {error ? <p className="errorText">{error}</p> : null}
-      <button className="primaryButton" type="submit" disabled={pending}>
+      {error ? <p className={styles.errorBanner}>{error}</p> : null}
+      <button className={styles.submitBtn} type="submit" disabled={pending}>
         {pending ? `Signing in...` : `Sign in`}
       </button>
     </form>

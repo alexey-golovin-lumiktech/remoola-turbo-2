@@ -1,6 +1,9 @@
 import { type ReactElement, type ReactNode } from 'react';
 
+import { cn } from '@remoola/ui';
+
 import { type StatusPillTone } from './status-pill';
+import { pillBaseClass, pillDenseClass, toneClassByTone } from './ui-classes';
 
 export type TinyPillProps = {
   children: ReactNode;
@@ -9,11 +12,5 @@ export type TinyPillProps = {
 };
 
 export function TinyPill({ children, tone = `neutral`, className }: TinyPillProps): ReactElement {
-  const composedClassName = className ? `pill ${className}` : `pill`;
-
-  return (
-    <span className={composedClassName} data-tone={tone} data-density="tight">
-      {children}
-    </span>
-  );
+  return <span className={cn(pillBaseClass, pillDenseClass, toneClassByTone[tone], className)}>{children}</span>;
 }

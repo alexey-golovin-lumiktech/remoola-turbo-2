@@ -1,13 +1,14 @@
 import Link from 'next/link';
 import { type ReactElement } from 'react';
 
+import { cn } from '@remoola/ui';
+
 import { ChecklistItem } from '../../../components/checklist-item';
 import { ModeCard } from '../../../components/mode-card';
 import { Panel } from '../../../components/panel';
 import { SignalCard, type SignalCardAvailability } from '../../../components/signal-card';
 import { TinyPill } from '../../../components/tiny-pill';
 import { getAdminIdentity, getOverviewSummary, getQuickstarts } from '../../../lib/admin-api.server';
-import { cn } from '../../../lib/cn';
 import { buildQuickstartHref, filterQuickstartsForWorkspaces } from '../../../lib/quickstart-investigations';
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -65,12 +66,7 @@ export default async function OverviewPage(): Promise<ReactElement> {
 
   return (
     <div className="flex flex-col gap-6">
-      <section
-        className={cn(
-          `panel pageHeader`,
-          `rounded-card border border-border bg-gradient-to-br from-bg via-panel to-bg p-6`,
-        )}
-      >
+      <section className={cn(`rounded-card border border-border bg-linear-to-br from-bg via-panel to-bg p-6`)}>
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div className="flex flex-col gap-2">
             <span className="text-[11px] font-medium uppercase tracking-[0.22em] text-cyan-300/80">

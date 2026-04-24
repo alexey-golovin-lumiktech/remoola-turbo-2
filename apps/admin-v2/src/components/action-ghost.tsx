@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { type ReactElement, type ReactNode } from 'react';
 
-import { cn } from '@/lib/cn';
+import { cn } from '@remoola/ui';
+
+import { ghostButtonClass } from './ui-classes';
 
 type CommonProps = {
   children: ReactNode;
@@ -22,8 +24,7 @@ type ButtonProps = CommonProps & {
   ariaDisabled?: boolean;
 };
 
-const baseClass = `inline-flex items-center gap-2 rounded-input border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white/72 transition hover:border-white/20 hover:bg-white/[0.05] hover:text-white/90`;
-const disabledClass = `opacity-50 cursor-not-allowed pointer-events-none`;
+const disabledClass = `cursor-not-allowed opacity-50 pointer-events-none`;
 
 export function ActionGhost(props: LinkProps | ButtonProps): ReactElement {
   if (`href` in props && props.href !== undefined) {
@@ -31,7 +32,7 @@ export function ActionGhost(props: LinkProps | ButtonProps): ReactElement {
     return (
       <Link
         href={href}
-        className={cn(baseClass, ariaDisabled ? disabledClass : ``, className)}
+        className={cn(ghostButtonClass, ariaDisabled ? disabledClass : ``, className)}
         aria-label={ariaLabel}
         aria-disabled={ariaDisabled || undefined}
         title={title}
@@ -48,7 +49,7 @@ export function ActionGhost(props: LinkProps | ButtonProps): ReactElement {
       aria-disabled={ariaDisabled || undefined}
       aria-label={ariaLabel}
       title={title}
-      className={cn(baseClass, disabled || ariaDisabled ? disabledClass : ``, className)}
+      className={cn(ghostButtonClass, disabled || ariaDisabled ? disabledClass : ``, className)}
     >
       {children}
     </button>

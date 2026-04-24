@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import { type ReactElement } from 'react';
 
-import { cn } from '@/lib/cn';
+import { cn } from '@remoola/ui';
 
 import { StatusPill } from './status-pill';
+import { panelSurfaceClass } from './ui-classes';
 
 export type SignalCardAvailability = `live-actionable` | `count-only` | `deferred` | string;
 
@@ -40,11 +41,10 @@ export function SignalCard({
   const isLive = availability === `live-actionable`;
   const clickable = isLive && typeof href === `string` && href.length > 0;
   const cardClassName = cn(
-    `panel signalCard`,
-    clickable && `signalCard--clickable`,
-    !isLive && `signalCard--unavailable`,
-    `flex flex-col gap-3 rounded-card border border-border bg-panel p-5 transition hover:border-white/20`,
-    clickable && `cursor-pointer hover:bg-white/[0.02]`,
+    panelSurfaceClass,
+    `flex flex-col gap-3 p-5 transition`,
+    clickable ? `cursor-pointer hover:border-white/20 hover:bg-white/[0.02]` : ``,
+    !isLive ? `border-amber-400/20` : ``,
   );
   const pillStatus = isLive ? `PROCESSING` : `Unavailable`;
   const supplemental = availabilityCopy(availability);
@@ -58,10 +58,8 @@ export function SignalCard({
         </span>
         <span className="text-xs text-white/55">{supplemental ?? `Live actionable`}</span>
       </div>
-      <div className={cn(`signalCard__label`, `text-sm text-white/72`)}>{label}</div>
-      <div className={cn(`signalCard__count`, `text-4xl font-semibold tabular-nums text-white`)}>
-        {count == null ? `—` : String(count)}
-      </div>
+      <div className="text-sm text-white/72">{label}</div>
+      <div className="text-4xl font-semibold tabular-nums text-white">{count == null ? `—` : String(count)}</div>
       <div className="flex flex-wrap items-center gap-2 text-xs text-white/55">
         <span className="text-white/55">Phase: {String(phaseStatus ?? `—`)}</span>
         <span

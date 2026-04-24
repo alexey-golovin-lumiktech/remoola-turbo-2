@@ -1,7 +1,5 @@
 import { headers } from 'next/headers';
 
-import { cn } from '@/lib/cn';
-
 import { getActivePathFromHeaders } from './nav-state';
 import { MobileBottomNav } from '../../components/mobile-bottom-nav';
 import { MobilePageHeader } from '../../components/mobile-page-header';
@@ -83,18 +81,8 @@ export default async function ShellLayout({ children }: { children: React.ReactN
   const visibleQuickstarts = filterQuickstartsForWorkspaces(quickstarts, identity?.workspaces);
 
   return (
-    <div
-      className={cn(
-        `shell`,
-        `grid grid-cols-1 md:grid-cols-[280px_minmax(0,1fr)] lg:grid-cols-[320px_minmax(0,1fr)] min-h-screen`,
-      )}
-    >
-      <aside
-        className={cn(
-          `sidebar`,
-          `hidden md:grid md:h-screen md:min-h-0 md:overflow-hidden md:border-r md:border-white/10 md:bg-[#0d1627]`,
-        )}
-      >
+    <div className="grid min-h-screen grid-cols-1 bg-bg md:grid-cols-[280px_minmax(0,1fr)] lg:grid-cols-[320px_minmax(0,1fr)]">
+      <aside className="hidden md:flex md:min-h-screen md:flex-col md:overflow-hidden md:border-r md:border-border md:bg-panel">
         <SidebarContents
           identity={identity}
           activePath={activePath}
@@ -102,9 +90,9 @@ export default async function ShellLayout({ children }: { children: React.ReactN
           quickstarts={visibleQuickstarts}
         />
       </aside>
-      <main className={cn(`content`, `min-w-0`)}>
+      <main className="min-w-0 px-4 py-4 pb-[var(--mobile-bottom-nav-reserved-space)] md:px-6 md:py-6 md:pb-6 xl:px-8">
         {identity ? (
-          <>
+          <div className="flex min-w-0 flex-col gap-6">
             <ShellHeader />
             <MobileShellDrawer>
               <SidebarContents
@@ -117,11 +105,13 @@ export default async function ShellLayout({ children }: { children: React.ReactN
             <MobileTopChips identity={identity} activePath={activePath} />
             <MobilePageHeader activePath={activePath} />
             {children}
-          </>
+          </div>
         ) : (
-          <section className="panel">
-            <h1>Access denied</h1>
-            <p className="muted">This admin identity is outside the schema-backed admin-v2 workspace allowlist.</p>
+          <section className="rounded-card border border-border bg-panel p-5">
+            <h1 className="text-xl font-semibold text-text">Access denied</h1>
+            <p className="mt-2 text-sm leading-6 text-muted-56">
+              This admin identity is outside the schema-backed admin-v2 workspace allowlist.
+            </p>
           </section>
         )}
       </main>

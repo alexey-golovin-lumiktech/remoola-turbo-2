@@ -1,7 +1,5 @@
 import { type ReactElement } from 'react';
 
-import { cn } from '@/lib/cn';
-
 const WORKSPACE_CLASSIFICATION: ReadonlyArray<{
   prefix: string;
   title: string;
@@ -102,12 +100,7 @@ export function MobilePageHeader({ activePath, liveCount = null }: MobilePageHea
   const { title, eyebrow, queueLabel } = classify(activePath);
   const countLabel = typeof liveCount === `number` ? String(liveCount) : `—`;
   return (
-    <div
-      className={cn(
-        `panel mobilePageHeader`,
-        `md:hidden mx-4 mt-3 rounded-card border border-border bg-panel px-4 py-4`,
-      )}
-    >
+    <div className="mx-4 mt-3 rounded-card border border-border bg-panel px-4 py-4 md:hidden">
       <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-white/45">{eyebrow}</div>
       <div className="mt-1 text-xl font-semibold text-white/95">{title}</div>
       <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-cyan-400/25 bg-cyan-500/10 px-3 py-1 text-xs text-cyan-100">

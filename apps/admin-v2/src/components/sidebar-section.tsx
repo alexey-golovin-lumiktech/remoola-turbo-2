@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { type ReactElement } from 'react';
 
-import { cn } from '@/lib/cn';
+import { cn } from '@remoola/ui';
 
 import { NavIcon, type NavIconName } from './nav-icon';
 import { isNavItemActive } from '../app/(shell)/nav-state';
@@ -57,7 +57,6 @@ export function SidebarSection({
                 aria-current={active ? `page` : undefined}
                 title={item.label}
                 className={cn(
-                  `navLink`,
                   `flex min-h-11 w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition`,
                   compact && `rounded-xl px-3 py-2.5`,
                   active

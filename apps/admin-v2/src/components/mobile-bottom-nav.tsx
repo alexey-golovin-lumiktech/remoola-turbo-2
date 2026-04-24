@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { type CSSProperties, type ReactElement } from 'react';
 
-import { cn } from '@/lib/cn';
+import { cn } from '@remoola/ui';
 
 import { NavIcon } from './nav-icon';
 import { isNavItemActive } from '../app/(shell)/nav-state';
@@ -32,8 +32,7 @@ export function MobileBottomNav({ identity, activePath }: MobileBottomNavProps):
   return (
     <nav
       className={cn(
-        `mobileBottomNav`,
-        `fixed bottom-0 inset-x-0 z-40 grid border-t border-border bg-bg/90 backdrop-blur-md pb-[env(safe-area-inset-bottom)]`,
+        `fixed inset-x-0 bottom-0 z-40 grid border-t border-border bg-bg/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden`,
       )}
       aria-label="Core workspaces"
       style={navStyle}
@@ -47,13 +46,14 @@ export function MobileBottomNav({ identity, activePath }: MobileBottomNavProps):
             aria-label={item.label}
             title={item.label}
             className={cn(
-              `bottomNavLink`,
               `flex flex-col items-center gap-1 py-2 text-xs text-white/55 transition data-[active=true]:bg-cyan-500/10 data-[active=true]:text-cyan-100 hover:text-white/85`,
             )}
             data-active={isActive}
           >
             {item.icon ? <NavIcon name={item.icon} /> : null}
-            <span className={cn(`bottomNavLabel`, `text-[11px] leading-none`)}>{item.label}</span>
+            <span className="line-clamp-2 min-h-[calc(10px*1.15*2)] max-w-full text-center text-[11px] leading-none break-words">
+              {item.label}
+            </span>
           </Link>
         );
       })}

@@ -1,9 +1,30 @@
 import Link from 'next/link';
 
+import { cn } from '@remoola/ui';
+
+import { ActionGhost } from '../../../components/action-ghost';
+import { ActionPrimary } from '../../../components/action-primary';
 import { DenseTable } from '../../../components/dense-table';
 import { MobileQueueCard } from '../../../components/mobile-queue-card';
+import { Panel } from '../../../components/panel';
 import { StatusPill } from '../../../components/status-pill';
 import { TabletRow } from '../../../components/tablet-row';
+import {
+  buttonRowClass,
+  checkboxFieldClass,
+  checkboxInputClass,
+  dangerButtonClass,
+  detailsSummaryClass,
+  emptyPanelClass,
+  fieldClass,
+  fieldLabelClass,
+  ghostButtonClass,
+  monoMutedTextClass,
+  mutedTextClass,
+  panelClass,
+  stackClass,
+  textInputClass,
+} from '../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../components/workspace-layout';
 import {
   getQuickstart,
@@ -99,13 +120,13 @@ function appendPayloadToQuery(query: URLSearchParams, payload: VerificationQueue
 
 function renderVerificationAssignee(item: VerificationItem) {
   if (!item.assignedTo) {
-    return <span className="muted">—</span>;
+    return <span className={mutedTextClass}>—</span>;
   }
 
   return (
     <>
       <div>{item.assignedTo.name ?? item.assignedTo.email ?? item.assignedTo.id}</div>
-      {item.assignedTo.email ? <div className="muted">{item.assignedTo.email}</div> : null}
+      {item.assignedTo.email ? <div className={mutedTextClass}>{item.assignedTo.email}</div> : null}
     </>
   );
 }
@@ -122,7 +143,7 @@ function VerificationMobileCards({ items }: { items: VerificationItem[] }) {
   if (items.length === 0) {
     return (
       <div className="readSurface md:hidden" data-view="mobile">
-        <div className="panel muted">No verification cases matched the current filters.</div>
+        <div className={emptyPanelClass}>No verification cases matched the current filters.</div>
       </div>
     );
   }
@@ -139,17 +160,17 @@ function VerificationMobileCards({ items }: { items: VerificationItem[] }) {
             subtitle={item.id}
             trailing={<StatusPill status={item.verificationStatus} />}
           >
-            <div className="muted">Stripe: {item.stripeIdentityStatus ?? `-`}</div>
+            <div className={mutedTextClass}>Stripe: {item.stripeIdentityStatus ?? `-`}</div>
             <div>
               {item.accountType} · {item.country ?? `-`}
             </div>
-            <div className="muted">{item.missingProfileData ? `Missing profile data` : `Profile ready`}</div>
-            <div className="muted">
+            <div className={mutedTextClass}>{item.missingProfileData ? `Missing profile data` : `Profile ready`}</div>
+            <div className={mutedTextClass}>
               {item.missingDocuments ? `Missing documents` : `${item.documentsCount} attached`}
             </div>
-            <div className="muted">SLA: {item.slaBreached ? `Breached` : `Within SLA`}</div>
-            <div className="muted">Assigned: {renderVerificationAssigneeSummary(item)}</div>
-            <div className="muted">Updated: {formatDate(item.updatedAt)}</div>
+            <div className={mutedTextClass}>SLA: {item.slaBreached ? `Breached` : `Within SLA`}</div>
+            <div className={mutedTextClass}>Assigned: {renderVerificationAssigneeSummary(item)}</div>
+            <div className={mutedTextClass}>Updated: {formatDate(item.updatedAt)}</div>
           </MobileQueueCard>
         ))}
       </div>
@@ -161,7 +182,7 @@ function VerificationTabletRows({ items }: { items: VerificationItem[] }) {
   if (items.length === 0) {
     return (
       <div className="readSurface hidden md:block xl:hidden" data-view="tablet">
-        <div className="panel muted">No verification cases matched the current filters.</div>
+        <div className={emptyPanelClass}>No verification cases matched the current filters.</div>
       </div>
     );
   }
@@ -177,7 +198,7 @@ function VerificationTabletRows({ items }: { items: VerificationItem[] }) {
                 <Link href={`/verification/${item.id}`}>
                   <strong>{item.email}</strong>
                 </Link>
-                <div className="muted mono">{item.id}</div>
+                <div className={monoMutedTextClass}>{item.id}</div>
               </>
             }
             cells={[
@@ -185,20 +206,22 @@ function VerificationTabletRows({ items }: { items: VerificationItem[] }) {
                 <div>
                   <StatusPill status={item.verificationStatus} />
                 </div>
-                <div className="muted">{item.stripeIdentityStatus ?? `-`}</div>
+                <div className={mutedTextClass}>{item.stripeIdentityStatus ?? `-`}</div>
               </div>,
               <div key="profile">
                 <div>{item.accountType}</div>
-                <div className="muted">{item.country ?? `-`}</div>
-                <div className="muted">{item.missingProfileData ? `Missing profile data` : `Profile ready`}</div>
+                <div className={mutedTextClass}>{item.country ?? `-`}</div>
+                <div className={mutedTextClass}>
+                  {item.missingProfileData ? `Missing profile data` : `Profile ready`}
+                </div>
               </div>,
               <div key="docs-sla">
                 <div>{item.missingDocuments ? `Missing documents` : `${item.documentsCount} attached`}</div>
-                <div className="muted">{item.slaBreached ? `Breached` : `Within SLA`}</div>
+                <div className={mutedTextClass}>{item.slaBreached ? `Breached` : `Within SLA`}</div>
               </div>,
               <div key="assigned-updated">
                 <div>{renderVerificationAssigneeSummary(item)}</div>
-                <div className="muted">{formatDate(item.updatedAt)}</div>
+                <div className={mutedTextClass}>{formatDate(item.updatedAt)}</div>
               </div>,
             ]}
           />
@@ -221,18 +244,20 @@ function VerificationDesktopTable({ items }: { items: VerificationItem[] }) {
               <tr key={item.id}>
                 <td>
                   <Link href={`/verification/${item.id}`}>{item.email}</Link>
-                  <div className="muted mono">{item.id}</div>
+                  <div className={monoMutedTextClass}>{item.id}</div>
                 </td>
                 <td>
                   <div>
                     <StatusPill status={item.verificationStatus} />
                   </div>
-                  <div className="muted">{item.stripeIdentityStatus ?? `-`}</div>
+                  <div className={mutedTextClass}>{item.stripeIdentityStatus ?? `-`}</div>
                 </td>
                 <td>
                   <div>{item.accountType}</div>
-                  <div className="muted">{item.country ?? `-`}</div>
-                  <div className="muted">{item.missingProfileData ? `Missing profile data` : `Profile ready`}</div>
+                  <div className={mutedTextClass}>{item.country ?? `-`}</div>
+                  <div className={mutedTextClass}>
+                    {item.missingProfileData ? `Missing profile data` : `Profile ready`}
+                  </div>
                 </td>
                 <td>{item.missingDocuments ? `Missing documents` : `${item.documentsCount} attached`}</td>
                 <td>{item.slaBreached ? `Breached` : `Within SLA`}</td>
@@ -250,43 +275,44 @@ function SavedViewRow({ view, buildHref }: { view: SavedViewSummary; buildHref: 
   const payloadJson = JSON.stringify(view.queryPayload ?? null);
 
   return (
-    <div className="panel">
-      <div className="pageHeader">
-        <div>
-          <strong>{view.name}</strong>
-          {view.description ? <p className="muted">{view.description}</p> : null}
-          {!payload ? (
-            <p className="muted">
-              Saved view payload could not be applied. The current default filters are loaded instead.
-            </p>
-          ) : null}
-        </div>
-        <div className="actionsRow">
+    <Panel
+      className="gap-4"
+      actions={
+        <div className={buttonRowClass}>
           {payload ? (
-            <Link className="secondaryButton" href={buildHref({ payload, page: 1 })}>
-              Apply
-            </Link>
+            <ActionGhost href={buildHref({ payload, page: 1 })}>Apply</ActionGhost>
           ) : (
-            <Link className="secondaryButton" href={buildHref({ payload: null, page: 1 })} aria-disabled="true">
+            <ActionGhost href={buildHref({ payload: null, page: 1 })} ariaDisabled>
               Use defaults
-            </Link>
+            </ActionGhost>
           )}
           <form action={deleteSavedViewAction.bind(null, view.id)}>
             <input type="hidden" name="workspace" value={view.workspace} />
-            <button className="dangerButton" type="submit">
+            <button className={dangerButtonClass} type="submit">
               Delete
             </button>
           </form>
         </div>
+      }
+    >
+      <div className="min-w-0">
+        <strong>{view.name}</strong>
+        {view.description ? <p className={mutedTextClass}>{view.description}</p> : null}
+        {!payload ? (
+          <p className={mutedTextClass}>
+            Saved view payload could not be applied. The current default filters are loaded instead.
+          </p>
+        ) : null}
       </div>
       <details>
-        <summary className="muted">Rename or update</summary>
-        <form action={updateSavedViewAction.bind(null, view.id)} className="formStack">
+        <summary className={detailsSummaryClass}>Rename or update</summary>
+        <form action={updateSavedViewAction.bind(null, view.id)} className={stackClass}>
           <input type="hidden" name="workspace" value={view.workspace} />
           <input type="hidden" name="queryPayload" value={payloadJson} />
-          <label className="field">
-            <span>Name</span>
+          <label className={fieldClass}>
+            <span className={fieldLabelClass}>Name</span>
             <input
+              className={textInputClass}
               name="name"
               defaultValue={view.name}
               required
@@ -294,21 +320,20 @@ function SavedViewRow({ view, buildHref }: { view: SavedViewSummary; buildHref: 
               aria-label="Saved view name"
             />
           </label>
-          <label className="field">
-            <span>Description</span>
+          <label className={fieldClass}>
+            <span className={fieldLabelClass}>Description</span>
             <input
+              className={textInputClass}
               name="description"
               defaultValue={view.description ?? ``}
               maxLength={MAX_SAVED_VIEW_DESCRIPTION_LENGTH}
               aria-label="Saved view description"
             />
           </label>
-          <button className="secondaryButton" type="submit">
-            Save changes
-          </button>
+          <ActionGhost type="submit">Save changes</ActionGhost>
         </form>
       </details>
-    </div>
+    </Panel>
   );
 }
 
@@ -324,34 +349,29 @@ function SavedViewsSection({
   hasInvalidPayload: boolean;
 }) {
   return (
-    <section className="panel" aria-label="Saved views">
-      <div className="pageHeader">
-        <div>
-          <h2>Saved views</h2>
-          <p className="muted">Personal saved filters for the verification queue workspace.</p>
-        </div>
-      </div>
+    <Panel title="Saved views" description="Personal saved filters for the verification queue workspace.">
       {hasInvalidPayload ? (
-        <p className="muted">
+        <p className={mutedTextClass}>
           One or more saved views have an unrecognised payload shape and cannot be applied. Default filters are used
           instead for those rows.
         </p>
       ) : null}
-      <div className="formStack">
+      <div className={stackClass}>
         {views.length === 0 ? (
-          <p className="muted">No saved views yet. Use the form below to save the current filters.</p>
+          <p className={mutedTextClass}>No saved views yet. Use the form below to save the current filters.</p>
         ) : (
           views.map((view) => <SavedViewRow key={view.id} view={view} buildHref={buildHref} />)
         )}
       </div>
-      <article className="panel">
+      <article className={cn(`mt-4`, panelClass)}>
         <h3>Save current view</h3>
-        <form action={createSavedViewAction} className="formStack">
+        <form action={createSavedViewAction} className={stackClass}>
           <input type="hidden" name="workspace" value={SAVED_VIEW_WORKSPACE} />
           <input type="hidden" name="queryPayload" value={JSON.stringify(currentPayload)} />
-          <label className="field">
-            <span>Name</span>
+          <label className={fieldClass}>
+            <span className={fieldLabelClass}>Name</span>
             <input
+              className={textInputClass}
               name="name"
               required
               maxLength={MAX_SAVED_VIEW_NAME_LENGTH}
@@ -359,31 +379,30 @@ function SavedViewsSection({
               aria-label="New saved view name"
             />
           </label>
-          <label className="field">
-            <span>Description</span>
+          <label className={fieldClass}>
+            <span className={fieldLabelClass}>Description</span>
             <input
+              className={textInputClass}
               name="description"
               maxLength={MAX_SAVED_VIEW_DESCRIPTION_LENGTH}
               placeholder="Optional"
               aria-label="New saved view description"
             />
           </label>
-          <p className="muted">
+          <p className={mutedTextClass}>
             Note: filters <code>missingProfileData</code> and <code>missingDocuments</code> are saved but cannot be used
             by alert evaluation (frontend-only filters).
           </p>
-          <p className="muted mono">
+          <p className={monoMutedTextClass}>
             status={currentPayload.status ?? `-`}, stripeIdentityStatus={currentPayload.stripeIdentityStatus ?? `-`},
             country={currentPayload.country ?? `-`}, contractorKind={currentPayload.contractorKind ?? `-`},
             missingProfileData={currentPayload.missingProfileData === true ? `true` : `false`}, missingDocuments=
             {currentPayload.missingDocuments === true ? `true` : `false`}
           </p>
-          <button className="primaryButton" type="submit">
-            Save current view
-          </button>
+          <ActionPrimary type="submit">Save current view</ActionPrimary>
         </form>
       </article>
-    </section>
+    </Panel>
   );
 }
 
@@ -472,32 +491,26 @@ export default async function VerificationQueuePage({
   return (
     <WorkspaceLayout workspace="verification">
       <>
-        <section className="panel pageHeader">
-          <div>
-            <h1>Verification Queue</h1>
-            <p className="muted">Verification queue for canonical review states: PENDING, MORE_INFO and FLAGGED.</p>
-          </div>
-          <p className="muted">
-            SLA breached: {queue?.sla.breachedCount ?? 0} · threshold {queue?.sla.thresholdHours ?? 24}h
-          </p>
-        </section>
+        <Panel
+          title="Verification Queue"
+          description="Verification queue for canonical review states: PENDING, MORE_INFO and FLAGGED."
+          actions={
+            <p className={mutedTextClass}>
+              SLA breached: {queue?.sla.breachedCount ?? 0} · threshold {queue?.sla.thresholdHours ?? 24}h
+            </p>
+          }
+        />
 
         {appliedQuickstart ? (
-          <section className="panel">
-            <div className="pageHeader">
-              <div>
-                <h2>{appliedQuickstart.label}</h2>
-                <p className="muted">{appliedQuickstart.description}</p>
-              </div>
-              <Link className="secondaryButton" href="/verification">
-                Remove quickstart
-              </Link>
-            </div>
-          </section>
+          <Panel
+            title={appliedQuickstart.label}
+            description={appliedQuickstart.description}
+            actions={<ActionGhost href="/verification">Remove quickstart</ActionGhost>}
+          />
         ) : params?.quickstart ? (
-          <section className="panel">
-            <p className="muted">The requested quickstart could not be resolved for the verification queue.</p>
-          </section>
+          <Panel>
+            <p className={mutedTextClass}>The requested quickstart could not be resolved for the verification queue.</p>
+          </Panel>
         ) : null}
 
         <SavedViewsSection
@@ -507,52 +520,71 @@ export default async function VerificationQueuePage({
           hasInvalidPayload={hasInvalidPayload}
         />
 
-        <section className="panel pageHeader">
-          <form className="actionsRow" method="get">
-            <input name="status" defaultValue={status ?? ``} placeholder="status" />
-            <input name="stripeIdentityStatus" defaultValue={stripeIdentityStatus ?? ``} placeholder="stripe status" />
-            <input name="country" defaultValue={country ?? ``} placeholder="country" />
-            <input name="contractorKind" defaultValue={contractorKind ?? ``} placeholder="contractor kind" />
-            <label className="field">
+        <Panel>
+          <form className={buttonRowClass} method="get">
+            <input className={textInputClass} name="status" defaultValue={status ?? ``} placeholder="status" />
+            <input
+              className={textInputClass}
+              name="stripeIdentityStatus"
+              defaultValue={stripeIdentityStatus ?? ``}
+              placeholder="stripe status"
+            />
+            <input className={textInputClass} name="country" defaultValue={country ?? ``} placeholder="country" />
+            <input
+              className={textInputClass}
+              name="contractorKind"
+              defaultValue={contractorKind ?? ``}
+              placeholder="contractor kind"
+            />
+            <label className={checkboxFieldClass}>
+              <input
+                className={checkboxInputClass}
+                type="checkbox"
+                name="missingProfileData"
+                value="true"
+                defaultChecked={missingProfileData}
+              />
               <span>Missing profile</span>
-              <input type="checkbox" name="missingProfileData" value="true" defaultChecked={missingProfileData} />
             </label>
-            <label className="field">
+            <label className={checkboxFieldClass}>
+              <input
+                className={checkboxInputClass}
+                type="checkbox"
+                name="missingDocuments"
+                value="true"
+                defaultChecked={missingDocuments}
+              />
               <span>Missing docs</span>
-              <input type="checkbox" name="missingDocuments" value="true" defaultChecked={missingDocuments} />
             </label>
-            <button className="secondaryButton" type="submit">
-              Apply
-            </button>
+            <ActionGhost type="submit">Apply</ActionGhost>
           </form>
-        </section>
+        </Panel>
 
-        <section className="panel">
-          <div className="pageHeader">
-            <p className="muted">
-              {queue?.total ?? 0} results · page {queue?.page ?? 1} / {totalPages}
-            </p>
-            <div className="actionsRow">
+        <Panel
+          actions={
+            <div className={buttonRowClass}>
               <a
-                className="secondaryButton"
-                aria-disabled={page <= 1}
+                className={cn(page <= 1 && `pointer-events-none opacity-50`, ghostButtonClass)}
                 href={page > 1 ? pageHref(page - 1) : pageHref(1)}
               >
                 Previous
               </a>
               <a
-                className="secondaryButton"
-                aria-disabled={page >= totalPages}
+                className={cn(page >= totalPages && `pointer-events-none opacity-50`, ghostButtonClass)}
                 href={page < totalPages ? pageHref(page + 1) : pageHref(totalPages)}
               >
                 Next
               </a>
             </div>
-          </div>
+          }
+        >
+          <p className={mutedTextClass}>
+            {queue?.total ?? 0} results · page {queue?.page ?? 1} / {totalPages}
+          </p>
           <VerificationMobileCards items={items} />
           <VerificationTabletRows items={items} />
           <VerificationDesktopTable items={items} />
-        </section>
+        </Panel>
       </>
     </WorkspaceLayout>
   );

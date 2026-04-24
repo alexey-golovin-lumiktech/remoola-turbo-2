@@ -1,6 +1,9 @@
 import { type ReactElement } from 'react';
 
+import { cn } from '@remoola/ui';
+
 import { type StatusPillTone } from './status-pill';
+import { pillBaseClass, toneClassByTone } from './ui-classes';
 
 export type PriorityPillProps = {
   priority: `High` | `Medium` | `Low` | string | null | undefined;
@@ -15,21 +18,12 @@ function resolvePriorityTone(value: string): StatusPillTone {
 
 export function PriorityPill({ priority, className }: PriorityPillProps): ReactElement {
   const trimmed = typeof priority === `string` ? priority.trim() : ``;
-  const composedClassName = className ? `pill ${className}` : `pill`;
 
   if (!trimmed) {
-    return (
-      <span className={composedClassName} data-tone="neutral">
-        —
-      </span>
-    );
+    return <span className={cn(pillBaseClass, toneClassByTone.neutral, className)}>—</span>;
   }
 
   const tone = resolvePriorityTone(trimmed);
 
-  return (
-    <span className={composedClassName} data-tone={tone}>
-      {trimmed}
-    </span>
-  );
+  return <span className={cn(pillBaseClass, toneClassByTone[tone], className)}>{trimmed}</span>;
 }

@@ -1,7 +1,22 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { ActionGhost } from '../../../../components/action-ghost';
+import { ActionPrimary } from '../../../../components/action-primary';
 import { AssignmentCard } from '../../../../components/assignment-card';
+import { Panel } from '../../../../components/panel';
+import { TinyPill } from '../../../../components/tiny-pill';
+import {
+  checkboxFieldClass,
+  checkboxInputClass,
+  dangerButtonClass,
+  fieldClass,
+  fieldLabelClass,
+  monoMutedTextClass,
+  mutedTextClass,
+  panelClass,
+  stackClass,
+  textAreaClass,
+} from '../../../../components/ui-classes';
 import { getAdminIdentity, getAdmins, getVerificationCase } from '../../../../lib/admin-api.server';
 import {
   approveVerificationAction,
@@ -45,49 +60,48 @@ export default async function VerificationCasePage({ params }: { params: Promise
 
   return (
     <>
-      <section className="panel pageHeader">
-        <div>
-          <h1>Verification Case</h1>
-          <p className="muted">{verificationCase.email}</p>
-          <p className="muted mono">{verificationCase.id}</p>
-          <div className="pillRow">
-            <span className="pill">{verificationCase.verificationStatus}</span>
-            <span className="pill">{verificationCase.accountType}</span>
-            {verificationCase.contractorKind ? <span className="pill">{verificationCase.contractorKind}</span> : null}
-            {verificationCase.verificationSla.breached ? <span className="pill">SLA breached</span> : null}
+      <Panel
+        title="Verification Case"
+        description={verificationCase.email}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <ActionGhost href={`/consumers/${verificationCase.id}`}>Open consumer case</ActionGhost>
+            <ActionGhost href={`/audit/admin-actions?resourceId=${verificationCase.id}`}>
+              Related admin actions
+            </ActionGhost>
           </div>
+        }
+      >
+        <p className={monoMutedTextClass}>{verificationCase.id}</p>
+        <div className="pillRow">
+          <TinyPill>{verificationCase.verificationStatus}</TinyPill>
+          <TinyPill>{verificationCase.accountType}</TinyPill>
+          {verificationCase.contractorKind ? <TinyPill>{verificationCase.contractorKind}</TinyPill> : null}
+          {verificationCase.verificationSla.breached ? <TinyPill>SLA breached</TinyPill> : null}
         </div>
-        <div className="actionsRow">
-          <Link className="secondaryButton" href={`/consumers/${verificationCase.id}`}>
-            Open consumer case
-          </Link>
-          <Link className="secondaryButton" href={`/audit/admin-actions?resourceId=${verificationCase.id}`}>
-            Related admin actions
-          </Link>
-        </div>
-      </section>
+      </Panel>
 
       <section className="statsGrid">
-        <article className="panel">
+        <Panel>
           <h3>Decision state</h3>
-          <p className="muted">Version: {verificationCase.version}</p>
-          <p className="muted">Reason: {verificationCase.verificationReason ?? `-`}</p>
-          <p className="muted">Verification updated: {formatDate(verificationCase.verificationUpdatedAt)}</p>
-          <p className="muted">Stripe status: {verificationCase.stripeIdentityStatus ?? `-`}</p>
-        </article>
-        <article className="panel">
+          <p className={mutedTextClass}>Version: {verificationCase.version}</p>
+          <p className={mutedTextClass}>Reason: {verificationCase.verificationReason ?? `-`}</p>
+          <p className={mutedTextClass}>Verification updated: {formatDate(verificationCase.verificationUpdatedAt)}</p>
+          <p className={mutedTextClass}>Stripe status: {verificationCase.stripeIdentityStatus ?? `-`}</p>
+        </Panel>
+        <Panel>
           <h3>Auth risk</h3>
-          <p className="muted">Login failures 24h: {verificationCase.authRisk.loginFailures24h}</p>
-          <p className="muted">Refresh reuse 30d: {verificationCase.authRisk.refreshReuse30d}</p>
-          <p className="muted">SLA computed: {formatDate(verificationCase.verificationSla.lastComputedAt)}</p>
-        </article>
-        <article className="panel">
+          <p className={mutedTextClass}>Login failures 24h: {verificationCase.authRisk.loginFailures24h}</p>
+          <p className={mutedTextClass}>Refresh reuse 30d: {verificationCase.authRisk.refreshReuse30d}</p>
+          <p className={mutedTextClass}>SLA computed: {formatDate(verificationCase.verificationSla.lastComputedAt)}</p>
+        </Panel>
+        <Panel>
           <h3>Profile and docs</h3>
-          <p className="muted">Contacts: {verificationCase._count.contacts}</p>
-          <p className="muted">Documents: {verificationCase._count.consumerResources}</p>
-          <p className="muted">Payment methods: {verificationCase._count.paymentMethods}</p>
-          <p className="muted">Recent payment requests: {verificationCase.recentPaymentRequests.length}</p>
-        </article>
+          <p className={mutedTextClass}>Contacts: {verificationCase._count.contacts}</p>
+          <p className={mutedTextClass}>Documents: {verificationCase._count.consumerResources}</p>
+          <p className={mutedTextClass}>Payment methods: {verificationCase._count.paymentMethods}</p>
+          <p className={mutedTextClass}>Recent payment requests: {verificationCase.recentPaymentRequests.length}</p>
+        </Panel>
       </section>
 
       <AssignmentCard
@@ -107,135 +121,133 @@ export default async function VerificationCasePage({ params }: { params: Promise
         <section className="detailGrid">
           {verificationCase.decisionControls.canDecide ? (
             <>
-              <article className="panel">
-                <h2>Approve</h2>
-                <form action={approveVerificationAction.bind(null, verificationCase.id)} className="formStack">
+              <Panel title="Approve">
+                <form action={approveVerificationAction.bind(null, verificationCase.id)} className={stackClass}>
                   <input type="hidden" name="version" value={String(verificationCase.version)} />
                   <input type="hidden" name="confirmed" value="false" />
-                  <label className="field">
-                    <span>Reason (optional)</span>
-                    <textarea name="reason" placeholder="Optional approval note" />
+                  <label className={fieldClass}>
+                    <span className={fieldLabelClass}>Reason (optional)</span>
+                    <textarea className={textAreaClass} name="reason" placeholder="Optional approval note" />
                   </label>
-                  <label className="field">
-                    <span>Confirmation</span>
-                    <input type="checkbox" name="confirmed" value="true" required />
+                  <label className={checkboxFieldClass}>
+                    <input className={checkboxInputClass} type="checkbox" name="confirmed" value="true" required />
+                    <span className={fieldLabelClass}>Confirmation</span>
                   </label>
-                  <button className="primaryButton" type="submit" name="confirmedSubmit" value="true">
-                    Approve verification
-                  </button>
+                  <ActionPrimary type="submit">Approve verification</ActionPrimary>
                 </form>
-              </article>
-              <article className="panel">
-                <h2>Request Info</h2>
-                <form action={requestInfoVerificationAction.bind(null, verificationCase.id)} className="formStack">
+              </Panel>
+              <Panel title="Request Info">
+                <form action={requestInfoVerificationAction.bind(null, verificationCase.id)} className={stackClass}>
                   <input type="hidden" name="version" value={String(verificationCase.version)} />
                   <input type="hidden" name="confirmed" value="false" />
-                  <label className="field">
-                    <span>Reason (optional)</span>
-                    <textarea name="reason" placeholder="What the operator needs from the consumer" />
+                  <label className={fieldClass}>
+                    <span className={fieldLabelClass}>Reason (optional)</span>
+                    <textarea
+                      className={textAreaClass}
+                      name="reason"
+                      placeholder="What the operator needs from the consumer"
+                    />
                   </label>
-                  <label className="field">
-                    <span>Confirmation</span>
-                    <input type="checkbox" name="confirmed" value="true" required />
+                  <label className={checkboxFieldClass}>
+                    <input className={checkboxInputClass} type="checkbox" name="confirmed" value="true" required />
+                    <span className={fieldLabelClass}>Confirmation</span>
                   </label>
-                  <button className="secondaryButton" type="submit" name="confirmedSubmit" value="true">
-                    Request more info
-                  </button>
+                  <ActionGhost type="submit">Request more info</ActionGhost>
                 </form>
-              </article>
-              <article className="panel">
-                <h2>Flag</h2>
-                <form action={flagVerificationAction.bind(null, verificationCase.id)} className="formStack">
+              </Panel>
+              <Panel title="Flag">
+                <form action={flagVerificationAction.bind(null, verificationCase.id)} className={stackClass}>
                   <input type="hidden" name="version" value={String(verificationCase.version)} />
                   <input type="hidden" name="confirmed" value="false" />
-                  <label className="field">
-                    <span>Reason (optional)</span>
-                    <textarea name="reason" placeholder="Optional flag note" />
+                  <label className={fieldClass}>
+                    <span className={fieldLabelClass}>Reason (optional)</span>
+                    <textarea className={textAreaClass} name="reason" placeholder="Optional flag note" />
                   </label>
-                  <label className="field">
-                    <span>Confirmation</span>
-                    <input type="checkbox" name="confirmed" value="true" required />
+                  <label className={checkboxFieldClass}>
+                    <input className={checkboxInputClass} type="checkbox" name="confirmed" value="true" required />
+                    <span className={fieldLabelClass}>Confirmation</span>
                   </label>
-                  <button className="secondaryButton" type="submit" name="confirmedSubmit" value="true">
-                    Flag verification
-                  </button>
+                  <ActionGhost type="submit">Flag verification</ActionGhost>
                 </form>
-              </article>
-              <article className="panel">
-                <h2>Reject</h2>
-                <form action={rejectVerificationAction.bind(null, verificationCase.id)} className="formStack">
+              </Panel>
+              <Panel title="Reject">
+                <form action={rejectVerificationAction.bind(null, verificationCase.id)} className={stackClass}>
                   <input type="hidden" name="version" value={String(verificationCase.version)} />
                   <input type="hidden" name="confirmed" value="false" />
-                  <label className="field">
-                    <span>Reason</span>
-                    <textarea name="reason" required placeholder="Reject reason is required" />
+                  <label className={fieldClass}>
+                    <span className={fieldLabelClass}>Reason</span>
+                    <textarea
+                      className={textAreaClass}
+                      name="reason"
+                      required
+                      placeholder="Reject reason is required"
+                    />
                   </label>
-                  <label className="field">
-                    <span>Confirmation</span>
-                    <input type="checkbox" name="confirmed" value="true" required />
+                  <label className={checkboxFieldClass}>
+                    <input className={checkboxInputClass} type="checkbox" name="confirmed" value="true" required />
+                    <span className={fieldLabelClass}>Confirmation</span>
                   </label>
-                  <button className="dangerButton" type="submit" name="confirmedSubmit" value="true">
+                  <button className={dangerButtonClass} type="submit" name="confirmedSubmit" value="true">
                     Reject verification
                   </button>
                 </form>
-              </article>
+              </Panel>
             </>
           ) : null}
 
           {verificationCase.decisionControls.canForceLogout ? (
-            <article className="panel">
-              <h2>Force Logout</h2>
-              <form action={forceLogoutConsumerAction.bind(null, verificationCase.id)} className="formStack">
+            <Panel title="Force Logout">
+              <form action={forceLogoutConsumerAction.bind(null, verificationCase.id)} className={stackClass}>
                 <input type="hidden" name="confirmed" value="false" />
-                <label className="field">
-                  <span>Confirmation</span>
-                  <input type="checkbox" name="confirmed" value="true" required />
+                <label className={checkboxFieldClass}>
+                  <input className={checkboxInputClass} type="checkbox" name="confirmed" value="true" required />
+                  <span className={fieldLabelClass}>Confirmation</span>
                 </label>
-                <button className="dangerButton" type="submit" name="confirmedSubmit" value="true">
+                <button className={dangerButtonClass} type="submit" name="confirmedSubmit" value="true">
                   Revoke all consumer sessions
                 </button>
               </form>
-            </article>
+            </Panel>
           ) : null}
         </section>
       ) : null}
 
       <section className="detailGrid">
-        <article className="panel">
-          <h2>Decision history</h2>
+        <Panel title="Decision history">
           {verificationCase.decisionHistory.length === 0 ? (
-            <p className="muted">No verification decisions yet.</p>
+            <p className={mutedTextClass}>No verification decisions yet.</p>
           ) : null}
-          <div className="formStack">
+          <div className={stackClass}>
             {verificationCase.decisionHistory.map((item, index) => (
-              <div className="panel" key={String(item.id ?? index)}>
+              <div className={panelClass} key={String(item.id ?? index)}>
                 <strong>{String(item.action ?? `-`)}</strong>
-                <p className="muted">
+                <p className={mutedTextClass}>
                   Admin: {String((item as { admin?: { email?: string } }).admin?.email ?? item.adminId ?? `-`)}
                 </p>
-                <p className="muted">
+                <p className={mutedTextClass}>
                   Created: {formatDate(typeof item.createdAt === `string` ? item.createdAt : null)}
                 </p>
                 <pre className="mono">{JSON.stringify(item.metadata ?? {}, null, 2)}</pre>
               </div>
             ))}
           </div>
-        </article>
-        <article className="panel">
-          <h2>Recent auth events</h2>
-          {verificationCase.authRisk.recentEvents.length === 0 ? <p className="muted">No recent auth events.</p> : null}
-          <div className="formStack">
+        </Panel>
+        <Panel title="Recent auth events">
+          {verificationCase.authRisk.recentEvents.length === 0 ? (
+            <p className={mutedTextClass}>No recent auth events.</p>
+          ) : null}
+          <div className={stackClass}>
             {verificationCase.authRisk.recentEvents.map((item, index) => (
-              <div className="panel" key={String(item.id ?? index)}>
+              <div className={panelClass} key={String(item.id ?? index)}>
                 <strong>{String(item.event ?? `-`)}</strong>
-                <p className="muted">
+                <p className={mutedTextClass}>
                   Created: {formatDate(typeof item.createdAt === `string` ? item.createdAt : null)}
                 </p>
-                <p className="muted">IP: {String(item.ipAddress ?? `-`)}</p>
+                <p className={mutedTextClass}>IP: {String(item.ipAddress ?? `-`)}</p>
               </div>
             ))}
           </div>
-        </article>
+        </Panel>
       </section>
     </>
   );

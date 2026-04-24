@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 
+import styles from './AuthForm.module.css';
+
 type TokenPasswordFormProps = {
   token: string;
   submitPath: string;
@@ -71,23 +73,30 @@ export function TokenPasswordForm({
   }
 
   return (
-    <form className="loginForm" onSubmit={onSubmit}>
-      <label className="field">
-        <span>New password</span>
-        <input value={password} onChange={(event) => setPassword(event.target.value)} type="password" required />
-      </label>
-      <label className="field">
-        <span>Confirm password</span>
+    <form className={styles.form} onSubmit={onSubmit}>
+      <label className={styles.field}>
+        <span className={styles.label}>New password</span>
         <input
+          className={styles.input}
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          type="password"
+          required
+        />
+      </label>
+      <label className={styles.field}>
+        <span className={styles.label}>Confirm password</span>
+        <input
+          className={styles.input}
           value={confirmPassword}
           onChange={(event) => setConfirmPassword(event.target.value)}
           type="password"
           required
         />
       </label>
-      {error ? <p className="errorText">{error}</p> : null}
-      {success ? <p className="muted">{success}</p> : null}
-      <button className="primaryButton" type="submit" disabled={pending}>
+      {error ? <p className={styles.errorBanner}>{error}</p> : null}
+      {success ? <p className={styles.successBanner}>{success}</p> : null}
+      <button className={styles.submitBtn} type="submit" disabled={pending}>
         {pending ? `Working...` : submitLabel}
       </button>
     </form>

@@ -2,7 +2,7 @@ import { headers } from 'next/headers';
 import Link from 'next/link';
 import { type ReactElement, type ReactNode } from 'react';
 
-import { cn } from '@/lib/cn';
+import { cn } from '@remoola/ui';
 
 import { getActivePathFromHeaders, isNavItemActive } from '../nav-state';
 

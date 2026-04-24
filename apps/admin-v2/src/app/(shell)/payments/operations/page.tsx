@@ -1,5 +1,9 @@
 import Link from 'next/link';
 
+import { ActionGhost } from '../../../../components/action-ghost';
+import { Panel } from '../../../../components/panel';
+import { TinyPill } from '../../../../components/tiny-pill';
+import { mutedTextClass, stackClass } from '../../../../components/ui-classes';
 import { getPaymentOperationsQueue, type PaymentOperationsQueueResponse } from '../../../../lib/admin-api.server';
 
 function formatDate(value: string | null | undefined): string {
@@ -24,76 +28,68 @@ export default async function PaymentOperationsQueuePage() {
 
   return (
     <>
-      <section className="panel pageHeader">
-        <div>
-          <h1>Payment operations queue</h1>
-          <p className="muted">
-            Non-SLA operator follow-up surface for payment-domain cases that need manual review before drilldown.
-          </p>
-          <p className="muted">Generated: {formatDate(queue?.generatedAt)}</p>
-        </div>
-        <div className="actionsRow">
-          <Link className="secondaryButton" href="/payments">
-            Back to payments
-          </Link>
-        </div>
-      </section>
+      <Panel
+        title="Payment operations queue"
+        description="Non-SLA operator follow-up surface for payment-domain cases that need manual review before drilldown."
+        actions={<ActionGhost href="/payments">Back to payments</ActionGhost>}
+      >
+        <p className={mutedTextClass}>Generated: {formatDate(queue?.generatedAt)}</p>
+      </Panel>
 
       {buckets.map((bucket) => (
-        <section key={bucket.key} className="panel">
-          <div className="pageHeader">
-            <div>
-              <h2>{bucket.label}</h2>
-              <p className="muted">{bucket.operatorPrompt}</p>
-            </div>
-            <div className="pillRow">
-              <span className="pill">{bucket.items.length} items</span>
-            </div>
-          </div>
-          <div className="formStack">
-            {bucket.items.length === 0 ? <p className="muted">No follow-up items in this bucket.</p> : null}
+        <Panel
+          key={bucket.key}
+          title={bucket.label}
+          description={bucket.operatorPrompt}
+          actions={<TinyPill>{bucket.items.length} items</TinyPill>}
+        >
+          <div className={stackClass}>
+            {bucket.items.length === 0 ? <p className={mutedTextClass}>No follow-up items in this bucket.</p> : null}
             {bucket.items.map((item) => (
-              <article className="panel" key={item.id}>
-                <div className="pageHeader">
-                  <div>
-                    <Link href={`/payments/${item.id}`}>
-                      <strong>{item.id}</strong>
-                    </Link>
-                    <p className="muted">
-                      {item.amount} {item.currencyCode} · {item.paymentRail ?? `No rail`}
-                    </p>
-                  </div>
-                  <div className="muted">
+              <Panel
+                key={item.id}
+                className="gap-4"
+                actions={
+                  <div className={mutedTextClass}>
                     Persisted: {item.persistedStatus} · Effective: {item.effectiveStatus}
                   </div>
+                }
+              >
+                <div>
+                  <Link href={`/payments/${item.id}`}>
+                    <strong>{item.id}</strong>
+                  </Link>
+                  <p className={mutedTextClass}>
+                    {item.amount} {item.currencyCode} · {item.paymentRail ?? `No rail`}
+                  </p>
                 </div>
                 <p>{item.followUpReason}</p>
-                <p className="muted">
+                <p className={mutedTextClass}>
                   Payer: {renderConsumerLink(item.payer)} · Requester: {renderConsumerLink(item.requester)}
                 </p>
-                <p className="muted">
+                <p className={mutedTextClass}>
                   Attachments: {item.attachmentsCount} · Invoice-tagged attachments:{` `}
                   {item.invoiceTaggedAttachmentsCount}
                 </p>
-                <p className="muted">
+                <p className={mutedTextClass}>
                   Due: {formatDate(item.dueDate)} · Updated: {formatDate(item.updatedAt)} · Freshness:{` `}
                   {item.dataFreshnessClass}
                 </p>
-                <p className="muted">
+                <p className={mutedTextClass}>
                   Assigned to:{` `}
                   {item.assignedTo ? (
                     <>
                       <span>{item.assignedTo.name ?? item.assignedTo.email ?? item.assignedTo.id}</span>
-                      {item.assignedTo.email ? <span className="muted"> {item.assignedTo.email}</span> : null}
+                      {item.assignedTo.email ? <span className={mutedTextClass}> {item.assignedTo.email}</span> : null}
                     </>
                   ) : (
-                    <span className="muted">—</span>
+                    <span className={mutedTextClass}>—</span>
                   )}
                 </p>
-              </article>
+              </Panel>
             ))}
           </div>
-        </section>
+        </Panel>
       ))}
     </>
   );

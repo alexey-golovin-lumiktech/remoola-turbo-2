@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { type ReactElement } from 'react';
 
-import { cn } from '@/lib/cn';
+import { cn } from '@remoola/ui';
 
 import { ChecklistItem } from './checklist-item';
 import { type ContextRailEntry, type WorkspaceKey } from './context-rail-data';
@@ -76,10 +76,8 @@ export function ContextRail({ entry }: ContextRailProps): ReactElement {
   const workspaceHref = workspaceHrefByKey[entry.workspace];
 
   return (
-    <div className={cn(`contextRail`, `flex flex-col gap-4`)}>
-      <div
-        className={cn(`contextRail__title`, `flex flex-col gap-1 rounded-card border border-border bg-panel px-4 py-4`)}
-      >
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1 rounded-card border border-border bg-panel px-4 py-4">
         <span className="text-[11px] font-semibold tracking-[0.22em] text-cyan-300/80">CONTEXT</span>
         <h3 className="text-base font-semibold text-text">{entry.title}</h3>
         <p className="text-sm text-muted-56">{entry.goal}</p>
@@ -90,7 +88,7 @@ export function ContextRail({ entry }: ContextRailProps): ReactElement {
         description="Operators and lifecycle scope."
         className="flex flex-col gap-4 border-border bg-panel"
       >
-        <div className={cn(`contextRail__meta`, `grid grid-cols-1 gap-3`)}>
+        <div className="grid grid-cols-1 gap-3">
           <ContextStat label="Primary operators" value={countOperators(entry.primaryOperators)} />
           <ContextStat label="Secondary operators" value={countOperators(entry.secondaryOperators)} />
           <ContextStat label="Earliest active phase" value={entry.earliestActivePhase} tone="cyan" />
@@ -102,7 +100,7 @@ export function ContextRail({ entry }: ContextRailProps): ReactElement {
         description="What to look at first."
         className="flex flex-col gap-4 border-border bg-panel"
       >
-        <ul className={cn(`contextRail__list`, `flex flex-col gap-2`)}>
+        <ul className="flex flex-col gap-2">
           {entry.whatToLookAtFirst.map((item) => (
             <li key={item}>
               <Link

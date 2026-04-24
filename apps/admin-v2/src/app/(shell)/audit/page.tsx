@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import { type ReactElement } from 'react';
 
+import { cn } from '@remoola/ui';
+
 import { Panel } from '@/components/panel';
 import { WorkspaceLayout } from '@/components/workspace-layout';
-import { cn } from '@/lib/cn';
 
 const AUDIT_ENTRIES: ReadonlyArray<{
   href: string;
@@ -39,12 +40,7 @@ export default function AuditOverviewPage(): ReactElement {
   return (
     <WorkspaceLayout workspace="audit/auth">
       <>
-        <section
-          className={cn(
-            `panel pageHeader`,
-            `rounded-card border border-border bg-gradient-to-br from-bg via-panel to-bg p-6`,
-          )}
-        >
+        <section className={cn(`rounded-card border border-border bg-linear-to-br from-bg via-panel to-bg p-6`)}>
           <div className="flex flex-col gap-2">
             <span className="text-[11px] font-medium uppercase tracking-[0.22em] text-cyan-300/80">AUDIT EXPLORER</span>
             <h1 className="text-2xl font-semibold text-white">Audit</h1>
@@ -55,11 +51,7 @@ export default function AuditOverviewPage(): ReactElement {
           </div>
         </section>
 
-        <Panel
-          title="Sub-explorers"
-          description="Pick the surface that matches the question you are asking."
-          className="rounded-card border border-border bg-panel"
-        >
+        <Panel title="Sub-explorers" description="Pick the surface that matches the question you are asking.">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {AUDIT_ENTRIES.map((entry) => (
               <Link key={entry.href} href={entry.href} className="block h-full">

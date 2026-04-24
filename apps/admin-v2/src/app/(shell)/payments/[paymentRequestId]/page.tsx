@@ -1,7 +1,10 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { ActionGhost } from '../../../../components/action-ghost';
 import { AssignmentCard } from '../../../../components/assignment-card';
+import { Panel } from '../../../../components/panel';
+import { TinyPill } from '../../../../components/tiny-pill';
+import { monoMutedTextClass, mutedTextClass, panelClass, stackClass } from '../../../../components/ui-classes';
 import { getAdminIdentity, getAdmins, getPaymentCase } from '../../../../lib/admin-api.server';
 import {
   claimPaymentRequestAssignmentAction,
@@ -16,7 +19,7 @@ function formatDate(value: string | null | undefined): string {
 
 function renderMetadata(value: Record<string, unknown> | null | undefined) {
   if (!value || Object.keys(value).length === 0) {
-    return <p className="muted">No metadata.</p>;
+    return <p className={mutedTextClass}>No metadata.</p>;
   }
 
   return <pre className="mono">{JSON.stringify(value, null, 2)}</pre>;
@@ -47,118 +50,115 @@ export default async function PaymentCasePage({ params }: { params: Promise<{ pa
 
   return (
     <>
-      <section className="panel pageHeader">
-        <div>
-          <h1>Payment Request</h1>
-          <p className="muted mono">{paymentCase.id}</p>
-          <div className="pillRow">
-            <span className="pill">{paymentCase.core.effectiveStatus}</span>
-            <span className="pill">{paymentCase.core.currencyCode}</span>
-            {paymentCase.core.paymentRail ? <span className="pill">{paymentCase.core.paymentRail}</span> : null}
-            {paymentCase.staleWarning ? <span className="pill">Persisted status stale</span> : null}
-            {paymentCase.core.deletedAt ? <span className="pill">Soft-deleted request</span> : null}
+      <Panel
+        title="Payment Request"
+        description={paymentCase.id}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            {paymentCase.payer.id ? (
+              <ActionGhost href={`/consumers/${paymentCase.payer.id}`}>Payer case</ActionGhost>
+            ) : null}
+            {paymentCase.requester.id ? (
+              <ActionGhost href={`/consumers/${paymentCase.requester.id}`}>Requester case</ActionGhost>
+            ) : null}
+            <ActionGhost href={`/audit/admin-actions?resourceId=${paymentCase.id}`}>Related admin actions</ActionGhost>
           </div>
+        }
+      >
+        <p className={monoMutedTextClass}>{paymentCase.id}</p>
+        <div className="pillRow">
+          <TinyPill>{paymentCase.core.effectiveStatus}</TinyPill>
+          <TinyPill>{paymentCase.core.currencyCode}</TinyPill>
+          {paymentCase.core.paymentRail ? <TinyPill>{paymentCase.core.paymentRail}</TinyPill> : null}
+          {paymentCase.staleWarning ? <TinyPill>Persisted status stale</TinyPill> : null}
+          {paymentCase.core.deletedAt ? <TinyPill>Soft-deleted request</TinyPill> : null}
         </div>
-        <div className="actionsRow">
-          {paymentCase.payer.id ? (
-            <Link className="secondaryButton" href={`/consumers/${paymentCase.payer.id}`}>
-              Payer case
-            </Link>
-          ) : null}
-          {paymentCase.requester.id ? (
-            <Link className="secondaryButton" href={`/consumers/${paymentCase.requester.id}`}>
-              Requester case
-            </Link>
-          ) : null}
-          <Link className="secondaryButton" href={`/audit/admin-actions?resourceId=${paymentCase.id}`}>
-            Related admin actions
-          </Link>
-        </div>
-      </section>
+      </Panel>
 
       <section className="statsGrid">
-        <article className="panel">
+        <Panel>
           <h3>Request core</h3>
-          <p className="muted">
+          <p className={mutedTextClass}>
             Amount: {paymentCase.core.amount} {paymentCase.core.currencyCode}
           </p>
-          <p className="muted">Persisted: {paymentCase.core.persistedStatus}</p>
-          <p className="muted">Effective: {paymentCase.core.effectiveStatus}</p>
-          <p className="muted">Case truth follows the latest linked ledger outcome, not the earliest one.</p>
-          <p className="muted">Description: {paymentCase.core.description ?? `-`}</p>
-        </article>
-        <article className="panel">
+          <p className={mutedTextClass}>Persisted: {paymentCase.core.persistedStatus}</p>
+          <p className={mutedTextClass}>Effective: {paymentCase.core.effectiveStatus}</p>
+          <p className={mutedTextClass}>Case truth follows the latest linked ledger outcome, not the earliest one.</p>
+          <p className={mutedTextClass}>Description: {paymentCase.core.description ?? `-`}</p>
+        </Panel>
+        <Panel>
           <h3>Participants</h3>
-          <p className="muted">Payer: {paymentCase.payer.email ?? paymentCase.payer.id ?? `-`}</p>
-          <p className="muted">Requester: {paymentCase.requester.email ?? paymentCase.requester.id ?? `-`}</p>
-          <p className="muted">Data freshness: {paymentCase.dataFreshnessClass}</p>
-        </article>
-        <article className="panel">
+          <p className={mutedTextClass}>Payer: {paymentCase.payer.email ?? paymentCase.payer.id ?? `-`}</p>
+          <p className={mutedTextClass}>Requester: {paymentCase.requester.email ?? paymentCase.requester.id ?? `-`}</p>
+          <p className={mutedTextClass}>Data freshness: {paymentCase.dataFreshnessClass}</p>
+        </Panel>
+        <Panel>
           <h3>Dates</h3>
-          <p className="muted">Created: {formatDate(paymentCase.core.createdAt)}</p>
-          <p className="muted">Sent: {formatDate(paymentCase.core.sentDate)}</p>
-          <p className="muted">Due: {formatDate(paymentCase.core.dueDate)}</p>
-          <p className="muted">Updated: {formatDate(paymentCase.updatedAt)}</p>
-          <p className="muted">Version: {paymentCase.version}</p>
-        </article>
+          <p className={mutedTextClass}>Created: {formatDate(paymentCase.core.createdAt)}</p>
+          <p className={mutedTextClass}>Sent: {formatDate(paymentCase.core.sentDate)}</p>
+          <p className={mutedTextClass}>Due: {formatDate(paymentCase.core.dueDate)}</p>
+          <p className={mutedTextClass}>Updated: {formatDate(paymentCase.updatedAt)}</p>
+          <p className={mutedTextClass}>Version: {paymentCase.version}</p>
+        </Panel>
       </section>
 
       <section className="detailGrid">
-        <article className="panel">
-          <h2>Attachments / documents</h2>
-          <div className="formStack">
-            {paymentCase.attachments.length === 0 ? <p className="muted">No attachments.</p> : null}
+        <Panel title="Attachments / documents">
+          <div className={stackClass}>
+            {paymentCase.attachments.length === 0 ? <p className={mutedTextClass}>No attachments.</p> : null}
             {paymentCase.attachments.map((attachment) => (
-              <div className="panel" key={attachment.id}>
+              <div className={panelClass} key={attachment.id}>
                 <strong>{attachment.name}</strong>
-                <p className="muted">{attachment.mimetype}</p>
-                <p className="muted">
+                <p className={mutedTextClass}>{attachment.mimetype}</p>
+                <p className={mutedTextClass}>
                   {attachment.size} bytes · {formatDate(attachment.createdAt)}
                 </p>
                 {attachment.deletedAt ? (
-                  <p className="muted">Attachment soft-deleted: {formatDate(attachment.deletedAt)}</p>
+                  <p className={mutedTextClass}>Attachment soft-deleted: {formatDate(attachment.deletedAt)}</p>
                 ) : null}
                 {attachment.resourceDeletedAt ? (
-                  <p className="muted">Resource soft-deleted: {formatDate(attachment.resourceDeletedAt)}</p>
+                  <p className={mutedTextClass}>Resource soft-deleted: {formatDate(attachment.resourceDeletedAt)}</p>
                 ) : null}
                 <div className="actionsRow">
                   {paymentCase.requester.id ? (
-                    <Link className="secondaryButton" href={`/consumers/${paymentCase.requester.id}`}>
+                    <ActionGhost href={`/consumers/${paymentCase.requester.id}`}>
                       Requester documents context
-                    </Link>
+                    </ActionGhost>
                   ) : null}
-                  <a className="secondaryButton" href={attachment.downloadUrl} target="_blank" rel="noreferrer">
+                  <a
+                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-input border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white/72 transition hover:border-white/20 hover:bg-white/[0.05] hover:text-white/90"
+                    href={attachment.downloadUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     Download
                   </a>
                 </div>
               </div>
             ))}
           </div>
-        </article>
+        </Panel>
 
-        <article className="panel">
-          <h2>Related ledger entries</h2>
-          <div className="formStack">
-            {paymentCase.ledgerEntries.length === 0 ? <p className="muted">No ledger entries.</p> : null}
+        <Panel title="Related ledger entries">
+          <div className={stackClass}>
+            {paymentCase.ledgerEntries.length === 0 ? <p className={mutedTextClass}>No ledger entries.</p> : null}
             {paymentCase.ledgerEntries.map((entry) => (
-              <div className="panel" key={entry.id}>
+              <div className={panelClass} key={entry.id}>
                 <strong>{entry.type}</strong>
-                <p className="muted">
+                <p className={mutedTextClass}>
                   {entry.amount} {entry.currencyCode}
                 </p>
-                <p className="muted">Effective status: {entry.effectiveStatus}</p>
+                <p className={mutedTextClass}>Effective status: {entry.effectiveStatus}</p>
                 {entry.deletedAt ? (
-                  <p className="muted">Ledger entry soft-deleted: {formatDate(entry.deletedAt)}</p>
+                  <p className={mutedTextClass}>Ledger entry soft-deleted: {formatDate(entry.deletedAt)}</p>
                 ) : null}
                 <div className="actionsRow">
-                  <Link className="secondaryButton" href={`/ledger/${entry.id}`}>
-                    Open ledger case
-                  </Link>
+                  <ActionGhost href={`/ledger/${entry.id}`}>Open ledger case</ActionGhost>
                 </div>
               </div>
             ))}
           </div>
-        </article>
+        </Panel>
       </section>
 
       <AssignmentCard
@@ -175,32 +175,30 @@ export default async function PaymentCasePage({ params }: { params: Promise<{ pa
       />
 
       <section className="detailGrid">
-        <article className="panel">
-          <h2>Timeline</h2>
-          <div className="formStack">
+        <Panel title="Timeline">
+          <div className={stackClass}>
             {paymentCase.timeline.map((item, index) => (
-              <div className="panel" key={`${item.event}-${index}`}>
+              <div className={panelClass} key={`${item.event}-${index}`}>
                 <strong>{item.event}</strong>
-                <p className="muted">{formatDate(item.timestamp)}</p>
+                <p className={mutedTextClass}>{formatDate(item.timestamp)}</p>
                 {renderMetadata(item.metadata)}
               </div>
             ))}
           </div>
-        </article>
+        </Panel>
 
-        <article className="panel">
-          <h2>Audit context</h2>
-          <div className="formStack">
-            {paymentCase.auditContext.length === 0 ? <p className="muted">No related admin actions.</p> : null}
+        <Panel title="Audit context">
+          <div className={stackClass}>
+            {paymentCase.auditContext.length === 0 ? <p className={mutedTextClass}>No related admin actions.</p> : null}
             {paymentCase.auditContext.map((item) => (
-              <div className="panel" key={item.id}>
+              <div className={panelClass} key={item.id}>
                 <strong>{item.action}</strong>
-                <p className="muted">{item.adminEmail ?? `Unknown admin`}</p>
-                <p className="muted">{formatDate(item.createdAt)}</p>
+                <p className={mutedTextClass}>{item.adminEmail ?? `Unknown admin`}</p>
+                <p className={mutedTextClass}>{formatDate(item.createdAt)}</p>
               </div>
             ))}
           </div>
-        </article>
+        </Panel>
       </section>
     </>
   );

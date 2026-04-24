@@ -1,5 +1,9 @@
 import { type ReactElement } from 'react';
 
+import { cn } from '@remoola/ui';
+
+import { pillBaseClass, toneClassByTone } from './ui-classes';
+
 export type StatusPillTone = `rose` | `amber` | `emerald` | `cyan` | `neutral`;
 
 export type StatusPillProps = {
@@ -25,21 +29,12 @@ function resolveStatusTone(value: string): StatusPillTone {
 
 export function StatusPill({ status, toneOverride, className }: StatusPillProps): ReactElement {
   const trimmed = typeof status === `string` ? status.trim() : ``;
-  const composedClassName = className ? `pill ${className}` : `pill`;
 
   if (!trimmed) {
-    return (
-      <span className={composedClassName} data-tone="neutral">
-        —
-      </span>
-    );
+    return <span className={cn(pillBaseClass, toneClassByTone.neutral, className)}>—</span>;
   }
 
   const tone = toneOverride ?? resolveStatusTone(trimmed);
 
-  return (
-    <span className={composedClassName} data-tone={tone}>
-      {trimmed}
-    </span>
-  );
+  return <span className={cn(pillBaseClass, toneClassByTone[tone], className)}>{trimmed}</span>;
 }
