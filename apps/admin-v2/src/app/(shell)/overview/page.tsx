@@ -3,8 +3,11 @@ import { type ReactElement } from 'react';
 
 import { cn } from '@remoola/ui';
 
+import { ActionGhost } from '../../../components/action-ghost';
+import { DenseTable } from '../../../components/dense-table';
 import { Panel } from '../../../components/panel';
 import { SignalCard, type SignalCardAvailability } from '../../../components/signal-card';
+import { TinyPill } from '../../../components/tiny-pill';
 import { getAdminIdentity, getOverviewSummary, getQuickstarts } from '../../../lib/admin-api.server';
 import { formatDateTime } from '../../../lib/admin-format';
 import {
@@ -63,27 +66,66 @@ export default async function OverviewPage(): Promise<ReactElement> {
   const recentAdminActions = asRecord(signals.recentAdminActions);
   const recentItems = Array.isArray(recentAdminActions.items) ? recentAdminActions.items : [];
   const recentHref = readHref(recentAdminActions);
+  const activeSignals = activeStatKeys.map((key) => asRecord(signals[key]));
+  const actionReadySignals = activeSignals.filter((signal) => readAvailability(signal) === `live-actionable`).length;
+  const activePressureCount = activeSignals.reduce((sum, signal) => sum + (readCount(signal) ?? 0), 0);
+  const breadthSignals = breadthSignalOrder.map((key) => asRecord(signals[key]));
+  const secondarySignalCount = breadthSignals.reduce((sum, signal) => sum + (readCount(signal) ?? 0), 0);
 
   return (
     <div className="flex flex-col gap-6">
-      <section className={cn(`rounded-card border border-border bg-linear-to-br from-bg via-panel to-bg p-6`)}>
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div className="flex flex-col gap-2">
-            <span className="text-[11px] font-medium uppercase tracking-[0.22em] text-cyan-300/80">
-              WORKSPACE OVERVIEW
-            </span>
-            <h1 className="text-2xl font-semibold text-white">Overview</h1>
-            <p className="max-w-2xl text-sm text-white/65">
-              Overview of active queues, follow-up items, and recent admin actions.
-            </p>
+      <section
+        className={cn(`rounded-card border border-border bg-linear-to-br from-bg via-panel to-bg p-6 shadow-xs`)}
+      >
+        <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="flex flex-col gap-2">
+              <span className="text-[11px] font-medium uppercase tracking-[0.22em] text-cyan-300/80">
+                WORKSPACE OVERVIEW
+              </span>
+              <h1 className="text-2xl font-semibold text-white">Overview</h1>
+              <p className="max-w-2xl text-sm text-white/65">
+                Overview of active queues, follow-up items, and recent admin actions.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <TinyPill tone="cyan">{actionReadySignals} live workspaces</TinyPill>
+              <TinyPill>{visibleQuickstarts.length} shortcuts</TinyPill>
+              <TinyPill>{recentItems.length} recent actions</TinyPill>
+            </div>
           </div>
-          <p className="text-xs text-white/45">Computed: {formatDateTime(summary?.computedAt, `—`)}</p>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <div className="rounded-2xl border border-cyan-400/15 bg-cyan-500/[0.06] p-4">
+              <div className="text-[11px] uppercase tracking-[0.2em] text-cyan-200/70">Operational pressure</div>
+              <div className="mt-2 text-3xl font-semibold text-white">{activePressureCount}</div>
+              <p className="mt-2 text-sm leading-6 text-white/60">
+                Visible items across the core action-ready investigation queues.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+              <div className="text-[11px] uppercase tracking-[0.2em] text-white/45">Reference breadth</div>
+              <div className="mt-2 text-3xl font-semibold text-white">{secondarySignalCount}</div>
+              <p className="mt-2 text-sm leading-6 text-white/60">
+                Exchange-adjacent signals kept outside the primary pressure grid.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+              <div className="text-[11px] uppercase tracking-[0.2em] text-white/45">Snapshot freshness</div>
+              <div className="mt-2 text-sm font-medium text-white">
+                Computed {formatDateTime(summary?.computedAt, `—`)}
+              </div>
+              <p className="mt-2 text-sm leading-6 text-white/60">
+                Use this page for triage, then move into queue surfaces for exact case handling.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
       <Panel
         title="Operational pressure"
         description="Core signals that need attention; action-ready cards link to the related workspace."
+        actions={<TinyPill tone="cyan">{activePressureCount} visible items</TinyPill>}
       >
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {activeStatKeys.map((key) => {
@@ -103,7 +145,11 @@ export default async function OverviewPage(): Promise<ReactElement> {
         </div>
       </Panel>
 
-      <Panel title="Additional signals" description="Exchange signals shown alongside the main operational queues.">
+      <Panel
+        title="Additional signals"
+        description="Exchange signals shown alongside the main operational queues."
+        actions={<TinyPill>{secondarySignalCount} reference items</TinyPill>}
+      >
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {breadthSignalOrder.map((key) => {
             const signal = asRecord(signals[key]);
@@ -123,13 +169,13 @@ export default async function OverviewPage(): Promise<ReactElement> {
       </Panel>
 
       <Panel title="Shortcuts" description="One-click shortcuts into the most common investigations.">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           {visibleQuickstarts.map((item) => (
             <Link
               key={item.id}
               href={buildQuickstartHref(item.targetPath, item.id)}
               className={cn(
-                `group flex flex-col gap-2 rounded-card border border-border bg-panel p-4 transition hover:border-cyan-400/30 hover:bg-white/[0.02]`,
+                `group flex min-h-[148px] flex-col gap-3 rounded-card border border-border bg-panel p-4 shadow-xs transition hover:border-cyan-400/30 hover:bg-white/[0.02]`,
               )}
             >
               <div className="flex items-center justify-between gap-2">
@@ -150,56 +196,28 @@ export default async function OverviewPage(): Promise<ReactElement> {
       <Panel
         title="Recent admin actions"
         description="Latest admin actions surfaced directly from the admin action log."
-        actions={
-          recentHref ? (
-            <Link
-              className={cn(
-                `secondaryButton`,
-                `inline-flex items-center gap-2 rounded-input border border-white/10 bg-white/[0.03] px-3 py-1.5 text-sm text-white/72 hover:text-white/95`,
-              )}
-              href={recentHref}
-            >
-              Open audit
-            </Link>
-          ) : null
-        }
-        className="tableWrap"
+        actions={recentHref ? <ActionGhost href={recentHref}>Open audit</ActionGhost> : null}
       >
-        <table className="w-full text-sm">
-          <thead className="text-left text-xs uppercase tracking-wide text-white/45">
-            <tr>
-              <th className="px-3 py-2">Action</th>
-              <th className="px-3 py-2">Resource</th>
-              <th className="px-3 py-2">Admin</th>
-              <th className="px-3 py-2">Created</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {recentItems.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="px-3 py-3 text-white/55">
-                  No recent admin actions.
+        <DenseTable headers={[`Action`, `Resource`, `Admin`, `Created`]} emptyMessage="No recent admin actions.">
+          {recentItems.map((item, index) => {
+            const row = asRecord(item);
+            return (
+              <tr key={String(row.id ?? index)} className="text-white/85">
+                <td className="px-3 py-3">
+                  <div className="font-medium text-white">{String(row.action ?? `—`)}</div>
+                </td>
+                <td className="px-3 py-3">
+                  <div>{String(row.resource ?? `—`)}</div>
+                  <div className="text-xs font-mono text-white/55">{String(row.resourceId ?? `—`)}</div>
+                </td>
+                <td className="px-3 py-3">{String(row.adminEmail ?? `—`)}</td>
+                <td className="px-3 py-3">
+                  {formatDateTime(typeof row.createdAt === `string` ? row.createdAt : null, `—`)}
                 </td>
               </tr>
-            ) : null}
-            {recentItems.map((item, index) => {
-              const row = asRecord(item);
-              return (
-                <tr key={String(row.id ?? index)} className="text-white/85">
-                  <td className="px-3 py-2">{String(row.action ?? `—`)}</td>
-                  <td className="px-3 py-2">
-                    {String(row.resource ?? `—`)}
-                    <div className="text-xs font-mono text-white/55">{String(row.resourceId ?? `—`)}</div>
-                  </td>
-                  <td className="px-3 py-2">{String(row.adminEmail ?? `—`)}</td>
-                  <td className="px-3 py-2">
-                    {formatDateTime(typeof row.createdAt === `string` ? row.createdAt : null, `—`)}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+            );
+          })}
+        </DenseTable>
       </Panel>
     </div>
   );

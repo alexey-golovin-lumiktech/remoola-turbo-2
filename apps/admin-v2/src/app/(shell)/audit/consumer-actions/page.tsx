@@ -2,7 +2,15 @@ import Link from 'next/link';
 
 import { DenseTable } from '../../../../components/dense-table';
 import { MobileQueueCard } from '../../../../components/mobile-queue-card';
+import { Panel } from '../../../../components/panel';
 import { TabletRow } from '../../../../components/tablet-row';
+import {
+  buttonRowClass,
+  fieldClass,
+  fieldLabelClass,
+  ghostButtonClass,
+  textInputClass,
+} from '../../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { getConsumerActionAudit } from '../../../../lib/admin-api.server';
 import { formatDateTime, getDefaultLookbackIsoRange } from '../../../../lib/admin-format';
@@ -156,55 +164,83 @@ export default async function AuditConsumerActionsPage({
   return (
     <WorkspaceLayout workspace="audit/consumer-actions">
       <>
-        <section className="panel pageHeader">
-          <div>
-            <h1>Audit / Consumer Actions</h1>
-            <p className="muted">Time-bounded consumer action log explorer. Default range is the last 7 days.</p>
-          </div>
-          <form className="actionsRow" method="get">
-            <input name="consumerId" defaultValue={params?.consumerId ?? ``} placeholder="consumer id" />
-            <input name="action" defaultValue={params?.action ?? ``} placeholder="action" />
-            <input
-              name="dateFrom"
-              defaultValue={params?.dateFrom ?? getDefaultLookbackIsoRange().dateFrom}
-              placeholder="dateFrom"
-            />
-            <input
-              name="dateTo"
-              defaultValue={params?.dateTo ?? getDefaultLookbackIsoRange().dateTo}
-              placeholder="dateTo"
-            />
-            <button className="secondaryButton" type="submit">
-              Apply
-            </button>
+        <Panel
+          title="Audit / Consumer Actions"
+          description="Time-bounded consumer action log explorer. Default range is the last 7 days."
+        >
+          <form className="grid gap-3 md:grid-cols-2 xl:grid-cols-4" method="get">
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Consumer id</span>
+              <input
+                className={textInputClass}
+                name="consumerId"
+                defaultValue={params?.consumerId ?? ``}
+                placeholder="consumer id"
+              />
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Action</span>
+              <input
+                className={textInputClass}
+                name="action"
+                defaultValue={params?.action ?? ``}
+                placeholder="action"
+              />
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Date from</span>
+              <input
+                className={textInputClass}
+                name="dateFrom"
+                defaultValue={params?.dateFrom ?? getDefaultLookbackIsoRange().dateFrom}
+                placeholder="dateFrom"
+              />
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Date to</span>
+              <input
+                className={textInputClass}
+                name="dateTo"
+                defaultValue={params?.dateTo ?? getDefaultLookbackIsoRange().dateTo}
+                placeholder="dateTo"
+              />
+            </label>
+            <div className={buttonRowClass}>
+              <button className={ghostButtonClass} type="submit">
+                Apply
+              </button>
+              <a className={ghostButtonClass} href="/audit/consumer-actions">
+                Reset
+              </a>
+            </div>
           </form>
-        </section>
-        <section className="panel">
-          <div className="pageHeader">
-            <p className="muted">
-              {data?.total ?? 0} results · page {data?.page ?? 1} / {totalPages}
-            </p>
-            <div className="actionsRow">
+        </Panel>
+        <Panel
+          title="Consumer actions"
+          description={`${data?.total ?? 0} results · page ${data?.page ?? 1} / ${totalPages}`}
+          actions={
+            <div className={buttonRowClass}>
               <a
-                className="secondaryButton"
+                className={ghostButtonClass}
                 aria-disabled={page <= 1}
                 href={page > 1 ? pageHref(page - 1) : pageHref(1)}
               >
                 Previous
               </a>
               <a
-                className="secondaryButton"
+                className={ghostButtonClass}
                 aria-disabled={page >= totalPages}
                 href={page < totalPages ? pageHref(page + 1) : pageHref(totalPages)}
               >
                 Next
               </a>
             </div>
-          </div>
+          }
+        >
           <ConsumerActionsMobileCards items={items} />
           <ConsumerActionsTabletRows items={items} />
           <ConsumerActionsDesktopTable items={items} />
-        </section>
+        </Panel>
       </>
     </WorkspaceLayout>
   );

@@ -4,6 +4,7 @@ import { type ReactElement } from 'react';
 import { cn } from '@remoola/ui';
 
 import { NavIcon, type NavIconName } from './nav-icon';
+import { TinyPill } from './tiny-pill';
 import { isNavItemActive } from '../app/(shell)/nav-state';
 
 type NavTupleItem = {
@@ -45,7 +46,7 @@ export function SidebarSection({
         {title}
       </div>
       {description && !compact ? <p className="mt-1 px-2 text-[11px] leading-5 text-white/45">{description}</p> : null}
-      <ul className="mt-2 space-y-1">
+      <ul className="mt-2 space-y-1.5">
         {items.map((item) => {
           const sig = item.queueSignalKey && signalCounts ? signalCounts[item.queueSignalKey] : undefined;
           const showSubtitle = !!sig && sig.count > 0 && !sig.deferred;
@@ -60,15 +61,22 @@ export function SidebarSection({
                   `flex min-h-11 w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition`,
                   compact && `rounded-xl px-3 py-2.5`,
                   active
-                    ? `border border-cyan-400/20 bg-cyan-500/10 text-white`
+                    ? `border border-cyan-400/25 bg-cyan-500/10 text-white shadow-xs`
                     : `border border-transparent text-white/72 hover:border-white/10 hover:bg-white/[0.03] hover:text-white`,
                 )}
               >
-                <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center text-sm">
+                <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center text-sm">
                   {item.icon ? <NavIcon name={item.icon} /> : null}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className={cn(`block font-medium`, compact && `leading-tight`)}>{item.label}</span>
+                  <span className="flex items-center justify-between gap-2">
+                    <span className={cn(`block font-medium`, compact && `leading-tight`)}>{item.label}</span>
+                    {showSubtitle ? (
+                      <TinyPill tone={active ? `cyan` : `neutral`} className="shrink-0">
+                        {sig.count}
+                      </TinyPill>
+                    ) : null}
+                  </span>
                   {showSubtitle ? (
                     <span className={cn(`mt-1 block text-xs text-white/40`, compact && `leading-4`)}>
                       {sig.count} pending

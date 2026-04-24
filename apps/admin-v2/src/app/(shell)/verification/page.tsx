@@ -538,47 +538,71 @@ export default async function VerificationQueuePage({
           canManageSavedViews={canManageSavedViews}
         />
 
-        <Panel>
-          <form className={buttonRowClass} method="get">
-            <input className={textInputClass} name="status" defaultValue={status ?? ``} placeholder="status" />
-            <input
-              className={textInputClass}
-              name="stripeIdentityStatus"
-              defaultValue={stripeIdentityStatus ?? ``}
-              placeholder="stripe status"
-            />
-            <input className={textInputClass} name="country" defaultValue={country ?? ``} placeholder="country" />
-            <input
-              className={textInputClass}
-              name="contractorKind"
-              defaultValue={contractorKind ?? ``}
-              placeholder="contractor kind"
-            />
-            <label className={checkboxFieldClass}>
-              <input
-                className={checkboxInputClass}
-                type="checkbox"
-                name="missingProfileData"
-                value="true"
-                defaultChecked={missingProfileData}
-              />
-              <span>Missing profile</span>
+        <Panel
+          title="Queue filters"
+          description="Refine the active verification review list without leaving the workspace."
+        >
+          <form className="grid gap-3 md:grid-cols-2 xl:grid-cols-4" method="get">
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Verification status</span>
+              <input className={textInputClass} name="status" defaultValue={status ?? ``} placeholder="status" />
             </label>
-            <label className={checkboxFieldClass}>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Stripe status</span>
               <input
-                className={checkboxInputClass}
-                type="checkbox"
-                name="missingDocuments"
-                value="true"
-                defaultChecked={missingDocuments}
+                className={textInputClass}
+                name="stripeIdentityStatus"
+                defaultValue={stripeIdentityStatus ?? ``}
+                placeholder="stripe status"
               />
-              <span>Missing docs</span>
             </label>
-            <ActionGhost type="submit">Apply</ActionGhost>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Country</span>
+              <input className={textInputClass} name="country" defaultValue={country ?? ``} placeholder="country" />
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Contractor kind</span>
+              <input
+                className={textInputClass}
+                name="contractorKind"
+                defaultValue={contractorKind ?? ``}
+                placeholder="contractor kind"
+              />
+            </label>
+            <div className="flex flex-col justify-end gap-3 xl:col-span-2">
+              <div className={buttonRowClass}>
+                <label className={checkboxFieldClass}>
+                  <input
+                    className={checkboxInputClass}
+                    type="checkbox"
+                    name="missingProfileData"
+                    value="true"
+                    defaultChecked={missingProfileData}
+                  />
+                  <span>Missing profile</span>
+                </label>
+                <label className={checkboxFieldClass}>
+                  <input
+                    className={checkboxInputClass}
+                    type="checkbox"
+                    name="missingDocuments"
+                    value="true"
+                    defaultChecked={missingDocuments}
+                  />
+                  <span>Missing docs</span>
+                </label>
+              </div>
+              <div className={buttonRowClass}>
+                <ActionGhost type="submit">Apply</ActionGhost>
+                <ActionGhost href="/verification">Reset</ActionGhost>
+              </div>
+            </div>
           </form>
         </Panel>
 
         <Panel
+          title="Verification cases"
+          description={`${queue?.total ?? 0} results · page ${queue?.page ?? 1} / ${totalPages}`}
           actions={
             <div className={buttonRowClass}>
               <a
@@ -596,9 +620,6 @@ export default async function VerificationQueuePage({
             </div>
           }
         >
-          <p className={mutedTextClass}>
-            {queue?.total ?? 0} results · page {queue?.page ?? 1} / {totalPages}
-          </p>
           <VerificationMobileCards items={items} />
           <VerificationTabletRows items={items} />
           <VerificationDesktopTable items={items} />

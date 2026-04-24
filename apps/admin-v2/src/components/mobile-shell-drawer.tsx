@@ -129,8 +129,8 @@ export function MobileShellDrawer({ children, triggerLabel = `Workspaces` }: Mob
   }, [open]);
 
   return (
-    <div className="md:hidden">
-      <div className="sticky top-0 z-[35] flex items-center gap-3 border-b border-border bg-bg/85 px-4 py-3 pt-[calc(var(--space-3)+env(safe-area-inset-top,0px))] backdrop-blur-md">
+    <div className="lg:hidden">
+      <div className="sticky top-0 z-[35] flex items-center gap-3 border-b border-border bg-bg/90 px-4 py-3 pt-[calc(var(--space-3)+env(safe-area-inset-top,0px))] backdrop-blur-md">
         <button
           ref={triggerRef}
           type="button"
@@ -138,7 +138,7 @@ export function MobileShellDrawer({ children, triggerLabel = `Workspaces` }: Mob
           aria-controls="mobile-shell-drawer-sheet"
           aria-expanded={open}
           onClick={() => setOpen(true)}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-input border border-white/10 bg-white/[0.03] text-white/80 hover:bg-white/[0.06]"
+          className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-input border border-white/10 bg-white/[0.03] text-white/80 transition hover:bg-white/[0.06] hover:text-white"
         >
           <span className="sr-only">Open navigation</span>
           <span aria-hidden="true" className="flex flex-col gap-1.5">
@@ -147,7 +147,7 @@ export function MobileShellDrawer({ children, triggerLabel = `Workspaces` }: Mob
             <span className="block h-0.5 w-5 bg-white/80" />
           </span>
         </button>
-        <span className="text-sm font-medium text-white/85">{triggerLabel}</span>
+        <span className="text-sm font-medium text-white/90">{triggerLabel}</span>
       </div>
 
       <div
@@ -184,7 +184,7 @@ export function MobileShellDrawer({ children, triggerLabel = `Workspaces` }: Mob
             type="button"
             aria-label="Close navigation"
             onClick={() => setOpen(false)}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-input border border-white/10 bg-white/[0.03] text-white/80 hover:bg-white/[0.06]"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-input border border-white/10 bg-white/[0.03] text-white/80 transition hover:bg-white/[0.06] hover:text-white"
           >
             <span aria-hidden="true" className="text-base leading-none">
               ×

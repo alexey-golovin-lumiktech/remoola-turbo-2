@@ -83,8 +83,8 @@ export default async function ShellLayout({ children }: { children: React.ReactN
   const visibleQuickstarts = filterQuickstartsForWorkspaces(quickstarts, identity?.workspaces);
 
   return (
-    <div className="grid min-h-screen grid-cols-1 bg-bg md:grid-cols-[280px_minmax(0,1fr)] lg:grid-cols-[320px_minmax(0,1fr)]">
-      <aside className="hidden md:flex md:min-h-screen md:flex-col md:overflow-hidden md:border-r md:border-border md:bg-panel">
+    <div className="grid min-h-screen grid-cols-1 bg-bg lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)]">
+      <aside className="hidden lg:flex lg:min-h-screen lg:flex-col lg:overflow-hidden lg:border-r lg:border-border lg:bg-panel">
         <SidebarContents
           identity={identity}
           activePath={activePath}
@@ -92,7 +92,7 @@ export default async function ShellLayout({ children }: { children: React.ReactN
           quickstarts={visibleQuickstarts}
         />
       </aside>
-      <main className="min-w-0 px-4 py-4 pb-[var(--mobile-bottom-nav-reserved-space)] md:px-6 md:py-6 md:pb-6 xl:px-8">
+      <main className="min-w-0 overflow-x-hidden px-4 py-4 pb-[var(--mobile-bottom-nav-reserved-space)] lg:px-6 lg:py-6 lg:pb-6 xl:px-8">
         {identity ? (
           <div className="flex min-w-0 flex-col gap-6">
             <ShellHeader />

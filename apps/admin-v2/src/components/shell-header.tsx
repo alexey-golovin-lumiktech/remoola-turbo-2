@@ -98,7 +98,7 @@ export async function ShellHeader(): Promise<ReactElement> {
     <header
       className={cn(
         panelSurfaceClass,
-        `sticky top-0 z-30 hidden border-border bg-bg/85 px-5 py-4 backdrop-blur-md md:block`,
+        `sticky top-0 z-30 hidden border-border bg-bg/85 px-5 py-4 backdrop-blur-md lg:block`,
       )}
     >
       <div className="flex items-center gap-2 text-xs text-white/40">
@@ -108,12 +108,12 @@ export async function ShellHeader(): Promise<ReactElement> {
         <span>/</span>
         <span className="text-cyan-300/80">workspace</span>
       </div>
-      <div className="mt-3 flex items-center gap-3">
+      <div className="mt-3 flex flex-wrap items-center gap-3">
         <form
           action={searchAction}
           role="search"
           className={cn(
-            `flex min-w-[360px] flex-1 items-center gap-3 rounded-shell border border-border bg-white/[0.03] px-4 py-2.5 text-sm text-white/60`,
+            `flex min-w-0 flex-1 items-center gap-3 rounded-shell border border-border bg-white/[0.03] px-4 py-2.5 text-sm text-white/60 lg:min-w-[360px]`,
           )}
         >
           <NavIcon name="search" />

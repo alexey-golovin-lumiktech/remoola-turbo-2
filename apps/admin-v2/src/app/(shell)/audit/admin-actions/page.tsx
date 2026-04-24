@@ -1,8 +1,17 @@
 import Link from 'next/link';
 
+import { ActionGhost } from '../../../../components/action-ghost';
 import { DenseTable } from '../../../../components/dense-table';
 import { MobileQueueCard } from '../../../../components/mobile-queue-card';
+import { Panel } from '../../../../components/panel';
 import { TabletRow } from '../../../../components/tablet-row';
+import {
+  buttonRowClass,
+  fieldClass,
+  fieldLabelClass,
+  ghostButtonClass,
+  textInputClass,
+} from '../../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { getAdminActionAudit, getQuickstart } from '../../../../lib/admin-api.server';
 import { parseQuickstartId } from '../../../../lib/quickstart-investigations';
@@ -177,70 +186,83 @@ export default async function AuditAdminActionsPage({
   return (
     <WorkspaceLayout workspace="audit/admin-actions">
       <>
-        <section className="panel pageHeader">
-          <div>
-            <h1>Audit / Admin Actions</h1>
-            <p className="muted">
-              Append-only admin action trail for consumers notes, flags and later workspace actions.
-            </p>
-          </div>
-          <form className="actionsRow" method="get">
-            <input name="action" defaultValue={action ?? ``} placeholder="action" />
-            <input name="email" defaultValue={email ?? ``} placeholder="admin email" />
-            <input name="resourceId" defaultValue={resourceId ?? ``} placeholder="resource id" />
-            <input name="dateFrom" defaultValue={dateFrom ?? ``} placeholder="dateFrom" />
-            <input name="dateTo" defaultValue={dateTo ?? ``} placeholder="dateTo" />
-            <button className="secondaryButton" type="submit">
-              Apply
-            </button>
-            <Link className="secondaryButton" href="/audit/admin-actions">
-              Reset
-            </Link>
-          </form>
-        </section>
-        {appliedQuickstart ? (
-          <section className="panel">
-            <div className="pageHeader">
-              <div>
-                <h2>{appliedQuickstart.label}</h2>
-                <p className="muted">{appliedQuickstart.description}</p>
-              </div>
-              <Link className="secondaryButton" href="/audit/admin-actions">
-                Remove quickstart
-              </Link>
+        <Panel
+          title="Audit / Admin Actions"
+          description="Append-only admin action trail for consumers notes, flags and later workspace actions."
+        >
+          <form className="grid gap-3 md:grid-cols-2 xl:grid-cols-5" method="get">
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Action</span>
+              <input className={textInputClass} name="action" defaultValue={action ?? ``} placeholder="action" />
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Admin email</span>
+              <input className={textInputClass} name="email" defaultValue={email ?? ``} placeholder="admin email" />
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Resource id</span>
+              <input
+                className={textInputClass}
+                name="resourceId"
+                defaultValue={resourceId ?? ``}
+                placeholder="resource id"
+              />
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Date from</span>
+              <input className={textInputClass} name="dateFrom" defaultValue={dateFrom ?? ``} placeholder="dateFrom" />
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Date to</span>
+              <input className={textInputClass} name="dateTo" defaultValue={dateTo ?? ``} placeholder="dateTo" />
+            </label>
+            <div className={buttonRowClass}>
+              <button className={ghostButtonClass} type="submit">
+                Apply
+              </button>
+              <a className={ghostButtonClass} href="/audit/admin-actions">
+                Reset
+              </a>
             </div>
-          </section>
+          </form>
+        </Panel>
+        {appliedQuickstart ? (
+          <Panel
+            title={appliedQuickstart.label}
+            description={appliedQuickstart.description}
+            actions={<ActionGhost href="/audit/admin-actions">Remove quickstart</ActionGhost>}
+          />
         ) : params?.quickstart ? (
-          <section className="panel">
+          <Panel>
             <p className="muted">The requested quickstart could not be resolved for admin action audit.</p>
-          </section>
+          </Panel>
         ) : null}
-        <section className="panel">
-          <div className="pageHeader">
-            <p className="muted">
-              {data?.total ?? 0} results · page {data?.page ?? 1} / {totalPages}
-            </p>
-            <div className="actionsRow">
+        <Panel
+          title="Admin actions"
+          description={`${data?.total ?? 0} results · page ${data?.page ?? 1} / ${totalPages}`}
+          actions={
+            <div className={buttonRowClass}>
               <a
-                className="secondaryButton"
+                className={ghostButtonClass}
                 aria-disabled={page <= 1}
                 href={page > 1 ? pageHref(page - 1) : pageHref(1)}
               >
                 Previous
               </a>
               <a
-                className="secondaryButton"
+                className={ghostButtonClass}
                 aria-disabled={page >= totalPages}
                 href={page < totalPages ? pageHref(page + 1) : pageHref(totalPages)}
               >
                 Next
               </a>
             </div>
-          </div>
+          }
+        >
           <AdminActionsMobileCards items={items} />
           <AdminActionsTabletRows items={items} />
           <AdminActionsDesktopTable items={items} />
-        </section>
+        </Panel>
       </>
     </WorkspaceLayout>
   );

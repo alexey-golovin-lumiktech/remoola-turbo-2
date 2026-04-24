@@ -1,8 +1,18 @@
 import Link from 'next/link';
 
+import { ActionGhost } from '../../../components/action-ghost';
 import { DenseTable } from '../../../components/dense-table';
 import { MobileQueueCard } from '../../../components/mobile-queue-card';
+import { Panel } from '../../../components/panel';
 import { TabletRow } from '../../../components/tablet-row';
+import {
+  buttonRowClass,
+  checkboxFieldClass,
+  checkboxInputClass,
+  fieldClass,
+  fieldLabelClass,
+  textInputClass,
+} from '../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../components/workspace-layout';
 import { getAdminIdentity, getDocuments, getDocumentTags } from '../../../lib/admin-api.server';
 import { formatBytes, formatDateTime } from '../../../lib/admin-format';
@@ -269,81 +279,137 @@ export default async function DocumentsPage({ searchParams }: { searchParams: Pr
   return (
     <WorkspaceLayout workspace="documents">
       <>
-        <section className="panel pageHeader">
-          <div>
-            <h1>Documents</h1>
-            <p className="muted">
-              Evidence review boundaries for uploaded resources linked to consumers or payment cases.
-            </p>
-            <p className="muted">
-              This workspace stays investigation-first: no review queues, no storage diagnostics, no generic file
-              administration.
-            </p>
-          </div>
-          <div className="actionsRow">
-            <Link className="secondaryButton" href="/documents/tags">
-              Tag management
-            </Link>
-          </div>
-        </section>
+        <Panel
+          title="Documents"
+          description="Evidence review boundaries for uploaded resources linked to consumers or payment cases."
+          actions={<ActionGhost href="/documents/tags">Tag management</ActionGhost>}
+        >
+          <p className="text-sm leading-6 text-white/60">
+            This workspace stays investigation-first: no review queues, no storage diagnostics, no generic file
+            administration.
+          </p>
+        </Panel>
 
-        <section className="panel">
-          <form className="actionsRow" method="get">
-            <input name="q" defaultValue={typeof params.q === `string` ? params.q : ``} placeholder="Name or id" />
-            <input
-              name="consumerId"
-              defaultValue={typeof params.consumerId === `string` ? params.consumerId : ``}
-              placeholder="Owner consumer id"
-            />
-            <input
-              name="paymentRequestId"
-              defaultValue={typeof params.paymentRequestId === `string` ? params.paymentRequestId : ``}
-              placeholder="Payment request id"
-            />
-            <input name="tag" defaultValue={typeof params.tag === `string` ? params.tag : ``} placeholder="Tag name" />
-            <select name="access" defaultValue={typeof params.access === `string` ? params.access : ``}>
-              <option value="">Any access</option>
-              <option value="PRIVATE">PRIVATE</option>
-              <option value="PUBLIC">PUBLIC</option>
-            </select>
-            <input
-              name="mimetype"
-              defaultValue={typeof params.mimetype === `string` ? params.mimetype : ``}
-              placeholder="MIME type"
-            />
-            <input
-              name="sizeMin"
-              type="number"
-              min="0"
-              defaultValue={typeof params.sizeMin === `string` ? params.sizeMin : ``}
-              placeholder="Min bytes"
-            />
-            <input
-              name="sizeMax"
-              type="number"
-              min="0"
-              defaultValue={typeof params.sizeMax === `string` ? params.sizeMax : ``}
-              placeholder="Max bytes"
-            />
-            <input
-              name="createdFrom"
-              type="datetime-local"
-              defaultValue={typeof params.createdFrom === `string` ? params.createdFrom.slice(0, 16) : ``}
-            />
-            <input
-              name="createdTo"
-              type="datetime-local"
-              defaultValue={typeof params.createdTo === `string` ? params.createdTo.slice(0, 16) : ``}
-            />
-            <label className="field">
-              <span>Include deleted</span>
-              <input type="checkbox" name="includeDeleted" value="true" defaultChecked={includeDeleted} />
+        <Panel
+          title="Explorer filters"
+          description="Narrow the evidence explorer by owner, payment linkage, tag, access, size, or time window."
+        >
+          <form className="grid gap-3 md:grid-cols-2 xl:grid-cols-4" method="get">
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Search</span>
+              <input
+                className={textInputClass}
+                name="q"
+                defaultValue={typeof params.q === `string` ? params.q : ``}
+                placeholder="Name or id"
+              />
             </label>
-            <button className="secondaryButton" type="submit">
-              Apply filters
-            </button>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Owner consumer</span>
+              <input
+                className={textInputClass}
+                name="consumerId"
+                defaultValue={typeof params.consumerId === `string` ? params.consumerId : ``}
+                placeholder="Owner consumer id"
+              />
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Payment request</span>
+              <input
+                className={textInputClass}
+                name="paymentRequestId"
+                defaultValue={typeof params.paymentRequestId === `string` ? params.paymentRequestId : ``}
+                placeholder="Payment request id"
+              />
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Tag</span>
+              <input
+                className={textInputClass}
+                name="tag"
+                defaultValue={typeof params.tag === `string` ? params.tag : ``}
+                placeholder="Tag name"
+              />
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Access</span>
+              <select
+                className={textInputClass}
+                name="access"
+                defaultValue={typeof params.access === `string` ? params.access : ``}
+              >
+                <option value="">Any access</option>
+                <option value="PRIVATE">PRIVATE</option>
+                <option value="PUBLIC">PUBLIC</option>
+              </select>
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>MIME type</span>
+              <input
+                className={textInputClass}
+                name="mimetype"
+                defaultValue={typeof params.mimetype === `string` ? params.mimetype : ``}
+                placeholder="MIME type"
+              />
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Minimum bytes</span>
+              <input
+                className={textInputClass}
+                name="sizeMin"
+                type="number"
+                min="0"
+                defaultValue={typeof params.sizeMin === `string` ? params.sizeMin : ``}
+                placeholder="Min bytes"
+              />
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Maximum bytes</span>
+              <input
+                className={textInputClass}
+                name="sizeMax"
+                type="number"
+                min="0"
+                defaultValue={typeof params.sizeMax === `string` ? params.sizeMax : ``}
+                placeholder="Max bytes"
+              />
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Created from</span>
+              <input
+                className={textInputClass}
+                name="createdFrom"
+                type="datetime-local"
+                defaultValue={typeof params.createdFrom === `string` ? params.createdFrom.slice(0, 16) : ``}
+              />
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Created to</span>
+              <input
+                className={textInputClass}
+                name="createdTo"
+                type="datetime-local"
+                defaultValue={typeof params.createdTo === `string` ? params.createdTo.slice(0, 16) : ``}
+              />
+            </label>
+            <div className="flex flex-col justify-end gap-3 xl:col-span-2">
+              <label className={checkboxFieldClass}>
+                <input
+                  className={checkboxInputClass}
+                  type="checkbox"
+                  name="includeDeleted"
+                  value="true"
+                  defaultChecked={includeDeleted}
+                />
+                <span>Include deleted</span>
+              </label>
+              <div className={buttonRowClass}>
+                <ActionGhost type="submit">Apply filters</ActionGhost>
+                <ActionGhost href="/documents">Reset</ActionGhost>
+              </div>
+            </div>
           </form>
-        </section>
+        </Panel>
 
         {canManage ? (
           <form action={bulkTagDocumentsAction} className="formStack">

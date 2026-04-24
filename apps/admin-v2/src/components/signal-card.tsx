@@ -50,9 +50,9 @@ export function SignalCard({
   const clickable = isLive && typeof href === `string` && href.length > 0;
   const cardClassName = cn(
     panelSurfaceClass,
-    `flex flex-col gap-3 p-5 transition`,
+    `flex min-h-[196px] flex-col gap-4 p-5 transition`,
     clickable ? `cursor-pointer hover:border-white/20 hover:bg-white/[0.02]` : ``,
-    !isLive ? `border-amber-400/20` : ``,
+    isLive ? `border-cyan-400/10` : `border-amber-400/20`,
   );
   const pillStatus = isLive ? `PROCESSING` : `Unavailable`;
   const supplemental = availabilityCopy(availability);
@@ -66,9 +66,13 @@ export function SignalCard({
         </span>
         <span className="text-xs text-white/55">{supplemental ?? `Action ready`}</span>
       </div>
-      <div className="text-sm text-white/72">{label}</div>
-      <div className="text-4xl font-semibold tabular-nums text-white">{count == null ? `—` : String(count)}</div>
-      <div className="flex flex-wrap items-center gap-2 text-xs text-white/55">
+      <div className="space-y-2">
+        <div className="text-sm font-medium leading-6 text-white/78">{label}</div>
+        <div className="text-4xl font-semibold leading-none tabular-nums text-white">
+          {count == null ? `—` : String(count)}
+        </div>
+      </div>
+      <div className="mt-auto flex flex-wrap items-center gap-2 text-xs text-white/55">
         <span className="text-white/55">State: {formatStateLabel(phaseStatus)}</span>
         <span
           className={

@@ -1,6 +1,14 @@
 import { DenseTable } from '../../../../components/dense-table';
 import { MobileQueueCard } from '../../../../components/mobile-queue-card';
+import { Panel } from '../../../../components/panel';
 import { TabletRow } from '../../../../components/tablet-row';
+import {
+  buttonRowClass,
+  fieldClass,
+  fieldLabelClass,
+  ghostButtonClass,
+  textInputClass,
+} from '../../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { getAuthAudit } from '../../../../lib/admin-api.server';
 
@@ -150,48 +158,87 @@ export default async function AuditAuthPage({
   return (
     <WorkspaceLayout workspace="audit/auth">
       <>
-        <section className="panel pageHeader">
-          <div>
-            <h1>Audit / Auth</h1>
-            <p className="muted">Searchable admin auth audit for login, refresh and logout reconstruction.</p>
-          </div>
-          <form className="actionsRow" method="get">
-            <input name="email" defaultValue={params?.email ?? ``} placeholder="admin email" />
-            <input name="event" defaultValue={params?.event ?? ``} placeholder="event" />
-            <input name="ipAddress" defaultValue={params?.ipAddress ?? ``} placeholder="ip or prefix" />
-            <input name="dateFrom" defaultValue={params?.dateFrom ?? ``} placeholder="2026-04-15T00:00:00Z" />
-            <input name="dateTo" defaultValue={params?.dateTo ?? ``} placeholder="2026-04-15T23:59:59Z" />
-            <button className="secondaryButton" type="submit">
-              Apply
-            </button>
+        <Panel
+          title="Audit / Auth"
+          description="Searchable admin auth audit for login, refresh and logout reconstruction."
+        >
+          <form className="grid gap-3 md:grid-cols-2 xl:grid-cols-5" method="get">
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Admin email</span>
+              <input
+                className={textInputClass}
+                name="email"
+                defaultValue={params?.email ?? ``}
+                placeholder="admin email"
+              />
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Event</span>
+              <input className={textInputClass} name="event" defaultValue={params?.event ?? ``} placeholder="event" />
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>IP or prefix</span>
+              <input
+                className={textInputClass}
+                name="ipAddress"
+                defaultValue={params?.ipAddress ?? ``}
+                placeholder="ip or prefix"
+              />
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Date from</span>
+              <input
+                className={textInputClass}
+                name="dateFrom"
+                defaultValue={params?.dateFrom ?? ``}
+                placeholder="2026-04-15T00:00:00Z"
+              />
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Date to</span>
+              <input
+                className={textInputClass}
+                name="dateTo"
+                defaultValue={params?.dateTo ?? ``}
+                placeholder="2026-04-15T23:59:59Z"
+              />
+            </label>
+            <div className={buttonRowClass}>
+              <button className={ghostButtonClass} type="submit">
+                Apply
+              </button>
+              <a className={ghostButtonClass} href="/audit/auth">
+                Reset
+              </a>
+            </div>
           </form>
-        </section>
-        <section className="panel">
-          <div className="pageHeader">
-            <p className="muted">
-              {data?.total ?? 0} results · page {data?.page ?? 1} / {totalPages}
-            </p>
-            <div className="actionsRow">
+        </Panel>
+        <Panel
+          title="Auth events"
+          description={`${data?.total ?? 0} results · page ${data?.page ?? 1} / ${totalPages}`}
+          actions={
+            <div className={buttonRowClass}>
               <a
-                className="secondaryButton"
+                className={ghostButtonClass}
                 aria-disabled={page <= 1}
                 href={page > 1 ? pageHref(page - 1) : pageHref(1)}
               >
                 Previous
               </a>
               <a
-                className="secondaryButton"
+                className={ghostButtonClass}
                 aria-disabled={page >= totalPages}
                 href={page < totalPages ? pageHref(page + 1) : pageHref(totalPages)}
               >
                 Next
               </a>
             </div>
-          </div>
+          }
+        >
           <AuthAuditMobileCards items={items} />
           <AuthAuditTabletRows items={items} />
           <AuthAuditDesktopTable items={items} />
-        </section>
+        </Panel>
       </>
     </WorkspaceLayout>
   );

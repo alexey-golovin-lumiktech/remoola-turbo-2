@@ -48,33 +48,40 @@ export default async function PaymentOperationsQueuePage() {
             {bucket.items.map((item) => (
               <Panel
                 key={item.id}
-                className="gap-4"
+                className="border-white/12 bg-white/[0.02]"
                 actions={
-                  <div className={mutedTextClass}>
-                    Persisted: {item.persistedStatus} · Effective: {item.effectiveStatus}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <TinyPill>
+                      {item.amount} {item.currencyCode}
+                    </TinyPill>
+                    <TinyPill tone="cyan">{item.paymentRail ?? `No rail`}</TinyPill>
                   </div>
                 }
               >
-                <div>
+                <div className="space-y-2">
                   <Link href={`/payments/${item.id}`}>
-                    <strong>{item.id}</strong>
+                    <strong className="text-base text-white">{item.id}</strong>
                   </Link>
+                  <p className="text-sm leading-6 text-white/80">{item.followUpReason}</p>
+                </div>
+                <div className="grid gap-2 text-sm text-white/72 md:grid-cols-2">
                   <p className={mutedTextClass}>
-                    {item.amount} {item.currencyCode} · {item.paymentRail ?? `No rail`}
+                    Persisted: {item.persistedStatus} · Effective: {item.effectiveStatus}
+                  </p>
+                  <p className={mutedTextClass}>
+                    Due: {formatDate(item.dueDate)} · Updated: {formatDate(item.updatedAt)}
                   </p>
                 </div>
-                <p>{item.followUpReason}</p>
                 <p className={mutedTextClass}>
                   Payer: {renderConsumerLink(item.payer)} · Requester: {renderConsumerLink(item.requester)}
                 </p>
-                <p className={mutedTextClass}>
-                  Attachments: {item.attachmentsCount} · Invoice-tagged attachments:{` `}
-                  {item.invoiceTaggedAttachmentsCount}
-                </p>
-                <p className={mutedTextClass}>
-                  Due: {formatDate(item.dueDate)} · Updated: {formatDate(item.updatedAt)} · Freshness:{` `}
-                  {item.dataFreshnessClass}
-                </p>
+                <div className="grid gap-2 text-sm text-white/72 md:grid-cols-2">
+                  <p className={mutedTextClass}>
+                    Attachments: {item.attachmentsCount} · Invoice-tagged attachments:{` `}
+                    {item.invoiceTaggedAttachmentsCount}
+                  </p>
+                  <p className={mutedTextClass}>Freshness: {item.dataFreshnessClass}</p>
+                </div>
                 <p className={mutedTextClass}>
                   Assigned to:{` `}
                   {item.assignedTo ? (

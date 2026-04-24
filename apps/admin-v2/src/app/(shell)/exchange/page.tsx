@@ -1,5 +1,8 @@
 import Link from 'next/link';
 
+import { ActionGhost } from '../../../components/action-ghost';
+import { Panel } from '../../../components/panel';
+import { TinyPill } from '../../../components/tiny-pill';
 import { WorkspaceLayout } from '../../../components/workspace-layout';
 
 export default function ExchangeWorkspacePage() {
@@ -24,30 +27,24 @@ export default function ExchangeWorkspacePage() {
   return (
     <WorkspaceLayout workspace="exchange">
       <>
-        <section className="panel pageHeader">
-          <div>
-            <h1>Exchange workspace</h1>
-            <p className="muted">
-              Exchange visibility for rates, scheduled conversions, and rule configuration with direct links into the
-              related workflows.
-            </p>
-          </div>
-          <div className="actionsRow">
-            <Link className="secondaryButton" href="/overview">
-              Back to overview
-            </Link>
-          </div>
-        </section>
+        <Panel
+          title="Exchange workspace"
+          description="Exchange visibility for rates, scheduled conversions, and rule configuration with direct links into the related workflows."
+          actions={<ActionGhost href="/overview">Back to overview</ActionGhost>}
+        />
 
         <section className="statsGrid">
           {sections.map((section) => (
-            <article className="panel" key={section.href}>
-              <h2>{section.title}</h2>
-              <p className="muted">{section.description}</p>
-              <Link className="secondaryButton" href={section.href}>
-                Open
-              </Link>
-            </article>
+            <Panel
+              key={section.href}
+              title={section.title}
+              description={section.description}
+              actions={<TinyPill>Workspace</TinyPill>}
+            >
+              <div className="pt-1">
+                <ActionGhost href={section.href}>Open</ActionGhost>
+              </div>
+            </Panel>
           ))}
         </section>
       </>

@@ -11,6 +11,8 @@ import {
   checkboxFieldClass,
   checkboxInputClass,
   emptyPanelClass,
+  fieldClass,
+  fieldLabelClass,
   mutedTextClass,
   textInputClass,
 } from '../../../components/ui-classes';
@@ -283,71 +285,85 @@ export default async function PaymentsPage({
           description="Read-only payment request investigation with finance-safe cross-links."
           actions={<ActionGhost href="/payments/operations">Open operations queue</ActionGhost>}
         >
-          <form className={buttonRowClass} method="get">
-            <input
-              className={textInputClass}
-              name="q"
-              defaultValue={q}
-              placeholder="Search by id, email or description"
-            />
-            <input className={textInputClass} name="status" defaultValue={status} placeholder="status" />
-            <input className={textInputClass} name="paymentRail" defaultValue={paymentRail} placeholder="rail" />
-            <input className={textInputClass} name="currencyCode" defaultValue={currencyCode} placeholder="currency" />
-            <input
-              className={textInputClass}
-              name="amountMin"
-              defaultValue={amountMin}
-              placeholder="min amount"
-              inputMode="decimal"
-            />
-            <input
-              className={textInputClass}
-              name="amountMax"
-              defaultValue={amountMax}
-              placeholder="max amount"
-              inputMode="decimal"
-            />
-            <input
-              className={textInputClass}
-              name="dueDateFrom"
-              type="date"
-              defaultValue={dueDateFrom}
-              aria-label="Due date from"
-            />
-            <input
-              className={textInputClass}
-              name="dueDateTo"
-              type="date"
-              defaultValue={dueDateTo}
-              aria-label="Due date to"
-            />
-            <input
-              className={textInputClass}
-              name="createdFrom"
-              type="date"
-              defaultValue={createdFrom}
-              aria-label="Created from"
-            />
-            <input
-              className={textInputClass}
-              name="createdTo"
-              type="date"
-              defaultValue={createdTo}
-              aria-label="Created to"
-            />
-            <label className={checkboxFieldClass}>
+          <form className="grid gap-3 md:grid-cols-2 xl:grid-cols-4" method="get">
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Search</span>
               <input
-                className={checkboxInputClass}
-                name="overdue"
-                type="checkbox"
-                value="true"
-                defaultChecked={overdue}
+                className={textInputClass}
+                name="q"
+                defaultValue={q}
+                placeholder="Search by id, email or description"
               />
-              {` `}
-              Overdue only
             </label>
-            <ActionGhost type="submit">Apply</ActionGhost>
-            <ActionGhost href="/payments">Reset</ActionGhost>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Effective status</span>
+              <input className={textInputClass} name="status" defaultValue={status} placeholder="status" />
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Payment rail</span>
+              <input className={textInputClass} name="paymentRail" defaultValue={paymentRail} placeholder="rail" />
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Currency</span>
+              <input
+                className={textInputClass}
+                name="currencyCode"
+                defaultValue={currencyCode}
+                placeholder="currency"
+              />
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Minimum amount</span>
+              <input
+                className={textInputClass}
+                name="amountMin"
+                defaultValue={amountMin}
+                placeholder="min amount"
+                inputMode="decimal"
+              />
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Maximum amount</span>
+              <input
+                className={textInputClass}
+                name="amountMax"
+                defaultValue={amountMax}
+                placeholder="max amount"
+                inputMode="decimal"
+              />
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Due date from</span>
+              <input className={textInputClass} name="dueDateFrom" type="date" defaultValue={dueDateFrom} />
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Due date to</span>
+              <input className={textInputClass} name="dueDateTo" type="date" defaultValue={dueDateTo} />
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Created from</span>
+              <input className={textInputClass} name="createdFrom" type="date" defaultValue={createdFrom} />
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Created to</span>
+              <input className={textInputClass} name="createdTo" type="date" defaultValue={createdTo} />
+            </label>
+            <div className="flex flex-col justify-end gap-3 xl:col-span-2">
+              <label className={checkboxFieldClass}>
+                <input
+                  className={checkboxInputClass}
+                  name="overdue"
+                  type="checkbox"
+                  value="true"
+                  defaultChecked={overdue}
+                />
+                <span>Overdue only</span>
+              </label>
+              <div className={buttonRowClass}>
+                <ActionGhost type="submit">Apply</ActionGhost>
+                <ActionGhost href="/payments">Reset</ActionGhost>
+              </div>
+            </div>
           </form>
         </Panel>
 
@@ -367,7 +383,11 @@ export default async function PaymentsPage({
           title="Payment request queue"
           description={`${items.length} rows in this window · cursor ${cursor ? `active` : `start`}`}
           actions={
-            data?.pageInfo.nextCursor ? <ActionGhost href={nextHref(data.pageInfo.nextCursor)}>Next</ActionGhost> : null
+            <div className={buttonRowClass}>
+              {data?.pageInfo.nextCursor ? (
+                <ActionGhost href={nextHref(data.pageInfo.nextCursor)}>Next</ActionGhost>
+              ) : null}
+            </div>
           }
         >
           <PaymentsMobileCards items={items} />

@@ -68,44 +68,53 @@ export function SidebarContents({
       <nav className="min-h-0 flex-1 space-y-5 px-3 pb-5" aria-label="Admin workspace navigation">
         <SidebarSection
           title="Primary workspaces"
+          description="Main operational routes with the shortest path into active queues and reviews."
           items={visibleCoreShellItems}
           signalCounts={signalCounts}
           activePath={activePath}
         />
         <SidebarSection
           title="Additional workspaces"
+          compact
           items={visibleTopLevelBreadthItems}
           signalCounts={signalCounts}
           activePath={activePath}
         />
         <SidebarSection
           title="Finance tools"
+          compact
           items={visibleFinanceBreadthItems}
           signalCounts={signalCounts}
           activePath={activePath}
         />
         <SidebarSection
           title="System"
+          compact
           items={visibleMaturityItems}
           signalCounts={signalCounts}
           activePath={activePath}
         />
         <SidebarSection
           title="Audit logs"
+          compact
           items={visibleAuditExplorerItems}
           signalCounts={signalCounts}
           activePath={activePath}
         />
         <SidebarSection
           title="Admin tools"
+          compact
           items={visibleLaterBreadthItems}
           signalCounts={signalCounts}
           activePath={activePath}
         />
       </nav>
 
-      <div className="border-t border-white/10 px-5 py-4">
+      <div className="border-t border-white/10 bg-white/[0.02] px-5 py-4">
         <div className="text-[11px] uppercase tracking-[0.24em] text-white/[0.32]">Shortcuts</div>
+        <div className="mt-1 text-xs leading-5 text-white/40">
+          Frequent investigation starts for the current admin scope.
+        </div>
         <div className="mt-3 space-y-2">
           {visibleQuickstarts.map((view) => (
             <Link
@@ -131,7 +140,7 @@ export function SidebarContents({
           ))}
         </div>
 
-        <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm">
+        <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-sm shadow-xs">
           <div className="font-medium text-white/85">{identity?.email ?? `Access denied`}</div>
           <div className="mt-1 text-white/45">
             {identity

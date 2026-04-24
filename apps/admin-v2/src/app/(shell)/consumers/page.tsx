@@ -1,9 +1,19 @@
 import Link from 'next/link';
 
+import { ActionGhost } from '../../../components/action-ghost';
 import { DenseTable } from '../../../components/dense-table';
 import { MobileQueueCard } from '../../../components/mobile-queue-card';
+import { Panel } from '../../../components/panel';
 import { StatusPill } from '../../../components/status-pill';
 import { TabletRow } from '../../../components/tablet-row';
+import {
+  buttonRowClass,
+  checkboxFieldClass,
+  checkboxInputClass,
+  fieldClass,
+  fieldLabelClass,
+  textInputClass,
+} from '../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../components/workspace-layout';
 import { getConsumers } from '../../../lib/admin-api.server';
 
@@ -206,70 +216,79 @@ export default async function ConsumersPage({
   return (
     <WorkspaceLayout workspace="consumers">
       <>
-        <section className="panel pageHeader">
-          <div>
-            <h1>Consumers</h1>
-            <p className="muted">Consumer investigation surface with notes, flags and audit drilldowns.</p>
-          </div>
-          <form method="get" className="actionsRow">
-            <input name="q" defaultValue={q} placeholder="Search by email, name or id" />
-            <select name="verificationStatus" defaultValue={verificationStatus}>
-              <option value="">All verification states</option>
-              <option value="PENDING">PENDING</option>
-              <option value="APPROVED">APPROVED</option>
-              <option value="MORE_INFO">MORE_INFO</option>
-              <option value="REJECTED">REJECTED</option>
-              <option value="FLAGGED">FLAGGED</option>
-            </select>
-            <select name="accountType" defaultValue={accountType}>
-              <option value="">All account types</option>
-              <option value="BUSINESS">BUSINESS</option>
-              <option value="CONTRACTOR">CONTRACTOR</option>
-            </select>
-            <select name="contractorKind" defaultValue={contractorKind}>
-              <option value="">All contractor kinds</option>
-              <option value="ENTITY">ENTITY</option>
-              <option value="INDIVIDUAL">INDIVIDUAL</option>
-            </select>
-            <label className="muted">
-              <input name="includeDeleted" type="checkbox" value="true" defaultChecked={includeDeleted} /> Include
-              deleted
+        <Panel title="Consumers" description="Consumer investigation surface with notes, flags and audit drilldowns.">
+          <form method="get" className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Search</span>
+              <input className={textInputClass} name="q" defaultValue={q} placeholder="Search by email, name or id" />
             </label>
-            <button className="secondaryButton" type="submit">
-              Apply
-            </button>
-          </form>
-        </section>
-
-        <section className="panel">
-          <div className="pageHeader">
-            <div>
-              <h2>Consumer queue</h2>
-              <p className="muted">
-                {data?.total ?? 0} results · page {data?.page ?? 1} / {totalPages}
-              </p>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Verification</span>
+              <select className={textInputClass} name="verificationStatus" defaultValue={verificationStatus}>
+                <option value="">All verification states</option>
+                <option value="PENDING">PENDING</option>
+                <option value="APPROVED">APPROVED</option>
+                <option value="MORE_INFO">MORE_INFO</option>
+                <option value="REJECTED">REJECTED</option>
+                <option value="FLAGGED">FLAGGED</option>
+              </select>
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Account type</span>
+              <select className={textInputClass} name="accountType" defaultValue={accountType}>
+                <option value="">All account types</option>
+                <option value="BUSINESS">BUSINESS</option>
+                <option value="CONTRACTOR">CONTRACTOR</option>
+              </select>
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Contractor kind</span>
+              <select className={textInputClass} name="contractorKind" defaultValue={contractorKind}>
+                <option value="">All contractor kinds</option>
+                <option value="ENTITY">ENTITY</option>
+                <option value="INDIVIDUAL">INDIVIDUAL</option>
+              </select>
+            </label>
+            <div className="flex flex-col justify-end gap-3">
+              <label className={checkboxFieldClass}>
+                <input
+                  className={checkboxInputClass}
+                  name="includeDeleted"
+                  type="checkbox"
+                  value="true"
+                  defaultChecked={includeDeleted}
+                />
+                <span>Include deleted</span>
+              </label>
+              <div className={buttonRowClass}>
+                <ActionGhost type="submit">Apply</ActionGhost>
+                <ActionGhost href="/consumers">Reset</ActionGhost>
+              </div>
             </div>
-            <div className="actionsRow">
-              <Link
-                className="secondaryButton"
-                aria-disabled={page <= 1}
-                href={page > 1 ? pageHref(page - 1) : pageHref(1)}
-              >
+          </form>
+        </Panel>
+
+        <Panel
+          title="Consumer queue"
+          description={`${data?.total ?? 0} results · page ${data?.page ?? 1} / ${totalPages}`}
+          actions={
+            <div className={buttonRowClass}>
+              <ActionGhost ariaDisabled={page <= 1} href={page > 1 ? pageHref(page - 1) : pageHref(1)}>
                 Previous
-              </Link>
-              <Link
-                className="secondaryButton"
-                aria-disabled={page >= totalPages}
+              </ActionGhost>
+              <ActionGhost
+                ariaDisabled={page >= totalPages}
                 href={page < totalPages ? pageHref(page + 1) : pageHref(totalPages)}
               >
                 Next
-              </Link>
+              </ActionGhost>
             </div>
-          </div>
+          }
+        >
           <ConsumersMobileCards items={items} />
           <ConsumersTabletRows items={items} />
           <ConsumersDesktopTable items={items} />
-        </section>
+        </Panel>
       </>
     </WorkspaceLayout>
   );

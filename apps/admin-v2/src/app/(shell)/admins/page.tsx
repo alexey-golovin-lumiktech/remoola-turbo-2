@@ -1,9 +1,12 @@
 import Link from 'next/link';
 
+import { ActionGhost } from '../../../components/action-ghost';
 import { DenseTable } from '../../../components/dense-table';
 import { MobileQueueCard } from '../../../components/mobile-queue-card';
+import { Panel } from '../../../components/panel';
 import { StatusPill } from '../../../components/status-pill';
 import { TabletRow } from '../../../components/tablet-row';
+import { buttonRowClass, fieldClass, fieldLabelClass, textInputClass } from '../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../components/workspace-layout';
 import { type AdminsListResponse, getAdminIdentity, getAdmins } from '../../../lib/admin-api.server';
 import { inviteAdminAction } from '../../../lib/admin-mutations.server';
@@ -151,59 +154,58 @@ export default async function AdminsPage({
   return (
     <WorkspaceLayout workspace="admins">
       <>
-        <section className="panel pageHeader">
-          <div>
-            <h1>Admins</h1>
-            <p className="muted">
-              Active and inactive admins, current schema-backed role posture, and exact lifecycle controls.
-            </p>
-          </div>
-          <div className="actionsRow">
-            <Link className="secondaryButton" href="/audit/admin-actions?action=admin_invite">
-              Admin lifecycle audit
-            </Link>
-            <Link className="secondaryButton" href="/audit/auth">
-              Auth audit
-            </Link>
-          </div>
-        </section>
+        <Panel
+          title="Admins"
+          description="Active and inactive admins, current schema-backed role posture, and exact lifecycle controls."
+          actions={
+            <div className={buttonRowClass}>
+              <ActionGhost href="/audit/admin-actions?action=admin_invite">Admin lifecycle audit</ActionGhost>
+              <ActionGhost href="/audit/auth">Auth audit</ActionGhost>
+            </div>
+          }
+        />
 
         <section className="detailGrid">
-          <article className="panel">
-            <h2>Filter</h2>
-            <form className="formStack">
-              <label className="field">
-                <span>Search</span>
-                <input name="q" defaultValue={q} placeholder="email or admin id" />
+          <Panel title="Filter" description="Narrow the admin list by identifier or lifecycle state.">
+            <form className="grid gap-3" method="get">
+              <label className={fieldClass}>
+                <span className={fieldLabelClass}>Search</span>
+                <input className={textInputClass} name="q" defaultValue={q} placeholder="email or admin id" />
               </label>
-              <label className="field">
-                <span>Status</span>
-                <select name="status" defaultValue={status}>
+              <label className={fieldClass}>
+                <span className={fieldLabelClass}>Status</span>
+                <select className={textInputClass} name="status" defaultValue={status}>
                   <option value="">All</option>
                   <option value="ACTIVE">Active</option>
                   <option value="INACTIVE">Inactive</option>
                 </select>
               </label>
-              <button className="primaryButton" type="submit">
-                Apply filters
-              </button>
+              <div className={buttonRowClass}>
+                <ActionGhost type="submit">Apply filters</ActionGhost>
+                <ActionGhost href="/admins">Reset</ActionGhost>
+              </div>
             </form>
-          </article>
+          </Panel>
 
           {canManage ? (
-            <article className="panel">
-              <h2>Invite admin</h2>
-              <p className="muted">
-                Invitations support the full schema-backed admin role set available in this workspace.
-              </p>
-              <form action={inviteAdminAction} className="formStack">
-                <label className="field">
-                  <span>Email</span>
-                  <input name="email" type="email" required placeholder="admin@example.com" />
+            <Panel
+              title="Invite admin"
+              description="Invitations support the full schema-backed admin role set available in this workspace."
+            >
+              <form action={inviteAdminAction} className="grid gap-3">
+                <label className={fieldClass}>
+                  <span className={fieldLabelClass}>Email</span>
+                  <input
+                    className={textInputClass}
+                    name="email"
+                    type="email"
+                    required
+                    placeholder="admin@example.com"
+                  />
                 </label>
-                <label className="field">
-                  <span>Role</span>
-                  <select name="roleKey" defaultValue="OPS_ADMIN">
+                <label className={fieldClass}>
+                  <span className={fieldLabelClass}>Role</span>
+                  <select className={textInputClass} name="roleKey" defaultValue="OPS_ADMIN">
                     {ADMIN_V2_ROLE_OPTIONS.map((role) => (
                       <option key={role.key} value={role.key}>
                         {role.key}
@@ -211,30 +213,21 @@ export default async function AdminsPage({
                     ))}
                   </select>
                 </label>
-                <button className="primaryButton" type="submit">
-                  Send invitation
-                </button>
+                <div className={buttonRowClass}>
+                  <ActionGhost type="submit">Send invitation</ActionGhost>
+                </div>
               </form>
-            </article>
+            </Panel>
           ) : null}
         </section>
 
-        <section className="panel">
-          <div className="pageHeader">
-            <div>
-              <h2>Admins</h2>
-              <p className="muted">
-                {admins?.total ?? 0} total, page {admins?.page ?? 1}
-              </p>
-            </div>
-          </div>
+        <Panel title="Admins" description={`${admins?.total ?? 0} total · page ${admins?.page ?? 1}`}>
           <AdminsMobileCards admins={admins?.items ?? []} />
           <AdminsTabletRows admins={admins?.items ?? []} />
           <AdminsDesktopTable admins={admins?.items ?? []} />
-        </section>
+        </Panel>
 
-        <section className="panel">
-          <h2>Pending invitations</h2>
+        <Panel title="Pending invitations">
           <div className="formStack">
             {admins?.pendingInvitations.length ? null : <p className="muted">No pending invitations.</p>}
             {admins?.pendingInvitations.map((invitation) => (
@@ -250,7 +243,7 @@ export default async function AdminsPage({
               </div>
             ))}
           </div>
-        </section>
+        </Panel>
       </>
     </WorkspaceLayout>
   );

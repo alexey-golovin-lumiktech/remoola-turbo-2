@@ -14,6 +14,7 @@ export type PanelProps = {
 
 export function Panel({ title, description, actions, children, className }: PanelProps): ReactElement {
   const hasHeader = Boolean(title) || Boolean(description) || Boolean(actions);
+  const hasBody = Boolean(children);
 
   return (
     <section className={cn(panelClass, className)}>
@@ -26,7 +27,7 @@ export function Panel({ title, description, actions, children, className }: Pane
           {actions ?? null}
         </div>
       ) : null}
-      {children}
+      {hasBody ? <div className="min-w-0">{children}</div> : null}
     </section>
   );
 }

@@ -1,8 +1,11 @@
 import Link from 'next/link';
 
+import { ActionGhost } from '../../../components/action-ghost';
 import { DenseTable } from '../../../components/dense-table';
 import { MobileQueueCard } from '../../../components/mobile-queue-card';
+import { Panel } from '../../../components/panel';
 import { TabletRow } from '../../../components/tablet-row';
+import { buttonRowClass, fieldClass, fieldLabelClass, textInputClass } from '../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../components/workspace-layout';
 import {
   getLedgerDisputes,
@@ -403,83 +406,124 @@ export default async function LedgerPage({
   return (
     <WorkspaceLayout workspace="ledger">
       <>
-        <section className="panel pageHeader">
-          <div>
-            <h1>Ledger and Disputes</h1>
-            <p className="muted">Read-only workspace for exact ledger outcomes and dispute review.</p>
-          </div>
-          <div className="actionsRow">
-            <Link className="secondaryButton" href={buildHref({ view: `entries` })}>
-              Ledger entries
-            </Link>
-            <Link className="secondaryButton" href={buildHref({ view: `disputes` })}>
-              Disputes
-            </Link>
-          </div>
-        </section>
+        <Panel
+          title="Ledger and Disputes"
+          description="Read-only workspace for exact ledger outcomes and dispute review."
+          actions={
+            <div className={buttonRowClass}>
+              <ActionGhost href={buildHref({ view: `entries` })}>Ledger entries</ActionGhost>
+              <ActionGhost href={buildHref({ view: `disputes` })}>Disputes</ActionGhost>
+            </div>
+          }
+        />
 
-        <section className="panel pageHeader">
-          <form className="actionsRow" method="get">
+        <Panel
+          title="Queue filters"
+          description="Use the exact identifiers and status slices needed for ledger or dispute investigation."
+        >
+          <form className="grid gap-3 md:grid-cols-2 xl:grid-cols-4" method="get">
             {view === `disputes` ? <input type="hidden" name="view" value="disputes" /> : null}
-            <input name="q" defaultValue={q} placeholder="Search by ids, Stripe ids or idempotency key" />
-            {view === `entries` ? <input name="type" defaultValue={type} placeholder="type" /> : null}
-            {view === `entries` ? <input name="status" defaultValue={status} placeholder="effective status" /> : null}
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Search</span>
+              <input
+                className={textInputClass}
+                name="q"
+                defaultValue={q}
+                placeholder="Search by ids, Stripe ids or idempotency key"
+              />
+            </label>
             {view === `entries` ? (
-              <input name="currencyCode" defaultValue={currencyCode} placeholder="currency" />
+              <label className={fieldClass}>
+                <span className={fieldLabelClass}>Entry type</span>
+                <input className={textInputClass} name="type" defaultValue={type} placeholder="type" />
+              </label>
             ) : null}
             {view === `entries` ? (
-              <input name="amountSign" defaultValue={amountSign} placeholder="amount sign" />
+              <label className={fieldClass}>
+                <span className={fieldLabelClass}>Effective status</span>
+                <input className={textInputClass} name="status" defaultValue={status} placeholder="effective status" />
+              </label>
             ) : null}
-            <input name="paymentRequestId" defaultValue={paymentRequestId} placeholder="payment request id" />
-            <input name="consumerId" defaultValue={consumerId} placeholder="consumer id" />
-            <input name="dateFrom" type="date" defaultValue={dateFrom} aria-label="Date from" />
-            <input name="dateTo" type="date" defaultValue={dateTo} aria-label="Date to" />
-            <button className="secondaryButton" type="submit">
-              Apply
-            </button>
-            <Link className="secondaryButton" href={view === `disputes` ? `/ledger?view=disputes` : `/ledger`}>
-              Reset
-            </Link>
+            {view === `entries` ? (
+              <label className={fieldClass}>
+                <span className={fieldLabelClass}>Currency</span>
+                <input
+                  className={textInputClass}
+                  name="currencyCode"
+                  defaultValue={currencyCode}
+                  placeholder="currency"
+                />
+              </label>
+            ) : null}
+            {view === `entries` ? (
+              <label className={fieldClass}>
+                <span className={fieldLabelClass}>Amount sign</span>
+                <input
+                  className={textInputClass}
+                  name="amountSign"
+                  defaultValue={amountSign}
+                  placeholder="amount sign"
+                />
+              </label>
+            ) : null}
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Payment request</span>
+              <input
+                className={textInputClass}
+                name="paymentRequestId"
+                defaultValue={paymentRequestId}
+                placeholder="payment request id"
+              />
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Consumer</span>
+              <input className={textInputClass} name="consumerId" defaultValue={consumerId} placeholder="consumer id" />
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Date from</span>
+              <input className={textInputClass} name="dateFrom" type="date" defaultValue={dateFrom} />
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Date to</span>
+              <input className={textInputClass} name="dateTo" type="date" defaultValue={dateTo} />
+            </label>
+            <div className="flex items-end gap-2 xl:col-span-2">
+              <ActionGhost type="submit">Apply</ActionGhost>
+              <ActionGhost href={view === `disputes` ? `/ledger?view=disputes` : `/ledger`}>Reset</ActionGhost>
+            </div>
           </form>
-        </section>
+        </Panel>
 
         {view === `entries` ? (
-          <section className="panel">
-            <div className="pageHeader">
-              <div>
-                <h2>Ledger entries</h2>
-                <p className="muted">{entryItems.length} rows in this window</p>
-              </div>
-              {entries?.pageInfo.nextCursor ? (
-                <Link className="secondaryButton" href={buildHref({ cursor: entries.pageInfo.nextCursor })}>
-                  Next
-                </Link>
-              ) : null}
-            </div>
+          <Panel
+            title="Ledger entries"
+            description={`${entryItems.length} rows in this window`}
+            actions={
+              entries?.pageInfo.nextCursor ? (
+                <ActionGhost href={buildHref({ cursor: entries.pageInfo.nextCursor })}>Next</ActionGhost>
+              ) : null
+            }
+          >
             <LedgerEntriesMobileCards items={entryItems} />
             <LedgerEntriesTabletRows items={entryItems} />
             <LedgerEntriesDesktopTable items={entryItems} />
-          </section>
+          </Panel>
         ) : (
-          <section className="panel">
-            <div className="pageHeader">
-              <div>
-                <h2>Dispute log</h2>
-                <p className="muted">Append-only dispute records captured from Stripe webhooks.</p>
-              </div>
-              {disputes?.pageInfo.nextCursor ? (
-                <Link
-                  className="secondaryButton"
-                  href={buildHref({ view: `disputes`, cursor: disputes.pageInfo.nextCursor })}
-                >
+          <Panel
+            title="Dispute log"
+            description="Append-only dispute records captured from Stripe webhooks."
+            actions={
+              disputes?.pageInfo.nextCursor ? (
+                <ActionGhost href={buildHref({ view: `disputes`, cursor: disputes.pageInfo.nextCursor })}>
                   Next
-                </Link>
-              ) : null}
-            </div>
+                </ActionGhost>
+              ) : null
+            }
+          >
             <DisputesMobileCards items={disputeItems} />
             <DisputesTabletRows items={disputeItems} />
             <DisputesDesktopTable items={disputeItems} />
-          </section>
+          </Panel>
         )}
       </>
     </WorkspaceLayout>

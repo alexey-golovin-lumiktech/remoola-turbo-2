@@ -1,9 +1,19 @@
 import Link from 'next/link';
 
+import { ActionGhost } from '../../../components/action-ghost';
 import { DenseTable } from '../../../components/dense-table';
 import { MobileQueueCard } from '../../../components/mobile-queue-card';
+import { Panel } from '../../../components/panel';
 import { StatusPill } from '../../../components/status-pill';
 import { TabletRow } from '../../../components/tablet-row';
+import {
+  buttonRowClass,
+  checkboxFieldClass,
+  checkboxInputClass,
+  fieldClass,
+  fieldLabelClass,
+  textInputClass,
+} from '../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../components/workspace-layout';
 import { type PaymentMethodsListResponse, getPaymentMethods } from '../../../lib/admin-api.server';
 
@@ -210,70 +220,84 @@ export default async function PaymentMethodsPage({
   return (
     <WorkspaceLayout workspace="payment-methods">
       <>
-        <section className="panel pageHeader">
-          <div>
-            <h1>Payment Methods</h1>
-            <p className="muted">
-              Investigation-first list surface for payment methods: consumer linkage, default state, fingerprint context
-              and soft-delete continuity. Authorized write controls remain detail-scoped and are capability-gated.
-            </p>
-          </div>
-          <form method="get" className="actionsRow">
-            <input name="consumerId" defaultValue={consumerId} placeholder="Consumer id" />
-            <select name="type" defaultValue={type}>
-              <option value="">All method types</option>
-              <option value="CREDIT_CARD">CREDIT_CARD</option>
-              <option value="BANK_ACCOUNT">BANK_ACCOUNT</option>
-            </select>
-            <select name="defaultSelected" defaultValue={defaultSelected}>
-              <option value="">All default states</option>
-              <option value="true">Default only</option>
-              <option value="false">Non-default only</option>
-            </select>
-            <input name="fingerprint" defaultValue={fingerprint} placeholder="Exact fingerprint" />
-            <label className="muted">
-              <input name="includeDeleted" type="checkbox" value="true" defaultChecked={includeDeleted} /> Include
-              deleted
+        <Panel
+          title="Payment Methods"
+          description="Investigation-first list surface for payment methods: consumer linkage, default state, fingerprint context and soft-delete continuity."
+        >
+          <p className="text-sm leading-6 text-white/60">
+            Authorized write controls remain detail-scoped and are capability-gated.
+          </p>
+          <form method="get" className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Consumer id</span>
+              <input className={textInputClass} name="consumerId" defaultValue={consumerId} placeholder="Consumer id" />
             </label>
-            <button className="secondaryButton" type="submit">
-              Apply
-            </button>
-          </form>
-        </section>
-
-        <section className="panel">
-          <div className="pageHeader">
-            <div>
-              <h2>Investigation queue</h2>
-              <p className="muted">
-                {data?.total ?? 0} results · page {data?.page ?? 1} / {totalPages}
-              </p>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Method type</span>
+              <select className={textInputClass} name="type" defaultValue={type}>
+                <option value="">All method types</option>
+                <option value="CREDIT_CARD">CREDIT_CARD</option>
+                <option value="BANK_ACCOUNT">BANK_ACCOUNT</option>
+              </select>
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Default state</span>
+              <select className={textInputClass} name="defaultSelected" defaultValue={defaultSelected}>
+                <option value="">All default states</option>
+                <option value="true">Default only</option>
+                <option value="false">Non-default only</option>
+              </select>
+            </label>
+            <label className={fieldClass}>
+              <span className={fieldLabelClass}>Fingerprint</span>
+              <input
+                className={textInputClass}
+                name="fingerprint"
+                defaultValue={fingerprint}
+                placeholder="Exact fingerprint"
+              />
+            </label>
+            <div className="flex flex-col justify-end gap-3">
+              <label className={checkboxFieldClass}>
+                <input
+                  className={checkboxInputClass}
+                  name="includeDeleted"
+                  type="checkbox"
+                  value="true"
+                  defaultChecked={includeDeleted}
+                />
+                <span>Include deleted</span>
+              </label>
+              <div className={buttonRowClass}>
+                <ActionGhost type="submit">Apply</ActionGhost>
+                <ActionGhost href="/payment-methods">Reset</ActionGhost>
+              </div>
             </div>
-            <div className="actionsRow">
-              <Link className="secondaryButton" href="/payment-methods">
-                Clear filters
-              </Link>
-              <Link
-                className="secondaryButton"
-                aria-disabled={page <= 1}
-                href={page > 1 ? pageHref(page - 1) : pageHref(1)}
-              >
+          </form>
+        </Panel>
+
+        <Panel
+          title="Investigation queue"
+          description={`${data?.total ?? 0} results · page ${data?.page ?? 1} / ${totalPages}`}
+          actions={
+            <div className={buttonRowClass}>
+              <ActionGhost href="/payment-methods">Clear filters</ActionGhost>
+              <ActionGhost ariaDisabled={page <= 1} href={page > 1 ? pageHref(page - 1) : pageHref(1)}>
                 Previous
-              </Link>
-              <Link
-                className="secondaryButton"
-                aria-disabled={page >= totalPages}
+              </ActionGhost>
+              <ActionGhost
+                ariaDisabled={page >= totalPages}
                 href={page < totalPages ? pageHref(page + 1) : pageHref(totalPages)}
               >
                 Next
-              </Link>
+              </ActionGhost>
             </div>
-          </div>
-
+          }
+        >
           <PaymentMethodsMobileCards items={data?.items ?? []} />
           <PaymentMethodsTabletRows items={data?.items ?? []} />
           <PaymentMethodsDesktopTable items={data?.items ?? []} />
-        </section>
+        </Panel>
       </>
     </WorkspaceLayout>
   );

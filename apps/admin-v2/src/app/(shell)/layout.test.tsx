@@ -94,4 +94,33 @@ describe(`admin-v2 shell layout read states`, () => {
     expect(markup).toContain(`could not confirm backend access right now`);
     expect(markup).not.toContain(`child-surface`);
   });
+
+  it(`keeps compact shell scaffolding below desktop breakpoint`, async () => {
+    mockedGetAdminIdentityResult.mockResolvedValue({
+      status: `ready`,
+      data: {
+        id: `admin-1`,
+        email: `admin@example.com`,
+        type: `SUPER_ADMIN`,
+        role: `OPS_ADMIN`,
+        phase: `workspace`,
+        capabilities: [`admin.read`],
+        workspaces: [`overview`, `consumers`, `payments`],
+      },
+    });
+
+    const markup = renderToStaticMarkup(
+      await ShellLayout({ children: React.createElement(`div`, null, `child-surface`) }),
+    );
+
+    expect(markup).toContain(
+      `grid min-h-screen grid-cols-1 bg-bg lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)]`,
+    );
+    expect(markup).toContain(`hidden lg:flex`);
+    expect(markup).toContain(`mobile-bottom-nav`);
+    expect(markup).toContain(`mobile-top-chips`);
+    expect(markup).toContain(`mobile-page-header`);
+    expect(markup).toContain(`shell-header`);
+    expect(markup).toContain(`child-surface`);
+  });
 });
