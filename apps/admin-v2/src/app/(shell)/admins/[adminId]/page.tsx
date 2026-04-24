@@ -1,4 +1,4 @@
-// Admin case is intentionally a leaf surface — no canonical row in the Cross-links Matrix
+// Admin case is intentionally a leaf surface — no row in the cross-links listing
 // requires outbound investigation links from the admin case page.
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -183,7 +183,9 @@ export default async function AdminCasePage({ params }: { params: Promise<{ admi
 
           <article className="panel">
             <h2>Role change</h2>
-            <p className="muted">Schema-backed lifecycle controls expose the full canonical MVP-2 admin role set.</p>
+            <p className="muted">
+              Schema-backed lifecycle controls expose the full admin role set available in this workspace.
+            </p>
             <form action={changeAdminRoleAction.bind(null, admin.core.id)} className="formStack">
               <input type="hidden" name="version" value={String(admin.version)} />
               <label className="field">
@@ -212,8 +214,8 @@ export default async function AdminCasePage({ params }: { params: Promise<{ admi
           <article className="panel">
             <h2>Permissions change</h2>
             <p className="muted">
-              Explicit overrides stay schema-backed and operate as inherit, grant, or deny on the canonical admin-v2
-              capability set.
+              Explicit overrides remain schema-backed and apply as inherit, grant, or deny across the available admin
+              capabilities.
             </p>
             <form action={changeAdminPermissionsAction.bind(null, admin.core.id)} className="formStack">
               <input type="hidden" name="version" value={String(admin.version)} />

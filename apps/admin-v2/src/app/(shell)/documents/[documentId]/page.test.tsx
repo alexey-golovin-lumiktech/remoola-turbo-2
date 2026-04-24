@@ -61,7 +61,7 @@ describe(`admin-v2 document case`, () => {
       email: `super@example.com`,
       type: `SUPER`,
       role: `SUPER_ADMIN`,
-      phase: `MVP-2 slice: documents workspace`,
+      phase: `documents workspace`,
       capabilities: [`documents.read`, `documents.manage`, `assignments.manage`],
       workspaces: [`documents`],
     });

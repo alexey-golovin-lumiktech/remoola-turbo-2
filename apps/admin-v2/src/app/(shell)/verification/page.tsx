@@ -406,10 +406,7 @@ function SavedViewsSection({
                 aria-label="New saved view description"
               />
             </label>
-            <p className={mutedTextClass}>
-              Note: filters <code>missingProfileData</code> and <code>missingDocuments</code> are saved but cannot be
-              used by alert evaluation (frontend-only filters).
-            </p>
+            <p className={mutedTextClass}>Note: these filters are saved with the view, but alerts do not use them.</p>
             <p className={monoMutedTextClass}>
               status={currentPayload.status ?? `-`}, stripeIdentityStatus={currentPayload.stripeIdentityStatus ?? `-`},
               country={currentPayload.country ?? `-`}, contractorKind={currentPayload.contractorKind ?? `-`},
@@ -513,7 +510,7 @@ export default async function VerificationQueuePage({
       <>
         <Panel
           title="Verification Queue"
-          description="Verification queue for canonical review states: PENDING, MORE_INFO and FLAGGED."
+          description="Verification queue for active review states: PENDING, MORE_INFO, and FLAGGED."
           actions={
             <p className={mutedTextClass}>
               SLA breached: {queue?.sla.breachedCount ?? 0} · threshold {queue?.sla.thresholdHours ?? 24}h

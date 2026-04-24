@@ -194,8 +194,7 @@ export default async function AdminsPage({
             <article className="panel">
               <h2>Invite admin</h2>
               <p className="muted">
-                Invitations can target the full canonical MVP-2 schema-backed role set, without falling back to the
-                bridge-era two-role posture.
+                Invitations support the full schema-backed admin role set available in this workspace.
               </p>
               <form action={inviteAdminAction} className="formStack">
                 <label className="field">

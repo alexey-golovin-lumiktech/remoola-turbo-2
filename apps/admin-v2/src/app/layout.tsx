@@ -10,7 +10,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: `Remoola Admin v2`,
-  description: `Operational admin console with canonical MVP-2 shell framing across core ops, top-level breadth, later admin breadth, and nested finance investigation routes`,
+  description: `Operational admin console for reviews, investigations, queues, and account administration`,
 };
 
 export const viewport: Viewport = {

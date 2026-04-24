@@ -280,7 +280,7 @@ export default async function PaymentsPage({
       <>
         <Panel
           title="Payments"
-          description="MVP-1c read-only payment request investigation with finance-safe cross-links."
+          description="Read-only payment request investigation with finance-safe cross-links."
           actions={<ActionGhost href="/payments/operations">Open operations queue</ActionGhost>}
         >
           <form className={buttonRowClass} method="get">

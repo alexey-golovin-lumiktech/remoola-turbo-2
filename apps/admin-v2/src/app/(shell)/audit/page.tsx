@@ -16,21 +16,21 @@ const AUDIT_ENTRIES: ReadonlyArray<{
   {
     href: `/audit/auth`,
     title: `Auth events`,
-    eyebrow: `AUTH · APPEND-ONLY`,
+    eyebrow: `Auth history`,
     description: `Sign-in, sign-out, password reset, and suspicious-activity events for admins and consumers.`,
     bullets: [`Suspicious-attempt threshold`, `90-day retention window`, `No PII in payloads (hashed email)`],
   },
   {
     href: `/audit/admin-actions`,
     title: `Admin actions`,
-    eyebrow: `ACTIONS · APPEND-ONLY`,
+    eyebrow: `Admin history`,
     description: `Every admin-initiated mutation across the platform with action_id, resource type, and resource id.`,
     bullets: [`Replay-deterministic action_id`, `Resource fields non-null by schema`, `No update or delete on the log`],
   },
   {
     href: `/audit/consumer-actions`,
     title: `Consumer actions`,
-    eyebrow: `CONSUMER · APPEND-ONLY`,
+    eyebrow: `Consumer history`,
     description: `Consumer-initiated mutations: profile edits, payment-method changes, KYC submissions, payout requests.`,
     bullets: [`Tied to consumer.id`, `Surfaced on consumer profile timeline`, `Cross-referenced from admin-actions`],
   },
@@ -45,8 +45,8 @@ export default function AuditOverviewPage(): ReactElement {
             <span className="text-[11px] font-medium uppercase tracking-[0.22em] text-cyan-300/80">AUDIT EXPLORER</span>
             <h1 className="text-2xl font-semibold text-white">Audit</h1>
             <p className="max-w-2xl text-sm text-white/65">
-              Append-only family of three sub-explorers. All writes elsewhere in the platform produce one or more
-              entries here.
+              Three audit explorers for authentication events, admin actions, and consumer actions. Activity elsewhere
+              in the platform surfaces related entries here.
             </p>
           </div>
         </section>

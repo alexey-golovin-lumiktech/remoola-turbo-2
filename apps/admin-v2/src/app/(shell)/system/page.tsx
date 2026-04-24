@@ -30,7 +30,7 @@ export default async function SystemPage() {
       <>
         <Panel
           title="System"
-          description="Read-only maturity surface for cross-domain product and background health, with drilldown into existing operator workspaces."
+          description="Read-only summary of product and background health, with links to related workspaces."
           actions={<p className={mutedTextClass}>Computed: {formatDateTime(summary?.computedAt)}</p>}
         />
 
@@ -38,8 +38,8 @@ export default async function SystemPage() {
           {cards.length === 0 ? (
             <Panel title="Summary unavailable">
               <p className={mutedTextClass}>
-                System summary is not currently available from the read-only backend contract. Use existing domain
-                workspaces for direct investigation.
+                System summary is not currently available from the shared service data. Use the related workspaces for
+                detailed investigation.
               </p>
             </Panel>
           ) : null}

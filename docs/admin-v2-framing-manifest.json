@@ -1,0 +1,239 @@
+{
+  "archiveVersion": 2,
+  "archivePurpose": "Preserve removed admin-v2 framing-layer for future restoration and historical reference.",
+  "runtimeStatus": "removed",
+  "cleanupSummary": {
+    "editedFiles": [
+      "apps/admin-v2/src/components/sidebar-contents.tsx",
+      "apps/admin-v2/src/app/(shell)/overview/page.tsx",
+      "apps/admin-v2/src/components/workspace-layout.tsx",
+      "apps/admin-v2/src/app/(auth)/login/page.tsx",
+      "apps/admin-v2/src/app/layout.tsx",
+      "docs/admin-v2-framing-archive.md",
+      "docs/admin-v2-framing-manifest.json",
+      "docs/admin-v2-framing-screenshots/README.md"
+    ],
+    "deletedFiles": [
+      "apps/admin-v2/src/components/mode-card.tsx",
+      "apps/admin-v2/src/components/context-rail.tsx",
+      "apps/admin-v2/src/components/context-rail-data.ts"
+    ]
+  },
+  "visualReferences": [
+    {
+      "type": "historical-preview-artifact",
+      "path": "docs/admin_v_2_hybrid_pack_clean_v2_shell_preview.jsx",
+      "notes": [
+        "Contains sidebar artifact contract",
+        "Contains overview artifact contract",
+        "Contains responsive dense-surface strategy",
+        "Contains visual ContextRail composition"
+      ]
+    },
+    {
+      "type": "captured-screenshot",
+      "path": "docs/admin-v2-framing-screenshots/sidebar-artifact-contract.png"
+    },
+    {
+      "type": "captured-screenshot",
+      "path": "docs/admin-v2-framing-screenshots/overview-framing.png"
+    },
+    {
+      "type": "captured-screenshot",
+      "path": "docs/admin-v2-framing-screenshots/verification-with-context-rail.png"
+    },
+    {
+      "type": "captured-screenshot",
+      "path": "docs/admin-v2-framing-screenshots/login-historical-subtitle.png"
+    }
+  ],
+  "entries": [
+    {
+      "id": "artifact-contract",
+      "status": "removed",
+      "renderedInBeforeRemoval": [
+        "apps/admin-v2/src/components/sidebar-contents.tsx",
+        "apps/admin-v2/src/app/(shell)/overview/page.tsx"
+      ],
+      "sourceFiles": [
+        "apps/admin-v2/src/components/sidebar-contents.tsx",
+        "apps/admin-v2/src/app/(shell)/overview/page.tsx",
+        "docs/admin_v_2_hybrid_pack_clean_v2_shell_preview.jsx"
+      ],
+      "dataSource": [
+        "inline runtime copy in sidebar and overview",
+        "historical preview artifact wording"
+      ],
+      "restoreHints": [
+        "Restore sidebar artifact contract card",
+        "Restore overview artifact contract panel",
+        "Restore queue-first, audit-first, case-first, derived artifact chips"
+      ],
+      "canonicalRefs": [
+        "docs/admin_v_2_hybrid_pack_clean_v2_shell_preview.jsx"
+      ],
+      "screenshots": [
+        "docs/admin-v2-framing-screenshots/sidebar-artifact-contract.png",
+        "docs/admin-v2-framing-screenshots/overview-framing.png"
+      ]
+    },
+    {
+      "id": "overview-header-chips",
+      "status": "removed",
+      "renderedInBeforeRemoval": [
+        "apps/admin-v2/src/app/(shell)/overview/page.tsx"
+      ],
+      "sourceFiles": [
+        "apps/admin-v2/src/app/(shell)/overview/page.tsx"
+      ],
+      "dataSource": [
+        "HEADER_CHIPS constant"
+      ],
+      "restoreHints": [
+        "Restore HEADER_CHIPS constant",
+        "Restore TinyPill mapping in overview hero"
+      ],
+      "canonicalRefs": [],
+      "screenshots": [
+        "docs/admin-v2-framing-screenshots/overview-framing.png"
+      ]
+    },
+    {
+      "id": "responsive-dense-surface-strategy",
+      "status": "removed",
+      "renderedInBeforeRemoval": [
+        "apps/admin-v2/src/components/mode-card.tsx",
+        "apps/admin-v2/src/app/(shell)/overview/page.tsx"
+      ],
+      "sourceFiles": [
+        "apps/admin-v2/src/components/mode-card.tsx",
+        "apps/admin-v2/src/app/(shell)/overview/page.tsx",
+        "docs/admin_v_2_hybrid_pack_clean_v2_shell_preview.jsx"
+      ],
+      "dataSource": [
+        "deleted runtime ModeCard component",
+        "historical preview artifact wording"
+      ],
+      "restoreHints": [
+        "Recreate mode-card.tsx",
+        "Restore overview grid that placed Frequent investigation starts beside ModeCard"
+      ],
+      "canonicalRefs": [
+        "docs/admin_v_2_hybrid_pack_clean_v2_shell_preview.jsx"
+      ],
+      "screenshots": [
+        "docs/admin-v2-framing-screenshots/overview-framing.png"
+      ]
+    },
+    {
+      "id": "context-rail",
+      "status": "removed",
+      "renderedInBeforeRemoval": [
+        "apps/admin-v2/src/components/workspace-layout.tsx"
+      ],
+      "sourceFiles": [
+        "apps/admin-v2/src/components/context-rail.tsx",
+        "apps/admin-v2/src/components/context-rail-data.ts",
+        "apps/admin-v2/src/components/workspace-layout.tsx",
+        "docs/admin_v_2_hybrid_pack_clean_v2_shell_preview.jsx"
+      ],
+      "dataSource": [
+        "deleted contextRailData record",
+        "deleted DEFAULT_GUARDRAILS fallback"
+      ],
+      "restoreHints": [
+        "Recreate ContextRail and context-rail-data.ts",
+        "Restore entry resolution in workspace-layout.tsx",
+        "Restore xl two-column grid and aside with ContextRail entry"
+      ],
+      "canonicalRefs": [
+        "docs/admin_v_2_hybrid_pack_clean_v2_shell_preview.jsx"
+      ],
+      "screenshots": [
+        "docs/admin-v2-framing-screenshots/verification-with-context-rail.png"
+      ],
+      "coveredPages": [
+        "apps/admin-v2/src/app/(shell)/consumers/page.tsx",
+        "apps/admin-v2/src/app/(shell)/verification/page.tsx",
+        "apps/admin-v2/src/app/(shell)/payments/page.tsx",
+        "apps/admin-v2/src/app/(shell)/ledger/page.tsx",
+        "apps/admin-v2/src/app/(shell)/payouts/page.tsx",
+        "apps/admin-v2/src/app/(shell)/payment-methods/page.tsx",
+        "apps/admin-v2/src/app/(shell)/exchange/page.tsx",
+        "apps/admin-v2/src/app/(shell)/exchange/rates/page.tsx",
+        "apps/admin-v2/src/app/(shell)/exchange/rules/page.tsx",
+        "apps/admin-v2/src/app/(shell)/exchange/scheduled/page.tsx",
+        "apps/admin-v2/src/app/(shell)/documents/page.tsx",
+        "apps/admin-v2/src/app/(shell)/documents/tags/page.tsx",
+        "apps/admin-v2/src/app/(shell)/audit/page.tsx",
+        "apps/admin-v2/src/app/(shell)/audit/auth/page.tsx",
+        "apps/admin-v2/src/app/(shell)/audit/admin-actions/page.tsx",
+        "apps/admin-v2/src/app/(shell)/audit/consumer-actions/page.tsx",
+        "apps/admin-v2/src/app/(shell)/admins/page.tsx",
+        "apps/admin-v2/src/app/(shell)/system/page.tsx"
+      ],
+      "subsections": [
+        {
+          "id": "linked-context",
+          "dataKeys": [
+            "primaryOperators",
+            "secondaryOperators",
+            "earliestActivePhase"
+          ]
+        },
+        {
+          "id": "jump-paths",
+          "dataKeys": [
+            "whatToLookAtFirst"
+          ]
+        },
+        {
+          "id": "guardrails",
+          "dataKeys": [
+            "guardrails"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "login-framing-subtitle",
+      "status": "removed",
+      "renderedInBeforeRemoval": [
+        "apps/admin-v2/src/app/(auth)/login/page.tsx"
+      ],
+      "sourceFiles": [
+        "apps/admin-v2/src/app/(auth)/login/page.tsx"
+      ],
+      "dataSource": [
+        "inline login subtitle copy"
+      ],
+      "restoreHints": [
+        "Restore canonical MVP-2 shell subtitle in login page"
+      ],
+      "canonicalRefs": [],
+      "screenshots": [
+        "docs/admin-v2-framing-screenshots/login-historical-subtitle.png"
+      ],
+      "historicalText": "Canonical MVP-2 shell keeps Overview, Consumers, Verification, Payments, Ledger and Audit primary. Exchange and Documents remain top-level breadth, Admins stays later breadth for eligible super-admin identities, and Payouts plus Payment Methods stay nested finance investigation routes. System remains outside MVP-2."
+    },
+    {
+      "id": "app-metadata-shell-framing",
+      "status": "removed",
+      "renderedInBeforeRemoval": [
+        "apps/admin-v2/src/app/layout.tsx"
+      ],
+      "sourceFiles": [
+        "apps/admin-v2/src/app/layout.tsx"
+      ],
+      "dataSource": [
+        "Next.js metadata description"
+      ],
+      "restoreHints": [
+        "Restore historical metadata.description in app/layout.tsx"
+      ],
+      "canonicalRefs": [],
+      "screenshots": [],
+      "historicalText": "Operational admin console with canonical MVP-2 shell framing across core ops, top-level breadth, later admin breadth, and nested finance investigation routes"
+    }
+  ]
+}

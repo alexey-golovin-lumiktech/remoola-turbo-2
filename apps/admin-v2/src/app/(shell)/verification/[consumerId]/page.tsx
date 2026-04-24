@@ -166,7 +166,7 @@ export default async function VerificationCasePage({ params }: { params: Promise
                     <textarea
                       className={textAreaClass}
                       name="reason"
-                      placeholder="What the operator needs from the consumer"
+                      placeholder="What information is needed from the consumer"
                     />
                   </label>
                   <label className={checkboxFieldClass}>

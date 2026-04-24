@@ -13,8 +13,8 @@ const QUICKSTART_CATALOG: readonly QuickstartCatalogEntry[] = [
   {
     id: `verification-missing-documents`,
     label: `Verification missing documents`,
-    description: `Focus the verification queue on cases blocked by missing consumer documents.`,
-    eyebrow: `QUEUE-FIRST`,
+    description: `Focus the verification queue on cases waiting for missing consumer documents.`,
+    eyebrow: `Priority queue`,
     targetPath: `/verification`,
     surfaces: [`shell`, `overview`],
     filters: {
@@ -24,8 +24,8 @@ const QUICKSTART_CATALOG: readonly QuickstartCatalogEntry[] = [
   {
     id: `overdue-payments-sweep`,
     label: `Overdue payments sweep`,
-    description: `Open overdue payment requests that likely need collections follow-up.`,
-    eyebrow: `QUEUE-FIRST`,
+    description: `Open overdue payment requests that likely need collections review.`,
+    eyebrow: `Priority queue`,
     targetPath: `/payments`,
     surfaces: [`shell`, `overview`],
     filters: {
@@ -35,8 +35,8 @@ const QUICKSTART_CATALOG: readonly QuickstartCatalogEntry[] = [
   {
     id: `force-logout-audit-trail`,
     label: `Force logout audit trail`,
-    description: `Reconstruct consumer force logout activity from the append-only admin action log.`,
-    eyebrow: `AUDIT-FIRST`,
+    description: `Review consumer force logout activity from the admin action log.`,
+    eyebrow: `Audit trail`,
     targetPath: `/audit/admin-actions`,
     surfaces: [`shell`, `overview`],
     filters: {

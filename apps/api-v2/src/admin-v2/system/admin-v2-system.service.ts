@@ -121,14 +121,14 @@ export class AdminV2SystemService {
               : null,
         escalationHint:
           totalLag > 0
-            ? `If backlog keeps growing after domain triage, escalate as Stripe event-ingestion degradation.`
-            : `Escalate only if operators report Stripe-backed payment drift without a visible queue backlog.`,
+            ? `If backlog keeps growing after payment or ledger review, escalate as Stripe event-ingestion degradation.`
+            : `Escalate only if Stripe-backed payment drift is reported without a visible payment or ledger backlog.`,
       };
     } catch {
       return this.temporarilyUnavailableCard({
         label: `Stripe webhook health`,
         explanation: [
-          `Product-facing Stripe ingestion health could not be derived safely from the current backend state.`,
+          `Product-facing Stripe ingestion health is temporarily unavailable from the current service data.`,
         ].join(` `),
         escalationHint: `Escalate platform degradation if Stripe-backed payment or reversal flows are visibly delayed.`,
       });
@@ -162,7 +162,7 @@ export class AdminV2SystemService {
             ? `Background freshness shows delayed work in exchange scheduling or auth cleanup families.` +
               ` Handle the exchange queue directly, and escalate auth cleanup drift if it persists.`
             : `No delayed exchange scheduling or auth cleanup backlog is currently visible` +
-              ` from DB-backed background surfaces.`,
+              ` in the available background data.`,
         facts: [
           { label: `Overdue scheduled conversions`, value: overdueScheduledConversions.count },
           { label: `Expired reset-password rows`, value: expiredResetPasswords },
@@ -177,16 +177,17 @@ export class AdminV2SystemService {
           totalBacklog > 0
             ? `Escalate platform degradation if auth cleanup backlog remains non-zero` +
               ` or scheduled conversions keep missing their execute window.`
-            : `Escalate only when operators observe missed background freshness` +
-              ` without a visible domain queue explanation.`,
+            : `Escalate only when delayed background processing is reported` + ` without a visible related queue.`,
       };
     } catch {
       return this.temporarilyUnavailableCard({
         label: `Scheduler health`,
         explanation: [
-          `Background freshness across scheduler-backed product surfaces could not be derived safely right now.`,
+          `Background freshness across scheduler-backed product surfaces is temporarily unavailable right now.`,
         ].join(` `),
-        escalationHint: `Escalate if exchange scheduling or auth recovery cleanup appears stale in operator workflows.`,
+        escalationHint: [
+          `Escalate if exchange scheduling or auth recovery cleanup appears delayed in the related workflows.`,
+        ].join(` `),
       });
     }
   }
@@ -225,7 +226,7 @@ export class AdminV2SystemService {
             ? `Recent admin-triggered email flows show failed delivery handoff patterns.` +
               ` Review audit traces first, then escalate broader mail degradation only if failures cluster.`
             : `Recent admin-triggered verification and admin lifecycle emails show` +
-              ` no failed delivery pattern in the audit trail window.`,
+              ` no failed delivery pattern in the current audit window.`,
         facts: [
           { label: `Failed deliveries in last 7d`, value: totalFailures },
           { label: `Verification email failures`, value: verificationFailures },
@@ -243,12 +244,12 @@ export class AdminV2SystemService {
           totalFailures > 0
             ? `If failures repeat across verification and admin password/invite flows,` +
               ` escalate mail delivery degradation instead of retrying silently.`
-            : `Escalate only when operators report missing admin-triggered emails outside the current audit window.`,
+            : `Escalate only when missing admin-triggered emails are reported outside the current audit window.`,
       };
     } catch {
       return this.temporarilyUnavailableCard({
         label: `Email delivery issue patterns`,
-        explanation: `Recent admin-triggered email failure patterns could not be derived safely from audit metadata.`,
+        explanation: `Recent admin-triggered email failure patterns are temporarily unavailable from audit metadata.`,
         escalationHint: [
           `Escalate mail delivery degradation if verification or admin recovery emails are visibly failing.`,
         ].join(` `),
@@ -272,12 +273,12 @@ export class AdminV2SystemService {
         status: totalCount && totalCount > 0 ? `watch` : totalCount === 0 ? `healthy` : `temporarily-unavailable`,
         explanation:
           totalCount && totalCount > 0
-            ? `Read-only ledger anomaly detection shows active finance-review backlog.` +
-              ` Use the dedicated queue for case triage instead of treating System as a replacement workspace.`
+            ? `Read-only ledger anomaly detection shows an active review backlog.` +
+              ` Use the dedicated queue for detailed investigation.`
             : totalCount === 0
               ? `No current stale pending entries, inconsistent outcome chains, large value outliers,` +
                 ` orphaned entries, duplicate idempotency risk, or impossible transitions are visible.`
-              : `Ledger anomaly health could not be derived safely from the read-only queue summary.`,
+              : `Ledger anomaly health is temporarily unavailable from the read-only queue summary.`,
         facts: [
           { label: `Total anomaly backlog`, value: totalCount },
           { label: `Stale pending entries`, value: stalePendingEntries },
@@ -293,13 +294,10 @@ export class AdminV2SystemService {
           totalCount && totalCount > 0
             ? [
                 `Escalate only when anomaly backlog keeps growing`,
-                `after ledger-domain triage identifies no safe operator action.`,
+                `after ledger review identifies no safe next step.`,
               ].join(` `)
             : totalCount === 0
-              ? [
-                  `Escalate only if operators observe ledger integrity drift`,
-                  `without an anomaly backlog signal.`,
-                ].join(` `)
+              ? [`Escalate only if ledger integrity drift is reported`, `without an anomaly backlog signal.`].join(` `)
               : [
                   `Use the Ledger workspace directly and escalate`,
                   `if anomaly review is blocked by missing queue visibility.`,
@@ -308,7 +306,7 @@ export class AdminV2SystemService {
     } catch {
       return this.temporarilyUnavailableCard({
         label: `Ledger anomalies`,
-        explanation: `Ledger anomaly health could not be derived safely from the read-only queue summary.`,
+        explanation: `Ledger anomaly health is temporarily unavailable from the read-only queue summary.`,
         escalationHint: [
           `Use the Ledger workspace directly and escalate`,
           `if anomaly review is blocked by missing queue visibility.`,
@@ -328,7 +326,7 @@ export class AdminV2SystemService {
         explanation:
           rateSnapshot.count > 0
             ? `Approved exchange rates are stale beyond the configured freshness window.` +
-              ` Use Exchange for exact rate investigation instead of treating System as an FX console.`
+              ` Use Exchange for rate details instead of relying on System for full FX investigation.`
             : `No approved exchange rates currently breach the configured freshness window.`,
         facts: [
           { label: `Stale approved rates`, value: rateSnapshot.count },
@@ -341,12 +339,12 @@ export class AdminV2SystemService {
           rateSnapshot.count > 0
             ? `Escalate platform degradation only if stale rates persist` +
               ` after Exchange review confirms no safe active rate path.`
-            : `Escalate only if operators observe FX freshness issues without a stale-rate alert.`,
+            : `Escalate only if FX freshness issues are reported without a stale-rate alert.`,
       };
     } catch {
       return this.temporarilyUnavailableCard({
         label: `Stale exchange rate alerts`,
-        explanation: `Exchange rate freshness could not be derived safely from the approved-rate surface.`,
+        explanation: `Exchange rate freshness is temporarily unavailable from the approved-rate surface.`,
         escalationHint: `Use the Exchange workspace and escalate if stale-rate investigation is blocked.`,
       });
     }

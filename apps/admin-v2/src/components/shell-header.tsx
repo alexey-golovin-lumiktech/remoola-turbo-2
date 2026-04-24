@@ -106,7 +106,7 @@ export async function ShellHeader(): Promise<ReactElement> {
         <span>/</span>
         <span>{workspaceTitle || `Console`}</span>
         <span>/</span>
-        <span className="text-cyan-300/80">derived preview</span>
+        <span className="text-cyan-300/80">workspace</span>
       </div>
       <div className="mt-3 flex items-center gap-3">
         <form
@@ -131,15 +131,15 @@ export async function ShellHeader(): Promise<ReactElement> {
         </form>
         <ActionGhost href="/audit/auth">
           <NavIcon name="eye" />
-          <span>Investigate</span>
+          <span>Audit</span>
         </ActionGhost>
         <ActionGhost href="/payments/operations">
           <NavIcon name="flag" />
-          <span>Escalations</span>
+          <span>Review queue</span>
         </ActionGhost>
         <ActionPrimary href="/me/sessions" ariaDisabled title="Coming soon">
           <NavIcon name="plus" />
-          <span>Open case</span>
+          <span>New case</span>
         </ActionPrimary>
       </div>
     </header>

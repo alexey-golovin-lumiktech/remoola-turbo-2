@@ -115,10 +115,10 @@ function buildPayoutCase() {
     version: 1713081600000,
     stuckPolicy: {
       thresholdHours: 24,
-      breachCondition: `latest pending-like payout outcome is older than the current threshold`,
-      escalationTarget: `human review with payout_escalate available only for failed or stuck payouts`,
-      expectedOperatorReaction: `review the payout case, verify destination linkage and use payout_escalate only when the payout is failed or stuck`,
-      automationStatus: `machine-detected queue only; payout execution writes remain disabled`,
+      breachCondition: `the latest payout outcome is still pending-like after the current threshold`,
+      escalationTarget: `manual review with payout_escalate available only for failed or stuck payouts`,
+      expectedOperatorReaction: `review the payout case, confirm destination linkage and use payout_escalate only when the payout is failed or stuck`,
+      automationStatus: `This list is detected automatically; payout execution writes remain disabled`,
     },
     highValuePolicy: {
       availability: `configured`,
@@ -167,7 +167,7 @@ describe(`admin-v2 payout case`, () => {
       email: `super@example.com`,
       type: `SUPER`,
       role: `SUPER_ADMIN`,
-      phase: `MVP-2 slice: payouts.write`,
+      phase: `payouts workspace`,
       capabilities: [`ledger.read`, `payouts.escalate`, `assignments.manage`],
       workspaces: [`ledger`],
     });
@@ -194,7 +194,7 @@ describe(`admin-v2 payout case`, () => {
         actionControls: {
           canEscalate: false,
           allowedActions: [],
-          escalateBlockedReason: `Only failed or stuck payouts can be escalated in MVP-2`,
+          escalateBlockedReason: `Only failed or stuck payouts can be escalated.`,
         },
       },
     });
@@ -206,11 +206,11 @@ describe(`admin-v2 payout case`, () => {
     );
 
     expect(mockedGetAdmins).not.toHaveBeenCalled();
-    expect(markup).toContain(`Only failed or stuck payouts can be escalated in MVP-2`);
+    expect(markup).toContain(`Only failed or stuck payouts can be escalated.`);
     expect(markup).not.toContain(`>Escalate payout<`);
   });
 
-  it(`keeps the durable escalation marker visible once an escalation already exists`, async () => {
+  it(`keeps the escalation marker visible once an escalation already exists`, async () => {
     mockedGetPayoutCaseResult.mockResolvedValueOnce({
       status: `ready`,
       data: {
@@ -264,7 +264,7 @@ describe(`admin-v2 payout case`, () => {
     );
 
     expect(markup).toContain(`Destination method unavailable.`);
-    expect(markup).toContain(`No schema-backed payout destination linkage could be confirmed`);
+    expect(markup).toContain(`No payout destination link could be confirmed`);
     expect(markup).not.toContain(`/payment-methods/pm-1`);
   });
 

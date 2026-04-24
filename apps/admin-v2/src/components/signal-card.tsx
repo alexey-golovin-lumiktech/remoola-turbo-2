@@ -24,10 +24,18 @@ function availabilityCopy(availability: SignalCardAvailability): string | null {
 }
 
 function availabilityEyebrow(availability: SignalCardAvailability): string {
-  if (availability === `live-actionable`) return `LIVE-ACTIONABLE`;
+  if (availability === `live-actionable`) return `ACTION READY`;
   if (availability === `count-only`) return `READ-ONLY COUNT`;
   if (availability === `deferred`) return `DEFERRED`;
   return `OBSERVED`;
+}
+
+function formatStateLabel(value: string | null | undefined): string {
+  if (!value) return `—`;
+  if (value === `live-actionable`) return `Action ready`;
+  if (value === `count-only`) return `Read-only`;
+  if (value === `deferred`) return `Deferred`;
+  return value.replaceAll(`-`, ` `);
 }
 
 export function SignalCard({
@@ -56,12 +64,12 @@ export function SignalCard({
         <span className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-[11px] uppercase tracking-[0.18em] text-white/65">
           {eyebrow}
         </span>
-        <span className="text-xs text-white/55">{supplemental ?? `Live actionable`}</span>
+        <span className="text-xs text-white/55">{supplemental ?? `Action ready`}</span>
       </div>
       <div className="text-sm text-white/72">{label}</div>
       <div className="text-4xl font-semibold tabular-nums text-white">{count == null ? `—` : String(count)}</div>
       <div className="flex flex-wrap items-center gap-2 text-xs text-white/55">
-        <span className="text-white/55">Phase: {String(phaseStatus ?? `—`)}</span>
+        <span className="text-white/55">State: {formatStateLabel(phaseStatus)}</span>
         <span
           className={
             typeof slaBreachedCount === `number` && slaBreachedCount > 0
@@ -71,7 +79,7 @@ export function SignalCard({
         >
           {typeof slaBreachedCount === `number` && slaBreachedCount > 0
             ? `SLA breached: ${String(slaBreachedCount)}`
-            : `No SLA pressure`}
+            : `No SLA issue`}
         </span>
         {isLive ? <StatusPill status={pillStatus} /> : null}
       </div>

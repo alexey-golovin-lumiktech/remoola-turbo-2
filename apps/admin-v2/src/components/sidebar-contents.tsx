@@ -5,9 +5,7 @@ import { cn } from '@remoola/ui';
 
 import { ActionGhost } from '@/components/action-ghost';
 
-import { LayerLegendRow } from './layer-legend-row';
 import { SidebarSection } from './sidebar-section';
-import { TinyPill } from './tiny-pill';
 import {
   auditExplorerItems,
   coreShellItems,
@@ -17,16 +15,13 @@ import {
   topLevelBreadthItems,
 } from '../app/(shell)/shell-nav';
 import { type AdminIdentity, type QuickstartCard } from '../lib/admin-api.server';
-import { buildQuickstartHref, filterQuickstartsForWorkspaces } from '../lib/quickstart-investigations';
+import {
+  buildQuickstartHref,
+  filterQuickstartsForWorkspaces,
+  normalizeQuickstartEyebrow,
+} from '../lib/quickstart-investigations';
 
 type SignalCount = { count: number; deferred: boolean };
-
-const artifactContractLayers = [
-  { label: `Operational signals`, value: `Verification, Payments, Ledger, Disputes` },
-  { label: `Domain reads`, value: `Read-only by capability` },
-  { label: `Audit explorers`, value: `One bucket family (Auth / Admin / Consumer)` },
-  { label: `Derived chrome`, value: `Preview-only assertions; not enforced` },
-] as const;
 
 type SidebarContentsProps = {
   identity: AdminIdentity | null;
@@ -65,66 +60,44 @@ export function SidebarContents({
           </div>
           <div className={cn(`brand`, `min-w-0`)}>
             <div className="text-lg font-semibold leading-tight">Admin v2</div>
-            <div className="text-xs text-white/40">Derived pack-clean v2 prototype</div>
-          </div>
-        </div>
-
-        <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm">
-          <div className="text-[11px] uppercase tracking-[0.28em] text-cyan-300/75">Artifact contract</div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <TinyPill tone="cyan">queue-first</TinyPill>
-            <TinyPill>audit-first</TinyPill>
-            <TinyPill>case-first</TinyPill>
-            <TinyPill>derived artifact</TinyPill>
-          </div>
-          <p className="mt-3 leading-6 text-white/55">
-            This surface is an illustrative interpretation artifact. Canonical planning, phase-specific navigation, and
-            route-family truth remain in the markdown pack.
-          </p>
-          <div className="mt-4 space-y-3">
-            {artifactContractLayers.map((layer) => (
-              <LayerLegendRow key={layer.label} label={layer.label} value={layer.value} />
-            ))}
+            <div className="text-xs text-white/40">Admin workspace</div>
           </div>
         </div>
       </div>
 
-      <nav className="min-h-0 flex-1 space-y-5 px-3 pb-5" aria-label="Canonical MVP-2 shell navigation">
+      <nav className="min-h-0 flex-1 space-y-5 px-3 pb-5" aria-label="Admin workspace navigation">
         <SidebarSection
-          title="Core shell"
+          title="Primary workspaces"
           items={visibleCoreShellItems}
           signalCounts={signalCounts}
           activePath={activePath}
         />
         <SidebarSection
-          title="Top-level breadth"
+          title="Additional workspaces"
           items={visibleTopLevelBreadthItems}
           signalCounts={signalCounts}
           activePath={activePath}
         />
         <SidebarSection
-          title="Finance breadth"
-          description="Payouts and Payment Methods stay nested finance breadth, not permanent first-level peers."
+          title="Finance tools"
           items={visibleFinanceBreadthItems}
           signalCounts={signalCounts}
           activePath={activePath}
         />
         <SidebarSection
-          title="Maturity"
-          description="System stays a read-only maturity destination for cross-domain health signals, not a promoted core shell peer."
+          title="System"
           items={visibleMaturityItems}
           signalCounts={signalCounts}
           activePath={activePath}
         />
         <SidebarSection
-          title="Audit explorers"
-          description="Audit stays grouped as one shell bucket over the canonical explorer family."
+          title="Audit logs"
           items={visibleAuditExplorerItems}
           signalCounts={signalCounts}
           activePath={activePath}
         />
         <SidebarSection
-          title="Later breadth"
+          title="Admin tools"
           items={visibleLaterBreadthItems}
           signalCounts={signalCounts}
           activePath={activePath}
@@ -132,7 +105,7 @@ export function SidebarContents({
       </nav>
 
       <div className="border-t border-white/10 px-5 py-4">
-        <div className="text-[11px] uppercase tracking-[0.24em] text-white/[0.32]">Frequent investigation starts</div>
+        <div className="text-[11px] uppercase tracking-[0.24em] text-white/[0.32]">Shortcuts</div>
         <div className="mt-3 space-y-2">
           {visibleQuickstarts.map((view) => (
             <Link
@@ -145,7 +118,7 @@ export function SidebarContents({
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/45 group-hover:text-cyan-200/80">
-                    {view.eyebrow}
+                    {normalizeQuickstartEyebrow(view.eyebrow)}
                   </div>
                   <div className="mt-1 text-sm font-medium text-white/85 group-hover:text-white">{view.label}</div>
                   <div className="mt-2 text-[11px] leading-5 text-white/45">{view.description}</div>
@@ -165,7 +138,7 @@ export function SidebarContents({
               ? `${identity.role ?? `UNAUTHORIZED`} · actor attribution required`
               : `This admin type is outside the allowed Admin v2 surfaces.`}
           </div>
-          <div className="mt-1 text-xs text-white/35">Phase: {identity?.phase ?? `MVP-2 canonical shell framing`}</div>
+          <div className="mt-1 text-xs text-white/35">Access: {identity?.phase ?? `Workspace access`}</div>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {identity ? (
               <Link

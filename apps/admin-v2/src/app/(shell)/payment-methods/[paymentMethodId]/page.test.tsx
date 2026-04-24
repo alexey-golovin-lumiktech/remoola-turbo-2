@@ -106,7 +106,7 @@ describe(`admin-v2 payment method detail kickoff surface`, () => {
       email: `super@example.com`,
       type: `SUPER`,
       role: `SUPER_ADMIN`,
-      phase: `MVP-2 slice: payouts.read`,
+      phase: `payment methods workspace`,
       capabilities: [`payment_methods.read`, `payment_methods.manage`],
       workspaces: [`payment_methods`],
     });

@@ -32,6 +32,17 @@ export function filterQuickstartsForWorkspaces(
   return quickstarts.filter((quickstart) => allowedWorkspaces.has(getQuickstartWorkspace(quickstart.targetPath)));
 }
 
+export function normalizeQuickstartEyebrow(eyebrow: string): string {
+  const normalized = eyebrow.trim().toLowerCase();
+
+  if (normalized.includes(`queue-first`)) return `Priority queue`;
+  if (normalized.includes(`audit-first`)) return `Audit trail`;
+  if (normalized.includes(`case-first`)) return `Case review`;
+  if (normalized.includes(`derived artifact`)) return `Reference`;
+
+  return eyebrow;
+}
+
 export function isQuickstartId(value: string): value is QuickstartId {
   return (KNOWN_QUICKSTART_IDS as readonly string[]).includes(value);
 }

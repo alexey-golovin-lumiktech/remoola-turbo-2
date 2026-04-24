@@ -57,6 +57,13 @@ function defaultDateRange() {
   return getDefaultLookbackDateOnlyRange();
 }
 
+function formatStateLabel(value: string | null | undefined): string {
+  if (!value || value === `live-actionable`) return `Action ready`;
+  if (value === `count-only`) return `Read-only`;
+  if (value === `deferred`) return `Deferred`;
+  return value.replaceAll(`-`, ` `);
+}
+
 type LedgerAnomalyItem = LedgerAnomalyListResponse[`items`][number];
 
 function AnomalyCards({ items }: { items: LedgerAnomalyItem[] }) {
@@ -389,7 +396,7 @@ export default async function LedgerAnomaliesPage({
               <div className="pageHeader">
                 <div>
                   <h2>{item?.label ?? key}</h2>
-                  <p className="muted">Phase: {item?.phaseStatus ?? `live-actionable`}</p>
+                  <p className="muted">State: {formatStateLabel(item?.phaseStatus)}</p>
                 </div>
                 <Link className="secondaryButton" href={buildHref({ className: key, cursor: null })}>
                   Open

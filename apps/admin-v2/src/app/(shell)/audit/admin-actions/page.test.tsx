@@ -41,12 +41,12 @@ describe(`admin-v2 audit admin-actions quickstarts`, () => {
     } as never);
   });
 
-  it(`resolves force logout quickstarts into admin-action filters and keeps reset/removal paths canonical`, async () => {
+  it(`resolves force logout quickstarts into admin-action filters and preserves reset/removal paths`, async () => {
     mockedGetQuickstart.mockResolvedValue({
       id: `force-logout-audit-trail`,
       label: `Force logout audit trail`,
-      description: `Reconstruct consumer force logout activity from the append-only admin action log.`,
-      eyebrow: `AUDIT-FIRST`,
+      description: `Review consumer force logout activity from the admin action log.`,
+      eyebrow: `Audit trail`,
       targetPath: `/audit/admin-actions`,
       surfaces: [`shell`, `overview`],
       filters: {

@@ -22,20 +22,20 @@ const PAYMENT_OPERATIONS_OVERDUE_STATUSES = [
   $Enums.TransactionStatus.PENDING,
 ] as const;
 const OVERDUE_OPERATOR_PROMPT = [
-  `Review overdue payment requests and continue case investigation`,
+  `Review overdue payment requests and continue investigation`,
   `from the payment detail view.`,
 ].join(` `);
 const MISSING_ATTACHMENT_OPERATOR_PROMPT = [
-  `Review cases with missing supporting attachment coverage`,
-  `or missing invoice-tagged attachment linkage.`,
+  `Review cases with missing supporting attachments`,
+  `or missing invoice-tagged attachment links.`,
 ].join(` `);
 const UNCOLLECTIBLE_OPERATOR_PROMPT = [
-  `Review UNCOLLECTIBLE payment requests as a distinct collections outcome`,
-  `before continuing case investigation from the payment detail view.`,
+  `Review UNCOLLECTIBLE payment requests as a separate collections outcome`,
+  `before continuing from the payment detail view.`,
 ].join(` `);
 const STALE_WAITING_RECIPIENT_APPROVAL_OPERATOR_PROMPT = [
   `Review payment requests that remain in WAITING_RECIPIENT_APPROVAL`,
-  `beyond the current follow-up window.`,
+  `beyond the current review window.`,
 ].join(` `);
 
 function normalizeLimit(limit?: number): number {
@@ -780,7 +780,7 @@ export class AdminV2PaymentsService {
       generatedAt: now,
       posture: {
         kind: `non_sla_follow_up_queue`,
-        wording: `Operator follow-up queue`,
+        wording: `Manual review queue`,
       },
       buckets: [
         {
@@ -789,7 +789,7 @@ export class AdminV2PaymentsService {
           operatorPrompt: OVERDUE_OPERATOR_PROMPT,
           items: overdueRows.map((row) => ({
             ...this.mapPaymentOperationsQueueItem(row, assigneeMap.get(row.id) ?? null),
-            followUpReason: `Due date passed while payment request remains in an active follow-up status`,
+            followUpReason: `Due date passed while the payment request remains in an active review status`,
           })),
         },
         {
@@ -807,7 +807,7 @@ export class AdminV2PaymentsService {
           operatorPrompt: STALE_WAITING_RECIPIENT_APPROVAL_OPERATOR_PROMPT,
           items: staleApprovalRows.map((row) => ({
             ...this.mapPaymentOperationsQueueItem(row, assigneeMap.get(row.id) ?? null),
-            followUpReason: `Payment request remains in WAITING_RECIPIENT_APPROVAL beyond the current follow-up window`,
+            followUpReason: `Payment request remains in WAITING_RECIPIENT_APPROVAL beyond the current review window`,
           })),
         },
         {

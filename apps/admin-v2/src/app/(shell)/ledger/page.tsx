@@ -406,7 +406,7 @@ export default async function LedgerPage({
         <section className="panel pageHeader">
           <div>
             <h1>Ledger and Disputes</h1>
-            <p className="muted">MVP-1c read surfaces for exact ledger outcomes and append-only dispute drilldown.</p>
+            <p className="muted">Read-only workspace for exact ledger outcomes and dispute review.</p>
           </div>
           <div className="actionsRow">
             <Link className="secondaryButton" href={buildHref({ view: `entries` })}>

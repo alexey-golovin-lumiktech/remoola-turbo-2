@@ -46,7 +46,7 @@ describe(`admin-v2 payments quickstarts`, () => {
       id: `overdue-payments-sweep`,
       label: `Overdue payments sweep`,
       description: `Open overdue payment requests that likely need collections follow-up.`,
-      eyebrow: `QUEUE-FIRST`,
+      eyebrow: `Priority queue`,
       targetPath: `/payments`,
       surfaces: [`shell`, `overview`],
       filters: { overdue: true },

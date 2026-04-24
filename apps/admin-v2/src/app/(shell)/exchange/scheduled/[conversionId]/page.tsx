@@ -39,7 +39,7 @@ export default async function ExchangeScheduledCasePage({ params }: { params: Pr
     return (
       <AdminSurfaceUnavailable
         title="Scheduled conversion unavailable"
-        description="The scheduled conversion case could not be loaded from the backend right now. Retry shortly."
+        description="The scheduled conversion could not be loaded right now. Retry shortly."
       />
     );
   }
@@ -181,7 +181,7 @@ export default async function ExchangeScheduledCasePage({ params }: { params: Pr
               ) : null}
 
               {!conversion.actionControls.canForceExecute && !conversion.actionControls.canCancel ? (
-                <p className="muted">No canonical exchange actions are currently available for this conversion.</p>
+                <p className="muted">No exchange actions are currently available for this conversion.</p>
               ) : null}
             </div>
           </article>

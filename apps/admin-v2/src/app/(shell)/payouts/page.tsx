@@ -29,15 +29,15 @@ const BUCKET_COPY: Record<
 > = {
   failed: {
     label: `Failed payouts`,
-    operatorPrompt: `Latest outcome is failed. Review payout case, verify linked ledger context and use payout_escalate only from the case page when operator confirmation is justified.`,
+    operatorPrompt: `Latest outcome is failed. Review the payout case and escalate from the case page if needed.`,
   },
   stuck: {
     label: `Stuck payouts`,
-    operatorPrompt: `Pending-like payouts older than the active threshold. Review the timeline, confirm destination linkage and use payout_escalate only from the case page if the payout remains stuck.`,
+    operatorPrompt: `Pending-like payouts older than the current threshold. Review the timeline and escalate from the case page if the payout remains stuck.`,
   },
   processing: {
     label: `Processing payouts`,
-    operatorPrompt: `In-flight payouts remain read-only. Use the case page for exact outcome history and destination context.`,
+    operatorPrompt: `In-flight payouts remain read-only. Use the case page for current outcome history and destination context.`,
   },
   pending: {
     label: `Pending payouts`,
@@ -49,7 +49,7 @@ const BUCKET_COPY: Record<
   },
   reversed: {
     label: `Reversed payouts`,
-    operatorPrompt: `Reversal rows are shown as their own payout-focused investigation bucket, not as a fake standalone lifecycle.`,
+    operatorPrompt: `Reversal rows appear in their own payout review bucket instead of sharing the standard payout lifecycle.`,
   },
 };
 
@@ -407,7 +407,7 @@ export default async function PayoutsPage({
       <>
         <Panel
           title="Payouts"
-          description="Ledger-derived payout queue with one regulated payout action only: `payout_escalate` for failed or stuck cases."
+          description="Ledger-based payout queue with one available action: `payout_escalate` for failed or stuck cases."
           actions={
             <div className={buttonRowClass}>
               <ActionGhost href="/ledger">Back to ledger</ActionGhost>
@@ -425,16 +425,16 @@ export default async function PayoutsPage({
             <h3>Queue posture</h3>
             <p className={mutedTextClass}>{data?.posture.wording ?? `No payout queue data available.`}</p>
             <p className={mutedTextClass}>Current window: {items.length} payouts</p>
-            <p className={mutedTextClass}>Freshness: ledger-derived exact status per row</p>
+            <p className={mutedTextClass}>Freshness: status is based on the latest ledger outcome for each row</p>
           </Panel>
           <Panel>
-            <h3>Threshold tuple</h3>
+            <h3>Threshold details</h3>
             <p className={mutedTextClass}>Threshold: {data?.stuckPolicy.thresholdHours ?? 24}h</p>
             <p className={mutedTextClass}>Breach condition: {data?.stuckPolicy.breachCondition ?? `-`}</p>
             <p className={mutedTextClass}>Escalation target: {data?.stuckPolicy.escalationTarget ?? `-`}</p>
           </Panel>
           <Panel>
-            <h3>Operator reaction</h3>
+            <h3>Expected follow-up</h3>
             <p className={mutedTextClass}>{data?.stuckPolicy.expectedOperatorReaction ?? `-`}</p>
             <p className={mutedTextClass}>Automation: {data?.stuckPolicy.automationStatus ?? `-`}</p>
           </Panel>

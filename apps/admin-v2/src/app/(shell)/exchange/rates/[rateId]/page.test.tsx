@@ -90,7 +90,7 @@ describe(`admin-v2 exchange rate case`, () => {
       email: `super@example.com`,
       type: `SUPER`,
       role: `SUPER_ADMIN`,
-      phase: `MVP-2 slice: exchange workspace`,
+      phase: `exchange workspace`,
       capabilities: [`exchange.read`, `exchange.manage`],
       workspaces: [`exchange`],
     });

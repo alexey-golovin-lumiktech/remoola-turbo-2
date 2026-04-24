@@ -130,7 +130,7 @@ describe(`admin-v2 admin case`, () => {
       email: `super@example.com`,
       type: `SUPER`,
       role: `SUPER_ADMIN`,
-      phase: `MVP-2 slice: admins and documents workspaces`,
+      phase: `admins workspace`,
       capabilities: [`admins.read`, `admins.manage`],
       workspaces: [`admins`],
     });

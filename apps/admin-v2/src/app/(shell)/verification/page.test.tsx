@@ -311,7 +311,7 @@ describe(`admin-v2 verification quickstarts`, () => {
       id: `verification-missing-documents`,
       label: `Verification missing documents`,
       description: `Focus the verification queue on cases blocked by missing consumer documents.`,
-      eyebrow: `QUEUE-FIRST`,
+      eyebrow: `Priority queue`,
       targetPath: `/verification`,
       surfaces: [`shell`, `overview`],
       filters: { missingDocuments: true },

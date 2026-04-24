@@ -101,7 +101,7 @@ export default async function LedgerEntryCasePage({ params }: { params: Promise<
           </p>
           <p className="muted">Persisted: {ledgerCase.core.persistedStatus}</p>
           <p className="muted">Effective: {ledgerCase.core.effectiveStatus}</p>
-          <p className="muted">Case truth follows the latest outcome in the append-only chain.</p>
+          <p className="muted">Current case status follows the latest recorded outcome.</p>
         </article>
         <article className="panel">
           <h3>Links</h3>

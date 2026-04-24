@@ -193,7 +193,7 @@ export default async function ConsumerCasePage({ params }: { params: Promise<{ c
           <h2>Consumer support actions</h2>
           <div className="formStack">
             <p className="muted">
-              Narrow support surface only: regulated suspension and explicit email resend. No generic consumer edits.
+              Limited support actions only: suspension and explicit email resend. No general consumer edits.
             </p>
             {identity?.capabilities.includes(`consumers.suspend`) ? (
               <form action={suspendConsumerAction.bind(null, consumer.id)} className="formStack">
@@ -203,7 +203,7 @@ export default async function ConsumerCasePage({ params }: { params: Promise<{ c
                     name="reason"
                     required
                     maxLength={500}
-                    placeholder="Regulatory or risk reason visible in audit history and suspension email."
+                    placeholder="Reason shown in audit history and the suspension email."
                   />
                 </label>
                 <label className="field">
@@ -356,7 +356,7 @@ export default async function ConsumerCasePage({ params }: { params: Promise<{ c
           <div className="pageHeader">
             <div>
               <h2>Payment methods</h2>
-              <p className="muted">Read-only bridge into the payment-method investigation surface.</p>
+              <p className="muted">Direct link into the payment-method investigation workspace.</p>
             </div>
             <Link className="secondaryButton" href={`/payment-methods?consumerId=${consumer.id}&includeDeleted=true`}>
               Open payment methods

@@ -28,8 +28,8 @@ export default function ExchangeWorkspacePage() {
           <div>
             <h1>Exchange workspace</h1>
             <p className="muted">
-              Narrow MVP-2 surface only: exchange read visibility, exact six canonical actions and truthful overview
-              linkage.
+              Exchange visibility for rates, scheduled conversions, and rule configuration with direct links into the
+              related workflows.
             </p>
           </div>
           <div className="actionsRow">

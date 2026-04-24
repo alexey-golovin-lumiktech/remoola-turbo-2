@@ -128,14 +128,14 @@ export default async function PayoutCasePage({ params }: { params: Promise<{ pay
 
       <section className="statsGrid">
         <Panel>
-          <h3>Payout truth</h3>
+          <h3>Payout status</h3>
           <p className={mutedTextClass}>
             Amount: {payoutCase.core.amount} {payoutCase.core.currencyCode}
           </p>
           <p className={mutedTextClass}>Persisted: {payoutCase.core.persistedStatus}</p>
           <p className={mutedTextClass}>Effective: {payoutCase.core.effectiveStatus}</p>
           <p className={mutedTextClass}>
-            Derived payout status follows the latest ledger outcome, not a standalone payout table.
+            Current payout status follows the latest ledger outcome, not a separate payout table.
           </p>
         </Panel>
         <Panel>
@@ -151,19 +151,15 @@ export default async function PayoutCasePage({ params }: { params: Promise<{ pay
           ) : (
             <>
               <p className={mutedTextClass}>Destination method unavailable.</p>
-              <p className={mutedTextClass}>
-                No schema-backed payout destination linkage could be confirmed for this case.
-              </p>
+              <p className={mutedTextClass}>No payout destination link could be confirmed for this case.</p>
             </>
           )}
         </Panel>
         <Panel>
-          <h3>Threshold tuple</h3>
+          <h3>Threshold details</h3>
           <p className={mutedTextClass}>Threshold: {payoutCase.stuckPolicy.thresholdHours}h</p>
           <p className={mutedTextClass}>Breach condition: {payoutCase.stuckPolicy.breachCondition}</p>
-          <p className={mutedTextClass}>
-            Expected operator reaction: {payoutCase.stuckPolicy.expectedOperatorReaction}
-          </p>
+          <p className={mutedTextClass}>Expected follow-up: {payoutCase.stuckPolicy.expectedOperatorReaction}</p>
         </Panel>
         <Panel>
           <h3>High-value policy</h3>
@@ -207,8 +203,8 @@ export default async function PayoutCasePage({ params }: { params: Promise<{ pay
                   <input type="hidden" name="consumerId" value={payoutCase.consumer.id} />
                   <input type="hidden" name="confirmed" value="false" />
                   <p className={mutedTextClass}>
-                    Creates one durable escalation marker only. It does not mutate payout execution state, ledger
-                    outcomes or destination linkage.
+                    Creates an escalation record only. It does not change payout state, ledger outcomes, or destination
+                    links.
                   </p>
                   <label className={fieldClass}>
                     <span className={fieldLabelClass}>Reason</span>

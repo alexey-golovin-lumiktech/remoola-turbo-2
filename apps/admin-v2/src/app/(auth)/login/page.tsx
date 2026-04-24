@@ -8,9 +8,8 @@ export default function LoginPage({ searchParams }: { searchParams?: Promise<{ s
         <div className={styles.header}>
           <h1 className={styles.title}>Admin v2</h1>
           <p className={styles.subtitle}>
-            Canonical MVP-2 shell keeps Overview, Consumers, Verification, Payments, Ledger and Audit primary. Exchange
-            and Documents remain top-level breadth, Admins stays later breadth for eligible super-admin identities, and
-            Payouts plus Payment Methods stay nested finance investigation routes. System remains outside MVP-2.
+            Access operational workspaces for reviews, queues, investigations, and account administration from a single
+            admin surface.
           </p>
         </div>
         <LoginForm />

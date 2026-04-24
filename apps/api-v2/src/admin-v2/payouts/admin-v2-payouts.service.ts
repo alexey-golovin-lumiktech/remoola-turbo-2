@@ -243,8 +243,8 @@ export class AdminV2PayoutsService {
           availability: `unconfigured`,
           source: PAYOUT_HIGH_VALUE_THRESHOLD_SOURCE,
           wording: [
-            `High-value payouts stay queue-visible only when per-currency thresholds are configured.`,
-            `The current runtime has no configured thresholds.`,
+            `High-value payouts appear in this list only when per-currency thresholds are configured.`,
+            `No per-currency thresholds are currently configured.`,
           ].join(` `),
           configuredThresholds,
         },
@@ -550,19 +550,19 @@ export class AdminV2PayoutsService {
       posture: {
         kind: `threshold_derived_follow_up_queue`,
         wording: [
-          `Ledger-derived payout queue with a single regulated action path:`,
-          `failed or stuck payouts may be escalated, and all other payout statuses remain investigation-only.`,
+          `Ledger-based payout queue with a single action path:`,
+          `failed or stuck payouts may be escalated, and all other payout statuses stay visible for review.`,
         ].join(` `),
       },
       stuckPolicy: {
         thresholdHours: PAYOUT_STUCK_THRESHOLD_HOURS,
-        breachCondition: `latest pending-like payout outcome is older than the current threshold`,
-        escalationTarget: `human review with payout_escalate available only for failed or stuck payouts`,
+        breachCondition: `the latest payout outcome is still pending-like after the current threshold`,
+        escalationTarget: `manual review with payout_escalate available only for failed or stuck payouts`,
         expectedOperatorReaction: [
-          `open payout case, inspect outcome timeline, verify destination/payment context`,
+          `open the payout case, inspect the outcome timeline, confirm destination and payment context`,
           `and escalate only if the payout is failed or stuck`,
         ].join(` `),
-        automationStatus: `machine-detected queue only; payout execution writes remain disabled`,
+        automationStatus: `This list is detected automatically; payout execution writes remain disabled`,
       },
       highValuePolicy: highValueConfig.policy,
       items: visibleRows.map((row) =>
@@ -752,13 +752,13 @@ export class AdminV2PayoutsService {
       slaBreachDetected: derivedStatus === `stuck`,
       stuckPolicy: {
         thresholdHours: PAYOUT_STUCK_THRESHOLD_HOURS,
-        breachCondition: `latest pending-like payout outcome is older than the current threshold`,
-        escalationTarget: `human review with payout_escalate available only for failed or stuck payouts`,
+        breachCondition: `the latest payout outcome is still pending-like after the current threshold`,
+        escalationTarget: `manual review with payout_escalate available only for failed or stuck payouts`,
         expectedOperatorReaction: [
-          `review the payout case, verify destination linkage`,
+          `review the payout case, confirm destination linkage`,
           `and use payout_escalate only when the payout is failed or stuck`,
         ].join(` `),
-        automationStatus: `machine-detected queue only; payout execution writes remain disabled`,
+        automationStatus: `This list is detected automatically; payout execution writes remain disabled`,
       },
       version: deriveVersion(entry.updatedAt),
       highValuePolicy: highValueConfig.policy,

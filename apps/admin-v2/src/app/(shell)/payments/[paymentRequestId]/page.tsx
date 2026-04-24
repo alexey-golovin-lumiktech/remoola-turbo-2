@@ -101,7 +101,9 @@ export default async function PaymentCasePage({ params }: { params: Promise<{ pa
           </p>
           <p className={mutedTextClass}>Persisted: {paymentCase.core.persistedStatus}</p>
           <p className={mutedTextClass}>Effective: {paymentCase.core.effectiveStatus}</p>
-          <p className={mutedTextClass}>Case truth follows the latest linked ledger outcome, not the earliest one.</p>
+          <p className={mutedTextClass}>
+            Current status follows the latest linked ledger outcome, not the earliest one.
+          </p>
           <p className={mutedTextClass}>Description: {paymentCase.core.description ?? `-`}</p>
         </Panel>
         <Panel>

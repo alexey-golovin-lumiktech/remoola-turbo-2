@@ -30,7 +30,7 @@ export default async function PaymentOperationsQueuePage() {
     <>
       <Panel
         title="Payment operations queue"
-        description="Non-SLA operator follow-up surface for payment-domain cases that need manual review before drilldown."
+        description="Manual review queue for payment cases that need follow-up before drilldown."
         actions={<ActionGhost href="/payments">Back to payments</ActionGhost>}
       >
         <p className={mutedTextClass}>Generated: {formatDate(queue?.generatedAt)}</p>

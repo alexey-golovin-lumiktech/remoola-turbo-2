@@ -481,8 +481,8 @@ function CreateVerificationQueueAlertForm() {
             {`{ "status"?: string, "stripeIdentityStatus"?: string, "country"?: string, "contractorKind"?: string }`}
           </span>
           <span className={mutedTextClass}>
-            Note: filters <code>missingProfileData</code> and <code>missingDocuments</code> are saved but cannot be used
-            by alert evaluation (frontend-only filters).
+            Note: filters <code>missingProfileData</code> and <code>missingDocuments</code> are saved with the view, but
+            alerts ignore them because they only affect the current UI.
           </span>
         </label>
         <label className={fieldClass}>
@@ -576,7 +576,7 @@ export default async function OperationalAlertsPage() {
     <>
       <Panel
         title="Operational alerts"
-        description="Personal alerts on supported workspaces. Backend evaluates every 5 minutes; in-app fired-state badge only."
+        description="Personal alerts for supported workspaces. Checked every 5 minutes; badges update in app only."
       />
 
       {workspaceResponses.map(({ workspace, response }) => {
