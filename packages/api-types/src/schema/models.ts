@@ -209,13 +209,12 @@ export type PaymentMethodModelWithRelations = Prisma.PaymentMethodModelGetPayloa
   };
 }>;
 
-export type PaymentMethodDuplicateEscalationModelWithRelations =
-  Prisma.PaymentMethodDuplicateEscalationModelGetPayload<{
-    include: {
-      paymentMethod: true;
-      escalatedByAdmin: true;
-    };
-  }>;
+export type PaymentMethodDuplicateEscalationModelWithRelations = Prisma.PaymentMethodDuplicateEscalationModelGetPayload<{
+  include: {
+    paymentMethod: true;
+    escalatedByAdmin: true;
+  };
+}>;
 
 export type PaymentRequestModelWithRelations = Prisma.PaymentRequestModelGetPayload<{
   include: {
