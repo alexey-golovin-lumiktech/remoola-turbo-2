@@ -1544,7 +1544,7 @@
 
 ---
 
-<details open>
+<details>
 <summary><strong>Changelog (March 2026)</strong></summary>
 
 # Changelog (March 2026)
