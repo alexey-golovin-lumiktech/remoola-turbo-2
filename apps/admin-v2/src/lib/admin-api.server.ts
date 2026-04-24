@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
+import { getDefaultLookbackIsoRange } from './admin-format';
 import { getEnv } from './env.server';
 import { getRequestOrigin } from './request-origin';
 
@@ -1763,7 +1764,7 @@ export async function getConsumerActionLog(params: {
 }): Promise<ConsumerTimelineResponse | null> {
   if (!params.consumerId.trim()) return null;
   const dateTo = params.dateTo?.trim() || new Date().toISOString();
-  const dateFrom = params.dateFrom?.trim() || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const dateFrom = params.dateFrom?.trim() || getDefaultLookbackIsoRange().dateFrom;
   const searchParams = new URLSearchParams({
     page: String(params.page ?? 1),
     pageSize: String(params.pageSize ?? 5),
@@ -1829,7 +1830,7 @@ export async function getConsumerActionAudit(params?: {
   dateTo?: string;
 }): Promise<AuditListResponse | null> {
   const dateTo = params?.dateTo?.trim() || new Date().toISOString();
-  const dateFrom = params?.dateFrom?.trim() || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const dateFrom = params?.dateFrom?.trim() || getDefaultLookbackIsoRange().dateFrom;
   const searchParams = new URLSearchParams({
     page: String(params?.page ?? 1),
     pageSize: String(params?.pageSize ?? 20),

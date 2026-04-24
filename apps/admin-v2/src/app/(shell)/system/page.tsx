@@ -3,6 +3,7 @@ import { Panel } from '../../../components/panel';
 import { mutedTextClass } from '../../../components/ui-classes';
 import { WorkspaceLayout } from '../../../components/workspace-layout';
 import { getSystemSummary, type SystemSummaryCard } from '../../../lib/admin-api.server';
+import { formatDateTime } from '../../../lib/admin-format';
 
 const cardOrder = [
   `stripeWebhookHealth`,
@@ -30,11 +31,7 @@ export default async function SystemPage() {
         <Panel
           title="System"
           description="Read-only maturity surface for cross-domain product and background health, with drilldown into existing operator workspaces."
-          actions={
-            <p className={mutedTextClass}>
-              Computed: {summary?.computedAt ? new Date(summary.computedAt).toLocaleString() : `-`}
-            </p>
-          }
+          actions={<p className={mutedTextClass}>Computed: {formatDateTime(summary?.computedAt)}</p>}
         />
 
         <section className="statsGrid">

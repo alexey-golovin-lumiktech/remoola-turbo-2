@@ -16,18 +16,27 @@ import {
 import {
   getAdminIdentity,
   getOperationalAlerts,
+  type LedgerAnomalyClass,
   type OperationalAlertSummary,
   type OperationalAlertThreshold,
   type OperationalAlertWorkspace,
 } from '../../../../lib/admin-api.server';
+import { formatDateTime } from '../../../../lib/admin-format';
 import {
   createOperationalAlertAction,
   deleteOperationalAlertAction,
   updateOperationalAlertAction,
 } from '../../../../lib/admin-mutations.server';
+import {
+  isLedgerAnomalyClass,
+  LEDGER_ANOMALY_CLASS_LABELS,
+  LEDGER_ANOMALY_CLASS_ORDER,
+  OPERATIONAL_ALERT_WORKSPACE_META,
+  OPERATIONAL_ALERT_WORKSPACE_ORDER,
+  SHARED_DESCRIPTION_MAX_LENGTH,
+  SHARED_NAME_MAX_LENGTH,
+} from '../../../../lib/admin-surface-meta';
 
-const MAX_OPERATIONAL_ALERT_NAME_LENGTH = 100;
-const MAX_OPERATIONAL_ALERT_DESCRIPTION_LENGTH = 500;
 const MIN_OPERATIONAL_ALERT_INTERVAL_MINUTES = 1;
 const MAX_OPERATIONAL_ALERT_INTERVAL_MINUTES = 1440;
 const DEFAULT_OPERATIONAL_ALERT_INTERVAL_MINUTES = 5;
@@ -37,23 +46,8 @@ const MIN_AUTH_REFRESH_WINDOW_MINUTES = 1;
 const MAX_AUTH_REFRESH_WINDOW_MINUTES = 1440;
 const DEFAULT_AUTH_REFRESH_WINDOW_MINUTES = 15;
 
-const LEDGER_ANOMALY_CLASS_OPTIONS = [
-  { value: `stalePendingEntries`, label: `Stale pending entries` },
-  { value: `inconsistentOutcomeChains`, label: `Inconsistent outcome chains` },
-  { value: `largeValueOutliers`, label: `Large value outliers` },
-  { value: `orphanedEntries`, label: `Orphaned entries` },
-  { value: `duplicateIdempotencyRisk`, label: `Duplicate idempotency risk` },
-  { value: `impossibleTransitions`, label: `Impossible transitions` },
-] as const;
-
-type LedgerAnomalyClassValue = (typeof LEDGER_ANOMALY_CLASS_OPTIONS)[number][`value`];
-
-function isLedgerAnomalyClass(value: unknown): value is LedgerAnomalyClassValue {
-  return typeof value === `string` && LEDGER_ANOMALY_CLASS_OPTIONS.some((option) => option.value === value);
-}
-
 type LedgerAnomaliesAlertQueryPayload = {
-  class: LedgerAnomalyClassValue;
+  class: LedgerAnomalyClass;
   dateFrom?: string;
   dateTo?: string;
 };
@@ -126,10 +120,7 @@ function formatThreshold(threshold: OperationalAlertThreshold): string {
 }
 
 function formatTimestamp(value: string | null | undefined) {
-  if (!value) {
-    return `-`;
-  }
-  return new Date(value).toLocaleString();
+  return formatDateTime(value);
 }
 
 function isCurrentlyFiring(alert: OperationalAlertSummary, now: Date): boolean {
@@ -144,13 +135,14 @@ function describeQueryPayload(workspace: OperationalAlertWorkspace, raw: unknown
   if (workspace === `ledger_anomalies`) {
     const parsed = parseLedgerAnomaliesAlertQuery(raw);
     if (!parsed) return `Class: unknown`;
+    const label = LEDGER_ANOMALY_CLASS_LABELS[parsed.class];
     const tail = [
       parsed.dateFrom ? `dateFrom=${parsed.dateFrom}` : null,
       parsed.dateTo ? `dateTo=${parsed.dateTo}` : null,
     ]
       .filter(Boolean)
       .join(`, `);
-    return tail ? `Class: ${parsed.class}, ${tail}` : `Class: ${parsed.class}`;
+    return tail ? `Class: ${label}, ${tail}` : `Class: ${label}`;
   }
   if (workspace === `auth_refresh_reuse`) {
     const parsed = parseAuthRefreshReuseQuery(raw);
@@ -232,7 +224,7 @@ function AlertRow({ alert, now }: { alert: OperationalAlertSummary; now: Date })
               name="name"
               defaultValue={alert.name}
               required
-              maxLength={MAX_OPERATIONAL_ALERT_NAME_LENGTH}
+              maxLength={SHARED_NAME_MAX_LENGTH}
               aria-label="Operational alert name"
             />
           </label>
@@ -242,7 +234,7 @@ function AlertRow({ alert, now }: { alert: OperationalAlertSummary; now: Date })
               className={textInputClass}
               name="description"
               defaultValue={alert.description ?? ``}
-              maxLength={MAX_OPERATIONAL_ALERT_DESCRIPTION_LENGTH}
+              maxLength={SHARED_DESCRIPTION_MAX_LENGTH}
               aria-label="Operational alert description"
             />
           </label>
@@ -282,8 +274,9 @@ function AlertRow({ alert, now }: { alert: OperationalAlertSummary; now: Date })
 function CreateLedgerAnomaliesAlertForm() {
   const defaultQueryPayload: LedgerAnomaliesAlertQueryPayload = { class: `stalePendingEntries` };
   const defaultThresholdPayload = { type: `count_gt`, value: 5 };
+  const meta = OPERATIONAL_ALERT_WORKSPACE_META.ledger_anomalies;
   return (
-    <Panel title="New ledger anomalies alert">
+    <Panel title={meta.createTitle}>
       <p className={mutedTextClass}>
         Backend treats queryPayload as opaque (workspace handler owns the schema) and parses thresholdPayload
         structurally. Only count_gt is supported.
@@ -296,8 +289,8 @@ function CreateLedgerAnomaliesAlertForm() {
             className={textInputClass}
             name="name"
             required
-            maxLength={MAX_OPERATIONAL_ALERT_NAME_LENGTH}
-            placeholder="e.g. Stale pending entries spike"
+            maxLength={SHARED_NAME_MAX_LENGTH}
+            placeholder={meta.namePlaceholder}
             aria-label="New ledger anomalies alert name"
           />
         </label>
@@ -306,7 +299,7 @@ function CreateLedgerAnomaliesAlertForm() {
           <input
             className={textInputClass}
             name="description"
-            maxLength={MAX_OPERATIONAL_ALERT_DESCRIPTION_LENGTH}
+            maxLength={SHARED_DESCRIPTION_MAX_LENGTH}
             placeholder="Optional"
             aria-label="New ledger anomalies alert description"
           />
@@ -323,7 +316,7 @@ function CreateLedgerAnomaliesAlertForm() {
           />
           <span className={mutedTextClass}>
             JSON shape:{` `}
-            {`{ "class": "<one of: ${LEDGER_ANOMALY_CLASS_OPTIONS.map((o) => o.value).join(`|`)}>", "dateFrom"?: "YYYY-MM-DD", "dateTo"?: "YYYY-MM-DD" }`}
+            {`{ "class": "<one of: ${LEDGER_ANOMALY_CLASS_ORDER.join(`|`)}>", "dateFrom"?: "YYYY-MM-DD", "dateTo"?: "YYYY-MM-DD" }`}
           </span>
         </label>
         <label className={fieldClass}>
@@ -363,8 +356,9 @@ function CreateAuthRefreshReuseAlertForm() {
     windowMinutes: DEFAULT_AUTH_REFRESH_WINDOW_MINUTES,
   };
   const defaultThresholdPayload = { type: `count_gt`, value: 1 };
+  const meta = OPERATIONAL_ALERT_WORKSPACE_META.auth_refresh_reuse;
   return (
-    <Panel title="New auth refresh reuse alert">
+    <Panel title={meta.createTitle}>
       <p className={mutedTextClass}>
         Fires when admin refresh-token reuse events exceed the threshold within the rolling window. Window range: [
         {MIN_AUTH_REFRESH_WINDOW_MINUTES}..{MAX_AUTH_REFRESH_WINDOW_MINUTES}] minutes.
@@ -377,8 +371,8 @@ function CreateAuthRefreshReuseAlertForm() {
             className={textInputClass}
             name="name"
             required
-            maxLength={MAX_OPERATIONAL_ALERT_NAME_LENGTH}
-            placeholder="e.g. Refresh reuse spike"
+            maxLength={SHARED_NAME_MAX_LENGTH}
+            placeholder={meta.namePlaceholder}
             aria-label="New auth refresh reuse alert name"
           />
         </label>
@@ -387,7 +381,7 @@ function CreateAuthRefreshReuseAlertForm() {
           <input
             className={textInputClass}
             name="description"
-            maxLength={MAX_OPERATIONAL_ALERT_DESCRIPTION_LENGTH}
+            maxLength={SHARED_DESCRIPTION_MAX_LENGTH}
             placeholder="Optional"
             aria-label="New auth refresh reuse alert description"
           />
@@ -442,8 +436,9 @@ function CreateAuthRefreshReuseAlertForm() {
 function CreateVerificationQueueAlertForm() {
   const defaultQueryPayload: VerificationQueueQueryPayload = {};
   const defaultThresholdPayload = { type: `count_gt`, value: 25 };
+  const meta = OPERATIONAL_ALERT_WORKSPACE_META.verification_queue;
   return (
-    <Panel title="New verification queue alert">
+    <Panel title={meta.createTitle}>
       <p className={mutedTextClass}>
         Fires when the verification queue size (filtered by the optional accept-list keys below) exceeds the threshold.
         An empty payload (<code>{`{}`}</code>) monitors the total queue.
@@ -456,8 +451,8 @@ function CreateVerificationQueueAlertForm() {
             className={textInputClass}
             name="name"
             required
-            maxLength={MAX_OPERATIONAL_ALERT_NAME_LENGTH}
-            placeholder="e.g. Verification queue backlog"
+            maxLength={SHARED_NAME_MAX_LENGTH}
+            placeholder={meta.namePlaceholder}
             aria-label="New verification queue alert name"
           />
         </label>
@@ -466,7 +461,7 @@ function CreateVerificationQueueAlertForm() {
           <input
             className={textInputClass}
             name="description"
-            maxLength={MAX_OPERATIONAL_ALERT_DESCRIPTION_LENGTH}
+            maxLength={SHARED_DESCRIPTION_MAX_LENGTH}
             placeholder="Optional"
             aria-label="New verification queue alert description"
           />
@@ -569,11 +564,12 @@ export default async function OperationalAlertsPage() {
     );
   }
 
-  const [ledgerResponse, verificationQueueResponse, authRefreshReuseResponse] = await Promise.all([
-    getOperationalAlerts({ workspace: `ledger_anomalies` }),
-    getOperationalAlerts({ workspace: `verification_queue` }),
-    getOperationalAlerts({ workspace: `auth_refresh_reuse` }),
-  ]);
+  const workspaceResponses = await Promise.all(
+    OPERATIONAL_ALERT_WORKSPACE_ORDER.map(async (workspace) => ({
+      workspace,
+      response: await getOperationalAlerts({ workspace }),
+    })),
+  );
   const now = new Date();
 
   return (
@@ -583,29 +579,19 @@ export default async function OperationalAlertsPage() {
         description="Personal alerts on supported workspaces. Backend evaluates every 5 minutes; in-app fired-state badge only."
       />
 
-      <WorkspaceSection
-        workspace="ledger_anomalies"
-        title="Ledger anomalies alerts"
-        caption="Threshold-based monitoring on ledger anomaly counts."
-        response={ledgerResponse}
-        now={now}
-      />
-
-      <WorkspaceSection
-        workspace="verification_queue"
-        title="Verification queue alerts"
-        caption="Threshold-based monitoring on verification queue size (filtered or total)."
-        response={verificationQueueResponse}
-        now={now}
-      />
-
-      <WorkspaceSection
-        workspace="auth_refresh_reuse"
-        title="Auth refresh reuse alerts"
-        caption="Threshold-based monitoring on admin refresh-token reuse detections."
-        response={authRefreshReuseResponse}
-        now={now}
-      />
+      {workspaceResponses.map(({ workspace, response }) => {
+        const meta = OPERATIONAL_ALERT_WORKSPACE_META[workspace];
+        return (
+          <WorkspaceSection
+            key={workspace}
+            workspace={workspace}
+            title={meta.sectionTitle}
+            caption={meta.sectionCaption}
+            response={response}
+            now={now}
+          />
+        );
+      })}
     </>
   );
 }

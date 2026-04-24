@@ -9,6 +9,7 @@ import { Panel } from '../../../components/panel';
 import { SignalCard, type SignalCardAvailability } from '../../../components/signal-card';
 import { TinyPill } from '../../../components/tiny-pill';
 import { getAdminIdentity, getOverviewSummary, getQuickstarts } from '../../../lib/admin-api.server';
+import { formatDateTime } from '../../../lib/admin-format';
 import { buildQuickstartHref, filterQuickstartsForWorkspaces } from '../../../lib/quickstart-investigations';
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -78,9 +79,7 @@ export default async function OverviewPage(): Promise<ReactElement> {
               follow-up signals.
             </p>
           </div>
-          <p className="text-xs text-white/45">
-            Computed: {summary?.computedAt ? new Date(summary.computedAt).toLocaleString() : `—`}
-          </p>
+          <p className="text-xs text-white/45">Computed: {formatDateTime(summary?.computedAt, `—`)}</p>
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
           {HEADER_CHIPS.map((chip) => (
@@ -244,7 +243,7 @@ export default async function OverviewPage(): Promise<ReactElement> {
                   </td>
                   <td className="px-3 py-2">{String(row.adminEmail ?? `—`)}</td>
                   <td className="px-3 py-2">
-                    {typeof row.createdAt === `string` ? new Date(row.createdAt).toLocaleString() : `—`}
+                    {formatDateTime(typeof row.createdAt === `string` ? row.createdAt : null, `—`)}
                   </td>
                 </tr>
               );

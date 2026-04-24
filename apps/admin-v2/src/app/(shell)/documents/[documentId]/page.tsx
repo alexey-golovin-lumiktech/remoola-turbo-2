@@ -4,31 +4,13 @@ import { notFound } from 'next/navigation';
 import { AdminSurfaceAccessDenied, AdminSurfaceUnavailable } from '../../../../components/admin-surface-state';
 import { AssignmentCard } from '../../../../components/assignment-card';
 import { getAdminIdentity, getAdmins, getDocumentCaseResult, getDocumentTags } from '../../../../lib/admin-api.server';
+import { formatBytes, formatDateTime } from '../../../../lib/admin-format';
 import {
   claimDocumentAssignmentAction,
   reassignDocumentAssignmentAction,
   releaseDocumentAssignmentAction,
   retagDocumentAction,
 } from '../../../../lib/admin-mutations.server';
-
-function formatDate(value: string | null | undefined): string {
-  if (!value) return `-`;
-  return new Date(value).toLocaleString();
-}
-
-function formatBytes(value: number | null | undefined): string {
-  const safeValue = value ?? NaN;
-  if (!Number.isFinite(safeValue)) {
-    return `-`;
-  }
-  if (safeValue < 1024) {
-    return `${safeValue} B`;
-  }
-  if (safeValue < 1024 * 1024) {
-    return `${(safeValue / 1024).toFixed(1)} KB`;
-  }
-  return `${(safeValue / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 export default async function DocumentCasePage({ params }: { params: Promise<{ documentId: string }> }) {
   const { documentId } = await params;
@@ -107,8 +89,8 @@ export default async function DocumentCasePage({ params }: { params: Promise<{ d
       <section className="statsGrid">
         <article className="panel">
           <h3>Core evidence context</h3>
-          <p className="muted">Created: {formatDate(documentCase.core.createdAt)}</p>
-          <p className="muted">Updated: {formatDate(documentCase.updatedAt)}</p>
+          <p className="muted">Created: {formatDateTime(documentCase.core.createdAt)}</p>
+          <p className="muted">Updated: {formatDateTime(documentCase.updatedAt)}</p>
           <p className="muted">Size: {formatBytes(documentCase.core.size)}</p>
           <p className="muted">Data freshness: {documentCase.dataFreshnessClass}</p>
           <p className="muted">Version: {documentCase.version}</p>
@@ -145,7 +127,7 @@ export default async function DocumentCasePage({ params }: { params: Promise<{ d
                   <p className="muted">
                     {payment.amount} · {payment.status}
                   </p>
-                  <p className="muted">Created: {formatDate(payment.createdAt)}</p>
+                  <p className="muted">Created: {formatDateTime(payment.createdAt)}</p>
                 </div>
               ))}
             </div>

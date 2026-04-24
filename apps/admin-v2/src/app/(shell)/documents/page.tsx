@@ -5,26 +5,8 @@ import { MobileQueueCard } from '../../../components/mobile-queue-card';
 import { TabletRow } from '../../../components/tablet-row';
 import { WorkspaceLayout } from '../../../components/workspace-layout';
 import { getAdminIdentity, getDocuments, getDocumentTags } from '../../../lib/admin-api.server';
+import { formatBytes, formatDateTime } from '../../../lib/admin-format';
 import { bulkTagDocumentsAction } from '../../../lib/admin-mutations.server';
-
-function formatDate(value: string | null | undefined): string {
-  if (!value) return `-`;
-  return new Date(value).toLocaleString();
-}
-
-function formatBytes(value: number | null | undefined): string {
-  const safeValue = value ?? NaN;
-  if (!Number.isFinite(safeValue)) {
-    return `-`;
-  }
-  if (safeValue < 1024) {
-    return `${safeValue} B`;
-  }
-  if (safeValue < 1024 * 1024) {
-    return `${(safeValue / 1024).toFixed(1)} KB`;
-  }
-  return `${(safeValue / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 type DocumentsPageParams = Record<string, string | string[] | undefined>;
 
@@ -159,7 +141,7 @@ function ExplorerTable({
                   subtitle={document.id}
                   trailing={<span className="pill">{document.access}</span>}
                 >
-                  <div className="muted">Created: {formatDate(document.createdAt)}</div>
+                  <div className="muted">Created: {formatDateTime(document.createdAt)}</div>
                   {canManage ? (
                     <label className="field">
                       <span>Select for bulk tag</span>
@@ -188,7 +170,7 @@ function ExplorerTable({
                         <strong>{document.originalName}</strong>
                       </Link>
                       <div className="muted mono">{document.id}</div>
-                      <div className="muted">Created: {formatDate(document.createdAt)}</div>
+                      <div className="muted">Created: {formatDateTime(document.createdAt)}</div>
                     </>
                   }
                   cells={[
@@ -232,7 +214,7 @@ function ExplorerTable({
                     <div className="formStack">
                       <strong>{document.originalName}</strong>
                       <span className="muted mono">{document.id}</span>
-                      <span className="muted">Created: {formatDate(document.createdAt)}</span>
+                      <span className="muted">Created: {formatDateTime(document.createdAt)}</span>
                       <div className="actionsRow">
                         <Link className="secondaryButton" href={`/documents/${document.id}`}>
                           Open detail

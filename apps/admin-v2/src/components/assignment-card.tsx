@@ -20,6 +20,7 @@ import {
   type AssignmentHistoryItem,
   type AssignmentSummary,
 } from '../lib/admin-api.server';
+import { formatDateTime } from '../lib/admin-format';
 
 type ReassignCandidate = AdminsListResponse[`items`][number];
 
@@ -49,11 +50,6 @@ export type AssignmentCardProps = {
   copy?: AssignmentCardCopy;
 };
 
-function formatDate(value: string | null | undefined): string {
-  if (!value) return `-`;
-  return new Date(value).toLocaleString();
-}
-
 function describeAdmin(ref: AdminRef | null | undefined): string {
   if (!ref) return `-`;
   return ref.name ?? ref.email ?? ref.id;
@@ -81,12 +77,12 @@ export function AssignmentCard({
               <span className={mutedTextClass}> · {currentAssignment.assignedTo.email}</span>
             ) : null}
           </p>
-          <p className={mutedTextClass}>Since: {formatDate(currentAssignment.assignedAt)}</p>
+          <p className={mutedTextClass}>Since: {formatDateTime(currentAssignment.assignedAt)}</p>
           {currentAssignment.reason ? (
             <p className={mutedTextClass}>Reason: &ldquo;{currentAssignment.reason}&rdquo;</p>
           ) : null}
           {currentAssignment.expiresAt ? (
-            <p className={mutedTextClass}>Expires: {formatDate(currentAssignment.expiresAt)}</p>
+            <p className={mutedTextClass}>Expires: {formatDateTime(currentAssignment.expiresAt)}</p>
           ) : null}
         </>
       ) : (
@@ -164,11 +160,11 @@ export function AssignmentCard({
               <li className={panelClass} key={entry.id}>
                 <p>
                   <strong>{describeAdmin(entry.assignedTo)}</strong>
-                  <span className={mutedTextClass}> · claimed {formatDate(entry.assignedAt)}</span>
+                  <span className={mutedTextClass}> · claimed {formatDateTime(entry.assignedAt)}</span>
                 </p>
                 {entry.releasedAt ? (
                   <p className={mutedTextClass}>
-                    Released {formatDate(entry.releasedAt)} by {describeAdmin(entry.releasedBy)}
+                    Released {formatDateTime(entry.releasedAt)} by {describeAdmin(entry.releasedBy)}
                   </p>
                 ) : (
                   <p className={mutedTextClass}>Still active</p>

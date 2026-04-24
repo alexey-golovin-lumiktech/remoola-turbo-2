@@ -5,11 +5,7 @@ import { MobileQueueCard } from '../../../../components/mobile-queue-card';
 import { TabletRow } from '../../../../components/tablet-row';
 import { WorkspaceLayout } from '../../../../components/workspace-layout';
 import { getConsumerActionAudit } from '../../../../lib/admin-api.server';
-
-function formatDate(value: unknown): string {
-  if (typeof value !== `string`) return `-`;
-  return new Date(value).toLocaleString();
-}
+import { formatDateTime, getDefaultLookbackIsoRange } from '../../../../lib/admin-format';
 
 type ConsumerActionRow = Record<string, unknown>;
 
@@ -45,7 +41,9 @@ function ConsumerActionsMobileCards({ items }: { items: ConsumerActionRow[] }) {
               <span className="muted mono">{String(item.resourceId ?? `-`)}</span>
             </div>
             <div className="muted mono">{JSON.stringify(item.metadata ?? {})}</div>
-            <div className="muted">Created: {formatDate(item.createdAt)}</div>
+            <div className="muted">
+              Created: {formatDateTime(typeof item.createdAt === `string` ? item.createdAt : null)}
+            </div>
           </MobileQueueCard>
         ))}
       </div>
@@ -83,7 +81,7 @@ function ConsumerActionsTabletRows({ items }: { items: ConsumerActionRow[] }) {
                 {JSON.stringify(item.metadata ?? {})}
               </div>,
               <div className="muted" key="created">
-                {formatDate(item.createdAt)}
+                {formatDateTime(typeof item.createdAt === `string` ? item.createdAt : null)}
               </div>,
               null,
             ]}
@@ -112,7 +110,7 @@ function ConsumerActionsDesktopTable({ items }: { items: ConsumerActionRow[] }) 
                   <div className="muted mono">{String(item.resourceId ?? `-`)}</div>
                 </td>
                 <td className="mono">{JSON.stringify(item.metadata ?? {})}</td>
-                <td>{formatDate(item.createdAt)}</td>
+                <td>{formatDateTime(typeof item.createdAt === `string` ? item.createdAt : null)}</td>
               </tr>
             ))}
       </DenseTable>
@@ -146,8 +144,9 @@ export default async function AuditConsumerActionsPage({
     const query = new URLSearchParams();
     if (params?.consumerId?.trim()) query.set(`consumerId`, params.consumerId.trim());
     if (params?.action?.trim()) query.set(`action`, params.action.trim());
-    query.set(`dateFrom`, params?.dateFrom ?? new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
-    query.set(`dateTo`, params?.dateTo ?? new Date().toISOString());
+    const { dateFrom, dateTo } = getDefaultLookbackIsoRange();
+    query.set(`dateFrom`, params?.dateFrom ?? dateFrom);
+    query.set(`dateTo`, params?.dateTo ?? dateTo);
     query.set(`page`, String(nextPage));
     return `/audit/consumer-actions?${query.toString()}`;
   }
@@ -167,10 +166,14 @@ export default async function AuditConsumerActionsPage({
             <input name="action" defaultValue={params?.action ?? ``} placeholder="action" />
             <input
               name="dateFrom"
-              defaultValue={params?.dateFrom ?? new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()}
+              defaultValue={params?.dateFrom ?? getDefaultLookbackIsoRange().dateFrom}
               placeholder="dateFrom"
             />
-            <input name="dateTo" defaultValue={params?.dateTo ?? new Date().toISOString()} placeholder="dateTo" />
+            <input
+              name="dateTo"
+              defaultValue={params?.dateTo ?? getDefaultLookbackIsoRange().dateTo}
+              placeholder="dateTo"
+            />
             <button className="secondaryButton" type="submit">
               Apply
             </button>

@@ -8,6 +8,7 @@ import { cookies } from 'next/headers';
 import { buildAdminMutationHeaders } from './admin-auth-headers.server';
 import { parseConfirmedFormValue } from './admin-confirmation';
 import { ADMIN_V2_PERMISSION_OVERRIDE_OPTIONS } from './admin-rbac';
+import { SAVED_VIEW_WORKSPACE_PATHS } from './admin-surface-meta';
 import { getEnv } from './env.server';
 
 type MutationError = {
@@ -866,13 +867,8 @@ export async function revokeAdminSessionAction(adminId: string, sessionId: strin
   revalidateAdminPaths(adminId);
 }
 
-const SAVED_VIEW_WORKSPACE_PATHS: Record<string, string> = {
-  ledger_anomalies: `/ledger/anomalies`,
-  verification_queue: `/verification`,
-};
-
 function revalidateSavedViewWorkspace(workspace: string) {
-  const path = SAVED_VIEW_WORKSPACE_PATHS[workspace];
+  const path = SAVED_VIEW_WORKSPACE_PATHS[workspace as keyof typeof SAVED_VIEW_WORKSPACE_PATHS];
   if (path) {
     revalidatePath(path);
   }

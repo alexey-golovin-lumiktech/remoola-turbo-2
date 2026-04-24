@@ -33,16 +33,16 @@ import {
   getVerificationQueue,
   type SavedViewSummary,
 } from '../../../lib/admin-api.server';
+import { formatDateTime } from '../../../lib/admin-format';
 import {
   createSavedViewAction,
   deleteSavedViewAction,
   updateSavedViewAction,
 } from '../../../lib/admin-mutations.server';
+import { SHARED_DESCRIPTION_MAX_LENGTH, SHARED_NAME_MAX_LENGTH } from '../../../lib/admin-surface-meta';
 import { parseQuickstartId } from '../../../lib/quickstart-investigations';
 
 const SAVED_VIEW_WORKSPACE = `verification_queue` as const;
-const MAX_SAVED_VIEW_NAME_LENGTH = 100;
-const MAX_SAVED_VIEW_DESCRIPTION_LENGTH = 500;
 
 type VerificationQueueSavedViewPayload = {
   status?: string;
@@ -63,11 +63,6 @@ const SUPPORTED_PAYLOAD_KEYS = new Set<keyof VerificationQueueSavedViewPayload>(
 ]);
 
 type VerificationItem = NonNullable<Awaited<ReturnType<typeof getVerificationQueue>>>[`items`][number];
-
-function formatDate(value: string | null | undefined): string {
-  if (!value) return `-`;
-  return new Date(value).toLocaleString();
-}
 
 function parseSavedViewPayload(raw: unknown): VerificationQueueSavedViewPayload | null {
   if (raw === null || typeof raw !== `object` || Array.isArray(raw)) {
@@ -171,7 +166,7 @@ function VerificationMobileCards({ items }: { items: VerificationItem[] }) {
             </div>
             <div className={mutedTextClass}>SLA: {item.slaBreached ? `Breached` : `Within SLA`}</div>
             <div className={mutedTextClass}>Assigned: {renderVerificationAssigneeSummary(item)}</div>
-            <div className={mutedTextClass}>Updated: {formatDate(item.updatedAt)}</div>
+            <div className={mutedTextClass}>Updated: {formatDateTime(item.updatedAt)}</div>
           </MobileQueueCard>
         ))}
       </div>
@@ -222,7 +217,7 @@ function VerificationTabletRows({ items }: { items: VerificationItem[] }) {
               </div>,
               <div key="assigned-updated">
                 <div>{renderVerificationAssigneeSummary(item)}</div>
-                <div className={mutedTextClass}>{formatDate(item.updatedAt)}</div>
+                <div className={mutedTextClass}>{formatDateTime(item.updatedAt)}</div>
               </div>,
             ]}
           />
@@ -263,7 +258,7 @@ function VerificationDesktopTable({ items }: { items: VerificationItem[] }) {
                 <td>{item.missingDocuments ? `Missing documents` : `${item.documentsCount} attached`}</td>
                 <td>{item.slaBreached ? `Breached` : `Within SLA`}</td>
                 <td>{renderVerificationAssignee(item)}</td>
-                <td>{formatDate(item.updatedAt)}</td>
+                <td>{formatDateTime(item.updatedAt)}</td>
               </tr>
             ))}
       </DenseTable>
@@ -328,7 +323,7 @@ function SavedViewRow({
                 name="name"
                 defaultValue={view.name}
                 required
-                maxLength={MAX_SAVED_VIEW_NAME_LENGTH}
+                maxLength={SHARED_NAME_MAX_LENGTH}
                 aria-label="Saved view name"
               />
             </label>
@@ -338,7 +333,7 @@ function SavedViewRow({
                 className={textInputClass}
                 name="description"
                 defaultValue={view.description ?? ``}
-                maxLength={MAX_SAVED_VIEW_DESCRIPTION_LENGTH}
+                maxLength={SHARED_DESCRIPTION_MAX_LENGTH}
                 aria-label="Saved view description"
               />
             </label>
@@ -396,7 +391,7 @@ function SavedViewsSection({
                 className={textInputClass}
                 name="name"
                 required
-                maxLength={MAX_SAVED_VIEW_NAME_LENGTH}
+                maxLength={SHARED_NAME_MAX_LENGTH}
                 placeholder="e.g. Pending DE individuals"
                 aria-label="New saved view name"
               />
@@ -406,7 +401,7 @@ function SavedViewsSection({
               <input
                 className={textInputClass}
                 name="description"
-                maxLength={MAX_SAVED_VIEW_DESCRIPTION_LENGTH}
+                maxLength={SHARED_DESCRIPTION_MAX_LENGTH}
                 placeholder="Optional"
                 aria-label="New saved view description"
               />

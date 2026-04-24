@@ -9,15 +9,21 @@ import {
   type LedgerAnomalyListResponse,
   type SavedViewSummary,
 } from '../../../../lib/admin-api.server';
+import { formatDateTime, getDefaultLookbackDateOnlyRange } from '../../../../lib/admin-format';
 import {
   createSavedViewAction,
   deleteSavedViewAction,
   updateSavedViewAction,
 } from '../../../../lib/admin-mutations.server';
+import {
+  isLedgerAnomalyClass,
+  LEDGER_ANOMALY_CLASS_LABELS,
+  LEDGER_ANOMALY_CLASS_ORDER,
+  SHARED_DESCRIPTION_MAX_LENGTH,
+  SHARED_NAME_MAX_LENGTH,
+} from '../../../../lib/admin-surface-meta';
 
 const SAVED_VIEW_WORKSPACE = `ledger_anomalies` as const;
-const MAX_SAVED_VIEW_NAME_LENGTH = 100;
-const MAX_SAVED_VIEW_DESCRIPTION_LENGTH = 500;
 
 type LedgerAnomaliesSavedViewPayload = {
   class: LedgerAnomalyClass;
@@ -47,47 +53,8 @@ function parseSavedViewPayload(raw: unknown): LedgerAnomaliesSavedViewPayload | 
   };
 }
 
-const CLASS_ORDER: LedgerAnomalyClass[] = [
-  `stalePendingEntries`,
-  `inconsistentOutcomeChains`,
-  `largeValueOutliers`,
-  `orphanedEntries`,
-  `duplicateIdempotencyRisk`,
-  `impossibleTransitions`,
-];
-
-const CLASS_LABELS: Record<LedgerAnomalyClass, string> = {
-  stalePendingEntries: `Stale pending entries`,
-  inconsistentOutcomeChains: `Inconsistent outcome chains`,
-  largeValueOutliers: `Large value outliers`,
-  orphanedEntries: `Orphaned entries`,
-  duplicateIdempotencyRisk: `Duplicate idempotency risk`,
-  impossibleTransitions: `Impossible transitions`,
-};
-
-function formatDate(value: string | null | undefined) {
-  if (!value) {
-    return `-`;
-  }
-
-  return new Date(value).toLocaleString();
-}
-
-function toDateOnly(value: Date) {
-  return value.toISOString().slice(0, 10);
-}
-
 function defaultDateRange() {
-  const dateTo = new Date();
-  const dateFrom = new Date(dateTo.getTime() - 7 * 24 * 60 * 60 * 1000);
-  return {
-    dateFrom: toDateOnly(dateFrom),
-    dateTo: toDateOnly(dateTo),
-  };
-}
-
-function isLedgerAnomalyClass(value: string | undefined): value is LedgerAnomalyClass {
-  return CLASS_ORDER.includes(value as LedgerAnomalyClass);
+  return getDefaultLookbackDateOnlyRange();
 }
 
 type LedgerAnomalyItem = LedgerAnomalyListResponse[`items`][number];
@@ -124,8 +91,8 @@ function AnomalyCards({ items }: { items: LedgerAnomalyItem[] }) {
             </div>
             <div>Status: {item.entryStatus}</div>
             <div className="muted">Latest outcome: {item.outcomeStatus ?? `-`}</div>
-            <div className="muted">Outcome at: {formatDate(item.outcomeAt)}</div>
-            <div className="muted">Created: {formatDate(item.createdAt)}</div>
+            <div className="muted">Outcome at: {formatDateTime(item.outcomeAt)}</div>
+            <div className="muted">Created: {formatDateTime(item.createdAt)}</div>
             <p className="muted">{item.signal.detail}</p>
           </div>
         </article>
@@ -169,8 +136,8 @@ function AnomalyTable({ items }: { items: LedgerAnomalyItem[] }) {
               </td>
               <td>{item.signal.detail}</td>
               <td>
-                <div className="muted">Outcome: {formatDate(item.outcomeAt)}</div>
-                <div className="muted">Created: {formatDate(item.createdAt)}</div>
+                <div className="muted">Outcome: {formatDateTime(item.outcomeAt)}</div>
+                <div className="muted">Created: {formatDateTime(item.createdAt)}</div>
               </td>
             </tr>
           ))}
@@ -256,7 +223,7 @@ function SavedViewRow({
                 name="name"
                 defaultValue={view.name}
                 required
-                maxLength={MAX_SAVED_VIEW_NAME_LENGTH}
+                maxLength={SHARED_NAME_MAX_LENGTH}
                 aria-label="Saved view name"
               />
             </label>
@@ -265,7 +232,7 @@ function SavedViewRow({
               <input
                 name="description"
                 defaultValue={view.description ?? ``}
-                maxLength={MAX_SAVED_VIEW_DESCRIPTION_LENGTH}
+                maxLength={SHARED_DESCRIPTION_MAX_LENGTH}
                 aria-label="Saved view description"
               />
             </label>
@@ -322,7 +289,7 @@ function SavedViewsSection({
               <input
                 name="name"
                 required
-                maxLength={MAX_SAVED_VIEW_NAME_LENGTH}
+                maxLength={SHARED_NAME_MAX_LENGTH}
                 placeholder="e.g. Stale entries last 7 days"
                 aria-label="New saved view name"
               />
@@ -331,7 +298,7 @@ function SavedViewsSection({
               <span>Description</span>
               <input
                 name="description"
-                maxLength={MAX_SAVED_VIEW_DESCRIPTION_LENGTH}
+                maxLength={SHARED_DESCRIPTION_MAX_LENGTH}
                 placeholder="Optional"
                 aria-label="New saved view description"
               />
@@ -411,11 +378,11 @@ export default async function LedgerAnomaliesPage({
           <h1>Ledger anomalies</h1>
           <p className="muted">Read-only investigation surface.</p>
         </div>
-        <p className="muted">Computed: {summary?.computedAt ? new Date(summary.computedAt).toLocaleString() : `-`}</p>
+        <p className="muted">Computed: {formatDateTime(summary?.computedAt)}</p>
       </section>
 
       <section className="statsGrid">
-        {CLASS_ORDER.map((key) => {
+        {LEDGER_ANOMALY_CLASS_ORDER.map((key) => {
           const item = summary?.classes[key];
           return (
             <article key={key} className="panel">
@@ -437,14 +404,14 @@ export default async function LedgerAnomaliesPage({
 
       <section className="panel pageHeader">
         <nav className="actionsRow" aria-label="Anomaly classes">
-          {CLASS_ORDER.map((key) => (
+          {LEDGER_ANOMALY_CLASS_ORDER.map((key) => (
             <Link
               key={key}
               className="secondaryButton"
               href={buildHref({ className: key, cursor: null })}
               aria-current={key === className ? `page` : undefined}
             >
-              {CLASS_LABELS[key]}
+              {LEDGER_ANOMALY_CLASS_LABELS[key]}
             </Link>
           ))}
         </nav>
