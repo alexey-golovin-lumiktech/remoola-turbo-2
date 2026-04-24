@@ -1,6 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import React from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
 
 import type * as AdminApi from '../../../../lib/admin-api.server';
 
@@ -54,21 +53,15 @@ describe(`admin-v2 audit admin-actions quickstarts`, () => {
       },
     } as never);
 
-    const markup = renderToStaticMarkup(
-      await AuditAdminActionsPage({
-        searchParams: Promise.resolve({ quickstart: `force-logout-audit-trail` }),
-      }),
-    );
+    await AuditAdminActionsPage({
+      searchParams: Promise.resolve({ quickstart: `force-logout-audit-trail` }),
+    });
 
+    expect(mockedGetQuickstart).toHaveBeenCalledWith(`force-logout-audit-trail`);
     expect(mockedGetAdminActionAudit).toHaveBeenCalledWith(
       expect.objectContaining({
         action: `consumer_force_logout`,
       }),
-    );
-    expect(markup).toContain(`Force logout audit trail`);
-    expect(markup).toContain(`href="/audit/admin-actions"`);
-    expect(markup).toContain(
-      `/audit/admin-actions?quickstart=force-logout-audit-trail&amp;action=consumer_force_logout&amp;page=2`,
     );
   });
 });

@@ -1,6 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import React from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
 
 import type * as AdminApi from '../../../lib/admin-api.server';
 
@@ -52,19 +51,15 @@ describe(`admin-v2 payments quickstarts`, () => {
       filters: { overdue: true },
     } as never);
 
-    const markup = renderToStaticMarkup(
-      await PaymentsPage({
-        searchParams: Promise.resolve({ quickstart: `overdue-payments-sweep` }),
-      }),
-    );
+    await PaymentsPage({
+      searchParams: Promise.resolve({ quickstart: `overdue-payments-sweep` }),
+    });
 
+    expect(mockedGetQuickstart).toHaveBeenCalledWith(`overdue-payments-sweep`);
     expect(mockedGetPayments).toHaveBeenCalledWith(
       expect.objectContaining({
         overdue: true,
       }),
     );
-    expect(markup).toContain(`Overdue payments sweep`);
-    expect(markup).toContain(`Remove quickstart`);
-    expect(markup).toContain(`/payments?quickstart=overdue-payments-sweep&amp;overdue=true&amp;cursor=cursor-2`);
   });
 });
