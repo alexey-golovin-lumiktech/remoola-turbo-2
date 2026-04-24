@@ -1,5 +1,3 @@
-import Link from 'next/link';
-
 import { ActionGhost } from '../../../components/action-ghost';
 import { Panel } from '../../../components/panel';
 import { TinyPill } from '../../../components/tiny-pill';

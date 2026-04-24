@@ -12,6 +12,8 @@ function createIdempotency() {
 
 describe(`AdminV2AdminsService`, () => {
   it(`keeps list and detail contracts inclusive of inactive admins and pending invitations`, async () => {
+    jest.useFakeTimers().setSystemTime(new Date(`2026-04-23T12:00:00.000Z`));
+
     const accessService = {
       getAccessProfile: jest.fn(async (identity: { id: string }) => ({
         source: `schema`,
@@ -75,49 +77,53 @@ describe(`AdminV2AdminsService`, () => {
       { normalizeOrigin: jest.fn((value: string) => value) } as never,
     );
 
-    await expect(service.listAdmins()).resolves.toEqual({
-      items: [
-        {
-          id: `admin-1`,
-          email: `super@example.com`,
-          type: `SUPER`,
-          role: `SUPER_ADMIN`,
-          status: `ACTIVE`,
-          lastActivityAt: `2026-04-17T09:00:00.000Z`,
-          createdAt: `2026-04-17T08:00:00.000Z`,
-          updatedAt: `2026-04-17T08:10:00.000Z`,
-          deletedAt: null,
-        },
-        {
-          id: `admin-2`,
-          email: `ops@example.com`,
-          type: `ADMIN`,
-          role: `OPS_ADMIN`,
-          status: `INACTIVE`,
-          lastActivityAt: `2026-04-17T09:10:00.000Z`,
-          createdAt: `2026-04-17T08:20:00.000Z`,
-          updatedAt: `2026-04-17T08:30:00.000Z`,
-          deletedAt: `2026-04-17T08:35:00.000Z`,
-        },
-      ],
-      pendingInvitations: [
-        {
-          id: `inv-1`,
-          email: `invitee@example.com`,
-          role: `OPS_ADMIN`,
-          status: `pending`,
-          expiresAt: `2026-04-24T08:00:00.000Z`,
-          createdAt: `2026-04-17T08:05:00.000Z`,
-          invitedBy: {
+    try {
+      await expect(service.listAdmins()).resolves.toEqual({
+        items: [
+          {
             id: `admin-1`,
             email: `super@example.com`,
+            type: `SUPER`,
+            role: `SUPER_ADMIN`,
+            status: `ACTIVE`,
+            lastActivityAt: `2026-04-17T09:00:00.000Z`,
+            createdAt: `2026-04-17T08:00:00.000Z`,
+            updatedAt: `2026-04-17T08:10:00.000Z`,
+            deletedAt: null,
           },
-        },
-      ],
-      total: 2,
-      page: 1,
-      pageSize: 20,
-    });
+          {
+            id: `admin-2`,
+            email: `ops@example.com`,
+            type: `ADMIN`,
+            role: `OPS_ADMIN`,
+            status: `INACTIVE`,
+            lastActivityAt: `2026-04-17T09:10:00.000Z`,
+            createdAt: `2026-04-17T08:20:00.000Z`,
+            updatedAt: `2026-04-17T08:30:00.000Z`,
+            deletedAt: `2026-04-17T08:35:00.000Z`,
+          },
+        ],
+        pendingInvitations: [
+          {
+            id: `inv-1`,
+            email: `invitee@example.com`,
+            role: `OPS_ADMIN`,
+            status: `pending`,
+            expiresAt: `2026-04-24T08:00:00.000Z`,
+            createdAt: `2026-04-17T08:05:00.000Z`,
+            invitedBy: {
+              id: `admin-1`,
+              email: `super@example.com`,
+            },
+          },
+        ],
+        total: 2,
+        page: 1,
+        pageSize: 20,
+      });
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it(`rejects permissions-change requests that try to touch non-overridable capabilities`, async () => {
